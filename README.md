@@ -71,7 +71,9 @@ or into iTerm2 or Warp if you use one of those.
    ```
 
    It ends with **All unit tests passed.** when everything passes. Anything
-   else, including a list of failures, means something needs fixing.
+   else, including a list of failures, means something needs fixing. The
+   script starts the simulator first and leaves it running in the
+   background afterwards; `xcrun simctl shutdown all` stops it.
 
 7. **The UI tests** (optional) launch the real app on a simulator and press
    its buttons, so they take a few minutes. Choose the **Brickson-UI**
@@ -146,11 +148,14 @@ Brickson/                 the app itself
 BricksonTests/            unit tests: fast checks of the app's logic
 BricksonUITests/          UI tests: launch the real app and press its buttons
 docs/                     the project's notes (see below)
+site/                     the public web pages: the privacy policy and the
+                          support page (see "The website" below)
 scripts/test.sh           builds the app and runs the tests in one step
 project.yml               describes the Xcode project for XcodeGen
 AGENTS.md                 the rules every AI coding agent follows here
 CLAUDE.md                 points Claude Code at AGENTS.md
-.github/                  GitHub settings: automatic tests, pull request template
+.github/                  GitHub settings: automatic tests, website publishing,
+                          pull request template
 ```
 
 ### How the pieces fit together
@@ -192,6 +197,31 @@ Every pull request is built and tested on GitHub's Mac machines
 (`.github/workflows/tests.yml`). The result appears at the bottom of the
 pull request as a green check or a red cross; a pull request should be
 merged only when it is green.
+
+## The website
+
+Apple needs two web addresses before the app can be listed: a privacy
+policy and a support page with a way to reach the developer. Both live in
+`site/` and are published for free by GitHub Pages:
+
+- https://middleagedbanana.github.io/Brickson/privacy/ (the privacy policy)
+- https://middleagedbanana.github.io/Brickson/ (the support page)
+
+Every change to `site/` that is merged into `main` republishes them
+(`.github/workflows/pages.yml`, shown as "Publish website" on the Actions
+tab). The run refuses to publish while a page still has a bracketed blank
+such as `[Contact Email]`.
+
+- **Edit the policy's words in `site/privacy/index.html`**, and change its
+  "Effective" date whenever the words change.
+- **Never rename the repository or make it private.** GitHub does not
+  redirect Pages addresses after a rename, a private repository on a free
+  account takes the site down, and the address is built into the App Store
+  listing and the app. The address is case-sensitive: `/Brickson/`, not
+  `/brickson/`.
+- **One-time setup:** in the repository's Settings → Pages, *Source* must
+  be **GitHub Actions**. Until it is, the publish run fails at
+  "Configure Pages".
 
 ## Working with AI agents
 
