@@ -1,0 +1,53 @@
+# Builds Brickson and runs its tests on GitHub's Mac machines, for every pull
+# request and every change to main. Free for public repositories.
+#
+# Each job runs the same script you run on your Mac (scripts/test.sh), on
+# the newest iPad Pro 13-inch simulator installed on the machine.
+name: Tests
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# A newer push to the same branch cancels the older, unfinished run.
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  HOMEBREW_NO_AUTO_UPDATE: "1"
+  HOMEBREW_NO_INSTALL_CLEANUP: "1"
+
+jobs:
+  unit:
+    name: Unit tests
+    runs-on: macos-26
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v5
+      - name: Show the Xcode version and simulators
+        run: |
+          xcodebuild -version
+          xcrun simctl list runtimes available
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Build and run the unit tests
+        run: scripts/test.sh unit
+
+  ui:
+    name: UI tests
+    runs-on: macos-26
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v5
+      - name: Show the Xcode version
+        run: xcodebuild -version
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Build the app and run the UI tests
+        run: scripts/test.sh ui
