@@ -53,4 +53,13 @@ struct CategorySelectionTests {
         #expect(CategorySelection.emergency(in: ordered) === emergency)
         #expect(CategorySelection.emergency(in: [everyday, feelings]) == nil)
     }
+
+    /// The Emergency quick control is the emergency category's only button,
+    /// so "Emergency" names exactly one control on Home.
+    @Test func theCategoryRowLeavesOutTheEmergencyCategory() {
+        let shown = CategorySelection.shownInCategoryRow(ordered)
+        #expect(shown.count == 2)
+        #expect(shown.first === everyday)
+        #expect(shown.last === feelings)
+    }
 }

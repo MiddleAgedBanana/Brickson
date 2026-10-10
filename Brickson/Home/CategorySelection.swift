@@ -18,4 +18,12 @@ enum CategorySelection {
     static func emergency(in categories: [PhraseCategory]) -> PhraseCategory? {
         categories.first { $0.isEmergency }
     }
+
+    /// The categories with their own button in the category row. The
+    /// emergency category is left out: the Emergency quick control already
+    /// opens it from every state, and two buttons with the same name are
+    /// ambiguous for Voice Control ("Tap Emergency") and for VoiceOver.
+    static func shownInCategoryRow(_ categories: [PhraseCategory]) -> [PhraseCategory] {
+        categories.filter { !$0.isEmergency }
+    }
 }

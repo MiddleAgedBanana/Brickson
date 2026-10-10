@@ -55,10 +55,21 @@ final class LaunchTests: XCTestCase {
     }
 
     /// Apple's automated accessibility audit: contrast, element labels, hit
-    /// regions, Dynamic Type support and clipped text.
+    /// regions, Dynamic Type support and clipped text. Each issue is reported
+    /// with the element it names, so the failure says what to fix.
     @MainActor
     func testHomePassesTheAccessibilityAudit() throws {
         let app = launchedApp()
-        try app.performAccessibilityAudit()
+        try app.performAccessibilityAudit { issue in
+            MainActor.assumeIsolated {
+                let element = issue.element.map {
+                    "\"\($0.label)\" (identifier \"\($0.identifier)\", frame \($0.frame))"
+                } ?? "no element"
+                XCTFail("Accessibility audit: \(issue.compactDescription) on \(element). \(issue.detailedDescription)")
+            }
+            // Reported above; returning true stops the audit failing a second
+            // time with less detail.
+            return true
+        }
     }
 }

@@ -26,10 +26,11 @@ struct HomeView: View {
             MessageRow()
             QuickControlsRow(
                 emergencyIsAvailable: emergency != nil,
+                isShowingEmergency: selected?.isEmergency == true,
                 showEmergency: { selectedCategoryID = emergency?.uuid }
             )
             CategoryRow(
-                categories: ordered,
+                categories: CategorySelection.shownInCategoryRow(ordered),
                 selectedID: selected?.uuid,
                 select: { selectedCategoryID = $0 }
             )
@@ -73,6 +74,7 @@ private struct MessageRow: View {
                 // shifts anything when speech starts or stops.
                 Label("Speaking", systemImage: "speaker.wave.2.fill")
                     .font(.subheadline.weight(.semibold))
+                    .accessibilityElement(children: .combine)
                     .opacity(speech.isSpeaking ? 1 : 0)
                     .accessibilityHidden(!speech.isSpeaking)
             }
@@ -96,10 +98,13 @@ private struct MessageRow: View {
 
 /// Controls that stay in the same place in every state. Yes and No speak at
 /// once; Emergency only switches to the emergency phrases, so a stray look
-/// on it never says anything.
+/// on it never says anything. While the emergency phrases show, Emergency is
+/// marked selected the same way a category is (a check mark and the Selected
+/// trait), because the emergency category has no button of its own.
 private struct QuickControlsRow: View {
     @Environment(SpeechService.self) private var speech
     let emergencyIsAvailable: Bool
+    let isShowingEmergency: Bool
     let showEmergency: () -> Void
 
     var body: some View {
@@ -121,10 +126,14 @@ private struct QuickControlsRow: View {
             Button {
                 showEmergency()
             } label: {
-                QuickControlLabel(title: "Emergency", systemImage: "exclamationmark.triangle.fill")
+                QuickControlLabel(
+                    title: "Emergency",
+                    systemImage: isShowingEmergency ? "checkmark.circle.fill" : "exclamationmark.triangle.fill"
+                )
             }
             .tint(Palette.emergencyFill)
             .disabled(!emergencyIsAvailable)
+            .accessibilityAddTraits(isShowingEmergency ? .isSelected : [])
         }
         .buttonStyle(.borderedProminent)
     }
@@ -144,7 +153,7 @@ private struct QuickControlLabel: View {
 
 // MARK: - Categories
 
-/// One button per category, in a fixed order. The selected one is filled
+/// One button per everyday category, in a fixed order. The selected one is filled
 /// with the phrase colour, shows a check mark instead of its symbol (so the
 /// choice never depends on colour alone), and carries the Selected trait for
 /// VoiceOver and Voice Control.
@@ -250,15 +259,18 @@ private struct StatusArea: View {
         VStack(alignment: .leading, spacing: 8) {
             if let audioIssue {
                 Label(audioIssue.message, systemImage: audioIssue.systemImage)
+                    .accessibilityElement(children: .combine)
             }
             if isVolatileStore {
                 Label(
                     "Phrases can't be saved right now. Changes will be lost when the app closes.",
                     systemImage: "externaldrive.badge.exclamationmark"
                 )
+                .accessibilityElement(children: .combine)
             }
             if let phraseLibraryIssue {
                 Label(phraseLibraryIssue.message, systemImage: "exclamationmark.bubble.fill")
+                    .accessibilityElement(children: .combine)
             }
         }
         .font(.subheadline.weight(.semibold))
