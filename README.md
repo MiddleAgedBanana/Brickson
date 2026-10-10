@@ -71,7 +71,9 @@ or into iTerm2 or Warp if you use one of those.
    ```
 
    It ends with **All unit tests passed.** when everything passes. Anything
-   else, including a list of failures, means something needs fixing.
+   else, including a list of failures, means something needs fixing. The
+   script starts the simulator first and leaves it running in the
+   background afterwards; `xcrun simctl shutdown all` stops it.
 
 7. **The UI tests** (optional) launch the real app on a simulator and press
    its buttons, so they take a few minutes. Choose the **Brickson-UI**
