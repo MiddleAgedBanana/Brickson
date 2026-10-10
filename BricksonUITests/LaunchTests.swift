@@ -49,7 +49,18 @@ final class LaunchTests: XCTestCase {
 
         phrase.tap()
 
-        XCTAssertTrue(app.buttons["Again"].isEnabled)
+        // Wait for Again to turn on rather than reading it once. On a busy
+        // CI machine a single read straight after tap() once found Again
+        // still off, with the same code green elsewhere (PR #4). The cause
+        // wasn't established; this test runs first, so its tap is also the
+        // first to start the audio session and the speech engine. The app
+        // still speaks on the first tap; only the test waits.
+        let turnsOn = NSPredicate(format: "isEnabled == true")
+        XCTAssertEqual(
+            XCTWaiter.wait(for: [expectation(for: turnsOn, evaluatedWith: app.buttons["Again"])], timeout: 10),
+            .completed,
+            "Again was still off 10 s after \"Hello.\" was tapped: the tap did not reach the tile, or the phrase did not start"
+        )
     }
 
     /// Emergency switches straight to the emergency phrases and says nothing
