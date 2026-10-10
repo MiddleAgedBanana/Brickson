@@ -61,6 +61,27 @@ struct AudioSafetyMonitorTests {
         #expect(monitor.audioSessionHealthy)
     }
 
+    /// A media-services reset that cuts off a phrase leaves Home naming
+    /// Again, not only the generic "Audio failed" (invariant 4).
+    @Test func aMediaResetDuringAPhraseNamesAgain() {
+        let center = NotificationCenter()
+        let sessionIdentity = NSObject()
+        let monitor = makeMonitor(
+            notificationCenter: center,
+            notificationObject: sessionIdentity
+        )
+        let speech = SpeechService(audioSafetyMonitor: monitor)
+        speech.speak("Hello.")
+
+        center.post(
+            name: AVAudioSession.mediaServicesWereResetNotification,
+            object: sessionIdentity
+        )
+
+        #expect(speech.speechInterruptionState == .stoppedUnexpectedly)
+        #expect(speech.lastSpokenText == "Hello.")
+    }
+
     @Test func failedActivationSurfacesUnhealthyState() {
         let monitor = makeMonitor()
 

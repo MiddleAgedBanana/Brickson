@@ -130,10 +130,17 @@ final class SpeechService {
             // The media daemon crashed; every audio object is invalid. Without
             // recreating the synthesizer, speech stays dead until relaunch —
             // for a person who cannot speak, that is the whole app dead.
+            // A phrase cut off by the crash is recorded first, so Home names
+            // Again rather than only "Audio failed" (invariant 4); the old
+            // synthesizer's cancel callback may never come.
+            let repeatableSpeechActive = self.utterances.isRepeatableSpeechActive
             self.synthesizer = AVSpeechSynthesizer()
             self.synthesizer.delegate = self.synthesizerEvents
             self.utterances.reset()
             self.activeUtterance = nil
+            self.speechInterruptionStatus.recordInterruption(
+                repeatableSpeechActive: repeatableSpeechActive
+            )
             // Apple requires restoring configuration after a media-services
             // reset but deferring activation/playback until user action. The
             // monitor therefore stays unhealthy until the next speech (or, once
@@ -144,9 +151,10 @@ final class SpeechService {
         requestPersonalVoiceAuthorization()
     }
 
-    /// Must run before any synthesis: requesting Personal Voice authorization
-    /// after the first utterance can miss personal voices for the rest of the
-    /// session (documented AVFoundation behavior).
+    /// Runs before any synthesis. The reference app found that asking after
+    /// the first utterance could miss personal voices for the rest of the
+    /// session; Apple's documentation does not say so (docs/DECISIONS.md,
+    /// "Personal Voice permission is asked at launch, for now").
     private func requestPersonalVoiceAuthorization() {
         // @Sendable: the completion arrives on an arbitrary queue, so it must
         // not inherit this method's MainActor isolation.
