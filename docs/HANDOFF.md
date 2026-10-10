@@ -50,6 +50,13 @@ versioned schema without cascade deletes.
   - Not seen by any test: VoiceOver announcements being posted, the
     message's scroll reset, the missed-callback watchdog, and anything
     about sound.
+  - On PR #4, the first UI test (`testAPhraseSpeaksOnTheFirstTap`) failed
+    twice on app and test code identical to green `main`: once reading
+    Again straight after the tap, once timing out while launching the app.
+    The cause was not established. `scripts/test.sh` now starts its default
+    simulator and waits for it to finish starting, and the test waits up to
+    10 s for Again to turn on. The failure was intermittent, so a green run
+    afterwards does not prove the fix.
   - Later commits are checked on the pull request; read its latest CI run.
 - **Not yet run by the owner on a Mac**, and **no physical-device evidence
   of any kind**. See *Checks that need a real device* below.
@@ -193,3 +200,5 @@ device, OS version, settings and date.
 | 2026-10-10 | `e6335dd` | Reversed the shrink, which drew the label below its default size (Codex review): a press now shows a primary-ink ring inside Again's edge, with the label and fill unchanged | CI; no test sees a pressed state |
 | 2026-10-10 | `d881f71` | `PaletteTests` pins the pressed ring: primary ink on the control fill at 3:1 or better in every appearance (Codex review) | CI |
 | 2026-10-10 | `d9586f4` | The policy's blanks filled in with the owner's name, contact email and effective date; README, AGENTS.md and this file describe the website | The publish run after PR #2 stopped at the blank check, as designed; the next run needs Pages' Source set to GitHub Actions |
+| 2026-10-10 | `6e78f0a` | `scripts/test.sh` starts its default simulator and waits for it to finish starting (`simctl bootstatus -b`) before building and testing, after a UI-test launch timed out on CI with the same code green on `main` | CI; the failure was intermittent, so one green run does not prove the fix |
+| 2026-10-10 | `d80f109` | `testAPhraseSpeaksOnTheFirstTap` waits up to 10 s for Again to turn on instead of reading it once straight after the tap | CI; intermittent, as above |

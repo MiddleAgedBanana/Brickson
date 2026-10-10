@@ -58,8 +58,9 @@ scripts/test.sh ui       # the UI tests: launch the real app and drive it
 scripts/test.sh device   # a build for a real device (needs DEVELOPMENT_TEAM)
 ```
 
-`scripts/test.sh` runs `xcodegen generate` first, then `xcodebuild` on the
-newest installed iPad Pro 13-inch simulator (any iPad if there is none).
+`scripts/test.sh` runs `xcodegen generate` first, starts the newest
+installed iPad Pro 13-inch simulator (any iPad if there is none) and waits
+for it, then runs `xcodebuild` on it.
 `DESTINATION='platform=iOS Simulator,name=iPhone 17' scripts/test.sh`
 chooses another. The iPad and the iPhone are both first-class: run both
 before a release.
@@ -328,6 +329,18 @@ Shortcuts. **Never apply** `core-data` skills (this app uses SwiftData),
   several flags as an array, not one string.
 - **A failing `xcodebuild test` can sit for minutes collecting
   diagnostics**; `scripts/test.sh` passes `-collect-test-diagnostics never`.
+- **A just-started simulator is slow, and the first UI test pays for it.**
+  On GitHub's busy machines, one run found Again still off when the test
+  read it straight after a tap, and the re-run's first launch timed out,
+  both on code that was green on `main` (cause not established; a slow
+  first launch is the likely one). With no `DESTINATION`, `scripts/test.sh`
+  starts its simulator and waits for it to finish starting
+  (`xcrun simctl bootstatus <udid> -b`), which leaves it running; a
+  `DESTINATION` you set is left to xcodebuild, which doesn't wait. In UI
+  tests, wait for a change after `tap()`: `waitForExistence(timeout:)` for
+  something appearing, an `XCTWaiter` expectation for a property such as
+  `isEnabled`. Check that something did *not* change only after waiting
+  for the change that did happen.
 - **Simulator audio is unreliable.** Every sound check needs a real device.
 - **A crash cannot be a known issue.** `withKnownIssue` does not survive a
   crash; commit the reproduction disabled, naming its issue.
