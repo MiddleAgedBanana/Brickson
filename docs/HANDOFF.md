@@ -69,6 +69,9 @@ versioned schema without cascade deletes.
   delegate methods have no off-main test yet (docs/LESSONS.md).
 - The audio session stays active after speech ends, so other apps' audio
   does not resume by itself (docs/DECISIONS.md, "Background audio").
+- `SpeechService` has no test seam for the synthesizer itself, so the
+  missed-callback watchdog (`watchForMissedFinish`) is untested. A
+  protocol over `AVSpeechSynthesizer` would let tests drive it.
 - The seeder fills the library whenever it is empty. Once editing exists,
   someone who deletes every category would get the starter set back at
   the next launch. Decide what should happen before porting editing.
@@ -128,4 +131,5 @@ device, OS version, settings and date.
 | 2026-10-10 | `0260099` | Long messages scroll at full size instead of shrinking to half (Codex review); the audio-session release is recorded as open | Pull request CI |
 | 2026-10-10 | `f9eb42c`, `cb25616` | Again's disabled look keeps readable contrast (audit); the spoken name and Siri's alternative name "Brick Son" | Pull request CI |
 | 2026-10-10 | `97906b2` | A store that cannot be filled at launch falls back to a filled in-memory library, so Emergency always has phrases (Codex review) | Pull request CI |
-| 2026-10-10 | *(next commit)* | A media-services reset that cuts off a phrase now names Again on Home, as other interruptions do (Codex review) | Pull request CI |
+| 2026-10-10 | `9e53ed5` | A media-services reset that cuts off a phrase now names Again on Home, as other interruptions do (Codex review) | Pull request CI |
+| 2026-10-10 | *(next commit)* | A synthesizer that goes idle with no callback is reported as a cut-off phrase (Again named), after a half-second grace for a late callback (Codex review) | Compiles on CI; no test seam for the synthesizer yet |

@@ -275,18 +275,25 @@ final class SpeechService {
         return trimmed
     }
 
-    /// Backstop for the speaking indicator: if the synthesizer stops without
-    /// a finish/cancel callback, Home would otherwise show "speaking" forever.
-    /// Checks the live state once a second while this utterance is current.
+    /// Backstop for a synthesizer that stops without a finish or cancel
+    /// callback. Without it, Home would show "Speaking" forever, and a phrase
+    /// that may never have been heard would fail silently. Checks the live
+    /// state once a second while this utterance is current.
     private func watchForMissedFinish(of id: ObjectIdentifier) {
         Task { @MainActor [weak self] in
             while true {
                 try? await Task.sleep(for: .seconds(1))
                 guard let self, self.utterances.activeID == id else { return }
-                if !self.synthesizer.isSpeaking {
-                    self.utteranceEnded(id)
-                    return
-                }
+                guard !self.synthesizer.isSpeaking else { continue }
+                // Idle with no callback. Give one already on its way a moment
+                // to land, so a phrase that simply finished is not reported.
+                try? await Task.sleep(for: .milliseconds(500))
+                guard self.utterances.activeID == id, !self.synthesizer.isSpeaking else { continue }
+                // Still nothing: treat it as cut off, so Home names Again
+                // (invariants 4 and 5). A voice sample is not repeatable and
+                // only clears the indicator.
+                self.utteranceEnded(id, wasCancelled: true)
+                return
             }
         }
     }
