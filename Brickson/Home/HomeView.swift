@@ -235,8 +235,16 @@ private struct PhraseGrid: View {
 
 /// Problems the person cannot hear: audio that failed or a very low volume,
 /// and a library that could not be opened or filled (invariants 4 and 5).
-/// Passive text only, never a control, and placed last so that when a
-/// warning appears nothing above it moves.
+/// Passive text only, never a control.
+///
+/// The phrase grid above takes whatever height is left, so anything that
+/// makes this area taller hides phrase tiles. The audio warning can appear
+/// at any moment, so its slot always holds invisible copies of every audio
+/// warning and keeps the tallest one's height: a warning appearing changes
+/// nothing above it. To keep that reserved slot to one short line, it shows
+/// each warning's compact text and gives VoiceOver the full sentence, as the
+/// reference app did. The two library warnings are decided once at launch
+/// and never change while the app runs, so they need no reserved space.
 private struct StatusArea: View {
     @Environment(SpeechService.self) private var speech
     @Environment(AudioSafetyMonitor.self) private var audioSafety
@@ -257,23 +265,36 @@ private struct StatusArea: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            if let audioIssue {
-                Label(audioIssue.message, systemImage: audioIssue.systemImage)
-                    .accessibilityElement(children: .combine)
+            ZStack(alignment: .topLeading) {
+                ForEach(HomeAudioIssue.allCases, id: \.self) { candidate in
+                    warning(candidate.compactMessage, systemImage: candidate.systemImage)
+                        .hidden()
+                        .accessibilityHidden(true)
+                }
+                if let audioIssue {
+                    warning(audioIssue.compactMessage, systemImage: audioIssue.systemImage)
+                        .accessibilityLabel(audioIssue.message)
+                }
             }
             if isVolatileStore {
-                Label(
-                    "Phrases can't be saved right now. Changes will be lost when the app closes.",
+                warning(
+                    String(localized: "Phrases can't be saved right now. Changes will be lost when the app closes."),
                     systemImage: "externaldrive.badge.exclamationmark"
                 )
-                .accessibilityElement(children: .combine)
             }
             if let phraseLibraryIssue {
-                Label(phraseLibraryIssue.message, systemImage: "exclamationmark.bubble.fill")
-                    .accessibilityElement(children: .combine)
+                warning(phraseLibraryIssue.message, systemImage: "exclamationmark.bubble.fill")
             }
         }
         .font(.subheadline.weight(.semibold))
         .frame(maxWidth: .infinity, alignment: .leading)
+        .allowsHitTesting(false)
+    }
+
+    private func warning(_ message: String, systemImage: String) -> some View {
+        Label(message, systemImage: systemImage)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .fixedSize(horizontal: false, vertical: true)
+            .accessibilityElement(children: .combine)
     }
 }
