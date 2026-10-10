@@ -158,6 +158,34 @@ documents can be read alongside.
 12. **The screen never locks while Brickson is open** (`ScreenWakePolicy`).
     Many people using it cannot unlock their device.
 
+## The privacy policy is a promise
+
+The public privacy policy (`site/privacy/index.html`, live at
+https://middleagedbanana.github.io/Brickson/privacy/) says what the app does
+with people's data, and App Review and privacy law hold the app to it. A
+change that makes any sentence in it untrue updates the page, its
+Effective date and the in-app copy (once there is one) in the same pull
+request. Code rules that keep it true:
+
+- SwiftData opens with `cloudKitDatabase: .none`, and the app has no iCloud
+  capability. With iCloud on, SwiftData syncs by itself.
+- Never put a person's phrase, draft or category text, or an error that may
+  contain it, in `fatalError`, `precondition`, `assert` or any other crash
+  message. Crash reports can reach the developer.
+- Store nothing in the Keychain. It survives deleting the app, and the
+  policy says deleting the app removes what it stored.
+- The policy has sections for three planned features: recorded phrases,
+  caregiver alerts and Siri and Shortcuts. A release that doesn't ship one
+  deletes its section, and a feature that ships matches its section:
+  recordings stay on the device; caregiver alerts advertise a random
+  service name and send the device name only inside the encrypted alert;
+  App Shortcut phrases and parameters never contain phrase words.
+  Caregiver alerts need network code, which invariant 9 forbids; the owner
+  decides before they are built.
+- Settings gets a Privacy row that shows the policy inside the app and
+  opens the web page in an in-app sheet (`SFSafariViewController`), not
+  Safari (App Review Guideline 5.1.1(i)).
+
 ## Design rules for dwell, switch and pointer input
 
 These hold for every profile in which a resting pointer or a scan can
