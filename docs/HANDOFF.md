@@ -36,14 +36,20 @@ versioned schema without cascade deletes.
   built or run where it was written.
 - **GitHub CI** (`.github/workflows/tests.yml`, `macos-26` runner, Xcode
   26.6, iPad Pro 13-inch simulator on iOS 26.5) is the only evidence so far:
-  - The app compiles and the whole unit suite passes (runs on `d5fecc2`
-    and `2b7dc2e`).
-  - UI tests on `2b7dc2e`: Home appears with its quick controls and
-    starter phrases, a phrase tap enables Again, and Emergency opens the
-    emergency phrases. The accessibility audit flagged one phrase tile's
-    label ("Maybe.") as "not human-readable"; tile labels are the person's
-    own words, so the audit test now expects that guess on phrase tiles
-    only (`LaunchTests`).
+  - **On `5569286`, both jobs are green.** The whole unit suite passes,
+    including every test added in review (launch fallback, media-services
+    reset, Increase Contrast, the spoken-name keys, announcements and
+    phrase starts). All four UI tests pass: Home appears with its quick
+    controls and starter phrases, a phrase tap enables Again, Emergency
+    opens the emergency phrases and says nothing, and Home passes the
+    accessibility audit.
+  - The audit flags phrase-tile labels such as "Maybe." as "not
+    human-readable". Tile labels are the person's own words, so the audit
+    test expects that guess on phrase tiles only (`LaunchTests`); any other
+    issue fails it.
+  - Not seen by any test: VoiceOver announcements being posted, the
+    message's scroll reset, the missed-callback watchdog, and anything
+    about sound.
   - Later commits are checked on the pull request; read its latest CI run.
 - **Not yet run by the owner on a Mac**, and **no physical-device evidence
   of any kind**. See *Checks that need a real device* below.
@@ -79,6 +85,13 @@ versioned schema without cascade deletes.
 - The seeder fills the library whenever it is empty. Once editing exists,
   someone who deletes every category would get the starter set back at
   the next launch. Decide what should happen before porting editing.
+- If SwiftData cannot create even an in-memory library, the app stops
+  (`fatalError` in `PhraseLibraryStore.openForApp`), as the reference app
+  did. A corrupt store or a full disk cannot cause that; only a schema
+  error (which every PR's tests would catch) or SwiftData failing outright.
+  A screen of Yes, No and emergency phrases that needs no SwiftData was
+  suggested in review and not built: it would be a second Home to keep
+  safe. The owner decides.
 - The app icon is a placeholder (a white speech bubble on blue).
 - No license file: the code is public but, without a license, all rights
   are reserved. The owner decides.
@@ -140,4 +153,5 @@ device, OS version, settings and date.
 | 2026-10-10 | `b4c3679` | A synthesizer that goes idle with no callback is reported as a cut-off phrase (Again named), after a half-second grace for a late callback (Codex review) | Compiles on CI; no test seam for the synthesizer yet |
 | 2026-10-10 | `2630e6d` | `PaletteTests` checks every pair with Increase Contrast too, and pins primary ink on the screen (Codex review) | Pull request CI |
 | 2026-10-10 | `451426c` | VoiceOver announces each audio problem as it happens, with the full sentence; cut-off phrases and audio failures interrupt, low volume waits for VoiceOver to finish (Codex review) | Pull request CI for the announcement text and priority; the posting itself needs a device with VoiceOver |
-| 2026-10-10 | *(next commit)* | Every phrase start, including Again and the same phrase chosen again, shows the message from the top (`SpeechService.phraseStartCount`; Codex review) | Pull request CI for the count (`SpeechServiceTests`); the scroll reset itself is not tested |
+| 2026-10-10 | `5569286` | Every phrase start, including Again and the same phrase chosen again, shows the message from the top (`SpeechService.phraseStartCount`; Codex review) | Pull request CI for the count (`SpeechServiceTests`); the scroll reset itself is not tested |
+| 2026-10-10 | *(next commit)* | CI green on `5569286` recorded; the app stopping if SwiftData cannot start at all is listed as a known gap (Codex review, declined) | Documentation only |
