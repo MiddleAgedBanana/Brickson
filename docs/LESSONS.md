@@ -9,7 +9,12 @@ FamilyVoice's decision records (`docs/fixes/DECISIONS.md` in that
 repository).
 
 Read the sections that touch your work before you start it.
-`docs/PORTING.md` says which lessons belong to which port step.
+`docs/PORTING.md` names, for each port step, the part of the reference app
+it comes from; the lessons below are grouped by subject.
+
+The reference repository is **private**. Agents and contributors without
+access to it can still follow every rule here; the file paths and "D"
+numbers are for those who can read it.
 
 ## Storage
 
@@ -22,12 +27,23 @@ failed and the code called `ModelContext.rollback()`, SwiftData crashed
 person without a voice until someone reopened it.
 
 **Rule.** The category-to-phrase relationship uses `.nullify`, and code that
-deletes a category deletes its phrases explicitly in the same save.
-Prefer doing a mutation in a separate `ModelContext` that is simply
-discarded on failure (the seeder does this). Every mutation path (add,
-rename, move, delete, merge, replace, seed, migrate) gets a test that makes
-the save throw and checks: no crash, nothing half-changed, something shown
-to the person. A save failure never crashes the app.
+deletes a category deletes its phrases explicitly in the same save. Neither
+half of that is proven yet: FamilyVoice never built it, so the first delete
+ported must show, with a failure-injection test, that a failed save can be
+undone without a crash.
+
+Inserting in a separate `ModelContext` that is simply discarded on failure
+is safe (the seeder does this). **Deleting** that way is not proven: in
+FamilyVoice's D28 experiments, a delete saved from a separate context made
+the main context crash the next time it read the deleted phrase ("This
+model instance was invalidated…"). Any delete through a separate context
+needs a test that reads through the main context after the save, and every
+view must drop its references to deleted items first.
+
+Every mutation path (add, rename, move, delete, merge, replace, seed,
+migrate) gets a test that makes the save throw and checks: no crash,
+nothing half-changed, something shown to the person. A save failure never
+crashes the app.
 
 ### Test every rollback path
 

@@ -2,7 +2,8 @@
 
 Brickson is built partly by porting code from **FamilyVoice**
 (`MiddleAgedBanana/ALS-app`, commit `6a22c1a`). That repository is
-**reference only**: read it, never push to it or open pull requests on it.
+**private** and **reference only**: read it, never push to it or open pull
+requests on it. Without access, `docs/LESSONS.md` carries its rules.
 Port one piece at a time, with its tests, into a pull request here.
 
 Before porting any piece, read in the reference repository:

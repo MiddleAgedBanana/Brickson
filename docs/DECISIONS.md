@@ -18,7 +18,7 @@ Everything that identifies the app sits in one block at the top of
 | Setting | Value | Notes |
 |---|---|---|
 | `APP_DISPLAY_NAME` | `Brickson` | The name under the icon. The working name, chosen by the owner. |
-| `APP_BUNDLE_ID` | `family.avery.brickson` | Working value. The final one is chosen with the developer account, and **cannot change after the first App Store upload**. |
+| `APP_BUNDLE_ID` | `family.avery.brickson` | Working value. Choose a neutral final one with the developer account, before the first upload: it **cannot change after the first App Store upload**, and it is public. Someone building for their own device changes it locally (it belongs to one team) and does not commit that. |
 | `DEVELOPMENT_TEAM` | empty | Needed only to run on a real device or upload. Left empty until the developer account is chosen (personal or organization). A team ID is not secret; it is in every signed app. |
 | `MARKETING_VERSION` | `0.1.0` | The version people see. |
 | `CURRENT_PROJECT_VERSION` | `1` | Must go up with every upload to App Store Connect. |
@@ -95,6 +95,19 @@ is not a setting on the person's path. Whether touch users, who can unlock
 their own device, should be able to turn this off is an open question for
 the stage profiles.
 
+## Background audio
+
+*2026-10-10.* `UIBackgroundModes` includes `audio`, and speech uses the
+`.playback` audio session, so a sentence keeps playing when the device
+locks or another app opens, and the Get Attention alarm (once ported)
+keeps sounding until it is stopped. App Review allows background audio
+only for its intended purpose (guideline 2.5.4), so:
+
+- never play silent audio to keep the app alive;
+- activate the audio session only to speak or to sound the alarm;
+- in the App Review notes, give steps that show it, for example: "Choose a
+  long phrase, then lock the device: speech continues."
+
 ## Orientations
 
 *2026-10-10. Default, from the reference app (its D2).*
@@ -127,15 +140,45 @@ defaults, not the measured gaze, switch and touch sizes. It is replaced
 when the layout engine and Home are ported (docs/PORTING.md, steps 4 and
 5).
 
+How it behaves, and where it knowingly falls short:
+
+- **One Emergency button.** The emergency category has no button in the
+  category row; the Emergency quick control opens it and shows a check
+  mark while it is open. Two buttons with the same name confused Voice
+  Control and the UI tests, and the reference app did the same.
+- **Audio warnings keep their space.** The warning area always holds the
+  height of the tallest short audio warning ("Volume low", "Audio failed"),
+  so a warning appearing hides no phrase tile (invariant 4). The short text
+  is what people see; VoiceOver reads the full sentence. The two library
+  warnings are decided at launch and never appear later.
+- **Accepted for the stand-in only:**
+  - No Get Attention yet, so invariant 10's "reachable in one dwell" holds
+    only for Emergency, Yes and No. Get Attention comes in port step 1.
+  - Again sits beside the message text the person reads, and the phrase
+    grid ends just above the warning text: under a gaze profile a look
+    that rests on the text could snap to them.
+  - The selected category swaps its symbol for a check mark; symbols
+    differ in width, so the buttons after it can shift slightly.
+  - CI tests the iPad only. On a narrow iPhone the three quick-control
+    labels may not fit at larger text sizes.
+
 ## Personal Voice permission is asked at launch, for now
 
 *2026-10-10. Default, from the reference app.*
 
-`SpeechService` asks for Personal Voice permission when the app starts,
-because asking after the first sentence can hide personal voices for the
-rest of the session. So the system question appears on first launch with
-no explanation. Onboarding should explain Personal Voice first and then
-ask; that comes with Settings and setup (docs/PORTING.md, step 7).
+`SpeechService` asks for Personal Voice permission when the app starts.
+The reference app did the same, with a comment saying that asking after
+the first sentence can hide personal voices for the rest of the session;
+Apple's documentation does not say so, so treat that as unverified. As a
+result the system question appears on first launch with no explanation.
+Onboarding should explain Personal Voice first and then ask; that comes
+with Settings and setup (docs/PORTING.md, step 7).
+
+No Info.plist key is needed for the request. If **Allow Apps to Request to
+Use** is off (Settings → Accessibility → Personal Voice), the system denies
+the request without asking. `AccessibilitySettings.openSettings(for:
+.personalVoiceAllowAppsToRequestToUse)` opens that switch directly; the
+voice picker should offer it when permission is denied.
 
 ## Tests
 

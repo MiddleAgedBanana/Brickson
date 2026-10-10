@@ -12,12 +12,14 @@ screen, tests, CI and these documents.
 
 ### What the app does today
 
-It opens on a Home screen with Yes, No and Emergency, a row of categories,
-and phrase tiles from a neutral starter set. Choosing a tile speaks it at
-once; the sentence stays on screen with Again beside it. Emergency switches
-to the emergency phrases and says nothing itself. If audio fails, the volume
-is very low, or the library cannot be saved, a passive warning appears at
-the bottom.
+What it is written to do; the *Verification* section says how much of it
+has been seen working. It opens on a Home screen with Yes, No and
+Emergency, a row of everyday categories, and phrase tiles from a neutral
+starter set. Choosing a tile speaks it at once; the sentence stays on
+screen with Again beside it. Emergency switches to the emergency phrases
+and says nothing itself. If audio fails or the volume is very low, a short
+passive warning appears at the bottom in space that is always kept for it;
+if the library cannot be saved or filled, a warning says so from launch.
 
 ### What came over from the reference app
 
@@ -31,13 +33,19 @@ versioned schema without cascade deletes.
 
 - **Written on a cloud machine that cannot compile Swift.** Nothing was
   built or run where it was written.
-- **GitHub CI** (`.github/workflows/tests.yml`) builds the app and runs
-  the unit and UI tests on GitHub's Mac machines for every pull request.
-  The result for this first pull request is recorded on the pull request
-  itself; until the owner has run it on a Mac, treat CI as the only
-  evidence.
-- **No physical-device evidence of any kind.** See *Checks that need a
-  real device* below.
+- **GitHub CI** (`.github/workflows/tests.yml`, `macos-26` runner, Xcode
+  26.6, iPad Pro 13-inch simulator on iOS 26.5) is the only evidence so far:
+  - The app compiles and the whole unit suite passes (runs on `d5fecc2`
+    and `2b7dc2e`).
+  - UI tests on `2b7dc2e`: Home appears with its quick controls and
+    starter phrases, a phrase tap enables Again, and Emergency opens the
+    emergency phrases. The accessibility audit flagged one phrase tile's
+    label ("Maybe.") as "not human-readable"; tile labels are the person's
+    own words, so the audit test now expects that guess on phrase tiles
+    only (`LaunchTests`).
+  - Later commits are checked on the pull request; read its latest CI run.
+- **Not yet run by the owner on a Mac**, and **no physical-device evidence
+  of any kind**. See *Checks that need a real device* below.
 
 ### Known gaps in this first version
 
@@ -49,7 +57,18 @@ versioned schema without cascade deletes.
 - No typing, editing, Settings, voice choice or backup.
 - Personal Voice permission is asked at first launch without explanation
   (docs/DECISIONS.md).
-- English only; the String Catalog fills itself as Xcode builds.
+- English only; the String Catalog fills itself as Xcode builds. Two
+  strings are not in it yet: the speech-rate names in `SpeechRateSteps`
+  and the voice sample sentence in `SpeechService`.
+- The full audio-warning sentences VoiceOver reads mention Get Attention,
+  which arrives with port step 1.
+- Off-main callbacks: `OffMainThreadCallbackTests` calls the volume
+  handler directly, so it would not catch a missing `@Sendable` on the
+  real KVO closure. The Personal Voice completion and the synthesizer
+  delegate methods have no off-main test yet (docs/LESSONS.md).
+- The seeder fills the library whenever it is empty. Once editing exists,
+  someone who deletes every category would get the starter set back at
+  the next launch. Decide what should happen before porting editing.
 - The app icon is a placeholder (a white speech bubble on blue).
 - No license file: the code is public but, without a license, all rights
   are reserved. The owner decides.
@@ -59,7 +78,9 @@ versioned schema without cascade deletes.
 1. **Owner:** open and run the app on a Mac (README → *First time on your
    Mac*), and run the tests once (⌘U).
 2. **Owner:** review the starter phrases
-   (`Brickson/Resources/StarterPhrases.json`).
+   (`Brickson/Resources/StarterPhrases.json`). A reviewer noted two
+   near-duplicates ("Wait a moment, please." and "Give me a moment to
+   answer.") and that "Please move me." could be clearer.
 3. **Owner:** choose the developer account (personal or organization).
    Then set `DEVELOPMENT_TEAM` and the final `APP_BUNDLE_ID` in
    `project.yml` (docs/DECISIONS.md, "App identity").
@@ -94,4 +115,9 @@ device, OS version, settings and date.
 
 | Date | Commit | Change | Verified by |
 |---|---|---|---|
-| 2026-10-10 | *(this pull request)* | Starting files: project, speech, storage, stand-in Home, tests, CI, docs | GitHub CI only |
+| 2026-10-10 | `a1f8cfa`…`d5fecc2` | Starting files: project, speech, storage, stand-in Home, tests, CI, docs | CI: unit green; UI 2 of 4 failed (two "Emergency" buttons; audit) |
+| 2026-10-10 | `c60db2a` | One Emergency button on Home (the category row leaves the emergency category out); the audit test names each issue | CI: UI tests pass except the audit |
+| 2026-10-10 | `15ff5b1` | Colours written in Xcode's hex form, values pinned by `PaletteTests` (Codex review) | CI: unit green |
+| 2026-10-10 | `2b7dc2e` | Create Application Support before opening the store, which silences SwiftData's first-launch errors | CI: unit green |
+| 2026-10-10 | `6625580` | The audio warning's space is always kept, with its short text (Codex review) | Pull request CI |
+| 2026-10-10 | *(next commits)* | Audit expects its phrase-tile label guess and reports every issue; Emergency checked to say nothing; migration plan checked; `test.sh` prints a pass line; README, AGENTS, LESSONS, DECISIONS corrected after review | Pull request CI |

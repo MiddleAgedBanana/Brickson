@@ -46,8 +46,9 @@ actually use?
   accurate when behaviour or setup changes.
 - **`docs/archive/`**: old versions of rewritten docs.
 - **The reference app**, FamilyVoice: `MiddleAgedBanana/ALS-app` at commit
-  `6a22c1a`. **Reference only. Never push to it or open pull requests on
-  it.**
+  `6a22c1a`, a **private** repository. **Reference only. Never push to it or
+  open pull requests on it.** Without access to it, follow `docs/LESSONS.md`,
+  which carries its rules.
 
 ## Build and test
 
@@ -63,8 +64,9 @@ newest installed iPad Pro 13-inch simulator (any iPad if there is none).
 chooses another. The iPad and the iPhone are both first-class: run both
 before a release.
 
-The unit suite must be **100% green before any commit**. No exceptions and
-no unexplained skips. A known limitation is a strict `withKnownIssue`
+On a Mac, the unit suite must be **100% green before any commit**; for
+work made where nothing can be built, CI must be green before the pull
+request merges. No exceptions and no unexplained skips. A known limitation is a strict `withKnownIssue`
 naming its decision, so it fails when it starts passing.
 
 **GitHub CI** (`.github/workflows/tests.yml`) runs the unit and UI tests on
@@ -96,7 +98,8 @@ documents can be read alongside.
    scrolling region and never covered, including by the software keyboard.
    It switches straight to the emergency phrases and leaves edit mode, and
    emergency phrases never open editors. One pure resolver owns that
-   decision, and every tap path goes through it.
+   decision, and every tap path goes through it (it arrives with edit mode;
+   until then a tile can only speak).
 3. **Speaking never changes data.** Every change to a person's phrases sits
    behind an explicit edit mode, and every delete, replace or merge asks
    first: Keep takes the asking control's place, and the confirmation
