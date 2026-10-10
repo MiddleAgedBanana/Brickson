@@ -39,6 +39,8 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   font-size: 1.125rem;
   line-height: 1.6;
+  /* Lets a long email address wrap instead of pushing the page sideways. */
+  overflow-wrap: break-word;
 }
 
 .page {
