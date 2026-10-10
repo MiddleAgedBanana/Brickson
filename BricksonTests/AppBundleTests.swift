@@ -30,6 +30,24 @@ struct AppBundleTests {
         #expect(!name.contains("$("))
     }
 
+    /// How text-to-speech says the name comes from `APP_SPOKEN_NAME`.
+    @Test func theSpokenNameIsSet() throws {
+        let name = try #require(try infoPlist()["CFBundleSpokenName"] as? String)
+        #expect(!name.isEmpty)
+        #expect(!name.contains("$("))
+    }
+
+    /// Siri accepts at most three alternative names, each a dictionary with
+    /// a non-empty `INAlternativeAppName`.
+    @Test func theAlternativeNamesAreWellFormed() throws {
+        let names = try #require(try infoPlist()["INAlternativeAppNames"] as? [[String: Any]])
+        #expect((1...3).contains(names.count))
+        for entry in names {
+            let name = try #require(entry["INAlternativeAppName"] as? String)
+            #expect(!name.trimmingCharacters(in: .whitespaces).isEmpty)
+        }
+    }
+
     @Test func theVersionNumbersAreSet() throws {
         let info = try infoPlist()
         for key in ["CFBundleShortVersionString", "CFBundleVersion"] {

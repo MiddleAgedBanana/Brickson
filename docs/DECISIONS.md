@@ -18,10 +18,16 @@ Everything that identifies the app sits in one block at the top of
 | Setting | Value | Notes |
 |---|---|---|
 | `APP_DISPLAY_NAME` | `Brickson` | The name under the icon. The working name, chosen by the owner. |
-| `APP_BUNDLE_ID` | `family.avery.brickson` | Working value. Choose a neutral final one with the developer account, before the first upload: it **cannot change after the first App Store upload**, and it is public. Someone building for their own device changes it locally (it belongs to one team) and does not commit that. |
+| `APP_SPOKEN_NAME` | `Brickson` | How VoiceOver and other text-to-speech say the app's name (`CFBundleSpokenName`). If they say it wrong, use a sound-alike spelling here; the name under the icon stays as it is. |
+| `APP_BUNDLE_ID` | `family.avery.brickson` | The identifier the owner was advised to register for the App Store. It **cannot change after the first App Store upload**, and it is public, so any change happens before that upload. Someone building for their own device changes it locally (it belongs to one team) and does not commit that. |
 | `DEVELOPMENT_TEAM` | empty | Needed only to run on a real device or upload. Left empty until the developer account is chosen (personal or organization). A team ID is not secret; it is in every signed app. |
 | `MARKETING_VERSION` | `0.1.0` | The version people see. |
 | `CURRENT_PROJECT_VERSION` | `1` | Must go up with every upload to App Store Connect. |
+
+Siri also accepts the alternative name "Brick Son" (`INAlternativeAppNames`
+under the app's `info` in `project.yml`; at most three, never another app's
+name), because "Brickson" is in no pronunciation dictionary. Whether Siri,
+Voice Control and VoiceOver handle the name well is a device check.
 
 The Xcode project, targets and folders are also called Brickson. Renaming
 those is a larger change (folders, target names, `@testable import`), and is

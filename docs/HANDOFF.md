@@ -112,6 +112,7 @@ device, OS version, settings and date.
 | Comfortable dwell time and movement tolerance | Setup recommendations per profile |
 | Whether Guided Access works together with Eye Tracking | Setup recommendations |
 | Which phrases people reach for, and how many categories can be scanned by eye | The starter library |
+| "Open Brickson" by Siri and Voice Control, said by a few people, and how VoiceOver reads the icon | `APP_SPOKEN_NAME` and the alternative names |
 
 ## Record of changes
 
@@ -123,4 +124,5 @@ device, OS version, settings and date.
 | 2026-10-10 | `2b7dc2e` | Create Application Support before opening the store, which silences SwiftData's first-launch errors | CI: unit green |
 | 2026-10-10 | `6625580` | The audio warning's space is always kept, with its short text (Codex review) | Pull request CI |
 | 2026-10-10 | `56c2c86`…`6fcb744` | Audit expects its phrase-tile label guess and reports every issue; Emergency checked to say nothing; migration plan checked; `test.sh` prints a pass line; README, AGENTS, LESSONS, DECISIONS corrected after review | Pull request CI |
-| 2026-10-10 | *(next commits)* | Long messages scroll at full size instead of shrinking to half (Codex review); the audio-session release is recorded as open | Pull request CI |
+| 2026-10-10 | `0260099` | Long messages scroll at full size instead of shrinking to half (Codex review); the audio-session release is recorded as open | Pull request CI |
+| 2026-10-10 | *(next commits)* | Again's disabled look keeps readable contrast (audit); the spoken name and Siri's alternative name "Brick Son" | Pull request CI |

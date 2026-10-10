@@ -21,6 +21,7 @@ settings:
     # The only lines to change when the name, bundle ID, version, or Apple
     # developer team changes. See docs/DECISIONS.md, "App identity".
     APP_DISPLAY_NAME: Brickson          # the name shown under the icon
+    APP_SPOKEN_NAME: Brickson           # how VoiceOver and Siri say it; a sound-alike spelling if they say it wrong
     APP_BUNDLE_ID: family.avery.brickson   # can't change after the first App Store upload
     DEVELOPMENT_TEAM: ""                # your Apple team ID; needed only for a real device
     MARKETING_VERSION: "0.1.0"          # the version people see
@@ -56,6 +57,13 @@ targets:
       path: Brickson/Info.plist
       properties:
         CFBundleDisplayName: $(APP_DISPLAY_NAME)
+        # Text-to-speech says the app's name this way ("Accessibility
+        # Bundle Name" in Xcode). Set in the App identity block above.
+        CFBundleSpokenName: $(APP_SPOKEN_NAME)
+        # Other names Siri accepts for the app (at most three; never another
+        # app's name). docs/DECISIONS.md, "App identity".
+        INAlternativeAppNames:
+          - INAlternativeAppName: Brick Son
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         # Only exempt cryptography (none at all today), so App Store Connect

@@ -181,9 +181,10 @@ whose eyes rest on a button doesn't make the app stutter.
 
 The name under the icon is set in one place: `APP_DISPLAY_NAME` in the
 *App identity* block at the top of `project.yml`. Change it there, run
-`xcodegen generate`, and run the app. The same block holds the bundle ID,
-the version numbers and the developer team (see `docs/DECISIONS.md`,
-"App identity").
+`xcodegen generate`, and run the app. Right below it, `APP_SPOKEN_NAME`
+sets how VoiceOver says the name; change it to a sound-alike spelling if
+VoiceOver gets it wrong. The same block holds the bundle ID, the version
+numbers and the developer team (see `docs/DECISIONS.md`, "App identity").
 
 ## Automatic tests on GitHub
 
