@@ -49,7 +49,7 @@ struct HomeView: View {
 
 /// The last sentence spoken, large enough for the listener to read, with
 /// Again beside it. Its height is reserved for two lines, so a long message
-/// shrinks to fit instead of pushing every control below it down.
+/// scrolls inside them instead of pushing every control below it down.
 private struct MessageRow: View {
     @Environment(SpeechService.self) private var speech
 
@@ -100,13 +100,35 @@ private struct MessageRow: View {
             } label: {
                 Label("Again", systemImage: "arrow.counterclockwise")
                     .font(.title3.weight(.semibold))
-                    .foregroundStyle(.white)
                     .frame(minWidth: 88, minHeight: 64)
             }
-            .buttonStyle(.borderedProminent)
-            .tint(Palette.controlFill)
+            .buttonStyle(MessageActionButtonStyle())
             .disabled(speech.lastSpokenText == nil)
         }
+    }
+}
+
+/// Again's look. Enabled: white text on the control fill (5.98:1, tested in
+/// `PaletteTests`). Disabled, before anything has been spoken: the same
+/// words in primary ink on the screen with a primary-ink border, unfilled
+/// so it reads as off. The system's dimmed look failed Apple's contrast
+/// audit, and people still need to read what a control is.
+private struct MessageActionButtonStyle: ButtonStyle {
+    @Environment(\.isEnabled) private var isEnabled
+
+    func makeBody(configuration: Configuration) -> some View {
+        let shape = RoundedRectangle(cornerRadius: 16)
+        configuration.label
+            .padding(.horizontal, 12)
+            .foregroundStyle(isEnabled ? Color.white : Color.primary)
+            .background(isEnabled ? Palette.controlFill : Color.clear, in: shape)
+            .overlay {
+                if !isEnabled {
+                    shape.strokeBorder(Color.primary, lineWidth: 2)
+                }
+            }
+            .contentShape(shape)
+            .opacity(configuration.isPressed ? 0.85 : 1)
     }
 }
 
