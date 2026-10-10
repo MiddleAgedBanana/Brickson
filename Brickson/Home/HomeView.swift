@@ -56,19 +56,35 @@ private struct MessageRow: View {
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
             VStack(alignment: .leading, spacing: 4) {
-                Group {
-                    if let text = speech.lastSpokenText {
-                        Text(verbatim: text)
-                    } else {
-                        // Primary ink, not the system's secondary gray, which
-                        // measures under 4.5:1 (invariant 6).
-                        Text("Choose a phrase to speak it.")
+                // Two lines of the message font are always reserved, by an
+                // invisible placeholder. A longer message scrolls inside
+                // them instead of shrinking, so the person's words keep their
+                // full size (AGENTS.md, "Words never break") and nothing
+                // below moves. A new message starts at the top.
+                Text(verbatim: " ")
+                    .font(.title.weight(.semibold))
+                    .lineLimit(2, reservesSpace: true)
+                    .frame(maxWidth: .infinity)
+                    .hidden()
+                    .accessibilityHidden(true)
+                    .overlay(alignment: .topLeading) {
+                        ScrollView {
+                            Group {
+                                if let text = speech.lastSpokenText {
+                                    Text(verbatim: text)
+                                } else {
+                                    // Primary ink, not the system's secondary
+                                    // gray, which measures under 4.5:1
+                                    // (invariant 6).
+                                    Text("Choose a phrase to speak it.")
+                                }
+                            }
+                            .font(.title.weight(.semibold))
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .scrollBounceBehavior(.basedOnSize)
+                        .id(speech.lastSpokenText)
                     }
-                }
-                .font(.title.weight(.semibold))
-                .lineLimit(2, reservesSpace: true)
-                .minimumScaleFactor(0.5)
-                .frame(maxWidth: .infinity, alignment: .leading)
 
                 // Always laid out, only shown while speaking, so it never
                 // shifts anything when speech starts or stops.

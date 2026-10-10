@@ -66,6 +66,8 @@ versioned schema without cascade deletes.
   handler directly, so it would not catch a missing `@Sendable` on the
   real KVO closure. The Personal Voice completion and the synthesizer
   delegate methods have no off-main test yet (docs/LESSONS.md).
+- The audio session stays active after speech ends, so other apps' audio
+  does not resume by itself (docs/DECISIONS.md, "Background audio").
 - The seeder fills the library whenever it is empty. Once editing exists,
   someone who deletes every category would get the starter set back at
   the next launch. Decide what should happen before porting editing.
@@ -120,4 +122,5 @@ device, OS version, settings and date.
 | 2026-10-10 | `15ff5b1` | Colours written in Xcode's hex form, values pinned by `PaletteTests` (Codex review) | CI: unit green |
 | 2026-10-10 | `2b7dc2e` | Create Application Support before opening the store, which silences SwiftData's first-launch errors | CI: unit green |
 | 2026-10-10 | `6625580` | The audio warning's space is always kept, with its short text (Codex review) | Pull request CI |
-| 2026-10-10 | *(next commits)* | Audit expects its phrase-tile label guess and reports every issue; Emergency checked to say nothing; migration plan checked; `test.sh` prints a pass line; README, AGENTS, LESSONS, DECISIONS corrected after review | Pull request CI |
+| 2026-10-10 | `56c2c86`…`6fcb744` | Audit expects its phrase-tile label guess and reports every issue; Emergency checked to say nothing; migration plan checked; `test.sh` prints a pass line; README, AGENTS, LESSONS, DECISIONS corrected after review | Pull request CI |
+| 2026-10-10 | *(next commits)* | Long messages scroll at full size instead of shrinking to half (Codex review); the audio-session release is recorded as open | Pull request CI |
