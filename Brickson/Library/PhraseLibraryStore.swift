@@ -32,6 +32,17 @@ nonisolated enum PhraseLibraryStore {
     /// be kept (invariant 5: no silent failures).
     static func openForApp() -> (container: ModelContainer, isVolatile: Bool) {
         let logger = Logger(subsystem: AppLog.subsystem, category: "library")
+        // On a new install the Application Support folder does not exist
+        // yet. SwiftData recovers by creating it, but only after logging a
+        // page of alarming errors; creating it first avoids that.
+        do {
+            try FileManager.default.createDirectory(
+                at: URL.applicationSupportDirectory,
+                withIntermediateDirectories: true
+            )
+        } catch {
+            logger.error("Could not create Application Support: \(error)")
+        }
         do {
             // `.none`: never sync, even if an iCloud capability is added for
             // something else later (docs/DECISIONS.md, "No iCloud sync in 1.0").
