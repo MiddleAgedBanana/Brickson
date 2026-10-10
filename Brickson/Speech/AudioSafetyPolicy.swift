@@ -1,3 +1,4 @@
+import Accessibility
 import Foundation
 
 nonisolated enum AttentionAlertState: Equatable {
@@ -215,5 +216,22 @@ nonisolated enum AudioAnnouncementPolicy {
         case .idle:
             nil
         }
+    }
+
+    /// What VoiceOver says when a warning appears. A warning that only
+    /// appears on screen is not heard by someone who is not looking at it,
+    /// so Home posts this as an announcement. It is the full sentence, which
+    /// names the control to use, not the short text the strip shows. Urgent
+    /// failures interrupt whatever VoiceOver is saying and cannot be cut off
+    /// (`.high`); low volume waits until VoiceOver has finished (`.low`).
+    static func announcement(for issue: HomeAudioIssue) -> AttributedString {
+        var announcement = AttributedString(issue.message)
+        switch issue.announcementUrgency {
+        case .urgent:
+            announcement.accessibilitySpeechAnnouncementPriority = .high
+        case .informational:
+            announcement.accessibilitySpeechAnnouncementPriority = .low
+        }
+        return announcement
     }
 }

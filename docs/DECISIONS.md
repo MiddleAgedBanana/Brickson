@@ -175,6 +175,14 @@ How it behaves, and where it knowingly falls short:
   so a warning appearing hides no phrase tile (invariant 4). The short text
   is what people see; VoiceOver reads the full sentence. The two library
   warnings are decided at launch and never appear later.
+- **VoiceOver is told about audio problems.** Text appearing on screen is
+  not announced, so Home posts an announcement when an audio problem
+  appears (including one present at launch) and on every cut-off phrase.
+  It says the full sentence, which names the control to use; the reference
+  app announced the short text instead. Cut-off phrases and audio failures
+  interrupt what VoiceOver is saying and cannot be cut off (high priority);
+  low volume waits until VoiceOver has finished (low priority, where the
+  reference app used the default). Focus does not move.
 - **Accepted for the stand-in only:**
   - No Get Attention yet, so invariant 10's "reachable in one dwell" holds
     only for Emergency, Yes and No. Get Attention comes in port step 1.

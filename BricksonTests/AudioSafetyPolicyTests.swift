@@ -1,3 +1,4 @@
+import Accessibility
 import AVFoundation
 import Testing
 
@@ -324,5 +325,33 @@ struct AudioSafetyPolicyTests {
     @Test(arguments: [AttentionAlertState.idle, .playing])
     func ordinaryAttentionStatesDoNotAnnounceFailure(state: AttentionAlertState) {
         #expect(AudioAnnouncementPolicy.attentionIssueToAnnounce(state) == nil)
+    }
+
+    /// VoiceOver hears the whole sentence, which names the control to use,
+    /// not the short text the warning strip shows.
+    @Test func announcementsSayTheFullSentence() {
+        for issue in HomeAudioIssue.allCases {
+            let announcement = AudioAnnouncementPolicy.announcement(for: issue)
+            #expect(String(announcement.characters) == issue.message, "\(issue)")
+        }
+        #expect(
+            String(AudioAnnouncementPolicy.announcement(for: .speechStopped).characters)
+                .contains("Again")
+        )
+    }
+
+    /// Urgent failures interrupt whatever VoiceOver is saying and cannot be
+    /// cut off; low volume waits until VoiceOver has finished.
+    @Test func urgentAnnouncementsInterruptAndLowVolumeWaits() {
+        for issue in HomeAudioIssue.allCases {
+            let priority = AudioAnnouncementPolicy.announcement(for: issue)
+                .accessibilitySpeechAnnouncementPriority
+            switch issue.announcementUrgency {
+            case .urgent:
+                #expect(priority == .high, "\(issue)")
+            case .informational:
+                #expect(priority == .low, "\(issue)")
+            }
+        }
     }
 }

@@ -69,6 +69,10 @@ versioned schema without cascade deletes.
   delegate methods have no off-main test yet (docs/LESSONS.md).
 - The audio session stays active after speech ends, so other apps' audio
   does not resume by itself (docs/DECISIONS.md, "Background audio").
+- Home posts a VoiceOver announcement for each audio problem. Its text and
+  priority are unit-tested (`AudioAnnouncementPolicy.announcement`), but
+  no test sees the announcement posted: neither the simulator nor UI tests
+  run VoiceOver. It is a device check below.
 - `SpeechService` has no test seam for the synthesizer itself, so the
   missed-callback watchdog (`watchForMissedFinish`) is untested. A
   protocol over `AVSpeechSynthesizer` would let tests drive it.
@@ -117,6 +121,7 @@ device, OS version, settings and date.
 | Whether Guided Access works together with Eye Tracking | Setup recommendations |
 | Which phrases people reach for, and how many categories can be scanned by eye | The starter library |
 | "Open Brickson" by Siri and Voice Control, said by a few people, and how VoiceOver reads the icon | `APP_SPOKEN_NAME` and the alternative names |
+| With VoiceOver on, a cut-off phrase or very low volume is announced once, in full, without moving focus | Home's audio announcements (invariant 4) |
 
 ## Record of changes
 
@@ -133,4 +138,5 @@ device, OS version, settings and date.
 | 2026-10-10 | `97906b2` | A store that cannot be filled at launch falls back to a filled in-memory library, so Emergency always has phrases (Codex review) | Pull request CI |
 | 2026-10-10 | `9e53ed5` | A media-services reset that cuts off a phrase now names Again on Home, as other interruptions do (Codex review) | Pull request CI |
 | 2026-10-10 | `b4c3679` | A synthesizer that goes idle with no callback is reported as a cut-off phrase (Again named), after a half-second grace for a late callback (Codex review) | Compiles on CI; no test seam for the synthesizer yet |
-| 2026-10-10 | *(next commit)* | `PaletteTests` checks every pair with Increase Contrast too, and pins primary ink on the screen (Codex review) | Pull request CI |
+| 2026-10-10 | `2630e6d` | `PaletteTests` checks every pair with Increase Contrast too, and pins primary ink on the screen (Codex review) | Pull request CI |
+| 2026-10-10 | *(next commit)* | VoiceOver announces each audio problem as it happens, with the full sentence; cut-off phrases and audio failures interrupt, low volume waits for VoiceOver to finish (Codex review) | Pull request CI for the announcement text and priority; the posting itself needs a device with VoiceOver |

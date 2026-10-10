@@ -1,3 +1,4 @@
+import Accessibility
 import SwiftData
 import SwiftUI
 
@@ -330,6 +331,32 @@ private struct StatusArea: View {
         .font(.subheadline.weight(.semibold))
         .frame(maxWidth: .infinity, alignment: .leading)
         .allowsHitTesting(false)
+        // Text appearing on screen is not announced, so VoiceOver users are
+        // told each audio problem as it happens (invariant 4). Ambient
+        // problems are announced when they appear, including one present at
+        // launch. A cut-off phrase is announced on every cut-off, even when
+        // the warning is already showing, because each one is a new event.
+        .onChange(of: audioIssue, initial: true) { _, newIssue in
+            guard let issue = AudioAnnouncementPolicy.ambientIssueToAnnounce(newIssue) else {
+                return
+            }
+            announce(issue)
+        }
+        .onChange(of: speech.speechInterruptionSequence) {
+            guard let issue = AudioAnnouncementPolicy.speechIssueToAnnounce(
+                speech.speechInterruptionState,
+                recoveryAction: .repeatLast
+            ) else {
+                return
+            }
+            announce(issue)
+        }
+    }
+
+    private func announce(_ issue: HomeAudioIssue) {
+        AccessibilityNotification.Announcement(
+            AudioAnnouncementPolicy.announcement(for: issue)
+        ).post()
     }
 
     private func warning(_ message: String, systemImage: String) -> some View {
