@@ -77,6 +77,16 @@ struct PaletteTests {
         }
     }
 
+    /// Again's pressed ring: primary ink drawn inside the edge of the control
+    /// fill. As a control edge it needs 3:1 against the fill it sits on.
+    @Test func pressedRingStandsOutFromTheFill() throws {
+        for appearance in Self.appearances {
+            let ink = UIColor.label.resolvedColor(with: appearance.traits)
+            let ratio = Contrast.ratio(ink, try fill(named: "ControlFill", in: appearance.traits))
+            #expect(ratio >= 3, "primary ink on ControlFill, \(appearance.name): \(ratio):1")
+        }
+    }
+
     /// The fills are the measured values in `Palette`'s table, so a typo in
     /// the asset catalog cannot pass unnoticed just because it still
     /// happens to clear the contrast bars.
