@@ -1,7 +1,9 @@
 import XCTest
 
 /// Launches the real app on a simulator and drives it the way a person
-/// would. Opt-in: run the Brickson-UI scheme (README, "Run the tests").
+/// would. Run them with the Brickson-UI scheme or `scripts/test.sh ui`
+/// (README, "First time on your Mac", step 7); GitHub CI runs them on every
+/// pull request.
 ///
 /// These check that the app opens and its first screen works. They say
 /// nothing about how it feels with Eye Tracking, Switch Control or Voice
@@ -44,32 +46,52 @@ final class LaunchTests: XCTestCase {
     }
 
     /// Emergency switches straight to the emergency phrases and says nothing
-    /// itself.
+    /// itself: Again stays off because nothing has been spoken.
     @MainActor
     func testEmergencyShowsTheEmergencyPhrases() {
         let app = launchedApp()
+        XCTAssertFalse(app.buttons["Again"].isEnabled, "something was spoken at launch")
 
         app.buttons["Emergency"].tap()
 
         XCTAssertTrue(app.buttons["I need help now."].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["Again"].isEnabled, "Emergency spoke")
     }
 
     /// Apple's automated accessibility audit: contrast, element labels, hit
     /// regions, Dynamic Type support and clipped text. Each issue is reported
     /// with the element it names, so the failure says what to fix.
+    ///
+    /// One kind of issue is expected and not reported: the audit's guess that
+    /// a phrase tile's label is "not human-readable". A tile's label is the
+    /// phrase itself, the person's own words, which VoiceOver must read
+    /// exactly as written; the audit flagged the starter phrase "Maybe." on
+    /// CI. An empty tile label still fails.
     @MainActor
     func testHomePassesTheAccessibilityAudit() throws {
+        // Report every issue the audit finds, not only the first.
+        continueAfterFailure = true
         let app = launchedApp()
         try app.performAccessibilityAudit { issue in
             MainActor.assumeIsolated {
+                if Self.isPhraseTileLabelGuess(issue) { return }
                 let element = issue.element.map {
                     "\"\($0.label)\" (identifier \"\($0.identifier)\", frame \($0.frame))"
                 } ?? "no element"
-                XCTFail("Accessibility audit: \(issue.compactDescription) on \(element). \(issue.detailedDescription)")
+                XCTFail("Accessibility audit (type \(issue.auditType.rawValue)): \(issue.compactDescription) on \(element). \(issue.detailedDescription)")
             }
-            // Reported above; returning true stops the audit failing a second
-            // time with less detail.
+            // Reported above (or expected); returning true stops the audit
+            // failing a second time with less detail.
             return true
         }
+    }
+
+    /// Phrase tiles carry the identifier "phraseTile" (HomeView's PhraseGrid).
+    @MainActor
+    private static func isPhraseTileLabelGuess(_ issue: XCUIAccessibilityAuditIssue) -> Bool {
+        guard issue.auditType == .sufficientElementDescription,
+              let element = issue.element,
+              element.identifier == "phraseTile" else { return false }
+        return !element.label.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 }

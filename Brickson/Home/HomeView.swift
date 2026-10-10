@@ -5,8 +5,8 @@ import SwiftUI
 /// end. A phrase is chosen, the speech engine says it, and the message row
 /// shows it to the person listening.
 ///
-/// It will be replaced when the layout engine is ported (docs/PORTING.md,
-/// step 4). Even so, it keeps the rules that matter from the first build:
+/// It will be replaced when the layout engine and Home are ported
+/// (docs/PORTING.md, steps 4 and 5). Even so, it keeps the rules that matter from the first build:
 /// every control is a standard `Button` with a label (invariant 1), every
 /// tile speaks on the first activation (invariant 2), a lingering look cannot
 /// make a phrase stutter (`SpokenUtteranceTracker`), and nothing moves when
@@ -218,6 +218,9 @@ private struct PhraseGrid: View {
                                 .frame(maxWidth: .infinity, minHeight: 96)
                         }
                         .tint(category.isEmergency ? Palette.emergencyFill : Palette.phraseFill)
+                        // Lets the UI tests tell phrase tiles from controls
+                        // (LaunchTests' accessibility audit). Not spoken.
+                        .accessibilityIdentifier("phraseTile")
                     }
                 }
                 .padding(.vertical, 2)
