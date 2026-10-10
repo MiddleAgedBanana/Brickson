@@ -99,8 +99,8 @@ nonisolated enum PhraseLibraryMigrationPlan: SchemaMigrationPlan {
 
 extension PhraseCategory {
     /// Total ordering for category buttons. A restored or hand-edited backup
-    /// can contain tied sort orders, and Swift's sort is not stable, so ties
-    /// fall back to the name and then the stable `uuid`. A control that moves
+    /// can contain tied sort orders, and a fetch returns rows in no promised
+    /// order, so ties fall back to the name and then the stable `uuid`. A control that moves
     /// between launches is a control someone reaches for and misses
     /// (invariant 8).
     static func orderedForDisplay(_ categories: [PhraseCategory]) -> [PhraseCategory] {

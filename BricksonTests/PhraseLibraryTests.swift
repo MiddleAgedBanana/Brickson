@@ -26,6 +26,8 @@ struct PhraseLibraryTests {
     /// version could not migrate it.
     @Test func aContainerOpensWithTheMigrationPlan() throws {
         let container = try PhraseLibraryStore.makeInMemoryContainer()
+        let planIsAttached = container.migrationPlan == PhraseLibraryMigrationPlan.self
+        #expect(planIsAttached)
         #expect(try container.mainContext.fetchCount(FetchDescriptor<PhraseCategory>()) == 0)
     }
 
