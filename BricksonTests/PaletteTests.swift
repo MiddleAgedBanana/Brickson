@@ -5,12 +5,38 @@ import UIKit
 /// Invariant 6: contrast is measured, never eyeballed. Every fill behind a
 /// control must carry white text at 4.5:1 or better (control labels are
 /// normal-size text under WCAG), and its edge must stand out at 3:1 or
-/// better against the screen behind it, in light and dark mode.
+/// better against the screen behind it. Checked in light and dark mode,
+/// each with and without Increase Contrast.
+///
+/// Reduce Transparency is not a trait colours resolve against, and every
+/// fill here is opaque, so it changes none of these values. How system
+/// button styles draw under these settings is not something a unit test
+/// can see; the UI tests' accessibility audit and a device check cover it.
 struct PaletteTests {
-    private static let appearances: [UIUserInterfaceStyle] = [.light, .dark]
+    private struct Appearance {
+        let traits: UITraitCollection
+        let name: String
+    }
 
-    private func fill(named name: String, in style: UIUserInterfaceStyle) throws -> UIColor {
-        let traits = UITraitCollection(userInterfaceStyle: style)
+    private static var appearances: [Appearance] {
+        var result: [Appearance] = []
+        for style in [UIUserInterfaceStyle.light, .dark] {
+            for contrast in [UIAccessibilityContrast.normal, .high] {
+                let traits = UITraitCollection(traitsFrom: [
+                    UITraitCollection(userInterfaceStyle: style),
+                    UITraitCollection(accessibilityContrast: contrast),
+                ])
+                var name = style == .dark ? "dark" : "light"
+                if contrast == .high {
+                    name += " with Increase Contrast"
+                }
+                result.append(Appearance(traits: traits, name: name))
+            }
+        }
+        return result
+    }
+
+    private func fill(named name: String, in traits: UITraitCollection) throws -> UIColor {
         let color = try #require(
             UIColor(named: name, in: .main, compatibleWith: traits),
             "\(name) is missing from the asset catalog"
@@ -23,21 +49,31 @@ struct PaletteTests {
 
     @Test func whiteTextIsReadableOnEveryFill() throws {
         for name in Palette.assetNames {
-            for style in Self.appearances {
-                let ratio = Contrast.ratio(.white, try fill(named: name, in: style))
-                #expect(ratio >= 4.5, "white on \(name) in \(style == .dark ? "dark" : "light") mode is \(ratio):1")
+            for appearance in Self.appearances {
+                let ratio = Contrast.ratio(.white, try fill(named: name, in: appearance.traits))
+                #expect(ratio >= 4.5, "white on \(name), \(appearance.name): \(ratio):1")
             }
         }
     }
 
     @Test func everyFillStandsOutFromTheScreen() throws {
         for name in Palette.assetNames {
-            for style in Self.appearances {
-                let traits = UITraitCollection(userInterfaceStyle: style)
-                let screen = UIColor.systemBackground.resolvedColor(with: traits)
-                let ratio = Contrast.ratio(screen, try fill(named: name, in: style))
-                #expect(ratio >= 3, "\(name) against the \(style == .dark ? "dark" : "light") screen is \(ratio):1")
+            for appearance in Self.appearances {
+                let screen = UIColor.systemBackground.resolvedColor(with: appearance.traits)
+                let ratio = Contrast.ratio(screen, try fill(named: name, in: appearance.traits))
+                #expect(ratio >= 3, "\(name) against the screen, \(appearance.name): \(ratio):1")
             }
+        }
+    }
+
+    /// Primary ink on the screen: the message text, the status warnings, and
+    /// Again's look while it is off (text and border).
+    @Test func primaryInkIsReadableOnTheScreen() {
+        for appearance in Self.appearances {
+            let screen = UIColor.systemBackground.resolvedColor(with: appearance.traits)
+            let ink = UIColor.label.resolvedColor(with: appearance.traits)
+            let ratio = Contrast.ratio(ink, screen)
+            #expect(ratio >= 4.5, "primary ink on the screen, \(appearance.name): \(ratio):1")
         }
     }
 
@@ -53,7 +89,7 @@ struct PaletteTests {
         #expect(Set(expected.keys) == Set(Palette.assetNames))
         for (name, hex) in expected {
             var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
-            let color = try fill(named: name, in: .light)
+            let color = try fill(named: name, in: UITraitCollection(userInterfaceStyle: .light))
             color.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
             let actual = String(
                 format: "#%02X%02X%02X",
