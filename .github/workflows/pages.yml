@@ -1,0 +1,61 @@
+# Publishes the public web pages in site/ (the privacy policy and the
+# support page) with GitHub Pages, free for public repositories:
+#
+#   https://middleagedbanana.github.io/Brickson/          support page
+#   https://middleagedbanana.github.io/Brickson/privacy/  privacy policy
+#
+# One-time setup, before this first runs: Settings > Pages > Build and
+# deployment > Source: "GitHub Actions". Until then the "Configure Pages"
+# step fails with "Get Pages site failed".
+#
+# Only site/ is published. Everything else in the repository stays out of
+# the website.
+name: Publish website
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "site/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deployment at a time. A newer run waits instead of cancelling one that
+# is already publishing.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish site/
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v7
+
+      # App Review rejects placeholder text, and a policy with blanks in it
+      # promises nothing. Refuse to publish until every blank is filled.
+      - name: Check that no blanks are left
+        run: |
+          if grep -rnE '\[(Developer Name|Contact Email|Effective Date)\]' site; then
+            echo "::error::Fill in the blanks listed above before publishing."
+            exit 1
+          fi
+
+      - uses: actions/configure-pages@v6
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: site
+
+      - id: deployment
+        uses: actions/deploy-pages@v5
