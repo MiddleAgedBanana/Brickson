@@ -18,21 +18,48 @@ struct PaletteTests {
         return color.resolvedColor(with: traits)
     }
 
-    @Test(arguments: Palette.assetNames)
-    func whiteTextIsReadableOnTheFill(_ name: String) throws {
-        for style in Self.appearances {
-            let ratio = Contrast.ratio(.white, try fill(named: name, in: style))
-            #expect(ratio >= 4.5, "white on \(name) in \(style == .dark ? "dark" : "light") mode is \(ratio):1")
+    // Plain loops rather than parameterized tests, so each check shows up by
+    // name in the test log.
+
+    @Test func whiteTextIsReadableOnEveryFill() throws {
+        for name in Palette.assetNames {
+            for style in Self.appearances {
+                let ratio = Contrast.ratio(.white, try fill(named: name, in: style))
+                #expect(ratio >= 4.5, "white on \(name) in \(style == .dark ? "dark" : "light") mode is \(ratio):1")
+            }
         }
     }
 
-    @Test(arguments: Palette.assetNames)
-    func theFillStandsOutFromTheScreen(_ name: String) throws {
-        for style in Self.appearances {
-            let traits = UITraitCollection(userInterfaceStyle: style)
-            let screen = UIColor.systemBackground.resolvedColor(with: traits)
-            let ratio = Contrast.ratio(screen, try fill(named: name, in: style))
-            #expect(ratio >= 3, "\(name) against the \(style == .dark ? "dark" : "light") screen is \(ratio):1")
+    @Test func everyFillStandsOutFromTheScreen() throws {
+        for name in Palette.assetNames {
+            for style in Self.appearances {
+                let traits = UITraitCollection(userInterfaceStyle: style)
+                let screen = UIColor.systemBackground.resolvedColor(with: traits)
+                let ratio = Contrast.ratio(screen, try fill(named: name, in: style))
+                #expect(ratio >= 3, "\(name) against the \(style == .dark ? "dark" : "light") screen is \(ratio):1")
+            }
+        }
+    }
+
+    /// The fills are the measured values in `Palette`'s table, so a typo in
+    /// the asset catalog cannot pass unnoticed just because it still
+    /// happens to clear the contrast bars.
+    @Test func theFillsAreTheMeasuredValues() throws {
+        let expected = [
+            "AccentColor": "#0A60D6",
+            "ControlFill": "#5A6474",
+            "EmergencyFill": "#C8161E",
+        ]
+        #expect(Set(expected.keys) == Set(Palette.assetNames))
+        for (name, hex) in expected {
+            var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
+            let color = try fill(named: name, in: .light)
+            color.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+            let actual = String(
+                format: "#%02X%02X%02X",
+                Int((red * 255).rounded()), Int((green * 255).rounded()), Int((blue * 255).rounded())
+            )
+            #expect(actual == hex, "\(name)")
         }
     }
 
