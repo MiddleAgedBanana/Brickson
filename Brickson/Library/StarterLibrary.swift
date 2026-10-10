@@ -1,4 +1,5 @@
 import Foundation
+import OSLog
 import SwiftData
 
 /// The phrases a new library starts with, decoded from the bundled
@@ -71,6 +72,57 @@ enum PhraseLibrarySeeder {
         }
         try save(context)
         return true
+    }
+}
+
+/// Readies the phrase library at launch. It fills the store it is given
+/// with the starter phrases when that store is empty and, if the store
+/// cannot be filled, falls back to a filled in-memory library: an empty
+/// library would leave Emergency with nothing to open (invariant 2).
+enum PhraseLibraryLaunch {
+    struct Prepared {
+        let container: ModelContainer
+        /// True when nothing changed now will be kept. Home says so.
+        let isVolatile: Bool
+        let issue: PhraseLibraryIssue?
+    }
+
+    /// `starter`, `saveToStore` and `makeFallback` exist so tests can make
+    /// each step fail; the app passes none of them.
+    static func prepare(
+        container: ModelContainer,
+        isVolatile: Bool,
+        starter: () throws -> StarterLibrary = { try StarterLibrary.bundled() },
+        saveToStore: (ModelContext) throws -> Void = { try $0.save() },
+        makeFallback: () throws -> ModelContainer = { try PhraseLibraryStore.makeInMemoryContainer() }
+    ) -> Prepared {
+        let logger = Logger(subsystem: AppLog.subsystem, category: "library")
+        let library: StarterLibrary
+        do {
+            library = try starter()
+        } catch {
+            // Only a broken build gets here: StarterPhrasesTests decodes the
+            // bundled file.
+            logger.error("Starter phrases could not be read: \(error)")
+            return Prepared(container: container, isVolatile: isVolatile, issue: .starterPhrasesUnavailable)
+        }
+        do {
+            try PhraseLibrarySeeder.seedIfEmpty(container, with: library, save: saveToStore)
+            return Prepared(container: container, isVolatile: isVolatile, issue: nil)
+        } catch {
+            logger.error("Starter phrases could not be saved, using memory: \(error)")
+        }
+        // The store opened but could not be filled (a full disk, say). Speak
+        // from a filled in-memory library instead, and say that changes will
+        // not be kept.
+        do {
+            let fallback = try makeFallback()
+            try PhraseLibrarySeeder.seedIfEmpty(fallback, with: library)
+            return Prepared(container: fallback, isVolatile: true, issue: nil)
+        } catch {
+            logger.error("The in-memory starter library failed too: \(error)")
+            return Prepared(container: container, isVolatile: isVolatile, issue: .starterPhrasesUnavailable)
+        }
     }
 }
 

@@ -18,8 +18,9 @@ Emergency, a row of everyday categories, and phrase tiles from a neutral
 starter set. Choosing a tile speaks it at once; the sentence stays on
 screen with Again beside it. Emergency switches to the emergency phrases
 and says nothing itself. If audio fails or the volume is very low, a short
-passive warning appears at the bottom in space that is always kept for it;
-if the library cannot be saved or filled, a warning says so from launch.
+passive warning appears at the bottom in space that is always kept for it.
+If the library cannot be saved or filled, the app runs from a filled
+in-memory library and a warning says changes will not be kept.
 
 ### What came over from the reference app
 
@@ -125,4 +126,5 @@ device, OS version, settings and date.
 | 2026-10-10 | `6625580` | The audio warning's space is always kept, with its short text (Codex review) | Pull request CI |
 | 2026-10-10 | `56c2c86`…`6fcb744` | Audit expects its phrase-tile label guess and reports every issue; Emergency checked to say nothing; migration plan checked; `test.sh` prints a pass line; README, AGENTS, LESSONS, DECISIONS corrected after review | Pull request CI |
 | 2026-10-10 | `0260099` | Long messages scroll at full size instead of shrinking to half (Codex review); the audio-session release is recorded as open | Pull request CI |
-| 2026-10-10 | *(next commits)* | Again's disabled look keeps readable contrast (audit); the spoken name and Siri's alternative name "Brick Son" | Pull request CI |
+| 2026-10-10 | `f9eb42c`, `cb25616` | Again's disabled look keeps readable contrast (audit); the spoken name and Siri's alternative name "Brick Son" | Pull request CI |
+| 2026-10-10 | *(next commit)* | A store that cannot be filled at launch falls back to a filled in-memory library, so Emergency always has phrases (Codex review) | Pull request CI |

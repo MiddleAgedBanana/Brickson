@@ -143,6 +143,13 @@ tiles too. Nothing about anyone's condition and nothing self-deprecating
 (invariant 7). The wording is a draft to review with people living with
 ALS and their families; the category count matters for scanning by eye.
 
+At launch, `PhraseLibraryLaunch` fills an empty store with them. If the
+store opens but cannot be filled (a full disk, say), the app speaks from a
+filled in-memory library and shows that changes will not be kept, rather
+than open on a Home where Emergency has nothing to show. Only an unreadable
+starter file, which the tests rule out for a passing build, leaves Home
+with Yes and No alone and a warning.
+
 ## Home version 0 is a stand-in
 
 *2026-10-10. Default.*

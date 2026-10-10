@@ -1,4 +1,3 @@
-import OSLog
 import SwiftData
 import SwiftUI
 import UIKit
@@ -19,20 +18,11 @@ struct BricksonApp: App {
         _audioSafety = State(initialValue: audioSafety)
         _speech = State(initialValue: SpeechService(audioSafetyMonitor: audioSafety))
 
-        let library = PhraseLibraryStore.openForApp()
+        let opened = PhraseLibraryStore.openForApp()
+        let library = PhraseLibraryLaunch.prepare(container: opened.container, isVolatile: opened.isVolatile)
         container = library.container
         isVolatileStore = library.isVolatile
-
-        var issue: PhraseLibraryIssue?
-        do {
-            try PhraseLibrarySeeder.seedIfEmpty(library.container, with: StarterLibrary.bundled())
-        } catch {
-            // Not fatal: the quick controls still speak with an empty library.
-            Logger(subsystem: AppLog.subsystem, category: "app")
-                .error("Starter phrases could not be seeded: \(error)")
-            issue = .starterPhrasesUnavailable
-        }
-        phraseLibraryIssue = issue
+        phraseLibraryIssue = library.issue
     }
 
     var body: some Scene {

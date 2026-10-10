@@ -136,4 +136,65 @@ struct PhraseLibraryTests {
         #expect(try categories(in: container).count == 2)
         #expect(try container.mainContext.fetchCount(FetchDescriptor<Phrase>()) == 3)
     }
+
+    // MARK: Launch
+
+    @Test func aNormalLaunchFillsTheStore() throws {
+        let store = try PhraseLibraryStore.makeInMemoryContainer()
+
+        let prepared = PhraseLibraryLaunch.prepare(container: store, isVolatile: false, starter: { library })
+
+        #expect(prepared.container === store)
+        #expect(!prepared.isVolatile)
+        #expect(prepared.issue == nil)
+        #expect(try categories(in: store).map(\.name) == ["Basics", "Emergency"])
+    }
+
+    /// A store that opens but cannot be filled (a full disk) must not leave
+    /// Emergency with nothing to open: the app speaks from a filled
+    /// in-memory library and says changes will not be kept.
+    @Test func aStoreThatCannotBeFilledFallsBackToAFilledLibraryInMemory() throws {
+        struct SaveFailed: Error {}
+        let store = try PhraseLibraryStore.makeInMemoryContainer()
+
+        let prepared = PhraseLibraryLaunch.prepare(
+            container: store,
+            isVolatile: false,
+            starter: { library },
+            saveToStore: { _ in throw SaveFailed() }
+        )
+
+        #expect(prepared.container !== store)
+        #expect(prepared.isVolatile)
+        #expect(prepared.issue == nil)
+        #expect(try categories(in: prepared.container).contains(where: \.isEmergency))
+        #expect(try store.mainContext.fetchCount(FetchDescriptor<PhraseCategory>()) == 0)
+    }
+
+    @Test func unreadableStarterPhrasesAreReported() throws {
+        struct Unreadable: Error {}
+        let store = try PhraseLibraryStore.makeInMemoryContainer()
+
+        let prepared = PhraseLibraryLaunch.prepare(container: store, isVolatile: false, starter: { throw Unreadable() })
+
+        #expect(prepared.container === store)
+        #expect(!prepared.isVolatile)
+        #expect(prepared.issue == .starterPhrasesUnavailable)
+    }
+
+    @Test func whenTheFallbackFailsTooTheProblemIsReported() throws {
+        struct Failed: Error {}
+        let store = try PhraseLibraryStore.makeInMemoryContainer()
+
+        let prepared = PhraseLibraryLaunch.prepare(
+            container: store,
+            isVolatile: false,
+            starter: { library },
+            saveToStore: { _ in throw Failed() },
+            makeFallback: { throw Failed() }
+        )
+
+        #expect(prepared.container === store)
+        #expect(prepared.issue == .starterPhrasesUnavailable)
+    }
 }
