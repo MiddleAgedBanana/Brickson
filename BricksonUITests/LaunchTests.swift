@@ -21,6 +21,13 @@ final class LaunchTests: XCTestCase {
         return app
     }
 
+    /// The phrase tile showing `text`, found by its label. (Tiles all share
+    /// the identifier "phraseTile", so they are not looked up by identifier.)
+    @MainActor
+    private func phraseTile(_ text: String, in app: XCUIApplication) -> XCUIElement {
+        app.buttons.matching(NSPredicate(format: "label == %@", text)).firstMatch
+    }
+
     @MainActor
     func testHomeShowsTheQuickControlsAndStarterPhrases() {
         let app = launchedApp()
@@ -29,7 +36,7 @@ final class LaunchTests: XCTestCase {
             XCTAssertTrue(app.buttons[name].exists, "\(name) is missing")
         }
         // Home starts on the first everyday category, not on Emergency.
-        XCTAssertTrue(app.buttons["Hello."].exists, "the Basics phrases are not showing")
+        XCTAssertTrue(phraseTile("Hello.", in: app).exists, "the Basics phrases are not showing")
     }
 
     /// Invariant 2: a phrase speaks on the first activation. Again turns on
@@ -37,7 +44,7 @@ final class LaunchTests: XCTestCase {
     @MainActor
     func testAPhraseSpeaksOnTheFirstTap() {
         let app = launchedApp()
-        let phrase = app.buttons["Hello."]
+        let phrase = phraseTile("Hello.", in: app)
         XCTAssertTrue(phrase.waitForExistence(timeout: 5))
 
         phrase.tap()
@@ -54,7 +61,7 @@ final class LaunchTests: XCTestCase {
 
         app.buttons["Emergency"].tap()
 
-        XCTAssertTrue(app.buttons["I need help now."].waitForExistence(timeout: 5))
+        XCTAssertTrue(phraseTile("I need help now.", in: app).waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["Again"].isEnabled, "Emergency spoke")
     }
 
