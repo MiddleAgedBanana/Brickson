@@ -154,4 +154,5 @@ device, OS version, settings and date.
 | 2026-10-10 | `2630e6d` | `PaletteTests` checks every pair with Increase Contrast too, and pins primary ink on the screen (Codex review) | Pull request CI |
 | 2026-10-10 | `451426c` | VoiceOver announces each audio problem as it happens, with the full sentence; cut-off phrases and audio failures interrupt, low volume waits for VoiceOver to finish (Codex review) | Pull request CI for the announcement text and priority; the posting itself needs a device with VoiceOver |
 | 2026-10-10 | `5569286` | Every phrase start, including Again and the same phrase chosen again, shows the message from the top (`SpeechService.phraseStartCount`; Codex review) | Pull request CI for the count (`SpeechServiceTests`); the scroll reset itself is not tested |
-| 2026-10-10 | *(next commit)* | CI green on `5569286` recorded; the app stopping if SwiftData cannot start at all is listed as a known gap (Codex review, declined) | Documentation only |
+| 2026-10-10 | `8be35ce` | CI green on `5569286` recorded; the app stopping if SwiftData cannot start at all is listed as a known gap (Codex review, declined) | Documentation only |
+| 2026-10-10 | *(next commit)* | Again shows a press by shrinking slightly instead of fading, so its white label keeps 4.5:1 on the fill while held (Codex review) | CI; no test sees a pressed state |

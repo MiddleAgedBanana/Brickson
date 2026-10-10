@@ -118,7 +118,9 @@ private struct MessageRow: View {
 /// `PaletteTests`). Disabled, before anything has been spoken: the same
 /// words in primary ink on the screen with a primary-ink border, unfilled
 /// so it reads as off. The system's dimmed look failed Apple's contrast
-/// audit, and people still need to read what a control is.
+/// audit, and people still need to read what a control is. Pressed: the
+/// button shrinks slightly and keeps its colours. Fading it would lighten
+/// the fill under its white label and drop the measured pair below 4.5:1.
 private struct MessageActionButtonStyle: ButtonStyle {
     @Environment(\.isEnabled) private var isEnabled
 
@@ -134,7 +136,7 @@ private struct MessageActionButtonStyle: ButtonStyle {
                 }
             }
             .contentShape(shape)
-            .opacity(configuration.isPressed ? 0.85 : 1)
+            .scaleEffect(configuration.isPressed ? 0.96 : 1)
     }
 }
 
