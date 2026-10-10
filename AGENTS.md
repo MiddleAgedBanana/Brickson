@@ -73,6 +73,14 @@ naming its decision, so it fails when it starts passing.
 GitHub's Mac machines for every pull request and every push to `main`. A
 pull request merges only when CI is green.
 
+**Reviews and updates on GitHub.** Codex reviews every push to a pull
+request. GitHub Copilot reviews each pull request once, when it opens;
+the owner can ask again with **Re-request review**. Both review against
+*Code Review Rules* below. Dependabot opens one pull request a month for
+new versions of the actions in `.github/workflows`, and one at once for a
+security fix. The intended repository settings, and why, are in
+docs/DECISIONS.md, "Reviews, updates and GitHub settings".
+
 **Cloud agents** without Xcode (Claude Code on the web, Codex cloud, Jules)
 cannot build or run anything. Say so plainly, treat the change as untested
 until CI or a Mac run passes, and never describe unbuilt code as working.
@@ -196,6 +204,67 @@ built for Eye Tracking.
   buttons or custom pointer code. Keep standard Back, Close and swipe
   navigation.
 
+## Code Review Rules
+
+Every reviewer reads this section: Codex code review looks for this
+heading, GitHub Copilot code review reads this whole file (and
+`.github/copilot-instructions.md`) from the pull request's own branch, and
+Claude Code reads it through `CLAUDE.md`. Flag a change that does any of
+the following, name the invariant, and show the path from a real input to
+the failure.
+
+### Communication never fails
+
+- A phrase that needs a second activation, a confirmation or a load before
+  it speaks (invariant 2). Safe path: speak at once; a repeat of the phrase
+  still being spoken is absorbed by `SpokenUtteranceTracker`.
+- Emergency, Get Attention, Yes or No more than one activation from any
+  Home state, or anything that can cover them: a scroll view, a sheet, the
+  software keyboard (invariants 2 and 10).
+- A failure the person cannot hear that shows nothing, or a `catch` that
+  only logs (invariants 4 and 5).
+- A save path with no test that makes the save fail, or
+  `ModelContext.rollback()` after a delete that cascades (invariant 5;
+  docs/LESSONS.md, "Never roll back a cascade delete").
+
+### Dwell and gaze safety
+
+- A control that turns into its opposite in place, or a mode switch that
+  leaves a speaking, alarming, destructive or position-changing control
+  nearest the spot just activated (invariant 10). Safe path: start and stop
+  in different places, fixed by placement, never by timers, decoy buttons
+  or custom pointer code.
+- An order that depends on usage or time, or a column count that changes
+  with content (invariant 8).
+- New scrolling on Home for the starter library, a target below its
+  profile's floor, or a layout that moves when the keyboard appears
+  (invariant 11).
+
+### Data, privacy and platform
+
+- Anything that deletes or rewrites a person's own words in a repair,
+  migration or import (invariant 7).
+- Network code, accounts, analytics, cloud sync, a third-party package or
+  SDK, or a new data type in the privacy manifest (invariant 9).
+- A closure a framework may call off the main thread that is main-actor
+  isolated by default: under Swift 6 it crashes at runtime. Safe path:
+  `@Sendable` or `nonisolated`, with a test in `OffMainThreadCallbackTests`.
+- Elapsed time measured with `Date` instead of `ContinuousClock`.
+- A colour pair not pinned in `PaletteTests` (invariant 6).
+- Personal names, email addresses, or health or family details in a
+  committed file: the repository is public.
+
+### Not findings
+
+- Formatting or naming on its own.
+- A gap already recorded as accepted in docs/DECISIONS.md or in
+  docs/HANDOFF.md, *Known gaps* (for example, no Get Attention yet), unless
+  the change makes it worse.
+- The accessibility audit's "not human-readable" guess on phrase-tile
+  labels, which `LaunchTests` expects.
+- That an agent did not run the app: for cloud agents the GitHub CI run is
+  the build (*Build and test*).
+
 ## Workflow rules
 
 - **Test first.** New behaviour gets a failing test first; a bug fix gets a
@@ -313,3 +382,12 @@ Shortcuts. **Never apply** `core-data` skills (this app uses SwiftData),
   `grep` and `python3` (`cp` asks before overwriting and can hang a
   script). Scripts are not affected; in a typed command, use
   `command cp` and so on.
+- **Job names in `tests.yml` are required check names.** The `main`
+  ruleset requires "Unit tests" and "UI tests" by name (docs/DECISIONS.md,
+  "Reviews, updates and GitHub settings"). Renaming a job, or adding a path
+  filter to the workflow, leaves every pull request waiting for a check
+  that never arrives until the owner updates the ruleset.
+- **Copilot code review reads instructions from the pull request's own
+  branch**: `AGENTS.md`, `CLAUDE.md` and `.github/copilot-instructions.md`.
+  A change to *Code Review Rules* applies to the review of the pull request
+  that makes it.

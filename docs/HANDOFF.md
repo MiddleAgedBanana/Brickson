@@ -96,6 +96,25 @@ versioned schema without cascade deletes.
 - No license file: the code is public but, without a license, all rights
   are reserved. The owner decides.
 
+### GitHub reviews and updates (2026-10-10)
+
+The owner bought GitHub Copilot Pro for code review. The repository now
+has review rules every reviewer reads (AGENTS.md, *Code Review Rules*), a
+short Copilot file pointing at them, a Dependabot configuration for the
+workflow actions, and a security policy. The repository settings these
+rely on (a `main` ruleset, Copilot's code review settings, Actions and
+security switches) are listed with reasons in docs/DECISIONS.md, "Reviews,
+updates and GitHub settings"; the owner applies them on GitHub.
+
+Not yet seen working, to check after the merge and the settings:
+
+- A Copilot review appears on the next pull request, and its comments
+  follow *Code Review Rules*.
+- Dependabot's first grouped pull request arrives (`tests.yml` uses
+  `actions/checkout@v5`, `pages.yml` uses `@v7`), and Insights →
+  Dependency graph → Dependabot shows no configuration error.
+- Copilot AI credits used per review (Settings → Billing → AI usage).
+
 ## Next steps, in order
 
 1. **Owner:** open and run the app on a Mac (README → *First time on your
@@ -107,12 +126,14 @@ versioned schema without cascade deletes.
 3. **Owner:** choose the developer account (personal or organization).
    Then set `DEVELOPMENT_TEAM` and the final `APP_BUNDLE_ID` in
    `project.yml` (docs/DECISIONS.md, "App identity").
-4. Port step 1's remainder: the Get Attention alarm (`AttentionAlertPlayer`
+4. **Owner:** apply the GitHub settings in docs/DECISIONS.md, "Reviews,
+   updates and GitHub settings".
+5. Port step 1's remainder: the Get Attention alarm (`AttentionAlertPlayer`
    and its tone) with Stop Alert in a different place, and the audio
    warning strip.
-5. Port step 2: editing logic and backup, with a failure-injection test for
+6. Port step 2: editing logic and backup, with a failure-injection test for
    every save (docs/LESSONS.md, "Never roll back a cascade delete").
-6. Port step 3, then design the generalized layout engine (step 4) before
+7. Port step 3, then design the generalized layout engine (step 4) before
    replacing Home.
 
 ## Checks that need a real device
@@ -157,4 +178,5 @@ device, OS version, settings and date.
 | 2026-10-10 | `8be35ce` | CI green on `5569286` recorded; the app stopping if SwiftData cannot start at all is listed as a known gap (Codex review, declined) | Documentation only |
 | 2026-10-10 | `f1182d9` | Again shows a press by shrinking slightly instead of fading, so its white label keeps 4.5:1 on the fill while held (Codex review) | CI; no test sees a pressed state |
 | 2026-10-10 | `e6335dd` | Reversed the shrink, which drew the label below its default size (Codex review): a press now shows a primary-ink ring inside Again's edge, with the label and fill unchanged | CI; no test sees a pressed state |
-| 2026-10-10 | *(next commit)* | `PaletteTests` pins the pressed ring: primary ink on the control fill at 3:1 or better in every appearance (Codex review) | CI |
+| 2026-10-10 | `d881f71` | `PaletteTests` pins the pressed ring: primary ink on the control fill at 3:1 or better in every appearance (Codex review) | CI |
+| 2026-10-10 | *(this pull request)* | Review and update setup: *Code Review Rules* in AGENTS.md (read by Codex, Copilot and Claude Code), `.github/copilot-instructions.md`, `.github/dependabot.yml` (GitHub Actions, monthly, grouped, 7-day cooldown), `.github/SECURITY.md`; intended GitHub settings recorded in docs/DECISIONS.md | YAML parsed locally; CI on the pull request. No Swift changed. Dependabot and Copilot behaviour show only after merge (*GitHub reviews and updates* above) |

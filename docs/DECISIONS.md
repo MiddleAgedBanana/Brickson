@@ -222,3 +222,60 @@ Unit tests use Swift Testing and run inside the app on a simulator
 real app (`BricksonUITests`, scheme `Brickson-UI`). GitHub runs both on
 every pull request (`.github/workflows/tests.yml`); a pull request merges
 only when they pass.
+
+## Reviews, updates and GitHub settings
+
+*2026-10-10. Default; the owner applies the settings in GitHub, so check
+them there before relying on them.*
+
+The repository's settings live on GitHub, not in these files. This is
+what they are meant to be, and why, so a change to the workflows or the
+review setup does not quietly break them.
+
+**Code review.**
+
+- Codex reviews every push to a pull request. GitHub Copilot (the owner's
+  Copilot Pro plan) reviews each pull request **once, when it opens**,
+  through the `main` ruleset's "Automatically request Copilot code review"
+  rule, at Balanced effort. It does not review every push: each Copilot
+  review is paid from a monthly allowance of AI credits (GitHub estimates
+  $0.25 to $5 a review at Balanced; Pro includes $15 a month), and Codex
+  already reviews every push. When a pull request changes a lot after
+  review, the owner can choose **Re-request review**.
+- Review guidance lives in AGENTS.md, *Code Review Rules*, which Codex,
+  Copilot and Claude Code all read. `.github/copilot-instructions.md` only
+  adds what is specific to Copilot and points back to AGENTS.md, so the
+  rules exist in one place.
+- Copilot's review runs on a Linux machine and cannot build an iOS app, so
+  there is no `copilot-code-review.yml`; the Tests workflow is the build.
+- Copilot never approves a pull request (its "Auto-approval" settings stay
+  off). An AI approval does not stand in for the owner's merge.
+- No `CODEOWNERS` file: the owner is the only maintainer and appears as
+  the author of every pull request agents open, and GitHub never asks an
+  author to review their own pull request.
+
+**Dependencies.** Brickson has no packages (invariant 9), so the actions
+in `.github/workflows` are its only dependencies. Dependabot proposes new
+versions once a month in one grouped pull request, waiting seven days
+after each release (`.github/dependabot.yml`); security fixes come at
+once through Dependabot security updates. Actions are referenced by
+version tag, not pinned to commit hashes: GitHub only raises security
+alerts for tag references, and all of them are GitHub's own actions.
+
+**Code scanning.** CodeQL's default setup scans the workflow files. The
+Swift code is not scanned: default setup cannot build a project that
+XcodeGen generates, and CodeQL cannot follow Xcode 27 builds yet. GitHub
+has announced a Swift scanner that needs no build; revisit then.
+
+**`main` ruleset** (recommended to the owner):
+
+| Rule | Setting | Why |
+|---|---|---|
+| Require a pull request before merging | 0 approvals; merge commits only | Nobody pushes to `main`. The owner cannot approve pull requests that show them as author, so any approval count would block every merge. Merge commits keep the commit hashes HANDOFF cites on `main`. |
+| Require status checks to pass | "Unit tests" and "UI tests" | The job names in `tests.yml`. Renaming a job blocks every pull request until the ruleset is changed to match. |
+| Require branches to be up to date | Off | Each update reruns the Mac tests; `main` is tested again after every merge anyway. |
+| Require conversation resolution | On | Every Codex and Copilot comment gets an answer before a merge. |
+| Require code scanning results | CodeQL: errors, high or higher | A dangerous workflow change cannot merge. |
+| Automatically request Copilot code review | On; new pushes and drafts off | As above. |
+| Block force pushes, restrict deletions | On | History on `main` never changes. |
+| Bypass | Repository admin, for pull requests only | The owner can still merge in an emergency, such as GitHub's Mac machines being down, but never push straight to `main`. |

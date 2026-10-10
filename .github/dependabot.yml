@@ -1,0 +1,25 @@
+# Dependabot keeps the GitHub Actions used in .github/workflows up to date.
+# Brickson uses no Swift packages or other outside code (AGENTS.md,
+# invariant 9), so these actions are its only dependencies.
+#
+# - A security fix arrives as soon as GitHub knows about it. That part is
+#   "Dependabot security updates" in Settings and needs nothing here.
+# - Ordinary new versions arrive once a month, all in one pull request, and
+#   only after a release has been public for a week, so a bad or hijacked
+#   release has time to be caught before it reaches this repository.
+#
+# Options: https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    cooldown:
+      default-days: 7
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+    assignees:
+      - "MiddleAgedBanana"

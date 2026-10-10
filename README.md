@@ -150,7 +150,9 @@ scripts/test.sh           builds the app and runs the tests in one step
 project.yml               describes the Xcode project for XcodeGen
 AGENTS.md                 the rules every AI coding agent follows here
 CLAUDE.md                 points Claude Code at AGENTS.md
-.github/                  GitHub settings: automatic tests, pull request template
+.github/                  GitHub settings: automatic tests, Dependabot, review
+                          instructions for Copilot, security policy, pull
+                          request template
 ```
 
 ### How the pieces fit together
@@ -192,6 +194,22 @@ Every pull request is built and tested on GitHub's Mac machines
 (`.github/workflows/tests.yml`). The result appears at the bottom of the
 pull request as a green check or a red cross; a pull request should be
 merged only when it is green.
+
+## Reviews and updates on GitHub
+
+Two AI reviewers comment on pull requests: Codex on every change pushed
+to one, and GitHub Copilot once, when it opens. To ask Copilot again, or to
+have it look at one of Dependabot's pull requests, choose **Re-request
+review** (or **Request**) next to Copilot under *Reviewers*. Both check the
+changes against the *Code Review Rules* in `AGENTS.md`. Their comments are
+suggestions to weigh, not orders, but each one should get an answer before
+the pull request merges.
+
+Dependabot keeps the pieces the GitHub workflows borrow (such as
+`actions/checkout`) up to date. Once a month it opens one pull request with
+any new versions, and it opens one straight away for a security fix.
+
+To report a security problem privately, see `.github/SECURITY.md`.
 
 ## Working with AI agents
 
