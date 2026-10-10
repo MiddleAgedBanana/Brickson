@@ -122,7 +122,8 @@ private struct MessageRow: View {
 /// primary-ink ring inside the edge, with the label and fill unchanged.
 /// Fading would lighten the fill under the white label below 4.5:1, and
 /// shrinking would draw the label below its default size. The ring is
-/// black on the fill in light mode (3.51:1) and white in dark (5.98:1).
+/// black on the fill in light mode (3.51:1) and white in dark (5.98:1),
+/// pinned by `PaletteTests.pressedRingStandsOutFromTheFill`.
 private struct MessageActionButtonStyle: ButtonStyle {
     @Environment(\.isEnabled) private var isEnabled
 

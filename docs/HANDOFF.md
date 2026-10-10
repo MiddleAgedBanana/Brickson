@@ -156,4 +156,5 @@ device, OS version, settings and date.
 | 2026-10-10 | `5569286` | Every phrase start, including Again and the same phrase chosen again, shows the message from the top (`SpeechService.phraseStartCount`; Codex review) | Pull request CI for the count (`SpeechServiceTests`); the scroll reset itself is not tested |
 | 2026-10-10 | `8be35ce` | CI green on `5569286` recorded; the app stopping if SwiftData cannot start at all is listed as a known gap (Codex review, declined) | Documentation only |
 | 2026-10-10 | `f1182d9` | Again shows a press by shrinking slightly instead of fading, so its white label keeps 4.5:1 on the fill while held (Codex review) | CI; no test sees a pressed state |
-| 2026-10-10 | *(next commit)* | Reversed the shrink, which drew the label below its default size (Codex review): a press now shows a primary-ink ring inside Again's edge, with the label and fill unchanged | CI; no test sees a pressed state |
+| 2026-10-10 | `e6335dd` | Reversed the shrink, which drew the label below its default size (Codex review): a press now shows a primary-ink ring inside Again's edge, with the label and fill unchanged | CI; no test sees a pressed state |
+| 2026-10-10 | *(next commit)* | `PaletteTests` pins the pressed ring: primary ink on the control fill at 3:1 or better in every appearance (Codex review) | CI |
