@@ -118,7 +118,12 @@ private struct MessageRow: View {
 /// `PaletteTests`). Disabled, before anything has been spoken: the same
 /// words in primary ink on the screen with a primary-ink border, unfilled
 /// so it reads as off. The system's dimmed look failed Apple's contrast
-/// audit, and people still need to read what a control is.
+/// audit, and people still need to read what a control is. Pressed: a
+/// primary-ink ring inside the edge, with the label and fill unchanged.
+/// Fading would lighten the fill under the white label below 4.5:1, and
+/// shrinking would draw the label below its default size. The ring is
+/// black on the fill in light mode (3.51:1) and white in dark (5.98:1),
+/// pinned by `PaletteTests.pressedRingStandsOutFromTheFill`.
 private struct MessageActionButtonStyle: ButtonStyle {
     @Environment(\.isEnabled) private var isEnabled
 
@@ -131,10 +136,11 @@ private struct MessageActionButtonStyle: ButtonStyle {
             .overlay {
                 if !isEnabled {
                     shape.strokeBorder(Color.primary, lineWidth: 2)
+                } else if configuration.isPressed {
+                    shape.strokeBorder(Color.primary, lineWidth: 3)
                 }
             }
             .contentShape(shape)
-            .opacity(configuration.isPressed ? 0.85 : 1)
     }
 }
 
