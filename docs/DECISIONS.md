@@ -169,7 +169,8 @@ How it behaves, and where it knowingly falls short:
   Control and the UI tests, and the reference app did the same.
 - **Messages never shrink.** The message row always reserves two lines of
   its font; a longer message scrolls inside them at full size (the reference
-  app's phone layout did the same), and a new message starts at the top.
+  app's phone layout did the same). Every phrase start, including Again and
+  the same phrase chosen again, shows the message from the top.
 - **Audio warnings keep their space.** The warning area always holds the
   height of the tallest short audio warning ("Volume low", "Audio failed"),
   so a warning appearing hides no phrase tile (invariant 4). The short text

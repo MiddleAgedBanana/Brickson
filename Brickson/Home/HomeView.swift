@@ -61,7 +61,8 @@ private struct MessageRow: View {
                 // invisible placeholder. A longer message scrolls inside
                 // them instead of shrinking, so the person's words keep their
                 // full size (AGENTS.md, "Words never break") and nothing
-                // below moves. A new message starts at the top.
+                // below moves. Every phrase start, Again included,
+                // shows the message from the top.
                 Text(verbatim: " ")
                     .font(.title.weight(.semibold))
                     .lineLimit(2, reservesSpace: true)
@@ -84,7 +85,11 @@ private struct MessageRow: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                         }
                         .scrollBounceBehavior(.basedOnSize)
-                        .id(speech.lastSpokenText)
+                        // A new view, so a new scroll position, on every
+                        // phrase start: Again and the same phrase chosen
+                        // again show the first words too, not where the
+                        // last reader left the scroll.
+                        .id(speech.phraseStartCount)
                     }
 
                 // Always laid out, only shown while speaking, so it never

@@ -41,6 +41,11 @@ final class AudioSessionInterruptionObserver {
 @Observable
 final class SpeechService {
     private(set) var lastSpokenText: String?
+    /// Counts every phrase that starts speaking, including Again and the
+    /// same phrase chosen again; an absorbed repeat does not count. Home
+    /// keys the message's scroll position to it, so each start shows the
+    /// message from its first word.
+    private(set) var phraseStartCount = 0
     private(set) var personalVoiceStatus: AVSpeechSynthesizer.PersonalVoiceAuthorizationStatus = .notDetermined
     private(set) var availableVoices: [VoiceDescriptor] = []
     var speechInterruptionState: SpeechInterruptionState { speechInterruptionStatus.state }
@@ -179,6 +184,7 @@ final class SpeechService {
         }
         if let spoken = synthesize(trimmed) {
             lastSpokenText = spoken
+            phraseStartCount &+= 1
         }
     }
 
