@@ -1,0 +1,328 @@
+import AVFoundation
+import Testing
+
+@testable import Brickson
+
+struct AudioSafetyPolicyTests {
+    @Test func volumeBelowThresholdWarns() {
+        let policy = AudioSafetyPolicy(
+            attentionState: .idle,
+            audioSessionHealthy: true,
+            outputVolume: 0.19
+        )
+
+        #expect(policy.issue == .lowOutputVolume)
+    }
+
+    @Test func volumeAtThresholdDoesNotWarn() {
+        let policy = AudioSafetyPolicy(
+            attentionState: .idle,
+            audioSessionHealthy: true,
+            outputVolume: AudioSafetyPolicy.lowVolumeThreshold
+        )
+
+        #expect(policy.issue == nil)
+    }
+
+    @Test func failedAlertOutranksUnavailableSession() {
+        let policy = AudioSafetyPolicy(
+            attentionState: .failedToStart,
+            audioSessionHealthy: false,
+            outputVolume: 0
+        )
+
+        #expect(policy.issue == .attentionAlertFailed)
+    }
+
+    @Test func acuteStopsOutrankAmbientWarningsAndOfferRecovery() {
+        let alertPolicy = AudioSafetyPolicy(
+            attentionState: .stoppedUnexpectedly,
+            audioSessionHealthy: true,
+            outputVolume: 0
+        )
+
+        #expect(alertPolicy.issue == .attentionAlertStopped)
+
+        let speechPolicy = AudioSafetyPolicy(
+            attentionState: .idle,
+            speechInterruptionState: .stoppedUnexpectedly,
+            audioSessionHealthy: true,
+            outputVolume: 1
+        )
+
+        #expect(speechPolicy.issue == .speechStopped)
+        #expect(speechPolicy.issue?.announcementUrgency == .urgent)
+        #expect(speechPolicy.issue?.compactMessage.contains("Again") == true)
+        #expect(speechPolicy.issue?.message.contains("Again") == true)
+
+        let typedSpeechPolicy = AudioSafetyPolicy(
+            attentionState: .idle,
+            speechInterruptionState: .stoppedUnexpectedly,
+            speechRecoveryAction: .showPhrasesThenRepeat,
+            audioSessionHealthy: true,
+            outputVolume: 1
+        )
+
+        #expect(typedSpeechPolicy.issue == .typedSpeechStopped)
+        #expect(typedSpeechPolicy.issue?.compactMessage == "Stopped: Phrases")
+        #expect(typedSpeechPolicy.issue?.message.contains("Phrases") == true)
+        #expect(typedSpeechPolicy.issue?.message.contains("Again") == true)
+        #expect(typedSpeechPolicy.issue?.message.contains("Speak") == false)
+
+        let modalSpeechPolicy = AudioSafetyPolicy(
+            attentionState: .idle,
+            speechInterruptionState: .stoppedUnexpectedly,
+            speechRecoveryAction: .dismissThenRepeat,
+            audioSessionHealthy: true,
+            outputVolume: 1
+        )
+
+        #expect(modalSpeechPolicy.issue == .modalSpeechStopped)
+        #expect(modalSpeechPolicy.issue?.compactMessage == "Stopped — Back")
+        #expect(modalSpeechPolicy.issue?.message.contains("Choose Back") == true)
+        #expect(modalSpeechPolicy.issue?.message.contains("Close") == false)
+        #expect(modalSpeechPolicy.issue?.message.contains("Again") == true)
+    }
+
+    @Test func unavailableSessionOutranksLowVolume() {
+        let policy = AudioSafetyPolicy(
+            attentionState: .idle,
+            audioSessionHealthy: false,
+            outputVolume: 0
+        )
+
+        #expect(policy.issue == .audioSessionUnavailable)
+    }
+
+    @Test func nextSpeechAttemptClearsOnlyARepeatableInterruptionWarning() {
+        var speechStatus = SpeechInterruptionStatus()
+
+        speechStatus.recordInterruption(
+            repeatableSpeechActive: false
+        )
+        #expect(speechStatus.state == .idle)
+        #expect(speechStatus.sequence == 0)
+
+        speechStatus.recordInterruption(
+            repeatableSpeechActive: true
+        )
+        #expect(speechStatus.state == .stoppedUnexpectedly)
+        #expect(speechStatus.sequence == 1)
+
+        speechStatus.recordInterruption(
+            repeatableSpeechActive: true
+        )
+        #expect(speechStatus.sequence == 2)
+
+        speechStatus.recordSpeechAttempt()
+        #expect(speechStatus.state == .idle)
+        #expect(speechStatus.sequence == 2)
+
+        let policy = AudioSafetyPolicy(
+            attentionState: .idle,
+            speechInterruptionState: speechStatus.state,
+            audioSessionHealthy: true,
+            outputVolume: 1
+        )
+
+        #expect(policy.issue == nil)
+    }
+
+    /// The system can stop synthesis before delivering the interruption.
+    /// Its live flag cannot decide whether the tracked sentence needs retry.
+    @Test func interruptedPhraseStillOffersRecoveryAfterTheSynthesizerStops() {
+        var speechStatus = SpeechInterruptionStatus()
+
+        speechStatus.recordInterruption(
+            repeatableSpeechActive: true
+        )
+
+        #expect(speechStatus.state == .stoppedUnexpectedly)
+        #expect(speechStatus.sequence == 1)
+    }
+
+    @Test(arguments: [true, false])
+    func interruptionAndCancellationOrderingProducesOneRecoveryEvent(cancellationArrivesFirst: Bool) {
+        var tracker = SpokenUtteranceTracker<Int>()
+        var speechStatus = SpeechInterruptionStatus()
+        tracker.began(1, text: "I need help now.", at: .now)
+
+        if cancellationArrivesFirst {
+            speechStatus.recordInterruption(repeatableSpeechActive: tracker.cancelled(1))
+        }
+
+        speechStatus.recordInterruption(repeatableSpeechActive: tracker.isRepeatableSpeechActive)
+        tracker.reset()
+
+        if !cancellationArrivesFirst {
+            speechStatus.recordInterruption(repeatableSpeechActive: tracker.cancelled(1))
+        }
+
+        #expect(speechStatus.state == .stoppedUnexpectedly)
+        #expect(speechStatus.sequence == 1)
+        #expect(!tracker.isSpeaking)
+    }
+
+    @Test @MainActor func audioInterruptionObserverForwardsBeganEventsOnly() {
+        let notificationCenter = NotificationCenter()
+        let observedSession = NSObject()
+        var receivedTypes: [AVAudioSession.InterruptionType] = []
+        let observer = AudioSessionInterruptionObserver(
+            notificationCenter: notificationCenter,
+            object: observedSession
+        ) { type in
+            receivedTypes.append(type)
+        }
+
+        notificationCenter.post(
+            name: AVAudioSession.interruptionNotification,
+            object: observedSession,
+            userInfo: [
+                AVAudioSessionInterruptionTypeKey:
+                    AVAudioSession.InterruptionType.ended.rawValue,
+            ]
+        )
+        notificationCenter.post(
+            name: AVAudioSession.interruptionNotification,
+            object: NSObject(),
+            userInfo: [
+                AVAudioSessionInterruptionTypeKey:
+                    AVAudioSession.InterruptionType.began.rawValue,
+            ]
+        )
+        #expect(receivedTypes.isEmpty)
+
+        notificationCenter.post(
+            name: AVAudioSession.interruptionNotification,
+            object: observedSession,
+            userInfo: [
+                AVAudioSessionInterruptionTypeKey:
+                    AVAudioSession.InterruptionType.began.rawValue,
+            ]
+        )
+        #expect(receivedTypes == [.began])
+
+        withExtendedLifetime(observer) {}
+    }
+
+    @Test func successfulAlertRetryRemovesItsSpecificWarning() {
+        let policy = AudioSafetyPolicy(
+            attentionState: .playing,
+            audioSessionHealthy: true,
+            outputVolume: 1
+        )
+
+        #expect(policy.issue == nil)
+    }
+
+    @Test func alertFailureDoesNotRecommendAnotherPotentiallySilentAppAction() {
+        let message = HomeAudioIssue.attentionAlertFailed.message.lowercased()
+
+        #expect(!message.contains("emergency phrase"))
+        #expect(!message.contains("another way"))
+    }
+
+    @Test func stoppedAlertCopyDoesNotInventACause() {
+        let message = HomeAudioIssue.attentionAlertStopped.message.lowercased()
+
+        #expect(message.contains("unexpectedly"))
+        #expect(!message.contains("because"))
+    }
+
+    @Test func provisionalThresholdCopyDoesNotClaimMeasuredInaudibility() {
+        let message = HomeAudioIssue.lowOutputVolume.message.lowercased()
+
+        #expect(message.contains("very low"))
+        #expect(!message.contains("too low"))
+    }
+
+    @Test(arguments: [
+        HomeAudioIssue.attentionAlertFailed,
+        .attentionAlertStopped,
+        .speechStopped,
+        .typedSpeechStopped,
+        .modalSpeechStopped,
+        .audioSessionUnavailable,
+    ])
+    func acuteFailuresRequestUrgentAnnouncements(issue: HomeAudioIssue) {
+        #expect(issue.announcementUrgency == .urgent)
+    }
+
+    @Test func lowVolumeAnnouncementRemainsInformational() {
+        #expect(HomeAudioIssue.lowOutputVolume.announcementUrgency == .informational)
+    }
+
+    @Test(arguments: [
+        HomeAudioIssue.attentionAlertFailed,
+        .attentionAlertStopped,
+        .speechStopped,
+        .typedSpeechStopped,
+        .modalSpeechStopped,
+        .audioSessionUnavailable,
+        .lowOutputVolume,
+    ])
+    func compactStatusCopyFitsAReservedStrip(issue: HomeAudioIssue) {
+        #expect(!issue.compactMessage.isEmpty)
+        #expect(issue.compactMessage.count <= 16)
+    }
+
+    @Test func ambientIssueChangesAreAnnouncedIncludingInitialDelivery() {
+        #expect(
+            AudioAnnouncementPolicy.ambientIssueToAnnounce(.audioSessionUnavailable)
+                == .audioSessionUnavailable
+        )
+        #expect(
+            AudioAnnouncementPolicy.ambientIssueToAnnounce(.lowOutputVolume)
+                == .lowOutputVolume
+        )
+    }
+
+    @Test func discreteFailureIssuesUseIndependentEvents() {
+        #expect(AudioAnnouncementPolicy.ambientIssueToAnnounce(.attentionAlertFailed) == nil)
+        #expect(AudioAnnouncementPolicy.ambientIssueToAnnounce(.attentionAlertStopped) == nil)
+        #expect(AudioAnnouncementPolicy.ambientIssueToAnnounce(.speechStopped) == nil)
+        #expect(AudioAnnouncementPolicy.ambientIssueToAnnounce(.typedSpeechStopped) == nil)
+        #expect(AudioAnnouncementPolicy.ambientIssueToAnnounce(.modalSpeechStopped) == nil)
+        #expect(
+            AudioAnnouncementPolicy.speechIssueToAnnounce(
+                .stoppedUnexpectedly,
+                recoveryAction: .repeatLast
+            )
+                == .speechStopped
+        )
+        #expect(
+            AudioAnnouncementPolicy.speechIssueToAnnounce(
+                .stoppedUnexpectedly,
+                recoveryAction: .showPhrasesThenRepeat
+            ) == .typedSpeechStopped
+        )
+        #expect(
+            AudioAnnouncementPolicy.speechIssueToAnnounce(
+                .stoppedUnexpectedly,
+                recoveryAction: .dismissThenRepeat
+            ) == .modalSpeechStopped
+        )
+        #expect(
+            AudioAnnouncementPolicy.speechIssueToAnnounce(
+                .idle,
+                recoveryAction: .repeatLast
+            ) == nil
+        )
+    }
+
+    @Test(arguments: [
+        (AttentionAlertState.failedToStart, HomeAudioIssue.attentionAlertFailed),
+        (.stoppedUnexpectedly, .attentionAlertStopped),
+    ])
+    func everyAttentionFailureEventGetsItsOwnAnnouncement(
+        state: AttentionAlertState,
+        expectedIssue: HomeAudioIssue
+    ) {
+        #expect(AudioAnnouncementPolicy.attentionIssueToAnnounce(state) == expectedIssue)
+    }
+
+    @Test(arguments: [AttentionAlertState.idle, .playing])
+    func ordinaryAttentionStatesDoNotAnnounceFailure(state: AttentionAlertState) {
+        #expect(AudioAnnouncementPolicy.attentionIssueToAnnounce(state) == nil)
+    }
+}
