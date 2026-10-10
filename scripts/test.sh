@@ -71,11 +71,19 @@ case "$mode" in
             -destination "$destination" \
             -collect-test-diagnostics never \
             test
+        # Reached only when every test passed: set -e stops the script at a
+        # failure, and pipefail keeps xcodebuild's result through xcbeautify.
+        if [ "$mode" = ui ]; then
+            echo "All UI tests passed."
+        else
+            echo "All unit tests passed."
+        fi
         ;;
     device)
         run_xcodebuild "${project[@]}" -scheme Brickson \
             -destination 'generic/platform=iOS' \
             build
+        echo "The device build succeeded."
         ;;
     *)
         echo "Unknown mode \"$mode\". Use: scripts/test.sh [unit|ui|device]" >&2
