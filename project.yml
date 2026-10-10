@@ -1,0 +1,134 @@
+# XcodeGen spec: the source of truth for the Xcode project.
+#
+# Brickson.xcodeproj is generated from this file and is not committed. After
+# cloning, pulling, or adding, removing, or renaming any file, run:
+#
+#     xcodegen generate
+#
+# Never edit the generated project in Xcode's project editor: the next
+# `xcodegen generate` throws those edits away. Change this file instead.
+
+name: Brickson
+options:
+  createIntermediateGroups: true
+  developmentLanguage: en
+  deploymentTarget:
+    iOS: "26.0"
+
+settings:
+  base:
+    # ── App identity ─────────────────────────────────────────────────────
+    # The only lines to change when the name, bundle ID, version, or Apple
+    # developer team changes. See docs/DECISIONS.md, "App identity".
+    APP_DISPLAY_NAME: Brickson          # the name shown under the icon
+    APP_BUNDLE_ID: family.avery.brickson   # can't change after the first App Store upload
+    DEVELOPMENT_TEAM: ""                # your Apple team ID; needed only for a real device
+    MARKETING_VERSION: "0.1.0"          # the version people see
+    CURRENT_PROJECT_VERSION: "1"        # must go up with every upload
+
+    # ── Swift: strict, modern concurrency ────────────────────────────────
+    SWIFT_VERSION: "6.0"
+    SWIFT_STRICT_CONCURRENCY: complete
+    SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
+    SWIFT_APPROACHABLE_CONCURRENCY: "YES"
+
+    # ── Devices ──────────────────────────────────────────────────────────
+    IPHONEOS_DEPLOYMENT_TARGET: "26.0"
+    TARGETED_DEVICE_FAMILY: "1,2"       # iPhone and iPad
+    SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: "NO"
+    SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD: "NO"
+    CODE_SIGN_STYLE: Automatic
+
+    # ── Localization: every string goes through the String Catalog ───────
+    SWIFT_EMIT_LOC_STRINGS: "YES"
+    LOCALIZATION_PREFERS_STRING_CATALOGS: "YES"
+
+targets:
+  Brickson:
+    type: application
+    platform: iOS
+    sources:
+      - Brickson
+    # An explicit Info.plist, generated from these properties: background
+    # audio has no INFOPLIST_KEY_ build setting, and speech must keep playing
+    # when the screen locks or another app comes forward.
+    info:
+      path: Brickson/Info.plist
+      properties:
+        CFBundleDisplayName: $(APP_DISPLAY_NAME)
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        # Only exempt cryptography (none at all today), so App Store Connect
+        # skips the export-compliance question on every upload.
+        ITSAppUsesNonExemptEncryption: false
+        UIBackgroundModes: [audio]
+        # An empty launch screen is drawn in the system background colour,
+        # so dark mode never flashes white.
+        UILaunchScreen: {}
+        # iPhone: portrait for now (docs/DECISIONS.md, "Orientations").
+        # iPad: all four, which multitasking requires.
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: "$(APP_BUNDLE_ID)"
+        PRODUCT_NAME: Brickson
+        SUPPORTS_MACCATALYST: "NO"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+
+  BricksonTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - BricksonTests
+    dependencies:
+      - target: Brickson
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: "$(APP_BUNDLE_ID).tests"
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Brickson.app/Brickson"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+        GENERATE_INFOPLIST_FILE: "YES"
+
+  BricksonUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - BricksonUITests
+    dependencies:
+      - target: Brickson
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: "$(APP_BUNDLE_ID).uitests"
+        GENERATE_INFOPLIST_FILE: "YES"
+        # XCTest UI tests drive the app from outside; they run off the main
+        # actor.
+        SWIFT_DEFAULT_ACTOR_ISOLATION: nonisolated
+        TEST_TARGET_NAME: Brickson
+
+schemes:
+  # The everyday scheme: build the app and run the fast unit tests.
+  Brickson:
+    build:
+      targets:
+        Brickson: all
+    test:
+      gatherCoverageData: false
+      targets:
+        - BricksonTests
+  # Opt-in: launches the real app on a simulator and drives it.
+  Brickson-UI:
+    build:
+      targets:
+        Brickson: all
+    test:
+      gatherCoverageData: false
+      targets:
+        - name: BricksonUITests
+          parallelizable: false

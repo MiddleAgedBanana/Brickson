@@ -1,0 +1,26 @@
+# The Xcode project is generated from project.yml (`xcodegen generate`).
+*.xcodeproj/
+
+# Xcode build output and per-person state
+build/
+DerivedData/
+*.xcresult
+xcuserdata/
+*.xcuserstate
+*.xcscmblueprint
+*.moved-aside
+
+# Swift Package Manager (no packages today; harmless if absent)
+.build/
+.swiftpm/
+
+# macOS
+.DS_Store
+
+# Claude Code: personal settings and local state stay on each machine
+.claude/settings.local.json
+.remember/
+
+# Agent skills installed per machine (see AGENTS.md, "Skills")
+.agents/
+.claude/skills/

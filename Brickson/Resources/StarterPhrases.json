@@ -1,0 +1,73 @@
+{
+  "categories": [
+    {
+      "name": "Basics",
+      "symbolName": "bubble.left.and.bubble.right.fill",
+      "isEmergency": false,
+      "phrases": [
+        "Maybe.",
+        "I don't know.",
+        "Please.",
+        "Thank you.",
+        "Wait a moment, please.",
+        "I'm not finished.",
+        "Hello.",
+        "Goodbye."
+      ]
+    },
+    {
+      "name": "Emergency",
+      "symbolName": "exclamationmark.triangle.fill",
+      "isEmergency": true,
+      "phrases": [
+        "I need help now.",
+        "Please come here.",
+        "I can't breathe.",
+        "I'm choking.",
+        "I'm in pain.",
+        "Something is wrong."
+      ]
+    },
+    {
+      "name": "Needs",
+      "symbolName": "hand.raised.fill",
+      "isEmergency": false,
+      "phrases": [
+        "I'm thirsty.",
+        "I'm hungry.",
+        "I need the bathroom.",
+        "I'm too hot.",
+        "I'm too cold.",
+        "Please move me.",
+        "I need my medication.",
+        "I'm tired."
+      ]
+    },
+    {
+      "name": "Conversation",
+      "symbolName": "text.bubble.fill",
+      "isEmergency": false,
+      "phrases": [
+        "Give me a moment to answer.",
+        "Can you repeat that?",
+        "I understand.",
+        "I don't understand.",
+        "That's not what I meant.",
+        "Please ask me yes or no questions."
+      ]
+    },
+    {
+      "name": "Feelings",
+      "symbolName": "heart.fill",
+      "isEmergency": false,
+      "phrases": [
+        "I love you.",
+        "I'm happy.",
+        "I'm okay.",
+        "I'm worried.",
+        "I'm frustrated.",
+        "That's funny."
+      ]
+    }
+  ]
+}
