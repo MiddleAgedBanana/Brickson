@@ -1,6 +1,6 @@
 # Copilot instructions for Brickson
 
-Brickson is a free iPhone and iPad app that speaks for people living with
+Brickson is an iPhone and iPad app that speaks for people living with
 ALS. A person chooses a phrase or types, and the app says it aloud. The
 people using it may be unable to speak or move, so a bug can leave someone
 with no way to ask for help. Correctness and accessibility come before
