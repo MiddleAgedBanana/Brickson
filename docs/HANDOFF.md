@@ -143,8 +143,9 @@ updates and GitHub settings"; the owner applies them on GitHub.
 
 Not yet seen working, to check after the merge and the settings:
 
-- A Copilot review appears on the next pull request, and its comments
-  follow *Code Review Rules*.
+- Copilot reviews a new pull request by itself once the settings are on.
+  Requested by hand on PR #5, it reviewed at Balanced effort in about three
+  minutes and left one correct Low finding (fixed in `dd4bfff`).
 - Dependabot's first grouped pull request arrives (`tests.yml` uses
   `actions/checkout@v5`, `pages.yml` uses `@v7`), and Insights →
   Dependency graph → Dependabot shows no configuration error.
@@ -223,4 +224,6 @@ device, OS version, settings and date.
 | 2026-10-10 | `d9586f4` | The policy's blanks filled in with the owner's name, contact email and effective date; README, AGENTS.md and this file describe the website | The publish run after PR #2 stopped at the blank check, as designed; the next run needs Pages' Source set to GitHub Actions |
 | 2026-10-10 | `6e78f0a` | `scripts/test.sh` starts its default simulator and waits for it to finish starting (`simctl bootstatus -b`) before building and testing, after a UI-test launch timed out on CI with the same code green on `main` | CI; the failure was intermittent, so one green run does not prove the fix |
 | 2026-10-10 | `d80f109` | `testAPhraseSpeaksOnTheFirstTap` waits up to 10 s for Again to turn on instead of reading it once straight after the tap | CI; intermittent, as above |
-| 2026-10-10 | `ea7a09d` | Review and update setup: *Code Review Rules* in AGENTS.md (read by Codex, Copilot and Claude Code), `.github/copilot-instructions.md`, `.github/dependabot.yml` (GitHub Actions, monthly, grouped, 7-day cooldown), `.github/SECURITY.md`; intended GitHub settings recorded in docs/DECISIONS.md | YAML parsed locally; CI on the pull request. No Swift changed. Dependabot and Copilot behaviour show only after merge (*GitHub reviews and updates* above) |
+| 2026-10-10 | `ea7a09d` | Review and update setup: *Code Review Rules* in AGENTS.md (read by Codex, Copilot and Claude Code), `.github/copilot-instructions.md`, `.github/dependabot.yml` (GitHub Actions, monthly, grouped, 7-day cooldown), `.github/SECURITY.md`; intended GitHub settings recorded in docs/DECISIONS.md | YAML validated locally; CI green on `ea7a09d`. No Swift changed. Dependabot and Copilot behaviour show only after merge (*GitHub reviews and updates* above) |
+| 2026-10-12 | `769350b`, `7103a58` | Main merged in (website, simulator wait). *Code Review Rules* and the Copilot file now treat the developer's name and support email in `site/` as allowed, and flag a change that makes the privacy policy untrue | Documentation only; CI on the pull request |
+| 2026-10-12 | `dd4bfff` | The security policy says the reporter can see a private report too (Copilot review) | Documentation only |
