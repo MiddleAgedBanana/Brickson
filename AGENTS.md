@@ -302,9 +302,8 @@ symlinks), and both folders are ignored by git. Where they exist:
 `swift-concurrency` for concurrency, `swift-testing-expert` for tests,
 `ios-accessibility` for accessibility, `app-intents` for Siri and
 Shortcuts. **Never apply** `core-data` skills (this app uses SwiftData),
-`cloudkit`, `authentication`, `push-notifications`, `ios-networking`,
-`storekit` or `apple-on-device-ai` (hard stops), or `swiftui-gestures`
-(invariant 1).
+`cloudkit`, `authentication`, `push-notifications`, `ios-networking` or
+`apple-on-device-ai` (hard stops), or `swiftui-gestures` (invariant 1).
 
 ## Gotchas
 
