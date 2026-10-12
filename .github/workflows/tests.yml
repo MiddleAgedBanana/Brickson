@@ -29,7 +29,7 @@ jobs:
     runs-on: macos-26
     timeout-minutes: 40
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - name: Show the Xcode version and simulators
         run: |
           xcodebuild -version
@@ -46,7 +46,7 @@ jobs:
     runs-on: macos-26
     timeout-minutes: 50
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - name: Show the Xcode version
         run: xcodebuild -version
       - name: Install XcodeGen

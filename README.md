@@ -132,6 +132,12 @@ the pull request. Local Mac changes require a passing unit suite before
 commit; changes made without Xcode remain untested until CI or a Mac run
 passes. The maintainer merges pull requests after review and passing CI.
 
+CodeQL scans GitHub workflow files, not Swift. AI Scan reviews eligible
+pull-request changes, including Swift, but its findings do not enforce a
+merge gate; address them during review. AI Scan skips forks and Dependabot
+pull requests. See [Code scanning](docs/DECISIONS.md) for the
+coverage, limitations and review requirements.
+
 For bugs, include reproduction steps and the device and OS version. Do not
 post personal phrases, medical details or private backups in public issues.
 Report security vulnerabilities privately using the
