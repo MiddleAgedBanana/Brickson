@@ -7,7 +7,7 @@ here, not in an agent-specific file, so every agent gets the same rules.
 
 ## What this is and what's at stake
 
-Brickson (the working name) is a free iPhone and iPad app that speaks for
+Brickson (the working name) is an iPhone and iPad app that speaks for
 people living with ALS, at every stage of the disease. A person chooses a
 phrase or types, and the app says it aloud, in their own Personal Voice if
 they banked one. It works with every way Apple devices can be controlled:
@@ -378,9 +378,8 @@ symlinks), and both folders are ignored by git. Where they exist:
 `swift-concurrency` for concurrency, `swift-testing-expert` for tests,
 `ios-accessibility` for accessibility, `app-intents` for Siri and
 Shortcuts. **Never apply** `core-data` skills (this app uses SwiftData),
-`cloudkit`, `authentication`, `push-notifications`, `ios-networking`,
-`storekit` or `apple-on-device-ai` (hard stops), or `swiftui-gestures`
-(invariant 1).
+`cloudkit`, `authentication`, `push-notifications`, `ios-networking` or
+`apple-on-device-ai` (hard stops), or `swiftui-gestures` (invariant 1).
 
 ## Gotchas
 

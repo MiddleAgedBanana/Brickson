@@ -1,6 +1,6 @@
 # Brickson
 
-Brickson (the working name) is a free iPhone and iPad app that speaks for
+Brickson (the working name) is an iPhone and iPad app that speaks for
 people living with ALS. A person chooses a phrase, and the app says it
 aloud, in their own Personal Voice if they have made one. It is being built
 to work at every stage of the disease and with every way an Apple device can
