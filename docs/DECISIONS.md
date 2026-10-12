@@ -65,6 +65,18 @@ code that can break, track or change under the person relying on it.
 (`Brickson/Resources/PrivacyInfo.xcprivacy`) declares no tracking and no
 collected data; `AppBundleTests` pins it.
 
+## Price not decided
+
+*2026-10-12. Owner.*
+
+The owner has not decided Brickson's price. Until they do, nothing in the
+repository, the website (`site/`), the app or the project's documents
+states one: not "free", not "paid", no amount. Describe Brickson by what it
+does ("an iPhone and iPad app that speaks for people living with ALS").
+"Free" about other things, such as Xcode, a free Apple Account or GitHub
+Pages, is fine. The reference app's handoff called its successor free, and
+earlier documents here copied that; the owner never decided it.
+
 ## Versioned storage
 
 *2026-10-10. Default.*
