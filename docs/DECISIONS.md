@@ -346,10 +346,9 @@ not scan the Swift code, on purpose:
   request's changes without building anything, when the pull request
   opens and after every new commit, and its job logs show it reading
   Swift files. It skips pull requests from forks and from Dependabot.
-  Its findings are advice: no ruleset can require them to pass. GitHub
-  posts them on the pull request like other code scanning findings,
-  though, so the ruleset's conversation rule most likely needs each one
-  resolved before a merge (GitHub's documentation; not seen here yet).
+  Its findings are advice: GitHub's documentation says they do not block
+  a merge and no ruleset can require them. By this project's practice,
+  each one still gets an answer and is resolved like a review comment.
   GitHub's documentation also says its use spends AI credits, most
   likely from the owner's Copilot allowance (not confirmed).
 - Dependabot's first pull request, PR #7, merged with no CodeQL analysis
@@ -384,7 +383,7 @@ page again.
 | Require a pull request before merging | 0 approvals; merge commits only | Nobody pushes to `main`. The owner cannot approve pull requests that show them as author, so any approval count would block every merge. Merge commits keep the commit hashes HANDOFF cites on `main`. |
 | Require status checks to pass | "Unit tests" and "UI tests" | The job names in `tests.yml`. Renaming a job blocks every pull request until the ruleset is changed to match. |
 | Require branches to be up to date | Off | Each update reruns the Mac tests; `main` is tested again after every merge anyway. |
-| Require conversation resolution | On | Every Codex and Copilot comment, and every code scanning finding posted on the pull request, gets an answer before a merge. |
+| Require conversation resolution | On | Every Codex and Copilot comment, and every CodeQL alert posted on the pull request, gets an answer before a merge. AI Scan findings are answered too, by practice (*Code scanning* above). |
 | Require code scanning results | CodeQL: errors, high or higher | A workflow change that CodeQL flags as an error, or as a high or critical security problem, cannot merge. It did not cover Dependabot's first pull request, which got no CodeQL analysis before merging (*Code scanning* above). |
 | Automatically request Copilot code review | On; new pushes and drafts off | As above. |
 | Block force pushes, restrict deletions | On | History on `main` never changes. |
