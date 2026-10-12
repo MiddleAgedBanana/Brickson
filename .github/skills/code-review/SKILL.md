@@ -126,16 +126,18 @@ review rules*, and you review those edits as that paragraph says.
 - Suggest the smallest fix the rules allow. A suggested fix must meet
   every rule a change must; for hazards, see *Design rules for dwell,
   switch and pointer input*.
-- If you cannot trace a path to a failure, ask a question instead of
-  reporting a bug.
+- A change that *Code Review Rules* names is a finding even when no person
+  is affected yet: name the rule and what the change does. For any other
+  suspected problem, if you cannot trace a path to a failure, ask a
+  question instead of reporting a bug.
 - Judge severity by how easily a real input reaches the problem and how
   much harm it does. High: a reachable way to stop a person communicating
   or calling for help through the app, lose or change their words, crash
   the app, expose their data, or fail where nobody can see or hear it.
   Medium: a real defect under narrower conditions, or a broken invariant
-  that harms no one yet. Low: a minor issue worth fixing. A problem is not
-  High because of its topic alone.
-- Leave out everything under *Not findings*, style alone, warnings with no
-  path, and repeats of a comment already made.
+  or review rule that harms no one yet. Low: a minor issue worth fixing.
+  A problem is not High because of its topic alone.
+- Leave out everything under *Not findings*, style alone, and repeats of a
+  comment already made.
 - Never describe the app as safe, ready for release or ready for a device;
   a review covers only the changes it read.
