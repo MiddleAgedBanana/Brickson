@@ -131,6 +131,26 @@ promise* lists the code rules that keep the policy true.
   privacy policy inside the app (AGENTS.md, *The privacy policy is a
   promise*).
 
+### GitHub reviews and updates (2026-10-10)
+
+The owner bought GitHub Copilot Pro for code review. The repository now
+has review rules every reviewer reads (AGENTS.md, *Code Review Rules*), a
+short Copilot file pointing at them, a Dependabot configuration for the
+workflow actions, and a security policy. The repository settings these
+rely on (a `main` ruleset, Copilot's code review settings, Actions and
+security switches) are listed with reasons in docs/DECISIONS.md, "Reviews,
+updates and GitHub settings"; the owner applies them on GitHub.
+
+Not yet seen working, to check after the merge and the settings:
+
+- Copilot reviews a new pull request by itself once the settings are on.
+  Requested by hand on PR #5, it reviewed at Balanced effort in about three
+  minutes and left one correct Low finding (fixed in `dd4bfff`).
+- Dependabot's first grouped pull request arrives (`tests.yml` uses
+  `actions/checkout@v5`, `pages.yml` uses `@v7`), and Insights →
+  Dependency graph → Dependabot shows no configuration error.
+- Copilot AI credits used per review (Settings → Billing → AI usage).
+
 ## Next steps, in order
 
 1. **Owner:** publish the website. In the repository's Settings → Pages,
@@ -147,12 +167,14 @@ promise* lists the code rules that keep the policy true.
 4. **Owner:** choose the developer account (personal or organization).
    Then set `DEVELOPMENT_TEAM` and the final `APP_BUNDLE_ID` in
    `project.yml` (docs/DECISIONS.md, "App identity").
-5. Port step 1's remainder: the Get Attention alarm (`AttentionAlertPlayer`
+5. **Owner:** apply the GitHub settings in docs/DECISIONS.md, "Reviews,
+   updates and GitHub settings".
+6. Port step 1's remainder: the Get Attention alarm (`AttentionAlertPlayer`
    and its tone) with Stop Alert in a different place, and the audio
    warning strip.
-6. Port step 2: editing logic and backup, with a failure-injection test for
+7. Port step 2: editing logic and backup, with a failure-injection test for
    every save (docs/LESSONS.md, "Never roll back a cascade delete").
-7. Port step 3, then design the generalized layout engine (step 4) before
+8. Port step 3, then design the generalized layout engine (step 4) before
    replacing Home.
 
 ## Checks that need a real device
@@ -202,5 +224,10 @@ device, OS version, settings and date.
 | 2026-10-10 | `d9586f4` | The policy's blanks filled in with the owner's name, contact email and effective date; README, AGENTS.md and this file describe the website | The publish run after PR #2 stopped at the blank check, as designed; the next run needs Pages' Source set to GitHub Actions |
 | 2026-10-10 | `6e78f0a` | `scripts/test.sh` starts its default simulator and waits for it to finish starting (`simctl bootstatus -b`) before building and testing, after a UI-test launch timed out on CI with the same code green on `main` | CI; the failure was intermittent, so one green run does not prove the fix |
 | 2026-10-10 | `d80f109` | `testAPhraseSpeaksOnTheFirstTap` waits up to 10 s for Again to turn on instead of reading it once straight after the tap | CI; intermittent, as above |
+| 2026-10-10 | `ea7a09d` | Review and update setup: *Code Review Rules* in AGENTS.md (read by Codex, Copilot and Claude Code), `.github/copilot-instructions.md`, `.github/dependabot.yml` (GitHub Actions, monthly, grouped, 7-day cooldown), `.github/SECURITY.md`; intended GitHub settings recorded in docs/DECISIONS.md | YAML validated locally; CI green on `ea7a09d`. No Swift changed. Dependabot and Copilot behaviour show only after merge (*GitHub reviews and updates* above) |
+| 2026-10-12 | `769350b`, `7103a58` | Main merged in (website, simulator wait). *Code Review Rules* and the Copilot file now treat the developer's name and support email in `site/` as allowed, and flag a change that makes the privacy policy untrue | Documentation only; CI on the pull request |
+| 2026-10-12 | `dd4bfff` | The security policy says the reporter can see a private report too (Copilot review) | Documentation only |
+| 2026-10-12 | `edf26de` | `.github/copilot-instructions.md` no longer states a price for Brickson: the owner has not decided one, and nothing in the project states one | Documentation only |
+| 2026-10-12 | `6b2f40c` | DECISIONS and the Dependabot file name the three settings security updates need (dependency graph, Dependabot alerts, Dependabot security updates), all on as of 2026-10-10 (Codex review) | Documentation only; YAML parsed locally |
 | 2026-10-12 | `280889b` | Brickson is no longer called free, because the owner has not decided its price: AGENTS.md, README.md, the support page's description and opening line, and the privacy policy's "Who we are" drop the word, and the policy's Effective date is now October 12, 2026. DECISIONS.md "Price not decided" says nothing may state a price until the owner decides | Text and HTML only, checked by a search of the repository; pull request CI. The live pages change only after the merge, when "Publish website" runs |
 | 2026-10-12 | `6865f47` | `storekit` taken off AGENTS.md's list of skills never to apply: it came from the reference app and ruled out in-app purchases before a price was decided | Documentation only |
