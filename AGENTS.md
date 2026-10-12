@@ -80,11 +80,16 @@ pull request once, when it opens. Neither reviews Dependabot's pull
 requests by itself. Each Copilot review spends the owner's monthly AI
 credits, so only the owner requests one (**Re-request review**, or a
 Dependabot pull request): agents never add Copilot as a reviewer unless
-the owner asks. Both review against *Code Review Rules* below. Dependabot
-opens one pull request a month for new versions of the actions in
-`.github/workflows`, and one at once for a security fix. The intended
-repository settings, and why, are in docs/DECISIONS.md, "Reviews, updates
-and GitHub settings".
+the owner asks. Both review against *Code Review Rules* below. GitHub's AI
+Scan also posts security findings after each push to such a pull request;
+answer them like review comments. It skips Dependabot's pull requests and
+those from forks, and CodeQL did not analyse Dependabot's first one before
+it merged, so treat a Dependabot pull request as not security-reviewed
+until the owner reads it or requests Copilot (docs/DECISIONS.md, *Code
+scanning*). Dependabot opens one pull request a month for new versions of
+the actions in `.github/workflows`, and one at once for a security fix.
+The intended repository settings, and why, are in docs/DECISIONS.md,
+"Reviews, updates and GitHub settings".
 
 **Cloud agents** without Xcode (Claude Code on the web, Codex cloud, Jules)
 cannot build or run anything. Say so plainly, treat the change as untested
@@ -473,6 +478,12 @@ Shortcuts. **Never apply** `core-data` skills (this app uses SwiftData),
   "Reviews, updates and GitHub settings"). Renaming a job, or adding a path
   filter to the workflow, leaves every pull request waiting for a check
   that never arrives until the owner updates the ruleset.
+- **CodeQL scans the workflow files, not the Swift code, on purpose.**
+  Default setup cannot build Swift without a committed Xcode project, so
+  adding Swift to it fails again; turning CodeQL off blocks every
+  merge while the ruleset requires CodeQL results. docs/DECISIONS.md,
+  "Reviews, updates and GitHub settings", *Code scanning*, says why and
+  when to revisit.
 - **Copilot code review reads its instructions from the pull request's
   own branch** (GitHub's documentation, checked 2026-10-12): `AGENTS.md`,
   `CLAUDE.md`, `.github/copilot-instructions.md` and the skills in
