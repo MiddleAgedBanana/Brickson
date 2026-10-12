@@ -201,8 +201,7 @@ Not yet seen working, to check after the merge and the settings:
    request that fills in the policy's blanks, then check that the
    "Publish website" run on the Actions tab is green and that both
    addresses open on a phone.
-2. **Owner:** open and run the app on a Mac (README → *First time on your
-   Mac*), and run the tests once (⌘U).
+2. **Owner:** open and run the app on a Mac ([local development setup](GETTING_STARTED.md)), and run the tests once (⌘U).
 3. **Owner:** review the starter phrases
    (`Brickson/Resources/StarterPhrases.json`). A reviewer noted two
    near-duplicates ("Wait a moment, please." and "Give me a moment to
@@ -352,3 +351,17 @@ a 1024×1024 opaque ivory-on-navy app-icon version and a 1254×1254 transparent
 navy mark. Dimensions and alpha were verified; the icon was inspected at
 64×64. The folder's README records the design brief and generation method.
 These are design deliverables; the existing app icon/catalog is unchanged.
+
+### Public README rewrite — 2026-10-12
+
+The README now addresses repository visitors: project purpose, implemented
+capabilities versus planned work, design principles, concise build/test
+commands, contribution requirements, security reporting and license status.
+The detailed first-time Xcode and device-signing instructions are preserved
+in `docs/GETTING_STARTED.md`. The README does not adopt a proposed new app
+name, promise a price or release date, or claim physical-device validation.
+Local Markdown links and command references were checked against the files;
+four website tests pass. The full app unit suite also passed again on
+Xcode 27.0 / iOS 27.0, using the dedicated iPad Pro 13-inch (M5, 16GB)
+simulator. The first attempt lacked sandbox access to CoreSimulator; the
+rerun with simulator access passed. No app, project or test code changed.
