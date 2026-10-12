@@ -8,8 +8,8 @@ or saved, or stop the app speaking for them.
 ## Reporting a problem
 
 Please report it privately, not in a public issue. Open the repository's
-**Security & quality** tab and choose **Report a vulnerability**. Only the
-maintainer can see the report, and the conversation about it stays in it.
+**Security & quality** tab and choose **Report a vulnerability**. Only you
+and the maintainer can see the report, and you can both reply in it.
 
 Say what you saw, the device and iOS version, and the steps that make it
 happen.
