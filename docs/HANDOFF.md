@@ -330,3 +330,16 @@ reloaded the settings page and verified the image remained displayed.
 This repository setting takes effect independently of the Pages deployment;
 committing a replacement image alone does not update GitHub's social preview.
 No app or website behavior changed in this follow-up.
+
+
+### Website review fixes — 2026-10-12
+
+Review found that the 2.1 MB hero PNG was unnecessarily large, and the
+200% text check had missed headings breaking inside words. The homepage
+now uses a local 284 KB JPEG (about 87% smaller). A test caps the hero
+download at 400 KiB. Headings no longer allow mid-word wrapping; mobile
+type scales and margins and tablet column stacking keep whole words in
+view. Chromium reproduced heading overflow with wrapping disabled before
+the layout fix; after it, both pages at 320, 390, 768 and 1440 CSS pixels
+with 200% root text size have no page or heading overflow. Four website
+tests pass. App code is unchanged from the passing 113-case unit run.

@@ -70,6 +70,12 @@ class SiteTests(unittest.TestCase):
                     other.feed(resolved.read_text())
                     self.assertIn(anchor, other.ids)
 
+    def test_hero_download_stays_below_400_kib(self):
+        """Replacing the optimized hero with the original large PNG fails."""
+        html = (ROOT / "site/index.html").read_text()
+        image = re.search(r'<img src="([^"]+)"', html)[1]
+        self.assertLess((ROOT / "site" / image).stat().st_size, 400 * 1024)
+
     def test_development_status_and_support_are_visible(self):
         html = (ROOT / 'site/index.html').read_text()
         self.assertIn('In development for iPhone and iPad.', html)

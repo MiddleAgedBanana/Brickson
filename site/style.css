@@ -31,7 +31,7 @@ a:hover { text-decoration-thickness: 2px; }
 a:focus-visible { outline: 3px solid var(--text); outline-offset: 5px; border-radius: 3px; }
 svg { flex: none; width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 p { margin: 0 0 1rem; }
-h1, h2, h3 { font-family: Georgia, "Times New Roman", serif; font-weight: 400; line-height: 1.12; letter-spacing: -.035em; text-wrap: balance; }
+h1, h2, h3 { overflow-wrap: normal; font-family: Georgia, "Times New Roman", serif; font-weight: 400; line-height: 1.12; letter-spacing: -.035em; text-wrap: balance; }
 h1 { font-size: clamp(3.7rem, 6.6vw, 6rem); margin: 0 0 1.65rem; line-height: .98; }
 h2 { font-size: clamp(2rem, 3.2vw, 2.8rem); margin: 0 0 1.6rem; }
 h3 { font-size: 1.8rem; margin: 0 0 .8rem; }
@@ -84,6 +84,10 @@ nav a:hover { text-decoration: underline; }
 .summary p:last-child { margin: 0; }
 .policy-footer { border-top: 1px solid var(--border); }
 @media (max-width: 1050px) {
+  .hero, .principles, .help-grid { grid-template-columns: minmax(0, 1fr); }
+  .principles > div + div { border-left: 0; padding-left: 0; }
+  .help-grid section + section { border-left: 0; padding-left: 0; }
+  .hero-art { max-width: 38rem; margin-inline: auto; }
   .wrap { width: calc(100% - 4rem); }
   .hero { gap: 1.5rem; }
   .help-grid { gap: 2rem; }
@@ -95,12 +99,15 @@ nav a:hover { text-decoration: underline; }
   .policy-nav p { flex-basis: 100%; }
 }
 @media (max-width: 720px) {
-  .wrap { width: calc(100% - 2.5rem); }
+  .wrap { width: calc(100% - 40px); }
   .site-header { flex-wrap: wrap; gap: .25rem 1.5rem; }
   .site-name { font-size: 2rem; }
   nav { gap: 1.4rem; flex-wrap: wrap; }
   .hero { grid-template-columns: minmax(0, 1fr); padding-top: 2rem; gap: 1rem; }
-  h1 { font-size: clamp(3.4rem, 12vw, 5rem); }
+  h1 { font-size: clamp(2rem, calc(1.5rem + 6vw), 5rem); }
+  .policy-copy h2 { font-size: 1.5rem; }
+  .policy-copy h1 { font-size: clamp(2rem, calc(1rem + 5vw), 3rem); }
+  h2 { font-size: clamp(1.5rem, calc(1rem + 4vw), 2rem); }
   .intro { font-size: 1.125rem; }
   .hero-art img { height: auto; }
   .hero-art { max-width: 26rem; width: 100%; margin-inline: auto; }
