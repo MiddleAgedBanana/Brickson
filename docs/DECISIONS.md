@@ -254,10 +254,32 @@ review setup does not quietly break them.
   $0.25 to $5 a review at Balanced; Pro includes $15 a month), and Codex
   already reviews every push. When a pull request changes a lot after
   review, the owner can choose **Re-request review**.
+- *Added 2026-10-12.* Dependabot's pull requests get no automatic review
+  from Copilot or Codex: PR #7, Dependabot's first, got neither, while
+  PR #8, opened by an agent, got both. The owner requests a Copilot review
+  of one by hand when wanted. Only the owner requests Copilot reviews;
+  agents never add Copilot as a reviewer unless the owner asks, because
+  each review spends the owner's credits.
 - Review guidance lives in AGENTS.md, *Code Review Rules*, which Codex,
   Copilot and Claude Code all read. `.github/copilot-instructions.md` only
   adds what is specific to Copilot and points back to AGENTS.md, so the
   rules exist in one place.
+- *Added 2026-10-12.* `.github/skills/code-review/SKILL.md` gives Copilot
+  the steps of a review: learn what is built, find the rules the change
+  touches, trace a path from a real input, and write the finding. It holds
+  the method only. What counts as a finding is decided in AGENTS.md, which
+  the skill cites by invariant number and section title, and the skill
+  says nothing about which features are built, how many there are or how
+  they are set, so it stays true as the app grows. A new review rule goes
+  in AGENTS.md, not the skill, and renaming a section the skill cites
+  means updating the skill. GitHub's documentation says Copilot code
+  review uses a skill in `.github/skills` when it is relevant to the
+  review, and that a review-focused folder name such as `code-review`
+  makes that likely; `.github/copilot-instructions.md` also points to it.
+  The owner asked for this skill, so it is an accepted reviewer
+  instruction file outside AGENTS.md. *Tests, workflows and the rules
+  themselves* still flags every change to it and every new file of its
+  kind for the owner to decide.
 - Copilot's review runs on a Linux machine and cannot build an iOS app, so
   there is no `copilot-code-review.yml`; the Tests workflow is the build.
 - Copilot never approves a pull request (its "Auto-approval" settings stay

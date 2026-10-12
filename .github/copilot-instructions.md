@@ -13,13 +13,16 @@ and `AGENTS.md` ever disagree, `AGENTS.md` wins.
 
 ## Reviewing pull requests
 
+- When reviewing pull requests, use the code-review skill at
+  `.github/skills/code-review/SKILL.md`.
 - Put first anything that could stop a person communicating: a phrase that
   needs more than one activation to speak, Emergency, Get Attention, Yes or
   No out of reach, a crash, a failure nobody can see or hear, or a person's
   words lost. Accessibility comes next, then everything else.
-- Name the `AGENTS.md` invariant a finding breaks, and show the path from a
-  real input to the failure. When you cannot trace one, ask a question
-  instead of reporting a bug.
+- Name the `AGENTS.md` invariant or rule a finding breaks, and show the
+  path from a real input to the failure. A change that "Code Review Rules"
+  names is a finding even when no person is affected yet; for any other
+  suspicion you cannot trace, ask a question instead of reporting a bug.
 - Don't comment on formatting or naming alone.
 - Write plainly. The owner is new to programming.
 

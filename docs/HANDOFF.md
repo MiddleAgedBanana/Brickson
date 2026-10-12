@@ -141,14 +141,57 @@ rely on (a `main` ruleset, Copilot's code review settings, Actions and
 security switches) are listed with reasons in docs/DECISIONS.md, "Reviews,
 updates and GitHub settings"; the owner applies them on GitHub.
 
+On 2026-10-12 a review skill was added for Copilot:
+`.github/skills/code-review/SKILL.md`, refined from the owner's draft. It
+gives the steps of a review; what counts as a finding stays in AGENTS.md
+(docs/DECISIONS.md, "Reviews, updates and GitHub settings"). GitHub's
+documentation, read from its source files on 2026-10-12, says four
+things:
+
+- Copilot code review can use a skill in `.github/skills` without being
+  asked, when the skill is relevant to the review.
+- A review-focused folder name such as `code-review` makes that likely.
+- Copilot reads skills and instructions from the pull request's own
+  branch.
+- A comment written with a skill's help carries an attribution at its
+  bottom that names the skill.
+
+GitHub's changelog of 2026-07-29, seen only in search results, adds that
+skills in code review are generally available, Copilot Pro included.
+`.github/copilot-instructions.md` also points to the skill; GitHub does
+not say whether that line changes anything.
+
+Seen working on PR #8, 2026-10-12:
+
+- GitHub requested a Copilot review as the pull request opened; nobody
+  asked for it. The review started 13 seconds after opening and posted
+  about five minutes after. (Requested by hand on PR #5, it had reviewed
+  at Balanced effort in about three minutes and left one correct Low
+  finding, fixed in `dd4bfff`.)
+- Copilot used the review skill. Its job log (the pull request's
+  `copilot-pull-request-reviewer` check → Details) says it loaded
+  instructions and skills from the pull request's branch, read
+  `.github/copilot-instructions.md`, `AGENTS.md` and `CLAUDE.md`, and
+  invoked the skill (`[skills] ... invoked: name="code-review"`). It left
+  no comments of its own, so no comment carried the attribution; the job
+  log is where to check.
+
+Also seen on 2026-10-12:
+
+- Dependabot's first grouped pull request arrived: PR #7, which moves
+  `tests.yml` from `actions/checkout@v5` to `@v7`. CI passed. It got no
+  review from Copilot or Codex, so Dependabot's pull requests are reviewed
+  only when the owner requests Copilot by hand (docs/DECISIONS.md, "Reviews,
+  updates and GitHub settings").
+- The `main` ruleset ("Protect main") matches the table in
+  docs/DECISIONS.md, checked through GitHub's API by the agent that set up
+  Copilot.
+
 Not yet seen working, to check after the merge and the settings:
 
-- Copilot reviews a new pull request by itself once the settings are on.
-  Requested by hand on PR #5, it reviewed at Balanced effort in about three
-  minutes and left one correct Low finding (fixed in `dd4bfff`).
-- Dependabot's first grouped pull request arrives (`tests.yml` uses
-  `actions/checkout@v5`, `pages.yml` uses `@v7`), and Insights →
-  Dependency graph → Dependabot shows no configuration error.
+- Insights → Dependency graph → Dependabot shows no configuration error.
+- The repository's Copilot code review settings page matches
+  docs/DECISIONS.md.
 - Copilot AI credits used per review (Settings → Billing → AI usage).
 
 ## Next steps, in order
@@ -231,3 +274,4 @@ device, OS version, settings and date.
 | 2026-10-12 | `6b2f40c` | DECISIONS and the Dependabot file name the three settings security updates need (dependency graph, Dependabot alerts, Dependabot security updates), all on as of 2026-10-10 (Codex review) | Documentation only; YAML parsed locally |
 | 2026-10-12 | `280889b` | Brickson is no longer called free, because the owner has not decided its price: AGENTS.md, README.md, the support page's description and opening line, and the privacy policy's "Who we are" drop the word, and the policy's Effective date is now October 12, 2026. DECISIONS.md "Price not decided" says nothing may state a price until the owner decides | Text and HTML only, checked by a search of the repository; pull request CI. The live pages change only after the merge, when "Publish website" runs |
 | 2026-10-12 | `6865f47` | `storekit` taken off AGENTS.md's list of skills never to apply: it came from the reference app and ruled out in-app purchases before a price was decided | Documentation only |
+| 2026-10-12 | `82aef90`, `5dfb8f6`, `4f9fe80`, `41f9555`, `b2b6206` | Review skill for Copilot (`.github/skills/code-review/SKILL.md`), refined from the owner's draft: review steps that point to AGENTS.md for every rule instead of restating rules or naming features that are not built yet. `.github/copilot-instructions.md` points to it. AGENTS.md *Code Review Rules* gains checks every reviewer applies: statements of Brickson's price; a new section, *Tests, workflows and the rules themselves*, for tests that cannot fail, workflow changes that expose secrets or a write token, put pull request text into a shell command or add an action not published by GitHub, and changes that weaken the review rules. *Not findings* now excuses only gaps the base branch already records. A change *Code Review Rules* names is reported even when no person is affected yet; only other suspicions a reviewer cannot trace become questions (Codex's review of this pull request). AGENTS.md, DECISIONS.md and README.md say where the skill sits, and DECISIONS.md records that the owner asked for it. AGENTS.md, DECISIONS.md and README.md now say Dependabot's pull requests get no automatic review (PR #7) and that only the owner requests Copilot reviews; README.md says Copilot never sees replies and its headline is not an approval | Documentation only; pull request CI. Copilot's automatic review of this pull request invoked the skill (its job log) |
