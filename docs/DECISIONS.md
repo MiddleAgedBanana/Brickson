@@ -258,6 +258,16 @@ review setup does not quietly break them.
   Copilot and Claude Code all read. `.github/copilot-instructions.md` only
   adds what is specific to Copilot and points back to AGENTS.md, so the
   rules exist in one place.
+- *Added 2026-10-12.* `.github/skills/code-review/SKILL.md` gives Copilot
+  the steps of a review: learn what is built, find the rules the change
+  touches, trace a path from a real input, and write the finding. It
+  refers every rule back to AGENTS.md and names only the project's
+  standing documents, not features, counts or settings, so it stays true
+  as the app grows; a new review rule goes in AGENTS.md, not the skill.
+  GitHub's documentation says Copilot code review uses a skill in
+  `.github/skills` when it is relevant to the review, and that a directory
+  named `code-review` makes that likely; `.github/copilot-instructions.md`
+  also points to it.
 - Copilot's review runs on a Linux machine and cannot build an iOS app, so
   there is no `copilot-code-review.yml`; the Tests workflow is the build.
 - Copilot never approves a pull request (its "Auto-approval" settings stay

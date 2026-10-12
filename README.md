@@ -155,8 +155,8 @@ project.yml               describes the Xcode project for XcodeGen
 AGENTS.md                 the rules every AI coding agent follows here
 CLAUDE.md                 points Claude Code at AGENTS.md
 .github/                  GitHub settings: automatic tests, website publishing,
-                          Dependabot, review instructions for Copilot,
-                          security policy, pull request template
+                          Dependabot, review instructions and a review skill
+                          for Copilot, security policy, pull request template
 ```
 
 ### How the pieces fit together
@@ -205,9 +205,10 @@ Two AI reviewers comment on pull requests: Codex on every change pushed
 to one, and GitHub Copilot once, when it opens. To ask Copilot again, or to
 have it look at one of Dependabot's pull requests, choose **Re-request
 review** (or **Request**) next to Copilot under *Reviewers*. Both check the
-changes against the *Code Review Rules* in `AGENTS.md`. Their comments are
-suggestions to weigh, not orders, but each one should get an answer before
-the pull request merges.
+changes against the *Code Review Rules* in `AGENTS.md`; Copilot also
+follows the review steps in `.github/skills/code-review/SKILL.md`. Their
+comments are suggestions to weigh, not orders, but each one should get an
+answer before the pull request merges.
 
 Dependabot keeps the pieces the GitHub workflows borrow (such as
 `actions/checkout`) up to date. Once a month it opens one pull request with

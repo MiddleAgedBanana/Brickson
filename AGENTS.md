@@ -236,11 +236,13 @@ built for Eye Tracking.
 ## Code Review Rules
 
 Every reviewer reads this section: Codex code review looks for this
-heading, GitHub Copilot code review reads this whole file (and
-`.github/copilot-instructions.md`) from the pull request's own branch, and
-Claude Code reads it through `CLAUDE.md`. Flag a change that does any of
-the following, name the invariant, and show the path from a real input to
-the failure.
+heading, GitHub Copilot code review reads this file,
+`.github/copilot-instructions.md` and its review steps in
+`.github/skills/code-review/SKILL.md` from the pull request's own branch,
+and Claude Code reads it through `CLAUDE.md`. The rules live here; the
+skill only says how to apply them. Flag a change that does any of the
+following, name the invariant, and show the path from a real input to the
+failure.
 
 ### Communication never fails
 
@@ -289,6 +291,18 @@ the failure.
   committed file: the repository is public. The developer's name and
   support email on the website pages in `site/` are the exception: Apple
   requires them, and the owner chose to publish them.
+- Text anywhere that states Brickson's price, "free" included
+  (docs/DECISIONS.md, "Price not decided").
+- A workflow change that lets pull request code reach secrets or a write
+  token (`pull_request_target`, wider `permissions`), puts text from a pull
+  request (a branch name, title or commit message) straight into a shell
+  command, adds an action that is not GitHub's own, or renames a required
+  job or adds a path filter (*Gotchas*).
+- A change to `AGENTS.md`, `CLAUDE.md`, `.github/copilot-instructions.md`
+  or `.github/skills/` that weakens an invariant, a review rule or *Not
+  findings*. Reviewers read these from the pull request's own branch, so
+  compare them with the base branch and name what the change weakens; the
+  owner decides.
 
 ### Not findings
 
@@ -373,7 +387,10 @@ using them, and say when you could not.
 ## Skills
 
 Skills are installed per machine (`.agents/skills/`, with `.claude/skills/`
-symlinks), and both folders are ignored by git. Where they exist:
+symlinks), and both folders are ignored by git. The one committed skill is
+`.github/skills/code-review/`, the review steps GitHub Copilot code review
+follows (*Code Review Rules*); put new review rules in this file, not
+there. Where per-machine skills exist:
 `swiftui-pro` leads for SwiftUI, `swiftdata-pro` for SwiftData,
 `swift-concurrency` for concurrency, `swift-testing-expert` for tests,
 `ios-accessibility` for accessibility, `app-intents` for Siri and
@@ -435,6 +452,7 @@ Shortcuts. **Never apply** `core-data` skills (this app uses SwiftData),
   filter to the workflow, leaves every pull request waiting for a check
   that never arrives until the owner updates the ruleset.
 - **Copilot code review reads instructions from the pull request's own
-  branch**: `AGENTS.md`, `CLAUDE.md` and `.github/copilot-instructions.md`.
-  A change to *Code Review Rules* applies to the review of the pull request
-  that makes it.
+  branch**: `AGENTS.md`, `CLAUDE.md`, `.github/copilot-instructions.md`
+  and the skills in `.github/skills/`. A change to *Code Review Rules* or
+  to the review skill applies to the review of the pull request that makes
+  it.
