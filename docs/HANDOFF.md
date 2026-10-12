@@ -413,3 +413,15 @@ coverage guidance, and retained both branches’ handoff history. The merged
 workflow retains the website test step and main’s CI comments and settings.
 Four website tests and the full unit suite passed on the dedicated iPad Pro
 13-inch M5 simulator (Xcode 27 / iOS 27) after resolution. No app code changed.
+
+### Founder-note privacy review — 2026-10-12
+
+PR #9 review identified that the general public-repository privacy rule did
+not mention the owner's explicit request to publish the founder note.
+AGENTS.md now records a narrow exception for the already authorized facts,
+Avery's attribution, and the decision/handoff record. Other family identities,
+medical details and private documents remain outside the exception. This
+implements the owner's publication request without broadening it. No public
+story text, app behavior or privacy-policy promise changed.
+The full unit suite passed again on the dedicated iPad Pro 13-inch M5
+simulator (Xcode 27 / iOS 27); this change is documentation only.
