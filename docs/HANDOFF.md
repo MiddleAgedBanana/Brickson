@@ -50,9 +50,41 @@ versioned schema without cascade deletes.
   - Not seen by any test: VoiceOver announcements being posted, the
     message's scroll reset, the missed-callback watchdog, and anything
     about sound.
+  - On PR #4, the first UI test (`testAPhraseSpeaksOnTheFirstTap`) failed
+    twice on app and test code identical to green `main`: once reading
+    Again straight after the tap, once timing out while launching the app.
+    The cause was not established. `scripts/test.sh` now starts its default
+    simulator and waits for it to finish starting, and the test waits up to
+    10 s for Again to turn on. The failure was intermittent, so a green run
+    afterwards does not prove the fix.
   - Later commits are checked on the pull request; read its latest CI run.
 - **Not yet run by the owner on a Mac**, and **no physical-device evidence
   of any kind**. See *Checks that need a real device* below.
+
+### The public website
+
+Apple needs a privacy policy address and a support address before the app
+can be listed. Both pages are in `site/`, published by GitHub Pages through
+`.github/workflows/pages.yml` ("Publish website"): the policy at
+https://middleagedbanana.github.io/Brickson/privacy/ and the support page
+at https://middleagedbanana.github.io/Brickson/. README → *The website*
+explains how to change them, and AGENTS.md → *The privacy policy is a
+promise* lists the code rules that keep the policy true.
+
+- The policy was drafted in the project's Claude Doc "Privacy Policy draft
+  for the new ALS app", which also says what to answer in App Store
+  Connect ("No, we do not collect data from this app", then Publish). Its
+  claims were checked against Apple's and GitHub's documentation on
+  2026-10-10. Not a lawyer's review.
+- The policy has sections for three features that are not built yet
+  (recorded phrases, caregiver alerts, Siri and Shortcuts). Delete any that
+  the first release doesn't ship before submitting.
+- The first publish run (after PR #2 merged) stopped, as designed, because
+  the name, email and date were still blanks. They are filled in the
+  following pull request. Whether Pages' Source is set to GitHub Actions
+  could not be seen from a cloud session.
+- Not yet seen live: the pages have only been rendered locally in
+  Chromium, at 320, 375 and 1280 px, light and dark.
 
 ### Known gaps in this first version
 
@@ -95,6 +127,9 @@ versioned schema without cascade deletes.
 - The app icon is a placeholder (a white speech bubble on blue).
 - No license file: the code is public but, without a license, all rights
   are reserved. The owner decides.
+- No Privacy row in the app yet. App Review requires a link to the
+  privacy policy inside the app (AGENTS.md, *The privacy policy is a
+  promise*).
 
 ### GitHub reviews and updates (2026-10-10)
 
@@ -117,23 +152,28 @@ Not yet seen working, to check after the merge and the settings:
 
 ## Next steps, in order
 
-1. **Owner:** open and run the app on a Mac (README → *First time on your
+1. **Owner:** publish the website. In the repository's Settings → Pages,
+   set *Source* to **GitHub Actions** if it isn't already, merge the pull
+   request that fills in the policy's blanks, then check that the
+   "Publish website" run on the Actions tab is green and that both
+   addresses open on a phone.
+2. **Owner:** open and run the app on a Mac (README → *First time on your
    Mac*), and run the tests once (⌘U).
-2. **Owner:** review the starter phrases
+3. **Owner:** review the starter phrases
    (`Brickson/Resources/StarterPhrases.json`). A reviewer noted two
    near-duplicates ("Wait a moment, please." and "Give me a moment to
    answer.") and that "Please move me." could be clearer.
-3. **Owner:** choose the developer account (personal or organization).
+4. **Owner:** choose the developer account (personal or organization).
    Then set `DEVELOPMENT_TEAM` and the final `APP_BUNDLE_ID` in
    `project.yml` (docs/DECISIONS.md, "App identity").
-4. **Owner:** apply the GitHub settings in docs/DECISIONS.md, "Reviews,
+5. **Owner:** apply the GitHub settings in docs/DECISIONS.md, "Reviews,
    updates and GitHub settings".
-5. Port step 1's remainder: the Get Attention alarm (`AttentionAlertPlayer`
+6. Port step 1's remainder: the Get Attention alarm (`AttentionAlertPlayer`
    and its tone) with Stop Alert in a different place, and the audio
    warning strip.
-6. Port step 2: editing logic and backup, with a failure-injection test for
+7. Port step 2: editing logic and backup, with a failure-injection test for
    every save (docs/LESSONS.md, "Never roll back a cascade delete").
-7. Port step 3, then design the generalized layout engine (step 4) before
+8. Port step 3, then design the generalized layout engine (step 4) before
    replacing Home.
 
 ## Checks that need a real device
@@ -176,7 +216,11 @@ device, OS version, settings and date.
 | 2026-10-10 | `451426c` | VoiceOver announces each audio problem as it happens, with the full sentence; cut-off phrases and audio failures interrupt, low volume waits for VoiceOver to finish (Codex review) | Pull request CI for the announcement text and priority; the posting itself needs a device with VoiceOver |
 | 2026-10-10 | `5569286` | Every phrase start, including Again and the same phrase chosen again, shows the message from the top (`SpeechService.phraseStartCount`; Codex review) | Pull request CI for the count (`SpeechServiceTests`); the scroll reset itself is not tested |
 | 2026-10-10 | `8be35ce` | CI green on `5569286` recorded; the app stopping if SwiftData cannot start at all is listed as a known gap (Codex review, declined) | Documentation only |
+| 2026-10-10 | `7e4e31c`, `6cf534c` | The privacy policy and support pages (`site/`) and the "Publish website" workflow (PR #2); the policy corrected after a fact-check and review | Pages rendered locally in Chromium; workflow not run until merge |
 | 2026-10-10 | `f1182d9` | Again shows a press by shrinking slightly instead of fading, so its white label keeps 4.5:1 on the fill while held (Codex review) | CI; no test sees a pressed state |
 | 2026-10-10 | `e6335dd` | Reversed the shrink, which drew the label below its default size (Codex review): a press now shows a primary-ink ring inside Again's edge, with the label and fill unchanged | CI; no test sees a pressed state |
 | 2026-10-10 | `d881f71` | `PaletteTests` pins the pressed ring: primary ink on the control fill at 3:1 or better in every appearance (Codex review) | CI |
-| 2026-10-10 | *(this pull request)* | Review and update setup: *Code Review Rules* in AGENTS.md (read by Codex, Copilot and Claude Code), `.github/copilot-instructions.md`, `.github/dependabot.yml` (GitHub Actions, monthly, grouped, 7-day cooldown), `.github/SECURITY.md`; intended GitHub settings recorded in docs/DECISIONS.md | YAML parsed locally; CI on the pull request. No Swift changed. Dependabot and Copilot behaviour show only after merge (*GitHub reviews and updates* above) |
+| 2026-10-10 | `d9586f4` | The policy's blanks filled in with the owner's name, contact email and effective date; README, AGENTS.md and this file describe the website | The publish run after PR #2 stopped at the blank check, as designed; the next run needs Pages' Source set to GitHub Actions |
+| 2026-10-10 | `6e78f0a` | `scripts/test.sh` starts its default simulator and waits for it to finish starting (`simctl bootstatus -b`) before building and testing, after a UI-test launch timed out on CI with the same code green on `main` | CI; the failure was intermittent, so one green run does not prove the fix |
+| 2026-10-10 | `d80f109` | `testAPhraseSpeaksOnTheFirstTap` waits up to 10 s for Again to turn on instead of reading it once straight after the tap | CI; intermittent, as above |
+| 2026-10-10 | `ea7a09d` | Review and update setup: *Code Review Rules* in AGENTS.md (read by Codex, Copilot and Claude Code), `.github/copilot-instructions.md`, `.github/dependabot.yml` (GitHub Actions, monthly, grouped, 7-day cooldown), `.github/SECURITY.md`; intended GitHub settings recorded in docs/DECISIONS.md | YAML parsed locally; CI on the pull request. No Swift changed. Dependabot and Copilot behaviour show only after merge (*GitHub reviews and updates* above) |

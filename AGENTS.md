@@ -58,8 +58,9 @@ scripts/test.sh ui       # the UI tests: launch the real app and drive it
 scripts/test.sh device   # a build for a real device (needs DEVELOPMENT_TEAM)
 ```
 
-`scripts/test.sh` runs `xcodegen generate` first, then `xcodebuild` on the
-newest installed iPad Pro 13-inch simulator (any iPad if there is none).
+`scripts/test.sh` runs `xcodegen generate` first, starts the newest
+installed iPad Pro 13-inch simulator (any iPad if there is none) and waits
+for it, then runs `xcodebuild` on it.
 `DESTINATION='platform=iOS Simulator,name=iPhone 17' scripts/test.sh`
 chooses another. The iPad and the iPhone are both first-class: run both
 before a release.
@@ -165,6 +166,34 @@ documents can be read alongside.
     at the floor. Nothing reflows when the keyboard appears.
 12. **The screen never locks while Brickson is open** (`ScreenWakePolicy`).
     Many people using it cannot unlock their device.
+
+## The privacy policy is a promise
+
+The public privacy policy (`site/privacy/index.html`, live at
+https://middleagedbanana.github.io/Brickson/privacy/) says what the app does
+with people's data, and App Review and privacy law hold the app to it. A
+change that makes any sentence in it untrue updates the page, its
+Effective date and the in-app copy (once there is one) in the same pull
+request. Code rules that keep it true:
+
+- SwiftData opens with `cloudKitDatabase: .none`, and the app has no iCloud
+  capability. With iCloud on, SwiftData syncs by itself.
+- Never put a person's phrase, draft or category text, or an error that may
+  contain it, in `fatalError`, `precondition`, `assert` or any other crash
+  message. Crash reports can reach the developer.
+- Store nothing in the Keychain. It survives deleting the app, and the
+  policy says deleting the app removes what it stored.
+- The policy has sections for three planned features: recorded phrases,
+  caregiver alerts and Siri and Shortcuts. A release that doesn't ship one
+  deletes its section, and a feature that ships matches its section:
+  recordings stay on the device; caregiver alerts advertise a random
+  service name and send the device name only inside the encrypted alert;
+  App Shortcut phrases and parameters never contain phrase words.
+  Caregiver alerts need network code, which invariant 9 forbids; the owner
+  decides before they are built.
+- Settings gets a Privacy row that shows the policy inside the app and
+  opens the web page in an in-app sheet (`SFSafariViewController`), not
+  Safari (App Review Guideline 5.1.1(i)).
 
 ## Design rules for dwell, switch and pointer input
 
@@ -369,6 +398,18 @@ Shortcuts. **Never apply** `core-data` skills (this app uses SwiftData),
   several flags as an array, not one string.
 - **A failing `xcodebuild test` can sit for minutes collecting
   diagnostics**; `scripts/test.sh` passes `-collect-test-diagnostics never`.
+- **A just-started simulator is slow, and the first UI test pays for it.**
+  On GitHub's busy machines, one run found Again still off when the test
+  read it straight after a tap, and the re-run's first launch timed out,
+  both on code that was green on `main` (cause not established; a slow
+  first launch is the likely one). With no `DESTINATION`, `scripts/test.sh`
+  starts its simulator and waits for it to finish starting
+  (`xcrun simctl bootstatus <udid> -b`), which leaves it running; a
+  `DESTINATION` you set is left to xcodebuild, which doesn't wait. In UI
+  tests, wait for a change after `tap()`: `waitForExistence(timeout:)` for
+  something appearing, an `XCTWaiter` expectation for a property such as
+  `isEnabled`. Check that something did *not* change only after waiting
+  for the change that did happen.
 - **Simulator audio is unreliable.** Every sound check needs a real device.
 - **A crash cannot be a known issue.** `withKnownIssue` does not survive a
   crash; commit the reproduction disabled, naming its issue.

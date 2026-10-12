@@ -65,7 +65,20 @@ case "$mode" in
     unit | ui)
         scheme=Brickson
         [ "$mode" = ui ] && scheme=Brickson-UI
-        destination="${DESTINATION:-id=$(newest_ipad_simulator)}"
+        if [ -n "${DESTINATION:-}" ]; then
+            destination="$DESTINATION"
+        else
+            # Start the default simulator and wait until it has finished
+            # starting. Left to xcodebuild, the first app launch can come
+            # while the simulator is still settling; on GitHub's busy machines
+            # it once timed out ("Timed out while launching application via
+            # Xcode"). The simulator stays running afterwards. A DESTINATION
+            # you choose is left to xcodebuild.
+            udid="$(newest_ipad_simulator)"
+            echo "Starting the simulator $udid"
+            xcrun simctl bootstatus "$udid" -b
+            destination="id=$udid"
+        fi
         echo "Testing $scheme on: $destination"
         run_xcodebuild "${project[@]}" -scheme "$scheme" \
             -destination "$destination" \
