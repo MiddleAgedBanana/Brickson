@@ -318,3 +318,15 @@ Verification on the owner's Mac:
 - These are browser and simulator checks, not physical-device evidence.
   GitHub CI and Pages deployment are separate checks. The owner merges;
   the live site changes only after merge and a successful Pages workflow.
+
+### Repository social preview — 2026-10-12
+
+The owner requested a GitHub social preview using GitHub's template.
+`site/assets/social-preview.jpg` preserves the uploaded 1280×640 JPEG
+(about 184 KB). It matches the website's ivory/navy speech-bubble design,
+keeps text within the template's safe area and says the app is in development.
+Uploaded through repository Settings → General → Social preview, then
+reloaded the settings page and verified the image remained displayed.
+This repository setting takes effect independently of the Pages deployment;
+committing a replacement image alone does not update GitHub's social preview.
+No app or website behavior changed in this follow-up.
