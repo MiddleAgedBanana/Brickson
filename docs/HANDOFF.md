@@ -425,3 +425,17 @@ implements the owner's publication request without broadening it. No public
 story text, app behavior or privacy-policy promise changed.
 The full unit suite passed again on the dedicated iPad Pro 13-inch M5
 simulator (Xcode 27 / iOS 27); this change is documentation only.
+
+### Privacy layout under enlarged text — 2026-10-12
+
+Reproduced the new review finding at 1100 CSS px with a 200% root font:
+the policy heading needed 348px inside a 220px column. The policy layout
+now wraps flex columns based on rem-sized content widths, so enlarged text
+stacks the columns without depending solely on the fixed viewport breakpoint.
+Chromium checks at 320, 390, 768, 1051, 1100, 1280 and 1440px with 200% root
+font found no page or heading overflow after the fix. The browser test
+surface served an older stylesheet, so verification explicitly replaced
+that stylesheet with the exact working-tree CSS before measuring. Four
+website tests pass. Policy wording and effective date are unchanged.
+The full app unit suite passed on the dedicated iPad Pro 13-inch M5
+simulator (Xcode 27 / iOS 27) before committing the layout change.

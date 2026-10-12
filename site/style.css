@@ -69,11 +69,11 @@ nav a:hover { text-decoration: underline; }
 .site-footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .5rem 2rem; padding-block: 1.5rem; color: var(--muted); font-size: .875rem; }
 .site-footer p { margin: 0; }
 /* The policy retains a narrow reading column and all existing section IDs. */
-.policy-layout { display: grid; grid-template-columns: 15rem minmax(0, 44rem); gap: 4.5rem; padding-block: 3rem 5rem; justify-content: center; }
-.policy-nav { align-self: start; display: flex; flex-direction: column; gap: .3rem; }
+.policy-layout { display: flex; flex-wrap: wrap; gap: 4.5rem; padding-block: 3rem 5rem; justify-content: center; }
+.policy-nav { flex: 0 1 15rem; min-width: 0; align-self: start; display: flex; flex-direction: column; gap: .3rem; }
 .policy-nav p { font-weight: 650; margin-bottom: .5rem; }
 .policy-nav a { min-height: 44px; padding-block: .4rem; }
-.policy-copy { min-width: 0; }
+.policy-copy { flex: 1 1 32rem; max-width: 44rem; min-width: 0; }
 .policy-copy h1 { font-size: clamp(3rem, 5vw, 4.8rem); }
 .policy-copy h2 { font-size: 1.75rem; margin: 2.7rem 0 .8rem; }
 .policy-copy a { display: inline-block; min-height: 44px; max-width: 100%; overflow-wrap: anywhere; }
@@ -94,8 +94,8 @@ nav a:hover { text-decoration: underline; }
   .help-grid section { gap: 1rem; }
   .help-grid section + section { padding-left: 2rem; }
   .section-icon { width: 44px; height: 44px; }
-  .policy-layout { grid-template-columns: minmax(0, 1fr); gap: 2rem; max-width: 44rem; }
-  .policy-nav { flex-direction: row; flex-wrap: wrap; gap: .3rem 1.5rem; }
+  .policy-layout { gap: 2rem; max-width: 44rem; }
+  .policy-nav { flex-basis: 100%; flex-direction: row; flex-wrap: wrap; gap: .3rem 1.5rem; }
   .policy-nav p { flex-basis: 100%; }
 }
 @media (max-width: 720px) {
@@ -120,7 +120,7 @@ nav a:hover { text-decoration: underline; }
   .help-grid section { gap: 1rem; }
   .help-grid section > div { min-width: 0; }
   .help-grid .text-link { font-size: .95rem; }
-  .policy-layout { grid-template-columns: minmax(0, 1fr); gap: 2rem; padding-top: 2rem; }
+  .policy-layout { gap: 2rem; padding-top: 2rem; }
   .policy-nav { border-bottom: 1px solid var(--border); padding-bottom: 1.5rem; }
 }
 @media (forced-colors: active) {
