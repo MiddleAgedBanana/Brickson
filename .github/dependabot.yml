@@ -3,7 +3,9 @@
 # invariant 9), so these actions are its only dependencies.
 #
 # - A security fix arrives as soon as GitHub knows about it. That part is
-#   "Dependabot security updates" in Settings and needs nothing here.
+#   not in this file: it needs the dependency graph, "Dependabot alerts" and
+#   "Dependabot security updates" switched on in Settings (docs/DECISIONS.md,
+#   "Reviews, updates and GitHub settings").
 # - Ordinary new versions arrive once a month, all in one pull request, and
 #   only after a release has been public for a week, so a bad or hijacked
 #   release has time to be caught before it reaches this repository.

@@ -258,7 +258,11 @@ review setup does not quietly break them.
 in `.github/workflows` are its only dependencies. Dependabot proposes new
 versions once a month in one grouped pull request, waiting seven days
 after each release (`.github/dependabot.yml`); security fixes come at
-once through Dependabot security updates. Actions are referenced by
+once through Dependabot security updates. Those need three switches in
+Settings → Advanced Security that the file cannot turn on: the dependency
+graph, Dependabot alerts and Dependabot security updates. Security
+updates were on when checked on 2026-10-10, and GitHub allows that only
+with the other two on; keep all three on. Actions are referenced by
 version tag, not pinned to commit hashes: GitHub only raises security
 alerts for tag references, and all of them are GitHub's own actions.
 
