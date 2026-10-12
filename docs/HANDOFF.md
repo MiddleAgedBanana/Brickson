@@ -186,6 +186,15 @@ Also seen on 2026-10-12:
 - The `main` ruleset ("Protect main") matches the table in
   docs/DECISIONS.md, checked through GitHub's API by the agent that set up
   Copilot.
+- Code scanning, checked through GitHub's API and job logs: CodeQL's
+  default setup analyses only the workflow files, with no alerts so far.
+  Its first run, on 2026-10-10, also tried Swift and failed because no
+  Xcode project is committed, and GitHub dropped Swift by itself. That
+  attempt still shows as an error on Security → Code scanning → Tool
+  status until the owner deletes it there. The decision not to scan Swift
+  with CodeQL, its reasons and when to revisit it are in docs/DECISIONS.md,
+  "Reviews, updates and GitHub settings", *Code scanning*, which also
+  records that AI Scan for pull requests is on.
 
 Not yet seen working, to check after the merge and the settings:
 
@@ -211,7 +220,8 @@ Not yet seen working, to check after the merge and the settings:
    Then set `DEVELOPMENT_TEAM` and the final `APP_BUNDLE_ID` in
    `project.yml` (docs/DECISIONS.md, "App identity").
 5. **Owner:** apply the GitHub settings in docs/DECISIONS.md, "Reviews,
-   updates and GitHub settings".
+   updates and GitHub settings", and delete the failed Swift
+   configuration on the Tool status page (*Code scanning* there).
 6. Port step 1's remainder: the Get Attention alarm (`AttentionAlertPlayer`
    and its tone) with Stop Alert in a different place, and the audio
    warning strip.

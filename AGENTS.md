@@ -473,6 +473,12 @@ Shortcuts. **Never apply** `core-data` skills (this app uses SwiftData),
   "Reviews, updates and GitHub settings"). Renaming a job, or adding a path
   filter to the workflow, leaves every pull request waiting for a check
   that never arrives until the owner updates the ruleset.
+- **CodeQL scans the workflow files, not the Swift code, on purpose.**
+  Default setup cannot build Swift without a committed Xcode project, so
+  adding Swift to it fails again; turning CodeQL off blocks every
+  merge while the ruleset requires CodeQL results. docs/DECISIONS.md,
+  "Reviews, updates and GitHub settings", *Code scanning*, says why and
+  when to revisit.
 - **Copilot code review reads its instructions from the pull request's
   own branch** (GitHub's documentation, checked 2026-10-12): `AGENTS.md`,
   `CLAUDE.md`, `.github/copilot-instructions.md` and the skills in
