@@ -365,3 +365,23 @@ four website tests pass. The full app unit suite also passed again on
 Xcode 27.0 / iOS 27.0, using the dedicated iPad Pro 13-inch (M5, 16GB)
 simulator. The first attempt lacked sandbox access to CoreSimulator; the
 rerun with simulator access passed. No app, project or test code changed.
+
+### Brickson name and short founder note — 2026-10-12
+
+The owner chose to retain Brickson and authorized a public explanation of
+its personal origin. After asking for a shorter version, the homepage and
+README now use two brief paragraphs attributed to Avery: his brother coined
+the name as a teenager, it still makes the family smile, and the app is being
+built in his memory after his death from ALS. No detailed fair story or
+additional biographical facts are published. The homepage has a Why Brickson?
+navigation link and a responsive founder section using existing palette colors.
+AGENTS.md and DECISIONS.md now reflect the name choice; no app identifier or
+privacy-policy wording changed. `docs/NAME_AVAILABILITY.md` separates fresh
+Apple/USPTO/domain checks from the broader research in the owner's supplied
+PDF. No registration, purchase, account change or legal clearance is claimed.
+
+Verification: all four website tests and the full app unit suite passed
+(Xcode 27 / iOS 27, dedicated iPad Pro 13-inch M5 simulator). The browser
+rendered the new note and its anchor navigation; widths 320 and 1440 CSS
+pixels had no page overflow. The note was visually inspected in dark mode
+and uses existing tested light/dark colors. No physical-device claims.

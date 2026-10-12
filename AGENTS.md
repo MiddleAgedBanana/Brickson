@@ -7,7 +7,7 @@ here, not in an agent-specific file, so every agent gets the same rules.
 
 ## What this is and what's at stake
 
-Brickson (the working name) is an iPhone and iPad app that speaks for
+Brickson is an iPhone and iPad app that speaks for
 people living with ALS, at every stage of the disease. A person chooses a
 phrase or types, and the app says it aloud, in their own Personal Voice if
 they banked one. It works with every way Apple devices can be controlled:

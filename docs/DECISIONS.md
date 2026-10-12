@@ -17,7 +17,7 @@ Everything that identifies the app sits in one block at the top of
 
 | Setting | Value | Notes |
 |---|---|---|
-| `APP_DISPLAY_NAME` | `Brickson` | The name under the icon. The working name, chosen by the owner. |
+| `APP_DISPLAY_NAME` | `Brickson` | The name under the icon. The name retained by the owner on 2026-10-12. |
 | `APP_SPOKEN_NAME` | `Brickson` | How VoiceOver and other text-to-speech say the app's name (`CFBundleSpokenName`). If they say it wrong, use a sound-alike spelling here; the name under the icon stays as it is. |
 | `APP_BUNDLE_ID` | `family.avery.brickson` | The identifier the owner was advised to register for the App Store. It **cannot change after the first App Store upload**, and it is public, so any change happens before that upload. Someone building for their own device changes it locally (it belongs to one team) and does not commit that. |
 | `DEVELOPMENT_TEAM` | empty | Needed only to run on a real device or upload. Left empty until the developer account is chosen (personal or organization). A team ID is not secret; it is in every signed app. |
@@ -32,6 +32,22 @@ Voice Control and VoiceOver handle the name well is a device check.
 The Xcode project, targets and folders are also called Brickson. Renaming
 those is a larger change (folders, target names, `@testable import`), and is
 not needed to change the name people see.
+
+## Brand name and founder story
+
+*2026-10-12. Owner.*
+
+Keep **Brickson**, styled **brickson** in the website wordmark. Before:
+Brickson was a working name and alternatives were being explored. The owner
+chose to retain it because his brother invented the name as a teenager;
+it became a family joke more than twenty years ago. His brother later died
+of ALS. The owner authorized a short public founder note on the website and
+README and specifically requested that it avoid a detailed backstory.
+
+Use the concise first-person note attributed to Avery Dedmon. Do not invent
+biographical details, testimonials, treatment benefits or reliability claims.
+The name decision is not legal clearance or an App Store reservation; see
+[the availability screen](NAME_AVAILABILITY.md).
 
 ## Generated Xcode project
 

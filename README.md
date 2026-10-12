@@ -17,9 +17,19 @@ controls keep their relative positions.
 [Development status](docs/HANDOFF.md)
 
 > **Early development — not ready for dependable daily communication.**
-> Brickson is a working name. The app is not yet released, and physical-device
+> The app is not yet released, and physical-device
 > accessibility and audio validation are still outstanding. Simulator tests
 > do not establish reliability for someone who depends on it to communicate.
+
+## Why Brickson?
+
+Brickson is a name my brother made up as a teenager. More than twenty years
+later, it still makes our family smile.
+
+My brother died of ALS. I’m building Brickson in his memory, to help people
+living with ALS keep expressing themselves, in their own words.
+
+— Avery Dedmon, creator of Brickson
 
 ## Current capabilities
 
