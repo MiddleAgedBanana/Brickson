@@ -37,4 +37,5 @@ and `AGENTS.md` ever disagree, `AGENTS.md` wins.
   are a person's own words: shown with `Text(verbatim:)`, never translated
   or reworded.
 - The repository is public. Flag names, email addresses, and health or
-  family details in any committed file.
+  family details in any committed file, except the developer's name and
+  support email on the website pages in `site/`, which Apple requires.

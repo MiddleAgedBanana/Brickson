@@ -280,8 +280,15 @@ the failure.
   `@Sendable` or `nonisolated`, with a test in `OffMainThreadCallbackTests`.
 - Elapsed time measured with `Date` instead of `ContinuousClock`.
 - A colour pair not pinned in `PaletteTests` (invariant 6).
+- A change that makes a sentence of the privacy policy untrue without
+  updating `site/privacy/index.html` and its Effective date in the same
+  pull request, or that breaks a code rule in *The privacy policy is a
+  promise*: SwiftData opened without `cloudKitDatabase: .none`, a person's
+  words in a crash message, anything stored in the Keychain.
 - Personal names, email addresses, or health or family details in a
-  committed file: the repository is public.
+  committed file: the repository is public. The developer's name and
+  support email on the website pages in `site/` are the exception: Apple
+  requires them, and the owner chose to publish them.
 
 ### Not findings
 
