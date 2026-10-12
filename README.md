@@ -239,6 +239,19 @@ Every change to `site/` that is merged into `main` republishes them
 tab). The run refuses to publish while a page still has a bracketed blank
 such as `[Contact Email]`.
 
+The homepage introduces the project, its approach, and support. Both pages
+use the same ivory-and-navy design, with dark appearance, keyboard focus
+styles and larger-text layouts. Fonts and artwork are local; the site has
+no JavaScript, cookies, analytics or outside assets. The speech-bubble art
+is decorative, not an app screenshot. The homepage labels the app as in
+development and makes no promise about its price or release date.
+
+To preview from the repository folder, run
+`python3 -m http.server 8765 --bind 127.0.0.1 --directory site`, then open
+http://127.0.0.1:8765/. Run `python3 scripts/test-site.py` to check light and
+dark colour contrast, internal links, local assets and the development
+notice. GitHub's Unit tests job also runs these website checks.
+
 - **Edit the policy's words in `site/privacy/index.html`**, and change its
   "Effective" date whenever the words change.
 - **Never rename the repository or make it private.** GitHub does not

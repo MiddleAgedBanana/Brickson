@@ -275,3 +275,46 @@ device, OS version, settings and date.
 | 2026-10-12 | `280889b` | Brickson is no longer called free, because the owner has not decided its price: AGENTS.md, README.md, the support page's description and opening line, and the privacy policy's "Who we are" drop the word, and the policy's Effective date is now October 12, 2026. DECISIONS.md "Price not decided" says nothing may state a price until the owner decides | Text and HTML only, checked by a search of the repository; pull request CI. The live pages change only after the merge, when "Publish website" runs |
 | 2026-10-12 | `6865f47` | `storekit` taken off AGENTS.md's list of skills never to apply: it came from the reference app and ruled out in-app purchases before a price was decided | Documentation only |
 | 2026-10-12 | `82aef90`, `5dfb8f6`, `4f9fe80`, `41f9555`, `b2b6206` | Review skill for Copilot (`.github/skills/code-review/SKILL.md`), refined from the owner's draft: review steps that point to AGENTS.md for every rule instead of restating rules or naming features that are not built yet. `.github/copilot-instructions.md` points to it. AGENTS.md *Code Review Rules* gains checks every reviewer applies: statements of Brickson's price; a new section, *Tests, workflows and the rules themselves*, for tests that cannot fail, workflow changes that expose secrets or a write token, put pull request text into a shell command or add an action not published by GitHub, and changes that weaken the review rules. *Not findings* now excuses only gaps the base branch already records. A change *Code Review Rules* names is reported even when no person is affected yet; only other suspicions a reviewer cannot trace become questions (Codex's review of this pull request). AGENTS.md, DECISIONS.md and README.md say where the skill sits, and DECISIONS.md records that the owner asked for it. AGENTS.md, DECISIONS.md and README.md now say Dependabot's pull requests get no automatic review (PR #7) and that only the owner requests Copilot reviews; README.md says Copilot never sees replies and its headline is not an approval | Documentation only; pull request CI. Copilot's automatic review of this pull request invoked the skill (its job log) |
+
+
+## Website redesign — 2026-10-12
+
+The homepage now introduces Brickson with an ivory-and-navy palette,
+large serif headings and locally stored decorative speech-bubble artwork.
+Support and privacy remain at their original addresses. Shared navigation,
+a policy contents list, dark appearance, keyboard focus and 44px link
+heights make the pages easier to use. The homepage explicitly says the app
+is in development; it states no price, release date or download offer.
+The existing privacy policy main content, including its Effective date,
+was compared byte-for-byte with the base version and is unchanged.
+
+Verification on the owner's Mac:
+
+- `scripts/test-site.py`: three tests pass. `PaletteTests` reads the actual
+  website CSS and measures text at 4.5:1 and boundaries at 3:1 in both
+  appearances. The palettes are opaque, with no transparency effects.
+  Link/asset checks reject missing targets, scripts and outside assets.
+  The tests were written first: missing new palette tokens and the absent
+  development notice failed before implementation. Each test names the
+  regression that makes it fail. CI runs them in the existing Unit tests
+  job, without changing its name, trigger or permissions.
+- Chromium: both pages at 320, 390, 768 and 1440 CSS pixels, light/dark,
+  normal and 200% root text size; no horizontal overflow after fixing
+  navigation wrapping and the long contact link. All links have at least
+  44px height. Increased-contrast and reduced-motion preferences checked;
+  there is no animated content. Keyboard skip link, support navigation,
+  policy navigation and policy section anchors work. The support link
+  points to the published email address; no email was sent.
+- The in-app browser rendered the page, but its 1440px capture was clipped
+  to the panel. Playwright Chromium supplied full-page visual checks.
+  The concept and final screenshots were compared for headline, hierarchy,
+  palette, artwork, spacing and section order. Support wording is more
+  specific than the concept and retains the non-emergency notice; dark
+  mode presents the artwork on its original ivory background.
+- The full app unit suite passed (113 passing cases in the formatted log),
+  Xcode 27.0, iOS 27.0, dedicated iPad Pro 13-inch (M5, 16GB) simulator
+  named `Brickson Website Checks`. No app UI, orientation, keyboard or
+  appearance assertions were made in that unit run. No Swift changed.
+- These are browser and simulator checks, not physical-device evidence.
+  GitHub CI and Pages deployment are separate checks. The owner merges;
+  the live site changes only after merge and a successful Pages workflow.

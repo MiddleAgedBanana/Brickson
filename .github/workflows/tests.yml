@@ -36,6 +36,8 @@ jobs:
           xcrun simctl list runtimes available
       - name: Install XcodeGen
         run: brew install xcodegen
+      - name: Check website contrast and links
+        run: python3 scripts/test-site.py
       - name: Build and run the unit tests
         run: scripts/test.sh unit
 
