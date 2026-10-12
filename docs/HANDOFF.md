@@ -161,23 +161,26 @@ skills in code review are generally available, Copilot Pro included.
 `.github/copilot-instructions.md` also points to the skill; GitHub does
 not say whether that line changes anything.
 
+Seen working on PR #8, 2026-10-12:
+
+- Copilot reviewed the pull request by itself, 13 seconds after it opened;
+  nobody requested it. (Requested by hand on PR #5, it had reviewed at
+  Balanced effort in about three minutes and left one correct Low finding,
+  fixed in `dd4bfff`.)
+- Copilot used the review skill. Its job log (the pull request's
+  `copilot-pull-request-reviewer` check → Details) says it loaded
+  instructions and skills from the pull request's branch, read
+  `.github/copilot-instructions.md`, `AGENTS.md` and `CLAUDE.md`, and
+  invoked the skill (`[skills] ... invoked: name="code-review"`). It left
+  no comments of its own, so no comment carried the attribution; the job
+  log is where to check.
+
 Not yet seen working, to check after the merge and the settings:
 
-- Copilot reviews a new pull request by itself once the settings are on.
-  Requested by hand on PR #5, it reviewed at Balanced effort in about three
-  minutes and left one correct Low finding (fixed in `dd4bfff`).
 - Dependabot's first grouped pull request arrives (`tests.yml` uses
   `actions/checkout@v5`, `pages.yml` uses `@v7`), and Insights →
   Dependency graph → Dependabot shows no configuration error.
 - Copilot AI credits used per review (Settings → Billing → AI usage).
-- Copilot uses the review skill. The pull request that adds it is the
-  first test, before the merge, because Copilot reads the skill from that
-  pull request's branch and the skill was there when it opened. Look for
-  the attribution at the bottom of Copilot's comments that names the
-  skill. A review with no comments has nothing to attribute. The review
-  session's log (opened from the pull request's timeline) is documented to
-  list the MCP servers and tools it called; whether it names a skill is
-  not known.
 
 ## Next steps, in order
 

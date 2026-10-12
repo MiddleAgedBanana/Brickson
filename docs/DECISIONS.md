@@ -270,6 +270,10 @@ review setup does not quietly break them.
   review uses a skill in `.github/skills` when it is relevant to the
   review, and that a review-focused folder name such as `code-review`
   makes that likely; `.github/copilot-instructions.md` also points to it.
+  The owner asked for this skill, so it is an accepted reviewer
+  instruction file outside AGENTS.md. *Tests, workflows and the rules
+  themselves* still flags every change to it and every new file of its
+  kind for the owner to decide.
 - Copilot's review runs on a Linux machine and cannot build an iOS app, so
   there is no `copilot-code-review.yml`; the Tests workflow is the build.
 - Copilot never approves a pull request (its "Auto-approval" settings stay
