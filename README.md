@@ -212,6 +212,14 @@ choose **Re-request review** (or **Request**) next to Copilot under
 are relevant. Their comments are suggestions to weigh, not orders, but
 each one should get an answer before the pull request merges.
 
+GitHub also checks pull requests for security problems. CodeQL reads the
+workflow files in `.github/workflows`, not the Swift code (docs/DECISIONS.md,
+*Code scanning*, says why), and a serious CodeQL finding stops a merge.
+AI Scan, a preview feature, reads every change, Swift included, when a
+pull request opens and after each push. Its findings are marked "AI" and
+are advice, but like any comment each one should be answered and
+resolved before the merge.
+
 Copilot never sees replies to its comments, and a second Copilot review
 may repeat comments already answered or resolved; answer a repeat by
 linking the earlier reply, then resolve it, because every comment has to

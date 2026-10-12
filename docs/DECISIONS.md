@@ -317,50 +317,65 @@ not scan the Swift code, on purpose:
   chosen, because:
   - CodeQL's Swift checks (CodeQL 2.27.2, read 2026-10-12) look for code
     Brickson does not have: network requests, web views, regular
-    expressions, `NSPredicate` or `String(format:)` built from outside
-    text, running other programs, XML, hashing or encryption, links opened
-    from other apps, and secret-looking values (a password or token)
-    written to logs or settings. None of them applies to today's code.
+    expressions, SQL, `NSPredicate` or `String(format:)` built from
+    outside text, running other programs, XML, hashing or encryption,
+    links opened from other apps, mixing `String` and `NSString` lengths
+    (such as an `NSRange` built from `String.count`), and values whose
+    names suggest secrets or private information (a password or token,
+    but also a phone number, an emergency contact or a medical detail)
+    written to logs, settings or the network. None of them applies to
+    today's code.
   - It would add a third Mac job to every pull request, estimated at 10 to
     20 minutes (never run). GitHub runs at most five Mac jobs at a time
     for an account, and the ruleset's code scanning rule would make each
     merge wait for it.
-  - CodeQL supports each new Swift version weeks or months after Xcode
-    ships it (31 to 115 days for recent ones). Today it covers Swift up
-    to 6.3, which CI's Xcode 26.6 uses, and not Swift 6.4 (Xcode 27).
-    Every Xcode upgrade could break the job or hold up merges.
+  - CodeQL learns to read each new Swift version weeks or months after
+    Xcode ships it: 31 to 115 days for Swift 6.0 to 6.3, and 10 to 45 days for their
+    point releases (Swift 6.3.3, in Xcode 26.6, took 24). Today it covers
+    Swift up to 6.3, which CI's Xcode 26.6 uses, and not Swift 6.4 (Xcode
+    27). Every Xcode upgrade could break the job or hold up merges.
 - The earlier text here said CodeQL "cannot follow Xcode 27 builds yet"
   and that GitHub "has announced a Swift scanner that needs no build". The
-  first is true but was never the reason: CI builds with Xcode 26.6. The
-  second does not hold for CodeQL, whose Swift support has only the
+  first is true, but it does not stop scanning today, because CI builds
+  with Xcode 26.6; it matters only as upkeep for advanced setup (above).
+  The second does not hold for CodeQL, whose Swift support has only the
   `autobuild` and `manual` build modes; no mode that skips the build has
   been announced. It probably meant AI Scan, below.
 - GitHub's **AI Scan for pull requests** (a public preview) is on for this
   repository, checked through GitHub's API. It reads each pull request's
   changes without building anything, when the pull request opens and
-  after every new commit. Its job logs show it reading Swift files. Its findings are advice and
-  cannot block a merge, and it skips Dependabot's pull requests. GitHub's
-  documentation says its use spends AI credits, most likely from the
-  owner's Copilot allowance (not confirmed).
-- Dependabot's pull requests get no CodeQL analysis before they merge:
-  PR #7's CodeQL check said "1 configuration not found" and analysed
-  nothing. Their workflow changes are scanned after the merge, on `main`.
+  after every new commit, and its job logs show it reading Swift files.
+  It skips Dependabot's pull requests. Its findings are advice: no ruleset
+  can require them to pass. GitHub posts them on the pull request like
+  other code scanning findings, though, so the ruleset's conversation rule
+  most likely needs each one resolved before a merge (GitHub's
+  documentation; not seen here yet). GitHub's documentation also says its
+  use spends AI credits, most likely from the owner's Copilot allowance
+  (not confirmed).
+- Dependabot's first pull request, PR #7, merged with no CodeQL analysis
+  of its own: its CodeQL check said "1 configuration not found" and
+  analysed nothing, and nothing blocked the merge. Its workflow change was
+  scanned after the merge, on `main`. GitHub's documentation does not say
+  why; check the next Dependabot pull request.
 - Keep default setup on. The ruleset requires CodeQL results, and GitHub
   blocks every merge when a required tool is not set up.
-- The failed Swift attempt left an error under Security → Code scanning →
-  Tool status. It changes nothing else: pull request checks leave it out,
-  and the code scanning rule passed on the merges after it. It stays
-  until someone deletes it there (the Swift configuration, then … →
-  Delete configuration).
+- The failed Swift attempt left an error on the Tool status page (the
+  repository's **Security and quality** tab, under the … menu if it is
+  hidden, then **Code scanning**, then **Tool status**). It changes
+  nothing else: pull request checks leave it out, and the code scanning
+  rule passed on the merges after it. It stays until someone deletes it
+  there (the Swift configuration, then … → **Delete configuration**).
 
 Revisit when CodeQL can analyse Swift without a build (`none` under
 `build_modes` in `swift/codeql-extractor.yml` in `github/codeql`), or
 default setup can build a generated project; when Brickson adds code that
 CodeQL's Swift checks look at (network code such as caregiver alerts,
-opening files or links from other apps, web views, encryption, or storing
-secret-looking values); when AI Scan stops reading Swift, leaves the
-preview with new terms, or costs more than the owner wants; or when a
-Swift error appears on the Tool status page again.
+opening files or links from other apps, web views, SQL, encryption, or
+storing, logging or sending values whose names suggest secrets or private
+information, such as an emergency contact's phone number); when AI Scan
+stops reading Swift, leaves the preview with new terms, or costs more
+than the owner wants; or when a Swift error appears on the Tool status
+page again.
 
 **`main` ruleset** (recommended to the owner):
 
@@ -369,8 +384,8 @@ Swift error appears on the Tool status page again.
 | Require a pull request before merging | 0 approvals; merge commits only | Nobody pushes to `main`. The owner cannot approve pull requests that show them as author, so any approval count would block every merge. Merge commits keep the commit hashes HANDOFF cites on `main`. |
 | Require status checks to pass | "Unit tests" and "UI tests" | The job names in `tests.yml`. Renaming a job blocks every pull request until the ruleset is changed to match. |
 | Require branches to be up to date | Off | Each update reruns the Mac tests; `main` is tested again after every merge anyway. |
-| Require conversation resolution | On | Every Codex and Copilot comment gets an answer before a merge. |
-| Require code scanning results | CodeQL: errors, high or higher | A workflow change that CodeQL flags as an error, or as a high or critical security problem, cannot merge. It does not cover Dependabot's pull requests, which get no CodeQL analysis before merging (*Code scanning* above). |
+| Require conversation resolution | On | Every Codex and Copilot comment, and every code scanning finding posted on the pull request, gets an answer before a merge. |
+| Require code scanning results | CodeQL: errors, high or higher | A workflow change that CodeQL flags as an error, or as a high or critical security problem, cannot merge. It did not cover Dependabot's first pull request, which got no CodeQL analysis before merging (*Code scanning* above). |
 | Automatically request Copilot code review | On; new pushes and drafts off | As above. |
 | Block force pushes, restrict deletions | On | History on `main` never changes. |
 | Bypass | Repository admin, for pull requests only | The owner can still merge in an emergency, such as GitHub's Mac machines being down, but never push straight to `main`. |

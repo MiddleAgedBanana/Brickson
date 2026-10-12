@@ -80,7 +80,9 @@ pull request once, when it opens. Neither reviews Dependabot's pull
 requests by itself. Each Copilot review spends the owner's monthly AI
 credits, so only the owner requests one (**Re-request review**, or a
 Dependabot pull request): agents never add Copilot as a reviewer unless
-the owner asks. Both review against *Code Review Rules* below. Dependabot
+the owner asks. Both review against *Code Review Rules* below. GitHub's
+AI Scan also posts security findings after each push; answer them like
+review comments (docs/DECISIONS.md, *Code scanning*). Dependabot
 opens one pull request a month for new versions of the actions in
 `.github/workflows`, and one at once for a security fix. The intended
 repository settings, and why, are in docs/DECISIONS.md, "Reviews, updates
