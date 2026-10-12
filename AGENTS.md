@@ -236,13 +236,15 @@ built for Eye Tracking.
 ## Code Review Rules
 
 Every reviewer reads this section: Codex code review looks for this
-heading, GitHub Copilot code review reads this file,
-`.github/copilot-instructions.md` and its review steps in
-`.github/skills/code-review/SKILL.md` from the pull request's own branch,
-and Claude Code reads it through `CLAUDE.md`. The rules live here; the
-skill only says how to apply them. Flag a change that does any of the
-following, name the invariant, and show the path from a real input to the
-failure.
+heading, GitHub Copilot code review reads this file and
+`.github/copilot-instructions.md` from the pull request's own branch
+(*Gotchas*), and Claude Code reads it through `CLAUDE.md`. Copilot is also
+given review steps in `.github/skills/code-review/SKILL.md`, which GitHub
+says it uses when they are relevant. The rules live here, and the skill
+only says how to apply them; it cites sections of this file by title, so
+renaming one means updating the skill too. Flag a change that does any of
+the following, name the invariant, and show the path from a real input to
+the failure.
 
 ### Communication never fails
 
@@ -291,25 +293,41 @@ failure.
   committed file: the repository is public. The developer's name and
   support email on the website pages in `site/` are the exception: Apple
   requires them, and the owner chose to publish them.
-- Text anywhere that states Brickson's price, "free" included
-  (docs/DECISIONS.md, "Price not decided").
-- A workflow change that lets pull request code reach secrets or a write
-  token (`pull_request_target`, wider `permissions`), puts text from a pull
-  request (a branch name, title or commit message) straight into a shell
-  command, adds an action that is not GitHub's own, or renames a required
-  job or adds a path filter (*Gotchas*).
-- A change to `AGENTS.md`, `CLAUDE.md`, `.github/copilot-instructions.md`
-  or `.github/skills/` that weakens an invariant, a review rule or *Not
-  findings*. Reviewers read these from the pull request's own branch, so
-  compare them with the base branch and name what the change weakens; the
-  owner decides.
+- Text anywhere that says what Brickson costs (an amount, "free" or
+  "paid") before docs/DECISIONS.md records the owner's decision ("Price
+  not decided"). "Free" about something else, such as Xcode or GitHub
+  Pages, is fine.
+
+### Tests, workflows and the rules themselves
+
+- A test that cannot fail, a test filter that runs no tests, a weakened
+  assertion, an unexplained skip, or a `withKnownIssue` that is not strict
+  or names no decision (*Build and test*; docs/LESSONS.md, "A check that
+  cannot fail is not a check").
+- A workflow change that lets pull request code reach secrets or a token
+  that can write to the repository (`pull_request_target`, wider
+  `permissions`), or that puts text from a pull request (a branch name,
+  title or commit message) straight into a shell command.
+- A workflow that starts using an action not published by GitHub (one
+  whose owner is not `actions` or `github`).
+- A renamed job that the `main` ruleset requires, or a path filter added
+  to the workflow that runs those jobs (*Gotchas*).
+- A change that weakens an invariant or a review rule, adds an exception
+  to one, or widens *Not findings*, made in `AGENTS.md`,
+  docs/DECISIONS.md, `.github/skills/` or any other file reviewers read as
+  instructions (*Gotchas* lists the ones Copilot reads); and any new file
+  of that kind, because review rules live here. Reviewers may be reading
+  the pull request's own version of these files, so compare them with the
+  base branch and name what the change weakens; the owner decides.
 
 ### Not findings
 
 - Formatting or naming on its own.
-- A gap already recorded as accepted in docs/DECISIONS.md or in
-  docs/HANDOFF.md, *Known gaps* (for example, no Get Attention yet), unless
-  the change makes it worse.
+- A gap the base branch already records as accepted in docs/DECISIONS.md
+  or in docs/HANDOFF.md, *Known gaps* (for example, no Get Attention yet),
+  unless the change makes it worse or newly reachable, or claims to close
+  it and doesn't. A feature that is planned but not built yet is not
+  missing.
 - The accessibility audit's "not human-readable" guess on phrase-tile
   labels, which `LaunchTests` expects.
 - That an agent did not run the app: for cloud agents the GitHub CI run is
@@ -387,10 +405,10 @@ using them, and say when you could not.
 ## Skills
 
 Skills are installed per machine (`.agents/skills/`, with `.claude/skills/`
-symlinks), and both folders are ignored by git. The one committed skill is
-`.github/skills/code-review/`, the review steps GitHub Copilot code review
-follows (*Code Review Rules*); put new review rules in this file, not
-there. Where per-machine skills exist:
+symlinks), and both folders are ignored by git. Committed skills live in
+`.github/skills/`: `code-review/` holds the review steps given to GitHub
+Copilot code review (*Code Review Rules*). Put new review rules in this
+file, not in a skill. Where per-machine skills exist:
 `swiftui-pro` leads for SwiftUI, `swiftdata-pro` for SwiftData,
 `swift-concurrency` for concurrency, `swift-testing-expert` for tests,
 `ios-accessibility` for accessibility, `app-intents` for Siri and
@@ -451,8 +469,9 @@ Shortcuts. **Never apply** `core-data` skills (this app uses SwiftData),
   "Reviews, updates and GitHub settings"). Renaming a job, or adding a path
   filter to the workflow, leaves every pull request waiting for a check
   that never arrives until the owner updates the ruleset.
-- **Copilot code review reads instructions from the pull request's own
-  branch**: `AGENTS.md`, `CLAUDE.md`, `.github/copilot-instructions.md`
-  and the skills in `.github/skills/`. A change to *Code Review Rules* or
-  to the review skill applies to the review of the pull request that makes
-  it.
+- **Copilot code review reads its instructions from the pull request's
+  own branch** (GitHub's documentation, checked 2026-10-12): `AGENTS.md`,
+  `CLAUDE.md`, `.github/copilot-instructions.md` and the skills in
+  `.github/skills/`, and also `REVIEW.md`, `GEMINI.md` and
+  `.github/instructions/**/*.instructions.md` if one is added. A change to
+  any of them applies to the review of the pull request that makes it.

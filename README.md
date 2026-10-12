@@ -205,10 +205,11 @@ Two AI reviewers comment on pull requests: Codex on every change pushed
 to one, and GitHub Copilot once, when it opens. To ask Copilot again, or to
 have it look at one of Dependabot's pull requests, choose **Re-request
 review** (or **Request**) next to Copilot under *Reviewers*. Both check the
-changes against the *Code Review Rules* in `AGENTS.md`; Copilot also
-follows the review steps in `.github/skills/code-review/SKILL.md`. Their
-comments are suggestions to weigh, not orders, but each one should get an
-answer before the pull request merges.
+changes against the *Code Review Rules* in `AGENTS.md`. Copilot is also
+given review steps in `.github/skills/code-review/SKILL.md`, which GitHub
+says it uses when they are relevant. Their comments are suggestions to
+weigh, not orders, but each one should get an answer before the pull
+request merges.
 
 Dependabot keeps the pieces the GitHub workflows borrow (such as
 `actions/checkout`) up to date. Once a month it opens one pull request with

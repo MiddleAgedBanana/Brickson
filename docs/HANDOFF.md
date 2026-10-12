@@ -143,14 +143,21 @@ updates and GitHub settings"; the owner applies them on GitHub.
 
 On 2026-10-12 a review skill was added for Copilot:
 `.github/skills/code-review/SKILL.md`, refined from the owner's draft. It
-gives the steps of a review and refers every rule back to AGENTS.md, so it
-names no features, counts or settings that change as the app grows.
-GitHub's documentation (its source, read on 2026-10-12) says Copilot code
-review uses a skill in `.github/skills` by itself when the skill is
-relevant to the review (generally available since July 2026, Copilot Pro
-included); a folder named `code-review` makes that likely; it
-reads skills and instructions from the pull request's own branch; and a
-comment a skill helped write says so at the bottom.
+gives the steps of a review; what counts as a finding stays in AGENTS.md
+(docs/DECISIONS.md, "Reviews, updates and GitHub settings"). GitHub's
+documentation, read from its source files on 2026-10-12, says four
+things:
+
+- Copilot code review can use a skill in `.github/skills` without being
+  asked, when the skill is relevant to the review.
+- A review-focused folder name such as `code-review` makes that likely.
+- Copilot reads skills and instructions from the pull request's own
+  branch.
+- A comment written with a skill's help carries an attribution at its
+  bottom that names the skill.
+
+GitHub's changelog of 2026-07-29, seen only in search results, adds that
+skills in code review are generally available, Copilot Pro included.
 `.github/copilot-instructions.md` also points to the skill; GitHub does
 not say whether that line changes anything.
 
@@ -164,10 +171,13 @@ Not yet seen working, to check after the merge and the settings:
   Dependency graph → Dependabot shows no configuration error.
 - Copilot AI credits used per review (Settings → Billing → AI usage).
 - Copilot uses the review skill. The pull request that adds it is the
-  first test, because Copilot reads the skill from that pull request's
-  branch: look for the note at the bottom of Copilot's comments that names
-  the skill, or open the review session from the pull request's timeline
-  and read its log. A review with no findings shows neither.
+  first test, before the merge, because Copilot reads the skill from that
+  pull request's branch and the skill was there when it opened. Look for
+  the attribution at the bottom of Copilot's comments that names the
+  skill. A review with no comments has nothing to attribute. The review
+  session's log (opened from the pull request's timeline) is documented to
+  list the MCP servers and tools it called; whether it names a skill is
+  not known.
 
 ## Next steps, in order
 
