@@ -343,3 +343,12 @@ view. Chromium reproduced heading overflow with wrapping disabled before
 the layout fix; after it, both pages at 320, 390, 768 and 1440 CSS pixels
 with 200% root text size have no page or heading overflow. Four website
 tests pass. App code is unchanged from the passing 113-case unit run.
+
+### Logo artwork — 2026-10-12
+
+The owner requested an app logo matching the project's purpose. The raster
+artwork in `design/brand/` combines a rounded B and a speech-bubble tail:
+a 1024×1024 opaque ivory-on-navy app-icon version and a 1254×1254 transparent
+navy mark. Dimensions and alpha were verified; the icon was inspected at
+64×64. The folder's README records the design brief and generation method.
+These are design deliverables; the existing app icon/catalog is unchanged.
