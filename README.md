@@ -214,11 +214,15 @@ each one should get an answer before the pull request merges.
 
 GitHub also checks pull requests for security problems. CodeQL reads the
 workflow files in `.github/workflows`, not the Swift code (docs/DECISIONS.md,
-*Code scanning*, says why), and a serious CodeQL finding stops a merge.
-AI Scan, a preview feature, reads every change, Swift included, when a
-pull request opens and after each push. Its findings are marked "AI" and
-are advice, but like any comment each one should be answered and
-resolved before the merge.
+*Code scanning*, says why), and a serious CodeQL finding in a pull request
+it analysed stops the merge. AI Scan, a preview feature, reads the
+changes in pull requests that you or an agent open, Swift included, when
+one opens and after each push. Its findings are marked "AI" and are
+advice that no rule enforces; answer and resolve each one like a comment
+before merging. AI Scan skips pull requests from forks and from
+Dependabot, and CodeQL did not analyse Dependabot's first one before it
+merged, so read a Dependabot workflow change yourself or request a
+Copilot review of it.
 
 Copilot never sees replies to its comments, and a second Copilot review
 may repeat comments already answered or resolved; answer a repeat by

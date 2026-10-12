@@ -341,17 +341,17 @@ not scan the Swift code, on purpose:
   The second does not hold for CodeQL, whose Swift support has only the
   `autobuild` and `manual` build modes; no mode that skips the build has
   been announced. It probably meant AI Scan, below.
-- GitHub's **AI Scan for pull requests** (a public preview) is on for this
-  repository, checked through GitHub's API. It reads each pull request's
-  changes without building anything, when the pull request opens and
-  after every new commit, and its job logs show it reading Swift files.
-  It skips Dependabot's pull requests. Its findings are advice: no ruleset
-  can require them to pass. GitHub posts them on the pull request like
-  other code scanning findings, though, so the ruleset's conversation rule
-  most likely needs each one resolved before a merge (GitHub's
-  documentation; not seen here yet). GitHub's documentation also says its
-  use spends AI credits, most likely from the owner's Copilot allowance
-  (not confirmed).
+- GitHub's **AI Scan for pull requests** (a public preview) is on for
+  this repository, checked through GitHub's API. It reads each pull
+  request's changes without building anything, when the pull request
+  opens and after every new commit, and its job logs show it reading
+  Swift files. It skips pull requests from forks and from Dependabot.
+  Its findings are advice: no ruleset can require them to pass. GitHub
+  posts them on the pull request like other code scanning findings,
+  though, so the ruleset's conversation rule most likely needs each one
+  resolved before a merge (GitHub's documentation; not seen here yet).
+  GitHub's documentation also says its use spends AI credits, most
+  likely from the owner's Copilot allowance (not confirmed).
 - Dependabot's first pull request, PR #7, merged with no CodeQL analysis
   of its own: its CodeQL check said "1 configuration not found" and
   analysed nothing, and nothing blocked the merge. Its workflow change was
