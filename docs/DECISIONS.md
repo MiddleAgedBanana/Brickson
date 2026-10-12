@@ -254,6 +254,12 @@ review setup does not quietly break them.
   $0.25 to $5 a review at Balanced; Pro includes $15 a month), and Codex
   already reviews every push. When a pull request changes a lot after
   review, the owner can choose **Re-request review**.
+- *Added 2026-10-12.* Dependabot's pull requests get no automatic review
+  from Copilot or Codex: PR #7, Dependabot's first, got neither, while
+  PR #8, opened by an agent, got both. The owner requests a Copilot review
+  of one by hand when wanted. Only the owner requests Copilot reviews;
+  agents never add Copilot as a reviewer unless the owner asks, because
+  each review spends the owner's credits.
 - Review guidance lives in AGENTS.md, *Code Review Rules*, which Codex,
   Copilot and Claude Code all read. `.github/copilot-instructions.md` only
   adds what is specific to Copilot and points back to AGENTS.md, so the

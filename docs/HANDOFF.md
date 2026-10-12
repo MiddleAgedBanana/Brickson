@@ -163,10 +163,11 @@ not say whether that line changes anything.
 
 Seen working on PR #8, 2026-10-12:
 
-- Copilot reviewed the pull request by itself, 13 seconds after it opened;
-  nobody requested it. (Requested by hand on PR #5, it had reviewed at
-  Balanced effort in about three minutes and left one correct Low finding,
-  fixed in `dd4bfff`.)
+- GitHub requested a Copilot review as the pull request opened; nobody
+  asked for it. The review started 13 seconds after opening and posted
+  about five minutes after. (Requested by hand on PR #5, it had reviewed
+  at Balanced effort in about three minutes and left one correct Low
+  finding, fixed in `dd4bfff`.)
 - Copilot used the review skill. Its job log (the pull request's
   `copilot-pull-request-reviewer` check → Details) says it loaded
   instructions and skills from the pull request's branch, read
@@ -175,11 +176,22 @@ Seen working on PR #8, 2026-10-12:
   no comments of its own, so no comment carried the attribution; the job
   log is where to check.
 
+Also seen on 2026-10-12:
+
+- Dependabot's first grouped pull request arrived: PR #7, which moves
+  `tests.yml` from `actions/checkout@v5` to `@v7`. CI passed. It got no
+  review from Copilot or Codex, so Dependabot's pull requests are reviewed
+  only when the owner requests Copilot by hand (docs/DECISIONS.md, "Reviews,
+  updates and GitHub settings").
+- The `main` ruleset ("Protect main") matches the table in
+  docs/DECISIONS.md, checked through GitHub's API by the agent that set up
+  Copilot.
+
 Not yet seen working, to check after the merge and the settings:
 
-- Dependabot's first grouped pull request arrives (`tests.yml` uses
-  `actions/checkout@v5`, `pages.yml` uses `@v7`), and Insights →
-  Dependency graph → Dependabot shows no configuration error.
+- Insights → Dependency graph → Dependabot shows no configuration error.
+- The repository's Copilot code review settings page matches
+  docs/DECISIONS.md.
 - Copilot AI credits used per review (Settings → Billing → AI usage).
 
 ## Next steps, in order

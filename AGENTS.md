@@ -75,12 +75,16 @@ GitHub's Mac machines for every pull request and every push to `main`. A
 pull request merges only when CI is green.
 
 **Reviews and updates on GitHub.** Codex reviews every push to a pull
-request. GitHub Copilot reviews each pull request once, when it opens;
-the owner can ask again with **Re-request review**. Both review against
-*Code Review Rules* below. Dependabot opens one pull request a month for
-new versions of the actions in `.github/workflows`, and one at once for a
-security fix. The intended repository settings, and why, are in
-docs/DECISIONS.md, "Reviews, updates and GitHub settings".
+request that a person or agent opens, and GitHub Copilot reviews each such
+pull request once, when it opens. Neither reviews Dependabot's pull
+requests by itself. Each Copilot review spends the owner's monthly AI
+credits, so only the owner requests one (**Re-request review**, or a
+Dependabot pull request): agents never add Copilot as a reviewer unless
+the owner asks. Both review against *Code Review Rules* below. Dependabot
+opens one pull request a month for new versions of the actions in
+`.github/workflows`, and one at once for a security fix. The intended
+repository settings, and why, are in docs/DECISIONS.md, "Reviews, updates
+and GitHub settings".
 
 **Cloud agents** without Xcode (Claude Code on the web, Codex cloud, Jules)
 cannot build or run anything. Say so plainly, treat the change as untested

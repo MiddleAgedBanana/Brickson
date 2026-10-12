@@ -201,15 +201,23 @@ merged only when it is green.
 
 ## Reviews and updates on GitHub
 
-Two AI reviewers comment on pull requests: Codex on every change pushed
-to one, and GitHub Copilot once, when it opens. To ask Copilot again, or to
-have it look at one of Dependabot's pull requests, choose **Re-request
-review** (or **Request**) next to Copilot under *Reviewers*. Both check the
-changes against the *Code Review Rules* in `AGENTS.md`. Copilot is also
-given review steps in `.github/skills/code-review/SKILL.md`, which GitHub
-says it uses when they are relevant. Their comments are suggestions to
-weigh, not orders, but each one should get an answer before the pull
-request merges.
+Two AI reviewers comment on the pull requests that you or an agent open:
+Codex on every change pushed to one, and GitHub Copilot once, when it
+opens. Neither reviews Dependabot's pull requests by itself. To ask
+Copilot again, or to have it look at one of Dependabot's pull requests,
+choose **Re-request review** (or **Request**) next to Copilot under
+*Reviewers*. Both check the changes against the *Code Review Rules* in
+`AGENTS.md`. Copilot is also given review steps in
+`.github/skills/code-review/SKILL.md`, which GitHub says it uses when they
+are relevant. Their comments are suggestions to weigh, not orders, but
+each one should get an answer before the pull request merges.
+
+Copilot never sees replies to its comments, and a second Copilot review
+may repeat comments already answered or resolved; answer a repeat by
+linking the earlier reply, then resolve it, because every comment has to
+be resolved before a merge. Copilot's headline ("Approval recommended" or
+"Changes recommended") is advice about the pull request as it was when
+Copilot looked, not an approval, and it does not change after fixes.
 
 Dependabot keeps the pieces the GitHub workflows borrow (such as
 `actions/checkout`) up to date. Once a month it opens one pull request with
