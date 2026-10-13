@@ -439,6 +439,7 @@ that stylesheet with the exact working-tree CSS before measuring. Four
 website tests pass. Policy wording and effective date are unchanged.
 The full app unit suite passed on the dedicated iPad Pro 13-inch M5
 simulator (Xcode 27 / iOS 27) before committing the layout change.
+
 ## UI-test infrastructure follow-up — October 13, 2026
 
 After PR #9 merged at `b25331d`, Tests run `38435645095` failed before
@@ -471,4 +472,3 @@ established: xcbeautify discarded its destination details.
   GitHub CI on the new pull request remains the merge gate; this does not
   claim a permanent fix for the first runner's unexplained destination
   failure.
-
