@@ -7,7 +7,7 @@ here, not in an agent-specific file, so every agent gets the same rules.
 
 ## What this is and what's at stake
 
-Brickson (the working name) is an iPhone and iPad app that speaks for
+Brickson is an iPhone and iPad app that speaks for
 people living with ALS, at every stage of the disease. A person chooses a
 phrase or types, and the app says it aloud, in their own Personal Voice if
 they banked one. It works with every way Apple devices can be controlled:
@@ -301,7 +301,15 @@ the failure.
 - Personal names, email addresses, or health or family details in a
   committed file: the repository is public. The developer's name and
   support email on the website pages in `site/` are the exception: Apple
-  requires them, and the owner chose to publish them.
+  requires them, and the owner chose to publish them. On 2026-10-12 the
+  owner also explicitly authorized the short "Why Brickson?" founder note
+  in `README.md` and `site/index.html`, attributed to Avery Dedmon: his
+  brother invented the name as a teenager, it remains a family joke more
+  than twenty years later, his brother died of ALS, and Avery is building
+  the app in his memory. Documentation of that name/publication decision
+  in `docs/DECISIONS.md` and `docs/HANDOFF.md` is also permitted. This is
+  a specific exception for those facts and attribution, not permission
+  to publish other family identities, medical details or private documents.
 - Text anywhere that says what Brickson costs (an amount, "free" or
   "paid") before docs/DECISIONS.md records the owner's decision ("Price
   not decided"). "Free" about something else, such as Xcode or GitHub

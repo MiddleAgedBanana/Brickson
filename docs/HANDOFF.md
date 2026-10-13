@@ -218,8 +218,7 @@ Not yet seen working, to check after the merge and the settings:
    request that fills in the policy's blanks, then check that the
    "Publish website" run on the Actions tab is green and that both
    addresses open on a phone.
-2. **Owner:** open and run the app on a Mac (README → *First time on your
-   Mac*), and run the tests once (⌘U).
+2. **Owner:** open and run the app on a Mac ([local development setup](GETTING_STARTED.md)), and run the tests once (⌘U).
 3. **Owner:** review the starter phrases
    (`Brickson/Resources/StarterPhrases.json`). A reviewer noted two
    near-duplicates ("Wait a moment, please." and "Give me a moment to
@@ -294,3 +293,149 @@ device, OS version, settings and date.
 | 2026-10-12 | `6865f47` | `storekit` taken off AGENTS.md's list of skills never to apply: it came from the reference app and ruled out in-app purchases before a price was decided | Documentation only |
 | 2026-10-12 | `82aef90`, `5dfb8f6`, `4f9fe80`, `41f9555`, `b2b6206` | Review skill for Copilot (`.github/skills/code-review/SKILL.md`), refined from the owner's draft: review steps that point to AGENTS.md for every rule instead of restating rules or naming features that are not built yet. `.github/copilot-instructions.md` points to it. AGENTS.md *Code Review Rules* gains checks every reviewer applies: statements of Brickson's price; a new section, *Tests, workflows and the rules themselves*, for tests that cannot fail, workflow changes that expose secrets or a write token, put pull request text into a shell command or add an action not published by GitHub, and changes that weaken the review rules. *Not findings* now excuses only gaps the base branch already records. A change *Code Review Rules* names is reported even when no person is affected yet; only other suspicions a reviewer cannot trace become questions (Codex's review of this pull request). AGENTS.md, DECISIONS.md and README.md say where the skill sits, and DECISIONS.md records that the owner asked for it. AGENTS.md, DECISIONS.md and README.md now say Dependabot's pull requests get no automatic review (PR #7) and that only the owner requests Copilot reviews; README.md says Copilot never sees replies and its headline is not an approval | Documentation only; pull request CI. Copilot's automatic review of this pull request invoked the skill (its job log) |
 | 2026-10-12 | `1188f5d`, `8fd22a0`, `5421109`, `c1ea737`, `28f4819` | Why CodeQL does not scan the Swift code: default setup's one Swift attempt failed because no Xcode project is committed, and GitHub dropped Swift by itself; advanced setup would add a Mac job to every pull request for checks that match nothing in today's code and fall behind each new Xcode. docs/DECISIONS.md *Code scanning* corrects two earlier statements (Xcode 27 does not block scanning today; CodeQL announced no Swift mode that skips the build), records that AI Scan for pull requests is on and that Dependabot's first pull request got no CodeQL analysis before merging, and lists when to revisit; the ruleset rows say the same. README.md and AGENTS.md mention the scans, and AGENTS.md gains a gotcha. The failed Swift configuration on the Tool status page is the owner's to delete | Documentation only. Checked 2026-10-12 through GitHub's API and job logs (default setup's languages, the failed job's log, analyses, PR check runs, the ruleset, AI Scan's setting and logs) and GitHub's and CodeQL's documentation sources; pull request CI. Not verified: where AI Scan's AI credits come from, and the 10 to 20 minute estimate for a Swift CodeQL job (never run) |
+
+
+## Website redesign — 2026-10-12
+
+The homepage now introduces Brickson with an ivory-and-navy palette,
+large serif headings and locally stored decorative speech-bubble artwork.
+Support and privacy remain at their original addresses. Shared navigation,
+a policy contents list, dark appearance, keyboard focus and 44px link
+heights make the pages easier to use. The homepage explicitly says the app
+is in development; it states no price, release date or download offer.
+The existing privacy policy main content, including its Effective date,
+was compared byte-for-byte with the base version and is unchanged.
+
+Verification on the owner's Mac:
+
+- `scripts/test-site.py`: three tests pass. `PaletteTests` reads the actual
+  website CSS and measures text at 4.5:1 and boundaries at 3:1 in both
+  appearances. The palettes are opaque, with no transparency effects.
+  Link/asset checks reject missing targets, scripts and outside assets.
+  The tests were written first: missing new palette tokens and the absent
+  development notice failed before implementation. Each test names the
+  regression that makes it fail. CI runs them in the existing Unit tests
+  job, without changing its name, trigger or permissions.
+- Chromium: both pages at 320, 390, 768 and 1440 CSS pixels, light/dark,
+  normal and 200% root text size; no horizontal overflow after fixing
+  navigation wrapping and the long contact link. All links have at least
+  44px height. Increased-contrast and reduced-motion preferences checked;
+  there is no animated content. Keyboard skip link, support navigation,
+  policy navigation and policy section anchors work. The support link
+  points to the published email address; no email was sent.
+- The in-app browser rendered the page, but its 1440px capture was clipped
+  to the panel. Playwright Chromium supplied full-page visual checks.
+  The concept and final screenshots were compared for headline, hierarchy,
+  palette, artwork, spacing and section order. Support wording is more
+  specific than the concept and retains the non-emergency notice; dark
+  mode presents the artwork on its original ivory background.
+- The full app unit suite passed (113 passing cases in the formatted log),
+  Xcode 27.0, iOS 27.0, dedicated iPad Pro 13-inch (M5, 16GB) simulator
+  named `Brickson Website Checks`. No app UI, orientation, keyboard or
+  appearance assertions were made in that unit run. No Swift changed.
+- These are browser and simulator checks, not physical-device evidence.
+  GitHub CI and Pages deployment are separate checks. The owner merges;
+  the live site changes only after merge and a successful Pages workflow.
+
+### Repository social preview — 2026-10-12
+
+The owner requested a GitHub social preview using GitHub's template.
+`site/assets/social-preview.jpg` preserves the uploaded 1280×640 JPEG
+(about 184 KB). It matches the website's ivory/navy speech-bubble design,
+keeps text within the template's safe area and says the app is in development.
+Uploaded through repository Settings → General → Social preview, then
+reloaded the settings page and verified the image remained displayed.
+This repository setting takes effect independently of the Pages deployment;
+committing a replacement image alone does not update GitHub's social preview.
+No app or website behavior changed in this follow-up.
+
+
+### Website review fixes — 2026-10-12
+
+Review found that the 2.1 MB hero PNG was unnecessarily large, and the
+200% text check had missed headings breaking inside words. The homepage
+now uses a local 284 KB JPEG (about 87% smaller). A test caps the hero
+download at 400 KiB. Headings no longer allow mid-word wrapping; mobile
+type scales and margins and tablet column stacking keep whole words in
+view. Chromium reproduced heading overflow with wrapping disabled before
+the layout fix; after it, both pages at 320, 390, 768 and 1440 CSS pixels
+with 200% root text size have no page or heading overflow. Four website
+tests pass. App code is unchanged from the passing 113-case unit run.
+
+### Logo artwork — 2026-10-12
+
+The owner requested an app logo matching the project's purpose. The raster
+artwork in `design/brand/` combines a rounded B and a speech-bubble tail:
+a 1024×1024 opaque ivory-on-navy app-icon version and a 1254×1254 transparent
+navy mark. Dimensions and alpha were verified; the icon was inspected at
+64×64. The folder's README records the design brief and generation method.
+These are design deliverables; the existing app icon/catalog is unchanged.
+
+### Public README rewrite — 2026-10-12
+
+The README now addresses repository visitors: project purpose, implemented
+capabilities versus planned work, design principles, concise build/test
+commands, contribution requirements, security reporting and license status.
+The detailed first-time Xcode and device-signing instructions are preserved
+in `docs/GETTING_STARTED.md`. The README does not adopt a proposed new app
+name, promise a price or release date, or claim physical-device validation.
+Local Markdown links and command references were checked against the files;
+four website tests pass. The full app unit suite also passed again on
+Xcode 27.0 / iOS 27.0, using the dedicated iPad Pro 13-inch (M5, 16GB)
+simulator. The first attempt lacked sandbox access to CoreSimulator; the
+rerun with simulator access passed. No app, project or test code changed.
+
+### Brickson name and short founder note — 2026-10-12
+
+The owner chose to retain Brickson and authorized a public explanation of
+its personal origin. After asking for a shorter version, the homepage and
+README now use two brief paragraphs attributed to Avery: his brother coined
+the name as a teenager, it still makes the family smile, and the app is being
+built in his memory after his death from ALS. No detailed fair story or
+additional biographical facts are published. The homepage has a Why Brickson?
+navigation link and a responsive founder section using existing palette colors.
+AGENTS.md and DECISIONS.md now reflect the name choice; no app identifier or
+privacy-policy wording changed. `docs/NAME_AVAILABILITY.md` separates fresh
+Apple/USPTO/domain checks from the broader research in the owner's supplied
+PDF. No registration, purchase, account change or legal clearance is claimed.
+
+Verification: all four website tests and the full app unit suite passed
+(Xcode 27 / iOS 27, dedicated iPad Pro 13-inch M5 simulator). The browser
+rendered the new note and its anchor navigation; widths 320 and 1440 CSS
+pixels had no page overflow. The note was visually inspected in dark mode
+and uses existing tested light/dark colors. No physical-device claims.
+
+### Merge main into website branch — 2026-10-12
+
+Resolved README and HANDOFF conflicts after PR #10 landed. Kept the
+visitor-facing README and founder note, included the new CodeQL/AI Scan
+coverage guidance, and retained both branches’ handoff history. The merged
+workflow retains the website test step and main’s CI comments and settings.
+Four website tests and the full unit suite passed on the dedicated iPad Pro
+13-inch M5 simulator (Xcode 27 / iOS 27) after resolution. No app code changed.
+
+### Founder-note privacy review — 2026-10-12
+
+PR #9 review identified that the general public-repository privacy rule did
+not mention the owner's explicit request to publish the founder note.
+AGENTS.md now records a narrow exception for the already authorized facts,
+Avery's attribution, and the decision/handoff record. Other family identities,
+medical details and private documents remain outside the exception. This
+implements the owner's publication request without broadening it. No public
+story text, app behavior or privacy-policy promise changed.
+The full unit suite passed again on the dedicated iPad Pro 13-inch M5
+simulator (Xcode 27 / iOS 27); this change is documentation only.
+
+### Privacy layout under enlarged text — 2026-10-12
+
+Reproduced the new review finding at 1100 CSS px with a 200% root font:
+the policy heading needed 348px inside a 220px column. The policy layout
+now wraps flex columns based on rem-sized content widths, so enlarged text
+stacks the columns without depending solely on the fixed viewport breakpoint.
+Chromium checks at 320, 390, 768, 1051, 1100, 1280 and 1440px with 200% root
+font found no page or heading overflow after the fix. The browser test
+surface served an older stylesheet, so verification explicitly replaced
+that stylesheet with the exact working-tree CSS before measuring. Four
+website tests pass. Policy wording and effective date are unchanged.
+The full app unit suite passed on the dedicated iPad Pro 13-inch M5
+simulator (Xcode 27 / iOS 27) before committing the layout change.
