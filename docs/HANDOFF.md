@@ -439,3 +439,36 @@ that stylesheet with the exact working-tree CSS before measuring. Four
 website tests pass. Policy wording and effective date are unchanged.
 The full app unit suite passed on the dedicated iPad Pro 13-inch M5
 simulator (Xcode 27 / iOS 27) before committing the layout change.
+
+## UI-test infrastructure follow-up — October 13, 2026
+
+After PR #9 merged at `b25331d`, Tests run `38435645095` failed before
+running a UI test: Xcode could not find simulator
+`A2011F14-88A1-46AA-999A-FD6FEDCD870B` (exit 70). The unit job passed with
+the same Xcode 26.6 and simulator ID on another runner. The unchanged UI
+rerun found the simulator and ran all four tests; three passed, but Apple's
+accessibility audit threw domain `com.apple.xcode.xctest.accessibilityAudit`,
+code `-56`, "Audit failed to complete in time". That timeout had also
+occurred on PR #9. The original destination failure's exact cause is not
+established: xcbeautify discarded its destination details.
+
+- The test-only `AccessibilityAuditRunner` repeats the complete audit once
+  for that exact domain/code. All other errors and a repeated timeout
+  propagate. The existing issue handler and `XCTFail` calls stay intact:
+  findings from either attempt remain failures. No app behavior changed.
+- Four injected-error regression tests cover recovery, persistent timeout,
+  unrelated errors and success. Before implementation, the recovery and
+  persistent-timeout tests failed; afterwards all four passed.
+- `scripts/test.sh` now prints the full raw Xcode output on failure while
+  preserving its nonzero exit status. Three shell-fixture tests check
+  destination details, assertion failures without automatic reruns, and
+  success. The two failure-reporting tests failed before the change and all
+  three passed after it. CI runs them in the existing Unit tests job;
+  required job names, triggers, permissions and test assertions are intact.
+- Local verification: 113 unit tests and all eight UI/regression tests
+  passed on Xcode 27.0 / iOS 27.0, dedicated iPad Pro 13-inch (M5, 16GB)
+  simulator `F677BB51-0144-4083-8112-3EC0A8838399`. No typing flow was used.
+  Physical-device sound and gaze behavior are not covered by these checks.
+  GitHub CI on the new pull request remains the merge gate; this does not
+  claim a permanent fix for the first runner's unexplained destination
+  failure.

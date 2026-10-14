@@ -469,6 +469,11 @@ Shortcuts. **Never apply** `core-data` skills (this app uses SwiftData),
   `isEnabled`. Check that something did *not* change only after waiting
   for the change that did happen.
 - **Simulator audio is unreliable.** Every sound check needs a real device.
+- **Apple's accessibility audit can time out on CI** with domain
+  `com.apple.xcode.xctest.accessibilityAudit`, code `-56`. The UI suite
+  retries the full audit once for that error only; a second timeout still
+  fails. Findings already reported with `XCTFail` remain failures. Never
+  retry or discard an accessibility finding to make CI green.
 - **A crash cannot be a known issue.** `withKnownIssue` does not survive a
   crash; commit the reproduction disabled, naming its issue.
 - **Lazy Forms unload rows far off screen**, so a missing element in a UI

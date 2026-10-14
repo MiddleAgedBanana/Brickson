@@ -38,6 +38,8 @@ jobs:
         run: brew install xcodegen
       - name: Check website contrast and links
         run: python3 scripts/test-site.py
+      - name: Check test runner failure reporting
+        run: python3 scripts/test-runner.py
       - name: Build and run the unit tests
         run: scripts/test.sh unit
 

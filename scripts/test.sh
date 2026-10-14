@@ -53,7 +53,19 @@ print(best[1])
 # (brew install xcbeautify). Without it the output is complete but long.
 run_xcodebuild() {
     if command -v xcbeautify >/dev/null 2>&1; then
-        xcodebuild "$@" 2>&1 | xcbeautify
+        local raw_log status
+        raw_log="$(mktemp "${TMPDIR:-/tmp}/brickson-xcodebuild.XXXXXX")"
+        if xcodebuild "$@" 2>&1 | tee "$raw_log" | xcbeautify; then
+            command rm -f "$raw_log"
+        else
+            status=$?
+            # The formatter omits Xcode's destination details. Preserve them
+            # on failure, along with the original nonzero pipeline status.
+            echo "xcodebuild failed; complete output follows:" >&2
+            cat "$raw_log" >&2
+            command rm -f "$raw_log"
+            return "$status"
+        fi
     else
         xcodebuild "$@"
     fi
