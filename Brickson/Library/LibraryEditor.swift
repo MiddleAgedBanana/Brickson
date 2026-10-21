@@ -28,7 +28,8 @@ enum LibraryEditor {
     ///
     /// The plan is refused if the store no longer matches the library it
     /// was made from (another edit landed in between), and a replace that
-    /// would remove the person's own words is refused.
+    /// would remove the person's own words is refused until safety copies
+    /// exist.
     ///
     /// `save` exists so tests can make the save fail; the app never passes
     /// it.

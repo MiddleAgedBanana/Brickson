@@ -41,4 +41,8 @@ and `AGENTS.md` ever disagree, `AGENTS.md` wins.
   or reworded.
 - The repository is public. Flag names, email addresses, and health or
   family details in any committed file, except the developer's name and
-  support email on the website pages in `site/`, which Apple requires.
+  support email on the website pages in `site/`, which Apple requires, and
+  the short founder note the owner authorized in `README.md` and
+  `site/index.html` (with its record in `docs/DECISIONS.md` and the
+  handoff), exactly as `AGENTS.md`, *Data, privacy and platform*,
+  describes it.

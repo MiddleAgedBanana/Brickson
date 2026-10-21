@@ -36,9 +36,9 @@ phrases".
 - **`LibraryEditor`**: reads the store into a snapshot, and writes a plan
   from a context of its own in one save. A failed save changes nothing,
   and `rollback()` is never called. A plan made from an older library is
-  refused. A replace that would remove the person's own words is refused;
-  letting it run after a safety copy would be an exception to invariant 7,
-  so that is left to the owner.
+  refused. A replace that would remove the person's own words runs only
+  after a safety copy of the library exists; safety copies are not built,
+  so today it is refused.
 - **`BackupCodec`**: the `brickson.library` file, version 1. Same library,
   same bytes. A newer version, a damaged file and a file that is not a
   backup are each refused with their own sentence, and a library too large
@@ -99,9 +99,11 @@ the existing tests and write these documents.
 
 Codex and Copilot reviewed the first push, and Codex the second. Every
 finding is fixed (the last, a repeated identity inside one backup, in
-`ef7b3b6`), except the one that asked for a decision: letting a replace
-run after a safety copy is an exception to invariant 7, so DECISIONS now
-leaves it to the owner and the code keeps refusing it. Copilot also asked
+`ef7b3b6`). One asked for a decision: whether a replace may run after a
+safety copy. It was first left to the owner, then decided by default the
+safe way (docs/DECISIONS.md, "Replacing the library"): only after a safety
+copy keeps every removed word on the device, and refused until safety
+copies exist. The code is the same either way: it refuses. Copilot also asked
 that the SwiftData probes not run in the required suite if they can only
 fail by crashing. They run once on CI so their answers are known; a probe
 that crashes is then committed disabled with an issue (docs/LESSONS.md),

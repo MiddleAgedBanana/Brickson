@@ -82,9 +82,9 @@ nonisolated struct LibraryPlan: Equatable, Sendable {
     let after: LibrarySnapshot
     let changes: LibraryChanges
     /// True when a replace would remove words the person wrote that the
-    /// backup does not have. Such a replace is refused: letting it run
-    /// after a safety copy would be an exception to invariant 7, which is
-    /// the owner's to decide (docs/DECISIONS.md, "Replacing the library").
+    /// backup does not have. Such a replace may run only after a safety
+    /// copy of the current library exists (docs/DECISIONS.md, "Replacing
+    /// the library"). Until safety copies are built, it cannot run at all.
     let needsSafetyCopy: Bool
     /// What a merge or replace kept, skipped or renumbered; nil for other
     /// edits.

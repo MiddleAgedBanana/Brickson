@@ -117,9 +117,9 @@ struct LibraryEditorTests {
         #expect(try LibraryEditor.read(container) == first.after)
     }
 
-    /// A replace that would remove the person's words cannot run
-    /// (invariant 7; docs/DECISIONS.md, "Replacing the library"). Fails if
-    /// apply ignores the plan's flag.
+    /// Until safety copies exist, a replace that would remove the person's
+    /// words cannot run (invariant 7; docs/DECISIONS.md, "Replacing the
+    /// library"). Fails if apply ignores the plan's flag.
     @Test func aReplaceThatNeedsASafetyCopyIsRefused() throws {
         let container = try store()
         let plan = try makePlan(F.sampleEdit(.replace), in: container, starter: nil)
