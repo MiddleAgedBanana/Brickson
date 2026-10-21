@@ -19,9 +19,11 @@ request that adds this file, is "Solid fills on Home, system glass
 elsewhere". Three more decisions it draws to are being written in other
 pull requests and are not in docs/DECISIONS.md yet: where each slot sits
 and what it is called, "Home's slot plan" (Phone layout and word
-fitting); the family screens' safety bar, "Settings is a cover with a
-fixed safety bar" (Settings and first run); and typing on Home, "Typing
-is a state of Home" (Typing foundation). Until each one merges, its row
+fitting, PR #22); the family screens' safety bar, "Settings is a cover
+with a fixed safety bar" (Settings and first run, PR #23); and typing on
+Home, "Typing is a state of Home" (Typing foundation, PR #21). This
+file proposes changes to the first; that pull request adopts or answers
+them (*What a held activation meets next*). Until each one merges, its row
 in the register *Decided by default on 2026-10-21* says what it will
 decide, AGENTS.md's invariants bind, and this file's sections on those
 subjects are proposals. Once one merges, it wins where this file
@@ -169,10 +171,10 @@ section is a proposal; once it merges, where the two differ, the
 decision wins and this section is corrected to match.
 
 Home is four regions, top to bottom, in every profile and on every
-device: **A** the message, **C** the safety row, **B** the categories with
-a pinned utility column, **D** the phrase grid. Each control's layer in
-the Figma file is named for its slot, so a drawing can be matched to the
-code by name.
+device: **A** the message, **C** the safety row, **B** the categories
+with Stop Alert and Settings, **D** the phrase grid. Each control's layer
+in the Figma file is named for its slot, so a drawing can be matched to
+the code by name.
 
 Today's Home is still the stand-in (docs/DECISIONS.md, "Home version 0 is
 a stand-in"). At compact widths it has, since PR #13, a full-width
@@ -184,28 +186,30 @@ it (docs/ROADMAP.md, R0 item 3), not a picture of it.
 |---|---|---|---|
 | `messageText` | The message block | A | Passive text, scrolls inside its frame |
 | `statusLine` | Speaking / Sounding / audio warnings | A | Passive footnote under the message; always reserved |
-| `clear` | Clear in the drawings; Phrases, the way out, as proposed under *Typing* | A | Trailing column, top; live only while typing, a well otherwise |
-| `type` | Type | A | Trailing column, under the top slot; selected while typing |
+| `clear` | Proposed: **Phrases** in every state, the way back to the phrases (*Typing*). The drawings show Clear while typing and a well otherwise | A | Trailing column, top; shown selected while browsing |
+| `type` | Type | A | Trailing column, under the top slot; shown selected while typing |
 | `yes`, `no` | Yes, No | C | |
 | `again` | Again, or Speak while typing | C | Same frame, label changes |
 | `emergency` | Emergency | C | Two columns wide on compact widths |
 | `getAttention` | Get Attention | C | Start only; never stops the alarm |
-| `stopAlert` | Stop Alert | B | Pinned leading column, top; live only while the alarm sounds, a well otherwise |
-| `settings` | Settings | B | Pinned leading column, under Stop Alert |
-| `category0`…`category3` | The categories | B | 2×2 on compact widths, one row of four on regular widths |
+| `stopAlert` | Stop Alert | B | Leading column, top, directly below Emergency; live only while the alarm sounds, a well otherwise. docs/DECISIONS.md, "Get Attention", on `main` still says "above Emergency", from an earlier order; PR #22 corrects it to below, and until then the decision on `main` binds |
+| `settings` | Settings | B | Proposed: B's last cell, at the trailing end (*What a held activation meets next*, below). The drawings put it under Stop Alert |
+| `category0`…`category3` | The categories | B | Proposed: on compact widths the first two beside Stop Alert and the other two under them, then Settings; on regular widths the first under Stop Alert, the other three full height. The drawings show 2×2 beside the leading column on compact widths and one row of four on regular widths |
 | `tileR_C` | Phrase tiles, row R column C | D | 3×3 on compact widths, 4×3 on regular widths |
 
 Why this order and these places (the rules are AGENTS.md invariants 2, 8
 and 10):
 
 - **Start and stop never share a frame.** Get Attention only starts the
-  alarm; Stop Alert sits in the pinned column, two regions away. Type only
-  opens typing, and the way out of typing is a different control in a
-  different place (*Typing*, below).
-- **Nothing harmful is nearest what people read.** The message text's
-  nearest controls are the trailing column's top slot (a well while
-  browsing) and Type; Yes and No are next. No phrase tile, Emergency or
-  Get Attention borders the text.
+  alarm, at the trailing end of C; Stop Alert sits at the leading end of
+  B, on another row. Type only opens typing, and Phrases only leaves it,
+  in a different place (*Typing*, below).
+- **What borders the text.** Beside the message, the trailing column
+  holds Phrases and Type, which only choose a mode. Below it is C: Yes
+  and No on compact widths, and Emergency, Yes, No and Again on regular
+  widths, where the text spans four of C's five columns. No phrase tile
+  or Get Attention borders the text, but a look resting on it can snap
+  to Yes or No, which speak; that is the first exception below.
 - **Safety first, then navigation, then phrases.** Emergency, Get
   Attention, Yes and No are one activation from every Home state. They
   sit above the software keyboard on the three drawn windows whose
@@ -217,8 +221,8 @@ and 10):
   frames in Figma overlay the states of each device to show it; the app's
   layout tests must assert it.
 - **Two column counts, not many.** Compact widths (iPhones, narrow iPad
-  windows) use three columns everywhere; regular widths use four in C and
-  D and one row of four categories. A device never chooses a layout by its
+  windows) use three columns everywhere; regular widths use five in A, B
+  and C, and four in D. A device never chooses a layout by its
   model, only by the width and height it has (AGENTS.md, *Layout on every
   device and window*).
 
@@ -227,47 +231,88 @@ measured and recorded in docs/DECISIONS.md; they are proposed here for
 "Home's slot plan" to record, and the code is measured before they are
 accepted:
 
-- While browsing, the trailing column's top slot is an empty well, so a
-  look that rests on the message text has Type and then Yes nearest. Type
-  only opens typing.
+- **A look resting on the message text can snap to Yes or No.** From the
+  text's centre they are the nearest controls on every drawn window, 90
+  to 152pt from it (to their edges), so a short snap range reaches
+  nothing and a long one reaches a control that speaks. The reference
+  app's portrait board had the same; the code's measurement decides.
 - While typing, the drawings put Clear beside the draft. **That placement
   is withdrawn** (Codex review of PR #20): a look that rests on the draft
   while reading it can land on Clear, and a recovery control with no
   fixed place does not make that safe. *Typing*, below, proposes where
   Clear and its recovery go instead.
-- Leaving typing through the proposed way out leaves the trailing
-  column's top slot empty, so Type, directly below, is nearest. Type only
-  reopens typing with the draft kept; nothing speaks, sounds or deletes.
-- While the alarm sounds, Stop Alert is Settings' upper neighbour.
-  Settings only opens the family cover; it never speaks.
-- On the Settings root, Family Setup is the only large control, so a held
-  look that opened Settings and then rests on it can open Family Setup.
-  Family Setup is a list; nothing in it speaks, sounds or deletes.
+
+Two more are **withdrawn** after the same review, because a held
+activation meets a harmful control next:
+
+- **Leaving typing.** The way out proposed after Codex's first review sat
+  in the trailing column's top slot and left it empty when typing ended,
+  so Type, directly below, was nearest and a repeat reopened typing.
+  Phrases now stays in its slot in every state (*Typing*). (The drawings
+  themselves put the way out in category 0, whose own name returns when
+  typing ends, but region B is under the keyboard on the zoomed window.)
+- **Stopping the alarm.** As drawn, Settings sits under Stop Alert, so a
+  repeat after Stop opens the family cover, and on the drawn Settings
+  root Family Setup covers that spot, so the next repeat opens it. The
+  proposal below moves Settings, and the drawn root is withdrawn
+  (*Family screens*).
+
+### What a held activation meets next
+
+Scored on the layout source's frames for the four drawn windows, with
+the pointer left at the centre of the control just activated, under two
+nearest rules, because Snap to Item's real one is unknown: the nearest
+centre, and the nearest edge with ties counted. Simulator and device
+checks replace these numbers when the code exists. "Before this review"
+is the drawings, except for the way out, which is the first review's
+proposal.
+
+| After | Before this review | As proposed |
+|---|---|---|
+| Stop Alert (the alarm stops, its well empties) | Settings by centre on all four windows, Settings or Emergency by edge: a repeat can open the family cover | The category under Stop Alert by centre, it or Emergency by edge: a repeat only shows a category, and a further one changes nothing |
+| Phrases (typing ends) | Type on all four, with the way out in the top slot: a repeat reopens typing | Phrases itself, shown selected: a repeat changes nothing |
+| Back to Talking (Settings closes) | Type, the only live control under it: a repeat opens typing | Phrases or Type, tied: neither speaks, and Phrases changes nothing |
+
+The proposal, for "Home's slot plan" to adopt or answer:
+
+- **Region B.** Stop Alert keeps its place at B's leading end, directly
+  below Emergency. On compact widths B is two rows of three: Stop Alert,
+  the first category, the second; then the third, the fourth, Settings.
+  On regular widths the first category sits under Stop Alert in the
+  leading column, the other three categories take the next three columns
+  at full height, and Settings takes the last. Every neighbour of Stop
+  Alert then only shows phrases; Settings is the farthest cell of B from
+  it, two cells below Get Attention on compact widths and directly below
+  it on regular widths. A repeat on Get Attention meets Get Attention
+  itself, which stays in place and absorbs it, so Settings is not what it
+  meets next.
+- **Phrases in every state** (*Typing*).
 
 ### Slot sizes per device
 
 Computed by the layout source from the window size, the safe-area insets,
 a 16pt margin and the gaps below; the windows are examples of space, and
-the device names only label them. Widths are per column; the trailing and
-pinned columns are one column wide. These are touch-profile frames: every
-target clears the 44pt floor.
+the device names only label them. Widths are per column; the trailing
+and leading columns are one column wide. These are touch-profile frames:
+every target clears the 44pt floor.
 
 Against the gaze floors held at the densest screen (phrase tiles 136pt,
 quick controls 109pt, categories 89pt; docs/DECISIONS.md, "Layouts from
 the space available"), both iPad windows' tiles, safety row and
-categories clear them, but the trailing and pinned columns do not: they
-are 103pt tall in portrait and 74pt in landscape, where Type and Stop
-Alert need 109pt and Settings 89pt. The phones clear only the touch
-floor. A gaze profile therefore needs taller columns, taking the height
-from the grid's rows or the message block and never moving a slot; the
-layout engine decides that, and its tests pin it.
+categories clear them, but the trailing and leading columns do not: they
+are 103pt tall in portrait and 74pt in landscape, where Phrases, Type and
+Stop Alert need 109pt and the category under Stop Alert 89pt. The
+phones clear only the touch floor. A gaze profile therefore needs taller
+columns, taking the height from the grid's rows or the message block and
+never moving a slot; the layout engine decides that, and its tests pin
+it.
 
-| Window | Gap | Column width | Trailing top slot / Type / Stop / Settings height | Safety row height | Category height | Tile (w × h) | Grid | Top of grid | Keyboard top (measured in the kit) |
+| Window | Gap | Column width | Phrases / Type / Stop Alert height | Safety row height | Category and Settings height | Tile (w × h) | Grid | Top of grid | Keyboard top (measured in the kit) |
 |---|---|---|---|---|---|---|---|---|---|
-| iPhone 17, 402×874 | 9 | 117.3 | 67 / 67 / 56 / 56 | 67 | 56 | 117.3 × 108.7 | 3×3 | 496 | 546 |
-| iPhone SE class, 375×667 | 8 | 109 | 67 / 67 / 56 / 56 | 67 | 56 | 109 × 67.7 | 3×3 | 448 | not measured |
-| iPad Pro 13 portrait, 1032×1376 | 13 | 189.6 | 103 / 103 / 103 / 103 | 135 | 219 | 240.2 × 211.3 | 4×3 | 664 | 973 |
-| iPad Pro 13 landscape, 1376×1032 | 13 | 258.4 | 74 / 74 / 74 / 74 | 113 | 161 | 326.2 × 142.7 | 4×3 | 526 | 534 |
+| iPhone 17, 402×874 | 9 | 117.3 | 67 / 67 / 56 | 67 | 56 | 117.3 × 108.7 | 3×3 | 496 | 546 |
+| iPhone SE class, 375×667 | 8 | 109 | 67 / 67 / 56 | 67 | 56 | 109 × 67.7 | 3×3 | 448 | not measured |
+| iPad Pro 13 portrait, 1032×1376 | 13 | 189.6 | 103 / 103 / 103 | 135 | 219; 103 under Stop Alert | 240.2 × 211.3 | 4×3 | 664 | 973 |
+| iPad Pro 13 landscape, 1376×1032 | 13 | 258.4 | 74 / 74 / 74 | 113 | 161; 74 under Stop Alert | 326.2 × 142.7 | 4×3 | 526 | 534 |
 | iPad Pro 13 landscape with Display Zoom Larger Text, 1032×774 | 13 | 189.6 | does not fit (see below) | | | | | | 276 (measured on a simulator, typing research) |
 
 Notes on the table:
@@ -302,11 +347,17 @@ Notes on the table:
   therefore not final for this window: the band rule in "Typing is a
   state of Home" (Typing foundation) and the layout engine decide it, and
   the exceptions it needs go to the owner with their numbers.
-- The iPhone 17 keeps every frame through AX3. At AX4 and AX5 the Phone
-  layout work proposes letting the grid scroll rather than cutting the
-  grid to one row; this file's drawings show AX5 in the same frames with
-  labels at their default-size floor. The layout engine's measurements
-  decide, and this table is corrected to match.
+- **The starter grid never scrolls at large text.** This file's drawings
+  show AX5 in the same frames, with labels stepped down no further than
+  their default size, and the grid unscrolled. Invariant 11 forbids
+  scrolling the starter library in every dwell, switch, head and gaze
+  profile, and iPhones run all of them. The Phone layout work expects the
+  iPhone 17 window to fit at every text size and checks it at the default
+  size and AX5; where a window cannot fit, such as the SE-class window
+  (above), the layout engine finds another arrangement, never scrolling
+  and never a smaller floor ("Where the grid still scrolls", in
+  that pull request). An earlier version of this note said the grid
+  would scroll at AX4 and AX5; it is withdrawn (Codex review of PR #20).
 - Keyboard tops are the kit's iPhone (402×332) and iPad (1210×428)
   keyboards placed at the bottom of the frame. On a device the keyboard's
   height varies with its options; the typing thread's probe records the
@@ -329,15 +380,24 @@ Two parts of the drawn typing state are withdrawn after Codex's review of
 PR #20, and this is proposed instead, for the Typing foundation's
 decisions and "Home's slot plan" to settle:
 
-- **The way out in region A.** While typing, the trailing column's top
-  slot, a well while browsing, holds **Phrases**, which leaves typing and
-  keeps the draft. It sits beside the draft, where a resting look is
-  harmless, and stays above the keyboard on every window, the zoomed one
-  included. Category 0 then keeps its own name.
+- **The way out in region A.** The trailing column's top slot holds
+  **Phrases** in every state, above Type: Phrases only leaves typing,
+  keeping the draft, and Type only opens it. The two work like the
+  segments of a mode switch, each choosing only its own mode: each shows
+  selected while its mode is on, and choosing it then changes nothing,
+  as Type already does while typing, so a repeat after
+  either one meets the same control and stops there (*What a held
+  activation meets next*). Both sit at the message's trailing side, so a
+  look resting there only chooses a mode, and above the keyboard on every
+  window, the zoomed one included. Category 0 keeps its own name.
 - **Clear and its recovery away from the draft.** Clear and **Put Back**
   (which restores what Clear removed) each take a fixed category slot in
-  region B while typing, apart from each other, from Speak and from the
-  draft, with the safety row between them and the text. On the three
+  region B while typing, apart from each other, from Speak, from Settings
+  and from the draft, with the safety row between them and the text. The
+  band rule keeps Clear away from the keys, and a slot beside Stop Alert
+  or Settings would leave Clear where a repeat after either could meet
+  it; on the compact plan no slot in B's upper row avoids both, so the
+  Typing work places the two and scores their chains. On the three
   drawn windows with a measured keyboard (iPhone 17 and both default iPad
   orientations) region B stays above the keyboard, so each is one
   activation away; the SE-class window's keyboard is not measured.
@@ -354,9 +414,9 @@ decisions and "Home's slot plan" to settle:
 
 ### Alarm
 
-Get Attention lights Stop Alert in the pinned column and sets the status
-line to "Sounding". Phrases still speak while the alarm sounds. Stop Alert
-is the only control that stops it.
+Get Attention lights Stop Alert at the leading end of region B and sets
+the status line to "Sounding". Phrases still speak while the alarm
+sounds. Stop Alert is the only control that stops it.
 
 ## Family screens
 
@@ -368,15 +428,21 @@ these drawings differ.
 
 Settings, Family Setup, Voice and the Library open as a full-screen cover
 over Home, so each starts with the same top band at fixed frames: **Back
-to Talking** over Home's trailing column (its top slot and Type) and a start-only
-**Get Attention** over Home's message text on compact widths, or over
-Home's Again column on regular widths. Below the band:
+to Talking** at the top trailing edge, over Home's trailing column
+(Phrases and Type), and a start-only **Get Attention** at the top leading
+edge, over the message, its place kept empty until Home has Stop Alert
+(the Settings and first run pull request, PR #23). Closing Settings
+leaves Phrases or Type nearest, and neither speaks (*What a held
+activation meets next*). Below the band:
 
-- **Settings root**: one large **Family Setup** button that spans from
-  the safety row's top to the categories' bottom, and a passive note that
-  Settings returns to this screen after 90 seconds idle and never closes
-  by itself. There is nothing else to activate, so a stray look that
-  opened Settings lands on text or on Family Setup.
+- **Settings root.** The drawings show one large **Family Setup** button
+  spanning the screen under the band, over the spot of Home's Settings
+  cell, so a held look that opens Settings would open Family Setup next.
+  **That drawing is withdrawn** (Codex review of PR #20). PR #23's root
+  holds one Family Setup row and a sentence, and Family Setup opens on
+  passive text at least as tall as that row, so a repeat finds nothing
+  there; with Home's Settings at the end of region B, as proposed, what
+  sits nearest that spot on the root is scored with PR #23's chains.
 - **Family Setup**: a list of rows, each a standard button: Get Started,
   Voice, Phrases, Reaching the Screen, Keep Brickson Open, Privacy Policy,
   About. No toggles anywhere: a toggle turns into its opposite in place.
@@ -414,14 +480,20 @@ and typography on 2026-10-21 (developer.apple.com, Markdown versions):
   Glass blurs and adjusts luminosity from whatever sits beneath, so a
   ratio measured once cannot be promised. **Home therefore uses solid
   fills**, and `PaletteTests` pins them.
-- **System components keep their glass.** The family screens' navigation
-  bars, toolbars, sheets, the in-app Safari sheet, alerts and the file
-  picker are standard components, and they adopt Liquid Glass by
-  themselves. Brickson does not restyle them; where it draws its own text
-  over them it uses the system label colour, which the system keeps
-  legible on glass. Reduce Transparency and Increase Contrast change
-  those components' look by themselves, which is why the app shows them
-  as the system draws them.
+- **System components keep their glass, once it is measured.** The
+  family screens' navigation bars, toolbars, sheets, the in-app Safari
+  sheet and the file picker are standard components, and they adopt
+  Liquid Glass by themselves; the family screens use no system alerts
+  (PR #23). Glass on them is context-dependent, the same reason Home
+  avoids it, and invariant 6 covers the system components the app shows.
+  So each one Brickson presents is captured in light, dark, Increase
+  Contrast and Reduce Transparency, over the content it really floats
+  over, and its words and edges are measured from the captures like
+  Home's pairs. One that fails gets an opaque backing behind it, or
+  Brickson's own measured control in its place, never a guess that the
+  system keeps it legible. Words Brickson draws over them are measured
+  in the same captures. None of this is measured yet: it is a check for
+  the family screens' pull requests and their UI tests' captures.
 - **No custom glass buttons.** `glassEffect` on Brickson's own buttons is
   not used: it would be glass in the content layer, and the words on it
   would lose their measured ratio. If a later decision adopts it for the

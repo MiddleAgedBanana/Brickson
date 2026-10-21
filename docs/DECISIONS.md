@@ -43,7 +43,7 @@ holds.
 | The releases and their order: R0, R1, R2 | `docs/ROADMAP.md` |
 | Layouts from the space available, with floors set without a device table | "Layouts from the space available", below |
 | Minimum iOS 26.0, iPhone and iPad, set by two rules: every device that can use eye tracking runs the app, and every mapped accessibility API stays reachable behind `#available` | "Minimum iOS, iPhone and iPad" (Toolchain and iOS version targets; PR #12, merged) |
-| Solid fills on Home with one measured colour per role, and the system's Liquid Glass elsewhere; screens drawn to the slot plan that "Home's slot plan" will record (Phone layout and word fitting) | "Solid fills on Home, system glass elsewhere" (Figma and Claude Design screens; `docs/log/2026-10-21-design-screens.md`) |
+| Solid fills on Home with one measured colour per role, and the system's Liquid Glass elsewhere once each component measures; screens drawn to the slot plan that "Home's slot plan" will record (Phone layout and word fitting) | "Solid fills on Home, system glass elsewhere" (Figma and Claude Design screens; `docs/log/2026-10-21-design-screens.md`) |
 | The App Store category is Utilities, with no secondary category; the age-rating answers give 4+ | "App Store category", "Age rating answers" (App Store readiness and ASO; PR #18) |
 | Home's fixed slots, labels and button style | Entries next to "Home version 0 is a stand-in" (Phone layout and word fitting; pull request not open yet) |
 | Typing as a state of Home under a band Apple's keyboard never covers, Apple's keyboard in 1.0, Writing Tools off, third-party keyboards refused, Return speaks, the typed message | "Typing is a state of Home", "Typing uses Apple's keyboard", "Writing Tools off while typing", "Third-party keyboards refused in 1.0", "Return speaks", "The typed message" (Typing foundation; pull request not open yet) |
@@ -651,8 +651,13 @@ navigation and controls floating over content and ask for it sparingly in
 custom controls; Home's buttons are the content, and glass takes its
 colour from what lies beneath, so a contrast ratio measured once could
 not be promised (invariant 6). Standard system components on the family
-screens (navigation bars, toolbars, sheets, alerts, the file picker, the
-in-app Safari sheet) keep the glass the system gives them, unstyled.
+screens (navigation bars, toolbars, sheets, the file picker, the in-app
+Safari sheet) keep the glass the system gives them, unstyled, only once
+they measure: invariant 6 covers system components too, so each one is
+captured in light, dark, Increase Contrast and Reduce Transparency over
+the content it floats over, and its words and edges are measured from
+the captures. One that fails gets an opaque backing or Brickson's own
+measured control instead of glass. None is measured yet.
 
 One measured colour per role, the same value in light and dark: phrase
 `#0A60D6` (`AccentColor`), control `#5A6474` (`ControlFill`) and

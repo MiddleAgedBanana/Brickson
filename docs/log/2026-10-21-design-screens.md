@@ -54,6 +54,21 @@ written down in one place.
   button for the web page. The typing field gets a `fieldEdge` colour,
   `#767676`, that clears 3:1 against the field and the screen in both
   appearances, where the hairline did not; the decision records it.
+- **After Codex's third review**, the drawn plan's held-activation chains
+  were scored (`docs/DESIGN.md`, *What a held activation meets next*). As
+  drawn, a repeat after Stop Alert meets Settings and then Family Setup;
+  with the way out the first review proposed, a repeat after leaving
+  typing meets Type and reopens it. The
+  proposal now keeps Phrases in its slot in every state, shown selected
+  while browsing, and moves Settings to the end of region B, with a
+  category under Stop Alert. The drawn Settings root is withdrawn in
+  favour of PR #23's. The note that the phone grid would scroll at AX4
+  and AX5 is withdrawn, because invariant 11 forbids it in every dwell,
+  switch, head and gaze profile. System glass on the family screens is
+  adopted only once each component measures, and the decision says so.
+  Two errors found on the way are corrected: regular widths have five
+  columns in C, not four, and on regular widths Emergency and Again
+  border the message, not only Yes and No.
 - `docs/ROADMAP.md` item 9 and its repository-review lines, and the app
   icon's owner in `docs/HANDOFF.md` and `docs/APP-STORE.md`, are brought up
   to date (*Follow-ups*).
@@ -62,7 +77,7 @@ written down in one place.
 
 The design commit, a merge of `main` (PRs #12, #13, #15, #16 and #18),
 the commit that moves the decision and this record into the new
-documentation structure, and the commit answering Codex's review. Hashes
+documentation structure, and the commits answering Codex's reviews. Hashes
 are on the pull request.
 
 ## Verified
@@ -83,13 +98,19 @@ build Swift. GitHub CI runs the usual suites on the pull request.
   each frame, not device measurements.
 - Apple's guidelines were read on 2026-10-21 from developer.apple.com's
   Markdown pages for materials, colour and typography.
+- The held-activation table was computed from the layout source's frames
+  by a short script, not committed (nearest centre, and nearest edge with
+  ties), with the pointer at the activated control's centre. It shows
+  what each arrangement does under those two rules, not what Snap to
+  Item does.
 
 ## Not verified
 
-- The Figma frames are not redrawn for the review's corrections: they
-  still show Clear beside the draft, two grid rows on the SE-class window
-  and the hairline as the field's edge. `docs/DESIGN.md` says so where
-  each applies, and wins over the frames.
+- The Figma frames are not redrawn for the reviews' corrections: they
+  still show Clear beside the draft, a well where Phrases now stays,
+  Settings under Stop Alert, the withdrawn Settings root, two grid rows
+  on the SE-class window and the hairline as the field's edge.
+  `docs/DESIGN.md` says so where each applies, and wins over the frames.
 
 - Label fits: the Figma file uses Inter, because SF Pro is listed in the
   owner's Figma account but does not render there, and SF Symbols are not
@@ -110,9 +131,18 @@ build Swift. GitHub CI runs the usual suites on the pull request.
   safety row sits above the categories; docs/DECISIONS.md, "Get
   Attention", says Stop takes the cell above Emergency, from the earlier
   order. That pull request settles it and corrects whichever is wrong.
+  It also adopts or answers this pull request's proposals for region B
+  (Settings at its end, a category under Stop Alert) and for Phrases in
+  every state, which its slot plan does not yet have.
 - Gaze-profile column heights on the iPads, and whether the iPhone grid
-  scrolls at AX4 and AX5. *(R1 layout engine; Phone layout and word
+  fits at AX4 and AX5 without scrolling. *(R1 layout engine; Phone layout and word
   fitting)*
+- Captures and measurements of every system component the family
+  screens present, in light, dark, Increase Contrast and Reduce
+  Transparency. *(Settings and first run, and the Library's screens)*
+- Where Clear and Put Back sit while typing, away from the keys, from
+  Stop Alert and from Settings, and their chains. *(Typing, next pull
+  request)*
 - Pins in `PaletteTests` for Get Attention and Stop when their fills
   enter the code. *(Speech engine and Get Attention, next pull request)*
 - The release app icon: owner-approved artwork, then a layered Icon
