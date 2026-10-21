@@ -21,7 +21,7 @@ import XCTest
 /// and the keyboard changes with the language and keyboards a person has
 /// added (docs/HANDOFF.md).
 final class KeyboardProbeTests: XCTestCase {
-    private static let isEnabled = true // TEMPORARY: measure on CI, reverted before review
+    private static let isEnabled = ProcessInfo.processInfo.environment["BRICKSON_KEYBOARD_PROBE"] == "1"
     /// `KeyboardProbeLaunch.argument` in the app.
     private static let probeArgument = "--screen=keyboard-probe"
     /// Fewer keys than this means the keyboard is minimized to its bar. A
@@ -128,7 +128,6 @@ final class KeyboardProbeTests: XCTestCase {
         let data = try JSONSerialization.data(withJSONObject: result, options: [.sortedKeys])
         let json = String(decoding: data, as: UTF8.self)
         print("KEYBOARD-PROBE " + json)
-        XCTFail("KEYBOARD-PROBE " + json) // TEMPORARY: shows the numbers in CI's log
         attach(XCTAttachment(data: data, uniformTypeIdentifier: "public.json"), named: "\(name).json")
         attach(XCTAttachment(screenshot: XCUIScreen.main.screenshot()), named: "\(name).png")
         attach(XCTAttachment(string: app.debugDescription), named: "\(name) tree.txt")
