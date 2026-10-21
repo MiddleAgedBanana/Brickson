@@ -93,6 +93,39 @@ does ("an iPhone and iPad app that speaks for people living with ALS").
 Pages, is fine. The reference app's handoff called its successor free, and
 earlier documents here copied that; the owner never decided it.
 
+## App Store category
+
+*2026-10-21. Default, adopted 2026-10-21: the owner left these choices to
+the project. Reversible if the owner objects.*
+
+Brickson's primary App Store category is **Utilities**, with no secondary
+category. Apple defines Utilities as apps that "solve a problem or complete
+a specific task", which speaking for someone is; Medical is for medical
+education, information management or health reference, which Brickson is
+not. A primary or secondary category of Medical or Health & Fitness would
+also require declaring, on the product page, whether the app is a regulated
+medical device in the US, UK and EEA, a legal question an individual
+developer should not answer alone. People find AAC apps by searching, so
+the category costs little in discovery. The reasons and Apple's sources are
+in docs/APP-STORE.md, section 5. The reference app's release checklist
+proposed Medical; this replaces it.
+
+## Age rating answers
+
+*2026-10-21. Default, adopted 2026-10-21: the owner left these choices to
+the project. Reversible if the owner objects.*
+
+Brickson answers every age-rating question No or None, which gives 4+.
+The one question that needs care is Medical or Treatment Information:
+the answer is None, because starter phrases such as "I need my medication."
+are the person's own words to the people nearby, not guidance on managing a
+condition. Infrequent would make the app 13+. The full answers are in
+docs/APP-STORE.md, section 6. Re-answer when the starter phrases, an in-app
+web view or caregiver alerts change what the app contains. Whether US state
+age-assurance laws require the Declared Age Range API is **not** decided
+here; any age check must never cover or block communication (invariants 2
+and 10).
+
 ## Versioned storage
 
 *2026-10-10. Default.*
