@@ -566,13 +566,16 @@ How it behaves, and where it knowingly falls short:
   large text size never pushes Yes, No or Emergency off the screen.
 - **Quick controls in one row, at every width.** Yes, No and Emergency, with
   Emergency twice as wide, and each label fitted by the steps in *Home's
-  stand-in layout*: it drops its icon before its words shrink, so an icon
-  never splits a word. *Before:* PR #13 (2026-10-21) put Emergency on a row
-  of its own at compact widths, removed the icons from Yes, No and Again,
-  and kept Emergency's in a slot above its word, because the labels had no
-  way to fit themselves and broke at AX5. The screenshot text-recognition
-  test that found that (`testLargestTextKeepsQuickControlWordsVisible`) is
-  unchanged and still has to pass.
+  stand-in layout*. Yes, No and Again carry no icon; Emergency keeps its
+  warning symbol (a check mark while its phrases show) and drops it before
+  its word shrinks, so an icon never splits a word. *Before:* PR #13
+  (2026-10-21) put Emergency on a row of its own at compact widths, removed
+  the icons from Yes, No and Again, and kept Emergency's in a slot above
+  its word, because the labels had no way to fit themselves and broke at
+  AX5. The first CI run of this layout put a thumbs-down beside No, and the
+  screenshot text-recognition test (`testLargestTextKeepsQuickControlWordsVisible`)
+  read it as part of the word ("g)No"), so those three icons stay off. The
+  test is unchanged.
 - **VoiceOver is told about audio problems.** Text appearing on screen is
   not announced, so Home posts an announcement when an audio problem
   appears (including one present at launch) and on every cut-off phrase.

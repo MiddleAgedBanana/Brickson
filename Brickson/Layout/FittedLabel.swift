@@ -35,14 +35,19 @@ struct FittedLabel: View {
         GeometryReader { proxy in
             let steps = LabelFont.steps(downFrom: dynamicTypeSize)
             let choices = font.choices(for: title, systemImage: systemImage, steps: steps, width: proxy.size.width)
-            ViewThatFits(in: .vertical) {
+            // A single word stays on one line, so SwiftUI also checks its
+            // width as drawn: the icon SwiftUI draws can be wider than the
+            // one UIKit measured, and a word that does not fit beside it
+            // would be cut short. Words that wrap are checked by height only.
+            ViewThatFits(in: isOneWord ? [.horizontal, .vertical] : .vertical) {
                 ForEach(choices, id: \.self) { choice in
+                    let isLast = choice == choices.last
                     label(showingIcon: choice.showsIcon, at: steps[choice.step])
                         // The last choice is the smallest size allowed. It
-                        // reports no height of its own, so it is chosen when
+                        // reports no size of its own, so it is chosen when
                         // nothing else fits rather than leaving the choice to
                         // ViewThatFits.
-                        .frame(idealHeight: choice == choices.last ? 0 : nil)
+                        .frame(idealWidth: isLast && isOneWord ? 0 : nil, idealHeight: isLast ? 0 : nil)
                 }
             }
             .frame(width: proxy.size.width, height: proxy.size.height, alignment: frameAlignment)

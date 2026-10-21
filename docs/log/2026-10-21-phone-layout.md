@@ -108,6 +108,16 @@ missing is the wells and A's trailing column. Again still sits in A.
   "Dynamic Type font sizes are partially unsupported" and "Text clipped"
   on the Needs button (`6391ec2`; the lazy grid, which PR #13 found loses
   elements during the audit, is gone in the merge too).
+- **CI on `b2612d3`** (this pull request's first run): the build and
+  every unit test passed. The UI tests failed on the iPad: the audit found
+  "Dynamic Type font sizes are partially unsupported" and "Text clipped"
+  on the Needs button again, and the text-recognition test read No as
+  "g)No", its thumbs-down beside the word. `HomeLayoutTests` and the
+  reachability tests passed there. The iPhone run did not start. Fixes,
+  not yet re-run: Yes, No and Again lose their icons; a one-word label is
+  now also checked by SwiftUI for width as drawn, because the symbol
+  SwiftUI draws (Needs has a raised hand) can be wider than the one UIKit
+  measured, which would cut the word short at a larger text size.
 - **Measured on CI** with the temporary calibration test: SwiftUI's text
   widths match UIKit's to within half a point; SwiftUI's line height is
   the first line plus the style's leading per extra line (headline 17pt:

@@ -100,7 +100,6 @@ private struct MessageBlock: View {
             } label: {
                 FittedLabel(
                     String(localized: "Again", comment: "Repeats the last thing spoken."),
-                    systemImage: "arrow.counterclockwise",
                     font: .quickControl
                 )
             }
@@ -300,6 +299,10 @@ private struct LibraryWarnings: View {
 /// on it never says anything. While the emergency phrases show, Emergency is
 /// marked selected the same way a category is (a check mark, a ring and the
 /// Selected trait), because the emergency category has no button of its own.
+///
+/// Yes, No and Again carry no icon. Beside the word, No's thumbs-down was
+/// read as part of it ("g)No") by the text recognizer in `LaunchTests`, and
+/// PR #13 had dropped these icons for the same reason.
 private struct QuickControlsRow: View {
     @Environment(SpeechService.self) private var speech
     /// Yes, No and Emergency, from `HomeShape.quickControlWidths`.
@@ -313,7 +316,7 @@ private struct QuickControlsRow: View {
             Button {
                 speech.speak(String(localized: "Yes.", comment: "Spoken when the Yes control is chosen."))
             } label: {
-                FittedLabel(String(localized: "Yes"), systemImage: "hand.thumbsup.fill", font: .quickControl)
+                FittedLabel(String(localized: "Yes"), font: .quickControl)
             }
             .buttonStyle(HomeButtonStyle(fill: Palette.controlFill))
             .frame(width: widths[0])
@@ -321,7 +324,7 @@ private struct QuickControlsRow: View {
             Button {
                 speech.speak(String(localized: "No.", comment: "Spoken when the No control is chosen."))
             } label: {
-                FittedLabel(String(localized: "No"), systemImage: "hand.thumbsdown.fill", font: .quickControl)
+                FittedLabel(String(localized: "No"), font: .quickControl)
             }
             .buttonStyle(HomeButtonStyle(fill: Palette.controlFill))
             .frame(width: widths[1])
