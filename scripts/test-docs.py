@@ -40,6 +40,13 @@ EXTERNAL = {
     # PORTING.md sends porters to sections of the reference app's HANDOFF.
     ('docs/PORTING.md', 'docs/HANDOFF.md', 'Decided but NOT built'),
     ('docs/PORTING.md', 'docs/HANDOFF.md', 'Known limits and issues'),
+    # Sections decided by default whose text an open thread's pull request
+    # adds (DECISIONS.md lists them as "pull request not open yet"). Delete
+    # an entry once its section lands; a stale entry only skips a check.
+    ('docs/APP-STORE.md', 'docs/DECISIONS.md',
+     'First launch opens Home; setup lives in Settings'),
+    ('docs/log/2026-10-21-speech-and-get-attention.md', 'docs/DECISIONS.md',
+     "Home's slot plan"),
 }
 
 SOURCE_SUFFIXES = {'.md', '.swift', '.yml', '.yaml', '.sh', '.py', '.json'}
