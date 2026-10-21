@@ -18,8 +18,8 @@ definition of done**.
 
 | Stage | What it produces here | Gate | Who passes the gate |
 |---|---|---|---|
-| 1. Plan | A row in [`ROADMAP.md`](ROADMAP.md) and the *Intent* of a work file; owner decisions listed with a recommendation | The owner accepts the item and the decisions it raises | The owner |
-| 2. Design | The *Spec* of the work file; screens in the Figma file, from Apple's iOS and iPadOS 27 UI kit | The owner sees the screens and accepts them | The owner |
+| 1. Plan | A row in [`ROADMAP.md`](ROADMAP.md) and the *Intent* of a work file; its decisions recorded in DECISIONS.md | The item serves the owner's goal, and nothing it needs is waiting on the owner | The agent planning it; the owner only for the few decisions that are theirs |
+| 2. Design | The *Spec* of the work file; screens in the Figma file, from Apple's iOS and iPadOS 27 UI kit | The screens are linked in the pull request before it is ready to merge | The owner, by merging |
 | 3. Build | The *Plan* of the work file; a branch and pull request; tests written first | A written plan before the first code commit | The agent, checked by reviewers |
 | 4. Test | `scripts/test.sh`, GitHub CI, the device-check table | The required checks "Unit tests" and "UI tests" pass | GitHub's `main` ruleset |
 | 5. Deploy | A merge into `main`; the website; TestFlight and App Store builds | The owner merges, and only the owner uploads or releases | The owner |
@@ -28,10 +28,11 @@ definition of done**.
 **The rule behind the table:** agents may do everything up to a gate the
 owner holds, and never pass it (playbook p46: "The agent may act up to the
 production gate, and cannot pass it"). The owner's gates are deliberately
-few, so the project never waits on them for routine work: decisions that
-change the goal, accepting screens, merging, and releasing. Everything
-else, agents decide, say what they chose, and keep going (AGENTS.md,
-*Working with the owner*).
+few, so the project never waits on them for routine work: the handful of
+decisions only the owner can make, merging, and releasing. On 2026-10-21
+the owner asked to focus on building and to leave the logistics to the
+project, so everything else, agents decide, record, and keep going
+(AGENTS.md, *Working with the owner*).
 
 ## The work file
 
@@ -68,20 +69,23 @@ row with an owner, and, when it needs one, a work file whose first part
 is its *Intent* (p13's template: problem, proposed outcome, who and what
 it affects, constraints, open questions).
 
-**Owner decisions.** A question only the owner can answer (it changes the
-goal, cannot be undone, or costs money) goes into
-[`DECISIONS.md`](DECISIONS.md), *Proposed decisions*, with a recommended
-default and one plain sentence of why. Agents ask in batches, never one at
-a time. Until the owner answers, the recommended default is the working
-assumption, and every document that relies on it says so.
+**Decisions.** Agents decide, and record each decision in
+[`DECISIONS.md`](DECISIONS.md) as decided: dated, with its reason, marked
+*Default*, and reversible if the owner objects. Only a few questions are
+the owner's: the app's name, its price, how the name is said, the
+license, and anything personal. They are listed in DECISIONS.md, *Waiting
+on the owner*, each with a recommendation and one plain sentence of why,
+asked together rather than one at a time. Until one is answered, nothing
+hard to undo is done under it.
 
-**Gate:** the owner accepts the roadmap item and the decisions it raises.
-Until then the item is a working default and is labelled as one.
+**Gate:** the item serves the owner's goal, and nothing it needs is
+waiting on the owner.
 
 **Done when:**
 - the item has a roadmap row naming who owns it;
 - if it needs one, its work file's *Intent* is committed;
-- its open questions are in *Proposed decisions* or answered.
+- its open questions are decided in DECISIONS.md, or listed under
+  *Waiting on the owner*.
 
 ## 2. Design
 
@@ -108,16 +112,17 @@ state on one page so the owner can see that nothing moves
 designed from the space available, never for one device model (the
 owner's goal, 2026-10-21).
 
-**Gate:** the owner sees the screens (a Figma link or a page) and accepts
-them before the pull request that puts them on screen is ready to merge.
-Work that changes nothing on screen needs no screens; its spec is
-reviewed with its pull request.
+**Gate:** the screens are drawn and linked from the pull request that
+puts them on screen before it is ready to merge, so the owner sees them
+when deciding to merge; the merge accepts them. Work that changes
+nothing on screen needs no screens; its spec is reviewed with its pull
+request.
 
 **Done when:**
 - the work file's *Spec* is committed;
 - every invariant it touches is named with how it is kept;
-- for screen changes, the Figma frames are linked from the spec and the
-  owner has accepted them.
+- for screen changes, the Figma frames are linked from the spec and from
+  the pull request.
 
 ## 3. Build
 

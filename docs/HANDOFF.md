@@ -82,11 +82,12 @@ release in docs/ROADMAP.md when no thread has it yet.
 
 ## Next steps, in order
 
-For the owner (the decisions are listed, with recommendations, in
-docs/DECISIONS.md, *Proposed decisions*):
+For the owner (everything else was decided on 2026-10-21 by default and
+can be reversed; docs/DECISIONS.md):
 
-1. Answer the open decisions, starting with the minimum iOS version (asked
-   on 2026-10-21; it stays 26.0 until then) and the bundle identifier.
+1. Answer the few questions that are yours, in docs/DECISIONS.md,
+   *Waiting on the owner*: the final name (and with it the bundle
+   identifier), the price, how the name is said, and the license.
 2. Run the app once yourself and hear a phrase ([local setup](GETTING_STARTED.md)).
 3. Put your Team ID in `project.yml` (`DEVELOPMENT_TEAM`), then run the app
    on your iPhone and iPad and work through *Checks that need a real device*.

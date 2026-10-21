@@ -217,6 +217,23 @@ request. Code rules that keep it true:
   opens the web page in an in-app sheet (`SFSafariViewController`), not
   Safari (App Review Guideline 5.1.1(i)).
 
+## Layout on every device and window
+
+The owner's goal (2026-10-21), in Apple's words: "For SwiftUI development,
+standard layout and navigation primitives remain the appropriate default,
+using adaptive layouts and standard SwiftUI containers, instead of
+building device-specific interfaces."
+
+- **Lay out from the space available**, never from the device. Sizes and
+  arrangements come from the window's size, its size classes, its safe
+  areas and Dynamic Type, through standard SwiftUI containers and
+  navigation. Never choose an interface by device model, by the screen's
+  physical size or from a table of devices; an iPhone, an iPad and a
+  resized iPad window are the same app given different room.
+- **One tested layout engine turns that space into frames**
+  (invariant 11). It takes the space, the input profile, the text size and
+  the library's shape, and nothing that names a device.
+
 ## Design rules for dwell, switch and pointer input
 
 These hold for every profile in which a resting pointer or a scan can
@@ -230,10 +247,15 @@ built for Eye Tracking.
   empty space they rest on.
 - **Scrolling is expensive** for dwell, head and switch users (several
   activations through the AssistiveTouch menu), and nearly free for touch.
-- **Target floors are physical.** Each profile sets its floors from viewing
-  distance and visual angle, computed in physical size per device. For gaze
-  at about 45 cm the reference used phrase tiles of at least 110pt, quick
-  controls of at least 88pt and categories of at least 72pt.
+- **Target floors are physical, set without a device table.** Each
+  profile's floors are physical sizes (a visual angle at the profile's
+  viewing distance), converted to points at the densest supported screen's
+  points per inch (about 163, on the 326 ppi screens at 2x), so they hold
+  everywhere and no code names a device (docs/DECISIONS.md, "Layouts from
+  the space available"). For gaze at about 45 cm the reference used phrase
+  tiles of at least 110pt, quick controls of at least 88pt and categories
+  of at least 72pt, sized on a 13-inch iPad (about 132 points per inch);
+  held at the densest screen they are about 136, 109 and 89pt.
 - **Keep corners clear.** Dwell hot corners (top-left starts Eye Tracking
   recalibration by default), window controls and the home indicator. Never
   hide a standard Back button to clear a corner; guide people to move the
@@ -294,6 +316,9 @@ the failure.
 - New scrolling on Home for the starter library, a target below its
   profile's floor, or a layout that moves when the keyboard appears
   (invariant 11).
+- An interface or a size chosen by device model, by the screen's physical
+  size or from a table of devices, instead of from the space available
+  (*Layout on every device and window*).
 
 ### Data, privacy and platform
 

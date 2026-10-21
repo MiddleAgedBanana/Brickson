@@ -5,13 +5,14 @@ led by what a person living with ALS needs at each stage of the disease,
 not by the order of the reference app's files ([`docs/PORTING.md`](PORTING.md)
 stays the checklist of what can be reused).
 
-**Status: working defaults as of 2026-10-21, pending the owner's
-confirmation.** The releases and their order come from the research sweep
-of 2026-10-15 ([`docs/recon/2026-10-15/README.md`](recon/2026-10-15/README.md),
-sections 5 to 7). They become binding only as the owner confirms the
-decisions in [`docs/DECISIONS.md`](DECISIONS.md), *Proposed decisions*.
-Each pull request that starts, lands or moves an item edits its row here,
-in place.
+**Status: decided on 2026-10-21, by default.** The releases and their
+order come from the research sweep of 2026-10-15
+([`docs/recon/2026-10-15/README.md`](recon/2026-10-15/README.md), sections
+5 to 7). The owner asked that day to focus on building and leave the
+logistics to the project, so they stand unless the owner objects; the few
+questions that are the owner's are in [`docs/DECISIONS.md`](DECISIONS.md),
+*Waiting on the owner*. Each pull request that starts, lands or moves an
+item edits its row here, in place.
 
 ## The goal
 
@@ -65,7 +66,7 @@ touches has a recorded result.
 | 4 | Get Attention and a sturdier speech engine | A start-only alarm with Stop elsewhere; one owner for the audio session; the code audit's speech fixes (M1, L1, L3, L4) | Speech engine and Get Attention | In progress; on-screen placement waits for item 3's slots |
 | 5 | Typing | A composer that does not care which keyboard feeds it, a draft that survives, a probe that measures the real keyboard; then typing on Home under a safety band the keyboard never covers | Typing foundation | Foundation in progress; on-screen typing waits for items 3 and 9 |
 | 6 | Editing and backup | One validated edit applied in one explicit save, a failure test for every save, an emergency category that cannot be deleted, fixed identities for starter phrases, a versioned backup file | Library editing and backup format | Core in progress; the Library screen waits for item 7 |
-| 7 | Settings and first run | Settings root (a large Back, a start-only Get Attention, Family setup), the voice picker and Personal Voice guidance, the in-app Privacy row, family setup including Guided Access and Assistive Access advice | Settings and first run | Started 2026-10-21, from the first-run design and [`onboarding-and-settings.md`](recon/2026-10-15/directions/onboarding-and-settings.md); its working defaults are recorded as *Proposed decisions* |
+| 7 | Settings and first run | Settings root (a large Back, a start-only Get Attention, Family setup), the voice picker and Personal Voice guidance, the in-app Privacy row, family setup including Guided Access and Assistive Access advice | Settings and first run | Started 2026-10-21, from the first-run design and [`onboarding-and-settings.md`](recon/2026-10-15/directions/onboarding-and-settings.md); its choices are recorded in DECISIONS.md as decided defaults |
 | 8 | Being heard on calls | Speech added to phone and FaceTime calls through Apple's "Add Audio in Calls" path, if a device check passes | None, on purpose | Held until the owner has a device build (see below) |
 | 9 | Screens designed in Figma | Home, typing, alarm, Settings, voice and library screens from Apple's iOS 27 UI kit, positions shown not to move, measured colour tokens | Figma and Claude Design screens | In progress (`docs/DESIGN.md`) |
 | 10 | App Store readiness | Apple's current requirements, store text with no price words, accessibility and privacy labels, screenshots, review notes, the privacy policy's unbuilt sections built or deleted | App Store readiness and ASO | In progress (`docs/APP-STORE.md`, `docs/ASO.md`) |
@@ -91,13 +92,13 @@ where anything is, and the dwell-safety scoring passes for every profile.
   ([`layout-blueprint.md`](recon/2026-10-15/layout-blueprint.md)) is the
   starting design, but it keys some numbers to a table of devices; the
   owner's 2026-10-21 rule asks for layouts from available space instead
-  (*Proposed decisions*, "Target sizes without a device table").
+  (DECISIONS.md, "Layouts from the space available").
 - **Dwell-safety scoring.** Chains of repeated activations scored for every
   state, under both pointer models, with each exception named
   (invariant 10; [`docs/LESSONS.md`](LESSONS.md), "Score chains, not single hops").
 - **The phone as a first-class device**, including whether it keeps
   portrait only (iOS 27 and foldable iPhones bring new orientations and
-  window shapes; *Proposed decisions*).
+  window shapes; DECISIONS.md, "Orientations").
 - **Who chooses the profile**: the family, in Settings; accessibility
   features the system reports may suggest a profile, never switch it.
 - **Recorded phrases, first two stages**: playing a recording attached to
