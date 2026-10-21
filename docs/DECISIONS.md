@@ -43,7 +43,7 @@ holds.
 | The releases and their order: R0, R1, R2 | `docs/ROADMAP.md` |
 | Layouts from the space available, with floors set without a device table | "Layouts from the space available", below |
 | Minimum iOS 26.0, iPhone and iPad, set by two rules: every device that can use eye tracking runs the app, and every mapped accessibility API stays reachable behind `#available` | "Minimum iOS, iPhone and iPad" (Toolchain and iOS version targets; PR #12, merged) |
-| Home's slot plan with stable slot identifiers; solid fills on Home and the system's Liquid Glass elsewhere | "Home's slot plan", "Solid fills on Home, system glass elsewhere" (Figma and Claude Design screens; pull request not open yet) |
+| Solid fills on Home with one measured colour per role, and the system's Liquid Glass elsewhere; screens drawn to the slot plan in "Home's slot plan" | "Solid fills on Home, system glass elsewhere" (Figma and Claude Design screens; `docs/log/2026-10-21-design-screens.md`) |
 | The App Store category is Utilities, with no secondary category; the age-rating answers give 4+ | "App Store category", "Age rating answers" (App Store readiness and ASO; PR #18) |
 | Home's fixed slots, labels and button style | Entries next to "Home version 0 is a stand-in" (Phone layout and word fitting; pull request not open yet) |
 | Typing as a state of Home under a band Apple's keyboard never covers, Apple's keyboard in 1.0, Writing Tools off, third-party keyboards refused, Return speaks, the typed message | "Typing is a state of Home", "Typing uses Apple's keyboard", "Writing Tools off while typing", "Third-party keyboards refused in 1.0", "Return speaks", "The typed message" (Typing foundation; pull request not open yet) |
@@ -608,69 +608,6 @@ passes do not validate this implementation.
 `docs/log/2026-10-21-ui-test-diagnosis.md` records the failing reproductions,
 the separate appearance-harness defect and subsequent verification.
 
-## Home's slot plan
-
-*2026-10-21. Default, adopted 2026-10-21: the owner left these choices to
-the project. Reversible if the owner objects.*
-
-Home is four regions, top to bottom on every device and in every profile:
-**A** the message (text, a status line, and a trailing column of Clear
-over Type), **C** the safety row (Yes, No, Again or Speak, Emergency, Get
-Attention), **B** the categories with a pinned leading column (Stop Alert
-over Settings), **D** the phrase grid. docs/DESIGN.md, *The slot plan*,
-gives each slot's identifier and the sizes per window.
-
-The choices inside it, and why:
-
-- **Safety row above the categories.** A scored search over the dwell
-  rules (a resting pointer may activate, a repeat may fire, a mode switch
-  must not leave a harmful control nearest) favoured A, C, B, D over A,
-  B, C, D: the message text's neighbours are Clear (a well while
-  browsing) and Type, and the grid never borders the text.
-- **Clear above Type in the trailing column.** Clear is live only while
-  typing, when it sits beside the draft it empties; the cleared text is
-  kept and recoverable. While browsing its frame is an empty well, so the
-  message text's nearest live control is Type, which only opens typing.
-- **Stop Alert above Settings in a pinned column.** Stop Alert is live
-  only while the alarm sounds and is two regions from Get Attention, so
-  start and stop never share a frame. While silent its frame is a well.
-- **Two column counts.** Compact widths use three columns in every
-  region; regular widths use four in C and D and one row of four
-  categories. Width and height choose, never the device model.
-- **Colours for the two alarm controls.** Get Attention is `#B45309`
-  (white label 5.02:1, the amber role without system orange's 2.2:1) and
-  Stop Alert `#0F766E` (5.47:1), a third hue so neither reads as a phrase
-  or as Emergency. docs/DESIGN.md, *Colour*, has every pair.
-- **The family screens' top band.** Back to Talking sits over Home's
-  trailing column and Settings' start-only Get Attention over Home's
-  message text (compact) or Again column (regular), so the family
-  screens' only controls near the spot that opened them are a way back
-  and a call for help. Settings root holds one large Family Setup button
-  and nothing else to activate.
-- **Largest text sizes.** Frames do not grow with text; labels drop their
-  symbol, then step down to the Large size and no further. On the iPhone
-  17 the drawings keep every frame at AX5 with labels at that floor; the
-  Phone layout thread proposes letting the grid scroll at AX4 and AX5
-  instead. The layout engine's measurements decide, and docs/DESIGN.md
-  records the result.
-
-Before: the stand-in Home (above) had no fixed plan.
-
-## Solid fills on Home, system glass elsewhere
-
-*2026-10-21. Default, adopted 2026-10-21: the owner left these choices to
-the project. Reversible if the owner objects.*
-
-Home's controls use solid, measured fills, not Liquid Glass. Apple's
-guidelines (materials page, read 2026-10-21) keep Liquid Glass for
-navigation and controls floating over content and ask for it sparingly in
-custom controls; Home's buttons are the content, and glass takes its
-colour from what lies beneath, so a contrast ratio measured once could
-not be promised (invariant 6). Standard system components on the family
-screens (navigation bars, toolbars, sheets, alerts, the file picker, the
-in-app Safari sheet) keep the glass the system gives them, unstyled.
-docs/DESIGN.md, *Apple's guidelines and Liquid Glass*.
-
 ## Personal Voice permission is asked at launch, for now
 
 *2026-10-10. Default, from the reference app.*
@@ -702,6 +639,34 @@ while they choose to speak. Recorded phrases, when they come, are the
 person's own recordings, not synthesized ones. A feature that seems to
 need a rendered file (sending a phrase as audio, Calls) is decided again
 here first.
+
+## Solid fills on Home, system glass elsewhere
+
+*2026-10-21. Default, adopted 2026-10-21: the owner left these choices to
+the project. Reversible if the owner objects.*
+
+Home's controls use solid, measured fills, not Liquid Glass. Apple's
+guidelines (materials page, read 2026-10-21) keep Liquid Glass for
+navigation and controls floating over content and ask for it sparingly in
+custom controls; Home's buttons are the content, and glass takes its
+colour from what lies beneath, so a contrast ratio measured once could
+not be promised (invariant 6). Standard system components on the family
+screens (navigation bars, toolbars, sheets, alerts, the file picker, the
+in-app Safari sheet) keep the glass the system gives them, unstyled.
+
+One measured colour per role, the same value in light and dark: phrase
+`#0A60D6` (`AccentColor`), control `#5A6474` (`ControlFill`) and
+emergency `#C8161E` (`EmergencyFill`), as `Palette` has them, and two for
+the alarm: Get Attention `#B45309` and Stop `#0F766E`. The alarm's two
+are hues of their own, so neither reads as a phrase or as Emergency, and
+the amber avoids system orange's 2.2:1. White labels on every fill are
+5.0:1 or better, and every fill's edge is 3.5:1 or better on white and on
+black. A pair enters the code only with its pin in `PaletteTests`.
+Which control takes which role, and where each sits, is "Home's slot
+plan". docs/DESIGN.md, *Colour* and *Apple's guidelines and Liquid
+Glass*, has the measurements and the review.
+
+Before: `Palette` had the three fills and no rule about glass.
 
 ## Tests
 

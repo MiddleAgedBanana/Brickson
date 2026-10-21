@@ -78,7 +78,7 @@ TestFlight group before the gate passes, and it goes out once items 1 to
 | 6 | Editing and backup | One validated edit applied in one explicit save, a failure test for every save, an emergency category that cannot be deleted, fixed identities for starter phrases, a versioned backup file | Library editing and backup format | Core in progress; the Library screen waits for item 7 |
 | 7 | Settings and first run | Settings root (a large Back, a start-only Get Attention, Family setup), the voice picker and Personal Voice guidance, the in-app Privacy row, family setup including Guided Access and Assistive Access advice | Settings and first run | Started 2026-10-21, from the first-run design and [`onboarding-and-settings.md`](recon/2026-10-15/directions/onboarding-and-settings.md); its choices are recorded in DECISIONS.md as decided defaults |
 | 8 | Being heard on calls | Speech added to phone and FaceTime calls through Apple's "Add Audio in Calls" path, if a device check passes | None, on purpose | Held until the owner has a device build (see below) |
-| 9 | Screens designed in Figma | Home, typing, alarm, Settings, voice and library screens from Apple's iOS 27 UI kit, positions shown not to move, measured colour tokens | Figma and Claude Design screens | In progress (`docs/DESIGN.md`) |
+| 9 | Screens designed in Figma | Home, typing, alarm, Settings, voice and library screens from Apple's iOS 27 UI kit, positions shown not to move, measured colour tokens | Figma and Claude Design screens | Drawn on 2026-10-21: the Figma file and `docs/DESIGN.md` ([record](log/2026-10-21-design-screens.md)); the slot plan's decision comes with item 3 |
 | 10 | App Store readiness | Apple's current requirements, store text with no price words, accessibility and privacy labels, screenshots, review notes, the privacy policy's unbuilt sections built or deleted | App Store readiness and ASO | In progress (`docs/APP-STORE.md`, `docs/ASO.md`) |
 | 11 | Release chores | The brand icon installed, a license decision, the App Store Connect record (after the name is confirmed), TestFlight to the owner and a small group that includes a person living with ALS and a speech-language pathologist | Owner, with items 9 and 10 | Waiting on decisions |
 | 12 | Plan and maintain | This roadmap, the decisions list, the handoff, the way of working ([`docs/SDLC.md`](SDLC.md)) | Roadmap, decisions and repo review | Landed with PR #15; each pull request keeps its own rows current |
@@ -175,13 +175,14 @@ Each owning piece of work checks its findings before acting. The biggest:
   numbers. *(App Store readiness and ASO; Toolchain and iOS version
   targets)*
 - The app icon is a placeholder, with no layered Liquid Glass icon.
-  *(Figma and Claude Design screens)*
+  *(Release chores, item 11: owner-approved artwork, then Icon Composer on a Mac)*
 - Nothing technical stops an agent merging or pushing to `main`; the
   owner's merge is the gate only by rule. *(Project guardrails)*
 
-Not reviewed yet: Apple's design guidelines and Liquid Glass adoption,
-and full accessibility API coverage (the "Accessibility API coverage"
-work, `docs/ACCESSIBILITY.md`).
+Apple's design guidelines and Liquid Glass adoption were reviewed on
+2026-10-21 (`docs/DESIGN.md`, *Apple's guidelines and Liquid Glass*).
+Not reviewed yet: full accessibility API coverage (the "Accessibility
+API coverage" work, `docs/ACCESSIBILITY.md`).
 
 ## Held on purpose
 

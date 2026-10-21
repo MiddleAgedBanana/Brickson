@@ -9,14 +9,22 @@ this file in the same pull request.
 
 Everything here is drawn and computed, not run on a device. The numbers
 come from one layout source shared by the Figma file and the Claude
-Design prototype, so the two agree with each other; the app's layout
-engine must reproduce them and its tests must pin them (AGENTS.md,
+Design prototype, so the two agree with each other. They are a design to
+build toward, not a measurement: the app's layout engine computes the real
+frames from the space available, and its tests pin them (AGENTS.md,
 invariant 11).
+
+Binding decisions this file draws, and does not repeat: where each slot
+sits and what it is called is docs/DECISIONS.md, "Home's slot plan"
+(Phone layout and word fitting); the family screens' safety bar is
+"Settings is a cover with a fixed safety bar" (Settings and first run);
+typing on Home is "Typing is a state of Home" (Typing foundation). This
+file's own decision is "Solid fills on Home, system glass elsewhere".
 
 ## Where the drawings are
 
-- **Figma file** (the owner's account, Starter plan): Brickson, file key
-  `zCYdh8hSJ9ZmrVhtealp8f`. Three pages:
+- **Figma file** in the owner's account,
+  https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f. Three pages:
   - *Foundations*: read me, colour tokens with contrast, the type ladder,
     slot sizes per device.
   - *Home*: iPhone 17, iPhone SE class, iPad Pro 13-inch portrait and
@@ -66,11 +74,17 @@ what they sit on).
 
 | Token | Hex | Used for | White label on it | Edge on white | Edge on black |
 |---|---|---|---|---|---|
-| `phrase` | `#0A60D6` | Phrase tiles, categories, Again, Speak, Type, Yes, No, Hear, Use, Save | 5.74:1 | 5.74:1 | 3.66:1 |
-| `control` | `#5A6474` | Clear, Settings, Back to Talking, Family Setup rows, Slower, Faster, Move to…, Keep | 5.98:1 | 5.98:1 | 3.51:1 |
-| `emergency` | `#C8161E` | Emergency, emergency phrases, Delete Phrase, "Delete … for good" | 5.85:1 | 5.85:1 | 3.59:1 |
-| `attention` | `#B45309` | Get Attention | 5.02:1 | 5.02:1 | 4.18:1 |
-| `stop` | `#0F766E` | Stop Alert | 5.47:1 | 5.47:1 | 3.84:1 |
+| `phrase` (`AccentColor`) | `#0A60D6` | Phrase tiles, categories, Again, Speak, Type, Yes, No, Hear, Use, Save | 5.74:1 | 5.74:1 | 3.66:1 |
+| `control` (`ControlFill`) | `#5A6474` | Clear, Settings, Back to Talking, Family Setup rows, Slower, Faster, Move to…, Keep | 5.98:1 | 5.98:1 | 3.51:1 |
+| `emergency` (`EmergencyFill`) | `#C8161E` | Emergency, emergency phrases, Delete Phrase, "Delete … for good" | 5.85:1 | 5.85:1 | 3.59:1 |
+| `attention` (not in the code yet) | `#B45309` | Get Attention | 5.02:1 | 5.02:1 | 4.18:1 |
+| `stop` (not in the code yet) | `#0F766E` | Stop Alert | 5.47:1 | 5.47:1 | 3.84:1 |
+
+The first three are `Palette`'s fills today, already pinned by
+`PaletteTests`. The "Used for" column is the drawings' assignment. Today's
+stand-in Home puts Yes, No, Again and the categories not selected on
+`control`; which role each control takes on the new Home is settled with
+"Home's slot plan", and every role it can take is a pair measured here.
 
 Surfaces, in light / dark:
 
@@ -124,22 +138,33 @@ Usage rules:
 - **Words never break** (AGENTS.md, *Design rules for dwell, switch and
   pointer input*). When a label does not fit its control, drop the
   symbol first, then step the text down one Dynamic Type size at a time,
-  and never below the Large size. On the phone at AX4 and AX5 this still
-  leaves a few labels too wide for a one-column slot; the drawings show
-  those at Large, which is the floor, so the app will do the same.
+  and never below its default size, the size it has at Large. On the
+  phone at AX4 and AX5 a few labels reach that floor in a one-column
+  slot; the drawings show them there. How the code fits labels is the
+  Phone layout and word fitting work's, and it wins where it differs.
 - A person's own words (phrase and category names) are shown verbatim and
   never localized (AGENTS.md, *Workflow rules*).
 
 ## The slot plan
 
+How the drawings lay out Home. The binding plan, with each slot's
+identifier for the layout engine and the UI tests' accessibility
+identifiers, is docs/DECISIONS.md, "Home's slot plan"; where the two
+differ, the decision wins and this section is corrected to match.
+
 Home is four regions, top to bottom, in every profile and on every
 device: **A** the message, **C** the safety row, **B** the categories with
-a pinned utility column, **D** the phrase grid. Each slot has a stable
-identifier, used as the layout engine's key, the UI tests' accessibility
-identifier and the layer name in Figma, so a test, a drawing and the code
-mean the same thing by the same name.
+a pinned utility column, **D** the phrase grid. Each control's layer in
+the Figma file is named for its slot, so a drawing can be matched to the
+code by name.
 
-| Identifier | Control | Region | Notes |
+Today's Home is still the stand-in (docs/DECISIONS.md, "Home version 0 is
+a stand-in"). At compact widths it has, since PR #13, a full-width
+message line with Again below, Yes and No in one row, Emergency on the
+full row below them, and one phrase column. The drawings are what replaces
+it (docs/ROADMAP.md, R0 item 3), not a picture of it.
+
+| Layer name | Control | Region | Notes |
 |---|---|---|---|
 | `messageText` | The message block | A | Passive text, scrolls inside its frame |
 | `statusLine` | Speaking / Sounding / audio warnings | A | Passive footnote under the message; always reserved |
@@ -174,10 +199,12 @@ and 10):
 - **Two column counts, not many.** Compact widths (iPhones, narrow iPad
   windows) use three columns everywhere; regular widths use four in C and
   D and one row of four categories. A device never chooses a layout by its
-  model, only by the width and height it has (AGENTS.md, *Design rules*;
-  docs/DECISIONS.md, "Home's slot plan").
+  model, only by the width and height it has (AGENTS.md, *Layout on every
+  device and window*).
 
-Named exceptions, each measured and recorded (invariant 10 asks for this):
+Exceptions the drawings carry. Invariant 10 asks for each to be named,
+measured and recorded in docs/DECISIONS.md; they are recorded with
+"Home's slot plan", and the code is measured before they are accepted:
 
 - While browsing, the trailing column's top slot is an empty well, so a
   look that rests on the message text has Type and then Yes nearest. Type
@@ -194,10 +221,20 @@ Named exceptions, each measured and recorded (invariant 10 asks for this):
 ### Slot sizes per device
 
 Computed by the layout source from the window size, the safe-area insets,
-a 16pt margin and the gaps below. Every size clears the 44pt floor; the
-iPads clear the reference app's gaze floors (phrase tiles 110pt or more,
-quick controls 88pt or more, categories 72pt or more). Widths are per
-column; the trailing and pinned columns are one column wide.
+a 16pt margin and the gaps below; the windows are examples of space, and
+the device names only label them. Widths are per column; the trailing and
+pinned columns are one column wide. These are touch-profile frames: every
+target clears the 44pt floor.
+
+Against the gaze floors held at the densest screen (phrase tiles 136pt,
+quick controls 109pt, categories 89pt; docs/DECISIONS.md, "Layouts from
+the space available"), both iPad windows' tiles, safety row and
+categories clear them, but the trailing and pinned columns do not: they
+are 103pt tall in portrait and 74pt in landscape, where Type and Stop
+Alert need 109pt and Settings 89pt. The phones clear only the touch
+floor. A gaze profile therefore needs taller columns, taking the height
+from the grid's rows or the message block and never moving a slot; the
+layout engine decides that, and its tests pin it.
 
 | Window | Gap | Column width | Clear / Type / Stop / Settings height | Safety row height | Category height | Tile (w × h) | Grid | Top of grid | Keyboard top (measured in the kit) |
 |---|---|---|---|---|---|---|---|---|---|
@@ -216,10 +253,10 @@ Notes on the table:
   that window; it never shrinks tiles (invariant 11 allows a grown
   library to scroll, never a shrunken target).
 - The iPhone 17 keeps every frame through AX3. At AX4 and AX5 the Phone
-  layout thread proposes letting the grid scroll rather than cutting the
+  layout work proposes letting the grid scroll rather than cutting the
   grid to one row; this file's drawings show AX5 in the same frames with
-  labels at the Large floor. The layout engine's tests decide between the
-  two by measurement, and this table is updated with the result.
+  labels at their default-size floor. The layout engine's measurements
+  decide, and this table is corrected to match.
 - Keyboard tops are the kit's iPhone (402×332) and iPad (1210×428)
   keyboards placed at the bottom of the frame. On a device the keyboard's
   height varies with its options; the typing thread's probe records the
@@ -243,6 +280,10 @@ line to "Sounding". Phrases still speak while the alarm sounds. Stop Alert
 is the only control that stops it.
 
 ## Family screens
+
+As drawn; the binding rules are the Settings and first run decisions
+(docs/DECISIONS.md, "Settings is a cover with a fixed safety bar" and
+the entries beside it), and they win where these drawings differ.
 
 Settings, Family Setup, Voice and the Library open as a full-screen cover
 over Home, so each starts with the same top band at fixed frames: **Back
@@ -303,16 +344,20 @@ and typography on 2026-10-21 (developer.apple.com, Markdown versions):
 - **Colour follows the HIG rule to use colour for meaning, sparingly:**
   one fill per role (phrase, control, emergency, attention, stop), never
   decorative tints, and every meaning also carried by words.
-- **Dynamic Type everywhere**, with the HIG ladder above; the layout
-  gives rows fixed heights that fit the largest size, so growth changes
-  text, never frames.
+- **Dynamic Type everywhere**, with the HIG ladder above. Rows keep their
+  frames at every text size and labels fit inside them by the rule in
+  *Type*, so larger text changes the words' size, never where a control
+  sits.
 - **Standard navigation stays.** Back buttons, Close, the edge swipe and
   the sheet grabber are never hidden to clear a corner (AGENTS.md,
   *Design rules*).
 
 ## The app icon
 
-The current icon is a placeholder. The App Store thread's review notes
-that it resembles Messages. The release icon is a layered Icon Composer
-icon with light, dark, tinted and clear appearances, from artwork the
-owner approves; nothing in this file or the Figma file is that artwork.
+The current icon is a placeholder, and the repository review of
+2026-10-21 notes that it resembles Messages. The release icon is a
+layered Icon Composer icon with light, dark, tinted and clear
+appearances, from artwork the owner approves (the logo in `design/brand/`
+is the starting point). Nothing in this file or the Figma file is that
+artwork, and Icon Composer runs only on a Mac, so the icon is made with
+the release chores (docs/ROADMAP.md, R0 item 11).

@@ -111,7 +111,7 @@ release in docs/ROADMAP.md when no thread has it yet.
 - The privacy policy describes features not built yet; each is built or its
   sentence deleted before release (docs/APP-STORE.md, section 3, lists
   each sentence). *(App Store readiness and ASO)*
-- The app icon is a placeholder; `design/brand/` is not installed. *(Figma and Claude Design screens)*
+- The app icon is a placeholder; `design/brand/` is not installed. *(Release chores, R0 item 11)*
 - No license file, so all rights are reserved; the bundle identifier
   contains the owner's first name and is permanent after the first upload. *(owner)*
 
