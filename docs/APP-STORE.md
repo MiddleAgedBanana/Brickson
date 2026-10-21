@@ -67,7 +67,13 @@ to undo; step 5 is, so it waits for the name.
    file: subtitle ([ASO.md](ASO.md#the-store-text)), category (section 5),
    content rights (Brickson shows no third-party content: answer No), age
    rating (section 6), and the privacy policy URL
-   `https://middleagedbanana.github.io/Brickson/privacy/`.
+   `https://middleagedbanana.github.io/Brickson/privacy/`. If the **Digital
+   Goods and Services** questionnaire appears, answer it after the price
+   decision (step 4): with nothing sold or unlocked inside the app, the
+   answer to "Can customers consume digital goods and services in this
+   app?" is No. The answers for the European Union lock for 12 months once
+   saved
+   ([questionnaire](https://developer.apple.com/help/app-store-connect/manage-app-information/complete-the-digital-goods-and-services-questionnaire)).
 7. **Answer App Privacy:** "No, we do not collect data from this app", then
    Publish (section 7).
 8. **Agreements, tax and banking** (App Store Connect → Business). Which
@@ -106,7 +112,7 @@ Store adds these hard requirements, checked against Apple's pages on
 
 | Requirement | Brickson today | Source |
 |---|---|---|
-| Built with Xcode 26 or later and an iOS 26 SDK or later (since 2026-04-28); the toolchain thread keeps Brickson on Apple's current release | CI and the Mac use the current Xcode (docs/DECISIONS.md, "Build with Apple's current Xcode") | [Upcoming requirements](https://developer.apple.com/news/upcoming-requirements/) |
+| Built with the Xcode and SDK that Apple's *Upcoming requirements* page names (when checked on 2026-10-21, it named the release and SDK required since 2026-04-28) | CI and the Mac use the current Xcode (docs/DECISIONS.md, "Build with Apple's current Xcode") | [Upcoming requirements](https://developer.apple.com/news/upcoming-requirements/) |
 | Approved reasons for "required reason" APIs in a privacy manifest (since 2024-05-01) | `PrivacyInfo.xcprivacy` declares UserDefaults reason CA92.1, no tracking, no collected data; `AppBundleTests` pins it | same |
 | Answers to the updated age-rating questions (since 2026-01-31) | Drafted in section 6 | same |
 | A privacy policy URL, and a link inside the app "in an easily accessible manner" | The URL exists; **the in-app link does not yet** (Settings and first run thread) | [Guideline 5.1.1(i)](https://developer.apple.com/app-store/review/guidelines/#data-collection-and-storage) |
@@ -431,8 +437,10 @@ read 2026-10-21:
 - **iPhone Duo** (Apple's foldable iPhone): outer display 1398 × 2034, inner
   display 2007 × 2853 (or rotated). The screenshot specifications say:
   "Starting in April 2027, screenshots will be required for any app using
-  the iOS 27.1 SDK or later." Brickson builds with Apple's current Xcode
-  (docs/DECISIONS.md), which is 27.1, so this will apply to it. A Duo set
+  the iOS 27.1 SDK or later" (read 2026-10-21). Whether it applies depends
+  on the SDK of the Xcode the build uses, so check that page against the
+  current Xcode before each submission (docs/DECISIONS.md, "Build with
+  Apple's current Xcode"). A Duo set
   also earns an "optimized for iPhone Duo" badge
   ([Apple news](https://developer.apple.com/news/?id=kkphp5qo)). Brickson's
   iPhone is portrait-only for now; the Duo screenshots must come from a real
@@ -447,14 +455,13 @@ read 2026-10-21:
   specifications](https://developer.apple.com/help/app-store-connect/reference/app-information/app-preview-specifications)).
 
 The frames, captions and storyboard are in [ASO.md](ASO.md#screenshots).
-Capture from the real app on the current Xcode's simulators (iPhone 17 or
-iPhone 17 Pro for the medium iPhone, iPad Pro 13-inch), light and dark, at the
+Capture from the real app on the current Xcode's simulators (a standard
+iPhone with a medium display, and the iPad Pro 13-inch), light and dark, at the
 default text size, and once at a large accessibility size to show that text
 grows. Never use mock-ups.
 
 **App icon.** Today's icon is a placeholder; the brand artwork in
-`design/brand/` is ready to install. On iOS 26 and later the icon is best
-made in Icon Composer, with dark and tinted variants (Figma and Claude Design
+`design/brand/` is ready to install. The icon is best made in Icon Composer, with dark and tinted variants (Figma and Claude Design
 screens thread, with release chores).
 
 ## 10. Localization

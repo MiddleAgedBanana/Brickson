@@ -199,7 +199,7 @@ YOUR WORDS, YOUR VOICE
 • Type anything and Brickson says it. Your message is kept if the app closes. [needs: typing]
 • Add, change and arrange your own phrases with your family. Changes are made in a separate edit mode, so speaking never changes your phrases. [needs: editing]
 • Save a backup of your phrases to Files. [needs: backup]
-• Uses your Personal Voice when you allow it, or any voice on your device.
+• Uses your Personal Voice when you allow it. [needs: voice choice in Settings] Or choose any voice on your device.
 
 PRIVATE BY DESIGN
 • No account. No ads. No tracking.
