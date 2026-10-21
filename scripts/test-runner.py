@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 """Exercise test.sh's error reporting and simulator choice without booting a
-simulator."""
+simulator, and check that CI runs it with the newest released Xcode."""
 import json
 import os
 from pathlib import Path
+import re
 import subprocess
 import tempfile
 import unittest
 
 SCRIPT = Path(__file__).resolve().with_name("test.sh")
+WORKFLOW = SCRIPT.parent.parent / ".github" / "workflows" / "tests.yml"
 
 # Answers the build-settings query with the fixture's deployment target, and
 # counts every other xcodebuild run.
@@ -169,6 +171,56 @@ class SimulatorChoiceTests(unittest.TestCase):
         })
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("Testing Brickson on: id=PRO", result.stdout)
+
+
+def workflow_jobs(text):
+    """Each job's id and its lines, without comments. Reads the layout
+    tests.yml uses: job ids two spaces in, under a top-level `jobs:`."""
+    jobs, current, inside = {}, None, False
+    for line in text.splitlines():
+        if line.lstrip().startswith("#") or not line.strip():
+            continue
+        if not line.startswith(" "):
+            inside, current = line.rstrip() == "jobs:", None
+            continue
+        job = re.match(r"  (\S+):\s*$", line)
+        if inside and job:
+            current = job.group(1)
+            jobs[current] = []
+        elif inside and current:
+            jobs[current].append(line)
+    return jobs
+
+
+class WorkflowTests(unittest.TestCase):
+    """CI runs test.sh only after switching to the newest released Xcode,
+    and names no Xcode version (docs/DECISIONS.md, "Build with Apple's
+    current Xcode")."""
+
+    # Running test.sh on the machine image's default Xcode, as the workflow
+    # did before 2026-10-21, fails this test.
+    def test_every_job_that_runs_the_tests_first_switches_xcode(self):
+        testing = {name: "\n".join(lines)
+                   for name, lines in workflow_jobs(WORKFLOW.read_text()).items()
+                   if any("scripts/test.sh" in line for line in lines)}
+        self.assertTrue(testing, "No job in tests.yml runs scripts/test.sh.")
+        for name, body in testing.items():
+            with self.subTest(job=name):
+                choose = body.find("scripts/select-xcode.py choose")
+                switch = body.find("xcode-select --switch", max(choose, 0))
+                self.assertTrue(
+                    0 <= choose < switch < body.index("scripts/test.sh"),
+                    f"Job {name} in .github/workflows/tests.yml runs scripts/test.sh "
+                    "without first choosing the newest released Xcode "
+                    "(python3 scripts/select-xcode.py choose, then sudo "
+                    "xcode-select --switch).")
+
+    # Writing an Xcode version or app path into the workflow fails this test.
+    def test_the_workflow_names_no_xcode_version(self):
+        pinned = [line.strip() for line in WORKFLOW.read_text().splitlines()
+                  if not line.lstrip().startswith("#")
+                  and re.search(r"Xcode_\d|DEVELOPER_DIR|xcode-version", line)]
+        self.assertEqual(pinned, [])
 
 
 if __name__ == "__main__":

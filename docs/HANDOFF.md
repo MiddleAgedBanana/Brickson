@@ -516,6 +516,17 @@ What changed:
   from the cloud session** (AGENTS.md, *Gotchas*); its full new text was
   handed to the owner to commit on the branch.
 - `scripts/select-xcode.py` and its tests, `scripts/test-select-xcode.py`.
+  The check compares the build as well as the version, so an older build
+  of Apple's newest version also warns (Copilot's review).
+- `scripts/test-runner.py`, *WorkflowTests*: every job that runs
+  `scripts/test.sh` must first run `select-xcode.py choose` and
+  `xcode-select --switch`, and the workflow may name no Xcode app path,
+  `DEVELOPER_DIR` or `xcode-version`. The workflow on `main` fails the
+  first test, so on this branch the Unit tests job stays red at "Check
+  test runner failure reporting" until the owner commits the new
+  workflow. That is on purpose: the pull request cannot merge, even with
+  auto-merge on, without the change that applies the rule (Codex's
+  review).
 - `scripts/test.sh`: the simulator's iOS must lie between the deployment
   target, read from the generated project, and the SDK of the Xcode in
   use. Six fixture tests in `scripts/test-runner.py` cover the range, the
@@ -525,8 +536,8 @@ What changed:
 - README.md and docs/GETTING_STARTED.md ask for the current Xcode release
   instead of "Xcode 26 or later". docs/DECISIONS.md *Code scanning* notes
   that CodeQL cannot trace Swift builds with Xcode 27 (GitHub's changelog,
-  2026-10-19), which changes nothing today: CodeQL scans only the
-  workflow files.
+  2026-10-19), which changes nothing today: default setup scans only the
+  workflow files and the Python scripts, which need no build.
 
 Not changed, on purpose:
 

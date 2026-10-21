@@ -402,7 +402,7 @@ not scan the Swift code, on purpose:
   - CodeQL learns to read each new Swift version weeks or months after
     Xcode ships it: 31 to 115 days for Swift 6.0 to 6.3, and 10 to 45 days for their
     point releases (Swift 6.3.3, in Xcode 26.6, took 24). Today it covers
-    Swift up to 6.3, which CI's Xcode 26.6 uses, and not Swift 6.4 (Xcode
+    Swift up to 6.3, which Xcode 26.6 uses, and not Swift 6.4 (Xcode
     27). Every Xcode upgrade could break the job or hold up merges.
   - Since CI moved to Xcode 27 (*Build with Apple's current Xcode*,
     above), advanced setup could not scan Swift at all: GitHub's changelog
@@ -413,9 +413,9 @@ not scan the Swift code, on purpose:
 - The earlier text here said CodeQL "cannot follow Xcode 27 builds yet"
   and that GitHub "has announced a Swift scanner that needs no build". The
   first is true, but it does not stop scanning today, because default
-  setup scans only the workflow files, which need no build (when this was
-  written, CI also still built with Xcode 26.6); it matters only for
-  advanced setup (above).
+  setup scans only the workflow files and the Python scripts, which need
+  no build (when this was written, CI also still built with Xcode 26.6);
+  it matters only for advanced setup (above).
   The second does not hold for CodeQL, whose Swift support has only the
   `autobuild` and `manual` build modes; no mode that skips the build has
   been announced. It probably meant AI Scan, below.
