@@ -66,8 +66,10 @@ run (the Voice screen and `PersonalVoiceGuidance`). Status: building.*
   setting kept on the device ("Your settings, such as the voice and
   speaking speed you chose"), and the voice itself stays with iOS.
 - **Screens:** none in this part. The Voice screen (Settings and first
-  run) reads `personalVoiceStatus`, `hasPersonalVoice`,
-  `personalVoices`, `automaticVoice` and `currentVoice`.
+  run) reads `personalVoiceStatus`, `availableVoices` (which leaves out a
+  Personal Voice without permission), `hasPersonalVoice`,
+  `personalVoices`, `automaticVoice`, `currentVoice` and
+  `personalVoiceAskPolicy` (whether it offers its own Ask button).
 - **Concerns:** whether a voice allowed after the first phrase in a
   session works without a relaunch (device check D1 in
   docs/recon/2026-10-15/directions/onboarding-and-settings.md, 2.5)

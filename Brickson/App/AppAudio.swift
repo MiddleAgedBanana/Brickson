@@ -39,7 +39,11 @@ struct AppAudio {
             voiceCatalog: SystemVoiceCatalog(),
             settings: settings,
             notificationCenter: .default,
-            requestPersonalVoiceAuthorization: SystemPersonalVoice.requestAuthorization,
+            personalVoice: SystemPersonalVoice(),
+            // Today's behaviour. `.fromSettings` waits for Settings' explained
+            // button and a device check (docs/DECISIONS.md, "Personal Voice
+            // permission is asked at launch, for now").
+            personalVoiceAskPolicy: .atLaunch,
             sleep: sleep
         )
         let attention = AttentionAlertPlayer(

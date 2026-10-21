@@ -140,18 +140,31 @@ final class FakeVoiceCatalog: SpeechVoiceCatalog {
     }
 }
 
-/// Keeps the Personal Voice completion so a test can call it, from any
-/// thread, whenever it likes.
+/// Stands in for the system's Personal Voice permission. `status` is what
+/// the system reports now; each request's completion is kept so a test can
+/// answer, from any thread, whenever it likes.
 @MainActor
-final class FakePersonalVoiceRequest {
+final class FakePersonalVoice: PersonalVoiceAuthorizing {
+    var status: AVSpeechSynthesizer.PersonalVoiceAuthorizationStatus
     private(set) var completion: (@Sendable (AVSpeechSynthesizer.PersonalVoiceAuthorizationStatus) -> Void)?
     private(set) var requestCount = 0
 
-    func request(
+    init(status: AVSpeechSynthesizer.PersonalVoiceAuthorizationStatus = .notDetermined) {
+        self.status = status
+    }
+
+    func requestAuthorization(
         _ completion: @escaping @Sendable (AVSpeechSynthesizer.PersonalVoiceAuthorizationStatus) -> Void
     ) {
         requestCount += 1
         self.completion = completion
+    }
+
+    /// The person answers the latest request: the system's status changes,
+    /// then the answer arrives.
+    func answer(_ status: AVSpeechSynthesizer.PersonalVoiceAuthorizationStatus) {
+        self.status = status
+        completion?(status)
     }
 }
 
@@ -264,7 +277,7 @@ struct AudioHarness {
     let coordinator: AudioSessionCoordinator
     let catalog: FakeVoiceCatalog
     let synthesizers: FakeSynthesizerFactory
-    let personalVoice: FakePersonalVoiceRequest
+    let personalVoice: FakePersonalVoice
     let speechSleeper: ManualSleeper
     let alarmSleeper: ManualSleeper
     let settings: UserDefaults
@@ -274,10 +287,15 @@ struct AudioHarness {
 
     var synthesizer: FakeSpeechSynthesizer { synthesizers.latest }
 
+    /// `personalVoiceStatus` is what the system reports before anything is
+    /// asked; `askPolicy` is today's `.atLaunch` unless a test says
+    /// otherwise.
     init(
         voices: [VoiceDescriptor] = [],
         settings: UserDefaults = freshDefaults(),
-        policy: AudioSessionLeasePolicy = .keepActive
+        policy: AudioSessionLeasePolicy = .keepActive,
+        personalVoiceStatus: AVSpeechSynthesizer.PersonalVoiceAuthorizationStatus = .notDetermined,
+        askPolicy: PersonalVoiceAskPolicy = .atLaunch
     ) {
         let center = NotificationCenter()
         let sessionIdentity = NSObject()
@@ -292,7 +310,7 @@ struct AudioHarness {
         )
         let catalog = FakeVoiceCatalog(voices: voices)
         let synthesizers = FakeSynthesizerFactory()
-        let personalVoice = FakePersonalVoiceRequest()
+        let personalVoice = FakePersonalVoice(status: personalVoiceStatus)
         let speechSleeper = ManualSleeper()
         let alarmSleeper = ManualSleeper()
         let tones = FakeToneFactory()
@@ -316,7 +334,8 @@ struct AudioHarness {
             voiceCatalog: catalog,
             settings: settings,
             notificationCenter: center,
-            requestPersonalVoiceAuthorization: { personalVoice.request($0) },
+            personalVoice: personalVoice,
+            personalVoiceAskPolicy: askPolicy,
             sleep: speechSleeper.closure
         )
         attention = AttentionAlertPlayer(
