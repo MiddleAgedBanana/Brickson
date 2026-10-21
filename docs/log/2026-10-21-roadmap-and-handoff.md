@@ -40,6 +40,19 @@ owner's goal of 2026-10-21 has a plan behind it.
   exception AGENTS.md already had; `.gitignore` covers worktrees, archives,
   app builds, debug symbols and a `private/` folder for the owner's own
   documents.
+- **Decisions.** On 2026-10-21 the owner asked to focus on building and
+  leave the logistics to the project. DECISIONS.md now lists the five
+  questions left for the owner (*Waiting on the owner*), registers every
+  choice decided by default that day (*Decided by default on
+  2026-10-21*), and records *Layouts from the space available*.
+- **Layout from the space available.** AGENTS.md carries the owner's
+  adaptive-layout sentence word for word in a new section, a review rule
+  against interfaces chosen by device, and target floors converted to
+  points at the densest supported screen instead of a device table.
+- **A repository review** against the owner's goal
+  (`docs/recon/2026-10-21/repo-review.md`, 71 findings, each with an
+  owner, not yet checked by a second reviewer), summarised in the roadmap
+  with an R0 release gate. Its documentation findings are applied here.
 - **Apple's documentation** is read in Markdown by adding `.md` to a
   developer.apple.com address (checked 2026-10-21); AGENTS.md says so.
 
@@ -49,6 +62,10 @@ owner's goal of 2026-10-21 has a plan behind it.
   per pull request
 - `f88766e` Correct stale documentation found by the 2026-10-15 docs audit
 - `47563d3` Add the roadmap, the way of working and the 2026-10-15 research
+- `cceaffc` Record this pull request in the change log
+- `07163fb` Lay out from the space available, and decide routine choices
+  by default
+- `c343ae7` Record the decisions made by default and the repository review
 
 ## Verified
 
