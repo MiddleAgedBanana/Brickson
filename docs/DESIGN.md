@@ -289,7 +289,7 @@ proposal.
 |---|---|---|
 | Stop Alert (the alarm stops, its well empties) | Settings by centre on all four windows, Settings or Emergency by edge: a repeat can open the family cover | The category under Stop Alert by centre, it or Emergency by edge: a repeat only shows a category, and a further one changes nothing |
 | Phrases (typing ends) | Type on all four, with the way out in the top slot: a repeat reopens typing | Phrases itself, shown selected: a repeat changes nothing |
-| Back to Talking (Settings closes) | Type, the only live control under it: a repeat opens typing | Phrases or Type, tied: neither speaks, and Phrases changes nothing |
+| Back to Talking (Settings closes) | Type, the only live control under it: a repeat opens typing | Phrases alone, with Back to Talking over Phrases' frame: a repeat changes nothing. Over the whole trailing column, as first proposed, Phrases and Type tied, and a repeat on Type would reopen typing (Codex review of PR #20) |
 
 The proposal, for "Home's slot plan" to adopt or answer:
 
@@ -311,7 +311,7 @@ The proposal, for "Home's slot plan" to adopt or answer:
 
 ### Open in the slot plan
 
-Two things the drawings and the proposal leave open, for "Home's slot
+Three things the drawings and the proposal leave open, for "Home's slot
 plan" (PR #22) to settle before Home is built to it:
 
 - **The Yes and No exception** (*Exceptions the drawings carry*): the
@@ -334,6 +334,11 @@ plan" (PR #22) to settle before Home is built to it:
   grown library scrolling at the floor at most; and scores the chain
   after every control it adds. This file proposes no answer, and its
   drawings show only the starter library.
+- **Back to Talking over Phrases alone.** The slot plan's version of
+  2026-10-21 puts Back to Talking over the whole trailing column, so it
+  closes onto Phrases or Type, tied; a repeat on Type reopens typing.
+  Over Phrases' frame alone, Phrases is the only nearest control. The
+  band's frames are the Settings and first run work's (PR #23).
 
 ### Slot sizes per device
 
@@ -352,10 +357,11 @@ the space available"), both iPad windows' tiles, safety row and
 categories clear them, but the trailing and leading columns do not: they
 are 103pt tall in portrait and 74pt in landscape, where Phrases, Type and
 Stop Alert need 109pt and the category under Stop Alert 89pt. The
-phones clear only the touch floor. A gaze profile therefore needs taller
-columns, taking the height from the grid's rows or the message block and
-never moving a slot; the layout engine decides that, and its tests pin
-it.
+phones clear only the touch floor, and no phone window can hold the
+gaze floors (*No phone window holds the gaze floors*, below). On the
+iPads a gaze profile needs taller columns, taking the height from the
+grid's rows or the message block and never moving a slot; the layout
+engine decides that, and its tests pin it.
 
 | Window | Gap | Column width | Phrases / Type / Stop Alert height | Safety row height | Category and Settings height | Tile (w × h) | Grid | Top of grid | Keyboard top (measured in the kit) |
 |---|---|---|---|---|---|---|---|---|---|
@@ -376,12 +382,26 @@ Notes on the table:
   that leaves tiles 67.7pt tall in the touch profile. The Figma frame for
   this window still draws two rows of 105.5pt, which hold only six, and
   is wrong on that point (Codex review of PR #20). Whether the starter
-  words fit 109×67.7pt tiles is measured by the word-fitting work. In
-  dwell, switch, head and gaze profiles three rows of floor-sized tiles do
-  not fit under this arrangement there (3 × 136pt is more than the 219pt
-  below the categories), and invariant 11 forbids scrolling the starter
-  library, so that window needs a different arrangement in those
-  profiles: the layout engine's work (R1), never a smaller floor.
+  words fit 109×67.7pt tiles is measured by the word-fitting work. At
+  the gaze floors no phone window fits at all (next note).
+- **No phone window holds the gaze floors with the starter library on
+  one screen.** Invariant 8 keeps regions A, C, B and D in the same
+  order in every profile, so on a phone they stack. At the gaze floors
+  (docs/DECISIONS.md, "Layouts from the space available") the stack
+  needs at least 1,094pt: the trailing column's two 109pt controls, the
+  safety row's two 109pt rows, region B's two 89pt rows, three rows of
+  136pt tiles, and the gaps. That counts the floors as heights. If a
+  tile's width must reach 136pt too, three columns need 408pt, wider
+  than either phone window, and two columns need four rows, 1,239pt in
+  all. The iPhone 17 window has 778pt between its safe areas, and the
+  SE-class window 647pt. So the "different arrangement, never scrolling
+  and never a smaller floor" an earlier version of this note promised
+  does not exist on a phone (Codex review of PR #20). Invariant 11 (no
+  scrolling for the starter library in a gaze profile), the gaze floors
+  (which only the owner changes) and a gaze profile on a phone cannot
+  all hold. Which gives way is the owner's decision, put to them with
+  these numbers by the layout engine's work (R1). Dwell, switch and head
+  profiles have no floors yet; each gets the same check when it does.
 - **The worst keyboard window does not hold the drawn plan.** On a 13-inch
   iPad with Display Zoom set to Larger Text, held in landscape (a
   1032×774pt window), Apple's keyboard starts at y 276
@@ -403,10 +423,10 @@ Notes on the table:
   scrolling the starter library in every dwell, switch, head and gaze
   profile, and iPhones run all of them. The Phone layout work expects the
   iPhone 17 window to fit at every text size and checks it at the default
-  size and AX5; where a window cannot fit, such as the SE-class window
-  (above), the layout engine finds another arrangement, never scrolling
-  and never a smaller floor ("Where the grid still scrolls", in
-  that pull request). An earlier version of this note said the grid
+  size and AX5; where a window cannot fit at the touch floor, the
+  layout engine finds another arrangement, never scrolling and never a
+  smaller floor ("Where the grid still scrolls", in that pull request).
+  At the gaze floors no phone window fits (above). An earlier version of this note said the grid
   would scroll at AX4 and AX5; it is withdrawn (Codex review of PR #20).
 - Keyboard tops are the kit's iPhone (402×332) and iPad (1210×428)
   keyboards placed at the bottom of the frame. On a device the keyboard's
@@ -478,12 +498,13 @@ these drawings differ.
 
 Settings, Family Setup, Voice and the Library open as a full-screen cover
 over Home, so each starts with the same top band at fixed frames: **Back
-to Talking** at the top trailing edge, over Home's trailing column
-(Phrases and Type), and a start-only **Get Attention** at the top leading
-edge, over the message, its place kept empty until Home has Stop Alert
-(the Settings and first run pull request, PR #23). Closing Settings
-leaves Phrases or Type nearest, and neither speaks (*What a held
-activation meets next*). Below the band:
+to Talking** at the top trailing edge, and a start-only **Get
+Attention** at the top leading edge, over the message, its place kept
+empty until Home has Stop Alert (the Settings and first run pull
+request, PR #23). Proposed: Back to Talking sits over Phrases' frame in
+Home's trailing column, not over Type, so closing Settings leaves
+Phrases alone nearest, and Phrases only ever chooses the phrases (*What
+a held activation meets next*). Below the band:
 
 - **Settings root.** The drawings show one large **Family Setup** button
   spanning the screen under the band, over the spot of Home's Settings

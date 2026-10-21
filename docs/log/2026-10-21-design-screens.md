@@ -84,6 +84,14 @@ written down in one place.
   drawings are kept for their look only: they give no route to a phrase
   or to Add Phrase, and the delete chain from entry to dismissal is not
   scored, so the Library screens work designs that flow.
+- **After Codex's fifth review**, two corrections. No phone window can
+  hold the gaze floors with the starter library unscrolled: the stacked
+  regions need at least 1,094pt and the iPhone 17 window has 778pt
+  between its safe areas, so the earlier promise of "a different
+  arrangement" there is withdrawn, and the conflict between invariant 11,
+  the floors and a phone gaze profile goes to the owner. Back to Talking
+  is proposed over Phrases' frame alone, because over the whole trailing
+  column it tied Phrases with Type, and a repeat on Type reopens typing.
 - `docs/ROADMAP.md` item 9 and its repository-review lines, and the app
   icon's owner in `docs/HANDOFF.md` and `docs/APP-STORE.md`, are brought up
   to date (*Follow-ups*).
@@ -154,6 +162,12 @@ build Swift. GitHub CI runs the usual suites on the pull request.
   still has to settle the message's width on regular widths, the Yes and
   No exception, and a path to every category in a grown library
   (`docs/DESIGN.md`, *Open in the slot plan*).
+- The owner's decision on a gaze profile on a phone, which cannot hold
+  invariant 11 and the gaze floors together (`docs/DESIGN.md`, *No phone
+  window holds the gaze floors*), put with its numbers. *(R1 layout
+  engine)*
+- Back to Talking's frame over Phrases alone. *(Settings and first run,
+  and "Home's slot plan")*
 - The Library and phrase editor flow: a phrase list for each category
   with Add Phrase, the editor, and where delete's confirmation sits,
   with the chain from entry to dismissal scored in one chain engine.
