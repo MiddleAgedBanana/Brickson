@@ -141,14 +141,105 @@ only for its intended purpose (guideline 2.5.4), so:
 - in the App Review notes, give steps that show it, for example: "Choose a
   long phrase, then lock the device: speech continues."
 
-**Open, decide with the Get Attention port (step 1):** when to release the
-audio session. Today `SpeechService` activates it before speaking and never
-deactivates it, as the reference app did, so music or a podcast that speech
-interrupted does not resume on its own. Releasing it after speech ends
-(with `.notifyOthersOnDeactivation`) is kinder to other apps, but it must
-never happen while the alarm sounds, must not delay the next phrase
-(invariant 2), and needs a device check. The alarm shares the session, so
-both are designed together.
+**When the session is released.** *2026-10-21. Default, adopted
+2026-10-21: the owner left these choices to the project. Reversible if the
+owner objects.*
+
+One object owns the shared audio session, `AudioSessionCoordinator`.
+Speech and the Get Attention alarm each hold it while they play
+(`acquire(for:)` and `release(for:)`), so neither can configure or release
+it underneath the other. In 1.0 it is never deactivated
+(`AudioSessionLeasePolicy.keepActive`): the next phrase never waits for
+activation (invariant 2) and a release can never cut the alarm off. The
+cost: music or a podcast that speech interrupted does not resume by itself.
+`.releaseWhenIdle` (deactivate with `.notifyOthersOnDeactivation` once
+nobody holds the session) is built and tested but unused until a device
+check shows the first syllable is not lost over Bluetooth and the next
+phrase does not wait.
+
+The session is `.playback` in mode `.default`, set at launch without
+activating. The reference app used `.spokenAudio`, which lets another app's
+spoken prompt (a navigation direction, say) pause the person's sentence or
+the alarm. When an activation is refused (during a phone or FaceTime call),
+it is retried mixing with other audio, so the sound plays rather than
+failing silently; a refusal of both shows "Audio failed".
+
+Before: "Open, decide with the Get Attention port (step 1): when to release
+the audio session." The reference app activated before speaking and never
+deactivated; Brickson keeps that behaviour, now in one place.
+
+## Get Attention
+
+*2026-10-21. Default, adopted 2026-10-21: the owner left these choices to
+the project. Reversible if the owner objects.*
+
+The alarm (`AttentionAlertPlayer`, rules in `AttentionAlertStatus`) is a
+looping tone, `Brickson/Resources/AttentionTone.wav`, ported from the
+reference app.
+
+- **Start-only.** Get Attention only starts it; a second activation while
+  the tone really plays changes nothing. Only Stop, a separate control in a
+  different place, ends it (invariant 10). On Home, Stop takes the pinned
+  cell above Emergency (with the layout work).
+- **Speaking never silences it.** While a phrase speaks, the tone drops to
+  `AttentionAlertStatus.toneVolumeWhileSpeaking` (0.32, about 10 dB down),
+  and comes back to full when the phrase ends, however it ends. The level
+  is not measured yet: a listening check on a device sets it.
+- **Never resumes by itself.** An interruption (a call, Siri, another app's
+  alarm), a lost output, a media-services loss or reset, or a player error
+  stops it and shows "Alert stopped"; one Get Attention activation
+  restarts it (invariant 4). A lost output stops it too, as in the
+  reference app, because the tone would otherwise move to a speaker no one
+  chose.
+- **Checked every second while it sounds, and on returning to the
+  foreground.** A tone that went quiet without a report shows "Alert
+  stopped" rather than "Sounding" over silence, and a repeat activation
+  restarts a quiet tone instead of being absorbed.
+- **No time limit and no flashing.** It sounds until someone chooses Stop.
+- **The tone itself is a placeholder.** Before release it is replaced with
+  a harmonic-rich tone that carries through a closed door and is easy to
+  locate, checked on a device from the next room.
+
+## A phrase the system cuts off
+
+*2026-10-21. Default, adopted 2026-10-21: the owner left these choices to
+the project. Reversible if the owner objects.*
+
+The system can report a phrase it stopped as finished, and can do so before
+its interruption notice arrives (code audit M1). Speech therefore records
+how far the synthesizer said it got (`speechSynthesizer(_:willSpeakRangeOfSpeechString:utterance:)`,
+generally once per word), and `SpokenUtteranceTracker` reads a finish whose
+reports never reached the final word as an early ending. An early ending
+alone shows nothing, because some voices skip reporting the last word; an
+interruption or media-services reset within 3 seconds
+(`cutOffCorrelationWindow`) confirms it, and Home shows "Stopped — Again".
+A lost output confirms it too, but a phrase still speaking when the output
+vanishes carries on through the new one and shows nothing. A phrase that
+reported no progress at all is trusted.
+
+If the session could not activate for the phrase, an unexpected end shows
+nothing new: "Audio failed" is already showing, and replacing it with
+"Stopped — Again" sent the reference app round a loop of Again activations
+that failed the same way (code audit L3).
+
+## Audio session notices
+
+*2026-10-21. Default, adopted 2026-10-21: the owner left these choices to
+the project. Reversible if the owner objects.*
+
+One adapter, `AudioSessionEvents`, observes the session's notices and hands
+each subscriber (the audio warnings, the coordinator, speech, the alarm) a
+plain `AudioSessionEvent`. iOS 27 deprecates the interruption notice in
+favour of life-cycle notices, because the old notice can lose its ending
+(Apple, "Handling audio interruptions"). Built with the iOS 27 SDK (Swift
+6.4, Xcode 27) and running on iOS 27, the adapter also observes
+`didBecomeInactiveNotification` and reads its `DeactivationContext`: a
+deactivation the app did not ask for is an interruption. It keeps the old
+notice too, which Apple still documents; every subscriber treats a second
+report of the same interruption as nothing new. Only an interruption's
+beginning matters, since its ending would only be a cue to resume, which
+Brickson never does by itself. Drop the old notice once the minimum iOS
+version is 27.
 
 ## Orientations
 

@@ -91,8 +91,10 @@ promise* lists the code rules that keep the policy true.
 - Home's sizes are plain defaults, not measured gaze, switch or touch
   sizes, and the phrase grid scrolls. Fine for a stand-in, not for a
   release (invariant 11).
-- No Get Attention alarm yet, so `AudioSafetyPolicy` runs with the alarm
-  always idle.
+- The Get Attention alarm is built (`AttentionAlertPlayer`, in the
+  environment) but not on screen yet, so `AudioSafetyPolicy` on Home still
+  runs with the alarm idle. Get Attention and Stop go into Home's slots with
+  the layout work (docs/DECISIONS.md, "Get Attention").
 - No typing, editing, Settings, voice choice or backup.
 - Personal Voice permission is asked at first launch without explanation
   (docs/DECISIONS.md).
@@ -100,20 +102,25 @@ promise* lists the code rules that keep the policy true.
   strings are not in it yet: the speech-rate names in `SpeechRateSteps`
   and the voice sample sentence in `SpeechService`.
 - The full audio-warning sentences VoiceOver reads mention Get Attention,
-  which arrives with port step 1.
+  which is not on screen until it is placed on Home.
 - Off-main callbacks: `OffMainThreadCallbackTests` calls the volume
   handler directly, so it would not catch a missing `@Sendable` on the
-  real KVO closure. The Personal Voice completion and the synthesizer
-  delegate methods have no off-main test yet (docs/LESSONS.md).
+  real KVO closure. The synthesizer and tone-player delegate methods, the
+  Personal Voice completion through `SpeechService`, and a session notice
+  posted off the main thread are tested from a background thread; the
+  closure inside `SystemPersonalVoice.requestAuthorization` is not, since
+  only the system can call it (docs/LESSONS.md).
 - The audio session stays active after speech ends, so other apps' audio
-  does not resume by itself (docs/DECISIONS.md, "Background audio").
+  does not resume by itself. This is now a decision, not an oversight
+  (docs/DECISIONS.md, "Background audio"); `.releaseWhenIdle` waits on a
+  device check.
 - Home posts a VoiceOver announcement for each audio problem. Its text and
   priority are unit-tested (`AudioAnnouncementPolicy.announcement`), but
   no test sees the announcement posted: neither the simulator nor UI tests
   run VoiceOver. It is a device check below.
-- `SpeechService` has no test seam for the synthesizer itself, so the
-  missed-callback watchdog (`watchForMissedFinish`) is untested. A
-  protocol over `AVSpeechSynthesizer` would let tests drive it.
+- The Get Attention tone is the reference app's placeholder; a
+  harmonic-rich replacement and its level under speech need a listening
+  check on a device (docs/DECISIONS.md, "Get Attention").
 - The seeder fills the library whenever it is empty. Once editing exists,
   someone who deletes every category would get the starter set back at
   the next launch. Decide what should happen before porting editing.
@@ -229,9 +236,11 @@ Not yet seen working, to check after the merge and the settings:
 5. **Owner:** apply the GitHub settings in docs/DECISIONS.md, "Reviews,
    updates and GitHub settings", and delete the failed Swift
    configuration on the Tool status page (*Code scanning* there).
-6. Port step 1's remainder: the Get Attention alarm (`AttentionAlertPlayer`
-   and its tone) with Stop Alert in a different place, and the audio
-   warning strip.
+6. Put Get Attention and Stop on Home (Stop in the pinned cell above
+   Emergency) once the layout work lands its slots, and feed the alarm's
+   real state to the audio warning strip. Then the Personal Voice
+   foundation: asking from an explained button in Settings, and reading
+   the status again on returning to the foreground.
 7. Port step 2: editing logic and backup, with a failure-injection test for
    every save (docs/LESSONS.md, "Never roll back a cascade delete").
 8. Port step 3, then design the generalized layout engine (step 4) before
@@ -251,7 +260,13 @@ device, OS version, settings and date.
 | Whether a lingering look re-fires a dwell | How much repeat protection matters |
 | Whether Snap to Item ignores controls scrolled off screen | Whether scrolling can keep family controls out of reach |
 | What the real software keyboard covers in each orientation | The typing layout (docs/LESSONS.md, "Test with the real software keyboard") |
-| Get Attention heard from the next room, on the speaker and over Bluetooth | The alarm's sound and level (once ported) |
+| Get Attention heard from the next room, on the speaker and over Bluetooth | The alarm's sound and level, and the replacement tone |
+| A phrase spoken while Get Attention sounds is understood over the tone at 0.32 | `AttentionAlertStatus.toneVolumeWhileSpeaking` |
+| A phone call, Siri and another app's alarm during a phrase and during Get Attention: each stops and shows "Stopped — Again" or "Alert stopped", and nothing restarts by itself, on iOS 26 and iOS 27 | Interruption handling and the iOS 27 notices (docs/DECISIONS.md, "Audio session notices") |
+| Lock the device during a long phrase and while Get Attention sounds: both carry on | Background audio, before the App Review notes promise it |
+| Whether a voice reports its final word before finishing, and whether the system reports a cut-off phrase as finished | How often "A phrase the system cuts off" relies on its 3-second window |
+| Unplugging headphones during a phrase and during Get Attention | Output loss: speech carries on, the alarm stops and says so |
+| Whether the tone player ever reads as not playing for a moment while it plays (route changes, Bluetooth) | Whether the once-a-second health check needs a second look before stopping the alarm |
 | Comfortable dwell time and movement tolerance | Setup recommendations per profile |
 | Whether Guided Access works together with Eye Tracking | Setup recommendations |
 | Which phrases people reach for, and how many categories can be scanned by eye | The starter library |
