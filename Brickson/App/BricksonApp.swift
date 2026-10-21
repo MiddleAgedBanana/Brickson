@@ -28,6 +28,7 @@ struct BricksonApp: App {
     var body: some Scene {
         WindowGroup {
             HomeView()
+                .replacedByKeyboardProbeIfRequested()
                 .environment(audioSafety)
                 .environment(speech)
                 .environment(\.isVolatileStore, isVolatileStore)
