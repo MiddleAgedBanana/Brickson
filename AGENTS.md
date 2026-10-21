@@ -65,7 +65,9 @@ tests, the newest standard iPhone too, each with an iOS between the
 deployment target and the SDK of the Xcode in use. It starts each one,
 waits for it, builds for testing, then runs the tests. Before UI tests it
 shows the full software keyboard and launches the app once, so the first
-test does not meet a cold simulator. `SIMULATOR_FAMILY=iphone` runs one
+test does not meet a cold simulator. A simulator the script boots is shut
+down after its run, including failures, before the next family starts;
+a simulator already running is left running. `SIMULATOR_FAMILY=iphone` runs one
 family; `DESTINATION='platform=iOS Simulator,name=iPhone 17' scripts/test.sh`
 names one simulator, which is started and waited for too. Anything after
 the mode goes to `xcodebuild`
@@ -505,8 +507,8 @@ Shortcuts. **Never apply** `core-data` skills (this app uses SwiftData),
   first launch is the likely one; on 2026-10-21 the first test failed with
   "kAXErrorServerNotFound" and the next took 187 s). `scripts/test.sh`
   starts each simulator, one a `DESTINATION` names included, and waits for
-  it to finish starting (`xcrun simctl bootstatus <udid> -b`), which leaves
-  it running; before UI tests it also launches the app once (a warm-up,
+  it to finish starting (`xcrun simctl bootstatus <udid> -b`); it shuts down
+  devices it booted after their run. Before UI tests it also launches the app once (a warm-up,
   on test-only storage). A `DESTINATION` that is not one simulator is left
   to xcodebuild, which doesn't wait. In UI
   tests, wait for a change after `tap()`: `waitForExistence(timeout:)` for
@@ -520,6 +522,24 @@ Shortcuts. **Never apply** `core-data` skills (this app uses SwiftData),
   earlier runs. The app reads these launch arguments (`LaunchOptions`)
   only in debug builds; a release build ignores them. `assertReachable`,
   `attachCapture` and `assertPassesAccessibilityAudit` sit beside it.
+- **Verify rendered appearance, not the setter's readback.** Command-line
+  simulator runs on Xcode 27.1 reported `XCUIDevice.appearance == .dark`
+  while the app stayed light. `launchedApp` uses debug-only
+  `--appearance=light|dark`, applied by `preferredColorScheme`; ordinary
+  and release launches follow the system. Keep the independent screenshot
+  gate. Its sample is the empty gutter between Yes and No, not a median
+  dominated by constant-colour tiles. Evidence and reproductions:
+  `docs/log/2026-10-21-ui-test-diagnosis.md`.
+- **Accessibility frames do not prove visible words fit.** On PR #13,
+  both complete UI suites passed while AX5 phone screenshots showed
+  clipped Yes, No, Emergency and Again labels. Keep the rendered-label
+  regression alongside reachability and audits: it recognizes each
+  button screenshot without language correction or supplied expected
+  words. Inspect its kept captures when it fails; a complete accessibility
+  label is not evidence that the text was drawn completely.
+  Vision's accurate mode also misread a clear `No` as `ON`; the fast mode
+  read it and rejected the old clipped captures. Keep whole-word matching
+  (case-insensitive), with no language correction or recognition hints.
 - **Simulator audio is unreliable.** Every sound check needs a real device.
 - **Apple's accessibility audit can time out on CI** with domain
   `com.apple.xcode.xctest.accessibilityAudit`, code `-56`. The UI suite

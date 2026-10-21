@@ -51,9 +51,14 @@ FAKE_XCRUN = """\
 case "$*" in
     "simctl list devices available --json") cat "$FIXTURE_DEVICES" ;;
     "--sdk iphonesimulator --show-sdk-version") echo "$FIXTURE_SDK" ;;
-    "simctl bootstatus "*" -b" | "simctl spawn "* | "simctl install "* | \\
+    "simctl boot "* | "simctl bootstatus "*" -b" | "simctl shutdown "* | "simctl spawn "* | "simctl install "* | \\
         "simctl terminate "*)
-        echo "$*" >> "$RUNNER_SIMCTL" ;;
+        echo "$*" >> "$RUNNER_SIMCTL"
+        case "$2" in
+            boot) exit "$FIXTURE_BOOT_STATUS" ;;
+            bootstatus) exit "$FIXTURE_BOOTSTATUS_STATUS" ;;
+            shutdown) exit "$FIXTURE_SHUTDOWN_STATUS" ;;
+        esac ;;
     "simctl launch "*)
         echo "$*" >> "$RUNNER_SIMCTL"
         exit "${FIXTURE_LAUNCH_STATUS:-0}" ;;
@@ -110,7 +115,8 @@ def run_script(build_body, mode="ui", destination="id=fixture-simulator",
                target="26.0", sdk="27.1", devices=None, team="",
                test_summary=summary(3), family=None, arguments=(),
                coverage=COVERAGE, strings=True, synced_catalog=None,
-               sync_status=0, on_ci=True):
+               sync_status=0, on_ci=True, boot_status=0,
+               bootstatus_status=0, shutdown_status=0):
     with tempfile.TemporaryDirectory() as directory:
         for name, body in {
             "xcodegen": 'if [ "${1:-}" = --version ]; then echo "Version: 9.9.9"; fi',
@@ -141,6 +147,9 @@ def run_script(build_body, mode="ui", destination="id=fixture-simulator",
                            FIXTURE_STRINGS="yes" if strings else "no",
                            FIXTURE_SYNCED_CATALOG=synced_catalog or "",
                            FIXTURE_SYNC_STATUS=str(sync_status),
+                           FIXTURE_BOOT_STATUS=str(boot_status),
+                           FIXTURE_BOOTSTATUS_STATUS=str(bootstatus_status),
+                           FIXTURE_SHUTDOWN_STATUS=str(shutdown_status),
                            CI="true" if on_ci else "",
                            STRING_CATALOG=str(catalog_path),
                            DERIVED_DATA_DIR=f"{directory}/DerivedData",
@@ -169,12 +178,12 @@ def runtime(version):
     return "com.apple.CoreSimulator.SimRuntime.iOS-" + version.replace(".", "-")
 
 
-def device(name, udid, kind=None):
+def device(name, udid, kind=None, state="Shutdown"):
     """A simulator as simctl lists it. Its type comes from its name unless
     given: "iPad Pro 13-inch (M5)" is of type iPad-Pro-13-inch-M5."""
     if kind is None:
         kind = re.sub(r"[^A-Za-z0-9]+", "-", name).strip("-")
-    return {"name": name, "udid": udid, "isAvailable": True, "state": "Shutdown",
+    return {"name": name, "udid": udid, "isAvailable": True, "state": state,
             "deviceTypeIdentifier": "com.apple.CoreSimulator.SimDeviceType." + kind}
 
 
@@ -378,7 +387,7 @@ class DestinationTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(actions(result), [("build-for-testing", "id=PHONE"),
                                            ("test-without-building", "id=PHONE")])
-        self.assertEqual(result.simctl[0], "simctl bootstatus PHONE -b")
+        self.assertEqual(result.simctl[:2], ["simctl boot PHONE", "simctl bootstatus PHONE -b"])
         self.assertIn("simctl spawn PHONE defaults write com.apple.keyboard.preferences "
                       "AutomaticMinimizationEnabled -bool false", result.simctl)
 
@@ -437,6 +446,7 @@ class PreparationTests(unittest.TestCase):
         result = self.ui_run()
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(result.simctl, [
+            "simctl boot PAD",
             "simctl bootstatus PAD -b",
             "simctl spawn PAD defaults write com.apple.keyboard.preferences "
             "AutomaticMinimizationEnabled -bool false",
@@ -445,6 +455,7 @@ class PreparationTests(unittest.TestCase):
             "simctl launch PAD fixture.brickson --fresh-test-storage",
             "sleep 15",
             "simctl terminate PAD fixture.brickson",
+            "simctl shutdown PAD",
         ])
         self.assertIn("Warm-up: launched Brickson once before the tests", result.stdout)
         warmed = result.stdout.index("Warm-up:")
@@ -456,7 +467,7 @@ class PreparationTests(unittest.TestCase):
         result = run_script("exit 0", mode="unit", destination=None, devices=IPAD_AND_IPHONE)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual([call for call in result.simctl if call.startswith("simctl")],
-                         ["simctl bootstatus PAD -b"])
+                         ["simctl boot PAD", "simctl bootstatus PAD -b", "simctl shutdown PAD"])
 
     # A failed warm-up that stops the run, or one that passes silently,
     # fails this test.
@@ -476,6 +487,70 @@ class PreparationTests(unittest.TestCase):
         self.assertEqual(result.returncode, 65)
         self.assertEqual([name for name, _ in actions(result)], ["build-for-testing"])
         self.assertNotIn("simctl launch PAD fixture.brickson --fresh-test-storage", result.simctl)
+
+
+class SimulatorLifecycleTests(unittest.TestCase):
+    """Only devices booted by this invocation belong to its cleanup."""
+
+    def phone_run(self, build_body="exit 0", state="Shutdown", **options):
+        return run_script(build_body, destination="platform=iOS Simulator,id=PHONE",
+                          devices={runtime("27.1"): [device("iPhone 17", "PHONE", state=state)]},
+                          **options)
+
+    # Omitting shutdown or waiting until both families finish fails this.
+    def test_each_owned_device_stops_before_the_next_family_boots(self):
+        result = run_script("exit 0", destination=None, devices=IPAD_AND_IPHONE)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        lifecycle = [call for call in result.simctl if call.startswith(
+            ("simctl boot ", "simctl shutdown "))]
+        self.assertEqual(lifecycle, ["simctl boot PAD", "simctl shutdown PAD",
+                                     "simctl boot PHONE", "simctl shutdown PHONE"])
+
+    # Early returns after boot must still release only the owned device.
+    def test_owned_device_stops_after_preparation_build_test_and_summary_failures(self):
+        cases = [
+            ("exit 0", {"bootstatus_status": 70}, 1),
+            ('if [ "$action" = build-for-testing ]; then exit 65; fi', {}, 65),
+            ('if [ "$action" = test-without-building ]; then exit 66; fi', {}, 66),
+            ("exit 0", {"test_summary": None}, 1),
+        ]
+        for body, options, status in cases:
+            with self.subTest(body=body, options=options):
+                result = self.phone_run(body, **options)
+                self.assertEqual(result.returncode, status, result.stderr)
+                self.assertEqual(result.simctl.count("simctl shutdown PHONE"), 1)
+                self.assertEqual(result.simctl[-1], "simctl shutdown PHONE")
+
+    # A device already starting/running may belong to another session.
+    def test_preexisting_device_is_waited_for_but_never_booted_or_stopped(self):
+        for state in ("Booted", "Booting"):
+            with self.subTest(state=state):
+                result = self.phone_run(state=state)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertIn("simctl bootstatus PHONE -b", result.simctl)
+                self.assertNotIn("simctl boot PHONE", result.simctl)
+                self.assertNotIn("simctl shutdown PHONE", result.simctl)
+
+    # A boot that fails never gives this invocation ownership of the device.
+    def test_failed_boot_does_not_claim_or_shutdown_the_device(self):
+        result = self.phone_run(boot_status=70)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertNotIn("simctl shutdown PHONE", result.simctl)
+        self.assertEqual(result.invocations, 0)
+
+    # Ignoring cleanup errors can start two simulators and cause UI timeouts.
+    def test_failed_shutdown_fails_the_run_and_does_not_start_another_family(self):
+        for body, expected in (("exit 0", 1),
+                               ('if [ "$action" = test-without-building ]; then exit 65; fi', 65)):
+            with self.subTest(body=body):
+                result = run_script(body, destination=None, devices=IPAD_AND_IPHONE,
+                                    shutdown_status=70)
+                self.assertEqual(result.returncode, expected, result.stderr)
+                self.assertEqual(result.simctl.count("simctl shutdown PAD"), 1)
+                self.assertNotIn("simctl boot PHONE", result.simctl)
+                self.assertNotIn(("build-for-testing", "id=PHONE"), actions(result))
+                self.assertIn("Could not shut down simulator PAD", result.stderr)
+                self.assertNotIn("All UI tests passed.", result.stdout)
 
 
 class EvidenceTests(unittest.TestCase):

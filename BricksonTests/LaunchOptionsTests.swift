@@ -37,6 +37,26 @@ struct LaunchOptionsTests {
         #expect(LaunchOptions.parse(["--fresh-test-storage"]).storage == .freshTest)
     }
 
+    // Release launches use .standard. Giving that default an appearance
+    // would override the person's system setting even without test flags.
+    @Test func appearanceDefaultsToTheSystemAndOnlyChangesWhenRequested() {
+        #expect(LaunchOptions.standard.appearance == nil)
+        #expect(LaunchOptions.parse([]).appearance == nil)
+        #expect(LaunchOptions.parse(["--appearance=light"]).appearance == .light)
+        #expect(LaunchOptions.parse(["--appearance=dark"]).appearance == .dark)
+        #expect(LaunchOptions.parse(["--appearance=dark"]).unrecognized.isEmpty)
+    }
+
+    // A typo must be reported, not silently interpreted as light or dark.
+    @Test func malformedAppearanceArgumentsAreReportedWithoutAnOverride() {
+        let arguments = ["--appearance", "--appearance=", "--appearance=system", "--appearance=DARK"]
+        let options = LaunchOptions.parse(arguments)
+
+        #expect(options.appearance == nil)
+        #expect(options.unrecognized == arguments)
+        #expect(LaunchOptions.parse(["--appearance=dark", "--appearance=invalid"]).appearance == .dark)
+    }
+
     // A test asking for fresh storage must get it, whatever the order.
     @Test func freshTestStorageWinsInEitherOrder() {
         #expect(LaunchOptions.parse(["--test-storage", "--fresh-test-storage"]).storage == .freshTest)

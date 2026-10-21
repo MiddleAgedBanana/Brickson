@@ -59,6 +59,9 @@ final class HomeReachabilityTests: XCTestCase {
         let configuration = "\(textSize.name), \(orientation.isLandscape ? "landscape" : "portrait"), \(isPad ? "iPad" : "iPhone")"
 
         check(app, state: "just opened", configuration: configuration)
+        let framesAtLaunch = Dictionary(uniqueKeysWithValues: Self.primaryControls.map {
+            ($0, app.buttons[$0].firstMatch.frame)
+        })
 
         app.buttons["Emergency"].tap()
         XCTAssertTrue(
@@ -66,7 +69,7 @@ final class HomeReachabilityTests: XCTestCase {
                 .waitForExistence(timeout: 10),
             "Emergency did not show the emergency phrases (\(configuration))"
         )
-        check(app, state: "emergency phrases showing", configuration: configuration)
+        check(app, state: "emergency phrases showing", configuration: configuration, framesAtLaunch: framesAtLaunch)
 
         // Any phrase will do; the first tile of the emergency phrases is
         // the one most surely on screen.
@@ -76,14 +79,36 @@ final class HomeReachabilityTests: XCTestCase {
             XCTWaiter.wait(for: [againTurnsOn], timeout: 15), .completed,
             "Again was still off 15 s after a phrase was chosen (\(configuration))"
         )
-        check(app, state: "a phrase just spoken", configuration: configuration)
+        check(app, state: "a phrase just spoken", configuration: configuration, framesAtLaunch: framesAtLaunch)
     }
 
     @MainActor
-    private func check(_ app: XCUIApplication, state: String, configuration: String) {
+    private func check(
+        _ app: XCUIApplication,
+        state: String,
+        configuration: String,
+        framesAtLaunch: [String: CGRect]? = nil
+    ) {
         let context = "\(state); \(configuration)"
         for label in Self.primaryControls {
             assertReachable(label, in: app, context: context)
+            if let original = framesAtLaunch?[label] {
+                // Reachability alone permits controls to move under a
+                // resting pointer. State changes must preserve every edge,
+                // allowing only one point for layout rounding (invariant 10).
+                let frame = app.buttons[label].firstMatch.frame
+                for (edge, actual, expected) in [
+                    ("left", frame.minX, original.minX),
+                    ("top", frame.minY, original.minY),
+                    ("right", frame.maxX, original.maxX),
+                    ("bottom", frame.maxY, original.maxY),
+                ] {
+                    XCTAssertEqual(
+                        actual, expected, accuracy: 1,
+                        "\(label)'s \(edge) edge moved (\(context)): launch \(original), now \(frame)"
+                    )
+                }
+            }
         }
         attachCapture(app, name: "home-\(state)-\(configuration)".replacingOccurrences(of: ", ", with: "-"))
     }

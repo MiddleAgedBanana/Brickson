@@ -1,3 +1,4 @@
+import Vision
 import XCTest
 
 /// Launches the real app on a simulator and drives it the way a person
@@ -77,7 +78,6 @@ final class LaunchTests: XCTestCase {
         // Report every issue the audit finds, not only the first.
         continueAfterFailure = true
         let app = launchedApp()
-        expectKnownPhoneHomeAuditFindings()
         try assertPassesAccessibilityAudit(app, context: "Home, light")
     }
 
@@ -87,7 +87,6 @@ final class LaunchTests: XCTestCase {
     func testHomeInDarkModePassesTheAccessibilityAudit() throws {
         continueAfterFailure = true
         let app = launchedApp(appearance: .dark)
-        expectKnownPhoneHomeAuditFindings()
         try assertPassesAccessibilityAudit(app, context: "Home, dark")
     }
 
@@ -99,8 +98,53 @@ final class LaunchTests: XCTestCase {
         app.buttons["Emergency"].tap()
         XCTAssertTrue(phraseTile("I need help now.", in: app).waitForExistence(timeout: 5))
         continueAfterFailure = true
-        expectKnownPhoneHomeAuditFindings()
         try assertPassesAccessibilityAudit(app, context: "Home with the emergency phrases, light")
+    }
+
+    /// A button's accessibility frame can be correct while its visible
+    /// label is clipped. Read the rendered words too, without supplying
+    /// the recognizer with the expected text or language correction.
+    @MainActor
+    func testLargestTextKeepsQuickControlWordsVisible() throws {
+        continueAfterFailure = true
+        for appearance in [UITestAppearance.light, .dark] {
+            let app = launchedApp(textSize: .ax5, appearance: appearance)
+            for state in ["just opened", "emergency selected", "phrase spoken"] {
+                if state == "emergency selected" {
+                    app.buttons["Emergency"].tap()
+                    XCTAssertTrue(phraseTile("I need help now.", in: app).waitForExistence(timeout: 10))
+                } else if state == "phrase spoken" {
+                    app.buttons["Yes"].tap()
+                    let againTurnsOn = expectation(for: NSPredicate(format: "isEnabled == true"), evaluatedWith: app.buttons["Again"])
+                    XCTAssertEqual(XCTWaiter.wait(for: [againTurnsOn], timeout: 15), .completed)
+                }
+                let context = "AX5, \(appearance.rawValue), \(state)"
+                attachCapture(app, name: context)
+                for label in ["Yes", "No", "Emergency", "Again"] {
+                    let screenshot = app.buttons[label].screenshot()
+                    let attachment = XCTAttachment(screenshot: screenshot)
+                    attachment.name = "\(context), \(label)"
+                    attachment.lifetime = .keepAlways
+                    add(attachment)
+                    let image = try XCTUnwrap(screenshot.image.cgImage)
+                    let request = VNRecognizeTextRequest()
+                    // The accurate recognizer returned "ON" for a clear
+                    // upright "No" crop on this runtime. Use the fast path
+                    // for these simple UI glyphs; still require whole words.
+                    request.recognitionLevel = .fast
+                    request.recognitionLanguages = ["en-US"]
+                    request.usesLanguageCorrection = false
+                    try VNImageRequestHandler(cgImage: image, options: [:]).perform([request])
+                    let words = (request.results ?? []).compactMap { $0.topCandidates(1).first?.string }
+                        .flatMap { $0.components(separatedBy: .whitespacesAndNewlines) }
+                    XCTAssertTrue(
+                        words.contains { $0.caseInsensitiveCompare(label) == .orderedSame },
+                        "Rendered \(label) is unreadable (\(context)); recognized \(words)"
+                    )
+                }
+            }
+            try assertPassesAccessibilityAudit(app, context: "AX5, \(appearance.rawValue)")
+        }
     }
 
     // MARK: The test settings take effect
@@ -118,11 +162,8 @@ final class LaunchTests: XCTestCase {
         )
     }
 
-    // Likewise for the dark-mode audit: if the appearance did not change,
-    // it would audit light mode twice. (Its first version read one pixel
-    // in the left margin and found it white in dark mode on CI, on the
-    // iPad and the iPhone; the median of the whole screen does not depend
-    // on where the margin is.)
+    // Independently check the rendered appearance: reading back the
+    // requested flag alone would let a broken launch setup pass.
     @MainActor
     func testTheAppearanceSettingTakesEffect() throws {
         let light = try XCTUnwrap(
@@ -133,9 +174,10 @@ final class LaunchTests: XCTestCase {
             backgroundBrightness(of: launchedApp(appearance: .dark), name: "Home, dark"),
             "Could not read the dark-mode screenshot"
         )
+        print("Rendered background brightness: light=\(light), dark=\(dark)")
         XCTAssertGreaterThan(
             light - dark, 0.5,
-            "Home is \(light) bright in light mode and \(dark) in dark mode (median of the screen; 0 black, 1 white): the appearance did not change"
+            "Home is \(light) bright in light mode and \(dark) in dark mode (background gutter; 0 black, 1 white): the appearance did not change"
         )
     }
 

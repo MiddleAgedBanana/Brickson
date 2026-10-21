@@ -24,6 +24,12 @@ enum UITestTextSize: String, CaseIterable {
     }
 }
 
+/// A debug launch preference, independently checked against rendered pixels.
+enum UITestAppearance: String {
+    case light
+    case dark
+}
+
 /// Where the launched app keeps what it saves (`LaunchOptions` in the app).
 enum UITestStorage {
     /// Test-only storage, erased first: the starter phrases, no saved
@@ -42,13 +48,14 @@ extension XCTestCase {
     /// and fails if Home says changes won't be kept, which would mean the
     /// test storage did not open.
     ///
-    /// Orientation and appearance are simulator-wide, so they are put back
-    /// (portrait, the earlier appearance) when the test ends.
+    /// Orientation is simulator-wide and is restored to portrait. Appearance
+    /// is a debug launch preference because XCUIDevice.appearance can report
+    /// success without changing the app in command-line simulator runs.
     @MainActor
     @discardableResult
     func launchedApp(
         textSize: UITestTextSize = .large,
-        appearance: XCUIDevice.Appearance = .light,
+        appearance: UITestAppearance = .light,
         orientation: UIDeviceOrientation = .portrait,
         storage: UITestStorage = .fresh,
         arguments: [String] = [],
@@ -57,20 +64,18 @@ extension XCTestCase {
         line: UInt = #line
     ) -> XCUIApplication {
         let device = XCUIDevice.shared
-        let earlierAppearance = device.appearance
         addTeardownBlock {
             await MainActor.run {
                 XCUIDevice.shared.orientation = .portrait
-                XCUIDevice.shared.appearance = earlierAppearance
             }
         }
-        device.appearance = appearance
         device.orientation = orientation
 
         let app = XCUIApplication()
         app.launchArguments = [
             storage == .fresh ? "--fresh-test-storage" : "--test-storage",
             "--short-timeouts",
+            "--appearance=\(appearance.rawValue)",
             "-UIPreferredContentSizeCategoryName", textSize.rawValue,
             // Tests find controls by their English labels.
             "-AppleLanguages", "(en)",
@@ -189,49 +194,10 @@ extension XCTestCase {
         }
     }
 
-    /// On the iPhone, today's stand-in Home fails two kinds of audit
-    /// finding: "Dynamic Type font sizes are partially unsupported" on
-    /// phrase tiles, and "Text clipped" on Yes, Emergency, phrase tiles and
-    /// the Speaking label (first seen on CI on 2026-10-21, when the UI
-    /// tests began running on an iPhone too). They are real and still
-    /// reported, as expected failures; the phone layout work fixes them
-    /// (docs/DECISIONS.md, "Home version 0 is a stand-in"). The expectation
-    /// is strict: once the iPhone passes, the test fails until this call is
-    /// removed. Only those pairs of kind and element are expected: the same
-    /// kind on any other element, any other kind, and any finding on the
-    /// iPad still fail the test.
-    @MainActor
-    func expectKnownPhoneHomeAuditFindings() {
-        guard UIDevice.current.userInterfaceIdiom == .phone else { return }
-        // How assertPassesAccessibilityAudit names a kind and an element.
-        func kind(_ type: XCUIAccessibilityAuditType) -> String { "; type \(type.rawValue)):" }
-        let tile = "(identifier \"phraseTile\""
-        func control(_ label: String) -> String { "on \"\(label)\" (identifier \"\"" }
-        let known = [
-            (kind(.dynamicType), tile),
-            (kind(.textClipped), tile),
-            (kind(.textClipped), control("Yes")),
-            (kind(.textClipped), control("Emergency")),
-            (kind(.textClipped), control("Speaking")),
-        ]
-        let options = XCTExpectedFailure.Options()
-        options.issueMatcher = { issue in
-            let text = issue.compactDescription
-            return text.contains("Accessibility audit (")
-                && known.contains { text.contains($0.0) && text.contains($0.1) }
-        }
-        XCTExpectFailure(
-            "Known iPhone audit findings on the stand-in Home (docs/DECISIONS.md, \"Home version 0 is a stand-in\")",
-            options: options
-        )
-    }
-
-    /// How bright most of the screen is: the median brightness of a 24×24
-    /// grid of points spread over the app's screenshot, where 0 is black
-    /// and 1 is white. Most points land on the background, so the median
-    /// follows it, whatever the tiles in between are coloured. Nil if the
-    /// screenshot cannot be read. The screenshot is kept in the results,
-    /// named by `name`, so a surprising number can be checked by eye.
+    /// Samples the empty gutter between Yes and No, not the coloured
+    /// controls (which occupy most of a phone screenshot and have the same
+    /// fill in both appearances). The screenshot is independent evidence
+    /// that the requested appearance reached the rendered app.
     @MainActor
     func backgroundBrightness(of app: XCUIApplication, name: String) -> Double? {
         let screenshot = app.screenshot()
@@ -240,38 +206,38 @@ extension XCTestCase {
         attachment.lifetime = .keepAlways
         add(attachment)
 
-        guard let image = screenshot.image.cgImage else { return nil }
-        let width = image.width
-        let height = image.height
-        guard width > 0, height > 0 else { return nil }
-        // Draw the whole screenshot once into plain 8-bit RGBA, top row
-        // first, whatever format the screenshot itself uses.
-        var pixels = [UInt8](repeating: 0, count: width * height * 4)
+        let yes = app.buttons["Yes"].frame
+        let no = app.buttons["No"].frame
+        guard no.minX - yes.maxX > 4,
+              let image = screenshot.image.cgImage,
+              app.frame.width > 0, app.frame.height > 0 else { return nil }
+        let scaleX = Double(image.width) / app.frame.width
+        let scaleY = Double(image.height) / app.frame.height
+        let point = CGPoint(x: (yes.maxX + no.minX) / 2, y: yes.midY)
+        let sampleRect = CGRect(
+            x: (point.x - app.frame.minX) * scaleX - 1,
+            y: (point.y - app.frame.minY) * scaleY - 1,
+            width: 3, height: 3
+        )
+        guard CGRect(x: 0, y: 0, width: image.width, height: image.height).contains(sampleRect),
+              let sample = image.cropping(to: sampleRect) else { return nil }
+        var pixels = [UInt8](repeating: 0, count: 3 * 3 * 4)
         let drawn = pixels.withUnsafeMutableBytes { bytes -> Bool in
             guard let context = CGContext(
-                data: bytes.baseAddress, width: width, height: height, bitsPerComponent: 8,
-                bytesPerRow: width * 4, space: CGColorSpaceCreateDeviceRGB(),
+                data: bytes.baseAddress, width: 3, height: 3, bitsPerComponent: 8,
+                bytesPerRow: 3 * 4, space: CGColorSpaceCreateDeviceRGB(),
                 bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
             ) else { return false }
-            context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+            context.draw(sample, in: CGRect(x: 0, y: 0, width: 3, height: 3))
             return true
         }
         guard drawn else { return nil }
-        let steps = 24
-        var samples: [Double] = []
-        for row in 0..<steps {
-            for column in 0..<steps {
-                let x = (2 * column + 1) * width / (2 * steps)
-                let y = (2 * row + 1) * height / (2 * steps)
-                let offset = (y * width + x) * 4
-                samples.append(
-                    (Double(pixels[offset]) + Double(pixels[offset + 1]) + Double(pixels[offset + 2])) / (3 * 255)
-                )
-            }
+        let brightness = stride(from: 0, to: pixels.count, by: 4).map { offset in
+            (Double(pixels[offset]) + Double(pixels[offset + 1]) + Double(pixels[offset + 2])) / (3 * 255)
         }
-        samples.sort()
-        return samples[samples.count / 2]
+        return brightness.reduce(0, +) / Double(brightness.count)
     }
+
 }
 
 /// The audit's guess that a phrase tile's label is "not human-readable"

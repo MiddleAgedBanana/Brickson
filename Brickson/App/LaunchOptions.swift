@@ -21,11 +21,13 @@ import SwiftData
 ///   (`AppTimeouts`), so tests don't wait minutes.
 /// - `--screen=keyboard-probe`: start on the typing work's keyboard probe
 ///   instead of Home.
+/// - `--appearance=light|dark`: request the app's colour scheme for this
+///   test launch. Without it, the app follows the system appearance.
 ///
-/// Text size and appearance are not among them. UI tests set those the
-/// system's way (UIKit's `-UIPreferredContentSizeCategoryName` argument and
-/// `XCUIDevice.appearance`; BricksonUITests, `launchedApp`), which reaches
-/// system components too and needs no code in the app.
+/// Text size still uses UIKit's `-UIPreferredContentSizeCategoryName`
+/// argument. Appearance needs an app-local option because command-line
+/// simulator runs can report `XCUIDevice.appearance == .dark` while the
+/// app stays light. The UI tests verify the rendered colours separately.
 ///
 /// Only debug builds read launch arguments. A release build, the one people
 /// install, always runs with `.standard`, so nothing here can change what
@@ -45,9 +47,16 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
         case keyboardProbe = "keyboard-probe"
     }
 
+    nonisolated enum Appearance: String, Equatable, Sendable {
+        case light
+        case dark
+    }
+
     var storage = Storage.standard
     var usesShortTimeouts = false
     var startScreen = StartScreen.home
+    /// Nil leaves the system in control. This is never a saved setting.
+    var appearance: Appearance?
     /// Arguments written like these options but not understood: a misspelt
     /// name, an unknown value. They are logged at launch, so a typo in a
     /// test shows up instead of quietly running with the defaults.
@@ -99,6 +108,8 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
                 options.usesShortTimeouts = true
             case ("screen", let value?) where StartScreen(rawValue: value) != nil:
                 options.startScreen = StartScreen(rawValue: value) ?? .home
+            case ("appearance", let value?) where Appearance(rawValue: value) != nil:
+                options.appearance = Appearance(rawValue: value)
             default:
                 options.unrecognized.append(argument)
             }

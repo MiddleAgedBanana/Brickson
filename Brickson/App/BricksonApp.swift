@@ -24,7 +24,7 @@ struct BricksonApp: App {
 
         let audioSafety = AudioSafetyMonitor()
         _audioSafety = State(initialValue: audioSafety)
-        _speech = State(initialValue: SpeechService(audioSafetyMonitor: audioSafety))
+        _speech = State(initialValue: SpeechService(settings: launch.settings, audioSafetyMonitor: audioSafety))
 
         let opened = launch.openLibrary()
         let library = PhraseLibraryLaunch.prepare(container: opened.container, isVolatile: opened.isVolatile)
@@ -41,10 +41,22 @@ struct BricksonApp: App {
                 .environment(\.isVolatileStore, isVolatileStore)
                 .environment(\.phraseLibraryIssue, phraseLibraryIssue)
                 .environment(\.appTimeouts, launch.timeouts)
+                .preferredColorScheme(testColorScheme)
         }
         .modelContainer(container)
         .onChange(of: scenePhase, initial: true) { _, phase in
             UIApplication.shared.isIdleTimerDisabled = ScreenWakePolicy.keepsScreenAwake(in: phase)
+        }
+    }
+
+    /// Release launches always use .standard, whose appearance is nil.
+    /// A UI test's preference affects this presentation, not saved settings
+    /// or the simulator's global appearance.
+    private var testColorScheme: ColorScheme? {
+        switch launch.appearance {
+        case .some(.light): .light
+        case .some(.dark): .dark
+        case .none: nil
         }
     }
 }

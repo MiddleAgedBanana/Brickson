@@ -72,12 +72,14 @@ other work streams can rely on it.
   removed before anything can fail; unit runs print coverage and check the
   String Catalog; `PaletteTests` uses `UITraitCollection(mutations:)`.
 
-## Verified
+## Original verification (before the Mac diagnosis)
 
 - Written on a cloud machine that cannot build Swift. The Swift changes
   are untested until this pull request's CI runs; read its latest run.
-- `python3 scripts/test-runner.py` (33 tests, 22 of them new) passes on
-  Linux with bash 5. Each new assertion was seen failing under a
+- The initial `python3 scripts/test-runner.py` run (33 tests, 22 new) passed
+  on Linux with bash 5. Follow-up commits brought this to 46 tests at
+  `6e6cbcc`; the Mac lifecycle fix brings it to 51. Each new assertion was
+  seen failing under a
   deliberate break: dropping the warm-up, the iPhone run, the keyboard
   step, the `--fresh-test-storage` argument, or the zero-test check.
 - What would make the new Swift tests fail: `LaunchOptionsTests`, a
@@ -85,9 +87,9 @@ other work streams can rely on it.
   storage, or DEBUG no longer set for tests; `HomeReachabilityTests`, a
   quick control moved off screen, covered or under 44pt in any of the
   twelve state, size and orientation combinations; the gate tests, the
-  text-size argument or `XCUIDevice.appearance` not taking effect.
+  text-size argument or requested appearance not taking effect.
 
-## Not verified
+## Original limits (superseded where the Mac diagnosis has evidence)
 
 - Nothing ran on macOS outside CI, including `scripts/test.sh` on
   macOS's bash 3.2.
@@ -106,11 +108,21 @@ other work streams can rely on it.
   produces; treat warnings as errors once CI builds clean; one `tests.yml`
   change for the owner to paste that uploads `build/TestResults` from
   both jobs.
-- Phone layout thread: Home on the iPhone must pass Apple's audit; then
-  remove `expectKnownPhoneHomeAuditFindings` (the tests fail until it is).
-- Speech thread: take `launch.settings` in `AppAudio.makeForApp(settings:)`
-  once both changes are on `main`. Typing thread: switch on
+- The Mac follow-up removes `expectKnownPhoneHomeAuditFindings` and fixes
+  the exposed layout and harness defects; see the diagnosis record.
+- The Mac follow-up wires `launch.settings` into the current SpeechService;
+  a later AppAudio wrapper must preserve that injection. Typing thread:
+  switch on
   `launch.startScreen == .keyboardProbe`, and keep drafts under
   `launch.filesDirectory`.
-- Phone layout thread: audits at AX5 and on the iPhone in landscape are
-  not added yet; add them with the new layout.
+- The Mac follow-up adds strict AX5 audits in both appearances. The
+  reachability tests still verify that turning the iPhone to landscape
+  leaves its portrait layout intact; iPad tests exercise both orientations.
+
+## Mac follow-up
+
+The earlier claim that changing the brightness sample solved dark mode
+was not supported by a passing run. Both screenshots remained light at
+`6e6cbcc`. [The diagnosis record](2026-10-21-ui-test-diagnosis.md) documents
+that reproduction, the debug appearance correction, strict audit fixes,
+speech settings injection, simulator lifecycle tests and final validation.

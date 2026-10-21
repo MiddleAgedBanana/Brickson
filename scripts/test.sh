@@ -23,7 +23,9 @@
 #   DESTINATION='platform=iOS Simulator,id=<udid>' scripts/test.sh
 #
 # The script says which simulator it chose, starts it and waits until it has
-# finished starting (a DESTINATION's simulator too), and leaves it running.
+# finished starting (a DESTINATION's simulator too). A device this script
+# boots is shut down after its run, before the next family starts; a device
+# that was already running is left running.
 # Before UI tests it turns off the keyboard's minimized bar, so typing tests
 # see the full software keyboard people actually use, and launches the app
 # once so the first test doesn't pay for a cold simulator.
@@ -117,6 +119,49 @@ destination_simulator() {
     # 3: not a simulator this script can resolve; anything else is an error.
     [ "$status" -eq 0 ] || [ "$status" -eq 3 ] || return "$status"
 }
+
+# Only a successful boot gives this invocation ownership of a simulator.
+# Never stop a device that was already running, or use `shutdown all`:
+# another agent or the owner may be using it.
+owned_simulator=""
+simulator_cleanup_failed=0
+
+simulator_state() {
+    xcrun simctl list devices available --json | /usr/bin/python3 -I -c '
+import json, sys
+devices = json.load(sys.stdin)["devices"]
+for family in devices.values():
+    for device in family:
+        if device["udid"] == sys.argv[1]:
+            print(device["state"])
+            sys.exit(0)
+sys.exit("Could not read simulator state for " + sys.argv[1])
+' "$1"
+}
+
+cleanup_simulator() {
+    local udid="$owned_simulator"
+    [ -n "$udid" ] || return 0
+    # A failed shutdown is reported once; don't retry it in the exit trap.
+    owned_simulator=""
+    echo "Shutting down simulator $udid (booted by this test run)"
+    if ! xcrun simctl shutdown "$udid"; then
+        simulator_cleanup_failed=1
+        echo "Could not shut down simulator $udid; stopping before another family starts." >&2
+        return 1
+    fi
+}
+
+finish() {
+    local status=$?
+    trap - EXIT
+    cleanup_simulator || { [ "$status" -ne 0 ] || status=1; }
+    exit "$status"
+}
+
+trap finish EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
 
 # Simulators minimize the software keyboard to a bar, as if a hardware
 # keyboard were attached. The people using Brickson type on the full
@@ -283,8 +328,8 @@ run_xcodebuild() {
 # ("ipad" or "iphone"), or the one DESTINATION names ("destination").
 # Called after || below, where set -e no longer stops a failing step, so
 # every step returns its own failure.
-run_tests() {
-    local family="$1" udid destination status=0 catalog_status=0
+run_tests_on_simulator() {
+    local family="$1" udid destination state status=0 catalog_status=0
     local results="$results_dir/$mode-$family.xcresult"
     # Remove the last run's bundle first, so a run that stops before
     # testing never leaves an old bundle that looks like its result.
@@ -303,6 +348,18 @@ run_tests() {
         destination="id=$udid"
     fi
     if [ -n "$udid" ]; then
+        state="$(simulator_state "$udid")" || return 1
+        case "$state" in
+            Shutdown)
+                xcrun simctl boot "$udid" || return 1
+                owned_simulator="$udid"
+                ;;
+            Booted | Booting) ;;
+            *)
+                echo "Simulator $udid is $state; wait for it to finish before testing." >&2
+                return 1
+                ;;
+        esac
         # Start the simulator and wait until it has finished starting.
         # Left to xcodebuild, the first app launch can come while the
         # simulator is still settling; on GitHub's busy machines it once
@@ -351,6 +408,16 @@ run_tests() {
     return "$catalog_status"
 }
 
+# All early returns after boot go through cleanup, including failed
+# preparation, builds, tests and result summaries. Keep the original test
+# failure when cleanup also fails. The exit trap covers interrupted runs.
+run_tests() {
+    local status=0
+    run_tests_on_simulator "$1" || status=$?
+    cleanup_simulator || { [ "$status" -ne 0 ] || status=1; }
+    return "$status"
+}
+
 case "$mode" in
     unit | ui)
         scheme=Brickson
@@ -382,6 +449,7 @@ case "$mode" in
                 echo "The $mode run failed on the $family simulator (status $result)." >&2
                 [ "$status" -ne 0 ] || status=$result
             }
+            [ "$simulator_cleanup_failed" -eq 0 ] || break
         done
         [ "$status" -eq 0 ] || exit "$status"
         if [ "$mode" = ui ]; then

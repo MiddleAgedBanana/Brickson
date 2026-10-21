@@ -99,7 +99,8 @@ The app test script generates the project and picks the newest
 iPad Pro 13-inch simulator that both the app (its deployment target) and
 the Xcode in use support, falling back to another iPad. UI tests then run
 again on the newest standard iPhone. It picks by device type, so a
-simulator you renamed still counts. To run on one kind only, or on a
+simulator you renamed still counts. It shuts down devices it booted after
+each run; devices that were already running stay running. To run on one kind only, or on a
 specific installed simulator:
 
 ```sh
