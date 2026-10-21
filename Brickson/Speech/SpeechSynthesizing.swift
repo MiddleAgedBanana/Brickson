@@ -126,8 +126,15 @@ final class SpeechSynthesizerEvents: NSObject, AVSpeechSynthesizerDelegate {
 
     private nonisolated func forward(_ utterance: AVSpeechUtterance, _ event: SpeechSynthesisEvent) {
         let reference = UtteranceReference(utterance: utterance)
-        Task { @MainActor [weak self] in
-            self?.onEvent?(reference.utterance, event)
+        // The main queue runs blocks in the order they were submitted;
+        // separate Tasks make no such promise. A finish must never overtake
+        // the progress report sent before it, or a phrase cut off just
+        // after its last report would read as complete
+        // (docs/DECISIONS.md, "A phrase the system cuts off").
+        DispatchQueue.main.async { [weak self] in
+            MainActor.assumeIsolated {
+                self?.onEvent?(reference.utterance, event)
+            }
         }
     }
 }

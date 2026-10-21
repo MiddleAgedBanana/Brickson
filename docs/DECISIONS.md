@@ -411,7 +411,11 @@ reference app.
 - **Checked every second while it sounds, and on returning to the
   foreground.** A tone that went quiet without a report shows "Alert
   stopped" rather than "Sounding" over silence, and a repeat activation
-  restarts a quiet tone instead of being absorbed.
+  restarts a quiet tone instead of being absorbed. When the session could
+  not be activated, the tone is tried anyway (it may still play), Home
+  shows "Audio failed", and a repeat activation retries the session
+  instead of being absorbed, since the tone may be muted by the silent
+  switch (Codex review of PR #16).
 - **No time limit and no flashing.** It sounds until someone chooses Stop.
 - **The tone itself is a placeholder.** Before release it is replaced with
   a harmonic-rich tone that carries through a closed door and is easy to

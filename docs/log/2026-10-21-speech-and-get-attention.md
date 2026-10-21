@@ -34,6 +34,12 @@ fixed, and the Get Attention alarm is built and ready for Home to show.
   start-only, dips while a phrase speaks, and never restarts by itself
   (docs/DECISIONS.md, "Get Attention", "Audio session notices"). It is in
   the environment but no control starts it yet.
+- **After Codex's review of `fc047dc`.** Synthesizer reports reach the
+  main actor through the main queue, which keeps their order (separate
+  Tasks do not promise it, and a finish that overtook its progress report
+  would hide a cut-off phrase). A Get Attention whose session could not be
+  activated is still tried, and the next activation retries the session
+  instead of being absorbed.
 - **Settings support.** `preview(from: .voice(id:))` speaks in that
   voice (`nil` means the voice Automatic would choose), and
   `VoicePreviewControl.normalRate` exists for a Normal Speed button.
@@ -50,9 +56,10 @@ fixed, and the Get Attention alarm is built and ready for Home to show.
 - `6aeda4b` Document the speech seams and the Get Attention alarm
 - `5683e7e` Let the off-main-thread tests read their boxed framework
   objects off the main actor (the first CI run's only compile errors)
-- The merge of `main` (PRs #12, #13 and #15), which adopts
+- `fc047dc` The merge of `main` (PRs #12, #13 and #15), which adopts
   `launch.settings`, keeps PR #13's three settings tests on the new
   harness, and records "Personal Voice is never written to a file".
+- The commit after it answers Codex's two findings on `fc047dc`.
 
 ## Verified
 

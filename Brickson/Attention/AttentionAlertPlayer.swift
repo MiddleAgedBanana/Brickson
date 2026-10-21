@@ -30,6 +30,11 @@ final class AttentionAlertPlayer {
     /// Goes up whenever the player is replaced or discarded, so a late
     /// report from an old player, or an old health check, changes nothing.
     @ObservationIgnored private var playbackGeneration: UInt = 0
+    /// Whether the session could not be activated for the tone now playing.
+    /// The tone is tried anyway, but it may be muted by the silent switch,
+    /// so the next Get Attention retries the session instead of being
+    /// absorbed as "already sounding".
+    @ObservationIgnored private var sessionActivationFailed = false
     @ObservationIgnored private let audioSession: AudioSessionCoordinator
     @ObservationIgnored private let makePlayback: @MainActor () throws -> any AttentionTonePlayback
     @ObservationIgnored private let sleep: @MainActor @Sendable (Duration) async -> Void
@@ -60,7 +65,7 @@ final class AttentionAlertPlayer {
 
     /// Get Attention. Idempotent while the tone is really playing.
     func start() {
-        let livePlayerIsPlaying = playback?.isPlaying ?? false
+        let livePlayerIsPlaying = (playback?.isPlaying ?? false) && !sessionActivationFailed
         switch status.startDecision(livePlayerIsPlaying: livePlayerIsPlaying) {
         case .alreadySounding:
             logger.info("Get Attention chosen again while sounding; the alarm carries on")
@@ -72,7 +77,9 @@ final class AttentionAlertPlayer {
         // A player the state thought was playing but which went quiet is
         // rebuilt rather than trusted.
         discardPlayback()
-        audioSession.acquire(for: .attentionAlert)
+        // A failed activation already shows "Audio failed" on Home. The tone
+        // is still tried, since it may play; the next Get Attention retries.
+        sessionActivationFailed = audioSession.acquire(for: .attentionAlert) == .failed
 
         let candidate: any AttentionTonePlayback
         do {

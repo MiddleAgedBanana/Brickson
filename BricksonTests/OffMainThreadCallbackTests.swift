@@ -57,6 +57,38 @@ struct OffMainThreadCallbackTests {
         #expect(received.contains(.cancelled))
     }
 
+    /// Reports sent one after another from a background thread arrive in
+    /// that order. A finish that overtook the progress before it would hide
+    /// a cut-off phrase. Fails if the hop stops preserving order.
+    @Test @MainActor func synthesizerReportsKeepTheirOrderAcrossTheHop() async {
+        let events = SpeechSynthesizerEvents()
+        var received: [SpeechSynthesisEvent] = []
+        events.onEvent = { _, event in received.append(event) }
+        let synthesizer = Unchecked(AVSpeechSynthesizer())
+        let utterance = Unchecked(AVSpeechUtterance(string: "Hello there."))
+        let pairs = 50
+
+        await Task.detached {
+            for index in 0..<pairs {
+                events.speechSynthesizer(
+                    synthesizer.value,
+                    willSpeakRangeOfSpeechString: NSRange(location: index, length: 1),
+                    utterance: utterance.value
+                )
+                events.speechSynthesizer(synthesizer.value, didCancel: utterance.value)
+            }
+        }.value
+        let arrived = await waitUntil { received.count == pairs * 2 }
+
+        #expect(arrived)
+        let progress = received.enumerated().filter { $0.offset.isMultiple(of: 2) }.map(\.element)
+        let cancels = received.enumerated().filter { !$0.offset.isMultiple(of: 2) }.map(\.element)
+        #expect(cancels.allSatisfy { $0 == .cancelled })
+        #expect(progress.enumerated().allSatisfy { item in
+            if case let .willSpeak(through: offset, at: _) = item.element { offset == item.offset + 1 } else { false }
+        })
+    }
+
     /// The Personal Voice answer arrives on an arbitrary queue.
     @Test @MainActor func thePersonalVoiceAnswerCanArriveOnABackgroundThread() async throws {
         let harness = AudioHarness()

@@ -99,6 +99,29 @@ struct AttentionAlertPlayerTests {
         #expect(activationsAtPlay == [1, 2])
     }
 
+    /// When the session cannot be activated, the tone is tried anyway but
+    /// may be muted by the silent switch, so the next Get Attention must
+    /// retry the session rather than be absorbed as "already sounding".
+    /// Fails if a failed activation leaves later activations absorbed.
+    @Test func afterAFailedSessionActivationTheNextGetAttentionRetriesTheSession() {
+        let harness = AudioHarness()
+        harness.audioSession.refusesActivation = true
+        harness.attention.start()
+        #expect(harness.tones.latest?.isPlaying == true)
+        #expect(!harness.safety.audioSessionHealthy)
+
+        harness.audioSession.refusesActivation = false
+        harness.attention.start()
+
+        #expect(harness.tones.attempts == 2)
+        #expect(harness.safety.audioSessionHealthy)
+        #expect(harness.attention.state == .playing)
+
+        // With the session active, a repeat is absorbed again.
+        harness.attention.start()
+        #expect(harness.tones.attempts == 2)
+    }
+
     // MARK: Start-only
 
     /// Under dwell a held look can fire Get Attention again. That must never
