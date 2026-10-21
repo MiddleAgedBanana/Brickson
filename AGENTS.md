@@ -58,13 +58,22 @@ scripts/test.sh ui       # the UI tests: launch the real app and drive it
 scripts/test.sh device   # a build for a real device (needs DEVELOPMENT_TEAM)
 ```
 
-`scripts/test.sh` runs `xcodegen generate` first, starts the newest
-iPad Pro 13-inch simulator (any iPad if there is none) whose iOS lies
-between the deployment target and the SDK of the Xcode in use, waits for
-it, then runs `xcodebuild` on it.
-`DESTINATION='platform=iOS Simulator,name=iPhone 17' scripts/test.sh`
-chooses another. The iPad and the iPhone are both first-class: run both
-before a release.
+`scripts/test.sh` runs `xcodegen generate` first and prints the Xcode
+and XcodeGen versions. It chooses simulators by device type, never by
+name: the newest iPad Pro 13-inch (any iPad if there is none) and, for UI
+tests, the newest standard iPhone too, each with an iOS between the
+deployment target and the SDK of the Xcode in use. It starts each one,
+waits for it, builds for testing, then runs the tests. Before UI tests it
+shows the full software keyboard and launches the app once, so the first
+test does not meet a cold simulator. `SIMULATOR_FAMILY=iphone` runs one
+family; `DESTINATION='platform=iOS Simulator,name=iPhone 17' scripts/test.sh`
+names one simulator, which is started and waited for too. Anything after
+the mode goes to `xcodebuild`
+(`scripts/test.sh unit '-only-testing:BricksonTests/PaletteTests/theContrastFormulaMatchesWCAG()'`).
+Each run keeps its result bundle, with screenshots of UI-test failures and
+the captures UI tests attach, in `build/TestResults/<mode>-<family>.xcresult`,
+and prints how many tests ran; a run in which no test ran fails. The iPad
+and the iPhone are both first-class: UI tests run on both every time.
 
 On a Mac, the unit suite must be **100% green before any commit**; for
 work made where nothing can be built, CI must be green before the pull
@@ -369,7 +378,8 @@ the failure.
   it and doesn't. A feature that is planned but not built yet is not
   missing.
 - The accessibility audit's "not human-readable" guess on phrase-tile
-  labels, which `LaunchTests` expects.
+  labels, which the UI tests' audit helper
+  (`assertPassesAccessibilityAudit`) expects.
 - That an agent did not run the app: for cloud agents the GitHub CI run is
   the build (*Build and test*).
 
@@ -458,8 +468,9 @@ Shortcuts. **Never apply** `core-data` skills (this app uses SwiftData),
 
 ## Gotchas
 
-- **The simulator keyboard is minimized by default.** Show the full
-  software keyboard before any typing test:
+- **The simulator keyboard is minimized by default.** `scripts/test.sh ui`
+  shows the full software keyboard before the tests; anywhere else, show
+  it before any typing test:
   `xcrun simctl spawn <udid> defaults write com.apple.keyboard.preferences AutomaticMinimizationEnabled -bool false`
   (write `true` to restore the bar).
 - **Display Zoom is lost whenever a simulator restarts**, and `xcodebuild`
@@ -475,7 +486,8 @@ Shortcuts. **Never apply** `core-data` skills (this app uses SwiftData),
   simulators.
 - **Swift Testing and `-only-testing:`**: include the function's
   parentheses (`-only-testing:BricksonTests/PaletteTests/theContrastFormulaMatchesWCAG()`);
-  without them `xcodebuild` runs 0 tests and reports success. In zsh, pass
+  without them `xcodebuild` runs 0 tests and reports success
+  (`scripts/test.sh` fails such a run: "No tests ran"). In zsh, pass
   several flags as an array, not one string.
 - **A failing `xcodebuild test` can sit for minutes collecting
   diagnostics**; `scripts/test.sh` passes `-collect-test-diagnostics never`.
@@ -483,14 +495,24 @@ Shortcuts. **Never apply** `core-data` skills (this app uses SwiftData),
   On GitHub's busy machines, one run found Again still off when the test
   read it straight after a tap, and the re-run's first launch timed out,
   both on code that was green on `main` (cause not established; a slow
-  first launch is the likely one). With no `DESTINATION`, `scripts/test.sh`
-  starts its simulator and waits for it to finish starting
-  (`xcrun simctl bootstatus <udid> -b`), which leaves it running; a
-  `DESTINATION` you set is left to xcodebuild, which doesn't wait. In UI
+  first launch is the likely one; on 2026-10-21 the first test failed with
+  "kAXErrorServerNotFound" and the next took 187 s). `scripts/test.sh`
+  starts each simulator, one a `DESTINATION` names included, and waits for
+  it to finish starting (`xcrun simctl bootstatus <udid> -b`), which leaves
+  it running; before UI tests it also launches the app once (a warm-up,
+  on test-only storage). A `DESTINATION` that is not one simulator is left
+  to xcodebuild, which doesn't wait. In UI
   tests, wait for a change after `tap()`: `waitForExistence(timeout:)` for
   something appearing, an `XCTWaiter` expectation for a property such as
   `isEnabled`. Check that something did *not* change only after waiting
   for the change that did happen.
+- **UI tests launch through `launchedApp`** (BricksonUITests/LaunchHelpers.swift):
+  fresh test-only storage, short idle limits, English, and the text size,
+  appearance and orientation a test asks for. A bare
+  `XCUIApplication().launch()` runs on whatever the simulator kept from
+  earlier runs. The app reads these launch arguments (`LaunchOptions`)
+  only in debug builds; a release build ignores them. `assertReachable`,
+  `attachCapture` and `assertPassesAccessibilityAudit` sit beside it.
 - **Simulator audio is unreliable.** Every sound check needs a real device.
 - **Apple's accessibility audit can time out on CI** with domain
   `com.apple.xcode.xctest.accessibilityAudit`, code `-56`. The UI suite

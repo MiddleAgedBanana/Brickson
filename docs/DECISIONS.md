@@ -101,9 +101,10 @@ anything the new Xcode reports.
   warning says so, and a pull request moves both jobs to it. Cloud agents
   cannot change workflow files (AGENTS.md, *Gotchas*), so the owner, or an
   agent on the owner's Mac, commits that change.
-- **Simulators.** `scripts/test.sh` tests on the newest iPad simulator
-  between the deployment target and the SDK of the Xcode in use. No
-  version is written into it.
+- **Simulators.** `scripts/test.sh` tests on the newest iPad simulator,
+  and runs UI tests on the newest standard iPhone too, each between the
+  deployment target and the SDK of the Xcode in use. No version is
+  written into it.
 - **Documents** say "the current Xcode release", not a number. A dated
   record of what something was checked on (the tables in
   docs/HANDOFF.md) keeps its version: that is history, not a pin.
