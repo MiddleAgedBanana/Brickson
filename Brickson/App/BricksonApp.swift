@@ -9,6 +9,7 @@ struct BricksonApp: App {
     @Environment(\.scenePhase) private var scenePhase
     @State private var audioSafety: AudioSafetyMonitor
     @State private var speech: SpeechService
+    @State private var setup = SetupStore(defaults: .standard)
     private let container: ModelContainer
     private let isVolatileStore: Bool
     private let phraseLibraryIssue: PhraseLibraryIssue?
@@ -30,6 +31,8 @@ struct BricksonApp: App {
             HomeView()
                 .environment(audioSafety)
                 .environment(speech)
+                .environment(setup)
+                .environment(\.showsSetupHint, FirstRunHint.isShown(for: setup.record))
                 .environment(\.isVolatileStore, isVolatileStore)
                 .environment(\.phraseLibraryIssue, phraseLibraryIssue)
         }
