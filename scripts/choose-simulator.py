@@ -16,9 +16,12 @@ run tests on a runtime newer than its own SDK, and the app cannot install on
 one older than its deployment target.
 
 `--destination` finds the simulator an xcodebuild destination names, by
-`id=` or by `name=` (with `OS=` if given, otherwise the newest runtime), so
-the script waits for the same device the build uses. It exits 3 when the
-destination is not one simulator (a real device, `generic/platform=...`).
+`id=` or by `name=` (with `OS=` if given, otherwise the newest runtime that
+`--min` and `--max` allow, as xcodebuild cannot run a newer one), so the
+script waits for the same device the build uses. A named simulator whose
+iOS is outside `--min` and `--max` is refused with a message saying why. It
+exits 3 when the destination is not one simulator (a real device,
+`generic/platform=...`).
 
 Exit status: 0 chosen, 1 nothing suitable is installed, 2 bad arguments,
 3 the destination is not a simulator this script can resolve.
@@ -96,17 +99,12 @@ def choose_by_family(listing, family, minimum, maximum):
         (device, version)
         for device, version in ios_devices(listing)
         if device.get("deviceTypeIdentifier", "").startswith(prefix + "-")
-        and (minimum is None or version >= minimum)
-        and (maximum is None or version <= maximum)
+        and in_range(version, minimum, maximum)
     ]
     if not candidates:
         wanted = f"{DISPLAY_NAMES[family]} simulator"
-        if minimum is not None and maximum is not None:
-            wanted += f" with iOS {describe_version(minimum)} to {describe_version(maximum)}"
-        elif minimum is not None:
-            wanted += f" with iOS {describe_version(minimum)} or later"
-        elif maximum is not None:
-            wanted += f" with iOS {describe_version(maximum)} or earlier"
+        if minimum is not None or maximum is not None:
+            wanted += f" with {describe_range(minimum, maximum)}"
         sys.exit(f"No {wanted} is installed. Add one in Xcode: Settings, Components "
                  "for the runtime, then Window, Devices and Simulators.")
     device, version = max(candidates, key=lambda item: rank(*item, family))
@@ -122,7 +120,19 @@ def parse_destination(text):
     return fields
 
 
-def choose_by_destination(listing, destination):
+def in_range(version, minimum, maximum):
+    return (minimum is None or version >= minimum) and (maximum is None or version <= maximum)
+
+
+def describe_range(minimum, maximum):
+    if minimum is not None and maximum is not None:
+        return f"iOS {describe_version(minimum)} to {describe_version(maximum)}"
+    if minimum is not None:
+        return f"iOS {describe_version(minimum)} or later"
+    return f"iOS {describe_version(maximum)} or earlier"
+
+
+def choose_by_destination(listing, destination, minimum=None, maximum=None):
     fields = parse_destination(destination)
     # Without a platform, xcodebuild also accepts a real device's id or
     # name; only an explicit simulator destination that matches nothing is
@@ -134,6 +144,9 @@ def choose_by_destination(listing, destination):
     if "id" in fields:
         for device, version in devices:
             if device["udid"] == fields["id"]:
+                if not in_range(version, minimum, maximum):
+                    sys.exit(f"The simulator {fields['id']} has iOS {describe_version(version)}; "
+                             f"the tests need {describe_range(minimum, maximum)}.")
                 return device, version
         if explicit:
             sys.exit(f"No available iOS simulator has the id {fields['id']}.")
@@ -153,8 +166,15 @@ def choose_by_destination(listing, destination):
                 return None
             sys.exit(f"No available iOS simulator is named \"{fields['name']}\""
                      + (f" with iOS {wanted_os}" if wanted_os != "latest" else "") + ".")
-        # The newest runtime, as xcodebuild does for a name without OS.
-        return max(named, key=lambda item: (item[1], item[0]["udid"]))
+        runnable = [(device, version) for device, version in named
+                    if in_range(version, minimum, maximum)]
+        if not runnable:
+            found = ", ".join(sorted({describe_version(version) for _, version in named}))
+            sys.exit(f"The simulator named \"{fields['name']}\" has iOS {found}; "
+                     f"the tests need {describe_range(minimum, maximum)}.")
+        # The newest runtime the tests can use, as xcodebuild does for a
+        # name without OS.
+        return max(runnable, key=lambda item: (item[1], item[0]["udid"]))
     return None
 
 
@@ -177,7 +197,8 @@ def main():
 
     listing = json.load(sys.stdin)
     if arguments.destination is not None:
-        chosen = choose_by_destination(listing, arguments.destination)
+        chosen = choose_by_destination(listing, arguments.destination,
+                                       limits.get("min"), limits.get("max"))
         if chosen is None:
             return NOT_A_SIMULATOR
         reason = "named by DESTINATION"

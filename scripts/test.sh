@@ -58,6 +58,7 @@ project=(-project Brickson.xcodeproj)
 # folders elsewhere.
 derived_data="${DERIVED_DATA_DIR:-build/DerivedData}"
 results_dir="${TEST_RESULTS_DIR:-build/TestResults}"
+catalog="${STRING_CATALOG:-Brickson/Resources/Localizable.xcstrings}"
 
 # Prints one build setting of the app, as Xcode reads it from the
 # generated project; nothing when it is not set.
@@ -99,13 +100,19 @@ newest_simulator() {
 }
 
 # Prints the id of the simulator DESTINATION names, so the script can wait
-# for the same device xcodebuild uses. Prints nothing when DESTINATION is
-# not a single simulator (a real device, say): xcodebuild then chooses.
+# for the same device xcodebuild uses. Its iOS must lie in the same range
+# as a simulator chosen by family; a name without OS= gets the newest
+# runtime in that range, the one xcodebuild can run. Prints nothing when
+# DESTINATION is not a single simulator (a real device, say): xcodebuild
+# then chooses.
 destination_simulator() {
-    local listing status=0
+    local listing oldest newest status=0
+    oldest="$(deployment_target)" || return 1
+    newest="$(xcrun --sdk iphonesimulator --show-sdk-version)" || return 1
     listing="$(xcrun simctl list devices available --json)" || return 1
     printf '%s' "$listing" |
-        /usr/bin/python3 -I scripts/choose-simulator.py --destination "$DESTINATION" ||
+        /usr/bin/python3 -I scripts/choose-simulator.py --destination "$DESTINATION" \
+            --min "$oldest" --max "$newest" ||
         status=$?
     # 3: not a simulator this script can resolve; anything else is an error.
     [ "$status" -eq 0 ] || [ "$status" -eq 3 ] || return "$status"
@@ -160,21 +167,21 @@ with open(sys.argv[1], "rb") as file:
 
 # Prints how many tests ran, and fails when none did: a filter that matches
 # no test (a Swift Testing name without its parentheses, say) otherwise
-# reports success. If the summary cannot be read the run's result stands,
-# with a warning.
+# reports success. A summary that cannot be read fails the run too, since
+# then nothing shows that any test ran.
 report_test_count() {
     local summary
     if ! summary="$(xcrun xcresulttool get test-results summary --path "$1" 2>/dev/null)"; then
-        echo "warning: could not read the test summary in $1, so the number of tests is not checked." >&2
-        return 0
+        echo "error: could not read the test summary in $1, so nothing shows that any test ran." >&2
+        return 1
     fi
     printf '%s' "$summary" | /usr/bin/python3 -I -c '
 import json, sys
 summary = json.load(sys.stdin)
 total = summary.get("totalTestCount")
 if total is None:
-    print("warning: the test summary has no test count, so it is not checked.", file=sys.stderr)
-    sys.exit(0)
+    print("error: the test summary has no test count, so nothing shows that any test ran.", file=sys.stderr)
+    sys.exit(1)
 counts = ", ".join(f"{summary.get(key, 0)} {label}" for key, label in [
     ("passedTests", "passed"), ("failedTests", "failed"),
     ("skippedTests", "skipped"), ("expectedFailures", "expected failures")])
@@ -188,6 +195,66 @@ if total == 0:
     sys.exit("No tests ran. A filter that matches nothing reports success; a Swift Testing "
              "name needs its parentheses (AGENTS.md, Gotchas).")
 '
+}
+
+# Prints how much of the app's code the unit tests ran (project.yml turns
+# coverage on for the Brickson scheme). Coverage is a guide to what is not
+# tested at all, not a target; a run without it only warns.
+report_coverage() {
+    local report
+    if ! report="$(xcrun xccov view --report --only-targets --json "$1" 2>/dev/null)"; then
+        echo "warning: could not read code coverage from $1." >&2
+        return 0
+    fi
+    printf '%s' "$report" | /usr/bin/python3 -I -c '
+import json, sys
+report = json.load(sys.stdin)
+targets = report if isinstance(report, list) else report.get("targets", [])
+for target in targets:
+    if target.get("name", "").split(".")[0] == "Brickson":
+        print("Code coverage: the unit tests ran {:.1%} of the app'"'"'s lines ({} of {}).".format(
+            target.get("lineCoverage", 0), target.get("coveredLines", "?"),
+            target.get("executableLines", "?")))
+        break
+else:
+    print("warning: the coverage report names no Brickson target.", file=sys.stderr)
+' || echo "warning: could not read code coverage from $1." >&2
+}
+
+# The String Catalog holds every string people see, ready for translation.
+# Xcode's editor fills it in as it builds; xcodebuild does not. So after a
+# unit-test build the script brings a copy up to date from the strings the
+# compiler found (SWIFT_EMIT_LOC_STRINGS in project.yml). On a Mac it
+# writes the result into the catalog, to commit with the change. On CI
+# (CI=true) a catalog that does not match the code fails the run, with the
+# difference printed so it can be applied without a Mac.
+check_string_catalog() {
+    local strings_data folder synced
+    strings_data=("$derived_data"/Build/Intermediates.noindex/Brickson.build/*-iphonesimulator/Brickson.build/Objects-normal/*/*.stringsdata)
+    if [ ! -e "${strings_data[0]}" ]; then
+        echo "The build left no strings for the String Catalog (.stringsdata files), so it could not be checked." >&2
+        return 1
+    fi
+    folder="$(mktemp -d "${TMPDIR:-/tmp}/brickson-strings.XXXXXX")" || return 1
+    synced="$folder/Localizable.xcstrings"
+    command cp "$catalog" "$synced" || return 1
+    if ! xcrun xcstringstool sync "$synced" --stringsdata "${strings_data[@]}"; then
+        echo "xcstringstool could not bring the String Catalog up to date." >&2
+        return 1
+    fi
+    if cmp -s "$catalog" "$synced"; then
+        echo "String Catalog: up to date with the code."
+    elif [ "${CI:-}" = true ]; then
+        echo "The String Catalog ($catalog) does not match the code. The up-to-date catalog differs like this:" >&2
+        diff -u "$catalog" "$synced" >&2 || true
+        echo "Run scripts/test.sh on a Mac and commit $catalog, or apply the difference above." >&2
+        command rm -rf "$folder"
+        return 1
+    else
+        command cp "$synced" "$catalog" || return 1
+        echo "String Catalog: updated $catalog from the code. Commit it with your change."
+    fi
+    command rm -rf "$folder"
 }
 
 # xcbeautify shortens xcodebuild's very long output when it is installed
@@ -217,7 +284,12 @@ run_xcodebuild() {
 # Called after || below, where set -e no longer stops a failing step, so
 # every step returns its own failure.
 run_tests() {
-    local family="$1" udid destination results status=0
+    local family="$1" udid destination status=0 catalog_status=0
+    local results="$results_dir/$mode-$family.xcresult"
+    # Remove the last run's bundle first, so a run that stops before
+    # testing never leaves an old bundle that looks like its result.
+    # (xcodebuild also will not write over one.)
+    command rm -rf "$results" || return 1
     if [ "$family" = destination ]; then
         udid="$(destination_simulator)" || return 1
         # The same simulator, by id, for the wait and the build.
@@ -252,10 +324,12 @@ run_tests() {
     if [ "$mode" = ui ] && [ -n "$udid" ]; then
         warm_up "$udid"
     fi
+    # The tests run even when the catalog is out of date, so one run shows
+    # both.
+    if [ "$mode" = unit ] && [ -n "$udid" ]; then
+        check_string_catalog || catalog_status=$?
+    fi
     echo "Testing $scheme on: $destination"
-    results="$results_dir/$mode-$family.xcresult"
-    # xcodebuild will not write over an earlier result bundle.
-    command rm -rf "$results" || return 1
     mkdir -p "$results_dir" || return 1
     run_xcodebuild "${project[@]}" -scheme "$scheme" \
         -destination "$destination" \
@@ -266,7 +340,11 @@ run_tests() {
         test-without-building || status=$?
     echo "Test results, with screenshots of any UI test failure: $results"
     [ "$status" -eq 0 ] || return "$status"
-    report_test_count "$results"
+    report_test_count "$results" || return 1
+    if [ "$mode" = unit ]; then
+        report_coverage "$results"
+    fi
+    return "$catalog_status"
 }
 
 case "$mode" in
@@ -297,7 +375,7 @@ case "$mode" in
         for family in $families; do
             run_tests "$family" || {
                 result=$?
-                echo "The $mode tests failed on the $family simulator (status $result)." >&2
+                echo "The $mode run failed on the $family simulator (status $result)." >&2
                 [ "$status" -ne 0 ] || status=$result
             }
         done

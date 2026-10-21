@@ -14,9 +14,9 @@ WORKFLOW = SCRIPT.parent.parent / ".github" / "workflows" / "tests.yml"
 
 # Answers the version and build-settings queries from the fixture, and
 # records every other xcodebuild run, one line of tab-separated arguments
-# each. A build
-# for testing leaves an app where test.sh looks for it. The test's own
-# body runs last and sees the run's last argument, its action, as $action.
+# each. A build for testing leaves an app, and the strings the compiler
+# found, where test.sh looks for them. The test's own body runs last and
+# sees the run's last argument, its action, as $action.
 FAKE_XCODEBUILD = """\
 for argument in "$@"; do
     case "$argument" in
@@ -35,11 +35,18 @@ if [ "$action" = build-for-testing ]; then
     app="$DERIVED_DATA_DIR/Build/Products/Debug-iphonesimulator/Brickson.app"
     mkdir -p "$app"
     cp "$FIXTURE_INFO_PLIST" "$app/Info.plist"
+    if [ "$FIXTURE_STRINGS" = yes ]; then
+        objects="$DERIVED_DATA_DIR/Build/Intermediates.noindex/Brickson.build/Debug-iphonesimulator/Brickson.build/Objects-normal/arm64"
+        mkdir -p "$objects"
+        echo strings > "$objects/HomeView.stringsdata"
+    fi
 fi
 """
 
-# The simulator list, the selected Xcode's simulator SDK, and the result
-# summary come from the fixture; every simulator command is recorded.
+# The simulator list, the selected Xcode's simulator SDK, the result
+# summary and the coverage report come from the fixture; every simulator
+# and String Catalog command is recorded. Syncing the catalog writes the
+# fixture's catalog over the copy it is given, or leaves the copy as it was.
 FAKE_XCRUN = """\
 case "$*" in
     "simctl list devices available --json") cat "$FIXTURE_DEVICES" ;;
@@ -53,6 +60,15 @@ case "$*" in
     "xcresulttool get test-results summary --path "*)
         [ -n "$FIXTURE_SUMMARY" ] || exit 1
         printf '%s\\n' "$FIXTURE_SUMMARY" ;;
+    "xccov view --report --only-targets --json "*)
+        [ -n "$FIXTURE_COVERAGE" ] || exit 1
+        printf '%s\\n' "$FIXTURE_COVERAGE" ;;
+    "xcstringstool sync "*)
+        echo "xcstringstool sync" >> "$RUNNER_SIMCTL"
+        [ "$FIXTURE_SYNC_STATUS" = 0 ] || exit "$FIXTURE_SYNC_STATUS"
+        if [ -n "$FIXTURE_SYNCED_CATALOG" ]; then
+            printf '%s' "$FIXTURE_SYNCED_CATALOG" > "$3"
+        fi ;;
     *) echo "unexpected: xcrun $*" >&2; exit 1 ;;
 esac
 """
@@ -64,6 +80,14 @@ INFO_PLIST = """\
 <key>CFBundleIdentifier</key><string>fixture.brickson</string>
 </dict></plist>
 """
+
+
+CATALOG = '{\n  "sourceLanguage" : "en",\n  "strings" : {\n\n  },\n  "version" : "1.0"\n}\n'
+SYNCED_CATALOG = CATALOG.replace('"strings" : {\n\n  }', '"strings" : {\n    "Yes" : {\n\n    }\n  }')
+
+# What xccov reports for the app target.
+COVERAGE = json.dumps([{"name": "Brickson.app", "lineCoverage": 0.4567,
+                        "coveredLines": 457, "executableLines": 1000}])
 
 
 def summary(total, passed=None, failed=0):
@@ -84,7 +108,9 @@ def lines(path):
 
 def run_script(build_body, mode="ui", destination="id=fixture-simulator",
                target="26.0", sdk="27.1", devices=None, team="",
-               test_summary=summary(3), family=None, arguments=()):
+               test_summary=summary(3), family=None, arguments=(),
+               coverage=COVERAGE, strings=True, synced_catalog=None,
+               sync_status=0, on_ci=True):
     with tempfile.TemporaryDirectory() as directory:
         for name, body in {
             "xcodegen": 'if [ "${1:-}" = --version ]; then echo "Version: 9.9.9"; fi',
@@ -102,6 +128,8 @@ def run_script(build_body, mode="ui", destination="id=fixture-simulator",
         devices_path.write_text(json.dumps({"devices": devices or {}}))
         plist_path = Path(directory, "Info.plist")
         plist_path.write_text(INFO_PLIST)
+        catalog_path = Path(directory, "Localizable.xcstrings")
+        catalog_path.write_text(CATALOG)
         environment = dict(os.environ, PATH=f"{directory}:/usr/bin:/bin",
                            RUNNER_INVOCATIONS=f"{directory}/invocations",
                            RUNNER_SIMCTL=f"{directory}/simctl",
@@ -109,6 +137,12 @@ def run_script(build_body, mode="ui", destination="id=fixture-simulator",
                            FIXTURE_INFO_PLIST=str(plist_path),
                            FIXTURE_TARGET=target, FIXTURE_SDK=sdk,
                            FIXTURE_TEAM=team, FIXTURE_SUMMARY=test_summary or "",
+                           FIXTURE_COVERAGE=coverage or "",
+                           FIXTURE_STRINGS="yes" if strings else "no",
+                           FIXTURE_SYNCED_CATALOG=synced_catalog or "",
+                           FIXTURE_SYNC_STATUS=str(sync_status),
+                           CI="true" if on_ci else "",
+                           STRING_CATALOG=str(catalog_path),
                            DERIVED_DATA_DIR=f"{directory}/DerivedData",
                            TEST_RESULTS_DIR=f"{directory}/TestResults")
         for name in ("DESTINATION", "SIMULATOR_FAMILY"):
@@ -127,6 +161,7 @@ def run_script(build_body, mode="ui", destination="id=fixture-simulator",
         result.simctl = lines(Path(directory, "simctl"))
         result.stale_bundle_kept = stale.exists()
         result.results_dir = f"{directory}/TestResults"
+        result.catalog = catalog_path.read_text()
         return result
 
 
@@ -298,7 +333,7 @@ class FamilyTests(unittest.TestCase):
             destination=None, devices=IPAD_AND_IPHONE)
         self.assertEqual(result.returncode, 65)
         self.assertIn(("test-without-building", "id=PHONE"), actions(result))
-        self.assertIn("The ui tests failed on the ipad simulator (status 65).", result.stderr)
+        self.assertIn("The ui run failed on the ipad simulator (status 65).", result.stderr)
         self.assertNotIn("All UI tests passed.", result.stdout)
 
     # Unit tests run once, on the iPad; running them on every family fails
@@ -346,6 +381,28 @@ class DestinationTests(unittest.TestCase):
         self.assertEqual(result.simctl[0], "simctl bootstatus PHONE -b")
         self.assertIn("simctl spawn PHONE defaults write com.apple.keyboard.preferences "
                       "AutomaticMinimizationEnabled -bool false", result.simctl)
+
+    # Choosing the newest runtime by name without the SDK's bound picks a
+    # simulator the Xcode in use cannot run, and fails this test.
+    def test_a_name_without_os_gets_the_newest_runtime_the_xcode_can_run(self):
+        result = run_script("exit 0", destination="platform=iOS Simulator,name=iPhone 17",
+                            sdk="27.1",
+                            devices={runtime("27.1"): [device("iPhone 17", "USABLE")],
+                                     runtime("27.2"): [device("iPhone 17", "TOO-NEW")]})
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(actions(result)[-1], ("test-without-building", "id=USABLE"))
+
+    # Testing on a named simulator older than the deployment target, which
+    # the app cannot install on, fails this test.
+    def test_a_simulator_outside_the_range_is_refused_before_building(self):
+        for destination in ("platform=iOS Simulator,name=iPhone 16",
+                            "platform=iOS Simulator,id=OLD-PHONE"):
+            with self.subTest(destination=destination):
+                result = run_script("exit 0", destination=destination, target="26.0",
+                                    devices={runtime("18.6"): [device("iPhone 16", "OLD-PHONE")]})
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("has iOS 18.6; the tests need iOS 26.0 to 27.1", result.stderr)
+                self.assertEqual(result.invocations, 0)
 
     # A typo in DESTINATION reaching xcodebuild, which then waits and fails
     # far later, fails this test.
@@ -398,7 +455,8 @@ class PreparationTests(unittest.TestCase):
     def test_unit_tests_only_wait_for_the_simulator(self):
         result = run_script("exit 0", mode="unit", destination=None, devices=IPAD_AND_IPHONE)
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(result.simctl, ["simctl bootstatus PAD -b"])
+        self.assertEqual([call for call in result.simctl if call.startswith("simctl")],
+                         ["simctl bootstatus PAD -b"])
 
     # A failed warm-up that stops the run, or one that passes silently,
     # fails this test.
@@ -471,13 +529,29 @@ class EvidenceTests(unittest.TestCase):
         self.assertIn("No tests ran.", result.stderr)
         self.assertNotIn("All unit tests passed.", result.stdout)
 
-    # An unreadable summary failing a green run, or passing it silently,
-    # fails this test.
-    def test_an_unreadable_summary_warns_and_keeps_the_result(self):
+    # A green run whose summary cannot be read shows no evidence that any
+    # test ran; passing it fails this test.
+    def test_an_unreadable_summary_fails_the_run(self):
         result = self.unit_run(test_summary=None)
-        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertNotEqual(result.returncode, 0)
         self.assertIn("could not read the test summary", result.stderr)
-        self.assertIn("All unit tests passed.", result.stdout)
+        self.assertNotIn("All unit tests passed.", result.stdout)
+
+    # Likewise a summary without a count; passing it fails this test.
+    def test_a_summary_without_a_count_fails_the_run(self):
+        result = self.unit_run(test_summary=json.dumps({"passedTests": 3}))
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("the test summary has no test count", result.stderr)
+
+    # Removing the earlier bundle only just before testing leaves it in
+    # place when the build fails, where it reads as this run's result, and
+    # fails this test.
+    def test_a_failed_build_leaves_no_earlier_result_bundle(self):
+        result = run_script('if [ "$action" = build-for-testing ]; then exit 65; fi',
+                            mode="unit", destination=None,
+                            devices={runtime("27.1"): [device("iPad Pro 13-inch (M5)", "PAD")]})
+        self.assertEqual(result.returncode, 65)
+        self.assertFalse(result.stale_bundle_kept)
 
 
 class DeviceBuildTests(unittest.TestCase):
@@ -509,6 +583,86 @@ class DeviceBuildTests(unittest.TestCase):
         self.assertEqual(result.returncode, 2)
         self.assertIn('Unknown mode "uii"', result.stderr)
         self.assertEqual(result.invocations, 0)
+
+
+class StringCatalogTests(unittest.TestCase):
+    """After a unit-test build, the String Catalog is brought up to date from
+    the strings the compiler found: written on a Mac, checked on CI."""
+
+    def unit_run(self, **options):
+        return run_script("exit 0", mode="unit", destination=None,
+                          devices={runtime("27.1"): [device("iPad Pro 13-inch (M5)", "PAD")]},
+                          **options)
+
+    # Failing a catalog that matches the code fails this test.
+    def test_a_catalog_that_matches_the_code_passes(self):
+        result = self.unit_run()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("String Catalog: up to date with the code.", result.stdout)
+        self.assertEqual(result.catalog, CATALOG)
+
+    # Passing a stale catalog on CI, hiding what differs, or skipping the
+    # tests because of it fails this test.
+    def test_on_ci_a_stale_catalog_fails_shows_the_difference_and_still_tests(self):
+        result = self.unit_run(synced_catalog=SYNCED_CATALOG, on_ci=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("does not match the code", result.stderr)
+        self.assertIn('+    "Yes" : {', result.stderr)
+        self.assertIn(("test-without-building", "id=PAD"), actions(result))
+        self.assertEqual(result.catalog, CATALOG)
+        self.assertNotIn("All unit tests passed.", result.stdout)
+
+    # Leaving the catalog stale on a Mac, or failing the run there, fails
+    # this test.
+    def test_on_a_mac_a_stale_catalog_is_updated_in_place(self):
+        result = self.unit_run(synced_catalog=SYNCED_CATALOG, on_ci=False)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.catalog, SYNCED_CATALOG)
+        self.assertIn("Commit it with your change.", result.stdout)
+
+    # A build that emitted no strings (SWIFT_EMIT_LOC_STRINGS turned off,
+    # say) passing the check unchecked fails this test.
+    def test_no_strings_from_the_build_fails(self):
+        result = self.unit_run(strings=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("left no strings for the String Catalog", result.stderr)
+
+    # Ignoring a failed sync fails this test.
+    def test_a_failed_sync_fails(self):
+        result = self.unit_run(sync_status=64)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("could not bring the String Catalog up to date", result.stderr)
+
+    # Checking the catalog twice per change (it is the same app build) fails
+    # this test.
+    def test_ui_runs_leave_the_catalog_alone(self):
+        result = run_script("exit 0", destination=None, family="ipad",
+                            synced_catalog=SYNCED_CATALOG,
+                            devices={runtime("27.1"): [device("iPad Pro 13-inch (M5)", "PAD")]})
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertNotIn("xcstringstool sync", result.simctl)
+
+
+class CoverageTests(unittest.TestCase):
+    """Unit runs print how much of the app's code the tests ran."""
+
+    def unit_run(self, **options):
+        return run_script("exit 0", mode="unit", destination=None,
+                          devices={runtime("27.1"): [device("iPad Pro 13-inch (M5)", "PAD")]},
+                          **options)
+
+    # Dropping the coverage line fails this test.
+    def test_the_apps_coverage_is_printed(self):
+        result = self.unit_run()
+        self.assertIn("Code coverage: the unit tests ran 45.7% of the app's lines (457 of 1000).",
+                      result.stdout)
+
+    # Failing a green run because coverage could not be read, or saying
+    # nothing about it, fails this test.
+    def test_unreadable_coverage_only_warns(self):
+        result = self.unit_run(coverage=None)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("could not read code coverage", result.stderr)
 
 
 def workflow_jobs(text):
