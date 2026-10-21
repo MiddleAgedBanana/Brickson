@@ -19,7 +19,11 @@ struct BricksonApp: App {
         _speech = State(initialValue: SpeechService(audioSafetyMonitor: audioSafety))
 
         let opened = PhraseLibraryStore.openForApp()
-        let library = PhraseLibraryLaunch.prepare(container: opened.container, isVolatile: opened.isVolatile)
+        let library = PhraseLibraryLaunch.prepare(
+            container: opened.container,
+            isVolatile: opened.isVolatile,
+            issue: opened.issue
+        )
         container = library.container
         isVolatileStore = library.isVolatile
         phraseLibraryIssue = library.issue
