@@ -14,11 +14,23 @@ xcuserdata/
 .build/
 .swiftpm/
 
+# Archives, app builds and debug symbols made for a device or an upload
+*.xcarchive
+*.ipa
+*.dSYM
+*.dSYM.zip
+
+# A safety net only, not a guarantee: git still adds these files with
+# `git add -f`. Keep account notes, receipts and anything sensitive
+# outside this public repository; this stops an accidental commit
+/private/
+
 # macOS
 .DS_Store
 
-# Claude Code: personal settings and local state stay on each machine
+# Claude Code: personal settings, worktrees and local state stay on each machine
 .claude/settings.local.json
+.claude/worktrees/
 .remember/
 
 # Agent skills installed per machine (see AGENTS.md, "Skills")

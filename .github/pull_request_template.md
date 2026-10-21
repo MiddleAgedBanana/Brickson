@@ -33,4 +33,4 @@ if nothing ran outside GitHub CI. -->
 - [ ] No new scrolling on Home for the starter library in dwell, switch or gaze profiles (11)
 - [ ] The screen still never locks while the app is open (12)
 - [ ] Elapsed time uses `ContinuousClock`; framework callbacks are `@Sendable` or `nonisolated`
-- [ ] `docs/HANDOFF.md` updated (and `README.md`, `AGENTS.md`, `docs/DECISIONS.md` where they changed)
+- [ ] One new file in `docs/log/`, and `docs/HANDOFF.md` edited in place where this change makes it untrue (and `docs/ROADMAP.md`, `README.md`, `AGENTS.md`, `docs/DECISIONS.md` where they changed)
