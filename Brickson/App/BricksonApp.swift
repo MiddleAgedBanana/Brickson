@@ -12,13 +12,21 @@ struct BricksonApp: App {
     private let container: ModelContainer
     private let isVolatileStore: Bool
     private let phraseLibraryIssue: PhraseLibraryIssue?
+    /// What a UI test asked for at launch; always `.standard` in a release
+    /// build (`LaunchOptions`).
+    private let launch: LaunchOptions
 
     init() {
+        // First, before anything reads a setting or opens the library.
+        let launch = LaunchOptions.current
+        launch.prepareStorage()
+        self.launch = launch
+
         let audioSafety = AudioSafetyMonitor()
         _audioSafety = State(initialValue: audioSafety)
         _speech = State(initialValue: SpeechService(audioSafetyMonitor: audioSafety))
 
-        let opened = PhraseLibraryStore.openForApp()
+        let opened = launch.openLibrary()
         let library = PhraseLibraryLaunch.prepare(container: opened.container, isVolatile: opened.isVolatile)
         container = library.container
         isVolatileStore = library.isVolatile
@@ -32,6 +40,7 @@ struct BricksonApp: App {
                 .environment(speech)
                 .environment(\.isVolatileStore, isVolatileStore)
                 .environment(\.phraseLibraryIssue, phraseLibraryIssue)
+                .environment(\.appTimeouts, launch.timeouts)
         }
         .modelContainer(container)
         .onChange(of: scenePhase, initial: true) { _, phase in
