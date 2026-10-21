@@ -39,6 +39,10 @@ written down in one place.
   of this change recorded a "Home's slot plan" entry; that entry belongs
   to the Phone layout and word fitting work, which builds the slots, so
   this pull request draws to it and links to it instead of writing it.
+  The same holds for "Settings is a cover with a fixed safety bar" and
+  "Typing is a state of Home": `docs/DESIGN.md` names all three as being
+  written in other pull requests, and calls its own sections on those
+  subjects proposals until they merge (Codex's second review).
 - **After Codex's review of this pull request**, five corrections to
   `docs/DESIGN.md`. Clear beside the draft is withdrawn, and the way out of
   typing moves to the trailing column's top slot while typing, with Clear

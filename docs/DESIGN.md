@@ -14,12 +14,18 @@ build toward, not a measurement: the app's layout engine computes the real
 frames from the space available, and its tests pin them (AGENTS.md,
 invariant 11).
 
-Binding decisions this file draws, and does not repeat: where each slot
-sits and what it is called is docs/DECISIONS.md, "Home's slot plan"
-(Phone layout and word fitting); the family screens' safety bar is
-"Settings is a cover with a fixed safety bar" (Settings and first run);
-typing on Home is "Typing is a state of Home" (Typing foundation). This
-file's own decision is "Solid fills on Home, system glass elsewhere".
+This file's own decision, recorded in docs/DECISIONS.md by the pull
+request that adds this file, is "Solid fills on Home, system glass
+elsewhere". Three more decisions it draws to are being written in other
+pull requests and are not in docs/DECISIONS.md yet: where each slot sits
+and what it is called, "Home's slot plan" (Phone layout and word
+fitting); the family screens' safety bar, "Settings is a cover with a
+fixed safety bar" (Settings and first run); and typing on Home, "Typing
+is a state of Home" (Typing foundation). Until each one merges, its row
+in the register *Decided by default on 2026-10-21* says what it will
+decide, AGENTS.md's invariants bind, and this file's sections on those
+subjects are proposals. Once one merges, it wins where this file
+differs, and this file is corrected to match.
 
 ## Where the drawings are
 
@@ -157,8 +163,10 @@ Usage rules:
 
 How the drawings lay out Home. The binding plan, with each slot's
 identifier for the layout engine and the UI tests' accessibility
-identifiers, is docs/DECISIONS.md, "Home's slot plan"; where the two
-differ, the decision wins and this section is corrected to match.
+identifiers, will be docs/DECISIONS.md, "Home's slot plan", which the
+Phone layout and word fitting pull request writes. Until it merges this
+section is a proposal; once it merges, where the two differ, the
+decision wins and this section is corrected to match.
 
 Home is four regions, top to bottom, in every profile and on every
 device: **A** the message, **C** the safety row, **B** the categories with
@@ -199,8 +207,11 @@ and 10):
   browsing) and Type; Yes and No are next. No phrase tile, Emergency or
   Get Attention borders the text.
 - **Safety first, then navigation, then phrases.** Emergency, Get
-  Attention, Yes and No are one activation from every Home state, above
-  the software keyboard on every drawn device (*Typing*, below).
+  Attention, Yes and No are one activation from every Home state. They
+  sit above the software keyboard on the three drawn windows whose
+  keyboard top is measured, not on the zoomed iPad window, and the
+  SE-class window's keyboard is not measured (*Typing* and *Slot sizes
+  per device*, below).
 - **The frames never move.** Across browse, typing and alarm, and across
   categories, only labels, fills and visibility change. The comparison
   frames in Figma overlay the states of each device to show it; the app's
@@ -212,8 +223,9 @@ and 10):
   device and window*).
 
 Exceptions the drawings carry. Invariant 10 asks for each to be named,
-measured and recorded in docs/DECISIONS.md; they are recorded with
-"Home's slot plan", and the code is measured before they are accepted:
+measured and recorded in docs/DECISIONS.md; they are proposed here for
+"Home's slot plan" to record, and the code is measured before they are
+accepted:
 
 - While browsing, the trailing column's top slot is an empty well, so a
   look that rests on the message text has Type and then Yes nearest. Type
@@ -348,9 +360,11 @@ is the only control that stops it.
 
 ## Family screens
 
-As drawn; the binding rules are the Settings and first run decisions
-(docs/DECISIONS.md, "Settings is a cover with a fixed safety bar" and
-the entries beside it), and they win where these drawings differ.
+As drawn. The binding rules will be the Settings and first run
+decisions (docs/DECISIONS.md, "Settings is a cover with a fixed safety
+bar" and the entries beside it), which that pull request writes; until
+it merges this section is a proposal, and once it merges they win where
+these drawings differ.
 
 Settings, Family Setup, Voice and the Library open as a full-screen cover
 over Home, so each starts with the same top band at fixed frames: **Back
