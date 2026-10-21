@@ -37,6 +37,25 @@ nonisolated enum CheckInPolicy {
         record.checkInSnoozedUntil = nil
     }
 
+    /// What the card's place says once it was answered on screen. Family
+    /// Setup keeps the card's frame and puts these words in it, so the rows
+    /// below never move up under the button just activated (AGENTS.md,
+    /// invariant 10).
+    enum Afterword: Equatable {
+        /// Not Now: the card comes back in 30 days.
+        case askAgainLater
+        /// Stop Asking.
+        case stopped
+        /// Set up again: the next check-in is three months away.
+        case answered
+    }
+
+    static func afterword(for record: SetupRecord) -> Afterword {
+        if record.checkInsStopped { return .stopped }
+        if record.checkInSnoozedUntil != nil { return .askAgainLater }
+        return .answered
+    }
+
     /// The family answered again: checking in resumes three months from now.
     static func answered(_ record: inout SetupRecord, methods: Set<AccessMethod>, now: Date) {
         record.answerAccessMethods(methods, at: now)

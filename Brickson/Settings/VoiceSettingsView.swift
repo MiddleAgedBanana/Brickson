@@ -7,7 +7,8 @@ import SwiftUI
 ///
 /// Hearing a voice and choosing it are separate buttons, so listening never
 /// changes anything. Each sample is absorbed while it is still playing, so a
-/// held look cannot restart it (`SpokenUtteranceTracker`).
+/// held look cannot restart it (`SpokenUtteranceTracker`). Speeds are fixed
+/// choices, so a repeated activation never walks the speed (`SpeedChoice`).
 struct VoiceSettingsView: View {
     var body: some View {
         SettingsScreen(title: "Voice Settings") {
@@ -41,27 +42,16 @@ struct VoiceContent: View {
         PersonalVoiceSection()
 
         SettingsHeading("Speed")
-        SettingsParagraph(verbatim: SpeechRateSteps.description(of: speech.speechRate))
-        HStack(spacing: SettingsMetrics.rowSpacing) {
-            Button {
-                speech.stepRate(SpeechRateSteps.slower, from: .slower)
-            } label: {
-                SettingsRowLabel(title: "Slower", systemImage: "tortoise.fill")
-            }
-            .settingsRowStyle()
-            Button {
-                speech.stepRate(SpeechRateSteps.faster, from: .faster)
-            } label: {
-                SettingsRowLabel(title: "Faster", systemImage: "hare.fill")
-            }
-            .settingsRowStyle()
+        let chosenSpeed = SpeedChoice.matching(speech.speechRate, normal: AVSpeechUtteranceDefaultSpeechRate)
+        if chosenSpeed?.isNormal == true {
+            SettingsParagraph("Speaking at normal speed.")
+        } else {
+            let share = SpeedChoice.fraction(of: speech.speechRate, normal: AVSpeechUtteranceDefaultSpeechRate)
+            SettingsParagraph("Speaking at \(share, format: .percent) of normal speed.")
         }
-        Button {
-            speech.stepRate({ _ in AVSpeechUtteranceDefaultSpeechRate }, from: .normalRate)
-        } label: {
-            SettingsRowLabel(title: "Normal Speed", systemImage: "gauge.with.dots.needle.50percent")
+        ForEach(SpeedChoice.all) { choice in
+            SpeedChoiceButton(choice: choice, isChosen: choice == chosenSpeed)
         }
-        .settingsRowStyle()
 
         SettingsHeading("Voice")
         if VoiceList.chosenVoiceIsMissing(selectedID: speech.selectedVoiceID, from: speech.availableVoices) {
@@ -73,9 +63,46 @@ struct VoiceContent: View {
     }
 }
 
+/// One fixed speed. Choosing it sets that speed and plays the sample at
+/// it; choosing it again changes nothing (`SpeedChoice`).
+private struct SpeedChoiceButton: View {
+    let choice: SpeedChoice
+    let isChosen: Bool
+    @Environment(SpeechService.self) private var speech
+    @Environment(SettingsActivity.self) private var activity: SettingsActivity?
+
+    var body: some View {
+        Button {
+            activity?.recordActivity()
+            speech.stepRate(choice.step(normal: AVSpeechUtteranceDefaultSpeechRate), from: choice.previewControl)
+        } label: {
+            SettingsRowLabel(text: title, systemImage: isChosen ? "checkmark.circle.fill" : "circle")
+        }
+        .buttonStyle(.borderedProminent)
+        .tint(isChosen ? Palette.phraseFill : Palette.controlFill)
+        .accessibilityLabel(spokenTitle)
+        .accessibilityAddTraits(isChosen ? .isSelected : [])
+    }
+
+    private var title: Text {
+        if choice.isNormal {
+            return Text("Normal")
+        }
+        return Text(choice.fraction, format: .percent)
+    }
+
+    private var spokenTitle: Text {
+        if choice.isNormal {
+            return Text("Normal speed")
+        }
+        return Text("\(choice.fraction, format: .percent) of normal speed")
+    }
+}
+
 private struct VoiceRowView: View {
     let row: VoiceRow
     @Environment(SpeechService.self) private var speech
+    @Environment(SettingsActivity.self) private var activity: SettingsActivity?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -98,6 +125,7 @@ private struct VoiceRowView: View {
 
             HStack(spacing: SettingsMetrics.rowSpacing) {
                 Button {
+                    activity?.recordActivity()
                     speech.preview(from: .voice(id: row.voiceID))
                 } label: {
                     SettingsRowLabel(title: "Hear", systemImage: "play.fill")
@@ -107,6 +135,7 @@ private struct VoiceRowView: View {
                 .accessibilityInputLabels([Text(verbatim: row.hearLabel)])
 
                 Button {
+                    activity?.recordActivity()
                     speech.selectedVoiceID = row.voiceID
                 } label: {
                     SettingsRowLabel(
@@ -127,6 +156,7 @@ private struct VoiceRowView: View {
 /// What Personal Voice needs next, from `PersonalVoiceGuidance`.
 private struct PersonalVoiceSection: View {
     @Environment(SpeechService.self) private var speech
+    @Environment(SettingsActivity.self) private var activity: SettingsActivity?
     @State private var couldNotOpenSettings = false
 
     var body: some View {
@@ -150,10 +180,11 @@ private struct PersonalVoiceSection: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             if guidance.suggestsMakingOne {
-                SettingsParagraph("Making a Personal Voice means reading phrases aloud, so it is easiest while speaking is comfortable. It stays on this device.")
+                SettingsParagraph("Making a Personal Voice means reading phrases aloud, so it is easiest while speaking is comfortable. Apple keeps it encrypted on this device, and in iCloud only if Share Across Devices is on. \(AppName.display) never receives the voice or its recordings.")
             }
             if guidance.action == .openPersonalVoiceSettings {
                 Button {
+                    activity?.recordActivity()
                     Task {
                         do {
                             try await AccessibilitySettings.openSettings(for: .personalVoiceAllowAppsToRequestToUse)

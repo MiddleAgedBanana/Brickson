@@ -445,7 +445,7 @@ the failure.
   `AudioSessionLeasePolicy`, `ScreenWakePolicy`, `CategorySelection`,
   `StarterLibrary`, `PhraseLibrarySeeder`, `SettingsIdleClock`,
   `SetupRecord`, `CheckInPolicy`, `VoiceList`, `PersonalVoiceGuidance`,
-  `PrivacyPolicyDocument`. Views only read them.
+  `PrivacyPolicyDocument`, `SpeedChoice`. Views only read them.
 - **Run it, don't just read it.** Layout and flow changes are checked in the
   running app on an iPad and an iPhone simulator, at default and
   accessibility text sizes, light and dark.

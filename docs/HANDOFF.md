@@ -21,8 +21,8 @@ scroll at full size. A phrase the system cuts off (a call, Siri, lost
 headphones) shows "Stopped" with Again to repeat it. Emergency opens the
 emergency phrases and says nothing. The start-only Get Attention alarm is
 built and waiting for its place on Home. Settings, for the family, is
-built (a full-screen cover with Back to Talking, Family Setup, Voice and
-Speed, guides, the privacy policy and step-by-step setup) and waits for
+built (a full-screen cover with Back to Talking, Family Setup, Voice
+Settings, guides, the privacy policy and step-by-step setup) and waits for
 Home to place its Settings button; until then only UI tests open it, with
 `--screen=settings`. Audio failures and very low volume show as a short passive
 warning in space always kept for it, and VoiceOver announces them. If the
@@ -96,14 +96,17 @@ release in docs/ROADMAP.md when no thread has it yet.
   Home has Stop would leave it with no way to stop. It goes in with Get
   Attention and Stop on Home. *(the thread that puts them on Home)*
 - Settings cannot yet ask for Personal Voice from the Voice Settings
-  screen; the app still asks at launch. *(Personal Voice foundation)*
+  screen; the app still asks at launch. Its permission state is read once
+  at launch, so after a family allows Personal Voice in the Settings app,
+  Voice Settings shows the old state until Brickson is relaunched.
+  *(Personal Voice foundation)*
 - A library the app cannot read is replaced by the starter phrases with a
   message about saving (code audit M2), and an emptied library is refilled
   with the starter set. *(Library editing and backup format)*
 - English only. `scripts/test.sh unit` brings the String Catalog up to
   date (xcodebuild alone does not), and CI fails when the committed one
-  is stale. The speech-rate names in `SpeechRateSteps` and the voice
-  sample sentence in `SpeechService` are not in it yet. *(Test seams and CI evidence)*
+  is stale. The voice sample sentence in `SpeechService` is not in it
+  yet (Voice Settings no longer shows `SpeechRateSteps`' rate names). *(Test seams and CI evidence)*
 - No off-main test reaches the real KVO closure (the volume handler is
   called directly) or the closure inside
   `SystemPersonalVoice.requestAuthorization`, which only the system can

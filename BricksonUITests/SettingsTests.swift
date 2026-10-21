@@ -145,15 +145,36 @@ final class SettingsTests: XCTestCase {
     }
 
     @MainActor
-    func testVoiceAndSpeedPassesTheAccessibilityAudit() throws {
+    func testVoiceSettingsPassesTheAccessibilityAudit() throws {
         continueAfterFailure = true
         let app = openSettings()
         open("familySetup", in: app, waitingFor: "Family Setup")
         open("voiceSettings", in: app, waitingFor: "Voice Settings")
         attachCapture(app, name: "Voice Settings")
-        assertReachable("Slower", in: app, context: "Voice Settings")
-        assertReachable("Faster", in: app, context: "Voice Settings")
         try assertPassesAccessibilityAudit(app, context: "Voice Settings, light")
+    }
+
+    /// A speed is a fixed choice: choosing it again keeps it, so a repeated
+    /// activation never walks the speed (docs/DECISIONS.md, "Speed is a set
+    /// of fixed choices").
+    @MainActor
+    func testASpeedChosenTwiceStaysChosen() {
+        let app = openSettings()
+        open("familySetup", in: app, waitingFor: "Family Setup")
+        open("voiceSettings", in: app, waitingFor: "Voice Settings")
+
+        let slower = app.buttons["70% of normal speed"]
+        XCTAssertTrue(slower.waitForExistence(timeout: 10), "the 70% speed is missing")
+        slower.tap()
+        XCTAssertEqual(
+            XCTWaiter.wait(for: [expectation(for: NSPredicate(format: "isSelected == true"), evaluatedWith: slower)], timeout: 10),
+            .completed,
+            "choosing 70% did not choose it"
+        )
+        slower.tap()
+        XCTAssertTrue(slower.isSelected, "choosing 70% again changed the speed")
+        XCTAssertFalse(app.buttons["Normal speed"].isSelected, "two speeds show as chosen")
+        XCTAssertFalse(app.buttons["60% of normal speed"].isSelected, "choosing 70% again walked the speed")
     }
 
     @MainActor

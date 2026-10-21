@@ -19,11 +19,23 @@ enum SettingsMetrics {
 
 /// A full-width row that opens another screen or does one thing.
 struct SettingsRowLabel: View {
-    let title: LocalizedStringKey
+    let title: Text
     let systemImage: String
 
+    init(title: LocalizedStringKey, systemImage: String) {
+        self.title = Text(title)
+        self.systemImage = systemImage
+    }
+
+    /// For words that are formatted rather than looked up, such as a
+    /// localized percent.
+    init(text: Text, systemImage: String) {
+        title = text
+        self.systemImage = systemImage
+    }
+
     var body: some View {
-        Label(title, systemImage: systemImage)
+        Label { title } icon: { Image(systemName: systemImage) }
             .font(.title3.weight(.semibold))
             .foregroundStyle(.white)
             .multilineTextAlignment(.leading)

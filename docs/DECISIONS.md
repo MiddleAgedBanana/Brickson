@@ -49,7 +49,7 @@ holds.
 | Typing as a state of Home under a band Apple's keyboard never covers, Apple's keyboard in 1.0, Writing Tools off, third-party keyboards refused, Return speaks, the typed message | "Typing is a state of Home", "Typing uses Apple's keyboard", "Writing Tools off while typing", "Third-party keyboards refused in 1.0", "Return speaks", "The typed message" (Typing foundation; pull request not open yet) |
 | Explicit saves, an Emergency category that is always there, fixed starter identities, editing, import, replace, the backup format, an unreadable library reported and never replaced | "Every save is explicit", "Starter phrases", "The emergency category is always there", "Editing the library", "Importing a backup", "Replacing the library", "Backup file format", "An unreadable library is reported, never replaced" (Library editing and backup format; PR #14, open) |
 | When the audio session is released, the alarm's sound, start-only Get Attention, no automatic resume, Personal Voice never written to a file | "Background audio", "Get Attention", "A phrase the system cuts off", "Audio session notices", "Personal Voice is never written to a file" (Speech engine and Get Attention; PR #16, open) |
-| Home first with setup as a place in Settings, the Settings root, the voice picker, the Privacy row, the largest sizes when nobody answers setup, an "Anything changed?" check-in every three months that waits 30 days after Not Now | "First launch opens Home; setup lives in Settings", "Settings is a cover with a fixed safety bar", "Settings resets when idle and never closes", "Setup answers are kept as offered, never as completed", "Check-ins come every three months", "The privacy policy ships inside the app" (Settings and first run; branch `claude/project-thread-j7207m`) |
+| Home first with setup as a place in Settings, the Settings root, the voice picker, the Privacy row, the largest sizes when nobody answers setup, an "Anything changed?" check-in every three months that waits 30 days after Not Now | "First launch opens Home; setup lives in Settings", "Settings is a cover with a fixed safety bar", "Settings resets when idle and never closes", "Setup answers are kept as offered, never as completed", "Check-ins come every three months", "The privacy policy ships inside the app", "Speed is a set of fixed choices" (Settings and first run; PR #23) |
 
 Recorded here:
 
@@ -673,10 +673,40 @@ primary ink, never the system's secondary gray or grouped-list headers,
 which measure under 4.5:1. No toggles and no system alerts. Multiple
 choice answers only select; Clear My Choices is a separate button.
 
+Under the bar, a line kept for it shows any sound problem, because the
+cover hides Home's warnings (invariant 4). It uses `AudioSafetyPolicy`
+with `.dismissThenRepeat`, the words for a screen over Home ("Stopped —
+Back"), and is passive and the same height whether or not it shows
+anything. Home's warnings, still alive under the cover, announce each
+problem to VoiceOver, so the line does not announce it again. A voice
+sample the system cuts off shows nothing, as on Home: the family hears
+it stop and chooses Hear again.
+
 Before: the reference app put Back to Talking top-leading and Get
 Attention trailing. Brickson swaps them so Back to Talking lands over
 Home's trailing column (Clear and Type in the planned Home) and Get
 Attention over the message, whose nearest Home control is Yes.
+
+## Speed is a set of fixed choices
+
+*2026-10-21. Default, adopted 2026-10-21: the owner left these choices to
+the project. Reversible if the owner objects.*
+
+Voice Settings offers seven speeds, from 60% to 120% of normal in tenths
+(`SpeedChoice`). Each is a button that sets that speed and plays the
+sample at it; the chosen one is marked and selected. Choosing a speed
+again changes nothing, so a held look, a lingering dwell or a switch's
+auto-select that fires it again after the sample finished cannot walk the
+speed (invariant 10, "chains of several activations are scored"). Each
+speed keys its own sample (`VoicePreviewControl.speed`), so another speed
+chosen while a sample plays takes effect at once. The speeds sit on
+`SpeechRateSteps`' grid; a speed that is not one of them is named
+("Speaking at 130% of normal speed") and no choice shows as chosen.
+
+Before: Slower, Faster and Normal Speed buttons, as in the reference app,
+were built first and replaced the same day after Codex's review of PR
+#23. Their repeat was absorbed only while the sample played, so a look
+that stayed on Faster stepped again as each sample ended.
 
 ## Settings resets when idle and never closes
 
@@ -708,7 +738,10 @@ when nobody answered or every choice was cleared, and the layout then
 uses its largest sizes. `SetupStore` keeps the record as JSON in
 UserDefaults; a change is saved before it is shown, a failed save changes
 nothing and shows a passive line, and an unreadable record is moved to
-`setupRecord.unreadable`, never deleted.
+`setupRecord.unreadable`, never deleted. Each answer is saved the moment
+it is chosen, so leaving a step by Back or Back to Talking keeps it; Next
+saves the answer once more, even unchanged, because going through the
+step again is what a check-in asks for.
 
 Set Up Step by Step has five steps, each a pushed screen with Next in a
 fixed bar at the bottom: how the screen is reached, the voice, turning
@@ -727,7 +760,10 @@ Three calendar months after setup was last answered (or after the first
 launch), Family Setup shows a passive card asking whether anything has
 changed, with Go Through Setup Again, Not Now (30 days) and Stop Asking
 (until the access question is answered again). It never appears on Home
-and is never a pop-up (`CheckInPolicy`). These times use `Date` and
+and is never a pop-up (`CheckInPolicy`). Once it is answered on screen,
+passive words take its place at the card's own size until Family Setup
+closes (`CheckInPolicy.afterword`), so the rows below never move up under
+the button just chosen (invariant 10). These times use `Date` and
 `Calendar`, an exception to "Time is `ContinuousClock`": they must survive
 relaunches and restarts, which `ContinuousClock` does not, and a clock
 set backwards only delays a card.

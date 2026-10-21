@@ -10,19 +10,17 @@ import SwiftUI
 /// 5. A summary.
 ///
 /// Every step can be left at any time with the standard Back button or
-/// Back to Talking; whatever was answered is kept, and nothing is recorded
-/// as "finished" (docs/DECISIONS.md, "Setup answers are kept as offered,
-/// never as completed"). Next and Done sit in the same fixed bar at the
-/// bottom of every step. A held look on Next can walk through the steps,
-/// which only navigates; Back undoes it.
+/// Back to Talking; each answer is saved the moment it is chosen, and
+/// nothing is recorded as "finished" (docs/DECISIONS.md, "Setup answers are
+/// kept as offered, never as completed"). Next and Done sit in the same
+/// fixed bar at the bottom of every step. A held look on Next can walk
+/// through the steps, which only navigates; Back undoes it.
 struct GuidedSetupView: View {
     let step: GuidedSetupStep
     @Binding var path: [SettingsRoute]
 
     @Environment(SetupStore.self) private var setup
-    /// Step 1's answers, held here until Next saves them, so a failed save
-    /// keeps them on screen to try again.
-    @State private var draft: Set<AccessMethod>? = nil
+    @Environment(SettingsActivity.self) private var activity: SettingsActivity?
     @State private var saveFailed = false
 
     var body: some View {
@@ -54,7 +52,7 @@ struct GuidedSetupView: View {
     }
 
     private var chosen: Set<AccessMethod> {
-        draft ?? setup.record.accessMethods ?? []
+        setup.record.accessMethods ?? []
     }
 
     /// Choices only ever select: a repeated activation of a choice leaves it
@@ -68,7 +66,7 @@ struct GuidedSetupView: View {
         ForEach(AccessMethod.allCases, id: \.self) { method in
             let isChosen = chosen.contains(method)
             Button {
-                draft = chosen.union([method])
+                answer(chosen.union([method]))
             } label: {
                 SettingsRowLabel(title: method.title, systemImage: isChosen ? "checkmark.circle.fill" : "circle")
             }
@@ -78,7 +76,7 @@ struct GuidedSetupView: View {
         }
 
         Button {
-            draft = []
+            answer([])
         } label: {
             SettingsRowLabel(title: "Clear My Choices", systemImage: "xmark.circle")
         }
@@ -86,7 +84,7 @@ struct GuidedSetupView: View {
         .padding(.top, 24)
 
         if saveFailed {
-            SettingsParagraph("These answers could not be saved. Choose Next to try again.")
+            SettingsParagraph("That answer could not be saved. Try again.")
         }
     }
 
@@ -120,17 +118,20 @@ struct GuidedSetupView: View {
         .accessibilityIdentifier("guidedSetupNext")
     }
 
+    /// Saves an answer at once, so leaving the step any way keeps it. A
+    /// failed save changes nothing on screen and says so.
+    private func answer(_ methods: Set<AccessMethod>) {
+        activity?.recordActivity()
+        saveFailed = !setup.update { CheckInPolicy.answered(&$0, methods: methods, now: .now) }
+    }
+
     private func advance() {
+        activity?.recordActivity()
         if step == .access {
-            // Next is the answer, even unchanged: going through the step
+            // Next answers too, even unchanged: going through the step
             // again is what a check-in asks for.
-            let answer = chosen
-            guard setup.update({ CheckInPolicy.answered(&$0, methods: answer, now: .now) }) else {
-                saveFailed = true
-                return
-            }
-            saveFailed = false
-            draft = nil
+            answer(chosen)
+            guard !saveFailed else { return }
         }
         if let next = step.next {
             path.append(.guidedSetup(next))

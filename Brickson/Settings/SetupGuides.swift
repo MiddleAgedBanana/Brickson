@@ -75,11 +75,13 @@ struct ReachingTheScreenContent: View {
 struct OpenAccessibilitySettingsButton: View {
     let title: LocalizedStringKey
     let feature: AccessibilitySettings.Feature
+    @Environment(SettingsActivity.self) private var activity: SettingsActivity?
     @State private var failed = false
 
     var body: some View {
         if canOpen {
             Button {
+                activity?.recordActivity()
                 Task {
                     do {
                         try await AccessibilitySettings.openSettings(for: feature)
@@ -146,7 +148,7 @@ struct AboutView: View {
         SettingsScreen(title: "About \(AppName.display)") {
             SettingsHeading(verbatim: AppName.display)
             SettingsParagraph("Version \(Self.version)")
-            SettingsParagraph("\(AppName.display) speaks for people who find speaking hard. Everything it stores stays on this device. It has no accounts, no ads and no analytics.")
+            SettingsParagraph("\(AppName.display) speaks for people who find speaking hard. It keeps what it stores on this device and never sends it to the developer. Copies leave the device only as the privacy policy explains, such as in backups. It has no accounts, no ads and no analytics.")
         }
     }
 

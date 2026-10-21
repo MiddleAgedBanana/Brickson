@@ -99,6 +99,25 @@ struct SetupRecordTests {
         #expect(CheckInPolicy.isDue(record, now: later, calendar: calendar))
     }
 
+    /// Once the card is answered on screen, passive words take its place,
+    /// so the rows below never move up under the spot just activated
+    /// (AGENTS.md, invariant 10). Each answer gets its own words.
+    @Test func eachAnswerLeavesItsOwnWordsInTheCardsPlace() {
+        let due = calendar.date(byAdding: .month, value: 3, to: launch)!
+
+        var snoozed = SetupRecord(createdAt: launch)
+        CheckInPolicy.notNow(&snoozed, now: due, calendar: calendar)
+        #expect(CheckInPolicy.afterword(for: snoozed) == .askAgainLater)
+
+        var stopped = SetupRecord(createdAt: launch)
+        CheckInPolicy.stopAsking(&stopped)
+        #expect(CheckInPolicy.afterword(for: stopped) == .stopped)
+
+        var answered = SetupRecord(createdAt: launch)
+        CheckInPolicy.answered(&answered, methods: [.switchControl], now: due)
+        #expect(CheckInPolicy.afterword(for: answered) == .answered)
+    }
+
     /// A clock set backwards must not make a check-in appear early.
     @Test func aClockSetBackwardsShowsNothing() {
         let record = SetupRecord(createdAt: launch)

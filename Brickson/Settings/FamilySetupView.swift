@@ -13,13 +13,16 @@ struct FamilySetupView: View {
     static let openingHeight: CGFloat = 96
 
     @Environment(SetupStore.self) private var setup
+    /// The check-in card was showing while this screen was open. Its place
+    /// is then kept until the screen closes, so answering it moves nothing.
+    @State private var checkInWasShown = false
 
     var body: some View {
         SettingsScreen(title: "Family Setup") {
             SettingsParagraph("This is where a family member or carer sets up \(AppName.display): the voice it speaks with, help with reaching the screen, and how to keep it open. Nothing here is needed to start talking.")
                 .frame(minHeight: Self.openingHeight, alignment: .topLeading)
 
-            CheckInCard()
+            CheckInCard(keepsItsPlace: checkInWasShown)
             SetupIssueText()
 
             NavigationLink(value: SettingsRoute.guidedSetup(.access)) {
@@ -56,6 +59,9 @@ struct FamilySetupView: View {
             .settingsRowStyle()
         }
         .onAppear {
+            if CheckInPolicy.isDue(setup.record, now: .now, calendar: .current) {
+                checkInWasShown = true
+            }
             setup.update { $0.familySetupOpened = true }
         }
     }
@@ -64,32 +70,60 @@ struct FamilySetupView: View {
 /// Every three months, a passive card asks whether how the person reaches
 /// the screen has changed (`CheckInPolicy`). Its three buttons sit apart,
 /// and none of them changes how Brickson speaks.
+///
+/// Once it is answered, passive words take its place at the card's own size
+/// until Family Setup closes. Otherwise the rows below would move up under
+/// the button just chosen, where a held look or a switch's auto-select
+/// could open one of them (AGENTS.md, invariant 10).
 private struct CheckInCard: View {
+    let keepsItsPlace: Bool
     @Environment(SetupStore.self) private var setup
+    @Environment(SettingsActivity.self) private var activity: SettingsActivity?
 
     var body: some View {
         if CheckInPolicy.isDue(setup.record, now: .now, calendar: .current) {
-            SettingsCard {
-                SettingsHeading("Time for a check-in")
-                SettingsParagraph("Needs can change. Is the screen still reached the same way? Going through setup again takes a few minutes.")
-                NavigationLink(value: SettingsRoute.guidedSetup(.access)) {
-                    SettingsRowLabel(title: "Go Through Setup Again", systemImage: "list.number")
+            card
+        } else if keepsItsPlace {
+            card
+                .hidden()
+                .accessibilityHidden(true)
+                .overlay(alignment: .topLeading) {
+                    SettingsParagraph(afterword)
+                }
+        }
+    }
+
+    private var afterword: LocalizedStringKey {
+        switch CheckInPolicy.afterword(for: setup.record) {
+        case .askAgainLater: "Family Setup will ask again in 30 days."
+        case .stopped: "Check-ins are off. Set Up Step by Step is always here."
+        case .answered: "Family Setup will ask again in about three months."
+        }
+    }
+
+    private var card: some View {
+        SettingsCard {
+            SettingsHeading("Time for a check-in")
+            SettingsParagraph("Needs can change. Is the screen still reached the same way? Going through setup again takes a few minutes.")
+            NavigationLink(value: SettingsRoute.guidedSetup(.access)) {
+                SettingsRowLabel(title: "Go Through Setup Again", systemImage: "list.number")
+            }
+            .settingsRowStyle()
+            HStack(spacing: SettingsMetrics.rowSpacing) {
+                Button {
+                    activity?.recordActivity()
+                    setup.update { CheckInPolicy.notNow(&$0, now: .now, calendar: .current) }
+                } label: {
+                    SettingsRowLabel(title: "Not Now", systemImage: "clock")
                 }
                 .settingsRowStyle()
-                HStack(spacing: SettingsMetrics.rowSpacing) {
-                    Button {
-                        setup.update { CheckInPolicy.notNow(&$0, now: .now, calendar: .current) }
-                    } label: {
-                        SettingsRowLabel(title: "Not Now", systemImage: "clock")
-                    }
-                    .settingsRowStyle()
-                    Button {
-                        setup.update { CheckInPolicy.stopAsking(&$0) }
-                    } label: {
-                        SettingsRowLabel(title: "Stop Asking", systemImage: "bell.slash")
-                    }
-                    .settingsRowStyle()
+                Button {
+                    activity?.recordActivity()
+                    setup.update { CheckInPolicy.stopAsking(&$0) }
+                } label: {
+                    SettingsRowLabel(title: "Stop Asking", systemImage: "bell.slash")
                 }
+                .settingsRowStyle()
             }
         }
     }

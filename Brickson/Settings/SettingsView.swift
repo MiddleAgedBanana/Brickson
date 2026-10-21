@@ -13,6 +13,10 @@ import SwiftUI
 /// When nobody has used it for 90 seconds it goes back to its root and
 /// stays open; only Back to Talking closes it (docs/DECISIONS.md, "Settings
 /// resets when idle and never closes").
+///
+/// Under the bar, a line kept for it shows any sound problem, because the
+/// cover hides Home's: a sample that cannot be heard always says why
+/// (AGENTS.md, invariant 4).
 struct SettingsView: View {
     let close: () -> Void
 
@@ -31,6 +35,7 @@ struct SettingsView: View {
     var body: some View {
         VStack(spacing: 0) {
             SettingsSafetyBar(close: close)
+            SettingsAudioStatus()
             NavigationStack(path: $path) {
                 SettingsRootView()
                     .navigationDestination(for: SettingsRoute.self) { route in
@@ -122,6 +127,54 @@ struct SettingsSafetyBar: View {
         }
         .padding(.horizontal, SettingsMetrics.gutter)
         .padding(.vertical, 8)
+    }
+}
+
+/// Sound problems while Settings covers Home, as passive text in a line kept
+/// for it, so nothing moves when one appears (AGENTS.md, invariant 4). The
+/// words are `AudioSafetyPolicy`'s for a screen over Home: they name Back,
+/// then Again. Home's own warnings still announce each problem to
+/// VoiceOver under the cover, so this line does not announce them again.
+private struct SettingsAudioStatus: View {
+    @Environment(SpeechService.self) private var speech
+    @Environment(AudioSafetyMonitor.self) private var audioSafety
+    @Environment(AttentionAlertPlayer.self) private var attention
+
+    private var issue: HomeAudioIssue? {
+        AudioSafetyPolicy(
+            attentionState: attention.state,
+            speechInterruptionState: speech.speechInterruptionState,
+            speechRecoveryAction: .dismissThenRepeat,
+            audioSessionHealthy: audioSafety.audioSessionHealthy,
+            outputVolume: audioSafety.outputVolume
+        ).issue
+    }
+
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            ForEach(HomeAudioIssue.allCases, id: \.self) { candidate in
+                warning(candidate)
+                    .hidden()
+                    .accessibilityHidden(true)
+            }
+            if let issue {
+                warning(issue)
+                    .accessibilityLabel(issue.message)
+            }
+        }
+        .font(.subheadline.weight(.semibold))
+        .foregroundStyle(.primary)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, SettingsMetrics.gutter)
+        .padding(.bottom, 8)
+        .allowsHitTesting(false)
+    }
+
+    private func warning(_ issue: HomeAudioIssue) -> some View {
+        Label(issue.compactMessage, systemImage: issue.systemImage)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .fixedSize(horizontal: false, vertical: true)
+            .accessibilityElement(children: .combine)
     }
 }
 

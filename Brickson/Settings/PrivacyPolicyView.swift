@@ -11,6 +11,7 @@ import SwiftUI
 /// ships inside the app").
 struct PrivacyPolicyView: View {
     @State private var showsWebVersion = false
+    @Environment(SettingsActivity.self) private var activity: SettingsActivity?
 
     /// Read once: the bundled page never changes while the app runs.
     private static let policy = Result { try PrivacyPolicyDocument.bundled() }
@@ -18,6 +19,7 @@ struct PrivacyPolicyView: View {
     var body: some View {
         SettingsScreen(title: "Privacy Policy") {
             Button {
+                activity?.recordActivity()
                 showsWebVersion = true
             } label: {
                 SettingsRowLabel(title: "Open the Web Version", systemImage: "safari.fill")
