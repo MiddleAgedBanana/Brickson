@@ -10,6 +10,8 @@ import UIKit
 /// Temporary: this first version only reports what it measured. It is
 /// replaced in the same pull request by a fixture of these values and a test
 /// that fails when the system fonts drift from it.
+private func r(_ value: CGFloat) -> String { String(format: "%.2f", Double(value)) }
+
 struct TextMetricsCalibrationTests {
     private static let styles: [(name: String, font: Font, textStyle: UIFont.TextStyle, weight: UIFont.Weight)] = [
         ("title.semibold", .title.weight(.semibold), .title1, .semibold),
@@ -59,8 +61,6 @@ struct TextMetricsCalibrationTests {
         let pointSize = UIFont.preferredFont(forTextStyle: textStyle, compatibleWith: traits).pointSize
         return .systemFont(ofSize: pointSize, weight: weight)
     }
-
-    private static func r(_ value: CGFloat) -> String { String(format: "%.2f", Double(value)) }
 
     @Test func reportLineHeights() {
         for style in Self.styles {
