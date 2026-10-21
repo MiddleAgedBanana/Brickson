@@ -523,7 +523,6 @@ Not verified, and limits:
   review suggests (needs-triage, needs-info, ready-for-agent,
   ready-for-human, crash, device-check) don't exist yet; only the owner
   can create them, under **Issues**, **Labels**.
-- Run against PR #15's branch, `test-docs.py` reports one citation that
-  resolves only once PR #12 lands: docs/ROADMAP.md cites the DECISIONS
-  section that PR #12 names "Build with Apple's current Xcode". Whichever
-  of these merges last must pass the check.
+- Run against PR #15's branch, `test-docs.py` found one citation that
+  only PR #12 would resolve; that branch removed it (383892b), so neither
+  PR depends on the other's headings.
