@@ -175,8 +175,7 @@ Each owning piece of work checks its findings before acting. The biggest:
 - The app icon is a placeholder, with no layered Liquid Glass icon.
   *(Figma and Claude Design screens)*
 - Nothing technical stops an agent merging or pushing to `main`; the
-  owner's merge is the gate only by rule. *(Roadmap, decisions and repo
-  review: proposed guardrails)*
+  owner's merge is the gate only by rule. *(Project guardrails)*
 
 Not reviewed yet: Apple's design guidelines and Liquid Glass adoption,
 and full accessibility API coverage (the "Accessibility API coverage"
