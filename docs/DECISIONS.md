@@ -87,6 +87,11 @@ anything the new Xcode reports.
   and puts a warning on the run when Apple has a newer one. It warns
   instead of failing because GitHub adds a new Xcode to its machines some
   days after Apple releases it, and a safety fix must not wait for that.
+  Apple's feed decides whether an installed build is a release, by its
+  build number; only a build the feed does not list goes by its app's
+  name. GitHub's names are not reliable: on 2026-10-21 the released 27.1
+  sat in `Xcode_27.1_Release_Candidate.app`, because Apple released the
+  release candidate unchanged, and `Xcode_27.2.app` led to a beta.
 - **Runner image.** GitHub now publishes one Mac image per major Xcode
   (`xcode-27` carries Xcode 27 on macOS 27; generally available since
   2026-10-15, GitHub's changelog). The older `macos-26` image that CI used

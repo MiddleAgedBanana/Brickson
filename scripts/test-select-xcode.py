@@ -92,6 +92,42 @@ class ChooseTests(unittest.TestCase):
                                      feed_text=released),
                          "Xcode_27.2.app")
 
+    # GitHub's xcode-27 image, seen on 2026-10-21: Apple released 27.1's
+    # release candidate unchanged, so the released build sits in a bundle
+    # named Release_Candidate, while the plain 27.2 names lead to a beta.
+    # Going by names when Apple's feed says otherwise, or trusting the plain
+    # names, fails this test.
+    GITHUB_XCODE_27 = (("Xcode.app", "27.0", "27A266a"),
+                       ("Xcode_27.1_Release_Candidate.app", "27.1", "27A9275"),
+                       "Xcode_27.1.app -> Xcode_27.1_Release_Candidate.app",
+                       "Xcode_27.1.0.app -> Xcode_27.1_Release_Candidate.app",
+                       ("Xcode_27.2_beta_2.app", "27.2", "27B5020b"),
+                       "Xcode_27.2.app -> Xcode_27.2_beta_2.app",
+                       "Xcode_27.2.0.app -> Xcode_27.2_beta_2.app")
+
+    def test_apples_feed_decides_over_the_bundle_name(self):
+        self.assertEqual(self.choose(*self.GITHUB_XCODE_27, feed_text=APPLE_FEED),
+                         "Xcode_27.1_Release_Candidate.app")
+
+    # Without the feed only names are left, and a release candidate's name
+    # cannot tell whether Apple released it, so the choice stays safe.
+    def test_without_the_feed_names_decide(self):
+        self.assertEqual(self.choose(*self.GITHUB_XCODE_27), "Xcode.app")
+
+    # For an app outside /Applications, either name is enough: the link's
+    # or the app's own. Reading only one of them fails this test.
+    def test_either_name_marks_a_linked_app_as_a_beta(self):
+        for link, app in [("Xcode-beta.app", "Xcode_28.app"),
+                          ("Xcode.app", "Xcode_28_beta.app")]:
+            with self.subTest(link=link, app=app), \
+                    tempfile.TemporaryDirectory() as applications, \
+                    tempfile.TemporaryDirectory() as elsewhere:
+                install(applications, "Xcode_27.1.app", "27.1", "27A9275")
+                beta = install(elsewhere, app, "28.0", "28A5001a")
+                Path(applications, link).symlink_to(beta)
+                self.assertEqual(select_xcode.choose(Path(applications)).name,
+                                 "Xcode_27.1.app")
+
     # Reporting success with nothing to build with fails this test.
     def test_nothing_installed(self):
         self.assertIsNone(self.choose(("Xcode_27.2_beta.app", "27.2", "27B5010a")))

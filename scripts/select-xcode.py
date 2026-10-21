@@ -9,8 +9,11 @@ current Xcode").
 
 No Xcode version is written here or in the workflow. `choose` takes the
 newest release on the machine and never a beta or release candidate, which
-App Store Connect does not accept builds from: it goes by the app's name and
-by Apple's releases feed. `check` reads the same feed and warns on the run
+App Store Connect does not accept builds from. Apple's releases feed decides
+by build number; only a build the feed does not list goes by the app's name,
+because GitHub keeps a release candidate's name on a build Apple then
+released unchanged (Xcode_27.1_Release_Candidate.app held the released 27.1
+on 2026-10-21). `check` reads the same feed and warns on the run
 when GitHub's machine is behind Apple; it never fails the run, because
 GitHub adds a new Xcode to its machines some days after Apple releases it.
 Standard library only.
@@ -47,31 +50,37 @@ def describe(app):
 
 
 def choose(applications=Path("/Applications"), feed_text=None):
-    """The newest released Xcode in `applications`, or None. A build that
-    Apple's feed lists only as a beta or release candidate is skipped too,
-    whatever the app is called."""
-    best, seen = None, set()
-    unreleased = prerelease_builds(feed_text)
+    """The newest released Xcode in `applications`, as the path of the app
+    itself (not a link to it), or None. Apple's feed decides whether a build
+    is a release; a build it does not list, or every build when the feed
+    could not be read, goes by the names of the app and of its links."""
+    apps = {}
     for app in sorted(applications.glob("Xcode*.app")):
-        real = app.resolve()
-        if PRERELEASE_NAME.search(app.name) or PRERELEASE_NAME.search(real.name):
-            print(f"  skipped, a prerelease: {app}", file=sys.stderr)
-            continue
-        if real in seen:
-            continue
-        seen.add(real)
+        apps.setdefault(app.resolve(), []).append(app)
+    listed = list(releases(feed_text))
+    released = {build for _, _, build, prerelease in listed if not prerelease}
+    unreleased = prerelease_builds(feed_text)
+    best = None
+    for real, names in sorted(apps.items()):
+        shown = ", ".join(str(name) for name in names if name != real)
+        shown = f"{real} (also {shown})" if shown else str(real)
         try:
             number, build = describe(real)
         except (OSError, KeyError, plistlib.InvalidFileException) as error:
-            print(f"  skipped, unreadable ({error}): {app}", file=sys.stderr)
+            print(f"  skipped, unreadable ({error}): {shown}", file=sys.stderr)
             continue
         if build in unreleased:
-            print(f"  skipped, Apple lists {build} as a prerelease: {app}", file=sys.stderr)
+            print(f"  skipped, Apple lists {build} as a prerelease: {shown}",
+                  file=sys.stderr)
             continue
-        print(f"  Xcode {number} ({build}): {app}", file=sys.stderr)
+        if build not in released and any(PRERELEASE_NAME.search(name.name)
+                                         for name in [real, *names]):
+            print(f"  skipped, named as a prerelease: {shown}", file=sys.stderr)
+            continue
+        print(f"  Xcode {number} ({build}): {shown}", file=sys.stderr)
         rank = (version(number), build)
         if best is None or rank > best[0]:
-            best = (rank, app)
+            best = (rank, real)
     return best[1] if best else None
 
 
