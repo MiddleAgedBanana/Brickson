@@ -123,6 +123,8 @@ nonisolated enum LibraryEditRejection: Error, Equatable, Sendable {
     case emergencyCategoryCannotBeDeleted
     /// The emergency category always keeps at least one phrase (E1).
     case emergencyCategoryNeedsAPhrase
+    /// The edit would leave no categories at all.
+    case libraryNeedsACategory
     /// The category or phrase is no longer in the library.
     case notFound
     /// Two items in the stored library share an identity, so an edit
@@ -147,6 +149,8 @@ nonisolated enum LibraryEditRejection: Error, Equatable, Sendable {
             String(localized: "Emergency can't be deleted, so it's always one step away. You can change its phrases.")
         case .emergencyCategoryNeedsAPhrase:
             String(localized: "Emergency needs at least one phrase. Change this phrase's words instead.")
+        case .libraryNeedsACategory:
+            String(localized: "The library needs at least one category. Add another before deleting this one.")
         case .notFound:
             String(localized: "This was changed or deleted somewhere else. Go back and try again.")
         case .libraryNeedsRepair:

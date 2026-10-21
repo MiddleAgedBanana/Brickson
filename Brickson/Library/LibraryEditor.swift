@@ -28,7 +28,7 @@ enum LibraryEditor {
     ///
     /// The plan is refused if the store no longer matches the library it
     /// was made from (another edit landed in between), and a replace that
-    /// needs a safety copy is refused until safety copies exist.
+    /// would remove the person's own words is refused.
     ///
     /// `save` exists so tests can make the save fail; the app never passes
     /// it.
@@ -102,6 +102,9 @@ struct StoredLibrary {
     private let phrases: [UUID: Phrase]
 
     init(_ context: ModelContext) throws {
+        // Fetching every phrase first means a phrase table that cannot be
+        // read throws here, instead of failing later while Home draws.
+        _ = try context.fetch(FetchDescriptor<Phrase>())
         let stored = PhraseCategory.orderedForDisplay(try context.fetch(FetchDescriptor<PhraseCategory>()))
         var categories: [UUID: PhraseCategory] = [:]
         var phrases: [UUID: Phrase] = [:]

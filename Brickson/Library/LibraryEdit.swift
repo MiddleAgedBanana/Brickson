@@ -82,9 +82,9 @@ nonisolated struct LibraryPlan: Equatable, Sendable {
     let after: LibrarySnapshot
     let changes: LibraryChanges
     /// True when a replace would remove words the person wrote that the
-    /// backup does not have. Such a replace may run only after a safety
-    /// copy of the current library exists (docs/DECISIONS.md, "Replacing
-    /// the library"). Until safety copies are built, it cannot run at all.
+    /// backup does not have. Such a replace is refused: letting it run
+    /// after a safety copy would be an exception to invariant 7, which is
+    /// the owner's to decide (docs/DECISIONS.md, "Replacing the library").
     let needsSafetyCopy: Bool
     /// What a merge or replace kept, skipped or renumbered; nil for other
     /// edits.
@@ -212,9 +212,16 @@ nonisolated extension LibraryEdit {
         }
 
         // Backstops for every kind of edit, including any added later: no
-        // edit may stop Emergency from working, and identities stay unique.
+        // edit may stop Emergency from working or empty the library, and
+        // identities stay unique. An empty store is refilled with the
+        // starter phrases at the next launch, so emptying a library (one
+        // damaged so it has no emergency category, say) would put words
+        // the person never chose in place of theirs.
         if library.keepsEmergencyWorking && !after.keepsEmergencyWorking {
             throw .emergencyCategoryNeedsAPhrase
+        }
+        if !library.categories.isEmpty && after.categories.isEmpty {
+            throw .libraryNeedsACategory
         }
         guard after.hasUniqueIDs else { throw .libraryNeedsRepair }
 

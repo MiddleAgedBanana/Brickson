@@ -53,25 +53,28 @@ enum PhraseLibrarySeeder {
     /// `rollback()` is needed (docs/LESSONS.md, "Never roll back a cascade
     /// delete").
     ///
-    /// `countCategories` and `save` exist so tests can make reading or
-    /// saving fail; the app passes neither.
+    /// `readStore` and `save` exist so tests can make reading or saving
+    /// fail; the app passes neither.
     @discardableResult
     static func seedIfEmpty(
         _ container: ModelContainer,
         with library: LibrarySnapshot,
-        countCategories: (ModelContext) throws -> Int = { try $0.fetchCount(FetchDescriptor<PhraseCategory>()) },
+        readStore: (ModelContext) throws -> LibrarySnapshot = { try StoredLibrary($0).snapshot },
         save: (ModelContext) throws -> Void = { try $0.save() }
     ) throws(PhraseLibrarySeedError) -> Bool {
         let context = ModelContext(container)
         context.autosaveEnabled = false
-        let count: Int
+        // The whole library is read, not only counted: a store whose
+        // categories read but whose phrases don't is unreadable too, and
+        // must be reported rather than shown with phrases missing.
+        let stored: LibrarySnapshot
         do {
-            count = try countCategories(context)
+            stored = try readStore(context)
         } catch {
             logger.error("The phrase library could not be read before seeding: \(error)")
             throw .storeUnreadable
         }
-        guard count == 0 else { return false }
+        guard stored.categories.isEmpty else { return false }
         do {
             try StoredLibrary(context).write(library, in: context)
             try save(context)
@@ -98,7 +101,7 @@ enum PhraseLibraryLaunch {
     }
 
     /// `issue` carries a problem found while opening the store
-    /// (`PhraseLibraryStore.openForApp`). `starter`, `countCategories`,
+    /// (`PhraseLibraryStore.openForApp`). `starter`, `readStore`,
     /// `saveToStore` and `makeFallback` exist so tests can make each step
     /// fail; the app passes none of them.
     ///
@@ -109,7 +112,7 @@ enum PhraseLibraryLaunch {
         isVolatile: Bool,
         issue: PhraseLibraryIssue? = nil,
         starter: () throws -> LibrarySnapshot = { try StarterLibrary.bundled() },
-        countCategories: (ModelContext) throws -> Int = { try $0.fetchCount(FetchDescriptor<PhraseCategory>()) },
+        readStore: (ModelContext) throws -> LibrarySnapshot = { try StoredLibrary($0).snapshot },
         saveToStore: (ModelContext) throws -> Void = { try $0.save() },
         makeFallback: () throws -> ModelContainer = { try PhraseLibraryStore.makeInMemoryContainer() }
     ) -> Prepared {
@@ -118,7 +121,7 @@ enum PhraseLibraryLaunch {
             isVolatile: isVolatile,
             issue: issue,
             starter: starter,
-            countCategories: countCategories,
+            readStore: readStore,
             saveToStore: saveToStore,
             makeFallback: makeFallback
         )
@@ -134,7 +137,7 @@ enum PhraseLibraryLaunch {
         isVolatile: Bool,
         issue: PhraseLibraryIssue?,
         starter: () throws -> LibrarySnapshot,
-        countCategories: (ModelContext) throws -> Int,
+        readStore: (ModelContext) throws -> LibrarySnapshot,
         saveToStore: (ModelContext) throws -> Void,
         makeFallback: () throws -> ModelContainer
     ) -> Prepared {
@@ -153,18 +156,22 @@ enum PhraseLibraryLaunch {
             try PhraseLibrarySeeder.seedIfEmpty(
                 container,
                 with: library,
-                countCategories: countCategories,
+                readStore: readStore,
                 save: saveToStore
             )
             return Prepared(container: container, isVolatile: isVolatile, issue: issue)
-        } catch .storeUnreadable {
-            // The store opened but its phrases could not be read. They may
-            // still be there: say so, and never write over them.
-            fallbackIssue = .libraryUnreadable
-        } catch .saveFailed {
-            // The store opened but could not be filled (a full disk, say).
-            // It held no categories, so nobody's words are involved.
-            fallbackIssue = issue
+        } catch {
+            switch error {
+            case .storeUnreadable:
+                // The store opened but its phrases could not be read. They
+                // may still be there: say so, and never write over them.
+                fallbackIssue = .libraryUnreadable
+            case .saveFailed:
+                // The store opened but could not be filled (a full disk,
+                // say). It held no categories, so nobody's words are
+                // involved.
+                fallbackIssue = issue
+            }
         }
         // Speak from a filled in-memory library instead, and say that
         // changes will not be kept.

@@ -268,6 +268,20 @@ struct LibraryEditTests {
 
     /// A library that already broke the rule (from a damaged store) can
     /// still be edited, as long as the edit does not make it worse.
+    /// An empty store is refilled with the starter phrases at the next
+    /// launch. Fails if an edit can empty a library (one damaged so it has
+    /// no emergency category), which would put starter words in place of
+    /// the person's.
+    @Test func noEditEmptiesTheLibrary() throws {
+        let onlyBasics = LibrarySnapshot(categories: [F.basics])
+        #expect(throws: LibraryEditRejection.libraryNeedsACategory) {
+            try LibraryEdit.deleteCategory(F.basicsID).plan(in: onlyBasics)
+        }
+        #expect(throws: LibraryEditRejection.libraryNeedsACategory) {
+            try LibraryEdit.replace(.empty).plan(in: onlyBasics)
+        }
+    }
+
     @Test func aLibraryWithoutEmergencyCanStillBeEdited() throws {
         let noEmergency = LibrarySnapshot(categories: [F.basics, F.needs])
         let plan = try makePlan(.addPhrase(text: "Please.", category: F.basicsID), in: noEmergency)
@@ -315,7 +329,7 @@ struct LibraryImportTests {
             .init(id: F.id(400), name: "Family", symbolName: "person.2.fill", isEmergency: false, phrases: [
                 .init(id: F.id(401), text: "Where is everyone?"),
             ]),
-            .init(id: F.basicsID, name: "Renamed elsewhere", symbolName: "star.fill", isEmergency: false, phrases: [
+            .init(id: F.basicsID, name: "Basics", symbolName: "star.fill", isEmergency: false, phrases: [
                 .init(id: F.id(104), text: "See you soon."),
                 .init(id: F.id(101), text: "Hello."),
             ]),
@@ -332,6 +346,54 @@ struct LibraryImportTests {
         #expect(plan.changes.phrasesRemoved == 0)
         #expect(plan.changes.categoriesAdded == 1)
         #expect(plan.changes.phrasesAdded == 2)
+    }
+
+    /// A backup's category name is the person's words too. Fails if merge
+    /// joins categories whose names differ, by identity or by a loose
+    /// match, which would drop the backup's name.
+    @Test func aCategoryWhoseNameDiffersIsAddedWithItsName() throws {
+        let incoming = LibrarySnapshot(categories: [
+            .init(id: F.basicsID, name: "Renamed elsewhere", symbolName: "star.fill", isEmergency: false, phrases: [
+                .init(id: F.id(104), text: "See you soon."),
+                .init(id: F.id(101), text: "Hello."),
+            ]),
+            .init(id: F.id(500), name: "needs!", symbolName: "drop.fill", isEmergency: false, phrases: [
+                .init(id: F.id(501), text: "I'm hungry."),
+            ]),
+        ])
+        let plan = try merge(incoming)
+
+        #expect(plan.after.categories.map(\.name) == ["Basics", "Emergency", "Needs", "Renamed elsewhere", "needs!"])
+        #expect(texts(plan.after, F.basicsID) == ["Hello.", "Thank you.", "Goodbye."])
+        // The identity was taken, so the renamed category gets a new one;
+        // "Hello." is already in the library and is not copied.
+        #expect(plan.after.categories[3].id == F.id(900))
+        #expect(plan.after.categories[3].phrases.map(\.text) == ["See you soon."])
+        #expect(texts(plan.after, F.id(500)) == ["I'm hungry."])
+
+        let twice = try LibraryEdit.merge(incoming).plan(in: plan.after, makeID: SequentialIDs(startingAt: 950).make)
+        #expect(twice.changes.isEmpty)
+    }
+
+    /// A backup that says the same thing twice in one category keeps both
+    /// tiles, the first time and every time. Fails if merge checks against
+    /// what it has just added.
+    @Test func aRepeatedPhraseInOneBackupCategoryIsKept() throws {
+        let incoming = LibrarySnapshot(categories: [
+            .init(id: F.id(400), name: "Family", symbolName: "person.2.fill", isEmergency: false, phrases: [
+                .init(id: F.id(401), text: "Where is everyone?"),
+                .init(id: F.id(402), text: "Where is everyone?"),
+            ]),
+        ])
+        let plan = try merge(incoming)
+        #expect(texts(plan.after, F.id(400)) == ["Where is everyone?", "Where is everyone?"])
+        #expect(plan.after.categories.last?.phrases.map(\.id) == [F.id(401), F.id(402)])
+
+        let replaced = try replace(with: LibrarySnapshot(categories: [F.emergency] + incoming.categories))
+        #expect(texts(replaced.after, F.id(400)) == ["Where is everyone?", "Where is everyone?"])
+
+        let twice = try LibraryEdit.merge(incoming).plan(in: plan.after, makeID: SequentialIDs(startingAt: 950).make)
+        #expect(twice.changes.isEmpty)
     }
 
     /// Fails if merging twice adds anything the first merge did not.
@@ -371,7 +433,7 @@ struct LibraryImportTests {
     /// identity only.
     @Test func categoriesWithTheSameNameBecomeOne() throws {
         let incoming = LibrarySnapshot(categories: [
-            .init(id: F.id(500), name: "needs", symbolName: "drop.fill", isEmergency: false, phrases: [
+            .init(id: F.id(500), name: "Needs", symbolName: "drop.fill", isEmergency: false, phrases: [
                 .init(id: F.id(501), text: "I'm hungry."),
             ]),
         ])
@@ -427,7 +489,9 @@ struct LibraryImportTests {
         #expect(added.phrases.map(\.text) == ["  spaced  ", "hello.", "Hello.", long])
     }
 
-    @Test func blankPhrasesAreSkippedAndCounted() throws {
+    /// Only a phrase with no characters at all is skipped. Fails if import
+    /// trims, so that spaces or line breaks someone kept are lost.
+    @Test func onlyEmptyPhrasesAreSkipped() throws {
         let incoming = LibrarySnapshot(categories: [
             .init(id: F.basicsID, name: "Basics", symbolName: "star.fill", isEmergency: false, phrases: [
                 .init(id: F.id(110), text: ""),
@@ -437,9 +501,9 @@ struct LibraryImportTests {
         ])
         let plan = try merge(incoming)
 
-        #expect(texts(plan.after, F.basicsID).last == "Please.")
-        #expect(plan.changes.phrasesAdded == 1)
-        #expect(plan.importReport?.blankPhrasesSkipped == 2)
+        #expect(Array(texts(plan.after, F.basicsID).suffix(2)) == [" \n\t", "Please."])
+        #expect(plan.changes.phrasesAdded == 2)
+        #expect(plan.importReport?.emptyPhrasesSkipped == 1)
     }
 
     /// A phrase moved to another category here is the same phrase as in an
@@ -459,6 +523,32 @@ struct LibraryImportTests {
         #expect(plan.after == incoming)
         #expect(plan.changes.categoriesRemoved == 1)
         #expect(plan.asksFirst)
+    }
+
+    /// Replace keeps the backup's structure. Fails if it joins categories
+    /// by name, as merge does, which would lose one of them.
+    @Test func replaceKeepsCategoriesThatShareAName() throws {
+        let twin = LibrarySnapshot.Category(id: F.id(400), name: "Needs", symbolName: "drop.fill", isEmergency: false, phrases: [
+            .init(id: F.id(401), text: "I'm hungry."),
+        ])
+        let incoming = LibrarySnapshot(categories: [F.needs, twin, F.emergency])
+        let plan = try replace(with: incoming)
+
+        #expect(plan.after == incoming)
+    }
+
+    /// A repeated identity in a backup gets a new one, so nothing is lost
+    /// and the store never holds two items with one identity.
+    @Test func replaceRenumbersRepeatedIdentities() throws {
+        let clash = LibrarySnapshot.Category(id: F.needsID, name: "More needs", symbolName: "drop.fill", isEmergency: false, phrases: [
+            .init(id: F.id(301), text: "I'm hungry."),
+        ])
+        let plan = try replace(with: LibrarySnapshot(categories: [F.needs, clash, F.emergency]))
+
+        #expect(plan.after.hasUniqueIDs)
+        #expect(plan.after.categories.map(\.name) == ["Needs", "More needs", "Emergency"])
+        #expect(plan.after.categories[1].phrases.map(\.text) == ["I'm hungry."])
+        #expect(plan.importReport?.phrasesGivenNewIdentity == 1)
     }
 
     /// Invariant 7: a replace that would lose the person's words needs a
@@ -499,6 +589,18 @@ struct LibraryImportTests {
         let blank = try replace(with: blankEmergency)
         #expect(blank.after.keepsEmergencyWorking)
         #expect(blank.after.categories.filter(\.isEmergency).first?.phrases.map(\.text)
+            == [" ", "I need help now.", "Please come here."])
+
+        // The backup has the current emergency phrases, with the same
+        // identities, in an ordinary category. They are still kept in
+        // Emergency, under new identities.
+        let elsewhere = LibrarySnapshot(categories: [
+            .init(id: F.id(400), name: "Saved", symbolName: "star.fill", isEmergency: false, phrases: F.emergency.phrases),
+        ])
+        let moved = try replace(with: elsewhere)
+        #expect(moved.after.hasUniqueIDs)
+        #expect(moved.after.categories.filter(\.isEmergency).first?.phrases.map(\.text)
             == ["I need help now.", "Please come here."])
+        #expect(texts(moved.after, F.id(400)) == ["I need help now.", "Please come here."])
     }
 }

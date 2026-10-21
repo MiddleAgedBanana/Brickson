@@ -127,6 +127,17 @@ struct BackupCodecTests {
         #expect(refusal(data) == .tooLarge)
     }
 
+    /// Fails if export can write a file that import would refuse as too
+    /// large.
+    @Test func aLibraryTooLargeToReadBackIsNotWritten() {
+        let library = LibrarySnapshot(categories: [
+            .init(id: F.id(100), name: "Long", symbolName: "star.fill", isEmergency: false, phrases: [
+                .init(id: F.id(101), text: String(repeating: "a", count: BackupCodec.maximumByteCount)),
+            ]),
+        ])
+        #expect(throws: BackupEncodeError.tooLarge) { try BackupCodec.encode(library) }
+    }
+
     @Test func somethingThatIsNotJSONIsUnreadable() throws {
         let valid = try BackupCodec.encode(F.library)
         #expect(refusal(Data()) == .unreadable)

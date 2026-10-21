@@ -5,16 +5,16 @@ import Foundation
 ///
 /// Import is not editing. It never renames, trims or rewrites a word, and
 /// the editor's rules (duplicate names, reserved names, the symbol list) do
-/// not apply: a backup's words come in exactly as they are (invariant 7).
-/// What import does enforce is structure the app depends on, and it does
-/// that only by adding:
+/// not apply: a backup's words come in exactly as they are, byte for byte
+/// (invariant 7). What import does enforce is structure the app depends
+/// on, and it does that only by adding:
 ///
-/// - phrases with nothing to say (empty, or only spaces and line breaks)
-///   are skipped: they have no words to lose and would be blank tiles;
-/// - a phrase whose exact words are already in its category is skipped,
-///   which is what makes importing the same backup twice add nothing;
+/// - a phrase with no characters at all is skipped: it has no words to
+///   lose. Anything else, even only spaces, comes in as it is;
 /// - every emergency category in the backup feeds the one emergency
-///   category, so there is always exactly one;
+///   category, so there is always exactly one. This is the one place a
+///   backup's category name can be left out: the emergency category has no
+///   button of its own, and keeps its local name;
 /// - identities stay unique: an incoming item whose identity is taken gets
 ///   a new one.
 nonisolated enum LibraryImport {
@@ -23,13 +23,19 @@ nonisolated enum LibraryImport {
     /// after the existing ones, and new phrases after the existing phrases
     /// of their category.
     ///
-    /// An incoming category goes to the local category with the same
-    /// identity (if both are, or both are not, the emergency category);
-    /// otherwise an emergency category goes to the local emergency
-    /// category; otherwise a category goes to a local category of the same
-    /// kind whose name matches (`LibraryText.nameKey`), so two family-made
-    /// "Needs" categories from two devices end as one. Anything else is
-    /// added as a new category.
+    /// An incoming category joins a local category only when their names
+    /// are the same, byte for byte: first the one with the same identity,
+    /// then any other of the same kind, so two family-made "Needs"
+    /// categories from two devices end as one. An emergency category joins
+    /// the local emergency category whatever its name. Anything else, a
+    /// renamed category included, is added as a new category, so no name in
+    /// the backup is lost.
+    ///
+    /// An incoming phrase is skipped when its exact words were already in
+    /// that category before this import, or when the library already has a
+    /// phrase with its identity and words (moved elsewhere since). That is
+    /// what makes importing the same backup twice add nothing, while a
+    /// backup that says the same thing twice in one category keeps both.
     static func merge(
         _ incoming: LibrarySnapshot,
         into library: LibrarySnapshot,
@@ -38,14 +44,13 @@ nonisolated enum LibraryImport {
         var result = library
         var report = LibraryImportReport()
         var ids = LibraryIDs(library)
-        // Phrases already in the library, by identity: an incoming phrase
-        // with the same identity and the same words is the same phrase,
-        // even if it has since been moved to another category here.
         var knownPhrases: [UUID: [UInt8]] = [:]
+        var wordsBefore: [UUID: Set<[UInt8]>] = [:]
         for category in library.categories {
             for phrase in category.phrases {
                 knownPhrases[phrase.id] = Array(phrase.text.utf8)
             }
+            wordsBefore[category.id, default: []].formUnion(category.phrases.map { Array($0.text.utf8) })
         }
 
         for incomingCategory in incoming.categories {
@@ -62,17 +67,15 @@ nonisolated enum LibraryImport {
                 ))
                 target = result.categories.endIndex - 1
             }
+            let existing = wordsBefore[result.categories[target].id] ?? []
 
             for phrase in incomingCategory.phrases {
-                let bytes = Array(phrase.text.utf8)
-                if LibraryText.isBlank(phrase.text) {
-                    report.blankPhrasesSkipped += 1
+                if phrase.text.isEmpty {
+                    report.emptyPhrasesSkipped += 1
                     continue
                 }
-                let alreadyThere = result.categories[target].phrases.contains {
-                    LibraryText.sameBytes($0.text, phrase.text)
-                }
-                if alreadyThere || knownPhrases[phrase.id] == bytes {
+                let bytes = Array(phrase.text.utf8)
+                if existing.contains(bytes) || knownPhrases[phrase.id] == bytes {
                     report.phrasesAlreadyThere += 1
                     continue
                 }
@@ -90,26 +93,73 @@ nonisolated enum LibraryImport {
     }
 
     /// Makes the library match `incoming`: its categories and phrases, in
-    /// its order, with its identities. Exact duplicates and blank phrases
-    /// are dropped as in `merge` (it is a merge into an empty library), so
-    /// a backup Brickson wrote comes back exactly as it was.
+    /// its order, with its identities, its names and its repeats. Only a
+    /// phrase with no characters is skipped, several emergency categories
+    /// become one (in the first one's place), and a repeated identity gets
+    /// a new one, so a backup Brickson wrote comes back exactly as it was.
     ///
-    /// Emergency keeps working: if the backup has no emergency phrases, the
-    /// current emergency category's phrases are kept.
+    /// Emergency keeps working: if the backup's emergency category has no
+    /// phrase with words in it, the current emergency phrases are added to
+    /// it (or kept as the emergency category, if the backup has none).
     ///
-    /// Whether the current library holds words the person would lose, and
-    /// so needs a safety copy first, is decided by `LibraryEdit.plan`.
+    /// Whether the current library holds words the person would lose is
+    /// decided by `LibraryEdit.plan`.
     static func replace(
         _ library: LibrarySnapshot,
         with incoming: LibrarySnapshot,
         makeID: () -> UUID
     ) -> (library: LibrarySnapshot, report: LibraryImportReport) {
-        var (result, report) = merge(incoming, into: .empty, makeID: makeID)
-        if !result.keepsEmergencyWorking,
+        var result = LibrarySnapshot.empty
+        var report = LibraryImportReport()
+        var ids = LibraryIDs(.empty)
+        var emergency: Int?
+
+        func phrases(_ phrases: [LibrarySnapshot.Phrase], counted: Bool) -> [LibrarySnapshot.Phrase] {
+            phrases.compactMap { phrase in
+                if phrase.text.isEmpty {
+                    if counted { report.emptyPhrasesSkipped += 1 }
+                    return nil
+                }
+                let id = ids.phraseID(preferring: phrase.id, makeID)
+                if counted, id != phrase.id { report.phrasesGivenNewIdentity += 1 }
+                return LibrarySnapshot.Phrase(id: id, text: phrase.text)
+            }
+        }
+
+        for category in incoming.categories {
+            let kept = phrases(category.phrases, counted: true)
+            if category.isEmergency, let emergency {
+                result.categories[emergency].phrases += kept
+                continue
+            }
+            result.categories.append(LibrarySnapshot.Category(
+                id: ids.categoryID(preferring: category.id, makeID),
+                name: category.name,
+                symbolName: category.symbolName,
+                isEmergency: category.isEmergency,
+                phrases: kept
+            ))
+            if category.isEmergency { emergency = result.categories.endIndex - 1 }
+        }
+
+        let emergencyHasWords = emergency.map { index in
+            result.categories[index].phrases.contains { !LibraryText.isBlank($0.text) }
+        } ?? false
+        if !emergencyHasWords,
            let current = library.categories.first(where: \.isEmergency),
            !current.phrases.isEmpty {
-            let kept = merge(LibrarySnapshot(categories: [current]), into: result, makeID: makeID)
-            result = kept.library
+            let kept = phrases(current.phrases, counted: false)
+            if let emergency {
+                result.categories[emergency].phrases += kept
+            } else {
+                result.categories.append(LibrarySnapshot.Category(
+                    id: ids.categoryID(preferring: current.id, makeID),
+                    name: current.name,
+                    symbolName: current.symbolName,
+                    isEmergency: true,
+                    phrases: kept
+                ))
+            }
             report.keptCurrentEmergencyPhrases = true
         }
         return (result, report)
@@ -119,18 +169,16 @@ nonisolated enum LibraryImport {
         for incoming: LibrarySnapshot.Category,
         in library: LibrarySnapshot
     ) -> Int? {
-        if let index = library.categories.firstIndex(where: {
-            $0.id == incoming.id && $0.isEmergency == incoming.isEmergency
-        }) {
-            return index
-        }
         if incoming.isEmergency {
             return library.categories.firstIndex(where: \.isEmergency)
         }
-        let key = LibraryText.nameKey(incoming.name)
-        return library.categories.firstIndex {
-            !$0.isEmergency && LibraryText.nameKey($0.name) == key
+        let sameName = { (category: LibrarySnapshot.Category) in
+            !category.isEmergency && LibraryText.sameBytes(category.name, incoming.name)
         }
+        if let index = library.categories.firstIndex(where: { $0.id == incoming.id && sameName($0) }) {
+            return index
+        }
+        return library.categories.firstIndex(where: sameName)
     }
 }
 
@@ -139,8 +187,8 @@ nonisolated enum LibraryImport {
 nonisolated struct LibraryImportReport: Equatable, Sendable {
     /// Phrases whose exact words were already in their category.
     var phrasesAlreadyThere = 0
-    /// Phrases with nothing to say.
-    var blankPhrasesSkipped = 0
+    /// Phrases with no characters at all.
+    var emptyPhrasesSkipped = 0
     /// Phrases added under a new identity because theirs was taken by a
     /// phrase with different words.
     var phrasesGivenNewIdentity = 0

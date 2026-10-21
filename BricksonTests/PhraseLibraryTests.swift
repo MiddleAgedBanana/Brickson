@@ -209,7 +209,7 @@ struct PhraseLibraryTests {
             try PhraseLibrarySeeder.seedIfEmpty(
                 container,
                 with: library,
-                countCategories: { _ in throw Failed() },
+                readStore: { _ in throw Failed() },
                 save: { _ in saved = true }
             )
         }
@@ -275,7 +275,7 @@ struct PhraseLibraryTests {
             container: store,
             isVolatile: false,
             starter: { library },
-            countCategories: { _ in throw Failed() }
+            readStore: { _ in throw Failed() }
         )
 
         #expect(prepared.container !== store)
@@ -367,7 +367,7 @@ struct PhraseLibraryTests {
             container: try PhraseLibraryStore.makeInMemoryContainer(),
             isVolatile: false,
             starter: { library },
-            countCategories: { _ in throw Failed() }
+            readStore: { _ in throw Failed() }
         )
         let noStarter = PhraseLibraryLaunch.prepare(
             container: try PhraseLibraryStore.makeInMemoryContainer(),

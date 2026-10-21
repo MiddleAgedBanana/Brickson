@@ -57,7 +57,11 @@ nonisolated enum BackupCodec {
         )
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
-        return try encoder.encode(document)
+        let data = try encoder.encode(document)
+        // A file `decode` would refuse is never written: it would look like
+        // a backup and fail only when it was needed.
+        guard data.count <= maximumByteCount else { throw BackupEncodeError.tooLarge }
+        return data
     }
 
     /// Reads a backup, or says why it cannot. Reading never touches the
@@ -161,6 +165,19 @@ nonisolated enum BackupDecodeError: Error, Equatable, Sendable {
             String(localized: "This backup was made by a newer version of the app. Update the app, then try again. Nothing was changed.")
         case .damaged:
             String(localized: "This backup is damaged and couldn't be read. Nothing was changed.")
+        }
+    }
+}
+
+/// Why a backup could not be written. Nothing was written.
+nonisolated enum BackupEncodeError: Error, Equatable, Sendable {
+    /// The library is larger than a backup may be (`maximumByteCount`).
+    case tooLarge
+
+    var message: String {
+        switch self {
+        case .tooLarge:
+            String(localized: "This library is too large to fit in one backup. Nothing was saved.")
         }
     }
 }
