@@ -1,7 +1,81 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Again" : {
 
+    },
+    "Alert failed" : {
+
+    },
+    "Alert stopped" : {
+
+    },
+    "Audio could not start. Speech and Get Attention may be silent. Try again." : {
+
+    },
+    "Audio failed" : {
+
+    },
+    "Choose a phrase to speak it." : {
+
+    },
+    "Device volume is very low. Raise it before relying on speech or Get Attention." : {
+
+    },
+    "Emergency" : {
+
+    },
+    "Get Attention did not start. Choose it again." : {
+
+    },
+    "Get Attention stopped unexpectedly. Choose it again to restart." : {
+
+    },
+    "No" : {
+
+    },
+    "No phrases yet." : {
+
+    },
+    "No." : {
+      "comment" : "Spoken when the No control is chosen."
+    },
+    "Phrases can't be saved right now. Changes will be lost when the app closes." : {
+
+    },
+    "Speaking" : {
+
+    },
+    "Speech stopped unexpectedly. Choose Again to repeat it." : {
+
+    },
+    "Speech stopped unexpectedly. Choose Back until Home appears, then choose Again to repeat it." : {
+
+    },
+    "Speech stopped unexpectedly. Choose Phrases, then choose Again to repeat it." : {
+
+    },
+    "Stopped — Again" : {
+
+    },
+    "Stopped — Back" : {
+
+    },
+    "Stopped: Phrases" : {
+
+    },
+    "The starter phrases couldn't be loaded. Yes and No still work. Restart the app to try again." : {
+
+    },
+    "Volume low" : {
+
+    },
+    "Yes" : {
+
+    },
+    "Yes." : {
+      "comment" : "Spoken when the Yes control is chosen."
+    }
   },
   "version" : "1.0"
 }
