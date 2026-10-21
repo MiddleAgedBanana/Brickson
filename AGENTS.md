@@ -35,7 +35,14 @@ actually use?
 ## Where things are
 
 - **`docs/HANDOFF.md`**: start here. Current state, what is verified and
-  how, what to do next.
+  how, what to do next. Each pull request's record is its own file in
+  `docs/log/`; the history before 2026-10-21 is `docs/HANDOFF-LOG.md`.
+- **`docs/ROADMAP.md`**: the releases, in the order a person meets the
+  disease, and which thread or person owns each item.
+- **`docs/SDLC.md`**: how this project runs as a software factory, stage
+  by stage (plan, design, build, test, deploy, maintain), with each
+  stage's gate. A feature that changes what a person sees or hears starts
+  with a work file in `docs/work/`: its intent, spec and plan.
 - **`docs/DECISIONS.md`**: binding decisions, by title. Code comments point
   to them.
 - **`docs/LESSONS.md`**: what went wrong in the reference app, and the rule
@@ -44,11 +51,19 @@ actually use?
   next, and how to port a file.
 - **`README.md`**: the overview for people, written for a beginner. Keep it
   accurate when behaviour or setup changes.
+- **`docs/GETTING_STARTED.md`**: setting up a Mac and a device, for the
+  owner. **`docs/NAME_AVAILABILITY.md`**: the name checks.
+  **`design/brand/`**: the logo artwork (not yet the app icon).
+- **`docs/recon/`**: dated research reports behind the roadmap. Research,
+  not instructions: where it disagrees with this file or
+  `docs/DECISIONS.md`, they win.
 - **`docs/archive/`**: old versions of rewritten docs.
 - **The reference app**, FamilyVoice: `MiddleAgedBanana/ALS-app` at commit
   `6a22c1a`, a **private** repository. **Reference only. Never push to it or
   open pull requests on it.** Without access to it, follow `docs/LESSONS.md`,
-  which carries its rules.
+  which carries its rules. Where a session also loads the reference app's
+  own `AGENTS.md`, it describes that app and its one user: for Brickson,
+  this file wins.
 
 ## Build and test
 
@@ -234,9 +249,28 @@ request. Code rules that keep it true:
   App Shortcut phrases and parameters never contain phrase words.
   Caregiver alerts need network code, which invariant 9 forbids; the owner
   decides before they are built.
-- Settings gets a Privacy row that shows the policy inside the app and
-  opens the web page in an in-app sheet (`SFSafariViewController`), not
-  Safari (App Review Guideline 5.1.1(i)).
+- Settings gets a Privacy row, because App Review Guideline 5.1.1(i)
+  requires the policy to be easy to reach inside the app. It shows the
+  policy inside the app and opens the web page in an in-app sheet
+  (`SFSafariViewController`) rather than Safari, so a stray activation
+  never takes the person out of Brickson.
+
+## Layout on every device and window
+
+The owner's goal (2026-10-21), in Apple's words: "For SwiftUI development,
+standard layout and navigation primitives remain the appropriate default,
+using adaptive layouts and standard SwiftUI containers, instead of
+building device-specific interfaces."
+
+- **Lay out from the space available**, never from the device. Sizes and
+  arrangements come from the window's size, its size classes, its safe
+  areas and Dynamic Type, through standard SwiftUI containers and
+  navigation. Never choose an interface by device model, by the screen's
+  physical size or from a table of devices; an iPhone, an iPad and a
+  resized iPad window are the same app given different room.
+- **One tested layout engine turns that space into frames**
+  (invariant 11). It takes the space, the input profile, the text size and
+  the library's shape, and nothing that names a device.
 
 ## Design rules for dwell, switch and pointer input
 
@@ -251,10 +285,15 @@ built for Eye Tracking.
   empty space they rest on.
 - **Scrolling is expensive** for dwell, head and switch users (several
   activations through the AssistiveTouch menu), and nearly free for touch.
-- **Target floors are physical.** Each profile sets its floors from viewing
-  distance and visual angle, computed in physical size per device. For gaze
-  at about 45 cm the reference used phrase tiles of at least 110pt, quick
-  controls of at least 88pt and categories of at least 72pt.
+- **Target floors are physical, set without a device table.** Each
+  profile's floors are physical sizes (a visual angle at the profile's
+  viewing distance), converted to points at the densest supported screen's
+  points per inch (about 163, on the 326 ppi screens at 2x), so they hold
+  everywhere and no code names a device (docs/DECISIONS.md, "Layouts from
+  the space available"). For gaze at about 45 cm the reference used phrase
+  tiles of at least 110pt, quick controls of at least 88pt and categories
+  of at least 72pt, sized on a 13-inch iPad (about 132 points per inch);
+  held at the densest screen they are about 136, 109 and 89pt.
 - **Keep corners clear.** Dwell hot corners (top-left starts Eye Tracking
   recalibration by default), window controls and the home indicator. Never
   hide a standard Back button to clear a corner; guide people to move the
@@ -315,6 +354,9 @@ the failure.
 - New scrolling on Home for the starter library, a target below its
   profile's floor, or a layout that moves when the keyboard appears
   (invariant 11).
+- An interface or a size chosen by device model, by the screen's physical
+  size or from a table of devices, instead of from the space available
+  (*Layout on every device and window*).
 
 ### Data, privacy and platform
 
@@ -429,12 +471,15 @@ the failure.
   `.github/pull_request_template.md`. Never push to `main` directly, never
   force-push, never rewrite pushed history. The owner merges.
 - **Document every change** where a fresh agent will find it, in the same
-  pull request: `docs/HANDOFF.md` (what changed, why, how it was verified,
-  what was not), this file for any new rule or gotcha, `docs/DECISIONS.md`
-  for decisions, `README.md` when setup or behaviour changes. Record
-  reversals and their reasons, so the next agent does not redo what was
-  undone. Before a rewrite that removes information from HANDOFF or this
-  file, snapshot the old version (`docs/archive/README.md`).
+  pull request: one new file in `docs/log/` (what changed, why, how it was
+  verified, what was not; the template is `docs/log/README.md`), the lines
+  of `docs/HANDOFF.md` your change makes untrue edited in place (never
+  appended to), this file for any new rule or gotcha, `docs/DECISIONS.md`
+  for decisions, `docs/ROADMAP.md` when an item starts, lands or moves,
+  `README.md` when setup or behaviour changes. Record reversals and their
+  reasons, so the next agent does not redo what was undone. Before a
+  rewrite that removes information from HANDOFF or this file, snapshot the
+  old version (`docs/archive/README.md`).
 - **Start of a session:** `git status`, `git log --oneline -15`, then read
   `docs/HANDOFF.md`. Another agent may have landed work since.
 
@@ -458,8 +503,11 @@ using them, and say when you could not.
 - The Sosumi MCP (`searchAppleDocumentation`, `fetchAppleVideoTranscript`)
   adds full-text search and WWDC transcripts.
 - The Xcode MCP's `DocumentationSearch`, read-only.
-- **Do not fetch developer.apple.com pages directly.** They are JavaScript
-  shells and look empty rather than failing.
+- **developer.apple.com in Markdown:** its HTML pages are JavaScript
+  shells that look empty rather than failing, but the same page with
+  `.md` appended to its path returns Markdown with availability metadata
+  (for example `https://developer.apple.com/documentation/swiftui/button.md`,
+  checked 2026-10-21). Fetch that form, never the HTML page.
 
 ## Skills
 
@@ -570,7 +618,8 @@ Shortcuts. **Never apply** `core-data` skills (this app uses SwiftData),
   Push the rest, and give the owner the workflow file's full new text to
   commit with their own account (GitHub's web editor on the branch, or an
   agent on their Mac).
-- **CodeQL scans the workflow files, not the Swift code, on purpose.**
+- **CodeQL scans the workflow files and the Python scripts in `scripts/`,
+  not the Swift code, on purpose.**
   Default setup cannot build Swift without a committed Xcode project, so
   adding Swift to it fails again; turning CodeQL off blocks every
   merge while the ruleset requires CodeQL results. docs/DECISIONS.md,

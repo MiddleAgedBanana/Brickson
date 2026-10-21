@@ -8,7 +8,7 @@ import unittest
 ROOT = Path(__file__).resolve().parents[1]
 
 
-class PaletteTests(unittest.TestCase):
+class WebsitePaletteTests(unittest.TestCase):
     """Changing any CSS ink/fill pair below to low contrast must fail."""
 
     def test_website_palette_in_both_appearances(self):

@@ -17,12 +17,16 @@ and `docs/SUCCESSOR-HANDOFF.md`. Here, read `docs/LESSONS.md`.
 2. Take out anything written for one person: their window, their phrases,
    their device, words about their care. Brickson serves many people at
    every stage of ALS and with every input method.
-3. Apply the lessons that touch it, especially *Timers use ContinuousClock*
+3. Take out every check of the device: `userInterfaceIdiom`, `UIDevice`,
+   `UIScreen`, the interface orientation and fixed screen sizes. Replace
+   each with the size of the window or container (AGENTS.md, *Layout on
+   every device and window*).
+4. Apply the lessons that touch it, especially *Timers use ContinuousClock*
    and *Closures a framework may call off the main thread*.
-4. Put user-facing words through the String Catalog (`String(localized:)`,
+5. Put user-facing words through the String Catalog (`String(localized:)`,
    or `LocalizedStringKey` in views).
-5. Run the tests, then record the port in `docs/HANDOFF.md`: what came
-   over, from which reference file, and what changed.
+6. Run the tests, then record the port in the pull request's `docs/log/`
+   file: what came over, from which reference file, and what changed.
 
 ## Port order
 
@@ -70,8 +74,7 @@ From the reference's own successor handoff, checked against its code.
   (steps 2 and 6).
 - `BackupService` (byte-lossless round trip) and `BackupImportQuestion`
   (step 2; add a schema version to the backup format).
-- `SettingsIdlePolicy` (on `ContinuousClock`), `SettingsSafetyBarLayout`,
-  `WindowSizePolicy` (steps 4 and 7).
+- `SettingsIdlePolicy` (on `ContinuousClock`) (step 7).
 - `Views/WordFit.swift` (`WordFit`, `FittedText`) and the `Views/FamilyVoiceTheme.swift` tokens
   (step 3; add Bold Text and Increase Contrast).
 - `VoiceControlLabels` and its collision tests (step 5; compare every
@@ -85,6 +88,9 @@ From the reference's own successor handoff, checked against its code.
 - `HomeView`, `SettingsView`, `SettingsOpening`, `TypeToSpeakView`,
   `EditSheets`, `VoicePickerView`: keep the structure; the geometry was
   tuned to one window.
+- `SettingsSafetyBarLayout`, `WindowSizePolicy` (steps 4 and 7): they
+  check for an iPad; take their sizes from the window instead, and give
+  every scene the minimum window.
 - `CaregiverSetupView`: rewrite as setup for families on their own,
   covering every input method.
 
