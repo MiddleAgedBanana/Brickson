@@ -39,7 +39,7 @@ here. Entries kept by other work arrive with its pull request.
 |---|---|
 | The releases and their order: R0, R1, R2 | `docs/ROADMAP.md` |
 | Layouts from the space available, with floors set without a device table | "Layouts from the space available", below |
-| Minimum iOS 26.0, iPhone and iPad | "Minimum iOS 26, iPhone and iPad" (Toolchain and iOS version targets) |
+| Minimum iOS 26.0, iPhone and iPad, set by two rules: every device that can use eye tracking runs the app, and every mapped accessibility API stays reachable behind `#available` | "Minimum iOS, iPhone and iPad" (Toolchain and iOS version targets) |
 | The App Store category is Utilities | "App Store category" (App Store readiness and ASO) |
 | Home's fixed slots, labels and button style | Entries next to "Home version 0 is a stand-in" (Phone layout and word fitting) |
 | Typing as a state of Home under a band Apple's keyboard never covers, Apple's keyboard in 1.0, Writing Tools off, third-party keyboards refused, Return speaks, the typed message | "Typing is a state of Home", "Typing uses Apple's keyboard", "Writing Tools off while typing", "Third-party keyboards refused in 1.0", "Return speaks", "The typed message" (Typing foundation) |
@@ -78,7 +78,7 @@ Recorded here:
   (`PhraseLibraryStore.openForApp`), as the reference app did: no real way
   for it to happen was found. Revisit if one is.
 - **At release, Mac and Apple Vision Pro availability are switched off**
-  in App Store Connect, matching *Minimum iOS 26, iPhone and iPad*.
+  in App Store Connect, matching *Minimum iOS, iPhone and iPad*.
 - **At most three pull requests wait for the owner's review at once**
   (docs/SDLC.md, *Build*); other work continues on its branch.
 
