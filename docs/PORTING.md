@@ -30,7 +30,7 @@ and `docs/SUCCESSOR-HANDOFF.md`. Here, read `docs/LESSONS.md`.
 |---|---|---|
 | 1 | Speech, the Get Attention alarm and audio safety | **Speech and audio safety ported.** Alarm not yet. |
 | 2 | Storage, editing logic and backup. Fix D28 here. | **Storage started** (versioned schema, seeding). Editing and backup not yet. |
-| 3 | Text fitting and colour tokens | Three measured fills only (`Palette`). |
+| 3 | Text fitting and colour tokens | **Text fitting ported** (`WordFit`, `FittedLabel`, `FittedLine`). Three measured fills only (`Palette`). |
 | 4 | The layout engine, generalized to profiles | Not started. |
 | 5 | Home and typing. Fix D27 here. | A stand-in Home only (docs/DECISIONS.md, "Home version 0 is a stand-in"). |
 | 6 | Editing screens. Build D24 and D25 here. | Not started. |
@@ -53,6 +53,8 @@ unchanged apart from names.
 | `App/ScreenWakePolicy.swift` | `FamilyVoice/Models/ScreenWakePolicy.swift` | Same. |
 | `Library/PhraseLibrarySchema.swift` | `FamilyVoice/Models/Models.swift` | Versioned schema; `.nullify` instead of `.cascade`; stable `uuid`; no `recordingFileName`. |
 | `Library/StarterLibrary.swift` | `FamilyVoice/Models/PhraseSeeder.swift` | Seeding only, in its own context with no rollback; the retired-seed repair is left behind. |
+| `Layout/WordFit.swift`, `Layout/FittedLabel.swift`, `Layout/FittedLine.swift`, `Layout/LabelFont.swift` | `FamilyVoice/Views/WordFit.swift` (`WordFit`, `FittedText`) and `BoardLabel` | Rewritten. A label steps through Apple's text sizes (the person's, then smaller ones down to the default) instead of searching for a point size, and SwiftUI's `ViewThatFits` measures each size's height, because UIKit's measure leaves out the line spacing SwiftUI adds (measured on CI). Same order: icon first, then the words, never below the default size. |
+| `Layout/HomeShape.swift`, `Home/HomeButtonStyle.swift` | — | New: the stand-in Home's sizes from the space it is given, and Home's button style (docs/DECISIONS.md, "Home's stand-in layout"). |
 | `Resources/StarterPhrases.json` | — | New, neutral starter set (docs/DECISIONS.md, "Starter phrases"). |
 | Tests for each of the above | `FamilyVoiceTests/` | Timer tests built from one `now` plus offsets. |
 
@@ -72,8 +74,8 @@ From the reference's own successor handoff, checked against its code.
   (step 2; add a schema version to the backup format).
 - `SettingsIdlePolicy` (on `ContinuousClock`), `SettingsSafetyBarLayout`,
   `WindowSizePolicy` (steps 4 and 7).
-- `Views/WordFit.swift` (`WordFit`, `FittedText`) and the `Views/FamilyVoiceTheme.swift` tokens
-  (step 3; add Bold Text and Increase Contrast).
+- The `Views/FamilyVoiceTheme.swift` tokens (step 3; add Bold Text and
+  Increase Contrast).
 - `VoiceControlLabels` and its collision tests (step 5; compare every
   alias, not only the first, and match visible text).
 

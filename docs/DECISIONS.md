@@ -195,15 +195,23 @@ How it behaves, and where it knowingly falls short:
   category row; the Emergency quick control opens it and shows a check
   mark while it is open. Two buttons with the same name confused Voice
   Control and the UI tests, and the reference app did the same.
-- **Messages never shrink.** The message row always reserves two lines of
-  its font; a longer message scrolls inside them at full size (the reference
-  app's phone layout did the same). Every phrase start, including Again and
-  the same phrase chosen again, shows the message from the top.
-- **Audio warnings keep their space.** The warning area always holds the
-  height of the tallest short audio warning ("Volume low", "Audio failed"),
-  so a warning appearing hides no phrase tile (invariant 4). The short text
-  is what people see; VoiceOver reads the full sentence. The two library
-  warnings are decided at launch and never appear later.
+- **Messages shrink only for their widest word.** The message row always
+  reserves two lines of its font at the person's text size; a longer
+  message scrolls inside them. It steps down through Apple's text sizes
+  only while its widest word is wider than the row, never below the
+  default size (2026-10-21, *Home's stand-in layout*). Before that it never
+  shrank (`0260099`, which reversed shrinking to half): at the largest text
+  sizes on a phone, one long word was wider than the row and broke.
+  Every phrase start, including Again and the same phrase chosen again,
+  shows the message from the top.
+- **Speech and audio share one status line that keeps its space.** The line
+  under the message always holds the height of the tallest of "Speaking"
+  and the short audio warnings ("Volume low", "Audio failed"), so nothing
+  moves when one appears (invariant 4). A warning takes the line over from
+  "Speaking", because when something cannot be heard that is what the
+  person needs to know (2026-10-21; before, each had a line of its own).
+  The short text is what people see; VoiceOver reads the full sentence. The
+  two library warnings are decided at launch and never appear later.
 - **VoiceOver is told about audio problems.** Text appearing on screen is
   not announced, so Home posts an announcement when an audio problem
   appears (including one present at launch) and on every cut-off phrase.
@@ -215,13 +223,89 @@ How it behaves, and where it knowingly falls short:
 - **Accepted for the stand-in only:**
   - No Get Attention yet, so invariant 10's "reachable in one dwell" holds
     only for Emergency, Yes and No. Get Attention comes in port step 1.
-  - Again sits beside the message text the person reads, and the phrase
-    grid ends just above the warning text: under a gaze profile a look
-    that rests on the text could snap to them.
+  - Again sits beside the message text the person reads, and Yes sits
+    just under it: under a gaze profile a look that rests on the text could
+    snap to them. The slot layout (next pull request) moves Again into the
+    safety row.
   - The selected category swaps its symbol for a check mark; symbols
     differ in width, so the buttons after it can shift slightly.
-  - CI tests the iPad only. On a narrow iPhone the three quick-control
-    labels may not fit at larger text sizes.
+  - The phrase grid scrolls on some phone windows at large text sizes
+    (*Home's stand-in layout*, "Where the grid still scrolls").
+
+## Home's stand-in layout
+
+*2026-10-21. Default, adopted 2026-10-21: the owner left these choices to
+the project. Reversible if the owner objects.*
+
+How the stand-in Home fits the space it is given until the layout engine
+replaces its fixed sizes (docs/PORTING.md, step 4). Everything comes from
+the width and height Home is given (`HomeShape`), never from a device
+model, as the owner asked: "For SwiftUI development, standard layout and
+navigation primitives remain the appropriate default, using adaptive
+layouts and standard SwiftUI containers, instead of building
+device-specific interfaces."
+
+- **Regions, top to bottom: the message and its status line, the quick
+  controls, the categories, the phrase grid.** Everything a person needs
+  while typing sits in the top part, which the software keyboard never
+  reaches, and the harmless categories are what sits nearest the keyboard's
+  edge (agreed with the Typing and design threads). Gaps are 12pt between
+  regions and 8pt between controls inside one.
+- **Four category buttons, never scrolled sideways.** Two by two on narrow
+  windows, one row of four from a 560pt content width. The region keeps its
+  height for four whatever the library holds; a library with more scrolls
+  inside it, vertically.
+- **Three phrase columns wherever three tiles of 107pt fit** (content of
+  337pt or more: every iPhone the app supports and every iPad window but
+  the narrowest), two below that. The count depends only on the width,
+  never on content or use (invariant 8); 107pt is the narrowest tile that
+  holds the starter library's widest word, "understand.", at its default
+  size. Rows come from the largest category, so a tile keeps its place in
+  every category. Tiles share the height left; the grid scrolls only where
+  they would be shorter than the minimum (99pt narrow, 110pt wide, which
+  holds the tallest starter phrase).
+- **Sizes.** Narrow windows (under 560pt of content): quick controls 64pt,
+  categories 48pt, touch sizes that leave the grid room. Wide windows: the
+  gaze floors AGENTS.md names, 88pt and 72pt, and tiles of at least 110pt.
+  These are the stand-in's numbers; the engine sets floors per profile.
+- **Labels step through Apple's text sizes.** Every Home label is drawn
+  with its text style at one of Apple's sizes: the person's own, with its
+  icon if it fits; then without the icon; then each smaller size down to
+  the default (Large), never below it (`WordFit`, `FittedLabel`). SwiftUI's
+  `ViewThatFits` measures each size's height, so what is measured is what
+  is drawn; UIKit measures only word widths, which CI checks against
+  SwiftUI's (`StarterLabelFitTests`). Measured on CI, SwiftUI adds the
+  style's line spacing that UIKit's own measure leaves out (22pt per line
+  at 17pt, not 20.3), which is why heights are left to SwiftUI.
+- **Home's own button style.** Home's controls use `HomeButtonStyle`
+  instead of `.borderedProminent`: that style's margins left too little
+  width in a phone's three-column grid for the starter words at their
+  default size, and its dimmed disabled look fails Apple's contrast audit,
+  as Again's did. The style is a standard `ButtonStyle` on standard
+  `Button`s (invariant 1): white words on a measured fill, a 4pt margin, a
+  white ring when selected, a primary-ink ring when pressed (3:1 on every
+  fill, `PaletteTests.pressedRingStandsOutFromEveryFill`) and the system's
+  pointer highlight for trackpads, AssistiveTouch and head or eye
+  tracking.
+
+### Where the grid still scrolls
+
+This is part of the stand-in's known gap, "the phrase grid scrolls
+(invariant 11)" (docs/HANDOFF.md, *Known gaps*), not an exception to the
+invariant: iPhones run Switch Control, AssistiveTouch with Dwell, head
+tracking and Eye Tracking, so invariant 11 covers phones too. The layout
+engine closes it. Worked out from CI's text measurements (not yet seen
+running on these windows):
+
+- A 375×667pt phone window (iPhone SE class): fits at the default text size
+  and through xxxLarge (by under a point there); the grid scrolls from AX1.
+  The two-row safety row planned for the slot layout makes it scroll at the
+  default size too, until the engine.
+- A 402×874pt phone window (iPhone 17 class): expected to fit at every text
+  size; `HomeLayoutTests` checks it at default and AX5 once CI runs on an
+  iPhone.
+- Every iPad window CI runs, both orientations, default and AX5: expected to
+  fit; `HomeLayoutTests` checks them.
 
 ## Personal Voice permission is asked at launch, for now
 

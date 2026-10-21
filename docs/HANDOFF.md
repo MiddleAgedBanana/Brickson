@@ -14,11 +14,15 @@ screen, tests, CI and these documents.
 
 What it is written to do; the *Verification* section says how much of it
 has been seen working. It opens on a Home screen with Yes, No and
-Emergency, a row of everyday categories, and phrase tiles from a neutral
-starter set. Choosing a tile speaks it at once; the sentence stays on
-screen with Again beside it. Emergency switches to the emergency phrases
-and says nothing itself. If audio fails or the volume is very low, a short
-passive warning appears at the bottom in space that is always kept for it.
+Emergency, four everyday categories, and phrase tiles from a neutral
+starter set, sized from the space the window gives it (docs/DECISIONS.md,
+"Home's stand-in layout"). Choosing a tile speaks it at once; the sentence
+stays on screen with Again beside it. Emergency switches to the emergency
+phrases and says nothing itself. While it speaks, "Speaking" shows under
+the message; if audio fails or the volume is very low, a short passive
+warning takes that line, in space that is always kept for it. No label
+breaks a word: each steps down through Apple's text sizes as far as it
+must, never below the default.
 If the library cannot be saved or filled, the app runs from a filled
 in-memory library and a warning says changes will not be kept.
 
@@ -88,9 +92,10 @@ promise* lists the code rules that keep the policy true.
 
 ### Known gaps in this first version
 
-- Home's sizes are plain defaults, not measured gaze, switch or touch
-  sizes, and the phrase grid scrolls. Fine for a stand-in, not for a
-  release (invariant 11).
+- Home's sizes are the stand-in's, not per-profile gaze, switch or touch
+  floors, and the phrase grid scrolls (invariant 11) on some phone windows
+  at large text sizes: docs/DECISIONS.md, "Home's stand-in layout", *Where
+  the grid still scrolls*. Fine for a stand-in, not for a release.
 - No Get Attention alarm yet, so `AudioSafetyPolicy` runs with the alarm
   always idle.
 - No typing, editing, Settings, voice choice or backup.
@@ -472,3 +477,37 @@ established: xcbeautify discarded its destination details.
   GitHub CI on the new pull request remains the merge gate; this does not
   claim a permanent fix for the first runner's unexplained destination
   failure.
+
+## Phone layout and word fitting — 2026-10-21
+
+Branch `claude/project-thread-odn7pp`. Home's stand-in fits the space it is
+given on iPhone and iPad (docs/DECISIONS.md, "Home's stand-in layout"):
+
+- **Labels never break a word** (`WordFit`, `FittedLabel`, `FittedLine`):
+  the person's text size with its icon, then without it, then Apple's
+  smaller sizes down to the default. Measured on CI first (a temporary
+  calibration test, since removed): SwiftUI's text widths match UIKit's to
+  within half a point, but SwiftUI adds each style's line spacing, so
+  SwiftUI measures heights itself (`ViewThatFits`).
+- **Fixed regions**: message and status line, quick controls, four
+  category buttons (two by two on narrow windows, never scrolled
+  sideways), then a three-column grid from 337pt of content. Rows come from
+  the largest category.
+- **One status line** for "Speaking" and the audio warnings, so the grid
+  keeps 22pt more on a phone.
+- **Home's own button style**, because `.borderedProminent`'s margins broke
+  starter words in three phone columns.
+
+Tests: `WordFitTests` and `HomeShapeTests` (pure, also run with the Linux
+Swift toolchain while writing); `StarterLabelFitTests` (real fonts: every
+starter phrase, category and quick control fits its narrowest slot at the
+default size); `PaletteTests.pressedRingStandsOutFromEveryFill`; the UI
+test `HomeLayoutTests` (no scrolling, tiles in place across categories,
+quick controls on screen; default and AX5, both orientations where the
+device turns).
+
+Not verified: nothing was built or run on a Mac; CI is the build. The
+layout was never seen with Eye Tracking, Switch Control or Snap to Item.
+The windows that still scroll are worked out from measurements, not seen.
+Next: the slot layout (regions A to D, Get Attention, Stop and Settings
+slots), then the layout engine with profiles.
