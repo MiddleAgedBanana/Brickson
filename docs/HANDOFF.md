@@ -86,7 +86,7 @@ promise* lists the code rules that keep the policy true.
 - Not yet seen live: the pages have only been rendered locally in
   Chromium, at 320, 375 and 1280 px, light and dark.
 
-### Known gaps in this first version
+### Known gaps
 
 - Home's sizes are plain defaults, not measured gaze, switch or touch
   sizes, and the phrase grid scrolls. Fine for a stand-in, not for a
