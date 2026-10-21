@@ -121,6 +121,16 @@ class CheckTests(unittest.TestCase):
         self.assertIn("Xcode 26.6 (17F113)", message)
         self.assertIn("Xcode 27.1 (27A9275)", message)
 
+    # Comparing only the version number, so an older build of Apple's
+    # newest version reads as current, fails this test.
+    def test_warns_when_ci_has_an_older_build_of_the_newest_version(self):
+        level, message = self.check("Xcode 27.1\nBuild version 27A9000\n", APPLE_FEED)
+        self.assertEqual(level, "warning")
+        self.assertIn("Xcode 27.1 (27A9000)", message)
+        self.assertIn("Xcode 27.1 (27A9275)", message)
+        level, message = self.check("Xcode 27.1\n", APPLE_FEED)
+        self.assertEqual(level, "warning", message)
+
     def test_quiet_notice_when_ci_matches(self):
         level, message = self.check("Xcode 27.1\nBuild version 27A9275\n", APPLE_FEED)
         self.assertEqual(level, "notice")

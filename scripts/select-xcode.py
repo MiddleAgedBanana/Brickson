@@ -114,9 +114,12 @@ def compare(active, feed_text):
     if newest is None:
         return "warning", (f"CI builds with {using}. Could not read Apple's newest "
                            f"Xcode release from {FEED}; check it by hand.")
-    _, newest_number, newest_build = newest
+    newest_version, newest_number, newest_build = newest
     latest = f"Xcode {newest_number} ({newest_build})"
-    if number == "unknown" or version(number) < newest[0]:
+    # Apple sometimes ships a newer build under the same version number, and
+    # a build that cannot be read is treated as behind.
+    if (number == "unknown" or version(number) < newest_version
+            or (version(number) == newest_version and build != newest_build)):
         return "warning", (f"CI builds with {using}, but Apple's newest release is "
                            f"{latest}. GitHub's Mac machine does not have it yet, or "
                            "the runner in .github/workflows/tests.yml needs a newer "
