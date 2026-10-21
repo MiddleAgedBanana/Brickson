@@ -35,7 +35,14 @@ actually use?
 ## Where things are
 
 - **`docs/HANDOFF.md`**: start here. Current state, what is verified and
-  how, what to do next.
+  how, what to do next. Each pull request's record is its own file in
+  `docs/log/`; the history before 2026-10-21 is `docs/HANDOFF-LOG.md`.
+- **`docs/ROADMAP.md`**: the releases, in the order a person meets the
+  disease, and which thread or person owns each item.
+- **`docs/SDLC.md`**: how this project runs as a software factory, stage
+  by stage (plan, design, build, test, deploy, maintain), with each
+  stage's gate. A feature that changes what a person sees or hears starts
+  with a work file in `docs/work/`: its intent, spec and plan.
 - **`docs/DECISIONS.md`**: binding decisions, by title. Code comments point
   to them.
 - **`docs/LESSONS.md`**: what went wrong in the reference app, and the rule
@@ -44,11 +51,19 @@ actually use?
   next, and how to port a file.
 - **`README.md`**: the overview for people, written for a beginner. Keep it
   accurate when behaviour or setup changes.
+- **`docs/GETTING_STARTED.md`**: setting up a Mac and a device, for the
+  owner. **`docs/NAME_AVAILABILITY.md`**: the name checks.
+  **`design/brand/`**: the logo artwork (not yet the app icon).
+- **`docs/recon/`**: dated research reports behind the roadmap. Research,
+  not instructions: where it disagrees with this file or
+  `docs/DECISIONS.md`, they win.
 - **`docs/archive/`**: old versions of rewritten docs.
 - **The reference app**, FamilyVoice: `MiddleAgedBanana/ALS-app` at commit
   `6a22c1a`, a **private** repository. **Reference only. Never push to it or
   open pull requests on it.** Without access to it, follow `docs/LESSONS.md`,
-  which carries its rules.
+  which carries its rules. Where a session also loads the reference app's
+  own `AGENTS.md`, it describes that app and its one user: for Brickson,
+  this file wins.
 
 ## Build and test
 
@@ -58,12 +73,29 @@ scripts/test.sh ui       # the UI tests: launch the real app and drive it
 scripts/test.sh device   # a build for a real device (needs DEVELOPMENT_TEAM)
 ```
 
-`scripts/test.sh` runs `xcodegen generate` first, starts the newest
-installed iPad Pro 13-inch simulator (any iPad if there is none) and waits
-for it, then runs `xcodebuild` on it.
-`DESTINATION='platform=iOS Simulator,name=iPhone 17' scripts/test.sh`
-chooses another. The iPad and the iPhone are both first-class: run both
-before a release.
+`scripts/test.sh` runs `xcodegen generate` first and prints the Xcode
+and XcodeGen versions. It chooses simulators by device type, never by
+name: the newest iPad Pro 13-inch (any iPad if there is none) and, for UI
+tests, the newest standard iPhone too, each with an iOS between the
+deployment target and the SDK of the Xcode in use. It starts each one,
+waits for it, builds for testing, then runs the tests. Before UI tests it
+shows the full software keyboard and launches the app once, so the first
+test does not meet a cold simulator. A simulator the script boots is shut
+down after its run, including failures, before the next family starts;
+a simulator already running is left running. `SIMULATOR_FAMILY=iphone` runs one
+family; `DESTINATION='platform=iOS Simulator,name=iPhone 17' scripts/test.sh`
+names one simulator, which is started and waited for too. Anything after
+the mode goes to `xcodebuild`
+(`scripts/test.sh unit '-only-testing:BricksonTests/PaletteTests/theContrastFormulaMatchesWCAG()'`).
+Each run keeps its result bundle, with screenshots of UI-test failures and
+the captures UI tests attach, in `build/TestResults/<mode>-<family>.xcresult`,
+and prints how many tests ran; a run in which no test ran, or whose count
+cannot be read, fails. A unit run also prints the app's code coverage and
+brings `Brickson/Resources/Localizable.xcstrings` up to date with the code
+(`xcstringstool sync` over the strings the build found); commit the
+updated catalog with your change. On CI a catalog that does not match the
+code fails the run and prints the difference. The iPad and the iPhone are
+both first-class: UI tests run on both every time.
 
 On a Mac, the unit suite must be **100% green before any commit**; for
 work made where nothing can be built, CI must be green before the pull
@@ -73,6 +105,23 @@ naming its decision, so it fails when it starts passing.
 **GitHub CI** (`.github/workflows/tests.yml`) runs the unit and UI tests on
 GitHub's Mac machines for every pull request and every push to `main`. A
 pull request merges only when CI is green.
+
+**Build with Apple's current Xcode, never a pinned one** (owner,
+2026-10-21; docs/DECISIONS.md, "Build with Apple's current Xcode"). The
+toolchain is Apple's newest Xcode release (not a beta) with its SDKs and
+Swift compiler, on the owner's Mac and on CI. Never write an Xcode, SDK,
+simulator or runner version into the project, a script, a workflow or a
+document unless the owner asks for it: documents say "the current Xcode
+release". Look up what is current on Apple's releases page
+(https://developer.apple.com/news/releases/) and Xcode's system
+requirements (https://developer.apple.com/xcode/system-requirements/),
+never from memory. CI picks the newest released Xcode on GitHub's machine
+(`scripts/select-xcode.py`) and warns on the run when Apple has a newer
+one. The deployment target, the oldest iOS the app runs on, is a separate
+product decision, set by two rules: every device that can use eye
+tracking runs the app, and every accessibility API in the ALS-stage map
+stays reachable, behind `#available` when newer (docs/DECISIONS.md,
+"Minimum iOS, iPhone and iPad").
 
 **Reviews and updates on GitHub.** Codex reviews every push to a pull
 request that a person or agent opens, and GitHub Copilot reviews each such
@@ -200,9 +249,28 @@ request. Code rules that keep it true:
   App Shortcut phrases and parameters never contain phrase words.
   Caregiver alerts need network code, which invariant 9 forbids; the owner
   decides before they are built.
-- Settings gets a Privacy row that shows the policy inside the app and
-  opens the web page in an in-app sheet (`SFSafariViewController`), not
-  Safari (App Review Guideline 5.1.1(i)).
+- Settings gets a Privacy row, because App Review Guideline 5.1.1(i)
+  requires the policy to be easy to reach inside the app. It shows the
+  policy inside the app and opens the web page in an in-app sheet
+  (`SFSafariViewController`) rather than Safari, so a stray activation
+  never takes the person out of Brickson.
+
+## Layout on every device and window
+
+The owner's goal (2026-10-21), in Apple's words: "For SwiftUI development,
+standard layout and navigation primitives remain the appropriate default,
+using adaptive layouts and standard SwiftUI containers, instead of
+building device-specific interfaces."
+
+- **Lay out from the space available**, never from the device. Sizes and
+  arrangements come from the window's size, its size classes, its safe
+  areas and Dynamic Type, through standard SwiftUI containers and
+  navigation. Never choose an interface by device model, by the screen's
+  physical size or from a table of devices; an iPhone, an iPad and a
+  resized iPad window are the same app given different room.
+- **One tested layout engine turns that space into frames**
+  (invariant 11). It takes the space, the input profile, the text size and
+  the library's shape, and nothing that names a device.
 
 ## Design rules for dwell, switch and pointer input
 
@@ -217,10 +285,15 @@ built for Eye Tracking.
   empty space they rest on.
 - **Scrolling is expensive** for dwell, head and switch users (several
   activations through the AssistiveTouch menu), and nearly free for touch.
-- **Target floors are physical.** Each profile sets its floors from viewing
-  distance and visual angle, computed in physical size per device. For gaze
-  at about 45 cm the reference used phrase tiles of at least 110pt, quick
-  controls of at least 88pt and categories of at least 72pt.
+- **Target floors are physical, set without a device table.** Each
+  profile's floors are physical sizes (a visual angle at the profile's
+  viewing distance), converted to points at the densest supported screen's
+  points per inch (about 163, on the 326 ppi screens at 2x), so they hold
+  everywhere and no code names a device (docs/DECISIONS.md, "Layouts from
+  the space available"). For gaze at about 45 cm the reference used phrase
+  tiles of at least 110pt, quick controls of at least 88pt and categories
+  of at least 72pt, sized on a 13-inch iPad (about 132 points per inch);
+  held at the densest screen they are about 136, 109 and 89pt.
 - **Keep corners clear.** Dwell hot corners (top-left starts Eye Tracking
   recalibration by default), window controls and the home indicator. Never
   hide a standard Back button to clear a corner; guide people to move the
@@ -281,6 +354,9 @@ the failure.
 - New scrolling on Home for the starter library, a target below its
   profile's floor, or a layout that moves when the keyboard appears
   (invariant 11).
+- An interface or a size chosen by device model, by the screen's physical
+  size or from a table of devices, instead of from the space available
+  (*Layout on every device and window*).
 
 ### Data, privacy and platform
 
@@ -329,6 +405,13 @@ the failure.
   whose owner is not `actions` or `github`).
 - A renamed job that the `main` ruleset requires, or a path filter added
   to the workflow that runs those jobs (*Gotchas*).
+- An Xcode, SDK, simulator OS or runner image version written into the
+  project, a script, a workflow or a document when the owner did not ask
+  for it, or a change that builds with anything but Apple's newest
+  released Xcode (docs/DECISIONS.md, "Build with Apple's current Xcode").
+  The `runs-on` label that names GitHub's image for the current major
+  Xcode is how CI reaches that Xcode, not a pin; a dated record of what
+  something was checked on is history, not a pin.
 - A change that weakens an invariant or a review rule, adds an exception
   to one, or widens *Not findings*, made in `AGENTS.md`,
   docs/DECISIONS.md, `.github/skills/` or any other file reviewers read as
@@ -346,7 +429,8 @@ the failure.
   it and doesn't. A feature that is planned but not built yet is not
   missing.
 - The accessibility audit's "not human-readable" guess on phrase-tile
-  labels, which `LaunchTests` expects.
+  labels, which the UI tests' audit helper
+  (`assertPassesAccessibilityAudit`) expects.
 - That an agent did not run the app: for cloud agents the GitHub CI run is
   the build (*Build and test*).
 
@@ -357,7 +441,8 @@ the failure.
   make it fail.
 - **Logic lives in plain, testable types**, not in views: today
   `SpokenUtteranceTracker`, `VoiceSelection`, `SpeechRateSteps`,
-  `AudioSafetyPolicy`, `ScreenWakePolicy`, `CategorySelection`,
+  `AudioSafetyPolicy`, `AttentionAlertStatus`, `AudioSessionEventMapping`,
+  `AudioSessionLeasePolicy`, `ScreenWakePolicy`, `CategorySelection`,
   `StarterLibrary`, `PhraseLibrarySeeder`, `MessageComposer`,
   `DraftStore`. Views only read them.
 - **Run it, don't just read it.** Layout and flow changes are checked in the
@@ -388,12 +473,15 @@ the failure.
   `.github/pull_request_template.md`. Never push to `main` directly, never
   force-push, never rewrite pushed history. The owner merges.
 - **Document every change** where a fresh agent will find it, in the same
-  pull request: `docs/HANDOFF.md` (what changed, why, how it was verified,
-  what was not), this file for any new rule or gotcha, `docs/DECISIONS.md`
-  for decisions, `README.md` when setup or behaviour changes. Record
-  reversals and their reasons, so the next agent does not redo what was
-  undone. Before a rewrite that removes information from HANDOFF or this
-  file, snapshot the old version (`docs/archive/README.md`).
+  pull request: one new file in `docs/log/` (what changed, why, how it was
+  verified, what was not; the template is `docs/log/README.md`), the lines
+  of `docs/HANDOFF.md` your change makes untrue edited in place (never
+  appended to), this file for any new rule or gotcha, `docs/DECISIONS.md`
+  for decisions, `docs/ROADMAP.md` when an item starts, lands or moves,
+  `README.md` when setup or behaviour changes. Record reversals and their
+  reasons, so the next agent does not redo what was undone. Before a
+  rewrite that removes information from HANDOFF or this file, snapshot the
+  old version (`docs/archive/README.md`).
 - **Start of a session:** `git status`, `git log --oneline -15`, then read
   `docs/HANDOFF.md`. Another agent may have landed work since.
 
@@ -417,8 +505,11 @@ using them, and say when you could not.
 - The Sosumi MCP (`searchAppleDocumentation`, `fetchAppleVideoTranscript`)
   adds full-text search and WWDC transcripts.
 - The Xcode MCP's `DocumentationSearch`, read-only.
-- **Do not fetch developer.apple.com pages directly.** They are JavaScript
-  shells and look empty rather than failing.
+- **developer.apple.com in Markdown:** its HTML pages are JavaScript
+  shells that look empty rather than failing, but the same page with
+  `.md` appended to its path returns Markdown with availability metadata
+  (for example `https://developer.apple.com/documentation/swiftui/button.md`,
+  checked 2026-10-21). Fetch that form, never the HTML page.
 
 ## Skills
 
@@ -436,8 +527,9 @@ Shortcuts. **Never apply** `core-data` skills (this app uses SwiftData),
 
 ## Gotchas
 
-- **The simulator keyboard is minimized by default.** Show the full
-  software keyboard before any typing test:
+- **The simulator keyboard is minimized by default.** `scripts/test.sh ui`
+  shows the full software keyboard before the tests; anywhere else, show
+  it before any typing test:
   `xcrun simctl spawn <udid> defaults write com.apple.keyboard.preferences AutomaticMinimizationEnabled -bool false`
   (write `true` to restore the bar).
 - **Display Zoom is lost whenever a simulator restarts**, and `xcodebuild`
@@ -453,7 +545,8 @@ Shortcuts. **Never apply** `core-data` skills (this app uses SwiftData),
   simulators.
 - **Swift Testing and `-only-testing:`**: include the function's
   parentheses (`-only-testing:BricksonTests/PaletteTests/theContrastFormulaMatchesWCAG()`);
-  without them `xcodebuild` runs 0 tests and reports success. In zsh, pass
+  without them `xcodebuild` runs 0 tests and reports success
+  (`scripts/test.sh` fails such a run: "No tests ran"). In zsh, pass
   several flags as an array, not one string.
 - **A failing `xcodebuild test` can sit for minutes collecting
   diagnostics**; `scripts/test.sh` passes `-collect-test-diagnostics never`.
@@ -461,14 +554,42 @@ Shortcuts. **Never apply** `core-data` skills (this app uses SwiftData),
   On GitHub's busy machines, one run found Again still off when the test
   read it straight after a tap, and the re-run's first launch timed out,
   both on code that was green on `main` (cause not established; a slow
-  first launch is the likely one). With no `DESTINATION`, `scripts/test.sh`
-  starts its simulator and waits for it to finish starting
-  (`xcrun simctl bootstatus <udid> -b`), which leaves it running; a
-  `DESTINATION` you set is left to xcodebuild, which doesn't wait. In UI
+  first launch is the likely one; on 2026-10-21 the first test failed with
+  "kAXErrorServerNotFound" and the next took 187 s). `scripts/test.sh`
+  starts each simulator, one a `DESTINATION` names included, and waits for
+  it to finish starting (`xcrun simctl bootstatus <udid> -b`); it shuts down
+  devices it booted after their run. Before UI tests it also launches the app once (a warm-up,
+  on test-only storage). A `DESTINATION` that is not one simulator is left
+  to xcodebuild, which doesn't wait. In UI
   tests, wait for a change after `tap()`: `waitForExistence(timeout:)` for
   something appearing, an `XCTWaiter` expectation for a property such as
   `isEnabled`. Check that something did *not* change only after waiting
   for the change that did happen.
+- **UI tests launch through `launchedApp`** (BricksonUITests/LaunchHelpers.swift):
+  fresh test-only storage, short idle limits, English, and the text size,
+  appearance and orientation a test asks for. A bare
+  `XCUIApplication().launch()` runs on whatever the simulator kept from
+  earlier runs. The app reads these launch arguments (`LaunchOptions`)
+  only in debug builds; a release build ignores them. `assertReachable`,
+  `attachCapture` and `assertPassesAccessibilityAudit` sit beside it.
+- **Verify rendered appearance, not the setter's readback.** Command-line
+  simulator runs on Xcode 27.1 reported `XCUIDevice.appearance == .dark`
+  while the app stayed light. `launchedApp` uses debug-only
+  `--appearance=light|dark`, applied by `preferredColorScheme`; ordinary
+  and release launches follow the system. Keep the independent screenshot
+  gate. Its sample is the empty gutter between Yes and No, not a median
+  dominated by constant-colour tiles. Evidence and reproductions:
+  `docs/log/2026-10-21-ui-test-diagnosis.md`.
+- **Accessibility frames do not prove visible words fit.** On PR #13,
+  both complete UI suites passed while AX5 phone screenshots showed
+  clipped Yes, No, Emergency and Again labels. Keep the rendered-label
+  regression alongside reachability and audits: it recognizes each
+  button screenshot without language correction or supplied expected
+  words. Inspect its kept captures when it fails; a complete accessibility
+  label is not evidence that the text was drawn completely.
+  Vision's accurate mode also misread a clear `No` as `ON`; the fast mode
+  read it and rejected the old clipped captures. Keep whole-word matching
+  (case-insensitive), with no language correction or recognition hints.
 - **Measuring the keyboard:** `KeyboardProbeTests` is opt-in
   (`TEST_RUNNER_BRICKSON_KEYBOARD_PROBE=1 scripts/test.sh ui`). It opens
   a debug-only probe screen (`--screen=keyboard-probe`) instead of Home,
@@ -501,7 +622,15 @@ Shortcuts. **Never apply** `core-data` skills (this app uses SwiftData),
   "Reviews, updates and GitHub settings"). Renaming a job, or adding a path
   filter to the workflow, leaves every pull request waiting for a check
   that never arrives until the owner updates the ruleset.
-- **CodeQL scans the workflow files, not the Swift code, on purpose.**
+- **Cloud agents cannot change `.github/workflows/`.** On 2026-10-21 a
+  cloud session's `git push` of `tests.yml` was refused ("refusing to
+  allow an OAuth App to create or update workflow ... without `workflow`
+  scope"), and so was the GitHub MCP's file update ("Insufficient scope").
+  Push the rest, and give the owner the workflow file's full new text to
+  commit with their own account (GitHub's web editor on the branch, or an
+  agent on their Mac).
+- **CodeQL scans the workflow files and the Python scripts in `scripts/`,
+  not the Swift code, on purpose.**
   Default setup cannot build Swift without a committed Xcode project, so
   adding Swift to it fails again; turning CodeQL off blocks every
   merge while the ruleset requires CodeQL results. docs/DECISIONS.md,

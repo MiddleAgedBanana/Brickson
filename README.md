@@ -66,8 +66,9 @@ known limitations and next steps.
 
 ## Build and run
 
-Requires a Mac with **Xcode 26 or later**, an **iOS 26 or later simulator**,
-and [XcodeGen](https://github.com/yonaskolb/XcodeGen). The app targets iPhone
+Requires a Mac with the **current release of Xcode** (Brickson is always
+built with Apple's newest Xcode), its iOS simulators, and
+[XcodeGen](https://github.com/yonaskolb/XcodeGen). The app targets iPhone
 and iPad running iOS/iPadOS 26 or later.
 
 ```sh
@@ -94,13 +95,34 @@ scripts/test.sh ui       # Run simulator UI tests
 python3 scripts/test-site.py  # Check the static website
 ```
 
-The app test script generates the project and defaults to the newest
-installed iPad Pro 13-inch simulator, falling back to another iPad.
-To select a specific installed simulator:
+The app test script generates the project and picks the newest
+iPad Pro 13-inch simulator that both the app (its deployment target) and
+the Xcode in use support, falling back to another iPad. UI tests then run
+again on the newest standard iPhone. It picks by device type, so a
+simulator you renamed still counts. It shuts down devices it booted after
+each run; devices that were already running stay running. To run on one kind only, or on a
+specific installed simulator:
 
 ```sh
+SIMULATOR_FAMILY=iphone scripts/test.sh ui
 DESTINATION='platform=iOS Simulator,name=iPhone 17' scripts/test.sh
 ```
+
+Anything after the mode goes to `xcodebuild`, for example one test (a
+Swift Testing name needs its parentheses):
+
+```sh
+scripts/test.sh unit '-only-testing:BricksonTests/PaletteTests/theContrastFormulaMatchesWCAG()'
+```
+
+Each run prints how many tests ran, fails if none did, and keeps its
+results in `build/TestResults/` (open a `.xcresult` file in Xcode to see
+each test, with screenshots of any UI-test failure). A unit run also
+prints how much of the app's code the tests ran, and updates the String
+Catalog (`Brickson/Resources/Localizable.xcstrings`, every string people
+see, ready for translation) to match the code. If it changed, commit it
+with your change; GitHub's run fails when the committed catalog is out of
+date.
 
 GitHub Actions runs unit and UI tests for pull requests and pushes to
 `main`. Passing tests are required before merging. Physical-device checks
@@ -132,11 +154,12 @@ the pull request. Local Mac changes require a passing unit suite before
 commit; changes made without Xcode remain untested until CI or a Mac run
 passes. The maintainer merges pull requests after review and passing CI.
 
-CodeQL scans GitHub workflow files, not Swift. AI Scan reviews eligible
-pull-request changes, including Swift, but its findings do not enforce a
-merge gate; address them during review. AI Scan skips forks and Dependabot
-pull requests. See [Code scanning](docs/DECISIONS.md) for the
-coverage, limitations and review requirements.
+CodeQL scans the GitHub workflow files and the Python scripts in
+`scripts/`, not Swift. AI Scan reviews eligible pull-request changes,
+including Swift, but its findings do not enforce a merge gate; address
+them during review. AI Scan skips forks and Dependabot pull requests. See
+[Code scanning](docs/DECISIONS.md#code-scanning) for the coverage,
+limitations and review requirements.
 
 For bugs, include reproduction steps and the device and OS version. Do not
 post personal phrases, medical details or private backups in public issues.
@@ -160,10 +183,14 @@ Policy wording changes must include an updated effective date.
 ## Documentation
 
 - [Local development setup](docs/GETTING_STARTED.md)
-- [Current state and verification](docs/HANDOFF.md)
+- [Current state and verification](docs/HANDOFF.md), with a
+  [record of every change](docs/log/README.md)
+- [Roadmap: what comes in which release](docs/ROADMAP.md)
+- [How the project is run, stage by stage](docs/SDLC.md)
 - [Design and engineering decisions](docs/DECISIONS.md)
 - [Lessons from the reference app](docs/LESSONS.md)
 - [Implementation and porting sequence](docs/PORTING.md)
+- [Research behind the roadmap](docs/recon/README.md)
 
 ## License
 

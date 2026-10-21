@@ -10,9 +10,10 @@ After:
 
 ## Verified
 
-<!-- Say what ran and where. Name the simulator or device, orientation,
-text size, appearance, and which keyboard showed if typing was involved.
-Cloud agents cannot build: say so if nothing ran outside GitHub CI. -->
+<!-- Say what ran and where. Name the Xcode version, the simulator or
+device and its iOS version, orientation, text size, appearance, and which
+keyboard showed if typing was involved. Cloud agents cannot build: say so
+if nothing ran outside GitHub CI. -->
 
 - [ ] GitHub CI is green (unit and UI tests)
 - [ ] Ran on a Mac or device (say which), or: not run outside CI
@@ -32,4 +33,4 @@ Cloud agents cannot build: say so if nothing ran outside GitHub CI. -->
 - [ ] No new scrolling on Home for the starter library in dwell, switch or gaze profiles (11)
 - [ ] The screen still never locks while the app is open (12)
 - [ ] Elapsed time uses `ContinuousClock`; framework callbacks are `@Sendable` or `nonisolated`
-- [ ] `docs/HANDOFF.md` updated (and `README.md`, `AGENTS.md`, `docs/DECISIONS.md` where they changed)
+- [ ] One new file in `docs/log/`, and `docs/HANDOFF.md` edited in place where this change makes it untrue (and `docs/ROADMAP.md`, `README.md`, `AGENTS.md`, `docs/DECISIONS.md` where they changed)

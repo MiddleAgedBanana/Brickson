@@ -2,7 +2,15 @@
 # request and every change to main. Free for public repositories.
 #
 # Each job runs the same script you run on your Mac (scripts/test.sh), on
-# the newest iPad Pro 13-inch simulator installed on the machine.
+# the newest iPad Pro 13-inch simulator the chosen Xcode can run.
+#
+# Both jobs build with Apple's newest released Xcode, never a pinned one
+# (docs/DECISIONS.md, "Build with Apple's current Xcode"). `runs-on` names
+# GitHub's machine image for the current major Xcode (xcode-27 holds
+# Xcode 27); scripts/select-xcode.py picks the newest release installed on
+# it, and warns on the run when Apple has released a newer Xcode than the
+# machine has. When Apple releases the next major Xcode and GitHub
+# publishes its image, move both `runs-on` lines to it.
 name: Tests
 
 on:
@@ -26,32 +34,49 @@ env:
 jobs:
   unit:
     name: Unit tests
-    runs-on: macos-26
+    runs-on: xcode-27
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@v7
+      - name: Check the Xcode choice
+        run: python3 scripts/test-select-xcode.py
+      - name: Use the newest released Xcode
+        run: |
+          xcode="$(python3 scripts/select-xcode.py choose)"
+          sudo xcode-select --switch "$xcode"
+      - name: Compare with Apple's newest Xcode release
+        run: python3 scripts/select-xcode.py check
       - name: Show the Xcode version and simulators
         run: |
           xcodebuild -version
+          xcrun --sdk iphonesimulator --show-sdk-version
           xcrun simctl list runtimes available
       - name: Install XcodeGen
-        run: brew install xcodegen
+        run: |
+          brew install xcodegen
+          brew list --versions xcodegen
       - name: Check website contrast and links
         run: python3 scripts/test-site.py
-      - name: Check test runner failure reporting
+      - name: Check the test script
         run: python3 scripts/test-runner.py
       - name: Build and run the unit tests
         run: scripts/test.sh unit
 
   ui:
     name: UI tests
-    runs-on: macos-26
+    runs-on: xcode-27
     timeout-minutes: 50
     steps:
       - uses: actions/checkout@v7
+      - name: Use the newest released Xcode
+        run: |
+          xcode="$(python3 scripts/select-xcode.py choose)"
+          sudo xcode-select --switch "$xcode"
       - name: Show the Xcode version
         run: xcodebuild -version
       - name: Install XcodeGen
-        run: brew install xcodegen
+        run: |
+          brew install xcodegen
+          brew list --versions xcodegen
       - name: Build the app and run the UI tests
         run: scripts/test.sh ui

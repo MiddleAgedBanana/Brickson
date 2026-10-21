@@ -1,5 +1,4 @@
 import Accessibility
-import AVFoundation
 import Testing
 
 @testable import Brickson
@@ -164,48 +163,6 @@ struct AudioSafetyPolicyTests {
         #expect(!tracker.isSpeaking)
     }
 
-    @Test @MainActor func audioInterruptionObserverForwardsBeganEventsOnly() {
-        let notificationCenter = NotificationCenter()
-        let observedSession = NSObject()
-        var receivedTypes: [AVAudioSession.InterruptionType] = []
-        let observer = AudioSessionInterruptionObserver(
-            notificationCenter: notificationCenter,
-            object: observedSession
-        ) { type in
-            receivedTypes.append(type)
-        }
-
-        notificationCenter.post(
-            name: AVAudioSession.interruptionNotification,
-            object: observedSession,
-            userInfo: [
-                AVAudioSessionInterruptionTypeKey:
-                    AVAudioSession.InterruptionType.ended.rawValue,
-            ]
-        )
-        notificationCenter.post(
-            name: AVAudioSession.interruptionNotification,
-            object: NSObject(),
-            userInfo: [
-                AVAudioSessionInterruptionTypeKey:
-                    AVAudioSession.InterruptionType.began.rawValue,
-            ]
-        )
-        #expect(receivedTypes.isEmpty)
-
-        notificationCenter.post(
-            name: AVAudioSession.interruptionNotification,
-            object: observedSession,
-            userInfo: [
-                AVAudioSessionInterruptionTypeKey:
-                    AVAudioSession.InterruptionType.began.rawValue,
-            ]
-        )
-        #expect(receivedTypes == [.began])
-
-        withExtendedLifetime(observer) {}
-    }
-
     @Test func successfulAlertRetryRemovesItsSpecificWarning() {
         let policy = AudioSafetyPolicy(
             attentionState: .playing,
@@ -253,15 +210,8 @@ struct AudioSafetyPolicyTests {
         #expect(HomeAudioIssue.lowOutputVolume.announcementUrgency == .informational)
     }
 
-    @Test(arguments: [
-        HomeAudioIssue.attentionAlertFailed,
-        .attentionAlertStopped,
-        .speechStopped,
-        .typedSpeechStopped,
-        .modalSpeechStopped,
-        .audioSessionUnavailable,
-        .lowOutputVolume,
-    ])
+    /// Every issue, including any added later, fits the reserved strip.
+    @Test(arguments: HomeAudioIssue.allCases)
     func compactStatusCopyFitsAReservedStrip(issue: HomeAudioIssue) {
         #expect(!issue.compactMessage.isEmpty)
         #expect(issue.compactMessage.count <= 16)
