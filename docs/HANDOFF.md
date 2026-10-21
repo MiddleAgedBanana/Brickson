@@ -472,3 +472,58 @@ established: xcbeautify discarded its destination details.
   GitHub CI on the new pull request remains the merge gate; this does not
   claim a permanent fix for the first runner's unexplained destination
   failure.
+
+## Agent guardrails — October 21, 2026
+
+The repository review on PR #15 (`docs/recon/2026-10-21/repo-review.md`,
+sdlc-2, sdlc-6, sdlc-7, sdlc-12, sdlc-16) found that AGENTS.md's "never"
+rules were advisory only: agents act as the owner's GitHub account, so
+nothing stopped one from merging. This change backs them with checks
+(AGENTS.md, "Guardrails for agents").
+
+- `.claude/settings.json` and `.claude/hooks/guard.py`: a Claude Code
+  guard that refuses staging everything (`git add -A`, `-u`, `.`,
+  `git commit -a`), force pushes, pushes to `main`, merging, auto-merging
+  or approving a pull request, the Copilot actions that spend the owner's
+  credits, and GitHub tools writing onto `main`. The merge and Copilot
+  tools are also denied outright in `permissions.deny`.
+- `scripts/test-hooks.py`: 13 tests that feed the guard the calls it must
+  refuse and the ones it must let through (including this branch's own
+  commit and push commands), plus the hook wiring and deny rules.
+- `scripts/test-docs.py`: every section cited by title and every relative
+  Markdown link in the repository must resolve, outside `docs/archive/`
+  and `docs/recon/`. It found one broken citation on `main`: AGENTS.md
+  and the review skill cite HANDOFF's *Known gaps*, whose heading read
+  "Known gaps in this first version". The heading is now "Known gaps".
+  It also checks the issue form below.
+- `scripts/test.sh` runs both before the unit tests, so the existing
+  "Unit tests" CI job runs them. `.github/workflows` is unchanged.
+- `.github/ISSUE_TEMPLATE/something-went-wrong.yml` and `config.yml`: the
+  bug form (what you tried, what happened, input method, device, how
+  often), opening with a warning that issues are public. Blank issues are
+  off; links go to the private security report and the support page.
+- `.claude/agents/verifier.md`: a report-only subagent that runs the
+  Python checks, reads the branch's CI run and lists what was not
+  verified.
+
+Verified in a Linux cloud session (Python 3.13): `test-docs.py` (11
+tests), `test-hooks.py` (13), `test-site.py` and `test-runner.py` pass.
+Removing the guard's `gh pr merge` rule, or renaming the cited heading
+"Orientations" in DECISIONS.md, made the suites fail. No Swift was built
+here; CI's Unit tests job is the first run of `scripts/test.sh` with the
+new step.
+
+Not verified, and limits:
+
+- The guard runs only in Claude Code sessions with one repository. Claude
+  Code's documentation says a cloud session that clones several
+  repositories ignores their hooks and permission rules; this session had
+  one repository. Codex, Jules and the owner are not covered.
+- Labels: the form adds GitHub's default `bug` label. The triage labels the
+  review suggests (needs-triage, needs-info, ready-for-agent,
+  ready-for-human, crash, device-check) don't exist yet; only the owner
+  can create them, under **Issues**, **Labels**.
+- Run against PR #15's branch, `test-docs.py` reports one citation that
+  resolves only once PR #12 lands: docs/ROADMAP.md cites the DECISIONS
+  section that PR #12 names "Build with Apple's current Xcode". Whichever
+  of these merges last must pass the check.
