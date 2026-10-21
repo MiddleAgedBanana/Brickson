@@ -10,9 +10,10 @@ After:
 
 ## Verified
 
-<!-- Say what ran and where. Name the simulator or device, orientation,
-text size, appearance, and which keyboard showed if typing was involved.
-Cloud agents cannot build: say so if nothing ran outside GitHub CI. -->
+<!-- Say what ran and where. Name the Xcode version, the simulator or
+device and its iOS version, orientation, text size, appearance, and which
+keyboard showed if typing was involved. Cloud agents cannot build: say so
+if nothing ran outside GitHub CI. -->
 
 - [ ] GitHub CI is green (unit and UI tests)
 - [ ] Ran on a Mac or device (say which), or: not run outside CI

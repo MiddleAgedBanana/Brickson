@@ -66,8 +66,9 @@ known limitations and next steps.
 
 ## Build and run
 
-Requires a Mac with **Xcode 26 or later**, an **iOS 26 or later simulator**,
-and [XcodeGen](https://github.com/yonaskolb/XcodeGen). The app targets iPhone
+Requires a Mac with the **current release of Xcode** (Brickson is always
+built with Apple's newest Xcode), its iOS simulators, and
+[XcodeGen](https://github.com/yonaskolb/XcodeGen). The app targets iPhone
 and iPad running iOS/iPadOS 26 or later.
 
 ```sh
@@ -95,7 +96,8 @@ python3 scripts/test-site.py  # Check the static website
 ```
 
 The app test script generates the project and defaults to the newest
-installed iPad Pro 13-inch simulator, falling back to another iPad.
+iPad Pro 13-inch simulator that both the app (its deployment target) and
+the Xcode in use support, falling back to another iPad.
 To select a specific installed simulator:
 
 ```sh

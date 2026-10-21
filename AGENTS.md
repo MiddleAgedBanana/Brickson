@@ -74,8 +74,9 @@ scripts/test.sh device   # a build for a real device (needs DEVELOPMENT_TEAM)
 ```
 
 `scripts/test.sh` runs `xcodegen generate` first, starts the newest
-installed iPad Pro 13-inch simulator (any iPad if there is none) and waits
-for it, then runs `xcodebuild` on it.
+iPad Pro 13-inch simulator (any iPad if there is none) whose iOS lies
+between the deployment target and the SDK of the Xcode in use, waits for
+it, then runs `xcodebuild` on it.
 `DESTINATION='platform=iOS Simulator,name=iPhone 17' scripts/test.sh`
 chooses another. The iPad and the iPhone are both first-class: run both
 before a release.
@@ -88,6 +89,23 @@ naming its decision, so it fails when it starts passing.
 **GitHub CI** (`.github/workflows/tests.yml`) runs the unit and UI tests on
 GitHub's Mac machines for every pull request and every push to `main`. A
 pull request merges only when CI is green.
+
+**Build with Apple's current Xcode, never a pinned one** (owner,
+2026-10-21; docs/DECISIONS.md, "Build with Apple's current Xcode"). The
+toolchain is Apple's newest Xcode release (not a beta) with its SDKs and
+Swift compiler, on the owner's Mac and on CI. Never write an Xcode, SDK,
+simulator or runner version into the project, a script, a workflow or a
+document unless the owner asks for it: documents say "the current Xcode
+release". Look up what is current on Apple's releases page
+(https://developer.apple.com/news/releases/) and Xcode's system
+requirements (https://developer.apple.com/xcode/system-requirements/),
+never from memory. CI picks the newest released Xcode on GitHub's machine
+(`scripts/select-xcode.py`) and warns on the run when Apple has a newer
+one. The deployment target, the oldest iOS the app runs on, is a separate
+product decision, set by two rules: every device that can use eye
+tracking runs the app, and every accessibility API in the ALS-stage map
+stays reachable, behind `#available` when newer (docs/DECISIONS.md,
+"Minimum iOS, iPhone and iPad").
 
 **Reviews and updates on GitHub.** Codex reviews every push to a pull
 request that a person or agent opens, and GitHub Copilot reviews each such
@@ -371,6 +389,13 @@ the failure.
   whose owner is not `actions` or `github`).
 - A renamed job that the `main` ruleset requires, or a path filter added
   to the workflow that runs those jobs (*Gotchas*).
+- An Xcode, SDK, simulator OS or runner image version written into the
+  project, a script, a workflow or a document when the owner did not ask
+  for it, or a change that builds with anything but Apple's newest
+  released Xcode (docs/DECISIONS.md, "Build with Apple's current Xcode").
+  The `runs-on` label that names GitHub's image for the current major
+  Xcode is how CI reaches that Xcode, not a pin; a dated record of what
+  something was checked on is history, not a pin.
 - A change that weakens an invariant or a review rule, adds an exception
   to one, or widens *Not findings*, made in `AGENTS.md`,
   docs/DECISIONS.md, `.github/skills/` or any other file reviewers read as
@@ -539,6 +564,13 @@ Shortcuts. **Never apply** `core-data` skills (this app uses SwiftData),
   "Reviews, updates and GitHub settings"). Renaming a job, or adding a path
   filter to the workflow, leaves every pull request waiting for a check
   that never arrives until the owner updates the ruleset.
+- **Cloud agents cannot change `.github/workflows/`.** On 2026-10-21 a
+  cloud session's `git push` of `tests.yml` was refused ("refusing to
+  allow an OAuth App to create or update workflow ... without `workflow`
+  scope"), and so was the GitHub MCP's file update ("Insufficient scope").
+  Push the rest, and give the owner the workflow file's full new text to
+  commit with their own account (GitHub's web editor on the branch, or an
+  agent on their Mac).
 - **CodeQL scans the workflow files and the Python scripts in `scripts/`,
   not the Swift code, on purpose.**
   Default setup cannot build Swift without a committed Xcode project, so
