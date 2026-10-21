@@ -93,7 +93,11 @@ promise* lists the code rules that keep the policy true.
   release (invariant 11).
 - No Get Attention alarm yet, so `AudioSafetyPolicy` runs with the alarm
   always idle.
-- No typing, editing, Settings, voice choice or backup.
+- No typing on Home yet. The typing rules (`MessageComposer`), the saved
+  message (`DraftStore`) and a keyboard probe are in `Brickson/Typing`,
+  waiting for the typing state (docs/DECISIONS.md, "Typing is a state of
+  Home"; docs/log/2026-10-21-typing-foundation.md). No editing,
+  Settings, voice choice or backup.
 - Personal Voice permission is asked at first launch without explanation
   (docs/DECISIONS.md).
 - English only; the String Catalog fills itself as Xcode builds. Two
@@ -250,7 +254,7 @@ device, OS version, settings and date.
 | How far Snap to Item jumps, and whether the pointer stays on an activated control or follows the gaze | Spacing and placement for dwell profiles |
 | Whether a lingering look re-fires a dwell | How much repeat protection matters |
 | Whether Snap to Item ignores controls scrolled off screen | Whether scrolling can keep family controls out of reach |
-| What the real software keyboard covers in each orientation | The typing layout (docs/LESSONS.md, "Test with the real software keyboard") |
+| What the real software keyboard covers in each orientation, and typing checks 1–8 in docs/log/2026-10-21-typing-foundation.md | The typing layout (docs/LESSONS.md, "Test with the real software keyboard"), the word row, Return under dwell, and whether Brickson needs its own keyboard |
 | Get Attention heard from the next room, on the speaker and over Bluetooth | The alarm's sound and level (once ported) |
 | Comfortable dwell time and movement tolerance | Setup recommendations per profile |
 | Whether Guided Access works together with Eye Tracking | Setup recommendations |

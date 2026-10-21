@@ -32,7 +32,7 @@ and `docs/SUCCESSOR-HANDOFF.md`. Here, read `docs/LESSONS.md`.
 | 2 | Storage, editing logic and backup. Fix D28 here. | **Storage started** (versioned schema, seeding). Editing and backup not yet. |
 | 3 | Text fitting and colour tokens | Three measured fills only (`Palette`). |
 | 4 | The layout engine, generalized to profiles | Not started. |
-| 5 | Home and typing. Fix D27 here. | A stand-in Home only (docs/DECISIONS.md, "Home version 0 is a stand-in"). |
+| 5 | Home and typing. Fix D27 here. | A stand-in Home only (docs/DECISIONS.md, "Home version 0 is a stand-in"). **Typing foundation built** (`Brickson/Typing`: `MessageComposer`, `DraftStore`, the keyboard probe); the typing state on Home not yet. |
 | 6 | Editing screens. Build D24 and D25 here. | Not started. |
 | 7 | Settings and family setup for every input method | Not started. |
 | 8 | The snap-reach harness, as a test matrix per input method | Not started. |
@@ -55,6 +55,8 @@ unchanged apart from names.
 | `Library/StarterLibrary.swift` | `FamilyVoice/Models/PhraseSeeder.swift` | Seeding only, in its own context with no rollback; the retired-seed repair is left behind. |
 | `Resources/StarterPhrases.json` | — | New, neutral starter set (docs/DECISIONS.md, "Starter phrases"). |
 | Tests for each of the above | `FamilyVoiceTests/` | Timer tests built from one `now` plus offsets. |
+| `BricksonUITests/KeyboardProbeTests.swift` | `FamilyVoiceUITests/TypingKeyboardProbe.swift` | Opens a debug-only probe screen instead of Home's typing state; reads SwiftUI's own keyboard edge as well as the keys; fails on the keyboard bar; no Display Zoom or Settings-app preparation; no Return-key check yet. |
+| `Typing/MessageComposer.swift`, `Typing/DraftStore.swift` | `AppSettings.typedDraft` and the typing panel in `HomeView` | New types: the reference kept its draft in UserDefaults, which cannot report a failed save, and let Return add a line break (docs/LESSONS.md). |
 
 ## Still to port, by tier
 

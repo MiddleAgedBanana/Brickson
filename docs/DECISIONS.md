@@ -223,6 +223,157 @@ How it behaves, and where it knowingly falls short:
   - CI tests the iPad only. On a narrow iPhone the three quick-control
     labels may not fit at larger text sizes.
 
+## Typing is a state of Home
+
+*Default, adopted 2026-10-21: the owner left these choices to the project. Reversible if the owner objects.*
+
+When someone chooses Type, Home stays on screen and only its lower part
+changes: the keyboard appears where the categories and phrase tiles were.
+Typing is not a separate screen or a sheet, because either would hide or
+duplicate Emergency, Get Attention, Yes and No, which must stay one
+activation away in every Home state (invariants 2 and 10).
+
+**The band rule.** A band across the top of Home holds everything the
+person must always reach: the message (which shows the words being
+typed), Emergency, Get Attention, Yes, No, Speak, the way back to the
+phrases and the space for warnings. The band is sized so that **Apple's
+keyboard never reaches it**, on the worst screen, in every orientation
+and text size. Because controls keep their relative places across
+profiles (invariant 8), the room Apple's keyboard leaves is the room
+every profile gets, even one that never uses Apple's keyboard.
+
+- Nothing moves when the keyboard appears or hides (invariant 11): the
+  keyboard covers the lower part of Home instead of pushing it up.
+- An app cannot ask how tall the keyboard will be before it appears. So
+  the layout reserves room for it as a function of the window alone (its
+  size and the text size), never of the device model. Measured keyboards
+  are rows in the tests, and a UI test fails if the live keyboard's top
+  crosses the band. `KeyboardProbeTests` measures it; the
+  table itself arrives with the layout engine (docs/PORTING.md, step 4).
+- The reference app's measurements on iOS 27.0 simulators with the full
+  software keyboard: a 13-inch iPad in landscape, keyboard top at 534 of
+  1032 points; the same iPad with Display Zoom set to Larger Text, 276 of
+  774 (the worst case: one row of 88pt controls fits under the message,
+  at the default text size only); an iPhone 17 Pro in portrait, 546 of
+  874. Brickson's own numbers are in docs/log/2026-10-21-typing-foundation.md.
+- Only controls that are harmless if a look slips up from the keyboard
+  sit nearest its edge; Speak, Yes, No, Get Attention, Emergency and
+  Clear sit away from the keys. Where the band has room for only one row,
+  that cannot be met, and each such screen becomes a named, measured
+  exception for the owner.
+- While typing, nothing that speaks sits under the keyboard, so hiding
+  the keyboard reveals nothing that speaks.
+
+Why: the reference app put its quick controls in a right-hand column, and
+the real keyboard covered Speak and Get Attention there (D27,
+docs/LESSONS.md, "Test with the real software keyboard"). The rule is set
+before Home is laid out, so that mistake cannot be built again.
+
+## Typing uses Apple's keyboard
+
+*Default, adopted 2026-10-21: the owner left these choices to the project. Reversible if the owner objects.*
+
+Version 1.0 types with Apple's own keyboard, everywhere. It brings
+QuickType predictions, autocorrection, Text Replacement, dictation, and
+the keyboard features Apple builds into Switch Control and Eye Tracking,
+and Apple keeps improving them. Two additions may follow, in this order:
+
+1. **A row of Brickson word buttons** just above the keyboard, at the
+   profile's target size, wherever the band leaves room (the larger
+   iPads). After a word is put in, the word buttons stay empty until the
+   next key, so a lingering look cannot keep adding words. Built only
+   after the device check on what happens at the keyboard's edge
+   (docs/log/2026-10-21-typing-foundation.md, check 5).
+2. **A large-key Brickson keyboard** for pointer and gaze users on large
+   iPads, only if device checks show Apple's keyboard is too slow or
+   unsafe for them. Never on iPhone: ten keys of at least 44 points do not
+   fit across any iPhone.
+
+The typing rules live in `MessageComposer`, which does not care which
+keyboard feeds it, so either addition reuses them.
+
+Not available in SwiftUI: turning off *inline predictions* (the grey word
+that Space accepts). That needs a wrapped UIKit text view; until then it
+is a setup tip (Settings › General › Keyboard › Show Predictions Inline).
+
+## Writing Tools off while typing
+
+*Default, adopted 2026-10-21: the owner left these choices to the project. Reversible if the owner objects.*
+
+Every field that types a message to speak turns off Apple Intelligence's
+Writing Tools (`typingFieldTraits()`, which applies
+`writingToolsBehavior(.disabled)`). A stray look could otherwise let it
+rewrite the person's words before they are spoken in the person's own
+voice (invariant 7), and AI-written replies are a hard stop (invariant
+9). For the same reason no on-device language model predicts words or
+finishes sentences.
+
+## Third-party keyboards refused in 1.0
+
+*Default, adopted 2026-10-21: the owner left these choices to the project. Reversible if the owner objects.* *Not built yet.*
+
+Brickson refuses keyboards from other apps, so only Apple's keyboard
+appears in it. Reasons: the keyboard table stays true (other keyboards
+have other heights, and could cover the band), and the privacy promise
+stays simple (a keyboard with Full Access can send what is typed to its
+maker). The cost: someone who relies on an accessible keyboard from
+another app, such as one with larger keys, could not use it in Brickson.
+Revisit if people ask. It is built with the typing state, as
+`application(_:shouldAllowExtensionPointIdentifier:)` returning false for
+`.keyboard` in an app delegate.
+
+## Return speaks
+
+*Default, adopted 2026-10-21: the owner left these choices to the project. Reversible if the owner objects.*
+
+The keyboard's Return key speaks the whole message, as an extra path;
+Speak stays the main one. A typed line break is never kept in the
+message. A line break inside pasted text becomes a space. Return with
+nothing to say does nothing. `MessageComposer` holds the rule, so it
+works the same with any keyboard (docs/LESSONS.md, "The return key must
+speak": in the reference app Return added a line break, nothing was
+spoken, and the line break was later read as a pause).
+
+Still open for dwell users: Apple's Return key sits among the letter
+keys, so a look that slips onto it speaks a half-written message. That
+goes against invariant 10 (no speaking control beside where the person
+points). Either it becomes a named, measured exception for dwell
+profiles, or Return stops speaking in those profiles. That is decided
+after the keyboard-edge device check (check 5 in
+docs/log/2026-10-21-typing-foundation.md), not before.
+
+## The typed message
+
+*Default, adopted 2026-10-21: the owner left these choices to the project. Reversible if the owner objects.*
+
+How the message being typed behaves (`MessageComposer`, `DraftStore`):
+
+- **Speaking keeps the message**, so it can be said again or added to
+  (invariant 3: speaking never changes data). A setting to clear it after
+  speaking is built into `MessageComposer` but not offered.
+- **Clear can be undone once.** The cleared words stay in memory, never
+  on disk, until a later Clear replaces them or the app closes. Nothing
+  else may take Clear's place, so there is never an Undo button where
+  Clear was (invariant 10). Where the restore control sits is Home's
+  layout's decision.
+- **At most 2,000 characters** (about two to three minutes of speech), so
+  an accidental paste cannot speak for many minutes. An edit that would
+  pass the limit is refused whole and nothing is cut short. A longer
+  message restored from an older version is kept whole (invariant 7).
+- **Kept across launches.** The message is saved after every change to a
+  small file, Application Support/Typing/draft.txt, written in one step
+  so a crash leaves the old or the new message and never part of either.
+  It is restored at launch without speaking and without opening typing,
+  and Clear deletes the file. This is what the privacy policy promises
+  ("The message you are typing, so it is still there if the app closes.
+  It stays until you clear it.").
+- **A failed save never loses the words.** They stay on screen and in
+  memory, Home shows "Message not saved" as passive text in the warning
+  space (invariant 5), and the next change or `retrySave()` tries again.
+  A file that cannot be read at launch gives an empty message and
+  "Message not restored". The message is never logged and never put in a
+  crash message.
+
 ## Personal Voice permission is asked at launch, for now
 
 *2026-10-10. Default, from the reference app.*

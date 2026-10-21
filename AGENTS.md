@@ -358,7 +358,8 @@ the failure.
 - **Logic lives in plain, testable types**, not in views: today
   `SpokenUtteranceTracker`, `VoiceSelection`, `SpeechRateSteps`,
   `AudioSafetyPolicy`, `ScreenWakePolicy`, `CategorySelection`,
-  `StarterLibrary`, `PhraseLibrarySeeder`. Views only read them.
+  `StarterLibrary`, `PhraseLibrarySeeder`, `MessageComposer`,
+  `DraftStore`. Views only read them.
 - **Run it, don't just read it.** Layout and flow changes are checked in the
   running app on an iPad and an iPhone simulator, at default and
   accessibility text sizes, light and dark.
@@ -468,6 +469,15 @@ Shortcuts. **Never apply** `core-data` skills (this app uses SwiftData),
   something appearing, an `XCTWaiter` expectation for a property such as
   `isEnabled`. Check that something did *not* change only after waiting
   for the change that did happen.
+- **Measuring the keyboard:** `KeyboardProbeTests` is opt-in
+  (`TEST_RUNNER_BRICKSON_KEYBOARD_PROBE=1 scripts/test.sh ui`). It opens
+  a debug-only probe screen (`--screen=keyboard-probe`) instead of Home,
+  prints one `KEYBOARD-PROBE {json}` line per orientation and text size,
+  and fails after printing if the simulator shows the keyboard bar
+  instead of the full keyboard. xcbeautify hides printed lines from
+  passing tests, so read the JSON attached to each test in the result
+  (Xcode's Report navigator), or run `xcodebuild` without xcbeautify. Say
+  which simulator and iOS version the numbers came from.
 - **Simulator audio is unreliable.** Every sound check needs a real device.
 - **Apple's accessibility audit can time out on CI** with domain
   `com.apple.xcode.xctest.accessibilityAudit`, code `-56`. The UI suite
