@@ -151,11 +151,20 @@ class SimulatorChoiceTests(unittest.TestCase):
         self.assertNotIn("Testing Brickson on:", result.stdout)
         self.assertEqual(result.invocations, 0)
 
+    # Letting an iPhone stand in for the default iPad fails this test.
+    def test_never_chooses_an_iphone(self):
+        result = self.choose({
+            runtime("27.1"): [device("iPhone 17 Pro", "PHONE")],
+        })
+        self.assertNotEqual(result.returncode, 0)
+        self.assertNotIn("Testing Brickson on:", result.stdout)
+
     # Ranking any iPad above the 13-inch iPad Pro fails this test.
     def test_prefers_the_13_inch_ipad_pro(self):
         result = self.choose({
             runtime("27.1"): [device("iPad Air 11-inch (M3)", "AIR"),
                               device("iPad Pro 13-inch (M5)", "PRO"),
+                              device("iPad mini (A17 Pro)", "MINI"),
                               device("iPhone 17", "PHONE")],
         })
         self.assertEqual(result.returncode, 0, result.stderr)
