@@ -173,12 +173,12 @@ combines them with these. "mnd" stays because some US caregivers use it.
 The draft below is 2,382 characters. **Every line tagged `[needs: …]` may
 only go in once that feature is in the build being submitted**: Guideline
 2.3.1 rejects descriptions that claim what the app doesn't do. Remove the
-tags before pasting. Lines with no tag describe what is built today.
+tags before pasting. Text with no tag describes what is built today.
 
 ```
 Brickson speaks for you. Choose a phrase and your iPhone or iPad says it out loud, at once, in your own Personal Voice if you have made one.
 
-Brickson is built for people living with ALS (also called MND), at every stage. As the way you use your device changes, from touch to switches to your eyes, the buttons can grow and spread out, but they never move. You never have to learn a new layout.
+Brickson is built for people living with ALS (also called MND), at every stage. [needs: profiles (R1); until then end the paragraph here] As the way you use your device changes, from touch to switches to your eyes, the buttons can grow and spread out, but they never move. You never have to learn a new layout.
 
 SPEAKS THE FIRST TIME
 • Every phrase speaks on the first tap, with no extra step to confirm.

@@ -31,7 +31,7 @@ to undo; step 5 is, so it waits for the name.
 2. **Choose the permanent bundle ID.** The bundle ID is the app's internal
    name, like `org.example.app`. Customers never see it, but it is public,
    it can never change after the first upload, and today's
-   `family.avery.brickson` contains your first name. Pick one you are happy
+   (`APP_BUNDLE_ID` in `project.yml`) contains a personal name. Pick one you are happy
    to keep forever (for example built from a web address you own, or a
    neutral word), and an agent changes `APP_BUNDLE_ID` in `project.yml`.
 3. **Check your membership.** Sign in at
@@ -43,7 +43,15 @@ to undo; step 5 is, so it waits for the name.
    agent for `DEVELOPMENT_TEAM` in `project.yml` (it is not secret).
 4. **Decide the price** (docs/DECISIONS.md, "Price not decided"). App Store
    Connect asks for it under Pricing and Availability, and the agreements in
-   step 8 depend on it.
+   step 8 depend on it. On the same page, before submitting: keep the
+   distribution method **Public** (an app approved for Private distribution
+   can never become public), choose the countries and regions (all, unless
+   there is a reason not to), confirm the tax category Apple suggests, and
+   turn off Mac and Apple Vision Pro availability (section 4)
+   ([publishing
+   overview](https://developer.apple.com/help/app-store-connect/manage-your-apps-availability/overview-of-publishing-your-app-on-the-app-store),
+   [distribution
+   methods](https://developer.apple.com/help/app-store-connect/manage-your-apps-availability/set-distribution-methods)).
 5. **Register the bundle ID and create the app record** (only after steps 1
    and 2). In [Certificates, Identifiers &
    Profiles](https://developer.apple.com/account/resources/identifiers/list):
@@ -88,8 +96,11 @@ to undo; step 5 is, so it waits for the name.
 
 ## 2. Before anything is submitted
 
-The project's release gate (docs/ROADMAP.md) holds every external TestFlight
-build and every App Review submission until its R0 items are done. The App
+The project's release gate holds every external TestFlight build and every
+App Review submission until the first release's work is done: today that is
+docs/HANDOFF.md, *Next steps* and *Checks that need a real device*, and the
+roadmap (docs/ROADMAP.md, when the roadmap's pull request lands) will name it
+R0. The App
 Store adds these hard requirements, checked against Apple's pages on
 2026-10-21:
 
@@ -122,7 +133,7 @@ say so in What's New when it happens.
 | "Your settings, such as the voice and speaking speed you chose" | Yes (`SpeechService` stores both) | Fixed on 2026-10-21: the policy no longer mentions a text-size setting, which Brickson does not have |
 | Deleting things "in the app" | Not until editing ships | Ship editing, or reword |
 | Speech and Personal Voice | Yes | — |
-| How you control the app | Yes (Brickson has no input code of its own) | — |
+| How you control the app ("works with … Eye Tracking, Switch Control and Voice Control") | The data half is true: Brickson has no input code of its own, so it never receives what those features use. "Works with" is **not yet verified**: nothing has run on a device | Reach every control with each named method on a real iPhone and iPad (docs/HANDOFF.md, *Checks that need a real device*), or reword to "is built to work with" |
 | Backups you export | No: no backup yet | Ship backup, or delete the paragraph |
 | Your device's own backups (iCloud Backup) | Yes | — |
 | If you turn on recorded phrases | Not built; not in R0 | Delete the section for 1.0 |
@@ -158,7 +169,7 @@ to be fixed. Re-check at every update.
 published only once a version is live
 ([manage labels](https://developer.apple.com/help/app-store-connect/manage-app-accessibility/manage-accessibility-nutrition-labels)).
 
-**Brickson's common tasks for 1.0** (from the R0 release gate): first launch
+**Brickson's common tasks for 1.0** (from the release gate in section 2): first launch
 (including the Personal Voice question), speak a phrase, Yes and No,
 Emergency, Again, Get Attention and Stop Alert, type and speak, edit phrases
 (with delete and keep), back up and restore, Settings (voice, privacy, family
@@ -418,9 +429,11 @@ read 2026-10-21:
   (for example 1320 × 2868) are optional; the 13-inch iPad takes 2064 × 2752
   portrait or 2752 × 2064 landscape (2048 × 2732 also accepted).
 - **iPhone Duo** (Apple's foldable iPhone): outer display 1398 × 2034, inner
-  display 2007 × 2853 (or rotated). "Starting April 2027, any apps or games
-  submitted will need to include screenshots for iPhone Duo", and a Duo set
-  earns an "optimized for iPhone Duo" badge
+  display 2007 × 2853 (or rotated). The screenshot specifications say:
+  "Starting in April 2027, screenshots will be required for any app using
+  the iOS 27.1 SDK or later." Brickson builds with Apple's current Xcode
+  (docs/DECISIONS.md), which is 27.1, so this will apply to it. A Duo set
+  also earns an "optimized for iPhone Duo" badge
   ([Apple news](https://developer.apple.com/news/?id=kkphp5qo)). Brickson's
   iPhone is portrait-only for now; the Duo screenshots must come from a real
   layout on the inner display, so they wait for the orientation decision
@@ -490,7 +503,10 @@ testers](https://developer.apple.com/help/app-store-connect/test-a-beta-version/
   build you submit requires a full review, but later builds for the same
   version might not." A public link can be limited by device and OS, and
   people who join by link show as anonymous.
-- **Required test information:** a Beta App Description and a Feedback Email
+- **Required test information:** a Beta App Description and a Feedback Email,
+  and, for external testing, Beta App Review contact information: first and
+  last name, email and phone, and whether sign-in is required (Brickson has
+  no accounts, so no demo account is needed)
   ([provide test
   information](https://developer.apple.com/help/app-store-connect/test-a-beta-version/provide-test-information)).
 - Each build can be tested for 90 days.
@@ -498,7 +514,7 @@ testers](https://developer.apple.com/help/app-store-connect/test-a-beta-version/
   sees their sessions and crashes.
 - TestFlight needs the app record, so it waits for the name too.
 
-**Runbook, matched to the roadmap's R0 release gate:**
+**Runbook, matched to the release gate above (R0 in the roadmap):**
 
 1. Gate: R0 items done, device checks logged in `docs/log/`, UI tests green on
    iPhone and iPad at default and largest text, light and dark; policy,
