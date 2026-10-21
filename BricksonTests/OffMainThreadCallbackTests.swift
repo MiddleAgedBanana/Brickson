@@ -110,7 +110,7 @@ struct OffMainThreadCallbackTests {
 
 /// Carries a framework object to a background thread for a test that calls
 /// a delegate method there, as the framework would.
-private struct Unchecked<Value>: @unchecked Sendable {
+private nonisolated struct Unchecked<Value>: @unchecked Sendable {
     let value: Value
 
     init(_ value: Value) {
