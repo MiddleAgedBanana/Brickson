@@ -24,7 +24,7 @@ import SwiftUI
 /// word: each one fits itself (`FittedLabel`). The starter library needs no
 /// scrolling on the windows `HomeLayoutTests` checks; the grid scrolls only
 /// where its tiles would otherwise be shorter than
-/// `HomeShape.minimumTileHeight`.
+/// `HomeShape.minimumTileHeight`, or where a library warning takes its room.
 struct HomeView: View {
     @Query private var categories: [PhraseCategory]
     @State private var selectedCategoryID: UUID?
@@ -65,6 +65,7 @@ struct HomeView: View {
                     tileFont: shape.isCompact ? .compactTile : .regularTile
                 )
                 .frame(maxHeight: .infinity)
+                LibraryWarnings()
             }
         }
         .padding(.horizontal, 16)
@@ -165,9 +166,8 @@ private struct MessageText: View {
 
 // MARK: - Status lines
 
-/// What the person cannot hear: speech in progress, audio that failed or a
-/// very low volume, and a library that could not be opened or filled
-/// (invariants 4 and 5). Passive text only, never a control.
+/// What the person cannot hear: speech in progress, and audio that failed
+/// or a very low volume (invariant 4). Passive text only, never a control.
 ///
 /// They sit under the message, in the part of Home the software keyboard
 /// never covers, so they stay visible while typing. Speech and audio share
@@ -176,14 +176,11 @@ private struct MessageText: View {
 /// so nothing moves when one appears. A warning takes the line over from
 /// "Speaking": when something cannot be heard, that is what the person needs
 /// to know. To keep the line short, it shows each warning's compact text and
-/// gives VoiceOver the full sentence, as the reference app did. The two
-/// library warnings are decided once at launch and never change while the
-/// app runs, so they need no reserved space.
+/// gives VoiceOver the full sentence, as the reference app did. The library
+/// warnings sit under the phrase grid instead (`LibraryWarnings`).
 private struct StatusLines: View {
     @Environment(SpeechService.self) private var speech
     @Environment(AudioSafetyMonitor.self) private var audioSafety
-    @Environment(\.isVolatileStore) private var isVolatileStore
-    @Environment(\.phraseLibraryIssue) private var phraseLibraryIssue
 
     private var audioIssue: HomeAudioIssue? {
         // Get Attention is not ported yet (docs/PORTING.md, step 1), so the
@@ -222,15 +219,6 @@ private struct StatusLines: View {
                         .accessibilityElement(children: .combine)
                 }
             }
-            if isVolatileStore {
-                warning(
-                    String(localized: "Phrases can't be saved right now. Changes will be lost when the app closes."),
-                    systemImage: "externaldrive.badge.exclamationmark"
-                )
-            }
-            if let phraseLibraryIssue {
-                warning(phraseLibraryIssue.message, systemImage: "exclamationmark.bubble.fill")
-            }
         }
         .font(LabelFont.status.font)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -261,6 +249,40 @@ private struct StatusLines: View {
         AccessibilityNotification.Announcement(
             AudioAnnouncementPolicy.announcement(for: issue)
         ).post()
+    }
+
+}
+
+// MARK: - Library warnings
+
+/// A library that could not be saved, or could not be filled (invariant 5).
+/// Passive text only, never a control. Both are decided once at launch and
+/// never change while the app runs.
+///
+/// They sit under the phrase grid, which gives up the height they need: a
+/// long warning at a large text size shortens the grid (which then scrolls)
+/// and never pushes Yes, No or Emergency off the screen.
+private struct LibraryWarnings: View {
+    @Environment(\.isVolatileStore) private var isVolatileStore
+    @Environment(\.phraseLibraryIssue) private var phraseLibraryIssue
+
+    var body: some View {
+        if isVolatileStore || phraseLibraryIssue != nil {
+            VStack(alignment: .leading, spacing: 4) {
+                if isVolatileStore {
+                    warning(
+                        String(localized: "Phrases can't be saved right now. Changes will be lost when the app closes."),
+                        systemImage: "externaldrive.badge.exclamationmark"
+                    )
+                }
+                if let phraseLibraryIssue {
+                    warning(phraseLibraryIssue.message, systemImage: "exclamationmark.bubble.fill")
+                }
+            }
+            .font(LabelFont.status.font)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .allowsHitTesting(false)
+        }
     }
 
     private func warning(_ message: String, systemImage: String) -> some View {

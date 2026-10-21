@@ -561,7 +561,9 @@ How it behaves, and where it knowingly falls short:
   person needs to know (2026-10-21; before, "Speaking" sat under the
   message and the warnings in an area under the grid). The short text is
   what people see; VoiceOver reads the full sentence. The two library
-  warnings are decided at launch and never appear later.
+  warnings are decided at launch and never appear later; they sit under
+  the phrase grid, which gives up the room they need, so a long one at a
+  large text size never pushes Yes, No or Emergency off the screen.
 - **Quick controls in one row, at every width.** Yes, No and Emergency, with
   Emergency twice as wide, and each label fitted by the steps in *Home's
   stand-in layout*: it drops its icon before its words shrink, so an icon
@@ -695,7 +697,11 @@ running on these windows):
 - A 375×667pt phone window (iPhone SE class): fits at the default text size
   and through xxxLarge (by under a point there); the grid scrolls from AX1.
   The two-row safety row in *Home's slot plan* makes it scroll at the
-  default size too, until the engine.
+  default size too, until the engine. The starter library needs three grid
+  rows there (Basics and Needs hold eight phrases each): in touch that is
+  tiles of about 109×68pt, but three floor-sized rows do not fit under
+  this arrangement in dwell, switch or gaze profiles, so the engine needs
+  another arrangement for this window, never scrolling.
 - A 402×874pt phone window (iPhone 17 class): expected to fit at every text
   size; `HomeLayoutTests` checks it at default and AX5.
 - Every iPad window CI runs, both orientations, default and AX5: expected to
@@ -718,7 +724,9 @@ never where it is.
 
 - **Regions, top to bottom: A, C, B, D.**
   - **A, the message.** The message with its status line, and a trailing
-    column of two wells: Clear above Type.
+    column of two wells: Clear above Type. While typing, the top well holds
+    Phrases, the way out of typing, instead of Clear; Type, below it, only
+    opens typing.
   - **C, the safety row.** Compact widths, two rows: Yes, No and
     Again; then Emergency across the first two columns and Get Attention
     in the third. Regular widths, one row: Emergency, Yes, No, Again,
@@ -727,7 +735,9 @@ never where it is.
   - **B, the categories.** A pinned leading column of two wells, Stop
     Alert above Settings (about 95pt wide on a 375pt phone), then the
     category buttons, at least 116pt wide: two by two on compact widths,
-    one row of four on regular ones.
+    one row of four on regular ones. While typing, the draft's Clear and
+    Put Back each take a fixed category slot here, away from the draft and
+    from Speak.
   - **D, the phrase grid.** Fixed columns; rows from the largest category
     (invariant 8).
 - **Wells.** A control that only applies in some states (Clear, Stop

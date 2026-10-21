@@ -52,12 +52,14 @@ layout engine follows. Both build on this contract (docs/DECISIONS.md,
    text size, never from Home's state, the library or use. A state
    changes what a slot shows, never where it is.
 2. **Regions, top to bottom: A, C, B, D.** A: the message and status
-   line, with a trailing column of two wells, Clear above Type. C: the
+   line, with a trailing column of two wells, Clear above Type (Phrases,
+   the way out, replaces Clear while typing). C: the
    safety row; on compact widths Yes, No, Again, then Emergency across two
    columns and Get Attention in the third; on regular widths one row of
    Emergency, Yes, No, Again, Get Attention. Again's well shows Speak while
    typing. B: a pinned leading column, Stop Alert above Settings, then the
-   category buttons (at least 116pt wide; two by two or one row of four).
+   category buttons (at least 116pt wide; two by two or one row of four);
+   while typing, the draft's Clear and Put Back take fixed category slots.
    D: the phrase grid.
 3. **Wells keep their frames.** A control that applies only in some
    states (Clear, Stop Alert, Speak) has a well that keeps its frame

@@ -79,6 +79,13 @@ release in docs/ROADMAP.md when no thread has it yet.
   Type, Get Attention, Stop and Settings have no place on Home
   (docs/DECISIONS.md, "Home's slot plan"). *(a new thread: Get Attention
   and Stop on Home)*
+- A label with a word too wide for its slot even at the default text size
+  is cut short with an ellipsis when it is one word, but in a phrase of
+  several words that word can wrap mid-word. No starter label has one
+  (`StarterLabelFitTests`), and nothing can add one until editing or
+  import exists; those must keep every word within the narrowest tile, or
+  the layout engine must give it room. *(Library editing and backup format,
+  with the layout engine)*
 - The rendered-label test reads the four English quick-control labels
   only, not phrases or categories; `StarterLabelFitTests` measures every
   starter label against its narrowest slot instead. *(Accessibility
