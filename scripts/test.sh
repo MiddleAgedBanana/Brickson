@@ -339,7 +339,11 @@ run_tests() {
         "${extra_arguments[@]+"${extra_arguments[@]}"}" \
         test-without-building || status=$?
     echo "Test results, with screenshots of any UI test failure: $results"
-    [ "$status" -eq 0 ] || return "$status"
+    if [ "$status" -ne 0 ]; then
+        # Still say how far the run got; the test failure decides the result.
+        report_test_count "$results" || true
+        return "$status"
+    fi
     report_test_count "$results" || return 1
     if [ "$mode" = unit ]; then
         report_coverage "$results"

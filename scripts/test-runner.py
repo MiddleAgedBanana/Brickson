@@ -529,6 +529,17 @@ class EvidenceTests(unittest.TestCase):
         self.assertIn("No tests ran.", result.stderr)
         self.assertNotIn("All unit tests passed.", result.stdout)
 
+    # Returning a test failure before counting hides how far the run got,
+    # and fails this test.
+    def test_a_failed_run_still_reports_its_count(self):
+        result = run_script('if [ "$action" = test-without-building ]; then exit 65; fi',
+                            mode="unit", destination=None,
+                            devices={runtime("27.1"): [device("iPad Pro 13-inch (M5)", "PAD")]},
+                            test_summary=summary(3, failed=1))
+        self.assertEqual(result.returncode, 65)
+        self.assertIn("3 tests ran on iPad Pro 13-inch (M5)", result.stdout)
+        self.assertIn("2 passed, 1 failed", result.stdout)
+
     # A green run whose summary cannot be read shows no evidence that any
     # test ran; passing it fails this test.
     def test_an_unreadable_summary_fails_the_run(self):
