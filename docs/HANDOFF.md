@@ -93,9 +93,12 @@ promise* lists the code rules that keep the policy true.
   release (invariant 11).
 - No Get Attention alarm yet, so `AudioSafetyPolicy` runs with the alarm
   always idle.
-- No typing, editing, Settings, voice choice or backup.
+- No typing, editing or backup. Settings, voice choice and Family Setup
+  exist (docs/log/2026-10-21-settings-and-first-run.md), but Home has no
+  Settings button until Home's layout places `SettingsButton`.
 - Personal Voice permission is asked at first launch without explanation
-  (docs/DECISIONS.md).
+  (docs/DECISIONS.md); the Voice and Speed screen explains it afterwards.
+- Settings' Get Attention place is empty until the alarm lands.
 - English only; the String Catalog fills itself as Xcode builds. Two
   strings are not in it yet: the speech-rate names in `SpeechRateSteps`
   and the voice sample sentence in `SpeechService`.
@@ -127,9 +130,9 @@ promise* lists the code rules that keep the policy true.
 - The app icon is a placeholder (a white speech bubble on blue).
 - No license file: the code is public but, without a license, all rights
   are reserved. The owner decides.
-- No Privacy row in the app yet. App Review requires a link to the
-  privacy policy inside the app (AGENTS.md, *The privacy policy is a
-  promise*).
+- The privacy policy is in Family Setup → Privacy Policy, from the
+  bundled page, with the web version in an in-app Safari sheet
+  (docs/DECISIONS.md, "The privacy policy ships inside the app").
 
 ### GitHub reviews and updates (2026-10-10)
 
@@ -257,6 +260,8 @@ device, OS version, settings and date.
 | Which phrases people reach for, and how many categories can be scanned by eye | The starter library |
 | "Open Brickson" by Siri and Voice Control, said by a few people, and how VoiceOver reads the icon | `APP_SPOKEN_NAME` and the alternative names |
 | With VoiceOver on, a cut-off phrase or very low volume is announced once, in full, without moving focus | Home's audio announcements (invariant 4) |
+| Opening Settings by a stray dwell, and leaving it by Back to Talking, lands on nothing that speaks or alarms; the idle reset under real dwell | Settings' safety bar and root (docs/DECISIONS.md) |
+| Guided Access and Assistive Access steps match iPadOS, and Brickson works inside both | Family Setup's Keep Brickson Open guide |
 
 ## Record of changes
 

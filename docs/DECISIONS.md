@@ -239,7 +239,128 @@ No Info.plist key is needed for the request. If **Allow Apps to Request to
 Use** is off (Settings → Accessibility → Personal Voice), the system denies
 the request without asking. `AccessibilitySettings.openSettings(for:
 .personalVoiceAllowAppsToRequestToUse)` opens that switch directly; the
-voice picker should offer it when permission is denied.
+Voice and Speed screen offers it when permission is denied, with the
+written path always shown (2026-10-21, `PersonalVoiceGuidance`).
+
+## First launch opens Home; setup lives in Settings
+
+*2026-10-21. Default, adopted 2026-10-21: the owner left these choices to
+the project. Reversible if the owner objects.*
+
+Brickson opens straight onto Home on first launch, never onto a setup
+screen: someone who needs to speak can do so the moment it opens, and a
+setup flow in front of Home would have to be got past by whoever is
+holding the device. Setup is a place inside Settings (Family Setup), not
+a gate. Until Family Setup has been opened once, Home's empty message
+area shows one passive line, `FirstRunHint.text` ("Family: help with
+setting up is in Settings."), through the `showsSetupHint` environment
+value. The line does not name the app, so it survives a rename.
+
+## Settings is a cover with a fixed safety bar
+
+*2026-10-21. Default, adopted 2026-10-21: the owner left these choices to
+the project. Reversible if the owner objects.*
+
+Settings is a full-screen cover. Because it hides Home's quick controls,
+every Settings screen sits under one fixed row (`SettingsSafetyBar`): a
+start-only Get Attention at the top leading edge and Back to Talking at
+the top trailing edge, at the same frames on every screen. Get
+Attention's place is kept empty until `AttentionAlertPlayer` lands, so
+adding it moves nothing. Under the bar is a `NavigationStack(path:)`
+whose root holds only a large Family Setup row and a sentence; every
+setting is a screen below, so a stray dwell that opens Settings meets
+only the way back, Get Attention and one row that navigates. Family
+Setup opens on passive text at least as tall as that row
+(`FamilySetupView.openingHeight`), so a repeated activation finds nothing.
+
+Family Setup's rows: Set Up Step by Step, Voice and Speed, Reaching the
+Screen, Keep Brickson Open (Guided Access and Assistive Access), Privacy
+Policy and About. The Library's row joins it as `SettingsRoute.library`
+when the Library lands; it never closes Settings or hands over to an edit
+mode on Home. Home owns where `SettingsButton` sits; Settings provides the
+button and `settingsCover(isPresented:)`.
+
+Every control is a standard `Button` or `NavigationLink` at least 64pt
+tall, white on `Palette.controlFill` or `Palette.phraseFill`; text is
+primary ink, never the system's secondary gray or grouped-list headers,
+which measure under 4.5:1. No toggles and no system alerts. Multiple
+choice answers only select; Clear My Choices is a separate button.
+
+Before: the reference app put Back to Talking top-leading and Get
+Attention trailing. Brickson swaps them so Back to Talking lands over
+Home's trailing column (Clear and Type in the planned Home) and Get
+Attention over the message, whose nearest Home control is Yes.
+
+## Settings resets when idle and never closes
+
+*2026-10-21. Default, adopted 2026-10-21: the owner left these choices to
+the project. Reversible if the owner objects.*
+
+After 90 seconds with no control used, no screen pushed or popped and no
+scrolling while Brickson is active, Settings goes back to its root,
+rebuilt scrolled to the top, and **stays open** (`SettingsIdleClock`,
+`SettingsActivity`). Closing would put Home's controls under a spot
+nobody chose. The clock is held while the privacy policy's web sheet is
+open, while iOS asks about Personal Voice, while the alarm sounds, and
+while a screen calls `holdsSettingsIdleReset(true)` (for the Library's
+editors and backup tasks); when the last hold ends, the full 90 seconds
+start again. Time in another app or with the screen off never counts.
+Time is `ContinuousClock`; the pure clock takes `now:`.
+
+## Setup answers are kept as offered, never as completed
+
+*2026-10-21. Default, adopted 2026-10-21: the owner left these choices to
+the project. Reversible if the owner objects.*
+
+`SetupRecord` keeps what Family Setup learned: whether it was opened, how
+the screen is reached (`AccessMethod`: touch, Voice Control, Switch
+Control, Eye Tracking, Head Tracking, someone else helps), when that was
+answered, and the check-in state. Nothing is recorded as "setup
+completed": a family can stop at any step. `plannedAccessMethods` is nil
+when nobody answered or every choice was cleared, and the layout then
+uses its largest sizes. `SetupStore` keeps the record as JSON in
+UserDefaults; a change is saved before it is shown, a failed save changes
+nothing and shows a passive line, and an unreadable record is moved to
+`setupRecord.unreadable`, never deleted.
+
+Set Up Step by Step has five steps, each a pushed screen with Next in a
+fixed bar at the bottom: how the screen is reached, the voice, turning
+on what was chosen, keeping Brickson open, and a summary. A held look on
+Next can walk the steps; that only navigates, and Back undoes it. Guides
+name Apple's own menus, checked against Apple's support pages on
+2026-10-21. Guided Access's guide says that emergency calls and Crash
+Detection do not work during a session.
+
+## Check-ins come every three months
+
+*2026-10-21. Default, adopted 2026-10-21: the owner left these choices to
+the project. Reversible if the owner objects.*
+
+Three calendar months after setup was last answered (or after the first
+launch), Family Setup shows a passive card asking whether anything has
+changed, with Go Through Setup Again, Not Now (30 days) and Stop Asking
+(until the access question is answered again). It never appears on Home
+and is never a pop-up (`CheckInPolicy`). These times use `Date` and
+`Calendar`, an exception to "Time is `ContinuousClock`": they must survive
+relaunches and restarts, which `ContinuousClock` does not, and a clock
+set backwards only delays a card.
+
+## The privacy policy ships inside the app
+
+*2026-10-21. Default, adopted 2026-10-21: the owner left these choices to
+the project. Reversible if the owner objects.*
+
+Guideline 5.1.1(i) requires a link to the policy inside the app "in an
+easily accessible manner"; it does not say how the link opens (checked
+2026-10-21). Brickson goes further: project.yml copies `site/privacy`
+into the app, and Family Setup's Privacy Policy screen shows that page's
+own words natively (`PrivacyPolicyDocument` reads its `<main>`), so the
+copy in the app can never differ from the web page, reads at the
+person's text size, and needs no network. Open the Web Version shows the
+live page in an in-app `SFSafariViewController` sheet, which 5.1.1(vii)
+says must be visibly presented. A test fails if any text of the page
+does not reach the screen, for example if the page gains an element the
+parser does not read.
 
 ## Tests
 
