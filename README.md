@@ -154,11 +154,12 @@ the pull request. Local Mac changes require a passing unit suite before
 commit; changes made without Xcode remain untested until CI or a Mac run
 passes. The maintainer merges pull requests after review and passing CI.
 
-CodeQL scans GitHub workflow files, not Swift. AI Scan reviews eligible
-pull-request changes, including Swift, but its findings do not enforce a
-merge gate; address them during review. AI Scan skips forks and Dependabot
-pull requests. See [Code scanning](docs/DECISIONS.md) for the
-coverage, limitations and review requirements.
+CodeQL scans the GitHub workflow files and the Python scripts in
+`scripts/`, not Swift. AI Scan reviews eligible pull-request changes,
+including Swift, but its findings do not enforce a merge gate; address
+them during review. AI Scan skips forks and Dependabot pull requests. See
+[Code scanning](docs/DECISIONS.md#code-scanning) for the coverage,
+limitations and review requirements.
 
 For bugs, include reproduction steps and the device and OS version. Do not
 post personal phrases, medical details or private backups in public issues.
@@ -182,10 +183,14 @@ Policy wording changes must include an updated effective date.
 ## Documentation
 
 - [Local development setup](docs/GETTING_STARTED.md)
-- [Current state and verification](docs/HANDOFF.md)
+- [Current state and verification](docs/HANDOFF.md), with a
+  [record of every change](docs/log/README.md)
+- [Roadmap: what comes in which release](docs/ROADMAP.md)
+- [How the project is run, stage by stage](docs/SDLC.md)
 - [Design and engineering decisions](docs/DECISIONS.md)
 - [Lessons from the reference app](docs/LESSONS.md)
 - [Implementation and porting sequence](docs/PORTING.md)
+- [Research behind the roadmap](docs/recon/README.md)
 
 ## License
 

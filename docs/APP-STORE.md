@@ -9,12 +9,13 @@ Apple changes these pages often: re-read a page before acting on it, and
 update this file when it has changed.
 
 **Status.** Nothing exists in App Store Connect for Brickson yet, and nothing
-is created there until the owner is ready to create the record (step 5).
-The owner chose the name Brickson on 2026-10-12 (docs/DECISIONS.md, "Brand
-name and founder story"). That choice is not an App Store reservation or a
-legal clearance: App Store Connect confirms the name only when the record is
-created, and the trademark checks outside the US are still open
-(docs/NAME_AVAILABILITY.md). The price is not decided, so nothing here
+is created there until the owner confirms the name and the bundle ID
+(docs/DECISIONS.md, *Waiting on the owner*). The owner retained Brickson
+publicly on 2026-10-12 (docs/DECISIONS.md, "Brand name and founder story"),
+and keeping it is the recommendation there. Neither is an App Store
+reservation or a legal clearance: App Store Connect confirms the name only
+when the record is created, and the trademark checks outside the US are
+still open (docs/NAME_AVAILABILITY.md). The price is not decided, so nothing here
 states one (docs/DECISIONS.md, "Price not decided").
 
 **Who does what.** App Store Connect is a website only the owner can use: the
@@ -27,7 +28,8 @@ step is copy and paste. Section 1 is the owner's list, in order.
 Each step says what it is and why before how. Nothing in steps 1 to 4 is hard
 to undo; step 5 is, so it waits for the name.
 
-1. **Check that the name is still available.** The App Store name is held by
+1. **Confirm the name** (docs/DECISIONS.md, *Waiting on the owner*), and
+   check that it is still available. The App Store name is held by
    whoever creates the record first. Brickson looked available on 2026-10-12
    (docs/NAME_AVAILABILITY.md), and only creating the record confirms it. If
    you want the trademark checks outside the US first, search "Brickson" on
