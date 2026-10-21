@@ -59,9 +59,63 @@ This keeps project settings reviewable as plain text and avoids merge
 conflicts in the project file. Agents never open the project in Xcode
 (docs/LESSONS.md, "Never open the project in Xcode from an agent").
 
-## Minimum iOS 26, iPhone and iPad
+## Build with Apple's current Xcode
 
-*2026-10-10. Default, from the reference app.*
+*2026-10-21. Owner.*
+
+Brickson is built with the Xcode Apple currently recommends: its newest
+release (never a beta or a release candidate) and the SDKs and Swift
+compiler that come with it. Nothing in the repository pins an Xcode, SDK,
+simulator or runner version the owner did not ask for. When Apple releases
+a new Xcode, the build moves to it in a pull request, which also fixes
+anything the new Xcode reports.
+
+- **Two different versions.** The *toolchain* (Xcode, its SDKs and its
+  Swift compiler) builds the app, and is always Apple's newest release.
+  The *deployment target* is the oldest iOS and iPadOS the app runs on;
+  it is the owner's product decision (*Minimum iOS, iPhone and iPad*,
+  below). Building with a newer SDK does not stop the app running on an
+  older system: the deployment target decides that.
+- **Look it up, never recall it.** An agent's training data is older than
+  Apple's newest release. What is current comes from Apple's releases
+  page (https://developer.apple.com/news/releases/) and Xcode's system
+  requirements (https://developer.apple.com/xcode/system-requirements/),
+  read at the time.
+- **CI** picks its Xcode with `scripts/select-xcode.py`: `choose` takes
+  the newest release installed on GitHub's Mac machine, whatever the
+  machine's default is, and `check` compares it with Apple's releases feed
+  and puts a warning on the run when Apple has a newer one. It warns
+  instead of failing because GitHub adds a new Xcode to its machines some
+  days after Apple releases it, and a safety fix must not wait for that.
+- **Runner image.** GitHub now publishes one Mac image per major Xcode
+  (`xcode-27` carries Xcode 27 on macOS 27; generally available since
+  2026-10-15, GitHub's changelog). The older `macos-26` image that CI used
+  until 2026-10-21 had Xcode 26.6 as its default and no iOS 27 simulators.
+  `runs-on` names the image for the current major Xcode; when Apple
+  releases the next one and GitHub publishes its image, the `check`
+  warning says so, and a pull request moves both jobs to it. Cloud agents
+  cannot change workflow files (AGENTS.md, *Gotchas*), so the owner, or an
+  agent on the owner's Mac, commits that change.
+- **Simulators.** `scripts/test.sh` tests on the newest iPad simulator
+  between the deployment target and the SDK of the Xcode in use. No
+  version is written into it.
+- **Documents** say "the current Xcode release", not a number. A dated
+  record of what something was checked on (the tables in
+  docs/HANDOFF.md) keeps its version: that is history, not a pin.
+- **Swift language mode.** `SWIFT_VERSION: "6.0"` in `project.yml` chooses
+  the Swift 6 language mode, not a compiler. On 2026-10-21 Swift 6 was the
+  newest mode in the current Xcode (its system requirements page). Move
+  to a newer mode in a pull request when Apple ships one.
+- **Why.** The owner asked for it on 2026-10-21, after seeing "26.0"
+  throughout the repository without having chosen it. Apple's rules point
+  the same way: from April 2027, App Store uploads must be built with the
+  iOS and iPadOS 27 SDK or later (Apple's submitting page, read
+  2026-10-21), and new Xcode releases add support for new devices.
+
+## Minimum iOS, iPhone and iPad
+
+*2026-10-10. Default, from the reference app. Open: on 2026-10-21 the
+owner was asked to choose the minimum; until they do, it stays 26.0.*
 
 iOS and iPadOS 26.0 or later, on iPhone and iPad. Mac ("Designed for
 iPad"), Mac Catalyst and Vision Pro are switched off until someone decides
@@ -350,10 +404,18 @@ not scan the Swift code, on purpose:
     point releases (Swift 6.3.3, in Xcode 26.6, took 24). Today it covers
     Swift up to 6.3, which CI's Xcode 26.6 uses, and not Swift 6.4 (Xcode
     27). Every Xcode upgrade could break the job or hold up merges.
+  - Since CI moved to Xcode 27 (*Build with Apple's current Xcode*,
+    above), advanced setup could not scan Swift at all: GitHub's changelog
+    of 2026-10-19 says that with Xcode 27 installed CodeQL cannot trace a
+    Swift build, and that it does not support Swift 6.4 on any platform.
+    Its advice to pin macOS 26 and Xcode 26 is not taken, because the
+    owner's toolchain decision comes first.
 - The earlier text here said CodeQL "cannot follow Xcode 27 builds yet"
   and that GitHub "has announced a Swift scanner that needs no build". The
-  first is true, but it does not stop scanning today, because CI builds
-  with Xcode 26.6; it matters only as upkeep for advanced setup (above).
+  first is true, but it does not stop scanning today, because default
+  setup scans only the workflow files, which need no build (when this was
+  written, CI also still built with Xcode 26.6); it matters only for
+  advanced setup (above).
   The second does not hold for CodeQL, whose Swift support has only the
   `autobuild` and `manual` build modes; no mode that skips the build has
   been announced. It probably meant AI Scan, below.

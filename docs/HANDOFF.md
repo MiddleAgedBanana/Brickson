@@ -213,28 +213,32 @@ Not yet seen working, to check after the merge and the settings:
 
 ## Next steps, in order
 
-1. **Owner:** publish the website. In the repository's Settings → Pages,
+1. **Owner:** choose the minimum iOS and iPadOS (the deployment target,
+   docs/DECISIONS.md, "Minimum iOS, iPhone and iPad"). It stays 26.0 until
+   then. The toolchain is not a choice: always Apple's newest Xcode
+   (*Toolchain — 2026-10-21* below).
+2. **Owner:** publish the website. In the repository's Settings → Pages,
    set *Source* to **GitHub Actions** if it isn't already, merge the pull
    request that fills in the policy's blanks, then check that the
    "Publish website" run on the Actions tab is green and that both
    addresses open on a phone.
-2. **Owner:** open and run the app on a Mac ([local development setup](GETTING_STARTED.md)), and run the tests once (⌘U).
-3. **Owner:** review the starter phrases
+3. **Owner:** open and run the app on a Mac ([local development setup](GETTING_STARTED.md)), and run the tests once (⌘U).
+4. **Owner:** review the starter phrases
    (`Brickson/Resources/StarterPhrases.json`). A reviewer noted two
    near-duplicates ("Wait a moment, please." and "Give me a moment to
    answer.") and that "Please move me." could be clearer.
-4. **Owner:** choose the developer account (personal or organization).
+5. **Owner:** choose the developer account (personal or organization).
    Then set `DEVELOPMENT_TEAM` and the final `APP_BUNDLE_ID` in
    `project.yml` (docs/DECISIONS.md, "App identity").
-5. **Owner:** apply the GitHub settings in docs/DECISIONS.md, "Reviews,
+6. **Owner:** apply the GitHub settings in docs/DECISIONS.md, "Reviews,
    updates and GitHub settings", and delete the failed Swift
    configuration on the Tool status page (*Code scanning* there).
-6. Port step 1's remainder: the Get Attention alarm (`AttentionAlertPlayer`
+7. Port step 1's remainder: the Get Attention alarm (`AttentionAlertPlayer`
    and its tone) with Stop Alert in a different place, and the audio
    warning strip.
-7. Port step 2: editing logic and backup, with a failure-injection test for
+8. Port step 2: editing logic and backup, with a failure-injection test for
    every save (docs/LESSONS.md, "Never roll back a cascade delete").
-8. Port step 3, then design the generalized layout engine (step 4) before
+9. Port step 3, then design the generalized layout engine (step 4) before
    replacing Home.
 
 ## Checks that need a real device
@@ -293,6 +297,7 @@ device, OS version, settings and date.
 | 2026-10-12 | `6865f47` | `storekit` taken off AGENTS.md's list of skills never to apply: it came from the reference app and ruled out in-app purchases before a price was decided | Documentation only |
 | 2026-10-12 | `82aef90`, `5dfb8f6`, `4f9fe80`, `41f9555`, `b2b6206` | Review skill for Copilot (`.github/skills/code-review/SKILL.md`), refined from the owner's draft: review steps that point to AGENTS.md for every rule instead of restating rules or naming features that are not built yet. `.github/copilot-instructions.md` points to it. AGENTS.md *Code Review Rules* gains checks every reviewer applies: statements of Brickson's price; a new section, *Tests, workflows and the rules themselves*, for tests that cannot fail, workflow changes that expose secrets or a write token, put pull request text into a shell command or add an action not published by GitHub, and changes that weaken the review rules. *Not findings* now excuses only gaps the base branch already records. A change *Code Review Rules* names is reported even when no person is affected yet; only other suspicions a reviewer cannot trace become questions (Codex's review of this pull request). AGENTS.md, DECISIONS.md and README.md say where the skill sits, and DECISIONS.md records that the owner asked for it. AGENTS.md, DECISIONS.md and README.md now say Dependabot's pull requests get no automatic review (PR #7) and that only the owner requests Copilot reviews; README.md says Copilot never sees replies and its headline is not an approval | Documentation only; pull request CI. Copilot's automatic review of this pull request invoked the skill (its job log) |
 | 2026-10-12 | `1188f5d`, `8fd22a0`, `5421109`, `c1ea737`, `28f4819` | Why CodeQL does not scan the Swift code: default setup's one Swift attempt failed because no Xcode project is committed, and GitHub dropped Swift by itself; advanced setup would add a Mac job to every pull request for checks that match nothing in today's code and fall behind each new Xcode. docs/DECISIONS.md *Code scanning* corrects two earlier statements (Xcode 27 does not block scanning today; CodeQL announced no Swift mode that skips the build), records that AI Scan for pull requests is on and that Dependabot's first pull request got no CodeQL analysis before merging, and lists when to revisit; the ruleset rows say the same. README.md and AGENTS.md mention the scans, and AGENTS.md gains a gotcha. The failed Swift configuration on the Tool status page is the owner's to delete | Documentation only. Checked 2026-10-12 through GitHub's API and job logs (default setup's languages, the failed job's log, analyses, PR check runs, the ruleset, AI Scan's setting and logs) and GitHub's and CodeQL's documentation sources; pull request CI. Not verified: where AI Scan's AI credits come from, and the 10 to 20 minute estimate for a Swift CodeQL job (never run) |
+| 2026-10-21 | `258fcf4`, `b70e742`, workflow commit pending | Build with Apple's current Xcode (owner): CI moves from the `macos-26` image (Xcode 26.6) to GitHub's `xcode-27` image and picks the newest released Xcode there (`scripts/select-xcode.py`), with a warning on the run when Apple has a newer one; `scripts/test.sh` takes its simulator range from the project's deployment target and the Xcode in use instead of a written-in 26; docs say "the current Xcode release"; docs/DECISIONS.md "Build with Apple's current Xcode"; the minimum iOS stays 26.0 until the owner decides | Python tests for both scripts, run on Linux, with every assertion seen failing first or under a deliberate break; pull request CI. See *Toolchain — 2026-10-21* |
 
 
 ## Website redesign — 2026-10-12
@@ -472,3 +477,112 @@ established: xcbeautify discarded its destination details.
   GitHub CI on the new pull request remains the merge gate; this does not
   claim a permanent fix for the first runner's unexplained destination
   failure.
+
+## Toolchain — 2026-10-21
+
+The owner asked that Brickson always build with the toolchain Apple
+currently recommends, after seeing "26.0" throughout the repository
+without having chosen it. The rule is recorded in docs/DECISIONS.md,
+"Build with Apple's current Xcode", with a pointer in AGENTS.md, *Build
+and test*, and a review rule in *Code Review Rules*.
+
+What was current, read on Apple's pages on 2026-10-21 (not recalled):
+
+- Newest Xcode release: **Xcode 27.1** (27A9275, 15 October 2026), with
+  the iOS 27.1 and iPadOS 27 SDKs and Swift 6.4; it needs macOS Tahoe
+  26.6 or later and an Apple silicon Mac. Xcode 27.2 is a release
+  candidate (27B48, 19 October). Swift 6 is still the newest language
+  mode. Sources: https://developer.apple.com/news/releases/ and
+  https://developer.apple.com/xcode/system-requirements/.
+- App Store uploads need Xcode 26 and the iOS 26 SDK today, and **from
+  April 2027 the iOS and iPadOS 27 SDK** (Apple's submitting page). Xcode
+  27.1 also adds support for iPhone Duo, Apple's new iPhone, and from
+  April 2027 submissions need iPhone Duo screenshots (Apple Developer
+  News).
+- Before this change CI ran on GitHub's `macos-26` image (version
+  20260907.0351.1) with its default **Xcode 26.6** (17F113) and iOS 26.2
+  to 26.5 simulators only (Brickson's CI logs, 12 to 14 October). GitHub
+  now publishes one image per major Xcode: `xcode-27` (macOS 27, Xcode 27)
+  has been generally available since 15 October (GitHub's changelog).
+- The owner's Mac ran Xcode 27.0 with iOS 27.0 simulators on 12 and 13
+  October (the records above).
+
+What changed:
+
+- `.github/workflows/tests.yml`: both jobs run on `xcode-27`, choose the
+  newest released Xcode installed there, and the Unit tests job compares
+  it with Apple's releases feed (a warning, never a failure). Job names,
+  triggers and permissions are unchanged. **This file could not be pushed
+  from the cloud session** (AGENTS.md, *Gotchas*); its full new text was
+  handed to the owner to commit on the branch.
+- `scripts/select-xcode.py` and its tests, `scripts/test-select-xcode.py`.
+- `scripts/test.sh`: the simulator's iOS must lie between the deployment
+  target, read from the generated project, and the SDK of the Xcode in
+  use. Six fixture tests in `scripts/test-runner.py` cover the range, the
+  error when nothing fits, iPads only, the 13-inch iPad Pro preference,
+  and that an unreadable deployment target stops the run (a first version
+  carried on, because `set -e` does not stop inside `$(...)`).
+- README.md and docs/GETTING_STARTED.md ask for the current Xcode release
+  instead of "Xcode 26 or later". docs/DECISIONS.md *Code scanning* notes
+  that CodeQL cannot trace Swift builds with Xcode 27 (GitHub's changelog,
+  2026-10-19), which changes nothing today: CodeQL scans only the
+  workflow files.
+
+Not changed, on purpose:
+
+- The deployment target stays **iOS and iPadOS 26.0** (`project.yml`,
+  `.github/copilot-instructions.md`, README.md, docs/GETTING_STARTED.md):
+  the owner decides it.
+- Dated records of what was checked on (this file's tables and sections,
+  docs/archive/) keep their versions: they are history.
+
+Verification: written on a cloud machine that cannot run Xcode. Both
+Python test files pass on Linux (Python 3.13). Every new test was seen
+failing: before the code it covers existed, or under a deliberate break
+of that code. Nothing has run on GitHub's `xcode-27` image yet: how it names its
+Xcode apps (the prerelease rule assumes names such as
+`Xcode_27.2_beta.app`), whether it has Homebrew for XcodeGen, and which
+iPad simulators it carries are unknown until the first CI run, whose
+"Use the newest released Xcode" step lists every Xcode it finds. Whether
+the app builds without warnings or failures under Xcode 27.1 and Swift
+6.4 is likewise unknown until then.
+
+Follow-ups this change leaves (none is done here):
+
+- **On the owner's Mac: Xcode's "recommended settings".** XcodeGen marks
+  the generated project as last checked by Xcode 14.3 (`LastUpgradeCheck`
+  1430, XcodeGen's default, seen on the owner's Mac on 15 and 16
+  October), so the current Xcode offers to update the project to its
+  recommended settings each time it opens it. Accepting changes only the
+  generated project, which the next `xcodegen generate` throws away. The
+  fix is to read that list in the current Xcode (open the project, then
+  the warning in the Issue navigator, and copy the list without
+  accepting it), bring the settings that fit into `project.yml`, and set
+  XcodeGen's `options.xcodeVersion` to that Xcode in the same pull
+  request. Setting `xcodeVersion` alone would hide the advice instead of
+  following it. Done blind from the cloud, it was not done here.
+- **Orientation and iPhone Duo.** Apple's iOS 27 release notes say that
+  on iPad, an app built with the iOS 27 SDK no longer needs all four
+  orientations to resize continuously, and supported orientations are
+  honoured only until the person resizes the window. Xcode 27.1 adds
+  iPhone Duo, Apple's foldable iPhone (on sale from 23 October 2026),
+  which Apple says has new "poses and orientations". The iPhone's
+  portrait-only choice (docs/DECISIONS.md, "Orientations") should be
+  checked against both in the iPhone Duo simulator; Apple also requires
+  iPhone Duo screenshots in App Store submissions from April 2027.
+- **iOS 27 APIs at a 26.0 target** need `if #available(iOS 27, *)` with an
+  iOS 26 path, for example the new `AVAudioSession` life-cycle
+  notifications (reported by the owner's Mac's review on 15 and 16
+  October; not checked here).
+- Xcode 27.1's release notes list "Initial Simulator launch can take
+  several minutes" as a known issue. `scripts/test.sh` already waits for
+  its default simulator to finish starting; a slow first UI test on the
+  new image is the first thing to suspect.
+- Xcode 27.2 (a release candidate on 2026-10-21) adds a JSON project
+  format (`.xcproj`) meant to be readable and merge-friendly. Worth
+  weighing against XcodeGen when it is released (docs/DECISIONS.md,
+  "Generated Xcode project").
+
+Noticed, not changed: GitHub's changelog of 2026-10-15 says AI Scan for
+pull requests is now generally available; docs/DECISIONS.md *Code
+scanning* still calls it a public preview.
