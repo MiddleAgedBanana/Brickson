@@ -1,47 +1,70 @@
 # Settings, Family Setup and the first run
 
-*2026-10-21. Pull request #<n> (`claude/project-thread-j7207m`). The
-"Settings and first run" thread.*
+*2026-10-21. Branch `claude/project-thread-j7207m`. The "Settings and
+first run" thread, which ends with this pull request.*
 
 ## What changed and why
 
 Brickson now has Settings, for the family, and a first run that never
-stands between someone and their voice. Decisions in docs/DECISIONS.md:
-"First launch opens Home; setup lives in Settings", "Settings is a cover
-with a fixed safety bar", "Settings resets when idle and never closes",
-"Setup answers are kept as offered, never as completed", "Check-ins come
-every three months" and "The privacy policy ships inside the app".
+stands between someone and their voice. The decisions are in
+docs/DECISIONS.md: "First launch opens Home; setup lives in Settings",
+"Settings is a cover with a fixed safety bar", "Settings resets when idle
+and never closes", "Setup answers are kept as offered, never as
+completed", "Check-ins come every three months" and "The privacy policy
+ships inside the app".
 
 - **Settings** (`Brickson/Settings/SettingsView.swift`): a full-screen
-  cover with a fixed safety bar (Get Attention's place, kept empty until
-  the alarm lands, and Back to Talking), a root with one Family Setup row,
-  and an idle reset to the root after 90 seconds that never closes it.
+  cover. A fixed safety bar keeps Get Attention's place (empty, see
+  *Follow-ups*) at the top leading edge and Back to Talking at the top
+  trailing edge, at the same frames on every screen. The root holds one
+  Family Setup row and a sentence. After 90 seconds with nothing used it
+  goes back to the root and stays open (`SettingsIdleClock`,
+  `SettingsActivity`); UI tests get 3 seconds through `AppTimeouts`. The
+  reset is held while the policy's web sheet is open, while Get Attention
+  sounds, and while a screen calls `holdsSettingsIdleReset(true)`.
 - **Family Setup** (`FamilySetupView.swift`): Set Up Step by Step, Voice
-  and Speed, Reaching the Screen, Keep Brickson Open, Privacy Policy and
-  About, plus the three-monthly check-in card.
-- **Voice and Speed** (`VoiceSettingsView.swift`): Personal Voice guidance
-  for every permission state (`PersonalVoiceGuidance`), with Open
-  Personal Voice Settings when iOS can open it and the written path
-  always shown; the voice list (`VoiceList`: Automatic, Personal Voices,
-  then this language's voices, best first, no novelty voices, unique
-  button names); Slower and Faster.
-- **Privacy Policy** (`PrivacyPolicyView.swift`): the bundled copy of
-  `site/privacy/index.html` shown natively (`PrivacyPolicyDocument`), and
-  the web version in an in-app Safari sheet. project.yml copies
-  `site/privacy` into the app.
+  Settings, Reaching the Screen, Keep Brickson Open, Privacy Policy and
+  About, plus the three-monthly check-in card (`CheckInPolicy`). It opens
+  on passive text as tall as the root's row. Opening it once ends Home's
+  first-run hint.
+- **Voice Settings** (`VoiceSettingsView.swift`): which voice is speaking
+  now; Personal Voice guidance for every permission state
+  (`PersonalVoiceGuidance`), with Open Personal Voice Settings where iOS
+  can open it and the written path always shown; Slower, Faster and
+  Normal Speed; the voice list (`VoiceList`: Automatic, Personal Voices,
+  then this language's voices, best first, never a novelty voice), each
+  with separate Hear and Use buttons whose names are unique.
+- **Privacy Policy** (`PrivacyPolicyView.swift`): project.yml copies
+  `site/privacy` into the app; the screen shows that page's own words
+  (`PrivacyPolicyDocument`), and Open the Web Version shows the live page
+  in an in-app Safari sheet.
 - **Guides** (`SetupGuides.swift`): turning on each input method, Guided
   Access and Assistive Access, checked against Apple's support pages on
-  2026-10-21.
-- **First run** (`Brickson/FirstRun/`): `SetupRecord`, `SetupStore`,
-  `CheckInPolicy`, `FirstRunHint` and Set Up Step by Step
-  (`GuidedSetupView`). `BricksonApp` creates the store and sets
-  `showsSetupHint`.
-- `AppName.display` (`Brickson/App/AppName.swift`) reads the name under
-  the icon from the bundle, so words people see never spell the name out.
+  2026-10-21 (Guided Access disables emergency calls and Crash Detection;
+  the guide says so).
+- **First run** (`Brickson/FirstRun/`): `SetupRecord`, `SetupStore` (JSON
+  in `launch.settings`, so UI tests never touch a person's record),
+  `FirstRunHint` and Set Up Step by Step (`GuidedSetupView`, five steps;
+  answers only select, Clear My Choices is separate).
+- **App and tests:** `AppName.display` reads the name under the icon, so
+  no text spells it out. `BricksonApp` creates the setup store, sets
+  `showsSetupHint`, and opens Settings at launch for `--screen=settings`
+  (a new `LaunchOptions.StartScreen` case). `launchedApp` takes
+  `shortTimeouts:` so a slow test can keep the real idle limits. The
+  String Catalog has the new strings, written by hand because nothing
+  here could build; a few strings were worded so their sort order is the
+  same under every collation.
 
 ## Commits
 
-<filled in when the pull request opens>
+- `c511e29` The tested logic behind Settings and the first run.
+- `1e63cea` The Settings, Family Setup and step-by-step screens.
+- `50154a4` The decisions and this record.
+- `002f3f8` Which voice is speaking, on Voice Settings.
+- The merge of `main` (PRs #13, #15, #16 and #18), which moves the setup
+  store onto `launch.settings`, takes Settings' idle limit from
+  `AppTimeouts`, adds `--screen=settings`, Normal Speed, the alarm hold
+  and the UI tests, and fills the String Catalog.
 
 ## Verified
 
@@ -50,35 +73,53 @@ every three months" and "The privacy policy ships inside the app".
   `PrivacyPolicyDocumentTests`, 39 tests) compiled and passed on a Linux
   Swift 6.3.3 toolchain with default main-actor isolation, with
   `String(localized:)` stubbed and the policy page as a package resource.
-  That run found one bug, now fixed: a voice whose identifier was
+  That run found a bug, now fixed: a voice whose identifier was
   "automatic" collided with the Automatic row.
-- Failing first: `SetupStoreTests.aFailedSaveChangesNothingAndSaysSo`
-  fails if `update` assigns before saving;
-  `PrivacyPolicyDocumentTests.textOutsideAnyBlockIsDetected` shows the
-  "no text lost" check can fail.
-- Nothing else was built or run here: this was written where Xcode is not
-  available. The SwiftUI views, `SetupStoreTests` (it needs `os`), the
-  project.yml resource and the bundled-page tests are untested until CI
-  passes.
+- Tests that can fail: `SetupStoreTests.aFailedSaveChangesNothingAndSaysSo`
+  fails if `update` shows a change before saving it;
+  `PrivacyPolicyDocumentTests.textOutsideAnyBlockIsDetected` shows the "no
+  text lost" check can fail; `SettingsTests.testAnIdleSettingsReturnsToItsFirstScreenAndStaysOpen`
+  fails if the reset closes Settings or never happens.
+- Nothing else was built or run where this was written (no Xcode). The
+  views, `SetupStoreTests`, `SettingsTests` (UI), the project.yml resource,
+  the bundled-page tests and the String Catalog are first checked by CI.
 
 ## Not verified
 
-- Any screen in the running app, on any device, text size or appearance.
-- How Back to Talking and Get Attention land over Home's controls
-  (that depends on Home's planned layout).
-- Whether Guided Access and Assistive Access steps read the same on
-  iPadOS 26 and 27 (checked against the iPhone guide).
+- Any screen on a real device, and how Back to Talking and the root's row
+  land over Home's controls under Snap to Item.
+- Whether the Guided Access and Assistive Access steps read the same on
+  iPadOS (checked against the iPhone guides).
+- The interpolated keys in the String Catalog (`%@`, `%lld`) are written
+  the way Xcode writes them as far as known; CI's catalog check prints the
+  difference if not.
 
 ## Follow-ups
 
-- Phone layout thread: place `SettingsButton` on Home with
-  `.settingsCover(isPresented:)`, and show `FirstRunHint.text` while
-  `showsSetupHint` is true.
-- This thread, after the Speech thread's PRs: Get Attention in the safety
-  bar (with the `.alarm` hold), Normal Speed, the Personal Voice Ask
-  button and its `.personalVoiceRequest` hold.
-- This thread, after the test seams PR: UI tests that open Settings with
-  `--screen=settings`, and the 3-second idle limit under
-  `--short-timeouts`.
-- Library thread: `SettingsRoute.library` and its Family Setup row.
-- Accessibility thread: whether to set `UISupportsFullScreenInAssistiveAccess`.
+For the next Settings thread, in order:
+
+1. **Home's Settings button** *(Phone layout and word fitting, or whoever
+   lands Home's slot model)*: place `SettingsButton(isPresented:)` on Home
+   with `.settingsCover(isPresented:)` applied before Home's environment
+   modifiers, and show `FirstRunHint.text` in the message area while
+   `showsSetupHint` is true. Then remove the `--screen=settings` cover in
+   `BricksonApp` only if UI tests can reach Settings from Home.
+2. **Get Attention in the safety bar**, once Home has Get Attention and
+   Stop: put a start-only `attention.start()` button in
+   `SettingsSafetyBar`'s empty leading slot, at the same frame. Never put
+   Stop in Settings. The `.alarm` hold is already wired.
+3. **Ask for Personal Voice from Settings** *(Personal Voice
+   foundation)*: when the engine exposes a request, pass `canAsk: true` to
+   `PersonalVoiceGuidance.make`, add the Ask button for `.askPermission`
+   (its text explains first), and hold the idle reset with
+   `.personalVoiceRequest` while iOS asks. Keep the launch-time ask until
+   that lands.
+4. **Library** *(Library editing and backup format)*: add
+   `case library` to `SettingsRoute` and a Family Setup row; editors and
+   backup tasks call `holdsSettingsIdleReset(_:)`.
+5. **Layout sizes**: `SetupRecord.plannedAccessMethods` is ready for the
+   layout engine; nil means the largest sizes.
+6. Decide whether to set `UISupportsFullScreenInAssistiveAccess`
+   *(Accessibility API coverage)*.
+7. Keep one UI test on the real 90-second idle limit (docs/LESSONS.md,
+   "Machine load causes false failures") once CI time allows.

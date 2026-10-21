@@ -2,7 +2,7 @@ import Accessibility
 import AVFoundation
 import SwiftUI
 
-/// Voice and Speed: which voice Brickson speaks with, Personal Voice
+/// Voice Settings: which voice Brickson speaks with, Personal Voice
 /// guidance, and the speaking speed.
 ///
 /// Hearing a voice and choosing it are separate buttons, so listening never
@@ -10,7 +10,7 @@ import SwiftUI
 /// held look cannot restart it (`SpokenUtteranceTracker`).
 struct VoiceSettingsView: View {
     var body: some View {
-        SettingsScreen(title: "Voice and Speed") {
+        SettingsScreen(title: "Voice Settings") {
             VoiceContent()
         }
     }
@@ -56,6 +56,12 @@ struct VoiceContent: View {
             }
             .settingsRowStyle()
         }
+        Button {
+            speech.stepRate({ _ in AVSpeechUtteranceDefaultSpeechRate }, from: .normalRate)
+        } label: {
+            SettingsRowLabel(title: "Normal Speed", systemImage: "gauge.with.dots.needle.50percent")
+        }
+        .settingsRowStyle()
 
         SettingsHeading("Voice")
         if VoiceList.chosenVoiceIsMissing(selectedID: speech.selectedVoiceID, from: speech.availableVoices) {
@@ -111,7 +117,7 @@ private struct VoiceRowView: View {
                 .settingsRowStyle()
                 .accessibilityLabel(Text(verbatim: row.useLabel))
                 .accessibilityInputLabels([Text(verbatim: row.useLabel)])
-                .accessibilityValue(row.isSelected ? Text("In use") : Text(verbatim: ""))
+                .accessibilityValue(row.isSelected ? Text("In Use") : Text(verbatim: ""))
             }
         }
         .padding(.bottom, 8)

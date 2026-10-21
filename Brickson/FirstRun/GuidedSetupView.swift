@@ -46,7 +46,7 @@ struct GuidedSetupView: View {
             SettingsHeading("Turn on what is used")
             ReachingTheScreenContent(methods: setup.record.plannedAccessMethods ?? Set(AccessMethod.allCases))
         case .keepOpen:
-            SettingsHeading("Keep \(AppName.display) open")
+            SettingsHeading("Keep \(AppName.display) Open")
             KeepOpenContent()
         case .ready:
             readySummary

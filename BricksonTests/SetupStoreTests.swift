@@ -59,10 +59,12 @@ struct SetupStoreTests {
             if failing { throw EncodingFailed() }
             return try JSONEncoder().encode(record)
         })
-        #expect(!store.update { $0.familySetupOpened = true })
+        let failedSave = store.update { $0.familySetupOpened = true }
+        #expect(!failedSave)
 
         failing = false
-        #expect(store.update { $0.familySetupOpened = true })
+        let retried = store.update { $0.familySetupOpened = true }
+        #expect(retried)
         #expect(store.issue == nil)
         #expect(store.record.familySetupOpened)
     }

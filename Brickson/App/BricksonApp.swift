@@ -3,23 +3,39 @@ import SwiftUI
 import UIKit
 
 /// The app's entry point. It opens the phrase library, creates the one
-/// speech engine, and hands both to every screen through the environment.
+/// speech engine and the Get Attention alarm, and hands them to every screen
+/// through the environment.
 @main
 struct BricksonApp: App {
     @Environment(\.scenePhase) private var scenePhase
     @State private var audioSafety: AudioSafetyMonitor
     @State private var speech: SpeechService
-    @State private var setup = SetupStore(defaults: .standard)
+    @State private var attention: AttentionAlertPlayer
+    @State private var setup: SetupStore
+    /// Settings opened at launch, for UI tests (`--screen=settings`). Home
+    /// opens it with its own Settings button.
+    @State private var showsSettingsAtLaunch: Bool
     private let container: ModelContainer
     private let isVolatileStore: Bool
     private let phraseLibraryIssue: PhraseLibraryIssue?
+    /// What a UI test asked for at launch; always `.standard` in a release
+    /// build (`LaunchOptions`).
+    private let launch: LaunchOptions
 
     init() {
-        let audioSafety = AudioSafetyMonitor()
-        _audioSafety = State(initialValue: audioSafety)
-        _speech = State(initialValue: SpeechService(audioSafetyMonitor: audioSafety))
+        // First, before anything reads a setting or opens the library.
+        let launch = LaunchOptions.current
+        launch.prepareStorage()
+        self.launch = launch
 
-        let opened = PhraseLibraryStore.openForApp()
+        let audio = AppAudio.makeForApp(settings: launch.settings)
+        _audioSafety = State(initialValue: audio.safety)
+        _speech = State(initialValue: audio.speech)
+        _attention = State(initialValue: audio.attention)
+        _setup = State(initialValue: SetupStore(defaults: launch.settings))
+        _showsSettingsAtLaunch = State(initialValue: launch.startScreen == .settings)
+
+        let opened = launch.openLibrary()
         let library = PhraseLibraryLaunch.prepare(container: opened.container, isVolatile: opened.isVolatile)
         container = library.container
         isVolatileStore = library.isVolatile
@@ -29,16 +45,38 @@ struct BricksonApp: App {
     var body: some Scene {
         WindowGroup {
             HomeView()
+                // Before the environment below, so Settings receives it too.
+                .settingsCover(isPresented: $showsSettingsAtLaunch)
                 .environment(audioSafety)
                 .environment(speech)
+                .environment(attention)
                 .environment(setup)
                 .environment(\.showsSetupHint, FirstRunHint.isShown(for: setup.record))
                 .environment(\.isVolatileStore, isVolatileStore)
                 .environment(\.phraseLibraryIssue, phraseLibraryIssue)
+                .environment(\.appTimeouts, launch.timeouts)
+                .preferredColorScheme(testColorScheme)
         }
         .modelContainer(container)
         .onChange(of: scenePhase, initial: true) { _, phase in
             UIApplication.shared.isIdleTimerDisabled = ScreenWakePolicy.keepsScreenAwake(in: phase)
+            if phase == .active {
+                // Back in the foreground: read again what may have changed
+                // while away, the volume and an alarm that went quiet.
+                audioSafety.refreshOutputVolume()
+                attention.checkHealth()
+            }
+        }
+    }
+
+    /// Release launches always use .standard, whose appearance is nil.
+    /// A UI test's preference affects this presentation, not saved settings
+    /// or the simulator's global appearance.
+    private var testColorScheme: ColorScheme? {
+        switch launch.appearance {
+        case .some(.light): .light
+        case .some(.dark): .dark
+        case .none: nil
         }
     }
 }

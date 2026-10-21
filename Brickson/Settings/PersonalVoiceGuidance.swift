@@ -63,7 +63,7 @@ nonisolated struct PersonalVoiceGuidance: Equatable, Sendable {
             return PersonalVoiceGuidance(
                 title: String(localized: "Personal Voice"),
                 message: canAsk
-                    ? String(localized: "\(AppName.display) can speak in a voice that sounds like you, made with Apple's Personal Voice. To use it, \(AppName.display) must ask iOS first.")
+                    ? String(localized: "\(AppName.display) can speak in a voice that sounds like you, made with Apple's Personal Voice. \(AppName.display) must ask iOS before using it.")
                     : String(localized: "\(AppName.display) can speak in a voice that sounds like you, made with Apple's Personal Voice. iOS asks once whether \(AppName.display) may use it; choose Allow."),
                 settingsPath: nil,
                 action: canAsk ? .askPermission : nil,

@@ -133,7 +133,10 @@ schemes:
       targets:
         Brickson: all
     test:
-      gatherCoverageData: false
+      # How much of the app the unit tests run; scripts/test.sh prints it.
+      gatherCoverageData: true
+      coverageTargets:
+        - Brickson
       targets:
         - BricksonTests
   # Opt-in: launches the real app on a simulator and drives it.

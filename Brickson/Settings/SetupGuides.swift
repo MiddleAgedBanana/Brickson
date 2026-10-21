@@ -123,7 +123,7 @@ struct KeepOpenContent: View {
         SettingsParagraph("Keeps the iPhone or iPad in one app until a passcode is entered.")
         SettingsSteps(steps: [
             "Open Settings > Accessibility > Guided Access and turn it on.",
-            "Choose Passcode Settings and set a passcode.",
+            "In Passcode Settings, set a passcode.",
             "Open \(AppName.display), then triple-click the side or top button (the Home button on older models) and choose Start.",
             "To end it, triple-click again, enter the passcode and choose End.",
         ])
@@ -134,7 +134,7 @@ struct KeepOpenContent: View {
         SettingsSteps(steps: [
             "Open Settings > Accessibility > Assistive Access and choose Set Up Assistive Access.",
             "When asked for apps, add \(AppName.display) under Other apps.",
-            "Set the Assistive Access passcode.",
+            "Create an Assistive Access passcode.",
             "To leave it, triple-click the side button (the Home button on older models), choose Exit Assistive Access and enter the passcode.",
         ])
     }

@@ -29,9 +29,10 @@ struct FamilySetupView: View {
             .accessibilityIdentifier("guidedSetup")
 
             NavigationLink(value: SettingsRoute.voice) {
-                SettingsRowLabel(title: "Voice and Speed", systemImage: "waveform")
+                SettingsRowLabel(title: "Voice Settings", systemImage: "waveform")
             }
             .settingsRowStyle()
+            .accessibilityIdentifier("voiceSettings")
 
             NavigationLink(value: SettingsRoute.reachingTheScreen) {
                 SettingsRowLabel(title: "Reaching the Screen", systemImage: "hand.point.up.left.fill")

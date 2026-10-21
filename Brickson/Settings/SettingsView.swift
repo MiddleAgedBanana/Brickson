@@ -17,8 +17,16 @@ struct SettingsView: View {
     let close: () -> Void
 
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(AttentionAlertPlayer.self) private var attention
     @State private var path: [SettingsRoute] = []
-    @State private var activity = SettingsActivity()
+    @State private var activity: SettingsActivity
+
+    /// - Parameter idleLimit: `SettingsIdleClock.standardLimit`, or the
+    ///   short limit UI tests ask for (`AppTimeouts`).
+    init(idleLimit: Duration = SettingsIdleClock.standardLimit, close: @escaping () -> Void) {
+        self.close = close
+        _activity = State(initialValue: SettingsActivity(limit: idleLimit))
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -37,6 +45,10 @@ struct SettingsView: View {
         .environment(activity)
         .onChange(of: path) {
             activity.recordActivity()
+        }
+        .onChange(of: attention.isSounding, initial: true) { _, isSounding in
+            // Never change the screen under someone answering the alarm.
+            activity.setHold(.alarm, isSounding)
         }
         .onChange(of: scenePhase) { _, phase in
             // Time in another app or with the screen off never counts.
@@ -84,15 +96,16 @@ struct SettingsView: View {
 
 /// The row above every Settings screen.
 ///
-/// Get Attention's place is kept empty until the alarm exists, so adding it
-/// moves nothing. Back to Talking is the widest control on the screen and
-/// its words are never shrunk.
+/// Get Attention's place is kept empty until Home shows Get Attention and
+/// Stop: starting the alarm here while Home has no Stop would leave it
+/// sounding with no way to stop it. Because the place is kept, adding it
+/// moves nothing. Back to Talking's words are never shrunk.
 struct SettingsSafetyBar: View {
     let close: () -> Void
 
     var body: some View {
         HStack(spacing: SettingsMetrics.rowSpacing) {
-            // Get Attention (start only) joins here with the alarm player.
+            // Get Attention (start only) joins here with Home's Stop.
             Color.clear
                 .frame(maxWidth: .infinity, minHeight: SettingsMetrics.rowHeight)
                 .accessibilityHidden(true)
@@ -150,7 +163,20 @@ extension View {
     /// Presents Settings over this view as a full-screen cover.
     func settingsCover(isPresented: Binding<Bool>) -> some View {
         fullScreenCover(isPresented: isPresented) {
-            SettingsView { isPresented.wrappedValue = false }
+            SettingsCoverContent(isPresented: isPresented)
+        }
+    }
+}
+
+/// Reads this launch's idle limits, which only a view can, and opens
+/// Settings with them.
+private struct SettingsCoverContent: View {
+    @Binding var isPresented: Bool
+    @Environment(\.appTimeouts) private var timeouts
+
+    var body: some View {
+        SettingsView(idleLimit: timeouts.limit(SettingsIdleClock.standardLimit, short: .seconds(3))) {
+            isPresented = false
         }
     }
 }

@@ -1,3 +1,4 @@
+import AVFoundation
 import Foundation
 import Testing
 @testable import Brickson
@@ -12,11 +13,11 @@ struct OffMainThreadCallbackTests {
     /// AVAudioSession documents outputVolume as KVO-observable but gives no
     /// thread guarantee. The observation must tolerate a background delivery.
     @Test func outputVolumeChangeCanArriveOnABackgroundThread() async {
+        let events = AudioSessionEvents(notificationCenter: NotificationCenter(), object: NSObject())
         let monitor = AudioSafetyMonitor(
             initialOutputVolume: 0.5,
             readOutputVolume: { 0.1 },
-            notificationCenter: NotificationCenter(),
-            notificationObject: NSObject()
+            events: events
         )
         let handler = monitor.outputVolumeChangeHandler
 
@@ -27,5 +28,124 @@ struct OffMainThreadCallbackTests {
         }
 
         #expect(monitor.outputVolume == 0.1)
+        withExtendedLifetime(events) {}
+    }
+
+    /// AVSpeechSynthesizer gives no thread guarantee for its delegate. Each
+    /// report must reach the main actor intact from a background thread.
+    @Test @MainActor func synthesizerReportsCanArriveOnABackgroundThread() async {
+        let events = SpeechSynthesizerEvents()
+        var received: [SpeechSynthesisEvent] = []
+        events.onEvent = { _, event in received.append(event) }
+        let synthesizer = Unchecked(AVSpeechSynthesizer())
+        let utterance = Unchecked(AVSpeechUtterance(string: "Hello there."))
+
+        await Task.detached {
+            events.speechSynthesizer(
+                synthesizer.value,
+                willSpeakRangeOfSpeechString: NSRange(location: 6, length: 5),
+                utterance: utterance.value
+            )
+            events.speechSynthesizer(synthesizer.value, didFinish: utterance.value)
+            events.speechSynthesizer(synthesizer.value, didCancel: utterance.value)
+        }.value
+        let arrived = await waitUntil { received.count == 3 }
+
+        #expect(arrived)
+        #expect(received.contains { if case .willSpeak(through: 11, at: _) = $0 { true } else { false } })
+        #expect(received.contains { if case .finished = $0 { true } else { false } })
+        #expect(received.contains(.cancelled))
+    }
+
+    /// Reports sent one after another from a background thread arrive in
+    /// that order. A finish that overtook the progress before it would hide
+    /// a cut-off phrase. Fails if the hop stops preserving order.
+    @Test @MainActor func synthesizerReportsKeepTheirOrderAcrossTheHop() async {
+        let events = SpeechSynthesizerEvents()
+        var received: [SpeechSynthesisEvent] = []
+        events.onEvent = { _, event in received.append(event) }
+        let synthesizer = Unchecked(AVSpeechSynthesizer())
+        let utterance = Unchecked(AVSpeechUtterance(string: "Hello there."))
+        let pairs = 50
+
+        await Task.detached {
+            for index in 0..<pairs {
+                events.speechSynthesizer(
+                    synthesizer.value,
+                    willSpeakRangeOfSpeechString: NSRange(location: index, length: 1),
+                    utterance: utterance.value
+                )
+                events.speechSynthesizer(synthesizer.value, didCancel: utterance.value)
+            }
+        }.value
+        let arrived = await waitUntil { received.count == pairs * 2 }
+
+        #expect(arrived)
+        let progress = received.enumerated().filter { $0.offset.isMultiple(of: 2) }.map(\.element)
+        let cancels = received.enumerated().filter { !$0.offset.isMultiple(of: 2) }.map(\.element)
+        #expect(cancels.allSatisfy { $0 == .cancelled })
+        #expect(progress.enumerated().allSatisfy { item in
+            if case let .willSpeak(through: offset, at: _) = item.element { offset == item.offset + 1 } else { false }
+        })
+    }
+
+    /// The Personal Voice answer arrives on an arbitrary queue.
+    @Test @MainActor func thePersonalVoiceAnswerCanArriveOnABackgroundThread() async throws {
+        let harness = AudioHarness()
+        let completion = try #require(harness.personalVoice.completion)
+
+        await Task.detached { completion(.denied) }.value
+        let arrived = await waitUntil { harness.speech.personalVoiceStatus == .denied }
+
+        #expect(arrived)
+    }
+
+    /// AVAudioPlayer gives no thread guarantee for its delegate either.
+    @Test @MainActor func toneReportsCanArriveOnABackgroundThread() async throws {
+        let playback = try SystemAttentionTonePlayback.bundled()
+        var received: [AttentionTonePlaybackEvent] = []
+        playback.eventHandler = { received.append($0) }
+        let url = try #require(Bundle.main.url(forResource: "AttentionTone", withExtension: "wav"))
+        let player = Unchecked(try AVAudioPlayer(contentsOf: url))
+
+        await Task.detached {
+            playback.audioPlayerDidFinishPlaying(player.value, successfully: false)
+            playback.audioPlayerDecodeErrorDidOccur(player.value, error: nil)
+        }.value
+        let arrived = await waitUntil { received.count == 2 }
+
+        #expect(arrived)
+        #expect(Set(received) == [.unexpectedFinish, .decodeError])
+    }
+
+    /// The audio session's notices are posted on the main queue, Apple
+    /// says; the adapter must still be safe if one is posted elsewhere.
+    @Test @MainActor func sessionNoticesPostedOnABackgroundThreadReachSubscribers() async {
+        let center = NotificationCenter()
+        let session = NSObject()
+        let events = AudioSessionEvents(notificationCenter: center, object: session)
+        var received: [AudioSessionEvent] = []
+        events.subscribe { received.append($0) }
+        let posting = Unchecked((center: center, session: session))
+
+        await Task.detached {
+            posting.value.center.post(
+                name: AVAudioSession.mediaServicesWereResetNotification,
+                object: posting.value.session
+            )
+        }.value
+        let arrived = await waitUntil { received == [.mediaServicesReset] }
+
+        #expect(arrived)
+    }
+}
+
+/// Carries a framework object to a background thread for a test that calls
+/// a delegate method there, as the framework would.
+private nonisolated struct Unchecked<Value>: @unchecked Sendable {
+    let value: Value
+
+    init(_ value: Value) {
+        self.value = value
     }
 }
