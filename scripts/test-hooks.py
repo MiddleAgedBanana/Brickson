@@ -111,13 +111,16 @@ class GuardTests(unittest.TestCase):
                         'gh api -X PUT repos/o/r/pulls/12/merge',
                         'gh api graphql -f query="mutation { mergePullRequest(input: {}) { clientMutationId } }"',
                         'gh api graphql -f query="mutation { enablePullRequestAutoMerge(input: {}) { clientMutationId } }"',
-                        'curl -X PUT https://api.github.com/repos/o/r/pulls/12/merge']:
+                        'curl -X PUT https://api.github.com/repos/o/r/pulls/12/merge',
+                        'curl -X PUT api.github.com/repos/o/r/pulls/12/merge']:
             self.assertDenied(command)
 
     def test_reading_pull_requests_is_allowed(self):
         for command in ['gh pr view 12', 'gh pr checks 12', 'gh pr create --fill',
                         'gh api repos/o/r/pulls/12', 'gh pr review 12 --comment -b ok',
-                        'git merge origin/main', 'git log --merges']:
+                        'git merge origin/main', 'git log --merges',
+                        'curl https://example.com/api.github.com/pulls/1/merge',
+                        'curl https://api.github.com.example.com/repos/o/r/pulls/1/merge']:
             self.assertAllowed(command)
 
     def test_github_tools_that_merge_or_write_main_are_denied(self):

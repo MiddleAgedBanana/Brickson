@@ -27,6 +27,7 @@ import re
 import shlex
 import subprocess
 import sys
+from urllib.parse import urlsplit
 
 PROTECTED = {'main', 'master'}
 
@@ -254,6 +255,17 @@ def check_gh(words):
                 deny(COPILOT)
 
 
+def github_api_merge(word):
+    """Whether a word is a GitHub API address that merges, auto-merges or
+    approves. The host is read from the parsed address, not searched for."""
+    url = urlsplit(word if '://' in word else 'https://' + word)
+    try:
+        host = (url.hostname or '').lower()
+    except ValueError:
+        return False
+    return host == 'api.github.com' and bool(API_MERGE.search(url.path))
+
+
 def check_command(command, cwd, depth=0):
     if depth > 3:
         return
@@ -282,7 +294,7 @@ def check_command(command, cwd, depth=0):
         elif program == 'gh':
             check_gh(words)
         elif program in ('curl', 'wget', 'http', 'https') and \
-                'api.github.com' in ' '.join(words) and API_MERGE.search(' '.join(words)):
+                any(github_api_merge(word) for word in words[1:]):
             deny(MERGE)
 
 
