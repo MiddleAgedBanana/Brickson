@@ -11,4 +11,4 @@ Small edits don't need a snapshot; git history keeps them.
 
 | Snapshot | Taken from commit | What changed in the code |
 |---|---|---|
-| *(none yet)* | | |
+| [`2026-10-21-before-handoff-restructure/docs/HANDOFF.md`](2026-10-21-before-handoff-restructure/docs/HANDOFF.md) | `9362eca` | None. The documents changed shape: the 474-line handoff became a front page (`docs/HANDOFF.md`), a history (`docs/HANDOFF-LOG.md`) and one record per pull request (`docs/log/`), so parallel pull requests stop conflicting in one file. |
