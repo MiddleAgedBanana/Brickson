@@ -25,7 +25,7 @@ its tests on iPad and iPhone simulators. Read the synthesis first.
 | [`docs-repo-audit.md`](2026-10-15/docs-repo-audit.md) | The documents, the repository's settings, the website and the privacy policy |
 | [`als-aac-research.md`](2026-10-15/als-aac-research.md) | What people living with ALS need from a communication app, with sources |
 | [`apple-platform.md`](2026-10-15/apple-platform.md) | Apple's frameworks and accessibility features that matter, checked against Apple's documentation |
-| [`layout-blueprint.md`](2026-10-15/layout-blueprint.md) | A design for the profile layout engine (R1). Written before the owner's 2026-10-21 rule that layouts come from available space, never per-device checks: read it with docs/DECISIONS.md, *Proposed decisions* |
+| [`layout-blueprint.md`](2026-10-15/layout-blueprint.md) | A design for the profile layout engine (R1). Written before the owner's 2026-10-21 rule that layouts come from available space, never per-device checks: read it with docs/DECISIONS.md, *Layouts from the space available*, which replaces its device table |
 | [`simulator-and-build-findings.md`](2026-10-15/simulator-and-build-findings.md) | What the simulators and builds showed |
 | [`directions/typing.md`](2026-10-15/directions/typing.md) | Typing: where it lives, which keyboard, what stays above it |
 | [`directions/alarm-and-audio.md`](2026-10-15/directions/alarm-and-audio.md) | Get Attention and the audio session |
