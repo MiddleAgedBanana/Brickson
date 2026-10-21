@@ -42,6 +42,7 @@ holds.
 |---|---|
 | The releases and their order: R0, R1, R2 | `docs/ROADMAP.md` |
 | Layouts from the space available, with floors set without a device table | "Layouts from the space available", below |
+| When Personal Voice permission is asked, Automatic keeping the person's Personal Voice, no Personal Voice without permission | "Personal Voice permission is asked at launch, for now", "Automatic keeps the person's Personal Voice", "A Personal Voice is used only while it is allowed" (Personal Voice foundation; `claude/project-thread-1ly6dd`) |
 | Minimum iOS 26.0, iPhone and iPad, set by two rules: every device that can use eye tracking runs the app, and every mapped accessibility API stays reachable behind `#available` | "Minimum iOS, iPhone and iPad" (Toolchain and iOS version targets; PR #12, merged) |
 | Home's slot plan with stable slot identifiers; solid fills on Home and the system's Liquid Glass elsewhere | "Home's slot plan", "Solid fills on Home, system glass elsewhere" (Figma and Claude Design screens; pull request not open yet) |
 | The App Store category is Utilities, with no secondary category; the age-rating answers give 4+ | "App Store category", "Age rating answers" (App Store readiness and ASO; PR #18) |
@@ -610,7 +611,9 @@ the separate appearance-harness defect and subsequent verification.
 
 ## Personal Voice permission is asked at launch, for now
 
-*2026-10-10. Default, from the reference app.*
+*2026-10-10. Default, from the reference app. 2026-10-21: the moment is
+now one policy, and the answer is read again on every return to the
+front (Personal Voice foundation).*
 
 `SpeechService` asks for Personal Voice permission when the app starts.
 The reference app did the same, with a comment saying that asking after
@@ -620,11 +623,74 @@ result the system question appears on first launch with no explanation.
 Onboarding should explain Personal Voice first and then ask; that comes
 with Settings and setup (docs/PORTING.md, step 7).
 
+When to ask is `PersonalVoiceAskPolicy`, chosen in one line in
+`AppAudio.makeForApp`. `.atLaunch` is today's behaviour and stays the
+app's policy. `.fromSettings` asks only from the Voice screen's explained
+button (`SpeechService.requestPersonalVoiceAuthorization()`), and at
+launch asks again only once the person has allowed it, which shows no
+question (Apple: the person is prompted initially and changes the answer
+in the Settings app). Switch to `.fromSettings` when two things are true:
+Settings has that button, and a device shows that a voice allowed after
+the first phrase of a session speaks without a relaunch (check D1 in
+docs/recon/2026-10-15/directions/onboarding-and-settings.md, 2.5; on
+docs/HANDOFF.md's device list). If D1 needs a relaunch, keep `.atLaunch`
+and explain afterwards on the Voice screen.
+
+Whatever the policy, the service reads the system's status at launch,
+before any answer (so someone who allowed it before speaks in their own
+voice from the first phrase), after every answer, and each time the app
+comes back to the front (`refreshPersonalVoiceAvailability()`), with the
+voice list each time: access can be turned on or off, and a voice made,
+in the Settings app while Brickson waits.
+
 No Info.plist key is needed for the request. If **Allow Apps to Request to
 Use** is off (Settings → Accessibility → Personal Voice), the system denies
 the request without asking. `AccessibilitySettings.openSettings(for:
 .personalVoiceAllowAppsToRequestToUse)` opens that switch directly; the
 voice picker should offer it when permission is denied.
+
+## Automatic keeps the person's Personal Voice
+
+*2026-10-21. Default, adopted 2026-10-21: the owner left these choices to
+the project. Reversible if the owner objects. Personal Voice foundation,
+from the research of 2026-10-15 (onboarding-and-settings.md, 3.2a).*
+
+A device can hold several Personal Voices, and Apple does not document
+the order the system lists them in. Automatic used to take the first one
+listed, so a second voice (made by someone else, or restored from
+another device) could change a person's voice between two launches,
+without anyone choosing it. A voice is part of who someone is.
+
+So once Automatic speaks in a Personal Voice, `SpeechService` keeps that
+voice's identifier under the settings key `automaticPersonalVoiceID`, and
+Automatic uses it for as long as the system lists it
+(`VoiceSelection.select`, `automaticPersonalVoiceID`). Only a Personal
+Voice is kept: a system voice never outranks the person's own. The kept
+voice is written only when the voice list is read, never cleared while
+access is off (so the same voice comes back with access), and replaced
+only when it is gone and another Personal Voice is listed. A voice the
+person chose still comes first. The Voice screen shows what Automatic
+uses (`SpeechService.automaticVoice`); a passive line when it changes is
+the Voice screen's to add. Whether identifiers stay the same across a
+relaunch, a restore and Share Across Devices is device check D5.
+
+## A Personal Voice is used only while it is allowed
+
+*2026-10-21. Default, adopted 2026-10-21: the owner left these choices to
+the project. Reversible if the owner objects. Personal Voice foundation,
+from the research of 2026-10-15 (onboarding-and-settings.md, 3.2b).*
+
+Apple makes personal voices available only while the app is allowed to
+use them (`AVSpeechSynthesisVoice.Traits.isPersonalVoice`), and one
+report on Apple's developer forums, from a Mac, says asking for one
+without permission gives no speech at all. A list read before access was
+turned off can still show the voice. So no Personal Voice is a candidate
+for a phrase, a voice sample or Automatic unless the status read last is
+"allowed" (`VoiceSelection.usableVoices`), and the voice list Settings
+shows (`SpeechService.availableVoices`) leaves it out; the phrase speaks
+in the next voice instead, and the person's choice is kept, so it comes
+back with access. What the system really does with a turned-off voice
+(silence, a finish, or another voice) is device check D4.
 
 ## Personal Voice is never written to a file
 
