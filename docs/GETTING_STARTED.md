@@ -1,8 +1,10 @@
 # Local development setup
 
-You need a Mac with **Xcode 26 or later** (free from the Mac App Store; its
-App Store page lists the macOS version it needs) and **Homebrew** (from
-[brew.sh](https://brew.sh)). The commands below are typed into
+You need a Mac with the **current release of Xcode** and **Homebrew** (from
+[brew.sh](https://brew.sh)). Xcode is free from the Mac App Store, whose
+page lists the macOS version it needs. Brickson is always built with
+Apple's newest Xcode, so install Xcode updates when the App Store offers
+them. The commands below are typed into
 **Terminal** (in Applications → Utilities, or search for it with ⌘Space),
 or into iTerm2 or Warp if you use one of those.
 

@@ -16,29 +16,8 @@ final class HomeLayoutTests: XCTestCase {
     private static let everydayCategories = ["Basics", "Needs", "Conversation", "Feelings"]
     private static let largestCategoryCount = 8
 
-    private static let textSizes = [
-        ("default text", nil as String?),
-        ("AX5 text", "UICTContentSizeCategoryAccessibilityXXXL"),
-    ]
-
     override func setUpWithError() throws {
         continueAfterFailure = true
-    }
-
-    override func tearDown() {
-        XCUIDevice.shared.orientation = .portrait
-        super.tearDown()
-    }
-
-    @MainActor
-    private func launchHome(textSize: String?) -> XCUIApplication {
-        let app = XCUIApplication()
-        if let textSize {
-            app.launchArguments += ["-UIPreferredContentSizeCategoryName", textSize]
-        }
-        app.launch()
-        XCTAssertTrue(app.buttons["Yes"].waitForExistence(timeout: 15), "Home did not appear")
-        return app
     }
 
     /// The phrase tiles showing now, in reading order (row by row).
@@ -49,10 +28,10 @@ final class HomeLayoutTests: XCTestCase {
             .sorted { ($0.minY.rounded(), $0.minX) < ($1.minY.rounded(), $1.minX) }
     }
 
-    /// Waits up to 10 s for Home to lay itself out again after a rotation:
-    /// until the window has turned and every phrase tile's frame lies inside
-    /// it. A query straight after rotating can read the frames from before
-    /// the turn. If the tiles never fit, this returns after 10 s and the
+    /// Waits up to 10 s for Home to lay itself out in the orientation asked
+    /// for: until the window has turned and every phrase tile's frame lies
+    /// inside it. A query straight after a rotation can read the frames from
+    /// before the turn. If the tiles never fit, this returns after 10 s and the
     /// checks that follow report them.
     @MainActor
     private func waitForLayout(in app: XCUIApplication, landscape: Bool) {
@@ -83,17 +62,19 @@ final class HomeLayoutTests: XCTestCase {
     /// on which category shows (invariant 8).
     @MainActor
     func testTheStarterLibraryFitsWithoutScrolling() {
-        for (sizeName, textSize) in Self.textSizes {
-            let app = launchHome(textSize: textSize)
+        for textSize in [UITestTextSize.large, .ax5] {
             for orientation in [UIDeviceOrientation.portrait, .landscapeLeft] {
-                XCUIDevice.shared.orientation = orientation
+                let app = launchedApp(textSize: textSize, orientation: orientation)
                 waitForLayout(in: app, landscape: orientation.isLandscape)
                 let window = app.windows.firstMatch.frame
                 let isLandscape = window.width > window.height
                 // The iPhone is portrait-only for now (AppBundleTests,
                 // theIPhoneIsPortraitOnly), so it has no landscape to check.
-                if orientation == .landscapeLeft && !isLandscape { continue }
-                let context = "\(sizeName), \(isLandscape ? "landscape" : "portrait"), window \(window.size)"
+                if orientation == .landscapeLeft && !isLandscape {
+                    app.terminate()
+                    continue
+                }
+                let context = "\(textSize.name), \(isLandscape ? "landscape" : "portrait"), window \(window.size)"
 
                 for name in ["Yes", "No", "Emergency", "Again"] {
                     expectWhollyOnScreen(app.buttons[name], name, in: window, context)
@@ -129,12 +110,9 @@ final class HomeLayoutTests: XCTestCase {
                 }
                 XCTAssertEqual(slots.count, Self.largestCategoryCount, "no category had the largest count (\(context))")
 
-                let screenshot = XCTAttachment(screenshot: app.screenshot())
-                screenshot.name = "Home, \(context)"
-                screenshot.lifetime = .keepAlways
-                add(screenshot)
+                attachCapture(app, name: "Home, \(context)")
+                app.terminate()
             }
-            app.terminate()
         }
     }
 }

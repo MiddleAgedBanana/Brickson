@@ -339,28 +339,23 @@ private struct CategoryGrid: View {
     let select: (UUID) -> Void
 
     var body: some View {
-        let grid = LazyVGrid(
-            columns: Array(repeating: GridItem(.flexible(), spacing: HomeShape.controlSpacing), count: columns),
-            spacing: HomeShape.controlSpacing
-        ) {
-            ForEach(categories) { category in
-                let isSelected = category.uuid == selectedID
-                Button {
-                    select(category.uuid)
-                } label: {
-                    FittedLabel(
-                        category.name,
-                        systemImage: isSelected ? "checkmark.circle.fill" : category.symbolName,
-                        font: .category
-                    )
-                }
-                .buttonStyle(HomeButtonStyle(
-                    fill: isSelected ? Palette.phraseFill : Palette.controlFill,
-                    isSelected: isSelected
-                ))
-                .frame(height: buttonHeight)
-                .accessibilityAddTraits(isSelected ? .isSelected : [])
+        let grid = FixedColumns(categories, columns: columns) { category in
+            let isSelected = category.uuid == selectedID
+            Button {
+                select(category.uuid)
+            } label: {
+                FittedLabel(
+                    category.name,
+                    systemImage: isSelected ? "checkmark.circle.fill" : category.symbolName,
+                    font: .category
+                )
             }
+            .buttonStyle(HomeButtonStyle(
+                fill: isSelected ? Palette.phraseFill : Palette.controlFill,
+                isSelected: isSelected
+            ))
+            .frame(height: buttonHeight)
+            .accessibilityAddTraits(isSelected ? .isSelected : [])
         }
 
         if categories.count > HomeShape.categoryCapacity {
@@ -398,24 +393,19 @@ private struct PhraseGrid: View {
             )
             if let category {
                 let phrases = category.phrasesInOrder
-                let grid = LazyVGrid(
-                    columns: Array(repeating: GridItem(.flexible(), spacing: HomeShape.controlSpacing), count: columns),
-                    spacing: HomeShape.controlSpacing
-                ) {
-                    ForEach(phrases) { phrase in
-                        Button {
-                            speech.speak(phrase.text)
-                        } label: {
-                            FittedLabel(phrase.text, font: tileFont)
-                        }
-                        .buttonStyle(HomeButtonStyle(
-                            fill: category.isEmergency ? Palette.emergencyFill : Palette.phraseFill
-                        ))
-                        .frame(height: sizing.tileHeight)
-                        // Lets the UI tests tell phrase tiles from controls
-                        // (LaunchTests' accessibility audit). Not spoken.
-                        .accessibilityIdentifier("phraseTile")
+                let grid = FixedColumns(phrases, columns: columns) { phrase in
+                    Button {
+                        speech.speak(phrase.text)
+                    } label: {
+                        FittedLabel(phrase.text, font: tileFont)
                     }
+                    .buttonStyle(HomeButtonStyle(
+                        fill: category.isEmergency ? Palette.emergencyFill : Palette.phraseFill
+                    ))
+                    .frame(height: sizing.tileHeight)
+                    // Lets the UI tests tell phrase tiles from controls
+                    // (LaunchTests' accessibility audit). Not spoken.
+                    .accessibilityIdentifier("phraseTile")
                 }
 
                 if sizing.scrolls || phrases.count > rows * columns {
@@ -426,6 +416,48 @@ private struct PhraseGrid: View {
             } else if phraseLibraryIssue == nil {
                 Text("No phrases yet.")
                     .font(.title2)
+            }
+        }
+    }
+}
+
+// MARK: - Fixed columns
+
+/// Items in rows of `columns` equal cells, in order, with
+/// `HomeShape.controlSpacing` between them. A short last row keeps its cells
+/// at the leading edge, at the same width and place as the rows above, so a
+/// slot is in the same place whatever fills it (invariant 8).
+///
+/// It is built from plain stacks rather than a lazy grid: lazy rows disappear
+/// while Apple's accessibility audit increases the text size, so the audit
+/// cannot compare them (docs/log/2026-10-21-ui-test-diagnosis.md).
+private struct FixedColumns<Item: Identifiable, Cell: View>: View {
+    let items: [Item]
+    let columns: Int
+    let cell: (Item) -> Cell
+
+    init(_ items: [Item], columns: Int, @ViewBuilder cell: @escaping (Item) -> Cell) {
+        self.items = items
+        self.columns = max(columns, 1)
+        self.cell = cell
+    }
+
+    var body: some View {
+        VStack(spacing: HomeShape.controlSpacing) {
+            ForEach(Array(stride(from: 0, to: items.count, by: columns)), id: \.self) { start in
+                HStack(spacing: HomeShape.controlSpacing) {
+                    ForEach(items[start..<min(start + columns, items.count)]) { item in
+                        cell(item)
+                            .frame(maxWidth: .infinity)
+                    }
+                    // Empty cells keep a short row's tiles at the full rows'
+                    // width and place.
+                    ForEach(0..<(columns - min(columns, items.count - start)), id: \.self) { _ in
+                        Color.clear
+                            .frame(maxWidth: .infinity, maxHeight: 0)
+                            .accessibilityHidden(true)
+                    }
+                }
             }
         }
     }

@@ -13,18 +13,15 @@ final class AudioSafetyMonitor {
     private(set) var audioSessionHealthy = true
 
     @ObservationIgnored private let readOutputVolume: @MainActor () -> Float
-    @ObservationIgnored private let notificationCenter: NotificationCenter
     @ObservationIgnored private var outputVolumeObservation: NSKeyValueObservation?
-    @ObservationIgnored private var observerTokens: [NSObjectProtocol] = []
-    @ObservationIgnored private var mediaServicesResetHandler: (@MainActor () -> Void)?
 
-    convenience init() {
+    /// The app's monitor: the shared session's volume, and its events.
+    convenience init(events: AudioSessionEvents) {
         let audioSession = AVAudioSession.sharedInstance()
         self.init(
             initialOutputVolume: audioSession.outputVolume,
             readOutputVolume: { audioSession.outputVolume },
-            notificationCenter: .default,
-            notificationObject: audioSession
+            events: events
         )
 
         // AVAudioSession documents outputVolume as KVO-observable, but the
@@ -45,56 +42,17 @@ final class AudioSafetyMonitor {
     init(
         initialOutputVolume: Float,
         readOutputVolume: @escaping @MainActor () -> Float,
-        notificationCenter: NotificationCenter,
-        notificationObject: AnyObject
+        events: AudioSessionEvents
     ) {
         outputVolume = initialOutputVolume
         self.readOutputVolume = readOutputVolume
-        self.notificationCenter = notificationCenter
-
-        observerTokens.append(
-            notificationCenter.addObserver(
-                forName: AVAudioSession.routeChangeNotification,
-                object: notificationObject,
-                queue: .main
-            ) { [weak self] _ in
-                MainActor.assumeIsolated { self?.refreshOutputVolume() }
-            })
-
-        observerTokens.append(
-            notificationCenter.addObserver(
-                forName: AVAudioSession.mediaServicesWereLostNotification,
-                object: notificationObject,
-                queue: .main
-            ) { [weak self] _ in
-                MainActor.assumeIsolated {
-                    self?.audioSessionHealthy = false
-                }
-            })
-
-        observerTokens.append(
-            notificationCenter.addObserver(
-                forName: AVAudioSession.mediaServicesWereResetNotification,
-                object: notificationObject,
-                queue: .main
-            ) { [weak self] _ in
-                MainActor.assumeIsolated {
-                    guard let self else { return }
-                    // Reset invalidates every audio object. Restore configuration
-                    // now, but stay visibly unhealthy until a later user action
-                    // proves that reactivation works.
-                    self.audioSessionHealthy = false
-                    self.refreshOutputVolume()
-                    self.mediaServicesResetHandler?()
-                }
-            })
+        events.subscribe { [weak self] event in
+            self?.handle(event)
+        }
     }
 
     isolated deinit {
         outputVolumeObservation?.invalidate()
-        for token in observerTokens {
-            notificationCenter.removeObserver(token)
-        }
     }
 
     /// The KVO change handler, safe to call from any thread.
@@ -120,7 +78,22 @@ final class AudioSafetyMonitor {
         refreshOutputVolume()
     }
 
-    func onMediaServicesReset(_ handler: @escaping @MainActor () -> Void) {
-        mediaServicesResetHandler = handler
+    private func handle(_ event: AudioSessionEvent) {
+        switch event {
+        case .routeChanged, .previousOutputUnavailable:
+            refreshOutputVolume()
+        case .mediaServicesLost:
+            audioSessionHealthy = false
+        case .mediaServicesReset:
+            // Reset invalidates every audio object. The coordinator restores
+            // the configuration now, but health stays visibly unresolved until
+            // a later user action proves that activation works.
+            audioSessionHealthy = false
+            refreshOutputVolume()
+        case .interrupted:
+            // An interruption is reported by what it stopped (speech or the
+            // alarm), not as a broken session.
+            break
+        }
     }
 }
