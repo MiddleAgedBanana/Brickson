@@ -33,8 +33,10 @@ Status: intent | spec | plan | building | done.*
 - **Who and what it affects:** people (by stage and input method),
   families, and the parts of the app.
 - **Constraints:** the AGENTS.md invariants and decisions that bind it.
-- **Open questions:** each one answered here or listed in
-  docs/DECISIONS.md, *Proposed decisions*.
+- **Open questions:** each one answered here, or decided and recorded
+  as its own entry in docs/DECISIONS.md. Only a question that is the
+  owner's to answer (the name, the price, anything personal) goes to
+  docs/DECISIONS.md, *Waiting on the owner*.
 
 ## Spec
 

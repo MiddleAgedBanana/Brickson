@@ -19,7 +19,7 @@ definition of done**.
 | Stage | What it produces here | Gate | Who passes the gate |
 |---|---|---|---|
 | 1. Plan | A row in [`ROADMAP.md`](ROADMAP.md) and the *Intent* of a work file; its decisions recorded in DECISIONS.md | The item serves the owner's goal, and nothing it needs is waiting on the owner | The agent planning it; the owner only for the few decisions that are theirs |
-| 2. Design | The *Spec* of the work file; screens in the Figma file, from Apple's iOS and iPadOS 27 UI kit | The screens are linked in the pull request before it is ready to merge | The owner, by merging |
+| 2. Design | The *Spec* of the work file; screens in the Figma file, from Apple's iOS and iPadOS 27 UI kit | The screens are drawn and linked from the work file before the first code commit | The agent designing it; the owner accepts them by merging |
 | 3. Build | The *Plan* of the work file; a branch and pull request; tests written first | A written plan before the first code commit | The agent, checked by reviewers |
 | 4. Test | `scripts/test.sh`, GitHub CI, the device-check table | The required checks "Unit tests" and "UI tests" pass | GitHub's `main` ruleset |
 | 5. Deploy | A merge into `main`; the website; TestFlight and App Store builds | The owner merges, and only the owner uploads or releases | The owner |
@@ -112,11 +112,12 @@ state on one page so the owner can see that nothing moves
 designed from the space available, never for one device model (the
 owner's goal, 2026-10-21).
 
-**Gate:** the screens are drawn and linked from the pull request that
-puts them on screen before it is ready to merge, so the owner sees them
-when deciding to merge; the merge accepts them. Work that changes
-nothing on screen needs no screens; its spec is reviewed with its pull
-request.
+**Gate:** the screens are drawn in the Figma file and linked from the
+work file's *Spec* before the first code commit, so the build follows a
+design rather than the other way round. The pull request links them too,
+and the owner's merge accepts the design along with the code. Work that
+changes nothing on screen needs no screens; its spec is reviewed with its
+pull request.
 
 **Done when:**
 - the work file's *Spec* is committed;

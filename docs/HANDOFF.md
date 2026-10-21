@@ -47,7 +47,8 @@ Each names who closes it: *(owner)*, the thread working on it, or the
 release in docs/ROADMAP.md when no thread has it yet.
 
 - Home's sizes are plain defaults, not measured gaze, switch or touch
-  sizes, and the phrase grid scrolls (invariant 11). *(Phone layout and word fitting; R1)*
+  sizes, and the phrase grid scrolls (invariant 11). Ending the scroll is R0
+  (ROADMAP item 3); measured sizes for each input profile are R1. *(Phone layout and word fitting)*
 - On an iPhone at the default text size "Emergency" breaks mid-word, the
   category row scrolls sideways and hides categories, and the starter
   library scrolls; at the largest size the labels clip. *(Phone layout and word fitting)*

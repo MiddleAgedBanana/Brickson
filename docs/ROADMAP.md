@@ -47,8 +47,8 @@ input method they actually use?
 Before R0's features are judged, Brickson runs on the owner's own iPhone
 and iPad and the owner works through the table in
 [`docs/HANDOFF.md`](HANDOFF.md), *Checks that need a real device*. This
-needs the Team ID in `project.yml` (`DEVELOPMENT_TEAM`, the personal
-membership chosen on 2026-10-10) and, before anything is uploaded, the
+needs the Team ID in `project.yml` (`DEVELOPMENT_TEAM`, from the personal
+membership the owner chose on 2026-10-10; docs/DECISIONS.md, *App identity*) and, before anything is uploaded, the
 final bundle identifier.
 
 ## R0 "A voice you can rely on"
@@ -58,13 +58,15 @@ final bundle identifier.
 iPad through TestFlight, and every row of the device-check table that R0
 touches has a recorded result.
 
-**Release gate.** No build goes to external TestFlight testers or to App
-Review until: the R0 items below are complete; the device checks they
+**Release gate.** No build goes to App Review until: the R0 items below
+are complete, including item 11's TestFlight pilot; the device checks they
 touch are logged in `docs/log/`; UI tests are green on an iPhone and an
 iPad at the default and largest text sizes, light and dark; and the
 privacy policy, README and website say only what the build does. A
 stand-in Home would likely fail App Review's completeness and minimum
-functionality guidelines (2.1 and 4.2).
+functionality guidelines (2.1 and 4.2). That pilot is the one external
+TestFlight group before the gate passes, and it goes out once items 1 to
+10 are complete and the rest of the gate holds.
 
 | # | Item | What it delivers | Owner | Status (2026-10-21) |
 |---|---|---|---|---|
@@ -79,7 +81,7 @@ functionality guidelines (2.1 and 4.2).
 | 9 | Screens designed in Figma | Home, typing, alarm, Settings, voice and library screens from Apple's iOS 27 UI kit, positions shown not to move, measured colour tokens | Figma and Claude Design screens | In progress (`docs/DESIGN.md`) |
 | 10 | App Store readiness | Apple's current requirements, store text with no price words, accessibility and privacy labels, screenshots, review notes, the privacy policy's unbuilt sections built or deleted | App Store readiness and ASO | In progress (`docs/APP-STORE.md`, `docs/ASO.md`) |
 | 11 | Release chores | The brand icon installed, a license decision, the App Store Connect record (after the name is confirmed), TestFlight to the owner and a small group that includes a person living with ALS and a speech-language pathologist | Owner, with items 9 and 10 | Waiting on decisions |
-| 12 | Plan and maintain | This roadmap, the decisions list, the handoff, the way of working ([`docs/SDLC.md`](SDLC.md)) | Roadmap, decisions and repo review | In progress |
+| 12 | Plan and maintain | This roadmap, the decisions list, the handoff, the way of working ([`docs/SDLC.md`](SDLC.md)) | Roadmap, decisions and repo review | Landed with PR #15; each pull request keeps its own rows current |
 
 **Left out of R0 on purpose:** stage profiles, prediction, recorded
 phrases, Siri and Shortcuts, caregiver alerts and the listener display.
