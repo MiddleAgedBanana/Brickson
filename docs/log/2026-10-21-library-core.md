@@ -66,22 +66,28 @@ phrases".
 
 The memo listed what only a real SwiftData run can settle.
 `SwiftDataBehaviourTests` asks each one; where the only possible failure
-is a crash, the test says so. The results come from this pull request's
-CI run and are filled in below when it finishes.
+is a crash, the test says so. The answers below come from this pull
+request's CI run 39592594864 (commit `ef7b3b6`): Xcode 26.6 (17F113), an
+iPad Pro 13-inch (M5) simulator on iOS 26.5, in-memory stores except S3,
+which uses a store on disk opened read-only. They are simulator answers
+for that toolchain; a newer Xcode or iOS can change them, and the tests
+will say so.
 
-| # | Question | Test | Result |
+| # | Question | Test | Answer |
 |---|---|---|---|
-| — | Does SwiftData autosave a new main context, and does SwiftUI's `.modelContainer` leave autosave off once Brickson turns it off? | `aNewMainContextAutosaves`, `attachingTheLibraryToSwiftUIKeepsAutosaveOff` | Pending CI |
-| S1 | After a delete saved from another context, does the main context stop seeing it? Does touching a model object the main context still holds crash? | `s1aDeleteSavedElsewhereIsSeenByTheMainContext`, `s1aHeldObjectDeletedElsewhereCanBeTouched` | Pending CI |
-| S2 | Does a category's phrase list in the main context drop a phrase deleted elsewhere? (A model-level stand-in for the memo's Home-level check, which needs an editing screen.) | `s2aPhraseDeletedElsewhereLeavesItsCategory` | Pending CI |
-| S3 | After SwiftData's own save fails (a store opened read-only), is the main context clean when the failing context was another one? Is the change still pending when it was the main context? | `s3aFailedSaveElsewhereLeavesTheMainContextClean`, `s3aFailedSaveInTheMainContextLeavesTheChangePending` | Pending CI |
-| S4 | Does `rollback()` crash after deleting a category and its phrases one by one (no cascade)? Does a `transaction` whose block throws write anything? | `s4RollbackAfterDeletingACategoryAndItsPhrases`, `s4ATransactionThatThrowsWritesNothing` | Pending CI |
+| — | Does SwiftData autosave a new main context, and does SwiftUI's `.modelContainer` leave autosave off once Brickson turns it off? | `aNewMainContextAutosaves`, `attachingTheLibraryToSwiftUIKeepsAutosaveOff` | Yes, and yes: a new main context autosaves, and attaching the library to SwiftUI leaves it off. |
+| S1 | After a delete saved from another context, does the main context stop seeing it? Does touching a model object the main context still holds crash? | `s1aDeleteSavedElsewhereIsSeenByTheMainContext`, `s1aHeldObjectDeletedElsewhereCanBeTouched` | The main context stops seeing it at once. Reading a held object's `isDeleted` and `uuid` after the delete did not crash. The reference app's crash ("This model instance was invalidated") did not appear. |
+| S2 | Does a category's phrase list in the main context drop a phrase deleted elsewhere? (A model-level stand-in for the memo's Home-level check, which needs an editing screen.) | `s2aPhraseDeletedElsewhereLeavesItsCategory` | Yes. |
+| S3 | After SwiftData's own save fails (a store opened read-only), is the main context clean when the failing context was another one? Is the change still pending when it was the main context? | `s3aFailedSaveElsewhereLeavesTheMainContextClean`, `s3aFailedSaveInTheMainContextLeavesTheChangePending` | Yes, and yes. That second answer is why no edit is made in the main context: a later save would write the failed change. |
+| S4 | Does `rollback()` crash after deleting a category and its phrases one by one (no cascade)? Does a `transaction` whose block throws write anything? | `s4RollbackAfterDeletingACategoryAndItsPhrases`, `s4ATransactionThatThrowsWritesNothing` | **`rollback()` crashes** ("Unexpected backing data for snapshot creation"), the same trap as the reference app's cascade delete. The test is now disabled, naming issue #19. A transaction that throws writes nothing. |
 
-If a probe crashes, it is committed disabled with an issue number
-(docs/LESSONS.md, "Commit a crash reproduction, disabled"), and the result
-is recorded here. Brickson's code depends on none of the answers: it never
-holds a model object across an edit, never calls `rollback()`, and never
-edits in the main context.
+Brickson's code depends on none of these answers: it never holds a model
+object across an edit, never calls `rollback()`, and never edits in the
+main context. S4 shows why the second rule matters: explicit deletes
+instead of a cascade do not make a rollback safe (docs/LESSONS.md,
+"Never roll back a cascade delete"). On the same run, every kind of edit
+had its save made to fail (`LibraryEditorTests.aFailedSaveChangesNothing`),
+deletes included, with no crash and nothing changed.
 
 ## Commits
 
@@ -91,14 +97,15 @@ the existing tests and write these documents.
 
 ## Review findings
 
-Codex and Copilot reviewed the first push. Every finding is fixed in the
-second push, except the one that asked for a decision: letting a replace
+Codex and Copilot reviewed the first push, and Codex the second. Every
+finding is fixed (the last, a repeated identity inside one backup, in
+`ef7b3b6`), except the one that asked for a decision: letting a replace
 run after a safety copy is an exception to invariant 7, so DECISIONS now
 leaves it to the owner and the code keeps refusing it. Copilot also asked
 that the SwiftData probes not run in the required suite if they can only
 fail by crashing. They run once on CI so their answers are known; a probe
 that crashes is then committed disabled with an issue (docs/LESSONS.md),
-and the result recorded above.
+and the result recorded above. One did: the S4 rollback probe, issue #19.
 
 ## Verified
 
@@ -106,13 +113,19 @@ and the result recorded above.
   Xcode, SwiftData or UIKit): the five pure files (`LibrarySnapshot`,
   `LibraryEdit`, `LibraryRules`, `LibraryImport`, `BackupCodec`) compile
   in a scratch package with the project's concurrency settings, and the
-  56 tests in `LibraryEditTests`, `LibraryImportTests` and
+  57 tests in `LibraryEditTests`, `LibraryImportTests` and
   `BackupCodecTests` pass. A one-line stand-in replaced
   `String(localized:)`, which Linux lacks.
-- **Everything else is checked only by this pull request's GitHub CI
-  run**: the app build, the SwiftData tests (`LibraryEditorTests`,
-  `PhraseLibraryTests`, `SwiftDataBehaviourTests`), the starter and
-  symbol tests, and the UI tests.
+- **GitHub CI, run 39592594864 on commit `ef7b3b6`** (Xcode 26.6, iPad
+  Pro 13-inch (M5) simulator, iOS 26.5): the app built, and 206 of 207
+  unit tests passed, including every library suite (`LibraryEditTests`,
+  `LibraryImportTests`, `LibraryEditorTests`, `BackupCodecTests`,
+  `PhraseLibraryTests`, `StarterPhrasesTests`, `LibraryRulesTests`). The
+  one failure was the S4 rollback probe, which crashed as described
+  above and is now disabled. The 8 UI tests passed.
+- The commit after that run (the disabled probe, and test stores released
+  before their folder is removed) is checked by the next CI run, after
+  the rebase.
 - Each new test's doc comment names the change that would make it fail.
   The per-kind tests run over `LibraryEdit.Kind.allCases`, and the
   fixtures' `sampleEdit` switch has no default, so a new kind of edit
@@ -134,8 +147,12 @@ and the result recorded above.
 
 ## Follow-ups
 
-- Read this pull request's CI run and fill in the S1 to S4 results above.
-  *(This thread.)*
+- Re-enable the S4 rollback probe once when CI moves to a newer Xcode or
+  iOS, and record the result on issue #19. *(Whoever moves CI.)*
+- Unit tests that open stores written by every shipped schema version,
+  starting with V1, so a later build is shown to open what an earlier one
+  wrote (repo review, sdlc-19). Needs a store file made by the app on a
+  Mac or in CI. *(Next library pull request.)*
 - Safety copies, then export (share sheet) and import (file picker in the
   family area), with the privacy policy checked in the same pull request.
   *(Next library pull request.)*

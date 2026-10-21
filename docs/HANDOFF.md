@@ -240,8 +240,8 @@ Not yet seen working, to check after the merge and the settings:
 6. Port step 1's remainder: the Get Attention alarm (`AttentionAlertPlayer`
    and its tone) with Stop Alert in a different place, and the audio
    warning strip.
-7. Step 2's remainder: read the SwiftData behaviour tests' results on CI
-   and record them (docs/log/2026-10-21-library-core.md, S1 to S4); then
+7. Step 2's remainder (the SwiftData answers S1 to S4 are recorded in
+   docs/log/2026-10-21-library-core.md; `rollback()` crashes, issue #19):
    export and import (file picker only), safety copies if the owner
    adopts them (DECISIONS, "Replacing the library"), and the editing
    screens (step 6), all on the library core.

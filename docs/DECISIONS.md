@@ -135,8 +135,8 @@ and the other SwiftData behaviours this rests on, are probed by
 `docs/log/2026-10-21-library-core.md`).
 
 Rejected: editing in the main context and undoing a failed save with
-`rollback()` or with hand-written inverse edits. The first can crash after
-a delete; the second is more code with more ways to half-change.
+`rollback()` or with hand-written inverse edits. The first crashes after
+a delete, even without a cascade (S4, issue #19); the second is more code with more ways to half-change.
 
 ## No iCloud sync in 1.0
 

@@ -81,21 +81,26 @@ struct LibraryEditorTests {
         let folder = URL.temporaryDirectory.appending(path: "LibraryEditorTests-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: folder) }
-        let url = folder.appending(path: "library.store")
-        let writable = try PhraseLibraryStore.makeContainer(ModelConfiguration(
-            schema: PhraseLibraryStore.schema, url: url, cloudKitDatabase: .none
-        ))
-        try PhraseLibrarySeeder.seedIfEmpty(writable, with: F.library)
-        let readOnly = try PhraseLibraryStore.makeContainer(ModelConfiguration(
-            schema: PhraseLibraryStore.schema, url: url, allowsSave: false, cloudKitDatabase: .none
-        ))
-        let plan = try makePlan(.deleteCategory(F.basicsID), in: readOnly)
+        // The containers live only in this block, so they are released
+        // before the folder is removed (SQLite warned "vnode unlinked while
+        // in use" on CI when they outlived it).
+        do {
+            let url = folder.appending(path: "library.store")
+            let writable = try PhraseLibraryStore.makeContainer(ModelConfiguration(
+                schema: PhraseLibraryStore.schema, url: url, cloudKitDatabase: .none
+            ))
+            try PhraseLibrarySeeder.seedIfEmpty(writable, with: F.library)
+            let readOnly = try PhraseLibraryStore.makeContainer(ModelConfiguration(
+                schema: PhraseLibraryStore.schema, url: url, allowsSave: false, cloudKitDatabase: .none
+            ))
+            let plan = try makePlan(.deleteCategory(F.basicsID), in: readOnly)
 
-        #expect(throws: LibraryEditError.saveFailed) {
-            try LibraryEditor.apply(plan, to: readOnly)
+            #expect(throws: LibraryEditError.saveFailed) {
+                try LibraryEditor.apply(plan, to: readOnly)
+            }
+            #expect(try LibraryEditor.read(readOnly) == F.library)
+            #expect(try LibraryEditor.read(writable) == F.library)
         }
-        #expect(try LibraryEditor.read(readOnly) == F.library)
-        #expect(try LibraryEditor.read(writable) == F.library)
     }
 
     /// A plan made before another edit landed is refused. Fails if apply
@@ -112,9 +117,9 @@ struct LibraryEditorTests {
         #expect(try LibraryEditor.read(container) == first.after)
     }
 
-    /// Until safety copies exist, a replace that would remove the person's
-    /// words cannot run (invariant 7). Fails if apply ignores the plan's
-    /// flag.
+    /// A replace that would remove the person's words cannot run
+    /// (invariant 7; docs/DECISIONS.md, "Replacing the library"). Fails if
+    /// apply ignores the plan's flag.
     @Test func aReplaceThatNeedsASafetyCopyIsRefused() throws {
         let container = try store()
         let plan = try makePlan(F.sampleEdit(.replace), in: container, starter: nil)

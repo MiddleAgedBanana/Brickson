@@ -169,15 +169,21 @@ struct SwiftDataBehaviourTests {
         let folder = URL.temporaryDirectory.appending(path: "SwiftDataBehaviourTests-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: folder) }
-        let url = folder.appending(path: "library.store")
-        let writable = try PhraseLibraryStore.makeContainer(ModelConfiguration(
-            schema: PhraseLibraryStore.schema, url: url, cloudKitDatabase: .none
-        ))
-        try PhraseLibrarySeeder.seedIfEmpty(writable, with: F.library)
-        let readOnly = try PhraseLibraryStore.makeContainer(ModelConfiguration(
-            schema: PhraseLibraryStore.schema, url: url, allowsSave: false, cloudKitDatabase: .none
-        ))
-        try body(readOnly)
+        // The containers live only in this block, so they are released
+        // before the folder is removed. On CI, removing the store's files
+        // while its containers were still alive made SQLite warn "vnode
+        // unlinked while in use".
+        do {
+            let url = folder.appending(path: "library.store")
+            let writable = try PhraseLibraryStore.makeContainer(ModelConfiguration(
+                schema: PhraseLibraryStore.schema, url: url, cloudKitDatabase: .none
+            ))
+            try PhraseLibrarySeeder.seedIfEmpty(writable, with: F.library)
+            let readOnly = try PhraseLibraryStore.makeContainer(ModelConfiguration(
+                schema: PhraseLibraryStore.schema, url: url, allowsSave: false, cloudKitDatabase: .none
+            ))
+            try body(readOnly)
+        }
     }
 
     // MARK: S4: rollback and transaction
@@ -186,7 +192,14 @@ struct SwiftDataBehaviourTests {
     /// delete (its D28). Brickson never calls `rollback()`; this records
     /// whether the same crash happens with explicit, non-cascading deletes.
     /// It fails only by crashing, or if the rollback does not restore.
-    @Test func s4RollbackAfterDeletingACategoryAndItsPhrases() throws {
+    ///
+    /// It does crash ("Unexpected backing data for snapshot creation"), on
+    /// Xcode 26.6 with an iOS 26.5 simulator, so it is disabled: a crash
+    /// would stop the whole suite (docs/LESSONS.md, "Commit a crash
+    /// reproduction, disabled"). Re-enable it once on a newer Xcode or iOS
+    /// to see whether Apple fixed it, and record the result on the issue.
+    @Test(.disabled("Crashes SwiftData: rollback() after deletes traps (issue #19)"), .bug("https://github.com/MiddleAgedBanana/Brickson/issues/19"))
+    func s4RollbackAfterDeletingACategoryAndItsPhrases() throws {
         let container = try store()
         let context = scratch(container)
         let basics = try category(F.basicsID, in: context)
