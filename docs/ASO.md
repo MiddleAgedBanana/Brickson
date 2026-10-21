@@ -146,11 +146,17 @@ the name stays the brand when it is shortened under the icon.
 
 ### Subtitle (30 characters)
 
-**`Text to speech at every stage`** (29 characters). It adds the second most
-searched phrase, and says the idea of the app (it follows the person through
-the disease) without naming the disease twice.
+**For 1.0: `Phrases and text to speech`** (26 characters). It adds the
+second most searched phrase and says plainly what the app does, without
+promising anything 1.0 does not have.
 
-Alternatives: `Phrases that speak at once` (26), `Speak with phrases you choose`
+**Once stage profiles ship (R1): `Text to speech at every stage`** (29
+characters). It keeps the same searched phrase and adds the idea of the app
+(it follows the person through the disease) without naming the disease
+twice. Before profiles exist it would promise more than the build does, so
+it waits; the subtitle can change with any new version.
+
+Other options: `Phrases that speak at once` (26), `Speak with phrases you choose`
 (29).
 
 ### Keywords (100 bytes)
@@ -160,7 +166,8 @@ communication,nonverbal,speak,talk,voice,eye,gaze,switch,assistive,augmentative,
 ```
 
 94 bytes. Words already in the name and subtitle (brickson, aac, for, als,
-text, to, speech, at, every, stage) are left out, because Apple already
+phrases, and, text, to, speech; at, every and stage with the R1 subtitle)
+are left out, because Apple already
 combines them with these. "mnd" stays because some US caregivers use it.
 
 ### Promotional text (170 characters, can change any time)
@@ -293,16 +300,19 @@ localization (APP-STORE.md, section 10), so:
 
 | Locale | Stores | Name | Subtitle | Keywords |
 | --- | --- | --- | --- | --- |
-| English (U.S.) | US | `Brickson: AAC for ALS` | `Text to speech at every stage` | as above |
-| English (Canada) | Canada | `Brickson: AAC for ALS` | `Text to speech at every stage` | as US |
-| English (U.K.) | UK, Ireland | `Brickson: AAC for MND` | `Text to speech at every stage` | below |
-| English (Australia) | Australia, New Zealand | `Brickson: AAC for MND` | `Text to speech at every stage` | below |
+| English (U.S.) | US | `Brickson: AAC for ALS` | `Phrases and text to speech` | as above |
+| English (Canada) | Canada | `Brickson: AAC for ALS` | `Phrases and text to speech` | as US |
+| English (U.K.) | UK, Ireland | `Brickson: AAC for MND` | `Phrases and text to speech` | below |
+| English (Australia) | Australia, New Zealand | `Brickson: AAC for MND` | `Phrases and text to speech` | below |
 
 UK and Australia keywords (99 bytes):
 
 ```
 communication,aid,motor,neurone,nonverbal,speak,talk,voice,eye,gaze,switch,assistive,als,board,type
 ```
+
+The subtitle changes to `Text to speech at every stage` in every locale
+once profiles ship (see *Subtitle*).
 
 In the UK and Australian descriptions, the second paragraph begins "Brickson
 is built for people living with MND (also called ALS)". The rest of the text

@@ -89,8 +89,10 @@ to undo; step 5 is, so it waits for the name.
 9. **Declare EU trader status** (section 11). This is your own legal
    self-assessment; until it is done the app can't be offered in the EU.
 10. **Upload a build** from your Mac (Xcode → Product → Archive → Distribute
-    App → App Store Connect). An agent prepares the build settings first;
-    `CURRENT_PROJECT_VERSION` must go up with every upload.
+    App → App Store Connect). An agent prepares the build settings first:
+    `MARKETING_VERSION` in `project.yml` is the version people see (0.1.0
+    today; set it to the release version, such as 1.0, before the archive
+    you submit), and `CURRENT_PROJECT_VERSION` must go up with every upload.
 11. **Test with TestFlight** (section 12): first yourself, then a few people
     living with ALS, family members and a speech-language pathologist.
 12. **Fill in the version page,** pasting from [ASO.md](ASO.md): screenshots
@@ -99,7 +101,11 @@ to undo; step 5 is, so it waits for the name.
     your legal name, for example "2027 Your Name"; Apple adds ©), and App
     Review information: your name, email and phone (the phone in
     international form, such as +1 555 555 0100), no sign-in, and the notes
-    in section 8.
+    in section 8 (delete any sentence still tagged `[needs: …]` for
+    something the build does not have). In the **Build** section, click +
+    and choose the build that passed TestFlight, then Save; a version can't
+    be submitted without one
+    ([choose a build to submit](https://developer.apple.com/help/app-store-connect/manage-builds/choose-a-build-to-submit)).
 13. **Save draft Accessibility Nutrition Labels** for iPhone and iPad
     (section 4), and add the Accessibility URL if the page exists.
 14. **Submit for review** with *Manually release this version*, so nothing
@@ -110,13 +116,13 @@ to undo; step 5 is, so it waits for the name.
 
 ## 2. Before anything is submitted
 
-The project's release gate holds every external TestFlight build and every
-App Review submission until the first release's work is done: today that is
-docs/HANDOFF.md, *Next steps* and *Checks that need a real device*, and the
-roadmap (docs/ROADMAP.md, when the roadmap's pull request lands) will name it
-R0. The App
-Store adds these hard requirements, checked against Apple's pages on
-2026-10-21:
+The project's release gate (docs/ROADMAP.md, R0, *Release gate*) holds
+every App Review submission until R0 is complete, including item 11's
+TestFlight pilot. That pilot is the one external TestFlight group allowed
+before the gate passes: it goes out once R0 items 1 to 10 are complete and
+the rest of the gate holds (device checks logged, UI tests green, and the
+policy, README and website true to the build). The App Store adds these
+hard requirements, checked against Apple's pages on 2026-10-21:
 
 | Requirement | Brickson today | Source |
 |---|---|---|
@@ -142,7 +148,7 @@ say so in What's New when it happens.
 
 | Policy sentence or section | True of the build? | Before submitting |
 |---|---|---|
-| Phrases and categories saved on the device | Yes | — |
+| "The phrases and categories you use, add or change" | Partly: the starter library is saved on the device, but adding and changing wait for editing | Ship editing, or reword to "The phrases and categories you use" |
 | "The message you are typing… stays until you clear it" | No: no typing yet | Ship typing with a kept draft, or delete the line |
 | "Your settings, such as the voice and speaking speed you chose" | Not yet: `SpeechService` can store both, but no screen lets a person choose them (no Settings yet). The policy no longer mentions a text-size setting (fixed 2026-10-21) | Ship voice and speed choice in Settings, or reword to the automatic voice and default speed |
 | Deleting things "in the app" | Not until editing ships | Ship editing, or reword |
@@ -314,8 +320,10 @@ checked twice. Two things follow:
   sheet, or a parental-consent block for a "significant update", must never
   cover Emergency, Yes, No or Get Attention, and must never stop someone
   communicating (invariants 2 and 10). If it is needed, the proposed shape is
-  a check in Settings or first run, never on Home, built by the Settings and
-  first run thread. This is listed in the roadmap's decision register.
+  a check the family opens from Settings, never on Home and never at first
+  launch, which opens Home (docs/DECISIONS.md, "First launch opens Home;
+  setup lives in Settings"), built by the Settings and first run thread.
+  This is listed in the roadmap's decision register.
 
 ## 7. App Privacy (the privacy "nutrition label")
 
@@ -357,7 +365,7 @@ information](https://developer.apple.com/help/app-store-connect/reference/app-in
 Guideline 2.3.1(a) asks for new features to be described "with specificity",
 and 2.5.4 allows background audio only "for their intended purposes". Paste
 this, after deleting every bracketed sentence whose feature is not in the
-build (1,812 bytes as drafted):
+build (1,865 bytes as drafted):
 
 > Brickson is a communication app (AAC) for people who cannot speak, such as
 > people living with ALS. A person chooses a phrase and the device says it
@@ -392,8 +400,9 @@ build (1,812 bytes as drafted):
 > The screen stays on while Brickson is open because many people who use it
 > cannot unlock their device.
 >
-> Brickson provides no healthcare service and makes no medical claims. The
-> privacy policy link is in Settings > Privacy. [needs: Settings]
+> Brickson provides no healthcare service and makes no medical claims.
+> [needs: the Privacy row in Settings; until then delete this sentence: The
+> privacy policy link is in Settings > Privacy.]
 
 Also: **no sign-in** (leave the demo account empty). Give a phone number App
 Review can reach.
@@ -531,9 +540,10 @@ testers](https://developer.apple.com/help/app-store-connect/test-a-beta-version/
 
 **Runbook, matched to the release gate above (R0 in the roadmap):**
 
-1. Gate: R0 items done, device checks logged in `docs/log/`, UI tests green on
-   iPhone and iPad at default and largest text, light and dark; policy,
-   README and website say only what the build does.
+1. Gate for the pilot: R0 items 1 to 10 done, device checks logged in
+   `docs/log/`, UI tests green on iPhone and iPad at default and largest
+   text, light and dark; policy, README and website say only what the build
+   does. The pilot itself is R0 item 11, so it is not a condition here.
 2. Internal build to the owner's own iPhone and iPad. Run the device checks
    in docs/HANDOFF.md.
 3. External group "First testers": a few people living with ALS, family
@@ -541,8 +551,16 @@ testers](https://developer.apple.com/help/app-store-connect/test-a-beta-version/
    Brickson is, in two sentences. What to Test: speak a phrase with your usual
    input method; use Emergency, Yes and No; try typing [if built]; tell us
    which input method you use and anything that was hard to reach or
-   happened by accident.
-4. Fix, re-test, then submit 1.0 to App Review.
+   happened by accident. Then, in TestFlight, select the group, click **Add
+   Builds**, choose the processed build and enter What to Test; **Submit
+   Review** sends it to TestFlight App Review (the first build gets a full
+   review). Leave "Automatically notify testers" on, or distribute the
+   build yourself once it is approved. Then invite testers by email or a
+   public link from the group's Testers tab
+   ([invite external testers](https://developer.apple.com/help/app-store-connect/test-a-beta-version/invite-external-testers)).
+4. Fix and re-test. When the pilot is done and the whole gate holds (R0
+   item 11 included), choose the build on the version page and submit 1.0
+   to App Review (section 1, steps 12 to 14).
 
 ## 13. Changes this needs in the app, and who owns them
 
@@ -556,6 +574,6 @@ testers](https://developer.apple.com/help/app-store-connect/test-a-beta-version/
 | Get Attention without flashing; Reduce Motion respected | Reduced Motion label | Speech engine and Get Attention |
 | A `site/accessibility/` page for the Accessibility URL | Section 4 | App Store readiness and ASO (follow-up) |
 | Delete the policy's unbuilt sections before 1.0 | Section 3 | App Store readiness and ASO, at release |
-| An age-range check only if needed, never over Home | Section 6 | Settings and first run, after the decision |
+| An age-range check only if needed, opened from Settings, never over Home or at first launch | Section 6 | Settings and first run, after the decision |
 | iPhone Duo inner-display layout and screenshots by April 2027 | Section 9 | Phone layout and word fitting |
 | No automatic rating prompt anywhere | Section 8 | Everyone |

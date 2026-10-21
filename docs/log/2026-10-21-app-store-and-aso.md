@@ -44,6 +44,12 @@ rejection.
   no live Xcode or SDK versions, the Digital Goods questionnaire, untagged
   claims about voice choice and profiles, the name status, the membership
   type, and the policy's settings sentence).
+- The commit after the merge: fixes from the review of that merge (the
+  release gate now matches the roadmap's, with the TestFlight pilot inside
+  it; choosing the build on the version page; `MARKETING_VERSION`;
+  assigning a build to the external group and inviting testers; a 1.0
+  subtitle that promises nothing unbuilt; the policy's "add or change" row;
+  a removable review-notes sentence; age checks kept out of first launch).
 - `f7382df` and the merge after `38f22f8`: `main` merged in (PRs #12, #13,
   #15).
 
@@ -72,5 +78,7 @@ Connect.
   (App Store readiness and ASO, with the website).
 - Before release, delete the policy sections for features 1.0 does not
   ship, and mark each row of APP-STORE.md, section 3, true or deleted.
-- Screenshots and the app preview wait for Home version 1, typing,
-  Settings and profiles (ASO.md, *Screenshots*).
+- The 1.0 screenshots wait for Home version 1, typing and Settings, and
+  use the large-text caption for number 4; only the profile screenshot,
+  the app preview and the R1 subtitle wait for profiles (ASO.md,
+  *Screenshots* and *Subtitle*).
