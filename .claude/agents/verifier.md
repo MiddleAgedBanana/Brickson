@@ -56,7 +56,9 @@ the branch's last commit and report:
 
 - the result of "Unit tests" and "UI tests", and the commit each ran on.
   A run on an older commit does not verify the newest one;
-- the Xcode version and simulator from the "Show the Xcode version" step;
+- the Xcode version from the "Show the Xcode version" step, and the
+  simulator from the build-and-test step, where `scripts/test.sh` prints
+  "Starting the simulator <udid>" and "Testing Brickson on: <destination>";
 - for a failure, the first failing test or error line from the job log,
   and whether the same test fails on `main` (`AGENTS.md`, *Gotchas*, on a
   slow first UI test).
