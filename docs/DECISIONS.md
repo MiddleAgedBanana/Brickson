@@ -44,7 +44,7 @@ holds.
 | Layouts from the space available, with floors set without a device table | "Layouts from the space available", below |
 | Minimum iOS 26.0, iPhone and iPad, set by two rules: every device that can use eye tracking runs the app, and every mapped accessibility API stays reachable behind `#available` | "Minimum iOS, iPhone and iPad" (Toolchain and iOS version targets; PR #12, merged) |
 | Home's slot plan with stable slot identifiers; solid fills on Home and the system's Liquid Glass elsewhere | "Home's slot plan", "Solid fills on Home, system glass elsewhere" (Figma and Claude Design screens; pull request not open yet) |
-| The App Store category is Utilities, with no secondary category; the age-rating answers give 4+ | "App Store category", "Age rating answers" (App Store readiness and ASO; PR #18, open) |
+| The App Store category is Utilities, with no secondary category; the age-rating answers give 4+ | "App Store category", "Age rating answers" (App Store readiness and ASO; PR #18) |
 | Home's fixed slots, labels and button style | Entries next to "Home version 0 is a stand-in" (Phone layout and word fitting; pull request not open yet) |
 | Typing as a state of Home under a band Apple's keyboard never covers, Apple's keyboard in 1.0, Writing Tools off, third-party keyboards refused, Return speaks, the typed message | "Typing is a state of Home", "Typing uses Apple's keyboard", "Writing Tools off while typing", "Third-party keyboards refused in 1.0", "Return speaks", "The typed message" (Typing foundation; pull request not open yet) |
 | Explicit saves, an Emergency category that is always there, fixed starter identities, editing, import, replace, the backup format, an unreadable library reported and never replaced | "Every save is explicit", "Starter phrases", "The emergency category is always there", "Editing the library", "Importing a backup", "Replacing the library", "Backup file format", "An unreadable library is reported, never replaced" (Library editing and backup format; PR #14, open) |
@@ -309,6 +309,39 @@ does ("an iPhone and iPad app that speaks for people living with ALS").
 "Free" about other things, such as Xcode, a free Apple Account or GitHub
 Pages, is fine. The reference app's handoff called its successor free, and
 earlier documents here copied that; the owner never decided it.
+
+## App Store category
+
+*2026-10-21. Default, adopted 2026-10-21: the owner left these choices to
+the project. Reversible if the owner objects.*
+
+Brickson's primary App Store category is **Utilities**, with no secondary
+category. Apple defines Utilities as apps that "solve a problem or complete
+a specific task", which speaking for someone is; Medical is for medical
+education, information management or health reference, which Brickson is
+not. A primary or secondary category of Medical or Health & Fitness would
+also require declaring, on the product page, whether the app is a regulated
+medical device in the US, UK and EEA, a legal question an individual
+developer should not answer alone. People find AAC apps by searching, so
+the category costs little in discovery. The reasons and Apple's sources are
+in docs/APP-STORE.md, section 5. The reference app's release checklist
+proposed Medical; this replaces it.
+
+## Age rating answers
+
+*2026-10-21. Default, adopted 2026-10-21: the owner left these choices to
+the project. Reversible if the owner objects.*
+
+Brickson answers every age-rating question No or None, which gives 4+.
+The one question that needs care is Medical or Treatment Information:
+the answer is None, because starter phrases such as "I need my medication."
+are the person's own words to the people nearby, not guidance on managing a
+condition. Infrequent would make the app 13+. The full answers are in
+docs/APP-STORE.md, section 6. Re-answer when the starter phrases, an in-app
+web view or caregiver alerts change what the app contains. Whether US state
+age-assurance laws require the Declared Age Range API is **not** decided
+here; any age check must never cover or block communication (invariants 2
+and 10).
 
 ## Versioned storage
 

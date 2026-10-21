@@ -109,7 +109,8 @@ release in docs/ROADMAP.md when no thread has it yet.
 - No Privacy row in the app, which App Review requires, and Personal Voice
   permission is asked at first launch without explanation. *(Settings and first run)*
 - The privacy policy describes features not built yet; each is built or its
-  sentence deleted before release. *(App Store readiness and ASO)*
+  sentence deleted before release (docs/APP-STORE.md, section 3, lists
+  each sentence). *(App Store readiness and ASO)*
 - The app icon is a placeholder; `design/brand/` is not installed. *(Figma and Claude Design screens)*
 - No license file, so all rights are reserved; the bundle identifier
   contains the owner's first name and is permanent after the first upload. *(owner)*
@@ -123,6 +124,8 @@ can be reversed; docs/DECISIONS.md):
    *Waiting on the owner*: the final name (and with it the bundle
    identifier), the price, how the name is said, the license, and your
    EU trader status (needed before the App Store release in the EU).
+   Everything App Store Connect will ask, in order, is in
+   [docs/APP-STORE.md](APP-STORE.md), section 1.
 2. Run the app once yourself and hear a phrase ([local setup](GETTING_STARTED.md)).
 3. Put your Team ID in `project.yml` (`DEVELOPMENT_TEAM`), then run the app
    on your iPhone and iPad and work through *Checks that need a real device*.
@@ -192,7 +195,7 @@ Simulators cannot show these. Record each result in a `docs/log/` file
   Billing → AI usage.
 - The [website](https://middleagedbanana.github.io/Brickson/) and its
   [privacy policy](https://middleagedbanana.github.io/Brickson/privacy/)
-  (Effective October 12, 2026) publish after each merge; on 2026-10-15 they
+  (Effective October 21, 2026, since PR #18) publish after each merge; on 2026-10-15 they
   matched `site/` byte for byte. The support page's "in development" lines
   change at release.
 
