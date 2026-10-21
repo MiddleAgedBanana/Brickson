@@ -61,7 +61,9 @@ actually use?
 - **The reference app**, FamilyVoice: `MiddleAgedBanana/ALS-app` at commit
   `6a22c1a`, a **private** repository. **Reference only. Never push to it or
   open pull requests on it.** Without access to it, follow `docs/LESSONS.md`,
-  which carries its rules.
+  which carries its rules. Where a session also loads the reference app's
+  own `AGENTS.md`, it describes that app and its one user: for Brickson,
+  this file wins.
 
 ## Build and test
 

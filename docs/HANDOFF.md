@@ -125,6 +125,8 @@ Simulators cannot show these. Record each result in a `docs/log/` file
 | A volume change made while Brickson was in the background shows when it returns | The volume warning (code audit L2) |
 | Buttons under Increase Contrast and Reduce Transparency, measured on the rendered pixels | Contrast of system components (invariant 6) |
 | The screen never dims or locks during a long session | `ScreenWakePolicy` (invariant 12) |
+| On a folding iPhone, open and folded, and in Stage Manager, Slide Over and iPhone Mirroring windows: nothing safety-critical is hidden or split | Layouts from the space available |
+| Eye Tracking and Dwell on an external display | Whether gaze profiles hold off the built-in screen |
 
 ## Repository, CI and website
 

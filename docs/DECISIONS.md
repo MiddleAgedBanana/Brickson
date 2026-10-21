@@ -8,6 +8,109 @@ changed and why, and keep the old reasoning in a "Before" line.
 "Owner" means the repository owner decided; "default" means an agent chose
 a reasonable default that the owner can overrule.
 
+## Waiting on the owner
+
+*2026-10-21.* On 2026-10-21 the owner asked to focus on building the app
+and to leave the logistics to the project. These are the only questions
+left for the owner, because each is personal, sets a price, or cannot be
+taken back. Until one is answered, nothing hard to undo is done under it.
+
+| Question | Recommended | Why |
+|---|---|---|
+| Is "Brickson" the final name, and so what is the bundle identifier? | Keep Brickson (retained publicly on 2026-10-12), with a bundle identifier that contains no personal name | The bundle identifier is public and can never change after the first upload; today's `family.avery.brickson` contains the owner's first name (*App identity*) |
+| What does Brickson cost? | No recommendation: the owner's call, before the first submission | Until then nothing anywhere states a price (*Price not decided*), and no purchase code is built |
+| How is "Brickson" said? | Tell an agent how it sounds; it sets a sound-alike spelling in `APP_SPOKEN_NAME` | VoiceOver and Siri say the name; only the owner knows how it should sound |
+| Should the code have a license? | Not yet: keep all rights reserved | A license can be added later, but one that has been granted cannot be withdrawn from copies already taken |
+| Is the owner a "trader" under the EU's Digital Services Act? | Decide when the App Store Connect record is made; if yes, publish a dedicated contact rather than a home address | App Store Connect asks before the app can be offered in the EU, and a trader's contact details are shown publicly |
+
+Owner steps that are actions, not decisions: the Team ID in
+`project.yml`, device runs, committing workflow files (docs/SDLC.md,
+*Deploy*), and every step in App Store Connect.
+
+## Decided by default on 2026-10-21
+
+*Default, adopted 2026-10-21: the owner left these choices to the
+project. Reversible if the owner objects.* Each was the recommended option
+of the research of 2026-10-15 (`docs/recon/`) or of the work that owns it.
+Decisions with their own entry are listed by title; the rest are recorded
+here. Entries kept by other work arrive with its pull request.
+
+| Decision | Where it is recorded |
+|---|---|
+| The releases and their order: R0, R1, R2 | `docs/ROADMAP.md` |
+| Layouts from the space available, with floors set without a device table | "Layouts from the space available", below |
+| Minimum iOS 26.0, iPhone and iPad | "Minimum iOS 26, iPhone and iPad" (Toolchain and iOS version targets) |
+| The App Store category is Utilities | "App Store category" (App Store readiness and ASO) |
+| Home's fixed slots, labels and button style | Entries next to "Home version 0 is a stand-in" (Phone layout and word fitting) |
+| Typing as a state of Home under a band Apple's keyboard never covers, Apple's keyboard in 1.0, Writing Tools off, third-party keyboards refused, Return speaks, the typed message | "Typing is a state of Home", "Typing uses Apple's keyboard", "Writing Tools off while typing", "Third-party keyboards refused in 1.0", "Return speaks", "The typed message" (Typing foundation) |
+| Explicit saves, an Emergency category that is always there, fixed starter identities, editing, import, replace, the backup format, an unreadable library reported and never replaced | "Every save is explicit", "Starter phrases", "The emergency category is always there", "Editing the library", "Importing a backup", "Replacing the library", "Backup file format", "An unreadable library is reported, never replaced" (Library editing and backup format) |
+| When the audio session is released, the alarm's sound, start-only Get Attention, no automatic resume, Personal Voice never written to a file | Entries next to "Background audio" (Speech engine and Get Attention) |
+| Home first with setup as a place in Settings, the Settings root, the voice picker, the Privacy row, the largest sizes when nobody answers setup, an "Anything changed?" check-in every three months that waits 30 days after Not Now | Entries next to "Personal Voice permission is asked at launch, for now" (Settings and first run) |
+
+Recorded here:
+
+- **iPhone orientations.** Portrait and both landscape orientations, not
+  upside down, from the pull request whose layout tests show a landscape
+  phone with no scrolling for the starter library; until then portrait
+  only. A phone on a wheelchair or bed mount is often sideways, and the
+  person may not be able to turn their head. That pull request updates
+  *Orientations*.
+- **No iCloud sync in 1.0** stands as recorded below.
+- **Caregiver alerts:** 1.0 alerts only with sound in the room (Get
+  Attention), and the privacy policy's caregiver-alerts section is deleted
+  before release. Anything that reaches another device needs network code,
+  which invariant 9 forbids, so it stays the owner's decision.
+- **Recorded phrases, in stages:** guidance for recording elsewhere first,
+  then importing and playing recordings (R1), then an in-app recorder
+  after device checks (R2).
+- **No purchase code** (StoreKit) until the owner decides a price.
+- **Who chooses the input profile:** the family, in Settings. Accessibility
+  features the system reports may suggest a profile, never switch it.
+- **No rating prompt on Home.** Brickson never asks for a review on its
+  own; a "Rate Brickson" row, if added, lives on a family Settings screen.
+- **Copilot's "Review new pushes" stays off.** Each review spends the
+  owner's AI credits, and Codex already reviews every push.
+- **No `REVIEW.md`.** AGENTS.md, *Code Review Rules*, is the review policy
+  every reviewer reads.
+- **The research is public** in `docs/recon/`, with personal details and
+  local paths removed.
+- **If storage cannot start at all,** the app still stops
+  (`PhraseLibraryStore.openForApp`), as the reference app did: no real way
+  for it to happen was found. Revisit if one is.
+- **At release, Mac and Apple Vision Pro availability are switched off**
+  in App Store Connect, matching *Minimum iOS 26, iPhone and iPad*.
+- **At most three pull requests wait for the owner's review at once**
+  (docs/SDLC.md, *Build*); other work continues on its branch.
+
+## Layouts from the space available
+
+*Default, adopted 2026-10-21: the owner left these choices to the
+project. Reversible if the owner objects.* The owner's goal of 2026-10-21
+asks for interfaces built from the space available with standard SwiftUI
+containers, "instead of building device-specific interfaces" (AGENTS.md,
+*Layout on every device and window*).
+
+- Layout code and the layout engine take the window's size, its safe
+  areas, Dynamic Type, the input profile and the library's shape, and
+  nothing that names a device: no device model, no table of screens, no
+  check of the screen's physical size. Size classes are hints, never the
+  reason a control moves. Test matrices and dated measurements may name
+  devices.
+- **Floors without a device table.** iOS does not report a screen's
+  physical density, so each profile's floors are physical sizes converted
+  to points once, at the densest supported screens (about 163 points per
+  inch, the 326 ppi screens at 2x), and used everywhere. A target is then
+  at least its physical size on every screen, and larger on most. The
+  reference app's gaze floors of 110, 88 and 72pt were sized on a 13-inch
+  iPad (about 132 points per inch); held at the densest screen they are
+  about 136, 109 and 89pt. The layout engine's fit tables decide whether
+  those hold on phones, and any shortfall is a named, measured exception.
+- The 2026-10-15 layout blueprint
+  (`docs/recon/2026-10-15/layout-blueprint.md`) keyed density, profiles and
+  the keyboard band to device tables; those parts are replaced by this
+  entry. Before: AGENTS.md said floors were "computed in physical size per
+  device".
+
 ## App identity
 
 *2026-10-10. Name: owner. Other values: default.*

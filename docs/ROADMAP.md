@@ -58,6 +58,14 @@ final bundle identifier.
 iPad through TestFlight, and every row of the device-check table that R0
 touches has a recorded result.
 
+**Release gate.** No build goes to external TestFlight testers or to App
+Review until: the R0 items below are complete; the device checks they
+touch are logged in `docs/log/`; UI tests are green on an iPhone and an
+iPad at the default and largest text sizes, light and dark; and the
+privacy policy, README and website say only what the build does. A
+stand-in Home would likely fail App Review's completeness and minimum
+functionality guidelines (2.1 and 4.2).
+
 | # | Item | What it delivers | Owner | Status (2026-10-21) |
 |---|---|---|---|---|
 | 1 | Current toolchain | CI and the Mac build with Apple's newest released Xcode; the minimum iOS decided | Toolchain and iOS version targets | PR #12 open; the owner committed its `tests.yml` on 2026-10-21; waits on the minimum iOS answer and green CI |
@@ -144,6 +152,35 @@ packages or SDKs, AI-generated replies, gesture-only controls, and custom
 eye, head or switch tracking. Nothing anywhere states a price for
 Brickson until the owner decides one (docs/DECISIONS.md, "Price not
 decided").
+
+## Repo review, 2026-10-21
+
+The repository was reviewed against the owner's goal for layouts keyed to
+devices, App Store and ASO gaps, and the way of working
+([`docs/recon/2026-10-21/repo-review.md`](recon/2026-10-21/repo-review.md):
+71 findings, each with an owner, not yet checked by a second reviewer).
+Each owning piece of work checks its findings before acting. The biggest:
+
+- The layout blueprint reads the screen and a table of devices; the
+  engine must take only the window's space (now a rule: AGENTS.md, *Layout
+  on every device and window*). *(Phone layout and word fitting)*
+- iPhone Duo and other folding or resizable windows are not planned for,
+  and App Store submissions will need iPhone Duo screenshots from April
+  2027 (App Store Connect release notes, 2026-10-15). *(Phone layout and word fitting; App Store readiness and ASO)*
+- No screenshots or result bundles leave CI, so cloud agents cannot see
+  what the UI tests saw. *(Test seams and CI evidence)*
+- No release or TestFlight runbook, and no plan for version and build
+  numbers. *(App Store readiness and ASO; Toolchain and iOS version
+  targets)*
+- The app icon is a placeholder, with no layered Liquid Glass icon.
+  *(Figma and Claude Design screens)*
+- Nothing technical stops an agent merging or pushing to `main`; the
+  owner's merge is the gate only by rule. *(Roadmap, decisions and repo
+  review: proposed guardrails)*
+
+Not reviewed yet: Apple's design guidelines and Liquid Glass adoption,
+and full accessibility API coverage (the "Accessibility API coverage"
+work, `docs/ACCESSIBILITY.md`).
 
 ## Held on purpose
 

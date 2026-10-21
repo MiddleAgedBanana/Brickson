@@ -138,6 +138,11 @@ stepping on each other.
   request at a time. Work in another's files goes to that owner as a
   message, not a commit (p28: parallel sessions in their own worktrees;
   `.claude/worktrees/` is ignored by git for that).
+- **Review keeps up with building.** At most three pull requests wait for
+  the owner's review at once, merged in roadmap order; other work
+  continues on its branch or as a draft. One beginner reviews everything,
+  and the playbook adds parallel work only while review keeps pace
+  (p28).
 - **The briefing.** `AGENTS.md` is this project's `CLAUDE.md` (Claude
   Code loads it through `CLAUDE.md`). The playbook says to keep that file
   under a page (p23); this one is long on purpose, because its invariants
