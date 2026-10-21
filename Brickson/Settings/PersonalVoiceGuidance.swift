@@ -22,7 +22,9 @@ nonisolated struct PersonalVoiceGuidance: Equatable, Sendable {
     enum Action: Equatable, Sendable {
         /// Ask iOS for permission. Its button explains what happens first.
         case askPermission
-        /// Open Settings > Accessibility > Personal Voice.
+        /// Open Settings > Accessibility > Personal Voice > Allow Apps to
+        /// Request to Use, the only Personal Voice page iOS opens directly
+        /// (`AccessibilitySettings.Feature`, checked 2026-10-21).
         case openPersonalVoiceSettings
     }
 
@@ -42,8 +44,8 @@ nonisolated struct PersonalVoiceGuidance: Equatable, Sendable {
     ///   - canAsk: Brickson can ask from this screen (otherwise it asks by
     ///     itself when it opens; docs/DECISIONS.md, "Personal Voice
     ///     permission is asked at launch, for now").
-    ///   - canOpenSettings: iOS can open its Settings at the Personal Voice
-    ///     page on this device.
+    ///   - canOpenSettings: iOS can open Personal Voice's permission page in
+    ///     its Settings on this device.
     static func make(
         access: PersonalVoiceAccess,
         hasPersonalVoice: Bool,
@@ -90,7 +92,9 @@ nonisolated struct PersonalVoiceGuidance: Equatable, Sendable {
                 title: String(localized: "No Personal Voice yet"),
                 message: String(localized: "\(AppName.display) may use a Personal Voice, but none is on this device. One is made in the Settings app by reading phrases aloud:"),
                 settingsPath: personalVoicePath,
-                action: canOpenSettings ? .openPersonalVoiceSettings : nil,
+                // iOS can open only the permission page, which is not where
+                // a voice is made, so the written path is the way there.
+                action: nil,
                 suggestsMakingOne: true
             )
         }

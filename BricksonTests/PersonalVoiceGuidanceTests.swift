@@ -38,11 +38,15 @@ struct PersonalVoiceGuidanceTests {
         #expect(noVoice.settingsPath == PersonalVoiceGuidance.personalVoicePath)
     }
 
+    /// iOS can open only Personal Voice's "Allow Apps to Request to Use"
+    /// page, which is not where a voice is made, so this state offers the
+    /// written path and no button.
     @Test func allowedWithNoVoiceSuggestsMakingOne() {
         let noVoice = guidance(.authorized, hasVoice: false)
 
         #expect(noVoice.suggestsMakingOne)
-        #expect(noVoice.action == .openPersonalVoiceSettings)
+        #expect(noVoice.action == nil)
+        #expect(noVoice.settingsPath == PersonalVoiceGuidance.personalVoicePath)
     }
 
     @Test func allowedWithAVoiceNeedsNothingMore() {

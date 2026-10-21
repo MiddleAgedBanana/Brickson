@@ -43,8 +43,9 @@ extension View {
         modifier(SettingsIdleHoldModifier(isBusy: isBusy))
     }
 
-    /// Counts scrolling as activity, so a family member reading a long
-    /// screen is never reset mid-way.
+    /// Holds the reset while the screen scrolls, however long one drag
+    /// lasts, and starts the full wait again when it comes to rest, so a
+    /// family member reading a long screen is never reset mid-way.
     func recordsSettingsScrolling() -> some View {
         modifier(SettingsScrollActivityModifier())
     }
@@ -68,12 +69,16 @@ private struct SettingsIdleHoldModifier: ViewModifier {
 
 private struct SettingsScrollActivityModifier: ViewModifier {
     @Environment(SettingsActivity.self) private var activity: SettingsActivity?
+    @State private var id = UUID()
 
     func body(content: Content) -> some View {
-        content.onScrollPhaseChange { _, phase in
-            if phase != .idle {
+        content
+            .onScrollPhaseChange { _, phase in
                 activity?.recordActivity()
+                activity?.setHold(.scrolling(id), phase != .idle)
             }
-        }
+            .onDisappear {
+                activity?.setHold(.scrolling(id), false)
+            }
     }
 }

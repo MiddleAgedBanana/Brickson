@@ -721,7 +721,8 @@ scrolling while Brickson is active, Settings goes back to its root,
 rebuilt scrolled to the top, and **stays open** (`SettingsIdleClock`,
 `SettingsActivity`). Closing would put Home's controls under a spot
 nobody chose. The clock is held while the privacy policy's web sheet is
-open, while iOS asks about Personal Voice, while the alarm sounds, and
+open, while iOS asks about Personal Voice, while the alarm sounds, while
+a screen is being scrolled, and
 while a screen calls `holdsSettingsIdleReset(true)` (for the Library's
 editors and backup tasks); when the last hold ends, the full 90 seconds
 start again. Time in another app or with the screen off never counts.

@@ -21,6 +21,19 @@ struct VoiceListTests {
         #expect(rows.map(\.voiceID) == [nil, "mine", "daniel", "samantha-enhanced", "samantha"])
     }
 
+    /// iOS lists voices in no promised order, so two Personal Voices must
+    /// not swap places when it lists them the other way round.
+    @Test func personalVoicesKeepTheirPlacesWhateverOrderIOSGives() {
+        let mine = VoiceDescriptor(id: "mine", name: "My Voice", languageCode: "en-US", quality: .premium, isPersonalVoice: true)
+        let older = VoiceDescriptor(id: "older", name: "Earlier Voice", languageCode: "en-US", quality: .premium, isPersonalVoice: true)
+
+        let one = VoiceList.rows(for: [mine, older], selectedID: nil, languageCode: "en").map(\.voiceID)
+        let other = VoiceList.rows(for: [older, mine], selectedID: nil, languageCode: "en").map(\.voiceID)
+
+        #expect(one == [nil, "older", "mine"])
+        #expect(other == one)
+    }
+
     @Test func noveltyVoicesAndOtherLanguagesAreNeverOffered() {
         let ids = VoiceList.rows(for: voices, selectedID: nil, languageCode: "en").map(\.voiceID)
 

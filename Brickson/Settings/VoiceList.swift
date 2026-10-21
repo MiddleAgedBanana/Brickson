@@ -22,7 +22,7 @@ nonisolated struct VoiceRow: Equatable, Identifiable, Sendable {
 /// called. Pure, so the order and the uniqueness of names are tested.
 ///
 /// The order never depends on what is used (AGENTS.md, invariant 8):
-/// Automatic first, then every Personal Voice, then the system voices in the
+/// Automatic first, then every Personal Voice by name, then the system voices in the
 /// language Brickson's words are written in, best quality first, then by
 /// name. Novelty voices (Bells, Boing and others) are never offered: a
 /// communication app must not be one stray activation away from a joke
@@ -36,7 +36,14 @@ nonisolated enum VoiceList {
         describeLanguage: (String) -> String = { $0 }
     ) -> [VoiceRow] {
         let language = VoiceSelection.primarySubtag(of: languageCode)
-        let personal = voices.filter(\.isPersonalVoice)
+        // iOS promises no order, so sort, or two Personal Voices could swap
+        // places between launches.
+        let personal = voices
+            .filter(\.isPersonalVoice)
+            .sorted { lhs, rhs in
+                if lhs.name != rhs.name { return lhs.name.localizedStandardCompare(rhs.name) == .orderedAscending }
+                return lhs.id < rhs.id
+            }
         let system = voices
             .filter { !$0.isPersonalVoice && !$0.isNovelty }
             .filter { VoiceSelection.primarySubtag(of: $0.languageCode) == language }

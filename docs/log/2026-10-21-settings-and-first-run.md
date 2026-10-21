@@ -30,10 +30,12 @@ months" and "The privacy policy ships inside the app".
   first-run hint.
 - **Voice Settings** (`VoiceSettingsView.swift`): which voice is speaking
   now; Personal Voice guidance for every permission state
-  (`PersonalVoiceGuidance`), with Open Personal Voice Settings where iOS
-  can open it and the written path always shown; seven fixed speeds,
-  60% to 120% of normal (`SpeedChoice`); the voice list (`VoiceList`: Automatic, Personal Voices,
-  then this language's voices, best first, never a novelty voice), each
+  (`PersonalVoiceGuidance`), with Open Personal Voice Settings when
+  Personal Voice is turned off for Brickson (the only Personal Voice page
+  iOS opens directly) and the written path always shown; seven fixed
+  speeds, 60% to 120% of normal (`SpeedChoice`); the voice list
+  (`VoiceList`: Automatic, Personal Voices by name, then this language's
+  voices, best first, never a novelty voice), each
   with separate Hear and Use buttons whose names are unique.
 - **Privacy Policy** (`PrivacyPolicyView.swift`): project.yml copies
   `site/privacy` into the app; the screen shows that page's own words
@@ -63,7 +65,8 @@ months" and "The privacy policy ships inside the app".
 - `50154a4` The decisions and this record.
 - `002f3f8` Which voice is speaking, on Voice Settings.
 - `5228bd4` and `695d765` Codex's first review and the first CI run.
-- The commit after them: Codex's second review.
+- `3a89292` and `50c1dce` Codex's second review and the second CI run.
+- The commit after them: Codex's third review.
 - The merge of `main` (PRs #13, #15, #16 and #18), which moves the setup
   store onto `launch.settings`, takes Settings' idle limit from
   `AppTimeouts`, adds `--screen=settings`, Normal Speed, the alarm hold
@@ -115,13 +118,24 @@ months" and "The privacy policy ships inside the app".
     Set Up Step by Step and save Touch, the first answer, which is then
     nearest (follow-up 10); and one word wider than half the safety bar
     can still break on narrow phones at accessibility sizes (follow-up 8).
+- Codex's third review, on `50c1dce`:
+  - Personal Voices kept whatever order iOS listed them in, which it does
+    not promise, so two could swap places between launches. They are now
+    sorted by name (`VoiceList`).
+  - When Personal Voice was allowed but none existed, Open Personal Voice
+    Settings opened the permission page, not the page where a voice is
+    made, and iOS has no link to that one. That state now shows only the
+    written path (`PersonalVoiceGuidance`).
+  - One drag longer than the idle limit could reset Settings mid-scroll.
+    Scrolling now holds the reset until it comes to rest
+    (`SettingsIdleHold.scrolling`).
 
 ## Verified
 
 - The pure types and their tests (`SettingsIdleClockTests`,
   `SetupRecordTests`, `VoiceListTests`, `PersonalVoiceGuidanceTests`,
   `PrivacyPolicyDocumentTests`, and `SpeedChoiceTests` without its two
-  speech-service tests, 45 tests) compiled and passed on a Linux
+  speech-service tests, 47 tests) compiled and passed on a Linux
   Swift 6.3.3 toolchain with default main-actor isolation, with
   `String(localized:)` stubbed and the policy page as a package resource.
   That run found a bug, now fixed: a voice whose identifier was
@@ -149,7 +163,11 @@ months" and "The privacy policy ships inside the app".
   audit on Settings labels built with `ViewThatFits`: Dynamic Type
   "partially unsupported" on both devices and Text clipped on the iPhone,
   on rows that had passed as plain labels. Fixed after, with Home's
-  label pattern; the next run is the check.
+  label pattern.
+- CI on `50c1dce`: unit tests passed, and all 28 UI tests passed on both
+  the iPad Pro 13-inch and the iPhone 17 (iOS 27.0 simulators), including
+  `testChoosingASpeedMovesNoSpeedChoice` at the largest text size and
+  `testNumberedStepsAreReadWithTheirNumbers`.
 - Nothing else was built or run where this was written (no Xcode). The
   views, `SetupStoreTests`, `SettingsTests` (UI), the project.yml resource,
   the bundled-page tests and the String Catalog are first checked by CI.

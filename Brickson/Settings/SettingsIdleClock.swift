@@ -14,6 +14,9 @@ nonisolated enum SettingsIdleHold: Hashable, Sendable {
     /// A screen pushed inside Settings asked to be held, such as the
     /// Library's editor or a backup task (`holdsSettingsIdleReset(_:)`).
     case screen(UUID)
+    /// A screen is being scrolled, however long one drag lasts
+    /// (`recordsSettingsScrolling()`).
+    case scrolling(UUID)
 }
 
 /// When an idle Settings goes back to its first screen.

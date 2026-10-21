@@ -42,6 +42,19 @@ struct SettingsIdleClockTests {
         #expect(!clock.isDue(at: start + .seconds(600)))
     }
 
+    /// One long drag holds the reset for as long as it lasts, and the full
+    /// wait starts again when the scroll comes to rest.
+    @Test func aScrollHoldsTheResetHoweverLongItLasts() {
+        var clock = SettingsIdleClock(limit: .seconds(90), startedAt: start)
+        let scroll = UUID()
+        clock.setHold(.scrolling(scroll), true, at: start + .seconds(5))
+
+        #expect(!clock.isDue(at: start + .seconds(500)))
+        clock.setHold(.scrolling(scroll), false, at: start + .seconds(600))
+        #expect(!clock.isDue(at: start + .seconds(689)))
+        #expect(clock.isDue(at: start + .seconds(690)))
+    }
+
     /// When a task ends, the family gets the whole wait again rather than a
     /// reset the instant the web page or the alarm closes.
     @Test func endingTheLastHoldRestartsTheFullWait() {
