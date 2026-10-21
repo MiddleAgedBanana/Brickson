@@ -20,7 +20,11 @@ screen with Again beside it. Emergency switches to the emergency phrases
 and says nothing itself. If audio fails or the volume is very low, a short
 passive warning appears at the bottom in space that is always kept for it.
 If the library cannot be saved or filled, the app runs from a filled
-in-memory library and a warning says changes will not be kept.
+in-memory library and a warning says changes will not be kept. If saved
+phrases exist but cannot be opened, the file is left untouched and a
+second warning says so and warns against deleting the app. Editing and
+backup exist as tested code with no screens yet
+(docs/log/2026-10-21-library-core.md).
 
 ### What came over from the reference app
 
@@ -93,7 +97,10 @@ promise* lists the code rules that keep the policy true.
   release (invariant 11).
 - No Get Attention alarm yet, so `AudioSafetyPolicy` runs with the alarm
   always idle.
-- No typing, editing, Settings, voice choice or backup.
+- No typing, Settings or voice choice. Editing and backup are code with
+  no screens: nothing calls `LibraryEditor` or `BackupCodec` yet, and a
+  replace that would remove the person's own words is refused until
+  safety copies exist (docs/DECISIONS.md, "Replacing the library").
 - Personal Voice permission is asked at first launch without explanation
   (docs/DECISIONS.md).
 - English only; the String Catalog fills itself as Xcode builds. Two
@@ -114,9 +121,9 @@ promise* lists the code rules that keep the policy true.
 - `SpeechService` has no test seam for the synthesizer itself, so the
   missed-callback watchdog (`watchForMissedFinish`) is untested. A
   protocol over `AVSpeechSynthesizer` would let tests drive it.
-- The seeder fills the library whenever it is empty. Once editing exists,
-  someone who deletes every category would get the starter set back at
-  the next launch. Decide what should happen before porting editing.
+- A store damaged so that it has no emergency category is not repaired;
+  editing cannot cause that (docs/DECISIONS.md, "The emergency category is
+  always there"), but a launch repair that only adds is not built.
 - If SwiftData cannot create even an in-memory library, the app stops
   (`fatalError` in `PhraseLibraryStore.openForApp`), as the reference app
   did. A corrupt store or a full disk cannot cause that; only a schema
@@ -232,8 +239,10 @@ Not yet seen working, to check after the merge and the settings:
 6. Port step 1's remainder: the Get Attention alarm (`AttentionAlertPlayer`
    and its tone) with Stop Alert in a different place, and the audio
    warning strip.
-7. Port step 2: editing logic and backup, with a failure-injection test for
-   every save (docs/LESSONS.md, "Never roll back a cascade delete").
+7. Step 2's remainder: read the SwiftData behaviour tests' results on CI
+   and record them (docs/log/2026-10-21-library-core.md, S1 to S4); then
+   safety copies, export and import (file picker only), and the editing
+   screens (step 6), all on the library core.
 8. Port step 3, then design the generalized layout engine (step 4) before
    replacing Home.
 

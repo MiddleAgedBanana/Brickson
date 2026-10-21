@@ -29,7 +29,7 @@ and `docs/SUCCESSOR-HANDOFF.md`. Here, read `docs/LESSONS.md`.
 | Step | What | State |
 |---|---|---|
 | 1 | Speech, the Get Attention alarm and audio safety | **Speech and audio safety ported.** Alarm not yet. |
-| 2 | Storage, editing logic and backup. Fix D28 here. | **Storage started** (versioned schema, seeding). Editing and backup not yet. |
+| 2 | Storage, editing logic and backup. Fix D28 here. | **Core written new** (editing rules, applier, backup format; D28 avoided by design). Safety copies, export and import not yet. |
 | 3 | Text fitting and colour tokens | Three measured fills only (`Palette`). |
 | 4 | The layout engine, generalized to profiles | Not started. |
 | 5 | Home and typing. Fix D27 here. | A stand-in Home only (docs/DECISIONS.md, "Home version 0 is a stand-in"). |
@@ -53,7 +53,10 @@ unchanged apart from names.
 | `App/ScreenWakePolicy.swift` | `FamilyVoice/Models/ScreenWakePolicy.swift` | Same. |
 | `Library/PhraseLibrarySchema.swift` | `FamilyVoice/Models/Models.swift` | Versioned schema; `.nullify` instead of `.cascade`; stable `uuid`; no `recordingFileName`. |
 | `Library/StarterLibrary.swift` | `FamilyVoice/Models/PhraseSeeder.swift` | Seeding only, in its own context with no rollback; the retired-seed repair is left behind. |
-| `Resources/StarterPhrases.json` | — | New, neutral starter set (docs/DECISIONS.md, "Starter phrases"). |
+| `Resources/StarterPhrases.json` | — | New, neutral starter set (docs/DECISIONS.md, "Starter phrases"), in the backup format with fixed identities. |
+| `Library/LibrarySnapshot.swift`, `LibraryEdit.swift`, `LibraryRules.swift`, `LibraryImport.swift` | — (replace `PhraseEditor`'s logic) | Written new from the editing and backup memo: every edit planned as plain values, the Emergency category undeletable, import that only adds. |
+| `Library/LibraryEditor.swift` | — (replaces `EditPersistence`) | Writes a plan from a context of its own in one save; never calls `rollback()`. |
+| `Library/BackupCodec.swift` | — (replaces `BackupService`'s file format) | `brickson.library` version 1, with a version check the reference lacked. |
 | Tests for each of the above | `FamilyVoiceTests/` | Timer tests built from one `now` plus offsets. |
 
 ## Still to port, by tier
@@ -66,10 +69,10 @@ From the reference's own successor handoff, checked against its code.
 - `Views/AudioSafetyStatusStrip` (step 1; Home's status area stands in for it).
 - `PhraseTileAction`, `HomeChromePolicy`, `QuickControl` (step 5).
 - `EditModeTimeout`/`EditModeSession` (on `ContinuousClock`),
-  `EditSubmission`, `EditToolbar`, `PendingDeletion`, `PhraseEditor`
-  (steps 2 and 6).
-- `BackupService` (byte-lossless round trip) and `BackupImportQuestion`
-  (step 2; add a schema version to the backup format).
+  `EditSubmission`, `EditToolbar`, `PendingDeletion` (step 6, on the
+  library core; `PhraseEditor`'s logic is replaced by `LibraryEdit`).
+- `BackupImportQuestion` (step 6; the file format and the import rules
+  are replaced by `BackupCodec` and `LibraryImport`).
 - `SettingsIdlePolicy` (on `ContinuousClock`), `SettingsSafetyBarLayout`,
   `WindowSizePolicy` (steps 4 and 7).
 - `Views/WordFit.swift` (`WordFit`, `FittedText`) and the `Views/FamilyVoiceTheme.swift` tokens

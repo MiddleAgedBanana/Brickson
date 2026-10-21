@@ -110,6 +110,34 @@ Deleting a category does not cascade to its phrases (`.nullify`); the code
 that deletes a category deletes its phrases in the same save
 (docs/LESSONS.md, "Never roll back a cascade delete").
 
+## Every save is explicit
+
+*Default, adopted 2026-10-21: the owner left these choices to the project.
+Reversible if the owner objects.*
+
+SwiftData saves a container's main context by itself ("autosave") unless
+told not to. Brickson turns that off on every path out of
+`PhraseLibraryLaunch.prepare` (pinned by `PhraseLibraryTests` and, through
+SwiftUI, by `SwiftDataBehaviourTests`), and Home only reads through that
+context. Every change to the library is planned first as plain values
+(`LibraryEdit`), then written by `LibraryEditor.apply` in a context of its
+own and saved once. If the save fails, that context is thrown away:
+nothing reached the store, Home never saw the change, and `rollback()` is
+never called (docs/LESSONS.md, "Never roll back a cascade delete"). Before
+writing, the applier checks that the store still matches the library the
+plan was made from, so a plan made before another edit landed is refused
+instead of undoing that edit.
+
+Screens keep identities (`uuid`) and fetch afresh across an edit, never a
+model object. What SwiftData does when a held object is deleted elsewhere,
+and the other SwiftData behaviours this rests on, are probed by
+`SwiftDataBehaviourTests` (questions S1 to S4 in
+`docs/log/2026-10-21-library-core.md`).
+
+Rejected: editing in the main context and undoing a failed save with
+`rollback()` or with hand-written inverse edits. The first can crash after
+a delete; the second is more code with more ways to half-change.
+
 ## No iCloud sync in 1.0
 
 *2026-10-10. Default; recommended to the owner.*
@@ -119,7 +147,8 @@ conflicts, account states and failure modes that a person who cannot speak
 must never meet mid-sentence. The models already follow SwiftData's iCloud
 rules (defaults on every property, optional relationships, nothing unique),
 so sync could be added later without a migration. Backup by file comes
-first (docs/PORTING.md, step 2).
+first (docs/PORTING.md, step 2). `PhraseLibraryTests` pins `.none` on the
+app's store.
 
 ## The screen stays awake
 
@@ -176,7 +205,196 @@ store opens but cannot be filled (a full disk, say), the app speaks from a
 filled in-memory library and shows that changes will not be kept, rather
 than open on a Home where Emergency has nothing to show. Only an unreadable
 starter file, which the tests rule out for a passing build, leaves Home
-with Yes and No alone and a warning.
+with Yes and No alone and a warning. Saved phrases that exist but cannot
+be opened are never filled over ("An unreadable library is reported,
+never replaced").
+
+*Default, adopted 2026-10-21: the owner left these choices to the project.
+Reversible if the owner objects.* The starter file is a backup in the
+format below ("Backup file format"), and every starter category and
+phrase has a fixed identity in it. Identities let a replace, a merge
+and a later "Restore starter phrases" tell an untouched starter item from
+the person's own words. An identity is never reused for different words:
+a starter phrase whose wording changes gets a new identity, and
+`StarterPhrasesTests` lists every identity ever shipped with its words.
+The starter phrases also follow the editor's rules ("Editing the
+library"), which `StarterPhrasesTests` checks.
+
+## The emergency category is always there
+
+*Default, adopted 2026-10-21: the owner left these choices to the project.
+Reversible if the owner objects. Decision E1 in the editing and backup
+memo.*
+
+Every library has exactly one emergency category, and it keeps at least
+one phrase. No edit can delete it, make another category an emergency
+one, or delete or move away its last phrase; the family changes its
+phrases' words instead, and the editor says why (`LibraryEditRejection`).
+`LibraryEdit` has no case that sets or clears the emergency flag, and a
+check at the end of `LibraryEdit.plan` refuses any edit, including kinds
+added later, that would leave a working Emergency without phrases. Import
+only adds to it: every emergency category in a backup feeds the one
+emergency category, and replacing with a backup that has none keeps the
+current emergency phrases.
+
+So editing can never empty a library. An empty store can only mean a new
+install or a lost store, which is why the seeder fills any empty store and
+needs no stored "already seeded" flag. A store damaged so that the
+emergency category is gone still needs a launch repair that only adds
+(the memo's R4). Not built.
+
+## Editing the library
+
+*Default, adopted 2026-10-21: the owner left these choices to the project.
+Reversible if the owner objects.*
+
+The rules a family's edits follow live in `LibraryRules` and
+`LibraryEdit.plan`, each with a test in `LibraryEditTests`:
+
+- Names and phrases are trimmed at both ends and may not be empty.
+- Category names must differ, ignoring case, accents, width, punctuation
+  and spaces ("Basics" and "basics!" are one name). A category may not
+  take the name of a Home control (Yes, No, Emergency, Again, Get
+  Attention, Stop Alert, Settings, Speak): two buttons with one name
+  confuse Voice Control and VoiceOver. The emergency category is exempt,
+  because it has no button of its own.
+- A category's phrases must differ, ignoring case and width. Punctuation
+  counts: "Okay." and "Okay?" are different sentences.
+- Pictures come from a fixed list of SF Symbols (`LibraryRulesTests`
+  checks each exists).
+- After every edit, each item's sort order becomes its place (0, 1, 2 and
+  so on), so tied orders from an older store are settled once.
+- Moves are absolute: "place before this one", or "at the end". Repeating
+  a move changes nothing, so a lingering dwell cannot walk an item along
+  (invariant 10).
+- Deleting a category deletes its phrases in the same save.
+- Deletes, merges and replaces ask first (invariant 3);
+  `LibraryPlan.asksFirst` says which. Where each question appears is
+  decided with the screens.
+- No PIN or password on the family area: placement keeps family controls
+  out of the person's path, and a forgotten PIN would lock a family out of
+  the person's words.
+
+The editing screens are not built. They live in a Library screen inside
+Settings for 1.0 (the memo's recommendation); an edit mode on Home may
+come later, for touch only.
+
+## Importing a backup
+
+*Default, adopted 2026-10-21: the owner left these choices to the project.
+Reversible if the owner objects.*
+
+- A backup comes in only through the system file picker, from inside the
+  family area (built later). Brickson registers no document type in 1.0,
+  so no file can open Brickson by itself or put an import question over
+  Home, where it could cover Emergency, Yes and No.
+- Import keeps the backup's words exactly, byte for byte. It never trims,
+  renames or drops them, even where the editor would refuse them (a
+  repeated phrase, a Home control's name, an unknown picture), because
+  invariant 7 forbids it. The one thing skipped is a phrase with no
+  characters at all, which has no words to lose.
+- **Add** (`LibraryImport.merge`) only adds: nothing already in the
+  library moves, changes or goes away. An incoming category joins the
+  local category with the same identity, else the emergency category if it
+  is one, else the category with the same name; otherwise it goes at the
+  end. A phrase whose exact words are already in that category is skipped,
+  so adding the same backup twice adds nothing the second time. A phrase
+  whose identity is already used gets a new one. A deletion made on
+  another device does not travel; to make two devices match, use Replace.
+- What was skipped or given a new identity is counted
+  (`LibraryImportReport`) for the question and the result screen.
+
+## Replacing the library
+
+*Default, adopted 2026-10-21: the owner left these choices to the project.
+Reversible if the owner objects. The memo's reading (a) plus (b) of
+invariant 7.*
+
+Replace makes the library match a backup, so it removes words the backup
+does not have, and invariant 7 says nothing may delete a person's own
+words. So:
+
+- Replace runs freely when it removes nothing the person wrote: the
+  library is empty, or every name and phrase in it is an untouched
+  starter item (known by its identity and exact words), or every word the
+  person wrote is also in the backup.
+- Otherwise it may run only after a safety copy of the current library
+  has been written on the device (memo, section 5.5). Safety copies are
+  not built, so today such a replace is refused
+  (`LibraryEditError.safetyCopyRequired`). Safety copies are more of the
+  person's words kept on the device, so the pull request that builds them
+  checks the privacy policy and updates it and its Effective date.
+- A backup with no emergency category keeps the current emergency
+  phrases.
+
+Invariant 7 in AGENTS.md could say this in one sentence; that edit is
+the owner's, because agents do not change invariants.
+
+## Backup file format
+
+*Default, adopted 2026-10-21: the owner left these choices to the project.
+Reversible if the owner objects. The names become permanent once the
+first backup file exists, which needs an export screen.*
+
+One JSON file, read and written by `BackupCodec`:
+
+```json
+{
+  "categories" : [
+    {
+      "isEmergency" : false,
+      "name" : "Basics",
+      "phrases" : [ { "text" : "Hello.", "uuid" : "…" } ],
+      "symbolName" : "bubble.left.and.bubble.right.fill",
+      "uuid" : "…"
+    }
+  ],
+  "format" : "brickson.library",
+  "formatVersion" : 1
+}
+```
+
+- `format` is `brickson.library`, not taken from the bundle identifier,
+  which can still change. If the app's name changes before the first
+  backup exists, change this string with it; after that it stays,
+  whatever the app is called. `formatVersion` is 1.
+- The order of the arrays is the order on screen. Only categories and
+  phrases: no settings, draft, device name or time, so the same library
+  always gives the same bytes (sorted keys, one layout). A date belongs in
+  the file name.
+- Words go out and come back byte for byte. Nothing is normalized, and
+  the tests compare UTF-8 bytes, because Swift's `==` calls "é" and "e"
+  plus a combining accent equal.
+- A file over 8 MB, a file that is not JSON, JSON that is not a backup, a
+  backup from a newer version, and a damaged backup are each refused with
+  their own sentence ending "Nothing was changed." A newer version is
+  never read on a best guess.
+- The starter phrases are a file in this format, so one reader serves
+  both.
+- In 1.0 a backup is a plain `.json` file. Recordings, once built, need
+  version 2 (a package with the audio files). A custom file type, if one
+  is ever declared, takes its identifier from a name the owner controls.
+
+## An unreadable library is reported, never replaced
+
+*Default, adopted 2026-10-21: the owner left these choices to the project.
+Reversible if the owner objects. Code audit M2.*
+
+If a saved library exists but will not open (a damaged file, or one
+written by a newer version), or opens but its phrases cannot be read, the
+person's words may still be in it. Brickson leaves the file exactly as it
+is, speaks from starter phrases held in memory so that Emergency works,
+tries the file again at the next launch, and Home says: "Your saved
+phrases couldn't be opened. They haven't been deleted. Restart the app to
+try again. Don't delete the app: that would erase them." The file is
+looked for before opening, so a failed open that leaves a file behind is
+not mistaken for saved phrases. A first launch that cannot create the
+store has no phrases to lose and only says changes won't be kept. Before
+this, every case showed only that message, which did not tell the family
+that saved phrases existed or warn them off deleting the app.
+
+Not built: a way for the family to rescue the phrases from a file that
+will not open.
 
 ## Home version 0 is a stand-in
 
