@@ -336,6 +336,10 @@ the failure.
   of that kind, because review rules live here. Reviewers may be reading
   the pull request's own version of these files, so compare them with the
   base branch and name what the change weakens; the owner decides.
+- A change to `.claude/settings.json` or `.claude/hooks/` that unhooks
+  the guard, drops a deny rule or lets through a call its tests deny
+  (*Guardrails for agents*), or a weakened test in `scripts/test-hooks.py`
+  or `scripts/test-docs.py`.
 
 ### Not findings
 
@@ -395,6 +399,43 @@ the failure.
   file, snapshot the old version (`docs/archive/README.md`).
 - **Start of a session:** `git status`, `git log --oneline -15`, then read
   `docs/HANDOFF.md`. Another agent may have landed work since.
+
+## Guardrails for agents
+
+Agents push and open pull requests as the owner's GitHub account, so
+GitHub itself cannot tell an agent's merge from the owner's. The rules
+above are backed by checks wherever a check can run:
+
+- **The guard.** `.claude/settings.json` runs `.claude/hooks/guard.py`
+  before every Bash command and before the GitHub tools that can merge or
+  write. It refuses, with the rule it breaks: `git add -A`, `--all`, `-u`
+  or `.` and `git commit -a`; force pushes and any push that updates
+  `main`; merging, auto-merging or approving a pull request (`gh`, the
+  GitHub API or a GitHub tool); the Copilot actions that spend the owner's
+  credits; and a GitHub tool writing a file onto `main`. The same settings
+  deny the merge and Copilot tools outright. When the guard refuses, do
+  not look for another way round: say in the thread what you needed and
+  why. It is a guard against mistakes, not a sandbox, and it covers
+  Claude Code only; Codex, Jules and the owner are held to the same rules
+  by review.
+- **Where the guard runs.** Claude Code reads a repository's hooks and
+  permission rules in a session with one repository. A cloud session that
+  clones several repositories reads only plugin settings from them, so
+  there the guard does not run and these rules are yours alone to keep.
+- **Its tests.** `scripts/test-hooks.py` feeds the guard the calls it must
+  refuse and the ones it must let through; `scripts/test.sh` runs it
+  before the unit tests, so CI runs it. A new rule gets a test first.
+- **Cross-references.** `scripts/test-docs.py`, run the same way, fails
+  when a section cited by title (a file name, then the title in quotes or
+  italics) or a relative link no longer resolves. In this file, the
+  review skill and `.github/copilot-instructions.md`, an italic title on
+  its own must name a real section. Rename a section and update what cites it in the same commit.
+- **The verifier.** `.claude/agents/verifier.md` is a report-only
+  subagent: it runs the Python checks, reads the branch's CI run and says
+  what was and was not verified. Run it before calling a pull request
+  ready, and paste its *Not verified* list into the pull request.
+- **Issues.** `.github/ISSUE_TEMPLATE/something-went-wrong.yml` is the
+  bug form, with a warning that issues are public. Blank issues are off.
 
 ## Working with the owner
 
