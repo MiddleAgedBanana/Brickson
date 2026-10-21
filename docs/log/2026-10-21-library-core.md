@@ -149,8 +149,18 @@ and the result recorded above. One did: the S4 rollback probe, issue #19.
 
 ## Follow-ups
 
-- Re-enable the S4 rollback probe once when CI moves to a newer Xcode or
-  iOS, and record the result on issue #19. *(Whoever moves CI.)*
+This thread ("Library editing and backup format") ends with this pull
+request. A new library thread takes the items below; it should start
+from docs/DECISIONS.md ("Every save is explicit" through "An unreadable
+library is reported, never replaced") and the types `LibraryEdit`,
+`LibraryEditor`, `LibraryImport` and `BackupCodec`, which nothing calls
+yet. Items marked *(Next library pull request.)* are R0 item 6 in
+docs/ROADMAP.md.
+
+- Re-enable the S4 rollback probe once on the current Xcode (CI moved to
+  Xcode 27 with PR #12, after these answers were taken), and record the
+  result on issue #19. The other S1 to S4 answers were also taken on
+  Xcode 26.6; the tests re-check them on every run.
 - Unit tests that open stores written by every shipped schema version,
   starting with V1, so a later build is shown to open what an earlier one
   wrote (repo review, sdlc-19). Needs a store file made by the app on a

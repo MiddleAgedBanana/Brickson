@@ -100,8 +100,9 @@ release in docs/ROADMAP.md when no thread has it yet.
   deleted), so only a damaged store reaches that path. *(R0, a new library
   thread: a repair that only adds an emergency category)*
 - `rollback()` crashes SwiftData after deletes, even without a cascade
-  (issue #19). Brickson never calls it; the reproduction is disabled.
-  *(whoever moves CI to a newer Xcode re-runs it once)*
+  (issue #19, seen with Xcode 26.6 on iOS 26.5). Brickson never calls it;
+  the reproduction is disabled and has not been run on the current Xcode
+  27 CI. *(R0, a new library thread re-runs it once)*
 - English only. `scripts/test.sh unit` brings the String Catalog up to
   date (xcodebuild alone does not), and CI fails when the committed one
   is stale. The speech-rate names in `SpeechRateSteps` and the voice
