@@ -128,6 +128,14 @@ class ChooseTests(unittest.TestCase):
                 self.assertEqual(select_xcode.choose(Path(applications)).name,
                                  "Xcode_27.1.app")
 
+    # A plain-named build of a version Apple has not released is a beta,
+    # whatever GitHub calls it. Trusting the plain name fails this test.
+    def test_skips_a_version_newer_than_apples_newest_release(self):
+        self.assertEqual(self.choose(("Xcode_27.1.app", "27.1", "27A9275"),
+                                     ("Xcode_27.2.app", "27.2", "27B5020b"),
+                                     feed_text=APPLE_FEED),
+                         "Xcode_27.1.app")
+
     # Reporting success with nothing to build with fails this test.
     def test_nothing_installed(self):
         self.assertIsNone(self.choose(("Xcode_27.2_beta.app", "27.2", "27B5010a")))
@@ -185,13 +193,37 @@ class CheckTests(unittest.TestCase):
         level, message = self.check("Xcode 27.2\nBuild version 27B48\n", released)
         self.assertEqual(level, "notice", message)
 
-    # Treating an unreadable feed as "up to date" fails this test.
-    def test_warns_when_the_feed_cannot_be_read(self):
+    # Treating an unreadable feed, or one with no Xcode release in it, as
+    # "up to date", or giving both the same cause, fails this test.
+    def test_warns_when_the_feed_cannot_decide(self):
         level, message = self.check("Xcode 27.1\nBuild version 27A9275\n", None)
         self.assertEqual(level, "warning")
-        self.assertIn("Could not read", message)
+        self.assertIn("could not be read", message)
         level, message = self.check("Xcode 27.1\nBuild version 27A9275\n", "<html>")
         self.assertEqual(level, "warning")
+        self.assertIn("lists no Xcode release", message)
+
+    # Passing a version Apple has not released (a beta under a plain name,
+    # or a build the feed has dropped) as current fails this test.
+    def test_warns_when_ci_is_ahead_of_apples_newest_release(self):
+        level, message = self.check("Xcode 27.2\nBuild version 27B5020b\n", APPLE_FEED)
+        self.assertEqual(level, "warning")
+        self.assertIn("beta or release candidate", message)
+
+
+class FallbackTests(unittest.TestCase):
+    """The warning `choose` gives when Apple's feed cannot decide."""
+
+    # A silent fallback to names, which skips a released Xcode still named
+    # as a release candidate, fails this test.
+    def test_warns_without_a_release_in_the_feed(self):
+        for feed_text in (None, "<html>", feed("Xcode 27.2 RC (27B48)")):
+            with self.subTest(feed_text=feed_text):
+                self.assertIn("app names only", select_xcode.fallback_warning(feed_text))
+
+    # Warning when the feed decided fails this test.
+    def test_quiet_when_the_feed_lists_a_release(self):
+        self.assertIsNone(select_xcode.fallback_warning(APPLE_FEED))
 
 
 if __name__ == "__main__":
