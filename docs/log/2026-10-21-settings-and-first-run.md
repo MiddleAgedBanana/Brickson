@@ -67,7 +67,11 @@ months" and "The privacy policy ships inside the app".
   `AppTimeouts`, adds `--screen=settings`, Normal Speed, the alarm hold
   and the UI tests, and fills the String Catalog.
 
-- The review round (Codex on `6dbb62f`), in one commit after the merge:
+- The review round (Codex and the first CI run on `6dbb62f`), in the
+  commits after the merge:
+  - Apple's audit on the iPhone 17 found Back to Talking's words clipped
+    beside its icon in half the bar's width. Settings labels now drop the
+    icon first and then wrap between words (`SettingsFittingLabel`).
   - Answering the check-in card left the rows below to move up under the
     button just chosen. Its place is now kept, with passive words, until
     Family Setup closes (`CheckInPolicy.afterword`).
@@ -106,6 +110,16 @@ months" and "The privacy policy ships inside the app".
   and `aSpeedChosenAgainAfterItsSampleChangesNothing` fail if a choice
   steps from the current rate, as Slower and Faster did; `SettingsTests.testAnIdleSettingsReturnsToItsFirstScreenAndStaysOpen`
   fails if the reset closes Settings or never happens.
+- CI on `6dbb62f`: unit tests passed, so the screens and the String
+  Catalog built. UI tests: 24 of 25 passed on the iPad Pro 13-inch and 23
+  of 25 on the iPhone 17 (both iOS 27.0 simulators, portrait, default
+  text). The iPhone failures were the clipped Back to Talking and the old
+  Slower and Faster rows below the screen, both fixed after. The iPad's
+  one failure was the first app-launching test,
+  `HomeReachabilityTests.testEveryHomeStateAtDefaultTextInLandscape`,
+  with "kAXErrorServerNotFound" after a 60-second automation setup. That
+  matches the cold-simulator failure in AGENTS.md's Gotchas, on Home code
+  this pull request does not change; the next run is the check.
 - Nothing else was built or run where this was written (no Xcode). The
   views, `SetupStoreTests`, `SettingsTests` (UI), the project.yml resource,
   the bundled-page tests and the String Catalog are first checked by CI.
@@ -151,5 +165,10 @@ For the next Settings thread, in order:
    *(Accessibility API coverage)*.
 7. When Get Attention joins the safety bar, check that the sound line's
    words still fit Settings: "Stopped — Back" names Back, then Again.
-8. Keep one UI test on the real 90-second idle limit (docs/LESSONS.md,
+8. On narrow phones at accessibility text sizes, one word wider than half
+   the safety bar (such as "Talking") can still break inside the word.
+   Use the word fitting the Phone layout thread is building, or give Back
+   to Talking a row of its own at those sizes, kept the same with Get
+   Attention.
+9. Keep one UI test on the real 90-second idle limit (docs/LESSONS.md,
    "Machine load causes false failures") once CI time allows.

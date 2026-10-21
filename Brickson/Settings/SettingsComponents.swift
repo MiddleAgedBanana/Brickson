@@ -35,11 +35,32 @@ struct SettingsRowLabel: View {
     }
 
     var body: some View {
-        Label { title } icon: { Image(systemName: systemImage) }
+        SettingsFittingLabel(title: title, systemImage: systemImage, alignment: .leading)
             .font(.title3.weight(.semibold))
             .foregroundStyle(.white)
             .multilineTextAlignment(.leading)
             .frame(maxWidth: .infinity, minHeight: SettingsMetrics.rowHeight, alignment: .leading)
+    }
+}
+
+/// A control's words and icon. When they do not fit on one line the icon
+/// goes first, then the words wrap between words; they are never shrunk
+/// (AGENTS.md, "Words never break"). Apple's audit found Back to Talking's
+/// words clipped on a 402-point iPhone with the icon beside them.
+struct SettingsFittingLabel: View {
+    let title: Text
+    let systemImage: String
+    let alignment: TextAlignment
+
+    var body: some View {
+        ViewThatFits(in: .horizontal) {
+            Label { title } icon: { Image(systemName: systemImage) }
+            title
+            title
+                .lineLimit(nil)
+                .multilineTextAlignment(alignment)
+                .fixedSize(horizontal: false, vertical: true)
+        }
     }
 }
 

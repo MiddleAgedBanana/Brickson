@@ -104,7 +104,8 @@ struct SettingsView: View {
 /// Get Attention's place is kept empty until Home shows Get Attention and
 /// Stop: starting the alarm here while Home has no Stop would leave it
 /// sounding with no way to stop it. Because the place is kept, adding it
-/// moves nothing. Back to Talking's words are never shrunk.
+/// moves nothing. Back to Talking's words are never shrunk: its icon goes
+/// first when they do not fit (`SettingsFittingLabel`).
 struct SettingsSafetyBar: View {
     let close: () -> Void
 
@@ -116,10 +117,14 @@ struct SettingsSafetyBar: View {
                 .accessibilityHidden(true)
 
             Button(action: close) {
-                Label("Back to Talking", systemImage: "bubble.left.and.text.bubble.right.fill")
-                    .font(.title3.weight(.semibold))
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity, minHeight: SettingsMetrics.rowHeight)
+                SettingsFittingLabel(
+                    title: Text("Back to Talking"),
+                    systemImage: "bubble.left.and.text.bubble.right.fill",
+                    alignment: .center
+                )
+                .font(.title3.weight(.semibold))
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity, minHeight: SettingsMetrics.rowHeight)
             }
             .buttonStyle(.borderedProminent)
             .tint(Palette.phraseFill)
