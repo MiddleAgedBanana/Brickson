@@ -506,7 +506,17 @@ test `HomeLayoutTests` (no scrolling, tiles in place across categories,
 quick controls on screen; default and AX5, both orientations where the
 device turns).
 
-Not verified: nothing was built or run on a Mac; CI is the build. The
+CI (a manual run on `644ba3d`, before the pull request): the build and
+every unit test pass, `StarterLabelFitTests` included. Two UI failures,
+both fixed afterwards and not yet re-run: `HomeLayoutTests` read portrait
+frames straight after rotating to landscape at AX5 (it now waits for the
+turn, `eb07905`), and the accessibility audit reported "Dynamic Type font
+sizes are partially unsupported" and "Text clipped" on the Needs button,
+with every label's size pinned (a label at the person's own size is now
+left unpinned, `6391ec2`). If the audit still reports it, that is the next
+thing to look at.
+
+Not verified: nothing was built or run on a Mac. The
 layout was never seen with Eye Tracking, Switch Control or Snap to Item.
 The windows that still scroll are worked out from measurements, not seen.
 Next: the slot layout (regions A to D, Get Attention, Stop and Settings
