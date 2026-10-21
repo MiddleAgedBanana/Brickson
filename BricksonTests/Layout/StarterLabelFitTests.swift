@@ -9,8 +9,10 @@ import UIKit
 ///
 /// These pin `HomeShape`'s sizes to what SwiftUI actually draws. If Apple's
 /// fonts change, these fail first, before a person sees a broken word. They
-/// also check the measurement `WordFit` relies on: UIKit's width for a word,
-/// rounded up, is never more than half a point narrower than SwiftUI's.
+/// also check the measurements `WordFit` and `FittedLabel` rely on: UIKit's
+/// width for a word, rounded up, is never more than half a point narrower
+/// than SwiftUI's, and `LabelFont.textHeight` is never less than SwiftUI's
+/// height.
 ///
 /// Widths are content widths: the window less Home's 16pt margins. 288 is
 /// the narrowest window this checks, a 320pt window (an iPad app in Slide
@@ -157,6 +159,35 @@ struct StarterLabelFitTests {
                     .sizeThatFits(in: CGSize(width: 10_000, height: 10_000)).height
                 let planned = font.lineHeight(at: size)
                 #expect(drawn <= planned, "\(font.textStyle) at \(size): draws \(drawn), planned \(planned)")
+            }
+        }
+    }
+
+    /// Fails if `LabelFont.textHeight` is ever less than the height SwiftUI
+    /// draws a starter label in, at any text size and at widths from the
+    /// narrowest tile to a wide one: `FittedLabel` would then choose a size
+    /// whose words do not fit, and cut them off. Only widths at which every
+    /// word fits are checked, the only ones `FittedLabel` draws words at.
+    @Test func theHeightMeasureCoversWhatSwiftUIDraws() {
+        let cases: [(LabelFont, [String], [CGFloat])] = [
+            (.compactTile, phrases, [99, 140, 200]),
+            (.regularTile, phrases, [168, 240, 320]),
+            (.category, everydayCategoryNames, [126, 236]),
+        ]
+        for (font, texts, widths) in cases {
+            for size in DynamicTypeSize.allCases where size >= .large {
+                for width in widths {
+                    for text in texts where font.widestWord(text, at: size) + WordFit.widthSlack <= width {
+                        let view = Text(verbatim: text).font(font.font).dynamicTypeSize(size)
+                        let drawn = UIHostingController(rootView: view)
+                            .sizeThatFits(in: CGSize(width: width, height: 10_000)).height
+                        let measured = font.textHeight(text, width: width, at: size)
+                        #expect(
+                            drawn <= measured,
+                            "\(font.textStyle) at \(size), \(width) wide: \"\(text)\" draws \(drawn), measured \(measured)"
+                        )
+                    }
+                }
             }
         }
     }

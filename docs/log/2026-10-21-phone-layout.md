@@ -101,6 +101,12 @@ missing is the wells and A's trailing column. Again still sits in A.
 - `6391ec2`: a label at the person's own size is left unpinned.
 - `eb07905`: `HomeLayoutTests` waits for the layout after a rotation.
 - `813a5a8`: the first CI run recorded.
+- `f1456b5`: library warnings under the grid (Codex review).
+- `31e48f7`: one-word labels checked by drawn width; no icons on Yes, No
+  and Again.
+- `7a7fdb6`: quick controls and categories grow to one line of text.
+- The commit after `7a7fdb6`: label sizes worked out without
+  `ViewThatFits`, one view per label, and the grid always a scroll view.
 - The merge of `main` (PRs #12, #13, #15, #16, #18): eager rows in a
   plain `FixedColumns` view instead of `LazyVGrid`, `HomeLayoutTests` on
   `launchedApp` and `attachCapture`, the documents fitted to the new
@@ -136,11 +142,30 @@ missing is the wells and A's trailing column. Again still sits in A.
   controls and categories grow to hold one line of their words at the
   person's size instead of stepping down to a fixed height. A 402pt phone
   then scrolls at AX5, recorded in *Where the grid still scrolls*.
+- **CI on `7a7fdb6`**: the build and unit tests passed, and so did
+  `HomeLayoutTests`, the reachability tests and the text-recognition
+  test on both devices; iPhone No was no longer reported. Four audit
+  tests still failed on each device: "Needs" (iPad) reported as clipped
+  and as not following Dynamic Type, and "Text clipped on no element"
+  in several audits on both. The likely cause, by elimination (no
+  screenshots were kept): Apple's audit grows the text and compares each
+  text with itself, and `ViewThatFits` swapped a label for another view
+  as it grew (Needs's tall raised-hand icon made it swap at a different
+  size from the other categories), while the phrase grid became a scroll
+  view, replacing every tile. PR #13 found the same with lazy rows. Fix,
+  not yet re-run: each label's size is worked out with UIKit and drawn
+  by one view whose size limit is always the same modifier; icons take
+  exactly their measured width and never more than a line's height; the
+  status line is given its width; the grid is always a scroll view,
+  turned off where the tiles fit. A new unit test checks the height
+  measure against SwiftUI for every starter label at every size.
 - **Measured on CI** with the temporary calibration test: SwiftUI's text
   widths match UIKit's to within half a point; SwiftUI's line height is
   the first line plus the style's leading per extra line (headline 17pt:
-  20.5 then 22 per line), which UIKit's measure leaves out. So widths are
-  measured with UIKit and heights by SwiftUI (`ViewThatFits`).
+  20.5 then 22 per line), which UIKit's measure leaves out. Heights were
+  first left to SwiftUI (`ViewThatFits`); after `7a7fdb6` UIKit measures
+  them with room for that spacing, checked against SwiftUI in
+  `StarterLabelFitTests`.
 - **Pure tests** (`WordFitTests`, `HomeShapeTests`) also ran with the
   Linux Swift toolchain while writing them.
 - New tests and what would make them fail: `WordFitTests` (a choice below

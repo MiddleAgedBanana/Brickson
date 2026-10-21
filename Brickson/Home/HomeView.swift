@@ -46,7 +46,11 @@ struct HomeView: View {
             let quickWidths = HomeShape.quickControlWidths(contentWidth: contentWidth)
 
             VStack(alignment: .leading, spacing: HomeShape.regionSpacing) {
-                MessageBlock(againWidth: quickWidths[0], againHeight: shape.quickControlHeight)
+                MessageBlock(
+                    textWidth: contentWidth - quickWidths[0] - HomeShape.controlSpacing,
+                    againWidth: quickWidths[0],
+                    againHeight: shape.quickControlHeight
+                )
                 QuickControlsRow(
                     widths: quickWidths,
                     emergencyIsAvailable: emergency != nil,
@@ -89,6 +93,8 @@ struct HomeView: View {
 /// "Keep corners clear").
 private struct MessageBlock: View {
     @Environment(SpeechService.self) private var speech
+    /// The width of the message and its status line, beside Again.
+    let textWidth: CGFloat
     let againWidth: CGFloat
     let againHeight: CGFloat
 
@@ -96,7 +102,7 @@ private struct MessageBlock: View {
         HStack(alignment: .bottom, spacing: HomeShape.controlSpacing) {
             VStack(alignment: .leading, spacing: 4) {
                 MessageText()
-                StatusLines()
+                StatusLines(width: textWidth)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -146,7 +152,7 @@ private struct MessageText: View {
                         // measures under 4.5:1 (invariant 6).
                         Text(verbatim: text)
                             .font(font.font)
-                            .textSize(fittedSize(text, width: proxy.size.width), from: dynamicTypeSize)
+                            .textSize(fittedSize(text, width: proxy.size.width))
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     .scrollBounceBehavior(.basedOnSize)
@@ -185,6 +191,7 @@ private struct MessageText: View {
 private struct StatusLines: View {
     @Environment(SpeechService.self) private var speech
     @Environment(AudioSafetyMonitor.self) private var audioSafety
+    let width: CGFloat
 
     private var audioIssue: HomeAudioIssue? {
         // Get Attention is not ported yet (docs/PORTING.md, step 1), so the
@@ -206,20 +213,20 @@ private struct StatusLines: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             ZStack(alignment: .topLeading) {
-                FittedLine(text: Self.speaking, systemImage: "speaker.wave.2.fill", font: .status)
+                FittedLine(text: Self.speaking, systemImage: "speaker.wave.2.fill", font: .status, width: width)
                     .hidden()
                     .accessibilityHidden(true)
                 ForEach(HomeAudioIssue.allCases, id: \.self) { candidate in
-                    FittedLine(text: candidate.compactMessage, systemImage: candidate.systemImage, font: .status)
+                    FittedLine(text: candidate.compactMessage, systemImage: candidate.systemImage, font: .status, width: width)
                         .hidden()
                         .accessibilityHidden(true)
                 }
                 if let audioIssue {
-                    FittedLine(text: audioIssue.compactMessage, systemImage: audioIssue.systemImage, font: .status)
+                    FittedLine(text: audioIssue.compactMessage, systemImage: audioIssue.systemImage, font: .status, width: width)
                         .accessibilityElement(children: .combine)
                         .accessibilityLabel(audioIssue.message)
                 } else if speech.isSpeaking {
-                    FittedLine(text: Self.speaking, systemImage: "speaker.wave.2.fill", font: .status)
+                    FittedLine(text: Self.speaking, systemImage: "speaker.wave.2.fill", font: .status, width: width)
                         .accessibilityElement(children: .combine)
                 }
             }
@@ -438,11 +445,13 @@ private struct PhraseGrid: View {
                     .accessibilityIdentifier("phraseTile")
                 }
 
-                if sizing.scrolls || phrases.count > rows * columns {
-                    ScrollView { grid }
-                } else {
-                    grid
-                }
+                // Always the same scroll view, turned off where the tiles fit,
+                // so the tiles stay the same views when the grid starts to
+                // scroll as the text grows (Apple's accessibility audit
+                // compares each one with itself).
+                ScrollView { grid }
+                    .scrollDisabled(!(sizing.scrolls || phrases.count > rows * columns))
+                    .scrollBounceBehavior(.basedOnSize)
             } else if phraseLibraryIssue == nil {
                 Text("No phrases yet.")
                     .font(.title2)

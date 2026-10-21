@@ -673,14 +673,22 @@ device-specific interfaces."
 - **Labels step through Apple's text sizes.** Every Home label is drawn
   with its text style at one of Apple's sizes: the person's own, with its
   icon if it fits; then without the icon; then each smaller size down to
-  the default (Large), never below it (`WordFit`, `FittedLabel`). SwiftUI's
-  `ViewThatFits` measures each size's height, so what is measured is what
-  is drawn; UIKit measures only word widths, which CI checks against
-  SwiftUI's (`StarterLabelFitTests`). Measured on CI, SwiftUI adds the
-  style's line spacing that UIKit's own measure leaves out (22pt per line
-  at 17pt, not 20.3), which is why heights are left to SwiftUI. A label at
-  the person's own size is left unpinned, so it follows Dynamic Type as
-  usual; only a stepped-down label sets its size.
+  the default (Large), never below it (`WordFit`, `FittedLabel`). UIKit
+  measures each size: word widths, which CI checks against SwiftUI's, and
+  the wrapped height, counted in lines and given each extra line 15% more
+  than UIKit's line height, because SwiftUI adds the style's line spacing
+  (22pt per line at 17pt, not 20.3, measured on CI). CI checks that this
+  height is never less than SwiftUI's for every starter label at every
+  size (`StarterLabelFitTests`). The choice is worked out, not left to
+  SwiftUI's `ViewThatFits`: Apple's accessibility audit grows the text and
+  compares each label with itself, and `ViewThatFits` replaced a label
+  with another view as it grew, which the audit reported as clipped text
+  and as text not following Dynamic Type (CI, 2026-10-21). For the same
+  reason a label's size is always limited by the same modifier
+  (`dynamicTypeSize(...size)`), which changes nothing at the person's own
+  size, and the phrase grid is always a scroll view, turned off where the
+  tiles fit. A label at the person's own size follows Dynamic Type as
+  usual.
 - **Home's own button style.** Home's controls use `HomeButtonStyle`
   instead of `.borderedProminent`: that style's margins left too little
   width in a phone's three-column grid for the starter words at their

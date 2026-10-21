@@ -91,6 +91,17 @@ struct WordFitTests {
     }
 
     /// Fails if a label could break anywhere but between words.
+    /// Fails if a label is drawn at a choice whose height does not fit when
+    /// a later one does, or if the smallest choice is not drawn when none
+    /// fits (nothing smaller is allowed).
+    @Test func theFirstChoiceWhoseHeightFitsIsDrawn() {
+        let choices = [Self.choice(0, icon: true), Self.choice(0), Self.choice(1), Self.choice(2)]
+        #expect(WordFit.first(of: choices, whereHeightFits: { $0.step >= 1 }) == Self.choice(1))
+        #expect(WordFit.first(of: choices, whereHeightFits: { _ in true }) == Self.choice(0, icon: true))
+        #expect(WordFit.first(of: choices, whereHeightFits: { _ in false }) == Self.choice(2))
+        #expect(WordFit.first(of: [], whereHeightFits: { _ in true }) == Self.choice(0))
+    }
+
     @Test func wordsSplitOnWhitespaceOnly() {
         #expect(WordFit.words(in: "I don't know.") == ["I", "don't", "know."])
         #expect(WordFit.words(in: "  Thank\tyou.\n") == ["Thank", "you."])

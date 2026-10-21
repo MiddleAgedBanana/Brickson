@@ -6,10 +6,14 @@ import SwiftUI
 /// default size (`WordFit`).
 ///
 /// `WordFit` rules out every size at which a word would not fit the width,
-/// and SwiftUI's `ViewThatFits` then picks the first remaining size whose
-/// height fits, measured by SwiftUI itself. The smallest size is drawn even
-/// when it does not fit, because nothing smaller is allowed: Home's sizes are
-/// chosen so the starter library always fits (`StarterLabelFitTests`).
+/// and the label is drawn at the first remaining size whose wrapped words fit
+/// the height (`LabelFont.choice`). The smallest size is drawn even when it
+/// does not fit, because nothing smaller is allowed: Home's sizes are chosen
+/// so the starter library always fits (`StarterLabelFitTests`).
+///
+/// Whatever is chosen, the label is the same view: the icon comes and goes
+/// and the text size changes, but the words are never replaced by another
+/// view, so Apple's accessibility audit can follow them as the text grows.
 ///
 /// The words are drawn with `Text(verbatim:)`: callers pass text that is
 /// already localized (`String(localized:)`) or a person's own words, which
@@ -34,23 +38,9 @@ struct FittedLabel: View {
     var body: some View {
         GeometryReader { proxy in
             let steps = LabelFont.steps(downFrom: dynamicTypeSize)
-            let choices = font.choices(for: title, systemImage: systemImage, steps: steps, width: proxy.size.width)
-            // A single word stays on one line, so SwiftUI also checks its
-            // width as drawn: the icon SwiftUI draws can be wider than the
-            // one UIKit measured, and a word that does not fit beside it
-            // would be cut short. Words that wrap are checked by height only.
-            ViewThatFits(in: isOneWord ? [.horizontal, .vertical] : .vertical) {
-                ForEach(choices, id: \.self) { choice in
-                    let isLast = choice == choices.last
-                    label(showingIcon: choice.showsIcon, at: steps[choice.step])
-                        // The last choice is the smallest size allowed. It
-                        // reports no size of its own, so it is chosen when
-                        // nothing else fits rather than leaving the choice to
-                        // ViewThatFits.
-                        .frame(idealWidth: isLast && isOneWord ? 0 : nil, idealHeight: isLast ? 0 : nil)
-                }
-            }
-            .frame(width: proxy.size.width, height: proxy.size.height, alignment: frameAlignment)
+            let choice = font.choice(for: title, systemImage: systemImage, steps: steps, size: proxy.size)
+            label(showingIcon: choice.showsIcon, at: steps[choice.step])
+                .frame(width: proxy.size.width, height: proxy.size.height, alignment: frameAlignment)
         }
     }
 
@@ -58,6 +48,10 @@ struct FittedLabel: View {
         HStack(spacing: font.iconSpacing(at: size)) {
             if showingIcon, let systemImage {
                 Image(systemName: systemImage)
+                    // Exactly the width WordFit measured, and never taller
+                    // than a line of the words, so the icon only ever takes
+                    // the room it was measured for.
+                    .frame(width: font.iconWidth(systemImage, at: size), height: font.lineHeight(at: size))
                     .accessibilityHidden(true)
             }
             Text(verbatim: title)
@@ -68,7 +62,7 @@ struct FittedLabel: View {
                 .lineLimit(isOneWord ? 1 : nil)
         }
         .font(font.font)
-        .textSize(size, from: dynamicTypeSize)
+        .textSize(size)
     }
 
     private var isOneWord: Bool {

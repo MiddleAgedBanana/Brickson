@@ -6,9 +6,9 @@ import UIKit
 ///
 /// Labels are drawn with the style itself at one of Apple's text sizes
 /// (`steps(downFrom:)`), never at a made-up point size, so SwiftUI lays them
-/// out with the style's own line spacing. UIKit measures only widths, which
-/// match SwiftUI's to within half a point (`StarterLabelFitTests`); SwiftUI
-/// measures heights itself (`FittedLabel`).
+/// out with the style's own line spacing. UIKit measures them: its widths
+/// match SwiftUI's to within half a point, and `textHeight` is never less
+/// than the height SwiftUI draws (`StarterLabelFitTests`).
 struct LabelFont: Equatable {
     enum Weight: Equatable {
         case regular
@@ -87,17 +87,44 @@ struct LabelFont: Equatable {
         uiFont(at: size).lineHeight.rounded(.up) + 1
     }
 
+    /// At least the height SwiftUI draws `text` in at a text size, wrapped
+    /// between words to `width`. UIKit counts the lines, wrapping 2pt early
+    /// (`WordFit.widthSlack`) so it never finds fewer lines than SwiftUI;
+    /// each line after the first is given the line height plus 15%, more
+    /// than the leading SwiftUI adds (headline at the default size: 22pt a
+    /// line against UIKit's 20.3, measured on CI).
+    func textHeight(_ text: String, width: CGFloat, at size: DynamicTypeSize) -> CGFloat {
+        let font = uiFont(at: size)
+        let paragraph = NSMutableParagraphStyle()
+        paragraph.lineBreakStrategy = .standard
+        let bounds = (text as NSString).boundingRect(
+            with: CGSize(width: max(width - WordFit.widthSlack, 1), height: .greatestFiniteMagnitude),
+            options: .usesLineFragmentOrigin,
+            attributes: [.font: font, .paragraphStyle: paragraph],
+            context: nil
+        )
+        let lines = max(1, Int((bounds.height / font.lineHeight).rounded()))
+        return lineHeight(at: size) + CGFloat(lines - 1) * (font.lineHeight * 1.15).rounded(.up)
+    }
+
     /// The width of `text` on one line at a text size.
     func lineWidth(_ text: String, at size: DynamicTypeSize) -> CGFloat {
         (text as NSString).size(withAttributes: [.font: uiFont(at: size)]).width.rounded(.up)
     }
 
-    /// The width a symbol and the gap after it take beside text at a text size.
-    func iconAdvance(_ systemImage: String, at size: DynamicTypeSize) -> CGFloat {
+    /// The width a symbol takes beside text at a text size. Labels give
+    /// their icon exactly this width, so what is measured is what is laid
+    /// out.
+    func iconWidth(_ systemImage: String, at size: DynamicTypeSize) -> CGFloat {
         let font = uiFont(at: size)
         let configuration = UIImage.SymbolConfiguration(font: font)
         let symbolWidth = UIImage(systemName: systemImage, withConfiguration: configuration)?.size.width ?? font.pointSize
-        return symbolWidth.rounded(.up) + iconSpacing(at: size)
+        return symbolWidth.rounded(.up)
+    }
+
+    /// The width a symbol and the gap after it take beside text at a text size.
+    func iconAdvance(_ systemImage: String, at size: DynamicTypeSize) -> CGFloat {
+        iconWidth(systemImage, at: size) + iconSpacing(at: size)
     }
 
     /// The gap between the icon and the words at a text size.
@@ -116,6 +143,34 @@ struct LabelFont: Equatable {
             widestWord: { widestWord(text, at: steps[$0]) },
             iconAdvance: { step in systemImage.map { iconAdvance($0, at: steps[step]) } ?? 0 }
         )
+    }
+
+    /// How `FittedLabel` draws `text` in `size`: the first of `choices` whose
+    /// wrapped words fit the height (`WordFit.first(of:whereHeightFits:)`).
+    func choice(
+        for text: String, systemImage: String?, steps: [DynamicTypeSize], size: CGSize
+    ) -> WordFit.Choice {
+        let candidates = choices(for: text, systemImage: systemImage, steps: steps, width: size.width)
+        return WordFit.first(of: candidates, whereHeightFits: { choice in
+            let step = steps[choice.step]
+            let icon = choice.showsIcon ? systemImage.map { iconAdvance($0, at: step) } ?? 0 : 0
+            return textHeight(text, width: size.width - icon, at: step) <= size.height
+        })
+    }
+
+    /// How `FittedLine` draws `text` on one line of `width`: the person's
+    /// size with its icon, then without, then each smaller size; the
+    /// smallest when none fits, which then wraps.
+    func lineChoice(
+        for text: String, systemImage: String, steps: [DynamicTypeSize], width: CGFloat
+    ) -> WordFit.Choice {
+        WordFit.choices(
+            stepCount: steps.count,
+            hasIcon: true,
+            width: width,
+            widestWord: { lineWidth(text, at: steps[$0]) },
+            iconAdvance: { iconAdvance(systemImage, at: steps[$0]) }
+        ).first ?? WordFit.Choice(step: 0, showsIcon: false)
     }
 
     private func uiFont(at size: DynamicTypeSize) -> UIFont {
@@ -141,16 +196,13 @@ struct LabelFont: Equatable {
 }
 
 extension View {
-    /// Draws the view at `size` when it is smaller than the person's own text
-    /// size `current`, and otherwise leaves the person's size untouched, so
-    /// text that fits keeps following the system's Dynamic Type as usual
-    /// (Apple's accessibility audit reports text pinned to a fixed size).
-    @ViewBuilder
-    func textSize(_ size: DynamicTypeSize, from current: DynamicTypeSize) -> some View {
-        if size == current {
-            self
-        } else {
-            dynamicTypeSize(size)
-        }
+    /// Draws the view at no more than `size`, one of the steps below the
+    /// person's own text size. At the person's own size the limit changes
+    /// nothing, so text that fits keeps following Dynamic Type as usual. It
+    /// is always the same modifier, whichever step is chosen, so the text
+    /// stays one view as it grows (Apple's accessibility audit compares each
+    /// text with itself at larger sizes).
+    func textSize(_ size: DynamicTypeSize) -> some View {
+        dynamicTypeSize(...size)
     }
 }

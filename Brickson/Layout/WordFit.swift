@@ -14,10 +14,10 @@ import Foundation
 ///    the words shrink),
 /// 3. each smaller size, without the icon.
 ///
-/// `FittedLabel` then draws the first choice whose height fits, measured by
-/// SwiftUI itself (`ViewThatFits`), so the height test is exactly what people
-/// see. The last choice is always the smallest size without the icon: it is
-/// drawn even when it does not fit, because nothing smaller is allowed.
+/// `FittedLabel` then draws the first choice whose height fits (`first(of:)`),
+/// by `LabelFont`'s measure of the wrapped words. The last choice is always
+/// the smallest size without the icon: it is drawn even when it does not
+/// fit, because nothing smaller is allowed.
 nonisolated enum WordFit {
     /// A way to draw a label: a step in the list of text sizes, and whether
     /// its icon shows.
@@ -63,6 +63,18 @@ nonisolated enum WordFit {
             result.append(smallest)
         }
         return result
+    }
+
+    /// The first of `choices` whose height fits, or the last when none does.
+    ///
+    /// The choice is worked out rather than left to SwiftUI's `ViewThatFits`,
+    /// so a label stays one view whatever size it is drawn at. Apple's
+    /// accessibility audit grows the text and compares each label with
+    /// itself; `ViewThatFits` replaced the label with another view as the
+    /// text grew, and the audit then reported it as clipped or as not
+    /// following Dynamic Type (docs/log/2026-10-21-phone-layout.md).
+    static func first(of choices: [Choice], whereHeightFits fits: (Choice) -> Bool) -> Choice {
+        choices.first(where: fits) ?? choices.last ?? Choice(step: 0, showsIcon: false)
     }
 
     /// The words of a label: it may break between them, never inside one.
