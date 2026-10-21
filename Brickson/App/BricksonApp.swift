@@ -3,12 +3,14 @@ import SwiftUI
 import UIKit
 
 /// The app's entry point. It opens the phrase library, creates the one
-/// speech engine, and hands both to every screen through the environment.
+/// speech engine and the Get Attention alarm, and hands them to every screen
+/// through the environment.
 @main
 struct BricksonApp: App {
     @Environment(\.scenePhase) private var scenePhase
     @State private var audioSafety: AudioSafetyMonitor
     @State private var speech: SpeechService
+    @State private var attention: AttentionAlertPlayer
     private let container: ModelContainer
     private let isVolatileStore: Bool
     private let phraseLibraryIssue: PhraseLibraryIssue?
@@ -22,9 +24,10 @@ struct BricksonApp: App {
         launch.prepareStorage()
         self.launch = launch
 
-        let audioSafety = AudioSafetyMonitor()
-        _audioSafety = State(initialValue: audioSafety)
-        _speech = State(initialValue: SpeechService(settings: launch.settings, audioSafetyMonitor: audioSafety))
+        let audio = AppAudio.makeForApp(settings: launch.settings)
+        _audioSafety = State(initialValue: audio.safety)
+        _speech = State(initialValue: audio.speech)
+        _attention = State(initialValue: audio.attention)
 
         let opened = launch.openLibrary()
         let library = PhraseLibraryLaunch.prepare(container: opened.container, isVolatile: opened.isVolatile)
@@ -38,6 +41,7 @@ struct BricksonApp: App {
             HomeView()
                 .environment(audioSafety)
                 .environment(speech)
+                .environment(attention)
                 .environment(\.isVolatileStore, isVolatileStore)
                 .environment(\.phraseLibraryIssue, phraseLibraryIssue)
                 .environment(\.appTimeouts, launch.timeouts)
@@ -46,6 +50,12 @@ struct BricksonApp: App {
         .modelContainer(container)
         .onChange(of: scenePhase, initial: true) { _, phase in
             UIApplication.shared.isIdleTimerDisabled = ScreenWakePolicy.keepsScreenAwake(in: phase)
+            if phase == .active {
+                // Back in the foreground: read again what may have changed
+                // while away, the volume and an alarm that went quiet.
+                audioSafety.refreshOutputVolume()
+                attention.checkHealth()
+            }
         }
     }
 

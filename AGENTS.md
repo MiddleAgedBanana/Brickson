@@ -441,7 +441,8 @@ the failure.
   make it fail.
 - **Logic lives in plain, testable types**, not in views: today
   `SpokenUtteranceTracker`, `VoiceSelection`, `SpeechRateSteps`,
-  `AudioSafetyPolicy`, `ScreenWakePolicy`, `CategorySelection`,
+  `AudioSafetyPolicy`, `AttentionAlertStatus`, `AudioSessionEventMapping`,
+  `AudioSessionLeasePolicy`, `ScreenWakePolicy`, `CategorySelection`,
   `StarterLibrary`, `PhraseLibrarySeeder`. Views only read them.
 - **Run it, don't just read it.** Layout and flow changes are checked in the
   running app on an iPad and an iPhone simulator, at default and
