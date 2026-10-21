@@ -197,18 +197,28 @@ extension XCTestCase {
     /// reported, as expected failures; the phone layout work fixes them
     /// (docs/DECISIONS.md, "Home version 0 is a stand-in"). The expectation
     /// is strict: once the iPhone passes, the test fails until this call is
-    /// removed. Any other kind of finding, and any finding on the iPad,
-    /// still fails the test.
+    /// removed. Only those pairs of kind and element are expected: the same
+    /// kind on any other element, any other kind, and any finding on the
+    /// iPad still fail the test.
     @MainActor
     func expectKnownPhoneHomeAuditFindings() {
         guard UIDevice.current.userInterfaceIdiom == .phone else { return }
-        let known = [XCUIAccessibilityAuditType.dynamicType, .textClipped].map {
-            "; type \($0.rawValue)):"
-        }
+        // How assertPassesAccessibilityAudit names a kind and an element.
+        func kind(_ type: XCUIAccessibilityAuditType) -> String { "; type \(type.rawValue)):" }
+        let tile = "(identifier \"phraseTile\""
+        func control(_ label: String) -> String { "on \"\(label)\" (identifier \"\"" }
+        let known = [
+            (kind(.dynamicType), tile),
+            (kind(.textClipped), tile),
+            (kind(.textClipped), control("Yes")),
+            (kind(.textClipped), control("Emergency")),
+            (kind(.textClipped), control("Speaking")),
+        ]
         let options = XCTExpectedFailure.Options()
         options.issueMatcher = { issue in
-            issue.compactDescription.contains("Accessibility audit (")
-                && known.contains { issue.compactDescription.contains($0) }
+            let text = issue.compactDescription
+            return text.contains("Accessibility audit (")
+                && known.contains { text.contains($0.0) && text.contains($0.1) }
         }
         XCTExpectFailure(
             "Known iPhone audit findings on the stand-in Home (docs/DECISIONS.md, \"Home version 0 is a stand-in\")",

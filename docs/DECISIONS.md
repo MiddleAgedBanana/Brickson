@@ -287,7 +287,9 @@ How it behaves, and where it knowingly falls short:
     those two kinds of finding are strict expected failures on the iPhone
     (`expectKnownPhoneHomeAuditFindings`, BricksonUITests): still reported,
     and the test fails once they are gone so the exception is removed.
-    Every other finding, and every finding on the iPad, fails the test.
+    Only those kinds on those elements are expected; the same kind on any
+    other element, every other finding, and every finding on the iPad
+    fail the test.
     *Default, adopted 2026-10-21: the owner left these choices to the
     project. Reversible if the owner objects.*
 
