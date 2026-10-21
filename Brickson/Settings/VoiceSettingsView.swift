@@ -28,6 +28,16 @@ struct VoiceContent: View {
             describeLanguage: { Locale.current.localizedString(forIdentifier: $0) ?? $0 }
         )
 
+        // Which voice speaks now, by the same rule speech uses.
+        if let current = VoiceSelection.select(
+            chosenID: speech.selectedVoiceID,
+            from: speech.availableVoices,
+            languageCode: Bundle.main.preferredLocalizations.first ?? "en"
+        ) {
+            SettingsParagraph("Speaking with \(current.name).")
+                .accessibilityIdentifier("nowSpeaking")
+        }
+
         PersonalVoiceSection()
 
         SettingsHeading("Speed")
