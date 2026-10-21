@@ -48,6 +48,19 @@ struct HomeShapeTests {
         }
     }
 
+    /// Fails if a control keeps a fixed height when one line of its label at
+    /// the person's text size is taller: the label would then have to step
+    /// down, and Apple's audit reports text that does not follow Dynamic Type.
+    @Test func controlsGrowToHoldOneLineOfTheirLabel() {
+        let insets = 2 * HomeShape.labelInset.vertical
+        let grown = HomeShape(contentWidth: 343, quickControlLineHeight: 70, categoryLineHeight: 60)
+        #expect(grown.quickControlHeight == 70 + insets)
+        #expect(grown.categoryHeight == 60 + insets)
+        let floors = HomeShape(contentWidth: 1000, quickControlLineHeight: 20, categoryLineHeight: 20)
+        #expect(floors.quickControlHeight == 88)
+        #expect(floors.categoryHeight == 72)
+    }
+
     /// Fails if phones lose the three-column grid that keeps the starter
     /// library from scrolling, or if a window too narrow for the starter
     /// words gets three columns anyway.

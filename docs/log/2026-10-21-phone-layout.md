@@ -126,6 +126,16 @@ missing is the wells and A's trailing column. Again still sits in A.
   now also checked by SwiftUI for width as drawn, because the symbol
   SwiftUI draws (Needs has a raised hand) can be wider than the one UIKit
   measured, which would cut the word short at a larger text size.
+- **CI on `31e48f7`**: the build and unit tests passed, and the
+  text-recognition test now reads every quick-control word on the iPad.
+  The audit still reported "Needs" (iPad) and "No" (iPhone) as not
+  following Dynamic Type, and `HomeLayoutTests`, the first test to launch
+  the app, failed on both devices with "kAXErrorServerNotFound" before
+  Home appeared (the cold-simulator failure in AGENTS.md, *Gotchas*; it
+  passed on the iPad in the run before). Fix, not yet re-run: quick
+  controls and categories grow to hold one line of their words at the
+  person's size instead of stepping down to a fixed height. A 402pt phone
+  then scrolls at AX5, recorded in *Where the grid still scrolls*.
 - **Measured on CI** with the temporary calibration test: SwiftUI's text
   widths match UIKit's to within half a point; SwiftUI's line height is
   the first line plus the style's leading per extra line (headline 17pt:

@@ -78,6 +78,15 @@ struct LabelFont: Equatable {
         return widest.rounded(.up)
     }
 
+    /// At least the height of one line of the style at a text size as
+    /// SwiftUI draws it. UIKit's line height comes out a fraction of a point
+    /// under SwiftUI's (headline at the default size: 20.3 against 20.5,
+    /// measured on CI), so this rounds up and adds a point
+    /// (`StarterLabelFitTests`).
+    func lineHeight(at size: DynamicTypeSize) -> CGFloat {
+        uiFont(at: size).lineHeight.rounded(.up) + 1
+    }
+
     /// The width of `text` on one line at a text size.
     func lineWidth(_ text: String, at size: DynamicTypeSize) -> CGFloat {
         (text as NSString).size(withAttributes: [.font: uiFont(at: size)]).width.rounded(.up)

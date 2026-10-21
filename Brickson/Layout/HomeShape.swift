@@ -40,22 +40,32 @@ nonisolated struct HomeShape: Equatable, Sendable {
     let isCompact: Bool
     let categoryColumns: Int
     let gridColumns: Int
+    /// The height of a quick control (Yes, No, Emergency) and of Again: one
+    /// line of its label at the person's text size, or the floor if that is
+    /// taller. On wide windows the floor is AGENTS.md's quick-control floor
+    /// for gaze (88pt); on narrow ones, a touch size that leaves the phrase
+    /// grid room.
+    let quickControlHeight: CGFloat
+    /// The height of a category button: one line of its label at the
+    /// person's text size, or the floor: the gaze floor (72pt) on wide
+    /// windows, a touch size on narrow ones.
+    let categoryHeight: CGFloat
 
-    init(contentWidth: CGFloat) {
+    /// `quickControlLineHeight` and `categoryLineHeight` are the heights of
+    /// one line of those labels at the person's text size
+    /// (`LabelFont.lineHeight(at:)`). A control grows to hold one line, so a
+    /// short word like "No" keeps the person's own size instead of stepping
+    /// down to fit a fixed height, which Apple's accessibility audit reports
+    /// as text that does not follow Dynamic Type.
+    init(contentWidth: CGFloat, quickControlLineHeight: CGFloat = 0, categoryLineHeight: CGFloat = 0) {
         isCompact = contentWidth < Self.regularMinimumWidth
         categoryColumns = isCompact ? 2 : 4
         let threeColumnTileWidth = (contentWidth - 2 * Self.controlSpacing) / 3
         gridColumns = threeColumnTileWidth >= Self.minimumTileWidth ? 3 : 2
+        let insets = 2 * Self.labelInset.vertical
+        quickControlHeight = max(isCompact ? 64 : 88, quickControlLineHeight + insets)
+        categoryHeight = max(isCompact ? 48 : 72, categoryLineHeight + insets)
     }
-
-    /// The height of a quick control (Yes, No, Emergency) and of Again. On
-    /// wide windows, AGENTS.md's quick-control floor for gaze (88pt); on
-    /// narrow ones, a touch size that leaves the phrase grid room.
-    var quickControlHeight: CGFloat { isCompact ? 64 : 88 }
-
-    /// The height of a category button: the gaze floor (72pt) on wide
-    /// windows, a touch size on narrow ones.
-    var categoryHeight: CGFloat { isCompact ? 48 : 72 }
 
     /// The shortest phrase tile before the grid scrolls instead of shrinking
     /// it further. On narrow windows, the tallest starter phrase at the

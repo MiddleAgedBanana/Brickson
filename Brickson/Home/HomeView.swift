@@ -26,6 +26,7 @@ import SwiftUI
 /// where its tiles would otherwise be shorter than
 /// `HomeShape.minimumTileHeight`, or where a library warning takes its room.
 struct HomeView: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Query private var categories: [PhraseCategory]
     @State private var selectedCategoryID: UUID?
 
@@ -37,7 +38,11 @@ struct HomeView: View {
 
         GeometryReader { proxy in
             let contentWidth = proxy.size.width
-            let shape = HomeShape(contentWidth: contentWidth)
+            let shape = HomeShape(
+                contentWidth: contentWidth,
+                quickControlLineHeight: LabelFont.quickControl.lineHeight(at: dynamicTypeSize),
+                categoryLineHeight: LabelFont.category.lineHeight(at: dynamicTypeSize)
+            )
             let quickWidths = HomeShape.quickControlWidths(contentWidth: contentWidth)
 
             VStack(alignment: .leading, spacing: HomeShape.regionSpacing) {

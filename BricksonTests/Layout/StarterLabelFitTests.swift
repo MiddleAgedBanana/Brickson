@@ -146,6 +146,21 @@ struct StarterLabelFitTests {
         }
     }
 
+    /// Fails if `LabelFont.lineHeight(at:)` is ever shorter than one line as
+    /// SwiftUI draws it: a control sized from it would then cut its label
+    /// off or make it step down.
+    @Test func oneLineFitsTheLineHeightAtEveryTextSize() {
+        for font in [LabelFont.quickControl, .category] {
+            for size in DynamicTypeSize.allCases {
+                let view = Text(verbatim: "Ag").font(font.font).dynamicTypeSize(size)
+                let drawn = UIHostingController(rootView: view)
+                    .sizeThatFits(in: CGSize(width: 10_000, height: 10_000)).height
+                let planned = font.lineHeight(at: size)
+                #expect(drawn <= planned, "\(font.textStyle) at \(size): draws \(drawn), planned \(planned)")
+            }
+        }
+    }
+
     /// Fails if the text sizes a label may step through ever include one
     /// below the default, or skip the person's own size.
     @Test func labelsStepFromThePersonsSizeDownToTheDefault() {

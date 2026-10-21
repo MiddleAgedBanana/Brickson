@@ -664,7 +664,12 @@ device-specific interfaces."
 - **Sizes.** Narrow windows (under 560pt of content): quick controls 64pt,
   categories 48pt, touch sizes that leave the grid room. Wide windows: the
   gaze floors AGENTS.md names, 88pt and 72pt, and tiles of at least 110pt.
-  These are the stand-in's numbers; the engine sets floors per profile.
+  Those are floors: a quick control or category grows to hold one line of
+  its words at the person's text size (`LabelFont.lineHeight(at:)`), so a
+  short word keeps the person's size. Fixed heights made "No" and "Needs"
+  step down at larger sizes, which Apple's accessibility audit reported as
+  text that does not follow Dynamic Type (CI, 2026-10-21). These are the
+  stand-in's numbers; the engine sets floors per profile.
 - **Labels step through Apple's text sizes.** Every Home label is drawn
   with its text style at one of Apple's sizes: the person's own, with its
   icon if it fits; then without the icon; then each smaller size down to
@@ -705,8 +710,12 @@ running on these windows):
   tiles of about 109×68pt, but three floor-sized rows do not fit under
   this arrangement in dwell, switch or gaze profiles, so the engine needs
   another arrangement for this window, never scrolling.
-- A 402×874pt phone window (iPhone 17 class): expected to fit at every text
-  size; `HomeLayoutTests` checks it at default and AX5.
+- A 402×874pt phone window (iPhone 17 class): fits at the default text
+  size, which `HomeLayoutTests` checks. At AX5 the grid scrolls: the quick
+  controls and categories grow to hold one line of their words at the
+  person's size (below), so the tiles left are about 94pt, under the 99pt
+  minimum. `HomeLayoutTests` still checks there that every tile keeps its
+  slot and that the quick controls and categories are on screen.
 - Every iPad window CI runs, both orientations, default and AX5: expected to
   fit; `HomeLayoutTests` checks them.
 

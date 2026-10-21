@@ -3,7 +3,9 @@ import XCTest
 /// Home's layout in the running app: the starter library needs no
 /// scrolling, every tile keeps its place whichever category shows, and the
 /// quick controls are wholly on screen, at the default text size and the
-/// largest accessibility size, in each orientation the device turns to.
+/// largest accessibility size, in each orientation the device turns to. The
+/// one recorded exception is a narrow window at the largest size, where the
+/// grid scrolls; its other checks still run.
 ///
 /// What it measures is the simulator CI runs on, named in each failure and
 /// in the attached screenshots. It says nothing about gaze comfort or Snap to
@@ -75,6 +77,13 @@ final class HomeLayoutTests: XCTestCase {
                     continue
                 }
                 let context = "\(textSize.name), \(isLandscape ? "landscape" : "portrait"), window \(window.size)"
+                // A narrow window at the largest text size is the recorded
+                // exception: its controls grow to hold their words, and the
+                // grid scrolls there (docs/DECISIONS.md, "Home's stand-in
+                // layout", *Where the grid still scrolls*). Everything else is
+                // still checked there, slots included. 592pt is Home's
+                // 560pt regular content width plus its margins.
+                let gridMustFit = !(textSize == .ax5 && window.width < 592)
 
                 for name in ["Yes", "No", "Emergency", "Again"] {
                     expectWhollyOnScreen(app.buttons[name], name, in: window, context)
@@ -92,10 +101,12 @@ final class HomeLayoutTests: XCTestCase {
                         slots = frames
                     }
                     for (index, frame) in frames.enumerated() {
-                        XCTAssertTrue(
-                            window.contains(frame),
-                            "\(category) tile \(index + 1) at \(frame) is cut off or scrolled away (\(context))"
-                        )
+                        if gridMustFit {
+                            XCTAssertTrue(
+                                window.contains(frame),
+                                "\(category) tile \(index + 1) at \(frame) is cut off or scrolled away (\(context))"
+                            )
+                        }
                         if index < slots.count {
                             XCTAssertEqual(
                                 frame.origin.x, slots[index].origin.x, accuracy: 0.5,
