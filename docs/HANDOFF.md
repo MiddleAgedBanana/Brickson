@@ -17,8 +17,10 @@ from a neutral starter set. A tile speaks at once, in the person's
 Personal Voice when one exists and is allowed; the sentence stays on screen
 in a reserved viewport: one full-width line with Again below at compact
 widths, two lines with Again beside at regular widths, and longer messages
-scroll at full size. Emergency opens the emergency phrases and says
-nothing. Audio failures and very low volume show as a short passive
+scroll at full size. A phrase the system cuts off (a call, Siri, lost
+headphones) shows "Stopped" with Again to repeat it. Emergency opens the
+emergency phrases and says nothing. The start-only Get Attention alarm is
+built and waiting for its place on Home. Audio failures and very low volume show as a short passive
 warning in space always kept for it, and VoiceOver announces them. If the
 library cannot be saved, the app speaks from a filled in-memory library
 and says changes will not be kept. The screen never locks. Ported code:
@@ -51,7 +53,8 @@ and says changes will not be kept. The screen never locks. Ported code:
   person has yet run the app and heard a phrase on record.
 - **Physical devices: none.** See *Checks that need a real device*.
 - **No test sees** VoiceOver announcements being posted, the message's
-  scroll reset, the missed-callback watchdog, or sound. Windowed iPad
+  scroll reset, the missed-callback watchdog on a real synthesizer (it is
+  unit-tested with fakes), or sound. Windowed iPad
   sizes and iPhone Duo poses are untested. The first UI test on a
   just-started CI simulator failed intermittently before PR #13's warm-up
   launch (AGENTS.md, *Gotchas*).
@@ -69,10 +72,16 @@ release in docs/ROADMAP.md when no thread has it yet.
   and hides categories. Quick-control words no longer clip or break at
   AX5; a rendered-label test checks the four English quick-control labels
   only, not phrases. *(Phone layout and word fitting)*
-- No Get Attention alarm yet, so `AudioSafetyPolicy` runs with the alarm
-  always idle, and the VoiceOver warning sentences mention it already. *(Speech engine and Get Attention)*
-- A phrase the system cuts off can be recorded as finished, so no
-  "Stopped, Again" appears (code audit M1). *(Speech engine and Get Attention)*
+- The Get Attention alarm is built (`AttentionAlertPlayer`, in the
+  environment) but not on screen, so `AudioSafetyPolicy` on Home runs with
+  the alarm always idle, and the VoiceOver warning sentences mention it
+  already. Get Attention and Stop go into Home's slots once the layout's
+  slot model lands (docs/DECISIONS.md, "Get Attention"). *(a new thread,
+  after Phone layout and word fitting)*
+- The Get Attention tone is the reference app's placeholder; a
+  harmonic-rich replacement and its level under speech need a listening
+  check on a device (docs/DECISIONS.md, "Get Attention"). *(owner, with a
+  device build)*
 - No typing *(Typing foundation)*; no editing or backup *(Library editing
   and backup format)*; no Settings or voice choice *(Settings and first run)*.
 - A library the app cannot read is replaced by the starter phrases with a
@@ -82,11 +91,17 @@ release in docs/ROADMAP.md when no thread has it yet.
   date (xcodebuild alone does not), and CI fails when the committed one
   is stale. The speech-rate names in `SpeechRateSteps` and the voice
   sample sentence in `SpeechService` are not in it yet. *(Test seams and CI evidence)*
-- No off-main test reaches the real KVO closure, the Personal Voice
-  completion or the synthesizer delegate, and with no seam over the
-  synthesizer the watchdog is untested. *(Speech engine and Get Attention)*
+- No off-main test reaches the real KVO closure (the volume handler is
+  called directly) or the closure inside
+  `SystemPersonalVoice.requestAuthorization`, which only the system can
+  call. The synthesizer and tone-player delegates, the Personal Voice
+  answer through `SpeechService` and a session notice are tested from a
+  background thread (docs/LESSONS.md). *(Personal Voice thread, when one
+  starts)*
 - The audio session stays active after speech, so other apps' audio does
-  not resume by itself (docs/DECISIONS.md, "Background audio"). *(owner, with the alarm)*
+  not resume by itself. This is a decision, not an oversight
+  (docs/DECISIONS.md, "Background audio"); `.releaseWhenIdle` waits on a
+  device check. *(owner, with a device build)*
 - If SwiftData cannot create even an in-memory library, the app stops
   (`fatalError` in `PhraseLibraryStore.openForApp`). *(owner)*
 - `cloudKitDatabase: .none` and the absence of an iCloud capability are
@@ -94,7 +109,8 @@ release in docs/ROADMAP.md when no thread has it yet.
 - No Privacy row in the app, which App Review requires, and Personal Voice
   permission is asked at first launch without explanation. *(Settings and first run)*
 - The privacy policy describes features not built yet; each is built or its
-  sentence deleted before release. *(App Store readiness and ASO)*
+  sentence deleted before release (docs/APP-STORE.md, section 3, lists
+  each sentence). *(App Store readiness and ASO)*
 - The app icon is a placeholder; `design/brand/` is not installed. *(Figma and Claude Design screens)*
 - No license file, so all rights are reserved; the bundle identifier
   contains the owner's first name and is permanent after the first upload. *(owner)*
@@ -108,6 +124,8 @@ can be reversed; docs/DECISIONS.md):
    *Waiting on the owner*: the final name (and with it the bundle
    identifier), the price, how the name is said, the license, and your
    EU trader status (needed before the App Store release in the EU).
+   Everything App Store Connect will ask, in order, is in
+   [docs/APP-STORE.md](APP-STORE.md), section 1.
 2. Run the app once yourself and hear a phrase ([local setup](GETTING_STARTED.md)).
 3. Put your Team ID in `project.yml` (`DEVELOPMENT_TEAM`), then run the app
    on your iPhone and iPad and work through *Checks that need a real device*.
@@ -124,6 +142,11 @@ by the owner (docs/SDLC.md, *Deploy*). The toolchain's follow-ups
 recheck the minimum iOS against its two rules whenever Apple's next major
 release drops devices (docs/DECISIONS.md, "Minimum iOS, iPhone and
 iPad").
+The speech work's two next pull requests, Get Attention and Stop on Home
+(after the layout's slot model) and the Personal Voice foundation, are
+described for a fresh thread each in
+[`log/2026-10-21-speech-and-get-attention.md`](log/2026-10-21-speech-and-get-attention.md),
+*Follow-ups*.
 
 ## Checks that need a real device
 
@@ -141,7 +164,13 @@ Simulators cannot show these. Record each result in a `docs/log/` file
 | Whether a lingering look re-fires a dwell | How much repeat protection matters |
 | Whether Snap to Item ignores controls scrolled off screen | Whether scrolling can keep family controls out of reach |
 | What the real software keyboard covers in each orientation | The typing layout (docs/LESSONS.md, "Test with the real software keyboard") |
-| Get Attention heard from the next room, on the speaker and over Bluetooth | The alarm's sound and level (once built) |
+| Get Attention heard from the next room, on the speaker and over Bluetooth | The alarm's sound and level, and the replacement tone |
+| A phrase spoken while Get Attention sounds is understood over the tone at 0.32 | `AttentionAlertStatus.toneVolumeWhileSpeaking` |
+| A phone call, Siri and another app's alarm during a phrase and during Get Attention: each stops and shows "Stopped — Again" or "Alert stopped", and nothing restarts by itself, on iOS 26 and iOS 27 | Interruption handling and the iOS 27 notices (docs/DECISIONS.md, "Audio session notices") |
+| Lock the device during a long phrase and while Get Attention sounds: both carry on | Background audio, before the App Review notes promise it |
+| Whether a voice reports its final word before finishing, and whether the system reports a cut-off phrase as finished | How often "A phrase the system cuts off" relies on its 3-second window |
+| Unplugging headphones during a phrase and during Get Attention | Output loss: speech carries on, the alarm stops and says so |
+| Whether the tone player ever reads as not playing for a moment while it plays (route changes, Bluetooth) | Whether the once-a-second health check needs a second look before stopping the alarm |
 | Comfortable dwell time and movement tolerance | Setup recommendations per profile |
 | Whether Guided Access works together with Eye Tracking | Setup recommendations |
 | Which phrases people reach for, and how many categories can be scanned by eye | The starter library |
@@ -166,7 +195,7 @@ Simulators cannot show these. Record each result in a `docs/log/` file
   Billing → AI usage.
 - The [website](https://middleagedbanana.github.io/Brickson/) and its
   [privacy policy](https://middleagedbanana.github.io/Brickson/privacy/)
-  (Effective October 12, 2026) publish after each merge; on 2026-10-15 they
+  (Effective October 21, 2026, since PR #18) publish after each merge; on 2026-10-15 they
   matched `site/` byte for byte. The support page's "in development" lines
   change at release.
 - Claude Code sessions run a guard before every command and GitHub tool
