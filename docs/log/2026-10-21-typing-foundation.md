@@ -77,8 +77,14 @@ full keyboard.
   68 tests compile and pass. The file tests ran against a real file
   system. Not checked there: anything that needs SwiftUI, UIKit or
   XCTest.
-- **On GitHub CI**: see the pull request's checks. CI is the first build
-  of the SwiftUI and UI-test code.
+- **On GitHub CI** (three manual runs on this branch before the pull
+  request, Xcode on GitHub's macos-26 machines, iPad Pro 13-inch (M5)
+  simulator, iOS 26.5): everything built; the unit tests passed each time;
+  LaunchTests and the audit passed. The probe, switched on for those runs
+  only (`cef0bba`, reverted), first showed that its own window reading
+  shrank with the keyboard (fixed in `4a1f5f4`); the last run found the
+  full keyboard and SwiftUI leaving room for it in all four cases. The pull
+  request's own checks are the final word.
 - Not run on a Mac or a device. Nothing here has been seen by a person.
 
 ## Not done, and why
