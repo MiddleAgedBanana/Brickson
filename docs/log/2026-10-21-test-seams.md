@@ -60,7 +60,17 @@ other work streams can rely on it.
   every state
 - `5b1d038` Describe the new test script, launch helper and simulator
   choice (AGENTS.md, README.md, docs/DECISIONS.md, docs/HANDOFF.md)
-- The commit that adds this file.
+- `53436bf` Record the test seams change in docs/log (this file).
+- After CI's first full run and the reviews (2026-10-21, later the same
+  day): the dark-mode gate reads the median of the whole screenshot
+  instead of one pixel, which read white in dark mode on both devices;
+  the iPhone's audit findings on the stand-in Home are recorded as strict
+  expected failures (docs/DECISIONS.md, "Home version 0 is a stand-in");
+  the iPhone's landscape tests check it stays portrait; a `DESTINATION`
+  simulator must fall in the deployment-target-to-SDK range; an
+  unreadable test summary fails the run; an earlier result bundle is
+  removed before anything can fail; unit runs print coverage and check the
+  String Catalog; `PaletteTests` uses `UITraitCollection(mutations:)`.
 
 ## Verified
 
@@ -92,11 +102,12 @@ other work streams can rely on it.
 
 ## Follow-ups
 
-- This thread, next in the same stream: keep `Localizable.xcstrings` in
-  step with the code and fail CI when it is stale; turn on code coverage,
-  fix the `PaletteTests` deprecation warning, then treat warnings as
-  errors; one `tests.yml` change for the owner to paste that uploads
-  `build/TestResults` from both jobs.
+- This thread, next in the same stream: commit the String Catalog CI
+  produces; treat warnings as errors once CI builds clean; one `tests.yml`
+  change for the owner to paste that uploads `build/TestResults` from
+  both jobs.
+- Phone layout thread: Home on the iPhone must pass Apple's audit; then
+  remove `expectKnownPhoneHomeAuditFindings` (the tests fail until it is).
 - Speech thread: take `launch.settings` in `AppAudio.makeForApp(settings:)`
   once both changes are on `main`. Typing thread: switch on
   `launch.startScreen == .keyboardProbe`, and keep drafts under

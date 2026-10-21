@@ -116,7 +116,12 @@ scripts/test.sh unit '-only-testing:BricksonTests/PaletteTests/theContrastFormul
 
 Each run prints how many tests ran, fails if none did, and keeps its
 results in `build/TestResults/` (open a `.xcresult` file in Xcode to see
-each test, with screenshots of any UI-test failure).
+each test, with screenshots of any UI-test failure). A unit run also
+prints how much of the app's code the tests ran, and updates the String
+Catalog (`Brickson/Resources/Localizable.xcstrings`, every string people
+see, ready for translation) to match the code. If it changed, commit it
+with your change; GitHub's run fails when the committed catalog is out of
+date.
 
 GitHub Actions runs unit and UI tests for pull requests and pushes to
 `main`. Passing tests are required before merging. Physical-device checks

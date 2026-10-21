@@ -91,13 +91,19 @@ promise* lists the code rules that keep the policy true.
 - Home's sizes are plain defaults, not measured gaze, switch or touch
   sizes, and the phrase grid scrolls. Fine for a stand-in, not for a
   release (invariant 11).
+- On the iPhone, Apple's accessibility audit finds Home's phrase tiles
+  only partly support larger text, and Yes, Emergency, tiles and the
+  Speaking label may clip. The UI tests record these as strict expected
+  failures on the iPhone only, until the phone layout replaces Home
+  (docs/DECISIONS.md, "Home version 0 is a stand-in").
 - No Get Attention alarm yet, so `AudioSafetyPolicy` runs with the alarm
   always idle.
 - No typing, editing, Settings, voice choice or backup.
 - Personal Voice permission is asked at first launch without explanation
   (docs/DECISIONS.md).
-- English only; the String Catalog fills itself as Xcode builds. Two
-  strings are not in it yet: the speech-rate names in `SpeechRateSteps`
+- English only. `scripts/test.sh unit` brings the String Catalog up to
+  date (xcodebuild alone does not), and CI fails when the committed one
+  is stale. Two strings are not in it yet: the speech-rate names in `SpeechRateSteps`
   and the voice sample sentence in `SpeechService`.
 - The full audio-warning sentences VoiceOver reads mention Get Attention,
   which arrives with port step 1.

@@ -72,8 +72,13 @@ the mode goes to `xcodebuild`
 (`scripts/test.sh unit '-only-testing:BricksonTests/PaletteTests/theContrastFormulaMatchesWCAG()'`).
 Each run keeps its result bundle, with screenshots of UI-test failures and
 the captures UI tests attach, in `build/TestResults/<mode>-<family>.xcresult`,
-and prints how many tests ran; a run in which no test ran fails. The iPad
-and the iPhone are both first-class: UI tests run on both every time.
+and prints how many tests ran; a run in which no test ran, or whose count
+cannot be read, fails. A unit run also prints the app's code coverage and
+brings `Brickson/Resources/Localizable.xcstrings` up to date with the code
+(`xcstringstool sync` over the strings the build found); commit the
+updated catalog with your change. On CI a catalog that does not match the
+code fails the run and prints the difference. The iPad and the iPhone are
+both first-class: UI tests run on both every time.
 
 On a Mac, the unit suite must be **100% green before any commit**; for
 work made where nothing can be built, CI must be green before the pull
