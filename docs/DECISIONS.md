@@ -81,7 +81,7 @@ Recorded here:
   (`PhraseLibraryStore.openForApp`), as the reference app did: no real way
   for it to happen was found. Revisit if one is.
 - **At release, Mac and Apple Vision Pro availability are switched off**
-  in App Store Connect, matching *Minimum iOS, iPhone and iPad*.
+  in App Store Connect, matching the minimum iOS entry.
 - **At most three pull requests wait for the owner's review at once**
   (docs/SDLC.md, *Build*); other work continues on its branch.
 

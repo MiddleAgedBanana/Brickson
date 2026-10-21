@@ -138,7 +138,7 @@ where anything is, and the dwell-safety scoring passes for every profile.
   [`tests-ci-audit.md`](recon/2026-10-15/tests-ci-audit.md), section 4.2 of
   the synthesis.
 - Moving to each new Xcode release when Apple ships it, through a pull
-  request (docs/DECISIONS.md, "Build with Apple's current Xcode").
+  request (the toolchain decision in PR #12).
 - Localization through the String Catalog, once its sync check is in CI.
 - The device-check log: every result recorded with what it was measured on.
 - The documents: each pull request edits the handoff's front page in
