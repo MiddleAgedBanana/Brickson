@@ -307,10 +307,11 @@ message block's frame; Type shows selected; Again reads Speak and speaks
 the whole draft; Return speaks too; category 0 reads "Phrases" and leaves
 typing; the grid is under the keyboard and nothing above it moves. The
 status line shows the typing thread's short texts ("Message not saved",
-"Message not restored") with the full sentence for VoiceOver. On the four
-drawn windows the safety row (Emergency, Get Attention, Yes, No, Speak)
-and the way out sit above the keyboard's top; on the zoomed iPad window
-they do not (*Slot sizes per device*).
+"Message not restored") with the full sentence for VoiceOver. On the
+three drawn windows with a measured keyboard the safety row (Emergency,
+Get Attention, Yes, No, Speak) and the way out sit above the keyboard's
+top; on the zoomed iPad window they do not (*Slot sizes per device*), and
+the SE-class window's keyboard is not measured.
 
 Two parts of the drawn typing state are withdrawn after Codex's review of
 PR #20, and this is proposed instead, for the Typing foundation's
@@ -324,14 +325,15 @@ decisions and "Home's slot plan" to settle:
 - **Clear and its recovery away from the draft.** Clear and **Put Back**
   (which restores what Clear removed) each take a fixed category slot in
   region B while typing, apart from each other, from Speak and from the
-  draft, with the safety row between them and the text. On the four
-  drawn windows region B stays above the keyboard, so each is one
-  activation away.
+  draft, with the safety row between them and the text. On the three
+  drawn windows with a measured keyboard (iPhone 17 and both default iPad
+  orientations) region B stays above the keyboard, so each is one
+  activation away; the SE-class window's keyboard is not measured.
 - **Reaching Clear where the keyboard covers region B**, as on the zoomed
   window. Typing stays open when the keyboard is lowered (part of this
-  proposal), so on an iPad
-  the keyboard's own hide-keyboard key uncovers B with Clear and Put Back
-  in their places: two activations, and nothing moves. A phone keyboard
+  proposal), so on an iPad the keyboard's own hide-keyboard key uncovers
+  B with Clear and Put Back in their places: two activations, and nothing
+  moves. A phone keyboard
   has no such key; no measured phone covers B, and a window where one
   does needs Clear placed above the keyboard or a named exception from
   the layout engine. Until then the delete key still edits the draft, one
