@@ -7,7 +7,7 @@ nothing is appended here. Plan: [`docs/ROADMAP.md`](ROADMAP.md). How the
 project runs: [`docs/SDLC.md`](SDLC.md).
 
 **State as of 2026-10-21: `main` at `9362eca` (PR #11, merged 2026-10-14).**
-Nine threads are working in parallel on the first release, R0.
+Ten threads are working in parallel on the first release, R0.
 
 ## What the app does today
 
@@ -56,7 +56,7 @@ release in docs/ROADMAP.md when no thread has it yet.
 - A phrase the system cuts off can be recorded as finished, so no
   "Stopped, Again" appears (code audit M1). *(Speech engine and Get Attention)*
 - No typing *(Typing foundation)*; no editing or backup *(Library editing
-  and backup format)*; no Settings or voice choice *(R0)*.
+  and backup format)*; no Settings or voice choice *(Settings and first run)*.
 - A library the app cannot read is replaced by the starter phrases with a
   message about saving (code audit M2), and an emptied library is refilled
   with the starter set. *(Library editing and backup format)*
@@ -73,7 +73,7 @@ release in docs/ROADMAP.md when no thread has it yet.
 - `cloudKitDatabase: .none` and the absence of an iCloud capability are
   privacy-policy promises no test pins. *(Test seams and CI evidence)*
 - No Privacy row in the app, which App Review requires, and Personal Voice
-  permission is asked at first launch without explanation. *(R0, Settings and first run)*
+  permission is asked at first launch without explanation. *(Settings and first run)*
 - The privacy policy describes features not built yet; each is built or its
   sentence deleted before release. *(App Store readiness and ASO)*
 - The app icon is a placeholder; `design/brand/` is not installed. *(Figma and Claude Design screens)*
@@ -87,18 +87,17 @@ docs/DECISIONS.md, *Proposed decisions*):
 
 1. Answer the open decisions, starting with the minimum iOS version (asked
    on 2026-10-21; it stays 26.0 until then) and the bundle identifier.
-2. Commit PR #12's new `tests.yml` on its branch (cloud sessions cannot
-   push workflow files; AGENTS.md, *Gotchas*).
-3. Run the app once yourself and hear a phrase ([local setup](GETTING_STARTED.md)).
-4. Put your Team ID in `project.yml` (`DEVELOPMENT_TEAM`), then run the app
+2. Run the app once yourself and hear a phrase ([local setup](GETTING_STARTED.md)).
+3. Put your Team ID in `project.yml` (`DEVELOPMENT_TEAM`), then run the app
    on your iPhone and iPad and work through *Checks that need a real device*.
-5. Review the starter phrases (`Brickson/Resources/StarterPhrases.json`): two
+4. Review the starter phrases (`Brickson/Resources/StarterPhrases.json`): two
    are near duplicates, and "Please move me." could be clearer.
-6. Delete the failed Swift configuration on the Tool status page
+5. Delete the failed Swift configuration on the Tool status page
    (docs/DECISIONS.md, *Code scanning*).
 
-For agents: R0 in [docs/ROADMAP.md](ROADMAP.md), in order. Settings and
-first run, voice choice, the Privacy row, and calls have no thread yet.
+For agents: R0 in [docs/ROADMAP.md](ROADMAP.md), in order. Calls (R0 item
+8) wait for a device build. Files under `.github/workflows` are committed
+by the owner (docs/SDLC.md, *Deploy*).
 
 ## Checks that need a real device
 

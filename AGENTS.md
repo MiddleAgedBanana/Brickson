@@ -41,7 +41,8 @@ actually use?
   disease, and which thread or person owns each item.
 - **`docs/SDLC.md`**: how this project runs as a software factory, stage
   by stage (plan, design, build, test, deploy, maintain), with each
-  stage's gate.
+  stage's gate. A feature that changes what a person sees or hears starts
+  with a work file in `docs/work/`: its intent, spec and plan.
 - **`docs/DECISIONS.md`**: binding decisions, by title. Code comments point
   to them.
 - **`docs/LESSONS.md`**: what went wrong in the reference app, and the rule
