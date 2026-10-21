@@ -50,7 +50,7 @@ CITATION = re.compile(
     r'(?:"(?P<quoted>[^"\n]{2,120})"'          # "Title"
     r'|(?<![*\w])\*(?P<italic>[^*\n]{2,120})\*(?![*\w]))')  # or *Title*
 BARE_ITALIC = re.compile(r'(?<![*\w`])\*(?P<title>[A-Z][^*\n]{1,120}?)\*(?![*\w])')
-LINK = re.compile(r'(?<!!)\[[^\]\n]*\]\((?P<target>[^)\s]+)\)')
+LINK = re.compile(r'(?<!!)\[[^\]\n]*\]\((?P<target>[^)\s]+)(?:\s+(?:"[^"]*"|\'[^\']*\'))?\s*\)')
 HEADING = re.compile(r'^#{1,6}\s+(?P<title>.+?)\s*#*\s*$', re.M)
 LEAD_IN = re.compile(r'^\s*(?:[-*]\s+|\d+\.\s+)?\*\*(?P<title>[^*\n]+?)\*\*', re.M)
 FENCE = re.compile(r'^\s*```.*?^\s*```', re.M | re.S)
@@ -209,6 +209,7 @@ class CheckerTests(unittest.TestCase):
     def test_a_missing_file_or_heading_is_reported(self):
         readme = ROOT / 'README.md'
         self.assertTrue(broken_links(readme, '[x](docs/NO-SUCH-FILE.md)'))
+        self.assertTrue(broken_links(readme, '[x](docs/NO-SUCH-FILE.md "a title")'))
         self.assertTrue(broken_links(readme, '[x](docs/DECISIONS.md#no-such-heading)'))
         self.assertEqual(broken_links(readme, '[x](docs/DECISIONS.md#orientations)'), [])
         self.assertEqual(broken_links(readme, '[x](https://example.com/a.md)'), [])
