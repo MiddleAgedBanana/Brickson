@@ -32,8 +32,8 @@ and `docs/SUCCESSOR-HANDOFF.md`. Here, read `docs/LESSONS.md`.
 
 | Step | What | State |
 |---|---|---|
-| 1 | Speech, the Get Attention alarm and audio safety | **Speech and audio safety ported.** Alarm not yet. |
-| 2 | Storage, editing logic and backup. Fix D28 here. | **Core written new** (editing rules, applier, backup format; D28 avoided by design). Safety copies, export and import not yet. |
+| 1 | Speech, the Get Attention alarm and audio safety | **Ported**, behind test seams (2026-10-21). Get Attention is not on Home yet, and the status strip is still Home's stand-in. |
+| 2 | Storage, editing logic and backup. Fix D28 here. | **Core written new** (editing rules, applier, backup format; D28 avoided by design: `rollback()` is never called, issue #19). Safety copies, export and import not yet. |
 | 3 | Text fitting and colour tokens | Three measured fills only (`Palette`). |
 | 4 | The layout engine, generalized to profiles | Not started. |
 | 5 | Home and typing. Fix D27 here. | A stand-in Home only (docs/DECISIONS.md, "Home version 0 is a stand-in"). |
@@ -48,11 +48,13 @@ unchanged apart from names.
 
 | Brickson | From | Changes |
 |---|---|---|
-| `Speech/SpeechService.swift` | `SpeechService.swift` | Progress is stamped with `ContinuousClock`; the voice is chosen for the app's language; one-person comments removed. |
-| `Speech/SpokenUtteranceTracker.swift` | `SpokenUtteranceTracker.swift` | `ContinuousClock.Instant` and `Duration` instead of `Date` and seconds. |
+| `Speech/SpeechService.swift` | `SpeechService.swift` | Progress is stamped with `ContinuousClock`; the voice is chosen for the app's language; one-person comments removed. 2026-10-21: every dependency injected (`SpeechSynthesizing`, `SpeechVoiceCatalog`, settings, sleep, Personal Voice request); utterances keyed by `UtteranceToken`, not `ObjectIdentifier` (L1); the voices observer removed on deinit (L4); "Audio failed" never replaced by "Stopped — Again" (L3); the watchdog also catches a synthesizer left paused; a voice row's sample plays in that voice; Normal Speed. |
+| `Speech/SpokenUtteranceTracker.swift` | `SpokenUtteranceTracker.swift` | `ContinuousClock.Instant` and `Duration` instead of `Date` and seconds. 2026-10-21: reads a finish that never reached the final word as an early ending, confirmed by an interruption within 3 seconds (M1; docs/DECISIONS.md, "A phrase the system cuts off"). |
 | `Speech/VoiceSelection.swift` | `VoiceSelection.swift` | Takes a language code instead of assuming English. |
 | `Speech/SpeechRateSteps.swift` | `SpeechRateSteps.swift` | Same. |
-| `Speech/AudioSafetyMonitor.swift` | `AudioSafetyMonitor.swift` | Same. |
+| `Speech/AudioSafetyMonitor.swift` | `AudioSafetyMonitor.swift` | Reads the session's events from `AudioSessionEvents` instead of observing notifications itself. |
+| `Speech/AudioSessionCoordinator.swift`, `Speech/AudioSessionEvents.swift` | `SpeechService.swift`, `AttentionAlertPlayer.swift` | New: one owner of the session (holds, `.default` mode, mixing fallback) and one observer of its notices, including iOS 27's (docs/DECISIONS.md, "Background audio", "Audio session notices"). |
+| `Attention/AttentionAlertPlayer.swift`, `Attention/AttentionTonePlayback.swift`, `Resources/AttentionTone.wav` | `AttentionAlertPlayer.swift`, `Resources/AttentionTone.wav` | Rules moved into the pure `AttentionAlertStatus`; a repeat is absorbed only while the tone really plays; a once-a-second and on-return health check; the tone dips while speech plays; lost output, interruptions and resets come through `AudioSessionEvents` (docs/DECISIONS.md, "Get Attention"). |
 | `Speech/AudioSafetyPolicy.swift` | `FamilyVoice/Models/AudioSafetyPolicy.swift` | Messages localized. |
 | `App/ScreenWakePolicy.swift` | `FamilyVoice/Models/ScreenWakePolicy.swift` | Same. |
 | `Library/PhraseLibrarySchema.swift` | `FamilyVoice/Models/Models.swift` | Versioned schema; `.nullify` instead of `.cascade`; stable `uuid`; no `recordingFileName`. |
@@ -68,8 +70,6 @@ unchanged apart from names.
 From the reference's own successor handoff, checked against its code.
 
 **Almost as-is (general and tested):**
-- `Speech/AttentionAlertPlayer` and `Resources/AttentionTone.wav`: the start-only
-  Get Attention alarm (step 1).
 - `Views/AudioSafetyStatusStrip` (step 1; Home's status area stands in for it).
 - `PhraseTileAction`, `HomeChromePolicy`, `QuickControl` (step 5).
 - `EditModeTimeout`/`EditModeSession` (on `ContinuousClock`),

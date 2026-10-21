@@ -1,6 +1,9 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "A button on Home already has this name. Choose a different name." : {
+
+    },
     "Again" : {
 
     },
@@ -8,6 +11,9 @@
 
     },
     "Alert stopped" : {
+
+    },
+    "Another category already has this name. Choose a different name." : {
 
     },
     "Audio could not start. Speech and Get Attention may be silent. Try again." : {
@@ -19,10 +25,25 @@
     "Choose a phrase to speak it." : {
 
     },
+    "Choose a picture from the list." : {
+
+    },
+    "Couldn't save, so nothing was changed. Try again." : {
+
+    },
     "Device volume is very low. Raise it before relying on speech or Get Attention." : {
 
     },
     "Emergency" : {
+
+    },
+    "Emergency can't be deleted, so it's always one step away. You can change its phrases." : {
+
+    },
+    "Emergency needs at least one phrase. Change this phrase's words instead." : {
+
+    },
+    "Get Attention" : {
 
     },
     "Get Attention did not start. Choose it again." : {
@@ -43,6 +64,15 @@
     "Phrases can't be saved right now. Changes will be lost when the app closes." : {
 
     },
+    "Replacing would remove phrases that aren't in the backup, so nothing was changed. Add the backup to your phrases instead." : {
+
+    },
+    "Settings" : {
+
+    },
+    "Speak" : {
+
+    },
     "Speaking" : {
 
     },
@@ -55,6 +85,9 @@
     "Speech stopped unexpectedly. Choose Phrases, then choose Again to repeat it." : {
 
     },
+    "Stop Alert" : {
+
+    },
     "Stopped — Again" : {
 
     },
@@ -64,7 +97,43 @@
     "Stopped: Phrases" : {
 
     },
+    "The library needs at least one category. Add another before deleting this one." : {
+
+    },
     "The starter phrases couldn't be loaded. Yes and No still work. Restart the app to try again." : {
+
+    },
+    "This backup is damaged and couldn't be read. Nothing was changed." : {
+
+    },
+    "This backup was made by a newer version of the app. Update the app, then try again. Nothing was changed." : {
+
+    },
+    "This category already has this phrase." : {
+
+    },
+    "This file couldn't be read. It may be damaged or not a phrase backup. Nothing was changed." : {
+
+    },
+    "This file is too large to be a phrase backup. Nothing was changed." : {
+
+    },
+    "This file isn't a phrase backup. Nothing was changed." : {
+
+    },
+    "This library is too large to fit in one backup. Nothing was saved." : {
+
+    },
+    "This was changed or deleted somewhere else. Go back and try again." : {
+
+    },
+    "Two items in this library have the same identity, so it can't be changed safely." : {
+
+    },
+    "Type a name for this category." : {
+
+    },
+    "Type the words for this phrase." : {
 
     },
     "Volume low" : {
@@ -75,6 +144,15 @@
     },
     "Yes." : {
       "comment" : "Spoken when the Yes control is chosen."
+    },
+    "Your phrases changed while this was open, so nothing was changed. Try again." : {
+
+    },
+    "Your phrases couldn't be read, so nothing was changed." : {
+
+    },
+    "Your saved phrases couldn't be opened. They haven't been deleted. Restart the app to try again. Don't delete the app: that would erase them." : {
+
     }
   },
   "version" : "1.0"

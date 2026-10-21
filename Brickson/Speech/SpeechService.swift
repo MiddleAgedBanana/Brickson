@@ -2,41 +2,9 @@ import AVFoundation
 import Observation
 import os
 
-/// Owns the block-based audio-session observer and reduces the notification to
-/// the only event speech recovery needs. The small injectable boundary keeps
-/// real NotificationCenter routing under test without faking AVFoundation.
-@MainActor
-final class AudioSessionInterruptionObserver {
-    private let notificationCenter: NotificationCenter
-    private var token: (any NSObjectProtocol)?
-
-    init(
-        notificationCenter: NotificationCenter = .default,
-        object: Any? = nil,
-        onBegan: @escaping @MainActor @Sendable (AVAudioSession.InterruptionType) -> Void
-    ) {
-        self.notificationCenter = notificationCenter
-        token = notificationCenter.addObserver(
-            forName: AVAudioSession.interruptionNotification,
-            object: object,
-            queue: .main
-        ) { notification in
-            let type = (notification.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt)
-                .flatMap(AVAudioSession.InterruptionType.init)
-            guard type == .began else { return }
-            MainActor.assumeIsolated { onBegan(.began) }
-        }
-    }
-
-    isolated deinit {
-        if let token {
-            notificationCenter.removeObserver(token)
-        }
-    }
-}
-
 /// The app's single text-to-speech engine. One instance is created at launch
-/// and shared through the environment; it owns the only `AVSpeechSynthesizer`.
+/// (`AppAudio`) and shared through the environment; it owns the only
+/// synthesizer.
 @MainActor
 @Observable
 final class SpeechService {
@@ -64,109 +32,92 @@ final class SpeechService {
     /// finishes or is cancelled. Drives the speaking indicator on Home.
     var isSpeaking: Bool { utterances.isSpeaking }
 
-    private var synthesizer = AVSpeechSynthesizer()
     private var speechInterruptionStatus = SpeechInterruptionStatus()
-    private var utterances = SpokenUtteranceTracker<ObjectIdentifier>()
-    /// Retained while active so its ObjectIdentifier cannot be reused by a new
-    /// utterance before the synthesizer reports the old one finished.
-    @ObservationIgnored private var activeUtterance: AVSpeechUtterance?
-    @ObservationIgnored private var synthesizerEvents: SpeechSynthesizerEvents?
-    @ObservationIgnored private var audioSessionInterruptionObserver: AudioSessionInterruptionObserver?
-    @ObservationIgnored private let audioSafetyMonitor: AudioSafetyMonitor
-    /// The launch-selected store: the person's preferences normally, or
-    /// the isolated suite for UI tests. Every read and write uses it.
+    private var utterances = SpokenUtteranceTracker<UtteranceToken>()
+    @ObservationIgnored private var synthesizer: any SpeechSynthesizing
+    @ObservationIgnored private var lastToken: UInt64 = 0
+    /// How the audio session activated for the latest utterance. When it
+    /// could not activate at all, Home already shows "Audio failed", and an
+    /// unexpected end must not replace that with "Stopped — Again": Again
+    /// would only fail the same way (code audit L3).
+    @ObservationIgnored private var latestActivation: AudioSessionActivation?
+    @ObservationIgnored private let makeSynthesizer: @MainActor () -> any SpeechSynthesizing
+    @ObservationIgnored private let audioSession: AudioSessionCoordinator
+    @ObservationIgnored private let voiceCatalog: any SpeechVoiceCatalog
     @ObservationIgnored private let settings: UserDefaults
+    @ObservationIgnored private let notificationCenter: NotificationCenter
+    @ObservationIgnored private let sleep: @MainActor @Sendable (Duration) async -> Void
+    @ObservationIgnored private var voicesObserver: (any NSObjectProtocol)?
     private let logger = Logger(subsystem: AppLog.subsystem, category: "speech")
-    private static let voiceIDKey = "selectedVoiceID"
-    private static let rateKey = "speechRate"
+    static let voiceIDKey = "selectedVoiceID"
+    static let rateKey = "speechRate"
 
-    init(settings: UserDefaults = .standard, audioSafetyMonitor: AudioSafetyMonitor = AudioSafetyMonitor()) {
+    /// Every dependency is explicit, so tests drive speech with fakes and the
+    /// app passes its real objects in one place (`AppAudio.makeForApp`).
+    /// `settings` is where the voice and rate are kept: the launch-selected
+    /// store, which is the person's preferences, or an isolated suite for
+    /// UI tests (`LaunchOptions`). `notificationCenter` carries the system's
+    /// "voices changed" notice; `sleep` paces the missed-finish watchdog.
+    init(
+        audioSession: AudioSessionCoordinator,
+        events: AudioSessionEvents,
+        makeSynthesizer: @escaping @MainActor () -> any SpeechSynthesizing,
+        voiceCatalog: any SpeechVoiceCatalog,
+        settings: UserDefaults,
+        notificationCenter: NotificationCenter,
+        requestPersonalVoiceAuthorization: PersonalVoiceAuthorizationRequest,
+        sleep: @escaping @MainActor @Sendable (Duration) async -> Void
+    ) {
+        self.audioSession = audioSession
+        self.makeSynthesizer = makeSynthesizer
+        self.voiceCatalog = voiceCatalog
         self.settings = settings
-        self.audioSafetyMonitor = audioSafetyMonitor
-        let audioSession = AVAudioSession.sharedInstance()
+        self.notificationCenter = notificationCenter
+        self.sleep = sleep
+        synthesizer = makeSynthesizer()
 
         selectedVoiceID = settings.string(forKey: Self.voiceIDKey)
         // Presence check rather than float(forKey:): an absent key reads as 0,
         // which is also AVSpeechUtteranceMinimumSpeechRate — a value a user
-        // could legitimately save from the rate slider.
+        // could legitimately save.
         if let storedRate = settings.object(forKey: Self.rateKey) as? Float {
             speechRate = min(max(storedRate, AVSpeechUtteranceMinimumSpeechRate), AVSpeechUtteranceMaximumSpeechRate)
         } else {
             speechRate = AVSpeechUtteranceDefaultSpeechRate
         }
 
-        // Set (but don't activate) the category at launch so any audio the app
-        // plays — including the Get Attention tone on a fresh launch, before
-        // the first utterance — already ignores the ring/silent switch.
-        configurePlaybackAudioSession()
-
-        let synthesizerEvents = SpeechSynthesizerEvents(
-            onUtteranceEnded: { [weak self] id, wasCancelled in
-                self?.utteranceEnded(id, wasCancelled: wasCancelled)
-            },
-            onUtteranceProgress: { [weak self] id, instant in
-                self?.utterances.recordProgress(id, at: instant)
-            }
-        )
-        self.synthesizerEvents = synthesizerEvents
-        synthesizer.delegate = synthesizerEvents
-
+        listen(to: synthesizer)
         refreshVoices()
-        NotificationCenter.default.addObserver(
+        voicesObserver = notificationCenter.addObserver(
             forName: AVSpeechSynthesizer.availableVoicesDidChangeNotification,
             object: nil,
             queue: .main
         ) { [weak self] _ in
             MainActor.assumeIsolated { self?.refreshVoices() }
         }
-        audioSessionInterruptionObserver = AudioSessionInterruptionObserver(
-            object: audioSession
-        ) { [weak self] _ in
-            // A call/Siri/alarm leaves the synthesizer paused on a deactivated
-            // session, and the .ended notification is not guaranteed. Stop for
-            // a clean state; the phrase stays in lastSpokenText so one Again
-            // activation re-speaks it in full.
-            guard let self else { return }
-            let repeatableSpeechActive = self.utterances.isRepeatableSpeechActive
-            self.stop()
-            self.speechInterruptionStatus.recordInterruption(
-                repeatableSpeechActive: repeatableSpeechActive
-            )
+        events.subscribe { [weak self] event in
+            self?.handle(event)
         }
-        audioSafetyMonitor.onMediaServicesReset { [weak self] in
-            guard let self else { return }
-            // The media daemon crashed; every audio object is invalid. Without
-            // recreating the synthesizer, speech stays dead until relaunch —
-            // for a person who cannot speak, that is the whole app dead.
-            // A phrase cut off by the crash is recorded first, so Home names
-            // Again rather than only "Audio failed" (invariant 4); the old
-            // synthesizer's cancel callback may never come.
-            let repeatableSpeechActive = self.utterances.isRepeatableSpeechActive
-            self.synthesizer = AVSpeechSynthesizer()
-            self.synthesizer.delegate = self.synthesizerEvents
-            self.utterances.reset()
-            self.activeUtterance = nil
-            self.speechInterruptionStatus.recordInterruption(
-                repeatableSpeechActive: repeatableSpeechActive
-            )
-            // Apple requires restoring configuration after a media-services
-            // reset but deferring activation/playback until user action. The
-            // monitor therefore stays unhealthy until the next speech (or, once
-            // ported, Get Attention) attempt proves the session can activate.
-            self.configurePlaybackAudioSession()
-            self.refreshVoices()
+        askForPersonalVoice(using: requestPersonalVoiceAuthorization)
+    }
+
+    /// Removes the voices observer, which the reference app leaked (code
+    /// audit L4). The app keeps one service for its whole life, so the leak
+    /// was harmless there; tests make many.
+    isolated deinit {
+        if let voicesObserver {
+            notificationCenter.removeObserver(voicesObserver)
         }
-        requestPersonalVoiceAuthorization()
     }
 
     /// Runs before any synthesis. The reference app found that asking after
     /// the first utterance could miss personal voices for the rest of the
     /// session; Apple's documentation does not say so (docs/DECISIONS.md,
     /// "Personal Voice permission is asked at launch, for now").
-    private func requestPersonalVoiceAuthorization() {
+    private func askForPersonalVoice(using request: PersonalVoiceAuthorizationRequest) {
         // @Sendable: the completion arrives on an arbitrary queue, so it must
-        // not inherit this method's MainActor isolation.
-        AVSpeechSynthesizer.requestPersonalVoiceAuthorization { @Sendable [weak self] status in
+        // not inherit this method's main-actor isolation.
+        request { @Sendable [weak self] status in
             Task { @MainActor in
                 guard let self else { return }
                 self.personalVoiceStatus = status
@@ -197,7 +148,8 @@ final class SpeechService {
     /// Plays the voice sample for a Settings control without recording
     /// last-spoken, so Again never replays it. As with phrase tiles, a held
     /// look re-firing the same control while its sample still plays is
-    /// absorbed rather than restarting it.
+    /// absorbed rather than restarting it. A voice row's sample plays in
+    /// that row's voice, whichever voice is chosen.
     func preview(from control: VoicePreviewControl) {
         guard !absorbsRepeat(of: .preview(control)) else {
             logger.info("Absorbed repeat activation of the voice sample still playing")
@@ -228,34 +180,108 @@ final class SpeechService {
         // Forget the request before stopping the system engine. Its cancel
         // callback is not an unexpected interruption of a current phrase.
         utterances.reset()
-        synthesizer.stopSpeaking(at: .immediate)
-        activeUtterance = nil
+        synthesizer.stopSpeakingImmediately()
+        releaseSessionIfIdle()
     }
 
-    private func utteranceEnded(_ id: ObjectIdentifier, wasCancelled: Bool = false) {
-        if wasCancelled {
-            // A system cancellation may arrive before its interruption
-            // notification. Preserve recovery then, even though clearing the
-            // current utterance makes the later notification look idle.
-            speechInterruptionStatus.recordInterruption(
-                repeatableSpeechActive: utterances.cancelled(id)
-            )
-        } else {
-            utterances.ended(id)
-        }
-        if !utterances.isSpeaking {
-            activeUtterance = nil
+    // MARK: - The synthesizer's reports
+
+    private func listen(to synthesizer: any SpeechSynthesizing) {
+        synthesizer.onEvent = { [weak self] token, event in
+            self?.receive(event, for: token)
         }
     }
+
+    private func receive(_ event: SpeechSynthesisEvent, for token: UtteranceToken) {
+        switch event {
+        case let .willSpeak(through: offset, at: instant):
+            utterances.recordProgress(token, reaching: offset, at: instant)
+        case let .finished(at: instant):
+            if utterances.ended(token, at: instant) == .endedBeforeItsFinalWord {
+                // Not shown on its own: some voices skip reporting the last
+                // word. An interruption arriving with it confirms a cut-off
+                // (docs/DECISIONS.md, "A phrase the system cuts off").
+                logger.info("A phrase was reported finished before its final word")
+            }
+            releaseSessionIfIdle()
+        case .cancelled:
+            // Brickson's own cancels are never current (`stop()` and a new
+            // phrase forget the old one first), so this is the system cutting
+            // the phrase off. It can arrive before the interruption notice,
+            // which then finds nothing speaking; record the cut-off now.
+            recordCutOff(utterances.cancelled(token))
+            releaseSessionIfIdle()
+        }
+    }
+
+    // MARK: - The audio session's events
+
+    private func handle(_ event: AudioSessionEvent) {
+        switch event {
+        case .interrupted:
+            // A call, Siri or another app's alarm leaves the synthesizer
+            // paused on an inactive session, and the end of the interruption
+            // is not guaranteed. Stop for a clean state; the phrase stays in
+            // lastSpokenText, so one Again activation re-speaks it in full.
+            // Never resume by itself (invariant 4). On iOS 27 this arrives
+            // twice, from the old and the new notice; the second finds
+            // nothing to record.
+            let cutOff = utterances.interruptionCutOffAPhrase(at: .now)
+            stop()
+            recordCutOff(cutOff)
+        case .mediaServicesReset:
+            // The media daemon restarted, and every audio object is invalid.
+            // Without a new synthesizer, speech stays dead until relaunch:
+            // for a person who cannot speak, that is the whole app dead. A
+            // phrase cut off by the reset is recorded so Home names Again;
+            // the old synthesizer's cancel may never come. Nothing speaks
+            // until the person's next activation (invariant 4).
+            let cutOff = utterances.interruptionCutOffAPhrase(at: .now)
+            synthesizer.onEvent = nil
+            synthesizer = makeSynthesizer()
+            listen(to: synthesizer)
+            utterances.reset()
+            releaseSessionIfIdle()
+            recordCutOff(cutOff)
+            refreshVoices()
+        case .previousOutputUnavailable:
+            // Headphones unplugged or a Bluetooth speaker switched off. A
+            // phrase still speaking carries on through the new output; one
+            // the system ended early as the output vanished needs Again.
+            recordCutOff(utterances.outputLossCutOffAPhrase(at: .now))
+        case .routeChanged, .mediaServicesLost:
+            break
+        }
+    }
+
+    /// Shows "Stopped — Again" for a phrase that was cut off. Not when the
+    /// session never activated for it: "Audio failed" is then the true
+    /// message, and replacing it would send the person round a loop of
+    /// Again activations that fail the same way (code audit L3).
+    private func recordCutOff(_ phraseWasCutOff: Bool) {
+        guard phraseWasCutOff else { return }
+        guard latestActivation != .failed else {
+            logger.info("A phrase stopped early while the audio session was unavailable")
+            return
+        }
+        speechInterruptionStatus.recordInterruption(repeatableSpeechActive: true)
+    }
+
+    // MARK: - Speaking
 
     private func absorbsRepeat(of source: UtteranceSource) -> Bool {
         utterances.absorbsRepeat(
             of: source,
-            // isSpeaking stays true while paused; a paused utterance is not
-            // audible, so a repeat must not be absorbed into it.
-            synthesizerIsSpeaking: synthesizer.isSpeaking && !synthesizer.isPaused,
+            synthesizerIsSpeaking: synthesizerIsAudible,
             now: .now
         )
+    }
+
+    /// isSpeaking stays true while paused; a paused utterance is not
+    /// audible, so a repeat must not be absorbed into it, and the watchdog
+    /// treats it as stopped.
+    private var synthesizerIsAudible: Bool {
+        synthesizer.isSpeaking && !synthesizer.isPaused
     }
 
     /// `source` defaults to the phrase itself; samples pass their control.
@@ -264,65 +290,113 @@ final class SpeechService {
         guard !trimmed.isEmpty else { return nil }
 
         // Any deliberate new utterance supersedes the interrupted one. If its
-        // audio session cannot activate, the existing Audio failed warning
-        // takes over instead of leaving stale repeat guidance on screen.
+        // audio session cannot activate, the Audio failed warning takes over
+        // instead of leaving stale repeat guidance on screen.
         speechInterruptionStatus.recordSpeechAttempt()
 
         if synthesizer.isSpeaking {
-            synthesizer.stopSpeaking(at: .immediate)
+            synthesizer.stopSpeakingImmediately()
         }
-        ensurePlaybackAudioSession()
+        // Never blocks speaking: whatever the outcome, the phrase is handed
+        // to the synthesizer, and a failure shows "Audio failed".
+        latestActivation = audioSession.acquire(for: .speech)
 
-        let utterance = AVSpeechUtterance(string: trimmed)
-        utterance.rate = speechRate
-        utterance.voice = resolveVoice()
-        activeUtterance = utterance
-        let id = ObjectIdentifier(utterance)
-        utterances.began(id, source: source ?? .phrase(trimmed), at: .now)
-        synthesizer.speak(utterance)
-        watchForMissedFinish(of: id)
+        lastToken &+= 1
+        let token = UtteranceToken(rawValue: lastToken)
+        utterances.began(token, source: source ?? .phrase(trimmed), at: .now)
+        synthesizer.speak(
+            SpeechRequest(
+                token: token,
+                text: trimmed,
+                rate: speechRate,
+                voiceIdentifier: resolveVoiceIdentifier(chosenID: voiceChoice(for: source))
+            )
+        )
+        watchForMissedFinish(of: token)
         return trimmed
     }
 
-    /// Backstop for a synthesizer that stops without a finish or cancel
-    /// callback. Without it, Home would show "Speaking" forever, and a phrase
-    /// that may never have been heard would fail silently. Checks the live
-    /// state once a second while this utterance is current.
-    private func watchForMissedFinish(of id: ObjectIdentifier) {
+    /// Lets go of the audio session once nothing is speaking, on every way a
+    /// phrase can end, so the Get Attention tone comes back to full level.
+    private func releaseSessionIfIdle() {
+        if !utterances.isSpeaking {
+            audioSession.release(for: .speech)
+        }
+    }
+
+    /// The watchdog's pace: a check every second while an utterance is
+    /// current, and a second look half a second after one finds it quiet.
+    static let watchdogInterval: Duration = .seconds(1)
+    static let watchdogGrace: Duration = .milliseconds(500)
+
+    /// Backstop for a synthesizer that stops, or is left paused, without a
+    /// finish or cancel report. Without it, Home would show "Speaking"
+    /// forever, and a phrase that may never have been heard would fail
+    /// silently. Holds the service only weakly between checks.
+    private func watchForMissedFinish(of token: UtteranceToken) {
+        let sleep = self.sleep
         Task { @MainActor [weak self] in
+            var quietChecks = 0
             while true {
-                try? await Task.sleep(for: .seconds(1))
-                guard let self, self.utterances.activeID == id else { return }
-                guard !self.synthesizer.isSpeaking else { continue }
-                // Idle with no callback. Give one already on its way a moment
-                // to land, so a phrase that simply finished is not reported.
-                try? await Task.sleep(for: .milliseconds(500))
-                guard self.utterances.activeID == id, !self.synthesizer.isSpeaking else { continue }
-                // Still nothing: treat it as cut off, so Home names Again
-                // (invariants 4 and 5). A voice sample is not repeatable and
-                // only clears the indicator.
-                self.utteranceEnded(id, wasCancelled: true)
+                await sleep(quietChecks == 0 ? SpeechService.watchdogInterval : SpeechService.watchdogGrace)
+                guard let self, self.utterances.activeID == token else { return }
+                guard !self.synthesizerIsAudible else {
+                    quietChecks = 0
+                    continue
+                }
+                // Quiet with no report. Look once more, so a report already
+                // on its way can land and a phrase that simply finished is
+                // not called cut off.
+                quietChecks += 1
+                guard quietChecks >= 2 else { continue }
+                self.recoverFromMissedFinish(of: token)
                 return
             }
         }
     }
 
-    /// Walks the selection precedence until a descriptor actually instantiates:
+    /// Treats the utterance as cut off, so Home names Again (invariants 4
+    /// and 5). A voice sample is not repeatable and only clears the
+    /// indicator. A synthesizer left paused is stopped, so the next phrase
+    /// starts clean.
+    private func recoverFromMissedFinish(of token: UtteranceToken) {
+        logger.error("The synthesizer went quiet without reporting the end of an utterance")
+        recordCutOff(utterances.cancelled(token))
+        if synthesizer.isSpeaking {
+            synthesizer.stopSpeakingImmediately()
+        }
+        releaseSessionIfIdle()
+    }
+
+    // MARK: - Voices
+
+    /// The voice an utterance asks for: a voice row's own voice for its
+    /// sample (nil, Automatic, ignores the chosen voice), the chosen voice
+    /// for everything else.
+    private func voiceChoice(for source: UtteranceSource?) -> String? {
+        if case let .some(.preview(.voice(id))) = source {
+            return id
+        }
+        return selectedVoiceID
+    }
+
+    /// Walks the selection precedence until a voice is actually available:
     /// the cached voice list can be stale (voice uninstalled or Personal Voice
     /// re-recorded while the app was suspended), and a single failed lookup
     /// must fall to the next-best voice, not to the system default.
-    private func resolveVoice() -> AVSpeechSynthesisVoice? {
+    private func resolveVoiceIdentifier(chosenID: String?) -> String? {
         var candidates = availableVoices
         var cacheWasStale = false
-        var resolved: AVSpeechSynthesisVoice?
+        var resolved: String?
         while resolved == nil,
               let descriptor = VoiceSelection.select(
-                chosenID: selectedVoiceID,
+                chosenID: chosenID,
                 from: candidates,
                 languageCode: Self.speechLanguageCode
               ) {
-            resolved = AVSpeechSynthesisVoice(identifier: descriptor.id)
-            if resolved == nil {
+            if voiceCatalog.voiceIsAvailable(identifier: descriptor.id) {
+                resolved = descriptor.id
+            } else {
                 cacheWasStale = true
                 candidates.removeAll { $0.id == descriptor.id }
             }
@@ -340,114 +414,6 @@ final class SpeechService {
     }
 
     private func refreshVoices() {
-        availableVoices = AVSpeechSynthesisVoice.speechVoices().map(VoiceDescriptor.init)
-    }
-
-    private func configurePlaybackAudioSession() {
-        do {
-            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .spokenAudio)
-        } catch {
-            audioSafetyMonitor.recordAudioSessionActivation(succeeded: false)
-            logger.error("Could not set playback audio category: \(error.localizedDescription)")
-        }
-    }
-
-    /// `.playback` keeps audio audible with the ring/silent switch on silent —
-    /// a lifeline requirement for an AAC app. Internal so the Get Attention
-    /// tone player can call it before playing. Failure never blocks speaking.
-    func ensurePlaybackAudioSession() {
-        let session = AVAudioSession.sharedInstance()
-        do {
-            try session.setCategory(.playback, mode: .spokenAudio)
-            try session.setActive(true)
-            audioSafetyMonitor.recordAudioSessionActivation(succeeded: true)
-        } catch {
-            // During a phone/FaceTime call a non-mixable session is refused
-            // (insufficient priority). A mixable one activates, so speech at
-            // least plays on the local route instead of failing silently.
-            do {
-                try session.setCategory(.playback, mode: .spokenAudio, options: [.mixWithOthers])
-                try session.setActive(true)
-                audioSafetyMonitor.recordAudioSessionActivation(succeeded: true)
-            } catch {
-                audioSafetyMonitor.recordAudioSessionActivation(succeeded: false)
-                logger.error("Could not activate playback audio session: \(error.localizedDescription)")
-            }
-        }
-    }
-}
-
-/// Forwards the synthesizer's callbacks, which carry no actor guarantee,
-/// onto the MainActor as plain utterance identities and event instants.
-@MainActor
-private final class SpeechSynthesizerEvents: NSObject, AVSpeechSynthesizerDelegate {
-    private let onUtteranceEnded: @MainActor (ObjectIdentifier, Bool) -> Void
-    private let onUtteranceProgress: @MainActor (ObjectIdentifier, ContinuousClock.Instant) -> Void
-
-    init(
-        onUtteranceEnded: @escaping @MainActor (ObjectIdentifier, Bool) -> Void,
-        onUtteranceProgress: @escaping @MainActor (ObjectIdentifier, ContinuousClock.Instant) -> Void
-    ) {
-        self.onUtteranceEnded = onUtteranceEnded
-        self.onUtteranceProgress = onUtteranceProgress
-    }
-
-    nonisolated func speechSynthesizer(
-        _ synthesizer: AVSpeechSynthesizer,
-        willSpeakRangeOfSpeechString characterRange: NSRange,
-        utterance: AVSpeechUtterance
-    ) {
-        // AVFoundation reports each spoken unit (generally a word). Capture
-        // its time before hopping actors so a delayed callback cannot make a
-        // stalled synthesizer appear to have made fresh progress. Monotonic
-        // time, never `Date` (docs/LESSONS.md, "Timers use ContinuousClock").
-        let id = ObjectIdentifier(utterance)
-        let instant = ContinuousClock.now
-        Task { @MainActor [weak self] in
-            self?.onUtteranceProgress(id, instant)
-        }
-    }
-
-    nonisolated func speechSynthesizer(
-        _ synthesizer: AVSpeechSynthesizer,
-        didFinish utterance: AVSpeechUtterance
-    ) {
-        forward(ObjectIdentifier(utterance), wasCancelled: false)
-    }
-
-    nonisolated func speechSynthesizer(
-        _ synthesizer: AVSpeechSynthesizer,
-        didCancel utterance: AVSpeechUtterance
-    ) {
-        forward(ObjectIdentifier(utterance), wasCancelled: true)
-    }
-
-    private nonisolated func forward(_ id: ObjectIdentifier, wasCancelled: Bool) {
-        Task { @MainActor [weak self] in
-            self?.onUtteranceEnded(id, wasCancelled)
-        }
-    }
-}
-
-extension VoiceDescriptor {
-    init(_ voice: AVSpeechSynthesisVoice) {
-        self.init(
-            id: voice.identifier,
-            name: voice.name,
-            languageCode: voice.language,
-            quality: VoiceQuality(voice.quality),
-            isPersonalVoice: voice.voiceTraits.contains(.isPersonalVoice),
-            isNovelty: voice.voiceTraits.contains(.isNoveltyVoice)
-        )
-    }
-}
-
-extension VoiceQuality {
-    init(_ quality: AVSpeechSynthesisVoiceQuality) {
-        switch quality {
-        case .premium: self = .premium
-        case .enhanced: self = .enhanced
-        default: self = .standard
-        }
+        availableVoices = voiceCatalog.installedVoices()
     }
 }

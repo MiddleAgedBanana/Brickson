@@ -44,11 +44,11 @@ holds.
 | Layouts from the space available, with floors set without a device table | "Layouts from the space available", below |
 | Minimum iOS 26.0, iPhone and iPad, set by two rules: every device that can use eye tracking runs the app, and every mapped accessibility API stays reachable behind `#available` | "Minimum iOS, iPhone and iPad" (Toolchain and iOS version targets; PR #12, merged) |
 | Home's slot plan with stable slot identifiers; solid fills on Home and the system's Liquid Glass elsewhere | "Home's slot plan", "Solid fills on Home, system glass elsewhere" (Figma and Claude Design screens; pull request not open yet) |
-| The App Store category is Utilities, with no secondary category; the age-rating answers give 4+ | "App Store category", "Age rating answers" (App Store readiness and ASO; PR #18, open) |
+| The App Store category is Utilities, with no secondary category; the age-rating answers give 4+ | "App Store category", "Age rating answers" (App Store readiness and ASO; PR #18) |
 | Home's fixed slots, labels and button style | Entries next to "Home version 0 is a stand-in" (Phone layout and word fitting; pull request not open yet) |
 | Typing as a state of Home under a band Apple's keyboard never covers, Apple's keyboard in 1.0, Writing Tools off, third-party keyboards refused, Return speaks, the typed message | "Typing is a state of Home", "Typing uses Apple's keyboard", "Writing Tools off while typing", "Third-party keyboards refused in 1.0", "Return speaks", "The typed message" (Typing foundation; pull request not open yet) |
 | Explicit saves, an Emergency category that is always there, fixed starter identities, editing, import, replace, the backup format, an unreadable library reported and never replaced | "Every save is explicit", "Starter phrases", "The emergency category is always there", "Editing the library", "Importing a backup", "Replacing the library", "Backup file format", "An unreadable library is reported, never replaced" (Library editing and backup format; PR #14) |
-| When the audio session is released, the alarm's sound, start-only Get Attention, no automatic resume, Personal Voice never written to a file | "Background audio", "Get Attention", "A phrase the system cuts off", "Audio session notices" (Speech engine and Get Attention; PR #16, open) |
+| When the audio session is released, the alarm's sound, start-only Get Attention, no automatic resume, Personal Voice never written to a file | "Background audio", "Get Attention", "A phrase the system cuts off", "Audio session notices", "Personal Voice is never written to a file" (Speech engine and Get Attention; PR #16) |
 | Home first with setup as a place in Settings, the Settings root, the voice picker, the Privacy row, the largest sizes when nobody answers setup, an "Anything changed?" check-in every three months that waits 30 days after Not Now | "First launch opens Home; setup lives in Settings", "Settings is a cover with a fixed safety bar", "Settings resets when idle and never closes", "Setup answers are kept as offered, never as completed", "Check-ins come every three months", "The privacy policy ships inside the app" (Settings and first run; pull request not open yet) |
 
 Recorded here:
@@ -310,6 +310,39 @@ does ("an iPhone and iPad app that speaks for people living with ALS").
 Pages, is fine. The reference app's handoff called its successor free, and
 earlier documents here copied that; the owner never decided it.
 
+## App Store category
+
+*2026-10-21. Default, adopted 2026-10-21: the owner left these choices to
+the project. Reversible if the owner objects.*
+
+Brickson's primary App Store category is **Utilities**, with no secondary
+category. Apple defines Utilities as apps that "solve a problem or complete
+a specific task", which speaking for someone is; Medical is for medical
+education, information management or health reference, which Brickson is
+not. A primary or secondary category of Medical or Health & Fitness would
+also require declaring, on the product page, whether the app is a regulated
+medical device in the US, UK and EEA, a legal question an individual
+developer should not answer alone. People find AAC apps by searching, so
+the category costs little in discovery. The reasons and Apple's sources are
+in docs/APP-STORE.md, section 5. The reference app's release checklist
+proposed Medical; this replaces it.
+
+## Age rating answers
+
+*2026-10-21. Default, adopted 2026-10-21: the owner left these choices to
+the project. Reversible if the owner objects.*
+
+Brickson answers every age-rating question No or None, which gives 4+.
+The one question that needs care is Medical or Treatment Information:
+the answer is None, because starter phrases such as "I need my medication."
+are the person's own words to the people nearby, not guidance on managing a
+condition. Infrequent would make the app 13+. The full answers are in
+docs/APP-STORE.md, section 6. Re-answer when the starter phrases, an in-app
+web view or caregiver alerts change what the app contains. Whether US state
+age-assurance laws require the Declared Age Range API is **not** decided
+here; any age check must never cover or block communication (invariants 2
+and 10).
+
 ## Versioned storage
 
 *2026-10-10. Default.*
@@ -387,14 +420,109 @@ only for its intended purpose (guideline 2.5.4), so:
 - in the App Review notes, give steps that show it, for example: "Choose a
   long phrase, then lock the device: speech continues."
 
-**Open, decide with the Get Attention port (step 1):** when to release the
-audio session. Today `SpeechService` activates it before speaking and never
-deactivates it, as the reference app did, so music or a podcast that speech
-interrupted does not resume on its own. Releasing it after speech ends
-(with `.notifyOthersOnDeactivation`) is kinder to other apps, but it must
-never happen while the alarm sounds, must not delay the next phrase
-(invariant 2), and needs a device check. The alarm shares the session, so
-both are designed together.
+**When the session is released.** *2026-10-21. Default, adopted
+2026-10-21: the owner left these choices to the project. Reversible if the
+owner objects.*
+
+One object owns the shared audio session, `AudioSessionCoordinator`.
+Speech and the Get Attention alarm each hold it while they play
+(`acquire(for:)` and `release(for:)`), so neither can configure or release
+it underneath the other. In 1.0 it is never deactivated
+(`AudioSessionLeasePolicy.keepActive`): the next phrase never waits for
+activation (invariant 2) and a release can never cut the alarm off. The
+cost: music or a podcast that speech interrupted does not resume by itself.
+`.releaseWhenIdle` (deactivate with `.notifyOthersOnDeactivation` once
+nobody holds the session) is built and tested but unused until a device
+check shows the first syllable is not lost over Bluetooth and the next
+phrase does not wait.
+
+The session is `.playback` in mode `.default`, set at launch without
+activating. The reference app used `.spokenAudio`, which lets another app's
+spoken prompt (a navigation direction, say) pause the person's sentence or
+the alarm. When an activation is refused (during a phone or FaceTime call),
+it is retried mixing with other audio, so the sound plays rather than
+failing silently; a refusal of both shows "Audio failed".
+
+Before: "Open, decide with the Get Attention port (step 1): when to release
+the audio session." The reference app activated before speaking and never
+deactivated; Brickson keeps that behaviour, now in one place.
+
+## Get Attention
+
+*2026-10-21. Default, adopted 2026-10-21: the owner left these choices to
+the project. Reversible if the owner objects.*
+
+The alarm (`AttentionAlertPlayer`, rules in `AttentionAlertStatus`) is a
+looping tone, `Brickson/Resources/AttentionTone.wav`, ported from the
+reference app.
+
+- **Start-only.** Get Attention only starts it; a second activation while
+  the tone really plays changes nothing. Only Stop, a separate control in a
+  different place, ends it (invariant 10). On Home, Stop takes the pinned
+  cell above Emergency (with the layout work).
+- **Speaking never silences it.** While a phrase speaks, the tone drops to
+  `AttentionAlertStatus.toneVolumeWhileSpeaking` (0.32, about 10 dB down),
+  and comes back to full when the phrase ends, however it ends. The level
+  is not measured yet: a listening check on a device sets it.
+- **Never resumes by itself.** An interruption (a call, Siri, another app's
+  alarm), a lost output, a media-services loss or reset, or a player error
+  stops it and shows "Alert stopped"; one Get Attention activation
+  restarts it (invariant 4). A lost output stops it too, as in the
+  reference app, because the tone would otherwise move to a speaker no one
+  chose.
+- **Checked every second while it sounds, and on returning to the
+  foreground.** A tone that went quiet without a report shows "Alert
+  stopped" rather than "Sounding" over silence, and a repeat activation
+  restarts a quiet tone instead of being absorbed. When the session could
+  not be activated, the tone is tried anyway (it may still play), Home
+  shows "Audio failed", and a repeat activation retries the session
+  instead of being absorbed, since the tone may be muted by the silent
+  switch (Codex review of PR #16).
+- **No time limit and no flashing.** It sounds until someone chooses Stop.
+- **The tone itself is a placeholder.** Before release it is replaced with
+  a harmonic-rich tone that carries through a closed door and is easy to
+  locate, checked on a device from the next room.
+
+## A phrase the system cuts off
+
+*2026-10-21. Default, adopted 2026-10-21: the owner left these choices to
+the project. Reversible if the owner objects.*
+
+The system can report a phrase it stopped as finished, and can do so before
+its interruption notice arrives (code audit M1). Speech therefore records
+how far the synthesizer said it got (`speechSynthesizer(_:willSpeakRangeOfSpeechString:utterance:)`,
+generally once per word), and `SpokenUtteranceTracker` reads a finish whose
+reports never reached the final word as an early ending. An early ending
+alone shows nothing, because some voices skip reporting the last word; an
+interruption or media-services reset within 3 seconds
+(`cutOffCorrelationWindow`) confirms it, and Home shows "Stopped — Again".
+A lost output confirms it too, but a phrase still speaking when the output
+vanishes carries on through the new one and shows nothing. A phrase that
+reported no progress at all is trusted.
+
+If the session could not activate for the phrase, an unexpected end shows
+nothing new: "Audio failed" is already showing, and replacing it with
+"Stopped — Again" sent the reference app round a loop of Again activations
+that failed the same way (code audit L3).
+
+## Audio session notices
+
+*2026-10-21. Default, adopted 2026-10-21: the owner left these choices to
+the project. Reversible if the owner objects.*
+
+One adapter, `AudioSessionEvents`, observes the session's notices and hands
+each subscriber (the audio warnings, the coordinator, speech, the alarm) a
+plain `AudioSessionEvent`. iOS 27 deprecates the interruption notice in
+favour of life-cycle notices, because the old notice can lose its ending
+(Apple, "Handling audio interruptions"). Built with the iOS 27 SDK (Swift
+6.4, Xcode 27) and running on iOS 27, the adapter also observes
+`didBecomeInactiveNotification` and reads its `DeactivationContext`: a
+deactivation the app did not ask for is an interruption. It keeps the old
+notice too, which Apple still documents; every subscriber treats a second
+report of the same interruption as nothing new. Only an interruption's
+beginning matters, since its ending would only be a cue to resume, which
+Brickson never does by itself. Drop the old notice once the minimum iOS
+version is 27.
 
 ## Orientations
 
@@ -736,6 +864,20 @@ Use** is off (Settings → Accessibility → Personal Voice), the system denies
 the request without asking. `AccessibilitySettings.openSettings(for:
 .personalVoiceAllowAppsToRequestToUse)` opens that switch directly; the
 voice picker should offer it when permission is denied.
+
+## Personal Voice is never written to a file
+
+*2026-10-21. Default, adopted 2026-10-21: the owner left these choices to
+the project. Reversible if the owner objects.*
+
+Brickson speaks a Personal Voice live and never renders it into an audio
+file or buffer to keep (`AVSpeechSynthesizer.write`). A file of someone's
+own voice could leave the device in a backup or a share sheet and be
+reused to sound like them; spoken live, it exists only
+while they choose to speak. Recorded phrases, when they come, are the
+person's own recordings, not synthesized ones. A feature that seems to
+need a rendered file (sending a phrase as audio, Calls) is decided again
+here first.
 
 ## Tests
 

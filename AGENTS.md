@@ -441,7 +441,8 @@ the failure.
   make it fail.
 - **Logic lives in plain, testable types**, not in views: today
   `SpokenUtteranceTracker`, `VoiceSelection`, `SpeechRateSteps`,
-  `AudioSafetyPolicy`, `ScreenWakePolicy`, `CategorySelection`,
+  `AudioSafetyPolicy`, `AttentionAlertStatus`, `AudioSessionEventMapping`,
+  `AudioSessionLeasePolicy`, `ScreenWakePolicy`, `CategorySelection`,
   `StarterLibrary`, `PhraseLibrarySeeder`, `LibrarySnapshot`,
   `LibraryEdit`, `LibraryRules`, `LibraryImport`, `LibraryEditor`,
   `BackupCodec`. Views only read them.
