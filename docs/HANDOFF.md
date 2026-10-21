@@ -6,7 +6,7 @@ edits this page in place and writes its record in [`docs/log/`](log/README.md);
 nothing is appended here. Plan: [`docs/ROADMAP.md`](ROADMAP.md). How the
 project runs: [`docs/SDLC.md`](SDLC.md).
 
-**State as of 2026-10-21: `main` at `9362eca` (PR #11, merged 2026-10-14).**
+**State as of 2026-10-21: `main` at `05eb7c2` (PR #13, merged 2026-10-21).**
 Ten threads are working in parallel on the first release, R0.
 
 ## What the app does today
@@ -15,7 +15,9 @@ What it is written to do (*Verification* says how much has been seen). A
 stand-in Home with Yes, No and Emergency, everyday categories, and tiles
 from a neutral starter set. A tile speaks at once, in the person's
 Personal Voice when one exists and is allowed; the sentence stays on screen
-with Again beside it. Emergency opens the emergency phrases and says
+in a reserved viewport: one full-width line with Again below at compact
+widths, two lines with Again beside at regular widths, and longer messages
+scroll at full size. Emergency opens the emergency phrases and says
 nothing. Audio failures and very low volume show as a short passive
 warning in space always kept for it, and VoiceOver announces them. If the
 library cannot be saved, the app speaks from a filled in-memory library
@@ -27,12 +29,20 @@ and says changes will not be kept. The screen never locks. Ported code:
 - **GitHub CI** since PR #12 (merged 2026-10-21) builds with Apple's
   newest released Xcode, chosen on GitHub's `xcode-27` image (27.1,
   27A9275, on 2026-10-21), and tests on an iPad Pro 13-inch (M5)
-  simulator on iOS 27.0, the only iOS runtime there: unit suite, website
-  and script checks, and UI tests (Home, a first tap, Emergency, the
-  accessibility audit), green on that pull request's last runs
-  ([`log/2026-10-21-toolchain.md`](log/2026-10-21-toolchain.md)). Before
-  it, CI used Xcode 26.6 and iOS 26.5; 10 of 11 runs on `9362eca` were
-  green, and the failure was simulator infrastructure.
+  simulator on iOS 27.0, the only iOS runtime there
+  ([`log/2026-10-21-toolchain.md`](log/2026-10-21-toolchain.md)). Since
+  PR #13 the UI tests run on the newest iPad Pro 13-inch and then the
+  newest standard iPhone, after a warm-up launch, and fail when no test
+  ran ([`log/2026-10-21-test-seams.md`](log/2026-10-21-test-seams.md)).
+  Before PR #12, CI used Xcode 26.6 and iOS 26.5; 10 of 11 runs on
+  `9362eca` were green, and the failure was simulator infrastructure.
+- **A Mac, 2026-10-21** (PR #13's diagnosis), iPhone 17 and iPad Pro
+  13-inch (M5) simulators on iOS 27.0: 17 UI tests passed on each, with
+  strict accessibility audits in light and dark, Home's controls
+  reachable and in fixed frames at the default and AX5 text sizes, and
+  the quick-control words read back whole from screenshots at AX5; 136
+  unit tests passed
+  ([`log/2026-10-21-ui-test-diagnosis.md`](log/2026-10-21-ui-test-diagnosis.md)).
 - **The owner's Mac, 2026-10-12 to 2026-10-16**, Xcode 27.0, iOS 27.0
   simulators, run by agents: 113 unit cases and 8 UI tests green on an
   iPad Pro 13-inch (M5). The app was also run on iPad and iPhone 17
@@ -41,9 +51,10 @@ and says changes will not be kept. The screen never locks. Ported code:
   person has yet run the app and heard a phrase on record.
 - **Physical devices: none.** See *Checks that need a real device*.
 - **No test sees** VoiceOver announcements being posted, the message's
-  scroll reset, the missed-callback watchdog, sound, an iPhone, any
-  accessibility text size, or dark mode. The first UI test on a
-  just-started CI simulator has failed intermittently (AGENTS.md, *Gotchas*).
+  scroll reset, the missed-callback watchdog, or sound. Windowed iPad
+  sizes and iPhone Duo poses are untested. The first UI test on a
+  just-started CI simulator failed intermittently before PR #13's warm-up
+  launch (AGENTS.md, *Gotchas*).
 
 ## Known gaps
 
@@ -53,9 +64,11 @@ release in docs/ROADMAP.md when no thread has it yet.
 - Home's sizes are plain defaults, not measured gaze, switch or touch
   sizes, and the phrase grid scrolls (invariant 11). Ending the scroll is R0
   (ROADMAP item 3); measured sizes for each input profile are R1. *(Phone layout and word fitting)*
-- On an iPhone at the default text size "Emergency" breaks mid-word, the
-  category row scrolls sideways and hides categories, and the starter
-  library scrolls; at the largest size the labels clip. *(Phone layout and word fitting)*
+- On an iPhone, compact Home (PR #13) shows one phrase column, so the
+  starter library scrolls further, and the category row scrolls sideways
+  and hides categories. Quick-control words no longer clip or break at
+  AX5; a rendered-label test checks the four English quick-control labels
+  only, not phrases. *(Phone layout and word fitting)*
 - No Get Attention alarm yet, so `AudioSafetyPolicy` runs with the alarm
   always idle, and the VoiceOver warning sentences mention it already. *(Speech engine and Get Attention)*
 - A phrase the system cuts off can be recorded as finished, so no
@@ -65,9 +78,10 @@ release in docs/ROADMAP.md when no thread has it yet.
 - A library the app cannot read is replaced by the starter phrases with a
   message about saving (code audit M2), and an emptied library is refilled
   with the starter set. *(Library editing and backup format)*
-- English only. The committed String Catalog has no entries; the
-  speech-rate names in `SpeechRateSteps` and the voice sample sentence in
-  `SpeechService` are not localizable. *(Test seams and CI evidence)*
+- English only. `scripts/test.sh unit` brings the String Catalog up to
+  date (xcodebuild alone does not), and CI fails when the committed one
+  is stale. The speech-rate names in `SpeechRateSteps` and the voice
+  sample sentence in `SpeechService` are not in it yet. *(Test seams and CI evidence)*
 - No off-main test reaches the real KVO closure, the Personal Voice
   completion or the synthesizer delegate, and with no seam over the
   synthesizer the watchdog is untested. *(Speech engine and Get Attention)*

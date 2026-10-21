@@ -191,9 +191,12 @@ image `xcode-27-arm64` version 20261012.0260.1) found:
   October; not checked here). *(Speech engine and Get Attention;
   Accessibility API coverage)*
 - Xcode 27.1's release notes list "Initial Simulator launch can take
-  several minutes" as a known issue. `scripts/test.sh` already waits for
-  its default simulator to finish starting; a slow first UI test on the
-  new image is the first thing to suspect. *(Test seams and CI evidence)*
+  several minutes" as a known issue. `scripts/test.sh` waits for each
+  simulator to finish starting and, before UI tests, launches the app
+  once to warm it up (updated by PR #13,
+  [`2026-10-21-test-seams.md`](2026-10-21-test-seams.md)); a slow first
+  UI test on the new image is still the first thing to suspect.
+  *(Test seams and CI evidence)*
 - Xcode 27.2 (a release candidate on 2026-10-21) adds a JSON project
   format (`.xcproj`) meant to be readable and merge-friendly. Worth
   weighing against XcodeGen when it is released (docs/DECISIONS.md,
