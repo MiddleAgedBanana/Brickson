@@ -324,9 +324,19 @@ decisions and "Home's slot plan" to settle:
 - **Clear and its recovery away from the draft.** Clear and **Put Back**
   (which restores what Clear removed) each take a fixed category slot in
   region B while typing, apart from each other, from Speak and from the
-  draft, with the safety row between them and the text. Where the
-  keyboard covers region B, as on the zoomed window, neither shows; the
-  keyboard's own delete key still edits the draft, and nothing is lost.
+  draft, with the safety row between them and the text. On the four
+  drawn windows region B stays above the keyboard, so each is one
+  activation away.
+- **Reaching Clear where the keyboard covers region B**, as on the zoomed
+  window. Typing stays open when the keyboard is lowered (part of this
+  proposal), so on an iPad
+  the keyboard's own hide-keyboard key uncovers B with Clear and Put Back
+  in their places: two activations, and nothing moves. A phone keyboard
+  has no such key; no measured phone covers B, and a window where one
+  does needs Clear placed above the keyboard or a named exception from
+  the layout engine. Until then the delete key still edits the draft, one
+  character at a time, and nothing is lost. (Typing foundation's review
+  of this proposal, 2026-10-21.)
 
 ### Alarm
 
