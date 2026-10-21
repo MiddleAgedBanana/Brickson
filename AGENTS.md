@@ -421,6 +421,36 @@ the failure.
 - **Start of a session:** `git status`, `git log --oneline -15`, then read
   `docs/HANDOFF.md`. Another agent may have landed work since.
 
+## Usage and context
+
+Every tool call re-sends the session's whole conversation to the model.
+On this project that made 1.87 billion cache reads in eleven days, three
+quarters of them from a few threads that ran for days at 150,000 to
+375,000 tokens of context (docs/DECISIONS.md, "Keep sessions short to
+save usage"). The model and effort level barely change this, so never
+pick a weaker model or lower effort to save usage. Keep sessions short
+instead:
+
+- **One pull request per session.** When it merges, finish. Start a
+  fresh session for the next piece of work rather than reviving a long
+  one: a session idle for over an hour re-stores its whole conversation
+  when woken.
+- **Stop watching a pull request** once it has merged or been handed to
+  the owner, so CI and review events stop waking the session.
+- **Message another session only when it must act now**, and put
+  everything in one message. Never send status updates to every session.
+- **No check-ins on a session that is not waiting for anything.**
+- **Read big files and long CI logs once**, write what matters to a note,
+  and work from the note.
+- **Compact earlier.** Claude Code compacts a conversation automatically
+  near the model's limit. Set the window to 200,000 tokens instead: in a
+  cloud environment, add the environment variable
+  `CLAUDE_CODE_AUTO_COMPACT_WINDOW=200000`; on a Mac, run
+  `/autocompact 200k` once (saved for that model) or export the same
+  variable. Before stepping away from a long session, type `/compact`.
+  A summary keeps less detail, so decisions belong in the repository and
+  project memory, never only in a conversation.
+
 ## Working with the owner
 
 The owner is new to programming. Explain in plain words, without talking

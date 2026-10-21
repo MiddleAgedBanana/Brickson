@@ -637,3 +637,17 @@ Follow-ups this change leaves (none is done here):
 Noticed, not changed: GitHub's changelog of 2026-10-15 says AI Scan for
 pull requests is now generally available; docs/DECISIONS.md *Code
 scanning* still calls it a public preview.
+
+## Usage and context rules — 2026-10-21
+
+The owner saw nearly 2 billion cache reads and asked why. A cloud session
+measured every project session's usage (docs/DECISIONS.md, "Keep sessions
+short to save usage") and found long-lived sessions, not the model or
+effort, were the cause. This pull request adds AGENTS.md, *Usage and
+context*: one pull request per session, stop watching merged pull
+requests, batch messages between sessions, no idle check-ins, read big
+files once, and compact at 200,000 tokens (the environment variable for
+cloud sessions, `/autocompact 200k` on a Mac). Documentation only; no
+code, tests or workflows changed. Not verified: whether the owner has set
+the auto-compact window in the cloud environment, which only the owner
+can do.

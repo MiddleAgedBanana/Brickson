@@ -519,3 +519,26 @@ page again.
 | Automatically request Copilot code review | On; new pushes and drafts off | As above. |
 | Block force pushes, restrict deletions | On | History on `main` never changes. |
 | Bypass | Repository admin, for pull requests only | The owner can still merge in an emergency, such as GitHub's Mac machines being down, but never push straight to `main`. |
+
+## Keep sessions short to save usage
+
+Decided 2026-10-21 at the owner's request, after the project's usage
+showed nearly 2 billion cache reads. Measured that day from every project
+session's own usage record: 1.87 billion cache reads from 10 to 21
+October, about $1,030 at API list price (cache writes 38%, cache reads
+31%, output 23%, fresh input 7%). Eight sessions that ran for hours or
+days made 74% of the reads; the coordinating sessions made 2.4%. Sessions
+on Opus 5.5 at medium effort made more reads than later ones with more
+effort, and a cache read costs nearly the same on every current model
+($0.20 per million tokens on Opus 5.5, $0.25 on Fable 5.1), so model and
+effort are not the cause. The cause is context size times the number of
+requests: every tool call re-sends the whole conversation, and pull
+request events, messages from other sessions and restarts after usage
+limits add requests. A session idle for over an hour stores its whole
+conversation again when woken (Claude Code's documentation: "Manage
+costs", "Projects").
+
+The rules are in AGENTS.md, *Usage and context*. The owner keeps any
+model and effort; nothing here limits that choice. Revisit if Claude Code
+lets a session compact itself on command, or if per-session usage shows
+a different cause.
