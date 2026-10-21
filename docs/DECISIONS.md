@@ -223,6 +223,69 @@ How it behaves, and where it knowingly falls short:
   - CI tests the iPad only. On a narrow iPhone the three quick-control
     labels may not fit at larger text sizes.
 
+## Home's slot plan
+
+*2026-10-21. Default, adopted 2026-10-21: the owner left these choices to
+the project. Reversible if the owner objects.*
+
+Home is four regions, top to bottom on every device and in every profile:
+**A** the message (text, a status line, and a trailing column of Clear
+over Type), **C** the safety row (Yes, No, Again or Speak, Emergency, Get
+Attention), **B** the categories with a pinned leading column (Stop Alert
+over Settings), **D** the phrase grid. docs/DESIGN.md, *The slot plan*,
+gives each slot's identifier and the sizes per window.
+
+The choices inside it, and why:
+
+- **Safety row above the categories.** A scored search over the dwell
+  rules (a resting pointer may activate, a repeat may fire, a mode switch
+  must not leave a harmful control nearest) favoured A, C, B, D over A,
+  B, C, D: the message text's neighbours are Clear (a well while
+  browsing) and Type, and the grid never borders the text.
+- **Clear above Type in the trailing column.** Clear is live only while
+  typing, when it sits beside the draft it empties; the cleared text is
+  kept and recoverable. While browsing its frame is an empty well, so the
+  message text's nearest live control is Type, which only opens typing.
+- **Stop Alert above Settings in a pinned column.** Stop Alert is live
+  only while the alarm sounds and is two regions from Get Attention, so
+  start and stop never share a frame. While silent its frame is a well.
+- **Two column counts.** Compact widths use three columns in every
+  region; regular widths use four in C and D and one row of four
+  categories. Width and height choose, never the device model.
+- **Colours for the two alarm controls.** Get Attention is `#B45309`
+  (white label 5.02:1, the amber role without system orange's 2.2:1) and
+  Stop Alert `#0F766E` (5.47:1), a third hue so neither reads as a phrase
+  or as Emergency. docs/DESIGN.md, *Colour*, has every pair.
+- **The family screens' top band.** Back to Talking sits over Home's
+  trailing column and Settings' start-only Get Attention over Home's
+  message text (compact) or Again column (regular), so the family
+  screens' only controls near the spot that opened them are a way back
+  and a call for help. Settings root holds one large Family Setup button
+  and nothing else to activate.
+- **Largest text sizes.** Frames do not grow with text; labels drop their
+  symbol, then step down to the Large size and no further. On the iPhone
+  17 the drawings keep every frame at AX5 with labels at that floor; the
+  Phone layout thread proposes letting the grid scroll at AX4 and AX5
+  instead. The layout engine's measurements decide, and docs/DESIGN.md
+  records the result.
+
+Before: the stand-in Home (above) had no fixed plan.
+
+## Solid fills on Home, system glass elsewhere
+
+*2026-10-21. Default, adopted 2026-10-21: the owner left these choices to
+the project. Reversible if the owner objects.*
+
+Home's controls use solid, measured fills, not Liquid Glass. Apple's
+guidelines (materials page, read 2026-10-21) keep Liquid Glass for
+navigation and controls floating over content and ask for it sparingly in
+custom controls; Home's buttons are the content, and glass takes its
+colour from what lies beneath, so a contrast ratio measured once could
+not be promised (invariant 6). Standard system components on the family
+screens (navigation bars, toolbars, sheets, alerts, the file picker, the
+in-app Safari sheet) keep the glass the system gives them, unstyled.
+docs/DESIGN.md, *Apple's guidelines and Liquid Glass*.
+
 ## Personal Voice permission is asked at launch, for now
 
 *2026-10-10. Default, from the reference app.*
