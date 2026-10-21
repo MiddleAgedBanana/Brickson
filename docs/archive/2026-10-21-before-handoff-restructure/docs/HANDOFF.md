@@ -389,9 +389,8 @@ rerun with simulator access passed. No app, project or test code changed.
 
 The owner chose to retain Brickson and authorized a public explanation of
 its personal origin. After asking for a shorter version, the homepage and
-README now use two brief paragraphs attributed to Avery: his brother coined
-the name as a teenager, it still makes the family smile, and the app is being
-built in his memory after his death from ALS. No detailed fair story or
+README now use two brief paragraphs, in the words the owner authorized
+(docs/DECISIONS.md, "Brand name and founder story"). No detailed fair story or
 additional biographical facts are published. The homepage has a Why Brickson?
 navigation link and a responsive founder section using existing palette colors.
 AGENTS.md and DECISIONS.md now reflect the name choice; no app identifier or
@@ -419,7 +418,7 @@ Four website tests and the full unit suite passed on the dedicated iPad Pro
 PR #9 review identified that the general public-repository privacy rule did
 not mention the owner's explicit request to publish the founder note.
 AGENTS.md now records a narrow exception for the already authorized facts,
-Avery's attribution, and the decision/handoff record. Other family identities,
+the owner's attribution, and the decision/handoff record. Other family identities,
 medical details and private documents remain outside the exception. This
 implements the owner's publication request without broadening it. No public
 story text, app behavior or privacy-policy promise changed.

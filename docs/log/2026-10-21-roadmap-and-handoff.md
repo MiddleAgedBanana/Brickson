@@ -13,7 +13,7 @@ owner's goal of 2026-10-21 has a plan behind it.
   front page of 150 lines that says what is true now and is edited in
   place, a history of everything before 2026-10-21
   (`docs/HANDOFF-LOG.md`), and one file per pull request in `docs/log/`
-  (this is the first). The old file is kept, unchanged, in
+  (this is the first). The old file is kept in
   `docs/archive/2026-10-21-before-handoff-restructure/`. AGENTS.md's
   "Document every change" rule and the pull request template now ask for
   one log file plus in-place edits.
@@ -77,7 +77,12 @@ owner's goal of 2026-10-21 has a plan behind it.
 
 - `python3 scripts/test-site.py` on the cloud machine: 4 tests, OK, after
   the class rename.
-- The archived handoff is byte-identical to `main`'s (`cmp`).
+- The archived handoff matches `9362eca` except two founder-note
+  passages, redacted in it and in `docs/HANDOFF-LOG.md` (`diff` shows
+  only those lines). The family facts in them are permitted only in
+  docs/DECISIONS.md, `docs/HANDOFF.md`, `README.md` and `site/index.html`
+  (AGENTS.md, *Code Review Rules*), so each now points to
+  docs/DECISIONS.md, "Brand name and founder story" (Codex's review).
 - Every relative link inside `docs/recon/` resolves; an adversarial scan
   of the research files for personal details, paths, emails, price words
   and secrets found the items listed above, which were fixed.
