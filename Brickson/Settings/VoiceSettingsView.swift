@@ -150,7 +150,7 @@ private struct VoiceRowView: View {
                     activity?.recordActivity()
                     speech.preview(from: .voice(id: row.voiceID))
                 } label: {
-                    SettingsRowLabel(title: "Hear", systemImage: "play.fill")
+                    SettingsPairLabel(title: "Hear", systemImage: "play.fill")
                 }
                 .settingsRowStyle()
                 .accessibilityLabel(Text(verbatim: row.hearLabel))
@@ -163,11 +163,11 @@ private struct VoiceRowView: View {
                     // Both versions are laid out, so choosing a voice never
                     // changes the button's size.
                     ZStack {
-                        SettingsRowLabel(title: "Use", systemImage: "checkmark.circle")
+                        SettingsPairLabel(title: "Use", systemImage: "checkmark.circle")
                             .hidden()
-                        SettingsRowLabel(title: "In Use", systemImage: "checkmark")
+                        SettingsPairLabel(title: "In Use", systemImage: "checkmark")
                             .hidden()
-                        SettingsRowLabel(
+                        SettingsPairLabel(
                             title: row.isSelected ? "In Use" : "Use",
                             systemImage: row.isSelected ? "checkmark" : "checkmark.circle"
                         )

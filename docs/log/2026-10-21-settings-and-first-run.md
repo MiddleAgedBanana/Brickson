@@ -72,8 +72,13 @@ months" and "The privacy policy ships inside the app".
 - The review round (Codex and the first CI run on `6dbb62f`), in the
   commits after the merge:
   - Apple's audit on the iPhone 17 found Back to Talking's words clipped
-    beside its icon in half the bar's width. Settings labels now drop the
-    icon first and then wrap between words (`SettingsFittingLabel`).
+    beside its icon in half the bar's width. A label that dropped the icon
+    when the words did not fit (`ViewThatFits`) then failed the audit's
+    Dynamic Type check on the iPad ("partially unsupported", CI on
+    `695d765`). Buttons that share a row (Back to Talking, Hear and Use,
+    Not Now and Stop Asking) now put the icon above the words, as Home's
+    quick controls do (`SettingsPairLabel`); full-width rows keep it
+    beside them. Words wrap between words and never shrink.
   - Answering the check-in card left the rows below to move up under the
     button just chosen. Its place is now kept, with passive words, until
     Family Setup closes (`CheckInPolicy.afterword`).
@@ -137,7 +142,14 @@ months" and "The privacy policy ships inside the app".
   `HomeReachabilityTests.testEveryHomeStateAtDefaultTextInLandscape`,
   with "kAXErrorServerNotFound" after a 60-second automation setup. That
   matches the cold-simulator failure in AGENTS.md's Gotchas, on Home code
-  this pull request does not change; the next run is the check.
+  this pull request does not change.
+- CI on `695d765`: unit tests passed. UI tests: 24 of 26 on the iPad and
+  25 of 26 on the iPhone. The iPad's first launch passed this time, so the
+  earlier failure was the cold-simulator flake. Every failure was Apple's
+  audit on Settings labels built with `ViewThatFits`: Dynamic Type
+  "partially unsupported" on both devices and Text clipped on the iPhone,
+  on rows that had passed as plain labels. Fixed after, with Home's
+  label pattern; the next run is the check.
 - Nothing else was built or run where this was written (no Xcode). The
   views, `SetupStoreTests`, `SettingsTests` (UI), the project.yml resource,
   the bundled-page tests and the String Catalog are first checked by CI.

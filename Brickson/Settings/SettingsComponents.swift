@@ -17,7 +17,10 @@ enum SettingsMetrics {
     static let rowHeight: CGFloat = 64
 }
 
-/// A full-width row that opens another screen or does one thing.
+/// A full-width row that opens another screen or does one thing. The words
+/// wrap between words beside the icon, never shrinking; a full-width row
+/// leaves room for every word with its icon (AGENTS.md, "Words never
+/// break").
 struct SettingsRowLabel: View {
     let title: Text
     let systemImage: String
@@ -35,32 +38,47 @@ struct SettingsRowLabel: View {
     }
 
     var body: some View {
-        SettingsFittingLabel(title: title, systemImage: systemImage, alignment: .leading)
-            .font(.title3.weight(.semibold))
-            .foregroundStyle(.white)
-            .multilineTextAlignment(.leading)
-            .frame(maxWidth: .infinity, minHeight: SettingsMetrics.rowHeight, alignment: .leading)
+        Label {
+            title
+                .fixedSize(horizontal: false, vertical: true)
+        } icon: {
+            Image(systemName: systemImage)
+        }
+        .font(.title3.weight(.semibold))
+        .foregroundStyle(.white)
+        .multilineTextAlignment(.leading)
+        .frame(maxWidth: .infinity, minHeight: SettingsMetrics.rowHeight, alignment: .leading)
     }
 }
 
-/// A control's words and icon. When they do not fit on one line the icon
-/// goes first, then the words wrap between words; they are never shrunk
-/// (AGENTS.md, "Words never break"). Apple's audit found Back to Talking's
-/// words clipped on a 402-point iPhone with the icon beside them.
-struct SettingsFittingLabel: View {
+/// The label of a button that shares its row with another, such as Hear and
+/// Use, or Back to Talking in the safety bar. As on Home's quick controls,
+/// the icon sits in a slot of its own above the words, so it never takes
+/// width from them, and the words wrap between words without shrinking.
+/// (A label that dropped its icon only when the words did not fit, through
+/// `ViewThatFits`, failed Apple's Dynamic Type audit.)
+struct SettingsPairLabel: View {
     let title: Text
     let systemImage: String
-    let alignment: TextAlignment
+
+    init(title: LocalizedStringKey, systemImage: String) {
+        self.title = Text(title)
+        self.systemImage = systemImage
+    }
 
     var body: some View {
-        ViewThatFits(in: .horizontal) {
-            Label { title } icon: { Image(systemName: systemImage) }
+        VStack(spacing: 4) {
+            Image(systemName: systemImage)
+                .font(.system(size: 20, weight: .semibold))
+                .frame(height: 22)
+                .accessibilityHidden(true)
             title
-            title
-                .lineLimit(nil)
-                .multilineTextAlignment(alignment)
+                .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
         }
+        .font(.title3.weight(.semibold))
+        .foregroundStyle(.white)
+        .frame(maxWidth: .infinity, minHeight: SettingsMetrics.rowHeight)
     }
 }
 

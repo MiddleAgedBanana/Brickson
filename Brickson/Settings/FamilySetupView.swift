@@ -115,14 +115,14 @@ private struct CheckInCard: View {
                     activity?.recordActivity()
                     setup.update { CheckInPolicy.notNow(&$0, now: .now, calendar: .current) }
                 } label: {
-                    SettingsRowLabel(title: "Not Now", systemImage: "clock")
+                    SettingsPairLabel(title: "Not Now", systemImage: "clock")
                 }
                 .settingsRowStyle()
                 Button {
                     activity?.recordActivity()
                     setup.update { CheckInPolicy.stopAsking(&$0) }
                 } label: {
-                    SettingsRowLabel(title: "Stop Asking", systemImage: "bell.slash")
+                    SettingsPairLabel(title: "Stop Asking", systemImage: "bell.slash")
                 }
                 .settingsRowStyle()
             }
