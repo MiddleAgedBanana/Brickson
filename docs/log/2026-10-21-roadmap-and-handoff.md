@@ -92,6 +92,6 @@ owner's goal of 2026-10-21 has a plan behind it.
   `docs/log/2026-10-21-toolchain.md` record and its next steps into the
   front page, and keep both new AGENTS.md gotchas. *(Whichever merges
   second)*
-- The four questions in DECISIONS.md, *Waiting on the owner*. *(Owner)*
+- The five questions in DECISIONS.md, *Waiting on the owner*. *(Owner)*
 - The repo review's findings, each with an owner, in `docs/ROADMAP.md`.
   *(This thread)*
