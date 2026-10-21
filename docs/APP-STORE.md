@@ -142,7 +142,7 @@ say so in What's New when it happens.
 |---|---|---|
 | Phrases and categories saved on the device | Yes | — |
 | "The message you are typing… stays until you clear it" | No: no typing yet | Ship typing with a kept draft, or delete the line |
-| "Your settings, such as the voice and speaking speed you chose" | Yes (`SpeechService` stores both) | Fixed on 2026-10-21: the policy no longer mentions a text-size setting, which Brickson does not have |
+| "Your settings, such as the voice and speaking speed you chose" | Not yet: `SpeechService` can store both, but no screen lets a person choose them (no Settings yet). The policy no longer mentions a text-size setting (fixed 2026-10-21) | Ship voice and speed choice in Settings, or reword to the automatic voice and default speed |
 | Deleting things "in the app" | Not until editing ships | Ship editing, or reword |
 | Speech and Personal Voice | Yes | — |
 | How you control the app ("works with … Eye Tracking, Switch Control and Voice Control") | The data half is true: Brickson has no input code of its own, so it never receives what those features use. "Works with" is **not yet verified**: nothing has run on a device | Reach every control with each named method on a real iPhone and iPad (docs/HANDOFF.md, *Checks that need a real device*), or reword to "is built to work with" |
