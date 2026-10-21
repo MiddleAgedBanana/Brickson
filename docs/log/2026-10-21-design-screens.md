@@ -69,6 +69,21 @@ written down in one place.
   Two errors found on the way are corrected: regular widths have five
   columns in C, not four, and on regular widths Emergency and Again
   border the message, not only Yes and No.
+- **After Codex's fourth review**, three more changes to `docs/DESIGN.md`.
+  On regular widths the drawn message spans four of five columns, so
+  Again, which speaks, sits under its trailing end; sampling the whole
+  message block found Again nearest from there on both iPad windows. The
+  proposal narrows the message to three columns and widens the trailing
+  column to two, which puts Again and Get Attention under Phrases and
+  Type; the held-activation chains score the same. The Yes and No
+  exception is restated from the whole block, not only its centre. A
+  grown library's fifth category has no cell in the drawn or proposed
+  region B, and the proposed L-shaped order cannot scroll as one standard
+  container, so *Open in the slot plan* hands that to "Home's slot plan"
+  with the conditions an answer must meet. The Library and phrase editor
+  drawings are kept for their look only: they give no route to a phrase
+  or to Add Phrase, and the delete chain from entry to dismissal is not
+  scored, so the Library screens work designs that flow.
 - `docs/ROADMAP.md` item 9 and its repository-review lines, and the app
   icon's owner in `docs/HANDOFF.md` and `docs/APP-STORE.md`, are brought up
   to date (*Follow-ups*).
@@ -102,14 +117,16 @@ build Swift. GitHub CI runs the usual suites on the pull request.
   by a short script, not committed (nearest centre, and nearest edge with
   ties), with the pointer at the activated control's centre. It shows
   what each arrangement does under those two rules, not what Snap to
-  Item does.
+  Item does. The same script sampled every 4pt of the message block and
+  its status line for the nearest control under both rules.
 
 ## Not verified
 
 - The Figma frames are not redrawn for the reviews' corrections: they
   still show Clear beside the draft, a well where Phrases now stays,
   Settings under Stop Alert, the withdrawn Settings root, two grid rows
-  on the SE-class window and the hairline as the field's edge.
+  on the SE-class window, the hairline as the field's edge and the
+  message over four columns on regular widths.
   `docs/DESIGN.md` says so where each applies, and wins over the frames.
 
 - Label fits: the Figma file uses Inter, because SF Pro is listed in the
@@ -131,9 +148,16 @@ build Swift. GitHub CI runs the usual suites on the pull request.
   safety row sits above the categories; docs/DECISIONS.md, "Get
   Attention", says Stop takes the cell above Emergency, from the earlier
   order. That pull request settles it and corrects whichever is wrong.
-  It also adopts or answers this pull request's proposals for region B
-  (Settings at its end, a category under Stop Alert) and for Phrases in
-  every state, which its slot plan does not yet have.
+  Its version of 2026-10-21 22:17 UTC puts Stop directly below Emergency
+  and adopts this pull request's proposals for region B (Settings at its
+  end, a category under Stop Alert) and for Phrases in every state. It
+  still has to settle the message's width on regular widths, the Yes and
+  No exception, and a path to every category in a grown library
+  (`docs/DESIGN.md`, *Open in the slot plan*).
+- The Library and phrase editor flow: a phrase list for each category
+  with Add Phrase, the editor, and where delete's confirmation sits,
+  with the chain from entry to dismissal scored in one chain engine.
+  *(The Library's screens)*
 - Gaze-profile column heights on the iPads, and whether the iPhone grid
   fits at AX4 and AX5 without scrolling. *(R1 layout engine; Phone layout and word
   fitting)*

@@ -23,7 +23,8 @@ fitting, PR #22); the family screens' safety bar, "Settings is a cover
 with a fixed safety bar" (Settings and first run, PR #23); and typing on
 Home, "Typing is a state of Home" (Typing foundation, PR #21). This
 file proposes changes to the first; that pull request adopts or answers
-them (*What a held activation meets next*). Until each one merges, its row
+them (*What a held activation meets next*), and *Open in the slot plan*
+lists what it still has to settle. Until each one merges, its row
 in the register *Decided by default on 2026-10-21* says what it will
 decide, AGENTS.md's invariants bind, and this file's sections on those
 subjects are proposals. Once one merges, it wins where this file
@@ -46,6 +47,9 @@ differs, and this file is corrected to match.
   they choose): an iPhone 17 Home you can tap through (speak, type, alarm,
   Settings, Family Setup, Voice, Library, editor, delete question), and
   still frames of the other states and the iPads. Same layout source.
+  Its taps join the drawn screens so they can be seen in order; where
+  this file withdraws a drawing or calls a flow open, the prototype
+  is not a reference for it either.
 
 What came from where:
 
@@ -184,9 +188,9 @@ it (docs/ROADMAP.md, R0 item 3), not a picture of it.
 
 | Layer name | Control | Region | Notes |
 |---|---|---|---|
-| `messageText` | The message block | A | Passive text, scrolls inside its frame |
-| `statusLine` | Speaking / Sounding / audio warnings | A | Passive footnote under the message; always reserved |
-| `clear` | Proposed: **Phrases** in every state, the way back to the phrases (*Typing*). The drawings show Clear while typing and a well otherwise | A | Trailing column, top; shown selected while browsing |
+| `messageText` | The message block | A | Passive text, scrolls inside its frame. Two of three columns wide on compact widths; proposed three of five on regular widths, where the drawings span four (*What borders the text*, below) |
+| `statusLine` | Speaking / Sounding / audio warnings | A | Passive footnote under the message, as wide as it; always reserved |
+| `clear` | Proposed: **Phrases** in every state, the way back to the phrases (*Typing*). The drawings show Clear while typing and a well otherwise | A | Trailing column, top; shown selected while browsing. The trailing column is one column wide on compact widths; proposed two on regular widths, where the drawings use one |
 | `type` | Type | A | Trailing column, under the top slot; shown selected while typing |
 | `yes`, `no` | Yes, No | C | |
 | `again` | Again, or Speak while typing | C | Same frame, label changes |
@@ -205,11 +209,17 @@ and 10):
   B, on another row. Type only opens typing, and Phrases only leaves it,
   in a different place (*Typing*, below).
 - **What borders the text.** Beside the message, the trailing column
-  holds Phrases and Type, which only choose a mode. Below it is C: Yes
-  and No on compact widths, and Emergency, Yes, No and Again on regular
-  widths, where the text spans four of C's five columns. No phrase tile
-  or Get Attention borders the text, but a look resting on it can snap
-  to Yes or No, which speak; that is the first exception below.
+  holds Phrases and Type, which only choose a mode. Below it is C. On
+  compact widths the message spans two of three columns, so Yes and No
+  are under it and Again is under the trailing column. On regular widths
+  the drawings span four of five columns, which puts Again, which
+  speaks, under the message's trailing end: from there a resting look
+  reaches it (Codex review of PR #20). The proposal narrows the message
+  to three columns and widens the trailing column to two, so Emergency,
+  Yes and No are under the message, and Again and Get Attention are
+  under Phrases and Type, on every width. No phrase tile, Again or Get
+  Attention then borders the text, but a look resting on it can snap to
+  Yes or No, which speak; that is the first exception below.
 - **Safety first, then navigation, then phrases.** Emergency, Get
   Attention, Yes and No are one activation from every Home state. They
   sit above the software keyboard on the three drawn windows whose
@@ -231,11 +241,19 @@ measured and recorded in docs/DECISIONS.md; they are proposed here for
 "Home's slot plan" to record, and the code is measured before they are
 accepted:
 
-- **A look resting on the message text can snap to Yes or No.** From the
-  text's centre they are the nearest controls on every drawn window, 90
-  to 152pt from it (to their edges), so a short snap range reaches
-  nothing and a long one reaches a control that speaks. The reference
-  app's portrait board had the same; the code's measurement decides.
+- **A look resting on the message can snap to Yes or No.** Sampled every
+  4pt over the whole message block and its status line, not only from
+  the text's centre, the nearest control anywhere on it, by either rule
+  in *What a held activation meets next*, is Yes, No, Phrases or Type,
+  or on the iPads Emergency; each is one gap (10 to 16pt) from the
+  block's nearest edge. With the message over four columns on regular
+  widths, Again was nearest from the block's trailing end on both iPad
+  windows; over three it is nearest nowhere, and Get Attention and the
+  phrase tiles are nearest nowhere on any window. So a look that rests
+  near the bottom of the message can reach a control that speaks Yes or
+  No. The reference app's portrait board had the same; the code's
+  measurement decides, and the owner accepts or rejects the exception
+  with its numbers.
 - While typing, the drawings put Clear beside the draft. **That placement
   is withdrawn** (Codex review of PR #20): a look that rests on the draft
   while reading it can land on Clear, and a recovery control with no
@@ -287,13 +305,45 @@ The proposal, for "Home's slot plan" to adopt or answer:
   itself, which stays in place and absorbs it, so Settings is not what it
   meets next.
 - **Phrases in every state** (*Typing*).
+- **The message over three columns on regular widths** (*What borders
+  the text*). The chains in the table above score the same with the
+  trailing column two columns wide.
+
+### Open in the slot plan
+
+Two things the drawings and the proposal leave open, for "Home's slot
+plan" (PR #22) to settle before Home is built to it:
+
+- **The Yes and No exception** (*Exceptions the drawings carry*): the
+  slot plan records it with its numbers for the owner, or places Yes and
+  No so the message does not border them.
+- **A path to every category in a grown library.** The starter library's
+  four categories fill region B's four category cells, and a family can
+  add more (Add Category, in the Library). As drawn and as proposed, a
+  fifth category has no cell on Home, so its phrases could not be
+  reached (Codex review of PR #20). Nothing is unreachable in the code:
+  Home on `main` scrolls its category row sideways, and PR #22's
+  stand-in, "Home's stand-in layout", scrolls four category buttons
+  vertically. That answer does not carry over to the slot plan, because
+  the proposed order puts the categories in an L around Stop Alert and
+  Settings, which cannot scroll as one standard container. Whatever the
+  slot plan chooses keeps every category reachable through standard
+  containers; keeps Stop Alert, Settings and their neighbours in place,
+  never scrolled away and never moved by the library's size; leaves the
+  starter library unscrolled in every profile (invariant 11), with a
+  grown library scrolling at the floor at most; and scores the chain
+  after every control it adds. This file proposes no answer, and its
+  drawings show only the starter library.
 
 ### Slot sizes per device
 
 Computed by the layout source from the window size, the safe-area insets,
 a 16pt margin and the gaps below; the windows are examples of space, and
-the device names only label them. Widths are per column; the trailing
-and leading columns are one column wide. These are touch-profile frames:
+the device names only label them. Widths are per column, and the
+frames are the drawn ones: the leading and trailing columns one column
+wide, the message over four columns on regular widths (the proposal in
+*What borders the text* widens the trailing column there to two and
+changes no height). These are touch-profile frames:
 every target clears the 44pt floor.
 
 Against the gaze floors held at the densest screen (phrase tiles 136pt,
@@ -457,16 +507,32 @@ activation meets next*). Below the band:
   the system switch is off); one row per voice with separate **Hear** and
   **Use** (Use shows selected); **Slower**, the rate name, **Faster**,
   with the rate name between them so the two never border each other.
-- **Library**: a reserved status line for save results; the Emergency
-  category row first with a note that it cannot be deleted; a row per
-  category; **Add Category**; a note on backups; **Export** and
-  **Restore** (file picker only).
-- **Phrase editor**: "In Basics" (the category, as a Move to… row), the
-  field, **Save**, **Move to…**, **Delete Phrase**, and a reserved line
-  for a failed save. **Delete asks first, in place**: the question
-  replaces the field, "Delete “Hello.” for good" takes Save's frame, and
-  **Keep Phrase** takes Delete's frame, so a repeated activation on the
-  spot that asked only keeps (AGENTS.md, invariant 3).
+- **Library and phrase editor: drawn for their look only, not as a
+  flow.** The drawings show the Library list (a reserved status line for
+  save results; the Emergency category row first with a note that it
+  cannot be deleted; a row per category; Add Category; a note on
+  backups; Export and Restore) and a phrase editor (the field, Save,
+  Move to…, Delete Phrase, a reserved line for a failed save, and the
+  delete question in the same frames, with Keep Phrase in Delete's
+  frame). Use them for row styles, fills, type and spacing. They are not
+  a flow to build from, for two reasons (Codex review of PR #20):
+  - **No way to a phrase.** Nothing drawn lists a category's phrases or
+    offers Add Phrase, so the drawings give no route to write a new
+    phrase or to open the editor on an existing one.
+  - **The delete chain is not scored.** Keep in Delete's frame only
+    covers a repeat on Delete itself. A held activation that opens the
+    editor from a phrase row, the question, the confirmation and the
+    screen the editor closes onto are one chain. In the reference app a
+    resting look went from a phrase tile to the editor, to Delete
+    Phrase, to the confirmation (docs/LESSONS.md, "Score chains, not
+    single hops").
+
+  The Library screens work designs the flow: a phrase list for each
+  category with Add Phrase, the editor, and where delete's confirmation
+  sits. It scores the chain from entry to dismissal, from every start
+  point, under both pointer models and with a look returning to where it
+  started, in one chain engine (docs/LESSONS.md, "One chain engine, not
+  five scripts"), under invariants 3 and 10.
 
 ## Apple's guidelines and Liquid Glass
 
