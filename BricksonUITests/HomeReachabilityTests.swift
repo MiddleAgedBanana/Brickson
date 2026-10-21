@@ -45,9 +45,14 @@ final class HomeReachabilityTests: XCTestCase {
         continueAfterFailure = false
         let app = launchedApp(textSize: textSize, orientation: orientation)
         let isPad = UIDevice.current.userInterfaceIdiom == .pad
-        if isPad && orientation.isLandscape {
-            // Otherwise the landscape tests would quietly check portrait.
-            XCTAssertGreaterThan(app.frame.width, app.frame.height, "the iPad did not turn to landscape")
+        if orientation.isLandscape {
+            if isPad {
+                // Otherwise the landscape tests would quietly check portrait.
+                XCTAssertGreaterThan(app.frame.width, app.frame.height, "the iPad did not turn to landscape")
+            } else {
+                // The iPhone keeps portrait (docs/DECISIONS.md, "Orientations").
+                XCTAssertGreaterThan(app.frame.height, app.frame.width, "the iPhone turned to landscape")
+            }
         }
         // Report every control that fails, not only the first.
         continueAfterFailure = true

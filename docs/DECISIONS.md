@@ -280,8 +280,16 @@ How it behaves, and where it knowingly falls short:
     that rests on the text could snap to them.
   - The selected category swaps its symbol for a check mark; symbols
     differ in width, so the buttons after it can shift slightly.
-  - CI tests the iPad only. On a narrow iPhone the three quick-control
-    labels may not fit at larger text sizes.
+  - On the iPhone, Apple's accessibility audit finds that phrase tiles
+    only partly support larger text and that Yes, Emergency, phrase tiles
+    and the Speaking label may clip at larger sizes. CI has tested the
+    iPhone since 2026-10-21; until the phone layout replaces this Home,
+    those two kinds of finding are strict expected failures on the iPhone
+    (`expectKnownPhoneHomeAuditFindings`, BricksonUITests): still reported,
+    and the test fails once they are gone so the exception is removed.
+    Every other finding, and every finding on the iPad, fails the test.
+    *Default, adopted 2026-10-21: the owner left these choices to the
+    project. Reversible if the owner objects.*
 
 ## Personal Voice permission is asked at launch, for now
 

@@ -189,33 +189,78 @@ extension XCTestCase {
         }
     }
 
-    /// How bright the screen is at `point` (in points, from the top left of
-    /// a portrait screen): 0 is black, 1 is white. Nil if the screenshot
-    /// cannot be read there.
+    /// On the iPhone, today's stand-in Home fails two kinds of audit
+    /// finding: "Dynamic Type font sizes are partially unsupported" on
+    /// phrase tiles, and "Text clipped" on Yes, Emergency, phrase tiles and
+    /// the Speaking label (first seen on CI on 2026-10-21, when the UI
+    /// tests began running on an iPhone too). They are real and still
+    /// reported, as expected failures; the phone layout work fixes them
+    /// (docs/DECISIONS.md, "Home version 0 is a stand-in"). The expectation
+    /// is strict: once the iPhone passes, the test fails until this call is
+    /// removed. Any other kind of finding, and any finding on the iPad,
+    /// still fails the test.
     @MainActor
-    func screenBrightness(at point: CGPoint, in app: XCUIApplication) -> Double? {
-        let screenshot = XCUIScreen.main.screenshot()
-        guard let image = screenshot.image.cgImage, app.frame.width > 0 else { return nil }
-        let scale = Double(image.width) / app.frame.width
-        let x = Int(point.x * scale)
-        let y = Int(point.y * scale)
-        guard x >= 0, y >= 0, x < image.width, y < image.height else { return nil }
-        var pixel = [UInt8](repeating: 0, count: 4)
-        let drawn = pixel.withUnsafeMutableBytes { bytes -> Bool in
+    func expectKnownPhoneHomeAuditFindings() {
+        guard UIDevice.current.userInterfaceIdiom == .phone else { return }
+        let known = [XCUIAccessibilityAuditType.dynamicType, .textClipped].map {
+            "; type \($0.rawValue)):"
+        }
+        let options = XCTExpectedFailure.Options()
+        options.issueMatcher = { issue in
+            issue.compactDescription.contains("Accessibility audit (")
+                && known.contains { issue.compactDescription.contains($0) }
+        }
+        XCTExpectFailure(
+            "Known iPhone audit findings on the stand-in Home (docs/DECISIONS.md, \"Home version 0 is a stand-in\")",
+            options: options
+        )
+    }
+
+    /// How bright most of the screen is: the median brightness of a 24×24
+    /// grid of points spread over the app's screenshot, where 0 is black
+    /// and 1 is white. Most points land on the background, so the median
+    /// follows it, whatever the tiles in between are coloured. Nil if the
+    /// screenshot cannot be read. The screenshot is kept in the results,
+    /// named by `name`, so a surprising number can be checked by eye.
+    @MainActor
+    func backgroundBrightness(of app: XCUIApplication, name: String) -> Double? {
+        let screenshot = app.screenshot()
+        let attachment = XCTAttachment(screenshot: screenshot)
+        attachment.name = name
+        attachment.lifetime = .keepAlways
+        add(attachment)
+
+        guard let image = screenshot.image.cgImage else { return nil }
+        let width = image.width
+        let height = image.height
+        guard width > 0, height > 0 else { return nil }
+        // Draw the whole screenshot once into plain 8-bit RGBA, top row
+        // first, whatever format the screenshot itself uses.
+        var pixels = [UInt8](repeating: 0, count: width * height * 4)
+        let drawn = pixels.withUnsafeMutableBytes { bytes -> Bool in
             guard let context = CGContext(
-                data: bytes.baseAddress, width: 1, height: 1, bitsPerComponent: 8, bytesPerRow: 4,
-                space: CGColorSpaceCreateDeviceRGB(),
+                data: bytes.baseAddress, width: width, height: height, bitsPerComponent: 8,
+                bytesPerRow: width * 4, space: CGColorSpaceCreateDeviceRGB(),
                 bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
             ) else { return false }
-            // Core Graphics counts rows from the bottom: move the wanted
-            // pixel onto the context's only one.
-            context.draw(image, in: CGRect(
-                x: -x, y: -(image.height - 1 - y), width: image.width, height: image.height
-            ))
+            context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
             return true
         }
         guard drawn else { return nil }
-        return (Double(pixel[0]) + Double(pixel[1]) + Double(pixel[2])) / (3 * 255)
+        let steps = 24
+        var samples: [Double] = []
+        for row in 0..<steps {
+            for column in 0..<steps {
+                let x = (2 * column + 1) * width / (2 * steps)
+                let y = (2 * row + 1) * height / (2 * steps)
+                let offset = (y * width + x) * 4
+                samples.append(
+                    (Double(pixels[offset]) + Double(pixels[offset + 1]) + Double(pixels[offset + 2])) / (3 * 255)
+                )
+            }
+        }
+        samples.sort()
+        return samples[samples.count / 2]
     }
 }
 

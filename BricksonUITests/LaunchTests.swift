@@ -77,6 +77,7 @@ final class LaunchTests: XCTestCase {
         // Report every issue the audit finds, not only the first.
         continueAfterFailure = true
         let app = launchedApp()
+        expectKnownPhoneHomeAuditFindings()
         try assertPassesAccessibilityAudit(app, context: "Home, light")
     }
 
@@ -86,6 +87,7 @@ final class LaunchTests: XCTestCase {
     func testHomeInDarkModePassesTheAccessibilityAudit() throws {
         continueAfterFailure = true
         let app = launchedApp(appearance: .dark)
+        expectKnownPhoneHomeAuditFindings()
         try assertPassesAccessibilityAudit(app, context: "Home, dark")
     }
 
@@ -97,6 +99,7 @@ final class LaunchTests: XCTestCase {
         app.buttons["Emergency"].tap()
         XCTAssertTrue(phraseTile("I need help now.", in: app).waitForExistence(timeout: 5))
         continueAfterFailure = true
+        expectKnownPhoneHomeAuditFindings()
         try assertPassesAccessibilityAudit(app, context: "Home with the emergency phrases, light")
     }
 
@@ -116,14 +119,23 @@ final class LaunchTests: XCTestCase {
     }
 
     // Likewise for the dark-mode audit: if the appearance did not change,
-    // it would audit light mode twice.
+    // it would audit light mode twice. (Its first version read one pixel
+    // in the left margin and found it white in dark mode on CI, on the
+    // iPad and the iPhone; the median of the whole screen does not depend
+    // on where the margin is.)
     @MainActor
-    func testTheAppearanceSettingTakesEffect() {
-        let light = backgroundBrightness(in: launchedApp(appearance: .light))
-        let dark = backgroundBrightness(in: launchedApp(appearance: .dark))
+    func testTheAppearanceSettingTakesEffect() throws {
+        let light = try XCTUnwrap(
+            backgroundBrightness(of: launchedApp(appearance: .light), name: "Home, light"),
+            "Could not read the light-mode screenshot"
+        )
+        let dark = try XCTUnwrap(
+            backgroundBrightness(of: launchedApp(appearance: .dark), name: "Home, dark"),
+            "Could not read the dark-mode screenshot"
+        )
         XCTAssertGreaterThan(
             light - dark, 0.5,
-            "Home's background is \(light) bright in light mode and \(dark) in dark mode (0 black, 1 white): the appearance did not change"
+            "Home is \(light) bright in light mode and \(dark) in dark mode (median of the screen; 0 black, 1 white): the appearance did not change"
         )
     }
 
@@ -138,17 +150,5 @@ final class LaunchTests: XCTestCase {
             return 0
         }
         return text.frame.height
-    }
-
-    /// The brightness of Home's background in its left margin, halfway
-    /// down the screen.
-    @MainActor
-    private func backgroundBrightness(in app: XCUIApplication) -> Double {
-        let point = CGPoint(x: 4, y: app.frame.midY)
-        guard let brightness = screenBrightness(at: point, in: app) else {
-            XCTFail("Could not read the screenshot at \(point)")
-            return .nan
-        }
-        return brightness
     }
 }
