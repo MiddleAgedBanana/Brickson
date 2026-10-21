@@ -53,11 +53,11 @@ final class SpeechService {
 
     /// Identifier of the user-chosen voice; nil means automatic selection.
     var selectedVoiceID: String? {
-        didSet { UserDefaults.standard.set(selectedVoiceID, forKey: Self.voiceIDKey) }
+        didSet { settings.set(selectedVoiceID, forKey: Self.voiceIDKey) }
     }
 
     var speechRate: Float {
-        didSet { UserDefaults.standard.set(speechRate, forKey: Self.rateKey) }
+        didSet { settings.set(speechRate, forKey: Self.rateKey) }
     }
 
     /// True from the moment an utterance is handed to the synthesizer until it
@@ -73,20 +73,23 @@ final class SpeechService {
     @ObservationIgnored private var synthesizerEvents: SpeechSynthesizerEvents?
     @ObservationIgnored private var audioSessionInterruptionObserver: AudioSessionInterruptionObserver?
     @ObservationIgnored private let audioSafetyMonitor: AudioSafetyMonitor
+    /// The launch-selected store: the person's preferences normally, or
+    /// the isolated suite for UI tests. Every read and write uses it.
+    @ObservationIgnored private let settings: UserDefaults
     private let logger = Logger(subsystem: AppLog.subsystem, category: "speech")
     private static let voiceIDKey = "selectedVoiceID"
     private static let rateKey = "speechRate"
 
-    init(audioSafetyMonitor: AudioSafetyMonitor = AudioSafetyMonitor()) {
+    init(settings: UserDefaults = .standard, audioSafetyMonitor: AudioSafetyMonitor = AudioSafetyMonitor()) {
+        self.settings = settings
         self.audioSafetyMonitor = audioSafetyMonitor
         let audioSession = AVAudioSession.sharedInstance()
 
-        let defaults = UserDefaults.standard
-        selectedVoiceID = defaults.string(forKey: Self.voiceIDKey)
+        selectedVoiceID = settings.string(forKey: Self.voiceIDKey)
         // Presence check rather than float(forKey:): an absent key reads as 0,
         // which is also AVSpeechUtteranceMinimumSpeechRate — a value a user
         // could legitimately save from the rate slider.
-        if let storedRate = defaults.object(forKey: Self.rateKey) as? Float {
+        if let storedRate = settings.object(forKey: Self.rateKey) as? Float {
             speechRate = min(max(storedRate, AVSpeechUtteranceMinimumSpeechRate), AVSpeechUtteranceMaximumSpeechRate)
         } else {
             speechRate = AVSpeechUtteranceDefaultSpeechRate

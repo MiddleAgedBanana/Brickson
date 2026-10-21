@@ -23,7 +23,7 @@ struct HomeView: View {
         let selected = CategorySelection.resolve(ordered, selectedID: selectedCategoryID)
         let emergency = CategorySelection.emergency(in: ordered)
 
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: horizontalSizeClass == .compact ? 8 : 16) {
             MessageRow()
             QuickControlsRow(
                 emergencyIsAvailable: emergency != nil,
@@ -37,7 +37,7 @@ struct HomeView: View {
             )
             PhraseGrid(
                 category: selected,
-                columnCount: horizontalSizeClass == .regular ? 3 : 2
+                columnCount: horizontalSizeClass == .regular ? 3 : 1
             )
             .frame(maxHeight: .infinity, alignment: .top)
             StatusArea()
@@ -48,69 +48,80 @@ struct HomeView: View {
 
 // MARK: - Message row
 
-/// The last sentence spoken, large enough for the listener to read, with
-/// Again beside it. Its height is reserved for two lines, so a long message
-/// scrolls inside them instead of pushing every control below it down.
+/// The last sentence spoken at full size in a fixed-height viewport.
+/// Compact widths put Again below one reserved message line; regular
+/// widths put it beside two lines. Neither moves when the message changes.
 private struct MessageRow: View {
     @Environment(SpeechService.self) private var speech
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+
+    private var isCompact: Bool { horizontalSizeClass == .compact }
 
     var body: some View {
-        HStack(alignment: .center, spacing: 12) {
-            VStack(alignment: .leading, spacing: 4) {
-                // Two lines of the message font are always reserved, by an
-                // invisible placeholder. A longer message scrolls inside
-                // them instead of shrinking, so the person's words keep their
-                // full size (AGENTS.md, "Words never break") and nothing
-                // below moves. Every phrase start, Again included,
-                // shows the message from the top.
-                Text(verbatim: " ")
-                    .font(.title.weight(.semibold))
-                    .lineLimit(2, reservesSpace: true)
-                    .frame(maxWidth: .infinity)
-                    .hidden()
-                    .accessibilityHidden(true)
-                    .overlay(alignment: .topLeading) {
-                        ScrollView {
-                            Group {
-                                if let text = speech.lastSpokenText {
-                                    Text(verbatim: text)
-                                } else {
-                                    // Primary ink, not the system's secondary
-                                    // gray, which measures under 4.5:1
-                                    // (invariant 6).
-                                    Text("Choose a phrase to speak it.")
-                                }
-                            }
-                            .font(.title.weight(.semibold))
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                        }
-                        .scrollBounceBehavior(.basedOnSize)
-                        // A new view, so a new scroll position, on every
-                        // phrase start: Again and the same phrase chosen
-                        // again show the first words too, not where the
-                        // last reader left the scroll.
-                        .id(speech.phraseStartCount)
-                    }
-
-                // Always laid out, only shown while speaking, so it never
-                // shifts anything when speech starts or stops.
-                Label("Speaking", systemImage: "speaker.wave.2.fill")
-                    .font(.subheadline.weight(.semibold))
-                    .accessibilityElement(children: .combine)
-                    .opacity(speech.isSpeaking ? 1 : 0)
-                    .accessibilityHidden(!speech.isSpeaking)
+        Group {
+            if isCompact {
+                VStack(alignment: .leading, spacing: 8) {
+                    message
+                    again
+                }
+            } else {
+                HStack(alignment: .center, spacing: 12) {
+                    message
+                    again
+                }
             }
-
-            Button {
-                speech.repeatLast()
-            } label: {
-                Label("Again", systemImage: "arrow.counterclockwise")
-                    .font(.title3.weight(.semibold))
-                    .frame(minWidth: 88, minHeight: 64)
-            }
-            .buttonStyle(MessageActionButtonStyle())
-            .disabled(speech.lastSpokenText == nil)
         }
+        .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private var message: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            // Reserve the same viewport for every phrase. Longer messages
+            // scroll at full size instead of moving the controls or shrinking.
+            Text(verbatim: " ")
+                .font(.title.weight(.semibold))
+                .lineLimit(isCompact ? 1 : 2, reservesSpace: true)
+                .frame(maxWidth: .infinity)
+                .hidden()
+                .accessibilityHidden(true)
+                .overlay(alignment: .topLeading) {
+                    ScrollView {
+                        Group {
+                            if let text = speech.lastSpokenText {
+                                Text(verbatim: text)
+                            } else {
+                                Text("Choose a phrase to speak it.")
+                            }
+                        }
+                        .font(.title.weight(.semibold))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .scrollBounceBehavior(.basedOnSize)
+                    // Again and the same phrase chosen again reset the scroll.
+                    .id(speech.phraseStartCount)
+                }
+
+            // Always reserve the speaking line, including while idle.
+            Label("Speaking", systemImage: "speaker.wave.2.fill")
+                .font(.subheadline.weight(.semibold))
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityElement(children: .combine)
+                .opacity(speech.isSpeaking ? 1 : 0)
+                .accessibilityHidden(!speech.isSpeaking)
+        }
+    }
+
+    private var again: some View {
+        Button {
+            speech.repeatLast()
+        } label: {
+            Text("Again")
+                .font(.title3.weight(.semibold))
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(minWidth: 88, maxWidth: isCompact ? .infinity : nil, minHeight: 64)
+        }
+        .buttonStyle(MessageActionButtonStyle())
+        .disabled(speech.lastSpokenText == nil)
     }
 }
 
@@ -153,51 +164,89 @@ private struct MessageActionButtonStyle: ButtonStyle {
 /// trait), because the emergency category has no button of its own.
 private struct QuickControlsRow: View {
     @Environment(SpeechService.self) private var speech
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     let emergencyIsAvailable: Bool
     let isShowingEmergency: Bool
     let showEmergency: () -> Void
 
+    private var isCompact: Bool { horizontalSizeClass == .compact }
+
     var body: some View {
-        HStack(spacing: 12) {
-            Button {
-                speech.speak(String(localized: "Yes.", comment: "Spoken when the Yes control is chosen."))
-            } label: {
-                QuickControlLabel(title: "Yes", systemImage: "hand.thumbsup.fill")
+        Group {
+            if isCompact {
+                // The same arrangement at every text size: changing content
+                // or selecting Emergency never moves a primary control.
+                VStack(spacing: 8) {
+                    HStack(spacing: 12) {
+                        yes
+                        no
+                    }
+                    emergency
+                }
+            } else {
+                HStack(spacing: 12) {
+                    yes
+                    no
+                    emergency
+                }
             }
-            .tint(Palette.controlFill)
-
-            Button {
-                speech.speak(String(localized: "No.", comment: "Spoken when the No control is chosen."))
-            } label: {
-                QuickControlLabel(title: "No", systemImage: "hand.thumbsdown.fill")
-            }
-            .tint(Palette.controlFill)
-
-            Button {
-                showEmergency()
-            } label: {
-                QuickControlLabel(
-                    title: "Emergency",
-                    systemImage: isShowingEmergency ? "checkmark.circle.fill" : "exclamationmark.triangle.fill"
-                )
-            }
-            .tint(Palette.emergencyFill)
-            .disabled(!emergencyIsAvailable)
-            .accessibilityAddTraits(isShowingEmergency ? .isSelected : [])
         }
         .buttonStyle(.borderedProminent)
+        .buttonBorderShape(.roundedRectangle(radius: 16))
+        .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private var yes: some View {
+        Button {
+            speech.speak(String(localized: "Yes.", comment: "Spoken when the Yes control is chosen."))
+        } label: {
+            QuickControlLabel(title: "Yes")
+        }
+        .tint(Palette.controlFill)
+    }
+
+    private var no: some View {
+        Button {
+            speech.speak(String(localized: "No.", comment: "Spoken when the No control is chosen."))
+        } label: {
+            QuickControlLabel(title: "No")
+        }
+        .tint(Palette.controlFill)
+    }
+
+    private var emergency: some View {
+        Button(action: showEmergency) {
+            QuickControlLabel(
+                title: "Emergency",
+                systemImage: isShowingEmergency ? "checkmark.circle.fill" : "exclamationmark.triangle.fill"
+            )
+        }
+        .tint(Palette.emergencyFill)
+        .disabled(!emergencyIsAvailable)
+        .accessibilityAddTraits(isShowingEmergency ? .isSelected : [])
     }
 }
 
 private struct QuickControlLabel: View {
     let title: LocalizedStringKey
-    let systemImage: String
+    var systemImage: String?
 
     var body: some View {
-        Label(title, systemImage: systemImage)
-            .font(.title3.weight(.semibold))
-            .foregroundStyle(.white)
-            .frame(maxWidth: .infinity, minHeight: 64)
+        VStack(spacing: 4) {
+            if let systemImage {
+                // Keep Emergency's selected cue in a permanent slot above
+                // its word. Decorative icons never take width from words.
+                Image(systemName: systemImage)
+                    .font(.system(size: 20, weight: .semibold))
+                    .frame(height: 22)
+                    .accessibilityHidden(true)
+            }
+            Text(title)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .font(.title3.weight(.semibold))
+        .foregroundStyle(.white)
+        .frame(maxWidth: .infinity, minHeight: 64)
     }
 }
 
@@ -253,24 +302,30 @@ private struct PhraseGrid: View {
     var body: some View {
         if let category {
             ScrollView {
-                LazyVGrid(
-                    columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: columnCount),
-                    spacing: 12
-                ) {
-                    ForEach(category.phrasesInOrder) { phrase in
-                        Button {
-                            speech.speak(phrase.text)
-                        } label: {
-                            Text(verbatim: phrase.text)
-                                .font(.title2.weight(.semibold))
-                                .foregroundStyle(.white)
-                                .multilineTextAlignment(.center)
-                                .frame(maxWidth: .infinity, minHeight: 96)
+                // Keep the small starter grid's elements alive as Dynamic
+                // Type changes. Lazy rows disappear while the accessibility
+                // audit increases text size, so it cannot compare them.
+                let phrases = category.phrasesInOrder
+                Grid(horizontalSpacing: 12, verticalSpacing: 12) {
+                    ForEach(Array(stride(from: 0, to: phrases.count, by: columnCount)), id: \.self) { start in
+                        GridRow {
+                            ForEach(phrases[start..<min(start + columnCount, phrases.count)]) { phrase in
+                                Button {
+                                    speech.speak(phrase.text)
+                                } label: {
+                                    Text(verbatim: phrase.text)
+                                        .font(.title2.weight(.semibold))
+                                        .foregroundStyle(.white)
+                                        .multilineTextAlignment(.center)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                        .frame(maxWidth: .infinity, minHeight: 96)
+                                }
+                                .tint(category.isEmergency ? Palette.emergencyFill : Palette.phraseFill)
+                                // Lets the UI tests tell phrase tiles from controls
+                                // (LaunchTests' accessibility audit). Not spoken.
+                                .accessibilityIdentifier("phraseTile")
+                            }
                         }
-                        .tint(category.isEmergency ? Palette.emergencyFill : Palette.phraseFill)
-                        // Lets the UI tests tell phrase tiles from controls
-                        // (LaunchTests' accessibility audit). Not spoken.
-                        .accessibilityIdentifier("phraseTile")
                     }
                 }
                 .padding(.vertical, 2)

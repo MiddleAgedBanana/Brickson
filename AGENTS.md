@@ -58,12 +58,29 @@ scripts/test.sh ui       # the UI tests: launch the real app and drive it
 scripts/test.sh device   # a build for a real device (needs DEVELOPMENT_TEAM)
 ```
 
-`scripts/test.sh` runs `xcodegen generate` first, starts the newest
-installed iPad Pro 13-inch simulator (any iPad if there is none) and waits
-for it, then runs `xcodebuild` on it.
-`DESTINATION='platform=iOS Simulator,name=iPhone 17' scripts/test.sh`
-chooses another. The iPad and the iPhone are both first-class: run both
-before a release.
+`scripts/test.sh` runs `xcodegen generate` first and prints the Xcode
+and XcodeGen versions. It chooses simulators by device type, never by
+name: the newest iPad Pro 13-inch (any iPad if there is none) and, for UI
+tests, the newest standard iPhone too, each with an iOS between the
+deployment target and the SDK of the Xcode in use. It starts each one,
+waits for it, builds for testing, then runs the tests. Before UI tests it
+shows the full software keyboard and launches the app once, so the first
+test does not meet a cold simulator. A simulator the script boots is shut
+down after its run, including failures, before the next family starts;
+a simulator already running is left running. `SIMULATOR_FAMILY=iphone` runs one
+family; `DESTINATION='platform=iOS Simulator,name=iPhone 17' scripts/test.sh`
+names one simulator, which is started and waited for too. Anything after
+the mode goes to `xcodebuild`
+(`scripts/test.sh unit '-only-testing:BricksonTests/PaletteTests/theContrastFormulaMatchesWCAG()'`).
+Each run keeps its result bundle, with screenshots of UI-test failures and
+the captures UI tests attach, in `build/TestResults/<mode>-<family>.xcresult`,
+and prints how many tests ran; a run in which no test ran, or whose count
+cannot be read, fails. A unit run also prints the app's code coverage and
+brings `Brickson/Resources/Localizable.xcstrings` up to date with the code
+(`xcstringstool sync` over the strings the build found); commit the
+updated catalog with your change. On CI a catalog that does not match the
+code fails the run and prints the difference. The iPad and the iPhone are
+both first-class: UI tests run on both every time.
 
 On a Mac, the unit suite must be **100% green before any commit**; for
 work made where nothing can be built, CI must be green before the pull
@@ -73,6 +90,23 @@ naming its decision, so it fails when it starts passing.
 **GitHub CI** (`.github/workflows/tests.yml`) runs the unit and UI tests on
 GitHub's Mac machines for every pull request and every push to `main`. A
 pull request merges only when CI is green.
+
+**Build with Apple's current Xcode, never a pinned one** (owner,
+2026-10-21; docs/DECISIONS.md, "Build with Apple's current Xcode"). The
+toolchain is Apple's newest Xcode release (not a beta) with its SDKs and
+Swift compiler, on the owner's Mac and on CI. Never write an Xcode, SDK,
+simulator or runner version into the project, a script, a workflow or a
+document unless the owner asks for it: documents say "the current Xcode
+release". Look up what is current on Apple's releases page
+(https://developer.apple.com/news/releases/) and Xcode's system
+requirements (https://developer.apple.com/xcode/system-requirements/),
+never from memory. CI picks the newest released Xcode on GitHub's machine
+(`scripts/select-xcode.py`) and warns on the run when Apple has a newer
+one. The deployment target, the oldest iOS the app runs on, is a separate
+product decision, set by two rules: every device that can use eye
+tracking runs the app, and every accessibility API in the ALS-stage map
+stays reachable, behind `#available` when newer (docs/DECISIONS.md,
+"Minimum iOS, iPhone and iPad").
 
 **Reviews and updates on GitHub.** Codex reviews every push to a pull
 request that a person or agent opens, and GitHub Copilot reviews each such
@@ -329,6 +363,13 @@ the failure.
   whose owner is not `actions` or `github`).
 - A renamed job that the `main` ruleset requires, or a path filter added
   to the workflow that runs those jobs (*Gotchas*).
+- An Xcode, SDK, simulator OS or runner image version written into the
+  project, a script, a workflow or a document when the owner did not ask
+  for it, or a change that builds with anything but Apple's newest
+  released Xcode (docs/DECISIONS.md, "Build with Apple's current Xcode").
+  The `runs-on` label that names GitHub's image for the current major
+  Xcode is how CI reaches that Xcode, not a pin; a dated record of what
+  something was checked on is history, not a pin.
 - A change that weakens an invariant or a review rule, adds an exception
   to one, or widens *Not findings*, made in `AGENTS.md`,
   docs/DECISIONS.md, `.github/skills/` or any other file reviewers read as
@@ -346,7 +387,8 @@ the failure.
   it and doesn't. A feature that is planned but not built yet is not
   missing.
 - The accessibility audit's "not human-readable" guess on phrase-tile
-  labels, which `LaunchTests` expects.
+  labels, which the UI tests' audit helper
+  (`assertPassesAccessibilityAudit`) expects.
 - That an agent did not run the app: for cloud agents the GitHub CI run is
   the build (*Build and test*).
 
@@ -435,8 +477,9 @@ Shortcuts. **Never apply** `core-data` skills (this app uses SwiftData),
 
 ## Gotchas
 
-- **The simulator keyboard is minimized by default.** Show the full
-  software keyboard before any typing test:
+- **The simulator keyboard is minimized by default.** `scripts/test.sh ui`
+  shows the full software keyboard before the tests; anywhere else, show
+  it before any typing test:
   `xcrun simctl spawn <udid> defaults write com.apple.keyboard.preferences AutomaticMinimizationEnabled -bool false`
   (write `true` to restore the bar).
 - **Display Zoom is lost whenever a simulator restarts**, and `xcodebuild`
@@ -452,7 +495,8 @@ Shortcuts. **Never apply** `core-data` skills (this app uses SwiftData),
   simulators.
 - **Swift Testing and `-only-testing:`**: include the function's
   parentheses (`-only-testing:BricksonTests/PaletteTests/theContrastFormulaMatchesWCAG()`);
-  without them `xcodebuild` runs 0 tests and reports success. In zsh, pass
+  without them `xcodebuild` runs 0 tests and reports success
+  (`scripts/test.sh` fails such a run: "No tests ran"). In zsh, pass
   several flags as an array, not one string.
 - **A failing `xcodebuild test` can sit for minutes collecting
   diagnostics**; `scripts/test.sh` passes `-collect-test-diagnostics never`.
@@ -460,14 +504,42 @@ Shortcuts. **Never apply** `core-data` skills (this app uses SwiftData),
   On GitHub's busy machines, one run found Again still off when the test
   read it straight after a tap, and the re-run's first launch timed out,
   both on code that was green on `main` (cause not established; a slow
-  first launch is the likely one). With no `DESTINATION`, `scripts/test.sh`
-  starts its simulator and waits for it to finish starting
-  (`xcrun simctl bootstatus <udid> -b`), which leaves it running; a
-  `DESTINATION` you set is left to xcodebuild, which doesn't wait. In UI
+  first launch is the likely one; on 2026-10-21 the first test failed with
+  "kAXErrorServerNotFound" and the next took 187 s). `scripts/test.sh`
+  starts each simulator, one a `DESTINATION` names included, and waits for
+  it to finish starting (`xcrun simctl bootstatus <udid> -b`); it shuts down
+  devices it booted after their run. Before UI tests it also launches the app once (a warm-up,
+  on test-only storage). A `DESTINATION` that is not one simulator is left
+  to xcodebuild, which doesn't wait. In UI
   tests, wait for a change after `tap()`: `waitForExistence(timeout:)` for
   something appearing, an `XCTWaiter` expectation for a property such as
   `isEnabled`. Check that something did *not* change only after waiting
   for the change that did happen.
+- **UI tests launch through `launchedApp`** (BricksonUITests/LaunchHelpers.swift):
+  fresh test-only storage, short idle limits, English, and the text size,
+  appearance and orientation a test asks for. A bare
+  `XCUIApplication().launch()` runs on whatever the simulator kept from
+  earlier runs. The app reads these launch arguments (`LaunchOptions`)
+  only in debug builds; a release build ignores them. `assertReachable`,
+  `attachCapture` and `assertPassesAccessibilityAudit` sit beside it.
+- **Verify rendered appearance, not the setter's readback.** Command-line
+  simulator runs on Xcode 27.1 reported `XCUIDevice.appearance == .dark`
+  while the app stayed light. `launchedApp` uses debug-only
+  `--appearance=light|dark`, applied by `preferredColorScheme`; ordinary
+  and release launches follow the system. Keep the independent screenshot
+  gate. Its sample is the empty gutter between Yes and No, not a median
+  dominated by constant-colour tiles. Evidence and reproductions:
+  `docs/log/2026-10-21-ui-test-diagnosis.md`.
+- **Accessibility frames do not prove visible words fit.** On PR #13,
+  both complete UI suites passed while AX5 phone screenshots showed
+  clipped Yes, No, Emergency and Again labels. Keep the rendered-label
+  regression alongside reachability and audits: it recognizes each
+  button screenshot without language correction or supplied expected
+  words. Inspect its kept captures when it fails; a complete accessibility
+  label is not evidence that the text was drawn completely.
+  Vision's accurate mode also misread a clear `No` as `ON`; the fast mode
+  read it and rejected the old clipped captures. Keep whole-word matching
+  (case-insensitive), with no language correction or recognition hints.
 - **Simulator audio is unreliable.** Every sound check needs a real device.
 - **Apple's accessibility audit can time out on CI** with domain
   `com.apple.xcode.xctest.accessibilityAudit`, code `-56`. The UI suite
@@ -491,6 +563,13 @@ Shortcuts. **Never apply** `core-data` skills (this app uses SwiftData),
   "Reviews, updates and GitHub settings"). Renaming a job, or adding a path
   filter to the workflow, leaves every pull request waiting for a check
   that never arrives until the owner updates the ruleset.
+- **Cloud agents cannot change `.github/workflows/`.** On 2026-10-21 a
+  cloud session's `git push` of `tests.yml` was refused ("refusing to
+  allow an OAuth App to create or update workflow ... without `workflow`
+  scope"), and so was the GitHub MCP's file update ("Insufficient scope").
+  Push the rest, and give the owner the workflow file's full new text to
+  commit with their own account (GitHub's web editor on the branch, or an
+  agent on their Mac).
 - **CodeQL scans the workflow files, not the Swift code, on purpose.**
   Default setup cannot build Swift without a committed Xcode project, so
   adding Swift to it fails again; turning CodeQL off blocks every

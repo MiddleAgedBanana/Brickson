@@ -16,7 +16,9 @@ What it is written to do; the *Verification* section says how much of it
 has been seen working. It opens on a Home screen with Yes, No and
 Emergency, a row of everyday categories, and phrase tiles from a neutral
 starter set. Choosing a tile speaks it at once; the sentence stays on
-screen with Again beside it. Emergency switches to the emergency phrases
+screen in a reserved viewport: one full-width line with Again below at
+compact widths, two lines with Again beside at regular widths. Longer
+messages scroll at full size. Emergency switches to the emergency phrases
 and says nothing itself. If audio fails or the volume is very low, a short
 passive warning appears at the bottom in space that is always kept for it.
 If the library cannot be saved or filled, the app runs from a filled
@@ -91,13 +93,24 @@ promise* lists the code rules that keep the policy true.
 - Home's sizes are plain defaults, not measured gaze, switch or touch
   sizes, and the phrase grid scrolls. Fine for a stand-in, not for a
   release (invariant 11).
+- PR #13 initially marked the iPhone's partial Dynamic Type support and
+  clipping on Yes, Emergency, phrase tiles and Speaking as expected audit
+  failures. That exception is withdrawn by the Mac diagnosis below:
+  labels expand vertically and phrase rows stay present during audits.
+  AX5 screenshots then exposed clipped quick-control words despite green
+  audits and correct accessibility frames. Compact Home now gives its
+  message and Emergency the full width, with Again below the message and
+  Yes/No together above Emergency; a rendered-label regression covers the
+  words themselves. Final verification of this layout is pending below.
+  The full replacement layout engine is still future work.
 - No Get Attention alarm yet, so `AudioSafetyPolicy` runs with the alarm
   always idle.
 - No typing, editing, Settings, voice choice or backup.
 - Personal Voice permission is asked at first launch without explanation
   (docs/DECISIONS.md).
-- English only; the String Catalog fills itself as Xcode builds. Two
-  strings are not in it yet: the speech-rate names in `SpeechRateSteps`
+- English only. `scripts/test.sh unit` brings the String Catalog up to
+  date (xcodebuild alone does not), and CI fails when the committed one
+  is stale. Two strings are not in it yet: the speech-rate names in `SpeechRateSteps`
   and the voice sample sentence in `SpeechService`.
 - The full audio-warning sentences VoiceOver reads mention Get Attention,
   which arrives with port step 1.
@@ -213,28 +226,32 @@ Not yet seen working, to check after the merge and the settings:
 
 ## Next steps, in order
 
-1. **Owner:** publish the website. In the repository's Settings → Pages,
+1. Recheck the minimum iOS and iPadOS (26.0) against its two rules when
+   Apple's next major release drops devices (docs/DECISIONS.md, "Minimum
+   iOS, iPhone and iPad"). The toolchain is not a choice: always Apple's
+   newest Xcode (*Toolchain — 2026-10-21* below).
+2. **Owner:** publish the website. In the repository's Settings → Pages,
    set *Source* to **GitHub Actions** if it isn't already, merge the pull
    request that fills in the policy's blanks, then check that the
    "Publish website" run on the Actions tab is green and that both
    addresses open on a phone.
-2. **Owner:** open and run the app on a Mac ([local development setup](GETTING_STARTED.md)), and run the tests once (⌘U).
-3. **Owner:** review the starter phrases
+3. **Owner:** open and run the app on a Mac ([local development setup](GETTING_STARTED.md)), and run the tests once (⌘U).
+4. **Owner:** review the starter phrases
    (`Brickson/Resources/StarterPhrases.json`). A reviewer noted two
    near-duplicates ("Wait a moment, please." and "Give me a moment to
    answer.") and that "Please move me." could be clearer.
-4. **Owner:** choose the developer account (personal or organization).
+5. **Owner:** choose the developer account (personal or organization).
    Then set `DEVELOPMENT_TEAM` and the final `APP_BUNDLE_ID` in
    `project.yml` (docs/DECISIONS.md, "App identity").
-5. **Owner:** apply the GitHub settings in docs/DECISIONS.md, "Reviews,
+6. **Owner:** apply the GitHub settings in docs/DECISIONS.md, "Reviews,
    updates and GitHub settings", and delete the failed Swift
    configuration on the Tool status page (*Code scanning* there).
-6. Port step 1's remainder: the Get Attention alarm (`AttentionAlertPlayer`
+7. Port step 1's remainder: the Get Attention alarm (`AttentionAlertPlayer`
    and its tone) with Stop Alert in a different place, and the audio
    warning strip.
-7. Port step 2: editing logic and backup, with a failure-injection test for
+8. Port step 2: editing logic and backup, with a failure-injection test for
    every save (docs/LESSONS.md, "Never roll back a cascade delete").
-8. Port step 3, then design the generalized layout engine (step 4) before
+9. Port step 3, then design the generalized layout engine (step 4) before
    replacing Home.
 
 ## Checks that need a real device
@@ -293,6 +310,7 @@ device, OS version, settings and date.
 | 2026-10-12 | `6865f47` | `storekit` taken off AGENTS.md's list of skills never to apply: it came from the reference app and ruled out in-app purchases before a price was decided | Documentation only |
 | 2026-10-12 | `82aef90`, `5dfb8f6`, `4f9fe80`, `41f9555`, `b2b6206` | Review skill for Copilot (`.github/skills/code-review/SKILL.md`), refined from the owner's draft: review steps that point to AGENTS.md for every rule instead of restating rules or naming features that are not built yet. `.github/copilot-instructions.md` points to it. AGENTS.md *Code Review Rules* gains checks every reviewer applies: statements of Brickson's price; a new section, *Tests, workflows and the rules themselves*, for tests that cannot fail, workflow changes that expose secrets or a write token, put pull request text into a shell command or add an action not published by GitHub, and changes that weaken the review rules. *Not findings* now excuses only gaps the base branch already records. A change *Code Review Rules* names is reported even when no person is affected yet; only other suspicions a reviewer cannot trace become questions (Codex's review of this pull request). AGENTS.md, DECISIONS.md and README.md say where the skill sits, and DECISIONS.md records that the owner asked for it. AGENTS.md, DECISIONS.md and README.md now say Dependabot's pull requests get no automatic review (PR #7) and that only the owner requests Copilot reviews; README.md says Copilot never sees replies and its headline is not an approval | Documentation only; pull request CI. Copilot's automatic review of this pull request invoked the skill (its job log) |
 | 2026-10-12 | `1188f5d`, `8fd22a0`, `5421109`, `c1ea737`, `28f4819` | Why CodeQL does not scan the Swift code: default setup's one Swift attempt failed because no Xcode project is committed, and GitHub dropped Swift by itself; advanced setup would add a Mac job to every pull request for checks that match nothing in today's code and fall behind each new Xcode. docs/DECISIONS.md *Code scanning* corrects two earlier statements (Xcode 27 does not block scanning today; CodeQL announced no Swift mode that skips the build), records that AI Scan for pull requests is on and that Dependabot's first pull request got no CodeQL analysis before merging, and lists when to revisit; the ruleset rows say the same. README.md and AGENTS.md mention the scans, and AGENTS.md gains a gotcha. The failed Swift configuration on the Tool status page is the owner's to delete | Documentation only. Checked 2026-10-12 through GitHub's API and job logs (default setup's languages, the failed job's log, analyses, PR check runs, the ruleset, AI Scan's setting and logs) and GitHub's and CodeQL's documentation sources; pull request CI. Not verified: where AI Scan's AI credits come from, and the 10 to 20 minute estimate for a Swift CodeQL job (never run) |
+| 2026-10-21 | `258fcf4`, `b70e742`, the owner's `a16838f` (workflow) | Build with Apple's current Xcode (owner): CI moves from the `macos-26` image (Xcode 26.6) to GitHub's `xcode-27` image and picks the newest released Xcode there (`scripts/select-xcode.py`), with a warning on the run when Apple has a newer one; `scripts/test.sh` takes its simulator range from the project's deployment target and the Xcode in use instead of a written-in 26; docs say "the current Xcode release"; docs/DECISIONS.md "Build with Apple's current Xcode"; the minimum iOS stays 26.0, now decided from two rules (every device that can use eye tracking; every mapped accessibility API reachable) | Python tests for both scripts, run on Linux, with every assertion seen failing first or under a deliberate break; pull request CI. See *Toolchain — 2026-10-21* |
 | 2026-10-21 | `e03c427`, `46a87c9` and the Codex-review fix after them | App Store readiness: `docs/APP-STORE.md` (what App Store Connect asks for, from Apple's pages read 2026-10-21, with the owner's checklist and the app changes it needs, each with its owning thread) and `docs/ASO.md` (search research and store text drafts, every unbuilt claim tagged, no price). DECISIONS.md gains "App Store category" (Utilities) and "Age rating answers" (4+) as reversible defaults. The privacy policy no longer lists a text-size setting, and its Effective date is October 21, 2026. Record: `docs/log/2026-10-21-app-store-and-aso.md` | Documentation and one HTML sentence; pull request CI. Not verified: non-US trademarks, US state age-assurance dates beyond Texas, and every "works with" claim, which waits for the device checks |
 
 
@@ -473,3 +491,226 @@ established: xcbeautify discarded its destination details.
   GitHub CI on the new pull request remains the merge gate; this does not
   claim a permanent fix for the first runner's unexplained destination
   failure.
+
+## Toolchain — 2026-10-21
+
+The owner asked that Brickson always build with the toolchain Apple
+currently recommends, after seeing "26.0" throughout the repository
+without having chosen it. The rule is recorded in docs/DECISIONS.md,
+"Build with Apple's current Xcode", with a pointer in AGENTS.md, *Build
+and test*, and a review rule in *Code Review Rules*.
+
+What was current, read on Apple's pages on 2026-10-21 (not recalled):
+
+- Newest Xcode release: **Xcode 27.1** (27A9275, 15 October 2026), with
+  the iOS 27.1 and iPadOS 27 SDKs and Swift 6.4; it needs macOS Tahoe
+  26.6 or later and an Apple silicon Mac. Xcode 27.2 is a release
+  candidate (27B48, 19 October). Swift 6 is still the newest language
+  mode. Sources: https://developer.apple.com/news/releases/ and
+  https://developer.apple.com/xcode/system-requirements/.
+- App Store uploads need Xcode 26 and the iOS 26 SDK today, and **from
+  April 2027 the iOS and iPadOS 27 SDK** (Apple's submitting page). Xcode
+  27.1 also adds support for iPhone Duo, Apple's new iPhone, and from
+  April 2027 submissions need iPhone Duo screenshots (Apple Developer
+  News).
+- Before this change CI ran on GitHub's `macos-26` image (version
+  20260907.0351.1) with its default **Xcode 26.6** (17F113) and iOS 26.2
+  to 26.5 simulators only (Brickson's CI logs, 12 to 14 October). GitHub
+  now publishes one image per major Xcode: `xcode-27` (macOS 27, Xcode 27)
+  has been generally available since 15 October (GitHub's changelog).
+- The owner's Mac ran Xcode 27.0 with iOS 27.0 simulators on 12 and 13
+  October (the records above).
+
+What changed:
+
+- `.github/workflows/tests.yml`: both jobs run on `xcode-27`, choose the
+  newest released Xcode installed there, and the Unit tests job compares
+  it with Apple's releases feed (a warning, never a failure). Job names,
+  triggers and permissions are unchanged. **This file could not be pushed
+  from the cloud session** (AGENTS.md, *Gotchas*); the owner committed its
+  full new text on the branch (`a16838f`).
+- `scripts/select-xcode.py` and its tests, `scripts/test-select-xcode.py`.
+  The check compares the build as well as the version, so an older build
+  of Apple's newest version also warns (Copilot's review). `choose` lets
+  Apple's feed decide by build number and goes by names only for a build
+  the feed does not list: the first `xcode-27` run skipped the released
+  27.1 because GitHub had installed it as
+  `Xcode_27.1_Release_Candidate.app`, and built with 27.0 (Codex's
+  review; below). A later review found two silent paths, fixed in the
+  next commit: when the feed cannot be read or lists no Xcode release,
+  `choose` now warns on the run itself, so the UI tests job (which has no
+  `check` step) says so too; and a plain-named Xcode newer than Apple's
+  newest release is skipped by `choose` and warned about by `check`, since
+  Apple has not released it.
+- `scripts/test-runner.py`, *WorkflowTests*: every job that runs
+  `scripts/test.sh` must first run `select-xcode.py choose` and
+  `xcode-select --switch`, and the workflow may name no Xcode app path,
+  `DEVELOPER_DIR` or `xcode-version`. The workflow on `main` fails the
+  first test, so the Unit tests job stayed red on this branch until the
+  owner committed the new workflow. That was on purpose: the pull request
+  could not merge, even with auto-merge on, without the change that
+  applies the rule (Codex's review).
+- `scripts/test.sh`: the simulator's iOS must lie between the deployment
+  target, read from the generated project, and the SDK of the Xcode in
+  use. Six fixture tests in `scripts/test-runner.py` cover the range, the
+  error when nothing fits, iPads only, the 13-inch iPad Pro preference,
+  and that an unreadable deployment target stops the run (a first version
+  carried on, because `set -e` does not stop inside `$(...)`).
+- README.md and docs/GETTING_STARTED.md ask for the current Xcode release
+  instead of "Xcode 26 or later". docs/DECISIONS.md *Code scanning* notes
+  that CodeQL cannot trace Swift builds with Xcode 27 (GitHub's changelog,
+  2026-10-19), which changes nothing today: default setup scans only the
+  workflow files and the Python scripts, which need no build.
+
+Not changed, on purpose:
+
+- The deployment target stays **iOS and iPadOS 26.0** (`project.yml`,
+  `.github/copilot-instructions.md`, README.md, docs/GETTING_STARTED.md).
+  It is now decided rather than inherited: the owner set the rule that
+  every device able to use eye tracking must run the app, and left the
+  rest to the project. A third-party eye tracker (eyeV's Skyle 3) works
+  with the 2018 iPad Pros, which run iPadOS 26 but not 27, so 26.0 is the
+  highest minimum that keeps every eye-tracking user; Apple's built-in Eye
+  Tracking alone would have allowed 27.0. Evidence and the second rule
+  (accessibility APIs) are in docs/DECISIONS.md, "Minimum iOS, iPhone and
+  iPad". Not re-checked by a second reader: the Skyle and TD Pilot pages
+  were read once, on 2026-10-21.
+- Dated records of what was checked on (this file's tables and sections,
+  docs/archive/) keep their versions: they are history.
+
+Verification: written on a cloud machine that cannot run Xcode. Both
+Python test files pass on Linux (Python 3.13). Every new test was seen
+failing: before the code it covers existed, or under a deliberate break
+of that code.
+
+The first CI run on GitHub's `xcode-27` image (the owner's `a16838f`,
+image `xcode-27-arm64` version 20261012.0260.1) found:
+
+- Installed: `Xcode.app` (27.0, 27A266a, the default);
+  `Xcode_27.1_Release_Candidate.app` (27.1, 27A9275, the released
+  build), also reached as `Xcode_27.1.app` and `Xcode_27.1.0.app`; and
+  `Xcode_27.2_beta_2.app`, also reached as `Xcode_27.2.app` and
+  `Xcode_27.2.0.app`. The selector of that commit skipped every app but
+  27.0 by name, so the run built with Xcode 27.0, and `check` warned that
+  Apple's newest release is 27.1 (27A9275). Fixed in `4198e94`: its run
+  chose `Xcode_27.1_Release_Candidate.app` (27.1, 27A9275), built with
+  the iOS 27.1 SDK, and `check` posted a notice that CI matches Apple's
+  newest release. Under 27.1 the only iOS simulator runtime was still
+  iOS 27.0. Unit tests and UI tests both passed on that run; the first UI
+  test took 39 seconds.
+- Homebrew is there: XcodeGen 2.46.0 installed. Under Xcode 27.0 the only
+  iOS simulators were iOS 27.0; `scripts/test.sh` chose iPad Pro 13-inch
+  (M5), iOS 27.0.
+- Unit tests passed under Xcode 27.0. The one build warning:
+  `UITraitCollection(traitsFrom:)` in `BricksonTests/PaletteTests.swift`,
+  deprecated since iOS 17.
+- UI tests failed in the first test after the simulator started,
+  `testAPhraseSpeaksOnTheFirstTap` ("Failed to get matching snapshots:
+  Error getting main window kAXErrorServerNotFound"), and the next test
+  took 187 seconds. On `48ef865` (`macos-26`, Xcode 26.6) the same first
+  test had failed differently ("Again was still off 10 s after "Hello."
+  was tapped"). Both match the slow first launch in AGENTS.md *Gotchas*;
+  this pull request changes neither the app nor its UI tests.
+
+Follow-ups this change leaves (none is done here):
+
+- **On the owner's Mac: Xcode's "recommended settings".** XcodeGen marks
+  the generated project as last checked by Xcode 14.3 (`LastUpgradeCheck`
+  1430, XcodeGen's default, seen on the owner's Mac on 15 and 16
+  October), so the current Xcode offers to update the project to its
+  recommended settings each time it opens it. Accepting changes only the
+  generated project, which the next `xcodegen generate` throws away. The
+  fix is to read that list in the current Xcode (open the project, then
+  the warning in the Issue navigator, and copy the list without
+  accepting it), bring the settings that fit into `project.yml`, and set
+  XcodeGen's `options.xcodeVersion` to that Xcode in the same pull
+  request. Setting `xcodeVersion` alone would hide the advice instead of
+  following it. Done blind from the cloud, it was not done here.
+- **Orientation and iPhone Duo.** Apple's iOS 27 release notes say that
+  on iPad, an app built with the iOS 27 SDK no longer needs all four
+  orientations to resize continuously, and supported orientations are
+  honoured only until the person resizes the window. Xcode 27.1 adds
+  iPhone Duo, Apple's foldable iPhone (on sale from 23 October 2026),
+  which Apple says has new "poses and orientations". The iPhone's
+  portrait-only choice (docs/DECISIONS.md, "Orientations") should be
+  checked against both in the iPhone Duo simulator; Apple also requires
+  iPhone Duo screenshots in App Store submissions from April 2027.
+- **iOS 27 APIs at a 26.0 target** need `if #available(iOS 27, *)` with an
+  iOS 26 path, for example the new `AVAudioSession` life-cycle
+  notifications (reported by the owner's Mac's review on 15 and 16
+  October; not checked here).
+- Xcode 27.1's release notes list "Initial Simulator launch can take
+  several minutes" as a known issue. `scripts/test.sh` waits for each
+  simulator to finish starting and, before UI tests, launches the app
+  once to warm it up (docs/log/2026-10-21-test-seams.md); a slow first UI
+  test on the new image is still the first thing to suspect.
+- Xcode 27.2 (a release candidate on 2026-10-21) adds a JSON project
+  format (`.xcproj`) meant to be readable and merge-friendly. Worth
+  weighing against XcodeGen when it is released (docs/DECISIONS.md,
+  "Generated Xcode project").
+
+Noticed, not changed: GitHub's changelog of 2026-10-15 says AI Scan for
+pull requests is now generally available; docs/DECISIONS.md *Code
+scanning* still calls it a public preview.
+
+## PR #13 UI-test diagnosis — 2026-10-21
+
+Start with [the diagnosis and verification record](log/2026-10-21-ui-test-diagnosis.md).
+The current-head reproduction showed that the appearance setter reported
+success while the app rendered light; the prior change from one pixel to
+a whole-screen median had not fixed it. Debug test launches now request a
+presentation colour scheme, with an independent screenshot gate. The
+phone audit exception is removed: labels can expand vertically, and an
+eager grid keeps phrase rows available while Dynamic Type changes.
+Initial complete runs passed 16 UI tests on each device, but the saved
+AX5 phone screenshots still showed visibly clipped quick-control words.
+A new Vision text-recognition regression reproduced 24 failures, covering
+all four labels in three Home states in both appearances. It reads each
+button's screenshot without language correction or a supplied word list;
+complete accessibility labels and large button frames alone missed this.
+The same regression then found iPad Emergency split as `Emer-` / `gency`
+at AX5. Vision's accurate mode separately misread a clear phone `No` as
+`ON`; its fast mode reads that crop and still rejects the four old clipped
+captures. Matching requires a whole word, ignoring case only.
+
+Compact Home now reserves one full-width message line with Again below,
+then a Yes/No row and full-width Emergency. The arrangement stays the same
+at all text sizes. On both width classes, Yes, No and Again omit decorative
+icons; Emergency's warning/checkmark occupies a permanent 22pt-high slot
+above its word. Regular widths retain two message lines with Again beside
+them and one horizontal quick-control row. Longer messages scroll at full
+size in their reserved viewport. Phrase columns are fixed at one for
+compact widths and three for regular widths, preventing the former compact
+grid from splitting words such as `Maybe.` at AX5. One column requires
+more scrolling; the future layout engine is still needed.
+
+All four reachability tests now compare each quick control's four edges
+with its launch frame after Emergency selection and speech, allowing 1pt
+for rounding. This checks state stability as well as reachability; it is
+not proof of gaze comfort.
+
+Speech preferences now use the launch-selected settings suite. The test
+runner shuts down only simulators it booted before starting another family.
+
+**Latest layout verification:** 17/17 UI tests passed on each device, with
+zero failed, skipped or expected-failure tests. This includes strict audits,
+rendered-label checks in light/dark at AX5, and default/AX5 reachability
+with stable primary-control frames. All 136 unit tests passed (87.7% line
+coverage), along with 51 runner fixtures, 21 Xcode-selector tests and four
+website checks. Final remote CI is pending at this pre-push checkpoint.
+Commands, result-bundle paths, before/after
+screenshots and limitations are in the diagnosis record.
+
+This work uses an isolated checkout and dedicated iPhone 17 and iPad Pro
+13-inch (M5) simulators. The original cancelled CI job's log was unavailable,
+so its exact cancellation cause remains unknown. Required checks and PR
+automation remain unchanged; local results do not establish a merge.
+
+**Remote checkpoint, 15:20–15:22 UTC:** implementation commit
+`db844b10c10b530a0489b3bd79eea4322f8b0d47` was pushed and confirmed on the
+PR branch. GitHub's PR record still showed `6e6cbcc`, with no Actions run
+for the new commit, during its active Pull Requests/Webhooks incident.
+Remote CI and merge verification are externally blocked; three old review
+threads also remain unresolved. Auto-merge remains enabled and protections
+are untouched. The diagnosis record links the incident and threads. This
+is a checkpoint, not a claim that the PR is ready or merged.
