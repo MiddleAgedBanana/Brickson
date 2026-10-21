@@ -77,6 +77,14 @@ layout engine follows. Both build on this contract (docs/DECISIONS.md,
    A's trailing column, Get Attention over the message's footprint.
 7. **Identifiers name the slot, not the label**, so tests compare frames
    by identifier across states.
+8. **On regular widths the message spans three of five columns**, the
+   trailing column two, so Again sits under the trailing column, not
+   beside the message.
+9. **Yes and No border the message** on every window measured, one gap
+   (10 to 16pt) away: a named exception, re-measured by the engine.
+10. **Open: more than four everyday categories.** Region B's L cannot
+    scroll as one standard container; the layout engine's thread decides,
+    before editing or import can add a fifth category.
 
 The stand-in already has regions A, C, B and D in that order; what is
 missing is the wells and A's trailing column. Again still sits in A.

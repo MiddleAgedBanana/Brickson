@@ -75,6 +75,9 @@ release in docs/ROADMAP.md when no thread has it yet.
   "Home's stand-in layout", *Where the grid still scrolls*. Ending the
   scroll is R0 (ROADMAP item 3); measured sizes for each input profile are
   R1. *(the layout engine, a new thread)*
+- The slot plan has no answer yet for more than four everyday categories
+  (docs/DECISIONS.md, "Home's slot plan", *Open*): editing and import
+  must not add a fifth until it does. *(the layout engine, a new thread)*
 - Home has no wells yet: Again sits beside the message text, and Phrases,
   Type, Get Attention, Stop and Settings have no place on Home
   (docs/DECISIONS.md, "Home's slot plan"). *(a new thread: Get Attention

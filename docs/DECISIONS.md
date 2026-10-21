@@ -728,7 +728,11 @@ never where it is.
 - **Regions, top to bottom: A, C, B, D.**
   - **A, the message.** The message with its status line, and a trailing
     column of two controls that are there in every state: Phrases above
-    Type. They work like the segments of a segmented control: each only
+    Type. On regular widths the message spans three of C's five columns
+    and the trailing column the other two, so Emergency, Yes and No sit
+    under the message and Again and Get Attention under the trailing
+    column; over four columns, Again was nearest the message's trailing
+    end on both iPad windows the design thread sampled. They work like the segments of a segmented control: each only
     picks its own mode (browsing phrases, or typing) and shows selected
     while that mode is on, so a repeat meets the same control and changes
     nothing.
@@ -772,6 +776,27 @@ never where it is.
   after leaving typing could reopen it. The design thread's chain scores
   found both; the table is in the design document, *What a held
   activation meets next*.
+- **Named exception: Yes and No border the message** (invariant 10;
+  design rule "Wherever a pointer rests can activate"). On every window
+  the design thread measured (an iPhone 17, a 375×667pt phone, the 13-inch
+  iPad in both orientations), Yes and No are the nearest controls to the
+  message, one gap (10 to 16pt) from its edge, with Emergency too on the
+  iPads; a look resting on the message can therefore speak Yes or No.
+  Something in C has to border the message, and every control in C is one
+  the person must reach in one activation, so it stays. The layout engine
+  re-measures it per profile and may widen the gap; it is accepted by
+  default, as the stand-in's Again beside the message is, and the owner
+  can reverse it.
+- **Open: a library with more than four everyday categories.** Region B
+  is an L (Stop Alert's column beside the categories), which cannot scroll
+  as one standard container, so the stand-in's answer (the category
+  region scrolls) does not carry over. Whatever is chosen must keep every
+  category reachable through standard containers, never scroll Stop
+  Alert, Settings or their neighbours away, leave the starter library
+  unscrolled in every profile, scroll a grown library at the floor at
+  most, and score the chain after any new control. Neither thread found
+  an arrangement that meets all of these. The layout engine's thread
+  decides it, before editing or import can add a fifth everyday category.
 - **Get Attention, Emergency, Yes and No are in C in every state**,
   including typing: C is above the worst-case software keyboard
   (invariants 2 and 10; the Typing thread's measured keyboard tops).
