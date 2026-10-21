@@ -47,6 +47,10 @@ actually use?
   to them.
 - **`docs/LESSONS.md`**: what went wrong in the reference app, and the rule
   each lesson gives. Read the sections that touch your work.
+- **`docs/ACCESSIBILITY.md`**: every Apple accessibility feature and API
+  in the project's map by ALS stage, with its iOS version, its release and
+  how it is checked. A pull request that adopts, changes or drops one
+  edits its row.
 - **`docs/PORTING.md`**: what has come over from the reference app, what is
   next, and how to port a file.
 - **`README.md`**: the overview for people, written for a beginner. Keep it

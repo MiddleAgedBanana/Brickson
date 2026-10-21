@@ -112,6 +112,10 @@ release in docs/ROADMAP.md when no thread has it yet.
   sentence deleted before release (docs/APP-STORE.md, section 3, lists
   each sentence). *(App Store readiness and ASO)*
 - The app icon is a placeholder; `design/brand/` is not installed. *(Figma and Claude Design screens)*
+- Siri's alternative name "Brick Son" (`INAlternativeAppNames`) has no
+  effect yet: Apple applies it only to apps with Siri support, which
+  Brickson does not have (docs/DECISIONS.md, "App identity"). *(R2 Siri
+  and Shortcuts)*
 - No license file, so all rights are reserved; the bundle identifier
   contains the owner's first name and is permanent after the first upload. *(owner)*
 
@@ -147,6 +151,11 @@ The speech work's two next pull requests, Get Attention and Stop on Home
 described for a fresh thread each in
 [`log/2026-10-21-speech-and-get-attention.md`](log/2026-10-21-speech-and-get-attention.md),
 *Follow-ups*.
+Every accessibility API in the map of Apple features by ALS stage has a
+row in [`ACCESSIBILITY.md`](ACCESSIBILITY.md), with its release and
+roadmap item; what each R0 item picks up from it, in order, is in
+[`log/2026-10-21-accessibility-coverage.md`](log/2026-10-21-accessibility-coverage.md),
+*Follow-ups*.
 
 ## Checks that need a real device
 
@@ -181,6 +190,11 @@ Simulators cannot show these. Record each result in a `docs/log/` file
 | The screen never dims or locks during a long session | `ScreenWakePolicy` (invariant 12) |
 | On a folding iPhone, open and folded, and in Stage Manager, Slide Over and iPhone Mirroring windows: nothing safety-critical is hidden or split | Layouts from the space available |
 | Eye Tracking and Dwell on an external display | Whether gaze profiles hold off the built-in screen |
+| Switch Control with Auto Scanning, Group Items on and off, and Auto Tap: the scan steps to Emergency, Yes and No from every Home state, and whether Home's regions become scan groups | Scan order and grouping (docs/ACCESSIBILITY.md, section 1) |
+| With VoiceOver on, a phrase tile with and without the `startsMediaSession` trait: does VoiceOver stay quiet while the phrase speaks | Whether phrase tiles carry the trait (R0 item 4) |
+| Brickson inside Assistive Access with `UISupportsFullScreenInAssistiveAccess`: its window size, and whether Eye Tracking and Switch Control work there | Assistive Access support (R0 item 7) |
+| Guided Access with each input method, and with a short Display Auto-Lock while Brickson keeps the screen awake | Setup advice, and invariant 12 under Guided Access |
+| Which of the VoiceOver, Switch Control and AssistiveTouch flags each input method turns on | Profile suggestions (R1) |
 
 ## Repository, CI and website
 

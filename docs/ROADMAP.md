@@ -97,8 +97,9 @@ where anything is, and the dwell-safety scoring passes for every profile.
   available, the input profile, the text size and the library's shape to
   a frame for every slot, with standard buttons placed at those frames.
   Profiles (touch, keyboard and Voice Control, switch including
-  brain-computer interfaces, head, gaze) change sizes and spacing only;
-  every control keeps its place. The 2026-10-15 blueprint
+  brain-computer interfaces, head, gaze, and a late-stage profile with
+  fewer, larger targets that serves as the map's Yes/No mode and rest
+  board) change sizes and spacing only; every control keeps its place. The 2026-10-15 blueprint
   ([`layout-blueprint.md`](recon/2026-10-15/layout-blueprint.md)) is the
   starting design, but it keys some numbers to a table of devices; the
   owner's 2026-10-21 rule asks for layouts from available space instead
@@ -133,6 +134,15 @@ where anything is, and the dwell-safety scoring passes for every profile.
   deleted; later a Shortcuts hand-off; a local-network caregiver station
   only behind a recorded exception to invariant 9, after an experiment
   ([`directions/caregiver-alerts.md`](recon/2026-10-15/directions/caregiver-alerts.md)).
+
+## Waiting, not yet in a release
+
+Worth building, each starting with a work file once R2's foundations are
+in: HomeKit tiles, a watch app, a start-only Get Attention control for
+Control Center and the Action button, an on-device partner view, custom
+VoiceOver rotors, pronunciation of names, and keyboard shortcuts
+([`docs/ACCESSIBILITY.md`](ACCESSIBILITY.md); docs/DECISIONS.md,
+"Accessibility API coverage").
 
 ## All the time
 
@@ -179,9 +189,10 @@ Each owning piece of work checks its findings before acting. The biggest:
 - Nothing technical stops an agent merging or pushing to `main`; the
   owner's merge is the gate only by rule. *(Project guardrails)*
 
-Not reviewed yet: Apple's design guidelines and Liquid Glass adoption,
-and full accessibility API coverage (the "Accessibility API coverage"
-work, `docs/ACCESSIBILITY.md`).
+Not reviewed yet: Apple's design guidelines and Liquid Glass adoption.
+Accessibility API coverage was checked against Apple's documentation on
+2026-10-21: [`docs/ACCESSIBILITY.md`](ACCESSIBILITY.md) gives every API
+in the map its release and roadmap item.
 
 ## Held on purpose
 

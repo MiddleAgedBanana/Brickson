@@ -50,6 +50,7 @@ holds.
 | Explicit saves, an Emergency category that is always there, fixed starter identities, editing, import, replace, the backup format, an unreadable library reported and never replaced | "Every save is explicit", "Starter phrases", "The emergency category is always there", "Editing the library", "Importing a backup", "Replacing the library", "Backup file format", "An unreadable library is reported, never replaced" (Library editing and backup format; PR #14, open) |
 | When the audio session is released, the alarm's sound, start-only Get Attention, no automatic resume, Personal Voice never written to a file | "Background audio", "Get Attention", "A phrase the system cuts off", "Audio session notices", "Personal Voice is never written to a file" (Speech engine and Get Attention; PR #16, open) |
 | Home first with setup as a place in Settings, the Settings root, the voice picker, the Privacy row, the largest sizes when nobody answers setup, an "Anything changed?" check-in every three months that waits 30 days after Not Now | "First launch opens Home; setup lives in Settings", "Settings is a cover with a fixed safety bar", "Settings resets when idle and never closes", "Setup answers are kept as offered, never as completed", "Check-ins come every three months", "The privacy policy ships inside the app" (Settings and first run; pull request not open yet) |
+| The accessibility coverage list and its choices: full screen in Assistive Access and no separate scene, no programmatic Guided Access, assistive-technology flags that only suggest, phrases in the person's voice with VoiceOver on, late-stage boards as an R1 profile, and what waits or is never used | "Accessibility API coverage" (Accessibility coverage checklist) |
 
 Recorded here:
 
@@ -133,10 +134,17 @@ Everything that identifies the app sits in one block at the top of
 | `MARKETING_VERSION` | `0.1.0` | The version people see. |
 | `CURRENT_PROJECT_VERSION` | `1` | Must go up with every upload to App Store Connect. |
 
-Siri also accepts the alternative name "Brick Son" (`INAlternativeAppNames`
-under the app's `info` in `project.yml`; at most three, never another app's
-name), because "Brickson" is in no pronunciation dictionary. Whether Siri,
-Voice Control and VoiceOver handle the name well is a device check.
+The alternative name "Brick Son" is declared for Siri
+(`INAlternativeAppNames` under the app's `info` in `project.yml`; at most
+three, never another app's name), because "Brickson" is in no pronunciation
+dictionary. It has no effect yet: Apple says Siri "recognizes alternative
+app names only for apps that include an Intents app extension with support
+for one or more intents" ("Specifying Synonyms for Your App Name", read
+2026-10-21), and Brickson has none. It stays declared for when Siri support
+comes (docs/ROADMAP.md, R2), and whether App Intents count is checked then.
+Whether Siri, Voice Control and VoiceOver handle the name well is a device
+check. Before (2026-10-10): this entry said Siri accepts "Brick Son"; the
+2026-10-21 accessibility coverage check found Apple's condition.
 
 The Xcode project, targets and folders are also called Brickson. Renaming
 those is a larger change (folders, target names, `@testable import`), and is
@@ -275,11 +283,12 @@ What the rules gave on 2026-10-21, from Apple's and the vendors' pages:
   none needs a system older than 26. Hence **26.0**: 27.0 would cut off a
   Skyle user on a 2018 iPad Pro.
 - **APIs in the map** that are newer than 26.0 sit behind `#available`:
-  `AccessibilitySettings.canOpenSettings(for:)` (26.4) and the iOS 27
-  audio-session life-cycle notifications, among others. Nothing the map
-  needs requires more than 26.0 to build on (preliminary floors from the
-  2026-10-15 platform recon; the *Accessibility API coverage* work
-  re-checks each one).
+  `AccessibilitySettings.canOpenSettings(for:)` and two SwiftUI display
+  values (26.4), the iOS 27 audio-session life-cycle notifications and
+  VoiceOver test service (27.0), and the iPhone Duo reserved regions
+  (27.1). Nothing the map needs requires more than 26.0 to build on
+  (re-checked on Apple's pages on 2026-10-21: docs/ACCESSIBILITY.md,
+  *Newer than iOS 26.0*).
 - Also gained at 26.0: iOS 26 runs on iPhone 11 and later and iPhone SE
   (2nd generation), and iPadOS 26 on iPad (8th generation) and later and
   the 2018 iPads above, so people using touch, switches or Voice Control
@@ -639,6 +648,58 @@ while they choose to speak. Recorded phrases, when they come, are the
 person's own recordings, not synthesized ones. A feature that seems to
 need a rendered file (sending a phrase as audio, Calls) is decided again
 here first.
+
+## Accessibility API coverage
+
+*2026-10-21. Default, adopted 2026-10-21: the owner left these choices to
+the project. Reversible if the owner objects.*
+
+[`docs/ACCESSIBILITY.md`](ACCESSIBILITY.md) lists every Apple
+accessibility feature and API in the project's map of Apple features by
+ALS stage, with its iOS version, its release and how it is checked. The
+choices it makes:
+
+- **The list stays current.** A pull request that adopts, changes or
+  drops an API edits its row. The pull request that moves Brickson to a
+  new major Xcode also reads Apple's update pages and adds what is new.
+- **Full screen in Assistive Access, and no separate scene.** Brickson
+  declares `UISupportsFullScreenInAssistiveAccess` (ROADMAP R0, item 7),
+  so it keeps its own layout there. It never adopts the `AssistiveAccess`
+  scene or `UISupportsAssistiveAccess` for its main interface: the system
+  would choose control sizes and placement, so controls would sit
+  somewhere else in Assistive Access than everywhere else (invariant 8).
+- **Brickson never takes over the device.** It never calls
+  `requestGuidedAccessSession` (only for supervised devices, and it could
+  trap a person) or `configureForGuidedAccess` (it could turn off the
+  person's only way to use the device). Families start Guided Access
+  themselves, with setup text.
+- **Assistive-technology flags only suggest.** The VoiceOver, Switch
+  Control, AssistiveTouch, Guided Access and Assistive Access flags may
+  choose setup text or suggest a profile; none changes Home (*Who chooses
+  the input profile*, above; invariant 8). Apple offers no flag for Voice
+  Control, Eye Tracking, Head Tracking, Dwell or Full Keyboard Access, and
+  Brickson never guesses one.
+- **Phrases keep the person's voice with VoiceOver on.**
+  `prefersAssistiveTechnologySettings` stays false: a phrase is for the
+  listener.
+- **Late-stage boards are a profile, not new screens.** The map's Yes/No
+  mode and rest board become one R1 profile of the layout engine: Yes,
+  No, Get Attention and Emergency keep their relative places and grow,
+  and the phrase area shows fewer, larger tiles from a category the
+  family chooses. Emergency stays visible (invariant 2).
+- **Waiting, each with a work file first:** HomeKit tiles (a permission,
+  an entitlement and a privacy-policy section), a watch app, a start-only
+  Get Attention control (never a toggle), an on-device partner view,
+  custom VoiceOver rotors, pronunciation with SSML or IPA, keyboard
+  shortcuts, and Guided Access restrictions of Brickson's own.
+- **Not used in 1.0:** AlarmKit and critical alerts (Get Attention plays
+  inside Brickson and needs no permission; revisit if it must sound with
+  Brickson closed); `mixToTelephonyUplink` (calls go through microphone
+  injection, R0 item 8); Liquid Glass styles on Home's speaking and safety
+  controls, whose contrast would depend on what is behind them.
+- **Never:** a person's phrases as an `AppEntity`, in Spotlight or in the
+  keyboard's conversation context; Foundation Models; custom eye, head,
+  pointer or switch input (invariant 9).
 
 ## Tests
 
