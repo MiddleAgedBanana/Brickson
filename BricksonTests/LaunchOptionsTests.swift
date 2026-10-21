@@ -45,7 +45,7 @@ struct LaunchOptionsTests {
 
     // Guessing at a misspelt option, or ignoring it silently, fails this.
     @Test func misspeltOrUnknownOptionsAreReportedAndChangeNothing() {
-        let arguments = ["--test-storag", "--short-timeouts=yes", "--screen=settings", "--test-storage=1", "--"]
+        let arguments = ["--test-storag", "--short-timeouts=yes", "--screen=no-such-screen", "--test-storage=1", "--"]
         let options = LaunchOptions.parse(arguments)
         #expect(options.storage == .standard)
         #expect(!options.usesShortTimeouts)
