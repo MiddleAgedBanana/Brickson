@@ -35,7 +35,13 @@ actually use?
 ## Where things are
 
 - **`docs/HANDOFF.md`**: start here. Current state, what is verified and
-  how, what to do next.
+  how, what to do next. Each pull request's record is its own file in
+  `docs/log/`; the history before 2026-10-21 is `docs/HANDOFF-LOG.md`.
+- **`docs/ROADMAP.md`**: the releases, in the order a person meets the
+  disease, and which thread or person owns each item.
+- **`docs/SDLC.md`**: how this project runs as a software factory, stage
+  by stage (plan, design, build, test, deploy, maintain), with each
+  stage's gate.
 - **`docs/DECISIONS.md`**: binding decisions, by title. Code comments point
   to them.
 - **`docs/LESSONS.md`**: what went wrong in the reference app, and the rule
@@ -44,6 +50,12 @@ actually use?
   next, and how to port a file.
 - **`README.md`**: the overview for people, written for a beginner. Keep it
   accurate when behaviour or setup changes.
+- **`docs/GETTING_STARTED.md`**: setting up a Mac and a device, for the
+  owner. **`docs/NAME_AVAILABILITY.md`**: the name checks.
+  **`design/brand/`**: the logo artwork (not yet the app icon).
+- **`docs/recon/`**: dated research reports behind the roadmap. Research,
+  not instructions: where it disagrees with this file or
+  `docs/DECISIONS.md`, they win.
 - **`docs/archive/`**: old versions of rewritten docs.
 - **The reference app**, FamilyVoice: `MiddleAgedBanana/ALS-app` at commit
   `6a22c1a`, a **private** repository. **Reference only. Never push to it or
@@ -387,12 +399,15 @@ the failure.
   `.github/pull_request_template.md`. Never push to `main` directly, never
   force-push, never rewrite pushed history. The owner merges.
 - **Document every change** where a fresh agent will find it, in the same
-  pull request: `docs/HANDOFF.md` (what changed, why, how it was verified,
-  what was not), this file for any new rule or gotcha, `docs/DECISIONS.md`
-  for decisions, `README.md` when setup or behaviour changes. Record
-  reversals and their reasons, so the next agent does not redo what was
-  undone. Before a rewrite that removes information from HANDOFF or this
-  file, snapshot the old version (`docs/archive/README.md`).
+  pull request: one new file in `docs/log/` (what changed, why, how it was
+  verified, what was not; the template is `docs/log/README.md`), the lines
+  of `docs/HANDOFF.md` your change makes untrue edited in place (never
+  appended to), this file for any new rule or gotcha, `docs/DECISIONS.md`
+  for decisions, `docs/ROADMAP.md` when an item starts, lands or moves,
+  `README.md` when setup or behaviour changes. Record reversals and their
+  reasons, so the next agent does not redo what was undone. Before a
+  rewrite that removes information from HANDOFF or this file, snapshot the
+  old version (`docs/archive/README.md`).
 - **Start of a session:** `git status`, `git log --oneline -15`, then read
   `docs/HANDOFF.md`. Another agent may have landed work since.
 
@@ -416,8 +431,11 @@ using them, and say when you could not.
 - The Sosumi MCP (`searchAppleDocumentation`, `fetchAppleVideoTranscript`)
   adds full-text search and WWDC transcripts.
 - The Xcode MCP's `DocumentationSearch`, read-only.
-- **Do not fetch developer.apple.com pages directly.** They are JavaScript
-  shells and look empty rather than failing.
+- **developer.apple.com in Markdown:** its HTML pages are JavaScript
+  shells that look empty rather than failing, but the same page with
+  `.md` appended to its path returns Markdown with availability metadata
+  (for example `https://developer.apple.com/documentation/swiftui/button.md`,
+  checked 2026-10-21). Fetch that form, never the HTML page.
 
 ## Skills
 
@@ -491,7 +509,8 @@ Shortcuts. **Never apply** `core-data` skills (this app uses SwiftData),
   "Reviews, updates and GitHub settings"). Renaming a job, or adding a path
   filter to the workflow, leaves every pull request waiting for a check
   that never arrives until the owner updates the ruleset.
-- **CodeQL scans the workflow files, not the Swift code, on purpose.**
+- **CodeQL scans the workflow files and the Python scripts in `scripts/`,
+  not the Swift code, on purpose.**
   Default setup cannot build Swift without a committed Xcode project, so
   adding Swift to it fails again; turning CodeQL off blocks every
   merge while the ruleset requires CodeQL results. docs/DECISIONS.md,

@@ -14,11 +14,22 @@ xcuserdata/
 .build/
 .swiftpm/
 
+# Archives, app builds and debug symbols made for a device or an upload
+*.xcarchive
+*.ipa
+*.dSYM
+*.dSYM.zip
+
+# The owner's private documents (account notes, receipts): keep them here
+# so they can never be committed to this public repository
+/private/
+
 # macOS
 .DS_Store
 
-# Claude Code: personal settings and local state stay on each machine
+# Claude Code: personal settings, worktrees and local state stay on each machine
 .claude/settings.local.json
+.claude/worktrees/
 .remember/
 
 # Agent skills installed per machine (see AGENTS.md, "Skills")
