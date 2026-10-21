@@ -215,9 +215,11 @@ request. Code rules that keep it true:
   App Shortcut phrases and parameters never contain phrase words.
   Caregiver alerts need network code, which invariant 9 forbids; the owner
   decides before they are built.
-- Settings gets a Privacy row that shows the policy inside the app and
-  opens the web page in an in-app sheet (`SFSafariViewController`), not
-  Safari (App Review Guideline 5.1.1(i)).
+- Settings gets a Privacy row, because App Review Guideline 5.1.1(i)
+  requires the policy to be easy to reach inside the app. It shows the
+  policy inside the app and opens the web page in an in-app sheet
+  (`SFSafariViewController`) rather than Safari, so a stray activation
+  never takes the person out of Brickson.
 
 ## Layout on every device and window
 
