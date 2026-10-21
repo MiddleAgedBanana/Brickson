@@ -21,11 +21,11 @@ final class SpeechService {
 
     /// Identifier of the user-chosen voice; nil means automatic selection.
     var selectedVoiceID: String? {
-        didSet { defaults.set(selectedVoiceID, forKey: Self.voiceIDKey) }
+        didSet { settings.set(selectedVoiceID, forKey: Self.voiceIDKey) }
     }
 
     var speechRate: Float {
-        didSet { defaults.set(speechRate, forKey: Self.rateKey) }
+        didSet { settings.set(speechRate, forKey: Self.rateKey) }
     }
 
     /// True from the moment an utterance is handed to the synthesizer until it
@@ -44,7 +44,7 @@ final class SpeechService {
     @ObservationIgnored private let makeSynthesizer: @MainActor () -> any SpeechSynthesizing
     @ObservationIgnored private let audioSession: AudioSessionCoordinator
     @ObservationIgnored private let voiceCatalog: any SpeechVoiceCatalog
-    @ObservationIgnored private let defaults: UserDefaults
+    @ObservationIgnored private let settings: UserDefaults
     @ObservationIgnored private let notificationCenter: NotificationCenter
     @ObservationIgnored private let sleep: @MainActor @Sendable (Duration) async -> Void
     @ObservationIgnored private var voicesObserver: (any NSObjectProtocol)?
@@ -54,15 +54,16 @@ final class SpeechService {
 
     /// Every dependency is explicit, so tests drive speech with fakes and the
     /// app passes its real objects in one place (`AppAudio.makeForApp`).
-    /// `defaults` is where the voice and rate are kept; `notificationCenter`
-    /// carries the system's "voices changed" notice; `sleep` paces the
-    /// missed-finish watchdog.
+    /// `settings` is where the voice and rate are kept: the launch-selected
+    /// store, which is the person's preferences, or an isolated suite for
+    /// UI tests (`LaunchOptions`). `notificationCenter` carries the system's
+    /// "voices changed" notice; `sleep` paces the missed-finish watchdog.
     init(
         audioSession: AudioSessionCoordinator,
         events: AudioSessionEvents,
         makeSynthesizer: @escaping @MainActor () -> any SpeechSynthesizing,
         voiceCatalog: any SpeechVoiceCatalog,
-        defaults: UserDefaults,
+        settings: UserDefaults,
         notificationCenter: NotificationCenter,
         requestPersonalVoiceAuthorization: PersonalVoiceAuthorizationRequest,
         sleep: @escaping @MainActor @Sendable (Duration) async -> Void
@@ -70,16 +71,16 @@ final class SpeechService {
         self.audioSession = audioSession
         self.makeSynthesizer = makeSynthesizer
         self.voiceCatalog = voiceCatalog
-        self.defaults = defaults
+        self.settings = settings
         self.notificationCenter = notificationCenter
         self.sleep = sleep
         synthesizer = makeSynthesizer()
 
-        selectedVoiceID = defaults.string(forKey: Self.voiceIDKey)
+        selectedVoiceID = settings.string(forKey: Self.voiceIDKey)
         // Presence check rather than float(forKey:): an absent key reads as 0,
         // which is also AVSpeechUtteranceMinimumSpeechRate — a value a user
         // could legitimately save.
-        if let storedRate = defaults.object(forKey: Self.rateKey) as? Float {
+        if let storedRate = settings.object(forKey: Self.rateKey) as? Float {
             speechRate = min(max(storedRate, AVSpeechUtteranceMinimumSpeechRate), AVSpeechUtteranceMaximumSpeechRate)
         } else {
             speechRate = AVSpeechUtteranceDefaultSpeechRate

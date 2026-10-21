@@ -6,6 +6,70 @@ import Testing
 
 @MainActor
 struct SpeechServiceTests {
+    // MARK: Settings chosen at launch
+
+    /// Test launches must restore their own speech preferences. Reading
+    /// UserDefaults.standard instead of the supplied suite fails this;
+    /// zero is a valid stored rate, not a missing preference.
+    @Test func restoresVoiceAndRateFromTheProvidedSettings() throws {
+        let suiteName = "SpeechServiceTests-\(UUID().uuidString)"
+        let settings = try #require(UserDefaults(suiteName: suiteName))
+        defer { settings.removePersistentDomain(forName: suiteName) }
+        let voiceID = "test-voice-\(UUID().uuidString)"
+        settings.set(voiceID, forKey: "selectedVoiceID")
+        settings.set(AVSpeechUtteranceMinimumSpeechRate, forKey: "speechRate")
+
+        let speech = AudioHarness(settings: settings).speech
+
+        #expect(speech.selectedVoiceID == voiceID)
+        #expect(speech.speechRate == AVSpeechUtteranceMinimumSpeechRate)
+    }
+
+    /// Preference changes must survive a new service using the same test
+    /// suite. Writing either preference to a different store fails this.
+    /// Choosing automatic voice must remove the old choice, not revive it
+    /// on the next launch.
+    @Test func savesAndClearsPreferencesInTheProvidedSettings() throws {
+        let suiteName = "SpeechServiceTests-\(UUID().uuidString)"
+        let settings = try #require(UserDefaults(suiteName: suiteName))
+        defer { settings.removePersistentDomain(forName: suiteName) }
+        let speech = AudioHarness(settings: settings).speech
+        let voiceID = "test-voice-\(UUID().uuidString)"
+        let rate: Float = 0.3
+
+        speech.selectedVoiceID = voiceID
+        speech.speechRate = rate
+
+        #expect(settings.string(forKey: "selectedVoiceID") == voiceID)
+        #expect(settings.float(forKey: "speechRate") == rate)
+        let reloaded = AudioHarness(settings: settings).speech
+        #expect(reloaded.selectedVoiceID == voiceID)
+        #expect(reloaded.speechRate == rate)
+
+        reloaded.selectedVoiceID = nil
+
+        #expect(settings.object(forKey: "selectedVoiceID") == nil)
+        #expect(AudioHarness(settings: settings).speech.selectedVoiceID == nil)
+    }
+
+    /// A fresh test launch must forget speech preferences too. Retaining
+    /// old settings, or treating a missing rate as zero, fails this.
+    @Test func freshTestStorageResetsSpeechPreferences() throws {
+        let suiteName = "SpeechServiceTests-\(UUID().uuidString)"
+        let settings = try #require(UserDefaults(suiteName: suiteName))
+        defer { settings.removePersistentDomain(forName: suiteName) }
+        settings.set("test-voice", forKey: "selectedVoiceID")
+        settings.set(Float(0.3), forKey: "speechRate")
+        let directory = URL.temporaryDirectory.appending(path: suiteName, directoryHint: .isDirectory)
+
+        LaunchOptions.parse(["--fresh-test-storage"])
+            .prepareStorage(directory: directory, settingsSuite: suiteName)
+        let speech = AudioHarness(settings: settings).speech
+
+        #expect(speech.selectedVoiceID == nil)
+        #expect(speech.speechRate == AVSpeechUtteranceDefaultSpeechRate)
+    }
+
     // MARK: Starting a phrase
 
     /// Home resets the message's scroll position on every phrase start, so
@@ -495,14 +559,14 @@ struct SpeechServiceTests {
     /// Fails if the voice or rate is kept anywhere but the settings given.
     @Test func theVoiceAndRateAreKeptInTheGivenSettings() {
         let defaults = freshDefaults()
-        let first = AudioHarness(defaults: defaults).speech
+        let first = AudioHarness(settings: defaults).speech
 
         first.selectedVoiceID = "voice.a"
         first.speechRate = 0.4
 
         #expect(defaults.string(forKey: SpeechService.voiceIDKey) == "voice.a")
         #expect(defaults.object(forKey: SpeechService.rateKey) as? Float == 0.4)
-        let second = AudioHarness(defaults: defaults).speech
+        let second = AudioHarness(settings: defaults).speech
         #expect(second.selectedVoiceID == "voice.a")
         #expect(second.speechRate == 0.4)
     }
@@ -513,7 +577,7 @@ struct SpeechServiceTests {
     @Test func aServiceGivenTestSettingsNeverTouchesTheStandardSettings() {
         let standardVoice = UserDefaults.standard.object(forKey: SpeechService.voiceIDKey) as? String
         let standardRate = UserDefaults.standard.object(forKey: SpeechService.rateKey) as? Float
-        let speech = AudioHarness(defaults: freshDefaults()).speech
+        let speech = AudioHarness(settings: freshDefaults()).speech
 
         speech.selectedVoiceID = "voice.only-in-the-test-suite"
         speech.speechRate = 0.123
@@ -535,7 +599,7 @@ struct SpeechServiceTests {
         let defaults = freshDefaults()
         defaults.set(AVSpeechUtteranceMinimumSpeechRate, forKey: SpeechService.rateKey)
 
-        let speech = AudioHarness(defaults: defaults).speech
+        let speech = AudioHarness(settings: defaults).speech
 
         #expect(speech.speechRate == AVSpeechUtteranceMinimumSpeechRate)
     }
@@ -544,7 +608,7 @@ struct SpeechServiceTests {
         let defaults = freshDefaults()
         defaults.set(Float(50), forKey: SpeechService.rateKey)
 
-        let speech = AudioHarness(defaults: defaults).speech
+        let speech = AudioHarness(settings: defaults).speech
 
         #expect(speech.speechRate == AVSpeechUtteranceMaximumSpeechRate)
     }

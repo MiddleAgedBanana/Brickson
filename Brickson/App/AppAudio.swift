@@ -37,7 +37,7 @@ struct AppAudio {
             events: events,
             makeSynthesizer: { SystemSpeechSynthesizer() },
             voiceCatalog: SystemVoiceCatalog(),
-            defaults: settings,
+            settings: settings,
             notificationCenter: .default,
             requestPersonalVoiceAuthorization: SystemPersonalVoice.requestAuthorization,
             sleep: sleep

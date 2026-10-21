@@ -8,6 +8,115 @@ changed and why, and keep the old reasoning in a "Before" line.
 "Owner" means the repository owner decided; "default" means an agent chose
 a reasonable default that the owner can overrule.
 
+## Waiting on the owner
+
+*2026-10-21.* On 2026-10-21 the owner asked to focus on building the app
+and to leave the logistics to the project. These are the only questions
+left for the owner, because each is personal, sets a price, or cannot be
+taken back. Until one is answered, nothing hard to undo is done under it.
+
+| Question | Recommended | Why |
+|---|---|---|
+| Is "Brickson" the final name, and so what is the bundle identifier? | Keep Brickson (retained publicly on 2026-10-12), with a bundle identifier that contains no personal name | The bundle identifier is public and can never change after the first upload; today's `family.avery.brickson` contains the owner's first name (*App identity*) |
+| What does Brickson cost? | No recommendation: the owner's call, before the first submission | Until then nothing anywhere states a price (*Price not decided*), and no purchase code is built |
+| How is "Brickson" said? | Tell an agent how it sounds; it sets a sound-alike spelling in `APP_SPOKEN_NAME` | VoiceOver and Siri say the name; only the owner knows how it should sound |
+| Should the code have a license? | Not yet: keep all rights reserved | A license can be added later, but one that has been granted cannot be withdrawn from copies already taken |
+| Is the owner a "trader" under the EU's Digital Services Act? | Decide when the App Store Connect record is made; if yes, publish a dedicated contact rather than a home address | App Store Connect asks before the app can be offered in the EU, and a trader's contact details are shown publicly |
+
+Owner steps that are actions, not decisions: the Team ID in
+`project.yml`, device runs, committing workflow files (docs/SDLC.md,
+*Deploy*), and every step in App Store Connect.
+
+## Decided by default on 2026-10-21
+
+*Default, adopted 2026-10-21: the owner left these choices to the
+project. Reversible if the owner objects.* Each was the recommended option
+of the research of 2026-10-15 (`docs/recon/`) or of the work that owns it.
+Decisions with their own entry are listed by title; the rest are recorded
+here. Entries kept by other work arrive with its pull request: until it
+merges, the entry and its reasons are in that pull request, or, where none
+is open yet, in the owning thread's work, and the summary here is what
+holds.
+
+| Decision | Where it is recorded |
+|---|---|
+| The releases and their order: R0, R1, R2 | `docs/ROADMAP.md` |
+| Layouts from the space available, with floors set without a device table | "Layouts from the space available", below |
+| Minimum iOS 26.0, iPhone and iPad, set by two rules: every device that can use eye tracking runs the app, and every mapped accessibility API stays reachable behind `#available` | "Minimum iOS, iPhone and iPad" (Toolchain and iOS version targets; PR #12, merged) |
+| Home's slot plan with stable slot identifiers; solid fills on Home and the system's Liquid Glass elsewhere | "Home's slot plan", "Solid fills on Home, system glass elsewhere" (Figma and Claude Design screens; pull request not open yet) |
+| The App Store category is Utilities, with no secondary category; the age-rating answers give 4+ | "App Store category", "Age rating answers" (App Store readiness and ASO; PR #18, open) |
+| Home's fixed slots, labels and button style | Entries next to "Home version 0 is a stand-in" (Phone layout and word fitting; pull request not open yet) |
+| Typing as a state of Home under a band Apple's keyboard never covers, Apple's keyboard in 1.0, Writing Tools off, third-party keyboards refused, Return speaks, the typed message | "Typing is a state of Home", "Typing uses Apple's keyboard", "Writing Tools off while typing", "Third-party keyboards refused in 1.0", "Return speaks", "The typed message" (Typing foundation; pull request not open yet) |
+| Explicit saves, an Emergency category that is always there, fixed starter identities, editing, import, replace, the backup format, an unreadable library reported and never replaced | "Every save is explicit", "Starter phrases", "The emergency category is always there", "Editing the library", "Importing a backup", "Replacing the library", "Backup file format", "An unreadable library is reported, never replaced" (Library editing and backup format; PR #14, open) |
+| When the audio session is released, the alarm's sound, start-only Get Attention, no automatic resume, Personal Voice never written to a file | "Background audio", "Get Attention", "A phrase the system cuts off", "Audio session notices", "Personal Voice is never written to a file" (Speech engine and Get Attention; PR #16, open) |
+| Home first with setup as a place in Settings, the Settings root, the voice picker, the Privacy row, the largest sizes when nobody answers setup, an "Anything changed?" check-in every three months that waits 30 days after Not Now | "First launch opens Home; setup lives in Settings", "Settings is a cover with a fixed safety bar", "Settings resets when idle and never closes", "Setup answers are kept as offered, never as completed", "Check-ins come every three months", "The privacy policy ships inside the app" (Settings and first run; pull request not open yet) |
+
+Recorded here:
+
+- **iPhone orientations.** Portrait and both landscape orientations, not
+  upside down, from the pull request whose layout tests show a landscape
+  phone with no scrolling for the starter library; until then portrait
+  only. A phone on a wheelchair or bed mount is often sideways, and the
+  person may not be able to turn their head. That pull request updates
+  *Orientations*.
+- **No iCloud sync in 1.0** stands as recorded below.
+- **Caregiver alerts:** 1.0 alerts only with sound in the room (Get
+  Attention), and the privacy policy's caregiver-alerts section is deleted
+  before release. Anything that reaches another device needs network code,
+  which invariant 9 forbids, so it stays the owner's decision.
+- **Recorded phrases, in stages:** guidance for recording elsewhere first,
+  then importing and playing recordings (R1), then an in-app recorder
+  after device checks (R2).
+- **No purchase code** (StoreKit) until the owner decides a price.
+- **Who chooses the input profile:** the family, in Settings. Accessibility
+  features the system reports may suggest a profile, never switch it.
+- **No rating prompt on Home.** Brickson never asks for a review on its
+  own; a "Rate Brickson" row, if added, lives on a family Settings screen.
+- **Copilot's "Review new pushes" stays off.** Each review spends the
+  owner's AI credits, and Codex already reviews every push.
+- **No `REVIEW.md`.** AGENTS.md, *Code Review Rules*, is the review policy
+  every reviewer reads.
+- **The research is public** in `docs/recon/`, with personal details and
+  local paths removed.
+- **If storage cannot start at all,** the app still stops
+  (`PhraseLibraryStore.openForApp`), as the reference app did: no real way
+  for it to happen was found. Revisit if one is.
+- **At release, Mac and Apple Vision Pro availability are switched off**
+  in App Store Connect, matching *Minimum iOS, iPhone and iPad*.
+- **At most three pull requests wait for the owner's review at once**
+  (docs/SDLC.md, *Build*); other work continues on its branch.
+
+## Layouts from the space available
+
+*Default, adopted 2026-10-21: the owner left these choices to the
+project. Reversible if the owner objects.* The owner's goal of 2026-10-21
+asks for interfaces built from the space available with standard SwiftUI
+containers, "instead of building device-specific interfaces" (AGENTS.md,
+*Layout on every device and window*).
+
+- Layout code and the layout engine take the window's size, its safe
+  areas, Dynamic Type, the input profile and the library's shape, and
+  nothing that names a device: no device model, no table of screens, no
+  check of the screen's physical size. Size classes are hints, never the
+  reason a control moves. Test matrices and dated measurements may name
+  devices.
+- **Floors without a device table.** iOS does not report a screen's
+  physical density, so each profile's floors are physical sizes converted
+  to points once, at the densest supported screens (about 163 points per
+  inch, the 326 ppi screens at 2x), and used everywhere. A target is then
+  at least its physical size on every screen, and larger on most. The
+  reference app's gaze floors of 110, 88 and 72pt were sized on a 13-inch
+  iPad (about 132 points per inch); held at the densest screen they are
+  about 136, 109 and 89pt. Where a window cannot hold them, the
+  arrangement changes (fewer tiles to a screen, a different split), never
+  the floor: invariant 11 forbids shrinking a target below its profile's
+  floor, and only the owner can change a floor.
+- The 2026-10-15 layout blueprint
+  (`docs/recon/2026-10-15/layout-blueprint.md`) keyed density, profiles and
+  the keyboard band to device tables; those parts are replaced by this
+  entry. Before: AGENTS.md said floors were "computed in physical size per
+  device".
+
 ## App identity
 
 *2026-10-10. Name: owner. Other values: default.*
@@ -20,7 +129,7 @@ Everything that identifies the app sits in one block at the top of
 | `APP_DISPLAY_NAME` | `Brickson` | The name under the icon. The name retained by the owner on 2026-10-12. |
 | `APP_SPOKEN_NAME` | `Brickson` | How VoiceOver and other text-to-speech say the app's name (`CFBundleSpokenName`). If they say it wrong, use a sound-alike spelling here; the name under the icon stays as it is. |
 | `APP_BUNDLE_ID` | `family.avery.brickson` | The identifier the owner was advised to register for the App Store. It **cannot change after the first App Store upload**, and it is public, so any change happens before that upload. Someone building for their own device changes it locally (it belongs to one team) and does not commit that. |
-| `DEVELOPMENT_TEAM` | empty | Needed only to run on a real device or upload. Left empty until the developer account is chosen (personal or organization). A team ID is not secret; it is in every signed app. |
+| `DEVELOPMENT_TEAM` | empty | Needed only to run on a real device or upload. The owner chose the personal (individual) membership on 2026-10-10; the field stays empty until the owner enters that team's ID. A team ID is not secret; it is in every signed app. |
 | `MARKETING_VERSION` | `0.1.0` | The version people see. |
 | `CURRENT_PROJECT_VERSION` | `1` | Must go up with every upload to App Store Connect. |
 
@@ -59,14 +168,122 @@ This keeps project settings reviewable as plain text and avoids merge
 conflicts in the project file. Agents never open the project in Xcode
 (docs/LESSONS.md, "Never open the project in Xcode from an agent").
 
-## Minimum iOS 26, iPhone and iPad
+## Build with Apple's current Xcode
 
-*2026-10-10. Default, from the reference app.*
+*2026-10-21. Owner.*
+
+Brickson is built with the Xcode Apple currently recommends: its newest
+release (never a beta or a release candidate) and the SDKs and Swift
+compiler that come with it. Nothing in the repository pins an Xcode, SDK,
+simulator or runner version the owner did not ask for. When Apple releases
+a new Xcode, the build moves to it in a pull request, which also fixes
+anything the new Xcode reports.
+
+- **Two different versions.** The *toolchain* (Xcode, its SDKs and its
+  Swift compiler) builds the app, and is always Apple's newest release.
+  The *deployment target* is the oldest iOS and iPadOS the app runs on;
+  it is a product decision with its own rules (*Minimum iOS, iPhone and
+  iPad*, below). Building with a newer SDK does not stop the app running on an
+  older system: the deployment target decides that.
+- **Look it up, never recall it.** An agent's training data is older than
+  Apple's newest release. What is current comes from Apple's releases
+  page (https://developer.apple.com/news/releases/) and Xcode's system
+  requirements (https://developer.apple.com/xcode/system-requirements/),
+  read at the time.
+- **CI** picks its Xcode with `scripts/select-xcode.py`: `choose` takes
+  the newest release installed on GitHub's Mac machine, whatever the
+  machine's default is, and `check` compares it with Apple's releases feed
+  and puts a warning on the run when Apple has a newer one. It warns
+  instead of failing because GitHub adds a new Xcode to its machines some
+  days after Apple releases it, and a safety fix must not wait for that.
+  Apple's feed decides whether an installed build is a release, by its
+  build number; only a build the feed does not list goes by its app's
+  name. GitHub's names are not reliable: on 2026-10-21 the released 27.1
+  sat in `Xcode_27.1_Release_Candidate.app`, because Apple released the
+  release candidate unchanged, and `Xcode_27.2.app` led to a beta. A
+  version newer than the feed's newest release is never taken, whatever
+  its name. When the feed cannot be read, or lists no Xcode release,
+  `choose` goes by names and warns on the run, in every job.
+- **Runner image.** GitHub now publishes one Mac image per major Xcode
+  (`xcode-27` carries Xcode 27 on macOS 27; generally available since
+  2026-10-15, GitHub's changelog). The older `macos-26` image that CI used
+  until 2026-10-21 had Xcode 26.6 as its default and no iOS 27 simulators.
+  `runs-on` names the image for the current major Xcode; when Apple
+  releases the next one and GitHub publishes its image, the `check`
+  warning says so, and a pull request moves both jobs to it. Cloud agents
+  cannot change workflow files (AGENTS.md, *Gotchas*), so the owner, or an
+  agent on the owner's Mac, commits that change.
+- **Simulators.** `scripts/test.sh` tests on the newest iPad simulator,
+  and runs UI tests on the newest standard iPhone too, each between the
+  deployment target and the SDK of the Xcode in use. No version is
+  written into it.
+- **Documents** say "the current Xcode release", not a number. A dated
+  record of what something was checked on (the tables in
+  docs/HANDOFF.md) keeps its version: that is history, not a pin.
+- **Swift language mode.** `SWIFT_VERSION: "6.0"` in `project.yml` chooses
+  the Swift 6 language mode, not a compiler. On 2026-10-21 Swift 6 was the
+  newest mode in the current Xcode (its system requirements page). Move
+  to a newer mode in a pull request when Apple ships one.
+- **Why.** The owner asked for it on 2026-10-21, after seeing "26.0"
+  throughout the repository without having chosen it. Apple's rules point
+  the same way: from April 2027, App Store uploads must be built with the
+  iOS and iPadOS 27 SDK or later (Apple's submitting page, read
+  2026-10-21), and new Xcode releases add support for new devices.
+
+## Minimum iOS, iPhone and iPad
+
+*2026-10-10 default, from the reference app. Decided 2026-10-21 from two
+rules, after the owner set the first and left the rest to the project.
+Reversible if the owner objects.*
 
 iOS and iPadOS 26.0 or later, on iPhone and iPad. Mac ("Designed for
 iPad"), Mac Catalyst and Vision Pro are switched off until someone decides
-to support them. iOS 26 brings the current SwiftUI, SwiftData and
-accessibility APIs, and Eye Tracking needs a recent iPad anyway.
+to support them.
+
+The number follows from two rules. Check them again when Apple's next
+major release drops devices, and move the number only as they allow.
+
+1. **Brickson supports every device that can use eye tracking** (owner,
+   2026-10-21: the app has to serve every stage of ALS). That means
+   Apple's built-in Eye Tracking and the third-party eye trackers made for
+   iPad. Both drive the system pointer (AssistiveTouch and Dwell Control),
+   which finds standard controls through the accessibility tree. No app
+   code takes part: invariant 1, standard `Button`s, is what makes eye
+   tracking work, and custom gaze code is a hard stop.
+2. **Every accessibility API in the project's map of Apple features by ALS
+   stage stays reachable.** An API newer than the minimum is used behind
+   `if #available`, with a path for older systems, never by raising the
+   minimum.
+
+What the rules gave on 2026-10-21, from Apple's and the vendors' pages:
+
+- **Built-in Eye Tracking** runs on named models, not on a chip class
+  (iPhone and iPad User Guides for iOS and iPadOS 18, 26 and 27, "Models
+  that support Eye Tracking"). On iPhone: iPhone 12 and later, and iPhone
+  SE (3rd generation). On iPad: iPad (10th generation) and later, iPad
+  mini (6th generation) and later, iPad Air (4th generation) and later,
+  iPad Pro 11-inch (3rd generation) and later, iPad Pro 12.9-inch (5th
+  generation) and later. Every one of them runs iOS or iPadOS 27, so rule
+  1 for Apple's feature alone would allow 27.0.
+- **Third-party trackers** set the floor. eyeV's Skyle 3 works with
+  "iPads with USB Type C" and "an iPad Pro of the 3rd generation or
+  newer" (eyev.de), which includes the 2018 iPad Pro 11-inch (1st
+  generation) and 12.9-inch (3rd generation). Those run iPadOS 26 but not
+  27 (Apple's iPadOS 27 compatibility list). Tobii Dynavox's TD Pilot
+  ships with an iPad Pro 12.9-inch and needs iPadOS 15.1 or later (its
+  user's manual). No current tracker found supports a Lightning iPad, so
+  none needs a system older than 26. Hence **26.0**: 27.0 would cut off a
+  Skyle user on a 2018 iPad Pro.
+- **APIs in the map** that are newer than 26.0 sit behind `#available`:
+  `AccessibilitySettings.canOpenSettings(for:)` (26.4) and the iOS 27
+  audio-session life-cycle notifications, among others. Nothing the map
+  needs requires more than 26.0 to build on (preliminary floors from the
+  2026-10-15 platform recon; the *Accessibility API coverage* work
+  re-checks each one).
+- Also gained at 26.0: iOS 26 runs on iPhone 11 and later and iPhone SE
+  (2nd generation), and iPadOS 26 on iPad (8th generation) and later and
+  the 2018 iPads above, so people using touch, switches or Voice Control
+  on those keep the app too.
 
 ## No outside packages
 
@@ -286,10 +503,26 @@ How it behaves, and where it knowingly falls short:
   category row; the Emergency quick control opens it and shows a check
   mark while it is open. Two buttons with the same name confused Voice
   Control and the UI tests, and the reference app did the same.
-- **Messages never shrink.** The message row always reserves two lines of
-  its font; a longer message scrolls inside them at full size (the reference
-  app's phone layout did the same). Every phrase start, including Again and
-  the same phrase chosen again, shows the message from the top.
+- **Messages never shrink.** At compact widths, the message has the full
+  width and reserves one line of its font, with a full-width Again button
+  below. At regular widths, it reserves two lines with Again beside it.
+  A longer message scrolls inside that viewport at full size. Every phrase
+  start, including Again and the same phrase chosen again, shows the
+  message from the top. The reserved height does not change with the
+  message or speaking state.
+- **Quick controls give words the width they need.** At compact widths,
+  Yes and No share one row; Emergency takes the full row below. Regular
+  widths retain the horizontal quick-control row. Both arrangements stay
+  the same at every text size and in every Home state. Yes, No and Again
+  omit decorative icons at both widths. Emergency retains its warning or
+  selected symbol in a permanent 22pt-high slot above its text: an inline
+  icon split the word into `Emer-` / `gency` even on the iPad at AX5.
+  Text uses Dynamic Type without a smaller-font workaround.
+- **Phrase columns stay fixed within each width class.** Compact widths
+  use one column, regular widths three, at every text size. The compact
+  two-column grid split even `Maybe.` at AX5. One column gives words more
+  width but shows fewer phrases at once; the stand-in still scrolls and
+  does not close the documented layout-engine gap.
 - **Audio warnings keep their space.** The warning area always holds the
   height of the tallest short audio warning ("Volume low", "Audio failed"),
   so a warning appearing hides no phrase tile (invariant 4). The short text
@@ -306,13 +539,37 @@ How it behaves, and where it knowingly falls short:
 - **Accepted for the stand-in only:**
   - No Get Attention yet, so invariant 10's "reachable in one dwell" holds
     only for Emergency, Yes and No. Get Attention comes in port step 1.
-  - Again sits beside the message text the person reads, and the phrase
-    grid ends just above the warning text: under a gaze profile a look
-    that rests on the text could snap to them.
+  - Again sits next to the message text the person reads (below at compact
+    widths, beside at regular widths), and the phrase grid ends just above
+    the warning text: under a gaze profile a look that rests on the text
+    could snap to them.
   - The selected category swaps its symbol for a check mark; symbols
     differ in width, so the buttons after it can shift slightly.
-  - CI tests the iPad only. On a narrow iPhone the three quick-control
-    labels may not fit at larger text sizes.
+
+*2026-10-21 correction:* PR #13 initially treated the iPhone's clipped-text
+and Dynamic Type audit findings as strict expected failures pending a new
+phone layout. That exception has been withdrawn: the owner requested a
+root-cause fix without weakening tests. Labels now retain their full
+vertical size, and eager phrase rows remain present while the audit
+changes text size. Both device families run the same strict audits.
+Those changes initially passed all 16 UI tests on each local device, but
+inspection of the AX5 screenshots still found clipped quick-control
+words on the phone. The accessibility labels and button frames were
+complete even when their visible text was not. A new screenshot-based
+text-recognition test reproduced all 24 label checks failing before the
+compact arrangement above was implemented. It checks Yes, No, Emergency
+and Again in three states, in light and dark, without language correction
+or expected words supplied to the recognizer. The same test also exposed
+Emergency's word splitting on iPad. It uses Vision's fast recognizer
+because the accurate mode returned `ON` for a visibly clear `No`;
+the fast mode read `No` and still rejected all four old clipped captures.
+Matching still requires a whole word, ignoring case only. The four
+reachability tests now compare every primary-control edge with its launch
+frame after Emergency and speech, allowing 1pt for rounding. Final
+validation remains pending in the diagnosis record; the earlier 16-test
+passes do not validate this implementation.
+`docs/log/2026-10-21-ui-test-diagnosis.md` records the failing reproductions,
+the separate appearance-harness defect and subsequent verification.
 
 ## Personal Voice permission is asked at launch, for now
 
@@ -331,6 +588,20 @@ Use** is off (Settings → Accessibility → Personal Voice), the system denies
 the request without asking. `AccessibilitySettings.openSettings(for:
 .personalVoiceAllowAppsToRequestToUse)` opens that switch directly; the
 voice picker should offer it when permission is denied.
+
+## Personal Voice is never written to a file
+
+*2026-10-21. Default, adopted 2026-10-21: the owner left these choices to
+the project. Reversible if the owner objects.*
+
+Brickson speaks a Personal Voice live and never renders it into an audio
+file or buffer to keep (`AVSpeechSynthesizer.write`). A file of someone's
+own voice could leave the device in a backup or a share sheet and be
+reused to sound like them; spoken live, it exists only
+while they choose to speak. Recorded phrases, when they come, are the
+person's own recordings, not synthesized ones. A feature that seems to
+need a rendered file (sending a phrase as audio, Calls) is decided again
+here first.
 
 ## Tests
 
@@ -351,7 +622,7 @@ The repository's settings live on GitHub, not in these files. This is
 what they are meant to be, and why, so a change to the workflows or the
 review setup does not quietly break them.
 
-**Code review.**
+### Code review
 
 - Codex reviews every push to a pull request. GitHub Copilot (the owner's
   Copilot Pro plan) reviews each pull request **once, when it opens**,
@@ -395,7 +666,9 @@ review setup does not quietly break them.
   the author of every pull request agents open, and GitHub never asks an
   author to review their own pull request.
 
-**Dependencies.** Brickson has no packages (invariant 9), so the actions
+### Dependencies
+
+Brickson has no packages (invariant 9), so the actions
 in `.github/workflows` are its only dependencies. Dependabot proposes new
 versions once a month in one grouped pull request, waiting seven days
 after each release (`.github/dependabot.yml`); security fixes come at
@@ -407,9 +680,13 @@ with the other two on; keep all three on. Actions are referenced by
 version tag, not pinned to commit hashes: GitHub only raises security
 alerts for tag references, and all of them are GitHub's own actions.
 
-**Code scanning.** *Revised 2026-10-12.* CodeQL's default setup scans
-the workflow files in `.github/workflows` and nothing else. CodeQL does
-not scan the Swift code, on purpose:
+### Code scanning
+
+*Revised 2026-10-12; languages corrected 2026-10-21.* CodeQL's default
+setup scans the workflow files in `.github/workflows` and, since
+2026-10-13, the Python scripts in `scripts/` (GitHub added Python by
+itself once `scripts/test-site.py` landed; checks "Analyze (actions)" and
+"Analyze (python)"). CodeQL does not scan the Swift code, on purpose:
 
 - Default setup can only build Swift that has a committed Xcode project
   or Swift package. Brickson's project is generated by XcodeGen and not
@@ -439,12 +716,20 @@ not scan the Swift code, on purpose:
   - CodeQL learns to read each new Swift version weeks or months after
     Xcode ships it: 31 to 115 days for Swift 6.0 to 6.3, and 10 to 45 days for their
     point releases (Swift 6.3.3, in Xcode 26.6, took 24). Today it covers
-    Swift up to 6.3, which CI's Xcode 26.6 uses, and not Swift 6.4 (Xcode
+    Swift up to 6.3, which Xcode 26.6 uses, and not Swift 6.4 (Xcode
     27). Every Xcode upgrade could break the job or hold up merges.
+  - Since CI moved to Xcode 27 (*Build with Apple's current Xcode*,
+    above), advanced setup could not scan Swift at all: GitHub's changelog
+    of 2026-10-19 says that with Xcode 27 installed CodeQL cannot trace a
+    Swift build, and that it does not support Swift 6.4 on any platform.
+    Its advice to pin macOS 26 and Xcode 26 is not taken, because the
+    owner's toolchain decision comes first.
 - The earlier text here said CodeQL "cannot follow Xcode 27 builds yet"
   and that GitHub "has announced a Swift scanner that needs no build". The
-  first is true, but it does not stop scanning today, because CI builds
-  with Xcode 26.6; it matters only as upkeep for advanced setup (above).
+  first is true, but it does not stop scanning today, because default
+  setup scans only the workflow files and the Python scripts, which need
+  no build (when this was written, CI also still built with Xcode 26.6);
+  it matters only for advanced setup (above).
   The second does not hold for CodeQL, whose Swift support has only the
   `autobuild` and `manual` build modes; no mode that skips the build has
   been announced. It probably meant AI Scan, below.
@@ -483,7 +768,10 @@ stops reading Swift, leaves the preview with new terms, or costs more
 than the owner wants; or when a Swift error appears on the Tool status
 page again.
 
-**`main` ruleset** (recommended to the owner):
+### `main` ruleset
+
+Recommended to the owner, and matching GitHub's settings when checked
+through its API on 2026-10-15:
 
 | Rule | Setting | Why |
 |---|---|---|

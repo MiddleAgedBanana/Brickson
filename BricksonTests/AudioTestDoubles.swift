@@ -267,7 +267,7 @@ struct AudioHarness {
     let personalVoice: FakePersonalVoiceRequest
     let speechSleeper: ManualSleeper
     let alarmSleeper: ManualSleeper
-    let defaults: UserDefaults
+    let settings: UserDefaults
     let speech: SpeechService
     let attention: AttentionAlertPlayer
     let tones: FakeToneFactory
@@ -276,7 +276,7 @@ struct AudioHarness {
 
     init(
         voices: [VoiceDescriptor] = [],
-        defaults: UserDefaults = freshDefaults(),
+        settings: UserDefaults = freshDefaults(),
         policy: AudioSessionLeasePolicy = .keepActive
     ) {
         let center = NotificationCenter()
@@ -307,14 +307,14 @@ struct AudioHarness {
         self.personalVoice = personalVoice
         self.speechSleeper = speechSleeper
         self.alarmSleeper = alarmSleeper
-        self.defaults = defaults
+        self.settings = settings
         self.tones = tones
         speech = SpeechService(
             audioSession: coordinator,
             events: events,
             makeSynthesizer: { synthesizers.make() },
             voiceCatalog: catalog,
-            defaults: defaults,
+            settings: settings,
             notificationCenter: center,
             requestPersonalVoiceAuthorization: { personalVoice.request($0) },
             sleep: speechSleeper.closure
