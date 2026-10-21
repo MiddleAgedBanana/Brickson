@@ -130,3 +130,18 @@ struct LabelFont: Equatable {
         }
     }
 }
+
+extension View {
+    /// Draws the view at `size` when it is smaller than the person's own text
+    /// size `current`, and otherwise leaves the person's size untouched, so
+    /// text that fits keeps following the system's Dynamic Type as usual
+    /// (Apple's accessibility audit reports text pinned to a fixed size).
+    @ViewBuilder
+    func textSize(_ size: DynamicTypeSize, from current: DynamicTypeSize) -> some View {
+        if size == current {
+            self
+        } else {
+            dynamicTypeSize(size)
+        }
+    }
+}

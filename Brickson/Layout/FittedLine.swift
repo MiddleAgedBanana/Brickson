@@ -37,6 +37,6 @@ struct FittedLine: View {
             Text(verbatim: text)
         }
         .font(font.font)
-        .dynamicTypeSize(size)
+        .textSize(size, from: dynamicTypeSize)
     }
 }

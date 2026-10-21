@@ -141,7 +141,7 @@ private struct MessageText: View {
                         // measures under 4.5:1 (invariant 6).
                         Text(verbatim: text)
                             .font(font.font)
-                            .dynamicTypeSize(fittedSize(text, width: proxy.size.width))
+                            .textSize(fittedSize(text, width: proxy.size.width), from: dynamicTypeSize)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     .scrollBounceBehavior(.basedOnSize)

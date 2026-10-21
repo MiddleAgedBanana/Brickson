@@ -63,7 +63,7 @@ struct FittedLabel: View {
                 .lineLimit(isOneWord ? 1 : nil)
         }
         .font(font.font)
-        .dynamicTypeSize(size)
+        .textSize(size, from: dynamicTypeSize)
     }
 
     private var isOneWord: Bool {
