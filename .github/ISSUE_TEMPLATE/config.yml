@@ -1,0 +1,10 @@
+# Every new issue starts from a form, so reporters see the privacy warning
+# first. The links go to private and support routes.
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security problem privately
+    url: https://github.com/MiddleAgedBanana/Brickson/security/policy
+    about: Security problems go in a private report, not a public issue.
+  - name: Support and contact
+    url: https://middleagedbanana.github.io/Brickson/#support
+    about: Questions about using Brickson, or anything you'd rather not post in public.
