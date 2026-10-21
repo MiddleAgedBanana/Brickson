@@ -189,11 +189,15 @@ def check_push(args, cwd):
     refspecs = []
     options = []
     skip = False
+    remote_given = False  # --repo names the remote instead of the first word
     for arg in args:
         if skip:
             skip = False
             continue
-        if arg in ('-o', '--push-option', '--repo', '--receive-pack', '--exec'):
+        if arg.startswith('--repo='):
+            remote_given = True
+        elif arg in ('-o', '--push-option', '--repo', '--receive-pack', '--exec'):
+            remote_given = remote_given or arg == '--repo'
             skip = True
         elif arg.startswith('-'):
             options.append(arg)
@@ -207,9 +211,10 @@ def check_push(args, cwd):
             deny(TO_MAIN)  # these push every branch, main included
         if option in ('-d', '--delete'):
             # Deleting a branch: only refuse it for main.
-            if any(branch_name(r) in PROTECTED for r in refspecs[1:]):
+            if any(branch_name(r) in PROTECTED for r in refspecs):
                 deny(TO_MAIN)
-    refspecs = refspecs[1:]  # the first word is the remote
+    if not remote_given:
+        refspecs = refspecs[1:]  # the first word is the remote
     if not refspecs:
         # A bare push goes wherever the branch pushes to.
         destination = git(cwd, 'rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{push}')
@@ -221,6 +226,8 @@ def check_push(args, cwd):
     for refspec in refspecs:
         if refspec.startswith('+'):
             deny(FORCE)
+        if refspec == ':':
+            deny(TO_MAIN)  # pushes every matching branch, main included
         source, colon, target = refspec.partition(':')
         destination = target if colon else source
         if destination in ('HEAD', '@', ''):
@@ -239,6 +246,9 @@ def check_gh(words):
             skip = False
         elif word in ('-R', '--repo', '--hostname'):
             skip = True
+        elif word.startswith(('--repo=', '--hostname=')) or \
+                (word.startswith('-R') and not plain):
+            continue  # the attached forms, --repo=OWNER/REPO and -ROWNER/REPO
         else:
             plain.append(word)
     if plain[:2] == ['pr', 'merge']:
@@ -247,6 +257,8 @@ def check_gh(words):
         deny(MERGE)
     if plain[:1] == ['api'] and API_MERGE.search(' '.join(plain)):
         deny(MERGE)
+    if plain[:1] == ['api'] and copilot_review_request(' '.join(plain)):
+        deny(COPILOT)
     if plain[:2] in (['pr', 'edit'], ['pr', 'create']) and any(
             'copilot' in w.lower() for w in plain if not w.startswith('-')):
         for index, word in enumerate(plain):
@@ -255,15 +267,30 @@ def check_gh(words):
                 deny(COPILOT)
 
 
+def parsed_url(word):
+    try:
+        url = urlsplit(word if '://' in word else 'https://' + word)
+        return url, (url.hostname or '').lower()
+    except ValueError:
+        return None, ''  # not an address, for example reviewers[]=name
+
+
+def github_api_host(word):
+    """Whether a word is a GitHub API address. The host is read from the
+    parsed address, not searched for."""
+    return parsed_url(word)[1] == 'api.github.com'
+
+
 def github_api_merge(word):
     """Whether a word is a GitHub API address that merges, auto-merges or
-    approves. The host is read from the parsed address, not searched for."""
-    url = urlsplit(word if '://' in word else 'https://' + word)
-    try:
-        host = (url.hostname or '').lower()
-    except ValueError:
-        return False
+    approves."""
+    url, host = parsed_url(word)
     return host == 'api.github.com' and bool(API_MERGE.search(url.path))
+
+
+def copilot_review_request(text):
+    """Whether API arguments ask for a review from Copilot."""
+    return 'requested_reviewers' in text and 'copilot' in text.lower()
 
 
 def check_command(command, cwd, depth=0):
@@ -275,9 +302,11 @@ def check_command(command, cwd, depth=0):
         # Unbalanced quotes: the shell would refuse it too. Look at the words.
         parts = [command.split()]
     for words in parts:
-        for inner in nested(words):
+        unwrapped = strip_wrappers(words)
+        # Look inside both forms: env bash -c '...' hides the shell behind env.
+        for inner in dict.fromkeys(nested(words) + nested(unwrapped)):
             check_command(inner, cwd, depth + 1)
-        words = strip_wrappers(words)
+        words = unwrapped
         if not words:
             continue
         program = os.path.basename(words[0])
@@ -293,9 +322,12 @@ def check_command(command, cwd, depth=0):
                 check_push(args, where)
         elif program == 'gh':
             check_gh(words)
-        elif program in ('curl', 'wget', 'http', 'https') and \
-                any(github_api_merge(word) for word in words[1:]):
-            deny(MERGE)
+        elif program in ('curl', 'wget', 'http', 'https'):
+            if any(github_api_merge(word) for word in words[1:]):
+                deny(MERGE)
+            if any(github_api_host(word) for word in words[1:]) and \
+                    copilot_review_request(' '.join(words)):
+                deny(COPILOT)
 
 
 def check_github_tool(name, arguments):

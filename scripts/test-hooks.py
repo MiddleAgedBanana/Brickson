@@ -62,6 +62,7 @@ class GuardTests(unittest.TestCase):
                         'cd docs && git add .', 'git commit -am "x"',
                         'git commit --all -m x', 'git status; git add -A',
                         'FOO=1 command git add --all', 'bash -lc "git add -A"',
+                        "env bash -lc 'git add -A'", "command bash -c 'git add .'",
                         'echo $(git add -A)']:
             self.assertDenied(command)
 
@@ -85,7 +86,9 @@ class GuardTests(unittest.TestCase):
         for command in ['git push origin main', 'git push origin HEAD:main',
                         'git push origin claude/topic:refs/heads/main',
                         'git push origin --delete main', 'git push --all origin',
-                        'git push --mirror origin', 'git push -u origin main']:
+                        'git push --mirror origin', 'git push -u origin main',
+                        'git push origin :', 'git push --repo origin main',
+                        'git push --repo=origin HEAD:main']:
             self.assertDenied(command)
 
     def test_a_bare_push_from_main_is_denied(self):
@@ -107,6 +110,9 @@ class GuardTests(unittest.TestCase):
     def test_merging_or_approving_a_pull_request_is_denied(self):
         for command in ['gh pr merge 12', 'gh pr merge --auto --squash 12',
                         'gh -R MiddleAgedBanana/Brickson pr merge 12',
+                        'gh --repo=MiddleAgedBanana/Brickson pr merge 12',
+                        'gh -RMiddleAgedBanana/Brickson pr review 12 --approve',
+                        "command bash -lc 'gh pr merge 12'",
                         'gh pr review 12 --approve',
                         'gh api -X PUT repos/o/r/pulls/12/merge',
                         'gh api graphql -f query="mutation { mergePullRequest(input: {}) { clientMutationId } }"',
@@ -114,6 +120,16 @@ class GuardTests(unittest.TestCase):
                         'curl -X PUT https://api.github.com/repos/o/r/pulls/12/merge',
                         'curl -X PUT api.github.com/repos/o/r/pulls/12/merge']:
             self.assertDenied(command)
+
+    def test_requesting_copilot_through_the_api_is_denied(self):
+        for command in [
+                "gh api --method POST repos/o/r/pulls/12/requested_reviewers "
+                "-f 'reviewers[]=copilot-pull-request-reviewer[bot]'",
+                'curl -X POST https://api.github.com/repos/o/r/pulls/12/requested_reviewers '
+                '-d \'{"reviewers":["copilot-pull-request-reviewer[bot]"]}\'']:
+            self.assertDenied(command)
+        self.assertAllowed("gh api --method POST repos/o/r/pulls/12/requested_reviewers "
+                           "-f 'reviewers[]=MiddleAgedBanana'")
 
     def test_reading_pull_requests_is_allowed(self):
         for command in ['gh pr view 12', 'gh pr checks 12', 'gh pr create --fill',
@@ -160,9 +176,11 @@ class SettingsTests(unittest.TestCase):
     def test_the_guard_runs_before_bash_and_the_github_tools(self):
         import re
         groups = self.settings['hooks']['PreToolUse']
-        for tool in ['Bash', 'mcp__github__merge_pull_request',
-                     'mcp__github__enable_pr_auto_merge', 'mcp__github__push_files',
-                     'mcp__github__request_copilot_review']:
+        tools = ['merge_pull_request', 'enable_pr_auto_merge', 'request_copilot_review',
+                 'assign_copilot_to_issue', 'create_pull_request_with_copilot',
+                 'push_files', 'create_or_update_file', 'delete_file',
+                 'pull_request_review_write', 'update_pull_request']
+        for tool in ['Bash'] + [f'mcp__github__{t}' for t in tools]:
             commands = [hook['command'] for group in groups
                         if re.fullmatch(group['matcher'], tool)
                         for hook in group['hooks']]
