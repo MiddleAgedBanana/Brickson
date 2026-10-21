@@ -107,6 +107,12 @@ struct SettingsParagraph: View {
         text = Text(verbatim: verbatim)
     }
 
+    /// For words that are formatted rather than looked up, such as a
+    /// localized percent.
+    init(text: Text) {
+        self.text = text
+    }
+
     var body: some View {
         text
             .font(.body)
@@ -116,7 +122,8 @@ struct SettingsParagraph: View {
     }
 }
 
-/// Numbered steps in the Settings app, read as one list by VoiceOver.
+/// Numbered steps in the Settings app. VoiceOver reads each step as one
+/// element, number first.
 struct SettingsSteps: View {
     let steps: [LocalizedStringKey]
 
@@ -124,9 +131,10 @@ struct SettingsSteps: View {
         VStack(alignment: .leading, spacing: 8) {
             ForEach(Array(steps.enumerated()), id: \.offset) { index, step in
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    // Read with its step, so the order is clear when
+                    // VoiceOver moves backward or straight to one step.
                     Text(verbatim: "\(index + 1).")
                         .font(.body.weight(.semibold))
-                        .accessibilityHidden(true)
                     Text(step)
                         .font(.body)
                         .fixedSize(horizontal: false, vertical: true)
@@ -136,6 +144,27 @@ struct SettingsSteps: View {
         }
         .foregroundStyle(.primary)
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+/// Passive text whose words change with a choice made on the same screen.
+/// Every version is laid out, hidden, under the current one, so the text
+/// keeps the height of its longest version and choosing never moves the
+/// controls below it (AGENTS.md, "Controls keep their frames across every
+/// state of a screen"). Only the current words are read.
+struct SettingsReservedParagraph: View {
+    let text: Text
+    let alternatives: [Text]
+
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            ForEach(alternatives.indices, id: \.self) { index in
+                SettingsParagraph(text: alternatives[index])
+                    .hidden()
+                    .accessibilityHidden(true)
+            }
+            SettingsParagraph(text: text)
+        }
     }
 }
 

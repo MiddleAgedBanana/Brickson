@@ -94,9 +94,10 @@ struct OpenAccessibilitySettingsButton: View {
                 SettingsRowLabel(title: title, systemImage: "gear")
             }
             .settingsRowStyle()
-            if failed {
-                SettingsParagraph("Settings could not be opened. Follow the steps above in the Settings app.")
-            }
+            // Its place is kept, so a failure moves nothing below it.
+            SettingsParagraph("Settings could not be opened. Follow the steps above in the Settings app.")
+                .opacity(failed ? 1 : 0)
+                .accessibilityHidden(!failed)
         }
     }
 

@@ -658,7 +658,10 @@ whose root holds only a large Family Setup row and a sentence; every
 setting is a screen below, so a stray dwell that opens Settings meets
 only the way back, Get Attention and one row that navigates. Family
 Setup opens on passive text at least as tall as that row
-(`FamilySetupView.openingHeight`), so a repeated activation finds nothing.
+(`FamilySetupView.openingHeight`), so nothing that can be activated sits
+under the spot just activated. With Snap to Item the nearest control is
+then a row that only navigates; chains through Settings are not scored
+yet (docs/HANDOFF.md, *Known gaps*).
 
 Family Setup's rows: Set Up Step by Step, Voice Settings, Reaching the
 Screen, Keep Brickson Open (Guided Access and Assistive Access), Privacy

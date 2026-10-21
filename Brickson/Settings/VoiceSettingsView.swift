@@ -9,6 +9,8 @@ import SwiftUI
 /// changes anything. Each sample is absorbed while it is still playing, so a
 /// held look cannot restart it (`SpokenUtteranceTracker`). Speeds are fixed
 /// choices, so a repeated activation never walks the speed (`SpeedChoice`).
+/// Choosing a voice or a speed changes words on the screen, but never the
+/// size of anything, so no control moves under the one just chosen.
 struct VoiceSettingsView: View {
     var body: some View {
         SettingsScreen(title: "Voice Settings") {
@@ -20,6 +22,9 @@ struct VoiceSettingsView: View {
 /// The screen's content, shared with step 2 of Set Up Step by Step.
 struct VoiceContent: View {
     @Environment(SpeechService.self) private var speech
+    /// The missing-voice note was shown. Its place is kept until the screen
+    /// closes, so choosing a voice does not pull the rows up under it.
+    @State private var missingVoiceWasShown = false
 
     var body: some View {
         let rows = VoiceList.rows(
@@ -35,31 +40,47 @@ struct VoiceContent: View {
             from: speech.availableVoices,
             languageCode: Bundle.main.preferredLocalizations.first ?? "en"
         ) {
-            SettingsParagraph("Speaking with \(current.name).")
-                .accessibilityIdentifier("nowSpeaking")
+            SettingsReservedParagraph(
+                text: Text("Speaking with \(current.name)."),
+                alternatives: speech.availableVoices.map { Text("Speaking with \($0.name).") }
+            )
         }
 
         PersonalVoiceSection()
 
         SettingsHeading("Speed")
         let chosenSpeed = SpeedChoice.matching(speech.speechRate, normal: AVSpeechUtteranceDefaultSpeechRate)
-        if chosenSpeed?.isNormal == true {
-            SettingsParagraph("Speaking at normal speed.")
-        } else {
-            let share = SpeedChoice.fraction(of: speech.speechRate, normal: AVSpeechUtteranceDefaultSpeechRate)
-            SettingsParagraph("Speaking at \(share, format: .percent) of normal speed.")
-        }
+        SettingsReservedParagraph(
+            text: Self.speedSentence(for: speech.speechRate),
+            alternatives: SpeedChoice.all.map { Self.speedSentence(for: $0.rate(normal: AVSpeechUtteranceDefaultSpeechRate)) }
+        )
         ForEach(SpeedChoice.all) { choice in
             SpeedChoiceButton(choice: choice, isChosen: choice == chosenSpeed)
         }
 
         SettingsHeading("Voice")
-        if VoiceList.chosenVoiceIsMissing(selectedID: speech.selectedVoiceID, from: speech.availableVoices) {
+        let voiceIsMissing = VoiceList.chosenVoiceIsMissing(selectedID: speech.selectedVoiceID, from: speech.availableVoices)
+        if voiceIsMissing || missingVoiceWasShown {
             SettingsParagraph("The voice chosen earlier is no longer on this device, so Automatic is used.")
+                .opacity(voiceIsMissing ? 1 : 0)
+                .accessibilityHidden(!voiceIsMissing)
+                .onAppear { missingVoiceWasShown = true }
         }
         ForEach(rows) { row in
             VoiceRowView(row: row)
         }
+    }
+}
+
+extension VoiceContent {
+    /// The speed line: normal, or the share of normal as a localized
+    /// percent.
+    static func speedSentence(for rate: Float) -> Text {
+        if SpeedChoice.matching(rate, normal: AVSpeechUtteranceDefaultSpeechRate)?.isNormal == true {
+            return Text("Speaking at normal speed.")
+        }
+        let share = SpeedChoice.fraction(of: rate, normal: AVSpeechUtteranceDefaultSpeechRate)
+        return Text("Speaking at \(share, format: .percent) of normal speed.")
     }
 }
 
@@ -107,10 +128,11 @@ private struct VoiceRowView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
-                if row.isSelected {
-                    Image(systemName: "checkmark.circle.fill")
-                        .accessibilityHidden(true)
-                }
+                // Always laid out, so the name keeps its width and the
+                // row its height whichever voice is chosen.
+                Image(systemName: "checkmark.circle.fill")
+                    .opacity(row.isSelected ? 1 : 0)
+                    .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 2) {
                     // A voice's name is its own, never translated.
                     Text(verbatim: row.name)
@@ -138,10 +160,18 @@ private struct VoiceRowView: View {
                     activity?.recordActivity()
                     speech.selectedVoiceID = row.voiceID
                 } label: {
-                    SettingsRowLabel(
-                        title: row.isSelected ? "In Use" : "Use",
-                        systemImage: row.isSelected ? "checkmark" : "checkmark.circle"
-                    )
+                    // Both versions are laid out, so choosing a voice never
+                    // changes the button's size.
+                    ZStack {
+                        SettingsRowLabel(title: "Use", systemImage: "checkmark.circle")
+                            .hidden()
+                        SettingsRowLabel(title: "In Use", systemImage: "checkmark")
+                            .hidden()
+                        SettingsRowLabel(
+                            title: row.isSelected ? "In Use" : "Use",
+                            systemImage: row.isSelected ? "checkmark" : "checkmark.circle"
+                        )
+                    }
                 }
                 .settingsRowStyle()
                 .accessibilityLabel(Text(verbatim: row.useLabel))
@@ -197,9 +227,10 @@ private struct PersonalVoiceSection: View {
                     SettingsRowLabel(title: "Open Personal Voice Settings", systemImage: "gear")
                 }
                 .settingsRowStyle()
-                if couldNotOpenSettings {
-                    SettingsParagraph("Settings could not be opened. Follow the steps above in the Settings app.")
-                }
+                // Its place is kept, so a failure moves nothing below it.
+                SettingsParagraph("Settings could not be opened. Follow the steps above in the Settings app.")
+                    .opacity(couldNotOpenSettings ? 1 : 0)
+                    .accessibilityHidden(!couldNotOpenSettings)
             }
         }
     }

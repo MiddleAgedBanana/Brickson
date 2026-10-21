@@ -62,6 +62,8 @@ months" and "The privacy policy ships inside the app".
 - `1e63cea` The Settings, Family Setup and step-by-step screens.
 - `50154a4` The decisions and this record.
 - `002f3f8` Which voice is speaking, on Voice Settings.
+- `5228bd4` and `695d765` Codex's first review and the first CI run.
+- The commit after them: Codex's second review.
 - The merge of `main` (PRs #13, #15, #16 and #18), which moves the setup
   store onto `launch.settings`, takes Settings' idle limit from
   `AppTimeouts`, adds `--screen=settings`, Normal Speed, the alarm hold
@@ -92,6 +94,22 @@ months" and "The privacy policy ships inside the app".
     launch, so allowing it in the Settings app shows only after a
     relaunch. That is the speech engine's, and the Personal Voice
     foundation thread has it (*Follow-ups*).
+- Codex's second review, on `695d765`:
+  - Choosing a speed could change how many lines the speed sentence
+    takes at large text sizes, moving every speed choice under a resting
+    pointer. The same held for "Speaking with …" when a voice was chosen,
+    the missing-voice note disappearing, the voice row's checkmark
+    narrowing its name, "Use" becoming "In Use", and "Settings could not
+    be opened" appearing. Each now keeps its size in every state
+    (`SettingsReservedParagraph`, kept places, a label laid out in both
+    versions), and `SettingsTests.testChoosingASpeedMovesNoSpeedChoice`
+    checks the speeds at the largest text size.
+  - VoiceOver read numbered steps without their numbers. Each step is now
+    read number first (`testNumberedStepsAreReadWithTheirNumbers`).
+  - Not fixed here: a held look can follow Family Setup's first row into
+    Set Up Step by Step and save Touch, the first answer, which is then
+    nearest (follow-up 10); and one word wider than half the safety bar
+    can still break on narrow phones at accessibility sizes (follow-up 8).
 
 ## Verified
 
@@ -172,3 +190,14 @@ For the next Settings thread, in order:
    Attention.
 9. Keep one UI test on the real 90-second idle limit (docs/LESSONS.md,
    "Machine load causes false failures") once CI time allows.
+10. **Score chains through Settings** *(Dwell-safety scoring, ROADMAP)*
+   before follow-up 5 lets access answers change sizes. Under Snap to
+   Item, the control nearest the spot just activated on a pushed screen
+   is often that screen's first control: Family Setup's opening text
+   covers the root's row, but Set Up Step by Step is then nearest, and
+   on step 1 the first answer, Touch, is nearest that row (Codex, PR
+   #23). Opening each screen on a window of passive text, as the
+   reference app did, depends on Snap to Item ignoring controls scrolled
+   off screen, which nobody has checked (docs/LESSONS.md, "Unverified
+   assumptions about Snap to Item"), so score the screens under both
+   answers before choosing a fix.

@@ -46,6 +46,7 @@ struct FamilySetupView: View {
                 SettingsRowLabel(title: "Keep \(AppName.display) Open", systemImage: "lock.fill")
             }
             .settingsRowStyle()
+            .accessibilityIdentifier("keepOpen")
 
             NavigationLink(value: SettingsRoute.privacy) {
                 SettingsRowLabel(title: "Privacy Policy", systemImage: "hand.raised.fill")

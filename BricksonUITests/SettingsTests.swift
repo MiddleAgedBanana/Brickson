@@ -177,6 +177,56 @@ final class SettingsTests: XCTestCase {
         XCTAssertFalse(app.buttons["60% of normal speed"].isSelected, "choosing 70% again walked the speed")
     }
 
+    /// Choosing a speed changes the sentence above the choices, but moves
+    /// none of them, so a repeated activation meets the same choice
+    /// (AGENTS.md, "Controls keep their frames across every state of a
+    /// screen"). At the largest text size the two sentences wrap to
+    /// different heights on a phone. Distances are measured from the Speed
+    /// heading, so scrolling the choice into view does not count as a move.
+    @MainActor
+    func testChoosingASpeedMovesNoSpeedChoice() {
+        let app = openSettings(textSize: .ax5)
+        open("familySetup", in: app, waitingFor: "Family Setup")
+        open("voiceSettings", in: app, waitingFor: "Voice Settings")
+
+        let heading = app.staticTexts["Speed"]
+        let normal = app.buttons["Normal speed"]
+        let slowest = app.buttons["60% of normal speed"]
+        XCTAssertTrue(slowest.waitForExistence(timeout: 10), "the 60% speed is missing")
+        XCTAssertTrue(normal.isSelected, "a fresh launch does not speak at normal speed")
+        let before = normal.frame.minY - heading.frame.minY
+
+        slowest.tap()
+        XCTAssertEqual(
+            XCTWaiter.wait(for: [expectation(for: NSPredicate(format: "isSelected == true"), evaluatedWith: slowest)], timeout: 10),
+            .completed,
+            "choosing 60% did not choose it"
+        )
+        XCTAssertEqual(
+            normal.frame.minY - heading.frame.minY, before, accuracy: 0.5,
+            "choosing a speed moved the speed choices"
+        )
+    }
+
+    /// VoiceOver reads each numbered step with its number, so the order is
+    /// clear when focus moves backward or straight to one step.
+    @MainActor
+    func testNumberedStepsAreReadWithTheirNumbers() {
+        let app = openSettings()
+        open("familySetup", in: app, waitingFor: "Family Setup")
+        // The screen's title carries the app's name, which is not final,
+        // so the test waits for the step instead.
+        let row = app.buttons["keepOpen"]
+        XCTAssertTrue(row.waitForExistence(timeout: 10), "keepOpen is missing")
+        row.tap()
+
+        let step = app.descendants(matching: .any)
+            .matching(NSPredicate(format: "label CONTAINS %@", "Guided Access and turn it on"))
+            .firstMatch
+        XCTAssertTrue(step.waitForExistence(timeout: 10), "Keep Open did not open, or its first Guided Access step is missing")
+        XCTAssertTrue(step.label.hasPrefix("1"), "the first step is read without its number: \(step.label)")
+    }
+
     @MainActor
     func testTheStepByStepSetupWalksToTheEnd() {
         let app = openSettings()

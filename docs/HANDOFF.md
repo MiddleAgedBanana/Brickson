@@ -100,6 +100,12 @@ release in docs/ROADMAP.md when no thread has it yet.
   at launch, so after a family allows Personal Voice in the Settings app,
   Voice Settings shows the old state until Brickson is relaunched.
   *(Personal Voice foundation)*
+- Chains of activations through Settings' screens are not scored. One is
+  known: a held look can follow Family Setup's first row into Set Up Step
+  by Step and save Touch, its first answer, which is then nearest. Answers
+  change no size yet; scoring and a fix come before they do
+  ([`log/2026-10-21-settings-and-first-run.md`](log/2026-10-21-settings-and-first-run.md),
+  follow-up 10). *(Dwell-safety scoring)*
 - A library the app cannot read is replaced by the starter phrases with a
   message about saving (code audit M2), and an emptied library is refilled
   with the starter set. *(Library editing and backup format)*
