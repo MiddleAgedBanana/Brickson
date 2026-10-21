@@ -52,21 +52,25 @@ layout engine follows. Both build on this contract (docs/DECISIONS.md,
    text size, never from Home's state, the library or use. A state
    changes what a slot shows, never where it is.
 2. **Regions, top to bottom: A, C, B, D.** A: the message and status
-   line, with a trailing column of two wells, Clear above Type (Phrases,
-   the way out, replaces Clear while typing). C: the
+   line, with a trailing column of Phrases above Type, both there in
+   every state, each only picking its own mode and showing selected while
+   it is on. C: the
    safety row; on compact widths Yes, No, Again, then Emergency across two
    columns and Get Attention in the third; on regular widths one row of
    Emergency, Yes, No, Again, Get Attention. Again's well shows Speak while
-   typing. B: a pinned leading column, Stop Alert above Settings, then the
-   category buttons (at least 116pt wide; two by two or one row of four);
-   while typing, the draft's Clear and Put Back take fixed category slots.
+   typing. B: Stop Alert's well directly below Emergency, a category in
+   the cell under it, the other categories (at least 116pt wide), and
+   Settings last, at the trailing end; while typing, the draft's Clear and
+   Put Back take fixed category slots.
    D: the phrase grid.
 3. **Wells keep their frames.** A control that applies only in some
-   states (Clear, Stop Alert, Speak) has a well that keeps its frame
+   states (Stop Alert, Speak, the draft's Clear and Put Back) has a well that keeps its frame
    always; while empty it holds no control and is hidden from
    accessibility, and nothing moves into it.
 4. **Start and stop apart.** Get Attention at the trailing end of C; Stop
-   Alert directly below Emergency, at the top of B's leading column.
+   Alert directly below Emergency. After Stop the nearest control is a
+   category or Emergency, never Settings; after Phrases or Type it is the
+   same control, now selected (chains scored by the design thread).
 5. **Get Attention, Emergency, Yes and No stay in C in every state**,
    above the worst-case software keyboard.
 6. **Settings' safety bar sits over Home's frames:** Back to Talking over

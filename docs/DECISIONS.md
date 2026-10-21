@@ -724,24 +724,30 @@ never where it is.
 
 - **Regions, top to bottom: A, C, B, D.**
   - **A, the message.** The message with its status line, and a trailing
-    column of two wells: Clear above Type. While typing, the top well holds
-    Phrases, the way out of typing, instead of Clear; Type, below it, only
-    opens typing.
+    column of two controls that are there in every state: Phrases above
+    Type. They work like the segments of a segmented control: each only
+    picks its own mode (browsing phrases, or typing) and shows selected
+    while that mode is on, so a repeat meets the same control and changes
+    nothing.
   - **C, the safety row.** Compact widths, two rows: Yes, No and
     Again; then Emergency across the first two columns and Get Attention
     in the third. Regular widths, one row: Emergency, Yes, No, Again,
     Get Attention. While typing, Again's well shows Speak; both speak the
     message, so neither is the other's opposite.
-  - **B, the categories.** A pinned leading column of two wells, Stop
-    Alert above Settings (about 95pt wide on a 375pt phone), then the
-    category buttons, at least 116pt wide: two by two on compact widths,
-    one row of four on regular ones. While typing, the draft's Clear and
-    Put Back each take a fixed category slot here, away from the draft and
+  - **B, the categories.** Stop Alert's well first, in the leading
+    column directly below Emergency (about 95pt wide on a 375pt phone);
+    a category in the cell under it; then the other categories, at least
+    116pt wide; Settings in the last cell, at the trailing end. Compact
+    widths, two rows: Stop Alert, category 1, category 2; then category 3
+    (under Stop Alert), category 4, Settings. Regular widths, one band:
+    Stop Alert above category 1 in the leading column, categories 2 to 4
+    at full height, then Settings. While typing, the draft's Clear and Put
+    Back each take a fixed category slot here, away from the draft and
     from Speak.
   - **D, the phrase grid.** Fixed columns; rows from the largest category
     (invariant 8).
-- **Wells.** A control that only applies in some states (Clear, Stop
-  Alert, Speak) has a well that keeps its frame in every state. While the
+- **Wells.** A control that only applies in some states (Stop Alert,
+  Speak, and the draft's Clear and Put Back) has a well that keeps its frame in every state. While the
   control does not apply, its well is empty: no control, hidden from
   accessibility, so there is nothing there for VoiceOver, Voice Control or
   a pointer to choose, and nothing else moves into it.
@@ -751,12 +757,24 @@ never where it is.
   repeated activation on Get Attention can never stop the alarm, and one
   on Stop Alert can never restart it. The design drawings
   use these slot names as their layer names.
+- **What a held activation meets next** (invariant 10, chains scored on
+  the drawn frames for an iPhone 17, a 375×667pt phone and a 13-inch iPad
+  in both orientations, by nearest centre and by nearest edge with ties
+  counted). After Stop Alert, its well empties and the nearest control is
+  the category under it or Emergency; a repeat on either only changes
+  which phrases show. After Phrases or Type, the nearest control is the
+  same one, now selected, so a repeat does nothing. *Before:* Stop Alert
+  sat above Settings, so a repeat after Stop could open the Settings
+  cover; and the way out of typing was a well above Type, so a repeat
+  after leaving typing could reopen it. The design thread's chain scores
+  found both; the table is in the design document, *What a held
+  activation meets next*.
 - **Get Attention, Emergency, Yes and No are in C in every state**,
   including typing: C is above the worst-case software keyboard
   (invariants 2 and 10; the Typing thread's measured keyboard tops).
 - **Settings covers Home with its own safety bar at Home's frames:** Back
-  to Talking over A's trailing column and Get Attention over the message's
-  footprint, so the controls a look reaches when Settings opens or closes
+  to Talking over A's trailing column (so it closes onto Phrases or Type)
+  and Get Attention over the message's footprint, so the controls a look reaches when Settings opens or closes
   are the harmless ones.
 - **Identifiers.** Each slot has a stable accessibility identifier, named
   for the slot, not for its label (for example the Again well keeps its
