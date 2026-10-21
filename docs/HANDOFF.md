@@ -24,11 +24,15 @@ and says changes will not be kept. The screen never locks. Ported code:
 
 ## Verification
 
-- **GitHub CI on `main` (`9362eca`)**: unit suite, website and script
-  checks, and UI tests (Home, a first tap, Emergency, the accessibility
-  audit) on Xcode 26.6 with an iPad Pro 13-inch simulator on iOS 26.5; 10
-  of 11 runs on `main` green, the failure was simulator infrastructure.
-  PR #12 moves CI to Apple's newest released Xcode.
+- **GitHub CI** since PR #12 (merged 2026-10-21) builds with Apple's
+  newest released Xcode, chosen on GitHub's `xcode-27` image (27.1,
+  27A9275, on 2026-10-21), and tests on an iPad Pro 13-inch (M5)
+  simulator on iOS 27.0, the only iOS runtime there: unit suite, website
+  and script checks, and UI tests (Home, a first tap, Emergency, the
+  accessibility audit), green on that pull request's last runs
+  ([`log/2026-10-21-toolchain.md`](log/2026-10-21-toolchain.md)). Before
+  it, CI used Xcode 26.6 and iOS 26.5; 10 of 11 runs on `9362eca` were
+  green, and the failure was simulator infrastructure.
 - **The owner's Mac, 2026-10-12 to 2026-10-16**, Xcode 27.0, iOS 27.0
   simulators, run by agents: 113 unit cases and 8 UI tests green on an
   iPad Pro 13-inch (M5). The app was also run on iPad and iPhone 17
@@ -100,7 +104,12 @@ can be reversed; docs/DECISIONS.md):
 
 For agents: R0 in [docs/ROADMAP.md](ROADMAP.md), in order. Calls (R0 item
 8) wait for a device build. Files under `.github/workflows` are committed
-by the owner (docs/SDLC.md, *Deploy*).
+by the owner (docs/SDLC.md, *Deploy*). The toolchain's follow-ups
+(Xcode's recommended settings, iPhone Duo, iOS 27 APIs behind
+`#available`) are in [`log/2026-10-21-toolchain.md`](log/2026-10-21-toolchain.md);
+recheck the minimum iOS against its two rules whenever Apple's next major
+release drops devices (docs/DECISIONS.md, "Minimum iOS, iPhone and
+iPad").
 
 ## Checks that need a real device
 

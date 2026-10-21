@@ -70,7 +70,7 @@ TestFlight group before the gate passes, and it goes out once items 1 to
 
 | # | Item | What it delivers | Owner | Status (2026-10-21) |
 |---|---|---|---|---|
-| 1 | Current toolchain | CI and the Mac build with Apple's newest released Xcode; the minimum iOS decided | Toolchain and iOS version targets | PR #12 open; the owner committed its `tests.yml` on 2026-10-21; minimum iOS 26.0 decided there; waits on green CI |
+| 1 | Current toolchain | CI and the Mac build with Apple's newest released Xcode; the minimum iOS decided | Toolchain and iOS version targets | Landed with PR #12 on 2026-10-21: CI builds with Apple's newest released Xcode, and the minimum iOS is 26.0, decided from two rules |
 | 2 | Test seams and CI evidence | Launch options for UI tests (in-memory library, fresh settings, text size, appearance), an iPhone run in the UI tests job, result bundles from CI, the String Catalog synced and checked | Test seams and CI evidence | In progress |
 | 3 | An honest Home on both devices | Words never break, every category visible, the starter library without scrolling, sized from the space available rather than the device model | Phone layout and word fitting | In progress |
 | 4 | Get Attention and a sturdier speech engine | A start-only alarm with Stop elsewhere; one owner for the audio session; the code audit's speech fixes (M1, L1, L3, L4) | Speech engine and Get Attention | In progress; on-screen placement waits for item 3's slots |
@@ -140,7 +140,7 @@ where anything is, and the dwell-safety scoring passes for every profile.
   [`tests-ci-audit.md`](recon/2026-10-15/tests-ci-audit.md), section 4.2 of
   the synthesis.
 - Moving to each new Xcode release when Apple ships it, through a pull
-  request (the toolchain decision in PR #12).
+  request (docs/DECISIONS.md, "Build with Apple's current Xcode").
 - Localization through the String Catalog, once its sync check is in CI.
 - The device-check log: every result recorded with what it was measured on.
 - The documents: each pull request edits the handoff's front page in

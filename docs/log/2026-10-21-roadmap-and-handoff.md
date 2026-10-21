@@ -66,6 +66,12 @@ owner's goal of 2026-10-21 has a plan behind it.
 - `07163fb` Lay out from the space available, and decide routine choices
   by default
 - `c343ae7` Record the decisions made by default and the repository review
+- Later commits: the Settings, speech, toolchain, App Store and design
+  decisions added to the register; answers to two rounds of Codex review
+  (`1be6f74`, `c40be15`); and the merge of `main` after PR #12
+  (`a5280a7`), which moved PR #12's handoff section, unchanged in
+  substance, to [`2026-10-21-toolchain.md`](2026-10-21-toolchain.md) and
+  kept both sides' AGENTS.md gotchas.
 
 ## Verified
 
@@ -80,18 +86,15 @@ owner's goal of 2026-10-21 has a plan behind it.
 
 ## Not verified
 
-- Links from these documents to files other open pull requests add
-  (`docs/DESIGN.md`, `docs/APP-STORE.md`, `docs/ASO.md`, DECISIONS.md's
-  "Build with Apple's current Xcode") resolve only once those merge.
+- Mentions of files other open pull requests add (`docs/DESIGN.md`,
+  `docs/APP-STORE.md`, `docs/ASO.md`) are plain text, not links, until
+  those merge; decisions they hold are named in DECISIONS.md's register
+  with the pull request that holds them.
 - The research's facts about CI, Xcode and simulators describe
   2026-10-15, not today.
 
 ## Follow-ups
 
-- Merging with PR #12: carry its handoff section into a
-  `docs/log/2026-10-21-toolchain.md` record and its next steps into the
-  front page, and keep both new AGENTS.md gotchas. *(Whichever merges
-  second)*
 - The five questions in DECISIONS.md, *Waiting on the owner*. *(Owner)*
 - The repo review's findings, each with an owner, in `docs/ROADMAP.md`.
   *(This thread)*
