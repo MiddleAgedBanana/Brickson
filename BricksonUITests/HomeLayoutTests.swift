@@ -49,6 +49,23 @@ final class HomeLayoutTests: XCTestCase {
             .sorted { ($0.minY.rounded(), $0.minX) < ($1.minY.rounded(), $1.minX) }
     }
 
+    /// Waits up to 10 s for Home to lay itself out again after a rotation:
+    /// until the window has turned and every phrase tile's frame lies inside
+    /// it. A query straight after rotating can read the frames from before
+    /// the turn. If the tiles never fit, this returns after 10 s and the
+    /// checks that follow report them.
+    @MainActor
+    private func waitForLayout(in app: XCUIApplication, landscape: Bool) {
+        let settled = NSPredicate { _, _ in
+            MainActor.assumeIsolated {
+                let window = app.windows.firstMatch.frame
+                guard (window.width > window.height) == landscape else { return false }
+                return self.tileFrames(in: app).allSatisfy { window.contains($0) }
+            }
+        }
+        _ = XCTWaiter.wait(for: [expectation(for: settled, evaluatedWith: nil)], timeout: 10)
+    }
+
     @MainActor
     private func expectWhollyOnScreen(
         _ element: XCUIElement, _ name: String, in window: CGRect, _ context: String
@@ -70,6 +87,7 @@ final class HomeLayoutTests: XCTestCase {
             let app = launchHome(textSize: textSize)
             for orientation in [UIDeviceOrientation.portrait, .landscapeLeft] {
                 XCUIDevice.shared.orientation = orientation
+                waitForLayout(in: app, landscape: orientation.isLandscape)
                 let window = app.windows.firstMatch.frame
                 let isLandscape = window.width > window.height
                 // The iPhone is portrait-only for now (AppBundleTests,
@@ -86,6 +104,7 @@ final class HomeLayoutTests: XCTestCase {
                     let button = app.buttons[category]
                     expectWhollyOnScreen(button, "the \(category) button", in: window, context)
                     button.tap()
+                    waitForLayout(in: app, landscape: isLandscape)
                     let frames = tileFrames(in: app)
                     XCTAssertFalse(frames.isEmpty, "\(category) shows no tiles (\(context))")
                     if frames.count == Self.largestCategoryCount && slots.isEmpty {
