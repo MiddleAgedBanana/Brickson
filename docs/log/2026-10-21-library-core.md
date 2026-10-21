@@ -1,6 +1,6 @@
 # The phrase library's core: editing rules, saving and the backup format
 
-*2026-10-21. Pull request #13 (`claude/project-thread-eqfpmu`). Thread
+*2026-10-21. Pull request #14 (`claude/project-thread-eqfpmu`). Thread
 "Library editing and backup format", from the editing and backup memo of
 2026-10-16.*
 
@@ -24,24 +24,35 @@ phrases".
   (add, rename, re-picture, move and delete a category; add, edit, move
   and delete a phrase; merge; replace). `plan(in:)` refuses a change with a
   sentence the family can read, or returns the library as it will be, what
-  changes, and whether to ask first. No SwiftData involved.
-- **`LibraryImport`**: merge adds only and never moves anything; replace
-  keeps the current emergency phrases when the backup has none. Neither
+  changes, and whether to ask first. No edit may leave the library with no
+  categories. No SwiftData involved.
+- **`LibraryImport`**: merge adds only and never moves anything; a
+  category joins a local one only when the names match byte for byte
+  (emergency excepted), and repeats inside one backup category are kept.
+  Replace rebuilds from the backup as it is, names and repeats included,
+  and keeps the current emergency phrases when the backup's emergency
+  category has none. Only phrases with no characters are skipped. Neither
   changes a word of the backup.
 - **`LibraryEditor`**: reads the store into a snapshot, and writes a plan
   from a context of its own in one save. A failed save changes nothing,
   and `rollback()` is never called. A plan made from an older library is
-  refused. A replace that would remove the person's own words is refused
-  until safety copies exist.
+  refused. A replace that would remove the person's own words is refused;
+  letting it run after a safety copy would be an exception to invariant 7,
+  so that is left to the owner.
 - **`BackupCodec`**: the `brickson.library` file, version 1. Same library,
   same bytes. A newer version, a damaged file and a file that is not a
-  backup are each refused with their own sentence.
+  backup are each refused with their own sentence, and a library too large
+  to read back is not written.
 - **Starter phrases**: `StarterPhrases.json` is now a file in the backup
   format, with a fixed identity for every category and phrase. Same 5
   categories and 34 phrases, same words, same order.
 - **Autosave off**: every path out of `PhraseLibraryLaunch.prepare` turns
   off the main context's autosave, so nothing Home holds can be saved by
   surprise.
+- **Launch reads the whole library**: the starter phrases are added only
+  when the store opens, every category and phrase reads, and there are no
+  categories. A store that opens but cannot be read is reported (below),
+  never seeded over.
 - **Code audit M2**: when saved phrases exist but will not open, or open
   but cannot be read, Home now says so ("Your saved phrases couldn't be
   opened. They haven't been deleted. Restart the app to try again. Don't
@@ -78,13 +89,24 @@ edits in the main context.
 M2). The commits after it on the branch add the SwiftData tests, update
 the existing tests and write these documents.
 
+## Review findings
+
+Codex and Copilot reviewed the first push. Every finding is fixed in the
+second push, except the one that asked for a decision: letting a replace
+run after a safety copy is an exception to invariant 7, so DECISIONS now
+leaves it to the owner and the code keeps refusing it. Copilot also asked
+that the SwiftData probes not run in the required suite if they can only
+fail by crashing. They run once on CI so their answers are known; a probe
+that crashes is then committed disabled with an issue (docs/LESSONS.md),
+and the result recorded above.
+
 ## Verified
 
 - **On a Linux machine with Swift 6.4.1** (not the app's toolchain: no
   Xcode, SwiftData or UIKit): the five pure files (`LibrarySnapshot`,
   `LibraryEdit`, `LibraryRules`, `LibraryImport`, `BackupCodec`) compile
   in a scratch package with the project's concurrency settings, and the
-  50 tests in `LibraryEditTests`, `LibraryImportTests` and
+  56 tests in `LibraryEditTests`, `LibraryImportTests` and
   `BackupCodecTests` pass. A one-line stand-in replaced
   `String(localized:)`, which Linux lacks.
 - **Everything else is checked only by this pull request's GitHub CI

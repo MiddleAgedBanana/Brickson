@@ -99,8 +99,9 @@ promise* lists the code rules that keep the policy true.
   always idle.
 - No typing, Settings or voice choice. Editing and backup are code with
   no screens: nothing calls `LibraryEditor` or `BackupCodec` yet, and a
-  replace that would remove the person's own words is refused until
-  safety copies exist (docs/DECISIONS.md, "Replacing the library").
+  replace that would remove the person's own words is refused; whether
+  it may run after a safety copy is the owner's decision
+  (docs/DECISIONS.md, "Replacing the library").
 - Personal Voice permission is asked at first launch without explanation
   (docs/DECISIONS.md).
 - English only; the String Catalog fills itself as Xcode builds. Two
@@ -241,7 +242,8 @@ Not yet seen working, to check after the merge and the settings:
    warning strip.
 7. Step 2's remainder: read the SwiftData behaviour tests' results on CI
    and record them (docs/log/2026-10-21-library-core.md, S1 to S4); then
-   safety copies, export and import (file picker only), and the editing
+   export and import (file picker only), safety copies if the owner
+   adopts them (DECISIONS, "Replacing the library"), and the editing
    screens (step 6), all on the library core.
 8. Port step 3, then design the generalized layout engine (step 4) before
    replacing Home.

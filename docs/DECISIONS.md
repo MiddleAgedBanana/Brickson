@@ -268,6 +268,9 @@ The rules a family's edits follow live in `LibraryRules` and
   a move changes nothing, so a lingering dwell cannot walk an item along
   (invariant 10).
 - Deleting a category deletes its phrases in the same save.
+- No edit may leave a library with no categories
+  (`LibraryEditError.libraryNeedsACategory`). The emergency category can
+  never be deleted, so this is a backstop for a store that has lost it.
 - Deletes, merges and replaces ask first (invariant 3);
   `LibraryPlan.asksFirst` says which. Where each question appears is
   decided with the screens.
@@ -292,23 +295,34 @@ Reversible if the owner objects.*
   renames or drops them, even where the editor would refuse them (a
   repeated phrase, a Home control's name, an unknown picture), because
   invariant 7 forbids it. The one thing skipped is a phrase with no
-  characters at all, which has no words to lose.
+  characters at all, which has no words to lose; a phrase of only spaces
+  comes in as it is.
 - **Add** (`LibraryImport.merge`) only adds: nothing already in the
-  library moves, changes or goes away. An incoming category joins the
-  local category with the same identity, else the emergency category if it
-  is one, else the category with the same name; otherwise it goes at the
-  end. A phrase whose exact words are already in that category is skipped,
-  so adding the same backup twice adds nothing the second time. A phrase
-  whose identity is already used gets a new one. A deletion made on
-  another device does not travel; to make two devices match, use Replace.
+  library moves, changes or goes away. An incoming category joins a local
+  category only when their names are the same, byte for byte (first the
+  one with the same identity, then any other), so no name in the backup
+  is lost; a renamed category comes in as a new one at the end. The one
+  exception is the emergency category: every incoming emergency category
+  joins the local one, which keeps its name, because there is always
+  exactly one and it has no button of its own. A phrase is skipped when
+  its exact words were already in that category before the import, or
+  the library already has it (same identity, same words), so adding the
+  same backup twice adds nothing the second time, while a backup that
+  says the same thing twice in one category keeps both. A phrase whose
+  identity is already used gets a new one. A deletion made on another
+  device does not travel; to make two devices match, use Replace.
+- **Replace** (`LibraryImport.replace`) builds the library from the
+  backup as it is: its categories, names, repeats and order. Several
+  emergency categories become one, in the first one's place, and a
+  repeated identity gets a new one.
 - What was skipped or given a new identity is counted
   (`LibraryImportReport`) for the question and the result screen.
 
 ## Replacing the library
 
 *Default, adopted 2026-10-21: the owner left these choices to the project.
-Reversible if the owner objects. The memo's reading (a) plus (b) of
-invariant 7.*
+Reversible if the owner objects. The memo's reading (a) of invariant 7;
+reading (b) is the owner's to decide.*
 
 Replace makes the library match a backup, so it removes words the backup
 does not have, and invariant 7 says nothing may delete a person's own
@@ -318,17 +332,20 @@ words. So:
   library is empty, or every name and phrase in it is an untouched
   starter item (known by its identity and exact words), or every word the
   person wrote is also in the backup.
-- Otherwise it may run only after a safety copy of the current library
-  has been written on the device (memo, section 5.5). Safety copies are
-  not built, so today such a replace is refused
-  (`LibraryEditError.safetyCopyRequired`). Safety copies are more of the
-  person's words kept on the device, so the pull request that builds them
-  checks the privacy policy and updates it and its Effective date.
-- A backup with no emergency category keeps the current emergency
-  phrases.
-
-Invariant 7 in AGENTS.md could say this in one sentence; that edit is
-the owner's, because agents do not change invariants.
+- Otherwise it is refused (`LibraryEditError.safetyCopyRequired`). The
+  memo's reading (b) would let it run after a safety copy of the current
+  library has been written on the device (memo, section 5.5). That is an
+  exception to invariant 7, which says nothing may delete a person's own
+  words, so it is **the owner's decision and not adopted**; until the
+  owner decides, such a replace stays refused, and a family can use Add
+  instead. Safety copies are not built either. If the owner adopts (b),
+  the pull request that builds safety copies records it here and in
+  invariant 7, and checks the privacy policy and updates it and its
+  Effective date, because safety copies keep more of the person's words
+  on the device.
+- A backup whose emergency category has no phrase with words keeps the
+  current emergency phrases, so Emergency always opens to something to
+  say.
 
 ## Backup file format
 
