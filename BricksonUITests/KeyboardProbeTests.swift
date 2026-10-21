@@ -92,15 +92,16 @@ final class KeyboardProbeTests: XCTestCase {
         )
         field.typeText("Water")
 
+        // SwiftUI's keyboard top is the window's bottom until it leaves room
+        // for the keyboard. Checked only after the numbers are printed, so a
+        // failure still reports what the keyboard looked like.
         let readout = app.staticTexts["keyboardProbe.readout"]
-        let keyboardSeen = NSPredicate(format: "NOT (label CONTAINS 'keyboardHeight=0.0')")
-        // Checked only after the numbers are printed, so a failure still
-        // reports what the keyboard looked like.
-        let swiftUILeftRoom = XCTWaiter.wait(
-            for: [expectation(for: keyboardSeen, evaluatedWith: readout)],
-            timeout: 10
-        ) == .completed
+        let windowHeight = Self.points(app.frame.height)
+        let keyboardSeen = NSPredicate(format: "NOT (label CONTAINS %@)", "keyboardTop=\(windowHeight);")
+        _ = XCTWaiter.wait(for: [expectation(for: keyboardSeen, evaluatedWith: readout)], timeout: 10)
         let swiftUI = settledReadout(readout)
+        let keyboardTop = swiftUI["keyboardTop"].flatMap(Double.init)
+        let swiftUILeftRoom = keyboardTop.map { $0 < windowHeight } ?? false
 
         let tree = try app.snapshot()
         let nodes = all(tree)
@@ -115,6 +116,7 @@ final class KeyboardProbeTests: XCTestCase {
             "appFrame": Self.rect(app.frame),
             "swiftUI": swiftUI,
             "swiftUILeftRoom": swiftUILeftRoom,
+            "keyboardHeight": keyboardTop.map { windowHeight - $0 } as Any,
             "keyCount": keys.count,
             "keyboard": keys.count >= Self.fullKeyboardKeys ? "full software keyboard" : "keyboard bar",
             "keyboardFrames": keyboards.map { Self.rect($0.frame) },
