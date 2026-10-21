@@ -94,11 +94,12 @@ final class KeyboardProbeTests: XCTestCase {
 
         let readout = app.staticTexts["keyboardProbe.readout"]
         let keyboardSeen = NSPredicate(format: "NOT (label CONTAINS 'keyboardHeight=0.0')")
-        XCTAssertEqual(
-            XCTWaiter.wait(for: [expectation(for: keyboardSeen, evaluatedWith: readout)], timeout: 10),
-            .completed,
-            "The keyboard is on screen, but SwiftUI never left room for it"
-        )
+        // Checked only after the numbers are printed, so a failure still
+        // reports what the keyboard looked like.
+        let swiftUILeftRoom = XCTWaiter.wait(
+            for: [expectation(for: keyboardSeen, evaluatedWith: readout)],
+            timeout: 10
+        ) == .completed
         let swiftUI = settledReadout(readout)
 
         let tree = try app.snapshot()
@@ -113,6 +114,7 @@ final class KeyboardProbeTests: XCTestCase {
             "textSize": textSize,
             "appFrame": Self.rect(app.frame),
             "swiftUI": swiftUI,
+            "swiftUILeftRoom": swiftUILeftRoom,
             "keyCount": keys.count,
             "keyboard": keys.count >= Self.fullKeyboardKeys ? "full software keyboard" : "keyboard bar",
             "keyboardFrames": keyboards.map { Self.rect($0.frame) },
@@ -139,6 +141,7 @@ final class KeyboardProbeTests: XCTestCase {
             AutomaticMinimizationEnabled -bool false, then measure again.
             """
         )
+        XCTAssertTrue(swiftUILeftRoom, "The keyboard is on screen, but SwiftUI never left room for it")
     }
 
     /// The readout's values once two reads half a second apart agree, so the
