@@ -93,7 +93,9 @@ too.
 - Then a merge of `main` (PRs #13, #15, #16 and #18), and expectations
   rewritten for Swift 6.4, which rejects a mutating call inside `#expect`
   (as `7990524` did on `main`): each `apply` now runs into a local first.
-  No assertion changed.
+  No assertion changed. `DraftIssue`'s four sentences were added to the
+  String Catalog by hand, because CI now fails a catalog that does not
+  match the code; the pull request's unit run checks them.
 
 ## Verified
 
