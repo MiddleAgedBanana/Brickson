@@ -7,8 +7,9 @@ drafts. What App Store Connect asks for, and the owner's checklist, are in
 [APP-STORE.md](APP-STORE.md).
 
 **Status (2026-10-21):** drafts. Nothing has been entered in App Store
-Connect. The name Brickson is a working name and not final; every draft
-below uses it, and *If the name is taken* has the fallbacks. Nothing here
+Connect. The owner chose the name Brickson (docs/DECISIONS.md, "Brand name
+and founder story"); every draft uses it. App Store Connect confirms it only
+when the record is created, and *If the name is taken* has the fallbacks. Nothing here
 states a price: the price is not decided (docs/DECISIONS.md, "Price not
 decided"), so no draft says "free", "paid" or an amount.
 

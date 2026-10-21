@@ -9,10 +9,13 @@ Apple changes these pages often: re-read a page before acting on it, and
 update this file when it has changed.
 
 **Status.** Nothing exists in App Store Connect for Brickson yet, and nothing
-is created there until the owner confirms the name (docs/DECISIONS.md, "App
-identity"). The price is not decided, so nothing here states one
-(docs/DECISIONS.md, "Price not decided"). Brickson is a working name; every
-draft below works with another name dropped in.
+is created there until the owner is ready to create the record (step 5).
+The owner chose the name Brickson on 2026-10-12 (docs/DECISIONS.md, "Brand
+name and founder story"). That choice is not an App Store reservation or a
+legal clearance: App Store Connect confirms the name only when the record is
+created, and the trademark checks outside the US are still open
+(docs/NAME_AVAILABILITY.md). The price is not decided, so nothing here
+states one (docs/DECISIONS.md, "Price not decided").
 
 **Who does what.** App Store Connect is a website only the owner can use: the
 owner creates the app record, answers the questionnaires, uploads builds and
@@ -24,10 +27,11 @@ step is copy and paste. Section 1 is the owner's list, in order.
 Each step says what it is and why before how. Nothing in steps 1 to 4 is hard
 to undo; step 5 is, so it waits for the name.
 
-1. **Confirm the name.** The App Store name is held by whoever creates the
-   record first, and a released app keeps its bundle ID forever. Brickson
-   looked available on 2026-10-12 (docs/NAME_AVAILABILITY.md); only creating
-   the record confirms it.
+1. **Check that the name is still available.** The App Store name is held by
+   whoever creates the record first. Brickson looked available on 2026-10-12
+   (docs/NAME_AVAILABILITY.md), and only creating the record confirms it. If
+   you want the trademark checks outside the US first, search "Brickson" on
+   TMview (ASO.md, *If the name is taken*).
 2. **Choose the permanent bundle ID.** The bundle ID is the app's internal
    name, like `org.example.app`. Customers never see it, but it is public,
    it can never change after the first upload, and today's
@@ -36,10 +40,12 @@ to undo; step 5 is, so it waits for the name.
    neutral word), and an agent changes `APP_BUNDLE_ID` in `project.yml`.
 3. **Check your membership.** Sign in at
    [developer.apple.com/account](https://developer.apple.com/account) →
-   Membership details. Check that it says Individual, that the legal name
-   shown is one you are happy to have under the app (individuals can't choose
-   another), and that auto-renew is on: if the membership lapses, the app
-   leaves the store. Copy the **Team ID** from that page and give it to an
+   Membership details. Check that the membership type (Individual or
+   Organization) is the one you chose for Brickson (docs/DECISIONS.md, "App
+   identity"), and that auto-renew is on: if the membership lapses, the app
+   leaves the store. On an Individual membership, the seller name on the
+   App Store is your legal name and can't be changed; on an Organization
+   membership it is the organization's legal name. Copy the **Team ID** from that page and give it to an
    agent for `DEVELOPMENT_TEAM` in `project.yml` (it is not secret).
 4. **Decide the price** (docs/DECISIONS.md, "Price not decided"). App Store
    Connect asks for it under Pricing and Availability, and the agreements in
