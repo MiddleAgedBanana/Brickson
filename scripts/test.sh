@@ -24,29 +24,63 @@ fi
 # matches the files on disk.
 xcodegen generate --quiet
 
-# Prints the id of the newest available iPad simulator running iOS 26 or
-# later, preferring an iPad Pro 13-inch.
+project=(-project Brickson.xcodeproj)
+
+# Prints the oldest iOS the app runs on: its deployment target, as Xcode
+# reads it from the generated project (IPHONEOS_DEPLOYMENT_TARGET in
+# project.yml). No version is written into this script (docs/DECISIONS.md,
+# "Build with Apple's current Xcode").
+deployment_target() {
+    xcodebuild "${project[@]}" -target Brickson -showBuildSettings -json | /usr/bin/python3 -c '
+import json, sys
+text = sys.stdin.read()
+for entry in json.loads(text[text.find("["):]):
+    value = entry.get("buildSettings", {}).get("IPHONEOS_DEPLOYMENT_TARGET")
+    if value:
+        print(value)
+        break
+else:
+    sys.exit("Could not read IPHONEOS_DEPLOYMENT_TARGET from the project.")
+'
+}
+
+# Prints the id of the newest available iPad simulator that can run the
+# tests, preferring an iPad Pro 13-inch. Its iOS is no older than the
+# deployment target and no newer than the simulator SDK of the Xcode in use,
+# which cannot run a newer simulator.
 newest_ipad_simulator() {
+    # Called inside $(...), where set -e does not stop at a failure, so
+    # each step stops the function itself.
+    local oldest newest
+    oldest="$(deployment_target)" || return 1
+    newest="$(xcrun --sdk iphonesimulator --show-sdk-version)" || return 1
     xcrun simctl list devices available --json | /usr/bin/python3 -c '
 import json, re, sys
+def version(text):
+    parts = [int(part) for part in re.findall(r"\d+", text)][:3]
+    return tuple(parts + [0] * (3 - len(parts)))
+oldest, newest = sys.argv[1], sys.argv[2]
 devices = json.load(sys.stdin)["devices"]
 best = None
 for runtime, entries in devices.items():
-    match = re.search(r"iOS-(\d+)-(\d+)", runtime)
-    if not match or int(match.group(1)) < 26:
+    match = re.search(r"\.iOS-(\d+(?:-\d+)*)$", runtime)
+    if not match:
         continue
-    version = (int(match.group(1)), int(match.group(2)))
+    runtime_version = version(match.group(1))
+    if not version(oldest) <= runtime_version <= version(newest):
+        continue
     for device in entries:
         name = device["name"]
         if not name.startswith("iPad"):
             continue
-        rank = (name.startswith("iPad Pro 13-inch"), version, name)
+        rank = (name.startswith("iPad Pro 13-inch"), runtime_version, name)
         if best is None or rank > best[0]:
             best = (rank, device["udid"])
 if best is None:
-    sys.exit("No iPad simulator with iOS 26 or later is installed. Add one in Xcode: Settings, Components.")
+    sys.exit(f"No iPad simulator with iOS {oldest} to {newest} is installed. "
+             "Add one in Xcode: Settings, Components.")
 print(best[1])
-'
+' "$oldest" "$newest"
 }
 
 # xcbeautify shortens xcodebuild's very long output when it is installed
@@ -70,8 +104,6 @@ run_xcodebuild() {
         xcodebuild "$@"
     fi
 }
-
-project=(-project Brickson.xcodeproj)
 
 case "$mode" in
     unit | ui)
