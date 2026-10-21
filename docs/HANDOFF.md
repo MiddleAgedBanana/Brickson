@@ -87,7 +87,8 @@ can be reversed; docs/DECISIONS.md):
 
 1. Answer the few questions that are yours, in docs/DECISIONS.md,
    *Waiting on the owner*: the final name (and with it the bundle
-   identifier), the price, how the name is said, and the license.
+   identifier), the price, how the name is said, the license, and your
+   EU trader status (needed before the App Store release in the EU).
 2. Run the app once yourself and hear a phrase ([local setup](GETTING_STARTED.md)).
 3. Put your Team ID in `project.yml` (`DEVELOPMENT_TEAM`), then run the app
    on your iPhone and iPad and work through *Checks that need a real device*.

@@ -33,19 +33,22 @@ Owner steps that are actions, not decisions: the Team ID in
 project. Reversible if the owner objects.* Each was the recommended option
 of the research of 2026-10-15 (`docs/recon/`) or of the work that owns it.
 Decisions with their own entry are listed by title; the rest are recorded
-here. Entries kept by other work arrive with its pull request.
+here. Entries kept by other work arrive with its pull request: until it
+merges, the entry and its reasons are in that pull request, or, where none
+is open yet, in the owning thread's work, and the summary here is what
+holds.
 
 | Decision | Where it is recorded |
 |---|---|
 | The releases and their order: R0, R1, R2 | `docs/ROADMAP.md` |
 | Layouts from the space available, with floors set without a device table | "Layouts from the space available", below |
-| Minimum iOS 26.0, iPhone and iPad, set by two rules: every device that can use eye tracking runs the app, and every mapped accessibility API stays reachable behind `#available` | "Minimum iOS, iPhone and iPad" (Toolchain and iOS version targets) |
-| The App Store category is Utilities | "App Store category" (App Store readiness and ASO) |
-| Home's fixed slots, labels and button style | Entries next to "Home version 0 is a stand-in" (Phone layout and word fitting) |
-| Typing as a state of Home under a band Apple's keyboard never covers, Apple's keyboard in 1.0, Writing Tools off, third-party keyboards refused, Return speaks, the typed message | "Typing is a state of Home", "Typing uses Apple's keyboard", "Writing Tools off while typing", "Third-party keyboards refused in 1.0", "Return speaks", "The typed message" (Typing foundation) |
-| Explicit saves, an Emergency category that is always there, fixed starter identities, editing, import, replace, the backup format, an unreadable library reported and never replaced | "Every save is explicit", "Starter phrases", "The emergency category is always there", "Editing the library", "Importing a backup", "Replacing the library", "Backup file format", "An unreadable library is reported, never replaced" (Library editing and backup format) |
-| When the audio session is released, the alarm's sound, start-only Get Attention, no automatic resume, Personal Voice never written to a file | "Background audio", "Get Attention", "A phrase the system cuts off", "Audio session notices" (Speech engine and Get Attention) |
-| Home first with setup as a place in Settings, the Settings root, the voice picker, the Privacy row, the largest sizes when nobody answers setup, an "Anything changed?" check-in every three months that waits 30 days after Not Now | "First launch opens Home; setup lives in Settings", "Settings is a cover with a fixed safety bar", "Settings resets when idle and never closes", "Setup answers are kept as offered, never as completed", "Check-ins come every three months", "The privacy policy ships inside the app" (Settings and first run) |
+| Minimum iOS 26.0, iPhone and iPad, set by two rules: every device that can use eye tracking runs the app, and every mapped accessibility API stays reachable behind `#available` | "Minimum iOS, iPhone and iPad" (Toolchain and iOS version targets; PR #12, open) |
+| The App Store category is Utilities | "App Store category" (App Store readiness and ASO; pull request not open yet) |
+| Home's fixed slots, labels and button style | Entries next to "Home version 0 is a stand-in" (Phone layout and word fitting; pull request not open yet) |
+| Typing as a state of Home under a band Apple's keyboard never covers, Apple's keyboard in 1.0, Writing Tools off, third-party keyboards refused, Return speaks, the typed message | "Typing is a state of Home", "Typing uses Apple's keyboard", "Writing Tools off while typing", "Third-party keyboards refused in 1.0", "Return speaks", "The typed message" (Typing foundation; pull request not open yet) |
+| Explicit saves, an Emergency category that is always there, fixed starter identities, editing, import, replace, the backup format, an unreadable library reported and never replaced | "Every save is explicit", "Starter phrases", "The emergency category is always there", "Editing the library", "Importing a backup", "Replacing the library", "Backup file format", "An unreadable library is reported, never replaced" (Library editing and backup format; PR #14, open) |
+| When the audio session is released, the alarm's sound, start-only Get Attention, no automatic resume, Personal Voice never written to a file | "Background audio", "Get Attention", "A phrase the system cuts off", "Audio session notices" (Speech engine and Get Attention; PR #16, open) |
+| Home first with setup as a place in Settings, the Settings root, the voice picker, the Privacy row, the largest sizes when nobody answers setup, an "Anything changed?" check-in every three months that waits 30 days after Not Now | "First launch opens Home; setup lives in Settings", "Settings is a cover with a fixed safety bar", "Settings resets when idle and never closes", "Setup answers are kept as offered, never as completed", "Check-ins come every three months", "The privacy policy ships inside the app" (Settings and first run; pull request not open yet) |
 
 Recorded here:
 
@@ -103,8 +106,10 @@ containers, "instead of building device-specific interfaces" (AGENTS.md,
   at least its physical size on every screen, and larger on most. The
   reference app's gaze floors of 110, 88 and 72pt were sized on a 13-inch
   iPad (about 132 points per inch); held at the densest screen they are
-  about 136, 109 and 89pt. The layout engine's fit tables decide whether
-  those hold on phones, and any shortfall is a named, measured exception.
+  about 136, 109 and 89pt. Where a window cannot hold them, the
+  arrangement changes (fewer tiles to a screen, a different split), never
+  the floor: invariant 11 forbids shrinking a target below its profile's
+  floor, and only the owner can change a floor.
 - The 2026-10-15 layout blueprint
   (`docs/recon/2026-10-15/layout-blueprint.md`) keyed density, profiles and
   the keyboard band to device tables; those parts are replaced by this

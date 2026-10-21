@@ -1,6 +1,6 @@
 # A roadmap, a way of working and a handoff that does not conflict
 
-*2026-10-21. Pull request #<n> (`claude/project-thread-9b2zvk`). The
+*2026-10-21. Pull request #15 (`claude/project-thread-9b2zvk`). The
 "Roadmap, decisions and repo review" thread (Claude Code on the web).*
 
 ## What changed and why

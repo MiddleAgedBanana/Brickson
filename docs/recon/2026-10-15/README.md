@@ -683,7 +683,7 @@ measured on.
 | Decision | Recommended default | Why |
 |---|---|---|
 | Developer account: personal or organisation; set the team ID | A paid personal account now; the organisation question can wait | Free installs expire in seven days; an organisation needs a legal entity and changes the policy's "we" |
-| Bundle identifier `family.avery.brickson` | Decide before the first upload; it is public and permanent | It carries the owner's first name, outside the recorded exception |
+| The bundle identifier in `project.yml` | Decide before the first upload; it is public and permanent | It carries the owner's first name, outside the recorded exception |
 | License | Decide before accepting outside contributions | Today all rights are reserved; contributors grant nothing |
 | Price | No price is decided; keep every text silent on it | Research: subscriptions gating speech are the most resented thing in the category |
 | Caregiver alerts | 1.0: sound only, policy section deleted; later the Shortcuts hand-off; a local-network caregiver station only behind a recorded exception, after a two-device experiment; no pocket delivery promised; no Watch app | Network code is a hard stop; a locked phone cannot receive local-network alerts; a silently failing alert is worse than none |

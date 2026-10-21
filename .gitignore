@@ -20,8 +20,9 @@ xcuserdata/
 *.dSYM
 *.dSYM.zip
 
-# The owner's private documents (account notes, receipts): keep them here
-# so they can never be committed to this public repository
+# A safety net only, not a guarantee: git still adds these files with
+# `git add -f`. Keep account notes, receipts and anything sensitive
+# outside this public repository; this stops an accidental commit
 /private/
 
 # macOS

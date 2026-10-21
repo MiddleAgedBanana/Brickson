@@ -36,7 +36,7 @@ Two environment notes: (1) the shared worktree has an **uncommitted modification
 - `.github/copilot-instructions.md:42–44` exception = "developer's name and support email on the website pages in site/" only; **narrower than AGENTS.md:300–312** (founder note in README.md and site/index.html, DECISIONS/HANDOFF record). AGENTS.md wins by copilot-instructions.md:11–12, but Copilot may flag README.md:24–32 on any README change. Add one sentence.
 - AGENTS.md "Where things are" (:35–51) omits docs/GETTING_STARTED.md, docs/NAME_AVAILABILITY.md, design/brand/README.md.
 - README.md:94 `python3 scripts/test-site.py` — on the owner's Mac `python3` is aliased in interactive shells (AGENTS.md Gotchas) → `command python3 …` or a note.
-- DECISIONS.md:22 / project.yml:25 `APP_BUNDLE_ID: family.avery.brickson` contains the owner's first name; outside AGENTS.md's listed exception; public and immutable after first upload → decide at next step 4 (it already says "final APP_BUNDLE_ID").
+- DECISIONS.md:22 / project.yml:25 `APP_BUNDLE_ID` contains the owner's first name; outside AGENTS.md's listed exception; public and immutable after first upload → decide at next step 4 (it already says "final APP_BUNDLE_ID").
 - AGENTS.md:60 "Codex reviews every push" — consistent with API: `chatgpt-codex-connector[bot]` summary on #9, #10, #11 and review threads on #9, #10; Copilot (`copilot-pull-request-reviewer[bot]`) reviewed #9, #10, #11; nothing on Dependabot #7 (as DECISIONS.md:273–278 says).
 - Price statements about Brickson: **none** (only "free" for GitHub Pages/Actions in pages.yml:2, tests.yml:2; Xcode/Apple accounts in GETTING_STARTED.md:3,75,96; Copilot pricing DECISIONS.md:269–270; `scripts/test-site.py:84` pins the support page against free/paid).
 

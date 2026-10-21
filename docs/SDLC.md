@@ -183,9 +183,12 @@ nothing can be built, CI is green before the pull request merges
 
 **Three levels, because a simulator cannot show everything:**
 1. **Unit and UI tests** on simulators, locally and in GitHub CI, on the
-   iPad and, as the test-seams work lands, the iPhone. UI tests keep
-   screenshots, which are compared with the accepted Figma frames
-   (p32: close the loop with a visual check).
+   iPad and, as the test-seams work lands, the iPhone. Planned, not yet
+   built: UI tests keep screenshots and compare them with the accepted
+   Figma frames (p32: close the loop with a visual check). Today no
+   screenshot leaves CI, so a green UI check says nothing about how a
+   screen looks; the author checks layout changes in the running app
+   (AGENTS.md, *Workflow rules*).
 2. **Device checks** on the owner's own iPhone and iPad: sound, the real
    keyboard, every input method, Snap to Item. The list and its results
    are on the handoff's front page, *Checks that need a real device*.
@@ -195,7 +198,8 @@ nothing can be built, CI is green before the pull request merges
    such step; for this app it is the test that matters most.
 
 **Gate:** the required checks "Unit tests" and "UI tests" pass on the pull
-request. The `main` ruleset enforces this; nothing merges without it.
+request. The `main` ruleset requires them, though the owner's account,
+which agents also act through, can bypass it (*Deploy*).
 
 **Done when:**
 - the required checks are green on the pull request's last commit;
@@ -242,8 +246,11 @@ new version by hand (Apple, "Release a version update in phases", checked
 2026-10-21). TestFlight is where problems should be found.
 
 **Gate:** the owner's hand. The owner merges, and only the owner uploads,
-submits or releases. GitHub's `main` ruleset enforces the merge gate for
-every agent, which is why it, not a per-agent setting, is the backstop.
+submits or releases. Today this is a rule agents follow, not something
+GitHub enforces: the `main` ruleset requires the checks but no approval,
+agents act through the owner's GitHub account, and that account can
+bypass the ruleset. The Project guardrails work is making the gate
+enforced (docs/ROADMAP.md, *Repo review, 2026-10-21*).
 
 **Done when:**
 - for a pull request: merged by the owner, with the website republished if
@@ -291,8 +298,8 @@ can hold that rule, a test (p50: add an eval for the incident).
   the owner's gates are the few that matter, and agents carry the rest.
 - **Hooks, managed settings and telemetry** (pp. 27, 40-43). They suit a
   company that manages its engineers' machines. Claude Code hooks bind
-  only Claude Code, not Codex or Jules, so GitHub's ruleset stays the
-  backstop for every agent. A small `.claude/settings.json` hook that
+  only Claude Code, not Codex or Jules, so GitHub's ruleset is the backstop
+  for every agent, once the guardrails work makes it bind them (*Deploy*). A small `.claude/settings.json` hook that
   blocks `git add -A`, a push to `main` and edits to the generated Xcode
   project would add a second line of defence for Claude Code; proposed,
   not built.
