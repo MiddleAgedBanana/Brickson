@@ -104,9 +104,10 @@ anything the new Xcode reports.
   warning says so, and a pull request moves both jobs to it. Cloud agents
   cannot change workflow files (AGENTS.md, *Gotchas*), so the owner, or an
   agent on the owner's Mac, commits that change.
-- **Simulators.** `scripts/test.sh` tests on the newest iPad simulator
-  between the deployment target and the SDK of the Xcode in use. No
-  version is written into it.
+- **Simulators.** `scripts/test.sh` tests on the newest iPad simulator,
+  and runs UI tests on the newest standard iPhone too, each between the
+  deployment target and the SDK of the Xcode in use. No version is
+  written into it.
 - **Documents** say "the current Xcode release", not a number. A dated
   record of what something was checked on (the tables in
   docs/HANDOFF.md) keeps its version: that is history, not a pin.
@@ -302,10 +303,26 @@ How it behaves, and where it knowingly falls short:
   category row; the Emergency quick control opens it and shows a check
   mark while it is open. Two buttons with the same name confused Voice
   Control and the UI tests, and the reference app did the same.
-- **Messages never shrink.** The message row always reserves two lines of
-  its font; a longer message scrolls inside them at full size (the reference
-  app's phone layout did the same). Every phrase start, including Again and
-  the same phrase chosen again, shows the message from the top.
+- **Messages never shrink.** At compact widths, the message has the full
+  width and reserves one line of its font, with a full-width Again button
+  below. At regular widths, it reserves two lines with Again beside it.
+  A longer message scrolls inside that viewport at full size. Every phrase
+  start, including Again and the same phrase chosen again, shows the
+  message from the top. The reserved height does not change with the
+  message or speaking state.
+- **Quick controls give words the width they need.** At compact widths,
+  Yes and No share one row; Emergency takes the full row below. Regular
+  widths retain the horizontal quick-control row. Both arrangements stay
+  the same at every text size and in every Home state. Yes, No and Again
+  omit decorative icons at both widths. Emergency retains its warning or
+  selected symbol in a permanent 22pt-high slot above its text: an inline
+  icon split the word into `Emer-` / `gency` even on the iPad at AX5.
+  Text uses Dynamic Type without a smaller-font workaround.
+- **Phrase columns stay fixed within each width class.** Compact widths
+  use one column, regular widths three, at every text size. The compact
+  two-column grid split even `Maybe.` at AX5. One column gives words more
+  width but shows fewer phrases at once; the stand-in still scrolls and
+  does not close the documented layout-engine gap.
 - **Audio warnings keep their space.** The warning area always holds the
   height of the tallest short audio warning ("Volume low", "Audio failed"),
   so a warning appearing hides no phrase tile (invariant 4). The short text
@@ -322,13 +339,37 @@ How it behaves, and where it knowingly falls short:
 - **Accepted for the stand-in only:**
   - No Get Attention yet, so invariant 10's "reachable in one dwell" holds
     only for Emergency, Yes and No. Get Attention comes in port step 1.
-  - Again sits beside the message text the person reads, and the phrase
-    grid ends just above the warning text: under a gaze profile a look
-    that rests on the text could snap to them.
+  - Again sits next to the message text the person reads (below at compact
+    widths, beside at regular widths), and the phrase grid ends just above
+    the warning text: under a gaze profile a look that rests on the text
+    could snap to them.
   - The selected category swaps its symbol for a check mark; symbols
     differ in width, so the buttons after it can shift slightly.
-  - CI tests the iPad only. On a narrow iPhone the three quick-control
-    labels may not fit at larger text sizes.
+
+*2026-10-21 correction:* PR #13 initially treated the iPhone's clipped-text
+and Dynamic Type audit findings as strict expected failures pending a new
+phone layout. That exception has been withdrawn: the owner requested a
+root-cause fix without weakening tests. Labels now retain their full
+vertical size, and eager phrase rows remain present while the audit
+changes text size. Both device families run the same strict audits.
+Those changes initially passed all 16 UI tests on each local device, but
+inspection of the AX5 screenshots still found clipped quick-control
+words on the phone. The accessibility labels and button frames were
+complete even when their visible text was not. A new screenshot-based
+text-recognition test reproduced all 24 label checks failing before the
+compact arrangement above was implemented. It checks Yes, No, Emergency
+and Again in three states, in light and dark, without language correction
+or expected words supplied to the recognizer. The same test also exposed
+Emergency's word splitting on iPad. It uses Vision's fast recognizer
+because the accurate mode returned `ON` for a visibly clear `No`;
+the fast mode read `No` and still rejected all four old clipped captures.
+Matching still requires a whole word, ignoring case only. The four
+reachability tests now compare every primary-control edge with its launch
+frame after Emergency and speech, allowing 1pt for rounding. Final
+validation remains pending in the diagnosis record; the earlier 16-test
+passes do not validate this implementation.
+`docs/log/2026-10-21-ui-test-diagnosis.md` records the failing reproductions,
+the separate appearance-harness defect and subsequent verification.
 
 ## Personal Voice permission is asked at launch, for now
 

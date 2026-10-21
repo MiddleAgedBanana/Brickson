@@ -16,7 +16,9 @@ What it is written to do; the *Verification* section says how much of it
 has been seen working. It opens on a Home screen with Yes, No and
 Emergency, a row of everyday categories, and phrase tiles from a neutral
 starter set. Choosing a tile speaks it at once; the sentence stays on
-screen with Again beside it. Emergency switches to the emergency phrases
+screen in a reserved viewport: one full-width line with Again below at
+compact widths, two lines with Again beside at regular widths. Longer
+messages scroll at full size. Emergency switches to the emergency phrases
 and says nothing itself. If audio fails or the volume is very low, a short
 passive warning appears at the bottom in space that is always kept for it.
 If the library cannot be saved or filled, the app runs from a filled
@@ -91,13 +93,24 @@ promise* lists the code rules that keep the policy true.
 - Home's sizes are plain defaults, not measured gaze, switch or touch
   sizes, and the phrase grid scrolls. Fine for a stand-in, not for a
   release (invariant 11).
+- PR #13 initially marked the iPhone's partial Dynamic Type support and
+  clipping on Yes, Emergency, phrase tiles and Speaking as expected audit
+  failures. That exception is withdrawn by the Mac diagnosis below:
+  labels expand vertically and phrase rows stay present during audits.
+  AX5 screenshots then exposed clipped quick-control words despite green
+  audits and correct accessibility frames. Compact Home now gives its
+  message and Emergency the full width, with Again below the message and
+  Yes/No together above Emergency; a rendered-label regression covers the
+  words themselves. Final verification of this layout is pending below.
+  The full replacement layout engine is still future work.
 - No Get Attention alarm yet, so `AudioSafetyPolicy` runs with the alarm
   always idle.
 - No typing, editing, Settings, voice choice or backup.
 - Personal Voice permission is asked at first launch without explanation
   (docs/DECISIONS.md).
-- English only; the String Catalog fills itself as Xcode builds. Two
-  strings are not in it yet: the speech-rate names in `SpeechRateSteps`
+- English only. `scripts/test.sh unit` brings the String Catalog up to
+  date (xcodebuild alone does not), and CI fails when the committed one
+  is stale. Two strings are not in it yet: the speech-rate names in `SpeechRateSteps`
   and the voice sample sentence in `SpeechService`.
 - The full audio-warning sentences VoiceOver reads mention Get Attention,
   which arrives with port step 1.
@@ -626,9 +639,10 @@ Follow-ups this change leaves (none is done here):
   notifications (reported by the owner's Mac's review on 15 and 16
   October; not checked here).
 - Xcode 27.1's release notes list "Initial Simulator launch can take
-  several minutes" as a known issue. `scripts/test.sh` already waits for
-  its default simulator to finish starting; a slow first UI test on the
-  new image is the first thing to suspect.
+  several minutes" as a known issue. `scripts/test.sh` waits for each
+  simulator to finish starting and, before UI tests, launches the app
+  once to warm it up (docs/log/2026-10-21-test-seams.md); a slow first UI
+  test on the new image is still the first thing to suspect.
 - Xcode 27.2 (a release candidate on 2026-10-21) adds a JSON project
   format (`.xcproj`) meant to be readable and merge-friendly. Worth
   weighing against XcodeGen when it is released (docs/DECISIONS.md,
@@ -637,3 +651,65 @@ Follow-ups this change leaves (none is done here):
 Noticed, not changed: GitHub's changelog of 2026-10-15 says AI Scan for
 pull requests is now generally available; docs/DECISIONS.md *Code
 scanning* still calls it a public preview.
+
+## PR #13 UI-test diagnosis — 2026-10-21
+
+Start with [the diagnosis and verification record](log/2026-10-21-ui-test-diagnosis.md).
+The current-head reproduction showed that the appearance setter reported
+success while the app rendered light; the prior change from one pixel to
+a whole-screen median had not fixed it. Debug test launches now request a
+presentation colour scheme, with an independent screenshot gate. The
+phone audit exception is removed: labels can expand vertically, and an
+eager grid keeps phrase rows available while Dynamic Type changes.
+Initial complete runs passed 16 UI tests on each device, but the saved
+AX5 phone screenshots still showed visibly clipped quick-control words.
+A new Vision text-recognition regression reproduced 24 failures, covering
+all four labels in three Home states in both appearances. It reads each
+button's screenshot without language correction or a supplied word list;
+complete accessibility labels and large button frames alone missed this.
+The same regression then found iPad Emergency split as `Emer-` / `gency`
+at AX5. Vision's accurate mode separately misread a clear phone `No` as
+`ON`; its fast mode reads that crop and still rejects the four old clipped
+captures. Matching requires a whole word, ignoring case only.
+
+Compact Home now reserves one full-width message line with Again below,
+then a Yes/No row and full-width Emergency. The arrangement stays the same
+at all text sizes. On both width classes, Yes, No and Again omit decorative
+icons; Emergency's warning/checkmark occupies a permanent 22pt-high slot
+above its word. Regular widths retain two message lines with Again beside
+them and one horizontal quick-control row. Longer messages scroll at full
+size in their reserved viewport. Phrase columns are fixed at one for
+compact widths and three for regular widths, preventing the former compact
+grid from splitting words such as `Maybe.` at AX5. One column requires
+more scrolling; the future layout engine is still needed.
+
+All four reachability tests now compare each quick control's four edges
+with its launch frame after Emergency selection and speech, allowing 1pt
+for rounding. This checks state stability as well as reachability; it is
+not proof of gaze comfort.
+
+Speech preferences now use the launch-selected settings suite. The test
+runner shuts down only simulators it booted before starting another family.
+
+**Latest layout verification:** 17/17 UI tests passed on each device, with
+zero failed, skipped or expected-failure tests. This includes strict audits,
+rendered-label checks in light/dark at AX5, and default/AX5 reachability
+with stable primary-control frames. All 136 unit tests passed (87.7% line
+coverage), along with 51 runner fixtures, 21 Xcode-selector tests and four
+website checks. Final remote CI is pending at this pre-push checkpoint.
+Commands, result-bundle paths, before/after
+screenshots and limitations are in the diagnosis record.
+
+This work uses an isolated checkout and dedicated iPhone 17 and iPad Pro
+13-inch (M5) simulators. The original cancelled CI job's log was unavailable,
+so its exact cancellation cause remains unknown. Required checks and PR
+automation remain unchanged; local results do not establish a merge.
+
+**Remote checkpoint, 15:20–15:22 UTC:** implementation commit
+`db844b10c10b530a0489b3bd79eea4322f8b0d47` was pushed and confirmed on the
+PR branch. GitHub's PR record still showed `6e6cbcc`, with no Actions run
+for the new commit, during its active Pull Requests/Webhooks incident.
+Remote CI and merge verification are externally blocked; three old review
+threads also remain unresolved. Auto-merge remains enabled and protections
+are untouched. The diagnosis record links the incident and threads. This
+is a checkpoint, not a claim that the PR is ready or merged.

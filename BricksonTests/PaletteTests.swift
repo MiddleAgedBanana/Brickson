@@ -22,10 +22,10 @@ struct PaletteTests {
         var result: [Appearance] = []
         for style in [UIUserInterfaceStyle.light, .dark] {
             for contrast in [UIAccessibilityContrast.normal, .high] {
-                let traits = UITraitCollection(traitsFrom: [
-                    UITraitCollection(userInterfaceStyle: style),
-                    UITraitCollection(accessibilityContrast: contrast),
-                ])
+                let traits = UITraitCollection { traits in
+                    traits.userInterfaceStyle = style
+                    traits.accessibilityContrast = contrast
+                }
                 var name = style == .dark ? "dark" : "light"
                 if contrast == .high {
                     name += " with Increase Contrast"
