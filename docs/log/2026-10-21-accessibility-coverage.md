@@ -36,7 +36,11 @@ changes no app code.
 
 ## Commits
 
-The commit that adds this file holds the whole change.
+The first commit holds the list and every document change above. The
+second answers Codex's review of it: the call-injection rows gain
+`setPreferredMicrophoneInjectionMode(_:)` and the availability notice,
+which the first had left out, and HomeKit moves from *Waiting* to the
+owner's decision under invariant 9.
 
 ## Verified
 
@@ -75,6 +79,12 @@ What the check found that earlier documents had wrong or did not have:
   iOS; `MCSession` (Multipeer Connectivity) is deprecated in iOS 27.0.
 - `AccessibilitySettings.Feature.allowAppsToAddAudioToCalls` (iOS 18.2)
   opens the Add Audio in Calls switch, useful for R0 item 8.
+- Being heard on a call takes three steps in Apple's sample ("Adding
+  synthesized speech to calls"): the permission, then
+  `AVAudioSession.setPreferredMicrophoneInjectionMode(.spokenAudio)`,
+  which is what adds the app's audio to the call, then the
+  `microphoneInjectionCapabilitiesChangeNotification` to know a call is
+  in progress. All three are iOS 18.2.
 - New since the map: the iPhone Duo reserved regions and hinge APIs
   (`ReservedRegion`, `onHingeChange`, iOS 27.1), and `XCUIVoiceOverService`
   for VoiceOver in UI tests (iOS 27.0).
@@ -154,8 +164,12 @@ the work should land. Each item's owner is named in `docs/ROADMAP.md`.
    `UISupportsFullScreenInAssistiveAccess` with an `AppBundleTests` pin
    (and one that `UISupportsAssistiveAccess` stays absent); header traits
    and standard toggles in Settings; an audit of every Settings screen.
-6. **Item 8, calls** (held): microphone injection, its usage text, and
-   the `allowAppsToAddAudioToCalls` link.
+6. **Item 8, calls** (held): the injection permission and its usage
+   text; `setPreferredMicrophoneInjectionMode(.spokenAudio)` once
+   permission is granted, which is what puts speech into the call, with a
+   test that a setter that throws shows passive text while the phrase
+   still speaks in the room; the availability notice; and the
+   `allowAppsToAddAudioToCalls` link.
 7. **Item 9, screens**: a rendered check of Home's fills with Reduce
    Transparency and Increase Contrast; no glass on speaking or safety
    controls.

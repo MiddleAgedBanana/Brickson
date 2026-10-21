@@ -138,11 +138,13 @@ where anything is, and the dwell-safety scoring passes for every profile.
 ## Waiting, not yet in a release
 
 Worth building, each starting with a work file once R2's foundations are
-in: HomeKit tiles, a watch app, a start-only Get Attention control for
-Control Center and the Action button, an on-device partner view, custom
-VoiceOver rotors, pronunciation of names, and keyboard shortcuts
+in: a watch app, a start-only Get Attention control for Control Center and
+the Action button, an on-device partner view, custom VoiceOver rotors,
+pronunciation of names, and keyboard shortcuts
 ([`docs/ACCESSIBILITY.md`](ACCESSIBILITY.md); docs/DECISIONS.md,
-"Accessibility API coverage").
+"Accessibility API coverage"). HomeKit tiles are not on this list: they
+would control devices beyond the iPhone or iPad, so they wait on the
+owner's decision under invariant 9, as caregiver alerts do.
 
 ## All the time
 

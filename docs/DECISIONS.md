@@ -687,11 +687,16 @@ choices it makes:
   No, Get Attention and Emergency keep their relative places and grow,
   and the phrase area shows fewer, larger tiles from a category the
   family chooses. Emergency stays visible (invariant 2).
-- **Waiting, each with a work file first:** HomeKit tiles (a permission,
-  an entitlement and a privacy-policy section), a watch app, a start-only
+- **Waiting, each with a work file first:** a watch app, a start-only
   Get Attention control (never a toggle), an on-device partner view,
   custom VoiceOver rotors, pronunciation with SSML or IPA, keyboard
   shortcuts, and Guided Access restrictions of Brickson's own.
+- **HomeKit tiles wait on the owner.** They would control lights, doors
+  and other devices beyond the iPhone or iPad, so whether they fall under
+  invariant 9's hard stop on network code is the owner's decision, as for
+  caregiver alerts. Nothing is planned or built until the owner records an
+  exception here; then they start with a work file and add a permission,
+  an entitlement and a privacy-policy section.
 - **Not used in 1.0:** AlarmKit and critical alerts (Get Attention plays
   inside Brickson and needs no permission; revisit if it must sound with
   Brickson closed); `mixToTelephonyUplink` (calls go through microphone

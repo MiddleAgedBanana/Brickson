@@ -77,7 +77,7 @@ test is named for what would make it fail.
 | Voice Control (2; has it) | Every Home control is a labelled standard button | Extra spoken names and a name-collision test: R0-3 | 3 |
 | AssistiveTouch, Touch Accommodations (2; system) | Standard buttons | Setup text: R0-7 | 2 |
 | Word prediction (2; add) | Nothing yet | Apple's keyboard suggestions with typing: R0-5. A prediction strip: R2 | 8 |
-| HomeKit (2; add) | Nothing yet | Later | 10 |
+| HomeKit (2; add, needs a decision) | Nothing yet | Not in 1.0; controlling devices beyond the iPhone or iPad is the owner's decision under invariant 9 | 10 |
 | Apple Watch (2; system, a watch app later) | System | Live Speech on the watch in the setup text: R0-7. A watch app: Later | 10 |
 | Text size, contrast (2; has it) | Contrast measured in `PaletteTests` | Kept | 6 |
 | Eye Tracking and Dwell (3; has it) | Standard buttons; repeats of a phrase absorbed | Gaze profile and dwell-safety scoring: R1 | 2 |
@@ -193,7 +193,9 @@ pointer input*).
 | `AccessibilitySettings.Feature.personalVoiceAllowAppsToRequestToUse` | Opens the switch that lets apps ask | 1–4 | 18.0 | **R0-7**, in the voice picker when permission is denied | Unit: the settings-link resolver. Device |
 | Live Speech | Apple's type-to-speak, also into calls | 1–3 | System, since 17.0 | **System.** Setup text: **R0-7**. No API to write its saved phrases was found, so families copy a few by hand | Device: Live Speech and Brickson do not cut each other off |
 | Add Audio in Calls, `AccessibilitySettings.Feature.allowAppsToAddAudioToCalls` | The system switch for apps' audio in calls, and a link to it | 2–4 | System, 18.2; the link 18.2 | **R0-8**, held until a device build | Device: a real call heard on both ends |
-| `AVAudioApplication.microphoneInjectionPermission`, `requestMicrophoneInjectionPermission(completionHandler:)` | Adding Brickson's speech to a call | 2–4 | 18.2 | **R0-8**, held | Unit: every permission state. Device |
+| `AVAudioApplication.microphoneInjectionPermission`, `requestMicrophoneInjectionPermission(completionHandler:)` | Permission to add Brickson's speech to calls; on its own it adds nothing | 2–4 | 18.2 | **R0-8**, held | Unit: every permission state. Device |
+| `AVAudioSession.setPreferredMicrophoneInjectionMode(_:)` with `.spokenAudio`, and `.none` to stop | The call that actually adds Brickson's speech to a call, made once permission is granted (Apple's sample, "Adding synthesized speech to calls") | 2–4 | 18.2 | **R0-8**, held | Unit: a setter that throws shows passive text and the phrase still speaks in the room (invariants 4 and 5). Device: the far end hears the phrase |
+| `isMicrophoneInjectionAvailable`, `microphoneInjectionCapabilitiesChangeNotification`, `AVAudioSessionMicrophoneInjectionIsAvailableKey` | Whether a call that can take Brickson's speech is in progress | 2–4 | 18.2 | **R0-8**, held | Unit: the notice's value read into the call state. Device: a call starting and ending |
 | `NSMicrophoneInjectionUsageDescription` | The sentence the system shows when asking | 2–4 | 18.2 (Apple's sample; no reference page) | **R0-8**, held | Unit: `AppBundleTests` once the request exists |
 | `mixToTelephonyUplink` | An older way to send speech into a call | 2–4 | 13.0 | **N/A**: calls go through microphone injection | — |
 | `.playback` category, with `.mixWithOthers` as a fallback | Speech with the silent switch on and the screen locked | 1–4 | 3.0 | **In place** (`AudioSessionCoordinator`; invariant 4) | Unit: `AudioSessionCoordinatorTests`. Device: silent switch |
@@ -321,7 +323,7 @@ pointer input*).
 | AlarmKit (`AlarmManager`) | System alarms that sound when the app is closed | 3–4 | 26.0 | **N/A for 1.0**: Get Attention plays inside Brickson and needs no permission. Revisit if it must sound with Brickson closed | Review |
 | Critical alerts | Notifications that sound through the silent switch | 3–4 | 12.0 | **N/A**: Brickson sends no notifications | — |
 | Caregiver alerts over the local network: Multipeer Connectivity, Bonjour (`NSLocalNetworkUsageDescription`), Wi-Fi Aware | Reaching a phone in another room | 3–4 | 7.0, deprecated 27.0; 14.0; 26.0 | **Not in 1.0**: network code is a hard stop (invariant 9) and the owner's decision (docs/DECISIONS.md, *Caregiver alerts*) | — |
-| HomeKit: `HMHomeManager`, `NSHomeKitUsageDescription` | Lights, doors and thermostat from a tile | 2–3 | 8.0 | **Later**: a work file first; it adds a permission, an entitlement and a privacy-policy section, and its tiles count as position-changing for dwell scoring | Unit. Device |
+| HomeKit: `HMHomeManager`, `NSHomeKitUsageDescription` | Lights, doors and thermostat from a tile | 2–3 | 8.0 | **Not in 1.0**: it controls devices beyond the iPhone or iPad, so whether it may be built at all is the owner's decision under invariant 9, as for caregiver alerts (docs/DECISIONS.md, *Accessibility API coverage*). If the owner records an exception: a work file first, a permission, an entitlement and a privacy-policy section, and its tiles count as position-changing for dwell scoring | Review |
 | Live Speech on Apple Watch | Type-to-speak on the wrist | 1–2 | watchOS 10 | **System.** Setup text: **R0-7** | Device |
 | AssistiveTouch on Apple Watch | Hand gestures for the watch | 1–2 | watchOS 8 | **System**; nothing until a watch app exists | — |
 | A Brickson watch app | A few phrases and Get Attention on the wrist | 1–2 | watchOS 10 (Personal Voice) | **Later**. Moving phrases to the watch needs a decision, since there is no iCloud sync | — |
