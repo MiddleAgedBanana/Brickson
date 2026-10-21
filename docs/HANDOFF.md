@@ -219,10 +219,10 @@ Not yet seen working, to check after the merge and the settings:
 
 ## Next steps, in order
 
-1. **Owner:** choose the minimum iOS and iPadOS (the deployment target,
-   docs/DECISIONS.md, "Minimum iOS, iPhone and iPad"). It stays 26.0 until
-   then. The toolchain is not a choice: always Apple's newest Xcode
-   (*Toolchain — 2026-10-21* below).
+1. Recheck the minimum iOS and iPadOS (26.0) against its two rules when
+   Apple's next major release drops devices (docs/DECISIONS.md, "Minimum
+   iOS, iPhone and iPad"). The toolchain is not a choice: always Apple's
+   newest Xcode (*Toolchain — 2026-10-21* below).
 2. **Owner:** publish the website. In the repository's Settings → Pages,
    set *Source* to **GitHub Actions** if it isn't already, merge the pull
    request that fills in the policy's blanks, then check that the
@@ -303,7 +303,7 @@ device, OS version, settings and date.
 | 2026-10-12 | `6865f47` | `storekit` taken off AGENTS.md's list of skills never to apply: it came from the reference app and ruled out in-app purchases before a price was decided | Documentation only |
 | 2026-10-12 | `82aef90`, `5dfb8f6`, `4f9fe80`, `41f9555`, `b2b6206` | Review skill for Copilot (`.github/skills/code-review/SKILL.md`), refined from the owner's draft: review steps that point to AGENTS.md for every rule instead of restating rules or naming features that are not built yet. `.github/copilot-instructions.md` points to it. AGENTS.md *Code Review Rules* gains checks every reviewer applies: statements of Brickson's price; a new section, *Tests, workflows and the rules themselves*, for tests that cannot fail, workflow changes that expose secrets or a write token, put pull request text into a shell command or add an action not published by GitHub, and changes that weaken the review rules. *Not findings* now excuses only gaps the base branch already records. A change *Code Review Rules* names is reported even when no person is affected yet; only other suspicions a reviewer cannot trace become questions (Codex's review of this pull request). AGENTS.md, DECISIONS.md and README.md say where the skill sits, and DECISIONS.md records that the owner asked for it. AGENTS.md, DECISIONS.md and README.md now say Dependabot's pull requests get no automatic review (PR #7) and that only the owner requests Copilot reviews; README.md says Copilot never sees replies and its headline is not an approval | Documentation only; pull request CI. Copilot's automatic review of this pull request invoked the skill (its job log) |
 | 2026-10-12 | `1188f5d`, `8fd22a0`, `5421109`, `c1ea737`, `28f4819` | Why CodeQL does not scan the Swift code: default setup's one Swift attempt failed because no Xcode project is committed, and GitHub dropped Swift by itself; advanced setup would add a Mac job to every pull request for checks that match nothing in today's code and fall behind each new Xcode. docs/DECISIONS.md *Code scanning* corrects two earlier statements (Xcode 27 does not block scanning today; CodeQL announced no Swift mode that skips the build), records that AI Scan for pull requests is on and that Dependabot's first pull request got no CodeQL analysis before merging, and lists when to revisit; the ruleset rows say the same. README.md and AGENTS.md mention the scans, and AGENTS.md gains a gotcha. The failed Swift configuration on the Tool status page is the owner's to delete | Documentation only. Checked 2026-10-12 through GitHub's API and job logs (default setup's languages, the failed job's log, analyses, PR check runs, the ruleset, AI Scan's setting and logs) and GitHub's and CodeQL's documentation sources; pull request CI. Not verified: where AI Scan's AI credits come from, and the 10 to 20 minute estimate for a Swift CodeQL job (never run) |
-| 2026-10-21 | `258fcf4`, `b70e742`, the owner's `a16838f` (workflow) | Build with Apple's current Xcode (owner): CI moves from the `macos-26` image (Xcode 26.6) to GitHub's `xcode-27` image and picks the newest released Xcode there (`scripts/select-xcode.py`), with a warning on the run when Apple has a newer one; `scripts/test.sh` takes its simulator range from the project's deployment target and the Xcode in use instead of a written-in 26; docs say "the current Xcode release"; docs/DECISIONS.md "Build with Apple's current Xcode"; the minimum iOS stays 26.0 until the owner decides | Python tests for both scripts, run on Linux, with every assertion seen failing first or under a deliberate break; pull request CI. See *Toolchain — 2026-10-21* |
+| 2026-10-21 | `258fcf4`, `b70e742`, the owner's `a16838f` (workflow) | Build with Apple's current Xcode (owner): CI moves from the `macos-26` image (Xcode 26.6) to GitHub's `xcode-27` image and picks the newest released Xcode there (`scripts/select-xcode.py`), with a warning on the run when Apple has a newer one; `scripts/test.sh` takes its simulator range from the project's deployment target and the Xcode in use instead of a written-in 26; docs say "the current Xcode release"; docs/DECISIONS.md "Build with Apple's current Xcode"; the minimum iOS stays 26.0, now decided from two rules (every device that can use eye tracking; every mapped accessibility API reachable) | Python tests for both scripts, run on Linux, with every assertion seen failing first or under a deliberate break; pull request CI. See *Toolchain — 2026-10-21* |
 
 
 ## Website redesign — 2026-10-12
@@ -528,7 +528,12 @@ What changed:
   the feed does not list: the first `xcode-27` run skipped the released
   27.1 because GitHub had installed it as
   `Xcode_27.1_Release_Candidate.app`, and built with 27.0 (Codex's
-  review; below).
+  review; below). A later review found two silent paths, fixed in the
+  next commit: when the feed cannot be read or lists no Xcode release,
+  `choose` now warns on the run itself, so the UI tests job (which has no
+  `check` step) says so too; and a plain-named Xcode newer than Apple's
+  newest release is skipped by `choose` and warned about by `check`, since
+  Apple has not released it.
 - `scripts/test-runner.py`, *WorkflowTests*: every job that runs
   `scripts/test.sh` must first run `select-xcode.py choose` and
   `xcode-select --switch`, and the workflow may name no Xcode app path,
@@ -552,8 +557,16 @@ What changed:
 Not changed, on purpose:
 
 - The deployment target stays **iOS and iPadOS 26.0** (`project.yml`,
-  `.github/copilot-instructions.md`, README.md, docs/GETTING_STARTED.md):
-  the owner decides it.
+  `.github/copilot-instructions.md`, README.md, docs/GETTING_STARTED.md).
+  It is now decided rather than inherited: the owner set the rule that
+  every device able to use eye tracking must run the app, and left the
+  rest to the project. A third-party eye tracker (eyeV's Skyle 3) works
+  with the 2018 iPad Pros, which run iPadOS 26 but not 27, so 26.0 is the
+  highest minimum that keeps every eye-tracking user; Apple's built-in Eye
+  Tracking alone would have allowed 27.0. Evidence and the second rule
+  (accessibility APIs) are in docs/DECISIONS.md, "Minimum iOS, iPhone and
+  iPad". Not re-checked by a second reader: the Skyle and TD Pilot pages
+  were read once, on 2026-10-21.
 - Dated records of what was checked on (this file's tables and sections,
   docs/archive/) keep their versions: they are history.
 
@@ -571,8 +584,12 @@ image `xcode-27-arm64` version 20261012.0260.1) found:
   `Xcode_27.2_beta_2.app`, also reached as `Xcode_27.2.app` and
   `Xcode_27.2.0.app`. The selector of that commit skipped every app but
   27.0 by name, so the run built with Xcode 27.0, and `check` warned that
-  Apple's newest release is 27.1 (27A9275). Fixed in the next commit; the
-  following run shows which Xcode it chose.
+  Apple's newest release is 27.1 (27A9275). Fixed in `4198e94`: its run
+  chose `Xcode_27.1_Release_Candidate.app` (27.1, 27A9275), built with
+  the iOS 27.1 SDK, and `check` posted a notice that CI matches Apple's
+  newest release. Under 27.1 the only iOS simulator runtime was still
+  iOS 27.0. Unit tests and UI tests both passed on that run; the first UI
+  test took 39 seconds.
 - Homebrew is there: XcodeGen 2.46.0 installed. Under Xcode 27.0 the only
   iOS simulators were iOS 27.0; `scripts/test.sh` chose iPad Pro 13-inch
   (M5), iOS 27.0.

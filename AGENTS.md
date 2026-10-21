@@ -101,8 +101,10 @@ requirements (https://developer.apple.com/xcode/system-requirements/),
 never from memory. CI picks the newest released Xcode on GitHub's machine
 (`scripts/select-xcode.py`) and warns on the run when Apple has a newer
 one. The deployment target, the oldest iOS the app runs on, is a separate
-product decision that belongs to the owner (docs/DECISIONS.md, "Minimum
-iOS, iPhone and iPad").
+product decision, set by two rules: every device that can use eye
+tracking runs the app, and every accessibility API in the ALS-stage map
+stays reachable, behind `#available` when newer (docs/DECISIONS.md,
+"Minimum iOS, iPhone and iPad").
 
 **Reviews and updates on GitHub.** Codex reviews every push to a pull
 request that a person or agent opens, and GitHub Copilot reviews each such
