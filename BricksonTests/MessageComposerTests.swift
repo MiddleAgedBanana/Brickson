@@ -31,7 +31,8 @@ struct MessageComposerTests {
     @Test func proposingTheSameTextChangesNothing() {
         var message = composer("Water, please.")
 
-        #expect(message.apply(.propose("Water, please.")) == .unchanged)
+        let outcome = message.apply(.propose("Water, please."))
+        #expect(outcome == .unchanged)
     }
 
     /// Fails if deleting, replacing a selection or editing the middle of the
@@ -56,7 +57,8 @@ struct MessageComposerTests {
     @Test func typingNeverSpeaks() {
         var message = composer()
         for typed in ["Hello", "Hello.", "Hello. ", "Hello. How", "Hello. How are you?"] {
-            #expect(message.apply(.propose(typed)).textToSpeak == nil)
+            let outcome = message.apply(.propose(typed))
+            #expect(outcome.textToSpeak == nil)
         }
     }
 
@@ -192,7 +194,8 @@ struct MessageComposerTests {
     @Test func speakTrimsTheSpacesAroundTheWords() {
         var message = composer("  Hello there.  ")
 
-        #expect(message.apply(.speak).textToSpeak == "Hello there.")
+        let spoken = message.apply(.speak)
+        #expect(spoken.textToSpeak == "Hello there.")
         #expect(message.text == "  Hello there.  ", "trimming is for speech only")
         #expect(message.spokenText == "Hello there.")
     }
@@ -203,7 +206,8 @@ struct MessageComposerTests {
         var message = composer(draft)
 
         #expect(!message.canSpeak)
-        #expect(message.apply(.speak) == .unchanged)
+        let outcome = message.apply(.speak)
+        #expect(outcome == .unchanged)
     }
 
     /// Fails if speaking twice in a row needs anything between: a second
@@ -212,8 +216,10 @@ struct MessageComposerTests {
     @Test func speakingAgainSaysTheSameWords() {
         var message = composer("Come here.")
 
-        #expect(message.apply(.speak).textToSpeak == "Come here.")
-        #expect(message.apply(.speak).textToSpeak == "Come here.")
+        let first = message.apply(.speak)
+        #expect(first.textToSpeak == "Come here.")
+        let second = message.apply(.speak)
+        #expect(second.textToSpeak == "Come here.")
     }
 
     /// Fails if clear-after-speaking loses the words, or keeps them in the
@@ -248,7 +254,8 @@ struct MessageComposerTests {
     @Test func aBlankDraftIsNotClearedBySpeaking() {
         var message = composer("   ", afterSpeaking: .clearsDraft)
 
-        #expect(message.apply(.speak) == .unchanged)
+        let outcome = message.apply(.speak)
+        #expect(outcome == .unchanged)
         #expect(message.text == "   ")
     }
 
@@ -273,7 +280,8 @@ struct MessageComposerTests {
         var message = composer()
 
         #expect(!message.canClear)
-        #expect(message.apply(.clear) == .unchanged)
+        let outcome = message.apply(.clear)
+        #expect(outcome == .unchanged)
     }
 
     /// Fails if a repeated Clear forgets the words the first one removed:
@@ -311,7 +319,8 @@ struct MessageComposerTests {
         _ = message.apply(.propose("New"))
 
         #expect(!message.canRestore)
-        #expect(message.apply(.restoreCleared) == .unchanged)
+        let outcome = message.apply(.restoreCleared)
+        #expect(outcome == .unchanged)
         #expect(message.text == "New")
     }
 
@@ -364,7 +373,8 @@ struct MessageComposerTests {
     @Test func insertingNothingChangesNothing() {
         var message = composer("Hi")
 
-        #expect(message.apply(.insert("")) == .unchanged)
+        let outcome = message.apply(.insert(""))
+        #expect(outcome == .unchanged)
     }
 
     /// Fails if delete removes more or less than one character as people
@@ -389,7 +399,8 @@ struct MessageComposerTests {
     @Test func deletingFromAnEmptyDraftDoesNothing() {
         var message = composer()
 
-        #expect(message.apply(.deleteBackward) == .unchanged)
+        let outcome = message.apply(.deleteBackward)
+        #expect(outcome == .unchanged)
     }
 
     /// Fails if a word suggestion is put in the wrong place, or loses the
@@ -431,8 +442,10 @@ struct MessageComposerTests {
     @Test func aSuggestionNeverSpeaksAndIsNeverEmpty() {
         var message = composer("I wa")
 
-        #expect(message.apply(.complete("")) == .unchanged)
-        #expect(message.apply(.complete("  ")) == .unchanged)
+        let empty = message.apply(.complete(""))
+        #expect(empty == .unchanged)
+        let blank = message.apply(.complete("  "))
+        #expect(blank == .unchanged)
         let outcome = message.apply(.complete("want\n"))
         #expect(outcome.textToSpeak == nil)
         #expect(message.text == "I want ")
@@ -524,7 +537,8 @@ struct MessageComposerTests {
 
         _ = message.apply(.deleteBackward)
         #expect(message.text == Self.atLimit + "extr")
-        #expect(message.apply(.insert("a")).reachedLimit)
+        let pastLimit = message.apply(.insert("a"))
+        #expect(pastLimit.reachedLimit)
         _ = message.apply(.propose(Self.atLimit + "EXTR"))
         #expect(message.text == Self.atLimit + "EXTR", "a same-length correction is allowed")
     }
