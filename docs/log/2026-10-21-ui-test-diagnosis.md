@@ -209,3 +209,34 @@ outside this verification. No audit types or test expectations were
 weakened to obtain passing results; focused filters were used only for
 diagnosis and do not replace the complete runs. The original cancelled
 job's missing log prevents a definitive diagnosis of its duration.
+
+## Remote checkpoint after the fix was pushed
+
+At 15:20–15:22 UTC on 2026-10-21, the signed implementation commit
+`db844b10c10b530a0489b3bd79eea4322f8b0d47` was confirmed on the existing
+`claude/project-thread-ieeqg5` branch by both `git ls-remote` and GitHub's
+Git-reference API. The working tree was clean. This documentation-only
+follow-up does not change the tested implementation.
+
+PR #13's API record still reported its previous head
+`6e6cbccd74382ba3fe8e85f08de8d89b2058f8d6`, even on an uncached read, and
+there were no Actions runs for the new implementation SHA. GitHub's
+[official status feed](https://www.githubstatus.com/api/v2/summary.json)
+reported the active incident **Delays for Pull Requests and Webhook
+deliveries**, started at 14:52 UTC (incident `nms1dpzmh9d9`,
+[incident link](https://stspg.io/gnnt0tx9nxmk)). That service incident is
+consistent with the observed delay; it is not evidence that the new
+commit's CI passed or failed. Final remote CI and merge verification are
+blocked pending GitHub processing the push. No check was bypassed or
+manually dispatched, and no PR setting was changed.
+
+The PR remained open with its existing merge-method auto-merge enabled.
+Three pre-existing review threads were still unresolved in that snapshot:
+[test settings injection](https://github.com/MiddleAgedBanana/Brickson/pull/13#discussion_r4333758401),
+[the withdrawn audit exception](https://github.com/MiddleAgedBanana/Brickson/pull/13#discussion_r4337694950),
+and [the historical test count](https://github.com/MiddleAgedBanana/Brickson/pull/13#discussion_r4337694974).
+The implementation/doc changes address their substance; the repository
+still requires review-thread resolution. Their state was left to the
+existing review/PR process, as requested. The next observer must check the
+actual current remote head and required checks, not reuse the old head's
+passing Unit result or this local verification as merge evidence.

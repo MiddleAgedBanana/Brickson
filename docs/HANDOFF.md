@@ -704,3 +704,12 @@ This work uses an isolated checkout and dedicated iPhone 17 and iPad Pro
 13-inch (M5) simulators. The original cancelled CI job's log was unavailable,
 so its exact cancellation cause remains unknown. Required checks and PR
 automation remain unchanged; local results do not establish a merge.
+
+**Remote checkpoint, 15:20–15:22 UTC:** implementation commit
+`db844b10c10b530a0489b3bd79eea4322f8b0d47` was pushed and confirmed on the
+PR branch. GitHub's PR record still showed `6e6cbcc`, with no Actions run
+for the new commit, during its active Pull Requests/Webhooks incident.
+Remote CI and merge verification are externally blocked; three old review
+threads also remain unresolved. Auto-merge remains enabled and protections
+are untouched. The diagnosis record links the incident and threads. This
+is a checkpoint, not a claim that the PR is ready or merged.
