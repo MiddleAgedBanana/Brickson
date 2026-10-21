@@ -1,7 +1,7 @@
 import Accessibility
 import Foundation
 
-nonisolated enum AttentionAlertState: Equatable {
+nonisolated enum AttentionAlertState: Equatable, Sendable {
     case idle
     case playing
     case failedToStart
