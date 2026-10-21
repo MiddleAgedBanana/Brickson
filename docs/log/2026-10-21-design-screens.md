@@ -39,15 +39,27 @@ written down in one place.
   of this change recorded a "Home's slot plan" entry; that entry belongs
   to the Phone layout and word fitting work, which builds the slots, so
   this pull request draws to it and links to it instead of writing it.
+- **After Codex's review of this pull request**, five corrections to
+  `docs/DESIGN.md`. Clear beside the draft is withdrawn, and the way out of
+  typing moves to the trailing column's top slot while typing, with Clear
+  and a Put Back control proposed for fixed slots in region B. The zoomed
+  iPad window (1032×774 in landscape, keyboard at y 276) is added, and
+  shown not to hold the drawn typing state. The iPhone SE-class grid
+  needs three rows, because Basics and Needs hold eight starter phrases.
+  The Privacy Policy row opens a bundled policy screen with a separate
+  button for the web page. The typing field gets a `fieldEdge` colour,
+  `#767676`, that clears 3:1 against the field and the screen in both
+  appearances, where the hairline did not; the decision records it.
 - `docs/ROADMAP.md` item 9 and its repository-review lines, and the app
   icon's owner in `docs/HANDOFF.md` and `docs/APP-STORE.md`, are brought up
   to date (*Follow-ups*).
 
 ## Commits
 
-The design commit, then a merge of `main` (PRs #12, #13, #15, #16 and #18)
-that moves the decision and this record into the new documentation
-structure. Hashes are on the pull request.
+The design commit, a merge of `main` (PRs #12, #13, #15, #16 and #18),
+the commit that moves the decision and this record into the new
+documentation structure, and the commit answering Codex's review. Hashes
+are on the pull request.
 
 ## Verified
 
@@ -69,6 +81,11 @@ build Swift. GitHub CI runs the usual suites on the pull request.
   Markdown pages for materials, colour and typography.
 
 ## Not verified
+
+- The Figma frames are not redrawn for the review's corrections: they
+  still show Clear beside the draft, two grid rows on the SE-class window
+  and the hairline as the field's edge. `docs/DESIGN.md` says so where
+  each applies, and wins over the frames.
 
 - Label fits: the Figma file uses Inter, because SF Pro is listed in the
   owner's Figma account but does not render there, and SF Symbols are not

@@ -661,7 +661,10 @@ the alarm: Get Attention `#B45309` and Stop `#0F766E`. The alarm's two
 are hues of their own, so neither reads as a phrase or as Emergency, and
 the amber avoids system orange's 2.2:1. White labels on every fill are
 5.0:1 or better, and every fill's edge is 3.5:1 or better on white and on
-black. A pair enters the code only with its pin in `PaletteTests`.
+black. The typing field's edge is `#767676` in both appearances, because
+the field's own fill barely differs from the screen: 4.07:1 against the
+field and 4.54:1 against the screen in light, 3.75:1 and 4.62:1 in dark.
+A pair enters the code only with its pin in `PaletteTests`.
 Which control takes which role, and where each sits, is "Home's slot
 plan". docs/DESIGN.md, *Colour* and *Apple's guidelines and Liquid
 Glass*, has the measurements and the review.

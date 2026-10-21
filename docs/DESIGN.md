@@ -92,9 +92,17 @@ Surfaces, in light / dark:
 |---|---|---|---|
 | `background` | `#FFFFFF` | `#000000` | The screen |
 | `field` | `#F2F2F7` | `#1C1C1E` | The typing field and message block |
+| `fieldEdge` | `#767676` | `#767676` | The typing field's 2pt edge: 4.07:1 on the field and 4.54:1 on the screen in light, 3.75:1 and 4.62:1 in dark |
 | `well` | `#E9E9EC` | `#2C2C2E` | A reserved slot that holds no control in this state |
-| `hairline` | `#C6C6C8` | `#38383A` | Field edge, row separators |
+| `hairline` | `#C6C6C8` | `#38383A` | Row separators only; decorative, never a control's edge |
 | `label` | `#000000` | `#FFFFFF` | Text on the background and on fields |
+
+The field itself is only 1.12:1 from the screen in light and 1.23:1 in
+dark, so the typing field's edge is what shows where the control is, and
+it needs 3:1 against both the field and the screen (invariant 6). The
+hairline measures 1.53:1 and 1.45:1 against the field, so it never draws
+a control's edge. The Figma frames still draw the field with the hairline;
+read them with `fieldEdge` (Codex review of PR #20).
 
 Rules the pairs enforce:
 
@@ -168,8 +176,8 @@ it (docs/ROADMAP.md, R0 item 3), not a picture of it.
 |---|---|---|---|
 | `messageText` | The message block | A | Passive text, scrolls inside its frame |
 | `statusLine` | Speaking / Sounding / audio warnings | A | Passive footnote under the message; always reserved |
-| `clear` | Clear | A | Trailing column, top; live only while typing, a well otherwise |
-| `type` | Type | A | Trailing column, under Clear; selected while typing |
+| `clear` | Clear in the drawings; Phrases, the way out, as proposed under *Typing* | A | Trailing column, top; live only while typing, a well otherwise |
+| `type` | Type | A | Trailing column, under the top slot; selected while typing |
 | `yes`, `no` | Yes, No | C | |
 | `again` | Again, or Speak while typing | C | Same frame, label changes |
 | `emergency` | Emergency | C | Two columns wide on compact widths |
@@ -184,11 +192,12 @@ and 10):
 
 - **Start and stop never share a frame.** Get Attention only starts the
   alarm; Stop Alert sits in the pinned column, two regions away. Type only
-  opens typing; the way out is any category (category 0 reads "Phrases"
-  while typing) and Clear only empties the draft.
+  opens typing, and the way out of typing is a different control in a
+  different place (*Typing*, below).
 - **Nothing harmful is nearest what people read.** The message text's
-  nearest controls are Clear (a well while browsing) and Type; Yes and No
-  are next. No phrase tile, Emergency or Get Attention borders the text.
+  nearest controls are the trailing column's top slot (a well while
+  browsing) and Type; Yes and No are next. No phrase tile, Emergency or
+  Get Attention borders the text.
 - **Safety first, then navigation, then phrases.** Emergency, Get
   Attention, Yes and No are one activation from every Home state, above
   the software keyboard on every drawn device (*Typing*, below).
@@ -209,9 +218,14 @@ measured and recorded in docs/DECISIONS.md; they are recorded with
 - While browsing, the trailing column's top slot is an empty well, so a
   look that rests on the message text has Type and then Yes nearest. Type
   only opens typing.
-- While typing, Clear sits beside the draft field. Clear is recoverable:
-  the composer keeps the cleared text, and a restore control (the typing
-  thread's `restoreCleared`) needs a fixed place that is not Clear's slot.
+- While typing, the drawings put Clear beside the draft. **That placement
+  is withdrawn** (Codex review of PR #20): a look that rests on the draft
+  while reading it can land on Clear, and a recovery control with no
+  fixed place does not make that safe. *Typing*, below, proposes where
+  Clear and its recovery go instead.
+- Leaving typing through the proposed way out leaves the trailing
+  column's top slot empty, so Type, directly below, is nearest. Type only
+  reopens typing with the draft kept; nothing speaks, sounds or deletes.
 - While the alarm sounds, Stop Alert is Settings' upper neighbour.
   Settings only opens the family cover; it never speaks.
 - On the Settings root, Family Setup is the only large control, so a held
@@ -236,22 +250,46 @@ floor. A gaze profile therefore needs taller columns, taking the height
 from the grid's rows or the message block and never moving a slot; the
 layout engine decides that, and its tests pin it.
 
-| Window | Gap | Column width | Clear / Type / Stop / Settings height | Safety row height | Category height | Tile (w × h) | Grid | Top of grid | Keyboard top (measured in the kit) |
+| Window | Gap | Column width | Trailing top slot / Type / Stop / Settings height | Safety row height | Category height | Tile (w × h) | Grid | Top of grid | Keyboard top (measured in the kit) |
 |---|---|---|---|---|---|---|---|---|---|
 | iPhone 17, 402×874 | 9 | 117.3 | 67 / 67 / 56 / 56 | 67 | 56 | 117.3 × 108.7 | 3×3 | 496 | 546 |
-| iPhone SE class, 375×667 | 8 | 109 | 67 / 67 / 56 / 56 | 67 | 56 | 109 × 105.5 | 3×2 | 448 | not measured |
+| iPhone SE class, 375×667 | 8 | 109 | 67 / 67 / 56 / 56 | 67 | 56 | 109 × 67.7 | 3×3 | 448 | not measured |
 | iPad Pro 13 portrait, 1032×1376 | 13 | 189.6 | 103 / 103 / 103 / 103 | 135 | 219 | 240.2 × 211.3 | 4×3 | 664 | 973 |
 | iPad Pro 13 landscape, 1376×1032 | 13 | 258.4 | 74 / 74 / 74 / 74 | 113 | 161 | 326.2 × 142.7 | 4×3 | 526 | 534 |
+| iPad Pro 13 landscape with Display Zoom Larger Text, 1032×774 | 13 | 189.6 | does not fit (see below) | | | | | | 276 (measured on a simulator, typing research) |
 
 Notes on the table:
 
 - On the iPads the trailing column starts 52pt down, so the top-right
   corner, a Dwell hot corner, stays clear; the message block starts at the
   top inset. On phones the status bar already clears the corner.
-- The SE-class window fits two grid rows, six starter phrases, at the
-  floor. A category with more than six phrases scrolls at the floor on
-  that window; it never shrinks tiles (invariant 11 allows a grown
-  library to scroll, never a shrunken target).
+- The starter library's largest categories, Basics and Needs, hold eight
+  phrases, so every window needs nine tile slots (three rows of three on
+  compact widths) to show them without scrolling. On the SE-class window
+  that leaves tiles 67.7pt tall in the touch profile. The Figma frame for
+  this window still draws two rows of 105.5pt, which hold only six, and
+  is wrong on that point (Codex review of PR #20). Whether the starter
+  words fit 109×67.7pt tiles is measured by the word-fitting work. In
+  dwell, switch, head and gaze profiles three rows of floor-sized tiles do
+  not fit under this arrangement there (3 × 136pt is more than the 219pt
+  below the categories), and invariant 11 forbids scrolling the starter
+  library, so that window needs a different arrangement in those
+  profiles: the layout engine's work (R1), never a smaller floor.
+- **The worst keyboard window does not hold the drawn plan.** On a 13-inch
+  iPad with Display Zoom set to Larger Text, held in landscape (a
+  1032×774pt window), Apple's keyboard starts at y 276
+  (`docs/recon/2026-10-15/directions/typing.md`, section 2). Laid out as
+  drawn, the safety row would span y 226 to 339 and the categories, with
+  the way out, start at y 352, so the keyboard would cover all of the way
+  out and most of the safety row, against invariants 2 and 10. To hold
+  the safety row and the way out above it, that window needs a one-line
+  message, the trailing column at its touch-floor heights and the way out
+  in region A (*Typing*, below). Even then only one row of quick controls
+  fits, touching the keyboard's edge, and at gaze floors (109pt) the
+  trailing column and the safety row do not both fit. The typing state is
+  therefore not final for this window: the band rule in "Typing is a
+  state of Home" (Typing foundation) and the layout engine decide it, and
+  the exceptions it needs go to the owner with their numbers.
 - The iPhone 17 keeps every frame through AX3. At AX4 and AX5 the Phone
   layout work proposes letting the grid scroll rather than cutting the
   grid to one row; this file's drawings show AX5 in the same frames with
@@ -264,14 +302,31 @@ Notes on the table:
 
 ### Typing
 
-Typing is a Home state, not a screen. The draft field takes the message
-block's frame; Clear becomes live; Type shows selected; Again reads Speak
-and speaks the whole draft; Return speaks too; category 0 reads "Phrases"
-and leaves typing; the grid is under the keyboard and nothing above it
-moves. On every drawn window the safety row (Emergency, Get Attention,
-Yes, No, Speak) and the way out sit above the keyboard's top. The status
-line shows the typing thread's short texts ("Message not saved", "Message
-not restored") with the full sentence for VoiceOver.
+Typing is a Home state, not a screen. As drawn: the draft field takes the
+message block's frame; Type shows selected; Again reads Speak and speaks
+the whole draft; Return speaks too; category 0 reads "Phrases" and leaves
+typing; the grid is under the keyboard and nothing above it moves. The
+status line shows the typing thread's short texts ("Message not saved",
+"Message not restored") with the full sentence for VoiceOver. On the four
+drawn windows the safety row (Emergency, Get Attention, Yes, No, Speak)
+and the way out sit above the keyboard's top; on the zoomed iPad window
+they do not (*Slot sizes per device*).
+
+Two parts of the drawn typing state are withdrawn after Codex's review of
+PR #20, and this is proposed instead, for the Typing foundation's
+decisions and "Home's slot plan" to settle:
+
+- **The way out in region A.** While typing, the trailing column's top
+  slot, a well while browsing, holds **Phrases**, which leaves typing and
+  keeps the draft. It sits beside the draft, where a resting look is
+  harmless, and stays above the keyboard on every window, the zoomed one
+  included. Category 0 then keeps its own name.
+- **Clear and its recovery away from the draft.** Clear and **Put Back**
+  (which restores what Clear removed) each take a fixed category slot in
+  region B while typing, apart from each other, from Speak and from the
+  draft, with the safety row between them and the text. Where the
+  keyboard covers region B, as on the zoomed window, neither shows; the
+  keyboard's own delete key still edits the draft, and nothing is lost.
 
 ### Alarm
 
@@ -287,7 +342,7 @@ the entries beside it), and they win where these drawings differ.
 
 Settings, Family Setup, Voice and the Library open as a full-screen cover
 over Home, so each starts with the same top band at fixed frames: **Back
-to Talking** over Home's trailing column (Clear and Type) and a start-only
+to Talking** over Home's trailing column (its top slot and Type) and a start-only
 **Get Attention** over Home's message text on compact widths, or over
 Home's Again column on regular widths. Below the band:
 
@@ -297,9 +352,14 @@ Home's Again column on regular widths. Below the band:
   by itself. There is nothing else to activate, so a stray look that
   opened Settings lands on text or on Family Setup.
 - **Family Setup**: a list of rows, each a standard button: Get Started,
-  Voice, Phrases, Reaching the Screen, Keep Brickson Open, Privacy Policy
-  (opens the policy in an in-app sheet, never Safari), About. No toggles
-  anywhere: a toggle turns into its opposite in place.
+  Voice, Phrases, Reaching the Screen, Keep Brickson Open, Privacy Policy,
+  About. No toggles anywhere: a toggle turns into its opposite in place.
+- **Privacy Policy**: a screen that shows the policy's text bundled in the
+  app, so it opens with no network, and on it a separate button that
+  opens the web page in an in-app Safari sheet, never in Safari
+  (AGENTS.md, *The privacy policy is a promise*; App Review Guideline
+  5.1.1(i)). This screen is not drawn in the Figma file yet; it shares
+  the family screens' top band.
 - **Voice**: a "now speaking" line; the Personal Voice status with one
   button ("Use My Personal Voice", or "Open Personal Voice Settings" when
   the system switch is off); one row per voice with separate **Hear** and
