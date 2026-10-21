@@ -401,7 +401,8 @@ struct SpokenUtteranceTrackerTests {
         tracker.recordProgress(1, reaching: 1, at: start + .seconds(0.2))
         tracker.recordProgress(1, reaching: 11, at: start + .seconds(0.6))
 
-        #expect(tracker.ended(1, at: start + .seconds(0.8)) == .endedBeforeItsFinalWord)
+        let ending = tracker.ended(1, at: start + .seconds(0.8))
+        #expect(ending == .endedBeforeItsFinalWord)
         #expect(!tracker.isSpeaking)
     }
 
@@ -412,8 +413,10 @@ struct SpokenUtteranceTrackerTests {
         tracker.recordProgress(1, reaching: 11, at: start + .seconds(0.6))
         tracker.recordProgress(1, reaching: 15, at: start + .seconds(0.9))
 
-        #expect(tracker.ended(1, at: start + .seconds(1.1)) == .finished)
-        #expect(!tracker.interruptionCutOffAPhrase(at: start + .seconds(1.2)))
+        let ending = tracker.ended(1, at: start + .seconds(1.1))
+        #expect(ending == .finished)
+        let cutOff = tracker.interruptionCutOffAPhrase(at: start + .seconds(1.2))
+        #expect(!cutOff)
     }
 
     /// A voice that reports one range for the whole sentence is complete
@@ -424,7 +427,8 @@ struct SpokenUtteranceTrackerTests {
         tracker.began(1, text: Self.helpNow, at: start)
         tracker.recordProgress(1, reaching: 16, at: start + .seconds(0.1))
 
-        #expect(tracker.ended(1, at: start + .seconds(1)) == .finished)
+        let ending = tracker.ended(1, at: start + .seconds(1))
+        #expect(ending == .finished)
     }
 
     /// With no word reports at all there is nothing to judge by, so the
@@ -434,8 +438,10 @@ struct SpokenUtteranceTrackerTests {
         tracker.began(1, text: Self.helpNow, at: start)
         tracker.recordProgress(1, at: start + .seconds(0.5))
 
-        #expect(tracker.ended(1, at: start + .seconds(1)) == .finished)
-        #expect(!tracker.interruptionCutOffAPhrase(at: start + .seconds(1.1)))
+        let ending = tracker.ended(1, at: start + .seconds(1))
+        #expect(ending == .finished)
+        let cutOff = tracker.interruptionCutOffAPhrase(at: start + .seconds(1.1))
+        #expect(!cutOff)
     }
 
     /// Word reports can arrive out of order. Fails if a late report of an
@@ -446,7 +452,8 @@ struct SpokenUtteranceTrackerTests {
         tracker.recordProgress(1, reaching: 15, at: start + .seconds(0.9))
         tracker.recordProgress(1, reaching: 6, at: start + .seconds(0.3))
 
-        #expect(tracker.ended(1, at: start + .seconds(1)) == .finished)
+        let ending = tracker.ended(1, at: start + .seconds(1))
+        #expect(ending == .finished)
     }
 
     @Test func aReportForAnotherUtteranceIsNotCurrent() {
@@ -454,7 +461,8 @@ struct SpokenUtteranceTrackerTests {
         tracker.began(1, text: Self.helpNow, at: start)
         tracker.began(2, text: "Yes.", at: start + .seconds(0.2))
 
-        #expect(tracker.ended(1, at: start + .seconds(0.3)) == .notCurrent)
+        let ending = tracker.ended(1, at: start + .seconds(0.3))
+        #expect(ending == .notCurrent)
         #expect(tracker.activeID == 2)
     }
 
@@ -467,10 +475,12 @@ struct SpokenUtteranceTrackerTests {
         tracker.recordProgress(1, reaching: 6, at: start + .seconds(0.3))
         tracker.ended(1, at: start + .seconds(0.4))
 
-        #expect(tracker.interruptionCutOffAPhrase(at: start + .seconds(0.5)))
+        let cutOff = tracker.interruptionCutOffAPhrase(at: start + .seconds(0.5))
+        #expect(cutOff)
         // Reported once: a second notice for the same interruption (the
         // legacy and the newer notices together) adds nothing.
-        #expect(!tracker.interruptionCutOffAPhrase(at: start + .seconds(0.6)))
+        let cutOff2 = tracker.interruptionCutOffAPhrase(at: start + .seconds(0.6))
+        #expect(!cutOff2)
     }
 
     /// An early ending with no interruption near it is not a cut-off: a voice
@@ -483,7 +493,8 @@ struct SpokenUtteranceTrackerTests {
         tracker.recordProgress(1, reaching: 6, at: start + .seconds(0.3))
         tracker.ended(1, at: start + .seconds(0.4))
 
-        #expect(!tracker.interruptionCutOffAPhrase(at: start + .seconds(0.4) + window))
+        let cutOff = tracker.interruptionCutOffAPhrase(at: start + .seconds(0.4) + window)
+        #expect(!cutOff)
     }
 
     @Test func anInterruptionJustInsideTheWindowStillCounts() {
@@ -493,9 +504,8 @@ struct SpokenUtteranceTrackerTests {
         tracker.recordProgress(1, reaching: 6, at: start + .seconds(0.3))
         tracker.ended(1, at: start + .seconds(0.4))
 
-        #expect(tracker.interruptionCutOffAPhrase(
-            at: start + .seconds(0.4) + window - .milliseconds(1)
-        ))
+        let cutOff = tracker.interruptionCutOffAPhrase(at: start + .seconds(0.4) + window - .milliseconds(1))
+        #expect(cutOff)
     }
 
     /// The other order: the interruption arrives while the phrase is still
@@ -504,7 +514,8 @@ struct SpokenUtteranceTrackerTests {
         var tracker = SpokenUtteranceTracker<Int>()
         tracker.began(1, text: Self.helpNow, at: start)
 
-        #expect(tracker.interruptionCutOffAPhrase(at: start + .seconds(0.5)))
+        let cutOff = tracker.interruptionCutOffAPhrase(at: start + .seconds(0.5))
+        #expect(cutOff)
     }
 
     /// A new phrase, or an intentional stop, supersedes an earlier early
@@ -517,13 +528,15 @@ struct SpokenUtteranceTrackerTests {
         tracker.began(2, text: "Yes.", at: start + .seconds(0.5))
         tracker.recordProgress(2, reaching: 3, at: start + .seconds(0.6))
         tracker.ended(2, at: start + .seconds(0.7))
-        #expect(!tracker.interruptionCutOffAPhrase(at: start + .seconds(0.8)))
+        let cutOff = tracker.interruptionCutOffAPhrase(at: start + .seconds(0.8))
+        #expect(!cutOff)
 
         tracker.began(3, text: Self.helpNow, at: start + .seconds(1))
         tracker.recordProgress(3, reaching: 6, at: start + .seconds(1.3))
         tracker.ended(3, at: start + .seconds(1.4))
         tracker.reset()
-        #expect(!tracker.interruptionCutOffAPhrase(at: start + .seconds(1.5)))
+        let cutOff2 = tracker.interruptionCutOffAPhrase(at: start + .seconds(1.5))
+        #expect(!cutOff2)
     }
 
     /// A Settings sample is never repeated with Again, so it never counts.
@@ -532,8 +545,10 @@ struct SpokenUtteranceTrackerTests {
         tracker.began(1, source: .preview(.faster), at: start)
         tracker.recordProgress(1, reaching: 4, at: start + .seconds(0.2))
 
-        #expect(tracker.ended(1, at: start + .seconds(0.3)) == .finished)
-        #expect(!tracker.interruptionCutOffAPhrase(at: start + .seconds(0.4)))
+        let ending = tracker.ended(1, at: start + .seconds(0.3))
+        #expect(ending == .finished)
+        let cutOff = tracker.interruptionCutOffAPhrase(at: start + .seconds(0.4))
+        #expect(!cutOff)
     }
 
     /// Losing the output (a Bluetooth speaker switched off) does not stop a
@@ -542,12 +557,15 @@ struct SpokenUtteranceTrackerTests {
     @Test func outputLossOnlyConfirmsAPhraseThatAlreadyEndedEarly() {
         var tracker = SpokenUtteranceTracker<Int>()
         tracker.began(1, text: Self.helpNow, at: start)
-        #expect(!tracker.outputLossCutOffAPhrase(at: start + .seconds(0.2)))
+        let outputLossCutOff = tracker.outputLossCutOffAPhrase(at: start + .seconds(0.2))
+        #expect(!outputLossCutOff)
         #expect(tracker.isRepeatableSpeechActive)
 
         tracker.recordProgress(1, reaching: 6, at: start + .seconds(0.3))
         tracker.ended(1, at: start + .seconds(0.4))
-        #expect(tracker.outputLossCutOffAPhrase(at: start + .seconds(0.5)))
-        #expect(!tracker.outputLossCutOffAPhrase(at: start + .seconds(0.6)))
+        let outputLossCutOff2 = tracker.outputLossCutOffAPhrase(at: start + .seconds(0.5))
+        #expect(outputLossCutOff2)
+        let outputLossCutOff3 = tracker.outputLossCutOffAPhrase(at: start + .seconds(0.6))
+        #expect(!outputLossCutOff3)
     }
 }

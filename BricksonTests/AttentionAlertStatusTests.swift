@@ -65,17 +65,20 @@ struct AttentionAlertStatusTests {
 
     @Test func anUnexpectedStopIsRecordedOnlyWhileSounding() {
         var idle = AttentionAlertStatus()
-        #expect(!idle.recordUnexpectedStop())
+        let stopReported = idle.recordUnexpectedStop()
+        #expect(!stopReported)
         #expect(idle.state == .idle)
         #expect(idle.failureSequence == 0)
 
         var sounding = AttentionAlertStatus()
         sounding.recordStart(succeeded: true)
-        #expect(sounding.recordUnexpectedStop())
+        let stopReported2 = sounding.recordUnexpectedStop()
+        #expect(stopReported2)
         #expect(sounding.state == .stoppedUnexpectedly)
         #expect(sounding.failureSequence == 1)
         // Once stopped, a second report is nothing new.
-        #expect(!sounding.recordUnexpectedStop())
+        let stopReported3 = sounding.recordUnexpectedStop()
+        #expect(!stopReported3)
         #expect(sounding.failureSequence == 1)
     }
 
@@ -83,11 +86,14 @@ struct AttentionAlertStatusTests {
         var status = AttentionAlertStatus()
         status.recordStart(succeeded: true)
 
-        #expect(!status.recordHealthCheck(livePlayerIsPlaying: true))
+        let quietReported = status.recordHealthCheck(livePlayerIsPlaying: true)
+        #expect(!quietReported)
         #expect(status.state == .playing)
-        #expect(status.recordHealthCheck(livePlayerIsPlaying: false))
+        let quietReported2 = status.recordHealthCheck(livePlayerIsPlaying: false)
+        #expect(quietReported2)
         #expect(status.state == .stoppedUnexpectedly)
-        #expect(!status.recordHealthCheck(livePlayerIsPlaying: false))
+        let quietReported3 = status.recordHealthCheck(livePlayerIsPlaying: false)
+        #expect(!quietReported3)
         #expect(status.failureSequence == 1)
     }
 
