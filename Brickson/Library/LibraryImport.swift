@@ -44,6 +44,9 @@ nonisolated enum LibraryImport {
         var result = library
         var report = LibraryImportReport()
         var ids = LibraryIDs(library)
+        // What the library held before this import. Phrases added by this
+        // import are not remembered, so a repeat in the backup (even one
+        // with a repeated identity) is kept, not taken for a duplicate.
         var knownPhrases: [UUID: [UInt8]] = [:]
         var wordsBefore: [UUID: Set<[UInt8]>] = [:]
         for category in library.categories {
@@ -85,7 +88,6 @@ nonisolated enum LibraryImport {
                     // phrase stays as it is, and these words are added.
                     report.phrasesGivenNewIdentity += 1
                 }
-                knownPhrases[id] = bytes
                 result.categories[target].phrases.append(LibrarySnapshot.Phrase(id: id, text: phrase.text))
             }
         }

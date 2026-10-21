@@ -396,6 +396,25 @@ struct LibraryImportTests {
         #expect(twice.changes.isEmpty)
     }
 
+    /// Fails if merge remembers phrases it has just added and skips a
+    /// repeat that shares their identity (a hand-edited backup), instead
+    /// of giving the repeat a new identity as replace does.
+    @Test func aRepeatedIdentityInOneBackupIsKeptWithANewOne() throws {
+        let incoming = LibrarySnapshot(categories: [
+            .init(id: F.id(400), name: "Family", symbolName: "person.2.fill", isEmergency: false, phrases: [
+                .init(id: F.id(401), text: "Where is everyone?"),
+                .init(id: F.id(401), text: "Where is everyone?"),
+            ]),
+        ])
+        let plan = try merge(incoming)
+        #expect(texts(plan.after, F.id(400)) == ["Where is everyone?", "Where is everyone?"])
+        #expect(plan.after.hasUniqueIDs)
+        #expect(plan.importReport?.phrasesGivenNewIdentity == 1)
+
+        let twice = try LibraryEdit.merge(incoming).plan(in: plan.after, makeID: SequentialIDs(startingAt: 950).make)
+        #expect(twice.changes.isEmpty)
+    }
+
     /// Fails if merging twice adds anything the first merge did not.
     @Test func mergingTwiceIsTheSameAsMergingOnce() throws {
         let incoming = LibrarySnapshot(categories: [
