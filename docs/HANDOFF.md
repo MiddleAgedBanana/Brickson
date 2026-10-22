@@ -167,9 +167,8 @@ release in docs/ROADMAP.md when no thread has it yet.
   agent)*
 - Words that get longer while Voice Settings is open still push what is
   below them down: the Personal Voice card going from ready to turned
-  off, or "Speaking with …" naming a newly allowed voice longer than
-  every listed one (docs/DECISIONS.md, "Voice Settings keeps its places
-  while it is open"). When Automatic moves to another Personal Voice
+  off (docs/DECISIONS.md, "Voice Settings keeps its places while it is
+  open"). When Automatic moves to another Personal Voice
   because the kept one is gone, no line says so yet
   ([`log/2026-10-22-voice-screen.md`](log/2026-10-22-voice-screen.md),
   *Follow-ups*). *(the next Settings thread)*

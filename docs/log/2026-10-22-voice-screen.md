@@ -30,7 +30,11 @@ Voice Settings screen, once they can reach it:
     than its row on a narrow screen at the largest text sizes, pushing
     every row below down (now the words take the line under the voice's
     name, and every row lays out each version of that line,
-    `VoiceList.secondLines`).
+    `VoiceList.secondLines`). Its second review found that a grant from
+    the Ask button can reveal a Personal Voice whose name was hidden
+    until then, and "Speaking with …" would grow to name it; the line now
+    names only voices on the device when the screen opened, and says "a
+    newly available voice" otherwise (`VoiceList.speakingName`).
 - **Ask to Use Personal Voice** (docs/DECISIONS.md, "Asking for Personal
   Voice from Voice Settings"): the card's explained button, calling
   `SpeechService.requestPersonalVoiceAuthorization()`. A second press
@@ -60,7 +64,7 @@ Voice Settings screen, once they can reach it:
   `goneVoiceNote`). Every version of each note is laid out, so access
   changing moves nothing.
 
-Besides the patch's own changes, the String Catalog gains six strings
+Besides the patch's own changes, the String Catalog gains seven strings
 and loses one, written by hand in code-point order (nothing here could
 build).
 
@@ -73,8 +77,9 @@ build).
 - `58cd607`, `d133c93` This record and the documents.
 - `54d36f4` The review fixes: arrivals keep their first places, and
   every row reserves its gone-voice line.
-- The commit that measures what the two UI tests below meant to
-  measure.
+- `38139ba` The two UI tests measure what they meant to measure.
+- `0dd6ab7` Main (with PR #22) merged in.
+- The commit that keeps "Speaking with …" from growing after a grant.
 
 ## Verified
 
@@ -86,17 +91,17 @@ Xcode with iOS Simulator 27.0:
   code, and every unit test passed on the iPad Pro 13-inch simulator
   (414, then 416 with the review fixes' two tests).
 - `54d36f4` UI tests: 29 of 30 run passed on the iPad Pro 13-inch and 28
-  of 30 on the iPhone 17 (the 4 opt-in keyboard probes skipped on each). Both
-  failures were the tests' measurements, not the app, and are fixed in
-  the commit after it (below). Green UI tests on that commit are still
-  to come; until then treat the two screens' UI checks as unproven.
+  of 30 on the iPhone 17 (the 4 opt-in keyboard probes skipped on
+  each). Both failures were the tests' measurements, not the app, and
+  are fixed in `38139ba` (below). Until the UI tests are green on a
+  later head, treat the two screens' UI checks as unproven.
 
 Before pushing, with Swift 6.3.3 on Linux in Swift 6 mode with
 main-actor default isolation (a throwaway package outside the repository,
 `String(localized:)` stubbed):
 
 - `PersonalVoiceGuidanceTests` and `VoiceListTests`, including the
-  patch's four `keepingPlaces` tests: 23 tests passed, and 25 after the
+  patch's four `keepingPlaces` tests: 23 tests passed, and 26 after the
   review fixes.
 - Each new test was made to fail by undoing its rule on those copies:
   offering Open Personal Voice Settings after asking fails
@@ -109,7 +114,8 @@ main-actor default isolation (a throwaway package outside the repository,
   `aVoiceWhoseAccessIsOffIsNeverCalledGone`. Leaving the snapshot
   without its arrivals fails `arrivalsKeepTheOrderTheyFirstAppearedIn`;
   reserving only the quality and language line fails
-  `everyRowReservesTheNotesItCouldShow`.
+  `everyRowReservesTheNotesItCouldShow`; naming whichever voice speaks
+  now fails `aVoiceThatAppearsAfterOpeningIsNotNamed`.
 - `StandInPersonalVoice` and `theStandInPersonalVoiceAnswersFromAnotherThread`
   compiled against a small stand-in for AVFoundation's status type and
   passed; the `switch` that picks the permission in `AppAudio` compiled
@@ -183,9 +189,8 @@ For the next Settings thread, in order, after docs/HANDOFF.md and
    (`SpeechService.keepAutomaticPersonalVoice`). It needs the engine to
    record the change, for the screen to say so once.
 3. **Words that grow while Voice Settings is open** still push what is
-   below down (the card going from ready to turned off; "Speaking with …"
-   naming a new, longer voice). Reserve both where the versions are
-   known, as the Ask button's words now are.
+   below down (the card going from ready to turned off). Reserve every
+   version where they are known, as the Ask button's words now are.
 4. **Score the chain through iOS's question** with the other Settings
    chains (Settings' follow-up 10) before `.fromSettings` ships: after
    answering, a dwell user's look rests where the question's button was.

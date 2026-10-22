@@ -48,14 +48,18 @@ struct VoiceContent: View {
 
         // Which voice speaks now, from the service itself, so a kept
         // Personal Voice is named the same way speech chooses it. Reserved
-        // over every voice listed now or when the screen opened.
-        if let current = speech.currentVoice {
-            let names = Set(speech.availableVoices.map(\.name) + (opened?.voiceNames ?? []))
-            SettingsReservedParagraph(
-                text: Text("Speaking with \(current.name)."),
-                alternatives: names.sorted().map { Text("Speaking with \($0).") }
-            )
-        }
+        // over every voice on the device when the screen opened, and laid
+        // out even while no voice speaks, so the line never grows; a voice
+        // that has appeared since is not named (`VoiceList.speakingName`).
+        let knownNames = opened?.speakingNames ?? Set(speech.availableVoices.map(\.name))
+        let current = speech.currentVoice
+        SettingsReservedParagraph(
+            text: Self.speakingSentence(for: current, knownNames: knownNames),
+            alternatives: knownNames.sorted().map { Text("Speaking with \($0).") }
+                + [Text("Speaking with a newly available voice.")]
+        )
+        .opacity(current == nil ? 0 : 1)
+        .accessibilityHidden(current == nil)
 
         PersonalVoiceSection()
             .settingsKeepsItsTallestHeight()
@@ -73,7 +77,11 @@ struct VoiceContent: View {
         SettingsHeading("Voice")
             .onAppear {
                 if opened == nil {
-                    opened = OpenedVoiceList(rows: rows, voiceWasMissing: voiceIsMissing)
+                    opened = OpenedVoiceList(
+                        rows: rows,
+                        voiceWasMissing: voiceIsMissing,
+                        speakingNames: Set(speech.availableVoices.map(\.name))
+                    )
                 }
             }
             .onChange(of: rows) { _, current in
@@ -112,13 +120,21 @@ struct VoiceContent: View {
 private struct OpenedVoiceList {
     var rows: [VoiceRow]
     let voiceWasMissing: Bool
-
-    var voiceNames: [String] {
-        rows.filter { $0.voiceID != nil }.map(\.name)
-    }
+    /// Every voice on the device when the screen opened: the names the
+    /// "Speaking with …" line keeps room for.
+    let speakingNames: Set<String>
 }
 
 extension VoiceContent {
+    /// The "Speaking with …" line (`VoiceList.speakingName`).
+    static func speakingSentence(for current: VoiceDescriptor?, knownNames: Set<String>) -> Text {
+        guard let current else { return Text(verbatim: "") }
+        guard let name = VoiceList.speakingName(current.name, knownAtOpening: knownNames) else {
+            return Text("Speaking with a newly available voice.")
+        }
+        return Text("Speaking with \(name).")
+    }
+
     /// The speed line: normal, or the share of normal as a localized
     /// percent.
     static func speedSentence(for rate: Float) -> Text {

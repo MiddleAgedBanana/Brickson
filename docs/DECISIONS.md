@@ -1283,17 +1283,19 @@ one visit to the screen:
 - The Personal Voice card keeps its tallest height
   (`settingsKeepsItsTallestHeight()`), so words that get shorter pull
   nothing up.
-- "Speaking with …" keeps room for every voice listed now or when the
-  screen opened.
+- "Speaking with …" keeps room for every voice on the device when the
+  screen opened, and names only those. A voice that appears while it is
+  open, such as a Personal Voice just allowed (iOS hides its name until
+  then), is "a newly available voice" until the next visit
+  (`VoiceList.speakingName`), so the line never grows.
 - The missing-voice note above the list appears only when the chosen
   voice was already missing as the screen opened; a voice that goes later
   says so in its own row.
 
 What this does not cover: words that get longer while the screen is open
 still push what is below them down (the card going from ready to turned
-off, or "Speaking with …" naming a newly allowed voice longer than every
-listed one, at sizes where that wraps). Where every version is known,
-reserve them all (`SettingsReservedParagraph`), as the Ask button does.
+off, at sizes where that wraps). Where every version is known, reserve
+them all (`SettingsReservedParagraph`), as the Ask button does.
 
 ## Asking for Personal Voice from Voice Settings
 

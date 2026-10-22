@@ -170,6 +170,18 @@ struct VoiceListTests {
         #expect(VoiceList.goneVoiceNote(for: daniel, personalVoiceAllowed: false).contains(gone))
     }
 
+    /// "Speaking with …" names only a voice on the device when Voice
+    /// Settings opened, since only those names have room reserved. A
+    /// Personal Voice allowed while the screen is open is hidden by iOS
+    /// until then, and its name may be longer than every reserved one.
+    /// Fails if the line names whichever voice speaks now.
+    @Test func aVoiceThatAppearsAfterOpeningIsNotNamed() {
+        let atOpening = Set(voices.filter { $0.id != "mine" }.map(\.name))
+
+        #expect(VoiceList.speakingName("Daniel", knownAtOpening: atOpening) == "Daniel")
+        #expect(VoiceList.speakingName("My Voice", knownAtOpening: atOpening) == nil)
+    }
+
     /// Every row lays out each note it could show if its voice left, so a
     /// voice leaving changes no row's height. Fails if a note is missing
     /// from the reserved lines, or the quality and language line is.

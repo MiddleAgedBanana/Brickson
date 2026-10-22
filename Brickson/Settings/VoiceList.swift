@@ -148,6 +148,17 @@ nonisolated enum VoiceList {
         return String(localized: "No longer on this device.")
     }
 
+    /// The voice Voice Settings' "Speaking with …" line names, or nil for
+    /// the line that names none. Only a voice on the device when the
+    /// screen opened is named, since only those names have room reserved:
+    /// one that appears while it is open, such as a Personal Voice just
+    /// allowed (whose name iOS hides until then), could be longer than all
+    /// of them, and the line would grow and push every button below it
+    /// down (AGENTS.md, invariant 10). The next visit names it.
+    static func speakingName(_ name: String, knownAtOpening known: Set<String>) -> String? {
+        known.contains(name) ? name : nil
+    }
+
     /// Every version of the line under a voice's name: its quality and
     /// language, and each note it would show if it left the list. A row
     /// lays them all out, so a voice that leaves while the screen is open
