@@ -38,7 +38,7 @@
 
     },
     "Again" : {
-
+      "comment" : "Repeats the last thing spoken."
     },
     "Alert failed" : {
 
@@ -65,7 +65,7 @@
 
     },
     "Choose a phrase to speak it." : {
-
+      "comment" : "Shown where the spoken message appears, before anything has been spoken."
     },
     "Choose every way that is used now. This sets how large %@’s buttons are. If nothing is chosen, it uses its largest sizes." : {
 
@@ -287,7 +287,7 @@
 
     },
     "Speaking" : {
-
+      "comment" : "Shown under the message while a phrase is being spoken."
     },
     "Speaking at %@ of normal speed." : {
 

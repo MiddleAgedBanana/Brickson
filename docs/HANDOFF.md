@@ -13,19 +13,24 @@ Ten threads are working in parallel on the first release, R0.
 
 What it is written to do (*Verification* says how much has been seen). A
 stand-in Home with Yes, No and Emergency, everyday categories, and tiles
-from a neutral starter set. A tile speaks at once, in the person's
-Personal Voice when one exists and is allowed; the sentence stays on screen
-in a reserved viewport: one full-width line with Again below at compact
-widths, two lines with Again beside at regular widths, and longer messages
-scroll at full size. A phrase the system cuts off (a call, Siri, lost
+from a neutral starter set, sized from the space the window gives it
+(docs/DECISIONS.md, "Home's stand-in layout"): four category buttons that
+never scroll sideways, and three phrase columns on every iPhone. A tile
+speaks at once, in the person's Personal Voice when one exists and is
+allowed; the sentence stays on screen in two reserved lines with Again
+beside them, and a longer message scrolls inside them. No label breaks a
+word: each drops its icon first, then shrinks only as far as it must,
+never below the default size, in lines of whole words. A phrase the system cuts off (a call, Siri, lost
 headphones) shows "Stopped" with Again to repeat it. Emergency opens the
 emergency phrases and says nothing. The start-only Get Attention alarm is
-built and waiting for its place on Home. Settings, for the family, is
+built and waiting for its place on Home (docs/DECISIONS.md, "Home's slot
+plan"). Settings, for the family, is
 built (a full-screen cover with Back to Talking, Family Setup, Voice
 Settings, guides, the privacy policy and step-by-step setup) and waits for
 Home to place its Settings button; until then only UI tests open it, with
-`--screen=settings`. Audio failures and very low volume show as a short passive
-warning in space always kept for it, and VoiceOver announces them. If the
+`--screen=settings`. "Speaking", audio failures and very low volume share
+one passive status line under the message, in space always kept for it,
+and VoiceOver announces the warnings. If the
 library cannot be saved, the app speaks from a filled in-memory library
 and says changes will not be kept. The screen never locks. Ported code:
 [`docs/PORTING.md`](PORTING.md).
@@ -68,20 +73,41 @@ and says changes will not be kept. The screen never locks. Ported code:
 Each names who closes it: *(owner)*, the thread working on it, or the
 release in docs/ROADMAP.md when no thread has it yet.
 
-- Home's sizes are plain defaults, not measured gaze, switch or touch
-  sizes, and the phrase grid scrolls (invariant 11). Ending the scroll is R0
-  (ROADMAP item 3); measured sizes for each input profile are R1. *(Phone layout and word fitting)*
-- On an iPhone, compact Home (PR #13) shows one phrase column, so the
-  starter library scrolls further, and the category row scrolls sideways
-  and hides categories. Quick-control words no longer clip or break at
-  AX5; a rendered-label test checks the four English quick-control labels
-  only, not phrases. *(Phone layout and word fitting)*
+- Home's sizes are the stand-in's, not measured gaze, switch or touch
+  floors per input profile, and the phrase grid still scrolls (invariant
+  11) on small phone windows at large text sizes: docs/DECISIONS.md,
+  "Home's stand-in layout", *Where the grid still scrolls*. Ending the
+  scroll is R0 (ROADMAP item 3); measured sizes for each input profile are
+  R1. *(the layout engine, a new thread)*
+- The slot plan has no answer yet for more than four everyday categories
+  (docs/DECISIONS.md, "Home's slot plan", *Open*): editing and import
+  must not add a fifth until it does. *(the layout engine, a new thread)*
+- In the slot plan, Yes and No border the message (10 to 16pt away), so a
+  look resting on it can speak Yes or No. Recorded as an open hazard, not
+  an accepted exception (docs/DECISIONS.md, "Home's slot plan"): it is
+  removed by placement or its measured cost goes to the owner before the
+  plan ships in a dwell, switch, head or gaze profile. *(the layout
+  engine, a new thread; owner if it stays)*
+- Home has no wells yet: Again sits beside the message text, and Phrases,
+  Type, Get Attention, Stop and Settings have no place on Home
+  (docs/DECISIONS.md, "Home's slot plan"). *(a new thread: Get Attention
+  and Stop on Home)*
+- A label with a word too wide for its slot even at the default text size
+  is cut short with an ellipsis when it is one word, but in a phrase of
+  several words that word can wrap mid-word. No starter label has one
+  (`StarterLabelFitTests`), and nothing can add one until editing or
+  import exists; those must keep every word within the narrowest tile, or
+  the layout engine must give it room. *(Library editing and backup format,
+  with the layout engine)*
+- The rendered-label test reads the four English quick-control labels
+  only, not phrases or categories; `StarterLabelFitTests` measures every
+  starter label against its narrowest slot instead. *(Accessibility
+  coverage checklist)*
 - The Get Attention alarm is built (`AttentionAlertPlayer`, in the
   environment) but not on screen, so `AudioSafetyPolicy` on Home runs with
   the alarm always idle, and the VoiceOver warning sentences mention it
-  already. Get Attention and Stop go into Home's slots once the layout's
-  slot model lands (docs/DECISIONS.md, "Get Attention"). *(a new thread,
-  after Phone layout and word fitting)*
+  already. Get Attention and Stop go into Home's slots (docs/DECISIONS.md,
+  "Home's slot plan" and "Get Attention"). *(a new thread)*
 - The Get Attention tone is the reference app's placeholder; a
   harmonic-rich replacement and its level under speech need a listening
   check on a device (docs/DECISIONS.md, "Get Attention"). *(owner, with a
@@ -173,7 +199,7 @@ recheck the minimum iOS against its two rules whenever Apple's next major
 release drops devices (docs/DECISIONS.md, "Minimum iOS, iPhone and
 iPad").
 The speech work's next pull request, Get Attention and Stop on Home
-(after the layout's slot model), is described for a fresh thread in
+(building the wells of docs/DECISIONS.md, "Home's slot plan"), is described for a fresh thread in
 [`log/2026-10-21-speech-and-get-attention.md`](log/2026-10-21-speech-and-get-attention.md),
 *Follow-ups*. What the Voice screen and the next speech thread take up
 from the Personal Voice engine (the explained Ask button, then the
@@ -185,6 +211,9 @@ row in [`ACCESSIBILITY.md`](ACCESSIBILITY.md), with its release and
 roadmap item; what each R0 item picks up from it, in order, is in
 [`log/2026-10-21-accessibility-coverage.md`](log/2026-10-21-accessibility-coverage.md),
 *Follow-ups*.
+The layout's next steps (the wells, then the engine with input
+profiles) are in
+[`log/2026-10-21-phone-layout.md`](log/2026-10-21-phone-layout.md).
 
 ## Checks that need a real device
 

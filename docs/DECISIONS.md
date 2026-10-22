@@ -44,9 +44,9 @@ holds.
 | Layouts from the space available, with floors set without a device table | "Layouts from the space available", below |
 | When Personal Voice permission is asked, Automatic keeping the person's Personal Voice, no Personal Voice without permission | "Personal Voice permission is asked at launch, for now", "Automatic keeps the person's Personal Voice", "A Personal Voice is used only while it is allowed" (Personal Voice foundation; `claude/project-thread-1ly6dd`) |
 | Minimum iOS 26.0, iPhone and iPad, set by two rules: every device that can use eye tracking runs the app, and every mapped accessibility API stays reachable behind `#available` | "Minimum iOS, iPhone and iPad" (Toolchain and iOS version targets; PR #12, merged) |
-| Home's slot plan with stable slot identifiers; solid fills on Home and the system's Liquid Glass elsewhere | "Home's slot plan", "Solid fills on Home, system glass elsewhere" (Figma and Claude Design screens; pull request not open yet) |
+| Home's slot plan with stable slot identifiers; solid fills on Home and the system's Liquid Glass elsewhere | "Home's slot plan" (Phone layout and word fitting), "Solid fills on Home, system glass elsewhere" (Figma and Claude Design screens; pull request not open yet) |
 | The App Store category is Utilities, with no secondary category; the age-rating answers give 4+ | "App Store category", "Age rating answers" (App Store readiness and ASO; PR #18) |
-| Home's fixed slots, labels and button style | Entries next to "Home version 0 is a stand-in" (Phone layout and word fitting; pull request not open yet) |
+| Home's stand-in layout, labels that fit themselves and Home's button style | "Home's stand-in layout", next to "Home version 0 is a stand-in" (Phone layout and word fitting) |
 | Typing as a state of Home under a band Apple's keyboard never covers, Apple's keyboard in 1.0, Writing Tools off, third-party keyboards refused, Return speaks, the typed message | "Typing is a state of Home", "Typing uses Apple's keyboard", "Writing Tools off while typing", "Third-party keyboards refused in 1.0", "Return speaks", "The typed message" (Typing foundation; its pull request from `claude/project-thread-dsbkry`) |
 | Explicit saves, an Emergency category that is always there, fixed starter identities, editing, import, replace, the backup format, an unreadable library reported and never replaced | "Every save is explicit", "Starter phrases", "The emergency category is always there", "Editing the library", "Importing a backup", "Replacing the library", "Backup file format", "An unreadable library is reported, never replaced" (Library editing and backup format; PR #14, open) |
 | When the audio session is released, the alarm's sound, start-only Get Attention, no automatic resume, Personal Voice never written to a file | "Background audio", "Get Attention", "A phrase the system cuts off", "Audio session notices", "Personal Voice is never written to a file" (Speech engine and Get Attention; PR #16, open) |
@@ -440,7 +440,9 @@ reference app.
 - **Start-only.** Get Attention only starts it; a second activation while
   the tone really plays changes nothing. Only Stop, a separate control in a
   different place, ends it (invariant 10). On Home, Stop takes the pinned
-  cell above Emergency (with the layout work).
+  well directly below Emergency, at the top of the categories' leading
+  column (*Home's slot plan*; this said "above" under an earlier order of
+  Home's regions).
 - **Speaking never silences it.** While a phrase speaks, the tone drops to
   `AttentionAlertStatus.toneVolumeWhileSpeaking` (0.32, about 10 dB down),
   and comes back to full when the phrase ends, however it ends. The level
@@ -550,31 +552,40 @@ How it behaves, and where it knowingly falls short:
   category row; the Emergency quick control opens it and shows a check
   mark while it is open. Two buttons with the same name confused Voice
   Control and the UI tests, and the reference app did the same.
-- **Messages never shrink.** At compact widths, the message has the full
-  width and reserves one line of its font, with a full-width Again button
-  below. At regular widths, it reserves two lines with Again beside it.
-  A longer message scrolls inside that viewport at full size. Every phrase
-  start, including Again and the same phrase chosen again, shows the
-  message from the top. The reserved height does not change with the
-  message or speaking state.
-- **Quick controls give words the width they need.** At compact widths,
-  Yes and No share one row; Emergency takes the full row below. Regular
-  widths retain the horizontal quick-control row. Both arrangements stay
-  the same at every text size and in every Home state. Yes, No and Again
-  omit decorative icons at both widths. Emergency retains its warning or
-  selected symbol in a permanent 22pt-high slot above its text: an inline
-  icon split the word into `Emer-` / `gency` even on the iPad at AX5.
-  Text uses Dynamic Type without a smaller-font workaround.
-- **Phrase columns stay fixed within each width class.** Compact widths
-  use one column, regular widths three, at every text size. The compact
-  two-column grid split even `Maybe.` at AX5. One column gives words more
-  width but shows fewer phrases at once; the stand-in still scrolls and
-  does not close the documented layout-engine gap.
-- **Audio warnings keep their space.** The warning area always holds the
-  height of the tallest short audio warning ("Volume low", "Audio failed"),
-  so a warning appearing hides no phrase tile (invariant 4). The short text
-  is what people see; VoiceOver reads the full sentence. The two library
-  warnings are decided at launch and never appear later.
+- **Messages shrink only for their widest word.** The message row always
+  reserves two lines of its font at the person's text size; a longer
+  message scrolls inside them. It steps down through Apple's text sizes
+  only while its widest word is wider than the row, never below the
+  default size (2026-10-21, *Home's stand-in layout*). Every phrase start,
+  including Again and the same phrase chosen again, shows the message from
+  the top. *Before:* it never shrank (`0260099`, which reversed shrinking
+  to half), and on 2026-10-21 PR #13 gave compact widths one reserved line
+  with a full-width Again below it, because at the largest text sizes on a
+  phone a long word was wider than the row and broke.
+- **Speech and audio share one status line that keeps its space.** The line
+  under the message always holds the height of the tallest of "Speaking"
+  and the short audio warnings ("Volume low", "Audio failed"), so nothing
+  moves when one appears (invariant 4), and it sits in the part of Home the
+  software keyboard never reaches. A warning takes the line over from
+  "Speaking", because when something cannot be heard that is what the
+  person needs to know (2026-10-21; before, "Speaking" sat under the
+  message and the warnings in an area under the grid). The short text is
+  what people see; VoiceOver reads the full sentence. The two library
+  warnings are decided at launch and never appear later; they sit under
+  the phrase grid, which gives up the room they need, so a long one at a
+  large text size never pushes Yes, No or Emergency off the screen.
+- **Quick controls in one row, at every width.** Yes, No and Emergency, with
+  Emergency twice as wide, and each label fitted by the steps in *Home's
+  stand-in layout*. Yes, No and Again carry no icon; Emergency keeps its
+  warning symbol (a check mark while its phrases show) and drops it before
+  its word shrinks, so an icon never splits a word. *Before:* PR #13
+  (2026-10-21) put Emergency on a row of its own at compact widths, removed
+  the icons from Yes, No and Again, and kept Emergency's in a slot above
+  its word, because the labels had no way to fit themselves and broke at
+  AX5. The first CI run of this layout put a thumbs-down beside No, and the
+  screenshot text-recognition test (`testLargestTextKeepsQuickControlWordsVisible`)
+  read it as part of the word ("g)No"), so those three icons stay off. The
+  test is unchanged.
 - **VoiceOver is told about audio problems.** Text appearing on screen is
   not announced, so Home posts an announcement when an audio problem
   appears (including one present at launch) and on every cut-off phrase.
@@ -586,12 +597,14 @@ How it behaves, and where it knowingly falls short:
 - **Accepted for the stand-in only:**
   - No Get Attention yet, so invariant 10's "reachable in one dwell" holds
     only for Emergency, Yes and No. Get Attention comes in port step 1.
-  - Again sits next to the message text the person reads (below at compact
-    widths, beside at regular widths), and the phrase grid ends just above
-    the warning text: under a gaze profile a look that rests on the text
-    could snap to them.
+  - Again sits beside the message text the person reads, and Yes sits
+    just under it: under a gaze profile a look that rests on the text could
+    snap to them. *Home's slot plan* moves Again into the safety row.
   - The selected category swaps its symbol for a check mark; symbols
-    differ in width, so the buttons after it can shift slightly.
+    differ in width, so the words beside it can shift slightly inside
+    their button. The button itself does not move.
+  - The phrase grid scrolls on some phone windows at large text sizes
+    (*Home's stand-in layout*, "Where the grid still scrolls").
 
 *2026-10-21 correction:* PR #13 initially treated the iPhone's clipped-text
 and Dynamic Type audit findings as strict expected failures pending a new
@@ -604,7 +617,7 @@ inspection of the AX5 screenshots still found clipped quick-control
 words on the phone. The accessibility labels and button frames were
 complete even when their visible text was not. A new screenshot-based
 text-recognition test reproduced all 24 label checks failing before the
-compact arrangement above was implemented. It checks Yes, No, Emergency
+compact arrangement was implemented. It checks Yes, No, Emergency
 and Again in three states, in light and dark, without language correction
 or expected words supplied to the recognizer. The same test also exposed
 Emergency's word splitting on iPad. It uses Vision's fast recognizer
@@ -612,11 +625,224 @@ because the accurate mode returned `ON` for a visibly clear `No`;
 the fast mode read `No` and still rejected all four old clipped captures.
 Matching still requires a whole word, ignoring case only. The four
 reachability tests now compare every primary-control edge with its launch
-frame after Emergency and speech, allowing 1pt for rounding. Final
-validation remains pending in the diagnosis record; the earlier 16-test
-passes do not validate this implementation.
+frame after Emergency and speech, allowing 1pt for rounding.
 `docs/log/2026-10-21-ui-test-diagnosis.md` records the failing reproductions,
-the separate appearance-harness defect and subsequent verification.
+the separate appearance-harness defect and subsequent verification. Later
+the same day *Home's stand-in layout* replaced that compact arrangement and
+the one-column phone grid with labels that fit themselves; it keeps the
+eager rows, the strict audits and the text-recognition test.
+
+## Home's stand-in layout
+
+*2026-10-21. Default, adopted 2026-10-21: the owner left these choices to
+the project. Reversible if the owner objects.*
+
+How the stand-in Home fits the space it is given until the layout engine
+replaces its fixed sizes (docs/PORTING.md, step 4). Everything comes from
+the width and height Home is given (`HomeShape`), never from a device
+model, as the owner asked: "For SwiftUI development, standard layout and
+navigation primitives remain the appropriate default, using adaptive
+layouts and standard SwiftUI containers, instead of building
+device-specific interfaces."
+
+- **Regions, top to bottom: the message and its status line, the quick
+  controls, the categories, the phrase grid.** Everything a person needs
+  while typing sits in the top part, which the software keyboard never
+  reaches, and the harmless categories are what sits nearest the keyboard's
+  edge (agreed with the Typing and design threads). Gaps are 12pt between
+  regions and 8pt between controls inside one.
+- **Four category buttons, never scrolled sideways.** Two by two on narrow
+  windows, one row of four from a 560pt content width. The region keeps its
+  height for four whatever the library holds; a library with more scrolls
+  inside it, vertically.
+- **Three phrase columns wherever three tiles of 107pt fit** (content of
+  337pt or more: every iPhone the app supports and every iPad window but
+  the narrowest), two below that. The count depends only on the width,
+  never on content or use (invariant 8); 107pt is the narrowest tile that
+  holds the starter library's widest word, "understand.", at its default
+  size. Rows come from the largest category, so a tile keeps its place in
+  every category. Tiles share the height left; the grid scrolls only where
+  they would be shorter than the minimum (99pt narrow, 110pt wide, which
+  holds the tallest starter phrase). *Before:* PR #13 used one column on
+  compact widths and three on regular ones, chosen by size class, because
+  two columns split `Maybe.` at AX5 when labels could not fit themselves.
+- **Rows are built eagerly.** The grids are plain stacks, not lazy grids:
+  lazy rows disappear while Apple's accessibility audit increases the text
+  size, so it cannot compare them (PR #13,
+  docs/log/2026-10-21-ui-test-diagnosis.md). A short last row keeps its
+  tiles at the full rows' width and place.
+- **Sizes.** Narrow windows (under 560pt of content): quick controls 64pt,
+  categories 48pt, touch sizes that leave the grid room. Wide windows: the
+  gaze floors AGENTS.md names, 88pt and 72pt, and tiles of at least 110pt.
+  Those are floors: a quick control or category grows to hold one line of
+  its words at the person's text size (`LabelFont.lineHeight(at:)`), so a
+  short word keeps the person's size. Fixed heights made "No" and "Needs"
+  step down at larger sizes, which Apple's accessibility audit reported as
+  text that does not follow Dynamic Type (CI, 2026-10-21). These are the
+  stand-in's numbers; the engine sets floors per profile.
+- **Labels step through Apple's text sizes.** Every Home label is drawn
+  with its text style at one of Apple's sizes: the person's own, with its
+  icon if it fits; then without the icon; then each smaller size down to
+  the default (Large), never below it (`WordFit`, `FittedLabel`). UIKit
+  measures each size: word widths, which CI checks against SwiftUI's, and
+  the height of the words set in whole-word lines, giving each extra line
+  15% more than UIKit's line height because SwiftUI adds the style's line
+  spacing (22pt per line at 17pt, not 20.3, measured on CI). CI checks
+  that height against SwiftUI's for every starter label at every size
+  (`StarterLabelFitTests`). The label is then drawn at the person's own
+  size in the lines set for the chosen size, one line each, and SwiftUI
+  shrinks the words just enough to fit (`minimumScaleFactor`, never below
+  the default size); a line that wrapped would need a line more than the
+  label allows, so no word breaks. Two earlier ways failed Apple's
+  accessibility audit on CI (2026-10-21), which grows the text and checks
+  that each text follows it: drawing a stepped-down label at a smaller
+  text size (`dynamicTypeSize`) was reported as not supporting Dynamic
+  Type, and letting `ViewThatFits` pick the size swapped the label for
+  another view as the text grew, reported as clipped. The phrase grid is
+  always a scroll view, turned off where the tiles fit, for the same
+  reason.
+- **Home's own button style.** Home's controls use `HomeButtonStyle`
+  instead of `.borderedProminent`: that style's margins left too little
+  width in a phone's three-column grid for the starter words at their
+  default size, and its dimmed disabled look fails Apple's contrast audit,
+  as Again's did. The style is a standard `ButtonStyle` on standard
+  `Button`s (invariant 1): white words on a measured fill, a 4pt margin, a
+  white ring when selected, a primary-ink ring when pressed (3:1 on every
+  fill, `PaletteTests.pressedRingStandsOutFromEveryFill`) and the system's
+  pointer highlight for trackpads, AssistiveTouch and head or eye
+  tracking. Disabled is PR #13's look: primary-ink words and border,
+  unfilled.
+
+### Where the grid still scrolls
+
+This is part of the stand-in's known gap, "the phrase grid scrolls
+(invariant 11)" (docs/HANDOFF.md, *Known gaps*), not an exception to the
+invariant: iPhones run Switch Control, AssistiveTouch with Dwell, head
+tracking and Eye Tracking, so invariant 11 covers phones too. The layout
+engine closes it. Worked out from CI's text measurements (not yet seen
+running on these windows):
+
+- A 375×667pt phone window (iPhone SE class): fits at the default text size
+  and through xxxLarge (by under a point there); the grid scrolls from AX1.
+  The two-row safety row in *Home's slot plan* makes it scroll at the
+  default size too, until the engine. The starter library needs three grid
+  rows there (Basics and Needs hold eight phrases each): in touch that is
+  tiles of about 109×68pt, but three floor-sized rows do not fit under
+  this arrangement in dwell, switch or gaze profiles, so the engine needs
+  another arrangement for this window, never scrolling.
+- A 402×874pt phone window (iPhone 17 class): fits at the default text
+  size, which `HomeLayoutTests` checks. At AX5 the grid scrolls: the quick
+  controls and categories grow to hold one line of their words at the
+  person's size (below), so the tiles left are about 94pt, under the 99pt
+  minimum. `HomeLayoutTests` still checks there that every tile keeps its
+  slot and that the quick controls and categories are on screen.
+- Every iPad window CI runs, both orientations, default and AX5: expected to
+  fit; `HomeLayoutTests` checks them.
+
+## Home's slot plan
+
+*2026-10-21. Default, adopted 2026-10-21: the owner left these choices to
+the project. Reversible if the owner objects.* Agreed between the Phone
+layout and design threads (the Figma and Claude Design screens). Not built
+yet: the stand-in above has regions A to D in this order but not the
+wells. This is the contract the next Home work builds on, Get Attention
+and Stop Alert on Home first.
+
+**Every control on Home has a slot: a fixed place with a stable
+identifier.** The slot's frame comes from the space available, the input
+profile and the text size (the layout engine), never from the state of
+Home, the library's contents or use. A state changes what a slot shows,
+never where it is.
+
+- **Regions, top to bottom: A, C, B, D.**
+  - **A, the message.** The message with its status line, and a trailing
+    column of two controls that are there in every state: Phrases above
+    Type. On regular widths the message spans three of C's five columns
+    and the trailing column the other two, so Emergency, Yes and No sit
+    under the message and Again and Get Attention under the trailing
+    column; over four columns, Again was nearest the message's trailing
+    end on both iPad windows the design thread sampled. They work like the segments of a segmented control: each only
+    picks its own mode (browsing phrases, or typing) and shows selected
+    while that mode is on, so a repeat meets the same control and changes
+    nothing.
+  - **C, the safety row.** Compact widths, two rows: Yes, No and
+    Again; then Emergency across the first two columns and Get Attention
+    in the third. Regular widths, one row: Emergency, Yes, No, Again,
+    Get Attention. While typing, Again's well shows Speak; both speak the
+    message, so neither is the other's opposite.
+  - **B, the categories.** Stop Alert's well first, in the leading
+    column directly below Emergency (about 95pt wide on a 375pt phone);
+    a category in the cell under it; then the other categories, at least
+    116pt wide; Settings in the last cell, at the trailing end. Compact
+    widths, two rows: Stop Alert, category 1, category 2; then category 3
+    (under Stop Alert), category 4, Settings. Regular widths, one band:
+    Stop Alert above category 1 in the leading column, categories 2 to 4
+    at full height, then Settings. While typing, the draft's Clear and Put
+    Back each take a fixed category slot here, away from the draft and
+    from Speak.
+  - **D, the phrase grid.** Fixed columns; rows from the largest category
+    (invariant 8).
+- **Wells.** A control that only applies in some states (Stop Alert,
+  Speak, and the draft's Clear and Put Back) has a well that keeps its frame in every state. While the
+  control does not apply, its well is empty: no control, hidden from
+  accessibility, so there is nothing there for VoiceOver, Voice Control or
+  a pointer to choose, and nothing else moves into it.
+- **Start and stop live apart** (invariant 10). Get Attention is in C, at
+  the trailing end; Stop Alert is the top well of B's leading column,
+  directly below Emergency, in another region and on another row. A
+  repeated activation on Get Attention can never stop the alarm, and one
+  on Stop Alert can never restart it. The design drawings
+  use these slot names as their layer names.
+- **What a held activation meets next** (invariant 10, chains scored on
+  the drawn frames for an iPhone 17, a 375×667pt phone and a 13-inch iPad
+  in both orientations, by nearest centre and by nearest edge with ties
+  counted). After Stop Alert, its well empties and the nearest control is
+  the category under it or Emergency; a repeat on either only changes
+  which phrases show. After Phrases or Type, the nearest control is the
+  same one, now selected, so a repeat does nothing. *Before:* Stop Alert
+  sat above Settings, so a repeat after Stop could open the Settings
+  cover; and the way out of typing was a well above Type, so a repeat
+  after leaving typing could reopen it. The design thread's chain scores
+  found both; the table is in the design document, *What a held
+  activation meets next*.
+- **Open hazard, not accepted: Yes and No border the message**
+  (invariant 10; design rule "Wherever a pointer rests can activate"). On
+  every window the design thread measured (an iPhone 17, a 375×667pt
+  phone, the 13-inch iPad in both orientations), Yes and No are the
+  nearest controls to the message, one gap (10 to 16pt) from its edge,
+  with Emergency too on the iPads; a look resting on the message can
+  therefore speak Yes or No. Something in C has to border the message, and
+  every control in C is one the person must reach in one activation, so
+  the plan alone cannot remove it. It is not an accepted exception:
+  invariant 10's exceptions are the owner's to accept. The layout engine's
+  thread measures it per profile and either removes it by placement (a
+  wider gap, or a harmless control nearest the message) or brings the
+  measured cost to the owner to accept or reject, before the slot plan
+  ships in a dwell, switch, head or gaze profile.
+- **Open: a library with more than four everyday categories.** Region B
+  is an L (Stop Alert's column beside the categories), which cannot scroll
+  as one standard container, so the stand-in's answer (the category
+  region scrolls) does not carry over. Whatever is chosen must keep every
+  category reachable through standard containers, never scroll Stop
+  Alert, Settings or their neighbours away, leave the starter library
+  unscrolled in every profile, scroll a grown library at the floor at
+  most, and score the chain after any new control. Neither thread found
+  an arrangement that meets all of these. The layout engine's thread
+  decides it, before editing or import can add a fifth everyday category.
+- **Get Attention, Emergency, Yes and No are in C in every state**,
+  including typing: C is above the worst-case software keyboard
+  (invariants 2 and 10; the Typing thread's measured keyboard tops).
+- **Settings covers Home with its own safety bar at Home's frames:** Back
+  to Talking over A's trailing column (so it closes onto Phrases or Type)
+  and Get Attention over the message's footprint, so the controls a look reaches when Settings opens or closes
+  are the harmless ones.
+- **Identifiers.** Each slot has a stable accessibility identifier, named
+  for the slot, not for its label (for example the Again well keeps its
+  identifier while it shows Speak). UI tests and captures compare frames by
+  identifier across states, as `HomeReachabilityTests` does today by label.
+
+*Before:* none; the stand-in Home had no wells (*Home version 0 is a
+stand-in*).
 
 ## Typing is a state of Home
 

@@ -3,18 +3,31 @@ import SwiftData
 import SwiftUI
 
 /// Home, version 0: a plain stand-in that proves the foundations work end to
-/// end. A phrase is chosen, the speech engine says it, and the message row
-/// shows it to the person listening.
+/// end. A phrase is chosen, the speech engine says it, and the message shows
+/// it to the person listening.
 ///
 /// It will be replaced when the layout engine and Home are ported
-/// (docs/PORTING.md, steps 4 and 5). Even so, it keeps the rules that matter from the first build:
-/// every control is a standard `Button` with a label (invariant 1), every
-/// tile speaks on the first activation (invariant 2), a lingering look cannot
-/// make a phrase stutter (`SpokenUtteranceTracker`), and nothing moves when
-/// state changes (the message row and status area keep their size).
+/// (docs/PORTING.md, steps 4 and 5). Even so, it keeps the rules that matter
+/// from the first build: every control is a standard `Button` with a label
+/// (invariant 1), every tile speaks on the first activation (invariant 2), a
+/// lingering look cannot make a phrase stutter (`SpokenUtteranceTracker`),
+/// and nothing moves when state changes (the message and its status lines
+/// keep their size).
+///
+/// The arrangement comes from the space Home is given (`HomeShape`), never
+/// from which device it is on. Top to bottom: the message with its status
+/// lines, the quick controls, the categories, then the phrase grid, which
+/// takes what is left. Everything a person needs while typing sits in the top
+/// part, which the software keyboard never reaches (docs/LESSONS.md, "Lay
+/// out against a measured keyboard"); the categories are nearest the
+/// keyboard because a slip onto one is harmless. No control's label breaks a
+/// word: each one fits itself (`FittedLabel`). The starter library needs no
+/// scrolling on the windows `HomeLayoutTests` checks; the grid scrolls only
+/// where its tiles would otherwise be shorter than
+/// `HomeShape.minimumTileHeight`, or where a library warning takes its room.
 struct HomeView: View {
-    @Environment(SpeechService.self) private var speech
-    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.legibilityWeight) private var legibilityWeight
     @Query private var categories: [PhraseCategory]
     @State private var selectedCategoryID: UUID?
 
@@ -22,342 +35,165 @@ struct HomeView: View {
         let ordered = PhraseCategory.orderedForDisplay(categories)
         let selected = CategorySelection.resolve(ordered, selectedID: selectedCategoryID)
         let emergency = CategorySelection.emergency(in: ordered)
+        let largestCategoryCount = ordered.map(\.phrasesInOrder.count).max() ?? 0
 
-        VStack(alignment: .leading, spacing: horizontalSizeClass == .compact ? 8 : 16) {
-            MessageRow()
-            QuickControlsRow(
-                emergencyIsAvailable: emergency != nil,
-                isShowingEmergency: selected?.isEmergency == true,
-                showEmergency: { selectedCategoryID = emergency?.uuid }
+        GeometryReader { proxy in
+            let contentWidth = proxy.size.width
+            let shape = HomeShape(
+                contentWidth: contentWidth,
+                quickControlLineHeight: LabelFont.quickControl.legible(legibilityWeight).lineHeight(at: dynamicTypeSize),
+                categoryLineHeight: LabelFont.category.legible(legibilityWeight).lineHeight(at: dynamicTypeSize)
             )
-            CategoryRow(
-                categories: CategorySelection.shownInCategoryRow(ordered),
-                selectedID: selected?.uuid,
-                select: { selectedCategoryID = $0 }
-            )
-            PhraseGrid(
-                category: selected,
-                columnCount: horizontalSizeClass == .regular ? 3 : 1
-            )
-            .frame(maxHeight: .infinity, alignment: .top)
-            StatusArea()
+            let quickWidths = HomeShape.quickControlWidths(contentWidth: contentWidth)
+
+            VStack(alignment: .leading, spacing: HomeShape.regionSpacing) {
+                MessageBlock(
+                    textWidth: contentWidth - quickWidths[0] - HomeShape.controlSpacing,
+                    againWidth: quickWidths[0],
+                    againHeight: shape.quickControlHeight
+                )
+                QuickControlsRow(
+                    widths: quickWidths,
+                    emergencyIsAvailable: emergency != nil,
+                    isShowingEmergency: selected?.isEmergency == true,
+                    showEmergency: { selectedCategoryID = emergency?.uuid }
+                )
+                .frame(height: shape.quickControlHeight)
+                CategoryGrid(
+                    categories: CategorySelection.shownInCategoryRow(ordered),
+                    columns: shape.categoryColumns,
+                    buttonHeight: shape.categoryHeight,
+                    selectedID: selected?.uuid,
+                    select: { selectedCategoryID = $0 }
+                )
+                .frame(height: shape.categoryRegionHeight)
+                PhraseGrid(
+                    category: selected,
+                    columns: shape.gridColumns,
+                    rows: shape.gridRows(largestCategoryCount: largestCategoryCount),
+                    minimumTileHeight: shape.minimumTileHeight,
+                    tileFont: shape.isCompact ? .compactTile : .regularTile
+                )
+                .frame(maxHeight: .infinity)
+                LibraryWarnings()
+            }
         }
-        .padding()
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+        // The keyboard overlays the bottom of Home instead of pushing it up,
+        // so no control moves when it appears (invariant 11).
+        .ignoresSafeArea(.keyboard)
     }
 }
 
-// MARK: - Message row
+// MARK: - Message
 
-/// The last sentence spoken at full size in a fixed-height viewport.
-/// Compact widths put Again below one reserved message line; regular
-/// widths put it beside two lines. Neither moves when the message changes.
-private struct MessageRow: View {
+/// The last sentence spoken, large enough for the listener to read, with
+/// its status lines under it and Again at its trailing edge. Again sits at
+/// the bottom of the block, away from the screen's top corner (design rule
+/// "Keep corners clear").
+private struct MessageBlock: View {
     @Environment(SpeechService.self) private var speech
-    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-
-    private var isCompact: Bool { horizontalSizeClass == .compact }
+    /// The width of the message and its status line, beside Again.
+    let textWidth: CGFloat
+    let againWidth: CGFloat
+    let againHeight: CGFloat
 
     var body: some View {
-        Group {
-            if isCompact {
-                VStack(alignment: .leading, spacing: 8) {
-                    message
-                    again
-                }
-            } else {
-                HStack(alignment: .center, spacing: 12) {
-                    message
-                    again
-                }
+        HStack(alignment: .bottom, spacing: HomeShape.controlSpacing) {
+            VStack(alignment: .leading, spacing: 4) {
+                MessageText()
+                StatusLines(width: textWidth)
             }
-        }
-        .fixedSize(horizontal: false, vertical: true)
-    }
+            .frame(maxWidth: .infinity, alignment: .leading)
 
-    private var message: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            // Reserve the same viewport for every phrase. Longer messages
-            // scroll at full size instead of moving the controls or shrinking.
-            Text(verbatim: " ")
-                .font(.title.weight(.semibold))
-                .lineLimit(isCompact ? 1 : 2, reservesSpace: true)
-                .frame(maxWidth: .infinity)
-                .hidden()
-                .accessibilityHidden(true)
-                .overlay(alignment: .topLeading) {
+            Button {
+                speech.repeatLast()
+            } label: {
+                FittedLabel(
+                    String(localized: "Again", comment: "Repeats the last thing spoken."),
+                    font: .quickControl
+                )
+            }
+            .buttonStyle(HomeButtonStyle(fill: Palette.controlFill))
+            .frame(width: againWidth, height: againHeight)
+            .disabled(speech.lastSpokenText == nil)
+        }
+    }
+}
+
+/// The message itself. Two lines of the message font at the person's text
+/// size are always reserved, by an invisible placeholder, so nothing below
+/// moves when a message appears or changes. A longer message scrolls inside
+/// them. It steps down through Apple's text sizes only as far as its widest
+/// word needs to fit the width, never below the default size (AGENTS.md,
+/// "Words never break"). Every phrase start, Again included, shows the
+/// message from the top.
+private struct MessageText: View {
+    @Environment(SpeechService.self) private var speech
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.legibilityWeight) private var legibilityWeight
+
+    var body: some View {
+        let font = LabelFont.message
+        let text = speech.lastSpokenText ?? String(
+            localized: "Choose a phrase to speak it.",
+            comment: "Shown where the spoken message appears, before anything has been spoken."
+        )
+
+        Text(verbatim: " ")
+            .font(font.font)
+            .lineLimit(2, reservesSpace: true)
+            .frame(maxWidth: .infinity)
+            .hidden()
+            .accessibilityHidden(true)
+            .overlay(alignment: .topLeading) {
+                GeometryReader { proxy in
                     ScrollView {
-                        Group {
-                            if let text = speech.lastSpokenText {
-                                Text(verbatim: text)
-                            } else {
-                                Text("Choose a phrase to speak it.")
-                            }
-                        }
-                        .font(.title.weight(.semibold))
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                        // Primary ink, not the system's secondary gray, which
+                        // measures under 4.5:1 (invariant 6).
+                        Text(verbatim: text)
+                            .font(font.font)
+                            .textSize(fittedSize(text, width: proxy.size.width))
+                            .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     .scrollBounceBehavior(.basedOnSize)
-                    // Again and the same phrase chosen again reset the scroll.
+                    // A new view, so a new scroll position, on every phrase
+                    // start: Again and the same phrase chosen again show the
+                    // first words too, not where the last reader left it.
                     .id(speech.phraseStartCount)
                 }
-
-            // Always reserve the speaking line, including while idle.
-            Label("Speaking", systemImage: "speaker.wave.2.fill")
-                .font(.subheadline.weight(.semibold))
-                .fixedSize(horizontal: false, vertical: true)
-                .accessibilityElement(children: .combine)
-                .opacity(speech.isSpeaking ? 1 : 0)
-                .accessibilityHidden(!speech.isSpeaking)
-        }
-    }
-
-    private var again: some View {
-        Button {
-            speech.repeatLast()
-        } label: {
-            Text("Again")
-                .font(.title3.weight(.semibold))
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(minWidth: 88, maxWidth: isCompact ? .infinity : nil, minHeight: 64)
-        }
-        .buttonStyle(MessageActionButtonStyle())
-        .disabled(speech.lastSpokenText == nil)
-    }
-}
-
-/// Again's look. Enabled: white text on the control fill (5.98:1, tested in
-/// `PaletteTests`). Disabled, before anything has been spoken: the same
-/// words in primary ink on the screen with a primary-ink border, unfilled
-/// so it reads as off. The system's dimmed look failed Apple's contrast
-/// audit, and people still need to read what a control is. Pressed: a
-/// primary-ink ring inside the edge, with the label and fill unchanged.
-/// Fading would lighten the fill under the white label below 4.5:1, and
-/// shrinking would draw the label below its default size. The ring is
-/// black on the fill in light mode (3.51:1) and white in dark (5.98:1),
-/// pinned by `PaletteTests.pressedRingStandsOutFromTheFill`.
-private struct MessageActionButtonStyle: ButtonStyle {
-    @Environment(\.isEnabled) private var isEnabled
-
-    func makeBody(configuration: Configuration) -> some View {
-        let shape = RoundedRectangle(cornerRadius: 16)
-        configuration.label
-            .padding(.horizontal, 12)
-            .foregroundStyle(isEnabled ? Color.white : Color.primary)
-            .background(isEnabled ? Palette.controlFill : Color.clear, in: shape)
-            .overlay {
-                if !isEnabled {
-                    shape.strokeBorder(Color.primary, lineWidth: 2)
-                } else if configuration.isPressed {
-                    shape.strokeBorder(Color.primary, lineWidth: 3)
-                }
             }
-            .contentShape(shape)
+    }
+
+    /// The largest text size, from the person's own down to the default, at
+    /// which the message's widest word fits the width. Only the width
+    /// matters: a long message scrolls.
+    private func fittedSize(_ text: String, width: CGFloat) -> DynamicTypeSize {
+        let steps = LabelFont.steps(downFrom: dynamicTypeSize)
+        let first = LabelFont.message.legible(legibilityWeight).choices(for: text, systemImage: nil, steps: steps, width: width).first
+        return steps[first?.step ?? steps.count - 1]
     }
 }
 
-// MARK: - Quick controls
+// MARK: - Status lines
 
-/// Controls that stay in the same place in every state. Yes and No speak at
-/// once; Emergency only switches to the emergency phrases, so a stray look
-/// on it never says anything. While the emergency phrases show, Emergency is
-/// marked selected the same way a category is (a check mark and the Selected
-/// trait), because the emergency category has no button of its own.
-private struct QuickControlsRow: View {
-    @Environment(SpeechService.self) private var speech
-    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-    let emergencyIsAvailable: Bool
-    let isShowingEmergency: Bool
-    let showEmergency: () -> Void
-
-    private var isCompact: Bool { horizontalSizeClass == .compact }
-
-    var body: some View {
-        Group {
-            if isCompact {
-                // The same arrangement at every text size: changing content
-                // or selecting Emergency never moves a primary control.
-                VStack(spacing: 8) {
-                    HStack(spacing: 12) {
-                        yes
-                        no
-                    }
-                    emergency
-                }
-            } else {
-                HStack(spacing: 12) {
-                    yes
-                    no
-                    emergency
-                }
-            }
-        }
-        .buttonStyle(.borderedProminent)
-        .buttonBorderShape(.roundedRectangle(radius: 16))
-        .fixedSize(horizontal: false, vertical: true)
-    }
-
-    private var yes: some View {
-        Button {
-            speech.speak(String(localized: "Yes.", comment: "Spoken when the Yes control is chosen."))
-        } label: {
-            QuickControlLabel(title: "Yes")
-        }
-        .tint(Palette.controlFill)
-    }
-
-    private var no: some View {
-        Button {
-            speech.speak(String(localized: "No.", comment: "Spoken when the No control is chosen."))
-        } label: {
-            QuickControlLabel(title: "No")
-        }
-        .tint(Palette.controlFill)
-    }
-
-    private var emergency: some View {
-        Button(action: showEmergency) {
-            QuickControlLabel(
-                title: "Emergency",
-                systemImage: isShowingEmergency ? "checkmark.circle.fill" : "exclamationmark.triangle.fill"
-            )
-        }
-        .tint(Palette.emergencyFill)
-        .disabled(!emergencyIsAvailable)
-        .accessibilityAddTraits(isShowingEmergency ? .isSelected : [])
-    }
-}
-
-private struct QuickControlLabel: View {
-    let title: LocalizedStringKey
-    var systemImage: String?
-
-    var body: some View {
-        VStack(spacing: 4) {
-            if let systemImage {
-                // Keep Emergency's selected cue in a permanent slot above
-                // its word. Decorative icons never take width from words.
-                Image(systemName: systemImage)
-                    .font(.system(size: 20, weight: .semibold))
-                    .frame(height: 22)
-                    .accessibilityHidden(true)
-            }
-            Text(title)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .font(.title3.weight(.semibold))
-        .foregroundStyle(.white)
-        .frame(maxWidth: .infinity, minHeight: 64)
-    }
-}
-
-// MARK: - Categories
-
-/// One button per everyday category, in a fixed order. The selected one is filled
-/// with the phrase colour, shows a check mark instead of its symbol (so the
-/// choice never depends on colour alone), and carries the Selected trait for
-/// VoiceOver and Voice Control.
-private struct CategoryRow: View {
-    let categories: [PhraseCategory]
-    let selectedID: UUID?
-    let select: (UUID) -> Void
-
-    var body: some View {
-        ScrollView(.horizontal) {
-            HStack(spacing: 12) {
-                ForEach(categories) { category in
-                    let isSelected = category.uuid == selectedID
-                    Button {
-                        select(category.uuid)
-                    } label: {
-                        Label {
-                            Text(verbatim: category.name)
-                        } icon: {
-                            Image(systemName: isSelected ? "checkmark.circle.fill" : category.symbolName)
-                        }
-                        .font(.headline)
-                        .foregroundStyle(.white)
-                        .frame(minHeight: 52)
-                        .padding(.horizontal, 4)
-                    }
-                    .tint(isSelected ? Palette.phraseFill : Palette.controlFill)
-                    .accessibilityAddTraits(isSelected ? .isSelected : [])
-                }
-            }
-            .padding(.vertical, 2)
-        }
-        .buttonStyle(.borderedProminent)
-    }
-}
-
-// MARK: - Phrases
-
-/// The selected category's phrases in a fixed number of columns. Position
-/// never depends on use (invariant 8): the order is the stored order.
-private struct PhraseGrid: View {
-    @Environment(SpeechService.self) private var speech
-    @Environment(\.phraseLibraryIssue) private var phraseLibraryIssue
-    let category: PhraseCategory?
-    let columnCount: Int
-
-    var body: some View {
-        if let category {
-            ScrollView {
-                // Keep the small starter grid's elements alive as Dynamic
-                // Type changes. Lazy rows disappear while the accessibility
-                // audit increases text size, so it cannot compare them.
-                let phrases = category.phrasesInOrder
-                Grid(horizontalSpacing: 12, verticalSpacing: 12) {
-                    ForEach(Array(stride(from: 0, to: phrases.count, by: columnCount)), id: \.self) { start in
-                        GridRow {
-                            ForEach(phrases[start..<min(start + columnCount, phrases.count)]) { phrase in
-                                Button {
-                                    speech.speak(phrase.text)
-                                } label: {
-                                    Text(verbatim: phrase.text)
-                                        .font(.title2.weight(.semibold))
-                                        .foregroundStyle(.white)
-                                        .multilineTextAlignment(.center)
-                                        .fixedSize(horizontal: false, vertical: true)
-                                        .frame(maxWidth: .infinity, minHeight: 96)
-                                }
-                                .tint(category.isEmergency ? Palette.emergencyFill : Palette.phraseFill)
-                                // Lets the UI tests tell phrase tiles from controls
-                                // (LaunchTests' accessibility audit). Not spoken.
-                                .accessibilityIdentifier("phraseTile")
-                            }
-                        }
-                    }
-                }
-                .padding(.vertical, 2)
-            }
-            .buttonStyle(.borderedProminent)
-            .buttonBorderShape(.roundedRectangle(radius: 16))
-        } else if phraseLibraryIssue == nil {
-            Text("No phrases yet.")
-                .font(.title2)
-        }
-    }
-}
-
-// MARK: - Status
-
-/// Problems the person cannot hear: audio that failed or a very low volume,
-/// and a library that could not be opened or filled (invariants 4 and 5).
-/// Passive text only, never a control.
+/// What the person cannot hear: speech in progress, and audio that failed
+/// or a very low volume (invariant 4). Passive text only, never a control.
 ///
-/// The phrase grid above takes whatever height is left, so anything that
-/// makes this area taller hides phrase tiles. The audio warning can appear
-/// at any moment, so its slot always holds invisible copies of every audio
-/// warning and keeps the tallest one's height: a warning appearing changes
-/// nothing above it. To keep that reserved slot to one short line, it shows
-/// each warning's compact text and gives VoiceOver the full sentence, as the
-/// reference app did. The two library warnings are decided once at launch
-/// and never change while the app runs, so they need no reserved space.
-private struct StatusArea: View {
+/// They sit under the message, in the part of Home the software keyboard
+/// never covers, so they stay visible while typing. Speech and audio share
+/// one line that is always laid out: it holds invisible copies of
+/// "Speaking" and of every audio warning and keeps the tallest one's height,
+/// so nothing moves when one appears. A warning takes the line over from
+/// "Speaking": when something cannot be heard, that is what the person needs
+/// to know. To keep the line short, it shows each warning's compact text and
+/// gives VoiceOver the full sentence, as the reference app did. The library
+/// warnings sit under the phrase grid instead (`LibraryWarnings`).
+private struct StatusLines: View {
     @Environment(SpeechService.self) private var speech
     @Environment(AudioSafetyMonitor.self) private var audioSafety
-    @Environment(\.isVolatileStore) private var isVolatileStore
-    @Environment(\.phraseLibraryIssue) private var phraseLibraryIssue
+    let width: CGFloat
 
     private var audioIssue: HomeAudioIssue? {
         // Get Attention is not ported yet (docs/PORTING.md, step 1), so the
@@ -371,30 +207,33 @@ private struct StatusArea: View {
         ).issue
     }
 
+    private static let speaking = String(
+        localized: "Speaking",
+        comment: "Shown under the message while a phrase is being spoken."
+    )
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 4) {
             ZStack(alignment: .topLeading) {
+                FittedLine(text: Self.speaking, systemImage: "speaker.wave.2.fill", font: .status, width: width)
+                    .hidden()
+                    .accessibilityHidden(true)
                 ForEach(HomeAudioIssue.allCases, id: \.self) { candidate in
-                    warning(candidate.compactMessage, systemImage: candidate.systemImage)
+                    FittedLine(text: candidate.compactMessage, systemImage: candidate.systemImage, font: .status, width: width)
                         .hidden()
                         .accessibilityHidden(true)
                 }
                 if let audioIssue {
-                    warning(audioIssue.compactMessage, systemImage: audioIssue.systemImage)
+                    FittedLine(text: audioIssue.compactMessage, systemImage: audioIssue.systemImage, font: .status, width: width)
+                        .accessibilityElement(children: .combine)
                         .accessibilityLabel(audioIssue.message)
+                } else if speech.isSpeaking {
+                    FittedLine(text: Self.speaking, systemImage: "speaker.wave.2.fill", font: .status, width: width)
+                        .accessibilityElement(children: .combine)
                 }
             }
-            if isVolatileStore {
-                warning(
-                    String(localized: "Phrases can't be saved right now. Changes will be lost when the app closes."),
-                    systemImage: "externaldrive.badge.exclamationmark"
-                )
-            }
-            if let phraseLibraryIssue {
-                warning(phraseLibraryIssue.message, systemImage: "exclamationmark.bubble.fill")
-            }
         }
-        .font(.subheadline.weight(.semibold))
+        .font(LabelFont.status.font)
         .frame(maxWidth: .infinity, alignment: .leading)
         .allowsHitTesting(false)
         // Text appearing on screen is not announced, so VoiceOver users are
@@ -425,10 +264,242 @@ private struct StatusArea: View {
         ).post()
     }
 
+}
+
+// MARK: - Library warnings
+
+/// A library that could not be saved, or could not be filled (invariant 5).
+/// Passive text only, never a control. Both are decided once at launch and
+/// never change while the app runs.
+///
+/// They sit under the phrase grid, which gives up the height they need: a
+/// long warning at a large text size shortens the grid (which then scrolls)
+/// and never pushes Yes, No or Emergency off the screen.
+private struct LibraryWarnings: View {
+    @Environment(\.isVolatileStore) private var isVolatileStore
+    @Environment(\.phraseLibraryIssue) private var phraseLibraryIssue
+
+    var body: some View {
+        if isVolatileStore || phraseLibraryIssue != nil {
+            VStack(alignment: .leading, spacing: 4) {
+                if isVolatileStore {
+                    warning(
+                        String(localized: "Phrases can't be saved right now. Changes will be lost when the app closes."),
+                        systemImage: "externaldrive.badge.exclamationmark"
+                    )
+                }
+                if let phraseLibraryIssue {
+                    warning(phraseLibraryIssue.message, systemImage: "exclamationmark.bubble.fill")
+                }
+            }
+            .font(LabelFont.status.font)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .allowsHitTesting(false)
+        }
+    }
+
     private func warning(_ message: String, systemImage: String) -> some View {
         Label(message, systemImage: systemImage)
             .frame(maxWidth: .infinity, alignment: .leading)
             .fixedSize(horizontal: false, vertical: true)
             .accessibilityElement(children: .combine)
+    }
+}
+
+// MARK: - Quick controls
+
+/// Controls that stay in the same place in every state. Yes and No speak at
+/// once; Emergency only switches to the emergency phrases, so a stray look
+/// on it never says anything. While the emergency phrases show, Emergency is
+/// marked selected the same way a category is (a check mark, a ring and the
+/// Selected trait), because the emergency category has no button of its own.
+///
+/// Yes, No and Again carry no icon. Beside the word, No's thumbs-down was
+/// read as part of it ("g)No") by the text recognizer in `LaunchTests`, and
+/// PR #13 had dropped these icons for the same reason.
+private struct QuickControlsRow: View {
+    @Environment(SpeechService.self) private var speech
+    /// Yes, No and Emergency, from `HomeShape.quickControlWidths`.
+    let widths: [CGFloat]
+    let emergencyIsAvailable: Bool
+    let isShowingEmergency: Bool
+    let showEmergency: () -> Void
+
+    var body: some View {
+        HStack(spacing: HomeShape.controlSpacing) {
+            Button {
+                speech.speak(String(localized: "Yes.", comment: "Spoken when the Yes control is chosen."))
+            } label: {
+                FittedLabel(String(localized: "Yes"), font: .quickControl)
+            }
+            .buttonStyle(HomeButtonStyle(fill: Palette.controlFill))
+            .frame(width: widths[0])
+
+            Button {
+                speech.speak(String(localized: "No.", comment: "Spoken when the No control is chosen."))
+            } label: {
+                FittedLabel(String(localized: "No"), font: .quickControl)
+            }
+            .buttonStyle(HomeButtonStyle(fill: Palette.controlFill))
+            .frame(width: widths[1])
+
+            Button {
+                showEmergency()
+            } label: {
+                FittedLabel(
+                    String(localized: "Emergency"),
+                    systemImage: isShowingEmergency ? "checkmark.circle.fill" : "exclamationmark.triangle.fill",
+                    font: .quickControl
+                )
+            }
+            .buttonStyle(HomeButtonStyle(fill: Palette.emergencyFill, isSelected: isShowingEmergency))
+            .frame(width: widths[2])
+            .disabled(!emergencyIsAvailable)
+            .accessibilityAddTraits(isShowingEmergency ? .isSelected : [])
+        }
+    }
+}
+
+// MARK: - Categories
+
+/// One button per everyday category, in a fixed order and a fixed grid: two
+/// by two on narrow windows, one row of four on wide ones, with room kept for
+/// four whatever the library holds. Nothing scrolls sideways. A library
+/// with more categories than that scrolls inside this region; the starter
+/// library never does. The selected category is filled with the phrase
+/// colour and shows a check mark and a ring (so the choice never depends on
+/// colour alone), and carries the Selected trait for VoiceOver and Voice
+/// Control.
+private struct CategoryGrid: View {
+    let categories: [PhraseCategory]
+    let columns: Int
+    let buttonHeight: CGFloat
+    let selectedID: UUID?
+    let select: (UUID) -> Void
+
+    var body: some View {
+        let grid = FixedColumns(categories, columns: columns) { category in
+            let isSelected = category.uuid == selectedID
+            Button {
+                select(category.uuid)
+            } label: {
+                FittedLabel(
+                    category.name,
+                    systemImage: isSelected ? "checkmark.circle.fill" : category.symbolName,
+                    font: .category
+                )
+            }
+            .buttonStyle(HomeButtonStyle(
+                fill: isSelected ? Palette.phraseFill : Palette.controlFill,
+                isSelected: isSelected
+            ))
+            .frame(height: buttonHeight)
+            .accessibilityAddTraits(isSelected ? .isSelected : [])
+        }
+
+        if categories.count > HomeShape.categoryCapacity {
+            ScrollView { grid }
+        } else {
+            grid.frame(maxHeight: .infinity, alignment: .top)
+        }
+    }
+}
+
+// MARK: - Phrases
+
+/// The selected category's phrases in a fixed grid. Position never depends
+/// on use (invariant 8): the order is the stored order, and the rows come
+/// from the largest category, so a tile keeps its place whichever category
+/// is showing. Tiles share the height left for the grid; only where that
+/// would make them shorter than the shape's minimum tile height does the grid
+/// scroll instead.
+private struct PhraseGrid: View {
+    @Environment(SpeechService.self) private var speech
+    @Environment(\.phraseLibraryIssue) private var phraseLibraryIssue
+    let category: PhraseCategory?
+    let columns: Int
+    let rows: Int
+    let minimumTileHeight: CGFloat
+    let tileFont: LabelFont
+
+    var body: some View {
+        GeometryReader { proxy in
+            let sizing = GridSizing(
+                availableHeight: proxy.size.height,
+                rows: rows,
+                spacing: HomeShape.controlSpacing,
+                minimumTileHeight: minimumTileHeight
+            )
+            if let category {
+                let phrases = category.phrasesInOrder
+                let grid = FixedColumns(phrases, columns: columns) { phrase in
+                    Button {
+                        speech.speak(phrase.text)
+                    } label: {
+                        FittedLabel(phrase.text, font: tileFont)
+                    }
+                    .buttonStyle(HomeButtonStyle(
+                        fill: category.isEmergency ? Palette.emergencyFill : Palette.phraseFill
+                    ))
+                    .frame(height: sizing.tileHeight)
+                    // Lets the UI tests tell phrase tiles from controls
+                    // (LaunchTests' accessibility audit). Not spoken.
+                    .accessibilityIdentifier("phraseTile")
+                }
+
+                // Always the same scroll view, turned off where the tiles fit,
+                // so the tiles stay the same views when the grid starts to
+                // scroll as the text grows (Apple's accessibility audit
+                // compares each one with itself).
+                ScrollView { grid }
+                    .scrollDisabled(!(sizing.scrolls || phrases.count > rows * columns))
+                    .scrollBounceBehavior(.basedOnSize)
+            } else if phraseLibraryIssue == nil {
+                Text("No phrases yet.")
+                    .font(.title2)
+            }
+        }
+    }
+}
+
+// MARK: - Fixed columns
+
+/// Items in rows of `columns` equal cells, in order, with
+/// `HomeShape.controlSpacing` between them. A short last row keeps its cells
+/// at the leading edge, at the same width and place as the rows above, so a
+/// slot is in the same place whatever fills it (invariant 8).
+///
+/// It is built from plain stacks rather than a lazy grid: lazy rows disappear
+/// while Apple's accessibility audit increases the text size, so the audit
+/// cannot compare them (docs/log/2026-10-21-ui-test-diagnosis.md).
+private struct FixedColumns<Item: Identifiable, Cell: View>: View {
+    let items: [Item]
+    let columns: Int
+    let cell: (Item) -> Cell
+
+    init(_ items: [Item], columns: Int, @ViewBuilder cell: @escaping (Item) -> Cell) {
+        self.items = items
+        self.columns = max(columns, 1)
+        self.cell = cell
+    }
+
+    var body: some View {
+        VStack(spacing: HomeShape.controlSpacing) {
+            ForEach(Array(stride(from: 0, to: items.count, by: columns)), id: \.self) { start in
+                HStack(spacing: HomeShape.controlSpacing) {
+                    ForEach(items[start..<min(start + columns, items.count)]) { item in
+                        cell(item)
+                            .frame(maxWidth: .infinity)
+                    }
+                    // Empty cells keep a short row's tiles at the full rows'
+                    // width and place.
+                    ForEach(0..<(columns - min(columns, items.count - start)), id: \.self) { _ in
+                        Color.clear
+                            .frame(maxWidth: .infinity, maxHeight: 0)
+                            .accessibilityHidden(true)
+                    }
+                }
+            }
+        }
     }
 }
