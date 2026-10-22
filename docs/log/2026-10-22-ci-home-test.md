@@ -1,6 +1,6 @@
 # Bounded Home layout queries and enough time for both UI suites
 
-*2026-10-22. Codex, branch `codex/ci-home-test`, from `main` at `2895825`.*
+*2026-10-22. Pull request #32 (`codex/ci-home-test`). Codex, from `main` at `2895825`.*
 
 ## What changed and why
 
@@ -41,11 +41,11 @@ layout queries and this record. The pre-push fetch found PR #27 newly
 landed as `main` at `5abdd9f`; merge commit `9075a14` incorporated it,
 and the complete unit and UI suites passed again on that combination.
 
-The working tree now also incorporates `main` at `d79d836`, which landed
-PR #20's documentation reconciliation without changing the app or tests.
-That merge and the audit diagnostics have passed local unit and full UI
-validation on both device families. This follow-up preserves the existing
-history with a merge commit; CI on the pushed commit is pending.
+Merge commit `431ee14` incorporated `main` at `d79d836`, which landed
+PR #20's documentation reconciliation without changing the app or tests,
+and added the audit diagnostics. It is committed and pushed, preserving
+existing history. Local unit and full UI validation passed on both device
+families; CI on the pushed commit remains pending.
 
 ## Verified
 
