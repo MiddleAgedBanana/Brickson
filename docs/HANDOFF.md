@@ -39,6 +39,14 @@ library cannot be saved, the app speaks from a filled in-memory library
 and says changes will not be kept. The screen never locks. Ported code:
 [`docs/PORTING.md`](PORTING.md).
 
+The design reference and its specification are in [DESIGN.md](DESIGN.md)
+and [work/design-screens.md](work/design-screens.md). PR #20's
+[reconciliation record](log/2026-10-22-design-reconciliation.md) preserves
+the landed slot decisions and lists drawings, placement questions and
+measurements still pending before implementation follows them. The local
+unit gate passed all 460 tests on iPad Pro 13-inch (M5), iOS 27.0, with
+Xcode 27.1 (27A9275); final-head CI is pending.
+
 ## Verification
 
 - **GitHub CI** since PR #12 (merged 2026-10-21) builds with Apple's
@@ -179,7 +187,7 @@ release in docs/ROADMAP.md when no thread has it yet.
 - The privacy policy describes features not built yet; each is built or its
   sentence deleted before release (docs/APP-STORE.md, section 3, lists
   each sentence). *(App Store readiness and ASO)*
-- The app icon is a placeholder; `design/brand/` is not installed. *(Figma and Claude Design screens)*
+- The app icon is a placeholder; `design/brand/` is not installed. *(Release chores, R0 item 11)*
 - Siri's alternative name "Brick Son" (`INAlternativeAppNames`) has no
   effect yet: Apple applies it only to apps with Siri support, which
   Brickson does not have (docs/DECISIONS.md, "App identity"). *(R2 Siri

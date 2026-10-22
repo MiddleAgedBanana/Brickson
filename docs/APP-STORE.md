@@ -478,8 +478,8 @@ default text size, and once at a large accessibility size to show that text
 grows. Never use mock-ups.
 
 **App icon.** Today's icon is a placeholder; the brand artwork in
-`design/brand/` is ready to install. The icon is best made in Icon Composer, with dark and tinted variants (Figma and Claude Design
-screens thread, with release chores).
+`design/brand/` is ready to install. The icon is best made in Icon Composer, with dark and tinted variants (release
+chores, R0 item 11; `docs/DESIGN.md`, *The app icon*).
 
 ## 10. Localization
 
@@ -569,7 +569,7 @@ testers](https://developer.apple.com/help/app-store-connect/test-a-beta-version/
 | In-app Privacy row: the policy text inside the app, plus a way to open the web page | Guideline 5.1.1(i) | Settings and first run |
 | Personal Voice explained before the system question, with "Not now" | 5.1.1(iv); a calmer first launch for the reviewer | Settings and first run |
 | A replaced bundle ID, and `DEVELOPMENT_TEAM` | Step 2 and 3 of the owner's list | Toolchain, after the owner's answer |
-| The brand icon in Icon Composer, with dark and tinted variants | 2.1 (no placeholders) | Figma and Claude Design screens |
+| The brand icon in Icon Composer, with dark and tinted variants | 2.1 (no placeholders) | Release chores (R0 item 11) |
 | Dark variants for every colour asset; UI tests in dark and at AX3 and AX5; a Grayscale pass | Accessibility labels (section 4) | Test seams and CI evidence; Phone layout and word fitting |
 | Get Attention without flashing; Reduce Motion respected | Reduced Motion label | Speech engine and Get Attention |
 | A `site/accessibility/` page for the Accessibility URL | Section 4 | App Store readiness and ASO (follow-up) |
