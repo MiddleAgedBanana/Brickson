@@ -1,6 +1,6 @@
 # The Voice screen: asking for Personal Voice, and places that hold
 
-*2026-10-22. Pull request not open yet (`claude/project-thread-stqn5g`).
+*2026-10-22. Pull request #27 (`claude/project-thread-stqn5g`).
 The "Voice screen in Settings" thread, which follows PR #23 (Settings
 and first run) and PR #25 (the Personal Voice engine).*
 
