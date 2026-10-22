@@ -7,7 +7,7 @@ final class AccessibilityAuditRunnerTests: XCTestCase {
     // Removing the retry makes this throw after one call.
     func testAuditServiceTimeoutGetsOneFreshAttempt() throws {
         var calls = 0
-        try AccessibilityAuditRunner.perform {
+        try AccessibilityAuditRunner.perform(settle: {}) {
             calls += 1
             if calls == 1 { throw timeout }
         }
@@ -17,7 +17,7 @@ final class AccessibilityAuditRunnerTests: XCTestCase {
     // Swallowing a persistent timeout or adding unlimited retries fails this.
     func testRepeatedTimeoutStillFails() {
         var calls = 0
-        XCTAssertThrowsError(try AccessibilityAuditRunner.perform {
+        XCTAssertThrowsError(try AccessibilityAuditRunner.perform(settle: {}) {
             calls += 1
             throw timeout
         }) { error in
@@ -34,7 +34,7 @@ final class AccessibilityAuditRunnerTests: XCTestCase {
             NSError(domain: "another.service", code: -56)
         ] {
             var calls = 0
-            XCTAssertThrowsError(try AccessibilityAuditRunner.perform {
+            XCTAssertThrowsError(try AccessibilityAuditRunner.perform(settle: {}) {
                 calls += 1
                 throw error
             }) { caught in
@@ -48,7 +48,28 @@ final class AccessibilityAuditRunnerTests: XCTestCase {
     // Running a successful audit twice fails this.
     func testSuccessfulAuditRunsOnce() throws {
         var calls = 0
-        try AccessibilityAuditRunner.perform { calls += 1 }
+        try AccessibilityAuditRunner.perform(settle: {}) { calls += 1 }
         XCTAssertEqual(calls, 1)
+    }
+
+    // Issue #30. Dropping the settle step, or running it after the audit,
+    // fails this.
+    func testTheScreenSettlesBeforeTheAudit() throws {
+        var steps: [String] = []
+        try AccessibilityAuditRunner.perform(settle: { steps.append("settle") }) {
+            steps.append("audit")
+        }
+        XCTAssertEqual(steps, ["settle", "audit"])
+    }
+
+    // Retrying on a screen that may have changed during the timed-out
+    // attempt, without settling again, fails this.
+    func testARetrySettlesTheScreenAgain() throws {
+        var steps: [String] = []
+        try AccessibilityAuditRunner.perform(settle: { steps.append("settle") }) {
+            steps.append("audit")
+            if steps.count == 2 { throw timeout }
+        }
+        XCTAssertEqual(steps, ["settle", "audit", "settle", "audit"])
     }
 }

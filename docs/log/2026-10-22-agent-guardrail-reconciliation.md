@@ -363,10 +363,31 @@ open until the tested correction is published. CI on `4415827` finished
 its unit job successfully, but its unfinished UI job was cancelled by the
 required `f872635` review-fix push. Current-head CI is still running.
 
+## Refresh after the audit timing fix landed
+
+The owner-enabled merge of PR #31 advanced `main` to `479175d`. The
+current main briefing, handoff, decisions and audit record were read
+before preparing a merge commit. Git merged the shared AGENTS and
+HANDOFF changes without conflicts; both the audit guidance and guardrail
+records remain. The main delta adds a settle step before accessibility
+audits and their existing timeout retry, waits for speech to finish,
+and adds two audit-runner tests plus evidence and guidance. It changes
+UI tests, not the app, native unit sources, scripts or workflows.
+The earlier local UI counts describe the earlier UI sources; they do
+not claim to run the newly merged audit helper. The fresh native unit
+gate for this merge passed: 460 tests, no failures, skips or expected
+failures, 62.6% app line coverage (3,540/5,659), and no String Catalog
+change. It used Xcode 27.1 (27A9275), XcodeGen 2.46.0 and iPad Pro
+13-inch (M5), iOS 27.0. Its Python gate passed 18 documentation tests in
+0.807 seconds and 41 hook tests in 9.167 seconds. Current UI validation
+and final-head review remain pending in CI.
+
 ## Not verified
 
-- CI on `f872635` is still running. The blockquote follow-up needs
-  publication and final-head CI and review.
+- CI on `7458118` is pending after the tested blockquote fix was
+  published and its thread resolved. Both jobs on superseded `f872635`
+  were cancelled. The locally tested `479175d` main merge needs
+  publication and final-head CI and review, including its current UI tests.
   Earlier CI on `7d6b3e1` finished
   with an iPad process-termination failure and a passing iPhone suite.
   Check the next pushed head's Unit tests, UI tests and CodeQL results.
@@ -384,11 +405,11 @@ required `f872635` review-fix push. Current-head CI is still running.
 
 ## Follow-ups
 
-1. Codex: the blockquote follow-up's native unit gate passed. Check
-   current main and the PR branch, then publish and answer its review
-   thread. Check current-head CI and review results. All nine original
-   review threads were resolved on `7d6b3e1` and the ten later threads
-   on `f872635`; preserve complete CI results when available.
+1. Codex: the main merge's fresh native unit gate passed. Check
+   current main and the PR branch, then publish and check final-head CI
+   and review. All nine original review threads were resolved on
+   `7d6b3e1`, ten later threads on `f872635` and the blockquote thread
+   on `7458118`; preserve complete CI results when available.
 2. In a live Claude Code session, confirm hook reloading; after the issue
    configuration lands, inspect the rendered bug form and its privacy text.
 3. The owner already enabled auto-merge on this PR. Its setting stays as

@@ -78,7 +78,10 @@ Xcode 27.1 (27A9275); PR #20 landed in `d79d836`.
   unit-tested with fakes), or sound. Windowed iPad
   sizes and iPhone Duo poses are untested. The first UI test on a
   just-started CI simulator failed intermittently before PR #13's warm-up
-  launch (AGENTS.md, *Gotchas*).
+  launch (AGENTS.md, *Gotchas*). Apple's accessibility audit never sees
+  Home's "Speaking" line: audits wait for speech to finish, because one
+  that ran while the line left reported text with no element (issue #30,
+  [`log/2026-10-22-audit-still-screen.md`](log/2026-10-22-audit-still-screen.md)).
 
 ## Known gaps
 
@@ -337,7 +340,10 @@ Simulators cannot show these. Record each result in a `docs/log/` file
   tests and 16 documentation tests passed; the catalog stayed unchanged.
   A later blockquoted-reference correction also passed a fresh native
   gate: 460 unit, 41 hook and 18 documentation tests, unchanged catalog.
-  Final-head CI and review remain pending.
+  Main's `479175d` audit-timing fix is now included without conflicts;
+  its fresh gate passed 460 unit, 41 hook and 18 docs tests, with the
+  catalog unchanged. Final-head CI/review remain pending.
+  The earlier local UI counts precede that audit-helper change.
   Reconciliation and verification: [`log/2026-10-22-agent-guardrail-reconciliation.md`](log/2026-10-22-agent-guardrail-reconciliation.md).
 
 ## History
