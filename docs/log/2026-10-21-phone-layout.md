@@ -125,6 +125,11 @@ missing is the wells and A's trailing column. Again still sits in A.
   measure; `HomeLayoutTests` skips the iPhone's landscape pass and waits
   only for the turn where the grid may scroll; the message border
   recorded as an open hazard, not an accepted exception.
+- `aa64319`'s CI: measuring Bold Text one weight heavier (bold) fell
+  short; SwiftUI drew semibold labels up to 4.6% wider ("Conversation" in
+  headline at AX5: 342pt drawn, 327pt measured), so set lines wrapped
+  again. The commit after it measures Bold Text at black, the heaviest
+  weight.
 
 ## Verified
 
@@ -220,8 +225,8 @@ missing is the wells and A's trailing column. Again still sits in A.
   out from measurements, not seen running.
 - The slot plan is a plan: no well exists yet.
 - Bold Text: how much heavier SwiftUI draws is not documented by Apple.
-  The measure uses one weight heavier, checked against SwiftUI on CI by
-  `StarterLabelFitTests`; the starter labels' fit in their narrowest
+  The measure uses the heaviest weight (black), checked against SwiftUI on
+  CI by `StarterLabelFitTests`; the starter labels' fit in their narrowest
   slots is checked with Bold Text off only.
 
 ## Follow-ups

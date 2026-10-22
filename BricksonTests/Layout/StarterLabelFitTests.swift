@@ -205,7 +205,7 @@ struct StarterLabelFitTests {
     /// point wider than `LabelFont` measures it under Bold Text: a bold label
     /// would then be given a size or lines its words do not fit. Apple does
     /// not document how much heavier Bold Text draws, so this pins the
-    /// weight `LabelFont.Weight.boldTextUIFontWeight` measures.
+    /// weight `LabelFont.boldTextUIFontWeight` measures.
     @Test func boldTextWordsAreNoWiderThanMeasured() {
         let cases: [(LabelFont, [String])] = [
             (.quickControl, ["Yes", "No", "Emergency", "Again"]),
