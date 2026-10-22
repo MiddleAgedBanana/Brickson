@@ -72,7 +72,11 @@ final class HomeLayoutTests: XCTestCase {
                 let isLandscape = window.width > window.height
                 // The iPhone is portrait-only for now (AppBundleTests,
                 // theIPhoneIsPortraitOnly), so it has no landscape to check.
+                // An iPad that does not turn is a failure, not a skip.
                 if orientation == .landscapeLeft && !isLandscape {
+                    if UIDevice.current.userInterfaceIdiom != .phone {
+                        XCTFail("the iPad did not turn to landscape (\(textSize.name), window \(window.size))")
+                    }
                     app.terminate()
                     continue
                 }
@@ -94,6 +98,13 @@ final class HomeLayoutTests: XCTestCase {
                     let button = app.buttons[category]
                     expectWhollyOnScreen(button, "the \(category) button", in: window, context)
                     button.tap()
+                    // The old category's tiles already fit, so wait for the
+                    // new one to be selected before reading its tiles.
+                    let selected = expectation(for: NSPredicate(format: "isSelected == true"), evaluatedWith: button)
+                    XCTAssertEqual(
+                        XCTWaiter.wait(for: [selected], timeout: 10), .completed,
+                        "\(category) was not selected (\(context))"
+                    )
                     waitForLayout(in: app, landscape: isLandscape)
                     let frames = tileFrames(in: app)
                     XCTAssertFalse(frames.isEmpty, "\(category) shows no tiles (\(context))")

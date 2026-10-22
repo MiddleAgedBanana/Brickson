@@ -107,8 +107,11 @@ missing is the wells and A's trailing column. Again still sits in A.
 - `7a7fdb6`: quick controls and categories grow to one line of text.
 - `1bca96a`: label sizes worked out without `ViewThatFits`, one view
   per label, and the grid always a scroll view.
-- The commit after `1bca96a`: labels drawn at the person's size in set
-  lines, shrunk by `minimumScaleFactor`.
+- `545a44b`: labels drawn at the person's size in set lines, shrunk by
+  `minimumScaleFactor`.
+- The commit after `545a44b` (Codex review): `HomeLayoutTests` fails when
+  an iPad does not turn, instead of skipping, and waits for each category
+  to be selected before reading its tiles.
 - The merge of `main` (PRs #12, #13, #15, #16, #18): eager rows in a
   plain `FixedColumns` view instead of `LazyVGrid`, `HomeLayoutTests` on
   `launchedApp` and `attachCapture`, the documents fitted to the new
