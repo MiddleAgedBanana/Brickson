@@ -89,6 +89,26 @@ extension View {
         buttonStyle(.borderedProminent)
             .tint(Palette.controlFill)
     }
+
+    /// Keeps the view at the tallest it has been since its screen opened,
+    /// so words that get shorter while the screen is open (Personal Voice
+    /// turned on in the Settings app, say) pull nothing below them up under
+    /// a resting pointer (AGENTS.md, invariant 10). Words that get longer
+    /// still push what is below down; where every version is known,
+    /// reserve them all instead (`SettingsReservedParagraph`).
+    func settingsKeepsItsTallestHeight() -> some View {
+        modifier(SettingsTallestHeight())
+    }
+}
+
+private struct SettingsTallestHeight: ViewModifier {
+    @State private var tallest: CGFloat = 0
+
+    func body(content: Content) -> some View {
+        content
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { tallest = max(tallest, $0) }
+            .frame(minHeight: tallest, alignment: .top)
+    }
 }
 
 /// A heading inside a screen. Primary ink, never the system's gray.

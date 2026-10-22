@@ -18,6 +18,22 @@ nonisolated struct VoiceRow: Equatable, Identifiable, Sendable {
     var id: String { voiceID.map { "voice:\($0)" } ?? "automatic" }
 }
 
+/// One place in the voice list while Voice Settings is open
+/// (`VoiceList.keepingPlaces`).
+nonisolated enum VoiceListPlace: Equatable, Identifiable, Sendable {
+    /// A voice that can be heard and chosen.
+    case voice(VoiceRow)
+    /// A voice listed when the screen opened that is no longer offered: its
+    /// place is kept, with passive words in it, until the screen closes.
+    case gone(VoiceRow)
+
+    var id: String {
+        switch self {
+        case .voice(let row), .gone(let row): row.id
+        }
+    }
+}
+
 /// Which voices Settings offers, in what order, and what each button is
 /// called. Pure, so the order and the uniqueness of names are tested.
 ///
@@ -107,6 +123,83 @@ nonisolated enum VoiceList {
     static func chosenVoiceIsMissing(selectedID: String?, from voices: [VoiceDescriptor]) -> Bool {
         guard let selectedID else { return false }
         return !voices.contains { $0.id == selectedID && !$0.isNovelty }
+    }
+
+    /// The note above the list when the chosen voice is not offered.
+    /// Without Personal Voice permission a chosen Personal Voice is left out
+    /// of the list though it is still on the device (docs/DECISIONS.md, "A
+    /// Personal Voice is used only while it is allowed"), so the note then
+    /// does not say the voice is gone.
+    static func missingVoiceNote(personalVoiceAllowed: Bool) -> String {
+        if personalVoiceAllowed {
+            return String(localized: "The voice chosen earlier is no longer on this device, so Automatic is used.")
+        }
+        return String(localized: "The voice chosen earlier can't be used now, so Automatic is used. If it is a Personal Voice, it comes back when Personal Voice is turned on for \(AppName.display).")
+    }
+
+    /// The words under the name of a voice that left the list while Voice
+    /// Settings was open (`keepingPlaces`), in place of its quality and
+    /// language. A Personal Voice also leaves when access to it is turned
+    /// off, and is then still on the device.
+    static func goneVoiceNote(for row: VoiceRow, personalVoiceAllowed: Bool) -> String {
+        if row.isPersonalVoice && !personalVoiceAllowed {
+            return String(localized: "Can't be used while Personal Voice is turned off for \(AppName.display).")
+        }
+        return String(localized: "No longer on this device.")
+    }
+
+    /// The voice Voice Settings' "Speaking with …" line names, or nil for
+    /// the line that names none. Only a voice on the device when the
+    /// screen opened is named, since only those names have room reserved:
+    /// one that appears while it is open, such as a Personal Voice just
+    /// allowed (whose name iOS hides until then), could be longer than all
+    /// of them, and the line would grow and push every button below it
+    /// down (AGENTS.md, invariant 10). The next visit names it.
+    static func speakingName(_ name: String, knownAtOpening known: Set<String>) -> String? {
+        known.contains(name) ? name : nil
+    }
+
+    /// Every version of the line under a voice's name: its quality and
+    /// language, and each note it would show if it left the list. A row
+    /// lays them all out, so a voice that leaves while the screen is open
+    /// keeps its row's height and moves no button below it (AGENTS.md,
+    /// invariant 10).
+    static func secondLines(for row: VoiceRow) -> [String] {
+        var lines = [row.detail]
+        for allowed in [true, false] {
+            let note = goneVoiceNote(for: row, personalVoiceAllowed: allowed)
+            if !lines.contains(note) { lines.append(note) }
+        }
+        return lines
+    }
+
+    /// The rows in the places they had when the screen opened (`shown`),
+    /// so a voice that arrives or leaves while Voice Settings is open moves
+    /// no Hear or Use button under a resting pointer (AGENTS.md,
+    /// invariant 10). A voice that is gone keeps its place as passive words;
+    /// a voice that arrives goes after every row already shown, and joins
+    /// them (`addingArrivals`). Each voice still shown takes its current
+    /// row, so which one is chosen is never out of date. The next time the
+    /// screen opens, `rows` alone decides the order again.
+    static func keepingPlaces(of shown: [VoiceRow], in current: [VoiceRow]) -> [VoiceListPlace] {
+        let currentByID = Dictionary(current.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        let shownIDs = Set(shown.map(\.id))
+        let kept = shown.map { row in
+            currentByID[row.id].map(VoiceListPlace.voice) ?? .gone(row)
+        }
+        let arrived = current
+            .filter { !shownIDs.contains($0.id) }
+            .map(VoiceListPlace.voice)
+        return kept + arrived
+    }
+
+    /// The rows shown, with each voice that has arrived since added after
+    /// them in the order it first appeared, so a later arrival never sorts
+    /// in ahead of an earlier one, and an arrival that leaves again keeps
+    /// its place as words (`keepingPlaces`).
+    static func addingArrivals(to shown: [VoiceRow], from current: [VoiceRow]) -> [VoiceRow] {
+        let shownIDs = Set(shown.map(\.id))
+        return shown + current.filter { !shownIDs.contains($0.id) }
     }
 
     private static func qualityName(_ voice: VoiceDescriptor) -> String {

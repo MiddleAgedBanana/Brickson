@@ -758,6 +758,34 @@ struct SpeechServiceTests {
         #expect(harness.synthesizer.requests.isEmpty)
     }
 
+    /// A second press of the Voice screen's button while iOS still asks
+    /// (a double tap, or a held look before the question covers the
+    /// screen) asks nothing more, and Settings knows a question is open
+    /// until the answer lands. Fails if the second press asks again, or if
+    /// `isAskingForPersonalVoice` is not set while waiting or not cleared
+    /// after.
+    @Test func aSecondRequestWhileTheFirstWaitsAsksNothingMore() async {
+        let harness = AudioHarness(askPolicy: .fromSettings)
+        let speech = harness.speech
+        #expect(!speech.isAskingForPersonalVoice)
+        let first = Task { await speech.requestPersonalVoiceAuthorization() }
+        #expect(await waitUntil { harness.personalVoice.requestCount == 1 })
+        #expect(speech.isAskingForPersonalVoice)
+
+        let second = await speech.requestPersonalVoiceAuthorization()
+
+        #expect(second == .notDetermined)
+        #expect(harness.personalVoice.requestCount == 1)
+        harness.personalVoice.answer(.authorized)
+        let landed = await waitUntil { !harness.speech.isAskingForPersonalVoice }
+        #expect(landed)
+        guard landed else { return }
+        let answer = await first.value
+        #expect(answer == .authorized)
+        #expect(harness.speech.personalVoiceStatus == .authorized)
+        #expect(harness.personalVoice.requestCount == 1)
+    }
+
     /// Access turned off in the Settings app while Brickson waited: coming
     /// back to the front reads it again. Fails if the refresh keeps the old
     /// status or the old list.

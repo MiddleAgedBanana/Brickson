@@ -28,7 +28,7 @@ struct BricksonApp: App {
         launch.prepareStorage()
         self.launch = launch
 
-        let audio = AppAudio.makeForApp(settings: launch.settings)
+        let audio = AppAudio.makeForApp(settings: launch.settings, personalVoiceTrial: launch.personalVoice)
         _audioSafety = State(initialValue: audio.safety)
         _speech = State(initialValue: audio.speech)
         _attention = State(initialValue: audio.attention)

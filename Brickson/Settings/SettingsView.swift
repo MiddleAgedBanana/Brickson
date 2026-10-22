@@ -1,3 +1,4 @@
+import Observation
 import SwiftUI
 
 /// Settings: a full-screen cover over Home, for the family.
@@ -22,8 +23,10 @@ struct SettingsView: View {
 
     @Environment(\.scenePhase) private var scenePhase
     @Environment(AttentionAlertPlayer.self) private var attention
+    @Environment(SpeechService.self) private var speech
     @State private var path: [SettingsRoute] = []
     @State private var activity: SettingsActivity
+    @State private var landing = SettingsLanding()
 
     /// - Parameter idleLimit: `SettingsIdleClock.standardLimit`, or the
     ///   short limit UI tests ask for (`AppTimeouts`).
@@ -48,12 +51,18 @@ struct SettingsView: View {
         }
         .background(Color(uiColor: .systemBackground))
         .environment(activity)
+        .environment(landing)
         .onChange(of: path) {
             activity.recordActivity()
         }
         .onChange(of: attention.isSounding, initial: true) { _, isSounding in
             // Never change the screen under someone answering the alarm.
             activity.setHold(.alarm, isSounding)
+        }
+        .onChange(of: speech.isAskingForPersonalVoice, initial: true) { _, isAsking in
+            // Voice Settings' question is open over the screen: the screen
+            // under it must still be there when it is answered.
+            activity.setHold(.personalVoiceRequest, isAsking)
         }
         .onChange(of: scenePhase) { _, phase in
             // Time in another app or with the screen off never counts.
@@ -176,9 +185,21 @@ private struct SettingsAudioStatus: View {
     }
 }
 
+/// The root's Family Setup row as drawn, its button style's insets
+/// included. Family Setup's opening text is at least this tall, so the
+/// whole of the spot just activated lands on words (AGENTS.md,
+/// invariant 10). It is measured, because the style's insets are the
+/// system's, not ours.
+@Observable
+final class SettingsLanding {
+    var rootRowHeight: CGFloat = 0
+}
+
 /// Settings' first screen: one large way into Family Setup, and a short
 /// note on what lies there. Nothing here changes a setting.
 struct SettingsRootView: View {
+    @Environment(SettingsLanding.self) private var landing: SettingsLanding?
+
     var body: some View {
         SettingsScreen(title: "Settings") {
             NavigationLink(value: SettingsRoute.familySetup) {
@@ -186,6 +207,7 @@ struct SettingsRootView: View {
                     .frame(minHeight: FamilySetupView.openingHeight)
             }
             .settingsRowStyle()
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { landing?.rootRowHeight = $0 }
             .accessibilityIdentifier("familySetup")
 
             SettingsParagraph("Voices, help with reaching the screen, keeping \(AppName.display) open, and the privacy policy are in Family Setup.")

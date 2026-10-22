@@ -27,4 +27,14 @@ struct PersonalVoiceAskPolicyTests {
     @Test func fromSettingsAsksAgainAtLaunchOnceAllowed() {
         #expect(PersonalVoiceAskPolicy.fromSettings.asksAtLaunch(alreadyAllowed: true))
     }
+
+    /// The app's policy stays `.atLaunch` until device check D1 passes;
+    /// only a debug launch that asks for a trial leaves the question to
+    /// Voice Settings. Fails if the app's policy changes without that
+    /// decision, or a trial still asks at launch.
+    @Test func theAppAsksAtLaunchUnlessALaunchAsksForATrial() {
+        #expect(AppAudio.personalVoiceAskPolicy(for: nil) == .atLaunch)
+        #expect(AppAudio.personalVoiceAskPolicy(for: .askFromSettings) == .fromSettings)
+        #expect(AppAudio.personalVoiceAskPolicy(for: .standInRefuses) == .fromSettings)
+    }
 }
