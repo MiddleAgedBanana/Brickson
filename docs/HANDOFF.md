@@ -22,7 +22,11 @@ beside them, and a longer message scrolls inside them. No label breaks a
 word: each drops its icon first, then shrinks only as far as it must,
 never below the default size, in lines of whole words. A phrase the system cuts off (a call, Siri, lost
 headphones) shows "Stopped" with Again to repeat it. Emergency opens the
-emergency phrases and says nothing. The start-only Get Attention alarm is
+emergency phrases and says nothing. VoiceOver, Switch Control and Full
+Keyboard Access reach Yes, No and Emergency first, then the message with
+Again, the categories and the phrases, each region as a group, and Voice
+Control also takes "Repeat" for Again (docs/DECISIONS.md, "Home's scan
+order and names"). The start-only Get Attention alarm is
 built and waiting for its place on Home (docs/DECISIONS.md, "Home's slot
 plan"). Settings, for the family, is
 built (a full-screen cover with Back to Talking, Family Setup, Voice
@@ -213,6 +217,9 @@ Every accessibility API in the map of Apple features by ALS stage has a
 row in [`ACCESSIBILITY.md`](ACCESSIBILITY.md), with its release and
 roadmap item; what each R0 item picks up from it, in order, is in
 [`log/2026-10-21-accessibility-coverage.md`](log/2026-10-21-accessibility-coverage.md),
+*Follow-ups*. Item 3's scan order, regions and Voice Control names are
+done; what is left of item 3's list, in order, is in
+[`log/2026-10-22-home-scan-order-and-names.md`](log/2026-10-22-home-scan-order-and-names.md),
 *Follow-ups*.
 The layout's next steps (the wells, then the engine with input
 profiles) are in
@@ -258,6 +265,7 @@ Simulators cannot show these. Record each result in a `docs/log/` file
 | On a folding iPhone, open and folded, and in Stage Manager, Slide Over and iPhone Mirroring windows: nothing safety-critical is hidden or split | Layouts from the space available |
 | Eye Tracking and Dwell on an external display | Whether gaze profiles hold off the built-in screen |
 | Switch Control with Auto Scanning, Group Items on and off, and Auto Tap: the scan steps to Emergency, Yes and No from every Home state, and whether Home's regions become scan groups | Scan order and grouping (docs/ACCESSIBILITY.md, section 1) |
+| With VoiceOver, Switch Control (item and group scanning) and Full Keyboard Access, Home is reached as Yes, No, Emergency, then the message and Again, the categories, the phrases, in every state; what each says on entering a region; whether the cursor stops on the message or the status line; Voice Control's "Show names" shows each control's visible words and "Tap Repeat" presses Again | "Home's scan order and names": the order, unlabelled regions, and whether `accessibilityRespondsToUserInteraction` is needed |
 | With VoiceOver on, a phrase tile with and without the `startsMediaSession` trait: does VoiceOver stay quiet while the phrase speaks | Whether phrase tiles carry the trait (R0 item 4) |
 | Brickson inside Assistive Access with `UISupportsFullScreenInAssistiveAccess`: its window size, and whether Eye Tracking and Switch Control work there | Assistive Access support (R0 item 7) |
 | Guided Access with each input method, and with a short Display Auto-Lock while Brickson keeps the screen awake | Setup advice, and invariant 12 under Guided Access |
