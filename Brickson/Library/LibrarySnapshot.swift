@@ -240,10 +240,15 @@ nonisolated enum LibraryText {
             locale: nil
         )
         var scalars = String.UnicodeScalarView()
-        for scalar in folded.unicodeScalars
-        where !CharacterSet.punctuationCharacters.contains(scalar)
-            && !CharacterSet.whitespacesAndNewlines.contains(scalar) {
-            scalars.append(scalar)
+        // Ignore standalone blank Characters, not every invisible scalar:
+        // joiners and emoji tags inside a meaningful grapheme affect its
+        // appearance and must still distinguish that name. Storage is intact.
+        for character in folded where !isBlank(String(character)) {
+            for scalar in character.unicodeScalars
+            where !CharacterSet.punctuationCharacters.contains(scalar)
+                && !CharacterSet.whitespacesAndNewlines.contains(scalar) {
+                scalars.append(scalar)
+            }
         }
         return String(scalars)
     }

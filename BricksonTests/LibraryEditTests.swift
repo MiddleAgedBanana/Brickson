@@ -86,9 +86,63 @@ struct LibraryEditTests {
         }
     }
 
+    /// Standalone invisible decorations cannot make a second category
+    /// with the same visible name. Fails if comparison keeps these blank
+    /// Characters; neither validation nor import may rewrite their bytes.
+    @Test(arguments: [
+        ("Needs", "Needs\u{200B}"),
+        ("Basics", "\u{2060}Basics\u{FEFF}"),
+        ("Needs", "Ne\u{00AD}eds"),
+        ("Basics", "Ba\u{0000}sics"),
+        ("Needs", "Needs\u{0007}"),
+        ("Basics", "Ba\u{FEFF}sics"),
+    ])
+    func standaloneBlankDecorationsDoNotMakeDistinctNames(base: String, decorated: String) throws {
+        #expect(throws: LibraryEditRejection.duplicateCategoryName) {
+            try makePlan(.addCategory(name: decorated, symbolName: "star.fill"))
+        }
+        let other = base == "Needs" ? F.basicsID : F.needsID
+        #expect(throws: LibraryEditRejection.duplicateCategoryName) {
+            try makePlan(.renameCategory(other, name: decorated))
+        }
+        // Keeping one's own name still succeeds. U+200B is already in
+        // Foundation's whitespace set, so the existing edge trim removes it.
+        let own = base == "Needs" ? F.needsID : F.basicsID
+        let renamed = try makePlan(.renameCategory(own, name: decorated))
+        let category = try #require(renamed.after.categories.first { $0.id == own })
+        #expect(LibraryText.sameBytes(category.name, decorated == "Needs\u{200B}" ? base : decorated))
+    }
+
+    /// Name comparison never becomes a sanitizer, even when an import
+    /// creates names the editor would consider duplicates. Fails if either
+    /// edit storage or merge/Replace strips a standalone blank Character.
+    @Test(arguments: ["\u{200B}", "\u{2060}", "\u{FEFF}", "\u{00AD}", "\u{0000}", "\u{0007}"])
+    func comparisonOnlyDropsStandaloneBlankCharacters(blank: String) throws {
+        let name = "New" + blank + " category"
+        let added = try makePlan(.addCategory(name: name, symbolName: "star.fill"))
+        #expect(LibraryText.sameBytes(try #require(added.after.categories.last).name, name))
+        let importedName = "Needs" + blank
+        let incoming = LibrarySnapshot(categories: [
+            .init(id: F.id(800), name: importedName, symbolName: "star.fill", isEmergency: false,
+                  phrases: [.init(id: F.id(801), text: blank + "Words." + blank)]),
+        ])
+        for edit in [LibraryEdit.merge(incoming), .replace(incoming)] {
+            let plan = try makePlan(edit)
+            let category = try #require(plan.after.categories.first { LibraryText.sameBytes($0.name, importedName) })
+            #expect(LibraryText.sameBytes(category.name, importedName))
+            #expect(LibraryText.sameBytes(try #require(category.phrases.first).text, blank + "Words." + blank))
+        }
+    }
+
     /// Fails if stripping symbols collapses distinct emoji names, including
     /// composed sequences, into one empty or format-only comparison key.
-    @Test(arguments: [("😀", "🎉"), ("👩‍💻", "👩‍🚀"), ("☀️", "❄️")])
+    @Test(arguments: [
+        ("😀", "🎉"), ("👩‍💻", "👩‍🚀"), ("☀️", "❄️"),
+        ("👩‍💻", "👩💻"), ("می\u{200C}خواهم", "میخواهم"),
+        ("क्\u{200D}ष", "क्\u{200C}ष"),
+        ("\u{1F3F4}\u{E0067}\u{E0062}\u{E0065}\u{E006E}\u{E0067}\u{E007F}",
+         "\u{1F3F4}\u{E0067}\u{E0062}\u{E0073}\u{E0063}\u{E0074}\u{E007F}"),
+    ])
     func distinctSymbolCategoryNamesCanBeAdded(first: String, second: String) throws {
         let firstPlan = try makePlan(.addCategory(name: first, symbolName: "star.fill"))
         let secondPlan = try makePlan(
@@ -100,7 +154,13 @@ struct LibraryEditTests {
 
     /// The same distinction must survive rename, not just category creation.
     /// Fails if rename still uses a symbol-stripping comparison.
-    @Test(arguments: [("😀", "🎉"), ("👩‍💻", "👩‍🚀"), ("☀️", "❄️")])
+    @Test(arguments: [
+        ("😀", "🎉"), ("👩‍💻", "👩‍🚀"), ("☀️", "❄️"),
+        ("👩‍💻", "👩💻"), ("می\u{200C}خواهم", "میخواهم"),
+        ("क्\u{200D}ष", "क्\u{200C}ष"),
+        ("\u{1F3F4}\u{E0067}\u{E0062}\u{E0065}\u{E006E}\u{E0067}\u{E007F}",
+         "\u{1F3F4}\u{E0067}\u{E0062}\u{E0073}\u{E0063}\u{E0074}\u{E007F}"),
+    ])
     func distinctSymbolCategoryNamesCanBeRenamed(first: String, second: String) throws {
         let firstPlan = try makePlan(.renameCategory(F.basicsID, name: first))
         let secondPlan = try makePlan(.renameCategory(F.needsID, name: second), in: firstPlan.after)

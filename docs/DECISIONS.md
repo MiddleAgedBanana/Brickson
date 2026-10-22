@@ -643,6 +643,16 @@ The rules a family's edits follow live in `LibraryRules` and
   out of the person's path, and a forgotten PIN would lock a family out of
   the person's words.
 
+*Default, adopted 2026-10-22: reversible if the owner objects.* Category
+comparison also ignores standalone blank characters, so a WORD JOINER,
+BOM, soft hyphen or control code cannot make a second copy of a visible
+name. The check uses Swift Characters (extended grapheme clusters): a
+blank-only character is omitted from the comparison key, while joiners,
+variation selectors and emoji tags attached to meaningful characters
+remain significant. This extends the listed comparison rules without
+rewriting stored or imported names. It does not change phrase validation
+or declare Unicode punctuation silent.
+
 The editing screens are not built. They live in a Library screen inside
 Settings for 1.0 (the memo's recommendation); an edit mode on Home may
 come later, for touch only.

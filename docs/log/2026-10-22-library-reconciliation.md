@@ -361,12 +361,89 @@ environment is checked. The successful combined native unit gate above
 precedes the merge commit. Fresh hosted CI and review must assess the
 published head; results for `d241dea` do not validate these later changes.
 
+### Review after `4808701`: punctuation and invisible name decorations
+
+The punctuation-only P1 was investigated rather than assumed correct.
+A temporary pure-library hypothesis test confirmed that `"..."` is accepted
+through snapshot validation, editing Emergency's last phrase, deleting or
+moving its other words, and Replace without adding current Emergency words.
+Six expectations enforcing the proposed new restriction failed. This
+establishes existing behavior, not that the resulting utterance is silent.
+
+A separate bounded offline `AVSpeechSynthesizer.write` probe used
+macOS 27.0.1, Xcode 27.1 (27A9275), and the compact Samantha en-US voice.
+`"..."` generated 11,904 PCM frames, with 11,106 samples above amplitude
+0.00001 and a peak of 0.709. The `"Help."` control and `"?!"`, an em dash,
+`"@"`, `"#"`, `"&"` and a grinning emoji also generated nonzero audio.
+All reached a terminal buffer; this probe used no playback or simulator.
+Apple's [write documentation](https://developer.apple.com/documentation/avfaudio/avspeechsynthesizer/write(_:tobuffercallback:)),
+read through Xcode, describes receiving synthesized buffers and makes no
+punctuation-silence guarantee. These results do not establish pronunciation
+or behavior on every iOS or Personal Voice. They contradict the finding's
+blanket silence premise, so it was answered and resolved as not actionable
+as stated. Neither phrase validation nor the Emergency policy changed.
+The temporary hypothesis test was not added to the repository.
+
+The separate duplicate-name finding was partly reproduced. Foundation's
+whitespace set already covers U+200B, so its proposed `Needs` plus trailing
+U+200B example was already refused. WORD JOINER/BOM decorations, an internal
+soft hyphen, NUL and BEL did make duplicate add/rename names pass: the final
+failing-first run had ten failed expectations across five cases. The new
+comparison drops only standalone blank Swift Characters, retaining every
+meaningful grapheme's scalars before the existing punctuation/spacing
+comparison. A blanket removal of all default-ignorable scalars was rejected:
+it would erase joining distinctions and collapse different emoji tag flags.
+Apple's [Character documentation](https://developer.apple.com/documentation/swift/character),
+read through Xcode, defines that boundary as an extended grapheme cluster.
+
+All 56 pure library edit/import tests now pass. The new six-case duplicate
+regression covers the five actual gaps and the already-safe U+200B case.
+The separate six-case storage/import regression confirms that comparison
+is not applied to saved or imported bytes; the pre-existing editor edge
+trim remains unchanged. Expanded add/rename controls preserve joined versus
+unjoined emoji, Persian ZWNJ, Devanagari ZWJ/ZWNJ and distinct England/Scotland
+tag flags, alongside existing emoji, meaningful-text and Home-alias cases.
+Removing the standalone-blank filter makes the duplicate regression fail;
+removing joining/tag scalars would break the composed-name cases.
+The fresh full `scripts/test.sh unit` gate for this comparison follow-up
+passed: 560 passed, zero failures, one existing issue #19 crash-probe skip,
+zero expected failures (561 total). Coverage was 66.9% (4,400/6,577), and
+the String Catalog was unchanged. It used the explicit iPad Pro 13-inch
+(M5) destination on iOS 27.0 with Xcode 27.1 (27A9275); results are under
+`build/TestResultsInvisibleNames`. An independent bounded review found no
+additional regression in the name comparison or byte-preservation paths.
+
+Full local UI on this follow-up remains pending. The host audio driver
+also failed to start outside the simulator, independently of Brickson;
+repair requires approval for a brief host audio restart. This supports
+investigating the local environment before changing app speech behavior,
+but does not explain the earlier CI AX5 finding. The current published
+`4808701` CI unit job passed 558 tests with one existing skip (559 total);
+its UI was still running when this batch was prepared. Fresh CI must
+validate the new comparison follow-up, and full local UI is still due.
+
+The visible-name intent already motivated duplicate validation, but its
+binding list did not include invisible decorations. The precise bounded
+comparison rule is therefore recorded beside editing rules as a reversible
+default adopted 2026-10-22. No stored text or import rule changes.
+
+The HANDOFF verification bullet now reports current state, with this log
+retaining the chronology. Its prior PR #14 technical section is preserved
+verbatim in [the archive snapshot](../archive/2026-10-22-before-library-verification-summary/docs/HANDOFF.md).
+Only the affected technical section is copied, excluding unrelated sections
+and attribution details under the owner's current privacy instruction.
+The review's claim that toolchain versions were not requested did not apply:
+the owner explicitly requested the Xcode version and measured evidence.
+Those details remain here. Auto-merge has been disabled during coordinated
+validation; the owner retains the merge click.
+
 ## Follow-ups, in order
 
-1. Verify fresh hosted CI and review for the published Unicode correction
-   and `479175d` merge. Complete PR #14's full local iPad/iPhone UI gates
-   once the simulator audio environment is validated; record the actual
-   result separately from the `182df4b` baseline. PR #14 is not green yet.
+1. Verify fresh hosted CI and review after publishing the tested
+   standalone-blank comparison follow-up and answering its two review
+   conversations. Complete full local iPad/iPhone UI once the host audio
+   environment is repaired; record that result separately from the
+   `182df4b` baseline. PR #14 is not green yet.
 2. If the AX5 finding recurs, inspect the new captures and native report to
    identify and fix its cause. The earlier failed run remains evidence;
    local passes do not explain it or authorize suppressing a finding.
@@ -376,6 +453,7 @@ published head; results for `d241dea` do not validate these later changes.
 
 ## Decisions
 
-No new product or storage decision. Existing import and safety-copy
-restrictions remain in force. The merge only reconciles concurrent work;
+Category-name comparison now has the explicit bounded default recorded
+above and in DECISIONS. Existing phrase, Emergency, import and safety-copy
+restrictions remain in force. No new storage or speech policy is adopted;
 the owner retains the merge decision.
