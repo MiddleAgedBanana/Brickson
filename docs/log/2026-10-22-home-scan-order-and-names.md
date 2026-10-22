@@ -88,7 +88,12 @@ Nothing was built or run on a Mac; GitHub CI is the build (AGENTS.md,
   skipped (the opt-in keyboard probe), none failed.
   `HomeAccessibilityOrderTests` passed on both, at the default and the
   largest text size, portrait. Codex's review and the security scan
-  found nothing. The run after the merge above is on the pull request.
+  found nothing.
+- **GitHub CI on `fd519cb`** (after the merges of PR #22's branch, whose
+  last commit is the tree PR #22 merged into `main`): the unit tests and
+  the UI tests on the iPad and the iPhone passed; Codex found nothing.
+  The unit run on `0b880d4` had failed only in PR #22's Bold Text tests
+  (`StarterLabelFitTests`), which PR #22 fixed before it merged.
 
 - **Linux Swift 6.3.3** (a throwaway package outside the repository, Swift
   6 language mode, main-actor default isolation, a stand-in for
