@@ -155,6 +155,9 @@ def broken_links(path, text):
     """Each relative Markdown link whose file or heading does not exist."""
     relative = path.relative_to(ROOT).as_posix()
     problems = []
+    # Blockquoted definitions apply to the whole document (CommonMark 218).
+    # Strip each quote marker, but leave code indentation after it intact.
+    text = re.sub(r'^(?: {0,3}>[ \t]?)+', '', text, flags=re.M)
     text = FENCE.sub('', text)
     # Check destinations at their definitions once, regardless of which
     # reference-link form uses them (or how many times the label is reused).
@@ -257,6 +260,34 @@ class CheckerTests(unittest.TestCase):
         readme = ROOT / 'README.md'
         text = '```markdown\n[ref][]\n\n[ref]: docs/NO-SUCH-FILE.md\n```'
         self.assertEqual(broken_links(readme, text), [])
+
+    def test_blockquoted_reference_definitions_are_checked(self):
+        # Removing quote-prefix normalization loses these missing destinations.
+        readme = ROOT / 'README.md'
+        for prefix in ['> ', '>', '   > ', '> > ']:
+            for target, problem in [
+                    ('docs/NO-SUCH-FILE.md', 'points to a missing file'),
+                    ('docs/DECISIONS.md#no-such-heading',
+                     'names a heading that does not exist')]:
+                with self.subTest(prefix=prefix, target=target):
+                    text = f'[guide]\n\n{prefix}[guide]: {target}\n'
+                    self.assertEqual(broken_links(readme, text),
+                                     [f'README.md: link {target} {problem}'])
+        self.assertEqual(broken_links(readme,
+            '[guide]\n\n> [guide]:\n> docs/NO-SUCH-FILE.md\n'),
+            ['README.md: link docs/NO-SUCH-FILE.md points to a missing file'])
+        self.assertEqual(broken_links(readme,
+            '[guide]\n\n> [guide]: docs/DECISIONS.md#orientations\n'), [])
+
+    def test_blockquoted_code_is_not_a_reference_definition(self):
+        # Quote removal must retain four-space indentation and fenced code.
+        readme = ROOT / 'README.md'
+        for text in [
+                '>     [guide]: docs/NO-SUCH-FILE.md',
+                '    > [guide]: docs/NO-SUCH-FILE.md',
+                '> ```markdown\n> [guide]: docs/NO-SUCH-FILE.md\n> ```']:
+            with self.subTest(text=text):
+                self.assertEqual(broken_links(readme, text), [])
 
     def test_reference_destinations_can_follow_on_the_next_line(self):
         readme = ROOT / 'README.md'

@@ -334,10 +334,39 @@ Each new guard test has a concrete failure trigger:
 | `sudo_option_operands_do_not_hide_commands` | Treat the user or group operand as the executable |
 | `rest_branch_merges_cannot_target_main` | Ignore the base branch in REST branch-merge requests |
 
+## Follow-up for blockquoted references
+
+The next review identified a Markdown reference definition inside a block
+quote that the checker missed. This was reproduced before changing the
+checker: a missing file returned no problem, and the focused regression
+then produced nine failing cases. CommonMark's
+[example 218](https://spec.commonmark.org/0.31.2/#example-218) confirms that
+these definitions apply throughout the document. The checker now removes
+quote markers before checking definitions and removing fenced examples,
+while retaining indentation that marks code. Missing files and headings
+are checked with plain, nested, indented and spaceless quote markers, as
+well as a destination on the next quoted line. Existing destinations,
+quoted fences and four-space code examples remain accepted. Removing
+quote normalization makes the new reference test fail; stripping code
+indentation or scanning a quoted fence makes the negative test fail.
+
+All 18 documentation tests passed with system Python 3.9.6 in 0.779
+seconds. The fresh `scripts/test.sh unit` gate then passed 460 native
+unit tests, with no failures, skips or expected failures and 62.6% app
+line coverage (3,540/5,659). It used Xcode 27.1 (27A9275), XcodeGen
+2.46.0 and iPad Pro 13-inch (M5), iOS 27.0; its Python checks passed
+18 documentation tests in 0.734 seconds and 41 hook tests in 8.979
+seconds. The String Catalog was unchanged. App, guard and UI-test
+sources have not changed. The ten previous follow-up
+threads were answered and resolved on `f872635`; this new finding remains
+open until the tested correction is published. CI on `4415827` finished
+its unit job successfully, but its unfinished UI job was cancelled by the
+required `f872635` review-fix push. Current-head CI is still running.
+
 ## Not verified
 
-- CI on `4415827` passed units and CodeQL; its UI job is still running.
-  The locally tested review follow-up still needs final-head CI and review.
+- CI on `f872635` is still running. The blockquote follow-up needs
+  publication and final-head CI and review.
   Earlier CI on `7d6b3e1` finished
   with an iPad process-termination failure and a passing iPhone suite.
   Check the next pushed head's Unit tests, UI tests and CodeQL results.
@@ -355,13 +384,11 @@ Each new guard test has a concrete failure trigger:
 
 ## Follow-ups
 
-1. Codex: the fresh local unit gate passed. Check current main and the PR
-   branch before pushing the review fixes,
-   then check current-head CI and review results. Complete
-   evidence from the preceding UI run has been retained. All nine
-   prior review threads were answered and resolved on `7d6b3e1`; the
-   ten later review threads remain pending until this follow-up is
-   tested and published.
+1. Codex: the blockquote follow-up's native unit gate passed. Check
+   current main and the PR branch, then publish and answer its review
+   thread. Check current-head CI and review results. All nine original
+   review threads were resolved on `7d6b3e1` and the ten later threads
+   on `f872635`; preserve complete CI results when available.
 2. In a live Claude Code session, confirm hook reloading; after the issue
    configuration lands, inspect the rendered bug form and its privacy text.
 3. The owner already enabled auto-merge on this PR. Its setting stays as

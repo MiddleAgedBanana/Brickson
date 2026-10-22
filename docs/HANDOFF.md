@@ -335,6 +335,9 @@ Simulators cannot show these. Record each result in a `docs/log/` file
   green CI remains required. The later guard/parser and coverage wording
   corrections passed a fresh native unit gate: all 460 unit tests, 41 hook
   tests and 16 documentation tests passed; the catalog stayed unchanged.
+  A later blockquoted-reference correction also passed a fresh native
+  gate: 460 unit, 41 hook and 18 documentation tests, unchanged catalog.
+  Final-head CI and review remain pending.
   Reconciliation and verification: [`log/2026-10-22-agent-guardrail-reconciliation.md`](log/2026-10-22-agent-guardrail-reconciliation.md).
 
 ## History
