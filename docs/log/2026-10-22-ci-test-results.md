@@ -68,6 +68,14 @@ test-only storage (`--test-storage`), nothing personal.
   timed out evaluating its `phraseTile` query after 395 s, on code
   identical to `main`. The one re-run passed. The failed run's
   `ui-test-results` holds that failure's bundle until it expires.
+- Its second run (`5beb447`, run 39835147321) failed on the iPhone: the
+  accessibility audit in `LaunchTests.testLargestTextKeepsQuickControlWordsVisible`
+  ("AX5, light") reported text with no accessibility element, on code
+  identical to `main`, where the same test had passed. It was not
+  re-run (AGENTS.md: never retry an accessibility finding to make CI
+  green); it is issue #30. That failed job still uploaded
+  `ui-test-results` (26.3 MB, expiring
+  2026-11-05), so `if: always()` keeps a failed run's bundle.
 
 ## Not verified
 
@@ -75,9 +83,9 @@ test-only storage (`--test-storage`), nothing personal.
 - The record came in a second pull request, not in #28 as AGENTS.md
   asks (Codex's finding on #28): #28 was the owner's web-editor branch,
   and it merged by auto-merge before the docs could be added to it.
-- That a failed run's artifact holds the failure screenshots follows
-  from `if: always()` and `scripts/test.sh` keeping its bundle on
-  failure, but is seen only when a run fails.
+- That a failed run's artifact holds the failure screenshots: run
+  39835147321 shows the upload happens on failure, but nobody has opened
+  the bundle to see the screenshots inside (that needs a Mac).
 - A `.xcresult` bundle opens only in Xcode or with `xcrun xcresulttool`
   on a Mac, so a cloud agent that downloads one still cannot read it.
 
