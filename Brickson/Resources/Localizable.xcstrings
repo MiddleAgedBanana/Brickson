@@ -1,10 +1,13 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "%@ can speak in a voice that sounds like you, made with Apple's Personal Voice. %@ must ask iOS before using it." : {
+    "%@ can speak in a voice that sounds like you, made with Apple's Personal Voice. Choose Ask to Use Personal Voice, then Allow when iOS asks. iOS asks only once." : {
 
     },
     "%@ can speak in a voice that sounds like you, made with Apple's Personal Voice. iOS asks once whether %@ may use it; choose Allow." : {
+
+    },
+    "%@ can't be used while Personal Voice is turned off for %@." : {
 
     },
     "%@ is no longer on this device." : {
@@ -44,6 +47,12 @@
 
     },
     "Alert stopped" : {
+
+    },
+    "Answered. iOS asks only once, so any change is made in the Settings app." : {
+
+    },
+    "Ask to Use Personal Voice" : {
 
     },
     "Assistive Access" : {
@@ -344,6 +353,9 @@
 
     },
     "The starter phrases couldn't be loaded. Yes and No still work. Restart the app to try again." : {
+
+    },
+    "The voice chosen earlier can't be used now, so Automatic is used. If it is a Personal Voice, it comes back when Personal Voice is turned on for %@." : {
 
     },
     "The voice chosen earlier is no longer on this device, so Automatic is used." : {

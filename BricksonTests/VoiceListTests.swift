@@ -131,6 +131,23 @@ struct VoiceListTests {
         #expect(chosen.map(\.id) == ["voice:samantha"])
     }
 
+    /// Without Personal Voice permission a chosen Personal Voice is only
+    /// left out of the list, not gone from the device, so neither note may
+    /// say it is gone then. Fails if one wording is used for both.
+    @Test func aVoiceWhoseAccessIsOffIsNeverCalledGone() {
+        let gone = "no longer on this device"
+        #expect(VoiceList.missingVoiceNote(personalVoiceAllowed: true).contains(gone))
+        #expect(!VoiceList.missingVoiceNote(personalVoiceAllowed: false).contains(gone))
+
+        let rows = VoiceList.rows(for: voices, selectedID: nil, languageCode: "en")
+        let mine = rows.first { $0.voiceID == "mine" }!
+        let daniel = rows.first { $0.voiceID == "daniel" }!
+        #expect(!VoiceList.goneVoiceNote(for: mine, personalVoiceAllowed: false).contains(gone))
+        #expect(VoiceList.goneVoiceNote(for: mine, personalVoiceAllowed: true).contains(gone))
+        #expect(VoiceList.goneVoiceNote(for: daniel, personalVoiceAllowed: false).contains(gone))
+        #expect(VoiceList.goneVoiceNote(for: mine, personalVoiceAllowed: false).hasPrefix("My Voice"))
+    }
+
     @Test func withNothingChangedThePlacesAreTheRows() {
         let rows = VoiceList.rows(for: voices, selectedID: "daniel", languageCode: "en")
 

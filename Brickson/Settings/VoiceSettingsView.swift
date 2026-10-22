@@ -43,6 +43,7 @@ struct VoiceContent: View {
             describeLanguage: { Locale.current.localizedString(forIdentifier: $0) ?? $0 }
         )
         let voiceIsMissing = VoiceList.chosenVoiceIsMissing(selectedID: speech.selectedVoiceID, from: speech.availableVoices)
+        let personalVoiceAllowed = speech.personalVoiceStatus == .authorized
 
         // Which voice speaks now, from the service itself, so a kept
         // Personal Voice is named the same way speech chooses it. Reserved
@@ -78,17 +79,22 @@ struct VoiceContent: View {
         // opened: its place is then kept, so choosing a voice pulls no row
         // up. A voice that goes while the screen is open says so in its
         // own row instead, so no note is pushed in above the rows.
+        // Its words depend on whether Personal Voice is allowed, which can
+        // change while the screen is open, so both versions are laid out.
         if opened?.voiceWasMissing ?? voiceIsMissing {
-            SettingsParagraph("The voice chosen earlier is no longer on this device, so Automatic is used.")
-                .opacity(voiceIsMissing ? 1 : 0)
-                .accessibilityHidden(!voiceIsMissing)
+            SettingsReservedParagraph(
+                text: Text(verbatim: VoiceList.missingVoiceNote(personalVoiceAllowed: personalVoiceAllowed)),
+                alternatives: [true, false].map { Text(verbatim: VoiceList.missingVoiceNote(personalVoiceAllowed: $0)) }
+            )
+            .opacity(voiceIsMissing ? 1 : 0)
+            .accessibilityHidden(!voiceIsMissing)
         }
         ForEach(VoiceList.keepingPlaces(of: opened?.rows ?? rows, in: rows)) { place in
             switch place {
             case .voice(let row):
                 VoiceRowView(row: row)
             case .gone(let row):
-                GoneVoiceRowView(row: row)
+                GoneVoiceRowView(row: row, personalVoiceAllowed: personalVoiceAllowed)
             }
         }
     }
@@ -215,30 +221,46 @@ private struct VoiceRowView: View {
     }
 }
 
-/// A voice listed when the screen opened that is no longer on the device.
-/// The row it had is laid out hidden, so its place keeps its size, with
-/// passive words in it and no button, until the screen closes
-/// (`VoiceList.keepingPlaces`).
+/// A voice listed when the screen opened that is no longer offered:
+/// deleted, or a Personal Voice whose access was turned off. The row it had
+/// is laid out hidden, so its place keeps its size, with passive words in
+/// it and no button, until the screen closes (`VoiceList.keepingPlaces`).
 private struct GoneVoiceRowView: View {
     let row: VoiceRow
+    let personalVoiceAllowed: Bool
 
     var body: some View {
         ZStack(alignment: .topLeading) {
             VoiceRowView(row: row)
                 .hidden()
                 .accessibilityHidden(true)
-            // A voice's name is its own, never translated.
-            SettingsParagraph("\(row.name) is no longer on this device.")
+            // A voice's name is its own, never translated; it is inserted
+            // into the localized sentence as it is.
+            SettingsParagraph(verbatim: VoiceList.goneVoiceNote(for: row, personalVoiceAllowed: personalVoiceAllowed))
         }
         .allowsHitTesting(false)
     }
 }
 
 /// What Personal Voice needs next, from `PersonalVoiceGuidance`.
+///
+/// Under `PersonalVoiceAskPolicy.fromSettings` the card offers Ask to Use
+/// Personal Voice, explained in the words above it. iOS's question then
+/// covers the screen, Settings holds its idle reset until the answer lands
+/// (`SettingsView`), and a second press meanwhile asks nothing more
+/// (`SpeechService.requestPersonalVoiceAuthorization()`). The answer moves
+/// nothing: while the button shows, the words above it keep room for every
+/// answer's words (`PersonalVoiceGuidance.outcomesOfAsking()`); once it has
+/// been used, its place holds passive words until the screen closes, and
+/// no new button appears in the card on this visit (`askedOnThisVisit`), so
+/// nothing that leaves the app lands beside the spot just activated
+/// (AGENTS.md, invariant 10).
 private struct PersonalVoiceSection: View {
     @Environment(SpeechService.self) private var speech
     @Environment(SettingsActivity.self) private var activity: SettingsActivity?
     @State private var couldNotOpenSettings = false
+    /// The Ask button was used since the screen opened.
+    @State private var asked = false
 
     var body: some View {
         let guidance = PersonalVoiceGuidance.make(
@@ -246,22 +268,35 @@ private struct PersonalVoiceSection: View {
             hasPersonalVoice: speech.hasPersonalVoice,
             // Brickson asks by itself when it opens, for now
             // (docs/DECISIONS.md, "Personal Voice permission is asked at
-            // launch, for now"); the Ask button arrives with that change.
-            canAsk: false,
-            canOpenSettings: Self.canOpenPersonalVoiceSettings
+            // launch, for now"), so the button shows only under the policy
+            // that leaves the question to this screen.
+            canAsk: speech.personalVoiceAskPolicy == .fromSettings,
+            canOpenSettings: Self.canOpenPersonalVoiceSettings,
+            askedOnThisVisit: asked
         )
+        let offersAsking = guidance.action == .askPermission
 
         SettingsCard {
-            SettingsHeading(verbatim: guidance.title)
-            SettingsParagraph(verbatim: guidance.message)
-            if let path = guidance.settingsPath {
-                Text(verbatim: path)
-                    .font(.body.weight(.semibold))
-                    .foregroundStyle(.primary)
-                    .fixedSize(horizontal: false, vertical: true)
+            ZStack(alignment: .topLeading) {
+                if offersAsking {
+                    ForEach(Array(PersonalVoiceGuidance.outcomesOfAsking().enumerated()), id: \.offset) { _, outcome in
+                        PersonalVoiceWords(guidance: outcome)
+                            .hidden()
+                            .accessibilityHidden(true)
+                    }
+                }
+                PersonalVoiceWords(guidance: guidance)
             }
-            if guidance.suggestsMakingOne {
-                SettingsParagraph("Making a Personal Voice means reading phrases aloud, so it is easiest while speaking is comfortable. Apple keeps it encrypted on this device, and in iCloud only if Share Across Devices is on. \(AppName.display) never receives the voice or its recordings.")
+            .settingsKeepsItsTallestHeight()
+
+            if offersAsking || asked {
+                PersonalVoiceAskPlace(offersAsking: offersAsking) {
+                    activity?.recordActivity()
+                    asked = true
+                    Task {
+                        await speech.requestPersonalVoiceAuthorization()
+                    }
+                }
             }
             if guidance.action == .openPersonalVoiceSettings {
                 Button {
@@ -293,6 +328,68 @@ private struct PersonalVoiceSection: View {
         // Before iOS 26.4 there is no way to ask; the button tries, and the
         // written path covers a failure.
         return true
+    }
+}
+
+/// The card's words for one Personal Voice state: what it is, what to do,
+/// and where in the Settings app.
+private struct PersonalVoiceWords: View {
+    let guidance: PersonalVoiceGuidance
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            SettingsHeading(verbatim: guidance.title)
+            SettingsParagraph(verbatim: guidance.message)
+            if let path = guidance.settingsPath {
+                Text(verbatim: path)
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(.primary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            if guidance.suggestsMakingOne {
+                SettingsParagraph("Making a Personal Voice means reading phrases aloud, so it is easiest while speaking is comfortable. Apple keeps it encrypted on this device, and in iCloud only if Share Across Devices is on. \(AppName.display) never receives the voice or its recordings.")
+            }
+        }
+    }
+}
+
+/// The Ask button's place in the Personal Voice card. The button and the
+/// words that replace it are both laid out, so the place keeps one size
+/// before and after the answer, and once the button has been used its
+/// place holds passive words, never another control, until the screen
+/// closes.
+private struct PersonalVoiceAskPlace: View {
+    let offersAsking: Bool
+    let ask: () -> Void
+
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            askButton
+                .hidden()
+                .accessibilityHidden(true)
+            askedWords
+                .hidden()
+                .accessibilityHidden(true)
+            if offersAsking {
+                askButton
+                    .accessibilityIdentifier("askPersonalVoice")
+            } else {
+                askedWords
+                    .accessibilityIdentifier("personalVoiceAsked")
+            }
+        }
+    }
+
+    private var askButton: some View {
+        Button(action: ask) {
+            SettingsRowLabel(title: "Ask to Use Personal Voice", systemImage: "person.wave.2")
+        }
+        .settingsRowStyle()
+    }
+
+    private var askedWords: some View {
+        SettingsParagraph("Answered. iOS asks only once, so any change is made in the Settings app.")
     }
 }
 

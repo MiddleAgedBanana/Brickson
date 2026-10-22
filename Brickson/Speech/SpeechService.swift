@@ -44,6 +44,11 @@ final class SpeechService {
     /// When the app asks for Personal Voice permission. The Voice screen
     /// offers its own Ask button only under `.fromSettings`.
     let personalVoiceAskPolicy: PersonalVoiceAskPolicy
+    /// True while the Voice screen's question waits for the person's
+    /// answer. Settings holds its idle reset meanwhile, and a second press
+    /// of the button asks nothing more
+    /// (`requestPersonalVoiceAuthorization()`).
+    private(set) var isAskingForPersonalVoice = false
     var speechInterruptionState: SpeechInterruptionState { speechInterruptionStatus.state }
     var speechInterruptionSequence: Int { speechInterruptionStatus.sequence }
 
@@ -173,8 +178,18 @@ final class SpeechService {
     /// reads the voices again so the next phrase can use the person's
     /// voice. Speaks nothing by itself. Returns the answer, for the screen to
     /// say what happens next.
+    ///
+    /// A second call while the first still waits, such as a double tap or a
+    /// held look before the question covers the screen, asks nothing more
+    /// and returns the status as it stands: one question, one answer.
     @discardableResult
     func requestPersonalVoiceAuthorization() async -> AVSpeechSynthesizer.PersonalVoiceAuthorizationStatus {
+        guard !isAskingForPersonalVoice else {
+            logger.info("Absorbed a second Personal Voice request while the first waits")
+            return personalVoiceStatus
+        }
+        isAskingForPersonalVoice = true
+        defer { isAskingForPersonalVoice = false }
         let status: AVSpeechSynthesizer.PersonalVoiceAuthorizationStatus = await withCheckedContinuation { continuation in
             // @Sendable, as at launch: the answer arrives on any queue.
             personalVoice.requestAuthorization { @Sendable answer in

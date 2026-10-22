@@ -46,11 +46,17 @@ nonisolated struct PersonalVoiceGuidance: Equatable, Sendable {
     ///     permission is asked at launch, for now").
     ///   - canOpenSettings: iOS can open Personal Voice's permission page in
     ///     its Settings on this device.
+    ///   - askedOnThisVisit: the Ask button was used since the screen
+    ///     opened. Whatever the answer, no new button appears until the
+    ///     screen opens again, so nothing new lands near the spot where the
+    ///     Ask button was (AGENTS.md, invariant 10); the written path still
+    ///     says where to go.
     static func make(
         access: PersonalVoiceAccess,
         hasPersonalVoice: Bool,
         canAsk: Bool,
-        canOpenSettings: Bool
+        canOpenSettings: Bool,
+        askedOnThisVisit: Bool = false
     ) -> PersonalVoiceGuidance {
         switch access {
         case .unsupported:
@@ -65,7 +71,7 @@ nonisolated struct PersonalVoiceGuidance: Equatable, Sendable {
             return PersonalVoiceGuidance(
                 title: String(localized: "Personal Voice"),
                 message: canAsk
-                    ? String(localized: "\(AppName.display) can speak in a voice that sounds like you, made with Apple's Personal Voice. \(AppName.display) must ask iOS before using it.")
+                    ? String(localized: "\(AppName.display) can speak in a voice that sounds like you, made with Apple's Personal Voice. Choose Ask to Use Personal Voice, then Allow when iOS asks. iOS asks only once.")
                     : String(localized: "\(AppName.display) can speak in a voice that sounds like you, made with Apple's Personal Voice. iOS asks once whether \(AppName.display) may use it; choose Allow."),
                 settingsPath: nil,
                 action: canAsk ? .askPermission : nil,
@@ -76,7 +82,7 @@ nonisolated struct PersonalVoiceGuidance: Equatable, Sendable {
                 title: String(localized: "Personal Voice is turned off for \(AppName.display)"),
                 message: String(localized: "To let \(AppName.display) speak in your Personal Voice, turn \(AppName.display) on in this list:"),
                 settingsPath: allowAppsPath,
-                action: canOpenSettings ? .openPersonalVoiceSettings : nil,
+                action: canOpenSettings && !askedOnThisVisit ? .openPersonalVoiceSettings : nil,
                 suggestsMakingOne: false
             )
         case .authorized where hasPersonalVoice:
@@ -96,6 +102,28 @@ nonisolated struct PersonalVoiceGuidance: Equatable, Sendable {
                 // a voice is made, so the written path is the way there.
                 action: nil,
                 suggestsMakingOne: true
+            )
+        }
+    }
+
+    /// What the card can say once iOS answers the Ask button, one for each
+    /// answer. While the button shows, the screen keeps room for the
+    /// longest of these, so the answer moves nothing below the card
+    /// (`VoiceSettingsView`). None offers a button (`askedOnThisVisit`).
+    static func outcomesOfAsking() -> [PersonalVoiceGuidance] {
+        let answers: [(access: PersonalVoiceAccess, hasPersonalVoice: Bool)] = [
+            (.authorized, true),
+            (.authorized, false),
+            (.denied, false),
+            (.unsupported, false),
+        ]
+        return answers.map { answer in
+            make(
+                access: answer.access,
+                hasPersonalVoice: answer.hasPersonalVoice,
+                canAsk: true,
+                canOpenSettings: true,
+                askedOnThisVisit: true
             )
         }
     }

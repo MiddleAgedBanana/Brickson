@@ -23,6 +23,7 @@ struct SettingsView: View {
 
     @Environment(\.scenePhase) private var scenePhase
     @Environment(AttentionAlertPlayer.self) private var attention
+    @Environment(SpeechService.self) private var speech
     @State private var path: [SettingsRoute] = []
     @State private var activity: SettingsActivity
     @State private var landing = SettingsLanding()
@@ -57,6 +58,11 @@ struct SettingsView: View {
         .onChange(of: attention.isSounding, initial: true) { _, isSounding in
             // Never change the screen under someone answering the alarm.
             activity.setHold(.alarm, isSounding)
+        }
+        .onChange(of: speech.isAskingForPersonalVoice, initial: true) { _, isAsking in
+            // Voice Settings' question is open over the screen: the screen
+            // under it must still be there when it is answered.
+            activity.setHold(.personalVoiceRequest, isAsking)
         }
         .onChange(of: scenePhase) { _, phase in
             // Time in another app or with the screen off never counts.

@@ -125,6 +125,28 @@ nonisolated enum VoiceList {
         return !voices.contains { $0.id == selectedID && !$0.isNovelty }
     }
 
+    /// The note above the list when the chosen voice is not offered.
+    /// Without Personal Voice permission a chosen Personal Voice is left out
+    /// of the list though it is still on the device (docs/DECISIONS.md, "A
+    /// Personal Voice is used only while it is allowed"), so the note then
+    /// does not say the voice is gone.
+    static func missingVoiceNote(personalVoiceAllowed: Bool) -> String {
+        if personalVoiceAllowed {
+            return String(localized: "The voice chosen earlier is no longer on this device, so Automatic is used.")
+        }
+        return String(localized: "The voice chosen earlier can't be used now, so Automatic is used. If it is a Personal Voice, it comes back when Personal Voice is turned on for \(AppName.display).")
+    }
+
+    /// The words in the place of a voice that left the list while Voice
+    /// Settings was open (`keepingPlaces`). A Personal Voice also leaves
+    /// when access to it is turned off, and is then still on the device.
+    static func goneVoiceNote(for row: VoiceRow, personalVoiceAllowed: Bool) -> String {
+        if row.isPersonalVoice && !personalVoiceAllowed {
+            return String(localized: "\(row.name) can't be used while Personal Voice is turned off for \(AppName.display).")
+        }
+        return String(localized: "\(row.name) is no longer on this device.")
+    }
+
     /// The rows in the places they had when the screen opened (`shown`),
     /// so a voice that arrives or leaves while Voice Settings is open moves
     /// no Hear or Use button under a resting pointer (AGENTS.md,
