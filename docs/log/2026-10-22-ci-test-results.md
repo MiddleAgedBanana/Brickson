@@ -63,6 +63,11 @@ test-only storage (`--test-storage`), nothing personal.
   passed, and the run's page lists both artifacts, `unit-test-results`
   (0.9 MB) and `ui-test-results` (13.2 MB), each set to expire 14 days
   after upload.
+- The docs pull request's first CI run (`1df97d5`, run 39823137500)
+  failed once on the iPad: `HomeLayoutTests.testTheStarterLibraryFitsWithoutScrolling`
+  timed out evaluating its `phraseTile` query after 395 s, on code
+  identical to `main`. The one re-run passed. The failed run's
+  `ui-test-results` holds that failure's bundle until it expires.
 
 ## Not verified
 
