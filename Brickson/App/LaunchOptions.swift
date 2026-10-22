@@ -21,8 +21,17 @@ import SwiftData
 ///   (`AppTimeouts`), so tests don't wait minutes.
 /// - `--screen=keyboard-probe`: start on the typing work's keyboard probe
 ///   instead of Home.
+/// - `--screen=settings`: open Settings over Home at launch.
 /// - `--appearance=light|dark`: request the app's colour scheme for this
 ///   test launch. Without it, the app follows the system appearance.
+/// - `--personal-voice=ask-from-settings`: ask for Personal Voice only from
+///   Voice Settings' Ask button, never at launch, with the device's own
+///   permission: the build device check D1 needs (docs/HANDOFF.md, "Checks
+///   that need a real device"). Added to the scheme's arguments in Xcode,
+///   it needs no change to the code.
+/// - `--personal-voice=stand-in-refuses`: the same, with a stand-in
+///   permission that has not been asked and refuses when asked
+///   (`StandInPersonalVoice`), so UI tests reach the button and its answer.
 ///
 /// Text size still uses UIKit's `-UIPreferredContentSizeCategoryName`
 /// argument. Appearance needs an app-local option because command-line
@@ -45,6 +54,7 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
     nonisolated enum StartScreen: String, Equatable, Sendable {
         case home
         case keyboardProbe = "keyboard-probe"
+        case settings
     }
 
     nonisolated enum Appearance: String, Equatable, Sendable {
@@ -52,11 +62,23 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
         case dark
     }
 
+    /// A launch that asks for Personal Voice from Voice Settings instead of
+    /// at launch (`AppAudio.personalVoiceAskPolicy(for:)`).
+    nonisolated enum PersonalVoiceTrial: String, Equatable, Sendable {
+        /// The device's own permission: for device check D1.
+        case askFromSettings = "ask-from-settings"
+        /// A stand-in that refuses when asked: for UI tests.
+        case standInRefuses = "stand-in-refuses"
+    }
+
     var storage = Storage.standard
     var usesShortTimeouts = false
     var startScreen = StartScreen.home
     /// Nil leaves the system in control. This is never a saved setting.
     var appearance: Appearance?
+    /// Nil is the app's own: the device's permission, asked when the app
+    /// starts.
+    var personalVoice: PersonalVoiceTrial?
     /// Arguments written like these options but not understood: a misspelt
     /// name, an unknown value. They are logged at launch, so a typo in a
     /// test shows up instead of quietly running with the defaults.
@@ -110,6 +132,8 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
                 options.startScreen = StartScreen(rawValue: value) ?? .home
             case ("appearance", let value?) where Appearance(rawValue: value) != nil:
                 options.appearance = Appearance(rawValue: value)
+            case ("personal-voice", let value?) where PersonalVoiceTrial(rawValue: value) != nil:
+                options.personalVoice = PersonalVoiceTrial(rawValue: value)
             default:
                 options.unrecognized.append(argument)
             }

@@ -1,8 +1,12 @@
 # Builds Brickson and runs its tests on GitHub's Mac machines, for every pull
 # request and every change to main. Free for public repositories.
 #
-# Each job runs the same script you run on your Mac (scripts/test.sh), on
-# the newest iPad Pro 13-inch simulator the chosen Xcode can run.
+# Each job runs the same script you run on your Mac (scripts/test.sh): unit
+# tests on the newest iPad Pro 13-inch simulator the chosen Xcode can run,
+# UI tests on that iPad and then on the newest standard iPhone. Each job
+# keeps its result bundles (build/TestResults: every test, screenshots of
+# failures, the screens UI tests capture) as a download on the run's page
+# for 14 days, whether the tests passed or failed.
 #
 # Both jobs build with Apple's newest released Xcode, never a pinned one
 # (docs/DECISIONS.md, "Build with Apple's current Xcode"). `runs-on` names
@@ -61,6 +65,14 @@ jobs:
         run: python3 scripts/test-runner.py
       - name: Build and run the unit tests
         run: scripts/test.sh unit
+      - name: Keep the test results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: unit-test-results
+          path: build/TestResults
+          if-no-files-found: warn
+          retention-days: 14
 
   ui:
     name: UI tests
@@ -80,3 +92,11 @@ jobs:
           brew list --versions xcodegen
       - name: Build the app and run the UI tests
         run: scripts/test.sh ui
+      - name: Keep the test results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ui-test-results
+          path: build/TestResults
+          if-no-files-found: warn
+          retention-days: 14

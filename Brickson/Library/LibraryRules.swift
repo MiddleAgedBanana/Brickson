@@ -49,13 +49,10 @@ nonisolated enum LibraryRules {
     /// Names of controls on Home and on the family screens' safety bar. A
     /// category with one of these names would be a second button with the
     /// same name, which Voice Control ("Tap Yes") and VoiceOver cannot tell
-    /// apart. Keep this list in step with Home's controls.
+    /// apart. Read every name directly from Home, including aliases such
+    /// as Repeat for Again, so the editor cannot drift from the controls.
     static var reservedCategoryNames: [String] {
-        [
-            String(localized: "Yes"),
-            String(localized: "No"),
-            String(localized: "Emergency"),
-            String(localized: "Again"),
+        HomeControlNames.fixed.flatMap(\.inputLabels) + [
             String(localized: "Get Attention"),
             String(localized: "Stop Alert"),
             String(localized: "Settings"),

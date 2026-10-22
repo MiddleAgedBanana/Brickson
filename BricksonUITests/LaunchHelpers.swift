@@ -42,7 +42,8 @@ enum UITestStorage {
 
 extension XCTestCase {
     /// Launches Brickson the way every UI test should: on test-only storage,
-    /// with short idle limits, in English, at the given text size,
+    /// with short idle limits (unless `shortTimeouts` is false, for a test
+    /// slower than they are), in English, at the given text size,
     /// appearance and orientation. It waits for Home (unless
     /// `waitsForHome` is false, for a test that starts on another screen)
     /// and fails if Home says changes won't be kept, which would mean the
@@ -59,6 +60,7 @@ extension XCTestCase {
         orientation: UIDeviceOrientation = .portrait,
         storage: UITestStorage = .fresh,
         arguments: [String] = [],
+        shortTimeouts: Bool = true,
         waitsForHome: Bool = true,
         file: StaticString = #filePath,
         line: UInt = #line
@@ -74,7 +76,7 @@ extension XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = [
             storage == .fresh ? "--fresh-test-storage" : "--test-storage",
-            "--short-timeouts",
+        ] + (shortTimeouts ? ["--short-timeouts"] : []) + [
             "--appearance=\(appearance.rawValue)",
             "-UIPreferredContentSizeCategoryName", textSize.rawValue,
             // Tests find controls by their English labels.

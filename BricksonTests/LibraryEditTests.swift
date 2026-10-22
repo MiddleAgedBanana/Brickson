@@ -84,8 +84,9 @@ struct LibraryEditTests {
     }
 
     /// A category named like a Home control would be a second button with
-    /// that name.
-    @Test(arguments: ["Yes", "no.", "EMERGENCY", "Get attention", "Again!"])
+    /// that name. Fails if validation omits an alternate input label,
+    /// such as Again's Repeat alias, from either add or rename.
+    @Test(arguments: ["Yes", "no.", "EMERGENCY", "Get attention", "Again!", "Repeat", "repeat!"])
     func homeControlNamesAreReserved(name: String) {
         #expect(throws: LibraryEditRejection.reservedCategoryName) {
             try makePlan(.addCategory(name: name, symbolName: "star.fill"))
@@ -490,10 +491,11 @@ struct LibraryImportTests {
     /// Import keeps a backup's words exactly. Fails if the editor's rules
     /// (trimming, reserved names, near-duplicates, the symbol list) leak
     /// into import.
-    @Test func importKeepsWhatTheEditorWouldRefuse() throws {
+    @Test(arguments: ["Yes", "Repeat"])
+    func importKeepsWhatTheEditorWouldRefuse(categoryName: String) throws {
         let long = String(repeating: "Very long words. ", count: 400)
         let incoming = LibrarySnapshot(categories: [
-            .init(id: F.id(800), name: "Yes", symbolName: "no.such.symbol", isEmergency: false, phrases: [
+            .init(id: F.id(800), name: categoryName, symbolName: "no.such.symbol", isEmergency: false, phrases: [
                 .init(id: F.id(801), text: "  spaced  "),
                 .init(id: F.id(802), text: "hello."),
                 .init(id: F.id(803), text: "Hello."),
@@ -503,7 +505,7 @@ struct LibraryImportTests {
         let plan = try merge(incoming)
         let added = try #require(plan.after.categories.last)
 
-        #expect(added.name == "Yes")
+        #expect(added.name == categoryName)
         #expect(added.symbolName == "no.such.symbol")
         #expect(added.phrases.map(\.text) == ["  spaced  ", "hello.", "Hello.", long])
     }

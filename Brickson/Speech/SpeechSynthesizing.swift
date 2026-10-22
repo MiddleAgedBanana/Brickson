@@ -163,20 +163,66 @@ struct SystemVoiceCatalog: SpeechVoiceCatalog {
     }
 }
 
-/// Asks for permission to use the person's Personal Voice. The completion
-/// may arrive on any thread.
-typealias PersonalVoiceAuthorizationRequest =
-    @MainActor (@escaping @Sendable (AVSpeechSynthesizer.PersonalVoiceAuthorizationStatus) -> Void) -> Void
+/// Permission to use the person's Personal Voice, as a seam so tests can
+/// answer the question whenever, and from whichever thread, they like.
+@MainActor
+protocol PersonalVoiceAuthorizing {
+    /// What the system reports now, read fresh each time: the person can
+    /// change it in the Settings app while Brickson waits.
+    var status: AVSpeechSynthesizer.PersonalVoiceAuthorizationStatus { get }
+    /// Asks. The system shows its question only the first time; afterwards
+    /// it answers with the current status. The completion may arrive on any
+    /// thread.
+    func requestAuthorization(
+        _ completion: @escaping @Sendable (AVSpeechSynthesizer.PersonalVoiceAuthorizationStatus) -> Void
+    )
+}
 
-enum SystemPersonalVoice {
-    static func requestAuthorization(
+struct SystemPersonalVoice: PersonalVoiceAuthorizing {
+    var status: AVSpeechSynthesizer.PersonalVoiceAuthorizationStatus {
+        AVSpeechSynthesizer.personalVoiceAuthorizationStatus
+    }
+
+    func requestAuthorization(
         _ completion: @escaping @Sendable (AVSpeechSynthesizer.PersonalVoiceAuthorizationStatus) -> Void
     ) {
-        // @Sendable: the system calls this from an arbitrary queue, so it must
-        // not inherit main-actor isolation (docs/LESSONS.md, "Closures a
-        // framework may call off the main thread").
-        AVSpeechSynthesizer.requestPersonalVoiceAuthorization { @Sendable status in
-            completion(status)
+        AVSpeechSynthesizer.requestPersonalVoiceAuthorization(completionHandler: Self.forwardingAnswer(to: completion))
+    }
+
+    /// The closure the system calls with its answer, from an arbitrary
+    /// queue. Built in a nonisolated method and @Sendable, so it never
+    /// inherits main-actor isolation (docs/LESSONS.md, "Closures a framework
+    /// may call off the main thread"), and internal so
+    /// `OffMainThreadCallbackTests` calls this same closure from a
+    /// background thread.
+    nonisolated static func forwardingAnswer(
+        to completion: @escaping @Sendable (AVSpeechSynthesizer.PersonalVoiceAuthorizationStatus) -> Void
+    ) -> @Sendable (AVSpeechSynthesizer.PersonalVoiceAuthorizationStatus) -> Void {
+        { status in completion(status) }
+    }
+}
+
+/// A Personal Voice permission that has not been asked yet and gives one
+/// fixed answer when it is, so UI tests reach the Voice screen's Ask button
+/// and its answer without the system's question
+/// (`--personal-voice=stand-in-refuses`, `LaunchOptions`). Like the system,
+/// it changes its status before it answers, and answers from another
+/// queue. Only debug builds read the launch argument that chooses it.
+final class StandInPersonalVoice: PersonalVoiceAuthorizing {
+    private(set) var status: AVSpeechSynthesizer.PersonalVoiceAuthorizationStatus = .notDetermined
+    let answer: AVSpeechSynthesizer.PersonalVoiceAuthorizationStatus
+
+    init(answer: AVSpeechSynthesizer.PersonalVoiceAuthorizationStatus) {
+        self.answer = answer
+    }
+
+    func requestAuthorization(
+        _ completion: @escaping @Sendable (AVSpeechSynthesizer.PersonalVoiceAuthorizationStatus) -> Void
+    ) {
+        status = answer
+        let answer = answer
+        DispatchQueue.global().async {
+            completion(answer)
         }
     }
 }

@@ -6,23 +6,36 @@ edits this page in place and writes its record in [`docs/log/`](log/README.md);
 nothing is appended here. Plan: [`docs/ROADMAP.md`](ROADMAP.md). How the
 project runs: [`docs/SDLC.md`](SDLC.md).
 
-**State as of 2026-10-21: `main` with PR #14 (the library core), after
-PR #16 (speech and Get Attention).**
+**State as of 2026-10-22: PR #14 (the library core), reconciled with
+`main` at `5abdd9f`; not merged.**
 Ten threads are working in parallel on the first release, R0.
 
 ## What the app does today
 
 What it is written to do (*Verification* says how much has been seen). A
 stand-in Home with Yes, No and Emergency, everyday categories, and tiles
-from a neutral starter set. A tile speaks at once, in the person's
-Personal Voice when one exists and is allowed; the sentence stays on screen
-in a reserved viewport: one full-width line with Again below at compact
-widths, two lines with Again beside at regular widths, and longer messages
-scroll at full size. A phrase the system cuts off (a call, Siri, lost
+from a neutral starter set, sized from the space the window gives it
+(docs/DECISIONS.md, "Home's stand-in layout"): four category buttons that
+never scroll sideways, and three phrase columns on every iPhone. A tile
+speaks at once, in the person's Personal Voice when one exists and is
+allowed; the sentence stays on screen in two reserved lines with Again
+beside them, and a longer message scrolls inside them. No label breaks a
+word: each drops its icon first, then shrinks only as far as it must,
+never below the default size, in lines of whole words. A phrase the system cuts off (a call, Siri, lost
 headphones) shows "Stopped" with Again to repeat it. Emergency opens the
-emergency phrases and says nothing. The start-only Get Attention alarm is
-built and waiting for its place on Home. Audio failures and very low volume show as a short passive
-warning in space always kept for it, and VoiceOver announces them. If the
+emergency phrases and says nothing. VoiceOver, Switch Control and Full
+Keyboard Access reach Yes, No and Emergency first, then the message with
+Again, the categories and the phrases, each region as a group, and Voice
+Control also takes "Repeat" for Again (docs/DECISIONS.md, "Home's scan
+order and names"). The start-only Get Attention alarm is
+built and waiting for its place on Home (docs/DECISIONS.md, "Home's slot
+plan"). Settings, for the family, is
+built (a full-screen cover with Back to Talking, Family Setup, Voice
+Settings, guides, the privacy policy and step-by-step setup) and waits for
+Home to place its Settings button; until then only UI tests open it, with
+`--screen=settings`. "Speaking", audio failures and very low volume share
+one passive status line under the message, in space always kept for it,
+and VoiceOver announces the warnings. If the
 library cannot be saved, the app speaks from a filled in-memory library
 and says changes will not be kept. If saved phrases exist but cannot be
 opened or read, the file is left untouched and a second warning says so
@@ -33,6 +46,20 @@ The screen never locks. Ported code:
 [`docs/PORTING.md`](PORTING.md).
 
 ## Verification
+
+- **PR #14 reconciliation, 2026-10-22:** prepared a merge of `main` at
+  `5abdd9f`, preserving its landed Voice Settings work, and adapted the
+  starter-label tests to the library snapshot format. Category edits now
+  reserve Again's `Repeat` alias. All 44 pure edit/import tests passed on
+  macOS; the full iOS unit run on an iPad Pro 13-inch (M5), iOS 27.0,
+  Xcode 27.1 passed 548 tests with only the pre-existing issue #19 crash
+  probe skipped. The full UI suite passed on iPad Pro 13-inch (M5) and
+  iPhone 17, iOS 27.0: 33 passed on each, no failures, with the four existing
+  opt-in keyboard measurements skipped on each. The catalog is synchronized;
+  independent review found no actionable defect. Final-head CI and reviews
+  remain pending;
+  [`log/2026-10-22-library-reconciliation.md`](log/2026-10-22-library-reconciliation.md)
+  records the changes, review status and next checks.
 
 - **GitHub CI** since PR #12 (merged 2026-10-21) builds with Apple's
   newest released Xcode, chosen on GitHub's `xcode-27` image (27.1,
@@ -70,26 +97,51 @@ The screen never locks. Ported code:
 Each names who closes it: *(owner)*, the thread working on it, or the
 release in docs/ROADMAP.md when no thread has it yet.
 
-- Home's sizes are plain defaults, not measured gaze, switch or touch
-  sizes, and the phrase grid scrolls (invariant 11). Ending the scroll is R0
-  (ROADMAP item 3); measured sizes for each input profile are R1. *(Phone layout and word fitting)*
-- On an iPhone, compact Home (PR #13) shows one phrase column, so the
-  starter library scrolls further, and the category row scrolls sideways
-  and hides categories. Quick-control words no longer clip or break at
-  AX5; a rendered-label test checks the four English quick-control labels
-  only, not phrases. *(Phone layout and word fitting)*
+- Home's sizes are the stand-in's, not measured gaze, switch or touch
+  floors per input profile, and the phrase grid still scrolls (invariant
+  11) on small phone windows at large text sizes: docs/DECISIONS.md,
+  "Home's stand-in layout", *Where the grid still scrolls*. Ending the
+  scroll is R0 (ROADMAP item 3); measured sizes for each input profile are
+  R1. *(the layout engine, a new thread)*
+- The slot plan has no answer yet for more than four everyday categories
+  (docs/DECISIONS.md, "Home's slot plan", *Open*): editing and import
+  must not add a fifth until it does. *(the layout engine, a new thread)*
+- In the slot plan, Yes and No border the message (10 to 16pt away), so a
+  look resting on it can speak Yes or No. Recorded as an open hazard, not
+  an accepted exception (docs/DECISIONS.md, "Home's slot plan"): it is
+  removed by placement or its measured cost goes to the owner before the
+  plan ships in a dwell, switch, head or gaze profile. *(the layout
+  engine, a new thread; owner if it stays)*
+- Home has no wells yet: Again sits beside the message text, and Phrases,
+  Type, Get Attention, Stop and Settings have no place on Home
+  (docs/DECISIONS.md, "Home's slot plan"). *(a new thread: Get Attention
+  and Stop on Home)*
+- A label with a word too wide for its slot even at the default text size
+  is cut short with an ellipsis when it is one word, but in a phrase of
+  several words that word can wrap mid-word. No starter label has one
+  (`StarterLabelFitTests`), and nothing can add one until editing or
+  import exists; those must keep every word within the narrowest tile, or
+  the layout engine must give it room. *(Library editing and backup format,
+  with the layout engine)*
+- The rendered-label test reads the four English quick-control labels
+  only, not phrases or categories; `StarterLabelFitTests` measures every
+  starter label against its narrowest slot instead. *(Accessibility
+  coverage checklist)*
 - The Get Attention alarm is built (`AttentionAlertPlayer`, in the
   environment) but not on screen, so `AudioSafetyPolicy` on Home runs with
   the alarm always idle, and the VoiceOver warning sentences mention it
-  already. Get Attention and Stop go into Home's slots once the layout's
-  slot model lands (docs/DECISIONS.md, "Get Attention"). *(a new thread,
-  after Phone layout and word fitting)*
+  already. Get Attention and Stop go into Home's slots (docs/DECISIONS.md,
+  "Home's slot plan" and "Get Attention"). *(a new thread)*
 - The Get Attention tone is the reference app's placeholder; a
   harmonic-rich replacement and its level under speech need a listening
   check on a device (docs/DECISIONS.md, "Get Attention"). *(owner, with a
   device build)*
-- No typing *(Typing foundation)*; no Settings or voice choice *(Settings
-  and first run)*.
+- No typing on Home. The typing rules (`MessageComposer`), the saved
+  message (`DraftStore`) and a keyboard probe are in `Brickson/Typing`,
+  waiting for Home's typing state (docs/DECISIONS.md, "Typing is a state
+  of Home"; [`log/2026-10-21-typing-foundation.md`](log/2026-10-21-typing-foundation.md),
+  *For the next typing thread*). *(a new typing thread, after Phone layout
+  and word fitting)*
 - No editing, export or import screens. The library core (`LibraryEdit`,
   `LibraryEditor`, `LibraryImport`, `BackupCodec`) is tested code that
   nothing calls yet. A Replace that would remove the person's own words
@@ -103,17 +155,32 @@ release in docs/ROADMAP.md when no thread has it yet.
   (issue #19, seen with Xcode 26.6 on iOS 26.5). Brickson never calls it;
   the reproduction is disabled and has not been run on the current Xcode
   27 CI. *(R0, a new library thread re-runs it once)*
+- Home has no Settings button and no first-run hint yet: Home places
+  `SettingsButton` with `.settingsCover(isPresented:)` and shows
+  `FirstRunHint.text` while `showsSetupHint` is true. *(Phone layout and
+  word fitting)*
+- Settings' Get Attention place is empty: starting the alarm there before
+  Home has Stop would leave it with no way to stop. It goes in with Get
+  Attention and Stop on Home. *(the thread that puts them on Home)*
+- Chains of activations through Settings' screens are not scored. One is
+  known: a held look can follow Family Setup's first row into Set Up Step
+  by Step and save Touch, its first answer, which is then nearest. Another
+  runs through iOS's Personal Voice question, once the Ask button shows:
+  after answering, the look rests where the question's button was, over
+  whatever Voice Settings has there. Answers
+  change no size yet; scoring and a fix come before they do
+  ([`log/2026-10-21-settings-and-first-run.md`](log/2026-10-21-settings-and-first-run.md),
+  follow-up 10). *(Dwell-safety scoring)*
 - English only. `scripts/test.sh unit` brings the String Catalog up to
   date (xcodebuild alone does not), and CI fails when the committed one
-  is stale. The speech-rate names in `SpeechRateSteps` and the voice
-  sample sentence in `SpeechService` are not in it yet. *(Test seams and CI evidence)*
+  is stale. The voice sample sentence in `SpeechService` is not in it
+  yet (Voice Settings no longer shows `SpeechRateSteps`' rate names). *(Test seams and CI evidence)*
 - No off-main test reaches the real KVO closure (the volume handler is
-  called directly) or the closure inside
-  `SystemPersonalVoice.requestAuthorization`, which only the system can
-  call. The synthesizer and tone-player delegates, the Personal Voice
-  answer through `SpeechService` and a session notice are tested from a
-  background thread (docs/LESSONS.md). *(Personal Voice thread, when one
-  starts)*
+  called directly). The synthesizer and tone-player delegates, the
+  Personal Voice answer (the closure handed to the system, built by
+  `SystemPersonalVoice.forwardingAnswer`, and the answer awaited through
+  `SpeechService`) and a session notice are tested from a background
+  thread (docs/LESSONS.md). *(R0, item 4)*
 - The audio session stays active after speech, so other apps' audio does
   not resume by itself. This is a decision, not an oversight
   (docs/DECISIONS.md, "Background audio"); `.releaseWhenIdle` waits on a
@@ -122,12 +189,30 @@ release in docs/ROADMAP.md when no thread has it yet.
   (`fatalError` in `PhraseLibraryStore.openForApp`). *(owner)*
 - `cloudKitDatabase: .none` and the absence of an iCloud capability are
   privacy-policy promises no test pins. *(Test seams and CI evidence)*
-- No Privacy row in the app, which App Review requires, and Personal Voice
-  permission is asked at first launch without explanation. *(Settings and first run)*
+- Personal Voice permission is still asked at first launch without
+  explanation. Voice Settings' explained Ask button is built
+  (docs/DECISIONS.md, "Asking for Personal Voice from Voice Settings") but
+  shows only under `.fromSettings`, which waits for device check D1; a
+  debug build launched with `--personal-voice=ask-from-settings` is the
+  build D1 needs. If D1 passes, the switch is the first line of
+  `AppAudio.personalVoiceAskPolicy(for:)` ("Personal Voice permission is
+  asked at launch, for now"). *(owner, with a device build; then an
+  agent)*
+- Words that get longer while Voice Settings is open still push what is
+  below them down: the Personal Voice card going from ready to turned
+  off (docs/DECISIONS.md, "Voice Settings keeps its places while it is
+  open"). When Automatic moves to another Personal Voice
+  because the kept one is gone, no line says so yet
+  ([`log/2026-10-22-voice-screen.md`](log/2026-10-22-voice-screen.md),
+  *Follow-ups*). *(the next Settings thread)*
 - The privacy policy describes features not built yet; each is built or its
   sentence deleted before release (docs/APP-STORE.md, section 3, lists
   each sentence). *(App Store readiness and ASO)*
 - The app icon is a placeholder; `design/brand/` is not installed. *(Figma and Claude Design screens)*
+- Siri's alternative name "Brick Son" (`INAlternativeAppNames`) has no
+  effect yet: Apple applies it only to apps with Siri support, which
+  Brickson does not have (docs/DECISIONS.md, "App identity"). *(R2 Siri
+  and Shortcuts)*
 - No license file, so all rights are reserved; the bundle identifier
   contains the owner's first name and is permanent after the first upload. *(owner)*
 
@@ -162,11 +247,25 @@ by the owner (docs/SDLC.md, *Deploy*). The toolchain's follow-ups
 recheck the minimum iOS against its two rules whenever Apple's next major
 release drops devices (docs/DECISIONS.md, "Minimum iOS, iPhone and
 iPad").
-The speech work's two next pull requests, Get Attention and Stop on Home
-(after the layout's slot model) and the Personal Voice foundation, are
-described for a fresh thread each in
+The speech work's next pull request, Get Attention and Stop on Home
+(building the wells of docs/DECISIONS.md, "Home's slot plan"), is described for a fresh thread in
 [`log/2026-10-21-speech-and-get-attention.md`](log/2026-10-21-speech-and-get-attention.md),
+*Follow-ups*. Voice Settings' explained Ask button is built; switching the app to
+asking from Settings waits for device check D1, and what the Voice
+screen still lacks is in
+[`log/2026-10-22-voice-screen.md`](log/2026-10-22-voice-screen.md),
 *Follow-ups*.
+Every accessibility API in the map of Apple features by ALS stage has a
+row in [`ACCESSIBILITY.md`](ACCESSIBILITY.md), with its release and
+roadmap item; what each R0 item picks up from it, in order, is in
+[`log/2026-10-21-accessibility-coverage.md`](log/2026-10-21-accessibility-coverage.md),
+*Follow-ups*. Item 3's scan order, regions and Voice Control names are
+done; what is left of item 3's list, in order, is in
+[`log/2026-10-22-home-scan-order-and-names.md`](log/2026-10-22-home-scan-order-and-names.md),
+*Follow-ups*.
+The layout's next steps (the wells, then the engine with input
+profiles) are in
+[`log/2026-10-21-phone-layout.md`](log/2026-10-21-phone-layout.md).
 
 ## Checks that need a real device
 
@@ -177,13 +276,20 @@ Simulators cannot show these. Record each result in a `docs/log/` file
 |---|---|
 | Speech plays with the silent switch on, and after a phone call | Audio session handling (invariant 4) |
 | A phrase cut off by a call shows "Stopped, Again" | The cut-off rule (code audit M1) |
+| D1: with no question at launch, a Personal Voice allowed after a phrase has been spoken speaks in the next phrase, after a voice-list refresh, a rebuilt synthesizer or only a relaunch (docs/recon/2026-10-15/directions/onboarding-and-settings.md, 2.5). Run from Xcode with `--personal-voice=ask-from-settings` added to the scheme's arguments (Product > Scheme > Edit Scheme > Run > Arguments), and ask with Voice Settings' Ask to Use Personal Voice | Whether the app may switch to `PersonalVoiceAskPolicy.fromSettings` (docs/DECISIONS.md, "Personal Voice permission is asked at launch, for now") |
+| In the same run: iOS's question appears over Voice Settings, which is still there after a wait of over 90 seconds; after Allow or Don't Allow the card shows the answer, "Answered. …" sits where the button was, nothing below the card moved, and Open Personal Voice Settings appears only after leaving and reopening Voice Settings | "Asking for Personal Voice from Voice Settings" |
+| D4: Personal Voice access turned off in the Settings app while Brickson waits in the background; on return a phrase speaks in another voice, and turning access back on brings the Personal Voice back | "A Personal Voice is used only while it is allowed" |
+| D5: with two Personal Voices, the order the system lists them in, and whether each keeps its identifier across a relaunch, a restore and Share Across Devices | "Automatic keeps the person's Personal Voice" |
 | Personal Voice appears and is chosen once permission is given, and keeps speaking after the screen locks | Voice choice and when to ask |
+| Opening Settings by a stray dwell, and leaving it by Back to Talking, lands on nothing that speaks or alarms; the idle reset under real dwell | Settings' safety bar and root (docs/DECISIONS.md, "Settings is a cover with a fixed safety bar") |
+| Guided Access and Assistive Access steps match the device, and Brickson works inside both | Family Setup's Keep Brickson Open guide |
+| Open Personal Voice Settings and Open Dwell Control Settings open the right page | `AccessibilitySettings.openSettings(for:)` |
 | Each input method reaches every control: touch, Voice Control, Switch Control, Full Keyboard Access, AssistiveTouch Dwell, head tracking, Eye Tracking | That standard buttons are the whole integration (invariant 1) |
 | A Switch Control double activation does not make a phrase stutter | Repeat absorption (invariant 10) |
 | How far Snap to Item jumps, and whether the pointer stays on an activated control or follows the gaze | Spacing and placement for dwell profiles |
 | Whether a lingering look re-fires a dwell | How much repeat protection matters |
 | Whether Snap to Item ignores controls scrolled off screen | Whether scrolling can keep family controls out of reach |
-| What the real software keyboard covers in each orientation | The typing layout (docs/LESSONS.md, "Test with the real software keyboard") |
+| What the real software keyboard covers in each orientation, and typing checks 1–8 in [`log/2026-10-21-typing-foundation.md`](log/2026-10-21-typing-foundation.md) | The typing layout (docs/LESSONS.md, "Test with the real software keyboard"), the word row, Return under dwell, and whether Brickson needs its own keyboard |
 | Get Attention heard from the next room, on the speaker and over Bluetooth | The alarm's sound and level, and the replacement tone |
 | A phrase spoken while Get Attention sounds is understood over the tone at 0.32 | `AttentionAlertStatus.toneVolumeWhileSpeaking` |
 | A phone call, Siri and another app's alarm during a phrase and during Get Attention: each stops and shows "Stopped — Again" or "Alert stopped", and nothing restarts by itself, on iOS 26 and iOS 27 | Interruption handling and the iOS 27 notices (docs/DECISIONS.md, "Audio session notices") |
@@ -201,6 +307,12 @@ Simulators cannot show these. Record each result in a `docs/log/` file
 | The screen never dims or locks during a long session | `ScreenWakePolicy` (invariant 12) |
 | On a folding iPhone, open and folded, and in Stage Manager, Slide Over and iPhone Mirroring windows: nothing safety-critical is hidden or split | Layouts from the space available |
 | Eye Tracking and Dwell on an external display | Whether gaze profiles hold off the built-in screen |
+| Switch Control with Auto Scanning, Group Items on and off, and Auto Tap: the scan steps to Emergency, Yes and No from every Home state, and whether Home's regions become scan groups | Scan order and grouping (docs/ACCESSIBILITY.md, section 1) |
+| With VoiceOver, Switch Control (item and group scanning) and Full Keyboard Access, Home is reached as Yes, No, Emergency, then the message and Again, the categories, the phrases, in every state; what each says on entering a region; whether the cursor stops on the message or the status line; Voice Control's "Show names" shows each control's visible words and "Tap Repeat" presses Again | "Home's scan order and names": the order, unlabelled regions, and whether `accessibilityRespondsToUserInteraction` is needed |
+| With VoiceOver on, a phrase tile with and without the `startsMediaSession` trait: does VoiceOver stay quiet while the phrase speaks | Whether phrase tiles carry the trait (R0 item 4) |
+| Brickson inside Assistive Access with `UISupportsFullScreenInAssistiveAccess`: its window size, and whether Eye Tracking and Switch Control work there | Assistive Access support (R0 item 7) |
+| Guided Access with each input method, and with a short Display Auto-Lock while Brickson keeps the screen awake | Setup advice, and invariant 12 under Guided Access |
+| Which of the VoiceOver, Switch Control and AssistiveTouch flags each input method turns on | Profile suggestions (R1) |
 
 ## Repository, CI and website
 

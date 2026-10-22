@@ -11,6 +11,10 @@ struct BricksonApp: App {
     @State private var audioSafety: AudioSafetyMonitor
     @State private var speech: SpeechService
     @State private var attention: AttentionAlertPlayer
+    @State private var setup: SetupStore
+    /// Settings opened at launch, for UI tests (`--screen=settings`). Home
+    /// opens it with its own Settings button.
+    @State private var showsSettingsAtLaunch: Bool
     private let container: ModelContainer
     private let isVolatileStore: Bool
     private let phraseLibraryIssue: PhraseLibraryIssue?
@@ -24,10 +28,12 @@ struct BricksonApp: App {
         launch.prepareStorage()
         self.launch = launch
 
-        let audio = AppAudio.makeForApp(settings: launch.settings)
+        let audio = AppAudio.makeForApp(settings: launch.settings, personalVoiceTrial: launch.personalVoice)
         _audioSafety = State(initialValue: audio.safety)
         _speech = State(initialValue: audio.speech)
         _attention = State(initialValue: audio.attention)
+        _setup = State(initialValue: SetupStore(defaults: launch.settings))
+        _showsSettingsAtLaunch = State(initialValue: launch.startScreen == .settings)
 
         let opened = launch.openLibrary()
         let library = PhraseLibraryLaunch.prepare(
@@ -43,9 +49,14 @@ struct BricksonApp: App {
     var body: some Scene {
         WindowGroup {
             HomeView()
+                .replacedByKeyboardProbeIfRequested()
+                // Before the environment below, so Settings receives it too.
+                .settingsCover(isPresented: $showsSettingsAtLaunch)
                 .environment(audioSafety)
                 .environment(speech)
                 .environment(attention)
+                .environment(setup)
+                .environment(\.showsSetupHint, FirstRunHint.isShown(for: setup.record))
                 .environment(\.isVolatileStore, isVolatileStore)
                 .environment(\.phraseLibraryIssue, phraseLibraryIssue)
                 .environment(\.appTimeouts, launch.timeouts)
@@ -56,9 +67,11 @@ struct BricksonApp: App {
             UIApplication.shared.isIdleTimerDisabled = ScreenWakePolicy.keepsScreenAwake(in: phase)
             if phase == .active {
                 // Back in the foreground: read again what may have changed
-                // while away, the volume and an alarm that went quiet.
+                // while away, the volume, an alarm that went quiet, and
+                // whether a Personal Voice may be used.
                 audioSafety.refreshOutputVolume()
                 attention.checkHealth()
+                speech.refreshPersonalVoiceAvailability()
             }
         }
     }
