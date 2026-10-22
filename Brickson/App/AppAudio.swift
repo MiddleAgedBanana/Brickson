@@ -14,8 +14,13 @@ struct AppAudio {
     let attention: AttentionAlertPlayer
 
     /// The real objects. `settings` is where speech keeps the chosen voice
-    /// and rate.
-    static func makeForApp(settings: UserDefaults) -> AppAudio {
+    /// and rate. `personalVoiceTrial` is a debug launch's request to ask for
+    /// Personal Voice from Voice Settings instead (`LaunchOptions`); a
+    /// release build always passes nil.
+    static func makeForApp(
+        settings: UserDefaults,
+        personalVoiceTrial: LaunchOptions.PersonalVoiceTrial? = nil
+    ) -> AppAudio {
         let events = AudioSessionEvents()
         let safety = AudioSafetyMonitor(events: events)
         let session = AudioSessionCoordinator(
@@ -32,6 +37,10 @@ struct AppAudio {
             // A cancelled sleep only ends a check early; nothing is lost.
             _ = try? await Task.sleep(for: duration)
         }
+        let personalVoice: any PersonalVoiceAuthorizing = switch personalVoiceTrial {
+        case .standInRefuses: StandInPersonalVoice(answer: .denied)
+        case .askFromSettings, nil: SystemPersonalVoice()
+        }
         let speech = SpeechService(
             audioSession: session,
             events: events,
@@ -39,7 +48,8 @@ struct AppAudio {
             voiceCatalog: SystemVoiceCatalog(),
             settings: settings,
             notificationCenter: .default,
-            requestPersonalVoiceAuthorization: SystemPersonalVoice.requestAuthorization,
+            personalVoice: personalVoice,
+            personalVoiceAskPolicy: personalVoiceAskPolicy(for: personalVoiceTrial),
             sleep: sleep
         )
         let attention = AttentionAlertPlayer(
@@ -55,5 +65,16 @@ struct AppAudio {
             speech: speech,
             attention: attention
         )
+    }
+
+    /// When the app asks for Personal Voice permission. The app's policy is
+    /// the first line: `.atLaunch`, today's behaviour, until device check D1
+    /// shows a voice allowed after the first phrase speaks without a
+    /// relaunch (docs/DECISIONS.md, "Personal Voice permission is asked at
+    /// launch, for now"). A debug launch can ask for `.fromSettings` to run
+    /// that check.
+    static func personalVoiceAskPolicy(for trial: LaunchOptions.PersonalVoiceTrial?) -> PersonalVoiceAskPolicy {
+        guard trial != nil else { return .atLaunch }
+        return .fromSettings
     }
 }

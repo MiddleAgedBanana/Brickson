@@ -56,9 +56,8 @@ the branch's last commit and report:
 
 - the result of "Unit tests" and "UI tests", and the commit each ran on.
   A run on an older commit does not verify the newest one;
-- the Xcode version from the "Show the Xcode version" step, and the
-  simulator from the build-and-test step, where `scripts/test.sh` prints
-  "Starting the simulator <udid>" and "Testing Brickson on: <destination>";
+- the Xcode version and each simulator from the build-and-test step,
+  where `scripts/test.sh` prints the versions and test destinations;
 - for a failure, the first failing test or error line from the job log,
   and whether the same test fails on `main` (`AGENTS.md`, *Gotchas*, on a
   slow first UI test).
@@ -74,8 +73,10 @@ does. Hold the evidence to what it can show:
 - A simulator is never proof of gaze comfort, sound, Snap to Item or real
   dwell timing (`AGENTS.md`, *Workflow rules*).
 - Layout and flow changes need a run on an iPad and an iPhone, at default
-  and accessibility text sizes, light and dark. CI runs one iPad
-  simulator at the default size, so say which of these nothing covered.
+  and accessibility text sizes, light and dark. The UI script runs both
+  device families; individual tests choose their text sizes, appearances
+  and orientations. Read the tests and results before saying which
+  combinations passed, and name every required combination not covered.
 - New behaviour needs a test that would fail without it. Name the test,
   and the change that would make it fail, or say that there is none.
 - Check the diff for the hard stops in `AGENTS.md`, *Non-negotiable

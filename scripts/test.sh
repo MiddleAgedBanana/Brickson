@@ -43,7 +43,7 @@ fi
 
 # Before the unit tests: the documents' cross-references resolve, and the
 # Claude Code guard in .claude/hooks still blocks what AGENTS.md forbids.
-# Both take a second and need no simulator.
+# Both need no simulator.
 if [ "$mode" = unit ]; then
     /usr/bin/python3 scripts/test-docs.py
     /usr/bin/python3 scripts/test-hooks.py

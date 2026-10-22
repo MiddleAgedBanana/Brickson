@@ -189,6 +189,7 @@ Policy wording changes must include an updated effective date.
 - [Roadmap: what comes in which release](docs/ROADMAP.md)
 - [How the project is run, stage by stage](docs/SDLC.md)
 - [Design and engineering decisions](docs/DECISIONS.md)
+- [Accessibility features and APIs, by ALS stage](docs/ACCESSIBILITY.md)
 - [Lessons from the reference app](docs/LESSONS.md)
 - [Implementation and porting sequence](docs/PORTING.md)
 - [Research behind the roadmap](docs/recon/README.md)

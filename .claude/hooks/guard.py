@@ -22,11 +22,13 @@ owner are held to the same rules by review. Standard library only, so it
 runs wherever python3 does. Its tests are scripts/test-hooks.py.
 """
 import json
+import fnmatch
 import os
 import re
 import shlex
 import subprocess
 import sys
+import stat
 from urllib.parse import urlsplit
 
 PROTECTED = {'main', 'master'}
@@ -45,9 +47,19 @@ MERGE = ('Agents never merge, approve or auto-merge a pull request: the owner '
 COPILOT = ('Each Copilot review or Copilot task spends the owner\'s monthly AI '
            'credits, so only the owner starts one (AGENTS.md, "Build and test", '
            '"Reviews and updates on GitHub").')
+UNKNOWN = ('The guard cannot inspect this push destination or API request body. '
+           'Use an explicit feature-branch refspec or a readable request file '
+           '(AGENTS.md, "Guardrails for agents").')
 
 WRAPPERS = {'command', 'builtin', 'exec', 'nohup', 'time', 'sudo', 'env', 'nice',
             'timeout', 'xargs', 'then', 'do', 'else', '!', '{', '('}
+WRAPPER_VALUE_OPTIONS = {
+    'env': {'-u', '--unset'},
+    'nice': {'-n', '--adjustment'},
+    'timeout': {'-k', '--kill-after', '-s', '--signal'},
+    'sudo': {'-u', '--user', '-g', '--group', '-h', '--host', '-p', '--prompt',
+             '-C', '--close-from', '-D', '--chdir', '-R', '--chroot'},
+}
 SHELLS = {'sh', 'bash', 'zsh', 'dash'}
 SEPARATORS = {';', '&&', '||', '|', '&', '|&', '(', ')', '\n'}
 # git options that take a separate value: git -C <path>, git -c <name=value>.
@@ -73,7 +85,7 @@ def deny(reason):
 
 
 def segments(command):
-    """Split a shell command into simple commands, as lists of words.
+    """Split into (words, preceding separator), keeping && and || for cd.
     Words inside $(...), `...` and sh -c '...' are split in turn."""
     lexer = shlex.shlex(command.replace('\\\n', ' '), posix=True,
                         punctuation_chars=';&|()\n')
@@ -81,15 +93,17 @@ def segments(command):
     lexer.whitespace_split = True
     lexer.commenters = '#'
     current = []
+    separator = ';'
     for word in lexer:
         if word in SEPARATORS or set(word) <= set(';&|()\n'):
             if current:
-                yield current
+                yield current, separator
             current = []
+            separator = word
         else:
             current.append(word)
     if current:
-        yield current
+        yield current, separator
 
 
 def nested(words):
@@ -109,42 +123,69 @@ def nested(words):
     return found
 
 
-def strip_wrappers(words):
+def strip_wrappers(words, inherited=None):
     """Drop VAR=value assignments and wrappers such as env, sudo, command."""
+    environment = dict(inherited or {})
     while words:
         first = words[0]
         if re.match(r'^[A-Za-z_][A-Za-z0-9_]*=', first):
+            key, _, value = first.partition('=')
+            if key.startswith('GIT_'):
+                environment[key] = value
             words = words[1:]
         elif os.path.basename(first) in WRAPPERS:
+            wrapper = os.path.basename(first)
             words = words[1:]
-            # Options of the wrapper itself (env -i, timeout 5, nice -n 5).
-            while words and (words[0].startswith('-') or words[0].isdigit()):
+            while words and words[0].startswith('-'):
+                option = words[0]
+                if option == '--':
+                    words = words[1:]
+                    break
+                if wrapper == 'env':
+                    if option in ('-i', '--ignore-environment'):
+                        environment = {key: None for key in set(os.environ) | set(environment)
+                                       if key.startswith('GIT_')}
+                    elif option in ('-u', '--unset') and len(words) > 1:
+                        environment[words[1]] = None
+                    elif option.startswith('--unset='):
+                        environment[option.partition('=')[2]] = None
+                    elif option.startswith('-u'):
+                        environment[option[2:]] = None
+                count = 2 if option in WRAPPER_VALUE_OPTIONS.get(wrapper, set()) else 1
+                words = words[count:]
+            # timeout's mandatory duration can be fractional and carry a unit.
+            if wrapper == 'timeout' and words and re.fullmatch(r'(?:\d+(?:\.\d*)?|\.\d+)[smhd]?', words[0]):
                 words = words[1:]
         else:
             break
-    return words
+    return words, environment
 
 
-def git_parts(words, cwd):
-    """For a git command: (subcommand, its arguments, working folder)."""
+def git_parts(words, cwd, environment):
+    """Keep Git's global options for every read-only repository query."""
     index = 1
     while index < len(words):
         word = words[index]
         if word in GIT_VALUE_OPTIONS and index + 1 < len(words):
-            if word == '-C':
-                cwd = os.path.join(cwd, words[index + 1])
             index += 2
         elif word.startswith('-'):
             index += 1
         else:
-            return word, words[index + 1:], cwd
-    return None, [], cwd
+            return word, words[index + 1:], (cwd, words[1:index], environment)
+    return None, [], (cwd, words[1:], environment)
 
 
-def git(cwd, *args):
+def git(context, *args):
+    cwd, options, overrides = context
+    environment = os.environ.copy()
+    for key, value in overrides.items():
+        if value is None:
+            environment.pop(key, None)
+        else:
+            environment[key] = value
     try:
-        result = subprocess.run(['git', '-C', cwd, *args], capture_output=True,
-                                text=True, timeout=5)
+        result = subprocess.run(['git', '-C', cwd, *options, *args], capture_output=True,
+                                text=True, timeout=5, env=environment)
     except (OSError, subprocess.SubprocessError):
         return None
     return result.stdout.strip() if result.returncode == 0 else None
@@ -185,24 +226,24 @@ def check_commit(args):
                     break
 
 
-def check_push(args, cwd):
+def check_push(args, context):
     refspecs = []
     options = []
-    skip = False
-    remote_given = False  # --repo names the remote instead of the first word
-    for arg in args:
-        if skip:
-            skip = False
-            continue
+    remote = None
+    index = 0
+    while index < len(args):
+        arg = args[index]
         if arg.startswith('--repo='):
-            remote_given = True
+            remote = arg.partition('=')[2]
         elif arg in ('-o', '--push-option', '--repo', '--receive-pack', '--exec'):
-            remote_given = remote_given or arg == '--repo'
-            skip = True
+            if arg == '--repo' and index + 1 < len(args):
+                remote = args[index + 1]
+            index += 1
         elif arg.startswith('-'):
             options.append(arg)
         else:
             refspecs.append(arg)
+        index += 1
     for option in options:
         if (option == '--force' or option.startswith(('--force-with-lease', '--force-if-includes'))
                 or (re.fullmatch(r'-[a-zA-Z]+', option) and 'f' in option)):
@@ -213,16 +254,38 @@ def check_push(args, cwd):
             # Deleting a branch: only refuse it for main.
             if any(branch_name(r) in PROTECTED for r in refspecs):
                 deny(TO_MAIN)
-    if not remote_given:
-        refspecs = refspecs[1:]  # the first word is the remote
+    if remote is None and refspecs:
+        remote = refspecs.pop(0)
     if not refspecs:
-        # A bare push goes wherever the branch pushes to.
-        destination = git(cwd, 'rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{push}')
-        current = git(cwd, 'symbolic-ref', '--short', 'HEAD')
-        for ref in (destination, current):
-            if ref and branch_name(ref) in PROTECTED:
+        if git(context, 'rev-parse', '--git-dir') is None:
+            deny(UNKNOWN)
+        current = git(context, 'symbolic-ref', '--short', 'HEAD')
+        if remote is None:
+            remote = ((git(context, 'config', '--get', f'branch.{current}.pushRemote') if current else None)
+                      or git(context, 'config', '--get', 'remote.pushDefault')
+                      or (git(context, 'config', '--get', f'branch.{current}.remote') if current else None)
+                      or 'origin')
+        if git(context, 'config', '--bool', '--get', f'remote.{remote}.mirror') == 'true':
+            deny(TO_MAIN)
+        configured = git(context, 'config', '--get-all', f'remote.{remote}.push')
+        if configured:
+            refspecs = configured.splitlines()
+        else:
+            mode = git(context, 'config', '--get', 'push.default') or 'simple'
+            if mode == 'matching':
                 deny(TO_MAIN)
-        return
+            if mode == 'nothing':
+                return  # Git refuses this push itself.
+            if current is None:
+                deny(UNKNOWN)
+            destinations = [current]
+            # upstream/simple may target the configured upstream branch.
+            if mode in ('simple', 'upstream', 'tracking'):
+                destinations += (git(context, 'config', '--get-all',
+                                     f'branch.{current}.merge') or '').splitlines()
+            if any(branch_name(ref) in PROTECTED for ref in destinations):
+                deny(TO_MAIN)
+            return
     for refspec in refspecs:
         if refspec.startswith('+'):
             deny(FORCE)
@@ -231,12 +294,71 @@ def check_push(args, cwd):
         source, colon, target = refspec.partition(':')
         destination = target if colon else source
         if destination in ('HEAD', '@', ''):
-            destination = git(cwd, 'symbolic-ref', '--short', 'HEAD') or ''
-        if branch_name(destination) in PROTECTED:
+            destination = git(context, 'symbolic-ref', '--short', 'HEAD')
+            if destination is None:
+                deny(UNKNOWN)
+        if any(fnmatch.fnmatchcase(protected, branch_name(destination))
+               or fnmatch.fnmatchcase('refs/heads/' + protected, destination)
+               for protected in PROTECTED):
             deny(TO_MAIN)
 
 
-def check_gh(words):
+def option_values(words, long_options, short_options=()):
+    """Read separate, --long=value and -svalue option arguments."""
+    for index, word in enumerate(words):
+        option, equal, value = word.partition('=')
+        if option in long_options or option in short_options:
+            if equal:
+                yield value
+            elif index + 1 < len(words):
+                yield words[index + 1]
+        elif any(word.startswith(short) and len(word) > len(short) for short in short_options):
+            yield word[2:].lstrip('=')
+
+
+def request_file(filename, cwd):
+    """Read a bounded regular file, never stdin, devices or a pipe."""
+    if filename == '-':
+        deny(UNKNOWN)
+    path = os.path.join(cwd, os.path.expanduser(filename))
+    try:
+        metadata = os.stat(path)
+        if not stat.S_ISREG(metadata.st_mode) or metadata.st_size > 1024 * 1024:
+            deny(UNKNOWN)
+        with open(path, encoding='utf-8') as payload:
+            text = payload.read(1024 * 1024 + 1)
+        if len(text) > 1024 * 1024:
+            deny(UNKNOWN)
+    except (OSError, UnicodeError):
+        deny(UNKNOWN)
+    try:
+        # Decode JSON escapes before looking for action names or APPROVE.
+        return json.dumps(json.loads(text))
+    except ValueError:
+        return text
+
+
+def api_arguments(words, cwd, program='gh'):
+    """Include the API clients' file-backed payloads in the same checks."""
+    parts = [' '.join(words)]
+    if program == 'gh':
+        for filename in option_values(words, {'--input'}):
+            parts.append(request_file(filename, cwd))
+        for field in option_values(words, {'--field'}, {'-F'}):
+            key, equals, value = field.partition('=')
+            if equals and value.startswith('@'):
+                parts.append('--raw-field ' + key + '=' + request_file(value[1:], cwd))
+    elif program == 'curl':
+        for data in option_values(words, {'--data', '--data-ascii', '--data-binary', '--json'}, {'-d'}):
+            if data.startswith('@'):
+                parts.append(request_file(data[1:], cwd))
+    elif program == 'wget':
+        for filename in option_values(words, {'--post-file', '--body-file'}):
+            parts.append(request_file(filename, cwd))
+    return ' '.join(parts)
+
+
+def check_gh(words, cwd):
     words = [w for w in words[1:]]
     # gh's global option --repo/-R takes a value.
     plain = []
@@ -253,17 +375,25 @@ def check_gh(words):
             plain.append(word)
     if plain[:2] == ['pr', 'merge']:
         deny(MERGE)
-    if plain[:2] == ['pr', 'review'] and ({'-a', '--approve'} & set(plain)):
-        deny(MERGE)
-    if plain[:1] == ['api'] and API_MERGE.search(' '.join(plain)):
-        deny(MERGE)
-    if plain[:1] == ['api'] and copilot_review_request(' '.join(plain)):
-        deny(COPILOT)
-    if plain[:2] in (['pr', 'edit'], ['pr', 'create']) and any(
-            'copilot' in w.lower() for w in plain if not w.startswith('-')):
-        for index, word in enumerate(plain):
-            if word in ('--add-reviewer', '--reviewer', '-r') and \
-                    'copilot' in ' '.join(plain[index + 1:index + 2]).lower():
+    if plain[:2] == ['pr', 'review']:
+        for word in plain[2:]:
+            option, equal, value = word.partition('=')
+            if option in ('-a', '--approve') and (not equal or value.lower() not in ('false', 'f', '0')):
+                deny(MERGE)
+    if plain[:1] == ['api']:
+        arguments = api_arguments(plain, cwd)
+        if API_MERGE.search(arguments) or protected_branch_merge(arguments):
+            deny(MERGE)
+        if copilot_request(arguments):
+            deny(COPILOT)
+    if len(plain) >= 2 and plain[0] in ('pr', 'issue') and plain[1] in ('edit', 'create'):
+        options = {'--add-assignee', '--assignee'}
+        short = {'-a'} if plain[1] == 'create' else set()
+        if plain[0] == 'pr':
+            options |= {'--add-reviewer', '--reviewer'}
+            short.add('-r')
+        for value in option_values(plain[2:], options, short):
+            if 'copilot' in value.lower():
                 deny(COPILOT)
 
 
@@ -281,53 +411,99 @@ def github_api_host(word):
     return parsed_url(word)[1] == 'api.github.com'
 
 
-def github_api_merge(word):
-    """Whether a word is a GitHub API address that merges, auto-merges or
-    approves."""
-    url, host = parsed_url(word)
-    return host == 'api.github.com' and bool(API_MERGE.search(url.path))
+def api_field_values(text, key):
+    """Read one field from gh options and inline or file-backed JSON bodies."""
+    decoder = json.JSONDecoder()
+    pattern = (r'(?<!\S)(?P<option>-[fF]|--(?:raw-)?field)(?:\s+|=)?'
+               + re.escape(key) + r'(?:\[\d*\])?=')
+    for field in re.finditer(pattern, text):
+        value = text[field.end():].lstrip()
+        if value.startswith('@') and field['option'] in ('-F', '--field'):
+            continue  # api_arguments appends this file's inspected contents.
+        try:
+            parsed, _ = decoder.raw_decode(value)
+        except ValueError:
+            parsed = value.split(None, 1)[0] if value else ''
+        yield parsed
+    for start in re.finditer(r'\{', text):
+        try:
+            payload, _ = decoder.raw_decode(text[start.start():])
+        except ValueError:
+            continue
+        if isinstance(payload, dict) and key in payload:
+            yield payload[key]
 
 
-def copilot_review_request(text):
-    """Whether API arguments ask for a review from Copilot."""
-    return 'requested_reviewers' in text and 'copilot' in text.lower()
+def protected_branch_merge(text):
+    """REST branch merges may update a feature branch, but never main."""
+    endpoint = r'(?:^|[\s/])repos/[^/\s]+/[^/\s]+/merges(?=\s|$)'
+    return bool(re.search(endpoint, text)) and any(
+        branch_name(str(base)) in PROTECTED for base in api_field_values(text, 'base'))
 
 
-def check_command(command, cwd, depth=0):
+def copilot_request(text):
+    """Whether API arguments request Copilot review or issue assignment."""
+    if ('requested_reviewers' in text or '/assignees' in text) and 'copilot' in text.lower():
+        return True
+    # Issue create/update endpoints also accept assignees. Inspect that field
+    # specifically: a body mentioning Copilot is not an assignment.
+    endpoint = r'(?:^|[\s/])repos/[^/\s]+/[^/\s]+/issues(?:/\d+)?(?=\s|$)'
+    return bool(re.search(endpoint, text)) and any(
+        'copilot' in str(value).lower() for value in api_field_values(text, 'assignees'))
+
+
+def check_command(command, cwd, depth=0, environment=None):
     if depth > 3:
         return
     try:
         parts = list(segments(command))
     except ValueError:
         # Unbalanced quotes: the shell would refuse it too. Look at the words.
-        parts = [command.split()]
-    for words in parts:
-        unwrapped = strip_wrappers(words)
-        # Look inside both forms: env bash -c '...' hides the shell behind env.
-        for inner in dict.fromkeys(nested(words) + nested(unwrapped)):
-            check_command(inner, cwd, depth + 1)
-        words = unwrapped
-        if not words:
+        parts = [(command.split(), ';')]
+    # The shell can continue after a failed cd. Keep both outcomes until a
+    # connector selects success (&&) or failure (||), instead of assuming cd
+    # succeeded because its target looked like a directory during this check.
+    states = {(cwd, True)}
+    for words, separator in parts:
+        runnable = {(where, success) for where, success in states
+                    if separator not in ('&&', '||')
+                    or (separator == '&&' and success)
+                    or (separator == '||' and not success)}
+        next_states = states - runnable
+        unwrapped, command_environment = strip_wrappers(words, environment)
+        if not unwrapped:
             continue
-        program = os.path.basename(words[0])
-        if program == 'cd' and len(words) > 1:
-            cwd = os.path.join(cwd, os.path.expanduser(words[1]))
-        elif program == 'git':
-            subcommand, args, where = git_parts(words, cwd)
-            if subcommand == 'add':
-                check_add(args)
-            elif subcommand == 'commit':
-                check_commit(args)
-            elif subcommand == 'push':
-                check_push(args, where)
-        elif program == 'gh':
-            check_gh(words)
-        elif program in ('curl', 'wget', 'http', 'https'):
-            if any(github_api_merge(word) for word in words[1:]):
-                deny(MERGE)
-            if any(github_api_host(word) for word in words[1:]) and \
-                    copilot_review_request(' '.join(words)):
-                deny(COPILOT)
+        program = os.path.basename(unwrapped[0])
+        for where in {path for path, _ in runnable}:
+            # Look inside both forms: env bash -c hides the shell behind env.
+            for inner in dict.fromkeys(nested(words) + nested(unwrapped)):
+                check_command(inner, where, depth + 1, command_environment)
+            if program == 'cd' and len(unwrapped) > 1:
+                target = os.path.join(where, os.path.expanduser(unwrapped[1]))
+                # Earlier shell commands may create the target, so inspect
+                # both outcomes even when it does not exist at hook time.
+                next_states.add((target, True))
+                next_states.add((where, False))
+                continue
+            if program == 'git':
+                subcommand, args, context = git_parts(unwrapped, where, command_environment)
+                if subcommand == 'add':
+                    check_add(args)
+                elif subcommand == 'commit':
+                    check_commit(args)
+                elif subcommand == 'push':
+                    check_push(args, context)
+            elif program == 'gh':
+                check_gh(unwrapped, where)
+            elif program in ('curl', 'wget', 'http', 'https'):
+                if any(github_api_host(word) for word in unwrapped[1:]):
+                    arguments = api_arguments(unwrapped, where, program)
+                    if API_MERGE.search(arguments) or protected_branch_merge(arguments):
+                        deny(MERGE)
+                    if copilot_request(arguments):
+                        deny(COPILOT)
+            next_states.update({(where, True), (where, False)})
+        states = next_states
 
 
 def check_github_tool(name, arguments):

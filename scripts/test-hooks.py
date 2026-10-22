@@ -40,6 +40,7 @@ class GuardTests(unittest.TestCase):
                            capture_output=True)
         git('init', '-q', '-b', 'main')
         git('-c', 'user.name=t', '-c', 'user.email=t@example.com',
+            '-c', 'commit.gpgsign=false', '-c', 'core.hooksPath=/dev/null',
             'commit', '-q', '--allow-empty', '-m', 'start')
         git('checkout', '-q', '-b', 'claude/topic')
 
@@ -55,6 +56,197 @@ class GuardTests(unittest.TestCase):
 
     def assertAllowed(self, command, cwd=None):
         self.assertIsNone(self.bash(command, cwd), command)
+
+    def configure(self, key, value):
+        subprocess.run(['git', '-C', str(self.repo), 'config', '--add', key, value],
+                       check=True)
+        self.addCleanup(subprocess.run,
+                        ['git', '-C', str(self.repo), 'config', '--unset-all', key],
+                        capture_output=True)
+
+    def test_wildcard_pushes_cannot_include_a_protected_branch(self):
+        for pattern in ['refs/heads/*:refs/heads/*', 'refs/*:refs/*', 'ma*:ma*', '*:*']:
+            with self.subTest(pattern=pattern):
+                self.assertDenied(f"git push origin '{pattern}'")
+        self.assertAllowed("git push origin 'refs/heads/claude/*:refs/heads/claude/*'")
+
+    def test_copilot_issue_assignments_are_denied(self):
+        for command in ['gh issue edit 12 --add-assignee @copilot',
+                        'gh issue edit 12 --add-assignee=@copilot',
+                        'gh issue create --assignee=@copilot',
+                        'gh pr edit 12 --add-assignee @copilot']:
+            with self.subTest(command=command):
+                self.assertDenied(command)
+        self.assertAllowed('gh issue edit 12 --remove-assignee @copilot')
+        self.assertAllowed('gh issue edit 12 --add-assignee @me')
+
+    def test_attached_copilot_reviewer_options_are_denied(self):
+        for command in ['gh pr edit 12 --add-reviewer=@copilot',
+                        'gh pr create --reviewer=@copilot',
+                        'gh pr create -r@copilot',
+                        'gh pr edit 12 --add-reviewer=human,@copilot']:
+            with self.subTest(command=command):
+                self.assertDenied(command)
+        self.assertAllowed('gh pr edit 12 --remove-reviewer=@copilot')
+        self.assertAllowed('gh pr edit 12 --add-reviewer=human')
+
+    def test_wrapper_operands_do_not_hide_commands(self):
+        for wrapper in ['env -u HOME', 'env --unset HOME', 'env --unset=HOME',
+                        'env -uHOME', 'timeout 5s', 'timeout -k 1s 5s',
+                        'timeout --kill-after=1s 0.5m', 'nice -n 5']:
+            with self.subTest(wrapper=wrapper):
+                self.assertDenied(f'{wrapper} git add -A')
+                self.assertAllowed(f'{wrapper} git add docs/HANDOFF.md')
+
+    def test_push_queries_use_the_selected_repository(self):
+        with tempfile.TemporaryDirectory(dir=self.repo) as folder:
+            other = Path(folder)
+            subprocess.run(['git', 'init', '-q', '-b', 'main', str(other)], check=True)
+            for selector in [f'--git-dir={other}/.git', f'--git-dir {other}/.git',
+                             f'--git-dir={other.name}/.git --work-tree={other.name}',
+                             f'-C {other.name}', f'-C{other.name}']:
+                with self.subTest(selector=selector):
+                    self.assertDenied(f'git {selector} push')
+
+    def test_git_environment_selects_the_repository_for_push_checks(self):
+        with tempfile.TemporaryDirectory(dir=self.repo) as folder:
+            other = Path(folder)
+            subprocess.run(['git', 'init', '-q', '-b', 'main', str(other)], check=True)
+            for prefix in [f'GIT_DIR={other}/.git', f'env GIT_DIR={other}/.git',
+                           f'GIT_DIR={other}/.git GIT_WORK_TREE={other}']:
+                with self.subTest(prefix=prefix):
+                    self.assertDenied(f'{prefix} git push origin')
+                    self.assertAllowed(f'{prefix} git push origin HEAD:claude/topic')
+            self.assertDenied(f"env GIT_DIR={other}/.git bash -c 'git push origin'")
+            self.assertAllowed(f'GIT_DIR={other}/.git env -u GIT_DIR git push origin')
+            self.assertAllowed(f'GIT_DIR={other}/.git env --unset=GIT_DIR git push origin')
+
+    def test_sudo_option_operands_do_not_hide_commands(self):
+        for wrapper in ['sudo -u root', 'sudo --user root', 'sudo -g staff',
+                        'sudo -u root -g staff', 'sudo --user=root']:
+            with self.subTest(wrapper=wrapper):
+                self.assertDenied(f'{wrapper} git add -A')
+                self.assertDenied(f'{wrapper} gh pr merge 17')
+                self.assertAllowed(f'{wrapper} git add docs/HANDOFF.md')
+
+    def test_configured_push_destinations_are_checked(self):
+        self.configure('remote.origin.push', 'HEAD:main')
+        for command in ['git push', 'git push origin', 'git push --repo origin']:
+            with self.subTest(command=command):
+                self.assertDenied(command)
+        self.assertAllowed('git push origin HEAD:claude/topic')
+
+    def test_matching_push_default_is_denied(self):
+        self.configure('push.default', 'matching')
+        self.assertDenied('git push origin')
+        self.assertAllowed('git push origin HEAD:claude/topic')
+
+    def test_push_remote_selection_and_command_configuration_are_preserved(self):
+        self.configure('branch.claude/topic.pushRemote', 'publish')
+        self.configure('remote.publish.push', 'HEAD:main')
+        self.assertDenied('git push')
+        self.assertAllowed('git push origin')
+        self.assertDenied('git -c remote.origin.push=HEAD:main push origin')
+        self.assertDenied('git -c push.default=matching push origin')
+        self.assertAllowed('git -c remote.origin.push=HEAD:claude/topic push origin')
+
+    def test_attached_boolean_approval_options_are_denied(self):
+        for flag in ['--approve=true', '-a=true', '--approve=1', '-a=TRUE']:
+            with self.subTest(flag=flag):
+                self.assertDenied(f'gh pr review 12 {flag}')
+        self.assertAllowed('gh pr review 12 --approve=false --comment -b ok')
+
+    def test_a_failed_cd_keeps_the_previous_push_destination(self):
+        subprocess.run(['git', '-C', str(self.repo), 'checkout', '-q', 'main'], check=True)
+        try:
+            self.assertDenied('cd missing-directory; git push')
+            self.assertDenied('cd missing-directory || true; git push')
+            # Even an existing directory may fail to open. With &&, the push
+            # runs only after success; with ;, the old repository also matters.
+            with tempfile.TemporaryDirectory(dir=self.repo) as folder:
+                subprocess.run(['git', 'init', '-q', '-b', 'claude/other', folder],
+                               check=True)
+                self.assertAllowed(f'cd {folder} && git push')
+                self.assertDenied(f'cd {folder}; git push')
+        finally:
+            subprocess.run(['git', '-C', str(self.repo), 'checkout', '-q', 'claude/topic'],
+                           check=True)
+
+    def test_api_bodies_loaded_from_files_are_checked(self):
+        with tempfile.TemporaryDirectory(dir=self.repo) as folder:
+            payload = Path(folder) / 'payload.json'
+            payload.write_text('{"event":"APPROVE"}')
+            for option in [f'--input {payload}', f'--input={payload}']:
+                with self.subTest(option=option):
+                    self.assertDenied(f'gh api --method POST repos/o/r/pulls/12/reviews {option}')
+            payload.write_text('{"event":"COMMENT","body":"Looks good"}')
+            self.assertAllowed(f'gh api repos/o/r/pulls/12/reviews --input {payload}')
+            payload.write_text('{"query":"mutation { mergePullRequest(input: {}) { clientMutationId } }"}')
+            self.assertDenied(f'gh api graphql --input {payload}')
+            payload.write_text('{"reviewers":["copilot-pull-request-reviewer[bot]"]}')
+            self.assertDenied(f'gh api repos/o/r/pulls/12/requested_reviewers --input {payload}')
+            payload.write_text('APPROVE')
+            self.assertDenied(f'gh api repos/o/r/pulls/12/reviews -F event=@{payload}')
+            self.assertDenied(f'gh api repos/o/r/pulls/12/reviews --field=event=@{payload}')
+        self.assertDenied('gh api repos/o/r/pulls/12/reviews --input missing-payload.json')
+        self.assertDenied('gh api repos/o/r/pulls/12/reviews --input -')
+
+    def test_other_api_clients_check_the_same_approval_payloads(self):
+        with tempfile.TemporaryDirectory(dir=self.repo) as folder:
+            payload = Path(folder) / 'payload.json'
+            payload.write_text('{"event":"APPROVE"}')
+            endpoint = 'https://api.github.com/repos/o/r/pulls/12/reviews'
+            for command in [f'curl {endpoint} --data @{payload}',
+                            f'curl {endpoint} --data-binary=@{payload}',
+                            f'curl {endpoint} --json @{payload}',
+                            f'wget {endpoint} --post-file={payload}']:
+                with self.subTest(command=command):
+                    self.assertDenied(command)
+            payload.write_text('{"event":"COMMENT","body":"Looks good"}')
+            self.assertAllowed(f'curl {endpoint} --data @{payload}')
+            # A non-GitHub endpoint must not cause the guard to open files.
+            self.assertAllowed('curl https://example.com --data @missing.json')
+
+    def test_api_assignment_payloads_cannot_start_copilot(self):
+        self.assertDenied("gh api repos/o/r/issues/12/assignees -f 'assignees[]=@copilot'")
+        self.assertAllowed("gh api repos/o/r/issues/12/assignees -f 'assignees[]=human'")
+
+    def test_issue_create_and_update_payloads_cannot_assign_copilot(self):
+        for method, endpoint in [('POST', 'repos/o/r/issues'),
+                                 ('PATCH', 'repos/o/r/issues/12')]:
+            for field in ["-f 'assignees[]=copilot-swe-agent[bot]'",
+                          "--raw-field=assignees[]=copilot-swe-agent[bot]",
+                          "-Fassignees[]=copilot-swe-agent[bot]"]:
+                with self.subTest(method=method, field=field):
+                    self.assertDenied(f'gh api --method {method} {endpoint} {field}')
+            with tempfile.TemporaryDirectory(dir=self.repo) as folder:
+                payload = Path(folder) / 'payload.json'
+                payload.write_text('{"assignees":["human","copilot-swe-agent[bot]"]}')
+                for command in [f'gh api --method {method} {endpoint} --input {payload}',
+                                f'curl -X {method} https://api.github.com/{endpoint} --json @{payload}']:
+                    with self.subTest(command=command):
+                        self.assertDenied(command)
+                payload.write_text('{"assignees":["human"],"body":"Discuss Copilot and assignees[]=copilot."}')
+                self.assertAllowed(f'gh api --method {method} {endpoint} --input {payload}')
+            self.assertAllowed(f"gh api --method {method} {endpoint} -f 'assignees[]=human' -f 'body=Discuss Copilot'")
+        self.assertAllowed("gh api repos/o/r/issues/12/comments -f 'body=Discuss Copilot assignments'")
+
+    def test_rest_branch_merges_cannot_target_main(self):
+        endpoint = 'repos/o/r/merges'
+        for field in ['-f base=main', '--field=base=main', '-Fbase=refs/heads/main',
+                      '-f base=master']:
+            with self.subTest(field=field):
+                self.assertDenied(f'gh api {endpoint} -X POST {field} -f head=claude/topic')
+        self.assertAllowed(f'gh api {endpoint} -X POST -f base=claude/topic -f head=main')
+        with tempfile.TemporaryDirectory(dir=self.repo) as folder:
+            payload = Path(folder) / 'payload.json'
+            payload.write_text('{"base":"main","head":"claude/topic"}')
+            for command in [f'gh api {endpoint} -X POST --input {payload}',
+                            f'curl -X POST https://api.github.com/{endpoint} --json @{payload}']:
+                with self.subTest(command=command):
+                    self.assertDenied(command)
+            payload.write_text('{"base":"claude/topic","head":"main"}')
+            self.assertAllowed(f'gh api {endpoint} -X POST --input {payload}')
 
     def test_staging_everything_is_denied(self):
         for command in ['git add -A', 'git add --all', 'git add .', 'git add -u',
