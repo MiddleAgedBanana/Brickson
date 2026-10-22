@@ -64,6 +64,113 @@ class GuardTests(unittest.TestCase):
                         ['git', '-C', str(self.repo), 'config', '--unset-all', key],
                         capture_output=True)
 
+    def test_unquoted_backticks_are_checked(self):
+        # These are inputs to the guard, never commands executed by the test.
+        for command in ['echo `git add -A`', 'echo `gh pr merge 17`',
+                        'printf %s `git push origin HEAD:main`']:
+            with self.subTest(command=command):
+                self.assertDenied(command)
+        self.assertAllowed('echo `git status --short`')
+        self.assertAllowed('echo `git add docs/HANDOFF.md`')
+
+    def test_env_directory_options_select_the_repository(self):
+        with tempfile.TemporaryDirectory(dir=self.repo) as folder:
+            other = Path(folder)
+            subprocess.run(['git', 'init', '-q', '-b', 'main', str(other)], check=True)
+            for option in [f'-C {other}', f'-C{other}', f'--chdir {other.name}',
+                           f'--chdir={other.name}']:
+                with self.subTest(option=option):
+                    self.assertDenied(f'env {option} git push origin')
+                    self.assertDenied(f"env {option} sh -c 'git push origin'")
+                    self.assertAllowed(f'env {option} git push origin HEAD:claude/topic')
+            self.assertAllowed(f'env -C {other} -C . git push origin')
+            self.assertDenied(f'env -C . env -C {other.name} git push origin')
+            self.assertAllowed(f'env -C {other} git status; git push origin')
+
+    def test_branch_merge_urls_use_the_parsed_path(self):
+        for suffix in ['#note', '?source=cli', '?source=cli#note']:
+            endpoint = f'https://api.github.com/repos/o/r/merges{suffix}'
+            with self.subTest(suffix=suffix):
+                self.assertDenied(f'''curl -X POST '{endpoint}' --json '{{"base":"main","head":"feature"}}' ''')
+                self.assertDenied(f"gh api '{endpoint}' -f base=main -f head=feature")
+                self.assertAllowed(f'''curl '{endpoint}' --json '{{"base":"feature","head":"main"}}' ''')
+        self.assertAllowed('''curl 'https://example.com/repos/o/r/merges#note' --json '{"base":"main"}' ''')
+
+    def test_env_directory_does_not_move_outer_shell_substitutions(self):
+        with tempfile.TemporaryDirectory(dir=self.repo) as folder:
+            other = Path(folder)
+            subprocess.run(['git', 'init', '-q', '-b', 'main', str(other)], check=True)
+            for substitution in ['`git push origin`', '"$(git push origin)"']:
+                with self.subTest(substitution=substitution, outer='main'):
+                    self.assertDenied(f'env -C {self.repo} echo {substitution}', cwd=other)
+                with self.subTest(substitution=substitution, outer='feature'):
+                    self.assertAllowed(f'env -C {other} echo {substitution}')
+            self.assertDenied(f'''env -C {other} sh -c 'echo "$(git push origin)"' ''')
+            self.assertAllowed(f'''env -C {self.repo} sh -c 'echo "$(git push origin)"' ''', cwd=other)
+
+    def test_double_quoted_child_scripts_expand_in_the_outer_shell(self):
+        with tempfile.TemporaryDirectory(dir=self.repo) as folder:
+            other = Path(folder)
+            subprocess.run(['git', 'init', '-q', '-b', 'main', str(other)], check=True)
+            for substitution in ['$(git push origin)', '`git push origin`']:
+                with self.subTest(substitution=substitution, outer='main'):
+                    self.assertDenied(f'env -C {self.repo} sh -c "echo {substitution}"', cwd=other)
+                with self.subTest(substitution=substitution, outer='feature'):
+                    self.assertAllowed(f'env -C {other} sh -c "echo {substitution}"')
+            self.assertDenied(f'env -C {other} sh -c "echo $(git status); git push origin"')
+
+    def test_escaped_substitutions_in_child_scripts_stay_checked(self):
+        with tempfile.TemporaryDirectory(dir=self.repo) as folder:
+            other = Path(folder)
+            subprocess.run(['git', 'init', '-q', '-b', 'main', str(other)], check=True)
+            for substitution in [r'\$(git push origin)', r'\`git push origin\`']:
+                with self.subTest(substitution=substitution):
+                    self.assertDenied(f'env -C {other} sh -c "echo {substitution}"')
+                    safe = substitution.replace('git push origin', 'git push origin HEAD:feature')
+                    self.assertAllowed(f'env -C {other} sh -c "echo {safe}"')
+
+    def test_commit_all_tree_pathspecs_are_denied(self):
+        for path in ['.', './', ':/', ':', '*', ':/*', './*', ':(top)',
+                     ':(top)*', ':(glob)**', ':(top,glob)**']:
+            with self.subTest(path=path):
+                self.assertDenied(f"git commit '{path}' -m update")
+                self.assertDenied(f"git commit -m update -- '{path}'")
+        for command in ['git commit docs/HANDOFF.md -m update',
+                        'git commit --message . docs/HANDOFF.md',
+                        'git commit -m .', 'git commit -m. -- docs/HANDOFF.md',
+                        'git commit --file . -- docs/HANDOFF.md']:
+            self.assertAllowed(command)
+
+    def test_pathspec_files_require_explicit_paths(self):
+        with tempfile.TemporaryDirectory(dir=self.repo) as folder:
+            paths = Path(folder) / 'paths.txt'
+            paths.write_text('.\n')
+            for command in ['add', 'commit']:
+                suffix = ' -m update' if command == 'commit' else ''
+                for option in [f'--pathspec-from-file {paths}',
+                               f'--pathspec-from-file={paths}', '--pathspec-from-file=-']:
+                    with self.subTest(command=command, option=option):
+                        self.assertDenied(f'git {command} {option}{suffix}')
+                self.assertAllowed(f'git {command} docs/HANDOFF.md{suffix}')
+
+    def test_repo_sync_checks_protected_and_force_destinations(self):
+        for options in ['--branch main', '-bmain', '--branch=refs/heads/main',
+                        '--branch master', '--branch feature --force',
+                        '--branch feature --force=true', '']:
+            with self.subTest(options=options):
+                self.assertDenied(f'gh repo sync o/r --source upstream/r {options}')
+        self.assertAllowed('gh repo sync o/r --source upstream/r --branch feature')
+        self.assertAllowed('gh repo sync o/r -b feature --force=false')
+        self.assertAllowed('gh repo view o/r')
+
+    def test_copilot_agent_task_creation_is_denied(self):
+        for name in ['agent-task', 'agent-tasks', 'agent', 'agents']:
+            with self.subTest(name=name):
+                self.assertDenied(f'gh {name} create "Fix the bug"')
+                self.assertDenied(f'gh --repo o/r {name} create --from-file task.md')
+                self.assertAllowed(f'gh {name} list')
+                self.assertAllowed(f'gh {name} view 17')
+
     def test_wildcard_pushes_cannot_include_a_protected_branch(self):
         for pattern in ['refs/heads/*:refs/heads/*', 'refs/*:refs/*', 'ma*:ma*', '*:*']:
             with self.subTest(pattern=pattern):

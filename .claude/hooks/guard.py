@@ -8,7 +8,7 @@ the tool call as JSON on standard input and, for a forbidden call, prints a
 normal permission flow untouched.
 
 It denies:
-- staging everything at once (git add -A, --all, -u, "." and git commit -a),
+- staging everything at once (git add -A, --all, -u, "." and all-tree commits),
   because another agent's or the owner's uncommitted work would go in too;
 - force pushes, and any push that would update main;
 - merging a pull request or turning on auto-merge, by gh, the GitHub API or
@@ -34,9 +34,12 @@ from urllib.parse import urlsplit
 PROTECTED = {'main', 'master'}
 
 STAGE_ALL = ('Stage only your own changes: name each path (git add <paths>). '
-             'git add -A, --all, -u, "." and git commit -a would also take '
+             'git add -A, --all, -u, "." and all-tree git commits would also take '
              "another agent's or the owner's uncommitted work "
              '(AGENTS.md, "Stage only your own changes").')
+PATHSPEC_FILE = ('Name each add or commit path on the command line. The guard does not '
+                 'interpret Git pathspec files, which can select every changed '
+                 'file (AGENTS.md, "Stage only your own changes").')
 FORCE = ('Never force-push or rewrite pushed history; push a new commit instead '
          '(AGENTS.md, "Branches and pull requests").')
 TO_MAIN = ('Never push to main. Push your <agent>/<topic> branch and open a pull '
@@ -47,14 +50,14 @@ MERGE = ('Agents never merge, approve or auto-merge a pull request: the owner '
 COPILOT = ('Each Copilot review or Copilot task spends the owner\'s monthly AI '
            'credits, so only the owner starts one (AGENTS.md, "Build and test", '
            '"Reviews and updates on GitHub").')
-UNKNOWN = ('The guard cannot inspect this push destination or API request body. '
-           'Use an explicit feature-branch refspec or a readable request file '
+UNKNOWN = ('The guard cannot inspect this push/sync destination or API request body. '
+           'Use an explicit feature branch or a readable request file '
            '(AGENTS.md, "Guardrails for agents").')
 
 WRAPPERS = {'command', 'builtin', 'exec', 'nohup', 'time', 'sudo', 'env', 'nice',
             'timeout', 'xargs', 'then', 'do', 'else', '!', '{', '('}
 WRAPPER_VALUE_OPTIONS = {
-    'env': {'-u', '--unset'},
+    'env': {'-u', '--unset', '-C', '--chdir'},
     'nice': {'-n', '--adjustment'},
     'timeout': {'-k', '--kill-after', '-s', '--signal'},
     'sudo': {'-u', '--user', '-g', '--group', '-h', '--host', '-p', '--prompt',
@@ -68,6 +71,9 @@ GIT_VALUE_OPTIONS = {'-C', '-c', '--git-dir', '--work-tree', '--namespace',
 # Short commit options that take a value, so a letter after them in the same
 # cluster is that value, not an option (git commit -mall is a message).
 COMMIT_VALUE_SHORT = set('mcCFtS')
+COMMIT_VALUE_LONG = {'--message', '--file', '--reuse-message', '--reedit-message',
+                     '--template', '--author', '--date', '--cleanup', '--fixup',
+                     '--squash', '--trailer', '--pathspec-from-file'}
 # GitHub API paths and GraphQL mutations that merge, auto-merge or approve.
 API_MERGE = re.compile(
     r'/pulls/[^/\s]+/merge\b|auto_merge|automerge|mergePullRequest|'
@@ -84,10 +90,10 @@ def deny(reason):
     sys.exit(0)
 
 
-def segments(command):
+def segments(command, preserve_quotes=False):
     """Split into (words, preceding separator), keeping && and || for cd.
     Words inside $(...), `...` and sh -c '...' are split in turn."""
-    lexer = shlex.shlex(command.replace('\\\n', ' '), posix=True,
+    lexer = shlex.shlex(command.replace('\\\n', ' '), posix=not preserve_quotes,
                         punctuation_chars=';&|()\n')
     lexer.whitespace = ' \t\r'
     lexer.whitespace_split = True
@@ -107,25 +113,44 @@ def segments(command):
 
 
 def nested(words):
-    """Commands hidden inside words: $(...), backticks, and sh -c '...'."""
+    """Command substitutions evaluated by the surrounding shell."""
     found = []
     for word in words:
         found += re.findall(r'\$\(([^()]*(?:\([^()]*\)[^()]*)*)\)', word)
-        found += re.findall(r'`([^`]*)`', word)
-    if words and words[0] == 'eval':
-        found.append(' '.join(words[1:]))
-    elif words and os.path.basename(words[0]) in SHELLS:
+    # Unquoted backtick commands span several whitespace-separated words.
+    found += re.findall(r'`([^`]*)`', ' '.join(words))
+    return found
+
+
+def shell_script_index(words):
+    if words and os.path.basename(words[0]) in SHELLS:
         # sh -c 'script', also as a cluster such as bash -lc 'script'.
         for index, word in enumerate(words[1:-1], 1):
             if re.fullmatch(r'-[a-zA-Z]*c[a-zA-Z]*', word):
-                found.append(words[index + 1])
-                break
-    return found
+                return index + 1
+    return None
+
+
+def script_quote(raw_words, words, index):
+    """Recognize a wholly quoted script; mixed shell quoting stays unknown."""
+    if len(raw_words) != len(words):
+        return None
+    raw = raw_words[index]
+    if raw.startswith('\"') and re.search(r'\\[$`]', raw):
+        return None  # escaped substitutions need conservative child checks too
+    if len(raw) >= 2 and raw[0] == raw[-1] and raw[0] in ('\"', "'"):
+        try:
+            if shlex.split(raw) == [words[index]]:
+                return raw[0]
+        except ValueError:
+            pass
+    return None
 
 
 def strip_wrappers(words, inherited=None):
     """Drop VAR=value assignments and wrappers such as env, sudo, command."""
     environment = dict(inherited or {})
+    directories = []
     while words:
         first = words[0]
         if re.match(r'^[A-Za-z_][A-Za-z0-9_]*=', first):
@@ -136,6 +161,7 @@ def strip_wrappers(words, inherited=None):
         elif os.path.basename(first) in WRAPPERS:
             wrapper = os.path.basename(first)
             words = words[1:]
+            directory = None
             while words and words[0].startswith('-'):
                 option = words[0]
                 if option == '--':
@@ -151,14 +177,23 @@ def strip_wrappers(words, inherited=None):
                         environment[option.partition('=')[2]] = None
                     elif option.startswith('-u'):
                         environment[option[2:]] = None
+                    elif option in ('-C', '--chdir') and len(words) > 1:
+                        directory = words[1]
+                    elif option.startswith('--chdir='):
+                        directory = option.partition('=')[2]
+                    elif option.startswith('-C'):
+                        directory = option[2:]
                 count = 2 if option in WRAPPER_VALUE_OPTIONS.get(wrapper, set()) else 1
                 words = words[count:]
+            # One env uses its last -C; nested env commands change again.
+            if directory is not None:
+                directories.append(directory)
             # timeout's mandatory duration can be fractional and carry a unit.
             if wrapper == 'timeout' and words and re.fullmatch(r'(?:\d+(?:\.\d*)?|\.\d+)[smhd]?', words[0]):
                 words = words[1:]
         else:
             break
-    return words, environment
+    return words, environment, directories
 
 
 def git_parts(words, cwd, environment):
@@ -199,31 +234,56 @@ def branch_name(ref):
     return ref
 
 
+def all_tree_pathspec(path):
+    return path in ('.', './', ':/', ':', '*', ':/*', './*', ':(top)',
+                    ':(top)*', ':(glob)**', ':(top,glob)**')
+
+
 def check_add(args):
     for arg in args:
         if arg == '--':
             break
+        if arg == '--pathspec-from-file' or arg.startswith('--pathspec-from-file='):
+            deny(PATHSPEC_FILE)
         if arg in ('-A', '--all', '-u', '--update', '--no-ignore-removal'):
             deny(STAGE_ALL)
         if re.fullmatch(r'-[a-zA-Z]+', arg) and set(arg[1:]) & set('Au'):
             deny(STAGE_ALL)
     paths = [a for a in args if not a.startswith('-')]
-    if any(p in ('.', './', ':/', ':', '*', ':/*') for p in paths):
+    if any(all_tree_pathspec(p) for p in paths):
         deny(STAGE_ALL)
 
 
 def check_commit(args):
-    for arg in args:
+    paths = []
+    index = 0
+    while index < len(args):
+        arg = args[index]
         if arg == '--':
+            paths.extend(args[index + 1:])
             break
         if arg in ('--all', '-a'):
             deny(STAGE_ALL)
-        if re.fullmatch(r'-[a-zA-Z]+', arg):
-            for letter in arg[1:]:
+        if arg == '--pathspec-from-file' or arg.startswith('--pathspec-from-file='):
+            deny(PATHSPEC_FILE)
+        if arg in COMMIT_VALUE_LONG:
+            index += 2
+            continue
+        if arg.startswith('-') and not arg.startswith('--'):
+            for offset, letter in enumerate(arg[1:], 1):
                 if letter == 'a':
                     deny(STAGE_ALL)
                 if letter in COMMIT_VALUE_SHORT:
+                    # -S's optional key must be attached; other values may
+                    # follow separately. Message text is never a pathspec.
+                    if offset == len(arg) - 1 and letter != 'S':
+                        index += 1
                     break
+        elif not arg.startswith('-'):
+            paths.append(arg)
+        index += 1
+    if any(all_tree_pathspec(p) for p in paths):
+        deny(STAGE_ALL)
 
 
 def check_push(args, context):
@@ -373,6 +433,19 @@ def check_gh(words, cwd):
             continue  # the attached forms, --repo=OWNER/REPO and -ROWNER/REPO
         else:
             plain.append(word)
+    if len(plain) >= 2 and plain[0] in ('agent-task', 'agent-tasks', 'agent', 'agents') \
+            and plain[1] == 'create':
+        deny(COPILOT)
+    if plain[:2] == ['repo', 'sync']:
+        for word in plain[2:]:
+            option, equal, value = word.partition('=')
+            if option == '--force' and (not equal or value.lower() not in ('false', 'f', '0')):
+                deny(FORCE)
+        branches = list(option_values(plain[2:], {'--branch'}, {'-b'}))
+        if not branches:
+            deny(UNKNOWN)  # the remote source's default branch is not known
+        if any(branch_name(branch) in PROTECTED for branch in branches):
+            deny(TO_MAIN)
     if plain[:2] == ['pr', 'merge']:
         deny(MERGE)
     if plain[:2] == ['pr', 'review']:
@@ -434,10 +507,26 @@ def api_field_values(text, key):
             yield payload[key]
 
 
+def has_api_endpoint(text, pattern):
+    """Match endpoint paths without URL queries or fragments."""
+    for word in text.split():
+        if '://' in word or github_api_host(word):
+            url, host = parsed_url(word)
+            if host != 'api.github.com':
+                continue
+        elif word.startswith(('repos/', '/repos/')):
+            url = urlsplit(word)
+        else:
+            continue
+        if re.fullmatch(pattern, url.path.lstrip('/')):
+            return True
+    return False
+
+
 def protected_branch_merge(text):
     """REST branch merges may update a feature branch, but never main."""
-    endpoint = r'(?:^|[\s/])repos/[^/\s]+/[^/\s]+/merges(?=\s|$)'
-    return bool(re.search(endpoint, text)) and any(
+    endpoint = r'repos/[^/\s]+/[^/\s]+/merges'
+    return has_api_endpoint(text, endpoint) and any(
         branch_name(str(base)) in PROTECTED for base in api_field_values(text, 'base'))
 
 
@@ -447,8 +536,8 @@ def copilot_request(text):
         return True
     # Issue create/update endpoints also accept assignees. Inspect that field
     # specifically: a body mentioning Copilot is not an assignment.
-    endpoint = r'(?:^|[\s/])repos/[^/\s]+/[^/\s]+/issues(?:/\d+)?(?=\s|$)'
-    return bool(re.search(endpoint, text)) and any(
+    endpoint = r'repos/[^/\s]+/[^/\s]+/issues(?:/\d+)?'
+    return has_api_endpoint(text, endpoint) and any(
         'copilot' in str(value).lower() for value in api_field_values(text, 'assignees'))
 
 
@@ -457,27 +546,53 @@ def check_command(command, cwd, depth=0, environment=None):
         return
     try:
         parts = list(segments(command))
+        raw_parts = list(segments(command, preserve_quotes=True))
     except ValueError:
         # Unbalanced quotes: the shell would refuse it too. Look at the words.
         parts = [(command.split(), ';')]
+        raw_parts = []
     # The shell can continue after a failed cd. Keep both outcomes until a
     # connector selects success (&&) or failure (||), instead of assuming cd
     # succeeded because its target looked like a directory during this check.
     states = {(cwd, True)}
-    for words, separator in parts:
+    for part_index, (words, separator) in enumerate(parts):
         runnable = {(where, success) for where, success in states
                     if separator not in ('&&', '||')
                     or (separator == '&&' and success)
                     or (separator == '||' and not success)}
         next_states = states - runnable
-        unwrapped, command_environment = strip_wrappers(words, environment)
+        unwrapped, command_environment, directories = strip_wrappers(words, environment)
         if not unwrapped:
             continue
         program = os.path.basename(unwrapped[0])
+        script_index = shell_script_index(unwrapped)
+        outer_words = words
+        script = unwrapped[script_index] if script_index is not None else None
+        if script_index is not None:
+            absolute_index = len(words) - len(unwrapped) + script_index
+            raw_words = raw_parts[part_index][0] if len(raw_parts) == len(parts) else []
+            quote = script_quote(raw_words, words, absolute_index)
+            if quote == "'":
+                # Literal scripts are evaluated only by the invoked shell.
+                outer_words = words[:absolute_index] + words[absolute_index + 1:]
+            elif quote == '\"':
+                # These substitutions run before env; inspect the remaining
+                # child commands without evaluating those substitutions twice.
+                for inner in nested([script]):
+                    script = script.replace('$(' + inner + ')', '').replace('`' + inner + '`', '')
+            # Unknown/mixed quoting is checked in both contexts conservatively.
         for where in {path for path, _ in runnable}:
-            # Look inside both forms: env bash -c hides the shell behind env.
-            for inner in dict.fromkeys(nested(words) + nested(unwrapped)):
-                check_command(inner, where, depth + 1, command_environment)
+            command_cwd = where
+            for directory in directories:
+                command_cwd = os.path.join(command_cwd, os.path.expanduser(directory))
+            for inner in dict.fromkeys(nested(outer_words)):
+                check_command(inner, where, depth + 1, environment)
+            if script_index is not None:
+                check_command(script, command_cwd, depth + 1,
+                              command_environment)
+            elif program == 'eval':
+                check_command(' '.join(unwrapped[1:]), command_cwd, depth + 1,
+                              command_environment)
             if program == 'cd' and len(unwrapped) > 1:
                 target = os.path.join(where, os.path.expanduser(unwrapped[1]))
                 # Earlier shell commands may create the target, so inspect
@@ -486,7 +601,7 @@ def check_command(command, cwd, depth=0, environment=None):
                 next_states.add((where, False))
                 continue
             if program == 'git':
-                subcommand, args, context = git_parts(unwrapped, where, command_environment)
+                subcommand, args, context = git_parts(unwrapped, command_cwd, command_environment)
                 if subcommand == 'add':
                     check_add(args)
                 elif subcommand == 'commit':
@@ -494,10 +609,10 @@ def check_command(command, cwd, depth=0, environment=None):
                 elif subcommand == 'push':
                     check_push(args, context)
             elif program == 'gh':
-                check_gh(unwrapped, where)
+                check_gh(unwrapped, command_cwd)
             elif program in ('curl', 'wget', 'http', 'https'):
                 if any(github_api_host(word) for word in unwrapped[1:]):
-                    arguments = api_arguments(unwrapped, where, program)
+                    arguments = api_arguments(unwrapped, command_cwd, program)
                     if API_MERGE.search(arguments) or protected_branch_merge(arguments):
                         deny(MERGE)
                     if copilot_request(arguments):

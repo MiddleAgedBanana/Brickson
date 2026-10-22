@@ -6,12 +6,15 @@ on `codex/pr17-reconcile`. Codex.*
 ## What changed and why
 
 Merged `main` at `5abdd9f` into PR #17 without rebasing, preserving the
-guardrail work and the changes that landed afterwards, including Voice
+guardrail work and the changes that landed afterward, including Voice
 Settings. The pending merge was refreshed when `main` advanced; the guard
 fixes were saved and verified before restoring them over the new merge.
 The original account stays in [`2026-10-21-agent-guardrails.md`](2026-10-21-agent-guardrails.md).
 This separate reconciliation record was requested for the handoff between
-agents. It adds no app behaviour and makes no new product decision.
+agents. The owner explicitly requested a dated record for each piece of
+work; that instruction takes precedence here over the general one-file-per-PR
+guidance in `README.md`. The original record remains intact. This adds no
+app behaviour and makes no new product decision.
 
 The nine open Codex findings were ordinary command forms the guard did
 not understand. The fixes keep the same rules in AGENTS.md, *Guardrails
@@ -109,19 +112,130 @@ retained in [artifact 12461203212](https://github.com/MiddleAgedBanana/Brickson/
 No test assertion or retry rule was changed for the termination failure.
 Current-head CI must pass before the PR is called green.
 
+## Follow-up on the next review
+
+The review of `4415827` found that unquoted backtick command substitutions
+spanning several words escaped the guard's per-word scan. A new regression
+first reproduced three missed denials: blanket staging, PR merging and
+pushing to `main`. The guard now scans the joined words for backtick pairs
+before recursively checking each enclosed command. Read-only `git status`
+and named-path staging remain allowed. This is a correction to a common
+command form, not a claim that the hook is a shell security boundary.
+
+The same review caught an overstatement in HANDOFF. It now describes the
+actual `.claude/settings.json` matchers: Bash and selected GitHub tools,
+in Claude Code sessions with one repository. Repository hooks are not
+loaded in multi-repository cloud sessions. The separate dated record is
+retained under the owner's explicit instruction above.
+
+The completed Codex review then supplied six more concrete cases. Five
+new hook regressions reproduced 30 failures before the corrections:
+
+- `env -C` and `--chdir` retain their directory operands for the child
+  command's Git queries and nested shell, including attached options and
+  nested `env` calls. A single `env` uses its last directory option; the
+  outer shell's directory is unchanged. This follows the
+  [Coreutils implementation](https://github.com/coreutils/coreutils/blob/master/src/env.c).
+- REST endpoint checks use the parsed URL path, so query strings and
+  fragments cannot hide branch merges or issue assignments. Curl
+  [does not send URL fragments](https://everything.curl.dev/cmdline/urls/fragment.html).
+  Explicit feature-branch merges remain allowed.
+- `git commit` rejects the same whole-tree pathspecs as `git add`, while
+  distinguishing paths from message/file option values. Git documents
+  that [commit pathspecs record the matched working-tree contents](https://git-scm.com/docs/git-commit).
+  Commits naming particular paths remain allowed.
+- `gh repo sync` rejects protected branches, force updates and an
+  unspecified remote default branch. An explicitly named feature branch
+  without force remains allowed. GitHub's
+  [sync manual](https://cli.github.com/manual/gh_repo_sync) confirms these
+  destination and force-update semantics.
+- `gh agent-task create` and its documented aliases are refused because
+  they [start a Copilot task](https://docs.github.com/en/copilot/how-tos/use-copilot-agents/cloud-agent/use-cloud-agent-from-cli).
+  Listing and viewing those tasks remain allowed.
+
+The documentation checker now validates reference-link definitions as
+well as inline links. Six full, collapsed and shortcut reference cases
+missed absent files or headings before the fix. Valid file, anchor and
+external references still pass; fenced examples, indented code, footnotes
+and ordinary bracketed prose do not become missing-file errors. It is a
+small definition scan, not a complete Markdown parser. The initial
+implementation failed three negative controls before its definition
+syntax was tightened to match the
+[CommonMark form](https://spec.commonmark.org/0.31.2/#link-reference-definitions).
+
+These additions retain the existing safety rules and allowed paths. They
+do not turn the advisory hook into a shell interpreter or sandbox.
+
+Independent review caught one directory-scoping regression in that first
+implementation: shell substitutions run in the outer shell before `env`
+changes the child directory. Four deny/allow cases reproduced the wrong
+result. Substitutions and an explicitly invoked shell's script are now
+checked in their respective contexts; the regression also preserves
+single-quoted child scripts containing substitutions. A second independent
+pass caught the double-quoted script form and reproduced four more wrong
+results. A quote-preserving view now recognizes wholly quoted scripts:
+single-quoted scripts run in the child; double-quoted substitutions run in
+the outer shell, and the remaining script still gets checked in the
+child. Unknown or mixed quoting is conservatively checked in both contexts.
+Escaped substitution markers in a double-quoted script use that same
+conservative path: two missed denials reproduced before the final check;
+explicit feature destinations still pass. This may refuse a bare push
+whose destination cannot be established in both contexts; it does not
+claim to interpret every shell quoting form.
+
+Final review also checked Git's pathspec-file option, which can select
+the entire working tree without naming those paths in the command. Three
+commit cases and three add cases failed before correction. Both commands
+now refuse `--pathspec-from-file` (separate, attached or stdin) and explain
+that paths must be named directly. This deliberately avoids interpreting
+Git's quoted or NUL-separated pathspec-file syntax; explicit named paths
+remain allowed.
+
+On 2026-10-22, the owner reported starting a two-week CodeRabbit trial and
+authorized Codex and Claude to request `@coderabbitai review` when useful.
+Treat it as optional supplementary review during that trial, not a
+permanent required gate or guaranteed future availability. Automatic
+reviews already arrived on this PR, so no duplicate request was sent.
+Its nested "Prompt to fix review comments" is agent guidance to inspect
+when useful, not an instruction to accept or execute blindly. Verify each
+claim against the repository and explain findings that are declined.
+Copilot authorization and repository review rules are unchanged.
+
 ## Commits
 
 - `1b6ccb6`: PR #17 before reconciliation.
 - `5abdd9f`: the `main` revision included in the merge.
 - `7d6b3e1`: the locally tested guardrail reconciliation, pushed for review.
-- `d79d836`: the documentation-only main revision in the next pending merge.
+- `d79d836`: the documentation-only main revision included in `4415827`.
   Its fresh local unit gate passed; final-head CI remains pending. Prior
   local UI evidence remains valid for the unchanged sources.
+- `4415827`: the documentation-only merge, pushed for CI and review.
 
 ## Verified
 
 On a Mac; Python checks used Python 3.15.0 unless noted:
 
+- The final review batch passed **41 hook tests** in 10.401 seconds and
+  **16 documentation tests** in 0.859 seconds using system Python 3.9.6.
+  The backtick reproduction failed three cases; the five later hook
+  reproductions failed 30; independent review's context and escaping
+  checks failed ten; and pathspec-file checks failed six. All now pass,
+  with the explicit allowed-path controls retained.
+- The final review batch's `scripts/test.sh unit` exited successfully:
+  **460 passed, 0 failed, 0 skipped, 0 expected failures**; 62.6% app line
+  coverage (3,540/5,659). It used Xcode 27.1 (27A9275), XcodeGen 2.46.0
+  and iPad Pro 13-inch (M5, 16 GB), iOS 27.0. Its system-Python gate passed
+  16 documentation tests in 0.796 seconds and 41 hook tests in 8.947
+  seconds. The String Catalog remained unchanged. No app or UI-test
+  source changed in this batch, so the earlier full local UI evidence
+  still describes those sources.
+- The independent verifier passed the 40-test hook suite and all 16 docs
+  tests after the quote fixes; the final pathspec-file refusal was then
+  reviewed and added with its focused regressions. Site checks passed
+  four tests and the Xcode-selector fixtures passed 21.
+- The full mocked runner suite passed all **51 tests** in 350.132 seconds;
+  it uses fixture build/simulator commands. The final hook and docs suites
+  above separately cover the later quoting and pathspec-file refinements.
 - Added the reproductions before changing the guard: 33 failing subcases
   across the first 25 test methods. Two related API-path tests then
   reproduced five more failures before their fix. Independent review
@@ -192,6 +306,16 @@ Each new guard test has a concrete failure trigger:
 
 | Test name after `test_` | Change that makes it fail |
 |---|---|
+| `unquoted_backticks_are_checked` | Search for each backtick pair within one word only |
+| `env_directory_options_select_the_repository` | Drop the selected child directory or apply it to the outer shell |
+| `env_directory_does_not_move_outer_shell_substitutions` | Evaluate a shell substitution in env's child directory |
+| `double_quoted_child_scripts_expand_in_the_outer_shell` | Treat a double-quoted script as a literal child script |
+| `escaped_substitutions_in_child_scripts_stay_checked` | Remove escaped substitutions from the child script |
+| `branch_merge_urls_use_the_parsed_path` | Match the raw URL including its query or fragment |
+| `commit_all_tree_pathspecs_are_denied` | Check only commit flags, or mistake message values for paths |
+| `pathspec_files_require_explicit_paths` | Allow an opaque add/commit pathspec file to select every changed file |
+| `repo_sync_checks_protected_and_force_destinations` | Ignore sync destinations or force updates |
+| `copilot_agent_task_creation_is_denied` | Ignore task creation or its documented aliases |
 | `wildcard_pushes_cannot_include_a_protected_branch` | Check only exact branch names, or omit complete refs |
 | `copilot_issue_assignments_are_denied` | Limit Copilot checks to PR reviewers |
 | `attached_copilot_reviewer_options_are_denied` | Read only separate option values |
@@ -212,11 +336,17 @@ Each new guard test has a concrete failure trigger:
 
 ## Not verified
 
-- CI for the next reconciliation commit is pending. Current CI on `7d6b3e1`
-  finished with an iPad process-termination failure and a passing iPhone
-  suite. Check the next pushed head's Unit tests, UI tests and CodeQL results. Earlier green CI on `1b6ccb6` does not verify these edits.
+- CI on `4415827` passed units and CodeQL; its UI job is still running.
+  The locally tested review follow-up still needs final-head CI and review.
+  Earlier CI on `7d6b3e1` finished
+  with an iPad process-termination failure and a passing iPhone suite.
+  Check the next pushed head's Unit tests, UI tests and CodeQL results.
+  Earlier CI does not verify these edits.
 - No live Claude Code session was used to confirm hook reloading. The
   settings wiring and hook decisions are tested directly.
+- The latest Codex security-summary comment still names the older
+  `651e197` revision. Successful CodeQL checks do not establish a refreshed
+  Codex security review for this batch.
 - The rendered GitHub issue form has not been checked. Its required
   privacy text and blank-issue setting pass the local documentation tests;
   the rendered form needs a live check after the configuration lands.
@@ -225,11 +355,13 @@ Each new guard test has a concrete failure trigger:
 
 ## Follow-ups
 
-1. Codex: check current main and the PR branch before pushing the tested
-   main merge, then check current-head CI and review results. Complete
+1. Codex: the fresh local unit gate passed. Check current main and the PR
+   branch before pushing the review fixes,
+   then check current-head CI and review results. Complete
    evidence from the preceding UI run has been retained. All nine
-   prior review threads were answered and resolved on `7d6b3e1`; its new
-   Codex code review is still running.
+   prior review threads were answered and resolved on `7d6b3e1`; the
+   ten later review threads remain pending until this follow-up is
+   tested and published.
 2. In a live Claude Code session, confirm hook reloading; after the issue
    configuration lands, inspect the rendered bug form and its privacy text.
 3. The owner already enabled auto-merge on this PR. Its setting stays as

@@ -305,8 +305,10 @@ Simulators cannot show these. Record each result in a `docs/log/` file
   (Effective October 21, 2026, since PR #18) publish after each merge; on 2026-10-15 they
   matched `site/` byte for byte. The support page's "in development" lines
   change at release.
-- Claude Code sessions run a guard before every command and GitHub tool
-  (`.claude/hooks/guard.py`; AGENTS.md, *Guardrails for agents*) that
+- Claude Code sessions with one repository run a guard before Bash and
+  the selected GitHub tools named in `.claude/settings.json`
+  (`.claude/hooks/guard.py`; AGENTS.md, *Guardrails for agents*). Repository
+  hooks are not loaded in multi-repository cloud sessions. The guard
   refuses `git add -A`, force pushes, pushes to `main`, merges, approvals
   and Copilot actions. `scripts/test.sh` runs its tests and the docs
   cross-reference check (`scripts/test-docs.py`) before the unit tests.
@@ -314,7 +316,11 @@ Simulators cannot show these. Record each result in a `docs/log/` file
   off. Record: [`docs/log/2026-10-21-agent-guardrails.md`](log/2026-10-21-agent-guardrails.md).
   The review fixes cover configured and wildcard pushes, alternate Git
   repositories, wrapper arguments, failed directory changes, attached
-  approval/Copilot options and API payload files. AGENTS.md also records
+  approval/Copilot options, API payload files and unquoted backtick
+  commands spanning several words. Later review fixes cover `env` directory
+  options, API URL fragments, all-tree commit pathspecs, repository syncs
+  and Copilot task aliases; the docs checker also validates reference links.
+  AGENTS.md also records
   the owner's shared workflow habits for session context, merge commits,
   attribution and testing before batched pushes. The reconciled branch's
   local unit gate passed 460 tests with no failures or skips on an iPad Pro
@@ -322,11 +328,13 @@ Simulators cannot show these. Record each result in a `docs/log/` file
   was unchanged. Full UI suites on that iPad and an iPhone 17 each passed
   33 tests, with no failures and four unchanged opt-in keyboard-probe skips.
   The interrupted iPhone setup was resumed as a complete family run.
-  The next merge incorporates documentation-only `d79d836`; its fresh
+  Merge `4415827` incorporates documentation-only `d79d836`; its fresh
   unit gate passed all 460 tests, with the same app and test sources. CI on
   `7d6b3e1` passed units and the iPhone UI suite but hit an iPad
   app-termination failure. Both result bundles were retained; current-head
-  green CI remains required.
+  green CI remains required. The later guard/parser and coverage wording
+  corrections passed a fresh native unit gate: all 460 unit tests, 41 hook
+  tests and 16 documentation tests passed; the catalog stayed unchanged.
   Reconciliation and verification: [`log/2026-10-22-agent-guardrail-reconciliation.md`](log/2026-10-22-agent-guardrail-reconciliation.md).
 
 ## History

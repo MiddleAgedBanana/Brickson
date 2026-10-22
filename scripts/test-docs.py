@@ -13,6 +13,8 @@ Two kinds of reference are checked:
   section somewhere in the repository.
 - A relative Markdown link, such as [handoff](docs/HANDOFF.md#verification),
   must point to a file that exists, and its #anchor to a heading in it.
+  Reference-link definitions are checked too, covering full, collapsed and
+  shortcut references without requiring their labels to be repeated inline.
 
 Renaming a section or moving a file without updating what cites it fails
 here, which is how reviewers were twice sent to sections that did not exist.
@@ -51,6 +53,10 @@ CITATION = re.compile(
     r'|(?<![*\w])\*(?P<italic>[^*\n]{2,120})\*(?![*\w]))')  # or *Title*
 BARE_ITALIC = re.compile(r'(?<![*\w`])\*(?P<title>[A-Z][^*\n]{1,120}?)\*(?![*\w])')
 LINK = re.compile(r'(?<!!)\[[^\]\n]*\]\((?P<target>[^)\s]+)(?:\s+(?:"[^"]*"|\'[^\']*\'))?\s*\)')
+REFERENCE_LINK = re.compile(
+    r'^ {0,3}\[(?!\^)[^\]\n]+\]:[ \t]*(?:\n[ \t]*)?'
+    r'(?P<target><[^>\n]*>|[^\s<>]+)'
+    r'(?:[ \t]+(?:"[^"\n]*"|\'[^\'\n]*\'|\([^\)\n]*\)))?[ \t]*$', re.M)
 HEADING = re.compile(r'^#{1,6}\s+(?P<title>.+?)\s*#*\s*$', re.M)
 LEAD_IN = re.compile(r'^\s*(?:[-*]\s+|\d+\.\s+)?\*\*(?P<title>[^*\n]+?)\*\*', re.M)
 FENCE = re.compile(r'^\s*```.*?^\s*```', re.M | re.S)
@@ -149,7 +155,11 @@ def broken_links(path, text):
     """Each relative Markdown link whose file or heading does not exist."""
     relative = path.relative_to(ROOT).as_posix()
     problems = []
-    for match in LINK.finditer(FENCE.sub('', text)):
+    text = FENCE.sub('', text)
+    # Check destinations at their definitions once, regardless of which
+    # reference-link form uses them (or how many times the label is reused).
+    links = list(LINK.finditer(text)) + list(REFERENCE_LINK.finditer(text))
+    for match in links:
         link = match['target'].strip('<>')
         if re.match(r'[a-z][a-z0-9+.-]*:', link):
             continue  # https:, mailto: and other absolute links
@@ -217,6 +227,50 @@ class CheckerTests(unittest.TestCase):
     def test_a_github_anchor_drops_punctuation(self):
         self.assertEqual(slug('Reviews, updates and GitHub settings'),
                          'reviews-updates-and-github-settings')
+
+    def test_reference_links_report_missing_files_and_headings(self):
+        # Removing definition scanning must break every reference-link form.
+        readme = ROOT / 'README.md'
+        for usage in ['[guide][ref]', '[ref][]', '[ref]']:
+            for target, problem in [
+                    ('docs/NO-SUCH-FILE.md', 'points to a missing file'),
+                    ('docs/DECISIONS.md#no-such-heading',
+                     'names a heading that does not exist')]:
+                with self.subTest(usage=usage, target=target):
+                    text = f'{usage}\n\n[ref]: {target} "Guide"\n'
+                    self.assertEqual(broken_links(readme, text),
+                                     [f'README.md: link {target} {problem}'])
+
+    def test_reference_links_accept_existing_files_anchors_and_external_links(self):
+        readme = ROOT / 'README.md'
+        for usage in ['[guide][ref]', '[ref][]', '[ref]']:
+            for target in ['docs/DECISIONS.md#orientations',
+                           '<docs/DECISIONS.md#orientations>',
+                           'https://example.com/a.md', 'mailto:test@example.com']:
+                with self.subTest(usage=usage, target=target):
+                    text = f'{usage}\n\n[ref]: {target} "Guide"\n'
+                    self.assertEqual(broken_links(readme, text), [])
+        self.assertEqual(broken_links(self.fixture,
+                                      '[here][]\n\n[here]: #orientations'), [])
+
+    def test_fenced_reference_definitions_are_ignored(self):
+        readme = ROOT / 'README.md'
+        text = '```markdown\n[ref][]\n\n[ref]: docs/NO-SUCH-FILE.md\n```'
+        self.assertEqual(broken_links(readme, text), [])
+
+    def test_reference_destinations_can_follow_on_the_next_line(self):
+        readme = ROOT / 'README.md'
+        text = '[ref][]\n\n   [ref]:\n  <docs/NO-SUCH-FILE.md>\n'
+        self.assertEqual(broken_links(readme, text),
+                         ['README.md: link docs/NO-SUCH-FILE.md points to a missing file'])
+
+    def test_non_link_bracketed_text_is_not_a_reference_definition(self):
+        readme = ROOT / 'README.md'
+        for text in ['[example]: ordinary prose, not a link definition',
+                     '[ref]: docs/NO-SUCH-FILE.md "title" trailing text',
+                     '    [ref]: docs/NO-SUCH-FILE.md', '[^note]: explanation']:
+            with self.subTest(text=text):
+                self.assertEqual(broken_links(readme, text), [])
 
 
 class DocumentTests(unittest.TestCase):
