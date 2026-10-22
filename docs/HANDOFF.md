@@ -20,7 +20,11 @@ widths, two lines with Again beside at regular widths, and longer messages
 scroll at full size. A phrase the system cuts off (a call, Siri, lost
 headphones) shows "Stopped" with Again to repeat it. Emergency opens the
 emergency phrases and says nothing. The start-only Get Attention alarm is
-built and waiting for its place on Home. Audio failures and very low volume show as a short passive
+built and waiting for its place on Home. Settings, for the family, is
+built (a full-screen cover with Back to Talking, Family Setup, Voice
+Settings, guides, the privacy policy and step-by-step setup) and waits for
+Home to place its Settings button; until then only UI tests open it, with
+`--screen=settings`. Audio failures and very low volume show as a short passive
 warning in space always kept for it, and VoiceOver announces them. If the
 library cannot be saved, the app speaks from a filled in-memory library
 and says changes will not be kept. The screen never locks. Ported code:
@@ -88,15 +92,27 @@ release in docs/ROADMAP.md when no thread has it yet.
   of Home"; [`log/2026-10-21-typing-foundation.md`](log/2026-10-21-typing-foundation.md),
   *For the next typing thread*). *(a new typing thread, after Phone layout
   and word fitting)*
-- No editing or backup *(Library editing and backup format)*; no Settings
-  or voice choice *(Settings and first run)*.
+- No editing or backup *(Library editing and backup format)*.
+- Home has no Settings button and no first-run hint yet: Home places
+  `SettingsButton` with `.settingsCover(isPresented:)` and shows
+  `FirstRunHint.text` while `showsSetupHint` is true. *(Phone layout and
+  word fitting)*
+- Settings' Get Attention place is empty: starting the alarm there before
+  Home has Stop would leave it with no way to stop. It goes in with Get
+  Attention and Stop on Home. *(the thread that puts them on Home)*
+- Chains of activations through Settings' screens are not scored. One is
+  known: a held look can follow Family Setup's first row into Set Up Step
+  by Step and save Touch, its first answer, which is then nearest. Answers
+  change no size yet; scoring and a fix come before they do
+  ([`log/2026-10-21-settings-and-first-run.md`](log/2026-10-21-settings-and-first-run.md),
+  follow-up 10). *(Dwell-safety scoring)*
 - A library the app cannot read is replaced by the starter phrases with a
   message about saving (code audit M2), and an emptied library is refilled
   with the starter set. *(Library editing and backup format)*
 - English only. `scripts/test.sh unit` brings the String Catalog up to
   date (xcodebuild alone does not), and CI fails when the committed one
-  is stale. The speech-rate names in `SpeechRateSteps` and the voice
-  sample sentence in `SpeechService` are not in it yet. *(Test seams and CI evidence)*
+  is stale. The voice sample sentence in `SpeechService` is not in it
+  yet (Voice Settings no longer shows `SpeechRateSteps`' rate names). *(Test seams and CI evidence)*
 - No off-main test reaches the real KVO closure (the volume handler is
   called directly). The synthesizer and tone-player delegates, the
   Personal Voice answer (the closure handed to the system, built by
@@ -111,8 +127,13 @@ release in docs/ROADMAP.md when no thread has it yet.
   (`fatalError` in `PhraseLibraryStore.openForApp`). *(owner)*
 - `cloudKitDatabase: .none` and the absence of an iCloud capability are
   privacy-policy promises no test pins. *(Test seams and CI evidence)*
-- No Privacy row in the app, which App Review requires, and Personal Voice
-  permission is asked at first launch without explanation. *(Settings and first run)*
+- Personal Voice permission is asked at first launch without explanation;
+  Voice Settings explains it afterwards but has no Ask button yet. The
+  button calls `SpeechService.requestPersonalVoiceAuthorization()` and
+  sets `canAsk` in `PersonalVoiceSection`; the policy changes to
+  `.fromSettings` only after device check D1 (docs/DECISIONS.md,
+  "Personal Voice permission is asked at launch, for now"). *(the next
+  Settings thread)*
 - The privacy policy describes features not built yet; each is built or its
   sentence deleted before release (docs/APP-STORE.md, section 3, lists
   each sentence). *(App Store readiness and ASO)*
@@ -178,6 +199,9 @@ Simulators cannot show these. Record each result in a `docs/log/` file
 | D4: Personal Voice access turned off in the Settings app while Brickson waits in the background; on return a phrase speaks in another voice, and turning access back on brings the Personal Voice back | "A Personal Voice is used only while it is allowed" |
 | D5: with two Personal Voices, the order the system lists them in, and whether each keeps its identifier across a relaunch, a restore and Share Across Devices | "Automatic keeps the person's Personal Voice" |
 | Personal Voice appears and is chosen once permission is given, and keeps speaking after the screen locks | Voice choice and when to ask |
+| Opening Settings by a stray dwell, and leaving it by Back to Talking, lands on nothing that speaks or alarms; the idle reset under real dwell | Settings' safety bar and root (docs/DECISIONS.md, "Settings is a cover with a fixed safety bar") |
+| Guided Access and Assistive Access steps match the device, and Brickson works inside both | Family Setup's Keep Brickson Open guide |
+| Open Personal Voice Settings and Open Dwell Control Settings open the right page | `AccessibilitySettings.openSettings(for:)` |
 | Each input method reaches every control: touch, Voice Control, Switch Control, Full Keyboard Access, AssistiveTouch Dwell, head tracking, Eye Tracking | That standard buttons are the whole integration (invariant 1) |
 | A Switch Control double activation does not make a phrase stutter | Repeat absorption (invariant 10) |
 | How far Snap to Item jumps, and whether the pointer stays on an activated control or follows the gaze | Spacing and placement for dwell profiles |
