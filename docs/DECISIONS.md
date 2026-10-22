@@ -50,7 +50,7 @@ holds.
 | Typing as a state of Home under a band Apple's keyboard never covers, Apple's keyboard in 1.0, Writing Tools off, third-party keyboards refused, Return speaks, the typed message | "Typing is a state of Home", "Typing uses Apple's keyboard", "Writing Tools off while typing", "Third-party keyboards refused in 1.0", "Return speaks", "The typed message" (Typing foundation; its pull request from `claude/project-thread-dsbkry`) |
 | Explicit saves, an Emergency category that is always there, fixed starter identities, editing, import, replace, the backup format, an unreadable library reported and never replaced | "Every save is explicit", "Starter phrases", "The emergency category is always there", "Editing the library", "Importing a backup", "Replacing the library", "Backup file format", "An unreadable library is reported, never replaced" (Library editing and backup format; PR #14, open) |
 | When the audio session is released, the alarm's sound, start-only Get Attention, no automatic resume, Personal Voice never written to a file | "Background audio", "Get Attention", "A phrase the system cuts off", "Audio session notices", "Personal Voice is never written to a file" (Speech engine and Get Attention; PR #16, open) |
-| Home first with setup as a place in Settings, the Settings root, the voice picker, the Privacy row, the largest sizes when nobody answers setup, an "Anything changed?" check-in every three months that waits 30 days after Not Now | "First launch opens Home; setup lives in Settings", "Settings is a cover with a fixed safety bar", "Settings resets when idle and never closes", "Setup answers are kept as offered, never as completed", "Check-ins come every three months", "The privacy policy ships inside the app" (Settings and first run; pull request not open yet) |
+| Home first with setup as a place in Settings, the Settings root, the voice picker, the Privacy row, the largest sizes when nobody answers setup, an "Anything changed?" check-in every three months that waits 30 days after Not Now | "First launch opens Home; setup lives in Settings", "Settings is a cover with a fixed safety bar", "Settings resets when idle and never closes", "Setup answers are kept as offered, never as completed", "Check-ins come every three months", "The privacy policy ships inside the app", "Speed is a set of fixed choices" (Settings and first run; PR #23) |
 | The accessibility coverage list and its choices: full screen in Assistive Access and no separate scene, no programmatic Guided Access, assistive-technology flags that only suggest, phrases in the person's voice with VoiceOver on, late-stage boards as an R1 profile, and what waits or is never used | "Accessibility API coverage" (Accessibility coverage checklist) |
 
 Recorded here:
@@ -1030,7 +1030,170 @@ No Info.plist key is needed for the request. If **Allow Apps to Request to
 Use** is off (Settings → Accessibility → Personal Voice), the system denies
 the request without asking. `AccessibilitySettings.openSettings(for:
 .personalVoiceAllowAppsToRequestToUse)` opens that switch directly; the
-voice picker should offer it when permission is denied.
+Voice Settings screen offers it when permission is denied, with the
+written path always shown (2026-10-21, `PersonalVoiceGuidance`).
+
+## First launch opens Home; setup lives in Settings
+
+*2026-10-21. Default, adopted 2026-10-21: the owner left these choices to
+the project. Reversible if the owner objects.*
+
+Brickson opens straight onto Home on first launch, never onto a setup
+screen: someone who needs to speak can do so the moment it opens, and a
+setup flow in front of Home would have to be got past by whoever is
+holding the device. Setup is a place inside Settings (Family Setup), not
+a gate. Until Family Setup has been opened once, Home's empty message
+area shows one passive line, `FirstRunHint.text` ("Family: help with
+setting up is in Settings."), through the `showsSetupHint` environment
+value. The line does not name the app, so it survives a rename.
+
+## Settings is a cover with a fixed safety bar
+
+*2026-10-21. Default, adopted 2026-10-21: the owner left these choices to
+the project. Reversible if the owner objects.*
+
+Settings is a full-screen cover. Because it hides Home's quick controls,
+every Settings screen sits under one fixed row (`SettingsSafetyBar`): a
+start-only Get Attention at the top leading edge and Back to Talking at
+the top trailing edge, at the same frames on every screen. Get
+Attention's place is kept empty until Home shows Get Attention and Stop:
+the alarm exists (`AttentionAlertPlayer`), but starting it here while Home
+has no Stop would leave it sounding with no way to stop it. Because the
+place is kept, adding it moves nothing. Under the bar is a `NavigationStack(path:)`
+whose root holds only a large Family Setup row and a sentence; every
+setting is a screen below, so a stray dwell that opens Settings meets
+only the way back, Get Attention and one row that navigates. Family
+Setup opens on passive text at least as tall as that row
+(`FamilySetupView.openingHeight`), so nothing that can be activated sits
+under the spot just activated. With Snap to Item the nearest control is
+then a row that only navigates; chains through Settings are not scored
+yet (docs/HANDOFF.md, *Known gaps*).
+
+Family Setup's rows: Set Up Step by Step, Voice Settings, Reaching the
+Screen, Keep Brickson Open (Guided Access and Assistive Access), Privacy
+Policy and About. The Library's row joins it as `SettingsRoute.library`
+when the Library lands; it never closes Settings or hands over to an edit
+mode on Home. Home owns where `SettingsButton` sits; Settings provides the
+button and `settingsCover(isPresented:)`.
+
+Every control is a standard `Button` or `NavigationLink` at least 64pt
+tall, white on `Palette.controlFill` or `Palette.phraseFill`; text is
+primary ink, never the system's secondary gray or grouped-list headers,
+which measure under 4.5:1. No toggles and no system alerts. Multiple
+choice answers only select; Clear My Choices is a separate button.
+
+Under the bar, a line kept for it shows any sound problem, because the
+cover hides Home's warnings (invariant 4). It uses `AudioSafetyPolicy`
+with `.dismissThenRepeat`, the words for a screen over Home ("Stopped —
+Back"), and is passive and the same height whether or not it shows
+anything. Home's warnings, still alive under the cover, announce each
+problem to VoiceOver, so the line does not announce it again. A voice
+sample the system cuts off shows nothing, as on Home: the family hears
+it stop and chooses Hear again.
+
+Before: the reference app put Back to Talking top-leading and Get
+Attention trailing. Brickson swaps them so Back to Talking lands over
+Home's trailing column (Clear and Type in the planned Home) and Get
+Attention over the message, whose nearest Home control is Yes.
+
+## Speed is a set of fixed choices
+
+*2026-10-21. Default, adopted 2026-10-21: the owner left these choices to
+the project. Reversible if the owner objects.*
+
+Voice Settings offers seven speeds, from 60% to 120% of normal in tenths
+(`SpeedChoice`). Each is a button that sets that speed and plays the
+sample at it; the chosen one is marked and selected. Choosing a speed
+again changes nothing, so a held look, a lingering dwell or a switch's
+auto-select that fires it again after the sample finished cannot walk the
+speed (invariant 10, "chains of several activations are scored"). Each
+speed keys its own sample (`VoicePreviewControl.speed`), so another speed
+chosen while a sample plays takes effect at once. The speeds sit on
+`SpeechRateSteps`' grid; a speed that is not one of them is named
+("Speaking at 130% of normal speed") and no choice shows as chosen.
+
+Before: Slower, Faster and Normal Speed buttons, as in the reference app,
+were built first and replaced the same day after Codex's review of PR
+#23. Their repeat was absorbed only while the sample played, so a look
+that stayed on Faster stepped again as each sample ended.
+
+## Settings resets when idle and never closes
+
+*2026-10-21. Default, adopted 2026-10-21: the owner left these choices to
+the project. Reversible if the owner objects.*
+
+After 90 seconds with no control used, no screen pushed or popped and no
+scrolling while Brickson is active, Settings goes back to its root,
+rebuilt scrolled to the top, and **stays open** (`SettingsIdleClock`,
+`SettingsActivity`). Closing would put Home's controls under a spot
+nobody chose. The clock is held while the privacy policy's web sheet is
+open, while iOS asks about Personal Voice, while the alarm sounds, while
+a screen is being scrolled, and
+while a screen calls `holdsSettingsIdleReset(true)` (for the Library's
+editors and backup tasks); when the last hold ends, the full 90 seconds
+start again. Time in another app or with the screen off never counts.
+Time is `ContinuousClock`; the pure clock takes `now:`.
+
+## Setup answers are kept as offered, never as completed
+
+*2026-10-21. Default, adopted 2026-10-21: the owner left these choices to
+the project. Reversible if the owner objects.*
+
+`SetupRecord` keeps what Family Setup learned: whether it was opened, how
+the screen is reached (`AccessMethod`: touch, Voice Control, Switch
+Control, Eye Tracking, Head Tracking, someone else helps), when that was
+answered, and the check-in state. Nothing is recorded as "setup
+completed": a family can stop at any step. `plannedAccessMethods` is nil
+when nobody answered or every choice was cleared, and the layout then
+uses its largest sizes. `SetupStore` keeps the record as JSON in
+UserDefaults; a change is saved before it is shown, a failed save changes
+nothing and shows a passive line, and an unreadable record is moved to
+`setupRecord.unreadable`, never deleted. Each answer is saved the moment
+it is chosen, so leaving a step by Back or Back to Talking keeps it; Next
+saves the answer once more, even unchanged, because going through the
+step again is what a check-in asks for.
+
+Set Up Step by Step has five steps, each a pushed screen with Next in a
+fixed bar at the bottom: how the screen is reached, the voice, turning
+on what was chosen, keeping Brickson open, and a summary. A held look on
+Next can walk the steps; that only navigates, and Back undoes it. Guides
+name Apple's own menus, checked against Apple's support pages on
+2026-10-21. Guided Access's guide says that emergency calls and Crash
+Detection do not work during a session.
+
+## Check-ins come every three months
+
+*2026-10-21. Default, adopted 2026-10-21: the owner left these choices to
+the project. Reversible if the owner objects.*
+
+Three calendar months after setup was last answered (or after the first
+launch), Family Setup shows a passive card asking whether anything has
+changed, with Go Through Setup Again, Not Now (30 days) and Stop Asking
+(until the access question is answered again). It never appears on Home
+and is never a pop-up (`CheckInPolicy`). Once it is answered on screen,
+passive words take its place at the card's own size until Family Setup
+closes (`CheckInPolicy.afterword`), so the rows below never move up under
+the button just chosen (invariant 10). These times use `Date` and
+`Calendar`, an exception to "Time is `ContinuousClock`": they must survive
+relaunches and restarts, which `ContinuousClock` does not, and a clock
+set backwards only delays a card.
+
+## The privacy policy ships inside the app
+
+*2026-10-21. Default, adopted 2026-10-21: the owner left these choices to
+the project. Reversible if the owner objects.*
+
+Guideline 5.1.1(i) requires a link to the policy inside the app "in an
+easily accessible manner"; it does not say how the link opens (checked
+2026-10-21). Brickson goes further: project.yml copies `site/privacy`
+into the app, and Family Setup's Privacy Policy screen shows that page's
+own words natively (`PrivacyPolicyDocument` reads its `<main>`), so the
+copy in the app can never differ from the web page, reads at the
+person's text size, and needs no network. Open the Web Version shows the
+live page in an in-app `SFSafariViewController` sheet, which 5.1.1(vii)
+says must be visibly presented. A test fails if any text of the page
+does not reach the screen, for example if the page gains an element the
+parser does not read.
 
 ## Automatic keeps the person's Personal Voice
 

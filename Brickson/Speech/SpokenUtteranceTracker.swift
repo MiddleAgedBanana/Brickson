@@ -22,6 +22,10 @@ nonisolated enum VoicePreviewControl: Equatable, Sendable {
     /// A row in the voice list; nil is Automatic. Its sample plays in that
     /// voice, so a voice can be heard before it is chosen.
     case voice(id: String?)
+    /// One of Voice Settings' fixed speeds (`SpeedChoice`), as a percent of
+    /// normal. Each speed is its own control, so choosing another speed
+    /// while a sample plays always takes effect.
+    case speed(percent: Int)
 }
 
 /// How the synthesizer's "finished" report for an utterance is read.

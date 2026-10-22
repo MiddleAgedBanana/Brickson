@@ -1,6 +1,42 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "%@ can speak in a voice that sounds like you, made with Apple's Personal Voice. %@ must ask iOS before using it." : {
+
+    },
+    "%@ can speak in a voice that sounds like you, made with Apple's Personal Voice. iOS asks once whether %@ may use it; choose Allow." : {
+
+    },
+    "%@ is set up for:" : {
+
+    },
+    "%@ may use a Personal Voice, but none is on this device. One is made in the Settings app by reading phrases aloud:" : {
+
+    },
+    "%@ may use your Personal Voice. It is listed below; Automatic chooses it." : {
+
+    },
+    "%@ of normal speed" : {
+
+    },
+    "%@ speaks for people who find speaking hard. It keeps what it stores on this device and never sends it to the developer. Copies leave the device only as the privacy policy explains, such as in backups. It has no accounts, no ads and no analytics." : {
+
+    },
+    "%@ works with every way an iPhone or iPad can be controlled. Each is part of iOS and is turned on in the Settings app; %@ needs no setup of its own." : {
+
+    },
+    "A partner can point to phrases on the screen for the person to choose with a look, a blink or a nod, then tap the one chosen." : {
+
+    },
+    "A simpler iPhone or iPad with only the apps chosen for it." : {
+
+    },
+    "A stray touch or look can leave %@. iOS has two ways to keep someone in it. %@ also keeps the screen from locking while it is open." : {
+
+    },
+    "About %@" : {
+
+    },
     "Again" : {
       "comment" : "Repeats the last thing spoken."
     },
@@ -10,19 +46,79 @@
     "Alert stopped" : {
 
     },
+    "Assistive Access" : {
+
+    },
     "Audio could not start. Speech and Get Attention may be silent. Try again." : {
 
     },
     "Audio failed" : {
 
     },
+    "Automatic" : {
+
+    },
+    "Back to Talking" : {
+
+    },
+    "Check-ins are off. Set Up Step by Step is always here." : {
+
+    },
     "Choose a phrase to speak it." : {
       "comment" : "Shown where the spoken message appears, before anything has been spoken."
+    },
+    "Choose every way that is used now. This sets how large %@’s buttons are. If nothing is chosen, it uses its largest sizes." : {
+
+    },
+    "Choose the voice" : {
+
+    },
+    "Clear My Choices" : {
+
+    },
+    "Create an Assistive Access passcode." : {
+
     },
     "Device volume is very low. Raise it before relying on speech or Get Attention." : {
 
     },
+    "Done" : {
+
+    },
+    "During Guided Access, emergency calls and Crash Detection are not available. Before relying on it, check that Eye Tracking, Switch Control or Voice Control still work with it on this device." : {
+
+    },
+    "Dwell Control chooses a button by looking at it for a moment." : {
+
+    },
+    "Earlier setup answers could not be read, so setup starts again. Nothing else was changed." : {
+
+    },
     "Emergency" : {
+
+    },
+    "Enhanced" : {
+
+    },
+    "Everything here can be changed later in Family Setup. In about three months, Family Setup will ask whether anything has changed." : {
+
+    },
+    "Eye Tracking" : {
+
+    },
+    "Family Setup" : {
+
+    },
+    "Family Setup will ask again in 30 days." : {
+
+    },
+    "Family Setup will ask again in about three months." : {
+
+    },
+    "Family: help with setting up is in Settings." : {
+
+    },
+    "Follow the dot with the eyes to calibrate." : {
 
     },
     "Get Attention did not start. Choose it again." : {
@@ -31,26 +127,176 @@
     "Get Attention stopped unexpectedly. Choose it again to restart." : {
 
     },
+    "Go Through Setup Again" : {
+
+    },
+    "Guided Access" : {
+
+    },
+    "Head Tracking" : {
+
+    },
+    "Hear" : {
+
+    },
+    "Hear %@" : {
+
+    },
+    "Hear Automatic" : {
+
+    },
+    "How is the screen reached?" : {
+
+    },
+    "In Passcode Settings, set a passcode." : {
+
+    },
+    "In Use" : {
+
+    },
+    "Keep %@ Open" : {
+
+    },
+    "Keeps the iPhone or iPad in one app until a passcode is entered." : {
+
+    },
+    "Making a Personal Voice means reading phrases aloud, so it is easiest while speaking is comfortable. Apple keeps it encrypted on this device, and in iCloud only if Share Across Devices is on. %@ never receives the voice or its recordings." : {
+
+    },
     "Message not restored" : {
 
     },
     "Message not saved" : {
 
     },
+    "Move the pointer by moving the head; choose with a facial expression or Dwell Control." : {
+
+    },
+    "Needs can change. Is the screen still reached the same way? Going through setup again takes a few minutes." : {
+
+    },
+    "Next" : {
+
+    },
     "No" : {
+
+    },
+    "No Personal Voice yet" : {
 
     },
     "No phrases yet." : {
 
     },
+    "No way of reaching the screen was chosen, so %@ uses its largest sizes." : {
+
+    },
     "No." : {
       "comment" : "Spoken when the No control is chosen."
+    },
+    "Normal" : {
+
+    },
+    "Normal speed" : {
+
+    },
+    "Not Now" : {
+
+    },
+    "Nothing to turn on. If tapping is hard, AssistiveTouch and Touch Accommodations in Settings > Accessibility > Touch can help." : {
+
+    },
+    "Open %@, then triple-click the side or top button (the Home button on older models) and choose Start." : {
+
+    },
+    "Open Dwell Control Settings" : {
+
+    },
+    "Open Personal Voice Settings" : {
+
+    },
+    "Open Settings > Accessibility > Assistive Access and choose Set Up Assistive Access." : {
+
+    },
+    "Open Settings > Accessibility > Eye Tracking and turn it on." : {
+
+    },
+    "Open Settings > Accessibility > Guided Access and turn it on." : {
+
+    },
+    "Open Settings > Accessibility > Head Tracking and turn it on." : {
+
+    },
+    "Open Settings > Accessibility > Switch Control." : {
+
+    },
+    "Open Settings > Accessibility > Voice Control." : {
+
+    },
+    "Open the Web Version" : {
+
+    },
+    "Personal Voice" : {
+
+    },
+    "Personal Voice is ready" : {
+
+    },
+    "Personal Voice is turned off for %@" : {
+
+    },
+    "Personal Voice isn't available here" : {
+
     },
     "Phrases can't be saved right now. Changes will be lost when the app closes." : {
 
     },
+    "Place the iPhone or iPad on a stable stand, about 1½ feet (45 cm) from the face." : {
+
+    },
+    "Premium" : {
+
+    },
+    "Privacy Policy" : {
+
+    },
+    "Reaching the Screen" : {
+
+    },
+    "Ready" : {
+
+    },
+    "Say the name of a button to choose it, such as “Tap Yes”." : {
+
+    },
+    "Set Up Step by Step" : {
+
+    },
+    "Settings" : {
+
+    },
+    "Settings > Accessibility > Personal Voice" : {
+
+    },
+    "Settings > Accessibility > Personal Voice > Allow Apps to Request to Use" : {
+
+    },
+    "Settings could not be opened. Follow the steps above in the Settings app." : {
+
+    },
+    "Someone else helps" : {
+
+    },
     "Speaking" : {
       "comment" : "Shown under the message while a phrase is being spoken."
+    },
+    "Speaking at %@ of normal speed." : {
+
+    },
+    "Speaking at normal speed." : {
+
+    },
+    "Speaking with %@." : {
+
     },
     "Speech stopped unexpectedly. Choose Again to repeat it." : {
 
@@ -59,6 +305,18 @@
 
     },
     "Speech stopped unexpectedly. Choose Phrases, then choose Again to repeat it." : {
+
+    },
+    "Speed" : {
+
+    },
+    "Standard" : {
+
+    },
+    "Step %lld of %lld" : {
+
+    },
+    "Stop Asking" : {
 
     },
     "Stopped — Again" : {
@@ -70,16 +328,91 @@
     "Stopped: Phrases" : {
 
     },
+    "Switch Control" : {
+
+    },
+    "That answer could not be saved. Try again." : {
+
+    },
+    "The last change could not be saved. Try again." : {
+
+    },
     "The message you were typing before the app closed could not be restored." : {
+
+    },
+    "The privacy policy could not be shown here. Open the web version above to read it." : {
 
     },
     "The starter phrases couldn't be loaded. Yes and No still work. Restart the app to try again." : {
 
     },
+    "The voice chosen earlier is no longer on this device, so Automatic is used." : {
+
+    },
+    "This iPhone or iPad can't use Personal Voice. %@ speaks with the voice chosen below." : {
+
+    },
+    "This is where a family member or carer sets up %@: the voice it speaks with, help with reaching the screen, and how to keep it open. Nothing here is needed to start talking." : {
+
+    },
     "This message is not being saved. It stays on screen, but it may be lost if the app closes." : {
 
     },
+    "Time for a check-in" : {
+
+    },
+    "To end it, triple-click again, enter the passcode and choose End." : {
+
+    },
+    "To leave it, triple-click the side button (the Home button on older models), choose Exit Assistive Access and enter the passcode." : {
+
+    },
+    "To let %@ speak in your Personal Voice, turn %@ on in this list:" : {
+
+    },
+    "Touch" : {
+
+    },
+    "Turn on Switch Control." : {
+
+    },
+    "Turn on Voice Control." : {
+
+    },
+    "Turn on what is used" : {
+
+    },
+    "Under Switches, add the switch that will be used." : {
+
+    },
+    "Use" : {
+
+    },
+    "Use %@" : {
+
+    },
+    "Use Automatic" : {
+
+    },
+    "Version %@" : {
+
+    },
+    "Voice" : {
+
+    },
+    "Voice Control" : {
+
+    },
+    "Voice Settings" : {
+
+    },
+    "Voices, help with reaching the screen, keeping %@ open, and the privacy policy are in Family Setup." : {
+
+    },
     "Volume low" : {
+
+    },
+    "When asked for apps, add %@ under Other apps." : {
 
     },
     "Yes" : {
@@ -87,6 +420,9 @@
     },
     "Yes." : {
       "comment" : "Spoken when the Yes control is chosen."
+    },
+    "Your Personal Voice when it is allowed, otherwise the best voice on this device" : {
+
     }
   },
   "version" : "1.0"
