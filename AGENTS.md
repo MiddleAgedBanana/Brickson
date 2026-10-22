@@ -47,6 +47,10 @@ actually use?
   to them.
 - **`docs/LESSONS.md`**: what went wrong in the reference app, and the rule
   each lesson gives. Read the sections that touch your work.
+- **`docs/ACCESSIBILITY.md`**: every Apple accessibility feature and API
+  in the project's map by ALS stage, with its iOS version, its release and
+  how it is checked. A pull request that adopts, changes or drops one
+  edits its row.
 - **`docs/PORTING.md`**: what has come over from the reference app, what is
   next, and how to port a file.
 - **`README.md`**: the overview for people, written for a beginner. Keep it
@@ -443,7 +447,11 @@ the failure.
   `SpokenUtteranceTracker`, `VoiceSelection`, `SpeechRateSteps`,
   `AudioSafetyPolicy`, `AttentionAlertStatus`, `AudioSessionEventMapping`,
   `AudioSessionLeasePolicy`, `ScreenWakePolicy`, `CategorySelection`,
-  `StarterLibrary`, `PhraseLibrarySeeder`. Views only read them.
+  `StarterLibrary`, `PhraseLibrarySeeder`, `MessageComposer`,
+  `DraftStore`, `SettingsIdleClock`, `SetupRecord`, `CheckInPolicy`,
+  `VoiceList`, `PersonalVoiceGuidance`, `PrivacyPolicyDocument`,
+  `SpeedChoice`, `WordFit`, `HomeShape`, `HomeRegion`, `HomeControlNames`.
+  Views only read them.
 - **Run it, don't just read it.** Layout and flow changes are checked in the
   running app on an iPad and an iPhone simulator, at default and
   accessibility text sizes, light and dark.
@@ -589,6 +597,15 @@ Shortcuts. **Never apply** `core-data` skills (this app uses SwiftData),
   Vision's accurate mode also misread a clear `No` as `ON`; the fast mode
   read it and rejected the old clipped captures. Keep whole-word matching
   (case-insensitive), with no language correction or recognition hints.
+- **Measuring the keyboard:** `KeyboardProbeTests` is opt-in
+  (`TEST_RUNNER_BRICKSON_KEYBOARD_PROBE=1 scripts/test.sh ui`). It opens
+  a debug-only probe screen (`--screen=keyboard-probe`) instead of Home,
+  prints one `KEYBOARD-PROBE {json}` line per orientation and text size,
+  and fails after printing if the simulator shows the keyboard bar
+  instead of the full keyboard. xcbeautify hides printed lines from
+  passing tests, so read the JSON attached to each test in the result
+  (Xcode's Report navigator), or run `xcodebuild` without xcbeautify. Say
+  which simulator and iOS version the numbers came from.
 - **Simulator audio is unreliable.** Every sound check needs a real device.
 - **Apple's accessibility audit can time out on CI** with domain
   `com.apple.xcode.xctest.accessibilityAudit`, code `-56`. The UI suite

@@ -163,8 +163,7 @@ build Swift. GitHub CI runs the usual suites on the pull request.
   No exception, and a path to every category in a grown library
   (`docs/DESIGN.md`, *Open in the slot plan*).
 - The owner's decision on a gaze profile on a phone, which cannot hold
-  invariant 11 and the gaze floors together (`docs/DESIGN.md`, *No phone
-  window holds the gaze floors*), put with its numbers. *(R1 layout
+  invariant 11 and the gaze floors together (`docs/DESIGN.md`, *Slot sizes per device*, the note on phone gaze floors), put with its numbers. *(R1 layout
   engine)*
 - Back to Talking's frame over Phrases alone. *(Settings and first run,
   and "Home's slot plan")*

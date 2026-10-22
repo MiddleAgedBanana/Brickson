@@ -14,21 +14,21 @@ build toward, not a measurement: the app's layout engine computes the real
 frames from the space available, and its tests pin them (AGENTS.md,
 invariant 11).
 
-This file's own decision, recorded in docs/DECISIONS.md by the pull
-request that adds this file, is "Solid fills on Home, system glass
-elsewhere". Three more decisions it draws to are being written in other
-pull requests and are not in docs/DECISIONS.md yet: where each slot sits
-and what it is called, "Home's slot plan" (Phone layout and word
-fitting, PR #22); the family screens' safety bar, "Settings is a cover
-with a fixed safety bar" (Settings and first run, PR #23); and typing on
-Home, "Typing is a state of Home" (Typing foundation, PR #21). This
-file proposes changes to the first; that pull request adopts or answers
-them (*What a held activation meets next*), and *Open in the slot plan*
-lists what it still has to settle. Until each one merges, its row
-in the register *Decided by default on 2026-10-21* says what it will
-decide, AGENTS.md's invariants bind, and this file's sections on those
-subjects are proposals. Once one merges, it wins where this file
-differs, and this file is corrected to match.
+This file's own decision is "Solid fills on Home, system glass
+elsewhere" in docs/DECISIONS.md. The decisions from PRs #21, #22 and
+#23 have now landed there: "Typing is a state of Home", "Home's slot
+plan" and "Settings is a cover with a fixed safety bar". They bind this
+reference. The specification is [work/design-screens.md](work/design-screens.md);
+it names the states, input paths, repeated activations and remaining
+checks before build work follows a screen.
+
+The slot plan adopted Phrases in every state, Settings at region B's
+trailing end, Stop Alert below Emergency, and a three-column message on
+regular widths. The drawings still show the earlier placements and are
+not corrected by this documentation update. The Yes/No message-border
+hazard and access to a fifth category remain open. Back to Talking over
+Phrases alone is still a proposal that differs from the landed decision;
+*Open in the slot plan* records it without adopting an exception.
 
 ## Where the drawings are
 
@@ -150,9 +150,11 @@ the Foundations page in Figma shows every size between.
 
 Usage rules:
 
-- The message block always shows the full message at Title 1; a message
-  longer than its block scrolls inside the block at full size and never
-  shrinks (docs/DECISIONS.md, "Home version 0 is a stand-in").
+- The drawings use Title 1 for the message. The landed stand-in reserves
+  two lines at the person's text size and scrolls a longer message inside
+  them. It shrinks only while its widest word is wider than the row,
+  never below the default size (docs/DECISIONS.md, "Home version 0 is a
+  stand-in"). That decision supersedes the drawings' never-shrink rule.
 - Control labels are Body semibold with a system symbol above the words
   where the control is tall enough for both.
 - **Words never break** (AGENTS.md, *Design rules for dwell, switch and
@@ -167,12 +169,12 @@ Usage rules:
 
 ## The slot plan
 
-How the drawings lay out Home. The binding plan, with each slot's
-identifier for the layout engine and the UI tests' accessibility
-identifiers, will be docs/DECISIONS.md, "Home's slot plan", which the
-Phone layout and word fitting pull request writes. Until it merges this
-section is a proposal; once it merges, where the two differ, the
-decision wins and this section is corrected to match.
+How the drawings lay out Home, reconciled with the binding plan in
+docs/DECISIONS.md, "Home's slot plan" (PR #22, landed). The table records
+adopted placements beside the historical drawing differences; an item
+explicitly called a proposal or open hazard remains unresolved. The
+layout engine still has to build the wells and pin their identifiers and
+frames in tests.
 
 Home is four regions, top to bottom, in every profile and on every
 device: **A** the message, **C** the safety row, **B** the categories
@@ -180,25 +182,27 @@ with Stop Alert and Settings, **D** the phrase grid. Each control's layer
 in the Figma file is named for its slot, so a drawing can be matched to
 the code by name.
 
-Today's Home is still the stand-in (docs/DECISIONS.md, "Home version 0 is
-a stand-in"). At compact widths it has, since PR #13, a full-width
-message line with Again below, Yes and No in one row, Emergency on the
-full row below them, and one phrase column. The drawings are what replaces
-it (docs/ROADMAP.md, R0 item 3), not a picture of it.
+Today's Home is still the stand-in (docs/DECISIONS.md, "Home's stand-in
+layout"). Since PR #22 its eager rows fit the available space: three
+phrase columns wherever three 107pt tiles fit, four visible category
+buttons, labels fitted in whole words, and the message with Again beside
+it. Main records the small-window scrolling gaps separately. The slot
+plan and its wells are still to be built; these drawings are not a
+picture of the running app.
 
 | Layer name | Control | Region | Notes |
 |---|---|---|---|
-| `messageText` | The message block | A | Passive text, scrolls inside its frame. Two of three columns wide on compact widths; proposed three of five on regular widths, where the drawings span four (*What borders the text*, below) |
+| `messageText` | The message block | A | Passive text, scrolls inside its frame. Two of three columns wide on compact widths; three of five on regular widths under the landed plan, where the drawings span four (*What borders the text*, below) |
 | `statusLine` | Speaking / Sounding / audio warnings | A | Passive footnote under the message, as wide as it; always reserved |
-| `clear` | Proposed: **Phrases** in every state, the way back to the phrases (*Typing*). The drawings show Clear while typing and a well otherwise | A | Trailing column, top; shown selected while browsing. The trailing column is one column wide on compact widths; proposed two on regular widths, where the drawings use one |
+| `clear` | **Phrases** in every state, the way back to the phrases (*Typing*). The drawings show Clear while typing and a well otherwise | A | Trailing column, top; shown selected while browsing. The trailing column is one column wide on compact widths; two on regular widths under the landed plan, where the drawings use one |
 | `type` | Type | A | Trailing column, under the top slot; shown selected while typing |
 | `yes`, `no` | Yes, No | C | |
 | `again` | Again, or Speak while typing | C | Same frame, label changes |
 | `emergency` | Emergency | C | Two columns wide on compact widths |
 | `getAttention` | Get Attention | C | Start only; never stops the alarm |
-| `stopAlert` | Stop Alert | B | Leading column, top, directly below Emergency; live only while the alarm sounds, a well otherwise. docs/DECISIONS.md, "Get Attention", on `main` still says "above Emergency", from an earlier order; PR #22 corrects it to below, and until then the decision on `main` binds |
-| `settings` | Settings | B | Proposed: B's last cell, at the trailing end (*What a held activation meets next*, below). The drawings put it under Stop Alert |
-| `category0`…`category3` | The categories | B | Proposed: on compact widths the first two beside Stop Alert and the other two under them, then Settings; on regular widths the first under Stop Alert, the other three full height. The drawings show 2×2 beside the leading column on compact widths and one row of four on regular widths |
+| `stopAlert` | Stop Alert | B | Leading column, top, directly below Emergency; live only while the alarm sounds, a well otherwise. docs/DECISIONS.md, "Get Attention" and "Home's slot plan", both now say below Emergency; the earlier above-Emergency order is superseded |
+| `settings` | Settings | B | B's last cell, at the trailing end (*What a held activation meets next*, below). The drawings put it under Stop Alert |
+| `category0`…`category3` | The categories | B | Adopted: on compact widths the first two beside Stop Alert and the other two under them, then Settings; on regular widths the first under Stop Alert, the other three full height. The drawings show 2×2 beside the leading column on compact widths and one row of four on regular widths |
 | `tileR_C` | Phrase tiles, row R column C | D | 3×3 on compact widths, 4×3 on regular widths |
 
 Why this order and these places (the rules are AGENTS.md invariants 2, 8
@@ -214,12 +218,12 @@ and 10):
   are under it and Again is under the trailing column. On regular widths
   the drawings span four of five columns, which puts Again, which
   speaks, under the message's trailing end: from there a resting look
-  reaches it (Codex review of PR #20). The proposal narrows the message
+  reaches it (Codex review of PR #20). The landed slot plan narrows the message
   to three columns and widens the trailing column to two, so Emergency,
   Yes and No are under the message, and Again and Get Attention are
   under Phrases and Type, on every width. No phrase tile, Again or Get
   Attention then borders the text, but a look resting on it can snap to
-  Yes or No, which speak; that is the first exception below.
+  Yes or No, which speak; that is the open hazard below.
 - **Safety first, then navigation, then phrases.** Emergency, Get
   Attention, Yes and No are one activation from every Home state. They
   sit above the software keyboard on the three drawn windows whose
@@ -236,10 +240,10 @@ and 10):
   model, only by the width and height it has (AGENTS.md, *Layout on every
   device and window*).
 
-Exceptions the drawings carry. Invariant 10 asks for each to be named,
-measured and recorded in docs/DECISIONS.md; they are proposed here for
-"Home's slot plan" to record, and the code is measured before they are
-accepted:
+Hazards the drawings carry. "Home's slot plan" records the message-border
+hazard as open, not as an accepted exception. Invariant 10 requires
+measurement and the owner's decision before any exception is adopted;
+this reference grants none:
 
 - **A look resting on the message can snap to Yes or No.** Sampled every
   4pt over the whole message block and its status line, not only from
@@ -251,14 +255,14 @@ accepted:
   windows; over three it is nearest nowhere, and Get Attention and the
   phrase tiles are nearest nowhere on any window. So a look that rests
   near the bottom of the message can reach a control that speaks Yes or
-  No. The reference app's portrait board had the same; the code's
-  measurement decides, and the owner accepts or rejects the exception
-  with its numbers.
+  No. The reference app's portrait board had the same; the layout engine must remove the hazard by placement or bring
+  its measured cost to the owner before the plan ships in a dwell,
+  switch, head or gaze profile.
 - While typing, the drawings put Clear beside the draft. **That placement
   is withdrawn** (Codex review of PR #20): a look that rests on the draft
   while reading it can land on Clear, and a recovery control with no
-  fixed place does not make that safe. *Typing*, below, proposes where
-  Clear and its recovery go instead.
+  fixed place does not make that safe. *Typing*, below, records the
+  adopted region and the placement work still needed for Clear and its recovery.
 
 Two more are **withdrawn** after the same review, because a held
 activation meets a harmful control next:
@@ -272,7 +276,7 @@ activation meets a harmful control next:
 - **Stopping the alarm.** As drawn, Settings sits under Stop Alert, so a
   repeat after Stop opens the family cover, and on the drawn Settings
   root Family Setup covers that spot, so the next repeat opens it. The
-  proposal below moves Settings, and the drawn root is withdrawn
+  landed placement below moves Settings, and the drawn root is withdrawn
   (*Family screens*).
 
 ### What a held activation meets next
@@ -280,18 +284,19 @@ activation meets a harmful control next:
 Scored on the layout source's frames for the four drawn windows, with
 the pointer left at the centre of the control just activated, under two
 nearest rules, because Snap to Item's real one is unknown: the nearest
-centre, and the nearest edge with ties counted. Simulator and device
-checks replace these numbers when the code exists. "Before this review"
-is the drawings, except for the way out, which is the first review's
-proposal.
+centre, and the nearest edge with ties counted. Simulator checks measure
+the implemented frames; physical-device checks establish Snap to Item and
+dwell behaviour when the code exists. "Before this review" is the
+drawings, except for the way out, which is the first review's proposal.
 
-| After | Before this review | As proposed |
+| After | Before this review | Reconciled placement |
 |---|---|---|
 | Stop Alert (the alarm stops, its well empties) | Settings by centre on all four windows, Settings or Emergency by edge: a repeat can open the family cover | The category under Stop Alert by centre, it or Emergency by edge: a repeat only shows a category, and a further one changes nothing |
 | Phrases (typing ends) | Type on all four, with the way out in the top slot: a repeat reopens typing | Phrases itself, shown selected: a repeat changes nothing |
-| Back to Talking (Settings closes) | Type, the only live control under it: a repeat opens typing | Phrases alone, with Back to Talking over Phrases' frame: a repeat changes nothing. Over the whole trailing column, as first proposed, Phrases and Type tied, and a repeat on Type would reopen typing (Codex review of PR #20) |
+| Back to Talking (Settings closes) | Type, the only live control under it: a repeat opens typing | Still proposed: Phrases alone, with Back to Talking over Phrases' frame: a repeat changes nothing. Over the whole trailing column, as first proposed, Phrases and Type tied, and a repeat on Type would reopen typing (Codex review of PR #20) |
 
-The proposal, for "Home's slot plan" to adopt or answer:
+The placements adopted by "Home's slot plan" (the Back to Talking
+proposal in the table remains open):
 
 - **Region B.** Stop Alert keeps its place at B's leading end, directly
   below Emergency. On compact widths B is two rows of three: Stop Alert,
@@ -311,21 +316,24 @@ The proposal, for "Home's slot plan" to adopt or answer:
 
 ### Open in the slot plan
 
-Three things the drawings and the proposal leave open, for "Home's slot
-plan" (PR #22) to settle before Home is built to it:
+Three things remain open after PR #22 landed, for the layout engine and
+Settings work to settle before the affected flows ship:
 
-- **The Yes and No exception** (*Exceptions the drawings carry*): the
-  slot plan records it with its numbers for the owner, or places Yes and
-  No so the message does not border them.
+- **The Yes and No message-border hazard** (*Hazards the drawings carry*):
+  the landed slot plan records it as open, not accepted. The layout engine
+  removes it by placement or presents its measured cost to the owner,
+  before shipping the plan in a dwell, switch, head or gaze profile.
 - **A path to every category in a grown library.** The starter library's
   four categories fill region B's four category cells, and a family can
   add more (Add Category, in the Library). As drawn and as proposed, a
   fifth category has no cell on Home, so its phrases could not be
   reached (Codex review of PR #20). Nothing is unreachable in the code:
-  Home on `main` scrolls its category row sideways, and PR #22's
-  stand-in, "Home's stand-in layout", scrolls four category buttons
-  vertically. That answer does not carry over to the slot plan, because
-  the proposed order puts the categories in an L around Stop Alert and
+  Home on `main`, since PR #22, reserves four category slots and
+  scrolls a grown library vertically inside that region ("Home's stand-in
+  layout"). Editing or import must not add a fifth everyday category
+  until the slot plan has a reachable place for it. The stand-in's scroll
+  does not carry over because the adopted order puts categories in an L
+  around Stop Alert and
   Settings, which cannot scroll as one standard container. Whatever the
   slot plan chooses keeps every category reachable through standard
   containers; keeps Stop Alert, Settings and their neighbours in place,
@@ -334,11 +342,13 @@ plan" (PR #22) to settle before Home is built to it:
   grown library scrolling at the floor at most; and scores the chain
   after every control it adds. This file proposes no answer, and its
   drawings show only the starter library.
-- **Back to Talking over Phrases alone.** The slot plan's version of
-  2026-10-21 puts Back to Talking over the whole trailing column, so it
+- **Back to Talking over Phrases alone.** The landed slot plan still
+  puts Back to Talking over the whole trailing column, so it
   closes onto Phrases or Type, tied; a repeat on Type reopens typing.
-  Over Phrases' frame alone, Phrases is the only nearest control. The
-  band's frames are the Settings and first run work's (PR #23).
+  Over Phrases' frame alone, Phrases is the only nearest control. This is
+  a proposed correction, not an adopted change to that binding decision. The next Home/Settings work must score entry and exit
+  together, record its decision and pin the bar's frames before this
+  path is treated as safe. PR #23's existing safety bar is unchanged.
 
 ### Slot sizes per device
 
@@ -346,7 +356,7 @@ Computed by the layout source from the window size, the safe-area insets,
 a 16pt margin and the gaps below; the windows are examples of space, and
 the device names only label them. Widths are per column, and the
 frames are the drawn ones: the leading and trailing columns one column
-wide, the message over four columns on regular widths (the proposal in
+wide, the message over four columns on regular widths (the landed plan in
 *What borders the text* widens the trailing column there to two and
 changes no height). These are touch-profile frames:
 every target clears the 44pt floor.
@@ -421,11 +431,11 @@ Notes on the table:
   show AX5 in the same frames, with labels stepped down no further than
   their default size, and the grid unscrolled. Invariant 11 forbids
   scrolling the starter library in every dwell, switch, head and gaze
-  profile, and iPhones run all of them. The Phone layout work expects the
-  iPhone 17 window to fit at every text size and checks it at the default
-  size and AX5; where a window cannot fit at the touch floor, the
-  layout engine finds another arrangement, never scrolling and never a
-  smaller floor ("Where the grid still scrolls", in that pull request).
+  profile, and iPhones run all of them. The landed stand-in checks the
+  iPhone 17 window at the default size and AX5; its documented small-window
+  scrolling gaps remain (docs/DECISIONS.md, "Where the grid still
+  scrolls"). The layout engine must close them without reducing a
+  profile's floor; the drawings are not evidence that it has done so.
   At the gaze floors no phone window fits (above). An earlier version of this note said the grid
   would scroll at AX4 and AX5; it is withdrawn (Codex review of PR #20).
 - Keyboard tops are the kit's iPhone (402×332) and iPad (1210×428)
@@ -446,9 +456,10 @@ Get Attention, Yes, No, Speak) and the way out sit above the keyboard's
 top; on the zoomed iPad window they do not (*Slot sizes per device*), and
 the SE-class window's keyboard is not measured.
 
-Two parts of the drawn typing state are withdrawn after Codex's review of
-PR #20, and this is proposed instead, for the Typing foundation's
-decisions and "Home's slot plan" to settle:
+Two parts of the drawn typing state were withdrawn after Codex's review
+of PR #20. The landed slot plan adopts Phrases in A and Clear/Put Back in
+separate category slots in B. Their exact typing frames and full chains
+remain for the typing implementation; the drawings do not prove fit:
 
 - **The way out in region A.** The trailing column's top slot holds
   **Phrases** in every state, above Type: Phrases only leaves typing,
@@ -458,8 +469,8 @@ decisions and "Home's slot plan" to settle:
   as Type already does while typing, so a repeat after
   either one meets the same control and stops there (*What a held
   activation meets next*). Both sit at the message's trailing side, so a
-  look resting there only chooses a mode, and above the keyboard on every
-  window, the zoomed one included. Category 0 keeps its own name.
+  look resting there only chooses a mode, and must stay above the keyboard. The zoomed window's full band
+  does not fit as drawn, so that requirement is still unverified there. Category 0 keeps its own name.
 - **Clear and its recovery away from the draft.** Clear and **Put Back**
   (which restores what Clear removed) each take a fixed category slot in
   region B while typing, apart from each other, from Speak, from Settings
@@ -490,11 +501,11 @@ sounds. Stop Alert is the only control that stops it.
 
 ## Family screens
 
-As drawn. The binding rules will be the Settings and first run
-decisions (docs/DECISIONS.md, "Settings is a cover with a fixed safety
-bar" and the entries beside it), which that pull request writes; until
-it merges this section is a proposal, and once it merges they win where
-these drawings differ.
+The binding rules are the landed Settings and first run decisions
+(docs/DECISIONS.md, "Settings is a cover with a fixed safety bar" and
+the entries beside it, PR #23). The descriptions below distinguish the
+current contract from the historical drawings; library flows and the
+Back to Talking placement proposal remain open.
 
 Settings, Family Setup, Voice and the Library open as a full-screen cover
 over Home, so each starts with the same top band at fixed frames: **Back
@@ -512,22 +523,36 @@ a held activation meets next*). Below the band:
   **That drawing is withdrawn** (Codex review of PR #20). PR #23's root
   holds one Family Setup row and a sentence, and Family Setup opens on
   passive text at least as tall as that row, so a repeat finds nothing
-  there; with Home's Settings at the end of region B, as proposed, what
-  sits nearest that spot on the root is scored with PR #23's chains.
-- **Family Setup**: a list of rows, each a standard button: Get Started,
-  Voice, Phrases, Reaching the Screen, Keep Brickson Open, Privacy Policy,
-  About. No toggles anywhere: a toggle turns into its opposite in place.
+  there. A pointer may snap to another navigation row; main explicitly
+  records the full Settings chains as unscored. With Settings at region
+  B's trailing end, the Home/Settings work must score the actual chain.
+- **Family Setup**: the landed rows are Set Up Step by Step, Voice
+  Settings, Reaching the Screen, Keep Brickson Open, Privacy Policy and
+  About, each a standard control. The Library row joins them when its
+  screen lands; the drawings' Phrases row is not that finished flow. No
+  toggles: a toggle turns into its opposite in place.
 - **Privacy Policy**: a screen that shows the policy's text bundled in the
   app, so it opens with no network, and on it a separate button that
   opens the web page in an in-app Safari sheet, never in Safari
   (AGENTS.md, *The privacy policy is a promise*; App Review Guideline
   5.1.1(i)). This screen is not drawn in the Figma file yet; it shares
   the family screens' top band.
-- **Voice**: a "now speaking" line; the Personal Voice status with one
-  button ("Use My Personal Voice", or "Open Personal Voice Settings" when
-  the system switch is off); one row per voice with separate **Hear** and
-  **Use** (Use shows selected); **Slower**, the rate name, **Faster**,
-  with the rate name between them so the two never border each other.
+- **Voice**: the drawings show a "now speaking" line, a Personal Voice
+  action, separate Hear/Use controls and Slower/Faster around a rate
+  name. The landed Settings contract instead uses the fixed speed choices
+  in docs/DECISIONS.md, "Speed is a set of fixed choices". Personal Voice
+  permission remains governed by "Personal Voice permission is asked at
+  launch, for now" and device check D1. PR #27 has since added the
+  explained Ask to Use Personal Voice state under `.fromSettings`, which
+  the app does not use yet. While asking, a repeated press asks nothing
+  more and Settings holds its idle reset. Answer words reserve their room,
+  the button becomes passive text in its existing place, and no new button
+  appears on that visit. The landed decisions "Voice Settings keeps its
+  places while it is open" and "Asking for Personal Voice from Voice
+  Settings" also keep existing voice rows in place and append arrivals.
+  The ready-to-turned-off card's longer words and the chain through iOS's
+  real question remain recorded gaps. These decisions win over the
+  drawings; this reference does not switch the permission policy.
 - **Library and phrase editor: drawn for their look only, not as a
   flow.** The drawings show the Library list (a reserved status line for
   save results; the Emergency category row first with a note that it
@@ -589,13 +614,15 @@ and typography on 2026-10-21 (developer.apple.com, Markdown versions):
 - **Colour follows the HIG rule to use colour for meaning, sparingly:**
   one fill per role (phrase, control, emergency, attention, stop), never
   decorative tints, and every meaning also carried by words.
-- **Dynamic Type everywhere**, with the HIG ladder above. Rows keep their
-  frames at every text size and labels fit inside them by the rule in
-  *Type*, so larger text changes the words' size, never where a control
-  sits.
+- **Dynamic Type everywhere**, with the HIG ladder above. Frames may be
+  sized from the window, input profile and text size, as "Home's slot
+  plan" decides. For that configuration they stay fixed across states,
+  including the keyboard appearing; labels fit by the rule in *Type*.
+  The drawings' identical frames at Large and AX5 are not a rule that
+  prevents controls growing with text.
 - **Standard navigation stays.** Back buttons, Close, the edge swipe and
   the sheet grabber are never hidden to clear a corner (AGENTS.md,
-  *Design rules*).
+  *Design rules for dwell, switch and pointer input*).
 
 ## The app icon
 

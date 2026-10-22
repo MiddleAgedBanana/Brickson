@@ -14,8 +14,41 @@ final class SpeechService {
     /// keys the message's scroll position to it, so each start shows the
     /// message from its first word.
     private(set) var phraseStartCount = 0
-    private(set) var personalVoiceStatus: AVSpeechSynthesizer.PersonalVoiceAuthorizationStatus = .notDetermined
+    /// What the system says about using the person's Personal Voice. Read
+    /// at launch, after every answer, and each time the app comes back to
+    /// the front (`refreshPersonalVoiceAvailability()`).
+    private(set) var personalVoiceStatus: AVSpeechSynthesizer.PersonalVoiceAuthorizationStatus
+    /// The voices phrases may be spoken in: every voice the system lists,
+    /// except a Personal Voice without permission. The system lists those
+    /// only while Brickson is allowed anyway; a list read before access was
+    /// turned off is filtered too (docs/DECISIONS.md, "A Personal Voice is
+    /// used only while it is allowed"). Read again after every change to
+    /// `personalVoiceStatus`.
     private(set) var availableVoices: [VoiceDescriptor] = []
+    /// The Personal Voice Automatic speaks in, kept while it exists so a
+    /// second one never takes over (docs/DECISIONS.md, "Automatic keeps the
+    /// person's Personal Voice"). Kept, not cleared, while access is off.
+    private(set) var automaticPersonalVoiceID: String?
+    /// The person's Personal Voices that phrases may be spoken in now, in
+    /// the system's order. Empty without permission.
+    var personalVoices: [VoiceDescriptor] { availableVoices.filter(\.isPersonalVoice) }
+    /// True when a Personal Voice is both allowed and installed.
+    var hasPersonalVoice: Bool { !personalVoices.isEmpty }
+    /// The voice Automatic speaks in now; nil when no voice is listed, and
+    /// the system's default voice speaks.
+    var automaticVoice: VoiceDescriptor? { selectVoice(chosenID: nil, from: availableVoices) }
+    /// The voice the next phrase is spoken in, as far as the voice list
+    /// knows. Each phrase still checks that its voice loads, and falls to
+    /// the next one if not (`resolveVoiceIdentifier`).
+    var currentVoice: VoiceDescriptor? { selectVoice(chosenID: selectedVoiceID, from: availableVoices) }
+    /// When the app asks for Personal Voice permission. The Voice screen
+    /// offers its own Ask button only under `.fromSettings`.
+    let personalVoiceAskPolicy: PersonalVoiceAskPolicy
+    /// True while the Voice screen's question waits for the person's
+    /// answer. Settings holds its idle reset meanwhile, and a second press
+    /// of the button asks nothing more
+    /// (`requestPersonalVoiceAuthorization()`).
+    private(set) var isAskingForPersonalVoice = false
     var speechInterruptionState: SpeechInterruptionState { speechInterruptionStatus.state }
     var speechInterruptionSequence: Int { speechInterruptionStatus.sequence }
 
@@ -44,6 +77,7 @@ final class SpeechService {
     @ObservationIgnored private let makeSynthesizer: @MainActor () -> any SpeechSynthesizing
     @ObservationIgnored private let audioSession: AudioSessionCoordinator
     @ObservationIgnored private let voiceCatalog: any SpeechVoiceCatalog
+    @ObservationIgnored private let personalVoice: any PersonalVoiceAuthorizing
     @ObservationIgnored private let settings: UserDefaults
     @ObservationIgnored private let notificationCenter: NotificationCenter
     @ObservationIgnored private let sleep: @MainActor @Sendable (Duration) async -> Void
@@ -51,13 +85,16 @@ final class SpeechService {
     private let logger = Logger(subsystem: AppLog.subsystem, category: "speech")
     static let voiceIDKey = "selectedVoiceID"
     static let rateKey = "speechRate"
+    static let automaticPersonalVoiceIDKey = "automaticPersonalVoiceID"
 
     /// Every dependency is explicit, so tests drive speech with fakes and the
     /// app passes its real objects in one place (`AppAudio.makeForApp`).
     /// `settings` is where the voice and rate are kept: the launch-selected
     /// store, which is the person's preferences, or an isolated suite for
     /// UI tests (`LaunchOptions`). `notificationCenter` carries the system's
-    /// "voices changed" notice; `sleep` paces the missed-finish watchdog.
+    /// "voices changed" notice; `personalVoice` is the Personal Voice
+    /// permission, asked for at launch when `personalVoiceAskPolicy` says
+    /// so; `sleep` paces the missed-finish watchdog.
     init(
         audioSession: AudioSessionCoordinator,
         events: AudioSessionEvents,
@@ -65,18 +102,26 @@ final class SpeechService {
         voiceCatalog: any SpeechVoiceCatalog,
         settings: UserDefaults,
         notificationCenter: NotificationCenter,
-        requestPersonalVoiceAuthorization: PersonalVoiceAuthorizationRequest,
+        personalVoice: any PersonalVoiceAuthorizing,
+        personalVoiceAskPolicy: PersonalVoiceAskPolicy,
         sleep: @escaping @MainActor @Sendable (Duration) async -> Void
     ) {
         self.audioSession = audioSession
         self.makeSynthesizer = makeSynthesizer
         self.voiceCatalog = voiceCatalog
+        self.personalVoice = personalVoice
+        self.personalVoiceAskPolicy = personalVoiceAskPolicy
         self.settings = settings
         self.notificationCenter = notificationCenter
         self.sleep = sleep
         synthesizer = makeSynthesizer()
 
         selectedVoiceID = settings.string(forKey: Self.voiceIDKey)
+        automaticPersonalVoiceID = settings.string(forKey: Self.automaticPersonalVoiceIDKey)
+        // What the system already knows, before the list is read: someone
+        // who allowed Brickson before speaks in their own voice from the
+        // first phrase, without waiting for an answer.
+        personalVoiceStatus = personalVoice.status
         // Presence check rather than float(forKey:): an absent key reads as 0,
         // which is also AVSpeechUtteranceMinimumSpeechRate — a value a user
         // could legitimately save.
@@ -98,7 +143,9 @@ final class SpeechService {
         events.subscribe { [weak self] event in
             self?.handle(event)
         }
-        askForPersonalVoice(using: requestPersonalVoiceAuthorization)
+        if personalVoiceAskPolicy.asksAtLaunch(alreadyAllowed: personalVoiceStatus == .authorized) {
+            askForPersonalVoiceAtLaunch()
+        }
     }
 
     /// Removes the voices observer, which the reference app leaked (code
@@ -110,20 +157,63 @@ final class SpeechService {
         }
     }
 
+    // MARK: - Personal Voice
+
     /// Runs before any synthesis. The reference app found that asking after
     /// the first utterance could miss personal voices for the rest of the
     /// session; Apple's documentation does not say so (docs/DECISIONS.md,
     /// "Personal Voice permission is asked at launch, for now").
-    private func askForPersonalVoice(using request: PersonalVoiceAuthorizationRequest) {
+    private func askForPersonalVoiceAtLaunch() {
         // @Sendable: the completion arrives on an arbitrary queue, so it must
         // not inherit this method's main-actor isolation.
-        request { @Sendable [weak self] status in
+        personalVoice.requestAuthorization { @Sendable [weak self] status in
             Task { @MainActor in
-                guard let self else { return }
-                self.personalVoiceStatus = status
-                self.refreshVoices()
+                self?.receivePersonalVoiceAnswer(status)
             }
         }
+    }
+
+    /// The Voice screen's explained button: asks for permission (the system
+    /// shows its question only the first time), waits for the answer, then
+    /// reads the voices again so the next phrase can use the person's
+    /// voice. Speaks nothing by itself. Returns the answer, for the screen to
+    /// say what happens next.
+    ///
+    /// A second call while the first still waits, such as a double tap or a
+    /// held look before the question covers the screen, asks nothing more
+    /// and returns the status as it stands: one question, one answer.
+    @discardableResult
+    func requestPersonalVoiceAuthorization() async -> AVSpeechSynthesizer.PersonalVoiceAuthorizationStatus {
+        guard !isAskingForPersonalVoice else {
+            logger.info("Absorbed a second Personal Voice request while the first waits")
+            return personalVoiceStatus
+        }
+        isAskingForPersonalVoice = true
+        defer { isAskingForPersonalVoice = false }
+        let status: AVSpeechSynthesizer.PersonalVoiceAuthorizationStatus = await withCheckedContinuation { continuation in
+            // @Sendable, as at launch: the answer arrives on any queue.
+            personalVoice.requestAuthorization { @Sendable answer in
+                continuation.resume(returning: answer)
+            }
+        }
+        receivePersonalVoiceAnswer(status)
+        return status
+    }
+
+    /// Reads again whether a Personal Voice may be used, and which voices
+    /// are installed. The app calls it each time it comes back to the
+    /// front: access can be turned on or off, and a voice made or deleted,
+    /// in the Settings app while Brickson waits, and a voice whose access
+    /// was turned off must not be asked for (docs/DECISIONS.md, "A Personal
+    /// Voice is used only while it is allowed"). Speaks nothing.
+    func refreshPersonalVoiceAvailability() {
+        personalVoiceStatus = personalVoice.status
+        refreshVoices()
+    }
+
+    private func receivePersonalVoiceAnswer(_ status: AVSpeechSynthesizer.PersonalVoiceAuthorizationStatus) {
+        personalVoiceStatus = status
+        refreshVoices()
     }
 
     /// Speaks `text`, interrupting anything currently being spoken (no queue).
@@ -389,11 +479,7 @@ final class SpeechService {
         var cacheWasStale = false
         var resolved: String?
         while resolved == nil,
-              let descriptor = VoiceSelection.select(
-                chosenID: chosenID,
-                from: candidates,
-                languageCode: Self.speechLanguageCode
-              ) {
+              let descriptor = selectVoice(chosenID: chosenID, from: candidates) {
             if voiceCatalog.voiceIsAvailable(identifier: descriptor.id) {
                 resolved = descriptor.id
             } else {
@@ -413,7 +499,34 @@ final class SpeechService {
         Bundle.main.preferredLocalizations.first ?? "en"
     }
 
+    private func selectVoice(chosenID: String?, from candidates: [VoiceDescriptor]) -> VoiceDescriptor? {
+        VoiceSelection.select(
+            chosenID: chosenID,
+            from: candidates,
+            languageCode: Self.speechLanguageCode,
+            automaticPersonalVoiceID: automaticPersonalVoiceID
+        )
+    }
+
     private func refreshVoices() {
-        availableVoices = voiceCatalog.installedVoices()
+        availableVoices = VoiceSelection.usableVoices(
+            voiceCatalog.installedVoices(),
+            personalVoiceAllowed: personalVoiceStatus == .authorized
+        )
+        keepAutomaticPersonalVoice()
+    }
+
+    /// Remembers the Personal Voice Automatic now speaks in, when it is a
+    /// new one: the first one allowed, or the next one after the kept voice
+    /// was deleted. Runs each time the list is read. While access is off no
+    /// Personal Voice is a candidate, so the kept one is not replaced and
+    /// comes back with access.
+    private func keepAutomaticPersonalVoice() {
+        guard let automatic = automaticVoice,
+              automatic.isPersonalVoice,
+              automatic.id != automaticPersonalVoiceID
+        else { return }
+        automaticPersonalVoiceID = automatic.id
+        settings.set(automatic.id, forKey: Self.automaticPersonalVoiceIDKey)
     }
 }

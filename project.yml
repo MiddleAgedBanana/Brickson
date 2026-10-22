@@ -50,6 +50,12 @@ targets:
     platform: iOS
     sources:
       - Brickson
+      # The public privacy policy, shown inside the app from this one copy
+      # (docs/DECISIONS.md, "The privacy policy ships inside the app").
+      # It is copied as a folder, so the app holds privacy/index.html.
+      - path: site/privacy
+        type: folder
+        buildPhase: resources
     # An explicit Info.plist, generated from these properties: background
     # audio has no INFOPLIST_KEY_ build setting, and speech must keep playing
     # when the screen locks or another app comes forward.
@@ -60,8 +66,9 @@ targets:
         # Text-to-speech says the app's name this way ("Accessibility
         # Bundle Name" in Xcode). Set in the App identity block above.
         CFBundleSpokenName: $(APP_SPOKEN_NAME)
-        # Other names Siri accepts for the app (at most three; never another
-        # app's name). docs/DECISIONS.md, "App identity".
+        # Other names for Siri (at most three; never another app's name).
+        # Siri uses them only once the app has Siri support (an Intents
+        # extension, in Apple's words). docs/DECISIONS.md, "App identity".
         INAlternativeAppNames:
           - INAlternativeAppName: Brick Son
         CFBundleShortVersionString: $(MARKETING_VERSION)

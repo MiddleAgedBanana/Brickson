@@ -35,6 +35,7 @@ struct LaunchOptionsTests {
         #expect(options.startScreen == .keyboardProbe)
         #expect(options.unrecognized.isEmpty)
         #expect(LaunchOptions.parse(["--fresh-test-storage"]).storage == .freshTest)
+        #expect(LaunchOptions.parse(["--screen=settings"]).startScreen == .settings)
     }
 
     // Release launches use .standard. Giving that default an appearance
@@ -45,6 +46,21 @@ struct LaunchOptionsTests {
         #expect(LaunchOptions.parse(["--appearance=light"]).appearance == .light)
         #expect(LaunchOptions.parse(["--appearance=dark"]).appearance == .dark)
         #expect(LaunchOptions.parse(["--appearance=dark"]).unrecognized.isEmpty)
+    }
+
+    // Release launches use .standard, which must ask at launch with the
+    // device's own permission. Taking a typo for a trial, or misreading
+    // one, fails this.
+    @Test func thePersonalVoiceTrialIsReadOnlyWhenSpelledRight() {
+        #expect(LaunchOptions.standard.personalVoice == nil)
+        #expect(LaunchOptions.parse(["--personal-voice=ask-from-settings"]).personalVoice == .askFromSettings)
+        #expect(LaunchOptions.parse(["--personal-voice=stand-in-refuses"]).personalVoice == .standInRefuses)
+        #expect(LaunchOptions.parse(["--personal-voice=stand-in-refuses"]).unrecognized.isEmpty)
+
+        let typos = ["--personal-voice", "--personal-voice=", "--personal-voice=refuses", "--personal-voice=Ask-From-Settings"]
+        let options = LaunchOptions.parse(typos)
+        #expect(options.personalVoice == nil)
+        #expect(options.unrecognized == typos)
     }
 
     // A typo must be reported, not silently interpreted as light or dark.

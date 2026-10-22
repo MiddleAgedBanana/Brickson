@@ -72,13 +72,13 @@ TestFlight group before the gate passes, and it goes out once items 1 to
 |---|---|---|---|---|
 | 1 | Current toolchain | CI and the Mac build with Apple's newest released Xcode; the minimum iOS decided | Toolchain and iOS version targets | Landed with PR #12 on 2026-10-21: CI builds with Apple's newest released Xcode, and the minimum iOS is 26.0, decided from two rules |
 | 2 | Test seams and CI evidence | Launch options for UI tests (in-memory library, fresh settings, text size, appearance), an iPhone run in the UI tests job, result bundles from CI, the String Catalog synced and checked | Test seams and CI evidence | Launch options, UI tests on iPad then iPhone, kept result bundles and the String Catalog check landed with PR #13 on 2026-10-21; uploading the result bundles from CI waits on a `tests.yml` change the owner commits |
-| 3 | An honest Home on both devices | Words never break, every category visible, the starter library without scrolling, sized from the space available rather than the device model | Phone layout and word fitting | In progress |
-| 4 | Get Attention and a sturdier speech engine | A start-only alarm with Stop elsewhere; one owner for the audio session; the code audit's speech fixes (M1, L1, L3, L4) | Speech engine and Get Attention | In progress; on-screen placement waits for item 3's slots |
-| 5 | Typing | A composer that does not care which keyboard feeds it, a draft that survives, a probe that measures the real keyboard; then typing on Home under a safety band the keyboard never covers | Typing foundation | Foundation in progress; on-screen typing waits for items 3 and 9 |
+| 3 | An honest Home on both devices | Words never break, every category visible, the starter library without scrolling, sized from the space available rather than the device model | Phone layout and word fitting, then a new thread for the wells and the engine | Labels that fit themselves, four categories that never scroll sideways, three phone columns and Home's slot plan in the Phone layout pull request; Home's scan order (quick controls first, regions as containers) and Voice Control names in the accessibility first pass ([`log/2026-10-22-home-scan-order-and-names.md`](log/2026-10-22-home-scan-order-and-names.md)); the wells, the rest of item 3's accessibility list, and no scrolling on small phones at large text, are still to build |
+| 4 | Get Attention and a sturdier speech engine | A start-only alarm with Stop elsewhere; one owner for the audio session; the code audit's speech fixes (M1, L1, L3, L4) | Speech engine and Get Attention | In progress; on-screen placement builds the wells of DECISIONS.md, "Home's slot plan" |
+| 5 | Typing | A composer that does not care which keyboard feeds it, a draft that survives, a probe that measures the real keyboard; then typing on Home under a safety band the keyboard never covers | Typing foundation, then a new thread | Foundation built on 2026-10-21 (`MessageComposer`, `DraftStore`, the keyboard probe; [`log/2026-10-21-typing-foundation.md`](log/2026-10-21-typing-foundation.md)); typing on Home waits for items 3 and 9 and gets a fresh thread |
 | 6 | Editing and backup | One validated edit applied in one explicit save, a failure test for every save, an emergency category that cannot be deleted, fixed identities for starter phrases, a versioned backup file | Library editing and backup format | Core in progress; the Library screen waits for item 7 |
-| 7 | Settings and first run | Settings root (a large Back, a start-only Get Attention, Family setup), the voice picker and Personal Voice guidance, the in-app Privacy row, family setup including Guided Access and Assistive Access advice | Settings and first run | Started 2026-10-21, from the first-run design and [`onboarding-and-settings.md`](recon/2026-10-15/directions/onboarding-and-settings.md); its choices are recorded in DECISIONS.md as decided defaults |
+| 7 | Settings and first run | Settings root (a large Back, a start-only Get Attention, Family setup), the voice picker and Personal Voice guidance, the in-app Privacy row, family setup including Guided Access and Assistive Access advice | Settings and first run | Built 2026-10-21 ([`log/2026-10-21-settings-and-first-run.md`](log/2026-10-21-settings-and-first-run.md)), from the first-run design and [`onboarding-and-settings.md`](recon/2026-10-15/directions/onboarding-and-settings.md); its choices are recorded in DECISIONS.md as decided defaults. Left for later: Home's Settings button, Get Attention in Settings (with Stop on Home). Asking for Personal Voice from Settings is built (2026-10-22, [`log/2026-10-22-voice-screen.md`](log/2026-10-22-voice-screen.md)) and switches on after device check D1 |
 | 8 | Being heard on calls | Speech added to phone and FaceTime calls through Apple's "Add Audio in Calls" path, if a device check passes | None, on purpose | Held until the owner has a device build (see below) |
-| 9 | Screens designed in Figma | Home, typing, alarm, Settings, voice and library screens from Apple's iOS 27 UI kit, positions shown not to move, measured colour tokens | Figma and Claude Design screens | Drawn on 2026-10-21: the Figma file and `docs/DESIGN.md` ([record](log/2026-10-21-design-screens.md)); the slot plan's decision comes with item 3 |
+| 9 | Screens designed in Figma | Home, typing, alarm, Settings, voice and library screens from Apple's iOS 27 UI kit, positions shown not to move, measured colour tokens | Figma and Claude Design screens | Reference drawings and [specification](work/design-screens.md) recorded; corrections and open placement questions remain ([record](log/2026-10-22-design-reconciliation.md)); item 3's landed slot decisions bind |
 | 10 | App Store readiness | Apple's current requirements, store text with no price words, accessibility and privacy labels, screenshots, review notes, the privacy policy's unbuilt sections built or deleted | App Store readiness and ASO | In progress (`docs/APP-STORE.md`, `docs/ASO.md`) |
 | 11 | Release chores | The brand icon installed, a license decision, the App Store Connect record (after the name is confirmed), TestFlight to the owner and a small group that includes a person living with ALS and a speech-language pathologist | Owner, with items 9 and 10 | Waiting on decisions |
 | 12 | Plan and maintain | This roadmap, the decisions list, the handoff, the way of working ([`docs/SDLC.md`](SDLC.md)) | Roadmap, decisions and repo review | Landed with PR #15; each pull request keeps its own rows current |
@@ -97,8 +97,9 @@ where anything is, and the dwell-safety scoring passes for every profile.
   available, the input profile, the text size and the library's shape to
   a frame for every slot, with standard buttons placed at those frames.
   Profiles (touch, keyboard and Voice Control, switch including
-  brain-computer interfaces, head, gaze) change sizes and spacing only;
-  every control keeps its place. The 2026-10-15 blueprint
+  brain-computer interfaces, head, gaze, and a late-stage profile with
+  fewer, larger targets that serves as the map's Yes/No mode and rest
+  board) change sizes and spacing only; every control keeps its place. The 2026-10-15 blueprint
   ([`layout-blueprint.md`](recon/2026-10-15/layout-blueprint.md)) is the
   starting design, but it keys some numbers to a table of devices; the
   owner's 2026-10-21 rule asks for layouts from available space instead
@@ -134,6 +135,17 @@ where anything is, and the dwell-safety scoring passes for every profile.
   only behind a recorded exception to invariant 9, after an experiment
   ([`directions/caregiver-alerts.md`](recon/2026-10-15/directions/caregiver-alerts.md)).
 
+## Waiting, not yet in a release
+
+Worth building, each starting with a work file once R2's foundations are
+in: a watch app, a start-only Get Attention control for Control Center and
+the Action button, an on-device partner view, custom VoiceOver rotors,
+pronunciation of names, and keyboard shortcuts
+([`docs/ACCESSIBILITY.md`](ACCESSIBILITY.md); docs/DECISIONS.md,
+"Accessibility API coverage"). HomeKit tiles are not on this list: they
+would control devices beyond the iPhone or iPad, so they wait on the
+owner's decision under invariant 9, as caregiver alerts do.
+
 ## All the time
 
 - The test infrastructure list in
@@ -165,10 +177,10 @@ Each owning piece of work checks its findings before acting. The biggest:
 
 - The layout blueprint reads the screen and a table of devices; the
   engine must take only the window's space (now a rule: AGENTS.md, *Layout
-  on every device and window*). *(Phone layout and word fitting)*
+  on every device and window*). *(the layout engine, a new thread)*
 - iPhone Duo and other folding or resizable windows are not planned for,
   and App Store submissions will need iPhone Duo screenshots from April
-  2027 (App Store Connect release notes, 2026-10-15). *(Phone layout and word fitting; App Store readiness and ASO)*
+  2027 (App Store Connect release notes, 2026-10-15). *(the layout engine, a new thread; App Store readiness and ASO)*
 - No screenshots or result bundles leave CI, so cloud agents cannot see
   what the UI tests saw. *(Test seams and CI evidence)*
 - No release or TestFlight runbook, and no plan for version and build
@@ -179,10 +191,11 @@ Each owning piece of work checks its findings before acting. The biggest:
 - Nothing technical stops an agent merging or pushing to `main`; the
   owner's merge is the gate only by rule. *(Project guardrails)*
 
+Accessibility API coverage was checked against Apple's documentation on
+2026-10-21: [`docs/ACCESSIBILITY.md`](ACCESSIBILITY.md) gives every API
+in the map its release and roadmap item.
 Apple's design guidelines and Liquid Glass adoption were reviewed on
 2026-10-21 (`docs/DESIGN.md`, *Apple's guidelines and Liquid Glass*).
-Not reviewed yet: full accessibility API coverage (the "Accessibility
-API coverage" work, `docs/ACCESSIBILITY.md`).
 
 ## Held on purpose
 

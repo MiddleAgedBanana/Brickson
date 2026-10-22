@@ -100,6 +100,62 @@ struct OffMainThreadCallbackTests {
         #expect(arrived)
     }
 
+    /// The Voice screen's request waits for the same answer, which can also
+    /// arrive on any queue. Fails if the wait traps or never ends.
+    @Test @MainActor func theRequestedPersonalVoiceAnswerCanArriveOnABackgroundThread() async throws {
+        let harness = AudioHarness(askPolicy: .fromSettings)
+        let speech = harness.speech
+        let asked = harness.personalVoice.requestCount
+        let request = Task { await speech.requestPersonalVoiceAuthorization() }
+        #expect(await waitUntil { harness.personalVoice.requestCount == asked + 1 })
+        let completion = try #require(harness.personalVoice.completion)
+
+        await Task.detached { completion(.authorized) }.value
+
+        // Waits for the request only once its answer has landed, so a
+        // broken hop fails here instead of waiting for ever.
+        let landed = await waitUntil { harness.speech.personalVoiceStatus == .authorized }
+        #expect(landed)
+        guard landed else { return }
+        let answer = await request.value
+        #expect(answer == .authorized)
+    }
+
+    /// The closure the system itself calls with its answer, built by
+    /// `SystemPersonalVoice.forwardingAnswer(to:)`, which is what
+    /// `requestAuthorization` hands to AVFoundation. Fails if that closure
+    /// becomes main-actor isolated.
+    @Test func theSystemsPersonalVoiceAnswerCanArriveOnABackgroundThread() async {
+        let answer: AVSpeechSynthesizer.PersonalVoiceAuthorizationStatus = await withCheckedContinuation { continuation in
+            let forward = SystemPersonalVoice.forwardingAnswer { status in
+                continuation.resume(returning: status)
+            }
+            Task.detached { forward(.authorized) }
+        }
+
+        #expect(answer == .authorized)
+    }
+
+    /// The UI tests' stand-in for the permission answers from another
+    /// queue, as the system does, after its status has changed. Fails if
+    /// it answers on the main thread, answers something else, or answers
+    /// before its status says so.
+    @Test @MainActor func theStandInPersonalVoiceAnswersFromAnotherThread() async {
+        let standIn = StandInPersonalVoice(answer: .denied)
+        #expect(standIn.status == .notDetermined)
+
+        let answer: (status: AVSpeechSynthesizer.PersonalVoiceAuthorizationStatus, onMain: Bool) =
+            await withCheckedContinuation { continuation in
+                standIn.requestAuthorization { status in
+                    continuation.resume(returning: (status, Thread.isMainThread))
+                }
+            }
+
+        #expect(answer.status == .denied)
+        #expect(!answer.onMain)
+        #expect(standIn.status == .denied)
+    }
+
     /// AVAudioPlayer gives no thread guarantee for its delegate either.
     @Test @MainActor func toneReportsCanArriveOnABackgroundThread() async throws {
         let playback = try SystemAttentionTonePlayback.bundled()
