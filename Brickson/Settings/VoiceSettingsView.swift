@@ -20,11 +20,20 @@ struct VoiceSettingsView: View {
 }
 
 /// The screen's content, shared with step 2 of Set Up Step by Step.
+///
+/// The voices can change while it is open: a voice downloaded or deleted,
+/// or Personal Voice turned on or off in the Settings app while Brickson
+/// waits (`SpeechService.refreshPersonalVoiceAvailability()`). So the voice
+/// list keeps the places it had when the screen opened
+/// (`VoiceList.keepingPlaces`), and the words above it keep the tallest
+/// height they have had, so no Hear, Use or speed button moves under a
+/// resting pointer.
 struct VoiceContent: View {
     @Environment(SpeechService.self) private var speech
-    /// The missing-voice note was shown. Its place is kept until the screen
-    /// closes, so choosing a voice does not pull the rows up under it.
-    @State private var missingVoiceWasShown = false
+    /// The voice list as it was when the screen opened, and whether the
+    /// missing-voice note was needed then. Both hold until the screen
+    /// closes.
+    @State private var opened: OpenedVoiceList?
 
     var body: some View {
         let rows = VoiceList.rows(
@@ -33,17 +42,21 @@ struct VoiceContent: View {
             languageCode: Bundle.main.preferredLocalizations.first ?? "en",
             describeLanguage: { Locale.current.localizedString(forIdentifier: $0) ?? $0 }
         )
+        let voiceIsMissing = VoiceList.chosenVoiceIsMissing(selectedID: speech.selectedVoiceID, from: speech.availableVoices)
 
         // Which voice speaks now, from the service itself, so a kept
-        // Personal Voice is named the same way speech chooses it.
+        // Personal Voice is named the same way speech chooses it. Reserved
+        // over every voice listed now or when the screen opened.
         if let current = speech.currentVoice {
+            let names = Set(speech.availableVoices.map(\.name) + (opened?.voiceNames ?? []))
             SettingsReservedParagraph(
                 text: Text("Speaking with \(current.name)."),
-                alternatives: speech.availableVoices.map { Text("Speaking with \($0.name).") }
+                alternatives: names.sorted().map { Text("Speaking with \($0).") }
             )
         }
 
         PersonalVoiceSection()
+            .settingsKeepsItsTallestHeight()
 
         SettingsHeading("Speed")
         let chosenSpeed = SpeedChoice.matching(speech.speechRate, normal: AVSpeechUtteranceDefaultSpeechRate)
@@ -56,16 +69,38 @@ struct VoiceContent: View {
         }
 
         SettingsHeading("Voice")
-        let voiceIsMissing = VoiceList.chosenVoiceIsMissing(selectedID: speech.selectedVoiceID, from: speech.availableVoices)
-        if voiceIsMissing || missingVoiceWasShown {
+            .onAppear {
+                if opened == nil {
+                    opened = OpenedVoiceList(rows: rows, voiceWasMissing: voiceIsMissing)
+                }
+            }
+        // Only when the chosen voice was already missing as the screen
+        // opened: its place is then kept, so choosing a voice pulls no row
+        // up. A voice that goes while the screen is open says so in its
+        // own row instead, so no note is pushed in above the rows.
+        if opened?.voiceWasMissing ?? voiceIsMissing {
             SettingsParagraph("The voice chosen earlier is no longer on this device, so Automatic is used.")
                 .opacity(voiceIsMissing ? 1 : 0)
                 .accessibilityHidden(!voiceIsMissing)
-                .onAppear { missingVoiceWasShown = true }
         }
-        ForEach(rows) { row in
-            VoiceRowView(row: row)
+        ForEach(VoiceList.keepingPlaces(of: opened?.rows ?? rows, in: rows)) { place in
+            switch place {
+            case .voice(let row):
+                VoiceRowView(row: row)
+            case .gone(let row):
+                GoneVoiceRowView(row: row)
+            }
         }
+    }
+}
+
+/// What Voice Settings looked like when it opened (`VoiceContent`).
+private struct OpenedVoiceList {
+    let rows: [VoiceRow]
+    let voiceWasMissing: Bool
+
+    var voiceNames: [String] {
+        rows.filter { $0.voiceID != nil }.map(\.name)
     }
 }
 
@@ -177,6 +212,25 @@ private struct VoiceRowView: View {
             }
         }
         .padding(.bottom, 8)
+    }
+}
+
+/// A voice listed when the screen opened that is no longer on the device.
+/// The row it had is laid out hidden, so its place keeps its size, with
+/// passive words in it and no button, until the screen closes
+/// (`VoiceList.keepingPlaces`).
+private struct GoneVoiceRowView: View {
+    let row: VoiceRow
+
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            VoiceRowView(row: row)
+                .hidden()
+                .accessibilityHidden(true)
+            // A voice's name is its own, never translated.
+            SettingsParagraph("\(row.name) is no longer on this device.")
+        }
+        .allowsHitTesting(false)
     }
 }
 

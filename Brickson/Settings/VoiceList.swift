@@ -18,6 +18,22 @@ nonisolated struct VoiceRow: Equatable, Identifiable, Sendable {
     var id: String { voiceID.map { "voice:\($0)" } ?? "automatic" }
 }
 
+/// One place in the voice list while Voice Settings is open
+/// (`VoiceList.keepingPlaces`).
+nonisolated enum VoiceListPlace: Equatable, Identifiable, Sendable {
+    /// A voice that can be heard and chosen.
+    case voice(VoiceRow)
+    /// A voice listed when the screen opened that is no longer offered: its
+    /// place is kept, with passive words in it, until the screen closes.
+    case gone(VoiceRow)
+
+    var id: String {
+        switch self {
+        case .voice(let row), .gone(let row): row.id
+        }
+    }
+}
+
 /// Which voices Settings offers, in what order, and what each button is
 /// called. Pure, so the order and the uniqueness of names are tested.
 ///
@@ -107,6 +123,26 @@ nonisolated enum VoiceList {
     static func chosenVoiceIsMissing(selectedID: String?, from voices: [VoiceDescriptor]) -> Bool {
         guard let selectedID else { return false }
         return !voices.contains { $0.id == selectedID && !$0.isNovelty }
+    }
+
+    /// The rows in the places they had when the screen opened (`shown`),
+    /// so a voice that arrives or leaves while Voice Settings is open moves
+    /// no Hear or Use button under a resting pointer (AGENTS.md,
+    /// invariant 10). A voice that is gone keeps its place as passive words;
+    /// a voice that arrives goes after every row already shown. Each voice
+    /// still shown takes its current row, so which one is chosen is never
+    /// out of date. The next time the screen opens, `rows` alone decides
+    /// the order again.
+    static func keepingPlaces(of shown: [VoiceRow], in current: [VoiceRow]) -> [VoiceListPlace] {
+        let currentByID = Dictionary(current.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        let shownIDs = Set(shown.map(\.id))
+        let kept = shown.map { row in
+            currentByID[row.id].map(VoiceListPlace.voice) ?? .gone(row)
+        }
+        let arrived = current
+            .filter { !shownIDs.contains($0.id) }
+            .map(VoiceListPlace.voice)
+        return kept + arrived
     }
 
     private static func qualityName(_ voice: VoiceDescriptor) -> String {

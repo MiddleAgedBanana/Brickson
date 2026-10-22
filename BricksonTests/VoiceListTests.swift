@@ -88,4 +88,52 @@ struct VoiceListTests {
         #expect(daniel?.useLabel == "Use Daniel")
         #expect(daniel?.hearLabel == "Hear Daniel")
     }
+
+    // MARK: - Places while the screen is open
+
+    /// A voice that arrives while Voice Settings is open, such as a
+    /// Personal Voice allowed in the Settings app, goes after every row
+    /// already shown. Fails if the live order is used, which would put it
+    /// second and move every row below it.
+    @Test func aVoiceThatArrivesGoesAfterTheRowsAlreadyShown() {
+        let withoutMine = voices.filter { $0.id != "mine" }
+        let shown = VoiceList.rows(for: withoutMine, selectedID: nil, languageCode: "en")
+        let current = VoiceList.rows(for: voices, selectedID: nil, languageCode: "en")
+
+        let places = VoiceList.keepingPlaces(of: shown, in: current)
+
+        #expect(places.map(\.id) == shown.map(\.id) + ["voice:mine"])
+    }
+
+    /// A voice that leaves keeps its place, as words, so nothing below it
+    /// moves up under a resting pointer. Fails if a gone voice is dropped.
+    @Test func aVoiceThatLeavesKeepsItsPlace() {
+        let shown = VoiceList.rows(for: voices, selectedID: nil, languageCode: "en")
+        let current = VoiceList.rows(for: voices.filter { $0.id != "daniel" }, selectedID: nil, languageCode: "en")
+
+        let places = VoiceList.keepingPlaces(of: shown, in: current)
+
+        #expect(places.map(\.id) == shown.map(\.id))
+        let daniel = shown.first { $0.voiceID == "daniel" }!
+        #expect(places.filter { if case .gone = $0 { true } else { false } } == [.gone(daniel)])
+    }
+
+    /// Each voice still listed shows whether it is chosen now. Fails if the
+    /// rows from when the screen opened are shown as they were.
+    @Test func whichVoiceIsChosenIsNeverOutOfDate() {
+        let shown = VoiceList.rows(for: voices, selectedID: nil, languageCode: "en")
+        let current = VoiceList.rows(for: voices, selectedID: "samantha", languageCode: "en")
+
+        let chosen = VoiceList.keepingPlaces(of: shown, in: current).filter { place in
+            if case .voice(let row) = place { row.isSelected } else { false }
+        }
+
+        #expect(chosen.map(\.id) == ["voice:samantha"])
+    }
+
+    @Test func withNothingChangedThePlacesAreTheRows() {
+        let rows = VoiceList.rows(for: voices, selectedID: "daniel", languageCode: "en")
+
+        #expect(VoiceList.keepingPlaces(of: rows, in: rows) == rows.map(VoiceListPlace.voice))
+    }
 }

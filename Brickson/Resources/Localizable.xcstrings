@@ -7,6 +7,9 @@
     "%@ can speak in a voice that sounds like you, made with Apple's Personal Voice. iOS asks once whether %@ may use it; choose Allow." : {
 
     },
+    "%@ is no longer on this device." : {
+
+    },
     "%@ may use a Personal Voice, but none is on this device. One is made in the Settings app by reading phrases aloud:" : {
 
     },
