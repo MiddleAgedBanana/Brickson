@@ -45,7 +45,7 @@ Merge commit `431ee14` incorporated `main` at `d79d836`, which landed
 PR #20's documentation reconciliation without changing the app or tests,
 and added the audit diagnostics. It is committed and pushed, preserving
 existing history. Local unit and full UI validation passed on both device
-families; CI on the pushed commit remains pending.
+families; subsequent CI outcomes are recorded below.
 
 ## Verified
 
@@ -173,12 +173,78 @@ light/dark audit passed in 22.884 seconds. `scripts/test.sh ui` completed
 successfully for both families; the original CI finding's cause remains
 unestablished.
 
+## CI after adding native diagnostic captures
+
+Head `c311252` (the documentation follow-up to `431ee14`) completed
+[run 39863233234](https://github.com/MiddleAgedBanana/Brickson/actions/runs/39863233234)
+with the unit job passing and the UI job failing. On iPad, 31 tests passed,
+two failed and four existing probes skipped in 870.118 seconds; the Home
+test passed in 125.742 seconds. The first app test failed obtaining the
+main-window accessibility snapshot (`kAXErrorServerNotFound`). The AX5
+light audit separately reported `elementDetection` with no element.
+On iPhone, all 33 enabled tests passed, with four existing probe skips,
+in 793.617 seconds; Home took 67.456 seconds. No rerun was requested.
+
+The new helper retained both contextual and native records for the audit
+finding, plus issue-time screenshots, the full tree and button JSON. The
+native attachment supplies the generic issue description and an app
+screenshot, but no element or rectangle. The pre-audit capture includes
+Speaking; the issue-time tree and both native and issue-time screenshots
+show the message with Speaking absent. These observations support checking
+a changing status line; they do not establish a different missing label.
+This run predates the still-screen waits introduced by PR #31.
+
+## Reconciliation with the still-screen audit fix
+
+After the documentation follow-up `c311252`, `main` advanced to `479175d`
+(PR #31), incorporated with a merge commit preserving the existing history.
+The merge had no conflicts and retains both changes: the helper waits for
+speech before each audit attempt and the AX5 captures,
+while unexpected findings still keep the issue-time captures, contextual
+failure and native XCTest issue. The existing phrase-label exception and
+one retry for audit-service code `-56` are unchanged.
+
+PR #31's [record](2026-10-22-audit-still-screen.md) documents a Speaking-line
+timing race from other CI evidence. It does not retroactively identify the
+text in this PR's earlier finding or establish that every similar finding
+is fixed. Audits now cover the settled, post-speech screen; the Speaking
+status coverage gap remains recorded in HANDOFF. The two new audit-runner
+tests are retained. On this combined tree, `scripts/test.sh unit` passed
+all 460 tests with no skips or failures; app coverage was 62.6%
+(3,540 of 5,659 lines), and the String Catalog stayed unchanged. The full
+iPad UI suite completed with 39 total tests: 34 passed, one failed and
+four existing probe skips, in 679.475 seconds. Home passed in 82.362
+seconds. The failing AX5 light/dark test took 143.552 seconds and recorded
+four failures: two consecutive 30-second waits per appearance for Speaking
+to disappear. The post-timeout captures and live dark screenshot show
+Speaking still rendered. The hidden reservation views are explicitly
+inaccessible; the two Speaking nodes are the combined visible status and
+its text child. No timeout or assertion was weakened.
+
+The full iPhone suite also completed with 39 tests: 34 passed, one failed,
+four existing probe skips and no expected failures, in 629.830 seconds.
+Home passed in 40.082 seconds; the AX5 light/dark test failed in 143.062
+seconds with the same four Speaking-wait failures. Both devices used the
+unchanged suite on iOS 27.0 and Xcode 27.1 (27A9275): full-screen,
+default/AX5 text and light/dark coverage, iPad portrait/landscape and
+iPhone portrait, with the full software keyboard configured. The script
+completed with exit status 65. These are failed full UI runs, not green
+validation.
+
+Filtered logs for the iPad app processes show repeated CoreAudio server
+startup errors when the phrases were requested. The app's callback and
+watchdog paths are unchanged; this evidence does not establish the full
+cause of the persistent status. A focused check on a newly created
+isolated iPad remains pending while hosted CI checks the combined source
+independently.
+
 ## Not verified
 
-CI on the resulting pushed commit is pending. The new local results
-cover the working tree incorporating `d79d836`; any later merge requires
-validation on the resulting tree. Earlier CI results above do not claim
-final-head validation.
+Full local UI validation on the tree incorporating `479175d` has not
+passed. The Speaking wait failure still needs diagnosis, and CI on the
+resulting pushed commit is pending. The earlier passing full UI results
+cover the tree incorporating `d79d836`; they do not validate the later
+merge. CI on `c311252` failed as recorded above.
 
 Local simulator timings do not predict GitHub's machines. No physical-device,
 sound, gaze comfort, Snap to Item or windowed-iPad claim is made here.

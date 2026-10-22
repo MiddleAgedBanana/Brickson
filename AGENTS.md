@@ -612,6 +612,23 @@ Shortcuts. **Never apply** `core-data` skills (this app uses SwiftData),
   retries the full audit once for that error only; a second timeout still
   fails. Findings already reported with `XCTFail` remain failures. Never
   retry or discard an accessibility finding to make CI green.
+- **Audit only a still screen.** Apple's audit reads a screenshot and the
+  accessibility tree a moment apart, so text that leaves the screen in
+  between is reported as "Potentially inaccessible text" on no element.
+  Home's "Speaking" line did that on CI, leaving as the simulator's voice
+  finished just after an audit began (issue #30). The audit helper first
+  waits for speech to finish (`waitForSpeechToFinish`); anything else
+  that changes the screen by itself (Settings' idle reset under
+  `--short-timeouts`, an alarm that ends) must be over, or unable to
+  happen, before an audit. A wait is not a retry: the finding came from
+  auditing a moving screen, not from the app.
+- **CI results can be read without a Mac.** A failed UI test's result
+  keeps a screen recording of the whole test, and each `.xcresult` has a
+  `database.sqlite3` listing every activity and attachment with its time
+  and its file in `Data/` (`data.<id>`). Images and recordings are stored
+  as they are; text and JSON are zstd-compressed. `sqlite3` (or Python),
+  `zstd` and `ffmpeg` read them on Linux; how it was done for issue #30 is
+  in `docs/log/2026-10-22-audit-still-screen.md`.
 - **A crash cannot be a known issue.** `withKnownIssue` does not survive a
   crash; commit the reproduction disabled, naming its issue.
 - **Lazy Forms unload rows far off screen**, so a missing element in a UI

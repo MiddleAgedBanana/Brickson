@@ -78,7 +78,10 @@ Xcode 27.1 (27A9275); final-head CI is pending.
   unit-tested with fakes), or sound. Windowed iPad
   sizes and iPhone Duo poses are untested. The first UI test on a
   just-started CI simulator failed intermittently before PR #13's warm-up
-  launch (AGENTS.md, *Gotchas*).
+  launch (AGENTS.md, *Gotchas*). Apple's accessibility audit never sees
+  Home's "Speaking" line: audits wait for speech to finish, because one
+  that ran while the line left reported text with no element (issue #30,
+  [`log/2026-10-22-audit-still-screen.md`](log/2026-10-22-audit-still-screen.md)).
 
 ## Known gaps
 
@@ -302,8 +305,15 @@ Simulators cannot show these. Record each result in a `docs/log/` file
   established. A temporary contrast defect failed as expected and retained
   issue-time and native evidence; its app mutation was removed. Final
   units passed 460/460; iPad and iPhone UI each passed 33 tests with four
-  existing probe skips. Pushed-commit CI remains pending. These local
-  results cover the working tree incorporating `d79d836`
+  existing probe skips on the tree incorporating `d79d836`. A further
+  merge incorporates `main` at `479175d` (PR #31): its still-screen waits
+  and two runner tests remain alongside the diagnostic captures and native
+  findings. Its unit gate passed 460/460 with the catalog unchanged;
+  both combined UI suites completed with 34 passed, one failed and four
+  existing skips per device. The AX5 light/dark Speaking waits failed,
+  with the status visibly still present and CoreAudio startup errors in
+  the iPad app logs. A fresh-simulator check and pushed-head CI are pending.
+  Earlier-head CI also failed, with its native audit evidence now retained
   ([`log/2026-10-22-ci-home-test.md`](log/2026-10-22-ci-home-test.md)).
 - CodeQL scans the workflow files and the Python scripts, not the Swift
   code, on purpose (docs/DECISIONS.md, *Code scanning*); the failed Swift
