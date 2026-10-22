@@ -89,8 +89,16 @@ Xcode 27.1 (27A9275); final-head CI is pending.
   after reproducing 42 issues. The fresh full iOS unit gate also passed:
   554 passed, zero failures, the same existing crash probe skipped (555
   total); the catalog stayed synchronized. Full local UI evidence is for
-  `182df4b`, before this pure comparison follow-up. The two later review
-  conversations still need the pushed evidence; new-head CI is pending. The
+  `182df4b`, before this pure comparison follow-up. Those two review
+  conversations were answered and resolved on `d241dea`. A later Codex
+  finding reproduced format/control-only text counting as Emergency words
+  and editor input: 54 pure tests first reported 99 issues, then all passed
+  with the shared blank predicate strengthened. Import bytes and meaningful
+  composed text remain intact. Its full native unit gate passed 558 tests,
+  zero failures, the same existing crash probe skipped (559 total); the
+  catalog was unchanged. Main `479175d` has since added settled-screen
+  audits in PR #31; that merge and combined gates are next. New-head CI
+  is pending, and the earlier audit finding remains unexplained. The
   [`reconciliation record`](log/2026-10-22-library-reconciliation.md)
   preserves the earlier core/review fixes, failed CI evidence and next checks.
 

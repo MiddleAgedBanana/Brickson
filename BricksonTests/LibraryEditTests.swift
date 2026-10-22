@@ -243,6 +243,44 @@ struct LibraryEditTests {
         }
     }
 
+
+    /// Fails if a non-rendering name or phrase can enter through the editor,
+    /// including replacing Emergency's last words. No import is sanitized.
+    @Test(arguments: [" \n\t", "\u{00A0}", "\u{2060}", "\u{FEFF}", "\u{200D}", "\u{FE0F}", "\u{034F}", "\u{E0100}", "\u{0000}", "\u{0007}", " \u{2060}\u{FE0F}\u{0000}\n"])
+    func invisibleEditorInputIsBlank(blank: String) throws {
+        #expect(throws: LibraryEditRejection.emptyName) {
+            try makePlan(.addCategory(name: blank, symbolName: "star.fill"))
+        }
+        #expect(throws: LibraryEditRejection.emptyName) {
+            try makePlan(.renameCategory(F.needsID, name: blank))
+        }
+        #expect(throws: LibraryEditRejection.emptyText) {
+            try makePlan(.addPhrase(text: blank, category: F.basicsID))
+        }
+        #expect(throws: LibraryEditRejection.emptyText) {
+            try makePlan(.editPhrase(F.id(101), text: blank))
+        }
+        let one = try makePlan(.deletePhrase(F.id(202))).after
+        #expect(throws: LibraryEditRejection.emptyText) {
+            try makePlan(.editPhrase(F.id(201), text: blank), in: one)
+        }
+    }
+
+    /// Fails if the blank check strips meaningful joiners or variation
+    /// selectors, or rejects all strings containing an invisible scalar.
+    @Test(arguments: ["\u{2060}Help.\u{FEFF}", "\u{0000}Help.\u{0000}", "می\u{200C}خواهم", "क्\u{200D}ष", "👩‍💻", "☀️", "\u{2060}e\u{0301}\u{FEFF}"])
+    func meaningfulTextKeepsItsScalars(text: String) throws {
+        #expect(!LibraryText.isBlank(text))
+        let category = try makePlan(.addCategory(name: text, symbolName: "star.fill"))
+        #expect(LibraryText.sameBytes(try #require(category.after.categories.last).name, text))
+        let phrase = try makePlan(.addPhrase(text: text, category: F.basicsID))
+        #expect(LibraryText.sameBytes(try #require(phrase.after.categories[0].phrases.last).text, text))
+        let one = try makePlan(.deletePhrase(F.id(202))).after
+        let edited = try makePlan(.editPhrase(F.id(201), text: text), in: one)
+        #expect(edited.after.keepsEmergencyWorking)
+        #expect(LibraryText.sameBytes(edited.after.categories[1].phrases[0].text, text))
+    }
+
     // MARK: Phrases
 
     @Test func aNewPhraseIsTrimmedAndGoesAtTheEnd() throws {
@@ -322,9 +360,9 @@ struct LibraryEditTests {
         _ = try LibraryEdit.movePhrase(F.id(201), category: F.emergencyID, before: nil).plan(in: one)
     }
 
-    /// Fails if a whitespace-only imported phrase counts as something
+    /// Fails if an invisible imported phrase counts as something
     /// Emergency can say, even though its tile produces no speech.
-    @Test(arguments: [" \n\t", "\u{00A0}"])
+    @Test(arguments: [" \n\t", "\u{00A0}", "\u{2060}", "\u{FEFF}", "\u{200D}", "\u{FE0F}", "\u{034F}", "\u{E0100}", "\u{0000}", "\u{0007}", " \u{2060}\u{FE0F}\u{0000}\n"])
     func emergencyNeedsWordsNotOnlyAStoredPhrase(blank: String) {
         var onlyBlank = library
         onlyBlank.categories[1].phrases = [.init(id: F.id(201), text: blank)]
@@ -333,8 +371,8 @@ struct LibraryEditTests {
 
     /// Fails if an imported blank lets a delete or move remove Emergency's
     /// last phrase with words. Imports must still keep the blank's bytes.
-    @Test(arguments: [" \n\t", "\u{00A0}"])
-    func importedWhitespaceCannotReplaceTheLastEmergencyWords(blank: String) throws {
+    @Test(arguments: [" \n\t", "\u{00A0}", "\u{2060}", "\u{FEFF}", "\u{200D}", "\u{FE0F}", "\u{034F}", "\u{E0100}", "\u{0000}", "\u{0007}", " \u{2060}\u{FE0F}\u{0000}\n"])
+    func importedBlankCannotReplaceTheLastEmergencyWords(blank: String) throws {
         var backup = library
         backup.categories[1].phrases[1].text = blank
         let imported = try makePlan(.replace(backup)).after
@@ -600,6 +638,43 @@ struct LibraryImportTests {
         #expect(LibraryText.sameBytes(added.name, categoryName))
         #expect(added.symbolName == "no.such.symbol")
         #expect(added.phrases.map(\.text) == ["  spaced  ", "hello.", "Hello.", long])
+    }
+
+
+    /// Fails if import applies editor validation or rewrites invisible
+    /// category names or phrase text. Both merge and replace keep the bytes.
+    @Test(arguments: [" \n\t", "\u{00A0}", "\u{2060}", "\u{FEFF}", "\u{200D}", "\u{FE0F}", "\u{034F}", "\u{E0100}", "\u{0000}", "\u{0007}", " \u{2060}\u{FE0F}\u{0000}\n"])
+    func invisibleImportsKeepTheirBytes(blank: String) throws {
+        let incoming = LibrarySnapshot(categories: [
+            .init(id: F.id(800), name: blank, symbolName: "star.fill", isEmergency: false, phrases: [
+                .init(id: F.id(801), text: blank),
+            ]),
+        ])
+        let merged = try merge(incoming)
+        let replaced = try replace(with: LibrarySnapshot(categories: [F.emergency] + incoming.categories))
+        for plan in [merged, replaced] {
+            let category = try #require(plan.after.categories.last)
+            #expect(LibraryText.sameBytes(category.name, blank))
+            #expect(LibraryText.sameBytes(try #require(category.phrases.first).text, blank))
+        }
+    }
+
+    /// Fails if invisible backup content prevents Replace from retaining
+    /// the current Emergency words. The incoming invisible bytes stay too.
+    @Test(arguments: [" \n\t", "\u{00A0}", "\u{2060}", "\u{FEFF}", "\u{200D}", "\u{FE0F}", "\u{034F}", "\u{E0100}", "\u{0000}", "\u{0007}", " \u{2060}\u{FE0F}\u{0000}\n"])
+    func replaceKeepsEmergencyWordsAlongsideInvisibleBackupText(blank: String) throws {
+        let incoming = LibrarySnapshot(categories: [
+            .init(id: F.id(600), name: "Emergency", symbolName: "star.fill", isEmergency: true, phrases: [
+                .init(id: F.id(601), text: blank),
+            ]),
+        ])
+        let plan = try replace(with: incoming)
+        #expect(plan.after.keepsEmergencyWorking)
+        #expect(plan.importReport?.keptCurrentEmergencyPhrases == true)
+        let emergency = try #require(plan.after.categories.first { $0.isEmergency })
+        #expect(emergency.phrases.count == 3)
+        #expect(LibraryText.sameBytes(try #require(emergency.phrases.first).text, blank))
+        #expect(emergency.phrases.dropFirst().map(\.text) == F.emergency.phrases.map(\.text))
     }
 
     /// Only a phrase with no characters at all is skipped. Fails if import

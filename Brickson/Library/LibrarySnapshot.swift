@@ -79,7 +79,7 @@ nonisolated extension LibrarySnapshot {
     /// always there"): exactly one emergency category, holding at least one
     /// phrase with words. Home's Emergency control opens the first emergency
     /// category it finds and hides the rest, so a second one is unreachable
-    /// and one holding only imported whitespace has nothing to say.
+    /// and one holding only imported blank text has nothing to say.
     var keepsEmergencyWorking: Bool {
         let emergencies = categories.filter(\.isEmergency)
         return emergencies.count == 1
@@ -217,10 +217,16 @@ nonisolated enum LibraryText {
         text.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    /// True for text with nothing to say: empty, or only spaces and line
-    /// breaks.
+    /// True when every scalar is whitespace, a control code, or a
+    /// default-ignorable scalar with no glyph of its own. This only checks
+    /// the text: joiners and variation selectors in meaningful text stay
+    /// intact, and import never removes or rewrites any scalar.
     static func isBlank(_ text: String) -> Bool {
-        trimmed(text).isEmpty
+        text.unicodeScalars.allSatisfy { scalar in
+            CharacterSet.whitespacesAndNewlines.contains(scalar)
+                || scalar.properties.generalCategory == .control
+                || scalar.properties.isDefaultIgnorableCodePoint
+        }
     }
 
     /// What two category names are compared by. Names that differ only in

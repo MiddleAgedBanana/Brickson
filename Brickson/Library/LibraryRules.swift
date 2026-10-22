@@ -76,7 +76,7 @@ nonisolated enum LibraryRules {
         excluding id: UUID?
     ) throws(LibraryEditRejection) -> String {
         let name = LibraryText.trimmed(proposed)
-        guard !name.isEmpty else { throw .emptyName }
+        guard !LibraryText.isBlank(name) else { throw .emptyName }
         let key = LibraryText.nameKey(name)
         // The emergency category has no button of its own: the Emergency
         // control opens it. So it may keep a name like "Emergency".
@@ -99,7 +99,7 @@ nonisolated enum LibraryRules {
         excluding id: UUID?
     ) throws(LibraryEditRejection) -> String {
         let text = LibraryText.trimmed(proposed)
-        guard !text.isEmpty else { throw .emptyText }
+        guard !LibraryText.isBlank(text) else { throw .emptyText }
         let key = LibraryText.phraseKey(text)
         let taken = category.phrases.contains { other in
             other.id != id && LibraryText.phraseKey(other.text) == key

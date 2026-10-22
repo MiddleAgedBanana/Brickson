@@ -259,11 +259,70 @@ A separate inspection found no additional issue in the focused diff. Fresh
 CI and review must validate the new head; no fresh full UI run is claimed
 for this pure comparison follow-up.
 
+### Later invisible-text review
+
+The category-name fixes were pushed as `d241dea`, and both related
+CodeRabbit conversations were answered and resolved. A subsequent Codex
+review found a further Emergency gap: WORD JOINER and BOM, like other
+format-only strings, survive whitespace trimming. The snapshot, last-phrase
+delete/move guards and Replace fallback therefore counted a silent imported
+phrase as words. The same input was also accepted by the editor despite its
+existing nonblank name/phrase rule.
+
+`LibraryText.isBlank` now classifies text as blank only when every scalar
+is whitespace, a Unicode control code, or a default-ignorable code point.
+The editor's name and phrase guards use this same predicate. It does not
+remove any scalar or change import normalization. Letters, combining marks,
+meaningful joiners and variation selectors remain intact when the text has
+content. The current Xcode documentation for
+[`isDefaultIgnorableCodePoint`](https://developer.apple.com/documentation/swift/unicode/scalar/properties-swift.struct/isdefaultignorablecodepoint)
+defines those scalars as having no glyph of their own while potentially
+affecting nearby characters; Unicode general category `Cc` covers control
+codes, including NUL and BEL.
+
+Failing-first verification ran the actual unmodified `d241dea` pure sources
+against the expanded tests: 54 tests ran with 99 issues. Nine showed the
+snapshot counting invisible text as Emergency words, 18 allowed the final
+words to be deleted or moved away, 45 accepted invisible editor names or
+phrases, and 27 failed to keep current Emergency words beside a blank-only
+backup. After the correction all 54 pure edit/import tests passed with
+Swift 6, strict concurrency and default main-actor isolation.
+
+The 11 blank inputs include whitespace, nonbreaking space, WORD JOINER,
+BOM, ZWJ, standalone variation selectors, COMBINING GRAPHEME JOINER, NUL,
+BEL and a mixed string. Seven nonblank controls include Persian and
+Devanagari joiners, joined/variation-selector emoji, a decomposed accent,
+and words surrounded by format or control scalars. Their bytes remain
+unchanged. Both merge and Replace retain the invisible imported names and
+phrases byte for byte; Replace adds the current Emergency words when
+necessary instead of deleting the incoming text. Restoring the old blank
+predicate or editor guards fails these regressions. A separate bounded
+inspection found no additional issue in these paths.
+
+The repeated CodeRabbit concern about recording both contextual and native
+audit failures was answered without weakening the diagnostic helper.
+Xcode's current header confirms that returning `true` suppresses native
+issue recording. A prior deliberate single-contrast failure with the
+identical helper on PR #32 retained both reports and continued to four
+later phrase-tile callbacks. That probe injected one unexpected finding;
+it did not establish behavior for two independent unexpected findings.
+
+The fresh full `scripts/test.sh unit` gate passed: 558 passed, zero
+failures, one existing disabled issue #19 crash probe, zero expected failures
+(559 total). App line coverage was 66.9% (4,395 of 6,572 lines), and the String
+Catalog was unchanged. This used Xcode 27.1 (27A9275), XcodeGen 2.46.0,
+iPad Pro 13-inch (M5), iOS 27.0 (24A434). The bundle is
+`build/TestResults/unit-ipad.xcresult`. The 554-pass result above belongs
+to `d241dea`; full local UI evidence remains the `182df4b` baseline.
+Current-head CI and review are still required, and the earlier unexplained
+iPhone audit finding remains open evidence.
+
 ## Follow-ups, in order
 
-1. Answer and resolve the two category-name follow-up conversations with
-   the pushed commit and test evidence, then verify fresh CI and review.
-   PR #14 is not green until those checks pass.
+1. Reconcile newly landed main at `479175d` (PR #31's settled-screen
+   audits), preserving native diagnostics, and run the combined gates
+   before publishing. Then answer the invisible-text review with its commit
+   and evidence. Verify fresh CI and review; PR #14 is not green yet.
 2. If the AX5 finding recurs, inspect the new captures and native report to
    identify and fix its cause. The earlier failed run remains evidence;
    local passes do not explain it or authorize suppressing a finding.
