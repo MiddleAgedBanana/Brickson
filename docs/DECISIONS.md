@@ -42,14 +42,16 @@ holds.
 |---|---|
 | The releases and their order: R0, R1, R2 | `docs/ROADMAP.md` |
 | Layouts from the space available, with floors set without a device table | "Layouts from the space available", below |
+| When Personal Voice permission is asked, Automatic keeping the person's Personal Voice, no Personal Voice without permission | "Personal Voice permission is asked at launch, for now", "Automatic keeps the person's Personal Voice", "A Personal Voice is used only while it is allowed" (Personal Voice foundation; `claude/project-thread-1ly6dd`) |
 | Minimum iOS 26.0, iPhone and iPad, set by two rules: every device that can use eye tracking runs the app, and every mapped accessibility API stays reachable behind `#available` | "Minimum iOS, iPhone and iPad" (Toolchain and iOS version targets; PR #12, merged) |
 | Home's slot plan with stable slot identifiers; solid fills on Home and the system's Liquid Glass elsewhere | "Home's slot plan", "Solid fills on Home, system glass elsewhere" (Figma and Claude Design screens; pull request not open yet) |
 | The App Store category is Utilities, with no secondary category; the age-rating answers give 4+ | "App Store category", "Age rating answers" (App Store readiness and ASO; PR #18) |
 | Home's fixed slots, labels and button style | Entries next to "Home version 0 is a stand-in" (Phone layout and word fitting; pull request not open yet) |
-| Typing as a state of Home under a band Apple's keyboard never covers, Apple's keyboard in 1.0, Writing Tools off, third-party keyboards refused, Return speaks, the typed message | "Typing is a state of Home", "Typing uses Apple's keyboard", "Writing Tools off while typing", "Third-party keyboards refused in 1.0", "Return speaks", "The typed message" (Typing foundation; pull request not open yet) |
+| Typing as a state of Home under a band Apple's keyboard never covers, Apple's keyboard in 1.0, Writing Tools off, third-party keyboards refused, Return speaks, the typed message | "Typing is a state of Home", "Typing uses Apple's keyboard", "Writing Tools off while typing", "Third-party keyboards refused in 1.0", "Return speaks", "The typed message" (Typing foundation; its pull request from `claude/project-thread-dsbkry`) |
 | Explicit saves, an Emergency category that is always there, fixed starter identities, editing, import, replace, the backup format, an unreadable library reported and never replaced | "Every save is explicit", "Starter phrases", "The emergency category is always there", "Editing the library", "Importing a backup", "Replacing the library", "Backup file format", "An unreadable library is reported, never replaced" (Library editing and backup format; PR #14, open) |
 | When the audio session is released, the alarm's sound, start-only Get Attention, no automatic resume, Personal Voice never written to a file | "Background audio", "Get Attention", "A phrase the system cuts off", "Audio session notices", "Personal Voice is never written to a file" (Speech engine and Get Attention; PR #16, open) |
 | Home first with setup as a place in Settings, the Settings root, the voice picker, the Privacy row, the largest sizes when nobody answers setup, an "Anything changed?" check-in every three months that waits 30 days after Not Now | "First launch opens Home; setup lives in Settings", "Settings is a cover with a fixed safety bar", "Settings resets when idle and never closes", "Setup answers are kept as offered, never as completed", "Check-ins come every three months", "The privacy policy ships inside the app", "Speed is a set of fixed choices" (Settings and first run; PR #23) |
+| The accessibility coverage list and its choices: full screen in Assistive Access and no separate scene, no programmatic Guided Access, assistive-technology flags that only suggest, phrases in the person's voice with VoiceOver on, late-stage boards as an R1 profile, and what waits or is never used | "Accessibility API coverage" (Accessibility coverage checklist) |
 
 Recorded here:
 
@@ -133,10 +135,17 @@ Everything that identifies the app sits in one block at the top of
 | `MARKETING_VERSION` | `0.1.0` | The version people see. |
 | `CURRENT_PROJECT_VERSION` | `1` | Must go up with every upload to App Store Connect. |
 
-Siri also accepts the alternative name "Brick Son" (`INAlternativeAppNames`
-under the app's `info` in `project.yml`; at most three, never another app's
-name), because "Brickson" is in no pronunciation dictionary. Whether Siri,
-Voice Control and VoiceOver handle the name well is a device check.
+The alternative name "Brick Son" is declared for Siri
+(`INAlternativeAppNames` under the app's `info` in `project.yml`; at most
+three, never another app's name), because "Brickson" is in no pronunciation
+dictionary. It has no effect yet: Apple says Siri "recognizes alternative
+app names only for apps that include an Intents app extension with support
+for one or more intents" ("Specifying Synonyms for Your App Name", read
+2026-10-21), and Brickson has none. It stays declared for when Siri support
+comes (docs/ROADMAP.md, R2), and whether App Intents count is checked then.
+Whether Siri, Voice Control and VoiceOver handle the name well is a device
+check. Before (2026-10-10): this entry said Siri accepts "Brick Son"; the
+2026-10-21 accessibility coverage check found Apple's condition.
 
 The Xcode project, targets and folders are also called Brickson. Renaming
 those is a larger change (folders, target names, `@testable import`), and is
@@ -275,11 +284,12 @@ What the rules gave on 2026-10-21, from Apple's and the vendors' pages:
   none needs a system older than 26. Hence **26.0**: 27.0 would cut off a
   Skyle user on a 2018 iPad Pro.
 - **APIs in the map** that are newer than 26.0 sit behind `#available`:
-  `AccessibilitySettings.canOpenSettings(for:)` (26.4) and the iOS 27
-  audio-session life-cycle notifications, among others. Nothing the map
-  needs requires more than 26.0 to build on (preliminary floors from the
-  2026-10-15 platform recon; the *Accessibility API coverage* work
-  re-checks each one).
+  `AccessibilitySettings.canOpenSettings(for:)` and two SwiftUI display
+  values (26.4), the iOS 27 audio-session life-cycle notifications and
+  VoiceOver test service (27.0), and the iPhone Duo reserved regions
+  (27.1). Nothing the map needs requires more than 26.0 to build on
+  (re-checked on Apple's pages on 2026-10-21: docs/ACCESSIBILITY.md,
+  *Newer than iOS 26.0*).
 - Also gained at 26.0: iOS 26 runs on iPhone 11 and later and iPhone SE
   (2nd generation), and iPadOS 26 on iPad (8th generation) and later and
   the 2018 iPads above, so people using touch, switches or Voice Control
@@ -608,9 +618,162 @@ passes do not validate this implementation.
 `docs/log/2026-10-21-ui-test-diagnosis.md` records the failing reproductions,
 the separate appearance-harness defect and subsequent verification.
 
+## Typing is a state of Home
+
+*Default, adopted 2026-10-21: the owner left these choices to the project. Reversible if the owner objects.*
+
+When someone chooses Type, Home stays on screen and only its lower part
+changes: the keyboard appears where the categories and phrase tiles were.
+Typing is not a separate screen or a sheet, because either would hide or
+duplicate Emergency, Get Attention, Yes and No, which must stay one
+activation away in every Home state (invariants 2 and 10).
+
+**The band rule.** A band across the top of Home holds everything the
+person must always reach: the message (which shows the words being
+typed), Emergency, Get Attention, Yes, No, Speak, the way back to the
+phrases and the space for warnings. The band is sized so that **Apple's
+keyboard never reaches it**, on the worst screen, in every orientation
+and text size. Because controls keep their relative places across
+profiles (invariant 8), the room Apple's keyboard leaves is the room
+every profile gets, even one that never uses Apple's keyboard.
+
+- Nothing moves when the keyboard appears or hides (invariant 11): the
+  keyboard covers the lower part of Home instead of pushing it up.
+- An app cannot ask how tall the keyboard will be before it appears. So
+  the layout reserves room for it as a function of the window alone (its
+  size and the text size), never of the device model. Measured keyboards
+  are rows in the tests, and a UI test fails if the live keyboard's top
+  crosses the band. `KeyboardProbeTests` measures it; the
+  table itself arrives with the layout engine (docs/PORTING.md, step 4).
+- The reference app's measurements on iOS 27.0 simulators with the full
+  software keyboard: a 13-inch iPad in landscape, keyboard top at 534 of
+  1032 points; the same iPad with Display Zoom set to Larger Text, 276 of
+  774 (the worst case: one row of 88pt controls fits under the message,
+  at the default text size only); an iPhone 17 Pro in portrait, 546 of
+  874. Brickson's own numbers are in docs/log/2026-10-21-typing-foundation.md.
+- Only controls that are harmless if a look slips up from the keyboard
+  sit nearest its edge; Speak, Yes, No, Get Attention, Emergency and
+  Clear sit away from the keys. Where the band has room for only one row,
+  that cannot be met, and each such screen becomes a named, measured
+  exception for the owner.
+- While typing, nothing that speaks sits under the keyboard, so hiding
+  the keyboard reveals nothing that speaks.
+
+Why: the reference app put its quick controls in a right-hand column, and
+the real keyboard covered Speak and Get Attention there (D27,
+docs/LESSONS.md, "Test with the real software keyboard"). The rule is set
+before Home is laid out, so that mistake cannot be built again.
+
+## Typing uses Apple's keyboard
+
+*Default, adopted 2026-10-21: the owner left these choices to the project. Reversible if the owner objects.*
+
+Version 1.0 types with Apple's own keyboard, everywhere. It brings
+QuickType predictions, autocorrection, Text Replacement, dictation, and
+the keyboard features Apple builds into Switch Control and Eye Tracking,
+and Apple keeps improving them. Two additions may follow, in this order:
+
+1. **A row of Brickson word buttons** just above the keyboard, at the
+   profile's target size, wherever the band leaves room (the larger
+   iPads). After a word is put in, the word buttons stay empty until the
+   next key, so a lingering look cannot keep adding words. Built only
+   after the device check on what happens at the keyboard's edge
+   (docs/log/2026-10-21-typing-foundation.md, check 5).
+2. **A large-key Brickson keyboard** for pointer and gaze users on large
+   iPads, only if device checks show Apple's keyboard is too slow or
+   unsafe for them. Never on iPhone: ten keys of at least 44 points do not
+   fit across any iPhone.
+
+The typing rules live in `MessageComposer`, which does not care which
+keyboard feeds it, so either addition reuses them.
+
+Not available in SwiftUI: turning off *inline predictions* (the grey word
+that Space accepts). That needs a wrapped UIKit text view; until then it
+is a setup tip (Settings › General › Keyboard › Show Predictions Inline).
+
+## Writing Tools off while typing
+
+*Default, adopted 2026-10-21: the owner left these choices to the project. Reversible if the owner objects.*
+
+Every field that types a message to speak turns off Apple Intelligence's
+Writing Tools (`typingFieldTraits()`, which applies
+`writingToolsBehavior(.disabled)`). A stray look could otherwise let it
+rewrite the person's words before they are spoken in the person's own
+voice (invariant 7), and AI-written replies are a hard stop (invariant
+9). For the same reason no on-device language model predicts words or
+finishes sentences.
+
+## Third-party keyboards refused in 1.0
+
+*Default, adopted 2026-10-21: the owner left these choices to the project. Reversible if the owner objects.* *Not built yet.*
+
+Brickson refuses keyboards from other apps, so only Apple's keyboard
+appears in it. Reasons: the keyboard table stays true (other keyboards
+have other heights, and could cover the band), and the privacy promise
+stays simple (a keyboard with Full Access can send what is typed to its
+maker). The cost: someone who relies on an accessible keyboard from
+another app, such as one with larger keys, could not use it in Brickson.
+Revisit if people ask. It is built with the typing state, as
+`application(_:shouldAllowExtensionPointIdentifier:)` returning false for
+`.keyboard` in an app delegate.
+
+## Return speaks
+
+*Default, adopted 2026-10-21: the owner left these choices to the project. Reversible if the owner objects.*
+
+The keyboard's Return key speaks the whole message, as an extra path;
+Speak stays the main one. A typed line break is never kept in the
+message. A line break inside pasted text becomes a space. Return with
+nothing to say does nothing. `MessageComposer` holds the rule, so it
+works the same with any keyboard (docs/LESSONS.md, "The return key must
+speak": in the reference app Return added a line break, nothing was
+spoken, and the line break was later read as a pause).
+
+Still open for dwell users: Apple's Return key sits among the letter
+keys, so a look that slips onto it speaks a half-written message. That
+goes against invariant 10 (no speaking control beside where the person
+points). Either it becomes a named, measured exception for dwell
+profiles, or Return stops speaking in those profiles. That is decided
+after the keyboard-edge device check (check 5 in
+docs/log/2026-10-21-typing-foundation.md), not before.
+
+## The typed message
+
+*Default, adopted 2026-10-21: the owner left these choices to the project. Reversible if the owner objects.*
+
+How the message being typed behaves (`MessageComposer`, `DraftStore`):
+
+- **Speaking keeps the message**, so it can be said again or added to
+  (invariant 3: speaking never changes data). A setting to clear it after
+  speaking is built into `MessageComposer` but not offered.
+- **Clear can be undone once.** The cleared words stay in memory, never
+  on disk, until a later Clear replaces them or the app closes. Nothing
+  else may take Clear's place, so there is never an Undo button where
+  Clear was (invariant 10). Where the restore control sits is Home's
+  layout's decision.
+- **At most 2,000 characters** (about two to three minutes of speech), so
+  an accidental paste cannot speak for many minutes. An edit that would
+  pass the limit is refused whole and nothing is cut short. A longer
+  message restored from an older version is kept whole (invariant 7).
+- **Kept across launches.** The message is saved after every change to a
+  small file, Application Support/Typing/draft.txt, written in one step
+  so a crash leaves the old or the new message and never part of either.
+  It is restored at launch without speaking and without opening typing,
+  and Clear deletes the file. This is what the privacy policy promises
+  ("The message you are typing, so it is still there if the app closes.
+  It stays until you clear it.").
+- **A failed save never loses the words.** They stay on screen and in
+  memory, Home shows "Message not saved" as passive text in the warning
+  space (invariant 5), and the next change or `retrySave()` tries again.
+  A file that cannot be read at launch gives an empty message and
+  "Message not restored". The message is never logged and never put in a
+  crash message.
+
 ## Personal Voice permission is asked at launch, for now
 
-*2026-10-10. Default, from the reference app.*
+*2026-10-10. Default, from the reference app. 2026-10-21: the moment is
+now one policy, and the answer is read again on every return to the
+front (Personal Voice foundation).*
 
 `SpeechService` asks for Personal Voice permission when the app starts.
 The reference app did the same, with a comment saying that asking after
@@ -619,6 +782,26 @@ Apple's documentation does not say so, so treat that as unverified. As a
 result the system question appears on first launch with no explanation.
 Onboarding should explain Personal Voice first and then ask; that comes
 with Settings and setup (docs/PORTING.md, step 7).
+
+When to ask is `PersonalVoiceAskPolicy`, chosen in one line in
+`AppAudio.makeForApp`. `.atLaunch` is today's behaviour and stays the
+app's policy. `.fromSettings` asks only from the Voice screen's explained
+button (`SpeechService.requestPersonalVoiceAuthorization()`), and at
+launch asks again only once the person has allowed it, which shows no
+question (Apple: the person is prompted initially and changes the answer
+in the Settings app). Switch to `.fromSettings` when two things are true:
+Settings has that button, and a device shows that a voice allowed after
+the first phrase of a session speaks without a relaunch (check D1 in
+docs/recon/2026-10-15/directions/onboarding-and-settings.md, 2.5; on
+docs/HANDOFF.md's device list). If D1 needs a relaunch, keep `.atLaunch`
+and explain afterwards on the Voice screen.
+
+Whatever the policy, the service reads the system's status at launch,
+before any answer (so someone who allowed it before speaks in their own
+voice from the first phrase), after every answer, and each time the app
+comes back to the front (`refreshPersonalVoiceAvailability()`), with the
+voice list each time: access can be turned on or off, and a voice made,
+in the Settings app while Brickson waits.
 
 No Info.plist key is needed for the request. If **Allow Apps to Request to
 Use** is off (Settings → Accessibility → Personal Voice), the system denies
@@ -789,6 +972,49 @@ says must be visibly presented. A test fails if any text of the page
 does not reach the screen, for example if the page gains an element the
 parser does not read.
 
+## Automatic keeps the person's Personal Voice
+
+*2026-10-21. Default, adopted 2026-10-21: the owner left these choices to
+the project. Reversible if the owner objects. Personal Voice foundation,
+from the research of 2026-10-15 (onboarding-and-settings.md, 3.2a).*
+
+A device can hold several Personal Voices, and Apple does not document
+the order the system lists them in. Automatic used to take the first one
+listed, so a second voice (made by someone else, or restored from
+another device) could change a person's voice between two launches,
+without anyone choosing it. A voice is part of who someone is.
+
+So once Automatic speaks in a Personal Voice, `SpeechService` keeps that
+voice's identifier under the settings key `automaticPersonalVoiceID`, and
+Automatic uses it for as long as the system lists it
+(`VoiceSelection.select`, `automaticPersonalVoiceID`). Only a Personal
+Voice is kept: a system voice never outranks the person's own. The kept
+voice is written only when the voice list is read, never cleared while
+access is off (so the same voice comes back with access), and replaced
+only when it is gone and another Personal Voice is listed. A voice the
+person chose still comes first. The Voice screen shows what Automatic
+uses (`SpeechService.automaticVoice`); a passive line when it changes is
+the Voice screen's to add. Whether identifiers stay the same across a
+relaunch, a restore and Share Across Devices is device check D5.
+
+## A Personal Voice is used only while it is allowed
+
+*2026-10-21. Default, adopted 2026-10-21: the owner left these choices to
+the project. Reversible if the owner objects. Personal Voice foundation,
+from the research of 2026-10-15 (onboarding-and-settings.md, 3.2b).*
+
+Apple makes personal voices available only while the app is allowed to
+use them (`AVSpeechSynthesisVoice.Traits.isPersonalVoice`), and one
+report on Apple's developer forums, from a Mac, says asking for one
+without permission gives no speech at all. A list read before access was
+turned off can still show the voice. So no Personal Voice is a candidate
+for a phrase, a voice sample or Automatic unless the status read last is
+"allowed" (`VoiceSelection.usableVoices`), and the voice list Settings
+shows (`SpeechService.availableVoices`) leaves it out; the phrase speaks
+in the next voice instead, and the person's choice is kept, so it comes
+back with access. What the system really does with a turned-off voice
+(silence, a finish, or another voice) is device check D4.
+
 ## Personal Voice is never written to a file
 
 *2026-10-21. Default, adopted 2026-10-21: the owner left these choices to
@@ -802,6 +1028,63 @@ while they choose to speak. Recorded phrases, when they come, are the
 person's own recordings, not synthesized ones. A feature that seems to
 need a rendered file (sending a phrase as audio, Calls) is decided again
 here first.
+
+## Accessibility API coverage
+
+*2026-10-21. Default, adopted 2026-10-21: the owner left these choices to
+the project. Reversible if the owner objects.*
+
+[`docs/ACCESSIBILITY.md`](ACCESSIBILITY.md) lists every Apple
+accessibility feature and API in the project's map of Apple features by
+ALS stage, with its iOS version, its release and how it is checked. The
+choices it makes:
+
+- **The list stays current.** A pull request that adopts, changes or
+  drops an API edits its row. The pull request that moves Brickson to a
+  new major Xcode also reads Apple's update pages and adds what is new.
+- **Full screen in Assistive Access, and no separate scene.** Brickson
+  declares `UISupportsFullScreenInAssistiveAccess` (ROADMAP R0, item 7),
+  so it keeps its own layout there. It never adopts the `AssistiveAccess`
+  scene or `UISupportsAssistiveAccess` for its main interface: the system
+  would choose control sizes and placement, so controls would sit
+  somewhere else in Assistive Access than everywhere else (invariant 8).
+- **Brickson never takes over the device.** It never calls
+  `requestGuidedAccessSession` (only for supervised devices, and it could
+  trap a person) or `configureForGuidedAccess` (it could turn off the
+  person's only way to use the device). Families start Guided Access
+  themselves, with setup text.
+- **Assistive-technology flags only suggest.** The VoiceOver, Switch
+  Control, AssistiveTouch, Guided Access and Assistive Access flags may
+  choose setup text or suggest a profile; none changes Home (*Who chooses
+  the input profile*, above; invariant 8). Apple offers no flag for Voice
+  Control, Eye Tracking, Head Tracking, Dwell or Full Keyboard Access, and
+  Brickson never guesses one.
+- **Phrases keep the person's voice with VoiceOver on.**
+  `prefersAssistiveTechnologySettings` stays false: a phrase is for the
+  listener.
+- **Late-stage boards are a profile, not new screens.** The map's Yes/No
+  mode and rest board become one R1 profile of the layout engine: Yes,
+  No, Get Attention and Emergency keep their relative places and grow,
+  and the phrase area shows fewer, larger tiles from a category the
+  family chooses. Emergency stays visible (invariant 2).
+- **Waiting, each with a work file first:** a watch app, a start-only
+  Get Attention control (never a toggle), an on-device partner view,
+  custom VoiceOver rotors, pronunciation with SSML or IPA, keyboard
+  shortcuts, and Guided Access restrictions of Brickson's own.
+- **HomeKit tiles wait on the owner.** They would control lights, doors
+  and other devices beyond the iPhone or iPad, so whether they fall under
+  invariant 9's hard stop on network code is the owner's decision, as for
+  caregiver alerts. Nothing is planned or built until the owner records an
+  exception here; then they start with a work file and add a permission,
+  an entitlement and a privacy-policy section.
+- **Not used in 1.0:** AlarmKit and critical alerts (Get Attention plays
+  inside Brickson and needs no permission; revisit if it must sound with
+  Brickson closed); `mixToTelephonyUplink` (calls go through microphone
+  injection, R0 item 8); Liquid Glass styles on Home's speaking and safety
+  controls, whose contrast would depend on what is behind them.
+- **Never:** a person's phrases as an `AppEntity`, in Spotlight or in the
+  keyboard's conversation context; Foundation Models; custom eye, head,
+  pointer or switch input (invariant 9).
 
 ## Tests
 

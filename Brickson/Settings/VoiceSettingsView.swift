@@ -34,12 +34,9 @@ struct VoiceContent: View {
             describeLanguage: { Locale.current.localizedString(forIdentifier: $0) ?? $0 }
         )
 
-        // Which voice speaks now, by the same rule speech uses.
-        if let current = VoiceSelection.select(
-            chosenID: speech.selectedVoiceID,
-            from: speech.availableVoices,
-            languageCode: Bundle.main.preferredLocalizations.first ?? "en"
-        ) {
+        // Which voice speaks now, from the service itself, so a kept
+        // Personal Voice is named the same way speech chooses it.
+        if let current = speech.currentVoice {
             SettingsReservedParagraph(
                 text: Text("Speaking with \(current.name)."),
                 alternatives: speech.availableVoices.map { Text("Speaking with \($0.name).") }
@@ -192,7 +189,7 @@ private struct PersonalVoiceSection: View {
     var body: some View {
         let guidance = PersonalVoiceGuidance.make(
             access: PersonalVoiceAccess(speech.personalVoiceStatus),
-            hasPersonalVoice: speech.availableVoices.contains(where: \.isPersonalVoice),
+            hasPersonalVoice: speech.hasPersonalVoice,
             // Brickson asks by itself when it opens, for now
             // (docs/DECISIONS.md, "Personal Voice permission is asked at
             // launch, for now"); the Ask button arrives with that change.

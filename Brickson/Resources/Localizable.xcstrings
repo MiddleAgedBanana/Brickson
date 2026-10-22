@@ -163,6 +163,12 @@
     "Making a Personal Voice means reading phrases aloud, so it is easiest while speaking is comfortable. Apple keeps it encrypted on this device, and in iCloud only if Share Across Devices is on. %@ never receives the voice or its recordings." : {
 
     },
+    "Message not restored" : {
+
+    },
+    "Message not saved" : {
+
+    },
     "Move the pointer by moving the head; choose with a facial expression or Dwell Control." : {
 
     },
@@ -331,6 +337,9 @@
     "The last change could not be saved. Try again." : {
 
     },
+    "The message you were typing before the app closed could not be restored." : {
+
+    },
     "The privacy policy could not be shown here. Open the web version above to read it." : {
 
     },
@@ -344,6 +353,9 @@
 
     },
     "This is where a family member or carer sets up %@: the voice it speaks with, help with reaching the screen, and how to keep it open. Nothing here is needed to start talking." : {
+
+    },
+    "This message is not being saved. It stays on screen, but it may be lost if the app closes." : {
 
     },
     "Time for a check-in" : {

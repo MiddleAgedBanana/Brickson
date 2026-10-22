@@ -66,11 +66,15 @@ months" and "The privacy policy ships inside the app".
 - `002f3f8` Which voice is speaking, on Voice Settings.
 - `5228bd4` and `695d765` Codex's first review and the first CI run.
 - `3a89292` and `50c1dce` Codex's second review and the second CI run.
-- The commit after them: Codex's third review.
+- `1a402a4` Codex's third review.
 - The merge of `main` (PRs #13, #15, #16 and #18), which moves the setup
   store onto `launch.settings`, takes Settings' idle limit from
   `AppTimeouts`, adds `--screen=settings`, Normal Speed, the alarm hold
   and the UI tests, and fills the String Catalog.
+- The merge of `main` (PRs #21, #24 and #25): "Speaking with …" now
+  names `SpeechService.currentVoice`, so a kept Personal Voice is named
+  the way speech chooses it, and the String Catalog has both sets of
+  strings.
 
 - The review round (Codex and the first CI run on `6dbb62f`), in the
   commits after the merge:
@@ -196,14 +200,17 @@ For the next Settings thread, in order:
    Stop: put a start-only `attention.start()` button in
    `SettingsSafetyBar`'s empty leading slot, at the same frame. Never put
    Stop in Settings. The `.alarm` hold is already wired.
-3. **Ask for Personal Voice from Settings** *(Personal Voice
-   foundation)*: when the engine exposes a request, pass `canAsk: true` to
-   `PersonalVoiceGuidance.make`, add the Ask button for `.askPermission`
-   (its text explains first), and hold the idle reset with
-   `.personalVoiceRequest` while iOS asks. Keep the launch-time ask until
-   that lands. The engine should also read the permission state again
-   when Brickson becomes active, so Voice Settings shows a change made in
-   the Settings app without a relaunch (Codex, PR #23).
+3. **Ask for Personal Voice from Settings**: the engine (PR #25) has
+   `SpeechService.requestPersonalVoiceAuthorization()` and reads the
+   permission state again each time Brickson comes back to the front, so
+   Voice Settings already shows a change made in the Settings app. Pass
+   `canAsk: true` to `PersonalVoiceGuidance.make`, add the Ask button for
+   `.askPermission` (its text explains first), and hold the idle reset
+   with `.personalVoiceRequest` while iOS asks. Keep
+   `PersonalVoiceAskPolicy.atLaunch` until device check D1 passes
+   (docs/DECISIONS.md, "Personal Voice permission is asked at launch, for
+   now"; [`2026-10-21-personal-voice-foundation.md`](2026-10-21-personal-voice-foundation.md),
+   *Follow-ups*).
 4. **Library** *(Library editing and backup format)*: add
    `case library` to `SettingsRoute` and a Family Setup row; editors and
    backup tasks call `holdsSettingsIdleReset(_:)`.

@@ -66,8 +66,9 @@ targets:
         # Text-to-speech says the app's name this way ("Accessibility
         # Bundle Name" in Xcode). Set in the App identity block above.
         CFBundleSpokenName: $(APP_SPOKEN_NAME)
-        # Other names Siri accepts for the app (at most three; never another
-        # app's name). docs/DECISIONS.md, "App identity".
+        # Other names for Siri (at most three; never another app's name).
+        # Siri uses them only once the app has Siri support (an Intents
+        # extension, in Apple's words). docs/DECISIONS.md, "App identity".
         INAlternativeAppNames:
           - INAlternativeAppName: Brick Son
         CFBundleShortVersionString: $(MARKETING_VERSION)
