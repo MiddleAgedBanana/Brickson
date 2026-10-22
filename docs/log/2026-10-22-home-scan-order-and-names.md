@@ -70,9 +70,10 @@ plain types in *Workflow rules*).
   `ControlNamesTests`, `HomeNameCollisionTests`,
   `HomeAccessibilityOrderTests`.
 - The records: this file and the documents above.
-- A merge of PR #22's branch after it took in `main` (PR #23) and began
-  measuring labels under Bold Text; then this record's CI results and
-  follow-ups.
+- Merges of PR #22's branch after it took in `main` (PR #23) and began
+  measuring labels under Bold Text, and after it fixed that measure (its
+  Bold Text tests had failed this pull request's unit run on `0b880d4`);
+  this record's CI results and follow-ups.
 
 ## Verified
 
@@ -144,9 +145,9 @@ Nothing was built or run on a Mac; GitHub CI is the build (AGENTS.md,
 For the next accessibility thread, the rest of item 3's list, in this
 order (each from docs/ACCESSIBILITY.md, section 6, unless named):
 
-1. **Bold Text in the narrowest slots.** PR #22 now measures labels at
-   the heavier weight SwiftUI draws with Bold Text on
-   (`LabelFont.legible`, checked by `StarterLabelFitTests`), but checks
+1. **Bold Text in the narrowest slots.** PR #22 now measures labels,
+   with Bold Text on, at a weight never narrower than the one SwiftUI
+   draws (`LabelFont.legible`, checked by `StarterLabelFitTests`), but checks
    the starter labels' fit in their narrowest slots with Bold Text off
    only (docs/log/2026-10-21-phone-layout.md, *Not verified*). Extend
    that check to Bold Text on.
