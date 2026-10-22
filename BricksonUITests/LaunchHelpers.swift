@@ -170,6 +170,13 @@ extension XCTestCase {
     /// the phrase itself, the person's own words, which VoiceOver must read
     /// exactly as written; the audit flagged the starter phrase "Maybe." on
     /// CI. An empty tile label still fails.
+    ///
+    /// The audit is only evidence about a still screen. It reads a
+    /// screenshot and the accessibility tree a moment apart, so text that
+    /// leaves the screen in between is reported as "Potentially
+    /// inaccessible text" on no element: Home's "Speaking" line did that on
+    /// CI when the voice finished just as the audit began (issue #30). So
+    /// it first waits for speech to finish (`waitForSpeechToFinish`).
     @MainActor
     func assertPassesAccessibilityAudit(
         _ app: XCUIApplication,
@@ -177,7 +184,9 @@ extension XCTestCase {
         file: StaticString = #filePath,
         line: UInt = #line
     ) throws {
-        try AccessibilityAuditRunner.perform {
+        try AccessibilityAuditRunner.perform(settle: {
+            waitForSpeechToFinish(in: app, context: context, file: file, line: line)
+        }) {
             try app.performAccessibilityAudit { issue in
                 MainActor.assumeIsolated {
                     if isPhraseTileLabelGuess(issue) { return }
@@ -194,6 +203,29 @@ extension XCTestCase {
                 return true
             }
         }
+    }
+
+    /// Waits until Home's "Speaking" line has gone: the voice has finished,
+    /// or the speech watchdog has ended the phrase (invariant 4). Returns
+    /// at once when nothing is speaking. Nothing else on Home changes by
+    /// itself, so the screen is then still. Fails if "Speaking" still shows
+    /// after `timeout`: speech that never ends is a failure of its own.
+    @MainActor
+    func waitForSpeechToFinish(
+        in app: XCUIApplication,
+        context: String,
+        timeout: TimeInterval = 30,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        // The status line's English words (StatusLines in HomeView). Its
+        // hidden copies, which keep the line's height, carry no label.
+        let speaking = app.staticTexts["Speaking"]
+        XCTAssertTrue(
+            speaking.waitForNonExistence(timeout: timeout),
+            "\"Speaking\" still showed \(Int(timeout)) s later (\(context)): the phrase never ended",
+            file: file, line: line
+        )
     }
 
     /// Samples the empty gutter between Yes and No, not the coloured

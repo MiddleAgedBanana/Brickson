@@ -78,7 +78,10 @@ Xcode 27.1 (27A9275); final-head CI is pending.
   unit-tested with fakes), or sound. Windowed iPad
   sizes and iPhone Duo poses are untested. The first UI test on a
   just-started CI simulator failed intermittently before PR #13's warm-up
-  launch (AGENTS.md, *Gotchas*).
+  launch (AGENTS.md, *Gotchas*). Apple's accessibility audit never sees
+  Home's "Speaking" line: audits wait for speech to finish, because one
+  that ran while the line left reported text with no element (issue #30,
+  [`log/2026-10-22-audit-still-screen.md`](log/2026-10-22-audit-still-screen.md)).
 
 ## Known gaps
 
