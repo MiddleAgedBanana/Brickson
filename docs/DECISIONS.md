@@ -52,6 +52,7 @@ holds.
 | When the audio session is released, the alarm's sound, start-only Get Attention, no automatic resume, Personal Voice never written to a file | "Background audio", "Get Attention", "A phrase the system cuts off", "Audio session notices", "Personal Voice is never written to a file" (Speech engine and Get Attention; PR #16, open) |
 | Home first with setup as a place in Settings, the Settings root, the voice picker, the Privacy row, the largest sizes when nobody answers setup, an "Anything changed?" check-in every three months that waits 30 days after Not Now | "First launch opens Home; setup lives in Settings", "Settings is a cover with a fixed safety bar", "Settings resets when idle and never closes", "Setup answers are kept as offered, never as completed", "Check-ins come every three months", "The privacy policy ships inside the app", "Speed is a set of fixed choices" (Settings and first run; PR #23) |
 | Voice Settings keeping its rows and words in place while voices change, and an explained Ask button for Personal Voice that moves nothing and adds no button on the visit that asked (switched on after device check D1) | "Voice Settings keeps its places while it is open", "Asking for Personal Voice from Voice Settings", and a paragraph in "A Personal Voice is used only while it is allowed" (Voice screen in Settings, 2026-10-22) |
+| Home's scan order (Yes, No and Emergency first, regions as containers) and the names Voice Control and Full Keyboard Access use, the visible words first | "Home's scan order and names" (Accessibility implementation, first pass) |
 | The accessibility coverage list and its choices: full screen in Assistive Access and no separate scene, no programmatic Guided Access, assistive-technology flags that only suggest, phrases in the person's voice with VoiceOver on, late-stage boards as an R1 profile, and what waits or is never used | "Accessibility API coverage" (Accessibility coverage checklist) |
 
 Recorded here:
@@ -844,6 +845,52 @@ never where it is.
 
 *Before:* none; the stand-in Home had no wells (*Home version 0 is a
 stand-in*).
+
+## Home's scan order and names
+
+*2026-10-22. Default, adopted 2026-10-22: the owner left these choices to
+the project. Reversible if the owner objects.* The first part of ROADMAP
+R0 item 3's accessibility work (docs/ACCESSIBILITY.md, sections 1 and 3;
+[`log/2026-10-22-home-scan-order-and-names.md`](log/2026-10-22-home-scan-order-and-names.md)).
+
+- **Yes, No and Emergency first.** VoiceOver, Switch Control and Full
+  Keyboard Access reach Home's regions in a fixed order: C (Yes, No,
+  Emergency), then A (the message, its status line and Again), then B
+  (the categories), then D (the phrases), then the library warnings. With
+  auto scanning, every step before Emergency, Yes and No is time spent
+  waiting. On screen A stands above C, and SwiftUI orders elements of
+  equal priority by where they are, so each region carries a fixed
+  accessibility sort priority (`HomeRegion`). The order never depends on
+  Home's state, the library or use (invariant 8). A VoiceOver user's
+  first swipe now lands on Yes, not on the message. When the slot plan's
+  wells are built, the controls that join C (Get Attention, and Again
+  moving there) and A (Phrases and Type) keep this order of regions.
+- **Each region is an accessibility container** (`.contain`), so its
+  controls are reached together and Switch Control can offer it as a
+  group when Group Items is on. The regions carry identifiers for tests
+  and no spoken labels: what VoiceOver and Switch Control say on entering
+  a group is a device check first.
+- **Names, the visible words first.** Each fixed control's names for Voice
+  Control and Full Keyboard Access (`accessibilityInputLabels`) start
+  with the words it shows, from one place the view and the tests both
+  read (`HomeControlNames`). Another name is added only where people
+  commonly use a different word for the same action, never one for a
+  different action: Again also answers to "Repeat". "Help" is not given to
+  Emergency, which opens the emergency phrases and says nothing, while a
+  person saying "Help" may mean Get Attention; the thread that puts Get
+  Attention on Home (R0 item 4) decides. Categories and phrases answer to
+  their own words only, and Brickson never renames them (invariant 7).
+- **No two controls on Home share a name.** Voice Control stops to ask
+  which one is meant when two do. Names are compared as Voice Control
+  hears them, without case, accents or punctuation, and a unit test checks
+  every state of the starter library (`HomeNameCollisionTests`). When
+  editing lets a family add a phrase or category that collides, the
+  editing thread (R0 item 6) decides what the editor says; it never
+  renames the person's words.
+
+*Before:* none. Home was reached in its order on screen (the message and
+Again first), as one flat list, and its controls answered only to their
+labels.
 
 ## Typing is a state of Home
 

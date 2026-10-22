@@ -274,6 +274,9 @@
     "Ready" : {
 
     },
+    "Repeat" : {
+      "comment" : "Another name a person can say for the Again control with Voice Control."
+    },
     "Say the name of a button to choose it, such as “Tap Yes”." : {
 
     },

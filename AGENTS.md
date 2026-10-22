@@ -450,7 +450,8 @@ the failure.
   `StarterLibrary`, `PhraseLibrarySeeder`, `MessageComposer`,
   `DraftStore`, `SettingsIdleClock`, `SetupRecord`, `CheckInPolicy`,
   `VoiceList`, `PersonalVoiceGuidance`, `PrivacyPolicyDocument`,
-  `SpeedChoice`, `WordFit`, `HomeShape`. Views only read them.
+  `SpeedChoice`, `WordFit`, `HomeShape`, `HomeRegion`, `HomeControlNames`.
+  Views only read them.
 - **Run it, don't just read it.** Layout and flow changes are checked in the
   running app on an iPad and an iPhone simulator, at default and
   accessibility text sizes, light and dark.

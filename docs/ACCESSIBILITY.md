@@ -17,8 +17,9 @@ and a family setup guide that explains the settings.
 **Checked on 2026-10-21** against Apple's developer documentation (each
 symbol page read in its Markdown form, which carries the availability
 data), Apple's user guides and the 2026-10-15 research
-([`docs/recon/`](recon/README.md)). Brickson's status is as of `main` on
-that date. How the check was done, and what it could not settle, is in
+([`docs/recon/`](recon/README.md)). Brickson's status was checked against
+`main` on that date; each pull request since edits the rows it changes
+and says so in its record in [`docs/log/`](log/README.md). How the check was done, and what it could not settle, is in
 [`log/2026-10-21-accessibility-coverage.md`](log/2026-10-21-accessibility-coverage.md).
 
 ## How to read this
@@ -74,7 +75,7 @@ test is named for what would make it fail.
 | Dynamic Type, Bold Text, Reduce Motion (1; has it) | Text styles on Home; UI tests at the largest size | Word fitting: R0-3 | 6 |
 | Phrase board and typing (2; has it) | The board is on Home; typing is not on `main` yet | Typing: R0-5. A touch profile: R1 | 8 |
 | Live Speech (2; system) | System | Setup text: R0-7. Being heard on calls: R0-8, held | 4 |
-| Voice Control (2; has it) | Every Home control is a labelled standard button | Extra spoken names and a name-collision test: R0-3 | 3 |
+| Voice Control (2; has it) | Every Home control is a labelled standard button; the fixed controls' names start with their visible words, Again also answers to "Repeat", and no two controls on Home share a name in any state of the starter library (`HomeControlNames`) | Names for Get Attention and Stop with them: R0-4. Collisions in a library a family has grown: R0-6 | 3 |
 | AssistiveTouch, Touch Accommodations (2; system) | Standard buttons | Setup text: R0-7 | 2 |
 | Word prediction (2; add) | Nothing yet | Apple's keyboard suggestions with typing: R0-5. A prediction strip: R2 | 8 |
 | HomeKit (2; add, needs a decision) | Nothing yet | Not in 1.0; controlling devices beyond the iPhone or iPad is the owner's decision under invariant 9 | 10 |
@@ -82,14 +83,14 @@ test is named for what would make it fail.
 | Text size, contrast (2; has it) | Contrast measured in `PaletteTests` | Kept | 6 |
 | Eye Tracking and Dwell (3; has it) | Standard buttons; repeats of a phrase absorbed | Gaze profile and dwell-safety scoring: R1 | 2 |
 | Head Tracking (3; system) | System | Head profile: R1. Setup text: R0-7 | 2 |
-| Switch Control (3; system) | Standard buttons | A fixed scan order with the quick controls first: R0-3. Switch profile: R1 | 1 |
+| Switch Control (3; system) | Standard buttons; Home's regions are containers, reached in a fixed order with Yes, No and Emergency first (`HomeRegion`) | Device check of the scan order and groups. Switch profile: R1 | 1 |
 | Guided Access (3; system) | System | Setup text: R0-7, and a device check with Eye Tracking | 7 |
 | Assistive Access (3; add) | Nothing yet | Full screen in Assistive Access: R0-7 | 7 |
 | Get Attention and Emergency (3; has it) | Emergency on Home; Get Attention built, not yet on screen | Get Attention and Stop on Home: R0-4, after Home's slots (R0-3) | 4, 5 |
 | Alert someone in another room (3; add, needs a decision) | Sound in the room only | Not in 1.0; anything that reaches another device is the owner's decision | 10 |
 | Screen never locks (3; has it) | In place | Kept | 7 |
 | Audio safety (3; has it) | In place | Device checks | 4 |
-| Brain-computer interfaces through Switch Control (4; system) | Standard buttons | Covered by the scan-order work (R0-3, R1) | 1 |
+| Brain-computer interfaces through Switch Control (4; system) | Standard buttons, in Home's fixed scan order | Covered by the scan-order work (R1) | 1 |
 | Yes/No mode (4; add) | Yes and No are on Home in every state | A late-stage profile: R1 (docs/DECISIONS.md, "Accessibility API coverage") | 1, 2 |
 | Partner-assisted mode (4; add) | Nothing yet | A printable board: R1. An on-device partner view: Later | 10 |
 | Rest board (4; add) | Nothing yet | The late-stage profile with a small, family-chosen category: R1 | 1, 2 |
@@ -113,8 +114,8 @@ the same place in the order in every state.
 
 | API or feature | What it is for | Stage | iOS | Status in Brickson | Checked by |
 |---|---|---|---|---|---|
-| Switch Control: item scanning, auto scanning, timing | Running the device with one or two switches | 2–4 | System, since iOS 8 or earlier | **System.** Standard buttons: in place. Quick controls first in the scan order, the same in every state: **R0-3**. Setup advice (Auto Tap, scanning time, Ignore Repeat): **R0-7** | UI: Home's elements in order in every category and state. Device: scan steps to each quick control |
-| Scanning groups (Group Items) | Choosing a region first, then an item in it | 3–4 | System | **R0-3**: Home's regions as containers. Whether a SwiftUI container becomes a scan group is not documented by Apple | UI: region order. Device: the groups Switch Control forms |
+| Switch Control: item scanning, auto scanning, timing | Running the device with one or two switches | 2–4 | System, since iOS 8 or earlier | **System.** Standard buttons: in place. Quick controls first in the scan order, the same in every state: **in place** (`HomeRegion`). Setup advice (Auto Tap, scanning time, Ignore Repeat): **R0-7** | UI: `HomeAccessibilityOrderTests` (Home's elements in order in every category and state, default and largest text). Device: scan steps to each quick control |
+| Scanning groups (Group Items) | Choosing a region first, then an item in it | 3–4 | System | **In place**: Home's regions are containers, in the order C, A, B, D of "Home's slot plan" (`HomeRegion`). Whether a SwiftUI container becomes a scan group is not documented by Apple | UI: `HomeAccessibilityOrderTests` (each control inside its region, regions in order). Device: the groups Switch Control forms |
 | Point scanning (Gliding Cursor), head and eye modes inside Switch Control | Picking a point instead of an item | 3–4 | System; the eye mode since iOS 26 | **R1** profile layout engine: switch, head and gaze floors | Unit: each profile's floors. Device: presses per control |
 | Switch sources (external switch, screen, camera, sound, Back Tap, AirPods nod) | What counts as a switch | 2–4 | System | **System.** Setup text: **R0-7**. Brickson never reads switch hardware (invariant 9) | Device: Brickson's own speech does not fire a sound switch |
 | Recipes, switch sets, saved gestures | A switch press that taps a fixed spot | 3–4 | System | **System.** Works because controls never move (invariant 8) | Unit: frames equal across states (R1 engine). Device: a saved tap on Yes still lands on Yes |
@@ -122,9 +123,9 @@ the same place in the order in every state.
 | Brain-computer interface protocol | A brain implant acting as a switch | 4 | 26.0 | **System**, through Switch Control. Nothing beyond the scan-order work | Device: no hardware available; Switch Control item mode stands in |
 | Full Keyboard Access | Running the device from a physical keyboard | 1–2 | System, since 13.4.1 | **System.** Standard buttons: in place. Focus order test: **R1** (keyboard and Voice Control profile) | UI: Tab order with `typeKey`. Device |
 | Full Keyboard Access status | Knowing whether it is on | 1–2 | — | **N/A**: Apple offers no flag; the family chooses the profile | — |
-| `accessibilityElement(children:)` | `.contain` makes a region; `.combine` merges passive text | 1–4 | 13.0 | **In place**: `.combine` on passive text only (Speaking indicator, warnings). `.contain` regions: **R0-3**. Never `.combine` or `.ignore` over buttons | UI: every control is its own button. Review |
-| `accessibilitySortPriority(_:)` | Order among elements at the same level | 2–4 | 14.0 | **R0-3**, only if view order cannot put the quick controls first; never from usage (invariant 8) | UI: element order. Device: whether Switch Control and Full Keyboard Access follow it (Apple does not say) |
-| `accessibilityRespondsToUserInteraction(_:)` | Telling the switch and keyboard cursor to skip passive text | 2–4 | 15.0 | **R0-3**, if a device check finds the cursor stopping on the message, the Speaking indicator or a warning. Never on a button | Device. Review |
+| `accessibilityElement(children:)` | `.contain` makes a region; `.combine` merges passive text | 1–4 | 13.0 | **In place**: `.combine` on passive text only (Speaking indicator, warnings); `.contain` on Home's four regions (`HomeRegion`). Never `.combine` or `.ignore` over buttons | UI: every control is its own button, inside its region (`HomeAccessibilityOrderTests`). Review |
+| `accessibilitySortPriority(_:)` | Order among elements at the same level | 2–4 | 14.0 | **In place** on Home's regions: SwiftUI orders elements of equal priority by where they are, which puts the message above the quick controls first, so each region has a fixed priority (`HomeRegion.sortPriority`). Never from usage (invariant 8) | Unit: `HomeRegionTests`. UI: `HomeAccessibilityOrderTests`. Device: whether Switch Control and Full Keyboard Access follow it (Apple does not say) |
+| `accessibilityRespondsToUserInteraction(_:)` | Telling the switch and keyboard cursor to skip passive text | 2–4 | 15.0 | **Not used yet**: only if a device check finds the cursor stopping on the message, the Speaking indicator or a warning (the next item 3 work). Never on a button | Device. Review |
 | `focusable(_:interactions:)` | Making a non-button view take keyboard focus | 1–2 | 17.0 | **N/A** while every control is a button | Review |
 | `focusSection()` | Guiding focus movement | — | macOS 13 only | **N/A**: Apple lists no iOS version | — |
 | `keyboardShortcut(_:modifiers:)` | A key that presses a control | 1–2 | 14.0 | **Later** (a candidate for R1's keyboard profile). Never on a destructive or position-changing action | UI: `typeKey` presses the control |
@@ -160,8 +161,8 @@ pointer input*).
 |---|---|---|---|---|---|
 | Voice Control | Running the device by voice ("Tap Yes", "Show numbers") | 1–2 | System, since 13.0 | **System.** Every Home control is a labelled standard button: in place. Setup text: **R0-7** | Audit (in place). Device: "Show numbers" numbers every control |
 | Voice Control flexible item names ("say what you see") | Naming a control in your own words | 1–2 | System, 27.0 | **System.** Nothing to build; good labels are what it needs | Device |
-| `accessibilityInputLabels(_:)` | Extra names to say or type, the visible words first | 1–2 | 14.0 | **R0-3** | Unit: every fixed control has its visible words among its names |
-| Voice Control name collisions | Two visible controls answering to one name | 1–2 | — | **In place** for the starter set: no "Yes." or "No." tiles, unique category names (`StarterPhrasesTests`). A whole-screen collision test: **R0-3**; for a library a family has grown: **R0-6**. Never rename a person's phrase (invariant 7) | Unit. Device |
+| `accessibilityInputLabels(_:)` | Extra names to say or type, the visible words first | 1–2 | 14.0 | **In place** on Yes, No, Emergency and Again (`HomeControlNames`): the visible words first; Again also answers to "Repeat". Categories and phrases answer to their own words only | Unit: `ControlNamesTests` (the visible words first, no repeated or empty name) |
+| Voice Control name collisions | Two visible controls answering to one name | 1–2 | — | **In place** for the starter set: no two controls on Home, input labels included, share a name in any category's state (`HomeNameCollisionTests`, comparing names without case, accents or punctuation); no "Yes." or "No." tiles, unique category names (`StarterPhrasesTests`). For a library a family has grown: **R0-6**, with `HomeControlNames.collisions`. Never rename a person's phrase (invariant 7) | Unit. Device |
 | Vocal Shortcuts | A person's own sound runs an action | 1–2 | System, since 18.0 | **System.** Setup text: **R0-7**. A Get Attention shortcut to run: **R2** | Device |
 | Listen for Atypical Speech | Siri listens for a wider range of speech; Apple names ALS | 1–2 | System, since 18.0 | **System.** Setup text: **R0-7** | — |
 | Siri and Type to Siri | "Open Brickson", by voice or typed | 1–2 | System | **System.** Opening the app works now. Fixed actions: **R2** | Device |
@@ -231,7 +232,7 @@ pointer input*).
 | Larger Text and Larger Accessibility Sizes | The person's reading size | 1–4 | System | **In place**: text styles on Home; reachability, fixed frames and whole quick-control words checked at the largest size. Word fitting for phrases: **R0-3** | UI: `HomeReachabilityTests`, `LaunchTests`. Audit. Device |
 | `Font.TextStyle`, `ScaledMetric`, `DynamicTypeSize`, `dynamicTypeSize(_:)` | Text and spacing that grow with the setting | 1–4 | 13.0; 14.0; 15.0 | **In place**: text styles. Non-text sizes with `@ScaledMetric`: **R0-3**. Never a cap on Home or Settings | Unit: the fitting type at every size. UI |
 | `accessibilityShowsLargeContentViewer()` | A large copy of a label that cannot grow | 1–2 | 15.0 | **R0-3**, for any label the fitting type limits | Unit. Device |
-| Bold Text (`legibilityWeight`) | Heavier text | 1–4 | 13.0 | **In place** through system fonts. Fitting measured in bold: **R0-3** | Unit. Device |
+| Bold Text (`legibilityWeight`) | Heavier text | 1–4 | 13.0 | **In place** through system fonts; the fitting type measures at a weight never narrower than the one drawn (PR #22). Starter labels in their narrowest slots with Bold Text on: **R0-3** | Unit (`StarterLabelFitTests`). Device |
 | Increase Contrast (`colorSchemeContrast`) | Stronger contrast | 1–4 | 13.0 | **In place**: every fill measured in light, dark and Increase Contrast (invariant 6) | Unit: `PaletteTests`. Device: rendered pixels |
 | Reduce Transparency (`accessibilityReduceTransparency`) | Solid instead of see-through | 1–4 | 13.0 | **In place** in part: Home uses `.borderedProminent` with measured fills and no materials, but Apple does not say whether the system draws those fills fully opaque on iOS 26 and 27. A rendered check: **R0-9** | Device: rendered pixels with the setting on and off |
 | Liquid Glass styles: `.glass`, `.glassProminent`, `glassEffect(_:in:)` | Apple's glass look | 1–4 | 26.0 | **Never on Home's speaking and safety controls**: their contrast would depend on what is behind them. The system's glass elsewhere (Figma and Claude Design screens) | Review |
