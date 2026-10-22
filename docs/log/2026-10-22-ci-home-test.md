@@ -28,6 +28,9 @@ UI automation and avoiding arbitrary sleeps.
 ## Commits
 
 One change: the UI job allowance, bounded layout queries and this record.
+The initial change is `bd00e85`. The pre-push fetch found PR #27 newly
+landed as `main` at `5abdd9f`; it is incorporated by a merge commit, and
+the complete unit and UI suites passed again on that combination.
 
 ## Verified
 
@@ -58,6 +61,14 @@ One change: the UI job allowance, bounded layout queries and this record.
   audits covered light and dark appearance; Settings used its existing
   default-text checks. All windows were full-screen. The four keyboard
   probes require their existing opt-in launch flag and were not enabled.
+- After incorporating `5abdd9f`, all 460 unit tests passed with no skips
+  or expected failures; app code coverage was 62.6% (3,540 of 5,659 lines).
+  The String Catalog stayed synchronized. Both full UI suites passed:
+  33 passed, zero failures and four existing opt-in probe skips per
+  device. Test execution took 554.617 seconds on iPad and 511.691 seconds
+  on iPhone. The Home test took 81.422 and 40.389 seconds respectively.
+  The newly landed Personal Voice Ask-button test passed at default and
+  AX5 text, and the new Family Setup placement test passed on both.
 
 ## Not verified
 

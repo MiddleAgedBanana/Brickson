@@ -61,7 +61,10 @@ struct GuidedSetupView: View {
     @ViewBuilder
     private var accessQuestion: some View {
         SettingsHeading("How is the screen reached?")
-        SettingsParagraph("Choose every way that is used now. This sets how large \(AppName.display)’s buttons are. If nothing is chosen, it uses its largest sizes.")
+        // Nothing reads these answers yet, so the words promise no change
+        // to the buttons; the layout engine adds that sentence when it reads
+        // them (docs/log/2026-10-21-settings-and-first-run.md, follow-up 5).
+        SettingsParagraph("Choose every way that is used now. Each answer is saved as soon as it is chosen.")
 
         ForEach(AccessMethod.allCases, id: \.self) { method in
             let isChosen = chosen.contains(method)
@@ -92,12 +95,12 @@ struct GuidedSetupView: View {
     private var readySummary: some View {
         SettingsHeading("Ready")
         if let methods = setup.record.plannedAccessMethods {
-            SettingsParagraph("\(AppName.display) is set up for:")
+            SettingsParagraph("Ways of reaching the screen chosen:")
             ForEach(AccessMethod.allCases.filter(methods.contains), id: \.self) { method in
                 SettingsParagraph(method.title)
             }
         } else {
-            SettingsParagraph("No way of reaching the screen was chosen, so \(AppName.display) uses its largest sizes.")
+            SettingsParagraph("No way of reaching the screen was chosen.")
         }
         SettingsParagraph("Everything here can be changed later in Family Setup. In about three months, Family Setup will ask whether anything has changed.")
     }

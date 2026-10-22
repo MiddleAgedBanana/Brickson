@@ -8,9 +8,16 @@ struct PersonalVoiceGuidanceTests {
         _ access: PersonalVoiceAccess,
         hasVoice: Bool = false,
         canAsk: Bool = false,
-        canOpen: Bool = true
+        canOpen: Bool = true,
+        asked: Bool = false
     ) -> PersonalVoiceGuidance {
-        PersonalVoiceGuidance.make(access: access, hasPersonalVoice: hasVoice, canAsk: canAsk, canOpenSettings: canOpen)
+        PersonalVoiceGuidance.make(
+            access: access,
+            hasPersonalVoice: hasVoice,
+            canAsk: canAsk,
+            canOpenSettings: canOpen,
+            askedOnThisVisit: asked
+        )
     }
 
     @Test func askingIsOfferedOnlyWhenThisScreenCanAsk() {
@@ -55,6 +62,50 @@ struct PersonalVoiceGuidanceTests {
         #expect(ready.action == nil)
         #expect(!ready.suggestsMakingOne)
         #expect(ready.settingsPath == nil)
+    }
+
+    /// The words above the Ask button name it and the answer to give,
+    /// before iOS asks. Fails if the button's own name or Allow is missing.
+    @Test func theAskButtonIsExplainedBeforeIOSAsks() {
+        let ask = guidance(.notDetermined, canAsk: true)
+
+        #expect(ask.message.contains("Ask to Use Personal Voice"))
+        #expect(ask.message.contains("Allow"))
+    }
+
+    /// After the Ask button is used, a refusal gives the written path but
+    /// no Open Personal Voice Settings button until the screen opens
+    /// again, so nothing that leaves the app lands beside the spot just
+    /// activated (AGENTS.md, invariant 10). Fails if the button is offered
+    /// on the same visit, or the path is dropped.
+    @Test func afterAskingHereNoNewButtonAppearsOnThisVisit() {
+        let refused = guidance(.denied, canAsk: true, canOpen: true, asked: true)
+
+        #expect(refused.action == nil)
+        #expect(refused.settingsPath == PersonalVoiceGuidance.allowAppsPath)
+        // The next visit offers it again.
+        #expect(guidance(.denied, canAsk: true, canOpen: true).action == .openPersonalVoiceSettings)
+    }
+
+    /// Asking again before an answer is the same button in the same place,
+    /// so it stays. Fails if using it once takes it away before iOS
+    /// answers.
+    @Test func theAskButtonStaysUntilIOSAnswers() {
+        #expect(guidance(.notDetermined, canAsk: true, asked: true).action == .askPermission)
+    }
+
+    /// Every answer iOS can give has words the screen keeps room for while
+    /// the button shows, and none of them offers a button. Fails if an
+    /// answer is missing or one offers a control.
+    @Test func everyAnswerToAskingOffersNoButton() {
+        let outcomes = PersonalVoiceGuidance.outcomesOfAsking()
+
+        #expect(outcomes.count == 4)
+        #expect(outcomes.allSatisfy { $0.action == nil })
+        #expect(outcomes.contains(guidance(.authorized, hasVoice: true, asked: true)))
+        #expect(outcomes.contains(guidance(.authorized, hasVoice: false, asked: true)))
+        #expect(outcomes.contains(guidance(.denied, asked: true)))
+        #expect(outcomes.contains(guidance(.unsupported, asked: true)))
     }
 
     @Test func unsupportedDevicesOfferNoDeadEnd() {

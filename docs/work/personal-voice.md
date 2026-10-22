@@ -2,7 +2,10 @@
 
 *Roadmap: R0, items 4 (the speech engine) and 7 (the voice picker).
 Owner: the Personal Voice foundation thread (engine); Settings and first
-run (the Voice screen and `PersonalVoiceGuidance`). Status: building.*
+run (the Voice screen and `PersonalVoiceGuidance`). Status: the engine
+landed with PR #25 and the Voice screen's Ask button on 2026-10-22
+(docs/log/2026-10-22-voice-screen.md); asking from Settings switches on
+after device check D1.*
 
 ## Intent
 

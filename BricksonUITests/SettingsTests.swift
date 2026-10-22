@@ -24,13 +24,14 @@ final class SettingsTests: XCTestCase {
         textSize: UITestTextSize = .large,
         appearance: UITestAppearance = .light,
         shortTimeouts: Bool = false,
+        arguments: [String] = [],
         file: StaticString = #filePath,
         line: UInt = #line
     ) -> XCUIApplication {
         let app = launchedApp(
             textSize: textSize,
             appearance: appearance,
-            arguments: ["--screen=settings"],
+            arguments: ["--screen=settings"] + arguments,
             shortTimeouts: shortTimeouts,
             waitsForHome: false,
             file: file,
@@ -93,6 +94,51 @@ final class SettingsTests: XCTestCase {
         open("privacyPolicy", in: app, waitingFor: "Privacy Policy")
         XCTAssertEqual(way.frame, onRoot, "Back to Talking moved on the privacy policy")
         assertReachable("backToTalking", in: app, context: "privacy policy")
+    }
+
+    /// Family Setup opens on passive text over the whole of the root's
+    /// Family Setup row as drawn, its button style's insets included, so a
+    /// repeated activation where that row was lands on words (Codex,
+    /// PR #23). Fails if the opening is sized from the row's label alone,
+    /// or if any button on Family Setup lies within the row's frame.
+    ///
+    /// The opening's accessibility frame is its words' own bounds, not the
+    /// block they are laid out in (CI on PR #27: 42.5pt of text in a block
+    /// sized for a 110pt row), so the block's lower edge is read from the
+    /// first row below it, less the spacing between rows.
+    @MainActor
+    func testFamilySetupOpensOnTextOverTheWholeRootRow() {
+        continueAfterFailure = true
+        for textSize in [UITestTextSize.large, .ax5] {
+            let app = openSettings(textSize: textSize)
+            let context = "Family Setup, \(textSize.name)"
+            let row = app.buttons["familySetup"]
+            XCTAssertTrue(row.waitForExistence(timeout: 10), "familySetup is missing (\(context))")
+            let rowFrame = row.frame
+
+            open("familySetup", in: app, waitingFor: "Family Setup")
+            let opening = app.descendants(matching: .any)["familySetupOpening"]
+            let firstRow = app.buttons["guidedSetup"]
+            let secondRow = app.buttons["voiceSettings"]
+            XCTAssertTrue(opening.waitForExistence(timeout: 10), "the opening text is missing (\(context))")
+            XCTAssertTrue(secondRow.waitForExistence(timeout: 10), "voiceSettings is missing (\(context))")
+            attachCapture(app, name: context)
+            XCTAssertLessThanOrEqual(
+                opening.frame.minY, rowFrame.minY + 0.5,
+                "the opening text starts below the root row's top (\(context)): \(opening.frame) against \(rowFrame)"
+            )
+            let spacing = secondRow.frame.minY - firstRow.frame.maxY
+            XCTAssertGreaterThanOrEqual(
+                firstRow.frame.minY - spacing, rowFrame.maxY - 0.5,
+                "the opening block ends above the root row's lower edge (\(context)): Set Up Step by Step at \(firstRow.frame), \(spacing)pt between rows, root row \(rowFrame)"
+            )
+            // Inset, so a row that only touches its edge does not count.
+            let spot = rowFrame.insetBy(dx: 0.5, dy: 0.5)
+            for button in app.buttons.allElementsBoundByIndex
+            where button.exists && button.frame.intersects(spot) && button.isHittable {
+                XCTFail("\(button.label) lies where the root's Family Setup row was (\(context)): \(button.frame) against \(rowFrame)")
+            }
+        }
     }
 
     /// App Review Guideline 5.1.1(i): the policy is inside the app. It is
@@ -206,6 +252,64 @@ final class SettingsTests: XCTestCase {
             normal.frame.minY - heading.frame.minY, before, accuracy: 0.5,
             "choosing a speed moved the speed choices"
         )
+    }
+
+    /// Voice Settings' Ask button for Personal Voice, reached with a
+    /// stand-in permission that refuses (`--personal-voice=stand-in-refuses`;
+    /// the real one shows iOS's question, which a UI test cannot answer
+    /// reliably). After the answer, the button's place holds passive words,
+    /// no button is where it was, nothing below the card moves, and Open
+    /// Personal Voice Settings waits for the next visit (AGENTS.md,
+    /// invariant 10). Fails if any of those changes, or if the button is
+    /// missing when the question is left to this screen.
+    @MainActor
+    func testAnsweringTheAskButtonMovesNothing() throws {
+        continueAfterFailure = true
+        for textSize in [UITestTextSize.large, .ax5] {
+            let app = openSettings(textSize: textSize, arguments: ["--personal-voice=stand-in-refuses"])
+            let context = "Voice Settings, Ask, \(textSize.name)"
+            open("familySetup", in: app, waitingFor: "Family Setup")
+            open("voiceSettings", in: app, waitingFor: "Voice Settings")
+
+            let ask = app.buttons["askPersonalVoice"]
+            guard ask.waitForExistence(timeout: 10) else {
+                XCTFail("the Ask button is missing (\(context))")
+                continue
+            }
+            if textSize == .large {
+                try assertPassesAccessibilityAudit(app, context: context)
+            }
+            attachCapture(app, name: "\(context), before the answer")
+            let heading = app.staticTexts["Speed"]
+            let askBefore = ask.frame
+            let headingBefore = heading.frame
+
+            ask.tap()
+
+            let answered = app.descendants(matching: .any)["personalVoiceAsked"]
+            XCTAssertTrue(answered.waitForExistence(timeout: 10), "the Ask button's place does not hold its words after the answer (\(context))")
+            attachCapture(app, name: "\(context), after a refusal")
+            XCTAssertFalse(ask.exists, "the Ask button is still offered after the answer (\(context))")
+            XCTAssertFalse(
+                app.buttons["Open Personal Voice Settings"].exists,
+                "a button that leaves the app appeared on the visit that asked (\(context))"
+            )
+            // Measured from the Speed heading, so a scroll made by the tap
+            // does not count as a move.
+            XCTAssertEqual(
+                heading.frame.minY - answered.frame.minY, headingBefore.minY - askBefore.minY, accuracy: 0.5,
+                "the answer moved the Ask button's place or the speeds below it (\(context))"
+            )
+            let scrolled = heading.frame.minY - headingBefore.minY
+            let spot = CGPoint(x: askBefore.midX, y: askBefore.midY + scrolled)
+            // Home stays in the tree under the Settings cover, so only a
+            // button that can be activated counts (CI on PR #27 found
+            // Home's "I don't know." tile under the spot on an iPhone).
+            for button in app.buttons.allElementsBoundByIndex
+            where button.exists && button.frame.contains(spot) && button.isHittable {
+                XCTFail("\(button.label) is where the Ask button was (\(context))")
+            }
+        }
     }
 
     /// VoiceOver reads each numbered step with its number, so the order is
