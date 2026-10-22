@@ -21,7 +21,9 @@ accessibility tree, and the two are not read at the same instant (Apple
 does not document this; the evidence below shows it). Text that leaves
 in between is in the screenshot and not in the tree, and is reported as
 text with no element, which is the finding. Whenever "Speaking" was
-drawn, it had its accessibility element.
+drawn, it had its accessibility element. The next run failed the same
+way in the other appearance, with "Speaking" again leaving as its audit
+began (*Evidence*).
 
 The fix makes every audit start on a still screen:
 
@@ -91,6 +93,30 @@ which is why the failure came and went. Home has no animations (no
 `withAnimation`, `.animation` or `.transition` in `Brickson/`), so the
 line leaves in a single frame.
 
+The next run of the same code failed the same way, in the dark pass this
+time: run [39843904104](https://github.com/MiddleAgedBanana/Brickson/actions/runs/39843904104)
+(PR #29 at `b261dc6`, which is `main` at `5abdd9f` plus Markdown), on the
+same simulator with the same settings. The voice took 2.1 seconds in its
+light pass and 2.6 in its dark pass. Across the four passes of the two
+runs, the result follows when "Speaking" left:
+
+| Run, pass | Yes tapped | "Speaking" left | Audit began | Result |
+|---|---|---|---|---|
+| 39835147321, light | 19.83–20.39 s | 23.41 s | 23.07 s | failed |
+| 39835147321, dark | 46.34–46.90 s | 49.92 s | 50.47 s | passed |
+| 39843904104, light | 13.65–14.07 s | 15.88 s | 15.95 s | passed |
+| 39843904104, dark | 31.86–32.32 s | 34.66 s | 34.48 s | failed |
+
+"Speaking left" is the recording's first frame without the line, and the
+recording runs up to about a quarter of a second behind the test's clock
+(each tap first shows 0.1 to 0.4 seconds after its step starts). "Audit
+began" is when the test's last step before the audit ended. In both
+failures the line left within about a quarter of a second of the audit's
+start; in both passes it had left before the audit began. In the second
+run's dark pass the test's own "phrase spoken" screenshot (33.59 s) and
+its captured tree (33.87 s) both still have "Speaking", and the recording
+shows no other change until the audit's Dynamic Type pass (from 35.25 s).
+
 How it was read on Linux, for the next time:
 
 ```sh
@@ -114,9 +140,9 @@ cancelled). The UI failures that came and went on unchanged code:
 
 | Failure | Seen | Cause and owner |
 |---|---|---|
-| This audit finding, type 2, in the AX5 test's one audit after "phrase spoken" | 5 device results in 4 run attempts: `31e48f7` (iPhone, light and dark), `9cf0e76` (iPhone, light and dark), `51f3a5f` (iPad and iPhone, light), `5beb447` (iPhone, light) | This pull request |
-| "Error getting main window kAXErrorServerNotFound", or a UI query timing out (395 s in `HomeLayoutTests`), always in the first test that launches the app | 8 device results in 7 run attempts of the kAX error, last on 2026-10-21 22:17 (`31e48f7`); the query timeout once, on `1df97d5` | AGENTS.md's known slow first launch; the warm-up launch (32 to 70 s) did not prevent it. Codex on the owner's Mac is rewriting the slow `HomeLayoutTests` query, now the first test to launch the app |
-| The UI job cancelled at its 50-minute limit with no test failed | once, `9658b0c` (iPad passed; the iPhone was 10 minutes into its tests) | Codex is raising the limit; setup times under *Follow-ups* |
+| This audit finding, type 2, in the AX5 test's one audit after "phrase spoken" | 5 device results in 4 run attempts: `31e48f7` (iPhone, light and dark), `9cf0e76` (iPhone, light and dark), `51f3a5f` (iPad and iPhone, light), `5beb447` (iPhone, light); then, after this pull request opened, `b261dc6` (iPhone, dark) | This pull request |
+| "Error getting main window kAXErrorServerNotFound", always in the first test that launches the app (now `HomeAccessibilityOrderTests`' first test); or a UI query timing out (395 s in `HomeLayoutTests`) | the kAX error in 8 device results in 7 run attempts to 2026-10-21 22:17 (`31e48f7`), then on this pull request's own first run (`43931ea`, iPad); the query timeout once, on `1df97d5` | A slow first launch (AGENTS.md); the warm-up launch (32 to 86 s) did not prevent it. Why the app sometimes draws nothing for a minute is not established (*Follow-ups*). Codex on the owner's Mac is rewriting the slow `HomeLayoutTests` query |
+| The UI job cancelled at its 50-minute limit with no test failed | once, `9658b0c` (iPad passed; the iPhone was 10 minutes into its tests); again on `main` at `5abdd9f` after this pull request opened (run 39843889370: the iPad's 37 tests passed, this one included, and the iPhone ran out of time before its results were written) | Codex is raising the limit; setup times under *Follow-ups* |
 | "Failed to compute hit point for Button … familySetup … {{inf, inf}, {0.0, 0.0}}" in `SettingsTests.testAnIdleSettingsReturnsToItsFirstScreenAndStaysOpen`, three tap attempts over 7 s | once, iPhone, `51f3a5f` (#27's branch; the iPad passed) | Not established; under *Follow-ups* |
 
 The type-2 finding first appeared on `31e48f7` (2026-10-21 22:17): none in
@@ -136,6 +162,9 @@ error) were fixed on their branches and are not flakes.
   wait and the two runner tests.
 - The next commit: this record, the evidence image, AGENTS.md's two
   gotchas and HANDOFF's *Verification* line.
+- A later commit: the second failure (run 39843904104), read the same
+  way, `main`'s run cut off by the time limit, and this pull request's
+  first CI run, with its slow first launch.
 
 ## Verified
 
@@ -152,6 +181,12 @@ error) were fixed on their branches and are not flakes.
   which Linux cannot compile.
 - `waitForNonExistence(timeout:)` is documented for Xcode 16.3 and later
   (developer.apple.com, XCUIAutomation, checked 2026-10-22).
+- CI on this pull request at `43931ea` (run
+  [39845748302](https://github.com/MiddleAgedBanana/Brickson/actions/runs/39845748302)):
+  the unit tests passed. On the iPad the six runner tests and all nine
+  `LaunchTests` passed, this AX5 test included; the first test to launch
+  the app failed with the kAX error (*Other UI failures*). The iPhone was
+  cut off at the 50-minute limit before it wrote any results.
 - `waitForSpeechToFinish` fails if "Speaking" never leaves, for example
   if the speech watchdog stopped ending phrases the synthesizer never
   reports finished; it has not been seen failing.
@@ -194,6 +229,21 @@ error) were fixed on their branches and are not flakes.
   leftover element would matter beyond the test, since VoiceOver and
   Switch Control walk the same tree. If it fails again, the kept result
   has the recording and the tree. *(a new thread if it recurs)*
+- **The first launch that draws nothing for a minute.** On this pull
+  request's run the iPad's first launch took 71.5 s: XCTest spent 60 s
+  "Setting up automation session" while the screen recording showed only
+  a blank white window, then reported "Unable to monitor event loop", and
+  its three snapshot requests failed with kAXErrorServerNotFound. The
+  second launch took 56 s, later ones 7 to 20 s; on the other recent runs
+  first launches took 9 to 36 s. The machine was slow that run (the
+  warm-up took 40 s), but a white window for a minute also fits the app's
+  main thread waiting at launch: `BricksonApp.init` reads the output
+  volume, sets the audio session's category, lists the installed voices
+  and reads the Personal Voice status there (`AppAudio.makeForApp`), and
+  each of those asks a system service that a just-started simulator may
+  still be starting. Not established; a log line per launch step, read
+  from the simulator's log after a slow launch, would show where the time
+  goes. *(a new thread if it recurs)*
 - **A script that lists and extracts a result's attachments on Linux**,
   so cloud threads need not retype the commands above. *(a test seams
   thread)*
