@@ -66,7 +66,7 @@ test is named for what would make it fail.
 
 | Map row (stage; the map's verdict) | Brickson today | Plan | Section |
 |---|---|---|---|
-| Personal Voice (1; has it) | Speaks in the person's Personal Voice when allowed; asks at launch | Guidance before asking, and a link to "Allow Apps to Request to Use": R0-7 | 4 |
+| Personal Voice (1; has it) | Speaks in the person's Personal Voice when allowed; asks at launch. Voice Settings explains each state, links to "Allow Apps to Request to Use", and has an explained Ask button that shows once the app asks from Settings | Asking from Settings instead of at launch, after device check D1: R0-7 | 4 |
 | Message banking (1; partly) | Nothing yet | Import and play recordings: R1. An in-app recorder: R2 | 10 |
 | Listen for Atypical Speech (1; system) | System | Setup text: R0-7 | 3 |
 | Siri and App Intents (1; add) | Nothing yet | R2 "Siri and Shortcuts", fixed phrases only | 3 |

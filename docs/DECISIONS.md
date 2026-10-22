@@ -51,6 +51,7 @@ holds.
 | Explicit saves, an Emergency category that is always there, fixed starter identities, editing, import, replace, the backup format, an unreadable library reported and never replaced | "Every save is explicit", "Starter phrases", "The emergency category is always there", "Editing the library", "Importing a backup", "Replacing the library", "Backup file format", "An unreadable library is reported, never replaced" (Library editing and backup format; PR #14, open) |
 | When the audio session is released, the alarm's sound, start-only Get Attention, no automatic resume, Personal Voice never written to a file | "Background audio", "Get Attention", "A phrase the system cuts off", "Audio session notices", "Personal Voice is never written to a file" (Speech engine and Get Attention; PR #16, open) |
 | Home first with setup as a place in Settings, the Settings root, the voice picker, the Privacy row, the largest sizes when nobody answers setup, an "Anything changed?" check-in every three months that waits 30 days after Not Now | "First launch opens Home; setup lives in Settings", "Settings is a cover with a fixed safety bar", "Settings resets when idle and never closes", "Setup answers are kept as offered, never as completed", "Check-ins come every three months", "The privacy policy ships inside the app", "Speed is a set of fixed choices" (Settings and first run; PR #23) |
+| Voice Settings keeping its rows and words in place while voices change, and an explained Ask button for Personal Voice that moves nothing and adds no button on the visit that asked (switched on after device check D1) | "Voice Settings keeps its places while it is open", "Asking for Personal Voice from Voice Settings", and a paragraph in "A Personal Voice is used only while it is allowed" (Voice screen in Settings, 2026-10-22) |
 | The accessibility coverage list and its choices: full screen in Assistive Access and no separate scene, no programmatic Guided Access, assistive-technology flags that only suggest, phrases in the person's voice with VoiceOver on, late-stage boards as an R1 profile, and what waits or is never used | "Accessibility API coverage" (Accessibility coverage checklist) |
 
 Recorded here:
@@ -783,18 +784,22 @@ result the system question appears on first launch with no explanation.
 Onboarding should explain Personal Voice first and then ask; that comes
 with Settings and setup (docs/PORTING.md, step 7).
 
-When to ask is `PersonalVoiceAskPolicy`, chosen in one line in
-`AppAudio.makeForApp`. `.atLaunch` is today's behaviour and stays the
+When to ask is `PersonalVoiceAskPolicy`, chosen in one line, the first
+of `AppAudio.personalVoiceAskPolicy(for:)` (until 2026-10-22, a line in
+`AppAudio.makeForApp`). `.atLaunch` is today's behaviour and stays the
 app's policy. `.fromSettings` asks only from the Voice screen's explained
 button (`SpeechService.requestPersonalVoiceAuthorization()`), and at
 launch asks again only once the person has allowed it, which shows no
 question (Apple: the person is prompted initially and changes the answer
 in the Settings app). Switch to `.fromSettings` when two things are true:
-Settings has that button, and a device shows that a voice allowed after
-the first phrase of a session speaks without a relaunch (check D1 in
-docs/recon/2026-10-15/directions/onboarding-and-settings.md, 2.5; on
-docs/HANDOFF.md's device list). If D1 needs a relaunch, keep `.atLaunch`
-and explain afterwards on the Voice screen.
+Settings has that button (it has since 2026-10-22: "Asking for Personal
+Voice from Voice Settings"), and a device shows that a voice allowed
+after the first phrase of a session speaks without a relaunch (check D1
+in docs/recon/2026-10-15/directions/onboarding-and-settings.md, 2.5; on
+docs/HANDOFF.md's device list). A debug build launched with
+`--personal-voice=ask-from-settings` is the build D1 needs, with no
+change to the code. If D1 needs a relaunch, keep `.atLaunch` and explain
+afterwards on the Voice screen.
 
 Whatever the policy, the service reads the system's status at launch,
 before any answer (so someone who allowed it before speaks in their own
@@ -807,8 +812,9 @@ No Info.plist key is needed for the request. If **Allow Apps to Request to
 Use** is off (Settings → Accessibility → Personal Voice), the system denies
 the request without asking. `AccessibilitySettings.openSettings(for:
 .personalVoiceAllowAppsToRequestToUse)` opens that switch directly; the
-Voice Settings screen offers it when permission is denied, with the
-written path always shown (2026-10-21, `PersonalVoiceGuidance`).
+Voice Settings screen offers it when permission is denied, except on the
+visit whose Ask button was just answered, with the written path always
+shown (2026-10-21, `PersonalVoiceGuidance`).
 
 ## First launch opens Home; setup lives in Settings
 
@@ -1014,6 +1020,85 @@ shows (`SpeechService.availableVoices`) leaves it out; the phrase speaks
 in the next voice instead, and the person's choice is kept, so it comes
 back with access. What the system really does with a turned-off voice
 (silence, a finish, or another voice) is device check D4.
+
+Voice Settings says so in those words: while access is off, a chosen
+Personal Voice is never called gone from the device. The note above the
+list then says the chosen voice can't be used now and comes back when
+Personal Voice is turned on, and a Personal Voice that leaves the list
+while the screen is open says it can't be used while Personal Voice is
+turned off (`VoiceList.missingVoiceNote`, `VoiceList.goneVoiceNote`;
+2026-10-22).
+
+## Voice Settings keeps its places while it is open
+
+*2026-10-22. Default: the owner left these choices to the project.
+Reversible if the owner objects. From Codex's fourth review of PR #23.*
+
+The voices can change while Voice Settings is open: a voice downloaded
+or deleted, or Personal Voice turned on or off in the Settings app while
+Brickson waits, which the speech engine reads again on return to the
+front. Rebuilding the list live would move every Hear and Use pair below
+the change under a resting pointer (AGENTS.md, invariant 10). So, for
+one visit to the screen:
+
+- Each voice row keeps the place it had when the screen opened
+  (`VoiceList.keepingPlaces`). A voice that goes keeps its place as
+  passive words with no button; a voice that arrives goes after every
+  row already shown. Each row still shows whether it is chosen now. The
+  next time the screen opens, the normal order (`VoiceList.rows`)
+  decides again.
+- The Personal Voice card keeps its tallest height
+  (`settingsKeepsItsTallestHeight()`), so words that get shorter pull
+  nothing up.
+- "Speaking with …" keeps room for every voice listed now or when the
+  screen opened.
+- The missing-voice note above the list appears only when the chosen
+  voice was already missing as the screen opened; a voice that goes later
+  says so in its own row.
+
+What this does not cover: words that get longer while the screen is open
+still push what is below them down (the card going from ready to turned
+off, or "Speaking with …" naming a newly allowed voice longer than every
+listed one, at sizes where that wraps). Where every version is known,
+reserve them all (`SettingsReservedParagraph`), as the Ask button does.
+
+## Asking for Personal Voice from Voice Settings
+
+*2026-10-22. Default: the owner left these choices to the project.
+Reversible if the owner objects. From the research of 2026-10-15
+(onboarding-and-settings.md, 2 and 3).*
+
+Under `PersonalVoiceAskPolicy.fromSettings`, Voice Settings' Personal
+Voice card offers **Ask to Use Personal Voice**, a standard button,
+explained in the words above it: what Personal Voice is, to choose Allow
+when iOS asks, and that iOS asks only once. The rules:
+
+- **One question.** A second press while iOS still asks (a double tap, or
+  a held look before the question covers the screen) asks nothing more
+  (`SpeechService.isAskingForPersonalVoice`), and Settings holds its idle
+  reset until the answer lands (`SettingsIdleHold.personalVoiceRequest`).
+- **The answer moves nothing.** While the button shows, the card's words
+  keep room for the words of every answer iOS can give
+  (`PersonalVoiceGuidance.outcomesOfAsking()`). Once used, the button's
+  place holds passive words ("Answered. …") until the screen closes, laid
+  out at the same size, so no control takes its frame.
+- **No new button on the visit that asked.** Whatever the answer, the
+  card adds no control until the screen opens again
+  (`PersonalVoiceGuidance.make`, `askedOnThisVisit`). A refusal shows the
+  written path, and Open Personal Voice Settings is back on the next
+  visit. A button that leaves Brickson must not appear beside the spot
+  just activated; with iOS's question in between, where a dwell user's
+  look rests after answering is the question's own button, which only
+  chain scoring can follow (docs/HANDOFF.md, *Known gaps*, "Chains of
+  activations through Settings' screens").
+
+The app's policy is still `.atLaunch`, so the button does not show to
+people yet ("Personal Voice permission is asked at launch, for now").
+Debug launches can ask for it: `--personal-voice=ask-from-settings` with
+the device's own permission, for device check D1, and
+`--personal-voice=stand-in-refuses` with a stand-in that refuses, so the
+UI tests reach the button (`LaunchOptions`, `StandInPersonalVoice`). A
+release build reads no launch arguments.
 
 ## Personal Voice is never written to a file
 
