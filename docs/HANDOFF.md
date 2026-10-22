@@ -7,7 +7,7 @@ nothing is appended here. Plan: [`docs/ROADMAP.md`](ROADMAP.md). How the
 project runs: [`docs/SDLC.md`](SDLC.md).
 
 **State as of 2026-10-22: PR #14 (the library core), reconciled with
-`main` at `5abdd9f`; not merged.**
+`main` at `d79d836`; not merged.**
 Ten threads are working in parallel on the first release, R0.
 
 ## What the app does today
@@ -45,6 +45,14 @@ code with no screens yet
 The screen never locks. Ported code:
 [`docs/PORTING.md`](PORTING.md).
 
+The design reference and its specification are in [DESIGN.md](DESIGN.md)
+and [work/design-screens.md](work/design-screens.md). PR #20's
+[reconciliation record](log/2026-10-22-design-reconciliation.md) preserves
+the landed slot decisions and lists drawings, placement questions and
+measurements still pending before implementation follows them. The local
+unit gate passed all 460 tests on iPad Pro 13-inch (M5), iOS 27.0, with
+Xcode 27.1 (27A9275); final-head CI is pending.
+
 ## Verification
 
 - **PR #14 reconciliation, 2026-10-22:** prepared a merge of `main` at
@@ -60,9 +68,23 @@ The screen never locks. Ported code:
   blank phrases to remain. It also restored the owner-only, unadopted
   safety-copy exception in the decision text. The follow-up full unit
   run passed 550 tests with only the same crash probe skipped; all 46
-  pure edit/import tests also passed. Final-head CI and reviews remain pending;
-  [`log/2026-10-22-library-reconciliation.md`](log/2026-10-22-library-reconciliation.md)
-  records the changes, review status and next checks.
+  pure edit/import tests also passed. CI on `596c59a` passed units (550
+  passed, one existing skip, 551 total) and iPad UI (33 passed, four existing
+  skips, 37 total), but iPhone UI had 32 passed, one failed test and the same
+  four skips (37 total). The AX5 quick-control audit reported type 2 text
+  findings with no element in both light and dark. Its cause remains
+  unresolved; the pre-audit screenshot/tree pairs do not identify it.
+  All 14 review conversations are resolved and Codex code review is clean
+  for `596c59a`. This follow-up merges `main` at `d79d836` and strengthens
+  the shared helper to preserve native audit issues and captures at
+  reporting time. Five focused iPhone AX5 iterations passed in both
+  appearances. Fresh full gates passed: units 550 passed, one existing
+  skip (551 total); UI 33 passed, four existing skips (37 total) on each
+  device, with no failures. These local runs did not reproduce or explain
+  the earlier CI finding and do not establish a fix. Fresh CI and review
+  remain pending; PR #14 is not yet green. The
+  [`reconciliation record`](log/2026-10-22-library-reconciliation.md)
+  preserves the earlier core/review fixes, failed CI evidence and next checks.
 
 - **GitHub CI** since PR #12 (merged 2026-10-21) builds with Apple's
   newest released Xcode, chosen on GitHub's `xcode-27` image (27.1,
@@ -212,7 +234,7 @@ release in docs/ROADMAP.md when no thread has it yet.
 - The privacy policy describes features not built yet; each is built or its
   sentence deleted before release (docs/APP-STORE.md, section 3, lists
   each sentence). *(App Store readiness and ASO)*
-- The app icon is a placeholder; `design/brand/` is not installed. *(Figma and Claude Design screens)*
+- The app icon is a placeholder; `design/brand/` is not installed. *(Release chores, R0 item 11)*
 - Siri's alternative name "Brick Son" (`INAlternativeAppNames`) has no
   effect yet: Apple applies it only to apps with Siri support, which
   Brickson does not have (docs/DECISIONS.md, "App identity"). *(R2 Siri

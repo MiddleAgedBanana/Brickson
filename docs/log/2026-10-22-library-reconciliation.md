@@ -129,15 +129,102 @@ Its result bundle is `build/TestResultsReview/unit-ipad.xcresult`.
 An independent follow-up inspection found no additional defect. In an
 already-damaged blank-only Emergency category, removing another blank is
 now refused until words are added or edited; other repairs remain possible.
-The UI results above predate this follow-up; it changes the unexposed editing planner and
-source comments, with no UI implementation or UI-test changes. Final-head
-CI and review remain pending.
+The local UI results above predate this follow-up; it changes the
+unexposed editing planner and source comments, with no UI implementation
+or UI-test changes in that commit.
+
+### CI on `596c59a` and the diagnostic follow-up
+
+The follow-up was pushed as `596c59a`, and both findings were answered and
+resolved. All 14 inline review conversations are resolved. Codex's
+[code-review summary](https://github.com/MiddleAgedBanana/Brickson/pull/14#issuecomment-6309731643)
+reports completed with no findings for that exact commit. This is separate
+from its older PR-opening security summary.
+
+[Tests run 39854568808](https://github.com/MiddleAgedBanana/Brickson/actions/runs/39854568808)
+finished with a failed UI job. It used Xcode 27.1 (27A9275), iOS 27.0
+(24A434), and the same two simulator models as the local runs. Units passed:
+550 passed, zero failures, the same issue #19 crash probe skipped, zero
+expected failures (551 total). The UI results were:
+
+| Simulator | Passed / total | Existing skips | Failed tests | Suite time | Starter-library layout test |
+| --- | --- | --- | --- | --- | --- |
+| iPad Pro 13-inch (M5) | 33 / 37 | 4 | 0 | 797.417 s | 113.083 s |
+| iPhone 17 | 32 / 37 | 4 | 1 | 1,042.657 s | 106.053 s |
+
+Both bundles have zero expected failures. The same four opt-in keyboard
+measurements were skipped on each device. On iPhone in portrait,
+`LaunchTests.testLargestTextKeepsQuickControlWordsVisible` failed two
+accessibility findings at AX5, one in light and one in dark: type 2,
+"Potentially inaccessible text", with no element identified. That test
+took 50.978 seconds; it passed on iPad in 29.505 seconds. This was a finding,
+not the known audit-service timeout. It has not been suppressed or retried.
+
+The retained
+[UI result artifact](https://github.com/MiddleAgedBanana/Brickson/actions/runs/39854568808/artifacts/12461807161)
+was inspected, including both full pre-audit screenshots, their complete
+accessibility trees, the activity record and recorded frames. Every visible
+app word in those paired screenshots is represented in its tree, including
+"Speaking". Later recorded frames show that status disappearing while its
+reserved area and nearby controls keep their positions, followed by
+text-size changes during the audit. The recording is sparse: it does not
+establish the exact instant of the status change. The old helper handled
+the native issue after recording its own contextual failure; none of the
+53 exported attachments is associated with a failure, and no native element
+or rectangle identifies the flagged text. The pre-audit captures therefore
+do not establish which text caused the finding. The cause remains unresolved.
+
+This follow-up merges `main` at `d79d836` without rebasing, bringing in
+PR #20's documentation without changing app code or tests from main.
+The shared audit helper is strengthened: unexpected findings capture a screenshot
+and full accessibility tree when reported, retain the contextual `XCTFail`,
+and return `false` so XCTest preserves its original issue and available
+native diagnostic attachments. The already accepted phrase-label guess
+still returns `true`; no new finding is accepted and no assertion is removed.
+A bounded iPhone repetition of the same AX5 quick-control test ran with
+`-test-iterations 5 -run-tests-until-failure`, stopping on the first failure
+if one occurred. All five iterations passed: 23.452, 22.269, 22.262,
+22.272 and 22.272 seconds (112.527 seconds total). Each iteration audited
+both light and dark appearances. This did not reproduce the CI finding
+and does not establish a fix or replace that failed CI result. The bundle
+is `build/TestResultsAuditRepetition/ui-iphone.xcresult`.
+
+The fresh full unit gate for the merge and diagnostics passed:
+550 passed, zero failures, the same one disabled issue #19 crash probe,
+zero expected failures (551 total), with 66.8% app line coverage
+(4,382 of 6,559). The String Catalog remains synchronized. This used
+Xcode 27.1 (27A9275), XcodeGen 2.46.0, and iPad Pro 13-inch (M5),
+iOS 27.0 (24A434).
+
+The fresh full `scripts/test.sh ui` run also passed on both device families,
+with Xcode 27.1 (27A9275) and iOS 27.0 (24A434):
+
+| Simulator | Passed / total | Existing skips | Failures | Suite time | Starter-library layout test | AX5 quick-control audit |
+| --- | --- | --- | --- | --- | --- | --- |
+| iPad Pro 13-inch (M5) | 33 / 37 | 4 | 0 | 549.809 s | 84.882 s | 23.365 s |
+| iPhone 17 | 33 / 37 | 4 | 0 | 496.122 s | 41.412 s | 22.362 s |
+
+Both bundles have zero expected failures, with only the four existing
+opt-in keyboard measurements skipped on each device. The bundles are
+`build/TestResultsDiagnostics/ui-ipad.xcresult` and
+`build/TestResultsDiagnostics/ui-iphone.xcresult`. Device orientation,
+text-size, appearance and keyboard-coverage limits remain as stated above.
+The AX5 quick-control test passed both appearances on each device; this
+is additional local non-reproduction, not an identified correction to the
+failed CI finding. No app behavior, audit assertions or accepted findings
+changed. A read-only inspection found no additional issue in the helper;
+the installed Xcode header confirms that returning `true` handles an issue
+instead of recording it, so `false` preserves XCTest's native report.
+Fresh CI and review for the pushed merge remain pending.
 
 ## Follow-ups, in order
 
-1. Push the tested follow-up to the existing PR branch, answer the two
-   findings, then verify CI and any final review.
-2. Continue the existing library follow-ups: safety copies, export and
+1. Verify fresh CI and review after pushing the tested merge and diagnostic
+   changes. PR #14 is not green until those checks pass.
+2. If the AX5 finding recurs, inspect the new captures and native report to
+   identify and fix its cause. The earlier failed run remains evidence;
+   local passes do not explain it or authorize suppressing a finding.
+3. Continue the existing library follow-ups: safety copies, export and
    import, editing screens, shipped-schema fixtures and issue #19's
    opt-in SwiftData rollback probe.
 

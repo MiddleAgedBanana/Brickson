@@ -44,7 +44,8 @@ holds.
 | Layouts from the space available, with floors set without a device table | "Layouts from the space available", below |
 | When Personal Voice permission is asked, Automatic keeping the person's Personal Voice, no Personal Voice without permission | "Personal Voice permission is asked at launch, for now", "Automatic keeps the person's Personal Voice", "A Personal Voice is used only while it is allowed" (Personal Voice foundation; `claude/project-thread-1ly6dd`) |
 | Minimum iOS 26.0, iPhone and iPad, set by two rules: every device that can use eye tracking runs the app, and every mapped accessibility API stays reachable behind `#available` | "Minimum iOS, iPhone and iPad" (Toolchain and iOS version targets; PR #12, merged) |
-| Home's slot plan with stable slot identifiers; solid fills on Home and the system's Liquid Glass elsewhere | "Home's slot plan" (Phone layout and word fitting), "Solid fills on Home, system glass elsewhere" (Figma and Claude Design screens; pull request not open yet) |
+| Home's slot plan with stable slot identifiers | "Home's slot plan" (Phone layout and word fitting; PR #22) |
+| Solid fills on Home with one measured colour per role, and the system's Liquid Glass elsewhere once each component measures | "Solid fills on Home, system glass elsewhere" (Figma and Claude Design screens; `docs/log/2026-10-21-design-screens.md`) |
 | The App Store category is Utilities, with no secondary category; the age-rating answers give 4+ | "App Store category", "Age rating answers" (App Store readiness and ASO; PR #18) |
 | Home's stand-in layout, labels that fit themselves and Home's button style | "Home's stand-in layout", next to "Home version 0 is a stand-in" (Phone layout and word fitting) |
 | Typing as a state of Home under a band Apple's keyboard never covers, Apple's keyboard in 1.0, Writing Tools off, third-party keyboards refused, Return speaks, the typed message | "Typing is a state of Home", "Typing uses Apple's keyboard", "Writing Tools off while typing", "Third-party keyboards refused in 1.0", "Return speaks", "The typed message" (Typing foundation; its pull request from `claude/project-thread-dsbkry`) |
@@ -1693,6 +1694,42 @@ choices it makes:
 - **Never:** a person's phrases as an `AppEntity`, in Spotlight or in the
   keyboard's conversation context; Foundation Models; custom eye, head,
   pointer or switch input (invariant 9).
+
+## Solid fills on Home, system glass elsewhere
+
+*2026-10-21. Default, adopted 2026-10-21: the owner left these choices to
+the project. Reversible if the owner objects.*
+
+Home's controls use solid, measured fills, not Liquid Glass. Apple's
+guidelines (materials page, read 2026-10-21) keep Liquid Glass for
+navigation and controls floating over content and ask for it sparingly in
+custom controls; Home's buttons are the content, and glass takes its
+colour from what lies beneath, so a contrast ratio measured once could
+not be promised (invariant 6). Standard system components on the family
+screens (navigation bars, toolbars, sheets, the file picker, the in-app
+Safari sheet) keep the glass the system gives them, unstyled, only once
+they measure: invariant 6 covers system components too, so each one is
+captured in light, dark, Increase Contrast and Reduce Transparency over
+the content it floats over, and its words and edges are measured from
+the captures. One that fails gets an opaque backing or Brickson's own
+measured control instead of glass. None is measured yet.
+
+One measured colour per role, the same value in light and dark: phrase
+`#0A60D6` (`AccentColor`), control `#5A6474` (`ControlFill`) and
+emergency `#C8161E` (`EmergencyFill`), as `Palette` has them, and two for
+the alarm: Get Attention `#B45309` and Stop `#0F766E`. The alarm's two
+are hues of their own, so neither reads as a phrase or as Emergency, and
+the amber avoids system orange's 2.2:1. White labels on every fill are
+5.0:1 or better, and every fill's edge is 3.5:1 or better on white and on
+black. The typing field's edge is `#767676` in both appearances, because
+the field's own fill barely differs from the screen: 4.07:1 against the
+field and 4.54:1 against the screen in light, 3.75:1 and 4.62:1 in dark.
+A pair enters the code only with its pin in `PaletteTests`.
+Which control takes which role, and where each sits, is "Home's slot
+plan". docs/DESIGN.md, *Colour* and *Apple's guidelines and Liquid
+Glass*, has the measurements and the review.
+
+Before: `Palette` had the three fills and no rule about glass.
 
 ## Tests
 
