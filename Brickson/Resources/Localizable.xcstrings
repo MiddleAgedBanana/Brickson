@@ -31,6 +31,12 @@
     "Get Attention stopped unexpectedly. Choose it again to restart." : {
 
     },
+    "Message not restored" : {
+
+    },
+    "Message not saved" : {
+
+    },
     "No" : {
 
     },
@@ -64,7 +70,13 @@
     "Stopped: Phrases" : {
 
     },
+    "The message you were typing before the app closed could not be restored." : {
+
+    },
     "The starter phrases couldn't be loaded. Yes and No still work. Restart the app to try again." : {
+
+    },
+    "This message is not being saved. It stays on screen, but it may be lost if the app closes." : {
 
     },
     "Volume low" : {

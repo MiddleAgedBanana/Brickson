@@ -156,4 +156,89 @@ struct VoiceSelectionTests {
         ]
         #expect(VoiceSelection.select(chosenID: nil, from: voices, languageCode: "es")?.id == "personal")
     }
+
+    // MARK: Automatic keeps the person's Personal Voice
+
+    /// A second Personal Voice, listed first, must not take over a voice
+    /// Automatic already speaks in (docs/DECISIONS.md, "Automatic keeps the
+    /// person's Personal Voice"). Fails if the remembered voice is ignored.
+    @Test func aSecondPersonalVoiceDoesNotChangeAutomatic() {
+        let voices = [
+            voice("second", personal: true),
+            voice("own", personal: true),
+        ]
+
+        let automatic = VoiceSelection.select(chosenID: nil, from: voices, automaticPersonalVoiceID: "own")
+
+        #expect(automatic?.id == "own")
+    }
+
+    /// The remembered voice counts only while it is listed. Fails if a
+    /// missing one blocks the next Personal Voice.
+    @Test func aRememberedVoiceThatIsGoneFallsToTheNextPersonalVoice() {
+        let voices = [
+            voice("premium-en", quality: .premium),
+            voice("other", personal: true),
+        ]
+
+        let automatic = VoiceSelection.select(chosenID: nil, from: voices, automaticPersonalVoiceID: "gone")
+
+        #expect(automatic?.id == "other")
+    }
+
+    /// Only a Personal Voice is kept this way; a system voice remembered by
+    /// mistake never outranks the person's own voice. Fails if any listed
+    /// remembered id wins.
+    @Test func onlyAPersonalVoiceIsKept() {
+        let voices = [
+            voice("premium-en", quality: .premium),
+            voice("own", personal: true),
+        ]
+
+        let automatic = VoiceSelection.select(chosenID: nil, from: voices, automaticPersonalVoiceID: "premium-en")
+
+        #expect(automatic?.id == "own")
+    }
+
+    /// A voice the person chose still comes first. Fails if the remembered
+    /// Personal Voice overrides an explicit choice.
+    @Test func aChosenVoiceStillBeatsTheRememberedPersonalVoice() {
+        let voices = [
+            voice("premium-en", quality: .premium),
+            voice("own", personal: true),
+        ]
+
+        let selected = VoiceSelection.select(chosenID: "premium-en", from: voices, automaticPersonalVoiceID: "own")
+
+        #expect(selected?.id == "premium-en")
+    }
+
+    // MARK: A Personal Voice only while it is allowed
+
+    /// Without permission, no Personal Voice is a candidate, even one a
+    /// stale list still shows (docs/DECISIONS.md, "A Personal Voice is used
+    /// only while it is allowed"). Fails if one is kept, or the other
+    /// voices lose their order.
+    @Test func withoutPermissionNoPersonalVoiceIsUsable() {
+        let voices = [
+            voice("standard-en"),
+            voice("own", personal: true),
+            voice("premium-en", quality: .premium),
+        ]
+
+        let usable = VoiceSelection.usableVoices(voices, personalVoiceAllowed: false)
+
+        #expect(usable.map(\.id) == ["standard-en", "premium-en"])
+        #expect(VoiceSelection.select(chosenID: "own", from: usable)?.id == "premium-en")
+    }
+
+    /// Fails if permission drops any voice.
+    @Test func withPermissionEveryVoiceIsUsable() {
+        let voices = [
+            voice("standard-en"),
+            voice("own", personal: true),
+        ]
+
+        #expect(VoiceSelection.usableVoices(voices, personalVoiceAllowed: true) == voices)
+    }
 }

@@ -39,6 +39,7 @@ struct BricksonApp: App {
     var body: some Scene {
         WindowGroup {
             HomeView()
+                .replacedByKeyboardProbeIfRequested()
                 .environment(audioSafety)
                 .environment(speech)
                 .environment(attention)
@@ -52,9 +53,11 @@ struct BricksonApp: App {
             UIApplication.shared.isIdleTimerDisabled = ScreenWakePolicy.keepsScreenAwake(in: phase)
             if phase == .active {
                 // Back in the foreground: read again what may have changed
-                // while away, the volume and an alarm that went quiet.
+                // while away, the volume, an alarm that went quiet, and
+                // whether a Personal Voice may be used.
                 audioSafety.refreshOutputVolume()
                 attention.checkHealth()
+                speech.refreshPersonalVoiceAvailability()
             }
         }
     }
