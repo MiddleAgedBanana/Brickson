@@ -1,6 +1,6 @@
 # Home's scan order and names
 
-*2026-10-22. Pull request from `claude/project-thread-soi3j3`. The
+*2026-10-22. Pull request #26, from `claude/project-thread-soi3j3`. The
 "Accessibility implementation, first pass" thread, a cloud session that
 cannot build or run the app.*
 
@@ -70,11 +70,24 @@ plain types in *Workflow rules*).
   `ControlNamesTests`, `HomeNameCollisionTests`,
   `HomeAccessibilityOrderTests`.
 - The records: this file and the documents above.
+- A merge of PR #22's branch after it took in `main` (PR #23) and began
+  measuring labels under Bold Text; then this record's CI results and
+  follow-ups.
 
 ## Verified
 
-Nothing was built or run on a Mac or by CI before the pull request
-opened; GitHub CI is the build (AGENTS.md, *Build and test*).
+Nothing was built or run on a Mac; GitHub CI is the build (AGENTS.md,
+*Build and test*).
+
+- **GitHub CI on `dc4dda3`** (the two commits on PR #22's branch at
+  `9cf0e76`, before the merge above), built with Xcode 27.1: the unit
+  tests passed, `HomeRegionTests`, `ControlNamesTests` and
+  `HomeNameCollisionTests` among them. The UI tests ran 24 on an iPad Pro
+  13-inch (M5) and an iPhone 17 simulator, both iOS 27.0: 20 passed, 4
+  skipped (the opt-in keyboard probe), none failed.
+  `HomeAccessibilityOrderTests` passed on both, at the default and the
+  largest text size, portrait. Codex's review and the security scan
+  found nothing. The run after the merge above is on the pull request.
 
 - **Linux Swift 6.3.3** (a throwaway package outside the repository, Swift
   6 language mode, main-actor default isolation, a stand-in for
@@ -91,7 +104,7 @@ opened; GitHub CI is the build (AGENTS.md, *Build and test*).
   `HomeNameCollisionTests` existed: no collision in any of the five
   category states.
 - **`HomeAccessibilityOrderTests`** type-checked on Linux against
-  stand-ins for the XCTest types it uses; it has not run.
+  stand-ins for the XCTest types it uses before it ran on CI.
 - New tests and what would make them fail: `HomeRegionTests` (a region
   reached before the quick controls, two regions tied, a region at the
   default priority, a shared identifier); `ControlNamesTests` (a fixed
@@ -131,11 +144,12 @@ opened; GitHub CI is the build (AGENTS.md, *Build and test*).
 For the next accessibility thread, the rest of item 3's list, in this
 order (each from docs/ACCESSIBILITY.md, section 6, unless named):
 
-1. **Bold Text in the fitting type.** `LabelFont` measures words with
-   UIKit's regular weight; with Bold Text on (`legibilityWeight == .bold`)
-   words draw wider, so a label that fits as measured can shrink further
-   or cut a word short. Measure at the weight that will be drawn, and
-   extend `StarterLabelFitTests` to bold.
+1. **Bold Text in the narrowest slots.** PR #22 now measures labels at
+   the heavier weight SwiftUI draws with Bold Text on
+   (`LabelFont.legible`, checked by `StarterLabelFitTests`), but checks
+   the starter labels' fit in their narrowest slots with Bold Text off
+   only (docs/log/2026-10-21-phone-layout.md, *Not verified*). Extend
+   that check to Bold Text on.
 2. **The Large Content Viewer** (`accessibilityShowsLargeContentViewer()`)
    on every Home control whose label the fitting type shrinks
    (`FittedLabel`'s `minimumScaleFactor`), so a person at an accessibility
