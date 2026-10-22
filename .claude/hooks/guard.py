@@ -59,6 +59,8 @@ WRAPPERS = {'command', 'builtin', 'exec', 'nohup', 'time', 'sudo', 'env', 'nice'
 WRAPPER_VALUE_OPTIONS = {
     'env': {'-u', '--unset', '-C', '--chdir'},
     'nice': {'-n', '--adjustment'},
+    'xargs': {'-n', '-L', '-I', '-P', '-s', '-E', '-J', '-R', '-S', '-a', '-d',
+              '--max-args', '--max-procs', '--max-chars', '--arg-file', '--delimiter'},
     'timeout': {'-k', '--kill-after', '-s', '--signal'},
     'sudo': {'-u', '--user', '-g', '--group', '-h', '--host', '-p', '--prompt',
              '-C', '--close-from', '-D', '--chdir', '-R', '--chroot'},
@@ -90,14 +92,50 @@ def deny(reason):
     sys.exit(0)
 
 
+def without_shell_comments(command):
+    """Remove comments only at word starts; hashes inside words are data."""
+    result = []
+    quote = None
+    escaped = False
+    word_start = True
+    index = 0
+    while index < len(command):
+        char = command[index]
+        if escaped:
+            result.append(char)
+            escaped = False
+        elif char == '\\' and quote != "'":
+            result.append(char)
+            escaped = True
+            word_start = False
+        elif quote:
+            result.append(char)
+            if char == quote:
+                quote = None
+        elif char in ('"', "'"):
+            result.append(char)
+            quote = char
+            word_start = False
+        elif char == '#' and word_start:
+            newline = command.find('\n', index)
+            if newline < 0:
+                break
+            index = newline - 1
+        else:
+            result.append(char)
+            word_start = char.isspace() or char in ';&|()'
+        index += 1
+    return ''.join(result)
+
+
 def segments(command, preserve_quotes=False):
     """Split into (words, preceding separator), keeping && and || for cd.
     Words inside $(...), `...` and sh -c '...' are split in turn."""
-    lexer = shlex.shlex(command.replace('\\\n', ' '), posix=not preserve_quotes,
+    lexer = shlex.shlex(without_shell_comments(command.replace('\\\n', ' ')), posix=not preserve_quotes,
                         punctuation_chars=';&|()\n')
     lexer.whitespace = ' \t\r'
     lexer.whitespace_split = True
-    lexer.commenters = '#'
+    lexer.commenters = ''
     current = []
     separator = ';'
     for word in lexer:
@@ -155,7 +193,7 @@ def strip_wrappers(words, inherited=None):
         first = words[0]
         if re.match(r'^[A-Za-z_][A-Za-z0-9_]*=', first):
             key, _, value = first.partition('=')
-            if key.startswith('GIT_'):
+            if key.startswith('GIT_') or key == 'HOME':
                 environment[key] = value
             words = words[1:]
         elif os.path.basename(first) in WRAPPERS:
@@ -170,7 +208,7 @@ def strip_wrappers(words, inherited=None):
                 if wrapper == 'env':
                     if option in ('-i', '--ignore-environment'):
                         environment = {key: None for key in set(os.environ) | set(environment)
-                                       if key.startswith('GIT_')}
+                                       if key.startswith('GIT_') or key == 'HOME'}
                     elif option in ('-u', '--unset') and len(words) > 1:
                         environment[words[1]] = None
                     elif option.startswith('--unset='):
@@ -239,6 +277,19 @@ def all_tree_pathspec(path):
                     ':(top)*', ':(glob)**', ':(top,glob)**')
 
 
+def exclusion_pathspec(path):
+    if path.startswith(':('):
+        magic, close, _ = path[2:].partition(')')
+        return bool(close) and 'exclude' in magic.split(',')
+    return bool(re.match(r'^:[/!^]*[!^]', path))
+
+
+def check_paths(paths):
+    if any(all_tree_pathspec(p) for p in paths) or (paths and all(
+            exclusion_pathspec(p) for p in paths)):
+        deny(STAGE_ALL)
+
+
 def check_add(args):
     for arg in args:
         if arg == '--':
@@ -250,8 +301,7 @@ def check_add(args):
         if re.fullmatch(r'-[a-zA-Z]+', arg) and set(arg[1:]) & set('Au'):
             deny(STAGE_ALL)
     paths = [a for a in args if not a.startswith('-')]
-    if any(all_tree_pathspec(p) for p in paths):
-        deny(STAGE_ALL)
+    check_paths(paths)
 
 
 def check_commit(args):
@@ -282,8 +332,7 @@ def check_commit(args):
         elif not arg.startswith('-'):
             paths.append(arg)
         index += 1
-    if any(all_tree_pathspec(p) for p in paths):
-        deny(STAGE_ALL)
+    check_paths(paths)
 
 
 def check_push(args, context):
@@ -429,7 +478,7 @@ def check_gh(words, cwd):
         elif word in ('-R', '--repo', '--hostname'):
             skip = True
         elif word.startswith(('--repo=', '--hostname=')) or \
-                (word.startswith('-R') and not plain):
+                word.startswith('-R'):
             continue  # the attached forms, --repo=OWNER/REPO and -ROWNER/REPO
         else:
             plain.append(word)
@@ -455,7 +504,14 @@ def check_gh(words, cwd):
                 deny(MERGE)
     if plain[:1] == ['api']:
         arguments = api_arguments(plain, cwd)
-        if API_MERGE.search(arguments) or protected_branch_merge(arguments):
+        methods = list(option_values(plain, {'--method'}, {'-X'}))
+        method = methods[-1].upper() if methods else (
+            'POST' if list(option_values(plain, {'--field', '--raw-field', '--input'},
+                                        {'-f', '-F'})) else 'GET')
+        merge_arguments = arguments
+        if method in ('GET', 'HEAD'):
+            merge_arguments = re.sub(r'/pulls/[^/\s]+/merge\b', '', arguments)
+        if API_MERGE.search(merge_arguments) or protected_branch_merge(arguments):
             deny(MERGE)
         if copilot_request(arguments):
             deny(COPILOT)
@@ -593,8 +649,13 @@ def check_command(command, cwd, depth=0, environment=None):
             elif program == 'eval':
                 check_command(' '.join(unwrapped[1:]), command_cwd, depth + 1,
                               command_environment)
-            if program == 'cd' and len(unwrapped) > 1:
-                target = os.path.join(where, os.path.expanduser(unwrapped[1]))
+            if program == 'cd':
+                destination = unwrapped[1] if len(unwrapped) > 1 else (
+                    command_environment.get('HOME', os.environ.get('HOME')))
+                if destination is None:
+                    next_states.add((where, False))
+                    continue  # HOME unset: operandless cd fails.
+                target = os.path.join(where, os.path.expanduser(destination))
                 # Earlier shell commands may create the target, so inspect
                 # both outcomes even when it does not exist at hook time.
                 next_states.add((target, True))

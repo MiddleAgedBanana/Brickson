@@ -382,12 +382,85 @@ change. It used Xcode 27.1 (27A9275), XcodeGen 2.46.0 and iPad Pro
 0.807 seconds and 41 hook tests in 9.167 seconds. Current UI validation
 and final-head review remain pending in CI.
 
+## Review of the audit-merge head
+
+The completed Codex review of `a15b4c5` found nine additional gaps. Each
+was checked against the current source before changing it:
+
+- Exclusion-only Git pathspecs select from an implicit whole-tree set.
+  Add and commit now require at least one positive named path when an
+  exclusion appears; an explicitly named path with exclusions remains
+  allowed. Git documents the [exclusion rule](https://git-scm.com/docs/gitglossary.html#def_pathspec).
+- `xargs` options with required operands now consume those operands,
+  exposing the actual command. Separate and attached forms are checked,
+  including the local `xargs` manual's argument-count, replacement,
+  process-count and size options. Optional GNU long-option values stay
+  attached; bare optional flags do not swallow the command.
+- Read-only `gh api` GET/HEAD checks of a PR's merge status are allowed.
+  PUT merges and GraphQL merge mutations are still refused. The
+  [CLI's method rules](https://cli.github.com/manual/gh_api) distinguish
+  explicit methods from the GET default and payload-driven POST default.
+- The shell lexer keeps a hash inside a word as data, including unquoted
+  URL fragments followed by request bodies. Comments at word starts are
+  removed while quoted text and the next line remain intact.
+- A child shell's operandless `cd` uses its effective HOME, including
+  command-prefix and `env` assignments. The possible failed-directory
+  outcome remains checked, and the child environment never changes the
+  outer command's repository.
+- Attached inherited `gh -R` options are removed at each command level,
+  so they cannot hide a merge, approval or Copilot task command.
+- Inline Markdown links now capture angle-bracketed destinations with
+  spaces. No current repository link uses that form, but it falls under
+  the checker's existing relative-link claim and is a small alternative
+  in its existing destination pattern, not a new Markdown parser.
+- Both policy hooks now use `onFailure: "block"`; a configuration
+  regression pins both entries. The
+  [official hook documentation](https://code.claude.com/docs/en/hooks#block-the-action-when-a-hook-fails)
+  requires Claude Code 2.1.295 or later for startup errors, crashes,
+  invalid output and timeouts to block the action. The installed CLI
+  reported 2.1.308; live hook reloading and cloud runtime versions remain
+  unverified. Permissions and their denied tools are unchanged.
+- The new report-only verifier was calling a unit command that can
+  rewrite the tracked String Catalog. The caller is new in this PR,
+  even though catalog synchronization already exists on main. It now
+  invokes `CI=true scripts/test.sh unit` (and the UI command with the
+  same environment), checks final status/diffs against its starting
+  snapshot, and reports unexpected tracked changes without repairing
+  or reverting them. Ignored generated build outputs are expected.
+
+Six command-hook regression methods produced 31 failures before the
+fixes. The hook-configuration check failed for both entries, and the
+inline-link check failed on a missing destination with spaces. The full
+system-Python gates then passed 48 hook tests in 12.913 seconds and
+19 documentation tests in 0.860 seconds. An independent reviewer checked
+the six changed command paths and the configuration test: all seven
+focused tests passed, with no additional actionable defect in that
+bounded review. No test command performs a real remote action. The
+six existing mocked String Catalog tests passed in 82.698 seconds,
+including CI mismatch reporting without rewriting the catalog. The
+fresh `scripts/test.sh unit` gate then passed 460 native tests with no
+failures, skips or expected failures; coverage was 62.6% (3,540/5,659)
+and the String Catalog was unchanged. It used Xcode 27.1 (27A9275),
+XcodeGen 2.46.0 and iPad Pro 13-inch (M5), iOS 27.0. Its Python gate
+passed 19 documentation tests in 0.813 seconds and 48 hook tests in
+12.628 seconds. These additions remain advisory checks against ordinary
+mistakes, not a shell sandbox.
+
+The new regressions fail if exclusion-only pathspecs count as named
+paths, xargs values hide the executable, merge-status reads are denied,
+embedded hashes discard payloads, operandless cd ignores the child's
+HOME, inherited attached repository flags hide the subcommand, either
+policy hook loses its failure-block setting, or angle-bracket targets
+stop at their first space.
+
 ## Not verified
 
-- CI on `7458118` is pending after the tested blockquote fix was
-  published and its thread resolved. Both jobs on superseded `f872635`
-  were cancelled. The locally tested `479175d` main merge needs
-  publication and final-head CI and review, including its current UI tests.
+- CI on `a15b4c5` passed units (460/460, no failures or skips, 62.6%
+  coverage) on Xcode 27.1 (27A9275), XcodeGen 2.46.0 and iPad Pro 13-inch
+  (M5), iOS 27.0; its UI job is still running. Its code review completed
+  with the nine findings above, which remain unresolved until this
+  locally tested follow-up is published. Current UI tests and final-head CI
+  and review are still required; earlier results do not verify this batch.
   Earlier CI on `7d6b3e1` finished
   with an iPad process-termination failure and a passing iPhone suite.
   Check the next pushed head's Unit tests, UI tests and CodeQL results.
@@ -405,13 +478,16 @@ and final-head review remain pending in CI.
 
 ## Follow-ups
 
-1. Codex: the main merge's fresh native unit gate passed. Check
-   current main and the PR branch, then publish and check final-head CI
-   and review. All nine original review threads were resolved on
+1. Codex: the latest review batch's native unit gate passed. Check
+   current main and the PR branch, publish together, then answer and
+   resolve the nine new findings and check final-head CI/review.
+   All nine original review threads were resolved on
    `7d6b3e1`, ten later threads on `f872635` and the blockquote thread
    on `7458118`; preserve complete CI results when available.
 2. In a live Claude Code session, confirm hook reloading; after the issue
    configuration lands, inspect the rendered bug form and its privacy text.
-3. The owner already enabled auto-merge on this PR. Its setting stays as
-   it is; GitHub can merge after all required checks and conversations
-   pass. Agents do not enable auto-merge or call the merge action.
+3. Auto-merge is now disabled, using the owner's explicit discretion
+   to keep main stable while the combined branches are validated. The
+   remote setting was verified disabled. This PR waits for the owner's
+   merge after green final-head checks and resolved reviews; agents do
+   not enable auto-merge or call the merge action.

@@ -344,6 +344,12 @@ Simulators cannot show these. Record each result in a `docs/log/` file
   its fresh gate passed 460 unit, 41 hook and 18 docs tests, with the
   catalog unchanged. Final-head CI/review remain pending.
   The earlier local UI counts precede that audit-helper change.
+  Nine further verified findings now pass 48 hook and 19 documentation
+  tests: exclusion-only pathspecs, xargs operands, merge-status reads,
+  word-internal hashes, child HOME, inherited gh repository flags,
+  angle-bracket links, hook error handling and the report-only verifier's
+  catalog command. Their fresh native gate passed 460 unit tests, with
+  no failures/skips and an unchanged catalog; final-head CI is pending.
   Reconciliation and verification: [`log/2026-10-22-agent-guardrail-reconciliation.md`](log/2026-10-22-agent-guardrail-reconciliation.md).
 
 ## History

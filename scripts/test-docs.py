@@ -52,7 +52,7 @@ CITATION = re.compile(
     r'(?:"(?P<quoted>[^"\n]{2,120})"'          # "Title"
     r'|(?<![*\w])\*(?P<italic>[^*\n]{2,120})\*(?![*\w]))')  # or *Title*
 BARE_ITALIC = re.compile(r'(?<![*\w`])\*(?P<title>[A-Z][^*\n]{1,120}?)\*(?![*\w])')
-LINK = re.compile(r'(?<!!)\[[^\]\n]*\]\((?P<target>[^)\s]+)(?:\s+(?:"[^"]*"|\'[^\']*\'))?\s*\)')
+LINK = re.compile(r'(?<!!)\[[^\]\n]*\]\((?P<target><[^>\n]*>|[^)\s]+)(?:\s+(?:"[^"]*"|\'[^\']*\'))?\s*\)')
 REFERENCE_LINK = re.compile(
     r'^ {0,3}\[(?!\^)[^\]\n]+\]:[ \t]*(?:\n[ \t]*)?'
     r'(?P<target><[^>\n]*>|[^\s<>]+)'
@@ -226,6 +226,18 @@ class CheckerTests(unittest.TestCase):
         self.assertTrue(broken_links(readme, '[x](docs/DECISIONS.md#no-such-heading)'))
         self.assertEqual(broken_links(readme, '[x](docs/DECISIONS.md#orientations)'), [])
         self.assertEqual(broken_links(readme, '[x](https://example.com/a.md)'), [])
+
+    def test_angle_bracketed_inline_destinations_keep_spaces(self):
+        # Capturing only non-whitespace targets loses this valid link form.
+        readme = ROOT / 'README.md'
+        for title in ['', ' "a title"']:
+            self.assertEqual(broken_links(readme,
+                f'[guide](<docs/NO SUCH FILE.md>{title})'),
+                ['README.md: link docs/NO SUCH FILE.md points to a missing file'])
+        self.assertEqual(broken_links(readme,
+            '[guide](<docs/DECISIONS.md#orientations>)'), [])
+        self.assertEqual(broken_links(readme,
+            '[guide](<https://example.com/a%20b>)'), [])
 
     def test_a_github_anchor_drops_punctuation(self):
         self.assertEqual(slug('Reviews, updates and GitHub settings'),

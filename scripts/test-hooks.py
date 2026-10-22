@@ -64,6 +64,71 @@ class GuardTests(unittest.TestCase):
                         ['git', '-C', str(self.repo), 'config', '--unset-all', key],
                         capture_output=True)
 
+    def test_exclusion_only_pathspecs_require_positive_named_paths(self):
+        # These inputs are JSON for the hook, never executed Git commands.
+        for exclusion in [':(exclude)docs/HANDOFF.md', ':!docs/HANDOFF.md',
+                          ':^docs/HANDOFF.md', ':(top,exclude)docs/HANDOFF.md']:
+            for operation in ['add', 'commit -m note --']:
+                with self.subTest(exclusion=exclusion, operation=operation):
+                    self.assertDenied(f"git {operation} '{exclusion}'")
+                    self.assertDenied(f"git {operation} '{exclusion}' ':!README.md'")
+                    self.assertAllowed(f"git {operation} docs/DECISIONS.md '{exclusion}'")
+        self.assertAllowed('git commit -m note')
+
+    def test_xargs_operands_do_not_hide_the_command(self):
+        for options in ['-n 4', '-L 2', '-I {}', '-P 2', '-s 1000',
+                        '-E stop', '-J {}', '-R 2', '-S 2000',
+                        '--max-args 4', '--replace={}', '--replace', '--max-lines',
+                        '-n4', '--max-args=4']:
+            with self.subTest(options=options):
+                self.assertDenied(f'xargs {options} git add -A')
+                self.assertDenied(f'xargs {options} gh pr merge 17')
+                self.assertAllowed(f'xargs {options} git add docs/HANDOFF.md')
+                self.assertAllowed(f'xargs {options} git status --short')
+
+    def test_merge_status_get_is_allowed_but_merge_put_is_denied(self):
+        endpoint = 'repos/o/r/pulls/12/merge'
+        for options in ['', '-X GET', '--method=GET', '-XGET', '--method HEAD']:
+            with self.subTest(options=options):
+                self.assertAllowed(f'gh api {options} {endpoint}')
+        for options in ['-X PUT', '--method=PUT', '-XPUT']:
+            with self.subTest(options=options):
+                self.assertDenied(f'gh api {options} {endpoint}')
+        self.assertDenied('gh api graphql -f query="mutation { mergePullRequest(input: {}) { clientMutationId } }"')
+
+    def test_embedded_hashes_do_not_discard_api_arguments(self):
+        for client, body_option in [('curl -X POST', '--json'),
+                                    ('wget --method POST', '--body-data')]:
+            self.assertDenied(client + ' https://api.github.com/repos/o/r/merges#note '
+                              + body_option + ' \'{"base":"main","head":"feature"}\'')
+        self.assertDenied('gh api repos/o/r/merges#note -f base=main -f head=feature')
+        self.assertDenied('echo word#suffix; git add -A')
+        self.assertAllowed('git status # git add -A')
+        self.assertAllowed('echo "# this is text"')
+        self.assertDenied('git status # harmless comment\ngit add -A')
+        self.assertAllowed('git add "docs/a#b.md"')
+
+    def test_operandless_cd_uses_the_child_home(self):
+        with tempfile.TemporaryDirectory(dir=self.repo) as folder:
+            other = Path(folder)
+            subprocess.run(['git', 'init', '-q', '-b', 'main', str(other)], check=True)
+            for prefix in [f'HOME={other}', f'env HOME={other}']:
+                for connector in [';', '&&']:
+                    with self.subTest(prefix=prefix, connector=connector):
+                        self.assertDenied(f'{prefix} bash -c "cd {connector} git push origin"')
+                        self.assertAllowed(f'{prefix} bash -c "cd {connector} git push origin HEAD:feature"')
+            self.assertAllowed(f'HOME={self.repo} bash -c "cd && git push origin"', cwd=other)
+            self.assertAllowed(f'HOME={other} bash -c "git status"; git push origin')
+
+    def test_attached_gh_repository_flags_are_inherited(self):
+        for option in ['-Ro/r', '--repo=o/r', '-R o/r']:
+            with self.subTest(option=option):
+                self.assertDenied(f'gh pr {option} merge 12')
+                self.assertDenied(f'gh pr {option} review 12 --approve')
+                self.assertDenied(f'gh agent-task {option} create "work"')
+                self.assertAllowed(f'gh pr {option} view 12')
+                self.assertAllowed(f'gh pr {option} review 12 --comment -b ok')
+
     def test_unquoted_backticks_are_checked(self):
         # These are inputs to the guard, never commands executed by the test.
         for command in ['echo `git add -A`', 'echo `gh pr merge 17`',
@@ -484,6 +549,16 @@ class SettingsTests(unittest.TestCase):
                         if re.fullmatch(group['matcher'], tool)
                         for hook in group['hooks']]
             self.assertTrue(any('.claude/hooks/guard.py' in c for c in commands), tool)
+
+    def test_policy_hook_failures_block_the_original_action(self):
+        # Removing onFailure from either entry makes errors fail open.
+        hooks = [hook for group in self.settings['hooks']['PreToolUse']
+                 for hook in group['hooks']
+                 if '.claude/hooks/guard.py' in hook.get('command', '')]
+        self.assertEqual(len(hooks), 2)
+        for index, hook in enumerate(hooks):
+            with self.subTest(index=index):
+                self.assertEqual(hook.get('onFailure'), 'block')
 
     def test_merging_and_copilot_tools_are_denied_outright(self):
         deny = set(self.settings['permissions']['deny'])

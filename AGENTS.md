@@ -524,7 +524,10 @@ above are backed by checks wherever a check can run:
   not look for another way round: say in the thread what you needed and
   why. It is a guard against mistakes, not a sandbox, and it covers
   Claude Code only; Codex, Jules and the owner are held to the same rules
-  by review.
+  by review. Both policy hooks use `onFailure: "block"`, so a startup
+  error, crash, invalid output or timeout blocks the original action in
+  Claude Code 2.1.295 or later. Older or unknown runtimes do not establish
+  that protection; confirm the runtime and hook reload before relying on it.
 - **Where the guard runs.** Claude Code reads a repository's hooks and
   permission rules in a session with one repository. A cloud session that
   clones several repositories reads only plugin settings from them, so
