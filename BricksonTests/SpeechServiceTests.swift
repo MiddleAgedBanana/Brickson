@@ -652,8 +652,15 @@ struct SpeechServiceTests {
         #expect(harness.speech.availableVoices == [added])
     }
 
-    /// Fails if Personal Voice permission is not asked at start, or its
-    /// answer does not reach the service.
+    // MARK: Personal Voice
+
+    private let ownVoice = VoiceDescriptor(id: "own", name: "Own", languageCode: "en-US", quality: .standard, isPersonalVoice: true)
+    private let secondVoice = VoiceDescriptor(id: "second", name: "Second", languageCode: "en-US", quality: .standard, isPersonalVoice: true)
+    private let systemVoice = VoiceDescriptor(id: "system", name: "System", languageCode: "en-US", quality: .premium, isPersonalVoice: false)
+
+    /// Fails if Personal Voice permission is not asked at start under
+    /// `.atLaunch` (the app's policy today), or its answer does not reach
+    /// the service.
     @Test func thePersonalVoiceAnswerIsKeptAndTheVoicesReadAgain() async throws {
         let harness = AudioHarness()
         #expect(harness.personalVoice.requestCount == 1)
@@ -664,5 +671,258 @@ struct SpeechServiceTests {
 
         #expect(await waitUntil { harness.speech.personalVoiceStatus == .authorized })
         #expect(harness.catalog.readCount == readsBefore + 1)
+    }
+
+    /// Someone who allowed Brickson before speaks in their own voice from
+    /// the first phrase, before any answer arrives. Fails if the service
+    /// starts from "not asked" instead of reading the system's status.
+    @Test func theStatusTheSystemAlreadyHasIsReadAtLaunch() {
+        let harness = AudioHarness(voices: [systemVoice, ownVoice], personalVoiceStatus: .authorized, askPolicy: .fromSettings)
+
+        #expect(harness.speech.personalVoiceStatus == .authorized)
+        harness.speech.speak("Hello.")
+        #expect(harness.synthesizer.requests.last?.voiceIdentifier == "own")
+    }
+
+    /// `.fromSettings` leaves the question to the Voice screen's explained
+    /// button, which reads the policy to know it may offer one. Fails if
+    /// the app asks at launch before the person allowed it.
+    @Test(arguments: [
+        AVSpeechSynthesizer.PersonalVoiceAuthorizationStatus.notDetermined,
+        .denied,
+        .unsupported,
+    ])
+    func fromSettingsDoesNotAskAtLaunch(status: AVSpeechSynthesizer.PersonalVoiceAuthorizationStatus) {
+        let harness = AudioHarness(personalVoiceStatus: status, askPolicy: .fromSettings)
+
+        #expect(harness.personalVoice.requestCount == 0)
+        #expect(harness.speech.personalVoiceStatus == status)
+        #expect(harness.speech.personalVoiceAskPolicy == .fromSettings)
+    }
+
+    /// Once allowed, the launch asks again, which shows no question. Fails
+    /// if either policy skips it.
+    @Test(arguments: [PersonalVoiceAskPolicy.atLaunch, .fromSettings])
+    func theLaunchAsksAgainOnceAllowed(policy: PersonalVoiceAskPolicy) {
+        let harness = AudioHarness(personalVoiceStatus: .authorized, askPolicy: policy)
+
+        #expect(harness.personalVoice.requestCount == 1)
+    }
+
+    /// The Voice screen's button: it asks, waits for the answer, reads the
+    /// voices again, and the next phrase speaks in the person's voice.
+    /// Fails if the answer is not kept or returned, or the voices are not
+    /// read again.
+    @Test func theRequestReturnsTheAnswerAndTheNextPhraseUsesTheVoice() async {
+        let harness = AudioHarness(voices: [systemVoice], askPolicy: .fromSettings)
+        let speech = harness.speech
+        let asked = harness.personalVoice.requestCount
+        let request = Task { await speech.requestPersonalVoiceAuthorization() }
+        #expect(await waitUntil { harness.personalVoice.requestCount == asked + 1 })
+        #expect(harness.speech.personalVoiceStatus == .notDetermined)
+
+        harness.catalog.voices = [systemVoice, ownVoice]
+        harness.personalVoice.answer(.authorized)
+
+        // Waits only once the answer has landed, so a broken request fails
+        // here instead of waiting for ever.
+        let landed = await waitUntil { harness.speech.personalVoiceStatus == .authorized }
+        #expect(landed)
+        guard landed else { return }
+        let answer = await request.value
+        #expect(answer == .authorized)
+        #expect(harness.speech.hasPersonalVoice)
+        #expect(harness.speech.personalVoices == [ownVoice])
+        #expect(harness.synthesizer.requests.isEmpty)
+        harness.speech.speak("Hello.")
+        #expect(harness.synthesizer.requests.last?.voiceIdentifier == "own")
+    }
+
+    /// A refusal is kept and returned too, and nothing speaks by itself.
+    /// Fails if the refusal is lost.
+    @Test func aRefusedRequestIsKeptAndSpeaksNothing() async {
+        let harness = AudioHarness(askPolicy: .fromSettings)
+        let speech = harness.speech
+        let asked = harness.personalVoice.requestCount
+        let request = Task { await speech.requestPersonalVoiceAuthorization() }
+        #expect(await waitUntil { harness.personalVoice.requestCount == asked + 1 })
+
+        harness.personalVoice.answer(.denied)
+
+        let landed = await waitUntil { harness.speech.personalVoiceStatus == .denied }
+        #expect(landed)
+        guard landed else { return }
+        let answer = await request.value
+        #expect(answer == .denied)
+        #expect(!harness.speech.hasPersonalVoice)
+        #expect(harness.synthesizer.requests.isEmpty)
+    }
+
+    /// Access turned off in the Settings app while Brickson waited: coming
+    /// back to the front reads it again. Fails if the refresh keeps the old
+    /// status or the old list.
+    @Test func comingBackToTheFrontReadsAccessAndVoicesAgain() {
+        let harness = AudioHarness(voices: [systemVoice, ownVoice], personalVoiceStatus: .authorized, askPolicy: .fromSettings)
+        #expect(harness.speech.hasPersonalVoice)
+        harness.personalVoice.status = .denied
+        harness.catalog.voices = [systemVoice]
+        let readsBefore = harness.catalog.readCount
+
+        harness.speech.refreshPersonalVoiceAvailability()
+
+        #expect(harness.speech.personalVoiceStatus == .denied)
+        #expect(!harness.speech.hasPersonalVoice)
+        #expect(harness.catalog.readCount == readsBefore + 1)
+        harness.speech.speak("Hello.")
+        #expect(harness.synthesizer.requests.last?.voiceIdentifier == "system")
+    }
+
+    /// A voice allowed or made while Brickson waited is used from the next
+    /// phrase, with no relaunch, and nothing speaks by itself. Fails if the
+    /// refresh misses the new status.
+    @Test func aVoiceAllowedWhileAwayIsUsedAfterComingBack() {
+        let harness = AudioHarness(voices: [systemVoice], personalVoiceStatus: .denied, askPolicy: .fromSettings)
+        harness.personalVoice.status = .authorized
+        harness.catalog.voices = [systemVoice, ownVoice]
+
+        harness.speech.refreshPersonalVoiceAvailability()
+
+        #expect(harness.speech.hasPersonalVoice)
+        #expect(harness.synthesizer.requests.isEmpty)
+        harness.speech.speak("Hello.")
+        #expect(harness.synthesizer.requests.last?.voiceIdentifier == "own")
+    }
+
+    /// A stale list can still show a Personal Voice after access was turned
+    /// off, and asking for it may give silence (docs/DECISIONS.md, "A
+    /// Personal Voice is used only while it is allowed"). Fails if the
+    /// voice list Settings shows keeps it, if a phrase, a voice row's
+    /// sample or Automatic's sample asks for it, or if the person's choice
+    /// is thrown away.
+    @Test func aPersonalVoiceIsNeverAskedForWithoutPermission() {
+        let harness = AudioHarness(voices: [systemVoice, ownVoice], personalVoiceStatus: .denied, askPolicy: .fromSettings)
+        harness.speech.selectedVoiceID = "own"
+
+        harness.speech.speak("Hello.")
+        harness.speech.preview(from: .voice(id: "own"))
+        harness.speech.preview(from: .voice(id: nil))
+
+        #expect(harness.synthesizer.requests.map(\.voiceIdentifier) == ["system", "system", "system"])
+        #expect(harness.speech.availableVoices == [systemVoice])
+        #expect(!harness.speech.hasPersonalVoice)
+        #expect(harness.speech.currentVoice == systemVoice)
+        #expect(harness.speech.selectedVoiceID == "own")
+    }
+
+    // MARK: Automatic keeps the person's Personal Voice
+
+    /// A second Personal Voice, listed first, must not change the voice
+    /// Automatic already speaks in (docs/DECISIONS.md, "Automatic keeps
+    /// the person's Personal Voice"). Fails if Automatic takes whichever
+    /// Personal Voice the system lists first.
+    @Test func aSecondPersonalVoiceDoesNotChangeTheVoiceAutomaticSpeaksIn() {
+        let harness = AudioHarness(voices: [systemVoice, ownVoice], personalVoiceStatus: .authorized)
+        harness.catalog.voices = [secondVoice, systemVoice, ownVoice]
+
+        harness.notifications.center.post(name: AVSpeechSynthesizer.availableVoicesDidChangeNotification, object: nil)
+        harness.speech.speak("Hello.")
+
+        #expect(harness.synthesizer.requests.last?.voiceIdentifier == "own")
+        #expect(harness.speech.automaticVoice == ownVoice)
+    }
+
+    /// Kept across launches, in the given settings. Fails if it is not
+    /// saved there or not read back.
+    @Test func theAutomaticPersonalVoiceIsKeptAcrossLaunches() {
+        let settings = freshDefaults()
+        _ = AudioHarness(voices: [ownVoice], settings: settings, personalVoiceStatus: .authorized)
+        #expect(settings.string(forKey: SpeechService.automaticPersonalVoiceIDKey) == "own")
+
+        let relaunched = AudioHarness(voices: [secondVoice, ownVoice], settings: settings, personalVoiceStatus: .authorized)
+        relaunched.speech.speak("Hello.")
+
+        #expect(relaunched.synthesizer.requests.last?.voiceIdentifier == "own")
+    }
+
+    /// Only a Personal Voice is kept. Fails if Automatic keeps a system
+    /// voice that would then outrank the person's own voice.
+    @Test func automaticNeverKeepsASystemVoice() {
+        let settings = freshDefaults()
+        let harness = AudioHarness(voices: [systemVoice], settings: settings, personalVoiceStatus: .authorized)
+        #expect(settings.object(forKey: SpeechService.automaticPersonalVoiceIDKey) == nil)
+
+        harness.catalog.voices = [systemVoice, ownVoice]
+        harness.speech.refreshPersonalVoiceAvailability()
+
+        #expect(harness.speech.automaticVoice == ownVoice)
+    }
+
+    /// Turning access off and on again brings back the same voice, even
+    /// with another one now listed first. Fails if the kept voice is
+    /// forgotten while access is off.
+    @Test func theSameVoiceComesBackWithAccess() {
+        let settings = freshDefaults()
+        let harness = AudioHarness(voices: [systemVoice, ownVoice], settings: settings, personalVoiceStatus: .authorized)
+
+        harness.personalVoice.status = .denied
+        harness.catalog.voices = [systemVoice]
+        harness.speech.refreshPersonalVoiceAvailability()
+        #expect(harness.speech.automaticVoice == systemVoice)
+        #expect(settings.string(forKey: SpeechService.automaticPersonalVoiceIDKey) == "own")
+
+        harness.personalVoice.status = .authorized
+        harness.catalog.voices = [secondVoice, systemVoice, ownVoice]
+        harness.speech.refreshPersonalVoiceAvailability()
+        harness.speech.speak("Hello.")
+
+        #expect(harness.synthesizer.requests.last?.voiceIdentifier == "own")
+    }
+
+    /// When the kept voice is deleted, Automatic moves to the person's
+    /// other Personal Voice and keeps that one. Fails if Automatic passes
+    /// over a listed Personal Voice, or does not keep the new one.
+    @Test func whenTheKeptVoiceIsDeletedAutomaticKeepsTheNextPersonalVoice() {
+        let settings = freshDefaults()
+        let harness = AudioHarness(voices: [systemVoice, ownVoice], settings: settings, personalVoiceStatus: .authorized)
+
+        harness.catalog.voices = [systemVoice, secondVoice]
+        harness.speech.refreshPersonalVoiceAvailability()
+
+        #expect(harness.speech.automaticVoice == secondVoice)
+        #expect(settings.string(forKey: SpeechService.automaticPersonalVoiceIDKey) == "second")
+    }
+
+    /// What the Voice screen shows: the voice the next phrase uses, and the
+    /// one Automatic would use. Fails if either ignores the choice or the
+    /// kept voice.
+    @Test func theCurrentAndAutomaticVoicesFollowTheChoice() {
+        let harness = AudioHarness(voices: [systemVoice, ownVoice], personalVoiceStatus: .authorized)
+        #expect(harness.speech.currentVoice == ownVoice)
+
+        harness.speech.selectedVoiceID = "system"
+
+        #expect(harness.speech.currentVoice == systemVoice)
+        #expect(harness.speech.automaticVoice == ownVoice)
+    }
+
+    /// Fails if `hasPersonalVoice` is true without permission (a stale
+    /// list) or without a listed voice (allowed, none made yet).
+    @Test func hasPersonalVoiceNeedsBothPermissionAndAVoice() {
+        let allowedWithNone = AudioHarness(voices: [systemVoice], personalVoiceStatus: .authorized)
+        let listedNotAllowed = AudioHarness(voices: [ownVoice], personalVoiceStatus: .denied)
+        let allowedAndListed = AudioHarness(voices: [ownVoice], personalVoiceStatus: .authorized)
+
+        #expect(!allowedWithNone.speech.hasPersonalVoice)
+        #expect(!listedNotAllowed.speech.hasPersonalVoice)
+        #expect(allowedAndListed.speech.hasPersonalVoice)
+    }
+
+    /// Saved settings are found again only under the same names, and a
+    /// name is never reused (docs/LESSONS.md, "Purge removed safety
+    /// settings"). Fails if a key is renamed.
+    @Test func theSettingsKeysKeepTheirNames() {
+        #expect(SpeechService.voiceIDKey == "selectedVoiceID")
+        #expect(SpeechService.rateKey == "speechRate")
+        #expect(SpeechService.automaticPersonalVoiceIDKey == "automaticPersonalVoiceID")
     }
 }

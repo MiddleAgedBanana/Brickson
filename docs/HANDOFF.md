@@ -98,12 +98,11 @@ release in docs/ROADMAP.md when no thread has it yet.
   is stale. The speech-rate names in `SpeechRateSteps` and the voice
   sample sentence in `SpeechService` are not in it yet. *(Test seams and CI evidence)*
 - No off-main test reaches the real KVO closure (the volume handler is
-  called directly) or the closure inside
-  `SystemPersonalVoice.requestAuthorization`, which only the system can
-  call. The synthesizer and tone-player delegates, the Personal Voice
-  answer through `SpeechService` and a session notice are tested from a
-  background thread (docs/LESSONS.md). *(Personal Voice thread, when one
-  starts)*
+  called directly). The synthesizer and tone-player delegates, the
+  Personal Voice answer (the closure handed to the system, built by
+  `SystemPersonalVoice.forwardingAnswer`, and the answer awaited through
+  `SpeechService`) and a session notice are tested from a background
+  thread (docs/LESSONS.md). *(R0, item 4)*
 - The audio session stays active after speech, so other apps' audio does
   not resume by itself. This is a decision, not an oversight
   (docs/DECISIONS.md, "Background audio"); `.releaseWhenIdle` waits on a
@@ -148,10 +147,13 @@ by the owner (docs/SDLC.md, *Deploy*). The toolchain's follow-ups
 recheck the minimum iOS against its two rules whenever Apple's next major
 release drops devices (docs/DECISIONS.md, "Minimum iOS, iPhone and
 iPad").
-The speech work's two next pull requests, Get Attention and Stop on Home
-(after the layout's slot model) and the Personal Voice foundation, are
-described for a fresh thread each in
+The speech work's next pull request, Get Attention and Stop on Home
+(after the layout's slot model), is described for a fresh thread in
 [`log/2026-10-21-speech-and-get-attention.md`](log/2026-10-21-speech-and-get-attention.md),
+*Follow-ups*. What the Voice screen and the next speech thread take up
+from the Personal Voice engine (the explained Ask button, then the
+switch to asking from Settings once device check D1 passes) is in
+[`log/2026-10-21-personal-voice-foundation.md`](log/2026-10-21-personal-voice-foundation.md),
 *Follow-ups*.
 
 ## Checks that need a real device
@@ -163,6 +165,9 @@ Simulators cannot show these. Record each result in a `docs/log/` file
 |---|---|
 | Speech plays with the silent switch on, and after a phone call | Audio session handling (invariant 4) |
 | A phrase cut off by a call shows "Stopped, Again" | The cut-off rule (code audit M1) |
+| D1: with no question at launch, a Personal Voice allowed after a phrase has been spoken speaks in the next phrase, after a voice-list refresh, a rebuilt synthesizer or only a relaunch (docs/recon/2026-10-15/directions/onboarding-and-settings.md, 2.5) | Whether the app may switch to `PersonalVoiceAskPolicy.fromSettings` (docs/DECISIONS.md, "Personal Voice permission is asked at launch, for now") |
+| D4: Personal Voice access turned off in the Settings app while Brickson waits in the background; on return a phrase speaks in another voice, and turning access back on brings the Personal Voice back | "A Personal Voice is used only while it is allowed" |
+| D5: with two Personal Voices, the order the system lists them in, and whether each keeps its identifier across a relaunch, a restore and Share Across Devices | "Automatic keeps the person's Personal Voice" |
 | Personal Voice appears and is chosen once permission is given, and keeps speaking after the screen locks | Voice choice and when to ask |
 | Each input method reaches every control: touch, Voice Control, Switch Control, Full Keyboard Access, AssistiveTouch Dwell, head tracking, Eye Tracking | That standard buttons are the whole integration (invariant 1) |
 | A Switch Control double activation does not make a phrase stutter | Repeat absorption (invariant 10) |
