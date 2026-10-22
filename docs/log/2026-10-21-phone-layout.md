@@ -173,6 +173,14 @@ missing is the wells and A's trailing column. Again still sits in A.
   chosen. Fix, not yet re-run: labels are drawn at the person's own size
   in whole-word lines set for the chosen size, and SwiftUI shrinks them
   only as far as needed (`minimumScaleFactor`, never below the default).
+- **CI on `a2ac972`** (that fix plus the two `HomeLayoutTests` changes
+  from Codex's review): green. Unit tests: 276 of 276 passed on the iPad
+  Pro 13-inch simulator, iOS 27.0, covering 93.0% of the app's lines. UI
+  tests: 18 of 18 passed on the iPad Pro 13-inch and 18 of 18 on the
+  iPhone 17, iOS 27.0, with no skips or expected failures: the light,
+  dark and emergency audits at the default size, the AX5 audits and
+  rendered words, `HomeLayoutTests` at default and AX5 in portrait and
+  landscape (the iPhone in portrait only), and the reachability tests.
 - **Measured on CI** with the temporary calibration test: SwiftUI's text
   widths match UIKit's to within half a point; SwiftUI's line height is
   the first line plus the style's leading per extra line (headline 17pt:
@@ -195,8 +203,8 @@ missing is the wells and A's trailing column. Again still sits in A.
 
 ## Not verified
 
-- Nothing was built or run on a Mac; this pull request's CI run is the
-  first build of the merge.
+- Nothing was built or run on a Mac; CI on GitHub's Mac machines is the
+  only build.
 - The layout was never seen with Eye Tracking, Switch Control, Snap to
   Item or a real keyboard.
 - The windows that still scroll (a 375×667pt phone from AX1) are worked
