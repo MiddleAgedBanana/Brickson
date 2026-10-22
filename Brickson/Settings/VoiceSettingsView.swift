@@ -24,15 +24,16 @@ struct VoiceSettingsView: View {
 /// The voices can change while it is open: a voice downloaded or deleted,
 /// or Personal Voice turned on or off in the Settings app while Brickson
 /// waits (`SpeechService.refreshPersonalVoiceAvailability()`). So the voice
-/// list keeps the places it had when the screen opened
-/// (`VoiceList.keepingPlaces`), and the words above it keep the tallest
+/// list keeps the places it had when the screen opened, with each voice that
+/// arrives added after them as it first appears (`VoiceList.keepingPlaces`,
+/// `VoiceList.addingArrivals`), and the words above it keep the tallest
 /// height they have had, so no Hear, Use or speed button moves under a
 /// resting pointer.
 struct VoiceContent: View {
     @Environment(SpeechService.self) private var speech
-    /// The voice list as it was when the screen opened, and whether the
-    /// missing-voice note was needed then. Both hold until the screen
-    /// closes.
+    /// The voice list as it was when the screen opened, with the voices
+    /// that have arrived since, and whether the missing-voice note was
+    /// needed when it opened. Both hold until the screen closes.
     @State private var opened: OpenedVoiceList?
 
     var body: some View {
@@ -75,6 +76,9 @@ struct VoiceContent: View {
                     opened = OpenedVoiceList(rows: rows, voiceWasMissing: voiceIsMissing)
                 }
             }
+            .onChange(of: rows) { _, current in
+                opened?.rows = VoiceList.addingArrivals(to: opened?.rows ?? [], from: current)
+            }
         // Only when the chosen voice was already missing as the screen
         // opened: its place is then kept, so choosing a voice pulls no row
         // up. A voice that goes while the screen is open says so in its
@@ -94,15 +98,19 @@ struct VoiceContent: View {
             case .voice(let row):
                 VoiceRowView(row: row)
             case .gone(let row):
-                GoneVoiceRowView(row: row, personalVoiceAllowed: personalVoiceAllowed)
+                VoiceRowView(
+                    row: row,
+                    goneNote: VoiceList.goneVoiceNote(for: row, personalVoiceAllowed: personalVoiceAllowed)
+                )
             }
         }
     }
 }
 
-/// What Voice Settings looked like when it opened (`VoiceContent`).
+/// What Voice Settings looked like when it opened (`VoiceContent`), with
+/// the voices that have arrived since.
 private struct OpenedVoiceList {
-    let rows: [VoiceRow]
+    var rows: [VoiceRow]
     let voiceWasMissing: Bool
 
     var voiceNames: [String] {
@@ -158,10 +166,23 @@ private struct SpeedChoiceButton: View {
     }
 }
 
+/// One voice: its name, a line under it, and Hear and Use.
+///
+/// A voice listed when the screen opened that is no longer offered
+/// (deleted, or a Personal Voice whose access was turned off) keeps its
+/// row until the screen closes (`VoiceList.keepingPlaces`): its name stays,
+/// `goneNote` takes the line under it, and its buttons are hidden, so
+/// nothing is left to activate there. Every row lays out each version of
+/// that line (`VoiceList.secondLines`), so a voice leaving changes no
+/// row's height and moves no button below it.
 private struct VoiceRowView: View {
     let row: VoiceRow
+    /// Set when the voice has left the list while the screen is open.
+    var goneNote: String? = nil
     @Environment(SpeechService.self) private var speech
     @Environment(SettingsActivity.self) private var activity: SettingsActivity?
+
+    private var isChosen: Bool { row.isSelected && goneNote == nil }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -169,19 +190,27 @@ private struct VoiceRowView: View {
                 // Always laid out, so the name keeps its width and the
                 // row its height whichever voice is chosen.
                 Image(systemName: "checkmark.circle.fill")
-                    .opacity(row.isSelected ? 1 : 0)
+                    .opacity(isChosen ? 1 : 0)
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 2) {
                     // A voice's name is its own, never translated.
                     Text(verbatim: row.name)
                         .font(.title3.weight(.semibold))
-                    Text(verbatim: row.detail)
-                        .font(.subheadline)
+                    ZStack(alignment: .topLeading) {
+                        ForEach(VoiceList.secondLines(for: row), id: \.self) { line in
+                            Text(verbatim: line)
+                                .hidden()
+                                .accessibilityHidden(true)
+                        }
+                        Text(verbatim: goneNote ?? row.detail)
+                    }
+                    .font(.subheadline)
+                    .fixedSize(horizontal: false, vertical: true)
                 }
             }
             .foregroundStyle(.primary)
             .accessibilityElement(children: .combine)
-            .accessibilityAddTraits(row.isSelected ? .isSelected : [])
+            .accessibilityAddTraits(isChosen ? .isSelected : [])
 
             HStack(spacing: SettingsMetrics.rowSpacing) {
                 Button {
@@ -216,29 +245,14 @@ private struct VoiceRowView: View {
                 .accessibilityInputLabels([Text(verbatim: row.useLabel)])
                 .accessibilityValue(row.isSelected ? Text("In Use") : Text(verbatim: ""))
             }
+            // A gone voice's buttons keep their room but cannot be seen,
+            // reached or activated.
+            .opacity(goneNote == nil ? 1 : 0)
+            .disabled(goneNote != nil)
+            .accessibilityHidden(goneNote != nil)
+            .allowsHitTesting(goneNote == nil)
         }
         .padding(.bottom, 8)
-    }
-}
-
-/// A voice listed when the screen opened that is no longer offered:
-/// deleted, or a Personal Voice whose access was turned off. The row it had
-/// is laid out hidden, so its place keeps its size, with passive words in
-/// it and no button, until the screen closes (`VoiceList.keepingPlaces`).
-private struct GoneVoiceRowView: View {
-    let row: VoiceRow
-    let personalVoiceAllowed: Bool
-
-    var body: some View {
-        ZStack(alignment: .topLeading) {
-            VoiceRowView(row: row)
-                .hidden()
-                .accessibilityHidden(true)
-            // A voice's name is its own, never translated; it is inserted
-            // into the localized sentence as it is.
-            SettingsParagraph(verbatim: VoiceList.goneVoiceNote(for: row, personalVoiceAllowed: personalVoiceAllowed))
-        }
-        .allowsHitTesting(false)
     }
 }
 

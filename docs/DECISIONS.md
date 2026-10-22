@@ -1042,11 +1042,18 @@ the change under a resting pointer (AGENTS.md, invariant 10). So, for
 one visit to the screen:
 
 - Each voice row keeps the place it had when the screen opened
-  (`VoiceList.keepingPlaces`). A voice that goes keeps its place as
-  passive words with no button; a voice that arrives goes after every
-  row already shown. Each row still shows whether it is chosen now. The
-  next time the screen opens, the normal order (`VoiceList.rows`)
-  decides again.
+  (`VoiceList.keepingPlaces`). A voice that arrives goes after every row
+  already shown and keeps that place for the rest of the visit, so
+  voices arriving one at a time stay in the order they first appeared
+  (`VoiceList.addingArrivals`). A voice that goes keeps its row: its
+  name stays, the line under it says it is no longer on the device (or,
+  for a Personal Voice whose access was turned off, that it can't be
+  used while Personal Voice is off), and its buttons are hidden, so
+  nothing is left to activate there. Every row lays out each version of
+  that line (`VoiceList.secondLines`), so a voice leaving changes no
+  row's height. Each row still shows whether it is chosen now. The next
+  time the screen opens, the normal order (`VoiceList.rows`) decides
+  again.
 - The Personal Voice card keeps its tallest height
   (`settingsKeepsItsTallestHeight()`), so words that get shorter pull
   nothing up.

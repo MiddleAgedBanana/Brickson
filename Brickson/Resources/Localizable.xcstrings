@@ -7,12 +7,6 @@
     "%@ can speak in a voice that sounds like you, made with Apple's Personal Voice. iOS asks once whether %@ may use it; choose Allow." : {
 
     },
-    "%@ can't be used while Personal Voice is turned off for %@." : {
-
-    },
-    "%@ is no longer on this device." : {
-
-    },
     "%@ may use a Personal Voice, but none is on this device. One is made in the Settings app by reading phrases aloud:" : {
 
     },
@@ -68,6 +62,9 @@
 
     },
     "Back to Talking" : {
+
+    },
+    "Can't be used while Personal Voice is turned off for %@." : {
 
     },
     "Check-ins are off. Set Up Step by Step is always here." : {
@@ -191,6 +188,9 @@
 
     },
     "No Personal Voice yet" : {
+
+    },
+    "No longer on this device." : {
 
     },
     "No phrases yet." : {

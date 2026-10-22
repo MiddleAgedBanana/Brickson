@@ -131,11 +131,34 @@ struct VoiceListTests {
         #expect(chosen.map(\.id) == ["voice:samantha"])
     }
 
+    /// Voices that arrive one at a time keep the order they first appeared
+    /// in, and one that leaves again keeps its place. Fails if arrivals are
+    /// sorted among themselves (My Voice, arriving second, would then go
+    /// ahead of Daniel and move his buttons down), or if an arrival that
+    /// leaves loses its place.
+    @Test func arrivalsKeepTheOrderTheyFirstAppearedIn() {
+        let atOpening = voices.filter { $0.id != "daniel" && $0.id != "mine" }
+        var shown = VoiceList.rows(for: atOpening, selectedID: nil, languageCode: "en")
+        let openedIDs = shown.map(\.id)
+
+        let withDaniel = VoiceList.rows(for: voices.filter { $0.id != "mine" }, selectedID: nil, languageCode: "en")
+        shown = VoiceList.addingArrivals(to: shown, from: withDaniel)
+        let withBoth = VoiceList.rows(for: voices, selectedID: nil, languageCode: "en")
+        shown = VoiceList.addingArrivals(to: shown, from: withBoth)
+
+        let arrivedIDs = ["voice:daniel", "voice:mine"]
+        #expect(VoiceList.keepingPlaces(of: shown, in: withBoth).map(\.id) == openedIDs + arrivedIDs)
+
+        let mineLeft = VoiceList.keepingPlaces(of: shown, in: withDaniel)
+        #expect(mineLeft.map(\.id) == openedIDs + arrivedIDs)
+        #expect(mineLeft.last == .gone(withBoth.first { $0.voiceID == "mine" }!))
+    }
+
     /// Without Personal Voice permission a chosen Personal Voice is only
     /// left out of the list, not gone from the device, so neither note may
     /// say it is gone then. Fails if one wording is used for both.
     @Test func aVoiceWhoseAccessIsOffIsNeverCalledGone() {
-        let gone = "no longer on this device"
+        let gone = "longer on this device"
         #expect(VoiceList.missingVoiceNote(personalVoiceAllowed: true).contains(gone))
         #expect(!VoiceList.missingVoiceNote(personalVoiceAllowed: false).contains(gone))
 
@@ -145,7 +168,22 @@ struct VoiceListTests {
         #expect(!VoiceList.goneVoiceNote(for: mine, personalVoiceAllowed: false).contains(gone))
         #expect(VoiceList.goneVoiceNote(for: mine, personalVoiceAllowed: true).contains(gone))
         #expect(VoiceList.goneVoiceNote(for: daniel, personalVoiceAllowed: false).contains(gone))
-        #expect(VoiceList.goneVoiceNote(for: mine, personalVoiceAllowed: false).hasPrefix("My Voice"))
+    }
+
+    /// Every row lays out each note it could show if its voice left, so a
+    /// voice leaving changes no row's height. Fails if a note is missing
+    /// from the reserved lines, or the quality and language line is.
+    @Test func everyRowReservesTheNotesItCouldShow() {
+        let rows = VoiceList.rows(for: voices, selectedID: nil, languageCode: "en")
+
+        for row in rows {
+            let lines = VoiceList.secondLines(for: row)
+            #expect(lines.first == row.detail)
+            for allowed in [true, false] {
+                #expect(lines.contains(VoiceList.goneVoiceNote(for: row, personalVoiceAllowed: allowed)))
+            }
+            #expect(Set(lines).count == lines.count)
+        }
     }
 
     @Test func withNothingChangedThePlacesAreTheRows() {

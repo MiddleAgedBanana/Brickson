@@ -22,7 +22,15 @@ Voice Settings screen, once they can reach it:
     (docs/DECISIONS.md, "Voice Settings keeps its places while it is
     open"): rows keep the place they had when the screen opened, a voice
     that goes keeps its place as words, one that arrives goes last, and
-    the Personal Voice card keeps its tallest height.
+    the Personal Voice card keeps its tallest height. Codex's review of
+    this pull request found two gaps, fixed here: voices arriving one at
+    a time were sorted among themselves, so a later arrival could move
+    an earlier one (now each keeps the place it first had,
+    `VoiceList.addingArrivals`); and a gone voice's words could be taller
+    than its row on a narrow screen at the largest text sizes, pushing
+    every row below down (now the words take the line under the voice's
+    name, and every row lays out each version of that line,
+    `VoiceList.secondLines`).
 - **Ask to Use Personal Voice** (docs/DECISIONS.md, "Asking for Personal
   Voice from Voice Settings"): the card's explained button, calling
   `SpeechService.requestPersonalVoiceAuthorization()`. A second press
@@ -49,11 +57,12 @@ Voice Settings screen, once they can reach it:
   used now" and comes back when Personal Voice is turned on, and a
   Personal Voice that leaves while the screen is open says it "can't be
   used while Personal Voice is turned off" (`VoiceList.missingVoiceNote`,
-  `goneVoiceNote`). Both versions of the note are laid out, so access
+  `goneVoiceNote`). Every version of each note is laid out, so access
   changing moves nothing.
 
-The String Catalog gains five strings and loses one, written by hand in
-code-point order (nothing here could build).
+Besides the patch's own changes, the String Catalog gains six strings
+and loses one, written by hand in code-point order (nothing here could
+build).
 
 ## Commits
 
@@ -61,7 +70,9 @@ code-point order (nothing here could build).
   with `git am` from the Settings thread's patch.
 - `259b690` The Personal Voice launch trial and its stand-in.
 - `3d88c1a` The Ask button and the truthful notes.
-- The commit that adds this record and the documents.
+- `58cd607`, `d133c93` This record and the documents.
+- The review fixes: arrivals keep their first places, and every row
+  reserves its gone-voice line.
 
 ## Verified
 
@@ -75,7 +86,8 @@ main-actor default isolation (a throwaway package outside the repository,
 `String(localized:)` stubbed):
 
 - `PersonalVoiceGuidanceTests` and `VoiceListTests`, including the
-  patch's four `keepingPlaces` tests: 23 tests passed.
+  patch's four `keepingPlaces` tests: 23 tests passed, and 25 after the
+  review fixes.
 - Each new test was made to fail by undoing its rule on those copies:
   offering Open Personal Voice Settings after asking fails
   `afterAskingHereNoNewButtonAppearsOnThisVisit` and
@@ -84,7 +96,10 @@ main-actor default isolation (a throwaway package outside the repository,
   that do not name the button or Allow fail
   `theAskButtonIsExplainedBeforeIOSAsks`; one note for both access
   states, or a gone row that ignores access, fails
-  `aVoiceWhoseAccessIsOffIsNeverCalledGone`.
+  `aVoiceWhoseAccessIsOffIsNeverCalledGone`. Leaving the snapshot
+  without its arrivals fails `arrivalsKeepTheOrderTheyFirstAppearedIn`;
+  reserving only the quality and language line fails
+  `everyRowReservesTheNotesItCouldShow`.
 - `StandInPersonalVoice` and `theStandInPersonalVoiceAnswersFromAnotherThread`
   compiled against a small stand-in for AVFoundation's status type and
   passed; the `switch` that picks the permission in `AppAudio` compiled
