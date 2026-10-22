@@ -39,6 +39,14 @@ library cannot be saved, the app speaks from a filled in-memory library
 and says changes will not be kept. The screen never locks. Ported code:
 [`docs/PORTING.md`](PORTING.md).
 
+The design reference and its specification are in [DESIGN.md](DESIGN.md)
+and [work/design-screens.md](work/design-screens.md). PR #20's
+[reconciliation record](log/2026-10-22-design-reconciliation.md) preserves
+the landed slot decisions and lists drawings, placement questions and
+measurements still pending before implementation follows them. The local
+unit gate passed all 460 tests on iPad Pro 13-inch (M5), iOS 27.0, with
+Xcode 27.1 (27A9275); PR #20 landed in `d79d836`.
+
 ## Verification
 
 - **GitHub CI** since PR #12 (merged 2026-10-21) builds with Apple's
@@ -179,7 +187,7 @@ release in docs/ROADMAP.md when no thread has it yet.
 - The privacy policy describes features not built yet; each is built or its
   sentence deleted before release (docs/APP-STORE.md, section 3, lists
   each sentence). *(App Store readiness and ASO)*
-- The app icon is a placeholder; `design/brand/` is not installed. *(Figma and Claude Design screens)*
+- The app icon is a placeholder; `design/brand/` is not installed. *(Release chores, R0 item 11)*
 - Siri's alternative name "Brick Son" (`INAlternativeAppNames`) has no
   effect yet: Apple applies it only to apps with Siri support, which
   Brickson does not have (docs/DECISIONS.md, "App identity"). *(R2 Siri
@@ -313,8 +321,13 @@ Simulators cannot show these. Record each result in a `docs/log/` file
   13-inch (M5), iOS 27.0, using Xcode 27.1 (27A9275); the String Catalog
   was unchanged. Full UI suites on that iPad and an iPhone 17 each passed
   33 tests, with no failures and four unchanged opt-in keyboard-probe skips.
-  The interrupted iPhone setup was resumed as a complete family run;
-  final CI is pending. Reconciliation and verification: [`log/2026-10-22-agent-guardrail-reconciliation.md`](log/2026-10-22-agent-guardrail-reconciliation.md).
+  The interrupted iPhone setup was resumed as a complete family run.
+  The next merge incorporates documentation-only `d79d836`; its fresh
+  unit gate passed all 460 tests, with the same app and test sources. CI on
+  `7d6b3e1` passed units and the iPhone UI suite but hit an iPad
+  app-termination failure. Both result bundles were retained; current-head
+  green CI remains required.
+  Reconciliation and verification: [`log/2026-10-22-agent-guardrail-reconciliation.md`](log/2026-10-22-agent-guardrail-reconciliation.md).
 
 ## History
 

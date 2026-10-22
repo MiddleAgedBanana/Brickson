@@ -69,12 +69,54 @@ silently worked around. These clarify workflow without weakening any
 invariant, review rule or test gate. The existing work-log and HANDOFF
 requirements remain.
 
+## Refresh after the design reference landed
+
+PR #20 merged through the owner's existing auto-merge setting, advancing
+`main` to `d79d836`. The latest briefing, handoff, decisions and new design
+record were checked before preparing another merge commit. That main
+change contains eight documentation files only. The merge preserves the
+design reference, specification, solid-fill decision and guardrail record
+in landing order; it required no conflict resolution. App, unit/UI test,
+script and workflow contents remain byte-identical to tested `7d6b3e1`.
+The prior full local UI results below therefore still describe those
+sources. The fresh `scripts/test.sh unit` gate passed before committing
+this merge: 460 passed, no failures, skips or expected failures, and
+62.6% line coverage (3,540/5,659), with Xcode 27.1 (27A9275), XcodeGen
+2.46.0 and iPad Pro 13-inch (M5), iOS 27.0. The String Catalog remains
+unchanged. Its Python gate passed all 11 documentation tests in 0.882
+seconds and all 31 hook tests in 6.168 seconds.
+
+CI run [39852524297](https://github.com/MiddleAgedBanana/Brickson/actions/runs/39852524297)
+on `7d6b3e1` passed Unit tests and CodeQL. Its unit job used Xcode 27.1
+(27A9275), XcodeGen 2.46.0 and iPad Pro 13-inch (M5), iOS 27.0: all 460
+unit tests passed, with no skips or expected failures and 62.6% app line
+coverage. The CI Python checks also passed: 21 selector, four website,
+51 runner, 11 documentation and 31 hook tests.
+
+The UI job finished with a failure. Its iPad family completed with
+32 passed, one failed and four unchanged opt-in skips. The failure was
+`HomeAccessibilityOrderTests.testQuickControlsComeFirstInEveryStateAtTheLargestText`:
+XCTest could not terminate the previously running app while launching the
+next test. This was an app-process termination failure before its layout
+assertions, not a finding to ignore. The Home layout test passed in
+154.000 seconds, and all nine LaunchTests passed, including
+`testLargestTextKeepsQuickControlWordsVisible` in 52.676 seconds. The iPad
+suite wall time was 1,130.078 seconds. The iPhone family passed all
+33 runnable tests with four unchanged opt-in skips; its suite wall time
+was 872.303 seconds, Home layout took 86.933 seconds and the AX5
+quick-control audit passed in 42.293 seconds. Both result bundles were
+retained in [artifact 12461203212](https://github.com/MiddleAgedBanana/Brickson/actions/runs/39852524297/artifacts/12461203212).
+No test assertion or retry rule was changed for the termination failure.
+Current-head CI must pass before the PR is called green.
+
 ## Commits
 
 - `1b6ccb6`: PR #17 before reconciliation.
 - `5abdd9f`: the `main` revision included in the merge.
-- The merge and review fixes are prepared together. The full local unit
-  and both device UI gates are green; final CI is pending.
+- `7d6b3e1`: the locally tested guardrail reconciliation, pushed for review.
+- `d79d836`: the documentation-only main revision in the next pending merge.
+  Its fresh local unit gate passed; final-head CI remains pending. Prior
+  local UI evidence remains valid for the unchanged sources.
 
 ## Verified
 
@@ -170,9 +212,9 @@ Each new guard test has a concrete failure trigger:
 
 ## Not verified
 
-- CI for the final reconciliation commit is pending. Check its current-head
-  Unit tests, UI tests and CodeQL results after the tested merge is pushed.
-  Earlier green CI on `1b6ccb6` does not verify these edits or the merged code.
+- CI for the next reconciliation commit is pending. Current CI on `7d6b3e1`
+  finished with an iPad process-termination failure and a passing iPhone
+  suite. Check the next pushed head's Unit tests, UI tests and CodeQL results. Earlier green CI on `1b6ccb6` does not verify these edits.
 - No live Claude Code session was used to confirm hook reloading. The
   settings wiring and hook decisions are tested directly.
 - The rendered GitHub issue form has not been checked. Its required
@@ -183,8 +225,11 @@ Each new guard test has a concrete failure trigger:
 
 ## Follow-ups
 
-1. Codex: push the tested merge, answer the nine review threads with the
-   corresponding test evidence, then check the new CI and review results.
+1. Codex: check current main and the PR branch before pushing the tested
+   main merge, then check current-head CI and review results. Complete
+   evidence from the preceding UI run has been retained. All nine
+   prior review threads were answered and resolved on `7d6b3e1`; its new
+   Codex code review is still running.
 2. In a live Claude Code session, confirm hook reloading; after the issue
    configuration lands, inspect the rendered bug form and its privacy text.
 3. The owner already enabled auto-merge on this PR. Its setting stays as
