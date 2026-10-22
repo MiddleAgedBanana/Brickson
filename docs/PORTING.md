@@ -34,7 +34,7 @@ and `docs/SUCCESSOR-HANDOFF.md`. Here, read `docs/LESSONS.md`.
 |---|---|---|
 | 1 | Speech, the Get Attention alarm and audio safety | **Ported**, behind test seams (2026-10-21). Get Attention is not on Home yet, and the status strip is still Home's stand-in. |
 | 2 | Storage, editing logic and backup. Fix D28 here. | **Storage started** (versioned schema, seeding). Editing and backup not yet. |
-| 3 | Text fitting and colour tokens | Three measured fills only (`Palette`). |
+| 3 | Text fitting and colour tokens | **Text fitting ported** (`WordFit`, `FittedLabel`, `FittedLine`). Three measured fills only (`Palette`). |
 | 4 | The layout engine, generalized to profiles | Not started. |
 | 5 | Home and typing. Fix D27 here. | A stand-in Home only (docs/DECISIONS.md, "Home version 0 is a stand-in"). **Typing foundation built** (`Brickson/Typing`: `MessageComposer`, `DraftStore`, the keyboard probe); the typing state on Home not yet. |
 | 6 | Editing screens. Build D24 and D25 here. | Not started. |
@@ -59,6 +59,8 @@ unchanged apart from names.
 | `App/ScreenWakePolicy.swift` | `FamilyVoice/Models/ScreenWakePolicy.swift` | Same. |
 | `Library/PhraseLibrarySchema.swift` | `FamilyVoice/Models/Models.swift` | Versioned schema; `.nullify` instead of `.cascade`; stable `uuid`; no `recordingFileName`. |
 | `Library/StarterLibrary.swift` | `FamilyVoice/Models/PhraseSeeder.swift` | Seeding only, in its own context with no rollback; the retired-seed repair is left behind. |
+| `Layout/WordFit.swift`, `Layout/FittedLabel.swift`, `Layout/FittedLine.swift`, `Layout/LabelFont.swift` | `FamilyVoice/Views/WordFit.swift` (`WordFit`, `FittedText`) and `BoardLabel` | Rewritten. A label steps through Apple's text sizes (the person's, then smaller ones down to the default) instead of searching for a point size, and UIKit measures each size's width and the height of its whole-word lines, with room for the line spacing SwiftUI adds (measured on CI, checked against SwiftUI in `StarterLabelFitTests`). The words are drawn at the person's size in those lines and shrunk by `minimumScaleFactor`, so they keep following Dynamic Type, as Apple's accessibility audit requires. Same order: icon first, then the words, never below the default size. |
+| `Layout/HomeShape.swift`, `Home/HomeButtonStyle.swift` | — | New: the stand-in Home's sizes from the space it is given, and Home's button style (docs/DECISIONS.md, "Home's stand-in layout"). |
 | `Resources/StarterPhrases.json` | — | New, neutral starter set (docs/DECISIONS.md, "Starter phrases"). |
 | Tests for each of the above | `FamilyVoiceTests/` | Timer tests built from one `now` plus offsets. |
 | `BricksonUITests/KeyboardProbeTests.swift` | `FamilyVoiceUITests/TypingKeyboardProbe.swift` | Opens a debug-only probe screen instead of Home's typing state; reads SwiftUI's own keyboard edge as well as the keys; fails on the keyboard bar; no Display Zoom or Settings-app preparation; no Return-key check yet. |
@@ -77,8 +79,8 @@ From the reference's own successor handoff, checked against its code.
 - `BackupService` (byte-lossless round trip) and `BackupImportQuestion`
   (step 2; add a schema version to the backup format).
 - `SettingsIdlePolicy` (on `ContinuousClock`) (step 7).
-- `Views/WordFit.swift` (`WordFit`, `FittedText`) and the `Views/FamilyVoiceTheme.swift` tokens
-  (step 3; add Bold Text and Increase Contrast).
+- The `Views/FamilyVoiceTheme.swift` tokens (step 3; add Bold Text and
+  Increase Contrast).
 - `VoiceControlLabels` and its collision tests (step 5; compare every
   alias, not only the first, and match visible text).
 

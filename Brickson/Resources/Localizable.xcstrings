@@ -35,7 +35,7 @@
 
     },
     "Again" : {
-
+      "comment" : "Repeats the last thing spoken."
     },
     "Alert failed" : {
 
@@ -71,7 +71,7 @@
 
     },
     "Choose a phrase to speak it." : {
-
+      "comment" : "Shown where the spoken message appears, before anything has been spoken."
     },
     "Choose every way that is used now. Each answer is saved as soon as it is chosen." : {
 
@@ -296,7 +296,7 @@
 
     },
     "Speaking" : {
-
+      "comment" : "Shown under the message while a phrase is being spoken."
     },
     "Speaking at %@ of normal speed." : {
 
