@@ -95,6 +95,35 @@ final class SettingsTests: XCTestCase {
         assertReachable("backToTalking", in: app, context: "privacy policy")
     }
 
+    /// Family Setup opens on passive text over the whole of the root's
+    /// Family Setup row as drawn, its button style's insets included, so a
+    /// repeated activation where that row was lands on words (Codex,
+    /// PR #23). Fails if the opening is sized from the row's label alone.
+    @MainActor
+    func testFamilySetupOpensOnTextOverTheWholeRootRow() {
+        continueAfterFailure = true
+        for textSize in [UITestTextSize.large, .ax5] {
+            let app = openSettings(textSize: textSize)
+            let context = "Family Setup, \(textSize.name)"
+            let row = app.buttons["familySetup"]
+            XCTAssertTrue(row.waitForExistence(timeout: 10), "familySetup is missing (\(context))")
+            let rowFrame = row.frame
+
+            open("familySetup", in: app, waitingFor: "Family Setup")
+            let opening = app.descendants(matching: .any)["familySetupOpening"]
+            XCTAssertTrue(opening.waitForExistence(timeout: 10), "the opening text is missing (\(context))")
+            attachCapture(app, name: context)
+            XCTAssertLessThanOrEqual(
+                opening.frame.minY, rowFrame.minY + 0.5,
+                "the opening text starts below the root row's top (\(context)): \(opening.frame) against \(rowFrame)"
+            )
+            XCTAssertGreaterThanOrEqual(
+                opening.frame.maxY, rowFrame.maxY - 0.5,
+                "the root row's lower edge lands below the opening text (\(context)): \(opening.frame) against \(rowFrame)"
+            )
+        }
+    }
+
     /// App Review Guideline 5.1.1(i): the policy is inside the app. It is
     /// the public page's own words.
     @MainActor

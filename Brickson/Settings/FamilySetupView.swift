@@ -4,15 +4,16 @@ import SwiftUI
 /// Settings' root.
 ///
 /// It opens on a block of passive text at least as tall as the root's Family
-/// Setup row, so the spot just activated holds nothing that can be activated
-/// again (AGENTS.md, invariant 10). Opening it once marks Family Setup as
-/// opened, which ends Home's first-run hint.
+/// Setup row as drawn (`SettingsLanding`), so the spot just activated holds
+/// nothing that can be activated again (AGENTS.md, invariant 10). Opening
+/// it once marks Family Setup as opened, which ends Home's first-run hint.
 struct FamilySetupView: View {
-    /// The height of the root's Family Setup row, and of this screen's
-    /// opening text: the two must match for the opening to cover the row.
+    /// The least height of the root's Family Setup label, before its button
+    /// style adds insets, and of this screen's opening text.
     static let openingHeight: CGFloat = 96
 
     @Environment(SetupStore.self) private var setup
+    @Environment(SettingsLanding.self) private var landing: SettingsLanding?
     /// The check-in card was showing while this screen was open. Its place
     /// is then kept until the screen closes, so answering it moves nothing.
     @State private var checkInWasShown = false
@@ -20,7 +21,9 @@ struct FamilySetupView: View {
     var body: some View {
         SettingsScreen(title: "Family Setup") {
             SettingsParagraph("This is where a family member or carer sets up \(AppName.display): the voice it speaks with, help with reaching the screen, and how to keep it open. Nothing here is needed to start talking.")
-                .frame(minHeight: Self.openingHeight, alignment: .topLeading)
+                .frame(minHeight: max(Self.openingHeight, landing?.rootRowHeight ?? 0), alignment: .topLeading)
+                .accessibilityElement(children: .combine)
+                .accessibilityIdentifier("familySetupOpening")
 
             CheckInCard(keepsItsPlace: checkInWasShown)
             SetupIssueText()
