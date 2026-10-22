@@ -1,9 +1,9 @@
 # CI keeps each job's test results
 
-*2026-10-22. Pull request #28 (`MiddleAgedBanana-patch-1`), merged as
-`c23a4b4`; this record and its docs changes follow in their own pull
-request (`claude/project-thread-5s82a6`). The owner committed the
-workflow; the "Keep CI test results" thread wrote the record.*
+*2026-10-22. Pull request #29 (`claude/project-thread-5s82a6`), the
+record for pull request #28 (`MiddleAgedBanana-patch-1`, merged as
+`c23a4b4`), which changed the workflow. The owner committed the
+workflow; the "Keep CI test results" thread wrote this record.*
 
 ## What changed and why
 
@@ -12,7 +12,9 @@ Nothing a person using Brickson sees. Each job in
 step that uploads `build/TestResults` (the result bundles
 `scripts/test.sh` writes: every test's outcome, screenshots of UI-test
 failures, the captures UI tests attach) as a download on the run's page:
-`unit-test-results` and `ui-test-results`, kept for 14 days.
+`unit-test-results` and `ui-test-results`, kept for 14 days. A run
+that stops before its tests start, a build failure for example, writes
+no bundle, so it has no artifact.
 
 Before this, the bundles vanished with GitHub's machine, so when CI
 failed nobody could see what the app showed, and cloud agents, which
@@ -31,10 +33,13 @@ Choices in the steps:
 - `actions/upload-artifact@v7`, published by GitHub (AGENTS.md, *Code
   Review Rules*: no actions from other publishers). Dependabot's monthly
   pull request keeps it current.
-- `if: always()`, so a failed run keeps its bundle; that is when it
-  matters most.
-- `if-no-files-found: warn`, so a run that fails before any test (Xcode
-  choice, XcodeGen) reports its real failure, not a missing upload.
+- `if: always()`, so a run whose tests fail keeps its bundle; that is
+  when it matters most.
+- `if-no-files-found: warn`, so a run that stops before its tests start
+  (choosing Xcode, XcodeGen, starting the simulator, or a build failure:
+  `scripts/test.sh` returns before writing a bundle) fails with its own
+  error and only a warning about the upload. Such a run has no
+  artifact.
 - `retention-days: 14`: long enough to look at a failure while its pull
   request is open, short enough that old bundles do not pile up.
 - Unchanged: `permissions: contents: read`, the triggers, the job names
@@ -48,7 +53,7 @@ test-only storage (`--test-storage`), nothing personal.
 ## Commits
 
 - `baf3567`: the two upload steps and the header comment (the owner).
-- The docs pull request after it: this record, and the lines #28 made
+- Pull request #29: this record, and the lines #28 made
   untrue in `docs/ROADMAP.md` (item 2, and the repo review's list),
   `docs/HANDOFF.md` (*Verification*) and `AGENTS.md` (*Build and test*).
 
@@ -75,7 +80,7 @@ test-only storage (`--test-storage`), nothing personal.
   re-run (AGENTS.md: never retry an accessibility finding to make CI
   green); it is issue #30. That failed job still uploaded
   `ui-test-results` (26.3 MB, expiring
-  2026-11-05), so `if: always()` keeps a failed run's bundle.
+  2026-11-05), so a run that fails in its tests keeps its bundle.
 
 ## Not verified
 

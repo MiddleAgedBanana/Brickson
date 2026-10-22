@@ -50,7 +50,8 @@ and says changes will not be kept. The screen never locks. Ported code:
   newest standard iPhone, after a warm-up launch, and fail when no test
   ran ([`log/2026-10-21-test-seams.md`](log/2026-10-21-test-seams.md)).
   Since PR #28 each job keeps `build/TestResults` as a download on the
-  run's page for 14 days, passed or failed
+  run's page for 14 days, passed or failed, unless the run stopped
+  before its tests started (a build failure leaves no bundle)
   ([`log/2026-10-22-ci-test-results.md`](log/2026-10-22-ci-test-results.md)).
   Before PR #12, CI used Xcode 26.6 and iOS 26.5; 10 of 11 runs on
   `9362eca` were green, and the failure was simulator infrastructure.
