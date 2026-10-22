@@ -96,9 +96,17 @@ Xcode 27.1 (27A9275); final-head CI is pending.
   with the shared blank predicate strengthened. Import bytes and meaningful
   composed text remain intact. Its full native unit gate passed 558 tests,
   zero failures, the same existing crash probe skipped (559 total); the
-  catalog was unchanged. Main `479175d` has since added settled-screen
-  audits in PR #31; that merge and combined gates are next. New-head CI
-  is pending, and the earlier audit finding remains unexplained. The
+  catalog was unchanged. Commit `4fbd521` holds that correction.
+  This publication also merges main `479175d`, retaining the native
+  diagnostic handler alongside PR #31's settled-screen audits. The combined
+  unit gate passed 558 tests with the same existing skip. Current merged
+  UI is not yet locally validated: the same inherited wait failed in
+  PR #32's local run while Speaking remained visible and CoreAudio reported
+  backend startup errors. The cause is under investigation; no app fix or
+  finding suppression is claimed. Fresh hosted CI and PR #14's full local
+  iPad/iPhone run remain required. Audits now wait for Speaking to disappear,
+  so they do not cover that status itself. The
+  earlier PR #14 audit finding remains unexplained. The
   [`reconciliation record`](log/2026-10-22-library-reconciliation.md)
   preserves the earlier core/review fixes, failed CI evidence and next checks.
 
@@ -131,7 +139,10 @@ Xcode 27.1 (27A9275); final-head CI is pending.
   unit-tested with fakes), or sound. Windowed iPad
   sizes and iPhone Duo poses are untested. The first UI test on a
   just-started CI simulator failed intermittently before PR #13's warm-up
-  launch (AGENTS.md, *Gotchas*).
+  launch (AGENTS.md, *Gotchas*). Apple's accessibility audit never sees
+  Home's "Speaking" line: audits wait for speech to finish, because one
+  that ran while the line left reported text with no element (issue #30,
+  [`log/2026-10-22-audit-still-screen.md`](log/2026-10-22-audit-still-screen.md)).
 
 ## Known gaps
 

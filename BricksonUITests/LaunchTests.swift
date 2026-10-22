@@ -117,6 +117,11 @@ final class LaunchTests: XCTestCase {
                     app.buttons["Yes"].tap()
                     let againTurnsOn = expectation(for: NSPredicate(format: "isEnabled == true"), evaluatedWith: app.buttons["Again"])
                     XCTAssertEqual(XCTWaiter.wait(for: [againTurnsOn], timeout: 15), .completed)
+                    // The audit after this state waits for speech to end
+                    // too. Waiting here as well keeps the captures and word
+                    // checks below, over a second of work, between the last
+                    // change on screen and the audit (issue #30).
+                    waitForSpeechToFinish(in: app, context: "AX5, \(appearance.rawValue), phrase spoken")
                 }
                 let context = "AX5, \(appearance.rawValue), \(state)"
                 attachCapture(app, name: context)

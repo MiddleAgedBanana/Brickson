@@ -317,12 +317,56 @@ to `d241dea`; full local UI evidence remains the `182df4b` baseline.
 Current-head CI and review are still required, and the earlier unexplained
 iPhone audit finding remains open evidence.
 
+### Reconciliation with the settled-screen audit
+
+The invisible-text correction is commit `4fbd521`. Before publishing,
+`main` advanced to `479175d` with PR #31's settled-screen audit change.
+A new merge was prepared with `--no-ff --no-commit` and no conflicts.
+It retains this branch's library changes and native audit diagnostics while
+adding main's wait for Home's Speaking status to disappear before an audit
+and before the single permitted service-timeout retry. The AX5 test also
+waits after Again becomes enabled, before its captures and label checks.
+The wait is bounded at 30 seconds and records a failure if speech has not
+finished. No app code or audit finding filter changes in this merge.
+
+The settled-screen behavior and the native diagnostic handler combine:
+unexpected findings still capture the screen/tree, record the contextual
+failure and return `false` to preserve XCTest's native report. The runner's
+two new ordering tests and its updated call sites are retained. Main's
+HANDOFF addition explicitly records the coverage gap: these audits do not
+inspect the Speaking status itself; auditing that state deliberately needs
+the planned held-speech test seam.
+
+PR #31 records timing evidence from another CI run. This merge does not
+retroactively identify the offending element in PR #14's earlier
+`596c59a` failure; its sparse video and missing native issue metadata remain
+insufficient for that claim. The combined `scripts/test.sh unit` gate
+passed with the same Xcode 27.1 (27A9275), XcodeGen 2.46.0, iPad Pro
+13-inch (M5) and iOS 27.0 (24A434): 558 passed, zero failures, one existing
+issue #19 crash-probe skip, zero expected failures (559 total). App line
+coverage was 66.9% (4,395 of 6,572 lines), and the String Catalog was
+unchanged. The latest complete local UI evidence is still `182df4b`,
+before the pure library follow-ups and this main merge.
+
+The publication sequence changed to let hosted CI validate this combined
+head while a local simulator audio failure is investigated. The same
+inherited audit wait failed in PR #32's local combined run: Speaking
+remained visibly present after its 30-second wait, and the simulator log
+contained repeated CoreAudio backend startup errors. Those observations
+are correlated evidence, not an established app defect or a diagnosis of
+PR #14's older audit finding. No app speech change, arbitrary speech cutoff
+or audit suppression was introduced. PR #14's merged UI has not yet been
+validated locally; the full iPad/iPhone run remains due after the audio
+environment is checked. The successful combined native unit gate above
+precedes the merge commit. Fresh hosted CI and review must assess the
+published head; results for `d241dea` do not validate these later changes.
+
 ## Follow-ups, in order
 
-1. Reconcile newly landed main at `479175d` (PR #31's settled-screen
-   audits), preserving native diagnostics, and run the combined gates
-   before publishing. Then answer the invisible-text review with its commit
-   and evidence. Verify fresh CI and review; PR #14 is not green yet.
+1. Verify fresh hosted CI and review for the published Unicode correction
+   and `479175d` merge. Complete PR #14's full local iPad/iPhone UI gates
+   once the simulator audio environment is validated; record the actual
+   result separately from the `182df4b` baseline. PR #14 is not green yet.
 2. If the AX5 finding recurs, inspect the new captures and native report to
    identify and fix its cause. The earlier failed run remains evidence;
    local passes do not explain it or authorize suppressing a finding.
