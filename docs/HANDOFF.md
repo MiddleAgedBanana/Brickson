@@ -82,8 +82,14 @@ release in docs/ROADMAP.md when no thread has it yet.
   harmonic-rich replacement and its level under speech need a listening
   check on a device (docs/DECISIONS.md, "Get Attention"). *(owner, with a
   device build)*
-- No typing *(Typing foundation)*; no editing or backup *(Library editing
-  and backup format)*; no Settings or voice choice *(Settings and first run)*.
+- No typing on Home. The typing rules (`MessageComposer`), the saved
+  message (`DraftStore`) and a keyboard probe are in `Brickson/Typing`,
+  waiting for Home's typing state (docs/DECISIONS.md, "Typing is a state
+  of Home"; [`log/2026-10-21-typing-foundation.md`](log/2026-10-21-typing-foundation.md),
+  *For the next typing thread*). *(a new typing thread, after Phone layout
+  and word fitting)*
+- No editing or backup *(Library editing and backup format)*; no Settings
+  or voice choice *(Settings and first run)*.
 - A library the app cannot read is replaced by the starter phrases with a
   message about saving (code audit M2), and an emptied library is refilled
   with the starter set. *(Library editing and backup format)*
@@ -163,7 +169,7 @@ Simulators cannot show these. Record each result in a `docs/log/` file
 | How far Snap to Item jumps, and whether the pointer stays on an activated control or follows the gaze | Spacing and placement for dwell profiles |
 | Whether a lingering look re-fires a dwell | How much repeat protection matters |
 | Whether Snap to Item ignores controls scrolled off screen | Whether scrolling can keep family controls out of reach |
-| What the real software keyboard covers in each orientation | The typing layout (docs/LESSONS.md, "Test with the real software keyboard") |
+| What the real software keyboard covers in each orientation, and typing checks 1–8 in [`log/2026-10-21-typing-foundation.md`](log/2026-10-21-typing-foundation.md) | The typing layout (docs/LESSONS.md, "Test with the real software keyboard"), the word row, Return under dwell, and whether Brickson needs its own keyboard |
 | Get Attention heard from the next room, on the speaker and over Bluetooth | The alarm's sound and level, and the replacement tone |
 | A phrase spoken while Get Attention sounds is understood over the tone at 0.32 | `AttentionAlertStatus.toneVolumeWhileSpeaking` |
 | A phone call, Siri and another app's alarm during a phrase and during Get Attention: each stops and shows "Stopped — Again" or "Alert stopped", and nothing restarts by itself, on iOS 26 and iOS 27 | Interruption handling and the iOS 27 notices (docs/DECISIONS.md, "Audio session notices") |
