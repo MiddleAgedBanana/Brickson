@@ -1,6 +1,6 @@
 # Accessibility audits wait for a still screen
 
-*2026-10-22. Pull request #PR (`claude/project-thread-5ubwzx`). Thread
+*2026-10-22. Pull request #31 (`claude/project-thread-5ubwzx`). Thread
 "Flaky UI tests in CI", a cloud session that cannot build or run Swift.
 Fixes issue #30.*
 
