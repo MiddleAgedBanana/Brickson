@@ -35,6 +35,7 @@ struct LaunchOptionsTests {
         #expect(options.startScreen == .keyboardProbe)
         #expect(options.unrecognized.isEmpty)
         #expect(LaunchOptions.parse(["--fresh-test-storage"]).storage == .freshTest)
+        #expect(LaunchOptions.parse(["--screen=settings"]).startScreen == .settings)
     }
 
     // Release launches use .standard. Giving that default an appearance

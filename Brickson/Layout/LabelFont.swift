@@ -27,10 +27,24 @@ struct LabelFont: Equatable {
             case .semibold: .semibold
             }
         }
+
+        /// The weight measured when Bold Text is on: one step heavier.
+        /// Apple does not document how much heavier SwiftUI draws, so
+        /// `StarterLabelFitTests` checks SwiftUI's Bold Text widths and
+        /// heights against these measures.
+        var boldTextUIFontWeight: UIFont.Weight {
+            switch self {
+            case .regular: .semibold
+            case .semibold: .bold
+            }
+        }
     }
 
     let textStyle: Font.TextStyle
     let weight: Weight
+    /// Whether Bold Text is on, so labels are measured at the heavier weight
+    /// SwiftUI draws them in (`legible(_:)`).
+    var boldText = false
 
     /// The message the listener reads.
     static let message = LabelFont(textStyle: .title, weight: .semibold)
@@ -61,6 +75,15 @@ struct LabelFont: Equatable {
     /// which `FittedLabel` sets to the chosen step.
     var font: Font {
         .system(textStyle, weight: weight.fontWeight)
+    }
+
+    /// This font as measured under the person's Bold Text setting. Views
+    /// pass their `legibilityWeight`: measuring a bold label at the regular
+    /// weight would choose a size or set lines its wider words do not fit.
+    func legible(_ legibilityWeight: LegibilityWeight?) -> LabelFont {
+        var font = self
+        font.boldText = legibilityWeight == .bold
+        return font
     }
 
     /// The style's point size at a text size.
@@ -170,7 +193,7 @@ struct LabelFont: Equatable {
     }
 
     private func uiFont(at size: DynamicTypeSize) -> UIFont {
-        .systemFont(ofSize: pointSize(at: size), weight: weight.uiFontWeight)
+        .systemFont(ofSize: pointSize(at: size), weight: boldText ? weight.boldTextUIFontWeight : weight.uiFontWeight)
     }
 
     private var uiTextStyle: UIFont.TextStyle {

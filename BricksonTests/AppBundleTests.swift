@@ -31,6 +31,13 @@ struct AppBundleTests {
     }
 
     /// How text-to-speech says the name comes from `APP_SPOKEN_NAME`.
+    /// Words people see name the app through `AppName.display`, so it must
+    /// be the name under the icon.
+    @Test func theNameInTheAppsWordsIsTheDisplayName() throws {
+        let name = try #require(try infoPlist()["CFBundleDisplayName"] as? String)
+        #expect(AppName.display == name)
+    }
+
     @Test func theSpokenNameIsSet() throws {
         let name = try #require(try infoPlist()["CFBundleSpokenName"] as? String)
         #expect(!name.isEmpty)

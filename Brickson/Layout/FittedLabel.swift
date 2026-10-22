@@ -28,6 +28,7 @@ import SwiftUI
 /// also what Voice Control users say.
 struct FittedLabel: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.legibilityWeight) private var legibilityWeight
 
     let title: String
     let systemImage: String?
@@ -43,6 +44,7 @@ struct FittedLabel: View {
 
     var body: some View {
         GeometryReader { proxy in
+            let font = measured
             let steps = LabelFont.steps(downFrom: dynamicTypeSize)
             let choice = font.choice(for: title, systemImage: systemImage, steps: steps, size: proxy.size)
             let chosen = steps[choice.step]
@@ -54,7 +56,8 @@ struct FittedLabel: View {
     }
 
     private func label(showingIcon: Bool, lines: [String], smallestScale: CGFloat) -> some View {
-        HStack(spacing: font.iconSpacing(at: dynamicTypeSize)) {
+        let font = measured
+        return HStack(spacing: font.iconSpacing(at: dynamicTypeSize)) {
             // The icon shows only at the person's own size (`WordFit`).
             if showingIcon, let systemImage {
                 Image(systemName: systemImage)
@@ -88,6 +91,11 @@ struct FittedLabel: View {
         let own = font.pointSize(at: dynamicTypeSize)
         guard own > 0, let smallest = steps.last else { return 1 }
         return min(1, font.pointSize(at: smallest) / own)
+    }
+
+    /// The font measured as drawn, heavier when Bold Text is on.
+    private var measured: LabelFont {
+        font.legible(legibilityWeight)
     }
 
     private var isOneWord: Bool {
