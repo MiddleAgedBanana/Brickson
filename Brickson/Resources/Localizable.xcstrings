@@ -7,9 +7,6 @@
     "%@ can speak in a voice that sounds like you, made with Apple's Personal Voice. iOS asks once whether %@ may use it; choose Allow." : {
 
     },
-    "%@ is set up for:" : {
-
-    },
     "%@ may use a Personal Voice, but none is on this device. One is made in the Settings app by reading phrases aloud:" : {
 
     },
@@ -67,7 +64,7 @@
     "Choose a phrase to speak it." : {
 
     },
-    "Choose every way that is used now. This sets how large %@’s buttons are. If nothing is chosen, it uses its largest sizes." : {
+    "Choose every way that is used now. Each answer is saved as soon as it is chosen." : {
 
     },
     "Choose the voice" : {
@@ -187,7 +184,7 @@
     "No phrases yet." : {
 
     },
-    "No way of reaching the screen was chosen, so %@ uses its largest sizes." : {
+    "No way of reaching the screen was chosen." : {
 
     },
     "No." : {
@@ -410,6 +407,9 @@
 
     },
     "Volume low" : {
+
+    },
+    "Ways of reaching the screen chosen:" : {
 
     },
     "When asked for apps, add %@ under Other apps." : {
