@@ -9,12 +9,12 @@ Home's stand-in now lays itself out from the width and height it is
 given (`HomeShape`), never from the device, as the owner asked on
 2026-10-21. What a person notices:
 
-- **No label breaks a word.** Every label on Home is drawn at one of
-  Apple's text sizes: the person's own, with its icon if it fits; then
-  without the icon; then each smaller size, down to the default (Large)
-  and never below it (`WordFit`, `FittedLabel`, `FittedLine`). The
-  message steps down the same way, only while its widest word is wider
-  than the row.
+- **No label breaks a word.** Every label on Home fits itself: at the
+  person's own size with its icon if it fits; then without the icon; then
+  shrunk only as far as it must, down to the default size (Large) and
+  never below it, in lines of whole words (`WordFit`, `FittedLabel`,
+  `FittedLine`). The message steps down the same way, only while its
+  widest word is wider than the row.
 - **Every category is visible.** Four category buttons, two by two on
   narrow windows and one row of four on wide ones, never scrolled
   sideways.
@@ -105,8 +105,10 @@ missing is the wells and A's trailing column. Again still sits in A.
 - `31e48f7`: one-word labels checked by drawn width; no icons on Yes, No
   and Again.
 - `7a7fdb6`: quick controls and categories grow to one line of text.
-- The commit after `7a7fdb6`: label sizes worked out without
-  `ViewThatFits`, one view per label, and the grid always a scroll view.
+- `1bca96a`: label sizes worked out without `ViewThatFits`, one view
+  per label, and the grid always a scroll view.
+- The commit after `1bca96a`: labels drawn at the person's size in set
+  lines, shrunk by `minimumScaleFactor`.
 - The merge of `main` (PRs #12, #13, #15, #16, #18): eager rows in a
   plain `FixedColumns` view instead of `LazyVGrid`, `HomeLayoutTests` on
   `launchedApp` and `attachCapture`, the documents fitted to the new
@@ -159,11 +161,20 @@ missing is the wells and A's trailing column. Again still sits in A.
   status line is given its width; the grid is always a scroll view,
   turned off where the tiles fit. A new unit test checks the height
   measure against SwiftUI for every starter label at every size.
+- **CI on `1bca96a`**: the build and unit tests passed, the new height
+  test included, and every "Text clipped" finding was gone. The audit
+  now reported "Dynamic Type font sizes are partially unsupported" on
+  each label that had stepped down: Conversation on the iPad, and on the
+  iPhone Yes, Again, Emergency, three categories and most tiles. So a
+  label drawn at a smaller text size fails the audit however it is
+  chosen. Fix, not yet re-run: labels are drawn at the person's own size
+  in whole-word lines set for the chosen size, and SwiftUI shrinks them
+  only as far as needed (`minimumScaleFactor`, never below the default).
 - **Measured on CI** with the temporary calibration test: SwiftUI's text
   widths match UIKit's to within half a point; SwiftUI's line height is
   the first line plus the style's leading per extra line (headline 17pt:
   20.5 then 22 per line), which UIKit's measure leaves out. Heights were
-  first left to SwiftUI (`ViewThatFits`); after `7a7fdb6` UIKit measures
+  first left to SwiftUI (`ViewThatFits`); since `1bca96a` UIKit measures
   them with room for that spacing, checked against SwiftUI in
   `StarterLabelFitTests`.
 - **Pure tests** (`WordFitTests`, `HomeShapeTests`) also ran with the

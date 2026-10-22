@@ -102,6 +102,18 @@ struct WordFitTests {
         #expect(WordFit.first(of: [], whereHeightFits: { _ in true }) == Self.choice(0))
     }
 
+    /// Fails if a line holds more words than fit, a word is split, a line
+    /// is left empty, or words are dropped or reordered.
+    @Test func wordsAreSetInLinesThatFit() {
+        // Every character 10pt wide; a space counts as one character.
+        let measure = { (line: String) in CGFloat(line.count * 10) }
+        #expect(WordFit.lines(of: "I need a drink", width: 72, measure: measure) == ["I need", "a drink"])
+        #expect(WordFit.lines(of: "Yes", width: 100, measure: measure) == ["Yes"])
+        // A word wider than the line keeps a line of its own, whole.
+        #expect(WordFit.lines(of: "a enormous b", width: 52, measure: measure) == ["a", "enormous", "b"])
+        #expect(WordFit.lines(of: "", width: 100, measure: measure).isEmpty)
+    }
+
     @Test func wordsSplitOnWhitespaceOnly() {
         #expect(WordFit.words(in: "I don't know.") == ["I", "don't", "know."])
         #expect(WordFit.words(in: "  Thank\tyou.\n") == ["Thank", "you."])

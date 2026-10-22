@@ -77,6 +77,29 @@ nonisolated enum WordFit {
         choices.first(where: fits) ?? choices.last ?? Choice(step: 0, showsIcon: false)
     }
 
+    /// `text` set in lines no wider than `width` less `widthSlack`, each
+    /// holding as many whole words as fit. A word wider than that keeps a
+    /// line of its own, whole. `FittedLabel` draws these lines as they are,
+    /// so the system never has to decide where a line breaks, and never
+    /// breaks a word.
+    static func lines(of text: String, width: CGFloat, measure: (String) -> CGFloat) -> [String] {
+        var lines: [String] = []
+        var current = ""
+        for word in words(in: text) {
+            let candidate = current.isEmpty ? String(word) : current + " " + word
+            if current.isEmpty || measure(candidate) <= width - widthSlack {
+                current = candidate
+            } else {
+                lines.append(current)
+                current = String(word)
+            }
+        }
+        if !current.isEmpty {
+            lines.append(current)
+        }
+        return lines
+    }
+
     /// The words of a label: it may break between them, never inside one.
     static func words(in text: String) -> [Substring] {
         text.split(whereSeparator: \.isWhitespace)

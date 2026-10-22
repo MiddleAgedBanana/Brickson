@@ -6,14 +6,20 @@ import SwiftUI
 /// default size (`WordFit`).
 ///
 /// `WordFit` rules out every size at which a word would not fit the width,
-/// and the label is drawn at the first remaining size whose wrapped words fit
-/// the height (`LabelFont.choice`). The smallest size is drawn even when it
-/// does not fit, because nothing smaller is allowed: Home's sizes are chosen
-/// so the starter library always fits (`StarterLabelFitTests`).
+/// and the first remaining size whose words, set in whole-word lines, fit
+/// the height is chosen (`LabelFont.choice`). The smallest size is chosen
+/// even when it does not fit, because nothing smaller is allowed: Home's
+/// sizes are chosen so the starter library always fits
+/// (`StarterLabelFitTests`).
 ///
-/// Whatever is chosen, the label is the same view: the icon comes and goes
-/// and the text size changes, but the words are never replaced by another
-/// view, so Apple's accessibility audit can follow them as the text grows.
+/// The words are then drawn at the person's own text size, in the lines
+/// set for the chosen size, and SwiftUI shrinks them only as far as they
+/// need to fit (`minimumScaleFactor`), never below the default size. So the
+/// text keeps following Dynamic Type, which Apple's accessibility audit
+/// checks: a label drawn at a smaller text size (`dynamicTypeSize`) is
+/// reported as not supporting it. With one line per set line, a word can
+/// never be broken: a line that wrapped would need a line more than the
+/// label allows, so SwiftUI shrinks the words instead.
 ///
 /// The words are drawn with `Text(verbatim:)`: callers pass text that is
 /// already localized (`String(localized:)`) or a person's own words, which
@@ -39,30 +45,49 @@ struct FittedLabel: View {
         GeometryReader { proxy in
             let steps = LabelFont.steps(downFrom: dynamicTypeSize)
             let choice = font.choice(for: title, systemImage: systemImage, steps: steps, size: proxy.size)
-            label(showingIcon: choice.showsIcon, at: steps[choice.step])
+            let chosen = steps[choice.step]
+            let iconRoom = choice.showsIcon ? systemImage.map { font.iconAdvance($0, at: chosen) } ?? 0 : 0
+            let lines = isOneWord ? [title] : font.lines(title, width: proxy.size.width - iconRoom, at: chosen)
+            label(showingIcon: choice.showsIcon, lines: lines, smallestScale: smallestScale(steps))
                 .frame(width: proxy.size.width, height: proxy.size.height, alignment: frameAlignment)
         }
     }
 
-    private func label(showingIcon: Bool, at size: DynamicTypeSize) -> some View {
-        HStack(spacing: font.iconSpacing(at: size)) {
+    private func label(showingIcon: Bool, lines: [String], smallestScale: CGFloat) -> some View {
+        HStack(spacing: font.iconSpacing(at: dynamicTypeSize)) {
+            // The icon shows only at the person's own size (`WordFit`).
             if showingIcon, let systemImage {
                 Image(systemName: systemImage)
                     // Exactly the width WordFit measured, and never taller
                     // than a line of the words, so the icon only ever takes
                     // the room it was measured for.
-                    .frame(width: font.iconWidth(systemImage, at: size), height: font.lineHeight(at: size))
+                    .frame(
+                        width: font.iconWidth(systemImage, at: dynamicTypeSize),
+                        height: font.lineHeight(at: dynamicTypeSize)
+                    )
                     .accessibilityHidden(true)
             }
-            Text(verbatim: title)
+            Text(verbatim: lines.joined(separator: "\n"))
                 .multilineTextAlignment(alignment)
-                // A single word that cannot fit even at the default size is
-                // cut short with an ellipsis rather than broken in two. The
-                // starter library has none (`StarterLabelFitTests`).
-                .lineLimit(isOneWord ? 1 : nil)
+                // One line per set line. A single word that cannot fit even
+                // at the default size is cut short with an ellipsis rather
+                // than broken in two; the starter library has none
+                // (`StarterLabelFitTests`).
+                .lineLimit(max(lines.count, 1))
+                .minimumScaleFactor(smallestScale)
+                // The words without the line breaks, for VoiceOver, Voice
+                // Control and the UI tests.
+                .accessibilityLabel(Text(verbatim: title))
         }
         .font(font.font)
-        .textSize(size)
+    }
+
+    /// The default size's share of the person's own: SwiftUI never shrinks
+    /// the words below the default size.
+    private func smallestScale(_ steps: [DynamicTypeSize]) -> CGFloat {
+        let own = font.pointSize(at: dynamicTypeSize)
+        guard own > 0, let smallest = steps.last else { return 1 }
+        return min(1, font.pointSize(at: smallest) / own)
     }
 
     private var isOneWord: Bool {

@@ -164,10 +164,11 @@ struct StarterLabelFitTests {
     }
 
     /// Fails if `LabelFont.textHeight` is ever less than the height SwiftUI
-    /// draws a starter label in, at any text size and at widths from the
-    /// narrowest tile to a wide one: `FittedLabel` would then choose a size
-    /// whose words do not fit, and cut them off. Only widths at which every
-    /// word fits are checked, the only ones `FittedLabel` draws words at.
+    /// draws a starter label's set lines in (`LabelFont.lines`), at any text
+    /// size and at widths from the narrowest tile to a wide one: a set line
+    /// SwiftUI wrapped again, or more leading than measured. `FittedLabel`
+    /// would then choose a size whose words do not fit. Only widths at which
+    /// every word fits are checked, the only ones it chooses.
     @Test func theHeightMeasureCoversWhatSwiftUIDraws() {
         let cases: [(LabelFont, [String], [CGFloat])] = [
             (.compactTile, phrases, [99, 140, 200]),
@@ -178,7 +179,8 @@ struct StarterLabelFitTests {
             for size in DynamicTypeSize.allCases where size >= .large {
                 for width in widths {
                     for text in texts where font.widestWord(text, at: size) + WordFit.widthSlack <= width {
-                        let view = Text(verbatim: text).font(font.font).dynamicTypeSize(size)
+                        let lines = font.lines(text, width: width, at: size)
+                        let view = Text(verbatim: lines.joined(separator: "\n")).font(font.font).dynamicTypeSize(size)
                         let drawn = UIHostingController(rootView: view)
                             .sizeThatFits(in: CGSize(width: width, height: 10_000)).height
                         let measured = font.textHeight(text, width: width, at: size)

@@ -87,24 +87,20 @@ struct LabelFont: Equatable {
         uiFont(at: size).lineHeight.rounded(.up) + 1
     }
 
-    /// At least the height SwiftUI draws `text` in at a text size, wrapped
-    /// between words to `width`. UIKit counts the lines, wrapping 2pt early
-    /// (`WordFit.widthSlack`) so it never finds fewer lines than SwiftUI;
-    /// each line after the first is given the line height plus 15%, more
-    /// than the leading SwiftUI adds (headline at the default size: 22pt a
-    /// line against UIKit's 20.3, measured on CI).
+    /// `text` set in lines that fit `width` at a text size, whole words
+    /// only (`WordFit.lines`).
+    func lines(_ text: String, width: CGFloat, at size: DynamicTypeSize) -> [String] {
+        WordFit.lines(of: text, width: width, measure: { lineWidth($0, at: size) })
+    }
+
+    /// At least the height SwiftUI draws `text` in at a text size, set in
+    /// lines that fit `width` (`lines`). Each line after the first is given
+    /// UIKit's line height plus 15%, more than the leading SwiftUI adds
+    /// (headline at the default size: 22pt a line against UIKit's 20.3,
+    /// measured on CI).
     func textHeight(_ text: String, width: CGFloat, at size: DynamicTypeSize) -> CGFloat {
-        let font = uiFont(at: size)
-        let paragraph = NSMutableParagraphStyle()
-        paragraph.lineBreakStrategy = .standard
-        let bounds = (text as NSString).boundingRect(
-            with: CGSize(width: max(width - WordFit.widthSlack, 1), height: .greatestFiniteMagnitude),
-            options: .usesLineFragmentOrigin,
-            attributes: [.font: font, .paragraphStyle: paragraph],
-            context: nil
-        )
-        let lines = max(1, Int((bounds.height / font.lineHeight).rounded()))
-        return lineHeight(at: size) + CGFloat(lines - 1) * (font.lineHeight * 1.15).rounded(.up)
+        let count = max(1, lines(text, width: width, at: size).count)
+        return lineHeight(at: size) + CGFloat(count - 1) * (uiFont(at: size).lineHeight * 1.15).rounded(.up)
     }
 
     /// The width of `text` on one line at a text size.

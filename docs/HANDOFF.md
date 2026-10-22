@@ -19,8 +19,8 @@ never scroll sideways, and three phrase columns on every iPhone. A tile
 speaks at once, in the person's Personal Voice when one exists and is
 allowed; the sentence stays on screen in two reserved lines with Again
 beside them, and a longer message scrolls inside them. No label breaks a
-word: each steps down through Apple's text sizes as far as it must, never
-below the default, dropping its icon first. A phrase the system cuts off (a call, Siri, lost
+word: each drops its icon first, then shrinks only as far as it must,
+never below the default size, in lines of whole words. A phrase the system cuts off (a call, Siri, lost
 headphones) shows "Stopped" with Again to repeat it. Emergency opens the
 emergency phrases and says nothing. The start-only Get Attention alarm is
 built and waiting for its place on Home (docs/DECISIONS.md, "Home's slot

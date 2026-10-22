@@ -675,20 +675,22 @@ device-specific interfaces."
   icon if it fits; then without the icon; then each smaller size down to
   the default (Large), never below it (`WordFit`, `FittedLabel`). UIKit
   measures each size: word widths, which CI checks against SwiftUI's, and
-  the wrapped height, counted in lines and given each extra line 15% more
-  than UIKit's line height, because SwiftUI adds the style's line spacing
-  (22pt per line at 17pt, not 20.3, measured on CI). CI checks that this
-  height is never less than SwiftUI's for every starter label at every
-  size (`StarterLabelFitTests`). The choice is worked out, not left to
-  SwiftUI's `ViewThatFits`: Apple's accessibility audit grows the text and
-  compares each label with itself, and `ViewThatFits` replaced a label
-  with another view as it grew, which the audit reported as clipped text
-  and as text not following Dynamic Type (CI, 2026-10-21). For the same
-  reason a label's size is always limited by the same modifier
-  (`dynamicTypeSize(...size)`), which changes nothing at the person's own
-  size, and the phrase grid is always a scroll view, turned off where the
-  tiles fit. A label at the person's own size follows Dynamic Type as
-  usual.
+  the height of the words set in whole-word lines, giving each extra line
+  15% more than UIKit's line height because SwiftUI adds the style's line
+  spacing (22pt per line at 17pt, not 20.3, measured on CI). CI checks
+  that height against SwiftUI's for every starter label at every size
+  (`StarterLabelFitTests`). The label is then drawn at the person's own
+  size in the lines set for the chosen size, one line each, and SwiftUI
+  shrinks the words just enough to fit (`minimumScaleFactor`, never below
+  the default size); a line that wrapped would need a line more than the
+  label allows, so no word breaks. Two earlier ways failed Apple's
+  accessibility audit on CI (2026-10-21), which grows the text and checks
+  that each text follows it: drawing a stepped-down label at a smaller
+  text size (`dynamicTypeSize`) was reported as not supporting Dynamic
+  Type, and letting `ViewThatFits` pick the size swapped the label for
+  another view as the text grew, reported as clipped. The phrase grid is
+  always a scroll view, turned off where the tiles fit, for the same
+  reason.
 - **Home's own button style.** Home's controls use `HomeButtonStyle`
   instead of `.borderedProminent`: that style's margins left too little
   width in a phone's three-column grid for the starter words at their
