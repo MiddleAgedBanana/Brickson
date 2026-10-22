@@ -65,7 +65,7 @@ on the original PR head `972c5b1`; this reconciliation did not add or widen a
 skip. Production code never calls rollback. Re-enabling the crash probe stays
 an isolated follow-up to [issue #19](https://github.com/MiddleAgedBanana/Brickson/issues/19).
 
-Independent review compared the reconciliation with both the original PR
+An initial independent review compared the reconciliation with both the original PR
 head and `main` at `5abdd9f` and found no actionable defects. It confirmed
 that main's Voice Settings code and catalog metadata were retained, no
 obsolete catalog keys were restored, the import/applier safety-copy
@@ -100,13 +100,43 @@ iOS permission question. These are ordinary simulator launches; no
 multitasking or Display Zoom configuration was measured. No physical-device,
 sound, gaze-comfort or Snap to Item validation is claimed.
 
-Local unit and UI verification is complete. CI and final reviews on the
-pushed head remain pending.
+### Follow-up review on the pushed reconciliation
+
+The later Codex review found two valid issues. The existing branch had
+reversed the earlier owner-only restriction on replacing personal words
+after a safety copy. The decision now restores that restriction, explicitly
+unadopted pending the owner's decision, and corrects the related handoff,
+source comments and earlier log claim. `LibraryEditor.apply` continues to
+refuse every plan needing a safety copy; its behavior did not change.
+
+Emergency could also hold one phrase with words plus an imported blank.
+Deleting or moving the words left nothing Emergency could say. The planner
+now requires a remaining nonblank phrase, and the snapshot backstop uses
+the same rule. Imported ASCII whitespace and nonbreaking-space bytes stay
+unchanged. Removing a blank, editing the words and reordering remain valid.
+Two parameterized regressions first failed with six expectations against
+the previous source. All 46 pure edit/import tests then passed on macOS
+using the real source files, Swift 6 strict concurrency and default
+main-actor isolation. Restoring the old count-only guards or snapshot
+predicate makes these regressions fail.
+
+The full `scripts/test.sh unit` rerun passed for this follow-up: 550 passed,
+zero failures, the same one disabled issue #19 crash probe, zero expected
+failures (551 total). App line coverage was 66.8% (4,382 of 6,559 lines),
+and the String Catalog remained synchronized. The run used Xcode 27.1
+(27A9275), XcodeGen 2.46.0 and iPad Pro 13-inch (M5), iOS 27.0 (24A434).
+Its result bundle is `build/TestResultsReview/unit-ipad.xcresult`.
+An independent follow-up inspection found no additional defect. In an
+already-damaged blank-only Emergency category, removing another blank is
+now refused until words are added or edited; other repairs remain possible.
+The UI results above predate this follow-up; it changes the unexposed editing planner and
+source comments, with no UI implementation or UI-test changes. Final-head
+CI and review remain pending.
 
 ## Follow-ups, in order
 
-1. Commit and push the tested reconciliation to the existing PR branch,
-   then address any new review conversation and verify CI on that commit.
+1. Push the tested follow-up to the existing PR branch, answer the two
+   findings, then verify CI and any final review.
 2. Continue the existing library follow-ups: safety copies, export and
    import, editing screens, shipped-schema fixtures and issue #19's
    opt-in SwiftData rollback probe.

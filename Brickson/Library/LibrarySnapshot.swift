@@ -77,12 +77,13 @@ nonisolated extension LibrarySnapshot {
 
     /// The emergency rule (docs/DECISIONS.md, "The emergency category is
     /// always there"): exactly one emergency category, holding at least one
-    /// phrase. Home's Emergency control opens the first emergency category
-    /// it finds and hides the rest, so a second one would be unreachable and
-    /// an empty one would open on nothing.
+    /// phrase with words. Home's Emergency control opens the first emergency
+    /// category it finds and hides the rest, so a second one is unreachable
+    /// and one holding only imported whitespace has nothing to say.
     var keepsEmergencyWorking: Bool {
         let emergencies = categories.filter(\.isEmergency)
-        return emergencies.count == 1 && !emergencies[0].phrases.isEmpty
+        return emergencies.count == 1
+            && emergencies[0].phrases.contains { !LibraryText.isBlank($0.text) }
     }
 
     /// The words in this library that the person wrote or changed: every

@@ -267,6 +267,43 @@ struct LibraryEditTests {
         _ = try LibraryEdit.movePhrase(F.id(201), category: F.emergencyID, before: nil).plan(in: one)
     }
 
+    /// Fails if a whitespace-only imported phrase counts as something
+    /// Emergency can say, even though its tile produces no speech.
+    @Test(arguments: [" \n\t", "\u{00A0}"])
+    func emergencyNeedsWordsNotOnlyAStoredPhrase(blank: String) {
+        var onlyBlank = library
+        onlyBlank.categories[1].phrases = [.init(id: F.id(201), text: blank)]
+        #expect(!onlyBlank.keepsEmergencyWorking)
+    }
+
+    /// Fails if an imported blank lets a delete or move remove Emergency's
+    /// last phrase with words. Imports must still keep the blank's bytes.
+    @Test(arguments: [" \n\t", "\u{00A0}"])
+    func importedWhitespaceCannotReplaceTheLastEmergencyWords(blank: String) throws {
+        var backup = library
+        backup.categories[1].phrases[1].text = blank
+        let imported = try makePlan(.replace(backup)).after
+        #expect(imported.keepsEmergencyWorking)
+        #expect(Array(imported.categories[1].phrases[1].text.utf8) == Array(blank.utf8))
+
+        #expect(throws: LibraryEditRejection.emergencyCategoryNeedsAPhrase) {
+            try makePlan(.deletePhrase(F.id(201)), in: imported)
+        }
+        #expect(throws: LibraryEditRejection.emergencyCategoryNeedsAPhrase) {
+            try makePlan(.movePhrase(F.id(201), category: F.basicsID, before: nil), in: imported)
+        }
+
+        // Removing the blank, editing the words, and reordering within
+        // Emergency all keep a reachable phrase with words.
+        let removedBlank = try makePlan(.deletePhrase(F.id(202)), in: imported)
+        #expect(texts(removedBlank.after, F.emergencyID) == ["I need help now."])
+        let edited = try makePlan(.editPhrase(F.id(201), text: "Help."), in: imported)
+        #expect(edited.after.keepsEmergencyWorking)
+        let reordered = try makePlan(.movePhrase(F.id(201), category: F.emergencyID, before: nil), in: imported)
+        #expect(reordered.after.keepsEmergencyWorking)
+        #expect(Array(reordered.after.categories[1].phrases[0].text.utf8) == Array(blank.utf8))
+    }
+
     /// A library that already broke the rule (from a damaged store) can
     /// still be edited, as long as the edit does not make it worse.
     /// An empty store is refilled with the starter phrases at the next

@@ -28,8 +28,8 @@ enum LibraryEditor {
     ///
     /// The plan is refused if the store no longer matches the library it
     /// was made from (another edit landed in between), and a replace that
-    /// would remove the person's own words is refused until safety copies
-    /// exist.
+    /// would remove the person's own words is refused. A safety-copy
+    /// exception still requires the owner's decision before implementation.
     ///
     /// `save` exists so tests can make the save fail; the app never passes
     /// it.
@@ -71,8 +71,8 @@ nonisolated enum LibraryEditError: Error, Equatable, Sendable {
     case libraryUnreadable
     /// The library changed after the plan was made.
     case libraryChanged
-    /// A replace would remove the person's words, and no safety copy of
-    /// them exists.
+    /// A replace would remove the person's words. The proposed safety-copy
+    /// exception is not adopted (docs/DECISIONS.md, "Replacing the library").
     case safetyCopyRequired
     case saveFailed
 

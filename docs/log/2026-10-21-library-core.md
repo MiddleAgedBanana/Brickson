@@ -97,6 +97,13 @@ the existing tests and write these documents.
 
 ## Review findings
 
+**Correction, 2026-10-22:** the adoption described below was not authorized.
+The owner-only safety-copy decision has been restored in
+docs/DECISIONS.md, "Replacing the library". A Replace that removes the
+person's own words remains refused; safety copies alone would not authorize
+it. See [the reconciliation record](2026-10-22-library-reconciliation.md).
+The following text records the earlier branch state.
+
 Codex and Copilot reviewed the first push, and Codex the second. Every
 finding is fixed (the last, a repeated identity inside one backup, in
 `ef7b3b6`). One asked for a decision: whether a replace may run after a

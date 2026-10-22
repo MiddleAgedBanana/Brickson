@@ -681,7 +681,8 @@ Reversible if the owner objects.*
 ## Replacing the library
 
 *Default, adopted 2026-10-21: the owner left these choices to the project.
-Reversible if the owner objects.*
+Reversible if the owner objects. The memo's reading (a) of invariant 7;
+reading (b) is the owner's to decide.*
 
 Replace makes the library match a backup, so it removes words the backup
 does not have, and invariant 7 says nothing may delete a person's own
@@ -691,25 +692,25 @@ words. So:
   library is empty, or every name and phrase in it is an untouched
   starter item (known by its identity and exact words), or every word the
   person wrote is also in the backup.
-- Otherwise it runs only after a safety copy of the whole current library
-  has been written on the device (the editing and backup memo, section
-  5.5), so every word it removes from the library is still kept on the
-  device and can be brought back. Nothing deletes a safety copy by
-  itself. Safety copies are not built yet, so today such a replace is
-  refused (`LibraryEditError.safetyCopyRequired`), and a family can use
-  Add instead. The pull request that builds safety copies tests that a
-  replace cannot run without one, and checks the privacy policy and
-  updates it and its Effective date, because safety copies keep more of
-  the person's words on the device.
+- Otherwise it is refused (`LibraryEditError.safetyCopyRequired`). The
+  memo's reading (b) would let it run after a safety copy of the current
+  library has been written on the device (memo, section 5.5). That is an
+  exception to invariant 7, which says nothing may delete a person's own
+  words, so it is **the owner's decision and not adopted**; until the
+  owner decides, such a replace stays refused, and a family can use Add
+  instead. Safety copies are not built either. If the owner adopts (b),
+  the pull request that builds safety copies records it here and in
+  invariant 7, and checks the privacy policy and updates it and its
+  Effective date, because safety copies keep more of the person's words
+  on the device.
 - A backup whose emergency category has no phrase with words keeps the
   current emergency phrases, so Emergency always opens to something to
   say.
 
-Before (earlier on 2026-10-21, after Codex's review): running a replace
-after a safety copy was left to the owner as a possible exception to
-invariant 7. The project then decided it by default, the safe way above:
-a safety copy keeps the words on the device, so nothing the person wrote
-is lost, and until safety copies exist the replace stays refused.
+Correction, 2026-10-22: later branch text had treated the safety-copy
+exception as adopted by default. That reversed the owner-only restriction
+without an owner decision. The restriction is restored here; building
+safety copies alone does not authorize replacing the person's own words.
 
 ## Backup file format
 

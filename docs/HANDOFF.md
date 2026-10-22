@@ -56,8 +56,11 @@ The screen never locks. Ported code:
   probe skipped. The full UI suite passed on iPad Pro 13-inch (M5) and
   iPhone 17, iOS 27.0: 33 passed on each, no failures, with the four existing
   opt-in keyboard measurements skipped on each. The catalog is synchronized;
-  independent review found no actionable defect. Final-head CI and reviews
-  remain pending;
+  a later review caught and fixed Emergency delete/move allowing only
+  blank phrases to remain. It also restored the owner-only, unadopted
+  safety-copy exception in the decision text. The follow-up full unit
+  run passed 550 tests with only the same crash probe skipped; all 46
+  pure edit/import tests also passed. Final-head CI and reviews remain pending;
   [`log/2026-10-22-library-reconciliation.md`](log/2026-10-22-library-reconciliation.md)
   records the changes, review status and next checks.
 
@@ -145,8 +148,9 @@ release in docs/ROADMAP.md when no thread has it yet.
 - No editing, export or import screens. The library core (`LibraryEdit`,
   `LibraryEditor`, `LibraryImport`, `BackupCodec`) is tested code that
   nothing calls yet. A Replace that would remove the person's own words
-  is refused until safety copies exist (docs/DECISIONS.md, "Replacing the
-  library"). *(R0, a new library thread)*
+  is refused. A safety-copy exception is not adopted and requires the
+  owner's decision before implementation (docs/DECISIONS.md, "Replacing
+  the library"). *(R0, a new library thread)*
 - A store that opens with no categories is filled with the starter set.
   No edit can empty the library (the emergency category cannot be
   deleted), so only a damaged store reaches that path. *(R0, a new library

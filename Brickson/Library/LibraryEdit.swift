@@ -82,9 +82,9 @@ nonisolated struct LibraryPlan: Equatable, Sendable {
     let after: LibrarySnapshot
     let changes: LibraryChanges
     /// True when a replace would remove words the person wrote that the
-    /// backup does not have. Such a replace may run only after a safety
-    /// copy of the current library exists (docs/DECISIONS.md, "Replacing
-    /// the library"). Until safety copies are built, it cannot run at all.
+    /// backup does not have. Such a replace is refused. A safety-copy
+    /// exception is not adopted and requires the owner's decision before
+    /// implementation (docs/DECISIONS.md, "Replacing the library").
     let needsSafetyCopy: Bool
     /// What a merge or replace kept, skipped or renumbered; nil for other
     /// edits.
@@ -177,10 +177,13 @@ nonisolated extension LibraryEdit {
             guard target != id else { break }
             let phrase = library.categories[source.category].phrases[source.phrase]
             if destinationCategory != source.category {
-                // Moving must not leave Emergency empty, nor put a second
-                // copy of the same words in one category.
+                // Moving must leave Emergency with something to say, even
+                // when imported whitespace phrases remain. It must not put
+                // a second copy of the same words in one category either.
                 if library.categories[source.category].isEmergency,
-                   library.categories[source.category].phrases.count == 1 {
+                   !library.categories[source.category].phrases.contains(where: {
+                       $0.id != id && !LibraryText.isBlank($0.text)
+                   }) {
                     throw .emergencyCategoryNeedsAPhrase
                 }
                 _ = try LibraryRules.phraseText(phrase.text, in: library.categories[destinationCategory], excluding: id)
@@ -193,7 +196,9 @@ nonisolated extension LibraryEdit {
         case let .deletePhrase(id):
             guard let location = library.location(ofPhrase: id) else { throw .notFound }
             let category = library.categories[location.category]
-            if category.isEmergency, category.phrases.count == 1 {
+            if category.isEmergency, !category.phrases.contains(where: {
+                $0.id != id && !LibraryText.isBlank($0.text)
+            }) {
                 throw .emergencyCategoryNeedsAPhrase
             }
             after.categories[location.category].phrases.remove(at: location.phrase)
