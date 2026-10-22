@@ -49,6 +49,9 @@
     "Phrases can't be saved right now. Changes will be lost when the app closes." : {
 
     },
+    "Repeat" : {
+      "comment" : "Another name a person can say for the Again control with Voice Control."
+    },
     "Speaking" : {
       "comment" : "Shown under the message while a phrase is being spoken."
     },

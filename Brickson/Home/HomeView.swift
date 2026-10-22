@@ -25,6 +25,13 @@ import SwiftUI
 /// scrolling on the windows `HomeLayoutTests` checks; the grid scrolls only
 /// where its tiles would otherwise be shorter than
 /// `HomeShape.minimumTileHeight`, or where a library warning takes its room.
+///
+/// Each region is an accessibility container, and assistive technologies
+/// reach them in a fixed order that differs from the one on screen: Yes, No
+/// and Emergency first, then the message with Again, the categories and the
+/// phrases (`HomeRegion`). Voice Control and Full Keyboard Access know the
+/// fixed controls by the names in `HomeControlNames`, their visible words
+/// first.
 struct HomeView: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Query private var categories: [PhraseCategory]
@@ -51,6 +58,7 @@ struct HomeView: View {
                     againWidth: quickWidths[0],
                     againHeight: shape.quickControlHeight
                 )
+                .homeRegion(.message)
                 QuickControlsRow(
                     widths: quickWidths,
                     emergencyIsAvailable: emergency != nil,
@@ -58,6 +66,7 @@ struct HomeView: View {
                     showEmergency: { selectedCategoryID = emergency?.uuid }
                 )
                 .frame(height: shape.quickControlHeight)
+                .homeRegion(.safety)
                 CategoryGrid(
                     categories: CategorySelection.shownInCategoryRow(ordered),
                     columns: shape.categoryColumns,
@@ -66,6 +75,7 @@ struct HomeView: View {
                     select: { selectedCategoryID = $0 }
                 )
                 .frame(height: shape.categoryRegionHeight)
+                .homeRegion(.categories)
                 PhraseGrid(
                     category: selected,
                     columns: shape.gridColumns,
@@ -74,6 +84,7 @@ struct HomeView: View {
                     tileFont: shape.isCompact ? .compactTile : .regularTile
                 )
                 .frame(maxHeight: .infinity)
+                .homeRegion(.phrases)
                 LibraryWarnings()
             }
         }
@@ -109,14 +120,12 @@ private struct MessageBlock: View {
             Button {
                 speech.repeatLast()
             } label: {
-                FittedLabel(
-                    String(localized: "Again", comment: "Repeats the last thing spoken."),
-                    font: .quickControl
-                )
+                FittedLabel(HomeControlNames.again.visible, font: .quickControl)
             }
             .buttonStyle(HomeButtonStyle(fill: Palette.controlFill))
             .frame(width: againWidth, height: againHeight)
             .disabled(speech.lastSpokenText == nil)
+            .accessibilityInputLabels(HomeControlNames.again.inputLabels)
         }
     }
 }
@@ -328,24 +337,26 @@ private struct QuickControlsRow: View {
             Button {
                 speech.speak(String(localized: "Yes.", comment: "Spoken when the Yes control is chosen."))
             } label: {
-                FittedLabel(String(localized: "Yes"), font: .quickControl)
+                FittedLabel(HomeControlNames.yes.visible, font: .quickControl)
             }
             .buttonStyle(HomeButtonStyle(fill: Palette.controlFill))
             .frame(width: widths[0])
+            .accessibilityInputLabels(HomeControlNames.yes.inputLabels)
 
             Button {
                 speech.speak(String(localized: "No.", comment: "Spoken when the No control is chosen."))
             } label: {
-                FittedLabel(String(localized: "No"), font: .quickControl)
+                FittedLabel(HomeControlNames.no.visible, font: .quickControl)
             }
             .buttonStyle(HomeButtonStyle(fill: Palette.controlFill))
             .frame(width: widths[1])
+            .accessibilityInputLabels(HomeControlNames.no.inputLabels)
 
             Button {
                 showEmergency()
             } label: {
                 FittedLabel(
-                    String(localized: "Emergency"),
+                    HomeControlNames.emergency.visible,
                     systemImage: isShowingEmergency ? "checkmark.circle.fill" : "exclamationmark.triangle.fill",
                     font: .quickControl
                 )
@@ -354,6 +365,7 @@ private struct QuickControlsRow: View {
             .frame(width: widths[2])
             .disabled(!emergencyIsAvailable)
             .accessibilityAddTraits(isShowingEmergency ? .isSelected : [])
+            .accessibilityInputLabels(HomeControlNames.emergency.inputLabels)
         }
     }
 }
@@ -499,5 +511,20 @@ private struct FixedColumns<Item: Identifiable, Cell: View>: View {
                 }
             }
         }
+    }
+}
+
+// MARK: - Regions
+
+private extension View {
+    /// Makes this view one of Home's regions: an accessibility container, so
+    /// its controls are reached together and Switch Control can offer them as
+    /// a group, at the region's fixed place in the order (`HomeRegion`). The
+    /// container is applied after the region's frame, so its edges are the
+    /// region's.
+    func homeRegion(_ region: HomeRegion) -> some View {
+        accessibilityElement(children: .contain)
+            .accessibilitySortPriority(region.sortPriority)
+            .accessibilityIdentifier(region.identifier)
     }
 }
