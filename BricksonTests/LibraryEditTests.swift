@@ -76,18 +76,73 @@ struct LibraryEditTests {
 
     /// Names that read and sound the same are one name. Fails if the
     /// comparison stops ignoring case, accents, spacing or punctuation.
-    @Test(arguments: ["basics", "BASICS!", " Básics ", "Ba-sics"])
+    @Test(arguments: ["basics", "BASICS!", " Básics ", "Ba-sics", "Ｂａｓｉｃｓ"])
     func categoryNamesMustDiffer(name: String) {
         #expect(throws: LibraryEditRejection.duplicateCategoryName) {
             try makePlan(.addCategory(name: name, symbolName: "star.fill"))
         }
+        #expect(throws: LibraryEditRejection.duplicateCategoryName) {
+            try makePlan(.renameCategory(F.needsID, name: name))
+        }
+    }
+
+    /// Fails if stripping symbols collapses distinct emoji names, including
+    /// composed sequences, into one empty or format-only comparison key.
+    @Test(arguments: [("😀", "🎉"), ("👩‍💻", "👩‍🚀"), ("☀️", "❄️")])
+    func distinctSymbolCategoryNamesCanBeAdded(first: String, second: String) throws {
+        let firstPlan = try makePlan(.addCategory(name: first, symbolName: "star.fill"))
+        let secondPlan = try makePlan(
+            .addCategory(name: second, symbolName: "star.fill"), in: firstPlan.after
+        )
+        #expect(names(secondPlan.after).suffix(2) == [first, second])
+        #expect(secondPlan.after.hasUniqueIDs)
+    }
+
+    /// The same distinction must survive rename, not just category creation.
+    /// Fails if rename still uses a symbol-stripping comparison.
+    @Test(arguments: [("😀", "🎉"), ("👩‍💻", "👩‍🚀"), ("☀️", "❄️")])
+    func distinctSymbolCategoryNamesCanBeRenamed(first: String, second: String) throws {
+        let firstPlan = try makePlan(.renameCategory(F.basicsID, name: first))
+        let secondPlan = try makePlan(.renameCategory(F.needsID, name: second), in: firstPlan.after)
+        #expect(names(secondPlan.after) == [first, "Emergency", second])
+    }
+
+    /// Fails if preserving symbols bypasses duplicate checks or prevents a
+    /// category from keeping its own name.
+    @Test(arguments: ["😀", "👩‍💻", "☀️"])
+    func identicalSymbolCategoryNamesRemainDuplicates(name: String) throws {
+        let firstPlan = try makePlan(.renameCategory(F.basicsID, name: name))
+        #expect(throws: LibraryEditRejection.duplicateCategoryName) {
+            try makePlan(.addCategory(name: name, symbolName: "star.fill"), in: firstPlan.after)
+        }
+        #expect(throws: LibraryEditRejection.duplicateCategoryName) {
+            try makePlan(.renameCategory(F.needsID, name: name), in: firstPlan.after)
+        }
+        let unchanged = try makePlan(.renameCategory(F.basicsID, name: name), in: firstPlan.after)
+        #expect(unchanged.after == firstPlan.after)
     }
 
     /// A category named like a Home control would be a second button with
     /// that name. Fails if validation omits an alternate input label,
     /// such as Again's Repeat alias, from either add or rename.
-    @Test(arguments: ["Yes", "no.", "EMERGENCY", "Get attention", "Again!", "Repeat", "repeat!"])
+    @Test(arguments: ["Yes", "no.", "EMERGENCY", "Get attention", "Again!", "Repeat", "repeat!", "Stop Alert", "Settings", "Speak"])
     func homeControlNamesAreReserved(name: String) {
+        #expect(throws: LibraryEditRejection.reservedCategoryName) {
+            try makePlan(.addCategory(name: name, symbolName: "star.fill"))
+        }
+        #expect(throws: LibraryEditRejection.reservedCategoryName) {
+            try makePlan(.renameCategory(F.needsID, name: name))
+        }
+    }
+
+    /// Symbols must not disguise a fixed control or alias as a category.
+    /// Fails if reservation uses the symbol-preserving category comparison.
+    @Test(
+        arguments: ["Yes", "No", "Emergency", "Again", "Repeat", "GetAttention", "Stop Alert", "Settings", "Speak"],
+        ["😀", "👩‍💻", "☀️"]
+    )
+    func symbolDecoratedHomeControlNamesStayReserved(control: String, decoration: String) {
+        let name = decoration + control + decoration
         #expect(throws: LibraryEditRejection.reservedCategoryName) {
             try makePlan(.addCategory(name: name, symbolName: "star.fill"))
         }
@@ -528,7 +583,7 @@ struct LibraryImportTests {
     /// Import keeps a backup's words exactly. Fails if the editor's rules
     /// (trimming, reserved names, near-duplicates, the symbol list) leak
     /// into import.
-    @Test(arguments: ["Yes", "Repeat"])
+    @Test(arguments: ["Yes", "Repeat", "  👩‍💻  ", "  🎉 \n"])
     func importKeepsWhatTheEditorWouldRefuse(categoryName: String) throws {
         let long = String(repeating: "Very long words. ", count: 400)
         let incoming = LibrarySnapshot(categories: [
@@ -542,7 +597,7 @@ struct LibraryImportTests {
         let plan = try merge(incoming)
         let added = try #require(plan.after.categories.last)
 
-        #expect(added.name == categoryName)
+        #expect(LibraryText.sameBytes(added.name, categoryName))
         #expect(added.symbolName == "no.such.symbol")
         #expect(added.phrases.map(\.text) == ["  spaced  ", "hello.", "Hello.", long])
     }

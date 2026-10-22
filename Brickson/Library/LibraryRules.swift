@@ -60,6 +60,13 @@ nonisolated enum LibraryRules {
         ]
     }
 
+    /// Symbols must not disguise a Home control name. Reuse Home's spoken
+    /// form and keep the existing space-insensitive reservation, so neither
+    /// "Yes😀" nor "GetAttention" becomes a category button.
+    private static func reservedCategoryNameKey(_ name: String) -> String {
+        HomeControlNames.spokenForm(name).filter { !$0.isWhitespace }
+    }
+
     /// The name to store for a category, or why it cannot be used.
     /// `excluding` is the category being renamed, which may keep its own name.
     static func categoryName(
@@ -74,8 +81,8 @@ nonisolated enum LibraryRules {
         // The emergency category has no button of its own: the Emergency
         // control opens it. So it may keep a name like "Emergency".
         if !isEmergency {
-            let reserved = Set(reservedCategoryNames.map(LibraryText.nameKey))
-            guard !reserved.contains(key) else { throw .reservedCategoryName }
+            let reserved = Set(reservedCategoryNames.map(reservedCategoryNameKey))
+            guard !reserved.contains(reservedCategoryNameKey(name)) else { throw .reservedCategoryName }
         }
         let taken = library.categories.contains { other in
             other.id != id && LibraryText.nameKey(other.name) == key

@@ -217,10 +217,53 @@ the installed Xcode header confirms that returning `true` handles an issue
 instead of recording it, so `false` preserves XCTest's native report.
 Fresh CI and review for the pushed merge remain pending.
 
+### Later category-name review
+
+Two later CodeRabbit conversations identified a real symbol-name collision
+and a wrong enum name in the decisions record. Both remained open after the
+14 earlier conversations were resolved. The category comparison stripped
+symbols as well as the documented case, accents, width, punctuation and
+spaces. This made distinct simple emoji share an empty key, and distinct
+composed emoji share a format-only key, so add and rename refused the second
+name as a duplicate. Category comparison now preserves symbols. The
+punctuation-insensitive rule is unchanged.
+
+Home control reservation remains stricter: it reuses
+`HomeControlNames.spokenForm` and ignores spacing, so symbols cannot disguise
+Yes, No, Emergency, Again, Repeat or the other fixed control names. This
+also closes the existing gap where joiners or variation selectors let a
+decorated fixed name through. Import still bypasses editing normalization
+and preserves name bytes. The decision's `libraryNeedsACategory` reference
+now correctly names `LibraryEditRejection`.
+
+Failing-first verification used the actual pure source files and existing
+macOS Swift 6 package with strict concurrency and default main-actor
+isolation: 50 tests ran with 42 issues before the fix. Six were add/rename
+collisions across simple, joined and variation-selector emoji pairs; 36 were
+accepted Home names decorated with joined or variation-selector emoji.
+After the fix all 50 edit/import tests passed. The same suite checks
+identical symbol-name rejection, keeping a category's own name, existing
+case/accent/width/punctuation duplicates, every current Home input label,
+and byte-preserving import of spaced symbol names. Restoring symbol
+stripping makes the distinct-name regressions fail; using that category
+comparison for reservation makes the decorated-control regressions fail.
+
+These are unexposed editing-planner changes. The full UI evidence above
+belongs to `182df4b`, before this comparison follow-up. The fresh full
+`scripts/test.sh unit` gate passed: 554 passed, zero failures, one existing
+disabled issue #19 crash probe, zero expected failures (555 total). App line
+coverage was 66.8% (4,384 of 6,561 lines), and the String Catalog was unchanged.
+This ran with Xcode 27.1 (27A9275), XcodeGen 2.46.0, on iPad Pro 13-inch (M5),
+iOS 27.0 (24A434). The bundle is `build/TestResults/unit-ipad.xcresult`.
+A separate inspection found no additional issue in the focused diff. Fresh
+CI and review must validate the new head; no fresh full UI run is claimed
+for this pure comparison follow-up.
+
 ## Follow-ups, in order
 
-1. Verify fresh CI and review after pushing the tested merge and diagnostic
-   changes. PR #14 is not green until those checks pass.
+1. Answer and resolve the two category-name follow-up conversations with
+   the pushed commit and test evidence, then verify fresh CI and review.
+   PR #14 is not green until those checks pass.
 2. If the AX5 finding recurs, inspect the new captures and native report to
    identify and fix its cause. The earlier failed run remains evidence;
    local passes do not explain it or authorize suppressing a finding.

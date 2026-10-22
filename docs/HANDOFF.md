@@ -82,7 +82,15 @@ Xcode 27.1 (27A9275); final-head CI is pending.
   skip (551 total); UI 33 passed, four existing skips (37 total) on each
   device, with no failures. These local runs did not reproduce or explain
   the earlier CI finding and do not establish a fix. Fresh CI and review
-  remain pending; PR #14 is not yet green. The
+  remain pending; PR #14 is not yet green. Two later CodeRabbit findings
+  have a focused local fix: distinct symbol category names no longer collide,
+  Home-name reservation uses the existing spoken form, and a decision's
+  rejection-enum reference is corrected. All 50 pure edit/import tests pass
+  after reproducing 42 issues. The fresh full iOS unit gate also passed:
+  554 passed, zero failures, the same existing crash probe skipped (555
+  total); the catalog stayed synchronized. Full local UI evidence is for
+  `182df4b`, before this pure comparison follow-up. The two later review
+  conversations still need the pushed evidence; new-head CI is pending. The
   [`reconciliation record`](log/2026-10-22-library-reconciliation.md)
   preserves the earlier core/review fixes, failed CI evidence and next checks.
 

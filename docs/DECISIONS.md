@@ -613,12 +613,16 @@ The rules a family's edits follow live in `LibraryRules` and
 
 - Names and phrases are trimmed at both ends and may not be empty.
 - Category names must differ, ignoring case, accents, width, punctuation
-  and spaces ("Basics" and "basics!" are one name). A category may not
+  and spaces ("Basics" and "basics!" are one name). Symbols remain
+  significant, so distinct emoji names can coexist. A category may not
   take any input name of a Home control (Yes, No, Emergency, Again,
   Repeat, Get Attention, Stop Alert, Settings, Speak): two buttons with one name
   confuse Voice Control and VoiceOver. The emergency category is exempt,
   because it has no button of its own. The fixed controls' names come
-  from `HomeControlNames`, including their Voice Control aliases.
+  from `HomeControlNames`, including their Voice Control aliases. This
+  reservation uses Home's spoken form and also ignores symbols and spaces,
+  so adding emoji does not disguise a reserved control name. Import still
+  preserves names byte for byte and does not apply these editing rules.
 - A category's phrases must differ, ignoring case and width. Punctuation
   counts: "Okay." and "Okay?" are different sentences.
 - Pictures come from a fixed list of SF Symbols (`LibraryRulesTests`
@@ -630,7 +634,7 @@ The rules a family's edits follow live in `LibraryRules` and
   (invariant 10).
 - Deleting a category deletes its phrases in the same save.
 - No edit may leave a library with no categories
-  (`LibraryEditError.libraryNeedsACategory`). The emergency category can
+  (`LibraryEditRejection.libraryNeedsACategory`). The emergency category can
   never be deleted, so this is a backstop for a store that has lost it.
 - Deletes, merges and replaces ask first (invariant 3);
   `LibraryPlan.asksFirst` says which. Where each question appears is

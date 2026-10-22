@@ -226,6 +226,8 @@ nonisolated enum LibraryText {
     /// What two category names are compared by. Names that differ only in
     /// case, accents, width, spacing or punctuation read and sound the same,
     /// so Voice Control ("Tap Needs") could not tell their buttons apart.
+    /// Symbols remain significant: different emoji are different names.
+    /// Fixed Home control names have a separate, stricter reservation.
     static func nameKey(_ name: String) -> String {
         let folded = name.folding(
             options: [.caseInsensitive, .diacriticInsensitive, .widthInsensitive],
@@ -234,7 +236,6 @@ nonisolated enum LibraryText {
         var scalars = String.UnicodeScalarView()
         for scalar in folded.unicodeScalars
         where !CharacterSet.punctuationCharacters.contains(scalar)
-            && !CharacterSet.symbols.contains(scalar)
             && !CharacterSet.whitespacesAndNewlines.contains(scalar) {
             scalars.append(scalar)
         }
