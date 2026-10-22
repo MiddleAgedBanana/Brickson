@@ -136,6 +136,26 @@ struct OffMainThreadCallbackTests {
         #expect(answer == .authorized)
     }
 
+    /// The UI tests' stand-in for the permission answers from another
+    /// queue, as the system does, after its status has changed. Fails if
+    /// it answers on the main thread, answers something else, or answers
+    /// before its status says so.
+    @Test @MainActor func theStandInPersonalVoiceAnswersFromAnotherThread() async {
+        let standIn = StandInPersonalVoice(answer: .denied)
+        #expect(standIn.status == .notDetermined)
+
+        let answer: (status: AVSpeechSynthesizer.PersonalVoiceAuthorizationStatus, onMain: Bool) =
+            await withCheckedContinuation { continuation in
+                standIn.requestAuthorization { status in
+                    continuation.resume(returning: (status, Thread.isMainThread))
+                }
+            }
+
+        #expect(answer.status == .denied)
+        #expect(!answer.onMain)
+        #expect(standIn.status == .denied)
+    }
+
     /// AVAudioPlayer gives no thread guarantee for its delegate either.
     @Test @MainActor func toneReportsCanArriveOnABackgroundThread() async throws {
         let playback = try SystemAttentionTonePlayback.bundled()
