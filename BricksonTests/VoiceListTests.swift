@@ -88,4 +88,119 @@ struct VoiceListTests {
         #expect(daniel?.useLabel == "Use Daniel")
         #expect(daniel?.hearLabel == "Hear Daniel")
     }
+
+    // MARK: - Places while the screen is open
+
+    /// A voice that arrives while Voice Settings is open, such as a
+    /// Personal Voice allowed in the Settings app, goes after every row
+    /// already shown. Fails if the live order is used, which would put it
+    /// second and move every row below it.
+    @Test func aVoiceThatArrivesGoesAfterTheRowsAlreadyShown() {
+        let withoutMine = voices.filter { $0.id != "mine" }
+        let shown = VoiceList.rows(for: withoutMine, selectedID: nil, languageCode: "en")
+        let current = VoiceList.rows(for: voices, selectedID: nil, languageCode: "en")
+
+        let places = VoiceList.keepingPlaces(of: shown, in: current)
+
+        #expect(places.map(\.id) == shown.map(\.id) + ["voice:mine"])
+    }
+
+    /// A voice that leaves keeps its place, as words, so nothing below it
+    /// moves up under a resting pointer. Fails if a gone voice is dropped.
+    @Test func aVoiceThatLeavesKeepsItsPlace() {
+        let shown = VoiceList.rows(for: voices, selectedID: nil, languageCode: "en")
+        let current = VoiceList.rows(for: voices.filter { $0.id != "daniel" }, selectedID: nil, languageCode: "en")
+
+        let places = VoiceList.keepingPlaces(of: shown, in: current)
+
+        #expect(places.map(\.id) == shown.map(\.id))
+        let daniel = shown.first { $0.voiceID == "daniel" }!
+        #expect(places.filter { if case .gone = $0 { true } else { false } } == [.gone(daniel)])
+    }
+
+    /// Each voice still listed shows whether it is chosen now. Fails if the
+    /// rows from when the screen opened are shown as they were.
+    @Test func whichVoiceIsChosenIsNeverOutOfDate() {
+        let shown = VoiceList.rows(for: voices, selectedID: nil, languageCode: "en")
+        let current = VoiceList.rows(for: voices, selectedID: "samantha", languageCode: "en")
+
+        let chosen = VoiceList.keepingPlaces(of: shown, in: current).filter { place in
+            if case .voice(let row) = place { row.isSelected } else { false }
+        }
+
+        #expect(chosen.map(\.id) == ["voice:samantha"])
+    }
+
+    /// Voices that arrive one at a time keep the order they first appeared
+    /// in, and one that leaves again keeps its place. Fails if arrivals are
+    /// sorted among themselves (My Voice, arriving second, would then go
+    /// ahead of Daniel and move his buttons down), or if an arrival that
+    /// leaves loses its place.
+    @Test func arrivalsKeepTheOrderTheyFirstAppearedIn() {
+        let atOpening = voices.filter { $0.id != "daniel" && $0.id != "mine" }
+        var shown = VoiceList.rows(for: atOpening, selectedID: nil, languageCode: "en")
+        let openedIDs = shown.map(\.id)
+
+        let withDaniel = VoiceList.rows(for: voices.filter { $0.id != "mine" }, selectedID: nil, languageCode: "en")
+        shown = VoiceList.addingArrivals(to: shown, from: withDaniel)
+        let withBoth = VoiceList.rows(for: voices, selectedID: nil, languageCode: "en")
+        shown = VoiceList.addingArrivals(to: shown, from: withBoth)
+
+        let arrivedIDs = ["voice:daniel", "voice:mine"]
+        #expect(VoiceList.keepingPlaces(of: shown, in: withBoth).map(\.id) == openedIDs + arrivedIDs)
+
+        let mineLeft = VoiceList.keepingPlaces(of: shown, in: withDaniel)
+        #expect(mineLeft.map(\.id) == openedIDs + arrivedIDs)
+        #expect(mineLeft.last == .gone(withBoth.first { $0.voiceID == "mine" }!))
+    }
+
+    /// Without Personal Voice permission a chosen Personal Voice is only
+    /// left out of the list, not gone from the device, so neither note may
+    /// say it is gone then. Fails if one wording is used for both.
+    @Test func aVoiceWhoseAccessIsOffIsNeverCalledGone() {
+        let gone = "longer on this device"
+        #expect(VoiceList.missingVoiceNote(personalVoiceAllowed: true).contains(gone))
+        #expect(!VoiceList.missingVoiceNote(personalVoiceAllowed: false).contains(gone))
+
+        let rows = VoiceList.rows(for: voices, selectedID: nil, languageCode: "en")
+        let mine = rows.first { $0.voiceID == "mine" }!
+        let daniel = rows.first { $0.voiceID == "daniel" }!
+        #expect(!VoiceList.goneVoiceNote(for: mine, personalVoiceAllowed: false).contains(gone))
+        #expect(VoiceList.goneVoiceNote(for: mine, personalVoiceAllowed: true).contains(gone))
+        #expect(VoiceList.goneVoiceNote(for: daniel, personalVoiceAllowed: false).contains(gone))
+    }
+
+    /// "Speaking with …" names only a voice on the device when Voice
+    /// Settings opened, since only those names have room reserved. A
+    /// Personal Voice allowed while the screen is open is hidden by iOS
+    /// until then, and its name may be longer than every reserved one.
+    /// Fails if the line names whichever voice speaks now.
+    @Test func aVoiceThatAppearsAfterOpeningIsNotNamed() {
+        let atOpening = Set(voices.filter { $0.id != "mine" }.map(\.name))
+
+        #expect(VoiceList.speakingName("Daniel", knownAtOpening: atOpening) == "Daniel")
+        #expect(VoiceList.speakingName("My Voice", knownAtOpening: atOpening) == nil)
+    }
+
+    /// Every row lays out each note it could show if its voice left, so a
+    /// voice leaving changes no row's height. Fails if a note is missing
+    /// from the reserved lines, or the quality and language line is.
+    @Test func everyRowReservesTheNotesItCouldShow() {
+        let rows = VoiceList.rows(for: voices, selectedID: nil, languageCode: "en")
+
+        for row in rows {
+            let lines = VoiceList.secondLines(for: row)
+            #expect(lines.first == row.detail)
+            for allowed in [true, false] {
+                #expect(lines.contains(VoiceList.goneVoiceNote(for: row, personalVoiceAllowed: allowed)))
+            }
+            #expect(Set(lines).count == lines.count)
+        }
+    }
+
+    @Test func withNothingChangedThePlacesAreTheRows() {
+        let rows = VoiceList.rows(for: voices, selectedID: "daniel", languageCode: "en")
+
+        #expect(VoiceList.keepingPlaces(of: rows, in: rows) == rows.map(VoiceListPlace.voice))
+    }
 }

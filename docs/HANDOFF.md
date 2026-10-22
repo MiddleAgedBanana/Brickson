@@ -132,7 +132,10 @@ release in docs/ROADMAP.md when no thread has it yet.
   Attention and Stop on Home. *(the thread that puts them on Home)*
 - Chains of activations through Settings' screens are not scored. One is
   known: a held look can follow Family Setup's first row into Set Up Step
-  by Step and save Touch, its first answer, which is then nearest. Answers
+  by Step and save Touch, its first answer, which is then nearest. Another
+  runs through iOS's Personal Voice question, once the Ask button shows:
+  after answering, the look rests where the question's button was, over
+  whatever Voice Settings has there. Answers
   change no size yet; scoring and a fix come before they do
   ([`log/2026-10-21-settings-and-first-run.md`](log/2026-10-21-settings-and-first-run.md),
   follow-up 10). *(Dwell-safety scoring)*
@@ -157,13 +160,22 @@ release in docs/ROADMAP.md when no thread has it yet.
   (`fatalError` in `PhraseLibraryStore.openForApp`). *(owner)*
 - `cloudKitDatabase: .none` and the absence of an iCloud capability are
   privacy-policy promises no test pins. *(Test seams and CI evidence)*
-- Personal Voice permission is asked at first launch without explanation;
-  Voice Settings explains it afterwards but has no Ask button yet. The
-  button calls `SpeechService.requestPersonalVoiceAuthorization()` and
-  sets `canAsk` in `PersonalVoiceSection`; the policy changes to
-  `.fromSettings` only after device check D1 (docs/DECISIONS.md,
-  "Personal Voice permission is asked at launch, for now"). *(the next
-  Settings thread)*
+- Personal Voice permission is still asked at first launch without
+  explanation. Voice Settings' explained Ask button is built
+  (docs/DECISIONS.md, "Asking for Personal Voice from Voice Settings") but
+  shows only under `.fromSettings`, which waits for device check D1; a
+  debug build launched with `--personal-voice=ask-from-settings` is the
+  build D1 needs. If D1 passes, the switch is the first line of
+  `AppAudio.personalVoiceAskPolicy(for:)` ("Personal Voice permission is
+  asked at launch, for now"). *(owner, with a device build; then an
+  agent)*
+- Words that get longer while Voice Settings is open still push what is
+  below them down: the Personal Voice card going from ready to turned
+  off (docs/DECISIONS.md, "Voice Settings keeps its places while it is
+  open"). When Automatic moves to another Personal Voice
+  because the kept one is gone, no line says so yet
+  ([`log/2026-10-22-voice-screen.md`](log/2026-10-22-voice-screen.md),
+  *Follow-ups*). *(the next Settings thread)*
 - The privacy policy describes features not built yet; each is built or its
   sentence deleted before release (docs/APP-STORE.md, section 3, lists
   each sentence). *(App Store readiness and ASO)*
@@ -205,10 +217,10 @@ iPad").
 The speech work's next pull request, Get Attention and Stop on Home
 (building the wells of docs/DECISIONS.md, "Home's slot plan"), is described for a fresh thread in
 [`log/2026-10-21-speech-and-get-attention.md`](log/2026-10-21-speech-and-get-attention.md),
-*Follow-ups*. What the Voice screen and the next speech thread take up
-from the Personal Voice engine (the explained Ask button, then the
-switch to asking from Settings once device check D1 passes) is in
-[`log/2026-10-21-personal-voice-foundation.md`](log/2026-10-21-personal-voice-foundation.md),
+*Follow-ups*. Voice Settings' explained Ask button is built; switching the app to
+asking from Settings waits for device check D1, and what the Voice
+screen still lacks is in
+[`log/2026-10-22-voice-screen.md`](log/2026-10-22-voice-screen.md),
 *Follow-ups*.
 Every accessibility API in the map of Apple features by ALS stage has a
 row in [`ACCESSIBILITY.md`](ACCESSIBILITY.md), with its release and
@@ -231,7 +243,8 @@ Simulators cannot show these. Record each result in a `docs/log/` file
 |---|---|
 | Speech plays with the silent switch on, and after a phone call | Audio session handling (invariant 4) |
 | A phrase cut off by a call shows "Stopped, Again" | The cut-off rule (code audit M1) |
-| D1: with no question at launch, a Personal Voice allowed after a phrase has been spoken speaks in the next phrase, after a voice-list refresh, a rebuilt synthesizer or only a relaunch (docs/recon/2026-10-15/directions/onboarding-and-settings.md, 2.5) | Whether the app may switch to `PersonalVoiceAskPolicy.fromSettings` (docs/DECISIONS.md, "Personal Voice permission is asked at launch, for now") |
+| D1: with no question at launch, a Personal Voice allowed after a phrase has been spoken speaks in the next phrase, after a voice-list refresh, a rebuilt synthesizer or only a relaunch (docs/recon/2026-10-15/directions/onboarding-and-settings.md, 2.5). Run from Xcode with `--personal-voice=ask-from-settings` added to the scheme's arguments (Product > Scheme > Edit Scheme > Run > Arguments), and ask with Voice Settings' Ask to Use Personal Voice | Whether the app may switch to `PersonalVoiceAskPolicy.fromSettings` (docs/DECISIONS.md, "Personal Voice permission is asked at launch, for now") |
+| In the same run: iOS's question appears over Voice Settings, which is still there after a wait of over 90 seconds; after Allow or Don't Allow the card shows the answer, "Answered. …" sits where the button was, nothing below the card moved, and Open Personal Voice Settings appears only after leaving and reopening Voice Settings | "Asking for Personal Voice from Voice Settings" |
 | D4: Personal Voice access turned off in the Settings app while Brickson waits in the background; on return a phrase speaks in another voice, and turning access back on brings the Personal Voice back | "A Personal Voice is used only while it is allowed" |
 | D5: with two Personal Voices, the order the system lists them in, and whether each keeps its identifier across a relaunch, a restore and Share Across Devices | "Automatic keeps the person's Personal Voice" |
 | Personal Voice appears and is chosen once permission is given, and keeps speaking after the screen locks | Voice choice and when to ask |

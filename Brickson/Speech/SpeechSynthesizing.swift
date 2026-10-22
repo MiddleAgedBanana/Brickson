@@ -202,6 +202,31 @@ struct SystemPersonalVoice: PersonalVoiceAuthorizing {
     }
 }
 
+/// A Personal Voice permission that has not been asked yet and gives one
+/// fixed answer when it is, so UI tests reach the Voice screen's Ask button
+/// and its answer without the system's question
+/// (`--personal-voice=stand-in-refuses`, `LaunchOptions`). Like the system,
+/// it changes its status before it answers, and answers from another
+/// queue. Only debug builds read the launch argument that chooses it.
+final class StandInPersonalVoice: PersonalVoiceAuthorizing {
+    private(set) var status: AVSpeechSynthesizer.PersonalVoiceAuthorizationStatus = .notDetermined
+    let answer: AVSpeechSynthesizer.PersonalVoiceAuthorizationStatus
+
+    init(answer: AVSpeechSynthesizer.PersonalVoiceAuthorizationStatus) {
+        self.answer = answer
+    }
+
+    func requestAuthorization(
+        _ completion: @escaping @Sendable (AVSpeechSynthesizer.PersonalVoiceAuthorizationStatus) -> Void
+    ) {
+        status = answer
+        let answer = answer
+        DispatchQueue.global().async {
+            completion(answer)
+        }
+    }
+}
+
 extension VoiceDescriptor {
     init(_ voice: AVSpeechSynthesisVoice) {
         self.init(

@@ -1,13 +1,10 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "%@ can speak in a voice that sounds like you, made with Apple's Personal Voice. %@ must ask iOS before using it." : {
+    "%@ can speak in a voice that sounds like you, made with Apple's Personal Voice. Choose Ask to Use Personal Voice, then Allow when iOS asks. iOS asks only once." : {
 
     },
     "%@ can speak in a voice that sounds like you, made with Apple's Personal Voice. iOS asks once whether %@ may use it; choose Allow." : {
-
-    },
-    "%@ is set up for:" : {
 
     },
     "%@ may use a Personal Voice, but none is on this device. One is made in the Settings app by reading phrases aloud:" : {
@@ -46,6 +43,12 @@
     "Alert stopped" : {
 
     },
+    "Answered. iOS asks only once, so any change is made in the Settings app." : {
+
+    },
+    "Ask to Use Personal Voice" : {
+
+    },
     "Assistive Access" : {
 
     },
@@ -61,13 +64,16 @@
     "Back to Talking" : {
 
     },
+    "Can't be used while Personal Voice is turned off for %@." : {
+
+    },
     "Check-ins are off. Set Up Step by Step is always here." : {
 
     },
     "Choose a phrase to speak it." : {
       "comment" : "Shown where the spoken message appears, before anything has been spoken."
     },
-    "Choose every way that is used now. This sets how large %@’s buttons are. If nothing is chosen, it uses its largest sizes." : {
+    "Choose every way that is used now. Each answer is saved as soon as it is chosen." : {
 
     },
     "Choose the voice" : {
@@ -184,10 +190,13 @@
     "No Personal Voice yet" : {
 
     },
+    "No longer on this device." : {
+
+    },
     "No phrases yet." : {
 
     },
-    "No way of reaching the screen was chosen, so %@ uses its largest sizes." : {
+    "No way of reaching the screen was chosen." : {
 
     },
     "No." : {
@@ -301,6 +310,9 @@
     "Speaking with %@." : {
 
     },
+    "Speaking with a newly available voice." : {
+
+    },
     "Speech stopped unexpectedly. Choose Again to repeat it." : {
 
     },
@@ -347,6 +359,9 @@
 
     },
     "The starter phrases couldn't be loaded. Yes and No still work. Restart the app to try again." : {
+
+    },
+    "The voice chosen earlier can't be used now, so Automatic is used. If it is a Personal Voice, it comes back when Personal Voice is turned on for %@." : {
 
     },
     "The voice chosen earlier is no longer on this device, so Automatic is used." : {
@@ -413,6 +428,9 @@
 
     },
     "Volume low" : {
+
+    },
+    "Ways of reaching the screen chosen:" : {
 
     },
     "When asked for apps, add %@ under Other apps." : {
