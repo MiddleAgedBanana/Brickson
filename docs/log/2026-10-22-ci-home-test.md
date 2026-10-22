@@ -25,12 +25,27 @@ the descendant hierarchy, so its traversal does not issue another live
 query for each tile. The Swift testing skill guided keeping XCTest for
 UI automation and avoiding arbitrary sleeps.
 
+A later CI run reported an accessibility finding without identifying an
+element. The audit helper now captures the screen and full accessibility
+tree when an unexpected finding is reported, while keeping the contextual
+failure and returning the finding to XCTest for its native issue record.
+The existing button-frame JSON capture is retained too. This adds evidence;
+it does not fix or suppress the unidentified finding. The only permitted
+phrase-label exception and the exact audit-service `-56` retry remain
+unchanged. Native and contextual records can describe the same finding.
+
 ## Commits
 
-One change: the UI job allowance, bounded layout queries and this record.
-The initial change is `bd00e85`. The pre-push fetch found PR #27 newly
-landed as `main` at `5abdd9f`; it is incorporated by a merge commit, and
-the complete unit and UI suites passed again on that combination.
+The initial change, `bd00e85`, contains the UI job allowance, bounded
+layout queries and this record. The pre-push fetch found PR #27 newly
+landed as `main` at `5abdd9f`; merge commit `9075a14` incorporated it,
+and the complete unit and UI suites passed again on that combination.
+
+The working tree now also incorporates `main` at `d79d836`, which landed
+PR #20's documentation reconciliation without changing the app or tests.
+That merge and the audit diagnostics have passed local unit and full UI
+validation on both device families. This follow-up preserves the existing
+history with a merge commit; CI on the pushed commit is pending.
 
 ## Verified
 
@@ -46,14 +61,16 @@ the complete unit and UI suites passed again on that combination.
   temporary app mutation. The optimized test reported the interior tile
   outside the window, including Basics and Needs, whose endpoints still
   fit. This proves the endpoint wait did not replace the full containment
-  assertion. The mutation was removed; no app code changes remain.
+  assertion. That mutation was removed before the initial commit; it
+  contributed no app code change.
 - `scripts/test.sh unit`: all 444 tests passed, with 65.2% app code
   coverage. The String Catalog was already synchronized.
 - `scripts/test-runner.py`: all 51 tests passed in 32.416 seconds;
   `scripts/test-site.py`: all four tests passed.
 - The optimized Home test passed during the full UI runs in 82.795
   seconds on iPad and 40.892 seconds on iPhone. The local reduction is
-  modest; CI timings remain to be measured.
+  modest. CI had not run at that point; later attempts are recorded
+  separately below.
 - `scripts/test.sh ui` completed both full suites: 31 passed, no failures
   and four existing opt-in keyboard probe skips on each device. Test
   execution took 477.075 seconds on iPad and 429.110 seconds on iPhone.
@@ -70,16 +87,113 @@ the complete unit and UI suites passed again on that combination.
   The newly landed Personal Voice Ask-button test passed at default and
   AX5 text, and the new Family Setup placement test passed on both.
 
+## CI attempts and audit investigation
+
+Both attempts below tested head `9075a14`, before the diagnostic change.
+GitHub used Xcode 27.1 (27A9275), iPad Pro 13-inch (M5) and iPhone 17
+simulators on iOS 27.0. These Home timings are measurements from separate,
+incomplete CI attempts, not evidence that either full attempt passed.
+
+- [Attempt 1 UI job](https://github.com/MiddleAgedBanana/Brickson/actions/runs/39846330618/job/120060460012):
+  the iPad test runner exited during bootstrapping before a named test
+  started. On iPhone, the first app UI test failed obtaining the main
+  window's accessibility snapshot (`kAXErrorServerNotFound`), before its
+  ordering assertions. iPhone completed with 32 passed, one failed and
+  four existing probe skips; the optimized Home test passed in 59.393
+  seconds. The unit job passed. The failed UI job was rerun on the same
+  commit after examining these startup failures.
+- [Attempt 2 UI job](https://github.com/MiddleAgedBanana/Brickson/actions/runs/39846330618/job/120077196612):
+  iPad completed with 32 passed, one failed and four existing probe skips.
+  The optimized Home test passed in 149.393 seconds. The failure was
+  `LaunchTests.testLargestTextKeepsQuickControlWordsVisible`: the AX5,
+  light audit reported `elementDetection`, "Potentially inaccessible
+  text", without identifying an element. This is an audit finding, not
+  the audit-service timeout covered by the retry rule. The run was
+  deliberately cancelled at 21:34:49 UTC after observing the iPad failure.
+  The browser log view was stale: the downloaded log shows iPhone
+  preparation and testing had started, with its warm-up completed at
+  21:23:59 UTC. Cancellation interrupted that run, leaving no complete
+  iPhone result; it must not be described as passed or as stalled before
+  starting the next device.
+
+The failed test's pre-audit screenshot and accessibility tree both include
+the spoken message and Speaking status, along with the visible control
+labels and emergency phrases. The recording shows the Speaking status
+ending and the audit changing text size; the dark audit underwent similar
+changes and passed. The capture predates the reported finding by about
+3.54 seconds, and the custom failure has no issue-associated element or
+rectangle. This evidence establishes no specific missing label or cause.
+
+The unchanged focused test then passed locally in 23.932 seconds on the
+iPad Pro 13-inch (M5), iOS 27.0, with Xcode 27.1 (27A9275): one test,
+zero failures. It exercised AX5, portrait, full-screen, light and dark,
+with no software keyboard shown. A passing reproduction does not dismiss
+the CI finding. The new issue-time capture and native issue record aim to
+identify the affected text if it recurs.
+
+## Diagnostic negative checks and final local validation
+
+A temporary mutation that hid the rendered message from accessibility did
+not trigger the audit: the focused test passed in 8.792 seconds. It did
+not reproduce the original `elementDetection` finding, and establishes
+neither its cause nor a fix.
+
+A separate temporary low-contrast mutation of the visible Home placeholder
+made `testHomePassesTheAccessibilityAudit` fail as intended in 8.765 seconds
+on iPad Pro 13-inch (M5), iOS 27.0, with Xcode 27.1 (27A9275), full-screen
+portrait, default text and light appearance. One test failed with two
+records for the same `contrast` finding: the contextual failure and
+XCTest's native "Contrast failed" issue. The result retained the issue-time
+screenshot, full accessibility tree and button JSON. It also retained
+native issue text, an app screenshot and an element screenshot identifying
+the deliberately pale placeholder. This verifies that the diagnostic
+change preserves a real failing finding and useful evidence; it does not
+reproduce the unidentified CI finding. Both app mutations were removed;
+no app source change remains.
+
+After the diagnostic change and mutation removal, `scripts/test.sh unit`
+passed all 460 tests with no skips or expected failures. App code coverage
+was 62.6% (3,540 of 5,659 lines), and the String Catalog remained unchanged.
+
+The full iPad UI suite then passed on that working tree incorporating
+`d79d836`: 37 total, 33 passed, zero failures, four existing opt-in keyboard
+probe skips and zero expected failures. Test execution took 556.884
+seconds; the optimized Home test took 82.546 seconds. This used iPad Pro
+13-inch (M5), iOS 27.0, and Xcode 27.1 (27A9275), full-screen with the
+suite's existing portrait/landscape, default/AX5 text and light/dark
+coverage. The runner configured the full software keyboard.
+
+The full iPhone 17 UI suite also passed on the same tree: 37 total,
+33 passed, zero failures, four existing opt-in keyboard probe skips and
+zero expected failures. Test execution took 503.597 seconds, and the
+optimized Home test took 40.710 seconds. The app stayed in portrait,
+full-screen on iOS 27.0, with the suite's existing default/AX5 and
+light/dark coverage and full software keyboard configuration. The AX5
+light/dark audit passed in 22.884 seconds. `scripts/test.sh ui` completed
+successfully for both families; the original CI finding's cause remains
+unestablished.
+
 ## Not verified
 
-CI on the eventual pushed commit is pending. Simulator timings are local
-measurements, not a prediction for GitHub's machines. No physical-device,
+CI on the resulting pushed commit is pending. The new local results
+cover the working tree incorporating `d79d836`; any later merge requires
+validation on the resulting tree. Earlier CI results above do not claim
+final-head validation.
+
+Local simulator timings do not predict GitHub's machines. No physical-device,
 sound, gaze comfort, Snap to Item or windowed-iPad claim is made here.
 
 ## Follow-ups
 
-1. Verify the required CI checks on the pushed commit; the owner merges.
-2. The layout engine still owns the already recorded small-window
+1. Verify required CI checks on the pushed commit; the owner merges.
+   Re-run the required local checks if the intended tree changes before
+   committing.
+2. If the audit finding recurs, inspect its native issue, issue-time
+   screenshot and full accessibility tree together. Identify the visible
+   text and compare its frame and label at that moment, then reproduce
+   that state before changing app semantics. Keep the finding failing;
+   do not add an exception, blanket retry or known issue to make it green.
+3. The layout engine still owns the already recorded small-window
    scrolling gap and profile floors. This test change accepts no new gap.
 
 ## Decisions

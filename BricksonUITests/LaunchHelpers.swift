@@ -180,7 +180,11 @@ extension XCTestCase {
         try AccessibilityAuditRunner.perform {
             try app.performAccessibilityAudit { issue in
                 MainActor.assumeIsolated {
-                    if isPhraseTileLabelGuess(issue) { return }
+                    if isPhraseTileLabelGuess(issue) { return true }
+                    // Some findings identify no element. Keep the screen
+                    // and tree at reporting time, not only before the audit
+                    // changes Dynamic Type, and retain Apple's native issue.
+                    self.attachCapture(app, name: "Audit failure, \(context), type \(issue.auditType.rawValue)")
                     let element = issue.element.map {
                         "\"\($0.label)\" (identifier \"\($0.identifier)\", frame \($0.frame))"
                     } ?? "no element"
@@ -188,10 +192,11 @@ extension XCTestCase {
                         "Accessibility audit (\(context); type \(issue.auditType.rawValue)): \(issue.compactDescription) on \(element). \(issue.detailedDescription)",
                         file: file, line: line
                     )
+                    // The contextual failure above survives a later service
+                    // timeout. False also preserves XCTest's original issue
+                    // and any diagnostic attachments it can provide.
+                    return false
                 }
-                // Reported above (or expected); returning true stops the
-                // audit failing a second time with less detail.
-                return true
             }
         }
     }
