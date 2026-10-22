@@ -71,15 +71,25 @@ build).
 - `259b690` The Personal Voice launch trial and its stand-in.
 - `3d88c1a` The Ask button and the truthful notes.
 - `58cd607`, `d133c93` This record and the documents.
-- The review fixes: arrivals keep their first places, and every row
-  reserves its gone-voice line.
+- `54d36f4` The review fixes: arrivals keep their first places, and
+  every row reserves its gone-voice line.
+- The commit that measures what the two UI tests below meant to
+  measure.
 
 ## Verified
 
-Not built for iOS: this was written in a cloud session without Xcode, so
-GitHub CI on the pull request is the first build of the views, the UI
-test and the String Catalog (AGENTS.md, *Build and test*). Until it is
-green, treat the change as untested.
+Written in a cloud session without Xcode, so GitHub CI on the pull
+request was the first build (AGENTS.md, *Build and test*), on the current
+Xcode with iOS Simulator 27.0:
+
+- `d133c93` and `54d36f4`: the app built, the String Catalog matched the
+  code, and every unit test passed on the iPad Pro 13-inch simulator
+  (414, then 416 with the review fixes' two tests).
+- `54d36f4` UI tests: 29 of 30 run passed on the iPad Pro 13-inch and 28
+  of 30 on the iPhone 17 (the 4 opt-in keyboard probes skipped on each). Both
+  failures were the tests' measurements, not the app, and are fixed in
+  the commit after it (below). Green UI tests on that commit are still
+  to come; until then treat the two screens' UI checks as unproven.
 
 Before pushing, with Swift 6.3.3 on Linux in Swift 6 mode with
 main-actor default isolation (a throwaway package outside the repository,
@@ -121,8 +131,21 @@ Written to fail, and first run by CI:
   the Ask button was, or if Open Personal Voice Settings appears on the
   visit that asked. It also runs Apple's audit on the asking state.
 - The patch's `SettingsTests.testFamilySetupOpensOnTextOverTheWholeRootRow`
-  assumes the combined opening element's frame is the framed block; if
-  CI says otherwise, read its captures before changing the code.
+  read the opening's lower edge from its accessibility frame, which CI
+  showed is the words' own bounds, not the block they are laid out in:
+  42.5pt tall and 995pt wide on the iPad (two lines of text) against a
+  110pt by 1000pt root row, and 86.3pt against 110pt on the iPhone. The
+  test now reads the block's lower edge from the first row below it,
+  less the spacing between rows (measured on the same screen), and also
+  fails if any button that can be activated lies within the root row's
+  frame. No captures were kept (CI uploads no result bundle); the frames
+  in the failure messages were enough.
+- `testAnsweringTheAskButtonMovesNothing` failed only on the iPhone,
+  naming Home's "I don't know." tile at the spot: Home stays in the
+  accessibility tree under the Settings cover. It now counts only a
+  button that can be activated (`isHittable`), as
+  `testAnIdleSettingsReturnsToItsFirstScreenAndStaysOpen` already does
+  for Home's Yes. Every other check in it passed on both devices.
 
 ## Not verified
 
