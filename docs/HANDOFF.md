@@ -272,6 +272,10 @@ Simulators cannot show these. Record each result in a `docs/log/` file
 
 - The `main` ruleset matched docs/DECISIONS.md on 2026-10-15 (GitHub's
   API); its required checks are "Unit tests" and "UI tests".
+  The UI job now allows 75 minutes for both device families, and Home's
+  layout test uses bounded live queries while retaining every tile's
+  visibility and position checks
+  ([`log/2026-10-22-ci-home-test.md`](log/2026-10-22-ci-home-test.md)).
 - CodeQL scans the workflow files and the Python scripts, not the Swift
   code, on purpose (docs/DECISIONS.md, *Code scanning*); the failed Swift
   attempt of 2026-10-10 is still listed on the Tool status page.
