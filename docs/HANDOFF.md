@@ -82,6 +82,12 @@ release in docs/ROADMAP.md when no thread has it yet.
 - The slot plan has no answer yet for more than four everyday categories
   (docs/DECISIONS.md, "Home's slot plan", *Open*): editing and import
   must not add a fifth until it does. *(the layout engine, a new thread)*
+- In the slot plan, Yes and No border the message (10 to 16pt away), so a
+  look resting on it can speak Yes or No. Recorded as an open hazard, not
+  an accepted exception (docs/DECISIONS.md, "Home's slot plan"): it is
+  removed by placement or its measured cost goes to the owner before the
+  plan ships in a dwell, switch, head or gaze profile. *(the layout
+  engine, a new thread; owner if it stays)*
 - Home has no wells yet: Again sits beside the message text, and Phrases,
   Type, Get Attention, Stop and Settings have no place on Home
   (docs/DECISIONS.md, "Home's slot plan"). *(a new thread: Get Attention

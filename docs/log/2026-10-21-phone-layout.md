@@ -81,7 +81,9 @@ layout engine follows. Both build on this contract (docs/DECISIONS.md,
    trailing column two, so Again sits under the trailing column, not
    beside the message.
 9. **Yes and No border the message** on every window measured, one gap
-   (10 to 16pt) away: a named exception, re-measured by the engine.
+   (10 to 16pt) away: an open hazard, not an accepted exception. The
+   engine removes it by placement or brings its measured cost to the
+   owner before the plan ships in a dwell profile.
 10. **Open: more than four everyday categories.** Region B's L cannot
     scroll as one standard container; the layout engine's thread decides,
     before editing or import can add a fifth category.
@@ -116,6 +118,13 @@ missing is the wells and A's trailing column. Again still sits in A.
   plain `FixedColumns` view instead of `LazyVGrid`, `HomeLayoutTests` on
   `launchedApp` and `attachCapture`, the documents fitted to the new
   structure.
+- The merges of `main` (PRs #21, #24, #25, then #23).
+- The commit after the #23 merge (Codex review): labels measured at the
+  heavier weight SwiftUI draws with Bold Text on (`LabelFont.legible`),
+  with tests comparing SwiftUI's Bold Text widths and heights to the
+  measure; `HomeLayoutTests` skips the iPhone's landscape pass and waits
+  only for the turn where the grid may scroll; the message border
+  recorded as an open hazard, not an accepted exception.
 
 ## Verified
 
@@ -210,13 +219,19 @@ missing is the wells and A's trailing column. Again still sits in A.
 - The windows that still scroll (a 375×667pt phone from AX1) are worked
   out from measurements, not seen running.
 - The slot plan is a plan: no well exists yet.
+- Bold Text: how much heavier SwiftUI draws is not documented by Apple.
+  The measure uses one weight heavier, checked against SwiftUI on CI by
+  `StarterLabelFitTests`; the starter labels' fit in their narrowest
+  slots is checked with Bold Text off only.
 
 ## Follow-ups
 
 - **Get Attention and Stop on Home**, building the wells of "Home's slot
   plan". *(a new speech thread)*
 - **The layout engine with input profiles**, closing *Where the grid
-  still scrolls* and taking floors per profile. *(a new thread)*
+  still scrolls* and taking floors per profile, and removing the message
+  border hazard by placement or bringing its cost to the owner
+  (DECISIONS.md, "Home's slot plan"). *(a new thread)*
 - **Phone landscape**, once a layout test shows a sideways phone with no
   scrolling (DECISIONS.md, *Decided by default*, "iPhone orientations").
   *(the layout engine's thread)*

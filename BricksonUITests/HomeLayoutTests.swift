@@ -30,17 +30,29 @@ final class HomeLayoutTests: XCTestCase {
             .sorted { ($0.minY.rounded(), $0.minX) < ($1.minY.rounded(), $1.minX) }
     }
 
+    /// Whether every tile must lie inside the window. A narrow window at the
+    /// largest text size is the recorded exception: its controls grow to hold
+    /// their words, and the grid scrolls there (docs/DECISIONS.md, "Home's
+    /// stand-in layout", *Where the grid still scrolls*). 592pt is Home's
+    /// 560pt regular content width plus its margins.
+    private static func gridMustFit(_ textSize: UITestTextSize, in window: CGRect) -> Bool {
+        !(textSize == .ax5 && window.width < 592)
+    }
+
     /// Waits up to 10 s for Home to lay itself out in the orientation asked
-    /// for: until the window has turned and every phrase tile's frame lies
-    /// inside it. A query straight after a rotation can read the frames from
-    /// before the turn. If the tiles never fit, this returns after 10 s and the
-    /// checks that follow report them.
+    /// for: until the window has turned and, where the grid must fit, every
+    /// phrase tile's frame lies inside it. A query straight after a rotation
+    /// can read the frames from before the turn. Where the grid may scroll,
+    /// only the turn is waited for, so the wait ends as soon as it can. If the
+    /// tiles never fit, this returns after 10 s and the checks that follow
+    /// report them.
     @MainActor
-    private func waitForLayout(in app: XCUIApplication, landscape: Bool) {
+    private func waitForLayout(in app: XCUIApplication, landscape: Bool, textSize: UITestTextSize) {
         let settled = NSPredicate { _, _ in
             MainActor.assumeIsolated {
                 let window = app.windows.firstMatch.frame
                 guard (window.width > window.height) == landscape else { return false }
+                guard Self.gridMustFit(textSize, in: window) else { return true }
                 return self.tileFrames(in: app).allSatisfy { window.contains($0) }
             }
         }
@@ -66,28 +78,25 @@ final class HomeLayoutTests: XCTestCase {
     func testTheStarterLibraryFitsWithoutScrolling() {
         for textSize in [UITestTextSize.large, .ax5] {
             for orientation in [UIDeviceOrientation.portrait, .landscapeLeft] {
-                let app = launchedApp(textSize: textSize, orientation: orientation)
-                waitForLayout(in: app, landscape: orientation.isLandscape)
-                let window = app.windows.firstMatch.frame
-                let isLandscape = window.width > window.height
                 // The iPhone is portrait-only for now (AppBundleTests,
                 // theIPhoneIsPortraitOnly), so it has no landscape to check.
+                if orientation.isLandscape && UIDevice.current.userInterfaceIdiom == .phone {
+                    continue
+                }
+                let app = launchedApp(textSize: textSize, orientation: orientation)
+                waitForLayout(in: app, landscape: orientation.isLandscape, textSize: textSize)
+                let window = app.windows.firstMatch.frame
+                let isLandscape = window.width > window.height
                 // An iPad that does not turn is a failure, not a skip.
-                if orientation == .landscapeLeft && !isLandscape {
-                    if UIDevice.current.userInterfaceIdiom != .phone {
-                        XCTFail("the iPad did not turn to landscape (\(textSize.name), window \(window.size))")
-                    }
+                if orientation.isLandscape && !isLandscape {
+                    XCTFail("the iPad did not turn to landscape (\(textSize.name), window \(window.size))")
                     app.terminate()
                     continue
                 }
                 let context = "\(textSize.name), \(isLandscape ? "landscape" : "portrait"), window \(window.size)"
-                // A narrow window at the largest text size is the recorded
-                // exception: its controls grow to hold their words, and the
-                // grid scrolls there (docs/DECISIONS.md, "Home's stand-in
-                // layout", *Where the grid still scrolls*). Everything else is
-                // still checked there, slots included. 592pt is Home's
-                // 560pt regular content width plus its margins.
-                let gridMustFit = !(textSize == .ax5 && window.width < 592)
+                // Where the grid may scroll, everything else is still
+                // checked, slots included.
+                let gridMustFit = Self.gridMustFit(textSize, in: window)
 
                 for name in ["Yes", "No", "Emergency", "Again"] {
                     expectWhollyOnScreen(app.buttons[name], name, in: window, context)
@@ -105,7 +114,7 @@ final class HomeLayoutTests: XCTestCase {
                         XCTWaiter.wait(for: [selected], timeout: 10), .completed,
                         "\(category) was not selected (\(context))"
                     )
-                    waitForLayout(in: app, landscape: isLandscape)
+                    waitForLayout(in: app, landscape: isLandscape, textSize: textSize)
                     let frames = tileFrames(in: app)
                     XCTAssertFalse(frames.isEmpty, "\(category) shows no tiles (\(context))")
                     if frames.count == Self.largestCategoryCount && slots.isEmpty {

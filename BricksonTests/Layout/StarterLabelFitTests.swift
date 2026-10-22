@@ -165,33 +165,82 @@ struct StarterLabelFitTests {
 
     /// Fails if `LabelFont.textHeight` is ever less than the height SwiftUI
     /// draws a starter label's set lines in (`LabelFont.lines`), at any text
-    /// size and at widths from the narrowest tile to a wide one: a set line
-    /// SwiftUI wrapped again, or more leading than measured. `FittedLabel`
-    /// would then choose a size whose words do not fit. Only widths at which
-    /// every word fits are checked, the only ones it chooses.
-    @Test func theHeightMeasureCoversWhatSwiftUIDraws() {
+    /// size, with Bold Text off and on, and at widths from the narrowest tile
+    /// to a wide one: a set line SwiftUI wrapped again, or more leading than
+    /// measured. `FittedLabel` would then choose a size whose words do not
+    /// fit. Only widths at which every word fits are checked, the only ones
+    /// it chooses.
+    @Test(arguments: [false, true])
+    func theHeightMeasureCoversWhatSwiftUIDraws(boldText: Bool) {
+        let legibility: LegibilityWeight = boldText ? .bold : .regular
         let cases: [(LabelFont, [String], [CGFloat])] = [
             (.compactTile, phrases, [99, 140, 200]),
             (.regularTile, phrases, [168, 240, 320]),
             (.category, everydayCategoryNames, [126, 236]),
         ]
-        for (font, texts, widths) in cases {
+        for (style, texts, widths) in cases {
+            let font = style.legible(legibility)
             for size in DynamicTypeSize.allCases where size >= .large {
                 for width in widths {
                     for text in texts where font.widestWord(text, at: size) + WordFit.widthSlack <= width {
                         let lines = font.lines(text, width: width, at: size)
-                        let view = Text(verbatim: lines.joined(separator: "\n")).font(font.font).dynamicTypeSize(size)
+                        let view = Text(verbatim: lines.joined(separator: "\n"))
+                            .font(font.font)
+                            .dynamicTypeSize(size)
+                            .environment(\.legibilityWeight, legibility)
                         let drawn = UIHostingController(rootView: view)
                             .sizeThatFits(in: CGSize(width: width, height: 10_000)).height
                         let measured = font.textHeight(text, width: width, at: size)
                         #expect(
                             drawn <= measured,
-                            "\(font.textStyle) at \(size), \(width) wide: \"\(text)\" draws \(drawn), measured \(measured)"
+                            "\(font.textStyle), Bold Text \(boldText ? "on" : "off"), at \(size), \(width) wide: \"\(text)\" draws \(drawn), measured \(measured)"
                         )
                     }
                 }
             }
         }
+    }
+
+    /// Fails if a word SwiftUI draws with Bold Text on is more than half a
+    /// point wider than `LabelFont` measures it under Bold Text: a bold label
+    /// would then be given a size or lines its words do not fit. Apple does
+    /// not document how much heavier Bold Text draws, so this pins the
+    /// weight `LabelFont.Weight.boldTextUIFontWeight` measures.
+    @Test func boldTextWordsAreNoWiderThanMeasured() {
+        let cases: [(LabelFont, [String])] = [
+            (.quickControl, ["Yes", "No", "Emergency", "Again"]),
+            (.category, everydayCategoryNames),
+            (.compactTile, phrases),
+            (.regularTile, phrases),
+            (.message, phrases),
+        ]
+        for (style, texts) in cases {
+            let font = style.legible(.bold)
+            for size in [DynamicTypeSize.large, .xxxLarge, .accessibility5] {
+                for word in Set(texts.flatMap { WordFit.words(in: $0).map(String.init) }) {
+                    let view = Text(verbatim: word)
+                        .font(font.font)
+                        .dynamicTypeSize(size)
+                        .environment(\.legibilityWeight, .bold)
+                    let drawn = UIHostingController(rootView: view)
+                        .sizeThatFits(in: CGSize(width: 10_000, height: 10_000)).width
+                    let measured = font.widestWord(word, at: size)
+                    #expect(
+                        drawn <= measured + 0.5,
+                        "\(font.textStyle) at \(size) with Bold Text: \"\(word)\" draws \(drawn), measured \(measured)"
+                    )
+                }
+            }
+        }
+    }
+
+    /// Fails if Bold Text is ignored when measuring: the bold measure must be
+    /// wider, and no setting or the regular one must measure as before.
+    @Test func boldTextIsMeasuredHeavier() {
+        let font = LabelFont.category
+        #expect(font.legible(nil) == font)
+        #expect(font.legible(.regular) == font)
+        #expect(font.legible(.bold).widestWord("Conversation", at: .large) > font.widestWord("Conversation", at: .large))
     }
 
     /// Fails if the text sizes a label may step through ever include one

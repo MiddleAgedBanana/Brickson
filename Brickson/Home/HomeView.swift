@@ -27,6 +27,7 @@ import SwiftUI
 /// `HomeShape.minimumTileHeight`, or where a library warning takes its room.
 struct HomeView: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.legibilityWeight) private var legibilityWeight
     @Query private var categories: [PhraseCategory]
     @State private var selectedCategoryID: UUID?
 
@@ -40,8 +41,8 @@ struct HomeView: View {
             let contentWidth = proxy.size.width
             let shape = HomeShape(
                 contentWidth: contentWidth,
-                quickControlLineHeight: LabelFont.quickControl.lineHeight(at: dynamicTypeSize),
-                categoryLineHeight: LabelFont.category.lineHeight(at: dynamicTypeSize)
+                quickControlLineHeight: LabelFont.quickControl.legible(legibilityWeight).lineHeight(at: dynamicTypeSize),
+                categoryLineHeight: LabelFont.category.legible(legibilityWeight).lineHeight(at: dynamicTypeSize)
             )
             let quickWidths = HomeShape.quickControlWidths(contentWidth: contentWidth)
 
@@ -131,6 +132,7 @@ private struct MessageBlock: View {
 private struct MessageText: View {
     @Environment(SpeechService.self) private var speech
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.legibilityWeight) private var legibilityWeight
 
     var body: some View {
         let font = LabelFont.message
@@ -169,7 +171,7 @@ private struct MessageText: View {
     /// matters: a long message scrolls.
     private func fittedSize(_ text: String, width: CGFloat) -> DynamicTypeSize {
         let steps = LabelFont.steps(downFrom: dynamicTypeSize)
-        let first = LabelFont.message.choices(for: text, systemImage: nil, steps: steps, width: width).first
+        let first = LabelFont.message.legible(legibilityWeight).choices(for: text, systemImage: nil, steps: steps, width: width).first
         return steps[first?.step ?? steps.count - 1]
     }
 }

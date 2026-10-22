@@ -11,6 +11,7 @@ import SwiftUI
 /// whichever step is chosen.
 struct FittedLine: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.legibilityWeight) private var legibilityWeight
 
     let text: String
     let systemImage: String
@@ -19,6 +20,8 @@ struct FittedLine: View {
     let width: CGFloat
 
     var body: some View {
+        // Measured at the weight drawn, heavier when Bold Text is on.
+        let font = self.font.legible(legibilityWeight)
         let steps = LabelFont.steps(downFrom: dynamicTypeSize)
         let choice = font.lineChoice(for: text, systemImage: systemImage, steps: steps, width: width)
         let size = steps[choice.step]

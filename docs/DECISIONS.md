@@ -805,17 +805,20 @@ never where it is.
   after leaving typing could reopen it. The design thread's chain scores
   found both; the table is in the design document, *What a held
   activation meets next*.
-- **Named exception: Yes and No border the message** (invariant 10;
-  design rule "Wherever a pointer rests can activate"). On every window
-  the design thread measured (an iPhone 17, a 375×667pt phone, the 13-inch
-  iPad in both orientations), Yes and No are the nearest controls to the
-  message, one gap (10 to 16pt) from its edge, with Emergency too on the
-  iPads; a look resting on the message can therefore speak Yes or No.
-  Something in C has to border the message, and every control in C is one
-  the person must reach in one activation, so it stays. The layout engine
-  re-measures it per profile and may widen the gap; it is accepted by
-  default, as the stand-in's Again beside the message is, and the owner
-  can reverse it.
+- **Open hazard, not accepted: Yes and No border the message**
+  (invariant 10; design rule "Wherever a pointer rests can activate"). On
+  every window the design thread measured (an iPhone 17, a 375×667pt
+  phone, the 13-inch iPad in both orientations), Yes and No are the
+  nearest controls to the message, one gap (10 to 16pt) from its edge,
+  with Emergency too on the iPads; a look resting on the message can
+  therefore speak Yes or No. Something in C has to border the message, and
+  every control in C is one the person must reach in one activation, so
+  the plan alone cannot remove it. It is not an accepted exception:
+  invariant 10's exceptions are the owner's to accept. The layout engine's
+  thread measures it per profile and either removes it by placement (a
+  wider gap, or a harmless control nearest the message) or brings the
+  measured cost to the owner to accept or reject, before the slot plan
+  ships in a dwell, switch, head or gaze profile.
 - **Open: a library with more than four everyday categories.** Region B
   is an L (Stop Alert's column beside the categories), which cannot scroll
   as one standard container, so the stand-in's answer (the category
