@@ -153,7 +153,11 @@ pull request's commit list.
   written path goes with its button; the two UI audits fail on any
   audit finding, or if a guide stops opening or loses the words the
   test knows it by.
-- GitHub CI: to be recorded when it has run.
+- GitHub CI on the first push (`6ff8dc7`, 2026-10-23): Unit tests,
+  with the String Catalog check, passed in about 10 minutes; UI tests,
+  with the new audits on iPad and iPhone, passed in about 53 minutes,
+  inside the job's 75-minute limit; CodeQL passed. The run for the
+  review fixes is on the pull request.
 
 ## Not verified
 
