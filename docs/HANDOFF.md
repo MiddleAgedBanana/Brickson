@@ -172,7 +172,10 @@ Xcode 27.1 (27A9275); PR #20 landed in `d79d836`.
 - **No test sees** VoiceOver announcements being posted, the message's
   scroll reset, the missed-callback watchdog on a real synthesizer (it is
   unit-tested with fakes), or sound. Windowed iPad
-  sizes and iPhone Duo poses are untested. The first UI test on a
+  sizes are untested. On iPhone Duo only the closed pose has run, in the
+  simulator on the owner's Mac (2026-10-23, the full UI suite: the
+  starter phrases scroll there, below); open and partly folded have not
+  ([`log/2026-10-23-large-content-and-iphone-duo.md`](log/2026-10-23-large-content-and-iphone-duo.md)). The first UI test on a
   just-started CI simulator failed intermittently before PR #13's warm-up
   launch (AGENTS.md, *Gotchas*). Apple's accessibility audit never sees
   Home's "Speaking" line: audits wait for speech to finish, because one
@@ -187,8 +190,9 @@ release in docs/ROADMAP.md when no thread has it yet.
 - Home's sizes are the stand-in's, not measured gaze, switch or touch
   floors per input profile, and the phrase grid still scrolls (invariant
   11) on small phone windows at large text sizes, and since Get Attention
-  came to Home at the default size on a 375×667 phone and, by the model,
-  an 11-inch iPad and an iPad mini in landscape: docs/DECISIONS.md,
+  came to Home at the default size on a 375×667 phone, on iPhone Duo's
+  outer display (seen in its simulator) and, by the model, an 11-inch
+  iPad and an iPad mini in landscape: docs/DECISIONS.md,
   "Home's stand-in layout", *Where the grid still scrolls*. Ending the
   scroll is R0 (ROADMAP item 3); measured sizes for each input profile are
   R1. *(the layout engine, a new thread)*
@@ -379,14 +383,19 @@ release in docs/ROADMAP.md when no thread has it yet.
   ([`log/2026-10-23-accessibility-page-and-privacy-trim.md`](log/2026-10-23-accessibility-page-and-privacy-trim.md)
   keeps their words). *(App Store readiness and ASO)*
 - iPhone Duo: Brickson builds with the iOS 27.1 SDK, so Apple already
-  treats it as optimized for iPhone Duo, but it has never run there. Its
+  treats it as optimized for iPhone Duo, but it has run there only
+  closed, in the simulator: on the outer display the starter phrases
+  scroll at the default text size, and Settings' Back moves into a
+  column at the trailing edge
+  ([`log/2026-10-23-large-content-and-iphone-duo.md`](log/2026-10-23-large-content-and-iphone-duo.md)).
+  Open and half-folded have not run: no command-line way to fold the
+  simulator was found, and Xcode's Device Hub was not tried. The
   inner display ignores the portrait-only setting, a fold can sit under
-  an odd column of Home, Settings' Back may move into a vertical bar, and
-  CI has no Duo simulator; screenshots are required from April 2027
-  (docs/DECISIONS.md, "iPhone Duo";
+  an odd column of Home, and CI has no Duo simulator; screenshots are
+  required from April 2027 (docs/DECISIONS.md, "iPhone Duo";
   [`log/2026-10-23-iphone-duo-readiness.md`](log/2026-10-23-iphone-duo-readiness.md)).
-  *(R0 item 13: a Mac thread first, then the layout engine, which builds
-  the owner's two fold choices)*
+  *(R0 item 13: the open poses on the Mac in Device Hub, then the layout
+  engine, which builds the owner's two fold choices)*
 - The app icon is a placeholder; `design/brand/` is not installed. *(Release chores, R0 item 11)*
 - Siri's alternative name "Brick Son" (`INAlternativeAppNames`) has no
   effect yet: Apple applies it only to apps with Siri support, which
@@ -435,8 +444,10 @@ schema version, safety copies, export and import, the editing screens). Calls (R
 `.github/workflows` are committed by the owner (docs/SDLC.md, *Deploy*). The toolchain's follow-ups
 (Xcode's recommended settings, iOS 27 APIs behind `#available`) are in
 [`log/2026-10-21-toolchain.md`](log/2026-10-21-toolchain.md); iPhone
-Duo is R0 item 13, starting with a run in the iPhone Duo simulator on
-the owner's Mac ([`log/2026-10-23-iphone-duo-readiness.md`](log/2026-10-23-iphone-duo-readiness.md), *Follow-ups*);
+Duo is R0 item 13: the closed pose has run in the simulator
+([`log/2026-10-23-large-content-and-iphone-duo.md`](log/2026-10-23-large-content-and-iphone-duo.md)),
+and open and half-folded come next, in Device Hub on the owner's Mac
+([`log/2026-10-23-iphone-duo-readiness.md`](log/2026-10-23-iphone-duo-readiness.md), *Follow-ups*);
 recheck the minimum iOS against its two rules whenever Apple's next major
 release drops devices (docs/DECISIONS.md, "Minimum iOS, iPhone and
 iPad").
@@ -455,11 +466,13 @@ roadmap item; what each R0 item picks up from it, in order, is in
 [`log/2026-10-21-accessibility-coverage.md`](log/2026-10-21-accessibility-coverage.md),
 *Follow-ups*. Item 3's scan order, regions and Voice Control names are
 done, and so is Home's border under Show Borders; the Large Content
-Viewer waits on a device check (docs/DECISIONS.md, "Show Borders and the
-Large Content Viewer on Home"). What is left of item 3's list, in order,
-is in
+Viewer stays off Home's controls other than Settings' gear, because on
+simulators a slow press with it spoke nothing (docs/DECISIONS.md, "Show
+Borders and the Large Content Viewer on Home";
+[`log/2026-10-23-large-content-and-iphone-duo.md`](log/2026-10-23-large-content-and-iphone-duo.md)).
+What is left of item 3's list, in order, is in
 [`log/2026-10-23-show-borders-and-large-content.md`](log/2026-10-23-show-borders-and-large-content.md),
-*Follow-ups*.
+*Follow-ups*, except the Large Content Viewer in its item 5, now settled.
 The layout's next steps are Wave 3's items 3 and 4 in
 [docs/ROADMAP.md](ROADMAP.md) (the engine, then Home on it with the slot
 plan's wells); input profiles and the phone on its side wait until R0's
@@ -514,7 +527,7 @@ Simulators cannot show these. Record each result in a `docs/log/` file
 | Brickson inside Assistive Access with `UISupportsFullScreenInAssistiveAccess`: its window size, and whether Eye Tracking and Switch Control work there | Assistive Access support (R0 item 7) |
 | Guided Access with each input method, and with a short Display Auto-Lock while Brickson keeps the screen awake | Setup advice, and invariant 12 under Guided Access |
 | Which of the VoiceOver, Switch Control and AssistiveTouch flags each input method turns on | Profile suggestions (R1) |
-| With a test build that adds `.accessibilityShowsLargeContentViewer()` to Yes and No (the change in [`log/2026-10-23-show-borders-and-large-content.md`](log/2026-10-23-show-borders-and-large-content.md), *The Large Content Viewer, built and held back*), at an accessibility text size: touch and hold Yes until the large copy shows, slide onto No, lift. Which speaks: No, Yes or nothing? Then hold Yes and lift without moving: does it speak once? Also with Touch Accommodations' Hold Duration on. Then, in a build without the viewer, touch Yes, slide onto No and lift: Yes or nothing, never No. The same slide from one phrase tile onto the next, with a library that fits and one that scrolls (issue #36). In a window where Settings shows its gear alone ([`log/2026-10-23-settings-on-home.md`](log/2026-10-23-settings-on-home.md)), in the shipped build: hold the gear until its large copy shows, slide onto each control beside it and lift: Settings opens or nothing happens, never anything else | Whether Home gets the Large Content Viewer, on which controls, and whether Settings' gear keeps it (docs/DECISIONS.md, "Show Borders and the Large Content Viewer on Home") |
+| With a real finger at an accessibility text size, in the shipped build: press Yes slowly (about half a second) and lift, then a phrase tile; then hold Yes, slide onto No and lift, and hold a phrase tile, slide onto the next and lift; also with Touch Accommodations' Hold Duration on, and with AssistiveTouch Dwell. Each press speaks; a slide says the control it began on or nothing, never the next. In a window where Settings shows its gear alone (iPhone Duo's outer display with Bold Text on is one; [`log/2026-10-23-settings-on-home.md`](log/2026-10-23-settings-on-home.md)): tap the gear (Settings opens); hold it until its large copy shows and lift, and record whether Settings opened (opening means a real finger is not swallowed as XCTest's touch was); hold it and slide onto each control beside, above and below it, and lift: Settings opens or nothing happens, never anything else; dwell on it; and press Yes and a phrase tile slowly there: each speaks. The simulator results these confirm are in [`log/2026-10-23-large-content-and-iphone-duo.md`](log/2026-10-23-large-content-and-iphone-duo.md) | That Home speaks on a slow real press and a slide never says the next control; from the gear, whether a real finger's held press is swallowed as XCTest's was, and whether the gear keeps the viewer (docs/DECISIONS.md, "Show Borders and the Large Content Viewer on Home") |
 | Show Borders on, in light and dark, with and without Increase Contrast: every Home control shows its border, a press thickens it, a selected category and Emergency show their inner ring, measured on the rendered pixels; Settings' system buttons show theirs | "Show Borders and the Large Content Viewer on Home"; Show Borders on Settings and setup |
 
 ## Repository, CI and website
@@ -547,6 +560,9 @@ Simulators cannot show these. Record each result in a `docs/log/` file
   code, on purpose (docs/DECISIONS.md, *Code scanning*); the failed Swift
   attempt of 2026-10-10 is still listed on the Tool status page.
 - Open PR pushes now follow AGENTS.md, "Pushing to an open PR": [rule and verification](log/2026-10-23-open-pr-push-policy.md).
+- The docs cross-reference check reads every title a citation names,
+  quoted titles starting with a small letter and titles after the first
+  included: [record](log/2026-10-23-docs-check-gaps.md).
 - Codex reviews every push to a pull request, Copilot each pull request
   once when it opens, AI Scan each push; none reviews Dependabot's pull
   requests by itself. The AI credits they use show only in Settings →

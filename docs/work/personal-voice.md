@@ -33,7 +33,7 @@ after device check D1.*
   4 and 5 (never silence because of a voice: fall back to the next voice),
   9 (no network: everything is the system's own API),
   docs/DECISIONS.md "Personal Voice is never written to a file", and
-  *Closures a framework may call off the main thread* (docs/LESSONS.md).
+  docs/LESSONS.md, *Closures a framework may call off the main thread*.
 - **Open questions:** each decided by default in docs/DECISIONS.md:
   when the question is asked ("Personal Voice permission is asked at
   launch, for now"), what Automatic keeps ("Automatic keeps the
