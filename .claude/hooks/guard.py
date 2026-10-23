@@ -29,6 +29,7 @@ import shlex
 import subprocess
 import sys
 import stat
+import posixpath
 from urllib.parse import urlsplit
 
 PROTECTED = {'main', 'master'}
@@ -60,7 +61,7 @@ WRAPPER_VALUE_OPTIONS = {
     'env': {'-u', '--unset', '-C', '--chdir'},
     'nice': {'-n', '--adjustment'},
     'xargs': {'-n', '-L', '-I', '-P', '-s', '-E', '-J', '-R', '-S', '-a', '-d',
-              '--max-args', '--max-procs', '--max-chars', '--arg-file', '--delimiter'},
+              '--max-args', '--max-procs', '--max-chars', '--arg-file', '--delimiter', '--process-slot-var'},
     'timeout': {'-k', '--kill-after', '-s', '--signal'},
     'sudo': {'-u', '--user', '-g', '--group', '-h', '--host', '-p', '--prompt',
              '-C', '--close-from', '-D', '--chdir', '-R', '--chroot'},
@@ -193,6 +194,13 @@ def strip_wrappers(words, inherited=None):
     environment = dict(inherited or {})
     directories = []
     while words:
+        # A shell may put file redirections before the executable or wrapper.
+        redirect = 1 if words[0].isdigit() and len(words) > 1 else 0
+        if words[redirect] in {'>', '>>', '<', '<>', '>|', '>&', '<&', '&>', '&>>'}:
+            if len(words) <= redirect + 1:
+                deny(UNKNOWN)
+            words = words[redirect + 2:]
+            continue
         first = words[0]
         if re.match(r'^[A-Za-z_][A-Za-z0-9_]*=', first):
             key, _, value = first.partition('=')
@@ -272,6 +280,8 @@ def git_parts(words, cwd, environment):
 
 def git(context, *args):
     cwd, options, overrides = context
+    if cwd is None:
+        return None  # an inherited directory-stack destination is unknown
     environment = os.environ.copy()
     for key, value in overrides.items():
         if value is None:
@@ -370,6 +380,16 @@ def check_push(args, context):
             if arg == '--repo' and index + 1 < len(args):
                 remote = args[index + 1]
             index += 1
+        elif arg.startswith('-') and not arg.startswith('--'):
+            flags = []
+            for offset, letter in enumerate(arg[1:], 1):
+                if letter == 'o':
+                    if offset == len(arg) - 1:
+                        index += 1  # -o consumes the following word too
+                    break
+                flags.append(letter)
+            if flags:
+                options.append('-' + ''.join(flags))
         elif arg.startswith('-'):
             options.append(arg)
         else:
@@ -486,6 +506,8 @@ def api_arguments(words, cwd, program='gh'):
         for data in option_values(words, {'--data', '--data-ascii', '--data-binary', '--json'}, {'-d'}):
             if data.startswith('@'):
                 parts.append(request_file(data[1:], cwd))
+    elif program in ('http', 'https'):
+        parts.append(httpie_body(words, cwd))
     elif program == 'wget':
         for filename in option_values(words, {'--post-file', '--body-file'}):
             parts.append(request_file(filename, cwd))
@@ -541,6 +563,8 @@ def check_gh(words, cwd):
             continue  # the attached forms, --repo=OWNER/REPO and -ROWNER/REPO
         else:
             plain.append(word)
+    if len(plain) >= 2 and plain[0] in ('issue', 'pr') and plain[1] == 'new':
+        plain[1] = 'create'
     if len(plain) >= 2 and plain[0] in ('agent-task', 'agent-tasks', 'agent', 'agents') \
             and plain[1] == 'create':
         deny(COPILOT)
@@ -585,6 +609,8 @@ def check_gh(words, cwd):
 def parsed_url(word):
     try:
         url = urlsplit(word if '://' in word else 'https://' + word)
+        # API clients normally remove literal dot segments before sending.
+        url = url._replace(path=posixpath.normpath(url.path))
         return url, (url.hostname or '').lower()
     except ValueError:
         return None, ''  # not an address, for example reviewers[]=name
@@ -635,6 +661,72 @@ def has_api_endpoint(text, pattern):
     return False
 
 
+def httpie_request(words):
+    """Read method and request items after ordinary leading CLI options."""
+    value_options = {'--auth', '-a', '--auth-type', '-A', '--session',
+        '--session-read-only', '--verify', '--cert', '--cert-key', '--proxy',
+        '--timeout', '--max-redirects', '--pretty', '--style', '--print', '-p',
+        '--format-options', '--output', '-o', '--ssl', '--ciphers', '--raw',
+        '--response-charset', '--response-mime', '--default-scheme'}
+    index, method, raw = 1, None, None
+    while index < len(words):
+        word = words[index]
+        if github_api_host(word):
+            items = words[index + 1:]
+            has_data = raw is not None or any(re.search(r'(?<![:=])(?::=|=)(?!=)', item)
+                                               for item in items)
+            return method or ('POST' if has_data else 'GET'), items, raw
+        option, equal, value = word.partition('=')
+        if option in value_options:
+            if not equal:
+                index += 1
+                if index >= len(words):
+                    deny(UNKNOWN)
+                value = words[index]
+            if option == '--raw':
+                raw = value
+        elif word.startswith('-'):
+            pass  # flags or attached option values are not HTTP methods
+        elif word.upper() in {'GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'}:
+            method = word.upper()
+        else:
+            deny(UNKNOWN)  # do not guess a method after an unknown operand
+        index += 1
+    deny(UNKNOWN)
+
+
+def httpie_body(words, cwd):
+    _, items, raw = httpie_request(words)
+    payload = {}
+    if raw is not None:
+        try:
+            return json.dumps(json.loads(raw))
+        except ValueError:
+            deny(UNKNOWN)
+    for item in items:
+        match = re.fullmatch(r'([^:=@]+)(:=@|=@|:=|==|=|:|@)(.*)', item, re.S)
+        if not match or match[2] in (':', '=='):
+            continue  # headers and URL query parameters are not JSON fields
+        key, operator, value = match.groups()
+        if operator == '@':
+            deny(UNKNOWN)  # file uploads need an explicit inspectable body
+        if operator.endswith('@'):
+            value = request_file(value, cwd)
+        if operator.startswith(':='):
+            try:
+                value = json.loads(value)
+            except ValueError:
+                deny(UNKNOWN)
+        if '[' in key:
+            array = re.fullmatch(r'(\w+)\[(?:\d*)\]', key)
+            if not array:
+                deny(UNKNOWN)
+            payload.setdefault(array[1], []).append(value)
+        else:
+            payload[key] = value
+    return json.dumps(payload)
+
+
 def request_method(words, program):
     """The common API-client method forms; an explicit method wins."""
     methods = list(option_values(words, {'--request', '--method'}, {'-X'}))
@@ -648,9 +740,8 @@ def request_method(words, program):
         data = list(option_values(words, {'--data', '--data-ascii', '--data-binary',
                                          '--data-raw', '--data-urlencode', '--json', '--form'}, {'-d', '-F'}))
         return 'POST' if data else 'GET'
-    if program in ('http', 'https') and len(words) > 1 and words[1].upper() in {
-            'GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE'}:
-        return words[1].upper()
+    if program in ('http', 'https'):
+        return httpie_request(words)[0]
     return 'POST' if any(w.startswith(('--post-', '--body-')) for w in words) else 'GET'
 
 
@@ -805,6 +896,13 @@ def inspectable_here_documents(command):
     return ''.join(output)
 
 
+def changed_directory(cwd, destination):
+    destination = os.path.expanduser(destination)
+    if os.path.isabs(destination):
+        return destination
+    return os.path.join(cwd, destination) if cwd is not None else None
+
+
 def check_command(command, cwd, depth=0, environment=None):
     if depth > 3:
         return
@@ -819,9 +917,9 @@ def check_command(command, cwd, depth=0, environment=None):
     # The shell can continue after a failed cd. Keep both outcomes until a
     # connector selects success (&&) or failure (||), instead of assuming cd
     # succeeded because its target looked like a directory during this check.
-    states = {(cwd, True)}
+    states = {(cwd, True, ())}
     for part_index, (words, separator) in enumerate(parts):
-        runnable = {(where, success) for where, success in states
+        runnable = {(where, success, stack) for where, success, stack in states
                     if separator not in ('&&', '||')
                     or (separator == '&&' and success)
                     or (separator == '||' and not success)}
@@ -838,7 +936,8 @@ def check_command(command, cwd, depth=0, environment=None):
             if (len(raw_words) == len(words) and raw_words[absolute_redirect] == '<<<'
                     and redirect + 1 < len(unwrapped)):
                 # With a script operand, stdin is data instead of shell code.
-                if all(word.startswith('-') for word in unwrapped[1:redirect]):
+                if all(word.startswith('-') or word in ('/dev/stdin', '/dev/fd/0')
+                       for word in unwrapped[1:redirect]):
                     script_index = redirect + 1
         outer_words = words
         script = unwrapped[script_index] if script_index is not None else None
@@ -855,10 +954,10 @@ def check_command(command, cwd, depth=0, environment=None):
                 for inner in nested([script]):
                     script = script.replace('$(' + inner + ')', '').replace('`' + inner + '`', '')
             # Unknown/mixed quoting is checked in both contexts conservatively.
-        for where in {path for path, _ in runnable}:
+        for where, stack in {(path, stack) for path, _, stack in runnable}:
             command_cwd = where
             for directory in directories:
-                command_cwd = os.path.join(command_cwd, os.path.expanduser(directory))
+                command_cwd = changed_directory(command_cwd, directory)
             for inner in dict.fromkeys(nested(outer_words)):
                 check_command(inner, where, depth + 1, environment)
             if script_index is not None:
@@ -867,17 +966,26 @@ def check_command(command, cwd, depth=0, environment=None):
             elif program == 'eval':
                 check_command(' '.join(unwrapped[1:]), command_cwd, depth + 1,
                               command_environment)
-            if program == 'cd':
+            if program in ('cd', 'pushd', 'popd'):
+                if program == 'popd' or (program == 'pushd' and len(unwrapped) == 1):
+                    target = stack[0] if stack else None
+                    rest = stack[1:] if stack else ()
+                    new_stack = ((where,) + rest) if program == 'pushd' else rest
+                    next_states.update({(target, True, new_stack), (where, False, stack)})
+                    continue
+                if program == 'pushd' and unwrapped[1].startswith(('-', '+')):
+                    deny(UNKNOWN)  # indexed/stack-only forms are not guessed
                 destination = unwrapped[1] if len(unwrapped) > 1 else (
                     command_environment.get('HOME', os.environ.get('HOME')))
                 if destination is None:
-                    next_states.add((where, False))
+                    next_states.add((where, False, stack))
                     continue  # HOME unset: operandless cd fails.
-                target = os.path.join(where, os.path.expanduser(destination))
+                target = changed_directory(where, destination)
                 # Earlier shell commands may create the target, so inspect
                 # both outcomes even when it does not exist at hook time.
-                next_states.add((target, True))
-                next_states.add((where, False))
+                new_stack = (where,) + stack if program == 'pushd' else stack
+                next_states.add((target, True, new_stack))
+                next_states.add((where, False, stack))
                 continue
             if program == 'git':
                 subcommand, args, context = git_parts(unwrapped, command_cwd, command_environment)
@@ -899,7 +1007,7 @@ def check_command(command, cwd, depth=0, environment=None):
                         deny(MERGE)
                     if copilot_request(arguments):
                         deny(COPILOT)
-            next_states.update({(where, True), (where, False)})
+            next_states.update({(where, True, stack), (where, False, stack)})
         states = next_states
 
 
@@ -909,6 +1017,8 @@ def check_github_tool(name, arguments):
         deny(MERGE)
     if tool in ('request_copilot_review', 'assign_copilot_to_issue',
                 'create_pull_request_with_copilot'):
+        deny(COPILOT)
+    if tool == 'assign_copilot_to_issue_with_intent' and arguments.get('is_suggestion') is not True:
         deny(COPILOT)
     if tool in ('push_files', 'create_or_update_file', 'delete_file') and \
             branch_name(str(arguments.get('branch', ''))) in PROTECTED:

@@ -61,7 +61,46 @@ REFERENCE_LINK = re.compile(
     r'(?:[ \t]+(?:"[^"\n]*"|\'[^\'\n]*\'|\([^\)\n]*\)))?[ \t]*$', re.M)
 HEADING = re.compile(r'^#{1,6}\s+(?P<title>.+?)\s*#*\s*$', re.M)
 LEAD_IN = re.compile(r'^\s*(?:[-*]\s+|\d+\.\s+)?\*\*(?P<title>[^*\n]+?)\*\*', re.M)
-FENCE = re.compile(r'^\s*```.*?^\s*```', re.M | re.S)
+def without_fenced_code(text):
+    output, fence = [], None
+    for line in text.splitlines(keepends=True):
+        if fence:
+            if re.fullmatch(r' {0,3}' + re.escape(fence[0]) + '{' + str(len(fence)) + r',}[ \t]*[\r\n]*', line):
+                fence = None
+            output.append('\n')
+            continue
+        opening = re.match(r' {0,3}(`{3,}|~{3,})(.*)', line)
+        if opening and not (opening[1][0] == '`' and '`' in opening[2]):
+            fence = opening[1]
+            output.append('\n')
+        else:
+            output.append(line)
+    return ''.join(output)
+
+
+def without_code_spans(text):
+    output, index = [], 0
+    while index < len(text):
+        opening = re.search(r'`+', text[index:])
+        if not opening:
+            output.append(text[index:])
+            break
+        start, end = index + opening.start(), index + opening.end()
+        output.append(text[index:start])
+        backslashes = len(text[:start]) - len(text[:start].rstrip('\\'))
+        if backslashes % 2:
+            output.append(text[start:end])
+            index = end
+            continue
+        closing = re.search(r'(?<!`)`{' + str(end - start) + r'}(?!`)', text[end:])
+        if closing:
+            stop = end + closing.end()
+            output.append(re.sub(r'[^\n]', ' ', text[start:stop]))
+            index = stop
+        else:
+            output.append(text[start:end])
+            index = end
+    return ''.join(output)
 
 
 def tracked_files():
@@ -82,7 +121,7 @@ def joined(text, suffix):
     """Join wrapped lines (and their comment markers) so a citation split
     across two lines reads as one."""
     if suffix == '.md':
-        text = FENCE.sub('', text)
+        text = without_fenced_code(text)
         return re.sub(r'\s*\n\s*(?:>\s*)?', ' ', text)
     return re.sub(r'\s*\n\s*(?:///?|#|\*)?\s*', ' ', text)
 
@@ -96,7 +135,7 @@ def normalize(title):
 
 def sections(text):
     """The titles a file offers: its headings and its bold lead-ins."""
-    text = FENCE.sub('', text)
+    text = without_fenced_code(text)
     titles = {normalize(m['title']) for m in HEADING.finditer(text)}
     titles |= {normalize(m['title']) for m in LEAD_IN.finditer(text)}
     # A heading such as "GitHub reviews and updates (2026-10-10)" is cited
@@ -187,7 +226,7 @@ def broken_links(path, text):
     # Blockquoted definitions apply to the whole document (CommonMark 218).
     # Strip each quote marker, but leave code indentation after it intact.
     text = re.sub(r'^(?: {0,3}>[ \t]?)+', '', text, flags=re.M)
-    text = without_indented_code(FENCE.sub('', text))
+    text = without_code_spans(without_indented_code(without_fenced_code(text)))
     # Check destinations at their definitions once, regardless of which
     # reference-link form uses them (or how many times the label is reused).
     links = list(LINK.finditer(text)) + list(REFERENCE_LINK.finditer(text))
@@ -207,7 +246,7 @@ def broken_links(path, text):
             problems.append(f'{relative}: link {link} points to a missing file')
             continue
         if anchor and resolved.suffix == '.md':
-            anchors = {slug(m['title']) for m in HEADING.finditer(FENCE.sub('', resolved.read_text()))}
+            anchors = {slug(m['title']) for m in HEADING.finditer(without_fenced_code(resolved.read_text()))}
             if anchor.lower() not in anchors:
                 problems.append(f'{relative}: link {link} names a heading that does not exist')
     return problems
@@ -258,6 +297,18 @@ class CheckerTests(unittest.TestCase):
         self.assertTrue(broken_links(readme, '[x](docs/DECISIONS.md#no-such-heading)'))
         self.assertEqual(broken_links(readme, '[x](docs/DECISIONS.md#orientations)'), [])
         self.assertEqual(broken_links(readme, '[x](https://example.com/a.md)'), [])
+
+    def test_markdown_code_does_not_create_links(self):
+        readme = ROOT / 'README.md'
+        missing = '[sample](docs/NO-SUCH.md)'
+        for code in [f'`{missing}`', f'``a ` {missing}``',
+                     f'~~~markdown\n{missing}\n~~~',
+                     f'````markdown\n```\n{missing}\n````',
+                     f'~~~markdown\n{missing}']:
+            self.assertEqual(broken_links(readme, code), [], code)
+            self.assertTrue(broken_links(readme, missing + '\n\n' + code))
+        self.assertTrue(broken_links(readme, '`unclosed ' + missing))
+        self.assertTrue(broken_links(readme, '```code``` ' + missing))
 
     def test_relative_links_cannot_escape_the_checkout(self):
         with tempfile.TemporaryDirectory() as folder:

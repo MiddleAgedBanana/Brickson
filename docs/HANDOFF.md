@@ -382,7 +382,10 @@ Simulators cannot show these. Record each result in a `docs/log/` file
   conservative curl-config refusal, GraphQL approval checks and repository-bound
   documentation links. The final gate passed 460 native unit, 61 hook and
   21 docs tests with the catalog unchanged; new-head CI is pending.
-  The owner re-enabled auto-merge.
+  Eleven more reproduced command-form/code-example findings passed the final
+  gate: 460 native unit, 71 hook and 22 docs tests, with an unchanged catalog.
+  New-head CI remains pending.
+  The owner re-enabled auto-merge on both remaining PRs.
   Reconciliation and verification: [`log/2026-10-22-agent-guardrail-reconciliation.md`](log/2026-10-22-agent-guardrail-reconciliation.md).
 
 ## History

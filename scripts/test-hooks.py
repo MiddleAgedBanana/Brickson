@@ -65,6 +65,65 @@ class GuardTests(unittest.TestCase):
                         ['git', '-C', str(self.repo), 'config', '--unset-all', key],
                         capture_output=True)
 
+    def test_xargs_process_slot_operand(self):
+        self.assertDenied("printf '' | xargs --process-slot-var SLOT git add -A")
+        self.assertAllowed("printf '' | xargs --process-slot-var SLOT git status")
+
+    def test_httpie_request_items(self):
+        self.assertDenied('http POST https://api.github.com/repos/o/r/pulls/12/reviews event=APPROVE')
+        self.assertDenied('https POST https://api.github.com/repos/o/r/pulls/12/reviews event:=\'"APPROVE"\'')
+        self.assertDenied('http POST https://api.github.com/repos/o/r/issues assignees:=\'["copilot"]\'')
+        self.assertAllowed('http POST https://api.github.com/repos/o/r/pulls/12/reviews event=COMMENT')
+        self.assertAllowed('http POST https://api.github.com/repos/o/r/issues body=APPROVE')
+
+    def test_httpie_methods_after_options(self):
+        for flags in ['--auth user:example', '-a user:example', '--auth=user:example', '--verify no --pretty all']:
+            self.assertDenied(f'http {flags} PUT https://api.github.com/repos/o/r/pulls/12/merge')
+            self.assertAllowed(f'http {flags} GET https://api.github.com/repos/o/r/pulls/12/merge')
+        self.assertDenied('http https://api.github.com/repos/o/r/pulls/12/reviews event=APPROVE')
+
+    def test_shell_stdin_file_operands(self):
+        for path in ['/dev/stdin', '/dev/fd/0']:
+            self.assertDenied(f"bash {path} <<< 'git add -A'")
+            self.assertAllowed(f"bash {path} <<< 'git status'")
+
+    def test_push_option_values_are_not_dry_run_flags(self):
+        for option in ['-on', '-ofn', '-von']:
+            self.assertDenied(f'git push {option} origin main')
+        self.assertAllowed('git push -vnoexample origin main')
+        self.assertAllowed('git push -on origin feature')
+
+    def test_gh_issue_new_inspects_assignments(self):
+        self.assertDenied('gh issue new --assignee @copilot --title task --body work')
+        self.assertAllowed('gh issue new --assignee octocat --title task --body work')
+
+    def test_leading_redirections_do_not_hide_commands(self):
+        for prefix in ['>/tmp/guard-test-log ', '2>/tmp/guard-test-log ', '2>&1 ', '< /tmp/guard-test-input ']:
+            self.assertDenied(prefix + 'git add -A')
+            self.assertDenied(prefix + 'gh pr merge 12')
+            self.assertAllowed(prefix + 'git status')
+        self.assertDenied('env > /tmp/guard-test-log git add -A')
+
+    def test_copilot_intent_assignment_is_guarded(self):
+        name = 'mcp__github__assign_copilot_to_issue_with_intent'
+        for args in [{'is_suggestion': False}, {}]:
+            self.assertEqual(decision(name, args, self.repo), 'deny')
+        self.assertIsNone(decision(name, {'is_suggestion': True}, self.repo))
+
+    def test_directory_stack_changes_are_checked(self):
+        with tempfile.TemporaryDirectory(dir=self.repo) as folder:
+            subprocess.run(['git', 'init', '-q', '-b', 'main', folder], check=True)
+            self.assertDenied(f'pushd {folder} && git push origin')
+            self.assertDenied(f'pushd {self.repo} && popd && git push origin', cwd=folder)
+            self.assertAllowed(f'pushd {folder} && popd && git push origin')
+            self.assertAllowed(f'pushd {folder} && git status')
+            self.assertDenied('popd && git push origin')
+
+    def test_curl_dot_segments_cannot_hide_endpoints(self):
+        endpoint = 'https://api.github.com/repos/o/r/unused/../pulls/12/./merge'
+        self.assertDenied('curl -X PUT ' + endpoint)
+        self.assertAllowed('curl -X GET ' + endpoint)
+
     def test_shell_here_strings_are_checked_as_commands(self):
         for redirect in [' <<< ', '<<<']:
             self.assertDenied(f"bash{redirect}'git add -A'")
@@ -661,7 +720,7 @@ class SettingsTests(unittest.TestCase):
         import re
         groups = self.settings['hooks']['PreToolUse']
         tools = ['merge_pull_request', 'enable_pr_auto_merge', 'request_copilot_review',
-                 'assign_copilot_to_issue', 'create_pull_request_with_copilot',
+                 'assign_copilot_to_issue', 'assign_copilot_to_issue_with_intent', 'create_pull_request_with_copilot',
                  'push_files', 'create_or_update_file', 'delete_file',
                  'pull_request_review_write', 'update_pull_request']
         for tool in ['Bash'] + [f'mcp__github__{t}' for t in tools]:

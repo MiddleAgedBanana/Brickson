@@ -583,3 +583,47 @@ iOS 27.0; app line coverage remains 62.6% (3,540/5,659). This batch changes
 no app or UI source. New-head hosted CI remains required. No new product decision or review-rule exception is adopted. The
 owner re-enabled auto-merge on this PR after the earlier off-state record;
 agents leave that setting in place and do not invoke a GitHub merge.
+
+
+### Follow-up review: command variants and Markdown examples
+
+Eleven findings on `19eca4f` reproduced before correction: ten new hook
+methods plus the existing hook-matcher test failed, and one new Markdown
+test failed. The fixes are confined to the reported command and code-example
+forms; no app/UI source or product decision changes.
+
+- GNU xargs consumes the process-slot variable operand, and `gh issue new`
+  uses the existing create/assignment checks.
+- Git push short options stop parsing flags when `-o` begins its attached
+  value: `-on` is a push option value, while a preceding real `-n` remains
+  a dry run. Existing force and protected-destination checks stay in place.
+- Shell `/dev/stdin` and `/dev/fd/0` operands expose redirected command text.
+  Leading file redirections are removed before executable classification.
+  Ordinary pushd/popd operations retain both successful and failed directory
+  transitions and their stack; an inherited stack destination is unknown,
+  so a bare push there is refused rather than guessed. Indexed/stack-only
+  pushd forms remain conservatively refused.
+- HTTPie reads methods after flags and their operands, then decodes data
+  request items for the existing approval, merge and Copilot checks. Plain
+  and JSON fields, ordinary array items and bounded file-backed fields are
+  recognized; unsupported nested/file-upload forms are refused. Headers and
+  URL query items are not JSON body fields. Explicit GET/read-only commands
+  and non-approving reviews remain allowed.
+- API dot segments are normalized before endpoint checks. Conditional
+  Copilot intent assignment is wired into the hook: only an explicit boolean
+  `is_suggestion: true` is allowed, because it records an intent rather than
+  launching the billed agent. The unconditional permission-deny entries
+  remain unchanged, so they do not prohibit that suggestion-only form.
+- Link checking skips inline code spans and backtick/tilde fenced code,
+  including longer and unclosed fences, while a real link outside the code
+  still fails. This also keeps headings inside those fences out of citations.
+
+The final `scripts/test.sh unit` gate passed all 460 native unit tests,
+71 hook tests and 22 documentation tests, including paired allowed paths,
+with no failures/skips and an unchanged String Catalog. Xcode 27.1
+(27A9275), iPad Pro 13-inch (M5), iOS 27.0; app line coverage is 62.6%
+(3,540/5,659). New-head hosted CI remains required. The known local audio limitation
+is unchanged; there is no audio workaround or weakened accessibility check.
+The owner has now re-enabled auto-merge on both #14 and #17. Agents leave
+those settings in place and will incorporate whichever branch lands first
+into the remaining branch when required.
