@@ -1213,7 +1213,9 @@ never where it is.
   measured cost to the owner to accept or reject, before the slot plan
   ships in a dwell, switch, head or gaze profile. *2026-10-23:* reduced,
   still open; *Settings on Home* says by how much and what decides the
-  rest.
+  rest. *Get Attention and Stop on Home* then took Again off the
+  message's edge: by the model, about 56% of the message is nearest Yes
+  or No by centre and 50% by edge, on every window.
 - **Open: a library with more than four everyday categories.** Region B
   is an L (Stop Alert's column beside the categories), which cannot scroll
   as one standard container, so the stand-in's answer (the category

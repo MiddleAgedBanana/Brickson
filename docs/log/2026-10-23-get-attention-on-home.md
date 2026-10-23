@@ -71,7 +71,7 @@ library; a 375×667 phone at the default size, and by the model an
 - `5a7b0ca`: main merged in (PR #35, Show Borders on Home).
 - `214f61c`: the sparse-library gap under Stop, pinned as a strict known
   issue (Codex's review).
-- The docs commit that records the review.
+- The docs commits that record the reviews.
 
 ## Verified
 

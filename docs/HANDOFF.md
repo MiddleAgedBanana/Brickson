@@ -147,10 +147,12 @@ release in docs/ROADMAP.md when no thread has it yet.
   editing and import must not leave fewer than three until the layout
   keeps a category nearest the well, or the owner accepts a rule that
   keeps three. *(R0, the library thread with the layout engine)*
-- Yes, No and Again border the message (12pt away), so a look resting on
-  it can speak one of them. Reduced, not removed: with Again out of the
-  message's row, about 61 to 67% of the message is nearest one of them,
-  down from about 89 to 95% on phones. Recorded as an open hazard, not
+- Yes and No border the message (12pt away), so a look resting on it
+  can speak one of them. Reduced, not removed: Again no longer shares the
+  message's edge, and by the model about 56% of the message is nearest a
+  control that speaks by centre and 50% by edge on every window
+  (Emergency is nearest the rest), down from about 61 to 67% with Again
+  in the first row and 89 to 95% before that, on phones. Recorded as an open hazard, not
   an accepted exception (docs/DECISIONS.md, "Home's slot plan" and
   "Settings on Home"): a device check (Snap to Item by nearest centre or
   nearest edge) decides whether placement can remove it, or its measured
@@ -375,7 +377,7 @@ Simulators cannot show these. Record each result in a `docs/log/` file
 | A phrase spoken while Get Attention sounds is understood over the tone at 0.32 | `AttentionAlertStatus.toneVolumeWhileSpeaking` |
 | A phone call, Siri and another app's alarm during a phrase and during Get Attention: each stops and shows "Stopped — Again" or "Alert stopped", and nothing restarts by itself, on iOS 26 and iOS 27 | Interruption handling and the iOS 27 notices (docs/DECISIONS.md, "Audio session notices") |
 | Lock the device during a long phrase and while Get Attention sounds: both carry on | Background audio, before the App Review notes promise it |
-| Get Attention from Home's own control, by touch, Dwell with Snap to Item, Switch Control and Voice Control ("Tap Help"): it sounds with the silent switch on; a look held on Get Attention never stops it; a look still resting where Stop was after Stop meets a category | "Get Attention and Stop on Home" (`GetAttentionOnHomeTests` scores the simulator's frames) |
+| Get Attention from Home's own control, by touch, Dwell with Snap to Item, Switch Control and Voice Control ("Tap Help"): it sounds with the silent switch on; a look held on Get Attention never stops it; a look still resting where Stop was after Stop meets a category; with Switch Control's Auto Tap, where the cursor goes once Stop's element leaves | "Get Attention and Stop on Home" (`GetAttentionOnHomeTests` scores the simulator's frames) |
 | Whether a voice reports its final word before finishing, and whether the system reports a cut-off phrase as finished | How often "A phrase the system cuts off" relies on its 3-second window |
 | Unplugging headphones during a phrase and during Get Attention | Output loss: speech carries on, the alarm stops and says so |
 | Whether the tone player ever reads as not playing for a moment while it plays (route changes, Bluetooth) | Whether the once-a-second health check needs a second look before stopping the alarm |

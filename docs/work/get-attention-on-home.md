@@ -2,7 +2,7 @@
 
 *Roadmap: R0 item 4 (Get Attention), the part PR #16 left for later:
 the controls on Home. Owner: the Get Attention and Stop on Home thread.
-Status: built (PR #38).*
+Status: building (PR #38; untested until CI passes).*
 
 ## Intent
 
@@ -147,6 +147,12 @@ widths (the window less Home's 16pt margins).
   alarm, and Get Attention is never nearest Stop's, so a held look on
   Stop can never restart it. Margins after Stop: 4pt by edge (the gap
   under Stop is 8pt, the gap above it 12pt) and 12pt or more by centre.
+  **Switch Control** counts the same way: every activation takes a
+  switch press, and with Auto Tap a repeat on the item just chosen is
+  the held activation in the table (Get Attention again changes nothing;
+  Stop's element leaves with the alarm). Where the scan cursor goes once
+  Stop's element is gone has not been seen; the device check covers it
+  (docs/HANDOFF.md, *Checks that need a real device*).
 - **Colours** (docs/DECISIONS.md, "Solid fills on Home"; pinned in
   `PaletteTests` with the other fills): `AttentionFill` `#B45309`, white
   text 5.02:1, against a black screen 4.18:1, against white 5.02:1;
