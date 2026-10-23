@@ -58,7 +58,7 @@ Xcode 27.1 (27A9275); final-head CI is pending.
   newest standard iPhone, after a warm-up launch, and fail when no test
   ran ([`log/2026-10-21-test-seams.md`](log/2026-10-21-test-seams.md)).
   Since PR #28 each job keeps `build/TestResults` as a download on the
-  run's page for 14 days, passed or failed, unless the run stopped
+  run's page for 14 days, passed or failed, unless the job stopped
   before its tests started (a build failure leaves no bundle)
   ([`log/2026-10-22-ci-test-results.md`](log/2026-10-22-ci-test-results.md)).
   Before PR #12, CI used Xcode 26.6 and iOS 26.5; 10 of 11 runs on

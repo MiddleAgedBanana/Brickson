@@ -12,9 +12,9 @@ Nothing a person using Brickson sees. Each job in
 step that uploads `build/TestResults` (the result bundles
 `scripts/test.sh` writes: every test's outcome, screenshots of UI-test
 failures, the captures UI tests attach) as a download on the run's page:
-`unit-test-results` and `ui-test-results`, kept for 14 days. A run
+`unit-test-results` and `ui-test-results`, kept for 14 days. A job
 that stops before its tests start, a build failure for example, writes
-no bundle, so it has no artifact.
+no bundle, so that job has no artifact; the other job keeps its own.
 
 Before this, the bundles vanished with GitHub's machine, so when CI
 failed nobody could see what the app showed, and cloud agents, which
@@ -35,10 +35,10 @@ Choices in the steps:
   pull request keeps it current.
 - `if: always()`, so a run whose tests fail keeps its bundle; that is
   when it matters most.
-- `if-no-files-found: warn`, so a run that stops before its tests start
+- `if-no-files-found: warn`, so a job that stops before its tests start
   (choosing Xcode, XcodeGen, starting the simulator, or a build failure:
   `scripts/test.sh` returns before writing a bundle) fails with its own
-  error and only a warning about the upload. Such a run has no
+  error and only a warning about the upload. That job has no
   artifact.
 - `retention-days: 14`: long enough to look at a failure while its pull
   request is open, short enough that old bundles do not pile up.
