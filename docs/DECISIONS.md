@@ -363,8 +363,9 @@ one replaces with no loss.
 | `NotificationCenter.addObserver(forName:object:queue:using:)` | `AudioSessionEvents`, `SpeechService` | Foundation's typed messages (iOS 26) exist for none of these notices: interruption, route change, media services, available voices. iOS 27's life-cycle notice has one (`AVAudioSession.DidBecomeInactiveMessage`), but Apple does not say what it does with a notice that has no context, and `AudioSessionEventsTests` posts one. | Under *Planned moves* |
 | Key-value observation of `outputVolume` | `AudioSafetyMonitor` | Apple offers no other way to observe the system volume. | — |
 | `UIColor` and `UITraitCollection` | `PaletteTests` | Invariant 6 measures every pair under Increase Contrast too. SwiftUI's `colorSchemeContrast` "depends entirely on user settings, and you can't change it", so SwiftUI cannot resolve a colour for Increase Contrast. | SwiftUI can |
-| `UIImage(systemName:)` | `StarterPhrasesTests` | Only UIKit reports a symbol name that does not exist; SwiftUI's `Image(systemName:)` cannot fail. | — |
+| `UIImage(systemName:)` | `StarterPhrasesTests`, `LibraryRulesTests` | Only UIKit reports a symbol name that does not exist; SwiftUI's `Image(systemName:)` cannot fail. | — |
 | `UIHostingController.sizeThatFits(in:)` | `StarterLabelFitTests` | The exact size SwiftUI gives a label, to within half a point. SwiftUI's `ImageRenderer` draws pixels, and Apple does not say its size is unrounded. | — |
+| A `UIHostingController` shown in a `UIWindow` | `SwiftDataBehaviourTests` | Checks that SwiftUI's `modelContainer` leaves the library's autosave off, which happens only for a view on screen; a unit test has no SwiftUI way to put a view in a window. | — |
 | `INAlternativeAppNames`, SiriKit's Info.plist key | `project.yml` | App Intents has no way to give the app other names. Apple's App Shortcuts sessions say `.applicationName` includes these names; SiriKit's article says they need an Intents extension (*App identity*). | R2's Siri device check |
 
 Siri and Shortcuts (R2) are built with App Intents and App Shortcuts. A

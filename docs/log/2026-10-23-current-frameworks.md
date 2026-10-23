@@ -92,6 +92,13 @@ for speech reports, block-based notification observers, KVO of the
 volume, UIKit in `PaletteTests`, `UIImage(systemName:)` and
 `UIHostingController` in tests, and `INAlternativeAppNames`.
 
+PR #14 (the phrase library) merged into `main` while this was open. Its
+code, merged in here, was checked against the rule the same way: one new
+use of `UIImage(systemName:)` (`LibraryRulesTests`) joins that row, and
+`SwiftDataBehaviourTests` shows a SwiftUI view in a `UIWindow`, now a row
+of its own. Its `JSONSerialization` in `BackupCodecTests` is Foundation,
+which the entry counts as current.
+
 ## Commits
 
 - `15e36be` Write the current-frameworks rule and the owner's vision into
