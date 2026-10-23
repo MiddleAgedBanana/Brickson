@@ -89,6 +89,19 @@ struct AppBundleTests {
         ])
     }
 
+    /// Inside Assistive Access, Brickson fills the space above the system's
+    /// Back button with its own layout, instead of the reduced frame the
+    /// system draws other apps in. It never declares Assistive Access's
+    /// separate, streamlined interface, which would put its controls
+    /// somewhere else there than everywhere else (invariant 8;
+    /// docs/DECISIONS.md, "Accessibility API coverage"). Fails if the key
+    /// is dropped, set to false, or joined by `UISupportsAssistiveAccess`.
+    @Test func assistiveAccessShowsBricksonFullScreenInItsOwnLayout() throws {
+        let info = try infoPlist()
+        #expect(info["UISupportsFullScreenInAssistiveAccess"] as? Bool == true)
+        #expect(info["UISupportsAssistiveAccess"] == nil)
+    }
+
     // MARK: App Store
 
     /// Without this, App Store Connect asks the export-compliance question

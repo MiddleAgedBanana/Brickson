@@ -44,12 +44,25 @@ struct FamilySetupView: View {
                 SettingsRowLabel(title: "Reaching the Screen", systemImage: "hand.point.up.left.fill")
             }
             .settingsRowStyle()
+            .accessibilityIdentifier("reachingTheScreen")
 
             NavigationLink(value: SettingsRoute.keepOpen) {
                 SettingsRowLabel(title: "Keep \(AppName.display) Open", systemImage: "lock.fill")
             }
             .settingsRowStyle()
             .accessibilityIdentifier("keepOpen")
+
+            NavigationLink(value: SettingsRoute.callsSiriAndShortcuts) {
+                SettingsRowLabel(title: "Calls, Siri and Shortcuts", systemImage: "phone.fill")
+            }
+            .settingsRowStyle()
+            .accessibilityIdentifier("callsSiriAndShortcuts")
+
+            NavigationLink(value: SettingsRoute.moreAccessibility) {
+                SettingsRowLabel(title: "More Accessibility Settings", systemImage: "accessibility")
+            }
+            .settingsRowStyle()
+            .accessibilityIdentifier("moreAccessibility")
 
             NavigationLink(value: SettingsRoute.privacy) {
                 SettingsRowLabel(title: "Privacy Policy", systemImage: "hand.raised.fill")
@@ -61,6 +74,7 @@ struct FamilySetupView: View {
                 SettingsRowLabel(title: "About \(AppName.display)", systemImage: "info.circle.fill")
             }
             .settingsRowStyle()
+            .accessibilityIdentifier("about")
         }
         .onAppear {
             if CheckInPolicy.isDue(setup.record, now: .now, calendar: .current) {

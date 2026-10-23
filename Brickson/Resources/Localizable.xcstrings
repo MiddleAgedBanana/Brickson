@@ -28,13 +28,22 @@
     "A partner can point to phrases on the screen for the person to choose with a look, a blink or a nod, then tap the one chosen." : {
 
     },
-    "A simpler iPhone or iPad with only the apps chosen for it." : {
+    "A simpler iPhone or iPad with only the apps chosen for it. Inside it, %@ fills the screen above the Back button." : {
 
     },
     "A stray touch or look can leave %@. iOS has two ways to keep someone in it. %@ also keeps the screen from locking while it is open." : {
 
     },
+    "A triple-click of the side or top button (the Home button, on a model that has one) turns chosen features on or off, such as Switch Control or Live Speech. With more than one chosen, a list appears to choose from." : {
+
+    },
     "About %@" : {
+
+    },
+    "Accessibility Shortcut" : {
+
+    },
+    "Add Switch Control to Settings > Accessibility > Accessibility Shortcut: once it is on, the usual touches cannot turn it off, and a triple-click can." : {
 
     },
     "Again" : {
@@ -52,10 +61,19 @@
     "Answered. iOS asks only once, so any change is made in the Settings app." : {
 
     },
+    "Apple Watch needs watchOS 10 or later." : {
+
+    },
+    "Apple's own features for speaking in calls, for Siri, and for running the device with a sound or a button. Each is turned on in the Settings app." : {
+
+    },
     "Ask to Use Personal Voice" : {
 
     },
     "Assistive Access" : {
+
+    },
+    "Assistive Access is on, so these steps are done after leaving it: triple-click the side or top button (the Home button, on a model that has one), choose Exit Assistive Access, and enter its passcode." : {
 
     },
     "Audio could not start. Speech and Get Attention may be silent. Try again." : {
@@ -64,10 +82,22 @@
     "Audio failed" : {
 
     },
+    "Auto Scanning Time sets how fast the highlight moves." : {
+
+    },
+    "Auto Tap, under Tap Behavior, taps a selected item after a short wait, without the menu. Pressing the switch again during the wait shows the menu instead." : {
+
+    },
+    "Auto-Lock, in Settings > Display & Brightness > Auto-Lock, sets when the screen locks in other apps. While Low Power Mode is on, Auto-Lock is 30 seconds." : {
+
+    },
     "Automatic" : {
 
     },
     "Back to Talking" : {
+
+    },
+    "Calls, Siri and Shortcuts" : {
 
     },
     "Can't be used while Personal Voice is turned off for %@." : {
@@ -85,10 +115,31 @@
     "Choose every way that is used now. Each answer is saved as soon as it is chosen." : {
 
     },
+    "Choose the action. For something Siri does, choose Siri Request and type the request." : {
+
+    },
+    "Choose the features a triple-click should reach." : {
+
+    },
+    "Choose the other device as the screen shows, then choose Accept on it." : {
+
+    },
     "Choose the voice" : {
 
     },
+    "Choose what it does. With one switch, choose Select Item." : {
+
+    },
+    "Choose where the switch is: External, Screen, Camera, Back Tap, Sound or AirPod Gestures." : {
+
+    },
     "Clear My Choices" : {
+
+    },
+    "Connect an external switch first, if one is used. A Bluetooth switch is paired in Settings > Bluetooth." : {
+
+    },
+    "Connect the device as its maker explains, and set it up in its own app." : {
 
     },
     "Couldn't save, so nothing was changed. Try again." : {
@@ -103,10 +154,16 @@
     "Done" : {
 
     },
+    "Double-tap the screen with three fingers to zoom in or out, and drag with three fingers to move around." : {
+
+    },
+    "During Guided Access, a triple-click reaches them only if Accessibility Shortcut is turned on in Settings > Accessibility > Guided Access. Assistive Access has its own Accessibility Shortcut setting, in Settings > Accessibility > Assistive Access." : {
+
+    },
     "During Guided Access, emergency calls and Crash Detection are not available. Before relying on it, check that Eye Tracking, Switch Control or Voice Control still work with it on this device." : {
 
     },
-    "Dwell Control chooses a button by looking at it for a moment." : {
+    "Dwell Control, on the same screen, chooses a button by looking at it for a moment." : {
 
     },
     "Earlier setup answers could not be read, so setup starts again. Nothing else was changed." : {
@@ -130,6 +187,9 @@
     "Eye Tracking" : {
 
     },
+    "Eye trackers for iPad" : {
+
+    },
     "Family Setup" : {
 
     },
@@ -142,7 +202,13 @@
     "Family: help with setting up is in Settings." : {
 
     },
-    "Follow the dot with the eyes to calibrate." : {
+    "First, open Settings > Accessibility > Accessibility Shortcut and make sure Touch Accommodations is selected, so a triple-click can turn it off again if touches stop working as expected." : {
+
+    },
+    "Follow the dot with the eyes to calibrate. This happens each time Eye Tracking is turned on." : {
+
+    },
+    "For the device's own options, choose Devices, then its name." : {
 
     },
     "Get Attention" : {
@@ -166,6 +232,9 @@
     "Guided Access" : {
 
     },
+    "Guided Access has its own Display Auto-Lock, which sets when the screen locks during a session. Open Settings > Accessibility > Guided Access > Display Auto-Lock and choose the longest time offered." : {
+
+    },
     "Head Tracking" : {
 
     },
@@ -181,7 +250,28 @@
     "Help" : {
       "comment" : "Another name a person can say for the Get Attention control with Voice Control."
     },
+    "Helps Siri understand speech that has changed. iOS offers it when the device's language is English (U.S.)." : {
+
+    },
+    "Hold Duration sets how long a switch must be held before it counts. Ignore Repeat ignores a press that comes again too soon." : {
+
+    },
     "How is the screen reached?" : {
+
+    },
+    "How long a dwell takes is set in Settings > Accessibility > Touch > AssistiveTouch > Dwell Control." : {
+
+    },
+    "How long a look takes is set in Settings > Accessibility > Touch > AssistiveTouch > Dwell Control." : {
+
+    },
+    "If a triple-click is too fast, a slower click speed is set in Settings > Accessibility > Side Button (Top Button or Home Button on some models)." : {
+
+    },
+    "If a triple-click is used to turn features such as Switch Control on or off, turn on Accessibility Shortcut on the same screen, so it still works during Guided Access." : {
+
+    },
+    "If three-finger gestures are hard, add Zoom to the Accessibility Shortcut, and turn on Zoom Controller in Zoom's settings." : {
 
     },
     "In Passcode Settings, set a passcode." : {
@@ -196,6 +286,24 @@
     "Keeps the iPhone or iPad in one app until a passcode is entered." : {
 
     },
+    "Lends the person's accessibility settings to another iPhone or iPad for a while. Sharing ends with Stop Sharing, a triple-click or locking the device, or when the two are more than 30 feet (about 9 m) apart." : {
+
+    },
+    "Listen for Atypical Speech" : {
+
+    },
+    "Live Speech" : {
+
+    },
+    "Live Speech on Apple Watch" : {
+
+    },
+    "Live Speech's phrases are its own: %@'s phrases are not in it, so type in the few used most." : {
+
+    },
+    "Magnifies the screen." : {
+
+    },
     "Making a Personal Voice means reading phrases aloud, so it is easiest while speaking is comfortable. Apple keeps it encrypted on this device, and in iCloud only if Share Across Devices is on. %@ never receives the voice or its recordings." : {
 
     },
@@ -203,6 +311,12 @@
 
     },
     "Message not saved" : {
+
+    },
+    "More Accessibility Settings" : {
+
+    },
+    "Most settings, these guides' steps included, are changed only after leaving Assistive Access." : {
 
     },
     "Move the pointer by moving the head; choose with a facial expression or Dwell Control." : {
@@ -244,16 +358,34 @@
     "Not Now" : {
 
     },
-    "Nothing to turn on. If tapping is hard, AssistiveTouch and Touch Accommodations in Settings > Accessibility > Touch can help." : {
+    "Nothing to turn on. If tapping is hard, Touch Accommodations can help: Hold Duration ignores touches shorter than a set time, Ignore Repeat treats several quick touches as one, and Tap Assistance uses the first or last place touched." : {
 
     },
-    "Open %@, then triple-click the side or top button (the Home button on older models) and choose Start." : {
+    "On an iPhone with an Action button, pressing and holding it can use an accessibility feature or run a shortcut." : {
+
+    },
+    "On iPad, an eye-tracking device made for iPad can move the pointer instead of the camera. Apple describes this for iPad, not iPhone." : {
+
+    },
+    "On the Apple Watch, open Settings > Accessibility > Live Speech and turn it on." : {
+
+    },
+    "On the same screen, save phrases used often under Phrases." : {
+
+    },
+    "Open %@, then triple-click the side or top button (the Home button, on a model that has one) and choose Start." : {
 
     },
     "Open Dwell Control Settings" : {
 
     },
     "Open Personal Voice Settings" : {
+
+    },
+    "Open Settings > Accessibility > Accessibility Shortcut and make sure Live Speech is selected, so a triple-click of the Digital Crown opens it." : {
+
+    },
+    "Open Settings > Accessibility > Accessibility Shortcut." : {
 
     },
     "Open Settings > Accessibility > Assistive Access and choose Set Up Assistive Access." : {
@@ -268,13 +400,40 @@
     "Open Settings > Accessibility > Head Tracking and turn it on." : {
 
     },
-    "Open Settings > Accessibility > Switch Control." : {
+    "Open Settings > Accessibility > Live Speech and turn it on." : {
+
+    },
+    "Open Settings > Accessibility > Share Accessibility Settings, then choose Continue." : {
+
+    },
+    "Open Settings > Accessibility > Siri." : {
+
+    },
+    "Open Settings > Accessibility > Switch Control > Switches and choose Add New Switch." : {
+
+    },
+    "Open Settings > Accessibility > Touch > AssistiveTouch and turn on AssistiveTouch." : {
+
+    },
+    "Open Settings > Accessibility > Touch > Touch Accommodations." : {
+
+    },
+    "Open Settings > Accessibility > Vocal Shortcuts, choose Set Up, then Continue." : {
 
     },
     "Open Settings > Accessibility > Voice Control." : {
 
     },
+    "Open Settings > Accessibility > Zoom and turn on Zoom." : {
+
+    },
+    "Open Settings > Action Button." : {
+
+    },
     "Open the Web Version" : {
+
+    },
+    "Other settings in iOS that can help. Each is in Settings > Accessibility." : {
 
     },
     "Personal Voice" : {
@@ -298,6 +457,9 @@
     "Premium" : {
 
     },
+    "Press and hold the Action button to use it." : {
+
+    },
     "Privacy Policy" : {
 
     },
@@ -313,7 +475,16 @@
     "Replacing would remove phrases that aren't in the backup, so nothing was changed. Add the backup to your phrases instead." : {
 
     },
+    "Save phrases under Favorite Phrases on the same screen." : {
+
+    },
     "Say the name of a button to choose it, such as “Tap Yes”." : {
+
+    },
+    "Scanning Style: Auto Scanning, the usual choice, moves the highlight by itself and works with one switch. Manual Scanning needs two switches." : {
+
+    },
+    "Screen lock" : {
 
     },
     "Set Up Step by Step" : {
@@ -329,6 +500,12 @@
 
     },
     "Settings could not be opened. Follow the steps above in the Settings app." : {
+
+    },
+    "Share Accessibility Settings" : {
+
+    },
+    "Siri Pause Time, on the same screen, gives more time to finish speaking." : {
 
     },
     "Someone else helps" : {
@@ -391,10 +568,22 @@
     "Stopped: Phrases" : {
 
     },
+    "Swipe to Accessibility and choose a feature, or to Shortcut and choose a shortcut. Without a choice, the button does nothing." : {
+
+    },
     "Switch Control" : {
 
     },
+    "Switch Control timing" : {
+
+    },
     "That answer could not be saved. Try again." : {
+
+    },
+    "The Action button" : {
+
+    },
+    "The iPhone or iPad learns a word or a sound of the person's own and runs an action when it hears it. It suits someone who can still make a few sounds the same way each time. While it is on, the microphone is in use; what it hears is handled on the device." : {
 
     },
     "The last change could not be saved. Try again." : {
@@ -416,6 +605,9 @@
 
     },
     "The voice chosen earlier is no longer on this device, so Automatic is used." : {
+
+    },
+    "These are in Settings > Accessibility > Switch Control." : {
 
     },
     "This backup is damaged and couldn't be read. Nothing was changed." : {
@@ -457,16 +649,34 @@
     "To end it, triple-click again, enter the passcode and choose End." : {
 
     },
-    "To leave it, triple-click the side button (the Home button on older models), choose Exit Assistive Access and enter the passcode." : {
+    "To leave it, triple-click the side or top button (the Home button, on a model that has one), choose Exit Assistive Access and enter the passcode." : {
 
     },
     "To let %@ speak in your Personal Voice, turn %@ on in this list:" : {
 
     },
+    "To speak, triple-click the Digital Crown, choose Live Speech if a list appears, then type or choose a phrase and choose Send." : {
+
+    },
+    "To speak, triple-click the side or top button (the Home button, on a model that has one), choose Live Speech if a list appears, then type the words and choose the button that speaks them." : {
+
+    },
     "Touch" : {
 
     },
-    "Turn on Switch Control." : {
+    "Turn on Bluetooth and Wi-Fi on both devices." : {
+
+    },
+    "Turn on Dwell Control there, so that holding the gaze on a button chooses it." : {
+
+    },
+    "Turn on Listen for Atypical Speech." : {
+
+    },
+    "Turn on Switch Control last, in Settings > Accessibility > Switch Control." : {
+
+    },
+    "Turn on Touch Accommodations, or choose Set Up Touch Accommodations where the screen offers it, and choose the settings that help." : {
 
     },
     "Turn on Voice Control." : {
@@ -481,10 +691,13 @@
     "Type a name for this category." : {
 
     },
+    "Type the phrase that will run it, then say it aloud as the screen asks." : {
+
+    },
     "Type the words for this phrase." : {
 
     },
-    "Under Switches, add the switch that will be used." : {
+    "Type, and iOS speaks the words aloud, in the room and into phone and FaceTime calls. It can speak in a Personal Voice." : {
 
     },
     "Use" : {
@@ -497,6 +710,9 @@
 
     },
     "Version %@" : {
+
+    },
+    "Vocal Shortcuts" : {
 
     },
     "Voice" : {
@@ -517,7 +733,10 @@
     "Ways of reaching the screen chosen:" : {
 
     },
-    "When asked for apps, add %@ under Other apps." : {
+    "When asked for apps, add %@." : {
+
+    },
+    "With it on, quick taps and swipes can seem to do nothing. AssistiveTouch, in Settings > Accessibility > Touch > AssistiveTouch, puts a menu on the screen for gestures that are hard to make." : {
 
     },
     "Yes" : {
@@ -536,6 +755,9 @@
 
     },
     "Your saved phrases couldn't be opened. They haven't been deleted. Restart the app to try again. Don't delete the app: that would erase them." : {
+
+    },
+    "Zoom" : {
 
     }
   },

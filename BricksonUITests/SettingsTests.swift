@@ -200,6 +200,60 @@ final class SettingsTests: XCTestCase {
         try assertPassesAccessibilityAudit(app, context: "Voice Settings, light")
     }
 
+    /// Every guide in Family Setup, and About, passes the audit. Two titles
+    /// carry the app's name, which is not final, so each guide is known by
+    /// words of its own instead of its title.
+    @MainActor
+    func testFamilySetupGuidesPassTheAccessibilityAudit() throws {
+        continueAfterFailure = true
+        let guides: [(row: String, name: String, words: String)] = [
+            ("reachingTheScreen", "Reaching the Screen", "needs no setup of its own"),
+            ("keepOpen", "Keep Open", "Guided Access and turn it on"),
+            ("callsSiriAndShortcuts", "Calls, Siri and Shortcuts", "Live Speech"),
+            ("moreAccessibility", "More Accessibility Settings", "Accessibility Shortcut"),
+            ("about", "About", "Version"),
+        ]
+        let app = openSettings()
+        open("familySetup", in: app, waitingFor: "Family Setup")
+        for guide in guides {
+            let row = app.buttons[guide.row].firstMatch
+            XCTAssertTrue(row.waitForExistence(timeout: 10), "\(guide.row) is missing")
+            row.tap()
+            let words = app.descendants(matching: .any)
+                .matching(NSPredicate(format: "label CONTAINS %@", guide.words))
+                .firstMatch
+            XCTAssertTrue(
+                words.waitForExistence(timeout: 10),
+                "\(guide.name) did not open, or no longer says \"\(guide.words)\""
+            )
+            attachCapture(app, name: guide.name)
+            try assertPassesAccessibilityAudit(app, context: "\(guide.name), light")
+
+            app.navigationBars.buttons.element(boundBy: 0).tap()
+            XCTAssertTrue(
+                app.navigationBars["Family Setup"].waitForExistence(timeout: 10),
+                "Back from \(guide.name) did not return to Family Setup"
+            )
+        }
+    }
+
+    /// Each step of Set Up Step by Step passes the audit.
+    @MainActor
+    func testTheStepByStepSetupPassesTheAccessibilityAudit() throws {
+        continueAfterFailure = true
+        let app = openSettings()
+        open("familySetup", in: app, waitingFor: "Family Setup")
+        open("guidedSetup", in: app, waitingFor: "Step 1 of 5")
+        try assertPassesAccessibilityAudit(app, context: "Step 1 of 5, light")
+
+        for step in 2...5 {
+            app.buttons["guidedSetupNext"].tap()
+            XCTAssertTrue(app.navigationBars["Step \(step) of 5"].waitForExistence(timeout: 10), "step \(step) did not open")
+            attachCapture(app, name: "Step \(step) of 5")
+            try assertPassesAccessibilityAudit(app, context: "Step \(step) of 5, light")
+        }
+    }
+
     /// A speed is a fixed choice: choosing it again keeps it, so a repeated
     /// activation never walks the speed (docs/DECISIONS.md, "Speed is a set
     /// of fixed choices").
