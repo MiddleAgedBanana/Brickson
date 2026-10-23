@@ -715,25 +715,29 @@ starter phrases, not the person's words. If an earlier category shares
 the emergency category's identity, Emergency opens that earlier
 category's phrases (`CategorySelection.resolve` finds a category by
 identity), so the emergency category gets a new identity, which nobody
-sees, chosen so it keeps its place. Apart from that identity, nothing
-already stored is changed, moved or deleted, not even a sort order, and
-the repair is saved once from a context of its own. If that save fails,
-the store is left as it was for the next launch to try again, and the
-app speaks from a copy in memory holding the person's whole library with
-the repair, and says changes won't be kept. A second emergency category
-is left as it is, because Home opens the first. The repair says nothing
-on Home: the family sees Emergency working again.
+sees, chosen so it keeps its place and stays the first emergency
+category. What is added goes after the last item. Nothing already stored
+is moved or deleted, and nothing is changed but that identity and, where
+a hand-edited store leaves no room after the last sort order (at or near
+the largest an `Int` holds), the sort orders of the items beside the
+additions, renumbered 0, 1, 2 in the order they are shown, which shows
+them exactly as before. The repair is saved once from a context of its
+own. If that save fails, the store is left as it was for the next launch
+to try again, and the app speaks from a copy in memory holding the
+person's whole library with the repair, and says changes won't be kept.
+A second emergency category is left as it is, because Home opens the
+first. The repair says nothing on Home: the family sees Emergency
+working again.
 
-One damaged store it cannot fully help, because helping would change
-stored sort orders: where a sort order is already the largest an `Int`
-holds, the additions take that same order and ties fall back to name or
-words, so they can sort before the person's items. Brickson never writes
-one: every save numbers sort orders 0, 1, 2. (Categories with the same
-sort order and name are ordered by identity, so the new identity must
-also sort, against each category with the emergency category's name, as
-the old one did. The repair tries 64 and keeps the old identity if none
-fits, which only a store made for it can cause. Brickson keeps every
-identity unique, so none of its own stores needs a new identity at all.)
+Only categories with the same sort order and name are ordered by
+identity, so only those limit the new identity: against each it must
+sort as the old one did, and another emergency category with the same
+identity must stay after it. The repair tries 64 new identities and
+keeps the old one if none fits, which needs a store made for it: several
+categories with the emergency category's name and sort order whose
+identities sit close around its own. Brickson keeps every identity
+unique and numbers sort orders 0, 1, 2, so none of its own stores needs
+a new identity or a renumbering.
 
 ## Editing the library
 

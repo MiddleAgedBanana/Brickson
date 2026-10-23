@@ -3,8 +3,10 @@ import Testing
 @testable import Brickson
 
 /// The launch repair that gives Emergency something to say in a damaged
-/// library, checked without a store. It may only add (invariant 7). Each
-/// test names the change that would make it fail.
+/// library, checked without a store. It never deletes, moves or rewrites
+/// anything in the library (invariant 7); the one stored thing it may
+/// change is the emergency category's identity. Each test names the change
+/// that would make it fail.
 struct EmergencyRepairTests {
     private typealias F = LibraryFixtures
     /// Stands in for the bundled starter library: its emergency category is
@@ -281,25 +283,125 @@ struct EmergencyRepairTests {
         #expect(repair(library) == nil)
     }
 
+    /// A category with neither the emergency category's sort order nor its
+    /// name, here the one that shadows it.
+    private func shadowing(_ id: UUID) -> LibrarySnapshot.Category {
+        LibrarySnapshot.Category(id: id, name: "Other", symbolName: "star.fill", isEmergency: false, phrases: [])
+    }
+
+    /// A category named like the emergency category, but not one.
+    private func namedLikeEmergency(_ id: UUID) -> LibrarySnapshot.Category {
+        LibrarySnapshot.Category(id: id, name: F.emergency.name, symbolName: "star.fill", isEmergency: false, phrases: [])
+    }
+
     /// Categories with the same sort order and name are shown in the order
-    /// of their identities, so a new identity must sort as the old one did
-    /// against every category with the same name. Fails if the repair takes
-    /// the first new identity it is given (930 sorts before the earlier
-    /// category's 940), or one that sorts after the later category (960).
+    /// of their identities, so against those the new identity must sort as
+    /// the old one did. Fails if the repair takes the first new identity it
+    /// is given (930 sorts before the earlier category's 935), or one that
+    /// sorts after the later category (960).
     @Test func aNewIdentityKeepsTheCategoryAmongSameNamedOnesInPlace() throws {
-        let name = F.emergency.name
-        let before = LibrarySnapshot.Category(id: F.id(940), name: name, symbolName: "star.fill", isEmergency: false, phrases: [])
         var emergency = F.emergency
         emergency.id = F.id(940)
-        let after = LibrarySnapshot.Category(id: F.id(950), name: name, symbolName: "star.fill", isEmergency: false, phrases: [])
-        let damaged = LibrarySnapshot(categories: [before, emergency, after])
+        let damaged = LibrarySnapshot(categories: [
+            shadowing(F.id(940)), namedLikeEmergency(F.id(935)), emergency, namedLikeEmergency(F.id(950)),
+        ])
         var offered = [F.id(930), F.id(960), F.id(945)]
 
-        let needed = EmergencyRepair.needed(in: damaged, starter: starter, makeID: { offered.removeFirst() })
+        let needed = EmergencyRepair.needed(in: damaged, sortOrders: [0, 1, 1, 1], starter: starter) {
+            offered.removeFirst()
+        }
 
         let repair = try #require(needed)
         #expect(repair.newIdentity == F.id(945))
         #expect(offered.isEmpty)
+    }
+
+    /// A category with the emergency category's name but another sort
+    /// order is placed by sort order, never by identity, so it does not
+    /// limit the new identity. Fails if the repair ignores sort orders:
+    /// here no identity sorts after the largest, and Emergency would stay
+    /// broken.
+    @Test func aSameNamedCategoryWithAnotherSortOrderDoesNotLimitTheNewIdentity() throws {
+        let largest = try #require(UUID(uuidString: "FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF"))
+        var emergency = F.emergency
+        emergency.id = F.id(500)
+        let damaged = LibrarySnapshot(categories: [namedLikeEmergency(largest), shadowing(F.id(500)), emergency])
+
+        let needed = EmergencyRepair.needed(in: damaged, sortOrders: [0, 1, 2], starter: starter, makeID: SequentialIDs().make)
+
+        let repair = try #require(needed)
+        #expect(repair.newIdentity == F.id(900))
+        #expect(shownByEmergency(repair.repaired)?.isEmergency == true)
+    }
+
+    /// Codex's case on PR #37: the shadowing category also has the
+    /// emergency category's name, its identity is the largest there is,
+    /// and its sort order is earlier. Fails if the repair then finds no new
+    /// identity and Emergency stays broken.
+    @Test func aShadowingCategoryWithTheSameNameAndTheLargestIdentityGivesWay() throws {
+        let largest = try #require(UUID(uuidString: "FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF"))
+        var emergency = F.emergency
+        emergency.id = largest
+        let damaged = LibrarySnapshot(categories: [namedLikeEmergency(largest), emergency])
+
+        let needed = EmergencyRepair.needed(in: damaged, sortOrders: [0, 1], starter: starter, makeID: SequentialIDs().make)
+
+        let repair = try #require(needed)
+        #expect(repair.newIdentity == F.id(900))
+        #expect(shownByEmergency(repair.repaired)?.isEmergency == true)
+    }
+
+    /// A category with the same sort order, name and identity was never put
+    /// before or after the emergency category by the display order (the
+    /// store's fetch order did that), so it does not limit the new
+    /// identity. Fails if the repair treats it like a category with an
+    /// identity of its own, when no identity sorts after the largest.
+    @Test func aCategoryIdenticalInSortOrderNameAndIdentityDoesNotLimitIt() throws {
+        let largest = try #require(UUID(uuidString: "FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF"))
+        var emergency = F.emergency
+        emergency.id = largest
+        let damaged = LibrarySnapshot(categories: [namedLikeEmergency(largest), emergency])
+
+        let needed = EmergencyRepair.needed(in: damaged, sortOrders: [3, 3], starter: starter, makeID: SequentialIDs().make)
+
+        let repair = try #require(needed)
+        #expect(repair.newIdentity == F.id(900))
+    }
+
+    /// Another emergency category with the same sort order, name and
+    /// identity must stay after the one repaired, or it would become the
+    /// one Home opens, still with the shadowed identity. Fails if the
+    /// repair takes 600, which sorts after the old 500.
+    @Test func anotherEmergencyCategoryWithTheSameIdentityStaysAfterIt() throws {
+        var emergency = F.emergency
+        emergency.id = F.id(500)
+        var twin = emergency
+        twin.phrases = []
+        let damaged = LibrarySnapshot(categories: [shadowing(F.id(500)), emergency, twin])
+        var offered = [F.id(600), F.id(400)]
+
+        let needed = EmergencyRepair.needed(in: damaged, sortOrders: [0, 1, 1], starter: starter) {
+            offered.removeFirst()
+        }
+
+        let repair = try #require(needed)
+        #expect(repair.newIdentity == F.id(400))
+        #expect(repair.place == .existingCategory(at: 1))
+    }
+
+    /// Sort orders that do not match the library are not trusted: every
+    /// category is then taken to share one. Fails if they are used anyway
+    /// (here they would crash the run).
+    @Test func sortOrdersThatDoNotMatchTheLibraryAreIgnored() throws {
+        var emergency = F.emergency
+        emergency.id = F.id(940)
+        let damaged = LibrarySnapshot(categories: [shadowing(F.id(940)), namedLikeEmergency(F.id(935)), emergency])
+
+        let needed = EmergencyRepair.needed(in: damaged, sortOrders: [0], starter: starter, makeID: SequentialIDs().make)
+
+        let repair = try #require(needed)
+        // 900 to 935 sort before the same-named category at 935.
+        #expect(repair.newIdentity == F.id(936))
     }
 
     /// When no identity offered keeps the category in place, it keeps its
@@ -307,26 +409,54 @@ struct EmergencyRepairTests {
     /// gives up on the phrases, takes an identity that moves it, or keeps
     /// asking for identities without end.
     @Test func withoutAnIdentityThatKeepsItsPlaceTheOldOneStays() throws {
-        let shadowing = LibrarySnapshot.Category(id: F.id(940), name: F.emergency.name, symbolName: "star.fill", isEmergency: false, phrases: [])
         var empty = F.emergency
         empty.id = F.id(940)
         empty.phrases = []
-        let damaged = LibrarySnapshot(categories: [shadowing, empty])
-        // Every identity offered sorts before 940.
+        let damaged = LibrarySnapshot(categories: [shadowing(F.id(940)), namedLikeEmergency(F.id(939)), empty])
+        // Every identity offered sorts before 939.
         let ids = SequentialIDs(startingAt: 1)
 
-        let needed = EmergencyRepair.needed(in: damaged, starter: starter, makeID: ids.make)
+        let needed = EmergencyRepair.needed(in: damaged, sortOrders: [0, 1, 1], starter: starter, makeID: ids.make)
 
         let repair = try #require(needed)
         #expect(repair.newIdentity == nil)
         #expect(repair.phrases.map(\.text) == F.emergency.phrases.map(\.text))
-        #expect(repair.repaired.categories.map(\.id) == [F.id(940), F.id(940)])
+        #expect(repair.repaired.categories.map(\.id) == [F.id(940), F.id(939), F.id(940)])
         let next = ids.make()
         #expect(next == F.id(EmergencyRepair.identityAttempts + 1))
 
         var withWords = damaged
-        withWords.categories[1].phrases = F.emergency.phrases
-        #expect(EmergencyRepair.needed(in: withWords, starter: starter, makeID: SequentialIDs(startingAt: 1).make) == nil)
+        withWords.categories[2].phrases = F.emergency.phrases
+        let again = EmergencyRepair.needed(in: withWords, sortOrders: [0, 1, 1], starter: starter, makeID: SequentialIDs(startingAt: 1).make)
+        #expect(again == nil)
+    }
+
+    // MARK: Sort orders for what is added
+
+    /// Additions follow the last sort order and nothing is renumbered while
+    /// there is room; without room the existing items are renumbered in the
+    /// order they are shown, so none moves. Fails if a normal store is
+    /// renumbered, if an addition overflows or ties at `Int.max`, or if the
+    /// renumbering changes the order.
+    @Test(arguments: [
+        (2, [], nil, [0, 1]),
+        (1, [3, 9, 1], nil, [10]),
+        (1, [-5], nil, [-4]),
+        (0, [Int.max], nil, []),
+        (2, [Int.max - 2], nil, [Int.max - 1, Int.max]),
+        (1, [5, Int.max], [0, 1], [2]),
+        (2, [Int.max - 1, Int.max - 1], [0, 1], [2, 3]),
+    ] as [(Int, [Int], [Int]?, [Int])])
+    func sortOrdersFollowTheLastOneAndRenumberOnlyWithoutRoom(
+        adding count: Int,
+        after orders: [Int],
+        renumbered: [Int]?,
+        added: [Int]
+    ) {
+        let result = EmergencyRepair.sortOrders(adding: count, after: orders)
+
+        #expect(result.renumbered == renumbered)
+        #expect(result.added == added)
     }
 
     /// Fails if a word is rewritten on the way, even into a canonically

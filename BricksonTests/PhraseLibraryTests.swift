@@ -530,15 +530,13 @@ struct PhraseLibraryTests {
         #expect(try LibraryEditor.read(container) == before)
     }
 
-    /// Fails if the next sort order overflows (a crash at launch) or
-    /// renumbers what is there (docs/DECISIONS.md, "The emergency category
-    /// is always there", names this store's one exception).
-    @Test func aSortOrderAtTheVeryEndDoesNotOverflow() throws {
-        #expect(PhraseLibraryRepairer.sortOrder(after: []) == 0)
-        #expect(PhraseLibraryRepairer.sortOrder(after: [3, 9, 1]) == 10)
-        #expect(PhraseLibraryRepairer.sortOrder(after: [-5]) == -4)
-        #expect(PhraseLibraryRepairer.sortOrder(after: [Int.max]) == Int.max)
-
+    /// A hand-edited store can leave no room after the last sort order.
+    /// The categories are then renumbered in the order they are shown, so
+    /// nothing moves, and the emergency category goes after them. Fails if
+    /// the next sort order overflows (a crash at launch), if the addition
+    /// ties at `Int.max` and sorts first by name, or if anything else is
+    /// renumbered.
+    @Test func aStoreWithNoRoomAtTheEndIsRenumberedWithoutMovingAnything() throws {
         let container = try storeWithoutEmergency(categorySortOrder: Int.max)
 
         let outcome = try PhraseLibraryRepairer.repairEmergency(container, starter: library)
@@ -548,11 +546,36 @@ struct PhraseLibraryTests {
             return
         }
         let stored = try categories(in: container)
-        #expect(stored.map(\.sortOrder) == [Int.max, Int.max])
-        // The documented exception: tied at Int.max, the order falls back
-        // to the name, so the hidden emergency category sorts first.
-        #expect(stored.map(\.name) == ["Emergency", "Mine"])
+        #expect(stored.map(\.name) == ["Mine", "Emergency"])
+        #expect(stored.map(\.sortOrder) == [0, 1])
+        #expect(stored.first?.phrasesInOrder.map(\.sortOrder) == [7, 9])
         #expect(CategorySelection.emergency(in: stored)?.phrasesInOrder.map(\.text) == F.emergency.phrases.map(\.text))
+    }
+
+    /// The same for an emergency category whose only phrase, blank, has no
+    /// room after it. Fails if the starter phrases tie with it at
+    /// `Int.max` and sort before it by their words.
+    @Test func anEmergencyPhraseWithNoRoomAfterItKeepsItsPlace() throws {
+        let container = try PhraseLibraryStore.makeInMemoryContainer()
+        let context = ModelContext(container)
+        let emergency = PhraseCategory(name: "Help", symbolName: "star.fill", sortOrder: 1, isEmergency: true, uuid: F.emergencyID)
+        context.insert(emergency)
+        context.insert(Phrase(text: "\u{2060}", sortOrder: Int.max, category: emergency, uuid: F.id(210)))
+        context.insert(PhraseCategory(name: mine.name, symbolName: mine.symbolName, sortOrder: 0, uuid: mine.id))
+        try context.save()
+
+        let outcome = try PhraseLibraryRepairer.repairEmergency(container, starter: library)
+
+        guard case .saved = outcome else {
+            Issue.record("The repair was not saved: \(outcome)")
+            return
+        }
+        let stored = try categories(in: container)
+        #expect(stored.map(\.sortOrder) == [0, 1])
+        let phrases = try #require(CategorySelection.emergency(in: stored)?.phrasesInOrder)
+        #expect(phrases.map(\.text) == ["\u{2060}"] + F.emergency.phrases.map(\.text))
+        #expect(phrases.map(\.sortOrder) == [0, 1, 2])
+        #expect(phrases.first?.uuid == F.id(210))
     }
 
     /// A store damaged so that an earlier category, `mine`'s, has the
@@ -595,6 +618,38 @@ struct PhraseLibraryTests {
         let shown = CategorySelection.resolve(stored, selectedID: CategorySelection.emergency(in: stored)?.uuid)
         #expect(shown?.isEmergency == true)
         #expect(try LibraryEditor.read(container) == repair.repaired)
+    }
+
+    /// A category with the emergency category's name but an earlier sort
+    /// order, and the largest identity there is, is placed by its sort
+    /// order, so it must not stop the new identity. Fails if the repair is
+    /// not given the stored sort orders: then no identity fits and
+    /// Emergency stays broken.
+    @Test func aSameNamedCategoryWithAnEarlierSortOrderDoesNotStopTheNewIdentity() throws {
+        let largest = try #require(UUID(uuidString: "FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF"))
+        let container = try PhraseLibraryStore.makeInMemoryContainer()
+        let context = ModelContext(container)
+        context.insert(PhraseCategory(name: "Help", symbolName: "star.fill", sortOrder: 0, uuid: largest))
+        let shadowing = PhraseCategory(name: mine.name, symbolName: mine.symbolName, sortOrder: 1, uuid: F.emergencyID)
+        context.insert(shadowing)
+        context.insert(Phrase(text: mine.phrases[0].text, sortOrder: 0, category: shadowing, uuid: mine.phrases[0].id))
+        let emergency = PhraseCategory(name: "Help", symbolName: "star.fill", sortOrder: 2, isEmergency: true, uuid: F.emergencyID)
+        context.insert(emergency)
+        context.insert(Phrase(text: "Come here, please.", sortOrder: 0, category: emergency, uuid: F.id(210)))
+        try context.save()
+
+        let outcome = try PhraseLibraryRepairer.repairEmergency(container, starter: library)
+
+        guard case let .saved(repair) = outcome else {
+            Issue.record("The repair was not saved: \(outcome)")
+            return
+        }
+        let newIdentity = try #require(repair.newIdentity)
+        let stored = try categories(in: container)
+        #expect(stored.map(\.uuid) == [largest, F.emergencyID, newIdentity])
+        #expect(stored.map(\.sortOrder) == [0, 1, 2])
+        let shown = CategorySelection.resolve(stored, selectedID: CategorySelection.emergency(in: stored)?.uuid)
+        #expect(shown?.phrasesInOrder.map(\.text) == ["Come here, please."])
     }
 
     /// Invariant 5, for the new identity: fails if it reaches the store

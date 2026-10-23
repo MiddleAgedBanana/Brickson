@@ -28,22 +28,34 @@ recorded as needed and not built.
   identity and shows the first category with it
   (`CategorySelection.resolve`), so in such a store Emergency opened the
   earlier category's phrases. The emergency category now gets a new
-  identity, which nobody sees. Categories with the same sort order and
-  name are ordered by identity, so the new one must sort as the old one
-  did against every category with the same name; the repair tries 64 and
-  keeps the old identity if none fits. A later category sharing it
-  changes nothing for Emergency (Home finds the first) and is left alone.
+  identity, which nobody sees. Only categories with the same sort order
+  and name are ordered by identity, so against those (the repair is
+  given the stored sort orders) the new one must sort as the old one
+  did, and another emergency category with the same identity must stay
+  after it; the repair tries 64 and keeps the old identity if none fits.
+  A later category sharing it changes nothing for Emergency (Home finds
+  the first) and is left alone. Codex's second review found the first
+  version compared against every category with the same name, sort
+  order or not, so a same-named category with the largest identity
+  could leave Emergency broken; that is the rule above.
 - **`PhraseLibraryRepairer`** reads the store and writes what the repair
-  says in a context of its own, saved once. Apart from that identity it
-  only inserts: no stored name, phrase, flag or sort order changes; new
-  sort orders come after the largest one there (and stop at `Int.max`
-  rather than overflow).
+  says in a context of its own, saved once. Otherwise it inserts: no
+  stored name, phrase or flag changes, and new sort orders come after the
+  largest one there.
+- **No room at the end** (Codex's second review). A hand-edited store
+  can leave no room after its last sort order. The first version let the
+  additions tie at `Int.max`, where the tie falls to name or words and
+  they could sort before the person's items, and recorded that as an
+  exception. Now the items beside the additions are renumbered 0, 1, 2 in
+  the order they are shown, which shows them exactly as before, and the
+  additions follow (`EmergencyRepair.sortOrders(adding:after:)`). A store
+  with room is never renumbered.
 - **Launch** (`PhraseLibraryLaunch`): a store that opens with categories
   is now repaired when it needs it. If the repair cannot be saved (a full
   disk, say), the store is left as it was for the next launch, and the app
-  speaks from a copy in memory holding the person's whole library plus the
-  starter emergency phrases, with the existing "Phrases can't be saved
-  right now" line. Before, the choice would have been the starter library
+  speaks from a copy in memory holding the person's whole library with
+  the repair made, with the existing "Phrases can't be saved right now"
+  line. Before, the choice would have been the starter library
   alone, hiding the person's words. If the repair cannot read the store,
   the saved phrases are reported as unreadable, exactly as when the seeder
   cannot read them.
@@ -55,10 +67,6 @@ recorded as needed and not built.
   other; inserting keeps them item for item.
 - Nothing on Home changed, and no sentence was added: the family sees
   Emergency working again. The log says the repair ran, without words.
-- One hand-edited store it cannot fully help, because helping would
-  change stored sort orders, is named in docs/DECISIONS.md: sort orders
-  already at `Int.max` (the additions tie and can sort first). Brickson
-  never writes one.
 
 The decision is recorded in docs/DECISIONS.md, "The emergency category is
 always there", as a default adopted on 2026-10-23, reversible.
@@ -73,14 +81,18 @@ See the pull request; the branch was cut from `main` at `f34e8ae` (PR #33).
   and invariants, whether CI will pass, the written rules and docs). One
   built a stand-in that behaves like SwiftData where these tests depend on
   it and ran the new store tests against it. Their findings are fixed
-  here: the two stores above are named rather than claimed, both halves of
-  the read check are tested, and "Every save is explicit" now covers the
-  launch's own writes.
+  here: two stores the repair could not help were named rather than
+  claimed (both since fixed, after Codex's reviews), both halves of the
+  read check are tested, and "Every save is explicit" now covers the
+  launch's own writes. A second independent review of the new identity
+  (correctness, CI, records, each finding checked by two more reviewers)
+  found the same over-strict rule Codex did, and three stale sentences,
+  all fixed here.
 - **On a Linux machine with Swift 6.4.1** (not the app's toolchain: no
   Xcode, SwiftData or UIKit), in a throwaway package with the project's
-  concurrency settings: `EmergencyRepair` and its 17 tests
-  (`EmergencyRepairTests`, 19 cases with arguments) pass with the
-  existing `LibraryEditTests` and `BackupCodecTests`, 86 tests in all. A
+  concurrency settings: `EmergencyRepair` and its 23 tests
+  (`EmergencyRepairTests`, 31 cases with arguments) pass with the
+  existing `LibraryEditTests` and `BackupCodecTests`, 92 tests in all. A
   one-line stand-in replaced `String(localized:)`.
 - **Each new pure test fails when its rule is broken.** Thirteen mutations
   of `EmergencyRepair` were run there, each caught: repairing an empty
@@ -110,6 +122,28 @@ See the pull request; the branch was cut from `main` at `f34e8ae` (PR #33).
   same-named categories before or after
   (`aNewIdentityKeepsTheCategoryAmongSameNamedOnesInPlace`); and trying
   without end (`withoutAnIdentityThatKeepsItsPlaceTheOldOneStays`).
+- **The second review round, the same way:** seven more, each caught.
+  Ignoring the sort orders
+  (`aSameNamedCategoryWithAnotherSortOrderDoesNotLimitTheNewIdentity`);
+  letting a category with the same sort order, name and identity limit
+  the new identity (`aCategoryIdenticalInSortOrderNameAndIdentityDoesNotLimitIt`);
+  letting another emergency category with the same identity go first
+  (`anotherEmergencyCategoryWithTheSameIdentityStaysAfterIt`); trusting
+  sort orders that do not match the library, which crashes the run
+  (`sortOrdersThatDoNotMatchTheLibraryAreIgnored`); and always
+  renumbering, never renumbering, or finding no room one place too soon
+  (`sortOrdersFollowTheLastOneAndRenumberOnlyWithoutRoom`).
+- **A fuzz of 40,000 random damaged stores**, in a throwaway test on the
+  same Linux machine (not committed): two to six categories each, with
+  repeated identities, sort orders and names (canonically equivalent
+  ones included), sorted by a copy of `orderedForDisplay`, then given
+  the repair's new identity. All 2,386 stores in which Emergency opened
+  another category were fixed; no category moved except the emergency
+  one among categories identical to it in sort order, name and identity;
+  the first emergency category never changed; and no store that worked
+  was given a new identity. On the first version an independent
+  reviewer's fuzz left 81 of 1,221 such stores broken, 73 of them through
+  the same-name rule Codex found.
 - **The SwiftData side compiles against stand-ins on Linux** (types with
   SwiftData's and OSLog's shapes and no behaviour): `StarterLibrary.swift`,
   `LibraryEditor.swift`, `CategorySelection.swift` and
@@ -127,8 +161,10 @@ See the pull request; the branch was cut from `main` at `f34e8ae` (PR #33).
   (`aFailedRepairChangesNothing`); a write to a store that cannot be read,
   or that reads differently, either half of the check
   (`aStoreThatCannotBeReadIsNotRepaired`,
-  `aStoreThatReadsDifferentlyIsNotRepaired`); an overflow, or a change to
-  the documented tie (`aSortOrderAtTheVeryEndDoesNotOverflow`); a starter
+  `aStoreThatReadsDifferentlyIsNotRepaired`); an overflow, a tie at
+  `Int.max`, or a renumbering that moves something
+  (`aStoreWithNoRoomAtTheEndIsRenumberedWithoutMovingAnything`,
+  `anEmergencyPhraseWithNoRoomAfterItKeepsItsPlace`); a starter
   file with no emergency phrases
   (`theBundledStarterCanGiveEmergencyItsPhrasesBack`);
   a launch that skips the repair
@@ -141,9 +177,11 @@ See the pull request; the branch was cut from `main` at `f34e8ae` (PR #33).
   (`whenTheRepairAndItsCopyBothFailTheStoreIsKeptAndTheProblemReported`);
   a shadowed emergency category that keeps its identity in the store, or
   any other stored change with it
-  (`aShadowedEmergencyCategoryGetsANewIdentityInTheStore`); and a new
-  identity that reaches the store when the save fails, or is missing from
-  the copy (`aFailedNewIdentityChangesNothing`).
+  (`aShadowedEmergencyCategoryGetsANewIdentityInTheStore`); a repair not
+  given the stored sort orders
+  (`aSameNamedCategoryWithAnEarlierSortOrderDoesNotStopTheNewIdentity`);
+  and a new identity that reaches the store when the save fails, or is
+  missing from the copy (`aFailedNewIdentityChangesNothing`).
   `everyLaunchTurnsAutosaveOff` covers the two new launch paths.
 
 ## Not verified

@@ -133,13 +133,15 @@ enum PhraseLibraryRepairer {
     /// words, and a new identity for it, which nobody sees and which keeps
     /// it in its place, when an earlier category shares its own.
     ///
-    /// Apart from that identity it only inserts (invariant 7). Nothing
-    /// already stored is renamed, moved or deleted, not even a sort order:
-    /// what it adds is ordered after what is there, except in a store whose
-    /// sort orders already reach `Int.max` (`sortOrder(after:)`). If the
-    /// save fails, that context is simply discarded: nothing reached the
-    /// store, and no `rollback()` is needed (docs/LESSONS.md, "Never roll
-    /// back a cascade delete").
+    /// Otherwise it inserts, and nothing already stored is renamed, moved
+    /// or deleted (invariant 7): what it adds is ordered after what is
+    /// there, and no sort order changes unless a hand-edited store leaves
+    /// no room after the last one, when the items beside the additions are
+    /// renumbered in the order they are shown
+    /// (`EmergencyRepair.sortOrders(adding:after:)`). If the save fails,
+    /// that context is simply discarded: nothing reached the store, and no
+    /// `rollback()` is needed (docs/LESSONS.md, "Never roll back a cascade
+    /// delete").
     ///
     /// `readStore` and `save` exist so tests can make reading or saving
     /// fail; the app passes neither.
@@ -161,15 +163,21 @@ enum PhraseLibraryRepairer {
             logger.error("The phrase library could not be read before the emergency repair: \(error)")
             throw .storeUnreadable
         }
-        guard let repair = EmergencyRepair.needed(in: stored, starter: starter) else { return .notNeeded }
+        guard let repair = EmergencyRepair.needed(
+            in: stored,
+            sortOrders: categories.map(\.sortOrder),
+            starter: starter
+        ) else { return .notNeeded }
 
         let category: PhraseCategory
         switch repair.place {
         case let .newCategory(id, name, symbolName):
+            let orders = EmergencyRepair.sortOrders(adding: 1, after: categories.map(\.sortOrder))
+            renumber(categories, orders.renumbered)
             category = PhraseCategory(
                 name: name,
                 symbolName: symbolName,
-                sortOrder: sortOrder(after: categories.map(\.sortOrder)),
+                sortOrder: orders.added[0],
                 isEmergency: true,
                 uuid: id
             )
@@ -187,10 +195,11 @@ enum PhraseLibraryRepairer {
                 category.uuid = newIdentity
             }
         }
-        var order = sortOrder(after: (category.phrases ?? []).map(\.sortOrder))
-        for phrase in repair.phrases {
+        let existing = category.phrasesInOrder
+        let orders = EmergencyRepair.sortOrders(adding: repair.phrases.count, after: existing.map(\.sortOrder))
+        renumber(existing, orders.renumbered)
+        for (phrase, order) in zip(repair.phrases, orders.added) {
             context.insert(Phrase(text: phrase.text, sortOrder: order, category: category, uuid: phrase.id))
-            order = sortOrder(after: [order])
         }
         do {
             try save(context)
@@ -206,13 +215,22 @@ enum PhraseLibraryRepairer {
         return .saved(repair)
     }
 
-    /// A sort order after every one in `orders`, so an addition goes last
-    /// without renumbering anything. At `Int.max` it stays there rather than
-    /// overflow; ties then fall back to name or words, then identity
-    /// (`PhraseCategory.orderedForDisplay`).
-    static func sortOrder(after orders: [Int]) -> Int {
-        guard let last = orders.max() else { return 0 }
-        return last == .max ? last : last + 1
+    /// Gives `categories`, in the order they are shown, the sort orders in
+    /// `renumbered`, if there are any.
+    private static func renumber(_ categories: [PhraseCategory], _ renumbered: [Int]?) {
+        guard let renumbered else { return }
+        for (category, order) in zip(categories, renumbered) {
+            category.sortOrder = order
+        }
+    }
+
+    /// Gives `phrases`, in the order they are shown, the sort orders in
+    /// `renumbered`, if there are any.
+    private static func renumber(_ phrases: [Phrase], _ renumbered: [Int]?) {
+        guard let renumbered else { return }
+        for (phrase, order) in zip(phrases, renumbered) {
+            phrase.sortOrder = order
+        }
     }
 
     private static let logger = Logger(subsystem: AppLog.subsystem, category: "library")
@@ -305,11 +323,11 @@ enum PhraseLibraryLaunch {
             case .notNeeded, .saved:
                 return Prepared(container: container, isVolatile: isVolatile, issue: issue)
             case let .notSaved(repair):
-                // The store holds the person's library, but Emergency has
-                // nothing to open and the repair could not be saved (a full
-                // disk, say). The store stays as it was, for the next launch
-                // to try again. Speak from a copy in memory: every word of
-                // theirs, with the starter emergency phrases.
+                // The store holds the person's library, but Emergency
+                // cannot open something to say and the repair could not be
+                // saved (a full disk, say). The store stays as it was, for
+                // the next launch to try again. Speak from a copy in memory:
+                // every word of theirs, with the repair made.
                 fallbackLibrary = repair.repaired
                 fallbackIssue = issue
             }
