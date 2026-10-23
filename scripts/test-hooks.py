@@ -67,6 +67,53 @@ class GuardTests(unittest.TestCase):
                         ['git', '-C', str(self.repo), 'config', '--unset-all', key],
                         capture_output=True)
 
+    def test_expanding_pathspecs_require_literal_paths(self):
+        for path in ['"$PWD"', '~+', '{.,README.md}', '"${PWD}"', '"$paths"']:
+            self.assertDenied(f'git add {path}')
+            self.assertDenied(f'git commit -m update -- {path}')
+        self.assertAllowed('git add docs/HANDOFF.md')
+        self.assertAllowed("git commit -m '$PWD is mentioned' -- docs/HANDOFF.md")
+
+    def test_branch_rename_invalidates_implicit_push_destination(self):
+        self.configure('push.default', 'current')
+        for command in ['git branch -M main', 'git branch -m main',
+                        'git branch --move main', 'git branch --mo main',
+                        'git symbolic-ref HEAD refs/heads/main']:
+            self.assertDenied(command + ' && git push origin')
+            self.assertDenied(command + ' && git push origin HEAD')
+            self.assertAllowed(command + ' && git push origin HEAD:feature')
+        self.assertAllowed('git branch --show-current && git push origin')
+        self.assertAllowed('git symbolic-ref HEAD && git push origin')
+
+    def test_xargs_runtime_arguments_are_unknown(self):
+        for command in ['echo HEAD:main | xargs git push origin',
+                        "printf '%s\\n' -A | xargs git add",
+                        'xargs -a args.txt git push origin feature',
+                        'printf main | xargs -I {} git push origin HEAD:{}',
+                        'echo --approve | xargs gh pr review 12']:
+            self.assertDenied(command)
+        self.assertAllowed('printf README.md | xargs git status --short')
+        self.assertAllowed('printf hello | xargs echo')
+
+    def test_gh_review_short_clusters_are_inspected(self):
+        for option in ['-ab looks-good', '-cab looks-good', '-ablooks-good', '-ra']:
+            self.assertDenied('gh pr review 12 ' + option)
+        for option in ['-cb approved', '-ba', '-b --approve',
+                       '--body=-ab --comment', '--approve=false --comment']:
+            self.assertAllowed('gh pr review 12 ' + option)
+
+    def test_named_shell_scripts_require_inspectable_commands(self):
+        with tempfile.TemporaryDirectory(dir=self.repo) as folder:
+            script = Path(folder) / 'run.sh'
+            script.write_text('git add -A\n')
+            for shell in ['bash', 'sh', 'zsh', 'dash']:
+                self.assertDenied(f'{shell} {script}')
+                self.assertDenied(f'{shell} -- {script}')
+            script.write_text('git status\n')
+            self.assertDenied(f'bash {script}')  # file may change before execution
+        self.assertAllowed("bash -c 'git status'")
+        self.assertAllowed('bash --help')
+
     def test_push_abbreviations_require_full_option_names(self):
         for option in ['--mir', '--force-w', '--force-w=main:abc', '--force-i', '--al', '--bra']:
             self.assertDenied(f'git push {option} origin')
@@ -281,7 +328,7 @@ class GuardTests(unittest.TestCase):
             self.assertDenied(command)
         self.assertDenied("printf 'git status\\n' | bash")  # unknown pipe input, even when benign
         self.assertAllowed("bash -c 'git status'")
-        self.assertAllowed("printf 'data' | bash script.sh")  # stdin is data for a named script
+        self.assertDenied("printf 'data' | bash script.sh")  # the program file is uninspected
         self.assertAllowed('bash --version')
 
     def test_exhaustive_glob_pathspecs_are_all_tree_staging(self):
@@ -650,7 +697,7 @@ class GuardTests(unittest.TestCase):
             with self.subTest(options=options):
                 self.assertDenied(f'xargs {options} git add -A')
                 self.assertDenied(f'xargs {options} gh pr merge 17')
-                self.assertAllowed(f'xargs {options} git add docs/HANDOFF.md')
+                self.assertDenied(f'xargs {options} git add docs/HANDOFF.md')  # input can append -A
                 self.assertAllowed(f'xargs {options} git status --short')
 
     def test_merge_status_get_is_allowed_but_merge_put_is_denied(self):

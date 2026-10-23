@@ -963,3 +963,45 @@ References checked: [Git option parsing](https://git-scm.com/docs/gitcli),
 [Bash invocation](https://www.gnu.org/software/bash/manual/html_node/Invoking-Bash.html),
 [command substitution](https://www.gnu.org/software/bash/manual/html_node/Command-Substitution.html),
 and [curl uploads](https://curl.se/docs/manpage.html#-T).
+
+
+## Runtime command operands and complete verifier reports, 2026-10-23
+
+Seven fresh findings on `7e64ecf` were assessed. Five guard regressions
+and one documentation regression failed before correction. The verifier
+also said to stop when CI was pending, contradicting its later comparison
+and reporting steps; it now stops polling but finishes those steps and
+marks CI pending in the complete report.
+
+Shell-expanded staging pathspecs require literal paths. Branch moves and
+symbolic HEAD writes invalidate later implicit push destinations, while
+read-only branch inspection and explicit feature destinations still pass.
+Xargs input can append or replace arguments at execution time: protected
+children require explicit arguments, while known read-only Git commands
+and ordinary echo keep working. The earlier xargs option-operand parsing
+and optional --max-lines regression remain intact. Named shell script
+files, like uninspectable stdin, require explicit commands; the guard does
+not execute or trust a file that can change before the shell reads it.
+
+GitHub review short-option clusters now inspect approval flags and stop
+at a value-taking body/file flag, so review prose remains data. Markdown
+reference titles now accept escaped quotes and parentheses, with missing
+file/anchor and valid-reference coverage. Prior allowed assertions for
+xargs staging and an uninspected shell file were tightened to denied;
+read-only and explicit-command assertions remain. All 119 hook tests and
+33 documentation tests pass. These checks remain advisory, not a complete
+shell parser or security sandbox.
+
+Main remains `d654cef`; no new merge is needed. The full local unit script
+passed 591 native tests, zero failures and the existing issue #19 skip
+(592 total), plus 119 hook and 33 documentation tests. Xcode 27.1
+(27A9275), iPad Pro 13-inch (M5), iOS 27.0; catalog unchanged; app line
+coverage 67.0% (4,568/6,821). Hosted CI and a fresh review on the published
+head remain required; older-head results do not certify these fixes.
+Replace import remains refused and no audio workaround was introduced.
+
+References: [GitHub review flags](https://cli.github.com/manual/gh_pr_review),
+[CommonMark link titles](https://spec.commonmark.org/0.31.2/#link-title),
+and installed Git, Bash and xargs help for branch, program and runtime
+argument behavior. The reported command fixtures are inspected as hook
+input; no protected remote action is executed.

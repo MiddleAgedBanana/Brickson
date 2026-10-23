@@ -59,7 +59,7 @@ BARE_ITALIC = re.compile(r'(?<![*\w`])\*(?P<title>[A-Z][^*\n]{1,120}?)\*(?![*\w]
 REFERENCE_LINK = re.compile(
     r'^ {0,3}\[(?!\^)(?:\\.|[^\[\]\\\n])+\]:[ \t]*(?:\n[ \t]*)?'
     r'(?P<target><[^>\n]*>|[^\s<>]+)'
-    r'(?:[ \t]+(?:"[^"\n]*"|\'[^\'\n]*\'|\([^\)\n]*\)))?[ \t]*$', re.M)
+    r'(?:[ \t]+(?:"(?:\\.|[^"\\\n])*"|\'(?:\\.|[^\'\\\n])*\'|\((?:\\.|[^)\\\n])*\)))?[ \t]*$', re.M)
 HEADING = re.compile(r'^ {0,3}#{1,6}\s+(?P<title>.+?)\s*#*\s*$', re.M)
 LEAD_IN = re.compile(r'^\s*(?:[-*]\s+|\d+\.\s+)?\*\*(?P<title>[^*\n]+?)\*\*', re.M)
 def without_fenced_code(text):
@@ -384,6 +384,20 @@ class CheckerTests(unittest.TestCase):
 
     def setUp(self):
         self.fixture = ROOT / 'docs' / 'DECISIONS.md'
+
+    def test_reference_titles_allow_escaped_delimiters(self):
+        titles = [r'"a \" title"', r"'a \' title'", r'(a \) title)']
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder).resolve()
+            page = root / 'index.md'
+            (root / 'guide.md').write_text('# Setup')
+            with patch.dict(globals(), ROOT=root):
+                for title in titles:
+                    for target in ['missing.md', 'guide.md#missing']:
+                        self.assertTrue(broken_links(page,
+                            f'[guide][ref]\n\n[ref]: {target} {title}'))
+                    self.assertEqual(broken_links(page,
+                        f'[guide][ref]\n\n[ref]: guide.md#setup {title}'), [])
 
     def test_escaped_brackets_in_reference_definition_labels(self):
         with tempfile.TemporaryDirectory() as folder:

@@ -64,8 +64,9 @@ the branch's last commit and report:
   and whether the same test fails on `main` (`AGENTS.md`, *Gotchas*, on a
   slow first UI test).
 
-If the run is still going, say so and stop there; never report a pending
-run as passing.
+If the run is still going, report CI as pending and stop polling it.
+Continue through steps 4 and 5, including the final worktree comparison
+and every required report section. Never report a pending run as passing.
 
 ## 4. Compare the claims with the evidence
 

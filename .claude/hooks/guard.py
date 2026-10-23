@@ -276,8 +276,8 @@ def shell_script_index(words):
     return None
 
 
-def shell_reads_stdin(words):
-    """Whether a shell without -c reads its program (not just data) from stdin."""
+def shell_reads_external_program(words):
+    """Whether a shell without -c reads code from an uninspected file or stdin."""
     if not words or os.path.basename(words[0]) not in SHELLS:
         return False
     args, index, options = words[1:], 0, True
@@ -297,7 +297,7 @@ def shell_reads_stdin(words):
         elif options and word.startswith(('-', '+')) and word != '-':
             pass
         else:
-            return word in ('-', '/dev/stdin', '/dev/fd/0')
+            return True  # ordinary script files can also contain guarded actions
         index += 1
     return True
 
@@ -322,7 +322,7 @@ def context_variable(key):
     return key.startswith('GIT_') or key in ('HOME', 'GH_CONFIG_DIR', 'XDG_CONFIG_HOME', 'CDPATH')
 
 
-def strip_wrappers(words, inherited=None):
+def strip_wrappers(words, inherited=None, runtime_inputs=None):
     """Drop VAR=value assignments and wrappers such as env, sudo, command."""
     environment = dict(inherited or {})
     directories = []
@@ -342,6 +342,8 @@ def strip_wrappers(words, inherited=None):
             words = words[1:]
         elif os.path.basename(first) in WRAPPERS:
             wrapper = os.path.basename(first)
+            if wrapper == 'xargs' and runtime_inputs is not None:
+                runtime_inputs.append(True)
             words = words[1:]
             directory = None
             while words and words[0].startswith('-'):
@@ -474,6 +476,8 @@ def exclusion_pathspec(path):
 
 
 def check_paths(paths):
+    if any(path.startswith('~') or any(char in path for char in '$`{}') for path in paths):
+        deny('Use literal staging paths; shell-expanded pathspecs may select the whole worktree.')
     if any(all_tree_pathspec(p) for p in paths) or (paths and all(
             exclusion_pathspec(p) for p in paths)):
         deny(STAGE_ALL)
@@ -847,10 +851,27 @@ def check_gh(words, cwd, environment):
     if plain[:2] == ['pr', 'merge']:
         deny(MERGE)
     if plain[:2] == ['pr', 'review']:
-        for word in plain[2:]:
+        args, index = plain[2:], 0
+        while index < len(args):
+            word = args[index]
+            if word == '--':
+                break
             option, equal, value = word.partition('=')
-            if option in ('-a', '--approve') and (not equal or value.lower() not in ('false', 'f', '0')):
-                deny(MERGE)
+            if option in ('-a', '--approve'):
+                if not equal or value.lower() not in ('false', 'f', '0'):
+                    deny(MERGE)
+            elif option in ('--body', '--body-file'):
+                if not equal:
+                    index += 1
+            elif word.startswith('-') and not word.startswith('--'):
+                for offset, letter in enumerate(word[1:], 1):
+                    if letter == 'a':
+                        deny(MERGE)
+                    if letter in ('b', 'F'):
+                        if offset == len(word) - 1:
+                            index += 1
+                        break  # remaining characters are the body/file operand
+            index += 1
     if plain[:1] == ['api']:
         arguments = api_arguments(plain, cwd)
         methods = list(option_values(plain, {'--method'}, {'-X'}))
@@ -1355,7 +1376,8 @@ def check_command(command, cwd, depth=0, environment=None, git_state=None):
                 states = skipped | {(where, success, stack, env)
                     for where, _, stack, env in outer for success in outcomes}
             continue
-        unwrapped, command_environment, directories = strip_wrappers(words, environment)
+        runtime_inputs = []
+        unwrapped, command_environment, directories = strip_wrappers(words, environment, runtime_inputs)
         if not unwrapped:
             if words and all(re.match(r'^[A-Za-z_][A-Za-z0-9_]*=', word) for word in words):
                 # Assignment-only shell commands persist, including unexported CDPATH.
@@ -1365,6 +1387,8 @@ def check_command(command, cwd, depth=0, environment=None, git_state=None):
                 states = next_states
             continue
         program = os.path.basename(unwrapped[0])
+        if runtime_inputs and program in SHELLS | {'eval', 'gh', 'curl', 'wget', 'http', 'https'}:
+            deny('Use explicit command arguments; xargs adds uninspected input at execution time.')
         script_index = shell_script_index(unwrapped)
         if script_index is None and program in SHELLS and '<<<' in unwrapped:
             redirect = unwrapped.index('<<<')
@@ -1376,7 +1400,7 @@ def check_command(command, cwd, depth=0, environment=None, git_state=None):
                 if all(word.startswith('-') or word in ('/dev/stdin', '/dev/fd/0')
                        for word in unwrapped[1:redirect]):
                     script_index = redirect + 1
-        if script_index is None and shell_reads_stdin(unwrapped):
+        if script_index is None and shell_reads_external_program(unwrapped):
             deny('The guard cannot inspect shell code from a pipe or input file. '
                  'Use an explicit -c script or an inspectable here-document/string.')
         outer_words = words
@@ -1462,7 +1486,15 @@ def check_command(command, cwd, depth=0, environment=None, git_state=None):
             if program == 'git':
                 subcommand, args, context = git_parts(unwrapped, command_cwd, command_environment)
                 subcommand, args, context = expand_git_alias(subcommand, args, context)
-                if subcommand in ('checkout', 'switch'):
+                if runtime_inputs and subcommand not in {
+                        'status', 'diff', 'log', 'show', 'rev-parse', 'ls-files'}:
+                    deny('Use explicit Git arguments; xargs may append protected flags or destinations.')
+                if (subcommand in ('checkout', 'switch')
+                        or (subcommand == 'branch' and any(
+                            (arg.startswith('--') and arg != '--' and '--move'.startswith(arg))
+                            or re.fullmatch(r'-[a-zA-Z]*[mM][a-zA-Z]*', arg) for arg in args))
+                        or (subcommand == 'symbolic-ref'
+                            and len([arg for arg in args if not arg.startswith('-')]) >= 2)):
                     git_state['branch_changed'] = True
                 elif subcommand in ('add', 'stage'):
                     check_add(args)
