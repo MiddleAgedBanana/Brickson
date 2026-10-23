@@ -258,13 +258,17 @@ can be reversed; docs/DECISIONS.md):
 5. Delete the failed Swift configuration on the Tool status page
    (docs/DECISIONS.md, *Code scanning*).
 
-For agents: R0 in [docs/ROADMAP.md](ROADMAP.md), in order. The library
-thread ended with PR #14; the next library thread starts from the
-*Follow-ups* in [`log/2026-10-21-library-core.md`](log/2026-10-21-library-core.md)
+For agents: R0 in [docs/ROADMAP.md](ROADMAP.md), in order; the owner's
+long-term vision, the direction behind it, is its *Where this goes*.
+Every change follows AGENTS.md, *Apple's current frameworks first*: the
+legacy uses kept, and the moves still planned with who owns each, are in
+docs/DECISIONS.md under that title
+([`log/2026-10-23-current-frameworks.md`](log/2026-10-23-current-frameworks.md)).
+The library thread ended with PR #14; the next library thread starts from
+the *Follow-ups* in [`log/2026-10-21-library-core.md`](log/2026-10-21-library-core.md)
 (safety copies, export and import, the editing screens, stores from every
-schema version). Calls (R0 item
-8) wait for a device build. Files under `.github/workflows` are committed
-by the owner (docs/SDLC.md, *Deploy*). The toolchain's follow-ups
+schema version). Calls (R0 item 8) wait for a device build. Files under
+`.github/workflows` are committed by the owner (docs/SDLC.md, *Deploy*). The toolchain's follow-ups
 (Xcode's recommended settings, iPhone Duo, iOS 27 APIs behind
 `#available`) are in [`log/2026-10-21-toolchain.md`](log/2026-10-21-toolchain.md);
 recheck the minimum iOS against its two rules whenever Apple's next major

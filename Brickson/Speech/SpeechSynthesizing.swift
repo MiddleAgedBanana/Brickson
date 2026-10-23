@@ -206,8 +206,8 @@ struct SystemPersonalVoice: PersonalVoiceAuthorizing {
 /// fixed answer when it is, so UI tests reach the Voice screen's Ask button
 /// and its answer without the system's question
 /// (`--personal-voice=stand-in-refuses`, `LaunchOptions`). Like the system,
-/// it changes its status before it answers, and answers from another
-/// queue. Only debug builds read the launch argument that chooses it.
+/// it changes its status before it answers, and answers off the main
+/// thread. Only debug builds read the launch argument that chooses it.
 final class StandInPersonalVoice: PersonalVoiceAuthorizing {
     private(set) var status: AVSpeechSynthesizer.PersonalVoiceAuthorizationStatus = .notDetermined
     let answer: AVSpeechSynthesizer.PersonalVoiceAuthorizationStatus
@@ -221,7 +221,7 @@ final class StandInPersonalVoice: PersonalVoiceAuthorizing {
     ) {
         status = answer
         let answer = answer
-        DispatchQueue.global().async {
+        Task.detached {
             completion(answer)
         }
     }
