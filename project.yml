@@ -41,6 +41,8 @@ settings:
     # when a new Xcode adds a warning a safety fix cannot wait for.
     SWIFT_TREAT_WARNINGS_AS_ERRORS: "YES"
     GCC_TREAT_WARNINGS_AS_ERRORS: "YES"
+    # Temporary probe, removed in the same pull request.
+    SWIFT_WARNINGS_AS_WARNINGS_GROUPS: NoUsage
 
     # ── Devices ──────────────────────────────────────────────────────────
     IPHONEOS_DEPLOYMENT_TARGET: "26.0"
