@@ -1,6 +1,6 @@
 # Show Borders on Home, and the Large Content Viewer held back
 
-*2026-10-23. Pull request #PR (`claude/project-thread-xm9rll`). The
+*2026-10-23. Pull request #35 (`claude/project-thread-xm9rll`). The
 "Accessibility pass two" thread, a cloud session that cannot build or run
 the app.*
 
