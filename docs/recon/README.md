@@ -33,3 +33,13 @@ its tests on iPad and iPhone simulators. Read the synthesis first.
 | [`directions/onboarding-and-settings.md`](2026-10-15/directions/onboarding-and-settings.md) | First launch, Settings, Personal Voice and the voice picker |
 | [`directions/recorded-phrases.md`](2026-10-15/directions/recorded-phrases.md) | Phrases recorded in the person's own voice |
 | [`directions/caregiver-alerts.md`](2026-10-15/directions/caregiver-alerts.md) | Reaching a caregiver who is not in the room |
+
+## 2026-10-23: folding phones for an AAC app
+
+A short, low-priority note the owner asked for when iPhone Duo went on
+sale, written in a cloud session for the Wave 3 plan
+(docs/ROADMAP.md). Nothing was run on a folding phone.
+
+| File | What it is |
+|---|---|
+| [`2026-10-23/folding-phones-for-aac.md`](2026-10-23/folding-phones-for-aac.md) | How well a folding phone suits an AAC app across the disease, from Apple's pages and AAC practice, with what is not known |
