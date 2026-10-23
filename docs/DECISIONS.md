@@ -824,6 +824,18 @@ them in R0 item 13.
    count comes from the space and the profile's floors, like every other
    count.
 
+   Invariant 8 still holds. Its column counts are fixed against content,
+   use and time, and the slot plan already takes three or five from the
+   width. This count comes from the space too (a fold is part of it), is
+   the same in every pose on that display, and keeps every control's
+   order and neighbours. One piece is left to design.
+   Region C is a row of five controls at regular widths, so the fold
+   would cross No. How each region fills an even count is the layout
+   engine's work in R0 item 13: an empty cell, or a wider control, but
+   never a new order. It is scored for dwell like any other layout. A way
+   of filling the count that changes a control's order or neighbours
+   goes back to the owner.
+
 ## Starter phrases
 
 *2026-10-10. Default; for the owner to review.*
