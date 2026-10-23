@@ -302,10 +302,13 @@ moved later, when moving it is harder.
   guarantee, a measurement's precision, a test's strength, a behaviour
   the person sees. Swapping working code for a newer API that weakens one
   of these is not a migration.
-- **Imports say what a file uses.** A file that uses UIKit imports it by
-  name, even where `import SwiftUI` or `import XCTest` would bring it in,
-  so a search for `import UIKit` finds every use; a file that uses none
-  does not import it.
+- **Imports say what a file uses.** A file that uses UIKit's own types
+  imports UIKit by name, even where `import SwiftUI` or `import XCTest`
+  would bring it in; a file that uses none does not import it. SwiftUI's
+  bridges to UIKit (`UIHostingController`, `UIViewControllerRepresentable`)
+  and its modifiers typed with UIKit values (`keyboardType`) are SwiftUI's
+  own API. The list in docs/DECISIONS.md, not a search for imports, is
+  the complete record.
 - **A test that drives no app uses Swift Testing**, in the unit tests,
   even when what it checks lives with the UI tests (compile that file into
   both targets in `project.yml`). XCTest is for UI automation only.
@@ -640,10 +643,11 @@ Shortcuts. **Never apply** `core-data` skills (this app uses SwiftData),
   Vision's accurate mode also misread a clear `No` as `ON`; the fast mode
   read it and rejected the old clipped captures. Keep whole-word matching
   (case-insensitive), with no language correction or recognition hints.
-  The recognizer lives in `RenderedWords` (Vision's `RecognizeTextRequest`),
-  and the unit tests run it on kept whole and clipped captures
-  (`RenderedWordsTests`, `BricksonTests/RenderedLabels`), so a change that
-  stops it telling them apart fails there first.
+  The recognizer lives in `RenderedWords` (Vision's `RecognizeTextRequest`).
+  The unit tests run it on kept whole and clipped captures
+  (`RenderedWordsTests`, `BricksonTests/RenderedLabels`) and pin its
+  settings, so a change that stops it reading whole words, accepts part
+  of one, or turns on correction or hints fails there first.
 - **Measuring the keyboard:** `KeyboardProbeTests` is opt-in
   (`TEST_RUNNER_BRICKSON_KEYBOARD_PROBE=1 scripts/test.sh ui`). It opens
   a debug-only probe screen (`--screen=keyboard-probe`) instead of Home,

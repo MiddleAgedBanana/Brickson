@@ -329,8 +329,9 @@ and the unit tests used only Swift Testing. It moved:
   `VNRecognizeTextRequest` to Vision's Swift API, `RecognizeTextRequest`
   (iOS 18), in one helper (`RenderedWords`) that the unit tests share.
   There `RenderedWordsTests` runs it on kept captures, so a recognizer
-  that stops reading whole labels, or starts accepting clipped ones,
-  fails on every run.
+  that stops reading whole labels, or a match that accepts part of a
+  word, fails on every run; it also pins the request's settings (fast,
+  English only, no language correction, no supplied words).
 - The audit runner's six tests, from XCTest in the UI tests to Swift
   Testing in the unit tests: they drive no app.
 - The Personal Voice stand-in's answer, from `DispatchQueue.global()` to a
@@ -339,11 +340,13 @@ and the unit tests used only Swift Testing. It moved:
   `toolbarTitleDisplayMode` (iOS 17).
 - Three copies of UIKit's system background, into one: `Palette.screen`.
 
-**Imports say what a file uses.** A file that uses UIKit imports it by
-name, even where `import SwiftUI` or `import XCTest` would bring it in, so
-a search for `import UIKit` finds every use; a file that uses none does
-not import it. SwiftUI's own modifiers whose parameters are UIKit types
-(`keyboardType`) count as SwiftUI.
+**Imports say what a file uses.** A file that uses UIKit's own types
+imports UIKit by name, even where `import SwiftUI` or `import XCTest`
+would bring it in; a file that uses none does not import it. SwiftUI's
+bridges to UIKit (`UIHostingController`, `UIViewControllerRepresentable`)
+and its modifiers typed with UIKit values (`keyboardType`) are SwiftUI's
+own API and need no UIKit import. The table below, not a search for
+imports, is the complete record.
 
 **Kept, and why.** Each row is a legacy framework or API that no current
 one replaces with no loss.
@@ -354,7 +357,7 @@ one replaces with no loss.
 | UIKit types in UI tests: `UIDevice` (its idiom and system version), `UIDeviceOrientation`, a screenshot's `UIImage` | `HomeAccessibilityOrderTests`, `HomeLayoutTests`, `HomeReachabilityTests`, `KeyboardProbeTests`, `LaunchHelpers`, `LaunchTests` | XCUIAutomation's own API uses these types (`XCUIDevice.orientation`, `XCUIScreenshot.image`) and reports no device idiom. | With the row above |
 | `UIApplication.isIdleTimerDisabled` | `BricksonApp` | Invariant 12. SwiftUI has no way to keep the screen awake; Apple documents this property for it. | SwiftUI gains one |
 | `UIFont` (text-style sizes, weights, line heights), `NSString.size(withAttributes:)`, `UIImage.SymbolConfiguration` | `LabelFont` | `WordFit` measures words before layout, as a plain tested type. SwiftUI measures text only inside a view hierarchy (`Text.Layout`; `ViewThatFits` failed Apple's accessibility audit). iOS 26's `Font.resolve(in:)` gives a point size and a Core Text font, but measuring a word still needs UIKit or Core Text, and resolving a font outside a view is undocumented. | Under *Planned moves* |
-| `UIColor.systemBackground` | `Palette.screen` | The colour `PaletteTests` measures as "the screen". SwiftUI has no colour of its own for it, and its background style changes with the container. | SwiftUI gains a system background colour |
+| `UIColor.systemBackground` | `Palette.screen` | The colour `PaletteTests` measures as "the screen", and pins `Palette.screen` to. SwiftUI has no colour of its own for it, and its background style changes with the container. | SwiftUI gains a system background colour |
 | `SFSafariViewController` in a `UIViewControllerRepresentable` | `PrivacyPolicyView` | The web version opens in Safari's in-app view (*The privacy policy ships inside the app*). SafariServices has no SwiftUI view. iOS 26's `OpenURLAction.Result.systemAction(_:prefersInApp:)` only prefers an in-app browser: Apple does not say how it is presented or when it opens Safari outside Brickson instead, and it gives Settings no state to hold its idle reset while the page is open. | Apple documents that presentation |
 | `DispatchQueue.main.async` | `SpeechSynthesizing` (`forward`) | The main queue runs blocks in order; separate tasks do not. A finish that overtook the progress report before it would make a cut-off phrase read as complete (*A phrase the system cuts off*; `OffMainThreadCallbackTests`). An `AsyncStream` keeps order but changes how speech reports interleave with the session's notices. | — |
 | `NotificationCenter.addObserver(forName:object:queue:using:)` | `AudioSessionEvents`, `SpeechService` | Foundation's typed messages (iOS 26) exist for none of these notices: interruption, route change, media services, available voices. iOS 27's life-cycle notice has one (`AVAudioSession.DidBecomeInactiveMessage`), but Apple does not say what it does with a notice that has no context, and `AudioSessionEventsTests` posts one. | Under *Planned moves* |
@@ -364,8 +367,9 @@ one replaces with no loss.
 | `UIHostingController.sizeThatFits(in:)` | `StarterLabelFitTests` | The exact size SwiftUI gives a label, to within half a point. SwiftUI's `ImageRenderer` draws pixels, and Apple does not say its size is unrounded. | — |
 | `INAlternativeAppNames`, SiriKit's Info.plist key | `project.yml` | App Intents has no way to give the app other names. Apple's App Shortcuts sessions say `.applicationName` includes these names; SiriKit's article says they need an Intents extension (*App identity*). | R2's Siri device check |
 
-Siri and Shortcuts (R2) are built with App Intents and App Shortcuts,
-never a SiriKit Intents extension.
+Siri and Shortcuts (R2) are built with App Intents and App Shortcuts. A
+SiriKit Intents extension is added only if R2's device check shows the
+app's other names need one, with its row here.
 
 Not legacy, so not listed: AVFoundation's speech, player and audio
 session, with their delegates (Apple has nothing newer for them); the

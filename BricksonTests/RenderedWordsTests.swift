@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+import Vision
 
 /// The UI tests read the words each quick control draws (`RenderedWords`,
 /// compiled here from BricksonUITests), because an accessibility frame can
@@ -11,9 +12,22 @@ import Testing
 /// only pieces of its word.
 ///
 /// A recognizer that no longer reads whole words fails
-/// `aWholeLabelIsRead`; one that accepts pieces (language correction, or
-/// matching part of a word) fails `aClippedLabelIsRejected`.
+/// `aWholeLabelIsRead`; matching part of a word fails
+/// `aClippedLabelIsRejected`. Language correction and word hints could not
+/// rebuild these words from their pieces, so `theRequestReadsOnlyWhatIsDrawn`
+/// pins the settings instead.
 struct RenderedWordsTests {
+    // Accurate mode, a second language, language correction or supplied
+    // words each fail this.
+    @Test func theRequestReadsOnlyWhatIsDrawn() {
+        let request = RenderedWords.request
+        #expect(request.recognitionLevel == .fast)
+        #expect(request.recognitionLanguages == [Locale.Language(identifier: "en-US")])
+        #expect(!request.automaticallyDetectsLanguage)
+        #expect(!request.usesLanguageCorrection)
+        #expect(request.customWords.isEmpty)
+    }
+
     @Test(arguments: ["Yes", "No", "Emergency", "Again"])
     func aWholeLabelIsRead(_ label: String) async throws {
         let words = try await RenderedWords.read(contentsOf: capture(of: label, state: "whole"))

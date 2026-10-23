@@ -208,8 +208,9 @@ where anything is, and the dwell-safety scoring passes for every profile.
   whose places do not (invariant 8).
 - **Siri and Shortcuts** with fixed phrases only ("Emergency in Brickson",
   "Get attention in Brickson"); no phrase words in App Shortcuts, as the
-  privacy policy promises. Built with App Intents and App Shortcuts, never
-  a SiriKit Intents extension (docs/DECISIONS.md, "Apple's current
+  privacy policy promises. Built with App Intents and App Shortcuts; a
+  SiriKit Intents extension only if the device check shows Siri needs one
+  for the app's other names (docs/DECISIONS.md, "Apple's current
   frameworks first").
 - **The listener display**: large text turned toward the person listening.
 - **Caregiver alerts**, by the owner's decision. The recommended path:

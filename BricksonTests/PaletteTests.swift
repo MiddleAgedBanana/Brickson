@@ -56,6 +56,16 @@ struct PaletteTests {
         }
     }
 
+    /// Settings and setup draw `Palette.screen`. Changing it to any colour
+    /// but the system background measured below fails this.
+    @Test func theFamilyScreensUseTheMeasuredScreen() {
+        for appearance in Self.appearances {
+            let drawn = Palette.screenColor.resolvedColor(with: appearance.traits)
+            let measured = UIColor.systemBackground.resolvedColor(with: appearance.traits)
+            #expect(drawn == measured, "Palette.screen, \(appearance.name)")
+        }
+    }
+
     @Test func everyFillStandsOutFromTheScreen() throws {
         for name in Palette.assetNames {
             for appearance in Self.appearances {

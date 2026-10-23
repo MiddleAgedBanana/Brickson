@@ -27,13 +27,18 @@ The owner asked on 2026-10-22 for two things, recorded here together:
    Models is under *Never*) left for the owner, and five frameworks named
    for later, each quoted from Apple's page. AGENTS.md points to it from
    *What this is and what's at stake*. R2's Siri and Shortcuts now say
-   App Intents, never a SiriKit Intents extension.
+   App Intents and App Shortcuts, with a SiriKit Intents extension only
+   if R2's device check shows the app's other names need one.
 
 The audit read every Swift file in the three targets and `project.yml`
 against Apple's documentation (two helper agents: one read Apple's pages,
 one swept the code; their findings were checked here before use). There
 was no Core Data, SiriKit, Combine, `ObservableObject` or deprecated API,
-and the unit tests used only Swift Testing. Code that changed:
+and the unit tests used only Swift Testing. A third agent reviewed the
+commits before the push; its findings (settings the kept captures cannot
+catch, an unpinned `Palette.screen`, an import rule that promised more
+than it kept, a too-firm "never" about SiriKit, the README's wording)
+were fixed. Code that changed:
 
 - **The rendered-word check** in `LaunchTests` moved from
   `VNRecognizeTextRequest` to Vision's Swift API, `RecognizeTextRequest`,
@@ -47,7 +52,12 @@ and the unit tests used only Swift Testing. Code that changed:
   on eight kept captures, cropped from the iPhone AX5 screenshots in
   `docs/log/ui-test-evidence/` (before and after PR #13's fix): each
   whole label must be read and each clipped one rejected. Until now
-  nothing on CI showed the check could fail.
+  nothing on CI showed the check could fail. Language correction or word
+  hints could not rebuild these words from their pieces, so a further
+  test pins the request's settings (fast, English only, no automatic
+  language, no correction, no supplied words); automatic language
+  detection is now off explicitly, as the old request had it by
+  default.
 - **`AccessibilityAuditRunnerTests`** moved from XCTest in the UI tests
   to Swift Testing in the unit tests; `project.yml` compiles
   `AccessibilityAuditRunner.swift` and `RenderedWords.swift` into the unit
@@ -60,7 +70,9 @@ and the unit tests used only Swift Testing. Code that changed:
   the same inline title on iOS.
 - **`Palette.screen`** replaces three copies of
   `Color(uiColor: .systemBackground)` in Settings and setup: the same
-  colour, now in one place beside the measured fills.
+  colour, now in one place beside the measured fills, and a new
+  `PaletteTests` case pins it to the system background the other cases
+  measure, in all four appearances.
 - **Imports say what a file uses:** `import UIKit` removed where unused
   (`SettingsTests`, `StarterLabelFitTests`), added where UIKit was used
   without it (`HomeLayoutTests`, `Palette`), and `LaunchTests` imports
@@ -106,6 +118,9 @@ See the pull request.
   `testLargestTextKeepsQuickControlWordsVisible` still passes on iPad and
   iPhone, and that XcodeGen puts the two shared files and the PNGs where
   the tests expect them.
+- The new pins (`theRequestReadsOnlyWhatIsDrawn`,
+  `theFamilyScreensUseTheMeasuredScreen`) have not run; each fails if
+  its setting or colour changes, by reading.
 - That `toolbarTitleDisplayMode(.inline)` draws Settings' titles exactly
   as before, beyond Apple's description; Settings' UI tests find screens
   by their navigation bar titles.

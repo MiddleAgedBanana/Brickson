@@ -29,13 +29,18 @@ nonisolated enum RenderedWords {
         words.contains { $0.caseInsensitiveCompare(label) == .orderedSame }
     }
 
-    private static var request: RecognizeTextRequest {
+    /// The request both readers use. `RenderedWordsTests` pins each
+    /// setting: the kept captures alone would not notice correction or
+    /// hints, which cannot rebuild a word from the pieces a clipped label
+    /// shows.
+    static var request: RecognizeTextRequest {
         var request = RecognizeTextRequest()
         // The accurate recognizer returned "ON" for a clear upright "No"
         // crop. Use the fast path for these simple UI glyphs; still require
         // whole words.
         request.recognitionLevel = .fast
         request.recognitionLanguages = [Locale.Language(identifier: "en-US")]
+        request.automaticallyDetectsLanguage = false
         request.usesLanguageCorrection = false
         return request
     }

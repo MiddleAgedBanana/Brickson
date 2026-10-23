@@ -24,9 +24,13 @@ nonisolated enum Palette {
     static let assetNames = ["AccentColor", "ControlFill", "EmergencyFill"]
 
     /// The background of Settings and setup: UIKit's system background,
-    /// the colour `PaletteTests` measures as "the screen". SwiftUI has no
-    /// colour of its own for it, and its background style changes with the
-    /// container, so the screens use the colour that is measured
-    /// (docs/DECISIONS.md, "Apple's current frameworks first").
-    static let screen = Color(uiColor: .systemBackground)
+    /// the colour `PaletteTests` measures as "the screen" (and the one Home
+    /// sits on, the window's own). SwiftUI has no colour of its own for it,
+    /// and its background style changes with the container, so the screens
+    /// use the colour that is measured (docs/DECISIONS.md, "Apple's current
+    /// frameworks first").
+    static let screen = Color(uiColor: screenColor)
+    /// `screen` as UIKit's colour, which `PaletteTests` pins to the system
+    /// background in every appearance.
+    static let screenColor = UIColor.systemBackground
 }
