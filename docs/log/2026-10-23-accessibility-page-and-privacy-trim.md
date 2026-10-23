@@ -118,6 +118,10 @@ words in App Shortcuts): rewrite it to match what ships.
 - A merge of `main` (PR #17, the agent guardrails), keeping this pull
   request's website lines in docs/HANDOFF.md beside #17's new guard
   paragraph.
+- The verifier's one finding: the order's check line says that UI tests
+  read the order of Home's buttons, and that a unit test
+  (`HomeRegionTests`) checks the message's place, since the message is
+  not a button and `HomeAccessibilityOrderTests` does not read it.
 
 ## Verified
 
