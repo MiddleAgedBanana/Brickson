@@ -77,8 +77,8 @@ struct StarterLabelFitTests {
         #expect(height <= size.height, "\(slot): \"\(text)\" draws \(height) tall, has \(size.height)")
     }
 
-    private static func labelSize(_ control: CGSize) -> CGSize {
-        CGSize(width: control.width - 2 * inset.horizontal, height: control.height - 2 * inset.vertical)
+    private static func labelSize(_ control: CGSize, sideInset: CGFloat = inset.horizontal) -> CGSize {
+        CGSize(width: control.width - 2 * sideInset, height: control.height - 2 * inset.vertical)
     }
 
     /// Fails if `HomeShape.minimumTileWidth` or `minimumTileHeight` is too
@@ -140,17 +140,18 @@ struct StarterLabelFitTests {
     func theFixedControlsFitTheirNarrowestWidths(boldText: Bool) {
         let minimum = HomeShape.MinimumWidths.forBoldText(boldText)
         let narrow = HomeShape(contentWidth: Self.narrowestWidth)
-        let quick: [(ControlNames, CGFloat)] = [
-            (HomeControlNames.yes, minimum.yesNo),
-            (HomeControlNames.no, minimum.yesNo),
-            (HomeControlNames.again, minimum.again),
-            (HomeControlNames.emergency, minimum.emergency),
-            (HomeControlNames.getAttention, minimum.getAttention),
+        let usual = Self.inset.horizontal
+        let quick: [(ControlNames, CGFloat, CGFloat)] = [
+            (HomeControlNames.yes, minimum.yesNo, usual),
+            (HomeControlNames.no, minimum.yesNo, usual),
+            (HomeControlNames.again, minimum.again, usual),
+            (HomeControlNames.emergency, minimum.emergency, HomeShape.emergencyLabelInset),
+            (HomeControlNames.getAttention, minimum.getAttention, usual),
         ]
-        for (names, width) in quick {
+        for (names, width, sideInset) in quick {
             Self.expectFits(
                 names.visible, .quickControl,
-                in: Self.labelSize(CGSize(width: width, height: narrow.quickControlHeight)),
+                in: Self.labelSize(CGSize(width: width, height: narrow.quickControlHeight), sideInset: sideInset),
                 "quick control", boldText: boldText
             )
         }

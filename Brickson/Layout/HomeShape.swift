@@ -21,6 +21,14 @@ nonisolated struct HomeShape: Equatable, Sendable {
     static let controlSpacing: CGFloat = 8
     /// The room between a label and its control's edge (`HomeButtonStyle`).
     static let labelInset = (horizontal: CGFloat(4), vertical: CGFloat(6))
+    /// The room beside Emergency's words: as much as above and below them,
+    /// which no ring reaches (`HomeButtonLook`). A label SwiftUI shrinks to
+    /// fit spreads to its inset, and Emergency's, a column wide, does at the
+    /// largest text sizes on a phone, where at the usual inset its last
+    /// letter met the selection ring while the emergency phrases showed.
+    /// The categories, also selected, keep the usual inset (docs/HANDOFF.md,
+    /// *Known gaps*).
+    static let emergencyLabelInset = labelInset.vertical
 
     /// Below this content width the phrase tiles use the smaller tile font
     /// and controls get the touch sizes. From this width up, controls get
@@ -255,7 +263,8 @@ nonisolated struct HomeShape: Equatable, Sendable {
     }
 
     /// The narrowest a control may be: its widest word at the default text
-    /// size, with `WordFit.widthSlack` and the label inset, so the word is
+    /// size, with `WordFit.widthSlack` and the label inset (Emergency's own,
+    /// `emergencyLabelInset`, for Emergency), so the word is
     /// drawn whole at every text size (labels step down to the default, never
     /// below). Measured on CI with the real fonts (`StarterLabelFitTests`),
     /// and wider with Bold Text on, which is measured at the heaviest weight
@@ -275,11 +284,11 @@ nonisolated struct HomeShape: Equatable, Sendable {
         let settingsSymbol: CGFloat
 
         static let regular = MinimumWidths(
-            yesNo: 46, again: 64, emergency: 116, getAttention: 100,
+            yesNo: 46, again: 64, emergency: 120, getAttention: 100,
             category: 118, stop: 52, settings: 80, settingsSymbol: 44
         )
         static let boldText = MinimumWidths(
-            yesNo: 48, again: 70, emergency: 126, getAttention: 110,
+            yesNo: 48, again: 70, emergency: 130, getAttention: 110,
             category: 128, stop: 56, settings: 86, settingsSymbol: 44
         )
 

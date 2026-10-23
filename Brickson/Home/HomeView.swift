@@ -450,7 +450,11 @@ private struct SafetyRow: View {
                 font: .quickControl
             )
         }
-        .buttonStyle(HomeButtonStyle(fill: Palette.emergencyFill, isSelected: isShowingEmergency))
+        .buttonStyle(HomeButtonStyle(
+            fill: Palette.emergencyFill,
+            isSelected: isShowingEmergency,
+            sideInset: HomeShape.emergencyLabelInset
+        ))
         .frame(width: shape.emergencyWidth, height: shape.quickControlHeight)
         .disabled(!emergencyIsAvailable)
         .accessibilityAddTraits(isShowingEmergency ? .isSelected : [])
