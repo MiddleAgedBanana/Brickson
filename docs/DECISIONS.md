@@ -944,7 +944,9 @@ How it behaves, and where it knowingly falls short:
   AX5. The first CI run of this layout put a thumbs-down beside No, and the
   screenshot text-recognition test (`testLargestTextKeepsQuickControlWordsVisible`)
   read it as part of the word ("g)No"), so those three icons stay off. The
-  test is unchanged.
+  test is unchanged. *2026-10-23:* two rows on every window since *Get
+  Attention and Stop on Home*: Yes, No and Emergency, then Again and Get
+  Attention.
 - **VoiceOver is told about audio problems.** Text appearing on screen is
   not announced, so Home posts an announcement when an audio problem
   appears (including one present at launch) and on every cut-off phrase.
@@ -956,11 +958,14 @@ How it behaves, and where it knowingly falls short:
 - **Accepted for the stand-in only:**
   - No Get Attention yet, so invariant 10's "reachable in one dwell" holds
     only for Emergency, Yes and No. Get Attention comes in port step 1.
+    *2026-10-23:* done: Get Attention is on Home in every state (*Get
+    Attention and Stop on Home*). No longer an accepted gap.
   - Again sits beside the message text the person reads, and Yes sits
     just under it: under a gaze profile a look that rests on the text could
     snap to them. *Home's slot plan* moves Again into the safety row.
     *2026-10-23:* done (*Settings on Home*); Yes, No and Again still
-    border the message.
+    border the message. Since *Get Attention and Stop on Home*, only Yes
+    and No do.
   - The selected category swaps its symbol for a check mark; symbols
     differ in width, so the words beside it can shift slightly inside
     their button. The button itself does not move.
@@ -1015,7 +1020,11 @@ device-specific interfaces."
 - **Four category buttons, never scrolled sideways.** Two by two on narrow
   windows, one row of four from a 560pt content width. The region keeps its
   height for four whatever the library holds; a library with more scrolls
-  inside it, vertically.
+  inside it, vertically. *2026-10-23:* since *Get Attention and Stop on
+  Home*, the region is a band, three columns or two columns
+  (`HomeShape.CategoryArrangement`), with Stop's well at its leading top
+  and Settings in its last cell, and a library with more than four
+  everyday categories scrolls only in the fourth cell.
 - **Three phrase columns wherever three tiles of 107pt fit** (content of
   337pt or more: every iPhone the app supports and every iPad window but
   the narrowest), two below that. The count depends only on the width,
@@ -1083,12 +1092,12 @@ tracking and Eye Tracking, so invariant 11 covers phones too. The layout
 engine closes it. Worked out from CI's text measurements (not yet seen
 running on these windows):
 
-- A 375×667pt phone window (iPhone SE class): fits at the default text size
-  and through xxxLarge (by under a point there); the grid scrolls from AX1.
-  The two-row safety row in *Home's slot plan* makes it scroll at the
-  default size too, until the engine: since *Get Attention and Stop on
-  Home* (2026-10-23) it does, with tiles of about 83pt against the 99pt
-  minimum. The starter library needs three grid
+- A 375×667pt phone window (iPhone SE class): scrolls at the default text
+  size since *Get Attention and Stop on Home* (2026-10-23), with tiles of
+  about 83pt against the 99pt minimum, as the two-row safety row in
+  *Home's slot plan* was expected to until the engine. Before that it fit
+  at the default text size and through xxxLarge (by under a point there)
+  and scrolled from AX1. The starter library needs three grid
   rows there (Basics and Needs hold eight phrases each): in touch that is
   tiles of about 109×68pt, but three floor-sized rows do not fit under
   this arrangement in dwell, switch or gaze profiles, so the engine needs
@@ -1099,7 +1108,10 @@ running on these windows):
   gear alone. A first draft gave the heavier words a second safety row
   and Settings a row of its own there, and the grid scrolled (tiles
   about 64pt against the 99pt minimum); Codex's review of PR #33 caught
-  it.
+  it. *2026-10-23:* since *Get Attention and Stop on Home* it scrolls at
+  the default size like the same window without Bold Text (tiles about
+  83pt), with Stop's well narrower and Settings showing its gear alone;
+  Yes and No are no longer narrower.
 - A 320pt phone window (2026-10-23): an iPhone with Display Zoom set to
   Larger Text, 320×568pt on a 375×667 phone and 320×693pt on a 6.1-inch
   one. It scrolls at the default size, with two columns and four rows of
@@ -1233,6 +1245,11 @@ never where it is.
 - **Get Attention, Emergency, Yes and No are in C in every state**,
   including typing: C is above the worst-case software keyboard
   (invariants 2 and 10; the Typing thread's measured keyboard tops).
+  *2026-10-23:* not yet true of Home's C, which has two rows on every
+  window (*Get Attention and Stop on Home*): only one row of 88pt
+  controls fits above the worst-case keyboard (*Typing is a state of
+  Home*), so typing comes to Home only once C is one row there, or the
+  engine otherwise keeps all of C above the keyboard.
 - **Settings covers Home with its own safety bar at Home's frames:** Back
   to Talking over A's trailing column (so it closes onto Phrases or Type)
   and Get Attention over the message's footprint, so the controls a look reaches when Settings opens or closes
@@ -1492,8 +1509,9 @@ ROADMAP R0 item 4 ([`work/get-attention-on-home.md`](work/get-attention-on-home.
 - **Open: fewer than three everyday categories.** A cell with no
   category holds nothing, and the cell directly under Stop's well holds
   the first category in the band, the third in three columns and the
-  second in two. So in a library with fewer than three (none at all, on
-  a wide window), after Stop the control nearest the well can be Again,
+  second in two. So in a library with fewer than three (none at all in
+  the band, from 584pt of content or 630pt with Bold Text), after Stop
+  the control nearest the well can be Again,
   which speaks: a hazard under invariant 10, not an accepted exception.
   Nobody meets it yet: the starter library has four, no screen can
   delete a category, and a store with none is filled with the starter
@@ -1504,6 +1522,38 @@ ROADMAP R0 item 4 ([`work/get-attention-on-home.md`](work/get-attention-on-home.
   delete. `HomeShapeTests.aLibraryOfFewerThanThreeEverydayCategoriesLeavesAgainNearStop`
   records it as a strict known issue, so it fails when the gap closes.
   Found in review of PR #38.
+- **Open: the top of Stop's well is nearest Again.** Stop's well is 12pt
+  under Again and 8pt over its category, so its centre and lower part are
+  nearest the category, but by the model its upper part (about 10 to 40%
+  of its area by nearest centre and about 40% by nearest edge, depending
+  on the arrangement) is nearest Again, which speaks. A look resting
+  there after Stop, or on the empty well while nothing sounds, could
+  repeat the last message. A hazard under invariant 10 and the design
+  rule for empty space, not an accepted exception. The device check that
+  decides *Yes and No border the message* (whether Snap to Item and
+  Dwell pick by nearest centre or nearest edge, and where a look rests
+  after an activation) decides this too; then the layout engine removes
+  it by placement (a well with harmless controls on every side needs
+  three rows in B) or brings the measured cost to the owner before a
+  dwell, switch, head or gaze profile ships.
+  `HomeShapeTests.theTopOfStopsWellIsNearestAgain` scores points across
+  the well and pins it as a strict known issue. Found in review of PR
+  #38.
+- **Open: an alarm warning nobody acts on keeps the line.** "Alert
+  stopped" or "Alert failed" leads Home's line until Get Attention
+  sounds again, the rule since the port
+  (`AudioSafetyPolicyTests.failedAlertOutranksUnavailableSession`), so a
+  later cut-off phrase, low volume or failed session shows second.
+  VoiceOver still hears each as it happens: since this review, low volume
+  and a failed session are announced from their own source
+  (`AudioSafetyPolicy.ambientIssue`), not from the line. Whether a newer
+  problem should take the line, or the person should be able to set the
+  warning aside, is for the next audio thread. Found in review of PR #38.
+- **Open: typing needs C in one row.** Only one row of 88pt controls fits
+  above the worst-case software keyboard (*Typing is a state of Home*),
+  so before typing comes to Home, C becomes one row on wide windows (the
+  slot plan's own C), or the engine keeps all of it above the keyboard
+  another way (*Home's slot plan*).
 - **A silent stand-in tone for UI tests.** Debug launches with
   `--attention-tone=silent` play `SilentAttentionTonePlayback`, which
   says it is playing until stopped and makes no sound, so UI tests sound
@@ -1755,7 +1805,10 @@ the top trailing edge, at the same frames on every screen. Get
 Attention's place is kept empty until Home shows Get Attention and Stop:
 the alarm exists (`AttentionAlertPlayer`), but starting it here while Home
 has no Stop would leave it sounding with no way to stop it. Because the
-place is kept, adding it moves nothing. Under the bar is a `NavigationStack(path:)`
+place is kept, adding it moves nothing. *2026-10-23:* Home has shown
+Get Attention and Stop since *Get Attention and Stop on Home*; the place
+stays empty until what a look resting there meets after Back to Talking
+is scored (docs/HANDOFF.md, *Known gaps*). Under the bar is a `NavigationStack(path:)`
 whose root holds only a large Family Setup row and a sentence; every
 setting is a screen below, so a stray dwell that opens Settings meets
 only the way back, Get Attention and one row that navigates. Family

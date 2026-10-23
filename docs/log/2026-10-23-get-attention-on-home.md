@@ -35,7 +35,10 @@ intent, spec and plan in [`work/get-attention-on-home.md`](../work/get-attention
   `AudioSafetyPolicy` now reads the alarm's real state instead of idle.
   While Settings covers Home, which has no Get Attention of its own, an
   alarm problem names Back first: "No alert — Back" (review on this pull
-  request).
+  request). VoiceOver hears low volume and a failed session when they
+  appear even while the line shows an alarm or speech warning first
+  (`AudioSafetyPolicy.ambientIssue`; before, they were announced only
+  when the line itself changed).
 - **Colours of their own**, measured and pinned: `AttentionFill`
   `#B45309`, `StopFill` `#0F766E`.
 - **Scan order:** Yes, No, Emergency, Get Attention, Again; then the
@@ -71,14 +74,21 @@ library; a 375×667 phone at the default size, and by the model an
 - `5a7b0ca`: main merged in (PR #35, Show Borders on Home).
 - `214f61c`: the sparse-library gap under Stop, pinned as a strict known
   issue (Codex's review).
-- The docs commits that record the reviews.
+- `a1cbf29`: CodeRabbit's review: the message hazard measured with Again
+  off its edge, and how Switch Control counts.
+- `cae344b`, then `1b537c8`: ambient problems announced from their own
+  source (a second review), test first.
+- `7e18850`: points across Stop's well scored, its top pinned as a strict
+  known issue (a second review).
+- The docs commit that corrects what this change made untrue elsewhere
+  and records the open hazards.
 
 ## Verified
 
 A cloud session: nothing was built for iOS or run outside GitHub CI, and
 this work is untested until CI passes. On Linux with Swift 6.3.3, the
-pure types compiled and 49 Swift Testing tests passed, one with its
-known issue recorded: `HomeShapeTests`
+pure types compiled and 51 Swift Testing tests passed, two with their
+known issues recorded: `HomeShapeTests`
 (every content width from 288 to 1400pt in half points, Bold Text on and
 off, default and grown line heights), `ControlNamesTests` and
 `AudioSafetyPolicyTests` (without its two announcement tests, which need
@@ -129,3 +139,14 @@ Each new test, and the change that makes it fail, is in the work file's
    editing or import can leave fewer than three: keep a category nearest
    the well for every library, or bring the owner a rule that keeps
    three. *(the library thread, with the layout engine)*
+7. **The top of Stop's well is nearest Again** (docs/DECISIONS.md, "Get
+   Attention and Stop on Home", *Open*): the device check that decides
+   the message hazard decides it too, then the layout engine removes it
+   or the owner hears its measured cost. *(the layout engine; owner if it
+   stays)*
+8. **An alarm warning nobody acts on keeps Home's line** over a later
+   problem until Get Attention sounds again; VoiceOver hears each. Whether
+   a newer problem takes the line is open. *(the next audio thread)*
+9. **Typing needs C in one row on wide windows** (or all of C above the
+   worst-case keyboard another way) before it comes to Home. *(the typing
+   and layout threads)*

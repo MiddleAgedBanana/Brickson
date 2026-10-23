@@ -32,7 +32,7 @@ and `docs/SUCCESSOR-HANDOFF.md`. Here, read `docs/LESSONS.md`.
 
 | Step | What | State |
 |---|---|---|
-| 1 | Speech, the Get Attention alarm and audio safety | **Ported**, behind test seams (2026-10-21). Get Attention is not on Home yet, and the status strip is still Home's stand-in. |
+| 1 | Speech, the Get Attention alarm and audio safety | **Ported**, behind test seams (2026-10-21). Get Attention and Stop are on Home since PR #38 (2026-10-23; docs/DECISIONS.md, "Get Attention and Stop on Home"), and the status line reads the alarm's real state; the status strip is otherwise still Home's stand-in. |
 | 2 | Storage, editing logic and backup. Fix D28 here. | **Core written new** (editing rules, applier, backup format; D28 avoided by design: `rollback()` is never called, issue #19). Safety copies, export and import not yet. |
 | 3 | Text fitting and colour tokens | **Text fitting ported** (`WordFit`, `FittedLabel`, `FittedLine`). Three measured fills only (`Palette`). |
 | 4 | The layout engine, generalized to profiles | Not started. |

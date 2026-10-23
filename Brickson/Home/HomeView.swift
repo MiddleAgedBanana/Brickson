@@ -19,9 +19,12 @@ import SwiftUI
 /// lines, the safety row (Yes, No and Emergency, then Again and Get
 /// Attention), the categories with Stop's well at their leading top and
 /// Settings at their trailing end, then the phrase grid, which takes what
-/// is left. Everything a person needs while typing sits in the top
+/// is left. Everything a person needs while typing is to sit in the top
 /// part, which the software keyboard never reaches (docs/LESSONS.md, "Lay
-/// out against a measured keyboard"); the categories are nearest the
+/// out against a measured keyboard"); the safety row's second row does not
+/// fit there on the worst-case keyboard yet, so typing waits for a one-row
+/// safety row on wide windows (docs/DECISIONS.md, "Get Attention and Stop
+/// on Home"). The categories are nearest the
 /// keyboard because a slip onto one is harmless. No control's label breaks a
 /// word: each one fits itself (`FittedLabel`). The starter library needs no
 /// scrolling on the windows `HomeLayoutTests` checks; the grid scrolls only

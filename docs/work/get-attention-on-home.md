@@ -271,6 +271,13 @@ widths (the window less Home's 16pt margins).
     category nearest Stop's empty well; and, strict, the known gap for
     fewer than three closing (docs/DECISIONS.md, "Get Attention and Stop
     on Home", *Open*).
+  - `HomeShapeTests.theTopOfStopsWellIsNearestAgain`: anything but Again
+    or a category nearest a point of Stop's well; and, strict, the known
+    hazard at its top closing (docs/DECISIONS.md, "Get Attention and Stop
+    on Home", *Open*).
+  - `AudioSafetyPolicyTests.theAmbientIssueIgnoresAlarmAndSpeechWarnings`:
+    low volume or a failed session hidden behind an alarm or speech
+    warning, so VoiceOver would not hear it.
   - `AudioSafetyPolicyTests.overSettingsAnAlarmProblemNamesBackThenGetAttention`:
     an alarm problem under Settings naming Get Attention, which Settings
     does not have, instead of Back first.

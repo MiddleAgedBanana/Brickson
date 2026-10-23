@@ -479,7 +479,7 @@ the failure.
 
 - Formatting or naming on its own.
 - A gap the base branch already records as accepted in docs/DECISIONS.md
-  or in docs/HANDOFF.md, *Known gaps* (for example, no Get Attention yet),
+  or in docs/HANDOFF.md, *Known gaps* (for example, no typing on Home yet),
   unless the change makes it worse or newly reachable, or claims to close
   it and doesn't. A feature that is planned but not built yet is not
   missing.

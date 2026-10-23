@@ -131,7 +131,9 @@ release in docs/ROADMAP.md when no thread has it yet.
 
 - Home's sizes are the stand-in's, not measured gaze, switch or touch
   floors per input profile, and the phrase grid still scrolls (invariant
-  11) on small phone windows at large text sizes: docs/DECISIONS.md,
+  11) on small phone windows at large text sizes, and since Get Attention
+  came to Home at the default size on a 375×667 phone and, by the model,
+  an 11-inch iPad and an iPad mini in landscape: docs/DECISIONS.md,
   "Home's stand-in layout", *Where the grid still scrolls*. Ending the
   scroll is R0 (ROADMAP item 3); measured sizes for each input profile are
   R1. *(the layout engine, a new thread)*
@@ -147,6 +149,18 @@ release in docs/ROADMAP.md when no thread has it yet.
   editing and import must not leave fewer than three until the layout
   keeps a category nearest the well, or the owner accepts a rule that
   keeps three. *(R0, the library thread with the layout engine)*
+- The top of Stop's well is nearest Again, 12pt above it, which speaks:
+  by the model about 10 to 40% of the well by nearest centre and about
+  40% by nearest edge. A look resting there after Stop, or on the empty
+  well, could repeat the last message. Open, not accepted; the same device
+  check as the message hazard decides it (docs/DECISIONS.md, "Get
+  Attention and Stop on Home"; a strict known issue in `HomeShapeTests`).
+  *(the layout engine, a new thread; owner if it stays)*
+- An alarm warning nobody acts on ("Alert stopped", "Alert failed") keeps
+  Home's status line until Get Attention sounds again, so a later cut-off
+  phrase, low volume or failed session shows second; VoiceOver still
+  hears each (docs/DECISIONS.md, "Get Attention and Stop on Home").
+  *(the next audio thread)*
 - Yes and No border the message (12pt away), so a look resting on it
   can speak one of them. Reduced, not removed: Again no longer shares the
   message's edge, and by the model about 56% of the message is nearest a
@@ -179,8 +193,8 @@ release in docs/ROADMAP.md when no thread has it yet.
   "ing") on CI's iPhone at the largest text size, in the half of the bar
   it keeps beside Get Attention's place (seen in PR #33's captures; the
   same on the base branch). *(Settings, with the next accessibility pass)*
-- The rendered-label test reads the four English quick-control labels
-  only, not phrases or categories; `StarterLabelFitTests` measures every
+- The rendered-label test reads the five English quick-control labels
+  (Yes, No, Emergency, Get Attention, Again) only, not phrases or categories; `StarterLabelFitTests` measures every
   starter label against its narrowest slot instead. *(Accessibility
   coverage checklist)*
 - The Get Attention tone is the reference app's placeholder; a
@@ -190,12 +204,17 @@ release in docs/ROADMAP.md when no thread has it yet.
 - In dark mode, iPad multitasking can lift a window's background from
   black to the elevated gray, and `PaletteTests` measures the fills' edges
   against black only. Against `#1C1C1E` (a commonly reported value, not
-  read from Apple) they come to 2.84 to 2.96:1, under invariant 6's 3:1.
+  read from Apple) the accent, control and Emergency fills come to 2.84
+  to 2.96:1, under invariant 6's 3:1 (Get Attention's and Stop's, 3.39
+  and 3.11:1, clear it).
   With Show Borders on, the border carries the edge. First step: measure
   with `userInterfaceLevel = .elevated` in `PaletteTests`
   ([`log/2026-10-23-show-borders-and-large-content.md`](log/2026-10-23-show-borders-and-large-content.md), *Follow-ups*). *(the next
   accessibility thread)*
-- No typing on Home. The typing rules (`MessageComposer`), the saved
+- No typing on Home. Before it comes, C must be one row on wide windows
+  (or otherwise all above the worst-case keyboard): its two rows do not
+  fit there (docs/DECISIONS.md, "Get Attention and Stop on Home"). The
+  typing rules (`MessageComposer`), the saved
   message (`DraftStore`) and a keyboard probe are in `Brickson/Typing`,
   waiting for Home's typing state (docs/DECISIONS.md, "Typing is a state
   of Home"; [`log/2026-10-21-typing-foundation.md`](log/2026-10-21-typing-foundation.md),
@@ -226,7 +245,7 @@ release in docs/ROADMAP.md when no thread has it yet.
   speak a sample or change a setting; the bar's redesign for Get
   Attention should give it a place whose neighbours do neither, without
   putting Back to Talking nearest Home's Settings (`SettingsOnHomeTests`).
-  *(the thread that puts them on Home)*
+  *(a new thread: Get Attention in Settings)*
 - Chains of activations through Settings' screens are not fully scored.
   From Home's Settings, two steps are (modelled, in
   [`work/settings-on-home.md`](work/settings-on-home.md)):
@@ -369,7 +388,7 @@ Simulators cannot show these. Record each result in a `docs/log/` file
 | Each input method reaches every control: touch, Voice Control, Switch Control, Full Keyboard Access, AssistiveTouch Dwell, head tracking, Eye Tracking | That standard buttons are the whole integration (invariant 1) |
 | A Switch Control double activation does not make a phrase stutter | Repeat absorption (invariant 10) |
 | How far Snap to Item jumps, and whether the pointer stays on an activated control or follows the gaze | Spacing and placement for dwell profiles |
-| Whether Snap to Item and Dwell pick a target by its nearest centre or its nearest edge, and which control a look resting on the message selects | What removes "Yes, No and Again border the message" (docs/DECISIONS.md, "Settings on Home") |
+| Whether Snap to Item and Dwell pick a target by its nearest centre or its nearest edge, and which control a look resting on the message selects | What removes "Yes and No border the message" (docs/DECISIONS.md, "Settings on Home"), and "the top of Stop's well is nearest Again" ("Get Attention and Stop on Home") |
 | Whether a lingering look re-fires a dwell | How much repeat protection matters |
 | Whether Snap to Item ignores controls scrolled off screen | Whether scrolling can keep family controls out of reach |
 | What the real software keyboard covers in each orientation, and typing checks 1–8 in [`log/2026-10-21-typing-foundation.md`](log/2026-10-21-typing-foundation.md) | The typing layout (docs/LESSONS.md, "Test with the real software keyboard"), the word row, Return under dwell, and whether Brickson needs its own keyboard |

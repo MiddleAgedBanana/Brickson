@@ -518,7 +518,9 @@ over Home, so each starts with the same top band at fixed frames: **Back
 to Talking** at the top trailing edge, and a start-only **Get
 Attention** at the top leading edge, over the message, its place kept
 empty until Home has Stop Alert (the Settings and first run pull
-request, PR #23). Proposed: Back to Talking sits over Phrases' frame in
+request, PR #23). *2026-10-23:* Home has Stop now (PR #38); the place
+stays empty until its chain is scored (docs/DECISIONS.md, "Get
+Attention and Stop on Home"). Proposed: Back to Talking sits over Phrases' frame in
 Home's trailing column, not over Type, so closing Settings leaves
 Phrases alone nearest, and Phrases only ever chooses the phrases (*What
 a held activation meets next*). Below the band:
