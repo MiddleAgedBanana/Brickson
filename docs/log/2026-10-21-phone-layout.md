@@ -238,5 +238,5 @@ missing is the wells and A's trailing column. Again still sits in A.
   border hazard by placement or bringing its cost to the owner
   (DECISIONS.md, "Home's slot plan"). *(a new thread)*
 - **Phone landscape**, once a layout test shows a sideways phone with no
-  scrolling (DECISIONS.md, *Decided by default*, "iPhone orientations").
+  scrolling (DECISIONS.md, *Decided by default on 2026-10-21*, "iPhone orientations").
   *(the layout engine's thread)*

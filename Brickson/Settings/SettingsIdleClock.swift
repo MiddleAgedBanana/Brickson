@@ -28,7 +28,8 @@ nonisolated enum SettingsIdleHold: Hashable, Sendable {
 /// a scroll, Settings returns to its root, so the large way back to talking
 /// and Get Attention are where they always are.
 ///
-/// It **resets, never closes** (AGENTS.md, *Design rules*: "timeouts reset
+/// It **resets, never closes** (AGENTS.md,
+/// *Design rules for dwell, switch and pointer input*: "timeouts reset
 /// screens, never close them"). Closing would put Home's controls under a
 /// spot nobody chose, which is a dwell hazard; returning to the root puts the
 /// same safe top row in front of them that opening Settings does.
