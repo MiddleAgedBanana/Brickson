@@ -701,7 +701,11 @@ the time. Export them again after each new Xcode release.
   shows the full software keyboard before the tests; anywhere else, show
   it before any typing test:
   `xcrun simctl spawn <udid> defaults write com.apple.keyboard.preferences AutomaticMinimizationEnabled -bool false`
-  (write `true` to restore the bar).
+  (write `true` to restore the bar). The first keyboard on a fresh iPhone
+  simulator also covers its keys with a sheet about sliding to type, so a
+  test finds no keys; `scripts/test.sh ui` marks it as shown, and
+  anywhere else write `DidShowContinuousPathIntroduction -bool true` to
+  the same domain first (docs/log/2026-10-23-keyboard-allowance.md).
 - **Display Zoom is lost whenever a simulator restarts**, and `xcodebuild`
   shuts down a simulator it booted itself. Boot the simulator yourself, set
   the configuration in a prepare step, and check the window size before

@@ -439,6 +439,8 @@ class DestinationTests(unittest.TestCase):
         self.assertEqual(result.simctl[:2], ["simctl boot PHONE", "simctl bootstatus PHONE -b"])
         self.assertIn("simctl spawn PHONE defaults write com.apple.keyboard.preferences "
                       "AutomaticMinimizationEnabled -bool false", result.simctl)
+        self.assertIn("simctl spawn PHONE defaults write com.apple.keyboard.preferences "
+                      "DidShowContinuousPathIntroduction -bool true", result.simctl)
 
     # Choosing the newest runtime by name without the SDK's bound picks a
     # simulator the Xcode in use cannot run, and fails this test.
@@ -489,7 +491,7 @@ class PreparationTests(unittest.TestCase):
                           devices={runtime("27.1"): [device("iPad Pro 13-inch (M5)", "PAD")]},
                           family="ipad", **options)
 
-    # Dropping the keyboard setting or the warm-up, warming up on the
+    # Dropping either keyboard setting or the warm-up, warming up on the
     # person's own storage, or warming up after the tests, fails this test.
     def test_ui_tests_get_the_full_keyboard_and_a_warm_simulator(self):
         result = self.ui_run()
@@ -499,6 +501,8 @@ class PreparationTests(unittest.TestCase):
             "simctl bootstatus PAD -b",
             "simctl spawn PAD defaults write com.apple.keyboard.preferences "
             "AutomaticMinimizationEnabled -bool false",
+            "simctl spawn PAD defaults write com.apple.keyboard.preferences "
+            "DidShowContinuousPathIntroduction -bool true",
             "simctl install PAD " + result.results_dir.replace(
                 "TestResults", "DerivedData/Build/Products/Debug-iphonesimulator/Brickson.app"),
             "simctl launch PAD fixture.brickson --fresh-test-storage",

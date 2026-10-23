@@ -97,30 +97,43 @@ the probe's cleanup; refusing other apps' keyboards; the documents.
 - `BricksonAppDelegateTests` fail if the delegate allows custom
   keyboards, if it refuses every extension, or if `BricksonApp` stops
   handing it to SwiftUI (the third asks the running app's delegate).
-  Not run here: they need iOS.
 - The frames above were read from main's CI result bundles, not
   measured again.
+- **CI on `9dbf7a4`** (run 39968155394, iPad Pro 13-inch (M5) and
+  iPhone 17 simulators, iOS 27.0, full software keyboard, light): the
+  unit tests passed, `BricksonAppDelegateTests` and
+  `KeyboardAllowanceTests` included, so SwiftUI does forward the
+  extension-point question to the adaptor's delegate. On the iPad all 40
+  UI tests passed, the four keyboard probes among them. Every keyboard
+  stood exactly at its reference: SwiftUI's keyboard top at 973
+  (portrait) and 534 (landscape) on the iPad, 546 on the iPhone, at the
+  default and largest text sizes alike, and every safety-row bottom it
+  reached matched main's frames. On the iPhone the probe at the default text
+  size, the first keyboard on that simulator, found no keys: its
+  screenshot shows the sheet "Speed up your typing by sliding your
+  finger across the letters to compose a word" over the keyboard, while
+  SwiftUI's edge already stood at 546, the full keyboard's. The probe at
+  the largest text size, next, found 29 keys with the same edge.
+  `scripts/test.sh ui` now marks that sheet as shown before the tests
+  (`DidShowContinuousPathIntroduction` in
+  `com.apple.keyboard.preferences`, beside the setting that turns off
+  the keyboard bar). Apple does not document the preference; Chromium's
+  iOS test bots, Appium and EarlGrey set it for the same sheet.
+  `scripts/test-runner.py` fails if either setting is dropped. The
+  keyboard probes took about two minutes on the iPad.
 
 ## Not verified
 
-- Whether CI's simulators show a keyboard within the allowance on this
-  branch: the first run of the always-on probe is CI's. The iPhone's
-  reference (iPhone 17 Pro, 402×874, top 546) came from the reference
-  app on iOS 27.0, not from Brickson. If CI's iPhone keyboard is taller,
-  the test says so and the reference rises with a new row in
-  `KeyboardAllowanceTests`.
-- That SwiftUI forwards `shouldAllowExtensionPointIdentifier` to the
-  adaptor's delegate: `theRunningAppRefusesCustomKeyboards` checks it on
-  CI. Whether a third-party keyboard is really absent needs a device
-  with one installed (docs/HANDOFF.md, *Checks that need a real device*).
+- The iPhone's default-text probe with the sliding sheet marked as
+  shown: the run after this fix is its first.
+- Whether a third-party keyboard is really absent needs a device with
+  one installed (docs/HANDOFF.md, *Checks that need a real device*).
 - Windowed iPad apps (Split View, Slide Over, Stage Manager, iPadOS's
   resizable windows), the floating and split iPad keyboards, keyboards
   for other languages, a hardware keyboard's bar, and iPhone Duo's
   displays. The rule is conservative for short windows, but none of
   these has been measured.
 - Real devices: every number here is from a simulator.
-- How much longer the UI job takes: the probe adds two launches per
-  test, four tests on the iPad and two on the iPhone.
 
 ## Follow-ups
 

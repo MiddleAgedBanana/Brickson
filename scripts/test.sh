@@ -177,10 +177,17 @@ trap 'exit 143' TERM
 # meet that one (docs/LESSONS.md, "Test with the real software keyboard").
 # Typing tests still check the keyboard's height, so a setting that did not
 # take effect fails them rather than passing with the bar.
+# The first keyboard on a fresh iPhone simulator also shows a sheet about
+# sliding to type over its keys, which hides every key from the tests
+# (docs/log/2026-10-23-keyboard-allowance.md); the second setting marks
+# it as already shown. Apple does not document it; Chromium's iOS test
+# bots, Appium and EarlGrey set the same preference for the same sheet.
 show_full_keyboard() {
     xcrun simctl spawn "$1" defaults write com.apple.keyboard.preferences \
-        AutomaticMinimizationEnabled -bool false
-    echo "Software keyboard: full size (minimized bar turned off)"
+        AutomaticMinimizationEnabled -bool false || return 1
+    xcrun simctl spawn "$1" defaults write com.apple.keyboard.preferences \
+        DidShowContinuousPathIntroduction -bool true || return 1
+    echo "Software keyboard: full size (minimized bar turned off, slide-to-type introduction marked as shown)"
 }
 
 # The first launch of the app on a simulator that has just started can be

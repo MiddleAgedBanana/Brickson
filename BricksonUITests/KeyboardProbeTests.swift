@@ -20,10 +20,11 @@ import XCTest
 ///
 /// The UI tests compile `KeyboardAllowance` too (project.yml), so the rule
 /// is the app's own. The simulator must show the full software keyboard,
-/// not the bar it shows when it thinks a hardware keyboard is in use;
-/// `scripts/test.sh ui` turns the bar off (AGENTS.md, *Gotchas*). A test
-/// that finds fewer keys than a full keyboard has prints its numbers and
-/// then fails. These are simulator numbers: a real device can differ, and
+/// not the bar it shows when it thinks a hardware keyboard is in use, nor
+/// the sheet about sliding to type that a fresh iPhone simulator puts over
+/// the keys; `scripts/test.sh ui` turns both off (AGENTS.md, *Gotchas*). A
+/// test that finds fewer keys than a full keyboard has prints its numbers
+/// and then fails. These are simulator numbers: a real device can differ, and
 /// the keyboard changes with the languages and keyboards a person has
 /// added (docs/HANDOFF.md).
 final class KeyboardProbeTests: XCTestCase {
@@ -137,10 +138,11 @@ final class KeyboardProbeTests: XCTestCase {
             keys.count,
             Self.fullKeyboardKeys,
             """
-            Only \(keys.count) keys: the simulator is showing the keyboard bar, not the full keyboard, \
-            so these numbers are not the worst case. Show the full keyboard with \
-            xcrun simctl spawn <udid> defaults write com.apple.keyboard.preferences \
-            AutomaticMinimizationEnabled -bool false, then measure again.
+            Only \(keys.count) keys: the simulator is showing the keyboard bar, or the sheet about \
+            sliding to type covers the keys, so these numbers are not the worst case. scripts/test.sh \
+            turns both off; elsewhere, write AutomaticMinimizationEnabled -bool false and \
+            DidShowContinuousPathIntroduction -bool true with xcrun simctl spawn <udid> defaults write \
+            com.apple.keyboard.preferences, then measure again (AGENTS.md, Gotchas).
             """
         )
         XCTAssertTrue(swiftUILeftRoom, "The keyboard is on screen, but SwiftUI never left room for it")
