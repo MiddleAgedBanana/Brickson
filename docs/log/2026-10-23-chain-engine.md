@@ -47,6 +47,9 @@ for dwell safety"). Nothing in the app changes; it is all tests.
   Home) or, on a phone at the largest size, its lower edge (Get
   Attention). The UI tests' `nearestControls` uses the engine's rules,
   and `ScreenControl` now carries whether a control shows as selected.
+  These checks launch with Settings' full idle limit, not the 3-second
+  test one, so Settings cannot go back to its first screen while three
+  screens are read and captured (Codex's review).
 - AGENTS.md's dwell design rules gain "Score chains with the one chain
   engine".
 
@@ -55,6 +58,7 @@ for dwell safety"). Nothing in the app changes; it is all tests.
 - `ee0ded1`: the engine, Home's and Settings' surfaces, and the tests.
 - This record, with docs/DECISIONS.md, docs/HANDOFF.md,
   docs/ROADMAP.md, docs/ACCESSIBILITY.md and AGENTS.md.
+- Settings' full idle limit for `SettingsOnHomeTests`' way in and out.
 
 ## Verified
 

@@ -81,7 +81,10 @@ final class SettingsOnHomeTests: XCTestCase {
 
     @MainActor
     private func checkTheWayInAndOut(textSize: UITestTextSize, orientation: UIDeviceOrientation) throws {
-        let app = launchedApp(textSize: textSize, orientation: orientation)
+        // Settings' full idle limit: reading and capturing three screens can
+        // take longer than the 3-second test limit, and a reset part way
+        // would put Settings back on its first screen (as in `SettingsTests`).
+        let app = launchedApp(textSize: textSize, orientation: orientation, shortTimeouts: false)
         let isPad = UIDevice.current.userInterfaceIdiom == .pad
         // A query straight after a rotation can read the frames from before
         // the turn, so wait for the window to turn first.
