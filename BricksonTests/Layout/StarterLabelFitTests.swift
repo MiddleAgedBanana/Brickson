@@ -1,6 +1,5 @@
 import SwiftUI
 import Testing
-import UIKit
 @testable import Brickson
 
 /// Every starter label fits its slot at the default text size in the

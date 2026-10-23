@@ -1,4 +1,4 @@
-import Vision
+import UIKit
 import XCTest
 
 /// Launches the real app on a simulator and drives it the way a person
@@ -103,9 +103,10 @@ final class LaunchTests: XCTestCase {
 
     /// A button's accessibility frame can be correct while its visible
     /// label is clipped. Read the rendered words too, without supplying
-    /// the recognizer with the expected text or language correction.
+    /// the recognizer with the expected text or language correction
+    /// (`RenderedWords`).
     @MainActor
-    func testLargestTextKeepsQuickControlWordsVisible() throws {
+    func testLargestTextKeepsQuickControlWordsVisible() async throws {
         continueAfterFailure = true
         for appearance in [UITestAppearance.light, .dark] {
             let app = launchedApp(textSize: .ax5, appearance: appearance)
@@ -116,7 +117,8 @@ final class LaunchTests: XCTestCase {
                 } else if state == "phrase spoken" {
                     app.buttons["Yes"].tap()
                     let againTurnsOn = expectation(for: NSPredicate(format: "isEnabled == true"), evaluatedWith: app.buttons["Again"])
-                    XCTAssertEqual(XCTWaiter.wait(for: [againTurnsOn], timeout: 15), .completed)
+                    let againResult = await XCTWaiter.fulfillment(of: [againTurnsOn], timeout: 15, enforceOrder: false)
+                    XCTAssertEqual(againResult, .completed)
                     // The audit after this state waits for speech to end
                     // too. Waiting here as well keeps the captures and word
                     // checks below, over a second of work, between the last
@@ -132,18 +134,9 @@ final class LaunchTests: XCTestCase {
                     attachment.lifetime = .keepAlways
                     add(attachment)
                     let image = try XCTUnwrap(screenshot.image.cgImage)
-                    let request = VNRecognizeTextRequest()
-                    // The accurate recognizer returned "ON" for a clear
-                    // upright "No" crop on this runtime. Use the fast path
-                    // for these simple UI glyphs; still require whole words.
-                    request.recognitionLevel = .fast
-                    request.recognitionLanguages = ["en-US"]
-                    request.usesLanguageCorrection = false
-                    try VNImageRequestHandler(cgImage: image, options: [:]).perform([request])
-                    let words = (request.results ?? []).compactMap { $0.topCandidates(1).first?.string }
-                        .flatMap { $0.components(separatedBy: .whitespacesAndNewlines) }
+                    let words = try await RenderedWords.read(image)
                     XCTAssertTrue(
-                        words.contains { $0.caseInsensitiveCompare(label) == .orderedSame },
+                        RenderedWords.show(label, in: words),
                         "Rendered \(label) is unreadable (\(context)); recognized \(words)"
                     )
                 }

@@ -1,4 +1,3 @@
-import UIKit
 import XCTest
 
 /// Settings, opened at launch with `--screen=settings` until Home has its
