@@ -325,7 +325,7 @@ release in docs/ROADMAP.md when no thread has it yet.
   ([`log/2026-10-22-voice-screen.md`](log/2026-10-22-voice-screen.md),
   *Follow-ups*). *(the next Settings thread)*
 - The privacy policy still describes R0 features not built yet (typing's
-  kept message, editing, exported backups, Get Attention); each is built or
+  kept message, editing, exported backups); each is built or
   its sentence deleted before release (docs/APP-STORE.md, section 3, lists
   each sentence). The sections for recorded phrases, caregiver alerts and
   Siri and Shortcuts, which 1.0 does not ship, were deleted on 2026-10-23

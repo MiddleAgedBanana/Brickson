@@ -2114,7 +2114,7 @@ features" became "If you use Apple's accessibility features … iOS runs
 them": a privacy policy has no need to claim what nobody has checked on a
 device, and the accessibility page says what is checked. The policy's
 sentences about R0 features not built yet (typing's kept message,
-editing, exported backups, Get Attention) stay: each is built or deleted
+editing, exported backups) stay: each is built or deleted
 before release (APP-STORE.md, section 3). The in-app copy is the same
 file (*The privacy policy ships inside the app*), so it changed with the
 page.

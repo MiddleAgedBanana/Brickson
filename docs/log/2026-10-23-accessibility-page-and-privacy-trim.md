@@ -22,7 +22,8 @@ page and the policy's trim" (new).
   Switch Control and Full Keyboard Access, AssistiveTouch with Dwell, Head
   Tracking and Eye Tracking), for reading (Larger Text and Bold Text,
   contrast, Show Borders, not by colour alone, Reduce Motion, Per-App
-  Settings) and for speech (Personal Voice, a phrase that is cut off),
+  Settings), for speech (Personal Voice, a phrase that is cut off) and for
+  Get Attention (the alarm, Stop, and when it fails),
   each with how it was checked. Only rows docs/ACCESSIBILITY.md marks *In
   place* are described. Its first lines say that nothing has been checked
   on a real iPhone or iPad, and *Known limits* names what a family would
@@ -48,9 +49,9 @@ page and the policy's trim" (new).
   "If you use Apple's accessibility features, such as Eye Tracking, Switch
   Control or Voice Control, iOS runs them": no device check has been done
   (APP-STORE.md, section 3), and the accessibility page is where what is
-  checked is said. Effective date: October 23, 2026. The app shows the same file inside
-  Settings (docs/DECISIONS.md, "The privacy policy ships inside the app"),
-  so the in-app copy changed with it.
+  checked is said. Effective date: October 23, 2026. The app shows the
+  same file inside Settings (docs/DECISIONS.md, "The privacy policy ships
+  inside the app"), so the in-app copy changed with it.
 - **Tests** (`scripts/test-site.py`, run by CI's unit job): every page
   links to the accessibility page through a real `href` (read by an HTML
   parser, so a `data-href` or a link within the page does not count); no
@@ -100,6 +101,14 @@ words in App Shortcuts): rewrite it to match what ships.
 - A merge of `main` (PR #37), then the review fix: CodeRabbit found that
   the link test's pattern also matched `data-href`, which no visitor can
   follow; it now reads each anchor's `href` with an HTML parser.
+- A merge of `main` (PR #38, Get Attention and Stop on Home), `6bb430a`,
+  keeping `main`'s Get Attention row in docs/APP-STORE.md, section 3. Then
+  the lines #38 made untrue or incomplete here: the accessibility page
+  names Get Attention and Stop, with Home's new order, names, audit and
+  known limits, each with how it is checked; docs/ACCESSIBILITY.md's audit
+  row adds Home while Get Attention sounds; Get Attention leaves the list
+  of policy sentences not yet true, in docs/DECISIONS.md and
+  docs/HANDOFF.md; and the follow-up for the page is done.
 
 ## Verified
 
@@ -120,9 +129,10 @@ Website and documents only; no Swift changed. On the cloud machine:
   founder note's layout, and the headers wrap cleanly on a phone.
 - Every sentence of the accessibility page and of the trimmed policy was
   checked by three independent read-only reviews: one against the code
-  and tests on this branch (file and line for each claim), one against
-  Apple's pages for each feature's name and Settings path (Apple's iPhone
-  and iPad User Guides for iOS 27, the Human Interface Guidelines, and
+  and tests on this branch before PR #38 was merged into it (file and line
+  for each claim), one against Apple's pages for each feature's name and
+  Settings path (Apple's iPhone and iPad User Guides for iOS 27, the
+  Human Interface Guidelines, and
   `performAccessibilityAudit`, whose default includes a contrast check),
   and one adversarial review of the trim. What they found was fixed
   before the pull request: the audits' real coverage (light and dark on
@@ -138,7 +148,21 @@ Website and documents only; no Swift changed. On the cloud machine:
 - GitHub CI on the pull request: the unit job runs `scripts/test-site.py`
   and `PrivacyPolicyDocumentTests` (the in-app copy loses no word of the
   trimmed page); the UI job opens the policy in Settings (`SettingsTests`).
-  The run's result is in the pull request.
+  The run's result is in the pull request. Its first complete run, on
+  `f0af640`, passed every unit test and the iPhone's 37 UI tests; on the
+  iPad, one test failed before its body ran: the test runner could not
+  close the app left by the test before it ("Failed to terminate",
+  `HomeAccessibilityOrderTests`, the largest-text case), a test this pull
+  request does not touch. The merge of PR #38 started a new run.
+- After the merge of PR #38, on the cloud machine:
+  `python3 scripts/test-site.py` passed again (7 tests), and every
+  sentence the merge changed on the accessibility page was read again
+  against #38's code and tests (`GetAttentionOnHomeTests`,
+  `HomeAccessibilityOrderTests`, `HomeReachabilityTests`,
+  `HomeShapeTests`, `ControlNamesTests`; docs/DECISIONS.md, "Get
+  Attention and Stop on Home"), with the file and line for each claim, by
+  two read-only checks and a third that tried to refute what they
+  proposed.
 
 ## Not verified
 
@@ -165,8 +189,6 @@ Website and documents only; no Swift changed. On the cloud machine:
 - **Typing on Home** updates the policy's "it only learns which button
   you chose" to cover words typed and dictated, and says that Apple
   handles Dictation under its own policy. *(the typing thread)*
-- **Get Attention and Stop on Home** adds Get Attention to the
-  accessibility page once it is on Home, with its check. *(that thread)*
 - **App Store Connect**: enter the Accessibility URL when the version
   page is filled in (docs/APP-STORE.md, section 1, step 13). *(owner)*
 - `.github/workflows/pages.yml`'s opening comment lists two pages; it
