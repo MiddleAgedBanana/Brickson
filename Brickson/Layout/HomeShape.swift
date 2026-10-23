@@ -66,6 +66,11 @@ nonisolated struct HomeShape: Equatable, Sendable {
     /// Where Settings sits in the categories region.
     let settingsPlacement: SettingsPlacement
     let settingsWidth: CGFloat
+    /// False where Settings beside the categories has room only for its
+    /// gear: from 296pt of content up to 332pt (with Bold Text, 316pt up
+    /// to 358pt, which takes in a 375pt phone). Its name stays its
+    /// accessibility label (docs/DECISIONS.md, "Settings on Home").
+    let settingsShowsName: Bool
 
     /// `quickControlLineHeight` and `categoryLineHeight` are the heights of
     /// one line of those labels at the person's text size
@@ -91,16 +96,24 @@ nonisolated struct HomeShape: Equatable, Sendable {
         categoryHeight = max(isCompact ? 48 : 72, categoryLineHeight + insets)
 
         // One row of five columns, Emergency across two, wherever Emergency
-        // and Again keep their minimums; otherwise Yes, No and Emergency in
-        // a row of four columns, Emergency across two, and Again across the
-        // row under them.
+        // and Again keep their minimums. Short of that, Again and Emergency
+        // at their minimums and Yes and No, the shortest words, sharing the
+        // rest, so a second row never takes a phrase row's height while Yes
+        // and No still fit. Otherwise Yes, No and Emergency in a row of four
+        // columns, Emergency across two, and Again across the row under them.
         let share = max((contentWidth - 4 * spacing) / 5, minimum.again)
         let wideEmergency = contentWidth - 3 * spacing - 3 * share
+        let narrowYesNo = (contentWidth - 3 * spacing - minimum.again - minimum.emergency) / 2
         if wideEmergency >= minimum.emergency {
             safetyRow = .oneRow
             yesNoWidth = share
             againWidth = share
             emergencyWidth = wideEmergency
+        } else if narrowYesNo >= minimum.yesNo {
+            safetyRow = .oneRow
+            yesNoWidth = narrowYesNo
+            againWidth = minimum.again
+            emergencyWidth = minimum.emergency
         } else {
             let quarter = max(0, contentWidth - 3 * spacing) / 4
             safetyRow = .twoRows
@@ -112,19 +125,24 @@ nonisolated struct HomeShape: Equatable, Sendable {
         // Settings in a column after the categories: every cell the same
         // width where the categories keep their minimum, otherwise Settings
         // at its minimum and the categories sharing the rest. Wide windows
-        // try four categories in a row first. Where neither fits, Settings
-        // takes a row of its own under two columns of categories.
+        // try four categories in a row first. Where the word does not fit,
+        // Settings at the minimum for its gear alone, because a row of its
+        // own would take a phrase row's height. Where even that does not
+        // fit, Settings takes a row of its own under two columns of
+        // categories.
         var band: (columns: Int, category: CGFloat, settings: CGFloat)?
-        for columns in isCompact ? [2] : [4, 2] {
-            let count = CGFloat(columns)
-            let equal = (contentWidth - count * spacing) / (count + 1)
-            let shared = (contentWidth - count * spacing - minimum.settings) / count
-            if equal >= minimum.category {
-                band = (columns, equal, equal)
-            } else if shared >= minimum.category {
-                band = (columns, shared, minimum.settings)
+        search: for settingsMinimum in [minimum.settings, minimum.settingsSymbol] {
+            for columns in isCompact ? [2] : [4, 2] {
+                let count = CGFloat(columns)
+                let equal = (contentWidth - count * spacing) / (count + 1)
+                let shared = (contentWidth - count * spacing - settingsMinimum) / count
+                if equal >= minimum.category {
+                    band = (columns, equal, equal)
+                } else if shared >= minimum.category {
+                    band = (columns, shared, settingsMinimum)
+                }
+                if band != nil { break search }
             }
-            if band != nil { break }
         }
         if let band {
             categoryColumns = band.columns
@@ -137,6 +155,7 @@ nonisolated struct HomeShape: Equatable, Sendable {
             settingsPlacement = .below
             settingsWidth = contentWidth
         }
+        settingsShowsName = settingsWidth >= minimum.settings
     }
 
     /// The shortest phrase tile before the grid scrolls instead of shrinking
@@ -217,15 +236,23 @@ nonisolated struct HomeShape: Equatable, Sendable {
     /// below). Measured on CI with the real fonts (`StarterLabelFitTests`),
     /// and wider with Bold Text on, which is measured at the heaviest weight
     /// (`LabelFont.boldTextUIFontWeight`). "Conversation" is the widest
-    /// starter category name, "Again" the widest of Yes, No and Again.
+    /// starter category name, "Yes" the wider of Yes and No. Settings' gear
+    /// alone gets Apple's 44pt minimum target, which holds the gear at the
+    /// default size.
     struct MinimumWidths: Equatable, Sendable {
+        let yesNo: CGFloat
         let again: CGFloat
         let emergency: CGFloat
         let category: CGFloat
         let settings: CGFloat
+        let settingsSymbol: CGFloat
 
-        static let regular = MinimumWidths(again: 64, emergency: 116, category: 118, settings: 80)
-        static let boldText = MinimumWidths(again: 70, emergency: 126, category: 128, settings: 86)
+        static let regular = MinimumWidths(
+            yesNo: 46, again: 64, emergency: 116, category: 118, settings: 80, settingsSymbol: 44
+        )
+        static let boldText = MinimumWidths(
+            yesNo: 48, again: 70, emergency: 126, category: 128, settings: 86, settingsSymbol: 44
+        )
 
         static func forBoldText(_ boldText: Bool) -> MinimumWidths {
             boldText ? .boldText : .regular
@@ -235,14 +262,6 @@ nonisolated struct HomeShape: Equatable, Sendable {
     /// The narrowest content width Home plans for: a 320pt window, an iPad
     /// app in Slide Over, less Home's margins.
     static let narrowestContentWidth: CGFloat = 288
-
-    /// The narrowest Yes and No get at any width from
-    /// `narrowestContentWidth` up: a share of a single row at Again's
-    /// minimum, or a column of the narrowest window's first row.
-    /// `StarterLabelFitTests` checks their words fit it.
-    static func narrowestYesNoWidth(boldText: Bool) -> CGFloat {
-        min(MinimumWidths.forBoldText(boldText).again, (narrowestContentWidth - 3 * controlSpacing) / 4)
-    }
 }
 
 /// How tall phrase tiles are in the space left for the grid.

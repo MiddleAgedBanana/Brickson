@@ -317,9 +317,9 @@ private struct LibraryWarnings: View {
 /// category is (a check mark, a ring and the Selected trait), because the
 /// emergency category has no button of its own.
 ///
-/// One row of Yes, No, Again and Emergency where Emergency and Again keep
-/// their minimum widths; otherwise Yes, No and Emergency, with Again across
-/// the row under them (`HomeShape.SafetyRow`). Either way Emergency is at
+/// One row of Yes, No, Again and Emergency wherever each keeps its minimum
+/// width, Yes and No narrowing first; otherwise Yes, No and Emergency, with
+/// Again across the row under them (`HomeShape.SafetyRow`). Either way Emergency is at
 /// the trailing end of the first row, under Settings' Back to Talking, so a
 /// look still resting there after Settings closes meets a control that says
 /// nothing (invariant 10; docs/DECISIONS.md, "Settings on Home"). Again is
@@ -413,8 +413,9 @@ private struct SafetyRow: View {
 // MARK: - Categories and Settings
 
 /// The category buttons, and Settings at their trailing end: a column as
-/// tall as their rows, or a row of its own under them where the window is
-/// too narrow for both words side by side (`HomeShape.SettingsPlacement`).
+/// tall as their rows, showing its gear alone where its word has no room,
+/// or a row of its own under them where the window is too narrow even for
+/// that (`HomeShape.SettingsPlacement`).
 /// Settings is for the family. It opens a cover with its own safety bar
 /// (`settingsCover`), and is reached after the categories by assistive
 /// technologies (`HomeRegion.lastInRegion`). Only the categories scroll,
@@ -435,7 +436,7 @@ private struct CategoriesAndSettings: View {
             select: select
         )
         .frame(width: shape.categoryGridWidth, height: shape.categoryGridHeight)
-        let settings = SettingsButton(isPresented: $showsSettings)
+        let settings = SettingsButton(isPresented: $showsSettings, showsName: shape.settingsShowsName)
             .frame(width: shape.settingsWidth, height: shape.settingsHeight)
             .accessibilitySortPriority(HomeRegion.lastInRegion)
 

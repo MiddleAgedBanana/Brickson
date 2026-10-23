@@ -221,18 +221,49 @@ struct SettingsRootView: View {
 /// categories (docs/DECISIONS.md, "Settings on Home"), and gives it its
 /// frame; everything it opens lives here. It looks like Home's other
 /// controls, and its gear drops before its word shrinks (`FittedLabel`).
+/// Where Home has room beside the categories only for the gear
+/// (`HomeShape.settingsShowsName`), it shows the gear alone, named
+/// "Settings" for VoiceOver, Voice Control and Switch Control, with a large
+/// copy of its name for the large content viewer, rather than take a row
+/// from the phrases.
 struct SettingsButton: View {
+    static let symbol = "gearshape.fill"
+    /// The gear alone at the default text size. `StarterLabelFitTests`
+    /// checks the narrowest gear-only Settings has room for it, and that it
+    /// is no smaller than the gear beside the word.
+    static let symbolSide: CGFloat = 24
+
     @Binding var isPresented: Bool
+    var showsName = true
+    /// The gear alone grows with the text, up to the room the button has.
+    @ScaledMetric(relativeTo: .headline) private var gearSide = SettingsButton.symbolSide
 
     var body: some View {
-        Button {
+        let button = Button {
             isPresented = true
         } label: {
-            FittedLabel(HomeControlNames.settings.visible, systemImage: "gearshape.fill", font: .category)
+            if showsName {
+                FittedLabel(HomeControlNames.settings.visible, systemImage: Self.symbol, font: .category)
+            } else {
+                Image(systemName: Self.symbol)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(maxWidth: gearSide, maxHeight: gearSide)
+                    .accessibilityLabel(Text(verbatim: HomeControlNames.settings.visible))
+            }
         }
         .buttonStyle(HomeButtonStyle(fill: Palette.controlFill))
         .accessibilityInputLabels(HomeControlNames.settings.inputLabels)
         .accessibilityIdentifier("settings")
+
+        if showsName {
+            button
+        } else {
+            // The gear stops growing where the button's room ends.
+            button.accessibilityShowsLargeContentViewer {
+                Label(HomeControlNames.settings.visible, systemImage: Self.symbol)
+            }
+        }
     }
 }
 
