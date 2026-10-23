@@ -55,6 +55,7 @@ holds.
 | Voice Settings keeping its rows and words in place while voices change, and an explained Ask button for Personal Voice that moves nothing and adds no button on the visit that asked (switched on after device check D1) | "Voice Settings keeps its places while it is open", "Asking for Personal Voice from Voice Settings", and a paragraph in "A Personal Voice is used only while it is allowed" (Voice screen in Settings, 2026-10-22) |
 | Home's scan order (Yes, No and Emergency first, regions as containers) and the names Voice Control and Full Keyboard Access use, the visible words first | "Home's scan order and names" (Accessibility implementation, first pass) |
 | Home's border, pressed and selection rings under Show Borders, and the Large Content Viewer held back from Home's speaking controls until a device check | "Show Borders and the Large Content Viewer on Home" (Accessibility pass two) |
+| A compiler warning fails the build in every target and configuration | "Warnings are errors" (Warnings as errors) |
 | The exceptions to Apple's current frameworks first, and the moves made and planned | "Apple's current frameworks first" (the rule is the owner's, 2026-10-22) |
 | The accessibility coverage list and its choices: full screen in Assistive Access and no separate scene, no programmatic Guided Access, assistive-technology flags that only suggest, phrases in the person's voice with VoiceOver on, late-stage boards as an R1 profile, and what waits or is never used | "Accessibility API coverage" (Accessibility coverage checklist) |
 
@@ -243,6 +244,70 @@ anything the new Xcode reports.
   the same way: from April 2027, App Store uploads must be built with the
   iOS and iPadOS 27 SDK or later (Apple's submitting page, read
   2026-10-21), and new Xcode releases add support for new devices.
+
+## Warnings are errors
+
+*2026-10-23. Default: the owner left routine choices to the project.
+Reversible if the owner objects.*
+
+Every target (the app, its unit tests, its UI tests and any target added
+later) treats a compiler warning as an error, in every build
+configuration: `SWIFT_TREAT_WARNINGS_AS_ERRORS` and
+`GCC_TREAT_WARNINGS_AS_ERRORS` in `project.yml`'s project-wide settings,
+which every target inherits. A warning fails the build on CI and on a
+Mac, so the pull request that causes one fixes it before it merges.
+
+- **Why.** A warning nothing enforces is a warning nobody reads, and
+  several of Brickson's rules show up first as one: a deprecated API
+  (AGENTS.md, *Apple's current frameworks first*: never a deprecated
+  one), a value computed and never used, code that can never run. On
+  2026-10-23 `main` built with no compiler warning (CI's run on
+  `f34e8ae`, Xcode 27.1), so turning this on cost nothing. Swift 6's
+  concurrency checks (`SWIFT_STRICT_CONCURRENCY: complete`) were errors
+  already and are unchanged.
+- **Fix the code; never silence the warning.** Never
+  `SWIFT_SUPPRESS_WARNINGS`, `GCC_WARN_INHIBIT_ALL_WARNINGS`,
+  `-suppress-warnings` or `-w`, never this setting turned off to get
+  green (the one exception is below), and never a change whose only
+  purpose is to quiet the compiler while the problem stays: discarding
+  the result that says whether a save worked breaks invariant 5.
+- **Deprecations follow the minimum iOS.** The compiler warns about an
+  Apple API only once it is deprecated in the oldest iOS the app runs on
+  (*Minimum iOS, iPhone and iPad*: 26.0). An API deprecated in a later
+  iOS, such as the audio session's interruption notice that Brickson
+  observes beside its iOS 27 replacement (*Audio session notices*), warns,
+  and so fails the build, the day the minimum reaches that iOS; the pull
+  request that raises the minimum moves off it.
+- **A new Xcode.** CI moves to Apple's newest Xcode by itself (*Build
+  with Apple's current Xcode*), and a new Xcode can add warnings. Until a
+  pull request fixes them, every pull request fails. That is intended:
+  the move to a new Xcode "also fixes anything the new Xcode reports",
+  and most fixes are a line or two.
+- **When a safety fix cannot wait.** If a warning a new Xcode adds blocks
+  a fix people need now, and fixing the warning is not quick, that pull
+  request may set `SWIFT_TREAT_WARNINGS_AS_ERRORS` to `NO` in the
+  `settings` of the one target the warning is in (`project.yml`), and adds
+  a line here naming the warning, why it waits and who turns the setting
+  back on. Never more targets than the warning is in, and never longer
+  than the fix takes. The narrower route, keeping only the warning's
+  diagnostic group a warning with `SWIFT_WARNINGS_AS_WARNINGS_GROUPS`
+  ("Diagnostic Groups Remain Warnings"), does nothing while warnings are
+  errors on Xcode 27.1: Xcode passes the group to the compiler before
+  `-warnings-as-errors`, and the later flag wins. A deliberate unused
+  value in a group named there still failed CI as an error
+  ([`log/2026-10-23-warnings-as-errors.md`](log/2026-10-23-warnings-as-errors.md),
+  *Verified*). Use that route only after a CI run shows it working.
+- **Release builds.** CI builds the Debug configuration only. Code under
+  `#if DEBUG` (launch options, the keyboard probe) compiles differently
+  in Release, so a warning only a Release build sees would first stop an
+  archive. `scripts/test.sh device -configuration Release` compiles the
+  Release configuration for a device, unsigned, on a Mac.
+- **Clang.** Brickson has no C, C++ or Objective-C source, so
+  `GCC_TREAT_WARNINGS_AS_ERRORS` changes nothing yet; it is set so the
+  first such file follows the same rule.
+- **Not covered:** warnings that are not the compiler's (the asset
+  catalog, the linker, Xcode's offer to update to recommended settings)
+  and runtime notices printed while tests run.
 
 ## Minimum iOS, iPhone and iPad
 

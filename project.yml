@@ -33,6 +33,15 @@ settings:
     SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
     SWIFT_APPROACHABLE_CONCURRENCY: "YES"
 
+    # ── Warnings are errors ──────────────────────────────────────────────
+    # In every target and configuration, a warning from the Swift or C
+    # compiler fails the build, on CI and on a Mac, so the change that
+    # causes one fixes it. Fix the code; never silence the warning.
+    # docs/DECISIONS.md, "Warnings are errors", says why, and what to do
+    # when a new Xcode adds a warning a safety fix cannot wait for.
+    SWIFT_TREAT_WARNINGS_AS_ERRORS: "YES"
+    GCC_TREAT_WARNINGS_AS_ERRORS: "YES"
+
     # ── Devices ──────────────────────────────────────────────────────────
     IPHONEOS_DEPLOYMENT_TARGET: "26.0"
     TARGETED_DEVICE_FAMILY: "1,2"       # iPhone and iPad
