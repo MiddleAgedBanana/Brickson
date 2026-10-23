@@ -133,9 +133,11 @@ enum PhraseLibraryRepairer {
     ///
     /// It only inserts (invariant 7). Nothing already stored is changed,
     /// moved or deleted, not even a sort order: what it adds is ordered
-    /// after what is there. If the save fails, that context is simply
-    /// discarded: nothing reached the store, and no `rollback()` is needed
-    /// (docs/LESSONS.md, "Never roll back a cascade delete").
+    /// after what is there, except in a store whose sort orders already
+    /// reach `Int.max` (`sortOrder(after:)`). If the save fails, that
+    /// context is simply discarded: nothing reached the store, and no
+    /// `rollback()` is needed (docs/LESSONS.md, "Never roll back a cascade
+    /// delete").
     ///
     /// `readStore` and `save` exist so tests can make reading or saving
     /// fail; the app passes neither.

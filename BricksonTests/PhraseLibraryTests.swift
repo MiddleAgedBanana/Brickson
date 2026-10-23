@@ -496,29 +496,43 @@ struct PhraseLibraryTests {
 
     /// The phrases go into the category Home opens, found again in the
     /// store. Fails if a store that reads differently from the library the
-    /// repair was planned on (here, no emergency category where the read
-    /// put one) is written to, or crashes the app.
-    @Test func aStoreThatReadsDifferentlyIsNotRepaired() throws {
-        let container = try storeWithoutEmergency()
-        var empty = F.emergency
-        empty.phrases = []
+    /// repair was planned on is written to, or crashes the app: here, the
+    /// read puts an empty emergency category where the store has none, or
+    /// one with another identity than the store's.
+    @Test(arguments: [false, true])
+    func aStoreThatReadsDifferentlyIsNotRepaired(storeHasEmergency: Bool) throws {
+        let container = try PhraseLibraryStore.makeInMemoryContainer()
+        let context = ModelContext(container)
+        context.insert(PhraseCategory(
+            name: "Help",
+            symbolName: "star.fill",
+            sortOrder: 0,
+            isEmergency: storeHasEmergency,
+            uuid: F.emergencyID
+        ))
+        try context.save()
+        let before = try LibraryEditor.read(container)
+        var read = before
+        read.categories[0].isEmergency = true
+        read.categories[0].id = storeHasEmergency ? F.id(999) : F.emergencyID
         var saved = false
 
         #expect(throws: PhraseLibrarySeedError.storeUnreadable) {
             try PhraseLibraryRepairer.repairEmergency(
                 container,
                 starter: library,
-                readStore: { _ in LibrarySnapshot(categories: [empty]) },
+                readStore: { _ in read },
                 save: { _ in saved = true }
             )
         }
 
         #expect(!saved)
-        #expect(try LibraryEditor.read(container) == LibrarySnapshot(categories: [mine]))
+        #expect(try LibraryEditor.read(container) == before)
     }
 
     /// Fails if the next sort order overflows (a crash at launch) or
-    /// renumbers what is there.
+    /// renumbers what is there (docs/DECISIONS.md, "The emergency category
+    /// is always there", names this store's one exception).
     @Test func aSortOrderAtTheVeryEndDoesNotOverflow() throws {
         #expect(PhraseLibraryRepairer.sortOrder(after: []) == 0)
         #expect(PhraseLibraryRepairer.sortOrder(after: [3, 9, 1]) == 10)
@@ -535,6 +549,9 @@ struct PhraseLibraryTests {
         }
         let stored = try categories(in: container)
         #expect(stored.map(\.sortOrder) == [Int.max, Int.max])
+        // The documented exception: tied at Int.max, the order falls back
+        // to the name, so the hidden emergency category sorts first.
+        #expect(stored.map(\.name) == ["Emergency", "Mine"])
         #expect(CategorySelection.emergency(in: stored)?.phrasesInOrder.map(\.text) == F.emergency.phrases.map(\.text))
     }
 

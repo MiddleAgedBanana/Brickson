@@ -38,7 +38,10 @@ nonisolated struct EmergencyRepair: Equatable, Sendable {
     ///
     /// Only the emergency category Home opens counts: the first one in the
     /// library's order (`CategorySelection.emergency`). A second emergency
-    /// category is left as it is, because nothing shows it. An empty
+    /// category is left as it is, because nothing shows it. (If that first
+    /// one shares its identity with an earlier category, Home opens the
+    /// earlier one, and only a change to stored items could help; Brickson
+    /// never writes such a store.) An empty
     /// library needs nothing here: the seeder fills it with the whole
     /// starter library. Nil too when `starter` has no emergency phrase with
     /// words, because the repair never adds words of its own.
