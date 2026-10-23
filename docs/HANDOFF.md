@@ -164,6 +164,15 @@ release in docs/ROADMAP.md when no thread has it yet.
   phrase, low volume or failed session shows second; VoiceOver still
   hears each (docs/DECISIONS.md, "Get Attention and Stop on Home").
   *(the next audio thread)*
+- At the largest text sizes, a selected category's words can meet its
+  selection ring: SwiftUI shrinks a name too wide for its label at the
+  person's size until it fills the label, out to its 4pt inset, and the
+  ring runs 2 to 5pt in. Emergency had the
+  same fault and now keeps 6pt at its sides; giving categories that room
+  grows their minimum by 4pt, which moves where the band and three
+  columns begin (docs/DECISIONS.md, "Get Attention and Stop on Home").
+  The rendered-label UI test checks only the quick controls.
+  *(the layout engine, a new thread)*
 - A Get Attention tone started while the audio session could not be
   activated shows "Sounding" with no warning once a later activation
   succeeds (a phrase, or a retry whose new tone then fails to start),

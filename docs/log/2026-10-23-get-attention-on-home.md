@@ -52,6 +52,12 @@ intent, spec and plan in [`work/get-attention-on-home.md`](../work/get-attention
   its replacement has started, so a held look re-firing the control can
   never leave the alarm silent with Stop gone (Codex's review;
   `AttentionAlertPlayer.start()`).
+- **Emergency's words keep 6pt from its sides**, as from its top and
+  bottom. A column wide on a phone, its word is shrunk to fill the label
+  at the largest text sizes, and at the usual 4pt the selection ring met
+  its last letter while the emergency phrases showed: CI's iPhone read
+  "Emergenc" (`HomeShape.emergencyLabelInset`; its minimum width is 4pt
+  wider, 120pt and 130pt with Bold Text).
 - **A silent stand-in tone for UI tests**: debug launches with
   `--attention-tone=silent` play `SilentAttentionTonePlayback`, so the
   tests sound and stop the real alarm without the simulator's audio.
@@ -90,7 +96,12 @@ library; a 375×667 phone at the default size, and by the model an
   untrue elsewhere and record the open hazards.
 - `1bca47e`, then `d504853`: a sounding tone is kept until its
   replacement plays (Codex's review), test first.
-- The docs commit that records it.
+- `dc0cd91`: the docs that record it.
+- Main merged in (`577f3b5`, warnings as errors from #39), then the two
+  fixes for CI's first complete run: `315b8e9`, a library test's sample
+  category "Help." became "Water.", since "Help" is now Get Attention's
+  other name; `e27a6d8`, Emergency's label inset, with its ring test.
+- The docs commit that records them.
 
 ## Verified
 
@@ -104,7 +115,14 @@ off, default and grown line heights), `ControlNamesTests` and
 Apple's Accessibility module), `CategorySelection.inCell`'s cases, and 26 of
 `AttentionAlertPlayerTests` (all but the seven that need Apple's audio
 frameworks or the speech engine), around stand-ins for the audio
-session's types.
+session's types. After the Emergency fix, `HomeShapeTests` and all seven
+`HomeButtonLookTests` passed there; the new ring test failed with
+Emergency's inset at 4pt and at 5pt.
+
+CI's first complete run (`dc0cd91`) found the two faults fixed above.
+Its other failures were the first-launch flake already seen on `main`
+after #35: the iPad runner crashed before any test ran, and the iPhone's
+first test lost the app ("kAXErrorServerNotFound").
 Label widths came from Apple's SF Pro font measured with HarfBuzz, which
 matched CI within half a point before.
 
@@ -167,3 +185,9 @@ Each new test, and the change that makes it fail, is in the work file's
     (docs/DECISIONS.md, "Get Attention", *Open*): a device check first,
     then a warning of the alarm's own if activation alone does not make
     it heard. *(the next audio thread)*
+11. **A selected category's words can meet its selection ring** at the
+    largest text sizes, as Emergency's did (docs/HANDOFF.md, *Known
+    gaps*): give categories the same room, which grows their minimum by
+    4pt and moves where the band and three columns begin, and extend the
+    rendered-label UI test to the selected category. *(the layout
+    engine)*

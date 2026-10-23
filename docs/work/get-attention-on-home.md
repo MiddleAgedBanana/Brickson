@@ -314,7 +314,10 @@ widths (the window less Home's 16pt margins).
     there after Stop, or any frame moving; the chain checks above; an
     accessibility audit finding while the alarm sounds.
   - `LaunchTests.testLargestTextKeepsQuickControlWordsVisible`: Get
-    Attention's words clipped at the largest text size.
+    Attention's words clipped at the largest text size. It also caught
+    Emergency's last letter meeting its selection ring on CI's iPhone;
+    `HomeButtonLookTests.noRingReachesEmergencysWords` now fails if
+    Emergency's label inset goes back to 4pt, or to 5pt.
   - `HomeReachabilityTests`, `HomeLayoutTests`,
     `HomeAccessibilityOrderTests`: Get Attention unreachable, off
     screen or out of order, or Stop not first among the categories while

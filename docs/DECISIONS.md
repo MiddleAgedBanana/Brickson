@@ -1526,6 +1526,19 @@ ROADMAP R0 item 4 ([`work/get-attention-on-home.md`](work/get-attention-on-home.
   trailing end under Phrases and Type) comes back with A's trailing
   column. Emergency still ends the first row, under Settings' Back to
   Talking (*Settings on Home*).
+- **Emergency's words keep 6pt from its sides**, as from its top and
+  bottom, where every other Home label keeps 4pt. A column wide on a
+  phone, its word is shrunk by SwiftUI to fill the label at the largest
+  text sizes, which reaches the label's inset, and the selection ring
+  runs 2 to 5pt in (*Show Borders and the Large Content Viewer on
+  Home*): at 4pt the ring met its last letter while the emergency
+  phrases showed, and CI's rendered-label test read "Emergenc". Its
+  minimum width grows by the same 4pt (120pt, 130pt with Bold Text);
+  every width Home gives it is a column, at least 140pt
+  (`HomeShape.emergencyLabelInset`, `HomeButtonLookTests`). A selected
+  category can still meet the ring the same way at the largest sizes:
+  its minimum is what sets where the band and three columns begin, so
+  the layout engine moves it (docs/HANDOFF.md, *Known gaps*).
 - **Stop has a well of its own at the categories' leading top, with a
   category directly under it.** Region B takes one of three arrangements
   from the width (`HomeShape.CategoryArrangement`): a band from 584pt of
