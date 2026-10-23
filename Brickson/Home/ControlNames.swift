@@ -52,10 +52,18 @@ nonisolated enum HomeControlNames {
         )
     }
 
+    /// Opens Settings, for the family. Its word only: "Settings" is what
+    /// people call it, and any other name could belong to something the
+    /// person wants to say.
+    static var settings: ControlNames {
+        ControlNames(String(localized: "Settings"))
+    }
+
     /// The controls Home always shows, in the order assistive technologies
-    /// reach them (`HomeRegion`).
+    /// reach them (`HomeRegion`): the safety row's, then Settings, which
+    /// comes after the category buttons.
     static var fixed: [ControlNames] {
-        [yes, no, emergency, again]
+        [yes, no, emergency, again, settings]
     }
 
     /// Every control on Home while `phrases` show, each by its names: the

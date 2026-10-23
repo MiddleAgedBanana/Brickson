@@ -12,9 +12,9 @@ struct BricksonApp: App {
     @State private var speech: SpeechService
     @State private var attention: AttentionAlertPlayer
     @State private var setup: SetupStore
-    /// Settings opened at launch, for UI tests (`--screen=settings`). Home
-    /// opens it with its own Settings button.
-    @State private var showsSettingsAtLaunch: Bool
+    /// Whether Settings covers Home. Home's Settings button opens it; UI
+    /// tests can open it at launch (`--screen=settings`).
+    @State private var showsSettings: Bool
     private let container: ModelContainer
     private let isVolatileStore: Bool
     private let phraseLibraryIssue: PhraseLibraryIssue?
@@ -33,7 +33,7 @@ struct BricksonApp: App {
         _speech = State(initialValue: audio.speech)
         _attention = State(initialValue: audio.attention)
         _setup = State(initialValue: SetupStore(defaults: launch.settings))
-        _showsSettingsAtLaunch = State(initialValue: launch.startScreen == .settings)
+        _showsSettings = State(initialValue: launch.startScreen == .settings)
 
         let opened = launch.openLibrary()
         let library = PhraseLibraryLaunch.prepare(
@@ -48,10 +48,10 @@ struct BricksonApp: App {
 
     var body: some Scene {
         WindowGroup {
-            HomeView()
+            HomeView(showsSettings: $showsSettings)
                 .replacedByKeyboardProbeIfRequested()
                 // Before the environment below, so Settings receives it too.
-                .settingsCover(isPresented: $showsSettingsAtLaunch)
+                .settingsCover(isPresented: $showsSettings)
                 .environment(audioSafety)
                 .environment(speech)
                 .environment(attention)

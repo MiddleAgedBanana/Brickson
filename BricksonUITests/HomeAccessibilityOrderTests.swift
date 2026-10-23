@@ -3,11 +3,13 @@ import XCTest
 
 /// The order in which assistive technologies reach Home's controls
 /// (docs/ACCESSIBILITY.md, section 1): Yes, No and Emergency first, then
-/// Again, then the categories, then the phrase tiles, each group inside its
-/// own region, the same in every state. With Switch Control's auto scanning,
-/// every step before Emergency, Yes and No is time spent waiting, so they
-/// come first although the message sits above them on screen
-/// (docs/DECISIONS.md, "Home's scan order and names").
+/// Again, all in the safety row; then the categories and Settings; then the
+/// phrase tiles, each group inside its own region, the same in every state.
+/// With Switch Control's auto scanning, every step before Emergency, Yes and
+/// No is time spent waiting, so they come first although the message sits
+/// above them on screen, and Again comes after Emergency although it sits
+/// between No and Emergency (docs/DECISIONS.md, "Home's scan order and
+/// names" and "Settings on Home").
 ///
 /// The order is read from the accessibility tree the app hands to
 /// VoiceOver, Switch Control and Full Keyboard Access, as XCTest sees it.
@@ -33,8 +35,9 @@ final class HomeAccessibilityOrderTests: XCTestCase {
             (label: "Yes", region: safety),
             (label: "No", region: safety),
             (label: "Emergency", region: safety),
-            (label: "Again", region: message),
+            (label: "Again", region: safety),
         ] + everydayCategories.map { (label: $0, region: categories) }
+        + [(label: "Settings", region: categories)]
 
     /// Fails if anything comes before Yes, No and Emergency, if the order
     /// changes with the category, the emergency phrases or a phrase being
