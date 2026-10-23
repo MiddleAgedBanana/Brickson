@@ -116,7 +116,9 @@ Nothing was built or run on a Mac; GitHub CI is the build (AGENTS.md,
   and not yet seen with SwiftUI buttons. And the claim that a touch
   without the viewer stays on Yes now cites Apple's touch model and says
   "expected", and the device check covers it.
-- GitHub CI: *(pending)*.
+- GitHub CI on `4f2a48f`: Unit tests and UI tests passed (iPad and
+  iPhone simulators, with the newest released Xcode on GitHub's machine),
+  run 39890270661. It ran again after main (PR #14) was merged in.
 
 ## Not verified
 
