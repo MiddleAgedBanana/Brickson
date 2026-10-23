@@ -1793,7 +1793,8 @@ ROADMAP R0 item 4 ([`work/get-attention-on-home.md`](work/get-attention-on-home.
   dwell, switch, head or gaze profile ships.
   `HomeShapeTests.theTopOfStopsWellIsNearestAgain` scores points across
   the well and pins it as a strict known issue. Found in review of PR
-  #38.
+  #38. The chain engine finds it, and nothing else, in every Home state
+  (*One chain engine for dwell safety*).
 - **Open: an alarm warning nobody acts on keeps the line.** "Alert
   stopped" or "Alert failed" leads Home's line until Get Attention
   sounds again, the rule since the port
@@ -1848,6 +1849,99 @@ status line ran with it always idle, the safety row was one row (Yes,
 No, Again, Emergency) wherever it fit, and the categories were two by
 two or one row of four with Settings beside or under them (*Settings on
 Home*).
+
+## One chain engine for dwell safety
+
+*2026-10-23. Default: the owner left these choices to the project.
+Reversible if the owner objects.* ROADMAP Wave 3 item 2
+([`log/2026-10-23-chain-engine.md`](log/2026-10-23-chain-engine.md)),
+from docs/LESSONS.md, "Score chains, not single hops" and "One chain
+engine, not five scripts".
+
+- **One engine, in the tests.** `ChainEngine`
+  (`BricksonUITests/ChainEngine.swift`) is compiled into both test
+  targets and never into the app. A screen is a surface for it: its
+  states, each control's frame, what the control does in each state
+  (speaks, alarms, changes data, moves things, only navigates, nothing)
+  and the state it leads to (`HomeChains`, `SettingsChains`). The unit
+  tests give it the layout's frames (`HomeShape`), the UI tests the
+  running app's. `HomeShapeTests`' nearest-control checks and the UI
+  tests' `nearestControls` use its rules, so "nearest" has one
+  definition.
+- **What it follows.** From each start, every chain of held activations,
+  up to six of them: by nearest centre and by nearest edge, with every
+  control within half a point of the nearest followed as a tie; with the
+  pointer staying on the control just activated, at its centre, and with
+  it going back to where the person looks, the start's look, for the
+  whole chain. An activation the person did not ask for that speaks,
+  alarms, changes data or moves things ends a chain as a hazard. A chain
+  also ends when it meets the control just activated, unchanged (the
+  person's own choice again; a phrase still speaking is absorbed by
+  `SpokenUtteranceTracker`), comes back to a state and spot it has
+  already met, leaves the screens it has, or meets nothing.
+- **Where chains start.** A control chosen, with the look at its centre
+  and at eight more points across it, half a point in from its edges,
+  where the rule picks that control alone: a look that ties two controls
+  is aiming, not choosing. And a place a look rests on that is not a
+  control, from which every activation is unasked, because reading is
+  pointing: so far Stop's empty well. Home's message and Settings' words
+  are not resting places in it yet.
+- **Conservative where a device check is open.** The pointer reaches any
+  distance (how far Snap to Item jumps is a device check), so a control
+  700pt away is still the nearest when nothing is nearer. Every Home
+  state gets the phrase tiles read in one state, which can only add
+  controls that speak. The UI tests score each screen as it first shows,
+  with the controls in the window: a look cannot choose what is not
+  shown, and whether Snap to Item ignores controls scrolled off screen
+  is a device check.
+- **Home: the known hazard and nothing else.**
+  `HomeShapeTests.noChainOnHomeMeetsAHazard` scores the layout's frames
+  in every Home state (spoken or not, each category or Emergency
+  showing, the alarm sounding or quiet) at widths every 16pt and on both
+  sides of each change of arrangement from 288 to 1400pt, with Bold Text
+  off and on and the controls grown for larger text. It finds only
+  *Open: the top of Stop's well is nearest Again* (*Get Attention and
+  Stop on Home*), from the empty well or after choosing Stop, sometimes
+  by way of a category. Anything else fails it, and, strict, so does
+  that hazard's end.
+- **Settings: two open hazards.** `SettingsOnHomeTests` reads Settings'
+  first screen, Family Setup and, where its row shows without scrolling,
+  Set Up Step by Step's first step, on CI's iPad and iPhone at the
+  default and largest text sizes and the iPad in landscape. It follows
+  every chain from Home's Settings and from each control of those
+  screens, out to Home and back, and attaches what it finds
+  (`settings-chains-…` in the UI results). It fails on a control it does
+  not know, on a hazard of any other kind, and, strictly, once either of
+  these is gone. The examples are from the model of main's CI frames of
+  2026-10-23, before this change's own run:
+  - **Open: a held look saves an answer in Set Up Step by Step.** The
+    known gap (docs/HANDOFF.md, *Known gaps*): on a phone at the default
+    size, a look held on Home's Settings goes through Family Setup and
+    Set Up Step by Step to Touch, the first answer, which saves it, by
+    either rule and with either pointer. On every window where the row
+    shows, a look held after choosing Set Up Step by Step meets one of
+    the first answers. ROADMAP Wave 3 item 7 breaks it by placement.
+  - **Open: Settings closes under the look.** New. Back to Talking
+    closes Settings onto Home, under the look. Its centre is over
+    Emergency (*Settings on Home*), but where the pointer goes back to
+    the look and that was near Back to Talking's leading edge, Home has
+    No there, on every window; on the phone at the largest size, where
+    Back to Talking is about 300pt tall, its lower edge is over Get
+    Attention. Chains that reach Back to Talking unasked end the same
+    way: on the iPad, a look on Family Setup's Back button meets Back to
+    Talking on Settings' first screen, and Settings closes under it over
+    Yes. Only the pointer that goes back to the look meets these, so the
+    device check of where a pointer rests after an activation decides
+    whether they bind. Placement removes them (Back to Talking over
+    harmless controls only, and Settings' screens placed so nothing
+    chains into it), in ROADMAP Wave 3 items 4 and 7, or the measured
+    cost goes to the owner before a dwell, switch, head or gaze profile
+    ships.
+
+*Before:* the nearest-control rules were written twice, in
+`HomeShapeTests` and in the UI tests' `ScreenControls`, and only single
+hops were scored: the spots where Home's Settings, Back to Talking and
+Stop had been, and points across Stop's well.
 
 ## Typing is a state of Home
 
