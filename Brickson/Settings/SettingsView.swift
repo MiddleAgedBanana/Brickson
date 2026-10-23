@@ -15,9 +15,12 @@ import SwiftUI
 /// stays open; only Back to Talking closes it (docs/DECISIONS.md, "Settings
 /// resets when idle and never closes").
 ///
-/// Under the bar, a line kept for it shows any sound problem, because the
-/// cover hides Home's: a sample that cannot be heard always says why
-/// (AGENTS.md, invariant 4).
+/// At the foot of the cover, a line kept for it shows any sound problem,
+/// because the cover hides Home's: a sample that cannot be heard always
+/// says why (AGENTS.md, invariant 4). It sits below the screens rather
+/// than under the bar, so each screen starts right under the bar, where
+/// the root's Family Setup row covers the spot Home's Settings was
+/// (docs/DECISIONS.md, "Settings on Home").
 struct SettingsView: View {
     let close: () -> Void
 
@@ -38,7 +41,6 @@ struct SettingsView: View {
     var body: some View {
         VStack(spacing: 0) {
             SettingsSafetyBar(close: close)
-            SettingsAudioStatus()
             NavigationStack(path: $path) {
                 SettingsRootView()
                     .navigationDestination(for: SettingsRoute.self) { route in
@@ -48,6 +50,7 @@ struct SettingsView: View {
             // A new identity after an idle reset rebuilds every screen
             // scrolled to the top, as if Settings had just opened.
             .id(activity.resetCount)
+            SettingsAudioStatus()
         }
         .background(Color(uiColor: .systemBackground))
         .environment(activity)
@@ -115,6 +118,11 @@ struct SettingsView: View {
 /// sounding with no way to stop it. Because the place is kept, adding it
 /// moves nothing. Back to Talking's words are never shrunk: its icon sits
 /// above them, so it never takes their width (`SettingsPairLabel`).
+///
+/// The bar is only as tall as its tallest control. Get Attention's empty
+/// place has no height of its own to keep, and once let it take a share of
+/// the screen's height, which put Back to Talking a third of the way down,
+/// over the spot where Home's Settings was (CI on PR #33).
 struct SettingsSafetyBar: View {
     let close: () -> Void
 
@@ -132,16 +140,18 @@ struct SettingsSafetyBar: View {
             .tint(Palette.phraseFill)
             .accessibilityIdentifier("backToTalking")
         }
+        .fixedSize(horizontal: false, vertical: true)
         .padding(.horizontal, SettingsMetrics.gutter)
         .padding(.vertical, 8)
     }
 }
 
 /// Sound problems while Settings covers Home, as passive text in a line kept
-/// for it, so nothing moves when one appears (AGENTS.md, invariant 4). The
-/// words are `AudioSafetyPolicy`'s for a screen over Home: they name Back,
-/// then Again. Home's own warnings still announce each problem to
-/// VoiceOver under the cover, so this line does not announce them again.
+/// for it at the foot of the cover, so nothing moves when one appears
+/// (AGENTS.md, invariant 4). The words are `AudioSafetyPolicy`'s for a
+/// screen over Home: they name Back, then Again. Home's own warnings still
+/// announce each problem to VoiceOver under the cover, so this line does
+/// not announce them again.
 private struct SettingsAudioStatus: View {
     @Environment(SpeechService.self) private var speech
     @Environment(AudioSafetyMonitor.self) private var audioSafety
@@ -173,7 +183,7 @@ private struct SettingsAudioStatus: View {
         .foregroundStyle(.primary)
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, SettingsMetrics.gutter)
-        .padding(.bottom, 8)
+        .padding(.vertical, 8)
         .allowsHitTesting(false)
     }
 
@@ -197,21 +207,47 @@ final class SettingsLanding {
 
 /// Settings' first screen: one large way into Family Setup, and a short
 /// note on what lies there. Nothing here changes a setting.
+///
+/// The row starts right under the safety bar, over the spot where Home's
+/// Settings was, so a look still resting there meets a row that only
+/// navigates (docs/DECISIONS.md, "Settings on Home"). In a regular-width
+/// window it takes the trailing column, under Back to Talking and as wide,
+/// with the note beside it. Across the whole window, the row's centre lay
+/// farther from that spot than Back to Talking's, so by the nearest centre
+/// a held look could close Settings again (CI on PR #33).
 struct SettingsRootView: View {
     @Environment(SettingsLanding.self) private var landing: SettingsLanding?
+    @Environment(\.horizontalSizeClass) private var sizeClass
 
     var body: some View {
         SettingsScreen(title: "Settings") {
-            NavigationLink(value: SettingsRoute.familySetup) {
-                SettingsRowLabel(title: "Family Setup", systemImage: "person.2.fill")
-                    .frame(minHeight: FamilySetupView.openingHeight)
+            if sizeClass == .regular {
+                // The bar's columns: equal halves, the same spacing.
+                HStack(alignment: .top, spacing: SettingsMetrics.rowSpacing) {
+                    note
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    familySetup
+                        .frame(maxWidth: .infinity)
+                }
+            } else {
+                familySetup
+                note
             }
-            .settingsRowStyle()
-            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { landing?.rootRowHeight = $0 }
-            .accessibilityIdentifier("familySetup")
-
-            SettingsParagraph("Voices, help with reaching the screen, keeping \(AppName.display) open, and the privacy policy are in Family Setup.")
         }
+    }
+
+    private var familySetup: some View {
+        NavigationLink(value: SettingsRoute.familySetup) {
+            SettingsRowLabel(title: "Family Setup", systemImage: "person.2.fill")
+                .frame(minHeight: FamilySetupView.openingHeight)
+        }
+        .settingsRowStyle()
+        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { landing?.rootRowHeight = $0 }
+        .accessibilityIdentifier("familySetup")
+    }
+
+    private var note: some View {
+        SettingsParagraph("Voices, help with reaching the screen, keeping \(AppName.display) open, and the privacy policy are in Family Setup.")
     }
 }
 
