@@ -178,6 +178,14 @@ release in docs/ROADMAP.md when no thread has it yet.
   harmonic-rich replacement and its level under speech need a listening
   check on a device (docs/DECISIONS.md, "Get Attention"). *(owner, with a
   device build)*
+- In dark mode, iPad multitasking can lift a window's background from
+  black to the elevated gray, and `PaletteTests` measures the fills' edges
+  against black only. Against `#1C1C1E` (a commonly reported value, not
+  read from Apple) they come to 2.84 to 2.96:1, under invariant 6's 3:1.
+  With Show Borders on, the border carries the edge. First step: measure
+  with `userInterfaceLevel = .elevated` in `PaletteTests`
+  ([`log/2026-10-23-show-borders-and-large-content.md`](log/2026-10-23-show-borders-and-large-content.md), *Follow-ups*). *(the next
+  accessibility thread)*
 - No typing on Home. The typing rules (`MessageComposer`), the saved
   message (`DraftStore`) and a keyboard probe are in `Brickson/Typing`,
   waiting for Home's typing state (docs/DECISIONS.md, "Typing is a state
@@ -322,8 +330,11 @@ row in [`ACCESSIBILITY.md`](ACCESSIBILITY.md), with its release and
 roadmap item; what each R0 item picks up from it, in order, is in
 [`log/2026-10-21-accessibility-coverage.md`](log/2026-10-21-accessibility-coverage.md),
 *Follow-ups*. Item 3's scan order, regions and Voice Control names are
-done; what is left of item 3's list, in order, is in
-[`log/2026-10-22-home-scan-order-and-names.md`](log/2026-10-22-home-scan-order-and-names.md),
+done, and so is Home's border under Show Borders; the Large Content
+Viewer waits on a device check (docs/DECISIONS.md, "Show Borders and the
+Large Content Viewer on Home"). What is left of item 3's list, in order,
+is in
+[`log/2026-10-23-show-borders-and-large-content.md`](log/2026-10-23-show-borders-and-large-content.md),
 *Follow-ups*.
 The layout's next steps (the wells, then the engine with input
 profiles) are in
@@ -377,6 +388,8 @@ Simulators cannot show these. Record each result in a `docs/log/` file
 | Brickson inside Assistive Access with `UISupportsFullScreenInAssistiveAccess`: its window size, and whether Eye Tracking and Switch Control work there | Assistive Access support (R0 item 7) |
 | Guided Access with each input method, and with a short Display Auto-Lock while Brickson keeps the screen awake | Setup advice, and invariant 12 under Guided Access |
 | Which of the VoiceOver, Switch Control and AssistiveTouch flags each input method turns on | Profile suggestions (R1) |
+| With a test build that adds `.accessibilityShowsLargeContentViewer()` to Yes and No (the change in [`log/2026-10-23-show-borders-and-large-content.md`](log/2026-10-23-show-borders-and-large-content.md), *The Large Content Viewer, built and held back*), at an accessibility text size: touch and hold Yes until the large copy shows, slide onto No, lift. Which speaks: No, Yes or nothing? Then hold Yes and lift without moving: does it speak once? Also with Touch Accommodations' Hold Duration on. Then, in a build without the viewer, touch Yes, slide onto No and lift: Yes or nothing, never No. The same slide from one phrase tile onto the next, with a library that fits and one that scrolls (issue #36). In a window where Settings shows its gear alone ([`log/2026-10-23-settings-on-home.md`](log/2026-10-23-settings-on-home.md)), in the shipped build: hold the gear until its large copy shows, slide onto each control beside it and lift: Settings opens or nothing happens, never anything else | Whether Home gets the Large Content Viewer, on which controls, and whether Settings' gear keeps it (docs/DECISIONS.md, "Show Borders and the Large Content Viewer on Home") |
+| Show Borders on, in light and dark, with and without Increase Contrast: every Home control shows its border, a press thickens it, a selected category and Emergency show their inner ring, measured on the rendered pixels; Settings' system buttons show theirs | "Show Borders and the Large Content Viewer on Home"; Show Borders on Settings and setup |
 
 ## Repository, CI and website
 
