@@ -1,6 +1,6 @@
 # The Large Content Viewer measured, and Brickson on the iPhone Duo simulator
 
-*2026-10-23. Pull request #PR (`claude/project-thread-m1qa35`). The
+*2026-10-23. Pull request #43 (`claude/project-thread-m1qa35`). The
 "Large Content Viewer and iPhone Duo checks" thread, run on the owner's
 Mac with Xcode 27.1 (27A9275) on macOS 27.0.1.*
 
