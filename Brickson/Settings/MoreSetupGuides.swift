@@ -41,6 +41,7 @@ struct CallsSiriAndShortcutsView: View {
         SettingsSteps(steps: [
             "On the Apple Watch, open Settings > Accessibility > Live Speech and turn it on.",
             "Save phrases under Favorite Phrases on the same screen.",
+            "Open Settings > Accessibility > Accessibility Shortcut and make sure Live Speech is selected, so a triple-click of the Digital Crown opens it.",
             "To speak, triple-click the Digital Crown, choose Live Speech if a list appears, then type or choose a phrase and choose Send.",
         ])
         SettingsParagraph("Apple Watch needs watchOS 10 or later.")

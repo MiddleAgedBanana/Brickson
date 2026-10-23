@@ -103,9 +103,6 @@
     "Can't be used while Personal Voice is turned off for %@." : {
 
     },
-    "Check that Touch Accommodations is in Settings > Accessibility > Accessibility Shortcut, so a triple-click can turn it off again." : {
-
-    },
     "Check-ins are off. Set Up Step by Step is always here." : {
 
     },
@@ -203,6 +200,9 @@
 
     },
     "Family: help with setting up is in Settings." : {
+
+    },
+    "First, open Settings > Accessibility > Accessibility Shortcut and make sure Touch Accommodations is selected, so a triple-click can turn it off again if touches stop working as expected." : {
 
     },
     "Follow the dot with the eyes to calibrate. This happens each time Eye Tracking is turned on." : {
@@ -380,6 +380,9 @@
 
     },
     "Open Personal Voice Settings" : {
+
+    },
+    "Open Settings > Accessibility > Accessibility Shortcut and make sure Live Speech is selected, so a triple-click of the Digital Crown opens it." : {
 
     },
     "Open Settings > Accessibility > Accessibility Shortcut." : {

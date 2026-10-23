@@ -37,9 +37,9 @@ struct ReachingTheScreenContent: View {
             SettingsHeading("Touch")
             SettingsParagraph("Nothing to turn on. If tapping is hard, Touch Accommodations can help: Hold Duration ignores touches shorter than a set time, Ignore Repeat treats several quick touches as one, and Tap Assistance uses the first or last place touched.")
             SettingsSteps(steps: [
+                "First, open Settings > Accessibility > Accessibility Shortcut and make sure Touch Accommodations is selected, so a triple-click can turn it off again if touches stop working as expected.",
                 "Open Settings > Accessibility > Touch > Touch Accommodations.",
                 "Turn on Touch Accommodations, or choose Set Up Touch Accommodations where the screen offers it, and choose the settings that help.",
-                "Check that Touch Accommodations is in Settings > Accessibility > Accessibility Shortcut, so a triple-click can turn it off again.",
             ])
             SettingsParagraph("With it on, quick taps and swipes can seem to do nothing. AssistiveTouch, in Settings > Accessibility > Touch > AssistiveTouch, puts a menu on the screen for gestures that are hard to make.")
         case .voiceControl:

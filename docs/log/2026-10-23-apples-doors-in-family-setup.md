@@ -38,7 +38,8 @@ answers are kept as offered, never as completed":
 
 - *Reaching the Screen* (and so step 3 of Set Up Step by Step, for the
   ways chosen): Touch Accommodations, with the caution that quick taps
-  can then seem to do nothing; Switch Control's six switch sources and
+  can then seem to do nothing, and its Accessibility Shortcut set before
+  it is turned on (review, below); Switch Control's six switch sources and
   its timing (scanning style, Auto Scanning Time, Hold Duration, Ignore
   Repeat, Auto Tap); Eye Tracking's calibration each time it starts and
   Dwell Control's written path; eye trackers made for iPad, which the
@@ -51,7 +52,8 @@ answers are kept as offered, never as completed":
   Mode's 30-second Auto-Lock and Guided Access's own Display Auto-Lock.
 - *Calls, Siri and Shortcuts*, a new Family Setup screen: Live Speech
   (and that its phrases are its own, so families type in a few), Live
-  Speech on Apple Watch, Vocal Shortcuts, Listen for Atypical Speech
+  Speech on Apple Watch (with the watch's own Accessibility Shortcut,
+  which its triple-click needs), Vocal Shortcuts, Listen for Atypical Speech
   with Apple's English (U.S.) limit and Siri Pause Time, and the Action
   button on an iPhone that has one.
 - *More Accessibility Settings*, a new Family Setup screen: the
@@ -94,6 +96,17 @@ rows; docs/ROADMAP.md marks item 1 built; AGENTS.md lists
 `SettingsAppLink`; the website's accessibility page names the new
 audits and the full-screen request, and says Brickson has not been
 tried inside Assistive Access.
+
+Review on the pull request found two steps in the wrong order or
+missing, both confirmed against Apple's guides and fixed: the Touch
+Accommodations guide now selects Touch Accommodations in the
+Accessibility Shortcut *before* turning it on, since Hold Duration can
+make ordinary taps do nothing and the way back must exist first; and
+Live Speech on Apple Watch now selects Live Speech in the watch's
+Accessibility Shortcut, which Apple's watch guide lists as its own step
+(the iPhone's guide has no such step). Both say "make sure … is
+selected" rather than "choose", because choosing an item already ticked
+unticks it.
 
 ## Apple's pages behind it
 
