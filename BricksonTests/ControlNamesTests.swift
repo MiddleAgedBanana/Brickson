@@ -12,7 +12,7 @@ struct ControlNamesTests {
     /// shows. Voice Control lists the first name when a person says "Show
     /// names", and people say what they read on the screen.
     @Test func everyFixedControlAnswersFirstToTheWordsItShows() {
-        for control in HomeControlNames.fixed {
+        for control in HomeControlNames.fixed + HomeControlNames.wells {
             #expect(!control.visible.isEmpty)
             #expect(control.inputLabels.first == control.visible)
         }
@@ -21,22 +21,27 @@ struct ControlNamesTests {
     /// Fails if a name has nothing to say in it, or a control lists the same
     /// name twice: neither gives the person another way to reach it.
     @Test func everyNameOfAFixedControlIsSayableAndNew() {
-        for control in HomeControlNames.fixed {
+        for control in HomeControlNames.fixed + HomeControlNames.wells {
             let forms = control.inputLabels.map(HomeControlNames.spokenForm)
             #expect(!forms.contains(""), "\(control.visible) has a name with nothing to say")
             #expect(Set(forms).count == forms.count, "\(control.visible) lists a name twice")
         }
     }
 
-    /// Fails if the fixed controls change their names or order without
-    /// docs/DECISIONS.md, "Home's scan order and names", changing too.
+    /// Fails if the fixed controls or the wells' controls change their
+    /// names or order without docs/DECISIONS.md, "Home's scan order and
+    /// names" and "Get Attention and Stop on Home", changing too.
     @Test func theFixedControlsAndTheirNamesAreTheDecidedOnes() {
         #expect(HomeControlNames.fixed.map(\.inputLabels) == [
             ["Yes"],
             ["No"],
             ["Emergency"],
+            ["Get Attention", "Help"],
             ["Again", "Repeat"],
             ["Settings"],
+        ])
+        #expect(HomeControlNames.wells.map(\.inputLabels) == [
+            ["Stop", "Stop Alert"],
         ])
     }
 
@@ -74,9 +79,13 @@ struct ControlNamesTests {
 
     // MARK: Home's screen
 
-    /// Fails if `onHome` leaves out the fixed controls, the category row or
-    /// the phrase tiles, which would let a collision through unseen.
+    /// Fails if `onHome` leaves out the fixed controls, Stop (on screen
+    /// while the alarm sounds, whichever category shows), the category row
+    /// or the phrase tiles, which would let a collision through unseen.
     @Test func homeListsEveryControlOnTheScreen() {
+        #expect(HomeControlNames.collisions(among: HomeControlNames.onHome(categoryRow: [], phrases: ["Help!"])) == ["help"])
+        #expect(HomeControlNames.collisions(among: HomeControlNames.onHome(categoryRow: [], phrases: ["Stop."])) == ["stop"])
+        #expect(HomeControlNames.collisions(among: HomeControlNames.onHome(categoryRow: ["Stop Alert"], phrases: [])) == ["stop alert"])
         #expect(HomeControlNames.collisions(among: HomeControlNames.onHome(categoryRow: ["Basics"], phrases: ["Again."])) == ["again"])
         #expect(HomeControlNames.collisions(among: HomeControlNames.onHome(categoryRow: ["Yes"], phrases: [])) == ["yes"])
         #expect(HomeControlNames.collisions(among: HomeControlNames.onHome(categoryRow: [], phrases: ["Repeat"])) == ["repeat"])

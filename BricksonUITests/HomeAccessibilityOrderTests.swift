@@ -35,6 +35,7 @@ final class HomeAccessibilityOrderTests: XCTestCase {
             (label: "Yes", region: safety),
             (label: "No", region: safety),
             (label: "Emergency", region: safety),
+            (label: "Get Attention", region: safety),
             (label: "Again", region: safety),
         ] + everydayCategories.map { (label: $0, region: categories) }
         + [(label: "Settings", region: categories)]

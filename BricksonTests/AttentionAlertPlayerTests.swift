@@ -24,6 +24,29 @@ struct AttentionAlertPlayerTests {
         #expect(playback.loopsUntilStopped)
     }
 
+    /// UI tests sound the alarm with a silent stand-in
+    /// (`--attention-tone=silent`). It must say it is playing from the start
+    /// until Stop, or the health check would end the alarm a second later
+    /// and Home's Stop would vanish under the test.
+    @Test func theSilentToneSoundsUntilStopped() {
+        let playback = SilentAttentionTonePlayback()
+        #expect(!playback.isPlaying)
+
+        #expect(playback.playFromBeginning())
+        #expect(playback.isPlaying)
+
+        playback.stop()
+        #expect(!playback.isPlaying)
+    }
+
+    /// Fails if the app's own launch, which reads no options, gets anything
+    /// but the real tone, or a test launch asking for silence gets sound.
+    @Test func onlyATestLaunchAskingForItGetsTheSilentTone() throws {
+        #expect(try AppAudio.attentionTone(for: nil) is SystemAttentionTonePlayback)
+        #expect(try AppAudio.attentionTone(for: LaunchOptions.standard.attentionTone) is SystemAttentionTonePlayback)
+        #expect(try AppAudio.attentionTone(for: .silent) is SilentAttentionTonePlayback)
+    }
+
     // MARK: Starting
 
     @Test func startPlaysTheToneAndHoldsTheSession() {

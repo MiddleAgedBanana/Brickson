@@ -124,6 +124,8 @@ struct PaletteTests {
             "AccentColor": "#0A60D6",
             "ControlFill": "#5A6474",
             "EmergencyFill": "#C8161E",
+            "AttentionFill": "#B45309",
+            "StopFill": "#0F766E",
         ]
         #expect(Set(expected.keys) == Set(Palette.assetNames))
         for (name, hex) in expected {

@@ -131,10 +131,11 @@ struct StarterLabelFitTests {
         }
     }
 
-    /// Fails if Yes, No, Again, Emergency or Settings would break or be cut
-    /// off in the narrowest width Home gives it (`HomeShape.MinimumWidths`),
-    /// with Bold Text off or on. `HomeShapeTests` checks no control is
-    /// narrower.
+    /// Fails if Yes, No, Again, Emergency, Get Attention, Stop or Settings
+    /// would break or be cut off in the narrowest width Home gives it
+    /// (`HomeShape.MinimumWidths`), with Bold Text off or on. Get Attention
+    /// takes two lines there, which the quick control's height holds.
+    /// `HomeShapeTests` checks no control is narrower.
     @Test(arguments: [false, true])
     func theFixedControlsFitTheirNarrowestWidths(boldText: Bool) {
         let minimum = HomeShape.MinimumWidths.forBoldText(boldText)
@@ -144,6 +145,7 @@ struct StarterLabelFitTests {
             (HomeControlNames.no, minimum.yesNo),
             (HomeControlNames.again, minimum.again),
             (HomeControlNames.emergency, minimum.emergency),
+            (HomeControlNames.getAttention, minimum.getAttention),
         ]
         for (names, width) in quick {
             Self.expectFits(
@@ -152,6 +154,11 @@ struct StarterLabelFitTests {
                 "quick control", boldText: boldText
             )
         }
+        Self.expectFits(
+            HomeControlNames.stop.visible, .category,
+            in: Self.labelSize(CGSize(width: minimum.stop, height: narrow.categoryHeight)),
+            "Stop", boldText: boldText
+        )
         Self.expectFits(
             HomeControlNames.settings.visible, .category,
             in: Self.labelSize(CGSize(width: minimum.settings, height: narrow.categoryHeight)),
@@ -233,8 +240,8 @@ struct StarterLabelFitTests {
     /// weight `LabelFont.boldTextUIFontWeight` measures.
     @Test func boldTextWordsAreNoWiderThanMeasured() {
         let cases: [(LabelFont, [String])] = [
-            (.quickControl, ["Yes", "No", "Emergency", "Again"]),
-            (.category, everydayCategoryNames + [HomeControlNames.settings.visible]),
+            (.quickControl, ["Yes", "No", "Emergency", "Again", HomeControlNames.getAttention.visible]),
+            (.category, everydayCategoryNames + [HomeControlNames.settings.visible, HomeControlNames.stop.visible]),
             (.compactTile, phrases),
             (.regularTile, phrases),
             (.message, phrases),

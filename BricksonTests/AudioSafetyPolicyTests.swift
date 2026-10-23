@@ -277,6 +277,19 @@ struct AudioSafetyPolicyTests {
         #expect(AudioAnnouncementPolicy.attentionIssueToAnnounce(state) == nil)
     }
 
+    /// Home's one status line: a problem first, because something cannot be
+    /// heard; then the alarm sounding; then speech. Fails if "Speaking"
+    /// hides "Sounding", or "Sounding" hides a problem such as "Alert
+    /// stopped".
+    @Test func theStatusLinePutsProblemsThenTheAlarmThenSpeech() {
+        #expect(HomeStatusLine(issue: .lowOutputVolume, alarmIsSounding: true, isSpeaking: true) == .issue(.lowOutputVolume))
+        #expect(HomeStatusLine(issue: .attentionAlertStopped, alarmIsSounding: false, isSpeaking: false) == .issue(.attentionAlertStopped))
+        #expect(HomeStatusLine(issue: nil, alarmIsSounding: true, isSpeaking: true) == .sounding)
+        #expect(HomeStatusLine(issue: nil, alarmIsSounding: true, isSpeaking: false) == .sounding)
+        #expect(HomeStatusLine(issue: nil, alarmIsSounding: false, isSpeaking: true) == .speaking)
+        #expect(HomeStatusLine(issue: nil, alarmIsSounding: false, isSpeaking: false) == nil)
+    }
+
     /// VoiceOver hears the whole sentence, which names the control to use,
     /// not the short text the warning strip shows.
     @Test func announcementsSayTheFullSentence() {

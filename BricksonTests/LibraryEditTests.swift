@@ -184,8 +184,9 @@ struct LibraryEditTests {
 
     /// A category named like a Home control would be a second button with
     /// that name. Fails if validation omits an alternate input label,
-    /// such as Again's Repeat alias, from either add or rename.
-    @Test(arguments: ["Yes", "no.", "EMERGENCY", "Get attention", "Again!", "Repeat", "repeat!", "Stop Alert", "Settings", "Speak"])
+    /// such as Again's Repeat alias or Get Attention's Help, or Stop, from
+    /// either add or rename.
+    @Test(arguments: ["Yes", "no.", "EMERGENCY", "Get attention", "help!", "Again!", "Repeat", "repeat!", "Stop.", "Stop Alert", "Settings", "Speak"])
     func homeControlNamesAreReserved(name: String) {
         #expect(throws: LibraryEditRejection.reservedCategoryName) {
             try makePlan(.addCategory(name: name, symbolName: "star.fill"))
