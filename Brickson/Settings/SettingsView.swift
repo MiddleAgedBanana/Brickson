@@ -151,9 +151,9 @@ struct SettingsSafetyBar: View {
 /// Sound problems while Settings covers Home, as passive text in a line kept
 /// for it at the foot of the cover, so nothing moves when one appears
 /// (AGENTS.md, invariant 4). The words are `AudioSafetyPolicy`'s for a
-/// screen over Home: they name Back, then Again. Home's own warnings still
-/// announce each problem to VoiceOver under the cover, so this line does
-/// not announce them again.
+/// screen over Home: they name Back, then Again or Get Attention. Home's own
+/// warnings still announce each problem to VoiceOver under the cover, in
+/// the same words, so this line does not announce them again.
 private struct SettingsAudioStatus: View {
     @Environment(SpeechService.self) private var speech
     @Environment(AudioSafetyMonitor.self) private var audioSafety

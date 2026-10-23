@@ -151,6 +151,9 @@
     "Get Attention did not start. Choose it again." : {
 
     },
+    "Get Attention is not sounding. Choose Back until Home appears, then choose Get Attention." : {
+
+    },
     "Get Attention is sounding." : {
       "comment" : "What VoiceOver reads for the status line while the Get Attention alarm sounds."
     },
@@ -215,6 +218,9 @@
 
     },
     "No Personal Voice yet" : {
+
+    },
+    "No alert — Back" : {
 
     },
     "No longer on this device." : {

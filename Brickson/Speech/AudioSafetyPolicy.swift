@@ -14,8 +14,10 @@ nonisolated enum SpeechInterruptionState: Equatable {
 }
 
 /// The control that is actually reachable on the surface where an interrupted
-/// utterance must be recovered. Recovery copy must never direct Voice Control
-/// to a button that the current mode has structurally removed.
+/// utterance, or an alarm that failed or stopped, must be recovered. Recovery
+/// copy must never direct Voice Control to a button that the current mode has
+/// structurally removed: over Home (`dismissThenRepeat`, Settings) neither
+/// Again nor Get Attention is on screen.
 nonisolated enum SpeechRecoveryAction: Equatable {
     case repeatLast
     case showPhrasesThenRepeat
@@ -48,6 +50,9 @@ nonisolated enum HomeAudioIssue: CaseIterable, Hashable {
     case speechStopped
     case typedSpeechStopped
     case modalSpeechStopped
+    /// The alarm failed or stopped while a screen covers Home, where Get
+    /// Attention is not: the way back comes first.
+    case modalAttentionAlertSilent
     case audioSessionUnavailable
     case lowOutputVolume
 
@@ -63,6 +68,8 @@ nonisolated enum HomeAudioIssue: CaseIterable, Hashable {
             String(localized: "Stopped: Phrases")
         case .modalSpeechStopped:
             String(localized: "Stopped — Back")
+        case .modalAttentionAlertSilent:
+            String(localized: "No alert — Back")
         case .audioSessionUnavailable:
             String(localized: "Audio failed")
         case .lowOutputVolume:
@@ -73,7 +80,7 @@ nonisolated enum HomeAudioIssue: CaseIterable, Hashable {
     var announcementUrgency: AudioAnnouncementUrgency {
         switch self {
         case .attentionAlertFailed, .attentionAlertStopped, .speechStopped,
-             .typedSpeechStopped, .modalSpeechStopped,
+             .typedSpeechStopped, .modalSpeechStopped, .modalAttentionAlertSilent,
              .audioSessionUnavailable:
             .urgent
         case .lowOutputVolume:
@@ -93,6 +100,8 @@ nonisolated enum HomeAudioIssue: CaseIterable, Hashable {
             String(localized: "Speech stopped unexpectedly. Choose Phrases, then choose Again to repeat it.")
         case .modalSpeechStopped:
             String(localized: "Speech stopped unexpectedly. Choose Back until Home appears, then choose Again to repeat it.")
+        case .modalAttentionAlertSilent:
+            String(localized: "Get Attention is not sounding. Choose Back until Home appears, then choose Get Attention.")
         case .audioSessionUnavailable:
             String(localized: "Audio could not start. Speech and Get Attention may be silent. Try again.")
         case .lowOutputVolume:
@@ -102,7 +111,7 @@ nonisolated enum HomeAudioIssue: CaseIterable, Hashable {
 
     var systemImage: String {
         switch self {
-        case .attentionAlertFailed, .attentionAlertStopped:
+        case .attentionAlertFailed, .attentionAlertStopped, .modalAttentionAlertSilent:
             "bell.slash.fill"
         case .speechStopped, .typedSpeechStopped, .modalSpeechStopped,
              .audioSessionUnavailable:
@@ -144,13 +153,8 @@ nonisolated struct AudioSafetyPolicy {
     var issue: HomeAudioIssue? {
         // A failed explicit Get Attention attempt needs immediate feedback,
         // even when an ambient volume/session warning was already present.
-        switch attentionState {
-        case .failedToStart:
-            return .attentionAlertFailed
-        case .stoppedUnexpectedly:
-            return .attentionAlertStopped
-        case .idle, .playing:
-            break
+        if let attentionIssue = Self.attentionIssue(attentionState, recoveryAction: speechRecoveryAction) {
+            return attentionIssue
         }
 
         if speechInterruptionState == .stoppedUnexpectedly {
@@ -171,6 +175,22 @@ nonisolated struct AudioSafetyPolicy {
             return .lowOutputVolume
         }
         return nil
+    }
+
+    /// The warning for an alarm that failed or stopped. Home and typing
+    /// show Get Attention, so the warning says to choose it again; a screen
+    /// over Home does not, so the warning names Back first.
+    static func attentionIssue(
+        _ state: AttentionAlertState,
+        recoveryAction: SpeechRecoveryAction
+    ) -> HomeAudioIssue? {
+        switch state {
+        case .idle, .playing:
+            return nil
+        case .failedToStart, .stoppedUnexpectedly:
+            guard recoveryAction != .dismissThenRepeat else { return .modalAttentionAlertSilent }
+            return state == .failedToStart ? .attentionAlertFailed : .attentionAlertStopped
+        }
     }
 }
 
@@ -204,20 +224,16 @@ nonisolated enum AudioAnnouncementPolicy {
         case .audioSessionUnavailable, .lowOutputVolume:
             issue
         case .attentionAlertFailed, .attentionAlertStopped, .speechStopped,
-             .typedSpeechStopped, .modalSpeechStopped, nil:
+             .typedSpeechStopped, .modalSpeechStopped, .modalAttentionAlertSilent, nil:
             nil
         }
     }
 
-    static func attentionIssueToAnnounce(_ state: AttentionAlertState) -> HomeAudioIssue? {
-        switch state {
-        case .failedToStart:
-            .attentionAlertFailed
-        case .stoppedUnexpectedly:
-            .attentionAlertStopped
-        case .idle, .playing:
-            nil
-        }
+    static func attentionIssueToAnnounce(
+        _ state: AttentionAlertState,
+        recoveryAction: SpeechRecoveryAction = .repeatLast
+    ) -> HomeAudioIssue? {
+        AudioSafetyPolicy.attentionIssue(state, recoveryAction: recoveryAction)
     }
 
     static func speechIssueToAnnounce(

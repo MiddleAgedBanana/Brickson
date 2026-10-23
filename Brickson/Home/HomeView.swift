@@ -63,7 +63,7 @@ struct HomeView: View {
             )
 
             VStack(alignment: .leading, spacing: HomeShape.regionSpacing) {
-                MessageBlock(width: contentWidth)
+                MessageBlock(width: contentWidth, isCovered: showsSettings)
                     .homeRegion(.message)
                 SafetyRow(
                     shape: shape,
@@ -112,11 +112,13 @@ struct HomeView: View {
 private struct MessageBlock: View {
     /// The width of the message and its status line.
     let width: CGFloat
+    /// Whether Settings covers Home.
+    let isCovered: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             MessageText()
-            StatusLines(width: width)
+            StatusLines(width: width, isCovered: isCovered)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -201,12 +203,21 @@ private struct StatusLines: View {
     @Environment(AudioSafetyMonitor.self) private var audioSafety
     @Environment(AttentionAlertPlayer.self) private var attention
     let width: CGFloat
+    /// Whether Settings covers Home. Its cover shows these problems on its
+    /// own line, but VoiceOver hears them from here, so while it is open
+    /// the words name Back first: neither Again nor Get Attention is on
+    /// Settings (`SpeechRecoveryAction.dismissThenRepeat`).
+    let isCovered: Bool
+
+    private var recovery: SpeechRecoveryAction {
+        isCovered ? .dismissThenRepeat : .repeatLast
+    }
 
     private var audioIssue: HomeAudioIssue? {
         AudioSafetyPolicy(
             attentionState: attention.state,
             speechInterruptionState: speech.speechInterruptionState,
-            speechRecoveryAction: .repeatLast,
+            speechRecoveryAction: recovery,
             audioSessionHealthy: audioSafety.audioSessionHealthy,
             outputVolume: audioSafety.outputVolume
         ).issue
@@ -276,7 +287,7 @@ private struct StatusLines: View {
         // again included, because each is a new event
         // (`AttentionAlertPlayer.failureSequence`).
         .onChange(of: attention.failureSequence) {
-            guard let issue = AudioAnnouncementPolicy.attentionIssueToAnnounce(attention.state) else {
+            guard let issue = AudioAnnouncementPolicy.attentionIssueToAnnounce(attention.state, recoveryAction: recovery) else {
                 return
             }
             announce(issue)
@@ -284,7 +295,7 @@ private struct StatusLines: View {
         .onChange(of: speech.speechInterruptionSequence) {
             guard let issue = AudioAnnouncementPolicy.speechIssueToAnnounce(
                 speech.speechInterruptionState,
-                recoveryAction: .repeatLast
+                recoveryAction: recovery
             ) else {
                 return
             }
