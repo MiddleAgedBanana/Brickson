@@ -7,8 +7,9 @@ Settings on Home thread, a cloud session.*
 
 Home now has a Settings button, so the Settings built in PR #23 and #27
 can be opened at last. It sits where *Home's slot plan* puts it, at the
-trailing end of the categories: a column as tall as the category rows,
-or a row of its own on the narrowest windows. Until Family Setup has been
+trailing end of the categories: a column as tall as the category rows
+(its gear alone on a 375pt phone with Bold Text), or a row of its own on
+the narrowest windows. Until Family Setup has been
 opened once, the message area says "Family: help with setting up is in
 Settings." instead of its placeholder.
 
@@ -30,6 +31,17 @@ variable font with its tracking table, through HarfBuzz on Linux), whose
 widths matched the ones CI measured earlier within half a point; CI's
 `StarterLabelFitTests` is the real check.
 
+**Review round 1.** Codex found that the first draft made a 375pt phone
+with Bold Text scroll its starter phrases (invariant 11): the heavier
+words took both a second safety row and a row of their own for Settings,
+leaving tiles about 64pt against the 99pt minimum, where the base branch
+fitted. It was right. Now Yes and No, the shortest words, narrow before
+the safety row splits, and Settings shows its gear alone where its word
+does not fit beside the categories, so Bold Text never takes height from
+a phone's phrases (`HomeShapeTests.boldTextTakesNoHeightFromAPhonesPhrases`).
+Only the 320pt window keeps the two-row safety row and Settings on its
+own row.
+
 ## Commits
 
 - `e61243d` Settings on Home: write the intent
@@ -48,6 +60,13 @@ widths matched the ones CI measured earlier within half a point; CI's
   all passing. Three mutations of `HomeShape` (no Emergency minimum, no
   "Settings at its minimum" step, no two-column try on wide windows)
   each failed the tests the plan names. Unbuilt for iOS: CI is the build.
+- Round 1, the same way: 30 tests, all passing, and four mutations each
+  failed the tests the plan names (no narrower Yes and No; no gear-only
+  Settings; the gear tried before the word; Yes and No with no minimum).
+  Two read-only review agents went over the fix before it was pushed,
+  one against AGENTS.md's rules and one for the build and CI's tests; the
+  Settings button's property pattern was typechecked on the same
+  toolchain with Swift 6 and main-actor default isolation.
 - CI: PENDING.
 
 ## Not verified
@@ -62,6 +81,11 @@ widths matched the ones CI measured earlier within half a point; CI's
   device check in docs/HANDOFF.md.
 - Bold Text on in a running app: no UI test turns it on; the label-fit
   tests check the widths with Bold Text drawn by SwiftUI.
+- Settings' gear alone is never drawn by a test: CI's iPhone has 370pt
+  of content, where the word fits with Bold Text off or on. Its label,
+  its large content viewer and Apple's audit of it wait for a window
+  with 296 to 332pt of content (316 to 358pt with Bold Text), such as a
+  375pt phone with Bold Text.
 
 ## Follow-ups
 
@@ -69,9 +93,17 @@ widths matched the ones CI measured earlier within half a point; CI's
    Phrases and Type are built, keep a control that says nothing nearest
    under Back to Talking (`SettingsOnHomeTests` fails otherwise). The slot
    plan's regular-width order (Emergency first) comes back with them.
-2. **The layout engine:** "Yes and No border the message" and the 375pt
-   phone with Bold Text, which now scrolls at the default size
-   (docs/DECISIONS.md, *Where the grid still scrolls*).
+2. **The layout engine:** "Yes and No border the message"
+   (docs/DECISIONS.md, "Settings on Home").
+4. **Phrase tiles with Bold Text** are not checked: the label-fit tests
+   check the starter phrases in their narrowest tiles with Bold Text off
+   only (ROADMAP R0-3 in docs/ACCESSIBILITY.md). Heavier words may need a
+   line more than the 99pt tile minimum allows.
+5. **The Figma frame for a 375pt phone with Bold Text** shows the first
+   draft; redraw it from the built arrangement when Figma reads allow.
+6. **320pt phone windows** (Display Zoom): the grid already scrolled
+   there and now shows less of itself (docs/DECISIONS.md, *Where the grid
+   still scrolls*); the layout engine needs another arrangement for them.
 3. **Typing:** Again's well shows Speak while typing. "Speak" is a little
    wider than "Again" (about 58 against 53pt at the default size), so the
    typing thread must check it against `MinimumWidths.again` or widen it.

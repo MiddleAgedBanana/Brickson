@@ -736,9 +736,21 @@ running on these windows):
   this arrangement in dwell, switch or gaze profiles, so the engine needs
   another arrangement for this window, never scrolling.
 - A 375×667pt phone window with Bold Text on (2026-10-23, *Settings on
-  Home*): scrolls at the default size, with tiles about 64pt against the
-  99pt minimum, because the heavier words fit neither one safety row nor
-  Settings beside the categories there, so both take a second row.
+  Home*): fits at the default size like the same window without it
+  (tiles about 107pt), with Yes and No narrower and Settings showing its
+  gear alone. A first draft gave the heavier words a second safety row
+  and Settings a row of its own there, and the grid scrolled (tiles
+  about 64pt against the 99pt minimum); Codex's review of PR #33 caught
+  it.
+- A 320pt phone window (2026-10-23): an iPhone with Display Zoom set to
+  Larger Text, 320×568pt on a 375×667 phone and 320×693pt on a 6.1-inch
+  one. It scrolls at the default size, with two columns and four rows of
+  at least 99pt to show. *Settings on Home* made it worse: at 288pt of
+  content the safety row's words need two rows and Settings a row of its
+  own, so the grid's height falls from about 240 to 110pt and from about
+  315 to 190pt (a model of the frames, safe areas of the zoomed 6.1-inch
+  phone estimated). The engine needs another arrangement for these
+  windows.
 - A 402×874pt phone window (iPhone 17 class): fits at the default text
   size, which `HomeLayoutTests` checks. At AX5 the grid scrolls: the quick
   controls and categories grow to hold one line of their words at the
@@ -913,10 +925,20 @@ item 7 left for later ([`work/settings-on-home.md`](work/settings-on-home.md),
 - **Settings is the last cell of region B,** at the trailing end of the
   categories, where *Home's slot plan* puts it: a column as tall as the
   category rows where it and the categories fit side by side, otherwise a
-  row of its own under them (the 320pt Slide Over window, and a 375pt
-  phone with Bold Text). It is a standard `Button` styled like Home's
-  other controls, named "Settings" and nothing else, and assistive
-  technologies reach it after the categories. A library with more than
+  row of its own under them (320pt windows: Slide Over, and an iPhone
+  with Display Zoom). Where its word does not fit beside the categories
+  but its gear does (a 375pt phone with Bold Text, whose heavier
+  "Conversation" needs the room, and windows 328 to 363pt wide without
+  it), Settings shows the gear alone and keeps the name "Settings" for
+  VoiceOver, Voice Control and Switch Control, with a large copy for the
+  large content viewer: a row of its own there would make the starter
+  phrases scroll (invariant 11), which is worse than a gear a family
+  member recognises. The gear alone departs from AGENTS.md's *Words
+  never break* (the icon is decorative and drops first) and from *Names,
+  the visible words first* above, so it is named in PR #33 for the
+  owner, who decides by merging or objecting. It is a standard `Button`
+  styled like Home's other controls, named "Settings" and nothing else,
+  and assistive technologies reach it after the categories. A library with more than
   four everyday categories scrolls only the categories; Settings stays.
 - **Again joins the safety row, which reads Yes, No, Again, Emergency.**
   The slot plan moves Again into C. Emergency goes at the trailing end
@@ -927,10 +949,12 @@ item 7 left for later ([`work/settings-on-home.md`](work/settings-on-home.md),
   message again. Now it is Emergency, which only shows the emergency
   phrases, by nearest centre and nearest edge on every window scored (the
   work file's table), and `SettingsOnHomeTests` checks the running app on
-  CI's iPad and iPhone at the default and largest text sizes. Where one
-  row does not hold Again and Emergency at their minimum widths, Yes, No
-  and Emergency keep the first row and Again takes a row of its own under
-  it. The slot plan's regular-width order (Emergency first, Get Attention
+  CI's iPad and iPhone at the default and largest text sizes. Where the
+  row is short of room, Yes and No, the shortest words, narrow first,
+  down to their own minimum, with Again and Emergency at theirs; only
+  where even that does not fit (the 320pt window) do Yes, No and
+  Emergency keep the first row and Again take a row of its own under
+  it, because a second row costs the phrases a row's height. The slot plan's regular-width order (Emergency first, Get Attention
   last) comes back with Phrases and Type; until then, whoever puts Get
   Attention and Stop on Home keeps a control that says nothing nearest
   under Back to Talking, or the test fails. Again is reached after
@@ -940,7 +964,7 @@ item 7 left for later ([`work/settings-on-home.md`](work/settings-on-home.md),
   measured with the real fonts, and wider with Bold Text on, which is
   measured at the heaviest weight (`HomeShape.MinimumWidths`, checked by
   `StarterLabelFitTests`; `HomeShapeTests` checks every width from 288 to
-  1400pt). So Bold Text can change the arrangement, as text size changes
+  1400pt). Settings' gear alone gets Apple's 44pt minimum target. So Bold Text can change the arrangement, as text size changes
   heights. The Bold Text minimums were first worked out from Apple's SF
   Pro font, whose measured widths matched CI's within half a point.
 - **The first-run hint** shows in the message area, in place of the
@@ -958,8 +982,10 @@ item 7 left for later ([`work/settings-on-home.md`](work/settings-on-home.md),
   engine must find. If the nearest centre, no placement with C under A
   removes it, and the measured cost goes to the owner before a dwell,
   switch, head or gaze profile ships. The layout engine's thread owns it.
-- **A 375pt phone with Bold Text scrolls its grid at the default size**
-  (*Where the grid still scrolls*): breaking or cutting words is worse.
+- **Bold Text never costs a phone's phrases any height**
+  (`HomeShapeTests.boldTextTakesNoHeightFromAPhonesPhrases`): on every
+  phone width the app supports, the heavier words narrow Yes and No or
+  leave Settings its gear alone, but add no row above the phrases.
 
 *Before:* Home had no Settings button, so only UI tests opened Settings
 (`--screen=settings`, which `SettingsTests` still use to start there),

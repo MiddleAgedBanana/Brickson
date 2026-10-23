@@ -12,11 +12,13 @@ Ten threads are working in parallel on the first release, R0.
 ## What the app does today
 
 What it is written to do (*Verification* says how much has been seen). A
-stand-in Home with Yes, No, Again and Emergency in one safety row, everyday
-categories with Settings at their trailing end, and tiles
-from a neutral starter set, sized from the space the window gives it
-(docs/DECISIONS.md, "Home's stand-in layout"): four category buttons that
-never scroll sideways, and three phrase columns on every iPhone. A tile
+stand-in Home with Yes, No, Again and Emergency in one safety row (Again on
+a second row only in windows under 328pt wide, 348pt with Bold Text, such
+as Slide Over or an iPhone with Display Zoom), everyday categories with
+Settings at their trailing end, and tiles from a neutral starter set,
+sized from the space the window gives it (docs/DECISIONS.md, "Home's
+stand-in layout"): four category buttons that never scroll sideways, and
+three phrase columns on every iPhone at its standard Display Zoom. A tile
 speaks at once, in the person's Personal Voice when one exists and is
 allowed; the sentence stays on screen in two reserved lines across the
 width, and a longer message scrolls inside them. No label breaks a
@@ -92,8 +94,7 @@ release in docs/ROADMAP.md when no thread has it yet.
 
 - Home's sizes are the stand-in's, not measured gaze, switch or touch
   floors per input profile, and the phrase grid still scrolls (invariant
-  11) on small phone windows at large text sizes, and on a 375pt phone
-  with Bold Text at the default size: docs/DECISIONS.md,
+  11) on small phone windows at large text sizes: docs/DECISIONS.md,
   "Home's stand-in layout", *Where the grid still scrolls*. Ending the
   scroll is R0 (ROADMAP item 3); measured sizes for each input profile are
   R1. *(the layout engine, a new thread)*

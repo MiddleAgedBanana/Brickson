@@ -70,32 +70,44 @@ window less Home's 16pt margins).
   - **C, the safety row.** One row, Yes, No, Again and Emergency, where
     five columns hold Again at its minimum width and Emergency, across
     two columns, at its own: Yes, No and Again share one width and
-    Emergency takes the rest. Otherwise two rows: Yes, No and Emergency
-    (across two of four columns), then Again across the width. Emergency
-    is at the trailing end of the first row in both.
+    Emergency takes the rest. Short of that, Again and Emergency at their
+    minimums and Yes and No sharing the rest, down to their own minimum.
+    Otherwise two rows: Yes, No and Emergency (across two of four
+    columns), then Again across the width. Emergency is at the trailing
+    end of the first row in every arrangement.
   - **B, the categories and Settings.** Settings is the last column,
     as tall as the category rows: every cell the same width where the
     categories keep their minimum, otherwise Settings at its minimum and
     the categories sharing the rest. Wide windows (from 560pt) try one
-    row of four categories first, then two rows of two. Where no column
-    fits (the narrowest windows, and a 375pt phone with Bold Text),
-    Settings takes a row of its own under two rows of two. A library with
+    row of four categories first, then two rows of two. Where the word
+    "Settings" does not fit beside them but its gear does (a 375pt phone
+    with Bold Text), Settings shows the gear alone, at Apple's 44pt
+    minimum width, and keeps its name for assistive technologies. Where
+    not even that fits (the narrowest windows), Settings takes a row of
+    its own under two rows of two. A library with
     more than four categories scrolls inside the category rectangle;
     Settings never scrolls.
   - **Minimum widths** (default text size, measured with the real fonts;
-    Bold Text measured at the heaviest weight): Again 64 (70 with Bold
-    Text), Emergency 116 (126), a category 118 (128, "Conversation"),
-    Settings 80 (86), each a point or two over what its word needs. Words step down to the default size at larger text
-    sizes, never below, so the default size is the binding one.
-  - **Where each arrangement applies:** one safety row and Settings
-    beside the categories from 332pt (Bold Text: one row from 360pt,
-    Settings beside from 358pt, so a 390pt phone with Bold Text takes the
-    two-row safety row and still fits without scrolling); four categories
-    in a row from 584pt (Bold Text: 630pt). The 320pt Slide Over window,
-    and a 375pt phone with Bold Text, get the two-row safety row and
-    Settings on its own row.
+    Bold Text measured at the heaviest weight): Yes and No 46 (48 with
+    Bold Text, "Yes"), Again 64 (70), Emergency 116 (126), a category
+    118 (128, "Conversation"), Settings 80 (86), each a point or a few
+    over what its word needs; Settings' gear alone 44. Words step down to
+    the default size at larger text sizes, never below, so the default
+    size is the binding one.
+  - **Where each arrangement applies:** one safety row from 296pt, with
+    Yes and No narrower than Again below 332pt; Settings beside the
+    categories with its word from 332pt and with its gear alone from
+    296pt (Bold Text: one row from 316pt, Yes and No narrower below
+    360pt; Settings' word beside from 358pt, its gear from 316pt). Four
+    categories in a row from 584pt (Bold Text: 630pt). So every phone at
+    its standard Display Zoom, with Bold Text or without, keeps one
+    safety row and Settings beside the categories. Only 320pt windows
+    (288pt of content: Slide Over on an iPad, and an iPhone with Display
+    Zoom set to Larger Text) get the two-row safety row and Settings on
+    its own row.
 - **Input methods:** Settings is a standard `Button` with the label
-  "Settings" (gear icon decorative), Voice Control name "Settings" only,
+  "Settings" (gear icon decorative; where the gear shows alone, the
+  label is on the gear), Voice Control name "Settings" only,
   identifier `settings`. VoiceOver, Switch Control and Full Keyboard
   Access reach C first (Yes, No, Emergency, then Again, which is
   reached last in its region though it sits between No and Emergency),
@@ -110,6 +122,7 @@ window less Home's 16pt margins).
   | 13-inch iPad portrait | Emergency by centre, Again by edge | Emergency, both | 75%, 75% | 65%, 60% |
   | 13-inch iPad landscape | Emergency by centre, Again by edge | Emergency, both | 71%, 73% | 64%, 60% |
   | 320pt window | Again, both | Emergency, both | 97%, 92% | 56%, 51% |
+  | 375×667 phone, Bold Text | Again, both | Emergency, both | 95%, 90% | 66%, 63% |
 
   After Settings opens, the spot where Home's Settings was is over
   Family Setup's row, which only opens the next screen. A second held
@@ -126,7 +139,10 @@ window less Home's 16pt margins).
   2026-10-23)](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=18-977):
   [iPhone 17](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=18-980),
   [375×667 phone](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=18-1022),
-  [375×667 phone with Bold Text](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=18-1063),
+  [375×667 phone with Bold Text](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=18-1063)
+  (the first draft, with two safety rows and Settings on its own row;
+  the built arrangement matches the 375×667 frame with narrower Yes
+  and No and the gear alone in Settings' column),
   [13-inch iPad portrait](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=18-1106)
   and [landscape](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=18-1148),
   and Settings open over
@@ -140,12 +156,21 @@ window less Home's 16pt margins).
   - *Yes and No still border the message.* Reduced, not removed: see
     the table. Recorded as open in docs/DECISIONS.md, "Settings on
     Home", with what decides it.
-  - *A 375pt phone with Bold Text scrolls its phrase grid at the default
-    size* (tiles about 64pt against a 99pt minimum), because neither
-    one safety row nor Settings beside the categories holds the heavier
-    words there. Words breaking would be worse; it is listed with the
-    stand-in's other scrolling windows and closes with the layout
-    engine.
+  - *A 320pt phone window loses more of its phrase grid.* An iPhone with
+    Display Zoom set to Larger Text gives Home 288pt of content, where
+    the safety row's words need two rows and Settings a row of its own:
+    the grid, which already scrolled there (two columns, four rows of at
+    least 99pt), drops from about 240 to 110pt on a zoomed 375×667 phone
+    (320×568) and from about 315 to 190pt on a zoomed 6.1-inch one
+    (320×693, safe areas estimated). Listed in docs/DECISIONS.md, *Where
+    the grid still scrolls*, for the layout engine.
+  - *Settings shows its gear alone on a 375pt phone with Bold Text.*
+    The first draft kept its word and gave it a row of its own there,
+    with a second safety row, and the phrase grid scrolled (tiles about
+    64pt against a 99pt minimum); Codex's review caught it. Breaking a
+    word would be worse than either, and the phrases outrank a family
+    control's word. Now Bold Text takes no height from any phone's
+    phrases (`HomeShapeTests`).
   - *The slot plan's own order in C* (Emergency first on wide windows,
     Get Attention at the trailing end) needs Phrases and Type in A's
     trailing column, where Back to Talking closes. Until they are
@@ -205,6 +230,13 @@ window less Home's 16pt margins).
     windows fails both.
   - `HomeShapeTests.theRegionsFillTheWidthExactly`: a row that overflows
     by a gap (the two-row Emergency's first draft did) fails it.
+  - `HomeShapeTests.boldTextTakesNoHeightFromAPhonesPhrases` and
+    `phonesKeepOneSafetyRowAndSettingsBesideTheCategories`: removing the
+    narrower Yes and No, or Settings' gear-only step, puts a row back
+    on a 375pt phone with Bold Text and fails both;
+    `yesAndNoNarrowBeforeTheSafetyRowSplits` fails without the first,
+    `settingsShowsItsNameWhereItFits` without the second or with the
+    gear tried before the word.
   - `StarterLabelFitTests.theFixedControlsFitTheirNarrowestWidths` and
     `everyStarterCategoryNameFitsTheNarrowestButton`: lowering a minimum
     below its word fails them.
