@@ -36,3 +36,7 @@ xcuserdata/
 # Agent skills installed per machine (see AGENTS.md, "Skills")
 .agents/
 .claude/skills/
+
+# Apple's Xcode skills, if exported into the checkout, are Apple's software
+# and must never be committed (AGENTS.md, "Skills")
+/xcode-skills/

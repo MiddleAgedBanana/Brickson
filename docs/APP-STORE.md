@@ -135,6 +135,8 @@ hard requirements, checked against Apple's pages on 2026-10-21:
 | Enough lasting use to be "app-like" | A stand-in Home would risk this; R0 fixes it | [Guideline 4.2](https://developer.apple.com/app-store/review/guidelines/#minimum-functionality) |
 | Export compliance | `ITSAppUsesNonExemptEncryption = NO` in `project.yml` skips the question on every upload | `project.yml` |
 | At least one iPhone and one 13-inch iPad screenshot | Plan in section 9 | [Screenshot specifications](https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications) |
+| From April 2027: "iOS and iPadOS apps must be built with the iOS & iPadOS 27 SDK or later, and target iOS 15 or later" (read 2026-10-23) | Met: built with the iOS 27.1 SDK, targets iOS 26.0 | [Submitting](https://developer.apple.com/app-store/submitting/) |
+| From April 2027: "any apps or games submitted will need to include screenshots for iPhone Duo" (read 2026-10-23) | Planned for every submission, the first included (docs/DECISIONS.md, "iPhone Duo"; section 9) | [Apple Developer News, 2026-10-05](https://developer.apple.com/news/?id=kkphp5qo) |
 
 ## 3. The privacy policy must match the build
 
@@ -452,18 +454,24 @@ read 2026-10-21:
   sizes 1206 × 2622 or 1179 × 2556 (portrait); the large iPhone sizes
   (for example 1320 × 2868) are optional; the 13-inch iPad takes 2064 × 2752
   portrait or 2752 × 2064 landscape (2048 × 2732 also accepted).
-- **iPhone Duo** (Apple's foldable iPhone): outer display 1398 × 2034, inner
-  display 2007 × 2853 (or rotated). The screenshot specifications say:
-  "Starting in April 2027, screenshots will be required for any app using
-  the iOS 27.1 SDK or later" (read 2026-10-21). Whether it applies depends
-  on the SDK of the Xcode the build uses, so check that page against the
-  current Xcode before each submission (docs/DECISIONS.md, "Build with
-  Apple's current Xcode"). A Duo set
-  also earns an "optimized for iPhone Duo" badge
-  ([Apple news](https://developer.apple.com/news/?id=kkphp5qo)). Brickson's
-  iPhone is portrait-only for now; the Duo screenshots must come from a real
-  layout on the inner display, so they wait for the orientation decision
-  (Phone layout and word fitting thread).
+- **iPhone Duo** (Apple's foldable iPhone): outer display 1398 × 2034 or
+  2034 × 1398, inner display 2007 × 2853 or 2853 × 2007. The screenshot
+  specifications say: "Starting in April 2027, screenshots will be
+  required for any app using the iOS 27.1 SDK or later"; Apple's news of
+  2026-10-05 says "Starting April 2027, any apps or games submitted will
+  need to include screenshots for iPhone Duo" (both read 2026-10-23).
+  Brickson builds with the newest SDK (iOS 27.1 on 2026-10-23), so under
+  either wording every submission from April 2027 needs them, and Brickson
+  includes them from its first (docs/DECISIONS.md, "iPhone Duo"). A Duo set
+  also earns an "optimized for iPhone Duo" badge, and App Store Connect's
+  new preview tool shows the product page on iPhone Duo
+  ([Apple news](https://developer.apple.com/news/?id=kkphp5qo)). Capture
+  them from the real app in the iPhone Duo simulator on the current Xcode
+  (Device Hub), once R0 item 13's checks pass. The inner display ignores
+  the iPhone's portrait-only setting, so its screenshots can be either
+  orientation now; outer-display landscape ones wait for the orientation
+  decision (docs/DECISIONS.md, "Orientations"). Re-read the
+  specifications before each submission.
 - Guideline 2.3.3: screenshots "should show the app in use", and may carry
   text overlays, "for example, to demonstrate input mechanisms". No price,
   and fictional content only (2.3.9): the starter phrases are fine.
@@ -576,5 +584,5 @@ testers](https://developer.apple.com/help/app-store-connect/test-a-beta-version/
 | A `site/accessibility/` page for the Accessibility URL | Section 4 | App Store readiness and ASO (follow-up) |
 | Delete the policy's unbuilt sections before 1.0 | Section 3 | App Store readiness and ASO, at release |
 | An age-range check only if needed, opened from Settings, never over Home or at first launch | Section 6 | Settings and first run, after the decision |
-| iPhone Duo inner-display layout and screenshots by April 2027 | Section 9 | Phone layout and word fitting |
+| iPhone Duo layouts checked on both displays in every pose, and Duo screenshots in every submission | Sections 2 and 9 | R0 item 13 (docs/ROADMAP.md), then App Store readiness and ASO for the screenshots |
 | No automatic rating prompt anywhere | Section 8 | Everyone |

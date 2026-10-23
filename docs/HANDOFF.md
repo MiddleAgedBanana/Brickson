@@ -374,6 +374,15 @@ release in docs/ROADMAP.md when no thread has it yet.
 - The privacy policy describes features not built yet; each is built or its
   sentence deleted before release (docs/APP-STORE.md, section 3, lists
   each sentence). *(App Store readiness and ASO)*
+- iPhone Duo: Brickson builds with the iOS 27.1 SDK, so Apple already
+  treats it as optimized for iPhone Duo, but it has never run there. Its
+  inner display ignores the portrait-only setting, a fold can sit under
+  an odd column of Home, Settings' Back may move into a vertical bar, and
+  CI has no Duo simulator; screenshots are required from April 2027
+  (docs/DECISIONS.md, "iPhone Duo";
+  [`log/2026-10-23-iphone-duo-readiness.md`](log/2026-10-23-iphone-duo-readiness.md)).
+  *(R0 item 13: a Mac thread first, then the layout engine, which builds
+  the owner's two fold choices)*
 - The app icon is a placeholder; `design/brand/` is not installed. *(Release chores, R0 item 11)*
 - Siri's alternative name "Brick Son" (`INAlternativeAppNames`) has no
   effect yet: Apple applies it only to apps with Siri support, which
@@ -400,6 +409,8 @@ can be reversed; docs/DECISIONS.md):
    are near duplicates, and "Please move me." could be clearer.
 5. Delete the failed Swift configuration on the Tool status page
    (docs/DECISIONS.md, *Code scanning*).
+6. You can delete the `xcode-skills` folder in `~/code/brickson`: its
+   skills are installed where agents load them.
 
 For agents: R0 in [docs/ROADMAP.md](ROADMAP.md), in order; the owner's
 long-term vision, the direction behind it, is its *Where this goes*.
@@ -413,8 +424,10 @@ Emergency working after it; the next library pull request starts from the
 in order (the rollback probe on the current Xcode, stores from every
 schema version, safety copies, export and import, the editing screens). Calls (R0 item 8) wait for a device build. Files under
 `.github/workflows` are committed by the owner (docs/SDLC.md, *Deploy*). The toolchain's follow-ups
-(Xcode's recommended settings, iPhone Duo, iOS 27 APIs behind
-`#available`) are in [`log/2026-10-21-toolchain.md`](log/2026-10-21-toolchain.md);
+(Xcode's recommended settings, iOS 27 APIs behind `#available`) are in
+[`log/2026-10-21-toolchain.md`](log/2026-10-21-toolchain.md); iPhone
+Duo is R0 item 13, starting with a run in the iPhone Duo simulator on
+the owner's Mac ([`log/2026-10-23-iphone-duo-readiness.md`](log/2026-10-23-iphone-duo-readiness.md), *Follow-ups*);
 recheck the minimum iOS against its two rules whenever Apple's next major
 release drops devices (docs/DECISIONS.md, "Minimum iOS, iPhone and
 iPad").
@@ -482,7 +495,7 @@ Simulators cannot show these. Record each result in a `docs/log/` file
 | A volume change made while Brickson was in the background shows when it returns | The volume warning (code audit L2) |
 | Buttons under Increase Contrast and Reduce Transparency, measured on the rendered pixels | Contrast of system components (invariant 6) |
 | The screen never dims or locks during a long session | `ScreenWakePolicy` (invariant 12) |
-| On a folding iPhone, open and folded, and in Stage Manager, Slide Over and iPhone Mirroring windows: nothing safety-critical is hidden or split | Layouts from the space available |
+| On a folding iPhone, open, partially folded and closed, and in Stage Manager, Slide Over and iPhone Mirroring windows: nothing safety-critical is hidden or split, nothing a person uses sits in the fold, and Eye Tracking and Dwell keep working as the phone folds and unfolds (the iPhone Duo simulator shows the layout first: R0 item 13) | Layouts from the space available; docs/DECISIONS.md, "iPhone Duo" |
 | Eye Tracking and Dwell on an external display | Whether gaze profiles hold off the built-in screen |
 | Switch Control with Auto Scanning, Group Items on and off, and Auto Tap: the scan steps to Emergency, Yes and No from every Home state, and whether Home's regions become scan groups | Scan order and grouping (docs/ACCESSIBILITY.md, section 1) |
 | With VoiceOver, Switch Control (item and group scanning) and Full Keyboard Access, Home is reached as Yes, No, Emergency, Get Attention, Again, then the message, Stop while it shows, the categories and Settings, the phrases, in every state; what each says on entering a region; whether the cursor stops on the message or the status line; Voice Control's "Show names" shows each control's visible words and "Tap Repeat" presses Again | "Home's scan order and names": the order, unlabelled regions, and whether `accessibilityRespondsToUserInteraction` is needed |
