@@ -55,10 +55,11 @@ viewer's gesture ends on an item
 (`largeContentViewerInteraction(_:didEndOn:at:)`); it is how a tab bar
 works. Whether SwiftUI buttons do the same has not been seen. If they do,
 on Home a touch begun on Yes that drifts 8pt onto No would say "No.", and
-a drift between phrase tiles would speak the next phrase. A plain
-SwiftUI button keeps its own touch, so today a touch
-begun on Yes can only say Yes or nothing. The viewer is not in this pull
-request; docs/HANDOFF.md has the device check that decides it.
+a drift between phrase tiles would speak the next phrase. Without the
+viewer, Apple documents that a touch stays with the view it began in, so
+today a touch begun on Yes is expected to say Yes or nothing. The viewer
+is not in this pull request; docs/HANDOFF.md has the device check that
+decides it, and that checks today's build too.
 
 The test build for that check is the commit described above: add
 `.accessibilityShowsLargeContentViewer { Text(verbatim: HomeControlNames.yes.visible) }`
@@ -108,11 +109,13 @@ Nothing was built or run on a Mac; GitHub CI is the build (AGENTS.md,
   covers a word now says where it holds; the screen's colour is named as
   the base level's; and a comment that put the border of a control that
   is off on a fill now puts it on the screen.
-- Codex's code and security reviews found nothing. CodeRabbit found one
-  point, taken: docs/ACCESSIBILITY.md said the viewer was held back
+- Codex's code and security reviews found nothing. CodeRabbit found two
+  points, both taken. docs/ACCESSIBILITY.md said the viewer was held back
   after a device check, when no device check has run; it, docs/DECISIONS.md
   and this record now say the slide is documented for UIKit's controls
-  and not yet seen with SwiftUI buttons.
+  and not yet seen with SwiftUI buttons. And the claim that a touch
+  without the viewer stays on Yes now cites Apple's touch model and says
+  "expected", and the device check covers it.
 - GitHub CI: *(pending)*.
 
 ## Not verified

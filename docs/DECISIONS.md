@@ -1534,8 +1534,11 @@ R0 item 3's accessibility work (docs/ACCESSIBILITY.md, section 6;
   If they do, on Home a touch begun on Yes that drifts 8pt onto No says
   "No.", and a drift from one phrase tile to the next speaks the next
   phrase: words the person did not choose, by a hand that may be weak or
-  unsteady. Without the viewer, a SwiftUI button keeps its own
-  touch, so a touch begun on Yes can only say Yes or nothing.
+  unsteady. Without the viewer, a touch stays with the view it began in
+  (Apple, "Using responders and the responder chain to handle events":
+  the touch's view never changes, even when it moves outside), so a
+  touch begun on Yes is expected to say Yes or nothing; the same device
+  check confirms it.
   `SpokenUtteranceTracker` absorbs only a repeat of the same phrase, so it
   does not help. The viewer stays off Home until a device check with a
   test build shows what a slide does in SwiftUI (docs/HANDOFF.md, *Checks
