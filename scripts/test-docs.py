@@ -8,9 +8,15 @@ Two kinds of reference are checked:
 
 - A section cited by title, such as docs/DECISIONS.md, "Orientations" or
   AGENTS.md, *Gotchas*, must be a heading or a bold lead-in
-  (**Title.** at the start of a line or list item) in the cited file. In the
-  files reviewers read as instructions, a bare *Title* must also name a
-  section somewhere in the repository.
+  (**Title.** at the start of a line or list item) in the cited file. A
+  title after a comma or an arrow, as in docs/DECISIONS.md, "iPhone Duo",
+  *The fold*, must name a part of a title before it or a section beside
+  one; a title after "and" is checked as the title before it was, so
+  ASO.md, *Screenshots* and *Subtitle* names two sections. Words in
+  quote marks after a file name are a title, whatever letter they start
+  with, unless QUOTATIONS lists them as a quotation. In the files
+  reviewers read as instructions, a bare *Title* must also name a section
+  somewhere in the repository.
 - A relative Markdown link, such as [handoff](docs/HANDOFF.md#verification),
   must point to a file that exists, and its #anchor to a heading in it.
   Reference-link definitions are checked too, covering full, collapsed and
@@ -19,6 +25,7 @@ Two kinds of reference are checked:
 Renaming a section or moving a file without updating what cites it fails
 here, which is how reviewers were twice sent to sections that did not exist.
 """
+from functools import cache
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
 import re
@@ -48,6 +55,18 @@ EXTERNAL = {
     ('docs/PORTING.md', 'docs/HANDOFF.md', 'Known limits and issues'),
 }
 
+# Words in quote marks after a file name that quote it rather than name a
+# section. Each must still appear, word for word, in the cited file.
+QUOTATIONS = {
+    ('BricksonTests/Layout/WordFitTests.swift', 'AGENTS.md',
+     'drop a decorative icon before shrinking words'),
+    ('BricksonTests/Layout/WordFitTests.swift', 'AGENTS.md',
+     'never render below their default size'),
+    # Known gaps items have no titles; this one is cited by its first words.
+    ('docs/DECISIONS.md', 'docs/HANDOFF.md',
+     "Chains of activations through Settings' screens"),
+}
+
 SOURCE_SUFFIXES = {'.md', '.swift', '.yml', '.yaml', '.sh', '.py', '.json'}
 
 CITATION = re.compile(
@@ -55,12 +74,17 @@ CITATION = re.compile(
     r'\s*(?:,|→|->)?\s*'                      # a comma or an arrow, or nothing
     r'(?:"(?P<quoted>[^"\n]{2,120})"'          # "Title"
     r'|(?<![*\w])\*(?P<italic>[^*\n]{2,120})\*(?![*\w]))')  # or *Title*
+# A further title after a cited one: , *The fold* or and "Home".
+FOLLOWING = re.compile(
+    r'(?=\s*(?:,|→|->|and\s))\s*(?:,|→|->)?\s*(?P<and>and\s+)?'
+    r'(?:"(?P<quoted>[^"\n]{2,120})"'
+    r'|(?<![*\w])\*(?P<italic>[^*\n]{2,120})\*(?![*\w]))')
 BARE_ITALIC = re.compile(r'(?<![*\w`])\*(?P<title>[A-Z][^*\n]{1,120}?)\*(?![*\w])')
 REFERENCE_LINK = re.compile(
     r'^ {0,3}\[(?!\^)(?:\\.|[^\[\]\\\n])+\]:[ \t]*(?:\n[ \t]*)?'
     r'(?P<target><[^>\n]*>|[^\s<>]+)'
     r'(?:[ \t]+(?:"(?:\\.|[^"\\\n])*"|\'(?:\\.|[^\'\\\n])*\'|\((?:\\.|[^)\\\n])*\)))?[ \t]*$', re.M)
-HEADING = re.compile(r'^ {0,3}#{1,6}\s+(?P<title>.+?)\s*#*\s*$', re.M)
+HEADING = re.compile(r'^ {0,3}(?P<marks>#{1,6})\s+(?P<title>.+?)\s*#*\s*$', re.M)
 LEAD_IN = re.compile(r'^\s*(?:[-*]\s+|\d+\.\s+)?\*\*(?P<title>[^*\n]+?)\*\*', re.M)
 def without_fenced_code(text):
     output, fence = [], None
@@ -79,7 +103,10 @@ def without_fenced_code(text):
     return ''.join(output)
 
 
-def without_code_spans(text, keep_file_names=False):
+def without_code_spans(text, for_citations=False):
+    """Blank out code spans. For citations, keep a span that is a file name,
+    or words that cannot start or end one (no quote mark, asterisk or file
+    name), so "`main` ruleset" is read as a title."""
     output, index = [], 0
     while index < len(text):
         opening = re.search(r'`+', text[index:])
@@ -97,7 +124,8 @@ def without_code_spans(text, keep_file_names=False):
         if closing:
             stop = end + closing.end()
             content = text[end:end + closing.start()]
-            if keep_file_names and re.fullmatch(r'(?:[\w.-]+/)*[\w.-]+\.md', content):
+            if for_citations and (re.fullmatch(r'(?:[\w.-]+/)*[\w.-]+\.md', content)
+                                  or not re.search(r'["*]|\.md', content)):
                 output.append(content)
             else:
                 output.append(re.sub(r'[^\n]', ' ', text[start:stop]))
@@ -128,7 +156,7 @@ def joined(text, suffix):
     if suffix == '.md':
         text = re.sub(r'^(?: {0,3}>[ \t]?)+', '', text, flags=re.M)
         text = without_code_spans(without_indented_code(without_fenced_code(text)),
-                                  keep_file_names=True)
+                                  for_citations=True)
         return re.sub(r'\s*\n\s*(?:>\s*)?', ' ', text)
     return re.sub(r'\s*\n\s*(?:///?|#|\*)?\s*', ' ', text)
 
@@ -140,17 +168,18 @@ def normalize(title):
     return title.rstrip('.:;,').strip().lower()
 
 
-def heading_titles(text):
-    """ATX and Setext headings in document order, outside fenced code."""
+def headings(text):
+    """ATX and Setext headings in document order, outside fenced code, as
+    (level, title, line number)."""
     paragraph = []
-    for line in without_fenced_code(text).splitlines():
+    for number, line in enumerate(without_fenced_code(text).splitlines()):
         heading = HEADING.fullmatch(line)
         if heading:
-            yield heading['title']
+            yield len(heading['marks']), heading['title'], number
             paragraph = []
         elif re.fullmatch(r' {0,3}(?:=+|-+)[ \t]*', line):
             if paragraph:
-                yield ' '.join(paragraph)
+                yield 1 if '=' in line else 2, ' '.join(paragraph), number
             paragraph = []
         elif (not line.strip() or re.match(r' {0,3}(?:>|[-+*]\s|\d+[.)]\s)', line)
               or (not paragraph and line.startswith(('    ', '\t')))):
@@ -159,17 +188,67 @@ def heading_titles(text):
             paragraph.append(line.strip())
 
 
-def sections(text):
-    """The titles a file offers: its headings and its bold lead-ins."""
-    text = without_fenced_code(text)
-    titles = {normalize(title) for title in heading_titles(text)}
-    titles |= {normalize(m['title']) for m in LEAD_IN.finditer(text)}
+def heading_titles(text):
+    for _, title, _ in headings(text):
+        yield title
+
+
+def aliases(title, lead_in):
+    """A title and the shorter forms it is cited by."""
+    title = normalize(title)
+    titles = {title}
+    # A lead-in such as "Open: fewer than three everyday categories." is
+    # cited by its label or by the words after it.
+    label, colon, words = title.partition(': ')
+    if lead_in and colon:
+        titles |= {label, words}
     # A heading such as "GitHub reviews and updates (2026-10-10)" is cited
     # without its date.
     titles |= {re.sub(r'\s*\([^)]*\)$', '', t) for t in titles}
     # A numbered heading such as "3. Build" is cited as "Build".
     titles |= {re.sub(r'^\d+\.\s+', '', t) for t in titles}
     return titles
+
+
+LEAD_IN_LEVEL = 7  # below every heading
+
+
+@cache  # each citation reads its file's outline; callers never change it
+def outline(text):
+    """Every heading and bold lead-in in document order, as (titles, level,
+    parent): parent is the index of the nearest heading above it of a
+    higher level, and a lead-in ranks below every heading."""
+    text = without_fenced_code(text)
+    found = [(number, level, title) for level, title, number in headings(text)]
+    found += [(text.count('\n', 0, m.start('title')), LEAD_IN_LEVEL, m['title'])
+              for m in LEAD_IN.finditer(text)]
+    nodes, open_headings = [], []
+    for _, level, title in sorted(found, key=lambda entry: entry[:2]):
+        while open_headings and nodes[open_headings[-1]][1] >= level:
+            open_headings.pop()
+        parent = open_headings[-1] if open_headings else None
+        nodes.append((aliases(title, level == LEAD_IN_LEVEL), level, parent))
+        if level != LEAD_IN_LEVEL:
+            open_headings.append(len(nodes) - 1)
+    return nodes
+
+
+def sections(text):
+    """The titles a file offers: its headings and its bold lead-ins."""
+    return set().union(*(titles for titles, _, _ in outline(text)))
+
+
+def part_of_or_beside(nodes, outer, inner):
+    """Whether node inner sits inside node outer, or beside it under the
+    same parent."""
+    parent = nodes[inner][2]
+    if parent == nodes[outer][2]:
+        return True
+    while parent is not None:
+        if parent == outer:
+            return True
+        parent = nodes[parent][2]
+    return False
 
 
 def slug(title):
@@ -203,25 +282,79 @@ def is_instruction_file(relative):
     return relative in INSTRUCTION_FILES or relative.startswith(INSTRUCTION_DIRS)
 
 
-def broken_citations(path, text, all_sections):
-    """Each cited section that does not exist, as a readable message."""
+def is_title(quoted):
+    """Whether quoted words are a title. Between quote marks around file
+    names, as in ("docs/HANDOFF.md", "README.md"), CITATION finds only
+    punctuation or a space; a title starts with a letter, digit or code."""
+    return re.match(r'[\w`]', quoted) is not None
+
+
+def cited_titles(flat, match):
+    """The titles a citation names, in order, as (title, quoted, after and),
+    and where the last one ends."""
+    titles = [(match['quoted'] or match['italic'], match['italic'] is None, False)]
+    end = match.end()
+    while (following := FOLLOWING.match(flat, end)) is not None:
+        if following['italic'] is None and not is_title(following['quoted']):
+            break
+        titles.append((following['quoted'] or following['italic'],
+                       following['italic'] is None, following['and'] is not None))
+        end = following.end()
+    return titles, end
+
+
+def broken_titles(path, cited, titles, used):
+    """Each title of one citation that the cited file does not have."""
+    relative = path.relative_to(ROOT).as_posix()
+    target = resolve(path, cited)
+    text = target.read_text() if target else ''
+    nodes = outline(text)
+    problems, earlier, previous = [], [], None
+    # What a title must be part of or beside: every section named before
+    # it, or, after "and", what the title before it had to be.
+    context, beside = [], None
+    for title, quoted, after_and in titles:
+        if not after_and:
+            context, beside = list(earlier), previous
+        key = (relative, cited, title)
+        if key in EXTERNAL:
+            used.add(key)
+            continue
+        if target is None:
+            problems.append(f'{relative}: cites {cited}, which does not exist')
+            break
+        if quoted and key in QUOTATIONS:
+            used.add(key)
+            if ' '.join(title.split()) not in ' '.join(text.split()):
+                problems.append(f'{relative}: {cited} does not contain the words "{title}"')
+            continue
+        found = [index for index, node in enumerate(nodes) if normalize(title) in node[0]]
+        if not found:
+            problems.append(f'{relative}: {cited} has no section "{title}"')
+        elif context and not any(part_of_or_beside(nodes, outer, inner)
+                                 for outer in context for inner in found):
+            problems.append(f'{relative}: {cited} has a section "{title}", '
+                            f'but not in or beside "{beside}"')
+        if found:
+            earlier += found
+            previous = title
+    return problems
+
+
+def broken_citations(path, text, all_sections, used=None):
+    """Each cited section that does not exist, as a readable message. Each
+    EXTERNAL or QUOTATIONS entry the text uses is added to used."""
     relative = path.relative_to(ROOT).as_posix()
     flat = joined(text, path.suffix)
+    used = set() if used is None else used
     problems = []
     cited_spans = []
     for match in CITATION.finditer(flat):
-        title = match['quoted'] or match['italic']
-        cited_spans.append(match.span())
-        if match['italic'] is None and not title[:1].isupper():
-            continue  # a quoted phrase after a file name, not a title
-        target = resolve(path, match['path'])
-        key = (relative, match['path'], title)
-        if key in EXTERNAL:
-            continue
-        if target is None:
-            problems.append(f'{relative}: cites {match["path"]}, which does not exist')
-        elif normalize(title) not in sections(target.read_text()):
-            problems.append(f'{relative}: {match["path"]} has no section "{title}"')
+        if match['italic'] is None and not is_title(match['quoted']):
+            continue  # quote marks around a file name, not a title
+        titles, end = cited_titles(flat, match)
+        cited_spans.append((match.start(), end))
+        problems += broken_titles(path, match['path'], titles, used)
     if path.suffix == '.md' and is_instruction_file(relative):
         for match in BARE_ITALIC.finditer(flat):
             inside = any(start <= match.start() < end for start, end in cited_spans)
@@ -550,6 +683,140 @@ class CheckerTests(unittest.TestCase):
     def test_a_numbered_heading_is_cited_without_its_number(self):
         self.assertIn('deploy', sections('## 5. Deploy'))
 
+    def test_a_quoted_title_may_start_with_a_small_letter(self):
+        # Skipping titles that start in lower case let every "iPhone Duo"
+        # citation through unchecked.
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder).resolve()
+            page = root / 'index.md'
+            (root / 'guide.md').write_text('# Decisions\n## iPhone Duo\n')
+            with patch.dict(globals(), ROOT=root):
+                self.assertEqual(broken_citations(page, 'guide.md, "iPhone Duo"', set()), [])
+                for title in ['iPhone Dou', 'iPad Duo', 'the fold']:
+                    self.assertEqual(broken_citations(page, f'guide.md, "{title}"', set()),
+                                     [f'index.md: guide.md has no section "{title}"'])
+
+    def test_quote_marks_around_a_file_name_are_not_a_title(self):
+        source = ROOT / 'scripts' / 'example.py'
+        for text in ['allowed("git stage docs/NO-SUCH.md")\nallowed("git status")',
+                     'files = ("docs/NO-SUCH.md", "docs/OTHER.md")',
+                     'See "docs/NO-SUCH.md" and "README.md".']:
+            self.assertEqual(broken_citations(source, text, set()), [], text)
+
+    def test_code_inside_a_quoted_title_is_read(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder).resolve()
+            page = root / 'index.md'
+            (root / 'guide.md').write_text('# Decisions\n### `main` ruleset\n')
+            with patch.dict(globals(), ROOT=root):
+                self.assertEqual(broken_citations(page, 'guide.md,\n"`main` ruleset"', set()), [])
+                self.assertEqual(broken_citations(page, 'guide.md, "`main` rules"', set()),
+                                 ['index.md: guide.md has no section "main rules"'])
+                # Code that could hold a citation is still not read as one.
+                self.assertEqual(broken_citations(page, '`guide.md, "Missing"`', set()), [])
+
+    def test_a_quotation_must_be_listed_and_appear_in_the_cited_file(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder).resolve()
+            page = root / 'index.md'
+            (root / 'guide.md').write_text('# Rules\n\nLabels shrink, and never\nrender below '
+                                           'their default size.\n')
+            listed = {('index.md', 'guide.md', 'never render below their default size'),
+                      ('index.md', 'guide.md', 'never render below their old size')}
+            with patch.dict(globals(), ROOT=root, QUOTATIONS=listed):
+                used = set()
+                self.assertEqual(broken_citations(page,
+                    'guide.md, "never render below their default size"', set(), used), [])
+                self.assertEqual(used, {('index.md', 'guide.md',
+                                         'never render below their default size')})
+                self.assertEqual(broken_citations(page,
+                    'guide.md, "never render below their old size"', set()),
+                    ['index.md: guide.md does not contain the words '
+                     '"never render below their old size"'])
+                # Words the file contains are a title unless they are listed.
+                self.assertEqual(broken_citations(page, 'guide.md, "Labels shrink"', set()),
+                    ['index.md: guide.md has no section "Labels shrink"'])
+
+    def test_a_title_after_a_cited_title_must_be_part_of_it(self):
+        # Reading only the first title let a wrong *The fold* pass.
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder).resolve()
+            page = root / 'index.md'
+            (root / 'guide.md').write_text(
+                '# Decisions\n\n## Orientations\n\n### The hinge\n\n'
+                '- **Open: a thing nobody decided.** Text.\n\n'
+                '## iPhone Duo\n\n### The fold\n\n'
+                '- **Open: fewer than three categories.** Text.\n\n'
+                '## Home\n\nText.\n')
+            with patch.dict(globals(), ROOT=root):
+                for text in ['guide.md, "iPhone Duo", *The fold*',
+                             'guide.md, "iPhone Duo", "The fold"',
+                             'guide.md, *iPhone Duo*, *The fold*',
+                             'guide.md → "iPhone Duo" → *The fold*',
+                             'guide.md, "iPhone Duo", *The fold*, *Open*',
+                             'guide.md, "iPhone Duo", *Fewer than three categories*',
+                             'guide.md, "iPhone Duo", "Orientations" and "Home"',
+                             'guide.md, "iPhone Duo", "Orientations", and "Home"',
+                             'guide.md, "Orientations", *The hinge*, "Home"',
+                             'guide.md, *Home* and *The fold*',
+                             'guide.md, "iPhone Duo", *The fold* and *Open*']:
+                    self.assertEqual(broken_citations(page, text, set()), [], text)
+                for text, title, beside in [
+                        ('guide.md, "iPhone Duo", *The flod*', 'The flod', None),
+                        ('guide.md, "iPhone Duo", "Orientations" and "Homes"', 'Homes', None),
+                        ('guide.md, "iPhone Duo", *The hinge*', 'The hinge', 'iPhone Duo'),
+                        ('guide.md, "Home", *Open*', 'Open', 'Home'),
+                        ('guide.md, "iPhone Duo", *The fold*, *The hinge*',
+                         'The hinge', 'The fold'),
+                        ('guide.md, "iPhone Duo", *The fold* and *The hinge*',
+                         'The hinge', 'iPhone Duo'),
+                        ('guide.md, *Home* and *The flod*', 'The flod', None)]:
+                    problem = (f'index.md: guide.md has a section "{title}", but not in or '
+                               f'beside "{beside}"' if beside else
+                               f'index.md: guide.md has no section "{title}"')
+                    self.assertEqual(broken_citations(page, text, set()), [problem], text)
+                swift = root / 'Example.swift'
+                self.assertEqual(broken_citations(swift,
+                    '/// See guide.md, "iPhone Duo",\n/// *The flod*.', set()),
+                    ['Example.swift: guide.md has no section "The flod"'])
+                # Words after a title that are not one are left alone.
+                for text in ['guide.md, "iPhone Duo"; "The flod" is a typo',
+                             'guide.md, "iPhone Duo", and the "flod"',
+                             '(guide.md, "iPhone Duo"), *not* the hinge']:
+                    self.assertEqual(broken_citations(page, text, set()), [], text)
+
+    def test_a_wrong_title_after_a_cited_title_is_reported_once(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder).resolve()
+            agents = root / 'AGENTS.md'
+            (root / 'guide.md').write_text('# Decisions\n## iPhone Duo\n### The fold\n')
+            with patch.dict(globals(), ROOT=root):
+                self.assertEqual(broken_citations(agents,
+                    'See guide.md, "iPhone Duo", *The flod*.', set()),
+                    ['AGENTS.md: guide.md has no section "The flod"'])
+
+    def test_external_titles_after_a_cited_title_are_skipped(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder).resolve()
+            page = root / 'index.md'
+            (root / 'guide.md').write_text('# Handoff\n')
+            text = '`guide.md` → *Decided but NOT built* and *Known limits and issues*'
+            first = ('index.md', 'guide.md', 'Decided but NOT built')
+            second = ('index.md', 'guide.md', 'Known limits and issues')
+            with patch.dict(globals(), ROOT=root, EXTERNAL={first, second}):
+                used = set()
+                self.assertEqual(broken_citations(page, text, set(), used), [])
+                self.assertEqual(used, {first, second})
+            with patch.dict(globals(), ROOT=root, EXTERNAL={first}):
+                self.assertEqual(broken_citations(page, text, set()),
+                    ['index.md: guide.md has no section "Known limits and issues"'])
+
+    def test_a_lead_in_is_cited_by_its_label_or_its_words(self):
+        titles = sections('- **Open: fewer than three everyday categories.** A cell')
+        self.assertLessEqual({'open: fewer than three everyday categories', 'open',
+                              'fewer than three everyday categories'}, titles)
+        self.assertEqual(sections('## Phase 1: Build'), {'phase 1: build'})
+
     def test_a_bare_title_in_an_instruction_file_must_exist(self):
         skill = ROOT / '.github' / 'skills' / 'code-review' / 'SKILL.md'
         self.assertTrue(broken_citations(skill, 'Read *No such section*.', set()))
@@ -696,13 +963,16 @@ class DocumentTests(unittest.TestCase):
     def test_every_cited_section_and_relative_link_resolves(self):
         files = tracked_files()
         titles = all_section_titles(files)
-        problems = []
+        problems, used = [], set()
         for path in files:
             text = path.read_text()
-            problems += broken_citations(path, text, titles)
+            problems += broken_citations(path, text, titles, used)
             if path.suffix == '.md':
                 problems += broken_links(path, text)
         self.assertEqual(problems, [], '\n' + '\n'.join(problems))
+        # An exception for a citation that is gone must go too.
+        unused = sorted((EXTERNAL | QUOTATIONS) - used)
+        self.assertEqual(unused, [], 'nothing cites these EXTERNAL or QUOTATIONS entries')
 
 
 class IssueFormTests(unittest.TestCase):
