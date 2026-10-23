@@ -210,40 +210,64 @@ final class SettingsLanding {
 ///
 /// The row starts right under the safety bar, over the spot where Home's
 /// Settings was, so a look still resting there meets a row that only
-/// navigates (docs/DECISIONS.md, "Settings on Home"). In a regular-width
-/// window it takes the trailing column, under Back to Talking and as wide,
-/// with the note beside it. Across the whole window, the row's centre lay
-/// farther from that spot than Back to Talking's, so by the nearest centre
-/// a held look could close Settings again (CI on PR #33).
+/// navigates (docs/DECISIONS.md, "Settings on Home"). Where half the width
+/// holds the row's words on one line, the row takes the bar's trailing
+/// column, under Back to Talking and as wide, with the note beside it.
+/// Across a wide window, a full-width row's centre lies farther from that
+/// spot than Back to Talking's, so by the nearest centre a held look could
+/// close Settings again (modelled from CI's frames on PR #33). Where half
+/// the width is too narrow, as on a phone, the row spans the width, which
+/// keeps its words whole.
 struct SettingsRootView: View {
     @Environment(SettingsLanding.self) private var landing: SettingsLanding?
-    @Environment(\.horizontalSizeClass) private var sizeClass
 
     var body: some View {
         SettingsScreen(title: "Settings") {
-            if sizeClass == .regular {
+            ViewThatFits(in: .horizontal) {
                 // The bar's columns: equal halves, the same spacing.
                 HStack(alignment: .top, spacing: SettingsMetrics.rowSpacing) {
-                    note
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                    ZStack(alignment: .topLeading) {
+                        // A hidden copy of the row makes this column want
+                        // the row's whole width, so these columns are
+                        // chosen only where each half holds the row's
+                        // words on one line. The note itself asks for no
+                        // width and wraps to what the column has.
+                        measuringCopy
+                            .hidden()
+                            .accessibilityHidden(true)
+                        note
+                            .frame(minWidth: 0, idealWidth: 0, maxWidth: .infinity, alignment: .leading)
+                    }
                     familySetup
-                        .frame(maxWidth: .infinity)
                 }
-            } else {
-                familySetup
-                note
+                VStack(alignment: .leading, spacing: SettingsMetrics.rowSpacing) {
+                    familySetup
+                    note
+                }
             }
         }
     }
 
     private var familySetup: some View {
         NavigationLink(value: SettingsRoute.familySetup) {
-            SettingsRowLabel(title: "Family Setup", systemImage: "person.2.fill")
-                .frame(minHeight: FamilySetupView.openingHeight)
+            familySetupLabel
         }
         .settingsRowStyle()
         .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { landing?.rootRowHeight = $0 }
         .accessibilityIdentifier("familySetup")
+    }
+
+    /// The row as drawn, for measuring only: never shown or reachable.
+    private var measuringCopy: some View {
+        Button {} label: {
+            familySetupLabel
+        }
+        .settingsRowStyle()
+    }
+
+    private var familySetupLabel: some View {
+        SettingsRowLabel(title: "Family Setup", systemImage: "person.2.fill")
+            .frame(minHeight: FamilySetupView.openingHeight)
     }
 
     private var note: some View {

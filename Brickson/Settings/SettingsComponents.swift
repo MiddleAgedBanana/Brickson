@@ -20,7 +20,8 @@ enum SettingsMetrics {
 /// A full-width row that opens another screen or does one thing. The words
 /// wrap between words beside the icon, never shrinking; a full-width row
 /// leaves room for every word with its icon (AGENTS.md, "Words never
-/// break").
+/// break"). Settings' root gives its row half the width only where the
+/// half holds the words on one line (`SettingsRootView`).
 struct SettingsRowLabel: View {
     let title: Text
     let systemImage: String
