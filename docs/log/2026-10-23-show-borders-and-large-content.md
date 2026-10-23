@@ -48,13 +48,15 @@ put `accessibilityShowsLargeContentViewer { Text(verbatim: title) }` on
 every Home button, through a small `View` extension in `FittedLabel.swift`,
 with a UI test (`HeldPressTests`) that a held touch at the largest text
 size still chooses a category and speaks a phrase. An independent review
-before pushing found the hazard: with the viewer on, a touch held on one
-control that slides onto another activates the second when the finger
-lifts. UIKit documents that as the default when the viewer's gesture ends
-on an item (`largeContentViewerInteraction(_:didEndOn:at:)`), and it is
-how a tab bar works. On Home a touch begun on Yes that drifts 8pt onto No
-would say "No.", and a drift between phrase tiles would speak the next
-phrase. A plain SwiftUI button keeps its own touch, so today a touch
+before pushing found the risk: for UIKit's own controls, Apple documents
+that with the viewer on, a touch held on one control that slides onto
+another activates the second when the finger lifts, the default when the
+viewer's gesture ends on an item
+(`largeContentViewerInteraction(_:didEndOn:at:)`); it is how a tab bar
+works. Whether SwiftUI buttons do the same has not been seen. If they do,
+on Home a touch begun on Yes that drifts 8pt onto No would say "No.", and
+a drift between phrase tiles would speak the next phrase. A plain
+SwiftUI button keeps its own touch, so today a touch
 begun on Yes can only say Yes or nothing. The viewer is not in this pull
 request; docs/HANDOFF.md has the device check that decides it.
 
@@ -101,11 +103,16 @@ Nothing was built or run on a Mac; GitHub CI is the build (AGENTS.md,
   white at the base level, or a change to which ink is white in which
   appearance).
 - An independent review of the diff (three reviewers: will it compile,
-  the safety rules, the tests) found the Large Content Viewer hazard
+  the safety rules, the tests) found the Large Content Viewer risk
   above, and three smaller points, all taken: the claim that no ring
   covers a word now says where it holds; the screen's colour is named as
   the base level's; and a comment that put the border of a control that
   is off on a fill now puts it on the screen.
+- Codex's code and security reviews found nothing. CodeRabbit found one
+  point, taken: docs/ACCESSIBILITY.md said the viewer was held back
+  after a device check, when no device check has run; it, docs/DECISIONS.md
+  and this record now say the slide is documented for UIKit's controls
+  and not yet seen with SwiftUI buttons.
 - GitHub CI: *(pending)*.
 
 ## Not verified

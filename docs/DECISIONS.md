@@ -1526,14 +1526,15 @@ R0 item 3's accessibility work (docs/ACCESSIBILITY.md, section 6;
 - **No Large Content Viewer on Home yet.** The coverage list planned it
   for every label the fitting type shrinks, and this pull request first
   built it (`accessibilityShowsLargeContentViewer` on each Home button).
-  Review found what it adds: with the viewer on, a touch held on one
-  control that slides onto another activates the second when the finger
-  lifts. That is the system's documented default for its own controls
-  (UIKit, `largeContentViewerInteraction(_:didEndOn:at:)`), and how a tab
-  bar works. On Home it means a touch begun on Yes that drifts 8pt onto No
-  says "No.", and a drift from one phrase tile to the next speaks the
-  next phrase: words the person did not choose, by a hand that may be
-  weak or unsteady. Without the viewer, a SwiftUI button keeps its own
+  Review found a risk in it. For UIKit's own controls, Apple documents
+  that with the viewer on, a touch held on one control that slides onto
+  another activates the second when the finger lifts
+  (`largeContentViewerInteraction(_:didEndOn:at:)`); that is how a tab
+  bar works. Whether SwiftUI buttons do the same has not been seen yet.
+  If they do, on Home a touch begun on Yes that drifts 8pt onto No says
+  "No.", and a drift from one phrase tile to the next speaks the next
+  phrase: words the person did not choose, by a hand that may be weak or
+  unsteady. Without the viewer, a SwiftUI button keeps its own
   touch, so a touch begun on Yes can only say Yes or nothing.
   `SpokenUtteranceTracker` absorbs only a repeat of the same phrase, so it
   does not help. The viewer stays off Home until a device check with a
