@@ -122,6 +122,10 @@ release in docs/ROADMAP.md when no thread has it yet.
   import exists; those must keep every word within the narrowest tile, or
   the layout engine must give it room. *(Library editing and backup format,
   with the layout engine)*
+- Settings' Back to Talking breaks "Talking" across two lines ("Talk-",
+  "ing") on CI's iPhone at the largest text size, in the half of the bar
+  it keeps beside Get Attention's place (seen in PR #33's captures; the
+  same on the base branch). *(Settings, with the next accessibility pass)*
 - The rendered-label test reads the four English quick-control labels
   only, not phrases or categories; `StarterLabelFitTests` measures every
   starter label against its narrowest slot instead. *(Accessibility

@@ -129,7 +129,11 @@ window less Home's 16pt margins).
   activation there opens Family Setup, whose first row leads into Set
   Up Step by Step; that chain is the one docs/HANDOFF.md already lists
   (Settings follow-up 10), now reachable from Home, and it changes no
-  size yet.
+  size yet. The first CI run showed this was not yet so: Settings' bar
+  had stretched to about a third of the screen, putting Back to Talking
+  over that spot. Round 2 fixed the bar, moved Settings' sound line to
+  the foot of the cover and put the root's row in the bar's trailing
+  column on regular widths (docs/DECISIONS.md, "Settings on Home").
 - **Colours:** none new. Settings uses `HomeButtonStyle` with
   `Palette.controlFill`, pinned in `PaletteTests` like Home's other
   controls.

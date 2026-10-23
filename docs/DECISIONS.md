@@ -986,6 +986,21 @@ item 7 left for later ([`work/settings-on-home.md`](work/settings-on-home.md),
   (`HomeShapeTests.boldTextTakesNoHeightFromAPhonesPhrases`): on every
   phone width the app supports, the heavier words narrow Yes and No or
   leave Settings its gear alone, but add no row above the phrases.
+- **Settings' first screen starts right under its bar.** The safety bar
+  is only as tall as its tallest control, and the sound line sits at the
+  foot of the cover (*Settings is a cover with a fixed safety bar*), so
+  the root's Family Setup row starts under the bar, over the spot where
+  Home's Settings was. In a regular-width window the row takes the bar's
+  trailing column, under Back to Talking and as wide, with the note
+  beside it. *Before:* Get Attention's empty place stretched the bar to
+  about a third of the screen (since PR #23), so Back to Talking sat over
+  Home's Settings, and a look resting after Settings closed met Home's
+  Settings again (`SettingsOnHomeTests` on PR #33's first CI run).
+  Modelled from that run's frames, fixing the bar alone still left Back
+  to Talking nearest by centre on the iPad, where a full-width row's
+  centre is mid-window, and by edge on the iPhone at the largest text
+  size, where the sound line, kept tall enough for its longest warning,
+  sat between them.
 
 *Before:* Home had no Settings button, so only UI tests opened Settings
 (`--screen=settings`, which `SettingsTests` still use to start there),
@@ -1237,8 +1252,9 @@ primary ink, never the system's secondary gray or grouped-list headers,
 which measure under 4.5:1. No toggles and no system alerts. Multiple
 choice answers only select; Clear My Choices is a separate button.
 
-Under the bar, a line kept for it shows any sound problem, because the
-cover hides Home's warnings (invariant 4). It uses `AudioSafetyPolicy`
+At the foot of the cover, below every screen, a line kept for it shows
+any sound problem, because the cover hides Home's warnings (invariant 4;
+it moved there from under the bar in *Settings on Home*). It uses `AudioSafetyPolicy`
 with `.dismissThenRepeat`, the words for a screen over Home ("Stopped —
 Back"), and is passive and the same height whether or not it shows
 anything. Home's warnings, still alive under the cover, announce each

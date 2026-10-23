@@ -42,6 +42,26 @@ a phone's phrases (`HomeShapeTests.boldTextTakesNoHeightFromAPhonesPhrases`).
 Only the 320pt window keeps the two-row safety row and Settings on its
 own row.
 
+**UI tests, first run.** `SettingsOnHomeTests` failed on both simulators,
+and its captures showed why: Settings' safety bar, built in PR #23, took
+about a third of the screen's height, because Get Attention's empty place
+was a `Color.clear` with only a minimum height, which takes whatever
+height it is offered. Back to Talking sat in the middle of that, over
+Home's Settings, so a look resting after Settings opened met Back to
+Talking, and after Settings closed met Home's Settings again: open and
+close in the same place (invariant 10). `SettingsTests` opens Settings
+the same way and never measured where the bar was. Now the bar is only
+as tall as its tallest control (`fixedSize`), Settings' sound line sits
+at the foot of the cover instead of between the bar and the screens, and
+on regular widths the root's Family Setup row takes the bar's trailing
+column, under Back to Talking, with the note beside it. Modelled from
+the run's own frames, the bar fix alone left Back to Talking nearest
+the spot by centre on the iPad and by edge on the iPhone at AX5; with
+all three, Family Setup is nearest by both rules on all five windows
+the test runs (iPhone 402×874 at default and AX5, 13-inch iPad portrait
+at default and AX5, landscape), and the way out still lands nearest
+Emergency.
+
 ## Commits
 
 - `e61243d` Settings on Home: write the intent
@@ -50,7 +70,12 @@ own row.
 - `63b078f` Test Settings on Home and the new safety row
 - `0fe291a` Put Settings on Home and move Again into the safety row
 - `82b75b6` Record Settings on Home in the docs
-- This record's pull request number and commits.
+- `d6f1235` Fill in the Settings on Home record's pull request and commits
+- `0969c1c` Test that Bold Text takes no height from a phone's phrases
+- `30a6f4f` Narrow Yes and No, and show Settings' gear alone, before taking a row
+- `abe25ad` Record review round 1 of Settings on Home
+- `d0b88ba` Keep Settings' bar at the top, over nothing of Home's Settings
+- This record's round 2.
 
 ## Verified
 
@@ -67,7 +92,11 @@ own row.
   one against AGENTS.md's rules and one for the build and CI's tests; the
   Settings button's property pattern was typechecked on the same
   toolchain with Swift 6 and main-actor default isolation.
-- CI: PENDING.
+- CI on `d6f1235`: unit tests passed on both simulators. UI tests
+  failed in `SettingsOnHomeTests` only, on both: the stretched bar above.
+  The frames, captures and screenshots were read from the run's result
+  bundles on Linux (Python's `sqlite3` and `zstandard`).
+- CI on round 2: PENDING.
 
 ## Not verified
 
@@ -81,6 +110,9 @@ own row.
   device check in docs/HANDOFF.md.
 - Bold Text on in a running app: no UI test turns it on; the label-fit
   tests check the widths with Bold Text drawn by SwiftUI.
+- The round 2 Settings layout (the bar's height, the sound line at the
+  foot, the root's two columns) is unbuilt until CI; its frames above
+  are a model from the first run's, with the bar at its natural height.
 - Settings' gear alone is never drawn by a test: CI's iPhone has 370pt
   of content, where the word fits with Bold Text off or on. Its label,
   its large content viewer and Apple's audit of it wait for a window
@@ -95,6 +127,9 @@ own row.
    plan's regular-width order (Emergency first) comes back with them.
 2. **The layout engine:** "Yes and No border the message"
    (docs/DECISIONS.md, "Settings on Home").
+3. **Typing:** Again's well shows Speak while typing. "Speak" is a little
+   wider than "Again" (about 58 against 53pt at the default size), so the
+   typing thread must check it against `MinimumWidths.again` or widen it.
 4. **Phrase tiles with Bold Text** are not checked: the label-fit tests
    check the starter phrases in their narrowest tiles with Bold Text off
    only (ROADMAP R0-3 in docs/ACCESSIBILITY.md). Heavier words may need a
@@ -104,6 +139,6 @@ own row.
 6. **320pt phone windows** (Display Zoom): the grid already scrolled
    there and now shows less of itself (docs/DECISIONS.md, *Where the grid
    still scrolls*); the layout engine needs another arrangement for them.
-3. **Typing:** Again's well shows Speak while typing. "Speak" is a little
-   wider than "Again" (about 58 against 53pt at the default size), so the
-   typing thread must check it against `MinimumWidths.again` or widen it.
+7. **Back to Talking breaks "Talking"** ("Talk-", "ing") on CI's iPhone
+   at AX5, a break of *Words never break* that the base branch has too
+   (docs/HANDOFF.md, *Known gaps*).
