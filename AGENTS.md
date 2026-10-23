@@ -777,9 +777,11 @@ the time. Export them again after each new Xcode release.
   whatever the simulator is set to. The test build that gives Home's
   controls the viewer is in
   `docs/log/2026-10-23-large-content-and-iphone-duo.md`; never ship it.
-- **The iPhone Duo simulator starts folded**, on its outer display. Only
-  Xcode's Device Hub window opens or folds it: `xcrun simctl` and
-  `XCUIDevice` cannot, and turning a display off does not unfold it.
+- **The iPhone Duo simulator starts folded**, on its outer display. No
+  command-line way to open or fold it was found (2026-10-23): `xcrun
+  simctl` has no pose command, `XCUIDevice` has none, and turning a
+  display off does not unfold it. Xcode's Device Hub window is expected
+  to do it; not yet tried by an agent.
   `DESTINATION='platform=iOS Simulator,id=<udid>' scripts/test.sh ui`
   runs the UI tests on whichever display is showing.
 - **Simulator audio is unreliable.** Every sound check needs a real device.

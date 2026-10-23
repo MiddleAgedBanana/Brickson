@@ -53,8 +53,9 @@ TEST_RUNNER_BRICKSON_SLIDE_PROBE=1 scripts/test.sh ui '-only-testing:BricksonUIT
 **2. Brickson on the iPhone Duo simulator.** PR #41 planned R0 item 13,
 *Ready for iPhone Duo*, and its first follow-up was to run the app in
 the iPhone Duo simulator. Only the closed pose could run: folding the
-simulator needs Xcode's Device Hub window, which this thread was not
-allowed to drive, and no command-line way to fold it was found. Closed,
+simulator is expected to need Xcode's Device Hub window, which this
+thread was not allowed to drive, and no command-line way to fold it was
+found. Closed,
 Brickson runs on the outer display, and two things showed up. **The
 starter phrases scroll there at the default text size** (invariant 11),
 as on the small 375×667 phone; and Settings' standard Back button moves
@@ -101,8 +102,9 @@ that folds) apply only to the inner display, which did not run.
 
 ### Results
 
-Each gesture ran once per build and device (the 0.25 to 1.0 s row is
-four presses), at AX5 unless the row says otherwise. "—" was not run.
+Each gesture ran at least once per build and device (the 0.25 to 1.0 s
+row is four presses; on the iPhone most ran twice, in the first draft of
+the probe and the final one, and agreed), at AX5 unless the row says otherwise. "—" was not run.
 
 | Gesture | Shipped, iPhone 17 | Shipped, iPad Pro 13 | Viewer build, iPhone 17 | Viewer build, iPad Pro 13 |
 |---|---|---|---|---|
@@ -180,8 +182,8 @@ Frames, iPhone 17, AX5 (each strip left to right):
 
 **What ran, and what could not.** The "iPhone Duo" simulator (iOS 27.1,
 runtime 24A94425) starts folded: its outer display is on and its inner
-one dark. Folding it needs Xcode 27.1's Device Hub window. No other way
-was found: `xcrun simctl` has no fold or pose command, XCTest's
+one dark. Folding it is expected to need Xcode 27.1's Device Hub window
+(not tried). No other way was found: `xcrun simctl` has no fold or pose command, XCTest's
 `XCUIDevice` has none, and turning the outer display off
 (`xcrun simctl io <udid> screenConfig --display=1 power off`) left the
 inner one dark. Control of Device Hub was asked for twice in the thread
@@ -321,7 +323,17 @@ simulators, each created or started by this thread and run one at a time.
   iPhone, the two landscape tests. Bold Text was on in the iPhone
   simulator for that run (see *Results*).
 - The probe and the new test compile with warnings as errors (every UI
-  run above built them).
+  run above built them). The committed probe, after the review's last
+  changes, ran both its tests on the iPhone Duo's outer display with Bold
+  Text on (simulator text size default, app at AX5): every result
+  matched the runs above, the gear's included, and the slide onto a tile
+  below was reported as not run, since only one row of tiles shows
+  there. The committed `SlowPressTests` passed again on the iPad Pro
+  13-inch (the full UI run had built an earlier draft for the iPad).
+- An independent check (the repository's verifier agent) matched every
+  cell of the results tables against the saved results, and ran the
+  Python checks: 34 documentation, 124 guard, 4 site, 54 runner and 21
+  Xcode-selection tests passed.
 
 ## Not verified
 
@@ -344,6 +356,12 @@ simulators, each created or started by this thread and run one at a time.
   available to this thread. Whether the system moves Home's buttons out
   of the fold, the inner display's safe areas and where its starter
   library scrolls are all unknown.
+- **`SlowPressTests` in dark mode, landscape or at the default text
+  size**: it runs at AX5, light, portrait only.
+- **The Duo's frame numbers** (the 16 to 366pt content span, Settings at
+  362.7pt, Back's 38pt frame) come from the UI tests' attached captures,
+  and the display sizes from `xcrun simctl io <udid> enumerate`; neither
+  output is kept in the repository beyond this record.
 - **Sound.** No phrase was heard; "Speaking" shows that a phrase
   started, not that it was heard.
 

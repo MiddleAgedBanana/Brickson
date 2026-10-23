@@ -384,7 +384,8 @@ release in docs/ROADMAP.md when no thread has it yet.
   scroll at the default text size, and Settings' Back moves into a
   column at the trailing edge
   ([`log/2026-10-23-large-content-and-iphone-duo.md`](log/2026-10-23-large-content-and-iphone-duo.md)).
-  Open and half-folded need Xcode's Device Hub and have not run. The
+  Open and half-folded have not run: no command-line way to fold the
+  simulator was found, and Xcode's Device Hub was not tried. The
   inner display ignores the portrait-only setting, a fold can sit under
   an odd column of Home, and CI has no Duo simulator; screenshots are
   required from April 2027 (docs/DECISIONS.md, "iPhone Duo";
