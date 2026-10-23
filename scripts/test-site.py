@@ -90,16 +90,27 @@ class SiteTests(unittest.TestCase):
                 self.assertNotRegex(path.read_text().lower(), r'\b(free|paid)\b')
 
     def test_every_page_links_to_the_accessibility_page(self):
-        """The App Store's Accessibility URL; dropping a page's link fails."""
+        """The App Store's Accessibility URL; dropping a page's link, or
+        moving it out of a real href (data-href), fails."""
+        class Links(HTMLParser):
+            def __init__(self):
+                super().__init__()
+                self.hrefs = []
+            def handle_starttag(self, tag, attrs):
+                href = dict(attrs).get('href')
+                if tag == 'a' and href is not None:
+                    self.hrefs.append(href)
         target = ROOT / 'site/accessibility/index.html'
         self.assertTrue(target.is_file(), 'site/accessibility/index.html is missing')
         for path in (ROOT / 'site').rglob('*.html'):
-            links = re.findall(r'<a\b[^>]*\bhref="([^"#]*)', path.read_text())
+            doc = Links()
+            doc.feed(path.read_text())
             resolved = set()
-            for link in links:
-                if link.startswith(('https:', 'mailto:')):
+            for link in doc.hrefs:
+                # A link within the page is not a way to reach it.
+                if link.startswith(('#', 'https:', 'mailto:')) or not link:
                     continue
-                page = (path.parent / link).resolve() if link else path.resolve()
+                page = (path.parent / link.partition('#')[0]).resolve()
                 resolved.add(page / 'index.html' if page.is_dir() else page)
             with self.subTest(page=path.relative_to(ROOT)):
                 self.assertIn(target.resolve(), resolved)

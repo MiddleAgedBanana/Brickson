@@ -52,7 +52,9 @@ page and the policy's trim" (new).
   Settings (docs/DECISIONS.md, "The privacy policy ships inside the app"),
   so the in-app copy changed with it.
 - **Tests** (`scripts/test-site.py`, run by CI's unit job): every page
-  links to the accessibility page; no page says "free" or "paid"; every
+  links to the accessibility page through a real `href` (read by an HTML
+  parser, so a `data-href` or a link within the page does not count); no
+  page says "free" or "paid"; every
   page has a language, a title, a viewport, one `h1`, one `main`, and a
   skip link that lands on it.
 - **Docs**: AGENTS.md (*Where things are* and *The privacy policy is a
@@ -95,6 +97,9 @@ words in App Shortcuts): rewrite it to match what ships.
 - `f97b03d`: the privacy policy's trim and Effective date.
 - The commit after it: this record, and the AGENTS.md, DECISIONS,
   APP-STORE, ACCESSIBILITY, ROADMAP, HANDOFF and README lines.
+- A merge of `main` (PR #37), then the review fix: CodeRabbit found that
+  the link test's pattern also matched `data-href`, which no visitor can
+  follow; it now reads each anchor's `href` with an HTML parser.
 
 ## Verified
 
@@ -105,6 +110,10 @@ Website and documents only; no Swift changed. On the cloud machine:
   missing"). The changes that would make each new test fail: removing a
   page's Accessibility link, the word "free" on any page, or a page
   without `lang`, a title, one `h1`, one `main` or a skip link to it.
+  After the review fix, two edits were tried and each made the link test
+  fail: the policy's Accessibility link changed to `data-href`, and the
+  accessibility page's own header link removed (its links within the
+  page no longer count).
 - The three pages, served with `python3 -m http.server`, were rendered in
   Chromium (Playwright) at 1280, 1000 and 390 points wide, light and dark:
   no page scrolls sideways, the home page's new section matches the
