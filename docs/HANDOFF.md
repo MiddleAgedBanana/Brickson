@@ -92,6 +92,9 @@ Xcode 27.1 (27A9275); final-head CI is pending.
   run's page for 14 days, passed or failed, unless the job stopped
   before its tests started (a build failure leaves no bundle)
   ([`log/2026-10-22-ci-test-results.md`](log/2026-10-22-ci-test-results.md)).
+  Since PR #39 (2026-10-23) a compiler warning in any target fails the
+  build (docs/DECISIONS.md, "Warnings are errors";
+  [`log/2026-10-23-warnings-as-errors.md`](log/2026-10-23-warnings-as-errors.md)).
   Before PR #12, CI used Xcode 26.6 and iOS 26.5; 10 of 11 runs on
   `9362eca` were green, and the failure was simulator infrastructure.
 - **A Mac, 2026-10-21** (PR #13's diagnosis), iPhone 17 and iPad Pro
@@ -227,6 +230,13 @@ release in docs/ROADMAP.md when no thread has it yet.
   change no size yet; scoring and a fix come before they do
   ([`log/2026-10-21-settings-and-first-run.md`](log/2026-10-21-settings-and-first-run.md),
   follow-up 10). *(Dwell-safety scoring)*
+- CI compiles only the Debug configuration. Warnings are errors in
+  Release too, and code under `#if DEBUG` compiles differently there, so
+  a warning only Release sees would first stop an archive; the Release
+  build has not been compiled since warnings became errors. Before the
+  first archive, run `scripts/test.sh device -configuration Release` on
+  the Mac ([`log/2026-10-23-warnings-as-errors.md`](log/2026-10-23-warnings-as-errors.md)).
+  *(the owner's Mac, or an agent on it)*
 - English only. `scripts/test.sh unit` brings the String Catalog up to
   date (xcodebuild alone does not), and CI fails when the committed one
   is stale. The voice sample sentence in `SpeechService` is not in it
