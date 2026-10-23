@@ -31,9 +31,10 @@ nonisolated enum StarterLibraryError: Error, Equatable {
     case missingFromBundle
 }
 
-/// Why seeding stopped. Nothing was written.
+/// Why seeding or the emergency repair stopped. Nothing was written.
 nonisolated enum PhraseLibrarySeedError: Error, Equatable {
-    /// The store could not be read, so whether it is empty is unknown.
+    /// The store could not be read, so whether it is empty, or whether
+    /// Emergency has something to open, is unknown.
     case storeUnreadable
     case saveFailed
 }
@@ -75,8 +76,8 @@ enum PhraseLibrarySeeder {
             throw .storeUnreadable
         }
         guard stored.categories.isEmpty else { return false }
+        insert(library, in: context)
         do {
-            try StoredLibrary(context).write(library, in: context)
             try save(context)
         } catch {
             logger.error("Starter phrases could not be saved: \(error)")
@@ -85,13 +86,166 @@ enum PhraseLibrarySeeder {
         return true
     }
 
+    /// Inserts every category and phrase of `library` as a new model, each
+    /// with its place as its sort order. Only for a store with no
+    /// categories. It matches nothing by identity, so it changes and deletes
+    /// nothing already stored, and a library whose identities repeat (a
+    /// damaged one, copied into memory by `PhraseLibraryLaunch`) comes out
+    /// item for item, where `StoredLibrary.write` would merge the repeats.
+    static func insert(_ library: LibrarySnapshot, in context: ModelContext) {
+        for (categoryIndex, category) in library.categories.enumerated() {
+            let model = PhraseCategory(
+                name: category.name,
+                symbolName: category.symbolName,
+                sortOrder: categoryIndex,
+                isEmergency: category.isEmergency,
+                uuid: category.id
+            )
+            context.insert(model)
+            for (phraseIndex, phrase) in category.phrases.enumerated() {
+                context.insert(Phrase(text: phrase.text, sortOrder: phraseIndex, category: model, uuid: phrase.id))
+            }
+        }
+    }
+
+    private static let logger = Logger(subsystem: AppLog.subsystem, category: "library")
+}
+
+/// What the launch repair did (`PhraseLibraryRepairer`).
+nonisolated enum EmergencyRepairOutcome: Equatable, Sendable {
+    /// Emergency already opened something to say. Nothing was written.
+    case notNeeded
+    /// The repair was saved.
+    case saved(EmergencyRepair)
+    /// The repair could not be saved, so the store is exactly as it was.
+    /// `PhraseLibraryLaunch` speaks from the repaired library in memory
+    /// instead.
+    case notSaved(EmergencyRepair)
+}
+
+/// Gives Emergency something to open in a store that has lost it
+/// (`EmergencyRepair`; docs/DECISIONS.md, "The emergency category is
+/// always there").
+enum PhraseLibraryRepairer {
+    /// Reads the store and writes what `EmergencyRepair` says it needs in a
+    /// context of its own, saved once: the starter emergency phrases when
+    /// the emergency category Home opens is missing or has no phrase with
+    /// words, and a new identity for it, which nobody sees and which keeps
+    /// it in its place, when an earlier category shares its own.
+    ///
+    /// Otherwise it inserts, and nothing already stored is renamed, moved
+    /// or deleted (invariant 7): what it adds is ordered after what is
+    /// there, and no sort order changes unless a hand-edited store leaves
+    /// no room after the last one, or ties the emergency category with
+    /// others so that none of the new identities tried keeps its place;
+    /// then the items beside the additions, or the categories, are
+    /// renumbered in the order they are shown
+    /// (`EmergencyRepair.sortOrders(adding:after:)`,
+    /// `EmergencyRepair.renumberedCategories`). If the save fails, that
+    /// context is simply discarded: nothing reached the store, and no
+    /// `rollback()` is needed (docs/LESSONS.md, "Never roll back a cascade
+    /// delete").
+    ///
+    /// `readStore` and `save` exist so tests can make reading or saving
+    /// fail; the app passes neither.
+    static func repairEmergency(
+        _ container: ModelContainer,
+        starter: LibrarySnapshot,
+        readStore: (ModelContext) throws -> LibrarySnapshot = { try StoredLibrary($0).snapshot },
+        save: (ModelContext) throws -> Void = { try $0.save() }
+    ) throws(PhraseLibrarySeedError) -> EmergencyRepairOutcome {
+        let context = ModelContext(container)
+        context.autosaveEnabled = false
+        let stored: LibrarySnapshot
+        let categories: [PhraseCategory]
+        do {
+            stored = try readStore(context)
+            // In the order the snapshot and Home use.
+            categories = PhraseCategory.orderedForDisplay(try context.fetch(FetchDescriptor<PhraseCategory>()))
+        } catch {
+            logger.error("The phrase library could not be read before the emergency repair: \(error)")
+            throw .storeUnreadable
+        }
+        guard let repair = EmergencyRepair.needed(
+            in: stored,
+            sortOrders: categories.map(\.sortOrder),
+            starter: starter
+        ) else { return .notNeeded }
+
+        let category: PhraseCategory
+        switch repair.place {
+        case let .newCategory(id, name, symbolName):
+            let orders = EmergencyRepair.sortOrders(adding: 1, after: categories.map(\.sortOrder))
+            renumber(categories, orders.renumbered)
+            category = PhraseCategory(
+                name: name,
+                symbolName: symbolName,
+                sortOrder: orders.added[0],
+                isEmergency: true,
+                uuid: id
+            )
+            context.insert(category)
+        case let .existingCategory(at: index):
+            // The category Home opens must be the one the repair was
+            // planned for; if the store reads differently, write nothing.
+            guard categories.firstIndex(where: \.isEmergency) == index,
+                  categories[index].uuid == stored.categories[index].id else {
+                logger.error("The phrase library read differently twice; the emergency repair was not made.")
+                throw .storeUnreadable
+            }
+            category = categories[index]
+            renumber(categories, repair.renumberedCategories)
+            if let newIdentity = repair.newIdentity {
+                category.uuid = newIdentity
+            }
+        }
+        let existing = category.phrasesInOrder
+        let orders = EmergencyRepair.sortOrders(adding: repair.phrases.count, after: existing.map(\.sortOrder))
+        renumber(existing, orders.renumbered)
+        for (phrase, order) in zip(repair.phrases, orders.added) {
+            context.insert(Phrase(text: phrase.text, sortOrder: order, category: category, uuid: phrase.id))
+        }
+        do {
+            try save(context)
+        } catch {
+            // The repair context goes out of scope here, taking the unsaved
+            // additions with it.
+            logger.error("The emergency repair could not be saved: \(error)")
+            return .notSaved(repair)
+        }
+        logger.notice(
+            "Emergency was repaired: \(repair.phrases.count) starter phrases added, new identity \(repair.newIdentity != nil), categories renumbered for it \(repair.renumberedCategories != nil)."
+        )
+        return .saved(repair)
+    }
+
+    /// Gives `categories`, in the order they are shown, the sort orders in
+    /// `renumbered`, if there are any.
+    private static func renumber(_ categories: [PhraseCategory], _ renumbered: [Int]?) {
+        guard let renumbered else { return }
+        for (category, order) in zip(categories, renumbered) {
+            category.sortOrder = order
+        }
+    }
+
+    /// Gives `phrases`, in the order they are shown, the sort orders in
+    /// `renumbered`, if there are any.
+    private static func renumber(_ phrases: [Phrase], _ renumbered: [Int]?) {
+        guard let renumbered else { return }
+        for (phrase, order) in zip(phrases, renumbered) {
+            phrase.sortOrder = order
+        }
+    }
+
     private static let logger = Logger(subsystem: AppLog.subsystem, category: "library")
 }
 
 /// Readies the phrase library at launch. It fills the store it is given
-/// with the starter phrases when that store is empty and, if the store
-/// cannot be read or filled, falls back to a filled in-memory library: an
-/// empty library would leave Emergency with nothing to open (invariant 2).
+/// with the starter phrases when that store is empty, gives Emergency back
+/// what a damaged store has lost (`PhraseLibraryRepairer`), and, if the
+/// store cannot be read or written, falls back to a filled in-memory
+/// library: a library with no emergency phrases would leave Emergency with
+/// nothing to open (invariant 2).
 enum PhraseLibraryLaunch {
     struct Prepared {
         let container: ModelContainer
@@ -151,16 +305,38 @@ enum PhraseLibraryLaunch {
             logger.error("Starter phrases could not be read: \(error)")
             return Prepared(container: container, isVolatile: isVolatile, issue: issue ?? .starterPhrasesUnavailable)
         }
+        // What to speak from in memory if the store cannot be used as it is.
+        let fallbackLibrary: LibrarySnapshot
         let fallbackIssue: PhraseLibraryIssue?
         do throws(PhraseLibrarySeedError) {
-            try PhraseLibrarySeeder.seedIfEmpty(
+            let seeded = try PhraseLibrarySeeder.seedIfEmpty(
                 container,
                 with: library,
                 readStore: readStore,
                 save: saveToStore
             )
-            return Prepared(container: container, isVolatile: isVolatile, issue: issue)
+            if seeded {
+                return Prepared(container: container, isVolatile: isVolatile, issue: issue)
+            }
+            switch try PhraseLibraryRepairer.repairEmergency(
+                container,
+                starter: library,
+                readStore: readStore,
+                save: saveToStore
+            ) {
+            case .notNeeded, .saved:
+                return Prepared(container: container, isVolatile: isVolatile, issue: issue)
+            case let .notSaved(repair):
+                // The store holds the person's library, but Emergency
+                // cannot open something to say and the repair could not be
+                // saved (a full disk, say). The store stays as it was, for
+                // the next launch to try again. Speak from a copy in memory:
+                // every word of theirs, with the repair made.
+                fallbackLibrary = repair.repaired
+                fallbackIssue = issue
+            }
         } catch {
+            fallbackLibrary = library
             switch error {
             case .storeUnreadable:
                 // The store opened but its phrases could not be read. They
@@ -177,10 +353,10 @@ enum PhraseLibraryLaunch {
         // changes will not be kept.
         do {
             let fallback = try makeFallback()
-            try PhraseLibrarySeeder.seedIfEmpty(fallback, with: library)
+            try PhraseLibrarySeeder.seedIfEmpty(fallback, with: fallbackLibrary)
             return Prepared(container: fallback, isVolatile: true, issue: fallbackIssue)
         } catch {
-            logger.error("The in-memory starter library failed too: \(error)")
+            logger.error("The in-memory library failed too: \(error)")
             return Prepared(container: container, isVolatile: isVolatile, issue: fallbackIssue ?? .starterPhrasesUnavailable)
         }
     }

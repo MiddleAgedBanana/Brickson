@@ -560,6 +560,11 @@ and the other SwiftData behaviours this rests on, are probed by
 `SwiftDataBehaviourTests` (questions S1 to S4 in
 `docs/log/2026-10-21-library-core.md`).
 
+The launch's own writes, the seeder filling an empty store and the
+emergency repair (*The emergency category is always there*), are not
+edits, but follow the same rules: a context of their own, one save, no
+`rollback()`, and a failure test for each save.
+
 Rejected: editing in the main context and undoing a failed save with
 `rollback()` or with hand-written inverse edits. The first crashes after
 a delete, even without a cascade (S4, issue #19); the second is more code with more ways to half-change.
@@ -762,9 +767,49 @@ current emergency phrases.
 
 So editing can never empty a library. An empty store can only mean a new
 install or a lost store, which is why the seeder fills any empty store and
-needs no stored "already seeded" flag. A store damaged so that the
-emergency category is gone still needs a launch repair that only adds
-(the memo's R4). Not built.
+needs no stored "already seeded" flag.
+
+*Default, adopted 2026-10-23: reversible if the owner objects.* A store
+damaged so that Emergency has nothing to open is repaired at launch, by
+adding what it lacks (the memo's R4; `EmergencyRepair`, written by
+`PhraseLibraryRepairer`). If the library has no emergency category, the
+starter emergency category is added after all the others; if the
+emergency category Home opens (the first) has no phrase with words, the
+starter emergency phrases are added after its own. The added items keep
+the starter's identities where they are free, so they count as untouched
+starter phrases, not the person's words. If an earlier category shares
+the emergency category's identity, Emergency opens that earlier
+category's phrases (`CategorySelection.resolve` finds a category by
+identity), so the emergency category gets a new identity, which nobody
+sees, chosen so it keeps its place and stays the first emergency
+category. What is added goes after the last item. Nothing already stored
+is moved or deleted, and nothing is changed but that identity and, in
+two cases, sort orders renumbered 0, 1, 2 in the order they are shown,
+which shows everything exactly as before: those of the items beside the
+additions, where a hand-edited store leaves no room after the last sort
+order (at or near the largest an `Int` holds), and those of the
+categories, where none of the new identities tried keeps the emergency
+category in its place (below). The repair is saved once from a context of its
+own. If that save fails, the store is left as it was for the next launch
+to try again, and the app speaks from a copy in memory holding the
+person's whole library with the repair, and says changes won't be kept.
+A second emergency category is left as it is, because Home opens the
+first. The repair says nothing on Home: the family sees Emergency
+working again.
+
+Only categories with the same sort order and name are ordered by
+identity, so only those limit the new identity: against each it must
+sort as the old one did, and another emergency category with the same
+identity must stay after it. The repair tries 64 random new identities.
+If none fits, because the categories around the emergency category leave
+too little room between their identities or none at all, it renumbers
+the categories 0, 1, 2 in the order they are shown, so that none is
+ordered by identity any more, and takes any new identity: Emergency then
+always opens the emergency category (Codex's third review on PR #37
+found the earlier version kept the old identity there; in a fuzz of
+damaged stores full of such ties, 32 of 15,376 stayed broken). Brickson
+keeps every identity unique and numbers sort orders 0, 1, 2, so none of
+its own stores needs a new identity or a renumbering.
 
 ## Editing the library
 
