@@ -47,6 +47,7 @@ holds.
 | Home's slot plan with stable slot identifiers | "Home's slot plan" (Phone layout and word fitting; PR #22) |
 | Solid fills on Home with one measured colour per role, and the system's Liquid Glass elsewhere once each component measures | "Solid fills on Home, system glass elsewhere" (Figma and Claude Design screens; `docs/log/2026-10-21-design-screens.md`) |
 | The App Store category is Utilities, with no secondary category; the age-rating answers give 4+ | "App Store category", "Age rating answers" (App Store readiness and ASO; PR #18) |
+| What the website's accessibility page says, and the privacy policy without the sections 1.0 does not ship | "The website's accessibility page and the policy's trim" (Website accessibility page and privacy trim) |
 | Home's stand-in layout, labels that fit themselves and Home's button style | "Home's stand-in layout", next to "Home version 0 is a stand-in" (Phone layout and word fitting) |
 | Typing as a state of Home under a band Apple's keyboard never covers, Apple's keyboard in 1.0, Writing Tools off, third-party keyboards refused, Return speaks, the typed message | "Typing is a state of Home", "Typing uses Apple's keyboard", "Writing Tools off while typing", "Third-party keyboards refused in 1.0", "Return speaks", "The typed message" (Typing foundation; its pull request from `claude/project-thread-dsbkry`) |
 | Explicit saves, an Emergency category that is always there, fixed starter identities, editing, import, replace, the backup format, an unreadable library reported and never replaced | "Every save is explicit", "Starter phrases", "The emergency category is always there", "Editing the library", "Importing a backup", "Replacing the library", "Backup file format", "An unreadable library is reported, never replaced" (Library editing and backup format; PR #14, open) |
@@ -71,8 +72,10 @@ Recorded here:
   *Orientations*.
 - **No iCloud sync in 1.0** stands as recorded below.
 - **Caregiver alerts:** 1.0 alerts only with sound in the room (Get
-  Attention), and the privacy policy's caregiver-alerts section is deleted
-  before release. Anything that reaches another device needs network code,
+  Attention), and the privacy policy's caregiver-alerts section was
+  deleted on 2026-10-23, with the recorded-phrases and Siri and Shortcuts
+  sections, which 1.0 does not ship either (*The website's accessibility
+  page and the policy's trim*). Anything that reaches another device needs network code,
   which invariant 9 forbids, so it stays the owner's decision.
 - **Recorded phrases, in stages:** guidance for recording elsewhere first,
   then importing and playing recordings (R1), then an in-app recorder
@@ -2188,6 +2191,40 @@ live page in an in-app `SFSafariViewController` sheet, which 5.1.1(vii)
 says must be visibly presented. A test fails if any text of the page
 does not reach the screen, for example if the page gains an element the
 parser does not read.
+
+## The website's accessibility page and the policy's trim
+
+*2026-10-23. Default, adopted 2026-10-23: the owner left these choices to
+the project. Reversible if the owner objects.*
+
+**The accessibility page.** `site/accessibility/index.html` is the
+Accessibility URL for the App Store product page (APP-STORE.md, section
+4), linked from every page of the website. It describes only what
+docs/ACCESSIBILITY.md marks *In place*, each with how it was checked, in
+plain words for families. It never says "works with" for something not
+checked on a real device, says plainly at the top that nothing has been,
+names no planned feature, and lists the known limits a family would meet
+(from docs/HANDOFF.md, *Known gaps*). When a device check is done, the
+page names the device and the date. Why: Apple's labels cover only some
+input methods, and a family choosing an AAC app for Eye Tracking or
+Switch Control has nothing else to go on; a page that claims more than
+was checked could leave someone with an app that fails them.
+
+**The policy's trim.** The sections for recorded phrases, caregiver
+alerts and Siri and Shortcuts were deleted, because R0, the first
+release, ships none of them (docs/ROADMAP.md, *Left out of R0 on
+purpose*), and a policy describing features the app does not have is not
+true of the build. Their words are kept in
+`docs/log/2026-10-23-accessibility-page-and-privacy-trim.md` for the pull
+request that ships one. "Brickson works with Apple's accessibility
+features" became "If you use Apple's accessibility features … iOS runs
+them": a privacy policy has no need to claim what nobody has checked on a
+device, and the accessibility page says what is checked. The policy's
+sentences about R0 features not built yet (typing's kept message,
+editing, exported backups) stay: each is built or deleted
+before release (APP-STORE.md, section 3). The in-app copy is the same
+file (*The privacy policy ships inside the app*), so it changed with the
+page.
 
 ## Automatic keeps the person's Personal Voice
 

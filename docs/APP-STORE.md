@@ -107,7 +107,9 @@ to undo; step 5 is, so it waits for the name.
     be submitted without one
     ([choose a build to submit](https://developer.apple.com/help/app-store-connect/manage-builds/choose-a-build-to-submit)).
 13. **Save draft Accessibility Nutrition Labels** for iPhone and iPad
-    (section 4), and add the Accessibility URL if the page exists.
+    (section 4), and add the Accessibility URL,
+    `https://middleagedbanana.github.io/Brickson/accessibility/`, after
+    checking that the page matches the build.
 14. **Submit for review** with *Manually release this version*, so nothing
     goes live until you press Release.
 15. **After release:** publish the accessibility labels (Apple only allows it
@@ -155,14 +157,15 @@ say so in What's New when it happens.
 | "Your settings, such as the voice and speaking speed you chose" | Yes, from 2026-10-23: Settings' Voice Settings screen chooses both (docs/log/2026-10-21-settings-and-first-run.md), and Home's Settings button opens it (docs/log/2026-10-23-settings-on-home.md). The policy no longer mentions a text-size setting (fixed 2026-10-21) | — |
 | Deleting things "in the app" | Not until editing ships | Ship editing, or reword |
 | Speech and Personal Voice | Yes | — |
-| How you control the app ("works with … Eye Tracking, Switch Control and Voice Control") | The data half is true: Brickson has no input code of its own, so it never receives what those features use. "Works with" is **not yet verified**: nothing has run on a device | Reach every control with each named method on a real iPhone and iPad (docs/HANDOFF.md, *Checks that need a real device*), or reword to "is built to work with" |
+| How you control the app ("If you use Apple's accessibility features, such as Eye Tracking, Switch Control or Voice Control, iOS runs them") | True: on 2026-10-23 "Brickson works with" these features became this sentence, which claims nothing nobody has checked on a device; the website's accessibility page says what is checked. The data half is true: Brickson has no input code of its own, so it never receives what those features use | Once typing ships, "it only learns which button you chose" also has to cover typed and dictated words (Typing on Home) |
 | Backups you export | No: no backup yet | Ship backup, or delete the paragraph |
 | Your device's own backups (iCloud Backup) | Yes | — |
-| If you turn on recorded phrases | Not built; not in R0 | Delete the section for 1.0 |
-| If you turn on caregiver alerts | Not built; needs network code, which invariant 9 forbids until the owner decides | Delete the section for 1.0 |
-| If you use Siri and Shortcuts | Not built; not in R0 | Delete the section for 1.0 |
+| If you turn on recorded phrases | **Deleted** 2026-10-23: not built, not in R0. Its words are in docs/log/2026-10-23-accessibility-page-and-privacy-trim.md | The pull request that ships recorded phrases adds a section back (AGENTS.md, *The privacy policy is a promise*) |
+| If you turn on caregiver alerts | **Deleted** 2026-10-23: not built; needs network code, which invariant 9 forbids until the owner decides. The summary's "features you choose to use" and the Emergencies paragraph's caregiver sentence went with it | As above, only after the owner's decision |
+| If you use Siri and Shortcuts | **Deleted** 2026-10-23: not built, not in R0 (R2) | As above |
+| Emergencies: "They never call emergency services or send anyone a message" | Yes: Brickson has no network, messaging or notification code (invariant 9) | — |
 | Get Attention | Yes, from 2026-10-23: on Home with Stop (PR #38; docs/DECISIONS.md, "Get Attention and Stop on Home") | — |
-| Effective date | October 21, 2026 | Move it with every wording change |
+| Effective date | October 23, 2026 | Move it with every wording change |
 
 ## 4. Accessibility Nutrition Labels
 
@@ -213,11 +216,14 @@ setup) and leaving Settings.
 tracking, Full Keyboard Access and AssistiveTouch have no label. Apple's
 answer is an optional **Accessibility URL** on the product page, linking to
 the developer's own accessibility page. An accessibility URL added before the
-first release goes live with it. Proposed: a `site/accessibility/` page that
-says, for each input method, what was tested, on which device, and when, and
-says plainly where only simulator evidence exists. Until the device checks
-in docs/HANDOFF.md are done, the page and the description say "works with"
-only for what was checked.
+first release goes live with it. Brickson's is
+[`site/accessibility/`](../site/accessibility/index.html) (2026-10-23),
+live at `https://middleagedbanana.github.io/Brickson/accessibility/` once
+merged: for each input method and display setting it says what is in place
+and how it was checked, and says plainly that nothing has yet been checked
+on a real device. Until the device checks in docs/HANDOFF.md are done, the
+page and the description say "works with" only for what was checked; each
+device check adds its device and date to the page.
 
 **Mac and Apple Vision Pro.** iPhone and iPad apps are offered on Apple
 silicon Macs and Apple Vision Pro unless the developer turns that off in App
@@ -581,8 +587,8 @@ testers](https://developer.apple.com/help/app-store-connect/test-a-beta-version/
 | The brand icon in Icon Composer, with dark and tinted variants | 2.1 (no placeholders) | Release chores (R0 item 11) |
 | Dark variants for every colour asset; UI tests in dark and at AX3 and AX5; a Grayscale pass | Accessibility labels (section 4) | Test seams and CI evidence; Phone layout and word fitting |
 | Get Attention without flashing; Reduce Motion respected | Reduced Motion label | Speech engine and Get Attention |
-| A `site/accessibility/` page for the Accessibility URL | Section 4 | App Store readiness and ASO (follow-up) |
-| Delete the policy's unbuilt sections before 1.0 | Section 3 | App Store readiness and ASO, at release |
+| A `site/accessibility/` page for the Accessibility URL | Section 4 | Done 2026-10-23; every pull request keeps it true (AGENTS.md, *Where things are*) |
+| Delete the policy's unbuilt sections before 1.0 | Section 3 | The three sections 1.0 does not ship were deleted 2026-10-23; the R0 rows left are marked true or deleted at release (App Store readiness and ASO) |
 | An age-range check only if needed, opened from Settings, never over Home or at first launch | Section 6 | Settings and first run, after the decision |
 | iPhone Duo layouts checked on both displays in every pose, and Duo screenshots in every submission | Sections 2 and 9 | R0 item 13 (docs/ROADMAP.md), then App Store readiness and ASO for the screenshots |
 | No automatic rating prompt anywhere | Section 8 | Everyone |

@@ -14,6 +14,7 @@ controls keep their relative positions.
 
 [Website & support](https://middleagedbanana.github.io/Brickson/) ·
 [Privacy policy](https://middleagedbanana.github.io/Brickson/privacy/) ·
+[Accessibility](https://middleagedbanana.github.io/Brickson/accessibility/) ·
 [Development status](docs/HANDOFF.md)
 
 > **Early development — not ready for dependable daily communication.**
@@ -186,8 +187,9 @@ python3 -m http.server 8765 --bind 127.0.0.1 --directory site
 
 Open [localhost:8765](http://127.0.0.1:8765/). Changes to `site/` deploy through
 GitHub Pages after merging into `main`. Keep the existing repository name
-and public page paths stable so support and privacy links continue to work.
-Policy wording changes must include an updated effective date.
+and public page paths stable so support, privacy and accessibility links
+continue to work. Policy wording changes must include an updated effective
+date, and accessibility page changes an updated "Last updated" date.
 
 ## Documentation
 

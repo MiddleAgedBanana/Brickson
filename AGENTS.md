@@ -56,7 +56,10 @@ actually use?
 - **`docs/ACCESSIBILITY.md`**: every Apple accessibility feature and API
   in the project's map by ALS stage, with its iOS version, its release and
   how it is checked. A pull request that adopts, changes or drops one
-  edits its row.
+  edits its row, and the website's accessibility page
+  (`site/accessibility/index.html`, the App Store's Accessibility URL)
+  where its words become untrue. That page says only what is in place and
+  how it was checked, never "works with" before a real-device check.
 - **`docs/PORTING.md`**: what has come over from the reference app, what is
   next, and how to port a file.
 - **`README.md`**: the overview for people, written for a beginner. Keep it
@@ -273,12 +276,14 @@ request. Code rules that keep it true:
   message. Crash reports can reach the developer.
 - Store nothing in the Keychain. It survives deleting the app, and the
   policy says deleting the app removes what it stored.
-- The policy has sections for three planned features: recorded phrases,
-  caregiver alerts and Siri and Shortcuts. A release that doesn't ship one
-  deletes its section, and a feature that ships matches its section:
-  recordings stay on the device; caregiver alerts advertise a random
-  service name and send the device name only inside the encrypted alert;
-  App Shortcut phrases and parameters never contain phrase words.
+- Three planned features have no section in the policy, because 1.0
+  does not ship them: recorded phrases, caregiver alerts and Siri and
+  Shortcuts. Their sections were deleted on 2026-10-23, and their words
+  are kept in `docs/log/2026-10-23-accessibility-page-and-privacy-trim.md`.
+  The pull request that ships one adds its section back, and the feature
+  matches it: recordings stay on the device; caregiver alerts advertise a
+  random service name and send the device name only inside the encrypted
+  alert; App Shortcut phrases and parameters never contain phrase words.
   Caregiver alerts need network code, which invariant 9 forbids; the owner
   decides before they are built.
 - Settings gets a Privacy row, because App Review Guideline 5.1.1(i)

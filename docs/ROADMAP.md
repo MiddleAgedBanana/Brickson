@@ -161,7 +161,7 @@ TestFlight group before the gate passes, and it goes out once items 1 to
 | 7 | Settings and first run | Settings root (a large Back, a start-only Get Attention, Family setup), the voice picker and Personal Voice guidance, the in-app Privacy row, family setup including Guided Access and Assistive Access advice | Settings and first run | Built 2026-10-21 ([`log/2026-10-21-settings-and-first-run.md`](log/2026-10-21-settings-and-first-run.md)), from the first-run design and [`onboarding-and-settings.md`](recon/2026-10-15/directions/onboarding-and-settings.md); its choices are recorded in DECISIONS.md as decided defaults. Home's Settings button is built (2026-10-23, [`log/2026-10-23-settings-on-home.md`](log/2026-10-23-settings-on-home.md)). Left for later: Get Attention in Settings (Home's Stop is built; its place needs scoring). Asking for Personal Voice from Settings is built (2026-10-22, [`log/2026-10-22-voice-screen.md`](log/2026-10-22-voice-screen.md)) and switches on after device check D1 |
 | 8 | Being heard on calls | Speech added to phone and FaceTime calls through Apple's "Add Audio in Calls" path, if a device check passes | None, on purpose | Held until the owner has a device build (see below) |
 | 9 | Screens designed in Figma | Home, typing, alarm, Settings, voice and library screens from Apple's iOS 27 UI kit, positions shown not to move, measured colour tokens | Figma and Claude Design screens | Reference drawings and [specification](work/design-screens.md) recorded; corrections and open placement questions remain ([record](log/2026-10-22-design-reconciliation.md)); item 3's landed slot decisions bind |
-| 10 | App Store readiness | Apple's current requirements, store text with no price words, accessibility and privacy labels, screenshots, review notes, the privacy policy's unbuilt sections built or deleted | App Store readiness and ASO | In progress (`docs/APP-STORE.md`, `docs/ASO.md`) |
+| 10 | App Store readiness | Apple's current requirements, store text with no price words, accessibility and privacy labels, screenshots, review notes, the privacy policy's unbuilt sections built or deleted | App Store readiness and ASO | In progress (`docs/APP-STORE.md`, `docs/ASO.md`). The website's accessibility page, and the policy without the sections R0 does not ship, landed on 2026-10-23 ([`log/2026-10-23-accessibility-page-and-privacy-trim.md`](log/2026-10-23-accessibility-page-and-privacy-trim.md)); the policy's R0 sentences are marked true or deleted at release |
 | 11 | Release chores | The brand icon installed, a license decision, the App Store Connect record (after the name is confirmed), TestFlight to the owner and a small group that includes a person living with ALS and a speech-language pathologist | Owner, with items 9 and 10 | Waiting on decisions |
 | 12 | Plan and maintain | This roadmap, the decisions list, the handoff, the way of working ([`docs/SDLC.md`](SDLC.md)) | Roadmap, decisions and repo review | Landed with PR #15; each pull request keeps its own rows current |
 | 13 | Ready for iPhone Duo | Home, Settings and setup checked on iPhone Duo's outer and inner displays, open, partially folded and rotated, and in Split View, in the iPhone Duo simulator on the current Xcode; whatever that finds fixed, with the owner's two fold answers built and dwell scoring that covers folding; a Duo family in the UI tests once CI's image has the simulator; the Duo screenshots item 10 submits | A Mac thread for the simulator run, then the layout engine thread, which builds the owner's fold choices (docs/DECISIONS.md, "iPhone Duo", *The fold*) | Planned 2026-10-23: Apple's requirements and an assessment of Brickson against them ([`log/2026-10-23-iphone-duo-readiness.md`](log/2026-10-23-iphone-duo-readiness.md)). Brickson already builds with the iOS 27.1 SDK, so it is already treated as optimized for iPhone Duo; it has never run on one. Screenshots are required from April 2027. A change it makes to what a person sees starts with a work file ([`docs/SDLC.md`](SDLC.md)) |
@@ -211,15 +211,15 @@ where anything is, and the dwell-safety scoring passes for every profile.
 - **Prediction and history** as fixed strips whose contents change but
   whose places do not (invariant 8).
 - **Siri and Shortcuts** with fixed phrases only ("Emergency in Brickson",
-  "Get attention in Brickson"); no phrase words in App Shortcuts, as the
-  privacy policy promises. Built with App Intents and App Shortcuts; a
+  "Get attention in Brickson"); no phrase words in App Shortcuts, as
+  AGENTS.md requires (*The privacy policy is a promise*). Built with App Intents and App Shortcuts; a
   SiriKit Intents extension only if the device check shows Siri needs one
   for the app's other names (docs/DECISIONS.md, "Apple's current
   frameworks first").
 - **The listener display**: large text turned toward the person listening.
 - **Caregiver alerts**, by the owner's decision. The recommended path:
-  1.0 makes sound only and the policy's caregiver-alerts section is
-  deleted; later a Shortcuts hand-off; a local-network caregiver station
+  1.0 makes sound only and the policy's caregiver-alerts section was
+  deleted (2026-10-23); later a Shortcuts hand-off; a local-network caregiver station
   only behind a recorded exception to invariant 9, after an experiment
   ([`directions/caregiver-alerts.md`](recon/2026-10-15/directions/caregiver-alerts.md)).
 

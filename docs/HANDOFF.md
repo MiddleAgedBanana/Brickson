@@ -371,9 +371,13 @@ release in docs/ROADMAP.md when no thread has it yet.
   because the kept one is gone, no line says so yet
   ([`log/2026-10-22-voice-screen.md`](log/2026-10-22-voice-screen.md),
   *Follow-ups*). *(the next Settings thread)*
-- The privacy policy describes features not built yet; each is built or its
-  sentence deleted before release (docs/APP-STORE.md, section 3, lists
-  each sentence). *(App Store readiness and ASO)*
+- The privacy policy still describes R0 features not built yet (typing's
+  kept message, editing, exported backups); each is built or
+  its sentence deleted before release (docs/APP-STORE.md, section 3, lists
+  each sentence). The sections for recorded phrases, caregiver alerts and
+  Siri and Shortcuts, which 1.0 does not ship, were deleted on 2026-10-23
+  ([`log/2026-10-23-accessibility-page-and-privacy-trim.md`](log/2026-10-23-accessibility-page-and-privacy-trim.md)
+  keeps their words). *(App Store readiness and ASO)*
 - iPhone Duo: Brickson builds with the iOS 27.1 SDK, so Apple already
   treats it as optimized for iPhone Duo, but it has never run there. Its
   inner display ignores the portrait-only setting, a fold can sit under
@@ -540,11 +544,15 @@ Simulators cannot show these. Record each result in a `docs/log/` file
   once when it opens, AI Scan each push; none reviews Dependabot's pull
   requests by itself. The AI credits they use show only in Settings →
   Billing → AI usage.
-- The [website](https://middleagedbanana.github.io/Brickson/) and its
+- The [website](https://middleagedbanana.github.io/Brickson/), its
   [privacy policy](https://middleagedbanana.github.io/Brickson/privacy/)
-  (Effective October 21, 2026, since PR #18) publish after each merge; on 2026-10-15 they
-  matched `site/` byte for byte. The support page's "in development" lines
-  change at release.
+  (Effective October 23, 2026, since PR #40) and its
+  [accessibility page](https://middleagedbanana.github.io/Brickson/accessibility/)
+  (since PR #40; the App Store's Accessibility URL) publish after each
+  merge; on 2026-10-15 the first two matched `site/` byte for byte. The
+  support page's "in development" lines change at release, and the
+  accessibility page changes with every device check and every row of
+  `docs/ACCESSIBILITY.md` that changes what it says.
 - Claude Code sessions with one repository run a guard before Bash and
   the selected GitHub tools named in `.claude/settings.json`
   (`.claude/hooks/guard.py`; AGENTS.md, *Guardrails for agents*). Repository

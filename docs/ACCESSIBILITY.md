@@ -72,7 +72,7 @@ test is named for what would make it fail.
 | Listen for Atypical Speech (1; system) | System | Setup text: R0-7 | 3 |
 | Siri and App Intents (1; add) | Nothing yet | R2 "Siri and Shortcuts", fixed phrases only | 3 |
 | Vocal Shortcuts (1; system) | System | Setup text: R0-7; a Get Attention shortcut to point it at: R2 | 3 |
-| Dynamic Type, Bold Text, Reduce Motion (1; has it) | Text styles on Home; UI tests at the largest size | Word fitting: R0-3 | 6 |
+| Dynamic Type, Bold Text, Reduce Motion (1; has it) | Text styles on Home; UI tests at the largest size; with Bold Text off every starter label keeps its words whole, dropping its icon first (`WordFit`, `StarterLabelFitTests`) | Phrase tiles in their narrowest slots with Bold Text on: R0-3 | 6 |
 | Phrase board and typing (2; has it) | The board is on Home; typing is not on `main` yet | Typing: R0-5. A touch profile: R1 | 8 |
 | Live Speech (2; system) | System | Setup text: R0-7. Being heard on calls: R0-8, held | 4 |
 | Voice Control (2; has it) | Every Home control is a labelled standard button; the fixed controls' names start with their visible words, Again also answers to "Repeat", Get Attention to "Help" and Stop to "Stop Alert", and no two controls on Home share a name in any state of the starter library, the alarm sounding included (`HomeControlNames`) | Collisions in a library a family has grown: R0-6 | 3 |
@@ -171,7 +171,7 @@ pointer input*).
 | `AppIntent`, `supportedModes` | Actions Siri, Shortcuts and the Action button can run | 1–3 | 16.0; `supportedModes` 26.0 | **R2** "Siri and Shortcuts": Speak, Get Attention, Emergency, each through the same resolver as its button | Unit: an intent and its button do the same. Device: from the Lock Screen |
 | `AudioPlaybackIntent` | Tells the system an intent plays sound, so Siri does not talk over it | 1–3 | 17.0 | **R2**, for Get Attention | Unit. Device |
 | `IntentExecutionTargets` (`allowedExecutionTargets`) | Which process may run an intent | 1–3 | 27.0 **`#available`** | **Later**, only if Controls are built: the app itself, never an extension | Unit |
-| `AppShortcutsProvider`, `AppShortcut`, `AppShortcutPhrase` | Ready-made Siri phrases that work after install | 1–3 | 16.0 | **R2**, fixed phrases only: no phrase words, as the privacy policy promises | Unit: phrases from a fixed list. Device |
+| `AppShortcutsProvider`, `AppShortcut`, `AppShortcutPhrase` | Ready-made Siri phrases that work after install | 1–3 | 16.0 | **R2**, fixed phrases only: no phrase words (AGENTS.md, *The privacy policy is a promise*) | Unit: phrases from a fixed list. Device |
 | Action button | A side button on newer iPhones runs a shortcut | 1–2 | System (iPhone) | **System.** Setup text: **R0-7**. A Get Attention target: **R2**. Never the only way to a safety action | Device |
 | `ControlWidget`, `ControlWidgetButton` | A button in Control Center, the Lock Screen or the Action button | 1–2 | 18.0 | **Later**: a start-only Get Attention button, never a toggle (invariant 10) | Unit. Device |
 | Phrases as `AppEntity` | Letting Shortcuts list a person's phrases | — | 16.0 | **Never** while R2's fixed-phrases rule stands: the system would show the person's words | Review |
@@ -229,7 +229,7 @@ pointer input*).
 
 | API or feature | What it is for | Stage | iOS | Status in Brickson | Checked by |
 |---|---|---|---|---|---|
-| Larger Text and Larger Accessibility Sizes | The person's reading size | 1–4 | System | **In place**: text styles on Home; reachability, fixed frames and whole quick-control words checked at the largest size. Word fitting for phrases: **R0-3** | UI: `HomeReachabilityTests`, `LaunchTests`. Audit. Device |
+| Larger Text and Larger Accessibility Sizes | The person's reading size | 1–4 | System | **In place**: text styles on Home; reachability, fixed frames and whole quick-control words checked at the largest size; every starter label fitted whole in its narrowest slot with Bold Text off (`StarterLabelFitTests`). Phrase tiles with Bold Text on: **R0-3** (the Bold Text row) | UI: `HomeReachabilityTests`, `LaunchTests`. Audit. Device |
 | `Font.TextStyle`, `ScaledMetric`, `DynamicTypeSize`, `dynamicTypeSize(_:)` | Text and spacing that grow with the setting | 1–4 | 13.0; 14.0; 15.0 | **In place**: text styles, and Settings' gear where it shows alone on Home (`@ScaledMetric`, 2026-10-23). Other non-text sizes with `@ScaledMetric`: **R0-3**. Never a cap on Home or Settings | Unit: the fitting type at every size. UI |
 | `accessibilityShowsLargeContentViewer(_:)` | A large copy of a label that cannot grow | 1–2 | 15.0 | **In place** only for Settings' gear where it shows alone on Home (PR #33, 2026-10-23); Settings never speaks. **Not on Home's speaking controls yet, on purpose** (2026-10-23): Apple documents that, with the viewer, a touch held on one of UIKit's own controls that slides onto another activates the second when the finger lifts. If SwiftUI's buttons do the same, a touch begun on Yes could speak No. Not yet observed: it waits on a device check with a test build, which also slides from the gear onto the controls beside it | Unit (the gear's layout). Device, not yet run: a slide and a lift with a test build (docs/HANDOFF.md, *Checks that need a real device*) |
 | Bold Text (`legibilityWeight`) | Heavier text | 1–4 | 13.0 | **In place** through system fonts; the fitting type measures at a weight never narrower than the one drawn (PR #22). Home's safety row, categories and Settings take wider minimum widths with Bold Text on, checked with Bold Text on and off (2026-10-23, `HomeShape.MinimumWidths`); on a 375pt phone Yes and No narrow and Settings shows its gear alone, so Bold Text never adds a row above the phrases (`HomeShapeTests`). Phrase tiles in their narrowest slots with Bold Text on: **R0-3** | Unit (`StarterLabelFitTests`). Device |
@@ -305,8 +305,8 @@ pointer input*).
 | API or feature | What it is for | Stage | iOS | Status in Brickson | Checked by |
 |---|---|---|---|---|---|
 | Accessibility Nutrition Labels | The App Store's list of supported features | 1–4 | Shown on 26 | **R0-10**: the nine labels, the evidence each needs and the 1.0 proposal are in [`APP-STORE.md`](APP-STORE.md), section 4 | Store. Device runs before VoiceOver and Voice Control are claimed |
-| Accessibility URL | A page on the product page for input methods without a label | 1–4 | — | **R0-10** (a `site/accessibility/` page, APP-STORE.md section 4) | Store |
-| `XCUIApplication.performAccessibilityAudit(for:_:)` | Apple's automatic audit in UI tests | 1–4 | 17.0 | **In place** on Home and the emergency phrases, light and dark. Each new screen adds one (R0-5, R0-6, R0-7) | UI |
+| Accessibility URL | A page on the product page for input methods without a label | 1–4 | — | **In place** (2026-10-23): [`site/accessibility/`](../site/accessibility/index.html) says what is in place for each input method and display setting, how each was checked, and that nothing has yet been checked on a real device (APP-STORE.md, section 4). Entering the URL in App Store Connect: **R0-10** | Unit: `scripts/test-site.py` (every page links to it, no price words). Store |
+| `XCUIApplication.performAccessibilityAudit(for:_:)` | Apple's automatic audit in UI tests | 1–4 | 17.0 | **In place** on Home, light and dark (and at the largest text size), and while Get Attention sounds, light (at the default and the largest text sizes, and at the default size in landscape on the iPad); on the emergency phrases and Voice Settings, light; on Settings' first screen, Family Setup and the privacy policy, light and dark (checked 2026-10-23). Not yet on Settings' guides, Set Up Step by Step or About. Each new screen adds one (R0-5, R0-6, R0-7) | UI |
 | Accessibility Inspector | The Mac tool that inspects elements | 1–4 | Xcode | Used on Mac runs. Never presented as proof of gaze or Snap to Item | — |
 | `-UIPreferredContentSizeCategoryName` launch argument | Starting a UI test at a text size | 1–4 | Not documented by Apple | **In place** (`launchedApp`); the largest-size tests show it takes effect | UI |
 | `XCUIDevice.appearance`, and Brickson's `--appearance` option | Light or dark in UI tests | 1–4 | 15.0 | **In place** through `--appearance`, because `XCUIDevice.appearance` proved unreliable (AGENTS.md, *Gotchas*) | UI: a screenshot sample checks the rendered colour |
@@ -354,6 +354,10 @@ None of them needs a minimum above 26.0, so the deployment target stands
 
 - A pull request that adopts, changes or drops an API here edits its row
   in the same pull request, and its *Checked by* names the real test.
+  Where that makes a sentence of the website's accessibility page
+  (`site/accessibility/index.html`) untrue, or adds something in place
+  worth telling families, it edits the page and its "Last updated" date
+  too.
 - When Apple ships a new major iOS, the pull request that moves Brickson
   to the new Xcode also reads Apple's accessibility, SwiftUI, UIKit,
   AVFAudio and App Intents update pages

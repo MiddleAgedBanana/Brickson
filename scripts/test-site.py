@@ -83,6 +83,72 @@ class SiteTests(unittest.TestCase):
         self.assertIn('This address is not for emergencies.', html)
         self.assertNotRegex(html.lower(), r'\b(free|paid)\b')
 
+    def test_no_page_states_a_price(self):
+        """docs/DECISIONS.md, "Price not decided": "free", "paid" or an
+        amount such as $4.99 on any page fails."""
+        for path in (ROOT / 'site').rglob('*.html'):
+            with self.subTest(page=path.relative_to(ROOT)):
+                self.assertNotRegex(path.read_text().lower(),
+                                    r'\b(free|paid)\b|[$\u20ac\u00a3\u00a5]\s*\d|\b\d+([.,]\d+)?\s*(usd|eur|gbp)\b')
+
+    def test_every_page_links_to_the_accessibility_page(self):
+        """The App Store's Accessibility URL; dropping a page's link, or
+        moving it out of a real href (data-href), fails."""
+        class Links(HTMLParser):
+            def __init__(self):
+                super().__init__()
+                self.hrefs = []
+            def handle_starttag(self, tag, attrs):
+                href = dict(attrs).get('href')
+                if tag == 'a' and href is not None:
+                    self.hrefs.append(href)
+        target = ROOT / 'site/accessibility/index.html'
+        self.assertTrue(target.is_file(), 'site/accessibility/index.html is missing')
+        for path in (ROOT / 'site').rglob('*.html'):
+            doc = Links()
+            doc.feed(path.read_text())
+            resolved = set()
+            for link in doc.hrefs:
+                # A link within the page is not a way to reach it.
+                if link.startswith(('#', 'https:', 'mailto:')) or not link:
+                    continue
+                page = (path.parent / link.partition('#')[0]).resolve()
+                resolved.add(page / 'index.html' if page.is_dir() else page)
+            with self.subTest(page=path.relative_to(ROOT)):
+                self.assertIn(target.resolve(), resolved)
+
+    def test_every_page_is_one_titled_document_with_a_way_past_the_header(self):
+        """A page without a language, a title, one h1, a main or a skip link
+        fails, and so does one whose only skip link is inside a comment."""
+        class Outline(HTMLParser):
+            def __init__(self):
+                super().__init__()
+                self.tags, self.title, self.in_title = [], '', False
+            def handle_starttag(self, tag, attrs):
+                self.tags.append((tag, dict(attrs)))
+                self.in_title = tag == 'title'
+            def handle_endtag(self, tag):
+                self.in_title = False
+            def handle_data(self, data):
+                if self.in_title:
+                    self.title += data
+        for path in (ROOT / 'site').rglob('*.html'):
+            doc = Outline()
+            doc.feed(path.read_text())
+            def named(name):
+                return [attrs for tag, attrs in doc.tags if tag == name]
+            skips = [a['href'][1:] for a in named('a')
+                     if 'skip' in (a.get('class') or '').split()
+                     and (a.get('href') or '').startswith('#')]
+            with self.subTest(page=path.relative_to(ROOT)):
+                self.assertEqual([a.get('lang') for a in named('html')], ['en'])
+                self.assertTrue(doc.title.strip(), 'no title')
+                self.assertIn('viewport', [a.get('name') for a in named('meta')])
+                self.assertEqual(len(named('h1')), 1)
+                self.assertEqual(len(named('main')), 1)
+                self.assertEqual(len(skips), 1, 'no skip link')
+                self.assertEqual(named('main')[0].get('id'), skips[0])
+
 
 if __name__ == '__main__':
     unittest.main()
