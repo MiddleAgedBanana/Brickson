@@ -14,6 +14,7 @@ import XCTest
 /// - A held look on Get Attention cannot stop the alarm: Stop is never the
 ///   control nearest Get Attention's spot, by nearest centre or by nearest
 ///   edge, ties counted (invariant 10).
+/// - While it sounds, Home passes Apple's accessibility audit.
 /// - Stop ends it: its well empties and nothing moves. A held look still
 ///   resting where Stop was meets a category, which only changes which
 ///   phrases show, and never Get Attention, which would restart it.
@@ -93,6 +94,12 @@ final class GetAttentionOnHomeTests: XCTestCase {
         )
         XCTAssertFalse(besideGetAttention.byCentre.contains("stopAlert"), "Stop is nearest Get Attention by centre (\(context))")
         XCTAssertFalse(besideGetAttention.byEdge.contains("stopAlert"), "Stop is nearest Get Attention by edge (\(context))")
+
+        // Stop, its fill and the status line pass Apple's audit. The
+        // silent tone changes nothing on screen while it sounds, so the
+        // screen is still (AGENTS.md, *Gotchas*, "Audit only a still
+        // screen").
+        try assertPassesAccessibilityAudit(app, context: "the alarm sounding; \(context)")
 
         // Choosing Get Attention again leaves the alarm sounding.
         getAttention.tap()
