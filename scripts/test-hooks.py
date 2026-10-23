@@ -67,6 +67,47 @@ class GuardTests(unittest.TestCase):
                         ['git', '-C', str(self.repo), 'config', '--unset-all', key],
                         capture_output=True)
 
+    def test_wget_execute_and_config_directives_require_explicit_options(self):
+        url = 'https://api.github.com/repos/o/r/pulls/12/merge'
+        for options in ['-e method=PUT', '-emethod=PUT', '-qe method=PUT',
+                        '--execute=method=PUT', '--execute method=PUT',
+                        '--exec=method=PUT', '--config=request.rc']:
+            self.assertDenied(f'wget --no-config {options} {url}')
+        self.assertDenied(f'wget {url}')
+        self.assertAllowed(f'wget --no-config {url}')
+        self.assertDenied(f'wget --no-config --method=PUT {url}')
+
+    def test_curl_implicit_config_requires_a_leading_disable(self):
+        url = 'https://api.github.com/repos/o/r/pulls/12/merge'
+        for options in ['', '-s -q', '-s --disable', '--url']:
+            self.assertDenied(f'curl {options} {url}')
+        for options in ['-q', '--disable']:
+            self.assertAllowed(f'curl {options} {url}')
+            self.assertDenied(f'curl {options} -X PUT {url}')
+            self.assertDenied(f'curl {options} --config request.rc {url}')
+            self.assertAllowed(f'curl {options} https://example.com --next {url}')
+        self.assertAllowed('curl https://example.com')
+
+    def test_send_pack_requires_the_inspectable_push_command(self):
+        for options in ['', '--force', '--all', '--mirror', '--dry-run']:
+            self.assertDenied(f'git send-pack {options} origin refs/heads/main')
+        self.assertDenied('git send-pack origin refs/heads/claude/topic')
+        self.assertAllowed('git push origin HEAD:refs/heads/claude/topic')
+
+    def test_locale_translated_shell_words_require_literal_commands(self):
+        self.assertDenied('bash -c $"git add -A"')
+        self.assertDenied('bash -c $"git status"')  # translation may change its text
+        self.assertDenied('$"git" add -A')
+        self.assertAllowed('bash -c "git status"')
+        self.assertAllowed("printf '%s' '$\"git add -A\"'")
+
+    def test_abbreviated_add_options_cannot_select_every_change(self):
+        for option in ['--al', '--up', '--upd', '--no-ignore-rem', '--pathspec-from-f=paths']:
+            self.assertDenied(f'git add {option}')
+            self.assertDenied(f'git stage {option}')
+        self.assertAllowed('git add --verbose README.md')
+        self.assertAllowed('git add -- --al')
+
     def test_time_option_operands_keep_the_wrapped_command(self):
         for options in ['-o stats', '-f %E', '--output stats', '--format %E', '-ao stats', '-oout']:
             self.assertDenied(f'/usr/bin/time {options} git add -A')
@@ -82,18 +123,18 @@ class GuardTests(unittest.TestCase):
     def test_curl_url_globs_require_explicit_urls_or_globoff(self):
         for suffix in ['{merge,status}', '[1-2]/merge']:
             url = 'https://api.github.com/repos/o/r/pulls/12/' + suffix
-            self.assertDenied('curl -X PUT ' + shlex.quote(url))
-            self.assertAllowed('curl -g -X PUT ' + shlex.quote(url))
-            self.assertDenied('curl -g --no-globoff -X PUT ' + shlex.quote(url))
-            self.assertAllowed('curl --no-globoff -g -X PUT ' + shlex.quote(url))
-        self.assertAllowed('curl -X GET https://api.github.com/repos/o/r/pulls/12/merge')
+            self.assertDenied('curl -q -X PUT ' + shlex.quote(url))
+            self.assertAllowed('curl -q -g -X PUT ' + shlex.quote(url))
+            self.assertDenied('curl -q -g --no-globoff -X PUT ' + shlex.quote(url))
+            self.assertAllowed('curl -q --no-globoff -g -X PUT ' + shlex.quote(url))
+        self.assertAllowed('curl -q -X GET https://api.github.com/repos/o/r/pulls/12/merge')
 
     def test_curl_final_get_and_head_toggles_set_the_method(self):
         url = 'https://api.github.com/repos/o/r/pulls/12/reviews'
         for on, off in [('--get', '--no-get'), ('--head', '--no-head')]:
-            self.assertDenied(f'curl {on} {off} -d ' + shlex.quote('{"event":"APPROVE"}') + ' ' + url)
-            self.assertAllowed(f'curl {off} {on} -d ' + shlex.quote('{"event":"APPROVE"}') + ' ' + url)
-        self.assertDenied(f'curl -GI --no-head --no-get -d ' + shlex.quote('{"event":"APPROVE"}') + ' ' + url)
+            self.assertDenied(f'curl -q {on} {off} -d ' + shlex.quote('{"event":"APPROVE"}') + ' ' + url)
+            self.assertAllowed(f'curl -q {off} {on} -d ' + shlex.quote('{"event":"APPROVE"}') + ' ' + url)
+        self.assertDenied(f'curl -q -GI --no-head --no-get -d ' + shlex.quote('{"event":"APPROVE"}') + ' ' + url)
 
     def test_httpie_redirected_input_is_checked(self):
         url = 'https://api.github.com/repos/o/r/pulls/12/reviews'
@@ -112,7 +153,7 @@ class GuardTests(unittest.TestCase):
     def test_rest_agent_tasks_are_owner_only(self):
         endpoint = '/agents/repos/o/r/tasks'
         self.assertDenied(f'gh api --method POST {endpoint} -f prompt=work')
-        self.assertDenied(f'curl -X POST https://api.github.com{endpoint} -d ' + shlex.quote('{"prompt":"work"}'))
+        self.assertDenied(f'curl -q -X POST https://api.github.com{endpoint} -d ' + shlex.quote('{"prompt":"work"}'))
         self.assertAllowed(f'gh api {endpoint}')
         self.assertAllowed(f'gh api {endpoint}/123')
 
@@ -122,9 +163,9 @@ class GuardTests(unittest.TestCase):
             self.assertDenied('gh api graphql -f ' + shlex.quote('query=' + query))
         query = 'mutation($input:CreateIssueInput!) { createIssue(input:$input) { clientMutationId } }'
         payload = json.dumps({'query':query, 'variables':{'input':{'agentAssignment':{'targetRepositoryId':'R'}}}})
-        self.assertDenied('curl https://api.github.com/graphql --json ' + shlex.quote(payload))
+        self.assertDenied('curl -q https://api.github.com/graphql --json ' + shlex.quote(payload))
         payload = json.dumps({'query':query, 'variables':{'input':{'title':'agentAssignment is discussed here'}}})
-        self.assertAllowed('curl https://api.github.com/graphql --json ' + shlex.quote(payload))
+        self.assertAllowed('curl -q https://api.github.com/graphql --json ' + shlex.quote(payload))
         self.assertAllowed('gh api graphql -f ' + shlex.quote('query=mutation { createIssue(input:{title:"agentAssignment: example"}) { clientMutationId } }'))
 
     def test_graphql_enqueue_is_an_owner_merge_action(self):
@@ -147,13 +188,13 @@ class GuardTests(unittest.TestCase):
         merge = 'https://api.github.com/repos/o/r/pulls/12/merge'
         review = 'https://api.github.com/repos/o/r/pulls/12/reviews'
         for options in ['-sX PUT', '-sXPUT', '-sST payload.json']:
-            self.assertDenied(f'curl {options} {merge}')
+            self.assertDenied(f'curl -q {options} {merge}')
         for options in ['-sX GET', '-sXGET', '-sSI', '-sH -XPUT', '-so -sXPUT']:
-            self.assertAllowed(f'curl {options} {merge}')
-        self.assertDenied(f'curl -sd ' + shlex.quote('{"event":"APPROVE"}') + ' ' + review)
-        self.assertDenied(f'curl -sF event=APPROVE {review}')
-        self.assertAllowed(f'curl -sF event=COMMENT {review}')
-        self.assertDenied('curl -sK config.txt')
+            self.assertAllowed(f'curl -q {options} {merge}')
+        self.assertDenied(f'curl -q -sd ' + shlex.quote('{"event":"APPROVE"}') + ' ' + review)
+        self.assertDenied(f'curl -q -sF event=APPROVE {review}')
+        self.assertAllowed(f'curl -q -sF event=COMMENT {review}')
+        self.assertDenied('curl -q -sK config.txt')
 
     def test_cdpath_does_not_guess_a_relative_repository(self):
         with tempfile.TemporaryDirectory(dir=self.repo) as folder:
@@ -196,14 +237,14 @@ class GuardTests(unittest.TestCase):
     def test_curl_long_form_fields_are_checked(self):
         endpoint = 'https://api.github.com/repos/o/r/pulls/12/reviews'
         for option in ['--form', '--form-string']:
-            self.assertDenied(f'curl {endpoint} {option} event=APPROVE')
-            self.assertAllowed(f'curl {endpoint} {option} event=COMMENT')
+            self.assertDenied(f'curl -q {endpoint} {option} event=APPROVE')
+            self.assertAllowed(f'curl -q {endpoint} {option} event=COMMENT')
         with tempfile.TemporaryDirectory(dir=self.repo) as folder:
             field = Path(folder) / 'event'
             field.write_text('APPROVE')
             for marker in ['<', '@']:
-                self.assertDenied(f'curl {endpoint} --form ' + shlex.quote(f'event={marker}{field}'))
-            self.assertAllowed(f'curl {endpoint} --form-string ' + shlex.quote(f'event=@{field}'))
+                self.assertDenied(f'curl -q {endpoint} --form ' + shlex.quote(f'event={marker}{field}'))
+            self.assertAllowed(f'curl -q {endpoint} --form-string ' + shlex.quote(f'event=@{field}'))
 
     def test_the_last_dry_run_option_controls_push(self):
         self.assertDenied('git push -n --no-dry-run origin main')
@@ -245,10 +286,10 @@ class GuardTests(unittest.TestCase):
     def test_curl_operations_keep_their_own_method(self):
         merge = 'https://api.github.com/repos/o/r/pulls/12/merge'
         for separator in ['--next', '-:']:
-            self.assertDenied(f'curl -X PUT {merge} {separator} -X GET https://example.com')
-            self.assertDenied(f'curl -X GET https://example.com {separator} -X PUT {merge}')
-            self.assertAllowed(f'curl -X GET {merge} {separator} -X PUT https://example.com')
-        self.assertAllowed(f'curl -X GET -H "--next" {merge}')
+            self.assertDenied(f'curl -q -X PUT {merge} {separator} -X GET https://example.com')
+            self.assertDenied(f'curl -q -X GET https://example.com {separator} -X PUT {merge}')
+            self.assertAllowed(f'curl -q -X GET {merge} {separator} -X PUT https://example.com')
+        self.assertAllowed(f'curl -q -X GET -H "--next" {merge}')
 
     def test_subshells_restore_the_outer_repository_context(self):
         with tempfile.TemporaryDirectory(dir=self.repo) as folder:
@@ -273,7 +314,7 @@ class GuardTests(unittest.TestCase):
         self.assertAllowed('gh api --method PATCH repos/o/r/git/refs/heads/feature -f sha=123')
         self.assertAllowed('gh api repos/o/r/contents/file')
         self.assertAllowed('gh api repos/o/r/git/refs/heads/main')
-        self.assertDenied('curl -X PUT https://api.github.com/repos/o/r/contents/file -d \'{"branch":"main"}\'')
+        self.assertDenied('curl -q -X PUT https://api.github.com/repos/o/r/contents/file -d \'{"branch":"main"}\'')
 
     def test_ansi_c_quoted_scripts_are_checked(self):
         self.assertDenied("bash -c $'git add -A'")
@@ -303,9 +344,9 @@ class GuardTests(unittest.TestCase):
     def test_curl_upload_uses_put_unless_overridden(self):
         endpoint = 'https://api.github.com/repos/o/r/pulls/12/merge'
         for option in ['-T payload.json', '-Tpayload.json', '--upload-file payload.json', '--upload-file=payload.json']:
-            self.assertDenied(f'curl {option} {endpoint}')
-            self.assertAllowed(f'curl -X GET {option} {endpoint}')
-        self.assertAllowed('curl -T payload.json https://example.com/upload')
+            self.assertDenied(f'curl -q {option} {endpoint}')
+            self.assertAllowed(f'curl -q -X GET {option} {endpoint}')
+        self.assertAllowed('curl -q -T payload.json https://example.com/upload')
 
     def test_push_digit_options_preserve_force_and_dry_run(self):
         for version in ['4', '6']:
@@ -403,8 +444,8 @@ class GuardTests(unittest.TestCase):
 
     def test_curl_dot_segments_cannot_hide_endpoints(self):
         endpoint = 'https://api.github.com/repos/o/r/unused/../pulls/12/./merge'
-        self.assertDenied('curl -X PUT ' + endpoint)
-        self.assertAllowed('curl -X GET ' + endpoint)
+        self.assertDenied('curl -q -X PUT ' + endpoint)
+        self.assertAllowed('curl -q -X GET ' + endpoint)
 
     def test_shell_here_strings_are_checked_as_commands(self):
         for redirect in [' <<< ', '<<<']:
@@ -423,9 +464,9 @@ class GuardTests(unittest.TestCase):
         config.write_text('url = "https://api.github.com/repos/o/r/pulls/12/merge"\nrequest = "PUT"\n')
         self.addCleanup(config.unlink)
         for option in ['-K ', '-K', '--config ', '--config=']:
-            self.assertDenied(f'curl {option}{config}')
-        self.assertDenied('curl -K -')
-        self.assertAllowed('curl --disable https://api.github.com/repos/o/r/pulls/12/merge')
+            self.assertDenied(f'curl -q {option}{config}')
+        self.assertDenied('curl -q -K -')
+        self.assertAllowed('curl -q --disable https://api.github.com/repos/o/r/pulls/12/merge')
 
     def test_git_aliases_use_the_selected_configuration(self):
         self.assertDenied("git -c alias.ship.command='push origin main' ship")
@@ -455,7 +496,7 @@ class GuardTests(unittest.TestCase):
         query = 'mutation($input: AddPullRequestReviewInput!) { addPullRequestReview(input: $input) { clientMutationId } }'
         for event in ['APPROVE', 'COMMENT']:
             payload = json.dumps({'query': query, 'variables': {'input': {'pullRequestId': 'PR_id', 'event': event}}})
-            command = 'curl https://api.github.com/graphql --json ' + shlex.quote(payload)
+            command = 'curl -q https://api.github.com/graphql --json ' + shlex.quote(payload)
             if event == 'APPROVE':
                 self.assertDenied(command)
             else:
@@ -517,13 +558,13 @@ class GuardTests(unittest.TestCase):
     def test_merge_api_checks_use_endpoint_method_and_fields(self):
         endpoint='https://api.github.com/repos/o/r/pulls/12/merge'
         for option in ['', '-X GET', '-XGET', '--request=GET', '-I', '--head']:
-            self.assertAllowed(f'curl {option} {endpoint}')
-        self.assertDenied(f'curl -X PUT {endpoint}')
+            self.assertAllowed(f'curl -q {option} {endpoint}')
+        self.assertDenied(f'curl -q -X PUT {endpoint}')
     def test_api_prose_is_not_a_merge_request(self):
         self.assertAllowed("gh api repos/o/r/issues -f title='Document automerge behavior'")
         self.assertAllowed("gh api repos/o/r/issues -f body='Discuss mergePullRequest and event=APPROVE'")
-        self.assertAllowed('curl https://api.github.com/repos/o/r/issues --json \'{"body":"mergePullRequest automerge event=APPROVE"}\'')
-        self.assertDenied('curl https://api.github.com/graphql --json \'{"query":"mutation { mergePullRequest(input: {}) { clientMutationId } }"}\'')
+        self.assertAllowed('curl -q https://api.github.com/repos/o/r/issues --json \'{"body":"mergePullRequest automerge event=APPROVE"}\'')
+        self.assertDenied('curl -q https://api.github.com/graphql --json \'{"query":"mutation { mergePullRequest(input: {}) { clientMutationId } }"}\'')
 
     def test_exclusion_only_pathspecs_require_positive_named_paths(self):
         # These inputs are JSON for the hook, never executed Git commands.
@@ -558,8 +599,8 @@ class GuardTests(unittest.TestCase):
         self.assertDenied('gh api graphql -f query="mutation { mergePullRequest(input: {}) { clientMutationId } }"')
 
     def test_embedded_hashes_do_not_discard_api_arguments(self):
-        for client, body_option in [('curl -X POST', '--json'),
-                                    ('wget --method POST', '--body-data')]:
+        for client, body_option in [('curl -q -X POST', '--json'),
+                                    ('wget --no-config --method POST', '--body-data')]:
             self.assertDenied(client + ' https://api.github.com/repos/o/r/merges#note '
                               + body_option + ' \'{"base":"main","head":"feature"}\'')
         self.assertDenied('gh api repos/o/r/merges#note -f base=main -f head=feature')
@@ -617,10 +658,10 @@ class GuardTests(unittest.TestCase):
         for suffix in ['#note', '?source=cli', '?source=cli#note']:
             endpoint = f'https://api.github.com/repos/o/r/merges{suffix}'
             with self.subTest(suffix=suffix):
-                self.assertDenied(f'''curl -X POST '{endpoint}' --json '{{"base":"main","head":"feature"}}' ''')
+                self.assertDenied(f'''curl -q -X POST '{endpoint}' --json '{{"base":"main","head":"feature"}}' ''')
                 self.assertDenied(f"gh api '{endpoint}' -f base=main -f head=feature")
-                self.assertAllowed(f'''curl '{endpoint}' --json '{{"base":"feature","head":"main"}}' ''')
-        self.assertAllowed('''curl 'https://example.com/repos/o/r/merges#note' --json '{"base":"main"}' ''')
+                self.assertAllowed(f'''curl -q '{endpoint}' --json '{{"base":"feature","head":"main"}}' ''')
+        self.assertAllowed('''curl -q 'https://example.com/repos/o/r/merges#note' --json '{"base":"main"}' ''')
 
     def test_env_directory_does_not_move_outer_shell_substitutions(self):
         with tempfile.TemporaryDirectory(dir=self.repo) as folder:
@@ -829,16 +870,16 @@ class GuardTests(unittest.TestCase):
             payload = Path(folder) / 'payload.json'
             payload.write_text('{"event":"APPROVE"}')
             endpoint = 'https://api.github.com/repos/o/r/pulls/12/reviews'
-            for command in [f'curl {endpoint} --data @{payload}',
-                            f'curl {endpoint} --data-binary=@{payload}',
-                            f'curl {endpoint} --json @{payload}',
-                            f'wget {endpoint} --post-file={payload}']:
+            for command in [f'curl -q {endpoint} --data @{payload}',
+                            f'curl -q {endpoint} --data-binary=@{payload}',
+                            f'curl -q {endpoint} --json @{payload}',
+                            f'wget --no-config {endpoint} --post-file={payload}']:
                 with self.subTest(command=command):
                     self.assertDenied(command)
             payload.write_text('{"event":"COMMENT","body":"Looks good"}')
-            self.assertAllowed(f'curl {endpoint} --data @{payload}')
+            self.assertAllowed(f'curl -q {endpoint} --data @{payload}')
             # A non-GitHub endpoint must not cause the guard to open files.
-            self.assertAllowed('curl https://example.com --data @missing.json')
+            self.assertAllowed('curl -q https://example.com --data @missing.json')
 
     def test_api_assignment_payloads_cannot_start_copilot(self):
         self.assertDenied("gh api repos/o/r/issues/12/assignees -f 'assignees[]=@copilot'")
@@ -856,7 +897,7 @@ class GuardTests(unittest.TestCase):
                 payload = Path(folder) / 'payload.json'
                 payload.write_text('{"assignees":["human","copilot-swe-agent[bot]"]}')
                 for command in [f'gh api --method {method} {endpoint} --input {payload}',
-                                f'curl -X {method} https://api.github.com/{endpoint} --json @{payload}']:
+                                f'curl -q -X {method} https://api.github.com/{endpoint} --json @{payload}']:
                     with self.subTest(command=command):
                         self.assertDenied(command)
                 payload.write_text('{"assignees":["human"],"body":"Discuss Copilot and assignees[]=copilot."}')
@@ -875,7 +916,7 @@ class GuardTests(unittest.TestCase):
             payload = Path(folder) / 'payload.json'
             payload.write_text('{"base":"main","head":"claude/topic"}')
             for command in [f'gh api {endpoint} -X POST --input {payload}',
-                            f'curl -X POST https://api.github.com/{endpoint} --json @{payload}']:
+                            f'curl -q -X POST https://api.github.com/{endpoint} --json @{payload}']:
                 with self.subTest(command=command):
                     self.assertDenied(command)
             payload.write_text('{"base":"claude/topic","head":"main"}')
@@ -942,15 +983,15 @@ class GuardTests(unittest.TestCase):
                         'gh api -X PUT repos/o/r/pulls/12/merge',
                         'gh api graphql -f query="mutation { mergePullRequest(input: {}) { clientMutationId } }"',
                         'gh api graphql -f query="mutation { enablePullRequestAutoMerge(input: {}) { clientMutationId } }"',
-                        'curl -X PUT https://api.github.com/repos/o/r/pulls/12/merge',
-                        'curl -X PUT api.github.com/repos/o/r/pulls/12/merge']:
+                        'curl -q -X PUT https://api.github.com/repos/o/r/pulls/12/merge',
+                        'curl -q -X PUT api.github.com/repos/o/r/pulls/12/merge']:
             self.assertDenied(command)
 
     def test_requesting_copilot_through_the_api_is_denied(self):
         for command in [
                 "gh api --method POST repos/o/r/pulls/12/requested_reviewers "
                 "-f 'reviewers[]=copilot-pull-request-reviewer[bot]'",
-                'curl -X POST https://api.github.com/repos/o/r/pulls/12/requested_reviewers '
+                'curl -q -X POST https://api.github.com/repos/o/r/pulls/12/requested_reviewers '
                 '-d \'{"reviewers":["copilot-pull-request-reviewer[bot]"]}\'']:
             self.assertDenied(command)
         self.assertAllowed("gh api --method POST repos/o/r/pulls/12/requested_reviewers "
@@ -960,8 +1001,8 @@ class GuardTests(unittest.TestCase):
         for command in ['gh pr view 12', 'gh pr checks 12', 'gh pr create --fill',
                         'gh api repos/o/r/pulls/12', 'gh pr review 12 --comment -b ok',
                         'git merge origin/main', 'git log --merges',
-                        'curl https://example.com/api.github.com/pulls/1/merge',
-                        'curl https://api.github.com.example.com/repos/o/r/pulls/1/merge']:
+                        'curl -q https://example.com/api.github.com/pulls/1/merge',
+                        'curl -q https://api.github.com.example.com/repos/o/r/pulls/1/merge']:
             self.assertAllowed(command)
 
     def test_github_tools_that_merge_or_write_main_are_denied(self):

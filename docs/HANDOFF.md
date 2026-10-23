@@ -61,7 +61,7 @@ Xcode 27.1 (27A9275); PR #20 landed in `d79d836`.
   the xargs optional-argument finding was rejected against GNU documentation
   because its suggested change broke a valid existing safeguard. The local
   unit script passed 570 native tests with the existing issue #19 skip,
-  102 hook tests and 29 documentation tests; the catalog is unchanged.
+  107 hook tests and 31 documentation tests; the catalog is unchanged.
   Xcode 27.1 (27A9275), iPad Pro 13-inch (M5), iOS 27.0.
   Five further findings on `227cda9` cover merge-queue requests, shell
   recursion/stdin, curl option clusters and CDPATH directory selection.
@@ -69,6 +69,10 @@ Xcode 27.1 (27A9275); PR #20 landed in `d79d836`.
   local gate above. A further eight findings on `e98e95a` now have focused
   fixes, alongside the clean main `b6be682` refresh. The refreshed full
   local gate passed, including the inherited current-framework tests.
+  Seven findings on `62b79b5` now cover implicit client configuration,
+  send-pack, translated shell strings, abbreviated staging options, link
+  labels and exact path spelling; their focused reproductions and the
+  full local unit gate pass.
   New-head hosted checks and fresh review remain required.
   [Guardrail record](log/2026-10-22-agent-guardrail-reconciliation.md).
 

@@ -832,3 +832,50 @@ Sources: [GNU time](https://www.gnu.org/software/time/manual/time.html),
 [curl methods](https://curl.se/docs/manpage.html#-G),
 [HTTPie raw input](https://httpie.io/docs/cli/sessions#raw-request-body),
 and [GitHub agent APIs](https://docs.github.com/en/enterprise-cloud@latest/copilot/how-tos/use-copilot-agents/cloud-agent/use-cloud-agent-via-the-api).
+
+## Explicit configuration and link spelling, 2026-10-23
+
+Seven fresh findings on `62b79b5` reproduced before correction: five
+failing hook tests and two failing documentation tests. Main remains
+`b6be682`; no new merge was needed.
+
+- Wget execute/config directives now require explicit request options;
+  GitHub requests require `--no-config` so implicit startup files cannot
+  change the method either. Separate, attached, clustered and abbreviated
+  execute options are covered.
+- GitHub curl requests require `-q` or `--disable` as the first argument,
+  before the client reads an implicit configuration. Explicit config
+  files remain refused. Existing method/body fixtures now use leading
+  `-q`, so they continue exercising their original checks, including
+  multiple curl operations.
+- `git send-pack` is refused with directions to use the inspected
+  `git push` path and an explicit feature branch.
+- Locale-translated shell strings are refused with directions to use
+  ordinary quotes. Treating them as untranslated text would still guess
+  the command when a translation exists; literal text and ordinary
+  quoted commands remain covered.
+- Abbreviated all-tree add/stage options and pathspec-file options are
+  refused; explicit file names following `--` remain valid.
+- Inline link text accepts balanced and escaped brackets before checking
+  its destination and anchor. Escaped non-links remain ignored.
+- Link paths are compared with the exact spelling of directory entries,
+  including decoded components, so a case-insensitive local filesystem
+  cannot approve a link that will be missing on GitHub.
+
+Each regression fails if its corresponding check is removed; allowed
+request, branch and link cases guard against indiscriminate refusal.
+Focused tests and the full local unit script pass: 570 native tests, zero
+failures and the existing issue #19 crash-probe skip (571 total), plus
+107 hook tests and 31 documentation tests. Xcode 27.1 (27A9275), iPad Pro
+13-inch (M5), iOS 27.0; catalog unchanged and app line coverage 66.9%
+(4,400/6,577). Current-head hosted checks and fresh review remain required. No app behaviour,
+review-rule exception or product decision changed. The hook remains an
+advisory check, not a complete shell parser or security sandbox.
+
+Sources: [Wget startup options](https://www.gnu.org/software/wget/manual/html_node/Basic-Startup-Options.html)
+and the installed client's `--help`,
+[curl configuration](https://curl.se/docs/manpage.html#-q),
+[Git send-pack](https://git-scm.com/docs/git-send-pack),
+[Bash locale translation](https://www.gnu.org/software/bash/manual/html_node/Locale-Translation.html),
+[Git option abbreviations](https://git-scm.com/docs/gitcli), and
+[CommonMark links](https://spec.commonmark.org/0.31.2/#links).

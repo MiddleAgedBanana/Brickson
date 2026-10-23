@@ -82,8 +82,11 @@ COMMIT_VALUE_LONG = {'--message', '--file', '--reuse-message', '--reedit-message
 GRAPHQL_MERGE = re.compile(r'\b(?:mergePullRequest|enablePullRequestAutoMerge|enqueuePullRequest|mergeBranch)\s*\(')
 
 
-CURL_CONFIG = ('The guard does not interpret curl configuration files. Use explicit '
-               'command-line options so the API destination and method can be checked.')
+CURL_CONFIG = ('The guard does not interpret curl configuration files. Put -q or '
+               '--disable first, then use explicit command-line options so the '
+               'API destination and method can be checked.')
+WGET_CONFIG = ('The guard does not interpret Wget configuration or execute directives. '
+               'Use --no-config and explicit command-line request options.')
 SHELL_ALIAS = ('The guard does not execute Git shell aliases. Use the underlying '
                'command explicitly so its operation and repository can be checked.')
 
@@ -167,7 +170,7 @@ def segments(command, preserve_quotes=False):
 
 
 def ansi_c_quotes(command):
-    """Normalize Bash dollar-single-quoted words without executing expansion."""
+    """Normalize ANSI-C strings; refuse strings whose locale may change commands."""
     escapes = {'a': '\a', 'b': '\b', 'e': '\x1b', 'E': '\x1b', 'f': '\f',
                'n': '\n', 'r': '\r', 't': '\t', 'v': '\v',
                '\\': '\\', "'": "'", '"': '"', '?': '?'}
@@ -197,6 +200,9 @@ def ansi_c_quotes(command):
             output.append(char)
             if char == quote:
                 quote = None
+        elif command.startswith('$"', index):
+            deny('Locale-translated shell strings cannot be inspected reliably. '
+                 'Use ordinary quotes with explicit command text.')
         elif command.startswith("$'", index):
             stop = index + 2
             while stop < len(command):
@@ -447,9 +453,13 @@ def check_add(args):
     for arg in args:
         if arg == '--':
             break
-        if arg == '--pathspec-from-file' or arg.startswith('--pathspec-from-file='):
+        option = arg.split('=', 1)[0]
+        if option.startswith('--') and '--pathspec-from-file'.startswith(option):
             deny(PATHSPEC_FILE)
-        if arg in ('-A', '--all', '-u', '--update', '--no-ignore-removal'):
+        if option.startswith('--') and any(full.startswith(option) for full in
+                ('--all', '--update', '--no-ignore-removal')):
+            deny(STAGE_ALL)
+        if arg in ('-A', '-u'):
             deny(STAGE_ALL)
         if re.fullmatch(r'-[a-zA-Z]+', arg) and set(arg[1:]) & set('Au'):
             deny(STAGE_ALL)
@@ -1256,7 +1266,7 @@ def changed_directory(cwd, destination):
 def check_command(command, cwd, depth=0, environment=None):
     if depth > 3:
         deny('Shell nesting exceeds the inspection limit. Use the underlying command explicitly.')
-    command = ansi_c_quotes(inspectable_here_documents(command))
+    command = ansi_c_quotes(without_shell_comments(inspectable_here_documents(command)))
     try:
         parts = list(segments(command))
         raw_parts = list(segments(command, preserve_quotes=True))
@@ -1399,14 +1409,30 @@ def check_command(command, cwd, depth=0, environment=None):
                     check_commit(args)
                 elif subcommand == 'push':
                     check_push(args, context)
+                elif subcommand == 'send-pack':
+                    deny('Use git push with an explicit feature branch; send-pack '
+                         'can update remote refs outside the inspected push path.')
             elif program == 'gh':
                 check_gh(unwrapped, command_cwd, command_environment)
             elif program in ('curl', 'wget', 'http', 'https'):
                 request_words = curl_words(unwrapped) if program == 'curl' else unwrapped
                 if program == 'curl' and list(option_values(request_words[1:], {'--config'}, {'-K'})):
                     deny(CURL_CONFIG)
+                if program == 'wget':
+                    for word in unwrapped[1:]:
+                        option = word.split('=', 1)[0]
+                        if ((option.startswith('--') and option != '--' and any(
+                                full.startswith(option) for full in ('--execute', '--config')))
+                                or re.match(r'^-[^-]*e', word)):
+                            deny(WGET_CONFIG)
                 for operation in http_operations(request_words):
                     if any(github_api_host(word) for word in operation[1:]):
+                        # curl reads its default file before any later options;
+                        # --next does not require a second leading disable.
+                        if program == 'curl' and unwrapped[1:2] not in (['-q'], ['--disable']):
+                            deny(CURL_CONFIG)
+                        if program == 'wget' and '--no-config' not in unwrapped[1:]:
+                            deny(WGET_CONFIG)
                         if program == 'curl' and not curl_flag(operation, {'--globoff', '-g'}, '--no-globoff'):
                             if any(github_api_host(word) and re.search(r'[{}\[\]]', word)
                                    for word in operation[1:]):

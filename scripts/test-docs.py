@@ -56,7 +56,6 @@ CITATION = re.compile(
     r'(?:"(?P<quoted>[^"\n]{2,120})"'          # "Title"
     r'|(?<![*\w])\*(?P<italic>[^*\n]{2,120})\*(?![*\w]))')  # or *Title*
 BARE_ITALIC = re.compile(r'(?<![*\w`])\*(?P<title>[A-Z][^*\n]{1,120}?)\*(?![*\w])')
-INLINE_LINK_START = re.compile(r'(?<!!)\[[^\]\n]*\]\(')
 REFERENCE_LINK = re.compile(
     r'^ {0,3}\[(?!\^)[^\]\n]+\]:[ \t]*(?:\n[ \t]*)?'
     r'(?P<target><[^>\n]*>|[^\s<>]+)'
@@ -258,10 +257,44 @@ def without_indented_code(text):
     return ''.join(output)
 
 
+def inline_link_starts(text):
+    """Find destinations after labels with balanced or escaped brackets."""
+    stack, index = [], 0
+    while index < len(text):
+        char = text[index]
+        if char == '\\' and index + 1 < len(text) and text[index + 1] in string.punctuation:
+            index += 2
+            continue
+        if char == '[':
+            stack.append(index)
+        elif char == ']' and stack:
+            start = stack.pop()
+            if text[index + 1:index + 2] == '(' and (start == 0 or text[start - 1] != '!'):
+                yield index + 2
+                # A link cannot contain another link; keep the innermost one.
+                stack.clear()
+        index += 1
+
+
+def exact_path_exists(path):
+    """Check directory-entry spelling even on a case-insensitive filesystem."""
+    current = ROOT
+    for component in path.relative_to(ROOT).parts:
+        if component == '..':
+            current = current.parent
+            continue
+        try:
+            if component not in {entry.name for entry in current.iterdir()}:
+                return False
+        except OSError:
+            return False
+        current /= component
+    return current.exists()
+
+
 def inline_link_targets(text):
     """Scan balanced destinations without ending at an inner parenthesis."""
-    for match in INLINE_LINK_START.finditer(text):
-        start = match.end()
+    for start in inline_link_starts(text):
         while start < len(text) and text[start].isspace():
             start += 1
         index, depth = start, 0
@@ -328,7 +361,7 @@ def broken_links(path, text):
         if not resolved.is_relative_to(ROOT.resolve()):
             problems.append(f'{relative}: link {link} escapes the repository')
             continue
-        if not resolved.exists():
+        if not exact_path_exists(path.parent / target if target else path):
             problems.append(f'{relative}: link {link} points to a missing file')
             continue
         if anchor and resolved.suffix == '.md':
@@ -351,6 +384,30 @@ class CheckerTests(unittest.TestCase):
 
     def setUp(self):
         self.fixture = ROOT / 'docs' / 'DECISIONS.md'
+
+    def test_balanced_and_escaped_brackets_in_link_text(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder).resolve()
+            page = root / 'index.md'
+            (root / 'guide.md').write_text('# Setup')
+            with patch.dict(globals(), ROOT=root):
+                for label in ['see [guide]', r'see \] guide', r'see \[ guide', 'see [a [guide]]']:
+                    self.assertTrue(broken_links(page, f'[{label}](missing.md)'))
+                    self.assertTrue(broken_links(page, f'[{label}](guide.md#missing)'))
+                    self.assertEqual(broken_links(page, f'[{label}](guide.md#setup)'), [])
+                self.assertEqual(broken_links(page, r'\[guide](missing.md)'), [])
+
+    def test_link_path_casing_is_exact_on_every_filesystem(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder).resolve()
+            page = root / 'index.md'
+            (root / 'Docs').mkdir()
+            (root / 'Docs' / 'Guide.md').write_text('# Setup')
+            with patch.dict(globals(), ROOT=root):
+                for target in ['docs/Guide.md', 'Docs/guide.md', 'Docs/%67uide.md']:
+                    self.assertTrue(broken_links(page, f'[guide]({target})'), target)
+                for target in ['Docs/Guide.md', './Docs/Guide.md', 'Docs/../Docs/Guide.md']:
+                    self.assertEqual(broken_links(page, f'[guide]({target}#setup)'), [])
 
     def test_balanced_parentheses_in_inline_destinations(self):
         with tempfile.TemporaryDirectory() as folder:
