@@ -1,6 +1,6 @@
 # Settings on Home
 
-*2026-10-23. Pull request #PRNUMBER (`claude/project-thread-5fe8vu`). The
+*2026-10-23. Pull request #33 (`claude/project-thread-5fe8vu`). The
 Settings on Home thread, a cloud session.*
 
 ## What changed and why
@@ -32,7 +32,13 @@ widths matched the ones CI measured earlier within half a point; CI's
 
 ## Commits
 
-COMMITS
+- `e61243d` Settings on Home: write the intent
+- `e287222` Settings on Home: write the spec and link the Figma frames
+- `f607f70` Settings on Home: write the plan
+- `63b078f` Test Settings on Home and the new safety row
+- `0fe291a` Put Settings on Home and move Again into the safety row
+- `82b75b6` Record Settings on Home in the docs
+- This record's pull request number and commits.
 
 ## Verified
 
