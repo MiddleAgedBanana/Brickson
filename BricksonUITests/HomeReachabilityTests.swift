@@ -1,9 +1,10 @@
 import UIKit
 import XCTest
 
-/// Invariants 2 and 10: Yes, No and Emergency are one activation away in
-/// every Home state, and Again, the way to repeat, and Settings, the
-/// family's way in, stay in reach too. Each
+/// Invariants 2 and 10: Yes, No, Emergency and Get Attention are one
+/// activation away in every Home state, and Again, the way to repeat, and
+/// Settings, the family's way in, stay in reach too. The alarm's own
+/// states, with Stop, are `GetAttentionOnHomeTests`. Each
 /// test walks Home through its states (just opened, the emergency phrases
 /// showing, a phrase just spoken) at one text size and orientation, and
 /// checks every one of those controls with `assertReachable`: it exists, is
@@ -19,7 +20,7 @@ import XCTest
 /// device (docs/HANDOFF.md, "Checks that need a real device").
 final class HomeReachabilityTests: XCTestCase {
     /// The controls that must stay in reach in every Home state.
-    private static let primaryControls = ["Yes", "No", "Emergency", "Again", "Settings"]
+    private static let primaryControls = ["Yes", "No", "Emergency", "Get Attention", "Again", "Settings"]
 
     @MainActor
     func testEveryHomeStateAtDefaultTextInPortrait() {

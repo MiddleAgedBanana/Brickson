@@ -63,10 +63,13 @@ final class AttentionAlertPlayer {
         }
     }
 
-    /// Get Attention. Idempotent while the tone is really playing.
+    /// Get Attention. Idempotent while the tone is really playing. A tone
+    /// started while the session could not be activated is replaced, to
+    /// retry the session, but it plays on until its replacement has
+    /// started, so this never silences a tone that is sounding.
     func start() {
-        let livePlayerIsPlaying = (playback?.isPlaying ?? false) && !sessionActivationFailed
-        switch status.startDecision(livePlayerIsPlaying: livePlayerIsPlaying) {
+        let livePlayerIsPlaying = playback?.isPlaying ?? false
+        switch status.startDecision(livePlayerIsPlaying: livePlayerIsPlaying && !sessionActivationFailed) {
         case .alreadySounding:
             logger.info("Get Attention chosen again while sounding; the alarm carries on")
             return
@@ -74,25 +77,30 @@ final class AttentionAlertPlayer {
             break
         }
 
-        // A player the state thought was playing but which went quiet is
-        // rebuilt rather than trusted.
-        discardPlayback()
+        // A tone still sounding here is one started without the session: a
+        // held look re-firing Get Attention must not silence it, so it is
+        // kept until a new tone plays. A player the state thought was
+        // playing but which went quiet is rebuilt rather than trusted.
+        let keepsLiveTone = status.isSounding && livePlayerIsPlaying
+        if !keepsLiveTone {
+            discardPlayback()
+        }
         // A failed activation already shows "Audio failed" on Home. The tone
         // is still tried, since it may play; the next Get Attention retries.
-        sessionActivationFailed = audioSession.acquire(for: .attentionAlert) == .failed
+        let activationFailed = audioSession.acquire(for: .attentionAlert) == .failed
 
         let candidate: any AttentionTonePlayback
         do {
             candidate = try makePlayback()
         } catch {
-            audioSession.release(for: .attentionAlert)
-            status.recordStart(succeeded: false)
             logger.error("Could not load the Get Attention tone: \(error.localizedDescription)")
+            recordFailedStart(keepingLiveTone: keepsLiveTone)
             return
         }
 
-        playbackGeneration &+= 1
-        let generation = playbackGeneration
+        // The generation the new tone takes once it replaces any kept one,
+        // so until then the kept tone's reports and health check still count.
+        let generation = playbackGeneration &+ 1
         candidate.eventHandler = { [weak self] _ in
             self?.playbackStopped(generation: generation)
         }
@@ -101,15 +109,28 @@ final class AttentionAlertPlayer {
         guard candidate.playFromBeginning() else {
             candidate.eventHandler = nil
             candidate.stop()
-            audioSession.release(for: .attentionAlert)
-            status.recordStart(succeeded: false)
             logger.error("The Get Attention tone player refused to start")
+            recordFailedStart(keepingLiveTone: keepsLiveTone)
             return
         }
 
+        // The new tone is playing; only now does a kept one stop.
+        discardPlayback()
+        playbackGeneration = generation
         playback = candidate
+        sessionActivationFailed = activationFailed
         status.recordStart(succeeded: true)
         watchHealth(generation: generation)
+    }
+
+    /// A start whose new tone could not load or play. A kept tone sounds on,
+    /// still holding the session and still started without it, so Stop stays
+    /// and the next Get Attention tries again. Otherwise the session is let
+    /// go and Home shows "Alert failed".
+    private func recordFailedStart(keepingLiveTone: Bool) {
+        guard !keepingLiveTone else { return }
+        audioSession.release(for: .attentionAlert)
+        status.recordStart(succeeded: false)
     }
 
     /// Stop Alert. An intentional stop is ordinary idle; it never erases an

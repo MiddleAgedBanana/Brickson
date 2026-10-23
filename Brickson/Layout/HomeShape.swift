@@ -21,15 +21,24 @@ nonisolated struct HomeShape: Equatable, Sendable {
     static let controlSpacing: CGFloat = 8
     /// The room between a label and its control's edge (`HomeButtonStyle`).
     static let labelInset = (horizontal: CGFloat(4), vertical: CGFloat(6))
+    /// The room beside Emergency's words: as much as above and below them,
+    /// which no ring reaches (`HomeButtonLook`). A label SwiftUI shrinks to
+    /// fit spreads to its inset, and Emergency's, a column wide, does at the
+    /// largest text sizes on a phone, where at the usual inset its last
+    /// letter met the selection ring while the emergency phrases showed.
+    /// The categories, also selected, keep the usual inset (docs/HANDOFF.md,
+    /// *Known gaps*).
+    static let emergencyLabelInset = labelInset.vertical
 
-    /// Below this content width the categories sit two by two, the phrase
-    /// tiles use the smaller tile font, and controls get the touch sizes.
-    /// From this width up, controls get the gaze floors and the categories
-    /// take one row of four wherever four and Settings fit beside each other
-    /// (from 584pt; `HomeShapeTests`).
+    /// Below this content width the phrase tiles use the smaller tile font
+    /// and controls get the touch sizes. From this width up, controls get
+    /// the gaze floors and the categories take one band of four, with Stop
+    /// above the first, wherever four and Settings fit beside each other
+    /// (`HomeShapeTests`).
     static let regularMinimumWidth: CGFloat = 560
-    /// Everyday categories with their own button. More than this scroll
-    /// inside the category region; the starter library has exactly four.
+    /// Everyday categories with a cell of their own. More than this share
+    /// the last cell, which then scrolls; the starter library has exactly
+    /// four.
     static let categoryCapacity = 4
     /// The narrowest phrase tile that holds the starter library's widest
     /// word at its default size on a narrow window: "understand." at 17pt is
@@ -40,35 +49,35 @@ nonisolated struct HomeShape: Equatable, Sendable {
 
     let isCompact: Bool
     let gridColumns: Int
-    /// The height of a quick control (Yes, No, Again and Emergency): one
-    /// line of its label at the person's text size, or the floor if that is
-    /// taller. On wide windows the floor is AGENTS.md's quick-control floor
-    /// for gaze (88pt); on narrow ones, a touch size that leaves the phrase
-    /// grid room.
+    /// The height of a quick control (Yes, No, Emergency, Again and Get
+    /// Attention): one line of its label at the person's text size, or the
+    /// floor if that is taller. On wide windows the floor is AGENTS.md's
+    /// quick-control floor for gaze (88pt); on narrow ones, a touch size
+    /// that leaves the phrase grid room.
     let quickControlHeight: CGFloat
-    /// The height of a category button: one line of its label at the
-    /// person's text size, or the floor: the gaze floor (72pt) on wide
-    /// windows, a touch size on narrow ones.
+    /// The height of a category button, Stop and Settings: one line of a
+    /// category's label at the person's text size, or the floor: the gaze
+    /// floor (72pt) on wide windows, a touch size on narrow ones.
     let categoryHeight: CGFloat
 
-    /// How the safety row holds Yes, No, Again and Emergency.
-    let safetyRow: SafetyRow
-    /// The width of Yes and of No.
+    /// The safety row is two rows of two equal columns on every window:
+    /// Yes and No sharing the leading column, then Emergency; under them
+    /// Again, then Get Attention, directly under Emergency. The width of
+    /// Yes and of No.
     let yesNoWidth: CGFloat
-    let againWidth: CGFloat
+    /// Emergency, Again and Get Attention each take a column.
     let emergencyWidth: CGFloat
+    let againWidth: CGFloat
+    let getAttentionWidth: CGFloat
 
-    /// Category buttons in a row: four on wide windows where they and
-    /// Settings fit, otherwise two.
-    let categoryColumns: Int
+    /// Where the categories, Stop's well and Settings go.
+    let categoryArrangement: CategoryArrangement
     /// The width of every category button.
     let categoryWidth: CGFloat
-    /// Where Settings sits in the categories region.
-    let settingsPlacement: SettingsPlacement
+    /// The width of Stop's well.
+    let stopWidth: CGFloat
     let settingsWidth: CGFloat
-    /// False where Settings beside the categories has room only for its
-    /// gear: from 296pt of content up to 332pt (with Bold Text, 316pt up
-    /// to 358pt, which takes in a 375pt phone). Its name stays its
+    /// False where Settings has room only for its gear. Its name stays its
     /// accessibility label (docs/DECISIONS.md, "Settings on Home").
     let settingsShowsName: Bool
 
@@ -95,66 +104,53 @@ nonisolated struct HomeShape: Equatable, Sendable {
         quickControlHeight = max(isCompact ? 64 : 88, quickControlLineHeight + insets)
         categoryHeight = max(isCompact ? 48 : 72, categoryLineHeight + insets)
 
-        // One row of five columns, Emergency across two, wherever Emergency
-        // and Again keep their minimums. Short of that, Again and Emergency
-        // at their minimums and Yes and No, the shortest words, sharing the
-        // rest, so a second row never takes a phrase row's height while Yes
-        // and No still fit. Otherwise Yes, No and Emergency in a row of four
-        // columns, Emergency across two, and Again across the row under them.
-        let share = max((contentWidth - 4 * spacing) / 5, minimum.again)
-        let wideEmergency = contentWidth - 3 * spacing - 3 * share
-        let narrowYesNo = (contentWidth - 3 * spacing - minimum.again - minimum.emergency) / 2
-        if wideEmergency >= minimum.emergency {
-            safetyRow = .oneRow
-            yesNoWidth = share
-            againWidth = share
-            emergencyWidth = wideEmergency
-        } else if narrowYesNo >= minimum.yesNo {
-            safetyRow = .oneRow
-            yesNoWidth = narrowYesNo
-            againWidth = minimum.again
-            emergencyWidth = minimum.emergency
-        } else {
-            let quarter = max(0, contentWidth - 3 * spacing) / 4
-            safetyRow = .twoRows
-            yesNoWidth = quarter
-            againWidth = contentWidth
-            emergencyWidth = 2 * quarter + spacing
-        }
+        // Two equal columns. Get Attention sits in the second row, never in
+        // the first: the message spans the full width above the first row,
+        // and a look resting on it must never meet an alarm. Emergency, at
+        // the first row's trailing end, is under Settings' Back to Talking,
+        // and Get Attention directly under Emergency (docs/DECISIONS.md,
+        // "Get Attention and Stop on Home").
+        let column = max(0, contentWidth - spacing) / 2
+        yesNoWidth = max(0, column - spacing) / 2
+        emergencyWidth = column
+        againWidth = column
+        getAttentionWidth = column
 
-        // Settings in a column after the categories: every cell the same
-        // width where the categories keep their minimum, otherwise Settings
-        // at its minimum and the categories sharing the rest. Wide windows
-        // try four categories in a row first. Where the word does not fit,
-        // Settings at the minimum for its gear alone, because a row of its
-        // own would take a phrase row's height. Where even that does not
-        // fit, Settings takes a row of its own under two columns of
-        // categories.
-        var band: (columns: Int, category: CGFloat, settings: CGFloat)?
-        search: for settingsMinimum in [minimum.settings, minimum.settingsSymbol] {
-            for columns in isCompact ? [2] : [4, 2] {
-                let count = CGFloat(columns)
-                let equal = (contentWidth - count * spacing) / (count + 1)
-                let shared = (contentWidth - count * spacing - settingsMinimum) / count
-                if equal >= minimum.category {
-                    band = (columns, equal, equal)
-                } else if shared >= minimum.category {
-                    band = (columns, shared, settingsMinimum)
-                }
-                if band != nil { break search }
+        // Wide windows try the slot plan's band first: Stop above the first
+        // category, the other three and Settings at the band's full height,
+        // every cell the same width where the categories keep their
+        // minimum, otherwise Settings at the minimum for its word and the
+        // categories sharing the rest. Short of that, three columns: Stop
+        // and two categories, then two categories and Settings, the
+        // categories at least at their minimum, Stop and Settings taking
+        // what is left (Settings showing its gear alone where its word does
+        // not fit). Where that leaves Stop too little, two columns of three
+        // rows. A category is directly under Stop in every arrangement.
+        var chosen: (CategoryArrangement, category: CGFloat, stop: CGFloat, settings: CGFloat)?
+        if !isCompact {
+            let equal = (contentWidth - 4 * spacing) / 5
+            let shared = (contentWidth - 4 * spacing - minimum.settings) / 4
+            if equal >= minimum.category {
+                chosen = (.band, equal, equal, equal)
+            } else if shared >= minimum.category {
+                chosen = (.band, shared, shared, minimum.settings)
             }
         }
-        if let band {
-            categoryColumns = band.columns
-            categoryWidth = band.category
-            settingsPlacement = .beside
-            settingsWidth = band.settings
-        } else {
-            categoryColumns = 2
-            categoryWidth = max(0, contentWidth - spacing) / 2
-            settingsPlacement = .below
-            settingsWidth = contentWidth
+        if chosen == nil {
+            let category = max(minimum.category, (contentWidth - 2 * spacing) / 3)
+            let rest = contentWidth - 2 * spacing - 2 * category
+            if rest >= max(minimum.stop, minimum.settingsSymbol) {
+                chosen = (.threeColumns, category, rest, rest)
+            } else {
+                let half = max(0, contentWidth - spacing) / 2
+                chosen = (.twoColumns, half, half, half)
+            }
         }
+        let arrangement = chosen ?? (.twoColumns, 0, 0, 0)
+        categoryArrangement = arrangement.0
+        categoryWidth = arrangement.category
+        stopWidth = arrangement.stop
+        settingsWidth = arrangement.settings
         settingsShowsName = settingsWidth >= minimum.settings
     }
 
@@ -165,43 +161,26 @@ nonisolated struct HomeShape: Equatable, Sendable {
     /// windows, AGENTS.md's phrase-tile floor for gaze (110pt).
     var minimumTileHeight: CGFloat { isCompact ? 99 : 110 }
 
+    /// Two rows of quick controls on every window.
     var safetyRegionHeight: CGFloat {
-        switch safetyRow {
-        case .oneRow: quickControlHeight
-        case .twoRows: 2 * quickControlHeight + Self.controlSpacing
-        }
+        2 * quickControlHeight + Self.controlSpacing
     }
 
-    /// Rows of category buttons: enough for the capacity, whatever the
+    /// The categories, Stop's well and Settings: the same rows whatever the
     /// library holds, so the region's height never follows the library.
-    var categoryRows: Int {
-        (Self.categoryCapacity + categoryColumns - 1) / categoryColumns
-    }
-
-    /// The category buttons' part of the region: the part that scrolls
-    /// when a library has more categories than the capacity.
-    var categoryGridHeight: CGFloat {
-        CGFloat(categoryRows) * categoryHeight + CGFloat(categoryRows - 1) * Self.controlSpacing
-    }
-
-    var categoryGridWidth: CGFloat {
-        CGFloat(categoryColumns) * categoryWidth + CGFloat(categoryColumns - 1) * Self.controlSpacing
-    }
-
-    /// Beside the categories, Settings is as tall as all their rows; on its
-    /// own row, as tall as one category button.
-    var settingsHeight: CGFloat {
-        switch settingsPlacement {
-        case .beside: categoryGridHeight
-        case .below: categoryHeight
+    var categoryRegionHeight: CGFloat {
+        switch categoryArrangement {
+        case .band, .threeColumns: 2 * categoryHeight + Self.controlSpacing
+        case .twoColumns: 3 * categoryHeight + 2 * Self.controlSpacing
         }
     }
 
-    /// The categories and Settings.
-    var categoryRegionHeight: CGFloat {
-        switch settingsPlacement {
-        case .beside: categoryGridHeight
-        case .below: categoryGridHeight + Self.controlSpacing + categoryHeight
+    /// In the band, every cell but Stop's and the first category's is as
+    /// tall as the region; elsewhere, as tall as one category button.
+    var fullCellHeight: CGFloat {
+        switch categoryArrangement {
+        case .band: categoryRegionHeight
+        case .threeColumns, .twoColumns: categoryHeight
         }
     }
 
@@ -211,47 +190,106 @@ nonisolated struct HomeShape: Equatable, Sendable {
         max(1, (largestCategoryCount + gridColumns - 1) / gridColumns)
     }
 
-    /// How the safety row is arranged. The order on screen is chosen so that
-    /// Emergency, which only shows the emergency phrases, is the control at
-    /// the row's trailing end, under Settings' Back to Talking: a look still
-    /// resting there after Settings closes meets Emergency, never something
-    /// that speaks (invariant 10; docs/DECISIONS.md, "Settings on Home").
-    enum SafetyRow: Equatable, Sendable {
-        /// Yes, No, Again, Emergency.
-        case oneRow
-        /// Yes, No, Emergency; then Again across the width.
-        case twoRows
+    /// Every slot of the safety row and the categories region, in one
+    /// space whose origin is the safety row's top leading corner, with the
+    /// categories `regionSpacing` below it. `HomeView` builds the same
+    /// arrangement from stacks; the unit tests score what a held look meets
+    /// on these frames at every width, and the UI tests on the app's.
+    var slotFrames: [Slot: CGRect] {
+        let spacing = Self.controlSpacing
+        let quick = quickControlHeight
+        let secondRow = quick + spacing
+        var frames: [Slot: CGRect] = [
+            .yes: CGRect(x: 0, y: 0, width: yesNoWidth, height: quick),
+            .no: CGRect(x: yesNoWidth + spacing, y: 0, width: yesNoWidth, height: quick),
+            .emergency: CGRect(x: againWidth + spacing, y: 0, width: emergencyWidth, height: quick),
+            .again: CGRect(x: 0, y: secondRow, width: againWidth, height: quick),
+            .getAttention: CGRect(x: againWidth + spacing, y: secondRow, width: getAttentionWidth, height: quick),
+        ]
+        let top = safetyRegionHeight + Self.regionSpacing
+        let row = categoryHeight + spacing
+        let category = categoryWidth
+        func cell(_ x: CGFloat, _ y: CGFloat, _ width: CGFloat, _ height: CGFloat) -> CGRect {
+            CGRect(x: x, y: top + y, width: width, height: height)
+        }
+        switch categoryArrangement {
+        case .band:
+            frames[.stop] = cell(0, 0, stopWidth, categoryHeight)
+            frames[.category(0)] = cell(0, row, category, categoryHeight)
+            for index in 1..<Self.categoryCapacity {
+                frames[.category(index)] = cell(CGFloat(index) * (category + spacing), 0, category, fullCellHeight)
+            }
+            frames[.settings] = cell(CGFloat(Self.categoryCapacity) * (category + spacing), 0, settingsWidth, fullCellHeight)
+        case .threeColumns:
+            frames[.stop] = cell(0, 0, stopWidth, categoryHeight)
+            frames[.category(0)] = cell(stopWidth + spacing, 0, category, categoryHeight)
+            frames[.category(1)] = cell(stopWidth + category + 2 * spacing, 0, category, categoryHeight)
+            frames[.category(2)] = cell(0, row, category, categoryHeight)
+            frames[.category(3)] = cell(category + spacing, row, category, categoryHeight)
+            frames[.settings] = cell(2 * (category + spacing), row, settingsWidth, categoryHeight)
+        case .twoColumns:
+            let slots: [Slot] = [.stop, .category(0), .category(1), .category(2), .category(3), .settings]
+            for (index, slot) in slots.enumerated() {
+                frames[slot] = cell(
+                    CGFloat(index % 2) * (category + spacing), CGFloat(index / 2) * row, category, categoryHeight
+                )
+            }
+        }
+        return frames
     }
 
-    enum SettingsPlacement: Equatable, Sendable {
-        /// The last column, after the categories, as tall as their rows.
-        case beside
-        /// A row of its own under the categories.
-        case below
+    /// A place on Home with a stable identity (docs/DECISIONS.md, "Home's
+    /// slot plan"): the same slot whatever it shows.
+    enum Slot: Hashable, Sendable {
+        case yes, no, emergency, again, getAttention
+        case stop
+        /// An everyday category's cell, from 0 in the library's order.
+        case category(Int)
+        case settings
     }
 
-    /// The narrowest a control may be: its starter word at the default text
-    /// size, with `WordFit.widthSlack` and the label inset, so the word is
+    /// How the categories region holds Stop's well, the four category
+    /// cells and Settings. A category is directly under Stop in each, so a
+    /// look still resting where Stop was meets one, which only changes
+    /// which phrases show (invariant 10).
+    enum CategoryArrangement: Equatable, Sendable {
+        /// Wide windows: Stop above the first category, then the other
+        /// three and Settings at the band's full height.
+        case band
+        /// Stop, two categories; then two categories and Settings.
+        case threeColumns
+        /// Stop and a category; two categories; a category and Settings.
+        case twoColumns
+    }
+
+    /// The narrowest a control may be: its widest word at the default text
+    /// size, with `WordFit.widthSlack` and the label inset (Emergency's own,
+    /// `emergencyLabelInset`, for Emergency), so the word is
     /// drawn whole at every text size (labels step down to the default, never
     /// below). Measured on CI with the real fonts (`StarterLabelFitTests`),
     /// and wider with Bold Text on, which is measured at the heaviest weight
     /// (`LabelFont.boldTextUIFontWeight`). "Conversation" is the widest
-    /// starter category name, "Yes" the wider of Yes and No. Settings' gear
-    /// alone gets Apple's 44pt minimum target, which holds the gear at the
-    /// default size.
+    /// starter category name, "Yes" the wider of Yes and No, "Attention"
+    /// Get Attention's wider word (it takes two lines where both do not
+    /// fit on one). Settings' gear alone gets Apple's 44pt minimum target,
+    /// which holds the gear at the default size.
     struct MinimumWidths: Equatable, Sendable {
         let yesNo: CGFloat
         let again: CGFloat
         let emergency: CGFloat
+        let getAttention: CGFloat
         let category: CGFloat
+        let stop: CGFloat
         let settings: CGFloat
         let settingsSymbol: CGFloat
 
         static let regular = MinimumWidths(
-            yesNo: 46, again: 64, emergency: 116, category: 118, settings: 80, settingsSymbol: 44
+            yesNo: 46, again: 64, emergency: 120, getAttention: 100,
+            category: 118, stop: 52, settings: 80, settingsSymbol: 44
         )
         static let boldText = MinimumWidths(
-            yesNo: 48, again: 70, emergency: 126, category: 128, settings: 86, settingsSymbol: 44
+            yesNo: 48, again: 70, emergency: 130, getAttention: 110,
+            category: 128, stop: 56, settings: 86, settingsSymbol: 44
         )
 
         static func forBoldText(_ boldText: Bool) -> MinimumWidths {

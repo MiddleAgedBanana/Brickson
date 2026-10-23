@@ -106,6 +106,29 @@ struct HomeButtonLookTests {
         }
     }
 
+    /// Fails if a ring could reach Emergency's words: its label inset is
+    /// set back to the usual one, which the selection ring passes. A label
+    /// SwiftUI shrinks to fit spreads to its inset, and Emergency's, a
+    /// column wide on a phone at the largest text sizes, did: its last
+    /// letter met the ring while the emergency phrases showed, and the
+    /// rendered-label UI test read "Emergenc" (PR #38's CI).
+    @Test func noRingReachesEmergencysWords() {
+        for showsBorders in [false, true] {
+            for state in Self.states {
+                let look = HomeButtonLook(
+                    isEnabled: state.isEnabled, isSelected: state.isSelected,
+                    isPressed: state.isPressed, showsBorders: showsBorders
+                )
+                for ring in look.rings {
+                    #expect(
+                        ring.depth < HomeShape.emergencyLabelInset,
+                        "\(state), Show Borders \(showsBorders), \(ring)"
+                    )
+                }
+            }
+        }
+    }
+
     /// Fails if, in light or dark mode, with Show Borders off or on, a
     /// press does not visibly change a control, selected or not, or a
     /// selected control looks like one that is not. "Visibly" is at least
