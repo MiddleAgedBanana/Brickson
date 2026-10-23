@@ -8,8 +8,8 @@ project runs: [`docs/SDLC.md`](SDLC.md).
 
 **State as of 2026-10-23: PR #14 (the library core), PR #33 (Settings
 on Home) and PR #35 (Show Borders on Home) are merged. PR #17 now
-incorporates main `43cea55` (PRs #39 and #37); its next hosted checks
-and fresh review remain required.**
+incorporates main `412f4cf` (PRs #39, #37 and #38); its next hosted
+checks and fresh review remain required.**
 Ten threads are working in parallel on the first release, R0.
 
 ## What the app does today
@@ -104,10 +104,12 @@ Xcode 27.1 (27A9275); PR #20 landed in `d79d836`.
   CI pending. Six findings on `9845a0d` now cover expanded push operands,
   Wget/curl URL sources, decoded Copilot endpoints, trap actions and exact
   fragment case; their regressions fail before correction and pass after it.
-  Main `43cea55` (PRs #39 and #37) is merged by merge commit. Eight
-  findings on `a4ed3d9` reproduce but are declined, past the two-round
-  fix cap, as ways round a guard against mistakes; the record lists them,
-  with `git add ..` and `source` first for a later guard pull request.
+  Main `43cea55` (PRs #39 and #37), then `412f4cf` (PR #38), are merged
+  by merge commits. Eight findings on `a4ed3d9` reproduce but are
+  declined, past the two-round fix cap, as ways round a guard against
+  mistakes, and one on `571c8fc` is a refusal of a harmless command; the
+  record lists them, with `git add ..` and `source` first for a later
+  guard pull request.
   New-head hosted checks and fresh review remain required.
   [Guardrail record](log/2026-10-22-agent-guardrail-reconciliation.md).
 

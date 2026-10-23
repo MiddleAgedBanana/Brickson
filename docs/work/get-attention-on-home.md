@@ -158,9 +158,10 @@ widths (the window less Home's 16pt margins).
   Stop's element leaves with the alarm). Where the scan cursor goes once
   Stop's element is gone has not been seen; the device check covers it
   (docs/HANDOFF.md, *Checks that need a real device*).
-- **Colours** (docs/DECISIONS.md, "Solid fills on Home"; pinned in
-  `PaletteTests` with the other fills): `AttentionFill` `#B45309`, white
-  text 5.02:1, against a black screen 4.18:1, against white 5.02:1;
+- **Colours** (pinned in `PaletteTests` with the other fills;
+  docs/DECISIONS.md, "Solid fills on Home, system glass elsewhere"):
+  `AttentionFill` `#B45309`, white text 5.02:1, against a black screen
+  4.18:1, against white 5.02:1;
   `StopFill` `#0F766E`, white text 5.47:1, against black 3.84:1, against
   white 5.47:1. Primary ink (the pressed ring) on each: 4.18 and 3.84 in
   light, 5.02 and 5.47 in dark.

@@ -1076,3 +1076,18 @@ Each is answered in its review thread:
 Of these, `git add ..` and `source` are the two an agent could reach by
 accident. They are the first candidates for a later guard pull request,
 each with a failing test first.
+
+One finding on `571c8fc` is declined too. The guard refuses
+`git commit -m 'Document $(git add -A)' README.md`, because `segments()`
+drops the single quotes that make the substitution literal text. The
+error refuses a harmless command and lets nothing through; reword the
+message or commit with `-F <file>`. It goes with the two above to the
+later guard pull request.
+
+A later merge brings in main `412f4cf`, PR #38 (Get Attention and Stop on
+Home), with no conflicts. The docs check then failed on one citation
+from it: `docs/work/get-attention-on-home.md` named a DECISIONS section
+by a shortened title. It now gives the full title, on one line, since
+the checker does not read a quoted title split across lines; breaking
+that title made the check fail again. The same three Python suites
+passed before the push.
