@@ -136,9 +136,11 @@ enum PhraseLibraryRepairer {
     /// Otherwise it inserts, and nothing already stored is renamed, moved
     /// or deleted (invariant 7): what it adds is ordered after what is
     /// there, and no sort order changes unless a hand-edited store leaves
-    /// no room after the last one, when the items beside the additions are
-    /// renumbered in the order they are shown
-    /// (`EmergencyRepair.sortOrders(adding:after:)`). If the save fails,
+    /// no room after the last one, or ties the emergency category with
+    /// others so that no new identity keeps its place; then the items
+    /// beside the additions, or the categories, are renumbered in the
+    /// order they are shown (`EmergencyRepair.sortOrders(adding:after:)`,
+    /// `EmergencyRepair.renumberedCategories`). If the save fails,
     /// that context is simply discarded: nothing reached the store, and no
     /// `rollback()` is needed (docs/LESSONS.md, "Never roll back a cascade
     /// delete").
@@ -191,6 +193,7 @@ enum PhraseLibraryRepairer {
                 throw .storeUnreadable
             }
             category = categories[index]
+            renumber(categories, repair.renumberedCategories)
             if let newIdentity = repair.newIdentity {
                 category.uuid = newIdentity
             }
@@ -210,7 +213,7 @@ enum PhraseLibraryRepairer {
             return .notSaved(repair)
         }
         logger.notice(
-            "Emergency was repaired: \(repair.phrases.count) starter phrases added, new identity \(repair.newIdentity != nil)."
+            "Emergency was repaired: \(repair.phrases.count) starter phrases added, new identity \(repair.newIdentity != nil), categories renumbered \(repair.renumberedCategories != nil)."
         )
         return .saved(repair)
     }

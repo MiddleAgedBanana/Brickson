@@ -652,6 +652,82 @@ struct PhraseLibraryTests {
         #expect(shown?.phrasesInOrder.map(\.text) == ["Come here, please."])
     }
 
+    /// Codex's third review on PR #37: a store damaged twice over. An
+    /// earlier category, `mine`'s, has the emergency category's identity,
+    /// and the emergency category shares its sort order and name with a
+    /// category just before it and one just after, whose identities leave
+    /// no new one between them. Home shows "My own words." for Emergency
+    /// (invariant 2).
+    private func storeWithNoIdentityToSpare() throws -> ModelContainer {
+        let container = try PhraseLibraryStore.makeInMemoryContainer()
+        let context = ModelContext(container)
+        let shadowing = PhraseCategory(name: mine.name, symbolName: mine.symbolName, sortOrder: 0, uuid: F.id(1))
+        context.insert(shadowing)
+        context.insert(Phrase(text: mine.phrases[0].text, sortOrder: 0, category: shadowing, uuid: mine.phrases[0].id))
+        let before = PhraseCategory(name: "Help", symbolName: "star.fill", sortOrder: 1, uuid: F.id(0))
+        context.insert(before)
+        let emergency = PhraseCategory(name: "Help", symbolName: "star.fill", sortOrder: 1, isEmergency: true, uuid: F.id(1))
+        context.insert(emergency)
+        context.insert(Phrase(text: "Come here, please.", sortOrder: 0, category: emergency, uuid: F.id(210)))
+        let after = PhraseCategory(name: "Help", symbolName: "star.fill", sortOrder: 1, uuid: F.id(2))
+        context.insert(after)
+        try context.save()
+        let ordered = PhraseCategory.orderedForDisplay([after, emergency, before, shadowing])
+        #expect(ordered.map(\.uuid) == [F.id(1), F.id(0), F.id(1), F.id(2)])
+        #expect(CategorySelection.resolve(ordered, selectedID: CategorySelection.emergency(in: ordered)?.uuid) === shadowing)
+        return container
+    }
+
+    /// The categories are renumbered 0, 1, 2, 3 in the order they are
+    /// shown, so none is ordered by identity any more, and the emergency
+    /// category gets a new identity. Fails if the repair keeps the old
+    /// identity (Emergency keeps opening "My own words."), if the new sort
+    /// orders are not saved or move anything, or if any identity but the
+    /// emergency category's, any name or any phrase changes.
+    @Test func aStoreWithNoIdentityToSpareIsRenumberedWithoutMovingAnything() throws {
+        let container = try storeWithNoIdentityToSpare()
+
+        let outcome = try PhraseLibraryRepairer.repairEmergency(container, starter: library)
+
+        guard case let .saved(repair) = outcome else {
+            Issue.record("The repair was not saved: \(outcome)")
+            return
+        }
+        #expect(repair.renumberedCategories == [0, 1, 2, 3])
+        let newIdentity = try #require(repair.newIdentity)
+        let stored = try categories(in: container)
+        #expect(stored.map(\.uuid) == [F.id(1), F.id(0), newIdentity, F.id(2)])
+        #expect(stored.map(\.sortOrder) == [0, 1, 2, 3])
+        #expect(stored.map(\.name) == ["Mine", "Help", "Help", "Help"])
+        #expect(stored.map { $0.phrasesInOrder.map(\.text) } == [["My own words."], [], ["Come here, please."], []])
+        let shown = CategorySelection.resolve(stored, selectedID: CategorySelection.emergency(in: stored)?.uuid)
+        #expect(shown?.phrasesInOrder.map(\.text) == ["Come here, please."])
+        #expect(try LibraryEditor.read(container) == repair.repaired)
+    }
+
+    /// Invariant 5, for the renumbering: fails if a new sort order or the
+    /// new identity reaches the store when the save fails.
+    @Test func aFailedRenumberingChangesNothing() throws {
+        let container = try storeWithNoIdentityToSpare()
+        let before = try LibraryEditor.read(container)
+
+        let outcome = try PhraseLibraryRepairer.repairEmergency(
+            container,
+            starter: library,
+            save: { _ in throw Failed() }
+        )
+
+        guard case let .notSaved(repair) = outcome else {
+            Issue.record("The failed save was not reported: \(outcome)")
+            return
+        }
+        #expect(repair.renumberedCategories == [0, 1, 2, 3])
+        #expect(try LibraryEditor.read(container) == before)
+        let stored = try categories(in: container)
+        #expect(stored.map(\.uuid) == [F.id(1), F.id(0), F.id(1), F.id(2)])
+        #expect(stored.map(\.sortOrder) == [0, 1, 1, 1])
+    }
+
     /// Invariant 5, for the new identity: fails if it reaches the store
     /// when the save fails, or if the copy to speak from keeps the old one.
     @Test func aFailedNewIdentityChangesNothing() throws {

@@ -718,11 +718,13 @@ category's phrases (`CategorySelection.resolve` finds a category by
 identity), so the emergency category gets a new identity, which nobody
 sees, chosen so it keeps its place and stays the first emergency
 category. What is added goes after the last item. Nothing already stored
-is moved or deleted, and nothing is changed but that identity and, where
-a hand-edited store leaves no room after the last sort order (at or near
-the largest an `Int` holds), the sort orders of the items beside the
-additions, renumbered 0, 1, 2 in the order they are shown, which shows
-them exactly as before. The repair is saved once from a context of its
+is moved or deleted, and nothing is changed but that identity and, in
+two cases, sort orders renumbered 0, 1, 2 in the order they are shown,
+which shows everything exactly as before: those of the items beside the
+additions, where a hand-edited store leaves no room after the last sort
+order (at or near the largest an `Int` holds), and those of the
+categories, where no new identity would keep the emergency category in
+its place (below). The repair is saved once from a context of its
 own. If that save fails, the store is left as it was for the next launch
 to try again, and the app speaks from a copy in memory holding the
 person's whole library with the repair, and says changes won't be kept.
@@ -733,12 +735,16 @@ working again.
 Only categories with the same sort order and name are ordered by
 identity, so only those limit the new identity: against each it must
 sort as the old one did, and another emergency category with the same
-identity must stay after it. The repair tries 64 new identities and
-keeps the old one if none fits, which needs a store made for it: several
-categories with the emergency category's name and sort order whose
-identities sit close around its own. Brickson keeps every identity
-unique and numbers sort orders 0, 1, 2, so none of its own stores needs
-a new identity or a renumbering.
+identity must stay after it. The repair tries 64 random new identities.
+If none fits, because the categories around the emergency category leave
+too little room between their identities or none at all, it renumbers
+the categories 0, 1, 2 in the order they are shown, so that none is
+ordered by identity any more, and takes any new identity: Emergency then
+always opens the emergency category (Codex's third review on PR #37
+found the earlier version kept the old identity there; in a fuzz of
+damaged stores full of such ties, 32 of 15,376 stayed broken). Brickson
+keeps every identity unique and numbers sort orders 0, 1, 2, so none of
+its own stores needs a new identity or a renumbering.
 
 ## Editing the library
 

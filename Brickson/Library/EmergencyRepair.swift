@@ -11,9 +11,11 @@ import Foundation
 /// starter emergency phrases, which are neutral words anyone might choose.
 /// Nothing already in the library is deleted, moved, renamed or rewritten,
 /// the person's own words above all (invariant 7). The only stored things
-/// it may change are an identity nobody sees (`newIdentity`) and, where a
-/// hand-edited store leaves no room after its last sort order, sort orders
-/// renumbered in the order they are shown (`sortOrders(adding:after:)`).
+/// it may change are an identity nobody sees (`newIdentity`) and sort
+/// orders renumbered in the order they are shown, which shows everything
+/// exactly as before: where a hand-edited store leaves no room after its
+/// last sort order (`sortOrders(adding:after:)`), and where no new identity
+/// would keep the emergency category in its place (`renumberedCategories`).
 ///
 /// Plain values, no SwiftData: `PhraseLibraryRepairer` reads the store,
 /// asks `needed(in:sortOrders:starter:makeID:)`, and writes what it says.
@@ -33,9 +35,16 @@ nonisolated struct EmergencyRepair: Equatable, Sendable {
     /// earlier category already uses its own. Home finds the category it
     /// shows by identity (`CategorySelection.resolve`), so until then
     /// Emergency opens that earlier category's phrases. Nil when its
-    /// identity is its own, or in a store made so that no new identity
-    /// keeps it in its place (`identity(replacing:in:sortOrders:ids:makeID:)`).
+    /// identity is its own.
     let newIdentity: UUID?
+    /// Sort orders for the library's categories, in the order they are
+    /// shown, when none of the new identities tried keeps the emergency
+    /// category in its place among categories with its sort order and
+    /// name (`identity(replacing:in:sortOrders:ids:makeID:)`): 0, 1, 2 in
+    /// the order they are shown, which shows them exactly as before and
+    /// leaves no two ordered by identity, so `newIdentity` keeps its place
+    /// whatever it is. Nil otherwise, which is almost always.
+    let renumberedCategories: [Int]?
     /// The starter emergency phrases, with the starter's identities where
     /// they are free. Empty when the emergency category already has words
     /// and only needs `newIdentity`.
@@ -45,8 +54,8 @@ nonisolated struct EmergencyRepair: Equatable, Sendable {
     let repaired: LibrarySnapshot
 
     /// How many new identities `needed(in:sortOrders:starter:makeID:)`
-    /// tries before it keeps the old one
-    /// (`identity(replacing:in:sortOrders:ids:makeID:)`).
+    /// tries before it renumbers the categories instead
+    /// (`renumberedCategories`).
     static let identityAttempts = 64
 
     /// The repair `library` needs, or nil when Emergency already opens
@@ -85,6 +94,7 @@ nonisolated struct EmergencyRepair: Equatable, Sendable {
         var repaired = library
         let place: Place
         var newIdentity: UUID?
+        var renumberedCategories: [Int]?
         var phrases: [LibrarySnapshot.Phrase] = []
 
         if let index = library.categories.firstIndex(where: \.isEmergency) {
@@ -97,6 +107,10 @@ nonisolated struct EmergencyRepair: Equatable, Sendable {
                     ids: &ids,
                     makeID: makeID
                 )
+                if newIdentity == nil {
+                    renumberedCategories = Array(library.categories.indices)
+                    newIdentity = ids.newCategoryID(makeID)
+                }
             }
             if !category.phrases.contains(where: { !LibraryText.isBlank($0.text) }) {
                 phrases = words.map { LibrarySnapshot.Phrase(id: ids.phraseID(preferring: $0.id, makeID), text: $0.text) }
@@ -120,12 +134,19 @@ nonisolated struct EmergencyRepair: Equatable, Sendable {
                 phrases: phrases
             ))
         }
-        return EmergencyRepair(place: place, newIdentity: newIdentity, phrases: phrases, repaired: repaired)
+        return EmergencyRepair(
+            place: place,
+            newIdentity: newIdentity,
+            renumberedCategories: renumberedCategories,
+            phrases: phrases,
+            repaired: repaired
+        )
     }
 
     /// A new identity for the emergency category at `index` that keeps it in
     /// its place and keeps it the first emergency category, or nil if none
-    /// of `identityAttempts` tries does.
+    /// of `identityAttempts` tries does, and the categories must be
+    /// renumbered instead (`renumberedCategories`).
     ///
     /// The display order compares sort orders, then names, then identities
     /// (`PhraseCategory.orderedForDisplay`), so only a category with the
@@ -134,9 +155,12 @@ nonisolated struct EmergencyRepair: Equatable, Sendable {
     /// those before it, before those after it. One that has the old
     /// identity as well was never ordered against it at all, so the new
     /// identity may put it on either side, except that another emergency
-    /// category must stay after it. Only a store made so that no identity
-    /// fits gives nil. Brickson keeps identities unique, so none of its own
-    /// stores gets here.
+    /// category must stay after it. Those around it can leave too little
+    /// room for a random identity to land in, or none at all, in a store
+    /// damaged twice over: one category sharing the emergency category's
+    /// identity, and others sharing its sort order and name. Brickson keeps
+    /// identities and sort orders unique, so none of its own stores gets
+    /// here.
     private static func identity(
         replacing index: Int,
         in library: LibrarySnapshot,

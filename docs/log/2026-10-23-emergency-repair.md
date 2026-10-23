@@ -32,16 +32,26 @@ recorded as needed and not built.
   and name are ordered by identity, so against those (the repair is
   given the stored sort orders) the new one must sort as the old one
   did, and another emergency category with the same identity must stay
-  after it; the repair tries 64 and keeps the old identity if none fits.
-  A later category sharing it changes nothing for Emergency (Home finds
-  the first) and is left alone. Codex's second review found the first
-  version compared against every category with the same name, sort
-  order or not, so a same-named category with the largest identity
+  after it. A later category sharing it changes nothing for Emergency
+  (Home finds the first) and is left alone. Codex's second review found
+  the first version compared against every category with the same name,
+  sort order or not, so a same-named category with the largest identity
   could leave Emergency broken; that is the rule above.
+- **When no new identity fits** (Codex's third review). The repair tries
+  64 random identities. Before, it then kept the old one, which the
+  records called a store made for it; but those around the emergency
+  category can leave too little room between their identities, or none,
+  and a fuzz of damaged stores full of such ties left 32 of 15,376
+  broken. Now it renumbers the categories 0, 1, 2 in the order they are
+  shown, which shows them exactly as before and leaves none ordered by
+  identity, and takes any new identity
+  (`EmergencyRepair.renumberedCategories`). Emergency always opens the
+  emergency category after the repair.
 - **`PhraseLibraryRepairer`** reads the store and writes what the repair
   says in a context of its own, saved once. Otherwise it inserts: no
   stored name, phrase or flag changes, and new sort orders come after the
-  largest one there.
+  largest one there, except for the two renumberings in the items just
+  before and after this one.
 - **No room at the end** (Codex's second review). A hand-edited store
   can leave no room after its last sort order. The first version let the
   additions tie at `Int.max`, where the tie falls to name or words and
@@ -87,7 +97,8 @@ See the pull request; the branch was cut from `main` at `f34e8ae` (PR #33).
   launch's own writes. A second independent review of the new identity
   (correctness, CI, records, each finding checked by two more reviewers)
   found the same over-strict rule Codex did, and three stale sentences,
-  all fixed here.
+  all fixed here. The third round (the renumbering when no identity
+  fits) had one more independent review before it was pushed.
 - **On a Linux machine with Swift 6.4.1** (not the app's toolchain: no
   Xcode, SwiftData or UIKit), in a throwaway package with the project's
   concurrency settings: `EmergencyRepair` and its 23 tests
@@ -121,7 +132,8 @@ See the pull request; the branch was cut from `main` at `f34e8ae` (PR #33).
   only with phrases; taking any identity offered, or ignoring the
   same-named categories before or after
   (`aNewIdentityKeepsTheCategoryAmongSameNamedOnesInPlace`); and trying
-  without end (`withoutAnIdentityThatKeepsItsPlaceTheOldOneStays`).
+  without end (`withoutAnIdentityThatKeepsItsPlaceTheCategoriesAreRenumbered`,
+  as the test is now named).
 - **The second review round, the same way:** seven more, each caught.
   Ignoring the sort orders
   (`aSameNamedCategoryWithAnotherSortOrderDoesNotLimitTheNewIdentity`);
@@ -133,6 +145,15 @@ See the pull request; the branch was cut from `main` at `f34e8ae` (PR #33).
   (`sortOrdersThatDoNotMatchTheLibraryAreIgnored`); and always
   renumbering, never renumbering, or finding no room one place too soon
   (`sortOrdersFollowTheLastOneAndRenumberOnlyWithoutRoom`).
+- **The third review round, the same way:** seven more, each caught by
+  `withoutAnIdentityThatKeepsItsPlaceTheCategoriesAreRenumbered` unless
+  named: keeping the old identity when none fits (as before); renumbering
+  without a new identity, or a new identity without renumbering;
+  renumbering in another order; taking an identity another category has;
+  and renumbering when an identity fits or when only phrases are needed
+  (`anEmergencyCategoryShadowedByAnEarlierOneGetsANewIdentity`,
+  `aNewIdentityKeepsTheCategoryAmongSameNamedOnesInPlace`,
+  `anEmptyEmergencyCategoryGetsTheStarterPhrases`).
 - **A fuzz of 40,000 random damaged stores**, in a throwaway test on the
   same Linux machine (not committed): two to six categories each, with
   repeated identities, sort orders and names (canonically equivalent
@@ -144,6 +165,15 @@ See the pull request; the branch was cut from `main` at `f34e8ae` (PR #33).
   was given a new identity. On the first version an independent
   reviewer's fuzz left 81 of 1,221 such stores broken, 73 of them through
   the same-name rule Codex found.
+- **A second fuzz, of damaged stores full of ties**: three to fourteen
+  categories, most with the emergency category's name, sort orders 0 or
+  1, random identities, and an earlier category given the emergency
+  category's identity. Before the third round 32 of 15,376 stayed broken
+  (no identity among the 64 tried fitted); after it, none of 15,495, 27
+  of them renumbered, with nothing moved but the emergency category among
+  categories identical to it and the first emergency category unchanged.
+  The first fuzz, rerun with the renumbering, still fixes all 2,386 and
+  renumbers none.
 - **The SwiftData side compiles against stand-ins on Linux** (types with
   SwiftData's and OSLog's shapes and no behaviour): `StarterLibrary.swift`,
   `LibraryEditor.swift`, `CategorySelection.swift` and
@@ -180,8 +210,13 @@ See the pull request; the branch was cut from `main` at `f34e8ae` (PR #33).
   (`aShadowedEmergencyCategoryGetsANewIdentityInTheStore`); a repair not
   given the stored sort orders
   (`aSameNamedCategoryWithAnEarlierSortOrderDoesNotStopTheNewIdentity`);
-  and a new identity that reaches the store when the save fails, or is
-  missing from the copy (`aFailedNewIdentityChangesNothing`).
+  a store whose ties leave no identity to spare that keeps its old one,
+  or whose renumbering is not saved or moves something
+  (`aStoreWithNoIdentityToSpareIsRenumberedWithoutMovingAnything`); a
+  renumbering that reaches the store when the save fails
+  (`aFailedRenumberingChangesNothing`); and a new identity that reaches
+  the store when the save fails, or is missing from the copy
+  (`aFailedNewIdentityChangesNothing`).
   `everyLaunchTurnsAutosaveOff` covers the two new launch paths.
 
 ## Not verified

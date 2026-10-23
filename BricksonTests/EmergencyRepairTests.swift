@@ -4,9 +4,10 @@ import Testing
 
 /// The launch repair that gives Emergency something to say in a damaged
 /// library, checked without a store. It never deletes, moves or rewrites
-/// anything in the library (invariant 7); the one stored thing it may
-/// change is the emergency category's identity. Each test names the change
-/// that would make it fail.
+/// anything in the library (invariant 7); the stored things it may change
+/// are the emergency category's identity and, only where that or a full
+/// store needs it, sort orders renumbered in the order they are shown.
+/// Each test names the change that would make it fail.
 struct EmergencyRepairTests {
     private typealias F = LibraryFixtures
     /// Stands in for the bundled starter library: its emergency category is
@@ -182,6 +183,8 @@ struct EmergencyRepairTests {
 
         #expect(repair.place == .existingCategory(at: 1))
         #expect(repair.phrases == F.emergency.phrases)
+        #expect(repair.newIdentity == nil)
+        #expect(repair.renumberedCategories == nil)
         #expect(repair.repaired == F.library)
         expectOnlyAdditions(from: damaged, to: repair.repaired)
     }
@@ -233,7 +236,7 @@ struct EmergencyRepairTests {
     /// category's identity, and then Emergency opens that category's
     /// phrases instead (invariant 2). Fails if the emergency category keeps
     /// its identity, if the earlier one is given the new identity instead,
-    /// or if anything else changes.
+    /// or if anything else changes, sort orders included.
     @Test func anEmergencyCategoryShadowedByAnEarlierOneGetsANewIdentity() throws {
         var shadowing = F.basics
         shadowing.id = F.emergencyID
@@ -244,6 +247,7 @@ struct EmergencyRepairTests {
 
         #expect(repair.place == .existingCategory(at: 1))
         #expect(repair.newIdentity == F.id(900))
+        #expect(repair.renumberedCategories == nil)
         #expect(repair.phrases.isEmpty)
         var expected = damaged
         expected.categories[1].id = F.id(900)
@@ -298,7 +302,8 @@ struct EmergencyRepairTests {
     /// of their identities, so against those the new identity must sort as
     /// the old one did. Fails if the repair takes the first new identity it
     /// is given (930 sorts before the earlier category's 935), or one that
-    /// sorts after the later category (960).
+    /// sorts after the later category (960), or renumbers the categories
+    /// when an identity fits.
     @Test func aNewIdentityKeepsTheCategoryAmongSameNamedOnesInPlace() throws {
         var emergency = F.emergency
         emergency.id = F.id(940)
@@ -313,6 +318,7 @@ struct EmergencyRepairTests {
 
         let repair = try #require(needed)
         #expect(repair.newIdentity == F.id(945))
+        #expect(repair.renumberedCategories == nil)
         #expect(offered.isEmpty)
     }
 
@@ -404,31 +410,46 @@ struct EmergencyRepairTests {
         #expect(repair.newIdentity == F.id(936))
     }
 
-    /// When no identity offered keeps the category in place, it keeps its
-    /// own, and the phrases it needs are still added. Fails if the repair
-    /// gives up on the phrases, takes an identity that moves it, or keeps
-    /// asking for identities without end.
-    @Test func withoutAnIdentityThatKeepsItsPlaceTheOldOneStays() throws {
+    /// When no identity tried keeps the category in place among those with
+    /// its sort order and name, the categories are renumbered 0, 1, 2 in
+    /// the order they are shown, which shows them exactly as before and
+    /// leaves none ordered by identity, and the next new identity is taken
+    /// (Codex's third review on PR #37). The phrases it needs are still
+    /// added. Fails if the repair keeps the old identity (Emergency would
+    /// still open the earlier category), takes a new one without
+    /// renumbering, renumbers in another order, takes an identity another
+    /// category has, gives up on the phrases, or keeps asking for
+    /// identities without end.
+    @Test func withoutAnIdentityThatKeepsItsPlaceTheCategoriesAreRenumbered() throws {
+        let tried = EmergencyRepair.identityAttempts
         var empty = F.emergency
         empty.id = F.id(940)
         empty.phrases = []
-        let damaged = LibrarySnapshot(categories: [shadowing(F.id(940)), namedLikeEmergency(F.id(939)), empty])
+        // A later category has the identity offered after the ones tried.
+        var later = shadowing(F.id(tried + 1))
+        later.name = "Later"
+        let damaged = LibrarySnapshot(categories: [shadowing(F.id(940)), namedLikeEmergency(F.id(939)), empty, later])
         // Every identity offered sorts before 939.
         let ids = SequentialIDs(startingAt: 1)
 
-        let needed = EmergencyRepair.needed(in: damaged, sortOrders: [0, 1, 1], starter: starter, makeID: ids.make)
+        let needed = EmergencyRepair.needed(in: damaged, sortOrders: [0, 1, 1, 2], starter: starter, makeID: ids.make)
 
         let repair = try #require(needed)
-        #expect(repair.newIdentity == nil)
+        #expect(repair.renumberedCategories == [0, 1, 2, 3])
+        #expect(repair.newIdentity == F.id(tried + 2))
         #expect(repair.phrases.map(\.text) == F.emergency.phrases.map(\.text))
-        #expect(repair.repaired.categories.map(\.id) == [F.id(940), F.id(939), F.id(940)])
+        #expect(repair.repaired.categories.map(\.id) == [F.id(940), F.id(939), F.id(tried + 2), F.id(tried + 1)])
+        #expect(shownByEmergency(repair.repaired)?.isEmergency == true)
         let next = ids.make()
-        #expect(next == F.id(EmergencyRepair.identityAttempts + 1))
+        #expect(next == F.id(tried + 3))
 
         var withWords = damaged
         withWords.categories[2].phrases = F.emergency.phrases
-        let again = EmergencyRepair.needed(in: withWords, sortOrders: [0, 1, 1], starter: starter, makeID: SequentialIDs(startingAt: 1).make)
-        #expect(again == nil)
+        let again = EmergencyRepair.needed(in: withWords, sortOrders: [0, 1, 1, 2], starter: starter, makeID: SequentialIDs(startingAt: 1).make)
+        let identityOnly = try #require(again)
+        #expect(identityOnly.renumberedCategories == [0, 1, 2, 3])
+        #expect(identityOnly.newIdentity == F.id(tried + 2))
+        #expect(identityOnly.phrases.isEmpty)
     }
 
     // MARK: Sort orders for what is added
