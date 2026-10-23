@@ -733,6 +733,19 @@ Shortcuts. **Never apply** `core-data` skills (this app uses SwiftData),
   passing tests, so read the JSON attached to each test in the result
   (Xcode's Report navigator), or run `xcodebuild` without xcbeautify. Say
   which simulator and iOS version the numbers came from.
+- **Measuring a slow press and a slide:** `HeldSlideProbeTests` is
+  opt-in (`TEST_RUNNER_BRICKSON_SLIDE_PROBE=1 scripts/test.sh ui
+  '-only-testing:BricksonUITests/HeldSlideProbeTests'`) and reports in its
+  attachments, like the keyboard probe. The large content viewer follows
+  the app's own text size, so `launchedApp(textSize: .ax5)` turns it on
+  whatever the simulator is set to. The test build that gives Home's
+  controls the viewer is in
+  `docs/log/2026-10-23-large-content-and-iphone-duo.md`; never ship it.
+- **The iPhone Duo simulator starts folded**, on its outer display. Only
+  Xcode's Device Hub window opens or folds it: `xcrun simctl` and
+  `XCUIDevice` cannot, and turning a display off does not unfold it.
+  `DESTINATION='platform=iOS Simulator,id=<udid>' scripts/test.sh ui`
+  runs the UI tests on whichever display is showing.
 - **Simulator audio is unreliable.** Every sound check needs a real device.
 - **Apple's accessibility audit can time out on CI** with domain
   `com.apple.xcode.xctest.accessibilityAudit`, code `-56`. The UI suite

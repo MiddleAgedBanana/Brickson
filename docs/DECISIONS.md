@@ -54,7 +54,7 @@ holds.
 | Home first with setup as a place in Settings, the Settings root, the voice picker, the Privacy row, the largest sizes when nobody answers setup, an "Anything changed?" check-in every three months that waits 30 days after Not Now | "First launch opens Home; setup lives in Settings", "Settings is a cover with a fixed safety bar", "Settings resets when idle and never closes", "Setup answers are kept as offered, never as completed", "Check-ins come every three months", "The privacy policy ships inside the app", "Speed is a set of fixed choices" (Settings and first run; PR #23) |
 | Voice Settings keeping its rows and words in place while voices change, and an explained Ask button for Personal Voice that moves nothing and adds no button on the visit that asked (switched on after device check D1) | "Voice Settings keeps its places while it is open", "Asking for Personal Voice from Voice Settings", and a paragraph in "A Personal Voice is used only while it is allowed" (Voice screen in Settings, 2026-10-22) |
 | Home's scan order (Yes, No and Emergency first, regions as containers) and the names Voice Control and Full Keyboard Access use, the visible words first | "Home's scan order and names" (Accessibility implementation, first pass) |
-| Home's border, pressed and selection rings under Show Borders, and the Large Content Viewer held back from Home's speaking controls until a device check | "Show Borders and the Large Content Viewer on Home" (Accessibility pass two) |
+| Home's border, pressed and selection rings under Show Borders, and no Large Content Viewer on Home's controls except Settings' gear where it shows alone (with it, a slow press speaks nothing) | "Show Borders and the Large Content Viewer on Home" (Accessibility pass two) |
 | Get Attention on Home under Emergency, Stop in a well of its own with a category under it, "Help" as Get Attention's other name, the status line's order, a silent stand-in tone for UI tests | "Get Attention and Stop on Home" (Get Attention and Stop on Home; PR #38) |
 | A compiler warning fails the build in every target and configuration | "Warnings are errors" (Warnings as errors) |
 | The exceptions to Apple's current frameworks first, and the moves made and planned | "Apple's current frameworks first" (the rule is the owner's, 2026-10-22) |
@@ -1256,6 +1256,14 @@ running on these windows):
   scrolls, with tiles of about 95pt and 65pt against the 110pt minimum,
   because the second safety row and the categories' second row take
   about 176pt. Portrait fits on both.
+- iPhone Duo's outer display, the phone closed (2026-10-23, seen in the
+  iPhone Duo simulator, not on CI): a 466×678pt window whose trailing
+  edge holds the status bar, leaving Home 350pt of content. It scrolls
+  at the default text size: Basics' and Needs' third row runs from 588.7
+  to 687.7pt, past the window, as on the 375×667pt phone, with
+  `HomeLayoutTests` failing there
+  ([`log/2026-10-23-large-content-and-iphone-duo.md`](log/2026-10-23-large-content-and-iphone-duo.md)).
+  The inner display, the phone open, has not run.
 - Every iPad window CI runs, both orientations, default and AX5: expected to
   fit; `HomeLayoutTests` checks them. On the 13-inch iPad the tiles are
   about 276, 236, 161 and 121pt (portrait and landscape, default and
@@ -2352,39 +2360,62 @@ R0 item 3's accessibility work (docs/ACCESSIBILITY.md, section 6;
   are the system's label and background colours. Settings and setup use
   the system's bordered style, which follows the setting itself (a device
   check).
-- **No Large Content Viewer on Home's speaking controls yet.** The
-  coverage list planned it for every label the fitting type shrinks, and
-  this pull request first built it (`accessibilityShowsLargeContentViewer` on each Home button).
-  Review found a risk in it. For UIKit's own controls, Apple documents
-  that with the viewer on, a touch held on one control that slides onto
+- **No Large Content Viewer on Home's controls, except Settings' gear**
+  (measured 2026-10-23 on Yes, No and the phrase tiles). The coverage
+  list planned it for every label the fitting type shrinks, and PR #35
+  first built it (`accessibilityShowsLargeContentViewer` on each Home
+  button), then held it back: for UIKit's own controls Apple documents
+  that, with the viewer, a touch held on one control that slides onto
   another activates the second when the finger lifts
-  (`largeContentViewerInteraction(_:didEndOn:at:)`); that is how a tab
-  bar works. Whether SwiftUI buttons do the same has not been seen yet.
-  If they do, on Home a touch begun on Yes that drifts 8pt onto No says
-  "No.", and a drift from one phrase tile to the next speaks the next
-  phrase: words the person did not choose, by a hand that may be weak or
-  unsteady. Without the viewer, a touch stays with the view it began in
-  (Apple, "Using responders and the responder chain to handle events":
-  the touch's view never changes, even when it moves outside), so a
-  touch begun on Yes is expected to say Yes or nothing; the same device
-  check confirms it.
-  `SpokenUtteranceTracker` absorbs only a repeat of the same phrase, so it
-  does not help. The viewer stays off them until a device check with a
-  test build shows what a slide does in SwiftUI (docs/HANDOFF.md, *Checks
-  that need a real device*). If a slide activates the control under the
-  finger, Home gets the viewer only where a slide cannot reach a control
-  that speaks, or not at all, and the owner hears the trade-off first.
-  Settings' gear has the viewer where it shows alone (PR #33, "Settings
-  on Home"). Settings never speaks, but a slide from the gear could end
-  on a control that does, so the same check slides from the gear onto
-  each control beside it, and the same rule decides whether it keeps the
-  viewer.
-  Meanwhile labels never shrink below the default size, and the system's
-  Zoom enlarges any of them.
+  (`largeContentViewerInteraction(_:didEndOn:at:)`), so a touch begun on
+  Yes might say "No.". On iPhone 17 and iPad Pro 13-inch simulators at
+  the largest text size (AX5), with XCTest's touches and a test build
+  that gave Yes, No and the phrase tiles the viewer, no touch activated
+  the control it ended on. Something worse happened instead: a press on
+  Yes of 0.2 s or longer said nothing, lifted in place (0.2 to 1.5 s) or
+  slid onto No, and so did a held slide between tiles and (measured on
+  the iPhone) a half-second press on No and on a tile; only a 0.1 s tap
+  spoke. A slow press is what
+  a weak or unsteady hand makes, and the people who would see the viewer
+  are those at accessibility text sizes (it was off at the default size
+  and on at AX5; sizes between were not tried), so it would break
+  invariant 2 (every phrase speaks on the first activation, by any input
+  method) for the people it is meant to help. The shipped build, with no
+  viewer on these controls, spoke for every press from 0.1 to 1.5 s, and
+  a slide from Yes onto No said Yes or nothing, never No
+  ([`log/2026-10-23-large-content-and-iphone-duo.md`](log/2026-10-23-large-content-and-iphone-duo.md)).
+  So none of Home's controls gets the viewer: not Yes, No, Again,
+  Emergency, Get Attention, Stop, the categories or the phrase tiles.
+  Again, Emergency, Get Attention, Stop and the categories were not
+  measured; they are the same SwiftUI `Button` in `HomeButtonStyle` and
+  are expected to behave alike. Adopting it "only where no neighbouring
+  control can be hit" would not help, since the harm is the press it
+  swallows, not a neighbour it reaches. `SlowPressTests` fails if Yes or
+  a phrase tile gets it. Labels never shrink below the default size, and
+  the system's Zoom enlarges any of them.
+- **Settings' gear keeps the viewer** where it shows alone (PR #33,
+  "Settings on Home"): from 304pt of content up to 332pt, or from 328pt
+  up to 358pt with Bold Text. Measured on iPhone Duo's outer display
+  with Bold Text on at AX5, where the gear shows alone (78pt wide): a tap
+  opened Settings; a 1.5 s hold, lifted in place or slid onto the
+  category beside it, the category above or the phrase tile below,
+  opened nothing and changed nothing; and in that window slow presses on
+  Yes (0.2 to 1.5 s), No and a tile still spoke. Settings never speaks,
+  so a held press that opens nothing costs a family member a quicker
+  second tap. If a slide from the gear ever activates the control it
+  ends on, the gear loses the viewer.
+- **Revisit** if a real finger behaves otherwise on a device, or a new
+  Xcode changes SwiftUI's viewer: `HeldSlideProbeTests` (opt-in) reruns
+  the measurement.
 
 *Before:* Home's button style did not read Show Borders, and on Home only
 Settings' gear had the Large Content Viewer (PR #33); the coverage list
 had the rest as R0-3 work.
+Until 2026-10-23 the viewer was held back from Home's speaking controls
+pending a device check of what a slide does; the simulator measurement
+above replaced "held back" with "off". It also answered the old check's
+"hold Yes and lift: does it speak once?" with "not at all", from a press
+of 0.2 s.
 
 ## Tests
 
