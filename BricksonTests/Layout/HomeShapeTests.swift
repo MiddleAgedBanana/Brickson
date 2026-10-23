@@ -263,6 +263,46 @@ struct HomeShapeTests {
         }
     }
 
+    /// Known gap (docs/DECISIONS.md, "Get Attention and Stop on Home",
+    /// *Fewer than three everyday categories*): a cell with no category
+    /// holds nothing, so where the cell under Stop's well is empty, a look
+    /// still resting where Stop was meets Again, which speaks. The cell
+    /// under the well holds the first category in the band, the third in
+    /// three columns and the second in two, so three everyday categories
+    /// are safe everywhere. No screen can remove a category yet; the
+    /// editing thread answers this before one can. Fails if a library of
+    /// three or more stops being safe, and, strict, once fewer are safe too.
+    @Test func aLibraryOfFewerThanThreeEverydayCategoriesLeavesAgainNearStop() {
+        let safeFrom = 3
+        var unsafe: [(count: Int, context: String)] = []
+        for (shape, context) in Self.everyShape {
+            let frames = shape.slotFrames
+            guard let stop = frames[.stop] else {
+                Issue.record("Stop has no slot (\(context))")
+                continue
+            }
+            for count in 0...HomeShape.categoryCapacity {
+                let shown = frames.filter { slot, _ in
+                    if case .category(let index) = slot { return index < count }
+                    return slot != .stop
+                }
+                let afterStop = Self.nearest(to: CGPoint(x: stop.midX, y: stop.midY), among: shown)
+                if !afterStop.byCentre.union(afterStop.byEdge).allSatisfy({ Self.categorySlots.contains($0) }) {
+                    unsafe.append((count, "\(count) categories, \(context)"))
+                }
+            }
+        }
+        // Counts, not the lists, in the expectations: a failure prints what
+        // it compared, and the lists run to thousands of shapes.
+        let unexpected = unsafe.filter { $0.count >= safeFrom }
+        let unexpectedCount = unexpected.count
+        #expect(unexpectedCount == 0, "first: \(unexpected.first?.context ?? "")")
+        let unsafeCount = unsafe.count
+        withKnownIssue("docs/DECISIONS.md, \"Get Attention and Stop on Home\": fewer than three everyday categories") {
+            #expect(unsafeCount == 0, "first: \(unsafe.first?.context ?? "")")
+        }
+    }
+
     /// The slots nearest `point` by the distance to their centres and by
     /// the distance to their nearest edge (zero inside one), each with
     /// every slot within half a point of the nearest.
