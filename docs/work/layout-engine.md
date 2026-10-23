@@ -3,7 +3,7 @@
 *Roadmap: docs/ROADMAP.md, Wave 3 item 3, "The layout engine, with no
 screen change yet" (R0 item 3, and R1's profile layout engine); this
 file also covers items 4 (Home on the engine) and 6 (Home on iPhone Duo,
-in every pose). Owner: the Layout engine thread. Status: intent.*
+in every pose). Owner: the Layout engine thread. Status: spec.*
 
 ## Intent
 
@@ -53,3 +53,143 @@ in every pose). Owner: the Layout engine thread. Status: intent.*
     at which text sizes?* And what happens where none can.
   - *How does the engine take a fold?* The plan says this waits for R0
     item 13's look at the open iPhone Duo, which has not happened.
+
+## Spec
+
+What the engine decides, and its answers to the open questions above.
+Nothing on screen changes in this pull request: `HomeLayout` is a plain
+type that nothing calls yet, and Home moves onto its frames in item 4.
+
+- **Inputs:** the window's size, its safe areas and the regions the
+  system reserves in it; the input profile (touch is the only one until
+  R1, Wave 3 items 8 and 9); one line of each of Home's label styles at
+  the person's text size, and whether Bold Text is on; and the library's
+  largest category. Never a device, a size class, the orientation or the
+  idiom. Home's state is not an input, so every slot has the same frame
+  in every state (invariant 8).
+- **States:** none added. Again's slot shows Speak while typing (item 5),
+  Stop's well is empty until an alarm sounds, and Phrases and Type keep
+  their frames once chosen.
+- **The arrangements** (*Where does each slot go when the slot plan meets
+  the decisions made after it?*), chosen from the width alone:
+  - *Compact*, below 664 points (714 with Bold Text). A: the message over
+    two columns, Phrases above Type in the trailing column, which is at
+    least as wide as Emergency's word. C: Yes, No and Emergency, then
+    Again over two columns and Get Attention directly under Emergency:
+    "Get Attention and Stop on Home" put it there, and it wins over the
+    slot plan's one-row safety row on these widths. B: Stop's well and two
+    categories, then two categories and Settings (two columns of three
+    rows where three columns leave Stop too little). D: three columns of
+    tiles, two where three would break "understand.".
+  - *Regular*, from 664 points (714): the slot plan's own. C in one row,
+    Emergency, Yes, No, Again, Get Attention; the message over the first
+    three columns and Phrases above Type over the last two; Stop's well
+    directly under Emergency with the first category under it, the other
+    three categories and Settings at the band's full height; four columns
+    of tiles.
+  - The line between them is where five equal columns each hold the
+    widest word one column carries (Emergency's: 120 points, 130 with
+    Bold Text). Today's stand-in switches at 592 points, so windows 592
+    to 663 points wide (iPad multitasking) move to the compact
+    arrangement.
+- **Sizes** (*What is the touch profile's floor, and what are today's
+  sizes?*):
+  - The touch floor is Apple's 44 by 44 points, about 6.9 mm on the
+    densest supported screens. A control is also never shorter than one
+    line of its words at the person's text size with 6 points above and
+    below, so no label steps down a size to fit a height (Apple's audit
+    reports that as text that does not follow Dynamic Type).
+  - Where the window has room once the starter library's largest
+    category (eight phrases) fits at the floors, sizes grow toward
+    today's in this order: the gaps between regions from 10 to 12 points,
+    the safety row to 64 points (88 on regular widths), the categories to
+    48 (72). The phrase grid takes the rest. The gap never goes below 10,
+    so it stays more than the 8 points between controls by more than the
+    half point the chain checks count as a tie.
+  - The safety row never grows into the keyboard's room
+    (`KeyboardAllowance`): it gives back its growth, then the gaps. A
+    category is never taller than the safety row, which keeps the
+    category under Stop's well nearer the well than Emergency above it.
+  - The controls are sized for the starter library's largest category. A
+    larger library scrolls at the tile floor; a smaller one gets taller
+    tiles; no control moves with the library.
+  - Tile floors: compact 107 points wide (118 with Bold Text) and 99
+    tall, the tallest starter phrase in four lines; regular 131 (146) by
+    100, three lines at the narrowest four-column tile (152 points). The
+    message is at least as wide as "understand." in its font at the
+    default size: 156 points (175).
+- **Where the starter library fits** (*Which windows can hold the starter
+  library without scrolling, and at which text sizes?*). Predicted from
+  Apple's SF Pro measured on Linux; `HomeLayoutEngineTests` pins the
+  table and `HomeLayoutEngineFontTests` checks its text sizes against
+  `LabelFont` on CI.
+
+  | Window | Fits through | With Bold Text | Safety row above the keyboard through |
+  |---|---|---|---|
+  | iPhone 17, 402×874 | AX1 | AX1 | AX5 |
+  | iPhone 17 Pro Max, 440×956 | AX3 | AX3 | AX5 |
+  | iPhone 16e, 390×844 | AX1 | default | AX5 |
+  | 375×667 phone | default, every control at its floor | none (27 points short) | AX1 |
+  | 375×667 phone with Display Zoom, 320×568 | none (65 points short) | none | default |
+  | iPads, 13-inch, 11-inch and mini in portrait, 13-inch and 11-inch in landscape | AX5 | AX5 | AX5 |
+  | 13-inch iPad in landscape with Display Zoom, 1032×774 | AX5 | AX5 | AX1 |
+  | iPad mini in landscape | AX3 (5 points short at AX5) | AX3 | AX1 |
+
+  Better than today's stand-in: the 375×667 phone fits again at the
+  default size, and every iPad fits at every size but the mini in
+  landscape at AX5. It cannot fit phones at AX3 and AX5 (the iPhone 17
+  is 5 and 38 points short), where every control holding one line of its
+  words leaves too little for three rows of tiles, or 320-point windows
+  at any size. Those stay the known gap, "the phrase grid scrolls
+  (invariant 11)", until an arrangement with fewer tiles to a screen
+  (docs/DECISIONS.md, "Layouts from the space available"), never by
+  shrinking a target. iPhone Duo's displays are not in the table: their
+  windows have not been measured (item 6).
+- **Input methods** (invariant 10). Every rule is scored on frames at
+  every width from 320 to 1432 points, every 4, at six heights, three
+  text sizes, Bold Text off and on, by nearest centre and nearest edge,
+  ties within half a point counted:
+  - After Get Attention, never Stop or a control that speaks. After
+    Stop, only a category. After Phrases or Type, nothing that speaks,
+    raises or ends the alarm (on short windows at large text sizes,
+    Emergency, which only shows the emergency phrases). A look on the
+    message never meets Get Attention or Stop.
+  - *Yes and No border the message* (docs/DECISIONS.md, "Home's slot
+    plan"), measured: with Phrases and Type beside the message, Yes and
+    No are nearest up to 97% of it by centre and 89% by edge on compact
+    widths (phones at the default size 88 to 90% and 75 to 81%), and up
+    to 68% and 62% on regular widths (iPads 67% and 54 to 60%), up from
+    today's 56% and 50%, where the message spans the width. No placement
+    inside the slot plan removes it: something in C must border the
+    message, and every control in C must be one activation away. It is
+    invariant 10's, so it is the owner's to accept or reject, before the
+    slot plan ships in a dwell, switch, head or gaze profile.
+  - *The top of Stop's well is nearest Again* on compact widths, as
+    today; on windows narrower than 375 points with Bold Text, the well's
+    top leading corner ties Yes by centre too. On regular widths
+    Emergency is above the well and nothing that speaks is nearest it.
+- **A fold** (*How does the engine take a fold?*): it takes the reserved
+  regions and reports which slots they cross, and moves nothing for
+  them. How Home keeps clear of a fold waits for R0 item 13's look at
+  the open iPhone Duo (docs/DECISIONS.md, "iPhone Duo", *The fold*);
+  item 6 builds it on this.
+- **Colours, privacy policy, screens:** none. Nothing is drawn, so no
+  Figma frame is needed (docs/SDLC.md, *Design*); item 4 checks Home on
+  the engine against the Figma file.
+- **Concerns**, each recorded in docs/DECISIONS.md, "The layout engine":
+  - *The message on the narrowest windows.* Below 345 points with Bold
+    Text on, the message beside Phrases and Type is narrower than
+    "understand." in its font at the default size, so the word would
+    break. Proposed: a known limit, until item 4 gives 320-point windows
+    their own arrangement.
+  - *Bold Text tiles on 375 and 390-point phones.* Today's Home gives
+    their tiles 109 and 114 points, too narrow for "understand." with
+    Bold Text (118 needed), so the word can break there today. The engine
+    keeps words whole and gives those windows two columns, so with Bold
+    Text the starter library scrolls on the 375×667 phone and fits the
+    iPhone 16e only at the default size. A tile floor that follows the
+    tile's width (two-column tiles need three lines, not four) would win
+    some of that back; proposed for item 4.
+  - *Compact up to 663 points.* Windows from 592 to 663 points wide lose
+    the regular arrangement, because its one-row safety row needs five
+    columns of Emergency's width.
