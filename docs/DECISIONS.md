@@ -54,6 +54,7 @@ holds.
 | Home first with setup as a place in Settings, the Settings root, the voice picker, the Privacy row, the largest sizes when nobody answers setup, an "Anything changed?" check-in every three months that waits 30 days after Not Now | "First launch opens Home; setup lives in Settings", "Settings is a cover with a fixed safety bar", "Settings resets when idle and never closes", "Setup answers are kept as offered, never as completed", "Check-ins come every three months", "The privacy policy ships inside the app", "Speed is a set of fixed choices" (Settings and first run; PR #23) |
 | Voice Settings keeping its rows and words in place while voices change, and an explained Ask button for Personal Voice that moves nothing and adds no button on the visit that asked (switched on after device check D1) | "Voice Settings keeps its places while it is open", "Asking for Personal Voice from Voice Settings", and a paragraph in "A Personal Voice is used only while it is allowed" (Voice screen in Settings, 2026-10-22) |
 | Home's scan order (Yes, No and Emergency first, regions as containers) and the names Voice Control and Full Keyboard Access use, the visible words first | "Home's scan order and names" (Accessibility implementation, first pass) |
+| Home's border, pressed and selection rings under Show Borders, and the Large Content Viewer held back from Home's speaking controls until a device check | "Show Borders and the Large Content Viewer on Home" (Accessibility pass two) |
 | The exceptions to Apple's current frameworks first, and the moves made and planned | "Apple's current frameworks first" (the rule is the owner's, 2026-10-22) |
 | The accessibility coverage list and its choices: full screen in Assistive Access and no separate scene, no programmatic Guided Access, assistive-technology flags that only suggest, phrases in the person's voice with VoiceOver on, late-stage boards as an R1 profile, and what waits or is never used | "Accessibility API coverage" (Accessibility coverage checklist) |
 
@@ -1979,6 +1980,72 @@ plan". docs/DESIGN.md, *Colour* and *Apple's guidelines and Liquid
 Glass*, has the measurements and the review.
 
 Before: `Palette` had the three fills and no rule about glass.
+
+## Show Borders and the Large Content Viewer on Home
+
+*2026-10-23. Default, adopted 2026-10-23: the owner left these choices to
+the project. Reversible if the owner objects.* The second part of ROADMAP
+R0 item 3's accessibility work (docs/ACCESSIBILITY.md, section 6;
+[`log/2026-10-23-show-borders-and-large-content.md`](log/2026-10-23-show-borders-and-large-content.md)).
+
+- **Show Borders draws a border inside every Home control.** With the
+  setting on (`accessibilityShowBorders`; Apple deprecates
+  `accessibilityShowButtonShapes` and UIKit's `buttonShapesEnabled`),
+  Home's button style draws a 2pt primary-ink border inside each
+  control's edge, so the edge stands out from the screen at 4.5:1 or
+  better (21:1 on Home's screen) instead of a fill's 3.5:1 on black. It
+  is drawn inside the frame, so nothing moves or changes size. A control
+  that is off has always had this border.
+- **The pressed and selection rings change with it,** so that pressed,
+  selected and neither still look different in light and dark mode: the
+  pressed ring doubles to 4pt, and the selection ring takes the screen's
+  colour (still white in light mode, black in dark). In dark mode primary
+  ink is white, like the usual selection ring, so without the change a
+  selected control would look the same pressed as not. The rings drawn
+  from the edge stay within the label inset (4pt), which a label's words
+  never cross; the selection ring keeps its place, 2 to 5pt in. With the
+  setting off nothing changes.
+- **Measured, not eyeballed** (invariant 6). The rings are drawn in plain
+  black and white. `HomeButtonLook`, a plain type, says which rings each
+  state and setting draws (`HomeButtonLookTests`); `PaletteTests`
+  measures every ring colour against every fill in light, dark and
+  Increase Contrast, and checks that primary ink and the screen's colour
+  are the system's label and background colours. Settings and setup use
+  the system's bordered style, which follows the setting itself (a device
+  check).
+- **No Large Content Viewer on Home's speaking controls yet.** The
+  coverage list planned it for every label the fitting type shrinks, and
+  this pull request first built it (`accessibilityShowsLargeContentViewer` on each Home button).
+  Review found a risk in it. For UIKit's own controls, Apple documents
+  that with the viewer on, a touch held on one control that slides onto
+  another activates the second when the finger lifts
+  (`largeContentViewerInteraction(_:didEndOn:at:)`); that is how a tab
+  bar works. Whether SwiftUI buttons do the same has not been seen yet.
+  If they do, on Home a touch begun on Yes that drifts 8pt onto No says
+  "No.", and a drift from one phrase tile to the next speaks the next
+  phrase: words the person did not choose, by a hand that may be weak or
+  unsteady. Without the viewer, a touch stays with the view it began in
+  (Apple, "Using responders and the responder chain to handle events":
+  the touch's view never changes, even when it moves outside), so a
+  touch begun on Yes is expected to say Yes or nothing; the same device
+  check confirms it.
+  `SpokenUtteranceTracker` absorbs only a repeat of the same phrase, so it
+  does not help. The viewer stays off them until a device check with a
+  test build shows what a slide does in SwiftUI (docs/HANDOFF.md, *Checks
+  that need a real device*). If a slide activates the control under the
+  finger, Home gets the viewer only where a slide cannot reach a control
+  that speaks, or not at all, and the owner hears the trade-off first.
+  Settings' gear has the viewer where it shows alone (PR #33, "Settings
+  on Home"). Settings never speaks, but a slide from the gear could end
+  on a control that does, so the same check slides from the gear onto
+  each control beside it, and the same rule decides whether it keeps the
+  viewer.
+  Meanwhile labels never shrink below the default size, and the system's
+  Zoom enlarges any of them.
+
+*Before:* Home's button style did not read Show Borders, and on Home only
+Settings' gear had the Large Content Viewer (PR #33); the coverage list
+had the rest as R0-3 work.
 
 ## Tests
 
