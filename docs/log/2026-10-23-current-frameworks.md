@@ -1,6 +1,6 @@
 # Apple's current frameworks first, and the owner's vision
 
-*2026-10-23. Pull request #PR (`claude/project-thread-wmfo5z`). Claude
+*2026-10-23. Pull request #34 (`claude/project-thread-wmfo5z`). Claude
 Code, cloud thread "Current frameworks rule and vision", from `main` at
 `313de2c`.*
 
@@ -87,7 +87,16 @@ volume, UIKit in `PaletteTests`, `UIImage(systemName:)` and
 
 ## Commits
 
-See the pull request.
+- `15e36be` Write the current-frameworks rule and the owner's vision into
+  the docs
+- `0bbca2a` Move test code to Vision's Swift API and Swift Testing
+- `eaaa54f` Use current APIs for the stand-in's answer and Settings' titles
+- `d72212b` Record the frameworks audit: exceptions, planned moves and the
+  log
+- `5c8b92b` Pin the word check's settings and the screen colour; tighten
+  the docs
+- Later commits on the pull request: this record's number and fixes from
+  review.
 
 ## Verified
 
