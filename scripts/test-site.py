@@ -83,6 +83,41 @@ class SiteTests(unittest.TestCase):
         self.assertIn('This address is not for emergencies.', html)
         self.assertNotRegex(html.lower(), r'\b(free|paid)\b')
 
+    def test_no_page_states_a_price(self):
+        """docs/DECISIONS.md, "Price not decided": "free" on any page fails."""
+        for path in (ROOT / 'site').rglob('*.html'):
+            with self.subTest(page=path.relative_to(ROOT)):
+                self.assertNotRegex(path.read_text().lower(), r'\b(free|paid)\b')
+
+    def test_every_page_links_to_the_accessibility_page(self):
+        """The App Store's Accessibility URL; dropping a page's link fails."""
+        target = ROOT / 'site/accessibility/index.html'
+        self.assertTrue(target.is_file(), 'site/accessibility/index.html is missing')
+        for path in (ROOT / 'site').rglob('*.html'):
+            links = re.findall(r'<a\b[^>]*\bhref="([^"#]*)', path.read_text())
+            resolved = set()
+            for link in links:
+                if link.startswith(('https:', 'mailto:')):
+                    continue
+                page = (path.parent / link).resolve() if link else path.resolve()
+                resolved.add(page / 'index.html' if page.is_dir() else page)
+            with self.subTest(page=path.relative_to(ROOT)):
+                self.assertIn(target.resolve(), resolved)
+
+    def test_every_page_is_one_titled_document_with_a_way_past_the_header(self):
+        """A page without a language, a title, one h1, a main or a skip link fails."""
+        for path in (ROOT / 'site').rglob('*.html'):
+            html = path.read_text()
+            with self.subTest(page=path.relative_to(ROOT)):
+                self.assertRegex(html, r'<html lang="en">')
+                self.assertRegex(html, r'<title>[^<]+</title>')
+                self.assertRegex(html, r'<meta name="viewport"')
+                self.assertEqual(len(re.findall(r'<h1\b', html)), 1)
+                self.assertEqual(len(re.findall(r'<main\b', html)), 1)
+                skip = re.search(r'<a class="skip" href="#([^"]+)"', html)
+                self.assertIsNotNone(skip, 'no skip link')
+                self.assertRegex(html, r'<main\b[^>]*\bid="%s"' % re.escape(skip[1]))
+
 
 if __name__ == '__main__':
     unittest.main()
