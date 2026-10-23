@@ -7,7 +7,9 @@ nothing is appended here. Plan: [`docs/ROADMAP.md`](ROADMAP.md). How the
 project runs: [`docs/SDLC.md`](SDLC.md).
 
 **State as of 2026-10-23: PR #14 (the library core), PR #33 (Settings
-on Home) and PR #35 (Show Borders on Home) are merged.**
+on Home) and PR #35 (Show Borders on Home) are merged. PR #17 now
+incorporates main `412f4cf` (PRs #39, #37 and #38); its next hosted
+checks and fresh review remain required.**
 Ten threads are working in parallel on the first release, R0.
 
 ## What the app does today
@@ -66,9 +68,50 @@ and [work/design-screens.md](work/design-screens.md). PR #20's
 the landed slot decisions and lists drawings, placement questions and
 measurements still pending before implementation follows them. The local
 unit gate passed all 460 tests on iPad Pro 13-inch (M5), iOS 27.0, with
-Xcode 27.1 (27A9275); final-head CI is pending.
+Xcode 27.1 (27A9275); PR #20 landed in `d79d836`.
 
 ## Verification
+
+- **PR #17 main refresh, 2026-10-23:** merged library main `48bcf73`
+  without rebasing. Nine new guard/documentation findings are corrected;
+  the xargs optional-argument finding was rejected against GNU documentation
+  because its suggested change broke a valid existing safeguard. The local
+  unit script passed 591 native tests with the existing issue #19 skip,
+  124 hook tests and 34 documentation tests; the catalog is unchanged.
+  Xcode 27.1 (27A9275), iPad Pro 13-inch (M5), iOS 27.0.
+  Five further findings on `227cda9` cover merge-queue requests, shell
+  recursion/stdin, curl option clusters and CDPATH directory selection.
+  All five failing reproductions now pass, as does the full refreshed
+  local gate above. A further eight findings on `e98e95a` now have focused
+  fixes, alongside the clean main `b6be682` refresh. The refreshed full
+  local gate passed, including the inherited current-framework tests.
+  Seven findings on `62b79b5` now cover implicit client configuration,
+  send-pack, translated shell strings, abbreviated staging options, link
+  labels and exact path spelling; their focused reproductions and the
+  full local unit gate pass.
+  Main `f34e8ae` (Settings on Home) is merged in. The old hosted unit
+  job failed before Swift tests because the runner fixture hid gh from
+  repeated guard-suite runs. The harness now isolates preflight dependencies
+  and checks their ordering and failures; the real unit gate still runs
+  both full suites. All 54 runner tests and the refreshed local unit gate
+  pass. Eight further findings on `f3bfb0b` now have failing-first
+  reproductions and fixes for command operands, branch changes, upload
+  bodies and escaped reference labels; all 114 hook and 32 docs tests pass.
+  Main `d654cef` (Show Borders on Home) is merged without conflicts.
+  Its device-check caveats remain intact. Seven further findings on
+  `7e64ecf` tighten runtime operands, branch renames, review flag clusters
+  and escaped reference titles; the verifier now completes its report with
+  CI pending. Six findings on `9845a0d` now cover expanded push operands,
+  Wget/curl URL sources, decoded Copilot endpoints, trap actions and exact
+  fragment case; their regressions fail before correction and pass after it.
+  Main `43cea55` (PRs #39 and #37), then `412f4cf` (PR #38), are merged
+  by merge commits. Eight findings on `a4ed3d9` reproduce but are
+  declined, past the two-round fix cap, as ways round a guard against
+  mistakes, and one on `571c8fc` is a refusal of a harmless command; the
+  record lists them, with `git add ..` and `source` first for a later
+  guard pull request.
+  New-head hosted checks and fresh review remain required.
+  [Guardrail record](log/2026-10-22-agent-guardrail-reconciliation.md).
 
 - **PR #14 reconciliation, 2026-10-22:** incorporates main `cc35c30`, the
   invisible-text Emergency correction and the bounded category-name fix.
@@ -81,13 +124,18 @@ Xcode 27.1 (27A9275); final-head CI is pending.
   per device, alongside the known host-audio limitation. Hosted CI on
   that head passed 560 units (one existing skip) and all 35 enabled UI
   tests per device (four existing probe skips). All 21 existing review
-  conversations are resolved; its Codex review still reports running.
+  conversations are resolved. The earlier Codex review was still running
+  at that measurement; the final head has since passed and merged.
   The PR #32 main refresh passed the same 560-unit native gate with one
-  existing skip and an unchanged catalog; its new CI run remains required. The older AX5 audit finding remains unexplained. Auto-merge
-  is disabled; the owner makes the merge decision. The
+  existing skip and an unchanged catalog. The older AX5 audit finding
+  remains unexplained. The owner later enabled auto-merge. The
   PR #29's CI-artifact documentation is now merged from main `cc35c30`;
   its fresh local gate passed 560 units with the existing issue #19 skip
-  and unchanged catalog. New-head CI remains pending.
+  and unchanged catalog. Final-head CI `39887840347` on `f45a33a` passed
+  560 native tests with the existing issue #19 skip, plus all 35 enabled
+  UI tests on each of iPad and iPhone (four existing probe skips each).
+  PR #14 then merged automatically into `48bcf73`; all 21 conversations
+  were resolved.
   [reconciliation record](log/2026-10-22-library-reconciliation.md)
   preserves toolchain/device details, complete history and remaining checks.
 
@@ -484,6 +532,74 @@ Simulators cannot show these. Record each result in a `docs/log/` file
   (Effective October 21, 2026, since PR #18) publish after each merge; on 2026-10-15 they
   matched `site/` byte for byte. The support page's "in development" lines
   change at release.
+- Claude Code sessions with one repository run a guard before Bash and
+  the selected GitHub tools named in `.claude/settings.json`
+  (`.claude/hooks/guard.py`; AGENTS.md, *Guardrails for agents*). Repository
+  hooks are not loaded in multi-repository cloud sessions. The guard
+  refuses `git add -A`, force pushes, pushes to `main`, merges, approvals
+  and Copilot actions. `scripts/test.sh` runs its tests and the docs
+  cross-reference check (`scripts/test-docs.py`) before the unit tests.
+  New issues start from the "Something went wrong" form; blank issues are
+  off. Record: [`docs/log/2026-10-21-agent-guardrails.md`](log/2026-10-21-agent-guardrails.md).
+  The review fixes cover configured and wildcard pushes, alternate Git
+  repositories, wrapper arguments, failed directory changes, attached
+  approval/Copilot options, API payload files and unquoted backtick
+  commands spanning several words. Later review fixes cover `env` directory
+  options, API URL fragments, all-tree commit pathspecs, repository syncs
+  and Copilot task aliases; the docs checker also validates reference links.
+  AGENTS.md also records
+  the owner's shared workflow habits for session context, merge commits,
+  attribution and testing before batched pushes. The reconciled branch's
+  local unit gate passed 460 tests with no failures or skips on an iPad Pro
+  13-inch (M5), iOS 27.0, using Xcode 27.1 (27A9275); the String Catalog
+  was unchanged. Full UI suites on that iPad and an iPhone 17 each passed
+  33 tests, with no failures and four unchanged opt-in keyboard-probe skips.
+  The interrupted iPhone setup was resumed as a complete family run.
+  Merge `4415827` incorporates documentation-only `d79d836`; its fresh
+  unit gate passed all 460 tests, with the same app and test sources. CI on
+  `7d6b3e1` passed units and the iPhone UI suite but hit an iPad
+  app-termination failure. Both result bundles were retained; current-head
+  green CI remains required. The later guard/parser and coverage wording
+  corrections passed a fresh native unit gate: all 460 unit tests, 41 hook
+  tests and 16 documentation tests passed; the catalog stayed unchanged.
+  A later blockquoted-reference correction also passed a fresh native
+  gate: 460 unit, 41 hook and 18 documentation tests, unchanged catalog.
+  Main's `479175d` audit-timing fix is now included without conflicts;
+  its fresh gate passed 460 unit, 41 hook and 18 docs tests, with the
+  catalog unchanged. Final-head CI/review remain pending.
+  The earlier local UI counts precede that audit-helper change.
+  Nine further verified findings now pass 48 hook and 19 documentation
+  tests: exclusion-only pathspecs, xargs operands, merge-status reads,
+  word-internal hashes, child HOME, inherited gh repository flags,
+  angle-bracket links, hook error handling and the report-only verifier's
+  catalog command. Their fresh native gate passed 460 unit tests, with
+  no failures/skips and an unchanged catalog; final-head CI is pending.
+  CI on `3c379f1` passed all 460 units and 35 enabled UI tests per device
+  (four existing opt-in probe skips). A final nine-finding parser batch
+  includes 57 hook and 20 docs tests. Main `313de2c` is incorporated;
+  the combined gate passed all 460 native units, 57 hook tests and 20
+  docs tests with the catalog unchanged. New-head CI remains pending. It distinguishes executed commands from here-document data,
+  actual API writes from prose/read requests, and code blocks from links.
+  Five later findings add checked shell here-strings, contextual Git aliases,
+  conservative curl-config refusal, GraphQL approval checks and repository-bound
+  documentation links. The final gate passed 460 native unit, 61 hook and
+  21 docs tests with the catalog unchanged; new-head CI is pending.
+  Eleven more reproduced command-form/code-example findings passed the final
+  gate: 460 native unit, 71 hook and 22 docs tests, with an unchanged catalog.
+  Main `cc35c30` is incorporated. Eight further findings cover pending-review
+  approvals, curl uploads, Git digit flags, gh aliases, persistent shell
+  environment, citation code examples, repeated heading anchors and the
+  verifier's staged snapshot. The final local gate passed 460 native unit,
+  76 hook and 24 docs tests with the catalog unchanged.
+  New-head CI remains pending.
+  Eight later findings cover separate curl operations, protected REST writes,
+  subshell scope, ANSI-C quoting, full heredoc delimiters, wrapper clusters,
+  encoded relative links and Setext headings. All eight reproduced before
+  correction. The full unit script passed 460 native tests; the final
+  guard/docs checks passed 82 and 26 tests. The catalog is unchanged.
+  The owner re-enabled auto-merge on both PRs; #14 has since merged,
+  and #17 retains that setting.
+  Reconciliation and verification: [`log/2026-10-22-agent-guardrail-reconciliation.md`](log/2026-10-22-agent-guardrail-reconciliation.md).
 
 ## History
 
