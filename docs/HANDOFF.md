@@ -6,8 +6,8 @@ edits this page in place and writes its record in [`docs/log/`](log/README.md);
 nothing is appended here. Plan: [`docs/ROADMAP.md`](ROADMAP.md). How the
 project runs: [`docs/SDLC.md`](SDLC.md).
 
-**State as of 2026-10-22: PR #14 (the library core), reconciled with
-`main` at `cc35c30`; not merged.**
+**State as of 2026-10-23: PR #14 (the library core) and PR #33
+(Settings on Home) are merged.**
 Ten threads are working in parallel on the first release, R0.
 
 ## What the app does today
@@ -46,7 +46,8 @@ opened or read, the file is left untouched and a second warning says so
 and warns against deleting the app. A saved library damaged so that
 Emergency has nothing to open gets the starter emergency phrases back at
 launch, added after what is already there, with nothing of the
-person's changed ([`log/2026-10-23-emergency-repair.md`](log/2026-10-23-emergency-repair.md)).
+person's changed (docs/DECISIONS.md, "The emergency category is always
+there", names the two damaged stores it cannot help) ([`log/2026-10-23-emergency-repair.md`](log/2026-10-23-emergency-repair.md)).
 Editing and backup exist as tested code with no screens yet
 ([`log/2026-10-21-library-core.md`](log/2026-10-21-library-core.md)).
 The screen never locks. Ported code:

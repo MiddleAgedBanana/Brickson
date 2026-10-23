@@ -494,6 +494,11 @@ and the other SwiftData behaviours this rests on, are probed by
 `SwiftDataBehaviourTests` (questions S1 to S4 in
 `docs/log/2026-10-21-library-core.md`).
 
+The launch's own writes, the seeder filling an empty store and the
+emergency repair (*The emergency category is always there*), are not
+edits, but follow the same rules: a context of their own, one save, no
+`rollback()`, and a failure test for each save.
+
 Rejected: editing in the main context and undoing a failed save with
 `rollback()` or with hand-written inverse edits. The first crashes after
 a delete, even without a cascade (S4, issue #19); the second is more code with more ways to half-change.
@@ -714,6 +719,16 @@ memory holding the person's whole library with the repair, and says
 changes won't be kept. A second emergency category is left as it is,
 because Home opens the first. The repair says nothing on Home: the
 family sees Emergency working again.
+
+Two damaged stores it cannot fully help, because helping would change
+stored items: where a sort order is already the largest an `Int` holds,
+the additions take that same order and ties fall back to name or words,
+so they can sort before the person's items; and where the emergency
+category shares its identity with an earlier category, Home's Emergency
+opens that earlier category (`CategorySelection.resolve` finds a category
+by identity). Brickson writes neither: every save numbers sort orders 0,
+1, 2, and identities are checked unique. Only a hand-edited store gets
+there.
 
 ## Editing the library
 

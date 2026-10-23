@@ -42,6 +42,11 @@ recorded as needed and not built.
   other; inserting keeps them item for item.
 - Nothing on Home changed, and no sentence was added: the family sees
   Emergency working again. The log says the repair ran, without words.
+- Two hand-edited stores it cannot fully help, because helping would
+  change stored items, are named in docs/DECISIONS.md: sort orders
+  already at `Int.max` (the additions tie and can sort first), and an
+  emergency category sharing its identity with an earlier category (Home
+  opens the earlier one). Brickson writes neither.
 
 The decision is recorded in docs/DECISIONS.md, "The emergency category is
 always there", as a default adopted on 2026-10-23, reversible.
@@ -52,6 +57,13 @@ See the pull request; the branch was cut from `main` at `f34e8ae` (PR #33).
 
 ## Verified
 
+- **Reviewed before pushing** by three independent reviewers (correctness
+  and invariants, whether CI will pass, the written rules and docs). One
+  built a stand-in that behaves like SwiftData where these tests depend on
+  it and ran the new store tests against it. Their findings are fixed
+  here: the two stores above are named rather than claimed, both halves of
+  the read check are tested, and "Every save is explicit" now covers the
+  launch's own writes.
 - **On a Linux machine with Swift 6.4.1** (not the app's toolchain: no
   Xcode, SwiftData or UIKit), in a throwaway package with the project's
   concurrency settings: `EmergencyRepair` and its 12 tests
@@ -90,11 +102,13 @@ See the pull request; the branch was cut from `main` at `f34e8ae` (PR #33).
   (`anEmergencyCategoryWithNothingToSayGetsTheStarterPhrasesAfterItsOwn`);
   a write to a working store (`aStoreWhoseEmergencyWorksIsLeftAlone`); a
   failed save that reaches the store or blocks the next try
-  (`aFailedRepairChangesNothing`); a write to a store that cannot be read
-  or reads differently (`aStoreThatCannotBeReadIsNotRepaired`,
-  `aStoreThatReadsDifferentlyIsNotRepaired`); an overflow
-  (`aSortOrderAtTheVeryEndDoesNotOverflow`); a starter file with no
-  emergency phrases (`theBundledStarterCanGiveEmergencyItsPhrasesBack`);
+  (`aFailedRepairChangesNothing`); a write to a store that cannot be read,
+  or that reads differently, either half of the check
+  (`aStoreThatCannotBeReadIsNotRepaired`,
+  `aStoreThatReadsDifferentlyIsNotRepaired`); an overflow, or a change to
+  the documented tie (`aSortOrderAtTheVeryEndDoesNotOverflow`); a starter
+  file with no emergency phrases
+  (`theBundledStarterCanGiveEmergencyItsPhrasesBack`);
   a launch that skips the repair
   (`aLaunchGivesADamagedStoreItsEmergencyPhrasesBack`); a failed repair
   that falls back to the starter library alone or writes the store
@@ -137,3 +151,8 @@ request (R0 item 6), from [the library-core record](2026-10-21-library-core.md):
 6. A store with two emergency categories keeps both; Home opens the
    first. Folding them into one would move or rewrite stored items, so
    it waits for a reason and the owner. *(Not planned.)*
+7. Home finds the emergency category by identity
+   (`CategorySelection.resolve`), so one that shares its identity with an
+   earlier category opens that one. Opening the emergency category itself
+   would close it; it is Home's code, left to the threads working on
+   Home. *(Home, low priority: only a hand-edited store gets there.)*
