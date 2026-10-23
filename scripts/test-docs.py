@@ -20,6 +20,7 @@ Renaming a section or moving a file without updating what cites it fails
 here, which is how reviewers were twice sent to sections that did not exist.
 """
 from pathlib import Path
+from urllib.parse import unquote
 import re
 import unittest
 import tempfile
@@ -139,10 +140,29 @@ def normalize(title):
     return title.rstrip('.:;,').strip().lower()
 
 
+def heading_titles(text):
+    """ATX and Setext headings in document order, outside fenced code."""
+    paragraph = []
+    for line in without_fenced_code(text).splitlines():
+        heading = HEADING.fullmatch(line)
+        if heading:
+            yield heading['title']
+            paragraph = []
+        elif re.fullmatch(r' {0,3}(?:=+|-+)[ \t]*', line):
+            if paragraph:
+                yield ' '.join(paragraph)
+            paragraph = []
+        elif (not line.strip() or re.match(r' {0,3}(?:>|[-+*]\s|\d+[.)]\s)', line)
+              or (not paragraph and line.startswith(('    ', '\t')))):
+            paragraph = []
+        else:
+            paragraph.append(line.strip())
+
+
 def sections(text):
     """The titles a file offers: its headings and its bold lead-ins."""
     text = without_fenced_code(text)
-    titles = {normalize(m['title']) for m in HEADING.finditer(text)}
+    titles = {normalize(title) for title in heading_titles(text)}
     titles |= {normalize(m['title']) for m in LEAD_IN.finditer(text)}
     # A heading such as "GitHub reviews and updates (2026-10-10)" is cited
     # without its date.
@@ -160,8 +180,8 @@ def slug(title):
 
 def heading_anchors(text):
     anchors = set()
-    for match in HEADING.finditer(without_fenced_code(text)):
-        base = slug(match['title'])
+    for title in heading_titles(text):
+        base = slug(title)
         anchor, number = base, 0
         while anchor in anchors:
             number += 1
@@ -253,6 +273,7 @@ def broken_links(path, text):
         if re.match(r'[a-z][a-z0-9+.-]*:', link):
             continue  # https:, mailto: and other absolute links
         target, _, anchor = link.partition('#')
+        target = unquote(target)
         resolved = (path.parent / target).resolve() if target else path
         if target.startswith('/'):
             problems.append(f'{relative}: link {link} is absolute; make it relative')
@@ -283,6 +304,33 @@ class CheckerTests(unittest.TestCase):
 
     def setUp(self):
         self.fixture = ROOT / 'docs' / 'DECISIONS.md'
+
+    def test_encoded_relative_links_are_resolved_inside_the_repository(self):
+        with tempfile.TemporaryDirectory() as folder:
+            parent = Path(folder).resolve()
+            root = parent / 'repo'
+            root.mkdir()
+            guide = root / 'My Guide.md'
+            guide.write_text('# Setup')
+            (parent / 'outside.md').write_text('# Outside')
+            with patch.dict(globals(), ROOT=root):
+                readme = root / 'README.md'
+                self.assertEqual(broken_links(readme, '[guide](My%20Guide.md#setup)'), [])
+                self.assertTrue(broken_links(readme, '[guide](Missing%20Guide.md)'))
+                self.assertEqual(broken_links(readme, '[outside](%2e%2e/outside.md)'),
+                    ['README.md: link %2e%2e/outside.md escapes the repository'])
+
+    def test_setext_headings_support_citations_and_anchors(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder).resolve()
+            guide = root / 'guide.md'
+            guide.write_text('Setup\n=====\n\nDetails\n-------\n\n# Setup\n')
+            with patch.dict(globals(), ROOT=root):
+                self.assertEqual(broken_citations(guide, 'guide.md, "Setup"', set()), [])
+                for anchor in ['setup', 'details', 'setup-1']:
+                    self.assertEqual(broken_links(guide, f'[part](#{anchor})'), [], anchor)
+                self.assertTrue(broken_links(guide, '[part](#missing)'))
+                self.assertNotIn('fake', sections('```\nFake\n====\n```'))
 
     def test_code_examples_are_not_section_citations(self):
         missing = 'docs/NO-SUCH.md, "Example"'

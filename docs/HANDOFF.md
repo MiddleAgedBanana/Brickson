@@ -394,6 +394,11 @@ Simulators cannot show these. Record each result in a `docs/log/` file
   verifier's staged snapshot. The final local gate passed 460 native unit,
   76 hook and 24 docs tests with the catalog unchanged.
   New-head CI remains pending.
+  Eight later findings cover separate curl operations, protected REST writes,
+  subshell scope, ANSI-C quoting, full heredoc delimiters, wrapper clusters,
+  encoded relative links and Setext headings. All eight reproduced before
+  correction. The full unit script passed 460 native tests; the final
+  guard/docs checks passed 82 and 26 tests. The catalog is unchanged.
   The owner re-enabled auto-merge on both remaining PRs.
   Reconciliation and verification: [`log/2026-10-22-agent-guardrail-reconciliation.md`](log/2026-10-22-agent-guardrail-reconciliation.md).
 

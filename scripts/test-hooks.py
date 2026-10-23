@@ -67,6 +67,58 @@ class GuardTests(unittest.TestCase):
                         ['git', '-C', str(self.repo), 'config', '--unset-all', key],
                         capture_output=True)
 
+    def test_curl_operations_keep_their_own_method(self):
+        merge = 'https://api.github.com/repos/o/r/pulls/12/merge'
+        for separator in ['--next', '-:']:
+            self.assertDenied(f'curl -X PUT {merge} {separator} -X GET https://example.com')
+            self.assertDenied(f'curl -X GET https://example.com {separator} -X PUT {merge}')
+            self.assertAllowed(f'curl -X GET {merge} {separator} -X PUT https://example.com')
+        self.assertAllowed(f'curl -X GET -H "--next" {merge}')
+
+    def test_subshells_restore_the_outer_repository_context(self):
+        with tempfile.TemporaryDirectory(dir=self.repo) as folder:
+            subprocess.run(['git', 'init', '-q', '-b', 'main', folder], check=True)
+            self.assertAllowed(f'(cd {folder} && git status); git push origin')
+            self.assertDenied(f'(cd {self.repo} && git status); git push origin', cwd=folder)
+            self.assertDenied(f'(cd {folder} && git push origin); git status')
+            self.assertAllowed(f'( (cd {folder} && git status) ); git push origin')
+            self.assertDenied(f'(cd {folder} && git status) && git push origin', cwd=folder)
+            self.assertAllowed(f'(export GIT_DIR={folder}/.git); git push origin')
+
+    def test_rest_writes_cannot_update_protected_branches(self):
+        for method in ['PUT', 'DELETE']:
+            prefix = f'gh api --method {method} repos/o/r/contents/file -f message=x -f content=eA=='
+            self.assertDenied(prefix + ' -f branch=main')
+            self.assertDenied(prefix)
+            self.assertDenied(prefix + ' -F branch=null')
+            self.assertAllowed(prefix + ' -f branch=feature')
+        self.assertDenied('gh api --method PATCH repos/o/r/git/refs/heads/main -f sha=123')
+        self.assertDenied('gh api --method DELETE repos/o/r/git/refs/heads/master')
+        self.assertDenied('gh api --method POST repos/o/r/git/refs -f ref=refs/heads/main -f sha=123')
+        self.assertAllowed('gh api --method PATCH repos/o/r/git/refs/heads/feature -f sha=123')
+        self.assertAllowed('gh api repos/o/r/contents/file')
+        self.assertAllowed('gh api repos/o/r/git/refs/heads/main')
+        self.assertDenied('curl -X PUT https://api.github.com/repos/o/r/contents/file -d \'{"branch":"main"}\'')
+
+    def test_ansi_c_quoted_scripts_are_checked(self):
+        self.assertDenied("bash -c $'git add -A'")
+        self.assertDenied("bash <<< $'gh pr merge 12'")
+        self.assertDenied(r"bash -c $'git\x20add\040-A'")
+        self.assertAllowed("bash -c $'git status'")
+        self.assertAllowed("printf '%s' $'git add -A'")
+        self.assertAllowed('echo "bash -c $\'git add -A\'"')
+
+    def test_complete_here_document_delimiters(self):
+        for delimiter in ['END:MARK', 'END/NOTE', 'END@NOTE', 'END+NOTE']:
+            self.assertDenied(f'cat <<{delimiter}\nordinary text\n{delimiter}\ngit add -A')
+            self.assertAllowed(f'cat <<{delimiter}\ngit add -A\n{delimiter}\ngit status')
+            self.assertDenied(f'bash <<{delimiter}\ngit add -A\n{delimiter}')
+
+    def test_wrapper_clusters_consume_value_options(self):
+        for prefix in ['timeout -vk 1 5', 'timeout -vk1 5', 'xargs -tI {}', 'xargs -tI{}']:
+            self.assertDenied(prefix + ' git add -A')
+            self.assertAllowed(prefix + ' git status')
+
     def test_pending_review_submission_checks_approval(self):
         endpoint = 'repos/o/r/pulls/12/reviews/34/events'
         self.assertDenied(f'gh api --method POST {endpoint} -f event=APPROVE')

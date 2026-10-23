@@ -665,3 +665,38 @@ iPad Pro 13-inch (M5), iOS 27.0; app coverage remains 62.6%
 repository flags inside the expansion. No app/UI source, product decision
 or review-rule exception changes. New-head hosted CI
 remains required; no local audio setting or accessibility assertion changed.
+
+
+### Follow-up review: operation and shell boundaries
+
+Eight findings on `4936c0f` reproduced before correction: six failing hook
+methods and two documentation tests. The fixes remain in the guard and
+documentation checker; no app, UI or audio behaviour changes.
+
+- curl `--next` and `-:` start separate operations, each checked with its
+  own URL, method and body. Flag operands containing the separator text
+  remain operands.
+- REST contents writes require an explicit branch and reject main/master.
+  Git-reference create/update/delete paths reject protected heads as well.
+  Read-only requests and explicit feature branches have allowed-path tests.
+- Parenthesized subshells restore outer directory, directory stack and
+  exported context when they finish, while commands inside are still
+  checked in their changed context. Conditional success/failure outcomes
+  remain separate.
+- Bash ANSI-C quoted words are decoded before command inspection, including
+  escaped whitespace. Literal data stays data; no shell expansion executes
+  in the guard. Here-document delimiters use the complete shell word,
+  including punctuation, so following commands cannot disappear into a
+  mistakenly unterminated body.
+- Wrapper short-option clusters consume the first value-taking flag's
+  attached or following operand before locating the child command.
+- Relative Markdown paths are percent-decoded before the existing
+  repository-boundary check. Setext headings join ATX headings for both
+  citations and duplicate-aware anchors, excluding fenced code.
+
+The full local unit script passed 460 native tests with zero failures/skips,
+using Xcode 27.1 (27A9275), iPad Pro 13-inch (M5), iOS 27.0. The catalog
+is unchanged; app line coverage remains 62.6% (3,540/5,659). Final guard
+and documentation checks passed 82 and 26 tests, including a follow-up
+null-branch case: null also selects an unspecified default and is refused. New-head hosted CI and fresh review remain
+required. No new product decision or review-rule exception is introduced.

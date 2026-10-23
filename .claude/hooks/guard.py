@@ -30,7 +30,7 @@ import subprocess
 import sys
 import stat
 import posixpath
-from urllib.parse import urlsplit
+from urllib.parse import urlsplit, unquote
 
 PROTECTED = {'main', 'master'}
 
@@ -147,11 +147,71 @@ def segments(command, preserve_quotes=False):
             if current:
                 yield current, separator
             current = []
-            separator = word
+            for token in re.findall(r'&&|\|\||\|&|[;&|()\n]', word):
+                if token in ('(', ')'):
+                    yield [token], separator
+                    separator = ';'
+                else:
+                    separator = token
         else:
             current.append(word)
     if current:
         yield current, separator
+
+
+def ansi_c_quotes(command):
+    """Normalize Bash dollar-single-quoted words without executing expansion."""
+    escapes = {'a': '\a', 'b': '\b', 'e': '\x1b', 'E': '\x1b', 'f': '\f',
+               'n': '\n', 'r': '\r', 't': '\t', 'v': '\v',
+               '\\': '\\', "'": "'", '"': '"', '?': '?'}
+    def decode(match):
+        value = match[1]
+        if value in escapes:
+            return escapes[value]
+        if value.startswith('c'):
+            return chr(127 if value[1] == '?' else ord(value[1].upper()) ^ 64)
+        try:
+            if value[0] in 'xuU' and len(value) > 1:
+                number = int(value[1:], 16)
+                return chr(number % 256 if value[0] == 'x' else number)
+            if value[0] in '01234567':
+                return chr(int(value, 8) % 256)
+            return '\\' + value  # Bash retains unrecognized escapes.
+        except (ValueError, OverflowError):
+            deny(UNKNOWN)
+    output, index, quote = [], 0, None
+    while index < len(command):
+        char = command[index]
+        if char == '\\' and quote != "'":
+            output.append(command[index:index + 2])
+            index += 2
+            continue
+        if quote:
+            output.append(char)
+            if char == quote:
+                quote = None
+        elif command.startswith("$'", index):
+            stop = index + 2
+            while stop < len(command):
+                if command[stop] == '\\':
+                    stop += 2
+                elif command[stop] == "'":
+                    break
+                else:
+                    stop += 1
+            if stop >= len(command):
+                deny(UNKNOWN)
+            value = re.sub(r"\\(x[0-9a-fA-F]{1,2}|u[0-9a-fA-F]{1,4}|U[0-9a-fA-F]{1,8}|[0-7]{1,3}|c.|.)",
+                           decode, command[index + 2:stop])
+            # Bash strings end at a decoded NUL.
+            output.append(shlex.quote(value.split('\0', 1)[0]))
+            index = stop
+        else:
+            output.append(char)
+            if char in ("'", '"'):
+                quote = char
+        index += 1
+    return ''.join(output)
 
 
 def nested(words):
@@ -217,6 +277,22 @@ def strip_wrappers(words, inherited=None):
             directory = None
             while words and words[0].startswith('-'):
                 option = words[0]
+                # Expand short clusters up to the first value-taking option.
+                # Its remaining characters are an operand, never more flags.
+                if len(option) > 2 and not option.startswith('--'):
+                    value_flags = {flag[1] for flag in WRAPPER_VALUE_OPTIONS.get(wrapper, set())
+                                   if len(flag) == 2 and flag.startswith('-')}
+                    if wrapper == 'env':
+                        value_flags.add('S')
+                    expanded = []
+                    for offset, letter in enumerate(option[1:], 1):
+                        expanded.append('-' + letter)
+                        if letter in value_flags:
+                            if option[offset + 1:]:
+                                expanded.append(option[offset + 1:])
+                            break
+                    words = expanded + words[1:]
+                    option = words[0]
                 if option == '--':
                     words = words[1:]
                     break
@@ -661,6 +737,8 @@ def check_gh(words, cwd, environment):
         method = methods[-1].upper() if methods else (
             'POST' if list(option_values(plain, {'--field', '--raw-field', '--input'},
                                         {'-f', '-F'})) else 'GET')
+        if protected_api_write(plain, arguments, method):
+            deny(TO_MAIN)
         if merge_api_request(plain, arguments, method):
             deny(MERGE)
         if copilot_request(arguments):
@@ -797,6 +875,28 @@ def httpie_body(words, cwd):
     return json.dumps(payload)
 
 
+def http_operations(words):
+    """curl --next resets request-local options; check each operation."""
+    if os.path.basename(words[0]) != 'curl':
+        return [words]
+    value_options = {'-X', '--request', '-H', '--header', '-d', '--data',
+        '--data-ascii', '--data-binary', '--data-raw', '--data-urlencode', '--json',
+        '-F', '--form', '--form-string', '-T', '--upload-file', '--url',
+        '-o', '--output', '-u', '--user', '-x', '--proxy', '--proxy-user',
+        '--connect-timeout', '-m', '--max-time', '-A', '--user-agent',
+        '-e', '--referer', '-b', '--cookie', '-c', '--cookie-jar'}
+    operations, current, operand = [], [words[0]], False
+    for word in words[1:]:
+        if not operand and word in ('--next', '-:'):
+            operations.append(current)
+            current = [words[0]]
+        else:
+            current.append(word)
+        operand = False if operand else word in value_options
+    operations.append(current)
+    return operations
+
+
 def request_method(words, program):
     """The common API-client method forms; an explicit method wins."""
     methods = list(option_values(words, {'--request', '--method'}, {'-X'}))
@@ -855,14 +955,40 @@ def graphql_review_approval(query, arguments, words):
     return False
 
 
-def merge_api_request(words, arguments, method):
-    """Match actual endpoint arguments and request fields, not prose words."""
+def api_paths(words):
     paths = []
     for word in words:
         if github_api_host(word):
             paths.append(parsed_url(word)[0].path.lstrip('/'))
         elif word == 'graphql' or word.startswith(('repos/', '/repos/')):
             paths.append(urlsplit(word).path.lstrip('/'))
+    return [unquote(path) for path in paths]
+
+
+def protected_api_write(words, arguments, method):
+    if method in ('GET', 'HEAD'):
+        return False
+    for path in api_paths(words):
+        if re.fullmatch(r'repos/[^/]+/[^/]+/contents/.+', path):
+            branches = list(api_field_values(arguments, 'branch'))
+            if not branches or any(not isinstance(branch, str) or not branch.strip()
+                                   for branch in branches):
+                deny(UNKNOWN)  # Missing/null branch writes the unknown remote default.
+            if any(branch_name(str(branch)) in PROTECTED for branch in branches):
+                return True
+        match = re.fullmatch(r'repos/[^/]+/[^/]+/git/refs(?:/(.+))?', path)
+        if match:
+            refs = [match[1]] if match[1] else list(api_field_values(arguments, 'ref'))
+            if not refs:
+                deny(UNKNOWN)
+            if any(str(ref).removeprefix('refs/').removeprefix('heads/') in PROTECTED for ref in refs):
+                return True
+    return False
+
+
+def merge_api_request(words, arguments, method):
+    """Match actual endpoint arguments and request fields, not prose words."""
+    paths = api_paths(words)
     if method == 'PUT' and any(re.fullmatch(r'repos/[^/]+/[^/]+/pulls/[^/]+/merge', p) for p in paths):
         return True
     if method not in ('GET', 'HEAD'):
@@ -905,7 +1031,7 @@ def inspectable_here_documents(command):
     This covers literal delimiters and direct shell receivers. Complex shell
     pipelines should use an explicit shell script rather than guessing context.
     """
-    pattern = re.compile(r'''(?<!<)<<(?!<)(-?)[ \t]*(('[^']*'|"[^"]*"|\\?[A-Za-z_][\w.-]*))''')
+    pattern = re.compile(r"""(?<!<)<<(?!<)(-?)[ \t]*((?:'[^']*'|"(?:\\.|[^"\\])*"|\\.|[^\s;&|()<>"'\\])+)""")
     lines = command.splitlines(keepends=True)
     output = []
     index = 0
@@ -978,7 +1104,7 @@ def changed_directory(cwd, destination):
 def check_command(command, cwd, depth=0, environment=None):
     if depth > 3:
         return
-    command = inspectable_here_documents(command)
+    command = ansi_c_quotes(inspectable_here_documents(command))
     try:
         parts = list(segments(command))
         raw_parts = list(segments(command, preserve_quotes=True))
@@ -990,12 +1116,24 @@ def check_command(command, cwd, depth=0, environment=None):
     # connector selects success (&&) or failure (||), instead of assuming cd
     # succeeded because its target looked like a directory during this check.
     states = {(cwd, True, (), tuple(sorted((environment or {}).items())))}
+    scopes = []
     for part_index, (words, separator) in enumerate(parts):
         runnable = {(where, success, stack, env) for where, success, stack, env in states
                     if separator not in ('&&', '||')
                     or (separator == '&&' and success)
                     or (separator == '||' and not success)}
         next_states = states - runnable
+        if words == ['(']:
+            scopes.append((runnable, next_states))
+            states = runnable
+            continue
+        if words == [')']:
+            if scopes:
+                outer, skipped = scopes.pop()
+                outcomes = {success for _, success, _, _ in states}
+                states = skipped | {(where, success, stack, env)
+                    for where, _, stack, env in outer for success in outcomes}
+            continue
         unwrapped, command_environment, directories = strip_wrappers(words, environment)
         if not unwrapped:
             continue
@@ -1098,12 +1236,16 @@ def check_command(command, cwd, depth=0, environment=None):
             elif program in ('curl', 'wget', 'http', 'https'):
                 if program == 'curl' and list(option_values(unwrapped[1:], {'--config'}, {'-K'})):
                     deny(CURL_CONFIG)
-                if any(github_api_host(word) for word in unwrapped[1:]):
-                    arguments = api_arguments(unwrapped, command_cwd, program)
-                    if merge_api_request(unwrapped, arguments, request_method(unwrapped, program)):
-                        deny(MERGE)
-                    if copilot_request(arguments):
-                        deny(COPILOT)
+                for operation in http_operations(unwrapped):
+                    if any(github_api_host(word) for word in operation[1:]):
+                        arguments = api_arguments(operation, command_cwd, program)
+                        method = request_method(operation, program)
+                        if protected_api_write(operation, arguments, method):
+                            deny(TO_MAIN)
+                        if merge_api_request(operation, arguments, method):
+                            deny(MERGE)
+                        if copilot_request(arguments):
+                            deny(COPILOT)
             next_states.update({(where, True, stack, shell_env), (where, False, stack, shell_env)})
         states = next_states
 
