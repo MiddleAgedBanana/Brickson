@@ -130,6 +130,12 @@ targets:
     platform: iOS
     sources:
       - BricksonUITests
+      # The room Home keeps for the keyboard, worked out from the window's
+      # size: plain logic with no app dependencies, compiled here too so
+      # KeyboardProbeTests checks the live keyboard and Home's safety row
+      # against the same rule the app uses (docs/DECISIONS.md, "Typing is a
+      # state of Home").
+      - path: Brickson/Layout/KeyboardAllowance.swift
     dependencies:
       - target: Brickson
     settings:

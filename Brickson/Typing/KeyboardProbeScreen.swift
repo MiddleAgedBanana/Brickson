@@ -1,9 +1,29 @@
-#if DEBUG
 import SwiftUI
 
+extension View {
+    /// This view, or the keyboard probe when the launch asked for it
+    /// (`--screen=keyboard-probe`, read by `LaunchOptions`). Only debug
+    /// builds read launch arguments, and only they have a probe screen: in a
+    /// release build this is always the view itself.
+    @ViewBuilder
+    func replacedByKeyboardProbe(when isRequested: Bool) -> some View {
+        #if DEBUG
+        if isRequested {
+            KeyboardProbeScreen()
+        } else {
+            self
+        }
+        #else
+        self
+        #endif
+    }
+}
+
+#if DEBUG
 /// One typing field and a line of numbers saying where Apple's keyboard
-/// starts, for `KeyboardProbeTests`. Debug builds only, opened by
-/// `KeyboardProbeLaunch`. Nothing typed here is saved.
+/// starts, for `KeyboardProbeTests`. Debug builds only, opened by the
+/// launch argument `--screen=keyboard-probe` in place of Home. Nothing typed
+/// here is saved.
 ///
 /// The field has the settings Home's typing field will have
 /// (`typingFieldTraits()`), so the keyboard measured is the one people will

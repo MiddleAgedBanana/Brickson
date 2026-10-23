@@ -53,7 +53,7 @@ struct BricksonApp: App {
     var body: some Scene {
         WindowGroup {
             HomeView(showsSettings: $showsSettings)
-                .replacedByKeyboardProbeIfRequested()
+                .replacedByKeyboardProbe(when: launch.startScreen == .keyboardProbe)
                 // Before the environment below, so Settings receives it too.
                 .settingsCover(isPresented: $showsSettings)
                 .environment(audioSafety)

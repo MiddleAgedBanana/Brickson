@@ -1,87 +1,87 @@
 import UIKit
 import XCTest
 
-/// Measures where Apple's keyboard starts on this simulator, so Home's
-/// typing state can keep every safety control above it (docs/DECISIONS.md,
-/// "Typing is a state of Home"). Opt-in: skipped unless the test runner's
-/// environment has BRICKSON_KEYBOARD_PROBE=1. xcodebuild passes it on when
-/// it is set with a TEST_RUNNER_ prefix:
+/// Apple's keyboard against the room Home keeps for it, on every UI run
+/// (docs/DECISIONS.md, "Typing is a state of Home"). Each test, for one
+/// orientation and text size:
 ///
-///     TEST_RUNNER_BRICKSON_KEYBOARD_PROBE=1 scripts/test.sh ui
+/// 1. Opens the probe screen (`KeyboardProbeScreen`, debug builds only),
+///    shows the keyboard, and prints one line, `KEYBOARD-PROBE {json}`, to
+///    the test log: where SwiftUI sees the keyboard's top, how many keys
+///    showed, and the allowance for the window. The JSON, a screenshot and
+///    the accessibility tree are attached to the result too.
+/// 2. Fails if the live keyboard reaches higher than `KeyboardAllowance`
+///    keeps for the window: Apple's keyboard has grown, and the measured
+///    rows in `KeyboardAllowanceTests` and the app's references need the
+///    new numbers.
+/// 3. Opens Home in the same window and fails if any of Yes, No,
+///    Emergency, Again or Get Attention reaches below the allowance's
+///    limit, so the keyboard would cover it once typing comes to Home.
 ///
-/// Each test opens the probe screen (`KeyboardProbeScreen`, debug builds
-/// only) in one orientation at one text size, shows the keyboard, and
-/// prints one line, `KEYBOARD-PROBE {json}`, to the test log. The JSON, a
-/// screenshot and the accessibility tree are attached to the result too.
-///
-/// The simulator must show the full software keyboard, not the bar it shows
-/// when it thinks a hardware keyboard is in use (AGENTS.md, *Gotchas*). A
-/// test that finds fewer keys than a full keyboard has prints its numbers
-/// and then fails. These are simulator numbers: a real device can differ,
-/// and the keyboard changes with the language and keyboards a person has
+/// The UI tests compile `KeyboardAllowance` too (project.yml), so the rule
+/// is the app's own. The simulator must show the full software keyboard,
+/// not the bar it shows when it thinks a hardware keyboard is in use;
+/// `scripts/test.sh ui` turns the bar off (AGENTS.md, *Gotchas*). A test
+/// that finds fewer keys than a full keyboard has prints its numbers and
+/// then fails. These are simulator numbers: a real device can differ, and
+/// the keyboard changes with the languages and keyboards a person has
 /// added (docs/HANDOFF.md).
 final class KeyboardProbeTests: XCTestCase {
-    private static let isEnabled = ProcessInfo.processInfo.environment["BRICKSON_KEYBOARD_PROBE"] == "1"
-    /// `KeyboardProbeLaunch.argument` in the app.
+    /// `LaunchOptions.StartScreen.keyboardProbe` in the app.
     private static let probeArgument = "--screen=keyboard-probe"
     /// Fewer keys than this means the keyboard is minimized to its bar. A
     /// full English keyboard has 26 letter keys before any other.
     private static let fullKeyboardKeys = 26
+    /// The probe and the frames read here are rounded to half a point.
+    private static let rounding: CGFloat = 0.5
 
     override func setUpWithError() throws {
         continueAfterFailure = false
-        try XCTSkipUnless(
-            Self.isEnabled,
-            "An opt-in measurement: set TEST_RUNNER_BRICKSON_KEYBOARD_PROBE=1 to measure the keyboard"
-        )
     }
 
     @MainActor
     func testPortraitAtDefaultTextSize() throws {
-        try measure(.portrait, textSize: "UICTContentSizeCategoryL")
+        try measure(.portrait, textSize: .large)
     }
 
     @MainActor
     func testPortraitAtLargestTextSize() throws {
-        try measure(.portrait, textSize: "UICTContentSizeCategoryAccessibilityXXXL")
+        try measure(.portrait, textSize: .ax5)
     }
 
     @MainActor
     func testLandscapeAtDefaultTextSize() throws {
-        try measure(.landscapeLeft, textSize: "UICTContentSizeCategoryL")
+        try measure(.landscapeLeft, textSize: .large)
     }
 
     @MainActor
     func testLandscapeAtLargestTextSize() throws {
-        try measure(.landscapeLeft, textSize: "UICTContentSizeCategoryAccessibilityXXXL")
+        try measure(.landscapeLeft, textSize: .ax5)
     }
 
     // MARK: - Measuring
 
     @MainActor
-    private func measure(_ orientation: UIDeviceOrientation, textSize: String) throws {
+    private func measure(_ orientation: UIDeviceOrientation, textSize: UITestTextSize) throws {
         if orientation.isLandscape, UIDevice.current.userInterfaceIdiom == .phone {
             throw XCTSkip("iPhone is portrait only (docs/DECISIONS.md, \"Orientations\")")
         }
         let simulator = ProcessInfo.processInfo.environment["SIMULATOR_DEVICE_NAME"] ?? "device"
-        let name = [
-            simulator,
-            orientation.isLandscape ? "landscape" : "portrait",
-            textSize.replacingOccurrences(of: "UICTContentSizeCategory", with: ""),
-        ].joined(separator: " ")
+        let name = [simulator, orientation.isLandscape ? "landscape" : "portrait", textSize.name].joined(separator: " ")
 
-        XCUIDevice.shared.orientation = orientation
-        defer { XCUIDevice.shared.orientation = .portrait }
-        let app = XCUIApplication()
-        app.launchArguments = [Self.probeArgument, "-UIPreferredContentSizeCategoryName", textSize]
-        app.launch()
-        defer { app.terminate() }
-
+        let app = launchedApp(
+            textSize: textSize,
+            orientation: orientation,
+            arguments: [Self.probeArgument],
+            waitsForHome: false
+        )
         let field = app.descendants(matching: .any)["keyboardProbe.field"]
         XCTAssertTrue(
-            field.waitForExistence(timeout: 15),
+            field.waitForExistence(timeout: 60),
             "The probe screen did not open. It exists only in debug builds."
         )
+        let window = waitForWindow(of: app, orientation: orientation)
+        let allowance = KeyboardAllowance(windowSize: window.size)
         // The screen focuses its field as it opens; tap only if that failed.
         if !app.keyboards.firstMatch.waitForExistence(timeout: 5) {
             field.tap()
@@ -96,7 +96,7 @@ final class KeyboardProbeTests: XCTestCase {
         // for the keyboard. Checked only after the numbers are printed, so a
         // failure still reports what the keyboard looked like.
         let readout = app.staticTexts["keyboardProbe.readout"]
-        let windowHeight = Self.points(app.frame.height)
+        let windowHeight = Self.points(window.height)
         let keyboardSeen = NSPredicate(format: "NOT (label CONTAINS %@)", "keyboardTop=\(windowHeight);")
         _ = XCTWaiter.wait(for: [expectation(for: keyboardSeen, evaluatedWith: readout)], timeout: 10)
         let swiftUI = settledReadout(readout)
@@ -112,11 +112,13 @@ final class KeyboardProbeTests: XCTestCase {
             "simulator": simulator,
             "system": UIDevice.current.systemVersion,
             "orientation": orientation.isLandscape ? "landscape" : "portrait",
-            "textSize": textSize,
-            "appFrame": Self.rect(app.frame),
+            "textSize": textSize.rawValue,
+            "appFrame": Self.rect(window),
             "swiftUI": swiftUI,
             "swiftUILeftRoom": swiftUILeftRoom,
             "keyboardHeight": keyboardTop.map { windowHeight - $0 } as Any,
+            "allowance": Double(allowance.height),
+            "bandLimit": Double(allowance.bandLimit),
             "keyCount": keys.count,
             "keyboard": keys.count >= Self.fullKeyboardKeys ? "full software keyboard" : "keyboard bar",
             "keyboardFrames": keyboards.map { Self.rect($0.frame) },
@@ -124,11 +126,7 @@ final class KeyboardProbeTests: XCTestCase {
         if let keysTop = keys.map(\.frame.minY).min() {
             result["keysTop"] = Self.points(keysTop)
         }
-
-        let data = try JSONSerialization.data(withJSONObject: result, options: [.sortedKeys])
-        let json = String(decoding: data, as: UTF8.self)
-        print("KEYBOARD-PROBE " + json)
-        attach(XCTAttachment(data: data, uniformTypeIdentifier: "public.json"), named: "\(name).json")
+        try report(result, prefix: "KEYBOARD-PROBE", name: name)
         attach(XCTAttachment(screenshot: XCUIScreen.main.screenshot()), named: "\(name).png")
         attach(XCTAttachment(string: app.debugDescription), named: "\(name) tree.txt")
 
@@ -143,6 +141,68 @@ final class KeyboardProbeTests: XCTestCase {
             """
         )
         XCTAssertTrue(swiftUILeftRoom, "The keyboard is on screen, but SwiftUI never left room for it")
+        let top = try XCTUnwrap(keyboardTop, "The probe did not report the keyboard's top (\(name))")
+        XCTAssertGreaterThanOrEqual(
+            CGFloat(top) + Self.rounding,
+            allowance.bandLimit,
+            """
+            The keyboard's top is at \(top), above the allowance's limit of \(allowance.bandLimit) for a window \
+            of \(window.size) (\(name)): Apple's keyboard is taller than KeyboardAllowance keeps room for. Add \
+            this measurement to KeyboardAllowanceTests and raise the reference for this shape of window.
+            """
+        )
+        app.terminate()
+
+        // Home in the same window: its safety row ends above the limit.
+        let home = launchedApp(textSize: textSize, orientation: orientation)
+        let homeWindow = waitForWindow(of: home, orientation: orientation)
+        XCTAssertEqual(homeWindow.size, window.size, "Home opened in another window than the probe (\(name))")
+        var safetyRow: [String: Double] = [:]
+        for control in ["Yes", "No", "Emergency", "Again", "getAttention"] {
+            let frame = home.buttons[control].firstMatch.frame
+            XCTAssertFalse(frame.isEmpty, "Home has no \(control) (\(name))")
+            let bottom = frame.maxY - homeWindow.minY
+            safetyRow[control] = Self.points(bottom)
+            XCTAssertLessThanOrEqual(
+                bottom,
+                allowance.bandLimit + Self.rounding,
+                """
+                \(control) ends at \(bottom), below the allowance's limit of \(allowance.bandLimit) (\(name)): \
+                Apple's keyboard would cover it once typing opens (docs/DECISIONS.md, "Typing is a state of Home")
+                """
+            )
+        }
+        try report(
+            ["name": name, "bandLimit": Double(allowance.bandLimit), "safetyRowBottoms": safetyRow],
+            prefix: "KEYBOARD-BAND",
+            name: "\(name) band"
+        )
+        attachCapture(home, name: "keyboard band, \(name)")
+    }
+
+    /// The app's window once it has turned to `orientation`: a query
+    /// straight after a rotation can read the frame from before the turn.
+    @MainActor
+    private func waitForWindow(of app: XCUIApplication, orientation: UIDeviceOrientation) -> CGRect {
+        let turned = NSPredicate { _, _ in
+            MainActor.assumeIsolated {
+                let frame = app.windows.firstMatch.frame
+                return !frame.isEmpty && (frame.width > frame.height) == orientation.isLandscape
+            }
+        }
+        XCTAssertEqual(
+            XCTWaiter.wait(for: [expectation(for: turned, evaluatedWith: nil)], timeout: 10), .completed,
+            "the window did not turn to \(orientation.isLandscape ? "landscape" : "portrait")"
+        )
+        return app.windows.firstMatch.frame
+    }
+
+    /// Prints `prefix {json}` to the test log and attaches the JSON.
+    @MainActor
+    private func report(_ values: [String: Any], prefix: String, name: String) throws {
+        let data = try JSONSerialization.data(withJSONObject: values, options: [.sortedKeys])
+        print(prefix + " " + String(decoding: data, as: UTF8.self))
+        attach(XCTAttachment(data: data, uniformTypeIdentifier: "public.json"), named: "\(name).json")
     }
 
     /// The readout's values once two reads half a second apart agree, so the
