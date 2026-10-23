@@ -667,7 +667,7 @@ reference app.
   switch (Codex review of PR #16). That retry replaces the tone, but the
   tone already sounding plays on until its replacement has started, so a
   retry that cannot start one never silences it (Codex review of PR #38).
-  *Open:* when that retry does activate the session but its new tone
+  **Open:** when that retry does activate the session but its new tone
   cannot start, the kept tone sounds on under "Sounding" with no warning,
   though it was started without the session; a later phrase that
   activates the session clears "Audio failed" the same way. Whether
