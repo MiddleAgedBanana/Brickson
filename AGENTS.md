@@ -456,7 +456,8 @@ the failure.
   `DraftStore`, `SettingsIdleClock`, `SetupRecord`, `CheckInPolicy`,
   `VoiceList`, `PersonalVoiceGuidance`, `PrivacyPolicyDocument`,
   `SpeedChoice`, `WordFit`, `HomeShape`, `HomeRegion`, `HomeControlNames`,
-  `HomeButtonLook`. Views only read them.
+  `HomeButtonLook`, `LibrarySnapshot`, `LibraryEdit`, `LibraryRules`,
+  `LibraryImport`, `LibraryEditor`, `BackupCodec`. Views only read them.
 - **Run it, don't just read it.** Layout and flow changes are checked in the
   running app on an iPad and an iPhone simulator, at default and
   accessibility text sizes, light and dark.
