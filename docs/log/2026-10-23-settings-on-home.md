@@ -97,13 +97,26 @@ to 110pt on a zoomed 375×667 phone): at 288pt of content Yes and No get
 114pt against their 118pt, so keeping both in one row means cutting
 words or the spacing between targets, which is the layout engine's
 call (follow-up 6). The sound line at the foot can sit nearest a row
-that speaks or changes a setting: under the bar, its 125pt at the
-largest text on CI's iPhone put Home's Settings nearest Back to Talking
-(modelled from the first run's frames), so a held look would open
-Settings and then close it from the same spot (invariant 10; follow-up
-9). CodeRabbit asked for the owner's answer on the gear alone, which the
-description asks for, and for this record to say what CI had and had
-not shown, fixed below.
+that speaks or changes a setting. Under the bar, at the largest text on
+CI's iPhone, the line's 125pt put Home's Settings nearest Back to
+Talking (modelled from the first run's frames), so a held look would
+open Settings and then close it from the same spot (invariant 10;
+follow-up 9). CodeRabbit asked for the owner's answer on the gear
+alone, which the description asks for, and for this record to say what
+CI had and had not shown, fixed below.
+
+**UI tests, second run** (`e285f6c`). `SettingsOnHomeTests` passed on
+both simulators, and every UI test passed on the iPad. On the iPhone one
+failed: Apple's audit of Settings' first screen, at the default text
+size, reported "Text clipped" on no element, twice in light and twice
+in dark. Family Setup and the privacy policy, under the same bar and
+sound line, passed, and the root had passed on the first run, so the
+change was the root's new `ViewThatFits`. This project had met it
+before: the audit grows the text and compares each text with itself,
+and labels built with `ViewThatFits` failed it (docs/DECISIONS.md,
+*Home's stand-in layout*). Now `SettingsRootColumns` works out the
+arrangement, and `SettingsRootLayout` places the one row and the one
+note, with no hidden copy; AGENTS.md has the gotcha.
 
 ## Commits
 
@@ -123,7 +136,9 @@ not shown, fixed below.
 - `0e512c0` Choose Settings' root columns by the width its row needs
 - `5cbc9a6` Record review round 2 and score the chain from Home's Settings
 - `3103ac5` Merge main (PR #14) into Settings on Home
-- This record's review round 3.
+- `e285f6c` Record review round 3 of Settings on Home
+- `5926afd` Place Settings' root with a layout instead of ViewThatFits
+- This record's second UI run, and the gotcha in AGENTS.md.
 
 ## Verified
 
@@ -149,14 +164,28 @@ not shown, fixed below.
   two-column layout built. Its UI run was cancelled by the next push
   before `SettingsOnHomeTests` started (read from its partial result
   bundle).
+- CI on `e285f6c`: unit tests passed. UI tests: on the iPad 39 passed
+  and the 4 opt-in keyboard probes were skipped; on the iPhone 37
+  passed, the Settings audit above failed, and 5 were skipped (the
+  probes, and the landscape check that runs on the iPad). The round 2
+  Settings layout held: Family Setup took the trailing column under Back
+  to Talking on the iPad at the default size and at AX5 (492pt wide,
+  where the estimate was 902 of 1000pt for two columns) and spanned the
+  iPhone's width, and `SettingsOnHomeTests` passed on all five windows.
+- `SettingsRootColumnsTests`, 4 tests, passed on Linux the same way, with
+  the 30 above; four mutations (strict `>`, the row in the leading
+  column, the height from the row alone, no gap between the columns)
+  each failed them. `SettingsRootLayout` was typechecked there, with
+  Swift 6 and main-actor default isolation, against a stand-in of
+  SwiftUI's `Layout` API written from Apple's documentation.
 
 ## Not verified
 
 - Nothing was built or run for iOS in this session; the views, the UI
   tests and the label-fit tests run first on CI.
-- CI on `0e512c0` and after had not finished when this record was
+- CI on `5926afd` and after had not finished when this record was
   written: the pull request's checks show it, and must pass before it
-  merges.
+  merges. `SettingsRootLayout` has not met the real SDK until then.
 - The scoring table's percentages and the Back to Talking result for
   windows CI does not run (a 375pt phone, iPads other than the 13-inch,
   the 320pt window) come from a model of the frames with CI's text
@@ -165,13 +194,8 @@ not shown, fixed below.
   device check in docs/HANDOFF.md.
 - Bold Text on in a running app: no UI test turns it on; the label-fit
   tests check the widths with Bold Text drawn by SwiftUI.
-- The round 2 Settings layout (the bar's height, the sound line at the
-  foot, the root's two columns) is unbuilt until CI; its frames above
-  are a model from the first run's, with the bar at its natural height.
-  On CI's 13-inch iPad at AX5, the two columns need about 902 of the
-  1000pt the root has, by the row's words as drawn on the first run's
-  iPhone; if the row is wider than that, the root falls back to one
-  column and `SettingsOnHomeTests` fails there by centre.
+- That the root's layout clears the audit's clipped text is the
+  project's earlier lesson applied, not yet a passing run.
 - Settings' gear alone is never drawn by a test: CI's iPhone has 370pt
   of content, where the word fits with Bold Text off or on. Its label,
   its large content viewer and Apple's audit of it wait for a window

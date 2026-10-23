@@ -1246,7 +1246,8 @@ item 7 left for later ([`work/settings-on-home.md`](work/settings-on-home.md),
   foot of the cover (*Settings is a cover with a fixed safety bar*), so
   the root's Family Setup row starts under the bar, over the spot where
   Home's Settings was. Where half the width holds the row's words on one
-  line (a `ViewThatFits` that measures the row), the row takes the bar's
+  line (`SettingsRootColumns`, which measures the row; a `ViewThatFits`
+  failed Apple's audit here, as it had for labels), the row takes the bar's
   trailing column, under Back to Talking and as wide, with the note
   beside it; on phones it spans the width. At the foot, the sound line's
   nearest controls are whatever rows a screen has scrolled to its lower

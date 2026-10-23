@@ -17,8 +17,8 @@ Home's Settings button. Owner: the Settings on Home thread. Status: building.*
   message" (docs/DECISIONS.md, "Home's slot plan") is the same kind of
   problem: a look resting on the message meets controls that speak.
 - **Proposed outcome:** a family member finds Settings on Home in one
-  touch, in the same place every time, and a person whose pointer rests
-  where a control was never speaks by accident on the way in or out.
+  touch, in the same place every time, and on the way in or out a
+  pointer still resting where a control was meets nothing that speaks.
   The first launch shows "Family: help with setting up is in Settings."
   in the message area until Family Setup has been opened once.
 - **Who and what it affects:** families and caregivers (touch, mostly);
