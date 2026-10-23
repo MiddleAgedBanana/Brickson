@@ -2,7 +2,7 @@
 
 *Roadmap: R0 item 4 (Get Attention), the part PR #16 left for later:
 the controls on Home. Owner: the Get Attention and Stop on Home thread.
-Status: intent.*
+Status: spec.*
 
 ## Intent
 
@@ -61,3 +61,112 @@ Status: intent.*
   - *Settings' Get Attention place* stays empty in this pull request:
     on wide windows Settings' root puts its note under that place, so
     adding it needs its own scoring. Recorded in docs/HANDOFF.md.
+
+## Spec
+
+Frames come from `HomeShape`, from the width Home is given and the
+person's Bold Text setting, never from the device. Region order is
+unchanged: A (the message), C (the safety row), B (the categories with
+Stop's well and Settings), D (the phrase grid). Widths below are content
+widths (the window less Home's 16pt margins).
+
+- **States:** Home's states (just opened, a category or the emergency
+  phrases showing, a phrase just spoken, an audio warning, the alarm
+  sounding, the alarm stopped or failed) change no frame. While the alarm
+  sounds, Stop's well shows Stop; otherwise it is empty, hidden from
+  accessibility, and nothing moves into it. Get Attention stays where it
+  is and stays enabled while sounding: choosing it again changes nothing.
+  - **C, the safety row,** two rows on every window, in two equal
+    columns: Yes and No sharing the leading column, then Emergency;
+    under them Again, then Get Attention. Emergency stays at the
+    trailing end of the first row, under Settings' Back to Talking; Get
+    Attention is directly under Emergency. Nothing in C shares a row
+    with the message's edge but Yes, No and Emergency, as before.
+  - **B, the categories:** Stop's well at the top of the leading column
+    with a category directly under it, and Settings at the trailing end:
+    - *Band* (wide windows where four categories and Settings fit in a
+      row: from 548pt, and from 588pt with Bold Text, Settings showing
+      its gear alone below 584pt and 630pt): Stop above the first
+      category in the leading column, the other three and Settings at
+      the full height of both rows (the slot plan's regular band).
+    - *Three columns* (narrower, from 304pt, 328pt with Bold Text): Stop,
+      Basics, Needs; then Conversation (under Stop), Feelings, Settings.
+      The categories keep at least their minimum and share any room
+      left as equal thirds; Stop and Settings take the rest, Settings
+      showing its gear alone below 80pt (86pt with Bold Text).
+    - *Two columns* (the narrowest windows): Stop, Basics; Needs (under
+      Stop), Conversation; Feelings, Settings.
+    The region is two rows tall in the first two arrangements and three
+    in the third, whatever the library holds. A library with more than
+    four everyday categories (none can be made yet: editing and import
+    have no screen) shows its fourth and later categories in a list that
+    scrolls inside the fourth category's cell; Stop and Settings never
+    scroll. The layout engine's thread still decides this for good
+    (docs/DECISIONS.md, "Home's slot plan", *Open*).
+  - **Minimum widths** (default text size, measured with SF Pro on Linux
+    and checked with the real fonts by `StarterLabelFitTests`): Get
+    Attention 100 (110 with Bold Text; "Attention" is its widest word,
+    85pt, 96pt bold), Stop 52 (56; "Stop" is 37pt, 41pt bold). Get
+    Attention always gets half the width (at least 140pt), so it shows
+    on one line at the default size wherever the line fits (123pt,
+    136pt bold), and on two otherwise.
+  - **The status line** shows, in order of what the person most needs:
+    an audio problem ("Alert failed", "Alert stopped", then the others),
+    else "Sounding" while the alarm sounds, else "Speaking". "Sounding"
+    gets a reserved invisible copy like the others, so nothing moves.
+    Every new `failureSequence` is announced to VoiceOver, so a retry
+    that fails again is heard again (`AudioAnnouncementPolicy`).
+- **Input methods:** both are standard `Button`s. Get Attention: label
+  "Get Attention" with a decorative bell, Voice Control names "Get
+  Attention" and "Help", identifier `getAttention`, fill `AttentionFill`.
+  Stop: label "Stop" with a decorative crossed-out bell, names "Stop" and
+  "Stop Alert", identifier `stopAlert`, fill `StopFill`. VoiceOver,
+  Switch Control and Full Keyboard Access reach C first: Yes, No,
+  Emergency, Get Attention, then Again (reached last in its region);
+  then A; then B: Stop when it shows, the categories, then Settings;
+  then D.
+  **What a held activation meets** (the model of the frames, from CI's
+  captures of the merged Settings on Home; nearest centre and nearest
+  edge, ties counted):
+
+  | Window | Nearest Get Attention's spot, after it (other than itself) | After Stop (its well empties) | After Back to Talking | After Home's Settings |
+  |---|---|---|---|---|
+  | 402×874 phone, default, AX5 and Bold Text | Emergency, both | Conversation (under Stop), both | Emergency, both | Family Setup, both |
+  | 375×667 phone | Emergency by edge; Emergency and Needs tie by centre | Conversation, both | Emergency, both | Family Setup, both |
+  | 13-inch iPad, both orientations, default and AX5 | Emergency, both | Basics (under Stop), both | Emergency, both | Family Setup, both |
+  | 320pt window | Emergency by edge, Basics by centre | Needs (under Stop), both | Emergency, both | Family Setup, both |
+
+  None of these speaks, alarms, deletes or changes a size: Emergency and
+  a category only change which phrases show. Stop is never nearest Get
+  Attention's spot, so a held look on Get Attention can never stop the
+  alarm, and Get Attention is never nearest Stop's, so a held look on
+  Stop can never restart it. Margins after Stop: 4pt by edge (the gap
+  under Stop is 8pt, the gap above it 12pt) and 12pt or more by centre.
+- **Colours** (docs/DECISIONS.md, "Solid fills on Home"; pinned in
+  `PaletteTests` with the other fills): `AttentionFill` `#B45309`, white
+  text 5.02:1, against a black screen 4.18:1, against white 5.02:1;
+  `StopFill` `#0F766E`, white text 5.47:1, against black 3.84:1, against
+  white 5.47:1. Primary ink (the pressed ring) on each: 4.18 and 3.84 in
+  light, 5.02 and 5.47 in dark.
+- **Privacy policy:** no sentence changes. The alarm plays on the
+  device and nothing is sent anywhere.
+- **Screens:** none drawn for this change; the UI tests attach captures
+  of every Home state, the alarm sounding included, on both devices.
+- **Concerns:**
+  - *The phrase grid loses height on every window.* Phones give up a
+    quick-control row (72pt at the default size); wide windows also give
+    the categories a second row (176pt in all). On the windows CI runs
+    the starter library still fits (tiles about 126pt on a 402×874 phone
+    against a 99pt minimum; on the 13-inch iPad 276, 236, 161 and 121pt
+    in portrait and landscape, default and AX5, against 110pt), which
+    `HomeLayoutTests` checks. It newly scrolls at the default size on a
+    375×667 phone (tiles about 83pt; the slot plan expected this), and,
+    by the model, on an 11-inch iPad in landscape (about 95pt) and an
+    iPad mini in landscape (about 65pt). Listed in docs/DECISIONS.md,
+    *Where the grid still scrolls*, for the layout engine. The trade:
+    a call for help one activation from every Home state, which
+    invariant 10 requires and nothing else gives.
+  - *The slot plan's own C* (one row on wide windows, Get Attention at
+    the trailing end, under Phrases and Type) waits for A's trailing
+    column. Until then Get Attention must not border the message.
+  - *Settings' Get Attention place* stays empty (Intent, above).
