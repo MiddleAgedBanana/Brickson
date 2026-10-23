@@ -133,17 +133,16 @@ struct StarterLabelFitTests {
     }
 
     /// Fails if Yes, No, Again, Emergency or Settings would break or be cut
-    /// off in the narrowest width Home gives it (`HomeShape.MinimumWidths`
-    /// and `narrowestYesNoWidth`), with Bold Text off or on.
-    /// `HomeShapeTests` checks no control is narrower.
+    /// off in the narrowest width Home gives it (`HomeShape.MinimumWidths`),
+    /// with Bold Text off or on. `HomeShapeTests` checks no control is
+    /// narrower.
     @Test(arguments: [false, true])
     func theFixedControlsFitTheirNarrowestWidths(boldText: Bool) {
         let minimum = HomeShape.MinimumWidths.forBoldText(boldText)
         let narrow = HomeShape(contentWidth: Self.narrowestWidth)
-        let yesNo = HomeShape.narrowestYesNoWidth(boldText: boldText)
         let quick: [(ControlNames, CGFloat)] = [
-            (HomeControlNames.yes, yesNo),
-            (HomeControlNames.no, yesNo),
+            (HomeControlNames.yes, minimum.yesNo),
+            (HomeControlNames.no, minimum.yesNo),
             (HomeControlNames.again, minimum.again),
             (HomeControlNames.emergency, minimum.emergency),
         ]
@@ -158,6 +157,20 @@ struct StarterLabelFitTests {
             HomeControlNames.settings.visible, .category,
             in: Self.labelSize(CGSize(width: minimum.settings, height: narrow.categoryHeight)),
             "Settings", boldText: boldText
+        )
+        // Where Settings shows its gear alone, the narrowest button has
+        // room for the gear at its default side, which is no smaller than
+        // the gear beside the word.
+        let room = Self.labelSize(CGSize(width: minimum.settingsSymbol, height: narrow.categoryHeight))
+        #expect(
+            SettingsButton.symbolSide <= min(room.width, room.height),
+            "Settings' gear alone is \(SettingsButton.symbolSide)pt, more than the \(room) it is given"
+        )
+        let besideTheWord = LabelFont.category.legible(boldText ? .bold : .regular)
+            .iconWidth(SettingsButton.symbol, at: .large)
+        #expect(
+            SettingsButton.symbolSide >= besideTheWord,
+            "Settings' gear alone is \(SettingsButton.symbolSide)pt, smaller than beside its word (\(besideTheWord)pt)"
         )
     }
 

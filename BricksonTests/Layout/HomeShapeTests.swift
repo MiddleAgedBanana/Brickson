@@ -108,20 +108,21 @@ struct HomeShapeTests {
     // MARK: The safety row and Settings
 
     /// Fails if a control of the safety row or the categories region gets
-    /// narrower than the width its word needs, at any width, with Bold Text
-    /// off or on. `StarterLabelFitTests` checks those widths, and the
-    /// narrowest Yes and No, with the real fonts.
+    /// narrower than the width its word needs, or Settings than its gear
+    /// where it shows the gear alone, at any width, with Bold Text off or
+    /// on. `StarterLabelFitTests` checks those widths with the real fonts.
     @Test(arguments: [false, true])
     func everyControlKeepsItsMinimumWidth(boldText: Bool) {
         let minimum = HomeShape.MinimumWidths.forBoldText(boldText)
-        let narrowestYesNo = HomeShape.narrowestYesNoWidth(boldText: boldText)
         for width in Self.everyWidth {
             let shape = HomeShape(contentWidth: width, boldText: boldText)
+            #expect(shape.yesNoWidth >= minimum.yesNo, "\(width)pt")
             #expect(shape.againWidth >= minimum.again, "\(width)pt")
             #expect(shape.emergencyWidth >= minimum.emergency, "\(width)pt")
             #expect(shape.categoryWidth >= minimum.category, "\(width)pt")
-            #expect(shape.settingsWidth >= minimum.settings, "\(width)pt")
-            #expect(shape.yesNoWidth >= narrowestYesNo, "\(width)pt")
+            let settings = shape.settingsShowsName ? minimum.settings : minimum.settingsSymbol
+            #expect(shape.settingsWidth >= settings, "\(width)pt")
+            #expect(shape.settingsShowsName == (shape.settingsWidth >= minimum.settings), "\(width)pt")
         }
     }
 
@@ -151,20 +152,44 @@ struct HomeShapeTests {
     }
 
     /// Fails if Emergency stops being the safety row's widest control, or
-    /// Yes, No and Again stop sharing one width in a single row: Emergency
-    /// is the longest word and the easiest target to find.
+    /// Yes, No and Again stop sharing one width in a single row wherever
+    /// Again and Emergency have room: Emergency is the longest word and the
+    /// easiest target to find.
     @Test(arguments: [false, true])
     func emergencyIsTheWidestQuickControl(boldText: Bool) {
+        let minimum = HomeShape.MinimumWidths.forBoldText(boldText)
         for width in Self.everyWidth {
             let shape = HomeShape(contentWidth: width, boldText: boldText)
             #expect(shape.emergencyWidth > shape.yesNoWidth, "\(width)pt")
             if shape.safetyRow == .oneRow {
                 #expect(shape.emergencyWidth > shape.againWidth, "\(width)pt")
-                #expect(shape.againWidth == shape.yesNoWidth, "\(width)pt")
+                #expect(shape.againWidth >= shape.yesNoWidth, "\(width)pt")
+                if shape.emergencyWidth > minimum.emergency {
+                    #expect(shape.againWidth == shape.yesNoWidth, "\(width)pt")
+                }
             }
         }
         let wide = HomeShape(contentWidth: 1000)
         #expect(abs(wide.emergencyWidth - (2 * wide.yesNoWidth + HomeShape.controlSpacing)) < 0.01)
+    }
+
+    /// Fails if a window keeps one safety row by narrowing anything but Yes
+    /// and No, or splits the row while Yes and No still have room: their
+    /// words are the shortest, and a second row costs the phrase grid a
+    /// row's height.
+    @Test(arguments: [false, true])
+    func yesAndNoNarrowBeforeTheSafetyRowSplits(boldText: Bool) {
+        let minimum = HomeShape.MinimumWidths.forBoldText(boldText)
+        let spacing = HomeShape.controlSpacing
+        let narrowestOneRow = 2 * minimum.yesNo + minimum.again + minimum.emergency + 3 * spacing
+        let tight = HomeShape(contentWidth: narrowestOneRow, boldText: boldText)
+        #expect(tight.safetyRow == .oneRow)
+        #expect(tight.yesNoWidth == minimum.yesNo)
+        #expect(tight.againWidth == minimum.again && tight.emergencyWidth == minimum.emergency)
+        #expect(HomeShape(contentWidth: narrowestOneRow - 0.5, boldText: boldText).safetyRow == .twoRows)
+        let smallPhone = HomeShape(contentWidth: 343, boldText: boldText)
+        #expect(smallPhone.safetyRow == .oneRow)
+        #expect(smallPhone.yesNoWidth <= smallPhone.againWidth)
     }
 
     /// Fails if a wider window ever gets the two-row safety row, or Settings
@@ -174,37 +199,67 @@ struct HomeShapeTests {
     func roomIsOnlyGivenUpAsTheWindowNarrows(boldText: Bool) {
         var sawOneRow = false
         var sawSettingsBeside = false
+        var sawSettingsNameBeside = false
         for width in Self.everyWidth {
             let shape = HomeShape(contentWidth: width, boldText: boldText)
+            let nameBeside = shape.settingsPlacement == .beside && shape.settingsShowsName
             if sawOneRow { #expect(shape.safetyRow == .oneRow, "\(width)pt") }
             if sawSettingsBeside { #expect(shape.settingsPlacement == .beside, "\(width)pt") }
+            if sawSettingsNameBeside { #expect(nameBeside, "\(width)pt") }
             sawOneRow = sawOneRow || shape.safetyRow == .oneRow
             sawSettingsBeside = sawSettingsBeside || shape.settingsPlacement == .beside
+            sawSettingsNameBeside = sawSettingsNameBeside || nameBeside
         }
     }
 
     /// Fails if a phone the app supports loses the one-row safety row or
-    /// Settings beside the categories where they fit, which keep the
-    /// starter library from scrolling there; or if the narrowest window, or
-    /// Bold Text on a smaller phone, keeps them where the words would not
-    /// fit.
-    @Test func phonesKeepOneSafetyRowAndSettingsBesideTheCategories() {
+    /// Settings beside the categories, with Bold Text off or on: either
+    /// would take a row from the phrase grid, and a 375pt phone's starter
+    /// library would scroll (invariant 11). Or if the narrowest window
+    /// keeps them where the words would not fit.
+    @Test(arguments: [false, true])
+    func phonesKeepOneSafetyRowAndSettingsBesideTheCategories(boldText: Bool) {
         for width: CGFloat in [343, 358, 370, 408] {
-            let shape = HomeShape(contentWidth: width)
+            let shape = HomeShape(contentWidth: width, boldText: boldText)
             #expect(shape.safetyRow == .oneRow, "\(width)pt")
             #expect(shape.settingsPlacement == .beside, "\(width)pt")
         }
-        for width: CGFloat in [370, 408] {
-            let bold = HomeShape(contentWidth: width, boldText: true)
-            #expect(bold.safetyRow == .oneRow, "\(width)pt with Bold Text")
-            #expect(bold.settingsPlacement == .beside, "\(width)pt with Bold Text")
-        }
-        let boldMidPhone = HomeShape(contentWidth: 358, boldText: true)
-        #expect(boldMidPhone.safetyRow == .twoRows && boldMidPhone.settingsPlacement == .beside)
-        let narrowest = HomeShape(contentWidth: 288)
+        let narrowest = HomeShape(contentWidth: 288, boldText: boldText)
         #expect(narrowest.safetyRow == .twoRows && narrowest.settingsPlacement == .below)
+    }
+
+    /// Fails if Bold Text costs a phone's phrase grid any height: the
+    /// heavier words may narrow Yes and No, and leave Settings its gear
+    /// alone, but never add a row above the phrases.
+    @Test func boldTextTakesNoHeightFromAPhonesPhrases() {
+        for width: CGFloat in [343, 358, 370, 408] {
+            let regular = HomeShape(contentWidth: width)
+            let bold = HomeShape(contentWidth: width, boldText: true)
+            #expect(bold.safetyRegionHeight == regular.safetyRegionHeight, "\(width)pt")
+            #expect(bold.categoryRegionHeight == regular.categoryRegionHeight, "\(width)pt")
+        }
+    }
+
+    /// Fails if Settings shows its gear alone where its word fits beside
+    /// the categories, or anywhere on a standard phone window without Bold
+    /// Text. A 375pt phone with Bold Text, and a window 328 to 363pt wide
+    /// without it, have room beside the categories only for the gear
+    /// (docs/DECISIONS.md, "Settings on Home").
+    @Test func settingsShowsItsNameWhereItFits() {
+        for width: CGFloat in [343, 358, 370, 408, 712, 1000] {
+            #expect(HomeShape(contentWidth: width).settingsShowsName, "\(width)pt")
+        }
+        for width: CGFloat in [358, 370, 408, 712, 1000] {
+            #expect(HomeShape(contentWidth: width, boldText: true).settingsShowsName, "\(width)pt with Bold Text")
+        }
         let boldSmallPhone = HomeShape(contentWidth: 343, boldText: true)
-        #expect(boldSmallPhone.safetyRow == .twoRows && boldSmallPhone.settingsPlacement == .below)
+        #expect(!boldSmallPhone.settingsShowsName)
+        #expect(boldSmallPhone.settingsWidth == HomeShape.MinimumWidths.boldText.settingsSymbol)
+        #expect(boldSmallPhone.categoryWidth >= HomeShape.MinimumWidths.boldText.category)
+        let narrowWindow = HomeShape(contentWidth: 308)
+        #expect(!narrowWindow.settingsShowsName && narrowWindow.settingsPlacement == .beside)
+        #expect(narrowWindow.settingsWidth == HomeShape.MinimumWidths.regular.settingsSymbol)
+        #expect(HomeShape(contentWidth: 288).settingsShowsName)
     }
 
     /// Fails if a 402pt phone's categories and Settings stop sharing their
