@@ -1,6 +1,6 @@
 # Emergency gets its starter phrases back in a damaged library
 
-*2026-10-23. Pull request #N (`claude/project-thread-0k2wbl`). Thread
+*2026-10-23. Pull request #37 (`claude/project-thread-0k2wbl`). Thread
 "Library follow-ups", the first library pull request after PR #14.*
 
 ## What changed and why
