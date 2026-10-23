@@ -78,7 +78,7 @@ COMMIT_VALUE_LONG = {'--message', '--file', '--reuse-message', '--reedit-message
                      '--template', '--author', '--date', '--cleanup', '--fixup',
                      '--squash', '--trailer', '--pathspec-from-file'}
 # Inspect GraphQL operation names only inside a query, never issue prose.
-GRAPHQL_MERGE = re.compile(r'\b(?:mergePullRequest|enablePullRequestAutoMerge|mergeBranch)\s*\(')
+GRAPHQL_MERGE = re.compile(r'\b(?:mergePullRequest|enablePullRequestAutoMerge|enqueuePullRequest|mergeBranch)\s*\(')
 
 
 CURL_CONFIG = ('The guard does not interpret curl configuration files. Use explicit '
@@ -239,6 +239,32 @@ def shell_script_index(words):
     return None
 
 
+def shell_reads_stdin(words):
+    """Whether a shell without -c reads its program (not just data) from stdin."""
+    if not words or os.path.basename(words[0]) not in SHELLS:
+        return False
+    args, index, options = words[1:], 0, True
+    while index < len(args):
+        word = args[index]
+        if word in ('<', '<>', '<&', '>', '>>', '>&'):
+            index += 2
+            continue
+        if options and word in ('--help', '--version'):
+            return False
+        if options and word == '--':
+            options = False
+        elif options and word in ('-o', '+o', '-O', '+O', '--rcfile', '--init-file'):
+            index += 1
+        elif options and re.fullmatch(r'-[a-zA-Z]*s[a-zA-Z]*', word):
+            return True  # -s treats remaining operands as positional parameters.
+        elif options and word.startswith(('-', '+')) and word != '-':
+            pass
+        else:
+            return word in ('-', '/dev/stdin', '/dev/fd/0')
+        index += 1
+    return True
+
+
 def script_quote(raw_words, words, index):
     """Recognize a wholly quoted script; mixed shell quoting stays unknown."""
     if len(raw_words) != len(words):
@@ -256,7 +282,7 @@ def script_quote(raw_words, words, index):
 
 
 def context_variable(key):
-    return key.startswith('GIT_') or key in ('HOME', 'GH_CONFIG_DIR', 'XDG_CONFIG_HOME')
+    return key.startswith('GIT_') or key in ('HOME', 'GH_CONFIG_DIR', 'XDG_CONFIG_HOME', 'CDPATH')
 
 
 def strip_wrappers(words, inherited=None):
@@ -902,16 +928,50 @@ def httpie_body(words, cwd):
     return json.dumps(payload)
 
 
+# curl short options stop clustering at the first option that takes a value.
+# Keep that value opaque, even when it resembles another option.
+CURL_VALUE_SHORT = set('EKCbcdDFPHhmoxUQreXYytzTuAw')
+CURL_VALUE_OPTIONS = {'-' + flag for flag in CURL_VALUE_SHORT} | {
+    '--request', '--header', '--data', '--data-ascii', '--data-binary',
+    '--data-raw', '--data-urlencode', '--json', '--form', '--form-string',
+    '--upload-file', '--url', '--output', '--user', '--proxy', '--proxy-user',
+    '--connect-timeout', '--max-time', '--user-agent', '--referer', '--cookie',
+    '--cookie-jar', '--config', '--cert', '--continue-at', '--dump-header',
+    '--ftp-port', '--help', '--quote', '--range', '--speed-limit', '--speed-time',
+    '--telnet-option', '--time-cond', '--write-out'}
+
+
+def curl_words(words):
+    normalized, operand = [words[0]], False
+    for index, word in enumerate(words[1:], 1):
+        if operand:
+            if normalized[-1] == '--url':
+                normalized.append(word)
+            else:
+                normalized[-1] += ('=' if normalized[-1].startswith('--') else '') + word
+            operand = False
+        elif word == '--':
+            normalized.extend(words[index:])
+            break
+        elif word.startswith('--') or not word.startswith('-') or word == '-':
+            normalized.append(word)
+            operand = word in CURL_VALUE_OPTIONS
+        else:
+            for offset, flag in enumerate(word[1:], 1):
+                normalized.append('-' + flag)
+                if flag in CURL_VALUE_SHORT:
+                    if word[offset + 1:]:
+                        normalized[-1] += word[offset + 1:]
+                    else:
+                        operand = True
+                    break
+    return normalized
+
+
 def http_operations(words):
     """curl --next resets request-local options; check each operation."""
     if os.path.basename(words[0]) != 'curl':
         return [words]
-    value_options = {'-X', '--request', '-H', '--header', '-d', '--data',
-        '--data-ascii', '--data-binary', '--data-raw', '--data-urlencode', '--json',
-        '-F', '--form', '--form-string', '-T', '--upload-file', '--url',
-        '-o', '--output', '-u', '--user', '-x', '--proxy', '--proxy-user',
-        '--connect-timeout', '-m', '--max-time', '-A', '--user-agent',
-        '-e', '--referer', '-b', '--cookie', '-c', '--cookie-jar'}
     operations, current, operand = [], [words[0]], False
     for word in words[1:]:
         if not operand and word in ('--next', '-:'):
@@ -919,7 +979,7 @@ def http_operations(words):
             current = [words[0]]
         else:
             current.append(word)
-        operand = False if operand else word in value_options
+        operand = False if operand else word in CURL_VALUE_OPTIONS
     operations.append(current)
     return operations
 
@@ -1133,7 +1193,7 @@ def changed_directory(cwd, destination):
 
 def check_command(command, cwd, depth=0, environment=None):
     if depth > 3:
-        return
+        deny('Shell nesting exceeds the inspection limit. Use the underlying command explicitly.')
     command = ansi_c_quotes(inspectable_here_documents(command))
     try:
         parts = list(segments(command))
@@ -1166,6 +1226,12 @@ def check_command(command, cwd, depth=0, environment=None):
             continue
         unwrapped, command_environment, directories = strip_wrappers(words, environment)
         if not unwrapped:
+            if words and all(re.match(r'^[A-Za-z_][A-Za-z0-9_]*=', word) for word in words):
+                # Assignment-only shell commands persist, including unexported CDPATH.
+                for where, _, stack, shell_env in runnable:
+                    _, updates, _ = strip_wrappers(words, dict(shell_env))
+                    next_states.add((where, True, stack, tuple(sorted(updates.items()))))
+                states = next_states
             continue
         program = os.path.basename(unwrapped[0])
         script_index = shell_script_index(unwrapped)
@@ -1179,6 +1245,9 @@ def check_command(command, cwd, depth=0, environment=None):
                 if all(word.startswith('-') or word in ('/dev/stdin', '/dev/fd/0')
                        for word in unwrapped[1:redirect]):
                     script_index = redirect + 1
+        if script_index is None and shell_reads_stdin(unwrapped):
+            deny('The guard cannot inspect shell code from a pipe or input file. '
+                 'Use an explicit -c script or an inspectable here-document/string.')
         outer_words = words
         script = unwrapped[script_index] if script_index is not None else None
         if script_index is not None:
@@ -1245,7 +1314,14 @@ def check_command(command, cwd, depth=0, environment=None):
                 if destination is None:
                     next_states.add((where, False, stack, shell_env))
                     continue  # HOME unset: operandless cd fails.
-                target = changed_directory(where, destination)
+                cdpath = command_environment.get('CDPATH', os.environ.get('CDPATH'))
+                if (cdpath and not os.path.isabs(destination)
+                        and destination.split('/', 1)[0] not in ('.', '..')):
+                    # Earlier commands may change which CDPATH entry exists. Keep
+                    # the target unknown rather than querying the wrong repository.
+                    target = None
+                else:
+                    target = changed_directory(where, destination)
                 # Earlier shell commands may create the target, so inspect
                 # both outcomes even when it does not exist at hook time.
                 new_stack = (where,) + stack if program == 'pushd' else stack
@@ -1264,9 +1340,10 @@ def check_command(command, cwd, depth=0, environment=None):
             elif program == 'gh':
                 check_gh(unwrapped, command_cwd, command_environment)
             elif program in ('curl', 'wget', 'http', 'https'):
-                if program == 'curl' and list(option_values(unwrapped[1:], {'--config'}, {'-K'})):
+                request_words = curl_words(unwrapped) if program == 'curl' else unwrapped
+                if program == 'curl' and list(option_values(request_words[1:], {'--config'}, {'-K'})):
                     deny(CURL_CONFIG)
-                for operation in http_operations(unwrapped):
+                for operation in http_operations(request_words):
                     if any(github_api_host(word) for word in operation[1:]):
                         arguments = api_arguments(operation, command_cwd, program)
                         method = request_method(operation, program)

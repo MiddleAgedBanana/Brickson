@@ -67,6 +67,60 @@ class GuardTests(unittest.TestCase):
                         ['git', '-C', str(self.repo), 'config', '--unset-all', key],
                         capture_output=True)
 
+    def test_graphql_enqueue_is_an_owner_merge_action(self):
+        query = 'mutation { enqueuePullRequest(input:{pullRequestId:"ID"}) { clientMutationId } }'
+        self.assertDenied('gh api graphql -f ' + shlex.quote('query=' + query))
+        self.assertAllowed('gh pr comment 12 --body ' + shlex.quote(query))
+        self.assertAllowed('gh api graphql -f ' + shlex.quote('query=query { viewer { login } }'))
+
+    def test_shell_recursion_limit_requires_explicit_commands(self):
+        def wrapped(command, count):
+            for _ in range(count):
+                command = 'bash -c ' + shlex.quote(command)
+            return command
+        self.assertDenied(wrapped('git add -A', 4))
+        self.assertDenied(wrapped('git status', 4))
+        self.assertAllowed(wrapped('git status', 3))
+        self.assertAllowed('echo ' + shlex.quote(wrapped('git add -A', 4)))
+
+    def test_curl_clusters_keep_values_as_operands(self):
+        merge = 'https://api.github.com/repos/o/r/pulls/12/merge'
+        review = 'https://api.github.com/repos/o/r/pulls/12/reviews'
+        for options in ['-sX PUT', '-sXPUT', '-sST payload.json']:
+            self.assertDenied(f'curl {options} {merge}')
+        for options in ['-sX GET', '-sXGET', '-sSI', '-sH -XPUT', '-so -sXPUT']:
+            self.assertAllowed(f'curl {options} {merge}')
+        self.assertDenied(f'curl -sd ' + shlex.quote('{"event":"APPROVE"}') + ' ' + review)
+        self.assertDenied(f'curl -sF event=APPROVE {review}')
+        self.assertAllowed(f'curl -sF event=COMMENT {review}')
+        self.assertDenied('curl -sK config.txt')
+
+    def test_cdpath_does_not_guess_a_relative_repository(self):
+        with tempfile.TemporaryDirectory(dir=self.repo) as folder:
+            root = Path(folder)
+            local = root / 'local'; other = root / 'other'
+            for base, branch in [(local, 'claude/topic'), (other, 'main')]:
+                (base / 'repo').mkdir(parents=True)
+                subprocess.run(['git', 'init', '-q', '-b', branch, str(base / 'repo')], check=True)
+            for prefix in [f'export CDPATH={other};', f'CDPATH={other};', f'CDPATH={other}']:
+                self.assertDenied(f'{prefix} cd repo && git push origin', cwd=local)
+                self.assertAllowed(f'{prefix} cd ./repo && git push origin', cwd=local)
+                self.assertAllowed(f'{prefix} cd repo && git status', cwd=local)
+            self.assertAllowed(f'export CDPATH={other}; unset CDPATH; cd repo && git push origin', cwd=local)
+            with patch.dict(os.environ, CDPATH=str(other)):
+                self.assertDenied('cd repo && git push origin', cwd=local)
+                self.assertAllowed('env -u CDPATH bash -c "cd repo && git push origin"', cwd=local)
+
+    def test_shell_standard_input_requires_inspectable_code(self):
+        for command in ["printf 'git add -A\\n' | bash", "echo 'gh pr merge 12' | sh",
+                        "printf 'git add -A\\n' | bash -s argument", 'bash < commands.sh',
+                        '< commands.sh bash', 'cat commands.sh | bash /dev/stdin']:
+            self.assertDenied(command)
+        self.assertDenied("printf 'git status\\n' | bash")  # unknown pipe input, even when benign
+        self.assertAllowed("bash -c 'git status'")
+        self.assertAllowed("printf 'data' | bash script.sh")  # stdin is data for a named script
+        self.assertAllowed('bash --version')
+
     def test_exhaustive_glob_pathspecs_are_all_tree_staging(self):
         for path in [':(glob)**/*', ':(top,glob)**/*', ':(glob,top,icase)**/**/*', '**/*']:
             self.assertDenied('git add ' + shlex.quote(path))

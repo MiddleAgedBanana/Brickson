@@ -742,3 +742,43 @@ hook and 28 documentation tests. Xcode 27.1 (27A9275), XcodeGen 2.46.0,
 iPad Pro 13-inch (M5), iOS 27.0. The catalog is unchanged and app line
 coverage is 66.9% (4,400/6,577). New-head hosted checks and fresh review
 remain required; no new local UI or sound claim is made.
+
+
+### Merge queues and shell input boundaries, 2026-10-23
+
+Five new findings on `227cda9` reproduced as five failing focused tests
+before correction. Main remains `48bcf73`; no app code changes.
+
+- GraphQL `enqueuePullRequest` is a merge action and is now refused;
+  read-only queries and mutation names inside comment text remain allowed.
+- Exceeding three nested shell inspections refuses the uninspectable
+  command instead of silently accepting it. Shallower readable commands
+  remain supported. This limit also refuses benign deeply nested commands.
+- curl short-option clusters expand before method, body, upload and config
+  inspection. Attached/separate values stay bound to their options, so a
+  header or output name resembling `-XPUT` cannot change the parsed method.
+- CDPATH is tracked through environment prefixes, exports, plain assignment
+  and unset. A CDPATH-dependent relative `cd` makes its repository unknown;
+  the guard refuses an implicit push rather than guessing. `./` paths,
+  absolute paths and ordinary read-only commands remain usable. The guard
+  does not predict which search-path directory an earlier command creates.
+- Shells that take their program from a pipe or input file require explicit
+  inspectable code. `-c`, literal here-documents and here-strings keep their
+  existing checks. Input to a named script remains data for that script;
+  this change does not claim to inspect arbitrary script files. Shell help
+  and version commands remain allowed.
+
+Each focused test pairs the reported failure with supported commands and
+would fail if its new check were removed. No blocked remote operation is
+executed by these tests. The complete local unit script passed 560 native
+tests with zero failures and the existing issue #19 skip, plus 95 hook
+and 28 documentation tests. Xcode 27.1 (27A9275), iPad Pro 13-inch (M5),
+iOS 27.0; catalog unchanged and app line coverage 66.9% (4,400/6,577).
+New-head hosted CI and fresh review remain required. These are advisory
+parser limits enforcing existing rules,
+not a security sandbox or a new invariant/exception.
+
+Sources: [GitHub merge queue mutation](https://docs.github.com/en/enterprise-cloud@latest/graphql/reference/pulls#enqueuepullrequest),
+[curl option syntax](https://curl.se/docs/manpage.html#Options),
+[Bash cd/CDPATH](https://www.gnu.org/software/bash/manual/html_node/Bourne-Shell-Builtins.html),
+and [Bash invocation](https://www.gnu.org/software/bash/manual/html_node/Invoking-Bash.html).
