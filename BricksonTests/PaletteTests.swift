@@ -90,11 +90,13 @@ struct PaletteTests {
         }
     }
 
-    /// Every ink a Home control's rings are drawn in (`HomeButtonLook`):
-    /// the pressed ring, the selection ring, the border of a control that
-    /// is off, and the Show Borders border and its selection ring. Each is
-    /// a control edge drawn on a fill, so it needs 3:1 against every fill
-    /// it can sit on, in the colour the look draws it in that appearance.
+    /// Every ink a Home control's rings are drawn in (`HomeButtonLook`), in
+    /// the colour the look draws it in each appearance, against every fill:
+    /// the pressed ring, the selection ring, and with Show Borders the
+    /// border and the screen-coloured selection ring, all drawn on a
+    /// control's fill as an edge, so each needs 3:1. (The border of a
+    /// control that is off sits on the screen instead:
+    /// `primaryInkIsReadableOnTheScreen`.)
     @Test func everyRingInkStandsOutFromEveryFill() throws {
         for ink in HomeButtonLook.Ink.allCases {
             for appearance in Self.appearances {
@@ -111,8 +113,9 @@ struct PaletteTests {
     /// The rings are drawn in plain black and white. Primary ink must be
     /// the system's label colour, the words of a control that is off and
     /// the ink the tests above measure on the screen, and the screen's ink
-    /// must be the screen behind Home, in every appearance. If Apple's
-    /// colours change, this fails before a ring stops matching them.
+    /// must be the screen behind Home at the base level, in light, dark and
+    /// Increase Contrast. If Apple's colours change, this fails before a
+    /// ring stops matching them.
     @Test func ringInksAreTheSystemColoursTheyStandFor() {
         for appearance in Self.appearances {
             let isDark = appearance.traits.userInterfaceStyle == .dark

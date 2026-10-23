@@ -6,8 +6,8 @@ import Foundation
 /// `PaletteTests` measures every ink against every fill.
 ///
 /// Every ring is drawn inside the control's frame, so no state and no
-/// setting moves or resizes a control, and none reaches the words
-/// (`maximumDepth`).
+/// setting moves or resizes a control, and no ring reaches deeper than the
+/// label's margin (`maximumDepth`).
 ///
 /// - Off: unfilled, with a primary-ink border.
 /// - Selected: a ring a few points inside the edge.
@@ -18,8 +18,8 @@ import Foundation
 ///   twice the border's width, and the selection ring takes the screen's
 ///   ink, so pressed, selected and neither still look different in both
 ///   appearances: in dark mode, primary ink and the usual selection ring
-///   are both white (docs/DECISIONS.md, "The Large Content Viewer and Show
-///   Borders on Home").
+///   are both white (docs/DECISIONS.md, "Show Borders and the Large Content
+///   Viewer on Home").
 nonisolated struct HomeButtonLook: Equatable, Sendable {
     /// The colours a ring is drawn in, each black or white.
     /// `PaletteTests` measures each against every fill in light and dark
@@ -31,8 +31,11 @@ nonisolated struct HomeButtonLook: Equatable, Sendable {
         case primary
         /// White in both appearances.
         case white
-        /// The colour of the screen behind Home, the opposite of primary
-        /// ink: white in light mode, black in dark.
+        /// The colour of the screen behind Home at the base level, the
+        /// opposite of primary ink: white in light mode, black in dark.
+        /// Where dark mode lifts a window to the elevated level (iPad
+        /// multitasking), the ring stays black; it is measured on the fill
+        /// it is drawn on, not on the screen.
         case screen
 
         /// Whether this ink is white in dark mode (or, when false, in
@@ -67,9 +70,13 @@ nonisolated struct HomeButtonLook: Equatable, Sendable {
     static let pressedWidthWithBorders: CGFloat = 2 * borderWidth
     static let selectionInset: CGFloat = 2
     static let selectionWidth: CGFloat = 3
-    /// The deepest any ring may reach: the label inset, plus half the room
-    /// `WordFit` keeps beside a label's widest line, so no ring ever covers
-    /// a word.
+    /// The deepest any ring may reach. A label sets its lines at least half
+    /// `WordFit`'s slack inside the label inset on each side, so a ring this
+    /// deep stays off the words at the size the label chose. Where
+    /// SwiftUI shrinks a label further, its widest line can spread to the
+    /// label inset itself: the rings drawn from the edge stay within the
+    /// inset (`HomeButtonLookTests`); only the selection ring, as Home
+    /// already drew it, reaches a point past it.
     static let maximumDepth = HomeShape.labelInset.horizontal + WordFit.widthSlack / 2
 
     /// Whether the control's fill is drawn. A control that is off is not

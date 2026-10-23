@@ -77,11 +77,16 @@ struct HomeButtonLookTests {
         }
     }
 
-    /// Fails if a ring could reach a control's words, which sit at least
-    /// the label inset and half of `WordFit`'s slack in from the edge, or
-    /// if a ring has no width or starts outside the control.
-    @Test func noRingReachesTheWords() {
+    /// Fails if a ring could reach past a label's margin, measured along
+    /// the straight edges: no ring deeper than the label inset plus half
+    /// `WordFit`'s slack, where a label's words sit at the size it chose; the
+    /// rings drawn from the edge (the borders and the pressed ring) within
+    /// the label inset itself, which even a label SwiftUI shrinks to fit
+    /// never crosses; and a vertical inset no smaller. Also fails if a ring
+    /// has no width or starts outside the control.
+    @Test func everyRingStaysInTheLabelsMargin() {
         #expect(HomeButtonLook.maximumDepth == HomeShape.labelInset.horizontal + WordFit.widthSlack / 2)
+        #expect(HomeShape.labelInset.vertical >= HomeButtonLook.maximumDepth)
         for showsBorders in [false, true] {
             for state in Self.states {
                 let look = HomeButtonLook(
@@ -89,9 +94,13 @@ struct HomeButtonLookTests {
                     isPressed: state.isPressed, showsBorders: showsBorders
                 )
                 for ring in look.rings {
-                    #expect(ring.inset >= 0, "\(state), Show Borders \(showsBorders)")
-                    #expect(ring.width > 0, "\(state), Show Borders \(showsBorders)")
-                    #expect(ring.depth <= HomeButtonLook.maximumDepth, "\(state), Show Borders \(showsBorders)")
+                    let context = "\(state), Show Borders \(showsBorders), \(ring)"
+                    #expect(ring.inset >= 0, "\(context)")
+                    #expect(ring.width > 0, "\(context)")
+                    #expect(ring.depth <= HomeButtonLook.maximumDepth, "\(context)")
+                    if ring.inset == 0 {
+                        #expect(ring.depth <= HomeShape.labelInset.horizontal, "\(context)")
+                    }
                 }
             }
         }
