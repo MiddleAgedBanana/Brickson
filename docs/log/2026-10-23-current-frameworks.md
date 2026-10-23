@@ -33,8 +33,11 @@ The owner asked on 2026-10-22 for two things, recorded here together:
 The audit read every Swift file in the three targets and `project.yml`
 against Apple's documentation (two helper agents: one read Apple's pages,
 one swept the code; their findings were checked here before use). There
-was no Core Data, SiriKit, Combine, `ObservableObject` or deprecated API,
-and the unit tests used only Swift Testing. A third agent reviewed the
+was no Core Data, Combine, `ObservableObject` or deprecated API, and no
+SiriKit code: the one SiriKit piece is the `INAlternativeAppNames`
+Info.plist key, kept below, which Apple says works only with an Intents
+app extension Brickson does not have yet. The unit tests used only Swift
+Testing. A third agent reviewed the
 commits before the push; its findings (settings the kept captures cannot
 catch, an unpinned `Palette.screen`, an import rule that promised more
 than it kept, a too-firm "never" about SiriKit, the README's wording)
