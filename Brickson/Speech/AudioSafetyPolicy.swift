@@ -168,6 +168,14 @@ nonisolated struct AudioSafetyPolicy {
             }
         }
 
+        return ambientIssue
+    }
+
+    /// The problem with the audio itself, whatever the alarm and speech are
+    /// doing: a session that could not start, then a very low volume.
+    /// VoiceOver is told these from here rather than from `issue`, so a
+    /// warning the line shows first never keeps one from being announced.
+    var ambientIssue: HomeAudioIssue? {
         if !audioSessionHealthy {
             return .audioSessionUnavailable
         }

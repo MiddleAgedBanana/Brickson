@@ -213,15 +213,17 @@ private struct StatusLines: View {
         isCovered ? .dismissThenRepeat : .repeatLast
     }
 
-    private var audioIssue: HomeAudioIssue? {
+    private var audioSafetyPolicy: AudioSafetyPolicy {
         AudioSafetyPolicy(
             attentionState: attention.state,
             speechInterruptionState: speech.speechInterruptionState,
             speechRecoveryAction: recovery,
             audioSessionHealthy: audioSafety.audioSessionHealthy,
             outputVolume: audioSafety.outputVolume
-        ).issue
+        )
     }
+
+    private var audioIssue: HomeAudioIssue? { audioSafetyPolicy.issue }
 
     private static let speaking = String(
         localized: "Speaking",
@@ -275,9 +277,10 @@ private struct StatusLines: View {
         // Text appearing on screen is not announced, so VoiceOver users are
         // told each audio problem as it happens (invariant 4). Ambient
         // problems are announced when they appear, including one present at
-        // launch. A cut-off phrase is announced on every cut-off, even when
+        // launch, even while the line shows an alarm or speech warning
+        // first. A cut-off phrase is announced on every cut-off, even when
         // the warning is already showing, because each one is a new event.
-        .onChange(of: audioIssue, initial: true) { _, newIssue in
+        .onChange(of: audioSafetyPolicy.ambientIssue, initial: true) { _, newIssue in
             guard let issue = AudioAnnouncementPolicy.ambientIssueToAnnounce(newIssue) else {
                 return
             }
