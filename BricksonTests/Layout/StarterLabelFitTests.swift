@@ -15,9 +15,11 @@ import Testing
 ///
 /// Widths are content widths: the window less Home's 16pt margins. 288 is
 /// the narrowest window this checks, a 320pt window (an iPad app in Slide
-/// Over); 560 is the narrowest regular window.
+/// Over); 560 is the narrowest regular window. The safety row, the category
+/// buttons and Settings are checked at the narrowest widths `HomeShape`
+/// gives them, which `HomeShapeTests` checks at every width.
 struct StarterLabelFitTests {
-    private static let narrowestWidth: CGFloat = 288
+    private static let narrowestWidth = HomeShape.narrowestContentWidth
     private static let inset = HomeShape.labelInset
 
     private let library: LibrarySnapshot
@@ -36,8 +38,13 @@ struct StarterLabelFitTests {
 
     /// What SwiftUI draws: `text` in `font` at the default size, laid out in
     /// `width` (or on one line when `width` is nil).
-    private static func drawnSize(_ text: String, _ font: LabelFont, width: CGFloat? = nil) -> CGSize {
-        let view = Text(verbatim: text).font(font.font).dynamicTypeSize(.large)
+    private static func drawnSize(
+        _ text: String, _ font: LabelFont, width: CGFloat? = nil, boldText: Bool = false
+    ) -> CGSize {
+        let view = Text(verbatim: text)
+            .font(font.font)
+            .dynamicTypeSize(.large)
+            .environment(\.legibilityWeight, boldText ? .bold : .regular)
         return UIHostingController(rootView: view).sizeThatFits(
             in: CGSize(width: width ?? 10_000, height: 10_000)
         )
@@ -45,24 +52,28 @@ struct StarterLabelFitTests {
 
     /// Checks that `text` fits a label `size` at the default text size: its
     /// widest word, with `WordFit`'s slack, fits the width both by UIKit's
-    /// measure and by SwiftUI's, and its lines fit the height.
+    /// measure and by SwiftUI's, and its lines fit the height. With
+    /// `boldText`, UIKit measures at the weight `FittedLabel` measures Bold
+    /// Text at, and SwiftUI draws with Bold Text on.
     private static func expectFits(
-        _ text: String, _ font: LabelFont, in size: CGSize, _ slot: String
+        _ text: String, _ font: LabelFont, in size: CGSize, _ slot: String, boldText: Bool = false
     ) {
-        let measured = font.widestWord(text, at: .large)
+        let measuring = font.legible(boldText ? .bold : .regular)
+        let slot = boldText ? "\(slot), Bold Text" : slot
+        let measured = measuring.widestWord(text, at: .large)
         #expect(
             measured + WordFit.widthSlack <= size.width,
             "\(slot): \"\(text)\" needs \(measured) + \(WordFit.widthSlack), has \(size.width)"
         )
         for word in WordFit.words(in: text) {
-            let drawn = drawnSize(String(word), font).width
+            let drawn = drawnSize(String(word), font, boldText: boldText).width
             #expect(drawn <= size.width, "\(slot): \"\(word)\" draws \(drawn) wide, has \(size.width)")
             #expect(
-                drawn <= font.widestWord(String(word), at: .large) + 0.5,
+                drawn <= measuring.widestWord(String(word), at: .large) + 0.5,
                 "\(slot): SwiftUI draws \"\(word)\" at \(drawn), more than half a point over UIKit's measure"
             )
         }
-        let height = drawnSize(text, font, width: size.width).height
+        let height = drawnSize(text, font, width: size.width, boldText: boldText).height
         #expect(height <= size.height, "\(slot): \"\(text)\" draws \(height) tall, has \(size.height)")
     }
 
@@ -106,45 +117,60 @@ struct StarterLabelFitTests {
         }
     }
 
-    /// Fails if a starter category's name would break on the narrowest
-    /// window, or on the narrowest window with four categories in a row.
-    @Test func everyStarterCategoryNameFitsItsButton() {
+    /// Fails if a starter category's name would break in the narrowest
+    /// category button Home makes (`HomeShape.MinimumWidths`), with Bold
+    /// Text off or on. `HomeShapeTests` checks no button is narrower.
+    @Test(arguments: [false, true])
+    func everyStarterCategoryNameFitsTheNarrowestButton(boldText: Bool) {
+        let minimum = HomeShape.MinimumWidths.forBoldText(boldText)
         let narrow = HomeShape(contentWidth: Self.narrowestWidth)
-        let narrowButton = Self.labelSize(CGSize(
-            width: (Self.narrowestWidth - HomeShape.controlSpacing) / 2,
-            height: narrow.categoryHeight
-        ))
-        let wide = HomeShape(contentWidth: HomeShape.regularMinimumWidth)
-        let wideButton = Self.labelSize(CGSize(
-            width: (HomeShape.regularMinimumWidth - 3 * HomeShape.controlSpacing) / 4,
-            height: wide.categoryHeight
-        ))
+        let button = Self.labelSize(CGSize(width: minimum.category, height: narrow.categoryHeight))
         #expect(everydayCategoryNames.count == HomeShape.categoryCapacity)
         for name in everydayCategoryNames {
-            Self.expectFits(name, .category, in: narrowButton, "narrowest category button")
-            Self.expectFits(name, .category, in: wideButton, "narrowest regular category button")
+            Self.expectFits(name, .category, in: button, "narrowest category button", boldText: boldText)
         }
     }
 
-    /// Fails if Yes, No, Emergency or Again would break or be cut off on the
-    /// narrowest window.
-    @Test func theQuickControlsFitTheNarrowestWindow() {
-        let shape = HomeShape(contentWidth: Self.narrowestWidth)
-        let widths = HomeShape.quickControlWidths(contentWidth: Self.narrowestWidth)
-        let labels: [(String, CGFloat)] = [
-            (String(localized: "Yes"), widths[0]),
-            (String(localized: "No"), widths[1]),
-            (String(localized: "Emergency"), widths[2]),
-            // Again sits beside the message, one share wide.
-            (String(localized: "Again", comment: "Repeats the last thing spoken."), widths[0]),
+    /// Fails if Yes, No, Again, Emergency or Settings would break or be cut
+    /// off in the narrowest width Home gives it (`HomeShape.MinimumWidths`),
+    /// with Bold Text off or on. `HomeShapeTests` checks no control is
+    /// narrower.
+    @Test(arguments: [false, true])
+    func theFixedControlsFitTheirNarrowestWidths(boldText: Bool) {
+        let minimum = HomeShape.MinimumWidths.forBoldText(boldText)
+        let narrow = HomeShape(contentWidth: Self.narrowestWidth)
+        let quick: [(ControlNames, CGFloat)] = [
+            (HomeControlNames.yes, minimum.yesNo),
+            (HomeControlNames.no, minimum.yesNo),
+            (HomeControlNames.again, minimum.again),
+            (HomeControlNames.emergency, minimum.emergency),
         ]
-        for (label, width) in labels {
+        for (names, width) in quick {
             Self.expectFits(
-                label, .quickControl,
-                in: Self.labelSize(CGSize(width: width, height: shape.quickControlHeight)),
-                "quick control"
+                names.visible, .quickControl,
+                in: Self.labelSize(CGSize(width: width, height: narrow.quickControlHeight)),
+                "quick control", boldText: boldText
             )
         }
+        Self.expectFits(
+            HomeControlNames.settings.visible, .category,
+            in: Self.labelSize(CGSize(width: minimum.settings, height: narrow.categoryHeight)),
+            "Settings", boldText: boldText
+        )
+        // Where Settings shows its gear alone, the narrowest button has
+        // room for the gear at its default side, which is no smaller than
+        // the gear beside the word.
+        let room = Self.labelSize(CGSize(width: minimum.settingsSymbol, height: narrow.categoryHeight))
+        #expect(
+            SettingsButton.symbolSide <= min(room.width, room.height),
+            "Settings' gear alone is \(SettingsButton.symbolSide)pt, more than the \(room) it is given"
+        )
+        let besideTheWord = LabelFont.category.legible(boldText ? .bold : .regular)
+            .iconWidth(SettingsButton.symbol, at: .large)
+        #expect(
+            SettingsButton.symbolSide >= besideTheWord,
+            "Settings' gear alone is \(SettingsButton.symbolSide)pt, smaller than beside its word (\(besideTheWord)pt)"
+        )
     }
 
     /// Fails if `LabelFont.lineHeight(at:)` is ever shorter than one line as
@@ -208,7 +234,7 @@ struct StarterLabelFitTests {
     @Test func boldTextWordsAreNoWiderThanMeasured() {
         let cases: [(LabelFont, [String])] = [
             (.quickControl, ["Yes", "No", "Emergency", "Again"]),
-            (.category, everydayCategoryNames),
+            (.category, everydayCategoryNames + [HomeControlNames.settings.visible]),
             (.compactTile, phrases),
             (.regularTile, phrases),
             (.message, phrases),

@@ -507,7 +507,7 @@ the failure.
   `VoiceList`, `PersonalVoiceGuidance`, `PrivacyPolicyDocument`,
   `SpeedChoice`, `WordFit`, `HomeShape`, `HomeRegion`, `HomeControlNames`,
   `LibrarySnapshot`, `LibraryEdit`, `LibraryRules`, `LibraryImport`,
-  `LibraryEditor`, `BackupCodec`.
+  `LibraryEditor`, `BackupCodec`, `SettingsRootColumns`.
   Views only read them.
 - **Run it, don't just read it.** Layout and flow changes are checked in the
   running app on an iPad and an iPhone simulator, at default and
@@ -735,6 +735,14 @@ Shortcuts. **Never apply** `core-data` skills (this app uses SwiftData),
   `--short-timeouts`, an alarm that ends) must be over, or unable to
   happen, before an audit. A wait is not a retry: the finding came from
   auditing a moving screen, not from the app.
+- **`ViewThatFits` fails Apple's audit around text.** The audit grows
+  the text and compares each text with itself, and `ViewThatFits` swaps
+  one view for another: labels built with it were reported as clipped or
+  as not following Dynamic Type (docs/DECISIONS.md, *Home's stand-in
+  layout*), and on PR #33 Settings' root, built with one, was reported as
+  clipped text belonging to no element on the phone. Choose arrangements
+  in a plain type and place each view once (`WordFit`,
+  `SettingsRootColumns`).
 - **CI results can be read without a Mac.** A failed UI test's result
   keeps a screen recording of the whole test, and each `.xcresult` has a
   `database.sqlite3` listing every activity and attachment with its time

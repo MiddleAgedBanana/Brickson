@@ -879,3 +879,39 @@ and the installed client's `--help`,
 [Bash locale translation](https://www.gnu.org/software/bash/manual/html_node/Locale-Translation.html),
 [Git option abbreviations](https://git-scm.com/docs/gitcli), and
 [CommonMark links](https://spec.commonmark.org/0.31.2/#links).
+
+## Settings main refresh and isolated runner fixtures, 2026-10-23
+
+Main `f34e8ae` (PR #33, Settings on Home) is merged with no conflicts.
+Its app, layout tests, recorded decisions and known gaps remain intact;
+this reconciliation adds no product change or exception.
+
+The hosted unit job in run `39901197907`, head `bd8f9aa`, failed in
+`test-runner.py` before the native build. Its deliberately restricted PATH
+contains only fake build tools and system tools, hiding gh from the real
+guard suite's read-only alias lookup. Read-only gh fixtures therefore
+failed closed. Each simulated unit run repeated the whole guard suite;
+the runner step took 1,550.8 seconds and reported 26 failures. This was
+not a Swift test failure or the known host-audio limitation.
+
+The same coverage-report test failed locally before correction (38.6
+seconds). The harness now copies the exact checked-in runner and simulator
+selector into a temporary fixture checkout, with controlled documentation
+and hook preflights just as it already controls the Apple tools. Three
+new tests check that docs then hooks precede the build, each failure stops
+before building with its original exit status, and non-unit modes do not
+repeat these preflights. Removing, reordering or swallowing a preflight
+fails those assertions. The production runner is unchanged and the real
+unit gate still runs both complete suites.
+
+All 54 runner tests pass in 42.6 seconds. Three throwaway mutations
+(removing docs, reversing the preflights, swallowing hook failure) each
+fail the new assertions. The full local unit script passed 583 native
+tests, zero failures and the existing issue #19 crash-probe skip (584
+total), plus all 107 hook tests and 31 documentation tests. Xcode 27.1
+(27A9275), iPad Pro 13-inch (M5), iOS 27.0; catalog unchanged, app line
+coverage 66.7% (4,513/6,767). Current-head hosted unit/UI checks and fresh
+review will be required after the refresh;
+all 109 review conversations were resolved at the start of this follow-up.
+Replace import remains refused. No audio workaround or weakened assertion
+was introduced.

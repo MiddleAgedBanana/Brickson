@@ -31,6 +31,7 @@ for argument in "$@"; do
 done
 (IFS=$'\\t'; echo "$*") >> "$RUNNER_INVOCATIONS"
 action="${!#}"
+echo "$action" >> "$RUNNER_EVENTS"
 if [ "$action" = build-for-testing ]; then
     app="$DERIVED_DATA_DIR/Build/Products/Debug-iphonesimulator/Brickson.app"
     mkdir -p "$app"
@@ -116,8 +117,22 @@ def run_script(build_body, mode="ui", destination="id=fixture-simulator",
                test_summary=summary(3), family=None, arguments=(),
                coverage=COVERAGE, strings=True, synced_catalog=None,
                sync_status=0, on_ci=True, boot_status=0,
-               bootstatus_status=0, shutdown_status=0):
+               bootstatus_status=0, shutdown_status=0, docs_status=0, hooks_status=0):
     with tempfile.TemporaryDirectory() as directory:
+        # Exercise the exact checked-in runner and selector in an isolated
+        # checkout. Preflights are dependencies, like the mocked Apple tools:
+        # verify their order and failures here; run their real suites once in
+        # the unit gate, with its normal PATH (including gh for alias reads).
+        fixture_scripts = Path(directory, "repo", "scripts")
+        fixture_scripts.mkdir(parents=True)
+        for name in ("test.sh", "choose-simulator.py"):
+            (fixture_scripts / name).write_bytes((SCRIPT.parent / name).read_bytes())
+        for name, status in (("docs", docs_status), ("hooks", hooks_status)):
+            (fixture_scripts / f"test-{name}.py").write_text(
+                "import os, sys\nfrom pathlib import Path\n"
+                'with Path(os.environ["RUNNER_EVENTS"]).open("a") as log:\n'
+                f"    log.write({name!r} + '\\n')\n"
+                f"sys.exit({status})\n")
         for name, body in {
             "xcodegen": 'if [ "${1:-}" = --version ]; then echo "Version: 9.9.9"; fi',
             "xcodebuild": FAKE_XCODEBUILD + build_body,
@@ -138,6 +153,7 @@ def run_script(build_body, mode="ui", destination="id=fixture-simulator",
         catalog_path.write_text(CATALOG)
         environment = dict(os.environ, PATH=f"{directory}:/usr/bin:/bin",
                            RUNNER_INVOCATIONS=f"{directory}/invocations",
+                           RUNNER_EVENTS=f"{directory}/events",
                            RUNNER_SIMCTL=f"{directory}/simctl",
                            FIXTURE_DEVICES=str(devices_path),
                            FIXTURE_INFO_PLIST=str(plist_path),
@@ -163,8 +179,10 @@ def run_script(build_body, mode="ui", destination="id=fixture-simulator",
         stale = Path(directory, "TestResults", f"{mode}-ipad.xcresult", "stale")
         stale.parent.mkdir(parents=True)
         stale.write_text("from an earlier run")
-        result = subprocess.run(["/bin/bash", str(SCRIPT), mode, *arguments],
+        result = subprocess.run(["/bin/bash", str(fixture_scripts / "test.sh"), mode, *arguments],
                                 env=environment, capture_output=True, text=True)
+        result.events = lines(Path(directory, "events"))
+        result.preflights = [event for event in result.events if event in ("docs", "hooks")]
         result.calls = lines(Path(directory, "invocations"))
         result.invocations = len(result.calls)
         result.simctl = lines(Path(directory, "simctl"))
@@ -199,6 +217,37 @@ def actions(result):
         destination = words[words.index("-destination") + 1] if "-destination" in words else None
         found.append((words[-1], destination))
     return found
+
+
+class PreflightTests(unittest.TestCase):
+    # Removing or reordering a preflight, or swallowing its exit status,
+    # fails these tests; the real suites run once in scripts/test.sh unit.
+    def test_unit_preflights_run_in_order_before_building(self):
+        result = run_script("exit 0", mode="unit")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.events, ["docs", "hooks",
+                                         "build-for-testing", "test-without-building"])
+        self.assertEqual([name for name, _ in actions(result)],
+                         ["build-for-testing", "test-without-building"])
+
+    def test_each_preflight_failure_stops_before_the_build(self):
+        for docs_status, hooks_status, expected in [(37, 0, ["docs"]),
+                                                    (0, 42, ["docs", "hooks"])]:
+            with self.subTest(docs=docs_status, hooks=hooks_status):
+                result = run_script("exit 0", mode="unit",
+                                    docs_status=docs_status, hooks_status=hooks_status)
+                self.assertEqual(result.returncode, docs_status or hooks_status)
+                self.assertEqual(result.events, expected)
+                self.assertEqual(result.calls, [])
+                self.assertNotIn("All unit tests passed.", result.stdout)
+
+    def test_other_modes_do_not_repeat_unit_preflights(self):
+        for mode in ["ui", "device"]:
+            with self.subTest(mode=mode):
+                result = run_script("exit 0", mode=mode)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(result.preflights, [])
+                self.assertGreater(result.invocations, 0)
 
 
 class RunnerTests(unittest.TestCase):

@@ -7,34 +7,38 @@ nothing is appended here. Plan: [`docs/ROADMAP.md`](ROADMAP.md). How the
 project runs: [`docs/SDLC.md`](SDLC.md).
 
 **State as of 2026-10-23: PR #14 (the library core) merged into main
-at `48bcf73`. PR #17 now incorporates main `b6be682` (PR #34); its next hosted
+at `48bcf73`. PR #17 now incorporates main `f34e8ae` (PR #33); its next hosted
 checks and fresh review remain required.**
 Ten threads are working in parallel on the first release, R0.
 
 ## What the app does today
 
 What it is written to do (*Verification* says how much has been seen). A
-stand-in Home with Yes, No and Emergency, everyday categories, and tiles
-from a neutral starter set, sized from the space the window gives it
-(docs/DECISIONS.md, "Home's stand-in layout"): four category buttons that
-never scroll sideways, and three phrase columns on every iPhone. A tile
+stand-in Home with Yes, No, Again and Emergency in one safety row (Again on
+a second row only in windows under 328pt wide, 348pt with Bold Text, such
+as Slide Over or an iPhone with Display Zoom), everyday categories with
+Settings at their trailing end, and tiles from a neutral starter set,
+sized from the space the window gives it (docs/DECISIONS.md, "Home's
+stand-in layout"): four category buttons that never scroll sideways, and
+three phrase columns on every iPhone at its standard Display Zoom. A tile
 speaks at once, in the person's Personal Voice when one exists and is
-allowed; the sentence stays on screen in two reserved lines with Again
-beside them, and a longer message scrolls inside them. No label breaks a
+allowed; the sentence stays on screen in two reserved lines across the
+width, and a longer message scrolls inside them. No label breaks a
 word: each drops its icon first, then shrinks only as far as it must,
 never below the default size, in lines of whole words. A phrase the system cuts off (a call, Siri, lost
 headphones) shows "Stopped" with Again to repeat it. Emergency opens the
 emergency phrases and says nothing. VoiceOver, Switch Control and Full
-Keyboard Access reach Yes, No and Emergency first, then the message with
-Again, the categories and the phrases, each region as a group, and Voice
-Control also takes "Repeat" for Again (docs/DECISIONS.md, "Home's scan
-order and names"). The start-only Get Attention alarm is
+Keyboard Access reach Yes, No and Emergency first, then Again, the
+message, the categories and Settings, and the phrases, each region as a
+group, and Voice Control also takes "Repeat" for Again (docs/DECISIONS.md,
+"Home's scan order and names" and "Settings on Home"). The start-only Get Attention alarm is
 built and waiting for its place on Home (docs/DECISIONS.md, "Home's slot
-plan"). Settings, for the family, is
-built (a full-screen cover with Back to Talking, Family Setup, Voice
-Settings, guides, the privacy policy and step-by-step setup) and waits for
-Home to place its Settings button; until then only UI tests open it, with
-`--screen=settings`. "Speaking", audio failures and very low volume share
+plan"). Settings, for the family (a
+full-screen cover with Back to Talking, Family Setup, Voice Settings,
+guides, the privacy policy and step-by-step setup), opens from Home's
+Settings button; until Family Setup has been opened once, Home's message
+area says where setup is. Back to Talking closes onto Emergency, never
+onto a control that speaks (docs/DECISIONS.md, "Settings on Home"). "Speaking", audio failures and very low volume share
 one passive status line under the message, in space always kept for it,
 and VoiceOver announces the warnings. If the
 library cannot be saved, the app speaks from a filled in-memory library
@@ -60,7 +64,7 @@ Xcode 27.1 (27A9275); PR #20 landed in `d79d836`.
   without rebasing. Nine new guard/documentation findings are corrected;
   the xargs optional-argument finding was rejected against GNU documentation
   because its suggested change broke a valid existing safeguard. The local
-  unit script passed 570 native tests with the existing issue #19 skip,
+  unit script passed 583 native tests with the existing issue #19 skip,
   107 hook tests and 31 documentation tests; the catalog is unchanged.
   Xcode 27.1 (27A9275), iPad Pro 13-inch (M5), iOS 27.0.
   Five further findings on `227cda9` cover merge-queue requests, shell
@@ -73,7 +77,12 @@ Xcode 27.1 (27A9275); PR #20 landed in `d79d836`.
   send-pack, translated shell strings, abbreviated staging options, link
   labels and exact path spelling; their focused reproductions and the
   full local unit gate pass.
-  New-head hosted checks and fresh review remain required.
+  Main `f34e8ae` (Settings on Home) is merged in. The old hosted unit
+  job failed before Swift tests because the runner fixture hid gh from
+  repeated guard-suite runs. The harness now isolates preflight dependencies
+  and checks their ordering and failures; the real unit gate still runs
+  both full suites. All 54 runner tests and the refreshed local unit gate
+  pass; new-head hosted checks and fresh review remain required.
   [Guardrail record](log/2026-10-22-agent-guardrail-reconciliation.md).
 
 - **PR #14 reconciliation, 2026-10-22:** incorporates main `cc35c30`, the
@@ -154,16 +163,20 @@ release in docs/ROADMAP.md when no thread has it yet.
 - The slot plan has no answer yet for more than four everyday categories
   (docs/DECISIONS.md, "Home's slot plan", *Open*): editing and import
   must not add a fifth until it does. *(the layout engine, a new thread)*
-- In the slot plan, Yes and No border the message (10 to 16pt away), so a
-  look resting on it can speak Yes or No. Recorded as an open hazard, not
-  an accepted exception (docs/DECISIONS.md, "Home's slot plan"): it is
-  removed by placement or its measured cost goes to the owner before the
-  plan ships in a dwell, switch, head or gaze profile. *(the layout
-  engine, a new thread; owner if it stays)*
-- Home has no wells yet: Again sits beside the message text, and Phrases,
-  Type, Get Attention, Stop and Settings have no place on Home
-  (docs/DECISIONS.md, "Home's slot plan"). *(a new thread: Get Attention
-  and Stop on Home)*
+- Yes, No and Again border the message (12pt away), so a look resting on
+  it can speak one of them. Reduced, not removed: with Again out of the
+  message's row, about 61 to 67% of the message is nearest one of them,
+  down from about 89 to 95% on phones. Recorded as an open hazard, not
+  an accepted exception (docs/DECISIONS.md, "Home's slot plan" and
+  "Settings on Home"): a device check (Snap to Item by nearest centre or
+  nearest edge) decides whether placement can remove it, or its measured
+  cost goes to the owner before a dwell, switch, head or gaze profile
+  ships. *(the layout engine, a new thread; owner if it stays)*
+- Home has no wells yet: Phrases, Type, Get Attention and Stop have no
+  place on Home (docs/DECISIONS.md, "Home's slot plan"). Until Phrases and
+  Type are built, Emergency stays at the safety row's trailing end, under
+  Back to Talking, which `SettingsOnHomeTests` checks (docs/DECISIONS.md,
+  "Settings on Home"). *(a new thread: Get Attention and Stop on Home)*
 - A label with a word too wide for its slot even at the default text size
   is cut short with an ellipsis when it is one word, but in a phrase of
   several words that word can wrap mid-word. No starter label has one
@@ -171,6 +184,10 @@ release in docs/ROADMAP.md when no thread has it yet.
   import exists; those must keep every word within the narrowest tile, or
   the layout engine must give it room. *(Library editing and backup format,
   with the layout engine)*
+- Settings' Back to Talking breaks "Talking" across two lines ("Talk-",
+  "ing") on CI's iPhone at the largest text size, in the half of the bar
+  it keeps beside Get Attention's place (seen in PR #33's captures; the
+  same on the base branch). *(Settings, with the next accessibility pass)*
 - The rendered-label test reads the four English quick-control labels
   only, not phrases or categories; `StarterLabelFitTests` measures every
   starter label against its narrowest slot instead. *(Accessibility
@@ -204,16 +221,29 @@ release in docs/ROADMAP.md when no thread has it yet.
   (issue #19, seen with Xcode 26.6 on iOS 26.5). Brickson never calls it;
   the reproduction is disabled and has not been run on the current Xcode
   27 CI. *(R0, a new library thread re-runs it once)*
-- Home has no Settings button and no first-run hint yet: Home places
-  `SettingsButton` with `.settingsCover(isPresented:)` and shows
-  `FirstRunHint.text` while `showsSetupHint` is true. *(Phone layout and
-  word fitting)*
 - Settings' Get Attention place is empty: starting the alarm there before
   Home has Stop would leave it with no way to stop. It goes in with Get
-  Attention and Stop on Home. *(the thread that puts them on Home)*
-- Chains of activations through Settings' screens are not scored. One is
-  known: a held look can follow Family Setup's first row into Set Up Step
-  by Step and save Touch, its first answer, which is then nearest. Another
+  Attention and Stop on Home. On wide windows, Settings' root puts its
+  note under that place, so adding Get Attention means scoring a look
+  that reads the note (docs/DECISIONS.md, "Settings on Home"). Settings'
+  sound line sits at the foot of the cover, where its nearest controls
+  are the rows a screen has scrolled to its lower edge, some of which
+  speak a sample or change a setting; the bar's redesign for Get
+  Attention should give it a place whose neighbours do neither, without
+  putting Back to Talking nearest Home's Settings (`SettingsOnHomeTests`).
+  *(the thread that puts them on Home)*
+- Chains of activations through Settings' screens are not fully scored.
+  From Home's Settings, two steps are (modelled, in
+  [`work/settings-on-home.md`](work/settings-on-home.md)):
+  the first meets the root's Family Setup row everywhere CI runs; the
+  second meets Back to Talking on wide windows by centre and on an iPad
+  at the largest text size by both rules, which closes Settings onto
+  Emergency. Placing Family Setup's own rows for it is the fix. A
+  further one is known: a held look can follow Family Setup's first row into Set Up Step
+  by Step and save Touch, its first answer, which is then nearest (it
+  adds Touch and restarts the check-in clock; nothing reads the answers
+  yet). Home's Settings button now starts that chain on a phone at the
+  default text size. Another
   runs through iOS's Personal Voice question, once the Ask button shows:
   after answering, the look rests where the question's button was, over
   whatever Voice Settings has there. Answers
@@ -334,12 +364,13 @@ Simulators cannot show these. Record each result in a `docs/log/` file
 | D4: Personal Voice access turned off in the Settings app while Brickson waits in the background; on return a phrase speaks in another voice, and turning access back on brings the Personal Voice back | "A Personal Voice is used only while it is allowed" |
 | D5: with two Personal Voices, the order the system lists them in, and whether each keeps its identifier across a relaunch, a restore and Share Across Devices | "Automatic keeps the person's Personal Voice" |
 | Personal Voice appears and is chosen once permission is given, and keeps speaking after the screen locks | Voice choice and when to ask |
-| Opening Settings by a stray dwell, and leaving it by Back to Talking, lands on nothing that speaks or alarms; the idle reset under real dwell | Settings' safety bar and root (docs/DECISIONS.md, "Settings is a cover with a fixed safety bar") |
+| Opening Settings by a stray dwell, and leaving it by Back to Talking, lands on nothing that speaks or alarms (`SettingsOnHomeTests` scores it on the simulator's frames); the idle reset under real dwell | Settings' safety bar and root (docs/DECISIONS.md, "Settings is a cover with a fixed safety bar") |
 | Guided Access and Assistive Access steps match the device, and Brickson works inside both | Family Setup's Keep Brickson Open guide |
 | Open Personal Voice Settings and Open Dwell Control Settings open the right page | `AccessibilitySettings.openSettings(for:)` |
 | Each input method reaches every control: touch, Voice Control, Switch Control, Full Keyboard Access, AssistiveTouch Dwell, head tracking, Eye Tracking | That standard buttons are the whole integration (invariant 1) |
 | A Switch Control double activation does not make a phrase stutter | Repeat absorption (invariant 10) |
 | How far Snap to Item jumps, and whether the pointer stays on an activated control or follows the gaze | Spacing and placement for dwell profiles |
+| Whether Snap to Item and Dwell pick a target by its nearest centre or its nearest edge, and which control a look resting on the message selects | What removes "Yes, No and Again border the message" (docs/DECISIONS.md, "Settings on Home") |
 | Whether a lingering look re-fires a dwell | How much repeat protection matters |
 | Whether Snap to Item ignores controls scrolled off screen | Whether scrolling can keep family controls out of reach |
 | What the real software keyboard covers in each orientation, and typing checks 1–8 in [`log/2026-10-21-typing-foundation.md`](log/2026-10-21-typing-foundation.md) | The typing layout (docs/LESSONS.md, "Test with the real software keyboard"), the word row, Return under dwell, and whether Brickson needs its own keyboard |
@@ -361,7 +392,7 @@ Simulators cannot show these. Record each result in a `docs/log/` file
 | On a folding iPhone, open and folded, and in Stage Manager, Slide Over and iPhone Mirroring windows: nothing safety-critical is hidden or split | Layouts from the space available |
 | Eye Tracking and Dwell on an external display | Whether gaze profiles hold off the built-in screen |
 | Switch Control with Auto Scanning, Group Items on and off, and Auto Tap: the scan steps to Emergency, Yes and No from every Home state, and whether Home's regions become scan groups | Scan order and grouping (docs/ACCESSIBILITY.md, section 1) |
-| With VoiceOver, Switch Control (item and group scanning) and Full Keyboard Access, Home is reached as Yes, No, Emergency, then the message and Again, the categories, the phrases, in every state; what each says on entering a region; whether the cursor stops on the message or the status line; Voice Control's "Show names" shows each control's visible words and "Tap Repeat" presses Again | "Home's scan order and names": the order, unlabelled regions, and whether `accessibilityRespondsToUserInteraction` is needed |
+| With VoiceOver, Switch Control (item and group scanning) and Full Keyboard Access, Home is reached as Yes, No, Emergency, Again, then the message, the categories and Settings, the phrases, in every state; what each says on entering a region; whether the cursor stops on the message or the status line; Voice Control's "Show names" shows each control's visible words and "Tap Repeat" presses Again | "Home's scan order and names": the order, unlabelled regions, and whether `accessibilityRespondsToUserInteraction` is needed |
 | With VoiceOver on, a phrase tile with and without the `startsMediaSession` trait: does VoiceOver stay quiet while the phrase speaks | Whether phrase tiles carry the trait (R0 item 4) |
 | Brickson inside Assistive Access with `UISupportsFullScreenInAssistiveAccess`: its window size, and whether Eye Tracking and Switch Control work there | Assistive Access support (R0 item 7) |
 | Guided Access with each input method, and with a short Display Auto-Lock while Brickson keeps the screen awake | Setup advice, and invariant 12 under Guided Access |
