@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// The three fills behind every control on Home, defined in the asset
 /// catalog. Each is measured, not eyeballed (invariant 6): white text on it
@@ -21,4 +22,15 @@ nonisolated enum Palette {
 
     /// Every fill above, by asset name, for `PaletteTests`.
     static let assetNames = ["AccentColor", "ControlFill", "EmergencyFill"]
+
+    /// The background of Settings and setup: UIKit's system background,
+    /// the colour `PaletteTests` measures as "the screen" (and the one Home
+    /// sits on, the window's own). SwiftUI has no colour of its own for it,
+    /// and its background style changes with the container, so the screens
+    /// use the colour that is measured (docs/DECISIONS.md, "Apple's current
+    /// frameworks first").
+    static let screen = Color(uiColor: screenColor)
+    /// `screen` as UIKit's colour, which `PaletteTests` pins to the system
+    /// background in every appearance.
+    static let screenColor = UIColor.systemBackground
 }

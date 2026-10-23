@@ -1,4 +1,3 @@
-import UIKit
 import XCTest
 
 /// Settings, opened at launch with `--screen=settings`, so each test starts

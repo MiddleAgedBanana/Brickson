@@ -117,7 +117,7 @@ struct GuidedSetupView: View {
         .buttonStyle(.borderedProminent)
         .tint(Palette.phraseFill)
         .padding(SettingsMetrics.gutter)
-        .background(Color(uiColor: .systemBackground))
+        .background(Palette.screen)
         .accessibilityIdentifier("guidedSetupNext")
     }
 

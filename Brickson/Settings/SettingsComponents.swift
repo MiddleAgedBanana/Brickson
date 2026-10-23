@@ -239,8 +239,8 @@ struct SettingsScreen<Content: View>: View {
             .padding(SettingsMetrics.gutter)
         }
         .recordsSettingsScrolling()
-        .background(Color(uiColor: .systemBackground))
+        .background(Palette.screen)
         .navigationTitle(title)
-        .navigationBarTitleDisplayMode(.inline)
+        .toolbarTitleDisplayMode(.inline)
     }
 }

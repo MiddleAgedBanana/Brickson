@@ -29,7 +29,10 @@ and `AGENTS.md` ever disagree, `AGENTS.md` wins.
 ## Facts that prevent wrong suggestions
 
 - Swift 6 and SwiftUI, iOS and iPadOS 26 or later, Apple's frameworks only.
-  Never suggest a package, an SDK or a network service.
+  Never suggest a package, an SDK or a network service. Apple's current
+  frameworks come first: suggest UIKit, Core Data, XCTest outside UI tests,
+  SiriKit or another legacy API only where `docs/DECISIONS.md`, "Apple's
+  current frameworks first", lists it (`AGENTS.md`, same title).
 - `Brickson.xcodeproj` is generated from `project.yml` by XcodeGen and is
   not committed. Changes go in `project.yml`.
 - Don't try to build or run the app: your review machine runs Linux, and

@@ -52,7 +52,7 @@ struct SettingsView: View {
             .id(activity.resetCount)
             SettingsAudioStatus()
         }
-        .background(Color(uiColor: .systemBackground))
+        .background(Palette.screen)
         .environment(activity)
         .environment(landing)
         .onChange(of: path) {
