@@ -7,9 +7,8 @@ nothing is appended here. Plan: [`docs/ROADMAP.md`](ROADMAP.md). How the
 project runs: [`docs/SDLC.md`](SDLC.md).
 
 **State as of 2026-10-23: PR #14 (the library core), PR #33 (Settings
-on Home) and PR #35 (Show Borders on Home) are merged. PR #17 now
-incorporates main `412f4cf` (PRs #39, #37 and #38); its next hosted
-checks and fresh review remain required.**
+on Home), PR #35 (Show Borders on Home) and PR #17 (agent guardrails)
+are merged; PR #17 landed as `7bff8f0`.**
 Ten threads are working in parallel on the first release, R0.
 
 ## What the app does today
@@ -110,7 +109,7 @@ Xcode 27.1 (27A9275); PR #20 landed in `d79d836`.
   mistakes, and one on `571c8fc` is a refusal of a harmless command; the
   record lists them, with `git add ..` and `source` first for a later
   guard pull request.
-  New-head hosted checks and fresh review remain required.
+  PR #17 has since merged as `7bff8f0`.
   [Guardrail record](log/2026-10-22-agent-guardrail-reconciliation.md).
 
 - **PR #14 reconciliation, 2026-10-22:** incorporates main `cc35c30`, the
@@ -523,6 +522,7 @@ Simulators cannot show these. Record each result in a `docs/log/` file
 - CodeQL scans the workflow files and the Python scripts, not the Swift
   code, on purpose (docs/DECISIONS.md, *Code scanning*); the failed Swift
   attempt of 2026-10-10 is still listed on the Tool status page.
+- Open PR pushes now follow AGENTS.md, "Pushing to an open PR": [rule and verification](log/2026-10-23-open-pr-push-policy.md).
 - Codex reviews every push to a pull request, Copilot each pull request
   once when it opens, AI Scan each push; none reviews Dependabot's pull
   requests by itself. The AI credits they use show only in Settings →
@@ -598,7 +598,7 @@ Simulators cannot show these. Record each result in a `docs/log/` file
   correction. The full unit script passed 460 native tests; the final
   guard/docs checks passed 82 and 26 tests. The catalog is unchanged.
   The owner re-enabled auto-merge on both PRs; #14 has since merged,
-  and #17 retains that setting.
+  and #17 has since merged as `7bff8f0`.
   Reconciliation and verification: [`log/2026-10-22-agent-guardrail-reconciliation.md`](log/2026-10-22-agent-guardrail-reconciliation.md).
 
 ## History

@@ -162,6 +162,16 @@ the actions in `.github/workflows`, and one at once for a security fix.
 The intended repository settings, and why, are in docs/DECISIONS.md,
 "Reviews, updates and GitHub settings".
 
+**Pushing to an open PR.** Once CI is green, push again only if CI fails,
+a reviewer finds a real bug or a rule violation, or `main` moved and must
+be merged in. Batch cosmetic, wording and style findings into one otherwise
+needed push, or answer them in words and resolve the thread; never one
+push per finding. After the first green run, apply the existing
+[stop after two rounds rule](docs/log/2026-10-22-agent-guardrail-reconciliation.md#main-refresh-and-declined-findings-2026-10-23)
+as a limit of two fix pushes. A PR with owner-enabled auto-merge merges
+itself on green once its other merge requirements are met: after the final
+push, stop and let it. Agents never enable auto-merge or merge a PR.
+
 **Cloud agents** without Xcode (Claude Code on the web, Codex cloud, Jules)
 cannot build or run anything. Say so plainly, treat the change as untested
 until CI or a Mac run passes, and never describe unbuilt code as working.
