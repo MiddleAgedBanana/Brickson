@@ -196,19 +196,28 @@ final class KeyboardProbeTests: XCTestCase {
 
     /// The app's window once it has turned to `orientation`: a query
     /// straight after a rotation can read the frame from before the turn.
+    /// Read by the test itself every quarter of a second, like
+    /// `settledReadout`, so the window is only ever read on the main actor:
+    /// XCTest documents main-actor evaluation of a predicate expectation
+    /// only for `fulfillment(of:)`, not for a synchronous wait.
     @MainActor
     private func waitForWindow(of app: XCUIApplication, orientation: UIDeviceOrientation) -> CGRect {
-        let turned = NSPredicate { _, _ in
-            MainActor.assumeIsolated {
-                let frame = app.windows.firstMatch.frame
-                return !frame.isEmpty && (frame.width > frame.height) == orientation.isLandscape
-            }
+        let deadline = ContinuousClock.now + .seconds(10)
+        var frame = app.windows.firstMatch.frame
+        while !Self.window(frame, hasTurnedTo: orientation), ContinuousClock.now < deadline {
+            _ = XCTWaiter.wait(for: [XCTestExpectation(description: "pause")], timeout: 0.25)
+            frame = app.windows.firstMatch.frame
         }
-        XCTAssertEqual(
-            XCTWaiter.wait(for: [expectation(for: turned, evaluatedWith: nil)], timeout: 10), .completed,
+        XCTAssertTrue(
+            Self.window(frame, hasTurnedTo: orientation),
             "the window did not turn to \(orientation.isLandscape ? "landscape" : "portrait")"
         )
-        return app.windows.firstMatch.frame
+        return frame
+    }
+
+    @MainActor
+    private static func window(_ frame: CGRect, hasTurnedTo orientation: UIDeviceOrientation) -> Bool {
+        !frame.isEmpty && (frame.width > frame.height) == orientation.isLandscape
     }
 
     /// Prints `prefix {json}` to the test log and attaches the JSON.
