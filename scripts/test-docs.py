@@ -22,6 +22,8 @@ here, which is how reviewers were twice sent to sections that did not exist.
 from pathlib import Path
 import re
 import unittest
+import tempfile
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -198,6 +200,9 @@ def broken_links(path, text):
         if target.startswith('/'):
             problems.append(f'{relative}: link {link} is absolute; make it relative')
             continue
+        if not resolved.is_relative_to(ROOT.resolve()):
+            problems.append(f'{relative}: link {link} escapes the repository')
+            continue
         if not resolved.exists():
             problems.append(f'{relative}: link {link} points to a missing file')
             continue
@@ -253,6 +258,21 @@ class CheckerTests(unittest.TestCase):
         self.assertTrue(broken_links(readme, '[x](docs/DECISIONS.md#no-such-heading)'))
         self.assertEqual(broken_links(readme, '[x](docs/DECISIONS.md#orientations)'), [])
         self.assertEqual(broken_links(readme, '[x](https://example.com/a.md)'), [])
+
+    def test_relative_links_cannot_escape_the_checkout(self):
+        with tempfile.TemporaryDirectory() as folder:
+            parent = Path(folder).resolve()
+            root = parent / 'repo'
+            root.mkdir()
+            (parent / 'outside.md').write_text('# Outside')
+            (root / 'inside.md').write_text('# Inside')
+            (root / 'shortcut.md').symlink_to(parent / 'outside.md')
+            with patch.dict(globals(), ROOT=root):
+                readme = root / 'README.md'
+                for target in ['../outside.md', 'shortcut.md', '../missing.md']:
+                    self.assertEqual(broken_links(readme, f'[link]({target})'),
+                        [f'README.md: link {target} escapes the repository'])
+                self.assertEqual(broken_links(readme, '[link](inside.md#inside)'), [])
 
     def test_indented_code_examples_are_not_links(self):
         readme = ROOT / 'README.md'

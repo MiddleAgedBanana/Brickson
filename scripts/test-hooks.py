@@ -7,6 +7,7 @@ a tool call the way Claude Code does and reads its decision. Removing a rule
 from the guard, or loosening one, fails a test here.
 """
 import json
+import shlex
 from pathlib import Path
 import subprocess
 import sys
@@ -63,6 +64,62 @@ class GuardTests(unittest.TestCase):
         self.addCleanup(subprocess.run,
                         ['git', '-C', str(self.repo), 'config', '--unset-all', key],
                         capture_output=True)
+
+    def test_shell_here_strings_are_checked_as_commands(self):
+        for redirect in [' <<< ', '<<<']:
+            self.assertDenied(f"bash{redirect}'git add -A'")
+            self.assertDenied(f"bash -s{redirect}'gh pr merge 17'")
+            self.assertAllowed(f"bash{redirect}'git status'")
+            self.assertAllowed(f"cat{redirect}'git add -A'")
+        self.assertAllowed("echo 'bash <<< git add -A'")
+        with tempfile.TemporaryDirectory(dir=self.repo) as folder:
+            subprocess.run(['git', 'init', '-q', '-b', 'main', folder], check=True)
+            self.assertDenied(f"env -C {folder} bash <<< 'git push origin'")
+            self.assertAllowed(f"env -C {self.repo} bash <<< 'git push origin'", cwd=folder)
+
+    def test_curl_configuration_files_require_explicit_options(self):
+        config = self.repo / 'curl-config'
+        config.write_text('url = "https://api.github.com/repos/o/r/pulls/12/merge"\nrequest = "PUT"\n')
+        self.addCleanup(config.unlink)
+        for option in ['-K ', '-K', '--config ', '--config=']:
+            self.assertDenied(f'curl {option}{config}')
+        self.assertDenied('curl -K -')
+        self.assertAllowed('curl --disable https://api.github.com/repos/o/r/pulls/12/merge')
+
+    def test_git_aliases_use_the_selected_configuration(self):
+        self.assertDenied("git -c alias.ship.command='push origin main' ship")
+        self.assertAllowed("git -c alias.inspect.command='status --short' inspect")
+        self.assertDenied("git -c alias.ship='push origin main' ship")
+        self.assertDenied("git -c alias.stagemine='add -A' stagemine")
+        self.assertAllowed("git -c alias.stagemine='add docs/HANDOFF.md' stagemine")
+        self.assertAllowed("git -c alias.inspect='status --short' inspect")
+        self.assertDenied("git -c alias.ship='!git push origin main' ship")
+        self.configure('alias.ship', 'push origin main')
+        self.assertDenied('git ship')
+        self.assertDenied("git -c alias.outer=ship outer")
+        self.assertAllowed("git -c alias.ship='push origin feature' ship")
+        self.assertDenied("git stage -A")
+        self.assertAllowed("git stage docs/HANDOFF.md")
+        self.assertAllowed("git -c alias.status='push origin main' status")
+
+    def test_graphql_review_approvals_are_denied(self):
+        for mutation in ['addPullRequestReview', 'submitPullRequestReview']:
+            for event in ['APPROVE', 'COMMENT', 'REQUEST_CHANGES']:
+                query = f'mutation {{ {mutation}(input: {{pullRequestId: "PR_id", event: {event}}}) {{ clientMutationId }} }}'
+                command = 'gh api graphql -f ' + shlex.quote('query=' + query)
+                if event == 'APPROVE':
+                    self.assertDenied(command)
+                else:
+                    self.assertAllowed(command)
+        query = 'mutation($input: AddPullRequestReviewInput!) { addPullRequestReview(input: $input) { clientMutationId } }'
+        for event in ['APPROVE', 'COMMENT']:
+            payload = json.dumps({'query': query, 'variables': {'input': {'pullRequestId': 'PR_id', 'event': event}}})
+            command = 'curl https://api.github.com/graphql --json ' + shlex.quote(payload)
+            if event == 'APPROVE':
+                self.assertDenied(command)
+            else:
+                self.assertAllowed(command)
+        self.assertAllowed("gh api repos/o/r/issues -f body='addPullRequestReview event: APPROVE'")
 
     def test_push_mode_operands_and_dry_runs(self):
         with tempfile.TemporaryDirectory(dir=self.repo) as folder:

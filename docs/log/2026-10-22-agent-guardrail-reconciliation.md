@@ -542,3 +542,44 @@ documentation tests, with no failures and an unchanged String Catalog.
 Xcode 27.1 (27A9275), iPad Pro 13-inch (M5), iOS 27.0; app line coverage
 remains 62.6% (3,540/5,659). New-head CI remains required. This is a
 local branch merge; no agent merged a GitHub pull request or pushed main.
+
+
+### Follow-up review: redirected commands and indirect configuration
+
+Five findings on `d8ac558` reproduced before the fixes: four new hook test
+methods and one documentation method failed. Shell here-strings now expose
+their command text to the existing checks, including attached redirection
+and the selected child working directory. Literal data passed to `cat`
+and ordinary read-only shell commands remain allowed.
+
+Plain Git aliases in both supported configuration spellings are read using
+the same repository, command configuration
+and environment as the requested operation, with bounded expansion. Built-in
+commands take precedence over aliases. The test fixture initially used
+`stage`, which is itself Git's built-in synonym for `add`; the fixture now
+uses an unambiguous alias. The installed Git and its official documentation
+confirmed the alternate `alias.<name>.command` form; a further failing
+reproduction was fixed before publication. `git stage -A` is also denied (the prior guard
+allowed it). Shell aliases are conservatively refused with a request to use
+the underlying command explicitly; the guard never executes an alias.
+
+Explicit curl configuration-file options are conservatively refused before
+host detection, including stdin and attached forms. Agents can use explicit
+command-line options instead. This avoids silently trusting URLs and methods
+hidden in a separate curl configuration language. GraphQL add/submit review
+mutations now check their event, including JSON input variables; APPROVE is
+refused, while COMMENT and REQUEST_CHANGES remain allowed. An unresolved
+variable is refused rather than guessed. Existing merge checks remain intact.
+
+Relative Markdown destinations must resolve inside the repository, including
+symlink targets, before their existence or heading is checked. A temporary
+fixture covers existing and missing outside files, an escaping symlink and
+a valid internal link. No host file contents are read by those tests.
+
+The final `scripts/test.sh unit` gate passed all 460 native unit tests,
+61 hook tests and 21 documentation tests, with zero failures/skips and an
+unchanged String Catalog. Xcode 27.1 (27A9275), iPad Pro 13-inch (M5),
+iOS 27.0; app line coverage remains 62.6% (3,540/5,659). This batch changes
+no app or UI source. New-head hosted CI remains required. No new product decision or review-rule exception is adopted. The
+owner re-enabled auto-merge on this PR after the earlier off-state record;
+agents leave that setting in place and do not invoke a GitHub merge.

@@ -378,6 +378,11 @@ Simulators cannot show these. Record each result in a `docs/log/` file
   the combined gate passed all 460 native units, 57 hook tests and 20
   docs tests with the catalog unchanged. New-head CI remains pending. It distinguishes executed commands from here-document data,
   actual API writes from prose/read requests, and code blocks from links.
+  Five later findings add checked shell here-strings, contextual Git aliases,
+  conservative curl-config refusal, GraphQL approval checks and repository-bound
+  documentation links. The final gate passed 460 native unit, 61 hook and
+  21 docs tests with the catalog unchanged; new-head CI is pending.
+  The owner re-enabled auto-merge.
   Reconciliation and verification: [`log/2026-10-22-agent-guardrail-reconciliation.md`](log/2026-10-22-agent-guardrail-reconciliation.md).
 
 ## History

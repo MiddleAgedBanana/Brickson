@@ -80,6 +80,12 @@ COMMIT_VALUE_LONG = {'--message', '--file', '--reuse-message', '--reedit-message
 GRAPHQL_MERGE = re.compile(r'\b(?:mergePullRequest|enablePullRequestAutoMerge|mergeBranch)\s*\(')
 
 
+CURL_CONFIG = ('The guard does not interpret curl configuration files. Use explicit '
+               'command-line options so the API destination and method can be checked.')
+SHELL_ALIAS = ('The guard does not execute Git shell aliases. Use the underlying '
+               'command explicitly so its operation and repository can be checked.')
+
+
 def deny(reason):
     print(json.dumps({'hookSpecificOutput': {
         'hookEventName': 'PreToolUse',
@@ -129,7 +135,7 @@ def segments(command, preserve_quotes=False):
     """Split into (words, preceding separator), keeping && and || for cd.
     Words inside $(...), `...` and sh -c '...' are split in turn."""
     lexer = shlex.shlex(without_shell_comments(command.replace('\\\n', ' ')), posix=not preserve_quotes,
-                        punctuation_chars=';&|()\n')
+                        punctuation_chars=';&|()<>\n')
     lexer.whitespace = ' \t\r'
     lexer.whitespace_split = True
     lexer.commenters = ''
@@ -486,6 +492,40 @@ def api_arguments(words, cwd, program='gh'):
     return ' '.join(parts)
 
 
+def expand_git_alias(subcommand, args, context):
+    """Read plain aliases in the same Git context; never execute shell aliases."""
+    seen = set()
+    while subcommand:
+        aliases = {value for key in ('alias.' + subcommand, 'alias.' + subcommand + '.command')
+                   if (value := git(context, 'config', '--get', key))}
+        if not aliases:
+            return subcommand, args, context
+        # Git ignores aliases that shadow its built-in commands.
+        builtins = git(context, '--list-cmds=builtins')
+        if builtins is None:
+            deny(UNKNOWN)
+        if subcommand in builtins.split():
+            return subcommand, args, context
+        if len(aliases) != 1:
+            deny(UNKNOWN)  # conflicting spellings are not guessed
+        alias = aliases.pop()
+        if subcommand in seen or len(seen) >= 8:
+            deny(UNKNOWN)
+        seen.add(subcommand)
+        if alias.startswith('!'):
+            deny(SHELL_ALIAS)
+        try:
+            expanded = shlex.split(alias)
+        except ValueError:
+            deny(UNKNOWN)
+        if not expanded:
+            deny(UNKNOWN)
+        cwd, options, environment = context
+        subcommand, args, context = git_parts(
+            ['git', *options, *expanded, *args], cwd, environment)
+    return subcommand, args, context
+
+
 def check_gh(words, cwd):
     words = [w for w in words[1:]]
     # gh's global option --repo/-R takes a value.
@@ -614,6 +654,44 @@ def request_method(words, program):
     return 'POST' if any(w.startswith(('--post-', '--body-')) for w in words) else 'GET'
 
 
+def graphql_review_approval(query, arguments, words):
+    """Check the event of the two review mutations, including JSON variables."""
+    variables = {}
+    for value in api_field_values(arguments, 'variables'):
+        if isinstance(value, dict):
+            variables.update(value)
+    for field in option_values(words, {'--field', '--raw-field'}, {'-f', '-F'}):
+        key, equal, value = field.partition('=')
+        if equal and key != 'query' and not value.startswith('@'):
+            try:
+                variables[key] = json.loads(value)
+            except ValueError:
+                variables[key] = value
+    for match in re.finditer(r'\b(?:addPullRequestReview|submitPullRequestReview)\s*\(', query):
+        start = match.end()
+        end, depth = start, 1
+        while end < len(query) and depth:
+            depth += (query[end] == '(') - (query[end] == ')')
+            end += 1
+        body = query[start:end - 1]
+        input_variable = re.search(r'\binput\s*:\s*\$(\w+)', body)
+        if input_variable:
+            value = variables.get(input_variable[1])
+            if not isinstance(value, dict):
+                deny(UNKNOWN)
+            event = value.get('event')
+        else:
+            event_match = re.search(r'\bevent\s*:\s*(\$?\w+)', body)
+            event = event_match[1] if event_match else None
+            if event and event.startswith('$'):
+                if event[1:] not in variables:
+                    deny(UNKNOWN)
+                event = variables[event[1:]]
+        if event == 'APPROVE':
+            return True
+    return False
+
+
 def merge_api_request(words, arguments, method):
     """Match actual endpoint arguments and request fields, not prose words."""
     paths = []
@@ -641,7 +719,8 @@ def merge_api_request(words, arguments, method):
         for query in queries:
             # GraphQL strings are data, even when they name a mutation.
             query = re.sub(r'"(?:\\.|[^"\\])*"', '""', str(query))
-            if GRAPHQL_MERGE.search(query):
+            query = re.sub(r'#[^\n]*', '', query)
+            if GRAPHQL_MERGE.search(query) or graphql_review_approval(query, arguments, words):
                 return True
     return False
 
@@ -752,6 +831,15 @@ def check_command(command, cwd, depth=0, environment=None):
             continue
         program = os.path.basename(unwrapped[0])
         script_index = shell_script_index(unwrapped)
+        if script_index is None and program in SHELLS and '<<<' in unwrapped:
+            redirect = unwrapped.index('<<<')
+            absolute_redirect = len(words) - len(unwrapped) + redirect
+            raw_words = raw_parts[part_index][0] if len(raw_parts) == len(parts) else []
+            if (len(raw_words) == len(words) and raw_words[absolute_redirect] == '<<<'
+                    and redirect + 1 < len(unwrapped)):
+                # With a script operand, stdin is data instead of shell code.
+                if all(word.startswith('-') for word in unwrapped[1:redirect]):
+                    script_index = redirect + 1
         outer_words = words
         script = unwrapped[script_index] if script_index is not None else None
         if script_index is not None:
@@ -793,7 +881,8 @@ def check_command(command, cwd, depth=0, environment=None):
                 continue
             if program == 'git':
                 subcommand, args, context = git_parts(unwrapped, command_cwd, command_environment)
-                if subcommand == 'add':
+                subcommand, args, context = expand_git_alias(subcommand, args, context)
+                if subcommand in ('add', 'stage'):
                     check_add(args)
                 elif subcommand == 'commit':
                     check_commit(args)
@@ -802,6 +891,8 @@ def check_command(command, cwd, depth=0, environment=None):
             elif program == 'gh':
                 check_gh(unwrapped, command_cwd)
             elif program in ('curl', 'wget', 'http', 'https'):
+                if program == 'curl' and list(option_values(unwrapped[1:], {'--config'}, {'-K'})):
+                    deny(CURL_CONFIG)
                 if any(github_api_host(word) for word in unwrapped[1:]):
                     arguments = api_arguments(unwrapped, command_cwd, program)
                     if merge_api_request(unwrapped, arguments, request_method(unwrapped, program)):
