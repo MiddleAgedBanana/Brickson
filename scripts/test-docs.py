@@ -13,8 +13,8 @@ Two kinds of reference are checked:
   *The fold*, must name a part of a title before it or a section beside
   one; a title after "and" is checked as the title before it was, so
   ASO.md, *Screenshots* and *Subtitle* names two sections. Words in
-  quote marks after a file name are a title, whatever letter they start
-  with, unless QUOTATIONS lists them as a quotation. In the files
+  quote marks after a file name and a comma are a title, whatever letter
+  they start with, unless QUOTATIONS lists them as a quotation. In the files
   reviewers read as instructions, a bare *Title* must also name a section
   somewhere in the repository.
 - A relative Markdown link, such as [handoff](docs/HANDOFF.md#verification),
@@ -69,9 +69,10 @@ QUOTATIONS = {
 
 SOURCE_SUFFIXES = {'.md', '.swift', '.yml', '.yaml', '.sh', '.py', '.json'}
 
+MARKDOWN_FILE = r'(?:[\w.-]+/)*[\w.-]+\.md'
 CITATION = re.compile(
-    r'`?(?P<path>(?:[\w.-]+/)*[\w.-]+\.md)`?'   # a Markdown file name
-    r'\s*(?:,|→|->)?\s*'                      # a comma or an arrow, or nothing
+    r'`?(?P<path>' + MARKDOWN_FILE + r')`?'     # a Markdown file name
+    r'\s*(?P<separator>,|→|->)?\s*'           # a comma or an arrow, or nothing
     r'(?:"(?P<quoted>[^"\n]{2,120})"'          # "Title"
     r'|(?<![*\w])\*(?P<italic>[^*\n]{2,120})\*(?![*\w]))')  # or *Title*
 # A further title after a cited one: , *The fold* or and "Home".
@@ -104,9 +105,10 @@ def without_fenced_code(text):
 
 
 def without_code_spans(text, for_citations=False):
-    """Blank out code spans. For citations, keep a span that is a file name,
-    or words that cannot start or end one (no quote mark, asterisk or file
-    name), so "`main` ruleset" is read as a title."""
+    """Blank out code spans. For citations, keep a file name without its
+    code marks, and keep a span of words that cannot start or end a
+    citation (no quote mark, asterisk or file name) as it is, so
+    "`main` ruleset" is read as a title."""
     output, index = [], 0
     while index < len(text):
         opening = re.search(r'`+', text[index:])
@@ -124,9 +126,10 @@ def without_code_spans(text, for_citations=False):
         if closing:
             stop = end + closing.end()
             content = text[end:end + closing.start()]
-            if for_citations and (re.fullmatch(r'(?:[\w.-]+/)*[\w.-]+\.md', content)
-                                  or not re.search(r'["*]|\.md', content)):
+            if for_citations and re.fullmatch(MARKDOWN_FILE, content):
                 output.append(content)
+            elif for_citations and not re.search(r'["*]|\.md', content):
+                output.append(text[start:stop])
             else:
                 output.append(re.sub(r'[^\n]', ' ', text[start:stop]))
             index = stop
@@ -220,8 +223,9 @@ def outline(text):
     higher level, and a lead-in ranks below every heading."""
     text = without_fenced_code(text)
     found = [(number, level, title) for level, title, number in headings(text)]
-    found += [(text.count('\n', 0, m.start('title')), LEAD_IN_LEVEL, m['title'])
-              for m in LEAD_IN.finditer(text)]
+    found += [(number, LEAD_IN_LEVEL, lead_in['title'])
+              for number, line in enumerate(text.splitlines())
+              if (lead_in := LEAD_IN.match(line))]
     nodes, open_headings = [], []
     for _, level, title in sorted(found, key=lambda entry: entry[:2]):
         while open_headings and nodes[open_headings[-1]][1] >= level:
@@ -282,11 +286,16 @@ def is_instruction_file(relative):
     return relative in INSTRUCTION_FILES or relative.startswith(INSTRUCTION_DIRS)
 
 
-def is_title(quoted):
-    """Whether quoted words are a title. Between quote marks around file
-    names, as in ("docs/HANDOFF.md", "README.md"), CITATION finds only
-    punctuation or a space; a title starts with a letter, digit or code."""
-    return re.match(r'[\w`]', quoted) is not None
+def is_title(words, separated=True):
+    """Whether words in quote marks or italics after a file name are a
+    title. A title starts with a letter, a digit or code, which leaves out
+    what CITATION finds between quote marks around file names in code, as in
+    ("docs/HANDOFF.md", "README.md"), owner notes such as *(R0)*, and file
+    names. Without a comma or an arrow before it, as when a comment line
+    runs into the string after it, only a capital marks a title."""
+    if re.fullmatch(MARKDOWN_FILE, words):
+        return False
+    return words[:1].isupper() or (separated and re.match(r'[\w`]', words) is not None)
 
 
 def cited_titles(flat, match):
@@ -295,7 +304,10 @@ def cited_titles(flat, match):
     titles = [(match['quoted'] or match['italic'], match['italic'] is None, False)]
     end = match.end()
     while (following := FOLLOWING.match(flat, end)) is not None:
-        if following['italic'] is None and not is_title(following['quoted']):
+        if not is_title(following['quoted'] or following['italic']):
+            break
+        # *Closures* (docs/LESSONS.md) names a section of its own file.
+        if re.match(r'\s*\(\s*`?' + MARKDOWN_FILE, flat[following.end():]):
             break
         titles.append((following['quoted'] or following['italic'],
                        following['italic'] is None, following['and'] is not None))
@@ -329,14 +341,16 @@ def broken_titles(path, cited, titles, used):
                 problems.append(f'{relative}: {cited} does not contain the words "{title}"')
             continue
         found = [index for index, node in enumerate(nodes) if normalize(title) in node[0]]
+        # Only the places a title fits may hold the titles after it.
+        fitting = [inner for inner in found if not context or any(
+            part_of_or_beside(nodes, outer, inner) for outer in context)]
         if not found:
             problems.append(f'{relative}: {cited} has no section "{title}"')
-        elif context and not any(part_of_or_beside(nodes, outer, inner)
-                                 for outer in context for inner in found):
+        elif not fitting:
             problems.append(f'{relative}: {cited} has a section "{title}", '
                             f'but not in or beside "{beside}"')
-        if found:
-            earlier += found
+        if fitting:
+            earlier += fitting
             previous = title
     return problems
 
@@ -350,7 +364,8 @@ def broken_citations(path, text, all_sections, used=None):
     problems = []
     cited_spans = []
     for match in CITATION.finditer(flat):
-        if match['italic'] is None and not is_title(match['quoted']):
+        if match['italic'] is None and not is_title(match['quoted'],
+                                                     match['separator'] is not None):
             continue  # quote marks around a file name, not a title
         titles, end = cited_titles(flat, match)
         cited_spans.append((match.start(), end))
@@ -711,9 +726,39 @@ class CheckerTests(unittest.TestCase):
             with patch.dict(globals(), ROOT=root):
                 self.assertEqual(broken_citations(page, 'guide.md,\n"`main` ruleset"', set()), [])
                 self.assertEqual(broken_citations(page, 'guide.md, "`main` rules"', set()),
-                                 ['index.md: guide.md has no section "main rules"'])
+                                 ['index.md: guide.md has no section "`main` rules"'])
                 # Code that could hold a citation is still not read as one.
                 self.assertEqual(broken_citations(page, '`guide.md, "Missing"`', set()), [])
+
+    def test_italic_code_in_an_instruction_file_is_not_a_title(self):
+        agents = ROOT / 'AGENTS.md'
+        self.assertEqual(broken_citations(agents, 'Press the *`Speak`* button.', set()), [])
+        self.assertEqual(broken_citations(agents, 'Read *Use `x` here*.', {'use x here'}), [])
+        self.assertTrue(broken_citations(agents, 'Read *Use `y` here*.', {'use x here'}))
+
+    def test_a_string_after_a_file_name_in_code_is_not_a_title(self):
+        # Joined comment lines run into the code after them; without a
+        # comma, only a capital marks a title, as before.
+        source = ROOT / 'Brickson' / 'Example.swift'
+        for text in ['case .failed:\n    // The symbols are in docs/DESIGN.md\n    "bell.slash.fill"',
+                     'cp README.md "build/README.md"',
+                     'DOCS = [\n    # the briefing: AGENTS.md\n    "docs/HANDOFF.md",\n]']:
+            self.assertEqual(broken_citations(source, text, set()), [], text)
+        self.assertEqual(broken_citations(source, '// See docs/DECISIONS.md,\n// "iPhone Duet".', set()),
+                         ['Brickson/Example.swift: docs/DECISIONS.md has no section "iPhone Duet"'])
+        self.assertEqual(broken_citations(source, '// See docs/DECISIONS.md "No such title".', set()),
+                         ['Brickson/Example.swift: docs/DECISIONS.md has no section "No such title"'])
+
+    def test_a_lead_in_belongs_to_the_heading_above_it_whatever_the_line_breaks(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder).resolve()
+            page = root / 'index.md'
+            for separator in ['\u2028', '\x0c', '\x85']:
+                (root / 'guide.md').write_text(
+                    f'# Doc\n## Alpha\nx{separator}y{separator}z\n## Beta\n- **Lead.** text\n')
+                with patch.dict(globals(), ROOT=root):
+                    self.assertEqual(broken_citations(page, 'guide.md, "Beta", *Lead*', set()), [])
+                    self.assertTrue(broken_citations(page, 'guide.md, "Alpha", *Lead*', set()))
 
     def test_a_quotation_must_be_listed_and_appear_in_the_cited_file(self):
         with tempfile.TemporaryDirectory() as folder:
@@ -744,7 +789,8 @@ class CheckerTests(unittest.TestCase):
             page = root / 'index.md'
             (root / 'guide.md').write_text(
                 '# Decisions\n\n## Orientations\n\n### The hinge\n\n'
-                '- **Open: a thing nobody decided.** Text.\n\n'
+                '- **Open: a thing nobody decided.** Text.\n'
+                '- **Closed: a thing decided.** Text.\n\n'
                 '## iPhone Duo\n\n### The fold\n\n'
                 '- **Open: fewer than three categories.** Text.\n\n'
                 '## Home\n\nText.\n')
@@ -770,7 +816,9 @@ class CheckerTests(unittest.TestCase):
                          'The hinge', 'The fold'),
                         ('guide.md, "iPhone Duo", *The fold* and *The hinge*',
                          'The hinge', 'iPhone Duo'),
-                        ('guide.md, *Home* and *The flod*', 'The flod', None)]:
+                        ('guide.md, *Home* and *The flod*', 'The flod', None),
+                        # A title found in many places counts only where it fits.
+                        ('guide.md, "iPhone Duo", *Open*, *Closed*', 'Closed', 'Open')]:
                     problem = (f'index.md: guide.md has a section "{title}", but not in or '
                                f'beside "{beside}"' if beside else
                                f'index.md: guide.md has no section "{title}"')
@@ -780,9 +828,14 @@ class CheckerTests(unittest.TestCase):
                     '/// See guide.md, "iPhone Duo",\n/// *The flod*.', set()),
                     ['Example.swift: guide.md has no section "The flod"'])
                 # Words after a title that are not one are left alone.
+                (root / 'other.md').write_text('# Lessons\n## Rules\n')
                 for text in ['guide.md, "iPhone Duo"; "The flod" is a typo',
                              'guide.md, "iPhone Duo", and the "flod"',
-                             '(guide.md, "iPhone Duo"), *not* the hinge']:
+                             '(guide.md, "iPhone Duo"), *not* the hinge',
+                             'guide.md, "iPhone Duo", "(see below)"',
+                             'guide.md, "iPhone Duo", *(R0, a new thread)*',
+                             'guide.md, "iPhone Duo", and *Rules* (other.md)',
+                             'guide.md, *Home*, and "other.md", "Rules"']:
                     self.assertEqual(broken_citations(page, text, set()), [], text)
 
     def test_a_wrong_title_after_a_cited_title_is_reported_once(self):

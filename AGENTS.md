@@ -621,10 +621,10 @@ above are backed by checks wherever a check can run:
 - **Cross-references.** `scripts/test-docs.py`, run the same way, fails
   when a section cited by title (a file name, then the title in quotes or
   italics) or a relative link no longer resolves. A title after a comma
-  must be part of the one before it or a section beside it
+  must be part of a title before it, or a section beside one
   (docs/DECISIONS.md, "iPhone Duo", *The fold*), and words in quote marks
-  after a file name are a title unless the script's `QUOTATIONS` lists
-  them as a quotation of that file. In this file, the
+  after a file name and a comma are a title unless the script's
+  `QUOTATIONS` lists them as a quotation of that file. In this file, the
   review skill and `.github/copilot-instructions.md`, an italic title on
   its own must name a real section. Rename a section and update what cites it in the same commit.
 - **The verifier.** `.claude/agents/verifier.md` is a report-only
