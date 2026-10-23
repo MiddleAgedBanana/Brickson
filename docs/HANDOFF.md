@@ -43,8 +43,11 @@ and VoiceOver announces the warnings. If the
 library cannot be saved, the app speaks from a filled in-memory library
 and says changes will not be kept. If saved phrases exist but cannot be
 opened or read, the file is left untouched and a second warning says so
-and warns against deleting the app. Editing and backup exist as tested
-code with no screens yet
+and warns against deleting the app. A saved library damaged so that
+Emergency has nothing to open gets the starter emergency phrases back at
+launch, added after what is already there, with nothing of the
+person's changed ([`log/2026-10-23-emergency-repair.md`](log/2026-10-23-emergency-repair.md)).
+Editing and backup exist as tested code with no screens yet
 ([`log/2026-10-21-library-core.md`](log/2026-10-21-library-core.md)).
 The screen never locks. Ported code:
 [`docs/PORTING.md`](PORTING.md).
@@ -182,10 +185,6 @@ release in docs/ROADMAP.md when no thread has it yet.
   is refused. A safety-copy exception is not adopted and requires the
   owner's decision before implementation (docs/DECISIONS.md, "Replacing
   the library"). *(R0, a new library thread)*
-- A store that opens with no categories is filled with the starter set.
-  No edit can empty the library (the emergency category cannot be
-  deleted), so only a damaged store reaches that path. *(R0, a new library
-  thread: a repair that only adds an emergency category)*
 - `rollback()` crashes SwiftData after deletes, even without a cascade
   (issue #19, seen with Xcode 26.6 on iOS 26.5). Brickson never calls it;
   the reproduction is disabled and has not been run on the current Xcode
@@ -289,10 +288,11 @@ Every change follows AGENTS.md, *Apple's current frameworks first*: the
 legacy uses kept, and the moves still planned with who owns each, are in
 docs/DECISIONS.md under that title
 ([`log/2026-10-23-current-frameworks.md`](log/2026-10-23-current-frameworks.md)).
-The library thread ended with PR #14; the next library thread starts from
-the *Follow-ups* in [`log/2026-10-21-library-core.md`](log/2026-10-21-library-core.md)
-(safety copies, export and import, the editing screens, stores from every
-schema version). Calls (R0 item 8) wait for a device build. Files under
+The library core landed with PR #14, and the launch repair that keeps
+Emergency working after it; the next library pull request starts from the
+*Follow-ups* in [`log/2026-10-23-emergency-repair.md`](log/2026-10-23-emergency-repair.md),
+in order (the rollback probe on the current Xcode, stores from every
+schema version, safety copies, export and import, the editing screens). Calls (R0 item 8) wait for a device build. Files under
 `.github/workflows` are committed by the owner (docs/SDLC.md, *Deploy*). The toolchain's follow-ups
 (Xcode's recommended settings, iPhone Duo, iOS 27 APIs behind
 `#available`) are in [`log/2026-10-21-toolchain.md`](log/2026-10-21-toolchain.md);

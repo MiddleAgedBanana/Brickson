@@ -696,9 +696,24 @@ current emergency phrases.
 
 So editing can never empty a library. An empty store can only mean a new
 install or a lost store, which is why the seeder fills any empty store and
-needs no stored "already seeded" flag. A store damaged so that the
-emergency category is gone still needs a launch repair that only adds
-(the memo's R4). Not built.
+needs no stored "already seeded" flag.
+
+*Default, adopted 2026-10-23: reversible if the owner objects.* A store
+damaged so that Emergency has nothing to open is repaired at launch, by
+adding only (the memo's R4; `EmergencyRepair`, written by
+`PhraseLibraryRepairer`). If the library has no emergency category, the
+starter emergency category is added after all the others; if the
+emergency category Home opens (the first) has no phrase with words, the
+starter emergency phrases are added after its own. The added items keep
+the starter's identities where they are free, so they count as untouched
+starter phrases, not the person's words. Nothing already stored is
+changed, moved or deleted, not even a sort order, and the repair is saved
+once from a context of its own. If that save fails, the store is left as
+it was for the next launch to try again, and the app speaks from a copy in
+memory holding the person's whole library with the repair, and says
+changes won't be kept. A second emergency category is left as it is,
+because Home opens the first. The repair says nothing on Home: the
+family sees Emergency working again.
 
 ## Editing the library
 
