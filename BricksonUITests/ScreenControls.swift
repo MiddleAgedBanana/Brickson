@@ -5,6 +5,8 @@ import XCTest
 struct ScreenControl: CustomStringConvertible {
     let name: String
     let frame: CGRect
+    /// Whether it shows as selected: the category or Emergency showing.
+    let isSelected: Bool
 
     var center: CGPoint { CGPoint(x: frame.midX, y: frame.midY) }
     var description: String { "\(name) \(frame)" }
@@ -20,7 +22,7 @@ extension XCTestCase {
         while let element = pending.popLast() {
             if element.elementType == .button {
                 let name = element.identifier.isEmpty ? element.label : element.identifier
-                found.append(ScreenControl(name: name, frame: element.frame))
+                found.append(ScreenControl(name: name, frame: element.frame, isSelected: element.isSelected))
                 continue
             }
             pending.append(contentsOf: element.children)
@@ -34,21 +36,11 @@ extension XCTestCase {
 /// nearest edge (zero inside one), each with every control within half a
 /// point of the nearest, so a tie is never hidden. How Snap to Item picks a
 /// target is a device check (docs/HANDOFF.md, *Checks that need a real
-/// device*), so both rules are scored.
+/// device*), so both rules are scored. The rules are the chain engine's
+/// (`ChainEngine`), which follows whole chains of them.
 func nearestControls(to point: CGPoint, among controls: [ScreenControl]) -> (byCentre: Set<String>, byEdge: Set<String>) {
-    guard !controls.isEmpty else { return ([], []) }
-    func centreDistance(_ frame: CGRect) -> CGFloat {
-        hypot(point.x - frame.midX, point.y - frame.midY)
-    }
-    func edgeDistance(_ frame: CGRect) -> CGFloat {
-        let dx = max(frame.minX - point.x, 0, point.x - frame.maxX)
-        let dy = max(frame.minY - point.y, 0, point.y - frame.maxY)
-        return hypot(dx, dy)
-    }
-    let closestCentre = controls.map { centreDistance($0.frame) }.min() ?? 0
-    let closestEdge = controls.map { edgeDistance($0.frame) }.min() ?? 0
-    return (
-        Set(controls.filter { centreDistance($0.frame) - closestCentre < 0.5 }.map(\.name)),
-        Set(controls.filter { edgeDistance($0.frame) - closestEdge < 0.5 }.map(\.name))
+    (
+        Set(ChainEngine.nearest(to: point, among: controls, by: .centre, frame: \.frame).map(\.name)),
+        Set(ChainEngine.nearest(to: point, among: controls, by: .edge, frame: \.frame).map(\.name))
     )
 }
