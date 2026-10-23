@@ -200,6 +200,7 @@ struct AudioSafetyPolicyTests {
         .speechStopped,
         .typedSpeechStopped,
         .modalSpeechStopped,
+        .modalAttentionAlertSilent,
         .audioSessionUnavailable,
     ])
     func acuteFailuresRequestUrgentAnnouncements(issue: HomeAudioIssue) {
@@ -234,6 +235,7 @@ struct AudioSafetyPolicyTests {
         #expect(AudioAnnouncementPolicy.ambientIssueToAnnounce(.speechStopped) == nil)
         #expect(AudioAnnouncementPolicy.ambientIssueToAnnounce(.typedSpeechStopped) == nil)
         #expect(AudioAnnouncementPolicy.ambientIssueToAnnounce(.modalSpeechStopped) == nil)
+        #expect(AudioAnnouncementPolicy.ambientIssueToAnnounce(.modalAttentionAlertSilent) == nil)
         #expect(
             AudioAnnouncementPolicy.speechIssueToAnnounce(
                 .stoppedUnexpectedly,
@@ -275,6 +277,41 @@ struct AudioSafetyPolicyTests {
     @Test(arguments: [AttentionAlertState.idle, .playing])
     func ordinaryAttentionStatesDoNotAnnounceFailure(state: AttentionAlertState) {
         #expect(AudioAnnouncementPolicy.attentionIssueToAnnounce(state) == nil)
+        #expect(AudioAnnouncementPolicy.attentionIssueToAnnounce(state, recoveryAction: .dismissThenRepeat) == nil)
+    }
+
+    /// Settings covers Home and has no Get Attention, so an alarm that
+    /// failed or stopped while it is open names the way back first, on its
+    /// line and in what VoiceOver hears (invariant 4: the text names a
+    /// reachable control). Fails if Settings' words send the person to a
+    /// Get Attention that is not on screen, or if Home's or typing's words
+    /// lose Get Attention, which is on screen there.
+    @Test(arguments: [AttentionAlertState.failedToStart, .stoppedUnexpectedly])
+    func overSettingsAnAlarmProblemNamesBackThenGetAttention(state: AttentionAlertState) {
+        let overSettings = AudioSafetyPolicy(
+            attentionState: state,
+            speechRecoveryAction: .dismissThenRepeat,
+            audioSessionHealthy: true,
+            outputVolume: 1
+        )
+        #expect(overSettings.issue == .modalAttentionAlertSilent)
+        #expect(AudioAnnouncementPolicy.attentionIssueToAnnounce(state, recoveryAction: .dismissThenRepeat) == .modalAttentionAlertSilent)
+        let message = HomeAudioIssue.modalAttentionAlertSilent.message
+        #expect(message.contains("Choose Back"))
+        #expect(message.contains("Get Attention"))
+        #expect(HomeAudioIssue.modalAttentionAlertSilent.compactMessage.contains("Back"))
+
+        let onHome = state == .failedToStart ? HomeAudioIssue.attentionAlertFailed : .attentionAlertStopped
+        for recovery in [SpeechRecoveryAction.repeatLast, .showPhrasesThenRepeat] {
+            let policy = AudioSafetyPolicy(
+                attentionState: state,
+                speechRecoveryAction: recovery,
+                audioSessionHealthy: true,
+                outputVolume: 1
+            )
+            #expect(policy.issue == onHome, "\(recovery)")
+            #expect(AudioAnnouncementPolicy.attentionIssueToAnnounce(state, recoveryAction: recovery) == onHome, "\(recovery)")
+        }
     }
 
     /// Home's one status line: a problem first, because something cannot be
