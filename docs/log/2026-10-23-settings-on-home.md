@@ -63,7 +63,7 @@ the test runs (iPhone 402×874 at default and AX5, 13-inch iPad portrait
 at default and AX5, landscape), and the way out still lands nearest
 Emergency.
 
-**Review round 2,** answered in words, as the second and last round.
+**Review round 2,** answered in words.
 Codex raised three points on `aac1993`. Settings hides Yes, No and
 Emergency: by design, since the cover opens on the way back and Get
 Attention's place (AGENTS.md, *Family controls stay out of the person's
@@ -88,6 +88,23 @@ work to score the chain), the sound line's new neighbours at the foot,
 and the root's note under Get Attention's place on wide windows, which
 the thread that adds Get Attention must score.
 
+**Review round 3,** answered in words except for this record. Codex
+raised two points on `3103ac5`, both trade-offs this pull request
+records in docs/DECISIONS.md, now also put to the owner in the pull
+request's description. A 320pt window loses more of its grid (about 240
+to 110pt on a zoomed 375×667 phone): at 288pt of content Yes and No get
+42pt against their 46pt words and the categories beside Settings' gear
+114pt against their 118pt, so keeping both in one row means cutting
+words or the spacing between targets, which is the layout engine's
+call (follow-up 6). The sound line at the foot can sit nearest a row
+that speaks or changes a setting: under the bar, its 125pt at the
+largest text on CI's iPhone put Home's Settings nearest Back to Talking
+(modelled from the first run's frames), so a held look would open
+Settings and then close it from the same spot (invariant 10; follow-up
+9). CodeRabbit asked for the owner's answer on the gear alone, which the
+description asks for, and for this record to say what CI had and had
+not shown, fixed below.
+
 ## Commits
 
 - `e61243d` Settings on Home: write the intent
@@ -104,7 +121,9 @@ the thread that adds Get Attention must score.
 - `3e0dd5d` Record the Settings layout fix from the first UI test run
 - `aac1993` Merge main into Settings on Home
 - `0e512c0` Choose Settings' root columns by the width its row needs
-- This record's review round 2 and the scored chain.
+- `5cbc9a6` Record review round 2 and score the chain from Home's Settings
+- `3103ac5` Merge main (PR #14) into Settings on Home
+- This record's review round 3.
 
 ## Verified
 
@@ -121,17 +140,23 @@ the thread that adds Get Attention must score.
   one against AGENTS.md's rules and one for the build and CI's tests; the
   Settings button's property pattern was typechecked on the same
   toolchain with Swift 6 and main-actor default isolation.
-- CI on `d6f1235`: unit tests passed on both simulators. UI tests
-  failed in `SettingsOnHomeTests` only, on both: the stretched bar above.
-  The frames, captures and screenshots were read from the run's result
-  bundles on Linux (Python's `sqlite3` and `zstandard`).
-- CI on round 2 and after: the pull request's checks, which must be
-  green before it merges.
+- CI on `d6f1235`: unit tests passed (the unit job runs on the iPad
+  simulator). UI tests failed in `SettingsOnHomeTests` only, on both
+  simulators: the stretched bar above. The frames, captures and
+  screenshots were read from the run's result bundles on Linux (Python's
+  `sqlite3` and `zstandard`).
+- CI on `aac1993`: unit tests passed, so the bar fix and the root's first
+  two-column layout built. Its UI run was cancelled by the next push
+  before `SettingsOnHomeTests` started (read from its partial result
+  bundle).
 
 ## Not verified
 
 - Nothing was built or run for iOS in this session; the views, the UI
   tests and the label-fit tests run first on CI.
+- CI on `0e512c0` and after had not finished when this record was
+  written: the pull request's checks show it, and must pass before it
+  merges.
 - The scoring table's percentages and the Back to Talking result for
   windows CI does not run (a 375pt phone, iPads other than the 13-inch,
   the 320pt window) come from a model of the frames with CI's text
@@ -180,3 +205,7 @@ the thread that adds Get Attention must score.
    root's row was, under Back to Talking, on wide windows and at large
    text, so the second held activation meets a row that only navigates
    (the work file's chain table).
+9. **Settings' sound line** at the foot of the cover: a place whose
+   nearest controls neither speak nor change a setting, when Get
+   Attention joins the bar (follow-up 1), keeping Back to Talking off
+   Home's Settings (docs/HANDOFF.md, *Known gaps*).

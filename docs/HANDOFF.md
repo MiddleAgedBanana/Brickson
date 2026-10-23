@@ -194,8 +194,13 @@ release in docs/ROADMAP.md when no thread has it yet.
   Home has Stop would leave it with no way to stop. It goes in with Get
   Attention and Stop on Home. On wide windows, Settings' root puts its
   note under that place, so adding Get Attention means scoring a look
-  that reads the note (docs/DECISIONS.md, "Settings on Home"). *(the
-  thread that puts them on Home)*
+  that reads the note (docs/DECISIONS.md, "Settings on Home"). Settings'
+  sound line sits at the foot of the cover, where its nearest controls
+  are the rows a screen has scrolled to its lower edge, some of which
+  speak a sample or change a setting; the bar's redesign for Get
+  Attention should give it a place whose neighbours do neither, without
+  putting Back to Talking nearest Home's Settings (`SettingsOnHomeTests`).
+  *(the thread that puts them on Home)*
 - Chains of activations through Settings' screens are not fully scored.
   From Home's Settings, two steps are (modelled, in
   [`work/settings-on-home.md`](work/settings-on-home.md)):
