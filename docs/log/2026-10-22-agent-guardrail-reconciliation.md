@@ -627,3 +627,41 @@ is unchanged; there is no audio workaround or weakened accessibility check.
 The owner has now re-enabled auto-merge on both #14 and #17. Agents leave
 those settings in place and will incorporate whichever branch lands first
 into the remaining branch when required.
+
+
+### Follow-up review: request methods, command context and citations
+
+Main `cc35c30` (PR #29's CI artifact documentation) was read and merged
+without conflicts. Seven executable regressions reproduced before fixing
+eight findings; the remaining finding corrects the verifier's initial
+snapshot to record `git diff --cached`, matching its final comparison.
+
+The guard now checks APPROVE on pending-review event submission as well as
+review creation, recognizes curl uploads' implicit PUT (an explicit method
+still wins), and includes IPv4/IPv6 digits in Git push flag clusters without
+consuming attached push-option data as flags. Official API and CLI sources:
+[review submission](https://docs.github.com/en/rest/pulls/reviews#submit-a-review-for-a-pull-request),
+[curl upload](https://curl.se/docs/manpage.html#-T), and
+[gh aliases](https://cli.github.com/manual/gh_alias_set).
+
+Native gh aliases are read through `gh alias list` in the selected HOME,
+GH_CONFIG_DIR or XDG_CONFIG_HOME context, without executing an expansion.
+Simple aliases are expanded and checked; shell/parameterized aliases and
+unsupported YAML forms require the explicit underlying command. The tests
+use a disposable configuration, including an empty one. Literal exports and
+unsets retain relevant Git/gh environment across shell segments and
+conditional paths; child shells keep their own changes. This remains an
+advisory mistake guard, not a complete shell parser or security sandbox.
+
+Citation checking ignores inline, indented and blockquoted fenced examples
+while retaining real citations whose file name alone is formatted as code.
+Markdown heading links include duplicate suffixes and collisions. Paired
+checks retain missing real citations/anchors and ordinary allowed commands.
+
+The final full local unit gate passed all 460 native tests (zero failures
+or skips), 76 hook tests and 24 documentation tests. Xcode 27.1 (27A9275),
+iPad Pro 13-inch (M5), iOS 27.0; app coverage remains 62.6%
+(3,540/5,659) and the catalog is unchanged. A final alias check includes
+repository flags inside the expansion. No app/UI source, product decision
+or review-rule exception changes. New-head hosted CI
+remains required; no local audio setting or accessibility assertion changed.

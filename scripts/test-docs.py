@@ -78,7 +78,7 @@ def without_fenced_code(text):
     return ''.join(output)
 
 
-def without_code_spans(text):
+def without_code_spans(text, keep_file_names=False):
     output, index = [], 0
     while index < len(text):
         opening = re.search(r'`+', text[index:])
@@ -95,7 +95,11 @@ def without_code_spans(text):
         closing = re.search(r'(?<!`)`{' + str(end - start) + r'}(?!`)', text[end:])
         if closing:
             stop = end + closing.end()
-            output.append(re.sub(r'[^\n]', ' ', text[start:stop]))
+            content = text[end:end + closing.start()]
+            if keep_file_names and re.fullmatch(r'(?:[\w.-]+/)*[\w.-]+\.md', content):
+                output.append(content)
+            else:
+                output.append(re.sub(r'[^\n]', ' ', text[start:stop]))
             index = stop
         else:
             output.append(text[start:end])
@@ -121,7 +125,9 @@ def joined(text, suffix):
     """Join wrapped lines (and their comment markers) so a citation split
     across two lines reads as one."""
     if suffix == '.md':
-        text = without_fenced_code(text)
+        text = re.sub(r'^(?: {0,3}>[ \t]?)+', '', text, flags=re.M)
+        text = without_code_spans(without_indented_code(without_fenced_code(text)),
+                                  keep_file_names=True)
         return re.sub(r'\s*\n\s*(?:>\s*)?', ' ', text)
     return re.sub(r'\s*\n\s*(?:///?|#|\*)?\s*', ' ', text)
 
@@ -150,6 +156,18 @@ def slug(title):
     """GitHub's anchor for a heading."""
     title = re.sub(r'[`*_]', '', title).strip().lower()
     return re.sub(r'[^\w\- ]', '', title).replace(' ', '-')
+
+
+def heading_anchors(text):
+    anchors = set()
+    for match in HEADING.finditer(without_fenced_code(text)):
+        base = slug(match['title'])
+        anchor, number = base, 0
+        while anchor in anchors:
+            number += 1
+            anchor = f'{base}-{number}'
+        anchors.add(anchor)
+    return anchors
 
 
 def resolve(citing, cited):
@@ -246,7 +264,7 @@ def broken_links(path, text):
             problems.append(f'{relative}: link {link} points to a missing file')
             continue
         if anchor and resolved.suffix == '.md':
-            anchors = {slug(m['title']) for m in HEADING.finditer(without_fenced_code(resolved.read_text()))}
+            anchors = heading_anchors(resolved.read_text())
             if anchor.lower() not in anchors:
                 problems.append(f'{relative}: link {link} names a heading that does not exist')
     return problems
@@ -265,6 +283,28 @@ class CheckerTests(unittest.TestCase):
 
     def setUp(self):
         self.fixture = ROOT / 'docs' / 'DECISIONS.md'
+
+    def test_code_examples_are_not_section_citations(self):
+        missing = 'docs/NO-SUCH.md, "Example"'
+        for code in [f'`{missing}`', f'``{missing}``',
+                     f'> ```markdown\n> {missing}\n> ```',
+                     f'    {missing}']:
+            self.assertEqual(broken_citations(self.fixture, code, set()), [], code)
+            self.assertTrue(broken_citations(self.fixture, missing + '\n\n' + code, set()))
+        # Formatting only the file name as code is an ordinary real citation.
+        self.assertTrue(broken_citations(self.fixture, '`docs/NO-SUCH.md`, "Example"', set()))
+        self.assertTrue(broken_citations(self.fixture, '`docs/DECISIONS.md`, "Missing title"', set()))
+        self.assertEqual(broken_citations(self.fixture, '`docs/DECISIONS.md`, "Orientations"', set()), [])
+
+    def test_duplicate_heading_links_get_numbered_anchors(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder).resolve()
+            guide = root / 'guide.md'
+            guide.write_text('# Repeat\n# Repeat\n# Repeat-1\n# Repeat\n')
+            with patch.dict(globals(), ROOT=root):
+                for anchor in ['repeat', 'repeat-1', 'repeat-1-1', 'repeat-2']:
+                    self.assertEqual(broken_links(guide, f'[part](#{anchor})'), [], anchor)
+                self.assertTrue(broken_links(guide, '[part](#repeat-3)'))
 
     def test_a_missing_section_is_reported(self):
         text = 'See docs/DECISIONS.md, "A section nobody wrote".'

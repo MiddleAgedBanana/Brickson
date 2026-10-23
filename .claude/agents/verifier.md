@@ -17,8 +17,8 @@ parts of *Gotchas* that touch the change before you start.
 
 ## 1. Find out what you are verifying
 
-- Record the initial `git status --short` and `git diff` (including staged
-  changes), then read `git log --oneline origin/main..HEAD` and
+- Record the initial `git status --short`, `git diff` and `git diff --cached`
+  (for staged changes), then read `git log --oneline origin/main..HEAD` and
   `git diff --stat origin/main...HEAD` (fetch `main` first with
   `git fetch origin main`). Name the branch and its last commit.
 - Read the pull request's description if there is one, and the entry the

@@ -57,6 +57,10 @@ Xcode 27.1 (27A9275); PR #20 landed in `d79d836`.
   PR #13 the UI tests run on the newest iPad Pro 13-inch and then the
   newest standard iPhone, after a warm-up launch, and fail when no test
   ran ([`log/2026-10-21-test-seams.md`](log/2026-10-21-test-seams.md)).
+  Since PR #28 each job keeps `build/TestResults` as a download on the
+  run's page for 14 days, passed or failed, unless the job stopped
+  before its tests started (a build failure leaves no bundle)
+  ([`log/2026-10-22-ci-test-results.md`](log/2026-10-22-ci-test-results.md)).
   Before PR #12, CI used Xcode 26.6 and iOS 26.5; 10 of 11 runs on
   `9362eca` were green, and the failure was simulator infrastructure.
 - **A Mac, 2026-10-21** (PR #13's diagnosis), iPhone 17 and iPad Pro
@@ -384,6 +388,11 @@ Simulators cannot show these. Record each result in a `docs/log/` file
   21 docs tests with the catalog unchanged; new-head CI is pending.
   Eleven more reproduced command-form/code-example findings passed the final
   gate: 460 native unit, 71 hook and 22 docs tests, with an unchanged catalog.
+  Main `cc35c30` is incorporated. Eight further findings cover pending-review
+  approvals, curl uploads, Git digit flags, gh aliases, persistent shell
+  environment, citation code examples, repeated heading anchors and the
+  verifier's staged snapshot. The final local gate passed 460 native unit,
+  76 hook and 24 docs tests with the catalog unchanged.
   New-head CI remains pending.
   The owner re-enabled auto-merge on both remaining PRs.
   Reconciliation and verification: [`log/2026-10-22-agent-guardrail-reconciliation.md`](log/2026-10-22-agent-guardrail-reconciliation.md).

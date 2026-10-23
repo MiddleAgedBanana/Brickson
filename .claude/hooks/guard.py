@@ -189,6 +189,10 @@ def script_quote(raw_words, words, index):
     return None
 
 
+def context_variable(key):
+    return key.startswith('GIT_') or key in ('HOME', 'GH_CONFIG_DIR', 'XDG_CONFIG_HOME')
+
+
 def strip_wrappers(words, inherited=None):
     """Drop VAR=value assignments and wrappers such as env, sudo, command."""
     environment = dict(inherited or {})
@@ -204,7 +208,7 @@ def strip_wrappers(words, inherited=None):
         first = words[0]
         if re.match(r'^[A-Za-z_][A-Za-z0-9_]*=', first):
             key, _, value = first.partition('=')
-            if key.startswith('GIT_') or key == 'HOME':
+            if context_variable(key):
                 environment[key] = value
             words = words[1:]
         elif os.path.basename(first) in WRAPPERS:
@@ -238,7 +242,7 @@ def strip_wrappers(words, inherited=None):
                 if wrapper == 'env':
                     if option in ('-i', '--ignore-environment'):
                         environment = {key: None for key in set(os.environ) | set(environment)
-                                       if key.startswith('GIT_') or key == 'HOME'}
+                                       if context_variable(key)}
                     elif option in ('-u', '--unset') and len(words) > 1:
                         environment[words[1]] = None
                     elif option.startswith('--unset='):
@@ -396,11 +400,11 @@ def check_push(args, context):
             refspecs.append(arg)
         index += 1
     if any(option == '--dry-run' or
-           (re.fullmatch(r'-[a-zA-Z]+', option) and 'n' in option) for option in options):
+           (re.fullmatch(r'-[a-zA-Z46]+', option) and 'n' in option) for option in options):
         return  # Git computes the update but does not send it.
     for option in options:
         if (option == '--force' or option.startswith(('--force-with-lease', '--force-if-includes'))
-                or (re.fullmatch(r'-[a-zA-Z]+', option) and 'f' in option)):
+                or (re.fullmatch(r'-[a-zA-Z46]+', option) and 'f' in option)):
             deny(FORCE)
         if option in ('--mirror', '--all', '--branches'):
             deny(TO_MAIN)  # these push every branch, main included
@@ -548,8 +552,69 @@ def expand_git_alias(subcommand, args, context):
     return subcommand, args, context
 
 
-def check_gh(words, cwd):
-    words = [w for w in words[1:]]
+def expand_gh_alias(words, cwd, inherited):
+    """Read gh's selected aliases without executing an expansion.
+
+    Shell or parameterized aliases require an explicit underlying command;
+    interpreting their separate expansion language here would be a guess.
+    """
+    environment = os.environ.copy()
+    for key, value in inherited.items():
+        if value is None:
+            environment.pop(key, None)
+        else:
+            environment[key] = value
+    try:
+        result = subprocess.run(['gh', 'alias', 'list'], cwd=cwd, env=environment,
+                                capture_output=True, text=True, timeout=5)
+    except (OSError, subprocess.TimeoutExpired):
+        deny(UNKNOWN)
+    if result.returncode:
+        if result.stderr.strip() == 'no aliases configured':
+            return words
+        deny(UNKNOWN)
+    def scalar(value):
+        # gh alias list emits YAML. Decode its ordinary single-line strings;
+        # multiline or unsupported scalars require an explicit command.
+        if value.startswith("'") and value.endswith("'"):
+            return value[1:-1].replace("''", "'")
+        if value.startswith('"'):
+            try:
+                decoded = json.loads(value)
+                if isinstance(decoded, str):
+                    return decoded
+            except ValueError:
+                pass
+            deny(UNKNOWN)
+        if value.startswith(('|', '>')):
+            deny(UNKNOWN)
+        return value
+    aliases = {}
+    for line in result.stdout.splitlines():
+        key, colon, value = line.partition(': ')
+        if not colon:
+            deny(UNKNOWN)
+        aliases[tuple(scalar(key).split())] = scalar(value)
+    for _ in range(8):
+        matches = [key for key in aliases if tuple(words[:len(key)]) == key]
+        if not matches:
+            return words
+        key = max(matches, key=len)
+        value = aliases[key]
+        if value.startswith('!') or '$' in value or '`' in value:
+            deny('Use the underlying gh command explicitly; the guard does not '
+                 'interpret shell or parameterized gh aliases.')
+        try:
+            expansion = shlex.split(value)
+        except ValueError:
+            deny(UNKNOWN)
+        if not expansion:
+            deny(UNKNOWN)
+        words = gh_command_words(expansion + words[len(key):])
+    deny(UNKNOWN)
+
+
+def gh_command_words(words):
     # gh's global option --repo/-R takes a value.
     plain = []
     skip = False
@@ -563,6 +628,11 @@ def check_gh(words, cwd):
             continue  # the attached forms, --repo=OWNER/REPO and -ROWNER/REPO
         else:
             plain.append(word)
+    return plain
+
+
+def check_gh(words, cwd, environment):
+    plain = expand_gh_alias(gh_command_words(words[1:]), cwd, environment)
     if len(plain) >= 2 and plain[0] in ('issue', 'pr') and plain[1] == 'new':
         plain[1] = 'create'
     if len(plain) >= 2 and plain[0] in ('agent-task', 'agent-tasks', 'agent', 'agents') \
@@ -733,6 +803,8 @@ def request_method(words, program):
     if methods:
         return methods[-1].upper()
     if program == 'curl':
+        if list(option_values(words, {'--upload-file'}, {'-T'})):
+            return 'PUT'
         if '--get' in words or '-G' in words:
             return 'GET'
         if '--head' in words or '-I' in words:
@@ -794,7 +866,7 @@ def merge_api_request(words, arguments, method):
     if method == 'PUT' and any(re.fullmatch(r'repos/[^/]+/[^/]+/pulls/[^/]+/merge', p) for p in paths):
         return True
     if method not in ('GET', 'HEAD'):
-        if any(re.fullmatch(r'repos/[^/]+/[^/]+/pulls/[^/]+/reviews', p) for p in paths):
+        if any(re.fullmatch(r'repos/[^/]+/[^/]+/pulls/[^/]+/reviews(?:/[^/]+/events)?', p) for p in paths):
             if any(str(v).upper() == 'APPROVE' for v in api_field_values(arguments, 'event')):
                 return True
         if any(re.fullmatch(r'repos/[^/]+/[^/]+/merges', p) for p in paths):
@@ -917,9 +989,9 @@ def check_command(command, cwd, depth=0, environment=None):
     # The shell can continue after a failed cd. Keep both outcomes until a
     # connector selects success (&&) or failure (||), instead of assuming cd
     # succeeded because its target looked like a directory during this check.
-    states = {(cwd, True, ())}
+    states = {(cwd, True, (), tuple(sorted((environment or {}).items())))}
     for part_index, (words, separator) in enumerate(parts):
-        runnable = {(where, success, stack) for where, success, stack in states
+        runnable = {(where, success, stack, env) for where, success, stack, env in states
                     if separator not in ('&&', '||')
                     or (separator == '&&' and success)
                     or (separator == '||' and not success)}
@@ -954,38 +1026,63 @@ def check_command(command, cwd, depth=0, environment=None):
                 for inner in nested([script]):
                     script = script.replace('$(' + inner + ')', '').replace('`' + inner + '`', '')
             # Unknown/mixed quoting is checked in both contexts conservatively.
-        for where, stack in {(path, stack) for path, _, stack in runnable}:
+        for where, stack, shell_env in {(path, stack, env) for path, _, stack, env in runnable}:
+            inherited = dict(shell_env)
+            _, command_environment, directories = strip_wrappers(words, inherited)
             command_cwd = where
             for directory in directories:
                 command_cwd = changed_directory(command_cwd, directory)
             for inner in dict.fromkeys(nested(outer_words)):
-                check_command(inner, where, depth + 1, environment)
+                check_command(inner, where, depth + 1, inherited)
             if script_index is not None:
                 check_command(script, command_cwd, depth + 1,
                               command_environment)
             elif program == 'eval':
                 check_command(' '.join(unwrapped[1:]), command_cwd, depth + 1,
                               command_environment)
+            if program in ('export', 'unset'):
+                updates = dict(inherited)
+                operands = unwrapped[1:]
+                flags = [word for word in operands if word.startswith('-')]
+                if program == 'unset' and '-f' in flags:
+                    pass  # Function names do not change exported variables.
+                else:
+                    for word in operands:
+                        key, equal, value = word.partition('=')
+                        if not context_variable(key):
+                            continue
+                        if flags and flags not in (['--'], ['-v']):
+                            deny(UNKNOWN)
+                        if program == 'unset':
+                            updates[key] = None
+                        elif equal:
+                            if '$' in value or '`' in value:
+                                deny(UNKNOWN)
+                            updates[key] = value
+                        else:
+                            deny(UNKNOWN)  # A prior unexported shell value is unknown.
+                next_states.add((where, True, stack, tuple(sorted(updates.items()))))
+                continue
             if program in ('cd', 'pushd', 'popd'):
                 if program == 'popd' or (program == 'pushd' and len(unwrapped) == 1):
                     target = stack[0] if stack else None
                     rest = stack[1:] if stack else ()
                     new_stack = ((where,) + rest) if program == 'pushd' else rest
-                    next_states.update({(target, True, new_stack), (where, False, stack)})
+                    next_states.update({(target, True, new_stack, shell_env), (where, False, stack, shell_env)})
                     continue
                 if program == 'pushd' and unwrapped[1].startswith(('-', '+')):
                     deny(UNKNOWN)  # indexed/stack-only forms are not guessed
                 destination = unwrapped[1] if len(unwrapped) > 1 else (
                     command_environment.get('HOME', os.environ.get('HOME')))
                 if destination is None:
-                    next_states.add((where, False, stack))
+                    next_states.add((where, False, stack, shell_env))
                     continue  # HOME unset: operandless cd fails.
                 target = changed_directory(where, destination)
                 # Earlier shell commands may create the target, so inspect
                 # both outcomes even when it does not exist at hook time.
                 new_stack = (where,) + stack if program == 'pushd' else stack
-                next_states.add((target, True, new_stack))
-                next_states.add((where, False, stack))
+                next_states.add((target, True, new_stack, shell_env))
+                next_states.add((where, False, stack, shell_env))
                 continue
             if program == 'git':
                 subcommand, args, context = git_parts(unwrapped, command_cwd, command_environment)
@@ -997,7 +1094,7 @@ def check_command(command, cwd, depth=0, environment=None):
                 elif subcommand == 'push':
                     check_push(args, context)
             elif program == 'gh':
-                check_gh(unwrapped, command_cwd)
+                check_gh(unwrapped, command_cwd, command_environment)
             elif program in ('curl', 'wget', 'http', 'https'):
                 if program == 'curl' and list(option_values(unwrapped[1:], {'--config'}, {'-K'})):
                     deny(CURL_CONFIG)
@@ -1007,7 +1104,7 @@ def check_command(command, cwd, depth=0, environment=None):
                         deny(MERGE)
                     if copilot_request(arguments):
                         deny(COPILOT)
-            next_states.update({(where, True, stack), (where, False, stack)})
+            next_states.update({(where, True, stack, shell_env), (where, False, stack, shell_env)})
         states = next_states
 
 

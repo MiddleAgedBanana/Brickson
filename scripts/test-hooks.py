@@ -13,6 +13,8 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import os
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 GUARD = ROOT / '.claude' / 'hooks' / 'guard.py'
@@ -64,6 +66,59 @@ class GuardTests(unittest.TestCase):
         self.addCleanup(subprocess.run,
                         ['git', '-C', str(self.repo), 'config', '--unset-all', key],
                         capture_output=True)
+
+    def test_pending_review_submission_checks_approval(self):
+        endpoint = 'repos/o/r/pulls/12/reviews/34/events'
+        self.assertDenied(f'gh api --method POST {endpoint} -f event=APPROVE')
+        self.assertAllowed(f'gh api --method POST {endpoint} -f event=COMMENT')
+        self.assertAllowed(f'gh api {endpoint}')
+
+    def test_curl_upload_uses_put_unless_overridden(self):
+        endpoint = 'https://api.github.com/repos/o/r/pulls/12/merge'
+        for option in ['-T payload.json', '-Tpayload.json', '--upload-file payload.json', '--upload-file=payload.json']:
+            self.assertDenied(f'curl {option} {endpoint}')
+            self.assertAllowed(f'curl -X GET {option} {endpoint}')
+        self.assertAllowed('curl -T payload.json https://example.com/upload')
+
+    def test_push_digit_options_preserve_force_and_dry_run(self):
+        for version in ['4', '6']:
+            self.assertDenied(f'git push -{version}f origin feature')
+            self.assertDenied(f'git push -v{version}f origin feature')
+            self.assertAllowed(f'git push -{version}n origin main')
+            self.assertAllowed(f'git push -{version}of origin feature')
+
+    def test_gh_aliases_use_the_selected_configuration(self):
+        # gh's own read-only alias list decodes its configuration; never run
+        # any expanded alias. Fixtures do not touch the user's configuration.
+        with tempfile.TemporaryDirectory(dir=self.repo) as folder:
+            config = Path(folder)
+            (config / 'config.yml').write_text(
+                'aliases:\n  land: -R o/r pr merge\n  inspect: pr view\n  approve: pr review --approve\n'
+                "  shell: '!gh pr merge'\n  detail: pr view $1 --json title\n")
+            with patch.dict(os.environ, GH_CONFIG_DIR=folder):
+                self.assertDenied('gh land 12')
+                self.assertDenied('gh approve 12')
+                self.assertDenied('gh shell 12')
+                self.assertAllowed('gh inspect 12')
+                self.assertDenied('gh detail 12')
+            self.assertDenied(f'GH_CONFIG_DIR={folder} gh land 12')
+            self.assertAllowed(f'env GH_CONFIG_DIR={folder} gh inspect 12')
+            (config / 'config.yml').write_text('aliases: {}\n')
+            self.assertAllowed(f'GH_CONFIG_DIR={folder} gh pr view 12')
+
+    def test_shell_exports_and_unsets_preserve_repository_context(self):
+        with tempfile.TemporaryDirectory(dir=self.repo) as folder:
+            subprocess.run(['git', 'init', '-q', '-b', 'main', folder], check=True)
+            assignment = 'GIT_DIR=' + shlex.quote(str(Path(folder) / '.git'))
+            self.assertDenied(f'export {assignment}; git push origin')
+            self.assertDenied(f'export {assignment} && git push origin')
+            self.assertDenied(f"sh -c 'export {assignment}; git push origin'")
+            self.assertAllowed(f'export {assignment}; unset GIT_DIR; git push origin')
+            self.assertAllowed(f'export {assignment}; git status')
+            self.assertAllowed(f"sh -c 'export {assignment}'; git push origin")
+            self.assertAllowed(f'export {assignment} || git push origin')
+            with patch.dict(os.environ, GIT_DIR=str(self.repo / '.git')):
+                self.assertDenied('unset GIT_DIR; git push origin', cwd=folder)
 
     def test_xargs_process_slot_operand(self):
         self.assertDenied("printf '' | xargs --process-slot-var SLOT git add -A")
