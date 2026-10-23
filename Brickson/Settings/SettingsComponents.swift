@@ -21,7 +21,7 @@ enum SettingsMetrics {
 /// wrap between words beside the icon, never shrinking; a full-width row
 /// leaves room for every word with its icon (AGENTS.md, "Words never
 /// break"). Settings' root gives its row half the width only where the
-/// half holds the words on one line (`SettingsRootView`).
+/// half holds the words on one line (`SettingsRootColumns`).
 struct SettingsRowLabel: View {
     let title: Text
     let systemImage: String

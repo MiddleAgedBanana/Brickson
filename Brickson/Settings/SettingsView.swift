@@ -212,38 +212,21 @@ final class SettingsLanding {
 /// Settings was, so a look still resting there meets a row that only
 /// navigates (docs/DECISIONS.md, "Settings on Home"). Where half the width
 /// holds the row's words on one line, the row takes the bar's trailing
-/// column, under Back to Talking and as wide, with the note beside it.
-/// Across a wide window, a full-width row's centre lies farther from that
-/// spot than Back to Talking's, so by the nearest centre a held look could
-/// close Settings again (modelled from CI's frames on PR #33). Where half
-/// the width is too narrow, as on a phone, the row spans the width, which
-/// keeps its words whole.
+/// column, under Back to Talking and as wide, with the note beside it
+/// (`SettingsRootColumns`). Across a wide window, a full-width row's centre
+/// lies farther from that spot than Back to Talking's, so by the nearest
+/// centre a held look could close Settings again (modelled from CI's
+/// frames on PR #33). Where half the width is too narrow, as on a phone,
+/// the row spans the width, which keeps its words whole.
 struct SettingsRootView: View {
     @Environment(SettingsLanding.self) private var landing: SettingsLanding?
 
     var body: some View {
         SettingsScreen(title: "Settings") {
-            ViewThatFits(in: .horizontal) {
-                // The bar's columns: equal halves, the same spacing.
-                HStack(alignment: .top, spacing: SettingsMetrics.rowSpacing) {
-                    ZStack(alignment: .topLeading) {
-                        // A hidden copy of the row makes this column want
-                        // the row's whole width, so these columns are
-                        // chosen only where each half holds the row's
-                        // words on one line. The note itself asks for no
-                        // width and wraps to what the column has.
-                        measuringCopy
-                            .hidden()
-                            .accessibilityHidden(true)
-                        note
-                            .frame(minWidth: 0, idealWidth: 0, maxWidth: .infinity, alignment: .leading)
-                    }
-                    familySetup
-                }
-                VStack(alignment: .leading, spacing: SettingsMetrics.rowSpacing) {
-                    familySetup
-                    note
-                }
+            // The bar's gap, so two columns are the bar's columns.
+            SettingsRootLayout(spacing: SettingsMetrics.rowSpacing) {
+                familySetup
+                note
             }
         }
     }
@@ -257,14 +240,6 @@ struct SettingsRootView: View {
         .accessibilityIdentifier("familySetup")
     }
 
-    /// The row as drawn, for measuring only: never shown or reachable.
-    private var measuringCopy: some View {
-        Button {} label: {
-            familySetupLabel
-        }
-        .settingsRowStyle()
-    }
-
     private var familySetupLabel: some View {
         SettingsRowLabel(title: "Family Setup", systemImage: "person.2.fill")
             .frame(minHeight: FamilySetupView.openingHeight)
@@ -272,6 +247,45 @@ struct SettingsRootView: View {
 
     private var note: some View {
         SettingsParagraph("Voices, help with reaching the screen, keeping \(AppName.display) open, and the privacy policy are in Family Setup.")
+    }
+}
+
+/// Places Settings' root where `SettingsRootColumns` says: its first view is
+/// the Family Setup row, its second the note. It measures the row with its
+/// words on one line, then each view at the width it gets.
+nonisolated struct SettingsRootLayout: Layout {
+    let spacing: CGFloat
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        columns(width: proposal.width, subviews: subviews)?.size ?? .zero
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        guard let columns = columns(width: bounds.width, subviews: subviews) else { return }
+        for (subview, frame) in zip(subviews, [columns.row, columns.note]) {
+            subview.place(
+                at: CGPoint(x: bounds.minX + frame.minX, y: bounds.minY + frame.minY),
+                proposal: ProposedViewSize(width: frame.width, height: frame.height)
+            )
+        }
+    }
+
+    /// Nothing but the row and the note is placed: the root has exactly
+    /// these two.
+    private func columns(width: CGFloat?, subviews: Subviews) -> SettingsRootColumns? {
+        guard subviews.count == 2 else { return nil }
+        let row = subviews[0]
+        let note = subviews[1]
+        let rowIdealWidth = row.sizeThatFits(.unspecified).width
+        // Asked for its own width, the root stacks at the row's.
+        let width = width.flatMap { $0.isFinite ? $0 : nil } ?? rowIdealWidth
+        return SettingsRootColumns(
+            width: width,
+            spacing: spacing,
+            rowIdealWidth: rowIdealWidth,
+            rowHeight: { row.sizeThatFits(ProposedViewSize(width: $0, height: nil)).height },
+            noteHeight: { note.sizeThatFits(ProposedViewSize(width: $0, height: nil)).height }
+        )
     }
 }
 
