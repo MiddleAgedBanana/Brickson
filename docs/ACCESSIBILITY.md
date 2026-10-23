@@ -328,7 +328,7 @@ pointer input*).
 | Live Speech on Apple Watch | Type-to-speak on the wrist | 1–2 | watchOS 10 | **System.** Setup text: **R0-7** | Device |
 | AssistiveTouch on Apple Watch | Hand gestures for the watch | 1–2 | watchOS 8 | **System**; nothing until a watch app exists | — |
 | A Brickson watch app | A few phrases and Get Attention on the wrist | 1–2 | watchOS 10 (Personal Voice) | **Later**. Moving phrases to the watch needs a decision, since there is no iCloud sync | — |
-| iPhone Duo: `ReservedRegion`, `reservedRegions(kind:options:layoutDirectionBehavior:)`, `onHingeChange(isEnabled:_:)` | Keeping controls off the hinge and the camera | 1–4 | 27.1 **`#available`** | **R1** "The phone as a first-class device": the layout engine takes reserved regions as part of the space available | Unit. Device: a folding iPhone, open and folded |
+| iPhone Duo: `ReservedRegion`, `reservedRegions(kind:options:layoutDirectionBehavior:)`, `onHingeChange(isEnabled:_:)` | Keeping controls off the hinge and the camera | 1–4 | 27.1 **`#available`** | **R0-13** "Ready for iPhone Duo": the layout engine takes reserved regions as part of the space available, once the owner answers docs/DECISIONS.md, "iPhone Duo", *Open*. `onHingeChange` drives nothing (same entry) | Unit. The iPhone Duo simulator first; device: a folding iPhone, open and folded |
 
 ## Newer than iOS 26.0
 

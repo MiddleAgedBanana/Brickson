@@ -265,6 +265,10 @@ at a glance.
   with Home at a large accessibility text size.
 - Order the iPad set landscape-first if the iPad layout reads better there;
   decide when the iPad layout is final.
+- iPhone Duo gets the same story twice, on the outer and the inner display
+  (sizes in APP-STORE.md, section 9), from the first submission: required
+  from April 2027, and it earns the "optimized for iPhone Duo" badge
+  (docs/DECISIONS.md, "iPhone Duo").
 - One set in light appearance. A dark set is not needed; the page shows one
   set per device size.
 - The capture is the real app on a simulator at the sizes in APP-STORE.md.

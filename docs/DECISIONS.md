@@ -57,6 +57,7 @@ holds.
 | Home's border, pressed and selection rings under Show Borders, and the Large Content Viewer held back from Home's speaking controls until a device check | "Show Borders and the Large Content Viewer on Home" (Accessibility pass two) |
 | Get Attention on Home under Emergency, Stop in a well of its own with a category under it, "Help" as Get Attention's other name, the status line's order, a silent stand-in tone for UI tests | "Get Attention and Stop on Home" (Get Attention and Stop on Home; PR #38) |
 | A compiler warning fails the build in every target and configuration | "Warnings are errors" (Warnings as errors) |
+| iPhone Duo: optimized by building with the current SDK, Duo screenshots in every submission, ready before the first, one layout for every pose, the hinge driving nothing, no arrangement view on Home, the system's bars in Settings, one window; two fold questions left to the owner | "iPhone Duo" (iPhone Duo readiness) |
 | The exceptions to Apple's current frameworks first, and the moves made and planned | "Apple's current frameworks first" (the rule is the owner's, 2026-10-22) |
 | The accessibility coverage list and its choices: full screen in Assistive Access and no separate scene, no programmatic Guided Access, assistive-technology flags that only suggest, phrases in the person's voice with VoiceOver on, late-stage boards as an R1 profile, and what waits or is never used | "Accessibility API coverage" (Accessibility coverage checklist) |
 
@@ -728,6 +729,94 @@ multitasking requires them). The reference app locked the phone to portrait
 because its phone layout lost Emergency off screen in landscape at large
 text sizes. Brickson revisits this when the layout engine is ported
 (docs/PORTING.md, step 4); until then, `AppBundleTests` pins it.
+*2026-10-23:* iPhone Duo's inner display ignores this setting ("The inner
+display doesn't honor your supported interface orientations", Apple), so
+Home already meets a landscape phone window there (*iPhone Duo*, below).
+
+## iPhone Duo
+
+*2026-10-23. Default: the owner left routine choices to the project.
+Reversible if the owner objects. The two questions under* Open *are the
+owner's.* Apple's words, with dates and links, and the assessment behind
+this entry are in
+[`docs/log/2026-10-23-iphone-duo-readiness.md`](log/2026-10-23-iphone-duo-readiness.md).
+
+iPhone Duo is Apple's foldable iPhone (on sale 2026-10-23): a compact
+outer display with iPhone size classes, and an inner display with regular
+size classes in both directions that can be partially folded. It has Eye
+Tracking, so *Minimum iOS, iPhone and iPad*, rule 1, already requires
+Brickson to run on it.
+
+- **Brickson ships optimized for iPhone Duo.** Apple treats an app built
+  with the iOS 27.1 SDK or later as optimized for it: the app fills both
+  displays, and system bars can turn vertical. *Build with Apple's
+  current Xcode* already builds that way (Xcode 27.1 on 2026-10-23), so
+  there is nothing to switch on and no reason to build with an older SDK.
+- **iPhone Duo screenshots in every submission**, the first one included:
+  Apple requires them from April 2027, and they earn the "optimized for
+  iPhone Duo" badge before then (docs/APP-STORE.md, section 9).
+- **Ready before the first submission.** docs/ROADMAP.md, R0 item 13, is
+  inside the release gate: the checks there are logged before a build
+  goes to App Review.
+- **One layout, every pose.** No layout is made for a pose (book, laptop
+  or tent): Apple says "You don't want to tie functionality to a specific
+  pose", and invariant 8 lets only sizes and spacing change. Home's
+  arrangement keeps coming from the space it is given; a fold or the
+  camera is part of that space (reserved regions), never a device check.
+- **The hinge drives nothing.** `onHingeChange` reads the fold's angle
+  "for driving interactions or effects" (Apple). Folding is a gesture, so
+  it never speaks, alarms, changes data or moves a control (invariants 1
+  and 9), and Apple itself says "For layout, use the arrangement and
+  region APIs."
+- **No arrangement view on Home.** `ArrangementView` can show only its
+  primary view when its axis does not fit; Home's regions must all show in
+  every state (invariants 2 and 10). Settings may use one later, in a
+  pull request that scores it.
+- **Settings keeps the system's bar placement**, as the HIG asks ("In
+  general, don't override the default bar placement"): its standard Back
+  may sit in a vertical bar on the outer display. Before release, item 13
+  scores where Back lands and what is nearest afterwards; if that fails,
+  `toolbarVerticalBehavior(.disabled)` on Settings is the fallback, in a
+  pull request that records why.
+- **One window.** Brickson does not ask for more than one window (no
+  `UIApplicationSupportsMultipleScenes`): two windows would be two Homes,
+  each with its own Emergency and its own voice. Apple: "If your app
+  supports this on iPad, it will on iPhone Duo as well." Item 13 checks
+  that a second window cannot open.
+- **Orientations** stand as recorded above. The iPhone landscape decision
+  also measures the outer display in landscape, the pose Apple describes
+  as a tent on a table.
+
+### Open, for the owner
+
+Both would change where Home's controls are on iPhone Duo's inner
+display, so neither is decided by default. Until they are answered,
+nothing builds fold handling.
+
+1. **When the inner display is partially folded, should Home keep its
+   controls off the fold?** Apple: "buttons are tough to tap when they land
+   right in the fold", and its own components move theirs aside.
+   *Recommended:* yes, by widening the gap at the fold and nothing else,
+   as Apple shows for a grid ("preserve the outer margins while increasing
+   the spacing around the hinge"): every control keeps its region, its
+   order and its neighbours, and only spacing changes, which invariant 8
+   allows. The cost: folding changes frames under a resting look, as
+   rotating does today, so dwell scoring covers folding first. The other
+   choices are to leave controls where they are (a gaze or a finger meets
+   a curved, hard-to-hit spot) or to move whole regions to one half, as
+   Apple's displacement pattern does (rejected: it moves controls).
+2. **On a display that has a fold, should Home use an even number of
+   columns?** The HIG: "In a grid-style layout, prefer an even number of
+   columns so content divides cleanly." The slot plan has three columns
+   at compact widths and five at regular ones (*Home's slot plan*), and
+   the stand-in grid three where they fit, so a column can sit on the
+   fold. *Recommended:* yes, chosen from whether the window has a fold at
+   all, folded or flat (Apple: "prefer even numbers of columns when a
+   division region is present regardless of its active state"), so
+   folding never changes a count. The cost: the inner display gets a
+   different column count from an iPad window of the same width. That is
+   still a layout from the space available, because a fold is part of the
+   space, but it is a change to the slot plan for that display.
 
 ## Starter phrases
 
