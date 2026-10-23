@@ -443,6 +443,7 @@ private struct SafetyRow: View {
     /// Never disabled: starting the alarm again while it sounds changes
     /// nothing (`AttentionAlertPlayer.start()`), and a control that greys
     /// out while the alarm sounds would look broken to the person calling.
+    /// It tells VoiceOver it makes its own sound (`playsSound`).
     private var getAttention: some View {
         Button {
             attention.start()
@@ -451,6 +452,7 @@ private struct SafetyRow: View {
         }
         .buttonStyle(HomeButtonStyle(fill: Palette.attentionFill))
         .frame(width: shape.getAttentionWidth, height: shape.quickControlHeight)
+        .accessibilityAddTraits(.playsSound)
         .accessibilityInputLabels(HomeControlNames.getAttention.inputLabels)
         .accessibilityIdentifier("getAttention")
     }
