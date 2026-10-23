@@ -301,7 +301,8 @@ release in docs/ROADMAP.md when no thread has it yet.
   and the keyboard probe are in `Brickson/Typing`, waiting for Home's
   typing state ([`log/2026-10-23-keyboard-allowance.md`](log/2026-10-23-keyboard-allowance.md),
   *Follow-ups*; [`log/2026-10-21-typing-foundation.md`](log/2026-10-21-typing-foundation.md),
-  *For the next typing thread*). *(a new typing thread)*
+  *For the next typing thread*). *(a new typing thread, once ROADMAP R0
+  items 3 and 9 allow it)*
 - No editing, export or import screens. The library core (`LibraryEdit`,
   `LibraryEditor`, `LibraryImport`, `BackupCodec`) is tested code that
   nothing calls yet. A Replace that would remove the person's own words

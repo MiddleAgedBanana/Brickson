@@ -124,7 +124,8 @@ the probe's cleanup; refusing other apps' keyboards; the documents.
 
 ## Follow-ups
 
-1. **The typing state on Home** *(the next typing thread)*: Phrases and
+1. **The typing state on Home** *(a new typing thread, once ROADMAP R0
+   items 3 and 9 allow it)*: Phrases and
    Type in A's trailing column, and C in one row wherever its two rows
    end below `KeyboardAllowance`'s limit, chosen from the space by the
    layout, never by device. Then the per-state checks: every control in
