@@ -137,7 +137,7 @@ struct OffMainThreadCallbackTests {
     }
 
     /// The UI tests' stand-in for the permission answers from another
-    /// queue, as the system does, after its status has changed. Fails if
+    /// thread, as the system does, after its status has changed. Fails if
     /// it answers on the main thread, answers something else, or answers
     /// before its status says so.
     @Test @MainActor func theStandInPersonalVoiceAnswersFromAnotherThread() async {

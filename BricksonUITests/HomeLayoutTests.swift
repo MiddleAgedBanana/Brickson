@@ -1,3 +1,4 @@
+import UIKit
 import XCTest
 
 /// Home's layout in the running app: the starter library needs no
