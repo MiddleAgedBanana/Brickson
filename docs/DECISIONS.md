@@ -1473,8 +1473,11 @@ ROADMAP R0 item 4 ([`work/get-attention-on-home.md`](work/get-attention-on-home.
   without Bold Text, at grown text sizes
   (`HomeShapeTests.aHeldLookMeetsNothingHarmfulAfterGetAttentionOrStop`),
   and in the running app on CI's iPad and iPhone
-  (`GetAttentionOnHomeTests`). The narrowest margin is after Stop by
-  edge: the category under it is 8pt away and Again, above it, 12pt.
+  (`GetAttentionOnHomeTests`). Measured from the well's centre, the
+  narrowest margin is 4pt, after Stop by nearest edge (the gap to the
+  category under the well is 8pt, to Again above it 12pt); by nearest
+  centre it is 12pt or more. Away from the centre the well's top is
+  nearer Again (*Open: the top of Stop's well is nearest Again*).
 - **Get Attention is never disabled.** A second activation while the
   tone plays changes nothing (*Get Attention*), and a control that greyed
   out while the alarm sounds would look broken to the person calling.

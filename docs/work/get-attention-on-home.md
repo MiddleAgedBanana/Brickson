@@ -145,8 +145,11 @@ widths (the window less Home's 16pt margins).
   a category only change which phrases show. Stop is never nearest Get
   Attention's spot, so a held look on Get Attention can never stop the
   alarm, and Get Attention is never nearest Stop's, so a held look on
-  Stop can never restart it. Margins after Stop: 4pt by edge (the gap
-  under Stop is 8pt, the gap above it 12pt) and 12pt or more by centre.
+  Stop can never restart it. Margins after Stop, from the well's centre:
+  4pt by nearest edge (the gap under the well is 8pt, the gap above it
+  12pt) and 12pt or more by nearest centre. Away from the centre, the
+  well's top is nearer Again (docs/DECISIONS.md, "Get Attention and Stop
+  on Home", *Open*).
   **Switch Control** counts the same way: every activation takes a
   switch press, and with Auto Tap a repeat on the item just chosen is
   the held activation in the table (Get Attention again changes nothing;
