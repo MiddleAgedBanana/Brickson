@@ -67,6 +67,55 @@ class GuardTests(unittest.TestCase):
                         ['git', '-C', str(self.repo), 'config', '--unset-all', key],
                         capture_output=True)
 
+    def test_push_destinations_require_literal_operands(self):
+        for command in ['branch=main; git push origin "$branch"',
+                        'ref=HEAD:main; git push origin "$ref"',
+                        'git push origin HEAD:${branch}', 'git push origin {main,feature}',
+                        'git push "$remote"', 'git push --repo="$remote"']:
+            self.assertDenied(command)
+        self.assertAllowed('git push origin HEAD:feature')
+        self.assertDenied('git push --dry-run origin "$branch"')
+        self.assertDenied('flags=--no-dry-run; git push --dry-run origin main "$flags"')
+        self.assertAllowed('git push --dry-run origin main')
+
+    def test_wget_input_urls_require_explicit_operands(self):
+        with tempfile.TemporaryDirectory(dir=self.repo) as folder:
+            urls = Path(folder) / 'urls.txt'
+            urls.write_text('https://api.github.com/repos/o/r/pulls/12/merge\n')
+            for option in [f'-i {urls}', f'-i{urls}', f'-qi{urls}',
+                           f'--input-file={urls}', f'--input {urls}']:
+                self.assertDenied('wget --no-config --method=PUT ' + option)
+        self.assertDenied('wget --no-config --input-file=- --method=PUT')
+        self.assertAllowed('wget --no-config https://example.com')
+
+    def test_curl_expansion_options_require_explicit_values(self):
+        endpoint = 'https://api.github.com/repos/o/r/pulls/12/merge'
+        self.assertDenied("curl -q --variable u=" + endpoint + " --expand-url '{{u}}' -X PUT")
+        self.assertDenied("curl -q --expand-url='{{u}}' -X PUT")
+        self.assertDenied("curl -q --expand-request '{{method}}' " + endpoint)
+        self.assertAllowed("curl -q -H '--expand-url' https://example.com")
+        self.assertAllowed('curl -q --url https://example.com')
+
+    def test_encoded_copilot_endpoints_are_checked(self):
+        for endpoint in ['issues/12/%61ssignees', 'pulls/12/requested%5freviewers']:
+            path = 'repos/o/r/' + endpoint
+            field = 'reviewers' if endpoint.startswith('pulls/') else 'assignees'
+            self.assertDenied('gh api --method POST ' + path + f" -f '{field}[]=copilot-swe-agent[bot]'")
+            self.assertDenied('curl -q -X POST https://api.github.com/' + path +
+                              ' --json ' + shlex.quote(json.dumps({field:['copilot-swe-agent[bot]']})))
+            self.assertAllowed('curl -q -X POST https://api.github.com/' + path +
+                               ' --json ' + shlex.quote(json.dumps({field:['human']})))
+        self.assertAllowed('gh api repos/o/r/issues/12/%61ssignees')
+
+    def test_trap_actions_require_inspectable_safe_commands(self):
+        for command in ["trap 'git push origin main' EXIT", "trap -- 'git add -A' EXIT",
+                        "trap 'gh pr merge 12' INT TERM", 'trap "$action" EXIT',
+                        "trap 'git push origin' EXIT"]:
+            self.assertDenied(command)
+        for command in ["trap 'git status' EXIT", "trap 'git push origin HEAD:feature' EXIT",
+                        "trap '' INT", 'trap - EXIT', 'trap -p', 'trap -l', 'trap -- - EXIT']:
+            self.assertAllowed(command)
+
     def test_expanding_pathspecs_require_literal_paths(self):
         for path in ['"$PWD"', '~+', '{.,README.md}', '"${PWD}"', '"$paths"']:
             self.assertDenied(f'git add {path}')

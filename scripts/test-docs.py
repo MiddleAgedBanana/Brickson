@@ -366,7 +366,7 @@ def broken_links(path, text):
             continue
         if anchor and resolved.suffix == '.md':
             anchors = heading_anchors(resolved.read_text())
-            if anchor.lower() not in anchors:
+            if anchor not in anchors:
                 problems.append(f'{relative}: link {link} names a heading that does not exist')
     return problems
 
@@ -384,6 +384,17 @@ class CheckerTests(unittest.TestCase):
 
     def setUp(self):
         self.fixture = ROOT / 'docs' / 'DECISIONS.md'
+
+    def test_heading_fragments_are_case_sensitive(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder).resolve()
+            page = root / 'index.md'
+            (root / 'guide.md').write_text('# Orientations')
+            with patch.dict(globals(), ROOT=root):
+                for fragment in ['ORIENTATIONS', '%4Frientations', 'Orientations']:
+                    self.assertTrue(broken_links(page, f'[guide](guide.md#{fragment})'))
+                for fragment in ['orientations', '%6Frientations']:
+                    self.assertEqual(broken_links(page, f'[guide](guide.md#{fragment})'), [])
 
     def test_reference_titles_allow_escaped_delimiters(self):
         titles = [r'"a \" title"', r"'a \' title'", r'(a \) title)']

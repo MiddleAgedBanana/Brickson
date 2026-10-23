@@ -581,6 +581,9 @@ def check_push(args, context, branch_changed=False):
             dry_run = False
         elif option == '--dry-run' or (re.fullmatch(r'-[a-zA-Z46]+', option) and 'n' in option):
             dry_run = True
+    if any(value.startswith('~') or any(char in value for char in '$`{}')
+           for value in [*refspecs, remote] if value):
+        deny('Use literal push remotes and destinations; shell expansions are not inspected.')
     if dry_run:
         return  # Only the final setting determines whether Git sends updates.
     for option in options:
@@ -1244,17 +1247,32 @@ def merge_api_request(words, arguments, method):
 
 def copilot_request(text, words=(), method='GET'):
     """Whether API arguments request Copilot review or issue assignment."""
+    paths = api_paths(words)
     if method == 'POST' and any(re.fullmatch(r'agents/repos/[^/]+/[^/]+/tasks', path)
-                                for path in api_paths(words)):
+                                for path in paths):
         return True
-    if ('requested_reviewers' in text or '/assignees' in text) and 'copilot' in text.lower():
+    if any(path.endswith(('/requested_reviewers', '/assignees')) for path in paths) and 'copilot' in text.lower():
         return True
     # Issue create/update endpoints also accept assignees. Inspect that field
     # specifically: a body mentioning Copilot is not an assignment.
     endpoint = r'repos/[^/\s]+/[^/\s]+/issues(?:/\d+)?'
-    return has_api_endpoint(text, endpoint) and any(
+    return any(re.fullmatch(endpoint, path) for path in paths) and any(
         'copilot' in str(value).lower()
         for field in ('assignee', 'assignees') for value in api_field_values(text, field))
+
+
+def trap_action(words):
+    """Inspect literal trap actions; their eventual working directory is unknown."""
+    args = words[1:]
+    if args[:1] == ['--']:
+        args = args[1:]
+    if not args or args[0] in ('-p', '-l', '-lp', '-pl'):
+        return None  # display registered actions or signal names
+    if len(args) < 2 or args[0] in ('', '-'):
+        return None  # reset or ignore, without registering command text
+    if args[0].startswith('-') or any(char in args[0] for char in '$`'):
+        deny('Use a literal trap action; dynamically supplied command text is not inspected.')
+    return args[0]
 
 
 def inspectable_here_documents(command):
@@ -1432,6 +1450,10 @@ def check_command(command, cwd, depth=0, environment=None, git_state=None):
             elif program == 'eval':
                 check_command(' '.join(unwrapped[1:]), command_cwd, depth + 1,
                               command_environment, git_state)
+            elif program == 'trap':
+                action = trap_action(unwrapped)
+                if action is not None:
+                    check_command(action, None, depth + 1, command_environment, git_state)
             if program in ('export', 'unset'):
                 updates = dict(inherited)
                 operands = unwrapped[1:]
@@ -1509,6 +1531,8 @@ def check_command(command, cwd, depth=0, environment=None, git_state=None):
                 check_gh(unwrapped, command_cwd, command_environment)
             elif program in ('curl', 'wget', 'http', 'https'):
                 request_words = curl_words(unwrapped) if program == 'curl' else unwrapped
+                if program == 'curl' and any(word.startswith('--expand-') for word in request_words[1:]):
+                    deny('Use explicit curl option values; variable expansion is not inspected.')
                 if program == 'curl' and list(option_values(request_words[1:], {'--config'}, {'-K'})):
                     deny(CURL_CONFIG)
                 if program == 'wget':
@@ -1517,6 +1541,9 @@ def check_command(command, cwd, depth=0, environment=None, git_state=None):
                             '--method', '--post-data', '--post-file', '--body-data', '--body-file',
                         })
                         option = word.split('=', 1)[0]
+                        if ((option.startswith('--') and option != '--' and '--input-file'.startswith(option))
+                                or re.match(r'^-[^-]*i', word)):
+                            deny('Use explicit Wget URLs; input-file URL lists are not inspected.')
                         if ((option.startswith('--') and option != '--' and any(
                                 full.startswith(option) for full in ('--execute', '--config')))
                                 or re.match(r'^-[^-]*e', word)):

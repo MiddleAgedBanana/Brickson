@@ -1005,3 +1005,37 @@ References: [GitHub review flags](https://cli.github.com/manual/gh_pr_review),
 and installed Git, Bash and xargs help for branch, program and runtime
 argument behavior. The reported command fixtures are inspected as hook
 input; no protected remote action is executed.
+
+
+## Literal destinations, URL sources and trap actions, 2026-10-23
+
+Six findings on `9845a0d` reproduced before correction. Push remotes and
+refspecs now require literal operands. That check precedes the dry-run
+shortcut because a variable could expand to an option that cancels it;
+the additional regression also failed before correction. A fully explicit
+dry run and feature destination still pass. Wget input-file URL lists and
+curl expansion options require explicit URLs/values before host detection.
+Curl header operands containing option-like text remain data.
+
+Copilot endpoint checks use decoded API paths, including encoded
+assignees and requested-reviewers routes, with human and read-only cases
+retained. Literal trap actions are inspected recursively; their future
+working directory is unknown, so an implicit push is refused. Dynamic
+trap commands require literal text, while reset/ignore, read-only displays
+and safe explicit actions pass. The cross-reference checker compares the
+decoded fragment exactly to generated heading anchors, catching incorrect
+case without rejecting correctly cased percent-encoded fragments.
+
+The final local unit script passed 591 native tests, zero failures and
+the existing issue #19 skip (592 total), plus all 124 hook and 34 docs
+tests, including the tightened dry-run regression. Xcode 27.1 (27A9275),
+iPad Pro 13-inch (M5), iOS 27.0; catalog unchanged; app line coverage
+67.0% (4,568/6,821). Main remains `d654cef`. Hosted units on `9845a0d`
+passed, but its UI job was still running and does not certify the next
+head. Fresh hosted checks and review remain required. Replace import
+remains refused, with no app change, audio workaround or weakened gate.
+
+References checked: [curl variable expansion](https://curl.se/docs/manpage.html#--variable),
+[HTML fragment matching](https://html.spec.whatwg.org/multipage/browsing-the-web.html#scroll-to-fragid),
+and the installed Wget input-file/method help and Bash `help trap`.
+The hooks inspect command fixtures; no owner-only remote action is run.
