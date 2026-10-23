@@ -90,6 +90,53 @@ struct PaletteTests {
         }
     }
 
+    /// Every ink a Home control's rings are drawn in (`HomeButtonLook`):
+    /// the pressed ring, the selection ring, the border of a control that
+    /// is off, and the Show Borders border and its selection ring. Each is
+    /// a control edge drawn on a fill, so it needs 3:1 against every fill
+    /// it can sit on, in the colour the look draws it in that appearance.
+    @Test func everyRingInkStandsOutFromEveryFill() throws {
+        for ink in HomeButtonLook.Ink.allCases {
+            for appearance in Self.appearances {
+                let isDark = appearance.traits.userInterfaceStyle == .dark
+                let drawn: UIColor = ink.isWhite(inDarkMode: isDark) ? .white : .black
+                for name in Palette.assetNames {
+                    let ratio = Contrast.ratio(drawn, try fill(named: name, in: appearance.traits))
+                    #expect(ratio >= 3, "\(ink) ring on \(name), \(appearance.name): \(ratio):1")
+                }
+            }
+        }
+    }
+
+    /// The rings are drawn in plain black and white. Primary ink must be
+    /// the system's label colour, the words of a control that is off and
+    /// the ink the tests above measure on the screen, and the screen's ink
+    /// must be the screen behind Home, in every appearance. If Apple's
+    /// colours change, this fails before a ring stops matching them.
+    @Test func ringInksAreTheSystemColoursTheyStandFor() {
+        for appearance in Self.appearances {
+            let isDark = appearance.traits.userInterfaceStyle == .dark
+            let expected: [(HomeButtonLook.Ink, UIColor, String)] = [
+                (.primary, .label, "the label colour"),
+                (.screen, .systemBackground, "the system background"),
+            ]
+            for (ink, system, systemName) in expected {
+                let drawn: UIColor = ink.isWhite(inDarkMode: isDark) ? .white : .black
+                #expect(
+                    Self.components(drawn) == Self.components(system.resolvedColor(with: appearance.traits)),
+                    "\(ink) ink is not \(systemName), \(appearance.name)"
+                )
+            }
+        }
+    }
+
+    /// Red, green, blue and alpha, each out of 255.
+    private static func components(_ color: UIColor) -> [Int] {
+        var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
+        color.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+        return [red, green, blue, alpha].map { Int(($0 * 255).rounded()) }
+    }
+
     /// The fills are the measured values in `Palette`'s table, so a typo in
     /// the asset catalog cannot pass unnoticed just because it still
     /// happens to clear the contrast bars.
