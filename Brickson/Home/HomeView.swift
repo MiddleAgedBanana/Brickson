@@ -16,9 +16,10 @@ import SwiftUI
 ///
 /// The arrangement comes from the space Home is given (`HomeShape`), never
 /// from which device it is on. Top to bottom: the message with its status
-/// lines, the safety row (Yes, No, Again and Emergency), the categories with
-/// Settings at their trailing end, then the phrase grid, which takes what is
-/// left. Everything a person needs while typing sits in the top
+/// lines, the safety row (Yes, No and Emergency, then Again and Get
+/// Attention), the categories with Stop's well at their leading top and
+/// Settings at their trailing end, then the phrase grid, which takes what
+/// is left. Everything a person needs while typing sits in the top
 /// part, which the software keyboard never reaches (docs/LESSONS.md, "Lay
 /// out against a measured keyboard"); the categories are nearest the
 /// keyboard because a slip onto one is harmless. No control's label breaks a
@@ -28,11 +29,11 @@ import SwiftUI
 /// `HomeShape.minimumTileHeight`, or where a library warning takes its room.
 ///
 /// Each region is an accessibility container, and assistive technologies
-/// reach them in a fixed order that differs from the one on screen: Yes, No
-/// and Emergency first, then Again, the message, the categories and
-/// Settings, and the phrases (`HomeRegion`). Voice Control and Full Keyboard
-/// Access know the fixed controls by the names in `HomeControlNames`, their
-/// visible words first.
+/// reach them in a fixed order that differs from the one on screen: Yes,
+/// No, Emergency and Get Attention first, then Again, the message, Stop
+/// when it shows, the categories and Settings, and the phrases
+/// (`HomeRegion`). Voice Control and Full Keyboard Access know the fixed
+/// controls by the names in `HomeControlNames`, their visible words first.
 struct HomeView: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.legibilityWeight) private var legibilityWeight
@@ -180,28 +181,30 @@ private struct MessageText: View {
 
 // MARK: - Status lines
 
-/// What the person cannot hear: speech in progress, and audio that failed
-/// or a very low volume (invariant 4). Passive text only, never a control.
+/// What the person cannot hear: audio that failed or a very low volume
+/// (invariant 4), the alarm sounding, and speech in progress. Passive text
+/// only, never a control.
 ///
 /// They sit under the message, in the part of Home the software keyboard
-/// never covers, so they stay visible while typing. Speech and audio share
-/// one line that is always laid out: it holds invisible copies of
-/// "Speaking" and of every audio warning and keeps the tallest one's height,
-/// so nothing moves when one appears. A warning takes the line over from
-/// "Speaking": when something cannot be heard, that is what the person needs
-/// to know. To keep the line short, it shows each warning's compact text and
-/// gives VoiceOver the full sentence, as the reference app did. The library
-/// warnings sit under the phrase grid instead (`LibraryWarnings`).
+/// never covers, so they stay visible while typing. They share one line
+/// that is always laid out: it holds invisible copies of "Speaking",
+/// "Sounding" and every audio warning and keeps the tallest one's height,
+/// so nothing moves when one appears. A warning takes the line over: when
+/// something cannot be heard, that is what the person needs to know. Then
+/// the alarm, which sounds until someone chooses Stop, then speech
+/// (`HomeStatusLine`). To keep the line short, it shows each warning's
+/// compact text and gives VoiceOver the full sentence, as the reference app
+/// did. The library warnings sit under the phrase grid instead
+/// (`LibraryWarnings`).
 private struct StatusLines: View {
     @Environment(SpeechService.self) private var speech
     @Environment(AudioSafetyMonitor.self) private var audioSafety
+    @Environment(AttentionAlertPlayer.self) private var attention
     let width: CGFloat
 
     private var audioIssue: HomeAudioIssue? {
-        // Get Attention is not ported yet (docs/PORTING.md, step 1), so the
-        // alarm is always idle here.
         AudioSafetyPolicy(
-            attentionState: .idle,
+            attentionState: attention.state,
             speechInterruptionState: speech.speechInterruptionState,
             speechRecoveryAction: .repeatLast,
             audioSessionHealthy: audioSafety.audioSessionHealthy,
@@ -213,11 +216,24 @@ private struct StatusLines: View {
         localized: "Speaking",
         comment: "Shown under the message while a phrase is being spoken."
     )
+    private static let speakingImage = "speaker.wave.2.fill"
+    private static let sounding = String(
+        localized: "Sounding",
+        comment: "Shown under the message while the Get Attention alarm sounds."
+    )
+    private static let soundingSentence = String(
+        localized: "Get Attention is sounding.",
+        comment: "What VoiceOver reads for the status line while the Get Attention alarm sounds."
+    )
+    private static let soundingImage = "bell.and.waves.left.and.right.fill"
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             ZStack(alignment: .topLeading) {
-                FittedLine(text: Self.speaking, systemImage: "speaker.wave.2.fill", font: .status, width: width)
+                FittedLine(text: Self.speaking, systemImage: Self.speakingImage, font: .status, width: width)
+                    .hidden()
+                    .accessibilityHidden(true)
+                FittedLine(text: Self.sounding, systemImage: Self.soundingImage, font: .status, width: width)
                     .hidden()
                     .accessibilityHidden(true)
                 ForEach(HomeAudioIssue.allCases, id: \.self) { candidate in
@@ -225,13 +241,20 @@ private struct StatusLines: View {
                         .hidden()
                         .accessibilityHidden(true)
                 }
-                if let audioIssue {
-                    FittedLine(text: audioIssue.compactMessage, systemImage: audioIssue.systemImage, font: .status, width: width)
+                switch HomeStatusLine(issue: audioIssue, alarmIsSounding: attention.isSounding, isSpeaking: speech.isSpeaking) {
+                case .issue(let issue):
+                    FittedLine(text: issue.compactMessage, systemImage: issue.systemImage, font: .status, width: width)
                         .accessibilityElement(children: .combine)
-                        .accessibilityLabel(audioIssue.message)
-                } else if speech.isSpeaking {
-                    FittedLine(text: Self.speaking, systemImage: "speaker.wave.2.fill", font: .status, width: width)
+                        .accessibilityLabel(issue.message)
+                case .sounding:
+                    FittedLine(text: Self.sounding, systemImage: Self.soundingImage, font: .status, width: width)
                         .accessibilityElement(children: .combine)
+                        .accessibilityLabel(Self.soundingSentence)
+                case .speaking:
+                    FittedLine(text: Self.speaking, systemImage: Self.speakingImage, font: .status, width: width)
+                        .accessibilityElement(children: .combine)
+                case nil:
+                    EmptyView()
                 }
             }
         }
@@ -245,6 +268,15 @@ private struct StatusLines: View {
         // the warning is already showing, because each one is a new event.
         .onChange(of: audioIssue, initial: true) { _, newIssue in
             guard let issue = AudioAnnouncementPolicy.ambientIssueToAnnounce(newIssue) else {
+                return
+            }
+            announce(issue)
+        }
+        // Every failed or cut-off alarm is announced, a retry that fails
+        // again included, because each is a new event
+        // (`AttentionAlertPlayer.failureSequence`).
+        .onChange(of: attention.failureSequence) {
+            guard let issue = AudioAnnouncementPolicy.attentionIssueToAnnounce(attention.state) else {
                 return
             }
             announce(issue)
@@ -310,49 +342,48 @@ private struct LibraryWarnings: View {
 
 // MARK: - Safety row
 
-/// Controls that stay in the same place in every state. Yes and No speak at
-/// once, and Again repeats the last message; Emergency only switches to the
-/// emergency phrases, so a stray look on it never says anything. While the
-/// emergency phrases show, Emergency is marked selected the same way a
-/// category is (a check mark, a ring and the Selected trait), because the
-/// emergency category has no button of its own.
+/// Controls that stay in the same place in every state, in two rows of two
+/// equal columns. Yes and No share the first row's leading column, with
+/// Emergency beside them; Again and Get Attention are under them, Get
+/// Attention directly under Emergency (`HomeShape.slotFrames`).
 ///
-/// One row of Yes, No, Again and Emergency wherever each keeps its minimum
-/// width, Yes and No narrowing first; otherwise Yes, No and Emergency, with
-/// Again across the row under them (`HomeShape.SafetyRow`). Either way Emergency is at
-/// the trailing end of the first row, under Settings' Back to Talking, so a
-/// look still resting there after Settings closes meets a control that says
-/// nothing (invariant 10; docs/DECISIONS.md, "Settings on Home"). Again is
-/// reached after Emergency by assistive technologies
-/// (`HomeRegion.lastInRegion`).
+/// Yes and No speak at once, and Again repeats the last message; Emergency
+/// only switches to the emergency phrases, so a stray look on it never says
+/// anything. While the emergency phrases show, Emergency is marked selected
+/// the same way a category is (a check mark, a ring and the Selected trait),
+/// because the emergency category has no button of its own. Get Attention
+/// starts the alarm on its first activation and only starts it: Stop is in
+/// its own well among the categories (`StopWell`), so a look held on Get
+/// Attention never stops what it started (invariant 10; docs/DECISIONS.md,
+/// "Get Attention and Stop on Home").
+///
+/// Emergency is at the trailing end of the first row, under Settings' Back
+/// to Talking, so a look still resting there after Settings closes meets a
+/// control that says nothing (docs/DECISIONS.md, "Settings on Home").
+/// Assistive technologies reach Yes, No, Emergency and Get Attention, then
+/// Again (`HomeRegion.lastInRegion`).
 ///
 /// Yes, No and Again carry no icon. Beside the word, No's thumbs-down was
 /// read as part of it ("g)No") by the text recognizer in `LaunchTests`, and
 /// PR #13 had dropped these icons for the same reason.
 private struct SafetyRow: View {
     @Environment(SpeechService.self) private var speech
+    @Environment(AttentionAlertPlayer.self) private var attention
     let shape: HomeShape
     let emergencyIsAvailable: Bool
     let isShowingEmergency: Bool
     let showEmergency: () -> Void
 
     var body: some View {
-        switch shape.safetyRow {
-        case .oneRow:
+        VStack(alignment: .leading, spacing: HomeShape.controlSpacing) {
             HStack(spacing: HomeShape.controlSpacing) {
                 yes
                 no
-                again
                 emergencyButton
             }
-        case .twoRows:
-            VStack(alignment: .leading, spacing: HomeShape.controlSpacing) {
-                HStack(spacing: HomeShape.controlSpacing) {
-                    yes
-                    no
-                    emergencyButton
-                }
+            HStack(spacing: HomeShape.controlSpacing) {
                 again
+                getAttention
             }
         }
     }
@@ -408,18 +439,39 @@ private struct SafetyRow: View {
         .accessibilityAddTraits(isShowingEmergency ? .isSelected : [])
         .accessibilityInputLabels(HomeControlNames.emergency.inputLabels)
     }
+
+    /// Never disabled: starting the alarm again while it sounds changes
+    /// nothing (`AttentionAlertPlayer.start()`), and a control that greys
+    /// out while the alarm sounds would look broken to the person calling.
+    private var getAttention: some View {
+        Button {
+            attention.start()
+        } label: {
+            FittedLabel(HomeControlNames.getAttention.visible, systemImage: "bell.fill", font: .quickControl)
+        }
+        .buttonStyle(HomeButtonStyle(fill: Palette.attentionFill))
+        .frame(width: shape.getAttentionWidth, height: shape.quickControlHeight)
+        .accessibilityInputLabels(HomeControlNames.getAttention.inputLabels)
+        .accessibilityIdentifier("getAttention")
+    }
 }
 
-// MARK: - Categories and Settings
+// MARK: - Categories, Stop and Settings
 
-/// The category buttons, and Settings at their trailing end: a column as
-/// tall as their rows, showing its gear alone where its word has no room,
-/// or a row of its own under them where the window is too narrow even for
-/// that (`HomeShape.SettingsPlacement`).
+/// Stop's well, the category buttons and Settings, in one of three fixed
+/// arrangements chosen from the width (`HomeShape.CategoryArrangement`):
+/// wide windows take a band, with Stop above the first category and the
+/// other three and Settings at the band's full height; narrower ones take
+/// three columns, or two. In each, Stop is at the leading top with a
+/// category directly under it, so a look still resting where Stop was
+/// meets a category, which only changes which phrases show (invariant 10).
+///
 /// Settings is for the family. It opens a cover with its own safety bar
 /// (`settingsCover`), and is reached after the categories by assistive
-/// technologies (`HomeRegion.lastInRegion`). Only the categories scroll,
-/// in a library with more than four of them; Settings stays where it is.
+/// technologies (`HomeRegion.lastInRegion`). Each category has a cell of
+/// its own; a library with more than four keeps the rest in the last cell,
+/// which scrolls (`CategorySelection.inCell`). Nothing else here scrolls,
+/// and nothing moves when Stop appears or goes.
 private struct CategoriesAndSettings: View {
     let shape: HomeShape
     let categories: [PhraseCategory]
@@ -428,73 +480,151 @@ private struct CategoriesAndSettings: View {
     @Binding var showsSettings: Bool
 
     var body: some View {
-        let grid = CategoryGrid(
-            categories: categories,
-            columns: shape.categoryColumns,
+        let spacing = HomeShape.controlSpacing
+        switch shape.categoryArrangement {
+        case .band:
+            HStack(alignment: .top, spacing: spacing) {
+                VStack(spacing: spacing) {
+                    stop
+                    cell(0)
+                }
+                cell(1)
+                cell(2)
+                cell(3)
+                settings
+            }
+        case .threeColumns:
+            VStack(alignment: .leading, spacing: spacing) {
+                HStack(spacing: spacing) {
+                    stop
+                    cell(0)
+                    cell(1)
+                }
+                HStack(spacing: spacing) {
+                    cell(2)
+                    cell(3)
+                    settings
+                }
+            }
+        case .twoColumns:
+            VStack(alignment: .leading, spacing: spacing) {
+                HStack(spacing: spacing) {
+                    stop
+                    cell(0)
+                }
+                HStack(spacing: spacing) {
+                    cell(1)
+                    cell(2)
+                }
+                HStack(spacing: spacing) {
+                    cell(3)
+                    settings
+                }
+            }
+        }
+    }
+
+    private var stop: some View {
+        StopWell()
+            .frame(width: shape.stopWidth, height: shape.categoryHeight)
+            .accessibilitySortPriority(HomeRegion.firstInRegion)
+    }
+
+    private var settings: some View {
+        SettingsButton(isPresented: $showsSettings, showsName: shape.settingsShowsName)
+            .frame(width: shape.settingsWidth, height: shape.fullCellHeight)
+            .accessibilitySortPriority(HomeRegion.lastInRegion)
+    }
+
+    /// The category cell at `index`. In the band, the first cell is under
+    /// Stop and the others take the band's full height. The first is
+    /// reached straight after Stop, wherever it stands (`HomeRegion`).
+    private func cell(_ index: Int) -> some View {
+        CategoryCell(
+            categories: CategorySelection.inCell(index, of: categories, cells: HomeShape.categoryCapacity),
             buttonHeight: shape.categoryHeight,
             selectedID: selectedID,
             select: select
         )
-        .frame(width: shape.categoryGridWidth, height: shape.categoryGridHeight)
-        let settings = SettingsButton(isPresented: $showsSettings, showsName: shape.settingsShowsName)
-            .frame(width: shape.settingsWidth, height: shape.settingsHeight)
-            .accessibilitySortPriority(HomeRegion.lastInRegion)
+        .frame(width: shape.categoryWidth, height: index == 0 ? shape.categoryHeight : shape.fullCellHeight)
+        .accessibilitySortPriority(index == 0 ? HomeRegion.secondInRegion : 0)
+    }
+}
 
-        switch shape.settingsPlacement {
-        case .beside:
-            HStack(alignment: .top, spacing: HomeShape.controlSpacing) {
-                grid
-                settings
+/// Stop, in a well of its own that shows it only while the alarm sounds.
+/// The well keeps its frame whether it is empty or not, so nothing moves
+/// when Stop appears or goes (invariant 8), and an empty well is hidden
+/// from assistive technologies. Stop only stops: Get Attention, which
+/// starts the alarm, is elsewhere, so no control turns into its opposite
+/// in place (invariant 10).
+private struct StopWell: View {
+    @Environment(AttentionAlertPlayer.self) private var attention
+
+    var body: some View {
+        if attention.isSounding {
+            Button {
+                attention.stop()
+            } label: {
+                FittedLabel(HomeControlNames.stop.visible, systemImage: "bell.slash.fill", font: .category)
             }
-        case .below:
-            VStack(alignment: .leading, spacing: HomeShape.controlSpacing) {
-                grid
-                settings
-            }
+            .buttonStyle(HomeButtonStyle(fill: Palette.stopFill))
+            .accessibilityInputLabels(HomeControlNames.stop.inputLabels)
+            .accessibilityIdentifier("stopAlert")
+        } else {
+            Color.clear
+                .accessibilityHidden(true)
         }
     }
 }
 
-/// One button per everyday category, in a fixed order and a fixed grid: two
-/// by two on narrow windows, one row of four on wide ones, with room kept for
-/// four whatever the library holds. Nothing scrolls sideways. A library
-/// with more categories than that scrolls inside this grid; the starter
-/// library never does. The selected category is filled with the phrase
-/// colour and shows a check mark and a ring (so the choice never depends on
+/// One category cell: a button for its category, filling the cell, or,
+/// in a library with more categories than cells, the rest of them in a
+/// list that scrolls inside the last cell. The starter library never
+/// scrolls here. The selected category is filled with the phrase colour
+/// and shows a check mark and a ring (so the choice never depends on
 /// colour alone), and carries the Selected trait for VoiceOver and Voice
-/// Control.
-private struct CategoryGrid: View {
-    let categories: [PhraseCategory]
-    let columns: Int
+/// Control. An empty cell shows nothing and is hidden from assistive
+/// technologies.
+private struct CategoryCell: View {
+    let categories: ArraySlice<PhraseCategory>
     let buttonHeight: CGFloat
     let selectedID: UUID?
     let select: (UUID) -> Void
 
     var body: some View {
-        let grid = FixedColumns(categories, columns: columns) { category in
-            let isSelected = category.uuid == selectedID
-            Button {
-                select(category.uuid)
-            } label: {
-                FittedLabel(
-                    category.name,
-                    systemImage: isSelected ? "checkmark.circle.fill" : category.symbolName,
-                    font: .category
-                )
+        if categories.count > 1 {
+            ScrollView {
+                VStack(spacing: HomeShape.controlSpacing) {
+                    ForEach(categories) { category in
+                        button(category)
+                            .frame(height: buttonHeight)
+                    }
+                }
             }
-            .buttonStyle(HomeButtonStyle(
-                fill: isSelected ? Palette.phraseFill : Palette.controlFill,
-                isSelected: isSelected
-            ))
-            .frame(height: buttonHeight)
-            .accessibilityAddTraits(isSelected ? .isSelected : [])
-        }
-
-        if categories.count > HomeShape.categoryCapacity {
-            ScrollView { grid }
+        } else if let category = categories.first {
+            button(category)
         } else {
-            grid.frame(maxHeight: .infinity, alignment: .top)
+            Color.clear
+                .accessibilityHidden(true)
         }
+    }
+
+    private func button(_ category: PhraseCategory) -> some View {
+        let isSelected = category.uuid == selectedID
+        return Button {
+            select(category.uuid)
+        } label: {
+            FittedLabel(
+                category.name,
+                systemImage: isSelected ? "checkmark.circle.fill" : category.symbolName,
+                font: .category
+            )
+        }
+        .buttonStyle(HomeButtonStyle(
+            fill: isSelected ? Palette.phraseFill : Palette.controlFill,
+            isSelected: isSelected
+        ))
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }
 

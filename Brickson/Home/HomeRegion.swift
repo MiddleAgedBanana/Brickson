@@ -1,9 +1,9 @@
 /// Home's regions, in the order VoiceOver, Switch Control and Full Keyboard
-/// Access reach them: Yes, No and Emergency first, because every step a
-/// switch scan spends before them is waiting time, then Again; then the
-/// message; then the categories and Settings; then the phrases
-/// (docs/DECISIONS.md, "Home's scan order and names" and "Settings on
-/// Home").
+/// Access reach them: Yes, No, Emergency and Get Attention first, because
+/// every step a switch scan spends before them is waiting time, then Again;
+/// then the message; then Stop while the alarm sounds, the categories and
+/// Settings; then the phrases (docs/DECISIONS.md, "Home's scan order and
+/// names", "Settings on Home" and "Get Attention and Stop on Home").
 ///
 /// Each region is an accessibility container, so its controls are reached
 /// together, one region after another, and Switch Control can offer it as
@@ -11,11 +11,11 @@
 /// library or use (invariant 8). The regions are C, A, B and D of "Home's
 /// slot plan", which stand top to bottom as A, C, B, D.
 nonisolated enum HomeRegion: CaseIterable, Sendable {
-    /// C: Yes, No, Emergency and Again.
+    /// C: Yes, No, Emergency, Get Attention and Again.
     case safety
     /// A: the message and its status line.
     case message
-    /// B: the category buttons and Settings.
+    /// B: Stop's well, the category buttons and Settings.
     case categories
     /// D: the phrase grid.
     case phrases
@@ -45,8 +45,16 @@ nonisolated enum HomeRegion: CaseIterable, Sendable {
 
     /// For `accessibilitySortPriority` inside a region: a control given it
     /// is reached after the region's others, which keep the default of
-    /// zero. Again comes after Yes, No and Emergency, though it sits
-    /// between them on screen, and Settings after the category buttons,
-    /// though it stands level with the first row.
+    /// zero. Again comes after Yes, No, Emergency and Get Attention, though
+    /// it sits at the leading end of their second row, and Settings after
+    /// the category buttons, though it stands level with their first row.
     static let lastInRegion: Double = -1
+
+    /// For `accessibilitySortPriority` in the categories region: Stop is
+    /// reached first, then the first category, then the others in order.
+    /// In the band those two stand one above the other at its leading end,
+    /// and the others start level with Stop, so by where they are the first
+    /// category would come after the last (`HomeShape.CategoryArrangement`).
+    static let firstInRegion: Double = 2
+    static let secondInRegion: Double = 1
 }

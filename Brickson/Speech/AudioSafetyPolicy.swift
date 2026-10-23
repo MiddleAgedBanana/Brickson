@@ -174,6 +174,27 @@ nonisolated struct AudioSafetyPolicy {
     }
 }
 
+/// What Home's one status line shows: a problem first, because something
+/// cannot be heard (invariant 4); otherwise the alarm sounding, which goes
+/// on until someone chooses Stop; otherwise speech in progress.
+nonisolated enum HomeStatusLine: Equatable {
+    case issue(HomeAudioIssue)
+    case sounding
+    case speaking
+
+    init?(issue: HomeAudioIssue?, alarmIsSounding: Bool, isSpeaking: Bool) {
+        if let issue {
+            self = .issue(issue)
+        } else if alarmIsSounding {
+            self = .sounding
+        } else if isSpeaking {
+            self = .speaking
+        } else {
+            return nil
+        }
+    }
+}
+
 /// Keeps ambient-condition announcements separate from discrete alert failures.
 /// `failureSequence` drives the latter so every failed retry is announced even
 /// when the alert's state remains `.failedToStart`.

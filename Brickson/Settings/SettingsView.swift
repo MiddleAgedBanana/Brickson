@@ -113,10 +113,12 @@ struct SettingsView: View {
 
 /// The row above every Settings screen.
 ///
-/// Get Attention's place is kept empty until Home shows Get Attention and
-/// Stop: starting the alarm here while Home has no Stop would leave it
-/// sounding with no way to stop it. Because the place is kept, adding it
-/// moves nothing. Back to Talking's words are never shrunk: its icon sits
+/// Get Attention's place is kept empty. Home now has Get Attention and
+/// Stop (docs/DECISIONS.md, "Get Attention and Stop on Home"), so starting
+/// the alarm here would no longer leave it with no way to stop it, but
+/// what a look resting on this place meets after Back to Talking is still
+/// to be scored; Get Attention joins the bar in its own pull request.
+/// Because the place is kept, adding it moves nothing. Back to Talking's words are never shrunk: its icon sits
 /// above them, so it never takes their width (`SettingsPairLabel`).
 ///
 /// The bar is only as tall as its tallest control. Get Attention's empty
@@ -128,7 +130,7 @@ struct SettingsSafetyBar: View {
 
     var body: some View {
         HStack(spacing: SettingsMetrics.rowSpacing) {
-            // Get Attention (start only) joins here with Home's Stop.
+            // Get Attention (start only) joins here in its own change.
             Color.clear
                 .frame(maxWidth: .infinity, minHeight: SettingsMetrics.rowHeight)
                 .accessibilityHidden(true)
