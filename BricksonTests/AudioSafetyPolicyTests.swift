@@ -94,6 +94,38 @@ struct AudioSafetyPolicyTests {
         #expect(policy.issue == .audioSessionUnavailable)
     }
 
+    /// VoiceOver hears an ambient problem from this, not from the line's
+    /// one issue, so an alarm warning nobody has acted on never keeps a
+    /// later low volume or failed session from being announced. Fails if
+    /// the ambient issue follows the line's precedence, or drops either
+    /// ambient problem.
+    @Test func theAmbientIssueIgnoresAlarmAndSpeechWarnings() {
+        let underAnAlarmWarning = AudioSafetyPolicy(
+            attentionState: .stoppedUnexpectedly,
+            speechInterruptionState: .stoppedUnexpectedly,
+            audioSessionHealthy: true,
+            outputVolume: 0
+        )
+        #expect(underAnAlarmWarning.issue == .attentionAlertStopped)
+        #expect(underAnAlarmWarning.ambientIssue == .lowOutputVolume)
+
+        let failedSession = AudioSafetyPolicy(
+            attentionState: .failedToStart,
+            audioSessionHealthy: false,
+            outputVolume: 0
+        )
+        #expect(failedSession.issue == .attentionAlertFailed)
+        #expect(failedSession.ambientIssue == .audioSessionUnavailable)
+
+        let nothingAmbient = AudioSafetyPolicy(
+            attentionState: .stoppedUnexpectedly,
+            speechInterruptionState: .stoppedUnexpectedly,
+            audioSessionHealthy: true,
+            outputVolume: 1
+        )
+        #expect(nothingAmbient.ambientIssue == nil)
+    }
+
     @Test func nextSpeechAttemptClearsOnlyARepeatableInterruptionWarning() {
         var speechStatus = SpeechInterruptionStatus()
 
