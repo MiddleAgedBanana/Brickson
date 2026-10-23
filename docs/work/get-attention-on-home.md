@@ -2,7 +2,7 @@
 
 *Roadmap: R0 item 4 (Get Attention), the part PR #16 left for later:
 the controls on Home. Owner: the Get Attention and Stop on Home thread.
-Status: plan.*
+Status: built (PR #38).*
 
 ## Intent
 
@@ -84,11 +84,13 @@ widths (the window less Home's 16pt margins).
     with the message's edge but Yes, No and Emergency, as before.
   - **B, the categories:** Stop's well at the top of the leading column
     with a category directly under it, and Settings at the trailing end:
-    - *Band* (wide windows, from 560pt, where four categories and
-      Settings fit in a row; from 588pt with Bold Text; Settings shows
-      its gear alone below 584pt, 630pt with Bold Text): Stop above the first
-      category in the leading column, the other three and Settings at
-      the full height of both rows (the slot plan's regular band).
+    - *Band* (wide windows, from 584pt, where four categories and
+      Settings with its word fit in a row; from 630pt with Bold Text):
+      Stop above the first category in the leading column, the other
+      three and Settings at the full height of both rows (the slot plan's
+      regular band). Narrower wide windows take three columns, so
+      Settings' word never shows, hides and shows again as a window
+      widens.
     - *Three columns* (narrower, from 304pt, 328pt with Bold Text): Stop,
       Basics, Needs; then Conversation (under Stop), Feelings, Settings.
       The categories keep at least their minimum and share any room
@@ -100,8 +102,8 @@ widths (the window less Home's 16pt margins).
     in the third, whatever the library holds. A library with more than
     four everyday categories (none can be made yet: editing and import
     have no screen) shows its fourth and later categories in a list that
-    scrolls inside the fourth category's cell; Stop and Settings never
-    scroll. The layout engine's thread still decides this for good
+    scrolls inside the fourth category's cell
+    (`CategorySelection.inCell`); Stop and Settings never scroll. The layout engine's thread still decides this for good
     (docs/DECISIONS.md, "Home's slot plan", *Open*).
   - **Minimum widths** (default text size, measured with SF Pro on Linux
     and checked with the real fonts by `StarterLabelFitTests`): Get
@@ -124,7 +126,10 @@ widths (the window less Home's 16pt margins).
   Switch Control and Full Keyboard Access reach C first: Yes, No,
   Emergency, Get Attention, then Again (reached last in its region);
   then A; then B: Stop when it shows, the categories, then Settings;
-  then D.
+  then D. In the band the first category sits under Stop, below the
+  others' tops, so Stop and the first category carry their own sort
+  priorities (`HomeRegion.firstInRegion`, `secondInRegion`). Get
+  Attention carries the `playsSound` trait.
   **What a held activation meets** (the model of the frames, from CI's
   captures of the merged Settings on Home; nearest centre and nearest
   edge, ties counted):
@@ -182,6 +187,13 @@ widths (the window less Home's 16pt margins).
     state, and the announcement of each new `failureSequence`.
   - `Brickson/Home/ControlNames.swift`: Get Attention and Stop, and Stop
     among the controls the collision check covers.
+  - `Brickson/Home/HomeRegion.swift`: Stop's and the first category's
+    sort priorities.
+  - `Brickson/Home/CategorySelection.swift`: which categories each cell
+    holds (`inCell`).
+  - `Brickson/Library/LibraryRules.swift`: the new names reserved.
+  - `Brickson/Settings/SettingsView.swift`: the bar's comment about Get
+    Attention's empty place.
   - `Brickson/Home/Palette.swift` and two colour sets in the asset
     catalog: `AttentionFill`, `StopFill`.
   - `Brickson/Speech/AudioSafetyPolicy.swift`: `HomeStatusLine`, which
@@ -196,15 +208,18 @@ widths (the window less Home's 16pt margins).
   - `Brickson/Resources/Localizable.xcstrings`: the new words.
   - Tests: `HomeShapeTests`, `StarterLabelFitTests`, `ControlNamesTests`,
     `HomeNameCollisionTests`, `PaletteTests`, `AudioSafetyPolicyTests`,
-    `LaunchOptionsTests`, `AttentionAlertPlayerTests`; UI: the new
-    `GetAttentionOnHomeTests`, and `HomeReachabilityTests`,
-    `HomeAccessibilityOrderTests`, `HomeLayoutTests`,
+    `LaunchOptionsTests`, `AttentionAlertPlayerTests`,
+    `CategorySelectionTests`, `HomeRegionTests`, `LibraryEditTests`; UI:
+    the new `GetAttentionOnHomeTests` and `ScreenControls.swift` (the
+    frame-reading and nearest-control helpers it shares with
+    `SettingsOnHomeTests`), and `HomeReachabilityTests`,
+    `HomeAccessibilityOrderTests`, `HomeLayoutTests`, `LaunchTests`,
     `SettingsOnHomeTests`.
   - Docs: DECISIONS ("Get Attention and Stop on Home", and notes in
     "Get Attention", "Home's slot plan", "Home's scan order and names",
     "Settings on Home" and *Where the grid still scrolls*), HANDOFF,
-    ROADMAP item 4, ACCESSIBILITY, DESIGN.md, README.md, this file and
-    the log record.
+    ROADMAP item 4, ACCESSIBILITY, DESIGN.md, README.md, AGENTS.md (the
+    plain types), this file and the log record.
 - **Order of work:** the unit tests first (they fail against today's
   `HomeShape`, names and palette), then the code, then the UI tests and
   the docs.
@@ -226,8 +241,8 @@ widths (the window less Home's 16pt margins).
   - *A word cut off:* `StarterLabelFitTests` checks Get Attention and
     Stop at their minimums with the real fonts, Bold Text off and on.
   - *The simulator's audio:* the UI tests use the silent stand-in tone;
-    the real tone is covered by `AttentionAlertPlayerTests` and device
-    check D3 (docs/HANDOFF.md).
+    the real tone is covered by `AttentionAlertPlayerTests` and a device
+    check (docs/HANDOFF.md, *Checks that need a real device*).
   - *Cloud session:* nothing here was built for iOS before CI; the pure
     `HomeShape`, names and status tests ran on a Linux Swift toolchain
     first.
@@ -240,8 +255,15 @@ widths (the window less Home's 16pt margins).
   - `HomeShapeTests.everyControlKeepsItsMinimumWidth` and
     `theRegionsFillTheWidthExactly`: a minimum lowered, or a row that
     overflows.
-  - `HomeShapeTests.phonesKeepTheirArrangementWithBoldText`: Bold Text
+  - `HomeShapeTests.boldTextTakesNoHeightFromAPhonesPhrases`: Bold Text
     taking a row from a phone's phrases.
+  - `HomeShapeTests.aHeldLookMeetsNothingHarmfulAfterGetAttentionOrStop`:
+    Stop nearest Get Attention's spot, or anything but a category nearest
+    Stop's, at any width, by either rule.
+  - `CategorySelectionTests.theLastCellHoldsEveryCategoryFromThereOn`: a
+    category past the fourth dropped, or a cell showing another's.
+  - `HomeRegionTests.stopThenTheFirstCategoryComeBeforeTheDefault`: Stop
+    or the first category without a priority above the others'.
   - `StarterLabelFitTests.theFixedControlsFitTheirNarrowestWidths`: Get
     Attention's or Stop's minimum below its word.
   - `ControlNamesTests.theFixedControlsAndTheirNamesAreTheDecidedOnes`
@@ -256,9 +278,14 @@ widths (the window less Home's 16pt margins).
     stand-in that reports not playing, which the health check would
     stop.
   - `GetAttentionOnHomeTests`: Stop missing after Get Attention, still
-    there after Stop, or any frame moving; the chain checks above.
+    there after Stop, or any frame moving; the chain checks above; an
+    accessibility audit finding while the alarm sounds.
+  - `LaunchTests.testLargestTextKeepsQuickControlWordsVisible`: Get
+    Attention's words clipped at the largest text size.
   - `HomeReachabilityTests`, `HomeLayoutTests`,
     `HomeAccessibilityOrderTests`: Get Attention unreachable, off
-    screen or out of order.
-  - Device checks (docs/HANDOFF.md): D3 (the alarm through the silent
-    switch and the lock screen) now runs from Home's own control.
+    screen or out of order, or Stop not first among the categories while
+    the alarm sounds.
+  - Device checks (docs/HANDOFF.md, *Checks that need a real device*): a
+    new row for Get Attention from Home's own control with each input
+    method, the silent switch on, and what a held look meets.

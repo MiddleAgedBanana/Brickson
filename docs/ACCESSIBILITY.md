@@ -75,7 +75,7 @@ test is named for what would make it fail.
 | Dynamic Type, Bold Text, Reduce Motion (1; has it) | Text styles on Home; UI tests at the largest size | Word fitting: R0-3 | 6 |
 | Phrase board and typing (2; has it) | The board is on Home; typing is not on `main` yet | Typing: R0-5. A touch profile: R1 | 8 |
 | Live Speech (2; system) | System | Setup text: R0-7. Being heard on calls: R0-8, held | 4 |
-| Voice Control (2; has it) | Every Home control is a labelled standard button; the fixed controls' names start with their visible words, Again also answers to "Repeat", and no two controls on Home share a name in any state of the starter library (`HomeControlNames`) | Names for Get Attention and Stop with them: R0-4. Collisions in a library a family has grown: R0-6 | 3 |
+| Voice Control (2; has it) | Every Home control is a labelled standard button; the fixed controls' names start with their visible words, Again also answers to "Repeat", Get Attention to "Help" and Stop to "Stop Alert", and no two controls on Home share a name in any state of the starter library, the alarm sounding included (`HomeControlNames`) | Collisions in a library a family has grown: R0-6 | 3 |
 | AssistiveTouch, Touch Accommodations (2; system) | Standard buttons | Setup text: R0-7 | 2 |
 | Word prediction (2; add) | Nothing yet | Apple's keyboard suggestions with typing: R0-5. A prediction strip: R2 | 8 |
 | HomeKit (2; add, needs a decision) | Nothing yet | Not in 1.0; controlling devices beyond the iPhone or iPad is the owner's decision under invariant 9 | 10 |
@@ -83,10 +83,10 @@ test is named for what would make it fail.
 | Text size, contrast (2; has it) | Contrast measured in `PaletteTests` | Kept | 6 |
 | Eye Tracking and Dwell (3; has it) | Standard buttons; repeats of a phrase absorbed | Gaze profile and dwell-safety scoring: R1 | 2 |
 | Head Tracking (3; system) | System | Head profile: R1. Setup text: R0-7 | 2 |
-| Switch Control (3; system) | Standard buttons; Home's regions are containers, reached in a fixed order with Yes, No and Emergency first (`HomeRegion`) | Device check of the scan order and groups. Switch profile: R1 | 1 |
+| Switch Control (3; system) | Standard buttons; Home's regions are containers, reached in a fixed order with Yes, No, Emergency and Get Attention first (`HomeRegion`) | Device check of the scan order and groups. Switch profile: R1 | 1 |
 | Guided Access (3; system) | System | Setup text: R0-7, and a device check with Eye Tracking | 7 |
 | Assistive Access (3; add) | Nothing yet | Full screen in Assistive Access: R0-7 | 7 |
-| Get Attention and Emergency (3; has it) | Emergency on Home; Get Attention built, not yet on screen | Get Attention and Stop on Home: R0-4, after Home's slots (R0-3) | 4, 5 |
+| Get Attention and Emergency (3; has it) | Emergency and a start-only Get Attention on Home in every state, with Stop in its own well while the alarm sounds (docs/DECISIONS.md, "Get Attention and Stop on Home") | Get Attention in Settings; the replacement tone after a device check | 4, 5 |
 | Alert someone in another room (3; add, needs a decision) | Sound in the room only | Not in 1.0; anything that reaches another device is the owner's decision | 10 |
 | Screen never locks (3; has it) | In place | Kept | 7 |
 | Audio safety (3; has it) | In place | Device checks | 4 |
@@ -146,7 +146,7 @@ pointer input*).
 | Eye Tracking | The front camera moves the pointer; dwell taps | 3–4 | System, since 18.0 | **System.** Standard buttons and the screen kept awake: in place. Gaze profile and dwell-safety scoring: **R1**. Setup text: **R0-7** | Unit: gaze floors, positions equal across profiles. Device: re-firing, Snap to Item |
 | External eye trackers made for iPad | A tracker bar driving the AssistiveTouch pointer | 3–4 | System (iPad) | **System.** Setup text: **R0-7**. Brickson never talks to the tracker (invariant 9) | Device, with a tracker |
 | Head Tracking | Head movement moves the pointer; expressions can act | 2–3 | System, since 26.0 | **System.** Head profile: **R1**. Setup text: **R0-7** | Unit: head floors. Device |
-| Dwell Control (dwell time, Movement Tolerance, Fallback Action, hot corners) | A resting pointer taps | 2–4 | System, since 13.0 | **In place**: a repeat of the phrase still speaking is absorbed (`SpokenUtteranceTracker`). Dwell-safety scoring: **R1**. Get Attention start-only, Stop elsewhere: **R0-4** | Unit: `SpokenUtteranceTrackerTests`; chains of activations scored (R1). Device |
+| Dwell Control (dwell time, Movement Tolerance, Fallback Action, hot corners) | A resting pointer taps | 2–4 | System, since 13.0 | **In place**: a repeat of the phrase still speaking is absorbed (`SpokenUtteranceTracker`). Get Attention start-only, Stop elsewhere, scored after each: **in place** (R0-4). Dwell-safety scoring per profile: **R1** | Unit: `SpokenUtteranceTrackerTests`, `HomeShapeTests` (after Get Attention and Stop, every width); chains of activations scored (R1). Device |
 | AssistiveTouch menu, custom gestures, Sound Actions | Gestures and buttons for people who cannot make them | 2–4 | System | **System.** The starter library without scrolling, since each scroll is several menu trips: **R0-3** | Unit: layout fits without scrolling. Device: where the menu button rests over Home |
 | Pointer devices and Pointer Control | Mouse, trackpad, joystick, head mouse | 1–3 | System, since 13.0 | **System.** Hit shapes on the custom button style: in place | Audit: hit regions. Device |
 | Touch Accommodations (Hold Duration, Ignore Repeat, Tap Assistance) | Shaky or slow touches read as one tap | 1–2 | System | **System.** Setup text: **R0-7**. Brickson never adds its own delay or confirm step (invariant 2) | UI: a phrase speaks on the first tap (in place). Device |
@@ -215,7 +215,7 @@ pointer input*).
 | `accessibilityLabel`, `accessibilityValue`, `accessibilityHint` | What an element is, its state, what it does | 1–4 | 14.0 to 16.0 | **In place**: labels on Home and the audio warning. Values and hints with Settings: **R0-7** | UI: controls found by label. Audit |
 | Traits: `isButton`, `isSelected`, `isHeader`; `accessibilityHidden(_:)` | Kind and state; hiding decoration | 1–4 | 13.0; 14.0 | **In place**: Selected on the chosen category and on Emergency; decoration hidden. Headers: **R0-7** | UI: the Selected trait follows the choice |
 | `startsMediaSession` trait | Asks VoiceOver to stay quiet while the control's sound plays | 1–2 | 13.0 | **R0-4**, after a device check of what VoiceOver does with synthesized speech | Device |
-| `playsSound` trait | Tells VoiceOver a control makes its own sound | 1–2 | 13.0 | **R0-4**, on Get Attention when it reaches Home | Device |
+| `playsSound` trait | Tells VoiceOver a control makes its own sound | 1–2 | 13.0 | **In place** on Home's Get Attention (R0-4) | Device |
 | `accessibilityRotor`, `AccessibilityRotorEntry` | Jumping between categories or phrases | 1–2 | 15.0; 16.0 | **Later**. Never ordered by use (invariant 8) | Unit: entries in stored order. Device |
 | `AccessibilityNotification.Announcement` with a priority | Telling a VoiceOver user about a sound problem without moving focus | 1–2 | 17.0 | **In place** (`AudioSafetyPolicy`, `HomeView`) | Unit: `AudioSafetyPolicyTests`. Device: heard once, in full |
 | `AccessibilityNotification.ScreenChanged`, `LayoutChanged` | Moving VoiceOver to a new screen | 1–2 | 17.0 | **Not posted on Home, on purpose.** Typing and Settings decide for their screens (R0-5, R0-7) | Review. Device |
@@ -317,7 +317,7 @@ pointer input*).
 
 | API or feature | What it is for | Stage | iOS | Status in Brickson | Checked by |
 |---|---|---|---|---|---|
-| Get Attention (`AttentionAlertPlayer`) | A start-only alarm, with Stop elsewhere | 3–4 | — | Built and tested, not yet on Home: **R0-4** | Unit: `AttentionAlertPlayerTests`. Device: heard from the next room |
+| Get Attention (`AttentionAlertPlayer`) | A start-only alarm, with Stop elsewhere | 3–4 | — | **In place** on Home (R0-4): Get Attention under Emergency, Stop in its own well with a category under it. In Settings: later | Unit: `AttentionAlertPlayerTests`, `HomeShapeTests` (what a held look meets). UI: `GetAttentionOnHomeTests`. Device: heard from the next room |
 | Emergency SOS | The iPhone's own emergency call | 1–2 | System | **N/A**: no public API to start it was found, and Brickson's Emergency never calls anyone | Review |
 | Recorded phrases: `AVAudioPlayer`, `fileImporter` | Playing and importing a person's own recordings | 1–4 | 2.2; 14.0 | **R1** "Recorded phrases, first two stages" | Unit: a missing file speaks the text instead. Device |
 | In-app recorder: `AVAudioRecorder`, `AVAudioApplication.requestRecordPermission`, `NSMicrophoneUsageDescription` | Banking messages inside Brickson | 1–2 | 3.0; 17.0; 7.0 | **R2** "The in-app recorder" | Unit. Device: recording never disturbs speech or calls |

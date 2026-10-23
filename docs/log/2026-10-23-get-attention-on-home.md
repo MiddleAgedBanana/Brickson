@@ -1,0 +1,115 @@
+# Get Attention and Stop on Home
+
+*2026-10-23. Pull request #38 (`claude/project-thread-apigc0`). The Get
+Attention and Stop on Home thread (a cloud session).*
+
+## What changed and why
+
+The Get Attention alarm (PR #16) had no control on screen, so a person
+who cannot speak had no way to call someone into the room from
+Brickson. Now (docs/DECISIONS.md, "Get Attention and Stop on Home";
+intent, spec and plan in [`work/get-attention-on-home.md`](../work/get-attention-on-home.md)):
+
+- **Get Attention is on Home in every state**, in the safety row's second
+  row directly under Emergency, beside Again. One activation starts the
+  alarm by any input method; a second one leaves it sounding. It is
+  never disabled, answers to "Get Attention" and "Help" with Voice
+  Control, and carries the `playsSound` trait.
+- **Stop appears only while the alarm sounds**, in a well of its own at
+  the categories' leading top, with a category directly under it. It
+  shows "Stop" and also answers to "Stop Alert". The well keeps its
+  frame, so nothing moves when Stop appears or goes.
+- **What a held activation meets.** Stop is never the control nearest
+  Get Attention's spot, and after Stop the nearest control is a
+  category, which only changes which phrases show (invariant 10), by
+  nearest centre and by nearest edge, at every width.
+- **The categories take one of three arrangements** from the width
+  (`HomeShape.CategoryArrangement`): a band from 584pt of content (630pt
+  with Bold Text), three columns from 304pt (328pt), two below that.
+  Settings takes the last cell in each. A library with more than four
+  everyday categories keeps the rest in the fourth cell, which scrolls
+  (none can be made yet).
+- **The status line** shows a problem first, then "Sounding" while the
+  alarm sounds, then "Speaking" (`HomeStatusLine`), and VoiceOver hears
+  every failed or cut-off alarm (`failureSequence`). Home's
+  `AudioSafetyPolicy` now reads the alarm's real state instead of idle.
+- **Colours of their own**, measured and pinned: `AttentionFill`
+  `#B45309`, `StopFill` `#0F766E`.
+- **Scan order:** Yes, No, Emergency, Get Attention, Again; then the
+  message; then Stop while it shows, the categories in order, Settings.
+  In the band the first category sits below the others' tops, so Stop
+  and the first category carry their own sort priorities
+  (`HomeRegion.firstInRegion`, `secondInRegion`).
+- **A silent stand-in tone for UI tests**: debug launches with
+  `--attention-tone=silent` play `SilentAttentionTonePlayback`, so the
+  tests sound and stop the real alarm without the simulator's audio.
+
+The cost is height: a phone gives up a quick-control row (72pt at the
+default size), a wide window 176pt. CI's windows still fit the starter
+library; a 375×667 phone at the default size, and by the model an
+11-inch iPad and an iPad mini in landscape, now scroll at the floor
+(docs/DECISIONS.md, *Where the grid still scrolls*).
+
+## Commits
+
+- `55d8352`, `d2937ba`, `1411b46`: the work file's intent, spec and plan.
+- `89f6fc8`: the tests first: layout and held-look scoring, names,
+  fills, the status line's order, the silent tone, and the UI tests for
+  sounding and stopping the alarm (with `ScreenControls.swift`, the
+  helpers it shares with `SettingsOnHomeTests`).
+- `5e2c1d2`: the category cells and Stop's place in the scan order.
+- `a3d98d6`: the code.
+- `5d916ab`: Get Attention's rendered words at the largest text size,
+  and an accessibility audit while the alarm sounds.
+- `7216f29`: the `playsSound` trait.
+- The docs commit that adds this file.
+
+## Verified
+
+A cloud session: nothing was built for iOS or run outside GitHub CI, and
+this work is untested until CI passes. On Linux with Swift 6.3.3, the
+pure types compiled and 47 Swift Testing tests passed: `HomeShapeTests`
+(every content width from 288 to 1400pt in half points, Bold Text on and
+off, default and grown line heights), `ControlNamesTests` and
+`AudioSafetyPolicyTests` (without its two announcement tests, which need
+Apple's Accessibility module), and `CategorySelection.inCell`'s cases.
+Label widths came from Apple's SF Pro font measured with HarfBuzz, which
+matched CI within half a point before.
+
+Each new test, and the change that makes it fail, is in the work file's
+*Proof*.
+
+## Not verified
+
+- Nothing ran on a simulator or device from this session; CI is the
+  build.
+- The frames and margins in the work file's table are a model of CI's
+  frames; `GetAttentionOnHomeTests` and `SettingsOnHomeTests` check the
+  running app on CI's iPad and iPhone only.
+- The 11-inch iPad and iPad mini figures are from the model, not seen
+  running.
+- Whether Dwell and Snap to Item pick a target by nearest centre or
+  nearest edge, and the real tone through the silent switch and the lock
+  screen from Home's control: device checks (docs/HANDOFF.md, *Checks
+  that need a real device*, a new row).
+- What VoiceOver does with `playsSound` on Get Attention.
+
+## Follow-ups
+
+1. **Get Attention in Settings' bar.** Home has Stop now, so the place
+   can be filled; on wide windows Settings' root puts its note under it,
+   so its chain needs scoring first (docs/HANDOFF.md, *Known gaps*).
+   *(a new thread)*
+2. **The windows that now scroll** (375×667 at the default size; 11-inch
+   iPad and iPad mini in landscape): the layout engine finds an
+   arrangement that does not scroll, never shrinking below the floors.
+   *(the layout engine)*
+3. **The slot plan's own C** (one row on wide windows, Get Attention at
+   its trailing end) when Phrases and Type are built; Stop then moves
+   under Emergency as the slot plan says, and its chain is scored again.
+   *(the typing and layout threads)*
+4. **More than four everyday categories:** the fourth cell's scroll is
+   interim; the engine decides (docs/DECISIONS.md, "Home's slot plan",
+   *Open*). *(the layout engine)*
+5. **The replacement tone** and its level under speech, after a listening
+   check on a device. *(owner, with a device build)*

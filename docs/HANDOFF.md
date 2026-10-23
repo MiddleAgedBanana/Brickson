@@ -13,13 +13,14 @@ Ten threads are working in parallel on the first release, R0.
 ## What the app does today
 
 What it is written to do (*Verification* says how much has been seen). A
-stand-in Home with Yes, No, Again and Emergency in one safety row (Again on
-a second row only in windows under 328pt wide, 348pt with Bold Text, such
-as Slide Over or an iPhone with Display Zoom), everyday categories with
-Settings at their trailing end, and tiles from a neutral starter set,
-sized from the space the window gives it (docs/DECISIONS.md, "Home's
-stand-in layout"): four category buttons that never scroll sideways, and
-three phrase columns on every iPhone at its standard Display Zoom. A tile
+stand-in Home with a safety row of two rows (Yes, No and Emergency; Again
+and Get Attention, Get Attention directly under Emergency), everyday
+categories with Stop's well at their leading top and Settings at their
+trailing end, and tiles from a neutral starter set, sized from the space
+the window gives it (docs/DECISIONS.md, "Home's stand-in layout" and "Get
+Attention and Stop on Home"): four category buttons that never scroll
+sideways, and three phrase columns on every iPhone at its standard
+Display Zoom. A tile
 speaks at once, in the person's Personal Voice when one exists and is
 allowed; the sentence stays on screen in two reserved lines across the
 width, and a longer message scrolls inside them. No label breaks a
@@ -27,19 +28,24 @@ word: each drops its icon first, then shrinks only as far as it must,
 never below the default size, in lines of whole words. A phrase the system cuts off (a call, Siri, lost
 headphones) shows "Stopped" with Again to repeat it. Emergency opens the
 emergency phrases and says nothing. VoiceOver, Switch Control and Full
-Keyboard Access reach Yes, No and Emergency first, then Again, the
-message, the categories and Settings, and the phrases, each region as a
-group, and Voice Control also takes "Repeat" for Again (docs/DECISIONS.md,
-"Home's scan order and names" and "Settings on Home"). The start-only Get Attention alarm is
-built and waiting for its place on Home (docs/DECISIONS.md, "Home's slot
-plan"). Settings, for the family (a
+Keyboard Access reach Yes, No, Emergency and Get Attention first, then
+Again, the message, Stop while it shows, the categories and Settings, and
+the phrases, each region as a group, and Voice Control also takes
+"Repeat" for Again and "Help" for Get Attention (docs/DECISIONS.md,
+"Home's scan order and names" and "Settings on Home"). Get Attention
+starts the alarm at once and only starts it; while it sounds, Stop shows
+in its own well, never nearest Get Attention, and the status line says
+"Sounding" (docs/DECISIONS.md, "Get Attention and Stop on Home").
+Settings, for the family (a
 full-screen cover with Back to Talking, Family Setup, Voice Settings,
 guides, the privacy policy and step-by-step setup), opens from Home's
 Settings button; until Family Setup has been opened once, Home's message
 area says where setup is. Back to Talking closes onto Emergency, never
-onto a control that speaks (docs/DECISIONS.md, "Settings on Home"). "Speaking", audio failures and very low volume share
-one passive status line under the message, in space always kept for it,
-and VoiceOver announces the warnings. If the
+onto a control that speaks (docs/DECISIONS.md, "Settings on Home").
+"Speaking", "Sounding", audio failures and very low volume share one
+passive status line under the message, in space always kept for it, and
+VoiceOver announces the warnings, every failed or cut-off alarm
+included. If the
 library cannot be saved, the app speaks from a filled in-memory library
 and says changes will not be kept. If saved phrases exist but cannot be
 opened or read, the file is left untouched and a second warning says so
@@ -131,7 +137,9 @@ release in docs/ROADMAP.md when no thread has it yet.
   R1. *(the layout engine, a new thread)*
 - The slot plan has no answer yet for more than four everyday categories
   (docs/DECISIONS.md, "Home's slot plan", *Open*): editing and import
-  must not add a fifth until it does. *(the layout engine, a new thread)*
+  must not add a fifth until it does. Meanwhile Home keeps the fourth and
+  later ones in the fourth cell, which scrolls (docs/DECISIONS.md, "Get
+  Attention and Stop on Home"). *(the layout engine, a new thread)*
 - Yes, No and Again border the message (12pt away), so a look resting on
   it can speak one of them. Reduced, not removed: with Again out of the
   message's row, about 61 to 67% of the message is nearest one of them,
@@ -141,11 +149,16 @@ release in docs/ROADMAP.md when no thread has it yet.
   nearest edge) decides whether placement can remove it, or its measured
   cost goes to the owner before a dwell, switch, head or gaze profile
   ships. *(the layout engine, a new thread; owner if it stays)*
-- Home has no wells yet: Phrases, Type, Get Attention and Stop have no
-  place on Home (docs/DECISIONS.md, "Home's slot plan"). Until Phrases and
-  Type are built, Emergency stays at the safety row's trailing end, under
-  Back to Talking, which `SettingsOnHomeTests` checks (docs/DECISIONS.md,
-  "Settings on Home"). *(a new thread: Get Attention and Stop on Home)*
+- Phrases and Type have no place on Home yet (docs/DECISIONS.md, "Home's
+  slot plan"). Until they are built, Emergency stays at the safety row's
+  first-row trailing end, under Back to Talking, which
+  `SettingsOnHomeTests` checks, and Get Attention sits under it in a
+  second row rather than at the slot plan's place (docs/DECISIONS.md,
+  "Settings on Home" and "Get Attention and Stop on Home"). The second row
+  makes the starter library scroll at the default size on a 375×667
+  phone and, by the model, on an 11-inch iPad and an iPad mini in
+  landscape (*Where the grid still scrolls*). *(the layout engine, a new
+  thread)*
 - A label with a word too wide for its slot even at the default text size
   is cut short with an ellipsis when it is one word, but in a phrase of
   several words that word can wrap mid-word. No starter label has one
@@ -161,11 +174,6 @@ release in docs/ROADMAP.md when no thread has it yet.
   only, not phrases or categories; `StarterLabelFitTests` measures every
   starter label against its narrowest slot instead. *(Accessibility
   coverage checklist)*
-- The Get Attention alarm is built (`AttentionAlertPlayer`, in the
-  environment) but not on screen, so `AudioSafetyPolicy` on Home runs with
-  the alarm always idle, and the VoiceOver warning sentences mention it
-  already. Get Attention and Stop go into Home's slots (docs/DECISIONS.md,
-  "Home's slot plan" and "Get Attention"). *(a new thread)*
 - The Get Attention tone is the reference app's placeholder; a
   harmonic-rich replacement and its level under speech need a listening
   check on a device (docs/DECISIONS.md, "Get Attention"). *(owner, with a
@@ -190,11 +198,12 @@ release in docs/ROADMAP.md when no thread has it yet.
   (issue #19, seen with Xcode 26.6 on iOS 26.5). Brickson never calls it;
   the reproduction is disabled and has not been run on the current Xcode
   27 CI. *(R0, a new library thread re-runs it once)*
-- Settings' Get Attention place is empty: starting the alarm there before
-  Home has Stop would leave it with no way to stop. It goes in with Get
-  Attention and Stop on Home. On wide windows, Settings' root puts its
-  note under that place, so adding Get Attention means scoring a look
-  that reads the note (docs/DECISIONS.md, "Settings on Home"). Settings'
+- Settings' Get Attention place is empty. Home has Get Attention and
+  Stop now, so starting the alarm there would no longer leave it with no
+  way to stop, but on wide windows Settings' root puts its note under that
+  place, so adding Get Attention means scoring a look that reads the note
+  (docs/DECISIONS.md, "Settings on Home" and "Get Attention and Stop on
+  Home"). *(a new thread: Get Attention in Settings)* Settings'
   sound line sits at the foot of the cover, where its nearest controls
   are the rows a screen has scrolled to its lower edge, some of which
   speak a sample or change a setting; the bar's redesign for Get
@@ -299,10 +308,11 @@ schema version). Calls (R0 item 8) wait for a device build. Files under
 recheck the minimum iOS against its two rules whenever Apple's next major
 release drops devices (docs/DECISIONS.md, "Minimum iOS, iPhone and
 iPad").
-The speech work's next pull request, Get Attention and Stop on Home
-(building the wells of docs/DECISIONS.md, "Home's slot plan"), is described for a fresh thread in
-[`log/2026-10-21-speech-and-get-attention.md`](log/2026-10-21-speech-and-get-attention.md),
-*Follow-ups*. Voice Settings' explained Ask button is built; switching the app to
+Get Attention and Stop are on Home; what is left of that work (Settings'
+Get Attention, the real tone, the windows that now scroll) is in
+[`log/2026-10-23-get-attention-on-home.md`](log/2026-10-23-get-attention-on-home.md),
+*Follow-ups*, and the rest of the speech work's list in
+[`log/2026-10-21-speech-and-get-attention.md`](log/2026-10-21-speech-and-get-attention.md). Voice Settings' explained Ask button is built; switching the app to
 asking from Settings waits for device check D1, and what the Voice
 screen still lacks is in
 [`log/2026-10-22-voice-screen.md`](log/2026-10-22-voice-screen.md),
@@ -347,6 +357,7 @@ Simulators cannot show these. Record each result in a `docs/log/` file
 | A phrase spoken while Get Attention sounds is understood over the tone at 0.32 | `AttentionAlertStatus.toneVolumeWhileSpeaking` |
 | A phone call, Siri and another app's alarm during a phrase and during Get Attention: each stops and shows "Stopped — Again" or "Alert stopped", and nothing restarts by itself, on iOS 26 and iOS 27 | Interruption handling and the iOS 27 notices (docs/DECISIONS.md, "Audio session notices") |
 | Lock the device during a long phrase and while Get Attention sounds: both carry on | Background audio, before the App Review notes promise it |
+| Get Attention from Home's own control, by touch, Dwell with Snap to Item, Switch Control and Voice Control ("Tap Help"): it sounds with the silent switch on; a look held on Get Attention never stops it; a look still resting where Stop was after Stop meets a category | "Get Attention and Stop on Home" (`GetAttentionOnHomeTests` scores the simulator's frames) |
 | Whether a voice reports its final word before finishing, and whether the system reports a cut-off phrase as finished | How often "A phrase the system cuts off" relies on its 3-second window |
 | Unplugging headphones during a phrase and during Get Attention | Output loss: speech carries on, the alarm stops and says so |
 | Whether the tone player ever reads as not playing for a moment while it plays (route changes, Bluetooth) | Whether the once-a-second health check needs a second look before stopping the alarm |
@@ -361,7 +372,7 @@ Simulators cannot show these. Record each result in a `docs/log/` file
 | On a folding iPhone, open and folded, and in Stage Manager, Slide Over and iPhone Mirroring windows: nothing safety-critical is hidden or split | Layouts from the space available |
 | Eye Tracking and Dwell on an external display | Whether gaze profiles hold off the built-in screen |
 | Switch Control with Auto Scanning, Group Items on and off, and Auto Tap: the scan steps to Emergency, Yes and No from every Home state, and whether Home's regions become scan groups | Scan order and grouping (docs/ACCESSIBILITY.md, section 1) |
-| With VoiceOver, Switch Control (item and group scanning) and Full Keyboard Access, Home is reached as Yes, No, Emergency, Again, then the message, the categories and Settings, the phrases, in every state; what each says on entering a region; whether the cursor stops on the message or the status line; Voice Control's "Show names" shows each control's visible words and "Tap Repeat" presses Again | "Home's scan order and names": the order, unlabelled regions, and whether `accessibilityRespondsToUserInteraction` is needed |
+| With VoiceOver, Switch Control (item and group scanning) and Full Keyboard Access, Home is reached as Yes, No, Emergency, Get Attention, Again, then the message, Stop while it shows, the categories and Settings, the phrases, in every state; what each says on entering a region; whether the cursor stops on the message or the status line; Voice Control's "Show names" shows each control's visible words and "Tap Repeat" presses Again | "Home's scan order and names": the order, unlabelled regions, and whether `accessibilityRespondsToUserInteraction` is needed |
 | With VoiceOver on, a phrase tile with and without the `startsMediaSession` trait: does VoiceOver stay quiet while the phrase speaks | Whether phrase tiles carry the trait (R0 item 4) |
 | Brickson inside Assistive Access with `UISupportsFullScreenInAssistiveAccess`: its window size, and whether Eye Tracking and Switch Control work there | Assistive Access support (R0 item 7) |
 | Guided Access with each input method, and with a short Display Auto-Lock while Brickson keeps the screen awake | Setup advice, and invariant 12 under Guided Access |
