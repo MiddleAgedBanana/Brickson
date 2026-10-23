@@ -84,10 +84,12 @@ class SiteTests(unittest.TestCase):
         self.assertNotRegex(html.lower(), r'\b(free|paid)\b')
 
     def test_no_page_states_a_price(self):
-        """docs/DECISIONS.md, "Price not decided": "free" on any page fails."""
+        """docs/DECISIONS.md, "Price not decided": "free", "paid" or an
+        amount such as $4.99 on any page fails."""
         for path in (ROOT / 'site').rglob('*.html'):
             with self.subTest(page=path.relative_to(ROOT)):
-                self.assertNotRegex(path.read_text().lower(), r'\b(free|paid)\b')
+                self.assertNotRegex(path.read_text().lower(),
+                                    r'\b(free|paid)\b|[$\u20ac\u00a3\u00a5]\s*\d|\b\d+([.,]\d+)?\s*(usd|eur|gbp)\b')
 
     def test_every_page_links_to_the_accessibility_page(self):
         """The App Store's Accessibility URL; dropping a page's link, or
@@ -116,18 +118,36 @@ class SiteTests(unittest.TestCase):
                 self.assertIn(target.resolve(), resolved)
 
     def test_every_page_is_one_titled_document_with_a_way_past_the_header(self):
-        """A page without a language, a title, one h1, a main or a skip link fails."""
+        """A page without a language, a title, one h1, a main or a skip link
+        fails, and so does one whose only skip link is inside a comment."""
+        class Outline(HTMLParser):
+            def __init__(self):
+                super().__init__()
+                self.tags, self.title, self.in_title = [], '', False
+            def handle_starttag(self, tag, attrs):
+                self.tags.append((tag, dict(attrs)))
+                self.in_title = tag == 'title'
+            def handle_endtag(self, tag):
+                self.in_title = False
+            def handle_data(self, data):
+                if self.in_title:
+                    self.title += data
         for path in (ROOT / 'site').rglob('*.html'):
-            html = path.read_text()
+            doc = Outline()
+            doc.feed(path.read_text())
+            def named(name):
+                return [attrs for tag, attrs in doc.tags if tag == name]
+            skips = [a['href'][1:] for a in named('a')
+                     if 'skip' in (a.get('class') or '').split()
+                     and (a.get('href') or '').startswith('#')]
             with self.subTest(page=path.relative_to(ROOT)):
-                self.assertRegex(html, r'<html lang="en">')
-                self.assertRegex(html, r'<title>[^<]+</title>')
-                self.assertRegex(html, r'<meta name="viewport"')
-                self.assertEqual(len(re.findall(r'<h1\b', html)), 1)
-                self.assertEqual(len(re.findall(r'<main\b', html)), 1)
-                skip = re.search(r'<a class="skip" href="#([^"]+)"', html)
-                self.assertIsNotNone(skip, 'no skip link')
-                self.assertRegex(html, r'<main\b[^>]*\bid="%s"' % re.escape(skip[1]))
+                self.assertEqual([a.get('lang') for a in named('html')], ['en'])
+                self.assertTrue(doc.title.strip(), 'no title')
+                self.assertIn('viewport', [a.get('name') for a in named('meta')])
+                self.assertEqual(len(named('h1')), 1)
+                self.assertEqual(len(named('main')), 1)
+                self.assertEqual(len(skips), 1, 'no skip link')
+                self.assertEqual(named('main')[0].get('id'), skips[0])
 
 
 if __name__ == '__main__':

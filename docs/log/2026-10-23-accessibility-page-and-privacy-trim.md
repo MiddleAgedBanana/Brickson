@@ -109,6 +109,12 @@ words in App Shortcuts): rewrite it to match what ships.
   row adds Home while Get Attention sounds; Get Attention leaves the list
   of policy sentences not yet true, in docs/DECISIONS.md and
   docs/HANDOFF.md; and the follow-up for the page is done.
+- CodeRabbit's third review: the price test also fails on an amount
+  ($4.99, €3, 4.99 USD), as AGENTS.md's rule says; the page-structure
+  test reads parsed elements, so a skip link left only in a comment
+  fails; and docs/ACCESSIBILITY.md's map row and Larger Text row say that
+  starter labels already keep whole words with Bold Text off, leaving
+  phrase tiles with Bold Text on as R0-3.
 
 ## Verified
 
@@ -123,6 +129,9 @@ Website and documents only; no Swift changed. On the cloud machine:
   fail: the policy's Accessibility link changed to `data-href`, and the
   accessibility page's own header link removed (its links within the
   page no longer count).
+  After the third review, six more edits were tried and each failed a
+  test: "$4.99", "4.99 USD" or "€3" on the page, the skip link left
+  only inside a comment, `main`'s id changed, and an empty title.
 - The three pages, served with `python3 -m http.server`, were rendered in
   Chromium (Playwright) at 1280, 1000 and 390 points wide, light and dark:
   no page scrolls sideways, the home page's new section matches the
