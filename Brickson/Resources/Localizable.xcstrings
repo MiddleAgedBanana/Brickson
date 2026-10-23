@@ -22,6 +22,9 @@
     "%@ works with every way an iPhone or iPad can be controlled. Each is part of iOS and is turned on in the Settings app; %@ needs no setup of its own." : {
 
     },
+    "A button on Home already has this name. Choose a different name." : {
+
+    },
     "A partner can point to phrases on the screen for the person to choose with a look, a blink or a nod, then tap the one chosen." : {
 
     },
@@ -41,6 +44,9 @@
 
     },
     "Alert stopped" : {
+
+    },
+    "Another category already has this name. Choose a different name." : {
 
     },
     "Answered. iOS asks only once, so any change is made in the Settings app." : {
@@ -73,6 +79,9 @@
     "Choose a phrase to speak it." : {
       "comment" : "Shown where the spoken message appears, before anything has been spoken."
     },
+    "Choose a picture from the list." : {
+
+    },
     "Choose every way that is used now. Each answer is saved as soon as it is chosen." : {
 
     },
@@ -80,6 +89,9 @@
 
     },
     "Clear My Choices" : {
+
+    },
+    "Couldn't save, so nothing was changed. Try again." : {
 
     },
     "Create an Assistive Access passcode." : {
@@ -101,6 +113,12 @@
 
     },
     "Emergency" : {
+
+    },
+    "Emergency can't be deleted, so it's always one step away. You can change its phrases." : {
+
+    },
+    "Emergency needs at least one phrase. Change this phrase's words instead." : {
 
     },
     "Enhanced" : {
@@ -125,6 +143,9 @@
 
     },
     "Follow the dot with the eyes to calibrate." : {
+
+    },
+    "Get Attention" : {
 
     },
     "Get Attention did not start. Choose it again." : {
@@ -277,6 +298,9 @@
     "Repeat" : {
       "comment" : "Another name a person can say for the Again control with Voice Control."
     },
+    "Replacing would remove phrases that aren't in the backup, so nothing was changed. Add the backup to your phrases instead." : {
+
+    },
     "Say the name of a button to choose it, such as “Tap Yes”." : {
 
     },
@@ -296,6 +320,9 @@
 
     },
     "Someone else helps" : {
+
+    },
+    "Speak" : {
 
     },
     "Speaking" : {
@@ -331,6 +358,9 @@
     "Step %lld of %lld" : {
 
     },
+    "Stop Alert" : {
+
+    },
     "Stop Asking" : {
 
     },
@@ -352,6 +382,9 @@
     "The last change could not be saved. Try again." : {
 
     },
+    "The library needs at least one category. Add another before deleting this one." : {
+
+    },
     "The message you were typing before the app closed could not be restored." : {
 
     },
@@ -367,13 +400,37 @@
     "The voice chosen earlier is no longer on this device, so Automatic is used." : {
 
     },
+    "This backup is damaged and couldn't be read. Nothing was changed." : {
+
+    },
+    "This backup was made by a newer version of the app. Update the app, then try again. Nothing was changed." : {
+
+    },
+    "This category already has this phrase." : {
+
+    },
+    "This file couldn't be read. It may be damaged or not a phrase backup. Nothing was changed." : {
+
+    },
+    "This file is too large to be a phrase backup. Nothing was changed." : {
+
+    },
+    "This file isn't a phrase backup. Nothing was changed." : {
+
+    },
     "This iPhone or iPad can't use Personal Voice. %@ speaks with the voice chosen below." : {
 
     },
     "This is where a family member or carer sets up %@: the voice it speaks with, help with reaching the screen, and how to keep it open. Nothing here is needed to start talking." : {
 
     },
+    "This library is too large to fit in one backup. Nothing was saved." : {
+
+    },
     "This message is not being saved. It stays on screen, but it may be lost if the app closes." : {
+
+    },
+    "This was changed or deleted somewhere else. Go back and try again." : {
 
     },
     "Time for a check-in" : {
@@ -398,6 +455,15 @@
 
     },
     "Turn on what is used" : {
+
+    },
+    "Two items in this library have the same identity, so it can't be changed safely." : {
+
+    },
+    "Type a name for this category." : {
+
+    },
+    "Type the words for this phrase." : {
 
     },
     "Under Switches, add the switch that will be used." : {
@@ -443,6 +509,15 @@
       "comment" : "Spoken when the Yes control is chosen."
     },
     "Your Personal Voice when it is allowed, otherwise the best voice on this device" : {
+
+    },
+    "Your phrases changed while this was open, so nothing was changed. Try again." : {
+
+    },
+    "Your phrases couldn't be read, so nothing was changed." : {
+
+    },
+    "Your saved phrases couldn't be opened. They haven't been deleted. Restart the app to try again. Don't delete the app: that would erase them." : {
 
     }
   },

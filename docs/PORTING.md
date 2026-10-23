@@ -33,7 +33,7 @@ and `docs/SUCCESSOR-HANDOFF.md`. Here, read `docs/LESSONS.md`.
 | Step | What | State |
 |---|---|---|
 | 1 | Speech, the Get Attention alarm and audio safety | **Ported**, behind test seams (2026-10-21). Get Attention is not on Home yet, and the status strip is still Home's stand-in. |
-| 2 | Storage, editing logic and backup. Fix D28 here. | **Storage started** (versioned schema, seeding). Editing and backup not yet. |
+| 2 | Storage, editing logic and backup. Fix D28 here. | **Core written new** (editing rules, applier, backup format; D28 avoided by design: `rollback()` is never called, issue #19). Safety copies, export and import not yet. |
 | 3 | Text fitting and colour tokens | **Text fitting ported** (`WordFit`, `FittedLabel`, `FittedLine`). Three measured fills only (`Palette`). |
 | 4 | The layout engine, generalized to profiles | Not started. |
 | 5 | Home and typing. Fix D27 here. | A stand-in Home only (docs/DECISIONS.md, "Home version 0 is a stand-in"). **Typing foundation built** (`Brickson/Typing`: `MessageComposer`, `DraftStore`, the keyboard probe); the typing state on Home not yet. |
@@ -61,7 +61,10 @@ unchanged apart from names.
 | `Library/StarterLibrary.swift` | `FamilyVoice/Models/PhraseSeeder.swift` | Seeding only, in its own context with no rollback; the retired-seed repair is left behind. |
 | `Layout/WordFit.swift`, `Layout/FittedLabel.swift`, `Layout/FittedLine.swift`, `Layout/LabelFont.swift` | `FamilyVoice/Views/WordFit.swift` (`WordFit`, `FittedText`) and `BoardLabel` | Rewritten. A label steps through Apple's text sizes (the person's, then smaller ones down to the default) instead of searching for a point size, and UIKit measures each size's width and the height of its whole-word lines, with room for the line spacing SwiftUI adds (measured on CI, checked against SwiftUI in `StarterLabelFitTests`). The words are drawn at the person's size in those lines and shrunk by `minimumScaleFactor`, so they keep following Dynamic Type, as Apple's accessibility audit requires. Same order: icon first, then the words, never below the default size. |
 | `Layout/HomeShape.swift`, `Home/HomeButtonStyle.swift` | — | New: the stand-in Home's sizes from the space it is given, and Home's button style (docs/DECISIONS.md, "Home's stand-in layout"). |
-| `Resources/StarterPhrases.json` | — | New, neutral starter set (docs/DECISIONS.md, "Starter phrases"). |
+| `Resources/StarterPhrases.json` | — | New, neutral starter set (docs/DECISIONS.md, "Starter phrases"), in the backup format with fixed identities. |
+| `Library/LibrarySnapshot.swift`, `LibraryEdit.swift`, `LibraryRules.swift`, `LibraryImport.swift` | — (replace `PhraseEditor`'s logic) | Written new from the editing and backup memo: every edit planned as plain values, the Emergency category undeletable, import that only adds. |
+| `Library/LibraryEditor.swift` | — (replaces `EditPersistence`) | Writes a plan from a context of its own in one save; never calls `rollback()`. |
+| `Library/BackupCodec.swift` | — (replaces `BackupService`'s file format) | `brickson.library` version 1, with a version check the reference lacked. |
 | Tests for each of the above | `FamilyVoiceTests/` | Timer tests built from one `now` plus offsets. |
 | `BricksonUITests/KeyboardProbeTests.swift` | `FamilyVoiceUITests/TypingKeyboardProbe.swift` | Opens a debug-only probe screen instead of Home's typing state; reads SwiftUI's own keyboard edge as well as the keys; fails on the keyboard bar; no Display Zoom or Settings-app preparation; no Return-key check yet. |
 | `Typing/MessageComposer.swift`, `Typing/DraftStore.swift` | `AppSettings.typedDraft` and the typing panel in `HomeView` | New types: the reference kept its draft in UserDefaults, which cannot report a failed save, and let Return add a line break (docs/LESSONS.md). |
@@ -74,10 +77,10 @@ From the reference's own successor handoff, checked against its code.
 - `Views/AudioSafetyStatusStrip` (step 1; Home's status area stands in for it).
 - `PhraseTileAction`, `HomeChromePolicy`, `QuickControl` (step 5).
 - `EditModeTimeout`/`EditModeSession` (on `ContinuousClock`),
-  `EditSubmission`, `EditToolbar`, `PendingDeletion`, `PhraseEditor`
-  (steps 2 and 6).
-- `BackupService` (byte-lossless round trip) and `BackupImportQuestion`
-  (step 2; add a schema version to the backup format).
+  `EditSubmission`, `EditToolbar`, `PendingDeletion` (step 6, on the
+  library core; `PhraseEditor`'s logic is replaced by `LibraryEdit`).
+- `BackupImportQuestion` (step 6; the file format and the import rules
+  are replaced by `BackupCodec` and `LibraryImport`).
 - `SettingsIdlePolicy` (on `ContinuousClock`) (step 7).
 - The `Views/FamilyVoiceTheme.swift` tokens (step 3; add Bold Text and
   Increase Contrast).
