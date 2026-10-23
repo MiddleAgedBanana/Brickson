@@ -32,7 +32,7 @@ it, and plans the work:
   agents. **`.gitignore`:** `/xcode-skills/`, so an export left in the
   checkout is never committed.
 
-**Avery's summary, checked.** Mostly right, with two corrections. Apple
+**The owner's summary, checked.** Mostly right, with two corrections. Apple
 does not make "supporting" iPhone Duo a condition of using the iOS 27.1
 SDK: every app runs on iPhone Duo, and an app *built* with the iOS 27.1
 SDK or later is treated as optimized for it automatically (it fills both
@@ -55,8 +55,10 @@ current Xcode") keeps it that way. Nothing for the toolchain thread to do.
 
 ## What Apple says
 
-Every page read on 2026-10-23. Quotes are Apple's words; nothing here is
-inferred.
+Every page read on 2026-10-23. Quotes are Apple's words, and nothing is
+added to them. The few sentences that apply them to Brickson (what it
+must submit, which requirements it meets, why it must run on iPhone Duo)
+are this record's reading, and each names Brickson.
 
 **Three steps to make your app shine on iPhone Duo**
 (https://developer.apple.com/iphone-duo/prepare/, no date on the page):
@@ -376,10 +378,12 @@ See the pull request.
   (`412f4cf`).
 - CI's Xcode and simulator runtimes, from run 39923081723's log; the Mac's
   simulators, from its simulator list (2026-10-23).
-- GitHub CI on this pull request is the build: no Swift changed.
 
 ## Not verified
 
+- GitHub CI on this pull request, which is the build for a change made
+  where nothing can be built, had not finished when this was written; the
+  pull request records its result. No Swift changed.
 - Brickson has not run on the iPhone Duo simulator or a device. Nothing
   here says how it looks or behaves on iPhone Duo.
 - Whether the system moves Home's own buttons out of the fold, where
