@@ -457,3 +457,28 @@ Category-name comparison now has the explicit bounded default recorded
 above and in DECISIONS. Existing phrase, Emergency, import and safety-copy
 restrictions remain in force. No new storage or speech policy is adopted;
 the owner retains the merge decision.
+
+
+## Main refresh after PR #32 landed
+
+CI on `7ec516f` passed in run 39872469181: 560 units, zero failures and
+one existing issue #19 skip; each UI suite passed all 35 enabled tests,
+with four existing opt-in probe skips. iPad UI took 872.179 seconds
+(Home 162.168 seconds), iPhone 686.526 seconds (Home 55.060 seconds).
+All 21 existing conversations are resolved; Codex's summary still reports
+its current-head code review as running, so no completed review is claimed.
+
+Full local UI on that same head completed with 34 passed, one failed and
+four existing skips per device. Only the AX5 speech-completion test failed,
+with four Speaking waits per device. iPad took 677.953 seconds (Home
+83.837 seconds), iPhone 628.687 seconds (Home 41.047 seconds). The known
+host audio-driver limitation remains; no Mac audio setting was changed.
+
+The owner merged PR #32 to main as `313de2c`. This follow-up incorporates
+it by merge commit, retaining the new 75-minute UI timeout and bounded
+Home test; the library implementation is unchanged. Main's briefing and
+new log were read. The combined native unit gate passed 560 tests, with zero failures and
+the existing issue #19 skip (561 total), using Xcode 27.1 (27A9275),
+iPad Pro 13-inch (M5), iOS 27.0. The catalog stayed unchanged; coverage
+remained 66.9% (4,400/6,577). The refreshed head requires a new CI run. Replace still refuses every
+plan that needs a safety copy. Auto-merge remains off.

@@ -7,7 +7,7 @@ nothing is appended here. Plan: [`docs/ROADMAP.md`](ROADMAP.md). How the
 project runs: [`docs/SDLC.md`](SDLC.md).
 
 **State as of 2026-10-22: PR #14 (the library core), reconciled with
-`main` at `479175d`; not merged.**
+`main` at `313de2c`; not merged.**
 Ten threads are working in parallel on the first release, R0.
 
 ## What the app does today
@@ -55,17 +55,20 @@ Xcode 27.1 (27A9275); final-head CI is pending.
 
 ## Verification
 
-- **PR #14 reconciliation, 2026-10-22:** includes main `479175d`, the
+- **PR #14 reconciliation, 2026-10-22:** incorporates main `313de2c`, the
   invisible-text Emergency correction and the bounded category-name fix.
   Standalone invisible decorations no longer create duplicate names;
   composed names and stored/imported bytes remain intact. All 56 pure
   library tests pass. The fresh full native unit gate passed 560 tests,
   zero failures and one existing issue #19 crash-probe skip (561 total);
-  the String Catalog is unchanged. Full local UI on this head is still
-  required; the last complete local baseline is `182df4b`. The local
-  host audio driver also failed outside the simulator, and its repair
-  awaits approval. Fresh hosted CI and review are pending for this
-  follow-up. The older AX5 audit finding remains unexplained. Auto-merge
+  the String Catalog is unchanged. Full local UI on `7ec516f` completed
+  with 34 passed, one speech-wait failure and four existing probe skips
+  per device, alongside the known host-audio limitation. Hosted CI on
+  that head passed 560 units (one existing skip) and all 35 enabled UI
+  tests per device (four existing probe skips). All 21 existing review
+  conversations are resolved; its Codex review still reports running.
+  This main refresh passed the same 560-unit native gate with one
+  existing skip and an unchanged catalog; its new CI run remains required. The older AX5 audit finding remains unexplained. Auto-merge
   is disabled; the owner makes the merge decision. The
   [reconciliation record](log/2026-10-22-library-reconciliation.md)
   preserves toolchain/device details, complete history and remaining checks.
@@ -331,6 +334,28 @@ Simulators cannot show these. Record each result in a `docs/log/` file
 
 - The `main` ruleset matched docs/DECISIONS.md on 2026-10-15 (GitHub's
   API); its required checks are "Unit tests" and "UI tests".
+  The UI job now allows 75 minutes for both device families, and Home's
+  layout test uses bounded live queries while retaining every tile's
+  visibility and position checks. After incorporating `main` at `d79d836`,
+  its audit helper also keeps issue-time captures and native XCTest
+  findings. CI reported an unidentified AX5/light text-accessibility
+  finding; the unchanged focused local test passed, but no cause is
+  established. A temporary contrast defect failed as expected and retained
+  issue-time and native evidence; its app mutation was removed. Final
+  units passed 460/460; iPad and iPhone UI each passed 33 tests with four
+  existing probe skips on the tree incorporating `d79d836`. A further
+  merge incorporates `main` at `479175d` (PR #31): its still-screen waits
+  and two runner tests remain alongside the diagnostic captures and native
+  findings. Its unit gate passed 460/460 with the catalog unchanged;
+  both combined UI suites completed with 34 passed, one failed and four
+  existing skips per device. The AX5 light/dark Speaking waits failed,
+  with the status visibly still present and CoreAudio startup errors in
+  the iPad app logs. Focused local checks reproduced the known host-audio
+  limitation. Exact-head CI on `f1f7954` passed 460 units and 35 enabled UI
+  tests per device (four existing probe skips); the owner merged PR #32
+  as `313de2c`. No host audio service or setting was changed.
+  Earlier-head CI also failed, with its native audit evidence now retained
+  ([`log/2026-10-22-ci-home-test.md`](log/2026-10-22-ci-home-test.md)).
 - CodeQL scans the workflow files and the Python scripts, not the Swift
   code, on purpose (docs/DECISIONS.md, *Code scanning*); the failed Swift
   attempt of 2026-10-10 is still listed on the Tool status page.
