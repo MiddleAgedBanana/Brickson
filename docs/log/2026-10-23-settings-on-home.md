@@ -118,6 +118,12 @@ and labels built with `ViewThatFits` failed it (docs/DECISIONS.md,
 arrangement, and `SettingsRootLayout` places the one row and the one
 note, with no hidden copy; AGENTS.md has the gotcha.
 
+**Main with PR #34** (`c0f9d20`). Main's frameworks rule lists every
+UIKit use; `SettingsOnHomeTests` reads `UIDevice` and
+`UIDeviceOrientation` as the other UI tests do, so it joins their row
+in docs/DECISIONS.md, *Apple's current frameworks first*. The merge
+had no conflicts.
+
 ## Commits
 
 - `e61243d` Settings on Home: write the intent
@@ -138,7 +144,9 @@ note, with no hidden copy; AGENTS.md has the gotcha.
 - `3103ac5` Merge main (PR #14) into Settings on Home
 - `e285f6c` Record review round 3 of Settings on Home
 - `5926afd` Place Settings' root with a layout instead of ViewThatFits
-- This record's second UI run, and the gotcha in AGENTS.md.
+- `e412f50` Record the second UI run and the ViewThatFits gotcha
+- `c0f9d20` Merge main (PR #34) into Settings on Home
+- This record's merge note, and `SettingsOnHomeTests` in the frameworks table.
 
 ## Verified
 
