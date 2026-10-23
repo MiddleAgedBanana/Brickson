@@ -24,6 +24,7 @@ from urllib.parse import unquote, urlsplit
 import re
 import unittest
 import tempfile
+import string
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -55,7 +56,7 @@ CITATION = re.compile(
     r'(?:"(?P<quoted>[^"\n]{2,120})"'          # "Title"
     r'|(?<![*\w])\*(?P<italic>[^*\n]{2,120})\*(?![*\w]))')  # or *Title*
 BARE_ITALIC = re.compile(r'(?<![*\w`])\*(?P<title>[A-Z][^*\n]{1,120}?)\*(?![*\w])')
-LINK = re.compile(r'(?<!!)\[[^\]\n]*\]\((?P<target><[^>\n]*>|[^)\s]+)(?:\s+(?:"[^"]*"|\'[^\']*\'))?\s*\)')
+INLINE_LINK_START = re.compile(r'(?<!!)\[[^\]\n]*\]\(')
 REFERENCE_LINK = re.compile(
     r'^ {0,3}\[(?!\^)[^\]\n]+\]:[ \t]*(?:\n[ \t]*)?'
     r'(?P<target><[^>\n]*>|[^\s<>]+)'
@@ -257,6 +258,52 @@ def without_indented_code(text):
     return ''.join(output)
 
 
+def inline_link_targets(text):
+    """Scan balanced destinations without ending at an inner parenthesis."""
+    for match in INLINE_LINK_START.finditer(text):
+        start = match.end()
+        while start < len(text) and text[start].isspace():
+            start += 1
+        index, depth = start, 0
+        angle = index < len(text) and text[index] == '<'
+        if angle:
+            index += 1
+        while index < len(text):
+            char = text[index]
+            if char == '\\' and index + 1 < len(text):
+                index += 2
+                continue
+            if angle:
+                if char == '>':
+                    index += 1
+                    break
+                if char in '<\n':
+                    break
+            else:
+                if char.isspace() or (char == ')' and depth == 0):
+                    break
+                if char == '(':
+                    depth += 1
+                elif char == ')':
+                    depth -= 1
+            index += 1
+        if depth or (angle and (index == start or text[index - 1] != '>')):
+            continue
+        end = index
+        while index < len(text) and text[index].isspace():
+            index += 1
+        if index > end and index < len(text) and text[index] in ('"', "'", '('):
+            close = ')' if text[index] == '(' else text[index]
+            index += 1
+            while index < len(text) and text[index] != close:
+                index += 2 if text[index] == '\\' else 1
+            index += 1
+            while index < len(text) and text[index].isspace():
+                index += 1
+        if index < len(text) and text[index] == ')':
+            yield text[start:end]
+
+
 def broken_links(path, text):
     """Each relative Markdown link whose file or heading does not exist."""
     relative = path.relative_to(ROOT).as_posix()
@@ -267,9 +314,9 @@ def broken_links(path, text):
     text = without_code_spans(without_indented_code(without_fenced_code(text)))
     # Check destinations at their definitions once, regardless of which
     # reference-link form uses them (or how many times the label is reused).
-    links = list(LINK.finditer(text)) + list(REFERENCE_LINK.finditer(text))
-    for match in links:
-        link = match['target'].strip('<>')
+    links = list(inline_link_targets(text)) + [match['target'] for match in REFERENCE_LINK.finditer(text)]
+    for target in links:
+        link = re.sub(r'\\([' + re.escape(string.punctuation) + r'])', r'\1', target.strip('<>'))
         url = urlsplit(link)
         if url.scheme or url.netloc:
             continue  # absolute and protocol-relative external links
@@ -304,6 +351,19 @@ class CheckerTests(unittest.TestCase):
 
     def setUp(self):
         self.fixture = ROOT / 'docs' / 'DECISIONS.md'
+
+    def test_balanced_parentheses_in_inline_destinations(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder).resolve()
+            page = root / 'index.md'
+            with patch.dict(globals(), ROOT=root):
+                for name in ['guide_(v2).md', 'guide_(v(2(x))).md']:
+                    (root / name).write_text('# Setup')
+                    for destination in [name, name.replace('(', r'\(').replace(')', r'\)')]:
+                        self.assertEqual(broken_links(page, f'[guide]({destination}#setup)'), [])
+                        self.assertEqual(broken_links(page, f'[guide]({destination}#setup "Guide title")'), [])
+                        self.assertTrue(broken_links(page, f'[guide]({destination}#missing)'))
+                self.assertTrue(broken_links(page, '[guide](missing_(v2).md#setup)'))
 
     def test_indented_atx_headings_are_real_sections(self):
         with tempfile.TemporaryDirectory() as folder:

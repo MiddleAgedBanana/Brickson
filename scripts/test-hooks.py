@@ -67,6 +67,66 @@ class GuardTests(unittest.TestCase):
                         ['git', '-C', str(self.repo), 'config', '--unset-all', key],
                         capture_output=True)
 
+    def test_time_option_operands_keep_the_wrapped_command(self):
+        for options in ['-o stats', '-f %E', '--output stats', '--format %E', '-ao stats', '-oout']:
+            self.assertDenied(f'/usr/bin/time {options} git add -A')
+            self.assertDenied(f'time {options} gh pr merge 12')
+            self.assertAllowed(f'time {options} git status')
+
+    def test_ansi_c_here_document_delimiters_do_not_hide_commands(self):
+        for delimiter in ["$'END'", r"$'E\x4eD'", "$'E'ND"]:
+            self.assertDenied(f'cat <<{delimiter}\ntext\nEND\ngit add -A')
+            self.assertDenied(f'bash <<{delimiter}\ngit add -A\nEND')
+            self.assertAllowed(f'cat <<{delimiter}\ngit add -A\nEND\ngit status')
+
+    def test_curl_url_globs_require_explicit_urls_or_globoff(self):
+        for suffix in ['{merge,status}', '[1-2]/merge']:
+            url = 'https://api.github.com/repos/o/r/pulls/12/' + suffix
+            self.assertDenied('curl -X PUT ' + shlex.quote(url))
+            self.assertAllowed('curl -g -X PUT ' + shlex.quote(url))
+            self.assertDenied('curl -g --no-globoff -X PUT ' + shlex.quote(url))
+            self.assertAllowed('curl --no-globoff -g -X PUT ' + shlex.quote(url))
+        self.assertAllowed('curl -X GET https://api.github.com/repos/o/r/pulls/12/merge')
+
+    def test_curl_final_get_and_head_toggles_set_the_method(self):
+        url = 'https://api.github.com/repos/o/r/pulls/12/reviews'
+        for on, off in [('--get', '--no-get'), ('--head', '--no-head')]:
+            self.assertDenied(f'curl {on} {off} -d ' + shlex.quote('{"event":"APPROVE"}') + ' ' + url)
+            self.assertAllowed(f'curl {off} {on} -d ' + shlex.quote('{"event":"APPROVE"}') + ' ' + url)
+        self.assertDenied(f'curl -GI --no-head --no-get -d ' + shlex.quote('{"event":"APPROVE"}') + ' ' + url)
+
+    def test_httpie_redirected_input_is_checked(self):
+        url = 'https://api.github.com/repos/o/r/pulls/12/reviews'
+        with tempfile.TemporaryDirectory(dir=self.repo) as folder:
+            payload = Path(folder) / 'request.json'
+            payload.write_text('{"event":"APPROVE"}')
+            self.assertDenied(f'http POST {url} Content-Type:application/json < {payload}')
+            self.assertDenied(f'< {payload} https {url}')
+            self.assertDenied(f'cat {payload} | http POST {url}')
+            self.assertAllowed(f'cat {payload} | http --ignore-stdin GET {url}')
+            payload.write_text('{"event":"COMMENT"}')
+            self.assertAllowed(f'http POST {url} < {payload}')
+            self.assertAllowed(f'< {payload} http {url}')
+        self.assertDenied(f"http POST {url} <<'END'\n{{\"event\":\"APPROVE\"}}\nEND")
+
+    def test_rest_agent_tasks_are_owner_only(self):
+        endpoint = '/agents/repos/o/r/tasks'
+        self.assertDenied(f'gh api --method POST {endpoint} -f prompt=work')
+        self.assertDenied(f'curl -X POST https://api.github.com{endpoint} -d ' + shlex.quote('{"prompt":"work"}'))
+        self.assertAllowed(f'gh api {endpoint}')
+        self.assertAllowed(f'gh api {endpoint}/123')
+
+    def test_graphql_agent_assignment_inputs_are_owner_only(self):
+        for mutation in ['createIssue', 'updateIssue', 'addAssigneesToAssignable', 'replaceActorsForAssignable']:
+            query = 'mutation { ' + mutation + '(input:{agentAssignment:{targetRepositoryId:"R",baseRef:"main"}}) { clientMutationId } }'
+            self.assertDenied('gh api graphql -f ' + shlex.quote('query=' + query))
+        query = 'mutation($input:CreateIssueInput!) { createIssue(input:$input) { clientMutationId } }'
+        payload = json.dumps({'query':query, 'variables':{'input':{'agentAssignment':{'targetRepositoryId':'R'}}}})
+        self.assertDenied('curl https://api.github.com/graphql --json ' + shlex.quote(payload))
+        payload = json.dumps({'query':query, 'variables':{'input':{'title':'agentAssignment is discussed here'}}})
+        self.assertAllowed('curl https://api.github.com/graphql --json ' + shlex.quote(payload))
+        self.assertAllowed('gh api graphql -f ' + shlex.quote('query=mutation { createIssue(input:{title:"agentAssignment: example"}) { clientMutationId } }'))
+
     def test_graphql_enqueue_is_an_owner_merge_action(self):
         query = 'mutation { enqueuePullRequest(input:{pullRequestId:"ID"}) { clientMutationId } }'
         self.assertDenied('gh api graphql -f ' + shlex.quote('query=' + query))

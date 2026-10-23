@@ -48,6 +48,7 @@ check every invariant the change could break.
 | Stored data: models, seeding, starter phrases, migrations, editing, import or backup | Invariants 3, 5 and 7; `docs/DECISIONS.md`, "Versioned storage"; `docs/LESSONS.md`, *Storage* |
 | Colours, labels, or words people see | Invariant 6; *Workflow rules* (the String Catalog and `Text(verbatim:)`) |
 | Timers, callbacks or concurrency | *Workflow rules*; `docs/LESSONS.md`, *Time* and *Swift concurrency* |
+| An `import`, or a framework or API the code did not use before | *Apple's current frameworks first*; `docs/DECISIONS.md`, "Apple's current frameworks first" |
 | Tests, `scripts/` or `.github/workflows/` | *Build and test*; *Gotchas*; *Tests, workflows and the rules themselves*; step 4 below |
 | `project.yml`, the privacy manifest, capabilities, `site/`, or text that describes the app | Invariant 9; *The privacy policy is a promise*; *Data, privacy and platform*; for a build setting, *Workflow rules* and the `docs/DECISIONS.md` entry that chose it |
 | `AGENTS.md`, `CLAUDE.md`, `.github/copilot-instructions.md`, `.github/skills/`, `docs/DECISIONS.md` or any other file that gives reviewers instructions | Step 4 below |

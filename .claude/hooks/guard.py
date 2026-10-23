@@ -58,6 +58,7 @@ UNKNOWN = ('The guard cannot inspect this push/sync destination or API request b
 WRAPPERS = {'command', 'builtin', 'exec', 'nohup', 'time', 'sudo', 'env', 'nice',
             'timeout', 'xargs', 'then', 'do', 'else', 'if', 'elif', 'while', 'until', '!', '{', '('}
 WRAPPER_VALUE_OPTIONS = {
+    'time': {'-o', '--output', '-f', '--format'},
     'env': {'-u', '--unset', '-C', '--chdir'},
     'nice': {'-n', '--adjustment'},
     'xargs': {'-n', '-L', '-I', '-P', '-s', '-E', '-J', '-R', '-S', '-a', '-d',
@@ -599,6 +600,8 @@ def request_file(filename, cwd):
     """Read a bounded regular file, never stdin, devices or a pipe."""
     if filename == '-':
         deny(UNKNOWN)
+    if cwd is None:
+        deny(UNKNOWN)
     path = os.path.join(cwd, os.path.expanduser(filename))
     try:
         metadata = os.stat(path)
@@ -794,7 +797,7 @@ def check_gh(words, cwd, environment):
             deny(TO_MAIN)
         if merge_api_request(plain, arguments, method):
             deny(MERGE)
-        if copilot_request(arguments):
+        if copilot_request(arguments, plain, method):
             deny(COPILOT)
     if len(plain) >= 2 and plain[0] in ('pr', 'issue') and plain[1] in ('edit', 'create'):
         options = {'--add-assignee', '--assignee'}
@@ -984,6 +987,29 @@ def http_operations(words):
     return operations
 
 
+def curl_flag(words, enabled, disabled):
+    value = False
+    for word in words:
+        if word in enabled:
+            value = True
+        elif word == disabled:
+            value = False
+    return value
+
+
+def httpie_stdin(words, original, separator, cwd):
+    if '--ignore-stdin' in words:
+        return words
+    if separator in ('|', '|&') or any(word in ('<&', '<>', '<<<') for word in original):
+        deny('Use HTTPie --raw or a bounded regular input file; pipe input is not inspectable.')
+    sources = [original[index + 1] for index, word in enumerate(original[:-1])
+               if word == '<' and (index == 0 or not original[index - 1].isdigit()
+                                   or original[index - 1] == '0')]
+    if sources:
+        return [words[0], '--raw', request_file(sources[-1], cwd), *words[1:]]
+    return words
+
+
 def request_method(words, program):
     """The common API-client method forms; an explicit method wins."""
     methods = list(option_values(words, {'--request', '--method'}, {'-X'}))
@@ -992,10 +1018,10 @@ def request_method(words, program):
     if program == 'curl':
         if list(option_values(words, {'--upload-file'}, {'-T'})):
             return 'PUT'
-        if '--get' in words or '-G' in words:
-            return 'GET'
-        if '--head' in words or '-I' in words:
+        if curl_flag(words, {'--head', '-I'}, '--no-head'):
             return 'HEAD'
+        if curl_flag(words, {'--get', '-G'}, '--no-get'):
+            return 'GET'
         data = list(option_values(words, {'--data', '--data-ascii', '--data-binary',
                                          '--data-raw', '--data-urlencode', '--json', '--form', '--form-string'}, {'-d', '-F'}))
         return 'POST' if data else 'GET'
@@ -1004,8 +1030,7 @@ def request_method(words, program):
     return 'POST' if any(w.startswith(('--post-', '--body-')) for w in words) else 'GET'
 
 
-def graphql_review_approval(query, arguments, words):
-    """Check the event of the two review mutations, including JSON variables."""
+def graphql_variables(arguments, words):
     variables = {}
     for value in api_field_values(arguments, 'variables'):
         if isinstance(value, dict):
@@ -1017,6 +1042,32 @@ def graphql_review_approval(query, arguments, words):
                 variables[key] = json.loads(value)
             except ValueError:
                 variables[key] = value
+    return variables
+
+
+def graphql_agent_assignment(query, arguments, words):
+    mutations = r'(?:createIssue|updateIssue|addAssigneesToAssignable|replaceActorsForAssignable)'
+    if not re.search(r'\b' + mutations + r'\s*\(', query):
+        return False
+    if re.search(r'\bagentAssignment\s*:(?!\s*null\b)', query):
+        return True
+    variables = graphql_variables(arguments, words)
+    def contains_assignment(value):
+        if isinstance(value, dict):
+            return any((key == 'agentAssignment' and child is not None) or contains_assignment(child)
+                       for key, child in value.items())
+        return isinstance(value, list) and any(contains_assignment(child) for child in value)
+    for match in re.finditer(r'\b' + mutations + r'\s*\(\s*input\s*:\s*\$(\w+)', query):
+        if match[1] not in variables:
+            deny(UNKNOWN)
+        if contains_assignment(variables[match[1]]):
+            return True
+    return False
+
+
+def graphql_review_approval(query, arguments, words):
+    """Check the event of the two review mutations, including JSON variables."""
+    variables = graphql_variables(arguments, words)
     for match in re.finditer(r'\b(?:addPullRequestReview|submitPullRequestReview)\s*\(', query):
         start = match.end()
         end, depth = start, 1
@@ -1047,7 +1098,7 @@ def api_paths(words):
     for word in words:
         if github_api_host(word):
             paths.append(parsed_url(word)[0].path.lstrip('/'))
-        elif word == 'graphql' or word.startswith(('repos/', '/repos/')):
+        elif word == 'graphql' or word.startswith(('repos/', '/repos/', 'agents/', '/agents/')):
             paths.append(urlsplit(word).path.lstrip('/'))
     return [unquote(path) for path in paths]
 
@@ -1099,13 +1150,18 @@ def merge_api_request(words, arguments, method):
             if re.search(r'\b(?:createRef|updateRef|updateRefs|deleteRef|createCommitOnBranch)\s*\(', query):
                 deny('Use explicit Git commands for ref or commit writes; the guard '
                      'does not resolve GraphQL ref IDs or variable targets.')
+            if graphql_agent_assignment(query, arguments, words):
+                deny(COPILOT)
             if GRAPHQL_MERGE.search(query) or graphql_review_approval(query, arguments, words):
                 return True
     return False
 
 
-def copilot_request(text):
+def copilot_request(text, words=(), method='GET'):
     """Whether API arguments request Copilot review or issue assignment."""
+    if method == 'POST' and any(re.fullmatch(r'agents/repos/[^/]+/[^/]+/tasks', path)
+                                for path in api_paths(words)):
+        return True
     if ('requested_reviewers' in text or '/assignees' in text) and 'copilot' in text.lower():
         return True
     # Issue create/update endpoints also accept assignees. Inspect that field
@@ -1144,7 +1200,7 @@ def inspectable_here_documents(command):
         bodies = []
         for match in matches:
             raw = match[2]
-            delimiter = shlex.split(raw)[0]
+            delimiter = shlex.split(ansi_c_quotes(raw))[0]
             quoted = any(char in raw for char in "'\"\\")
             body = []
             while index < len(lines):
@@ -1160,6 +1216,12 @@ def inspectable_here_documents(command):
         shell_parts = [words for words, _ in parts
                        if (unwrapped := strip_wrappers(words)[0])
                        and os.path.basename(unwrapped[0]) in SHELLS]
+        for receiver, _ in parts:
+            unwrapped = strip_wrappers(receiver)[0]
+            if (unwrapped and os.path.basename(unwrapped[0]) in ('http', 'https')
+                    and '--ignore-stdin' not in unwrapped
+                    and any(github_api_host(word) for word in unwrapped[1:])):
+                deny('Use HTTPie --raw or a bounded regular input file instead of a here-document.')
         if shell_parts:
             if len(parts) != 1 or len(bodies) != 1:
                 deny(UNKNOWN)
@@ -1345,13 +1407,19 @@ def check_command(command, cwd, depth=0, environment=None):
                     deny(CURL_CONFIG)
                 for operation in http_operations(request_words):
                     if any(github_api_host(word) for word in operation[1:]):
+                        if program == 'curl' and not curl_flag(operation, {'--globoff', '-g'}, '--no-globoff'):
+                            if any(github_api_host(word) and re.search(r'[{}\[\]]', word)
+                                   for word in operation[1:]):
+                                deny('Use explicit GitHub API URLs or --globoff; URL globs are not inspected.')
+                        if program in ('http', 'https'):
+                            operation = httpie_stdin(operation, words, separator, command_cwd)
                         arguments = api_arguments(operation, command_cwd, program)
                         method = request_method(operation, program)
                         if protected_api_write(operation, arguments, method):
                             deny(TO_MAIN)
                         if merge_api_request(operation, arguments, method):
                             deny(MERGE)
-                        if copilot_request(arguments):
+                        if copilot_request(arguments, operation, method):
                             deny(COPILOT)
             next_states.update({(where, True, stack, shell_env), (where, False, stack, shell_env)})
         states = next_states

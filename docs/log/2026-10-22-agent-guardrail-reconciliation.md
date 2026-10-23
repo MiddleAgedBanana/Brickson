@@ -782,3 +782,53 @@ Sources: [GitHub merge queue mutation](https://docs.github.com/en/enterprise-clo
 [curl option syntax](https://curl.se/docs/manpage.html#Options),
 [Bash cd/CDPATH](https://www.gnu.org/software/bash/manual/html_node/Bourne-Shell-Builtins.html),
 and [Bash invocation](https://www.gnu.org/software/bash/manual/html_node/Invoking-Bash.html).
+
+
+### Framework main refresh and API input forms, 2026-10-23
+
+Main moved to `b6be682` (PR #34) during this follow-up. Its current-framework
+rules, exceptions, handoff and record were read, then merged without
+conflicts or rebasing. This includes the new shared Vision recognizer and
+its fixture tests, the audit tests moved to Swift Testing, and the measured
+screen colour. No additional framework migration or product change is
+part of this reconciliation.
+
+Eight fresh findings on `e98e95a` reproduced first: seven failing guard
+tests and one failing documentation test. Corrections:
+
+- External time wrappers consume their format/output option operands.
+- Here-document delimiter quote removal handles ANSI-C quoted segments
+  before locating the terminator, preserving later executable commands.
+- Inline Markdown destinations use balanced parentheses, including three
+  nested levels and backslash escapes; missing files/anchors still fail.
+- GitHub curl URL globs require explicit URLs or effective `--globoff`.
+  This conservative guard does not expand an unbounded generated URL set.
+- curl GET/HEAD negations are evaluated in order, so the final settings
+  determine whether an approval body is a write.
+- HTTPie redirected regular files use the bounded body reader. Pipes,
+  descriptor redirections, here-strings and here-documents require an
+  explicit inspectable body or `--ignore-stdin`; comment-only bodies and
+  reads with ignored stdin remain allowed.
+- POST requests to GitHub's agent-task collection are owner-only Copilot
+  actions; listing tasks and reading their status remain allowed.
+- GraphQL issue-assignment mutations with `agentAssignment` are refused,
+  including JSON variable inputs. Human issue inputs and discussion of
+  that field inside ordinary strings remain allowed.
+
+The focused reproductions now pass. The full local unit script passed
+570 native tests with zero failures and the existing issue #19 crash-probe
+skip (571 total), including PR #34's inherited tests; 102 hook and 29
+documentation tests passed. Xcode 27.1 (27A9275), iPad Pro 13-inch (M5),
+iOS 27.0; catalog unchanged, app line coverage 66.9% (4,400/6,577).
+Current-head hosted CI and fresh review remain required. This adds no
+product decision, review-rule
+exception or claim that the advisory guard is a security sandbox. Replace
+import remains refused, and no audio setting or test assertion is weakened.
+
+Sources: [GNU time](https://www.gnu.org/software/time/manual/time.html),
+[Bash here-documents](https://www.gnu.org/s/bash/manual/html_node/Redirections.html),
+[CommonMark links](https://spec.commonmark.org/spec#links),
+[curl URL syntax](https://curl.se/docs/url-syntax.html#globbing-letters),
+[curl methods](https://curl.se/docs/manpage.html#-G),
+[HTTPie raw input](https://httpie.io/docs/cli/sessions#raw-request-body),
+and [GitHub agent APIs](https://docs.github.com/en/enterprise-cloud@latest/copilot/how-tos/use-copilot-agents/cloud-agent/use-cloud-agent-via-the-api).

@@ -29,6 +29,87 @@ Every item below is judged by AGENTS.md's question: does this make
 communication faster, clearer or more reliable for the person, on the
 input method they actually use?
 
+## Where this goes
+
+*The owner's vision, 2026-10-22.* Over time, Brickson becomes **the one
+app a person with ALS keeps open all day** on their iPad or iPhone. It
+functionally takes the place of the operating system for them, the way
+the leading ALS apps on Windows do. It does not replace iOS, which no app
+can: it covers, inside Brickson, everything the person and their
+caregivers need, and reaches the rest through Apple's own doors. In the
+owner's words, for a person with ALS "it's the only app they need and is
+something they just keep on at all times on their iPad."
+
+What that asks of the work:
+
+- **Every stage of the disease.** Speaking, getting attention, typing,
+  routines and alarms come first; later the web, the camera, calls and
+  messages, on-device AI, and a way for people to extend the app. Each is
+  usable with touch, Switch Control, Eye Tracking, a head pointer and
+  dwell, and keeps its place as the person moves from one to the next
+  (AGENTS.md, invariant 8).
+- **Apple's doors, not workarounds.** Guided Access and Assistive Access
+  keep the device on Brickson, started by the family: Brickson never
+  takes over the device itself (docs/DECISIONS.md, "Accessibility API
+  coverage"). App Intents and Shortcuts are the way to extend it. Live
+  Caption, Personal Voice, Switch Control and Eye Tracking are its input
+  and voice. Where iOS keeps an action for itself, such as sending a text
+  or placing a call, Brickson fills it in and hands it to the system; it
+  never fakes one.
+- **Apple's current frameworks first**, so the app grows on what Apple is
+  building next rather than on what it is leaving behind (AGENTS.md,
+  *Apple's current frameworks first*).
+- **Fully native.** Apple's Human Interface Guidelines, Liquid Glass and
+  Apple's accessibility documentation set the standard. Layouts come from
+  the space available, with standard SwiftUI containers, never screens
+  made for one device (AGENTS.md, *Layout on every device and window*).
+
+**Direction, not a licence to skip steps.** The releases below are how
+Brickson gets there, one step at a time, in the order a person meets the
+disease. Nothing here moves an item ahead of its release or past its
+gate, and every invariant in AGENTS.md still holds. Each part of the
+vision starts, when a release takes it, with a work file
+([`docs/SDLC.md`](SDLC.md)) that checks it against the invariants and the
+privacy policy. Some parts meet a rule today, and the owner decides each
+before it is planned:
+
+- A web view inside Brickson is network code, which invariant 9 forbids.
+  Safari's own in-app view, which the privacy policy's web version
+  already uses, may be the door instead.
+- On-device AI must never write a person's words for them: invariant 9
+  forbids AI-generated replies, invariant 7 forbids words about a
+  person's condition in their mouth, and docs/DECISIONS.md, "Accessibility
+  API coverage", lists Foundation Models under *Never*. Using it for
+  anything else changes that entry first.
+- The camera, calls and messages each need a permission, the words the
+  system shows when it asks, and a section of the privacy policy.
+
+**Frameworks to explore later.** Named so that they are not forgotten;
+none is scheduled, and each starts with a work file when a release takes
+it:
+
+- **Foundation Models** (iOS 26): Apple's on-device language model, to
+  "perform tasks with models that specialize in language understanding,
+  structured output, and tool calling". Today it is under *Never* (above),
+  so any use starts with the owner changing that entry.
+- **AlarmKit** (iOS 26): "Schedule prominent alarms and countdowns to help
+  people manage their time." Not in 1.0, because Get Attention sounds
+  inside Brickson (docs/DECISIONS.md, "Accessibility API coverage"); a
+  candidate for routines and alarms that must sound when Brickson is not
+  in front.
+- **Evaluations** (iOS 27): "Measure the quality of your app's
+  intelligence-powered features." Only alongside Foundation Models.
+- **RelevanceKit** (watchOS 26): "Provide on-device intelligence with
+  contextual clues that increase your widget's visibility on Apple Watch."
+  For a helper Apple Watch app (*Waiting, not yet in a release*).
+- **StateReporting** (iOS 27): "Communicate your app's state to the system
+  to improve diagnostic actionability." What it reports, and to whom, is
+  checked against the privacy policy and invariant 9 (no analytics)
+  first.
+
+Each quote is from the framework's page on developer.apple.com, read on
+2026-10-23.
+
 ## How the order was chosen
 
 - **In the order a person meets the disease.** People usually start on
@@ -127,7 +208,10 @@ where anything is, and the dwell-safety scoring passes for every profile.
   whose places do not (invariant 8).
 - **Siri and Shortcuts** with fixed phrases only ("Emergency in Brickson",
   "Get attention in Brickson"); no phrase words in App Shortcuts, as the
-  privacy policy promises.
+  privacy policy promises. Built with App Intents and App Shortcuts; a
+  SiriKit Intents extension only if the device check shows Siri needs one
+  for the app's other names (docs/DECISIONS.md, "Apple's current
+  frameworks first").
 - **The listener display**: large text turned toward the person listening.
 - **Caregiver alerts**, by the owner's decision. The recommended path:
   1.0 makes sound only and the policy's caregiver-alerts section is

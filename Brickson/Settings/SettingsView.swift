@@ -49,7 +49,7 @@ struct SettingsView: View {
             // scrolled to the top, as if Settings had just opened.
             .id(activity.resetCount)
         }
-        .background(Color(uiColor: .systemBackground))
+        .background(Palette.screen)
         .environment(activity)
         .environment(landing)
         .onChange(of: path) {

@@ -7,7 +7,7 @@ nothing is appended here. Plan: [`docs/ROADMAP.md`](ROADMAP.md). How the
 project runs: [`docs/SDLC.md`](SDLC.md).
 
 **State as of 2026-10-23: PR #14 (the library core) merged into main
-at `48bcf73`. PR #17 incorporates that main revision; its next hosted
+at `48bcf73`. PR #17 now incorporates main `b6be682` (PR #34); its next hosted
 checks and fresh review remain required.**
 Ten threads are working in parallel on the first release, R0.
 
@@ -60,13 +60,16 @@ Xcode 27.1 (27A9275); PR #20 landed in `d79d836`.
   without rebasing. Nine new guard/documentation findings are corrected;
   the xargs optional-argument finding was rejected against GNU documentation
   because its suggested change broke a valid existing safeguard. The local
-  unit script passed 560 native tests with the existing issue #19 skip,
-  95 hook tests and 28 documentation tests; the catalog is unchanged.
+  unit script passed 570 native tests with the existing issue #19 skip,
+  102 hook tests and 29 documentation tests; the catalog is unchanged.
   Xcode 27.1 (27A9275), iPad Pro 13-inch (M5), iOS 27.0.
   Five further findings on `227cda9` cover merge-queue requests, shell
   recursion/stdin, curl option clusters and CDPATH directory selection.
   All five failing reproductions now pass, as does the full refreshed
-  local gate above. New-head hosted checks and fresh review remain required.
+  local gate above. A further eight findings on `e98e95a` now have focused
+  fixes, alongside the clean main `b6be682` refresh. The refreshed full
+  local gate passed, including the inherited current-framework tests.
+  New-head hosted checks and fresh review remain required.
   [Guardrail record](log/2026-10-22-agent-guardrail-reconciliation.md).
 
 - **PR #14 reconciliation, 2026-10-22:** incorporates main `cc35c30`, the
@@ -277,13 +280,17 @@ can be reversed; docs/DECISIONS.md):
 5. Delete the failed Swift configuration on the Tool status page
    (docs/DECISIONS.md, *Code scanning*).
 
-For agents: R0 in [docs/ROADMAP.md](ROADMAP.md), in order. The library
-thread ended with PR #14; the next library thread starts from the
-*Follow-ups* in [`log/2026-10-21-library-core.md`](log/2026-10-21-library-core.md)
+For agents: R0 in [docs/ROADMAP.md](ROADMAP.md), in order; the owner's
+long-term vision, the direction behind it, is its *Where this goes*.
+Every change follows AGENTS.md, *Apple's current frameworks first*: the
+legacy uses kept, and the moves still planned with who owns each, are in
+docs/DECISIONS.md under that title
+([`log/2026-10-23-current-frameworks.md`](log/2026-10-23-current-frameworks.md)).
+The library thread ended with PR #14; the next library thread starts from
+the *Follow-ups* in [`log/2026-10-21-library-core.md`](log/2026-10-21-library-core.md)
 (safety copies, export and import, the editing screens, stores from every
-schema version). Calls (R0 item
-8) wait for a device build. Files under `.github/workflows` are committed
-by the owner (docs/SDLC.md, *Deploy*). The toolchain's follow-ups
+schema version). Calls (R0 item 8) wait for a device build. Files under
+`.github/workflows` are committed by the owner (docs/SDLC.md, *Deploy*). The toolchain's follow-ups
 (Xcode's recommended settings, iPhone Duo, iOS 27 APIs behind
 `#available`) are in [`log/2026-10-21-toolchain.md`](log/2026-10-21-toolchain.md);
 recheck the minimum iOS against its two rules whenever Apple's next major
