@@ -36,7 +36,11 @@ struct BricksonApp: App {
         _showsSettingsAtLaunch = State(initialValue: launch.startScreen == .settings)
 
         let opened = launch.openLibrary()
-        let library = PhraseLibraryLaunch.prepare(container: opened.container, isVolatile: opened.isVolatile)
+        let library = PhraseLibraryLaunch.prepare(
+            container: opened.container,
+            isVolatile: opened.isVolatile,
+            issue: opened.issue
+        )
         container = library.container
         isVolatileStore = library.isVolatile
         phraseLibraryIssue = library.issue

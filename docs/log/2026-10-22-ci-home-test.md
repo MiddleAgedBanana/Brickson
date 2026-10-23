@@ -266,3 +266,21 @@ sound, gaze comfort, Snap to Item or windowed-iPad claim is made here.
 
 No product or accessibility decision changed. The owner requested the
 75-minute CI allowance. The extra time does not retry or skip a test.
+
+
+## Completion evidence after publication
+
+CI on `f1f7954` passed (run 39871458458): 460 units, and 35 enabled UI
+tests on each device, with four existing opt-in probe skips per device.
+iPad UI took 749.156 seconds and Home 103.021 seconds; iPhone UI took
+660.616 seconds and Home 54.828 seconds. CodeQL and CodeRabbit passed,
+Codex code review completed cleanly, and both review threads were resolved.
+The owner merged PR #32 as `313de2c`.
+
+The fresh isolated iPad and Device Hub-connected focused checks reproduced
+the local Speaking waits. Host CoreAudio logs also reported the built-in
+output driver's startup failure (IOKit kIOReturnDeviceError). This is a
+known local audio limitation; no host audio service or setting was changed.
+The independent CI result above validates the exact published source on
+both device families. It does not establish the cause of the older CI
+audit findings or prove physical-device sound or gaze behavior.

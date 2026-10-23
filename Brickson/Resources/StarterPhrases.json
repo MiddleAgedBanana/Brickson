@@ -1,73 +1,182 @@
 {
-  "categories": [
+  "categories" : [
     {
-      "name": "Basics",
-      "symbolName": "bubble.left.and.bubble.right.fill",
-      "isEmergency": false,
-      "phrases": [
-        "Maybe.",
-        "I don't know.",
-        "Please.",
-        "Thank you.",
-        "Wait a moment, please.",
-        "I'm not finished.",
-        "Hello.",
-        "Goodbye."
-      ]
+      "isEmergency" : false,
+      "name" : "Basics",
+      "phrases" : [
+        {
+          "text" : "Maybe.",
+          "uuid" : "4BABD144-5232-45FC-B8B0-2C9055536293"
+        },
+        {
+          "text" : "I don't know.",
+          "uuid" : "79E779D5-C7D1-4651-8C36-C88DA3CE285C"
+        },
+        {
+          "text" : "Please.",
+          "uuid" : "9D7428D9-D4FC-4ECC-973B-A51AB5BCF14D"
+        },
+        {
+          "text" : "Thank you.",
+          "uuid" : "06D63EC4-9335-4994-9D67-473BD3C5BC65"
+        },
+        {
+          "text" : "Wait a moment, please.",
+          "uuid" : "37824337-4B63-4345-807E-20DDFB0B7180"
+        },
+        {
+          "text" : "I'm not finished.",
+          "uuid" : "66A971A4-FE09-4B34-A810-70EBAA7169C4"
+        },
+        {
+          "text" : "Hello.",
+          "uuid" : "4ED63E64-DA30-49CC-A22A-168E7D191E4E"
+        },
+        {
+          "text" : "Goodbye.",
+          "uuid" : "F4436804-9150-4ECF-BDFC-A3A3826DDDD5"
+        }
+      ],
+      "symbolName" : "bubble.left.and.bubble.right.fill",
+      "uuid" : "236173E3-0A84-4305-830C-DDD05AF16472"
     },
     {
-      "name": "Emergency",
-      "symbolName": "exclamationmark.triangle.fill",
-      "isEmergency": true,
-      "phrases": [
-        "I need help now.",
-        "Please come here.",
-        "I can't breathe.",
-        "I'm choking.",
-        "I'm in pain.",
-        "Something is wrong."
-      ]
+      "isEmergency" : true,
+      "name" : "Emergency",
+      "phrases" : [
+        {
+          "text" : "I need help now.",
+          "uuid" : "0AE47FBC-30FA-4D99-8017-520CC0E9D88B"
+        },
+        {
+          "text" : "Please come here.",
+          "uuid" : "98B62E4B-81FD-4DC0-85C7-E5D3AAF711C5"
+        },
+        {
+          "text" : "I can't breathe.",
+          "uuid" : "B24267D9-4FA4-4465-AFB7-96F62225CB51"
+        },
+        {
+          "text" : "I'm choking.",
+          "uuid" : "38F8DF65-9E9B-47A4-AD01-42A203871C08"
+        },
+        {
+          "text" : "I'm in pain.",
+          "uuid" : "1EB3641E-AF1F-45B7-93D2-5A3E2E53A97D"
+        },
+        {
+          "text" : "Something is wrong.",
+          "uuid" : "A9EFC9B8-E51F-4C39-AC83-25D831EEC852"
+        }
+      ],
+      "symbolName" : "exclamationmark.triangle.fill",
+      "uuid" : "BEF474BF-A9D3-4CA0-A2B3-DF800C70E07D"
     },
     {
-      "name": "Needs",
-      "symbolName": "hand.raised.fill",
-      "isEmergency": false,
-      "phrases": [
-        "I'm thirsty.",
-        "I'm hungry.",
-        "I need the bathroom.",
-        "I'm too hot.",
-        "I'm too cold.",
-        "Please move me.",
-        "I need my medication.",
-        "I'm tired."
-      ]
+      "isEmergency" : false,
+      "name" : "Needs",
+      "phrases" : [
+        {
+          "text" : "I'm thirsty.",
+          "uuid" : "D27DBAE7-214F-4696-AB5D-5D76042343E3"
+        },
+        {
+          "text" : "I'm hungry.",
+          "uuid" : "D075CCE3-ACC6-4FD1-90A0-E9B18747C8BA"
+        },
+        {
+          "text" : "I need the bathroom.",
+          "uuid" : "24C810AE-089E-4A1C-AE13-8D1A48558502"
+        },
+        {
+          "text" : "I'm too hot.",
+          "uuid" : "8B36C1F7-04DF-407E-A587-853DEFF5E8F6"
+        },
+        {
+          "text" : "I'm too cold.",
+          "uuid" : "EAC9C328-5620-4C56-8061-1B086FDA4026"
+        },
+        {
+          "text" : "Please move me.",
+          "uuid" : "F8BC81F4-322D-425A-80F4-6B4D30AC19CB"
+        },
+        {
+          "text" : "I need my medication.",
+          "uuid" : "7229A0AF-99F0-45FC-9032-90E163C557BD"
+        },
+        {
+          "text" : "I'm tired.",
+          "uuid" : "47A182EE-35A7-4F82-B7B1-6E70BA0655E0"
+        }
+      ],
+      "symbolName" : "hand.raised.fill",
+      "uuid" : "E8FB50A4-AE55-46D4-A054-AA3AA1A2E87A"
     },
     {
-      "name": "Conversation",
-      "symbolName": "text.bubble.fill",
-      "isEmergency": false,
-      "phrases": [
-        "Give me a moment to answer.",
-        "Can you repeat that?",
-        "I understand.",
-        "I don't understand.",
-        "That's not what I meant.",
-        "Please ask me yes or no questions."
-      ]
+      "isEmergency" : false,
+      "name" : "Conversation",
+      "phrases" : [
+        {
+          "text" : "Give me a moment to answer.",
+          "uuid" : "CD400D16-FDE1-4934-A5C8-9F1F5D1E34E8"
+        },
+        {
+          "text" : "Can you repeat that?",
+          "uuid" : "E3249B78-27CC-490F-8504-5F899729345E"
+        },
+        {
+          "text" : "I understand.",
+          "uuid" : "FC7BA19B-9487-4588-A1EA-EDF51513E428"
+        },
+        {
+          "text" : "I don't understand.",
+          "uuid" : "F99B70FA-D4F7-44F4-8B10-771AD9AE11FD"
+        },
+        {
+          "text" : "That's not what I meant.",
+          "uuid" : "E0722EBD-C407-4220-822D-CF59804E12B2"
+        },
+        {
+          "text" : "Please ask me yes or no questions.",
+          "uuid" : "74DC1F38-F90F-40A7-A50B-AAA03CF156F8"
+        }
+      ],
+      "symbolName" : "text.bubble.fill",
+      "uuid" : "81F8F5BD-F2CE-4186-BC1B-D1FA27F628CA"
     },
     {
-      "name": "Feelings",
-      "symbolName": "heart.fill",
-      "isEmergency": false,
-      "phrases": [
-        "I love you.",
-        "I'm happy.",
-        "I'm okay.",
-        "I'm worried.",
-        "I'm frustrated.",
-        "That's funny."
-      ]
+      "isEmergency" : false,
+      "name" : "Feelings",
+      "phrases" : [
+        {
+          "text" : "I love you.",
+          "uuid" : "5391D75E-188E-40D9-8A5D-AC52C5AF1A5E"
+        },
+        {
+          "text" : "I'm happy.",
+          "uuid" : "05AF131D-EF90-4AB0-9508-3376D23793B2"
+        },
+        {
+          "text" : "I'm okay.",
+          "uuid" : "63740035-5A30-48B5-A7E9-56D17C527EC2"
+        },
+        {
+          "text" : "I'm worried.",
+          "uuid" : "5EAB3650-ABEA-4674-8F7E-B9B699E72519"
+        },
+        {
+          "text" : "I'm frustrated.",
+          "uuid" : "B3B44D64-604C-4BAF-850D-FF854D81B78C"
+        },
+        {
+          "text" : "That's funny.",
+          "uuid" : "1B8B7230-167A-444C-A0EE-292ACDCE9AB4"
+        }
+      ],
+      "symbolName" : "heart.fill",
+      "uuid" : "FF99D433-4ED8-41D1-A661-D48EB30F1945"
     }
-  ]
+  ],
+  "format" : "brickson.library",
+  "formatVersion" : 1
 }

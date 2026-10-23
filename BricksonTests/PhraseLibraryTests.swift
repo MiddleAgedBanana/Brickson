@@ -3,12 +3,12 @@ import SwiftData
 import Testing
 @testable import Brickson
 
-/// The stored library: its schema, its fixed ordering, and seeding.
+/// The stored library: its schema, its fixed ordering, opening it at launch
+/// and seeding.
 struct PhraseLibraryTests {
-    private let library = StarterLibrary(categories: [
-        .init(name: "Basics", symbolName: "star.fill", isEmergency: false, phrases: ["Hello.", "Thank you."]),
-        .init(name: "Emergency", symbolName: "exclamationmark.triangle.fill", isEmergency: true, phrases: ["I need help now."]),
-    ])
+    private typealias F = LibraryFixtures
+    private let library = LibraryFixtures.library
+    private struct Failed: Error {}
 
     private func categories(in container: ModelContainer) throws -> [PhraseCategory] {
         PhraseCategory.orderedForDisplay(try container.mainContext.fetch(FetchDescriptor<PhraseCategory>()))
@@ -83,20 +83,91 @@ struct PhraseLibraryTests {
         #expect(category.phrasesInOrder.map(\.text) == ["First.", "Second.", "Third."])
     }
 
+    // MARK: Opening
+
+    /// Fails if the app's store could ever sync through iCloud: the privacy
+    /// policy says phrases stay on the device.
+    @Test func theAppsStoreNeverSyncs() {
+        let configuration = PhraseLibraryStore.persistentConfiguration
+        let never = String(describing: ModelConfiguration.CloudKitDatabase.none)
+        // The comparison below can only fail if the two options describe
+        // themselves differently.
+        #expect(never != String(describing: ModelConfiguration.CloudKitDatabase.automatic))
+        #expect(String(describing: configuration.cloudKitDatabase) == never)
+        #expect(configuration.cloudKitContainerIdentifier == nil)
+        #expect(!configuration.isStoredInMemoryOnly)
+        #expect(configuration.allowsSave)
+    }
+
+    @Test func aStoreThatOpensIsUsed() throws {
+        let store = try PhraseLibraryStore.makeInMemoryContainer()
+
+        let opened = PhraseLibraryStore.openForApp(makeContainer: { _ in store }, storeExists: { _ in true })
+
+        #expect(opened.container === store)
+        #expect(!opened.isVolatile)
+        #expect(opened.issue == nil)
+    }
+
+    /// M2: a store file that exists but will not open (damaged, or written
+    /// by a newer version) may hold someone's phrases. Fails if that is
+    /// reported as anything less than "your saved phrases couldn't be
+    /// opened".
+    @Test func savedPhrasesThatWillNotOpenAreReported() throws {
+        let opened = PhraseLibraryStore.openForApp(
+            makeContainer: { _ in throw Failed() },
+            storeExists: { _ in true }
+        )
+
+        #expect(opened.isVolatile)
+        #expect(opened.issue == .libraryUnreadable)
+        #expect(try opened.container.mainContext.fetchCount(FetchDescriptor<PhraseCategory>()) == 0)
+    }
+
+    /// With no store file, a failed open (a full disk on first launch) has
+    /// nobody's phrases to report: only that changes will not be kept.
+    @Test func aFirstLaunchThatCannotCreateTheStoreIsOnlyVolatile() {
+        let opened = PhraseLibraryStore.openForApp(
+            makeContainer: { _ in throw Failed() },
+            storeExists: { _ in false }
+        )
+
+        #expect(opened.isVolatile)
+        #expect(opened.issue == nil)
+    }
+
+    /// Fails if the file is looked for after the failed open, which might
+    /// have left a file behind and so report phrases that never existed.
+    @Test func theStoreFileIsLookedForBeforeOpening() {
+        var steps: [String] = []
+        var checkedURL: URL?
+
+        _ = PhraseLibraryStore.openForApp(
+            makeContainer: { _ in steps.append("open"); throw Failed() },
+            storeExists: { url in steps.append("look"); checkedURL = url; return false }
+        )
+
+        #expect(steps == ["look", "open"])
+        #expect(checkedURL == PhraseLibraryStore.persistentConfiguration.url)
+    }
+
     // MARK: Seeding
 
-    @Test func anEmptyLibraryIsSeededInOrder() throws {
+    /// Fixed starter identities reach the store unchanged, so a backup can
+    /// tell an untouched starter phrase from the person's own words.
+    @Test func anEmptyLibraryIsSeededInOrderWithItsIdentities() throws {
         let container = try PhraseLibraryStore.makeInMemoryContainer()
 
         let seeded = try PhraseLibrarySeeder.seedIfEmpty(container, with: library)
 
         #expect(seeded)
         let stored = try categories(in: container)
-        #expect(stored.map(\.name) == ["Basics", "Emergency"])
-        #expect(stored.map(\.sortOrder) == [0, 1])
-        #expect(stored.map(\.isEmergency) == [false, true])
-        #expect(stored.first?.phrasesInOrder.map(\.text) == ["Hello.", "Thank you."])
-        #expect(stored.first?.phrasesInOrder.map(\.sortOrder) == [0, 1])
+        #expect(stored.map(\.uuid) == library.categories.map(\.id))
+        #expect(stored.map(\.sortOrder) == [0, 1, 2])
+        #expect(stored.map(\.isEmergency) == [false, true, false])
+        #expect(stored.first?.phrasesInOrder.map(\.uuid) == F.basics.phrases.map(\.id))
+        #expect(stored.first?.phrasesInOrder.map(\.sortOrder) == [0, 1, 2])
+        #expect(try LibraryEditor.read(container) == library)
     }
 
     /// Seeding never layers the starter phrases on top of someone's library.
@@ -112,19 +183,39 @@ struct PhraseLibraryTests {
     }
 
     /// A failed save must leave nothing half-written and must not crash
-    /// (invariant 5). The error reaches the caller, which shows it on Home.
+    /// (invariant 5). The error reaches the caller, which falls back to a
+    /// library in memory.
     @Test func aFailedSeedLeavesTheLibraryEmpty() throws {
-        struct SaveFailed: Error {}
         let container = try PhraseLibraryStore.makeInMemoryContainer()
 
-        #expect(throws: SaveFailed.self) {
-            try PhraseLibrarySeeder.seedIfEmpty(container, with: library) { _ in throw SaveFailed() }
+        #expect(throws: PhraseLibrarySeedError.saveFailed) {
+            try PhraseLibrarySeeder.seedIfEmpty(container, with: library, save: { _ in throw Failed() })
         }
 
         #expect(try container.mainContext.fetchCount(FetchDescriptor<PhraseCategory>()) == 0)
         #expect(try container.mainContext.fetchCount(FetchDescriptor<Phrase>()) == 0)
+        #expect(!container.mainContext.hasChanges)
         // And the next launch can still seed.
         #expect(try PhraseLibrarySeeder.seedIfEmpty(container, with: library))
+    }
+
+    /// When the store cannot say whether it is empty, it is never written
+    /// to: it may hold someone's phrases.
+    @Test func aStoreThatCannotBeReadIsNotSeeded() throws {
+        let container = try PhraseLibraryStore.makeInMemoryContainer()
+        var saved = false
+
+        #expect(throws: PhraseLibrarySeedError.storeUnreadable) {
+            try PhraseLibrarySeeder.seedIfEmpty(
+                container,
+                with: library,
+                readStore: { _ in throw Failed() },
+                save: { _ in saved = true }
+            )
+        }
+
+        #expect(!saved)
+        #expect(try container.mainContext.fetchCount(FetchDescriptor<PhraseCategory>()) == 0)
     }
 
     @Test func seedingTwiceDoesNotDuplicate() throws {
@@ -133,8 +224,8 @@ struct PhraseLibraryTests {
         try PhraseLibrarySeeder.seedIfEmpty(container, with: library)
         try PhraseLibrarySeeder.seedIfEmpty(container, with: library)
 
-        #expect(try categories(in: container).count == 2)
-        #expect(try container.mainContext.fetchCount(FetchDescriptor<Phrase>()) == 3)
+        #expect(try categories(in: container).count == 3)
+        #expect(try container.mainContext.fetchCount(FetchDescriptor<Phrase>()) == 6)
     }
 
     // MARK: Launch
@@ -147,43 +238,100 @@ struct PhraseLibraryTests {
         #expect(prepared.container === store)
         #expect(!prepared.isVolatile)
         #expect(prepared.issue == nil)
-        #expect(try categories(in: store).map(\.name) == ["Basics", "Emergency"])
+        #expect(try LibraryEditor.read(store) == library)
     }
 
     /// A store that opens but cannot be filled (a full disk) must not leave
     /// Emergency with nothing to open: the app speaks from a filled
     /// in-memory library and says changes will not be kept.
     @Test func aStoreThatCannotBeFilledFallsBackToAFilledLibraryInMemory() throws {
-        struct SaveFailed: Error {}
         let store = try PhraseLibraryStore.makeInMemoryContainer()
 
         let prepared = PhraseLibraryLaunch.prepare(
             container: store,
             isVolatile: false,
             starter: { library },
-            saveToStore: { _ in throw SaveFailed() }
+            saveToStore: { _ in throw Failed() }
         )
 
         #expect(prepared.container !== store)
         #expect(prepared.isVolatile)
         #expect(prepared.issue == nil)
-        #expect(try categories(in: prepared.container).contains(where: \.isEmergency))
+        #expect(try LibraryEditor.read(prepared.container).keepsEmergencyWorking)
         #expect(try store.mainContext.fetchCount(FetchDescriptor<PhraseCategory>()) == 0)
     }
 
+    /// M2: a store that opens but whose phrases cannot be read is reported
+    /// as unreadable, and is never written over. Fails if the failure is
+    /// reported as a saving problem, or if starter phrases are written into
+    /// the store.
+    @Test func aStoreWhosePhrasesCannotBeReadIsReportedAndLeftAlone() throws {
+        let store = try PhraseLibraryStore.makeInMemoryContainer()
+        let context = ModelContext(store)
+        context.insert(PhraseCategory(name: "Mine", symbolName: "star.fill", sortOrder: 0))
+        try context.save()
+
+        let prepared = PhraseLibraryLaunch.prepare(
+            container: store,
+            isVolatile: false,
+            starter: { library },
+            readStore: { _ in throw Failed() }
+        )
+
+        #expect(prepared.container !== store)
+        #expect(prepared.isVolatile)
+        #expect(prepared.issue == .libraryUnreadable)
+        #expect(try LibraryEditor.read(prepared.container) == library)
+        #expect(try categories(in: store).map(\.name) == ["Mine"])
+    }
+
+    /// The whole launch, as the app runs it, when a saved store will not
+    /// open: Emergency still has phrases, and Home is told the saved
+    /// phrases exist but could not be opened.
+    @Test func anUnopenableStoreStillLaunchesWithEmergencyAndSaysWhy() throws {
+        let opened = PhraseLibraryStore.openForApp(
+            makeContainer: { _ in throw Failed() },
+            storeExists: { _ in true }
+        )
+
+        let prepared = PhraseLibraryLaunch.prepare(
+            container: opened.container,
+            isVolatile: opened.isVolatile,
+            issue: opened.issue,
+            starter: { library }
+        )
+
+        #expect(prepared.isVolatile)
+        #expect(prepared.issue == .libraryUnreadable)
+        #expect(try LibraryEditor.read(prepared.container).keepsEmergencyWorking)
+    }
+
     @Test func unreadableStarterPhrasesAreReported() throws {
-        struct Unreadable: Error {}
         let store = try PhraseLibraryStore.makeInMemoryContainer()
 
-        let prepared = PhraseLibraryLaunch.prepare(container: store, isVolatile: false, starter: { throw Unreadable() })
+        let prepared = PhraseLibraryLaunch.prepare(container: store, isVolatile: false, starter: { throw Failed() })
 
         #expect(prepared.container === store)
         #expect(!prepared.isVolatile)
         #expect(prepared.issue == .starterPhrasesUnavailable)
     }
 
+    /// The more serious problem wins: saved phrases that would not open
+    /// are still reported when the starter phrases fail too.
+    @Test func unreadableSavedPhrasesStayReportedWhenTheStarterFails() throws {
+        let store = try PhraseLibraryStore.makeInMemoryContainer()
+
+        let prepared = PhraseLibraryLaunch.prepare(
+            container: store,
+            isVolatile: true,
+            issue: .libraryUnreadable,
+            starter: { throw Failed() }
+        )
+
+        #expect(prepared.issue == .libraryUnreadable)
+    }
+
     @Test func whenTheFallbackFailsTooTheProblemIsReported() throws {
-        struct Failed: Error {}
         let store = try PhraseLibraryStore.makeInMemoryContainer()
 
         let prepared = PhraseLibraryLaunch.prepare(
@@ -196,5 +344,46 @@ struct PhraseLibraryTests {
 
         #expect(prepared.container === store)
         #expect(prepared.issue == .starterPhrasesUnavailable)
+    }
+
+    // MARK: Explicit saves
+
+    /// Every way a launch can end leaves the main context unable to save
+    /// by itself (docs/DECISIONS.md, "Every save is explicit"). Fails if a
+    /// path returns before autosave is turned off.
+    @Test func everyLaunchTurnsAutosaveOff() throws {
+        let normal = PhraseLibraryLaunch.prepare(
+            container: try PhraseLibraryStore.makeInMemoryContainer(),
+            isVolatile: false,
+            starter: { library }
+        )
+        let fallback = PhraseLibraryLaunch.prepare(
+            container: try PhraseLibraryStore.makeInMemoryContainer(),
+            isVolatile: false,
+            starter: { library },
+            saveToStore: { _ in throw Failed() }
+        )
+        let unreadable = PhraseLibraryLaunch.prepare(
+            container: try PhraseLibraryStore.makeInMemoryContainer(),
+            isVolatile: false,
+            starter: { library },
+            readStore: { _ in throw Failed() }
+        )
+        let noStarter = PhraseLibraryLaunch.prepare(
+            container: try PhraseLibraryStore.makeInMemoryContainer(),
+            isVolatile: false,
+            starter: { throw Failed() }
+        )
+        let fallbackFailed = PhraseLibraryLaunch.prepare(
+            container: try PhraseLibraryStore.makeInMemoryContainer(),
+            isVolatile: false,
+            starter: { library },
+            saveToStore: { _ in throw Failed() },
+            makeFallback: { throw Failed() }
+        )
+
+        for prepared in [normal, fallback, unreadable, noStarter, fallbackFailed] {
+            #expect(!prepared.container.mainContext.autosaveEnabled)
+        }
     }
 }

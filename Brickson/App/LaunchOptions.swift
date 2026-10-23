@@ -200,7 +200,7 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
     /// (`PhraseLibraryStore.openForApp()`), or the test-only one. If the
     /// test library cannot be opened, the app runs from memory and Home says
     /// changes won't be kept, which `launchedApp` in the UI tests checks for.
-    func openLibrary(in directory: URL = LaunchOptions.testDirectory) -> (container: ModelContainer, isVolatile: Bool) {
+    func openLibrary(in directory: URL = LaunchOptions.testDirectory) -> PhraseLibraryStore.Opened {
         guard storage != .standard else {
             return PhraseLibraryStore.openForApp()
         }
@@ -211,12 +211,20 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
                 url: directory.appending(path: "PhraseLibrary.store"),
                 cloudKitDatabase: .none
             )
-            return (try PhraseLibraryStore.makeContainer(configuration), false)
+            return PhraseLibraryStore.Opened(
+                container: try PhraseLibraryStore.makeContainer(configuration),
+                isVolatile: false,
+                issue: nil
+            )
         } catch {
             Logger(subsystem: AppLog.subsystem, category: "launch")
                 .error("UI-test library failed to open, using memory: \(error)")
             do {
-                return (try PhraseLibraryStore.makeInMemoryContainer(), true)
+                return PhraseLibraryStore.Opened(
+                    container: try PhraseLibraryStore.makeInMemoryContainer(),
+                    isVolatile: true,
+                    issue: nil
+                )
             } catch {
                 fatalError("Unable to create any phrase library: \(error)")
             }

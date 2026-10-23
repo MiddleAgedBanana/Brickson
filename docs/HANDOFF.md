@@ -6,7 +6,8 @@ edits this page in place and writes its record in [`docs/log/`](log/README.md);
 nothing is appended here. Plan: [`docs/ROADMAP.md`](ROADMAP.md). How the
 project runs: [`docs/SDLC.md`](SDLC.md).
 
-**State as of 2026-10-21: `main` at `05eb7c2` (PR #13, merged 2026-10-21).**
+**State as of 2026-10-22: PR #14 (the library core), reconciled with
+`main` at `cc35c30`; not merged.**
 Ten threads are working in parallel on the first release, R0.
 
 ## What the app does today
@@ -36,7 +37,12 @@ Home to place its Settings button; until then only UI tests open it, with
 one passive status line under the message, in space always kept for it,
 and VoiceOver announces the warnings. If the
 library cannot be saved, the app speaks from a filled in-memory library
-and says changes will not be kept. The screen never locks. Ported code:
+and says changes will not be kept. If saved phrases exist but cannot be
+opened or read, the file is left untouched and a second warning says so
+and warns against deleting the app. Editing and backup exist as tested
+code with no screens yet
+([`log/2026-10-21-library-core.md`](log/2026-10-21-library-core.md)).
+The screen never locks. Ported code:
 [`docs/PORTING.md`](PORTING.md).
 
 The design reference and its specification are in [DESIGN.md](DESIGN.md)
@@ -48,6 +54,27 @@ unit gate passed all 460 tests on iPad Pro 13-inch (M5), iOS 27.0, with
 Xcode 27.1 (27A9275); final-head CI is pending.
 
 ## Verification
+
+- **PR #14 reconciliation, 2026-10-22:** incorporates main `cc35c30`, the
+  invisible-text Emergency correction and the bounded category-name fix.
+  Standalone invisible decorations no longer create duplicate names;
+  composed names and stored/imported bytes remain intact. All 56 pure
+  library tests pass. The fresh full native unit gate passed 560 tests,
+  zero failures and one existing issue #19 crash-probe skip (561 total);
+  the String Catalog is unchanged. Full local UI on `7ec516f` completed
+  with 34 passed, one speech-wait failure and four existing probe skips
+  per device, alongside the known host-audio limitation. Hosted CI on
+  that head passed 560 units (one existing skip) and all 35 enabled UI
+  tests per device (four existing probe skips). All 21 existing review
+  conversations are resolved; its Codex review still reports running.
+  The PR #32 main refresh passed the same 560-unit native gate with one
+  existing skip and an unchanged catalog; its new CI run remains required. The older AX5 audit finding remains unexplained. Auto-merge
+  is disabled; the owner makes the merge decision. The
+  PR #29's CI-artifact documentation is now merged from main `cc35c30`;
+  its fresh local gate passed 560 units with the existing issue #19 skip
+  and unchanged catalog. New-head CI remains pending.
+  [reconciliation record](log/2026-10-22-library-reconciliation.md)
+  preserves toolchain/device details, complete history and remaining checks.
 
 - **GitHub CI** since PR #12 (merged 2026-10-21) builds with Apple's
   newest released Xcode, chosen on GitHub's `xcode-27` image (27.1,
@@ -137,7 +164,20 @@ release in docs/ROADMAP.md when no thread has it yet.
   of Home"; [`log/2026-10-21-typing-foundation.md`](log/2026-10-21-typing-foundation.md),
   *For the next typing thread*). *(a new typing thread, after Phone layout
   and word fitting)*
-- No editing or backup *(Library editing and backup format)*.
+- No editing, export or import screens. The library core (`LibraryEdit`,
+  `LibraryEditor`, `LibraryImport`, `BackupCodec`) is tested code that
+  nothing calls yet. A Replace that would remove the person's own words
+  is refused. A safety-copy exception is not adopted and requires the
+  owner's decision before implementation (docs/DECISIONS.md, "Replacing
+  the library"). *(R0, a new library thread)*
+- A store that opens with no categories is filled with the starter set.
+  No edit can empty the library (the emergency category cannot be
+  deleted), so only a damaged store reaches that path. *(R0, a new library
+  thread: a repair that only adds an emergency category)*
+- `rollback()` crashes SwiftData after deletes, even without a cascade
+  (issue #19, seen with Xcode 26.6 on iOS 26.5). Brickson never calls it;
+  the reproduction is disabled and has not been run on the current Xcode
+  27 CI. *(R0, a new library thread re-runs it once)*
 - Home has no Settings button and no first-run hint yet: Home places
   `SettingsButton` with `.settingsCover(isPresented:)` and shows
   `FirstRunHint.text` while `showsSetupHint` is true. *(Phone layout and
@@ -154,9 +194,6 @@ release in docs/ROADMAP.md when no thread has it yet.
   change no size yet; scoring and a fix come before they do
   ([`log/2026-10-21-settings-and-first-run.md`](log/2026-10-21-settings-and-first-run.md),
   follow-up 10). *(Dwell-safety scoring)*
-- A library the app cannot read is replaced by the starter phrases with a
-  message about saving (code audit M2), and an emptied library is refilled
-  with the starter set. *(Library editing and backup format)*
 - English only. `scripts/test.sh unit` brings the String Catalog up to
   date (xcodebuild alone does not), and CI fails when the committed one
   is stale. The voice sample sentence in `SpeechService` is not in it
@@ -227,7 +264,10 @@ Every change follows AGENTS.md, *Apple's current frameworks first*: the
 legacy uses kept, and the moves still planned with who owns each, are in
 docs/DECISIONS.md under that title
 ([`log/2026-10-23-current-frameworks.md`](log/2026-10-23-current-frameworks.md)).
-Calls (R0 item 8) wait for a device build. Files under
+The library thread ended with PR #14; the next library thread starts from
+the *Follow-ups* in [`log/2026-10-21-library-core.md`](log/2026-10-21-library-core.md)
+(safety copies, export and import, the editing screens, stores from every
+schema version). Calls (R0 item 8) wait for a device build. Files under
 `.github/workflows` are committed by the owner (docs/SDLC.md, *Deploy*). The toolchain's follow-ups
 (Xcode's recommended settings, iPhone Duo, iOS 27 APIs behind
 `#available`) are in [`log/2026-10-21-toolchain.md`](log/2026-10-21-toolchain.md);
@@ -321,7 +361,10 @@ Simulators cannot show these. Record each result in a `docs/log/` file
   both combined UI suites completed with 34 passed, one failed and four
   existing skips per device. The AX5 light/dark Speaking waits failed,
   with the status visibly still present and CoreAudio startup errors in
-  the iPad app logs. A fresh-simulator check and pushed-head CI are pending.
+  the iPad app logs. Focused local checks reproduced the known host-audio
+  limitation. Exact-head CI on `f1f7954` passed 460 units and 35 enabled UI
+  tests per device (four existing probe skips); the owner merged PR #32
+  as `313de2c`. No host audio service or setting was changed.
   Earlier-head CI also failed, with its native audit evidence now retained
   ([`log/2026-10-22-ci-home-test.md`](log/2026-10-22-ci-home-test.md)).
 - CodeQL scans the workflow files and the Python scripts, not the Swift
