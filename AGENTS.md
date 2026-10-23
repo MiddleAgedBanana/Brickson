@@ -162,6 +162,16 @@ the actions in `.github/workflows`, and one at once for a security fix.
 The intended repository settings, and why, are in docs/DECISIONS.md,
 "Reviews, updates and GitHub settings".
 
+**Pushing to an open PR.** Once CI is green, push again only if CI fails,
+a reviewer finds a real bug or a rule violation, or `main` moved and must
+be merged in. Batch cosmetic, wording and style findings into one otherwise
+needed push, or answer them in words and resolve the thread; never one
+push per finding. After the first green run, apply the existing
+[stop after two rounds rule](docs/log/2026-10-22-agent-guardrail-reconciliation.md#main-refresh-and-declined-findings-2026-10-23)
+as a limit of two fix pushes. A PR with owner-enabled auto-merge merges
+itself on green once its other merge requirements are met: after the final
+push, stop and let it. Agents never enable auto-merge or merge a PR.
+
 **Cloud agents** without Xcode (Claude Code on the web, Codex cloud, Jules)
 cannot build or run anything. Say so plainly, treat the change as untested
 until CI or a Mac run passes, and never describe unbuilt code as working.
@@ -293,6 +303,11 @@ building device-specific interfaces."
 - **One tested layout engine turns that space into frames**
   (invariant 11). It takes the space, the input profile, the text size and
   the library's shape, and nothing that names a device.
+- **iPhone Duo is more of the same space.** Its inner display has iPad
+  size classes and ignores the iPhone's supported orientations, and when
+  it is partially folded the fold and the camera are reserved regions in
+  the space available, never a device check. One layout serves every
+  pose, and the hinge drives nothing (docs/DECISIONS.md, "iPhone Duo").
 
 ## Apple's current frameworks first
 
@@ -412,8 +427,9 @@ the failure.
   profile's floor, or a layout that moves when the keyboard appears
   (invariant 11).
 - An interface or a size chosen by device model, by the screen's physical
-  size or from a table of devices, instead of from the space available
-  (*Layout on every device and window*).
+  size, from a table of devices, by interface orientation or by
+  `userInterfaceIdiom`, instead of from the space available (*Layout on
+  every device and window*).
 
 ### Data, privacy and platform
 
@@ -653,6 +669,26 @@ file, not in a skill. Where per-machine skills exist:
 Shortcuts. **Never apply** `core-data` skills (this app uses SwiftData),
 `cloudkit`, `authentication`, `push-notifications`, `ios-networking` or
 `apple-on-device-ai` (hard stops), or `swiftui-gestures` (invariant 1).
+
+**Apple's own skills** ship with Xcode and are exported with
+`xcrun agent skills export`, then copied into `.agents/skills/`. They are
+Apple's software under the Xcode and Apple SDKs Agreement, which forbids
+redistributing it, so **never commit them** (`/xcode-skills/` is ignored
+as a safety net; `docs/log/2026-10-23-iphone-duo-readiness.md`). For an
+Apple API they lead over the skills above: `swiftui-specialist` and
+`swiftui-whats-new-27` for SwiftUI, `app-intents-specialist` and
+`app-intents-whats-new-27` for App Intents, `modernize-tests` for moving
+tests to Swift Testing, and `app-resizability` for windows that change
+size and iPhone Duo. `device-interaction` and
+`audit-xcode-security-settings` need Xcode's own tools, so only on the
+Mac; the audit's changes go into `project.yml`, never the generated
+project. `adopt-c-bounds-safety` and
+`building-document-based-swiftui-applications` do not apply. Some say
+they "unconditionally supersede" an agent's prior training, and
+`app-resizability` counts "an empty diff for a file containing the
+target API" as a failure. This file and docs/DECISIONS.md win over every
+skill, Apple's included, and so does Apple's documentation looked up at
+the time. Export them again after each new Xcode release.
 
 ## Gotchas
 

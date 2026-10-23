@@ -7,9 +7,8 @@ nothing is appended here. Plan: [`docs/ROADMAP.md`](ROADMAP.md). How the
 project runs: [`docs/SDLC.md`](SDLC.md).
 
 **State as of 2026-10-23: PR #14 (the library core), PR #33 (Settings
-on Home) and PR #35 (Show Borders on Home) are merged. PR #17 now
-incorporates main `412f4cf` (PRs #39, #37 and #38); its next hosted
-checks and fresh review remain required.**
+on Home), PR #35 (Show Borders on Home) and PR #17 (agent guardrails)
+are merged; PR #17 landed as `7bff8f0`.**
 Ten threads are working in parallel on the first release, R0.
 
 ## What the app does today
@@ -110,7 +109,7 @@ Xcode 27.1 (27A9275); PR #20 landed in `d79d836`.
   mistakes, and one on `571c8fc` is a refusal of a harmless command; the
   record lists them, with `git add ..` and `source` first for a later
   guard pull request.
-  New-head hosted checks and fresh review remain required.
+  PR #17 has since merged as `7bff8f0`.
   [Guardrail record](log/2026-10-22-agent-guardrail-reconciliation.md).
 
 - **PR #14 reconciliation, 2026-10-22:** incorporates main `cc35c30`, the
@@ -379,6 +378,15 @@ release in docs/ROADMAP.md when no thread has it yet.
 - The privacy policy describes features not built yet; each is built or its
   sentence deleted before release (docs/APP-STORE.md, section 3, lists
   each sentence). *(App Store readiness and ASO)*
+- iPhone Duo: Brickson builds with the iOS 27.1 SDK, so Apple already
+  treats it as optimized for iPhone Duo, but it has never run there. Its
+  inner display ignores the portrait-only setting, a fold can sit under
+  an odd column of Home, Settings' Back may move into a vertical bar, and
+  CI has no Duo simulator; screenshots are required from April 2027
+  (docs/DECISIONS.md, "iPhone Duo";
+  [`log/2026-10-23-iphone-duo-readiness.md`](log/2026-10-23-iphone-duo-readiness.md)).
+  *(R0 item 13: a Mac thread first, then the layout engine, which builds
+  the owner's two fold choices)*
 - The app icon is a placeholder; `design/brand/` is not installed. *(Release chores, R0 item 11)*
 - Siri's alternative name "Brick Son" (`INAlternativeAppNames`) has no
   effect yet: Apple applies it only to apps with Siri support, which
@@ -405,6 +413,8 @@ can be reversed; docs/DECISIONS.md):
    are near duplicates, and "Please move me." could be clearer.
 5. Delete the failed Swift configuration on the Tool status page
    (docs/DECISIONS.md, *Code scanning*).
+6. You can delete the `xcode-skills` folder in `~/code/brickson`: its
+   skills are installed where agents load them.
 
 For agents: R0 in [docs/ROADMAP.md](ROADMAP.md), in order; the owner's
 long-term vision, the direction behind it, is its *Where this goes*.
@@ -418,8 +428,10 @@ Emergency working after it; the next library pull request starts from the
 in order (the rollback probe on the current Xcode, stores from every
 schema version, safety copies, export and import, the editing screens). Calls (R0 item 8) wait for a device build. Files under
 `.github/workflows` are committed by the owner (docs/SDLC.md, *Deploy*). The toolchain's follow-ups
-(Xcode's recommended settings, iPhone Duo, iOS 27 APIs behind
-`#available`) are in [`log/2026-10-21-toolchain.md`](log/2026-10-21-toolchain.md);
+(Xcode's recommended settings, iOS 27 APIs behind `#available`) are in
+[`log/2026-10-21-toolchain.md`](log/2026-10-21-toolchain.md); iPhone
+Duo is R0 item 13, starting with a run in the iPhone Duo simulator on
+the owner's Mac ([`log/2026-10-23-iphone-duo-readiness.md`](log/2026-10-23-iphone-duo-readiness.md), *Follow-ups*);
 recheck the minimum iOS against its two rules whenever Apple's next major
 release drops devices (docs/DECISIONS.md, "Minimum iOS, iPhone and
 iPad").
@@ -489,7 +501,7 @@ Simulators cannot show these. Record each result in a `docs/log/` file
 | A volume change made while Brickson was in the background shows when it returns | The volume warning (code audit L2) |
 | Buttons under Increase Contrast and Reduce Transparency, measured on the rendered pixels | Contrast of system components (invariant 6) |
 | The screen never dims or locks during a long session | `ScreenWakePolicy` (invariant 12) |
-| On a folding iPhone, open and folded, and in Stage Manager, Slide Over and iPhone Mirroring windows: nothing safety-critical is hidden or split | Layouts from the space available |
+| On a folding iPhone, open, partially folded and closed, and in Stage Manager, Slide Over and iPhone Mirroring windows: nothing safety-critical is hidden or split, nothing a person uses sits in the fold, and Eye Tracking and Dwell keep working as the phone folds and unfolds (the iPhone Duo simulator shows the layout first: R0 item 13) | Layouts from the space available; docs/DECISIONS.md, "iPhone Duo" |
 | Eye Tracking and Dwell on an external display | Whether gaze profiles hold off the built-in screen |
 | Switch Control with Auto Scanning, Group Items on and off, and Auto Tap: the scan steps to Emergency, Yes and No from every Home state, and whether Home's regions become scan groups | Scan order and grouping (docs/ACCESSIBILITY.md, section 1) |
 | With VoiceOver, Switch Control (item and group scanning) and Full Keyboard Access, Home is reached as Yes, No, Emergency, Get Attention, Again, then the message, Stop while it shows, the categories and Settings, the phrases, in every state; what each says on entering a region; whether the cursor stops on the message or the status line; Voice Control's "Show names" shows each control's visible words and "Tap Repeat" presses Again | "Home's scan order and names": the order, unlabelled regions, and whether `accessibilityRespondsToUserInteraction` is needed |
@@ -529,6 +541,7 @@ Simulators cannot show these. Record each result in a `docs/log/` file
 - CodeQL scans the workflow files and the Python scripts, not the Swift
   code, on purpose (docs/DECISIONS.md, *Code scanning*); the failed Swift
   attempt of 2026-10-10 is still listed on the Tool status page.
+- Open PR pushes now follow AGENTS.md, "Pushing to an open PR": [rule and verification](log/2026-10-23-open-pr-push-policy.md).
 - Codex reviews every push to a pull request, Copilot each pull request
   once when it opens, AI Scan each push; none reviews Dependabot's pull
   requests by itself. The AI credits they use show only in Settings →
@@ -604,7 +617,7 @@ Simulators cannot show these. Record each result in a `docs/log/` file
   correction. The full unit script passed 460 native tests; the final
   guard/docs checks passed 82 and 26 tests. The catalog is unchanged.
   The owner re-enabled auto-merge on both PRs; #14 has since merged,
-  and #17 retains that setting.
+  and #17 has since merged as `7bff8f0`.
   Reconciliation and verification: [`log/2026-10-22-agent-guardrail-reconciliation.md`](log/2026-10-22-agent-guardrail-reconciliation.md).
 
 ## History
