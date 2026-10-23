@@ -303,6 +303,52 @@ struct HomeShapeTests {
         }
     }
 
+    /// Known gap (docs/DECISIONS.md, "Get Attention and Stop on Home",
+    /// *Open: the top of Stop's well is nearest Again*): the well's centre
+    /// is nearest a category (the test above), but a look resting in its
+    /// upper part, after Stop or while the well is empty, is nearest Again,
+    /// 12pt above, which speaks. Scores points across the whole well. Fails
+    /// if anything but Again or a category is ever nearest one of them,
+    /// and, strict, once Again is nearest none.
+    @Test func theTopOfStopsWellIsNearestAgain() {
+        var nearestAgain = 0
+        var worse: [String] = []
+        for (shape, context) in Self.everyShape {
+            let frames = shape.slotFrames
+            guard let well = frames[.stop] else {
+                Issue.record("Stop has no slot (\(context))")
+                continue
+            }
+            let others = frames.filter { $0.key != .stop }
+            var meetsAgain = false
+            for column in 0...8 {
+                for row in 0...4 {
+                    let point = CGPoint(
+                        x: well.minX + 0.5 + (well.width - 1) * CGFloat(column) / 8,
+                        y: well.minY + 0.5 + (well.height - 1) * CGFloat(row) / 4
+                    )
+                    let nearest = Self.nearest(to: point, among: others)
+                    let met = nearest.byCentre.union(nearest.byEdge).subtracting(Self.categorySlots)
+                    if met.contains(.again) {
+                        meetsAgain = true
+                    }
+                    if !met.isSubset(of: [.again]) {
+                        worse.append("\(met) at \(point), \(context)")
+                    }
+                }
+            }
+            if meetsAgain {
+                nearestAgain += 1
+            }
+        }
+        // Counts, not the lists, in the expectations (see above).
+        let worseCount = worse.count
+        #expect(worseCount == 0, "first: \(worse.first ?? "")")
+        withKnownIssue("docs/DECISIONS.md, \"Get Attention and Stop on Home\": the top of Stop's well is nearest Again") {
+            #expect(nearestAgain == 0)
+        }
+    }
+
     /// The slots nearest `point` by the distance to their centres and by
     /// the distance to their nearest edge (zero inside one), each with
     /// every slot within half a point of the nearest.
