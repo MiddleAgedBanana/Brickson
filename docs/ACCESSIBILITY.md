@@ -290,9 +290,9 @@ pointer input*).
 | Writing Tools; `writingToolsBehavior(_:)` | Apple Intelligence rewriting text | 1–3 | 18.0 | **R0-5** ("Writing Tools off while typing"), and the phrase editor: **R0-6**. Brickson never rewrites what a person says (invariant 9) | Review. Device |
 | Write with Siri | Siri composes or rewrites selected text | 1–3 | System, 27.0 | **System.** A device check of whether it can reach Brickson's field | Device |
 | `conversationContext` (`UIConversationContext`) | Giving the keyboard a conversation for smart replies | — | 18.4 | **Never**: it invites system-written replies | Review |
-| `application(_:shouldAllowExtensionPointIdentifier:)` | Refusing third-party keyboards | 1–3 | 8.0 | **R0-5** ("Third-party keyboards refused in 1.0") | Unit. Device |
+| `application(_:shouldAllowExtensionPointIdentifier:)` | Refusing third-party keyboards | 1–3 | 8.0 | **In place** (R0-5): `BricksonAppDelegate`, through `UIApplicationDelegateAdaptor`, refuses custom keyboards only ("Third-party keyboards refused in 1.0") | Unit: `BricksonAppDelegateTests`, the running app's delegate included. Device: a third-party keyboard does not appear |
 | `ignoresSafeArea(_:edges:)` with `.keyboard` | Nothing moves when the keyboard shows | 1–3 | 14.0 | **R0-5** (invariant 11) | UI: frames equal before and after the keyboard |
-| Keyboard frame notices, `UIKeyboardLayoutGuide` | Measuring the real keyboard | 1–3 | 3.2; 15.0 | **R0-5** (the keyboard probe) | UI. Device: real keyboard heights |
+| Keyboard frame notices, `UIKeyboardLayoutGuide` | Measuring the real keyboard | 1–3 | 3.2; 15.0 | **Not used**: the keyboard probe reads SwiftUI's own keyboard edge instead, and the room Home keeps is a tested rule (`KeyboardAllowance`, R0-5) | UI: `KeyboardProbeTests` on every UI run. Device: real keyboard heights |
 | `GCKeyboard.coalesced` | Whether a hardware keyboard is connected | 1–2 | 14.0 | **Later**, only if the layout needs it. Never moves a control | Unit. Device |
 | Dictation | Speech to text in the field | 1–2 | System; clean-up 27 | **System.** The composer accepts whole-field changes: **R0-5** | Unit. Device |
 | `UITextChecker.completions(forPartialWordRange:in:language:)` | Word endings from a word list, no model | 2–3 | 3.2 | **R2** prediction strip, in fixed slots | Unit: slots never re-sort by use. Device |

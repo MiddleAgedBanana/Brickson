@@ -542,7 +542,7 @@ the failure.
   `SpeedChoice`, `WordFit`, `HomeShape`, `HomeRegion`, `HomeControlNames`,
   `HomeStatusLine`, `HomeButtonLook`, `LibrarySnapshot`, `LibraryEdit`,
   `LibraryRules`, `LibraryImport`, `LibraryEditor`, `BackupCodec`,
-  `EmergencyRepair`, `SettingsRootColumns`.
+  `EmergencyRepair`, `SettingsRootColumns`, `KeyboardAllowance`.
   Views only read them.
 - **Run it, don't just read it.** Layout and flow changes are checked in the
   running app on an iPad and an iPhone simulator, at default and
@@ -705,7 +705,11 @@ the time. Export them again after each new Xcode release.
   shows the full software keyboard before the tests; anywhere else, show
   it before any typing test:
   `xcrun simctl spawn <udid> defaults write com.apple.keyboard.preferences AutomaticMinimizationEnabled -bool false`
-  (write `true` to restore the bar).
+  (write `true` to restore the bar). The first keyboard on a fresh iPhone
+  simulator also covers its keys with a sheet about sliding to type, so a
+  test finds no keys; `scripts/test.sh ui` marks it as shown, and
+  anywhere else write `DidShowContinuousPathIntroduction -bool true` to
+  the same domain first (docs/log/2026-10-23-keyboard-allowance.md).
 - **Display Zoom is lost whenever a simulator restarts**, and `xcodebuild`
   shuts down a simulator it booted itself. Boot the simulator yourself, set
   the configuration in a prepare step, and check the window size before
@@ -769,15 +773,20 @@ the time. Export them again after each new Xcode release.
   (`RenderedWordsTests`, `BricksonTests/RenderedLabels`) and pin its
   settings, so a change that stops it reading whole words, accepts part
   of one, or turns on correction or hints fails there first.
-- **Measuring the keyboard:** `KeyboardProbeTests` is opt-in
-  (`TEST_RUNNER_BRICKSON_KEYBOARD_PROBE=1 scripts/test.sh ui`). It opens
-  a debug-only probe screen (`--screen=keyboard-probe`) instead of Home,
-  prints one `KEYBOARD-PROBE {json}` line per orientation and text size,
-  and fails after printing if the simulator shows the keyboard bar
-  instead of the full keyboard. xcbeautify hides printed lines from
-  passing tests, so read the JSON attached to each test in the result
-  (Xcode's Report navigator), or run `xcodebuild` without xcbeautify. Say
-  which simulator and iOS version the numbers came from.
+- **Measuring the keyboard:** `KeyboardProbeTests` runs on every UI run.
+  For each orientation and text size it opens a debug-only probe screen
+  (`--screen=keyboard-probe`) instead of Home, prints one
+  `KEYBOARD-PROBE {json}` line, and fails if the keyboard reaches above
+  the room `KeyboardAllowance` keeps for the window (add the measurement
+  to `KeyboardAllowanceTests` and raise that shape's reference). It then
+  opens Home in the same window, prints `KEYBOARD-BAND {json}` and fails
+  if Yes, No, Emergency, Again or Get Attention ends below the
+  allowance's limit. It also fails, after printing, if the simulator
+  shows the keyboard bar instead of the full keyboard. xcbeautify hides
+  printed lines from passing tests, so read the JSON attached to each
+  test in the result (Xcode's Report navigator, or the `.xcresult`
+  database on Linux), or run `xcodebuild` without xcbeautify. Say which
+  simulator and iOS version the numbers came from.
 - **Measuring a slow press and a slide:** `HeldSlideProbeTests` is
   opt-in (`TEST_RUNNER_BRICKSON_SLIDE_PROBE=1 scripts/test.sh ui
   '-only-testing:BricksonUITests/HeldSlideProbeTests'`) and reports in its

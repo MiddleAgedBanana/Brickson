@@ -66,7 +66,7 @@ unchanged apart from names.
 | `Library/LibraryEditor.swift` | — (replaces `EditPersistence`) | Writes a plan from a context of its own in one save; never calls `rollback()`. |
 | `Library/BackupCodec.swift` | — (replaces `BackupService`'s file format) | `brickson.library` version 1, with a version check the reference lacked. |
 | Tests for each of the above | `FamilyVoiceTests/` | Timer tests built from one `now` plus offsets. |
-| `BricksonUITests/KeyboardProbeTests.swift` | `FamilyVoiceUITests/TypingKeyboardProbe.swift` | Opens a debug-only probe screen instead of Home's typing state; reads SwiftUI's own keyboard edge as well as the keys; fails on the keyboard bar; no Display Zoom or Settings-app preparation; no Return-key check yet. |
+| `BricksonUITests/KeyboardProbeTests.swift` | `FamilyVoiceUITests/TypingKeyboardProbe.swift` | Runs on every UI run; opens a debug-only probe screen instead of Home's typing state; reads SwiftUI's own keyboard edge as well as the keys; fails on the keyboard bar, on a keyboard taller than `KeyboardAllowance` keeps room for, and when Home's safety row reaches below that room; no Display Zoom or Settings-app preparation; no Return-key check yet. |
 | `Typing/MessageComposer.swift`, `Typing/DraftStore.swift` | `AppSettings.typedDraft` and the typing panel in `HomeView` | New types: the reference kept its draft in UserDefaults, which cannot report a failed save, and let Return add a line break (docs/LESSONS.md). |
 
 ## Still to port, by tier

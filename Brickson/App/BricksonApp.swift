@@ -7,6 +7,8 @@ import UIKit
 /// through the environment.
 @main
 struct BricksonApp: App {
+    /// Refuses keyboards from other apps (`BricksonAppDelegate`).
+    @UIApplicationDelegateAdaptor(BricksonAppDelegate.self) private var appDelegate
     @Environment(\.scenePhase) private var scenePhase
     @State private var audioSafety: AudioSafetyMonitor
     @State private var speech: SpeechService
@@ -53,7 +55,7 @@ struct BricksonApp: App {
     var body: some Scene {
         WindowGroup {
             HomeView(showsSettings: $showsSettings)
-                .replacedByKeyboardProbeIfRequested()
+                .replacedByKeyboardProbe(when: launch.startScreen == .keyboardProbe)
                 // Before the environment below, so Settings receives it too.
                 .settingsCover(isPresented: $showsSettings)
                 .environment(audioSafety)
