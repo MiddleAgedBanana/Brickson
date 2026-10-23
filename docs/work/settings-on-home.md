@@ -1,7 +1,7 @@
 # Settings on Home
 
 *Roadmap: R0 item 7 (Settings and first run), the part it left for later:
-Home's Settings button. Owner: the Settings on Home thread. Status: intent.*
+Home's Settings button. Owner: the Settings on Home thread. Status: spec.*
 
 ## Intent
 
@@ -50,3 +50,104 @@ Home's Settings button. Owner: the Settings on Home thread. Status: intent.*
     no longer sits beside the message, so less of the message is nearest
     a control that speaks) and stays open with a device check, recorded
     in docs/DECISIONS.md, "Settings on Home".
+
+## Spec
+
+Frames come from `HomeShape`, from the width Home is given and the
+person's Bold Text setting, never from the device. Region order is
+unchanged: A (the message), C (the safety row), B (the categories and
+Settings), D (the phrase grid). Numbers below are content widths (the
+window less Home's 16pt margins).
+
+- **States:** Home's states (just opened, a category or the emergency
+  phrases showing, a phrase just spoken, an audio warning) change no
+  frame, Settings' included. Settings open is a full-screen cover; when
+  it closes, every Home frame is where it was.
+  - **A, the message,** spans the full width: Again leaves it. Until
+    Family Setup has been opened once, the message area shows
+    `FirstRunHint.text` in place of its placeholder; the first phrase
+    spoken replaces either.
+  - **C, the safety row.** One row, Yes, No, Again and Emergency, where
+    five columns hold Again at its minimum width and Emergency, across
+    two columns, at its own: Yes, No and Again share one width and
+    Emergency takes the rest. Otherwise two rows: Yes, No and Emergency
+    (across two of four columns), then Again across the width. Emergency
+    is at the trailing end of the first row in both.
+  - **B, the categories and Settings.** Settings is the last column,
+    as tall as the category rows: every cell the same width where the
+    categories keep their minimum, otherwise Settings at its minimum and
+    the categories sharing the rest. Wide windows (from 560pt) try one
+    row of four categories first, then two rows of two. Where no column
+    fits (the narrowest windows, and a 375pt phone with Bold Text),
+    Settings takes a row of its own under two rows of two. A library with
+    more than four categories scrolls inside the category rectangle;
+    Settings never scrolls.
+  - **Minimum widths** (default text size, measured with the real fonts;
+    Bold Text measured at the heaviest weight): Again 64 (70 with Bold
+    Text), Emergency 116 (126), a category 118 (128, "Conversation"),
+    Settings 80 (86), each a point or two over what its word needs. Words step down to the default size at larger text
+    sizes, never below, so the default size is the binding one.
+  - **Where each arrangement applies:** one safety row and Settings
+    beside the categories from 332pt (Bold Text: one row from 360pt,
+    Settings beside from 358pt, so a 390pt phone with Bold Text takes the
+    two-row safety row and still fits without scrolling); four categories
+    in a row from 584pt (Bold Text: 630pt). The 320pt Slide Over window,
+    and a 375pt phone with Bold Text, get the two-row safety row and
+    Settings on its own row.
+- **Input methods:** Settings is a standard `Button` with the label
+  "Settings" (gear icon decorative), Voice Control name "Settings" only,
+  identifier `settings`. VoiceOver, Switch Control and Full Keyboard
+  Access reach C first (Yes, No, Emergency, then Again, which is
+  reached last in its region though it sits between No and Emergency),
+  then A, then B (the categories, then Settings), then D.
+  **What a held activation meets** (nearest centre and nearest edge,
+  ties counted, on the frames above with the calibrated text sizes):
+
+  | Window | After Back to Talking, today | After Back to Talking, now | Message nearest Yes, No or Again, today | Now |
+  |---|---|---|---|---|
+  | 402×874 phone | Again, both rules | Emergency, both rules | 94% centre, 89% edge | 66%, 61% |
+  | 375×667 phone | Again, both | Emergency, both | 95%, 90% | 67%, 63% |
+  | 13-inch iPad portrait | Emergency by centre, Again by edge | Emergency, both | 75%, 75% | 65%, 60% |
+  | 13-inch iPad landscape | Emergency by centre, Again by edge | Emergency, both | 71%, 73% | 64%, 60% |
+  | 320pt window | Again, both | Emergency, both | 97%, 92% | 56%, 51% |
+
+  After Settings opens, the spot where Home's Settings was is over
+  Family Setup's row, which only opens the next screen. A second held
+  activation there opens Family Setup, whose first row leads into Set
+  Up Step by Step; that chain is the one docs/HANDOFF.md already lists
+  (Settings follow-up 10), now reachable from Home, and it changes no
+  size yet.
+- **Colours:** none new. Settings uses `HomeButtonStyle` with
+  `Palette.controlFill`, pinned in `PaletteTests` like Home's other
+  controls.
+- **Privacy policy:** no sentence changes; Settings already holds the
+  in-app Privacy row.
+- **Screens:** Figma, page *Home*, section [Settings on Home (interim,
+  2026-10-23)](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=18-977):
+  [iPhone 17](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=18-980),
+  [375×667 phone](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=18-1022),
+  [375×667 phone with Bold Text](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=18-1063),
+  [13-inch iPad portrait](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=18-1106)
+  and [landscape](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=18-1148),
+  and Settings open over
+  [the iPhone 17](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=18-1190)
+  and [the iPad](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=18-1241),
+  with the line from Back to Talking to Emergency. Wireframes in Inter
+  (SF Pro does not render in the account), light mode only, drawn from
+  the frames above by a model of the layout, not captured from the app.
+  The owner accepts them by merging.
+- **Concerns:**
+  - *Yes and No still border the message.* Reduced, not removed: see
+    the table. Recorded as open in docs/DECISIONS.md, "Settings on
+    Home", with what decides it.
+  - *A 375pt phone with Bold Text scrolls its phrase grid at the default
+    size* (tiles about 64pt against a 99pt minimum), because neither
+    one safety row nor Settings beside the categories holds the heavier
+    words there. Words breaking would be worse; it is listed with the
+    stand-in's other scrolling windows and closes with the layout
+    engine.
+  - *The slot plan's own order in C* (Emergency first on wide windows,
+    Get Attention at the trailing end) needs Phrases and Type in A's
+    trailing column, where Back to Talking closes. Until they are
+    built, the control nearest under Back to Talking must say nothing;
+    `SettingsOnHomeTests` fails if it does not.
