@@ -7,7 +7,7 @@ nothing is appended here. Plan: [`docs/ROADMAP.md`](ROADMAP.md). How the
 project runs: [`docs/SDLC.md`](SDLC.md).
 
 **State as of 2026-10-22: PR #14 (the library core), reconciled with
-`main` at `313de2c`; not merged.**
+`main` at `cc35c30`; not merged.**
 Ten threads are working in parallel on the first release, R0.
 
 ## What the app does today
@@ -55,7 +55,7 @@ Xcode 27.1 (27A9275); final-head CI is pending.
 
 ## Verification
 
-- **PR #14 reconciliation, 2026-10-22:** incorporates main `313de2c`, the
+- **PR #14 reconciliation, 2026-10-22:** incorporates main `cc35c30`, the
   invisible-text Emergency correction and the bounded category-name fix.
   Standalone invisible decorations no longer create duplicate names;
   composed names and stored/imported bytes remain intact. All 56 pure
@@ -67,9 +67,12 @@ Xcode 27.1 (27A9275); final-head CI is pending.
   that head passed 560 units (one existing skip) and all 35 enabled UI
   tests per device (four existing probe skips). All 21 existing review
   conversations are resolved; its Codex review still reports running.
-  This main refresh passed the same 560-unit native gate with one
+  The PR #32 main refresh passed the same 560-unit native gate with one
   existing skip and an unchanged catalog; its new CI run remains required. The older AX5 audit finding remains unexplained. Auto-merge
   is disabled; the owner makes the merge decision. The
+  PR #29's CI-artifact documentation is now merged from main `cc35c30`;
+  its fresh local gate passed 560 units with the existing issue #19 skip
+  and unchanged catalog. New-head CI remains pending.
   [reconciliation record](log/2026-10-22-library-reconciliation.md)
   preserves toolchain/device details, complete history and remaining checks.
 
@@ -81,6 +84,10 @@ Xcode 27.1 (27A9275); final-head CI is pending.
   PR #13 the UI tests run on the newest iPad Pro 13-inch and then the
   newest standard iPhone, after a warm-up launch, and fail when no test
   ran ([`log/2026-10-21-test-seams.md`](log/2026-10-21-test-seams.md)).
+  Since PR #28 each job keeps `build/TestResults` as a download on the
+  run's page for 14 days, passed or failed, unless the job stopped
+  before its tests started (a build failure leaves no bundle)
+  ([`log/2026-10-22-ci-test-results.md`](log/2026-10-22-ci-test-results.md)).
   Before PR #12, CI used Xcode 26.6 and iOS 26.5; 10 of 11 runs on
   `9362eca` were green, and the failure was simulator infrastructure.
 - **A Mac, 2026-10-21** (PR #13's diagnosis), iPhone 17 and iPad Pro

@@ -482,3 +482,23 @@ the existing issue #19 skip (561 total), using Xcode 27.1 (27A9275),
 iPad Pro 13-inch (M5), iOS 27.0. The catalog stayed unchanged; coverage
 remained 66.9% (4,400/6,577). The refreshed head requires a new CI run. Replace still refuses every
 plan that needs a safety copy. Auto-merge remains off.
+
+
+## Main refresh after PR #29 landed
+
+Main `cc35c30` adds the record of retained CI test artifacts. Its changed
+briefing, handoff and log were read and merged without conflicts; no app
+or test source changes in this refresh. The prior head `1ede402` passed
+hosted units and all 35 enabled iPhone UI tests. Its first iPad attempt
+had two accessibility-window server errors and a Needs-selection timeout;
+the saved accessibility snapshots around that timeout contained no child
+elements. That suggests runner/accessibility-service trouble but does not
+prove its cause. One failed-job rerun on unchanged source was requested;
+no assertions or accessibility findings were suppressed.
+
+The fresh local unit gate passed 560 tests, with zero failures and the
+existing issue #19 skip (561 total). Xcode 27.1 (27A9275), iPad Pro 13-inch
+(M5), iOS 27.0; the String Catalog is unchanged, and app line coverage is
+66.9% (4,400/6,577). New-head CI remains required. The owner re-enabled auto-merge on both remaining PRs;
+agents leave those settings in place. Replace import remains refused until
+safety copies exist. No new binding decision is introduced.
