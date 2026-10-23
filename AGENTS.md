@@ -107,7 +107,12 @@ request merges. No exceptions and no unexplained skips. A known limitation is a 
 naming its decision, so it fails when it starts passing.
 
 **GitHub CI** (`.github/workflows/tests.yml`) runs the unit and UI tests on
-GitHub's Mac machines for every pull request and every push to `main`. A
+GitHub's Mac machines for every pull request and every push to `main`.
+Each job keeps `build/TestResults` (the result bundles above) as a
+download on the run's page for 14 days, passed or failed: the artifacts
+`unit-test-results` and `ui-test-results`. A job that stops before its
+tests start (choosing Xcode, XcodeGen, a build failure) writes no
+bundle, so that job has no artifact, only a warning. A
 pull request merges only when CI is green.
 
 **Build with Apple's current Xcode, never a pinned one** (owner,
