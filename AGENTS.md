@@ -542,7 +542,7 @@ the failure.
   `SpeedChoice`, `WordFit`, `HomeShape`, `HomeRegion`, `HomeControlNames`,
   `HomeStatusLine`, `HomeButtonLook`, `LibrarySnapshot`, `LibraryEdit`,
   `LibraryRules`, `LibraryImport`, `LibraryEditor`, `BackupCodec`,
-  `EmergencyRepair`, `SettingsRootColumns`.
+  `EmergencyRepair`, `SettingsRootColumns`, `KeyboardAllowance`.
   Views only read them.
 - **Run it, don't just read it.** Layout and flow changes are checked in the
   running app on an iPad and an iPhone simulator, at default and
@@ -765,15 +765,20 @@ the time. Export them again after each new Xcode release.
   (`RenderedWordsTests`, `BricksonTests/RenderedLabels`) and pin its
   settings, so a change that stops it reading whole words, accepts part
   of one, or turns on correction or hints fails there first.
-- **Measuring the keyboard:** `KeyboardProbeTests` is opt-in
-  (`TEST_RUNNER_BRICKSON_KEYBOARD_PROBE=1 scripts/test.sh ui`). It opens
-  a debug-only probe screen (`--screen=keyboard-probe`) instead of Home,
-  prints one `KEYBOARD-PROBE {json}` line per orientation and text size,
-  and fails after printing if the simulator shows the keyboard bar
-  instead of the full keyboard. xcbeautify hides printed lines from
-  passing tests, so read the JSON attached to each test in the result
-  (Xcode's Report navigator), or run `xcodebuild` without xcbeautify. Say
-  which simulator and iOS version the numbers came from.
+- **Measuring the keyboard:** `KeyboardProbeTests` runs on every UI run.
+  For each orientation and text size it opens a debug-only probe screen
+  (`--screen=keyboard-probe`) instead of Home, prints one
+  `KEYBOARD-PROBE {json}` line, and fails if the keyboard reaches above
+  the room `KeyboardAllowance` keeps for the window (add the measurement
+  to `KeyboardAllowanceTests` and raise that shape's reference). It then
+  opens Home in the same window, prints `KEYBOARD-BAND {json}` and fails
+  if Yes, No, Emergency, Again or Get Attention ends below the
+  allowance's limit. It also fails, after printing, if the simulator
+  shows the keyboard bar instead of the full keyboard. xcbeautify hides
+  printed lines from passing tests, so read the JSON attached to each
+  test in the result (Xcode's Report navigator, or the `.xcresult`
+  database on Linux), or run `xcodebuild` without xcbeautify. Say which
+  simulator and iOS version the numbers came from.
 - **Simulator audio is unreliable.** Every sound check needs a real device.
 - **Apple's accessibility audit can time out on CI** with domain
   `com.apple.xcode.xctest.accessibilityAudit`, code `-56`. The UI suite

@@ -153,6 +153,11 @@ Xcode 27.1 (27A9275); PR #20 landed in `d79d836`.
   Since PR #39 (2026-10-23) a compiler warning in any target fails the
   build (docs/DECISIONS.md, "Warnings are errors";
   [`log/2026-10-23-warnings-as-errors.md`](log/2026-10-23-warnings-as-errors.md)).
+  Since the keyboard allowance (2026-10-23) every UI run measures Apple's
+  keyboard in each orientation at the default and largest text sizes,
+  and fails if it is taller than `KeyboardAllowance` keeps room for or
+  if Home's safety row reaches below that room
+  ([`log/2026-10-23-keyboard-allowance.md`](log/2026-10-23-keyboard-allowance.md)).
   Before PR #12, CI used Xcode 26.6 and iOS 26.5; 10 of 11 runs on
   `9362eca` were green, and the failure was simulator infrastructure.
 - **A Mac, 2026-10-21** (PR #13's diagnosis), iPhone 17 and iPad Pro
@@ -281,15 +286,22 @@ release in docs/ROADMAP.md when no thread has it yet.
   with `userInterfaceLevel = .elevated` in `PaletteTests`
   ([`log/2026-10-23-show-borders-and-large-content.md`](log/2026-10-23-show-borders-and-large-content.md), *Follow-ups*). *(the next
   accessibility thread)*
-- No typing on Home. Before it comes, C must be one row on wide windows
-  (or otherwise all above the worst-case keyboard): its two rows do not
-  fit there (docs/DECISIONS.md, "Get Attention and Stop on Home"). The
-  typing rules (`MessageComposer`), the saved
-  message (`DraftStore`) and a keyboard probe are in `Brickson/Typing`,
-  waiting for Home's typing state (docs/DECISIONS.md, "Typing is a state
-  of Home"; [`log/2026-10-21-typing-foundation.md`](log/2026-10-21-typing-foundation.md),
-  *For the next typing thread*). *(a new typing thread, after Phone layout
-  and word fitting)*
+- No typing on Home. The room it must leave for Apple's keyboard is a
+  tested rule, `KeyboardAllowance`, and every UI run checks the live
+  keyboard and Home's safety row against it (`KeyboardProbeTests`);
+  keyboards from other apps are refused (docs/DECISIONS.md, "Typing is a
+  state of Home" and "Third-party keyboards refused in 1.0"). On CI's
+  windows both of the safety row's rows already end above the
+  allowance's limit. On shorter wide windows (a 13-inch iPad with Display
+  Zoom at Larger Text, an iPad mini in landscape) they do not, so the
+  typing state needs C in one row there, which needs A's trailing column
+  (Phrases and Type) that the typing state brings (docs/DECISIONS.md,
+  "Get Attention and Stop on Home", *Open: typing needs C in one row*).
+  The typing rules (`MessageComposer`), the saved message (`DraftStore`)
+  and the keyboard probe are in `Brickson/Typing`, waiting for Home's
+  typing state ([`log/2026-10-23-keyboard-allowance.md`](log/2026-10-23-keyboard-allowance.md),
+  *Follow-ups*; [`log/2026-10-21-typing-foundation.md`](log/2026-10-21-typing-foundation.md),
+  *For the next typing thread*). *(a new typing thread)*
 - No editing, export or import screens. The library core (`LibraryEdit`,
   `LibraryEditor`, `LibraryImport`, `BackupCodec`) is tested code that
   nothing calls yet. A Replace that would remove the person's own words
@@ -482,7 +494,7 @@ Simulators cannot show these. Record each result in a `docs/log/` file
 | Whether Snap to Item and Dwell pick a target by its nearest centre or its nearest edge, and which control a look resting on the message selects | What removes "Yes and No border the message" (docs/DECISIONS.md, "Settings on Home"), and "the top of Stop's well is nearest Again" ("Get Attention and Stop on Home") |
 | Whether a lingering look re-fires a dwell | How much repeat protection matters |
 | Whether Snap to Item ignores controls scrolled off screen | Whether scrolling can keep family controls out of reach |
-| What the real software keyboard covers in each orientation, and typing checks 1–8 in [`log/2026-10-21-typing-foundation.md`](log/2026-10-21-typing-foundation.md) | The typing layout (docs/LESSONS.md, "Test with the real software keyboard"), the word row, Return under dwell, and whether Brickson needs its own keyboard |
+| What the real software keyboard covers in each orientation (CI measures the simulator's on every UI run; a device, other languages and windowed iPads are not measured), that a third-party keyboard never appears in Brickson, and typing checks 1–8 in [`log/2026-10-21-typing-foundation.md`](log/2026-10-21-typing-foundation.md) | `KeyboardAllowance`'s references, the typing layout (docs/LESSONS.md, "Test with the real software keyboard"), the word row, Return under dwell, and whether Brickson needs its own keyboard |
 | Get Attention heard from the next room, on the speaker and over Bluetooth | The alarm's sound and level, and the replacement tone |
 | A phrase spoken while Get Attention sounds is understood over the tone at 0.32 | `AttentionAlertStatus.toneVolumeWhileSpeaking` |
 | A phone call, Siri and another app's alarm during a phrase and during Get Attention: each stops and shows "Stopped — Again" or "Alert stopped", and nothing restarts by itself, on iOS 26 and iOS 27 | Interruption handling and the iOS 27 notices (docs/DECISIONS.md, "Audio session notices") |

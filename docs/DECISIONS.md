@@ -427,6 +427,7 @@ one replaces with no loss.
 | XCTest and XCUIAutomation | UI tests | Swift Testing cannot launch or drive an app. Apple: "UI automation and performance testing APIs are only available in XCTest" (WWDC26, "Migrate to Swift Testing"), and the XCTest page says to "continue to use XCTest for user interface tests". | Swift Testing can drive an app |
 | UIKit types in UI tests: `UIDevice` (its idiom and system version), `UIDeviceOrientation`, a screenshot's `UIImage` | `GetAttentionOnHomeTests`, `HomeAccessibilityOrderTests`, `HomeLayoutTests`, `HomeReachabilityTests`, `KeyboardProbeTests`, `LaunchHelpers`, `LaunchTests`, `SettingsOnHomeTests` | XCUIAutomation's own API uses these types (`XCUIDevice.orientation`, `XCUIScreenshot.image`) and reports no device idiom. | With the row above |
 | `UIApplication.isIdleTimerDisabled` | `BricksonApp` | Invariant 12. SwiftUI has no way to keep the screen awake; Apple documents this property for it. | SwiftUI gains one |
+| A `UIApplicationDelegate` answering `application(_:shouldAllowExtensionPointIdentifier:)`, given to SwiftUI with `UIApplicationDelegateAdaptor`; `UIApplication` in its tests | `BricksonAppDelegate`, `BricksonApp`, `BricksonAppDelegateTests` | Refusing other apps' keyboards (*Third-party keyboards refused in 1.0*). SwiftUI has no way to refuse an app extension; Apple documents this delegate method for it (not deprecated, iOS 8 and later, read 2026-10-23), and the adaptor as how a SwiftUI app handles app-delegate callbacks. | SwiftUI gains a way |
 | `UIFont` (text-style sizes, weights, line heights), `NSString.size(withAttributes:)`, `UIImage.SymbolConfiguration` | `LabelFont` | `WordFit` measures words before layout, as a plain tested type. SwiftUI measures text only inside a view hierarchy (`Text.Layout`; `ViewThatFits` failed Apple's accessibility audit). iOS 26's `Font.resolve(in:)` gives a point size and a Core Text font, but measuring a word still needs UIKit or Core Text, and resolving a font outside a view is undocumented. | Under *Planned moves* |
 | `UIColor.systemBackground` | `Palette.screen` | The colour `PaletteTests` measures as "the screen", and pins `Palette.screen` to. SwiftUI has no colour of its own for it, and its background style changes with the container. | SwiftUI gains a system background colour |
 | `SFSafariViewController` in a `UIViewControllerRepresentable` | `PrivacyPolicyView` | The web version opens in Safari's in-app view (*The privacy policy ships inside the app*). SafariServices has no SwiftUI view. iOS 26's `OpenURLAction.Result.systemAction(_:prefersInApp:)` only prefers an in-app browser: Apple does not say how it is presented or when it opens Safari outside Brickson instead, and it gives Settings no state to hold its idle reset while the page is open. | Apple documents that presentation |
@@ -1799,7 +1800,19 @@ ROADMAP R0 item 4 ([`work/get-attention-on-home.md`](work/get-attention-on-home.
   above the worst-case software keyboard (*Typing is a state of Home*),
   so before typing comes to Home, C becomes one row on wide windows (the
   slot plan's own C), or the engine keeps all of it above the keyboard
-  another way (*Home's slot plan*).
+  another way (*Home's slot plan*). *2026-10-23, measured against
+  `KeyboardAllowance`:* on CI's windows both rows already end above the
+  keyboard's room. On main's CI run of 2026-10-23, C ends at 326.5pt
+  (default size) and 437.5pt (AX5) on the 13-inch iPad in either
+  orientation, against limits of 973 (portrait) and 534 (landscape), and
+  at 308.7 and 449.3pt on the iPhone 17, against 546;
+  `KeyboardProbeTests` now checks it on every run. Where two rows do not
+  fit is shorter wide windows: on the 13-inch iPad in landscape with
+  Display Zoom set to Larger Text (1032 × 774, limit 276), by the model of
+  the same frames, two rows end at 326.5 and one would end at 230.5 at the
+  default size, and even one ends at 341.5 at AX5, the named exception
+  *Typing is a state of Home* foresaw. An iPad mini in landscape (limit
+  246 by the allowance) is the same at the default size.
 - **A silent stand-in tone for UI tests.** Debug launches with
   `--attention-tone=silent` play `SilentAttentionTonePlayback`, which
   says it is playing until stopped and makes no sound, so UI tests sound
@@ -1855,6 +1868,24 @@ every profile gets, even one that never uses Apple's keyboard.
   are rows in the tests, and a UI test fails if the live keyboard's top
   crosses the band. `KeyboardProbeTests` measures it; the
   table itself arrives with the layout engine (docs/PORTING.md, step 4).
+  *2026-10-23:* built as `KeyboardAllowance`
+  ([`log/2026-10-23-keyboard-allowance.md`](log/2026-10-23-keyboard-allowance.md)).
+  A window is wide (wider than tall), tall, or narrow (tall and under
+  600pt wide), and each shape has a reference: the tallest keyboard
+  measured on that shape and the height of its window (498pt on 1032,
+  403pt on 1376, 328pt on 874). A window no taller than its reference
+  window keeps room for the whole reference keyboard, since Display Zoom
+  shrank the 13-inch iPad's landscape window to 774pt and its keyboard
+  stayed 498pt; a taller one keeps room for a keyboard grown in
+  proportion. Text size is not an input after all: the keyboard measured
+  the same at the default and the largest size. The measured keyboards
+  are rows in `KeyboardAllowanceTests`, and `KeyboardProbeTests` now runs
+  on every UI run, failing if the live keyboard reaches higher than the
+  allowance or Home's safety row lower. Not covered yet, because nothing
+  has measured them: iPad windows smaller than their screen, where the
+  keyboard follows the screen; the floating and split iPad keyboards;
+  other languages; iPhone Duo's inner display (device check 6 in
+  docs/log/2026-10-21-typing-foundation.md).
 - The reference app's measurements on iOS 27.0 simulators with the full
   software keyboard: a 13-inch iPad in landscape, keyboard top at 534 of
   1032 points; the same iPad with Display Zoom set to Larger Text, 276 of
@@ -1915,7 +1946,7 @@ finishes sentences.
 
 ## Third-party keyboards refused in 1.0
 
-*Default, adopted 2026-10-21: the owner left these choices to the project. Reversible if the owner objects.* *Not built yet.*
+*Default, adopted 2026-10-21: the owner left these choices to the project. Reversible if the owner objects.* *Built 2026-10-23* (`BricksonAppDelegate`, `BricksonAppDelegateTests`; [`log/2026-10-23-keyboard-allowance.md`](log/2026-10-23-keyboard-allowance.md)), before typing reaches Home, because the keyboard allowance is built on Apple's keyboards alone.
 
 Brickson refuses keyboards from other apps, so only Apple's keyboard
 appears in it. Reasons: the keyboard table stays true (other keyboards
@@ -1923,9 +1954,12 @@ have other heights, and could cover the band), and the privacy promise
 stays simple (a keyboard with Full Access can send what is typed to its
 maker). The cost: someone who relies on an accessible keyboard from
 another app, such as one with larger keys, could not use it in Brickson.
-Revisit if people ask. It is built with the typing state, as
+Revisit if people ask. It is built as
 `application(_:shouldAllowExtensionPointIdentifier:)` returning false for
-`.keyboard` in an app delegate.
+`.keyboard` in an app delegate, which SwiftUI is given through
+`UIApplicationDelegateAdaptor` (*Apple's current frameworks first*). It
+refuses only custom keyboards: Apple's keyboards, dictation and the
+keyboard features of Switch Control and Eye Tracking are the system's.
 
 ## Return speaks
 
