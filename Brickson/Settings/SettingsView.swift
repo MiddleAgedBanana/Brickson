@@ -217,8 +217,10 @@ struct SettingsRootView: View {
 
 // MARK: - Presenting Settings from Home
 
-/// Home's way into Settings. Home places it (where it sits is part of
-/// Home's layout); everything it opens lives here.
+/// Home's way into Settings. Home places it, at the trailing end of its
+/// categories (docs/DECISIONS.md, "Settings on Home"), and gives it its
+/// frame; everything it opens lives here. It looks like Home's other
+/// controls, and its gear drops before its word shrinks (`FittedLabel`).
 struct SettingsButton: View {
     @Binding var isPresented: Bool
 
@@ -226,8 +228,10 @@ struct SettingsButton: View {
         Button {
             isPresented = true
         } label: {
-            Label("Settings", systemImage: "gearshape.fill")
+            FittedLabel(HomeControlNames.settings.visible, systemImage: "gearshape.fill", font: .category)
         }
+        .buttonStyle(HomeButtonStyle(fill: Palette.controlFill))
+        .accessibilityInputLabels(HomeControlNames.settings.inputLabels)
         .accessibilityIdentifier("settings")
     }
 }
