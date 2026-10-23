@@ -2,7 +2,7 @@
 
 *Roadmap: R0 item 4 (Get Attention), the part PR #16 left for later:
 the controls on Home. Owner: the Get Attention and Stop on Home thread.
-Status: spec.*
+Status: plan.*
 
 ## Intent
 
@@ -84,9 +84,9 @@ widths (the window less Home's 16pt margins).
     with the message's edge but Yes, No and Emergency, as before.
   - **B, the categories:** Stop's well at the top of the leading column
     with a category directly under it, and Settings at the trailing end:
-    - *Band* (wide windows where four categories and Settings fit in a
-      row: from 548pt, and from 588pt with Bold Text, Settings showing
-      its gear alone below 584pt and 630pt): Stop above the first
+    - *Band* (wide windows, from 560pt, where four categories and
+      Settings fit in a row; from 588pt with Bold Text; Settings shows
+      its gear alone below 584pt, 630pt with Bold Text): Stop above the first
       category in the leading column, the other three and Settings at
       the full height of both rows (the slot plan's regular band).
     - *Three columns* (narrower, from 304pt, 328pt with Bold Text): Stop,
@@ -170,3 +170,95 @@ widths (the window less Home's 16pt margins).
     the trailing end, under Phrases and Type) waits for A's trailing
     column. Until then Get Attention must not border the message.
   - *Settings' Get Attention place* stays empty (Intent, above).
+
+## Plan
+
+- **Files that change** (all in this one pull request, by this thread):
+  - `Brickson/Layout/HomeShape.swift`: the safety row's two equal
+    columns, the categories' three arrangements with Stop's well, and
+    the minimum widths of Get Attention and Stop.
+  - `Brickson/Home/HomeView.swift`: Get Attention in C, Stop's well in B,
+    the categories' arrangements, the status line fed by the alarm's real
+    state, and the announcement of each new `failureSequence`.
+  - `Brickson/Home/ControlNames.swift`: Get Attention and Stop, and Stop
+    among the controls the collision check covers.
+  - `Brickson/Home/Palette.swift` and two colour sets in the asset
+    catalog: `AttentionFill`, `StopFill`.
+  - `Brickson/Speech/AudioSafetyPolicy.swift`: `HomeStatusLine`, which
+    chooses between a problem, "Sounding" and "Speaking".
+  - `Brickson/Attention/AttentionTonePlayback.swift`,
+    `Brickson/App/LaunchOptions.swift`, `Brickson/App/AppAudio.swift`,
+    `Brickson/App/BricksonApp.swift`: a debug-only launch option,
+    `--attention-tone=silent`, that plays a silent stand-in tone, so UI
+    tests sound the alarm without sound and without depending on the
+    simulator's audio. A release build ignores it, like every launch
+    option.
+  - `Brickson/Resources/Localizable.xcstrings`: the new words.
+  - Tests: `HomeShapeTests`, `StarterLabelFitTests`, `ControlNamesTests`,
+    `HomeNameCollisionTests`, `PaletteTests`, `AudioSafetyPolicyTests`,
+    `LaunchOptionsTests`, `AttentionAlertPlayerTests`; UI: the new
+    `GetAttentionOnHomeTests`, and `HomeReachabilityTests`,
+    `HomeAccessibilityOrderTests`, `HomeLayoutTests`,
+    `SettingsOnHomeTests`.
+  - Docs: DECISIONS ("Get Attention and Stop on Home", and notes in
+    "Get Attention", "Home's slot plan", "Home's scan order and names",
+    "Settings on Home" and *Where the grid still scrolls*), HANDOFF,
+    ROADMAP item 4, ACCESSIBILITY, DESIGN.md, README.md, this file and
+    the log record.
+- **Order of work:** the unit tests first (they fail against today's
+  `HomeShape`, names and palette), then the code, then the UI tests and
+  the docs.
+- **Risks, and how each is checked:**
+  - *A held look on Get Attention stopping the alarm, or one on Stop
+    restarting it:* `GetAttentionOnHomeTests` sounds the alarm and reads
+    every frame from the accessibility tree: Stop is not nearest Get
+    Attention's spot, Get Attention is not nearest Stop's, and after Stop
+    the nearest control is a category (both rules).
+  - *Anything moving when the alarm sounds or stops:*
+    `GetAttentionOnHomeTests` and `HomeReachabilityTests` compare every
+    edge with its launch frame.
+  - *New scrolling for the starter library on CI's windows:*
+    `HomeLayoutTests`, both devices, default and largest text. The 13-inch
+    iPad in landscape at AX5 has the least room (tiles about 121pt
+    against 110pt).
+  - *Back to Talking or Home's Settings landing somewhere new:*
+    `SettingsOnHomeTests`, unchanged in what it requires.
+  - *A word cut off:* `StarterLabelFitTests` checks Get Attention and
+    Stop at their minimums with the real fonts, Bold Text off and on.
+  - *The simulator's audio:* the UI tests use the silent stand-in tone;
+    the real tone is covered by `AttentionAlertPlayerTests` and device
+    check D3 (docs/HANDOFF.md).
+  - *Cloud session:* nothing here was built for iOS before CI; the pure
+    `HomeShape`, names and status tests ran on a Linux Swift toolchain
+    first.
+- **Proof** (each test, and the change that makes it fail):
+  - `HomeShapeTests.getAttentionIsDirectlyUnderEmergency`: Get Attention
+    and Emergency in different columns, or Get Attention in the first
+    row.
+  - `HomeShapeTests.stopHasACategoryDirectlyUnderIt`: Stop above
+    Settings, or beside its category in one row.
+  - `HomeShapeTests.everyControlKeepsItsMinimumWidth` and
+    `theRegionsFillTheWidthExactly`: a minimum lowered, or a row that
+    overflows.
+  - `HomeShapeTests.phonesKeepTheirArrangementWithBoldText`: Bold Text
+    taking a row from a phone's phrases.
+  - `StarterLabelFitTests.theFixedControlsFitTheirNarrowestWidths`: Get
+    Attention's or Stop's minimum below its word.
+  - `ControlNamesTests.theFixedControlsAndTheirNamesAreTheDecidedOnes`
+    and `homeListsEveryControlOnTheScreen`: a name dropped or Stop left
+    out of the check.
+  - `PaletteTests`: either fill missing from `Palette.assetNames`, or a
+    value other than the measured one.
+  - `AudioSafetyPolicyTests.theStatusLinePutsProblemsThenTheAlarmThenSpeech`:
+    "Speaking" over "Sounding", or "Sounding" over a problem.
+  - `LaunchOptionsTests`: `--attention-tone=silent` not understood.
+  - `AttentionAlertPlayerTests.theSilentToneSoundsUntilStopped`: a
+    stand-in that reports not playing, which the health check would
+    stop.
+  - `GetAttentionOnHomeTests`: Stop missing after Get Attention, still
+    there after Stop, or any frame moving; the chain checks above.
+  - `HomeReachabilityTests`, `HomeLayoutTests`,
+    `HomeAccessibilityOrderTests`: Get Attention unreachable, off
+    screen or out of order.
+  - Device checks (docs/HANDOFF.md): D3 (the alarm through the silent
+    switch and the lock screen) now runs from Home's own control.
