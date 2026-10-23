@@ -268,9 +268,9 @@ Mac, so the pull request that causes one fixes it before it merges.
 - **Fix the code; never silence the warning.** Never
   `SWIFT_SUPPRESS_WARNINGS`, `GCC_WARN_INHIBIT_ALL_WARNINGS`,
   `-suppress-warnings` or `-w`, never this setting turned off to get
-  green, and never a change whose only purpose is to quiet the compiler
-  while the problem stays: discarding the result that says whether a save
-  worked breaks invariant 5.
+  green (the one exception is below), and never a change whose only
+  purpose is to quiet the compiler while the problem stays: discarding
+  the result that says whether a save worked breaks invariant 5.
 - **Deprecations follow the minimum iOS.** The compiler warns about an
   Apple API only once it is deprecated in the oldest iOS the app runs on
   (*Minimum iOS, iPhone and iPad*: 26.0). An API deprecated in a later
@@ -285,13 +285,18 @@ Mac, so the pull request that causes one fixes it before it merges.
   and most fixes are a line or two.
 - **When a safety fix cannot wait.** If a warning a new Xcode adds blocks
   a fix people need now, and fixing the warning is not quick, that pull
-  request may keep the warning's one diagnostic group a warning with
-  `SWIFT_WARNINGS_AS_WARNINGS_GROUPS` in `project.yml` ("Diagnostic Groups
-  Remain Warnings" in Apple's build settings reference). The group is
-  named in square brackets at the end of the warning, such as
-  `[#DeprecatedDeclaration]`. The same pull request adds a line here
-  naming the group, why it waits and who removes it; never more than the
-  groups that block, never the whole setting.
+  request may set `SWIFT_TREAT_WARNINGS_AS_ERRORS` to `NO` in the
+  `settings` of the one target the warning is in (`project.yml`), and adds
+  a line here naming the warning, why it waits and who turns the setting
+  back on. Never more targets than the warning is in, and never longer
+  than the fix takes. The narrower route, keeping only the warning's
+  diagnostic group a warning with `SWIFT_WARNINGS_AS_WARNINGS_GROUPS`
+  ("Diagnostic Groups Remain Warnings"), does nothing while warnings are
+  errors on Xcode 27.1: Xcode passes the group to the compiler before
+  `-warnings-as-errors`, and the later flag wins. A deliberate unused
+  value in a group named there still failed CI as an error
+  ([`log/2026-10-23-warnings-as-errors.md`](log/2026-10-23-warnings-as-errors.md),
+  *Verified*). Use that route only after a CI run shows it working.
 - **Release builds.** CI builds the Debug configuration only. Code under
   `#if DEBUG` (launch options, the keyboard probe) compiles differently
   in Release, so a warning only a Release build sees would first stop an

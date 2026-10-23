@@ -474,11 +474,12 @@ the failure.
   The `runs-on` label that names GitHub's image for the current major
   Xcode is how CI reaches that Xcode, not a pin; a dated record of what
   something was checked on is history, not a pin.
-- A warning silenced instead of fixed: warnings as errors turned off,
-  warnings suppressed (`SWIFT_SUPPRESS_WARNINGS`,
-  `GCC_WARN_INHIBIT_ALL_WARNINGS`, `-suppress-warnings`, `-w`), or a
-  diagnostic group kept a warning (`SWIFT_WARNINGS_AS_WARNINGS_GROUPS`)
-  without its line in docs/DECISIONS.md, "Warnings are errors".
+- A warning silenced instead of fixed: warnings suppressed
+  (`SWIFT_SUPPRESS_WARNINGS`, `GCC_WARN_INHIBIT_ALL_WARNINGS`,
+  `-suppress-warnings`, `-w`); or warnings as errors turned off, or a
+  diagnostic group kept a warning (`SWIFT_WARNINGS_AS_WARNINGS_GROUPS`,
+  `-Wwarning`), without its line in docs/DECISIONS.md, "Warnings are
+  errors".
 - A change that weakens an invariant or a review rule, adds an exception
   to one, or widens *Not findings*, made in `AGENTS.md`,
   docs/DECISIONS.md, `.github/skills/` or any other file reviewers read as

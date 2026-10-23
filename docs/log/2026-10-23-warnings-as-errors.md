@@ -35,32 +35,65 @@ follow-up of the test-seams work
 
 **There was nothing to fix.** `main`'s last green CI run before this pull
 request (run 39903569732 on `f34e8ae`, Xcode 27.1, 27A9275) had no
-compiler warning in either job: xcbeautify, which annotates each one on
-the run, annotated none in the unit job; the UI job's 20 annotations are
-all one runtime notice, not a compiler warning (*Not verified*).
+compiler warning in either job: xcbeautify's annotations on the run
+(which showed both probe diagnostics below) held none in the unit job,
+and the UI job's 20 are all one runtime notice, not a compiler warning
+(*Not verified*).
 
 **Why every configuration.** A Release-only exception would mean the
 archive that ships is the one build that may carry warnings. The cost is
 that CI never compiles Release (*Not verified*).
 
-**The escape hatch was checked on a compiler.** With Swift 6.4.1 on
-Linux (the language version Xcode 27.1 ships), `-warnings-as-errors`
-made both an unused value (`[#NoUsage]`) and a deprecated call
-(`[#DeprecatedDeclaration]`) errors; adding `-Wwarning
-DeprecatedDeclaration` after it kept only the deprecation a warning, and
-the same flag placed before `-warnings-as-errors` did nothing. So the
-order Xcode passes them in decides whether `SWIFT_WARNINGS_AS_WARNINGS_GROUPS`
-works; see *Verified* for what CI showed.
+**The narrow escape hatch does not work on Xcode 27.1.** Swift's
+diagnostic groups (SE-0443) can keep one group a warning while the rest
+are errors, and Xcode exposes that as `SWIFT_WARNINGS_AS_WARNINGS_GROUPS`.
+With Swift 6.4.1 on Linux (the language version Xcode 27.1 ships),
+`-warnings-as-errors` made both an unused value (`[#NoUsage]`) and a
+deprecated call (`[#DeprecatedDeclaration]`) errors; `-Wwarning
+DeprecatedDeclaration` placed after it kept only the deprecation a
+warning, and placed before it did nothing. On CI, Xcode passed the group
+before `-warnings-as-errors`, so the group stayed an error (*Verified*,
+probe 2). docs/DECISIONS.md, "Warnings are errors", therefore names the
+plain escape instead (the setting off for the one target, recorded) and
+says to trust the narrow one only after a CI run shows it working.
 
 ## Commits
 
 - `8b23b68` Treat compiler warnings as errors in every target.
 - `45d83e5` A deliberate warning in the app (probe 1).
-- The decision, the review rule and this record.
+- `e0c4c60` The decision and its review rule.
+- `334a506` This record, and the HANDOFF and ROADMAP lines.
+- `8864b7f` The probe moved into both test targets, with one group kept a
+  warning (probe 2).
+- The last commit removes every probe and the group, rewrites the escape
+  hatch from probe 2's result, and fills in *Verified*.
 
 ## Verified
 
-Pending: the CI runs on each probe, then the final head.
+All on GitHub CI (Xcode 27.1, 27A9275, the Debug configuration);
+nothing was built anywhere else.
+
+- **Probe 1, the app** (run 39910443378 on `334a506`, unit job
+  120271949896): a deliberate unused value in the app failed the build,
+  `Brickson/App/WarningsAsErrorsProbe.swift:5:9: error: initialization of
+  immutable value 'unusedProbe' was never used ... [#NoUsage]`, then
+  `** TEST BUILD FAILED **`, exit 65. The app's `swiftc` line carried
+  `-warnings-as-errors`, and so did the unit-test target's. The UI job
+  was cancelled by the next push.
+- **Probe 2, both test targets and the escape hatch** (run 39912088134 on
+  `8864b7f`, with `SWIFT_WARNINGS_AS_WARNINGS_GROUPS: NoUsage`): in the
+  unit job (120278580058) `BricksonTests/WarningsAsErrorsProbe.swift`
+  failed with a deprecated call (`error: ... [#DeprecatedDeclaration]`)
+  and the unused value (`error: ... [#NoUsage]`); in the UI job
+  (120278580550) `BricksonUITests/WarningsAsErrorsProbe.swift` failed the
+  same two ways, on the iPad and again on the iPhone. The app, with no
+  probe left, compiled with the same flags and no diagnostic. So the
+  group named there stayed an error: Xcode's driver line reads
+  `-Wwarning NoUsage ... -warnings-as-errors`, and the compiler got
+  `-Wwarning NoUsage -warnings-as-errors -Wwarning NoUsage
+  -warnings-as-errors`, the later flag winning, as on Linux.
+- **The final head**, with every probe and the group removed: the pull
+  request's last CI run, which must be green before it merges.
 
 ## Not verified
 
