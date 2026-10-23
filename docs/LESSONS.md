@@ -26,19 +26,34 @@ failed and the code called `ModelContext.rollback()`, SwiftData crashed
 (D28, never fixed). A full disk would have closed the app and left the
 person without a voice until someone reopened it.
 
-**Rule.** The category-to-phrase relationship uses `.nullify`, and code that
-deletes a category deletes its phrases explicitly in the same save. Neither
-half of that is proven yet: FamilyVoice never built it, so the first delete
-ported must show, with a failure-injection test, that a failed save can be
-undone without a crash.
+**Rule.** Never call `rollback()`. Make every change in a `ModelContext` of
+its own with autosave off, save it once, and on failure drop that context
+(`LibraryEditor`; docs/DECISIONS.md, "Every save is explicit"). The
+category-to-phrase relationship uses `.nullify`, and code that deletes a
+category deletes its phrases explicitly in the same save, so a delete
+removes only what the edit names.
+
+The first version of this rule hoped that explicit deletes instead of a
+cascade would make `rollback()` safe. Brickson's probe says they do not:
+`rollback()` after deleting a category and its phrases one by one crashed
+with the same "Unexpected backing data for snapshot creation" (Xcode 26.6,
+iOS 26.5 simulator; `SwiftDataBehaviourTests`, disabled, issue #19).
+Dropping the context does work: `LibraryEditorTests` makes the save fail
+for every kind of edit, deletes included, with no crash and nothing
+changed.
 
 Inserting in a separate `ModelContext` that is simply discarded on failure
-is safe (the seeder does this). **Deleting** that way is not proven: in
+is safe (the seeder does this). **Deleting** that way was not proven: in
 FamilyVoice's D28 experiments, a delete saved from a separate context made
 the main context crash the next time it read the deleted phrase ("This
-model instance was invalidated…"). Any delete through a separate context
-needs a test that reads through the main context after the save, and every
-view must drop its references to deleted items first.
+model instance was invalidated…"). Brickson's probes (S1 and S2 in
+docs/log/2026-10-21-library-core.md, same toolchain) did not reproduce
+that: the main context stopped seeing the deleted items, and reading a
+held object's identity after the delete did not crash. That is one
+simulator and one toolchain, so the rule stands: any delete through a
+separate context has a test that reads through the main context after the
+save, and every view drops its references to deleted items first (screens
+keep identities, never model objects, across an edit).
 
 Every mutation path (add, rename, move, delete, merge, replace, seed,
 migrate) gets a test that makes the save throw and checks: no crash,

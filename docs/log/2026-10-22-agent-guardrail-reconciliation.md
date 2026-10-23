@@ -700,3 +700,45 @@ is unchanged; app line coverage remains 62.6% (3,540/5,659). Final guard
 and documentation checks passed 82 and 26 tests, including a follow-up
 null-branch case: null also selects an unspecified default and is refused. New-head hosted CI and fresh review remain
 required. No new product decision or review-rule exception is introduced.
+
+
+### Library main refresh and fresh review, 2026-10-23
+
+PR #14 final head `f45a33a` passed hosted run `39887840347`: 560 native
+unit tests passed with the existing issue #19 skip; all 35 enabled UI tests
+passed on each of iPad and iPhone with four existing opt-in probe skips per
+device. All 21 review conversations were resolved and owner-enabled
+auto-merge landed it as `48bcf73`. This branch merges that main revision
+with a merge commit, retaining the refusal of Replace import until its
+safety-copy and owner-decision prerequisites are satisfied.
+
+Ten fresh findings on `2e497bf` were assessed. Nine are corrected:
+exhaustive glob pathspec staging; curl long form fields; final dry-run
+option precedence; process-substitution child commands and directory
+scope; GraphQL ref/commit writes; generic MCP issue assignments to Copilot;
+asynchronous REST merges; indented ATX headings; and relative links with
+query components. Failing reproductions preceded the fixes, paired with
+allowed commands or valid links. Removing these checks makes their focused
+regressions fail. Queries, literal command-like text, human issue assignees
+and explicit bounded paths remain allowed.
+
+The xargs finding is rejected: GNU documents `--max-lines[=max-lines]`,
+with an optional attached argument; `--max-lines 1 git ...` selects `1` as
+the command. Consuming that separate word as an option value would instead
+hide `git` in the valid `xargs --max-lines git add -A` case. The original
+regression caught that error before publication; it remains intact, with
+additional paired coverage for attached `=1` and mandatory `-L 1` values.
+See [GNU xargs options](https://www.gnu.org/software/findutils/manual/html_node/find_html/xargs-options.html).
+
+GraphQL writes require explicit Git commands because this advisory guard
+does not resolve opaque ref IDs or variable targets. This is a bounded
+implementation limitation, not a security sandbox or a new product rule.
+The remaining changes enforce existing rules; no review exception, app
+behaviour, audio setting or assertion is weakened.
+
+The full local `scripts/test.sh unit` gate passed 560 native tests, zero
+failures and one existing issue #19 crash-probe skip (561 total), plus 90
+hook and 28 documentation tests. Xcode 27.1 (27A9275), XcodeGen 2.46.0,
+iPad Pro 13-inch (M5), iOS 27.0. The catalog is unchanged and app line
+coverage is 66.9% (4,400/6,577). New-head hosted checks and fresh review
+remain required; no new local UI or sound claim is made.

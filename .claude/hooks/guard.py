@@ -143,6 +143,12 @@ def segments(command, preserve_quotes=False):
     current = []
     separator = ';'
     for word in lexer:
+        if word in ('<(', '>('):
+            if current:
+                yield current, separator
+            yield [word], ';'
+            current, separator = [], ';'
+            continue
         if word in SEPARATORS or set(word) <= set(';&|()\n'):
             if current:
                 yield current, separator
@@ -385,8 +391,16 @@ def branch_name(ref):
 
 
 def all_tree_pathspec(path):
-    return path in ('.', './', ':/', ':', '*', ':/*', './*', ':(top)',
-                    ':(top)*', ':(glob)**', ':(top,glob)**')
+    if path.startswith(':('):
+        magic, close, pattern = path[2:].partition(')')
+        if not close or {'literal', 'exclude'} & set(magic.split(',')):
+            return False
+        path = pattern
+    elif path.startswith(':/'):
+        path = path[2:]
+    while path.startswith('./'):
+        path = path[2:]
+    return path in ('', '.', ':') or bool(re.fullmatch(r'(?:\*\*/)*\*{1,2}', path))
 
 
 def exclusion_pathspec(path):
@@ -475,9 +489,14 @@ def check_push(args, context):
         else:
             refspecs.append(arg)
         index += 1
-    if any(option == '--dry-run' or
-           (re.fullmatch(r'-[a-zA-Z46]+', option) and 'n' in option) for option in options):
-        return  # Git computes the update but does not send it.
+    dry_run = False
+    for option in options:
+        if option == '--no-dry-run':
+            dry_run = False
+        elif option == '--dry-run' or (re.fullmatch(r'-[a-zA-Z46]+', option) and 'n' in option):
+            dry_run = True
+    if dry_run:
+        return  # Only the final setting determines whether Git sends updates.
     for option in options:
         if (option == '--force' or option.startswith(('--force-with-lease', '--force-if-includes'))
                 or (re.fullmatch(r'-[a-zA-Z46]+', option) and 'f' in option)):
@@ -583,6 +602,14 @@ def api_arguments(words, cwd, program='gh'):
             if equals and value.startswith('@'):
                 parts.append('--raw-field ' + key + '=' + json.dumps(request_file(value[1:], cwd)))
     elif program == 'curl':
+        for options, shorts, files in [({'--form'}, {'-F'}, True),
+                                       ({'--form-string'}, set(), False)]:
+            for field in option_values(words, options, shorts):
+                key, equal, value = field.partition('=')
+                if equal:
+                    if files and value.startswith(('@', '<')):
+                        value = request_file(value[1:].split(';', 1)[0], cwd)
+                    parts.append('--raw-field ' + key + '=' + json.dumps(value))
         for data in option_values(words, {'--data', '--data-ascii', '--data-binary', '--json'}, {'-d'}):
             if data.startswith('@'):
                 parts.append(request_file(data[1:], cwd))
@@ -910,7 +937,7 @@ def request_method(words, program):
         if '--head' in words or '-I' in words:
             return 'HEAD'
         data = list(option_values(words, {'--data', '--data-ascii', '--data-binary',
-                                         '--data-raw', '--data-urlencode', '--json', '--form'}, {'-d', '-F'}))
+                                         '--data-raw', '--data-urlencode', '--json', '--form', '--form-string'}, {'-d', '-F'}))
         return 'POST' if data else 'GET'
     if program in ('http', 'https'):
         return httpie_request(words)[0]
@@ -989,7 +1016,7 @@ def protected_api_write(words, arguments, method):
 def merge_api_request(words, arguments, method):
     """Match actual endpoint arguments and request fields, not prose words."""
     paths = api_paths(words)
-    if method == 'PUT' and any(re.fullmatch(r'repos/[^/]+/[^/]+/pulls/[^/]+/merge', p) for p in paths):
+    if method == 'PUT' and any(re.fullmatch(r'repos/[^/]+/[^/]+/pulls/[^/]+/merge(?:-async)?', p) for p in paths):
         return True
     if method not in ('GET', 'HEAD'):
         if any(re.fullmatch(r'repos/[^/]+/[^/]+/pulls/[^/]+/reviews(?:/[^/]+/events)?', p) for p in paths):
@@ -1009,6 +1036,9 @@ def merge_api_request(words, arguments, method):
             # GraphQL strings are data, even when they name a mutation.
             query = re.sub(r'"(?:\\.|[^"\\])*"', '""', str(query))
             query = re.sub(r'#[^\n]*', '', query)
+            if re.search(r'\b(?:createRef|updateRef|updateRefs|deleteRef|createCommitOnBranch)\s*\(', query):
+                deny('Use explicit Git commands for ref or commit writes; the guard '
+                     'does not resolve GraphQL ref IDs or variable targets.')
             if GRAPHQL_MERGE.search(query) or graphql_review_approval(query, arguments, words):
                 return True
     return False
@@ -1123,14 +1153,14 @@ def check_command(command, cwd, depth=0, environment=None):
                     or (separator == '&&' and success)
                     or (separator == '||' and not success)}
         next_states = states - runnable
-        if words == ['(']:
-            scopes.append((runnable, next_states))
+        if words in (['('], ['<('], ['>(']):
+            scopes.append((runnable, next_states, words != ['(']))
             states = runnable
             continue
         if words == [')']:
             if scopes:
-                outer, skipped = scopes.pop()
-                outcomes = {success for _, success, _, _ in states}
+                outer, skipped, asynchronous = scopes.pop()
+                outcomes = {True, False} if asynchronous else {success for _, success, _, _ in states}
                 states = skipped | {(where, success, stack, env)
                     for where, _, stack, env in outer for success in outcomes}
             continue
@@ -1265,6 +1295,9 @@ def check_github_tool(name, arguments):
     if tool == 'pull_request_review_write' and \
             str(arguments.get('event', '')).upper() == 'APPROVE':
         deny(MERGE)
+    if tool in ('issue_write', 'create_issue', 'update_issue') and any(
+            'copilot' in str(a).lower() for a in arguments.get('assignees') or []):
+        deny(COPILOT)
     if tool == 'update_pull_request' and any(
             'copilot' in str(r).lower() for r in arguments.get('reviewers') or []):
         deny(COPILOT)

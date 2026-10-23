@@ -67,6 +67,67 @@ class GuardTests(unittest.TestCase):
                         ['git', '-C', str(self.repo), 'config', '--unset-all', key],
                         capture_output=True)
 
+    def test_exhaustive_glob_pathspecs_are_all_tree_staging(self):
+        for path in [':(glob)**/*', ':(top,glob)**/*', ':(glob,top,icase)**/**/*', '**/*']:
+            self.assertDenied('git add ' + shlex.quote(path))
+        for path in [':(glob)docs/**/*.md', ':(literal)**/*', 'Brickson/File.swift']:
+            self.assertAllowed('git add ' + shlex.quote(path))
+
+    def test_xargs_max_lines_optional_value_stays_attached(self):
+        # GNU long optional arguments use =value; a following word is the command.
+        for option in ['--max-lines', '--max-lines=1', '-L 1']:
+            self.assertDenied('printf x | xargs ' + option + ' git add -A')
+            self.assertAllowed('printf x | xargs ' + option + ' git status')
+
+    def test_curl_long_form_fields_are_checked(self):
+        endpoint = 'https://api.github.com/repos/o/r/pulls/12/reviews'
+        for option in ['--form', '--form-string']:
+            self.assertDenied(f'curl {endpoint} {option} event=APPROVE')
+            self.assertAllowed(f'curl {endpoint} {option} event=COMMENT')
+        with tempfile.TemporaryDirectory(dir=self.repo) as folder:
+            field = Path(folder) / 'event'
+            field.write_text('APPROVE')
+            for marker in ['<', '@']:
+                self.assertDenied(f'curl {endpoint} --form ' + shlex.quote(f'event={marker}{field}'))
+            self.assertAllowed(f'curl {endpoint} --form-string ' + shlex.quote(f'event=@{field}'))
+
+    def test_the_last_dry_run_option_controls_push(self):
+        self.assertDenied('git push -n --no-dry-run origin main')
+        self.assertDenied('git push --dry-run --no-dry-run origin main')
+        self.assertAllowed('git push --no-dry-run -n origin main')
+        self.assertAllowed('git push -n --no-dry-run origin feature')
+
+    def test_process_substitutions_are_checked_in_child_context(self):
+        for redirect in ['<', '>']:
+            self.assertDenied(f'cat {redirect}(git add -A)')
+            self.assertAllowed(f'cat {redirect}(git status)')
+        self.assertAllowed("echo '<(git add -A)'")
+        with tempfile.TemporaryDirectory(dir=self.repo) as folder:
+            subprocess.run(['git', 'init', '-q', '-b', 'main', folder], check=True)
+            self.assertAllowed(f'cat <(cd {folder} && git status); git push origin')
+            self.assertDenied(f'cat <(cd {folder} && git push origin)')
+
+    def test_graphql_ref_writes_require_explicit_git_commands(self):
+        for query in [
+            'mutation { updateRefs(input:{repositoryId:"R",refUpdates:[{name:"refs/heads/main",afterOid:"OID",force:true}]}) { clientMutationId } }',
+            'mutation { createCommitOnBranch(input:{branch:{repositoryNameWithOwner:"o/r",branchName:"main"},expectedHeadOid:"OID",message:{headline:"x"}}) { clientMutationId } }',
+            'mutation($input:UpdateRefsInput!) { updateRefs(input:$input) { clientMutationId } }']:
+            self.assertDenied('gh api graphql -f ' + shlex.quote('query=' + query))
+        self.assertAllowed('gh api graphql -f ' + shlex.quote('query=query { viewer { login } }'))
+        self.assertAllowed('gh issue comment 12 --body "updateRefs(input: example)"')
+
+    def test_generic_issue_writes_check_assignees(self):
+        for tool in ['issue_write', 'create_issue', 'update_issue']:
+            self.assertEqual(decision('mcp__github__' + tool,
+                {'method': 'update', 'assignees': ['copilot-swe-agent[bot]']}, self.repo), 'deny')
+            self.assertIsNone(decision('mcp__github__' + tool,
+                {'method': 'update', 'assignees': ['octocat']}, self.repo))
+
+    def test_asynchronous_merge_requests_are_guarded(self):
+        endpoint = 'repos/o/r/pulls/12/merge-async'
+        self.assertDenied(f'gh api --method PUT {endpoint} -f merge_action=direct_merge')
+        self.assertAllowed(f'gh api {endpoint}/example-uuid')
+
     def test_curl_operations_keep_their_own_method(self):
         merge = 'https://api.github.com/repos/o/r/pulls/12/merge'
         for separator in ['--next', '-:']:
@@ -829,7 +890,8 @@ class SettingsTests(unittest.TestCase):
         tools = ['merge_pull_request', 'enable_pr_auto_merge', 'request_copilot_review',
                  'assign_copilot_to_issue', 'assign_copilot_to_issue_with_intent', 'create_pull_request_with_copilot',
                  'push_files', 'create_or_update_file', 'delete_file',
-                 'pull_request_review_write', 'update_pull_request']
+                 'pull_request_review_write', 'update_pull_request',
+                 'issue_write', 'create_issue', 'update_issue']
         for tool in ['Bash'] + [f'mcp__github__{t}' for t in tools]:
             commands = [hook['command'] for group in groups
                         if re.fullmatch(group['matcher'], tool)

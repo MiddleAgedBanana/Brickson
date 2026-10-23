@@ -20,7 +20,7 @@ Renaming a section or moving a file without updating what cites it fails
 here, which is how reviewers were twice sent to sections that did not exist.
 """
 from pathlib import Path
-from urllib.parse import unquote
+from urllib.parse import unquote, urlsplit
 import re
 import unittest
 import tempfile
@@ -60,7 +60,7 @@ REFERENCE_LINK = re.compile(
     r'^ {0,3}\[(?!\^)[^\]\n]+\]:[ \t]*(?:\n[ \t]*)?'
     r'(?P<target><[^>\n]*>|[^\s<>]+)'
     r'(?:[ \t]+(?:"[^"\n]*"|\'[^\'\n]*\'|\([^\)\n]*\)))?[ \t]*$', re.M)
-HEADING = re.compile(r'^#{1,6}\s+(?P<title>.+?)\s*#*\s*$', re.M)
+HEADING = re.compile(r'^ {0,3}#{1,6}\s+(?P<title>.+?)\s*#*\s*$', re.M)
 LEAD_IN = re.compile(r'^\s*(?:[-*]\s+|\d+\.\s+)?\*\*(?P<title>[^*\n]+?)\*\*', re.M)
 def without_fenced_code(text):
     output, fence = [], None
@@ -270,10 +270,10 @@ def broken_links(path, text):
     links = list(LINK.finditer(text)) + list(REFERENCE_LINK.finditer(text))
     for match in links:
         link = match['target'].strip('<>')
-        if re.match(r'[a-z][a-z0-9+.-]*:', link):
-            continue  # https:, mailto: and other absolute links
-        target, _, anchor = link.partition('#')
-        target = unquote(target)
+        url = urlsplit(link)
+        if url.scheme or url.netloc:
+            continue  # absolute and protocol-relative external links
+        target, anchor = unquote(url.path), unquote(url.fragment)
         resolved = (path.parent / target).resolve() if target else path
         if target.startswith('/'):
             problems.append(f'{relative}: link {link} is absolute; make it relative')
@@ -304,6 +304,28 @@ class CheckerTests(unittest.TestCase):
 
     def setUp(self):
         self.fixture = ROOT / 'docs' / 'DECISIONS.md'
+
+    def test_indented_atx_headings_are_real_sections(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder).resolve()
+            guide = root / 'guide.md'
+            with patch.dict(globals(), ROOT=root):
+                for spaces in range(4):
+                    guide.write_text(' ' * spaces + '# Setup\n')
+                    self.assertEqual(broken_citations(guide, 'guide.md, "Setup"', set()), [])
+                    self.assertEqual(broken_links(guide, '[part](#setup)'), [])
+                guide.write_text('    # Setup\n')
+                self.assertTrue(broken_links(guide, '[part](#setup)'))
+
+    def test_relative_link_queries_are_not_file_names(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder).resolve()
+            guide = root / 'guide.md'
+            guide.write_text('# Setup')
+            with patch.dict(globals(), ROOT=root):
+                self.assertEqual(broken_links(guide, '[part](guide.md?plain=1#setup)'), [])
+                self.assertTrue(broken_links(guide, '[part](guide.md?plain=1#missing)'))
+                self.assertTrue(broken_links(guide, '[part](missing.md?plain=1#setup)'))
 
     def test_encoded_relative_links_are_resolved_inside_the_repository(self):
         with tempfile.TemporaryDirectory() as folder:
