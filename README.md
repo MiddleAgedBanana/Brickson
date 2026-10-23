@@ -58,6 +58,10 @@ known limitations and next steps.
 - **Familiar placement.** Controls do not reorder by frequency or recency.
 - **Standard accessibility.** Use native controls and Apple's input systems,
   with no custom eye, head or switch tracking.
+- **Apple's current frameworks.** SwiftUI, SwiftData and Swift Testing,
+  with an older framework only where Apple offers nothing newer for the
+  job; each such use and its reason is in
+  [docs/DECISIONS.md](docs/DECISIONS.md) ("Apple's current frameworks first").
 - **Privacy by design.** No accounts, app servers, ads, analytics or tracking.
   The app stores its library on the device; device backups and optional
   features are covered in the [privacy policy](https://middleagedbanana.github.io/Brickson/privacy/).

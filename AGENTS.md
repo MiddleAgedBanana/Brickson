@@ -24,6 +24,12 @@ so they never have to relearn it.** As they move from touch to switches to
 their eyes, target sizes, spacing and dwell protection change, but where
 each control sits does not.
 
+**Where it is going** (the owner's vision, docs/ROADMAP.md, *Where this
+goes*): over time, the one app a person with ALS keeps open all day,
+covering inside Brickson what they and their caregivers need and reaching
+the rest through Apple's own doors. It sets the direction, not the order:
+work follows the releases, and every invariant below still holds.
+
 "Choose the boring, reliable option" governs **how** you build: proven
 APIs, plain testable types, no clever indirection. It does not govern
 **how much** the app does. The bar is an app that does its job better than
@@ -276,6 +282,38 @@ building device-specific interfaces."
   (invariant 11). It takes the space, the input profile, the text size and
   the library's shape, and nothing that names a device.
 
+## Apple's current frameworks first
+
+The owner's rule (2026-10-22): build on the frameworks Apple is investing
+in for the future, not the ones it is leaving behind, so nothing has to be
+moved later, when moving it is harder.
+
+- **Use the current framework for each job:** SwiftUI, not UIKit;
+  SwiftData, not Core Data; Swift Testing, not XCTest; App Intents, not
+  SiriKit; Observation, not Combine or `ObservableObject`; Swift
+  concurrency, not Dispatch, where it keeps the same guarantees. Within a
+  framework, use its current Swift API rather than an older one, and
+  never a deprecated one.
+- **A legacy framework or API only when no current one does the job with
+  no loss**, and every such use is listed, with its reason, in
+  docs/DECISIONS.md, "Apple's current frameworks first". A pull request
+  that adds one adds its row; one that removes the last use removes it.
+- **"No loss" includes what the person relies on:** an ordering
+  guarantee, a measurement's precision, a test's strength, a behaviour
+  the person sees. Swapping working code for a newer API that weakens one
+  of these is not a migration.
+- **Imports say what a file uses.** A file that uses UIKit imports it by
+  name, even where `import SwiftUI` or `import XCTest` would bring it in,
+  so a search for `import UIKit` finds every use; a file that uses none
+  does not import it.
+- **A test that drives no app uses Swift Testing**, in the unit tests,
+  even when what it checks lives with the UI tests (compile that file into
+  both targets in `project.yml`). XCTest is for UI automation only.
+- **Look it up first** (*Apple documentation: look it up, don't recall
+  it*). The pull request that moves Brickson to a new major Xcode also
+  reads what Apple has newly replaced, and rechecks every row of the
+  exceptions list.
+
 ## Design rules for dwell, switch and pointer input
 
 These hold for every profile in which a resting pointer or a scan can
@@ -371,6 +409,11 @@ the failure.
 - A closure a framework may call off the main thread that is main-actor
   isolated by default: under Swift 6 it crashes at runtime. Safe path:
   `@Sendable` or `nonisolated`, with a test in `OffMainThreadCallbackTests`.
+- A new use of a legacy framework or API (UIKit, Core Data, XCTest
+  outside UI automation, SiriKit, Combine, Dispatch, a deprecated API)
+  with no row in docs/DECISIONS.md, "Apple's current frameworks first",
+  or where a current one does the same job with no loss (*Apple's current
+  frameworks first*).
 - Elapsed time measured with `Date` instead of `ContinuousClock`.
 - A colour pair not pinned in `PaletteTests` (invariant 6).
 - A change that makes a sentence of the privacy policy untrue without
@@ -597,6 +640,10 @@ Shortcuts. **Never apply** `core-data` skills (this app uses SwiftData),
   Vision's accurate mode also misread a clear `No` as `ON`; the fast mode
   read it and rejected the old clipped captures. Keep whole-word matching
   (case-insensitive), with no language correction or recognition hints.
+  The recognizer lives in `RenderedWords` (Vision's `RecognizeTextRequest`),
+  and the unit tests run it on kept whole and clipped captures
+  (`RenderedWordsTests`, `BricksonTests/RenderedLabels`), so a change that
+  stops it telling them apart fails there first.
 - **Measuring the keyboard:** `KeyboardProbeTests` is opt-in
   (`TEST_RUNNER_BRICKSON_KEYBOARD_PROBE=1 scripts/test.sh ui`). It opens
   a debug-only probe screen (`--screen=keyboard-probe`) instead of Home,
