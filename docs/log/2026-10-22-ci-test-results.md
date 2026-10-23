@@ -78,9 +78,15 @@ test-only storage (`--test-storage`), nothing personal.
   ("AX5, light") reported text with no accessibility element, on code
   identical to `main`, where the same test had passed. It was not
   re-run (AGENTS.md: never retry an accessibility finding to make CI
-  green); it is issue #30. That failed job still uploaded
+  green); it is issue #30, and the next run failed the same way. That
+  failed job still uploaded
   `ui-test-results` (26.3 MB, expiring
   2026-11-05), so a run that fails in its tests keeps its bundle.
+- The "Flaky UI tests in CI" thread (PR #31) downloaded both failed
+  runs' `ui-test-results` and read them on Linux: each holds the failed
+  test's screen recording, captures and attachments, with their times.
+  That is how it found #30's cause
+  ([`2026-10-22-audit-still-screen.md`](2026-10-22-audit-still-screen.md)).
 
 ## Not verified
 
@@ -88,17 +94,15 @@ test-only storage (`--test-storage`), nothing personal.
 - The record came in a second pull request, not in #28 as AGENTS.md
   asks (Codex's finding on #28): #28 was the owner's web-editor branch,
   and it merged by auto-merge before the docs could be added to it.
-- That a failed run's artifact holds the failure screenshots: run
-  39835147321 shows the upload happens on failure, but nobody has opened
-  the bundle to see the screenshots inside (that needs a Mac).
-- A `.xcresult` bundle opens only in Xcode or with `xcrun xcresulttool`
-  on a Mac, so a cloud agent that downloads one still cannot read it.
 
 ## Follow-ups
 
-- Export the UI tests' screenshots and a short failure summary from the
-  bundle as plain files (`xcrun xcresulttool export`), so a failure can
-  be read without a Mac (`docs/recon/2026-10-21/repo-review.md`,
-  sdlc-13). Needs a
-  `tests.yml` change, so the owner commits it. *(Test seams and CI
-  evidence; not scheduled)*
+- This record first proposed exporting the screenshots and a failure
+  summary from each bundle as plain files on CI, so a failure could be
+  read without a Mac (`docs/recon/2026-10-21/repo-review.md`, sdlc-13).
+  PR #31 showed a cloud agent can read a downloaded bundle on Linux
+  (AGENTS.md, *Gotchas*, "CI results can be read without a Mac"), so
+  that export, which needed an owner-committed `tests.yml` change, is no
+  longer needed. What is left is PR #31's follow-up: a script that lists
+  and extracts a result's attachments, so nobody retypes the commands.
+  *(Test seams and CI evidence)*

@@ -182,9 +182,9 @@ Each owning piece of work checks its findings before acting. The biggest:
   and App Store submissions will need iPhone Duo screenshots from April
   2027 (App Store Connect release notes, 2026-10-15). *(the layout engine, a new thread; App Store readiness and ASO)*
 - Since PR #28 (2026-10-22) each CI job keeps its result bundles for 14
-  days, but a `.xcresult` opens only on a Mac, so cloud agents still
-  cannot see what the UI tests saw until the screenshots are exported as
-  plain files. *(Test seams and CI evidence)*
+  days, and since PR #31 a cloud agent can read them on Linux (AGENTS.md,
+  *Gotchas*), but only by hand: no script yet lists and extracts a
+  result's attachments. *(Test seams and CI evidence)*
 - No release or TestFlight runbook, and no plan for version and build
   numbers. *(App Store readiness and ASO; Toolchain and iOS version
   targets)*
