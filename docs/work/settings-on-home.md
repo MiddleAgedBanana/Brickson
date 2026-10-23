@@ -1,7 +1,7 @@
 # Settings on Home
 
 *Roadmap: R0 item 7 (Settings and first run), the part it left for later:
-Home's Settings button. Owner: the Settings on Home thread. Status: spec.*
+Home's Settings button. Owner: the Settings on Home thread. Status: plan.*
 
 ## Intent
 
@@ -151,3 +151,71 @@ window less Home's 16pt margins).
     trailing column, where Back to Talking closes. Until they are
     built, the control nearest under Back to Talking must say nothing;
     `SettingsOnHomeTests` fails if it does not.
+
+## Plan
+
+- **Files that change** (all in this one pull request, by the Settings on
+  Home thread):
+  - `Brickson/Layout/HomeShape.swift`: the safety row's one- or two-row
+    arrangement, Settings beside or below the categories, and the
+    minimum widths, regular and Bold Text.
+  - `Brickson/Home/HomeView.swift`: the message across the width with the
+    first-run hint, `SafetyRow` (Yes, No, Again, Emergency) and
+    `CategoriesAndSettings`; Home takes a binding to Settings' cover.
+  - `Brickson/Settings/SettingsView.swift`: `SettingsButton` draws a
+    fitted label in Home's button style, with its Voice Control name.
+  - `Brickson/App/BricksonApp.swift`: one `showsSettings` state, opened by
+    Home's button or at launch by `--screen=settings`.
+  - `Brickson/Home/ControlNames.swift`, `Brickson/Home/HomeRegion.swift`:
+    Settings' name; Again and Settings reached last in their regions.
+  - Tests: `HomeShapeTests`, `StarterLabelFitTests`, `ControlNamesTests`,
+    `HomeRegionTests`; UI: the new `SettingsOnHomeTests`, and
+    `HomeAccessibilityOrderTests`, `HomeReachabilityTests`,
+    `HomeLayoutTests`, `LaunchTests` (it measured the placeholder, which a
+    first launch now replaces with the hint), `SettingsTests` (comment).
+  - Docs: DECISIONS ("Settings on Home", notes in the Home sections),
+    HANDOFF, ROADMAP item 7, ACCESSIBILITY (two rows), the log record.
+- **Order of work:** the unit tests first (they fail against today's
+  `HomeShape`, which has no safety-row or Settings arrangement), then the
+  code, then the UI tests and the docs.
+- **Risks, and how each is checked:**
+  - *A word cut off in a narrower slot,* above all with Bold Text: the
+    minimums come from measured words, `StarterLabelFitTests` checks each
+    against SwiftUI's drawing with Bold Text off and on, and
+    `HomeShapeTests` checks no width from 288 to 1400pt goes below them.
+  - *New scrolling for the starter library:* `HomeLayoutTests` on CI's
+    iPad (both orientations) and iPhone, default and largest text; the
+    model's heights for other windows are in the Spec.
+  - *Back to Talking or the Settings button landing on something that
+    speaks:* `SettingsOnHomeTests`, both rules, on both devices, default
+    and largest text, and every Home frame unchanged after the round trip.
+  - *Scan order:* `HomeAccessibilityOrderTests` reads the order from the
+    accessibility tree in every Home state.
+  - *Cloud session:* nothing here was built for iOS before CI; the pure
+    `HomeShape` and names tests ran on a Linux Swift toolchain first.
+- **Proof** (each test, and the change that makes it fail):
+  - `HomeShapeTests.everyControlKeepsItsMinimumWidth`: dropping the
+    one-row condition (Emergency's minimum) fails it.
+  - `HomeShapeTests.settingsSharesTheRowEquallyWhereTheCategoriesHaveRoom`
+    and `phonesKeepOneSafetyRowAndSettingsBesideTheCategories`: removing
+    the "Settings at its minimum" step puts Settings below on a 375pt
+    phone and fails both.
+  - `HomeShapeTests.wideWindowsShowTheFourCategoriesInOneRow` and
+    `roomIsOnlyGivenUpAsTheWindowNarrows`: not trying two columns on wide
+    windows fails both.
+  - `HomeShapeTests.theRegionsFillTheWidthExactly`: a row that overflows
+    by a gap (the two-row Emergency's first draft did) fails it.
+  - `StarterLabelFitTests.theFixedControlsFitTheirNarrowestWidths` and
+    `everyStarterCategoryNameFitsTheNarrowestButton`: lowering a minimum
+    below its word fails them.
+  - `ControlNamesTests`: Settings left out of `fixed` fails
+    `homeListsEveryControlOnTheScreen` and the pinned list.
+  - `SettingsOnHomeTests`: Emergency anywhere but the safety row's
+    trailing end, or Again back beside the message, fails the way out;
+    a first launch without the hint, or a hint that stays after Family
+    Setup, fails `testTheFirstRunHintShowsUntilFamilySetupOpens`.
+  - `HomeAccessibilityOrderTests`: dropping `lastInRegion` from Again or
+    Settings fails the order.
+  - Device check added to docs/HANDOFF.md: whether Snap to Item and Dwell
+    pick the nearest centre or the nearest edge, which decides the rest of
+    "Yes and No border the message".
