@@ -170,7 +170,8 @@ them during review. AI Scan skips forks and Dependabot pull requests. See
 [Code scanning](docs/DECISIONS.md#code-scanning) for the coverage,
 limitations and review requirements.
 
-For bugs, include reproduction steps and the device and OS version. Do not
+For bugs, use the **Something went wrong** issue form: it asks for the
+steps, the device and OS version, and your input method. Do not
 post personal phrases, medical details or private backups in public issues.
 Report security vulnerabilities privately using the
 [security policy](.github/SECURITY.md).

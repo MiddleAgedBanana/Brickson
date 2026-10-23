@@ -1,0 +1,83 @@
+# The form people use to report a bug. GitHub shows it when someone opens a
+# new issue. Labels it names must already exist in the repository; GitHub
+# skips any that don't.
+name: Something went wrong
+description: Brickson did not speak, did the wrong thing, or was hard to reach with your input method.
+title: "Something went wrong: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for taking the time to tell us. Brickson speaks for people who may be unable to speak or move, so every report matters.
+
+        **This page is public.** Anyone on the internet can read it. Please don't include the words of your own phrases, screenshots or recordings that show them, names, health details, or a backup file. Describe what happened instead, for example "the third phrase in my second category".
+
+        To report a security problem, use the private form in the [security policy](https://github.com/MiddleAgedBanana/Brickson/security/policy) instead.
+  - type: textarea
+    id: trying
+    attributes:
+      label: What were you trying to say or do?
+      description: Describe it without the words themselves, for example "speak a phrase from Needs" or "type a new message".
+    validations:
+      required: true
+  - type: textarea
+    id: happened
+    attributes:
+      label: What happened instead?
+      description: Did it speak at all? Did anything appear on screen? Did a control move or stop responding?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps that make it happen
+      description: One step per line, from opening Brickson. Leave it blank if you're not sure.
+      placeholder: |
+        1. Open Brickson.
+        2. ...
+  - type: dropdown
+    id: input
+    attributes:
+      label: How do you control the device?
+      description: Choose every method that was in use.
+      multiple: true
+      options:
+        - Touch
+        - Voice Control
+        - Switch Control
+        - Full Keyboard Access, or a keyboard
+        - AssistiveTouch with Dwell
+        - Head tracking
+        - Eye Tracking
+        - VoiceOver
+        - Something else (say which below)
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Device, iOS or iPadOS version, and how it was held
+      description: Settings, General, About shows the model and version. For example "iPad Air 13-inch, iPadOS 27.1, landscape" or "iPhone 17, iOS 27.0, portrait".
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Brickson version
+      description: If you know it. Leave it blank if you're testing a build from the repository.
+  - type: dropdown
+    id: often
+    attributes:
+      label: How often does it happen?
+      options:
+        - Every time
+        - Sometimes
+        - Once so far
+    validations:
+      required: true
+  - type: textarea
+    id: more
+    attributes:
+      label: Anything else
+      description: Text size, Dark Mode, Increase Contrast, the voice in use (Personal Voice or a system voice), whether the keyboard was showing, or anything else you noticed.
