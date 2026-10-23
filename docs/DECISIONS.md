@@ -2110,8 +2110,9 @@ can be Back to Talking elsewhere (*Settings on Home*); chains through
 Settings are not fully scored yet (docs/HANDOFF.md, *Known gaps*).
 
 Family Setup's rows: Set Up Step by Step, Voice Settings, Reaching the
-Screen, Keep Brickson Open (Guided Access and Assistive Access), Privacy
-Policy and About. The Library's row joins it as `SettingsRoute.library`
+Screen, Keep Brickson Open (Guided Access and Assistive Access), Calls,
+Siri and Shortcuts, More Accessibility Settings, Privacy Policy and
+About. The Library's row joins it as `SettingsRoute.library`
 when the Library lands; it never closes Settings or hands over to an edit
 mode on Home. Home owns where `SettingsButton` sits; Settings provides the
 button and `settingsCover(isPresented:)`.
@@ -2199,8 +2200,26 @@ fixed bar at the bottom: how the screen is reached, the voice, turning
 on what was chosen, keeping Brickson open, and a summary. A held look on
 Next can walk the steps; that only navigates, and Back undoes it. Guides
 name Apple's own menus, checked against Apple's support pages on
-2026-10-21. Guided Access's guide says that emergency calls and Crash
+2026-10-21, and again, with the guides Wave 3 item 1 added, against
+Apple's iPhone, iPad and Apple Watch User Guides for iOS 26 and iOS 27
+on 2026-10-23. Guided Access's guide says that emergency calls and Crash
 Detection do not work during a session.
+
+*2026-10-23. Default, adopted 2026-10-23: the owner left these choices
+to the project. Reversible if the owner objects.* Where the guides to
+Apple's features live: Touch Accommodations, Switch Control's switches
+and timing, and eye trackers made for iPad extend Reaching the Screen,
+so step 3 of Set Up Step by Step shows them for the ways chosen in step
+1; Auto-Lock and Guided Access's Display Auto-Lock extend Keep Brickson
+Open, and so step 4. Two new screens hold the rest: Calls, Siri and
+Shortcuts (Live Speech on iPhone, iPad and Apple Watch, Vocal Shortcuts,
+Listen for Atypical Speech, the Action button) and More Accessibility
+Settings (the Accessibility Shortcut, Zoom, Share Accessibility
+Settings). A guide that applies to one kind of device says so in words
+(the Action button on an iPhone that has one, eye trackers on iPad),
+never by checking the device (AGENTS.md, *Layout on every device and
+window*). Steps give no count or timing Apple's pages do not give, and
+where iOS 26 and iOS 27 name a step differently, the words fit both.
 
 ## Check-ins come every three months
 
@@ -2434,6 +2453,14 @@ choices it makes:
   scene or `UISupportsAssistiveAccess` for its main interface: the system
   would choose control sizes and placement, so controls would sit
   somewhere else in Assistive Access than everywhere else (invariant 8).
+  `AppBundleTests` pins both (2026-10-23). Inside Assistive Access, the
+  family can open the full Settings app only after leaving it (Apple's
+  Assistive Access User Guide, *Change settings*), so Settings' guides
+  offer no Open … Settings button there: the written path stays, and a
+  line says to leave Assistive Access first (`SettingsAppLink`,
+  `accessibilityAssistiveAccessEnabled`). Assistive Access cannot start
+  or end while Brickson is open, so nothing appears or goes under a
+  resting pointer.
 - **Brickson never takes over the device.** It never calls
   `requestGuidedAccessSession` (only for supervised devices, and it could
   trap a person) or `configureForGuidedAccess` (it could turn off the

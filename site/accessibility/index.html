@@ -49,8 +49,9 @@
 <li><strong>One choice speaks.</strong> A phrase speaks the first time you choose it. There is no confirm step.</li>
 <li><strong>Nothing moves on its own.</strong> Buttons are never reordered by how often or how recently you use them.</li>
 <li><strong>The screen stays on.</strong> The screen never locks while Brickson is open, because many people who use it cannot unlock their device.</li>
+<li><strong>Full screen in Assistive Access.</strong> Brickson asks iOS to show it full screen inside Assistive Access: in its own layout, in all the space above the Back button, instead of the smaller frame iOS gives apps that do not ask.</li>
 </ul>
-<p class="small"><strong>How it's checked:</strong> Apple's automated accessibility audit runs on Home, and on Settings' first screen, Family Setup and the privacy policy, in light and dark, and on the emergency phrases, on Home while Get Attention sounds, and on Voice Settings, in light. Settings' other screens are not audited yet. A UI test taps a phrase once and checks that the tap starts it speaking; no test can hear the sound. A unit test checks the rule that keeps the screen on.</p>
+<p class="small"><strong>How it's checked:</strong> Apple's automated accessibility audit runs on Home, and on Settings' first screen, Family Setup and the privacy policy, in light and dark, and on the emergency phrases, on Home while Get Attention sounds, on Voice Settings, on each of Family Setup's guides, on each step of Set Up Step by Step and on About, in light. A UI test taps a phrase once and checks that the tap starts it speaking; no test can hear the sound. A unit test checks the rule that keeps the screen on, and another that Brickson asks for full screen in Assistive Access; Brickson has not been tried inside Assistive Access yet.</p>
 
 <h2 id="ways-to-control-brickson">Ways to control Brickson</h2>
 <h3>Touch</h3>

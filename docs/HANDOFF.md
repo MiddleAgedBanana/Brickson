@@ -39,9 +39,19 @@ in its own well, never nearest Get Attention, and the status line says
 "Sounding" (docs/DECISIONS.md, "Get Attention and Stop on Home").
 Settings, for the family (a
 full-screen cover with Back to Talking, Family Setup, Voice Settings,
-guides, the privacy policy and step-by-step setup), opens from Home's
-Settings button; until Family Setup has been opened once, Home's message
-area says where setup is. Back to Talking closes onto Emergency, never
+guides to Apple's own features, the privacy policy and step-by-step
+setup), opens from Home's Settings button. The guides cover reaching
+the screen (touch, Voice Control, Switch Control with its switches and
+timing, Eye Tracking, eye trackers for iPad, Head Tracking), keeping
+Brickson open (Guided Access, Assistive Access, screen lock), calls,
+Siri and shortcuts (Live Speech, also on Apple Watch, Vocal Shortcuts,
+Listen for Atypical Speech, the Action button), and the Accessibility
+Shortcut, Zoom and Share Accessibility Settings, each checked against
+Apple's user guides on 2026-10-23. Brickson asks for full screen in
+Assistive Access, and inside it the guides give written Settings paths
+instead of links (docs/DECISIONS.md, "Accessibility API coverage").
+Until Family Setup has been opened once, Home's message area says where
+setup is. Back to Talking closes onto Emergency, never
 onto a control that speaks (docs/DECISIONS.md, "Settings on Home").
 "Speaking", "Sounding", audio failures and very low volume share one
 passive status line under the message, in space always kept for it, and
@@ -507,7 +517,7 @@ Simulators cannot show these. Record each result in a `docs/log/` file
 | D5: with two Personal Voices, the order the system lists them in, and whether each keeps its identifier across a relaunch, a restore and Share Across Devices | "Automatic keeps the person's Personal Voice" |
 | Personal Voice appears and is chosen once permission is given, and keeps speaking after the screen locks | Voice choice and when to ask |
 | Opening Settings by a stray dwell, and leaving it by Back to Talking, lands on nothing that speaks or alarms (`SettingsOnHomeTests` scores it on the simulator's frames); the idle reset under real dwell | Settings' safety bar and root (docs/DECISIONS.md, "Settings is a cover with a fixed safety bar") |
-| Guided Access and Assistive Access steps match the device, and Brickson works inside both | Family Setup's Keep Brickson Open guide |
+| Each Family Setup guide's steps match the device, on iOS 26 and iOS 27, iPhone, iPad and (Live Speech) Apple Watch, and Brickson works inside Guided Access and Assistive Access | Family Setup's guides ([`log/2026-10-23-apples-doors-in-family-setup.md`](log/2026-10-23-apples-doors-in-family-setup.md)) |
 | Open Personal Voice Settings and Open Dwell Control Settings open the right page | `AccessibilitySettings.openSettings(for:)` |
 | Each input method reaches every control: touch, Voice Control, Switch Control, Full Keyboard Access, AssistiveTouch Dwell, head tracking, Eye Tracking | That standard buttons are the whole integration (invariant 1) |
 | A Switch Control double activation does not make a phrase stutter | Repeat absorption (invariant 10) |
@@ -537,7 +547,7 @@ Simulators cannot show these. Record each result in a `docs/log/` file
 | Switch Control with Auto Scanning, Group Items on and off, and Auto Tap: the scan steps to Emergency, Yes and No from every Home state, and whether Home's regions become scan groups | Scan order and grouping (docs/ACCESSIBILITY.md, section 1) |
 | With VoiceOver, Switch Control (item and group scanning) and Full Keyboard Access, Home is reached as Yes, No, Emergency, Get Attention, Again, then the message, Stop while it shows, the categories and Settings, the phrases, in every state; what each says on entering a region; whether the cursor stops on the message or the status line; Voice Control's "Show names" shows each control's visible words and "Tap Repeat" presses Again | "Home's scan order and names": the order, unlabelled regions, and whether `accessibilityRespondsToUserInteraction` is needed |
 | With VoiceOver on, a phrase tile with and without the `startsMediaSession` trait: does VoiceOver stay quiet while the phrase speaks | Whether phrase tiles carry the trait (R0 item 4) |
-| Brickson inside Assistive Access with `UISupportsFullScreenInAssistiveAccess`: its window size, and whether Eye Tracking and Switch Control work there | Assistive Access support (R0 item 7) |
+| Brickson inside Assistive Access with `UISupportsFullScreenInAssistiveAccess`: its window size (all the space above the Back button), whether Eye Tracking and Switch Control work there, and that the guides show no Open … Settings button and say to leave Assistive Access first | Assistive Access support (R0 item 7; Wave 3 item 1) |
 | Guided Access with each input method, and with a short Display Auto-Lock while Brickson keeps the screen awake | Setup advice, and invariant 12 under Guided Access |
 | Which of the VoiceOver, Switch Control and AssistiveTouch flags each input method turns on | Profile suggestions (R1) |
 | With a real finger at an accessibility text size, in the shipped build: press Yes slowly (about half a second) and lift, then a phrase tile; then hold Yes, slide onto No and lift, and hold a phrase tile, slide onto the next and lift; also with Touch Accommodations' Hold Duration on, and with AssistiveTouch Dwell. Each press speaks; a slide says the control it began on or nothing, never the next. In a window where Settings shows its gear alone (iPhone Duo's outer display with Bold Text on is one; [`log/2026-10-23-settings-on-home.md`](log/2026-10-23-settings-on-home.md)): tap the gear (Settings opens); hold it until its large copy shows and lift, and record whether Settings opened (opening means a real finger is not swallowed as XCTest's touch was); hold it and slide onto each control beside, above and below it, and lift: Settings opens or nothing happens, never anything else; dwell on it; and press Yes and a phrase tile slowly there: each speaks. The simulator results these confirm are in [`log/2026-10-23-large-content-and-iphone-duo.md`](log/2026-10-23-large-content-and-iphone-duo.md) | That Home speaks on a slow real press and a slide never says the next control; from the gear, whether a real finger's held press is swallowed as XCTest's was, and whether the gear keeps the viewer (docs/DECISIONS.md, "Show Borders and the Large Content Viewer on Home") |
