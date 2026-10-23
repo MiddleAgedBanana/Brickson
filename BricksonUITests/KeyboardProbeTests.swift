@@ -34,6 +34,9 @@ final class KeyboardProbeTests: XCTestCase {
     private static let fullKeyboardKeys = 26
     /// The probe and the frames read here are rounded to half a point.
     private static let rounding: CGFloat = 0.5
+    /// Home's safety row, by the names UI tests find them with (Get
+    /// Attention by its identifier).
+    private static let safetyRow = ["Yes", "No", "Emergency", "Again", "getAttention"]
 
     override func setUpWithError() throws {
         continueAfterFailure = false
@@ -154,15 +157,32 @@ final class KeyboardProbeTests: XCTestCase {
         app.terminate()
 
         // Home in the same window: its safety row ends above the limit.
+        // Measured, printed and captured before anything is checked, so a
+        // failure keeps the numbers and the picture that explain it.
         let home = launchedApp(textSize: textSize, orientation: orientation)
         let homeWindow = waitForWindow(of: home, orientation: orientation)
+        var bottoms: [String: CGFloat] = [:]
+        for control in Self.safetyRow {
+            let button = home.buttons[control].firstMatch
+            if button.exists {
+                bottoms[control] = button.frame.maxY - homeWindow.minY
+            }
+        }
+        try report(
+            [
+                "name": name,
+                "appFrame": Self.rect(homeWindow),
+                "bandLimit": Double(allowance.bandLimit),
+                "safetyRowBottoms": bottoms.mapValues { Self.points($0) },
+            ],
+            prefix: "KEYBOARD-BAND",
+            name: "\(name) band"
+        )
+        attachCapture(home, name: "keyboard band, \(name)")
+
         XCTAssertEqual(homeWindow.size, window.size, "Home opened in another window than the probe (\(name))")
-        var safetyRow: [String: Double] = [:]
-        for control in ["Yes", "No", "Emergency", "Again", "getAttention"] {
-            let frame = home.buttons[control].firstMatch.frame
-            XCTAssertFalse(frame.isEmpty, "Home has no \(control) (\(name))")
-            let bottom = frame.maxY - homeWindow.minY
-            safetyRow[control] = Self.points(bottom)
+        for control in Self.safetyRow {
+            let bottom = try XCTUnwrap(bottoms[control], "Home has no \(control) (\(name))")
             XCTAssertLessThanOrEqual(
                 bottom,
                 allowance.bandLimit + Self.rounding,
@@ -172,12 +192,6 @@ final class KeyboardProbeTests: XCTestCase {
                 """
             )
         }
-        try report(
-            ["name": name, "bandLimit": Double(allowance.bandLimit), "safetyRowBottoms": safetyRow],
-            prefix: "KEYBOARD-BAND",
-            name: "\(name) band"
-        )
-        attachCapture(home, name: "keyboard band, \(name)")
     }
 
     /// The app's window once it has turned to `orientation`: a query
