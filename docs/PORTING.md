@@ -35,7 +35,7 @@ and `docs/SUCCESSOR-HANDOFF.md`. Here, read `docs/LESSONS.md`.
 | 1 | Speech, the Get Attention alarm and audio safety | **Ported**, behind test seams (2026-10-21). Get Attention and Stop are on Home since PR #38 (2026-10-23; docs/DECISIONS.md, "Get Attention and Stop on Home"), and the status line reads the alarm's real state; the status strip is otherwise still Home's stand-in. |
 | 2 | Storage, editing logic and backup. Fix D28 here. | **Core written new** (editing rules, applier, backup format; D28 avoided by design: `rollback()` is never called, issue #19). Safety copies, export and import not yet. |
 | 3 | Text fitting and colour tokens | **Text fitting ported** (`WordFit`, `FittedLabel`, `FittedLine`). Three measured fills only (`Palette`). |
-| 4 | The layout engine, generalized to profiles | Not started. |
+| 4 | The layout engine, generalized to profiles | **Written new** (`HomeLayout`, 2026-10-23; docs/DECISIONS.md, "The layout engine"): touch only, and nothing on screen uses it until Home moves onto it (docs/ROADMAP.md, Wave 3 item 4). The other profiles come with R1. |
 | 5 | Home and typing. Fix D27 here. | A stand-in Home only (docs/DECISIONS.md, "Home version 0 is a stand-in"). **Typing foundation built** (`Brickson/Typing`: `MessageComposer`, `DraftStore`, the keyboard probe); the typing state on Home not yet. |
 | 6 | Editing screens. Build D24 and D25 here. | Not started. |
 | 7 | Settings and family setup for every input method | Not started. |
