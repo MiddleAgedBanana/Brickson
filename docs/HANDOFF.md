@@ -152,13 +152,22 @@ release in docs/ROADMAP.md when no thread has it yet.
 - No editing or backup *(Library editing and backup format)*.
 - Settings' Get Attention place is empty: starting the alarm there before
   Home has Stop would leave it with no way to stop. It goes in with Get
-  Attention and Stop on Home. *(the thread that puts them on Home)*
-- Chains of activations through Settings' screens are not scored. One is
-  known: a held look can follow Family Setup's first row into Set Up Step
-  by Step and save Touch, its first answer, which is then nearest. Home's
-  Settings button now starts that chain: once Settings opens, its spot is
-  over the root's Family Setup row (docs/DECISIONS.md, "Settings on
-  Home"). Another
+  Attention and Stop on Home. On wide windows, Settings' root puts its
+  note under that place, so adding Get Attention means scoring a look
+  that reads the note (docs/DECISIONS.md, "Settings on Home"). *(the
+  thread that puts them on Home)*
+- Chains of activations through Settings' screens are not fully scored.
+  From Home's Settings, two steps are (modelled, in
+  [`work/settings-on-home.md`](work/settings-on-home.md)):
+  the first meets the root's Family Setup row everywhere CI runs; the
+  second meets Back to Talking on wide windows by centre and on an iPad
+  at the largest text size by both rules, which closes Settings onto
+  Emergency. Placing Family Setup's own rows for it is the fix. A
+  further one is known: a held look can follow Family Setup's first row into Set Up Step
+  by Step and save Touch, its first answer, which is then nearest (it
+  adds Touch and restarts the check-in clock; nothing reads the answers
+  yet). Home's Settings button now starts that chain on a phone at the
+  default text size. Another
   runs through iOS's Personal Voice question, once the Ask button shows:
   after answering, the look rests where the question's button was, over
   whatever Voice Settings has there. Answers

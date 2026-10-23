@@ -53,14 +53,40 @@ close in the same place (invariant 10). `SettingsTests` opens Settings
 the same way and never measured where the bar was. Now the bar is only
 as tall as its tallest control (`fixedSize`), Settings' sound line sits
 at the foot of the cover instead of between the bar and the screens, and
-on regular widths the root's Family Setup row takes the bar's trailing
-column, under Back to Talking, with the note beside it. Modelled from
+wherever half the width holds its words on one line, the root's Family
+Setup row takes the bar's trailing column, under Back to Talking, with
+the note beside it. Modelled from
 the run's own frames, the bar fix alone left Back to Talking nearest
 the spot by centre on the iPad and by edge on the iPhone at AX5; with
 all three, Family Setup is nearest by both rules on all five windows
 the test runs (iPhone 402×874 at default and AX5, 13-inch iPad portrait
 at default and AX5, landscape), and the way out still lands nearest
 Emergency.
+
+**Review round 2,** answered in words, as the second and last round.
+Codex raised three points on `aac1993`. Settings hides Yes, No and
+Emergency: by design, since the cover opens on the way back and Get
+Attention's place (AGENTS.md, *Family controls stay out of the person's
+path*), now named as two activations away in docs/DECISIONS.md. The gear
+alone is an exception to *Words never break*: it is, and it is put to
+the owner. The known chain through Set Up Step by Step is now reachable
+from Home: it is, recorded in docs/HANDOFF.md for the dwell-safety
+scoring work, and its last step changes nothing the person sees or
+hears yet.
+
+**Before pushing round 2's notes,** two read-only review agents went over
+the unbuilt Settings fix, one for the build and layout and one for the
+rules and the record. Fixed: the root first chose its columns by size
+class, which left compact windows wide enough for Home's regular
+arrangement (an iPad's two-thirds Split View) with a full-width row and
+Back to Talking nearest by centre; it now chooses them with
+`ViewThatFits`, measuring a hidden copy of the row, so the columns come
+wherever each half holds the row's words on one line. A code comment
+credited CI with a modelled result. Recorded rather than fixed: the
+chain's second step (the work file's table; docs/DESIGN.md asked this
+work to score the chain), the sound line's new neighbours at the foot,
+and the root's note under Get Attention's place on wide windows, which
+the thread that adds Get Attention must score.
 
 ## Commits
 
@@ -75,7 +101,10 @@ Emergency.
 - `30a6f4f` Narrow Yes and No, and show Settings' gear alone, before taking a row
 - `abe25ad` Record review round 1 of Settings on Home
 - `d0b88ba` Keep Settings' bar at the top, over nothing of Home's Settings
-- This record's round 2.
+- `3e0dd5d` Record the Settings layout fix from the first UI test run
+- `aac1993` Merge main into Settings on Home
+- `0e512c0` Choose Settings' root columns by the width its row needs
+- This record's review round 2 and the scored chain.
 
 ## Verified
 
@@ -96,7 +125,8 @@ Emergency.
   failed in `SettingsOnHomeTests` only, on both: the stretched bar above.
   The frames, captures and screenshots were read from the run's result
   bundles on Linux (Python's `sqlite3` and `zstandard`).
-- CI on round 2: PENDING.
+- CI on round 2 and after: the pull request's checks, which must be
+  green before it merges.
 
 ## Not verified
 
@@ -113,6 +143,10 @@ Emergency.
 - The round 2 Settings layout (the bar's height, the sound line at the
   foot, the root's two columns) is unbuilt until CI; its frames above
   are a model from the first run's, with the bar at its natural height.
+  On CI's 13-inch iPad at AX5, the two columns need about 902 of the
+  1000pt the root has, by the row's words as drawn on the first run's
+  iPhone; if the row is wider than that, the root falls back to one
+  column and `SettingsOnHomeTests` fails there by centre.
 - Settings' gear alone is never drawn by a test: CI's iPhone has 370pt
   of content, where the word fits with Bold Text off or on. Its label,
   its large content viewer and Apple's audit of it wait for a window
@@ -142,3 +176,7 @@ Emergency.
 7. **Back to Talking breaks "Talking"** ("Talk-", "ing") on CI's iPhone
    at AX5, a break of *Words never break* that the base branch has too
    (docs/HANDOFF.md, *Known gaps*).
+8. **Family Setup's rows placed for the chain:** its first row where the
+   root's row was, under Back to Talking, on wide windows and at large
+   text, so the second held activation meets a row that only navigates
+   (the work file's chain table).

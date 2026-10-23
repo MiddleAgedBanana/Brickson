@@ -990,9 +990,15 @@ item 7 left for later ([`work/settings-on-home.md`](work/settings-on-home.md),
   is only as tall as its tallest control, and the sound line sits at the
   foot of the cover (*Settings is a cover with a fixed safety bar*), so
   the root's Family Setup row starts under the bar, over the spot where
-  Home's Settings was. In a regular-width window the row takes the bar's
+  Home's Settings was. Where half the width holds the row's words on one
+  line (a `ViewThatFits` that measures the row), the row takes the bar's
   trailing column, under Back to Talking and as wide, with the note
-  beside it. *Before:* Get Attention's empty place stretched the bar to
+  beside it; on phones it spans the width. At the foot, the sound line's
+  nearest controls are whatever rows a screen has scrolled to its lower
+  edge, some of which speak a sample or change a setting; under the bar
+  its nearest were Back to Talking and the navigation bar. That costs a
+  look that reads a warning, which is rare, to keep a look that opens
+  Settings off Back to Talking. *Before:* Get Attention's empty place stretched the bar to
   about a third of the screen (since PR #23), so Back to Talking sat over
   Home's Settings, and a look resting after Settings closed met Home's
   Settings again (`SettingsOnHomeTests` on PR #33's first CI run).
@@ -1001,6 +1007,22 @@ item 7 left for later ([`work/settings-on-home.md`](work/settings-on-home.md),
   centre is mid-window, and by edge on the iPhone at the largest text
   size, where the sound line, kept tall enough for its longest warning,
   sat between them.
+- **The next held activation is scored, not fixed.** After Family
+  Setup's row, the chain goes on as the work file's table says: Set Up
+  Step by Step on a phone at the default size; Back to Talking by centre
+  (Set Up Step by Step by edge) on a wide window; Back to Talking by both
+  on an iPad at the largest size, so Settings closes onto Emergency; on a
+  phone at the largest size, Back to Talking or the navigation bar's
+  back button. None speaks, alarms or deletes. Breaking it needs Family
+  Setup's own rows placed for it, which is the Settings chain scoring
+  in docs/HANDOFF.md, *Known gaps*.
+- **From Settings, Yes, No and Emergency are two activations away:**
+  Back to Talking, whose spot lands nearest Emergency on Home, then the
+  control. The cover is the family's screen, not a Home state, and opens
+  on the way back and Get Attention's place (AGENTS.md, *Family controls
+  stay out of the person's path*; *Settings is a cover with a fixed
+  safety bar*). Home's Settings button makes that reachable by a stray
+  activation; Get Attention joins the bar with Home's Stop.
 
 *Before:* Home had no Settings button, so only UI tests opened Settings
 (`--screen=settings`, which `SettingsTests` still use to start there),
@@ -1236,8 +1258,9 @@ only the way back, Get Attention and one row that navigates. Family
 Setup opens on passive text at least as tall as that row
 (`FamilySetupView.openingHeight`), so nothing that can be activated sits
 under the spot just activated. With Snap to Item the nearest control is
-then a row that only navigates; chains through Settings are not scored
-yet (docs/HANDOFF.md, *Known gaps*).
+then a row that only navigates on a phone at the default text size, and
+can be Back to Talking elsewhere (*Settings on Home*); chains through
+Settings are not fully scored yet (docs/HANDOFF.md, *Known gaps*).
 
 Family Setup's rows: Set Up Step by Step, Voice Settings, Reaching the
 Screen, Keep Brickson Open (Guided Access and Assistive Access), Privacy

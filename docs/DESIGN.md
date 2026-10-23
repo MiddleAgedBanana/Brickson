@@ -529,6 +529,10 @@ a held activation meets next*). Below the band:
   there. A pointer may snap to another navigation row; main explicitly
   records the full Settings chains as unscored. With Settings at region
   B's trailing end, the Home/Settings work must score the actual chain.
+  It did (PR #33): the landed root's row sits over that spot again, now
+  with Family Setup's passive opening under it, and the work file
+  [`work/settings-on-home.md`](work/settings-on-home.md) scores two
+  steps of the chain.
 - **Family Setup**: the landed rows are Set Up Step by Step, Voice
   Settings, Reaching the Screen, Keep Brickson Open, Privacy Policy and
   About, each a standard control. The Library row joins them when its

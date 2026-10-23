@@ -125,15 +125,32 @@ window less Home's 16pt margins).
   | 375×667 phone, Bold Text | Again, both | Emergency, both | 95%, 90% | 66%, 63% |
 
   After Settings opens, the spot where Home's Settings was is over
-  Family Setup's row, which only opens the next screen. A second held
-  activation there opens Family Setup, whose first row leads into Set
-  Up Step by Step; that chain is the one docs/HANDOFF.md already lists
-  (Settings follow-up 10), now reachable from Home, and it changes no
-  size yet. The first CI run showed this was not yet so: Settings' bar
-  had stretched to about a third of the screen, putting Back to Talking
-  over that spot. Round 2 fixed the bar, moved Settings' sound line to
-  the foot of the cover and put the root's row in the bar's trailing
-  column on regular widths (docs/DECISIONS.md, "Settings on Home").
+  Family Setup's row, which only opens the next screen. The first CI
+  run showed this was not yet so: Settings' bar had stretched to about
+  a third of the screen, putting Back to Talking over that spot. Round
+  2 fixed the bar, moved Settings' sound line to the foot of the cover
+  and put the root's row in the bar's trailing column wherever half the
+  width holds its words (docs/DECISIONS.md, "Settings on Home").
+
+  **The chain, two steps** (modelled from the first CI run's frames,
+  with the bar at its natural height; the pointer at the centre of the
+  control just activated, as in docs/DESIGN.md):
+
+  | Window | After Home's Settings | After the root's Family Setup row |
+  |---|---|---|
+  | 402×874 phone, default | Family Setup, both rules | Set Up Step by Step, both; its first answer, Touch, is next (docs/HANDOFF.md) |
+  | 402×874 phone, AX5 | Family Setup, both | Back to Talking by edge, the navigation bar's back button by centre (its frame is estimated); Set Up Step by Step is below the screen, under Family Setup's long opening |
+  | 13-inch iPad portrait, default | Family Setup, both | Back to Talking by centre, Set Up Step by Step by edge |
+  | 13-inch iPad portrait, AX5 | Family Setup, both | Back to Talking, both: Settings closes, and its spot is nearest Emergency |
+  | 13-inch iPad landscape, default | Family Setup, both | Back to Talking by centre, Set Up Step by Step by edge |
+
+  None of these speaks, alarms, deletes or changes a size. Where Back
+  to Talking comes next, Settings closes and the look meets Emergency,
+  which only shows the emergency phrases. With the root's row full
+  width instead, the first step met Back to Talking on the iPads by
+  centre. Breaking the second step needs Family Setup's first row
+  where the root's row was, under Back to Talking, which is the
+  Settings chain scoring in docs/HANDOFF.md.
 - **Colours:** none new. Settings uses `HomeButtonStyle` with
   `Palette.controlFill`, pinned in `PaletteTests` like Home's other
   controls.
