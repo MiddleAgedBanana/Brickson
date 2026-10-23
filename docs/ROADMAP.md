@@ -236,7 +236,9 @@ owner's decision under invariant 9, as caregiver alerts do.
   [`tests-ci-audit.md`](recon/2026-10-15/tests-ci-audit.md), section 4.2 of
   the synthesis.
 - Moving to each new Xcode release when Apple ships it, through a pull
-  request (docs/DECISIONS.md, "Build with Apple's current Xcode").
+  request (docs/DECISIONS.md, "Build with Apple's current Xcode"), which
+  fixes every warning it adds, since warnings are errors (docs/DECISIONS.md,
+  "Warnings are errors").
 - Localization through the String Catalog, once its sync check is in CI.
 - The device-check log: every result recorded with what it was measured on.
 - The documents: each pull request edits the handoff's front page in
