@@ -346,6 +346,534 @@ struct PhraseLibraryTests {
         #expect(prepared.issue == .starterPhrasesUnavailable)
     }
 
+    // MARK: Emergency repair
+
+    /// The person's own category in the damaged stores below, as stored
+    /// there: sort orders 5, then 7 and 9, so a renumbering shows.
+    private let mine = LibrarySnapshot.Category(
+        id: LibraryFixtures.id(400),
+        name: "Mine",
+        symbolName: "star.fill",
+        isEmergency: false,
+        phrases: [
+            .init(id: LibraryFixtures.id(401), text: "My own words."),
+            .init(id: LibraryFixtures.id(402), text: "More of mine."),
+        ]
+    )
+
+    /// A store damaged so that Emergency has nothing to open: `mine`, and
+    /// no emergency category.
+    private func storeWithoutEmergency(categorySortOrder: Int = 5) throws -> ModelContainer {
+        let container = try PhraseLibraryStore.makeInMemoryContainer()
+        let context = ModelContext(container)
+        let category = PhraseCategory(name: mine.name, symbolName: mine.symbolName, sortOrder: categorySortOrder, uuid: mine.id)
+        context.insert(category)
+        context.insert(Phrase(text: mine.phrases[0].text, sortOrder: 7, category: category, uuid: mine.phrases[0].id))
+        context.insert(Phrase(text: mine.phrases[1].text, sortOrder: 9, category: category, uuid: mine.phrases[1].id))
+        try context.save()
+        return container
+    }
+
+    /// The case the repair exists for (invariant 2). Fails if the starter
+    /// emergency category is not added, goes anywhere but last, takes new
+    /// identities when the starter ones are free, or if anything already
+    /// stored is renumbered, changed or deleted (invariant 7).
+    @Test func aStoreWithoutEmergencyGetsTheStarterOneAndKeepsEverythingElse() throws {
+        let container = try storeWithoutEmergency()
+
+        let outcome = try PhraseLibraryRepairer.repairEmergency(container, starter: library)
+
+        let expected = LibrarySnapshot(categories: [mine, F.emergency])
+        guard case let .saved(repair) = outcome else {
+            Issue.record("The repair was not saved: \(outcome)")
+            return
+        }
+        #expect(repair.repaired == expected)
+        #expect(try LibraryEditor.read(container) == expected)
+        let stored = try categories(in: container)
+        #expect(stored.map(\.sortOrder) == [5, 6])
+        #expect(stored.map(\.isEmergency) == [false, true])
+        #expect(stored.first?.phrasesInOrder.map(\.sortOrder) == [7, 9])
+        #expect(stored.last?.phrasesInOrder.map(\.sortOrder) == [0, 1])
+        #expect(CategorySelection.emergency(in: stored)?.uuid == F.emergencyID)
+    }
+
+    /// An emergency category whose only phrase is blank gives Emergency
+    /// nothing to say. The blank phrase is the person's: it keeps its
+    /// place and its bytes. Fails if it is removed, rewritten or
+    /// renumbered, or if the starter phrases are not added after it.
+    @Test func anEmergencyCategoryWithNothingToSayGetsTheStarterPhrasesAfterItsOwn() throws {
+        let container = try PhraseLibraryStore.makeInMemoryContainer()
+        let context = ModelContext(container)
+        let emergency = PhraseCategory(name: "Help", symbolName: "star.fill", sortOrder: 0, isEmergency: true, uuid: F.emergencyID)
+        context.insert(emergency)
+        context.insert(Phrase(text: " \u{2060}", sortOrder: 3, category: emergency, uuid: F.id(201)))
+        context.insert(PhraseCategory(name: mine.name, symbolName: mine.symbolName, sortOrder: 1, uuid: mine.id))
+        try context.save()
+
+        let outcome = try PhraseLibraryRepairer.repairEmergency(container, starter: library)
+
+        guard case .saved = outcome else {
+            Issue.record("The repair was not saved: \(outcome)")
+            return
+        }
+        let stored = try categories(in: container)
+        #expect(stored.map(\.uuid) == [F.emergencyID, mine.id])
+        #expect(stored.map(\.name) == ["Help", "Mine"])
+        let phrases = try #require(stored.first?.phrasesInOrder)
+        #expect(phrases.map(\.text) == [" \u{2060}", "I need help now.", "Please come here."])
+        #expect(phrases.map(\.sortOrder) == [3, 4, 5])
+        #expect(phrases.first?.uuid == F.id(201))
+        // The blank phrase holds the starter's first identity, so that
+        // starter phrase gets a new one; the second keeps the starter's.
+        #expect(phrases[1].uuid != F.id(201))
+        #expect(phrases[2].uuid == F.id(202))
+        #expect(try LibraryEditor.read(container).keepsEmergencyWorking)
+    }
+
+    /// Fails if a store whose Emergency works is written to, which would
+    /// add phrases nobody chose.
+    @Test func aStoreWhoseEmergencyWorksIsLeftAlone() throws {
+        let container = try PhraseLibraryStore.makeInMemoryContainer()
+        try PhraseLibrarySeeder.seedIfEmpty(container, with: library)
+        var saved = false
+
+        let outcome = try PhraseLibraryRepairer.repairEmergency(
+            container,
+            starter: library,
+            save: { _ in saved = true }
+        )
+
+        #expect(outcome == .notNeeded)
+        #expect(!saved)
+        #expect(try LibraryEditor.read(container) == library)
+    }
+
+    /// Invariant 5: a repair whose save fails leaves the store exactly as
+    /// it was, does not crash, and hands back the repaired library to speak
+    /// from. Fails if anything reaches the store, or if the next launch
+    /// cannot repair it.
+    @Test func aFailedRepairChangesNothing() throws {
+        let container = try storeWithoutEmergency()
+
+        let outcome = try PhraseLibraryRepairer.repairEmergency(
+            container,
+            starter: library,
+            save: { _ in throw Failed() }
+        )
+
+        guard case let .notSaved(repair) = outcome else {
+            Issue.record("The failed save was not reported: \(outcome)")
+            return
+        }
+        #expect(repair.repaired == LibrarySnapshot(categories: [mine, F.emergency]))
+        #expect(try LibraryEditor.read(container) == LibrarySnapshot(categories: [mine]))
+        #expect(try container.mainContext.fetchCount(FetchDescriptor<PhraseCategory>()) == 1)
+        #expect(try container.mainContext.fetchCount(FetchDescriptor<Phrase>()) == 2)
+        #expect(!container.mainContext.hasChanges)
+        // And the next launch can still repair it.
+        #expect(try PhraseLibraryRepairer.repairEmergency(container, starter: library) == .saved(repair))
+    }
+
+    /// When the store cannot be read, nobody can tell what it needs: it is
+    /// never written to. Fails if the repair writes anyway.
+    @Test func aStoreThatCannotBeReadIsNotRepaired() throws {
+        let container = try storeWithoutEmergency()
+        var saved = false
+
+        #expect(throws: PhraseLibrarySeedError.storeUnreadable) {
+            try PhraseLibraryRepairer.repairEmergency(
+                container,
+                starter: library,
+                readStore: { _ in throw Failed() },
+                save: { _ in saved = true }
+            )
+        }
+
+        #expect(!saved)
+        #expect(try LibraryEditor.read(container) == LibrarySnapshot(categories: [mine]))
+    }
+
+    /// The phrases go into the category Home opens, found again in the
+    /// store. Fails if a store that reads differently from the library the
+    /// repair was planned on is written to, or crashes the app: here, the
+    /// read puts an empty emergency category where the store has none, or
+    /// one with another identity than the store's.
+    @Test(arguments: [false, true])
+    func aStoreThatReadsDifferentlyIsNotRepaired(storeHasEmergency: Bool) throws {
+        let container = try PhraseLibraryStore.makeInMemoryContainer()
+        let context = ModelContext(container)
+        context.insert(PhraseCategory(
+            name: "Help",
+            symbolName: "star.fill",
+            sortOrder: 0,
+            isEmergency: storeHasEmergency,
+            uuid: F.emergencyID
+        ))
+        try context.save()
+        let before = try LibraryEditor.read(container)
+        var read = before
+        read.categories[0].isEmergency = true
+        read.categories[0].id = storeHasEmergency ? F.id(999) : F.emergencyID
+        var saved = false
+
+        #expect(throws: PhraseLibrarySeedError.storeUnreadable) {
+            try PhraseLibraryRepairer.repairEmergency(
+                container,
+                starter: library,
+                readStore: { _ in read },
+                save: { _ in saved = true }
+            )
+        }
+
+        #expect(!saved)
+        #expect(try LibraryEditor.read(container) == before)
+    }
+
+    /// A hand-edited store can leave no room after the last sort order.
+    /// The categories are then renumbered in the order they are shown, so
+    /// nothing moves, and the emergency category goes after them. Fails if
+    /// the next sort order overflows (a crash at launch), if the addition
+    /// ties at `Int.max` and sorts first by name, or if anything else is
+    /// renumbered.
+    @Test func aStoreWithNoRoomAtTheEndIsRenumberedWithoutMovingAnything() throws {
+        let container = try storeWithoutEmergency(categorySortOrder: Int.max)
+
+        let outcome = try PhraseLibraryRepairer.repairEmergency(container, starter: library)
+
+        guard case .saved = outcome else {
+            Issue.record("The repair was not saved: \(outcome)")
+            return
+        }
+        let stored = try categories(in: container)
+        #expect(stored.map(\.name) == ["Mine", "Emergency"])
+        #expect(stored.map(\.sortOrder) == [0, 1])
+        #expect(stored.first?.phrasesInOrder.map(\.sortOrder) == [7, 9])
+        #expect(CategorySelection.emergency(in: stored)?.phrasesInOrder.map(\.text) == F.emergency.phrases.map(\.text))
+    }
+
+    /// The same for an emergency category whose only phrase, blank, has no
+    /// room after it. Fails if the starter phrases tie with it at
+    /// `Int.max` and sort before it by their words.
+    @Test func anEmergencyPhraseWithNoRoomAfterItKeepsItsPlace() throws {
+        let container = try PhraseLibraryStore.makeInMemoryContainer()
+        let context = ModelContext(container)
+        let emergency = PhraseCategory(name: "Help", symbolName: "star.fill", sortOrder: 1, isEmergency: true, uuid: F.emergencyID)
+        context.insert(emergency)
+        context.insert(Phrase(text: "\u{2060}", sortOrder: Int.max, category: emergency, uuid: F.id(210)))
+        context.insert(PhraseCategory(name: mine.name, symbolName: mine.symbolName, sortOrder: 0, uuid: mine.id))
+        try context.save()
+
+        let outcome = try PhraseLibraryRepairer.repairEmergency(container, starter: library)
+
+        guard case .saved = outcome else {
+            Issue.record("The repair was not saved: \(outcome)")
+            return
+        }
+        let stored = try categories(in: container)
+        #expect(stored.map(\.sortOrder) == [0, 1])
+        let phrases = try #require(CategorySelection.emergency(in: stored)?.phrasesInOrder)
+        #expect(phrases.map(\.text) == ["\u{2060}"] + F.emergency.phrases.map(\.text))
+        #expect(phrases.map(\.sortOrder) == [0, 1, 2])
+        #expect(phrases.first?.uuid == F.id(210))
+    }
+
+    /// A store damaged so that an earlier category, `mine`'s, has the
+    /// emergency category's identity. Home shows the first category with
+    /// the identity Emergency asks for (`CategorySelection.resolve`), so
+    /// Emergency opens "My own words." instead (invariant 2).
+    private func shadowedStore() throws -> ModelContainer {
+        let container = try PhraseLibraryStore.makeInMemoryContainer()
+        let context = ModelContext(container)
+        let shadowing = PhraseCategory(name: mine.name, symbolName: mine.symbolName, sortOrder: 0, uuid: F.emergencyID)
+        context.insert(shadowing)
+        context.insert(Phrase(text: mine.phrases[0].text, sortOrder: 0, category: shadowing, uuid: mine.phrases[0].id))
+        let emergency = PhraseCategory(name: "Help", symbolName: "star.fill", sortOrder: 1, isEmergency: true, uuid: F.emergencyID)
+        context.insert(emergency)
+        context.insert(Phrase(text: "Come here, please.", sortOrder: 0, category: emergency, uuid: F.id(210)))
+        try context.save()
+        let ordered = PhraseCategory.orderedForDisplay([shadowing, emergency])
+        #expect(CategorySelection.resolve(ordered, selectedID: CategorySelection.emergency(in: ordered)?.uuid) === shadowing)
+        return container
+    }
+
+    /// Fails if the emergency category keeps its identity in the store, if
+    /// the earlier category's identity changes instead, or if any name,
+    /// phrase or sort order changes.
+    @Test func aShadowedEmergencyCategoryGetsANewIdentityInTheStore() throws {
+        let container = try shadowedStore()
+
+        let outcome = try PhraseLibraryRepairer.repairEmergency(container, starter: library)
+
+        guard case let .saved(repair) = outcome else {
+            Issue.record("The repair was not saved: \(outcome)")
+            return
+        }
+        let newIdentity = try #require(repair.newIdentity)
+        let stored = try categories(in: container)
+        #expect(stored.map(\.uuid) == [F.emergencyID, newIdentity])
+        #expect(stored.map(\.name) == ["Mine", "Help"])
+        #expect(stored.map(\.sortOrder) == [0, 1])
+        #expect(stored.map { $0.phrasesInOrder.map(\.text) } == [["My own words."], ["Come here, please."]])
+        let shown = CategorySelection.resolve(stored, selectedID: CategorySelection.emergency(in: stored)?.uuid)
+        #expect(shown?.isEmergency == true)
+        #expect(try LibraryEditor.read(container) == repair.repaired)
+    }
+
+    /// A category with the emergency category's name but an earlier sort
+    /// order, and the largest identity there is, is placed by its sort
+    /// order, so it must not stop the new identity. Fails if the repair is
+    /// not given the stored sort orders: then no identity fits and the
+    /// categories are renumbered for nothing.
+    @Test func aSameNamedCategoryWithAnEarlierSortOrderDoesNotStopTheNewIdentity() throws {
+        let largest = try #require(UUID(uuidString: "FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF"))
+        let container = try PhraseLibraryStore.makeInMemoryContainer()
+        let context = ModelContext(container)
+        context.insert(PhraseCategory(name: "Help", symbolName: "star.fill", sortOrder: 0, uuid: largest))
+        let shadowing = PhraseCategory(name: mine.name, symbolName: mine.symbolName, sortOrder: 1, uuid: F.emergencyID)
+        context.insert(shadowing)
+        context.insert(Phrase(text: mine.phrases[0].text, sortOrder: 0, category: shadowing, uuid: mine.phrases[0].id))
+        let emergency = PhraseCategory(name: "Help", symbolName: "star.fill", sortOrder: 2, isEmergency: true, uuid: F.emergencyID)
+        context.insert(emergency)
+        context.insert(Phrase(text: "Come here, please.", sortOrder: 0, category: emergency, uuid: F.id(210)))
+        try context.save()
+
+        let outcome = try PhraseLibraryRepairer.repairEmergency(container, starter: library)
+
+        guard case let .saved(repair) = outcome else {
+            Issue.record("The repair was not saved: \(outcome)")
+            return
+        }
+        #expect(repair.renumberedCategories == nil)
+        let newIdentity = try #require(repair.newIdentity)
+        let stored = try categories(in: container)
+        #expect(stored.map(\.uuid) == [largest, F.emergencyID, newIdentity])
+        #expect(stored.map(\.sortOrder) == [0, 1, 2])
+        let shown = CategorySelection.resolve(stored, selectedID: CategorySelection.emergency(in: stored)?.uuid)
+        #expect(shown?.phrasesInOrder.map(\.text) == ["Come here, please."])
+    }
+
+    /// Codex's third review on PR #37: a store damaged twice over. An
+    /// earlier category, `mine`'s, has the emergency category's identity,
+    /// and the emergency category shares its sort order and name with a
+    /// category just before it and one just after, whose identities leave
+    /// no new one between them. Home shows "My own words." for Emergency
+    /// (invariant 2).
+    private func storeWithNoIdentityToSpare() throws -> ModelContainer {
+        let container = try PhraseLibraryStore.makeInMemoryContainer()
+        let context = ModelContext(container)
+        let shadowing = PhraseCategory(name: mine.name, symbolName: mine.symbolName, sortOrder: 0, uuid: F.id(1))
+        context.insert(shadowing)
+        context.insert(Phrase(text: mine.phrases[0].text, sortOrder: 0, category: shadowing, uuid: mine.phrases[0].id))
+        let before = PhraseCategory(name: "Help", symbolName: "star.fill", sortOrder: 1, uuid: F.id(0))
+        context.insert(before)
+        let emergency = PhraseCategory(name: "Help", symbolName: "star.fill", sortOrder: 1, isEmergency: true, uuid: F.id(1))
+        context.insert(emergency)
+        context.insert(Phrase(text: "Come here, please.", sortOrder: 0, category: emergency, uuid: F.id(210)))
+        let after = PhraseCategory(name: "Help", symbolName: "star.fill", sortOrder: 1, uuid: F.id(2))
+        context.insert(after)
+        try context.save()
+        let ordered = PhraseCategory.orderedForDisplay([after, emergency, before, shadowing])
+        #expect(ordered.map(\.uuid) == [F.id(1), F.id(0), F.id(1), F.id(2)])
+        #expect(CategorySelection.resolve(ordered, selectedID: CategorySelection.emergency(in: ordered)?.uuid) === shadowing)
+        return container
+    }
+
+    /// The categories are renumbered 0, 1, 2, 3 in the order they are
+    /// shown, so none is ordered by identity any more, and the emergency
+    /// category gets a new identity. Fails if the repair keeps the old
+    /// identity (Emergency keeps opening "My own words."), if the new sort
+    /// orders are not saved or move anything, or if any identity but the
+    /// emergency category's, any name or any phrase changes.
+    @Test func aStoreWithNoIdentityToSpareIsRenumberedWithoutMovingAnything() throws {
+        let container = try storeWithNoIdentityToSpare()
+
+        let outcome = try PhraseLibraryRepairer.repairEmergency(container, starter: library)
+
+        guard case let .saved(repair) = outcome else {
+            Issue.record("The repair was not saved: \(outcome)")
+            return
+        }
+        #expect(repair.renumberedCategories == [0, 1, 2, 3])
+        let newIdentity = try #require(repair.newIdentity)
+        let stored = try categories(in: container)
+        #expect(stored.map(\.uuid) == [F.id(1), F.id(0), newIdentity, F.id(2)])
+        #expect(stored.map(\.sortOrder) == [0, 1, 2, 3])
+        #expect(stored.map(\.name) == ["Mine", "Help", "Help", "Help"])
+        #expect(stored.map { $0.phrasesInOrder.map(\.text) } == [["My own words."], [], ["Come here, please."], []])
+        let shown = CategorySelection.resolve(stored, selectedID: CategorySelection.emergency(in: stored)?.uuid)
+        #expect(shown?.phrasesInOrder.map(\.text) == ["Come here, please."])
+        #expect(try LibraryEditor.read(container) == repair.repaired)
+    }
+
+    /// Invariant 5, for the renumbering: fails if a new sort order or the
+    /// new identity reaches the store when the save fails.
+    @Test func aFailedRenumberingChangesNothing() throws {
+        let container = try storeWithNoIdentityToSpare()
+        let before = try LibraryEditor.read(container)
+
+        let outcome = try PhraseLibraryRepairer.repairEmergency(
+            container,
+            starter: library,
+            save: { _ in throw Failed() }
+        )
+
+        guard case let .notSaved(repair) = outcome else {
+            Issue.record("The failed save was not reported: \(outcome)")
+            return
+        }
+        #expect(repair.renumberedCategories == [0, 1, 2, 3])
+        #expect(try LibraryEditor.read(container) == before)
+        let stored = try categories(in: container)
+        #expect(stored.map(\.uuid) == [F.id(1), F.id(0), F.id(1), F.id(2)])
+        #expect(stored.map(\.sortOrder) == [0, 1, 1, 1])
+    }
+
+    /// Invariant 5, for the new identity: fails if it reaches the store
+    /// when the save fails, or if the copy to speak from keeps the old one.
+    @Test func aFailedNewIdentityChangesNothing() throws {
+        let container = try shadowedStore()
+        let before = try LibraryEditor.read(container)
+
+        let outcome = try PhraseLibraryRepairer.repairEmergency(
+            container,
+            starter: library,
+            save: { _ in throw Failed() }
+        )
+
+        guard case let .notSaved(repair) = outcome else {
+            Issue.record("The failed save was not reported: \(outcome)")
+            return
+        }
+        let newIdentity = try #require(repair.newIdentity)
+        #expect(repair.repaired.categories.map(\.id) == [F.emergencyID, newIdentity])
+        #expect(try LibraryEditor.read(container) == before)
+        #expect(try categories(in: container).map(\.uuid) == [F.emergencyID, F.emergencyID])
+    }
+
+    /// The real starter file must offer emergency phrases, or the repair
+    /// has nothing to add. Fails if the bundled emergency category is
+    /// removed or left with no phrase with words.
+    @Test func theBundledStarterCanGiveEmergencyItsPhrasesBack() throws {
+        let bundled = try StarterLibrary.bundled()
+
+        let repair = try #require(EmergencyRepair.needed(in: LibrarySnapshot(categories: [mine]), starter: bundled))
+
+        #expect(repair.repaired.keepsEmergencyWorking)
+        #expect(repair.repaired.categories.first == mine)
+    }
+
+    /// The whole launch, as the app runs it, on a store that lost its
+    /// emergency category: the same store, repaired, kept, and nothing to
+    /// report. Fails if the launch skips the repair.
+    @Test func aLaunchGivesADamagedStoreItsEmergencyPhrasesBack() throws {
+        let store = try storeWithoutEmergency()
+
+        let prepared = PhraseLibraryLaunch.prepare(container: store, isVolatile: false, starter: { library })
+
+        #expect(prepared.container === store)
+        #expect(!prepared.isVolatile)
+        #expect(prepared.issue == nil)
+        #expect(try LibraryEditor.read(store) == LibrarySnapshot(categories: [mine, F.emergency]))
+    }
+
+    /// A repair that cannot be saved (a full disk) must neither leave
+    /// Emergency with nothing to open nor hide the person's words: the app
+    /// speaks from a copy in memory holding both, and says changes will not
+    /// be kept. Fails if it falls back to the starter library alone, or
+    /// writes to the store.
+    @Test func aRepairThatCannotBeSavedSpeaksFromACopyWithTheirWords() throws {
+        let store = try storeWithoutEmergency()
+
+        let prepared = PhraseLibraryLaunch.prepare(
+            container: store,
+            isVolatile: false,
+            starter: { library },
+            saveToStore: { _ in throw Failed() }
+        )
+
+        #expect(prepared.container !== store)
+        #expect(prepared.isVolatile)
+        #expect(prepared.issue == nil)
+        #expect(try LibraryEditor.read(prepared.container) == LibrarySnapshot(categories: [mine, F.emergency]))
+        #expect(try LibraryEditor.read(store) == LibrarySnapshot(categories: [mine]))
+    }
+
+    /// The copy in memory holds the store's categories item for item, even
+    /// two that a damaged store gave one identity. Fails if the copy is
+    /// written by identity (`StoredLibrary.write`), which would merge them
+    /// and show one category's name in place of the other's.
+    @Test func aCopyInMemoryKeepsCategoriesWhoseIdentitiesRepeat() throws {
+        let store = try PhraseLibraryStore.makeInMemoryContainer()
+        let context = ModelContext(store)
+        let first = PhraseCategory(name: "Mine", symbolName: "star.fill", sortOrder: 0, uuid: mine.id)
+        let second = PhraseCategory(name: "Also mine", symbolName: "star.fill", sortOrder: 1, uuid: mine.id)
+        context.insert(first)
+        context.insert(second)
+        context.insert(Phrase(text: "My own words.", sortOrder: 0, category: first, uuid: F.id(401)))
+        context.insert(Phrase(text: "Different words.", sortOrder: 0, category: second, uuid: F.id(401)))
+        try context.save()
+
+        let prepared = PhraseLibraryLaunch.prepare(
+            container: store,
+            isVolatile: false,
+            starter: { library },
+            saveToStore: { _ in throw Failed() }
+        )
+
+        #expect(prepared.isVolatile)
+        let copied = try categories(in: prepared.container)
+        #expect(copied.map(\.name) == ["Mine", "Also mine", "Emergency"])
+        #expect(copied.map { $0.phrasesInOrder.map(\.text) } == [["My own words."], ["Different words."], F.emergency.phrases.map(\.text)])
+    }
+
+    /// When the repair cannot read the store, the launch treats it as the
+    /// seeder does: the saved phrases are reported, never written over.
+    /// Fails if the repair's read failure is lost or reported as anything
+    /// less.
+    @Test func aRepairThatCannotReadTheStoreIsReported() throws {
+        let store = try storeWithoutEmergency()
+        var reads = 0
+
+        let prepared = PhraseLibraryLaunch.prepare(
+            container: store,
+            isVolatile: false,
+            starter: { library },
+            readStore: { context in
+                reads += 1
+                if reads > 1 { throw Failed() }
+                return try StoredLibrary(context).snapshot
+            }
+        )
+
+        #expect(reads == 2)
+        #expect(prepared.container !== store)
+        #expect(prepared.isVolatile)
+        #expect(prepared.issue == .libraryUnreadable)
+        #expect(try LibraryEditor.read(prepared.container) == library)
+        #expect(try LibraryEditor.read(store) == LibrarySnapshot(categories: [mine]))
+    }
+
+    /// If even the copy in memory cannot be made, the person's library
+    /// still shows from the store, and Home says what is missing. Fails if
+    /// this path crashes or reports nothing.
+    @Test func whenTheRepairAndItsCopyBothFailTheStoreIsKeptAndTheProblemReported() throws {
+        let store = try storeWithoutEmergency()
+
+        let prepared = PhraseLibraryLaunch.prepare(
+            container: store,
+            isVolatile: false,
+            starter: { library },
+            saveToStore: { _ in throw Failed() },
+            makeFallback: { throw Failed() }
+        )
+
+        #expect(prepared.container === store)
+        #expect(!prepared.isVolatile)
+        #expect(prepared.issue == .starterPhrasesUnavailable)
+        #expect(try LibraryEditor.read(store) == LibrarySnapshot(categories: [mine]))
+    }
+
     // MARK: Explicit saves
 
     /// Every way a launch can end leaves the main context unable to save
@@ -381,8 +909,19 @@ struct PhraseLibraryTests {
             saveToStore: { _ in throw Failed() },
             makeFallback: { throw Failed() }
         )
+        let repaired = PhraseLibraryLaunch.prepare(
+            container: try storeWithoutEmergency(),
+            isVolatile: false,
+            starter: { library }
+        )
+        let repairNotSaved = PhraseLibraryLaunch.prepare(
+            container: try storeWithoutEmergency(),
+            isVolatile: false,
+            starter: { library },
+            saveToStore: { _ in throw Failed() }
+        )
 
-        for prepared in [normal, fallback, unreadable, noStarter, fallbackFailed] {
+        for prepared in [normal, fallback, unreadable, noStarter, fallbackFailed, repaired, repairNotSaved] {
             #expect(!prepared.container.mainContext.autosaveEnabled)
         }
     }
