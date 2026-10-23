@@ -379,14 +379,18 @@ release in docs/ROADMAP.md when no thread has it yet.
   sentence deleted before release (docs/APP-STORE.md, section 3, lists
   each sentence). *(App Store readiness and ASO)*
 - iPhone Duo: Brickson builds with the iOS 27.1 SDK, so Apple already
-  treats it as optimized for iPhone Duo, but it has never run there. Its
+  treats it as optimized for iPhone Duo, but it has run there only
+  closed, in the simulator: on the outer display the starter phrases
+  scroll at the default text size, and Settings' Back moves into a
+  column at the trailing edge
+  ([`log/2026-10-23-large-content-and-iphone-duo.md`](log/2026-10-23-large-content-and-iphone-duo.md)).
+  Open and half-folded need Xcode's Device Hub and have not run. The
   inner display ignores the portrait-only setting, a fold can sit under
-  an odd column of Home, Settings' Back may move into a vertical bar, and
-  CI has no Duo simulator; screenshots are required from April 2027
-  (docs/DECISIONS.md, "iPhone Duo";
+  an odd column of Home, and CI has no Duo simulator; screenshots are
+  required from April 2027 (docs/DECISIONS.md, "iPhone Duo";
   [`log/2026-10-23-iphone-duo-readiness.md`](log/2026-10-23-iphone-duo-readiness.md)).
-  *(R0 item 13: a Mac thread first, then the layout engine, which builds
-  the owner's two fold choices)*
+  *(R0 item 13: the open poses on the Mac in Device Hub, then the layout
+  engine, which builds the owner's two fold choices)*
 - The app icon is a placeholder; `design/brand/` is not installed. *(Release chores, R0 item 11)*
 - Siri's alternative name "Brick Son" (`INAlternativeAppNames`) has no
   effect yet: Apple applies it only to apps with Siri support, which
@@ -430,8 +434,10 @@ schema version, safety copies, export and import, the editing screens). Calls (R
 `.github/workflows` are committed by the owner (docs/SDLC.md, *Deploy*). The toolchain's follow-ups
 (Xcode's recommended settings, iOS 27 APIs behind `#available`) are in
 [`log/2026-10-21-toolchain.md`](log/2026-10-21-toolchain.md); iPhone
-Duo is R0 item 13, starting with a run in the iPhone Duo simulator on
-the owner's Mac ([`log/2026-10-23-iphone-duo-readiness.md`](log/2026-10-23-iphone-duo-readiness.md), *Follow-ups*);
+Duo is R0 item 13: the closed pose has run in the simulator
+([`log/2026-10-23-large-content-and-iphone-duo.md`](log/2026-10-23-large-content-and-iphone-duo.md)),
+and open and half-folded come next, in Device Hub on the owner's Mac
+([`log/2026-10-23-iphone-duo-readiness.md`](log/2026-10-23-iphone-duo-readiness.md), *Follow-ups*);
 recheck the minimum iOS against its two rules whenever Apple's next major
 release drops devices (docs/DECISIONS.md, "Minimum iOS, iPhone and
 iPad").

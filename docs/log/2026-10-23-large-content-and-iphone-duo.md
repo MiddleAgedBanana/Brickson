@@ -50,9 +50,8 @@ after each major Xcode, in case SwiftUI's viewer changes:
 TEST_RUNNER_BRICKSON_SLIDE_PROBE=1 scripts/test.sh ui '-only-testing:BricksonUITests/HeldSlideProbeTests'
 ```
 
-**2. Brickson on the iPhone Duo simulator.** PR #41 (open when this was
-written) plans R0 item 13, *Ready for iPhone Duo*, and its first
-follow-up is to run the app in
+**2. Brickson on the iPhone Duo simulator.** PR #41 planned R0 item 13,
+*Ready for iPhone Duo*, and its first follow-up was to run the app in
 the iPhone Duo simulator. Only the closed pose could run: folding the
 simulator needs Xcode's Device Hub window, which this thread was not
 allowed to drive, and no command-line way to fold it was found. Closed,
@@ -273,6 +272,12 @@ simulator (`record_sim_video`) and give coverage per file
 these (this run used `xcrun simctl io recordVideo` and the UI tests'
 own captures instead).
 
+PR #41 merged while this pull request was open. Merging main brought
+its iPhone Duo plan in, and this pull request then edited its lines that
+said Brickson had never run on iPhone Duo (docs/HANDOFF.md's known gap
+and next step, R0 item 13 in docs/ROADMAP.md) to say the closed pose has
+run, here.
+
 ## Commits
 
 See the pull request.
@@ -350,18 +355,14 @@ simulators, each created or started by this thread and run one at a time.
 2. **The iPhone Duo open and half-folded**, as PR #41's readiness record
    lists (its follow-up 1), in Device Hub on the owner's Mac, by the
    owner or a thread allowed to drive it. *(R0 item 13)*
-3. **PR #41's "never run" lines.** Its HANDOFF known gap and R0 item 13
-   say Brickson has never run on iPhone Duo. Whichever of the two pull
-   requests merges second edits them to point here: the closed pose ran
-   in the simulator on 2026-10-23. *(the second to merge)*
-4. **The outer display's scrolling** belongs with the 375×667pt phone's
+3. **The outer display's scrolling** belongs with the 375×667pt phone's
    (docs/DECISIONS.md, *Where the grid still scrolls*). *(the layout
    engine, a new thread)*
-5. **A Duo UI test family** waits until GitHub's image has a simulator
+4. **A Duo UI test family** waits until GitHub's image has a simulator
    runtime that offers iPhone Duo (PR #41's follow-up 3). Until then
    `scripts/test.sh` runs on the Mac's Duo with
    `DESTINATION='platform=iOS Simulator,id=<udid>'`, as this record did.
    *(Test seams and CI evidence)*
-6. **Rerun `HeldSlideProbeTests`** after each major Xcode, with the test
+5. **Rerun `HeldSlideProbeTests`** after each major Xcode, with the test
    build above, in case SwiftUI's viewer starts sending the action UIKit
    documents. *(whoever moves Brickson to the next Xcode)*
