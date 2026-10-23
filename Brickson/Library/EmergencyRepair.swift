@@ -14,8 +14,9 @@ import Foundation
 /// it may change are an identity nobody sees (`newIdentity`) and sort
 /// orders renumbered in the order they are shown, which shows everything
 /// exactly as before: where a hand-edited store leaves no room after its
-/// last sort order (`sortOrders(adding:after:)`), and where no new identity
-/// would keep the emergency category in its place (`renumberedCategories`).
+/// last sort order (`sortOrders(adding:after:)`), and where none of the
+/// new identities tried keeps the emergency category in its place
+/// (`renumberedCategories`).
 ///
 /// Plain values, no SwiftData: `PhraseLibraryRepairer` reads the store,
 /// asks `needed(in:sortOrders:starter:makeID:)`, and writes what it says.

@@ -325,8 +325,8 @@ struct EmergencyRepairTests {
     /// A category with the emergency category's name but another sort
     /// order is placed by sort order, never by identity, so it does not
     /// limit the new identity. Fails if the repair ignores sort orders:
-    /// here no identity sorts after the largest, and Emergency would stay
-    /// broken.
+    /// here no identity sorts after the largest, so the first identity
+    /// offered would be refused and the categories renumbered for nothing.
     @Test func aSameNamedCategoryWithAnotherSortOrderDoesNotLimitTheNewIdentity() throws {
         let largest = try #require(UUID(uuidString: "FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF"))
         var emergency = F.emergency
@@ -343,7 +343,8 @@ struct EmergencyRepairTests {
     /// Codex's case on PR #37: the shadowing category also has the
     /// emergency category's name, its identity is the largest there is,
     /// and its sort order is earlier. Fails if the repair then finds no new
-    /// identity and Emergency stays broken.
+    /// identity among those offered, refuses the first and renumbers the
+    /// categories for nothing.
     @Test func aShadowingCategoryWithTheSameNameAndTheLargestIdentityGivesWay() throws {
         let largest = try #require(UUID(uuidString: "FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF"))
         var emergency = F.emergency

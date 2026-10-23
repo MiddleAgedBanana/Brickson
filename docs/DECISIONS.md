@@ -723,8 +723,8 @@ two cases, sort orders renumbered 0, 1, 2 in the order they are shown,
 which shows everything exactly as before: those of the items beside the
 additions, where a hand-edited store leaves no room after the last sort
 order (at or near the largest an `Int` holds), and those of the
-categories, where no new identity would keep the emergency category in
-its place (below). The repair is saved once from a context of its
+categories, where none of the new identities tried keeps the emergency
+category in its place (below). The repair is saved once from a context of its
 own. If that save fails, the store is left as it was for the next launch
 to try again, and the app speaks from a copy in memory holding the
 person's whole library with the repair, and says changes won't be kept.

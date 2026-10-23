@@ -98,7 +98,13 @@ See the pull request; the branch was cut from `main` at `f34e8ae` (PR #33).
   (correctness, CI, records, each finding checked by two more reviewers)
   found the same over-strict rule Codex did, and three stale sentences,
   all fixed here. The third round (the renumbering when no identity
-  fits) had one more independent review before it was pushed.
+  fits) had one more independent review before it was pushed, with its
+  own fuzzes of the repairer's steps; it found no fault in the fallback,
+  and its four findings on the records are fixed: test descriptions that
+  still said Emergency would stay broken, a store test that no longer
+  caught a repair not given the sort orders (it now expects no
+  renumbering), a log line that named the wrong renumbering, and three
+  summaries that said more than the 64 tries do.
 - **On a Linux machine with Swift 6.4.1** (not the app's toolchain: no
   Xcode, SwiftData or UIKit), in a throwaway package with the project's
   concurrency settings: `EmergencyRepair` and its 23 tests

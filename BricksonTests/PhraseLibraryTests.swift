@@ -623,8 +623,8 @@ struct PhraseLibraryTests {
     /// A category with the emergency category's name but an earlier sort
     /// order, and the largest identity there is, is placed by its sort
     /// order, so it must not stop the new identity. Fails if the repair is
-    /// not given the stored sort orders: then no identity fits and
-    /// Emergency stays broken.
+    /// not given the stored sort orders: then no identity fits and the
+    /// categories are renumbered for nothing.
     @Test func aSameNamedCategoryWithAnEarlierSortOrderDoesNotStopTheNewIdentity() throws {
         let largest = try #require(UUID(uuidString: "FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF"))
         let container = try PhraseLibraryStore.makeInMemoryContainer()
@@ -644,6 +644,7 @@ struct PhraseLibraryTests {
             Issue.record("The repair was not saved: \(outcome)")
             return
         }
+        #expect(repair.renumberedCategories == nil)
         let newIdentity = try #require(repair.newIdentity)
         let stored = try categories(in: container)
         #expect(stored.map(\.uuid) == [largest, F.emergencyID, newIdentity])
