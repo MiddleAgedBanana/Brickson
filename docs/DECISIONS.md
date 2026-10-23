@@ -1872,7 +1872,9 @@ every profile gets, even one that never uses Apple's keyboard.
   keyboard covers the lower part of Home instead of pushing it up.
 - An app cannot ask how tall the keyboard will be before it appears. So
   the layout reserves room for it as a function of the window alone (its
-  size and the text size), never of the device model. Measured keyboards
+  size; text size was planned as a second input until the 2026-10-23
+  measurements below showed it changes nothing), never of the device
+  model. Measured keyboards
   are rows in the tests, and a UI test fails if the live keyboard's top
   crosses the band. `KeyboardProbeTests` measures it; the
   table itself arrives with the layout engine (docs/PORTING.md, step 4).

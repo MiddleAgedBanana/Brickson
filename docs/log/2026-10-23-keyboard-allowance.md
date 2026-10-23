@@ -1,7 +1,8 @@
 # The room Home keeps for Apple's keyboard
 
-*2026-10-23. Branch `claude/project-thread-o4bpnw`. A cloud thread asked
-to bring typing onto Home, which built its prerequisite instead.*
+*2026-10-23. Pull request #46 (`claude/project-thread-o4bpnw`). A cloud
+thread asked to bring typing onto Home, which built its prerequisite
+instead.*
 
 ## What changed and why
 
@@ -79,9 +80,18 @@ C in one row*.
 
 ## Commits
 
-The commits on `claude/project-thread-o4bpnw`, listed in the pull
-request: the allowance and its tests; the always-on keyboard check and
-the probe's cleanup; refusing other apps' keyboards; the documents.
+- `f11cf42` Add KeyboardAllowance: the room Home keeps for Apple's keyboard
+- `42205a4` Check the keyboard and Home's safety row on every UI run
+- `42e3044` Refuse keyboards from other apps
+- `24ce843` Record the keyboard allowance and what typing on Home needs next
+- `9fec435` Keep typing on Home waiting for ROADMAP items 3 and 9
+- `686670c` Report Home's safety row before checking it against the keyboard
+- `9dbf7a4` Read the window's turn from the test itself, on the main actor
+- `eed2b93` Mark the keyboard's slide-to-type sheet as shown before UI tests
+- `28d1dab` Merge main (PRs #43 and #44) into the keyboard allowance branch
+- The commit after it corrects this record and one sentence of
+  docs/DECISIONS.md, "Typing is a state of Home", after CodeRabbit's
+  review.
 
 ## Verified
 
