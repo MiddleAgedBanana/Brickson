@@ -67,6 +67,68 @@ class GuardTests(unittest.TestCase):
                         ['git', '-C', str(self.repo), 'config', '--unset-all', key],
                         capture_output=True)
 
+    def test_push_abbreviations_require_full_option_names(self):
+        for option in ['--mir', '--force-w', '--force-w=main:abc', '--force-i', '--al', '--bra']:
+            self.assertDenied(f'git push {option} origin')
+        self.assertDenied('git push --dry-run --no-dry origin main')
+        self.assertAllowed('git push --dry-run --mirror origin')
+        self.assertAllowed('git push origin feature')
+        self.assertAllowed('git push -o --mir origin feature')  # option payload, not a flag
+
+    def test_wget_request_options_require_full_names(self):
+        endpoint = 'https://api.github.com/repos/o/r/pulls/12/merge'
+        for option in ['--met=PUT', '--meth PUT', '--metho=PUT']:
+            self.assertDenied(f'wget --no-config {option} {endpoint}')
+        self.assertDenied('wget --no-config --post-d=' + shlex.quote('{"event":"APPROVE"}') +
+                          ' https://api.github.com/repos/o/r/pulls/12/reviews')
+        self.assertAllowed(f'wget --no-config --method GET {endpoint}')
+
+    def test_singular_issue_assignment_is_checked(self):
+        endpoint = 'repos/o/r/issues/12'
+        self.assertDenied(f"gh api --method PATCH {endpoint} -f 'assignee=copilot-swe-agent[bot]'")
+        self.assertDenied('curl -q -X PATCH https://api.github.com/' + endpoint +
+                          ' --json ' + shlex.quote('{"assignee":"copilot-swe-agent[bot]"}'))
+        self.assertAllowed(f'gh api --method PATCH {endpoint} -f assignee=human')
+        self.assertAllowed('curl -q -X PATCH https://api.github.com/' + endpoint +
+                           ' --json ' + shlex.quote('{"assignee":null,"body":"copilot is mentioned here"}'))
+
+    def test_shell_script_follows_the_option_terminator(self):
+        for options in ['-c --', '-lc --']:
+            self.assertDenied(f"bash {options} 'git add -A'")
+            self.assertDenied(f"bash {options} 'gh pr merge 12'")
+            self.assertAllowed(f"bash {options} 'git status'")
+
+    def test_nested_command_substitutions_are_fully_checked(self):
+        for script in ['((1)); git add -A', '((1 + (2))); git add -A',
+                       'echo "$(git add -A)"', "printf ')'; git add -A"]:
+            self.assertDenied('echo "$( ' + script.replace('"', '\\"') + ')"')
+        self.assertAllowed('echo "$( ((1 + (2))); git status )"')
+        self.assertAllowed('echo "$(printf \'(\'; git status)"')
+
+    def test_curl_upload_bodies_are_inspected(self):
+        endpoint = 'https://api.github.com/repos/o/r/pulls/12/reviews'
+        with tempfile.TemporaryDirectory(dir=self.repo) as folder:
+            payload = Path(folder) / 'upload.json'
+            for event in ['APPROVE', 'COMMENT']:
+                payload.write_text(json.dumps({'event':event}))
+                for option in [f'-T {payload}', f'-T{payload}',
+                               f'--upload-file {payload}', f'--upload-file={payload}']:
+                    command = f'curl -q -X POST {option} {endpoint}'
+                    (self.assertDenied if event == 'APPROVE' else self.assertAllowed)(command)
+        for source in ['-', '.', 'missing.json', '{approve,comment}.json']:
+            self.assertDenied(f'curl -q -X POST -T {shlex.quote(source)} {endpoint}')
+
+    def test_branch_changes_require_explicit_push_destinations(self):
+        for change in ['git checkout main', 'git switch main',
+                       "bash -c 'git switch main'", '(git checkout main)']:
+            self.assertDenied(f'{change} && git push')
+            self.assertDenied(f'{change}; git push origin')
+            self.assertDenied(f'{change} && git push origin HEAD')
+            self.assertAllowed(f'{change} && git push origin HEAD:feature')
+        self.assertAllowed('git switch main')
+        self.assertAllowed('git checkout main && git push --dry-run origin main')
+        self.assertAllowed('git status && git push origin feature')
+
     def test_wget_execute_and_config_directives_require_explicit_options(self):
         url = 'https://api.github.com/repos/o/r/pulls/12/merge'
         for options in ['-e method=PUT', '-emethod=PUT', '-qe method=PUT',
@@ -343,9 +405,12 @@ class GuardTests(unittest.TestCase):
 
     def test_curl_upload_uses_put_unless_overridden(self):
         endpoint = 'https://api.github.com/repos/o/r/pulls/12/merge'
-        for option in ['-T payload.json', '-Tpayload.json', '--upload-file payload.json', '--upload-file=payload.json']:
-            self.assertDenied(f'curl -q {option} {endpoint}')
-            self.assertAllowed(f'curl -q -X GET {option} {endpoint}')
+        with tempfile.TemporaryDirectory(dir=self.repo) as folder:
+            payload = Path(folder) / 'payload.json'
+            payload.write_text('{}')
+            for option in [f'-T {payload}', f'-T{payload}', f'--upload-file {payload}', f'--upload-file={payload}']:
+                self.assertDenied(f'curl -q {option} {endpoint}')
+                self.assertAllowed(f'curl -q -X GET {option} {endpoint}')
         self.assertAllowed('curl -q -T payload.json https://example.com/upload')
 
     def test_push_digit_options_preserve_force_and_dry_run(self):

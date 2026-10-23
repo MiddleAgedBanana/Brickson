@@ -57,7 +57,7 @@ CITATION = re.compile(
     r'|(?<![*\w])\*(?P<italic>[^*\n]{2,120})\*(?![*\w]))')  # or *Title*
 BARE_ITALIC = re.compile(r'(?<![*\w`])\*(?P<title>[A-Z][^*\n]{1,120}?)\*(?![*\w])')
 REFERENCE_LINK = re.compile(
-    r'^ {0,3}\[(?!\^)[^\]\n]+\]:[ \t]*(?:\n[ \t]*)?'
+    r'^ {0,3}\[(?!\^)(?:\\.|[^\[\]\\\n])+\]:[ \t]*(?:\n[ \t]*)?'
     r'(?P<target><[^>\n]*>|[^\s<>]+)'
     r'(?:[ \t]+(?:"[^"\n]*"|\'[^\'\n]*\'|\([^\)\n]*\)))?[ \t]*$', re.M)
 HEADING = re.compile(r'^ {0,3}#{1,6}\s+(?P<title>.+?)\s*#*\s*$', re.M)
@@ -384,6 +384,19 @@ class CheckerTests(unittest.TestCase):
 
     def setUp(self):
         self.fixture = ROOT / 'docs' / 'DECISIONS.md'
+
+    def test_escaped_brackets_in_reference_definition_labels(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder).resolve()
+            page = root / 'index.md'
+            (root / 'guide.md').write_text('# Setup')
+            with patch.dict(globals(), ROOT=root):
+                for label in [r'ref\]', r'ref\[', r'ref\\']:
+                    for destination in ['missing.md', 'guide.md#missing']:
+                        self.assertTrue(broken_links(page,
+                            f'[guide][{label}]\n\n[{label}]: {destination}'))
+                    self.assertEqual(broken_links(page,
+                        f'[guide][{label}]\n\n[{label}]: guide.md#setup'), [])
 
     def test_balanced_and_escaped_brackets_in_link_text(self):
         with tempfile.TemporaryDirectory() as folder:

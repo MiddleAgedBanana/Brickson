@@ -228,10 +228,36 @@ def ansi_c_quotes(command):
 
 
 def nested(words):
-    """Command substitutions evaluated by the surrounding shell."""
+    """Read balanced command substitutions, including nested shell groups."""
     found = []
     for word in words:
-        found += re.findall(r'\$\(([^()]*(?:\([^()]*\)[^()]*)*)\)', word)
+        cursor = 0
+        while (start := word.find('$(', cursor)) >= 0:
+            index, quote, stack = start + 2, None, [None]
+            while index < len(word) and stack:
+                char = word[index]
+                if char == '\\' and quote != "'":
+                    index += 2
+                    continue
+                if word.startswith('$(', index) and quote != "'":
+                    stack.append(quote)
+                    quote = None
+                    index += 2
+                    continue
+                if quote:
+                    if char == quote:
+                        quote = None
+                elif char in ('"', "'", '`'):
+                    quote = char
+                elif char == '(':
+                    stack.append(None)
+                elif char == ')':
+                    quote = stack.pop()
+                index += 1
+            if stack:
+                deny(UNKNOWN)
+            found.append(word[start + 2:index - 1])
+            cursor = index
     # Unquoted backtick commands span several whitespace-separated words.
     found += re.findall(r'`([^`]*)`', ' '.join(words))
     return found
@@ -242,7 +268,11 @@ def shell_script_index(words):
         # sh -c 'script', also as a cluster such as bash -lc 'script'.
         for index, word in enumerate(words[1:-1], 1):
             if re.fullmatch(r'-[a-zA-Z]*c[a-zA-Z]*', word):
-                return index + 1
+                script = index + 1
+                if words[script] == '--':
+                    script += 1
+                if script < len(words):
+                    return script
     return None
 
 
@@ -498,13 +528,28 @@ def check_commit(args):
     check_paths(paths)
 
 
-def check_push(args, context):
+def require_full_options(word, options):
+    """Do not guess abbreviated spellings of options that affect policy."""
+    option = word.partition('=')[0]
+    if (option.startswith('--') and option != '--' and option not in options
+            and any(full.startswith(option) for full in options)):
+        deny('Spell out command options in full so the guard can inspect their effect.')
+
+
+def check_push(args, context, branch_changed=False):
     refspecs = []
     options = []
     remote = None
     index = 0
     while index < len(args):
         arg = args[index]
+        require_full_options(arg, {
+            '--force', '--force-with-lease', '--force-if-includes', '--mirror',
+            '--all', '--branches', '--delete', '--dry-run', '--no-dry-run',
+            '--no-force', '--no-force-with-lease', '--no-force-if-includes',
+            '--no-mirror', '--no-all', '--no-branches', '--no-delete',
+            '--repo', '--push-option', '--receive-pack', '--exec', '--recurse-submodules',
+        })
         if arg.startswith('--repo='):
             remote = arg.partition('=')[2]
         elif arg in ('-o', '--push-option', '--repo', '--receive-pack', '--exec', '--recurse-submodules'):
@@ -547,6 +592,8 @@ def check_push(args, context):
     if remote is None and refspecs:
         remote = refspecs.pop(0)
     if not refspecs:
+        if branch_changed:
+            deny(UNKNOWN)
         if git(context, 'rev-parse', '--git-dir') is None:
             deny(UNKNOWN)
         current = git(context, 'symbolic-ref', '--short', 'HEAD')
@@ -584,6 +631,8 @@ def check_push(args, context):
         source, colon, target = refspec.partition(':')
         destination = target if colon else source
         if destination in ('HEAD', '@', ''):
+            if branch_changed:
+                deny(UNKNOWN)
             destination = git(context, 'symbolic-ref', '--short', 'HEAD')
             if destination is None:
                 deny(UNKNOWN)
@@ -641,6 +690,11 @@ def api_arguments(words, cwd, program='gh'):
             if equals and value.startswith('@'):
                 parts.append('--raw-field ' + key + '=' + json.dumps(request_file(value[1:], cwd)))
     elif program == 'curl':
+        for filename in option_values(words, {'--upload-file'}, {'-T'}):
+            if (re.search(r'[{}\[\]]', filename)
+                    and not curl_flag(words, {'--globoff', '-g'}, '--no-globoff')):
+                deny(UNKNOWN)
+            parts.append(request_file(filename, cwd))
         for options, shorts, files in [({'--form'}, {'-F'}, True),
                                        ({'--form-string'}, set(), False)]:
             for field in option_values(words, options, shorts):
@@ -1178,7 +1232,8 @@ def copilot_request(text, words=(), method='GET'):
     # specifically: a body mentioning Copilot is not an assignment.
     endpoint = r'repos/[^/\s]+/[^/\s]+/issues(?:/\d+)?'
     return has_api_endpoint(text, endpoint) and any(
-        'copilot' in str(value).lower() for value in api_field_values(text, 'assignees'))
+        'copilot' in str(value).lower()
+        for field in ('assignee', 'assignees') for value in api_field_values(text, field))
 
 
 def inspectable_here_documents(command):
@@ -1263,7 +1318,11 @@ def changed_directory(cwd, destination):
     return os.path.join(cwd, destination) if cwd is not None else None
 
 
-def check_command(command, cwd, depth=0, environment=None):
+def check_command(command, cwd, depth=0, environment=None, git_state=None):
+    # Branch changes persist even across subshells. Later implicit pushes
+    # cannot be resolved using the repository's state before this command.
+    if git_state is None:
+        git_state = {'branch_changed': False}
     if depth > 3:
         deny('Shell nesting exceeds the inspection limit. Use the underlying command explicitly.')
     command = ansi_c_quotes(without_shell_comments(inspectable_here_documents(command)))
@@ -1342,13 +1401,13 @@ def check_command(command, cwd, depth=0, environment=None):
             for directory in directories:
                 command_cwd = changed_directory(command_cwd, directory)
             for inner in dict.fromkeys(nested(outer_words)):
-                check_command(inner, where, depth + 1, inherited)
+                check_command(inner, where, depth + 1, inherited, git_state)
             if script_index is not None:
                 check_command(script, command_cwd, depth + 1,
-                              command_environment)
+                              command_environment, git_state)
             elif program == 'eval':
                 check_command(' '.join(unwrapped[1:]), command_cwd, depth + 1,
-                              command_environment)
+                              command_environment, git_state)
             if program in ('export', 'unset'):
                 updates = dict(inherited)
                 operands = unwrapped[1:]
@@ -1403,12 +1462,14 @@ def check_command(command, cwd, depth=0, environment=None):
             if program == 'git':
                 subcommand, args, context = git_parts(unwrapped, command_cwd, command_environment)
                 subcommand, args, context = expand_git_alias(subcommand, args, context)
-                if subcommand in ('add', 'stage'):
+                if subcommand in ('checkout', 'switch'):
+                    git_state['branch_changed'] = True
+                elif subcommand in ('add', 'stage'):
                     check_add(args)
                 elif subcommand == 'commit':
                     check_commit(args)
                 elif subcommand == 'push':
-                    check_push(args, context)
+                    check_push(args, context, git_state['branch_changed'])
                 elif subcommand == 'send-pack':
                     deny('Use git push with an explicit feature branch; send-pack '
                          'can update remote refs outside the inspected push path.')
@@ -1420,6 +1481,9 @@ def check_command(command, cwd, depth=0, environment=None):
                     deny(CURL_CONFIG)
                 if program == 'wget':
                     for word in unwrapped[1:]:
+                        require_full_options(word, {
+                            '--method', '--post-data', '--post-file', '--body-data', '--body-file',
+                        })
                         option = word.split('=', 1)[0]
                         if ((option.startswith('--') and option != '--' and any(
                                 full.startswith(option) for full in ('--execute', '--config')))

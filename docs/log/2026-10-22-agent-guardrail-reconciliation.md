@@ -915,3 +915,51 @@ review will be required after the refresh;
 all 109 review conversations were resolved at the start of this follow-up.
 Replace import remains refused. No audio workaround or weakened assertion
 was introduced.
+
+
+## Explicit command operands and Show Borders main refresh, 2026-10-23
+
+Eight new review findings on `f3bfb0b` reproduced before correction. The
+regressions cover abbreviated push and Wget request options, singular issue
+assignees, escaped brackets in Markdown reference labels, the shell's `-c
+--` form, nested command substitutions, curl upload bodies, and a branch
+switch before an implicit push. Each reproduction failed its denied-path
+or broken-link assertion against the previous implementation.
+
+The guard now requires full policy-sensitive long option names; it does
+not guess their abbreviations. Push option operands remain data. Both
+issue assignment field names are inspected without treating prose as an
+assignment. The shell scanner skips its option terminator and balances
+nested substitutions with quoted parentheses. Upload files use the same
+bounded regular-file reader as other API bodies; stdin, missing files and
+unexpanded globs are refused. A checkout/switch makes later implicit push
+destinations unknown, including through a child shell or subshell. An
+explicit feature destination and a dry run still pass. The documentation
+checker now recognizes escaped punctuation in reference labels.
+
+All 114 hook tests and 32 documentation tests pass, including allowed-path
+checks beside the reproductions. The earlier curl method test now creates
+a real harmless upload file so its PUT/GET assertions remain meaningful.
+The guard remains advisory, not a complete shell parser or sandbox.
+
+The pre-refresh unit gate passed 583 native tests with zero failures and
+the existing issue #19 crash-probe skip. Main then advanced to `d654cef`
+(PR #35, Show Borders on Home). It is merged without rebasing or conflicts;
+its app implementation, decisions, Large Content Viewer device-check
+caveats and dated record are preserved. The merged-head unit script passed
+591 native tests with zero failures and the existing issue #19 skip (592
+total), plus 114 hook tests and 32 documentation tests. Xcode 27.1
+(27A9275), iPad Pro 13-inch (M5), iOS 27.0; catalog unchanged; app line
+coverage 67.0% (4,568/6,821). A harmless loopback-only Wget reproduction
+also confirmed that `--met=PUT` sends PUT. The hosted unit job on `f3bfb0b` passed,
+confirming the earlier runner fixture repair; its UI result does not
+certify the next head. Fresh hosted checks and review remain required.
+Replace import remains refused, and no audio workaround was introduced.
+
+References checked: [Git option parsing](https://git-scm.com/docs/gitcli),
+[Wget options](https://www.gnu.org/software/wget/manual/html_node/Option-Syntax.html),
+[issue updates](https://docs.github.com/en/rest/issues/issues#update-an-issue),
+[CommonMark link labels](https://spec.commonmark.org/0.31.2/#link-label),
+[Bash invocation](https://www.gnu.org/software/bash/manual/html_node/Invoking-Bash.html),
+[command substitution](https://www.gnu.org/software/bash/manual/html_node/Command-Substitution.html),
+and [curl uploads](https://curl.se/docs/manpage.html#-T).
