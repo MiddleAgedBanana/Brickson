@@ -2410,6 +2410,8 @@ review setup does not quietly break them.
 
 ### Code review
 
+- **2026-10-23, owner, reversible:** follow AGENTS.md, "Pushing to an open PR", to batch fixes and stop restarting green CI for polish; reason: PR #17. Before: only batching before each push was explicit.
+
 - Codex reviews every push to a pull request. GitHub Copilot (the owner's
   Copilot Pro plan) reviews each pull request **once, when it opens**,
   through the `main` ruleset's "Automatically request Copilot code review"
