@@ -23,7 +23,7 @@ struct StarterLabelFitTests {
     private static let narrowestWidth = HomeShape.narrowestContentWidth
     private static let inset = HomeShape.labelInset
 
-    private let library: StarterLibrary
+    private let library: LibrarySnapshot
 
     init() throws {
         library = try StarterLibrary.bundled()
@@ -34,7 +34,7 @@ struct StarterLabelFitTests {
     }
 
     private var phrases: [String] {
-        library.categories.flatMap(\.phrases)
+        library.categories.flatMap(\.phrases).map(\.text)
     }
 
     /// What SwiftUI draws: `text` in `font` at the default size, laid out in
