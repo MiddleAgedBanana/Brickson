@@ -593,7 +593,16 @@ reference app.
   not be activated, the tone is tried anyway (it may still play), Home
   shows "Audio failed", and a repeat activation retries the session
   instead of being absorbed, since the tone may be muted by the silent
-  switch (Codex review of PR #16).
+  switch (Codex review of PR #16). That retry replaces the tone, but the
+  tone already sounding plays on until its replacement has started, so a
+  retry that cannot start one never silences it (Codex review of PR #38).
+  *Open:* when that retry does activate the session but its new tone
+  cannot start, the kept tone sounds on under "Sounding" with no warning,
+  though it was started without the session; a later phrase that
+  activates the session clears "Audio failed" the same way. Whether
+  activation alone makes such a tone heard with the silent switch on is
+  for a device check; if it does not, the alarm needs a warning of its
+  own (review of PR #38).
 - **No time limit and no flashing.** It sounds until someone chooses Stop.
 - **The tone itself is a placeholder.** Before release it is replaced with
   a harmonic-rich tone that carries through a closed door and is easy to
@@ -1479,8 +1488,9 @@ ROADMAP R0 item 4 ([`work/get-attention-on-home.md`](work/get-attention-on-home.
   centre it is 12pt or more. Away from the centre the well's top is
   nearer Again (*Open: the top of Stop's well is nearest Again*).
 - **Get Attention is never disabled.** A second activation while the
-  tone plays changes nothing (*Get Attention*), and a control that greyed
-  out while the alarm sounds would look broken to the person calling.
+  tone plays never silences it (*Get Attention*), and a control that
+  greyed out while the alarm sounds would look broken to the person
+  calling.
 - **Names.** Get Attention also answers to "Help" with Voice Control:
   people say it to call for help, and Emergency, which says nothing,
   never takes it (*Home's scan order and names*). Stop shows "Stop", the

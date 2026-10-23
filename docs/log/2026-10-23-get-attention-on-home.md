@@ -46,6 +46,12 @@ intent, spec and plan in [`work/get-attention-on-home.md`](../work/get-attention
   In the band the first category sits below the others' tops, so Stop
   and the first category carry their own sort priorities
   (`HomeRegion.firstInRegion`, `secondInRegion`).
+- **A repeat Get Attention never silences a sounding tone.** A tone
+  started while the audio session could not be activated is replaced by
+  the next Get Attention, to retry the session; it now plays on until
+  its replacement has started, so a held look re-firing the control can
+  never leave the alarm silent with Stop gone (Codex's review;
+  `AttentionAlertPlayer.start()`).
 - **A silent stand-in tone for UI tests**: debug launches with
   `--attention-tone=silent` play `SilentAttentionTonePlayback`, so the
   tests sound and stop the real alarm without the simulator's audio.
@@ -80,19 +86,25 @@ library; a 375×667 phone at the default size, and by the model an
   source (a second review), test first.
 - `7e18850`: points across Stop's well scored, its top pinned as a strict
   known issue (a second review).
-- The docs commit that corrects what this change made untrue elsewhere
-  and records the open hazards.
+- `b3b89bb`, `af31926`: the docs that correct what this change made
+  untrue elsewhere and record the open hazards.
+- `1bca47e`, then `d504853`: a sounding tone is kept until its
+  replacement plays (Codex's review), test first.
+- The docs commit that records it.
 
 ## Verified
 
 A cloud session: nothing was built for iOS or run outside GitHub CI, and
 this work is untested until CI passes. On Linux with Swift 6.3.3, the
-pure types compiled and 51 Swift Testing tests passed, two with their
+pure types compiled and their Swift Testing tests passed, two with their
 known issues recorded: `HomeShapeTests`
 (every content width from 288 to 1400pt in half points, Bold Text on and
 off, default and grown line heights), `ControlNamesTests` and
 `AudioSafetyPolicyTests` (without its two announcement tests, which need
-Apple's Accessibility module), and `CategorySelection.inCell`'s cases.
+Apple's Accessibility module), `CategorySelection.inCell`'s cases, and 26 of
+`AttentionAlertPlayerTests` (all but the seven that need Apple's audio
+frameworks or the speech engine), around stand-ins for the audio
+session's types.
 Label widths came from Apple's SF Pro font measured with HarfBuzz, which
 matched CI within half a point before.
 
@@ -150,3 +162,8 @@ Each new test, and the change that makes it fail, is in the work file's
 9. **Typing needs C in one row on wide windows** (or all of C above the
    worst-case keyboard another way) before it comes to Home. *(the typing
    and layout threads)*
+10. **A tone kept after a retry shows no warning** once a later
+    activation succeeds, though it was started without the session
+    (docs/DECISIONS.md, "Get Attention", *Open*): a device check first,
+    then a warning of the alarm's own if activation alone does not make
+    it heard. *(the next audio thread)*

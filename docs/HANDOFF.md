@@ -161,6 +161,12 @@ release in docs/ROADMAP.md when no thread has it yet.
   phrase, low volume or failed session shows second; VoiceOver still
   hears each (docs/DECISIONS.md, "Get Attention and Stop on Home").
   *(the next audio thread)*
+- A Get Attention tone started while the audio session could not be
+  activated shows "Sounding" with no warning once a later activation
+  succeeds (a phrase, or a retry whose new tone then fails to start),
+  though nothing has shown it is heard with the silent switch on
+  (docs/DECISIONS.md, "Get Attention", *Open*). *(the next audio thread,
+  after a device check)*
 - Yes and No border the message (12pt away), so a look resting on it
   can speak one of them. Reduced, not removed: Again no longer shares the
   message's edge, and by the model about 56% of the message is nearest a

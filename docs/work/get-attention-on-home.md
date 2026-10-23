@@ -20,9 +20,11 @@ Status: building (PR #38; untested until CI passes).*
   (a held look, a repeated switch press) leaves it sounding. While it
   sounds, Stop appears in a well of its own, in another region and on
   another row, and the status line says "Sounding". Stop ends it; its
-  well empties and nothing else moves. A tone that fails or stops by
-  itself shows "Alert failed" or "Alert stopped" and is announced to
-  VoiceOver, every time.
+  well empties and nothing else moves. A tone that fails to start or
+  stops by itself shows "Alert failed" or "Alert stopped" and is
+  announced to VoiceOver, every time; a replacement that cannot start
+  while a tone still sounds leaves that tone sounding (docs/DECISIONS.md,
+  "Get Attention").
 - **Who and what it affects:** the person, at every stage and on every
   input method (touch, Voice Control, Switch Control, Full Keyboard
   Access, AssistiveTouch with Dwell, head and Eye Tracking); the family,
@@ -253,8 +255,8 @@ widths (the window less Home's 16pt margins).
     the real tone is covered by `AttentionAlertPlayerTests` and a device
     check (docs/HANDOFF.md, *Checks that need a real device*).
   - *Cloud session:* nothing here was built for iOS before CI; the pure
-    `HomeShape`, names and status tests ran on a Linux Swift toolchain
-    first.
+    `HomeShape`, names and status tests, and the alarm player's, ran on
+    a Linux Swift toolchain first.
 - **Proof** (each test, and the change that makes it fail):
   - `HomeShapeTests.getAttentionIsDirectlyUnderEmergency`: Get Attention
     and Emergency in different columns, or Get Attention in the first
@@ -298,6 +300,13 @@ widths (the window less Home's 16pt margins).
   - `AudioSafetyPolicyTests.theStatusLinePutsProblemsThenTheAlarmThenSpeech`:
     "Speaking" over "Sounding", or "Sounding" over a problem.
   - `LaunchOptionsTests`: `--attention-tone=silent` not understood.
+  - `AttentionAlertPlayerTests.aRetryThatCannotStartANewToneLeavesTheLiveOneSounding`
+    and `aToneKeptAfterAFailedRetryStillReportsAStop`: a tone started
+    without the session discarded before its replacement plays, so a
+    held look silences it and Stop goes; or the kept tone no longer
+    watched. `aToneKeptAfterAFailedRetryIsReplacedByTheNextGetAttention`
+    and `aRetryThatStartsANewToneStopsTheOldOne`: the kept tone counted
+    as started with the session, or two tones left sounding.
   - `AttentionAlertPlayerTests.theSilentToneSoundsUntilStopped`: a
     stand-in that reports not playing, which the health check would
     stop.
