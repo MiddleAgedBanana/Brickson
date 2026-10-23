@@ -1,8 +1,9 @@
 import UIKit
 import XCTest
 
-/// Settings, opened at launch with `--screen=settings` until Home has its
-/// Settings button. These check what a family member and a stray
+/// Settings, opened at launch with `--screen=settings`, so each test starts
+/// there without walking Home; `SettingsOnHomeTests` opens it with Home's
+/// own Settings button. These check what a family member and a stray
 /// activation meet: the way back and one row on the first screen, Family
 /// Setup a screen below, the privacy policy inside the app, the idle reset
 /// that returns to the first screen and never closes Settings, and Apple's

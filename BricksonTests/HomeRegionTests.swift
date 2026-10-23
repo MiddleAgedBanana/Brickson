@@ -22,6 +22,12 @@ struct HomeRegionTests {
         #expect(priorities.allSatisfy { $0 > 0 })
     }
 
+    /// Fails if Again or Settings, given `lastInRegion`, could come before
+    /// the controls beside them, which keep the default priority of zero.
+    @Test func lastInRegionComesAfterTheDefault() {
+        #expect(HomeRegion.lastInRegion < 0)
+    }
+
     /// Fails if two regions share an identifier, so a UI test could not
     /// tell which region holds a control.
     @Test func everyRegionHasItsOwnIdentifier() {

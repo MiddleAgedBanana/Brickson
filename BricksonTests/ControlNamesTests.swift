@@ -36,6 +36,7 @@ struct ControlNamesTests {
             ["No"],
             ["Emergency"],
             ["Again", "Repeat"],
+            ["Settings"],
         ])
     }
 
@@ -80,5 +81,6 @@ struct ControlNamesTests {
         #expect(HomeControlNames.collisions(among: HomeControlNames.onHome(categoryRow: ["Yes"], phrases: [])) == ["yes"])
         #expect(HomeControlNames.collisions(among: HomeControlNames.onHome(categoryRow: [], phrases: ["Repeat"])) == ["repeat"])
         #expect(HomeControlNames.collisions(among: HomeControlNames.onHome(categoryRow: ["Needs"], phrases: ["Needs"])) == ["needs"])
+        #expect(HomeControlNames.collisions(among: HomeControlNames.onHome(categoryRow: [], phrases: ["Settings."])) == ["settings"])
     }
 }
