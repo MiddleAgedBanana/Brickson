@@ -21,9 +21,11 @@ import XCTest
 /// what a person's gaze does on a device.
 final class SettingsOnHomeTests: XCTestCase {
     /// Home's controls that keep their place in every state, by the name
-    /// `controls(in:)` gives them. The category names are copied from
+    /// `screenControls(in:)` gives them. The category names are copied from
     /// Brickson/Resources/StarterPhrases.json, as in `HomeLayoutTests`.
-    private static let fixedOnHome = ["Yes", "No", "Again", "Emergency", "settings", "Basics", "Needs", "Conversation", "Feelings"]
+    private static let fixedOnHome = [
+        "Yes", "No", "Emergency", "Again", "getAttention", "settings", "Basics", "Needs", "Conversation", "Feelings",
+    ]
     private static let firstRunHint = "Family: help with setting up is in Settings."
 
     override func setUpWithError() throws {
@@ -87,7 +89,7 @@ final class SettingsOnHomeTests: XCTestCase {
         let context = "\(textSize.name), \(orientation.isLandscape ? "landscape" : "portrait"), \(isPad ? "iPad" : "iPhone"), window \(window.size)"
 
         assertReachable("Settings", in: app, context: context)
-        let home = try controls(in: app)
+        let home = try screenControls(in: app)
         let before = Self.fixedFrames(home)
         let settings = try XCTUnwrap(before["settings"], "Home has no Settings button (\(context))")
 
@@ -96,9 +98,9 @@ final class SettingsOnHomeTests: XCTestCase {
         let back = app.buttons["backToTalking"]
         XCTAssertTrue(back.waitForExistence(timeout: 10), "Settings did not open from Home (\(context))")
         XCTAssertTrue(app.buttons["familySetup"].waitForExistence(timeout: 10), "Settings opened without Family Setup (\(context))")
-        let cover = try controls(in: app).filter { !Self.fixedOnHome.contains($0.name) && $0.name != "phraseTile" }
+        let cover = try screenControls(in: app).filter { !Self.fixedOnHome.contains($0.name) && $0.name != "phraseTile" }
         attachCapture(app, name: "settings-opened-\(context)".replacingOccurrences(of: ", ", with: "-"))
-        let landing = Self.nearest(to: settings.center, among: cover)
+        let landing = nearestControls(to: settings.center, among: cover)
         XCTAssertEqual(landing.byCentre, ["familySetup"], "Home's Settings at \(settings) is nearest \(landing.byCentre) by centre in Settings (\(context)): \(cover)")
         XCTAssertEqual(landing.byEdge, ["familySetup"], "Home's Settings at \(settings) is nearest \(landing.byEdge) by edge in Settings (\(context)): \(cover)")
 
@@ -108,9 +110,9 @@ final class SettingsOnHomeTests: XCTestCase {
         XCTAssertTrue(app.buttons["Yes"].waitForExistence(timeout: 10), "Home did not come back (\(context))")
         let closed = expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: back)
         XCTAssertEqual(XCTWaiter.wait(for: [closed], timeout: 10), .completed, "Settings did not close (\(context))")
-        let after = try controls(in: app)
+        let after = try screenControls(in: app)
         attachCapture(app, name: "settings-closed-\(context)".replacingOccurrences(of: ", ", with: "-"))
-        let returning = Self.nearest(to: way.center, among: after)
+        let returning = nearestControls(to: way.center, among: after)
         XCTAssertEqual(returning.byCentre, ["Emergency"], "Back to Talking at \(way) is nearest \(returning.byCentre) by centre on Home (\(context))")
         XCTAssertEqual(returning.byEdge, ["Emergency"], "Back to Talking at \(way) is nearest \(returning.byEdge) by edge on Home (\(context))")
 
@@ -134,58 +136,10 @@ final class SettingsOnHomeTests: XCTestCase {
 
     // MARK: Reading the screen
 
-    /// A button on screen, named by its identifier where it has one and by
-    /// its label otherwise.
-    private struct Control: CustomStringConvertible {
-        let name: String
-        let frame: CGRect
-
-        var description: String { "\(name) \(frame)" }
-    }
-
-    /// Every button on screen, from one accessibility snapshot, so the
-    /// frames all come from one moment and one query.
-    @MainActor
-    private func controls(in app: XCUIApplication) throws -> [Control] {
-        var pending: [any XCUIElementSnapshot] = [try app.snapshot()]
-        var found: [Control] = []
-        while let element = pending.popLast() {
-            if element.elementType == .button {
-                let name = element.identifier.isEmpty ? element.label : element.identifier
-                found.append(Control(name: name, frame: element.frame))
-                continue
-            }
-            pending.append(contentsOf: element.children)
-        }
-        return found
-    }
-
-    private static func fixedFrames(_ controls: [Control]) -> [String: CGRect] {
+    private static func fixedFrames(_ controls: [ScreenControl]) -> [String: CGRect] {
         Dictionary(
             controls.filter { fixedOnHome.contains($0.name) }.map { ($0.name, $0.frame) },
             uniquingKeysWith: { first, _ in first }
-        )
-    }
-
-    /// The controls nearest `point` by the distance to their centres and
-    /// by the distance to their nearest edge (zero inside one), each with
-    /// every control within half a point of the nearest, so a tie is never
-    /// hidden.
-    private static func nearest(to point: CGPoint, among controls: [Control]) -> (byCentre: Set<String>, byEdge: Set<String>) {
-        guard !controls.isEmpty else { return ([], []) }
-        func centreDistance(_ frame: CGRect) -> CGFloat {
-            hypot(point.x - frame.midX, point.y - frame.midY)
-        }
-        func edgeDistance(_ frame: CGRect) -> CGFloat {
-            let dx = max(frame.minX - point.x, 0, point.x - frame.maxX)
-            let dy = max(frame.minY - point.y, 0, point.y - frame.maxY)
-            return hypot(dx, dy)
-        }
-        let closestCentre = controls.map { centreDistance($0.frame) }.min() ?? 0
-        let closestEdge = controls.map { edgeDistance($0.frame) }.min() ?? 0
-        return (
-            Set(controls.filter { centreDistance($0.frame) - closestCentre < 0.5 }.map(\.name)),
-            Set(controls.filter { edgeDistance($0.frame) - closestEdge < 0.5 }.map(\.name))
         )
     }
 }

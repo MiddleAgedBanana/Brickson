@@ -39,6 +39,9 @@ The initial implementation includes:
 - A starter phrase library organized into everyday categories.
 - Phrase buttons that speak on the first activation, plus Yes, No, Again
   and an Emergency category on Home.
+- Get Attention on Home: one activation sounds an alarm to call someone
+  into the room, and a Stop button, in a different place, appears while
+  it sounds.
 - Settings for the family, opened from Home's Settings button: voices,
   setup guides and the privacy policy.
 - Speech through Apple's built-in speech system, with Personal Voice
@@ -48,8 +51,7 @@ The initial implementation includes:
   restarting a phrase that is already being spoken.
 - Unit tests for core logic and simulator UI tests for the initial Home flow.
 
-Typing, phrase editing, backup export and the Get Attention alarm on Home
-are not implemented yet. The current Home layout is a foundation; the
+Typing, phrase editing and backup export are not implemented yet. The current Home layout is a foundation; the
 profile-based layout engine and validation across access methods remain
 planned work. See the [handoff](docs/HANDOFF.md) for verification evidence,
 known limitations and next steps.

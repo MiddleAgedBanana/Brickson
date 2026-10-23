@@ -52,6 +52,30 @@ nonisolated enum HomeControlNames {
         )
     }
 
+    /// Sounds the alarm that calls someone into the room. It also answers
+    /// to "Help", which people say to call for help; Emergency, which only
+    /// shows the emergency phrases, never does (docs/DECISIONS.md, "Get
+    /// Attention and Stop on Home").
+    static var getAttention: ControlNames {
+        ControlNames(
+            String(localized: "Get Attention"),
+            others: [String(
+                localized: "Help",
+                comment: "Another name a person can say for the Get Attention control with Voice Control."
+            )]
+        )
+    }
+
+    /// Ends the alarm. It shows only while the alarm sounds, in a well of
+    /// its own away from Get Attention. "Stop" is the word that fits;
+    /// "Stop Alert" says what it stops.
+    static var stop: ControlNames {
+        ControlNames(
+            String(localized: "Stop", comment: "Ends the Get Attention alarm. Shown only while the alarm sounds."),
+            others: [String(localized: "Stop Alert")]
+        )
+    }
+
     /// Opens Settings, for the family. Its word only: "Settings" is what
     /// people call it, and any other name could belong to something the
     /// person wants to say.
@@ -63,15 +87,22 @@ nonisolated enum HomeControlNames {
     /// reach them (`HomeRegion`): the safety row's, then Settings, which
     /// comes after the category buttons.
     static var fixed: [ControlNames] {
-        [yes, no, emergency, again, settings]
+        [yes, no, emergency, getAttention, again, settings]
+    }
+
+    /// The controls Home shows in a well only while they apply: Stop, while
+    /// the alarm sounds, whichever category shows.
+    static var wells: [ControlNames] {
+        [stop]
     }
 
     /// Every control on Home while `phrases` show, each by its names: the
-    /// fixed controls, the category buttons in `categoryRow`, and the phrase
-    /// tiles. Categories and phrases answer to their own words only, and
-    /// Brickson never renames them (invariant 7).
+    /// fixed controls, the wells' controls (as if each applied, the worst
+    /// case), the category buttons in `categoryRow`, and the phrase tiles.
+    /// Categories and phrases answer to their own words only, and Brickson
+    /// never renames them (invariant 7).
     static func onHome(categoryRow: [String], phrases: [String]) -> [[String]] {
-        fixed.map(\.inputLabels) + categoryRow.map { [$0] } + phrases.map { [$0] }
+        (fixed + wells).map(\.inputLabels) + categoryRow.map { [$0] } + phrases.map { [$0] }
     }
 
     /// The names, as Voice Control hears them (`spokenForm`), that more than

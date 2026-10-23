@@ -11,7 +11,8 @@ import Testing
 struct HomeNameCollisionTests {
     /// Fails if a starter phrase, a category name or a fixed control's name,
     /// its other names included, sounds the same as another control on the
-    /// same screen: a tile "Again." or "Repeat.", or a category named "Yes".
+    /// same screen, with the alarm sounding and Stop showing: a tile
+    /// "Again.", "Help." or "Stop.", or a category named "Yes".
     /// The categories and phrases come from the starter library as the app
     /// stores it, and the category row from the same rule Home uses.
     @Test func noTwoControlsOnHomeShareANameWhicheverCategoryShows() throws {

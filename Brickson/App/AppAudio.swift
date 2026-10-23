@@ -15,11 +15,13 @@ struct AppAudio {
 
     /// The real objects. `settings` is where speech keeps the chosen voice
     /// and rate. `personalVoiceTrial` is a debug launch's request to ask for
-    /// Personal Voice from Voice Settings instead (`LaunchOptions`); a
-    /// release build always passes nil.
+    /// Personal Voice from Voice Settings instead, and `attentionTone` one
+    /// for a stand-in tone (`LaunchOptions`); a release build always passes
+    /// nil for both.
     static func makeForApp(
         settings: UserDefaults,
-        personalVoiceTrial: LaunchOptions.PersonalVoiceTrial? = nil
+        personalVoiceTrial: LaunchOptions.PersonalVoiceTrial? = nil,
+        attentionTone: LaunchOptions.AttentionTone? = nil
     ) -> AppAudio {
         let events = AudioSessionEvents()
         let safety = AudioSafetyMonitor(events: events)
@@ -55,7 +57,7 @@ struct AppAudio {
         let attention = AttentionAlertPlayer(
             audioSession: session,
             events: events,
-            makePlayback: { try SystemAttentionTonePlayback.bundled() },
+            makePlayback: { try Self.attentionTone(for: attentionTone) },
             sleep: sleep
         )
         return AppAudio(
@@ -65,6 +67,16 @@ struct AppAudio {
             speech: speech,
             attention: attention
         )
+    }
+
+    /// The Get Attention tone: the real one, or the silent stand-in a
+    /// debug launch asked for. A new player for every start, so a player
+    /// that went quiet is never trusted again.
+    static func attentionTone(for option: LaunchOptions.AttentionTone?) throws -> any AttentionTonePlayback {
+        switch option {
+        case .silent: SilentAttentionTonePlayback()
+        case nil: try SystemAttentionTonePlayback.bundled()
+        }
     }
 
     /// When the app asks for Personal Voice permission. The app's policy is

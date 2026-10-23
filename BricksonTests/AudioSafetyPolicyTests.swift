@@ -94,6 +94,38 @@ struct AudioSafetyPolicyTests {
         #expect(policy.issue == .audioSessionUnavailable)
     }
 
+    /// VoiceOver hears an ambient problem from this, not from the line's
+    /// one issue, so an alarm warning nobody has acted on never keeps a
+    /// later low volume or failed session from being announced. Fails if
+    /// the ambient issue follows the line's precedence, or drops either
+    /// ambient problem.
+    @Test func theAmbientIssueIgnoresAlarmAndSpeechWarnings() {
+        let underAnAlarmWarning = AudioSafetyPolicy(
+            attentionState: .stoppedUnexpectedly,
+            speechInterruptionState: .stoppedUnexpectedly,
+            audioSessionHealthy: true,
+            outputVolume: 0
+        )
+        #expect(underAnAlarmWarning.issue == .attentionAlertStopped)
+        #expect(underAnAlarmWarning.ambientIssue == .lowOutputVolume)
+
+        let failedSession = AudioSafetyPolicy(
+            attentionState: .failedToStart,
+            audioSessionHealthy: false,
+            outputVolume: 0
+        )
+        #expect(failedSession.issue == .attentionAlertFailed)
+        #expect(failedSession.ambientIssue == .audioSessionUnavailable)
+
+        let nothingAmbient = AudioSafetyPolicy(
+            attentionState: .stoppedUnexpectedly,
+            speechInterruptionState: .stoppedUnexpectedly,
+            audioSessionHealthy: true,
+            outputVolume: 1
+        )
+        #expect(nothingAmbient.ambientIssue == nil)
+    }
+
     @Test func nextSpeechAttemptClearsOnlyARepeatableInterruptionWarning() {
         var speechStatus = SpeechInterruptionStatus()
 
@@ -200,6 +232,7 @@ struct AudioSafetyPolicyTests {
         .speechStopped,
         .typedSpeechStopped,
         .modalSpeechStopped,
+        .modalAttentionAlertSilent,
         .audioSessionUnavailable,
     ])
     func acuteFailuresRequestUrgentAnnouncements(issue: HomeAudioIssue) {
@@ -234,6 +267,7 @@ struct AudioSafetyPolicyTests {
         #expect(AudioAnnouncementPolicy.ambientIssueToAnnounce(.speechStopped) == nil)
         #expect(AudioAnnouncementPolicy.ambientIssueToAnnounce(.typedSpeechStopped) == nil)
         #expect(AudioAnnouncementPolicy.ambientIssueToAnnounce(.modalSpeechStopped) == nil)
+        #expect(AudioAnnouncementPolicy.ambientIssueToAnnounce(.modalAttentionAlertSilent) == nil)
         #expect(
             AudioAnnouncementPolicy.speechIssueToAnnounce(
                 .stoppedUnexpectedly,
@@ -275,6 +309,54 @@ struct AudioSafetyPolicyTests {
     @Test(arguments: [AttentionAlertState.idle, .playing])
     func ordinaryAttentionStatesDoNotAnnounceFailure(state: AttentionAlertState) {
         #expect(AudioAnnouncementPolicy.attentionIssueToAnnounce(state) == nil)
+        #expect(AudioAnnouncementPolicy.attentionIssueToAnnounce(state, recoveryAction: .dismissThenRepeat) == nil)
+    }
+
+    /// Settings covers Home and has no Get Attention, so an alarm that
+    /// failed or stopped while it is open names the way back first, on its
+    /// line and in what VoiceOver hears (invariant 4: the text names a
+    /// reachable control). Fails if Settings' words send the person to a
+    /// Get Attention that is not on screen, or if Home's or typing's words
+    /// lose Get Attention, which is on screen there.
+    @Test(arguments: [AttentionAlertState.failedToStart, .stoppedUnexpectedly])
+    func overSettingsAnAlarmProblemNamesBackThenGetAttention(state: AttentionAlertState) {
+        let overSettings = AudioSafetyPolicy(
+            attentionState: state,
+            speechRecoveryAction: .dismissThenRepeat,
+            audioSessionHealthy: true,
+            outputVolume: 1
+        )
+        #expect(overSettings.issue == .modalAttentionAlertSilent)
+        #expect(AudioAnnouncementPolicy.attentionIssueToAnnounce(state, recoveryAction: .dismissThenRepeat) == .modalAttentionAlertSilent)
+        let message = HomeAudioIssue.modalAttentionAlertSilent.message
+        #expect(message.contains("Choose Back"))
+        #expect(message.contains("Get Attention"))
+        #expect(HomeAudioIssue.modalAttentionAlertSilent.compactMessage.contains("Back"))
+
+        let onHome = state == .failedToStart ? HomeAudioIssue.attentionAlertFailed : .attentionAlertStopped
+        for recovery in [SpeechRecoveryAction.repeatLast, .showPhrasesThenRepeat] {
+            let policy = AudioSafetyPolicy(
+                attentionState: state,
+                speechRecoveryAction: recovery,
+                audioSessionHealthy: true,
+                outputVolume: 1
+            )
+            #expect(policy.issue == onHome, "\(recovery)")
+            #expect(AudioAnnouncementPolicy.attentionIssueToAnnounce(state, recoveryAction: recovery) == onHome, "\(recovery)")
+        }
+    }
+
+    /// Home's one status line: a problem first, because something cannot be
+    /// heard; then the alarm sounding; then speech. Fails if "Speaking"
+    /// hides "Sounding", or "Sounding" hides a problem such as "Alert
+    /// stopped".
+    @Test func theStatusLinePutsProblemsThenTheAlarmThenSpeech() {
+        #expect(HomeStatusLine(issue: .lowOutputVolume, alarmIsSounding: true, isSpeaking: true) == .issue(.lowOutputVolume))
+        #expect(HomeStatusLine(issue: .attentionAlertStopped, alarmIsSounding: false, isSpeaking: false) == .issue(.attentionAlertStopped))
+        #expect(HomeStatusLine(issue: nil, alarmIsSounding: true, isSpeaking: true) == .sounding)
+        #expect(HomeStatusLine(issue: nil, alarmIsSounding: true, isSpeaking: false) == .sounding)
+        #expect(HomeStatusLine(issue: nil, alarmIsSounding: false, isSpeaking: true) == .speaking)
+        #expect(HomeStatusLine(issue: nil, alarmIsSounding: false, isSpeaking: false) == nil)
     }
 
     /// VoiceOver hears the whole sentence, which names the control to use,

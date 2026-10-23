@@ -81,6 +81,28 @@ final class SystemAttentionTonePlayback: NSObject, AttentionTonePlayback, AVAudi
     }
 }
 
+/// A tone that makes no sound, for UI tests (`--attention-tone=silent`,
+/// read only by debug builds: `LaunchOptions`). It says it is playing from
+/// `playFromBeginning()` until `stop()`, so the alarm's state, Home's Stop
+/// and the status line behave as with the real tone, without depending on
+/// the simulator's audio.
+@MainActor
+final class SilentAttentionTonePlayback: AttentionTonePlayback {
+    var eventHandler: (@MainActor (AttentionTonePlaybackEvent) -> Void)?
+    private(set) var isPlaying = false
+
+    func setVolume(_ volume: Float, fadeDuration: TimeInterval) {}
+
+    func playFromBeginning() -> Bool {
+        isPlaying = true
+        return true
+    }
+
+    func stop() {
+        isPlaying = false
+    }
+}
+
 nonisolated enum AttentionToneError: LocalizedError {
     case missingBundledTone
 

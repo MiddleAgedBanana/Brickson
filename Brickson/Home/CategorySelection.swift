@@ -26,4 +26,14 @@ enum CategorySelection {
     static func shownInCategoryRow(_ categories: [PhraseCategory]) -> [PhraseCategory] {
         categories.filter { !$0.isEmergency }
     }
+
+    /// What the cell at `index` of Home's `cells` category cells holds: one
+    /// category each, in order, and the last cell every category from
+    /// there on, so a library with more categories than cells keeps each
+    /// one reachable (that cell then scrolls). Nothing for a cell past the
+    /// library's end, or past the last cell.
+    static func inCell<Item>(_ index: Int, of items: [Item], cells: Int) -> ArraySlice<Item> {
+        guard index >= 0, index < cells, index < items.count else { return [] }
+        return index == cells - 1 ? items[index...] : items[index...index]
+    }
 }

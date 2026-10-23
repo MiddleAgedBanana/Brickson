@@ -162,7 +162,7 @@ say so in What's New when it happens.
 | If you turn on caregiver alerts | **Deleted** 2026-10-23: not built; needs network code, which invariant 9 forbids until the owner decides. The summary's "features you choose to use" and the Emergencies paragraph's caregiver sentence went with it | As above, only after the owner's decision |
 | If you use Siri and Shortcuts | **Deleted** 2026-10-23: not built, not in R0 (R2) | As above |
 | Emergencies: "They never call emergency services or send anyone a message" | Yes: Brickson has no network, messaging or notification code (invariant 9) | — |
-| Get Attention | Built and tested (`AttentionAlertPlayer`), not yet on Home; its place on Home is R0 item 4 | Ship it on Home, or delete the mention |
+| Get Attention | Yes, from 2026-10-23: on Home with Stop (PR #38; docs/DECISIONS.md, "Get Attention and Stop on Home") | — |
 | Effective date | October 23, 2026 | Move it with every wording change |
 
 ## 4. Accessibility Nutrition Labels
@@ -194,7 +194,7 @@ published only once a version is live
 
 **Brickson's common tasks for 1.0** (from the release gate in section 2): first launch
 (including the Personal Voice question), speak a phrase, Yes and No,
-Emergency, Again, Get Attention and Stop Alert, type and speak, edit phrases
+Emergency, Again, Get Attention and Stop, type and speak, edit phrases
 (with delete and keep), back up and restore, Settings (voice, privacy, family
 setup) and leaving Settings.
 
@@ -396,8 +396,9 @@ build (1,865 bytes as drafted):
 >
 > [Get Attention: tap Get Attention to play a repeating tone that calls
 > someone to the room. It plays even with the silent switch on and keeps
-> playing while the device is locked, until someone taps Stop Alert, which is
-> a separate button in a different place so a resting gaze cannot stop the
+> playing while the device is locked, until someone taps Stop (Voice
+> Control also accepts "Stop Alert"), which is a separate button in a
+> different place so a resting gaze cannot stop the
 > call by accident. It contacts nobody.]
 >
 > Emergency: shows a set of urgent phrases. It does not call or message
