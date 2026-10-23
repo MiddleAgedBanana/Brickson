@@ -7,6 +7,8 @@ import UIKit
 /// through the environment.
 @main
 struct BricksonApp: App {
+    /// Refuses keyboards from other apps (`BricksonAppDelegate`).
+    @UIApplicationDelegateAdaptor(BricksonAppDelegate.self) private var appDelegate
     @Environment(\.scenePhase) private var scenePhase
     @State private var audioSafety: AudioSafetyMonitor
     @State private var speech: SpeechService
