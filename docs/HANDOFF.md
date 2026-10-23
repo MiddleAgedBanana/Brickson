@@ -140,6 +140,13 @@ release in docs/ROADMAP.md when no thread has it yet.
   must not add a fifth until it does. Meanwhile Home keeps the fourth and
   later ones in the fourth cell, which scrolls (docs/DECISIONS.md, "Get
   Attention and Stop on Home"). *(the layout engine, a new thread)*
+- A library with fewer than three everyday categories can leave Again,
+  which speaks, nearest Stop's empty well: the cell under the well can be
+  empty (docs/DECISIONS.md, "Get Attention and Stop on Home"; a strict
+  known issue in `HomeShapeTests`). No screen can remove a category yet;
+  editing and import must not leave fewer than three until the layout
+  keeps a category nearest the well, or the owner accepts a rule that
+  keeps three. *(R0, the library thread with the layout engine)*
 - Yes, No and Again border the message (12pt away), so a look resting on
   it can speak one of them. Reduced, not removed: with Again out of the
   message's row, about 61 to 67% of the message is nearest one of them,

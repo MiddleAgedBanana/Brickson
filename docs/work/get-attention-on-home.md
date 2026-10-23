@@ -260,6 +260,14 @@ widths (the window less Home's 16pt margins).
   - `HomeShapeTests.aHeldLookMeetsNothingHarmfulAfterGetAttentionOrStop`:
     Stop nearest Get Attention's spot, or anything but a category nearest
     Stop's, at any width, by either rule.
+  - `HomeShapeTests.aLibraryOfFewerThanThreeEverydayCategoriesLeavesAgainNearStop`:
+    a library of three or more categories leaving anything but a
+    category nearest Stop's empty well; and, strict, the known gap for
+    fewer than three closing (docs/DECISIONS.md, "Get Attention and Stop
+    on Home", *Open*).
+  - `AudioSafetyPolicyTests.overSettingsAnAlarmProblemNamesBackThenGetAttention`:
+    an alarm problem under Settings naming Get Attention, which Settings
+    does not have, instead of Back first.
   - `CategorySelectionTests.theLastCellHoldsEveryCategoryFromThereOn`: a
     category past the fourth dropped, or a cell showing another's.
   - `HomeRegionTests.stopThenTheFirstCategoryComeBeforeTheDefault`: Stop

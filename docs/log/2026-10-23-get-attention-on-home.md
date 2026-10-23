@@ -33,6 +33,9 @@ intent, spec and plan in [`work/get-attention-on-home.md`](../work/get-attention
   alarm sounds, then "Speaking" (`HomeStatusLine`), and VoiceOver hears
   every failed or cut-off alarm (`failureSequence`). Home's
   `AudioSafetyPolicy` now reads the alarm's real state instead of idle.
+  While Settings covers Home, which has no Get Attention of its own, an
+  alarm problem names Back first: "No alert — Back" (review on this pull
+  request).
 - **Colours of their own**, measured and pinned: `AttentionFill`
   `#B45309`, `StopFill` `#0F766E`.
 - **Scan order:** Yes, No, Emergency, Get Attention, Again; then the
@@ -62,13 +65,20 @@ library; a 375×667 phone at the default size, and by the model an
 - `5d916ab`: Get Attention's rendered words at the largest text size,
   and an accessibility audit while the alarm sounds.
 - `7216f29`: the `playsSound` trait.
-- The docs commit that adds this file.
+- `0501469`: the docs, with this file.
+- `adb930e`, then `a875dee`: an alarm problem over Settings names Back
+  first (Codex's review), test first.
+- `5a7b0ca`: main merged in (PR #35, Show Borders on Home).
+- `214f61c`: the sparse-library gap under Stop, pinned as a strict known
+  issue (Codex's review).
+- The docs commit that records the review.
 
 ## Verified
 
 A cloud session: nothing was built for iOS or run outside GitHub CI, and
 this work is untested until CI passes. On Linux with Swift 6.3.3, the
-pure types compiled and 47 Swift Testing tests passed: `HomeShapeTests`
+pure types compiled and 49 Swift Testing tests passed, one with its
+known issue recorded: `HomeShapeTests`
 (every content width from 288 to 1400pt in half points, Bold Text on and
 off, default and grown line heights), `ControlNamesTests` and
 `AudioSafetyPolicyTests` (without its two announcement tests, which need
@@ -113,3 +123,9 @@ Each new test, and the change that makes it fail, is in the work file's
    *Open*). *(the layout engine)*
 5. **The replacement tone** and its level under speech, after a listening
    check on a device. *(owner, with a device build)*
+6. **Fewer than three everyday categories** leave the cell under Stop's
+   well empty in some arrangements, so Again can be nearest after Stop
+   (docs/DECISIONS.md, "Get Attention and Stop on Home", *Open*). Before
+   editing or import can leave fewer than three: keep a category nearest
+   the well for every library, or bring the owner a rule that keeps
+   three. *(the library thread, with the layout engine)*

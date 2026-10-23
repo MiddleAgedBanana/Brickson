@@ -1487,6 +1487,21 @@ ROADMAP R0 item 4 ([`work/get-attention-on-home.md`](work/get-attention-on-home.
   (`CategorySelection.inCell`); nothing else in B scrolls. No screen can
   add a fifth yet; the layout engine's thread decides for good (*Home's
   slot plan*, *Open*).
+- **Open: fewer than three everyday categories.** A cell with no
+  category holds nothing, and the cell directly under Stop's well holds
+  the first category in the band, the third in three columns and the
+  second in two. So in a library with fewer than three (none at all, on
+  a wide window), after Stop the control nearest the well can be Again,
+  which speaks: a hazard under invariant 10, not an accepted exception.
+  Nobody meets it yet: the starter library has four, no screen can
+  delete a category, and a store with none is filled with the starter
+  set, so only a damaged store could. Before editing or import can leave
+  fewer than three, the library and layout engine threads either keep a
+  category nearest the well for every library (never a decoy) or bring
+  the owner a rule that keeps three, since that limits what a family can
+  delete. `HomeShapeTests.aLibraryOfFewerThanThreeEverydayCategoriesLeavesAgainNearStop`
+  records it as a strict known issue, so it fails when the gap closes.
+  Found in review of PR #38.
 - **A silent stand-in tone for UI tests.** Debug launches with
   `--attention-tone=silent` play `SilentAttentionTonePlayback`, which
   says it is playing until stopped and makes no sound, so UI tests sound
@@ -1502,6 +1517,12 @@ ROADMAP R0 item 4 ([`work/get-attention-on-home.md`](work/get-attention-on-home.
   the alarm there no longer leaves it with no way to stop, but on wide
   windows Settings' root puts its note under that place, so adding it
   needs its own scoring (docs/HANDOFF.md, *Known gaps*).
+- **An alarm problem while Settings covers Home names Back first.**
+  Settings can open while the alarm sounds, and has no Get Attention of
+  its own, so a failed or cut-off alarm there shows and announces "No
+  alert — Back": "Get Attention is not sounding. Choose Back until Home
+  appears, then choose Get Attention." (`AudioSafetyPolicy`, the same
+  rule as a phrase cut off under Settings). Found in review of PR #38.
 
 *Before:* the alarm was tested code with no control on screen, Home's
 status line ran with it always idle, the safety row was one row (Yes,
