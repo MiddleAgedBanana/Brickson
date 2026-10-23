@@ -26,9 +26,10 @@ reasons, in order of weight:
    fully open; it isn't available when iPhone Duo is partially folded."
    The same is said of Head Tracking. So the poses in which it stands
    by itself on a table or bedside cannot be used with the eyes or the
-   head. While Eye Tracking is on, "the part of the inner display where
-   the FaceTime camera sits is dark, so a control in that area can be
-   hard to see" ([Eye Tracking guide][eye]; [Head Tracking guide][head]).
+   head. While either is on, "the part of the inner display where the
+   FaceTime camera sits is dark, so a control in that area can be hard
+   to see" ([Eye Tracking guide][eye]; [Head Tracking guide][head]: each
+   says it of its own feature).
 2. **The open screen is small for gaze.** Worked out from Apple's pixel
    counts and densities ([specifications][specs]; not Apple's own
    figures): the inner display is about 11 × 16 cm, about a third of a
@@ -39,11 +40,16 @@ reasons, in order of weight:
    space available") would fit few tiles, and the research the roadmap
    rests on found 4 degrees the comfortable gaze target
    (`docs/recon/2026-10-15/als-aac-research.md`).
-3. **No external eye tracker.** Apple documents trackers made for iPad
-   only ("iPad also supports third-party eye trackers", [Apple's
-   accessibility features][features]); the iPhone guide, which covers
-   iPhone Duo, has no such section. This is read from missing
-   documentation, not an explicit statement.
+3. **External eye trackers: in Apple's guides, for iPad only.** The user
+   guides document an external eye tracker for iPad only ("You can also
+   use a Made for iPad (MFi) eye-tracking device to control iPad", [iPad
+   guide][ipad-eye]). The iPhone guide, which covers iPhone Duo, has no
+   such section, and lists pointer devices "such as trackpads, game
+   controllers, and mouse devices" ([AssistiveTouch][at]). Apple's
+   features page says "iPad also supports third-party eye trackers", but
+   also names an "eye-tracking device" among AssistiveTouch's pointers
+   for iOS and iPadOS ([Apple's accessibility features][features]), so
+   whether one works with iPhone Duo is unconfirmed, not ruled out.
 4. **Mounting and durability are unknown.** Phone holders used in AAC
    grip devices up to about 9.5 cm wide ([Rehadapt][rehadapt]); the open
    Duo is 11.8 × 16.5 cm, and no mount maker lists a holder for it yet.
@@ -90,10 +96,13 @@ Nothing changes in R0 item 13: Brickson must run well on iPhone Duo
 (it has Eye Tracking, so it is a supported device under docs/DECISIONS.md,
 "Minimum iOS, iPhone and iPad"), and the owner's two fold choices stand.
 Two small points for the layout engine (Wave 3 items 3 and 6): a gaze or
-head profile only meets the fully open inner display or the outer one,
-never a partly folded one; and the dark camera area under Eye Tracking
-needs checking in the simulator. Family Setup could later say, for
-iPhone Duo, that Eye Tracking needs it fully open on a stand.
+head profile meets only the fully open inner display, never a partly
+folded or closed phone (Apple: each "works only when the device is fully
+open"; no device check yet, see *Gaps*); and the dark camera area under
+Eye Tracking or Head Tracking needs checking on a real iPhone Duo, since
+Apple documents no way to run either in a simulator. Family Setup could
+later say, for iPhone Duo, that Eye Tracking and Head Tracking need it
+fully open on a stand.
 
 ## Gaps
 
@@ -101,14 +110,17 @@ iPhone Duo, that Eye Tracking needs it fully open on a stand.
   nearest independent figure (about 3.2 to 3.6 degrees) is for ARKit gaze
   on an iPad Pro ([Taore et al. 2024][taore]), not the accessibility
   feature and not a phone.
-- Apple does not say outright whether Eye Tracking works on the outer
-  display when the phone is closed.
+- Apple's guides name no outer-display case: they rule out the closed
+  phone only through "works only when the device is fully open", and
+  nobody has checked it on a device.
 - No hinge-life figure, teardown or independent durability test yet, and
   no evidence on heat or battery with the camera running all day.
 - No ALS-specific evidence on phone against tablet screen size for AAC.
 
 [eye]: https://support.apple.com/guide/iphone/control-iphone-with-the-movement-of-your-eyes-iph66057d0f6/ios
 [head]: https://support.apple.com/guide/iphone/iph9c3dc17cf/ios
+[ipad-eye]: https://support.apple.com/guide/ipad/control-ipad-with-the-movement-of-your-eyes-ipad2cd35723/ipados
+[at]: https://support.apple.com/guide/iphone/use-assistivetouch-iph96b21954/ios
 [specs]: https://www.apple.com/iphone-duo/specs/
 [features]: https://www.apple.com/accessibility/features/
 [handling]: https://support.apple.com/guide/iphone/important-handling-information-iphbbe12ba1/ios

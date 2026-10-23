@@ -460,8 +460,10 @@ Large Content Viewer on Home"). What is left of item 3's list, in order,
 is in
 [`log/2026-10-23-show-borders-and-large-content.md`](log/2026-10-23-show-borders-and-large-content.md),
 *Follow-ups*.
-The layout's next steps (the wells, then the engine with input
-profiles) are in
+The layout's next steps are Wave 3's items 3 and 4 in
+[docs/ROADMAP.md](ROADMAP.md) (the engine, then Home on it with the slot
+plan's wells); input profiles and the phone on its side wait until R0's
+first build has gone to App Review. The earlier order is in
 [`log/2026-10-21-phone-layout.md`](log/2026-10-21-phone-layout.md).
 
 ## Checks that need a real device
@@ -504,7 +506,7 @@ Simulators cannot show these. Record each result in a `docs/log/` file
 | A volume change made while Brickson was in the background shows when it returns | The volume warning (code audit L2) |
 | Buttons under Increase Contrast and Reduce Transparency, measured on the rendered pixels | Contrast of system components (invariant 6) |
 | The screen never dims or locks during a long session | `ScreenWakePolicy` (invariant 12) |
-| On a folding iPhone, open, partially folded and closed, and in Stage Manager, Slide Over and iPhone Mirroring windows: nothing safety-critical is hidden or split, nothing a person uses sits in the fold, and Eye Tracking and Dwell keep working as the phone folds and unfolds (the iPhone Duo simulator shows the layout first: R0 item 13) | Layouts from the space available; docs/DECISIONS.md, "iPhone Duo" |
+| On a folding iPhone, open, partially folded and closed, and in Stage Manager, Slide Over and iPhone Mirroring windows: nothing safety-critical is hidden or split, nothing a person uses sits in the fold, Dwell keeps working as the phone folds and unfolds, Eye Tracking and Head Tracking (which Apple says work only fully open) come back when it opens fully with nothing moved, and whether the inner camera's reserved region covers the area that goes dark while either is on (the iPhone Duo simulator shows the layout first: R0 item 13; Wave 3 item 6) | Layouts from the space available; docs/DECISIONS.md, "iPhone Duo" |
 | Eye Tracking and Dwell on an external display | Whether gaze profiles hold off the built-in screen |
 | Switch Control with Auto Scanning, Group Items on and off, and Auto Tap: the scan steps to Emergency, Yes and No from every Home state, and whether Home's regions become scan groups | Scan order and grouping (docs/ACCESSIBILITY.md, section 1) |
 | With VoiceOver, Switch Control (item and group scanning) and Full Keyboard Access, Home is reached as Yes, No, Emergency, Get Attention, Again, then the message, Stop while it shows, the categories and Settings, the phrases, in every state; what each says on entering a region; whether the cursor stops on the message or the status line; Voice Control's "Show names" shows each control's visible words and "Tap Repeat" presses Again | "Home's scan order and names": the order, unlabelled regions, and whether `accessibilityRespondsToUserInteraction` is needed |
