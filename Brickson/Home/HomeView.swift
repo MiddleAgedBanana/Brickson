@@ -16,8 +16,9 @@ import SwiftUI
 ///
 /// The arrangement comes from the space Home is given (`HomeShape`), never
 /// from which device it is on. Top to bottom: the message with its status
-/// lines, the quick controls, the categories, then the phrase grid, which
-/// takes what is left. Everything a person needs while typing sits in the top
+/// lines, the safety row (Yes, No, Again and Emergency), the categories with
+/// Settings at their trailing end, then the phrase grid, which takes what is
+/// left. Everything a person needs while typing sits in the top
 /// part, which the software keyboard never reaches (docs/LESSONS.md, "Lay
 /// out against a measured keyboard"); the categories are nearest the
 /// keyboard because a slip onto one is harmless. No control's label breaks a
@@ -28,15 +29,22 @@ import SwiftUI
 ///
 /// Each region is an accessibility container, and assistive technologies
 /// reach them in a fixed order that differs from the one on screen: Yes, No
-/// and Emergency first, then the message with Again, the categories and the
-/// phrases (`HomeRegion`). Voice Control and Full Keyboard Access know the
-/// fixed controls by the names in `HomeControlNames`, their visible words
-/// first.
+/// and Emergency first, then Again, the message, the categories and
+/// Settings, and the phrases (`HomeRegion`). Voice Control and Full Keyboard
+/// Access know the fixed controls by the names in `HomeControlNames`, their
+/// visible words first.
 struct HomeView: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.legibilityWeight) private var legibilityWeight
     @Query private var categories: [PhraseCategory]
     @State private var selectedCategoryID: UUID?
+    /// Whether Settings covers Home. Its button sets it; Settings' Back to
+    /// Talking clears it (`settingsCover`).
+    @Binding var showsSettings: Bool
+
+    init(showsSettings: Binding<Bool>) {
+        _showsSettings = showsSettings
+    }
 
     var body: some View {
         let ordered = PhraseCategory.orderedForDisplay(categories)
@@ -49,31 +57,27 @@ struct HomeView: View {
             let shape = HomeShape(
                 contentWidth: contentWidth,
                 quickControlLineHeight: LabelFont.quickControl.legible(legibilityWeight).lineHeight(at: dynamicTypeSize),
-                categoryLineHeight: LabelFont.category.legible(legibilityWeight).lineHeight(at: dynamicTypeSize)
+                categoryLineHeight: LabelFont.category.legible(legibilityWeight).lineHeight(at: dynamicTypeSize),
+                boldText: legibilityWeight == .bold
             )
-            let quickWidths = HomeShape.quickControlWidths(contentWidth: contentWidth)
 
             VStack(alignment: .leading, spacing: HomeShape.regionSpacing) {
-                MessageBlock(
-                    textWidth: contentWidth - quickWidths[0] - HomeShape.controlSpacing,
-                    againWidth: quickWidths[0],
-                    againHeight: shape.quickControlHeight
-                )
-                .homeRegion(.message)
-                QuickControlsRow(
-                    widths: quickWidths,
+                MessageBlock(width: contentWidth)
+                    .homeRegion(.message)
+                SafetyRow(
+                    shape: shape,
                     emergencyIsAvailable: emergency != nil,
                     isShowingEmergency: selected?.isEmergency == true,
                     showEmergency: { selectedCategoryID = emergency?.uuid }
                 )
-                .frame(height: shape.quickControlHeight)
+                .frame(height: shape.safetyRegionHeight)
                 .homeRegion(.safety)
-                CategoryGrid(
+                CategoriesAndSettings(
+                    shape: shape,
                     categories: CategorySelection.shownInCategoryRow(ordered),
-                    columns: shape.categoryColumns,
-                    buttonHeight: shape.categoryHeight,
                     selectedID: selected?.uuid,
-                    select: { selectedCategoryID = $0 }
+                    select: { selectedCategoryID = $0 },
+                    showsSettings: $showsSettings
                 )
                 .frame(height: shape.categoryRegionHeight)
                 .homeRegion(.categories)
@@ -100,34 +104,20 @@ struct HomeView: View {
 // MARK: - Message
 
 /// The last sentence spoken, large enough for the listener to read, with
-/// its status lines under it and Again at its trailing edge. Again sits at
-/// the bottom of the block, away from the screen's top corner (design rule
-/// "Keep corners clear").
+/// its status lines under it, across the full width. No control shares the
+/// region: Again is in the safety row, so a look that rests on the message
+/// and slips past its trailing end meets nothing there
+/// (docs/DECISIONS.md, "Settings on Home").
 private struct MessageBlock: View {
-    @Environment(SpeechService.self) private var speech
-    /// The width of the message and its status line, beside Again.
-    let textWidth: CGFloat
-    let againWidth: CGFloat
-    let againHeight: CGFloat
+    /// The width of the message and its status line.
+    let width: CGFloat
 
     var body: some View {
-        HStack(alignment: .bottom, spacing: HomeShape.controlSpacing) {
-            VStack(alignment: .leading, spacing: 4) {
-                MessageText()
-                StatusLines(width: textWidth)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-
-            Button {
-                speech.repeatLast()
-            } label: {
-                FittedLabel(HomeControlNames.again.visible, font: .quickControl)
-            }
-            .buttonStyle(HomeButtonStyle(fill: Palette.controlFill))
-            .frame(width: againWidth, height: againHeight)
-            .disabled(speech.lastSpokenText == nil)
-            .accessibilityInputLabels(HomeControlNames.again.inputLabels)
+        VStack(alignment: .leading, spacing: 4) {
+            MessageText()
+            StatusLines(width: width)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
@@ -137,18 +127,21 @@ private struct MessageBlock: View {
 /// them. It steps down through Apple's text sizes only as far as its widest
 /// word needs to fit the width, never below the default size (AGENTS.md,
 /// "Words never break"). Every phrase start, Again included, shows the
-/// message from the top.
+/// message from the top. Before anything is spoken it shows a placeholder,
+/// or, until Family Setup has been opened once, the line that tells a family
+/// where setup is (`FirstRunHint`).
 private struct MessageText: View {
     @Environment(SpeechService.self) private var speech
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.legibilityWeight) private var legibilityWeight
+    @Environment(\.showsSetupHint) private var showsSetupHint
 
     var body: some View {
         let font = LabelFont.message
-        let text = speech.lastSpokenText ?? String(
+        let text = speech.lastSpokenText ?? (showsSetupHint ? FirstRunHint.text : String(
             localized: "Choose a phrase to speak it.",
             comment: "Shown where the spoken message appears, before anything has been spoken."
-        )
+        ))
 
         Text(verbatim: " ")
             .font(font.font)
@@ -315,69 +308,157 @@ private struct LibraryWarnings: View {
     }
 }
 
-// MARK: - Quick controls
+// MARK: - Safety row
 
 /// Controls that stay in the same place in every state. Yes and No speak at
-/// once; Emergency only switches to the emergency phrases, so a stray look
-/// on it never says anything. While the emergency phrases show, Emergency is
-/// marked selected the same way a category is (a check mark, a ring and the
-/// Selected trait), because the emergency category has no button of its own.
+/// once, and Again repeats the last message; Emergency only switches to the
+/// emergency phrases, so a stray look on it never says anything. While the
+/// emergency phrases show, Emergency is marked selected the same way a
+/// category is (a check mark, a ring and the Selected trait), because the
+/// emergency category has no button of its own.
+///
+/// One row of Yes, No, Again and Emergency wherever each keeps its minimum
+/// width, Yes and No narrowing first; otherwise Yes, No and Emergency, with
+/// Again across the row under them (`HomeShape.SafetyRow`). Either way Emergency is at
+/// the trailing end of the first row, under Settings' Back to Talking, so a
+/// look still resting there after Settings closes meets a control that says
+/// nothing (invariant 10; docs/DECISIONS.md, "Settings on Home"). Again is
+/// reached after Emergency by assistive technologies
+/// (`HomeRegion.lastInRegion`).
 ///
 /// Yes, No and Again carry no icon. Beside the word, No's thumbs-down was
 /// read as part of it ("g)No") by the text recognizer in `LaunchTests`, and
 /// PR #13 had dropped these icons for the same reason.
-private struct QuickControlsRow: View {
+private struct SafetyRow: View {
     @Environment(SpeechService.self) private var speech
-    /// Yes, No and Emergency, from `HomeShape.quickControlWidths`.
-    let widths: [CGFloat]
+    let shape: HomeShape
     let emergencyIsAvailable: Bool
     let isShowingEmergency: Bool
     let showEmergency: () -> Void
 
     var body: some View {
-        HStack(spacing: HomeShape.controlSpacing) {
-            Button {
-                speech.speak(String(localized: "Yes.", comment: "Spoken when the Yes control is chosen."))
-            } label: {
-                FittedLabel(HomeControlNames.yes.visible, font: .quickControl)
+        switch shape.safetyRow {
+        case .oneRow:
+            HStack(spacing: HomeShape.controlSpacing) {
+                yes
+                no
+                again
+                emergencyButton
             }
-            .buttonStyle(HomeButtonStyle(fill: Palette.controlFill))
-            .frame(width: widths[0])
-            .accessibilityInputLabels(HomeControlNames.yes.inputLabels)
+        case .twoRows:
+            VStack(alignment: .leading, spacing: HomeShape.controlSpacing) {
+                HStack(spacing: HomeShape.controlSpacing) {
+                    yes
+                    no
+                    emergencyButton
+                }
+                again
+            }
+        }
+    }
 
-            Button {
-                speech.speak(String(localized: "No.", comment: "Spoken when the No control is chosen."))
-            } label: {
-                FittedLabel(HomeControlNames.no.visible, font: .quickControl)
-            }
-            .buttonStyle(HomeButtonStyle(fill: Palette.controlFill))
-            .frame(width: widths[1])
-            .accessibilityInputLabels(HomeControlNames.no.inputLabels)
+    private var yes: some View {
+        Button {
+            speech.speak(String(localized: "Yes.", comment: "Spoken when the Yes control is chosen."))
+        } label: {
+            FittedLabel(HomeControlNames.yes.visible, font: .quickControl)
+        }
+        .buttonStyle(HomeButtonStyle(fill: Palette.controlFill))
+        .frame(width: shape.yesNoWidth, height: shape.quickControlHeight)
+        .accessibilityInputLabels(HomeControlNames.yes.inputLabels)
+    }
 
-            Button {
-                showEmergency()
-            } label: {
-                FittedLabel(
-                    HomeControlNames.emergency.visible,
-                    systemImage: isShowingEmergency ? "checkmark.circle.fill" : "exclamationmark.triangle.fill",
-                    font: .quickControl
-                )
+    private var no: some View {
+        Button {
+            speech.speak(String(localized: "No.", comment: "Spoken when the No control is chosen."))
+        } label: {
+            FittedLabel(HomeControlNames.no.visible, font: .quickControl)
+        }
+        .buttonStyle(HomeButtonStyle(fill: Palette.controlFill))
+        .frame(width: shape.yesNoWidth, height: shape.quickControlHeight)
+        .accessibilityInputLabels(HomeControlNames.no.inputLabels)
+    }
+
+    private var again: some View {
+        Button {
+            speech.repeatLast()
+        } label: {
+            FittedLabel(HomeControlNames.again.visible, font: .quickControl)
+        }
+        .buttonStyle(HomeButtonStyle(fill: Palette.controlFill))
+        .frame(width: shape.againWidth, height: shape.quickControlHeight)
+        .disabled(speech.lastSpokenText == nil)
+        .accessibilityInputLabels(HomeControlNames.again.inputLabels)
+        .accessibilitySortPriority(HomeRegion.lastInRegion)
+    }
+
+    private var emergencyButton: some View {
+        Button {
+            showEmergency()
+        } label: {
+            FittedLabel(
+                HomeControlNames.emergency.visible,
+                systemImage: isShowingEmergency ? "checkmark.circle.fill" : "exclamationmark.triangle.fill",
+                font: .quickControl
+            )
+        }
+        .buttonStyle(HomeButtonStyle(fill: Palette.emergencyFill, isSelected: isShowingEmergency))
+        .frame(width: shape.emergencyWidth, height: shape.quickControlHeight)
+        .disabled(!emergencyIsAvailable)
+        .accessibilityAddTraits(isShowingEmergency ? .isSelected : [])
+        .accessibilityInputLabels(HomeControlNames.emergency.inputLabels)
+    }
+}
+
+// MARK: - Categories and Settings
+
+/// The category buttons, and Settings at their trailing end: a column as
+/// tall as their rows, showing its gear alone where its word has no room,
+/// or a row of its own under them where the window is too narrow even for
+/// that (`HomeShape.SettingsPlacement`).
+/// Settings is for the family. It opens a cover with its own safety bar
+/// (`settingsCover`), and is reached after the categories by assistive
+/// technologies (`HomeRegion.lastInRegion`). Only the categories scroll,
+/// in a library with more than four of them; Settings stays where it is.
+private struct CategoriesAndSettings: View {
+    let shape: HomeShape
+    let categories: [PhraseCategory]
+    let selectedID: UUID?
+    let select: (UUID) -> Void
+    @Binding var showsSettings: Bool
+
+    var body: some View {
+        let grid = CategoryGrid(
+            categories: categories,
+            columns: shape.categoryColumns,
+            buttonHeight: shape.categoryHeight,
+            selectedID: selectedID,
+            select: select
+        )
+        .frame(width: shape.categoryGridWidth, height: shape.categoryGridHeight)
+        let settings = SettingsButton(isPresented: $showsSettings, showsName: shape.settingsShowsName)
+            .frame(width: shape.settingsWidth, height: shape.settingsHeight)
+            .accessibilitySortPriority(HomeRegion.lastInRegion)
+
+        switch shape.settingsPlacement {
+        case .beside:
+            HStack(alignment: .top, spacing: HomeShape.controlSpacing) {
+                grid
+                settings
             }
-            .buttonStyle(HomeButtonStyle(fill: Palette.emergencyFill, isSelected: isShowingEmergency))
-            .frame(width: widths[2])
-            .disabled(!emergencyIsAvailable)
-            .accessibilityAddTraits(isShowingEmergency ? .isSelected : [])
-            .accessibilityInputLabels(HomeControlNames.emergency.inputLabels)
+        case .below:
+            VStack(alignment: .leading, spacing: HomeShape.controlSpacing) {
+                grid
+                settings
+            }
         }
     }
 }
 
-// MARK: - Categories
-
 /// One button per everyday category, in a fixed order and a fixed grid: two
 /// by two on narrow windows, one row of four on wide ones, with room kept for
 /// four whatever the library holds. Nothing scrolls sideways. A library
-/// with more categories than that scrolls inside this region; the starter
+/// with more categories than that scrolls inside this grid; the starter
 /// library never does. The selected category is filled with the phrase
 /// colour and shows a check mark and a ring (so the choice never depends on
 /// colour alone), and carries the Selected trait for VoiceOver and Voice

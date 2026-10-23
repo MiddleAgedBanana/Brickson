@@ -150,7 +150,7 @@ say so in What's New when it happens.
 |---|---|---|
 | "The phrases and categories you use, add or change" | Partly: the starter library is saved on the device, but adding and changing wait for editing | Ship editing, or reword to "The phrases and categories you use" |
 | "The message you are typing… stays until you clear it" | No: no typing yet | Ship typing with a kept draft, or delete the line |
-| "Your settings, such as the voice and speaking speed you chose" | Not yet: Settings' Voice Settings screen chooses both (docs/log/2026-10-21-settings-and-first-run.md), but Home has no Settings button yet, so a person cannot reach it. The policy no longer mentions a text-size setting (fixed 2026-10-21) | Home places the Settings button |
+| "Your settings, such as the voice and speaking speed you chose" | Yes, from 2026-10-23: Settings' Voice Settings screen chooses both (docs/log/2026-10-21-settings-and-first-run.md), and Home's Settings button opens it (docs/log/2026-10-23-settings-on-home.md). The policy no longer mentions a text-size setting (fixed 2026-10-21) | — |
 | Deleting things "in the app" | Not until editing ships | Ship editing, or reword |
 | Speech and Personal Voice | Yes | — |
 | How you control the app ("works with … Eye Tracking, Switch Control and Voice Control") | The data half is true: Brickson has no input code of its own, so it never receives what those features use. "Works with" is **not yet verified**: nothing has run on a device | Reach every control with each named method on a real iPhone and iPad (docs/HANDOFF.md, *Checks that need a real device*), or reword to "is built to work with" |

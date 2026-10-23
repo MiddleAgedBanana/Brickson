@@ -186,7 +186,10 @@ Today's Home is still the stand-in (docs/DECISIONS.md, "Home's stand-in
 layout"). Since PR #22 its eager rows fit the available space: three
 phrase columns wherever three 107pt tiles fit, four visible category
 buttons, labels fitted in whole words, and the message with Again beside
-it. Main records the small-window scrolling gaps separately. The slot
+it. Since 2026-10-23 Again is in the safety row (Yes, No, Again,
+Emergency) and Settings is at the categories' trailing end
+(docs/DECISIONS.md, "Settings on Home"). Main records the small-window
+scrolling gaps separately. The slot
 plan and its wells are still to be built; these drawings are not a
 picture of the running app.
 
@@ -526,6 +529,10 @@ a held activation meets next*). Below the band:
   there. A pointer may snap to another navigation row; main explicitly
   records the full Settings chains as unscored. With Settings at region
   B's trailing end, the Home/Settings work must score the actual chain.
+  It did (PR #33): the landed root's row sits over that spot again, now
+  with Family Setup's passive opening under it, and the work file
+  [`work/settings-on-home.md`](work/settings-on-home.md) scores two
+  steps of the chain.
 - **Family Setup**: the landed rows are Set Up Step by Step, Voice
   Settings, Reaching the Screen, Keep Brickson Open, Privacy Policy and
   About, each a standard control. The Library row joins them when its

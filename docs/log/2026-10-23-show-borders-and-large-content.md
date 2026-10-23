@@ -67,6 +67,13 @@ after `.accessibilityInputLabels(HomeControlNames.yes.inputLabels)` in
 `HomeView.swift`, and the same for No, then run at an accessibility text
 size. Never ship that build.
 
+PR #33 (Settings on Home) merged while this one was open, and gave
+Settings' gear the viewer where it shows alone. Merging main kept that
+and made the records agree: the viewer is held back from Home's speaking
+controls, Settings never speaks, and the device check now also slides
+from the gear onto each control beside it, and between phrase tiles
+(issue #36). The same rule then decides whether the gear keeps it.
+
 Documents: docs/ACCESSIBILITY.md (the Show Borders and Large Content
 Viewer rows), docs/DECISIONS.md (the new entry and its row in *Decided by
 default*), docs/HANDOFF.md (the pointer to these follow-ups, a known gap

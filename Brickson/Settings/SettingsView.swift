@@ -15,9 +15,12 @@ import SwiftUI
 /// stays open; only Back to Talking closes it (docs/DECISIONS.md, "Settings
 /// resets when idle and never closes").
 ///
-/// Under the bar, a line kept for it shows any sound problem, because the
-/// cover hides Home's: a sample that cannot be heard always says why
-/// (AGENTS.md, invariant 4).
+/// At the foot of the cover, a line kept for it shows any sound problem,
+/// because the cover hides Home's: a sample that cannot be heard always
+/// says why (AGENTS.md, invariant 4). It sits below the screens rather
+/// than under the bar, so each screen starts right under the bar, where
+/// the root's Family Setup row covers the spot Home's Settings was
+/// (docs/DECISIONS.md, "Settings on Home").
 struct SettingsView: View {
     let close: () -> Void
 
@@ -38,7 +41,6 @@ struct SettingsView: View {
     var body: some View {
         VStack(spacing: 0) {
             SettingsSafetyBar(close: close)
-            SettingsAudioStatus()
             NavigationStack(path: $path) {
                 SettingsRootView()
                     .navigationDestination(for: SettingsRoute.self) { route in
@@ -48,6 +50,7 @@ struct SettingsView: View {
             // A new identity after an idle reset rebuilds every screen
             // scrolled to the top, as if Settings had just opened.
             .id(activity.resetCount)
+            SettingsAudioStatus()
         }
         .background(Palette.screen)
         .environment(activity)
@@ -115,6 +118,11 @@ struct SettingsView: View {
 /// sounding with no way to stop it. Because the place is kept, adding it
 /// moves nothing. Back to Talking's words are never shrunk: its icon sits
 /// above them, so it never takes their width (`SettingsPairLabel`).
+///
+/// The bar is only as tall as its tallest control. Get Attention's empty
+/// place has no height of its own to keep, and once let it take a share of
+/// the screen's height, which put Back to Talking a third of the way down,
+/// over the spot where Home's Settings was (CI on PR #33).
 struct SettingsSafetyBar: View {
     let close: () -> Void
 
@@ -132,16 +140,18 @@ struct SettingsSafetyBar: View {
             .tint(Palette.phraseFill)
             .accessibilityIdentifier("backToTalking")
         }
+        .fixedSize(horizontal: false, vertical: true)
         .padding(.horizontal, SettingsMetrics.gutter)
         .padding(.vertical, 8)
     }
 }
 
 /// Sound problems while Settings covers Home, as passive text in a line kept
-/// for it, so nothing moves when one appears (AGENTS.md, invariant 4). The
-/// words are `AudioSafetyPolicy`'s for a screen over Home: they name Back,
-/// then Again. Home's own warnings still announce each problem to
-/// VoiceOver under the cover, so this line does not announce them again.
+/// for it at the foot of the cover, so nothing moves when one appears
+/// (AGENTS.md, invariant 4). The words are `AudioSafetyPolicy`'s for a
+/// screen over Home: they name Back, then Again. Home's own warnings still
+/// announce each problem to VoiceOver under the cover, so this line does
+/// not announce them again.
 private struct SettingsAudioStatus: View {
     @Environment(SpeechService.self) private var speech
     @Environment(AudioSafetyMonitor.self) private var audioSafety
@@ -173,7 +183,7 @@ private struct SettingsAudioStatus: View {
         .foregroundStyle(.primary)
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, SettingsMetrics.gutter)
-        .padding(.bottom, 8)
+        .padding(.vertical, 8)
         .allowsHitTesting(false)
     }
 
@@ -197,38 +207,137 @@ final class SettingsLanding {
 
 /// Settings' first screen: one large way into Family Setup, and a short
 /// note on what lies there. Nothing here changes a setting.
+///
+/// The row starts right under the safety bar, over the spot where Home's
+/// Settings was, so a look still resting there meets a row that only
+/// navigates (docs/DECISIONS.md, "Settings on Home"). Where half the width
+/// holds the row's words on one line, the row takes the bar's trailing
+/// column, under Back to Talking and as wide, with the note beside it
+/// (`SettingsRootColumns`). Across a wide window, a full-width row's centre
+/// lies farther from that spot than Back to Talking's, so by the nearest
+/// centre a held look could close Settings again (modelled from CI's
+/// frames on PR #33). Where half the width is too narrow, as on a phone,
+/// the row spans the width, which keeps its words whole.
 struct SettingsRootView: View {
     @Environment(SettingsLanding.self) private var landing: SettingsLanding?
 
     var body: some View {
         SettingsScreen(title: "Settings") {
-            NavigationLink(value: SettingsRoute.familySetup) {
-                SettingsRowLabel(title: "Family Setup", systemImage: "person.2.fill")
-                    .frame(minHeight: FamilySetupView.openingHeight)
+            // The bar's gap, so two columns are the bar's columns.
+            SettingsRootLayout(spacing: SettingsMetrics.rowSpacing) {
+                familySetup
+                note
             }
-            .settingsRowStyle()
-            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { landing?.rootRowHeight = $0 }
-            .accessibilityIdentifier("familySetup")
-
-            SettingsParagraph("Voices, help with reaching the screen, keeping \(AppName.display) open, and the privacy policy are in Family Setup.")
         }
+    }
+
+    private var familySetup: some View {
+        NavigationLink(value: SettingsRoute.familySetup) {
+            familySetupLabel
+        }
+        .settingsRowStyle()
+        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { landing?.rootRowHeight = $0 }
+        .accessibilityIdentifier("familySetup")
+    }
+
+    private var familySetupLabel: some View {
+        SettingsRowLabel(title: "Family Setup", systemImage: "person.2.fill")
+            .frame(minHeight: FamilySetupView.openingHeight)
+    }
+
+    private var note: some View {
+        SettingsParagraph("Voices, help with reaching the screen, keeping \(AppName.display) open, and the privacy policy are in Family Setup.")
+    }
+}
+
+/// Places Settings' root where `SettingsRootColumns` says: its first view is
+/// the Family Setup row, its second the note. It measures the row with its
+/// words on one line, then each view at the width it gets.
+nonisolated struct SettingsRootLayout: Layout {
+    let spacing: CGFloat
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        columns(width: proposal.width, subviews: subviews)?.size ?? .zero
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        guard let columns = columns(width: bounds.width, subviews: subviews) else { return }
+        for (subview, frame) in zip(subviews, [columns.row, columns.note]) {
+            subview.place(
+                at: CGPoint(x: bounds.minX + frame.minX, y: bounds.minY + frame.minY),
+                proposal: ProposedViewSize(width: frame.width, height: frame.height)
+            )
+        }
+    }
+
+    /// Nothing but the row and the note is placed: the root has exactly
+    /// these two.
+    private func columns(width: CGFloat?, subviews: Subviews) -> SettingsRootColumns? {
+        guard subviews.count == 2 else { return nil }
+        let row = subviews[0]
+        let note = subviews[1]
+        let rowIdealWidth = row.sizeThatFits(.unspecified).width
+        // Asked for its own width, the root stacks at the row's.
+        let width = width.flatMap { $0.isFinite ? $0 : nil } ?? rowIdealWidth
+        return SettingsRootColumns(
+            width: width,
+            spacing: spacing,
+            rowIdealWidth: rowIdealWidth,
+            rowHeight: { row.sizeThatFits(ProposedViewSize(width: $0, height: nil)).height },
+            noteHeight: { note.sizeThatFits(ProposedViewSize(width: $0, height: nil)).height }
+        )
     }
 }
 
 // MARK: - Presenting Settings from Home
 
-/// Home's way into Settings. Home places it (where it sits is part of
-/// Home's layout); everything it opens lives here.
+/// Home's way into Settings. Home places it, at the trailing end of its
+/// categories (docs/DECISIONS.md, "Settings on Home"), and gives it its
+/// frame; everything it opens lives here. It looks like Home's other
+/// controls, and its gear drops before its word shrinks (`FittedLabel`).
+/// Where Home has room beside the categories only for the gear
+/// (`HomeShape.settingsShowsName`), it shows the gear alone, named
+/// "Settings" for VoiceOver, Voice Control and Switch Control, with a large
+/// copy of its name for the large content viewer, rather than take a row
+/// from the phrases.
 struct SettingsButton: View {
+    static let symbol = "gearshape.fill"
+    /// The gear alone at the default text size. `StarterLabelFitTests`
+    /// checks the narrowest gear-only Settings has room for it, and that it
+    /// is no smaller than the gear beside the word.
+    static let symbolSide: CGFloat = 24
+
     @Binding var isPresented: Bool
+    var showsName = true
+    /// The gear alone grows with the text, up to the room the button has.
+    @ScaledMetric(relativeTo: .headline) private var gearSide = SettingsButton.symbolSide
 
     var body: some View {
-        Button {
+        let button = Button {
             isPresented = true
         } label: {
-            Label("Settings", systemImage: "gearshape.fill")
+            if showsName {
+                FittedLabel(HomeControlNames.settings.visible, systemImage: Self.symbol, font: .category)
+            } else {
+                Image(systemName: Self.symbol)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(maxWidth: gearSide, maxHeight: gearSide)
+                    .accessibilityLabel(Text(verbatim: HomeControlNames.settings.visible))
+            }
         }
+        .buttonStyle(HomeButtonStyle(fill: Palette.controlFill))
+        .accessibilityInputLabels(HomeControlNames.settings.inputLabels)
         .accessibilityIdentifier("settings")
+
+        if showsName {
+            button
+        } else {
+            // The gear stops growing where the button's room ends.
+            button.accessibilityShowsLargeContentViewer {
+                Label(HomeControlNames.settings.visible, systemImage: Self.symbol)
+            }
+        }
     }
 }
 

@@ -156,7 +156,7 @@ final class LaunchTests: XCTestCase {
         let largestHeight = placeholderHeight(in: launchedApp(textSize: .ax5))
         XCTAssertGreaterThan(
             largestHeight, defaultHeight * 1.5,
-            "The message placeholder is \(largestHeight)pt tall at AX5 and \(defaultHeight)pt at the default size: the text size did not change"
+            "The first-run hint is \(largestHeight)pt tall at AX5 and \(defaultHeight)pt at the default size: the text size did not change"
         )
     }
 
@@ -179,14 +179,17 @@ final class LaunchTests: XCTestCase {
         )
     }
 
-    /// The height of the message row's placeholder, which follows Dynamic
-    /// Type. If Home's wording changes, measure another text that follows
-    /// Dynamic Type instead.
+    /// The height of the line the message row shows on a first launch, the
+    /// first-run hint, which follows Dynamic Type. Every launch here starts
+    /// on fresh storage, so Family Setup has never been opened. If Home's
+    /// wording changes, measure another text that follows Dynamic Type
+    /// instead.
     @MainActor
     private func placeholderHeight(in app: XCUIApplication) -> Double {
-        let text = app.staticTexts["Choose a phrase to speak it."]
+        let hint = "Family: help with setting up is in Settings."
+        let text = app.staticTexts[hint]
         guard text.waitForExistence(timeout: 5) else {
-            XCTFail("Home has no \"Choose a phrase to speak it.\" text to measure")
+            XCTFail("Home has no \"\(hint)\" text to measure")
             return 0
         }
         return text.frame.height

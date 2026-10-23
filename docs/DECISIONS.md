@@ -54,7 +54,7 @@ holds.
 | Home first with setup as a place in Settings, the Settings root, the voice picker, the Privacy row, the largest sizes when nobody answers setup, an "Anything changed?" check-in every three months that waits 30 days after Not Now | "First launch opens Home; setup lives in Settings", "Settings is a cover with a fixed safety bar", "Settings resets when idle and never closes", "Setup answers are kept as offered, never as completed", "Check-ins come every three months", "The privacy policy ships inside the app", "Speed is a set of fixed choices" (Settings and first run; PR #23) |
 | Voice Settings keeping its rows and words in place while voices change, and an explained Ask button for Personal Voice that moves nothing and adds no button on the visit that asked (switched on after device check D1) | "Voice Settings keeps its places while it is open", "Asking for Personal Voice from Voice Settings", and a paragraph in "A Personal Voice is used only while it is allowed" (Voice screen in Settings, 2026-10-22) |
 | Home's scan order (Yes, No and Emergency first, regions as containers) and the names Voice Control and Full Keyboard Access use, the visible words first | "Home's scan order and names" (Accessibility implementation, first pass) |
-| Home's border, pressed and selection rings under Show Borders, and the Large Content Viewer held back from Home until a device check | "Show Borders and the Large Content Viewer on Home" (Accessibility pass two) |
+| Home's border, pressed and selection rings under Show Borders, and the Large Content Viewer held back from Home's speaking controls until a device check | "Show Borders and the Large Content Viewer on Home" (Accessibility pass two) |
 | The exceptions to Apple's current frameworks first, and the moves made and planned | "Apple's current frameworks first" (the rule is the owner's, 2026-10-22) |
 | The accessibility coverage list and its choices: full screen in Assistive Access and no separate scene, no programmatic Guided Access, assistive-technology flags that only suggest, phrases in the person's voice with VoiceOver on, late-stage boards as an R1 profile, and what waits or is never used | "Accessibility API coverage" (Accessibility coverage checklist) |
 
@@ -355,7 +355,7 @@ one replaces with no loss.
 | What | Where | Why | Revisit when |
 |---|---|---|---|
 | XCTest and XCUIAutomation | UI tests | Swift Testing cannot launch or drive an app. Apple: "UI automation and performance testing APIs are only available in XCTest" (WWDC26, "Migrate to Swift Testing"), and the XCTest page says to "continue to use XCTest for user interface tests". | Swift Testing can drive an app |
-| UIKit types in UI tests: `UIDevice` (its idiom and system version), `UIDeviceOrientation`, a screenshot's `UIImage` | `HomeAccessibilityOrderTests`, `HomeLayoutTests`, `HomeReachabilityTests`, `KeyboardProbeTests`, `LaunchHelpers`, `LaunchTests` | XCUIAutomation's own API uses these types (`XCUIDevice.orientation`, `XCUIScreenshot.image`) and reports no device idiom. | With the row above |
+| UIKit types in UI tests: `UIDevice` (its idiom and system version), `UIDeviceOrientation`, a screenshot's `UIImage` | `HomeAccessibilityOrderTests`, `HomeLayoutTests`, `HomeReachabilityTests`, `KeyboardProbeTests`, `LaunchHelpers`, `LaunchTests`, `SettingsOnHomeTests` | XCUIAutomation's own API uses these types (`XCUIDevice.orientation`, `XCUIScreenshot.image`) and reports no device idiom. | With the row above |
 | `UIApplication.isIdleTimerDisabled` | `BricksonApp` | Invariant 12. SwiftUI has no way to keep the screen awake; Apple documents this property for it. | SwiftUI gains one |
 | `UIFont` (text-style sizes, weights, line heights), `NSString.size(withAttributes:)`, `UIImage.SymbolConfiguration` | `LabelFont` | `WordFit` measures words before layout, as a plain tested type. SwiftUI measures text only inside a view hierarchy (`Text.Layout`; `ViewThatFits` failed Apple's accessibility audit). iOS 26's `Font.resolve(in:)` gives a point size and a Core Text font, but measuring a word still needs UIKit or Core Text, and resolving a font outside a view is undocumented. | Under *Planned moves* |
 | `UIColor.systemBackground` | `Palette.screen` | The colour `PaletteTests` measures as "the screen", and pins `Palette.screen` to. SwiftUI has no colour of its own for it, and its background style changes with the container. | SwiftUI gains a system background colour |
@@ -956,6 +956,8 @@ How it behaves, and where it knowingly falls short:
   - Again sits beside the message text the person reads, and Yes sits
     just under it: under a gaze profile a look that rests on the text could
     snap to them. *Home's slot plan* moves Again into the safety row.
+    *2026-10-23:* done (*Settings on Home*); Yes, No and Again still
+    border the message.
   - The selected category swaps its symbol for a check mark; symbols
     differ in width, so the words beside it can shift slightly inside
     their button. The button itself does not move.
@@ -1086,6 +1088,22 @@ running on these windows):
   tiles of about 109×68pt, but three floor-sized rows do not fit under
   this arrangement in dwell, switch or gaze profiles, so the engine needs
   another arrangement for this window, never scrolling.
+- A 375×667pt phone window with Bold Text on (2026-10-23, *Settings on
+  Home*): fits at the default size like the same window without it
+  (tiles about 107pt), with Yes and No narrower and Settings showing its
+  gear alone. A first draft gave the heavier words a second safety row
+  and Settings a row of its own there, and the grid scrolled (tiles
+  about 64pt against the 99pt minimum); Codex's review of PR #33 caught
+  it.
+- A 320pt phone window (2026-10-23): an iPhone with Display Zoom set to
+  Larger Text, 320×568pt on a 375×667 phone and 320×693pt on a 6.1-inch
+  one. It scrolls at the default size, with two columns and four rows of
+  at least 99pt to show. *Settings on Home* made it worse: at 288pt of
+  content the safety row's words need two rows and Settings a row of its
+  own, so the grid's height falls from about 240 to 110pt and from about
+  315 to 190pt (a model of the frames, safe areas of the zoomed 6.1-inch
+  phone estimated). The engine needs another arrangement for these
+  windows.
 - A 402×874pt phone window (iPhone 17 class): fits at the default text
   size, which `HomeLayoutTests` checks. At AX5 the grid scrolls: the quick
   controls and categories grow to hold one line of their words at the
@@ -1174,7 +1192,9 @@ never where it is.
   thread measures it per profile and either removes it by placement (a
   wider gap, or a harmless control nearest the message) or brings the
   measured cost to the owner to accept or reject, before the slot plan
-  ships in a dwell, switch, head or gaze profile.
+  ships in a dwell, switch, head or gaze profile. *2026-10-23:* reduced,
+  still open; *Settings on Home* says by how much and what decides the
+  rest.
 - **Open: a library with more than four everyday categories.** Region B
   is an L (Stop Alert's column beside the categories), which cannot scroll
   as one standard container, so the stand-in's answer (the category
@@ -1219,6 +1239,8 @@ R0 item 3's accessibility work (docs/ACCESSIBILITY.md, sections 1 and 3;
   first swipe now lands on Yes, not on the message. When the slot plan's
   wells are built, the controls that join C (Get Attention, and Again
   moving there) and A (Phrases and Type) keep this order of regions.
+  *2026-10-23:* Again is in C, reached after Emergency, and Settings in
+  B, after the categories (*Settings on Home*).
 - **Each region is an accessibility container** (`.contain`), so its
   controls are reached together and Switch Control can offer it as a
   group when Group Items is on. The regions carry identifiers for tests
@@ -1245,6 +1267,120 @@ R0 item 3's accessibility work (docs/ACCESSIBILITY.md, sections 1 and 3;
 *Before:* none. Home was reached in its order on screen (the message and
 Again first), as one flat list, and its controls answered only to their
 labels.
+
+## Settings on Home
+
+*2026-10-23. Default: the owner left these choices to the project.
+Reversible if the owner objects.* The Settings button that ROADMAP R0
+item 7 left for later ([`work/settings-on-home.md`](work/settings-on-home.md),
+[`log/2026-10-23-settings-on-home.md`](log/2026-10-23-settings-on-home.md)).
+
+- **Settings is the last cell of region B,** at the trailing end of the
+  categories, where *Home's slot plan* puts it: a column as tall as the
+  category rows where it and the categories fit side by side, otherwise a
+  row of its own under them (320pt windows: Slide Over, and an iPhone
+  with Display Zoom). Where its word does not fit beside the categories
+  but its gear does (a 375pt phone with Bold Text, whose heavier
+  "Conversation" needs the room, and windows 328 to 363pt wide without
+  it), Settings shows the gear alone and keeps the name "Settings" for
+  VoiceOver, Voice Control and Switch Control, with a large copy for the
+  large content viewer: a row of its own there would make the starter
+  phrases scroll (invariant 11), which is worse than a gear a family
+  member recognises. The gear alone departs from AGENTS.md's *Words
+  never break* (the icon is decorative and drops first) and from *Names,
+  the visible words first* above, so it is named in PR #33 for the
+  owner, who decides by merging or objecting. It is a standard `Button`
+  styled like Home's other controls, named "Settings" and nothing else,
+  and assistive technologies reach it after the categories. A library with more than
+  four everyday categories scrolls only the categories; Settings stays.
+- **Again joins the safety row, which reads Yes, No, Again, Emergency.**
+  The slot plan moves Again into C. Emergency goes at the trailing end
+  because Settings' Back to Talking sits over A's trailing end, and until
+  A's trailing column (Phrases and Type) is built, what lies nearest under
+  Back to Talking is C's trailing control. Beside the message, that was
+  Again: a look still resting where Back to Talking was would say the last
+  message again. Now it is Emergency, which only shows the emergency
+  phrases, by nearest centre and nearest edge on every window scored (the
+  work file's table), and `SettingsOnHomeTests` checks the running app on
+  CI's iPad and iPhone at the default and largest text sizes. Where the
+  row is short of room, Yes and No, the shortest words, narrow first,
+  down to their own minimum, with Again and Emergency at theirs; only
+  where even that does not fit (the 320pt window) do Yes, No and
+  Emergency keep the first row and Again take a row of its own under
+  it, because a second row costs the phrases a row's height. The slot plan's regular-width order (Emergency first, Get Attention
+  last) comes back with Phrases and Type; until then, whoever puts Get
+  Attention and Stop on Home keeps a control that says nothing nearest
+  under Back to Talking, or the test fails. Again is reached after
+  Emergency by assistive technologies, though it sits before it.
+- **Widths come from the words.** Each control's minimum is its starter
+  word at the default text size, with the label's slack and inset,
+  measured with the real fonts, and wider with Bold Text on, which is
+  measured at the heaviest weight (`HomeShape.MinimumWidths`, checked by
+  `StarterLabelFitTests`; `HomeShapeTests` checks every width from 288 to
+  1400pt). Settings' gear alone gets Apple's 44pt minimum target. So Bold Text can change the arrangement, as text size changes
+  heights. The Bold Text minimums were first worked out from Apple's SF
+  Pro font, whose measured widths matched CI's within half a point.
+- **The first-run hint** shows in the message area, in place of the
+  placeholder, until Family Setup has been opened once (*First launch
+  opens Home; setup lives in Settings*).
+- **"Yes and No border the message" stays open, reduced** (*Home's slot
+  plan*). The message now spans the width with no control beside it; the
+  share of it whose nearest control speaks fell from about 89 to 95% to
+  about 61 to 67% on phones, and from about 72 to 75% to about 60 to 65%
+  on iPads, by either rule. Yes, No and Again still border it. A device
+  check decides the rest: whether Snap to Item and Dwell pick the nearest
+  centre or the nearest edge. If the nearest edge, a harmless control
+  across the message's full width (Emergency in a row of its own under
+  the message) removes it, at about 72pt of height on a phone that the
+  engine must find. If the nearest centre, no placement with C under A
+  removes it, and the measured cost goes to the owner before a dwell,
+  switch, head or gaze profile ships. The layout engine's thread owns it.
+- **Bold Text never costs a phone's phrases any height**
+  (`HomeShapeTests.boldTextTakesNoHeightFromAPhonesPhrases`): on every
+  phone width the app supports, the heavier words narrow Yes and No or
+  leave Settings its gear alone, but add no row above the phrases.
+- **Settings' first screen starts right under its bar.** The safety bar
+  is only as tall as its tallest control, and the sound line sits at the
+  foot of the cover (*Settings is a cover with a fixed safety bar*), so
+  the root's Family Setup row starts under the bar, over the spot where
+  Home's Settings was. Where half the width holds the row's words on one
+  line (`SettingsRootColumns`, which measures the row; a `ViewThatFits`
+  failed Apple's audit here, as it had for labels), the row takes the bar's
+  trailing column, under Back to Talking and as wide, with the note
+  beside it; on phones it spans the width. At the foot, the sound line's
+  nearest controls are whatever rows a screen has scrolled to its lower
+  edge, some of which speak a sample or change a setting; under the bar
+  its nearest were Back to Talking and the navigation bar. That costs a
+  look that reads a warning, which is rare, to keep a look that opens
+  Settings off Back to Talking. *Before:* Get Attention's empty place stretched the bar to
+  about a third of the screen (since PR #23), so Back to Talking sat over
+  Home's Settings, and a look resting after Settings closed met Home's
+  Settings again (`SettingsOnHomeTests` on PR #33's first CI run).
+  Modelled from that run's frames, fixing the bar alone still left Back
+  to Talking nearest by centre on the iPad, where a full-width row's
+  centre is mid-window, and by edge on the iPhone at the largest text
+  size, where the sound line, kept tall enough for its longest warning,
+  sat between them.
+- **The next held activation is scored, not fixed.** After Family
+  Setup's row, the chain goes on as the work file's table says: Set Up
+  Step by Step on a phone at the default size; Back to Talking by centre
+  (Set Up Step by Step by edge) on a wide window; Back to Talking by both
+  on an iPad at the largest size, so Settings closes onto Emergency; on a
+  phone at the largest size, Back to Talking or the navigation bar's
+  back button. None speaks, alarms or deletes. Breaking it needs Family
+  Setup's own rows placed for it, which is the Settings chain scoring
+  in docs/HANDOFF.md, *Known gaps*.
+- **From Settings, Yes, No and Emergency are two activations away:**
+  Back to Talking, whose spot lands nearest Emergency on Home, then the
+  control. The cover is the family's screen, not a Home state, and opens
+  on the way back and Get Attention's place (AGENTS.md, *Family controls
+  stay out of the person's path*; *Settings is a cover with a fixed
+  safety bar*). Home's Settings button makes that reachable by a stray
+  activation; Get Attention joins the bar with Home's Stop.
+
+*Before:* Home had no Settings button, so only UI tests opened Settings
+(`--screen=settings`, which `SettingsTests` still use to start there),
+and Again sat beside the message (*Home version 0 is a stand-in*).
 
 ## Typing is a state of Home
 
@@ -1476,8 +1612,9 @@ only the way back, Get Attention and one row that navigates. Family
 Setup opens on passive text at least as tall as that row
 (`FamilySetupView.openingHeight`), so nothing that can be activated sits
 under the spot just activated. With Snap to Item the nearest control is
-then a row that only navigates; chains through Settings are not scored
-yet (docs/HANDOFF.md, *Known gaps*).
+then a row that only navigates on a phone at the default text size, and
+can be Back to Talking elsewhere (*Settings on Home*); chains through
+Settings are not fully scored yet (docs/HANDOFF.md, *Known gaps*).
 
 Family Setup's rows: Set Up Step by Step, Voice Settings, Reaching the
 Screen, Keep Brickson Open (Guided Access and Assistive Access), Privacy
@@ -1492,8 +1629,9 @@ primary ink, never the system's secondary gray or grouped-list headers,
 which measure under 4.5:1. No toggles and no system alerts. Multiple
 choice answers only select; Clear My Choices is a separate button.
 
-Under the bar, a line kept for it shows any sound problem, because the
-cover hides Home's warnings (invariant 4). It uses `AudioSafetyPolicy`
+At the foot of the cover, below every screen, a line kept for it shows
+any sound problem, because the cover hides Home's warnings (invariant 4;
+it moved there from under the bar in *Settings on Home*). It uses `AudioSafetyPolicy`
 with `.dismissThenRepeat`, the words for a screen over Home ("Stopped —
 Back"), and is passive and the same height whether or not it shows
 anything. Home's warnings, still alive under the cover, announce each
@@ -1875,9 +2013,9 @@ R0 item 3's accessibility work (docs/ACCESSIBILITY.md, section 6;
   are the system's label and background colours. Settings and setup use
   the system's bordered style, which follows the setting itself (a device
   check).
-- **No Large Content Viewer on Home yet.** The coverage list planned it
-  for every label the fitting type shrinks, and this pull request first
-  built it (`accessibilityShowsLargeContentViewer` on each Home button).
+- **No Large Content Viewer on Home's speaking controls yet.** The
+  coverage list planned it for every label the fitting type shrinks, and
+  this pull request first built it (`accessibilityShowsLargeContentViewer` on each Home button).
   Review found a risk in it. For UIKit's own controls, Apple documents
   that with the viewer on, a touch held on one control that slides onto
   another activates the second when the finger lifts
@@ -1892,16 +2030,22 @@ R0 item 3's accessibility work (docs/ACCESSIBILITY.md, section 6;
   touch begun on Yes is expected to say Yes or nothing; the same device
   check confirms it.
   `SpokenUtteranceTracker` absorbs only a repeat of the same phrase, so it
-  does not help. The viewer stays off Home until a device check with a
+  does not help. The viewer stays off them until a device check with a
   test build shows what a slide does in SwiftUI (docs/HANDOFF.md, *Checks
   that need a real device*). If a slide activates the control under the
   finger, Home gets the viewer only where a slide cannot reach a control
   that speaks, or not at all, and the owner hears the trade-off first.
+  Settings' gear has the viewer where it shows alone (PR #33, "Settings
+  on Home"). Settings never speaks, but a slide from the gear could end
+  on a control that does, so the same check slides from the gear onto
+  each control beside it, and the same rule decides whether it keeps the
+  viewer.
   Meanwhile labels never shrink below the default size, and the system's
   Zoom enlarges any of them.
 
-*Before:* Home's button style did not read Show Borders, and Home had no
-Large Content Viewer (the coverage list had it as R0-3 work).
+*Before:* Home's button style did not read Show Borders, and on Home only
+Settings' gear had the Large Content Viewer (PR #33); the coverage list
+had the rest as R0-3 work.
 
 ## Tests
 

@@ -1,8 +1,9 @@
 /// Home's regions, in the order VoiceOver, Switch Control and Full Keyboard
 /// Access reach them: Yes, No and Emergency first, because every step a
-/// switch scan spends before them is waiting time; then the message with
-/// Again; then the categories; then the phrases (docs/DECISIONS.md, "Home's
-/// scan order and names").
+/// switch scan spends before them is waiting time, then Again; then the
+/// message; then the categories and Settings; then the phrases
+/// (docs/DECISIONS.md, "Home's scan order and names" and "Settings on
+/// Home").
 ///
 /// Each region is an accessibility container, so its controls are reached
 /// together, one region after another, and Switch Control can offer it as
@@ -10,11 +11,11 @@
 /// library or use (invariant 8). The regions are C, A, B and D of "Home's
 /// slot plan", which stand top to bottom as A, C, B, D.
 nonisolated enum HomeRegion: CaseIterable, Sendable {
-    /// C: Yes, No and Emergency.
+    /// C: Yes, No, Emergency and Again.
     case safety
-    /// A: the message, its status line and Again.
+    /// A: the message and its status line.
     case message
-    /// B: the category buttons.
+    /// B: the category buttons and Settings.
     case categories
     /// D: the phrase grid.
     case phrases
@@ -41,4 +42,11 @@ nonisolated enum HomeRegion: CaseIterable, Sendable {
         case .phrases: 1
         }
     }
+
+    /// For `accessibilitySortPriority` inside a region: a control given it
+    /// is reached after the region's others, which keep the default of
+    /// zero. Again comes after Yes, No and Emergency, though it sits
+    /// between them on screen, and Settings after the category buttons,
+    /// though it stands level with the first row.
+    static let lastInRegion: Double = -1
 }
