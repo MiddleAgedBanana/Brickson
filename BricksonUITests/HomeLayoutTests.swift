@@ -22,12 +22,20 @@ final class HomeLayoutTests: XCTestCase {
         continueAfterFailure = true
     }
 
-    /// The phrase tiles showing now, in reading order (row by row).
+    /// Read every tile from one accessibility snapshot. Asking each live
+    /// element for its frame repeats the remote hierarchy query for every
+    /// tile; walking a snapshot keeps the same checks with one query.
     @MainActor
-    private func tileFrames(in app: XCUIApplication) -> [CGRect] {
-        app.buttons.matching(identifier: "phraseTile").allElementsBoundByIndex
-            .map(\.frame)
-            .sorted { ($0.minY.rounded(), $0.minX) < ($1.minY.rounded(), $1.minX) }
+    private func tileFrames(in app: XCUIApplication) throws -> [CGRect] {
+        var pending: [any XCUIElementSnapshot] = [try app.snapshot()]
+        var frames: [CGRect] = []
+        while let element = pending.popLast() {
+            if element.elementType == .button && element.identifier == "phraseTile" {
+                frames.append(element.frame)
+            }
+            pending.append(contentsOf: element.children)
+        }
+        return frames.sorted { ($0.minY.rounded(), $0.minX) < ($1.minY.rounded(), $1.minX) }
     }
 
     /// Whether every tile must lie inside the window. A narrow window at the
@@ -40,23 +48,35 @@ final class HomeLayoutTests: XCTestCase {
     }
 
     /// Waits up to 10 s for Home to lay itself out in the orientation asked
-    /// for: until the window has turned and, where the grid must fit, every
-    /// phrase tile's frame lies inside it. A query straight after a rotation
+    /// for: until the window has turned and, where the grid must fit, its
+    /// first and last tiles lie inside it. A query straight after a rotation
     /// can read the frames from before the turn. Where the grid may scroll,
     /// only the turn is waited for, so the wait ends as soon as it can. If the
-    /// tiles never fit, this returns after 10 s and the checks that follow
-    /// report them.
+    /// endpoints never fit, the wait fails. This only waits for layout;
+    /// the snapshot checks below still verify every tile, including any
+    /// middle tile that could extend beyond the window or change its slot.
     @MainActor
     private func waitForLayout(in app: XCUIApplication, landscape: Bool, textSize: UITestTextSize) {
+        let tiles = app.buttons.matching(identifier: "phraseTile")
+        let count = tiles.count
+        guard count > 0 else {
+            XCTFail("Home shows no phrase tiles (\(textSize.name))")
+            return
+        }
+        let first = tiles.element(boundBy: 0)
+        let last = tiles.element(boundBy: count - 1)
         let settled = NSPredicate { _, _ in
             MainActor.assumeIsolated {
                 let window = app.windows.firstMatch.frame
                 guard (window.width > window.height) == landscape else { return false }
                 guard Self.gridMustFit(textSize, in: window) else { return true }
-                return self.tileFrames(in: app).allSatisfy { window.contains($0) }
+                return window.contains(first.frame) && window.contains(last.frame)
             }
         }
-        _ = XCTWaiter.wait(for: [expectation(for: settled, evaluatedWith: nil)], timeout: 10)
+        XCTAssertEqual(
+            XCTWaiter.wait(for: [expectation(for: settled, evaluatedWith: nil)], timeout: 10),
+            .completed, "Home did not finish laying out (\(textSize.name), landscape: \(landscape))"
+        )
     }
 
     @MainActor
@@ -75,7 +95,7 @@ final class HomeLayoutTests: XCTestCase {
     /// (invariant 11 for the windows CI runs), or if a tile's place depends
     /// on which category shows (invariant 8).
     @MainActor
-    func testTheStarterLibraryFitsWithoutScrolling() {
+    func testTheStarterLibraryFitsWithoutScrolling() throws {
         for textSize in [UITestTextSize.large, .ax5] {
             for orientation in [UIDeviceOrientation.portrait, .landscapeLeft] {
                 // The iPhone is portrait-only for now (AppBundleTests,
@@ -115,7 +135,7 @@ final class HomeLayoutTests: XCTestCase {
                         "\(category) was not selected (\(context))"
                     )
                     waitForLayout(in: app, landscape: isLandscape, textSize: textSize)
-                    let frames = tileFrames(in: app)
+                    let frames = try tileFrames(in: app)
                     XCTAssertFalse(frames.isEmpty, "\(category) shows no tiles (\(context))")
                     if frames.count == Self.largestCategoryCount && slots.isEmpty {
                         slots = frames

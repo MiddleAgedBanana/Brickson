@@ -296,6 +296,28 @@ Simulators cannot show these. Record each result in a `docs/log/` file
 
 - The `main` ruleset matched docs/DECISIONS.md on 2026-10-15 (GitHub's
   API); its required checks are "Unit tests" and "UI tests".
+  The UI job now allows 75 minutes for both device families, and Home's
+  layout test uses bounded live queries while retaining every tile's
+  visibility and position checks. After incorporating `main` at `d79d836`,
+  its audit helper also keeps issue-time captures and native XCTest
+  findings. CI reported an unidentified AX5/light text-accessibility
+  finding; the unchanged focused local test passed, but no cause is
+  established. A temporary contrast defect failed as expected and retained
+  issue-time and native evidence; its app mutation was removed. Final
+  units passed 460/460; iPad and iPhone UI each passed 33 tests with four
+  existing probe skips on the tree incorporating `d79d836`. A further
+  merge incorporates `main` at `479175d` (PR #31): its still-screen waits
+  and two runner tests remain alongside the diagnostic captures and native
+  findings. Its unit gate passed 460/460 with the catalog unchanged;
+  both combined UI suites completed with 34 passed, one failed and four
+  existing skips per device. The AX5 light/dark Speaking waits failed,
+  with the status visibly still present and CoreAudio startup errors in
+  the iPad app logs. Focused local checks reproduced the known host-audio
+  limitation. Exact-head CI on `f1f7954` passed 460 units and 35 enabled UI
+  tests per device (four existing probe skips); the owner merged PR #32
+  as `313de2c`. No host audio service or setting was changed.
+  Earlier-head CI also failed, with its native audit evidence now retained
+  ([`log/2026-10-22-ci-home-test.md`](log/2026-10-22-ci-home-test.md)).
 - CodeQL scans the workflow files and the Python scripts, not the Swift
   code, on purpose (docs/DECISIONS.md, *Code scanning*); the failed Swift
   attempt of 2026-10-10 is still listed on the Tool status page.
@@ -350,6 +372,12 @@ Simulators cannot show these. Record each result in a `docs/log/` file
   angle-bracket links, hook error handling and the report-only verifier's
   catalog command. Their fresh native gate passed 460 unit tests, with
   no failures/skips and an unchanged catalog; final-head CI is pending.
+  CI on `3c379f1` passed all 460 units and 35 enabled UI tests per device
+  (four existing opt-in probe skips). A final nine-finding parser batch
+  includes 57 hook and 20 docs tests. Main `313de2c` is incorporated;
+  the combined gate passed all 460 native units, 57 hook tests and 20
+  docs tests with the catalog unchanged. New-head CI remains pending. It distinguishes executed commands from here-document data,
+  actual API writes from prose/read requests, and code blocks from links.
   Reconciliation and verification: [`log/2026-10-22-agent-guardrail-reconciliation.md`](log/2026-10-22-agent-guardrail-reconciliation.md).
 
 ## History

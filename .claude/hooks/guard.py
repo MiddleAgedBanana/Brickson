@@ -55,7 +55,7 @@ UNKNOWN = ('The guard cannot inspect this push/sync destination or API request b
            '(AGENTS.md, "Guardrails for agents").')
 
 WRAPPERS = {'command', 'builtin', 'exec', 'nohup', 'time', 'sudo', 'env', 'nice',
-            'timeout', 'xargs', 'then', 'do', 'else', '!', '{', '('}
+            'timeout', 'xargs', 'then', 'do', 'else', 'if', 'elif', 'while', 'until', '!', '{', '('}
 WRAPPER_VALUE_OPTIONS = {
     'env': {'-u', '--unset', '-C', '--chdir'},
     'nice': {'-n', '--adjustment'},
@@ -76,11 +76,8 @@ COMMIT_VALUE_SHORT = set('mcCFtS')
 COMMIT_VALUE_LONG = {'--message', '--file', '--reuse-message', '--reedit-message',
                      '--template', '--author', '--date', '--cleanup', '--fixup',
                      '--squash', '--trailer', '--pathspec-from-file'}
-# GitHub API paths and GraphQL mutations that merge, auto-merge or approve.
-API_MERGE = re.compile(
-    r'/pulls/[^/\s]+/merge\b|auto_merge|automerge|mergePullRequest|'
-    r'enablePullRequestAutoMerge|mergeBranch|'
-    r'event["\']?\s*[:=]\s*["\']?APPROVE', re.I)
+# Inspect GraphQL operation names only inside a query, never issue prose.
+GRAPHQL_MERGE = re.compile(r'\b(?:mergePullRequest|enablePullRequestAutoMerge|mergeBranch)\s*\(')
 
 
 def deny(reason):
@@ -205,6 +202,25 @@ def strip_wrappers(words, inherited=None):
                 if option == '--':
                     words = words[1:]
                     break
+                if wrapper == 'env' and (option in ('-S', '--split-string')
+                        or option.startswith(('-S', '--split-string='))):
+                    separate = option in ('-S', '--split-string')
+                    if separate and len(words) < 2:
+                        deny(UNKNOWN)
+                    value = words[1] if separate else (
+                        option[2:] if option.startswith('-S') else option.partition('=')[2])
+                    try:
+                        words = shlex.split(value) + words[2 if separate else 1:]
+                    except ValueError:
+                        deny(UNKNOWN)
+                    continue
+                if wrapper == 'sudo':
+                    if option in ('-D', '--chdir') and len(words) > 1:
+                        directory = words[1]
+                    elif option.startswith('--chdir='):
+                        directory = option.partition('=')[2]
+                    elif option.startswith('-D'):
+                        directory = option[2:]
                 if wrapper == 'env':
                     if option in ('-i', '--ignore-environment'):
                         environment = {key: None for key in set(os.environ) | set(environment)
@@ -344,7 +360,7 @@ def check_push(args, context):
         arg = args[index]
         if arg.startswith('--repo='):
             remote = arg.partition('=')[2]
-        elif arg in ('-o', '--push-option', '--repo', '--receive-pack', '--exec'):
+        elif arg in ('-o', '--push-option', '--repo', '--receive-pack', '--exec', '--recurse-submodules'):
             if arg == '--repo' and index + 1 < len(args):
                 remote = args[index + 1]
             index += 1
@@ -353,6 +369,9 @@ def check_push(args, context):
         else:
             refspecs.append(arg)
         index += 1
+    if any(option == '--dry-run' or
+           (re.fullmatch(r'-[a-zA-Z]+', option) and 'n' in option) for option in options):
+        return  # Git computes the update but does not send it.
     for option in options:
         if (option == '--force' or option.startswith(('--force-with-lease', '--force-if-includes'))
                 or (re.fullmatch(r'-[a-zA-Z]+', option) and 'f' in option)):
@@ -456,7 +475,7 @@ def api_arguments(words, cwd, program='gh'):
         for field in option_values(words, {'--field'}, {'-F'}):
             key, equals, value = field.partition('=')
             if equals and value.startswith('@'):
-                parts.append('--raw-field ' + key + '=' + request_file(value[1:], cwd))
+                parts.append('--raw-field ' + key + '=' + json.dumps(request_file(value[1:], cwd)))
     elif program == 'curl':
         for data in option_values(words, {'--data', '--data-ascii', '--data-binary', '--json'}, {'-d'}):
             if data.startswith('@'):
@@ -508,10 +527,7 @@ def check_gh(words, cwd):
         method = methods[-1].upper() if methods else (
             'POST' if list(option_values(plain, {'--field', '--raw-field', '--input'},
                                         {'-f', '-F'})) else 'GET')
-        merge_arguments = arguments
-        if method in ('GET', 'HEAD'):
-            merge_arguments = re.sub(r'/pulls/[^/\s]+/merge\b', '', arguments)
-        if API_MERGE.search(merge_arguments) or protected_branch_merge(arguments):
+        if merge_api_request(plain, arguments, method):
             deny(MERGE)
         if copilot_request(arguments):
             deny(COPILOT)
@@ -579,11 +595,55 @@ def has_api_endpoint(text, pattern):
     return False
 
 
-def protected_branch_merge(text):
-    """REST branch merges may update a feature branch, but never main."""
-    endpoint = r'repos/[^/\s]+/[^/\s]+/merges'
-    return has_api_endpoint(text, endpoint) and any(
-        branch_name(str(base)) in PROTECTED for base in api_field_values(text, 'base'))
+def request_method(words, program):
+    """The common API-client method forms; an explicit method wins."""
+    methods = list(option_values(words, {'--request', '--method'}, {'-X'}))
+    if methods:
+        return methods[-1].upper()
+    if program == 'curl':
+        if '--get' in words or '-G' in words:
+            return 'GET'
+        if '--head' in words or '-I' in words:
+            return 'HEAD'
+        data = list(option_values(words, {'--data', '--data-ascii', '--data-binary',
+                                         '--data-raw', '--data-urlencode', '--json', '--form'}, {'-d', '-F'}))
+        return 'POST' if data else 'GET'
+    if program in ('http', 'https') and len(words) > 1 and words[1].upper() in {
+            'GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE'}:
+        return words[1].upper()
+    return 'POST' if any(w.startswith(('--post-', '--body-')) for w in words) else 'GET'
+
+
+def merge_api_request(words, arguments, method):
+    """Match actual endpoint arguments and request fields, not prose words."""
+    paths = []
+    for word in words:
+        if github_api_host(word):
+            paths.append(parsed_url(word)[0].path.lstrip('/'))
+        elif word == 'graphql' or word.startswith(('repos/', '/repos/')):
+            paths.append(urlsplit(word).path.lstrip('/'))
+    if method == 'PUT' and any(re.fullmatch(r'repos/[^/]+/[^/]+/pulls/[^/]+/merge', p) for p in paths):
+        return True
+    if method not in ('GET', 'HEAD'):
+        if any(re.fullmatch(r'repos/[^/]+/[^/]+/pulls/[^/]+/reviews', p) for p in paths):
+            if any(str(v).upper() == 'APPROVE' for v in api_field_values(arguments, 'event')):
+                return True
+        if any(re.fullmatch(r'repos/[^/]+/[^/]+/merges', p) for p in paths):
+            if any(branch_name(str(v)) in PROTECTED for v in api_field_values(arguments, 'base')):
+                return True
+    if 'graphql' in paths:
+        queries = list(api_field_values(arguments, 'query'))
+        # Direct gh fields retain spaces here, before flattening arguments.
+        for field in option_values(words, {'--field', '--raw-field'}, {'-f', '-F'}):
+            key, _, value = field.partition('=')
+            if key == 'query' and not value.startswith('@'):
+                queries.append(value)
+        for query in queries:
+            # GraphQL strings are data, even when they name a mutation.
+            query = re.sub(r'"(?:\\.|[^"\\])*"', '""', str(query))
+            if GRAPHQL_MERGE.search(query):
+                return True
+    return False
 
 
 def copilot_request(text):
@@ -597,9 +657,79 @@ def copilot_request(text):
         'copilot' in str(value).lower() for value in api_field_values(text, 'assignees'))
 
 
+def inspectable_here_documents(command):
+    """Remove ordinary here-doc data; retain commands that really execute.
+
+    This covers literal delimiters and direct shell receivers. Complex shell
+    pipelines should use an explicit shell script rather than guessing context.
+    """
+    pattern = re.compile(r'''(?<!<)<<(?!<)(-?)[ \t]*(('[^']*'|"[^"]*"|\\?[A-Za-z_][\w.-]*))''')
+    lines = command.splitlines(keepends=True)
+    output = []
+    index = 0
+    while index < len(lines):
+        line = without_shell_comments(lines[index])
+        index += 1
+        matches = []
+        for match in pattern.finditer(line):
+            try:
+                shlex.split(''.join(output) + line[:match.start()])
+            except ValueError:
+                continue  # the operator is inside a quoted word
+            matches.append(match)
+        if not matches:
+            output.append(lines[index - 1])
+            continue
+        header = line
+        for match in reversed(matches):
+            header = header[:match.start()] + header[match.end():]
+        bodies = []
+        for match in matches:
+            raw = match[2]
+            delimiter = shlex.split(raw)[0]
+            quoted = any(char in raw for char in "'\"\\")
+            body = []
+            while index < len(lines):
+                candidate = lines[index]
+                index += 1
+                if match[1]:
+                    candidate = candidate.lstrip('\t')
+                if candidate.rstrip('\r\n') == delimiter:
+                    break
+                body.append(candidate)
+            bodies.append((''.join(body), quoted))
+        parts = list(segments(header))
+        shell_parts = [words for words, _ in parts
+                       if (unwrapped := strip_wrappers(words)[0])
+                       and os.path.basename(unwrapped[0]) in SHELLS]
+        if shell_parts:
+            if len(parts) != 1 or len(bodies) != 1:
+                deny(UNKNOWN)
+            body, quoted = bodies[0]
+            if not quoted:
+                expanded = re.sub(r'\\([$`\\])', lambda m: '\uffff' if m[1] != '\\' else '\\', body)
+                for inner in nested([expanded]):
+                    # Here-doc substitutions happen before the receiver's
+                    # env/sudo directory change, in the surrounding shell.
+                    output.append(inner + '\n')
+                    body = body.replace('$(' + inner + ')', '').replace('`' + inner + '`', '')
+            output.append(header.rstrip() + ' -c ' + shlex.quote(body) + '\n')
+        else:
+            output.append(header.rstrip() + '\n')
+            for body, quoted in bodies:
+                if not quoted:
+                    # Escaped dollars/backticks in an unquoted here-doc are
+                    # literal text, while unescaped substitutions execute.
+                    body = re.sub(r'\\([$`\\])', lambda m: '\uffff' if m[1] != '\\' else '\\', body)
+                    for inner in nested([body]):
+                        output.append(inner + '\n')
+    return ''.join(output)
+
+
 def check_command(command, cwd, depth=0, environment=None):
     if depth > 3:
         return
+    command = inspectable_here_documents(command)
     try:
         parts = list(segments(command))
         raw_parts = list(segments(command, preserve_quotes=True))
@@ -674,7 +804,7 @@ def check_command(command, cwd, depth=0, environment=None):
             elif program in ('curl', 'wget', 'http', 'https'):
                 if any(github_api_host(word) for word in unwrapped[1:]):
                     arguments = api_arguments(unwrapped, command_cwd, program)
-                    if API_MERGE.search(arguments) or protected_branch_merge(arguments):
+                    if merge_api_request(unwrapped, arguments, request_method(unwrapped, program)):
                         deny(MERGE)
                     if copilot_request(arguments):
                         deny(COPILOT)

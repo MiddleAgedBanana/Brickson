@@ -64,6 +64,69 @@ class GuardTests(unittest.TestCase):
                         ['git', '-C', str(self.repo), 'config', '--unset-all', key],
                         capture_output=True)
 
+    def test_push_mode_operands_and_dry_runs(self):
+        with tempfile.TemporaryDirectory(dir=self.repo) as folder:
+            subprocess.run(['git', 'init', '-q', '-b', 'main', folder], check=True)
+            self.assertDenied('git push --recurse-submodules check origin', cwd=folder)
+            self.assertDenied('git push --recurse-submodules=check origin', cwd=folder)
+            self.assertAllowed('git push --recurse-submodules check origin HEAD:feature', cwd=folder)
+    def test_dry_run_pushes_do_not_write_protected_branches(self):
+        for options in ['--dry-run', '-n', '-nf', '--dry-run --force']:
+            self.assertAllowed(f'git push {options} origin main')
+        self.assertDenied('git push --force origin main')
+        self.assertDenied('git push -o --dry-run origin main')
+
+    def test_env_split_string_inspects_its_command(self):
+        for option in ['-S ', '-S', '--split-string ', '--split-string=']:
+            self.assertDenied(f"env {option}'git add -A'")
+            self.assertDenied(f"env {option}'git push origin main'")
+            self.assertAllowed(f"env {option}'git add docs/HANDOFF.md'")
+        self.assertDenied("env -S 'git add' -A")
+
+    def test_shell_conditions_are_executed_commands(self):
+        for keyword in ['if', 'elif', 'while', 'until']:
+            self.assertDenied(f'{keyword} git add -A; then echo ok; fi')
+            self.assertDenied(f'{keyword} gh pr merge 12; then :; fi')
+            self.assertAllowed(f'{keyword} git status; then echo ok; fi')
+
+    def test_sudo_chdir_selects_the_repository(self):
+        with tempfile.TemporaryDirectory(dir=self.repo) as folder:
+            subprocess.run(['git', 'init', '-q', '-b', 'main', folder], check=True)
+            for option in [f'-D {folder}', f'-D{folder}', f'--chdir {folder}', f'--chdir={folder}']:
+                self.assertDenied(f'sudo {option} git push origin')
+                self.assertAllowed(f'sudo {option} git push origin HEAD:feature')
+
+    def test_here_documents_distinguish_data_from_execution(self):
+        self.assertAllowed("cat <<'EOF'\ngit add -A\nEOF")
+        self.assertAllowed('cat <<EOF\ngit add -A\nEOF')
+        self.assertAllowed("cat <<-'EOF'\n\tgit add -A\n\tEOF")
+        self.assertAllowed("cat <<'EOF'\n$(git add -A)\nEOF")
+        self.assertDenied('cat <<EOF\n$(git add -A)\nEOF')
+        self.assertDenied("bash <<'EOF'\ngit add -A\nEOF")
+        self.assertDenied("cat <<'EOF' | bash\ngit add -A\nEOF")
+        self.assertDenied("cat <<'EOF'\nexample\nEOF\ngit add -A")
+        self.assertAllowed("bash <<'EOF'\ngit status\nEOF")
+        self.assertAllowed("echo '\n# literal text\ncat <<EOF\ngit add -A\nEOF\n'")
+        self.assertDenied("echo '\n# literal text\n'; git add -A")
+        self.assertAllowed("cat <<EOF\n\\$(git add -A)\nEOF")
+
+    def test_here_document_substitutions_keep_outer_repository_context(self):
+        with tempfile.TemporaryDirectory(dir=self.repo) as folder:
+            subprocess.run(['git', 'init', '-q', '-b', 'main', folder], check=True)
+            self.assertDenied(f'env -C {self.repo} bash <<EOF\n$(git push origin)\nEOF', cwd=folder)
+            self.assertAllowed(f"env -C {self.repo} bash <<'EOF'\ngit push origin\nEOF", cwd=folder)
+
+    def test_merge_api_checks_use_endpoint_method_and_fields(self):
+        endpoint='https://api.github.com/repos/o/r/pulls/12/merge'
+        for option in ['', '-X GET', '-XGET', '--request=GET', '-I', '--head']:
+            self.assertAllowed(f'curl {option} {endpoint}')
+        self.assertDenied(f'curl -X PUT {endpoint}')
+    def test_api_prose_is_not_a_merge_request(self):
+        self.assertAllowed("gh api repos/o/r/issues -f title='Document automerge behavior'")
+        self.assertAllowed("gh api repos/o/r/issues -f body='Discuss mergePullRequest and event=APPROVE'")
+        self.assertAllowed('curl https://api.github.com/repos/o/r/issues --json \'{"body":"mergePullRequest automerge event=APPROVE"}\'')
+        self.assertDenied('curl https://api.github.com/graphql --json \'{"query":"mutation { mergePullRequest(input: {}) { clientMutationId } }"}\'')
+
     def test_exclusion_only_pathspecs_require_positive_named_paths(self):
         # These inputs are JSON for the hook, never executed Git commands.
         for exclusion in [':(exclude)docs/HANDOFF.md', ':!docs/HANDOFF.md',

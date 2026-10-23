@@ -151,6 +151,33 @@ def broken_citations(path, text, all_sections):
     return problems
 
 
+def without_indented_code(text):
+    """Skip four-space/tab code blocks without hiding paragraph continuations."""
+    output = []
+    paragraph = False
+    code = False
+    container_indent = 0
+    for line in text.splitlines(keepends=True):
+        expanded = line.expandtabs(4)
+        indent = len(expanded) - len(expanded.lstrip(' '))
+        item = re.match(r' {0,3}(?:[-*+] |\d+[.)] ) *', expanded)
+        if item:
+            container_indent = item.end()
+        elif line.strip() and indent < container_indent:
+            container_indent = 0
+        if not line.strip():
+            paragraph = False
+            output.append(line)
+        elif indent >= container_indent + 4 and (code or not paragraph):
+            code = True
+            output.append('\n')
+        else:
+            code = False
+            output.append(line)
+            paragraph = not bool(re.match(r' {0,3}#{1,6} ', line))
+    return ''.join(output)
+
+
 def broken_links(path, text):
     """Each relative Markdown link whose file or heading does not exist."""
     relative = path.relative_to(ROOT).as_posix()
@@ -158,7 +185,7 @@ def broken_links(path, text):
     # Blockquoted definitions apply to the whole document (CommonMark 218).
     # Strip each quote marker, but leave code indentation after it intact.
     text = re.sub(r'^(?: {0,3}>[ \t]?)+', '', text, flags=re.M)
-    text = FENCE.sub('', text)
+    text = without_indented_code(FENCE.sub('', text))
     # Check destinations at their definitions once, regardless of which
     # reference-link form uses them (or how many times the label is reused).
     links = list(LINK.finditer(text)) + list(REFERENCE_LINK.finditer(text))
@@ -226,6 +253,17 @@ class CheckerTests(unittest.TestCase):
         self.assertTrue(broken_links(readme, '[x](docs/DECISIONS.md#no-such-heading)'))
         self.assertEqual(broken_links(readme, '[x](docs/DECISIONS.md#orientations)'), [])
         self.assertEqual(broken_links(readme, '[x](https://example.com/a.md)'), [])
+
+    def test_indented_code_examples_are_not_links(self):
+        readme = ROOT / 'README.md'
+        for text in ['    [sample](docs/NO-SUCH.md)', '\t[sample](docs/NO-SUCH.md)',
+                     'Example:\n\n    [sample](docs/NO-SUCH.md)\n',
+                     '>     [sample](docs/NO-SUCH.md)']:
+            self.assertEqual(broken_links(readme, text), [], text)
+        # Indentation cannot interrupt an existing paragraph.
+        self.assertTrue(broken_links(readme, 'Paragraph\n    [sample](docs/NO-SUCH.md)'))
+        self.assertTrue(broken_links(readme, '    example\n\n[sample](docs/NO-SUCH.md)'))
+        self.assertTrue(broken_links(readme, '- Item\n\n    [sample](docs/NO-SUCH.md)'))
 
     def test_angle_bracketed_inline_destinations_keep_spaces(self):
         # Capturing only non-whitespace targets loses this valid link form.

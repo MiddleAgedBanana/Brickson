@@ -491,3 +491,54 @@ stop at their first space.
    remote setting was verified disabled. This PR waits for the owner's
    merge after green final-head checks and resolved reviews; agents do
    not enable auto-merge or call the merge action.
+
+
+## Final command and Markdown review batch
+
+The next review of `3c379f1` identified nine concrete parser cases. Eight
+new hook test methods and one documentation test reproduced them before
+implementation (56 hook tests: eight failures; 20 docs tests: one failure).
+The guard now consumes the separate recurse-submodules mode, inspects
+ordinary env split-string commands and shell condition lists, and carries
+sudo's working-directory option into its read-only Git queries. Dry-run
+pushes are allowed only when the dry-run flag is an actual option, not an
+option value.
+
+API checks now distinguish endpoint arguments, effective request methods
+and operation fields from prose. Curl GET/HEAD merge-status reads and issue
+text mentioning merge operations are allowed; actual PUT merges, approval
+fields, protected branch merges and GraphQL merge operations remain denied.
+Here-document data is not treated as executable shell commands. Unquoted
+command substitutions and direct shell receivers remain checked; complex
+shell pipelines are conservatively declined rather than assigned a guessed
+execution directory. This remains an advisory guard for common mistakes,
+not a complete shell parser or security boundary.
+
+The documentation checker skips ordinary indented code while continuing to
+check paragraph and list continuation links. A paired list case caught and
+fixed an intermediate regression. Multiline quoted text and escaped
+substitutions also have coverage. Final focused results before the context edge case: all 56 hook tests
+and all 20 documentation tests passed; the native gate passed all 460 units.
+A further paired regression reproduces outer-shell substitutions in an
+unquoted shell here-document versus a literal quoted child script. The
+fix keeps their repository contexts distinct. The combined main-merge
+gate below includes this additional test (57 hook tests total). No app, UI, String Catalog or workflow changes are
+part of this batch; no new product decision is adopted.
+
+CI on the preceding `3c379f1` passed: 460 units and 35 enabled UI tests on
+each device, with four existing opt-in keyboard-probe skips per device.
+Its nine later review conversations remain open until this correction is
+published. The new commit requires its own CI run. Auto-merge remains off.
+
+
+### Incorporating landed PR #32
+
+The owner merged PR #32 as main `313de2c` after its exact-head CI passed.
+This batch merges that main revision without rebasing, retaining its
+75-minute UI allowance, bounded Home queries and diagnostic attachments.
+Main's AGENTS and DECISIONS are unchanged; the new handoff and log were
+read before merging. The combined gate passed 460 native unit tests, 57 hook tests and 20
+documentation tests, with no failures and an unchanged String Catalog.
+Xcode 27.1 (27A9275), iPad Pro 13-inch (M5), iOS 27.0; app line coverage
+remains 62.6% (3,540/5,659). New-head CI remains required. This is a
+local branch merge; no agent merged a GitHub pull request or pushed main.
