@@ -2,14 +2,16 @@ import UIKit
 import XCTest
 
 /// The order in which assistive technologies reach Home's controls
-/// (docs/ACCESSIBILITY.md, section 1): Yes, No and Emergency first, then
-/// Again, all in the safety row; then the categories and Settings; then the
+/// (docs/ACCESSIBILITY.md, section 1): Yes, No, Emergency and Get Attention
+/// first, then Again, all in the safety row; then Stop while the alarm
+/// sounds, the categories in the library's order and Settings; then the
 /// phrase tiles, each group inside its own region, the same in every state.
 /// With Switch Control's auto scanning, every step before Emergency, Yes and
 /// No is time spent waiting, so they come first although the message sits
-/// above them on screen, and Again comes after Emergency although it sits
-/// between No and Emergency (docs/DECISIONS.md, "Home's scan order and
-/// names" and "Settings on Home").
+/// above them on screen, and Again comes after Get Attention although it
+/// sits at the leading end of their row (docs/DECISIONS.md, "Home's scan
+/// order and names", "Settings on Home" and "Get Attention and Stop on
+/// Home").
 ///
 /// The order is read from the accessibility tree the app hands to
 /// VoiceOver, Switch Control and Full Keyboard Access, as XCTest sees it.
@@ -41,8 +43,10 @@ final class HomeAccessibilityOrderTests: XCTestCase {
         + [(label: "Settings", region: categories)]
 
     /// Fails if anything comes before Yes, No and Emergency, if the order
-    /// changes with the category, the emergency phrases or a phrase being
-    /// spoken, or if a control sits outside its region.
+    /// changes with the category, the emergency phrases, a phrase being
+    /// spoken or the alarm sounding, if Stop is not reached first among the
+    /// categories, or if a control sits outside its region. The alarm's
+    /// tone is the silent stand-in (`--attention-tone=silent`).
     @MainActor
     func testQuickControlsComeFirstInEveryStateAtDefaultText() {
         checkEveryState(textSize: .large)
@@ -58,7 +62,7 @@ final class HomeAccessibilityOrderTests: XCTestCase {
     @MainActor
     private func checkEveryState(textSize: UITestTextSize) {
         continueAfterFailure = true
-        let app = launchedApp(textSize: textSize)
+        let app = launchedApp(textSize: textSize, arguments: ["--attention-tone=silent"])
         let device = UIDevice.current.userInterfaceIdiom == .pad ? "iPad" : "iPhone"
         let configuration = "\(textSize.name), portrait, \(device)"
 
@@ -82,10 +86,19 @@ final class HomeAccessibilityOrderTests: XCTestCase {
             "Again was still off 15 s after a phrase was chosen (\(configuration))"
         )
         check(app, state: "a phrase just spoken", configuration: configuration)
+
+        app.buttons["getAttention"].tap()
+        let stop = app.buttons["stopAlert"]
+        XCTAssertTrue(stop.waitForExistence(timeout: 10), "Stop did not appear after Get Attention (\(configuration))")
+        check(app, state: "the alarm sounding", configuration: configuration, alarmIsSounding: true)
+        stop.tap()
+        let stopped = expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: stop)
+        XCTAssertEqual(XCTWaiter.wait(for: [stopped], timeout: 10), .completed, "Stop is still showing after Stop (\(configuration))")
+        check(app, state: "the alarm stopped", configuration: configuration)
     }
 
     @MainActor
-    private func check(_ app: XCUIApplication, state: String, configuration: String) {
+    private func check(_ app: XCUIApplication, state: String, configuration: String, alarmIsSounding: Bool = false) {
         let context = "\(state); \(configuration)"
         let buttons: [OrderedButton]
         do {
@@ -103,7 +116,11 @@ final class HomeAccessibilityOrderTests: XCTestCase {
         // attachment but not checked here; every Home control is checked
         // to be inside its region below.
         let home = buttons.filter { $0.region != nil }
-        let expected = Self.expectedOrder
+        // Stop, while it shows, is the categories region's first control.
+        var expected = Self.expectedOrder
+        if alarmIsSounding, let firstCategory = expected.firstIndex(where: { $0.region == Self.categories }) {
+            expected.insert((label: "Stop", region: Self.categories), at: firstCategory)
+        }
         XCTAssertGreaterThan(home.count, expected.count, "Home shows no phrase tiles in its regions (\(context)): \(order)")
         XCTAssertEqual(
             home.prefix(expected.count).map(\.label), expected.map { $0.label },

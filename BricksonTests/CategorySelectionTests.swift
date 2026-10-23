@@ -62,4 +62,18 @@ struct CategorySelectionTests {
         #expect(shown.first === everyday)
         #expect(shown.last === feelings)
     }
+
+    /// Fails if a category past Home's last cell is dropped (it must stay
+    /// reachable in the last cell, which scrolls), or a cell shows another
+    /// cell's category.
+    @Test func theLastCellHoldsEveryCategoryFromThereOn() {
+        let four = Array(0..<4)
+        #expect((0..<4).map { Array(CategorySelection.inCell($0, of: four, cells: 4)) } == [[0], [1], [2], [3]])
+        let six = Array(0..<6)
+        #expect(Array(CategorySelection.inCell(3, of: six, cells: 4)) == [3, 4, 5])
+        #expect(Array(CategorySelection.inCell(1, of: six, cells: 4)) == [1])
+        let two = Array(0..<2)
+        #expect(CategorySelection.inCell(2, of: two, cells: 4).isEmpty)
+        #expect(CategorySelection.inCell(3, of: two, cells: 4).isEmpty)
+    }
 }
