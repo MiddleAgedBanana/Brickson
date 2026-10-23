@@ -54,6 +54,7 @@ holds.
 | Home first with setup as a place in Settings, the Settings root, the voice picker, the Privacy row, the largest sizes when nobody answers setup, an "Anything changed?" check-in every three months that waits 30 days after Not Now | "First launch opens Home; setup lives in Settings", "Settings is a cover with a fixed safety bar", "Settings resets when idle and never closes", "Setup answers are kept as offered, never as completed", "Check-ins come every three months", "The privacy policy ships inside the app", "Speed is a set of fixed choices" (Settings and first run; PR #23) |
 | Voice Settings keeping its rows and words in place while voices change, and an explained Ask button for Personal Voice that moves nothing and adds no button on the visit that asked (switched on after device check D1) | "Voice Settings keeps its places while it is open", "Asking for Personal Voice from Voice Settings", and a paragraph in "A Personal Voice is used only while it is allowed" (Voice screen in Settings, 2026-10-22) |
 | Home's scan order (Yes, No and Emergency first, regions as containers) and the names Voice Control and Full Keyboard Access use, the visible words first | "Home's scan order and names" (Accessibility implementation, first pass) |
+| The exceptions to Apple's current frameworks first, and the moves made and planned | "Apple's current frameworks first" (the rule is the owner's, 2026-10-22) |
 | The accessibility coverage list and its choices: full screen in Assistive Access and no separate scene, no programmatic Guided Access, assistive-technology flags that only suggest, phrases in the person's voice with VoiceOver on, late-stage boards as an R1 profile, and what waits or is never used | "Accessibility API coverage" (Accessibility coverage checklist) |
 
 Recorded here:
@@ -304,6 +305,97 @@ What the rules gave on 2026-10-21, from Apple's and the vendors' pages:
 
 Only Apple's frameworks. No Swift packages, no SDKs. Every dependency is
 code that can break, track or change under the person relying on it.
+
+## Apple's current frameworks first
+
+*2026-10-22. The rule: owner. The exceptions and moves below: default,
+adopted 2026-10-23; reversible if the owner objects.*
+
+The owner asked on 2026-10-22 to build on the frameworks Apple is
+investing in for the future: SwiftData, not Core Data; SwiftUI, not UIKit
+"unless ABSOLUTELY necessary"; Swift Testing, not XCTest; App Intents, not
+SiriKit. And to do it now, because "the longer it takes to do, the harder
+it will be to update everything". AGENTS.md, *Apple's current frameworks
+first*, holds the rule. This entry lists every exception, and a pull
+request that adds or removes one edits its row.
+
+**The audit of 2026-10-23** read every Swift file in the app, unit-test
+and UI-test targets, and `project.yml`, against Apple's documentation for
+the Xcode then current (27.1, with the iOS 27.1 SDK and Swift 6.4). There
+was no Core Data, SiriKit, Combine, `ObservableObject` or deprecated API,
+and the unit tests used only Swift Testing. It moved:
+
+- The UI tests' check that quick-control words are drawn whole, from
+  `VNRecognizeTextRequest` to Vision's Swift API, `RecognizeTextRequest`
+  (iOS 18), in one helper (`RenderedWords`) that the unit tests share.
+  There `RenderedWordsTests` runs it on kept captures, so a recognizer
+  that stops reading whole labels, or starts accepting clipped ones,
+  fails on every run.
+- The audit runner's six tests, from XCTest in the UI tests to Swift
+  Testing in the unit tests: they drive no app.
+- The Personal Voice stand-in's answer, from `DispatchQueue.global()` to a
+  detached task.
+- Settings' inline titles, from `navigationBarTitleDisplayMode` to
+  `toolbarTitleDisplayMode` (iOS 17).
+- Three copies of UIKit's system background, into one: `Palette.screen`.
+
+**Imports say what a file uses.** A file that uses UIKit imports it by
+name, even where `import SwiftUI` or `import XCTest` would bring it in, so
+a search for `import UIKit` finds every use; a file that uses none does
+not import it. SwiftUI's own modifiers whose parameters are UIKit types
+(`keyboardType`) count as SwiftUI.
+
+**Kept, and why.** Each row is a legacy framework or API that no current
+one replaces with no loss.
+
+| What | Where | Why | Revisit when |
+|---|---|---|---|
+| XCTest and XCUIAutomation | UI tests | Swift Testing cannot launch or drive an app. Apple: "UI automation and performance testing APIs are only available in XCTest" (WWDC26, "Migrate to Swift Testing"), and the XCTest page says to "continue to use XCTest for user interface tests". | Swift Testing can drive an app |
+| UIKit types in UI tests: `UIDevice` (its idiom and system version), `UIDeviceOrientation`, a screenshot's `UIImage` | `HomeAccessibilityOrderTests`, `HomeLayoutTests`, `HomeReachabilityTests`, `KeyboardProbeTests`, `LaunchHelpers`, `LaunchTests` | XCUIAutomation's own API uses these types (`XCUIDevice.orientation`, `XCUIScreenshot.image`) and reports no device idiom. | With the row above |
+| `UIApplication.isIdleTimerDisabled` | `BricksonApp` | Invariant 12. SwiftUI has no way to keep the screen awake; Apple documents this property for it. | SwiftUI gains one |
+| `UIFont` (text-style sizes, weights, line heights), `NSString.size(withAttributes:)`, `UIImage.SymbolConfiguration` | `LabelFont` | `WordFit` measures words before layout, as a plain tested type. SwiftUI measures text only inside a view hierarchy (`Text.Layout`; `ViewThatFits` failed Apple's accessibility audit). iOS 26's `Font.resolve(in:)` gives a point size and a Core Text font, but measuring a word still needs UIKit or Core Text, and resolving a font outside a view is undocumented. | Under *Planned moves* |
+| `UIColor.systemBackground` | `Palette.screen` | The colour `PaletteTests` measures as "the screen". SwiftUI has no colour of its own for it, and its background style changes with the container. | SwiftUI gains a system background colour |
+| `SFSafariViewController` in a `UIViewControllerRepresentable` | `PrivacyPolicyView` | The web version opens in Safari's in-app view (*The privacy policy ships inside the app*). SafariServices has no SwiftUI view. iOS 26's `OpenURLAction.Result.systemAction(_:prefersInApp:)` only prefers an in-app browser: Apple does not say how it is presented or when it opens Safari outside Brickson instead, and it gives Settings no state to hold its idle reset while the page is open. | Apple documents that presentation |
+| `DispatchQueue.main.async` | `SpeechSynthesizing` (`forward`) | The main queue runs blocks in order; separate tasks do not. A finish that overtook the progress report before it would make a cut-off phrase read as complete (*A phrase the system cuts off*; `OffMainThreadCallbackTests`). An `AsyncStream` keeps order but changes how speech reports interleave with the session's notices. | — |
+| `NotificationCenter.addObserver(forName:object:queue:using:)` | `AudioSessionEvents`, `SpeechService` | Foundation's typed messages (iOS 26) exist for none of these notices: interruption, route change, media services, available voices. iOS 27's life-cycle notice has one (`AVAudioSession.DidBecomeInactiveMessage`), but Apple does not say what it does with a notice that has no context, and `AudioSessionEventsTests` posts one. | Under *Planned moves* |
+| Key-value observation of `outputVolume` | `AudioSafetyMonitor` | Apple offers no other way to observe the system volume. | — |
+| `UIColor` and `UITraitCollection` | `PaletteTests` | Invariant 6 measures every pair under Increase Contrast too. SwiftUI's `colorSchemeContrast` "depends entirely on user settings, and you can't change it", so SwiftUI cannot resolve a colour for Increase Contrast. | SwiftUI can |
+| `UIImage(systemName:)` | `StarterPhrasesTests` | Only UIKit reports a symbol name that does not exist; SwiftUI's `Image(systemName:)` cannot fail. | — |
+| `UIHostingController.sizeThatFits(in:)` | `StarterLabelFitTests` | The exact size SwiftUI gives a label, to within half a point. SwiftUI's `ImageRenderer` draws pixels, and Apple does not say its size is unrounded. | — |
+| `INAlternativeAppNames`, SiriKit's Info.plist key | `project.yml` | App Intents has no way to give the app other names. Apple's App Shortcuts sessions say `.applicationName` includes these names; SiriKit's article says they need an Intents extension (*App identity*). | R2's Siri device check |
+
+Siri and Shortcuts (R2) are built with App Intents and App Shortcuts,
+never a SiriKit Intents extension.
+
+Not legacy, so not listed: AVFoundation's speech, player and audio
+session, with their delegates (Apple has nothing newer for them); the
+Accessibility framework; `Logger`; Foundation, including its
+`NSString`-bridged methods; Vision; SwiftUI modifiers typed with UIKit
+values.
+
+**Planned moves.** Current APIs that can replace a legacy one, each
+needing a Mac or its own pull request:
+
+- Personal Voice permission through `AVSpeechSynthesizer`'s async
+  `requestPersonalVoiceAuthorization()` instead of its completion handler,
+  which would retire the off-main closure `forwardingAnswer` guards. *(the
+  next speech or Voice Settings thread)*
+- `LabelFont` measuring with SwiftUI's resolved font (`Font.Resolved`,
+  iOS 26) instead of building its own `UIFont`, which could replace the
+  Bold Text guess (`boldTextUIFontWeight`) with the font SwiftUI draws;
+  `StarterLabelFitTests` decides on a Mac. *(the layout engine)*
+- UI tests waiting with XCUIAutomation's `wait(for:toEqual:timeout:)`
+  where a wait watches one property, and AGENTS.md's gotcha with them.
+  *(Test seams and CI evidence)*
+- iOS 27's typed audio-session messages, once the minimum iOS is 27 or a
+  Mac check shows a notice without context still arrives (*Audio session
+  notices*). *(the speech engine)*
+
+**Planned uses, not built yet.** Each gets its row when it lands, after
+checking SwiftUI still lacks the API: a wrapped UIKit text view to turn
+off inline predictions (*Typing uses Apple's keyboard*), and UIKit's
+`prefersCrossFadeTransitions` before iOS 26.4
+([`ACCESSIBILITY.md`](ACCESSIBILITY.md)).
 
 ## No servers, accounts, ads or analytics
 
@@ -1496,9 +1588,12 @@ Before: `Palette` had the three fills and no rule about glass.
 
 Unit tests use Swift Testing and run inside the app on a simulator
 (`BricksonTests`, scheme `Brickson`). UI tests use XCTest and launch the
-real app (`BricksonUITests`, scheme `Brickson-UI`). GitHub runs both on
-every pull request (`.github/workflows/tests.yml`); a pull request merges
-only when they pass.
+real app (`BricksonUITests`, scheme `Brickson-UI`), because only XCTest
+can drive an app. A test that drives no app uses Swift Testing in the
+unit tests, even when what it checks lives with the UI tests, which is
+then compiled into both (*Apple's current frameworks first*). GitHub
+runs both on every pull request (`.github/workflows/tests.yml`); a pull
+request merges only when they pass.
 
 ## Reviews, updates and GitHub settings
 
