@@ -132,6 +132,271 @@ needs the Team ID in `project.yml` (`DEVELOPMENT_TEAM`, from the personal
 membership the owner chose on 2026-10-10; docs/DECISIONS.md, *App identity*) and, before anything is uploaded, the
 final bundle identifier.
 
+## Wave 3: the next pull requests, in order
+
+*Planned 2026-10-23, as Wave 2 (Settings, Get Attention, Stop and Show
+Borders on Home; the website's accessibility page; the iPhone Duo plan)
+landed. Default: the owner left the order of work to the project, so it
+stands unless the owner objects. The record behind it, with the Apple
+pages each item rests on and what they say, is
+[`log/2026-10-23-wave-3-plan.md`](log/2026-10-23-wave-3-plan.md).*
+
+A wave is the set of pull requests planned together. Wave 3 comes from
+R1 "Follows you" and from the first of Apple's doors in *Where this
+goes*: Guided Access and Assistive Access, then App Intents and
+Shortcuts. It moves nothing past its release. The layout engine, R1's
+first piece, is also what R0 item 3 still needs, so it finishes R0's
+Home before it serves R1's profiles. Typing (R0 item 5) and iPhone Duo
+(R0 item 13) take their turns on Home before R1's profiles do. Siri and
+Shortcuts stay in R2 and get only their work file here (item 10).
+
+**How it runs.**
+
+- **One Home pull request at a time.** Items 4, 5, 6, 8 and 9 change
+  Home's code, so they go in that order, each after the one before has
+  merged. The others run beside them.
+- **Cloud first.** Every item can be written in a cloud session, with
+  GitHub CI as its build. Item 6 also needs the owner's Mac, because
+  CI's image has no iPhone Duo simulator yet. The device checks each
+  item names wait for the owner's own iPhone and iPad (*Step zero*).
+- **Design before code.** An item that changes what a person sees starts
+  with a work file and the Figma frames docs/SDLC.md asks for in its
+  *Design* stage. Item 3's work file covers items 4, 6, 8 and 9.
+- **Start now:** items 1, 2 and 3, side by side; none touches Home.
+  Then item 7 once 2 has merged, and item 4 once 2 and 3 have. Item 10
+  takes any free slot.
+- **Alongside, not in this list:** R0's own remaining work keeps its
+  place: the library's next pull requests (R0 item 6, from the emergency
+  repair record's *Follow-ups*), the screens (R0 item 9) and App Store
+  readiness (R0 item 10).
+
+| # | Item | From | Home's code | Needs |
+|---|---|---|---|---|
+| 1 | Apple's doors in Family Setup | R0 item 7 | No | Cloud |
+| 2 | One chain engine for dwell safety | R1, dwell-safety scoring | No (tests) | Cloud |
+| 3 | The layout engine, with no screen change yet | R0 items 3 and 13; R1, the profile layout engine | No | Cloud |
+| 4 | Home on the engine: the starter library never scrolls | R0 item 3 | Yes | Cloud |
+| 5 | Typing on Home | R0 item 5 | Yes | Cloud |
+| 6 | Home in every pose: iPhone Duo's fold, and a phone on its side | R0 item 13; R1, the phone as a first-class device | Yes | The owner's Mac |
+| 7 | Settings' chains, and Get Attention in Settings | R0 items 4 and 7 | No | Cloud |
+| 8 | Sizes that follow how the person reaches the screen | R1, the profile layout engine and who chooses the profile | Yes | Cloud |
+| 9 | The late-stage profile: Yes and No, and the rest board | R1, the profile layout engine | Yes | Cloud |
+| 10 | Siri and Shortcuts, the work file | R2, Siri and Shortcuts | No (documents) | Cloud |
+
+**1. Apple's doors in Family Setup.** Brickson fills the screen inside
+Assistive Access, and Family Setup explains each Apple feature that R0
+item 7 lists and it does not explain yet. Declare
+`UISupportsFullScreenInAssistiveAccess`, so that inside Assistive Access
+Brickson keeps its own layout in all the space the system gives it
+rather than a smaller frame; `AppBundleTests` pins it, and pins that
+`UISupportsAssistiveAccess` stays absent (docs/DECISIONS.md,
+"Accessibility API coverage"). Inside Assistive Access, the guides show
+written Settings paths where they now show Open … Settings buttons. New
+guides, each step checked against Apple's user guides on the day: Vocal
+Shortcuts, Listen for Atypical Speech, Live Speech (also on Apple
+Watch), Touch Accommodations, Switch Control's timing and switch
+sources, external eye trackers (iPad only), the Accessibility Shortcut,
+Zoom, Share Accessibility Settings, Auto-Lock with Guided Access's own
+Display Auto-Lock, and the Action button (iPhone only). Guide headings
+become headers, and every guide, Set Up Step by Step and About get an
+accessibility audit.
+*Rows in docs/ACCESSIBILITY.md:* section 7's
+`UISupportsFullScreenInAssistiveAccess`, `AssistiveAccess` scene and
+`accessibilityAssistiveAccessEnabled`; every row whose plan says "Setup
+text: R0-7"; section 5's traits; section 9's audit. *Needs:* cloud and
+CI; afterwards, the device checks for Assistive Access and Guided Access
+already in docs/HANDOFF.md. *Apple:*
+[`UISupportsFullScreenInAssistiveAccess`](https://developer.apple.com/documentation/bundleresources/information-property-list/uisupportsfullscreeninassistiveaccess),
+[Optimizing your app for Assistive Access](https://developer.apple.com/documentation/accessibility/optimizing-your-app-for-assistive-access),
+[`accessibilityAssistiveAccessEnabled`](https://developer.apple.com/documentation/swiftui/environmentvalues/accessibilityassistiveaccessenabled),
+and Apple's iPhone and iPad User Guides for the guides' words.
+
+**2. One chain engine for dwell safety.** One tested type that takes a
+screen's controls in each state, with what each one does (speaks,
+alarms, changes data, moves things, only navigates, nothing), and
+follows chains of several held activations from every start: the
+pointer staying on the control or going back to the look, the nearest
+control by centre and by edge, ties counted (docs/LESSONS.md, "Score
+chains, not single hops" and "One chain engine, not five scripts"). The
+nearest-control helpers now in `HomeShapeTests` and the UI tests'
+`ScreenControls` move onto it. It scores Home in every state and the
+chains through Settings that docs/HANDOFF.md lists under *Known gaps*,
+and records what it finds; items 4 and 7 make the fixes.
+*Rows:* section 2's Eye Tracking and Dwell Control ("dwell-safety
+scoring: R1"). *Needs:* cloud (a Linux Swift toolchain can run its own
+tests first) and CI; later, the device check of whether Snap to Item
+picks by nearest centre or nearest edge says which result binds.
+*Apple:* no API; what it models is in Apple's
+[Eye Tracking guide](https://support.apple.com/guide/iphone/control-iphone-with-the-movement-of-your-eyes-iph66057d0f6/ios)
+("Snap to Item: Have the Eye Tracking pointer automatically move to the
+item on the screen that's closest to where you're looking").
+
+**3. The layout engine, with no screen change yet.** The work file
+(intent, spec and plan) and one pure function from the space available
+(the window's size, its safe areas, and reserved regions such as a
+fold), the input profile, the text size and the library's shape to a
+frame for every slot. Floors are physical sizes for each profile
+(docs/DECISIONS.md, "Layouts from the space available"). Before Home
+uses it, its tests show that the starter library fits without
+scrolling in every window that scrolls today (docs/DECISIONS.md, "Home's
+stand-in layout") and in the rest of the matrix docs/LESSONS.md asks
+for; that every control keeps its place relative to the others in
+every profile (invariant 8); and that item 2 finds no new hazard.
+*Rows:* section 1's point scanning and recipes; section 2's Eye
+Tracking, Head Tracking and AssistiveTouch; section 6's `ScaledMetric`
+and Display Zoom; section 10's `ReservedRegion`. *Needs:* cloud and CI.
+*Owner:* the gaze floors are the reference app's; floors for switch,
+head and the late stage are new, so the work file proposes them,
+measured, as defaults the owner can overrule. *Apple:*
+[Layout](https://developer.apple.com/design/human-interface-guidelines/layout)
+("Determine layout based on size classes, not device type or
+orientation"),
+[Accessibility](https://developer.apple.com/design/human-interface-guidelines/accessibility)
+(44 by 44 points by default), and
+[`reservedRegions(kind:options:layoutDirectionBehavior:)`](https://developer.apple.com/documentation/swiftui/geometryproxy/reservedregions(kind:options:layoutdirectionbehavior:))
+(iOS 27.1, so behind `#available`).
+
+**4. Home on the engine: the starter library never scrolls.** Home
+takes every frame from the engine, still at today's touch sizes. The
+windows that scroll today stop scrolling (invariant 11), the slot plan's
+wells are built, a selected category gets the room Emergency has, and
+the two open hazards (Yes and No bordering the message; the top of
+Stop's well nearest Again) are removed by placement or measured for the
+owner (docs/DECISIONS.md, "Get Attention and Stop on Home"). Phrase
+tiles are checked with Bold Text on.
+*Rows:* section 2's AssistiveTouch ("without scrolling: R0-3");
+section 6's Larger Text, Bold Text and `ScaledMetric`. *Needs:* cloud
+and CI's UI tests on iPad and iPhone; the Snap to Item device check
+decides the message hazard. *Owner:* either hazard, if it stays.
+*Apple:* the pages item 3 rests on.
+
+**5. Typing on Home.** Its brief is written:
+[`log/2026-10-21-typing-foundation.md`](log/2026-10-21-typing-foundation.md),
+*Follow-ups*. It brings the slot plan's own row of quick controls, with
+Phrases and Type, in one row on wide windows, so that Emergency, Get
+Attention, Yes, No and Speak sit above the worst-case keyboard; then the
+typing state, Return speaks, third-party keyboards refused, and nothing
+moving when the keyboard shows (docs/DECISIONS.md, "Typing is a state of
+Home"). Figma's typing screen (R0 item 9) comes first, and the privacy
+policy's words on typing change with it.
+*Rows:* section 8's R0-5 rows. *Needs:* cloud and CI (the keyboard
+probe runs on CI's iPhone and iPad); the typing record's device checks
+afterwards. *Apple:* the pages section 8 of docs/ACCESSIBILITY.md
+lists, checked on 2026-10-21.
+
+**6. Home in every pose: iPhone Duo's fold, and a phone on its side.**
+The owner's two fold choices (docs/DECISIONS.md, "iPhone Duo"): Home's
+controls kept off the fold, and an even number of columns on a display
+that folds, behind `#available(iOS 27.1, *)`. Apple's Eye Tracking guide
+adds one thing to check: on iPhone Duo, Eye Tracking and Head Tracking
+work only fully open, and while Eye Tracking is on, the inner display is
+dark where its camera sits. Whether that area reaches Brickson as a
+reserved region is checked in the simulator, and how Home keeps clear of
+it is this item's to settle, with nothing moving when Eye Tracking
+starts (invariant 8).
+Then the iPhone in landscape, once the engine's tests show a sideways
+phone with no scrolling (docs/DECISIONS.md, "Orientations").
+*Rows:* section 10's `ReservedRegion`. *Needs:* the owner's Mac, to
+fold the iPhone Duo simulator (Device Hub, which the owner allows an
+agent to control); CI's UI tests for the phone in landscape; a folding
+iPhone later. *Apple:*
+[Designing for iPhone Duo](https://developer.apple.com/design/human-interface-guidelines/designing-for-iphone-duo),
+[`ReservedRegion`](https://developer.apple.com/documentation/swiftui/reservedregion)
+("If your layout is a grid, use an even number of columns so your
+content divides cleanly at the fold"), and the
+[Eye Tracking guide](https://support.apple.com/guide/iphone/control-iphone-with-the-movement-of-your-eyes-iph66057d0f6/ios).
+
+**7. Settings' chains, and Get Attention in Settings.** With item 2's
+scores: Family Setup's rows placed so that a look held after the root's
+row meets a row that only navigates, and the chain that follows Family
+Setup's first row into Set Up Step by Step and saves an answer broken
+by placement (docs/HANDOFF.md, *Known gaps*). Then a start-only Get
+Attention in Settings' bar, in its empty place, with the sound line
+moved where its neighbours neither speak nor change a setting. This
+comes before item 8, because item 8 lets setup answers change sizes.
+*Rows:* section 10's Get Attention ("In Settings: later"). *Needs:*
+cloud and CI. *Apple:* no new API.
+
+**8. Sizes that follow how the person reaches the screen.** Family
+Setup already asks how the screen is reached (`SetupRecord`: touch,
+Voice Control, Switch Control, Eye Tracking, Head Tracking, someone else
+helps), and Home's sizes and spacing come to follow that answer, with
+the largest sizes when nobody has answered (docs/DECISIONS.md, "Setup
+answers are kept as offered, never as completed"). How several answers
+combine is the work file's to decide. No control changes place relative
+to the others. What iOS reports about VoiceOver and Switch Control may
+suggest an answer in Family Setup, never change one (docs/DECISIONS.md,
+"Accessibility API coverage").
+*Rows:* section 7's assistive-technology flags; section 1's point
+scanning; section 2's Eye Tracking and Head Tracking profiles.
+*Needs:* cloud and CI; device checks afterwards (which flags each input
+method turns on; comfortable dwell and target sizes). *Owner:* only if
+item 4 left a hazard, which must be gone, or accepted by the owner,
+before a dwell, switch, head or gaze size ships. *Apple:*
+[`accessibilitySwitchControlEnabled`](https://developer.apple.com/documentation/swiftui/environmentvalues/accessibilityswitchcontrolenabled)
+and
+[`accessibilityVoiceOverEnabled`](https://developer.apple.com/documentation/swiftui/environmentvalues/accessibilityvoiceoverenabled).
+SwiftUI has no AssistiveTouch value, and UIKit's `isAssistiveTouchRunning`
+reports correctly only with Guided Access on (Apple: "The user must
+enable Guided Access for the correct value to return"), so it is left
+out.
+
+**9. The late-stage profile: Yes and No, and the rest board.** The
+map's Yes/No mode and rest board as one profile of the engine: Yes, No,
+Get Attention and Emergency keep their places relative to each other
+and grow, and the phrase area shows fewer, larger tiles from a category
+the family chooses (docs/DECISIONS.md, "Accessibility API coverage").
+Emergency stays visible (invariant 2).
+*Rows:* the map's "Yes/No mode" and "Rest board". *Needs:* cloud and
+CI. *Apple:* the pages item 3 rests on.
+
+**10. Siri and Shortcuts, the work file.** The intent, spec and plan for
+R2's fixed actions ("Get attention in Brickson", "Emergency in
+Brickson"), so that the door is designed while the engine is built. It
+settles: each action going through the same resolver as its button;
+where Stop is when Get Attention starts from Siri, the Action button,
+Back Tap or a Vocal Shortcut while Brickson is not in front; App
+Shortcut phrases, titles and parameters that never hold a person's words
+(Apple may use App Shortcuts' phrases and titles, anonymized, to train
+its models); the privacy policy's Siri and Shortcuts section, which
+comes back with the build (AGENTS.md, *The privacy policy is a
+promise*); and whether `INAlternativeAppNames` then works. No code.
+*Rows:* section 3's `AppIntent`, `AudioPlaybackIntent`,
+`AppShortcutsProvider`, Vocal Shortcuts, the Action button and
+`INAlternativeAppNames`. *Needs:* cloud. *Owner:* building it before R1
+is done would move an R2 item ahead, which *Where this goes* rules out
+without the owner ("Direction, not a licence to skip steps"); the
+recommendation is to keep it in R2. *Apple:*
+[`supportedModes`](https://developer.apple.com/documentation/appintents/appintent/supportedmodes)
+(`openAppWhenRun` is deprecated since iOS 26),
+[`AudioPlaybackIntent`](https://developer.apple.com/documentation/appintents/audioplaybackintent),
+[`AppShortcutsProvider`](https://developer.apple.com/documentation/appintents/appshortcutsprovider),
+[App Shortcuts](https://developer.apple.com/design/human-interface-guidelines/app-shortcuts)
+in the HIG (the app's name in every phrase; at most 10), and
+[Hardware interactions](https://developer.apple.com/documentation/appintents/hardware-interactions)
+for the Action button.
+
+**After Wave 3.** A printable board that mirrors the screen (R1), once
+item 4 gives it Home's frames; recorded phrases, first two stages (R1),
+once the Library screen (R0 item 6) gives a phrase somewhere to hold a
+recording. Guided Access restrictions of Brickson's own stay a
+candidate, with a work file first (docs/DECISIONS.md, "Accessibility API
+coverage"); Guided Access's APIs are UIKit's only, so using one also
+adds its row under "Apple's current frameworks first" there.
+
+**Folding phones, briefly.** The owner asked how well a folding phone
+such as iPhone Duo suits an AAC app. On today's evidence it is a
+larger iPhone: good for people who still use touch or a switch, and for
+caregivers, while the iPad (or a dedicated eye-gaze device) stays the
+main device once a person needs their eyes. Open, its screen is about a
+third of a 13-inch iPad's; Apple says Eye Tracking and Head Tracking work
+on it only fully open, not in the poses where it stands by itself;
+Apple documents external eye trackers for iPad only; and no mount maker
+offers a holder for it open yet. No AAC study, clinician or vendor has
+said anything about folding phones. Sources and reasoning:
+[`recon/2026-10-23/folding-phones-for-aac.md`](recon/2026-10-23/folding-phones-for-aac.md).
+Low priority; it changes nothing in R0 item 13.
+
 ## R0 "A voice you can rely on"
 
 **For whom:** a person who can still use their hands, and their family.

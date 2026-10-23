@@ -418,6 +418,11 @@ can be reversed; docs/DECISIONS.md):
 
 For agents: R0 in [docs/ROADMAP.md](ROADMAP.md), in order; the owner's
 long-term vision, the direction behind it, is its *Where this goes*.
+The next pull requests, in order, with which may run side by side and
+which change Home, are its
+[Wave 3](ROADMAP.md#wave-3-the-next-pull-requests-in-order) (planned
+2026-10-23): typing on Home is its item 5, after Home moves onto the
+layout engine.
 Every change follows AGENTS.md, *Apple's current frameworks first*: the
 legacy uses kept, and the moves still planned with who owns each, are in
 docs/DECISIONS.md under that title
