@@ -553,6 +553,9 @@ Simulators cannot show these. Record each result in a `docs/log/` file
   code, on purpose (docs/DECISIONS.md, *Code scanning*); the failed Swift
   attempt of 2026-10-10 is still listed on the Tool status page.
 - Open PR pushes now follow AGENTS.md, "Pushing to an open PR": [rule and verification](log/2026-10-23-open-pr-push-policy.md).
+- The docs cross-reference check reads every title a citation names,
+  quoted titles starting with a small letter and titles after the first
+  included: [record](log/2026-10-23-docs-check-gaps.md).
 - Codex reviews every push to a pull request, Copilot each pull request
   once when it opens, AI Scan each push; none reviews Dependabot's pull
   requests by itself. The AI credits they use show only in Settings →
