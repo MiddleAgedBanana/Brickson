@@ -1,0 +1,115 @@
+<!doctype html>
+<!--
+  Brickson's accessibility page, published at
+  https://middleagedbanana.github.io/Brickson/accessibility/ by
+  .github/workflows/pages.yml: the Accessibility URL for the App Store
+  product page (docs/APP-STORE.md, section 4).
+  It says only what is in place on main (docs/ACCESSIBILITY.md, "In place")
+  and how each part was checked. Never say "works with" for something not
+  checked on a real device, never describe a planned feature, and update
+  "Last updated" whenever the words change.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Accessibility · Brickson</title>
+<meta name="description" content="What Brickson does today with Apple's accessibility features, such as VoiceOver, Voice Control, Switch Control and Eye Tracking, and how each part has been checked.">
+<link rel="stylesheet" href="../style.css">
+<link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+</head>
+<body>
+<a class="skip" href="#accessibility">Skip to the content</a>
+<header class="site-header wrap">
+  <a class="site-name" href="../" aria-label="Brickson home">brickson</a>
+  <nav aria-label="Main navigation"><a href="../#approach">Our approach</a><a href="./" aria-current="page">Accessibility</a><a href="../#support">Support</a><a href="../privacy/">Privacy</a></nav>
+</header>
+<div class="policy-layout wrap">
+<aside class="policy-nav" aria-label="Page sections">
+<p>On this page</p>
+<a href="#how-brickson-is-built">How it is built</a>
+<a href="#ways-to-control-brickson">Ways to control it</a>
+<a href="#seeing-and-reading">Seeing and reading</a>
+<a href="#speech">Speech</a>
+<a href="#known-limits">Known limits</a>
+<a href="#tell-us">Tell us</a>
+</aside>
+<main class="policy-copy" id="accessibility" tabindex="-1">
+<h1>Accessibility in Brickson</h1>
+<p class="effective">Last updated October 23, 2026</p>
+<div class="summary">
+<p><strong>The short version:</strong> Brickson is made only of Apple's standard buttons, which Apple's accessibility features are built to use, so it needs no eye, head or switch tracking of its own. It is still in development and not yet on the App Store. This page lists what is in place today and how each part has been checked. <strong>Nothing has been checked on a real iPhone or iPad yet.</strong> Every check below is an automated test on Apple's iPhone and iPad simulators, or a reading of the code. A simulator cannot show how Eye Tracking, Switch Control, Dwell Control or sound behave in daily use.</p>
+</div>
+
+<h2 id="how-brickson-is-built">How Brickson is built</h2>
+<ul>
+<li><strong>Standard buttons only.</strong> Every control is one of Apple's standard buttons, with a name. Apple builds VoiceOver, Voice Control, Switch Control, Full Keyboard Access, AssistiveTouch, Head Tracking and Eye Tracking to reach buttons like these. Brickson has no eye, head or switch tracking of its own.</li>
+<li><strong>One choice speaks.</strong> A phrase speaks the first time you choose it. There is no confirm step.</li>
+<li><strong>Nothing moves on its own.</strong> Buttons are never reordered by how often or how recently you use them.</li>
+<li><strong>The screen stays on.</strong> The screen never locks while Brickson is open, because many people who use it cannot unlock their device.</li>
+</ul>
+<p class="small"><strong>How it's checked:</strong> Apple's automated accessibility audit runs on Home, and on Settings' first screen, Family Setup and the privacy policy, in light and dark, and on the emergency phrases and Voice Settings in light. Settings' other screens are not audited yet. A UI test taps a phrase once and checks that the tap starts it speaking; no test can hear the sound. A unit test checks the rule that keeps the screen on.</p>
+
+<h2 id="ways-to-control-brickson">Ways to control Brickson</h2>
+<h3>Touch</h3>
+<p>Yes, No, Emergency, Again and Settings are each at least 44 by 44 points, the size Apple's design guidelines ask for on a button. They stay inside the window, in the same place, as Home opens, while the emergency phrases show and after a phrase is spoken, at the default and the largest text sizes.</p>
+<p class="small"><strong>How it's checked:</strong> UI tests on iPhone and iPad simulators.</p>
+<h3>VoiceOver</h3>
+<p>Every control on Home has a name that VoiceOver reads. If a phrase is cut off or the volume is very low, VoiceOver announces it without moving its place on the screen.</p>
+<p class="small"><strong>How it's checked:</strong> Apple's accessibility audit finds a name for every control. Unit tests check which warning is announced and its words; that VoiceOver's place does not move is from a reading of the code. A full run with VoiceOver on a real iPhone and iPad has not been done yet.</p>
+<h3>Voice Control</h3>
+<p>Each control on Home answers to the words it shows, so you can say "Tap Yes". Again also answers to "Repeat", and Settings answers to "Settings" even where it has room only for its gear. With the starter phrases, no two controls on Home share a name, so saying a control's name never matches two buttons.</p>
+<p class="small"><strong>How it's checked:</strong> unit tests of every name on Home. Voice Control has not been tried on a real device yet.</p>
+<h3>Switch Control and Full Keyboard Access</h3>
+<p>Brickson gives Switch Control, Full Keyboard Access and VoiceOver a fixed order. On Home, Yes, No and Emergency come first, then Again, then the message, then the categories and Settings, then the phrases. Each of these areas is grouped, and the order is the same whatever is showing.</p>
+<p class="small"><strong>How it's checked:</strong> UI tests read the order Home gives these features, in every category, at the default and the largest text sizes. Whether VoiceOver, Switch Control and Full Keyboard Access follow it on a real device, and whether Switch Control scans each area as a group, has not been checked yet.</p>
+<h3>AssistiveTouch with Dwell Control, Head Tracking and Eye Tracking</h3>
+<p>These move a pointer, and with Dwell Control on, holding the pointer still taps. Brickson's controls are standard buttons for the pointer to rest on, and Brickson adds no tracking of its own. If a resting pointer, a switch or a second tap chooses the phrase that is still being spoken, Brickson lets it finish instead of starting it again, so the phrase does not stutter.</p>
+<p class="small"><strong>How it's checked:</strong> unit tests of the repeat rule. A simulator cannot show dwell, head or eye pointing, so these wait for a real device.</p>
+
+<h2 id="seeing-and-reading">Seeing and reading</h2>
+<h3>Larger Text and Bold Text</h3>
+<p>Home's text follows the text size you set, up to the largest accessibility sizes. Yes, No, Emergency, Again, the categories and Settings make room for Bold Text; the phrases have not yet been measured with it. With the starter phrases and Bold Text off, no label on Home breaks a word in two: a label drops its icon first, then shrinks only as much as it must, and never gets smaller than it is at the default text size. Where Settings has little room, it shows only its gear.</p>
+<p class="small"><strong>How it's checked:</strong> UI tests at the default and the largest text sizes check that Home's controls stay in reach and in place, and at the largest size read the Yes, No, Emergency and Again labels back from screenshots to check that each is drawn whole. Unit tests measure every starter label in its narrowest space, and Home's quick controls, categories and Settings with Bold Text on and off.</p>
+<h3>Contrast, Dark Mode and Increase Contrast</h3>
+<p>Home's colours are measured, never judged by eye: text at least 4.5 to 1 against what is behind it, and the edges of buttons at least 3 to 1, in light and dark, with Increase Contrast on and off.</p>
+<p class="small"><strong>How it's checked:</strong> unit tests measure every pair of colours. Apple's accessibility audit, which includes a contrast check, also runs on the screens listed under How Brickson is built.</p>
+<h3>Show Borders</h3>
+<p>With Show Borders on, every control on Home draws a border inside its edge. Pressing a control makes the border thicker, and the chosen category, and Emergency while its phrases show, keep an inner ring, so pressed, chosen and neither still look different.</p>
+<p class="small"><strong>How it's checked:</strong> unit tests of each border and ring, and of its contrast against every button colour. Not yet seen on a real device.</p>
+<h3>Not by colour alone</h3>
+<p>The chosen category, and Emergency while its phrases show, keep an inner ring, and a check mark where there is room, as well as their colour. VoiceOver says they are selected.</p>
+<p class="small"><strong>How it's checked:</strong> UI tests check that each category and Emergency is reported as selected once chosen, and unit tests check the ring. The check mark is from a reading of the code.</p>
+<h3>Reduce Motion</h3>
+<p>Home adds no animation of its own.</p>
+<p class="small"><strong>How it's checked:</strong> a reading of the code.</p>
+<h3>Per-App Settings</h3>
+<p>Brickson takes its text size, contrast and motion from iOS rather than from switches of its own, so settings you give Brickson alone, in Settings &gt; Accessibility &gt; Per-App Settings, are the ones it uses.</p>
+<p class="small"><strong>How it's checked:</strong> a reading of the code. Not yet tried on a real device.</p>
+
+<h2 id="speech">Speech</h2>
+<h3>Personal Voice</h3>
+<p>If you have made a Personal Voice and allow Brickson to use it, Brickson speaks your phrases in your own voice, unless another voice is chosen in Brickson's Voice Settings. iOS speaks the words; Brickson never receives the voice itself.</p>
+<p class="small"><strong>How it's checked:</strong> unit tests of how the voice is chosen. Nobody has heard Brickson speak on a real device yet.</p>
+<h3>When speech is cut off</h3>
+<p>If a phrase is cut off, for example by a phone call, Siri or unplugged headphones, Brickson shows "Stopped" on screen, and Again says the phrase again. A line on screen also says when the volume is very low. These words sit in space kept for them, so nothing else on the screen moves.</p>
+<p class="small"><strong>How it's checked:</strong> unit tests of when "Stopped" and the volume line show, and of Again. The kept space is from a reading of the code. Calls and headphones need a real device, so this has not been seen in use yet.</p>
+
+<h2 id="known-limits">Known limits today</h2>
+<ul>
+<li>Nothing has been checked on a real iPhone or iPad. Nobody has yet used Brickson with Eye Tracking, Switch Control, Dwell Control or Voice Control, or heard it speak.</li>
+<li>Home's sizes and spacing are the same for every way of controlling it. They have not yet been measured for pointing with the eyes or head, or for switches.</li>
+<li>On an iPhone at the larger accessibility text sizes, and at any text size with Display Zoom set to Larger Text, the phrases can need scrolling.</li>
+<li>In Dark Mode, when an iPad shows Brickson beside another app, the system can lighten the background, and the edges of the coloured buttons may then measure a little under 3 to 1 (about 2.8 to 3.0, against a commonly reported background colour; the tests do not measure it yet). With Show Borders on, each button's border keeps its edge clear.</li>
+<li>Brickson is in English only.</li>
+</ul>
+
+<h2 id="tell-us">Tell us what works for you</h2>
+<p>If something in Brickson doesn't work with the way you use your iPhone or iPad, please tell us at <a href="mailto:ajdedmon12@gmail.com">ajdedmon12@gmail.com</a>. This address is not for emergencies. How we handle your email is in the <a href="../privacy/#if-you-contact-us">privacy policy</a>.</p>
+<p>When a check is done on a real device, this page will say which device it was and when.</p>
+</main>
+</div>
+<footer class="site-footer policy-footer wrap"><a class="text-link" href="../">Brickson home and support</a><p>Made by Avery Dedmon.</p></footer>
+</body>
+</html>
