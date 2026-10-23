@@ -15,16 +15,29 @@ recorded as needed and not built.
 
 - **`EmergencyRepair`** (plain values, no SwiftData) says what a library
   needs: nothing when the emergency category Home opens (the first one)
-  has a phrase with words; otherwise the bundled starter emergency
-  phrases, either as a new emergency category after all the others or
-  after the emergency category's own phrases. Starter identities are kept
+  has a phrase with words and an identity of its own; otherwise the
+  bundled starter emergency phrases, either as a new emergency category
+  after all the others or after the emergency category's own phrases,
+  and a new identity for an emergency category that an earlier category
+  shares its identity with. Starter identities are kept
   where free, so the additions count as untouched starter phrases, not
   the person's words, and a taken one is replaced. An empty library is
   left to the seeder, and a second emergency category is left alone.
-- **`PhraseLibraryRepairer`** reads the store and inserts what the repair
-  says in a context of its own, saved once. It only inserts: no stored
-  name, phrase, flag or sort order changes; new sort orders come after the
-  largest one there (and stop at `Int.max` rather than overflow).
+- **A new identity where an earlier category shares it** (Codex's review
+  of this pull request). Home remembers the emergency category by
+  identity and shows the first category with it
+  (`CategorySelection.resolve`), so in such a store Emergency opened the
+  earlier category's phrases. The emergency category now gets a new
+  identity, which nobody sees. Categories with the same sort order and
+  name are ordered by identity, so the new one must sort as the old one
+  did against every category with the same name; the repair tries 64 and
+  keeps the old identity if none fits. A later category sharing it
+  changes nothing for Emergency (Home finds the first) and is left alone.
+- **`PhraseLibraryRepairer`** reads the store and writes what the repair
+  says in a context of its own, saved once. Apart from that identity it
+  only inserts: no stored name, phrase, flag or sort order changes; new
+  sort orders come after the largest one there (and stop at `Int.max`
+  rather than overflow).
 - **Launch** (`PhraseLibraryLaunch`): a store that opens with categories
   is now repaired when it needs it. If the repair cannot be saved (a full
   disk, say), the store is left as it was for the next launch, and the app
@@ -42,11 +55,10 @@ recorded as needed and not built.
   other; inserting keeps them item for item.
 - Nothing on Home changed, and no sentence was added: the family sees
   Emergency working again. The log says the repair ran, without words.
-- Two hand-edited stores it cannot fully help, because helping would
-  change stored items, are named in docs/DECISIONS.md: sort orders
-  already at `Int.max` (the additions tie and can sort first), and an
-  emergency category sharing its identity with an earlier category (Home
-  opens the earlier one). Brickson writes neither.
+- One hand-edited store it cannot fully help, because helping would
+  change stored sort orders, is named in docs/DECISIONS.md: sort orders
+  already at `Int.max` (the additions tie and can sort first). Brickson
+  never writes one.
 
 The decision is recorded in docs/DECISIONS.md, "The emergency category is
 always there", as a default adopted on 2026-10-23, reversible.
@@ -66,9 +78,9 @@ See the pull request; the branch was cut from `main` at `f34e8ae` (PR #33).
   launch's own writes.
 - **On a Linux machine with Swift 6.4.1** (not the app's toolchain: no
   Xcode, SwiftData or UIKit), in a throwaway package with the project's
-  concurrency settings: `EmergencyRepair` and its 12 tests
-  (`EmergencyRepairTests`, 14 cases with arguments) pass with the
-  existing `LibraryEditTests` and `BackupCodecTests`, 81 tests in all. A
+  concurrency settings: `EmergencyRepair` and its 17 tests
+  (`EmergencyRepairTests`, 19 cases with arguments) pass with the
+  existing `LibraryEditTests` and `BackupCodecTests`, 86 tests in all. A
   one-line stand-in replaced `String(localized:)`.
 - **Each new pure test fails when its rule is broken.** Thirteen mutations
   of `EmergencyRepair` were run there, each caught: repairing an empty
@@ -88,6 +100,16 @@ See the pull request; the branch was cut from `main` at `f34e8ae` (PR #33).
   refusing a library whose identities repeat
   (`aLibraryWithRepeatedIdentitiesIsStillRepaired`); and normalizing
   words (`theLibrarysWordsComeThroughByteForByte`).
+- **The new identity, the same way:** eight more mutations, each caught.
+  Looking for a shared identity in later categories too
+  (`aLaterCategoryWithTheSameIdentityLeavesEmergencyAlone`); giving no
+  new identity, or not putting it in the repaired library
+  (`anEmergencyCategoryShadowedByAnEarlierOneGetsANewIdentity`,
+  `aShadowedEmergencyCategoryWithNothingToSayGetsBothRepairs`); giving one
+  only with phrases; taking any identity offered, or ignoring the
+  same-named categories before or after
+  (`aNewIdentityKeepsTheCategoryAmongSameNamedOnesInPlace`); and trying
+  without end (`withoutAnIdentityThatKeepsItsPlaceTheOldOneStays`).
 - **The SwiftData side compiles against stand-ins on Linux** (types with
   SwiftData's and OSLog's shapes and no behaviour): `StarterLibrary.swift`,
   `LibraryEditor.swift`, `CategorySelection.swift` and
@@ -115,8 +137,13 @@ See the pull request; the branch was cut from `main` at `f34e8ae` (PR #33).
   (`aRepairThatCannotBeSavedSpeaksFromACopyWithTheirWords`); a copy made
   by identity (`aCopyInMemoryKeepsCategoriesWhoseIdentitiesRepeat`); a
   repair read failure that is lost (`aRepairThatCannotReadTheStoreIsReported`);
-  and a crash or silence when even the copy fails
-  (`whenTheRepairAndItsCopyBothFailTheStoreIsKeptAndTheProblemReported`).
+  a crash or silence when even the copy fails
+  (`whenTheRepairAndItsCopyBothFailTheStoreIsKeptAndTheProblemReported`);
+  a shadowed emergency category that keeps its identity in the store, or
+  any other stored change with it
+  (`aShadowedEmergencyCategoryGetsANewIdentityInTheStore`); and a new
+  identity that reaches the store when the save fails, or is missing from
+  the copy (`aFailedNewIdentityChangesNothing`).
   `everyLaunchTurnsAutosaveOff` covers the two new launch paths.
 
 ## Not verified
@@ -151,8 +178,7 @@ request (R0 item 6), from [the library-core record](2026-10-21-library-core.md):
 6. A store with two emergency categories keeps both; Home opens the
    first. Folding them into one would move or rewrite stored items, so
    it waits for a reason and the owner. *(Not planned.)*
-7. Home finds the emergency category by identity
-   (`CategorySelection.resolve`), so one that shares its identity with an
-   earlier category opens that one. Opening the emergency category itself
-   would close it; it is Home's code, left to the threads working on
-   Home. *(Home, low priority: only a hand-edited store gets there.)*
+7. Two ordinary categories sharing an identity: Home's button for the
+   later one shows the earlier one, so its phrases cannot be reached from
+   Home. The same new-identity repair would fix it; only a hand-edited
+   store gets there, and it is not an Emergency failure. *(Low priority.)*

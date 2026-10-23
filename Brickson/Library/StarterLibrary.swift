@@ -113,9 +113,9 @@ enum PhraseLibrarySeeder {
 
 /// What the launch repair did (`PhraseLibraryRepairer`).
 nonisolated enum EmergencyRepairOutcome: Equatable, Sendable {
-    /// Emergency already had something to open. Nothing was written.
+    /// Emergency already opened something to say. Nothing was written.
     case notNeeded
-    /// The starter emergency phrases were added and saved.
+    /// The repair was saved.
     case saved(EmergencyRepair)
     /// The repair could not be saved, so the store is exactly as it was.
     /// `PhraseLibraryLaunch` speaks from the repaired library in memory
@@ -127,17 +127,19 @@ nonisolated enum EmergencyRepairOutcome: Equatable, Sendable {
 /// (`EmergencyRepair`; docs/DECISIONS.md, "The emergency category is
 /// always there").
 enum PhraseLibraryRepairer {
-    /// Reads the store and, when the emergency category Home opens is
-    /// missing or has no phrase with words, inserts the starter emergency
-    /// phrases in a context of its own and saves once.
+    /// Reads the store and writes what `EmergencyRepair` says it needs in a
+    /// context of its own, saved once: the starter emergency phrases when
+    /// the emergency category Home opens is missing or has no phrase with
+    /// words, and a new identity for it, which nobody sees and which keeps
+    /// it in its place, when an earlier category shares its own.
     ///
-    /// It only inserts (invariant 7). Nothing already stored is changed,
-    /// moved or deleted, not even a sort order: what it adds is ordered
-    /// after what is there, except in a store whose sort orders already
-    /// reach `Int.max` (`sortOrder(after:)`). If the save fails, that
-    /// context is simply discarded: nothing reached the store, and no
-    /// `rollback()` is needed (docs/LESSONS.md, "Never roll back a cascade
-    /// delete").
+    /// Apart from that identity it only inserts (invariant 7). Nothing
+    /// already stored is renamed, moved or deleted, not even a sort order:
+    /// what it adds is ordered after what is there, except in a store whose
+    /// sort orders already reach `Int.max` (`sortOrder(after:)`). If the
+    /// save fails, that context is simply discarded: nothing reached the
+    /// store, and no `rollback()` is needed (docs/LESSONS.md, "Never roll
+    /// back a cascade delete").
     ///
     /// `readStore` and `save` exist so tests can make reading or saving
     /// fail; the app passes neither.
@@ -181,6 +183,9 @@ enum PhraseLibraryRepairer {
                 throw .storeUnreadable
             }
             category = categories[index]
+            if let newIdentity = repair.newIdentity {
+                category.uuid = newIdentity
+            }
         }
         var order = sortOrder(after: (category.phrases ?? []).map(\.sortOrder))
         for phrase in repair.phrases {
@@ -195,7 +200,9 @@ enum PhraseLibraryRepairer {
             logger.error("The emergency repair could not be saved: \(error)")
             return .notSaved(repair)
         }
-        logger.notice("Emergency had nothing to open; the starter emergency phrases were added.")
+        logger.notice(
+            "Emergency was repaired: \(repair.phrases.count) starter phrases added, new identity \(repair.newIdentity != nil)."
+        )
         return .saved(repair)
     }
 
@@ -212,11 +219,11 @@ enum PhraseLibraryRepairer {
 }
 
 /// Readies the phrase library at launch. It fills the store it is given
-/// with the starter phrases when that store is empty, gives Emergency its
-/// starter phrases back when a damaged store has lost them
-/// (`PhraseLibraryRepairer`), and, if the store cannot be read or written,
-/// falls back to a filled in-memory library: a library with no emergency
-/// phrases would leave Emergency with nothing to open (invariant 2).
+/// with the starter phrases when that store is empty, gives Emergency back
+/// what a damaged store has lost (`PhraseLibraryRepairer`), and, if the
+/// store cannot be read or written, falls back to a filled in-memory
+/// library: a library with no emergency phrases would leave Emergency with
+/// nothing to open (invariant 2).
 enum PhraseLibraryLaunch {
     struct Prepared {
         let container: ModelContainer

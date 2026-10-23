@@ -705,30 +705,35 @@ needs no stored "already seeded" flag.
 
 *Default, adopted 2026-10-23: reversible if the owner objects.* A store
 damaged so that Emergency has nothing to open is repaired at launch, by
-adding only (the memo's R4; `EmergencyRepair`, written by
+adding what it lacks (the memo's R4; `EmergencyRepair`, written by
 `PhraseLibraryRepairer`). If the library has no emergency category, the
 starter emergency category is added after all the others; if the
 emergency category Home opens (the first) has no phrase with words, the
 starter emergency phrases are added after its own. The added items keep
 the starter's identities where they are free, so they count as untouched
-starter phrases, not the person's words. Nothing already stored is
-changed, moved or deleted, not even a sort order, and the repair is saved
-once from a context of its own. If that save fails, the store is left as
-it was for the next launch to try again, and the app speaks from a copy in
-memory holding the person's whole library with the repair, and says
-changes won't be kept. A second emergency category is left as it is,
-because Home opens the first. The repair says nothing on Home: the
-family sees Emergency working again.
+starter phrases, not the person's words. If an earlier category shares
+the emergency category's identity, Emergency opens that earlier
+category's phrases (`CategorySelection.resolve` finds a category by
+identity), so the emergency category gets a new identity, which nobody
+sees, chosen so it keeps its place. Apart from that identity, nothing
+already stored is changed, moved or deleted, not even a sort order, and
+the repair is saved once from a context of its own. If that save fails,
+the store is left as it was for the next launch to try again, and the
+app speaks from a copy in memory holding the person's whole library with
+the repair, and says changes won't be kept. A second emergency category
+is left as it is, because Home opens the first. The repair says nothing
+on Home: the family sees Emergency working again.
 
-Two damaged stores it cannot fully help, because helping would change
-stored items: where a sort order is already the largest an `Int` holds,
-the additions take that same order and ties fall back to name or words,
-so they can sort before the person's items; and where the emergency
-category shares its identity with an earlier category, Home's Emergency
-opens that earlier category (`CategorySelection.resolve` finds a category
-by identity). Brickson writes neither: every save numbers sort orders 0,
-1, 2, and identities are checked unique. Only a hand-edited store gets
-there.
+One damaged store it cannot fully help, because helping would change
+stored sort orders: where a sort order is already the largest an `Int`
+holds, the additions take that same order and ties fall back to name or
+words, so they can sort before the person's items. Brickson never writes
+one: every save numbers sort orders 0, 1, 2. (Categories with the same
+sort order and name are ordered by identity, so the new identity must
+also sort, against each category with the emergency category's name, as
+the old one did. The repair tries 64 and keeps the old identity if none
+fits, which only a store made for it can cause. Brickson keeps every
+identity unique, so none of its own stores needs a new identity at all.)
 
 ## Editing the library
 

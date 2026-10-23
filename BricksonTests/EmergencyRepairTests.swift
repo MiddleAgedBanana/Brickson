@@ -22,6 +22,14 @@ struct EmergencyRepairTests {
         library.categories.first(where: \.isEmergency)
     }
 
+    /// What Home shows when Emergency is activated: it remembers the
+    /// emergency category's identity, then shows the first category with
+    /// that identity (`CategorySelection.resolve`).
+    private func shownByEmergency(_ library: LibrarySnapshot) -> LibrarySnapshot.Category? {
+        guard let emergency = emergencyHomeOpens(library) else { return nil }
+        return library.categories.first { $0.id == emergency.id }
+    }
+
     private func hasWords(_ category: LibrarySnapshot.Category?) -> Bool {
         category?.phrases.contains { !LibraryText.isBlank($0.text) } ?? false
     }
@@ -215,6 +223,110 @@ struct EmergencyRepairTests {
         #expect(repair.repaired.categories[1].phrases.map(\.id) == [F.id(900), F.id(901)])
         #expect(repair.repaired.hasUniqueIDs)
         expectOnlyAdditions(from: damaged, to: repair.repaired)
+    }
+
+    // MARK: An earlier category with the emergency category's identity
+
+    /// A damaged store can give an earlier category the emergency
+    /// category's identity, and then Emergency opens that category's
+    /// phrases instead (invariant 2). Fails if the emergency category keeps
+    /// its identity, if the earlier one is given the new identity instead,
+    /// or if anything else changes.
+    @Test func anEmergencyCategoryShadowedByAnEarlierOneGetsANewIdentity() throws {
+        var shadowing = F.basics
+        shadowing.id = F.emergencyID
+        let damaged = LibrarySnapshot(categories: [shadowing, F.emergency, F.needs])
+        #expect(shownByEmergency(damaged) == shadowing)
+
+        let repair = try #require(repair(damaged))
+
+        #expect(repair.place == .existingCategory(at: 1))
+        #expect(repair.newIdentity == F.id(900))
+        #expect(repair.phrases.isEmpty)
+        var expected = damaged
+        expected.categories[1].id = F.id(900)
+        #expect(repair.repaired == expected)
+        #expect(shownByEmergency(repair.repaired) == expected.categories[1])
+    }
+
+    /// Fails if a shadowed emergency category with nothing to say gets only
+    /// one of the two repairs.
+    @Test func aShadowedEmergencyCategoryWithNothingToSayGetsBothRepairs() throws {
+        var shadowing = F.basics
+        shadowing.id = F.emergencyID
+        var empty = F.emergency
+        empty.phrases = []
+        let damaged = LibrarySnapshot(categories: [shadowing, empty, F.needs])
+
+        let repair = try #require(repair(damaged))
+
+        #expect(repair.place == .existingCategory(at: 1))
+        #expect(repair.newIdentity == F.id(900))
+        #expect(repair.phrases == F.emergency.phrases)
+        var expected = F.emergency
+        expected.id = F.id(900)
+        #expect(repair.repaired == LibrarySnapshot(categories: [shadowing, expected, F.needs]))
+        #expect(hasWords(shownByEmergency(repair.repaired)))
+    }
+
+    /// A later category with the emergency category's identity does not
+    /// change what Emergency opens: Home finds the first one. Fails if the
+    /// repair looks past the emergency category for a shared identity.
+    @Test func aLaterCategoryWithTheSameIdentityLeavesEmergencyAlone() {
+        var later = F.needs
+        later.id = F.emergencyID
+        let library = LibrarySnapshot(categories: [F.basics, F.emergency, later])
+        #expect(shownByEmergency(library) == F.emergency)
+
+        #expect(repair(library) == nil)
+    }
+
+    /// Categories with the same sort order and name are shown in the order
+    /// of their identities, so a new identity must sort as the old one did
+    /// against every category with the same name. Fails if the repair takes
+    /// the first new identity it is given (930 sorts before the earlier
+    /// category's 940), or one that sorts after the later category (960).
+    @Test func aNewIdentityKeepsTheCategoryAmongSameNamedOnesInPlace() throws {
+        let name = F.emergency.name
+        let before = LibrarySnapshot.Category(id: F.id(940), name: name, symbolName: "star.fill", isEmergency: false, phrases: [])
+        var emergency = F.emergency
+        emergency.id = F.id(940)
+        let after = LibrarySnapshot.Category(id: F.id(950), name: name, symbolName: "star.fill", isEmergency: false, phrases: [])
+        let damaged = LibrarySnapshot(categories: [before, emergency, after])
+        var offered = [F.id(930), F.id(960), F.id(945)]
+
+        let needed = EmergencyRepair.needed(in: damaged, starter: starter, makeID: { offered.removeFirst() })
+
+        let repair = try #require(needed)
+        #expect(repair.newIdentity == F.id(945))
+        #expect(offered.isEmpty)
+    }
+
+    /// When no identity offered keeps the category in place, it keeps its
+    /// own, and the phrases it needs are still added. Fails if the repair
+    /// gives up on the phrases, takes an identity that moves it, or keeps
+    /// asking for identities without end.
+    @Test func withoutAnIdentityThatKeepsItsPlaceTheOldOneStays() throws {
+        let shadowing = LibrarySnapshot.Category(id: F.id(940), name: F.emergency.name, symbolName: "star.fill", isEmergency: false, phrases: [])
+        var empty = F.emergency
+        empty.id = F.id(940)
+        empty.phrases = []
+        let damaged = LibrarySnapshot(categories: [shadowing, empty])
+        // Every identity offered sorts before 940.
+        let ids = SequentialIDs(startingAt: 1)
+
+        let needed = EmergencyRepair.needed(in: damaged, starter: starter, makeID: ids.make)
+
+        let repair = try #require(needed)
+        #expect(repair.newIdentity == nil)
+        #expect(repair.phrases.map(\.text) == F.emergency.phrases.map(\.text))
+        #expect(repair.repaired.categories.map(\.id) == [F.id(940), F.id(940)])
+        let next = ids.make()
+        #expect(next == F.id(EmergencyRepair.identityAttempts + 1))
+
+        var withWords = damaged
+        withWords.categories[1].phrases = F.emergency.phrases
+        #expect(EmergencyRepair.needed(in: withWords, starter: starter, makeID: SequentialIDs(startingAt: 1).make) == nil)
     }
 
     /// Fails if a word is rewritten on the way, even into a canonically
