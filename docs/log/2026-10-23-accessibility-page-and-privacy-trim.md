@@ -115,6 +115,9 @@ words in App Shortcuts): rewrite it to match what ships.
   fails; and docs/ACCESSIBILITY.md's map row and Larger Text row say that
   starter labels already keep whole words with Bold Text off, leaving
   phrase tiles with Bold Text on as R0-3.
+- A merge of `main` (PR #17, the agent guardrails), keeping this pull
+  request's website lines in docs/HANDOFF.md beside #17's new guard
+  paragraph.
 
 ## Verified
 
@@ -132,6 +135,11 @@ Website and documents only; no Swift changed. On the cloud machine:
   After the third review, six more edits were tried and each failed a
   test: "$4.99", "4.99 USD" or "€3" on the page, the skip link left
   only inside a comment, `main`'s id changed, and an empty title.
+- After the merge of PR #17, on the cloud machine: every
+  `scripts/test-*.py` passed (`test-docs.py` 34 tests, so every section
+  cited by title and every relative link in these documents resolves;
+  `test-hooks.py` 124; `test-runner.py`; `test-select-xcode.py`;
+  `test-site.py` 7).
 - The three pages, served with `python3 -m http.server`, were rendered in
   Chromium (Playwright) at 1280, 1000 and 390 points wide, light and dark:
   no page scrolls sideways, the home page's new section matches the
