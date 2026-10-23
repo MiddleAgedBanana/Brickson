@@ -6,9 +6,10 @@ edits this page in place and writes its record in [`docs/log/`](log/README.md);
 nothing is appended here. Plan: [`docs/ROADMAP.md`](ROADMAP.md). How the
 project runs: [`docs/SDLC.md`](SDLC.md).
 
-**State as of 2026-10-23: PR #14 (the library core) merged into main
-at `48bcf73`. PR #17 now incorporates main `d654cef` (PR #35); its next hosted
-checks and fresh review remain required.**
+**State as of 2026-10-23: PR #14 (the library core), PR #33 (Settings
+on Home) and PR #35 (Show Borders on Home) are merged. PR #17 now
+incorporates main `43cea55` (PRs #39 and #37); its next hosted checks
+and fresh review remain required.**
 Ten threads are working in parallel on the first release, R0.
 
 ## What the app does today
@@ -44,8 +45,13 @@ and VoiceOver announces the warnings. If the
 library cannot be saved, the app speaks from a filled in-memory library
 and says changes will not be kept. If saved phrases exist but cannot be
 opened or read, the file is left untouched and a second warning says so
-and warns against deleting the app. Editing and backup exist as tested
-code with no screens yet
+and warns against deleting the app. A saved library damaged so that
+Emergency has nothing to open gets the starter emergency phrases back at
+launch, added after what is already there, and an emergency category
+whose identity an earlier category shares gets a new one, with nothing of
+the person's changed or moved (docs/DECISIONS.md, "The emergency category
+is always there") ([`log/2026-10-23-emergency-repair.md`](log/2026-10-23-emergency-repair.md)).
+Editing and backup exist as tested code with no screens yet
 ([`log/2026-10-21-library-core.md`](log/2026-10-21-library-core.md)).
 The screen never locks. Ported code:
 [`docs/PORTING.md`](PORTING.md).
@@ -133,6 +139,9 @@ Xcode 27.1 (27A9275); PR #20 landed in `d79d836`.
   run's page for 14 days, passed or failed, unless the job stopped
   before its tests started (a build failure leaves no bundle)
   ([`log/2026-10-22-ci-test-results.md`](log/2026-10-22-ci-test-results.md)).
+  Since PR #39 (2026-10-23) a compiler warning in any target fails the
+  build (docs/DECISIONS.md, "Warnings are errors";
+  [`log/2026-10-23-warnings-as-errors.md`](log/2026-10-23-warnings-as-errors.md)).
   Before PR #12, CI used Xcode 26.6 and iOS 26.5; 10 of 11 runs on
   `9362eca` were green, and the failure was simulator infrastructure.
 - **A Mac, 2026-10-21** (PR #13's diagnosis), iPhone 17 and iPad Pro
@@ -231,10 +240,6 @@ release in docs/ROADMAP.md when no thread has it yet.
   is refused. A safety-copy exception is not adopted and requires the
   owner's decision before implementation (docs/DECISIONS.md, "Replacing
   the library"). *(R0, a new library thread)*
-- A store that opens with no categories is filled with the starter set.
-  No edit can empty the library (the emergency category cannot be
-  deleted), so only a damaged store reaches that path. *(R0, a new library
-  thread: a repair that only adds an emergency category)*
 - `rollback()` crashes SwiftData after deletes, even without a cascade
   (issue #19, seen with Xcode 26.6 on iOS 26.5). Brickson never calls it;
   the reproduction is disabled and has not been run on the current Xcode
@@ -268,6 +273,13 @@ release in docs/ROADMAP.md when no thread has it yet.
   change no size yet; scoring and a fix come before they do
   ([`log/2026-10-21-settings-and-first-run.md`](log/2026-10-21-settings-and-first-run.md),
   follow-up 10). *(Dwell-safety scoring)*
+- CI compiles only the Debug configuration. Warnings are errors in
+  Release too, and code under `#if DEBUG` compiles differently there, so
+  a warning only Release sees would first stop an archive; the Release
+  build has not been compiled since warnings became errors. Before the
+  first archive, run `scripts/test.sh device -configuration Release` on
+  the Mac ([`log/2026-10-23-warnings-as-errors.md`](log/2026-10-23-warnings-as-errors.md)).
+  *(the owner's Mac, or an agent on it)*
 - English only. `scripts/test.sh unit` brings the String Catalog up to
   date (xcodebuild alone does not), and CI fails when the committed one
   is stale. The voice sample sentence in `SpeechService` is not in it
@@ -338,10 +350,11 @@ Every change follows AGENTS.md, *Apple's current frameworks first*: the
 legacy uses kept, and the moves still planned with who owns each, are in
 docs/DECISIONS.md under that title
 ([`log/2026-10-23-current-frameworks.md`](log/2026-10-23-current-frameworks.md)).
-The library thread ended with PR #14; the next library thread starts from
-the *Follow-ups* in [`log/2026-10-21-library-core.md`](log/2026-10-21-library-core.md)
-(safety copies, export and import, the editing screens, stores from every
-schema version). Calls (R0 item 8) wait for a device build. Files under
+The library core landed with PR #14, and the launch repair that keeps
+Emergency working after it; the next library pull request starts from the
+*Follow-ups* in [`log/2026-10-23-emergency-repair.md`](log/2026-10-23-emergency-repair.md),
+in order (the rollback probe on the current Xcode, stores from every
+schema version, safety copies, export and import, the editing screens). Calls (R0 item 8) wait for a device build. Files under
 `.github/workflows` are committed by the owner (docs/SDLC.md, *Deploy*). The toolchain's follow-ups
 (Xcode's recommended settings, iPhone Duo, iOS 27 APIs behind
 `#available`) are in [`log/2026-10-21-toolchain.md`](log/2026-10-21-toolchain.md);

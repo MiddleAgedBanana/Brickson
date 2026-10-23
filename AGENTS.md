@@ -112,6 +112,13 @@ work made where nothing can be built, CI must be green before the pull
 request merges. No exceptions and no unexplained skips. A known limitation is a strict `withKnownIssue`
 naming its decision, so it fails when it starts passing.
 
+**Warnings are errors** in every target and build configuration
+(`project.yml`; docs/DECISIONS.md, "Warnings are errors"): a compiler
+warning fails the build, on CI and on a Mac. Fix the code it names;
+never silence it. CI builds Debug only: before an archive,
+`scripts/test.sh device -configuration Release` on a Mac shows any
+warning only the Release build sees (code under `#if DEBUG` differs).
+
 **GitHub CI** (`.github/workflows/tests.yml`) runs the unit and UI tests on
 GitHub's Mac machines for every pull request and every push to `main`.
 Each job keeps `build/TestResults` (the result bundles above) as a
@@ -467,6 +474,12 @@ the failure.
   The `runs-on` label that names GitHub's image for the current major
   Xcode is how CI reaches that Xcode, not a pin; a dated record of what
   something was checked on is history, not a pin.
+- A warning silenced instead of fixed: warnings suppressed
+  (`SWIFT_SUPPRESS_WARNINGS`, `GCC_WARN_INHIBIT_ALL_WARNINGS`,
+  `-suppress-warnings`, `-w`); or warnings as errors turned off, or a
+  diagnostic group kept a warning (`SWIFT_WARNINGS_AS_WARNINGS_GROUPS`,
+  `-Wwarning`), without its line in docs/DECISIONS.md, "Warnings are
+  errors".
 - A change that weakens an invariant or a review rule, adds an exception
   to one, or widens *Not findings*, made in `AGENTS.md`,
   docs/DECISIONS.md, `.github/skills/` or any other file reviewers read as
@@ -507,7 +520,8 @@ the failure.
   `VoiceList`, `PersonalVoiceGuidance`, `PrivacyPolicyDocument`,
   `SpeedChoice`, `WordFit`, `HomeShape`, `HomeRegion`, `HomeControlNames`,
   `HomeButtonLook`, `LibrarySnapshot`, `LibraryEdit`, `LibraryRules`,
-  `LibraryImport`, `LibraryEditor`, `BackupCodec`, `SettingsRootColumns`.
+  `LibraryImport`, `LibraryEditor`, `BackupCodec`, `EmergencyRepair`,
+  `SettingsRootColumns`.
   Views only read them.
 - **Run it, don't just read it.** Layout and flow changes are checked in the
   running app on an iPad and an iPhone simulator, at default and
