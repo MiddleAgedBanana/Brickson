@@ -98,6 +98,10 @@ Xcode 27.1 (27A9275); PR #20 landed in `d79d836`.
   CI pending. Six findings on `9845a0d` now cover expanded push operands,
   Wget/curl URL sources, decoded Copilot endpoints, trap actions and exact
   fragment case; their regressions fail before correction and pass after it.
+  Main `43cea55` (PRs #39 and #37) is merged by merge commit. Eight
+  findings on `a4ed3d9` reproduce but are declined, past the two-round
+  fix cap, as ways round a guard against mistakes; the record lists them,
+  with `git add ..` and `source` first for a later guard pull request.
   New-head hosted checks and fresh review remain required.
   [Guardrail record](log/2026-10-22-agent-guardrail-reconciliation.md).
 

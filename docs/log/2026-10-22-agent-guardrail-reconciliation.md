@@ -1039,3 +1039,40 @@ References checked: [curl variable expansion](https://curl.se/docs/manpage.html#
 [HTML fragment matching](https://html.spec.whatwg.org/multipage/browsing-the-web.html#scroll-to-fragid),
 and the installed Wget input-file/method help and Bash `help trap`.
 The hooks inspect command fixtures; no owner-only remote action is run.
+
+## Main refresh and declined findings, 2026-10-23
+
+Merge `9e178b1` brings in main `43cea55`, PR #39 (warnings as errors) and
+PR #37 (the emergency repair), by merge commit. Only `docs/HANDOFF.md`'s
+state line conflicted; main's wording is kept and the PR #17 sentence
+names the new main. The two forward DECISIONS citations had already left
+`scripts/test-docs.py`. On Linux with Python 3.13, 34 docs, 124 hook and
+54 runner tests passed. This cloud session built no Swift, so the hosted
+checks are the build.
+
+Eight findings on `a4ed3d9` are declined for this pull request. Each
+reproduces: the guard lets the command through, or the checker skips the
+link. The project stops fix pushes after two rounds, and this pull request
+is far past that. Each finding needs a deliberate way round the guard or
+an unusual setup, which the guard does not claim to stop (AGENTS.md,
+*Guardrails for agents*: "a guard against mistakes, not a sandbox").
+Each is answered in its review thread:
+
+- `git config remote.origin.push HEAD:main && git push origin`: a push
+  configuration written in the same command as the push.
+- HTTPie `default_options` in its `config.json` adding an approval body.
+- `git commit --pathspec-from-f=paths`, an abbreviated
+  `--pathspec-from-file`.
+- `git add ..` from a subdirectory, or the repository root as an absolute
+  path.
+- `http POST .../pulls/12/reviews @approve.json`, HTTPie's top-level file
+  body.
+- `source run.sh` and `. run.sh` with a script that stages everything or
+  merges.
+- macOS `env -P /usr/bin git push origin main`.
+- A link after an escaped exclamation mark (`\![guide](missing.md)`),
+  which the docs checker skips as an image.
+
+Of these, `git add ..` and `source` are the two an agent could reach by
+accident. They are the first candidates for a later guard pull request,
+each with a failing test first.
