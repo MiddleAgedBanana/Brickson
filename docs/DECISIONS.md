@@ -57,7 +57,7 @@ holds.
 | Home's border, pressed and selection rings under Show Borders, and the Large Content Viewer held back from Home's speaking controls until a device check | "Show Borders and the Large Content Viewer on Home" (Accessibility pass two) |
 | Get Attention on Home under Emergency, Stop in a well of its own with a category under it, "Help" as Get Attention's other name, the status line's order, a silent stand-in tone for UI tests | "Get Attention and Stop on Home" (Get Attention and Stop on Home; PR #38) |
 | A compiler warning fails the build in every target and configuration | "Warnings are errors" (Warnings as errors) |
-| iPhone Duo: optimized by building with the current SDK, Duo screenshots in every submission, ready before the first, one layout for every pose, the hinge driving nothing, no arrangement view on Home, the system's bars in Settings, one window; two fold questions left to the owner | "iPhone Duo" (iPhone Duo readiness) |
+| iPhone Duo: optimized by building with the current SDK, Duo screenshots in every submission, ready before the first, one layout for every pose, the hinge driving nothing, no arrangement view on Home, the system's bars in Settings, one window; and, by the owner's choice, Home's controls kept off the fold and an even column count on a display that folds | "iPhone Duo" (iPhone Duo readiness) |
 | The exceptions to Apple's current frameworks first, and the moves made and planned | "Apple's current frameworks first" (the rule is the owner's, 2026-10-22) |
 | The accessibility coverage list and its choices: full screen in Assistive Access and no separate scene, no programmatic Guided Access, assistive-technology flags that only suggest, phrases in the person's voice with VoiceOver on, late-stage boards as an R1 profile, and what waits or is never used | "Accessibility API coverage" (Accessibility coverage checklist) |
 
@@ -736,7 +736,7 @@ Home already meets a landscape phone window there (*iPhone Duo*, below).
 ## iPhone Duo
 
 *2026-10-23. Default: the owner left routine choices to the project.
-Reversible if the owner objects. The two questions under* Open *are the
+Reversible if the owner objects. The two choices under* The fold *are the
 owner's.* Apple's words, with dates and links, and the assessment behind
 this entry are in
 [`docs/log/2026-10-23-iphone-duo-readiness.md`](log/2026-10-23-iphone-duo-readiness.md).
@@ -787,36 +787,42 @@ Brickson to run on it.
   also measures the outer display in landscape, the pose Apple describes
   as a tent on a table.
 
-### Open, for the owner
+### The fold
 
-Both would change where Home's controls are on iPhone Duo's inner
-display, so neither is decided by default. Until they are answered,
-nothing builds fold handling.
+*2026-10-23. The owner accepted both recommendations below, and has not
+held an iPhone Duo yet. Reversible: look again once R0 item 13 has run
+Brickson in the iPhone Duo simulator, and again on a device.*
 
-1. **When the inner display is partially folded, should Home keep its
-   controls off the fold?** Apple: "buttons are tough to tap when they land
-   right in the fold", and its own components move theirs aside.
-   *Recommended:* yes, by widening the gap at the fold and nothing else,
-   as Apple shows for a grid ("preserve the outer margins while increasing
-   the spacing around the hinge"): every control keeps its region, its
+Both change where Home's controls are on iPhone Duo's inner display, so
+they were the owner's to choose, not defaults. The layout engine builds
+them in R0 item 13.
+
+1. **When the inner display is partially folded, Home keeps its controls
+   off the fold.** Apple: "buttons are tough to tap when they land right
+   in the fold", and its own components move theirs aside. It does this
+   by widening the gap at the fold and nothing else, as Apple shows for
+   a grid ("preserve the outer margins while increasing the spacing
+   around the hinge"): every control keeps its region, its
    order and its neighbours, and only spacing changes, which invariant 8
    allows. The cost: folding changes frames under a resting look, as
-   rotating does today, so dwell scoring covers folding first. The other
-   choices are to leave controls where they are (a gaze or a finger meets
-   a curved, hard-to-hit spot) or to move whole regions to one half, as
-   Apple's displacement pattern does (rejected: it moves controls).
-2. **On a display that has a fold, should Home use an even number of
-   columns?** The HIG: "In a grid-style layout, prefer an even number of
+   rotating does today, so dwell scoring covers folding first. Not
+   chosen: leaving controls where they are (a gaze or a finger meets a
+   curved, hard-to-hit spot), or moving whole regions to one half, as
+   Apple's displacement pattern does (it moves controls).
+2. **On a display that has a fold, Home uses an even number of
+   columns.** The HIG: "In a grid-style layout, prefer an even number of
    columns so content divides cleanly." The slot plan has three columns
    at compact widths and five at regular ones (*Home's slot plan*), and
    the stand-in grid three where they fit, so a column can sit on the
-   fold. *Recommended:* yes, chosen from whether the window has a fold at
-   all, folded or flat (Apple: "prefer even numbers of columns when a
+   fold. The count is chosen from whether the window has a fold at all,
+   folded or flat (Apple: "prefer even numbers of columns when a
    division region is present regardless of its active state"), so
    folding never changes a count. The cost: the inner display gets a
    different column count from an iPad window of the same width. That is
    still a layout from the space available, because a fold is part of the
-   space, but it is a change to the slot plan for that display.
+   space, but it is a change to the slot plan for that display. Which even
+   count comes from the space and the profile's floors, like every other
+   count.
 
 ## Starter phrases
 

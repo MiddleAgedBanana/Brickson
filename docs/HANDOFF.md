@@ -334,8 +334,8 @@ release in docs/ROADMAP.md when no thread has it yet.
   CI has no Duo simulator; screenshots are required from April 2027
   (docs/DECISIONS.md, "iPhone Duo";
   [`log/2026-10-23-iphone-duo-readiness.md`](log/2026-10-23-iphone-duo-readiness.md)).
-  *(R0 item 13: a Mac thread first, then the layout engine; owner for the
-  two questions)*
+  *(R0 item 13: a Mac thread first, then the layout engine, which builds
+  the owner's two fold choices)*
 - The app icon is a placeholder; `design/brand/` is not installed. *(Release chores, R0 item 11)*
 - Siri's alternative name "Brick Son" (`INAlternativeAppNames`) has no
   effect yet: Apple applies it only to apps with Siri support, which
@@ -362,11 +362,8 @@ can be reversed; docs/DECISIONS.md):
    are near duplicates, and "Please move me." could be clearer.
 5. Delete the failed Swift configuration on the Tool status page
    (docs/DECISIONS.md, *Code scanning*).
-6. Answer the two iPhone Duo questions (docs/DECISIONS.md, "iPhone Duo",
-   *Open*): whether Home keeps its controls off the fold, and whether it
-   uses an even number of columns on a display that folds. You can also
-   delete the `xcode-skills` folder in `~/code/brickson`: its skills are
-   installed where agents load them.
+6. You can delete the `xcode-skills` folder in `~/code/brickson`: its
+   skills are installed where agents load them.
 
 For agents: R0 in [docs/ROADMAP.md](ROADMAP.md), in order; the owner's
 long-term vision, the direction behind it, is its *Where this goes*.

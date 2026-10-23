@@ -17,8 +17,13 @@ it, and plans the work:
 - **docs/ROADMAP.md:** R0 item 13, *Ready for iPhone Duo*, inside the
   release gate, so no build goes to App Review before it is done.
 - **docs/DECISIONS.md:** a new entry, "iPhone Duo", with the routine
-  choices as reversible defaults and two questions for the owner (*Open*)
-  that would change Home's columns or move controls when the phone folds.
+  choices as reversible defaults, and two fold choices that were the
+  owner's (*The fold*), because they change Home's columns and spacing on
+  iPhone Duo. The pull request first asked them as questions; the owner
+  accepted both recommendations the same day, before holding an iPhone
+  Duo: Home keeps its controls off the fold when the phone is partially
+  folded, by widening the gap there, and uses an even number of columns
+  on a display that folds.
 - **docs/APP-STORE.md**, sections 2, 9 and 13: the April 2027 requirements
   in Apple's words, the Duo screenshot sizes, and a correction (the inner
   display's screenshots do not wait for the iPhone orientation decision,
@@ -361,7 +366,7 @@ content there only for camera apps (`CameraCaptureAccessory`).
 - **Before the first submission:** R0 item 13's checks logged (Home,
   Settings and setup on both displays, open, folded and rotated, in Split
   View, at the default and largest text sizes, light and dark), and the
-  owner's two answers built.
+  owner's two fold choices built.
 - **Optional:** a featuring nomination that says Brickson supports iPhone
   Duo, once item 13 holds in every pose.
 
@@ -403,8 +408,10 @@ In order, each owned as R0 item 13 in docs/ROADMAP.md unless named:
    `docs/log/` file whether the system moves Home's buttons when folded,
    where Settings' Back goes, whether a second window can open, the
    `displayScale` of each display, and where the starter library scrolls.
-2. **The owner's two answers** (docs/DECISIONS.md, "iPhone Duo", *Open*),
-   built by the layout engine thread with dwell scoring of a fold.
+2. **The owner's two fold choices** (docs/DECISIONS.md, "iPhone Duo",
+   *The fold*), built by the layout engine thread with dwell scoring of a
+   fold, and looked at again once follow-up 1 has shown Brickson on
+   iPhone Duo.
 3. **A Duo UI test family** in `scripts/choose-simulator.py` and
    `scripts/test.sh` (no workflow change), once GitHub's image has an iOS
    27.1 runtime and the iPhone Duo simulator; until then, on the Mac.
