@@ -184,8 +184,9 @@ struct LibraryEditTests {
 
     /// A category named like a Home control would be a second button with
     /// that name. Fails if validation omits an alternate input label,
-    /// such as Again's Repeat alias, from either add or rename.
-    @Test(arguments: ["Yes", "no.", "EMERGENCY", "Get attention", "Again!", "Repeat", "repeat!", "Stop Alert", "Settings", "Speak"])
+    /// such as Again's Repeat alias or Get Attention's Help, or Stop, from
+    /// either add or rename.
+    @Test(arguments: ["Yes", "no.", "EMERGENCY", "Get attention", "help!", "Again!", "Repeat", "repeat!", "Stop.", "Stop Alert", "Settings", "Speak"])
     func homeControlNamesAreReserved(name: String) {
         #expect(throws: LibraryEditRejection.reservedCategoryName) {
             try makePlan(.addCategory(name: name, symbolName: "star.fill"))
@@ -328,7 +329,9 @@ struct LibraryEditTests {
 
     /// Fails if the blank check strips meaningful joiners or variation
     /// selectors, or rejects all strings containing an invisible scalar.
-    @Test(arguments: ["\u{2060}Help.\u{FEFF}", "\u{0000}Help.\u{0000}", "می\u{200C}خواهم", "क्\u{200D}ष", "👩‍💻", "☀️", "\u{2060}e\u{0301}\u{FEFF}"])
+    /// Each is also a category name, so none may be a Home control's name
+    /// ("Help" is Get Attention's other name).
+    @Test(arguments: ["\u{2060}Water.\u{FEFF}", "\u{0000}Water.\u{0000}", "می\u{200C}خواهم", "क्\u{200D}ष", "👩‍💻", "☀️", "\u{2060}e\u{0301}\u{FEFF}"])
     func meaningfulTextKeepsItsScalars(text: String) throws {
         #expect(!LibraryText.isBlank(text))
         let category = try makePlan(.addCategory(name: text, symbolName: "star.fill"))

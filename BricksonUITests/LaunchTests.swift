@@ -27,7 +27,7 @@ final class LaunchTests: XCTestCase {
     func testHomeShowsTheQuickControlsAndStarterPhrases() {
         let app = launchedApp()
 
-        for name in ["Yes", "No", "Emergency", "Again"] {
+        for name in ["Yes", "No", "Emergency", "Get Attention", "Again"] {
             XCTAssertTrue(app.buttons[name].exists, "\(name) is missing")
         }
         // Home starts on the first everyday category, not on Emergency.
@@ -127,7 +127,7 @@ final class LaunchTests: XCTestCase {
                 }
                 let context = "AX5, \(appearance.rawValue), \(state)"
                 attachCapture(app, name: context)
-                for label in ["Yes", "No", "Emergency", "Again"] {
+                for label in ["Yes", "No", "Emergency", "Get Attention", "Again"] {
                     let screenshot = app.buttons[label].screenshot()
                     let attachment = XCTAttachment(screenshot: screenshot)
                     attachment.name = "\(context), \(label)"
@@ -135,8 +135,9 @@ final class LaunchTests: XCTestCase {
                     add(attachment)
                     let image = try XCTUnwrap(screenshot.image.cgImage)
                     let words = try await RenderedWords.read(image)
+                    // Each word whole: Get Attention may take two lines.
                     XCTAssertTrue(
-                        RenderedWords.show(label, in: words),
+                        label.split(separator: " ").allSatisfy { RenderedWords.show(String($0), in: words) },
                         "Rendered \(label) is unreadable (\(context)); recognized \(words)"
                     )
                 }

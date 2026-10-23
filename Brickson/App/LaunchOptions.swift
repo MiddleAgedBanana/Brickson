@@ -32,6 +32,10 @@ import SwiftData
 /// - `--personal-voice=stand-in-refuses`: the same, with a stand-in
 ///   permission that has not been asked and refuses when asked
 ///   (`StandInPersonalVoice`), so UI tests reach the button and its answer.
+/// - `--attention-tone=silent`: Get Attention plays a silent stand-in tone
+///   (`SilentAttentionTonePlayback`) instead of the real one, so UI tests
+///   sound and stop the alarm without sound and without depending on the
+///   simulator's audio.
 ///
 /// Text size still uses UIKit's `-UIPreferredContentSizeCategoryName`
 /// argument. Appearance needs an app-local option because command-line
@@ -71,6 +75,13 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
         case standInRefuses = "stand-in-refuses"
     }
 
+    /// A launch that plays a stand-in for the Get Attention tone
+    /// (`AppAudio.attentionTone(for:)`).
+    nonisolated enum AttentionTone: String, Equatable, Sendable {
+        /// Says it is playing and makes no sound: for UI tests.
+        case silent
+    }
+
     var storage = Storage.standard
     var usesShortTimeouts = false
     var startScreen = StartScreen.home
@@ -79,6 +90,8 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
     /// Nil is the app's own: the device's permission, asked when the app
     /// starts.
     var personalVoice: PersonalVoiceTrial?
+    /// Nil is the app's own: the real tone.
+    var attentionTone: AttentionTone?
     /// Arguments written like these options but not understood: a misspelt
     /// name, an unknown value. They are logged at launch, so a typo in a
     /// test shows up instead of quietly running with the defaults.
@@ -134,6 +147,8 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
                 options.appearance = Appearance(rawValue: value)
             case ("personal-voice", let value?) where PersonalVoiceTrial(rawValue: value) != nil:
                 options.personalVoice = PersonalVoiceTrial(rawValue: value)
+            case ("attention-tone", let value?) where AttentionTone(rawValue: value) != nil:
+                options.attentionTone = AttentionTone(rawValue: value)
             default:
                 options.unrecognized.append(argument)
             }

@@ -119,7 +119,7 @@ final class HomeLayoutTests: XCTestCase {
                 // checked, slots included.
                 let gridMustFit = Self.gridMustFit(textSize, in: window)
 
-                for name in ["Yes", "No", "Emergency", "Again", "Settings"] {
+                for name in ["Yes", "No", "Emergency", "Get Attention", "Again", "Settings"] {
                     expectWhollyOnScreen(app.buttons[name], name, in: window, context)
                 }
 

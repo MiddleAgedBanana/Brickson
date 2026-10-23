@@ -63,6 +63,19 @@ struct LaunchOptionsTests {
         #expect(options.unrecognized == typos)
     }
 
+    // Release launches use .standard, which plays the real tone. Taking a
+    // typo for the silent stand-in, or missing it, fails this.
+    @Test func theSilentToneIsReadOnlyWhenSpelledRight() {
+        #expect(LaunchOptions.standard.attentionTone == nil)
+        #expect(LaunchOptions.parse(["--attention-tone=silent"]).attentionTone == .silent)
+        #expect(LaunchOptions.parse(["--attention-tone=silent"]).unrecognized.isEmpty)
+
+        let typos = ["--attention-tone", "--attention-tone=", "--attention-tone=quiet", "--attention-tone=Silent"]
+        let options = LaunchOptions.parse(typos)
+        #expect(options.attentionTone == nil)
+        #expect(options.unrecognized == typos)
+    }
+
     // A typo must be reported, not silently interpreted as light or dark.
     @Test func malformedAppearanceArgumentsAreReportedWithoutAnOverride() {
         let arguments = ["--appearance", "--appearance=", "--appearance=system", "--appearance=DARK"]

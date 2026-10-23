@@ -24,6 +24,29 @@ struct AttentionAlertPlayerTests {
         #expect(playback.loopsUntilStopped)
     }
 
+    /// UI tests sound the alarm with a silent stand-in
+    /// (`--attention-tone=silent`). It must say it is playing from the start
+    /// until Stop, or the health check would end the alarm a second later
+    /// and Home's Stop would vanish under the test.
+    @Test func theSilentToneSoundsUntilStopped() {
+        let playback = SilentAttentionTonePlayback()
+        #expect(!playback.isPlaying)
+
+        #expect(playback.playFromBeginning())
+        #expect(playback.isPlaying)
+
+        playback.stop()
+        #expect(!playback.isPlaying)
+    }
+
+    /// Fails if the app's own launch, which reads no options, gets anything
+    /// but the real tone, or a test launch asking for silence gets sound.
+    @Test func onlyATestLaunchAskingForItGetsTheSilentTone() throws {
+        #expect(try AppAudio.attentionTone(for: nil) is SystemAttentionTonePlayback)
+        #expect(try AppAudio.attentionTone(for: LaunchOptions.standard.attentionTone) is SystemAttentionTonePlayback)
+        #expect(try AppAudio.attentionTone(for: .silent) is SilentAttentionTonePlayback)
+    }
+
     // MARK: Starting
 
     @Test func startPlaysTheToneAndHoldsTheSession() {
@@ -120,6 +143,90 @@ struct AttentionAlertPlayerTests {
         // With the session active, a repeat is absorbed again.
         harness.attention.start()
         #expect(harness.tones.attempts == 2)
+    }
+
+    /// The tone a retry replaces stops once its replacement plays, so two
+    /// tones never sound together. Fails if the old tone is left playing.
+    @Test func aRetryThatStartsANewToneStopsTheOldOne() {
+        let harness = AudioHarness()
+        harness.audioSession.refusesActivation = true
+        harness.attention.start()
+        let old = harness.tones.latest
+
+        harness.audioSession.refusesActivation = false
+        harness.attention.start()
+
+        #expect(harness.tones.attempts == 2)
+        #expect(old?.isPlaying == false)
+        #expect(old?.stopCount == 1)
+        #expect(harness.tones.latest?.isPlaying == true)
+        #expect(harness.attention.state == .playing)
+    }
+
+    /// A held look re-firing Get Attention over a tone started without the
+    /// session retries the session, but must never silence that tone
+    /// (invariant 10). The tone plays on until its replacement has started,
+    /// so a replacement that cannot load or refuses to play leaves it
+    /// sounding, with Stop still showing. Fails if the live tone is
+    /// discarded before its replacement plays (Codex review of PR #38).
+    @Test(arguments: [false, true])
+    func aRetryThatCannotStartANewToneLeavesTheLiveOneSounding(replacementLoads: Bool) {
+        let harness = AudioHarness()
+        harness.audioSession.refusesActivation = true
+        harness.attention.start()
+        let live = harness.tones.latest
+        #expect(live?.isPlaying == true)
+
+        harness.tones.queue = [replacementLoads ? FakeTonePlayback(playSucceeds: false) : nil]
+        harness.attention.start()
+
+        #expect(harness.tones.attempts == 2)
+        #expect(live?.isPlaying == true)
+        #expect(live?.stopCount == 0)
+        #expect(harness.attention.state == .playing)
+        #expect(harness.attention.isSounding)
+        #expect(harness.attention.failureSequence == 0)
+        #expect(harness.coordinator.isHeld(by: .attentionAlert))
+    }
+
+    /// The tone kept after a failed retry is still the one being watched:
+    /// a report that it stopped still shows "Alert stopped". Fails if the
+    /// retry stops listening to the tone it kept, as it would by moving to
+    /// the replacement's generation before the replacement plays.
+    @Test(arguments: [false, true])
+    func aToneKeptAfterAFailedRetryStillReportsAStop(replacementLoads: Bool) {
+        let harness = AudioHarness()
+        harness.audioSession.refusesActivation = true
+        harness.attention.start()
+        let live = harness.tones.latest
+        harness.tones.queue = [replacementLoads ? FakeTonePlayback(playSucceeds: false) : nil]
+        harness.attention.start()
+
+        live?.send(.unexpectedFinish)
+
+        #expect(harness.attention.state == .stoppedUnexpectedly)
+        #expect(!harness.coordinator.isHeld(by: .attentionAlert))
+    }
+
+    /// The kept tone was still started without the session, so the next
+    /// Get Attention tries again rather than being absorbed, even when the
+    /// failed retry did activate the session. Fails if that retry counts
+    /// the kept tone as started under an active session.
+    @Test func aToneKeptAfterAFailedRetryIsReplacedByTheNextGetAttention() {
+        let harness = AudioHarness()
+        harness.audioSession.refusesActivation = true
+        harness.attention.start()
+        let live = harness.tones.latest
+        harness.audioSession.refusesActivation = false
+        harness.tones.queue = [nil]
+        harness.attention.start()
+
+        harness.attention.start()
+
+        #expect(harness.tones.attempts == 3)
+        #expect(live?.isPlaying == false)
+        #expect(harness.tones.latest?.isPlaying == true)
+        #expect(harness.attention.state == .playing)
     }
 
     // MARK: Start-only

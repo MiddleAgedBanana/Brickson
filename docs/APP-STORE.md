@@ -159,7 +159,7 @@ say so in What's New when it happens.
 | If you turn on recorded phrases | Not built; not in R0 | Delete the section for 1.0 |
 | If you turn on caregiver alerts | Not built; needs network code, which invariant 9 forbids until the owner decides | Delete the section for 1.0 |
 | If you use Siri and Shortcuts | Not built; not in R0 | Delete the section for 1.0 |
-| Get Attention | Not until the Speech engine and Get Attention thread lands it | Ship it, or delete the mention |
+| Get Attention | Yes, from 2026-10-23: on Home with Stop (PR #38; docs/DECISIONS.md, "Get Attention and Stop on Home") | — |
 | Effective date | October 21, 2026 | Move it with every wording change |
 
 ## 4. Accessibility Nutrition Labels
@@ -191,7 +191,7 @@ published only once a version is live
 
 **Brickson's common tasks for 1.0** (from the release gate in section 2): first launch
 (including the Personal Voice question), speak a phrase, Yes and No,
-Emergency, Again, Get Attention and Stop Alert, type and speak, edit phrases
+Emergency, Again, Get Attention and Stop, type and speak, edit phrases
 (with delete and keep), back up and restore, Settings (voice, privacy, family
 setup) and leaving Settings.
 
@@ -390,8 +390,9 @@ build (1,865 bytes as drafted):
 >
 > [Get Attention: tap Get Attention to play a repeating tone that calls
 > someone to the room. It plays even with the silent switch on and keeps
-> playing while the device is locked, until someone taps Stop Alert, which is
-> a separate button in a different place so a resting gaze cannot stop the
+> playing while the device is locked, until someone taps Stop (Voice
+> Control also accepts "Stop Alert"), which is a separate button in a
+> different place so a resting gaze cannot stop the
 > call by accident. It contacts nobody.]
 >
 > Emergency: shows a set of urgent phrases. It does not call or message

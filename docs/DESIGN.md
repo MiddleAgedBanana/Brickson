@@ -89,11 +89,11 @@ what they sit on).
 | `phrase` (`AccentColor`) | `#0A60D6` | Phrase tiles, categories, Again, Speak, Type, Yes, No, Hear, Use, Save | 5.74:1 | 5.74:1 | 3.66:1 |
 | `control` (`ControlFill`) | `#5A6474` | Clear, Settings, Back to Talking, Family Setup rows, Slower, Faster, Move to…, Keep | 5.98:1 | 5.98:1 | 3.51:1 |
 | `emergency` (`EmergencyFill`) | `#C8161E` | Emergency, emergency phrases, Delete Phrase, "Delete … for good" | 5.85:1 | 5.85:1 | 3.59:1 |
-| `attention` (not in the code yet) | `#B45309` | Get Attention | 5.02:1 | 5.02:1 | 4.18:1 |
-| `stop` (not in the code yet) | `#0F766E` | Stop Alert | 5.47:1 | 5.47:1 | 3.84:1 |
+| `attention` (`AttentionFill`) | `#B45309` | Get Attention | 5.02:1 | 5.02:1 | 4.18:1 |
+| `stop` (`StopFill`) | `#0F766E` | Stop (Stop Alert in the drawings) | 5.47:1 | 5.47:1 | 3.84:1 |
 
-The first three are `Palette`'s fills today, already pinned by
-`PaletteTests`. The "Used for" column is the drawings' assignment. Today's
+All five are `Palette`'s fills, pinned by `PaletteTests` (the last two
+since *Get Attention and Stop on Home*, 2026-10-23). The "Used for" column is the drawings' assignment. Today's
 stand-in Home puts Yes, No, Again and the categories not selected on
 `control`; which role each control takes on the new Home is settled with
 "Home's slot plan", and every role it can take is a pair measured here.
@@ -186,12 +186,15 @@ Today's Home is still the stand-in (docs/DECISIONS.md, "Home's stand-in
 layout"). Since PR #22 its eager rows fit the available space: three
 phrase columns wherever three 107pt tiles fit, four visible category
 buttons, labels fitted in whole words, and the message with Again beside
-it. Since 2026-10-23 Again is in the safety row (Yes, No, Again,
-Emergency) and Settings is at the categories' trailing end
-(docs/DECISIONS.md, "Settings on Home"). Main records the small-window
-scrolling gaps separately. The slot
-plan and its wells are still to be built; these drawings are not a
-picture of the running app.
+it. Since 2026-10-23 Again is in the safety row and Settings is at the
+categories' trailing end (docs/DECISIONS.md, "Settings on Home"), and
+Get Attention and Stop are on Home: the safety row is two rows (Yes, No
+and Emergency; Again and Get Attention, under Emergency), and Stop has a
+well at the categories' leading top with a category under it
+(docs/DECISIONS.md, "Get Attention and Stop on Home"). Main records the
+small-window scrolling gaps separately. Phrases and Type and the slot
+plan's own C are still to be built; these drawings are not a picture of
+the running app.
 
 | Layer name | Control | Region | Notes |
 |---|---|---|---|
@@ -203,7 +206,7 @@ picture of the running app.
 | `again` | Again, or Speak while typing | C | Same frame, label changes |
 | `emergency` | Emergency | C | Two columns wide on compact widths |
 | `getAttention` | Get Attention | C | Start only; never stops the alarm |
-| `stopAlert` | Stop Alert | B | Leading column, top, directly below Emergency; live only while the alarm sounds, a well otherwise. docs/DECISIONS.md, "Get Attention" and "Home's slot plan", both now say below Emergency; the earlier above-Emergency order is superseded |
+| `stopAlert` | Stop Alert (built as "Stop") | B | Leading column, top; live only while the alarm sounds, a well otherwise. The slot plan puts it directly below Emergency; until A's trailing column is built, the code puts Emergency at C's trailing end and Stop under Again, with a category under Stop (docs/DECISIONS.md, "Get Attention and Stop on Home") |
 | `settings` | Settings | B | B's last cell, at the trailing end (*What a held activation meets next*, below). The drawings put it under Stop Alert |
 | `category0`…`category3` | The categories | B | Adopted: on compact widths the first two beside Stop Alert and the other two under them, then Settings; on regular widths the first under Stop Alert, the other three full height. The drawings show 2×2 beside the leading column on compact widths and one row of four on regular widths |
 | `tileR_C` | Phrase tiles, row R column C | D | 3×3 on compact widths, 4×3 on regular widths |
@@ -515,7 +518,9 @@ over Home, so each starts with the same top band at fixed frames: **Back
 to Talking** at the top trailing edge, and a start-only **Get
 Attention** at the top leading edge, over the message, its place kept
 empty until Home has Stop Alert (the Settings and first run pull
-request, PR #23). Proposed: Back to Talking sits over Phrases' frame in
+request, PR #23). *2026-10-23:* Home has Stop now (PR #38); the place
+stays empty until its chain is scored (docs/DECISIONS.md, "Get
+Attention and Stop on Home"). Proposed: Back to Talking sits over Phrases' frame in
 Home's trailing column, not over Type, so closing Settings leaves
 Phrases alone nearest, and Phrases only ever chooses the phrases (*What
 a held activation meets next*). Below the band:

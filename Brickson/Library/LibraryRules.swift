@@ -52,10 +52,7 @@ nonisolated enum LibraryRules {
     /// apart. Read every name directly from Home, including aliases such
     /// as Repeat for Again, so the editor cannot drift from the controls.
     static var reservedCategoryNames: [String] {
-        HomeControlNames.fixed.flatMap(\.inputLabels) + [
-            String(localized: "Get Attention"),
-            String(localized: "Stop Alert"),
-            String(localized: "Settings"),
+        (HomeControlNames.fixed + HomeControlNames.wells).flatMap(\.inputLabels) + [
             String(localized: "Speak"),
         ]
     }

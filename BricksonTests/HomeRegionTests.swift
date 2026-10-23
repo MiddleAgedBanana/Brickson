@@ -28,6 +28,15 @@ struct HomeRegionTests {
         #expect(HomeRegion.lastInRegion < 0)
     }
 
+    /// Fails if Stop could come after the first category, or the first
+    /// category after the others, which keep the default of zero: in the
+    /// band the first category sits under Stop, lower than the others'
+    /// tops, so only these priorities put it first.
+    @Test func stopThenTheFirstCategoryComeBeforeTheDefault() {
+        #expect(HomeRegion.firstInRegion > HomeRegion.secondInRegion)
+        #expect(HomeRegion.secondInRegion > 0)
+    }
+
     /// Fails if two regions share an identifier, so a UI test could not
     /// tell which region holds a control.
     @Test func everyRegionHasItsOwnIdentifier() {

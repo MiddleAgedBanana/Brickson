@@ -38,6 +38,9 @@ struct HomeButtonStyle: ButtonStyle {
     /// selection never depends on colour alone, even where the label had to
     /// drop its icon to fit.
     var isSelected = false
+    /// The room beside the label: the usual inset, or Emergency's
+    /// (`HomeShape.emergencyLabelInset`).
+    var sideInset = HomeShape.labelInset.horizontal
 
     /// Small enough that the label inset (`HomeShape.labelInset`) stays clear
     /// of the curve.
@@ -54,7 +57,7 @@ struct HomeButtonStyle: ButtonStyle {
         configuration.label
             // Room between the label and the edge. Small on purpose: the label
             // fits itself to what is left (`FittedLabel`).
-            .padding(.horizontal, HomeShape.labelInset.horizontal)
+            .padding(.horizontal, sideInset)
             .padding(.vertical, HomeShape.labelInset.vertical)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .foregroundStyle(look.isFilled ? Color.white : Color.primary)
