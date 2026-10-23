@@ -457,9 +457,10 @@ private struct SafetyRow: View {
         .accessibilityInputLabels(HomeControlNames.emergency.inputLabels)
     }
 
-    /// Never disabled: starting the alarm again while it sounds changes
-    /// nothing (`AttentionAlertPlayer.start()`), and a control that greys
-    /// out while the alarm sounds would look broken to the person calling.
+    /// Never disabled: choosing it again while the alarm sounds never
+    /// silences it (`AttentionAlertPlayer.start()`), and a control that
+    /// greys out while the alarm sounds would look broken to the person
+    /// calling.
     /// It tells VoiceOver it makes its own sound (`playsSound`).
     private var getAttention: some View {
         Button {
