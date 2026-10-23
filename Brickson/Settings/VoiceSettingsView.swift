@@ -288,6 +288,9 @@ private struct VoiceRowView: View {
 private struct PersonalVoiceSection: View {
     @Environment(SpeechService.self) private var speech
     @Environment(SettingsActivity.self) private var activity: SettingsActivity?
+    /// Inside Assistive Access the card gives only the written path
+    /// (`SettingsAppLink`).
+    @Environment(\.accessibilityAssistiveAccessEnabled) private var insideAssistiveAccess
     @State private var couldNotOpenSettings = false
     /// The Ask button was used since the screen opened.
     @State private var asked = false
@@ -301,7 +304,10 @@ private struct PersonalVoiceSection: View {
             // launch, for now"), so the button shows only under the policy
             // that leaves the question to this screen.
             canAsk: speech.personalVoiceAskPolicy == .fromSettings,
-            canOpenSettings: Self.canOpenPersonalVoiceSettings,
+            canOpenSettings: SettingsAppLink.offersButton(
+                insideAssistiveAccess: insideAssistiveAccess,
+                systemCanOpen: Self.canOpenPersonalVoiceSettings
+            ),
             askedOnThisVisit: asked
         )
         let offersAsking = guidance.action == .askPermission
