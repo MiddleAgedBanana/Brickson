@@ -71,7 +71,7 @@ TestFlight group before the gate passes, and it goes out once items 1 to
 | # | Item | What it delivers | Owner | Status (2026-10-21) |
 |---|---|---|---|---|
 | 1 | Current toolchain | CI and the Mac build with Apple's newest released Xcode; the minimum iOS decided | Toolchain and iOS version targets | Landed with PR #12 on 2026-10-21: CI builds with Apple's newest released Xcode, and the minimum iOS is 26.0, decided from two rules |
-| 2 | Test seams and CI evidence | Launch options for UI tests (in-memory library, fresh settings, text size, appearance), an iPhone run in the UI tests job, result bundles from CI, the String Catalog synced and checked | Test seams and CI evidence | Launch options, UI tests on iPad then iPhone, kept result bundles and the String Catalog check landed with PR #13 on 2026-10-21; uploading the result bundles from CI waits on a `tests.yml` change the owner commits |
+| 2 | Test seams and CI evidence | Launch options for UI tests (in-memory library, fresh settings, text size, appearance), an iPhone run in the UI tests job, result bundles from CI, the String Catalog synced and checked | Test seams and CI evidence | Launch options, UI tests on iPad then iPhone, kept result bundles and the String Catalog check landed with PR #13 on 2026-10-21; since PR #28 (2026-10-22) each CI job keeps its result bundles as a download for 14 days ([`log/2026-10-22-ci-test-results.md`](log/2026-10-22-ci-test-results.md)) |
 | 3 | An honest Home on both devices | Words never break, every category visible, the starter library without scrolling, sized from the space available rather than the device model | Phone layout and word fitting, then a new thread for the wells and the engine | Labels that fit themselves, four categories that never scroll sideways, three phone columns and Home's slot plan in the Phone layout pull request; Home's scan order (quick controls first, regions as containers) and Voice Control names in the accessibility first pass ([`log/2026-10-22-home-scan-order-and-names.md`](log/2026-10-22-home-scan-order-and-names.md)); the wells, the rest of item 3's accessibility list, and no scrolling on small phones at large text, are still to build |
 | 4 | Get Attention and a sturdier speech engine | A start-only alarm with Stop elsewhere; one owner for the audio session; the code audit's speech fixes (M1, L1, L3, L4) | Speech engine and Get Attention | In progress; on-screen placement builds the wells of DECISIONS.md, "Home's slot plan" |
 | 5 | Typing | A composer that does not care which keyboard feeds it, a draft that survives, a probe that measures the real keyboard; then typing on Home under a safety band the keyboard never covers | Typing foundation, then a new thread | Foundation built on 2026-10-21 (`MessageComposer`, `DraftStore`, the keyboard probe; [`log/2026-10-21-typing-foundation.md`](log/2026-10-21-typing-foundation.md)); typing on Home waits for items 3 and 9 and gets a fresh thread |
@@ -181,8 +181,10 @@ Each owning piece of work checks its findings before acting. The biggest:
 - iPhone Duo and other folding or resizable windows are not planned for,
   and App Store submissions will need iPhone Duo screenshots from April
   2027 (App Store Connect release notes, 2026-10-15). *(the layout engine, a new thread; App Store readiness and ASO)*
-- No screenshots or result bundles leave CI, so cloud agents cannot see
-  what the UI tests saw. *(Test seams and CI evidence)*
+- Since PR #28 (2026-10-22) each CI job keeps its result bundles for 14
+  days, and since PR #31 a cloud agent can read them on Linux (AGENTS.md,
+  *Gotchas*), but only by hand: no script yet lists and extracts a
+  result's attachments. *(Test seams and CI evidence)*
 - No release or TestFlight runbook, and no plan for version and build
   numbers. *(App Store readiness and ASO; Toolchain and iOS version
   targets)*
