@@ -72,7 +72,11 @@ were fixed. Code that changed:
   `Color(uiColor: .systemBackground)` in Settings and setup: the same
   colour, now in one place beside the measured fills, and a new
   `PaletteTests` case pins it to the system background the other cases
-  measure, in all four appearances.
+  measure: its UIKit colour in all four appearances, and the SwiftUI
+  colour itself, resolved by SwiftUI, in light and dark. (CodeRabbit
+  suggested turning `screen` back into a `UIColor` instead; reports say
+  that conversion keeps one appearance only, so the dark checks would
+  have compared the wrong colour.)
 - **Imports say what a file uses:** `import UIKit` removed where unused
   (`SettingsTests`, `StarterLabelFitTests`), added where UIKit was used
   without it (`HomeLayoutTests`, `Palette`), and `LaunchTests` imports

@@ -1,3 +1,4 @@
+import SwiftUI
 import Testing
 import UIKit
 @testable import Brickson
@@ -56,14 +57,29 @@ struct PaletteTests {
         }
     }
 
-    /// Settings and setup draw `Palette.screen`. Changing it to any colour
-    /// but the system background measured below fails this.
+    /// Settings and setup draw `Palette.screen`. Changing it, or the UIKit
+    /// colour it is made from, to anything but the system background
+    /// measured below fails this. UIKit checks `screenColor` in all four
+    /// appearances. SwiftUI resolves `screen` itself in light and dark: a
+    /// SwiftUI colour turned back into a `UIColor` keeps one appearance
+    /// only, and SwiftUI's environment cannot set Increase Contrast.
     @Test func theFamilyScreensUseTheMeasuredScreen() {
         for appearance in Self.appearances {
             let drawn = Palette.screenColor.resolvedColor(with: appearance.traits)
             let measured = UIColor.systemBackground.resolvedColor(with: appearance.traits)
-            #expect(drawn == measured, "Palette.screen, \(appearance.name)")
+            #expect(drawn == measured, "Palette.screenColor, \(appearance.name)")
         }
+        var resolved: [Color.Resolved] = []
+        for scheme in [ColorScheme.light, .dark] {
+            var environment = EnvironmentValues()
+            environment.colorScheme = scheme
+            let drawn = Palette.screen.resolve(in: environment)
+            let measured = Color(uiColor: .systemBackground).resolve(in: environment)
+            #expect(drawn == measured, "Palette.screen, \(scheme)")
+            resolved.append(drawn)
+        }
+        // Light and dark differ, so the environment reached the colour.
+        #expect(resolved.first != resolved.last)
     }
 
     @Test func everyFillStandsOutFromTheScreen() throws {
