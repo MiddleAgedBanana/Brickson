@@ -603,6 +603,8 @@ How it behaves, and where it knowingly falls short:
   - Again sits beside the message text the person reads, and Yes sits
     just under it: under a gaze profile a look that rests on the text could
     snap to them. *Home's slot plan* moves Again into the safety row.
+    *2026-10-23:* done (*Settings on Home*); Yes, No and Again still
+    border the message.
   - The selected category swaps its symbol for a check mark; symbols
     differ in width, so the words beside it can shift slightly inside
     their button. The button itself does not move.
@@ -733,6 +735,10 @@ running on these windows):
   tiles of about 109×68pt, but three floor-sized rows do not fit under
   this arrangement in dwell, switch or gaze profiles, so the engine needs
   another arrangement for this window, never scrolling.
+- A 375×667pt phone window with Bold Text on (2026-10-23, *Settings on
+  Home*): scrolls at the default size, with tiles about 64pt against the
+  99pt minimum, because the heavier words fit neither one safety row nor
+  Settings beside the categories there, so both take a second row.
 - A 402×874pt phone window (iPhone 17 class): fits at the default text
   size, which `HomeLayoutTests` checks. At AX5 the grid scrolls: the quick
   controls and categories grow to hold one line of their words at the
@@ -821,7 +827,9 @@ never where it is.
   thread measures it per profile and either removes it by placement (a
   wider gap, or a harmless control nearest the message) or brings the
   measured cost to the owner to accept or reject, before the slot plan
-  ships in a dwell, switch, head or gaze profile.
+  ships in a dwell, switch, head or gaze profile. *2026-10-23:* reduced,
+  still open; *Settings on Home* says by how much and what decides the
+  rest.
 - **Open: a library with more than four everyday categories.** Region B
   is an L (Stop Alert's column beside the categories), which cannot scroll
   as one standard container, so the stand-in's answer (the category
@@ -866,6 +874,8 @@ R0 item 3's accessibility work (docs/ACCESSIBILITY.md, sections 1 and 3;
   first swipe now lands on Yes, not on the message. When the slot plan's
   wells are built, the controls that join C (Get Attention, and Again
   moving there) and A (Phrases and Type) keep this order of regions.
+  *2026-10-23:* Again is in C, reached after Emergency, and Settings in
+  B, after the categories (*Settings on Home*).
 - **Each region is an accessibility container** (`.contain`), so its
   controls are reached together and Switch Control can offer it as a
   group when Group Items is on. The regions carry identifiers for tests
@@ -892,6 +902,68 @@ R0 item 3's accessibility work (docs/ACCESSIBILITY.md, sections 1 and 3;
 *Before:* none. Home was reached in its order on screen (the message and
 Again first), as one flat list, and its controls answered only to their
 labels.
+
+## Settings on Home
+
+*2026-10-23. Default: the owner left these choices to the project.
+Reversible if the owner objects.* The Settings button that ROADMAP R0
+item 7 left for later ([`work/settings-on-home.md`](work/settings-on-home.md),
+[`log/2026-10-23-settings-on-home.md`](log/2026-10-23-settings-on-home.md)).
+
+- **Settings is the last cell of region B,** at the trailing end of the
+  categories, where *Home's slot plan* puts it: a column as tall as the
+  category rows where it and the categories fit side by side, otherwise a
+  row of its own under them (the 320pt Slide Over window, and a 375pt
+  phone with Bold Text). It is a standard `Button` styled like Home's
+  other controls, named "Settings" and nothing else, and assistive
+  technologies reach it after the categories. A library with more than
+  four everyday categories scrolls only the categories; Settings stays.
+- **Again joins the safety row, which reads Yes, No, Again, Emergency.**
+  The slot plan moves Again into C. Emergency goes at the trailing end
+  because Settings' Back to Talking sits over A's trailing end, and until
+  A's trailing column (Phrases and Type) is built, what lies nearest under
+  Back to Talking is C's trailing control. Beside the message, that was
+  Again: a look still resting where Back to Talking was would say the last
+  message again. Now it is Emergency, which only shows the emergency
+  phrases, by nearest centre and nearest edge on every window scored (the
+  work file's table), and `SettingsOnHomeTests` checks the running app on
+  CI's iPad and iPhone at the default and largest text sizes. Where one
+  row does not hold Again and Emergency at their minimum widths, Yes, No
+  and Emergency keep the first row and Again takes a row of its own under
+  it. The slot plan's regular-width order (Emergency first, Get Attention
+  last) comes back with Phrases and Type; until then, whoever puts Get
+  Attention and Stop on Home keeps a control that says nothing nearest
+  under Back to Talking, or the test fails. Again is reached after
+  Emergency by assistive technologies, though it sits before it.
+- **Widths come from the words.** Each control's minimum is its starter
+  word at the default text size, with the label's slack and inset,
+  measured with the real fonts, and wider with Bold Text on, which is
+  measured at the heaviest weight (`HomeShape.MinimumWidths`, checked by
+  `StarterLabelFitTests`; `HomeShapeTests` checks every width from 288 to
+  1400pt). So Bold Text can change the arrangement, as text size changes
+  heights. The Bold Text minimums were first worked out from Apple's SF
+  Pro font, whose measured widths matched CI's within half a point.
+- **The first-run hint** shows in the message area, in place of the
+  placeholder, until Family Setup has been opened once (*First launch
+  opens Home; setup lives in Settings*).
+- **"Yes and No border the message" stays open, reduced** (*Home's slot
+  plan*). The message now spans the width with no control beside it; the
+  share of it whose nearest control speaks fell from about 89 to 95% to
+  about 61 to 67% on phones, and from about 72 to 75% to about 60 to 65%
+  on iPads, by either rule. Yes, No and Again still border it. A device
+  check decides the rest: whether Snap to Item and Dwell pick the nearest
+  centre or the nearest edge. If the nearest edge, a harmless control
+  across the message's full width (Emergency in a row of its own under
+  the message) removes it, at about 72pt of height on a phone that the
+  engine must find. If the nearest centre, no placement with C under A
+  removes it, and the measured cost goes to the owner before a dwell,
+  switch, head or gaze profile ships. The layout engine's thread owns it.
+- **A 375pt phone with Bold Text scrolls its grid at the default size**
+  (*Where the grid still scrolls*): breaking or cutting words is worse.
+
+*Before:* Home had no Settings button, so only UI tests opened Settings
+(`--screen=settings`, which `SettingsTests` still use to start there),
+and Again sat beside the message (*Home version 0 is a stand-in*).
 
 ## Typing is a state of Home
 

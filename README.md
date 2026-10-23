@@ -36,8 +36,10 @@ living with ALS keep expressing themselves, in their own words.
 The initial implementation includes:
 
 - A starter phrase library organized into everyday categories.
-- Phrase buttons that speak on the first activation, plus Yes, No and an
-  Emergency category on Home.
+- Phrase buttons that speak on the first activation, plus Yes, No, Again
+  and an Emergency category on Home.
+- Settings for the family, opened from Home's Settings button: voices,
+  setup guides and the privacy policy.
 - Speech through Apple's built-in speech system, with Personal Voice
   selection when permission and availability allow it.
 - Local phrase storage with SwiftData, without CloudKit sync.
@@ -45,7 +47,7 @@ The initial implementation includes:
   restarting a phrase that is already being spoken.
 - Unit tests for core logic and simulator UI tests for the initial Home flow.
 
-Typing, phrase editing, Settings, backup export and the Get Attention alarm
+Typing, phrase editing, backup export and the Get Attention alarm on Home
 are not implemented yet. The current Home layout is a foundation; the
 profile-based layout engine and validation across access methods remain
 planned work. See the [handoff](docs/HANDOFF.md) for verification evidence,

@@ -1,7 +1,7 @@
 # Settings on Home
 
 *Roadmap: R0 item 7 (Settings and first run), the part it left for later:
-Home's Settings button. Owner: the Settings on Home thread. Status: plan.*
+Home's Settings button. Owner: the Settings on Home thread. Status: building.*
 
 ## Intent
 

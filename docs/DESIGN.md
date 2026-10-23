@@ -186,7 +186,10 @@ Today's Home is still the stand-in (docs/DECISIONS.md, "Home's stand-in
 layout"). Since PR #22 its eager rows fit the available space: three
 phrase columns wherever three 107pt tiles fit, four visible category
 buttons, labels fitted in whole words, and the message with Again beside
-it. Main records the small-window scrolling gaps separately. The slot
+it. Since 2026-10-23 Again is in the safety row (Yes, No, Again,
+Emergency) and Settings is at the categories' trailing end
+(docs/DECISIONS.md, "Settings on Home"). Main records the small-window
+scrolling gaps separately. The slot
 plan and its wells are still to be built; these drawings are not a
 picture of the running app.
 
