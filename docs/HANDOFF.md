@@ -39,6 +39,14 @@ library cannot be saved, the app speaks from a filled in-memory library
 and says changes will not be kept. The screen never locks. Ported code:
 [`docs/PORTING.md`](PORTING.md).
 
+The design reference and its specification are in [DESIGN.md](DESIGN.md)
+and [work/design-screens.md](work/design-screens.md). PR #20's
+[reconciliation record](log/2026-10-22-design-reconciliation.md) preserves
+the landed slot decisions and lists drawings, placement questions and
+measurements still pending before implementation follows them. The local
+unit gate passed all 460 tests on iPad Pro 13-inch (M5), iOS 27.0, with
+Xcode 27.1 (27A9275); final-head CI is pending.
+
 ## Verification
 
 - **GitHub CI** since PR #12 (merged 2026-10-21) builds with Apple's
@@ -74,7 +82,10 @@ and says changes will not be kept. The screen never locks. Ported code:
   unit-tested with fakes), or sound. Windowed iPad
   sizes and iPhone Duo poses are untested. The first UI test on a
   just-started CI simulator failed intermittently before PR #13's warm-up
-  launch (AGENTS.md, *Gotchas*).
+  launch (AGENTS.md, *Gotchas*). Apple's accessibility audit never sees
+  Home's "Speaking" line: audits wait for speech to finish, because one
+  that ran while the line left reported text with no element (issue #30,
+  [`log/2026-10-22-audit-still-screen.md`](log/2026-10-22-audit-still-screen.md)).
 
 ## Known gaps
 
@@ -183,7 +194,7 @@ release in docs/ROADMAP.md when no thread has it yet.
 - The privacy policy describes features not built yet; each is built or its
   sentence deleted before release (docs/APP-STORE.md, section 3, lists
   each sentence). *(App Store readiness and ASO)*
-- The app icon is a placeholder; `design/brand/` is not installed. *(Figma and Claude Design screens)*
+- The app icon is a placeholder; `design/brand/` is not installed. *(Release chores, R0 item 11)*
 - Siri's alternative name "Brick Son" (`INAlternativeAppNames`) has no
   effect yet: Apple applies it only to apps with Siri support, which
   Brickson does not have (docs/DECISIONS.md, "App identity"). *(R2 Siri
@@ -289,6 +300,25 @@ Simulators cannot show these. Record each result in a `docs/log/` file
 
 - The `main` ruleset matched docs/DECISIONS.md on 2026-10-15 (GitHub's
   API); its required checks are "Unit tests" and "UI tests".
+  The UI job now allows 75 minutes for both device families, and Home's
+  layout test uses bounded live queries while retaining every tile's
+  visibility and position checks. After incorporating `main` at `d79d836`,
+  its audit helper also keeps issue-time captures and native XCTest
+  findings. CI reported an unidentified AX5/light text-accessibility
+  finding; the unchanged focused local test passed, but no cause is
+  established. A temporary contrast defect failed as expected and retained
+  issue-time and native evidence; its app mutation was removed. Final
+  units passed 460/460; iPad and iPhone UI each passed 33 tests with four
+  existing probe skips on the tree incorporating `d79d836`. A further
+  merge incorporates `main` at `479175d` (PR #31): its still-screen waits
+  and two runner tests remain alongside the diagnostic captures and native
+  findings. Its unit gate passed 460/460 with the catalog unchanged;
+  both combined UI suites completed with 34 passed, one failed and four
+  existing skips per device. The AX5 light/dark Speaking waits failed,
+  with the status visibly still present and CoreAudio startup errors in
+  the iPad app logs. A fresh-simulator check and pushed-head CI are pending.
+  Earlier-head CI also failed, with its native audit evidence now retained
+  ([`log/2026-10-22-ci-home-test.md`](log/2026-10-22-ci-home-test.md)).
 - CodeQL scans the workflow files and the Python scripts, not the Swift
   code, on purpose (docs/DECISIONS.md, *Code scanning*); the failed Swift
   attempt of 2026-10-10 is still listed on the Tool status page.

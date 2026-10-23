@@ -170,6 +170,13 @@ extension XCTestCase {
     /// the phrase itself, the person's own words, which VoiceOver must read
     /// exactly as written; the audit flagged the starter phrase "Maybe." on
     /// CI. An empty tile label still fails.
+    ///
+    /// The audit is only evidence about a still screen. It reads a
+    /// screenshot and the accessibility tree a moment apart, so text that
+    /// leaves the screen in between is reported as "Potentially
+    /// inaccessible text" on no element: Home's "Speaking" line did that on
+    /// CI when the voice finished just as the audit began (issue #30). So
+    /// it first waits for speech to finish (`waitForSpeechToFinish`).
     @MainActor
     func assertPassesAccessibilityAudit(
         _ app: XCUIApplication,
@@ -177,10 +184,16 @@ extension XCTestCase {
         file: StaticString = #filePath,
         line: UInt = #line
     ) throws {
-        try AccessibilityAuditRunner.perform {
+        try AccessibilityAuditRunner.perform(settle: {
+            waitForSpeechToFinish(in: app, context: context, file: file, line: line)
+        }) {
             try app.performAccessibilityAudit { issue in
                 MainActor.assumeIsolated {
-                    if isPhraseTileLabelGuess(issue) { return }
+                    if isPhraseTileLabelGuess(issue) { return true }
+                    // Some findings identify no element. Keep the screen
+                    // and tree at reporting time, not only before the audit
+                    // changes Dynamic Type, and retain Apple's native issue.
+                    self.attachCapture(app, name: "Audit failure, \(context), type \(issue.auditType.rawValue)")
                     let element = issue.element.map {
                         "\"\($0.label)\" (identifier \"\($0.identifier)\", frame \($0.frame))"
                     } ?? "no element"
@@ -188,12 +201,36 @@ extension XCTestCase {
                         "Accessibility audit (\(context); type \(issue.auditType.rawValue)): \(issue.compactDescription) on \(element). \(issue.detailedDescription)",
                         file: file, line: line
                     )
+                    // The contextual failure above survives a later service
+                    // timeout. False also preserves XCTest's original issue
+                    // and any diagnostic attachments it can provide.
+                    return false
                 }
-                // Reported above (or expected); returning true stops the
-                // audit failing a second time with less detail.
-                return true
             }
         }
+    }
+
+    /// Waits until Home's "Speaking" line has gone: the voice has finished,
+    /// or the speech watchdog has ended the phrase (invariant 4). Returns
+    /// at once when nothing is speaking. Nothing else on Home changes by
+    /// itself, so the screen is then still. Fails if "Speaking" still shows
+    /// after `timeout`: speech that never ends is a failure of its own.
+    @MainActor
+    func waitForSpeechToFinish(
+        in app: XCUIApplication,
+        context: String,
+        timeout: TimeInterval = 30,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        // The status line's English words (StatusLines in HomeView). Its
+        // hidden copies, which keep the line's height, carry no label.
+        let speaking = app.staticTexts["Speaking"]
+        XCTAssertTrue(
+            speaking.waitForNonExistence(timeout: timeout),
+            "\"Speaking\" still showed \(Int(timeout)) s later (\(context)): the phrase never ended",
+            file: file, line: line
+        )
     }
 
     /// Samples the empty gutter between Yes and No, not the coloured
