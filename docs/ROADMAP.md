@@ -142,7 +142,8 @@ touches has a recorded result.
 **Release gate.** No build goes to App Review until: the R0 items below
 are complete, including item 11's TestFlight pilot; the device checks they
 touch are logged in `docs/log/`; UI tests are green on an iPhone and an
-iPad at the default and largest text sizes, light and dark; and the
+iPad at the default and largest text sizes, light and dark; item 13's
+iPhone Duo checks are logged and its screenshots made; and the
 privacy policy, README and website say only what the build does. A
 stand-in Home would likely fail App Review's completeness and minimum
 functionality guidelines (2.1 and 4.2). That pilot is the one external
@@ -163,6 +164,7 @@ TestFlight group before the gate passes, and it goes out once items 1 to
 | 10 | App Store readiness | Apple's current requirements, store text with no price words, accessibility and privacy labels, screenshots, review notes, the privacy policy's unbuilt sections built or deleted | App Store readiness and ASO | In progress (`docs/APP-STORE.md`, `docs/ASO.md`). The website's accessibility page, and the policy without the sections R0 does not ship, landed on 2026-10-23 ([`log/2026-10-23-accessibility-page-and-privacy-trim.md`](log/2026-10-23-accessibility-page-and-privacy-trim.md)); the policy's R0 sentences are marked true or deleted at release |
 | 11 | Release chores | The brand icon installed, a license decision, the App Store Connect record (after the name is confirmed), TestFlight to the owner and a small group that includes a person living with ALS and a speech-language pathologist | Owner, with items 9 and 10 | Waiting on decisions |
 | 12 | Plan and maintain | This roadmap, the decisions list, the handoff, the way of working ([`docs/SDLC.md`](SDLC.md)) | Roadmap, decisions and repo review | Landed with PR #15; each pull request keeps its own rows current |
+| 13 | Ready for iPhone Duo | Home, Settings and setup checked on iPhone Duo's outer and inner displays, open, partially folded and rotated, and in Split View, in the iPhone Duo simulator on the current Xcode; whatever that finds fixed, with the owner's two fold answers built and dwell scoring that covers folding; a Duo family in the UI tests once CI's image has the simulator; the Duo screenshots item 10 submits | A Mac thread for the simulator run, then the layout engine thread, which builds the owner's fold choices (docs/DECISIONS.md, "iPhone Duo", *The fold*) | Planned 2026-10-23: Apple's requirements and an assessment of Brickson against them ([`log/2026-10-23-iphone-duo-readiness.md`](log/2026-10-23-iphone-duo-readiness.md)). Brickson already builds with the iOS 27.1 SDK, so it is already treated as optimized for iPhone Duo; it has never run on one. Screenshots are required from April 2027. A change it makes to what a person sees starts with a work file ([`docs/SDLC.md`](SDLC.md)) |
 
 **Left out of R0 on purpose:** stage profiles, prediction, recorded
 phrases, Siri and Shortcuts, caregiver alerts and the listener display.
@@ -190,7 +192,9 @@ where anything is, and the dwell-safety scoring passes for every profile.
   (invariant 10; [`docs/LESSONS.md`](LESSONS.md), "Score chains, not single hops").
 - **The phone as a first-class device**, including whether it keeps
   portrait only (iOS 27 and foldable iPhones bring new orientations and
-  window shapes; DECISIONS.md, "Orientations").
+  window shapes; DECISIONS.md, "Orientations"). iPhone Duo's own checks
+  come earlier, in R0 item 13, and its inner display ignores the
+  portrait-only setting already (DECISIONS.md, "iPhone Duo").
 - **Who chooses the profile**: the family, in Settings; accessibility
   features the system reports may suggest a profile, never switch it.
 - **Recorded phrases, first two stages**: playing a recording attached to
@@ -264,9 +268,10 @@ Each owning piece of work checks its findings before acting. The biggest:
 - The layout blueprint reads the screen and a table of devices; the
   engine must take only the window's space (now a rule: AGENTS.md, *Layout
   on every device and window*). *(the layout engine, a new thread)*
-- iPhone Duo and other folding or resizable windows are not planned for,
+- iPhone Duo and other folding or resizable windows were not planned for,
   and App Store submissions will need iPhone Duo screenshots from April
-  2027 (App Store Connect release notes, 2026-10-15). *(the layout engine, a new thread; App Store readiness and ASO)*
+  2027 (App Store Connect release notes, 2026-10-15). *(Planned since
+  2026-10-23 as R0 item 13)*
 - Since PR #28 (2026-10-22) each CI job keeps its result bundles for 14
   days, and since PR #31 a cloud agent can read them on Linux (AGENTS.md,
   *Gotchas*), but only by hand: no script yet lists and extracts a

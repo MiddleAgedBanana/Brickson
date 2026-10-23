@@ -122,6 +122,9 @@ words in App Shortcuts): rewrite it to match what ships.
   read the order of Home's buttons, and that a unit test
   (`HomeRegionTests`) checks the message's place, since the message is
   not a button and `HomeAccessibilityOrderTests` does not read it.
+- A merge of `main` (PR #42, the pushing rule, and PR #41, iPhone Duo),
+  keeping this pull request's privacy policy line in docs/HANDOFF.md,
+  *Known gaps*, beside #41's new iPhone Duo line.
 
 ## Verified
 
