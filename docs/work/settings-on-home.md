@@ -210,17 +210,27 @@ window less Home's 16pt margins).
     `CategoriesAndSettings`; Home takes a binding to Settings' cover.
   - `Brickson/Settings/SettingsView.swift`: `SettingsButton` draws a
     fitted label in Home's button style, with its Voice Control name.
+    Added after the first UI runs: the bar only as tall as its
+    controls, the sound line at the cover's foot, and
+    `SettingsRootLayout`, which places the root's row and note.
+  - `Brickson/Layout/SettingsRootColumns.swift` (added after the second
+    UI run): where the root's row and note go, from the width;
+    `Brickson/Settings/SettingsComponents.swift` points to it.
   - `Brickson/App/BricksonApp.swift`: one `showsSettings` state, opened by
     Home's button or at launch by `--screen=settings`.
   - `Brickson/Home/ControlNames.swift`, `Brickson/Home/HomeRegion.swift`:
     Settings' name; Again and Settings reached last in their regions.
   - Tests: `HomeShapeTests`, `StarterLabelFitTests`, `ControlNamesTests`,
-    `HomeRegionTests`; UI: the new `SettingsOnHomeTests`, and
+    `HomeRegionTests`, `SettingsRootColumnsTests`; UI: the new `SettingsOnHomeTests`, and
     `HomeAccessibilityOrderTests`, `HomeReachabilityTests`,
     `HomeLayoutTests`, `LaunchTests` (it measured the placeholder, which a
     first launch now replaces with the hint), `SettingsTests` (comment).
-  - Docs: DECISIONS ("Settings on Home", notes in the Home sections),
-    HANDOFF, ROADMAP item 7, ACCESSIBILITY (two rows), the log record.
+  - Docs: DECISIONS ("Settings on Home", notes in the Home sections,
+    `SettingsOnHomeTests` in the frameworks table), HANDOFF, ROADMAP
+    item 7, ACCESSIBILITY (four rows), AGENTS.md (the `ViewThatFits`
+    gotcha, `SettingsRootColumns` among the plain types), DESIGN.md
+    (the slot plan's Again and Settings, and the chain), README.md and
+    APP-STORE.md (Settings is reachable), this file and the log record.
 - **Order of work:** the unit tests first (they fail against today's
   `HomeShape`, which has no safety-row or Settings arrangement), then the
   code, then the UI tests and the docs.

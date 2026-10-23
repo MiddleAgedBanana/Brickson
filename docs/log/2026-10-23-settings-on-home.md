@@ -146,7 +146,10 @@ had no conflicts.
 - `5926afd` Place Settings' root with a layout instead of ViewThatFits
 - `e412f50` Record the second UI run and the ViewThatFits gotcha
 - `c0f9d20` Merge main (PR #34) into Settings on Home
-- This record's merge note, and `SettingsOnHomeTests` in the frameworks table.
+- `89aefc1` List Settings on Home's UI test under the UIKit exceptions
+
+The pull request's commit list has the rest: after `89aefc1`, commits
+change only this record and the work file's inventory.
 
 ## Verified
 
