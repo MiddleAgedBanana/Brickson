@@ -3,7 +3,7 @@
 *Roadmap: docs/ROADMAP.md, Wave 3 item 3, "The layout engine, with no
 screen change yet" (R0 item 3, and R1's profile layout engine); this
 file also covers items 4 (Home on the engine) and 6 (Home on iPhone Duo,
-in every pose). Owner: the Layout engine thread. Status: spec.*
+in every pose). Owner: the Layout engine thread. Status: plan; item 3 built.*
 
 ## Intent
 
@@ -193,3 +193,63 @@ type that nothing calls yet, and Home moves onto its frames in item 4.
   - *Compact up to 663 points.* Windows from 592 to 663 points wide lose
     the regular arrangement, because its one-row safety row needs five
     columns of Emergency's width.
+
+## Plan
+
+- **Files that change**, all owned by the Layout engine thread for item
+  3:
+  - `Brickson/Layout/HomeLayout.swift`: the engine, pure, Foundation
+    only, so its tests also run with Swift on Linux.
+  - `Brickson/Layout/HomeLayoutText.swift`: one line of each label style
+    from `LabelFont`, the engine's only link to the fonts.
+  - `BricksonTests/Layout/HomeLayoutEngineTests.swift`: the rules on
+    frames, with no fonts. `HomeLayoutTests` is already the UI test that
+    checks the running Home, hence the name.
+  - `BricksonTests/Layout/HomeLayoutEngineFontTests.swift`: the engine's
+    text sizes and widths against the real fonts (CI only).
+  - `BricksonTests/Layout/StarterLabelFitTests.swift`: its two fit
+    helpers shared with the font tests, unchanged otherwise.
+  - docs/DECISIONS.md, docs/HANDOFF.md, docs/ROADMAP.md,
+    docs/ACCESSIBILITY.md, docs/PORTING.md, AGENTS.md and a record in
+    docs/log/.
+- **Order of work:**
+  1. Item 3, this pull request: the engine and its tests, no screen
+     change.
+  2. Item 4: Home reads its frames from the engine and `HomeShape` goes.
+     Its spec adds the arrangement for 320-point windows and the message
+     there, the tile floor that follows the tile's width, the Bold Text
+     tiles, and Back to Talking over Phrases' frame (docs/DESIGN.md);
+     its UI tests pin the frames on CI's iPhone and iPad at default and
+     AX5; it is checked against the Figma file; and the owner answers
+     *Yes and No border the message* before R1's profiles.
+  3. Item 5, typing on Home, on the engine's frames: Speak in Again's
+     slot, the message as the typing field, the keyboard's room.
+  4. Item 6, iPhone Duo in every pose, once R0 item 13 has looked at the
+     open device: the engine moves slots off reserved regions.
+- **Risks:**
+  - The text sizes in the pure tests come from Apple's fonts measured on
+    Linux, which matched CI to half a point before; one point off at a
+    size would move a window in the table. Checked on CI by
+    `thePureTestsTextSizesAreTheRealOnes`.
+  - The new minimum widths and tile floors are predictions until CI
+    draws them; `HomeLayoutEngineFontTests` checks each with UIKit and
+    SwiftUI.
+  - The sweep scores about ten thousand layouts: 19 seconds in a Linux
+    debug build. If CI finds it slow, the sweep's step grows, not its
+    range.
+- **Proof.** Each test with a change that made it fail when tried
+  (docs/LESSONS.md, "A check that cannot fail is not a check"):
+  - Categories grow past the safety row after the keyboard cut:
+    `aCategoryIsNeverTallerThanTheSafetyRow`,
+    `aHeldLookAfterStopMeetsACategory`.
+  - The safety row grows into the keyboard's room: `growthStopsAtTheKeyboard`.
+  - The gap between regions falls to the 8 points between controls: the
+    Stop, Phrases and Type chain tests and
+    `roomGoesToTheGapsThenTheSafetyRowThenTheCategories`.
+  - Get Attention swaps places with Emergency:
+    `compactPutsGetAttentionDirectlyUnderEmergency`.
+  - The grid never scrolls, or claims the starter library always fits:
+    `onlyTheGridFollowsTheLibrary`, `theShortfallIsReported`.
+  - Floors ignore the person's text size:
+    `controlsHoldOneLineOfTheirWords`.
+  - No device check is added: nothing on screen changes.
