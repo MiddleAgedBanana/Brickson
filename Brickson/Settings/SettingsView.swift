@@ -201,14 +201,30 @@ private struct SettingsAudioStatus: View {
     }
 }
 
-/// The root's Family Setup row as drawn, its button style's insets
-/// included. Family Setup's opening text is at least this tall, so the
-/// whole of the spot just activated lands on words (AGENTS.md,
-/// invariant 10). It is measured, because the style's insets are the
-/// system's, not ours.
+/// Rows as drawn, so the screen each opens can put something harmless
+/// under the spot just activated (AGENTS.md, invariant 10). They are
+/// measured, because the button style's insets are the system's, not ours.
 @Observable
 final class SettingsLanding {
+    /// The root's Family Setup row, its insets included. Family Setup's
+    /// opening text is at least this tall, so the whole of the spot just
+    /// activated lands on words.
     var rootRowHeight: CGFloat = 0
+    /// Family Setup's Set Up Step by Step row: its top in Family Setup's
+    /// content (`SettingsMetrics.contentSpace`), and its label's height
+    /// before the insets. The first step puts Learn About Each Way there,
+    /// at least as tall, so a look held after choosing the row meets a row
+    /// that only navigates, never an answer, which saves
+    /// (docs/DECISIONS.md, "One chain engine for dwell safety").
+    var guidedSetupRowTop: CGFloat = 0
+    var guidedSetupLabelHeight: CGFloat = 0
+
+    /// The least height of the first step's opening words, so the row after
+    /// them starts at `guidedSetupRowTop`: that top less the screen's top
+    /// gutter and the spacing between them.
+    var firstStepOpeningHeight: CGFloat {
+        max(0, guidedSetupRowTop - SettingsMetrics.gutter - SettingsMetrics.rowSpacing)
+    }
 }
 
 /// Settings' first screen: one large way into Family Setup, and a short

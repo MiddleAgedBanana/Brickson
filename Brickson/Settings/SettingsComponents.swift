@@ -15,6 +15,10 @@ enum SettingsMetrics {
     /// may reach it by a stray dwell, so its controls keep Home's size
     /// rather than a list row's.
     static let rowHeight: CGFloat = 64
+    /// The name of every Settings screen's scrolling content, from its top
+    /// gutter down (`SettingsScreen`). A frame measured in it on one screen
+    /// is the same place on the next, whatever either has scrolled.
+    nonisolated static let contentSpace = "settingsContent"
 }
 
 /// A full-width row that opens another screen or does one thing. The words
@@ -226,7 +230,7 @@ struct SettingsCard<Content: View>: View {
 }
 
 /// A scrolling Settings screen with the shared gutters, scroll activity and
-/// title.
+/// title. Its content is the coordinate space `SettingsMetrics.contentSpace`.
 struct SettingsScreen<Content: View>: View {
     let title: LocalizedStringKey
     @ViewBuilder let content: Content
@@ -237,6 +241,7 @@ struct SettingsScreen<Content: View>: View {
                 content
             }
             .padding(SettingsMetrics.gutter)
+            .coordinateSpace(.named(SettingsMetrics.contentSpace))
         }
         .recordsSettingsScrolling()
         .background(Palette.screen)

@@ -13,14 +13,15 @@ import XCTest
 ///   which only shows the emergency phrases. Before this, it was nearest
 ///   Again, which speaks.
 /// - Chains: on the way in, it also reads Family Setup and, where its row
-///   shows, Set Up Step by Step's first step, and has the chain engine
-///   follow every chain of held activations from Home's Settings and from
-///   each control of those screens, out to Home and back
-///   (`SettingsChains`, `ChainEngine`). Two kinds of hazard are known and
-///   expected, strictly, so each fails once it is gone: a held look saves
-///   an answer in the first step, and Settings closes under a look resting
-///   over Yes, No or Get Attention (docs/DECISIONS.md, "One chain engine
-///   for dwell safety"). Any other hazard fails.
+///   shows, Set Up Step by Step's first step and, where its link shows,
+///   the guide that link opens, and has the chain engine follow every
+///   chain of held activations from Home's Settings and from each control
+///   of those screens, out to Home and back (`SettingsChains`,
+///   `ChainEngine`). No chain may save an answer in the first step. One
+///   kind of hazard is known and expected, strictly, so it fails once it
+///   is gone: Settings closes under a look resting over Yes, No or Get
+///   Attention (docs/DECISIONS.md, "One chain engine for dwell safety").
+///   Any other hazard fails.
 ///
 /// "Nearest" is scored two ways, because how Snap to Item picks a target is
 /// a device check (docs/HANDOFF.md, *Checks that need a real device*): by
@@ -118,22 +119,31 @@ final class SettingsOnHomeTests: XCTestCase {
         XCTAssertEqual(landing.byEdge, ["familySetup"], "Home's Settings at \(settings) is nearest \(landing.byEdge) by edge in Settings (\(context)): \(cover)")
 
         // Further in, for the chains: Family Setup, then the first step of
-        // Set Up Step by Step where its row shows without scrolling. Each
-        // is read once the screen before it has gone.
+        // Set Up Step by Step where its row shows without scrolling, then
+        // the guide its link opens where the link shows. Each is read once
+        // the screen before it has gone.
         open("familySetup", leaving: "familySetup", in: app, context: context)
         let familySetup = try Self.onCover(screenControls(in: app))
         attachCapture(app, name: "family-setup-opened-\(context)".replacingOccurrences(of: ", ", with: "-"))
         var firstStep: [ScreenControl]?
+        var firstStepGuide: [ScreenControl]?
         if Self.onScreen(familySetup, in: window).contains(where: { $0.name == SettingsChains.guidedSetupRow }) {
             open("guidedSetup", leaving: "guidedSetup", in: app, context: context)
-            firstStep = try Self.onCover(screenControls(in: app))
+            let step = try Self.onCover(screenControls(in: app))
+            firstStep = step
             attachCapture(app, name: "first-step-opened-\(context)".replacingOccurrences(of: ", ", with: "-"))
+            if Self.onScreen(step, in: window).contains(where: { $0.name == SettingsChains.learnAboutEachWay }) {
+                open(SettingsChains.learnAboutEachWay, leaving: SettingsChains.learnAboutEachWay, in: app, context: context)
+                firstStepGuide = try Self.onCover(screenControls(in: app))
+                attachCapture(app, name: "first-step-guide-opened-\(context)".replacingOccurrences(of: ", ", with: "-"))
+            }
         }
         checkChains(
             home: home, screens: SettingsChains.Screens(
                 root: Self.named(Self.onScreen(cover, in: window)),
                 familySetup: Self.named(Self.onScreen(familySetup, in: window)),
-                firstStep: firstStep.map { Self.named(Self.onScreen($0, in: window)) }
+                firstStep: firstStep.map { Self.named(Self.onScreen($0, in: window)) },
+                firstStepGuide: firstStepGuide.map { Self.named(Self.onScreen($0, in: window)) }
             ),
             window: window, context: context
         )
@@ -182,9 +192,9 @@ final class SettingsOnHomeTests: XCTestCase {
 
     /// Follows every chain from Home's Settings and from each control of
     /// Settings' first screens (`SettingsChains`), and attaches what it
-    /// finds. Fails on a hazard of any other kind than the two known, on a
-    /// control the chains do not know, and, strictly, once a known kind is
-    /// no longer found: the first step's only where it was read.
+    /// finds. Fails on a chain that saves an answer, on a hazard of any
+    /// other kind than the one known, on a control the chains do not know,
+    /// and, strictly, once the known kind is no longer found.
     @MainActor
     private func checkChains(home: [ScreenControl], screens: SettingsChains.Screens, window: CGRect, context: String) {
         let homeControls = Self.onScreen(home, in: window)
@@ -214,16 +224,11 @@ final class SettingsOnHomeTests: XCTestCase {
         add(report)
 
         XCTAssertEqual(findings(.unexpected), [], "a chain through Settings meets a new hazard (\(context))")
+        // Closed by Learn About Each Way, where Set Up Step by Step's row
+        // was (docs/DECISIONS.md, "One chain engine for dwell safety").
+        XCTAssertEqual(findings(.savesAnAnswer), [], "a held look saves an answer in Set Up Step by Step (\(context))")
         let strict = XCTExpectedFailure.Options()
         strict.isStrict = true
-        if screens.firstStep != nil {
-            XCTExpectFailure(
-                "docs/DECISIONS.md, \"One chain engine for dwell safety\": a held look saves an answer in Set Up Step by Step",
-                options: strict
-            ) {
-                XCTAssertEqual(findings(.savesAnAnswer), [], "a held look saves an answer (\(context))")
-            }
-        }
         XCTExpectFailure(
             "docs/DECISIONS.md, \"One chain engine for dwell safety\": Settings closes under the look",
             options: strict

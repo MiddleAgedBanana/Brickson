@@ -28,10 +28,16 @@ struct FamilySetupView: View {
             CheckInCard(keepsItsPlace: checkInWasShown)
             SetupIssueText()
 
+            // Measured for the first step, which puts a row that only
+            // navigates where this one is (`SettingsLanding`).
             NavigationLink(value: SettingsRoute.guidedSetup(.access)) {
                 SettingsRowLabel(title: "Set Up Step by Step", systemImage: "list.number")
+                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { landing?.guidedSetupLabelHeight = $0 }
             }
             .settingsRowStyle()
+            .onGeometryChange(for: CGFloat.self) { $0.frame(in: .named(SettingsMetrics.contentSpace)).minY } action: {
+                landing?.guidedSetupRowTop = $0
+            }
             .accessibilityIdentifier("guidedSetup")
 
             NavigationLink(value: SettingsRoute.voice) {

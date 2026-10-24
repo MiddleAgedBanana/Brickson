@@ -21,6 +21,7 @@ struct GuidedSetupView: View {
 
     @Environment(SetupStore.self) private var setup
     @Environment(SettingsActivity.self) private var activity: SettingsActivity?
+    @Environment(SettingsLanding.self) private var landing: SettingsLanding?
     @State private var saveFailed = false
 
     var body: some View {
@@ -58,13 +59,31 @@ struct GuidedSetupView: View {
     /// Choices only ever select: a repeated activation of a choice leaves it
     /// chosen rather than undoing it (AGENTS.md, invariant 10). Clear My
     /// Choices is a separate button at the end.
+    ///
+    /// The words fill the space down to where Family Setup's Set Up Step by
+    /// Step row was, and Learn About Each Way takes that row's place, at
+    /// least as tall (`SettingsLanding`). A look held after choosing the row
+    /// then meets a row that only opens the guide, by the nearest centre and
+    /// by the nearest edge, never an answer, which saves (docs/DECISIONS.md,
+    /// "One chain engine for dwell safety"). Words alone would not do: the
+    /// nearest control to a look resting on them would be the first answer.
     @ViewBuilder
     private var accessQuestion: some View {
-        SettingsHeading("How is the screen reached?")
-        // Nothing reads these answers yet, so the words promise no change
-        // to the buttons; the layout engine adds that sentence when it reads
-        // them (docs/log/2026-10-21-settings-and-first-run.md, follow-up 5).
-        SettingsParagraph("Choose every way that is used now. Each answer is saved as soon as it is chosen.")
+        VStack(alignment: .leading, spacing: SettingsMetrics.rowSpacing) {
+            SettingsHeading("How is the screen reached?")
+            // Nothing reads these answers yet, so the words promise no change
+            // to the buttons; the layout engine adds that sentence when it reads
+            // them (docs/log/2026-10-21-settings-and-first-run.md, follow-up 5).
+            SettingsParagraph("Choose every way that is used now. Each answer is saved as soon as it is chosen.")
+        }
+        .frame(maxWidth: .infinity, minHeight: landing?.firstStepOpeningHeight ?? 0, alignment: .topLeading)
+
+        NavigationLink(value: SettingsRoute.reachingTheScreen) {
+            SettingsRowLabel(title: "Learn About Each Way", systemImage: "book.fill")
+                .frame(minHeight: landing?.guidedSetupLabelHeight ?? 0)
+        }
+        .settingsRowStyle()
+        .accessibilityIdentifier("learnAboutEachWay")
 
         ForEach(AccessMethod.allCases, id: \.self) { method in
             let isChosen = chosen.contains(method)
