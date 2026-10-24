@@ -302,7 +302,7 @@ nonisolated struct SettingsRootLayout: Layout {
 /// frame; everything it opens lives here. It looks like Home's other
 /// controls, and its gear drops before its word shrinks (`FittedLabel`).
 /// Where Home has room beside the categories only for the gear
-/// (`HomeShape.settingsShowsName`), it shows the gear alone, named
+/// (`HomeLayout.settingsShowsName`), it shows the gear alone, named
 /// "Settings" for VoiceOver, Voice Control and Switch Control, with a large
 /// copy of its name for the large content viewer, rather than take a row
 /// from the phrases.

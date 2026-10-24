@@ -5,9 +5,9 @@ import Testing
 /// The layout engine against the real fonts: the text sizes
 /// `HomeLayoutEngineTests` lays out with are the ones `LabelFont` measures,
 /// and the widths and heights the engine never goes below hold the words
-/// they are for, at the default text size, with Bold Text off and on, the
-/// way `StarterLabelFitTests` checks today's stand-in (AGENTS.md, *Words
-/// never break*).
+/// they are for, at the default text size, with Bold Text off and on
+/// (AGENTS.md, *Words never break*). `StarterLabelFitTests` checks the
+/// categories and the fixed controls at the narrowest widths.
 struct HomeLayoutEngineFontTests {
     private let library: LibrarySnapshot
 
@@ -19,7 +19,7 @@ struct HomeLayoutEngineFontTests {
         library.categories.flatMap(\.phrases).map(\.text)
     }
 
-    private static let inset = HomeShape.labelInset
+    private static let inset = HomeLayout.labelInset
 
     /// The Dynamic Type sizes `HomeLayoutEngineTests.textSizes` stands for,
     /// in its order.
@@ -63,42 +63,75 @@ struct HomeLayoutEngineFontTests {
         }
     }
 
-    /// Fails if a starter phrase does not fit the narrowest tile the engine
-    /// makes, at its floor: three compact columns, two compact columns on
-    /// the narrowest window, and four regular columns on the narrowest
-    /// regular window; and, for the regular tile's narrowest width, its
-    /// widest word.
+    /// Fails if the message's two reserved lines, or the status line under
+    /// them, draw taller than the engine keeps for them (two and one
+    /// `LabelFont.lineHeight(at:)`), at any text size, with Bold Text off
+    /// and on: they would spill into the gap above the safety row.
     @Test(arguments: [false, true])
-    func everyStarterPhraseFitsTheNarrowestTiles(boldText: Bool) {
-        let compactWidth = boldText ? HomeLayout.compactTile.boldMinimumWidth : HomeLayout.compactTile.minimumWidth
-        let compactHeight = HomeLayout.compactTile.minimumHeight - 2 * HomeLayout.labelInsetVertical
-        let twoColumns = (HomeShape.narrowestContentWidth - HomeLayout.controlSpacing) / 2
-        let regularWidth = boldText ? HomeLayout.regularTile.boldMinimumWidth : HomeLayout.regularTile.minimumWidth
-        let regular = Self.narrowestRegularLayout(boldText: boldText)
-        #expect(regular.isRegular && regular.grid.columns == 4)
-        let tiles: [(LabelFont, CGSize, String)] = [
-            (.compactTile, CGSize(width: compactWidth - 2 * Self.inset.horizontal, height: compactHeight), "narrowest three-column tile"),
-            (.compactTile, CGSize(width: twoColumns - 2 * Self.inset.horizontal, height: compactHeight), "narrowest two-column tile"),
-            (
-                .regularTile,
-                CGSize(width: regular.grid.tileSize.width - 2 * Self.inset.horizontal, height: HomeLayout.regularTile.minimumHeight - 2 * HomeLayout.labelInsetVertical),
-                "narrowest four-column tile"
-            ),
-            (.regularTile, CGSize(width: regularWidth - 2 * Self.inset.horizontal, height: 10_000), "narrowest regular tile width"),
+    func theMessageAndStatusLinesFitTheirRegion(boldText: Bool) {
+        let legibility: LegibilityWeight = boldText ? .bold : .regular
+        for size in DynamicTypeSize.allCases where size >= .large {
+            let text = HomeLayout.Text.measured(at: size, boldText: boldText)
+            let message = Text(verbatim: " ")
+                .font(LabelFont.message.legible(legibility).font)
+                .lineLimit(2, reservesSpace: true)
+                .dynamicTypeSize(size)
+                .environment(\.legibilityWeight, legibility)
+            let status = Text(verbatim: "Speaking")
+                .font(LabelFont.status.legible(legibility).font)
+                .dynamicTypeSize(size)
+                .environment(\.legibilityWeight, legibility)
+            let unbounded = CGSize(width: 10_000, height: 10_000)
+            let messageHeight = UIHostingController(rootView: message).sizeThatFits(in: unbounded).height
+            let statusHeight = UIHostingController(rootView: status).sizeThatFits(in: unbounded).height
+            #expect(messageHeight <= 2 * text.messageLine, "message at \(size): draws \(messageHeight), has \(2 * text.messageLine)")
+            #expect(statusHeight <= text.statusLine, "status line at \(size): draws \(statusHeight), has \(text.statusLine)")
+        }
+    }
+
+    /// Fails if a starter phrase does not fit a tile at any of the floors
+    /// the engine keeps (`HomeLayout.TileFloor`): at the narrowest width
+    /// each floor applies to, in the lines its height holds, in the compact
+    /// and the regular tile font. A wider tile at the same floor holds the
+    /// same lines. Fails too if the narrowest tile of either font, the
+    /// first floor's width, is too narrow for the widest word.
+    @Test(arguments: [false, true])
+    func everyStarterPhraseFitsEveryTileFloor(boldText: Bool) {
+        #expect(HomeLayout.compactTile.minimumWidth == HomeLayout.TileFloor.compact.first?.width)
+        #expect(HomeLayout.compactTile.boldMinimumWidth == HomeLayout.TileFloor.compact.first?.boldWidth)
+        #expect(HomeLayout.regularTile.minimumWidth == HomeLayout.TileFloor.regular.first?.width)
+        #expect(HomeLayout.regularTile.boldMinimumWidth == HomeLayout.TileFloor.regular.first?.boldWidth)
+        let fonts: [(LabelFont, [HomeLayout.TileFloor], String)] = [
+            (.compactTile, HomeLayout.TileFloor.compact, "compact"),
+            (.regularTile, HomeLayout.TileFloor.regular, "regular"),
         ]
-        for (font, size, slot) in tiles {
-            for phrase in phrases {
-                StarterLabelFitTests.expectFits(phrase, font, in: size, slot, boldText: boldText)
+        for (font, floors, name) in fonts {
+            for floor in floors {
+                let width = boldText ? floor.boldWidth : floor.width
+                let label = CGSize(width: width - 2 * Self.inset.horizontal, height: floor.height - 2 * Self.inset.vertical)
+                for phrase in phrases {
+                    StarterLabelFitTests.expectFits(phrase, font, in: label, "\(name) tile \(width) by \(floor.height)", boldText: boldText)
+                }
             }
         }
     }
 
-    /// The layout of the narrowest window that gets the regular
-    /// arrangement.
-    private static func narrowestRegularLayout(boldText: Bool) -> HomeLayout {
+    /// Fails if "Get Attention" does not fit one line at its one-line
+    /// width and the touch floor (two lines are too tall for it), or two
+    /// lines at its narrowest width and the height the engine gives it
+    /// there (`HomeLayout.twoLineQuickControlHeight`).
+    @Test(arguments: [false, true])
+    func getAttentionHoldsItsWordsOnOneLineOrTwo(boldText: Bool) {
         let minimum = HomeLayout.MinimumWidths.forBoldText(boldText)
-        let width = 5 * minimum.regularColumn + 4 * HomeLayout.controlSpacing + 2 * HomeLayout.margins.horizontal
-        return HomeLayout(space: .init(size: CGSize(width: width, height: 1000)), text: .measured(at: .large, boldText: boldText))
+        let words = HomeControlNames.getAttention.visible
+        let floor = HomeLayout.Profile.touch.floor
+        let oneLine = CGSize(width: minimum.getAttentionOneLine - 2 * Self.inset.horizontal, height: floor - 2 * Self.inset.vertical)
+        StarterLabelFitTests.expectFits(words, .quickControl, in: oneLine, "Get Attention on one line", boldText: boldText)
+        let twoLines = CGSize(
+            width: minimum.getAttention - 2 * Self.inset.horizontal,
+            height: HomeLayout.twoLineQuickControlHeight - 2 * Self.inset.vertical
+        )
+        StarterLabelFitTests.expectFits(words, .quickControl, in: twoLines, "Get Attention on two lines", boldText: boldText)
     }
 
     /// Fails if the controls stop being sized for the starter library's

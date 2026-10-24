@@ -6,21 +6,30 @@ import Testing
 /// narrowest window Home plans for, measured with the real fonts, so no word
 /// breaks and no tile needs to scroll (AGENTS.md, "Words never break").
 ///
-/// These pin `HomeShape`'s sizes to what SwiftUI actually draws. If Apple's
-/// fonts change, these fail first, before a person sees a broken word. They
-/// also check the measurements `WordFit` and `FittedLabel` rely on: UIKit's
-/// width for a word, rounded up, is never more than half a point narrower
-/// than SwiftUI's, and `LabelFont.textHeight` is never less than SwiftUI's
-/// height.
+/// These pin the layout engine's widths to what SwiftUI actually draws. If
+/// Apple's fonts change, these fail first, before a person sees a broken
+/// word. They also check the measurements `WordFit` and `FittedLabel` rely
+/// on: UIKit's width for a word, rounded up, is never more than half a
+/// point narrower than SwiftUI's, and `LabelFont.textHeight` is never less
+/// than SwiftUI's height.
 ///
-/// Widths are content widths: the window less Home's 16pt margins. 288 is
-/// the narrowest window this checks, a 320pt window (an iPad app in Slide
-/// Over); 560 is the narrowest regular window. The safety row, the category
-/// buttons and Settings are checked at the narrowest widths `HomeShape`
-/// gives them, which `HomeShapeTests` checks at every width.
+/// The category buttons and the fixed controls are checked at the
+/// narrowest widths `HomeLayout.MinimumWidths` allows, which
+/// `HomeLayoutEngineTests` checks no window goes below, and at the heights
+/// of the narrowest window this checks, a 320 by 568 point one (Display
+/// Zoom's Larger Text on a 375 by 667 phone, or an iPad app in Slide
+/// Over). `HomeLayoutEngineFontTests` checks the phrase tiles, the message
+/// and Get Attention's two lines.
 struct StarterLabelFitTests {
-    private static let narrowestWidth = HomeShape.narrowestContentWidth
-    private static let inset = HomeShape.labelInset
+    private static let inset = HomeLayout.labelInset
+
+    /// Home on the narrowest window, at the default size, as it is today.
+    private static func narrowest(boldText: Bool) -> HomeLayout {
+        HomeLayout(
+            space: .init(size: CGSize(width: 320, height: 568)),
+            text: .measured(at: .large, boldText: boldText), modes: .phrasesOnly
+        )
+    }
 
     private let library: LibrarySnapshot
 
@@ -81,72 +90,37 @@ struct StarterLabelFitTests {
         CGSize(width: control.width - 2 * sideInset, height: control.height - 2 * inset.vertical)
     }
 
-    /// Fails if `HomeShape.minimumTileWidth` or `minimumTileHeight` is too
-    /// small for a starter phrase on a narrow window: a word would break, or
-    /// the phrase would be cut off or force the grid to scroll.
-    @Test func everyStarterPhraseFitsTheNarrowestThreeColumnTile() {
-        let shape = HomeShape(contentWidth: 3 * HomeShape.minimumTileWidth + 2 * HomeShape.controlSpacing)
-        #expect(shape.gridColumns == 3 && shape.isCompact)
-        let tile = Self.labelSize(CGSize(width: HomeShape.minimumTileWidth, height: shape.minimumTileHeight))
-        for phrase in phrases {
-            Self.expectFits(phrase, .compactTile, in: tile, "narrowest three-column tile")
-        }
-    }
-
-    /// Fails if the narrowest window's two-column tiles cannot hold a starter
-    /// phrase.
-    @Test func everyStarterPhraseFitsTheNarrowestTwoColumnTile() {
-        let shape = HomeShape(contentWidth: Self.narrowestWidth)
-        #expect(shape.gridColumns == 2)
-        let width = (Self.narrowestWidth - HomeShape.controlSpacing) / 2
-        let tile = Self.labelSize(CGSize(width: width, height: shape.minimumTileHeight))
-        for phrase in phrases {
-            Self.expectFits(phrase, .compactTile, in: tile, "narrowest two-column tile")
-        }
-    }
-
-    /// Fails if the narrowest regular window's tiles cannot hold a starter
-    /// phrase in the larger tile font.
-    @Test func everyStarterPhraseFitsTheNarrowestRegularTile() {
-        let shape = HomeShape(contentWidth: HomeShape.regularMinimumWidth)
-        #expect(!shape.isCompact && shape.gridColumns == 3)
-        let width = (HomeShape.regularMinimumWidth - 2 * HomeShape.controlSpacing) / 3
-        let tile = Self.labelSize(CGSize(width: width, height: shape.minimumTileHeight))
-        for phrase in phrases {
-            Self.expectFits(phrase, .regularTile, in: tile, "narrowest regular tile")
-        }
-    }
-
     /// Fails if a starter category's name would break in the narrowest
-    /// category button Home makes (`HomeShape.MinimumWidths`), with Bold
-    /// Text off or on. `HomeShapeTests` checks no button is narrower.
+    /// category button Home makes (`HomeLayout.MinimumWidths`), with the
+    /// wider side inset of a control that shows selected, with Bold Text
+    /// off or on.
     @Test(arguments: [false, true])
     func everyStarterCategoryNameFitsTheNarrowestButton(boldText: Bool) {
-        let minimum = HomeShape.MinimumWidths.forBoldText(boldText)
-        let narrow = HomeShape(contentWidth: Self.narrowestWidth)
-        let button = Self.labelSize(CGSize(width: minimum.category, height: narrow.categoryHeight))
-        #expect(everydayCategoryNames.count == HomeShape.categoryCapacity)
+        let minimum = HomeLayout.MinimumWidths.forBoldText(boldText)
+        let narrow = Self.narrowest(boldText: boldText)
+        let button = Self.labelSize(CGSize(width: minimum.category, height: narrow.categoryHeight), sideInset: HomeLayout.selectableSideInset)
+        #expect(everydayCategoryNames.count == HomeLayout.categoryCapacity)
         for name in everydayCategoryNames {
             Self.expectFits(name, .category, in: button, "narrowest category button", boldText: boldText)
         }
     }
 
-    /// Fails if Yes, No, Again, Emergency, Get Attention, Stop or Settings
-    /// would break or be cut off in the narrowest width Home gives it
-    /// (`HomeShape.MinimumWidths`), with Bold Text off or on. Get Attention
-    /// takes two lines there, which the quick control's height holds.
-    /// `HomeShapeTests` checks no control is narrower.
+    /// Fails if Yes, No, Again, Emergency, Stop or Settings would break or
+    /// be cut off in the narrowest width Home gives it
+    /// (`HomeLayout.MinimumWidths`), with Bold Text off or on. Emergency
+    /// shows selected, so it has the wider side inset.
+    /// `HomeLayoutEngineFontTests` checks Get Attention, which takes two
+    /// lines at its narrowest.
     @Test(arguments: [false, true])
     func theFixedControlsFitTheirNarrowestWidths(boldText: Bool) {
-        let minimum = HomeShape.MinimumWidths.forBoldText(boldText)
-        let narrow = HomeShape(contentWidth: Self.narrowestWidth)
+        let minimum = HomeLayout.MinimumWidths.forBoldText(boldText)
+        let narrow = Self.narrowest(boldText: boldText)
         let usual = Self.inset.horizontal
         let quick: [(ControlNames, CGFloat, CGFloat)] = [
             (HomeControlNames.yes, minimum.yesNo, usual),
             (HomeControlNames.no, minimum.yesNo, usual),
             (HomeControlNames.again, minimum.again, usual),
-            (HomeControlNames.emergency, minimum.emergency, HomeShape.emergencyLabelInset),
-            (HomeControlNames.getAttention, minimum.getAttention, usual),
+            (HomeControlNames.emergency, minimum.emergency, HomeLayout.selectableSideInset),
         ]
         for (names, width, sideInset) in quick {
             Self.expectFits(

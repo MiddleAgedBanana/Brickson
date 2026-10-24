@@ -54,7 +54,7 @@ nonisolated enum HomeRegion: CaseIterable, Sendable {
     /// reached first, then the first category, then the others in order.
     /// In the band those two stand one above the other at its leading end,
     /// and the others start level with Stop, so by where they are the first
-    /// category would come after the last (`HomeShape.CategoryArrangement`).
+    /// category would come after the last (`HomeLayout.CategoryArrangement`).
     static let firstInRegion: Double = 2
     static let secondInRegion: Double = 1
 }

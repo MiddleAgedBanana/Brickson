@@ -42,8 +42,11 @@ import Foundation
 /// so, with the height it lacks: a target is never made smaller than its
 /// floor to avoid scrolling (invariant 11).
 ///
-/// Nothing on screen uses it yet: Home moves onto it in the pull request
-/// after this one (docs/ROADMAP.md, Wave 3 item 4; docs/work/layout-engine.md).
+/// Home has its frames from it (docs/ROADMAP.md, Wave 3 item 4;
+/// docs/work/layout-engine.md). Until typing comes to Home (item 5), Home
+/// has one mode, browsing phrases, and lays out without A's trailing
+/// column (`Modes.phrasesOnly`): the message spans the width, and the
+/// safety row keeps two rows on every width, as it did before the engine.
 nonisolated struct HomeLayout: Equatable, Sendable {
     // MARK: Inputs
 
@@ -118,6 +121,30 @@ nonisolated struct HomeLayout: Equatable, Sendable {
         }
     }
 
+    /// Which of the slot plan's two modes Home has: browsing phrases, and
+    /// typing (docs/DECISIONS.md, "Home's slot plan", A). Phrases and Type,
+    /// the controls that pick a mode, sit in A's trailing column only once
+    /// there is a second mode to pick, and the slot plan's one-row safety
+    /// row on regular widths needs them there: with the message across the
+    /// width above it, Get Attention would border the message, and a look
+    /// resting on the message must never meet an alarm.
+    enum Modes: Equatable, Sendable {
+        /// Home until typing comes (docs/ROADMAP.md, Wave 3 item 5): no
+        /// trailing column in A, so the message spans the width; the safety
+        /// row in two rows of two equal columns on every width, Yes and No
+        /// sharing the leading one with Emergency beside them, then Again and
+        /// Get Attention, Get Attention directly under Emergency
+        /// (docs/DECISIONS.md, "Get Attention and Stop on Home"). Emergency
+        /// stays under Settings' Back to Talking (*Settings on Home*), and
+        /// Yes and No border no more of the message than they did before the
+        /// engine (*Home's slot plan*, *Open hazard, not accepted: Yes and No
+        /// border the message*).
+        case phrasesOnly
+        /// The slot plan's own, with Phrases above Type beside the message:
+        /// the compact and regular arrangements above.
+        case phrasesAndTyping
+    }
+
     /// One line of each of Home's label styles at the person's text size,
     /// as `LabelFont.lineHeight(at:)` measures it, and whether Bold Text is
     /// on. The engine never measures text itself, so it runs anywhere;
@@ -159,9 +186,24 @@ nonisolated struct HomeLayout: Equatable, Sendable {
     /// own region first (`HomeLayoutEngineTests`). A window short of room gives
     /// these four points back before any control shrinks to its floor.
     static let minimumRegionSpacing: CGFloat = 10
-    /// The room between a label and its control's top and bottom edges
-    /// (`HomeShape.labelInset`).
-    static let labelInsetVertical: CGFloat = 6
+    /// The room between a label and its control's edges: 4 points at the
+    /// sides, 6 above and below (`HomeButtonStyle`). Small on purpose: the
+    /// label fits itself to what is left (`FittedLabel`).
+    static let labelInset = (horizontal: CGFloat(4), vertical: CGFloat(6))
+    /// The room beside the words of a control that shows selected, Emergency
+    /// and the categories: as much as above and below them, which no ring
+    /// reaches (`HomeButtonLook`). SwiftUI shrinks a word too wide for its
+    /// label at the person's size until it fills the label, out to its
+    /// inset, and the selection ring runs 2 to 5 points in: at the usual 4
+    /// points the ring met Emergency's last letter on a phone at the largest
+    /// text sizes, and CI's rendered-label test read "Emergenc"
+    /// (docs/DECISIONS.md, "Get Attention and Stop on Home").
+    static let selectableSideInset = labelInset.vertical
+    /// The shortest safety row in which "Get Attention", too narrow for one
+    /// line (`MinimumWidths.getAttentionOneLine`), is drawn whole on two at
+    /// the default size: the stand-in Home's compact height, at which CI's
+    /// rendered-label test read both words 100 points wide.
+    static let twoLineQuickControlHeight: CGFloat = 64
     /// The space between the message's two lines and the status line
     /// under them (`HomeView`).
     static let statusSpacing: CGFloat = 4
@@ -173,24 +215,74 @@ nonisolated struct HomeLayout: Equatable, Sendable {
     /// taller tiles. The controls' frames never follow the library.
     static let referencePhraseCount = 8
 
-    /// The narrowest compact tile, and the shortest: the starter library's
-    /// widest word, "understand.", at the default size (`HomeShape`'s 107
-    /// points; 118 with Bold Text, which `HomeShape` does not yet allow
-    /// for), and its tallest phrase in four lines (`HomeShape`'s 99
-    /// points). `HomeLayoutEngineFontTests` checks them with the real fonts.
-    static let compactTile = (minimumWidth: CGFloat(107), boldMinimumWidth: CGFloat(118), minimumHeight: CGFloat(99))
+    /// The narrowest compact tile: the starter library's widest word,
+    /// "understand.", at the default size with `WordFit.widthSlack` and the
+    /// label inset (107 points; 118 with Bold Text), and the shortest at
+    /// each width (`TileFloor`). `HomeLayoutEngineFontTests` checks them
+    /// with the real fonts.
+    static let compactTile = (minimumWidth: CGFloat(107), boldMinimumWidth: CGFloat(118), floors: TileFloor.compact)
     /// The narrowest regular tile, in the larger tile font: "understand."
     /// at 22 points with `WordFit.widthSlack` and the label inset (131
-    /// points, 146 with Bold Text), and the shortest, the starter library's
-    /// tallest phrases in three lines at the narrowest four-column tile
+    /// points, 146 with Bold Text), and the shortest at each width
     /// (`HomeLayoutEngineFontTests` checks both with the real fonts).
-    static let regularTile = (minimumWidth: CGFloat(131), boldMinimumWidth: CGFloat(146), minimumHeight: CGFloat(100))
+    static let regularTile = (minimumWidth: CGFloat(131), boldMinimumWidth: CGFloat(146), floors: TileFloor.regular)
+
+    /// The shortest a phrase tile may be at its width before the grid
+    /// scrolls instead: the starter library's tallest phrase at the default
+    /// size, set in whole-word lines at that width (`WordFit.lines`), with
+    /// the label's inset, and never under the profile's floor. A wider tile
+    /// holds the phrases in fewer lines, so it may be shorter: at the
+    /// narrowest compact tile "Please ask me yes or no questions." takes
+    /// four lines, from 114 points every starter phrase takes three, from
+    /// 160 two. Labels step down to the default size and never below it
+    /// (`WordFit`), so the default size is the one that sets the floor at
+    /// every text size.
+    ///
+    /// Each width is where Apple's SF Pro, measured on Linux, first sets
+    /// every starter phrase in that many lines, plus 2 points; each height
+    /// is SwiftUI's height for those lines on CI (headline: 20.5 points for
+    /// the first line and 22 for each after it) with the inset, rounded up,
+    /// plus a point or more. `HomeLayoutEngineFontTests` draws every starter
+    /// phrase at each width and height with the real fonts.
+    struct TileFloor: Equatable, Sendable {
+        /// The narrowest tile this floor applies to, without and with Bold
+        /// Text, whose heavier words need more room for the same lines.
+        let width: CGFloat
+        let boldWidth: CGFloat
+        let height: CGFloat
+
+        /// The compact tile font, headline: four lines, then three and two.
+        static let compact = [
+            TileFloor(width: 107, boldWidth: 118, height: 99),
+            TileFloor(width: 114, boldWidth: 120, height: 78),
+            TileFloor(width: 160, boldWidth: 170, height: 56),
+        ]
+        /// The regular tile font, title 2: four lines at the narrowest
+        /// regular tile, three from 139 points (149 with Bold Text), two
+        /// from 198 (213).
+        static let regular = [
+            TileFloor(width: 131, boldWidth: 146, height: 128),
+            TileFloor(width: 139, boldWidth: 149, height: 100),
+            TileFloor(width: 198, boldWidth: 213, height: 72),
+        ]
+
+        /// The floor for a tile `width` wide: the shortest of `floors` that
+        /// applies there, and never under `profileFloor`.
+        static func height(for width: CGFloat, in floors: [TileFloor], boldText: Bool, profileFloor: CGFloat) -> CGFloat {
+            let applies = floors.filter { width >= (boldText ? $0.boldWidth : $0.width) - 0.001 }
+            let height = applies.map(\.height).min() ?? floors.map(\.height).max() ?? profileFloor
+            return max(profileFloor, height)
+        }
+    }
 
     // MARK: Results
 
     /// The window less its safe areas and Home's margins: where every slot
     /// lies, in the window's coordinates.
     let content: CGRect
+    /// Whether Home has Phrases and Type, and with them the slot plan's own
+    /// arrangements (`Modes`).
+    let modes: Modes
     /// Three columns or five, chosen from the width.
     let isRegular: Bool
     let categoryArrangement: CategoryArrangement
@@ -212,17 +304,19 @@ nonisolated struct HomeLayout: Equatable, Sendable {
     /// The room kept for Apple's keyboard (docs/DECISIONS.md, "Typing is a
     /// state of Home").
     let keyboard: KeyboardAllowance
-    /// Whether the message, Phrases, Type and the whole safety row end
-    /// above the keyboard's room, so typing can leave them reachable.
+    /// Whether the message, Phrases and Type (where Home has them) and the
+    /// whole safety row end above the keyboard's room, so typing can leave
+    /// them reachable.
     let bandClearsKeyboard: Bool
     /// False where Settings has room only for its gear.
     let settingsShowsName: Bool
     /// Whether the message is wide enough for the starter library's widest
     /// word at the default text size (`MinimumWidths.message`): the message
     /// steps down only as far as its widest word needs, never below the
-    /// default size (AGENTS.md, *Words never break*). False only on compact
-    /// windows narrower than 345 points with Bold Text on, where the
-    /// trailing column is as wide as Emergency's bold word.
+    /// default size (AGENTS.md, *Words never break*). Where Home has Phrases
+    /// and Type, false only on compact windows narrower than 345 points
+    /// with Bold Text on, where the trailing column is as wide as
+    /// Emergency's bold word; never where the message spans the width.
     let messageHoldsItsWords: Bool
     /// Whether every control above the phrase grid fits in the content,
     /// leaving the grid some height of its own. False only on a window too
@@ -231,14 +325,36 @@ nonisolated struct HomeLayout: Equatable, Sendable {
     /// The slots a reserved region crosses.
     let slotsInReservedRegions: Set<Slot>
 
-    /// The frame of `slot`. Every slot but `.tile` has one in every layout.
+    /// The frame of `slot`, or `.null` for a slot this layout does not
+    /// have (`slots`).
     func frame(_ slot: Slot) -> CGRect {
         frames[slot] ?? .null
     }
 
+    /// The slots this layout has: all of them, but Phrases and Type only
+    /// once Home has typing (`Modes`).
+    var slots: [Slot] {
+        modes == .phrasesAndTyping ? Slot.all : Slot.all.filter { $0 != .phrases && $0 != .type }
+    }
+
+    /// The slots of `slots` that are controls a person can activate, or
+    /// Stop's well.
+    var controls: [Slot] {
+        Slot.controls.filter(slots.contains)
+    }
+
+    /// How tall the region `slots` make up is, from its top to its foot:
+    /// the height Home gives that region's stack.
+    func height(of slots: [Slot]) -> CGFloat {
+        slots.map(frame).filter { !$0.isNull }.reduce(CGRect.null) { $0.union($1) }.height
+    }
+
     // MARK: The engine
 
-    init(space: Space, profile: Profile = .touch, text: Text, largestCategory: Int = HomeLayout.referencePhraseCount) {
+    init(
+        space: Space, profile: Profile = .touch, text: Text,
+        largestCategory: Int = HomeLayout.referencePhraseCount, modes: Modes
+    ) {
         let spacing = Self.controlSpacing
         let minimum = MinimumWidths.forBoldText(text.boldText)
         let safe = space.safeArea
@@ -249,27 +365,59 @@ nonisolated struct HomeLayout: Equatable, Sendable {
             height: max(0, space.size.height - safe.top - safe.bottom - 2 * Self.margins.vertical)
         )
         self.content = content
+        self.modes = modes
         let width = content.width
         keyboard = KeyboardAllowance(windowSize: space.size)
 
         // Columns. Regular wherever five equal columns each hold the widest
-        // word any of them carries; compact otherwise.
+        // word any of them carries; compact otherwise. The slot plan's
+        // one-row safety row also needs Phrases and Type above Again and
+        // Get Attention (`Modes`).
         let fifth = (width - 4 * spacing) / 5
         let isRegular = fifth >= minimum.regularColumn
         self.isRegular = isRegular
+        let safetyInOneRow = isRegular && modes == .phrasesAndTyping
+
+        // Widths across the content: the message, and A's trailing column,
+        // which Emergency and Get Attention share under Phrases and Type,
+        // with Yes and No each as wide as `lead`.
+        let messageWidth: CGFloat
+        let trailingWidth: CGFloat
+        let lead: CGFloat
+        if modes == .phrasesOnly {
+            messageWidth = width
+            trailingWidth = 0
+            lead = 0
+        } else if isRegular {
+            messageWidth = 3 * fifth + 2 * spacing
+            trailingWidth = 2 * fifth + spacing
+            lead = fifth
+        } else {
+            trailingWidth = max((width - 2 * spacing) / 3, minimum.compactTrailingColumn)
+            lead = max(0, width - 2 * spacing - trailingWidth) / 2
+            messageWidth = 2 * lead + spacing
+        }
+        let getAttentionWidth = safetyInOneRow ? fifth
+            : modes == .phrasesAndTyping ? trailingWidth : max(0, width - spacing) / 2
 
         // Floors: the profile's, or one line of the words at the person's
         // size with the label's inset, whichever is taller, so no label has
         // to step down to fit a height (Apple's audit reports that as text
-        // that does not follow Dynamic Type).
-        let insets = 2 * Self.labelInsetVertical
-        let quickFloor = max(profile.floor, text.quickControlLine + insets)
+        // that does not follow Dynamic Type). Where Get Attention is too
+        // narrow for its words on one line, the safety row is tall enough
+        // for two.
+        let insets = 2 * Self.labelInset.vertical
+        let getAttentionTakesTwoLines = getAttentionWidth < minimum.getAttentionOneLine - 0.001
+        let quickFloor = max(
+            profile.floor, text.quickControlLine + insets,
+            getAttentionTakesTwoLines ? Self.twoLineQuickControlHeight : 0
+        )
         let categoryFloor = max(profile.floor, text.categoryLine + insets)
         let messageBlock = 2 * text.messageLine + Self.statusSpacing + text.statusLine
         // Phrases above Type, beside the message: two controls at their
         // floor, or the message's height if that is taller.
-        let messageRegion = max(messageBlock, 2 * quickFloor + spacing)
-        let quickRows = isRegular ? 1 : 2
+        let messageRegion = modes == .phrasesAndTyping ? max(messageBlock, 2 * quickFloor + spacing) : messageBlock
+        let quickRows = safetyInOneRow ? 1 : 2
 
         // The categories region's arrangement and widths.
         let categories = CategoryWidths(contentWidth: width, isRegular: isRegular, fifth: fifth, minimum: minimum)
@@ -277,18 +425,21 @@ nonisolated struct HomeLayout: Equatable, Sendable {
         settingsShowsName = categories.settings >= minimum.settings
         let categoryRows = categories.arrangement == .twoColumns ? 3 : 2
 
-        // The phrase grid: fixed columns from the width.
+        // The phrase grid: fixed columns from the width, and the shortest
+        // tile that holds the starter phrases at the tiles' width.
         let columns: Int
-        let tileFloor: CGFloat
         if isRegular {
             let tileMinimum = text.boldText ? Self.regularTile.boldMinimumWidth : Self.regularTile.minimumWidth
             columns = (width - 3 * spacing) / 4 >= tileMinimum ? 4 : 3
-            tileFloor = max(profile.floor, Self.regularTile.minimumHeight)
         } else {
             let tileMinimum = text.boldText ? Self.compactTile.boldMinimumWidth : Self.compactTile.minimumWidth
             columns = (width - 2 * spacing) / 3 >= tileMinimum ? 3 : 2
-            tileFloor = max(profile.floor, Self.compactTile.minimumHeight)
         }
+        let tileWidth = (width - CGFloat(columns - 1) * spacing) / CGFloat(columns)
+        let tileFloor = TileFloor.height(
+            for: tileWidth, in: isRegular ? Self.regularTile.floors : Self.compactTile.floors,
+            boldText: text.boldText, profileFloor: profile.floor
+        )
         let referenceRows = Grid.rows(for: Self.referencePhraseCount, columns: columns)
 
         func stack(_ rows: Int, of height: CGFloat) -> CGFloat {
@@ -321,11 +472,13 @@ nonisolated struct HomeLayout: Equatable, Sendable {
             spare -= categoryGrowth
         }
 
-        // The keyboard's room. Growth never carries the safety row into it:
-        // the rows give back what they grew first, then the gaps.
+        // The keyboard's room. Where Home has typing, growth never carries
+        // the safety row into it: the rows give back what they grew first,
+        // then the gaps. Without typing nothing on Home opens the keyboard,
+        // so nothing is given back for it.
         let limit = keyboard.bandLimit
         var safetyBottom = content.minY + messageRegion + gap + stack(quickRows, of: quick)
-        if safetyBottom > limit {
+        if modes == .phrasesAndTyping && safetyBottom > limit {
             let quickCut = min(safetyBottom - limit, CGFloat(quickRows) * (quick - quickFloor))
             quick -= quickCut / CGFloat(quickRows)
             safetyBottom -= quickCut
@@ -348,42 +501,43 @@ nonisolated struct HomeLayout: Equatable, Sendable {
         let x = content.minX
         let top = content.minY
 
-        // A: the message and its status line, then Phrases above Type.
-        let messageWidth: CGFloat
-        let trailingWidth: CGFloat
-        let lead: CGFloat
-        if isRegular {
-            messageWidth = 3 * fifth + 2 * spacing
-            trailingWidth = 2 * fifth + spacing
-            lead = fifth
-        } else {
-            trailingWidth = max((width - 2 * spacing) / 3, minimum.compactTrailingColumn)
-            lead = max(0, width - 2 * spacing - trailingWidth) / 2
-            messageWidth = 2 * lead + spacing
-        }
+        // A: the message and its status line, then Phrases above Type
+        // where Home has them; otherwise the message spans the width.
         messageHoldsItsWords = messageWidth >= minimum.message
         let messageHeight = messageRegion - Self.statusSpacing - text.statusLine
         frames[.message] = CGRect(x: x, y: top, width: messageWidth, height: messageHeight)
         frames[.statusLine] = CGRect(x: x, y: top + messageHeight + Self.statusSpacing, width: messageWidth, height: text.statusLine)
-        let modeHeight = (messageRegion - spacing) / 2
         let trailingX = x + messageWidth + spacing
-        frames[.phrases] = CGRect(x: trailingX, y: top, width: trailingWidth, height: modeHeight)
-        frames[.type] = CGRect(x: trailingX, y: top + modeHeight + spacing, width: trailingWidth, height: modeHeight)
+        if modes == .phrasesAndTyping {
+            let modeHeight = (messageRegion - spacing) / 2
+            frames[.phrases] = CGRect(x: trailingX, y: top, width: trailingWidth, height: modeHeight)
+            frames[.type] = CGRect(x: trailingX, y: top + modeHeight + spacing, width: trailingWidth, height: modeHeight)
+        }
 
         // C: the safety row.
         let safetyTop = top + messageRegion + gap
-        if isRegular {
+        let secondRow = safetyTop + quick + spacing
+        if safetyInOneRow {
             let order: [Slot] = [.emergency, .yes, .no, .again, .getAttention]
             for (index, slot) in order.enumerated() {
                 frames[slot] = CGRect(x: x + CGFloat(index) * (fifth + spacing), y: safetyTop, width: fifth, height: quick)
             }
-        } else {
-            let secondRow = safetyTop + quick + spacing
+        } else if modes == .phrasesAndTyping {
             frames[.yes] = CGRect(x: x, y: safetyTop, width: lead, height: quick)
             frames[.no] = CGRect(x: x + lead + spacing, y: safetyTop, width: lead, height: quick)
             frames[.emergency] = CGRect(x: trailingX, y: safetyTop, width: trailingWidth, height: quick)
             frames[.again] = CGRect(x: x, y: secondRow, width: messageWidth, height: quick)
             frames[.getAttention] = CGRect(x: trailingX, y: secondRow, width: trailingWidth, height: quick)
+        } else {
+            // Two equal columns: Yes and No share the leading one.
+            let column = max(0, width - spacing) / 2
+            let yesNo = max(0, column - spacing) / 2
+            let trailing = x + column + spacing
+            frames[.yes] = CGRect(x: x, y: safetyTop, width: yesNo, height: quick)
+            frames[.no] = CGRect(x: x + yesNo + spacing, y: safetyTop, width: yesNo, height: quick)
+            frames[.emergency] = CGRect(x: trailing, y: safetyTop, width: column, height: quick)
+            frames[.again] = CGRect(x: x, y: secondRow, width: column, height: quick)
+            frames[.getAttention] = CGRect(x: trailing, y: secondRow, width: column, height: quick)
         }
 
         // B: Stop's well, the categories and Settings.
@@ -425,13 +579,20 @@ nonisolated struct HomeLayout: Equatable, Sendable {
         /// Region D's visible frame. Its tiles are in `grid`.
         case phraseGrid
 
-        /// Every slot a layout has.
+        /// Every slot of the slot plan; a layout has all of them but Phrases
+        /// and Type until Home has typing (`HomeLayout.slots`).
         static let all: [Slot] = [.message, .statusLine, .phrases, .type, .yes, .no, .emergency, .again, .getAttention, .stop]
             + (0..<HomeLayout.categoryCapacity).map { .category($0) } + [.settings, .phraseGrid]
 
         /// The slots that are controls a person can activate (or, for Stop,
         /// a well that holds one).
         static let controls: [Slot] = all.filter { ![.message, .statusLine, .phraseGrid].contains($0) }
+
+        /// Region C, the safety row.
+        static let safetyRow: [Slot] = [.yes, .no, .emergency, .again, .getAttention]
+
+        /// Region B: Stop's well, the categories and Settings.
+        static let categoriesRegion: [Slot] = [.stop] + (0..<HomeLayout.categoryCapacity).map { .category($0) } + [.settings]
 
         var description: String {
             switch self {
@@ -453,8 +614,7 @@ nonisolated struct HomeLayout: Equatable, Sendable {
     }
 
     /// How region B holds Stop's well, the four category cells and
-    /// Settings (`HomeShape.CategoryArrangement`). A category is directly
-    /// under Stop in each.
+    /// Settings. A category is directly under Stop in each.
     enum CategoryArrangement: Equatable, Sendable {
         /// Regular widths: Stop above the first category in the leading
         /// column, the other three and Settings at the band's full height.
@@ -479,14 +639,17 @@ nonisolated struct HomeLayout: Equatable, Sendable {
         let tileSize: CGSize
         let scrolls: Bool
         let spacing: CGFloat
+        /// The shortest a tile may be here (`TileFloor`).
+        let tileFloor: CGFloat
 
         init(frame: CGRect, columns: Int, phraseCount: Int, tileFloor: CGFloat, spacing: CGFloat) {
             self.frame = frame
             self.columns = columns
             self.spacing = spacing
+            self.tileFloor = tileFloor
             rows = Self.rows(for: phraseCount, columns: columns)
             let tileWidth = (frame.width - CGFloat(columns - 1) * spacing) / CGFloat(columns)
-            // Whole points, as `GridSizing` gives them; the thousandth keeps
+            // Whole points, so tiles sit on whole points; the thousandth keeps
             // a window that fits exactly from losing a point to rounding.
             let fitted = ((frame.height - CGFloat(rows - 1) * spacing) / CGFloat(rows) + 0.001).rounded(.down)
             scrolls = fitted < tileFloor
@@ -516,12 +679,12 @@ nonisolated struct HomeLayout: Equatable, Sendable {
     /// The narrowest a control may be: its widest word at the default text
     /// size, with `WordFit.widthSlack` and the label inset, so the word is
     /// drawn whole at every text size; wider with Bold Text on, measured at
-    /// the heaviest weight (`LabelFont.boldTextUIFontWeight`). The values
-    /// `HomeShape.MinimumWidths` has, measured on CI (`StarterLabelFitTests`),
-    /// and four new ones: "Phrases" and "Type" (A's trailing column),
-    /// "Speak", which Again's slot shows while typing, and the message, which
-    /// has no inset. `HomeLayoutEngineFontTests` checks the new ones with
-    /// the real fonts.
+    /// the heaviest weight (`LabelFont.boldTextUIFontWeight`). Emergency and
+    /// the categories, which show selected, have the wider side inset
+    /// (`selectableSideInset`); the message has none. `StarterLabelFitTests`
+    /// and `HomeLayoutEngineFontTests` check every one with the real fonts
+    /// on CI: "Phrases" and "Type" (A's trailing column) and "Speak", which
+    /// Again's slot shows while typing, are there for item 5.
     struct MinimumWidths: Equatable, Sendable {
         /// The message: the starter library's widest word in the message
         /// font, "understand.", with `WordFit.widthSlack`.
@@ -531,6 +694,9 @@ nonisolated struct HomeLayout: Equatable, Sendable {
         let again: CGFloat
         let emergency: CGFloat
         let getAttention: CGFloat
+        /// "Get Attention" on one line; narrower, it takes two
+        /// (`twoLineQuickControlHeight`).
+        let getAttentionOneLine: CGFloat
         let phrases: CGFloat
         let type: CGFloat
         let category: CGFloat
@@ -539,12 +705,14 @@ nonisolated struct HomeLayout: Equatable, Sendable {
         let settingsSymbol: CGFloat
 
         static let regular = MinimumWidths(
-            message: 156, yesNo: 46, again: 70, emergency: 120, getAttention: 100, phrases: 86, type: 58,
-            category: 118, stop: 52, settings: 80, settingsSymbol: 44
+            message: 156, yesNo: 46, again: 70, emergency: 120, getAttention: 100, getAttentionOneLine: 134,
+            phrases: 86, type: 58,
+            category: 122, stop: 52, settings: 80, settingsSymbol: 44
         )
         static let boldText = MinimumWidths(
-            message: 175, yesNo: 48, again: 75, emergency: 130, getAttention: 110, phrases: 94, type: 63,
-            category: 128, stop: 56, settings: 86, settingsSymbol: 44
+            message: 175, yesNo: 48, again: 75, emergency: 130, getAttention: 110, getAttentionOneLine: 147,
+            phrases: 94, type: 63,
+            category: 132, stop: 56, settings: 86, settingsSymbol: 44
         )
 
         static func forBoldText(_ boldText: Bool) -> MinimumWidths {
@@ -564,8 +732,7 @@ nonisolated struct HomeLayout: Equatable, Sendable {
         }
     }
 
-    /// Region B's widths (`HomeShape`'s rules for the categories): the
-    /// band on regular widths, every cell a column; otherwise three columns
+    /// Region B's widths: the band on regular widths, every cell a column; otherwise three columns
     /// with the categories at least their minimum and Stop and Settings
     /// sharing what is left (Settings showing its gear alone where its word
     /// does not fit), or two columns of three rows where that leaves Stop

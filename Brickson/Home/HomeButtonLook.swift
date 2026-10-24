@@ -76,8 +76,10 @@ nonisolated struct HomeButtonLook: Equatable, Sendable {
     /// SwiftUI shrinks a label further, its widest line can spread to the
     /// label inset itself: the rings drawn from the edge stay within the
     /// inset (`HomeButtonLookTests`); only the selection ring, as Home
-    /// already drew it, reaches a point past it.
-    static let maximumDepth = HomeShape.labelInset.horizontal + WordFit.widthSlack / 2
+    /// already drew it, reaches a point past it, so the controls that show
+    /// selected, Emergency and the categories, have a wider side inset that
+    /// no ring reaches (`HomeLayout.selectableSideInset`).
+    static let maximumDepth = HomeLayout.labelInset.horizontal + WordFit.widthSlack / 2
 
     /// Whether the control's fill is drawn. A control that is off is not
     /// filled: its words are primary ink on the screen.
