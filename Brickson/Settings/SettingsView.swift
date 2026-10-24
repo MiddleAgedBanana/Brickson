@@ -96,6 +96,10 @@ struct SettingsView: View {
             ReachingTheScreenView()
         case .keepOpen:
             KeepOpenView()
+        case .callsSiriAndShortcuts:
+            CallsSiriAndShortcutsView()
+        case .moreAccessibility:
+            MoreAccessibilityView()
         case .privacy:
             PrivacyPolicyView()
         case .about:

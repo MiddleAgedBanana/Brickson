@@ -391,6 +391,11 @@ built for Eye Tracking.
 - **Fix hazards with placement**, never with time-based input guards, decoy
   buttons or custom pointer code. Keep standard Back, Close and swipe
   navigation.
+- **Score chains with the one chain engine.** `ChainEngine` (in
+  `BricksonUITests`, compiled into both test targets) follows held
+  activations from every start; a new screen becomes a surface for it,
+  like `HomeChains` and `SettingsChains`, never another nearest-control
+  script (docs/DECISIONS.md, "One chain engine for dwell safety").
 
 ## Code Review Rules
 
@@ -542,7 +547,8 @@ the failure.
   `SpeedChoice`, `WordFit`, `HomeShape`, `HomeRegion`, `HomeControlNames`,
   `HomeStatusLine`, `HomeButtonLook`, `LibrarySnapshot`, `LibraryEdit`,
   `LibraryRules`, `LibraryImport`, `LibraryEditor`, `BackupCodec`,
-  `EmergencyRepair`, `SettingsRootColumns`, `KeyboardAllowance`, `HomeLayout`.
+  `EmergencyRepair`, `SettingsRootColumns`, `KeyboardAllowance`,
+  `SettingsAppLink`, `HomeLayout`.
   Views only read them.
 - **Run it, don't just read it.** Layout and flow changes are checked in the
   running app on an iPad and an iPhone simulator, at default and

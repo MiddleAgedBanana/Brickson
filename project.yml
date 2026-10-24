@@ -98,6 +98,12 @@ targets:
           - UIInterfaceOrientationPortraitUpsideDown
           - UIInterfaceOrientationLandscapeLeft
           - UIInterfaceOrientationLandscapeRight
+        # Inside Assistive Access, Brickson keeps its own layout in all the
+        # space above the system's Back button, instead of a reduced frame.
+        # Never UISupportsAssistiveAccess, whose separate interface would
+        # put controls somewhere else there (docs/DECISIONS.md,
+        # "Accessibility API coverage").
+        UISupportsFullScreenInAssistiveAccess: true
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: "$(APP_BUNDLE_ID)"
@@ -111,11 +117,15 @@ targets:
     platform: iOS
     sources:
       - BricksonTests
-      # Two UI-test helpers that drive no app, also compiled here so their
-      # own tests use Swift Testing (docs/DECISIONS.md, "Apple's current
-      # frameworks first"). Never add them to the app.
+      # UI-test helpers that drive no app, also compiled here so their own
+      # tests use Swift Testing (docs/DECISIONS.md, "Apple's current
+      # frameworks first"); the chain engine and its screens also score
+      # the layout's own frames here. Never add them to the app.
       - path: BricksonUITests/AccessibilityAuditRunner.swift
       - path: BricksonUITests/RenderedWords.swift
+      - path: BricksonUITests/ChainEngine.swift
+      - path: BricksonUITests/HomeChains.swift
+      - path: BricksonUITests/SettingsChains.swift
     dependencies:
       - target: Brickson
     settings:

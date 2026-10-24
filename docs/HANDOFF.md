@@ -39,10 +39,22 @@ in its own well, never nearest Get Attention, and the status line says
 "Sounding" (docs/DECISIONS.md, "Get Attention and Stop on Home").
 Settings, for the family (a
 full-screen cover with Back to Talking, Family Setup, Voice Settings,
-guides, the privacy policy and step-by-step setup), opens from Home's
-Settings button; until Family Setup has been opened once, Home's message
-area says where setup is. Back to Talking closes onto Emergency, never
-onto a control that speaks (docs/DECISIONS.md, "Settings on Home").
+guides to Apple's own features, the privacy policy and step-by-step
+setup), opens from Home's Settings button. The guides cover reaching
+the screen (touch, Voice Control, Switch Control with its switches and
+timing, Eye Tracking, eye trackers for iPad, Head Tracking), keeping
+Brickson open (Guided Access, Assistive Access, screen lock), calls,
+Siri and shortcuts (Live Speech, also on Apple Watch, Vocal Shortcuts,
+Listen for Atypical Speech, the Action button), and the Accessibility
+Shortcut, Zoom and Share Accessibility Settings, each checked against
+Apple's user guides on 2026-10-23. Brickson asks for full screen in
+Assistive Access, and inside it the guides give written Settings paths
+instead of links (docs/DECISIONS.md, "Accessibility API coverage").
+Until Family Setup has been opened once, Home's message area says where
+setup is. Back to Talking's centre lies over Emergency, never over a
+control that speaks, though a look near its leading edge rests over No
+once Home returns (docs/DECISIONS.md, "Settings on Home" and "One chain
+engine for dwell safety").
 "Speaking", "Sounding", audio failures and very low volume share one
 passive status line under the message, in space always kept for it, and
 VoiceOver announces the warnings, every failed or cut-off alarm
@@ -153,6 +165,10 @@ Xcode 27.1 (27A9275); PR #20 landed in `d79d836`.
   Since PR #39 (2026-10-23) a compiler warning in any target fails the
   build (docs/DECISIONS.md, "Warnings are errors";
   [`log/2026-10-23-warnings-as-errors.md`](log/2026-10-23-warnings-as-errors.md)).
+  Since the chain engine (2026-10-23) every UI run follows the chains of
+  held activations through Settings' first screens on each simulator and
+  attaches what it finds (`settings-chains-…`; docs/DECISIONS.md, "One
+  chain engine for dwell safety").
   Since the keyboard allowance (2026-10-23) every UI run measures Apple's
   keyboard in each orientation at the default and largest text sizes,
   and fails if it is taller than `KeyboardAllowance` keeps room for or
@@ -224,10 +240,12 @@ release in docs/ROADMAP.md when no thread has it yet.
   well, could repeat the last message. Open, not accepted; the same device
   check as the message hazard decides it (docs/DECISIONS.md, "Get
   Attention and Stop on Home"; a strict known issue in `HomeShapeTests`).
-  On the layout engine's frames it is gone on regular widths (Emergency is
-  above the well) and stays on compact ones, where windows narrower than
-  375pt with Bold Text also tie Yes at the well's top corner.
-  *(the layout engine thread; owner if it stays)*
+  It is the only hazard the chain engine finds in Home's states
+  (`HomeShapeTests.noChainOnHomeMeetsAHazard`). On the layout engine's
+  frames it is gone on regular widths (Emergency is above the well) and
+  stays on compact ones, where windows narrower than 375pt with Bold Text
+  also tie Yes at the well's top corner.
+  *(Home on the layout engine, a new thread; owner if it stays)*
 - An alarm warning nobody acts on ("Alert stopped", "Alert failed") keeps
   Home's status line until Get Attention sounds again, so a later cut-off
   phrase, low volume or failed session shows second; VoiceOver still
@@ -348,24 +366,25 @@ release in docs/ROADMAP.md when no thread has it yet.
   Attention should give it a place whose neighbours do neither, without
   putting Back to Talking nearest Home's Settings (`SettingsOnHomeTests`).
   *(a new thread: Get Attention in Settings)*
-- Chains of activations through Settings' screens are not fully scored.
-  From Home's Settings, two steps are (modelled, in
-  [`work/settings-on-home.md`](work/settings-on-home.md)):
-  the first meets the root's Family Setup row everywhere CI runs; the
-  second meets Back to Talking on wide windows by centre and on an iPad
-  at the largest text size by both rules, which closes Settings onto
-  Emergency. Placing Family Setup's own rows for it is the fix. A
-  further one is known: a held look can follow Family Setup's first row into Set Up Step
-  by Step and save Touch, its first answer, which is then nearest (it
-  adds Touch and restarts the check-in clock; nothing reads the answers
-  yet). Home's Settings button now starts that chain on a phone at the
-  default text size. Another
-  runs through iOS's Personal Voice question, once the Ask button shows:
-  after answering, the look rests where the question's button was, over
-  whatever Voice Settings has there. Answers
-  change no size yet; scoring and a fix come before they do
+- Chains of activations through Settings' screens are scored on its
+  first screens (`SettingsOnHomeTests` with the chain engine, on CI's
+  iPad and iPhone; docs/DECISIONS.md, "One chain engine for dwell
+  safety"), and two hazards are open. A held look can follow Family Setup's first row into
+  Set Up Step by Step and save an answer (it adds Touch and restarts the
+  check-in clock; nothing reads the answers yet): from Home's Settings
+  on a phone at the default text size, and from Set Up Step by Step
+  itself on every window where it shows. And Settings closes under the
+  look: where the pointer goes back to the look, a look near Back to
+  Talking's leading edge rests over No once Home returns, and on the
+  phone at the largest size its lower edge rests over Get Attention.
+  Placing Settings' screens and Back to Talking for them is the fix,
+  and a device check says whether the second binds. Not scored yet: the
+  chain through iOS's Personal Voice question once the Ask button shows
+  (after answering, the look rests where the question's button was, over
+  whatever Voice Settings has there), and Settings' other screens.
+  Answers change no size yet; scoring and a fix come before they do
   ([`log/2026-10-21-settings-and-first-run.md`](log/2026-10-21-settings-and-first-run.md),
-  follow-up 10). *(Dwell-safety scoring)*
+  follow-up 10). *(ROADMAP Wave 3 item 7, with item 4 for Home)*
 - CI compiles only the Debug configuration. Warnings are errors in
   Release too, and code under `#if DEBUG` compiles differently there, so
   a warning only Release sees would first stop an archive; the Release
@@ -463,7 +482,10 @@ The next pull requests, in order, with which may run side by side and
 which change Home, are its
 [Wave 3](ROADMAP.md#wave-3-the-next-pull-requests-in-order) (planned
 2026-10-23): typing on Home is its item 5, after Home moves onto the
-layout engine.
+layout engine. Its item 2, the chain engine, is built; a change that
+moves a control keeps its tests passing, and items 4 and 7 make the
+fixes for what it found (docs/DECISIONS.md, "One chain engine for dwell
+safety").
 Every change follows AGENTS.md, *Apple's current frameworks first*: the
 legacy uses kept, and the moves still planned with who owns each, are in
 docs/DECISIONS.md under that title
@@ -526,14 +548,14 @@ Simulators cannot show these. Record each result in a `docs/log/` file
 | D5: with two Personal Voices, the order the system lists them in, and whether each keeps its identifier across a relaunch, a restore and Share Across Devices | "Automatic keeps the person's Personal Voice" |
 | Personal Voice appears and is chosen once permission is given, and keeps speaking after the screen locks | Voice choice and when to ask |
 | Opening Settings by a stray dwell, and leaving it by Back to Talking, lands on nothing that speaks or alarms (`SettingsOnHomeTests` scores it on the simulator's frames); the idle reset under real dwell | Settings' safety bar and root (docs/DECISIONS.md, "Settings is a cover with a fixed safety bar") |
-| Guided Access and Assistive Access steps match the device, and Brickson works inside both | Family Setup's Keep Brickson Open guide |
+| Each Family Setup guide's steps match the device, on iOS 26 and iOS 27, iPhone, iPad and (Live Speech) Apple Watch, and Brickson works inside Guided Access and Assistive Access | Family Setup's guides ([`log/2026-10-23-apples-doors-in-family-setup.md`](log/2026-10-23-apples-doors-in-family-setup.md)) |
 | Open Personal Voice Settings and Open Dwell Control Settings open the right page | `AccessibilitySettings.openSettings(for:)` |
 | Each input method reaches every control: touch, Voice Control, Switch Control, Full Keyboard Access, AssistiveTouch Dwell, head tracking, Eye Tracking | That standard buttons are the whole integration (invariant 1) |
 | A Switch Control double activation does not make a phrase stutter | Repeat absorption (invariant 10) |
-| How far Snap to Item jumps, and whether the pointer stays on an activated control or follows the gaze | Spacing and placement for dwell profiles |
+| How far Snap to Item jumps, and whether the pointer stays on an activated control or follows the gaze | Spacing and placement for dwell profiles, and which of the chain engine's findings bind: it scores both pointers at any distance, and "Settings closes under the look" needs the pointer to follow the gaze (docs/DECISIONS.md, "One chain engine for dwell safety") |
 | Whether Snap to Item and Dwell pick a target by its nearest centre or its nearest edge, and which control a look resting on the message selects | What removes "Yes and No border the message" (docs/DECISIONS.md, "Settings on Home"), and "the top of Stop's well is nearest Again" ("Get Attention and Stop on Home") |
 | Whether a lingering look re-fires a dwell | How much repeat protection matters |
-| Whether Snap to Item ignores controls scrolled off screen | Whether scrolling can keep family controls out of reach |
+| Whether Snap to Item ignores controls scrolled off screen | Whether scrolling can keep family controls out of reach, and whether the chain engine may keep scoring only the controls in the window |
 | What the real software keyboard covers in each orientation (CI measures the simulator's on every UI run; a device, other languages and windowed iPads are not measured), that a third-party keyboard never appears in Brickson, and typing checks 1–8 in [`log/2026-10-21-typing-foundation.md`](log/2026-10-21-typing-foundation.md) | `KeyboardAllowance`'s references, the typing layout (docs/LESSONS.md, "Test with the real software keyboard"), the word row, Return under dwell, and whether Brickson needs its own keyboard |
 | Get Attention heard from the next room, on the speaker and over Bluetooth | The alarm's sound and level, and the replacement tone |
 | A phrase spoken while Get Attention sounds is understood over the tone at 0.32 | `AttentionAlertStatus.toneVolumeWhileSpeaking` |
@@ -556,7 +578,7 @@ Simulators cannot show these. Record each result in a `docs/log/` file
 | Switch Control with Auto Scanning, Group Items on and off, and Auto Tap: the scan steps to Emergency, Yes and No from every Home state, and whether Home's regions become scan groups | Scan order and grouping (docs/ACCESSIBILITY.md, section 1) |
 | With VoiceOver, Switch Control (item and group scanning) and Full Keyboard Access, Home is reached as Yes, No, Emergency, Get Attention, Again, then the message, Stop while it shows, the categories and Settings, the phrases, in every state; what each says on entering a region; whether the cursor stops on the message or the status line; Voice Control's "Show names" shows each control's visible words and "Tap Repeat" presses Again | "Home's scan order and names": the order, unlabelled regions, and whether `accessibilityRespondsToUserInteraction` is needed |
 | With VoiceOver on, a phrase tile with and without the `startsMediaSession` trait: does VoiceOver stay quiet while the phrase speaks | Whether phrase tiles carry the trait (R0 item 4) |
-| Brickson inside Assistive Access with `UISupportsFullScreenInAssistiveAccess`: its window size, and whether Eye Tracking and Switch Control work there | Assistive Access support (R0 item 7) |
+| Brickson inside Assistive Access with `UISupportsFullScreenInAssistiveAccess`: its window size (all the space above the Back button), whether Eye Tracking and Switch Control work there, and that the guides show no Open … Settings button and say to leave Assistive Access first | Assistive Access support (R0 item 7; Wave 3 item 1) |
 | Guided Access with each input method, and with a short Display Auto-Lock while Brickson keeps the screen awake | Setup advice, and invariant 12 under Guided Access |
 | Which of the VoiceOver, Switch Control and AssistiveTouch flags each input method turns on | Profile suggestions (R1) |
 | With a real finger at an accessibility text size, in the shipped build: press Yes slowly (about half a second) and lift, then a phrase tile; then hold Yes, slide onto No and lift, and hold a phrase tile, slide onto the next and lift; also with Touch Accommodations' Hold Duration on, and with AssistiveTouch Dwell. Each press speaks; a slide says the control it began on or nothing, never the next. In a window where Settings shows its gear alone (iPhone Duo's outer display with Bold Text on is one; [`log/2026-10-23-settings-on-home.md`](log/2026-10-23-settings-on-home.md)): tap the gear (Settings opens); hold it until its large copy shows and lift, and record whether Settings opened (opening means a real finger is not swallowed as XCTest's touch was); hold it and slide onto each control beside, above and below it, and lift: Settings opens or nothing happens, never anything else; dwell on it; and press Yes and a phrase tile slowly there: each speaks. The simulator results these confirm are in [`log/2026-10-23-large-content-and-iphone-duo.md`](log/2026-10-23-large-content-and-iphone-duo.md) | That Home speaks on a slow real press and a slide never says the next control; from the gear, whether a real finger's held press is swallowed as XCTest's was, and whether the gear keeps the viewer (docs/DECISIONS.md, "Show Borders and the Large Content Viewer on Home") |

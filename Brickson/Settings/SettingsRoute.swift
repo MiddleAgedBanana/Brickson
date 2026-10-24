@@ -11,6 +11,8 @@ nonisolated enum SettingsRoute: Hashable, Sendable {
     case voice
     case reachingTheScreen
     case keepOpen
+    case callsSiriAndShortcuts
+    case moreAccessibility
     case privacy
     case about
 }
