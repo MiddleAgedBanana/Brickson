@@ -61,19 +61,37 @@ What came from where:
   Guidelines instead (*Type*, below).
 - **Drawn by the layout source**: every Brickson control, label, well and
   frame, on both Figma and the prototype.
-- **Stand-ins to know about**: the Figma file labels controls in Inter,
-  because SF Pro is listed in the account but does not render there. SF
-  Symbols are not drawn; each control's layer name carries the symbol
-  name the app should use. The prototype uses the system font of the
-  browser it runs in. The real app uses San Francisco and SF Symbols, and
-  its word-fitting is measured on the device, so label fits here are
-  estimates (*Words never break*, below).
-- **Figma account limits**: the Starter plan allows three pages per file,
-  one variable mode (light and dark are two modes of Apple's kit, which is
-  why the dark frames come from the kit's collection) and a small monthly
-  budget of read calls through the Figma connector. Agents draw with
-  `use_figma` scripts, which do not count against it, and take screenshots
-  from inside those scripts.
+- **Stand-ins to know about**: the Figma file labels controls in Inter.
+  SF Pro is listed in the account, but text an agent writes in it through
+  the Figma connector measures zero wide and does not render, and SF
+  Symbol glyphs written the same way vanish too; only the text inside
+  Apple's kit components draws (measured 2026-10-24,
+  [record](log/2026-10-24-figma-playbook.md)). So SF Symbols are not
+  drawn; each control's layer name carries the symbol name the app should
+  use. The prototype uses the system font of the browser it runs in. The
+  real app uses San Francisco and SF Symbols, and its word-fitting is
+  measured on the device, so label fits here are estimates (*Words never
+  break*, below).
+- **Figma account**: the owner's team has been on the Professional plan,
+  with a Full seat, since 2026-10-23. The Starter plan's limits no longer
+  apply: pages are not capped, a local variable collection holds up to 10
+  modes, and the connector allows 200 read calls a day and 10 a minute,
+  with the tools that write exempt. Professional has no branching, so a
+  large redraw starts in a new section, with version history as the undo.
+  Agents still draw with `use_figma` scripts and take screenshots from
+  inside them.
+- **How agents work in the file** (the method, with the connector calls
+  and what each Figma mode is good for, is in the
+  [record](log/2026-10-24-figma-playbook.md)): the work file's spec comes
+  first and the frames illustrate it; library searches are limited to
+  Apple's iOS and iPadOS 27 kit, because non-Apple kits are attached to
+  the file too; the frames are pictures of what the layout engine should
+  produce, so the pixel positions `get_design_context` returns are never
+  copied into SwiftUI, only names, words, symbol names and colour roles;
+  `PaletteTests`, not Figma's colour checker, is the proof of contrast
+  for `Palette`'s pairs, and system components are measured from
+  rendered captures (docs/work/design-screens.md, invariant 6);
+  and where the built app differs, the frames are redrawn from it.
 
 ## Colour
 
