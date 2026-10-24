@@ -357,7 +357,7 @@ release in docs/ROADMAP.md when no thread has it yet.
 - Settings' Get Attention place is still empty, although AGENTS.md's
   design rules say "Settings opens on a large way back and a start-only
   Get Attention". Scored on 2026-10-24, Get Attention there would sound
-  the alarm unasked on every window, 5 to 7 chains each, mostly from the
+  the alarm unasked on every window, 2 to 5 chains each, mostly from the
   standard Back button just under that place, so it was not added.
   Keeping it out, adding it anyway or finding a place first is the
   owner's decision (docs/DECISIONS.md, "Get Attention in Settings' bar:
@@ -372,15 +372,19 @@ release in docs/ROADMAP.md when no thread has it yet.
 - Chains of activations through Settings' screens are scored on its
   first screens (`SettingsOnHomeTests` with the chain engine, on CI's
   iPad and iPhone; docs/DECISIONS.md, "One chain engine for dwell
-  safety"), and one hazard is open: Settings closes under the look.
-  Where the pointer goes back to the look, a look near Back to Talking's
-  leading edge rests over No once Home returns, and on the phone at the
-  largest size its lower edge rests over Get Attention; the Reaching the
-  Screen guide that the first step of Set Up Step by Step now opens is
-  one more way to it. Placing Back to Talking over harmless controls is
-  the fix, and a device check says whether it binds. *(ROADMAP Wave 3
-  item 4)* A held look no longer saves a setup answer: the first step
-  puts Learn About Each Way where Set Up Step by Step's row was
+  safety"), and two hazards are open. A held look can follow Family Setup's first row into
+  Set Up Step by Step and save an answer (it adds Touch and restarts the
+  check-in clock; nothing reads the answers yet): from Home's Settings
+  on a phone at the default text size, and from Set Up Step by Step
+  itself on every window where it shows. And Settings closes under the
+  look: where the pointer goes back to the look, a look near Back to
+  Talking's leading edge rests over No once Home returns, and on the
+  phone at the largest size its lower edge rests over Get Attention.
+  Placing Back to Talking over harmless controls is the fix for the
+  second, and a device check says whether it binds. *(ROADMAP Wave 3
+  item 4)* The fix for the first, Learn About Each Way where Set Up Step
+  by Step's row was, was built and held on 2026-10-24, because its guide
+  leads into the second hazard; it comes back after item 4
   ([`log/2026-10-24-settings-chains.md`](log/2026-10-24-settings-chains.md)).
   Not scored yet: the chain through iOS's Personal Voice question once
   the Ask button shows (after answering, the look rests where the
@@ -492,12 +496,12 @@ which change Home, are its
 [Wave 3](ROADMAP.md#wave-3-the-next-pull-requests-in-order) (planned
 2026-10-23): typing on Home is its item 5, after Home moves onto the
 layout engine. Its item 2, the chain engine, is built; a change that
-moves a control keeps its tests passing. Item 7 fixed the chain that
-saved a setup answer and scored Get Attention in Settings' bar, which
-would sound the alarm unasked, for the owner to decide; item 4 makes the
-fix for Settings closing under the look (docs/DECISIONS.md, "One chain
-engine for dwell safety" and "Get Attention in Settings' bar: the owner
-decides").
+moves a control keeps its tests passing. Item 7 scored Get Attention
+in Settings' bar, which would sound the alarm unasked, for the owner to
+decide, and built a fix for the chain that saves a setup answer, held
+until item 4 makes the fix for Settings closing under the look
+(docs/DECISIONS.md, "One chain engine for dwell safety" and "Get
+Attention in Settings' bar: the owner decides").
 Every change follows AGENTS.md, *Apple's current frameworks first*: the
 legacy uses kept, and the moves still planned with who owns each, are in
 docs/DECISIONS.md under that title

@@ -2018,44 +2018,44 @@ engine, not five scripts".
   Stop on Home*), from the empty well or after choosing Stop, sometimes
   by way of a category. Anything else fails it, and, strict, so does
   that hazard's end.
-- **Settings: one open hazard, one closed.** `SettingsOnHomeTests` reads
-  Settings' first screen, Family Setup and, where its row shows without
-  scrolling, Set Up Step by Step's first step and, where its link shows,
-  the Reaching the Screen guide that link opens, on CI's iPad and
-  iPhone at the default and largest text sizes and the iPad in
-  landscape. It follows every chain from Home's Settings and from each
-  control of those screens, out to Home and back, and attaches what it
-  finds (`settings-chains-…` in the UI results). It fails on a control it
-  does not know, on a chain that saves an answer, on a hazard of any
-  other kind, and, strictly, once the open one is gone. The examples are
-  from the model of main's CI frames of 2026-10-23:
-  - **Closed 2026-10-24: a held look saved an answer in Set Up Step by
-    Step.** On a phone at the default size, a look held on Home's
-    Settings went through Family Setup and Set Up Step by Step to Touch,
-    the first answer, which saved it, by either rule and with either
-    pointer; on every window where the row showed, a look held after
-    choosing Set Up Step by Step met one of the first answers (CI on PR
-    #49: 7 chains on the iPhone, 6 on the iPad in portrait and
-    landscape, 4 at its largest size). ROADMAP Wave 3 item 7 broke it by
-    placement
-    ([`log/2026-10-24-settings-chains.md`](log/2026-10-24-settings-chains.md)):
-    the first step opens on its words, filled down to where Family
-    Setup's Set Up Step by Step row was (both measured in their screens'
-    content, `SettingsLanding`), and then **Learn About Each Way**, at
-    least as tall as that row, which only opens Reaching the Screen. The
-    answers sit one row lower. Words alone would not do: wherever a look
-    rests, Snap to Item picks the nearest control, and below the words
-    that was an answer. The link is not a decoy: the guide is what a
-    family member needs to answer the question well, and Family Setup
-    offers it too. Modelled on PR #49's CI frames, the link clears every
-    such chain on every window, and still does 40 or 100pt lower or 60pt
-    taller; shorter than the row, or more than about 8pt higher, a look
-    on the row's edge meets Touch again. The guide opens on words, with
-    only Back and Back to Talking in its first screenful, so its Back to
-    Talking is one more way into the hazard below, where the pointer goes
-    back to the look (on the model, 3 to 6 chains on the phone, 4 to 10
-    on the iPad in portrait); Family Setup's own guide rows reach it the
-    same way, unscored, because the engine stops at their screens.
+- **Settings: two open hazards.** `SettingsOnHomeTests` reads Settings'
+  first screen, Family Setup and, where its row shows without scrolling,
+  Set Up Step by Step's first step, on CI's iPad and iPhone at the
+  default and largest text sizes and the iPad in landscape. It follows
+  every chain from Home's Settings and from each control of those
+  screens, out to Home and back, and attaches what it finds
+  (`settings-chains-…` in the UI results). It fails on a control it does
+  not know, on a hazard of any other kind, and, strictly, once either of
+  these is gone. The examples are from the model of main's CI frames of
+  2026-10-23, before this change's own run:
+  - **Open: a held look saves an answer in Set Up Step by Step.** The
+    known gap (docs/HANDOFF.md, *Known gaps*): on a phone at the default
+    size, a look held on Home's Settings goes through Family Setup and
+    Set Up Step by Step to Touch, the first answer, which saves it, by
+    either rule and with either pointer. On every window where the row
+    shows, a look held after choosing Set Up Step by Step meets one of
+    the first answers (CI on PR #49: 7 chains on the iPhone, 6 on the
+    iPad in portrait and in landscape, 4 at its largest size). It is
+    milder than the hazard below: it adds Touch and restarts the
+    check-in clock, and nothing reads the answers yet.
+    *Tried 2026-10-24 and held* (ROADMAP Wave 3 item 7,
+    [`log/2026-10-24-settings-chains.md`](log/2026-10-24-settings-chains.md)):
+    the first step opening on its words, filled down to where Family
+    Setup's Set Up Step by Step row was, and then **Learn About Each
+    Way**, at least as tall as that row, which only opens Reaching the
+    Screen, with the answers one row lower. Modelled on PR #49's CI
+    frames it clears every chain that saves an answer, but the guide
+    opens with only Back and Back to Talking near the look, so a held
+    look goes on to Back to Talking and Settings closes over a phrase, No
+    or Get Attention: the hazard below goes from 3, 3, 4, 5 and 4 chains
+    to 6, 3, 10, 7 and 9 (iPhone 17 at the default and largest sizes,
+    13-inch iPad in portrait at both sizes, iPad in landscape). Codex's
+    review of PR #50 found it; a milder hazard is not traded for a worse
+    one, and the owner chose to hold the link until Wave 3 item 4. Its
+    code is commit `1de50f5` on PR #50, reverted there, and comes back
+    after item 4, rescored. Words alone would not do it: wherever a look rests, Snap to
+    Item picks the nearest control, and below the words that is an
+    answer.
   - **Open: Settings closes under the look.** New. Back to Talking
     closes Settings onto Home, under the look. Its centre is over
     Emergency (*Settings on Home*), but where the pointer goes back to
@@ -2088,13 +2088,13 @@ Wave 3 item 7
 
 Settings' safety bar keeps an empty place at its top leading edge for a
 start-only Get Attention (*Settings is a cover with a fixed safety bar*),
-waiting for the chain engine's score (*One chain engine for dwell
-safety*). Scored on PR #49's CI frames, with the first step's Learn About
-Each Way in place, a Get Attention filling that place adds chains that
-sound the alarm unasked on every window: 7 on the iPhone 17 at the
-default size, 5 at the largest size, 7 on the 13-inch iPad in portrait
-and in landscape, 5 at its largest size. So the pull request that scored
-it does not add it, and the sound line, whose move was to come with Get
+and the chain engine has now scored that place (*One chain engine for
+dwell safety*). On PR #49's CI frames, a Get Attention filling it adds
+chains that sound the alarm unasked on every window: 3 on the iPhone 17
+at the default size, 5 on the iPhone 17 at its largest size, and 2 each
+on the 13-inch iPad in portrait at the default size, in portrait at its
+largest size and in landscape. So the pull request that scored it does
+not add it, and the sound line, whose move was to come with Get
 Attention, stays at the foot of the cover. The app is as it has always
 been: Brickson has never shown Get Attention in Settings, a gap recorded
 in docs/HANDOFF.md, *Known gaps*. Nothing here makes that gap the rule.
@@ -2106,9 +2106,7 @@ in docs/HANDOFF.md, *Known gaps*. Nothing here makes that gap the rule.
   back and then sounds the alarm ("choosing BackButton →
   settingsGetAttention" in the model). On the phone, a look held after
   choosing the first screen's Family Setup row can meet it too, once
-  Family Setup shows. On the iPad, the middle of a full-width row (Learn
-  About Each Way's, from the guide it opens) is as near Get Attention as
-  Back to Talking, and a tie counts both.
+  Family Setup shows.
 - **What its absence costs.** Someone in Settings needs Back to Talking,
   then Get Attention on Home: two activations, not one. Settings is a
   family's screen, reached from Home's Settings button, and Home's Get
@@ -2117,7 +2115,7 @@ in docs/HANDOFF.md, *Known gaps*. Nothing here makes that gap the rule.
   - *Keep it out for now* (recommended): Get Attention stays out of
     Settings' bar until a place clears its chains, and AGENTS.md's design
     rule says so; the record of this change proposes the wording.
-  - *Add it in the bar's place anyway*, accepting 5 to 7 chains on every
+  - *Add it in the bar's place anyway*, accepting 2 to 5 chains on every
     window that sound the alarm unasked, each stopped from Home.
   - *Find a place first*, from the list below, and decide when it is
     scored.
@@ -2382,7 +2380,7 @@ the project. Reversible if the owner objects.*
 
 Settings is a full-screen cover. Because it hides Home's quick controls,
 every Settings screen sits under one fixed row (`SettingsSafetyBar`): a
-start-only Get Attention at the top leading edge and Back to Talking at
+place reserved for a start-only Get Attention at the top leading edge and Back to Talking at
 the top trailing edge, at the same frames on every screen. Get
 Attention's place is kept empty until Home shows Get Attention and Stop:
 the alarm exists (`AttentionAlertPlayer`), but starting it here while Home

@@ -1,7 +1,8 @@
 # Settings' chains, and Get Attention in Settings
 
 *Roadmap: Wave 3 item 7 (R0 items 4 and 7). Owner: the Settings' chains
-thread (a cloud session; GitHub CI is its build). Status: building.*
+thread (a cloud session; GitHub CI is its build). Status: held on
+2026-10-24; the link waits for ROADMAP Wave 3 item 4 (*Held*, below).*
 
 ## Intent
 
@@ -110,7 +111,8 @@ thread (a cloud session; GitHub CI is its build). Status: building.*
     Talking over harmless controls only (ROADMAP Wave 3 item 4).
   - *Get Attention in the bar's empty place adds alarm chains.* Modelled
     on CI's frames with the link: 5 to 7 chains on every window sound the
-    alarm unasked. The standard Back button sits just under that place,
+    alarm unasked; without it, as merged (*Held*, below), 2 to 5. The
+    standard Back button sits just under that place,
     and on a screen with no Back, Settings' first screen, the spot where
     Back was is nearest Get Attention by both rules. On the iPad, the
     middle of a full-width row is as near Get Attention as Back to
@@ -176,3 +178,19 @@ thread (a cloud session; GitHub CI is its build). Status: building.*
   - Device checks: none new. Whether Snap to Item lands on the link is
     the open check of how Snap to Item picks a target (docs/HANDOFF.md,
     *Checks that need a real device*).
+
+## Held
+
+*2026-10-24, after Codex's review of PR #50.* The link was built
+(commit `1de50f5`), passed CI's unit and UI tests, and was reverted in
+the same pull request before it merged. On PR #49's CI frames it clears
+every chain that saves an answer, but the Reaching the Screen guide it
+opens has only Back and Back to Talking near the look, so a held look
+goes on to Back to Talking, and Settings closes over a phrase, No or Get
+Attention: "Settings closes under the look" goes from 3, 3, 4, 5 and 4
+chains to 6, 3, 10, 7 and 9. That is worse than saving a setup answer,
+which nothing reads yet. No placement of the link avoids it while Back
+to Talking closes onto Home under the look, so the link comes back
+after ROADMAP Wave 3 item 4 puts Back to Talking over harmless controls,
+rescored on that pull request's frames (docs/DECISIONS.md, "One chain
+engine for dwell safety"). The Figma screens show the held design.
