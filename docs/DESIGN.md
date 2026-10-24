@@ -88,7 +88,9 @@ What came from where:
   the file too; the frames are pictures of what the layout engine should
   produce, so the pixel positions `get_design_context` returns are never
   copied into SwiftUI, only names, words, symbol names and colour roles;
-  `PaletteTests`, not Figma's colour checker, is the proof of contrast;
+  `PaletteTests`, not Figma's colour checker, is the proof of contrast
+  for `Palette`'s pairs, and system components are measured from
+  rendered captures (docs/work/design-screens.md, invariant 6);
   and where the built app differs, the frames are redrawn from it.
 
 ## Colour

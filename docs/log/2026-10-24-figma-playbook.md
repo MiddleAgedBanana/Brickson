@@ -1,6 +1,6 @@
 # What Figma can do for Brickson's design work, measured
 
-*2026-10-24. Pull request from `claude/project-thread-yjzkvg`. The
+*2026-10-24. Pull request #51 (`claude/project-thread-yjzkvg`). The
 "Explore Figma modes for design threads" thread, a cloud session that
 cannot build or run anything.*
 
@@ -23,7 +23,8 @@ the app changes.
 
 Checked against Figma's help centre, developer docs and release notes on
 2026-10-24 (sources below). "Connector" means Figma's remote MCP server,
-the only way agents reach Figma.
+the one this session used. Figma also has a desktop server, which runs
+inside the Figma app on a Mac and cannot write to the canvas.
 
 | Mode | Connector | For Brickson |
 |---|---|---|
@@ -32,7 +33,7 @@ the only way agents reach Figma.
 | FigJam | `generate_diagram` (Mermaid flowchart, state, sequence, gantt, ER), `get_figjam`, `use_figma` | **High as an explainer**: states and activation chains as diagrams, review boards agents can read. A diagram is never proof; `ChainEngine` and the UI tests are. |
 | Specs | `use_figma` with Figma's `figma-spec` skill | A review copy beside the frames at most. `docs/work/` stays the spec. |
 | Slides | `use_figma`, screenshots | Rarely needed: an occasional review deck. |
-| Make | Can read and import code; cannot be prompted | No: it builds React web apps, not SwiftUI. |
+| Make | Reads and imports code; the tool that prompts Make was not offered in this session | No: it builds React web apps, not SwiftUI. |
 | Sites (beta) | None | No: the hand-written GitHub Pages site stays in the repository. |
 | Buzz (beta) | None | Only by hand, for App Store screenshot sets. |
 | Weave | Tools exist, but it is a separate paid product, not linked | No: AI imagery does not fit an honest accessibility app. |
@@ -64,8 +65,11 @@ the only way agents reach Figma.
 
 ## Commits
 
-- Correct DESIGN.md's Figma account notes and record what each Figma mode
-  is good for.
+- `492900a` Correct DESIGN.md's Figma account notes and record what each
+  Figma mode is good for.
+- The last commit answers CodeRabbit's review: contrast proof scoped to
+  `Palette`'s pairs, the connector, Make and the unreached modes scoped
+  to this session, and this list and the checks below.
 
 ## Verified
 
@@ -92,7 +96,9 @@ Run through the Figma connector on 2026-10-24, from this cloud session:
 - Figma's rate-limit page (200 read calls a day, 10 a minute, writing
   tools exempt) and its AI settings page were read on the day.
 
-GitHub CI is this pull request's build check; nothing in the app changed.
+`python3 scripts/test-docs.py` and `python3 scripts/test-hooks.py` passed
+in this cloud session (Linux) on the last commit. GitHub CI is this pull
+request's build check; nothing in the app changed.
 
 ## Not verified
 
@@ -100,8 +106,10 @@ GitHub CI is this pull request's build check; nothing in the app changed.
   Mac with SF Pro installed.
 - Whether `use_figma` counts toward the read limit, and whether
   `get_design_context` returns annotations: Figma's docs do not say.
-- Make, Sites, Buzz and Figma's in-app agent were not driven: the connector
-  cannot reach Sites, Buzz or the agent, or prompt Make.
+- Make, Sites, Buzz and Figma's in-app agent were not driven: no connector
+  tool for Sites, Buzz or the agent was found in Figma's tools page or in
+  this session, and the tool that prompts Make was not offered here.
+- Whether GitHub CI passes: it had not finished when this was written.
 
 ## Follow-ups
 
