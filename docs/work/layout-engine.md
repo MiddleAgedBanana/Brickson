@@ -171,6 +171,9 @@ type that nothing calls yet, and Home moves onto its frames in item 4.
     today; on windows narrower than 375 points with Bold Text, the well's
     top leading corner ties Yes by centre too. On regular widths
     Emergency is above the well and nothing that speaks is nearest it.
+    *2026-10-24, item 4:* Yes is nearest no point of the well in either
+    arrangement; where the safety row is short the categories sit lower
+    (`HomeLayout.wellDrop`).
   - Whole chains of held activations, by the chain engine on the
     engine's frames (`HomeChains`, with Phrases and Type added), in every
     Home state, at widths every 16 points and both sides of each change
@@ -235,7 +238,8 @@ type that nothing calls yet, and Home moves onto its frames in item 4.
      ([`log/2026-10-24-home-on-the-layout-engine.md`](../log/2026-10-24-home-on-the-layout-engine.md)):
      Home on the engine without Phrases and Type (`HomeLayout.Modes`),
      the tile floor that follows the width, the Bold Text tiles, the
-     selected categories' inset, and Get Attention's two lines. Left
+     selected categories' inset, Get Attention's two lines, and Yes
+     kept off Stop's well (found by Codex in review). Left
      for later: the arrangement for 320-point windows and phones at
      the largest sizes (a design question); Back to Talking over
      Phrases' frame and the Figma check (item 5, which brings

@@ -111,7 +111,8 @@ struct HomeLayoutEngineTests {
 
     /// Fails if the regions leave the slot plan's order, A, C, B, D from
     /// the top, or the gap between them leaves 10 to 12 points: never less
-    /// than 2 points more than the gap between controls.
+    /// than 2 points more than the gap between controls. B sits lower by
+    /// `wellDrop` (`theCategoriesSitLowerOnlyWhereYesWouldReachStopsWell`).
     @Test func theRegionsRunTopToBottomInTheSlotPlansOrder() {
         var faults: [String] = []
         for (layout, _, context) in Self.everyLayout {
@@ -123,8 +124,9 @@ struct HomeLayoutEngineTests {
             if gap < HomeLayout.minimumRegionSpacing - 0.001 || gap > HomeLayout.regionSpacing + 0.001 {
                 faults.append("gap \(gap) (\(context))")
             }
-            for (upper, lower, name) in [(a, c, "A to C"), (c, b, "C to B"), (b, d, "B to D")] where abs(lower.minY - upper.maxY - gap) > 0.01 {
-                faults.append("\(name): \(lower.minY - upper.maxY) apart, gap \(gap) (\(context))")
+            for (upper, lower, apart, name) in [(a, c, gap, "A to C"), (c, b, gap + layout.wellDrop, "C to B"), (b, d, gap, "B to D")]
+            where abs(lower.minY - upper.maxY - apart) > 0.01 {
+                faults.append("\(name): \(lower.minY - upper.maxY) apart, gap \(gap), drop \(layout.wellDrop) (\(context))")
             }
             if abs(a.minY - layout.content.minY) > 0.01 {
                 faults.append("A starts at \(a.minY), content at \(layout.content.minY) (\(context))")
@@ -650,29 +652,25 @@ struct HomeLayoutEngineTests {
     /// *Open: the top of Stop's well is nearest Again*): with Get Attention
     /// under Emergency, Again is the control above Stop's well, as it was
     /// before the engine, on every width without typing and on compact
-    /// widths with it, and where the safety row is at or near its floor
-    /// the leading part of the well's top edge ties Yes, above Again, by
-    /// centre too.
-    /// In the slot plan's one-row safety row Emergency is above the well,
-    /// and nothing that speaks is nearest any point of it. Fails if
-    /// anything else is ever nearest a point of the well, if Yes is met
-    /// anywhere but along its top edge, if the one-row safety row meets Again,
-    /// and, strict, once the others do not.
+    /// widths with it. Yes, two rows up, is never nearest any point of it
+    /// (`HomeLayout.wellDrop`). In the slot plan's one-row safety row
+    /// Emergency is above the well, and nothing that speaks is nearest any
+    /// point of it. Fails if anything else is ever nearest a point of the
+    /// well, Yes included, if the one-row safety row meets Again, and,
+    /// strict, once the others do not.
     @Test func theTopOfStopsWellIsNearestAgainUnlessEmergencyIsAboveIt() {
         var meetsAgain = 0
         var faults: [String] = []
         for (layout, _, context) in Self.everyLayout {
             let others = Nearest.controls(in: layout, excluding: [.stop])
-            let well = layout.frame(.stop)
-            let allowed: Set<HomeLayout.Slot> = Self.emergencyIsAboveTheWell(layout) ? [.emergency] : [.again, .yes]
+            let allowed: Set<HomeLayout.Slot> = Self.emergencyIsAboveTheWell(layout) ? [.emergency] : [.again]
             var again = false
-            for point in Nearest.points(in: well) {
+            for point in Nearest.points(in: layout.frame(.stop)) {
                 let met = Nearest.to(point, among: others).subtracting(Self.categories)
-                let onTheTopEdge = point.y < well.minY + 1
-                if !met.isSubset(of: allowed) || (met.contains(.yes) && !onTheTopEdge) {
+                if !met.isSubset(of: allowed) {
                     faults.append("\(met) from \(point) in Stop's well (\(context))")
                 }
-                again = again || !met.isDisjoint(with: [.again, .yes])
+                again = again || met.contains(.again)
             }
             if again {
                 meetsAgain += 1
@@ -683,6 +681,81 @@ struct HomeLayoutEngineTests {
         withKnownIssue("docs/DECISIONS.md, \"Get Attention and Stop on Home\": the top of Stop's well is nearest Again") {
             #expect(meetsAgain == 0)
         }
+    }
+
+    /// Fails if Yes is nearest, ties counted, any point of the top edge of
+    /// Stop's well, taken every tenth of a point, where Yes comes nearest
+    /// the well: the points the other checks take, a few points apart,
+    /// can fall either side of one. On PR #52, a 1356×568 window at AX5
+    /// left Yes 0.36 points from the nearest at one point of the edge
+    /// while the engine checked the well every 4 points.
+    @Test func noPointOfTheTopOfStopsWellIsNearestYes() {
+        var faults: [String] = []
+        for (layout, _, context) in Self.everyLayout where !Self.emergencyIsAboveTheWell(layout) {
+            let others = Nearest.controls(in: layout, excluding: [.stop])
+            let well = layout.frame(.stop), yes = layout.frame(.yes)
+            let under = Self.categories.map(layout.frame)
+                .filter { abs($0.minX - well.minX) < 0.01 && $0.minY > well.maxY }
+                .min { $0.minY < $1.minY }
+            let rivals = [layout.frame(.again)] + (under.map { [$0] } ?? [])
+            // Yes is met only where it comes within a tie of the nearer of
+            // Again and the category under the well, by one rule or the
+            // other. That margin changes by at most 2 points for each point
+            // along the edge, so only the points within half a point of one
+            // where it is under a tie and a point need taking every tenth of
+            // a point.
+            func margin(_ point: CGPoint) -> CGFloat {
+                NearestRule.allCases.map { rule in
+                    rule.distance(from: point, to: yes) - (rivals.map { rule.distance(from: point, to: $0) }.min() ?? .infinity)
+                }.min() ?? .infinity
+            }
+            let samples = Int(well.width.rounded(.up))
+            scan: for sample in 0...samples {
+                let coarse = well.minX + well.width * CGFloat(sample) / CGFloat(samples)
+                guard margin(CGPoint(x: coarse, y: well.minY)) <= ChainEngine.tie + 1 else { continue }
+                for x in stride(from: max(well.minX, coarse - 0.5), through: min(well.maxX, coarse + 0.5), by: 0.1) {
+                    let point = CGPoint(x: x, y: well.minY)
+                    if margin(point) <= ChainEngine.tie && Nearest.to(point, among: others).contains(.yes) {
+                        faults.append("Yes from \(point) (\(context))")
+                        break scan
+                    }
+                }
+            }
+        }
+        let count = faults.count
+        #expect(count == 0, "first: \(faults.first ?? "")")
+    }
+
+    /// Fails if a look resting in Stop's empty well can meet Yes where the
+    /// safety row is short: on PR #52, in a 400×568 window at the default
+    /// size without typing, the well's top leading corner was nearest Yes
+    /// by centre, until the categories sat lower there. Fails too if the
+    /// categories sit lower on a phone or a full-screen iPad (the fit
+    /// table's windows), or if the room the drop takes leaves a library
+    /// that fits scrolling.
+    @Test func theCategoriesSitLowerOnlyWhereYesWouldReachStopsWell() {
+        let found = HomeLayout(space: .init(size: CGSize(width: 400, height: 568)), text: Self.defaultText, modes: .phrasesOnly)
+        let well = found.frame(.stop)
+        let corner = CGPoint(x: well.minX + 0.5, y: well.minY + 0.5)
+        #expect(found.wellDrop > 0)
+        #expect(!Nearest.to(corner, among: Nearest.controls(in: found, excluding: [.stop])).contains(.yes))
+        for window in Self.windows {
+            let space = HomeLayout.Space(size: window.size, safeArea: .init(top: window.top, leading: 0, bottom: window.bottom, trailing: 0))
+            for (name, plain) in Self.textSizes {
+                for boldText in [false, true] {
+                    for modes in Self.bothModes {
+                        let layout = HomeLayout(space: space, text: boldText ? Self.bold(plain) : plain, modes: modes)
+                        #expect(layout.wellDrop == 0, "\(window.name), \(name), Bold Text \(boldText), \(modes)")
+                    }
+                }
+            }
+        }
+        var faults: [String] = []
+        for (layout, _, context) in Self.everyLayout where layout.startersFit && layout.grid.scrolls {
+            faults.append("drop \(layout.wellDrop) (\(context))")
+        }
+        let count = faults.count
+        #expect(count == 0, "first: \(faults.first ?? "")")
     }
 
     // MARK: Chains of held activations
@@ -715,13 +788,12 @@ struct HomeLayoutEngineTests {
     /// change of arrangement, at a phone's and an iPad's height, at three
     /// text sizes, in both modes.
     ///
-    /// One finding is known, wherever Again is above Stop's well (the test
+    /// One finding is known, wherever Again is above Stop's well (the tests
     /// above): a look resting in the well, empty or after choosing Stop,
-    /// can meet Again, or Yes along the well's top edge where the safety
-    /// row is at or near its floor, sometimes after choosing a category on
-    /// the way. Anything
-    /// else fails, and so does that finding where Emergency is above the
-    /// well; strict, so it fails once it is gone everywhere.
+    /// can meet Again, sometimes after choosing a category on the way.
+    /// Anything else fails, Yes from the well included, and so does that
+    /// finding where Emergency is above the well; strict, so it fails once
+    /// it is gone everywhere.
     @Test(arguments: [false, true])
     func noChainOnTheEnginesFramesMeetsAHazardButStopsWell(boldText: Bool) {
         var known = 0
@@ -741,7 +813,7 @@ struct HomeLayoutEngineTests {
                             let start = finding.example.start
                             let fromTheWell = start.chosen?.name == HomeChains.stop || start.restingOn == HomeChains.emptyWell
                             let met = finding.example.hazard?.control.name
-                            if !Self.emergencyIsAboveTheWell(layout) && fromTheWell && (met == HomeChains.again || met == HomeChains.yes) {
+                            if !Self.emergencyIsAboveTheWell(layout) && fromTheWell && met == HomeChains.again {
                                 known += 1
                             } else {
                                 unexpected.append("\(finding) (\(context))")

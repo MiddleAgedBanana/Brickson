@@ -1,6 +1,6 @@
 # Home on the layout engine
 
-*2026-10-24. Pull request (`claude/project-thread-2z1cok`). The Move Home
+*2026-10-24. Pull request #52 (`claude/project-thread-2z1cok`). The Move Home
 onto the layout engine thread, a cloud session with no Xcode: nothing
 here was built or run on a Mac, and CI is the first build.*
 
@@ -69,6 +69,19 @@ What a person sees:
   cut the safety row back to keep it above Apple's keyboard; with
   nothing on Home that opens the keyboard, Home keeps its full height
   (88 points on an iPad in landscape, where the cut took it to 44).
+- **Yes stays off Stop's well** (found by Codex in review of this pull
+  request). The engine's shorter safety row, 44 points where the
+  stand-in kept 64, brought Yes's centre, two rows up, as near the top
+  leading corner of Stop's well as Again's: in a 400×568 window at the
+  default size, a look resting there after Stop met Yes by nearest
+  centre, which the stand-in never allowed. Where Yes would come within
+  a point of Again or the category under the well, at any point of the
+  well's top edge, the categories now sit lower (`HomeLayout.wellDrop`),
+  by at most 18.5 points, in 3% of the layouts measured and on no phone
+  in portrait or full-screen iPad. It costs 48 layouts (604 to 720
+  points wide, 667 tall, at AX3) up to 7.5 points of scrolling where
+  they fitted (docs/DECISIONS.md, "The layout engine", *Home on the
+  engine*).
 
 Hazards (invariant 10), measured on the engine's frames for every width
 from 320 to 1432 points, both modes, three text sizes, Bold Text off and
@@ -79,17 +92,18 @@ on:
   edge, as before (about 56% and 50%). With the slot plan's Phrases and
   Type beside the message it would be up to 97% and 89% on compact
   widths. Still open; the owner decides before R1's profiles.
-- *The top of Stop's well is nearest Again:* on Home, on every width.
-  Where the safety row is at or near its floor, the leading part of the
-  well's top edge also ties Yes by nearest centre. The chain engine finds
-  this and nothing else (`noChainOnTheEnginesFramesMeetsAHazardButStopsWell`).
+- *The top of Stop's well is nearest Again:* on Home, on every width,
+  as before. Yes never is (below). The chain engine finds this and
+  nothing else (`noChainOnTheEnginesFramesMeetsAHazardButStopsWell`).
 
 ## Commits
 
 - `3937f12` the engine's modes, tile floors, selected inset and Get
   Attention's two lines; Home on the engine; the stand-in removed; the
   tests ported.
-- The commit after it: this record and the documents.
+- `5473c99` this record and the documents.
+- The commit after those: Yes kept off Stop's well, from Codex's
+  review, with its tests and documents.
 
 ## Verified
 
@@ -110,13 +124,37 @@ undone:
   `everyGridKeepsTheFloorItsWidthSets` when the grid takes the floor of
   the narrowest width whatever its tiles' width.
 
+After Codex's review, the same suite, 45 tests, passes with the same
+83 known issues. Without the drop, `theTopOfStopsWellIsNearestAgainUnlessEmergencyIsAboveIt`,
+`theCategoriesSitLowerOnlyWhereYesWouldReachStopsWell` and
+`noChainOnTheEnginesFramesMeetsAHazardButStopsWell` fail; without its
+room counted with the floors, the last check of
+`theCategoriesSitLowerOnlyWhereYesWouldReachStopsWell` fails (a window
+the engine says fits would scroll). `noPointOfTheTopOfStopsWellIsNearestYes`
+failed on the fix's first version, which checked a grid of 65 by 9
+points across the well (Yes tied at a point of the top edge of a
+1336×568 window at AX5, as the review found), and passes on the one
+that takes the edge every quarter point. A sweep on Linux of 44,640
+layouts (widths every 4 points from 320 to 1432, eight heights from 568
+to 1376, five text sizes, Bold Text off and on, both arrangements)
+compared the fixed engine with the one before it: Yes nearest some
+point of the well, by the chain engine's rules, in 903 layouts before
+on its 45 points and 1,197 on the top edge every tenth of a point, and
+in none after on those or on 1,105 points; the numbers above come from
+it.
+
+On GitHub CI, `5473c99`, the first build of `HomeView`, the font tests
+and the UI tests for iOS, passed: the unit tests, and the UI tests on
+the iPad and the iPhone CI runs.
+
 `scripts/test-hooks.py` and `scripts/test-docs.py` pass.
 
 ## Not verified
 
-- Nothing was compiled for iOS: `HomeView`, the font tests
-  (`HomeLayoutEngineFontTests`, `StarterLabelFitTests`) and the UI tests
-  build and run first on CI. Until CI is green this is untested code.
+- Nothing was compiled here for iOS: CI is the build. The drop's one
+  line in `HomeView` (the categories' top padding) is not exercised by
+  the UI tests: no window CI runs has a drop, so the running app has
+  not been seen with one.
 - The new tile floors, Get Attention's one-line width and the message's
   two lines against SwiftUI are predictions from Apple's SF Pro measured
   on Linux; the font tests check them on CI.

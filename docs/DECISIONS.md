@@ -1638,9 +1638,9 @@ docs/work/layout-engine.md; the record is
   widths and nothing else. *2026-10-24:* on Home's own arrangement, as
   before the engine: at most 57% of the message by nearest centre and
   51% by nearest edge is nearest Yes, No or Again, and the top of
-  Stop's well is nearest Again on every width, its leading top edge
-  tying Yes by centre where the safety row is at or near its floor. The
-  chain engine finds that and nothing else.
+  Stop's well is nearest Again on every width, never Yes (*Home on the
+  engine*, *Yes stays off Stop's well*). The chain engine finds that
+  and nothing else.
 - **A fold is reported, not avoided.** The engine says which slots a
   reserved region crosses and moves nothing yet; how Home keeps clear of
   a fold waits for R0 item 13 (*iPhone Duo*, *The fold*).
@@ -1693,6 +1693,38 @@ is [`log/2026-10-24-home-on-the-layout-engine.md`](log/2026-10-24-home-on-the-la
   that keep words whole*): a wider tile holds the starter phrases in
   fewer lines, so it may be shorter before the grid scrolls. Each floor
   is checked on CI with every starter phrase, Bold Text off and on.
+- **Yes stays off Stop's well.** Found by Codex in review of PR #52:
+  the engine's safety row, 44 points at its floor where the stand-in
+  kept 64, brought Yes's centre, two rows up, as near the top leading
+  corner of Stop's well as Again's or the category's under the well. In
+  a 400×568 window at the default size, a look resting there after
+  Stop met Yes by nearest centre; the stand-in never let it, and the
+  slot plan's arrangement no longer does. Wherever Yes's centre would
+  not be a point (`HomeLayout.wellClearance`) farther than Again's or
+  the category's from every point of the well's top edge, taken every
+  quarter point, the categories sit lower (`HomeLayout.wellDrop`), half
+  a point at a time, until it is. The top edge is where Yes comes
+  nearest: wherever Yes is within a point of them, a look lower in the
+  well moves away from Yes faster than from Again, and nearer the
+  category.
+  Between two points a quarter point apart the margin is at most a
+  quarter point smaller, so Yes stays more than the chain engine's
+  half-point tie away (`noPointOfTheTopOfStopsWellIsNearestYes` takes
+  the edge every tenth of a point). A grid of 65 by 9 points across the
+  well, the first version, missed points between its columns: in a
+  1336×568 window at AX5, Yes tied at one (found by this pull request's
+  own review). The room is counted with the floors, before anything grows.
+  Measured on 44,640 layouts (widths every 4 points from 320 to 1432,
+  eight heights from 568 to 1376, five text sizes, Bold Text off and
+  on, both arrangements): Yes met the well in 903 before on the chain
+  engine's 45 points and in 1,197 on its top edge every tenth of a
+  point, and in none now, on those or on 1,105 points; the categories
+  sit lower in 1,397, all without typing, by at most 18.5 points; no
+  window of the fit table (phones in portrait and full-screen iPads)
+  changes. The cost: 48 layouts, 604 to 720 points
+  wide and 667 tall at AX3, now scroll by up to 7.5 points where they
+  fitted, each one a window where Yes met the well. Again above the
+  well stays the open hazard it was (*Get Attention and Stop on Home*).
 - **Not built here.** An arrangement with fewer tiles to a screen for
   phones at the largest text sizes and 320-point windows: a design
   question (Figma, then the owner) before R1's dwell, switch, head and
@@ -2014,9 +2046,11 @@ ROADMAP R0 item 4 ([`work/get-attention-on-home.md`](work/get-attention-on-home.
   narrower than 375 points with Bold Text the well's top leading corner
   ties Yes by centre too.
   The same test pins both. *2026-10-24, Home on the engine:* without
-  Phrases and Type, Again is above the well on every width, and where
-  the safety row is at or near its floor the leading part of the well's
-  top edge ties Yes by centre too.
+  Phrases and Type, Again is above the well on every width. Where the
+  safety row is at or near its floor, the leading part of the well's top
+  edge was nearest Yes by centre too, until the categories sat lower
+  there (*Home on the engine*, *Yes stays off Stop's well*); the test now
+  fails if Yes is nearest any point of the well.
 - **Open: an alarm warning nobody acts on keeps the line.** "Alert
   stopped" or "Alert failed" leads Home's line until Get Attention
   sounds again, the rule since the port

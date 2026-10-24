@@ -317,7 +317,7 @@ pointer input*).
 
 | API or feature | What it is for | Stage | iOS | Status in Brickson | Checked by |
 |---|---|---|---|---|---|
-| Get Attention (`AttentionAlertPlayer`) | A start-only alarm, with Stop elsewhere | 3–4 | — | **In place** on Home (R0-4): Get Attention under Emergency, Stop in its own well with a category under it. In Settings: later | Unit: `AttentionAlertPlayerTests`, `HomeShapeTests` (what a held look meets). UI: `GetAttentionOnHomeTests`. Device: heard from the next room |
+| Get Attention (`AttentionAlertPlayer`) | A start-only alarm, with Stop elsewhere | 3–4 | — | **In place** on Home (R0-4): Get Attention under Emergency, Stop in its own well with a category under it. In Settings: later | Unit: `AttentionAlertPlayerTests`, `HomeLayoutEngineTests` (what a held look meets). UI: `GetAttentionOnHomeTests`. Device: heard from the next room |
 | Emergency SOS | The iPhone's own emergency call | 1–2 | System | **N/A**: no public API to start it was found, and Brickson's Emergency never calls anyone | Review |
 | Recorded phrases: `AVAudioPlayer`, `fileImporter` | Playing and importing a person's own recordings | 1–4 | 2.2; 14.0 | **R1** "Recorded phrases, first two stages" | Unit: a missing file speaks the text instead. Device |
 | In-app recorder: `AVAudioRecorder`, `AVAudioApplication.requestRecordPermission`, `NSMicrophoneUsageDescription` | Banking messages inside Brickson | 1–2 | 3.0; 17.0; 7.0 | **R2** "The in-app recorder" | Unit. Device: recording never disturbs speech or calls |

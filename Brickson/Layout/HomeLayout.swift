@@ -186,6 +186,11 @@ nonisolated struct HomeLayout: Equatable, Sendable {
     /// own region first (`HomeLayoutEngineTests`). A window short of room gives
     /// these four points back before any control shrinks to its floor.
     static let minimumRegionSpacing: CGFloat = 10
+    /// How much farther than Again or the category under Stop's well Yes's
+    /// centre stays from every point of the well (`wellDrop`): more than
+    /// the half point the chain checks count as a tie, so a look resting in
+    /// the empty well never meets Yes.
+    static let wellClearance: CGFloat = 1
     /// The room between a label and its control's edges: 4 points at the
     /// sides, 6 above and below (`HomeButtonStyle`). Small on purpose: the
     /// label fits itself to what is left (`FittedLabel`).
@@ -295,6 +300,11 @@ nonisolated struct HomeLayout: Equatable, Sendable {
     let categoryHeight: CGFloat
     /// The gap between regions.
     let regionGap: CGFloat
+    /// How much lower the categories sit than the gap alone would put
+    /// them, so that a look resting in Stop's empty well meets Again or the
+    /// category under it, never Yes: zero unless the safety row is short
+    /// (docs/DECISIONS.md, "Get Attention and Stop on Home").
+    let wellDrop: CGFloat
     /// Whether the starter library's largest category fits without
     /// scrolling: invariant 11 holds in this window at this text size.
     let startersFit: Bool
@@ -397,8 +407,13 @@ nonisolated struct HomeLayout: Equatable, Sendable {
             lead = max(0, width - 2 * spacing - trailingWidth) / 2
             messageWidth = 2 * lead + spacing
         }
+        // Yes's and Again's widths in a two-row safety row: without typing,
+        // two equal columns, with Yes and No sharing the leading one.
+        let column = max(0, width - spacing) / 2
+        let yesWidth = modes == .phrasesOnly ? max(0, column - spacing) / 2 : lead
+        let againWidth = modes == .phrasesOnly ? column : messageWidth
         let getAttentionWidth = safetyInOneRow ? fifth
-            : modes == .phrasesAndTyping ? trailingWidth : max(0, width - spacing) / 2
+            : modes == .phrasesAndTyping ? trailingWidth : column
 
         // Floors: the profile's, or one line of the words at the person's
         // size with the label's inset, whichever is taller, so no label has
@@ -446,9 +461,49 @@ nonisolated struct HomeLayout: Equatable, Sendable {
             CGFloat(rows) * height + CGFloat(max(0, rows - 1)) * spacing
         }
 
-        // What the starter library needs at every floor.
+        // Stop's well. Once Stop has gone, a look resting in the empty well
+        // must meet Again above it or the category under it, never Yes, two
+        // rows up (docs/DECISIONS.md, "Get Attention and Stop on Home").
+        // Where the safety row is short, Yes's centre comes about as near
+        // the well's top leading corner as theirs, so the categories sit
+        // lower, half a point at a time, until Yes's centre is
+        // `wellClearance` farther than theirs from every point of the
+        // well's top edge, taken every quarter point. Yes comes nearest
+        // there: wherever it is within a point of them, a look lower in
+        // the well moves away from Yes faster than from Again, and nearer
+        // the category. Between two of those points the margin can be at
+        // most a quarter point smaller, still more than the half-point
+        // tie. In one row Emergency is above the well, and Yes, beside it,
+        // is always farther.
+        func dropKeepingYesOffTheWell(quick: CGFloat, gap: CGFloat, category: CGFloat) -> CGFloat {
+            guard !safetyInOneRow else { return 0 }
+            // Centres from the well's top leading corner: Yes's and Again's
+            // above it, the category's under it.
+            let yes = CGPoint(x: yesWidth / 2, y: 1.5 * quick + spacing + gap)
+            let again = CGPoint(x: againWidth / 2, y: quick / 2 + gap)
+            let under = CGPoint(x: categories.category / 2, y: 1.5 * category + spacing)
+            let steps = max(1, Int((categories.stop * 4).rounded(.up)))
+            func yesIsNear(dropping drop: CGFloat) -> Bool {
+                (0...steps).contains { step in
+                    let x = categories.stop * CGFloat(step) / CGFloat(steps)
+                    let toYes = hypot(x - yes.x, yes.y + drop)
+                    let toAgain = hypot(x - again.x, again.y + drop)
+                    let toUnder = hypot(x - under.x, under.y)
+                    return toYes < min(toAgain, toUnder) + Self.wellClearance
+                }
+            }
+            var drop: CGFloat = 0
+            while yesIsNear(dropping: drop) && drop < content.height {
+                drop += 0.5
+            }
+            return drop
+        }
+
+        // What the starter library needs at every floor, with the drop the
+        // floors need. Growth only makes the drop smaller.
+        let floorDrop = dropKeepingYesOffTheWell(quick: quickFloor, gap: Self.minimumRegionSpacing, category: categoryFloor)
         let needed = messageRegion + stack(quickRows, of: quickFloor) + stack(categoryRows, of: categoryFloor)
-            + stack(referenceRows, of: tileFloor) + 3 * Self.minimumRegionSpacing
+            + stack(referenceRows, of: tileFloor) + 3 * Self.minimumRegionSpacing + floorDrop
         var spare = content.height - needed
         startersFit = spare >= -0.001
         shortfall = max(0, -spare)
@@ -495,6 +550,8 @@ nonisolated struct HomeLayout: Equatable, Sendable {
         quickControlHeight = quick
         categoryHeight = category
         regionGap = gap
+        let drop = dropKeepingYesOffTheWell(quick: quick, gap: gap, category: category)
+        wellDrop = drop
 
         // Frames, top to bottom.
         var frames: [Slot: CGRect] = [:]
@@ -530,18 +587,17 @@ nonisolated struct HomeLayout: Equatable, Sendable {
             frames[.getAttention] = CGRect(x: trailingX, y: secondRow, width: trailingWidth, height: quick)
         } else {
             // Two equal columns: Yes and No share the leading one.
-            let column = max(0, width - spacing) / 2
-            let yesNo = max(0, column - spacing) / 2
             let trailing = x + column + spacing
-            frames[.yes] = CGRect(x: x, y: safetyTop, width: yesNo, height: quick)
-            frames[.no] = CGRect(x: x + yesNo + spacing, y: safetyTop, width: yesNo, height: quick)
+            frames[.yes] = CGRect(x: x, y: safetyTop, width: yesWidth, height: quick)
+            frames[.no] = CGRect(x: x + yesWidth + spacing, y: safetyTop, width: yesWidth, height: quick)
             frames[.emergency] = CGRect(x: trailing, y: safetyTop, width: column, height: quick)
             frames[.again] = CGRect(x: x, y: secondRow, width: column, height: quick)
             frames[.getAttention] = CGRect(x: trailing, y: secondRow, width: column, height: quick)
         }
 
-        // B: Stop's well, the categories and Settings.
-        let categoriesTop = safetyTop + stack(quickRows, of: quick) + gap
+        // B: Stop's well, the categories and Settings, lower by the drop
+        // that keeps Yes off the well.
+        let categoriesTop = safetyTop + stack(quickRows, of: quick) + gap + drop
         for (slot, cell) in categories.cells(rowHeight: category, spacing: spacing) {
             frames[slot] = cell.offsetBy(dx: x, dy: categoriesTop)
         }

@@ -92,6 +92,7 @@ struct HomeView: View {
                 )
                 .frame(height: layout.height(of: HomeLayout.Slot.categoriesRegion))
                 .homeRegion(.categories)
+                .padding(.top, layout.wellDrop)
                 PhraseGrid(
                     category: selected,
                     layout: layout.grid,

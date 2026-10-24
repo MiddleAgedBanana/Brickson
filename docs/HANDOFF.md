@@ -215,7 +215,9 @@ release in docs/ROADMAP.md when no thread has it yet.
   phones smaller than the Pro Max at AX5, on the iPhone 17 at AX3 with
   Bold Text, on a 375×667 phone above the default size or with Bold
   Text, on the iPad mini and a zoomed 13-inch iPad in landscape at AX5,
-  and on 320pt windows at every size; it no longer does on a 375×667
+  on 320pt windows at every size, and, as the categories sit lower to
+  keep Yes off Stop's well, on windows 604 to 720pt wide and 667pt tall
+  at AX3, by up to 7.5pt; it no longer does on a 375×667
   phone at the default size or on an 11-inch iPad in landscape
   (docs/DECISIONS.md, "The layout engine", *Where the starter library
   fits*). iPhone Duo's outer display is predicted to fit at the default
@@ -235,12 +237,13 @@ release in docs/ROADMAP.md when no thread has it yet.
   editing and import must not leave fewer than three until the layout
   keeps a category nearest the well, or the owner accepts a rule that
   keeps three. *(R0, the library thread with the layout engine)*
-- The top of Stop's well is nearest Again, 10 to 12pt above it, which
-  speaks: by the stand-in's model about 10 to 40% of the well by nearest
+- The top of Stop's well is nearest Again, 10 to 12pt above it (up to
+  30.5pt where the categories sit lower), which speaks: by the stand-in's model about 10 to 40% of the well by nearest
   centre and about 40% by nearest edge. On the engine's frames Again is
-  above it on every width, and where the safety row is at or near its
-  floor the leading part of the well's top edge ties Yes by centre. A look resting there after Stop, or on the empty well, could
-  repeat the last message or say "Yes". Open, not accepted; the same
+  above it on every width; Yes, two rows up, never is, as the categories
+  sit lower where the safety row is short (`HomeLayout.wellDrop`). A
+  look resting there after Stop, or on the empty well, could repeat the
+  last message. Open, not accepted; the same
   device check as the message hazard decides it (docs/DECISIONS.md, "Get
   Attention and Stop on Home"; a strict known issue in
   `HomeLayoutEngineTests`). It is the only hazard the chain engine finds
