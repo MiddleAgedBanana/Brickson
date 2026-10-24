@@ -1,7 +1,7 @@
 # Settings' chains, and Get Attention in Settings
 
 *Roadmap: Wave 3 item 7 (R0 items 4 and 7). Owner: the Settings' chains
-thread (a cloud session; GitHub CI is its build). Status: spec.*
+thread (a cloud session; GitHub CI is its build). Status: building.*
 
 ## Intent
 
@@ -119,3 +119,61 @@ thread (a cloud session; GitHub CI is its build). Status: spec.*
     does the sound line's move that was to come with it
     (docs/DECISIONS.md, "Get Attention stays out of Settings' bar for
     now").
+
+## Plan
+
+- **Files that change** (this thread, one pull request):
+  - `Brickson/Settings/SettingsComponents.swift`: `SettingsScreen` names
+    its scrolling content's coordinate space, so a frame measured on one
+    Settings screen means the same place on the next.
+  - `Brickson/Settings/SettingsView.swift`: `SettingsLanding` also keeps
+    the top of Family Setup's Set Up Step by Step row and its label's
+    height, and gives the first step the least height of its opening
+    block.
+  - `Brickson/Settings/FamilySetupView.swift`: measures that row.
+  - `Brickson/FirstRun/GuidedSetupView.swift`: the opening block and
+    Learn About Each Way.
+  - `Brickson/Resources/Localizable.xcstrings`: the new row's words.
+  - `BricksonUITests/SettingsChains.swift`: the link and the guide it
+    opens, as a state of their own.
+  - `BricksonUITests/SettingsOnHomeTests.swift`: opens and reads the
+    guide where the link shows; "a held look saves an answer" is no
+    longer expected.
+  - `BricksonUITests/SettingsTests.swift`: the walk through the steps
+    chooses Voice Control, which stays clear of the Next bar on a phone
+    now that Eye Tracking sits under it until scrolled.
+  - `BricksonTests/ChainEngineTests.swift` and a new
+    `BricksonTests/SettingsLandingTests.swift`.
+  - Records: a `docs/log/` file, docs/DECISIONS.md, docs/HANDOFF.md,
+    docs/ROADMAP.md and docs/ACCESSIBILITY.md where they say otherwise.
+- **Order of work:** this work file, then the code and its tests in one
+  commit, then the records.
+- **Risks, and how each is checked:**
+  - The link lands off the row's frame (a measuring mistake, or a screen
+    whose content starts lower): `SettingsOnHomeTests` reads CI's real
+    frames on the iPhone and the iPad and fails if any chain saves an
+    answer.
+  - A control on the guide that the chains do not know: reported and
+    failed, not guessed (`SettingsChains`).
+  - The coordinate-space and geometry APIs under Swift 6's strict
+    concurrency: the CI build, with warnings as errors.
+  - Apple's accessibility audit on the first step: the existing audit
+    test of every step.
+- **Proof:**
+  - `SettingsOnHomeTests` (UI, CI's iPhone and iPad, default and largest
+    text, iPad landscape): no chain saves an answer, plainly asserted
+    where it was a strict expected failure. Fails if the link is removed,
+    sits shorter than the row or more than about 8pt higher.
+  - `SettingsChainsTests.aGuideLinkWhereSetUpStepByStepWasSavesNoAnswer`
+    (unit, also runs on Linux): CI's phone frames with the link find no
+    chain that saves an answer and nothing new. Fails if the link is
+    dropped from the first step's frames or scored as saving.
+  - `SettingsChainsTests.eachControlDoesWhatSettingsDoes`: the link only
+    navigates, to the guide; the guide's Back returns to the first step.
+    Fails if either leads anywhere else.
+  - `SettingsLandingTests`: the opening block's height is the row's top
+    less the gutter and one row's spacing, and never negative. Fails if
+    either is dropped.
+  - Device checks: none new. Whether Snap to Item lands on the link is
+    the open check of how Snap to Item picks a target (docs/HANDOFF.md,
+    *Checks that need a real device*).
