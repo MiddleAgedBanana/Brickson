@@ -363,18 +363,21 @@ release in docs/ROADMAP.md when no thread has it yet.
   (issue #19, seen with Xcode 26.6 on iOS 26.5). Brickson never calls it;
   the reproduction is disabled and has not been run on the current Xcode
   27 CI. *(R0, a new library thread re-runs it once)*
-- Settings' Get Attention place is empty. Home has Get Attention and
-  Stop now, so starting the alarm there would no longer leave it with no
-  way to stop, but on wide windows Settings' root puts its note under that
-  place, so adding Get Attention means scoring a look that reads the note
-  (docs/DECISIONS.md, "Settings on Home" and "Get Attention and Stop on
-  Home"). *(a new thread: Get Attention in Settings)* Settings'
-  sound line sits at the foot of the cover, where its nearest controls
-  are the rows a screen has scrolled to its lower edge, some of which
-  speak a sample or change a setting; the bar's redesign for Get
-  Attention should give it a place whose neighbours do neither, without
-  putting Back to Talking nearest Home's Settings (`SettingsOnHomeTests`).
-  *(a new thread: Get Attention in Settings)*
+- Settings' Get Attention place is still empty, although AGENTS.md's
+  design rules say "Settings opens on a large way back and a start-only
+  Get Attention". Scored on 2026-10-24, Get Attention there would sound
+  the alarm unasked on every window, 2 to 5 chains each, mostly from the
+  standard Back button just under that place, so it was not added.
+  Keeping it out, adding it anyway or finding a place first is the
+  owner's decision (docs/DECISIONS.md, "Get Attention in Settings' bar:
+  the owner decides"); the AGENTS.md wording for keeping it out is
+  proposed in
+  [`log/2026-10-24-settings-chains.md`](log/2026-10-24-settings-chains.md).
+  Settings' sound line stays at the foot of the cover, where its nearest
+  controls are the rows a screen has scrolled to its lower edge, some of
+  which speak a sample or change a setting; a place whose neighbours do
+  neither comes with Get Attention's, if it comes. *(the owner, then a
+  new thread)*
 - Chains of activations through Settings' screens are scored on its
   first screens (`SettingsOnHomeTests` with the chain engine, on CI's
   iPad and iPhone; docs/DECISIONS.md, "One chain engine for dwell
@@ -386,14 +389,24 @@ release in docs/ROADMAP.md when no thread has it yet.
   look: where the pointer goes back to the look, a look near Back to
   Talking's leading edge rests over No once Home returns, and on the
   phone at the largest size its lower edge rests over Get Attention.
-  Placing Settings' screens and Back to Talking for them is the fix,
-  and a device check says whether the second binds. Not scored yet: the
-  chain through iOS's Personal Voice question once the Ask button shows
-  (after answering, the look rests where the question's button was, over
-  whatever Voice Settings has there), and Settings' other screens.
-  Answers change no size yet; scoring and a fix come before they do
+  Placing Back to Talking over harmless controls is the fix for the
+  second, and a device check says whether it binds. *(ROADMAP Wave 3
+  item 4)* The fix for the first, Learn About Each Way where Set Up Step
+  by Step's row was, was built and held on 2026-10-24, because its guide
+  leads into the second hazard; it comes back after item 4
+  ([`log/2026-10-24-settings-chains.md`](log/2026-10-24-settings-chains.md)).
+  Not scored yet: the chain through iOS's Personal Voice question once
+  the Ask button shows (after answering, the look rests where the
+  question's button was, over whatever Voice Settings has there); Voice
+  Settings itself, where a look held after Family Setup's Voice Settings
+  row can rest over choices that play a sample and set a voice or a
+  speed; the check-in card's
+  rows in Family Setup (no test can make a check-in due yet); Family
+  Setup scrolled before a row is chosen; and Settings' other screens.
+  Answers change no size yet; scoring comes before they do
   ([`log/2026-10-21-settings-and-first-run.md`](log/2026-10-21-settings-and-first-run.md),
-  follow-up 10). *(ROADMAP Wave 3 item 7, with item 4 for Home)*
+  follow-up 10). *(Settings' other screens: a new thread, before ROADMAP
+  Wave 3 item 8)*
 - CI compiles only the Debug configuration. Warnings are errors in
   Release too, and code under `#if DEBUG` compiles differently there, so
   a warning only Release sees would first stop an archive; the Release
@@ -492,9 +505,13 @@ which change Home, are its
 [Wave 3](ROADMAP.md#wave-3-the-next-pull-requests-in-order) (planned
 2026-10-23): typing on Home is its item 5, next now that Home is on the
 layout engine (item 4). Its item 2, the chain engine, is built; a change
-that moves a control keeps its tests passing, and items 4 and 7 make the
-fixes for what it found (docs/DECISIONS.md, "One chain engine for dwell
-safety").
+that moves a control keeps its tests passing. Item 7 scored Get
+Attention in Settings' bar, which would sound the alarm unasked, for the
+owner to decide, and built a fix for the chain that saves a setup
+answer, held until Back to Talking is placed over harmless controls:
+item 4 left it where it was, so that is item 5's (docs/DECISIONS.md,
+"One chain engine for dwell safety" and "Get Attention in Settings'
+bar: the owner decides").
 Every change follows AGENTS.md, *Apple's current frameworks first*: the
 legacy uses kept, and the moves still planned with who owns each, are in
 docs/DECISIONS.md under that title

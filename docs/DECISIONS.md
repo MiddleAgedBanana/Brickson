@@ -2179,7 +2179,28 @@ engine, not five scripts".
     Set Up Step by Step to Touch, the first answer, which saves it, by
     either rule and with either pointer. On every window where the row
     shows, a look held after choosing Set Up Step by Step meets one of
-    the first answers. ROADMAP Wave 3 item 7 breaks it by placement.
+    the first answers (CI on PR #49: 7 chains on the iPhone, 6 on the
+    iPad in portrait and in landscape, 4 at its largest size). It is
+    milder than the hazard below: it adds Touch and restarts the
+    check-in clock, and nothing reads the answers yet.
+    *Tried 2026-10-24 and held* (ROADMAP Wave 3 item 7,
+    [`log/2026-10-24-settings-chains.md`](log/2026-10-24-settings-chains.md)):
+    the first step opening on its words, filled down to where Family
+    Setup's Set Up Step by Step row was, and then **Learn About Each
+    Way**, at least as tall as that row, which only opens Reaching the
+    Screen, with the answers one row lower. Modelled on PR #49's CI
+    frames it clears every chain that saves an answer, but the guide
+    opens with only Back and Back to Talking near the look, so a held
+    look goes on to Back to Talking and Settings closes over a phrase, No
+    or Get Attention: the hazard below goes from 3, 3, 4, 5 and 4 chains
+    to 6, 3, 10, 7 and 9 (iPhone 17 at the default and largest sizes,
+    13-inch iPad in portrait at both sizes, iPad in landscape). Codex's
+    review of PR #50 found it; a milder hazard is not traded for a worse
+    one, and the owner chose to hold the link until Wave 3 item 4. Its
+    code is commit `1de50f5` on PR #50, reverted there, and comes back
+    after item 4, rescored. Words alone would not do it: wherever a look rests, Snap to
+    Item picks the nearest control, and below the words that is an
+    answer.
   - **Open: Settings closes under the look.** New. Back to Talking
     closes Settings onto Home, under the look. Its centre is over
     Emergency (*Settings on Home*), but where the pointer goes back to
@@ -2193,14 +2214,68 @@ engine, not five scripts".
     device check of where a pointer rests after an activation decides
     whether they bind. Placement removes them (Back to Talking over
     harmless controls only, and Settings' screens placed so nothing
-    chains into it), in ROADMAP Wave 3 items 4 and 7, or the measured
-    cost goes to the owner before a dwell, switch, head or gaze profile
-    ships.
+    chains into it), in ROADMAP Wave 3 item 4, or the measured cost goes
+    to the owner before a dwell, switch, head or gaze profile ships.
 
 *Before:* the nearest-control rules were written twice, in
 `HomeShapeTests` and in the UI tests' `ScreenControls`, and only single
 hops were scored: the spots where Home's Settings, Back to Talking and
 Stop had been, and points across Stop's well.
+
+## Get Attention in Settings' bar: the owner decides
+
+*2026-10-24. Open: for the owner, not adopted.* AGENTS.md's *Design
+rules for dwell, switch and pointer input* say "Settings opens on a large
+way back and a start-only Get Attention", and an exception to a design
+rule is the owner's to make (AGENTS.md, *Code Review Rules*). ROADMAP
+Wave 3 item 7
+([`log/2026-10-24-settings-chains.md`](log/2026-10-24-settings-chains.md)).
+
+Settings' safety bar keeps an empty place at its top leading edge for a
+start-only Get Attention (*Settings is a cover with a fixed safety bar*),
+and the chain engine has now scored that place (*One chain engine for
+dwell safety*). On PR #49's CI frames, a Get Attention filling it adds
+chains that sound the alarm unasked on every window: 3 on the iPhone 17
+at the default size, 5 on the iPhone 17 at its largest size, and 2 each
+on the 13-inch iPad in portrait at the default size, in portrait at its
+largest size and in landscape. So the pull request that scored it does
+not add it, and the sound line, whose move was to come with Get
+Attention, stays at the foot of the cover. The app is as it has always
+been: Brickson has never shown Get Attention in Settings, a gap recorded
+in docs/HANDOFF.md, *Known gaps*. Nothing here makes that gap the rule.
+
+- **Why it was not added.** The standard Back button sits just under
+  that place. On a screen with no Back, Settings' first screen, the spot
+  where Back was is nearest Get Attention, by the nearest centre and by
+  the nearest edge, so a held look that chose Back on Family Setup goes
+  back and then sounds the alarm ("choosing BackButton →
+  settingsGetAttention" in the model). On the phone, a look held after
+  choosing the first screen's Family Setup row can meet it too, once
+  Family Setup shows.
+- **What its absence costs.** Someone in Settings needs Back to Talking,
+  then Get Attention on Home: two activations, not one. Settings is a
+  family's screen, reached from Home's Settings button, and Home's Get
+  Attention is one activation away in every Home state (invariant 10).
+- **The owner's choices.**
+  - *Keep it out for now* (recommended): Get Attention stays out of
+    Settings' bar until a place clears its chains, and AGENTS.md's design
+    rule says so; the record of this change proposes the wording.
+  - *Add it in the bar's place anyway*, accepting 2 to 5 chains on every
+    window that sound the alarm unasked, each stopped from Home.
+  - *Find a place first*, from the list below, and decide when it is
+    scored.
+- **Places that could clear its chains**, each scored by the chain
+  engine before it ships: the standard Back somewhere no screen leaves
+  Get Attention nearest its spot (it is the system's, and AGENTS.md
+  keeps it); a Settings first screen with a control that only navigates
+  nearer Back's spot than Get Attention by both rules; or a place for Get
+  Attention away from the bar's leading column, which moves the bar's
+  other places and so needs *Settings on Home* rescored.
+- *Before:* this section was first written as a default ("Get Attention
+  stays out of Settings' bar for now", reversible if the owner objected).
+  Codex's review of PR #50 found that it turned a gap into an exception
+  to an AGENTS.md design rule without the owner, so it was rewritten
+  as open before the pull request merged.
 
 ## Typing is a state of Home
 
@@ -2450,15 +2525,16 @@ the project. Reversible if the owner objects.*
 
 Settings is a full-screen cover. Because it hides Home's quick controls,
 every Settings screen sits under one fixed row (`SettingsSafetyBar`): a
-start-only Get Attention at the top leading edge and Back to Talking at
+place reserved for a start-only Get Attention at the top leading edge and Back to Talking at
 the top trailing edge, at the same frames on every screen. Get
 Attention's place is kept empty until Home shows Get Attention and Stop:
 the alarm exists (`AttentionAlertPlayer`), but starting it here while Home
 has no Stop would leave it sounding with no way to stop it. Because the
 place is kept, adding it moves nothing. *2026-10-23:* Home has shown
 Get Attention and Stop since *Get Attention and Stop on Home*; the place
-stays empty until what a look resting there meets after Back to Talking
-is scored (docs/HANDOFF.md, *Known gaps*). Under the bar is a `NavigationStack(path:)`
+stays empty: scored on 2026-10-24, Get Attention there would sound the
+alarm unasked, and what happens to the place is the owner's decision
+(*Get Attention in Settings' bar: the owner decides*). Under the bar is a `NavigationStack(path:)`
 whose root holds only a large Family Setup row and a sentence; every
 setting is a screen below, so a stray dwell that opens Settings meets
 only the way back, Get Attention and one row that navigates. Family
