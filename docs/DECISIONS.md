@@ -2198,7 +2198,10 @@ engine, not five scripts".
     review of PR #50 found it; a milder hazard is not traded for a worse
     one, and the owner chose to hold the link until Wave 3 item 4. Its
     code is commit `1de50f5` on PR #50, reverted there, and comes back
-    after item 4, rescored. Words alone would not do it: wherever a look rests, Snap to
+    after item 4, rescored. *2026-10-24:* item 4 (PR #52) left Back to
+    Talking where it was, so the link waits for item 5, which brings
+    Phrases and the proposed Back to Talking over its frame
+    (docs/DESIGN.md). Words alone would not do it: wherever a look rests, Snap to
     Item picks the nearest control, and below the words that is an
     answer.
   - **Open: Settings closes under the look.** New. Back to Talking
@@ -2214,7 +2217,8 @@ engine, not five scripts".
     device check of where a pointer rests after an activation decides
     whether they bind. Placement removes them (Back to Talking over
     harmless controls only, and Settings' screens placed so nothing
-    chains into it), in ROADMAP Wave 3 item 4, or the measured cost goes
+    chains into it), in ROADMAP Wave 3 item 4 (*2026-10-24:* item 5;
+    item 4 left Settings as it was), or the measured cost goes
     to the owner before a dwell, switch, head or gaze profile ships.
 
 *Before:* the nearest-control rules were written twice, in

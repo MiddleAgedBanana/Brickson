@@ -102,8 +102,16 @@ on:
   Attention's two lines; Home on the engine; the stand-in removed; the
   tests ported.
 - `5473c99` this record and the documents.
-- The commit after those: Yes kept off Stop's well, from Codex's
-  review, with its tests and documents.
+- `0aadc43` Yes kept off Stop's well, from Codex's review, with its
+  tests and documents.
+- `6bafb20` main merged in (PR #50, Settings' chains, and PR #51, the
+  Figma notes), as GitHub reported a conflict in three documents.
+- The commit after that: PR #50's records said this item would place
+  Settings' Back to Talking over harmless controls and bring back its
+  held guide link. It did neither: Home has no Phrases yet, and the
+  proposed place is over Phrases' frame, so both are now item 5's
+  (docs/ROADMAP.md, docs/HANDOFF.md, docs/DECISIONS.md, "One chain
+  engine for dwell safety", and `docs/work/settings-chains.md`).
 
 ## Verified
 
@@ -181,8 +189,10 @@ the iPad and the iPhone CI runs.
   R1, recorded in docs/HANDOFF.md. *(owner)*
 - **Item 5** brings Phrases and Type (`phrasesAndTyping`), Back to
   Talking over Phrases' frame (docs/DESIGN.md), the Figma check, and the
-  slot plan's compact Get Attention, which needs its 64-point row.
-  *(Wave 3 item 5)*
+  slot plan's compact Get Attention, which needs its 64-point row. With
+  Back to Talking placed, it rescores Settings closing under the look
+  and brings back PR #50's held guide link (`1de50f5`) if its chains
+  clear. *(Wave 3 item 5)*
 - **Comparing the running frames with the engine's** in the UI tests,
   by compiling the engine into the UI test target, once a Mac can build
   it first. *(item 5, or a Mac thread)*

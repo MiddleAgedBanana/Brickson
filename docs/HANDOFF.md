@@ -391,9 +391,11 @@ release in docs/ROADMAP.md when no thread has it yet.
   phone at the largest size its lower edge rests over Get Attention.
   Placing Back to Talking over harmless controls is the fix for the
   second, and a device check says whether it binds. *(ROADMAP Wave 3
-  item 4)* The fix for the first, Learn About Each Way where Set Up Step
-  by Step's row was, was built and held on 2026-10-24, because its guide
-  leads into the second hazard; it comes back after item 4
+  item 5, which brings Phrases, with Back to Talking proposed over its
+  frame in docs/DESIGN.md; item 4 left Back to Talking where it was)*
+  The fix for the first, Learn About Each Way where Set Up Step by
+  Step's row was, was built and held on 2026-10-24, because its guide
+  leads into the second hazard; it comes back with that placement
   ([`log/2026-10-24-settings-chains.md`](log/2026-10-24-settings-chains.md)).
   Not scored yet: the chain through iOS's Personal Voice question once
   the Ask button shows (after answering, the look rests where the
