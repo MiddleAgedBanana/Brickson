@@ -2,7 +2,8 @@
 
 *Roadmap: Wave 3 item 7 (R0 items 4 and 7). Owner: the Settings' chains
 thread (a cloud session; GitHub CI is its build). Status: held on
-2026-10-24; the link waits for ROADMAP Wave 3 item 4 (*Held*, below).*
+2026-10-24; the link waits for ROADMAP Wave 3 item 5, since item 4 left
+Back to Talking where it was (*Held*, below).*
 
 ## Intent
 
@@ -108,7 +109,8 @@ thread (a cloud session; GitHub CI is its build). Status: held on
     largest size and 4 to 9 in landscape. Family Setup's own guide rows
     reach it the same way today, unscored, because the engine stops at
     their screens. It stays a strict expected failure; its fix is Back to
-    Talking over harmless controls only (ROADMAP Wave 3 item 4).
+    Talking over harmless controls only (ROADMAP Wave 3 item 5; item 4
+    left it where it was).
   - *Get Attention in the bar's empty place adds alarm chains.* Modelled
     on CI's frames with the link: 5 to 7 chains on every window sound the
     alarm unasked; without it, as merged (*Held*, below), 2 to 5. The
@@ -191,6 +193,7 @@ Attention: "Settings closes under the look" goes from 3, 3, 4, 5 and 4
 chains to 6, 3, 10, 7 and 9. That is worse than saving a setup answer,
 which nothing reads yet. No placement of the link avoids it while Back
 to Talking closes onto Home under the look, so the link comes back
-after ROADMAP Wave 3 item 4 puts Back to Talking over harmless controls,
+once Back to Talking is over harmless controls (ROADMAP Wave 3 item 5;
+item 4 left it where it was),
 rescored on that pull request's frames (docs/DECISIONS.md, "One chain
 engine for dwell safety"). The Figma screens show the held design.

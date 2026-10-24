@@ -39,13 +39,15 @@ final class HomeLayoutTests: XCTestCase {
         return frames.sorted { ($0.minY.rounded(), $0.minX) < ($1.minY.rounded(), $1.minX) }
     }
 
-    /// Whether every tile must lie inside the window. A narrow window at the
-    /// largest text size is the recorded exception: its controls grow to hold
-    /// their words, and the grid scrolls there (docs/DECISIONS.md, "Home's
-    /// stand-in layout", *Where the grid still scrolls*). 592pt is Home's
-    /// 560pt regular content width plus its margins.
+    /// Whether every tile must lie inside the window. A compact window at
+    /// the largest text size is the recorded exception: its controls grow
+    /// to hold their words, and on most phones the grid scrolls there
+    /// (docs/DECISIONS.md, "The layout engine", *Where the starter library
+    /// fits*; `HomeLayoutEngineTests` pins exactly which windows). 674pt is
+    /// the narrowest window the layout engine gives five columns: five
+    /// columns of 122pt, four gaps of 8 and Home's margins.
     private static func gridMustFit(_ textSize: UITestTextSize, in window: CGRect) -> Bool {
-        !(textSize == .ax5 && window.width < 592)
+        !(textSize == .ax5 && window.width < 674)
     }
 
     /// Waits up to 10 s for Home to lay itself out in the orientation asked

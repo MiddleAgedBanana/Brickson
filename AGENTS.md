@@ -544,7 +544,7 @@ the failure.
   `StarterLibrary`, `PhraseLibrarySeeder`, `MessageComposer`,
   `DraftStore`, `SettingsIdleClock`, `SetupRecord`, `CheckInPolicy`,
   `VoiceList`, `PersonalVoiceGuidance`, `PrivacyPolicyDocument`,
-  `SpeedChoice`, `WordFit`, `HomeShape`, `HomeRegion`, `HomeControlNames`,
+  `SpeedChoice`, `WordFit`, `HomeRegion`, `HomeControlNames`,
   `HomeStatusLine`, `HomeButtonLook`, `LibrarySnapshot`, `LibraryEdit`,
   `LibraryRules`, `LibraryImport`, `LibraryEditor`, `BackupCodec`,
   `EmergencyRepair`, `SettingsRootColumns`, `KeyboardAllowance`,

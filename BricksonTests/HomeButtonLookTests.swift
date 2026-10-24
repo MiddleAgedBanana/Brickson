@@ -85,8 +85,8 @@ struct HomeButtonLookTests {
     /// never crosses; and a vertical inset no smaller. Also fails if a ring
     /// has no width or starts outside the control.
     @Test func everyRingStaysInTheLabelsMargin() {
-        #expect(HomeButtonLook.maximumDepth == HomeShape.labelInset.horizontal + WordFit.widthSlack / 2)
-        #expect(HomeShape.labelInset.vertical >= HomeButtonLook.maximumDepth)
+        #expect(HomeButtonLook.maximumDepth == HomeLayout.labelInset.horizontal + WordFit.widthSlack / 2)
+        #expect(HomeLayout.labelInset.vertical >= HomeButtonLook.maximumDepth)
         for showsBorders in [false, true] {
             for state in Self.states {
                 let look = HomeButtonLook(
@@ -99,20 +99,22 @@ struct HomeButtonLookTests {
                     #expect(ring.width > 0, "\(context)")
                     #expect(ring.depth <= HomeButtonLook.maximumDepth, "\(context)")
                     if ring.inset == 0 {
-                        #expect(ring.depth <= HomeShape.labelInset.horizontal, "\(context)")
+                        #expect(ring.depth <= HomeLayout.labelInset.horizontal, "\(context)")
                     }
                 }
             }
         }
     }
 
-    /// Fails if a ring could reach Emergency's words: its label inset is
-    /// set back to the usual one, which the selection ring passes. A label
-    /// SwiftUI shrinks to fit spreads to its inset, and Emergency's, a
-    /// column wide on a phone at the largest text sizes, did: its last
-    /// letter met the ring while the emergency phrases showed, and the
-    /// rendered-label UI test read "Emergenc" (PR #38's CI).
-    @Test func noRingReachesEmergencysWords() {
+    /// Fails if a ring could reach the words of a control that shows
+    /// selected, Emergency or a category: its label inset is set back to
+    /// the usual one, which the selection ring passes. A label SwiftUI
+    /// shrinks to fit spreads to its inset, and Emergency's, a column wide
+    /// on a phone at the largest text sizes, did: its last letter met the
+    /// ring while the emergency phrases showed, and the rendered-label UI
+    /// test read "Emergenc" (PR #38's CI). A category's label shrinks the
+    /// same way at the largest sizes.
+    @Test func noRingReachesTheWordsOfAControlThatShowsSelected() {
         for showsBorders in [false, true] {
             for state in Self.states {
                 let look = HomeButtonLook(
@@ -121,7 +123,7 @@ struct HomeButtonLookTests {
                 )
                 for ring in look.rings {
                     #expect(
-                        ring.depth < HomeShape.emergencyLabelInset,
+                        ring.depth < HomeLayout.selectableSideInset,
                         "\(state), Show Borders \(showsBorders), \(ring)"
                     )
                 }

@@ -14,14 +14,15 @@ Ten threads are working in parallel on the first release, R0.
 ## What the app does today
 
 What it is written to do (*Verification* says how much has been seen). A
-stand-in Home with a safety row of two rows (Yes, No and Emergency; Again
-and Get Attention, Get Attention directly under Emergency), everyday
-categories with Stop's well at their leading top and Settings at their
-trailing end, and tiles from a neutral starter set, sized from the space
-the window gives it (docs/DECISIONS.md, "Home's stand-in layout" and "Get
-Attention and Stop on Home"): four category buttons that never scroll
-sideways, and three phrase columns on every iPhone at its standard
-Display Zoom. A tile
+Home with a safety row of two rows (Yes, No and Emergency; Again and Get
+Attention, Get Attention directly under Emergency), everyday categories
+with Stop's well at their leading top and Settings at their trailing
+end, and tiles from a neutral starter set, every frame from the layout
+engine, from the space the window gives it (docs/DECISIONS.md, "The
+layout engine", *Home on the engine*, and "Get Attention and Stop on
+Home"): four category buttons that never scroll sideways, and three
+phrase columns on every iPhone at its standard Display Zoom (two on 375
+and 390-point phones with Bold Text). A tile
 speaks at once, in the person's Personal Voice when one exists and is
 allowed; the sentence stays on screen in two reserved lines across the
 width, and a longer message scrolls inside them. No label breaks a
@@ -208,20 +209,22 @@ Xcode 27.1 (27A9275); PR #20 landed in `d79d836`.
 Each names who closes it: *(owner)*, the thread working on it, or the
 release in docs/ROADMAP.md when no thread has it yet.
 
-- Home's sizes are the stand-in's, not measured gaze, switch or touch
-  floors per input profile, and the phrase grid still scrolls (invariant
-  11) on small phone windows at large text sizes, and since Get Attention
-  came to Home at the default size on a 375×667 phone, on iPhone Duo's
-  outer display (seen in its simulator) and, by the model, an 11-inch
-  iPad and an iPad mini in landscape: docs/DECISIONS.md,
-  "Home's stand-in layout", *Where the grid still scrolls*. The layout
-  engine (`HomeLayout`, built 2026-10-23, not yet on screen) fits it on
-  every iPad window but the mini in landscape at AX5, on the 375×667
-  phone at the default size and on larger phones through AX1; phones at
-  AX3 and AX5 and 320pt windows need an arrangement with fewer tiles to a
-  screen (docs/DECISIONS.md, "The layout engine"). Home moves onto it in
-  ROADMAP Wave 3 item 4; measured sizes for each input profile are R1.
-  *(the layout engine thread)*
+- Home's sizes are the layout engine's touch sizes (since 2026-10-24),
+  not measured gaze, switch or head floors per input profile (R1). By
+  the engine's model the phrase grid still scrolls (invariant 11) on
+  phones smaller than the Pro Max at AX5, on the iPhone 17 at AX3 with
+  Bold Text, on a 375×667 phone above the default size or with Bold
+  Text, on the iPad mini and a zoomed 13-inch iPad in landscape at AX5,
+  on 320pt windows at every size, and, as the categories sit lower to
+  keep Yes off Stop's well, on windows 604 to 720pt wide and 667pt tall
+  at AX3, by up to 7.5pt; it no longer does on a 375×667
+  phone at the default size or on an 11-inch iPad in landscape
+  (docs/DECISIONS.md, "The layout engine", *Where the starter library
+  fits*). iPhone Duo's outer display is predicted to fit at the default
+  size, not yet seen. What remains needs an arrangement with fewer tiles
+  to a screen, a design question (Figma, then the owner) before R1's
+  dwell, switch, head and gaze profiles. *(a design thread, then the
+  owner)*
 - The slot plan has no answer yet for more than four everyday categories
   (docs/DECISIONS.md, "Home's slot plan", *Open*): editing and import
   must not add a fifth until it does. Meanwhile Home keeps the fourth and
@@ -230,36 +233,34 @@ release in docs/ROADMAP.md when no thread has it yet.
 - A library with fewer than three everyday categories can leave Again,
   which speaks, nearest Stop's empty well: the cell under the well can be
   empty (docs/DECISIONS.md, "Get Attention and Stop on Home"; a strict
-  known issue in `HomeShapeTests`). No screen can remove a category yet;
+  known issue in `HomeLayoutEngineTests`). No screen can remove a category yet;
   editing and import must not leave fewer than three until the layout
   keeps a category nearest the well, or the owner accepts a rule that
   keeps three. *(R0, the library thread with the layout engine)*
-- The top of Stop's well is nearest Again, 12pt above it, which speaks:
-  by the model about 10 to 40% of the well by nearest centre and about
-  40% by nearest edge. A look resting there after Stop, or on the empty
-  well, could repeat the last message. Open, not accepted; the same device
-  check as the message hazard decides it (docs/DECISIONS.md, "Get
-  Attention and Stop on Home"; a strict known issue in `HomeShapeTests`).
-  It is the only hazard the chain engine finds in Home's states
-  (`HomeShapeTests.noChainOnHomeMeetsAHazard`). On the layout engine's
-  frames it is gone on regular widths (Emergency is above the well) and
-  stays on compact ones, where windows narrower than 375pt with Bold Text
-  also tie Yes at the well's top corner.
-  *(Home on the layout engine, a new thread; owner if it stays)*
+- The top of Stop's well is nearest Again, 10 to 12pt above it (up to
+  30.5pt where the categories sit lower), which speaks: by the stand-in's model about 10 to 40% of the well by nearest
+  centre and about 40% by nearest edge. On the engine's frames Again is
+  above it on every width; Yes, two rows up, never is, as the categories
+  sit lower where the safety row is short (`HomeLayout.wellDrop`). A
+  look resting there after Stop, or on the empty well, could repeat the
+  last message. Open, not accepted; the same
+  device check as the message hazard decides it (docs/DECISIONS.md, "Get
+  Attention and Stop on Home"; a strict known issue in
+  `HomeLayoutEngineTests`). It is the only hazard the chain engine finds
+  in Home's states
+  (`HomeLayoutEngineTests.noChainOnTheEnginesFramesMeetsAHazardButStopsWell`).
+  In the slot plan's arrangement (item 5) it is gone on regular widths,
+  where Emergency is above the well. *(owner if it stays)*
 - An alarm warning nobody acts on ("Alert stopped", "Alert failed") keeps
   Home's status line until Get Attention sounds again, so a later cut-off
   phrase, low volume or failed session shows second; VoiceOver still
   hears each (docs/DECISIONS.md, "Get Attention and Stop on Home").
   *(the next audio thread)*
-- At the largest text sizes, a selected category's words can meet its
-  selection ring: SwiftUI shrinks a name too wide for its label at the
-  person's size until it fills the label, out to its 4pt inset, and the
-  ring runs 2 to 5pt in. Emergency had the
-  same fault and now keeps 6pt at its sides; giving categories that room
-  grows their minimum by 4pt, which moves where the band and three
-  columns begin (docs/DECISIONS.md, "Get Attention and Stop on Home").
-  The rendered-label UI test checks only the quick controls.
-  *(the layout engine, a new thread)*
+- The rendered-label UI test reads only the quick controls back from
+  screenshots, not the categories, whose words now keep 6pt from their
+  sides like Emergency's, out of the selection ring's reach
+  (docs/DECISIONS.md, "The layout engine", *Home on the engine*).
+  *(the next accessibility thread)*
 - A Get Attention tone started while the audio session could not be
   activated shows "Sounding" with no warning once a later activation
   succeeds (a phrase, or a retry whose new tone then fails to start),
@@ -276,21 +277,26 @@ release in docs/ROADMAP.md when no thread has it yet.
   "Settings on Home"): a device check (Snap to Item by nearest centre or
   nearest edge) decides whether placement can remove it, or its measured
   cost goes to the owner before a dwell, switch, head or gaze profile
-  ships. On the layout engine's frames, with Phrases and Type beside the
-  message as the slot plan places them, it grows: up to 97% by centre and
-  89% by edge on compact widths, 68% and 62% on regular ones, and no
-  placement inside the slot plan removes it (docs/DECISIONS.md, "The
-  layout engine"). *(the owner, before R1's profiles)*
+  ships. On the layout engine's frames as Home has them (since
+  2026-10-24) it is the same, at most 57% by centre and 51% by edge.
+  **Owner question, before R1:** with Phrases and Type beside the
+  message, as the slot plan places them for typing (item 5), it grows to
+  up to 97% by centre and 89% by edge on compact widths, 68% and 62% on
+  regular ones, and no placement inside the slot plan removes it. Accept
+  that as a named exception to invariant 10, or ask for another
+  placement (docs/DECISIONS.md, "The layout engine", *Home on the
+  engine*). *(the owner, before R1's profiles)*
 - Phrases and Type have no place on Home yet (docs/DECISIONS.md, "Home's
   slot plan"). Until they are built, Emergency stays at the safety row's
   first-row trailing end, under Back to Talking, which
   `SettingsOnHomeTests` checks, and Get Attention sits under it in a
   second row rather than at the slot plan's place (docs/DECISIONS.md,
-  "Settings on Home" and "Get Attention and Stop on Home"). The second row
-  makes the starter library scroll at the default size on a 375×667
-  phone and, by the model, on an 11-inch iPad and an iPad mini in
-  landscape (*Where the grid still scrolls*). *(the layout engine, a new
-  thread)*
+  "Settings on Home" and "Get Attention and Stop on Home"). The engine
+  has the slot plan's arrangement ready for them (`HomeLayout.Modes`);
+  in it, on compact windows, Get Attention takes two lines in A's
+  narrow trailing column, so the safety row needs 64pt and the starter
+  library no longer fits a 375×667 phone (docs/DECISIONS.md, "The layout
+  engine", *Home on the engine*). *(Wave 3 item 5)*
 - A label with a word too wide for its slot even at the default text size
   is cut short with an ellipsis when it is one word, but in a phrase of
   several words that word can wrap mid-word. No starter label has one
@@ -298,13 +304,16 @@ release in docs/ROADMAP.md when no thread has it yet.
   import exists; those must keep every word within the narrowest tile, or
   the layout engine must give it room. *(Library editing and backup format,
   with the layout engine)*
-- With Bold Text on, "understand." needs a compact tile 118pt wide, and
-  today's Home gives 375pt and 390pt phones 109 and 114pt tiles, so the
-  word can break there (predicted from Apple's fonts; the stand-in's tests
-  check tiles without Bold Text only). The layout engine gives those
-  windows two columns instead, and on windows under 345pt with Bold Text
-  its message is too narrow for that word (docs/DECISIONS.md, "The layout
-  engine"). *(Home on the engine, Wave 3 item 4)*
+- In the slot plan's arrangement (item 5), on windows under 345pt with
+  Bold Text, the message beside Phrases and Type is too narrow for
+  "understand." (docs/DECISIONS.md, "The layout engine", *The message on
+  the narrowest windows*). Home today, whose message spans the width,
+  and its Bold Text tiles keep the word whole. *(Wave 3 item 5)*
+- The running app's frames are not compared with the engine's point by
+  point: the UI tests check what the engine predicts for CI's iPhone and
+  iPad (fits, on screen, fixed places), not each frame
+  ([`log/2026-10-24-home-on-the-layout-engine.md`](log/2026-10-24-home-on-the-layout-engine.md)).
+  *(Wave 3 item 5, or a Mac thread)*
 - Settings' Back to Talking breaks "Talking" across two lines ("Talk-",
   "ing") on CI's iPhone at the largest text size, in the half of the bar
   it keeps beside Get Attention's place (seen in PR #33's captures; the
@@ -382,9 +391,11 @@ release in docs/ROADMAP.md when no thread has it yet.
   phone at the largest size its lower edge rests over Get Attention.
   Placing Back to Talking over harmless controls is the fix for the
   second, and a device check says whether it binds. *(ROADMAP Wave 3
-  item 4)* The fix for the first, Learn About Each Way where Set Up Step
-  by Step's row was, was built and held on 2026-10-24, because its guide
-  leads into the second hazard; it comes back after item 4
+  item 5, which brings Phrases, with Back to Talking proposed over its
+  frame in docs/DESIGN.md; item 4 left Back to Talking where it was)*
+  The fix for the first, Learn About Each Way where Set Up Step by
+  Step's row was, was built and held on 2026-10-24, because its guide
+  leads into the second hazard; it comes back with that placement
   ([`log/2026-10-24-settings-chains.md`](log/2026-10-24-settings-chains.md)).
   Not scored yet: the chain through iOS's Personal Voice question once
   the Ask button shows (after answering, the look rests where the
@@ -494,14 +505,15 @@ long-term vision, the direction behind it, is its *Where this goes*.
 The next pull requests, in order, with which may run side by side and
 which change Home, are its
 [Wave 3](ROADMAP.md#wave-3-the-next-pull-requests-in-order) (planned
-2026-10-23): typing on Home is its item 5, after Home moves onto the
-layout engine. Its item 2, the chain engine, is built; a change that
-moves a control keeps its tests passing. Item 7 scored Get Attention
-in Settings' bar, which would sound the alarm unasked, for the owner to
-decide, and built a fix for the chain that saves a setup answer, held
-until item 4 makes the fix for Settings closing under the look
-(docs/DECISIONS.md, "One chain engine for dwell safety" and "Get
-Attention in Settings' bar: the owner decides").
+2026-10-23): typing on Home is its item 5, next now that Home is on the
+layout engine (item 4). Its item 2, the chain engine, is built; a change
+that moves a control keeps its tests passing. Item 7 scored Get
+Attention in Settings' bar, which would sound the alarm unasked, for the
+owner to decide, and built a fix for the chain that saves a setup
+answer, held until Back to Talking is placed over harmless controls:
+item 4 left it where it was, so that is item 5's (docs/DECISIONS.md,
+"One chain engine for dwell safety" and "Get Attention in Settings'
+bar: the owner decides").
 Every change follows AGENTS.md, *Apple's current frameworks first*: the
 legacy uses kept, and the moves still planned with who owns each, are in
 docs/DECISIONS.md under that title
@@ -544,8 +556,10 @@ What is left of item 3's list, in order, is in
 [`log/2026-10-23-show-borders-and-large-content.md`](log/2026-10-23-show-borders-and-large-content.md),
 *Follow-ups*, except the Large Content Viewer in its item 5, now settled.
 The layout engine, Wave 3's item 3 in [docs/ROADMAP.md](ROADMAP.md), is
-built with no screen change (docs/work/layout-engine.md); the layout's
-next step is item 4, Home on it with the slot plan's wells; input profiles and the phone on its side wait until R0's
+built, and Home is on it (item 4; docs/work/layout-engine.md and
+[`log/2026-10-24-home-on-the-layout-engine.md`](log/2026-10-24-home-on-the-layout-engine.md),
+*Follow-ups*); the layout's next step is item 5, typing, with the slot
+plan's Phrases and Type; input profiles and the phone on its side wait until R0's
 first build has gone to App Review. The earlier order is in
 [`log/2026-10-21-phone-layout.md`](log/2026-10-21-phone-layout.md).
 

@@ -38,12 +38,12 @@ struct HomeButtonStyle: ButtonStyle {
     /// selection never depends on colour alone, even where the label had to
     /// drop its icon to fit.
     var isSelected = false
-    /// The room beside the label: the usual inset, or Emergency's
-    /// (`HomeShape.emergencyLabelInset`).
-    var sideInset = HomeShape.labelInset.horizontal
+    /// The room beside the label: the usual inset, or the wider one of a
+    /// control that shows selected (`HomeLayout.selectableSideInset`).
+    var sideInset = HomeLayout.labelInset.horizontal
 
-    /// Small enough that the label inset (`HomeShape.labelInset`) stays clear
-    /// of the curve.
+    /// Small enough that the label inset (`HomeLayout.labelInset`) stays
+    /// clear of the curve.
     static let cornerRadius: CGFloat = 12
 
     func makeBody(configuration: Configuration) -> some View {
@@ -58,7 +58,7 @@ struct HomeButtonStyle: ButtonStyle {
             // Room between the label and the edge. Small on purpose: the label
             // fits itself to what is left (`FittedLabel`).
             .padding(.horizontal, sideInset)
-            .padding(.vertical, HomeShape.labelInset.vertical)
+            .padding(.vertical, HomeLayout.labelInset.vertical)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .foregroundStyle(look.isFilled ? Color.white : Color.primary)
             .background(look.isFilled ? fill : Color.clear, in: shape)

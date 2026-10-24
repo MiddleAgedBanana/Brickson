@@ -51,8 +51,8 @@ The initial implementation includes:
   restarting a phrase that is already being spoken.
 - Unit tests for core logic and simulator UI tests for the initial Home flow.
 
-Typing, phrase editing and backup export are not implemented yet. The current Home layout is a foundation; the
-profile-based layout engine and validation across access methods remain
+Typing, phrase editing and backup export are not implemented yet. Home's layout comes from one tested layout
+engine, at touch sizes; sizes for switches, head and eye tracking, and validation across access methods, remain
 planned work. See the [handoff](docs/HANDOFF.md) for verification evidence,
 known limitations and next steps.
 

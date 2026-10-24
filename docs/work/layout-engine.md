@@ -3,7 +3,8 @@
 *Roadmap: docs/ROADMAP.md, Wave 3 item 3, "The layout engine, with no
 screen change yet" (R0 item 3, and R1's profile layout engine); this
 file also covers items 4 (Home on the engine) and 6 (Home on iPhone Duo,
-in every pose). Owner: the Layout engine thread. Status: plan; item 3 built.*
+in every pose). Owner: the Layout engine thread. Status: plan; items 3
+and 4 built.*
 
 ## Intent
 
@@ -170,6 +171,9 @@ type that nothing calls yet, and Home moves onto its frames in item 4.
     today; on windows narrower than 375 points with Bold Text, the well's
     top leading corner ties Yes by centre too. On regular widths
     Emergency is above the well and nothing that speaks is nearest it.
+    *2026-10-24, item 4:* Yes is nearest no point of the well in either
+    arrangement; where the safety row is short the categories sit lower
+    (`HomeLayout.wellDrop`).
   - Whole chains of held activations, by the chain engine on the
     engine's frames (`HomeChains`, with Phrases and Type added), in every
     Home state, at widths every 16 points and both sides of each change
@@ -230,6 +234,17 @@ type that nothing calls yet, and Home moves onto its frames in item 4.
      its UI tests pin the frames on CI's iPhone and iPad at default and
      AX5; it is checked against the Figma file; and the owner answers
      *Yes and No border the message* before R1's profiles.
+     *Built 2026-10-24*
+     ([`log/2026-10-24-home-on-the-layout-engine.md`](../log/2026-10-24-home-on-the-layout-engine.md)):
+     Home on the engine without Phrases and Type (`HomeLayout.Modes`),
+     the tile floor that follows the width, the Bold Text tiles, the
+     selected categories' inset, Get Attention's two lines, and Yes
+     kept off Stop's well (found by Codex in review). Left
+     for later: the arrangement for 320-point windows and phones at
+     the largest sizes (a design question); Back to Talking over
+     Phrases' frame and the Figma check (item 5, which brings
+     Phrases); the UI tests check what the engine predicts on CI's
+     windows, not each frame; the owner's answer is still to come.
   3. Item 5, typing on Home, on the engine's frames: Speak in Again's
      slot, the message as the typing field, the keyboard's room.
   4. Item 6, iPhone Duo in every pose, once R0 item 13 has looked at the

@@ -9,7 +9,7 @@ import Foundation
 /// The names are the ones the UI tests read Home's controls by
 /// (`screenControls(in:)`): the accessibility identifier where a control
 /// has one, its label otherwise. The unit tests build it from the layout's
-/// frames (`HomeShape.slotFrames`), the UI tests from the running app's.
+/// frames (`HomeLayout.frame(_:)`), the UI tests from the running app's.
 ///
 /// Test infrastructure only, compiled into both test targets like
 /// `ChainEngine`.

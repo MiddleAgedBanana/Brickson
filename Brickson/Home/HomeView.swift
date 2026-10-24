@@ -2,34 +2,41 @@ import Accessibility
 import SwiftData
 import SwiftUI
 
-/// Home, version 0: a plain stand-in that proves the foundations work end to
-/// end. A phrase is chosen, the speech engine says it, and the message shows
-/// it to the person listening.
+/// Home: a phrase is chosen, the speech engine says it, and the message
+/// shows it to the person listening.
 ///
-/// It will be replaced when the layout engine and Home are ported
-/// (docs/PORTING.md, steps 4 and 5). Even so, it keeps the rules that matter
-/// from the first build: every control is a standard `Button` with a label
+/// Its frames come from the layout engine (docs/PORTING.md, step 4); its
+/// controls are still Brickson's first ones, until Home is ported (step 5).
+/// It keeps the rules that matter from the first build: every control is a standard `Button` with a label
 /// (invariant 1), every tile speaks on the first activation (invariant 2), a
 /// lingering look cannot make a phrase stutter (`SpokenUtteranceTracker`),
 /// and nothing moves when state changes (the message and its status lines
 /// keep their size).
 ///
-/// The arrangement comes from the space Home is given (`HomeShape`), never
-/// from which device it is on. Top to bottom: the message with its status
-/// lines, the safety row (Yes, No and Emergency, then Again and Get
-/// Attention), the categories with Stop's well at their leading top and
-/// Settings at their trailing end, then the phrase grid, which takes what
-/// is left. Everything a person needs while typing is to sit in the top
-/// part, which the software keyboard never reaches (docs/LESSONS.md, "Lay
-/// out against a measured keyboard"); the safety row's second row does not
-/// fit there on the worst-case keyboard yet, so typing waits for a one-row
-/// safety row on wide windows (docs/DECISIONS.md, "Get Attention and Stop
-/// on Home"). The categories are nearest the
-/// keyboard because a slip onto one is harmless. No control's label breaks a
-/// word: each one fits itself (`FittedLabel`). The starter library needs no
-/// scrolling on the windows `HomeLayoutTests` checks; the grid scrolls only
-/// where its tiles would otherwise be shorter than
-/// `HomeShape.minimumTileHeight`, or where a library warning takes its room.
+/// Every frame comes from the layout engine (`HomeLayout`), from the space
+/// the window gives Home, the person's text size and Bold Text, and the
+/// library's largest category, never from which device it is on. Until
+/// typing comes to Home, it lays out without Phrases and Type
+/// (`HomeLayout.Modes.phrasesOnly`). Top to bottom: the message with its
+/// status lines, across the width; the safety row (Yes, No and Emergency,
+/// then Again and Get Attention); the categories with Stop's well at their
+/// leading top and Settings at their trailing end; then the phrase grid,
+/// which takes what is left. Standard stacks place them, each at the size
+/// the engine gives it, so the frames are the engine's and right-to-left
+/// languages mirror them. Everything a person needs while typing is to sit
+/// in the top part, which the software keyboard never reaches
+/// (docs/LESSONS.md, "Lay out against a measured keyboard"); the safety
+/// row's second row does not fit there on the worst-case keyboard yet, so
+/// typing waits for the slot plan's one-row safety row on wide windows
+/// (docs/DECISIONS.md, "Get Attention and Stop on Home"). The categories
+/// are nearest the keyboard because a slip onto one is harmless. No
+/// control's label breaks a word: each one fits itself (`FittedLabel`). The
+/// grid scrolls only where its tiles would otherwise be shorter than the
+/// floor their width sets (`HomeLayout.TileFloor`): where the window has
+/// too little room for the starter library at every control's floor
+/// (docs/DECISIONS.md, "The layout engine", *Where the starter library
+/// fits*), for a library larger than the starter one, or where a library
+/// warning takes its room.
 ///
 /// Each region is an accessibility container, and assistive technologies
 /// reach them in a fixed order that differs from the one on screen: Yes,
@@ -57,51 +64,66 @@ struct HomeView: View {
         let largestCategoryCount = ordered.map(\.phrasesInOrder.count).max() ?? 0
 
         GeometryReader { proxy in
-            let contentWidth = proxy.size.width
-            let shape = HomeShape(
-                contentWidth: contentWidth,
-                quickControlLineHeight: LabelFont.quickControl.legible(legibilityWeight).lineHeight(at: dynamicTypeSize),
-                categoryLineHeight: LabelFont.category.legible(legibilityWeight).lineHeight(at: dynamicTypeSize),
-                boldText: legibilityWeight == .bold
+            let layout = HomeLayout(
+                space: Self.space(proxy),
+                text: .measured(at: dynamicTypeSize, boldText: legibilityWeight == .bold),
+                largestCategory: largestCategoryCount,
+                modes: .phrasesOnly
             )
 
-            VStack(alignment: .leading, spacing: HomeShape.regionSpacing) {
-                MessageBlock(width: contentWidth, isCovered: showsSettings)
+            VStack(alignment: .leading, spacing: layout.regionGap) {
+                MessageBlock(width: layout.frame(.message).width, isCovered: showsSettings)
+                    .frame(height: layout.height(of: [.message, .statusLine]), alignment: .top)
                     .homeRegion(.message)
                 SafetyRow(
-                    shape: shape,
+                    layout: layout,
                     emergencyIsAvailable: emergency != nil,
                     isShowingEmergency: selected?.isEmergency == true,
                     showEmergency: { selectedCategoryID = emergency?.uuid }
                 )
-                .frame(height: shape.safetyRegionHeight)
+                .frame(height: layout.height(of: HomeLayout.Slot.safetyRow))
                 .homeRegion(.safety)
                 CategoriesAndSettings(
-                    shape: shape,
+                    layout: layout,
                     categories: CategorySelection.shownInCategoryRow(ordered),
                     selectedID: selected?.uuid,
                     select: { selectedCategoryID = $0 },
                     showsSettings: $showsSettings
                 )
-                .frame(height: shape.categoryRegionHeight)
+                .frame(height: layout.height(of: HomeLayout.Slot.categoriesRegion))
                 .homeRegion(.categories)
+                .padding(.top, layout.wellDrop)
                 PhraseGrid(
                     category: selected,
-                    columns: shape.gridColumns,
-                    rows: shape.gridRows(largestCategoryCount: largestCategoryCount),
-                    minimumTileHeight: shape.minimumTileHeight,
-                    tileFont: shape.isCompact ? .compactTile : .regularTile
+                    layout: layout.grid,
+                    largestCategoryCount: largestCategoryCount,
+                    tileFont: layout.isRegular ? .regularTile : .compactTile
                 )
                 .frame(maxHeight: .infinity)
                 .homeRegion(.phrases)
                 LibraryWarnings()
             }
+            .padding(.horizontal, HomeLayout.margins.horizontal)
+            .padding(.vertical, HomeLayout.margins.vertical)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
         // The keyboard overlays the bottom of Home instead of pushing it up,
-        // so no control moves when it appears (invariant 11).
+        // so no control moves when it appears (invariant 11), and the
+        // engine is given the window, not what the keyboard leaves of it.
         .ignoresSafeArea(.keyboard)
+    }
+
+    /// The space the window gives Home: its size, and what the system keeps
+    /// at each edge. The reader fills the window's safe area, so the window
+    /// is the reader with its safe areas added back.
+    private static func space(_ proxy: GeometryProxy) -> HomeLayout.Space {
+        let insets = proxy.safeAreaInsets
+        return HomeLayout.Space(
+            size: CGSize(
+                width: proxy.size.width + insets.leading + insets.trailing,
+                height: proxy.size.height + insets.top + insets.bottom
+            ),
+            safeArea: HomeLayout.Insets(top: insets.top, leading: insets.leading, bottom: insets.bottom, trailing: insets.trailing)
+        )
     }
 }
 
@@ -362,7 +384,7 @@ private struct LibraryWarnings: View {
 /// Controls that stay in the same place in every state, in two rows of two
 /// equal columns. Yes and No share the first row's leading column, with
 /// Emergency beside them; Again and Get Attention are under them, Get
-/// Attention directly under Emergency (`HomeShape.slotFrames`).
+/// Attention directly under Emergency (`HomeLayout`, without typing).
 ///
 /// Yes and No speak at once, and Again repeats the last message; Emergency
 /// only switches to the emergency phrases, so a stray look on it never says
@@ -386,19 +408,19 @@ private struct LibraryWarnings: View {
 private struct SafetyRow: View {
     @Environment(SpeechService.self) private var speech
     @Environment(AttentionAlertPlayer.self) private var attention
-    let shape: HomeShape
+    let layout: HomeLayout
     let emergencyIsAvailable: Bool
     let isShowingEmergency: Bool
     let showEmergency: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: HomeShape.controlSpacing) {
-            HStack(spacing: HomeShape.controlSpacing) {
+        VStack(alignment: .leading, spacing: HomeLayout.controlSpacing) {
+            HStack(spacing: HomeLayout.controlSpacing) {
                 yes
                 no
                 emergencyButton
             }
-            HStack(spacing: HomeShape.controlSpacing) {
+            HStack(spacing: HomeLayout.controlSpacing) {
                 again
                 getAttention
             }
@@ -412,7 +434,7 @@ private struct SafetyRow: View {
             FittedLabel(HomeControlNames.yes.visible, font: .quickControl)
         }
         .buttonStyle(HomeButtonStyle(fill: Palette.controlFill))
-        .frame(width: shape.yesNoWidth, height: shape.quickControlHeight)
+        .sized(as: .yes, in: layout)
         .accessibilityInputLabels(HomeControlNames.yes.inputLabels)
     }
 
@@ -423,7 +445,7 @@ private struct SafetyRow: View {
             FittedLabel(HomeControlNames.no.visible, font: .quickControl)
         }
         .buttonStyle(HomeButtonStyle(fill: Palette.controlFill))
-        .frame(width: shape.yesNoWidth, height: shape.quickControlHeight)
+        .sized(as: .no, in: layout)
         .accessibilityInputLabels(HomeControlNames.no.inputLabels)
     }
 
@@ -434,7 +456,7 @@ private struct SafetyRow: View {
             FittedLabel(HomeControlNames.again.visible, font: .quickControl)
         }
         .buttonStyle(HomeButtonStyle(fill: Palette.controlFill))
-        .frame(width: shape.againWidth, height: shape.quickControlHeight)
+        .sized(as: .again, in: layout)
         .disabled(speech.lastSpokenText == nil)
         .accessibilityInputLabels(HomeControlNames.again.inputLabels)
         .accessibilitySortPriority(HomeRegion.lastInRegion)
@@ -453,9 +475,9 @@ private struct SafetyRow: View {
         .buttonStyle(HomeButtonStyle(
             fill: Palette.emergencyFill,
             isSelected: isShowingEmergency,
-            sideInset: HomeShape.emergencyLabelInset
+            sideInset: HomeLayout.selectableSideInset
         ))
-        .frame(width: shape.emergencyWidth, height: shape.quickControlHeight)
+        .sized(as: .emergency, in: layout)
         .disabled(!emergencyIsAvailable)
         .accessibilityAddTraits(isShowingEmergency ? .isSelected : [])
         .accessibilityInputLabels(HomeControlNames.emergency.inputLabels)
@@ -473,7 +495,7 @@ private struct SafetyRow: View {
             FittedLabel(HomeControlNames.getAttention.visible, systemImage: "bell.fill", font: .quickControl)
         }
         .buttonStyle(HomeButtonStyle(fill: Palette.attentionFill))
-        .frame(width: shape.getAttentionWidth, height: shape.quickControlHeight)
+        .sized(as: .getAttention, in: layout)
         .accessibilityAddTraits(.playsSound)
         .accessibilityInputLabels(HomeControlNames.getAttention.inputLabels)
         .accessibilityIdentifier("getAttention")
@@ -483,7 +505,7 @@ private struct SafetyRow: View {
 // MARK: - Categories, Stop and Settings
 
 /// Stop's well, the category buttons and Settings, in one of three fixed
-/// arrangements chosen from the width (`HomeShape.CategoryArrangement`):
+/// arrangements chosen from the width (`HomeLayout.CategoryArrangement`):
 /// wide windows take a band, with Stop above the first category and the
 /// other three and Settings at the band's full height; narrower ones take
 /// three columns, or two. In each, Stop is at the leading top with a
@@ -497,15 +519,15 @@ private struct SafetyRow: View {
 /// which scrolls (`CategorySelection.inCell`). Nothing else here scrolls,
 /// and nothing moves when Stop appears or goes.
 private struct CategoriesAndSettings: View {
-    let shape: HomeShape
+    let layout: HomeLayout
     let categories: [PhraseCategory]
     let selectedID: UUID?
     let select: (UUID) -> Void
     @Binding var showsSettings: Bool
 
     var body: some View {
-        let spacing = HomeShape.controlSpacing
-        switch shape.categoryArrangement {
+        let spacing = HomeLayout.controlSpacing
+        switch layout.categoryArrangement {
         case .band:
             HStack(alignment: .top, spacing: spacing) {
                 VStack(spacing: spacing) {
@@ -550,13 +572,13 @@ private struct CategoriesAndSettings: View {
 
     private var stop: some View {
         StopWell()
-            .frame(width: shape.stopWidth, height: shape.categoryHeight)
+            .sized(as: .stop, in: layout)
             .accessibilitySortPriority(HomeRegion.firstInRegion)
     }
 
     private var settings: some View {
-        SettingsButton(isPresented: $showsSettings, showsName: shape.settingsShowsName)
-            .frame(width: shape.settingsWidth, height: shape.fullCellHeight)
+        SettingsButton(isPresented: $showsSettings, showsName: layout.settingsShowsName)
+            .sized(as: .settings, in: layout)
             .accessibilitySortPriority(HomeRegion.lastInRegion)
     }
 
@@ -565,12 +587,12 @@ private struct CategoriesAndSettings: View {
     /// reached straight after Stop, wherever it stands (`HomeRegion`).
     private func cell(_ index: Int) -> some View {
         CategoryCell(
-            categories: CategorySelection.inCell(index, of: categories, cells: HomeShape.categoryCapacity),
-            buttonHeight: shape.categoryHeight,
+            categories: CategorySelection.inCell(index, of: categories, cells: HomeLayout.categoryCapacity),
+            buttonHeight: layout.categoryHeight,
             selectedID: selectedID,
             select: select
         )
-        .frame(width: shape.categoryWidth, height: index == 0 ? shape.categoryHeight : shape.fullCellHeight)
+        .sized(as: .category(index), in: layout)
         .accessibilitySortPriority(index == 0 ? HomeRegion.secondInRegion : 0)
     }
 }
@@ -607,8 +629,10 @@ private struct StopWell: View {
 /// scrolls here. The selected category is filled with the phrase colour
 /// and shows a check mark and a ring (so the choice never depends on
 /// colour alone), and carries the Selected trait for VoiceOver and Voice
-/// Control. An empty cell shows nothing and is hidden from assistive
-/// technologies.
+/// Control. Every category has the side inset of a control that shows
+/// selected, which the ring never reaches, so its words keep their place
+/// whether it is selected or not (`HomeLayout.selectableSideInset`). An
+/// empty cell shows nothing and is hidden from assistive technologies.
 private struct CategoryCell: View {
     let categories: ArraySlice<PhraseCategory>
     let buttonHeight: CGFloat
@@ -618,7 +642,7 @@ private struct CategoryCell: View {
     var body: some View {
         if categories.count > 1 {
             ScrollView {
-                VStack(spacing: HomeShape.controlSpacing) {
+                VStack(spacing: HomeLayout.controlSpacing) {
                     ForEach(categories) { category in
                         button(category)
                             .frame(height: buttonHeight)
@@ -646,7 +670,8 @@ private struct CategoryCell: View {
         }
         .buttonStyle(HomeButtonStyle(
             fill: isSelected ? Palette.phraseFill : Palette.controlFill,
-            isSelected: isSelected
+            isSelected: isSelected,
+            sideInset: HomeLayout.selectableSideInset
         ))
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
@@ -655,31 +680,33 @@ private struct CategoryCell: View {
 // MARK: - Phrases
 
 /// The selected category's phrases in a fixed grid. Position never depends
-/// on use (invariant 8): the order is the stored order, and the rows come
-/// from the largest category, so a tile keeps its place whichever category
-/// is showing. Tiles share the height left for the grid; only where that
-/// would make them shorter than the shape's minimum tile height does the grid
-/// scroll instead.
+/// on use (invariant 8): the order is the stored order, the columns come
+/// from the width, and the rows from the largest category, so a tile keeps
+/// its place whichever category is showing. Tiles share the height the
+/// grid has (the engine's, less any library warning under it); only where
+/// that would make them shorter than the floor their width sets
+/// (`HomeLayout.TileFloor`) does the grid scroll instead.
 private struct PhraseGrid: View {
     @Environment(SpeechService.self) private var speech
     @Environment(\.phraseLibraryIssue) private var phraseLibraryIssue
     let category: PhraseCategory?
-    let columns: Int
-    let rows: Int
-    let minimumTileHeight: CGFloat
+    /// The engine's grid: its columns and its tiles' floor.
+    let layout: HomeLayout.Grid
+    let largestCategoryCount: Int
     let tileFont: LabelFont
 
     var body: some View {
         GeometryReader { proxy in
-            let sizing = GridSizing(
-                availableHeight: proxy.size.height,
-                rows: rows,
-                spacing: HomeShape.controlSpacing,
-                minimumTileHeight: minimumTileHeight
+            let sizing = HomeLayout.Grid(
+                frame: CGRect(origin: .zero, size: proxy.size),
+                columns: layout.columns,
+                phraseCount: largestCategoryCount,
+                tileFloor: layout.tileFloor,
+                spacing: HomeLayout.controlSpacing
             )
             if let category {
                 let phrases = category.phrasesInOrder
-                let grid = FixedColumns(phrases, columns: columns) { phrase in
+                let grid = FixedColumns(phrases, columns: sizing.columns) { phrase in
                     Button {
                         speech.speak(phrase.text)
                     } label: {
@@ -688,7 +715,7 @@ private struct PhraseGrid: View {
                     .buttonStyle(HomeButtonStyle(
                         fill: category.isEmergency ? Palette.emergencyFill : Palette.phraseFill
                     ))
-                    .frame(height: sizing.tileHeight)
+                    .frame(height: sizing.tileSize.height)
                     // Lets the UI tests tell phrase tiles from controls
                     // (LaunchTests' accessibility audit). Not spoken.
                     .accessibilityIdentifier("phraseTile")
@@ -699,7 +726,7 @@ private struct PhraseGrid: View {
                 // scroll as the text grows (Apple's accessibility audit
                 // compares each one with itself).
                 ScrollView { grid }
-                    .scrollDisabled(!(sizing.scrolls || phrases.count > rows * columns))
+                    .scrollDisabled(!(sizing.scrolls || phrases.count > sizing.rows * sizing.columns))
                     .scrollBounceBehavior(.basedOnSize)
             } else if phraseLibraryIssue == nil {
                 Text("No phrases yet.")
@@ -712,7 +739,7 @@ private struct PhraseGrid: View {
 // MARK: - Fixed columns
 
 /// Items in rows of `columns` equal cells, in order, with
-/// `HomeShape.controlSpacing` between them. A short last row keeps its cells
+/// `HomeLayout.controlSpacing` between them. A short last row keeps its cells
 /// at the leading edge, at the same width and place as the rows above, so a
 /// slot is in the same place whatever fills it (invariant 8).
 ///
@@ -731,9 +758,9 @@ private struct FixedColumns<Item: Identifiable, Cell: View>: View {
     }
 
     var body: some View {
-        VStack(spacing: HomeShape.controlSpacing) {
+        VStack(spacing: HomeLayout.controlSpacing) {
             ForEach(Array(stride(from: 0, to: items.count, by: columns)), id: \.self) { start in
-                HStack(spacing: HomeShape.controlSpacing) {
+                HStack(spacing: HomeLayout.controlSpacing) {
                     ForEach(items[start..<min(start + columns, items.count)]) { item in
                         cell(item)
                             .frame(maxWidth: .infinity)
@@ -754,6 +781,13 @@ private struct FixedColumns<Item: Identifiable, Cell: View>: View {
 // MARK: - Regions
 
 private extension View {
+    /// Sizes this view to `slot`'s frame in `layout`. The stacks around it
+    /// place it, in the engine's order, so its frame is the engine's.
+    func sized(as slot: HomeLayout.Slot, in layout: HomeLayout) -> some View {
+        let frame = layout.frame(slot)
+        return self.frame(width: frame.width, height: frame.height)
+    }
+
     /// Makes this view one of Home's regions: an accessibility container, so
     /// its controls are reached together and Switch Control can offer them as
     /// a group, at the region's fixed place in the order (`HomeRegion`). The
