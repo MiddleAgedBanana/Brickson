@@ -86,7 +86,7 @@ test is named for what would make it fail.
 | Switch Control (3; system) | Standard buttons; Home's regions are containers, reached in a fixed order with Yes, No, Emergency and Get Attention first (`HomeRegion`) | Device check of the scan order and groups. Switch profile: R1 | 1 |
 | Guided Access (3; system) | System, with a guide in Keep Brickson Open | A device check with Eye Tracking | 7 |
 | Assistive Access (3; add) | Full screen inside it, in Brickson's own layout; a guide in Keep Brickson Open, and written Settings paths instead of links while inside it | A device check of the window and the guides | 7 |
-| Get Attention and Emergency (3; has it) | Emergency and a start-only Get Attention on Home in every state, with Stop in its own well while the alarm sounds (docs/DECISIONS.md, "Get Attention and Stop on Home") | Get Attention in Settings: scored, kept out for now (docs/DECISIONS.md, "Get Attention stays out of Settings' bar for now"); the replacement tone after a device check | 4, 5 |
+| Get Attention and Emergency (3; has it) | Emergency and a start-only Get Attention on Home in every state, with Stop in its own well while the alarm sounds (docs/DECISIONS.md, "Get Attention and Stop on Home") | Get Attention in Settings: scored, not added, the owner decides (docs/DECISIONS.md, "Get Attention in Settings' bar: the owner decides"); the replacement tone after a device check | 4, 5 |
 | Alert someone in another room (3; add, needs a decision) | Sound in the room only | Not in 1.0; anything that reaches another device is the owner's decision | 10 |
 | Screen never locks (3; has it) | In place | Kept | 7 |
 | Audio safety (3; has it) | In place | Device checks | 4 |
@@ -317,7 +317,7 @@ pointer input*).
 
 | API or feature | What it is for | Stage | iOS | Status in Brickson | Checked by |
 |---|---|---|---|---|---|
-| Get Attention (`AttentionAlertPlayer`) | A start-only alarm, with Stop elsewhere | 3–4 | — | **In place** on Home (R0-4): Get Attention under Emergency, Stop in its own well with a category under it. In Settings: scored 2026-10-24 and kept out, because its place would sound the alarm unasked (docs/DECISIONS.md, "Get Attention stays out of Settings' bar for now") | Unit: `AttentionAlertPlayerTests`, `HomeShapeTests` (what a held look meets). UI: `GetAttentionOnHomeTests`. Device: heard from the next room |
+| Get Attention (`AttentionAlertPlayer`) | A start-only alarm, with Stop elsewhere | 3–4 | — | **In place** on Home (R0-4): Get Attention under Emergency, Stop in its own well with a category under it. In Settings: scored 2026-10-24 and not added, because its place would sound the alarm unasked; the owner decides (docs/DECISIONS.md, "Get Attention in Settings' bar: the owner decides") | Unit: `AttentionAlertPlayerTests`, `HomeShapeTests` (what a held look meets). UI: `GetAttentionOnHomeTests`. Device: heard from the next room |
 | Emergency SOS | The iPhone's own emergency call | 1–2 | System | **N/A**: no public API to start it was found, and Brickson's Emergency never calls anyone | Review |
 | Recorded phrases: `AVAudioPlayer`, `fileImporter` | Playing and importing a person's own recordings | 1–4 | 2.2; 14.0 | **R1** "Recorded phrases, first two stages" | Unit: a missing file speaks the text instead. Device |
 | In-app recorder: `AVAudioRecorder`, `AVAudioApplication.requestRecordPermission`, `NSMicrophoneUsageDescription` | Banking messages inside Brickson | 1–2 | 3.0; 17.0; 7.0 | **R2** "The in-app recorder" | Unit. Device: recording never disturbs speech or calls |

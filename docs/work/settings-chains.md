@@ -114,10 +114,10 @@ thread (a cloud session; GitHub CI is its build). Status: building.*
     and on a screen with no Back, Settings' first screen, the spot where
     Back was is nearest Get Attention by both rules. On the iPad, the
     middle of a full-width row is as near Get Attention as Back to
-    Talking. So Get Attention stays out of Settings' bar for now, and so
-    does the sound line's move that was to come with it
-    (docs/DECISIONS.md, "Get Attention stays out of Settings' bar for
-    now").
+    Talking. So this change does not add Get Attention to Settings'
+    bar, nor move the sound line, whose move was to come with it; whether
+    it stays out is the owner's decision (docs/DECISIONS.md, "Get
+    Attention in Settings' bar: the owner decides").
 
 ## Plan
 

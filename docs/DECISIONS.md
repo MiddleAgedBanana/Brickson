@@ -1963,10 +1963,13 @@ engine, not five scripts".
 hops were scored: the spots where Home's Settings, Back to Talking and
 Stop had been, and points across Stop's well.
 
-## Get Attention stays out of Settings' bar for now
+## Get Attention in Settings' bar: the owner decides
 
-*2026-10-24. Default: the owner left these choices to the project.
-Reversible if the owner objects.* ROADMAP Wave 3 item 7
+*2026-10-24. Open: for the owner, not adopted.* AGENTS.md's *Design
+rules for dwell, switch and pointer input* say "Settings opens on a large
+way back and a start-only Get Attention", and an exception to a design
+rule is the owner's to make (AGENTS.md, *Code Review Rules*). ROADMAP
+Wave 3 item 7
 ([`log/2026-10-24-settings-chains.md`](log/2026-10-24-settings-chains.md)).
 
 Settings' safety bar keeps an empty place at its top leading edge for a
@@ -1976,37 +1979,46 @@ safety*). Scored on PR #49's CI frames, with the first step's Learn About
 Each Way in place, a Get Attention filling that place adds chains that
 sound the alarm unasked on every window: 7 on the iPhone 17 at the
 default size, 5 at the largest size, 7 on the 13-inch iPad in portrait
-and in landscape, 5 at its largest size. So the place stays empty, and
-the sound line stays at the foot of the cover, since its move was to
-come with Get Attention.
+and in landscape, 5 at its largest size. So the pull request that scored
+it does not add it, and the sound line, whose move was to come with Get
+Attention, stays at the foot of the cover. The app is as it has always
+been: Brickson has never shown Get Attention in Settings, a gap recorded
+in docs/HANDOFF.md, *Known gaps*. Nothing here makes that gap the rule.
 
-- **Why.** The standard Back button sits just under that place. On a
-  screen with no Back, Settings' first screen, the spot where Back was is
-  nearest Get Attention, by the nearest centre and by the nearest edge,
-  so a held look that chose Back on Family Setup goes back and then
-  sounds the alarm ("choosing BackButton → settingsGetAttention" in the
-  model). On the phone, a look held after choosing the first screen's
-  Family Setup row can meet it too, once Family Setup shows. On the iPad,
-  the middle of a full-width row (Learn About Each Way's, from the guide
-  it opens) is as near Get Attention as Back to Talking, and a tie counts
-  both.
-- **What is lost.** Someone in Settings needs Back to Talking, then Get
-  Attention on Home: two activations, not one. Settings is a family's
-  screen, reached from Home's Settings button, and Home's Get Attention
-  is one activation away in every Home state (invariant 10).
-- **What would change it.** Any of these, each scored by the chain
+- **Why it was not added.** The standard Back button sits just under
+  that place. On a screen with no Back, Settings' first screen, the spot
+  where Back was is nearest Get Attention, by the nearest centre and by
+  the nearest edge, so a held look that chose Back on Family Setup goes
+  back and then sounds the alarm ("choosing BackButton →
+  settingsGetAttention" in the model). On the phone, a look held after
+  choosing the first screen's Family Setup row can meet it too, once
+  Family Setup shows. On the iPad, the middle of a full-width row (Learn
+  About Each Way's, from the guide it opens) is as near Get Attention as
+  Back to Talking, and a tie counts both.
+- **What its absence costs.** Someone in Settings needs Back to Talking,
+  then Get Attention on Home: two activations, not one. Settings is a
+  family's screen, reached from Home's Settings button, and Home's Get
+  Attention is one activation away in every Home state (invariant 10).
+- **The owner's choices.**
+  - *Keep it out for now* (recommended): Get Attention stays out of
+    Settings' bar until a place clears its chains, and AGENTS.md's design
+    rule says so; the record of this change proposes the wording.
+  - *Add it in the bar's place anyway*, accepting 5 to 7 chains on every
+    window that sound the alarm unasked, each stopped from Home.
+  - *Find a place first*, from the list below, and decide when it is
+    scored.
+- **Places that could clear its chains**, each scored by the chain
   engine before it ships: the standard Back somewhere no screen leaves
   Get Attention nearest its spot (it is the system's, and AGENTS.md
   keeps it); a Settings first screen with a control that only navigates
   nearer Back's spot than Get Attention by both rules; or a place for Get
   Attention away from the bar's leading column, which moves the bar's
-  other places and so needs *Settings on Home* rescored. The owner may
-  also accept the measured cost.
-- **AGENTS.md is ahead of the app here.** Its design rules say "Settings
-  opens on a large way back and a start-only Get Attention"; Brickson
-  has never shown Get Attention in Settings, and now has a measured
-  reason not to yet. The record of this change proposes the correction;
-  the owner decides.
+  other places and so needs *Settings on Home* rescored.
+- *Before:* this section was first written as a default ("Get Attention
+  stays out of Settings' bar for now", reversible if the owner objected).
+  Codex's review of PR #50 found that it turned a gap into an exception
+  to an AGENTS.md design rule without the owner, so it was rewritten
+  as open before the pull request merged.
 
 ## Typing is a state of Home
 
@@ -2257,7 +2269,8 @@ has no Stop would leave it sounding with no way to stop it. Because the
 place is kept, adding it moves nothing. *2026-10-23:* Home has shown
 Get Attention and Stop since *Get Attention and Stop on Home*; the place
 stays empty: scored on 2026-10-24, Get Attention there would sound the
-alarm unasked (*Get Attention stays out of Settings' bar for now*). Under the bar is a `NavigationStack(path:)`
+alarm unasked, and what happens to the place is the owner's decision
+(*Get Attention in Settings' bar: the owner decides*). Under the bar is a `NavigationStack(path:)`
 whose root holds only a large Family Setup row and a sentence; every
 setting is a screen below, so a stray dwell that opens Settings meets
 only the way back, Get Attention and one row that navigates. Family

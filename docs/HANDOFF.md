@@ -335,12 +335,15 @@ release in docs/ROADMAP.md when no thread has it yet.
   (issue #19, seen with Xcode 26.6 on iOS 26.5). Brickson never calls it;
   the reproduction is disabled and has not been run on the current Xcode
   27 CI. *(R0, a new library thread re-runs it once)*
-- Settings' Get Attention place is empty, on purpose for now. Scored on
-  2026-10-24, Get Attention there would sound the alarm unasked on every
-  window, 5 to 7 chains each, mostly from the standard Back button just
-  under that place (docs/DECISIONS.md, "Get Attention stays out of
-  Settings' bar for now", with what would change it). AGENTS.md's "Settings opens on a large way back and a start-only Get
-  Attention" is ahead of the app; the correction is proposed in
+- Settings' Get Attention place is still empty, although AGENTS.md's
+  design rules say "Settings opens on a large way back and a start-only
+  Get Attention". Scored on 2026-10-24, Get Attention there would sound
+  the alarm unasked on every window, 5 to 7 chains each, mostly from the
+  standard Back button just under that place, so it was not added.
+  Keeping it out, adding it anyway or finding a place first is the
+  owner's decision (docs/DECISIONS.md, "Get Attention in Settings' bar:
+  the owner decides"); the AGENTS.md wording for keeping it out is
+  proposed in
   [`log/2026-10-24-settings-chains.md`](log/2026-10-24-settings-chains.md).
   Settings' sound line stays at the foot of the cover, where its nearest
   controls are the rows a screen has scrolled to its lower edge, some of
@@ -471,10 +474,11 @@ which change Home, are its
 2026-10-23): typing on Home is its item 5, after Home moves onto the
 layout engine. Its item 2, the chain engine, is built; a change that
 moves a control keeps its tests passing. Item 7 fixed the chain that
-saved a setup answer and kept Get Attention out of Settings for a
-measured reason; item 4 makes the fix for Settings closing under the
-look (docs/DECISIONS.md, "One chain engine for dwell safety" and "Get
-Attention stays out of Settings' bar for now").
+saved a setup answer and scored Get Attention in Settings' bar, which
+would sound the alarm unasked, for the owner to decide; item 4 makes the
+fix for Settings closing under the look (docs/DECISIONS.md, "One chain
+engine for dwell safety" and "Get Attention in Settings' bar: the owner
+decides").
 Every change follows AGENTS.md, *Apple's current frameworks first*: the
 legacy uses kept, and the moves still planned with who owns each, are in
 docs/DECISIONS.md under that title

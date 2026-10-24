@@ -33,11 +33,16 @@ screens are in the Figma file's
   row moves the row and so the link; at the largest text sizes, where
   the words are taller than the space, the link sits lower, the safe
   direction.
-- **Get Attention stays out of Settings' bar for now**
-  (docs/DECISIONS.md, the section of that title). Scored with the link in
-  place, filling the bar's empty place adds 5 to 7 chains on every window
-  that sound the alarm unasked, mostly through the standard Back button
-  just under it. So the sound line stays where it is too.
+- **Get Attention is not added to Settings' bar, and the owner
+  decides what happens to its place** (docs/DECISIONS.md, "Get Attention
+  in Settings' bar: the owner decides"). Scored with the link in place,
+  filling the bar's empty place adds 5 to 7 chains on every window that
+  sound the alarm unasked, mostly through the standard Back button just
+  under it. So this change leaves the place empty, as it has always
+  been, and the sound line where it is. The section was first written as
+  a reversible default; Codex's review found that it made a gap into an
+  exception to an AGENTS.md design rule without the owner, and it was
+  rewritten as open, with the owner's three choices, before merging.
 - **Tests.** `SettingsChains` knows the link and the guide it opens (its
   Open Dwell Control Settings buttons leave for the Settings app, which
   the chains do not follow). `SettingsOnHomeTests` opens and reads the
@@ -52,8 +57,10 @@ screens are in the Figma file's
 
 - `c663791`, `31cc050`, `144248b`: the work file's intent, spec and plan.
 - `1de50f5`: the link, its measuring, and the tests.
-- This record, with docs/DECISIONS.md, docs/HANDOFF.md, docs/ROADMAP.md
-  and docs/ACCESSIBILITY.md.
+- `603ad93`: this record, with docs/DECISIONS.md, docs/HANDOFF.md,
+  docs/ROADMAP.md and docs/ACCESSIBILITY.md.
+- The next commit: Get Attention's section rewritten as open for the
+  owner, after Codex's review, and the lines that cite it.
 
 ## Verified
 
@@ -105,16 +112,17 @@ screens are in the Figma file's
 - **AGENTS.md is ahead of the app.** Its *Design rules for dwell, switch
   and pointer input* say "Settings opens on a large way back and a
   start-only Get Attention". Brickson has never shown Get Attention in
-  Settings, and now has a measured reason not to yet. Proposed wording,
-  for the owner to accept or refuse: "Settings opens on a large way back,
-  with a place kept for a start-only Get Attention until one clears its
-  chains (docs/DECISIONS.md, "Get Attention stays out of Settings' bar for
-  now")". Not changed here, because review rules change only with the
-  owner's yes.
+  Settings, and now has a measured reason not to yet. If the owner
+  chooses to keep it out, proposed wording: "Settings opens on a large
+  way back, with a place kept for a start-only Get Attention until one
+  clears its chains (docs/DECISIONS.md, "Get Attention in Settings' bar:
+  the owner decides")", with that section retitled for the choice. Not
+  changed here, because review rules change only with the owner's yes.
 - **Settings closes under the look:** Back to Talking over harmless
   controls only, with Home on the layout engine (ROADMAP Wave 3 item 4).
-- **Get Attention in Settings:** a place that clears its chains, or the
-  owner accepting the measured cost (docs/DECISIONS.md, "Get Attention
-  stays out of Settings' bar for now", *What would change it*).
+- **Get Attention in Settings:** the owner's choice of the three in
+  docs/DECISIONS.md, "Get Attention in Settings' bar: the owner decides":
+  keep it out for now, add it anyway at the measured cost, or find a
+  place that clears its chains first.
 - **Voice Settings as a chain surface**, with the Personal Voice question,
   before ROADMAP Wave 3 item 8 lets setup answers change sizes.
