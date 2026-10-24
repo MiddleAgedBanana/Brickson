@@ -1,7 +1,7 @@
 # Settings' chains, and Get Attention in Settings
 
 *Roadmap: Wave 3 item 7 (R0 items 4 and 7). Owner: the Settings' chains
-thread (a cloud session; GitHub CI is its build). Status: intent.*
+thread (a cloud session; GitHub CI is its build). Status: spec.*
 
 ## Intent
 
@@ -56,3 +56,66 @@ thread (a cloud session; GitHub CI is its build). Status: intent.*
     its own.
   - *Get Attention in Settings' empty place?* Scored first, then decided
     (*Spec*, *Concerns*).
+
+## Spec
+
+- **States:** only the first step of Set Up Step by Step changes. Top to
+  bottom: the heading and the sentence under it, in one block; **Learn
+  About Each Way** (a `NavigationLink` to Reaching the Screen, a book
+  icon, `learnAboutEachWay`); the six answers; Clear My Choices; the
+  reserved failure line. Next stays in its fixed bar at the bottom.
+- **Where the link sits:** its top is where Family Setup's Set Up Step by
+  Step row's top was, both measured in the scrolling content of their
+  screens (`SettingsLanding`), so a check-in card above the row, when one
+  shows, is counted. The block above it is at least tall enough to reach
+  that line. Its label is at least as tall as the row's label, so the
+  link is at least as tall as the row: modelled on CI's frames, a link
+  40 or 100pt lower or 60pt taller still clears every chain, but one
+  shorter than the row does not (a look at the row's lower edge then
+  meets Touch). Where the words above are taller than the space, at the
+  largest text sizes, the link sits lower, which is the safe direction.
+  Where Family Setup was scrolled before the row was chosen, the look
+  rests higher than the link, on the words or the link, never nearer an
+  answer.
+- **Where it leads:** the same Reaching the Screen guide as Family
+  Setup's row, every way shown. It opens on words: on CI's windows its
+  first screenful holds only Back and Back to Talking. Its Open Dwell
+  Control Settings buttons, far down, leave for the Settings app, as
+  they do from Family Setup. Back returns to the first step, answers
+  untouched.
+- **Input methods:** touch passes one more row; Voice Control can say
+  "Tap Learn About Each Way"; Switch Control scans one more item before
+  the answers; a dwell, head or gaze pointer resting where Set Up Step by
+  Step was meets the link, which only navigates. On the phone the answers
+  sit one row lower, so Eye Tracking and below are reached by scrolling,
+  as Head Tracking and below already were.
+- **Colours:** none new: the row is white on `Palette.controlFill`
+  (5.98:1, pinned in `PaletteTests`).
+- **Privacy policy:** no sentence changes.
+- **Screens:** in the Figma file, page *Settings and Library*, section
+  [Settings' chains: step 1 with Learn About Each Way](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=48-207),
+  wireframes at CI's measured frames:
+  [A. Family Setup today](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=48-210),
+  [B. step 1 today](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=48-238),
+  [C. step 1 proposed, iPhone 17](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=48-269),
+  [D. step 1 proposed, 13-inch iPad portrait](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=48-301).
+  Not yet accepted by the owner; the owner accepts them by merging.
+- **Concerns:**
+  - *Settings closes under the look, more often.* The guide's Back to
+    Talking is a new way into that open hazard, only where the pointer
+    goes back to the look: modelled on CI's frames, its chains go from 3
+    to 6 on the phone, 4 to 10 on the iPad in portrait, 5 to 7 at the
+    largest size and 4 to 9 in landscape. Family Setup's own guide rows
+    reach it the same way today, unscored, because the engine stops at
+    their screens. It stays a strict expected failure; its fix is Back to
+    Talking over harmless controls only (ROADMAP Wave 3 item 4).
+  - *Get Attention in the bar's empty place adds alarm chains.* Modelled
+    on CI's frames with the link: 5 to 7 chains on every window sound the
+    alarm unasked. The standard Back button sits just under that place,
+    and on a screen with no Back, Settings' first screen, the spot where
+    Back was is nearest Get Attention by both rules. On the iPad, the
+    middle of a full-width row is as near Get Attention as Back to
+    Talking. So Get Attention stays out of Settings' bar for now, and so
+    does the sound line's move that was to come with it
+    (docs/DECISIONS.md, "Get Attention stays out of Settings' bar for
+    now").
