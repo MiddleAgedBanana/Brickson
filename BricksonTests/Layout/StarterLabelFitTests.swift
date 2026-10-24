@@ -38,7 +38,7 @@ struct StarterLabelFitTests {
 
     /// What SwiftUI draws: `text` in `font` at the default size, laid out in
     /// `width` (or on one line when `width` is nil).
-    private static func drawnSize(
+    static func drawnSize(
         _ text: String, _ font: LabelFont, width: CGFloat? = nil, boldText: Bool = false
     ) -> CGSize {
         let view = Text(verbatim: text)
@@ -55,7 +55,7 @@ struct StarterLabelFitTests {
     /// measure and by SwiftUI's, and its lines fit the height. With
     /// `boldText`, UIKit measures at the weight `FittedLabel` measures Bold
     /// Text at, and SwiftUI draws with Bold Text on.
-    private static func expectFits(
+    static func expectFits(
         _ text: String, _ font: LabelFont, in size: CGSize, _ slot: String, boldText: Bool = false
     ) {
         let measuring = font.legible(boldText ? .bold : .regular)
