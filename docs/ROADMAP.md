@@ -286,8 +286,10 @@ Its tests found that the starter library cannot fit everywhere at the
 touch floors: it fits every window that scrolls today but the iPad mini
 in landscape at AX5, and phones at AX3 and AX5 and 320-point windows
 need an arrangement with fewer tiles to a screen (docs/DECISIONS.md,
-"The layout engine"). Item 2 has not landed; the engine's own tests
-score the same chains, and their hazards are recorded there.
+"The layout engine"). Item 2 landed first (#49); on the engine's
+frames it finds no new hazard, only the top of Stop's well on compact
+widths (`HomeLayoutEngineTests.noChainOnTheEnginesFramesMeetsAHazardButStopsWell`,
+2026-10-24).
 *Apple:*
 [Layout](https://developer.apple.com/design/human-interface-guidelines/layout)
 ("Determine layout based on size classes, not device type or

@@ -61,7 +61,31 @@ tests; nothing else in it changed.
 - `2a16b3b` the plan.
 - `9856975` the tests.
 - `9388ede` the engine.
-- The documents and this record: the pull request's last commit.
+- `924ea46` the documents and this record.
+- A merge commit bringing in main with #47 and #49 (2026-10-24), its
+  four conflicts in documents only, each kept from both sides.
+- The engine's tests on the chain engine's rules, and this section's
+  updates: the last commit.
+
+## Main merged in, and the one chain engine (2026-10-24)
+
+#49 merged first, with one chain engine for dwell safety
+(docs/DECISIONS.md, "One chain engine for dwell safety"), so that
+"nearest" has one definition. This pull request had written its own
+nearest-control helper, a third copy. Its `Nearest` helper now takes its
+rules from `ChainEngine` (the distances, the half-point tie, the points
+across a frame), and a new test,
+`noChainOnTheEnginesFramesMeetsAHazardButStopsWell`, follows every chain
+of held activations on the engine's frames with `HomeChains`' map, with
+Phrases and Type added: in every Home state, both rules and both
+pointers, at widths every 16 points and both sides of each change of
+arrangement, at 874 and 1376 points tall, three text sizes, Bold Text
+off and on. It finds the top of Stop's well nearest Again on compact
+widths (and Yes at its corner on the narrowest bold windows) and nothing
+else; it fails on that hazard on a regular width, and, strict, once
+compact widths lose it. Swapping Again and Get Attention on compact
+widths made it fail (Get Attention, then Stop). On Linux all 28 tests
+pass, the chain test in about 33 seconds.
 
 ## Verified
 
@@ -87,22 +111,21 @@ tests; nothing else in it changed.
 ## Not verified
 
 - Nothing was built with Xcode: this session cannot. CI is the build.
-  `HomeLayoutText.swift` and `HomeLayoutEngineFontTests` (UIKit and
-  SwiftUI) have not compiled anywhere yet.
-- Whether `LabelFont` measures the line heights the pure tests use, at
-  each of the five text sizes and with Bold Text
-  (`thePureTestsTextSizesAreTheRealOnes`). One point off at a size would
-  move a window in the table.
-- Whether the new widths hold their words as SwiftUI draws them
-  (Phrases, Type, Speak, the message, the bold tiles), and whether every
-  starter phrase fits the narrowest four-column tile in three lines.
+  *Since settled:* CI's first run (run 39997145852, on `924ea46`) built
+  `HomeLayoutText.swift` and `HomeLayoutEngineFontTests` with warnings as
+  errors and passed them on the iPad simulator: `LabelFont` measures the
+  pure tests' line heights at all five text sizes with Bold Text off and
+  on, and the new widths and tile floors hold their words at the default
+  size (by UIKit's and SwiftUI's measurement, not rendered pixels). The
+  font tests have not run on an iPhone simulator.
 - The iPad safe areas (32 above, 20 below) are inferred from CI's
   frames, and the phones' from Apple's published sizes, not measured
   here. iPhone Duo's displays and iPad windows smaller than the screen
   are not in the table.
 - That today's Home breaks "understand." on 375 and 390-point phones with
   Bold Text is a prediction; no screenshot shows it.
-- How long the sweep takes on CI's Mac.
+- How long the chain test takes on CI's Mac. The rest of the sweep took
+  about 52 seconds there (84 summed) on its first run.
 
 ## Follow-ups
 

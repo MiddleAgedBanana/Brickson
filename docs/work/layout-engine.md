@@ -148,7 +148,9 @@ type that nothing calls yet, and Home moves onto its frames in item 4.
 - **Input methods** (invariant 10). Every rule is scored on frames at
   every width from 320 to 1432 points, every 4, at six heights, three
   text sizes, Bold Text off and on, by nearest centre and nearest edge,
-  ties within half a point counted:
+  ties within half a point counted, by the chain engine's rules
+  (docs/DECISIONS.md, "One chain engine for dwell safety"; since
+  2026-10-24, when main brought it in):
   - After Get Attention, never Stop or a control that speaks. After
     Stop, only a category. After Phrases or Type, nothing that speaks,
     raises or ends the alarm (on short windows at large text sizes,
@@ -168,6 +170,12 @@ type that nothing calls yet, and Home moves onto its frames in item 4.
     today; on windows narrower than 375 points with Bold Text, the well's
     top leading corner ties Yes by centre too. On regular widths
     Emergency is above the well and nothing that speaks is nearest it.
+  - Whole chains of held activations, by the chain engine on the
+    engine's frames (`HomeChains`, with Phrases and Type added), in every
+    Home state, at widths every 16 points and both sides of each change
+    of arrangement, at a phone's and an iPad's height, three text sizes,
+    Bold Text off and on: nothing but the well's hazard above, and that
+    only on compact widths.
 - **A fold** (*How does the engine take a fold?*): it takes the reserved
   regions and reports which slots they cross, and moves nothing for
   them. How Home keeps clear of a fold waits for R0 item 13's look at
@@ -248,6 +256,9 @@ type that nothing calls yet, and Home moves onto its frames in item 4.
     `roomGoesToTheGapsThenTheSafetyRowThenTheCategories`.
   - Get Attention swaps places with Emergency:
     `compactPutsGetAttentionDirectlyUnderEmergency`.
+  - Get Attention swaps places with Again on compact widths: the chain
+    test, `noChainOnTheEnginesFramesMeetsAHazardButStopsWell` (Get
+    Attention, then Stop).
   - The grid never scrolls, or claims the starter library always fits:
     `onlyTheGridFollowsTheLibrary`, `theShortfallIsReported`.
   - Floors ignore the person's text size:

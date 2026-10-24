@@ -1596,6 +1596,12 @@ docs/work/layout-engine.md; the record is
   top of Stop's well is nearest Again*); each has a dated note there.
   After Phrases or Type, a held look can meet Emergency on short windows
   at large text sizes: harmless, as it only shows the emergency phrases.
+  *2026-10-24:* the engine's tests take "nearest" from the chain engine
+  (*One chain engine for dwell safety*), and
+  `HomeLayoutEngineTests.noChainOnTheEnginesFramesMeetsAHazardButStopsWell`
+  follows every chain on the engine's frames, with Phrases and Type
+  added to `HomeChains`' map: it finds the well's hazard on compact
+  widths and nothing else.
 - **A fold is reported, not avoided.** The engine says which slots a
   reserved region crosses and moves nothing yet; how Home keeps clear of
   a fold waits for R0 item 13 (*iPhone Duo*, *The fold*).
@@ -1971,7 +1977,9 @@ engine, not five scripts".
   (speaks, alarms, changes data, moves things, only navigates, nothing)
   and the state it leads to (`HomeChains`, `SettingsChains`). The unit
   tests give it the layout's frames (`HomeShape`), the UI tests the
-  running app's. `HomeShapeTests`' nearest-control checks and the UI
+  running app's. *2026-10-24:* the layout engine's frames too
+  (`HomeLayoutEngineTests`, *The layout engine*), before Home moves onto
+  them. `HomeShapeTests`' nearest-control checks and the UI
   tests' `nearestControls` use its rules, so "nearest" has one
   definition.
 - **What it follows.** From each start, every chain of held activations,

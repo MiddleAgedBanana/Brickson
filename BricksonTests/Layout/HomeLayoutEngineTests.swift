@@ -473,6 +473,98 @@ struct HomeLayoutEngineTests {
         }
     }
 
+    // MARK: Chains of held activations
+
+    /// Home's map for the chain engine on the layout engine's frames
+    /// (`HomeChains`), built as `HomeShapeTests` builds it from today's
+    /// stand-in, with Phrases and Type added: Phrases does nothing while the
+    /// phrases show, and Type leads to typing, which the map does not have
+    /// yet, so a chain stops there.
+    static func chainMap(_ layout: HomeLayout) -> ChainMap {
+        let categories = (0..<HomeLayout.categoryCapacity).map { (name: "category \($0 + 1)", frame: layout.frame(.category($0))) }
+        var map = HomeChains.map(HomeChains.Frames(
+            yes: layout.frame(.yes), no: layout.frame(.no), emergency: layout.frame(.emergency), again: layout.frame(.again),
+            getAttention: layout.frame(.getAttention), stop: layout.frame(.stop), settings: layout.frame(.settings),
+            categories: categories
+        ))
+        for state in map.states.keys {
+            map.states[state]?.append(ChainControl("phrases", layout.frame(.phrases), .nothing))
+            map.states[state]?.append(ChainControl("type", layout.frame(.type), .navigates, leadsTo: "Typing"))
+        }
+        return map
+    }
+
+    /// Fails if a chain of held activations on the engine's frames meets
+    /// anything that speaks, alarms, changes data or moves things unasked,
+    /// in any of Home's states, from any control a person chooses or any
+    /// place a look rests, by nearest centre or nearest edge, with the
+    /// pointer staying on the control or going back to the look
+    /// (`ChainEngine`): the check `HomeShapeTests.noChainOnHomeMeetsAHazard`
+    /// makes on today's Home. Scores widths every 16pt and both sides of
+    /// each change of arrangement, at a phone's and an iPad's height, at
+    /// three text sizes.
+    ///
+    /// One finding is known, on compact widths only (the test above): a look
+    /// resting in Stop's well, empty or after choosing Stop, can meet Again,
+    /// or Yes at the well's corner on the narrowest bold windows. Anything
+    /// else fails, and so does that finding on a regular width; strict, so
+    /// it fails once compact widths do not meet it either.
+    @Test(arguments: [false, true])
+    func noChainOnTheEnginesFramesMeetsAHazardButStopsWell(boldText: Bool) {
+        var known = 0
+        var unexpected: [String] = []
+        for (name, text) in [("default", Self.defaultText), ("xxxLarge", Self.largerText), ("AX5", Self.largestText)] {
+            let text = boldText ? Self.bold(text) : text
+            for height: CGFloat in [874, 1376] {
+                func layout(_ width: CGFloat) -> HomeLayout {
+                    HomeLayout(space: .init(size: CGSize(width: width, height: height)), text: text)
+                }
+                for width in Self.chainWidths(layout) {
+                    let layout = layout(width)
+                    let context = "\(width)×\(height), \(name), Bold Text \(boldText)"
+                    let map = Self.chainMap(layout)
+                    for finding in ChainFinding.findings(in: map.hazards(from: map.everyStart())) {
+                        let start = finding.example.start
+                        let fromTheWell = start.chosen?.name == HomeChains.stop || start.restingOn == HomeChains.emptyWell
+                        let met = finding.example.hazard?.control.name
+                        if !layout.isRegular && fromTheWell && (met == HomeChains.again || met == HomeChains.yes) {
+                            known += 1
+                        } else {
+                            unexpected.append("\(finding) (\(context))")
+                        }
+                    }
+                }
+            }
+        }
+        // Counts, not the lists, in the expectations (see above).
+        let unexpectedCount = unexpected.count
+        #expect(unexpectedCount == 0, "first: \(unexpected.first ?? "")")
+        withKnownIssue("docs/DECISIONS.md, \"Get Attention and Stop on Home\": the top of Stop's well is nearest Again") {
+            #expect(known == 0)
+        }
+    }
+
+    /// Window widths for chain scoring: every 16pt from 320 to 1432, and
+    /// both sides of each width where the arrangement, the categories'
+    /// arrangement or Settings' word changes. Following every chain takes
+    /// far longer than laying out, so not every 4 points.
+    private static func chainWidths(_ layout: (CGFloat) -> HomeLayout) -> [CGFloat] {
+        var widths = Set(stride(from: CGFloat(320), through: 1432, by: 16))
+        var previous: (width: CGFloat, layout: HomeLayout)?
+        for width in stride(from: CGFloat(320), through: 1432, by: 1) {
+            let current = layout(width)
+            if let previous,
+               previous.layout.isRegular != current.isRegular
+               || previous.layout.categoryArrangement != current.categoryArrangement
+               || previous.layout.settingsShowsName != current.settingsShowsName {
+                widths.insert(previous.width)
+                widths.insert(width)
+            }
+            previous = (width, current)
+        }
+        return widths.sorted()
+    }
+
     // MARK: The keyboard
 
     /// The band rule (docs/DECISIONS.md, "Typing is a state of Home"): on
@@ -717,37 +809,23 @@ private enum Below {
     }
 }
 
-/// What a resting look meets: the control nearest a point by the distance
-/// to its centre and by the distance to its nearest edge (zero inside
-/// it), each with every control within half a point of the nearest
-/// counted, because whether Snap to Item picks by centre or by edge is
-/// not known yet (docs/HANDOFF.md, *Checks that need a real device*).
+/// What a resting look meets, by the chain engine's rules (`ChainEngine`;
+/// docs/DECISIONS.md, "One chain engine for dwell safety"), so "nearest"
+/// has one definition: the controls nearest a point by the distance to
+/// their centre and by the distance to their nearest edge (zero inside
+/// one), each with every control within half a point of the nearest
+/// counted, because whether Snap to Item picks by centre or by edge is not
+/// known yet (docs/HANDOFF.md, *Checks that need a real device*).
 enum Nearest {
-    typealias Control = (slot: HomeLayout.Slot, frame: CGRect)
-
     /// The controls of `layout` a look can meet, less `excluded`.
-    static func controls(in layout: HomeLayout, excluding excluded: Set<HomeLayout.Slot> = []) -> [Control] {
-        HomeLayout.Slot.controls.filter { !excluded.contains($0) }.map { ($0, layout.frame($0)) }
+    static func controls(in layout: HomeLayout, excluding excluded: Set<HomeLayout.Slot> = []) -> [HomeLayout.Slot: CGRect] {
+        Dictionary(uniqueKeysWithValues: HomeLayout.Slot.controls.filter { !excluded.contains($0) }.map { ($0, layout.frame($0)) })
     }
 
-    static func centreDistance(_ point: CGPoint, _ frame: CGRect) -> CGFloat {
-        hypot(point.x - frame.midX, point.y - frame.midY)
-    }
-
-    static func edgeDistance(_ point: CGPoint, _ frame: CGRect) -> CGFloat {
-        hypot(max(frame.minX - point.x, 0, point.x - frame.maxX), max(frame.minY - point.y, 0, point.y - frame.maxY))
-    }
-
-    static func to(_ point: CGPoint, among controls: [Control]) -> Set<HomeLayout.Slot> {
-        let centres = controls.map { centreDistance(point, $0.frame) }
-        let edges = controls.map { edgeDistance(point, $0.frame) }
-        let closestCentre = centres.min() ?? 0
-        let closestEdge = edges.min() ?? 0
-        var met: Set<HomeLayout.Slot> = []
-        for index in controls.indices where centres[index] - closestCentre < 0.5 || edges[index] - closestEdge < 0.5 {
-            met.insert(controls[index].slot)
-        }
-        return met
+    /// The controls nearest `point` by centre or by edge, ties counted.
+    static func to(_ point: CGPoint, among controls: [HomeLayout.Slot: CGRect]) -> Set<HomeLayout.Slot> {
+        let met = ChainEngine.nearest(to: point, among: controls)
+        return met.byCentre.union(met.byEdge)
     }
 
     /// The nearest other controls to `slot`'s centre: where a held look
@@ -760,14 +838,7 @@ enum Nearest {
     /// Points across `frame`, every eighth of its width and quarter of its
     /// height, half a point in from its edges.
     static func points(in frame: CGRect) -> [CGPoint] {
-        (0...8).flatMap { column in
-            (0...4).map { row in
-                CGPoint(
-                    x: frame.minX + 0.5 + (frame.width - 1) * CGFloat(column) / 8,
-                    y: frame.minY + 0.5 + (frame.height - 1) * CGFloat(row) / 4
-                )
-            }
-        }
+        ChainEngine.points(across: frame)
     }
 
     /// The share of points on the message and its status line, every 4
@@ -775,9 +846,9 @@ enum Nearest {
     static func speakingShare(of layout: HomeLayout) -> (centre: Double, edge: Double) {
         let block = layout.frame(.message).union(layout.frame(.statusLine))
         let speaks: Set<HomeLayout.Slot> = [.yes, .no, .again]
-        let all = controls(in: layout)
-        let frames = all.map(\.frame)
-        let speaking = all.map { speaks.contains($0.slot) }
+        let all = HomeLayout.Slot.controls
+        let frames = all.map(layout.frame)
+        let speaking = all.map { speaks.contains($0) }
         var total = 0, byCentre = 0, byEdge = 0
         for x in stride(from: block.minX + 2, to: block.maxX, by: 4) {
             for y in stride(from: block.minY + 2, to: block.maxY, by: 4) {
@@ -785,9 +856,9 @@ enum Nearest {
                 var centre = (index: 0, distance: CGFloat.infinity)
                 var edge = (index: 0, distance: CGFloat.infinity)
                 for index in frames.indices {
-                    let toCentre = centreDistance(point, frames[index])
+                    let toCentre = NearestRule.centre.distance(from: point, to: frames[index])
                     if toCentre < centre.distance { centre = (index, toCentre) }
-                    let toEdge = edgeDistance(point, frames[index])
+                    let toEdge = NearestRule.edge.distance(from: point, to: frames[index])
                     if toEdge < edge.distance { edge = (index, toEdge) }
                 }
                 total += 1
