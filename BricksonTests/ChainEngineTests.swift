@@ -373,8 +373,12 @@ struct SettingsChainsTests {
         ],
         firstStep: [
             (SettingsChains.backToTalking, backToTalking), (SettingsChains.back, back),
-            ("Touch", row(335)), ("Voice Control", row(429)),
+            (SettingsChains.learnAboutEachWay, row(362)), ("Touch", row(456)), ("Voice Control", row(550)),
             (SettingsChains.firstStepNext, CGRect(x: 0, y: 694.3, width: 402, height: 110)),
+        ],
+        firstStepGuide: [
+            (SettingsChains.backToTalking, backToTalking), (SettingsChains.back, back),
+            ("Open Dwell Control Settings", row(1400)),
         ]
     )
 
@@ -383,15 +387,17 @@ struct SettingsChainsTests {
     }
 
     /// Fails if Back to Talking stops closing Settings onto Home from any
-    /// screen, a row opens the wrong screen, or anything on the first step
-    /// but Back stops counting as saving an answer.
+    /// screen, a row opens the wrong screen, anything on the first step but
+    /// Back and Learn About Each Way stops counting as saving an answer, or
+    /// the guide's Back stops returning to the first step.
     @Test func eachControlDoesWhatSettingsDoes() {
         let built = SettingsChains.map(Self.screens, closingOnto: Self.home)
         #expect(built.unknown.isEmpty)
         let root = Self.controls(built.map, SettingsChains.root)
         let familySetup = Self.controls(built.map, SettingsChains.familySetup)
         let firstStep = Self.controls(built.map, SettingsChains.firstStep)
-        for screen in [root, familySetup, firstStep] {
+        let guide = Self.controls(built.map, SettingsChains.firstStepGuide)
+        for screen in [root, familySetup, firstStep, guide] {
             #expect(screen[SettingsChains.backToTalking]?.leadsTo == Self.home)
             #expect(screen[SettingsChains.backToTalking]?.effect == .navigates)
         }
@@ -401,8 +407,13 @@ struct SettingsChainsTests {
         #expect(familySetup["voiceSettings"]?.leadsTo == "voiceSettings")
         #expect(familySetup["voiceSettings"]?.effect == .navigates)
         #expect(firstStep[SettingsChains.back]?.leadsTo == SettingsChains.familySetup)
+        #expect(firstStep[SettingsChains.learnAboutEachWay]?.leadsTo == SettingsChains.firstStepGuide)
+        #expect(firstStep[SettingsChains.learnAboutEachWay]?.effect == .navigates)
         #expect(firstStep["Touch"]?.effect == .changesData)
         #expect(firstStep[SettingsChains.firstStepNext]?.effect == .changesData)
+        #expect(guide[SettingsChains.back]?.leadsTo == SettingsChains.firstStep)
+        #expect(guide["Open Dwell Control Settings"]?.effect == .navigates)
+        #expect(guide["Open Dwell Control Settings"]?.leadsTo.map { !SettingsChains.scored.contains($0) } == true)
     }
 
     /// Fails if a control the chains do not know is scored as harmless
@@ -411,9 +422,10 @@ struct SettingsChainsTests {
         var screens = Self.screens
         screens.root.append(("somethingNew", Self.row(400)))
         screens.familySetup?.append(("anotherNew", Self.row(550)))
+        screens.firstStepGuide?.append(("aThirdNew", Self.row(600)))
         screens.firstStep = nil
         let built = SettingsChains.map(screens, closingOnto: Self.home)
-        #expect(built.unknown == ["somethingNew on Settings", "anotherNew on Family Setup"])
+        #expect(built.unknown == ["somethingNew on Settings", "anotherNew on Family Setup", "aThirdNew on Reaching the Screen"])
         #expect(Self.controls(built.map, SettingsChains.root)["somethingNew"] == nil)
         #expect(built.map.states[SettingsChains.firstStep] == nil)
     }
@@ -441,15 +453,9 @@ struct SettingsChainsTests {
         #expect(SettingsChains.kind(of: chain(Self.home, tile, .returnsToLook, .settles)) == nil)
     }
 
-    /// Main's CI frames for an iPhone at the default text size (Home as it
-    /// launches, Settings' first screen and Family Setup as they first
-    /// show; the first step's rows placed as Step 2's are, since CI has not
-    /// captured it). Fails if the chains through them meet a hazard of a
-    /// new kind, or stop finding the two known ones: Home's Settings,
-    /// Family Setup and Set Up Step by Step lead a held look to save Touch
-    /// (docs/HANDOFF.md, *Known gaps*), and Back to Talking's corner closes
-    /// Settings over No.
-    @Test func aPhoneAsCIReadsItHasOnlyTheKnownKinds() throws {
+    /// An iPhone at the default text size as main's CI read it on
+    /// 2026-10-23: Home as it launches, and Family Setup as it first shows.
+    private static func phoneHome() throws -> (map: ChainMap, atRest: String) {
         let categories = ["Basics", "Needs", "Conversation", "Feelings"]
         var read: [(name: String, frame: CGRect)] = [
             (HomeChains.yes, CGRect(x: 16, y: 172.7, width: 86.7, height: 64)),
@@ -467,29 +473,70 @@ struct SettingsChainsTests {
             read.append((HomeChains.phraseTile, CGRect(x: 16 + 126 * CGFloat(column), y: 436.7 + 134 * CGFloat(row), width: 118, height: 126)))
         }
         let atRest = HomeChains.name(of: HomeChains.State(), categories: categories)
-        let home = HomeChains.map(try #require(HomeChains.frames(from: read, categories: categories)))
+        return (HomeChains.map(try #require(HomeChains.frames(from: read, categories: categories))), atRest)
+    }
+
+    private static let phoneFamilySetup: [(name: String, frame: CGRect)] = [
+        (SettingsChains.backToTalking, backToTalking), (SettingsChains.back, back),
+        (SettingsChains.guidedSetupRow, row(362)), ("voiceSettings", row(456)),
+        ("reachingTheScreen", row(550)), ("keepOpen", row(644)),
+        ("callsSiriAndShortcuts", row(738)), ("moreAccessibility", row(832)),
+    ]
+
+    /// The paths of each kind of hazard through `screens` on the phone.
+    private static func phonePaths(_ screens: SettingsChains.Screens) throws -> [SettingsChains.Kind: [String]] {
+        let home = try phoneHome()
+        let settings = SettingsChains.map(screens, closingOnto: home.atRest)
+        #expect(settings.unknown.isEmpty)
+        let map = home.map.merging(settings.map)
+        let hazards = map.hazards(from: SettingsChains.starts(in: map, home: home.atRest))
+        return Dictionary(uniqueKeysWithValues: SettingsChains.Kind.allCases.map { kind in
+            (kind, ChainFinding.findings(in: hazards.filter { SettingsChains.kind(of: $0) == kind }).map(\.path))
+        })
+    }
+
+    /// The phone with the first step as it was before Learn About Each
+    /// Way, its rows placed as Step 2's are (CI had not captured it). Fails
+    /// if the chains through it meet a hazard of a new kind, or stop finding
+    /// the two known ones: Home's Settings, Family Setup and Set Up Step by
+    /// Step lead a held look to save Touch, and Back to Talking's corner
+    /// closes Settings over No.
+    @Test func aPhoneAsCIReadsItHasOnlyTheKnownKinds() throws {
         var screens = Self.screens
-        screens.familySetup = [
-            (SettingsChains.backToTalking, Self.backToTalking), (SettingsChains.back, Self.back),
-            (SettingsChains.guidedSetupRow, Self.row(362)), ("voiceSettings", Self.row(456)),
-            ("reachingTheScreen", Self.row(550)), ("keepOpen", Self.row(644)),
-            ("callsSiriAndShortcuts", Self.row(738)), ("moreAccessibility", Self.row(832)),
-        ]
+        screens.familySetup = Self.phoneFamilySetup
         screens.firstStep = [
             (SettingsChains.backToTalking, Self.backToTalking), (SettingsChains.back, Self.back),
             ("Touch", Self.row(335)), ("Voice Control", Self.row(429)), ("Switch Control", Self.row(523)),
             ("Eye Tracking", Self.row(617)), ("Head Tracking", Self.row(711)), ("Someone else helps", Self.row(805)),
             (SettingsChains.firstStepNext, CGRect(x: 0, y: 694.3, width: 402, height: 110)),
         ]
-        let settings = SettingsChains.map(screens, closingOnto: atRest)
-        #expect(settings.unknown.isEmpty)
-        let map = home.merging(settings.map)
-        let hazards = map.hazards(from: SettingsChains.starts(in: map, home: atRest))
-        func paths(_ kind: SettingsChains.Kind) -> [String] {
-            ChainFinding.findings(in: hazards.filter { SettingsChains.kind(of: $0) == kind }).map(\.path)
-        }
-        #expect(paths(.unexpected) == [])
-        #expect(paths(.savesAnAnswer).contains("choosing settings → familySetup (navigates) → guidedSetup (navigates) → Touch (changesData)"))
-        #expect(paths(.closesUnderTheLook).contains("choosing backToTalking → No (speaks)"))
+        screens.firstStepGuide = nil
+        let paths = try Self.phonePaths(screens)
+        #expect(paths[.unexpected] == [])
+        #expect(paths[.savesAnAnswer]?.contains("choosing settings → familySetup (navigates) → guidedSetup (navigates) → Touch (changesData)") == true)
+        #expect(paths[.closesUnderTheLook]?.contains("choosing backToTalking → No (speaks)") == true)
+    }
+
+    /// The same phone with the first step as it is now: Learn About Each
+    /// Way on Set Up Step by Step's frame, the answers a row lower, and the
+    /// guide it opens as it first shows, with only Back and Back to
+    /// Talking. Fails if a held look still saves an answer (the link
+    /// dropped, shorter than the row, or scored as saving), or meets
+    /// anything new.
+    @Test func aGuideLinkWhereSetUpStepByStepWasSavesNoAnswer() throws {
+        var screens = Self.screens
+        screens.familySetup = Self.phoneFamilySetup
+        screens.firstStep = [
+            (SettingsChains.backToTalking, Self.backToTalking), (SettingsChains.back, Self.back),
+            (SettingsChains.learnAboutEachWay, Self.row(362)),
+            ("Touch", Self.row(456)), ("Voice Control", Self.row(550)), ("Switch Control", Self.row(644)),
+            ("Eye Tracking", Self.row(738)), ("Head Tracking", Self.row(832)),
+            (SettingsChains.firstStepNext, CGRect(x: 0, y: 694.3, width: 402, height: 110)),
+        ]
+        screens.firstStepGuide = [(SettingsChains.backToTalking, Self.backToTalking), (SettingsChains.back, Self.back)]
+        let paths = try Self.phonePaths(screens)
+        #expect(paths[.unexpected] == [])
+        #expect(paths[.savesAnAnswer] == [])
+        #expect(paths[.closesUnderTheLook]?.contains("choosing backToTalking → No (speaks)") == true)
     }
 }
