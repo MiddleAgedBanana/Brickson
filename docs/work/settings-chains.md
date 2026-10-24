@@ -16,8 +16,7 @@ thread (a cloud session; GitHub CI is its build). Status: building.*
   default text size, 6 on the 13-inch iPad in portrait and in landscape,
   4 on the iPad at the largest size, some starting at Home's Settings
   button, three activations away (docs/DECISIONS.md, "One chain engine
-  for dwell safety", *Open: a held look saves an answer in Set Up Step
-  by Step*). Nothing reads the answers yet, but ROADMAP Wave 3 item 8
+  for dwell safety"). Nothing reads the answers yet, but ROADMAP Wave 3 item 8
   will let them change Home's sizes, so this comes first. The second half
   of the item: Settings' safety bar keeps an empty place for a start-only
   Get Attention, waiting for this score.
