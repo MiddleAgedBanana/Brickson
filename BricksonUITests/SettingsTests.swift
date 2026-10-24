@@ -391,44 +391,19 @@ final class SettingsTests: XCTestCase {
         open("familySetup", in: app, waitingFor: "Family Setup")
         open("guidedSetup", in: app, waitingFor: "Step 1 of 5")
 
-        // An answer clear of the Next bar on a phone: Eye Tracking and
-        // below sit under it until the step scrolls.
-        app.buttons["Voice Control"].tap()
-        XCTAssertTrue(app.buttons["Voice Control"].isSelected, "choosing an answer did not select it")
+        app.buttons["Eye Tracking"].tap()
+        XCTAssertTrue(app.buttons["Eye Tracking"].isSelected, "choosing an answer did not select it")
         // A second activation keeps it chosen: answers only select.
-        app.buttons["Voice Control"].tap()
-        XCTAssertTrue(app.buttons["Voice Control"].isSelected, "a repeated activation undid the answer")
+        app.buttons["Eye Tracking"].tap()
+        XCTAssertTrue(app.buttons["Eye Tracking"].isSelected, "a repeated activation undid the answer")
 
         for step in 2...5 {
             app.buttons["guidedSetupNext"].tap()
             XCTAssertTrue(app.navigationBars["Step \(step) of 5"].waitForExistence(timeout: 10), "step \(step) did not open")
         }
-        XCTAssertTrue(app.staticTexts["Voice Control"].exists, "the summary does not list the answer")
+        XCTAssertTrue(app.staticTexts["Eye Tracking"].exists, "the summary does not list the answer")
 
         app.buttons["guidedSetupNext"].tap()
         XCTAssertTrue(app.navigationBars["Family Setup"].waitForExistence(timeout: 10), "Done did not return to Family Setup")
-    }
-
-    /// The first step's Learn About Each Way opens the Reaching the Screen
-    /// guide, and Back returns to the first step with its answer as it was.
-    /// Fails if the row is missing, opens anything else, or Back leaves the
-    /// steps.
-    @MainActor
-    func testLearnAboutEachWayOpensTheGuideAndBackReturns() {
-        let app = openSettings()
-        open("familySetup", in: app, waitingFor: "Family Setup")
-        open("guidedSetup", in: app, waitingFor: "Step 1 of 5")
-        app.buttons["Voice Control"].tap()
-        XCTAssertTrue(app.buttons["Voice Control"].isSelected, "choosing an answer did not select it")
-
-        open("learnAboutEachWay", in: app, waitingFor: "Reaching the Screen")
-        let words = app.descendants(matching: .any)
-            .matching(NSPredicate(format: "label CONTAINS %@", "needs no setup of its own"))
-            .firstMatch
-        XCTAssertTrue(words.waitForExistence(timeout: 10), "Learn About Each Way did not open the Reaching the Screen guide")
-
-        app.navigationBars.buttons.element(boundBy: 0).tap()
-        XCTAssertTrue(app.navigationBars["Step 1 of 5"].waitForExistence(timeout: 10), "Back from the guide did not return to the first step")
-        XCTAssertTrue(app.buttons["Voice Control"].isSelected, "the answer changed on the way to the guide and back")
     }
 }

@@ -10,16 +10,12 @@ import Foundation
 /// - Family Setup: the standard Back button returns to the first screen;
 ///   Set Up Step by Step opens its first step; every other row opens a
 ///   screen of its own, which only navigates and is not followed further.
-/// - Set Up Step by Step's first step: Back returns to Family Setup; Learn
-///   About Each Way opens the Reaching the Screen guide; every other
-///   control saves the answers: the ways of reaching the screen, Clear My
-///   Choices, and Next, which saves them before it moves on.
-/// - That guide, opened from the first step: Back returns to the first
-///   step; Open Dwell Control Settings leaves for the Settings app, which
-///   the chains do not follow.
+/// - Set Up Step by Step's first step: Back returns to Family Setup; every
+///   other control saves the answers: the ways of reaching the screen,
+///   Clear My Choices, and Next, which saves them before it moves on.
 ///
-/// A control on the first screen, Family Setup or the guide that this does
-/// not know is returned as unknown rather than guessed at, so a new one is described
+/// A control on the first screen or Family Setup that this does not know is
+/// returned as unknown rather than guessed at, so a new one is described
 /// here before it is scored. On the first step, anything new is taken to
 /// save, which can only add hazards.
 ///
@@ -30,10 +26,6 @@ nonisolated enum SettingsChains {
     static let root = HomeChains.settingsRoot
     static let familySetup = "Family Setup"
     static let firstStep = "Step 1 of 5"
-    /// Reaching the Screen, opened from the first step.
-    static let firstStepGuide = "Reaching the Screen"
-    /// Every state above: Settings' screens that are scored.
-    static let scored: Set = [root, familySetup, firstStep, firstStepGuide]
 
     /// Controls, by the names the UI tests read them by.
     static let backToTalking = "backToTalking"
@@ -42,11 +34,6 @@ nonisolated enum SettingsChains {
     static let guidedSetupRow = "guidedSetup"
     /// Next, on every step of Set Up Step by Step.
     static let firstStepNext = "guidedSetupNext"
-    /// The first step's way into the guide, where Set Up Step by Step's
-    /// row was.
-    static let learnAboutEachWay = "learnAboutEachWay"
-    /// The guide's buttons that open the Settings app, by their words.
-    static let opensTheSettingsApp: Set = ["Open Dwell Control Settings"]
     /// Family Setup's rows that open guides and settings of their own.
     static let familySetupGuides: Set = [
         "voiceSettings", "reachingTheScreen", "keepOpen", "callsSiriAndShortcuts", "moreAccessibility", "privacyPolicy",
@@ -59,7 +46,6 @@ nonisolated enum SettingsChains {
         var root: [(name: String, frame: CGRect)]
         var familySetup: [(name: String, frame: CGRect)]?
         var firstStep: [(name: String, frame: CGRect)]?
-        var firstStepGuide: [(name: String, frame: CGRect)]? = nil
     }
 
     /// The map of Settings' first screens, with Back to Talking leading to
@@ -97,20 +83,9 @@ nonisolated enum SettingsChains {
         }
         if let list = screens.firstStep {
             states[firstStep] = controls(list, on: firstStep) { name, frame in
-                switch name {
-                case back: ChainControl(name, frame, .navigates, leadsTo: familySetup)
-                case learnAboutEachWay: ChainControl(name, frame, .navigates, leadsTo: firstStepGuide)
-                default: ChainControl(name, frame, .changesData)
-                }
-            }
-        }
-        if let list = screens.firstStepGuide {
-            states[firstStepGuide] = controls(list, on: firstStepGuide) { name, frame in
-                switch name {
-                case back: ChainControl(name, frame, .navigates, leadsTo: firstStep)
-                case _ where opensTheSettingsApp.contains(name): ChainControl(name, frame, .navigates, leadsTo: "Settings app")
-                default: nil
-                }
+                name == back
+                    ? ChainControl(name, frame, .navigates, leadsTo: familySetup)
+                    : ChainControl(name, frame, .changesData)
             }
         }
         return (ChainMap(states: states), unknown)
@@ -120,8 +95,9 @@ nonisolated enum SettingsChains {
     /// chosen in `home`, and every control of Settings' first screens
     /// chosen, each with the look at its centre and across it.
     static func starts(in map: ChainMap, home: String) -> [ChainStart] {
-        map.everyStart().filter { start in
-            scored.contains(start.state) || (start.state == home && start.chosen?.name == HomeChains.settings)
+        let screens: Set = [root, familySetup, firstStep]
+        return map.everyStart().filter { start in
+            screens.contains(start.state) || (start.state == home && start.chosen?.name == HomeChains.settings)
         }
     }
 
@@ -144,7 +120,7 @@ nonisolated enum SettingsChains {
     static func kind(of chain: Chain) -> Kind? {
         guard let hazard = chain.hazard else { return nil }
         if hazard.state == firstStep { return .savesAnAnswer }
-        let onHome = !scored.contains(hazard.state)
+        let onHome = ![root, familySetup, firstStep].contains(hazard.state)
         return onHome && chain.pointer == .returnsToLook ? .closesUnderTheLook : .unexpected
     }
 }
