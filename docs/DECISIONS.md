@@ -1319,7 +1319,11 @@ This is part of the stand-in's known gap, "the phrase grid scrolls
 (invariant 11)" (docs/HANDOFF.md, *Known gaps*), not an exception to the
 invariant: iPhones run Switch Control, AssistiveTouch with Dwell, head
 tracking and Eye Tracking, so invariant 11 covers phones too. The layout
-engine closes it. Worked out from CI's text measurements (not yet seen
+engine closes it. *2026-10-23:* it does on every iPad window but the
+iPad mini in landscape at AX5, on the 375×667 phone at the default size
+and on larger phones through AX1, once Home moves onto it (*The layout
+engine*, *Where the starter library fits*); phones at AX3 and AX5 and
+320-point windows need an arrangement with fewer tiles to a screen. Worked out from CI's text measurements (not yet seen
 running on these windows):
 
 - A 375×667pt phone window (iPhone SE class): scrolls at the default text
@@ -1465,7 +1469,15 @@ never where it is.
   still open; *Settings on Home* says by how much and what decides the
   rest. *Get Attention and Stop on Home* then took Again off the
   message's edge: by the model, about 56% of the message is nearest Yes
-  or No by centre and 50% by edge, on every window.
+  or No by centre and 50% by edge, on every window. *2026-10-23, the layout
+  engine:* with Phrases and Type beside the message, as this plan has
+  them, Yes and No are nearest up to 97% of the message by centre and
+  89% by edge on compact widths (88 to 90% and 75 to 81% on phones at
+  the default size), and up to 68% and 62% on regular widths (iPads, 67%
+  and 54 to 60%). No placement inside this plan removes it, and a wider
+  gap changes nothing, since nothing else borders the message. It goes
+  to the owner to accept or reject before a dwell, switch, head or gaze
+  profile ships (*The layout engine*).
 - **Open: a library with more than four everyday categories.** Region B
   is an L (Stop Alert's column beside the categories), which cannot scroll
   as one standard container, so the stand-in's answer (the category
@@ -1499,6 +1511,100 @@ never where it is.
 
 *Before:* none; the stand-in Home had no wells (*Home version 0 is a
 stand-in*).
+
+## The layout engine
+
+*2026-10-23. Default, adopted 2026-10-23 by the Layout engine thread
+(docs/ROADMAP.md, Wave 3 item 3): routine choices, reversible if the
+owner objects. It accepts no exception to an invariant: the hazards it
+measures stay open for the owner.* The spec is
+docs/work/layout-engine.md; the record is
+[`log/2026-10-23-layout-engine.md`](log/2026-10-23-layout-engine.md).
+
+- **One engine, from the space.** `HomeLayout` turns the window's size,
+  its safe areas and the regions the system reserves in it, the input
+  profile, one line of each of Home's label styles at the person's text
+  size (with Bold Text) and the library's largest category into a frame
+  for every slot on Home (*Layouts from the space available*). It names
+  no device and reads no size class, orientation or idiom; Home's state
+  is not an input, so a slot's frame never changes with it (invariant
+  8). Nothing on screen uses it until Home moves onto it (Wave 3 item 4);
+  `HomeShape` stays until then.
+- **Two arrangements, by width.** Compact below 664 points (714 with
+  Bold Text), regular from there: where five equal columns each hold
+  Emergency's word. Compact keeps Get Attention directly under Emergency
+  (*Get Attention and Stop on Home*) with Again beside it over two
+  columns, and puts Phrases above Type beside the message in a trailing
+  column at least as wide as Emergency's word. Regular is the slot
+  plan's own: the safety row in one row, Emergency first, Stop's well
+  under Emergency (*Home's slot plan*). Before: the stand-in switched to
+  its regular arrangement at 592 points, so windows 592 to 663 points
+  wide now get the compact one.
+- **Floors and growth.** Touch's floor is 44 by 44 points; a control is
+  also never shorter than one line of its words at the person's size
+  with 6 points above and below. Where the starter library's largest
+  category (eight phrases) fits at the floors, the rest goes, in order,
+  to the gaps between regions (10 to 12 points: never less than 2 more
+  than the 8 between controls), the safety row (to 64 points, 88 on
+  regular widths), the categories (48, 72) and the phrase grid. The
+  safety row never grows into the keyboard's room (*Typing is a state of
+  Home*), and a category is never taller than the safety row, which
+  keeps a held look after Stop on the category under the well rather
+  than Emergency above it on regular widths.
+- **Widths that keep words whole** (AGENTS.md, *Words never break*): the
+  stand-in's minimum widths, Again's slot widened for "Speak", Phrases
+  86 points (94 with Bold Text), Type 58 (63), the message 156 (175),
+  compact tiles 107 (118), regular tiles 131 (146). Compact tiles are 99
+  points tall at the least and regular ones 100.
+  `HomeLayoutEngineFontTests` checks the new numbers with the real fonts
+  on CI.
+- **Where the starter library fits.** Predicted from Apple's fonts
+  measured on Linux and pinned by
+  `HomeLayoutEngineTests.theStarterLibraryFitsWhereTheTableSays`, whose
+  text sizes `HomeLayoutEngineFontTests` checks against `LabelFont`:
+  every iPad window in both orientations at every text size, but the
+  iPad mini in landscape at AX5 (5 points short); the iPhone 17 Pro Max
+  through AX3; the iPhone 17 and 16e through AX1 (the 16e only at the
+  default size with Bold Text); the 375×667 phone at the default size
+  only, with every control at its floor, and not with Bold Text. Never:
+  phones at AX5, the iPhone 17 and 16e at AX3, and 320-point windows at
+  any size. Where they do not fit, every control holding one line of
+  its words leaves too little for three rows of tiles; they stay the
+  known gap (*Home's stand-in layout*, *Where the grid still scrolls*)
+  until an arrangement with fewer tiles to a screen, never a smaller
+  target. The full table is in the work file's spec.
+- **The message on the narrowest windows.** Known limit, not accepted:
+  below 345 points with Bold Text on, the message beside Phrases and Type
+  is narrower than "understand." in its font at the default size, so the
+  word would break. `HomeLayoutEngineTests` pins it as a strict known
+  issue. Item 4 gives 320-point windows their own arrangement and closes
+  it there.
+- **Bold Text tiles on 375 and 390-point phones.** Found while measuring:
+  "understand." in the compact tile font with Bold Text is about 107
+  points wide, so a tile needs 118 points with the slack and inset, and
+  today's Home gives these windows 109 and 114-point tiles: the word can
+  break there today (a prediction; the stand-in's tests check tiles
+  without Bold Text only). The engine keeps words whole and gives those
+  windows two columns with Bold Text, so the starter library scrolls on
+  the 375×667 phone with Bold Text. A tile floor that follows the
+  tile's width (wider tiles need fewer lines) is proposed for item 4.
+- **Hazards, measured** (invariant 10, scored on every width from 320 to
+  1432 points): Yes and No border more of the message than on today's
+  Home (*Home's slot plan*, *Open hazard, not accepted: Yes and No
+  border the message*), and the top of Stop's well is still nearest
+  Again on compact widths (*Get Attention and Stop on Home*, *Open: the
+  top of Stop's well is nearest Again*); each has a dated note there.
+  After Phrases or Type, a held look can meet Emergency on short windows
+  at large text sizes: harmless, as it only shows the emergency phrases.
+  *2026-10-24:* the engine's tests take "nearest" from the chain engine
+  (*One chain engine for dwell safety*), and
+  `HomeLayoutEngineTests.noChainOnTheEnginesFramesMeetsAHazardButStopsWell`
+  follows every chain on the engine's frames, with Phrases and Type
+  added to `HomeChains`' map: it finds the well's hazard on compact
+  widths and nothing else.
+- **A fold is reported, not avoided.** The engine says which slots a
+  reserved region crosses and moves nothing yet; how Home keeps clear of
+  a fold waits for R0 item 13 (*iPhone Duo*, *The fold*).
 
 ## Home's scan order and names
 
@@ -1794,7 +1900,13 @@ ROADMAP R0 item 4 ([`work/get-attention-on-home.md`](work/get-attention-on-home.
   `HomeShapeTests.theTopOfStopsWellIsNearestAgain` scores points across
   the well and pins it as a strict known issue. Found in review of PR
   #38. The chain engine finds it, and nothing else, in every Home state
-  (*One chain engine for dwell safety*).
+  (*One chain engine for dwell safety*). *2026-10-23, the layout engine:*
+  on regular widths Emergency is above the well and nothing that speaks
+  is nearest it; on compact widths Again still is, and on windows
+  narrower than 375 points with Bold Text the well's top leading corner
+  ties Yes by centre too.
+  `HomeLayoutEngineTests.theTopOfStopsWellIsNearestAgainOnlyOnCompactWidths`
+  pins both.
 - **Open: an alarm warning nobody acts on keeps the line.** "Alert
   stopped" or "Alert failed" leads Home's line until Get Attention
   sounds again, the rule since the port
@@ -1865,7 +1977,9 @@ engine, not five scripts".
   (speaks, alarms, changes data, moves things, only navigates, nothing)
   and the state it leads to (`HomeChains`, `SettingsChains`). The unit
   tests give it the layout's frames (`HomeShape`), the UI tests the
-  running app's. `HomeShapeTests`' nearest-control checks and the UI
+  running app's. *2026-10-24:* the layout engine's frames too
+  (`HomeLayoutEngineTests`, *The layout engine*), before Home moves onto
+  them. `HomeShapeTests`' nearest-control checks and the UI
   tests' `nearestControls` use its rules, so "nearest" has one
   definition.
 - **What it follows.** From each start, every chain of held activations,
@@ -2066,7 +2180,14 @@ every profile gets, even one that never uses Apple's keyboard.
   has measured them: iPad windows smaller than their screen, where the
   keyboard follows the screen; the floating and split iPad keyboards;
   other languages; iPhone Duo's inner display (device check 6 in
-  docs/log/2026-10-21-typing-foundation.md).
+  docs/log/2026-10-21-typing-foundation.md). *2026-10-23, the layout
+  engine:* where the safety row's floors fit above the keyboard's room,
+  the engine keeps it there, giving back growth and then gap; where they
+  do not (the 375×667 phone from AX3, 320-point windows from xxxLarge,
+  the 13-inch iPad in landscape with Display Zoom and the iPad mini in
+  landscape from AX3), it says so (`bandClearsKeyboard`). Each is a
+  measured exception for the owner, pinned as a strict known issue in
+  `HomeLayoutEngineTests` (*The layout engine*).
 - The reference app's measurements on iOS 27.0 simulators with the full
   software keyboard: a 13-inch iPad in landscape, keyboard top at 534 of
   1032 points; the same iPad with Display Zoom set to Larger Text, 276 of

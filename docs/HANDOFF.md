@@ -214,9 +214,14 @@ release in docs/ROADMAP.md when no thread has it yet.
   came to Home at the default size on a 375×667 phone, on iPhone Duo's
   outer display (seen in its simulator) and, by the model, an 11-inch
   iPad and an iPad mini in landscape: docs/DECISIONS.md,
-  "Home's stand-in layout", *Where the grid still scrolls*. Ending the
-  scroll is R0 (ROADMAP item 3); measured sizes for each input profile are
-  R1. *(the layout engine, a new thread)*
+  "Home's stand-in layout", *Where the grid still scrolls*. The layout
+  engine (`HomeLayout`, built 2026-10-23, not yet on screen) fits it on
+  every iPad window but the mini in landscape at AX5, on the 375×667
+  phone at the default size and on larger phones through AX1; phones at
+  AX3 and AX5 and 320pt windows need an arrangement with fewer tiles to a
+  screen (docs/DECISIONS.md, "The layout engine"). Home moves onto it in
+  ROADMAP Wave 3 item 4; measured sizes for each input profile are R1.
+  *(the layout engine thread)*
 - The slot plan has no answer yet for more than four everyday categories
   (docs/DECISIONS.md, "Home's slot plan", *Open*): editing and import
   must not add a fifth until it does. Meanwhile Home keeps the fourth and
@@ -236,8 +241,11 @@ release in docs/ROADMAP.md when no thread has it yet.
   check as the message hazard decides it (docs/DECISIONS.md, "Get
   Attention and Stop on Home"; a strict known issue in `HomeShapeTests`).
   It is the only hazard the chain engine finds in Home's states
-  (`HomeShapeTests.noChainOnHomeMeetsAHazard`).
-  *(the layout engine, a new thread; owner if it stays)*
+  (`HomeShapeTests.noChainOnHomeMeetsAHazard`). On the layout engine's
+  frames it is gone on regular widths (Emergency is above the well) and
+  stays on compact ones, where windows narrower than 375pt with Bold Text
+  also tie Yes at the well's top corner.
+  *(Home on the layout engine, a new thread; owner if it stays)*
 - An alarm warning nobody acts on ("Alert stopped", "Alert failed") keeps
   Home's status line until Get Attention sounds again, so a later cut-off
   phrase, low volume or failed session shows second; VoiceOver still
@@ -268,7 +276,11 @@ release in docs/ROADMAP.md when no thread has it yet.
   "Settings on Home"): a device check (Snap to Item by nearest centre or
   nearest edge) decides whether placement can remove it, or its measured
   cost goes to the owner before a dwell, switch, head or gaze profile
-  ships. *(the layout engine, a new thread; owner if it stays)*
+  ships. On the layout engine's frames, with Phrases and Type beside the
+  message as the slot plan places them, it grows: up to 97% by centre and
+  89% by edge on compact widths, 68% and 62% on regular ones, and no
+  placement inside the slot plan removes it (docs/DECISIONS.md, "The
+  layout engine"). *(the owner, before R1's profiles)*
 - Phrases and Type have no place on Home yet (docs/DECISIONS.md, "Home's
   slot plan"). Until they are built, Emergency stays at the safety row's
   first-row trailing end, under Back to Talking, which
@@ -286,6 +298,13 @@ release in docs/ROADMAP.md when no thread has it yet.
   import exists; those must keep every word within the narrowest tile, or
   the layout engine must give it room. *(Library editing and backup format,
   with the layout engine)*
+- With Bold Text on, "understand." needs a compact tile 118pt wide, and
+  today's Home gives 375pt and 390pt phones 109 and 114pt tiles, so the
+  word can break there (predicted from Apple's fonts; the stand-in's tests
+  check tiles without Bold Text only). The layout engine gives those
+  windows two columns instead, and on windows under 345pt with Bold Text
+  its message is too narrow for that word (docs/DECISIONS.md, "The layout
+  engine"). *(Home on the engine, Wave 3 item 4)*
 - Settings' Back to Talking breaks "Talking" across two lines ("Talk-",
   "ing") on CI's iPhone at the largest text size, in the half of the bar
   it keeps beside Get Attention's place (seen in PR #33's captures; the
@@ -520,9 +539,9 @@ Borders and the Large Content Viewer on Home";
 What is left of item 3's list, in order, is in
 [`log/2026-10-23-show-borders-and-large-content.md`](log/2026-10-23-show-borders-and-large-content.md),
 *Follow-ups*, except the Large Content Viewer in its item 5, now settled.
-The layout's next steps are Wave 3's items 3 and 4 in
-[docs/ROADMAP.md](ROADMAP.md) (the engine, then Home on it with the slot
-plan's wells); input profiles and the phone on its side wait until R0's
+The layout engine, Wave 3's item 3 in [docs/ROADMAP.md](ROADMAP.md), is
+built with no screen change (docs/work/layout-engine.md); the layout's
+next step is item 4, Home on it with the slot plan's wells; input profiles and the phone on its side wait until R0's
 first build has gone to App Review. The earlier order is in
 [`log/2026-10-21-phone-layout.md`](log/2026-10-21-phone-layout.md).
 
