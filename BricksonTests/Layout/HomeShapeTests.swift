@@ -232,11 +232,12 @@ struct HomeShapeTests {
 
     /// Invariant 10, scored on the shape's frames at every width: what a
     /// held look meets after Get Attention and after Stop, by nearest
-    /// centre and by nearest edge, ties within half a point counted (the
-    /// rules `SettingsOnHomeTests` and `GetAttentionOnHomeTests` apply to
-    /// the app's own frames). After Get Attention it stays where it is,
-    /// and the nearest other control is never Stop (a repeat would end the
-    /// alarm) nor one that speaks. After Stop its well empties, and the
+    /// centre and by nearest edge, ties within half a point counted
+    /// (`ChainEngine`, whose rules `SettingsOnHomeTests` and
+    /// `GetAttentionOnHomeTests` apply to the app's own frames). After Get
+    /// Attention it stays where it is, and the nearest other control is
+    /// never Stop (a repeat would end the alarm) nor one that speaks.
+    /// After Stop its well empties, and the
     /// nearest control is a category, which only changes which phrases
     /// show: never Get Attention (a repeat would restart the alarm), never
     /// one that speaks, never Settings.
@@ -248,12 +249,14 @@ struct HomeShapeTests {
                 Issue.record("Get Attention or Stop has no slot (\(context))")
                 continue
             }
-            let afterGetAttention = Self.nearest(to: CGPoint(x: getAttention.midX, y: getAttention.midY), among: frames.filter { $0.key != .getAttention })
+            let afterGetAttention = ChainEngine.nearest(
+                to: CGPoint(x: getAttention.midX, y: getAttention.midY), among: frames.filter { $0.key != .getAttention }
+            )
             for (rule, nearest) in [("centre", afterGetAttention.byCentre), ("edge", afterGetAttention.byEdge)] {
                 #expect(!nearest.contains(.stop), "Stop is nearest Get Attention by \(rule) (\(context))")
                 #expect(nearest.isDisjoint(with: speaks), "\(nearest) nearest Get Attention by \(rule) (\(context))")
             }
-            let afterStop = Self.nearest(to: CGPoint(x: stop.midX, y: stop.midY), among: frames.filter { $0.key != .stop })
+            let afterStop = ChainEngine.nearest(to: CGPoint(x: stop.midX, y: stop.midY), among: frames.filter { $0.key != .stop })
             for (rule, nearest) in [("centre", afterStop.byCentre), ("edge", afterStop.byEdge)] {
                 #expect(
                     !nearest.isEmpty && nearest.allSatisfy { Self.categorySlots.contains($0) },
@@ -286,7 +289,7 @@ struct HomeShapeTests {
                     if case .category(let index) = slot { return index < count }
                     return slot != .stop
                 }
-                let afterStop = Self.nearest(to: CGPoint(x: stop.midX, y: stop.midY), among: shown)
+                let afterStop = ChainEngine.nearest(to: CGPoint(x: stop.midX, y: stop.midY), among: shown)
                 if !afterStop.byCentre.union(afterStop.byEdge).allSatisfy({ Self.categorySlots.contains($0) }) {
                     unsafe.append((count, "\(count) categories, \(context)"))
                 }
@@ -321,20 +324,14 @@ struct HomeShapeTests {
             }
             let others = frames.filter { $0.key != .stop }
             var meetsAgain = false
-            for column in 0...8 {
-                for row in 0...4 {
-                    let point = CGPoint(
-                        x: well.minX + 0.5 + (well.width - 1) * CGFloat(column) / 8,
-                        y: well.minY + 0.5 + (well.height - 1) * CGFloat(row) / 4
-                    )
-                    let nearest = Self.nearest(to: point, among: others)
-                    let met = nearest.byCentre.union(nearest.byEdge).subtracting(Self.categorySlots)
-                    if met.contains(.again) {
-                        meetsAgain = true
-                    }
-                    if !met.isSubset(of: [.again]) {
-                        worse.append("\(met) at \(point), \(context)")
-                    }
+            for point in ChainEngine.points(across: well) {
+                let nearest = ChainEngine.nearest(to: point, among: others)
+                let met = nearest.byCentre.union(nearest.byEdge).subtracting(Self.categorySlots)
+                if met.contains(.again) {
+                    meetsAgain = true
+                }
+                if !met.isSubset(of: [.again]) {
+                    worse.append("\(met) at \(point), \(context)")
                 }
             }
             if meetsAgain {
@@ -349,26 +346,91 @@ struct HomeShapeTests {
         }
     }
 
-    /// The slots nearest `point` by the distance to their centres and by
-    /// the distance to their nearest edge (zero inside one), each with
-    /// every slot within half a point of the nearest.
-    private static func nearest(
-        to point: CGPoint, among frames: [HomeShape.Slot: CGRect]
-    ) -> (byCentre: Set<HomeShape.Slot>, byEdge: Set<HomeShape.Slot>) {
-        func centreDistance(_ frame: CGRect) -> CGFloat {
-            hypot(point.x - frame.midX, point.y - frame.midY)
+    // MARK: Chains of held activations
+
+    /// Home's map for the chain engine on `shape`'s frames (`HomeChains`),
+    /// with as many everyday categories as Home has cells for. The shape
+    /// has no message or phrase tiles: its frames are the safety row, the
+    /// categories, Stop's well and Settings.
+    private static func chainMap(_ shape: HomeShape) -> ChainMap? {
+        let frames = shape.slotFrames
+        guard let yes = frames[.yes], let no = frames[.no], let emergency = frames[.emergency], let again = frames[.again],
+              let getAttention = frames[.getAttention], let stop = frames[.stop], let settings = frames[.settings]
+        else { return nil }
+        let categories = (0..<HomeShape.categoryCapacity).compactMap { index in
+            frames[.category(index)].map { (name: "category \(index + 1)", frame: $0) }
         }
-        func edgeDistance(_ frame: CGRect) -> CGFloat {
-            let dx = max(frame.minX - point.x, 0, point.x - frame.maxX)
-            let dy = max(frame.minY - point.y, 0, point.y - frame.maxY)
-            return hypot(dx, dy)
+        return HomeChains.map(HomeChains.Frames(
+            yes: yes, no: no, emergency: emergency, again: again, getAttention: getAttention,
+            stop: stop, settings: settings, categories: categories
+        ))
+    }
+
+    /// Fails if a chain of held activations on Home meets anything that
+    /// speaks, alarms, changes data or moves things unasked, in any of
+    /// Home's states (`HomeChains`), from any control a person chooses or
+    /// any place a look rests, by nearest centre or nearest edge, with the
+    /// pointer staying on the control or going back to the look
+    /// (`ChainEngine`). Scores windows every 16pt and on both sides of each
+    /// change of arrangement, with Bold Text off and on and the controls
+    /// grown for larger text.
+    ///
+    /// One finding is known: the top of Stop's well is nearest Again (the
+    /// test above), so a look resting there, while the well is empty or
+    /// after choosing Stop, can repeat the last message, sometimes after
+    /// choosing a category on the way. Anything else fails; strict, so it
+    /// fails once that one is gone too.
+    @Test(arguments: [false, true])
+    func noChainOnHomeMeetsAHazard(boldText: Bool) {
+        var known = 0
+        var unexpected: [String] = []
+        for (quickLine, categoryLine) in [(CGFloat(0), CGFloat(0)), (31, 27), (67, 65)] {
+            func shape(_ width: CGFloat) -> HomeShape {
+                HomeShape(contentWidth: width, quickControlLineHeight: quickLine, categoryLineHeight: categoryLine, boldText: boldText)
+            }
+            for width in Self.chainWidths(shape) {
+                let context = "\(width)pt, lines \(quickLine)/\(categoryLine), Bold Text \(boldText)"
+                guard let map = Self.chainMap(shape(width)) else {
+                    Issue.record("a slot is missing (\(context))")
+                    continue
+                }
+                for finding in ChainFinding.findings(in: map.hazards(from: map.everyStart())) {
+                    let start = finding.example.start
+                    let fromTheWell = start.chosen?.name == HomeChains.stop || start.restingOn == HomeChains.emptyWell
+                    if fromTheWell && finding.example.hazard?.control.name == HomeChains.again {
+                        known += 1
+                    } else {
+                        unexpected.append("\(finding) (\(context))")
+                    }
+                }
+            }
         }
-        let closestCentre = frames.values.map(centreDistance).min() ?? 0
-        let closestEdge = frames.values.map(edgeDistance).min() ?? 0
-        return (
-            Set(frames.filter { centreDistance($0.value) - closestCentre < 0.5 }.keys),
-            Set(frames.filter { edgeDistance($0.value) - closestEdge < 0.5 }.keys)
-        )
+        // Counts, not the lists, in the expectations (see above).
+        let unexpectedCount = unexpected.count
+        #expect(unexpectedCount == 0, "first: \(unexpected.first ?? "")")
+        withKnownIssue("docs/DECISIONS.md, \"Get Attention and Stop on Home\": the top of Stop's well is nearest Again") {
+            #expect(known == 0)
+        }
+    }
+
+    /// Content widths for chain scoring: every 16pt across `everyWidth`,
+    /// and both sides of each width where the categories' arrangement or
+    /// Settings' word changes. Following every chain takes far longer than
+    /// laying out, so not every half point.
+    private static func chainWidths(_ shape: (CGFloat) -> HomeShape) -> [CGFloat] {
+        var widths = Set(stride(from: everyWidth[0], through: everyWidth[everyWidth.count - 1], by: 16))
+        var previous: (width: CGFloat, shape: HomeShape)?
+        for width in everyWidth {
+            let current = shape(width)
+            if let previous,
+               previous.shape.categoryArrangement != current.categoryArrangement
+               || previous.shape.settingsShowsName != current.settingsShowsName {
+                widths.insert(previous.width)
+                widths.insert(width)
+            }
+            previous = (width, current)
+        }
+        return widths.sorted()
     }
 
     /// Fails if Emergency stops being as wide as Again and Get Attention,

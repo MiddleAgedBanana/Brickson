@@ -235,7 +235,12 @@ already in docs/HANDOFF.md. *Apple:*
 [`accessibilityAssistiveAccessEnabled`](https://developer.apple.com/documentation/swiftui/environmentvalues/accessibilityassistiveaccessenabled),
 and Apple's iPhone and iPad User Guides for the guides' words.
 
-**2. One chain engine for dwell safety.** One tested type that takes a
+**2. One chain engine for dwell safety.** *Built 2026-10-23
+([`log/2026-10-23-chain-engine.md`](log/2026-10-23-chain-engine.md)):
+Home's states find only the known hazard at the top of Stop's well;
+Settings' first screens find two, a held look saving a setup answer and
+Settings closing under the look, for items 7 and 4 to fix
+(docs/DECISIONS.md, "One chain engine for dwell safety").* One tested type that takes a
 screen's controls in each state, with what each one does (speaks,
 alarms, changes data, moves things, only navigates, nothing), and
 follows chains of several held activations from every start: the
