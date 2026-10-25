@@ -116,7 +116,9 @@ keystroke at the limit told to VoiceOver (CodeRabbit). Then, after the
 first UI run: the message drawn at the person's text size and scaled
 down to fit instead of capped (`MessageFit`), with its test; and Settings'
 unasked closing expected strictly on every window, with the iPad's
-finding recorded.
+finding recorded. Then, from CodeRabbit's review of that push: every
+refused keystroke told to VoiceOver even while a failed save holds the
+status line, and this record's *Not verified* brought up to date.
 
 ## Verified
 
@@ -196,11 +198,11 @@ finding recorded.
 
 ## Not verified
 
-- **Nothing was built for iOS or run in a simulator.** Home's typing
-  state, Settings' bar, the app's `DraftStore`, the status line and every
-  UI test (`TypingOnHomeTests`, the changed `SettingsOnHomeTests`,
-  `HomeReachabilityTests`, `HomeLayoutTests` and
-  `HomeAccessibilityOrderTests`) are untested until CI runs them.
+- **Nothing was built for iOS or run in a simulator in this session**;
+  CI is the build (*Verified*). Its UI run on `e682dc2` exercised Home's
+  typing state, Settings' bar, the app's `DraftStore`, the status line and
+  the UI tests and failed in the seven places above; until a run passes
+  on the last push, those are not verified as passing.
 - **Focus.** Type puts the cursor in the field through `@FocusState` in
   a `task` just after the field appears, the pattern Apple's developer
   forums give for a field new to the screen (set in `onAppear`, a new

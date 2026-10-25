@@ -351,7 +351,8 @@ struct DraftStoreTests {
     }
 
     /// Fails if the limit's notice takes the place of a failed save's,
-    /// which matters more: those words may be lost.
+    /// which matters more: those words may be lost; or if a refusal under
+    /// it goes uncounted, so Home would not tell VoiceOver of it.
     @Test func aFailedSaveOutranksTheLimit() {
         let storage = FakeStorage()
         let draft = store(storage: storage)
@@ -363,6 +364,8 @@ struct DraftStoreTests {
         draft.perform(.propose(full + "b"))
 
         #expect(draft.issue == .notSaved)
+        // Still counted, so Home tells VoiceOver the keystroke did nothing.
+        #expect(draft.refusals == 1)
     }
 
     /// Fails if a refusal straight after another is not counted, so Home

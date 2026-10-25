@@ -547,16 +547,16 @@ private struct StatusLines: View {
         // A typed message that cannot be kept, or was not restored, is told
         // to VoiceOver when it happens, like a sound problem (invariant 5),
         // and a change refused at the length limit on every refusal, a
-        // second in a row included (`DraftIssue.isAnnouncedWhenItShows`).
+        // second in a row included (`DraftIssue.isAnnouncedWhenItShows`),
+        // and while a failed save holds the status line too, so a keystroke
+        // that did nothing is never silent.
         .onChange(of: drafts.issue, initial: true) { _, issue in
             if let issue, issue.isAnnouncedWhenItShows {
                 AccessibilityNotification.Announcement(issue.message).post()
             }
         }
         .onChange(of: drafts.refusals) {
-            if drafts.issue == .reachedLimit {
-                AccessibilityNotification.Announcement(DraftIssue.reachedLimit.message).post()
-            }
+            AccessibilityNotification.Announcement(DraftIssue.reachedLimit.message).post()
         }
         .onChange(of: speech.speechInterruptionSequence) {
             guard let issue = AudioAnnouncementPolicy.speechIssueToAnnounce(

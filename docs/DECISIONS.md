@@ -2591,7 +2591,8 @@ plan's places (*Home's slot plan*).
   refused at the length limit), which lasts until the next save and so
   waits behind what is about sound now. Each of those is announced to
   VoiceOver when it appears (invariants 4 and 5), and "Message full" on
-  every refusal. While typing, a phrase
+  every refusal, even while "Message not saved" holds the line. While
+  typing, a phrase
   cut off names Phrases first ("Stopped: Phrases"), since Again's slot
   shows Speak.
 - **The app keeps the message** (`BricksonApp` owns one `DraftStore`, in
