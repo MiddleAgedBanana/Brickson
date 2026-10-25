@@ -654,9 +654,10 @@ struct SettingsChainsTests {
         /// Set Up Step by Step with its words on one line, and its height at
         /// a width: one line where it is that wide, two below. Modelled from
         /// the Family Setup row CI measured, since this change is the first
-        /// to draw it narrower than the content: its words are about a
-        /// third wider, and two lines of them fit within the row's 64-point
-        /// least height at the default text size.
+        /// to draw it narrower than the content: its words are about half
+        /// as wide again (9.82 ems to 6.66, `SweptFamilySetup`), and two
+        /// lines of them fit within the row's 64-point least height at the
+        /// default text size.
         let guidedIdealWidth: CGFloat
         let guidedHeights: (oneLine: CGFloat, twoLines: CGFloat)
         /// The standard Back button on the screens below the root.
@@ -813,10 +814,10 @@ struct SettingsChainsTests {
     /// anything new is met (docs/DECISIONS.md, "Settings' first row, placed
     /// from Home's frames"). Put back across the top of the content, the
     /// row leaves the iPad at AX5 with held looks through the first step
-    /// that close Settings onto No and Get Attention; across many more
-    /// windows, `noSweptWindowClosesSettingsUnderTheLook` fails too. Pins
-    /// the known held look that saves Touch (docs/HANDOFF.md, *Known
-    /// gaps*), so it fails once that goes too.
+    /// that close Settings onto No and Get Attention (the window sweep,
+    /// which does not draw the first step, does not catch that). Pins the
+    /// known held look that saves Touch (docs/HANDOFF.md, *Known gaps*),
+    /// so it fails once that goes too.
     @Test func theRowPlacedFromHomesFramesClosesNothingUnderTheLook() {
         for window in [ModelledWindow.phone, .padPortrait, .padPortraitLargest, .padLandscape] {
             let model = Self.modelled(window)
@@ -839,7 +840,8 @@ struct SettingsChainsTests {
     ///   SF Pro Semibold; Set Up Step by Step's words are 9.82 ems, wrapped
     ///   between words, and each line is a category line tall over the
     ///   row's least height of 64 points, with 14 points of insets.
-    /// - Family Setup's opening words (190 characters): each character 0.4
+    /// - Family Setup's opening words (190 characters, rounded up from the
+    ///   sentence's 179 with the app's name): each character 0.4
     ///   of the body size wide and each line 1.25 of it tall, with the body
     ///   size from 17 points at the default size to 50 at AX5 in proportion
     ///   to the category line; at AX5 across CI's iPad they are 250 points

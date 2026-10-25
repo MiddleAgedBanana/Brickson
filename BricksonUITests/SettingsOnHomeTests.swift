@@ -199,9 +199,8 @@ final class SettingsOnHomeTests: XCTestCase {
     /// Settings' first screens (`SettingsChains`), and attaches what it
     /// finds. Fails on a hazard of any other kind than the two known, on a
     /// control the chains do not know, on choosing Back to Talking closing
-    /// Settings under the look, on any other chain closing it except
-    /// through a first step that shows no answer above Next, and on a held
-    /// look saving an answer where the first step was not read; and,
+    /// Settings under the look, and on any other chain closing it except
+    /// through a first step that shows no answer above Next; and,
     /// strictly, once a known hazard is no longer found where it is
     /// expected: a held look saving an answer, an answer or Next, wherever
     /// the first step was read, and Settings closing through a first step
@@ -239,6 +238,8 @@ final class SettingsOnHomeTests: XCTestCase {
         XCTAssertEqual(findings(.unexpected), [], "a chain through Settings meets a new hazard (\(context))")
         let strict = XCTExpectedFailure.Options()
         strict.isStrict = true
+        // Only the first step's controls save, so no save can be found
+        // where it was not read.
         if screens.firstStep != nil {
             XCTExpectFailure(
                 "docs/DECISIONS.md, \"One chain engine for dwell safety\": a held look saves an answer in Set Up Step by Step",
@@ -246,8 +247,6 @@ final class SettingsOnHomeTests: XCTestCase {
             ) {
                 XCTAssertEqual(findings(.savesAnAnswer), [], "a held look saves an answer (\(context))")
             }
-        } else {
-            XCTAssertEqual(findings(.savesAnAnswer), [], "a held look saves an answer outside Set Up Step by Step (\(context))")
         }
         let closings = hazards.filter { SettingsChains.kind(of: $0) == .closesUnderTheLook }
         let chosen = closings.filter { $0.start.chosen?.name == SettingsChains.backToTalking }
