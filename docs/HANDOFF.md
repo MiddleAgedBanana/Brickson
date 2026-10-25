@@ -252,15 +252,19 @@ Xcode 27.1 (27A9275); PR #20 landed in `d79d836`.
   limits ([record](log/2026-10-25-mac-keyboard-checks.md)). Later item 6
   measurements queried the reserved regions and reached both native
   Split View panes. The item 6 Spec and scoped drawings are linked, and
-  the local implementation has a passing 769-test native unit gate and
-  six native pose probes. The complete standard phone/iPad UI run fails
+  the local implementation has a passing 775-test native unit gate
+  (including six later coherent-snapshot helper regressions) and six
+  native pose probes on unchanged product source. The complete standard phone/iPad UI run fails
   one Speaking-wait case on each; unchanged main reproduces that failure
   on the same iPad. Default/AX5 light/dark captures were inspected on both
   families; representative Duo active-display captures were also inspected
-  ([design record](log/2026-10-25-duo-fold-design.md)). The first
-  UI test on a just-started CI simulator failed intermittently before
-  PR #13's warm-up launch (AGENTS.md, *Gotchas*); three local cold boots
-  without warm-up did not reproduce it on 2026-10-25. Apple's accessibility audit never sees
+  ([design record](log/2026-10-25-duo-fold-design.md)). The first UI test still
+  intermittently shows a blank canvas and fails AX startup on CI despite
+  PR #13's warm-up launch. The latest retained
+  [hosted receipt](evidence/2026-10-25-duo-design/ci-startup-1322630/README.md)
+  has no app stack establishing a cause. Three local cold controls on the
+  matching12GB iPad/runtime passed on 2026-10-25; two were unwarmed and one
+  used the CI-shaped warm-up. They do not explain the hosted failure. Apple's accessibility audit never sees
   Home's "Speaking" line: audits wait for speech to finish, because one
   that ran while the line left reported text with no element (issue #30,
   [`log/2026-10-22-audit-still-screen.md`](log/2026-10-22-audit-still-screen.md)).
@@ -597,9 +601,14 @@ release in docs/ROADMAP.md when no thread has it yet.
   occlusion; original active-display captures are in the implementation
   record. Other pane arrangements remain unverified. Default inner-display typing keeps the core
   controls, Clear and Put Back above the full US English keyboard;
-  AX5 Type is unavailable. Native Settings Back stays within Phrases,
-  but AX5 Settings rows still intersect the fold, as in the existing
-  baseline. A [changed-window diagnostic](evidence/2026-10-25-duo-design/transition-report.md)
+  AX5 Type is unavailable. Settings' root Back stays within Phrases,
+  but AX5 rows still intersect the fold. The original current19-case Home
+  checks fail in closed/open poses (1/9 failed cases respectively).
+  Native Family Setup's standard Back is trailing; its AX5 chain reaches
+  Back to Talking and Get Attention. Unchanged main reproduces that exact
+  path, outside the accepted first-step-only scope. The
+  [native comparison](evidence/2026-10-25-duo-design/native-settings-chain-results.json)
+  retains it as an open baseline failure. A [changed-window diagnostic](evidence/2026-10-25-duo-design/transition-report.md)
   finds added hazards under hypothetical pointer-coordinate maps;
   actual platform mapping is unknown, so that gate has not passed and
   PR #58 stays a draft. Settings/setup remain broader R0-13 work;
@@ -659,8 +668,10 @@ withdrawn: the measured full-screen tall phrase viewport is below the
 division. Right-pane AX5 still leaves no whole phrase tile visible.
 The scoped 84-state drawings are complete, with an outward whole-point
 fold allowance after a strict native overlap failure. The local engine
-passed the full 769-test unit suite and six native pose probes; standard
-phone/iPad UI gates fail a Speaking-wait case also reproduced on main.
+passed the latest775-test unit suite, including six test-helper
+regressions, and six native pose probes on unchanged product source.
+The original complete phone/iPad UI runs fail a Speaking-wait case also
+reproduced on main.
 Representative Duo active-display checks show the AX5 and Settings gaps;
 the paired left pane shows six/zero whole tiles at default/AX5.
 Changed-window diagnostics expose added paths under unverified

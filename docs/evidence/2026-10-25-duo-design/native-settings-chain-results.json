@@ -1,0 +1,436 @@
+{
+  "schema": 1,
+  "scope": "Read-only native ControlCapture/AX text audit. Recorded chains come from the existing ChainEngine; arithmetic below is explanatory, not an alternate chain engine.",
+  "nativeRenderConfirmation": {
+    "status": "Confirmed visually from corrected active Family Setup image; title and guided row distinguish it from earlier root-only image.",
+    "path": "native-family-back-right-ax5.png",
+    "sha256": "1ea412583127c98ab96497f635af187bcc336548579137e3cf8a8a8911513183"
+  },
+  "cases": [
+    {
+      "text": "default",
+      "screens": {
+        "root": {
+          "jsonSource": "68AC34B4-1299-4BE2-8C37-48A77D031769.json",
+          "jsonSHA256": "002ffbb8e173db926fa57f3d6707da8c2e14bb4cc670b7cd86e5cc7274ab144a",
+          "treeSource": "F4FE68B3-0547-43E5-B9EE-2B8A7D8A8F25.txt",
+          "treeSHA256": "10eb3bdf5ffc52f61822663774789ed59c7f2cf5b9a3b0e526ca3e4ed460bc10",
+          "separateCaptureWindowField": {
+            "height": 951,
+            "width": 669,
+            "x": 0,
+            "y": 0
+          },
+          "coherentAXTreeWindow": {
+            "x": 0.0,
+            "y": 0.0,
+            "width": 951.0,
+            "height": 669.0
+          },
+          "controls": {
+            "backToTalking": {
+              "x": 593.3333333333333,
+              "y": 8,
+              "width": 160.33333333333326,
+              "height": 44
+            },
+            "familySetup": {
+              "x": 626,
+              "y": 201,
+              "width": 225,
+              "height": 78
+            }
+          },
+          "navigationBarLines": [
+            "NavigationBar, 0x112648dc0, {{0.0, 84.0}, {951.0, 58.0}}, identifier: 'Settings'"
+          ]
+        },
+        "family": {
+          "jsonSource": "324A1914-E4B1-4A4F-B8E2-7EC1E9261B96.json",
+          "jsonSHA256": "2025356191dcdc6561e9e5517eb829593cd351ec1baa5747ef62516a051282dd",
+          "treeSource": "64E7BC21-B745-4A8A-9E44-6A6B477B3164.txt",
+          "treeSHA256": "cfe4fa5d942f24fe2fe921de1d006d0551dfd1d4534eb248d6104f2098873e8d",
+          "separateCaptureWindowField": {
+            "height": 951,
+            "width": 669,
+            "x": 0,
+            "y": 0
+          },
+          "coherentAXTreeWindow": {
+            "x": 0.0,
+            "y": 0.0,
+            "width": 951.0,
+            "height": 669.0
+          },
+          "controls": {
+            "backToTalking": {
+              "x": 593.3333333333333,
+              "y": 8,
+              "width": 160.33333333333326,
+              "height": 44
+            },
+            "guidedSetup": {
+              "x": 626,
+              "y": 201,
+              "width": 225,
+              "height": 78
+            },
+            "BackButton": {
+              "x": 884,
+              "y": 129,
+              "width": 38,
+              "height": 38
+            }
+          },
+          "navigationBarLines": [
+            "NavigationBar, 0x112648f00, {{0.0, 84.0}, {951.0, 58.0}}, identifier: 'Family Setup'"
+          ]
+        },
+        "homeAfter": {
+          "jsonSource": "9AC7A5C3-6BA3-4A49-9817-A9264B7AAB80.json",
+          "jsonSHA256": "fc96eedf3aae327f2bd911bb899b1d315376cbf24a98c83fc00f75e001088d10",
+          "treeSource": "7B0045BE-7EEA-4D3F-AB40-E9A6CC052AAB.txt",
+          "treeSHA256": "d32a2986cc69aba3cb33ef92bfb2bedfa1e0b75c97df894750c9be111284f734",
+          "separateCaptureWindowField": {
+            "height": 951,
+            "width": 669,
+            "x": 0,
+            "y": 0
+          },
+          "coherentAXTreeWindow": {
+            "x": 0.0,
+            "y": 0.0,
+            "width": 951.0,
+            "height": 669.0
+          },
+          "controls": {
+            "Yes": {
+              "x": 165,
+              "y": 116,
+              "width": 141,
+              "height": 55
+            },
+            "No": {
+              "x": 314,
+              "y": 116,
+              "width": 141,
+              "height": 55
+            },
+            "Emergency": {
+              "x": 16,
+              "y": 116,
+              "width": 141,
+              "height": 55
+            },
+            "getAttention": {
+              "x": 626,
+              "y": 116,
+              "width": 225,
+              "height": 55
+            },
+            "Again": {
+              "x": 496,
+              "y": 116,
+              "width": 122,
+              "height": 55
+            },
+            "phrases": {
+              "x": 496,
+              "y": 8,
+              "width": 355,
+              "height": 44
+            },
+            "type": {
+              "x": 496,
+              "y": 60,
+              "width": 355,
+              "height": 44
+            },
+            "settings": {
+              "x": 626,
+              "y": 183,
+              "width": 225,
+              "height": 118
+            }
+          },
+          "navigationBarLines": []
+        }
+      },
+      "standardBackCentre": [
+        903.0,
+        148.0
+      ],
+      "centreDistanceArithmetic": {
+        "root": {
+          "backToTalking": 258.0586173721003,
+          "familySetup": 188.47877864629749
+        },
+        "home": {
+          "getAttention": 164.5615386413241,
+          "phrases": 258.0586173721002,
+          "type": 238.80169597387703,
+          "Again": 346.0292617684233,
+          "settings": 189.46305708501592
+        }
+      }
+    },
+    {
+      "text": "AX5",
+      "screens": {
+        "root": {
+          "jsonSource": "BA21BDD9-194F-447A-9632-E19B1D49F934.json",
+          "jsonSHA256": "b0179846ae127d5ee3a0bb3af0d4259983b224e7c92860396c82e95f1ba7ffe7",
+          "treeSource": "FF56FEB4-440F-4456-BE8D-40028505E7F3.txt",
+          "treeSHA256": "8be943dd8572ab666d8c94dbdff1e4d1991cfb5280b6361ceee66aca9b2c7380",
+          "separateCaptureWindowField": {
+            "height": 951,
+            "width": 669,
+            "x": 0,
+            "y": 0
+          },
+          "coherentAXTreeWindow": {
+            "x": 0.0,
+            "y": 0.0,
+            "width": 951.0,
+            "height": 669.0
+          },
+          "controls": {
+            "backToTalking": {
+              "x": 593.3333333333333,
+              "y": 8,
+              "width": 160.33333333333326,
+              "height": 99
+            },
+            "familySetup": {
+              "x": 413.66666666666663,
+              "y": 336,
+              "width": 437.33333333333337,
+              "height": 79.66666666666663
+            }
+          },
+          "navigationBarLines": [
+            "NavigationBar, 0x1125dc780, {{0.0, 139.0}, {951.0, 58.0}}, identifier: 'Settings'"
+          ]
+        },
+        "family": {
+          "jsonSource": "CDFC69C6-577D-406D-9625-026B6C8EFA8B.json",
+          "jsonSHA256": "2ff3d88ddc5e0e19998c5f3427e9a4eb6f52ce05a3a2664f7d641a465a3fabf1",
+          "treeSource": "D868F0F4-9DAC-48EB-A7D1-1CEB4C3121C8.txt",
+          "treeSHA256": "c130b69a9468f4fcf75218df8e51a08d8b49a96b9ff2d24724915904dd928682",
+          "separateCaptureWindowField": {
+            "height": 951,
+            "width": 669,
+            "x": 0,
+            "y": 0
+          },
+          "coherentAXTreeWindow": {
+            "x": 0.0,
+            "y": 0.0,
+            "width": 951.0,
+            "height": 669.0
+          },
+          "controls": {
+            "backToTalking": {
+              "x": 593.3333333333333,
+              "y": 8,
+              "width": 160.33333333333326,
+              "height": 99
+            },
+            "guidedSetup": {
+              "x": 413.66666666666663,
+              "y": 336,
+              "width": 437.33333333333337,
+              "height": 144.66666666666663
+            },
+            "BackButton": {
+              "x": 884,
+              "y": 144,
+              "width": 38,
+              "height": 38
+            }
+          },
+          "navigationBarLines": [
+            "NavigationBar, 0x1125dc8c0, {{0.0, 139.0}, {951.0, 58.0}}, identifier: 'Family Setup'"
+          ]
+        },
+        "homeAfter": {
+          "jsonSource": "42143A35-9A8F-43AB-A82D-1BC9DC95B054.json",
+          "jsonSHA256": "88857d8cde87ef195318a712dc85ab8e853080f1ab45a762ae97517febf6989d",
+          "treeSource": "F8A61C95-C7A1-461F-8E85-550CA10B5946.txt",
+          "treeSHA256": "b7ffc2e97823514cff9a278b3a1cd1d7c9f42a044c4fc91d984698f6b842d96a",
+          "separateCaptureWindowField": {
+            "height": 951,
+            "width": 669,
+            "x": 0,
+            "y": 0
+          },
+          "coherentAXTreeWindow": {
+            "x": 0.0,
+            "y": 0.0,
+            "width": 951.0,
+            "height": 669.0
+          },
+          "controls": {
+            "Yes": {
+              "x": 165,
+              "y": 224,
+              "width": 141,
+              "height": 79
+            },
+            "No": {
+              "x": 314,
+              "y": 224,
+              "width": 141,
+              "height": 79
+            },
+            "Emergency": {
+              "x": 16,
+              "y": 224,
+              "width": 141,
+              "height": 79
+            },
+            "getAttention": {
+              "x": 626,
+              "y": 224,
+              "width": 225,
+              "height": 79
+            },
+            "Again": {
+              "x": 496,
+              "y": 224,
+              "width": 122,
+              "height": 79
+            },
+            "phrases": {
+              "x": 496,
+              "y": 8,
+              "width": 355,
+              "height": 99
+            },
+            "type": {
+              "x": 496,
+              "y": 115,
+              "width": 355,
+              "height": 99
+            },
+            "settings": {
+              "x": 626,
+              "y": 313,
+              "width": 225,
+              "height": 162
+            }
+          },
+          "navigationBarLines": []
+        },
+        "firstStep": {
+          "jsonSource": "1427BF20-2C4A-4B12-B685-855E04DF5E5E.json",
+          "jsonSHA256": "31233937e12b9b986f5ec5aceea3b6a3fc1061892938ed142fc002068bd53790",
+          "treeSource": "B819AFAC-D4F1-43FA-B041-182C55029860.txt",
+          "treeSHA256": "65765faeb751d01b5707a8d4257f3c9c7528cbc74794b895e8acb17f772f77af",
+          "separateCaptureWindowField": {
+            "height": 951,
+            "width": 669,
+            "x": 0,
+            "y": 0
+          },
+          "coherentAXTreeWindow": {
+            "x": 0.0,
+            "y": 0.0,
+            "width": 951.0,
+            "height": 669.0
+          },
+          "controls": {
+            "backToTalking": {
+              "x": 593.3333333333333,
+              "y": 8,
+              "width": 160.33333333333326,
+              "height": 99
+            },
+            "BackButton": {
+              "x": 884,
+              "y": 144,
+              "width": 38,
+              "height": 38
+            }
+          },
+          "navigationBarLines": [
+            "NavigationBar, 0x112648780, {{0.0, 139.0}, {951.0, 58.0}}, identifier: 'Step 1 of 5'"
+          ]
+        }
+      },
+      "standardBackCentre": [
+        903.0,
+        163.0
+      ],
+      "centreDistanceArithmetic": {
+        "root": {
+          "backToTalking": 252.58760856384077,
+          "familySetup": 344.3232089508668
+        },
+        "home": {
+          "getAttention": 192.7705890430384,
+          "phrases": 252.5876085638407,
+          "type": 229.5049019084342,
+          "Again": 360.3002220371228,
+          "settings": 283.58640658536507
+        }
+      }
+    }
+  ],
+  "legacyComparison": {
+    "status": "Native unchanged main37c2e0b selected Settings AX5 run reproduces the exact Family Setup Back centre903,163 \u2192 backToTalking \u2192 getAttention, centre/returnsToLook path. Not introduced by the Home change.",
+    "oldHostBackModel": {
+      "height": 44,
+      "width": 44,
+      "x": 16,
+      "y": 125
+    },
+    "legacyRootBackToTalking": {
+      "height": 99,
+      "width": 160.6,
+      "x": 606.1,
+      "y": 8
+    },
+    "legacyRootRow": {
+      "height": 79,
+      "width": 442,
+      "x": 409,
+      "y": 336
+    },
+    "distanceFromSameHypotheticalTrailingPoint": {
+      "backToTalking": 240.92698063936302,
+      "familySetup": 345.9555607299874
+    },
+    "limitation": "Previous model assumes leading44pt Back at x16; current native tree has trailing Back at x884. Zero added model paths do not cover this native start location.",
+    "nativeBaselineLog": "brickson-duo-native-main-settings.log (private temporary original)",
+    "nativeBaselineFailureLine": 160,
+    "nativeBaselineSummary": {
+      "total": 1,
+      "passed": 0,
+      "failed": 1,
+      "skipped": 0,
+      "expectedFailures": 0
+    },
+    "nativeBaselineSource": "37c2e0b (unchanged main source)",
+    "nativeBaselineResultBundle": "duo-native-main-settings/ui-destination.xcresult (private temporary baseline copy)",
+    "baselineSummaryFirstFailure": "The requested portrait orientation did not occur; the complete raw log independently retains the direct Family Setup chain assertion. The summary lists only the first failure."
+  },
+  "finding": {
+    "rawLog": "brickson-duo-current-open-home.log (private temporary original)",
+    "rawLine": 2557,
+    "sourceAssertion": "BricksonUITests/SettingsOnHomeTests.swift:263",
+    "chainKind": "closesUnderTheLook",
+    "outsideKnownFirstStepScope": true,
+    "start": "choosing BackButton in Family Setup, centre903,163",
+    "path": [
+      "BackButton navigates to Settings",
+      "backToTalking navigates to Home",
+      "getAttention alarms"
+    ],
+    "rule": "centre",
+    "pointer": "returnsToLook",
+    "separateKnownPath": "Back from Step1 adds an initial Back step; strict expected annotation at line278. Direct Family Setup start does not pass through Step1 and fails unwrapped assertion263.",
+    "windowAPIConclusion": "Separate captured window is stale669x951, but same-tree Windows are951x669. Correcting that metadata leaves all participating native frames in bounds and does not erase this chain.",
+    "cause": "Existing baseline path confirmed; no width/minimum cause or product fix inferred; actual physical activation remains untested."
+  }
+}

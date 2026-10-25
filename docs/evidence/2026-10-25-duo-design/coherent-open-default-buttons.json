@@ -1,0 +1,379 @@
+{
+  "controls" : [
+    {
+      "ancestorWindowFrame" : {
+        "height" : 669,
+        "width" : 951,
+        "x" : 0,
+        "y" : 0
+      },
+      "ancestorWindowIndex" : 0,
+      "hasAncestorWindow" : true,
+      "height" : 55,
+      "identifier" : "",
+      "isEnabled" : true,
+      "isSelected" : false,
+      "label" : "Yes",
+      "width" : 141,
+      "x" : 165,
+      "y" : 116
+    },
+    {
+      "ancestorWindowFrame" : {
+        "height" : 669,
+        "width" : 951,
+        "x" : 0,
+        "y" : 0
+      },
+      "ancestorWindowIndex" : 0,
+      "hasAncestorWindow" : true,
+      "height" : 55,
+      "identifier" : "",
+      "isEnabled" : true,
+      "isSelected" : false,
+      "label" : "No",
+      "width" : 141,
+      "x" : 314,
+      "y" : 116
+    },
+    {
+      "ancestorWindowFrame" : {
+        "height" : 669,
+        "width" : 951,
+        "x" : 0,
+        "y" : 0
+      },
+      "ancestorWindowIndex" : 0,
+      "hasAncestorWindow" : true,
+      "height" : 55,
+      "identifier" : "",
+      "isEnabled" : true,
+      "isSelected" : false,
+      "label" : "Emergency",
+      "width" : 141,
+      "x" : 16,
+      "y" : 116
+    },
+    {
+      "ancestorWindowFrame" : {
+        "height" : 669,
+        "width" : 951,
+        "x" : 0,
+        "y" : 0
+      },
+      "ancestorWindowIndex" : 0,
+      "hasAncestorWindow" : true,
+      "height" : 55,
+      "identifier" : "getAttention",
+      "isEnabled" : true,
+      "isSelected" : false,
+      "label" : "Get Attention",
+      "width" : 225,
+      "x" : 626,
+      "y" : 116
+    },
+    {
+      "ancestorWindowFrame" : {
+        "height" : 669,
+        "width" : 951,
+        "x" : 0,
+        "y" : 0
+      },
+      "ancestorWindowIndex" : 0,
+      "hasAncestorWindow" : true,
+      "height" : 55,
+      "identifier" : "",
+      "isEnabled" : false,
+      "isSelected" : false,
+      "label" : "Again",
+      "width" : 122,
+      "x" : 496,
+      "y" : 116
+    },
+    {
+      "ancestorWindowFrame" : {
+        "height" : 669,
+        "width" : 951,
+        "x" : 0,
+        "y" : 0
+      },
+      "ancestorWindowIndex" : 0,
+      "hasAncestorWindow" : true,
+      "height" : 44,
+      "identifier" : "phrases",
+      "isEnabled" : true,
+      "isSelected" : true,
+      "label" : "Phrases",
+      "width" : 355,
+      "x" : 496,
+      "y" : 8
+    },
+    {
+      "ancestorWindowFrame" : {
+        "height" : 669,
+        "width" : 951,
+        "x" : 0,
+        "y" : 0
+      },
+      "ancestorWindowIndex" : 0,
+      "hasAncestorWindow" : true,
+      "height" : 44,
+      "identifier" : "type",
+      "isEnabled" : true,
+      "isSelected" : false,
+      "label" : "Type",
+      "width" : 355,
+      "x" : 496,
+      "y" : 60
+    },
+    {
+      "ancestorWindowFrame" : {
+        "height" : 669,
+        "width" : 951,
+        "x" : 0,
+        "y" : 0
+      },
+      "ancestorWindowIndex" : 0,
+      "hasAncestorWindow" : true,
+      "height" : 55,
+      "identifier" : "",
+      "isEnabled" : true,
+      "isSelected" : true,
+      "label" : "Basics",
+      "width" : 141,
+      "x" : 16,
+      "y" : 246
+    },
+    {
+      "ancestorWindowFrame" : {
+        "height" : 669,
+        "width" : 951,
+        "x" : 0,
+        "y" : 0
+      },
+      "ancestorWindowIndex" : 0,
+      "hasAncestorWindow" : true,
+      "height" : 118,
+      "identifier" : "",
+      "isEnabled" : true,
+      "isSelected" : false,
+      "label" : "Needs",
+      "width" : 141,
+      "x" : 165,
+      "y" : 183
+    },
+    {
+      "ancestorWindowFrame" : {
+        "height" : 669,
+        "width" : 951,
+        "x" : 0,
+        "y" : 0
+      },
+      "ancestorWindowIndex" : 0,
+      "hasAncestorWindow" : true,
+      "height" : 118,
+      "identifier" : "",
+      "isEnabled" : true,
+      "isSelected" : false,
+      "label" : "Conversation",
+      "width" : 141,
+      "x" : 314,
+      "y" : 183
+    },
+    {
+      "ancestorWindowFrame" : {
+        "height" : 669,
+        "width" : 951,
+        "x" : 0,
+        "y" : 0
+      },
+      "ancestorWindowIndex" : 0,
+      "hasAncestorWindow" : true,
+      "height" : 118,
+      "identifier" : "",
+      "isEnabled" : true,
+      "isSelected" : false,
+      "label" : "Feelings",
+      "width" : 122,
+      "x" : 496,
+      "y" : 183
+    },
+    {
+      "ancestorWindowFrame" : {
+        "height" : 669,
+        "width" : 951,
+        "x" : 0,
+        "y" : 0
+      },
+      "ancestorWindowIndex" : 0,
+      "hasAncestorWindow" : true,
+      "height" : 118,
+      "identifier" : "settings",
+      "isEnabled" : true,
+      "isSelected" : false,
+      "label" : "Settings",
+      "width" : 225,
+      "x" : 626,
+      "y" : 183
+    },
+    {
+      "ancestorWindowFrame" : {
+        "height" : 669,
+        "width" : 951,
+        "x" : 0,
+        "y" : 0
+      },
+      "ancestorWindowIndex" : 0,
+      "hasAncestorWindow" : true,
+      "height" : 145,
+      "identifier" : "phraseTile",
+      "isEnabled" : true,
+      "isSelected" : false,
+      "label" : "Maybe.",
+      "width" : 215.66666666666666,
+      "x" : 16,
+      "y" : 313
+    },
+    {
+      "ancestorWindowFrame" : {
+        "height" : 669,
+        "width" : 951,
+        "x" : 0,
+        "y" : 0
+      },
+      "ancestorWindowIndex" : 0,
+      "hasAncestorWindow" : true,
+      "height" : 145,
+      "identifier" : "phraseTile",
+      "isEnabled" : true,
+      "isSelected" : false,
+      "label" : "I don't know.",
+      "width" : 215.33333333333334,
+      "x" : 239.66666666666666,
+      "y" : 313
+    },
+    {
+      "ancestorWindowFrame" : {
+        "height" : 669,
+        "width" : 951,
+        "x" : 0,
+        "y" : 0
+      },
+      "ancestorWindowIndex" : 0,
+      "hasAncestorWindow" : true,
+      "height" : 145,
+      "identifier" : "phraseTile",
+      "isEnabled" : true,
+      "isSelected" : false,
+      "label" : "Please.",
+      "width" : 173.66666666666663,
+      "x" : 496,
+      "y" : 313
+    },
+    {
+      "ancestorWindowFrame" : {
+        "height" : 669,
+        "width" : 951,
+        "x" : 0,
+        "y" : 0
+      },
+      "ancestorWindowIndex" : 0,
+      "hasAncestorWindow" : true,
+      "height" : 145,
+      "identifier" : "phraseTile",
+      "isEnabled" : true,
+      "isSelected" : false,
+      "label" : "Thank you.",
+      "width" : 173.33333333333337,
+      "x" : 677.6666666666666,
+      "y" : 313
+    },
+    {
+      "ancestorWindowFrame" : {
+        "height" : 669,
+        "width" : 951,
+        "x" : 0,
+        "y" : 0
+      },
+      "ancestorWindowIndex" : 0,
+      "hasAncestorWindow" : true,
+      "height" : 145,
+      "identifier" : "phraseTile",
+      "isEnabled" : true,
+      "isSelected" : false,
+      "label" : "Wait a moment, please.",
+      "width" : 215.66666666666666,
+      "x" : 16,
+      "y" : 466
+    },
+    {
+      "ancestorWindowFrame" : {
+        "height" : 669,
+        "width" : 951,
+        "x" : 0,
+        "y" : 0
+      },
+      "ancestorWindowIndex" : 0,
+      "hasAncestorWindow" : true,
+      "height" : 145,
+      "identifier" : "phraseTile",
+      "isEnabled" : true,
+      "isSelected" : false,
+      "label" : "I'm not finished.",
+      "width" : 215.33333333333334,
+      "x" : 239.66666666666666,
+      "y" : 466
+    },
+    {
+      "ancestorWindowFrame" : {
+        "height" : 669,
+        "width" : 951,
+        "x" : 0,
+        "y" : 0
+      },
+      "ancestorWindowIndex" : 0,
+      "hasAncestorWindow" : true,
+      "height" : 145,
+      "identifier" : "phraseTile",
+      "isEnabled" : true,
+      "isSelected" : false,
+      "label" : "Hello.",
+      "width" : 173.66666666666663,
+      "x" : 496,
+      "y" : 466
+    },
+    {
+      "ancestorWindowFrame" : {
+        "height" : 669,
+        "width" : 951,
+        "x" : 0,
+        "y" : 0
+      },
+      "ancestorWindowIndex" : 0,
+      "hasAncestorWindow" : true,
+      "height" : 145,
+      "identifier" : "phraseTile",
+      "isEnabled" : true,
+      "isSelected" : false,
+      "label" : "Goodbye.",
+      "width" : 173.33333333333337,
+      "x" : 677.6666666666666,
+      "y" : 466
+    }
+  ],
+  "rootSnapshotFrame" : {
+    "height" : 951,
+    "width" : 669,
+    "x" : 0,
+    "y" : 0
+  },
+  "schemaVersion" : 2,
+  "windowFrames" : [
+    {
+      "height" : 669,
+      "width" : 951,
+      "x" : 0,
+      "y" : 0
+    }
+  ]
+}

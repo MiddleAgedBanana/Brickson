@@ -313,6 +313,105 @@ not every appearance/pose combination.
   activation; no compiler warning was suppressed. The observation-only
   test was removed, and all nine final-unit source hashes match again.
 
+## Original Home checks on the current implementation
+
+Before changing test helpers, the original six Home UI classes ran again
+at the closed and full-screen open sizes on product/test source `1322630`.
+The classes, portrait requests, idiom guards, floor checks and strict
+expected-failure scopes were unchanged.
+
+| Pose | Total | Passed | Failed | Skipped | Expected failures |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Closed, 466×678 | 19 | 14 | 1 | 2 | 2 |
+| Open, 951×669 | 19 | 8 | 9 | 2 | 0 |
+
+**Closed failed:** the default alarm's Dynamic Type audit reports
+“Sounding” as partially unsupported, type65536. It is not the retryable
+-56 error and no exception was added. The AX5 alarm case passed.
+[Default issue capture](../evidence/2026-10-25-duo-design/closed-home-sounding-audit.png),
+[AX5 capture](../evidence/2026-10-25-duo-design/closed-home-ax5-sounding.png),
+[closed receipt](../evidence/2026-10-25-duo-design/closed-home-results.json).
+
+**Open failed:** the inner window remains landscape despite the original
+portrait requests. Independent live control/app queries also mix
+951×669 control coordinates with a transposed669×951 application frame.
+Those measurement failures do not clear the independent AX5 clipping of
+tiles5–8 or the native Settings chain below. The original failures remain
+retained, with no orientation or idiom assertion weakened.
+[Active default preflight](../evidence/2026-10-25-duo-design/open-home-before-tests.png),
+[open receipt](../evidence/2026-10-25-duo-design/open-home-results.json).
+
+**Native Settings failure is pre-existing:** the standard Back in Family
+Setup is actually on the right, centre(903,163), unlike the illustrative
+leading-Back model. The existing ChainEngine reports
+`Family Setup Back → Back to Talking → Get Attention (alarms)` by
+centre/returnsToLook. This direct Family Setup start is outside the
+accepted first-step-only scope. The selected comparison on unchanged main
+`37c2e0b`, on the same open Duo/runtime, reproduces the exact path:
+one test, zero passed, one failed, no skips/expected failures. Its result
+summary lists the earlier orientation failure; the complete raw log also
+retains the chain failure. This is not introduced by the Home change and
+is not a new accepted exception. The [original active AX5/dark image](../evidence/2026-10-25-duo-design/native-family-back-right-ax5.png)
+visually confirms the right-hand standard Back; it is a separate launch
+from the AX5/light failing case. [Native frames and comparison](../evidence/2026-10-25-duo-design/native-settings-chain-results.json).
+No physical alarm or Snap behavior was observed.
+
+## Coherent test geometry
+
+The native open check exposed an obvious helper error: `assertReachable`
+compared a separately queried button with `app.frame`, whose orientation
+can disagree on the inner display. The correction uniquely matches the
+selected button's exact identifier/label pair in one snapshot and uses
+its closest ancestor Window from that same tree. Missing/ambiguous
+controls or a missing ancestor fail. Live existence/hittability, the44pt
+floor, one-point allowance, original orientation checks, timeouts and
+strict failure scopes remain unchanged. No product source changed.
+
+A new pure shared resolver has six Swift Testing regressions, including
+the transposed root, another keyboard window/nonzero origin, exact
+identity and missing/ambiguous ancestor cases. A controlled first run
+modeled the existing root-frame substitution in this new seam:
+6 total,3 passed/3 failed. Applying ancestor propagation without changing
+expectations then passed the full native gate:775 total,766 passed,
+zero failed, existing issue#19 skip and8 strict expected failures;
+70.5% app-line coverage, current catalog. The six new cases all passed.
+This is a staged unit reproduction, not a claim these tests existed on
+main. [Source hashes, results and limits](../evidence/2026-10-25-duo-design/coherent-helper-results.json).
+
+Capture JSON schema2 accurately names `rootSnapshotFrame`, retains all
+windows, and records each button's ancestor window. All buttons, including
+keyboard buttons and genuine duplicates, remain in traversal order.
+Old schema1 evidence is untouched. The selected live Duo run reports
+3 total:2 passed,1 failed, no skips/expected failures. Default Home
+reachability and typing/keyboard frame stability passed. The unchanged
+AX5 Settings case still fails its portrait request and direct Family
+Back alarm-chain assertion; no new geometry-matching error was reported.
+The original-byte [Home](../evidence/2026-10-25-duo-design/coherent-open-default-buttons.json)
+and [typing](../evidence/2026-10-25-duo-design/coherent-open-typing-buttons.json)
+captures preserve a669×951 root but951×669 ancestor windows. Typing retains
+29 button records across two of three windows, including9 keyboard-window
+buttons; Key elements are a separate AX type, outside the unchanged
+button-only schema. The adjacent text attachment also has29 buttons and
+40 keys, not a simultaneous-snapshot claim. An AVAudioSession synchronous
+activation warning remains unattributed and unsuppressed. The complete
+standard family UI rerun is recorded separately; neither the unit pass
+nor the two selected passes clears existing layout or input gates.
+
+## Latest hosted startup failure
+
+[CI at `1322630`](../evidence/2026-10-25-duo-design/ci-startup-1322630/README.md)
+completed with unit769/0 failures, iPhone UI51/0 failures and iPad UI51/1
+failure. The iPad's first test fails before alarm activation, after an
+automation-session timeout and `kAXErrorServerNotFound`. Reviewed retained
+media frames show a blank white Brickson canvas without Home controls.
+The video does not span the full81.903-second case; its media samples are
+not exact failure-time captures. No app crash/hang stack was recovered,
+so the cause remains unresolved. This differs from the local
+post-activation Speaking waits. The earlier three passing cold controls
+already used the same12GB iPad model/runtime; another matching control
+is not missing evidence. No timeout, retry or product audio change is
+justified by these results.
+
 ## Not verified
 
 The [later speech-status diagnostic](../evidence/2026-10-25-duo-design/speech-diagnostic/README.md)
@@ -339,8 +438,12 @@ was removed and only the owned simulator booted for it was shut down.
   travel. Physical Snap to Item, folding/input comfort, sound, Phone
   handoff and the camera dark-area match need a real mounted device.
   The owner deferred physical testing.
-- The JSON project trial: it still waits for released Xcode 27.2 and its
-  first fix release; nothing is converted.
+- The JSON project trial still waits for released Xcode 27.2 and its
+  first fix release; nothing is converted. Rechecked on2026-10-25:
+  [Apple releases](https://developer.apple.com/news/releases/) and
+  [system requirements](https://developer.apple.com/xcode/system-requirements/)
+  list27.2RC and released27.1. The requested trial condition is unmet;
+  XcodeGen remains in use.
 
 ## Follow-ups
 
@@ -355,5 +458,14 @@ was removed and only the owned simulator booted for it was shut down.
   the message and two message lines. Changing that placement is outside
   the owner's keep-the-current-rule direction. AX5 capacity remains an
   explicit failure rather than a silent rule change.
+- A [bounded joint-mode narrowing study](../evidence/2026-10-25-duo-design/mode-feasibility.md)
+  retains Back centred over Phrases and the existing status position.
+  It removes the observed Family Back-centre chain, but one-line word-floor
+  widths still fail from Back's top edge. Smaller two-line widths are
+  hypotheses without native Back-word/Bold fitting or complete chain proof;
+  no guessed minimum or selective device rule was adopted. A Back-only
+  leading move also violates the centred-Back decision and exposes Again
+  at a lower corner. Neither is a validated replacement design or a new
+  rule exception. The current placement rule remains in force.
 - Keep controlled physical-input checks deferred and do not present
   simulator geometry as a completed R0-13 release gate.

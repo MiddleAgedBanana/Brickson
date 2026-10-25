@@ -122,6 +122,7 @@ targets:
       # frameworks first"); the chain engine and its screens also score
       # the layout's own frames here. Never add them to the app.
       - path: BricksonUITests/AccessibilityAuditRunner.swift
+      - path: BricksonUITests/SnapshotControlGeometry.swift
       - path: BricksonUITests/RenderedWords.swift
       - path: BricksonUITests/ChainEngine.swift
       - path: BricksonUITests/HomeChains.swift
