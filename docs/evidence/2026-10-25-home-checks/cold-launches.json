@@ -1,0 +1,33 @@
+{
+  "date": "2026-10-25",
+  "test": "HomeAccessibilityOrderTests/testQuickControlsComeFirstInEveryStateAtDefaultText",
+  "simulator": "iPhone 17, iOS 27.0",
+  "method": "three separate simulator shutdown/boot/bootstatus cycles; direct xcodebuild test-without-building; installed app; no manual launch or scripts/test.sh warm-up",
+  "runs": [
+    {
+      "cycle": 1,
+      "exitStatus": 0,
+      "result": "Passed",
+      "totalTestCount": 1,
+      "passedTests": 1,
+      "failedTests": 0
+    },
+    {
+      "cycle": 2,
+      "exitStatus": 0,
+      "result": "Passed",
+      "totalTestCount": 1,
+      "passedTests": 1,
+      "failedTests": 0
+    },
+    {
+      "cycle": 3,
+      "exitStatus": 0,
+      "result": "Passed",
+      "totalTestCount": 1,
+      "passedTests": 1,
+      "failedTests": 0
+    }
+  ],
+  "conclusion": "Not reproduced locally in three cold boots; historical CI cause remains unestablished. No app fix."
+}

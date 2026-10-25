@@ -199,8 +199,8 @@ objects.*
 
 **Decision.** Brickson keeps generating its project with XcodeGen for
 now (*Generated Xcode project*, above). Xcode's JSON project format is
-planned in three steps: a trial on the owner's Mac once an Xcode that
-writes the format is released, gates the trial must pass, and then one
+planned in three steps: a trial on the owner's Mac after Xcode 27.2 and
+its first fix release, gates the trial must pass, and then one
 pull request that commits a JSON project and retires XcodeGen. Nothing is
 converted or committed before that pull request. If every gate holds,
 switching is the default; the trial's record says so, or says why not.
@@ -287,8 +287,14 @@ formatter, `xcprojformatter`, that rewrites a file in its canonical form.
 
 **Step 1, the trial.** It needs the owner's Mac (a hand-off to an agent
 there), and it commits nothing but its record in `docs/log/`. It starts
-when Apple's releases feed lists Xcode 27.2, or a later Xcode, as a
-release, and that Xcode is on the Mac.
+only after Xcode 27.2 is released and has its first fix release, and the
+current released Xcode is on the Mac. The owner set this stricter trial
+timing in the 2026-10-25 Mac handoff. Apple's releases feed verifies both
+prerequisites.
+
+*Before:* the trial could begin at the initial release, to compare the
+generated project with Xcode's output before deciding whether to switch;
+the switch already waited for a subsequent release and the other gates.
 
 1. Clone the repository again, into a folder of its own outside the
    owner's working checkout, and run `xcodegen generate` in it. Every
@@ -354,8 +360,8 @@ release, and that Xcode is on the Mac.
 
 Reverting that pull request brings XcodeGen back.
 
-**Revisit** when Apple releases Xcode 27.2 (start step 1), when a gate
-changes, or when the owner asks.
+**Revisit** when the first fix release after Xcode 27.2 is released
+(start step 1), when a gate changes, or when the owner asks.
 
 ## Build with Apple's current Xcode
 
@@ -1566,7 +1572,10 @@ running on these windows):
   to 687.7pt, past the window, as on the 375×667pt phone, with
   `HomeLayoutTests` failing there
   ([`log/2026-10-23-large-content-and-iphone-duo.md`](log/2026-10-23-large-content-and-iphone-duo.md)).
-  The inner display, the phone open, has not run.
+  The inner display had not run at that point. The 2026-10-25 Mac
+  [measurement record](log/2026-10-25-mac-keyboard-checks.md) now covers
+  open, partly open and rotated Home, with current scroll amounts,
+  recorded test failures and unverified fold/camera clearance.
 - Every iPad window CI runs, both orientations, default and AX5: expected to
   fit; `HomeLayoutTests` checks them. On the 13-inch iPad the tiles are
   about 276, 236, 161 and 121pt (portrait and landscape, default and
