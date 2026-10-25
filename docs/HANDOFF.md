@@ -576,13 +576,16 @@ which change Home, are its
 2026-10-23): items 1 to 5 and 7 are built, typing on Home (item 5) on
 2026-10-24 ([`log/2026-10-24-typing-on-home.md`](log/2026-10-24-typing-on-home.md),
 *Follow-ups*); next on Home is item 6, iPhone Duo in every pose. Its Mac
-design pass has started after PR #56 merged. The current continuation in
+design pass has started after PR #56 merged. The continuation in
 [the layout-engine work file](work/layout-engine.md#item-6-fold-and-camera-design-2026-10-25)
-records a horizontal-fold scrolling choice for the owner: a fixed gap
-scrolls away from the fold; pinned panes change visible neighbours, and
-paging would move R1 work into R0. No implementation or exception has been
-accepted. The measured Mac record is PR #55; physical checks remain
-deferred. Its item 2, the chain engine, is built; a change
+now uses queried fold/camera rectangles and native left/right Split View
+measurements. The earlier horizontal-scrolling owner blocker is
+withdrawn: the measured full-screen tall phrase viewport is below the
+division. Right-pane AX5 still leaves no whole phrase tile visible. No
+reserved-region implementation or new exception is accepted. The
+same-app second-window attempt remains inconclusive; the temporary
+XCTest windowing probe skipped. Physical checks remain deferred.
+Its item 2, the chain engine, is built; a change
 that moves a control keeps its tests passing. Item 7 scored Get
 Attention in Settings' bar, which would sound the alarm unasked, for the
 owner to decide, and built a fix for the chain that saves a setup

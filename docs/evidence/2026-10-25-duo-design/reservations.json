@@ -1,0 +1,1350 @@
+{
+  "appCodeBase": "6d040d5",
+  "diagnostic": "temporary geometry-only logger; layout inputs unchanged",
+  "records": [
+    {
+      "case": "open-wide-default",
+      "geometry": {
+        "apiAvailable": true,
+        "division": [
+          {
+            "frameInReader": {
+              "height": 669,
+              "width": 40,
+              "x": 455.5,
+              "y": 0
+            },
+            "frameInReconstructedWindow": {
+              "height": 669,
+              "width": 40,
+              "x": 455.5,
+              "y": 0
+            },
+            "isActive": false,
+            "kind": "division",
+            "marginsAlreadyIncludedInFrame": {
+              "bottom": 0,
+              "leading": 20,
+              "top": 0,
+              "trailing": 20
+            }
+          }
+        ],
+        "engineSafeArea": {
+          "bottom": 34,
+          "leading": 0,
+          "top": 0,
+          "trailing": 84
+        },
+        "engineWindowOffsetFromReader": {
+          "x": 0,
+          "y": 0
+        },
+        "frameIncludesMargins": true,
+        "layoutDirectionBehavior": "mirrors",
+        "occlusion": [
+          {
+            "frameInReader": {
+              "height": 37,
+              "width": 58,
+              "x": 677.3333333333334,
+              "y": 21
+            },
+            "frameInReconstructedWindow": {
+              "height": 37,
+              "width": 58,
+              "x": 677.3333333333334,
+              "y": 21
+            },
+            "isActive": false,
+            "kind": "occlusion",
+            "marginsAlreadyIncludedInFrame": {
+              "bottom": 0,
+              "leading": 0,
+              "top": 0,
+              "trailing": 0
+            }
+          },
+          {
+            "frameInReader": {
+              "height": 124,
+              "width": 84,
+              "x": 867,
+              "y": 0
+            },
+            "frameInReconstructedWindow": {
+              "height": 124,
+              "width": 84,
+              "x": 867,
+              "y": 0
+            },
+            "isActive": true,
+            "kind": "occlusion",
+            "marginsAlreadyIncludedInFrame": {
+              "bottom": 0,
+              "leading": 0,
+              "top": 0,
+              "trailing": 0
+            }
+          }
+        ],
+        "queryOptions": "includeInactive",
+        "readerFrameInGlobal": {
+          "height": 635,
+          "width": 867,
+          "x": 0,
+          "y": 0
+        },
+        "readerSize": {
+          "height": 635,
+          "width": 867
+        },
+        "reconstructedWindowSize": {
+          "height": 669,
+          "width": 951
+        },
+        "safeArea": {
+          "bottom": 34,
+          "leading": 0,
+          "top": 0,
+          "trailing": 84
+        },
+        "schema": 1
+      },
+      "hingeAngleDegrees": 180.0,
+      "observedRecordCountInLog": 6
+    },
+    {
+      "case": "partial-wide-default",
+      "geometry": {
+        "apiAvailable": true,
+        "division": [
+          {
+            "frameInReader": {
+              "height": 669,
+              "width": 40,
+              "x": 455.5,
+              "y": 0
+            },
+            "frameInReconstructedWindow": {
+              "height": 669,
+              "width": 40,
+              "x": 455.5,
+              "y": 0
+            },
+            "isActive": true,
+            "kind": "division",
+            "marginsAlreadyIncludedInFrame": {
+              "bottom": 0,
+              "leading": 20,
+              "top": 0,
+              "trailing": 20
+            }
+          }
+        ],
+        "engineSafeArea": {
+          "bottom": 34,
+          "leading": 0,
+          "top": 0,
+          "trailing": 84
+        },
+        "engineWindowOffsetFromReader": {
+          "x": 0,
+          "y": 0
+        },
+        "frameIncludesMargins": true,
+        "layoutDirectionBehavior": "mirrors",
+        "occlusion": [
+          {
+            "frameInReader": {
+              "height": 37,
+              "width": 58,
+              "x": 677.3333333333334,
+              "y": 21
+            },
+            "frameInReconstructedWindow": {
+              "height": 37,
+              "width": 58,
+              "x": 677.3333333333334,
+              "y": 21
+            },
+            "isActive": false,
+            "kind": "occlusion",
+            "marginsAlreadyIncludedInFrame": {
+              "bottom": 0,
+              "leading": 0,
+              "top": 0,
+              "trailing": 0
+            }
+          },
+          {
+            "frameInReader": {
+              "height": 124,
+              "width": 84,
+              "x": 867,
+              "y": 0
+            },
+            "frameInReconstructedWindow": {
+              "height": 124,
+              "width": 84,
+              "x": 867,
+              "y": 0
+            },
+            "isActive": true,
+            "kind": "occlusion",
+            "marginsAlreadyIncludedInFrame": {
+              "bottom": 0,
+              "leading": 0,
+              "top": 0,
+              "trailing": 0
+            }
+          }
+        ],
+        "queryOptions": "includeInactive",
+        "readerFrameInGlobal": {
+          "height": 635,
+          "width": 867,
+          "x": 0,
+          "y": 0
+        },
+        "readerSize": {
+          "height": 635,
+          "width": 867
+        },
+        "reconstructedWindowSize": {
+          "height": 669,
+          "width": 951
+        },
+        "safeArea": {
+          "bottom": 34,
+          "leading": 0,
+          "top": 0,
+          "trailing": 84
+        },
+        "schema": 1
+      },
+      "hingeAngleDegrees": 130.0,
+      "observedRecordCountInLog": 7
+    },
+    {
+      "case": "partial-tall-default",
+      "geometry": {
+        "apiAvailable": true,
+        "division": [
+          {
+            "frameInReader": {
+              "height": 40,
+              "width": 669,
+              "x": 0,
+              "y": 373.5
+            },
+            "frameInReconstructedWindow": {
+              "height": 40,
+              "width": 669,
+              "x": 0,
+              "y": 455.5
+            },
+            "isActive": true,
+            "kind": "division",
+            "marginsAlreadyIncludedInFrame": {
+              "bottom": 20,
+              "leading": 0,
+              "top": 20,
+              "trailing": 0
+            }
+          }
+        ],
+        "engineSafeArea": {
+          "bottom": 34,
+          "leading": 0,
+          "top": 82,
+          "trailing": 0
+        },
+        "engineWindowOffsetFromReader": {
+          "x": 0,
+          "y": 82
+        },
+        "frameIncludesMargins": true,
+        "layoutDirectionBehavior": "mirrors",
+        "occlusion": [
+          {
+            "frameInReader": {
+              "height": 58,
+              "width": 37,
+              "x": 611,
+              "y": 595.3333333333334
+            },
+            "frameInReconstructedWindow": {
+              "height": 58,
+              "width": 37,
+              "x": 611,
+              "y": 677.3333333333334
+            },
+            "isActive": false,
+            "kind": "occlusion",
+            "marginsAlreadyIncludedInFrame": {
+              "bottom": 0,
+              "leading": 0,
+              "top": 0,
+              "trailing": 0
+            }
+          },
+          {
+            "frameInReader": {
+              "height": 82,
+              "width": 144,
+              "x": 525,
+              "y": -82
+            },
+            "frameInReconstructedWindow": {
+              "height": 82,
+              "width": 144,
+              "x": 525,
+              "y": 0
+            },
+            "isActive": true,
+            "kind": "occlusion",
+            "marginsAlreadyIncludedInFrame": {
+              "bottom": 0,
+              "leading": 0,
+              "top": 0,
+              "trailing": 0
+            }
+          }
+        ],
+        "queryOptions": "includeInactive",
+        "readerFrameInGlobal": {
+          "height": 835,
+          "width": 669,
+          "x": 0,
+          "y": 82
+        },
+        "readerSize": {
+          "height": 835,
+          "width": 669
+        },
+        "reconstructedWindowSize": {
+          "height": 951,
+          "width": 669
+        },
+        "safeArea": {
+          "bottom": 34,
+          "leading": 0,
+          "top": 82,
+          "trailing": 0
+        },
+        "schema": 1
+      },
+      "hingeAngleDegrees": 130.0,
+      "observedRecordCountInLog": 12
+    },
+    {
+      "case": "open-tall-default",
+      "geometry": {
+        "apiAvailable": true,
+        "division": [
+          {
+            "frameInReader": {
+              "height": 40,
+              "width": 669,
+              "x": 0,
+              "y": 373.5
+            },
+            "frameInReconstructedWindow": {
+              "height": 40,
+              "width": 669,
+              "x": 0,
+              "y": 455.5
+            },
+            "isActive": false,
+            "kind": "division",
+            "marginsAlreadyIncludedInFrame": {
+              "bottom": 20,
+              "leading": 0,
+              "top": 20,
+              "trailing": 0
+            }
+          }
+        ],
+        "engineSafeArea": {
+          "bottom": 34,
+          "leading": 0,
+          "top": 82,
+          "trailing": 0
+        },
+        "engineWindowOffsetFromReader": {
+          "x": 0,
+          "y": 82
+        },
+        "frameIncludesMargins": true,
+        "layoutDirectionBehavior": "mirrors",
+        "occlusion": [
+          {
+            "frameInReader": {
+              "height": 58,
+              "width": 37,
+              "x": 611,
+              "y": 595.3333333333334
+            },
+            "frameInReconstructedWindow": {
+              "height": 58,
+              "width": 37,
+              "x": 611,
+              "y": 677.3333333333334
+            },
+            "isActive": false,
+            "kind": "occlusion",
+            "marginsAlreadyIncludedInFrame": {
+              "bottom": 0,
+              "leading": 0,
+              "top": 0,
+              "trailing": 0
+            }
+          },
+          {
+            "frameInReader": {
+              "height": 82,
+              "width": 144,
+              "x": 525,
+              "y": -82
+            },
+            "frameInReconstructedWindow": {
+              "height": 82,
+              "width": 144,
+              "x": 525,
+              "y": 0
+            },
+            "isActive": true,
+            "kind": "occlusion",
+            "marginsAlreadyIncludedInFrame": {
+              "bottom": 0,
+              "leading": 0,
+              "top": 0,
+              "trailing": 0
+            }
+          }
+        ],
+        "queryOptions": "includeInactive",
+        "readerFrameInGlobal": {
+          "height": 835,
+          "width": 669,
+          "x": 0,
+          "y": 82
+        },
+        "readerSize": {
+          "height": 835,
+          "width": 669
+        },
+        "reconstructedWindowSize": {
+          "height": 951,
+          "width": 669
+        },
+        "safeArea": {
+          "bottom": 34,
+          "leading": 0,
+          "top": 82,
+          "trailing": 0
+        },
+        "schema": 1
+      },
+      "hingeAngleDegrees": 180.0,
+      "observedRecordCountInLog": 13
+    },
+    {
+      "case": "open-tall-ax5",
+      "geometry": {
+        "apiAvailable": true,
+        "division": [
+          {
+            "frameInReader": {
+              "height": 40,
+              "width": 669,
+              "x": 0,
+              "y": 373.5
+            },
+            "frameInReconstructedWindow": {
+              "height": 40,
+              "width": 669,
+              "x": 0,
+              "y": 455.5
+            },
+            "isActive": false,
+            "kind": "division",
+            "marginsAlreadyIncludedInFrame": {
+              "bottom": 20,
+              "leading": 0,
+              "top": 20,
+              "trailing": 0
+            }
+          }
+        ],
+        "engineSafeArea": {
+          "bottom": 34,
+          "leading": 0,
+          "top": 82,
+          "trailing": 0
+        },
+        "engineWindowOffsetFromReader": {
+          "x": 0,
+          "y": 82
+        },
+        "frameIncludesMargins": true,
+        "layoutDirectionBehavior": "mirrors",
+        "occlusion": [
+          {
+            "frameInReader": {
+              "height": 58,
+              "width": 37,
+              "x": 611,
+              "y": 595.3333333333334
+            },
+            "frameInReconstructedWindow": {
+              "height": 58,
+              "width": 37,
+              "x": 611,
+              "y": 677.3333333333334
+            },
+            "isActive": false,
+            "kind": "occlusion",
+            "marginsAlreadyIncludedInFrame": {
+              "bottom": 0,
+              "leading": 0,
+              "top": 0,
+              "trailing": 0
+            }
+          },
+          {
+            "frameInReader": {
+              "height": 82,
+              "width": 144,
+              "x": 525,
+              "y": -82
+            },
+            "frameInReconstructedWindow": {
+              "height": 82,
+              "width": 144,
+              "x": 525,
+              "y": 0
+            },
+            "isActive": true,
+            "kind": "occlusion",
+            "marginsAlreadyIncludedInFrame": {
+              "bottom": 0,
+              "leading": 0,
+              "top": 0,
+              "trailing": 0
+            }
+          }
+        ],
+        "queryOptions": "includeInactive",
+        "readerFrameInGlobal": {
+          "height": 835,
+          "width": 669,
+          "x": 0,
+          "y": 82
+        },
+        "readerSize": {
+          "height": 835,
+          "width": 669
+        },
+        "reconstructedWindowSize": {
+          "height": 951,
+          "width": 669
+        },
+        "safeArea": {
+          "bottom": 34,
+          "leading": 0,
+          "top": 82,
+          "trailing": 0
+        },
+        "schema": 1
+      },
+      "hingeAngleDegrees": 180.0,
+      "observedRecordCountInLog": 6
+    },
+    {
+      "case": "partial-tall-ax5",
+      "geometry": {
+        "apiAvailable": true,
+        "division": [
+          {
+            "frameInReader": {
+              "height": 40,
+              "width": 669,
+              "x": 0,
+              "y": 373.5
+            },
+            "frameInReconstructedWindow": {
+              "height": 40,
+              "width": 669,
+              "x": 0,
+              "y": 455.5
+            },
+            "isActive": true,
+            "kind": "division",
+            "marginsAlreadyIncludedInFrame": {
+              "bottom": 20,
+              "leading": 0,
+              "top": 20,
+              "trailing": 0
+            }
+          }
+        ],
+        "engineSafeArea": {
+          "bottom": 34,
+          "leading": 0,
+          "top": 82,
+          "trailing": 0
+        },
+        "engineWindowOffsetFromReader": {
+          "x": 0,
+          "y": 82
+        },
+        "frameIncludesMargins": true,
+        "layoutDirectionBehavior": "mirrors",
+        "occlusion": [
+          {
+            "frameInReader": {
+              "height": 58,
+              "width": 37,
+              "x": 611,
+              "y": 595.3333333333334
+            },
+            "frameInReconstructedWindow": {
+              "height": 58,
+              "width": 37,
+              "x": 611,
+              "y": 677.3333333333334
+            },
+            "isActive": false,
+            "kind": "occlusion",
+            "marginsAlreadyIncludedInFrame": {
+              "bottom": 0,
+              "leading": 0,
+              "top": 0,
+              "trailing": 0
+            }
+          },
+          {
+            "frameInReader": {
+              "height": 82,
+              "width": 144,
+              "x": 525,
+              "y": -82
+            },
+            "frameInReconstructedWindow": {
+              "height": 82,
+              "width": 144,
+              "x": 525,
+              "y": 0
+            },
+            "isActive": true,
+            "kind": "occlusion",
+            "marginsAlreadyIncludedInFrame": {
+              "bottom": 0,
+              "leading": 0,
+              "top": 0,
+              "trailing": 0
+            }
+          }
+        ],
+        "queryOptions": "includeInactive",
+        "readerFrameInGlobal": {
+          "height": 835,
+          "width": 669,
+          "x": 0,
+          "y": 82
+        },
+        "readerSize": {
+          "height": 835,
+          "width": 669
+        },
+        "reconstructedWindowSize": {
+          "height": 951,
+          "width": 669
+        },
+        "safeArea": {
+          "bottom": 34,
+          "leading": 0,
+          "top": 82,
+          "trailing": 0
+        },
+        "schema": 1
+      },
+      "hingeAngleDegrees": 130.0,
+      "observedRecordCountInLog": 7
+    },
+    {
+      "case": "partial-wide-ax5",
+      "geometry": {
+        "apiAvailable": true,
+        "division": [
+          {
+            "frameInReader": {
+              "height": 669,
+              "width": 40,
+              "x": 455.5,
+              "y": 0
+            },
+            "frameInReconstructedWindow": {
+              "height": 669,
+              "width": 40,
+              "x": 455.5,
+              "y": 0
+            },
+            "isActive": true,
+            "kind": "division",
+            "marginsAlreadyIncludedInFrame": {
+              "bottom": 0,
+              "leading": 20,
+              "top": 0,
+              "trailing": 20
+            }
+          }
+        ],
+        "engineSafeArea": {
+          "bottom": 34,
+          "leading": 0,
+          "top": 0,
+          "trailing": 84
+        },
+        "engineWindowOffsetFromReader": {
+          "x": 0,
+          "y": 0
+        },
+        "frameIncludesMargins": true,
+        "layoutDirectionBehavior": "mirrors",
+        "occlusion": [
+          {
+            "frameInReader": {
+              "height": 37,
+              "width": 58,
+              "x": 677.3333333333334,
+              "y": 21
+            },
+            "frameInReconstructedWindow": {
+              "height": 37,
+              "width": 58,
+              "x": 677.3333333333334,
+              "y": 21
+            },
+            "isActive": false,
+            "kind": "occlusion",
+            "marginsAlreadyIncludedInFrame": {
+              "bottom": 0,
+              "leading": 0,
+              "top": 0,
+              "trailing": 0
+            }
+          },
+          {
+            "frameInReader": {
+              "height": 124,
+              "width": 84,
+              "x": 867,
+              "y": 0
+            },
+            "frameInReconstructedWindow": {
+              "height": 124,
+              "width": 84,
+              "x": 867,
+              "y": 0
+            },
+            "isActive": true,
+            "kind": "occlusion",
+            "marginsAlreadyIncludedInFrame": {
+              "bottom": 0,
+              "leading": 0,
+              "top": 0,
+              "trailing": 0
+            }
+          }
+        ],
+        "queryOptions": "includeInactive",
+        "readerFrameInGlobal": {
+          "height": 635,
+          "width": 867,
+          "x": 0,
+          "y": 0
+        },
+        "readerSize": {
+          "height": 635,
+          "width": 867
+        },
+        "reconstructedWindowSize": {
+          "height": 669,
+          "width": 951
+        },
+        "safeArea": {
+          "bottom": 34,
+          "leading": 0,
+          "top": 0,
+          "trailing": 84
+        },
+        "schema": 1
+      },
+      "hingeAngleDegrees": 130.0,
+      "observedRecordCountInLog": 12
+    },
+    {
+      "case": "closed-ax5",
+      "geometry": {
+        "apiAvailable": true,
+        "division": [],
+        "engineSafeArea": {
+          "bottom": 34,
+          "leading": 0,
+          "top": 0,
+          "trailing": 84
+        },
+        "engineWindowOffsetFromReader": {
+          "x": 0,
+          "y": 0
+        },
+        "frameIncludesMargins": true,
+        "layoutDirectionBehavior": "mirrors",
+        "occlusion": [
+          {
+            "frameInReader": {
+              "height": 37,
+              "width": 37,
+              "x": 399.6666666666667,
+              "y": 29.333333333333332
+            },
+            "frameInReconstructedWindow": {
+              "height": 37,
+              "width": 37,
+              "x": 399.6666666666667,
+              "y": 29.333333333333332
+            },
+            "isActive": true,
+            "kind": "occlusion",
+            "marginsAlreadyIncludedInFrame": {
+              "bottom": 0,
+              "leading": 0,
+              "top": 0,
+              "trailing": 0
+            }
+          },
+          {
+            "frameInReader": {
+              "height": 174,
+              "width": 84,
+              "x": 382,
+              "y": 0
+            },
+            "frameInReconstructedWindow": {
+              "height": 174,
+              "width": 84,
+              "x": 382,
+              "y": 0
+            },
+            "isActive": true,
+            "kind": "occlusion",
+            "marginsAlreadyIncludedInFrame": {
+              "bottom": 0,
+              "leading": 0,
+              "top": 0,
+              "trailing": 0
+            }
+          }
+        ],
+        "queryOptions": "includeInactive",
+        "readerFrameInGlobal": {
+          "height": 644,
+          "width": 382,
+          "x": 0,
+          "y": 0
+        },
+        "readerSize": {
+          "height": 644,
+          "width": 382
+        },
+        "reconstructedWindowSize": {
+          "height": 678,
+          "width": 466
+        },
+        "safeArea": {
+          "bottom": 34,
+          "leading": 0,
+          "top": 0,
+          "trailing": 84
+        },
+        "schema": 1
+      },
+      "hingeAngleDegrees": 0.0,
+      "observedRecordCountInLog": 16
+    },
+    {
+      "case": "split-left-wide-default",
+      "geometry": {
+        "apiAvailable": true,
+        "division": [
+          {
+            "frameInReader": {
+              "height": 669,
+              "width": 13.5,
+              "x": 455.5,
+              "y": 0
+            },
+            "frameInReconstructedWindow": {
+              "height": 669,
+              "width": 13.5,
+              "x": 455.5,
+              "y": 0
+            },
+            "isActive": false,
+            "kind": "division",
+            "marginsAlreadyIncludedInFrame": {
+              "bottom": 0,
+              "leading": 20,
+              "top": 0,
+              "trailing": 20
+            }
+          }
+        ],
+        "engineSafeArea": {
+          "bottom": 34,
+          "leading": 0,
+          "top": 0,
+          "trailing": 0
+        },
+        "engineWindowOffsetFromReader": {
+          "x": 0,
+          "y": 0
+        },
+        "frameIncludesMargins": true,
+        "layoutDirectionBehavior": "mirrors",
+        "occlusion": [],
+        "queryOptions": "includeInactive",
+        "readerFrameInGlobal": {
+          "height": 635,
+          "width": 469,
+          "x": 0,
+          "y": 0
+        },
+        "readerSize": {
+          "height": 635,
+          "width": 469
+        },
+        "reconstructedWindowSize": {
+          "height": 669,
+          "width": 469
+        },
+        "safeArea": {
+          "bottom": 34,
+          "leading": 0,
+          "top": 0,
+          "trailing": 0
+        },
+        "schema": 1
+      },
+      "hingeAngleDegrees": 180,
+      "observedRecordCountInLog": 13
+    },
+    {
+      "case": "open-wide-reverse-ax5",
+      "geometry": {
+        "apiAvailable": true,
+        "division": [
+          {
+            "frameInReader": {
+              "height": 669,
+              "width": 40,
+              "x": 455.5,
+              "y": 0
+            },
+            "frameInReconstructedWindow": {
+              "height": 669,
+              "width": 40,
+              "x": 455.5,
+              "y": 0
+            },
+            "isActive": false,
+            "kind": "division",
+            "marginsAlreadyIncludedInFrame": {
+              "bottom": 0,
+              "leading": 20,
+              "top": 0,
+              "trailing": 20
+            }
+          }
+        ],
+        "engineSafeArea": {
+          "bottom": 34,
+          "leading": 0,
+          "top": 0,
+          "trailing": 84
+        },
+        "engineWindowOffsetFromReader": {
+          "x": 0,
+          "y": 0
+        },
+        "frameIncludesMargins": true,
+        "layoutDirectionBehavior": "mirrors",
+        "occlusion": [
+          {
+            "frameInReader": {
+              "height": 37,
+              "width": 57.99999999999997,
+              "x": 215.66666666666666,
+              "y": 611
+            },
+            "frameInReconstructedWindow": {
+              "height": 37,
+              "width": 57.99999999999997,
+              "x": 215.66666666666666,
+              "y": 611
+            },
+            "isActive": false,
+            "kind": "occlusion",
+            "marginsAlreadyIncludedInFrame": {
+              "bottom": 0,
+              "leading": 0,
+              "top": 0,
+              "trailing": 0
+            }
+          },
+          {
+            "frameInReader": {
+              "height": 124,
+              "width": 84,
+              "x": 867,
+              "y": 0
+            },
+            "frameInReconstructedWindow": {
+              "height": 124,
+              "width": 84,
+              "x": 867,
+              "y": 0
+            },
+            "isActive": true,
+            "kind": "occlusion",
+            "marginsAlreadyIncludedInFrame": {
+              "bottom": 0,
+              "leading": 0,
+              "top": 0,
+              "trailing": 0
+            }
+          }
+        ],
+        "queryOptions": "includeInactive",
+        "readerFrameInGlobal": {
+          "height": 635,
+          "width": 867,
+          "x": 0,
+          "y": 0
+        },
+        "readerSize": {
+          "height": 635,
+          "width": 867
+        },
+        "reconstructedWindowSize": {
+          "height": 669,
+          "width": 951
+        },
+        "safeArea": {
+          "bottom": 34,
+          "leading": 0,
+          "top": 0,
+          "trailing": 84
+        },
+        "schema": 1
+      },
+      "hingeAngleDegrees": 180,
+      "observedRecordCountInLog": 40
+    },
+    {
+      "case": "split-right-wide-reverse-ax5",
+      "geometry": {
+        "apiAvailable": true,
+        "division": [
+          {
+            "frameInReader": {
+              "height": 669,
+              "width": 13.5,
+              "x": 0,
+              "y": 0
+            },
+            "frameInReconstructedWindow": {
+              "height": 669,
+              "width": 13.5,
+              "x": 0,
+              "y": 0
+            },
+            "isActive": false,
+            "kind": "division",
+            "marginsAlreadyIncludedInFrame": {
+              "bottom": 0,
+              "leading": 20,
+              "top": 0,
+              "trailing": 20
+            }
+          }
+        ],
+        "engineSafeArea": {
+          "bottom": 34,
+          "leading": 0,
+          "top": 0,
+          "trailing": 84
+        },
+        "engineWindowOffsetFromReader": {
+          "x": 0,
+          "y": 0
+        },
+        "frameIncludesMargins": true,
+        "layoutDirectionBehavior": "mirrors",
+        "occlusion": [
+          {
+            "frameInReader": {
+              "height": 124,
+              "width": 84,
+              "x": 385,
+              "y": 0
+            },
+            "frameInReconstructedWindow": {
+              "height": 124,
+              "width": 84,
+              "x": 385,
+              "y": 0
+            },
+            "isActive": true,
+            "kind": "occlusion",
+            "marginsAlreadyIncludedInFrame": {
+              "bottom": 0,
+              "leading": 0,
+              "top": 0,
+              "trailing": 0
+            }
+          }
+        ],
+        "queryOptions": "includeInactive",
+        "readerFrameInGlobal": {
+          "height": 635,
+          "width": 385,
+          "x": 0,
+          "y": 0
+        },
+        "readerSize": {
+          "height": 635,
+          "width": 385
+        },
+        "reconstructedWindowSize": {
+          "height": 669,
+          "width": 469
+        },
+        "safeArea": {
+          "bottom": 34,
+          "leading": 0,
+          "top": 0,
+          "trailing": 84
+        },
+        "schema": 1
+      },
+      "hingeAngleDegrees": 180,
+      "observedRecordCountInLog": 54
+    },
+    {
+      "case": "open-tall-reverse-default",
+      "geometry": {
+        "apiAvailable": true,
+        "division": [
+          {
+            "frameInReader": {
+              "height": 40,
+              "width": 669,
+              "x": 0,
+              "y": 373.5
+            },
+            "frameInReconstructedWindow": {
+              "height": 40,
+              "width": 669,
+              "x": 0,
+              "y": 455.5
+            },
+            "isActive": false,
+            "kind": "division",
+            "marginsAlreadyIncludedInFrame": {
+              "bottom": 20,
+              "leading": 0,
+              "top": 20,
+              "trailing": 0
+            }
+          }
+        ],
+        "engineSafeArea": {
+          "bottom": 34,
+          "leading": 0,
+          "top": 82,
+          "trailing": 0
+        },
+        "engineWindowOffsetFromReader": {
+          "x": 0,
+          "y": 82
+        },
+        "frameIncludesMargins": true,
+        "layoutDirectionBehavior": "mirrors",
+        "occlusion": [
+          {
+            "frameInReader": {
+              "height": 57.99999999999997,
+              "width": 37,
+              "x": 21,
+              "y": 133.66666666666666
+            },
+            "frameInReconstructedWindow": {
+              "height": 57.99999999999997,
+              "width": 37,
+              "x": 21,
+              "y": 215.66666666666666
+            },
+            "isActive": false,
+            "kind": "occlusion",
+            "marginsAlreadyIncludedInFrame": {
+              "bottom": 0,
+              "leading": 0,
+              "top": 0,
+              "trailing": 0
+            }
+          },
+          {
+            "frameInReader": {
+              "height": 82,
+              "width": 144,
+              "x": 525,
+              "y": -82
+            },
+            "frameInReconstructedWindow": {
+              "height": 82,
+              "width": 144,
+              "x": 525,
+              "y": 0
+            },
+            "isActive": true,
+            "kind": "occlusion",
+            "marginsAlreadyIncludedInFrame": {
+              "bottom": 0,
+              "leading": 0,
+              "top": 0,
+              "trailing": 0
+            }
+          }
+        ],
+        "queryOptions": "includeInactive",
+        "readerFrameInGlobal": {
+          "height": 835,
+          "width": 669,
+          "x": 0,
+          "y": 82
+        },
+        "readerSize": {
+          "height": 835,
+          "width": 669
+        },
+        "reconstructedWindowSize": {
+          "height": 951,
+          "width": 669
+        },
+        "safeArea": {
+          "bottom": 34,
+          "leading": 0,
+          "top": 82,
+          "trailing": 0
+        },
+        "schema": 1
+      },
+      "hingeAngleDegrees": 180,
+      "observedRecordCountInLog": 65
+    },
+    {
+      "case": "split-right-wide-reverse-default",
+      "geometry": {
+        "apiAvailable": true,
+        "division": [
+          {
+            "frameInReader": {
+              "height": 669,
+              "width": 13.5,
+              "x": 0,
+              "y": 0
+            },
+            "frameInReconstructedWindow": {
+              "height": 669,
+              "width": 13.5,
+              "x": 0,
+              "y": 0
+            },
+            "isActive": false,
+            "kind": "division",
+            "marginsAlreadyIncludedInFrame": {
+              "bottom": 0,
+              "leading": 20,
+              "top": 0,
+              "trailing": 20
+            }
+          }
+        ],
+        "engineSafeArea": {
+          "bottom": 34,
+          "leading": 0,
+          "top": 0,
+          "trailing": 84
+        },
+        "engineWindowOffsetFromReader": {
+          "x": 0,
+          "y": 0
+        },
+        "frameIncludesMargins": true,
+        "layoutDirectionBehavior": "mirrors",
+        "occlusion": [
+          {
+            "frameInReader": {
+              "height": 124,
+              "width": 84,
+              "x": 385,
+              "y": 0
+            },
+            "frameInReconstructedWindow": {
+              "height": 124,
+              "width": 84,
+              "x": 385,
+              "y": 0
+            },
+            "isActive": true,
+            "kind": "occlusion",
+            "marginsAlreadyIncludedInFrame": {
+              "bottom": 0,
+              "leading": 0,
+              "top": 0,
+              "trailing": 0
+            }
+          }
+        ],
+        "queryOptions": "includeInactive",
+        "readerFrameInGlobal": {
+          "height": 635,
+          "width": 385,
+          "x": 0,
+          "y": 0
+        },
+        "readerSize": {
+          "height": 635,
+          "width": 385
+        },
+        "reconstructedWindowSize": {
+          "height": 669,
+          "width": 469
+        },
+        "safeArea": {
+          "bottom": 34,
+          "leading": 0,
+          "top": 0,
+          "trailing": 84
+        },
+        "schema": 1
+      },
+      "hingeAngleDegrees": 180,
+      "observedRecordCountInLog": 59
+    }
+  ]
+}

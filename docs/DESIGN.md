@@ -48,9 +48,11 @@ Phrases alone was a proposal that differed from the landed decision;
     linked from the typing work file; use these over the historical Home
     page where the placements differ.
   - [*Duo fold options*](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=73-3):
-    unapproved lane and scrolling diagrams for the layout-engine work
-    file. Illustrative reserved bands are unmeasured; these are decision
-    drawings, not a completed Design gate or a runtime safety result.
+    the later measured-region panel and earlier lane candidates. The
+    runtime rectangles supersede the first horizontal-scrolling blocking
+    conclusion; the counterexample is marked synthetic. Resolved control
+    frames and safety scores remain to be drawn and checked, so the
+    Design gate stays open.
 - **Claude Design prototype** (private artifact, shared by the owner when
   they choose): an iPhone 17 Home you can tap through (speak, type, alarm,
   Settings, Family Setup, Voice, Library, editor, delete question), and

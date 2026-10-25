@@ -302,10 +302,41 @@ tiles. Existing open-Duo Home tests had eight passes, nine failures and
 two landscape skips. The record distinguishes frame-API disagreements
 from a pre-#56 Settings chain finding; none has been rescored on #56.
 
-Those observations establish the need for reserved-region layout. They
-do not provide the system's exact region rectangles, prove camera
-clearance or settle every window. Windowing and the second-window check
-remain open. A normal rectangular viewport is not fold-safe evidence.
+Follow-up measurements on app code `6d040d5` now record the system's exact
+[reserved rectangles and safe areas](../evidence/2026-10-25-duo-design/reservations.json).
+The full-screen wide window is 951×669 with an 84pt trailing safe area;
+its division is x 455.5–495.5, rather than the centre of the 867pt-wide
+reader. The full-screen tall window is 669×951 with top/bottom safe areas
+82/34pt; its division is y 455.5–495.5 in window coordinates. Fully-open
+and 130° records have the same division rectangle and different activity.
+The temporary probe only queried geometry; it changed no layout input.
+
+The inactive camera moves with the supplied geometry, not with a device
+branch. The four native rotations reported these window rectangles:
+
+| Window | Camera x, y, width, height (pt) |
+|---|---|
+| Wide | 677.33, 21, 58, 37 |
+| Tall | 611, 677.33, 37, 58 |
+| Reversed wide | 215.67, 611, 58, 37 |
+| Reversed tall | 21, 215.67, 37, 58 |
+
+Native Split View gives narrower, asymmetric spaces. The measured left
+pane is 469×669, bottom safe area 34pt, with a division clipped to its
+trailing 13.5pt and no occlusion. The measured reversed right pane is
+469×669 but its reader is only 385×635 because of the 84pt trailing and
+34pt bottom safe areas; its division is clipped to the leading 13.5pt.
+Its active status occlusion already lies inside that trailing safe area.
+At AX5 no whole phrase tile is visible in the right-pane sample. Use the
+actual rectangles without assuming equal usable panes, adding margins
+twice, or centring a fold in the reader.
+
+A tall rotation after each sampled Split View arrangement returned a
+full-screen 669×951 window. A same-app second selection produced a brief
+blank area and then App Library; second-window behaviour remains
+inconclusive. A bounded XCTest attempt skipped while the SpringBoard
+icon was unhittable. Native input later worked; the Mac preview could
+lag the simulator. None of these is a layout-safety pass.
 
 ### Spec: what stays binding
 
@@ -336,7 +367,7 @@ Sources: [Apple's query API](https://developer.apple.com/documentation/swiftui/g
 [ReservedRegion](https://developer.apple.com/documentation/swiftui/reservedregion)
 and [Duo layout guidance](https://developer.apple.com/design/human-interface-guidelines/designing-for-iphone-duo).
 
-### Proposed vertical lanes; horizontal scrolling unresolved
+### Proposed lanes and the measured horizontal division
 
 For a vertical division at regular widths, the candidate uses six virtual
 lanes. C is `Emergency, Yes, No | Again, Get Attention spanning two`.
@@ -346,43 +377,61 @@ Conversation under No, Feelings under Again and Settings under Get
 Attention. Phrase columns are even, allocated from each side's room.
 This is a candidate to score, not a claim that floors or chains pass.
 
-A vertical gap stays aligned when a vertical grid scrolls. A horizontal
-gap inside one ScrollView does not: scrolling moves the gap away from the
-division, letting the next tile cross it. A fixed gap at the viewport
-instead needs a different content arrangement. The straightforward
-standard-container alternative is a pinned prefix above the division
-and a scrolling remainder below. With four columns, tiles 0–3 stay above;
-after the lower pane scrolls a row, their visible neighbours below change
-from 4–7 to 8–11. Stored order and row ownership survive, but the current
-continuous grid and spacing-only behaviour do not.
+**Correction to the initial draft:** the measured full-screen tall
+phrase viewport already begins below the horizontal division: y 502 at
+default, 612 at AX4 and 660 at AX5, against a band ending at 495.5.
+It therefore does not need a gap moving through scrolling content in
+that observed geometry. The earlier owner-blocking conclusion is
+withdrawn; it was based on a generic layout before the system's
+rectangles were read. Growing the existing gaps between ordered rows
+can clear the division while leaving D on the same side it already uses.
 
-**Owner choice before code:** keep the current rule while another
-spacing-only design is investigated; explicitly accept pinned-prefix
-scrolling; or bring whole-row paging forward into this R0 job. Moving all
-of D into one half remains rejected by the current decision. Paging is
-currently R1 work after the first R0 App Review build; this document
-does not move it earlier. Recommendation: retain the current rule until
-one alternative is explicitly chosen and scored. The drawings show
-candidate failures and trade-offs, not a completed Design gate.
+The generic counterexample remains a regression case: if a division
+intersects a scrolling viewport, a gap inside its content moves with the
+scroll and cannot guarantee clearance. First test the existing spacing,
+order and neighbour rules against each measured and resized space. A
+changed scrolling policy or neighbour relationship would still need a
+decision, but none is selected or requested by this correction. Pinned
+panes and paging remain unapproved alternatives, not prerequisites
+established by the tall measurement.
+
+Camera avoidance must also be local to the affected rows or viewport.
+Insetting all of wide Home below the upper camera would disable Type at
+default text: its minimum safety bottom would be 216pt, beyond the
+171pt keyboard band. Instead, investigate the free interval beside the
+camera for A's modes; for the reversed bottom camera, shorten D's fixed
+viewport before considering any other band. On tall windows inspect
+each affected row, including A and C in the reversed rotation, rather
+than assuming the camera occupies a remembered corner. Final floors,
+keyboard availability and chain scores must use the resolved frames.
 
 Figma: [the options page](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=73-3),
 [vertical lanes](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=74-139)
 and [horizontal scrolling counterexamples](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=74-190).
 The [saved render](../evidence/2026-10-25-duo-design/duo-fold-options.png)
-keeps the proposed options visible without Figma access.
+keeps the first proposed options visible without Figma access. Its bands
+were illustrative; the runtime rectangles above supersede its blocking
+conclusion. The [measured panel](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=84-2)
+and [updated render](../evidence/2026-10-25-duo-design/duo-measured-regions.png)
+show the corrected region maps and identify the old scrolling example
+as synthetic. These are observations and unfinished candidates, not a
+completed Design gate or approval for pinned panes or paging.
 
-### Plan after that choice
+### Plan from the measured regions
 
-1. Finish the chosen Spec and drawings for both axes, camera inactive and
-   active, default and AX5, light and dark, browsing/typing/alarm, and the
-   Settings cover. Record exact queried region rectangles in Device Hub;
-   illustrative bands in the drawings are not measurements.
+1. Finish the Spec and drawings from the recorded full-screen and clipped
+   Split View rectangles, both axes and reversed rotations, inactive and
+   active reservations, default and AX5, light and dark,
+   browsing/typing/alarm and the Settings cover. Keep readers and
+   reconstructed windows distinct. These candidate observations do not
+   complete the Design gate.
 2. Write failing pure Swift Testing reproductions before implementation:
    division and camera separately, inactive/active stability, translated
    safe areas, both axes, resized windows and grown libraries at nonzero
    scroll offsets. Removing reservations, querying only active regions,
-   double-offsetting a frame or using a single scrolling row gap must
-   make the corresponding check fail.
+   double-offsetting a frame or using a content gap where a division
+   intersects a scrolling viewport must make its corresponding check
+   fail. A viewport wholly on one side needs no scrolling gap.
 3. Have the pure engine return typed reservation, lane/gap and viewport
    geometry. Recalculate floors, fit/shortfall, keyboard availability,
    Back to Talking and Settings placement from the final frames. Report
