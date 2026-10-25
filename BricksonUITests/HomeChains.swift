@@ -8,8 +8,8 @@ import Foundation
 ///
 /// Typing is a state of Home (docs/DECISIONS.md, "Typing on Home"): the
 /// field takes the message's frame, Speak Again's, Clear and Put Back two
-/// category cells (`HomeLayout.typingCells`), the other categories are
-/// dimmed, and the phrase grid is empty, a place a look can rest on. Type
+/// category cells (`HomeLayout.typingCells`), and the other categories
+/// and the phrase tiles are dimmed in place, so each does nothing. Type
 /// chooses it, and Phrases, Emergency and Settings leave it; Phrases and
 /// Type each do nothing while their own mode is on. The draft is kept
 /// while browsing, so every state has one: empty, written (Speak and Clear
@@ -39,8 +39,6 @@ nonisolated enum HomeChains {
     static let putBack = "putBack"
     /// The typing field, in the message's frame while typing.
     static let field = "messageField"
-    /// The phrase grid while typing: empty, but a look can rest on it.
-    static let emptyGrid = "the empty phrase grid"
     /// Stop's well while the alarm is quiet: empty, and hidden from
     /// accessibility, but a look can rest on it.
     static let emptyWell = "Stop's empty well"
@@ -89,10 +87,14 @@ nonisolated enum HomeChains {
         var settings: CGRect
         /// The everyday categories, in the library's order.
         var categories: [(name: String, frame: CGRect)]
-        /// The phrase tiles of the category showing. Every state but
-        /// typing gets them: a tile that another category would not have is
-        /// one more control that speaks, so it can only add hazards, never
-        /// hide one.
+        /// The phrase tiles of the category showing, in every state: they
+        /// speak while browsing and are dimmed while typing. Browsing, a
+        /// tile that another category would not have is one more control
+        /// that speaks, so it can only add hazards. Typing, it is one more
+        /// place a look rests on that does nothing, so it can hide one: the
+        /// empty cells a shorter category leaves (docs/DECISIONS.md,
+        /// "Typing on Home", *Open: by centre, dimmed phrases border Clear
+        /// and Put Back*).
         var tiles: [CGRect] = []
         /// Phrases and Type, beside the message. Nil where they are not
         /// known; the map then has neither.
@@ -111,8 +113,6 @@ nonisolated enum HomeChains {
         /// order (`HomeLayout.typingCells`).
         var clearCell: Int
         var putBackCell: Int
-        /// The phrase grid's frame: empty while typing.
-        var grid: CGRect
     }
 
     /// Home's frames from controls read off the running app by name
@@ -180,7 +180,7 @@ nonisolated enum HomeChains {
     /// Home's map: every state, each control with what it does there.
     /// `resting` adds places a look can rest on in every state (the
     /// message, read from the running app); Stop's empty well is one in
-    /// every quiet state, and the empty phrase grid in every typing state.
+    /// every quiet state.
     static func map(_ frames: Frames, resting extra: [(name: String, frame: CGRect)] = []) -> ChainMap {
         let names = frames.categories.map(\.name)
         var states: [String: [ChainControl]] = [:]
@@ -224,8 +224,8 @@ nonisolated enum HomeChains {
                     )
                 } else if typing != nil {
                     // Dimmed while typing: choosing one would leave typing
-                    // and fill the empty grid with phrases under a look
-                    // resting there.
+                    // and turn the dimmed tiles under a look resting there
+                    // into phrases that speak.
                     controls.append(ChainControl(category.name, category.frame, .nothing))
                 } else {
                     controls.append(
@@ -254,14 +254,14 @@ nonisolated enum HomeChains {
             }
             if let typing {
                 controls.append(ChainControl(field, typing.field, .nothing))
+                controls += frames.tiles.map { ChainControl(phraseTile, $0, .nothing) }
             } else {
                 controls += frames.tiles.map { ChainControl(phraseTile, $0, .speaks, leadsTo: spoken) }
             }
             let here = name(of: state, categories: names)
             states[here] = controls
             let well = state.sounding ? nil : frames.stop.map { (name: emptyWell, frame: $0) }
-            let grid = typing.map { (name: emptyGrid, frame: $0.grid) }
-            resting[here] = (well.map { [$0] } ?? []) + (grid.map { [$0] } ?? []) + extra
+            resting[here] = (well.map { [$0] } ?? []) + extra
         }
         return ChainMap(states: states, resting: resting)
     }

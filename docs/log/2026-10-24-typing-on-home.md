@@ -25,8 +25,8 @@ What a person sees:
 - **Typing.** Type opens Apple's keyboard with the message being typed in
   the message's place. Speak, in Again's place, or Return says the whole
   message and keeps it. Clear empties it and Put Back brings it back once,
-  each in a category's cell; the other categories are dimmed and the
-  phrase grid is empty while typing. Phrases leaves typing and keeps the
+  each in a category's cell; the other categories and the phrase tiles
+  are dimmed in place while typing. Phrases leaves typing and keeps the
   message; Emergency leaves it for the emergency phrases; Settings leaves
   it before it opens. Nothing moves when the keyboard shows.
 - **No typing where the keyboard would cover the call for help.** Type is
@@ -35,8 +35,8 @@ What a person sees:
   On 320-point windows, a 375×667 phone from AX3, and the iPad mini and
   a zoomed 13-inch iPad in landscape from AX3, Type is dimmed, with a
   VoiceOver hint saying why; if the room goes while typing, the keyboard
-  is put away and the field is dimmed, and typing stays on, so the grid
-  stays empty.
+  is put away and the field is dimmed, and typing stays on, so the
+  phrases stay dimmed.
 - **The message is kept.** The app keeps one `DraftStore`, so the message
   survives a relaunch until it is cleared, and a failed save or restore
   shows "Message not saved" or "Message not restored" on the status line,
@@ -68,6 +68,17 @@ What was settled along the way, each recorded in "Typing on Home":
   the field put the words back without a reason, though
   `MessageComposer` reports the refusal; Greptile's review found it, and
   `DraftStore` now sets `DraftIssue.reachedLimit`.
+- **The phrases are dimmed while typing, not taken away.** The first push
+  left the phrase grid empty while typing and recorded for the owner that
+  a look resting on its top edge could meet Clear or Put Back, which
+  border it on every arrangement. Codex's review held that against
+  invariant 10. The tiles now stay in place, disabled like the other
+  categories, so the look rests on a tile that does nothing. Scored again
+  with looks resting all along the top row's tiles: by nearest edge no
+  typing chain meets Clear, Put Back or anything else harmful; by nearest
+  centre, a look near the top of a tile is still nearer the centre of the
+  shorter cell above, so the finding is narrower, not gone, and stays
+  open for the owner, pinned strict.
 
 - **Where Clear and Put Back go**, by scoring every pair of category cells
   in every typing state: never under or beside Stop's well.
@@ -92,9 +103,10 @@ their tests; Home's typing state, the app's message and the names,
 regions and status line with their tests; Settings' bar over Phrases with
 its tests; the UI tests; and this record with the String Catalog and the
 documents. Then, after the reviews: Type offered only where the safety
-row clears the keyboard, with its test, hint and records (Codex); and
+row clears the keyboard, with its test, hint and records (Codex);
 "Message full" for a change refused at the length limit, with its tests
-(Greptile).
+(Greptile); and the phrase tiles dimmed in place while typing, with the
+chain maps and tests that score them (Codex).
 
 ## Verified
 
@@ -103,12 +115,17 @@ row clears the keyboard, with its test, hint and records (Codex); and
   layout engine, `KeyboardAllowance`, the chain engine, `HomeChains` and
   `SettingsChains` with `HomeLayoutEngineTests`, `KeyboardAllowanceTests`,
   `ChainEngineTests`, `HomeChainsTests`, `HomeChainsTypingTests` and
-  `SettingsChainsTests`: 85 tests passed, with only the strict known
-  issues the decisions name. `ControlNamesTests`, `HomeRegionTests` and
+  `SettingsChainsTests`: 86 tests passed after the reviews, with only the
+  strict known issues the decisions name. `ControlNamesTests`, `HomeRegionTests` and
   `SettingsRootColumnsTests` also passed there (17 tests), with a
   harness-only stand-in for `String(localized:)`, which Linux Foundation
   lacks, and so did `DraftStoreTests` and `MessageComposerTests` (70
   tests), with stand-ins for OSLog and the Application Support folder.
+- **CI on `e682dc2`** (the second push): the unit tests passed on the
+  iPad Pro 13-inch (M5) simulator, iOS 27.0, Xcode 27.1: 725 ran, 717
+  passed, 0 failed, 1 skipped (issue #19's disabled reproduction), 7
+  expected failures, with the String Catalog up to date. The last push's
+  run is the check for the dimmed tiles.
 - **What each new test fails on** (each was run against the change that
   should fail it, or the old code):
   - `backToTalkingClosesOntoPhrasesAlone`: Back to Talking as wide as
@@ -122,8 +139,10 @@ row clears the keyboard, with its test, hint and records (Codex); and
     before the safety row, or kept growth under the keyboard's room.
   - `clearAndPutBackStayOffStopsNeighbours`: Clear or Put Back under or
     beside Stop's well.
-  - `typingChainsMeetOnlyTheEmptyGridsClearAndPutBack`: any other hazard
-    while typing, and, strictly, the grid's finding gone.
+  - `typingChainsMeetOnlyClearAndPutBackByCentreFromTheDimmedPhrases`:
+    the phrase grid empty while typing, as the first push had it (Clear
+    or Put Back met by edge), and the tiles speaking while typing; and,
+    strictly, the centre's finding gone.
   - `typeIsOfferedOnlyWhereTheSafetyRowClearsTheKeyboard`: Type offered
     on every window, as the first push did (it fails on the zoomed
     13-inch iPad in landscape at AX5, Codex's case).
@@ -192,8 +211,8 @@ row clears the keyboard, with its test, hint and records (Codex); and
    Setup's first rows for it, and then the held guide link again.
    *(the next Settings thread)*
 4. **The owner's questions before R1**, each measured in "Typing on
-   Home": the empty phrase grid beside Clear and Put Back; whether to
-   offer typing, with the covered controls two activations away, where
+   Home": by nearest centre, the top of a dimmed phrase nearest Clear or
+   Put Back; whether to offer typing, with the covered controls two activations away, where
    Type is dimmed today; Yes and No beside the message. *(the owner)*
 5. **Fewer tiles to a screen**, from the Figma direction, with R1's
    profiles. *(R1, Wave 3 item 8)*

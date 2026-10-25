@@ -5,7 +5,7 @@ import XCTest
 /// Type opens Apple's keyboard with the cursor in the message's place and
 /// nothing moved; Speak, in Again's place, and Return say the message and
 /// keep it; Clear empties it and Put Back brings it back; while typing the
-/// other categories are dimmed and the phrase grid is empty; Phrases,
+/// other categories and the phrase tiles are dimmed in place; Phrases,
 /// Emergency and Settings leave typing and the message is kept; and it
 /// survives a relaunch.
 ///
@@ -25,18 +25,21 @@ final class TypingOnHomeTests: XCTestCase {
     }
 
     /// Fails if choosing Type moves anything, if Speak, Clear and Put Back
-    /// do not take Again's and two categories' frames, if a phrase shows
-    /// or another category can be chosen while typing, or if the field,
+    /// do not take Again's and two categories' frames, if a phrase moves,
+    /// goes or can be chosen while typing, or another category can be
+    /// chosen, or if the field,
     /// Speak, Yes, No, Emergency, Get Attention, Phrases or Type ends below
     /// the keyboard's top.
     @MainActor
     func testTypeOpensTheKeyboardAndMovesNothing() throws {
         let app = launchedApp()
         let context = Self.context(app)
-        let before = Dictionary(try screenControls(in: app).map { ($0.name, $0.frame) }, uniquingKeysWith: { first, _ in first })
+        let controlsBefore = try screenControls(in: app)
+        let before = Dictionary(controlsBefore.map { ($0.name, $0.frame) }, uniquingKeysWith: { first, _ in first })
 
         let keyboard = startTyping(in: app, context: context)
-        let typing = Dictionary(try screenControls(in: app).map { ($0.name, $0.frame) }, uniquingKeysWith: { first, _ in first })
+        let controlsTyping = try screenControls(in: app)
+        let typing = Dictionary(controlsTyping.map { ($0.name, $0.frame) }, uniquingKeysWith: { first, _ in first })
         attachCapture(app, name: "typing-\(context)")
 
         for name in Self.fixed {
@@ -71,7 +74,21 @@ final class TypingOnHomeTests: XCTestCase {
             Self.expectSameFrame(category.frame, cells[index], name, context)
         }
 
-        XCTAssertEqual(app.buttons.matching(identifier: HomeChains.phraseTile).count, 0, "phrases show while typing (\(context))")
+        // The phrase tiles stay where they were, dimmed, so no empty space
+        // beside Clear and Put Back is left for a look to rest on
+        // (docs/DECISIONS.md, "Typing on Home").
+        func tiles(_ controls: [ScreenControl]) -> [CGRect] {
+            controls.filter { $0.name == HomeChains.phraseTile }.map(\.frame).sorted { ($0.minY, $0.minX) < ($1.minY, $1.minX) }
+        }
+        let tilesBefore = tiles(controlsBefore)
+        let tilesTyping = tiles(controlsTyping)
+        XCTAssertFalse(tilesBefore.isEmpty, "no phrases before typing (\(context))")
+        XCTAssertEqual(tilesTyping.count, tilesBefore.count, "phrases came or went while typing (\(context))")
+        for (frame, original) in zip(tilesTyping, tilesBefore) {
+            Self.expectSameFrame(frame, original, "a phrase", context)
+        }
+        let choosable = app.buttons.matching(identifier: HomeChains.phraseTile).matching(NSPredicate(format: "isEnabled == true"))
+        XCTAssertEqual(choosable.count, 0, "a phrase can be chosen while typing (\(context))")
         XCTAssertFalse(app.buttons["Speak"].isEnabled, "Speak is on with nothing typed (\(context))")
         XCTAssertFalse(app.buttons["clear"].isEnabled, "Clear is on with nothing typed (\(context))")
         XCTAssertFalse(app.buttons["putBack"].isEnabled, "Put Back is on with nothing cleared (\(context))")
@@ -162,7 +179,7 @@ final class TypingOnHomeTests: XCTestCase {
         let emergency = app.buttons["Emergency"]
         emergency.tap()
         Self.waitUntil(emergency, "isSelected == true", "Emergency did not show its phrases from typing (\(context))")
-        XCTAssertTrue(app.buttons[HomeChains.phraseTile].firstMatch.waitForExistence(timeout: 10), "no phrases after Emergency (\(context))")
+        Self.waitUntil(app.buttons[HomeChains.phraseTile].firstMatch, "isEnabled == true", "the phrases are still dimmed after Emergency (\(context))")
         XCTAssertFalse(Self.field(in: app).exists, "the field is still showing after Emergency (\(context))")
         startTyping(in: app, context: context)
         Self.waitForField(Self.field(in: app), toHold: "Hello", "Emergency did not keep the message (\(context))")
@@ -178,7 +195,7 @@ final class TypingOnHomeTests: XCTestCase {
         startTyping(in: app, context: context)
         Self.waitForField(Self.field(in: app), toHold: "Hello", "Settings did not keep the message (\(context))")
         showPhrases(in: app, context: context)
-        XCTAssertTrue(app.buttons[HomeChains.phraseTile].firstMatch.exists, "no phrases after Phrases (\(context))")
+        Self.waitUntil(app.buttons[HomeChains.phraseTile].firstMatch, "isEnabled == true", "the phrases are still dimmed after Phrases (\(context))")
     }
 
     /// Fails if the message is lost when the app closes, or if restoring it

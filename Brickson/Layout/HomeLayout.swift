@@ -782,7 +782,7 @@ nonisolated struct HomeLayout: Equatable, Sendable {
     /// never the cell under Stop's well, which a look held after Stop
     /// meets, nor the one beside it, which a look resting in the empty well
     /// meets; on three columns, Clear in the top row, away from the
-    /// keyboard and the empty phrase grid, and Put Back in the bottom row,
+    /// keyboard and the dimmed phrase grid, and Put Back in the bottom row,
     /// beside Settings. Each shows only while typing: browsing, the cell
     /// shows its category, as it always has.
     struct TypingCells: Equatable, Sendable {

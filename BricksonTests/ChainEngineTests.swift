@@ -375,7 +375,7 @@ struct HomeChainsTypingTests {
         tiles: [CGRect(x: 0, y: 300, width: 88, height: 60)],
         phrases: CGRect(x: 96, y: 0, width: 88, height: 40),
         type: CGRect(x: 96, y: 48, width: 88, height: 40),
-        typing: HomeChains.Typing(field: CGRect(x: 0, y: 0, width: 88, height: 88), clearCell: 1, putBackCell: 3, grid: CGRect(x: 0, y: 300, width: 184, height: 200))
+        typing: HomeChains.Typing(field: CGRect(x: 0, y: 0, width: 88, height: 88), clearCell: 1, putBackCell: 3)
     )
 
     private static func controls(_ state: HomeChains.State) -> [String: ChainControl] {
@@ -427,14 +427,13 @@ struct HomeChainsTypingTests {
     }
 
     /// Fails if a category does anything while typing (dimmed: choosing one
-    /// would fill the empty grid with phrases under a look resting there),
-    /// if Emergency stops leaving typing for the emergency phrases, or if a
-    /// phrase tile shows while typing.
+    /// would turn the dimmed tiles under a look resting there into phrases
+    /// that speak), or if Emergency stops leaving typing for the emergency
+    /// phrases.
     @Test func whileTypingTheCategoriesAreDimmedAndEmergencyLeaves() {
         let typing = Self.controls(Self.typing(.written))
         #expect(typing["Basics"]?.effect == .nothing && typing["Feelings"]?.effect == .nothing)
         #expect(typing["Needs"] == nil && typing["Conversation"] == nil)
-        #expect(typing[HomeChains.phraseTile] == nil)
         var leaving = Self.typing(.written)
         leaving.typing = false
         leaving.showing = nil
@@ -461,15 +460,25 @@ struct HomeChainsTypingTests {
         #expect(browse["Needs"]?.effect == .navigates && browse[HomeChains.phraseTile]?.effect == .speaks)
     }
 
-    /// Fails if the empty phrase grid stops being a place a look rests on
-    /// while typing, or becomes one while the phrases show.
-    @Test func theEmptyGridIsARestingPlaceOnlyWhileTyping() {
+    /// Fails if a phrase tile goes while typing, leaving empty space a look
+    /// rests on beside Clear and Put Back, or does anything while typing
+    /// (docs/DECISIONS.md, "Typing on Home"); or if a tile stops
+    /// speaking while the phrases show. Only Stop's well is a resting place
+    /// either way.
+    @Test func whileTypingThePhraseTilesStayDimmedInPlace() {
         let map = HomeChains.map(Self.frames)
         let typing = HomeChains.name(of: Self.typing(), categories: Self.names)
         var browsing = Self.typing()
         browsing.typing = false
         let browse = HomeChains.name(of: browsing, categories: Self.names)
-        #expect(map.resting[typing]?.map(\.name) == [HomeChains.emptyWell, HomeChains.emptyGrid])
+        func tiles(_ state: String) -> [ChainControl] {
+            (map.states[state] ?? []).filter { $0.name == HomeChains.phraseTile }
+        }
+        #expect(tiles(typing).map(\.frame) == Self.frames.tiles)
+        #expect(tiles(typing).allSatisfy { $0.effect == .nothing })
+        #expect(tiles(browse).map(\.frame) == Self.frames.tiles)
+        #expect(tiles(browse).allSatisfy { $0.effect == .speaks })
+        #expect(map.resting[typing]?.map(\.name) == [HomeChains.emptyWell])
         #expect(map.resting[browse]?.map(\.name) == [HomeChains.emptyWell])
         // Browsing with an empty draft keeps the name it had before typing.
         #expect(browse == "Home, nothing spoken, Basics showing, quiet")

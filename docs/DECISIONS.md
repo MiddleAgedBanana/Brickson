@@ -2546,13 +2546,25 @@ plan's places (*Home's slot plan*).
   band: the third's and the fourth's. "Put Back", not "Undo", which Voice
   Control uses for its own command.
 - **The other categories are dimmed** while typing: disabled in their own
-  cells, none shown selected. Choosing one would leave typing and fill
-  the empty phrase grid with phrases under a look resting there, so the
-  next activation would speak unasked. A category is two activations away
-  while typing (Phrases, then the category); Emergency stays one.
-- **The phrase grid is empty while typing**, its frame kept: nothing that
-  speaks sits under the keyboard, and lowering the keyboard reveals
-  nothing that speaks.
+  cells, none shown selected. Choosing one would leave typing and turn
+  the dimmed phrases under a look resting there into phrases that speak,
+  so the next activation would speak unasked. A category is two
+  activations away while typing (Phrases, then the category); Emergency
+  stays one.
+- **The phrase tiles are dimmed while typing**, in their places:
+  disabled, as the other categories are, so nothing that speaks sits
+  under the keyboard, lowering the keyboard reveals nothing that speaks,
+  and a look resting on the grid rests on a tile that does nothing. The
+  first push left the grid empty instead; Codex's review of PR #53
+  found that a look resting on the empty grid's top edge, with Snap to
+  Item, met Clear or Put Back, which border the grid on every
+  arrangement, and the dimmed tiles leave no empty space there: by
+  edge, nothing is left; by centre, the top of a tile is still nearer
+  the cell above (*Open: by centre, dimmed phrases border Clear and Put Back*). A phrase is two activations away while typing (Phrases,
+  then the phrase), as a category is; Emergency and its phrases stay
+  one. Reversible. The cost: VoiceOver, and
+  Switch Control if it scans dimmed controls, now pass the tiles while
+  typing, as they pass the dimmed categories.
 - **Leaving typing.** Phrases leaves it and keeps the message for the next
   Type; Emergency leaves it for the emergency phrases (invariant 2);
   Settings leaves it before it opens, so Settings always closes onto the
@@ -2678,8 +2690,9 @@ plan's places (*Home's slot plan*).
   dwell, switch and pointer input*, "Typing never hides the call for
   help"; invariants 2 and 10). Where the room goes while typing (the
   window turns or shrinks, or the text grows), the keyboard is put away
-  and the field is dimmed too; typing stays on, so the phrase grid stays
-  empty under a look that rested on the keys, and Phrases leaves typing
+  and the field is dimmed too; typing stays on, so the phrases stay
+  dimmed, nothing that speaks, under a look that rested on the keys, and
+  Phrases leaves typing
   as before. The cost: no typing on Home on those windows at those
   sizes. A first draft of this pull request offered Type there anyway,
   with each covered control two activations away through Phrases;
@@ -2690,20 +2703,36 @@ plan's places (*Home's slot plan*).
   owner's Mac) may give room back. Offering typing there with the
   covered controls two activations away would be an exception for the
   owner to accept; none is accepted here.
-- **Open: the empty phrase grid borders Clear and Put Back.** Scored on
-  the engine's frames with the grid's top edge sampled every 4 points
-  (`HomeLayoutEngineTests.typingChainsMeetOnlyTheEmptyGridsClearAndPutBack`):
-  every cell of the band, and the second row of three columns, borders
-  the empty grid, so a look resting on its top edge can meet Clear or
-  Put Back. No pair of cells removes it. Neither loses words (Put Back
-  only refills an empty message with the words just cleared, and Clear
-  can be undone once by Put Back), but each changes the message unasked:
-  an open hazard under invariant 10, for the owner before a dwell,
+- **Open: by centre, dimmed phrases border Clear and Put Back.** Every
+  cell of the band, and the second row of three columns, borders the
+  phrase grid. With the grid empty while typing, as the
+  first push had it, a look resting on its top edge met Clear or Put Back
+  by either rule, and no pair of cells removed it (Codex, PR #53). With
+  the tiles dimmed in place, scored on the engine's frames in every
+  typing state with a look also resting across each tile of the grid's
+  top row and every 4 points half a point under its top edge
+  (`HomeLayoutEngineTests.typingChainsMeetOnlyClearAndPutBackByCentreFromTheDimmedPhrases`):
+  by edge, the tile under the look is nearest, and nothing harmful is
+  met. By centre, a look in the top band of a top-row tile, or in the
+  gap between two, is nearer the centre of the shorter cell above than
+  its own tile's, so it can meet Put Back on phones and Clear or Put Back
+  on the band, on every window scored except most compact ones at AX5
+  on a phone's height (found there only at 352 and 384 points). The band is
+  deep: up to about 40% of a tile's height on regular widths, and about
+  a fifth on phones. Neither loses words (Put Back only brings back
+  what Clear took, and Clear can be undone once by Put Back), but each
+  changes the message unasked: open, for the owner before a dwell,
   switch, head or gaze profile ships, pinned as a strict known issue so
-  it fails when it goes. While typing, the top of Stop's well is nearest
-  Speak where it was nearest Again (*Get Attention and Stop on Home*,
-  *Open: the top of Stop's well is nearest Again*); the same test allows
-  only that and the grid's finding.
+  it fails when it goes. Which rule Snap to Item follows over a dimmed
+  control is a device check. The model fills the grid with the largest
+  category's tiles: where a library a family grew shows a category with
+  fewer phrases than the grid has columns, or none, the top row's empty
+  cells are the empty grid again, by either rule. Every starter category
+  has at least six phrases, and the grid at most four columns. While
+  typing, the top of Stop's well is
+  nearest Speak where it was nearest Again (*Get Attention and Stop on
+  Home*, *Open: the top of Stop's well is nearest Again*); the same test
+  allows only that and the centre's finding.
 - **Fewer tiles to a screen, for R1** (drawn, not built; the work file's
   *Fewer tiles to a screen*). Where the starter library's largest
   category does not fit at the floors, a dwell, switch, head or gaze

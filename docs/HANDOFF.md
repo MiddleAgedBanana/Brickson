@@ -31,8 +31,8 @@ and a longer message scrolls inside them. Type opens Apple's keyboard
 with the message being typed in the message's place: Speak, in Again's
 place, or Return says the whole message and keeps it; Phrases goes back
 to the phrases and keeps it too; Clear and Put Back take two category
-cells while the other categories are dimmed and the phrase grid is
-empty; Emergency leaves typing for the emergency phrases; nothing moves
+cells while the other categories and the phrase tiles are dimmed in
+place; Emergency leaves typing for the emergency phrases; nothing moves
 when the keyboard shows. The message is kept on the device across
 launches until it is cleared (docs/DECISIONS.md, "Typing on Home"). No label breaks a
 word: each drops its icon first, then shrinks only as far as it must,
@@ -300,21 +300,25 @@ release in docs/ROADMAP.md when no thread has it yet.
   named exception to invariant 10, or ask for another placement
   (docs/DECISIONS.md, "The layout engine", *Home on the engine*; "Typing
   on Home" left it as it was). *(the owner, before R1's profiles)*
-- While typing, a look resting on the top edge of the empty phrase grid
-  can meet Clear or Put Back, which change the message unasked (neither
-  loses words: Put Back only brings back what Clear took, and Clear can
-  be undone once). Every cell of the band, and the second row of three
-  columns, borders the grid, so no pair of cells removes it; open, not
-  accepted, pinned strict in `HomeLayoutEngineTests` (docs/DECISIONS.md,
-  "Typing on Home", *Open: the empty phrase grid borders Clear and Put
-  Back*). *(owner, before R1's profiles)*
+- While typing, by nearest centre, a look resting in the top band of a
+  dimmed phrase tile in the grid's top row (up to about 40% of its
+  height on iPads, a fifth on phones), or between two of them, is nearer
+  Clear's or Put Back's centre than its own tile's, so it can meet one of
+  them, which change the message unasked
+  (neither loses words: Put Back only brings back what Clear took, and
+  Clear can be undone once). By nearest edge nothing is met: the empty
+  grid's finding by both rules went when the tiles stayed in place,
+  dimmed, except over the empty cells of a grown library's category with
+  fewer phrases than the grid has columns: when editing or import ships,
+  score typing with the shown category's own tiles. Open, not accepted, pinned strict in `HomeLayoutEngineTests`
+  (docs/DECISIONS.md, "Typing on Home", *Open: by centre, dimmed phrases border Clear and Put Back*). *(owner, before R1's profiles)*
 - No typing on Home where the keyboard's room reaches the safety row:
   320pt windows at every size, a 375×667 phone from AX3, and the iPad
   mini and a zoomed 13-inch iPad in landscape from AX3. There Type is
   dimmed, with a VoiceOver hint saying why, so the keyboard never covers
   Emergency, Yes, No, Speak or Get Attention; if the room goes while
-  typing, the keyboard is put away and typing stays on with the grid
-  empty (`HomeLayout.offersTyping`; docs/DECISIONS.md, "Typing on Home",
+  typing, the keyboard is put away and typing stays on with the phrases
+  dimmed (`HomeLayout.offersTyping`; docs/DECISIONS.md, "Typing on Home",
   *The keyboard's room, measured*). The keyboards on these windows are
   not measured (the room is the tallest keyboard measured on their
   shape), so measuring them may give typing back; offering it with the
@@ -632,7 +636,7 @@ Simulators cannot show these. Record each result in a `docs/log/` file
 | Whether a lingering look re-fires a dwell | How much repeat protection matters |
 | Whether Snap to Item ignores controls scrolled off screen | Whether scrolling can keep family controls out of reach, and whether the chain engine may keep scoring only the controls in the window |
 | What the real software keyboard covers in each orientation (CI measures the simulator's on every UI run; a device, other languages and windowed iPads are not measured), that a third-party keyboard never appears in Brickson, and typing checks 1–8 in [`log/2026-10-21-typing-foundation.md`](log/2026-10-21-typing-foundation.md) | `KeyboardAllowance`'s references, the typing layout (docs/LESSONS.md, "Test with the real software keyboard"), the word row, Return under dwell, and whether Brickson needs its own keyboard |
-| Typing on Home by touch, Switch Control, Voice Control ("Tap Type"), Full Keyboard Access and Dwell with Snap to Item: Type brings the cursor and Apple's keyboard at once; Speak and Return say the message; Clear, then Put Back; Phrases puts the keyboard away and keeps the message; a look slipping off the keyboard's top row meets nothing that speaks or changes the message; and, on an iPhone SE with Display Zoom and at AX3 without it, where Type is dimmed, whether the real keyboard would cover Speak or Get Attention | docs/DECISIONS.md, "Typing on Home" (*The keyboard's room, measured*; *Open: the empty phrase grid borders Clear and Put Back*) and "Return speaks" |
+| Typing on Home by touch, Switch Control, Voice Control ("Tap Type"), Full Keyboard Access and Dwell with Snap to Item: Type brings the cursor and Apple's keyboard at once; Speak and Return say the message; Clear, then Put Back; Phrases puts the keyboard away and keeps the message; a look slipping off the keyboard's top row meets nothing that speaks or changes the message; Snap to Item stops on the dimmed phrase tiles and categories while typing; and, on an iPhone SE with Display Zoom and at AX3 without it, where Type is dimmed, whether the real keyboard would cover Speak or Get Attention | docs/DECISIONS.md, "Typing on Home" (*The keyboard's room, measured*; *Open: by centre, dimmed phrases border Clear and Put Back*) and "Return speaks" |
 | Get Attention heard from the next room, on the speaker and over Bluetooth | The alarm's sound and level, and the replacement tone |
 | A phrase spoken while Get Attention sounds is understood over the tone at 0.32 | `AttentionAlertStatus.toneVolumeWhileSpeaking` |
 | A phone call, Siri and another app's alarm during a phrase and during Get Attention: each stops and shows "Stopped — Again" or "Alert stopped", and nothing restarts by itself, on iOS 26 and iOS 27 | Interruption handling and the iOS 27 notices (docs/DECISIONS.md, "Audio session notices") |

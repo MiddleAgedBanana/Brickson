@@ -144,13 +144,16 @@ keyboard's room, measured*).
   back what Clear took, once. Each is disabled while it cannot act.
 - **The other categories are dimmed** while typing (disabled, in their
   own cells, none shown selected). Scoring found that choosing one would
-  leave typing and fill the empty grid with phrases right under a look
-  resting there, so the next activation would speak unasked. Phrases,
+  leave typing and turn the grid under a look resting there into phrases
+  that speak, so the next activation would speak unasked. Phrases,
   then the category, is two activations instead of one; Emergency stays
   one.
-- **The phrase grid is empty** while typing, so nothing that speaks sits
-  under the keyboard and lowering the keyboard reveals nothing that
-  speaks (*Typing is a state of Home*). Its frame stays.
+- **The phrase tiles are dimmed** while typing, in their places, so
+  nothing that speaks sits under the keyboard, lowering the keyboard
+  reveals nothing that speaks, and a look resting on the grid rests on a
+  tile that does nothing. The first push left the grid empty; Codex's
+  review of PR #53 found a look resting on its top edge met Clear or Put
+  Back, which border it (*Where Clear and Put Back go*).
 - **Phrases** leaves typing: the keyboard goes, the phrases come back and
   the message shows the last thing spoken again; the draft is kept for
   the next Type. **Emergency** leaves typing for the emergency phrases
@@ -177,8 +180,8 @@ keyboard's room, measured*).
 
 Scored with the chain engine on the engine's frames, every pair of
 category cells, every typing state (draft empty, written or cleared), by
-both rules and both pointers, the empty phrase grid sampled densely along
-its top edge as a place a look rests on:
+both rules and both pointers, with a look resting densely along the
+grid's top edge (first on the empty grid, then on the dimmed tiles):
 
 - **Compact, three columns** (phones): Clear in the second category's
   cell (top row, trailing), Put Back in the fourth's (second row,
@@ -186,14 +189,14 @@ its top edge as a place a look rests on:
   look still resting where Stop was meets a category.
 - **Regular, the band, and two columns:** Clear in the third category's
   cell and Put Back in the fourth's.
-- **What is left, measured:** every cell of the band, and the second row
-  of three columns, borders the empty phrase grid, so a look resting on
-  the grid's top edge can meet Put Back or Clear. No pair of cells removes
-  it. Put Back can only refill an empty draft with the words just cleared,
-  and Clear can be undone once by Put Back, so neither loses words, but
-  each changes data unasked: it is an open, measured hazard for the owner
-  (docs/DECISIONS.md, "Typing on Home"), pinned as a strict known issue so
-  it fails when it goes.
+- **The grid's edge, measured:** every cell of the band, and the second
+  row of three columns, borders the phrase grid. With the grid empty, a
+  look resting on its top edge met Put Back or Clear, and no pair of
+  cells removed it; neither loses words, but each changes the message
+  unasked. With the tiles dimmed in place, the same looks rest on tiles
+  that do nothing: by edge no chain meets Clear or Put Back; by centre,
+  the top of a tile is still nearer the shorter cell above
+  (docs/DECISIONS.md, "Typing on Home", *Open: by centre, dimmed phrases border Clear and Put Back*).
 
 ### Settings over Home
 
@@ -285,13 +288,16 @@ Linux harness, and nothing else; GitHub CI is the build for the rest.
    Each new test is run against the old engine first and fails there.
 2. **The chain maps** (`HomeChains`): typing states, the draft's three
    states, Phrases and Type, Speak, Clear and Put Back, the empty grid as
-   a resting place. `HomeChainsTests` pins what each control does;
-   `HomeLayoutEngineTests` scores typing on the engine's frames, with the
-   grid's top edge sampled densely, and pins the known Clear and Put Back
-   finding as a strict known issue.
+   a resting place (after review, the dimmed tiles instead).
+   `HomeChainsTests` pins what each control does; `HomeLayoutEngineTests`
+   scores typing on the engine's frames, with the grid's top edge sampled
+   densely (the empty grid's finding first pinned as a strict known
+   issue; with the dimmed tiles only its by-centre part is left, pinned
+   the same way).
 3. **Home** (`HomeView`): Home lays out with `.phrasesAndTyping`; A gains
    Phrases and Type; the regular safety row becomes one row; the field,
-   Speak, Clear and Put Back; the empty grid while typing; the draft's
+   Speak, Clear and Put Back; the empty grid while typing (after review,
+   dimmed tiles); the draft's
    problems on the status line; `HomeControlNames` and `HomeRegion` for
    the new controls, with their collision tests. `BricksonApp` keeps the
    draft (`DraftStore`, test storage under UI tests).

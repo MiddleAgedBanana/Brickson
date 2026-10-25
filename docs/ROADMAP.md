@@ -360,9 +360,10 @@ Back to Talking sits over Phrases, so choosing it closes onto Phrases;
 the privacy policy covers typed and dictated words. The held guide
 link stays held: rescored, its guide still closes Settings over Get
 Attention. Where the keyboard's room reaches the safety row, Type is
-dimmed, so the keyboard never covers a call for help. Measured and left
-for the owner: the empty phrase grid beside Clear and Put Back, and the
-375×667 phone's half point of scroll.
+dimmed, so the keyboard never covers a call for help. While typing the
+phrases stay in place, dimmed. Measured and left for the owner: by
+nearest centre, the top of a dimmed phrase is still nearest Clear or Put
+Back, and the 375×667 phone's half point of scroll.
 Fewer tiles to a screen is drawn as R1's direction, not built. Yes and
 No beside the message stays the owner's question before R1.
 

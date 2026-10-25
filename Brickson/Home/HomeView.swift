@@ -31,7 +31,7 @@ import SwiftUI
 /// (`HomeLayout.offersTyping`), puts the field in the message's place and
 /// opens Apple's keyboard, Speak takes Again's place, Clear and Put Back
 /// take two categories' places (`HomeLayout.typingCells`), the other
-/// categories are dimmed, and the phrase grid is empty, so nothing that
+/// categories and the phrase tiles are dimmed in place, so nothing that
 /// speaks sits under the keyboard.
 /// Nothing moves. Everything a person needs while typing is above the room
 /// the keyboard takes (`KeyboardAllowance`; docs/LESSONS.md, "Lay out
@@ -207,8 +207,8 @@ extension HomeLayout.Space {
 /// hides the call for help. Elsewhere it stays in its place, dimmed, and
 /// tells VoiceOver why; where the room goes while typing (the window
 /// turns or shrinks, or the text grows), the keyboard is put away and the
-/// field is dimmed too, so nothing reveals phrases under a resting look and
-/// Phrases still leaves typing (docs/DECISIONS.md, "Typing on Home", *The
+/// field is dimmed too, so nothing that speaks is revealed under a resting
+/// look and Phrases still leaves typing (docs/DECISIONS.md, "Typing on Home", *The
 /// keyboard's room, measured*).
 private struct MessageRegion: View {
     let layout: HomeLayout
@@ -866,9 +866,9 @@ private struct CategoriesAndSettings: View {
     /// reached straight after Stop, wherever it stands (`HomeRegion`).
     /// While typing, two cells show Clear and Put Back instead
     /// (`HomeLayout.typingCells`), and the others' categories are dimmed:
-    /// choosing one would leave typing and fill the empty phrase grid with
-    /// phrases under a look resting there (docs/DECISIONS.md, "Typing on
-    /// Home").
+    /// choosing one would leave typing and turn the dimmed phrases under a
+    /// look resting there into phrases that speak (docs/DECISIONS.md,
+    /// "Typing on Home").
     @ViewBuilder
     private func cell(_ index: Int) -> some View {
         Group {
@@ -1005,7 +1005,7 @@ private struct CategoryCell: View {
 
 // MARK: - Phrases
 
-/// The selected category's phrases in a fixed grid, empty while typing.
+/// The selected category's phrases in a fixed grid, dimmed while typing.
 /// Position never depends on use (invariant 8): the order is the stored order, the columns come
 /// from the width, and the rows from the largest category, so a tile keeps
 /// its place whichever category is showing. Tiles share the height the
@@ -1016,9 +1016,13 @@ private struct PhraseGrid: View {
     @Environment(SpeechService.self) private var speech
     @Environment(\.phraseLibraryIssue) private var phraseLibraryIssue
     let category: PhraseCategory?
-    /// While typing the grid is empty, so nothing that speaks sits under
-    /// the keyboard, and lowering the keyboard reveals nothing that speaks
-    /// (docs/DECISIONS.md, "Typing is a state of Home").
+    /// While typing the tiles stay in place, dimmed, as the categories are:
+    /// nothing that speaks sits under the keyboard, and lowering it reveals
+    /// nothing that speaks. By nearest edge, a look resting on the grid
+    /// rests on a tile that does nothing, not in empty space nearest Clear
+    /// or Put Back; by nearest centre, the top of the top row is still
+    /// nearer them (docs/DECISIONS.md, "Typing on Home", *Open: by centre,
+    /// dimmed phrases border Clear and Put Back*).
     let isTyping: Bool
     /// The engine's grid: its columns and its tiles' floor.
     let layout: HomeLayout.Grid
@@ -1034,10 +1038,7 @@ private struct PhraseGrid: View {
                 tileFloor: layout.tileFloor,
                 spacing: HomeLayout.controlSpacing
             )
-            if isTyping {
-                Color.clear
-                    .accessibilityHidden(true)
-            } else if let category {
+            if let category {
                 let phrases = category.phrasesInOrder
                 let grid = FixedColumns(phrases, columns: sizing.columns) { phrase in
                     Button {
@@ -1061,6 +1062,7 @@ private struct PhraseGrid: View {
                 ScrollView { grid }
                     .scrollDisabled(!(sizing.scrolls || phrases.count > sizing.rows * sizing.columns))
                     .scrollBounceBehavior(.basedOnSize)
+                    .disabled(isTyping)
             } else if phraseLibraryIssue == nil {
                 Text("No phrases yet.")
                     .font(.title2)

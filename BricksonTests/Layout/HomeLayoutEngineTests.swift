@@ -939,9 +939,8 @@ struct HomeLayoutEngineTests {
     /// (`HomeChains`), with Phrases and Type where the layout has them.
     /// Without `typing`, Type leads to typing, which the map does not have,
     /// so a chain stops there. With it, the map has typing too, and every
-    /// state but typing has the largest category's tiles, as many as show
-    /// without scrolling: a look resting on the empty grid while typing
-    /// must not meet a control that fills the grid with phrases under it.
+    /// state has the largest category's tiles, as many as show without
+    /// scrolling: speaking while browsing, dimmed while typing.
     static func chainMap(_ layout: HomeLayout, typing: Bool = false) -> ChainMap {
         let categories = (0..<HomeLayout.categoryCapacity).map { (name: "category \($0 + 1)", frame: layout.frame(.category($0))) }
         let hasModes = layout.modes == .phrasesAndTyping
@@ -959,8 +958,7 @@ struct HomeLayoutEngineTests {
             categories: categories, tiles: tiles,
             phrases: hasModes ? layout.frame(.phrases) : nil, type: hasModes ? layout.frame(.type) : nil,
             typing: typing && hasModes ? HomeChains.Typing(
-                field: layout.frame(.message), clearCell: layout.typingCells.clear, putBackCell: layout.typingCells.putBack,
-                grid: layout.frame(.phraseGrid)
+                field: layout.frame(.message), clearCell: layout.typingCells.clear, putBackCell: layout.typingCells.putBack
             ) : nil
         ))
     }
@@ -1019,22 +1017,28 @@ struct HomeLayoutEngineTests {
 
     /// Typing on the engine's frames (docs/DECISIONS.md, "Typing on
     /// Home"): every Home state, typing with the draft empty, written or
-    /// cleared included, scored as above, with the empty phrase grid a place
-    /// a look rests on, sampled every 4 points half a point under its top
-    /// edge as well as across it. Fewer widths than above (every 32pt, and
-    /// both sides of each change of arrangement): there are six times the
+    /// cleared included, scored as above. While typing the phrase tiles are
+    /// dimmed in place and do nothing, so a look may rest on one as on words
+    /// it reads: besides choosing each, every typing state also starts from
+    /// a look resting on each tile of the grid's top row, across it and
+    /// every 4 points half a point under its top edge, and in the gaps
+    /// between those tiles every 8 points down to their middle: the row
+    /// that borders Clear and Put Back. Fewer widths than above (every 32pt, and both
+    /// sides of each change of arrangement): there are six times the
     /// states.
     ///
     /// Two findings are known. Stop's well's, as above, where Speak, in
-    /// Again's slot while typing, is what the well's top meets. And a look
-    /// resting on the empty grid can meet Clear or Put Back, which border it
-    /// on every arrangement: no pair of category cells keeps both away from
-    /// it and from Stop's neighbours (`HomeLayout.typingCells`). Anything
-    /// else fails: a category that left typing and filled the grid with
-    /// phrases under the look, a phrase, Yes, No or the alarm. Strict, so
-    /// it fails once the grid's finding is gone.
+    /// Again's slot while typing, is what the well's top meets. And, by
+    /// centre only, a look resting near the top of a dimmed tile, or
+    /// between two, is nearer Clear's or Put Back's centre, in the shorter
+    /// cell above, than its own: by edge a tile is nearest. Anything else
+    /// fails: Clear or Put Back met by edge (as from the empty grid the
+    /// first version had), a category that left typing and turned the
+    /// tiles under the look into phrases that speak, a phrase, Yes, No or
+    /// the alarm. Strict, so it fails once the centre's finding is gone.
     @Test(arguments: [false, true])
-    func typingChainsMeetOnlyTheEmptyGridsClearAndPutBack(boldText: Bool) {
+    func typingChainsMeetOnlyClearAndPutBackByCentreFromTheDimmedPhrases(boldText: Bool) {
+        let dimmedPhrase = "a dimmed phrase"
         var known = 0
         var unexpected: [String] = []
         for (name, text) in [("default", Self.defaultText), ("xxxLarge", Self.largerText), ("AX5", Self.largestText)] {
@@ -1048,20 +1052,30 @@ struct HomeLayoutEngineTests {
                     let layout = layout(width)
                     let context = "\(width)×\(height), \(name), Bold Text \(boldText)"
                     let map = Self.chainMap(layout, typing: true)
-                    let grid = layout.frame(.phraseGrid)
-                    let starts = map.everyStart { frame in
-                        let across = ChainEngine.points(across: frame, columns: 2, rows: 2)
-                        guard frame == grid else { return across }
-                        return across + stride(from: grid.minX + 0.5, through: grid.maxX - 0.5, by: 4).map { CGPoint(x: $0, y: grid.minY + 0.5) }
+                    let grid = layout.grid
+                    let topRow = (0..<min(grid.columns, HomeLayout.referencePhraseCount)).map { grid.tile(row: 0, column: $0) }
+                    let categories = (0..<HomeLayout.categoryCapacity).map { "category \($0 + 1)" }
+                    let typingStates = HomeChains.states(categoryCount: categories.count, typing: true)
+                        .filter(\.typing)
+                        .map { HomeChains.name(of: $0, categories: categories) }
+                    let onTiles = topRow.flatMap { tile in
+                        ChainEngine.points(across: tile, columns: 2, rows: 2)
+                            + stride(from: tile.minX + 0.5, through: tile.maxX - 0.5, by: 4).map { CGPoint(x: $0, y: tile.minY + 0.5) }
                     }
-                    for finding in ChainFinding.findings(in: map.hazards(from: starts)) {
+                    let betweenTiles = zip(topRow, topRow.dropFirst()).flatMap { left, right in
+                        stride(from: left.minY + 0.5, through: left.midY, by: 8).map { CGPoint(x: (left.maxX + right.minX) / 2, y: $0) }
+                    }
+                    let resting = typingStates.flatMap { state in
+                        (onTiles + betweenTiles).map { ChainStart.resting(at: $0, on: dimmedPhrase, in: state) }
+                    }
+                    for finding in ChainFinding.findings(in: map.hazards(from: map.everyStart() + resting)) {
                         let start = finding.example.start
                         let fromTheWell = start.chosen?.name == HomeChains.stop || start.restingOn == HomeChains.emptyWell
-                        let fromTheGrid = start.restingOn == HomeChains.emptyGrid
                         let met = finding.example.hazard?.control.name
+                        let byCentreOnly = finding.under.allSatisfy { $0.hasPrefix(NearestRule.centre.rawValue) }
                         if !Self.emergencyIsAboveTheWell(layout) && fromTheWell && (met == HomeChains.again || met == HomeChains.speak) {
                             continue
-                        } else if fromTheGrid && (met == HomeChains.clear || met == HomeChains.putBack) {
+                        } else if start.restingOn == dimmedPhrase && byCentreOnly && (met == HomeChains.clear || met == HomeChains.putBack) {
                             known += 1
                         } else {
                             unexpected.append("\(finding) (\(context))")
@@ -1072,7 +1086,7 @@ struct HomeLayoutEngineTests {
         }
         let unexpectedCount = unexpected.count
         #expect(unexpectedCount == 0, "first: \(unexpected.first ?? "")")
-        withKnownIssue("docs/DECISIONS.md, \"Typing on Home\": the empty phrase grid borders Clear and Put Back") {
+        withKnownIssue("docs/DECISIONS.md, \"Typing on Home\": by centre, dimmed phrases border Clear and Put Back") {
             #expect(known == 0)
         }
     }
