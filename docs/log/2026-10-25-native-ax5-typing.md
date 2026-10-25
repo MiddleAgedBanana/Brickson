@@ -1,4 +1,4 @@
-# Native AX5 typing follow-up
+# Native AX5 typing and first-launch follow-up
 
 *2026-10-25. Codex. Documentation and simulator evidence only.*
 
@@ -9,6 +9,8 @@ Closed the native-input reproduction left by PR #55. The earlier
 Return, and asked for a native check of covered Put Back before a fix.
 This follow-up records both on unchanged app code `6d040d5`, after PR #56.
 Main `37c2e0b` supplies the merged PR #55 notes. No app or test changes.
+The same Mac-check follow-up also investigates a new CI startup failure
+with recovered visual evidence and three bounded local comparisons.
 
 ## Verified
 
@@ -45,6 +47,69 @@ existing issue #19 skip and eight strict expected failures; coverage
 `build/TestResults/duo-probe-restored-unit/unit-destination.xcresult`;
 log: `/private/tmp/brickson-duo-probe-restored-unit.log`.
 
+## First-launch follow-up
+
+The [PR #57 UI job](https://github.com/MiddleAgedBanana/Brickson/actions/runs/40195916540/job/121176591223),
+head `4231d21`, provides a new occurrence of the startup failure. On its
+iPad, the first test was
+`GetAttentionOnHomeTests/testTheAlarmStartsAndStopsAtDefaultText`.
+The script had reported a successful app warm-up. XCTest then waited
+60.034s for the foreground app's automation session, timed out, and
+failed inside the first Yes accessibility lookup at
+`LaunchHelpers.swift:93` with `kAXErrorServerNotFound`. No alarm
+activation occurred in that failed case; the normal Home assertion on
+the next line was not reached.
+
+The completed iPad suite had 51 tests: 45 passed, 1 failed, 2 skipped
+and 3 expected failures. The later iPhone first default Get Attention
+case passed, but the overall job reached its configured 75-minute limit
+and was cancelled. That is not a green UI run. Buffered console output
+arrived at 13:55 UTC; native session timestamps place the failure around
+13:12–13:13 UTC.
+
+The failed test's screen recording had no standalone screenshot. An
+[unaltered decoded frame](../evidence/2026-10-25-native-ax5-typing/ci-first-launch-white-frame.png)
+shows white content with no Home controls. Its [provenance](../evidence/2026-10-25-native-ax5-typing/ci-frame-provenance.json)
+records the last available frame at video PTS 71.078333s; this is not
+claimed to be the exact failure instant. The original recording and
+native session excerpts remain under `/private/tmp/brickson-pr57-*`.
+The retained diagnostics have no stack sample of the failing app during
+the stall. Root cause remains unresolved.
+
+Bounded local checks used unchanged current app/test sources, a newly
+created disposable iPad Pro 13-inch (M5) simulator, iOS 27.0, default
+text, light, Full Screen, full software keyboard and test-only storage.
+Each selected exactly the same test above:
+
+| Sample | Preconditions | Result |
+|---|---|---|
+| First installation | New simulator, completed boot, Brickson absent from pre-run app inventory, no app warm-up | **Pass**, 1 ran, 0 failed, 0 skipped; case 20.834s. |
+| Second installation | Shut down and erased only that task-owned simulator; completed fresh boot; no app warm-up | **Pass**, 1 ran, 0 failed, 0 skipped; case 21.736s. |
+| CI-shaped warmed control | Independently erased the task-owned simulator; normal `scripts/test.sh ui` boot, keyboard preparation and 21s app warm-up | **Pass**, 1 ran, 0 failed, 0 skipped; case 22.861s. |
+
+The first two used MobileBuildMCP's test command without a preceding
+app launch; the control used the repository script with
+`-only-testing:BricksonUITests/GetAttentionOnHomeTests/testTheAlarmStartsAndStopsAtDefaultText`.
+No test ordering, assertion, wait duration or retry setting changed.
+The two cold cases disabled parallel test execution. These are separate
+from PR #55's older three cold-phone boots of the historical snapshot
+test.
+
+[Saved counts and preconditions](../evidence/2026-10-25-native-ax5-typing/startup-samples.json).
+Local result bundles:
+
+- `build/TestResults/fresh-install-first-test.xcresult`.
+- `build/TestResults/fresh-install-second-test.xcresult`.
+- `build/TestResults/fresh-install-warmed-control/ui-destination.xcresult`.
+
+The framework emitted an audio-session runtime warning during these
+passing alarm tests. It is retained in the receipts; this is separate
+from compiler diagnostics and does not establish the startup cause.
+No startup fix is made because the local runs did not reproduce the
+failure and no app-owned blocking path has been established. A future
+recurrence needs a sample of the stalled process before another test
+terminates it.
+
 ## Not verified
 
 - Put Back's functionality with a covering keyboard, a fix for its
@@ -54,6 +119,8 @@ log: `/private/tmp/brickson-duo-probe-restored-unit.log`.
   or Phone handoff. The informal earlier handheld observation is not a
   controlled device pass; physical checks remain deferred.
 - Final-head hosted CI before this PR runs.
+- The startup failure's cause or a fix. Three selected-case local passes
+  do not establish a full UI-suite pass or reproduce GitHub's machine.
 
 ## Follow-ups
 

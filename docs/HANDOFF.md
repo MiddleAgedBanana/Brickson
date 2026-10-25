@@ -247,8 +247,14 @@ Xcode 27.1 (27A9275); PR #20 landed in `d79d836`.
   limits; windowed Duo and its reserved fold/camera regions remain
   unverified ([record](log/2026-10-25-mac-keyboard-checks.md)). The first
   UI test on a just-started CI simulator failed intermittently before
-  PR #13's warm-up launch (AGENTS.md, *Gotchas*); three local cold boots
-  without warm-up did not reproduce it on 2026-10-25. Apple's accessibility audit never sees
+  PR #13's warm-up launch (AGENTS.md, *Gotchas*). A later PR #57 CI run
+  failed its first Yes lookup after an automation-session timeout; that
+  job eventually reached its 75-minute limit. The exact failing Get
+  Attention test passed locally on two fresh iPad installations without
+  app warm-up and one independently reset, normally warmed control.
+  The three older cold-phone snapshot checks also passed. The cause
+  remains unresolved ([follow-up and recovered CI frame](log/2026-10-25-native-ax5-typing.md)).
+  Apple's accessibility audit never sees
   Home's "Speaking" line: audits wait for speech to finish, because one
   that ran while the line left reported text with no element (issue #30,
   [`log/2026-10-22-audit-still-screen.md`](log/2026-10-22-audit-still-screen.md)).

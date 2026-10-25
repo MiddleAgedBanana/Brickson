@@ -1,0 +1,95 @@
+{
+  "appCodeBase": "6d040d5",
+  "date": "2026-10-25",
+  "environment": {
+    "toolchain": "Xcode 27.1 (27A9275)",
+    "simulatorModel": "iPad Pro 13-inch (M5)",
+    "runtime": "iOS Simulator 27.0",
+    "text": "default",
+    "appearance": "light",
+    "keyboard": "full software keyboard",
+    "testOnlyStorage": true
+  },
+  "selectedTest": "BricksonUITests/GetAttentionOnHomeTests/testTheAlarmStartsAndStopsAtDefaultText",
+  "samples": [
+    {
+      "name": "cold-new-simulator",
+      "precondition": "Created a new simulator, completed boot, prepared keyboard. Brickson absent in pre-run listapps; no app launch or app AX query before selected test.",
+      "summary": {
+        "status": "SUCCEEDED",
+        "durationMs": 38168,
+        "counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "target": "simulator"
+      },
+      "testCases": [
+        {
+          "suite": "GetAttentionOnHomeTests",
+          "test": "testTheAlarmStartsAndStopsAtDefaultText",
+          "status": "passed",
+          "durationMs": 20834
+        }
+      ],
+      "resultBundlePath": "build/TestResults/fresh-install-first-test.xcresult",
+      "runtimeWarnings": [
+        {
+          "message": "-[BricksonUITests.GetAttentionOnHomeTests testTheAlarmStartsAndStopsAtDefaultText] :     AVAudioSession_iOS.mm:978   This method can lead to UI unresponsiveness if called on the main thread. Consider using the asynchronous activate/deactivate API instead for calls from the main thread.",
+          "location": "<unknown>:0"
+        }
+      ]
+    },
+    {
+      "name": "cold-erased-owned-simulator",
+      "precondition": "Shut down and erased only the task-owned simulator, completed fresh boot, prepared keyboard; no app warm-up.",
+      "summary": {
+        "status": "SUCCEEDED",
+        "durationMs": 36162,
+        "counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "target": "simulator"
+      },
+      "testCases": [
+        {
+          "suite": "GetAttentionOnHomeTests",
+          "test": "testTheAlarmStartsAndStopsAtDefaultText",
+          "status": "passed",
+          "durationMs": 21736
+        }
+      ],
+      "resultBundlePath": "build/TestResults/fresh-install-second-test.xcresult",
+      "runtimeWarnings": [
+        {
+          "message": "-[BricksonUITests.GetAttentionOnHomeTests testTheAlarmStartsAndStopsAtDefaultText] :     AVAudioSession_iOS.mm:978   This method can lead to UI unresponsiveness if called on the main thread. Consider using the asynchronous activate/deactivate API instead for calls from the main thread.",
+          "location": "<unknown>:0"
+        }
+      ]
+    },
+    {
+      "name": "independently-reset-warmed-control",
+      "precondition": "Shut down and erased only the task-owned simulator; ran normal scripts/test.sh ui flow, including completed boot/full keyboard and successful21second app warm-up. Same one selected test.",
+      "summary": {
+        "result": "Passed",
+        "totalTestCount": 1,
+        "passedTests": 1,
+        "failedTests": 0,
+        "skippedTests": 0,
+        "expectedFailures": 0
+      },
+      "caseDurationSeconds": 22.861,
+      "resultBundlePath": "build/TestResults/fresh-install-warmed-control/ui-destination.xcresult",
+      "runtimeWarnings": [
+        {
+          "issueType": "Runtime Warning",
+          "message": "    AVAudioSession_iOS.mm:978   This method can lead to UI unresponsiveness if called on the main thread. Consider using the asynchronous activate/deactivate API instead for calls from the main thread."
+        }
+      ]
+    }
+  ],
+  "conclusion": "Two unwarmed fresh-install samples and one independently reset CI-shaped warmed control passed the selected test. Root cause of the recorded CI automation-session/AX failure remains unresolved; no source fix made."
+}
