@@ -1,6 +1,6 @@
 # Fewer phrase tiles, measured
 
-*2026-10-25. Branch `codex/fewer-phrase-tiles`. Codex.*
+*2026-10-25. Pull request #57 (`codex/fewer-phrase-tiles`). Codex.*
 
 ## What changed and why
 
@@ -38,7 +38,9 @@ layout must recalculate capacity from its final frames.
 
 ## Commits
 
-- This documentation commit.
+- `050fb03`: propose measured whole-row phrase pages.
+- `4231d21`: merge current main into the proposal.
+- `5cae59b`: merge current main and add the native pane observations.
 - Measurement source: [PR #55 source commit](https://github.com/MiddleAgedBanana/Brickson/commit/cb4c965).
 - Main refresh incorporates PR #56 (`6d040d5`) by merge commit. Measurements
   remain dated to app code `8316743`, before its Settings change. Relative
@@ -75,11 +77,27 @@ layout must recalculate capacity from its final frames.
   `LaunchHelpers.swift:93` (`kAXErrorServerNotFound`). This is not a
   green UI run. The [separate Mac follow-up](https://github.com/MiddleAgedBanana/Brickson/pull/59)
   retains its recovered frame and startup investigation; cause unresolved.
+- GitHub CI on `5cae59b`: units passed. The UI job failed on
+  `KeyboardProbeTests.testLandscapeAtDefaultTextSize()` after the iPad's
+  keyboard measurement, while relaunching Home. The result records the
+  test runner exiting with code 74; its native log says "Exiting due to
+  IDE disconnection" at 15:50:27 UTC. The first Get Attention suite had
+  passed all three cases. This is a different recorded failure from the
+  earlier first-launch accessibility timeout; no shared or app-owned
+  cause is established. The iPad finished with 45 passed, 1 failed,
+  2 skipped and 3 expected failures; the iPhone with 43 passed, 0 failed,
+  6 skipped and 2 expected failures (51 total each). The script completed
+  both families and exited 65, before its job limit.
+  [Job and retained artifact](https://github.com/MiddleAgedBanana/Brickson/actions/runs/40207302069/job/121210870865).
 - The subsequent full native gate passed on the same app/test sources:
   740 ran, 731 passed, 0 failed, existing #19 skip, 8 strict expected
   failures, coverage 67.7%, catalog unchanged. Result:
   `build/TestResults/duo-probe-restored-unit/unit-destination.xcresult`.
-  Final documentation checks pass; new-head hosted CI remains required.
+  The review corrections reuse this native receipt after confirming that
+  app, tests, scripts and project are byte-identical to `6d040d5`.
+  All five Python suites and the diff check pass again; no native build
+  is repeated for these documentation corrections. New-head hosted CI
+  remains required.
 
 ## Not verified
 

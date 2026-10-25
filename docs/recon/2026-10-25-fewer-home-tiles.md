@@ -13,8 +13,9 @@ minimum; do not gain room by shrinking those or removing another row.
 
 Follow the existing
 [drawn direction](../work/typing-on-home.md#fewer-tiles-to-a-screen-r1-drawn-not-built):
-**More, 1 of 2** occupies the last grid slot on every page, advances to the
-next page and wraps to the first. Its slot never becomes a speaking tile.
+When pagination is needed, **More, 1 of 2** occupies the last grid slot on
+every page, advances to the next page and wraps to the first. Its slot
+never becomes a speaking tile.
 Keep columns and phrase-ordinal slots fixed across categories; nothing
 is ranked by usage or time.
 
