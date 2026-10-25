@@ -42,11 +42,10 @@ import Foundation
 /// so, with the height it lacks: a target is never made smaller than its
 /// floor to avoid scrolling (invariant 11).
 ///
-/// Home has its frames from it (docs/ROADMAP.md, Wave 3 item 4;
-/// docs/work/layout-engine.md). Until typing comes to Home (item 5), Home
-/// has one mode, browsing phrases, and lays out without A's trailing
-/// column (`Modes.phrasesOnly`): the message spans the width, and the
-/// safety row keeps two rows on every width, as it did before the engine.
+/// Home has its frames from it (docs/ROADMAP.md, Wave 3 items 4 and 5;
+/// docs/work/layout-engine.md, docs/work/typing-on-home.md), with both
+/// modes, browsing and typing (`Modes.phrasesAndTyping`), and so does
+/// Settings' Back to Talking, which takes Phrases' frame.
 nonisolated struct HomeLayout: Equatable, Sendable {
     // MARK: Inputs
 
@@ -129,19 +128,21 @@ nonisolated struct HomeLayout: Equatable, Sendable {
     /// width above it, Get Attention would border the message, and a look
     /// resting on the message must never meet an alarm.
     enum Modes: Equatable, Sendable {
-        /// Home until typing comes (docs/ROADMAP.md, Wave 3 item 5): no
+        /// Home before typing came (docs/ROADMAP.md, Wave 3 item 4), kept
+        /// as the comparison for the owner's open question on Yes and No
+        /// (*Open hazard, not accepted: Yes and No border the message*): no
         /// trailing column in A, so the message spans the width; the safety
         /// row in two rows of two equal columns on every width, Yes and No
         /// sharing the leading one with Emergency beside them, then Again and
         /// Get Attention, Get Attention directly under Emergency
-        /// (docs/DECISIONS.md, "Get Attention and Stop on Home"). Emergency
-        /// stays under Settings' Back to Talking (*Settings on Home*), and
-        /// Yes and No border no more of the message than they did before the
-        /// engine (*Home's slot plan*, *Open hazard, not accepted: Yes and No
+        /// (docs/DECISIONS.md, "Get Attention and Stop on Home"). Yes and
+        /// No border no more of the message than they did before the engine
+        /// (*Home's slot plan*, *Open hazard, not accepted: Yes and No
         /// border the message*).
         case phrasesOnly
         /// The slot plan's own, with Phrases above Type beside the message:
-        /// the compact and regular arrangements above.
+        /// the compact and regular arrangements above. Home's
+        /// (docs/DECISIONS.md, "Typing on Home").
         case phrasesAndTyping
     }
 
@@ -209,6 +210,12 @@ nonisolated struct HomeLayout: Equatable, Sendable {
     /// the default size: the stand-in Home's compact height, at which CI's
     /// rendered-label test read both words 100 points wide.
     static let twoLineQuickControlHeight: CGFloat = 64
+    /// The shortest Phrases may be where Settings' "Back to Talking", which
+    /// takes Phrases' frame, is too wide for one line of the categories'
+    /// font (`MinimumWidths.backToTalkingOneLine`): two lines at the
+    /// default size, on CI 20.5 points for the first and 22 for the second,
+    /// with the label's inset, rounded up, plus a point.
+    static let twoLineCategoryHeight: CGFloat = 56
     /// The space between the message's two lines and the status line
     /// under them (`HomeView`).
     static let statusSpacing: CGFloat = 4
@@ -320,6 +327,19 @@ nonisolated struct HomeLayout: Equatable, Sendable {
     let bandClearsKeyboard: Bool
     /// False where Settings has room only for its gear.
     let settingsShowsName: Bool
+    /// Settings' Back to Talking, which closes Settings onto Home, in the
+    /// window's coordinates; `.null` without Phrases. It lies inside
+    /// Phrases' frame, and every point of it is nearer Phrases, by centre
+    /// and by edge, than any other control, so a look still resting on it
+    /// once Settings closes meets Phrases, which does nothing while the
+    /// phrases show (Settings always closes onto them). On compact widths
+    /// it is Phrases' frame. On regular ones, where Phrases spans the two
+    /// columns above Again and Get Attention, it is centred over Phrases,
+    /// as tall, and at most one column wide, narrower on short windows: on
+    /// the whole of Phrases, a look at a lower corner is nearer Get
+    /// Attention's centre, or Again's, than Phrases' (docs/DECISIONS.md,
+    /// "Typing on Home").
+    let backToTalking: CGRect
     /// Whether the message is wide enough for the starter library's widest
     /// word at the default text size (`MinimumWidths.message`): the message
     /// steps down only as far as its widest word needs, never below the
@@ -342,7 +362,7 @@ nonisolated struct HomeLayout: Equatable, Sendable {
     }
 
     /// The slots this layout has: all of them, but Phrases and Type only
-    /// once Home has typing (`Modes`).
+    /// where there is typing to pick (`Modes`).
     var slots: [Slot] {
         modes == .phrasesAndTyping ? Slot.all : Slot.all.filter { $0 != .phrases && $0 != .type }
     }
@@ -351,6 +371,23 @@ nonisolated struct HomeLayout: Equatable, Sendable {
     /// Stop's well.
     var controls: [Slot] {
         Slot.controls.filter(slots.contains)
+    }
+
+    /// Whether Home offers Type: only where there is typing to pick and
+    /// the message, Phrases, Type and the whole safety row end above the
+    /// keyboard's room (`bandClearsKeyboard`), because typing never hides
+    /// the call for help (AGENTS.md, *Design rules for dwell, switch and
+    /// pointer input*). Elsewhere Type stays in its place, dimmed
+    /// (docs/DECISIONS.md, "Typing on Home", *The keyboard's room,
+    /// measured*).
+    var offersTyping: Bool {
+        modes == .phrasesAndTyping && bandClearsKeyboard
+    }
+
+    /// The category cells that show Clear and Put Back while typing
+    /// (`TypingCells`).
+    var typingCells: TypingCells {
+        TypingCells(categoryArrangement)
     }
 
     /// How tall the region `slots` make up is, from its top to its foot:
@@ -403,7 +440,16 @@ nonisolated struct HomeLayout: Equatable, Sendable {
             trailingWidth = 2 * fifth + spacing
             lead = fifth
         } else {
-            trailingWidth = max((width - 2 * spacing) / 3, minimum.compactTrailingColumn)
+            // A third of the width, but never narrower than Emergency's word
+            // and, where the message keeps its widest word beside it, wide
+            // enough for "Get Attention" on one line: two lines would need
+            // a taller safety row (`twoLineQuickControlHeight`), and Phrases
+            // and Type above it would be as tall.
+            let besideTheMessage = width - spacing - minimum.message
+            trailingWidth = max(
+                (width - 2 * spacing) / 3, minimum.compactTrailingColumn,
+                min(minimum.getAttentionOneLine, besideTheMessage)
+            )
             lead = max(0, width - 2 * spacing - trailingWidth) / 2
             messageWidth = 2 * lead + spacing
         }
@@ -428,10 +474,21 @@ nonisolated struct HomeLayout: Equatable, Sendable {
             getAttentionTakesTwoLines ? Self.twoLineQuickControlHeight : 0
         )
         let categoryFloor = max(profile.floor, text.categoryLine + insets)
+        // Phrases and Type: one line of their words, which fit the trailing
+        // column on one line wherever it is. Settings' Back to Talking sits
+        // over Phrases (`backToTalking`), in the categories' font, so where
+        // it is too narrow for its words on one line, Phrases is tall enough
+        // for two.
+        let backToTalkingWidth = isRegular ? fifth : trailingWidth
+        let backToTalkingTakesTwoLines = backToTalkingWidth < minimum.backToTalkingOneLine - 0.001
+        let modeFloor = max(
+            profile.floor, text.quickControlLine + insets,
+            backToTalkingTakesTwoLines ? Self.twoLineCategoryHeight : 0
+        )
         let messageBlock = 2 * text.messageLine + Self.statusSpacing + text.statusLine
         // Phrases above Type, beside the message: two controls at their
         // floor, or the message's height if that is taller.
-        let messageRegion = modes == .phrasesAndTyping ? max(messageBlock, 2 * quickFloor + spacing) : messageBlock
+        let messageRegionFloor = modes == .phrasesAndTyping ? max(messageBlock, 2 * modeFloor + spacing) : messageBlock
         let quickRows = safetyInOneRow ? 1 : 2
 
         // The categories region's arrangement and widths.
@@ -502,25 +559,35 @@ nonisolated struct HomeLayout: Equatable, Sendable {
         // What the starter library needs at every floor, with the drop the
         // floors need. Growth only makes the drop smaller.
         let floorDrop = dropKeepingYesOffTheWell(quick: quickFloor, gap: Self.minimumRegionSpacing, category: categoryFloor)
-        let needed = messageRegion + stack(quickRows, of: quickFloor) + stack(categoryRows, of: categoryFloor)
+        let needed = messageRegionFloor + stack(quickRows, of: quickFloor) + stack(categoryRows, of: categoryFloor)
             + stack(referenceRows, of: tileFloor) + 3 * Self.minimumRegionSpacing + floorDrop
         var spare = content.height - needed
         startersFit = spare >= -0.001
         shortfall = max(0, -spare)
 
         // Growth, in order, where there is room: the gaps between regions,
-        // the safety row, the categories. The phrase grid takes the rest.
+        // the safety row, Phrases and Type, the categories. The phrase grid
+        // takes the rest.
         var gap = Self.minimumRegionSpacing
         var quick = quickFloor
+        var messageRegion = messageRegionFloor
         var category = categoryFloor
+        let quickTarget = max(quickFloor, profile.quickControlHeight(isRegular: isRegular))
         if spare > 0 {
             let gapGrowth = min(spare, 3 * (Self.regionSpacing - Self.minimumRegionSpacing))
             gap += gapGrowth / 3
             spare -= gapGrowth
-            let quickTarget = max(quickFloor, profile.quickControlHeight(isRegular: isRegular))
             let quickGrowth = min(spare, CGFloat(quickRows) * (quickTarget - quickFloor))
             quick += quickGrowth / CGFloat(quickRows)
             spare -= quickGrowth
+            if modes == .phrasesAndTyping {
+                // Phrases and Type grow to the safety row's height, and the
+                // message with them.
+                let modeTarget = max(messageRegionFloor, 2 * max(modeFloor, quickTarget) + spacing)
+                let modeGrowth = min(spare, modeTarget - messageRegionFloor)
+                messageRegion += modeGrowth
+                spare -= modeGrowth
+            }
             let categoryTarget = max(categoryFloor, profile.categoryHeight(isRegular: isRegular))
             let categoryGrowth = min(spare, CGFloat(categoryRows) * (categoryTarget - categoryFloor))
             category += categoryGrowth / CGFloat(categoryRows)
@@ -534,7 +601,12 @@ nonisolated struct HomeLayout: Equatable, Sendable {
         let limit = keyboard.bandLimit
         var safetyBottom = content.minY + messageRegion + gap + stack(quickRows, of: quick)
         if modes == .phrasesAndTyping && safetyBottom > limit {
-            let quickCut = min(safetyBottom - limit, CGFloat(quickRows) * (quick - quickFloor))
+            // Phrases and Type give back what they grew first: the safety
+            // row is the larger need.
+            let modeCut = min(safetyBottom - limit, messageRegion - messageRegionFloor)
+            messageRegion -= modeCut
+            safetyBottom -= modeCut
+            let quickCut = min(max(0, safetyBottom - limit), CGFloat(quickRows) * (quick - quickFloor))
             quick -= quickCut / CGFloat(quickRows)
             safetyBottom -= quickCut
             let gapCut = min(max(0, safetyBottom - limit), gap - Self.minimumRegionSpacing)
@@ -593,6 +665,27 @@ nonisolated struct HomeLayout: Equatable, Sendable {
             frames[.emergency] = CGRect(x: trailing, y: safetyTop, width: column, height: quick)
             frames[.again] = CGRect(x: x, y: secondRow, width: column, height: quick)
             frames[.getAttention] = CGRect(x: trailing, y: secondRow, width: column, height: quick)
+        }
+
+        // Settings' Back to Talking, over Phrases. On regular widths, a
+        // point at its foot `dx` from Phrases' centre is nearer that centre
+        // than Get Attention's (or, mirrored, Again's) while
+        // dx < (a² + d² - d·h) / 2a, with Get Attention's centre `a` across
+        // and `d` down from Phrases' and Phrases `h` tall; on short windows
+        // that is narrower than a column. Two points short of it, for the
+        // half point that counts as a tie.
+        if let phrases = frames[.phrases], let again = frames[.again], let getAttention = frames[.getAttention] {
+            if safetyInOneRow {
+                let across = getAttention.midX - phrases.midX
+                let down = again.midY - phrases.midY
+                let reach = (across * across + down * down - down * phrases.height) / (2 * across)
+                let width = min(backToTalkingWidth, 2 * (reach - 2))
+                backToTalking = CGRect(x: phrases.midX - width / 2, y: phrases.minY, width: width, height: phrases.height)
+            } else {
+                backToTalking = phrases
+            }
+        } else {
+            backToTalking = .null
         }
 
         // B: Stop's well, the categories and Settings, lower by the drop
@@ -681,6 +774,34 @@ nonisolated struct HomeLayout: Equatable, Sendable {
         case twoColumns
     }
 
+    /// The two category cells that show the draft's Clear and Put Back
+    /// while typing, by the categories' order (docs/DECISIONS.md, "Typing
+    /// on Home"). The slot plan gives them category cells in region B,
+    /// apart from each other, from Speak and from the draft. Placed by
+    /// scoring held activations in every state (`HomeLayoutEngineTests`):
+    /// never the cell under Stop's well, which a look held after Stop
+    /// meets, nor the one beside it, which a look resting in the empty well
+    /// meets; on three columns, Clear in the top row, away from the
+    /// keyboard and the dimmed phrase grid, and Put Back in the bottom row,
+    /// beside Settings. Each shows only while typing: browsing, the cell
+    /// shows its category, as it always has.
+    struct TypingCells: Equatable, Sendable {
+        let clear: Int
+        let putBack: Int
+
+        init(_ arrangement: CategoryArrangement) {
+            switch arrangement {
+            // Stop, category 0, category 1; then category 2 (under Stop),
+            // category 3, Settings.
+            case .threeColumns: (clear, putBack) = (1, 3)
+            // Stop, category 0; category 1 (under Stop), category 2;
+            // category 3, Settings. The band: Stop above category 0, then
+            // categories 1 (beside Stop) to 3 and Settings.
+            case .twoColumns, .band: (clear, putBack) = (2, 3)
+            }
+        }
+    }
+
     // MARK: The phrase grid
 
     /// Region D: fixed columns from the width, rows from the library's
@@ -739,8 +860,8 @@ nonisolated struct HomeLayout: Equatable, Sendable {
     /// the categories, which show selected, have the wider side inset
     /// (`selectableSideInset`); the message has none. `StarterLabelFitTests`
     /// and `HomeLayoutEngineFontTests` check every one with the real fonts
-    /// on CI: "Phrases" and "Type" (A's trailing column) and "Speak", which
-    /// Again's slot shows while typing, are there for item 5.
+    /// on CI, "Phrases" and "Type" (A's trailing column) and "Speak", which
+    /// Again's slot shows while typing, among them.
     struct MinimumWidths: Equatable, Sendable {
         /// The message: the starter library's widest word in the message
         /// font, "understand.", with `WordFit.widthSlack`.
@@ -755,6 +876,9 @@ nonisolated struct HomeLayout: Equatable, Sendable {
         let getAttentionOneLine: CGFloat
         let phrases: CGFloat
         let type: CGFloat
+        /// Settings' "Back to Talking" on one line, in the categories'
+        /// font: it takes Phrases' frame (`backToTalking`).
+        let backToTalkingOneLine: CGFloat
         let category: CGFloat
         let stop: CGFloat
         let settings: CGFloat
@@ -762,12 +886,12 @@ nonisolated struct HomeLayout: Equatable, Sendable {
 
         static let regular = MinimumWidths(
             message: 156, yesNo: 46, again: 70, emergency: 120, getAttention: 100, getAttentionOneLine: 134,
-            phrases: 86, type: 58,
+            phrases: 86, type: 58, backToTalkingOneLine: 131,
             category: 122, stop: 52, settings: 80, settingsSymbol: 44
         )
         static let boldText = MinimumWidths(
             message: 175, yesNo: 48, again: 75, emergency: 130, getAttention: 110, getAttentionOneLine: 147,
-            phrases: 94, type: 63,
+            phrases: 94, type: 63, backToTalkingOneLine: 142,
             category: 132, stop: 56, settings: 86, settingsSymbol: 44
         )
 

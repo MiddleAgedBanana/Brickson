@@ -3,7 +3,7 @@ import XCTest
 
 /// Home's layout in the running app: the starter library needs no
 /// scrolling, every tile keeps its place whichever category shows, and the
-/// safety row and Settings are wholly on screen, at the default text size and the
+/// safety row, Phrases, Type and Settings are wholly on screen, at the default text size and the
 /// largest accessibility size, in each orientation the device turns to. The
 /// one recorded exception is a narrow window at the largest size, where the
 /// grid scrolls; its other checks still run.
@@ -121,7 +121,7 @@ final class HomeLayoutTests: XCTestCase {
                 // checked, slots included.
                 let gridMustFit = Self.gridMustFit(textSize, in: window)
 
-                for name in ["Yes", "No", "Emergency", "Get Attention", "Again", "Settings"] {
+                for name in ["Yes", "No", "Emergency", "Get Attention", "Again", "Phrases", "Type", "Settings"] {
                     expectWhollyOnScreen(app.buttons[name], name, in: window, context)
                 }
 

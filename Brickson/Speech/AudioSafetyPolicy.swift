@@ -204,19 +204,25 @@ nonisolated struct AudioSafetyPolicy {
 
 /// What Home's one status line shows: a problem first, because something
 /// cannot be heard (invariant 4); otherwise the alarm sounding, which goes
-/// on until someone chooses Stop; otherwise speech in progress.
+/// on until someone chooses Stop; otherwise speech in progress; otherwise a
+/// typed message that cannot be kept (invariant 5), which lasts until the
+/// next save and so waits behind what is about sound now
+/// (docs/DECISIONS.md, "Typing on Home").
 nonisolated enum HomeStatusLine: Equatable {
     case issue(HomeAudioIssue)
     case sounding
     case speaking
+    case draft(DraftIssue)
 
-    init?(issue: HomeAudioIssue?, alarmIsSounding: Bool, isSpeaking: Bool) {
+    init?(issue: HomeAudioIssue?, alarmIsSounding: Bool, isSpeaking: Bool, draftIssue: DraftIssue? = nil) {
         if let issue {
             self = .issue(issue)
         } else if alarmIsSounding {
             self = .sounding
         } else if isSpeaking {
             self = .speaking
+        } else if let draftIssue {
+            self = .draft(draftIssue)
         } else {
             return nil
         }

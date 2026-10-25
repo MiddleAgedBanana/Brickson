@@ -27,8 +27,9 @@ trailing end, Stop Alert below Emergency, and a three-column message on
 regular widths. The drawings still show the earlier placements and are
 not corrected by this documentation update. The Yes/No message-border
 hazard and access to a fifth category remain open. Back to Talking over
-Phrases alone is still a proposal that differs from the landed decision;
-*Open in the slot plan* records it without adopting an exception.
+Phrases alone was a proposal that differed from the landed decision;
+*2026-10-24:* adopted and built with typing on Home (docs/DECISIONS.md,
+"Typing on Home"), and *Open in the slot plan* says how.
 
 ## Where the drawings are
 
@@ -210,9 +211,12 @@ Get Attention and Stop are on Home: the safety row is two rows (Yes, No
 and Emergency; Again and Get Attention, under Emergency), and Stop has a
 well at the categories' leading top with a category under it
 (docs/DECISIONS.md, "Get Attention and Stop on Home"). Main records the
-small-window scrolling gaps separately. Phrases and Type and the slot
-plan's own C are still to be built; these drawings are not a picture of
-the running app.
+small-window scrolling gaps separately. *2026-10-24:* Phrases and Type
+and the slot plan's own C are built (docs/DECISIONS.md, "Typing on
+Home"), and the typing screens are drawn again from the engine's frames
+on the Figma page *Typing on Home (Wave 3 item 5)*
+(docs/work/typing-on-home.md, *Screens*). These older drawings are not a
+picture of the running app.
 
 | Layer name | Control | Region | Notes |
 |---|---|---|---|
@@ -317,10 +321,10 @@ drawings, except for the way out, which is the first review's proposal.
 |---|---|---|
 | Stop Alert (the alarm stops, its well empties) | Settings by centre on all four windows, Settings or Emergency by edge: a repeat can open the family cover | The category under Stop Alert by centre, it or Emergency by edge: a repeat only shows a category, and a further one changes nothing |
 | Phrases (typing ends) | Type on all four, with the way out in the top slot: a repeat reopens typing | Phrases itself, shown selected: a repeat changes nothing |
-| Back to Talking (Settings closes) | Type, the only live control under it: a repeat opens typing | Still proposed: Phrases alone, with Back to Talking over Phrases' frame: a repeat changes nothing. Over the whole trailing column, as first proposed, Phrases and Type tied, and a repeat on Type would reopen typing (Codex review of PR #20) |
+| Back to Talking (Settings closes) | Type, the only live control under it: a repeat opens typing | Phrases alone, with Back to Talking over Phrases' frame: a repeat changes nothing. Over the whole trailing column, as first proposed, Phrases and Type tied, and a repeat on Type would reopen typing (Codex review of PR #20). *2026-10-24:* built, narrowed on regular widths so Again and Get Attention are never nearer (docs/DECISIONS.md, "Typing on Home") |
 
 The placements adopted by "Home's slot plan" (the Back to Talking
-proposal in the table remains open):
+proposal in the table was adopted on 2026-10-24, with typing on Home):
 
 - **Region B.** Stop Alert keeps its place at B's leading end, directly
   below Emergency. On compact widths B is two rows of three: Stop Alert,
@@ -373,6 +377,11 @@ Settings work to settle before the affected flows ship:
   a proposed correction, not an adopted change to that binding decision. The next Home/Settings work must score entry and exit
   together, record its decision and pin the bar's frames before this
   path is treated as safe. PR #23's existing safety bar is unchanged.
+  *2026-10-24: closed.* Typing on Home adopted it, scored opening and
+  closing Settings together, and pins Back to Talking's frame in the
+  engine (`HomeLayout.backToTalking`) and on CI (`SettingsOnHomeTests`);
+  what still closes Settings unasked is recorded in docs/DECISIONS.md,
+  "Typing on Home".
 
 ### Slot sizes per device
 
@@ -483,7 +492,12 @@ the SE-class window's keyboard is not measured.
 Two parts of the drawn typing state were withdrawn after Codex's review
 of PR #20. The landed slot plan adopts Phrases in A and Clear/Put Back in
 separate category slots in B. Their exact typing frames and full chains
-remain for the typing implementation; the drawings do not prove fit:
+remain for the typing implementation; the drawings do not prove fit.
+*2026-10-24:* built, with the cells chosen by scoring and every typing
+state's chains scored (docs/DECISIONS.md, "Typing on Home"); the typing
+screens drawn from the engine's frames are on the Figma page the work
+file links (docs/work/typing-on-home.md, *Screens*). What follows is the
+proposal as it was:
 
 - **The way out in region A.** The trailing column's top slot holds
   **Phrases** in every state, above Type: Phrases only leaves typing,

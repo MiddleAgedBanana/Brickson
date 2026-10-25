@@ -133,6 +133,9 @@
     "Choose where the switch is: External, Screen, Camera, Back Tap, Sound or AirPod Gestures." : {
 
     },
+    "Clear" : {
+      "comment" : "Empties the typed message. Shown in a category's place while typing."
+    },
     "Clear My Choices" : {
 
     },
@@ -307,6 +310,12 @@
     "Making a Personal Voice means reading phrases aloud, so it is easiest while speaking is comfortable. Apple keeps it encrypted on this device, and in iCloud only if Share Across Devices is on. %@ never receives the voice or its recordings." : {
 
     },
+    "Message" : {
+      "comment" : "What VoiceOver calls the field on Home where a message is typed."
+    },
+    "Message full" : {
+
+    },
     "Message not restored" : {
 
     },
@@ -357,6 +366,9 @@
     },
     "Not Now" : {
 
+    },
+    "Not available at this text size in this window: the keyboard would cover Emergency, Yes, No and Get Attention." : {
+      "comment" : "VoiceOver hint on Home's Type while it is dimmed, because the window has no room for the safety buttons above the keyboard."
     },
     "Nothing to turn on. If tapping is hard, Touch Accommodations can help: Hold Duration ignores touches shorter than a set time, Ignore Repeat treats several quick touches as one, and Tap Assistance uses the first or last place touched." : {
 
@@ -448,6 +460,9 @@
     "Personal Voice isn't available here" : {
 
     },
+    "Phrases" : {
+      "comment" : "Shows the phrases instead of typing. Beside the message, above Type."
+    },
     "Phrases can't be saved right now. Changes will be lost when the app closes." : {
 
     },
@@ -462,6 +477,9 @@
     },
     "Privacy Policy" : {
 
+    },
+    "Put Back" : {
+      "comment" : "Brings back the typed message Clear just emptied. Shown in a category's place while typing."
     },
     "Reaching the Screen" : {
 
@@ -637,6 +655,9 @@
     "This library is too large to fit in one backup. Nothing was saved." : {
 
     },
+    "This message is as long as it can be, so the last change was not added." : {
+
+    },
     "This message is not being saved. It stays on screen, but it may be lost if the app closes." : {
 
     },
@@ -687,6 +708,9 @@
     },
     "Two items in this library have the same identity, so it can't be changed safely." : {
 
+    },
+    "Type" : {
+      "comment" : "Opens the keyboard to type a message. Beside the message, under Phrases."
     },
     "Type a name for this category." : {
 

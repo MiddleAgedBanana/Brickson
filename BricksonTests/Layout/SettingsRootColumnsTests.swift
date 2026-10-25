@@ -21,11 +21,11 @@ struct SettingsRootColumnsTests {
         )
     }
 
-    /// Fails if the row leaves the bar's trailing column on a wide window,
-    /// where a full-width row's centre lies farther from the spot Home's
-    /// Settings was than Back to Talking's (`SettingsOnHomeTests`), or if
-    /// the columns stop matching the bar's: two equal halves with its gap.
-    @Test func onAWideWindowTheRowTakesTheBarsTrailingColumn() {
+    /// Fails if the row leaves the trailing half on a wide window, where a
+    /// full-width row's centre lies farther from the spot Home's Settings
+    /// was than Back to Talking's (`SettingsOnHomeTests`), or if the columns
+    /// stop being two equal halves with the rows' gap.
+    @Test func onAWideWindowTheRowTakesTheTrailingHalf() {
         for rowIdealWidth: CGFloat in [185, 442] {
             let columns = Self.columns(width: 1000, rowIdealWidth: rowIdealWidth)
             #expect(columns.isTwoColumns, "row \(rowIdealWidth)pt")

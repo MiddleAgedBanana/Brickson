@@ -53,7 +53,7 @@ struct SettingsRowLabel: View {
 }
 
 /// The label of a button that shares its row with another, such as Hear and
-/// Use, or Back to Talking in the safety bar. As on Home's quick controls,
+/// Use. As on Home's quick controls,
 /// the icon sits in a slot of its own above the words, so it never takes
 /// width from them, and the words wrap between words without shrinking.
 /// (A label that dropped its icon only when the words did not fit, through

@@ -9,18 +9,22 @@ import XCTest
 ///
 /// - Opening: the spot where Home's Settings was is nearest Family Setup,
 ///   which only opens the next screen.
-/// - Closing: the spot where Back to Talking was is nearest Emergency,
-///   which only shows the emergency phrases. Before this, it was nearest
-///   Again, which speaks.
+/// - Closing: Back to Talking lies over Home's Phrases, and the spot where
+///   it was is nearest Phrases, which does nothing while the phrases show
+///   (docs/DECISIONS.md, "Typing on Home"). Before typing came to Home, it
+///   was nearest Emergency, and before that Again, which speaks.
 /// - Chains: on the way in, it also reads Family Setup and, where its row
 ///   shows, Set Up Step by Step's first step, and has the chain engine
 ///   follow every chain of held activations from Home's Settings and from
 ///   each control of those screens, out to Home and back
-///   (`SettingsChains`, `ChainEngine`). Two kinds of hazard are known and
+///   (`SettingsChains`, `ChainEngine`). Choosing Back to Talking never
+///   closes Settings under the look. Two kinds of hazard are known and
 ///   expected, strictly, so each fails once it is gone: a held look saves
-///   an answer in the first step, and Settings closes under a look resting
-///   over Yes, No or Get Attention (docs/DECISIONS.md, "One chain engine
-///   for dwell safety"). Any other hazard fails.
+///   an answer in the first step, and, on every window, a look on the
+///   first screen's Family Setup row meets Back to Talking once Family
+///   Setup shows, so Settings closes under it: over No on the phone, over
+///   Get Attention or No on the iPads (docs/DECISIONS.md, "One chain
+///   engine for dwell safety", "Typing on Home"). Any other hazard fails.
 ///
 /// "Nearest" is scored two ways, because how Snap to Item picks a target is
 /// a device check (docs/HANDOFF.md, *Checks that need a real device*): by
@@ -33,7 +37,8 @@ final class SettingsOnHomeTests: XCTestCase {
     /// `screenControls(in:)` gives them. The category names are copied from
     /// Brickson/Resources/StarterPhrases.json, as in `HomeLayoutTests`.
     private static let fixedOnHome = [
-        "Yes", "No", "Emergency", "Again", "getAttention", "settings", "Basics", "Needs", "Conversation", "Feelings",
+        "Yes", "No", "Emergency", "Again", "getAttention", "phrases", "type", "settings",
+        "Basics", "Needs", "Conversation", "Feelings",
     ]
     private static let everydayCategories = ["Basics", "Needs", "Conversation", "Feelings"]
     private static let firstRunHint = "Family: help with setting up is in Settings."
@@ -105,6 +110,7 @@ final class SettingsOnHomeTests: XCTestCase {
         let home = try screenControls(in: app)
         let before = Self.fixedFrames(home)
         let settings = try XCTUnwrap(before["settings"], "Home has no Settings button (\(context))")
+        let phrases = try XCTUnwrap(before["phrases"], "Home has no Phrases (\(context))")
 
         // In: where Home's Settings was, Settings' first screen.
         app.buttons["settings"].tap()
@@ -113,6 +119,13 @@ final class SettingsOnHomeTests: XCTestCase {
         XCTAssertTrue(app.buttons["familySetup"].waitForExistence(timeout: 10), "Settings opened without Family Setup (\(context))")
         let cover = try Self.onCover(screenControls(in: app))
         attachCapture(app, name: "settings-opened-\(context)".replacingOccurrences(of: ", ", with: "-"))
+        // Back to Talking over Phrases, centred and as tall: Phrases' frame
+        // on a phone, a column of it on wider windows (`HomeLayout.backToTalking`).
+        let way = back.frame
+        XCTAssertTrue(
+            phrases.insetBy(dx: -1, dy: -1).contains(way) && abs(way.midX - phrases.midX) <= 1 && abs(way.height - phrases.height) <= 1,
+            "Back to Talking at \(way) is not over Phrases at \(phrases) (\(context))"
+        )
         let landing = nearestControls(to: settings.center, among: cover)
         XCTAssertEqual(landing.byCentre, ["familySetup"], "Home's Settings at \(settings) is nearest \(landing.byCentre) by centre in Settings (\(context)): \(cover)")
         XCTAssertEqual(landing.byEdge, ["familySetup"], "Home's Settings at \(settings) is nearest \(landing.byEdge) by edge in Settings (\(context)): \(cover)")
@@ -139,7 +152,6 @@ final class SettingsOnHomeTests: XCTestCase {
         )
 
         // Out: where Back to Talking was, Home.
-        let way = back.frame
         back.tap()
         XCTAssertTrue(app.buttons["Yes"].waitForExistence(timeout: 10), "Home did not come back (\(context))")
         let closed = expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: back)
@@ -147,8 +159,8 @@ final class SettingsOnHomeTests: XCTestCase {
         let after = try screenControls(in: app)
         attachCapture(app, name: "settings-closed-\(context)".replacingOccurrences(of: ", ", with: "-"))
         let returning = nearestControls(to: way.center, among: after)
-        XCTAssertEqual(returning.byCentre, ["Emergency"], "Back to Talking at \(way) is nearest \(returning.byCentre) by centre on Home (\(context))")
-        XCTAssertEqual(returning.byEdge, ["Emergency"], "Back to Talking at \(way) is nearest \(returning.byEdge) by edge on Home (\(context))")
+        XCTAssertEqual(returning.byCentre, ["phrases"], "Back to Talking at \(way) is nearest \(returning.byCentre) by centre on Home (\(context))")
+        XCTAssertEqual(returning.byEdge, ["phrases"], "Back to Talking at \(way) is nearest \(returning.byEdge) by edge on Home (\(context))")
 
         // Opening and closing Settings moves nothing on Home.
         for (name, frame) in Self.fixedFrames(after) {
@@ -183,10 +195,15 @@ final class SettingsOnHomeTests: XCTestCase {
     /// Follows every chain from Home's Settings and from each control of
     /// Settings' first screens (`SettingsChains`), and attaches what it
     /// finds. Fails on a hazard of any other kind than the two known, on a
-    /// control the chains do not know, and, strictly, once a known kind is
-    /// no longer found: the first step's only where it was read.
+    /// control the chains do not know, on choosing Back to Talking closing
+    /// Settings under the look, and, strictly, once a known kind is no
+    /// longer found: the first step's only where it was read, and Settings
+    /// closing under a look that reaches Back to Talking unasked on every
+    /// window.
     @MainActor
-    private func checkChains(home: [ScreenControl], screens: SettingsChains.Screens, window: CGRect, context: String) {
+    private func checkChains(
+        home: [ScreenControl], screens: SettingsChains.Screens, window: CGRect, context: String
+    ) {
         let homeControls = Self.onScreen(home, in: window)
         guard let frames = HomeChains.frames(from: Self.named(homeControls), categories: Self.everydayCategories) else {
             XCTFail("Home is missing a control the chains need (\(context)): \(homeControls)")
@@ -224,11 +241,15 @@ final class SettingsOnHomeTests: XCTestCase {
                 XCTAssertEqual(findings(.savesAnAnswer), [], "a held look saves an answer (\(context))")
             }
         }
+        let closings = ChainFinding.findings(in: hazards.filter { SettingsChains.kind(of: $0) == .closesUnderTheLook })
+        let chosen = closings.filter { $0.example.start.chosen?.name == SettingsChains.backToTalking }
+        XCTAssertEqual(chosen.map(\.description), [], "choosing Back to Talking closes Settings under the look (\(context))")
+        let unasked = closings.filter { $0.example.start.chosen?.name != SettingsChains.backToTalking }.map(\.description)
         XCTExpectFailure(
-            "docs/DECISIONS.md, \"One chain engine for dwell safety\": Settings closes under the look",
+            "docs/DECISIONS.md, \"Typing on Home\": Settings closes under a look that reaches Back to Talking unasked",
             options: strict
         ) {
-            XCTAssertEqual(findings(.closesUnderTheLook), [], "Settings closes under the look (\(context))")
+            XCTAssertEqual(unasked, [], "Settings closes under a look that reaches Back to Talking unasked (\(context))")
         }
     }
 

@@ -153,11 +153,11 @@ say so in What's New when it happens.
 | Policy sentence or section | True of the build? | Before submitting |
 |---|---|---|
 | "The phrases and categories you use, add or change" | Partly: the starter library is saved on the device, but adding and changing wait for editing | Ship editing, or reword to "The phrases and categories you use" |
-| "The message you are typing… stays until you clear it" | No: no typing yet | Ship typing with a kept draft, or delete the line |
+| "The message you are typing… stays until you clear it" | Yes, from 2026-10-24: Home's typing keeps the message in Application Support/Typing until Clear (docs/DECISIONS.md, "Typing on Home", "The typed message") | — |
 | "Your settings, such as the voice and speaking speed you chose" | Yes, from 2026-10-23: Settings' Voice Settings screen chooses both (docs/log/2026-10-21-settings-and-first-run.md), and Home's Settings button opens it (docs/log/2026-10-23-settings-on-home.md). The policy no longer mentions a text-size setting (fixed 2026-10-21) | — |
 | Deleting things "in the app" | Not until editing ships | Ship editing, or reword |
 | Speech and Personal Voice | Yes | — |
-| How you control the app ("If you use Apple's accessibility features, such as Eye Tracking, Switch Control or Voice Control, iOS runs them") | True: on 2026-10-23 "Brickson works with" these features became this sentence, which claims nothing nobody has checked on a device; the website's accessibility page says what is checked. The data half is true: Brickson has no input code of its own, so it never receives what those features use | Once typing ships, "it only learns which button you chose" also has to cover typed and dictated words (Typing on Home) |
+| How you control the app ("If you use Apple's accessibility features, such as Eye Tracking, Switch Control or Voice Control, iOS runs them") | True: on 2026-10-23 "Brickson works with" these features became this sentence, which claims nothing nobody has checked on a device; the website's accessibility page says what is checked. The data half is true: Brickson has no input code of its own, so it never receives what those features use | — (2026-10-24: typing shipped, and the section gained a paragraph on typed and dictated words) |
 | Backups you export | No: no backup yet | Ship backup, or delete the paragraph |
 | Your device's own backups (iCloud Backup) | Yes | — |
 | If you turn on recorded phrases | **Deleted** 2026-10-23: not built, not in R0. Its words are in docs/log/2026-10-23-accessibility-page-and-privacy-trim.md | The pull request that ships recorded phrases adds a section back (AGENTS.md, *The privacy policy is a promise*) |
@@ -165,7 +165,7 @@ say so in What's New when it happens.
 | If you use Siri and Shortcuts | **Deleted** 2026-10-23: not built, not in R0 (R2) | As above |
 | Emergencies: "They never call emergency services or send anyone a message" | Yes: Brickson has no network, messaging or notification code (invariant 9) | — |
 | Get Attention | Yes, from 2026-10-23: on Home with Stop (PR #38; docs/DECISIONS.md, "Get Attention and Stop on Home") | — |
-| Effective date | October 23, 2026 | Move it with every wording change |
+| Effective date | October 24, 2026 | Move it with every wording change |
 
 ## 4. Accessibility Nutrition Labels
 

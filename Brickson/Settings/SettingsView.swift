@@ -4,12 +4,12 @@ import SwiftUI
 /// Settings: a full-screen cover over Home, for the family.
 ///
 /// Because it covers Home's quick controls, every Settings screen sits under
-/// one fixed safety bar: a start-only Get Attention at the top leading edge
-/// and a large Back to Talking at the top trailing edge, at the same frames
-/// on every screen (docs/DECISIONS.md, "Settings is a cover with a fixed
-/// safety bar"). The settings themselves start a screen below the root, so
-/// a stray dwell that opens Settings meets only the way back, Get Attention
-/// and the one Family Setup row.
+/// one fixed safety bar: a large Back to Talking over the place of Home's
+/// Phrases, at the same frame on every screen, with the place for a
+/// start-only Get Attention kept empty at its leading side (docs/DECISIONS.md,
+/// "Settings is a cover with a fixed safety bar", "Typing on Home"). The
+/// settings themselves start a screen below the root, so a stray dwell that
+/// opens Settings meets only the way back and the one Family Setup row.
 ///
 /// When nobody has used it for 90 seconds it goes back to its root and
 /// stays open; only Back to Talking closes it (docs/DECISIONS.md, "Settings
@@ -25,6 +25,8 @@ struct SettingsView: View {
     let close: () -> Void
 
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.legibilityWeight) private var legibilityWeight
     @Environment(AttentionAlertPlayer.self) private var attention
     @Environment(SpeechService.self) private var speech
     @State private var path: [SettingsRoute] = []
@@ -39,19 +41,31 @@ struct SettingsView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            SettingsSafetyBar(close: close)
-            NavigationStack(path: $path) {
-                SettingsRootView()
-                    .navigationDestination(for: SettingsRoute.self) { route in
-                        destination(for: route)
-                    }
+        let text = HomeLayout.Text.measured(at: dynamicTypeSize, boldText: legibilityWeight == .bold)
+        GeometryReader { proxy in
+            // Home's own engine, given the same window and text size, so
+            // Back to Talking lands where Home's Phrases is.
+            let space = HomeLayout.Space(proxy)
+            let home = HomeLayout(space: space, text: text, modes: .phrasesAndTyping)
+            VStack(spacing: 0) {
+                SettingsSafetyBar(backToTalking: home.backToTalking, safeArea: space.safeArea, close: close)
+                NavigationStack(path: $path) {
+                    SettingsRootView()
+                        .navigationDestination(for: SettingsRoute.self) { route in
+                            destination(for: route)
+                        }
+                }
+                // A new identity after an idle reset rebuilds every screen
+                // scrolled to the top, as if Settings had just opened.
+                .id(activity.resetCount)
+                SettingsAudioStatus()
             }
-            // A new identity after an idle reset rebuilds every screen
-            // scrolled to the top, as if Settings had just opened.
-            .id(activity.resetCount)
-            SettingsAudioStatus()
         }
+        // As on Home, the window is the space, whatever a keyboard leaves of
+        // it (Settings has no field of its own, but Home's keyboard can
+        // still be going away as Settings opens), so Back to Talking never
+        // moves.
+        .ignoresSafeArea(.keyboard)
         .background(Palette.screen)
         .environment(activity)
         .environment(landing)
@@ -115,40 +129,45 @@ struct SettingsView: View {
     }
 }
 
-/// The row above every Settings screen.
+/// The row above every Settings screen: Back to Talking, in the frame Home's
+/// layout engine gives it over Phrases (`HomeLayout.backToTalking`), from
+/// the same window and text size. Settings always closes onto the phrases,
+/// so a look still resting on Back to Talking meets Phrases, which does
+/// nothing while they show (docs/DECISIONS.md, "Typing on Home"). It looks
+/// like Home's controls, in the categories' font: its words are on one
+/// line where it is wide enough, on two where Phrases is tall enough for
+/// them, and drop the icon before they shrink, never below their default
+/// size (`FittedLabel`).
 ///
-/// Get Attention's place is kept empty. Home now has Get Attention and
-/// Stop (docs/DECISIONS.md, "Get Attention and Stop on Home"), so starting
-/// the alarm here would no longer leave it with no way to stop it, but
-/// what a look resting on this place meets after Back to Talking is still
-/// to be scored; Get Attention joins the bar in its own pull request.
-/// Because the place is kept, adding it moves nothing. Back to Talking's words are never shrunk: its icon sits
-/// above them, so it never takes their width (`SettingsPairLabel`).
-///
-/// The bar is only as tall as its tallest control. Get Attention's empty
-/// place has no height of its own to keep, and once let it take a share of
-/// the screen's height, which put Back to Talking a third of the way down,
-/// over the spot where Home's Settings was (CI on PR #33).
+/// Its leading side is the place kept for a start-only Get Attention,
+/// which the owner decides on (docs/DECISIONS.md, "Get Attention in
+/// Settings' bar: the owner decides"). The bar ends a gap below Back to
+/// Talking, so every screen starts at the same height.
 struct SettingsSafetyBar: View {
+    /// The room between Back to Talking and the screen below it.
+    static let gapBelow: CGFloat = 8
+
+    /// Back to Talking's frame, in the window's coordinates.
+    let backToTalking: CGRect
+    /// What the system keeps at the window's edges: the bar starts inside
+    /// them, as the engine's frames do.
+    let safeArea: HomeLayout.Insets
     let close: () -> Void
 
     var body: some View {
-        HStack(spacing: SettingsMetrics.rowSpacing) {
-            // Get Attention (start only) joins here in its own change.
-            Color.clear
-                .frame(maxWidth: .infinity, minHeight: SettingsMetrics.rowHeight)
-                .accessibilityHidden(true)
-
-            Button(action: close) {
-                SettingsPairLabel(title: "Back to Talking", systemImage: "bubble.left.and.text.bubble.right.fill")
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(Palette.phraseFill)
-            .accessibilityIdentifier("backToTalking")
+        Button(action: close) {
+            FittedLabel(
+                String(localized: "Back to Talking"), systemImage: "bubble.left.and.text.bubble.right.fill", font: .category
+            )
         }
-        .fixedSize(horizontal: false, vertical: true)
-        .padding(.horizontal, SettingsMetrics.gutter)
-        .padding(.vertical, 8)
+        .buttonStyle(HomeButtonStyle(fill: Palette.phraseFill))
+        .accessibilityIdentifier("backToTalking")
+        .frame(width: backToTalking.width, height: backToTalking.height)
+        // Leading, so the bar mirrors with the language, as Home does.
+        .padding(.leading, backToTalking.minX - safeArea.leading)
+        .padding(.top, backToTalking.minY - safeArea.top)
+        .padding(.bottom, Self.gapBelow)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
@@ -217,19 +236,19 @@ final class SettingsLanding {
 /// The row starts right under the safety bar, over the spot where Home's
 /// Settings was, so a look still resting there meets a row that only
 /// navigates (docs/DECISIONS.md, "Settings on Home"). Where half the width
-/// holds the row's words on one line, the row takes the bar's trailing
-/// column, under Back to Talking and as wide, with the note beside it
-/// (`SettingsRootColumns`). Across a wide window, a full-width row's centre
-/// lies farther from that spot than Back to Talking's, so by the nearest
-/// centre a held look could close Settings again (modelled from CI's
-/// frames on PR #33). Where half the width is too narrow, as on a phone,
-/// the row spans the width, which keeps its words whole.
+/// holds the row's words on one line, the row takes the trailing half, with
+/// the note beside it (`SettingsRootColumns`). Across a wide window, a
+/// full-width row's centre lies farther from that spot than Back to
+/// Talking's, so by the nearest centre a held look could close Settings
+/// again (modelled from CI's frames on PR #33). Where half the width is too
+/// narrow, as on a phone, the row spans the width, which keeps its words
+/// whole.
 struct SettingsRootView: View {
     @Environment(SettingsLanding.self) private var landing: SettingsLanding?
 
     var body: some View {
         SettingsScreen(title: "Settings") {
-            // The bar's gap, so two columns are the bar's columns.
+            // The rows' gap, between the two columns too.
             SettingsRootLayout(spacing: SettingsMetrics.rowSpacing) {
                 familySetup
                 note

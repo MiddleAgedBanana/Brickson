@@ -6,8 +6,8 @@ import Testing
 /// narrowest window Home plans for to wider than any iPad, at window heights
 /// from a 568pt phone to a 13-inch iPad in portrait, at the default and the
 /// largest text sizes, with Bold Text off and on, in both of Home's modes:
-/// browsing phrases only, which Home has until typing comes, and the slot
-/// plan's own, with Phrases and Type (`HomeLayout.Modes`). Plain logic: no
+/// browsing phrases only, Home's before typing came, and the slot plan's
+/// own, Home's now, with Phrases and Type (`HomeLayout.Modes`). Plain logic: no
 /// font is measured here (`HomeLayoutEngineFontTests` checks the engine
 /// against the real fonts and the windows people use).
 ///
@@ -402,6 +402,173 @@ struct HomeLayoutEngineTests {
         }
     }
 
+    /// Fails if Get Attention takes two lines on a compact window with room
+    /// beside the message for its words on one: the trailing column is as
+    /// wide as "Get Attention" wherever the message keeps its widest word
+    /// beside it, because two lines would make the safety row, and Phrases
+    /// and Type above it, taller (docs/DECISIONS.md, "Typing on Home").
+    @Test func getAttentionTakesOneLineWhereTheMessageLeavesRoom() {
+        var faults: [String] = []
+        var checked = 0
+        for (layout, text, context) in Self.everyLayout where layout.modes == .phrasesAndTyping && !layout.isRegular {
+            let minimum = HomeLayout.MinimumWidths.forBoldText(text.boldText)
+            guard layout.content.width - HomeLayout.controlSpacing - minimum.message >= minimum.getAttentionOneLine else { continue }
+            checked += 1
+            if layout.frame(.getAttention).width < minimum.getAttentionOneLine - 0.01 {
+                faults.append("Get Attention is \(layout.frame(.getAttention).width) wide (\(context))")
+            }
+            if layout.frame(.message).width < minimum.message - 0.01 {
+                faults.append("the message is \(layout.frame(.message).width) wide (\(context))")
+            }
+        }
+        let count = faults.count
+        #expect(count == 0, "first: \(faults.first ?? "")")
+        #expect(checked > 0)
+    }
+
+    /// Settings' Back to Talking sits over Phrases, as tall, in the
+    /// categories' font (docs/DECISIONS.md, "Typing on Home"). Fails if
+    /// Phrases or Type is shorter than the profile's floor or one line of
+    /// the quick controls' words, or, where Back to Talking is too narrow
+    /// for its words on one line, shorter than two lines of them.
+    @Test func phrasesHasRoomForBackToTalking() {
+        var faults: [String] = []
+        var narrow = 0
+        for (layout, text, context) in Self.everyLayout where layout.modes == .phrasesAndTyping {
+            let minimum = HomeLayout.MinimumWidths.forBoldText(text.boldText)
+            let phrases = layout.frame(.phrases)
+            let oneLine = max(HomeLayout.Profile.touch.floor, text.quickControlLine + 2 * HomeLayout.labelInset.vertical)
+            if phrases.height < oneLine - 0.01 {
+                faults.append("Phrases is \(phrases.height) tall, needs \(oneLine) (\(context))")
+            }
+            if layout.backToTalking.width < minimum.backToTalkingOneLine - 0.01 {
+                narrow += 1
+                if phrases.height < HomeLayout.twoLineCategoryHeight - 0.01 {
+                    faults.append("Phrases is \(phrases.size), too short for Back to Talking on two lines (\(context))")
+                }
+            }
+        }
+        let count = faults.count
+        #expect(count == 0, "first: \(faults.first ?? "")")
+        #expect(narrow > 0)
+    }
+
+    /// Settings closes onto the phrases, so a look still resting on Back
+    /// to Talking must meet Phrases, which does nothing while they show
+    /// (invariant 10; docs/DECISIONS.md, "Typing on Home"). Fails if Back
+    /// to Talking leaves Phrases' frame, or if any point across it is
+    /// nearer another control than Phrases, by centre or by edge, ties
+    /// counted: as it would be on regular widths with Back to Talking as
+    /// wide as Phrases, whose lower corners are nearer Get Attention's
+    /// centre or Again's, and on short regular windows with it a column
+    /// wide. Also fails if it is not Phrases' frame on compact widths, or,
+    /// on regular ones, not centred over Phrases and as tall, or wider than
+    /// a column, or narrower than a column on any window 874 points tall
+    /// or taller, where a column is never too wide.
+    @Test func backToTalkingClosesOntoPhrasesAlone() {
+        var faults: [String] = []
+        var regular = 0
+        var narrowed = 0
+        for (layout, _, context) in Self.everyLayout where layout.modes == .phrasesAndTyping {
+            let phrases = layout.frame(.phrases)
+            let back = layout.backToTalking
+            let inside = back.minX >= phrases.minX - 0.001 && back.maxX <= phrases.maxX + 0.001
+                && back.minY >= phrases.minY - 0.001 && back.maxY <= phrases.maxY + 0.001
+            if !inside || back.isEmpty {
+                faults.append("Back to Talking \(back) is not over Phrases \(phrases) (\(context))")
+                continue
+            }
+            if layout.isRegular {
+                regular += 1
+                let column = layout.frame(.again).width
+                let tall = layout.content.height + 2 * HomeLayout.margins.vertical >= 874
+                if back.width > column + 0.001 || (tall && back.width < column - 0.001)
+                    || abs(back.midX - phrases.midX) > 0.001 || abs(back.height - phrases.height) > 0.001 {
+                    faults.append("Back to Talking \(back) is not a column or less, centred over Phrases \(phrases) (\(context))")
+                }
+                if back.width < column - 0.001 { narrowed += 1 }
+            } else if back != phrases {
+                faults.append("Back to Talking \(back) is not Phrases' frame \(phrases) (\(context))")
+            }
+            let controls = Nearest.controls(in: layout)
+            for point in Nearest.points(in: back) {
+                let met = Nearest.to(point, among: controls)
+                if met != [.phrases] {
+                    faults.append("a look at \(point) on Back to Talking meets \(met.map(\.description).sorted()) (\(context))")
+                    break
+                }
+            }
+        }
+        let count = faults.count
+        #expect(count == 0, "first: \(faults.first ?? "")")
+        #expect(regular > 0 && narrowed > 0)
+    }
+
+    /// Fails if Phrases and Type grow before the safety row has grown as
+    /// far as it goes, or keep growth the keyboard's room needs: they grow
+    /// toward the safety row's height after it, and where the keyboard's
+    /// room is short they give back what they grew before the safety row
+    /// gives back anything (docs/DECISIONS.md, "Typing on Home").
+    @Test func phrasesAndTypeGrowAfterTheSafetyRowAndGiveItBackFirst() {
+        var faults: [String] = []
+        var grown = 0
+        for (layout, text, context) in Self.everyLayout where layout.modes == .phrasesAndTyping {
+            let minimum = HomeLayout.MinimumWidths.forBoldText(text.boldText)
+            let spacing = HomeLayout.controlSpacing
+            let insets = 2 * HomeLayout.labelInset.vertical
+            let phrases = layout.frame(.phrases)
+            let modeFloor = max(
+                HomeLayout.Profile.touch.floor, text.quickControlLine + insets,
+                layout.backToTalking.width < minimum.backToTalkingOneLine - 0.001 ? HomeLayout.twoLineCategoryHeight : 0
+            )
+            let messageBlock = 2 * text.messageLine + HomeLayout.statusSpacing + text.statusLine
+            let floorHeight = (max(messageBlock, 2 * modeFloor + spacing) - spacing) / 2
+            guard phrases.height > floorHeight + 0.01 else { continue }
+            grown += 1
+            let quickFloor = max(
+                HomeLayout.Profile.touch.floor, text.quickControlLine + insets,
+                layout.frame(.getAttention).width < minimum.getAttentionOneLine - 0.001 ? HomeLayout.twoLineQuickControlHeight : 0
+            )
+            let quickTarget = max(quickFloor, HomeLayout.Profile.touch.quickControlHeight(isRegular: layout.isRegular))
+            if layout.quickControlHeight < quickTarget - 0.01 {
+                faults.append("Phrases grew to \(phrases.height) with the safety row at \(layout.quickControlHeight) of \(quickTarget) (\(context))")
+            }
+            if phrases.height > max(modeFloor, quickTarget) + 0.01 {
+                faults.append("Phrases grew to \(phrases.height), past \(max(modeFloor, quickTarget)) (\(context))")
+            }
+        }
+        let count = faults.count
+        #expect(count == 0, "first: \(faults.first ?? "")")
+        #expect(grown > 0)
+        // An iPhone 17 at the default size: room for all of it, so Phrases
+        // and Type are as tall as the safety row's controls.
+        let phone = HomeLayout(
+            space: .init(size: CGSize(width: 402, height: 874), safeArea: .init(top: 62, leading: 0, bottom: 34, trailing: 0)),
+            text: Self.defaultText, modes: .phrasesAndTyping
+        )
+        #expect(phone.frame(.phrases).height == phone.quickControlHeight && phone.quickControlHeight == 64)
+    }
+
+    /// Fails if Clear or Put Back takes the category cell under Stop's well
+    /// or the one beside it, which a look still resting where Stop was
+    /// meets, or if the two share a cell (docs/DECISIONS.md, "Typing on
+    /// Home").
+    @Test func clearAndPutBackStayOffStopsNeighbours() {
+        let spacing = HomeLayout.controlSpacing
+        for (layout, _, context) in Self.everyLayout where layout.modes == .phrasesAndTyping {
+            let cells = layout.typingCells
+            #expect(cells.clear != cells.putBack, "\(context)")
+            let well = layout.frame(.stop)
+            for index in [cells.clear, cells.putBack] {
+                #expect((0..<HomeLayout.categoryCapacity).contains(index), "\(context)")
+                let cell = layout.frame(.category(index))
+                let under = abs(cell.minX - well.minX) < 0.01 && abs(cell.minY - well.maxY - spacing) < 0.01
+                let beside = abs(cell.minY - well.minY) < 0.01 && abs(cell.minX - well.maxX - spacing) < 0.01
+                #expect(!under && !beside, "category \(index + 1) (\(context))")
+            }
+        }
+    }
+
     /// Fails if Stop's well leaves the leading edge or loses the category
     /// directly under it (Settings there, the slot plan's first draft,
     /// would open the cover on a held look after Stop), or, in the slot
@@ -731,21 +898,29 @@ struct HomeLayoutEngineTests {
     /// size without typing, the well's top leading corner was nearest Yes
     /// by centre, until the categories sat lower there. Fails too if the
     /// categories sit lower on a phone or a full-screen iPad (the fit
-    /// table's windows), or if the room the drop takes leaves a library
-    /// that fits scrolling.
+    /// table's windows) other than by the drops pinned below, or if the
+    /// room the drop takes leaves a library that fits scrolling.
     @Test func theCategoriesSitLowerOnlyWhereYesWouldReachStopsWell() {
         let found = HomeLayout(space: .init(size: CGSize(width: 400, height: 568)), text: Self.defaultText, modes: .phrasesOnly)
         let well = found.frame(.stop)
         let corner = CGPoint(x: well.minX + 0.5, y: well.minY + 0.5)
         #expect(found.wellDrop > 0)
         #expect(!Nearest.to(corner, among: Nearest.controls(in: found, excluding: [.stop])).contains(.yes))
+        // The 375×667 phone with Phrases and Type, whose safety row is at its
+        // 44pt floor there (docs/DECISIONS.md, "Typing on Home").
+        let knownDrops: [String: CGFloat] = [
+            "375×667 phone, default, Bold Text false, phrasesAndTyping": 0.5,
+            "375×667 phone, default, Bold Text true, phrasesAndTyping": 5.5,
+            "375×667 phone, xxxLarge, Bold Text true, phrasesAndTyping": 4,
+        ]
         for window in Self.windows {
             let space = HomeLayout.Space(size: window.size, safeArea: .init(top: window.top, leading: 0, bottom: window.bottom, trailing: 0))
             for (name, plain) in Self.textSizes {
                 for boldText in [false, true] {
                     for modes in Self.bothModes {
                         let layout = HomeLayout(space: space, text: boldText ? Self.bold(plain) : plain, modes: modes)
-                        #expect(layout.wellDrop == 0, "\(window.name), \(name), Bold Text \(boldText), \(modes)")
+                        let context = "\(window.name), \(name), Bold Text \(boldText), \(modes)"
+                        #expect(layout.wellDrop == knownDrops[context] ?? 0, "\(context)")
                     }
                 }
             }
@@ -761,22 +936,31 @@ struct HomeLayoutEngineTests {
     // MARK: Chains of held activations
 
     /// Home's map for the chain engine on the layout engine's frames
-    /// (`HomeChains`), with Phrases and Type added where the layout has
-    /// them: Phrases does nothing while the phrases show, and Type leads to
-    /// typing, which the map does not have yet, so a chain stops there.
-    static func chainMap(_ layout: HomeLayout) -> ChainMap {
+    /// (`HomeChains`), with Phrases and Type where the layout has them.
+    /// Without `typing`, Type leads to typing, which the map does not have,
+    /// so a chain stops there. With it, the map has typing too, and every
+    /// state has the largest category's tiles, as many as show without
+    /// scrolling: speaking while browsing, dimmed while typing.
+    static func chainMap(_ layout: HomeLayout, typing: Bool = false) -> ChainMap {
         let categories = (0..<HomeLayout.categoryCapacity).map { (name: "category \($0 + 1)", frame: layout.frame(.category($0))) }
-        var map = HomeChains.map(HomeChains.Frames(
+        let hasModes = layout.modes == .phrasesAndTyping
+        var tiles: [CGRect] = []
+        if typing {
+            let grid = layout.grid
+            for index in 0..<HomeLayout.referencePhraseCount {
+                let tile = grid.tile(row: index / grid.columns, column: index % grid.columns)
+                if tile.minY < grid.frame.maxY { tiles.append(tile) }
+            }
+        }
+        return HomeChains.map(HomeChains.Frames(
             yes: layout.frame(.yes), no: layout.frame(.no), emergency: layout.frame(.emergency), again: layout.frame(.again),
             getAttention: layout.frame(.getAttention), stop: layout.frame(.stop), settings: layout.frame(.settings),
-            categories: categories
+            categories: categories, tiles: tiles,
+            phrases: hasModes ? layout.frame(.phrases) : nil, type: hasModes ? layout.frame(.type) : nil,
+            typing: typing && hasModes ? HomeChains.Typing(
+                field: layout.frame(.message), clearCell: layout.typingCells.clear, putBackCell: layout.typingCells.putBack
+            ) : nil
         ))
-        guard layout.modes == .phrasesAndTyping else { return map }
-        for state in map.states.keys {
-            map.states[state]?.append(ChainControl("phrases", layout.frame(.phrases), .nothing))
-            map.states[state]?.append(ChainControl("type", layout.frame(.type), .navigates, leadsTo: "Typing"))
-        }
-        return map
     }
 
     /// Fails if a chain of held activations on the engine's frames meets
@@ -827,6 +1011,82 @@ struct HomeLayoutEngineTests {
         let unexpectedCount = unexpected.count
         #expect(unexpectedCount == 0, "first: \(unexpected.first ?? "")")
         withKnownIssue("docs/DECISIONS.md, \"Get Attention and Stop on Home\": the top of Stop's well is nearest Again") {
+            #expect(known == 0)
+        }
+    }
+
+    /// Typing on the engine's frames (docs/DECISIONS.md, "Typing on
+    /// Home"): every Home state, typing with the draft empty, written or
+    /// cleared included, scored as above. While typing the phrase tiles are
+    /// dimmed in place and do nothing, so a look may rest on one as on words
+    /// it reads: besides choosing each, every typing state also starts from
+    /// a look resting on each tile of the grid's top row, across it and
+    /// every 4 points half a point under its top edge, and in the gaps
+    /// between those tiles every 8 points down to their middle: the row
+    /// that borders Clear and Put Back. Fewer widths than above (every 32pt, and both
+    /// sides of each change of arrangement): there are six times the
+    /// states.
+    ///
+    /// Two findings are known. Stop's well's, as above, where Speak, in
+    /// Again's slot while typing, is what the well's top meets. And, by
+    /// centre only, a look resting near the top of a dimmed tile, or
+    /// between two, is nearer Clear's or Put Back's centre, in the shorter
+    /// cell above, than its own: by edge a tile is nearest. Anything else
+    /// fails: Clear or Put Back met by edge (as from the empty grid the
+    /// first version had), a category that left typing and turned the
+    /// tiles under the look into phrases that speak, a phrase, Yes, No or
+    /// the alarm. Strict, so it fails once the centre's finding is gone.
+    @Test(arguments: [false, true])
+    func typingChainsMeetOnlyClearAndPutBackByCentreFromTheDimmedPhrases(boldText: Bool) {
+        let dimmedPhrase = "a dimmed phrase"
+        var known = 0
+        var unexpected: [String] = []
+        for (name, text) in [("default", Self.defaultText), ("xxxLarge", Self.largerText), ("AX5", Self.largestText)] {
+            let text = boldText ? Self.bold(text) : text
+            for height: CGFloat in [874, 1376] {
+                func layout(_ width: CGFloat) -> HomeLayout {
+                    HomeLayout(space: .init(size: CGSize(width: width, height: height)), text: text, modes: .phrasesAndTyping)
+                }
+                let boundaries = Self.chainWidths(layout).filter { $0.truncatingRemainder(dividingBy: 16) != 0 }
+                for width in Set(stride(from: CGFloat(320), through: 1432, by: 32)).union(boundaries).sorted() {
+                    let layout = layout(width)
+                    let context = "\(width)×\(height), \(name), Bold Text \(boldText)"
+                    let map = Self.chainMap(layout, typing: true)
+                    let grid = layout.grid
+                    let topRow = (0..<min(grid.columns, HomeLayout.referencePhraseCount)).map { grid.tile(row: 0, column: $0) }
+                    let categories = (0..<HomeLayout.categoryCapacity).map { "category \($0 + 1)" }
+                    let typingStates = HomeChains.states(categoryCount: categories.count, typing: true)
+                        .filter(\.typing)
+                        .map { HomeChains.name(of: $0, categories: categories) }
+                    let onTiles = topRow.flatMap { tile in
+                        ChainEngine.points(across: tile, columns: 2, rows: 2)
+                            + stride(from: tile.minX + 0.5, through: tile.maxX - 0.5, by: 4).map { CGPoint(x: $0, y: tile.minY + 0.5) }
+                    }
+                    let betweenTiles = zip(topRow, topRow.dropFirst()).flatMap { left, right in
+                        stride(from: left.minY + 0.5, through: left.midY, by: 8).map { CGPoint(x: (left.maxX + right.minX) / 2, y: $0) }
+                    }
+                    let resting = typingStates.flatMap { state in
+                        (onTiles + betweenTiles).map { ChainStart.resting(at: $0, on: dimmedPhrase, in: state) }
+                    }
+                    for finding in ChainFinding.findings(in: map.hazards(from: map.everyStart() + resting)) {
+                        let start = finding.example.start
+                        let fromTheWell = start.chosen?.name == HomeChains.stop || start.restingOn == HomeChains.emptyWell
+                        let met = finding.example.hazard?.control.name
+                        let byCentreOnly = finding.under.allSatisfy { $0.hasPrefix(NearestRule.centre.rawValue) }
+                        if !Self.emergencyIsAboveTheWell(layout) && fromTheWell && (met == HomeChains.again || met == HomeChains.speak) {
+                            continue
+                        } else if start.restingOn == dimmedPhrase && byCentreOnly && (met == HomeChains.clear || met == HomeChains.putBack) {
+                            known += 1
+                        } else {
+                            unexpected.append("\(finding) (\(context))")
+                        }
+                    }
+                }
+            }
+        }
+        let unexpectedCount = unexpected.count
+        #expect(unexpectedCount == 0, "first: \(unexpected.first ?? "")")
+        withKnownIssue("docs/DECISIONS.md, \"Typing on Home\": by centre, dimmed phrases border Clear and Put Back") {
             #expect(known == 0)
         }
     }
@@ -941,6 +1201,34 @@ struct HomeLayoutEngineTests {
         }
     }
 
+    /// Typing never hides the call for help (AGENTS.md, *Design rules for
+    /// dwell, switch and pointer input*): Home offers Type only where the
+    /// message, Phrases, Type and the whole safety row end above the
+    /// keyboard's room, and never without typing (docs/DECISIONS.md,
+    /// "Typing on Home", *The keyboard's room, measured*). Fails if Type is
+    /// offered where the keyboard would cover Emergency, Yes, No, Speak or
+    /// Get Attention, as on the zoomed 13-inch iPad in landscape at AX5, or
+    /// withheld where they clear, as on CI's iPhone 17 at AX5.
+    @Test func typeIsOfferedOnlyWhereTheSafetyRowClearsTheKeyboard() {
+        var faults: [String] = []
+        for (layout, _, context) in Self.everyLayout
+        where layout.offersTyping != (layout.modes == .phrasesAndTyping && layout.bandClearsKeyboard) {
+            faults.append("offers typing \(layout.offersTyping), band clears \(layout.bandClearsKeyboard) (\(context))")
+        }
+        let count = faults.count
+        #expect(count == 0, "first: \(faults.first ?? "")")
+        let zoomed = HomeLayout(
+            space: .init(size: CGSize(width: 1032, height: 774), safeArea: .init(top: 32, leading: 0, bottom: 20, trailing: 0)),
+            text: Self.largestText, modes: .phrasesAndTyping
+        )
+        #expect(!zoomed.offersTyping)
+        let phone = HomeLayout(
+            space: .init(size: CGSize(width: 402, height: 874), safeArea: .init(top: 62, leading: 0, bottom: 34, trailing: 0)),
+            text: Self.largestText, modes: .phrasesAndTyping
+        )
+        #expect(phone.offersTyping)
+    }
+
     // MARK: The windows people use
 
     /// A full-screen window and how far up the text sizes it holds the
@@ -1035,12 +1323,15 @@ struct HomeLayoutEngineTests {
         #expect(today.quickControlHeight == 44 && today.categoryHeight == 44)
         #expect(today.grid.tileSize.height == today.grid.tileFloor)
         // With Phrases and Type the message's region is three points
-        // taller, and Get Attention, in A's narrow trailing column, needs
-        // two lines: the library no longer fits, and nothing grows.
+        // taller, two controls at their floor, and the categories sit half
+        // a point lower to keep Yes off Stop's well: the library is half a
+        // point short, and nothing grows (docs/DECISIONS.md, "Typing on
+        // Home"). Get Attention keeps one line beside the message.
         let small = HomeLayout(space: smallSpace, text: Self.defaultText, modes: .phrasesAndTyping)
         #expect(!small.startersFit && small.grid.scrolls)
+        #expect(abs(small.shortfall - 0.5) < 0.001 && small.wellDrop == 0.5)
         #expect(small.regionGap == HomeLayout.minimumRegionSpacing)
-        #expect(small.quickControlHeight == HomeLayout.twoLineQuickControlHeight && small.categoryHeight == 44)
+        #expect(small.quickControlHeight == 44 && small.categoryHeight == 44 && small.frame(.phrases).height == 44)
         for modes in Self.bothModes {
             // An iPhone 17: room for today's sizes, and taller tiles.
             let phone = HomeLayout(

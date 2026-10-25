@@ -42,6 +42,13 @@ The initial implementation includes:
 - Get Attention on Home: one activation sounds an alarm to call someone
   into the room, and a Stop button, in a different place, appears while
   it sounds.
+- Typing on Home: Type, beside the message, opens Apple's keyboard;
+  Speak or Return says the message, Phrases goes back to the phrases,
+  and Clear and Put Back each have a fixed place. The message is kept on
+  the device until it is cleared, and nothing on Home moves when the
+  keyboard shows. On the smallest windows at the largest text sizes,
+  where the keyboard would cover Emergency, Yes, No or Get Attention,
+  Type is dimmed instead.
 - Settings for the family, opened from Home's Settings button: voices,
   setup guides and the privacy policy.
 - Speech through Apple's built-in speech system, with Personal Voice
@@ -51,7 +58,7 @@ The initial implementation includes:
   restarting a phrase that is already being spoken.
 - Unit tests for core logic and simulator UI tests for the initial Home flow.
 
-Typing, phrase editing and backup export are not implemented yet. Home's layout comes from one tested layout
+Phrase editing and backup export are not implemented yet. Home's layout comes from one tested layout
 engine, at touch sizes; sizes for switches, head and eye tracking, and validation across access methods, remain
 planned work. See the [handoff](docs/HANDOFF.md) for verification evidence,
 known limitations and next steps.

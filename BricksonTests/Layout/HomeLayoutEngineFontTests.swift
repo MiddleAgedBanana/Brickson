@@ -63,6 +63,34 @@ struct HomeLayoutEngineFontTests {
         }
     }
 
+    /// Fails if the message stops following the person's text size where
+    /// its words fit, capped at a smaller size instead (Apple's audit
+    /// reported that as "Dynamic Type font sizes are partially unsupported"
+    /// on the first-run hint, in the narrower message Phrases and Type leave
+    /// on a phone), may shrink below the default size, or sets a line wider
+    /// than the message at the default size. Fails too if a word too wide
+    /// even at the default size is no longer capped there.
+    @Test(arguments: [false, true])
+    func theMessageFollowsThePersonsTextSize(boldText: Bool) throws {
+        let legibility: LegibilityWeight = boldText ? .bold : .regular
+        let font = LabelFont.message.legible(legibility)
+        // The message's width on CI's phone, with Phrases and Type beside it.
+        let width: CGFloat = 217
+        for size in DynamicTypeSize.allCases where size >= .large {
+            let fit = font.messageFit(for: FirstRunHint.text, at: size, width: width)
+            let lines = try #require(fit.lines, "\(size)")
+            #expect(fit.cap == size, "\(size)")
+            #expect(fit.smallestScale == font.pointSize(at: .large) / font.pointSize(at: size), "\(size)")
+            #expect(lines.joined(separator: " ") == FirstRunHint.text, "\(size)")
+            for line in lines {
+                #expect(font.lineWidth(line, at: .large) <= width, "\(size): \(line)")
+            }
+        }
+        #expect(font.messageFit(for: FirstRunHint.text, at: .accessibility5, width: width).smallestScale < 1)
+        let tooWide = font.messageFit(for: "Supercalifragilisticexpialidocious", at: .accessibility3, width: width)
+        #expect(tooWide == MessageFit(lines: nil, smallestScale: 1, cap: .large))
+    }
+
     /// Fails if the message's two reserved lines, or the status line under
     /// them, draw taller than the engine keeps for them (two and one
     /// `LabelFont.lineHeight(at:)`), at any text size, with Bold Text off

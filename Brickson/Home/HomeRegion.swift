@@ -1,9 +1,10 @@
 /// Home's regions, in the order VoiceOver, Switch Control and Full Keyboard
 /// Access reach them: Yes, No, Emergency and Get Attention first, because
 /// every step a switch scan spends before them is waiting time, then Again;
-/// then the message; then Stop while the alarm sounds, the categories and
-/// Settings; then the phrases (docs/DECISIONS.md, "Home's scan order and
-/// names", "Settings on Home" and "Get Attention and Stop on Home").
+/// then the message, Phrases and Type; then Stop while the alarm sounds,
+/// the categories and Settings; then the phrases (docs/DECISIONS.md,
+/// "Home's scan order and names", "Settings on Home", "Get Attention and
+/// Stop on Home" and "Typing on Home").
 ///
 /// Each region is an accessibility container, so its controls are reached
 /// together, one region after another, and Switch Control can offer it as
@@ -13,7 +14,8 @@
 nonisolated enum HomeRegion: CaseIterable, Sendable {
     /// C: Yes, No, Emergency, Get Attention and Again.
     case safety
-    /// A: the message and its status line.
+    /// A: the message and its status line (the field while typing), then
+    /// Phrases and Type beside them.
     case message
     /// B: Stop's well, the category buttons and Settings.
     case categories
@@ -55,6 +57,9 @@ nonisolated enum HomeRegion: CaseIterable, Sendable {
     /// In the band those two stand one above the other at its leading end,
     /// and the others start level with Stop, so by where they are the first
     /// category would come after the last (`HomeLayout.CategoryArrangement`).
+    /// In the safety row, Yes and then No are reached first, then Emergency
+    /// and Get Attention, wherever they stand: on regular widths Emergency
+    /// leads the row (docs/DECISIONS.md, "Typing on Home").
     static let firstInRegion: Double = 2
     static let secondInRegion: Double = 1
 }

@@ -329,6 +329,72 @@ struct DraftStoreTests {
         #expect(file.url.path(percentEncoded: false) == expected.path(percentEncoded: false))
     }
 
+    // MARK: The length limit
+
+    /// Fails if an edit refused at the length limit passes silently: the
+    /// field puts the words back as they were, so Home must say why
+    /// (`DraftIssue.reachedLimit`), until the next change is saved.
+    @Test func aRefusedEditSaysTheMessageIsFull() {
+        let storage = FakeStorage()
+        let draft = store(storage: storage)
+        let full = String(repeating: "a", count: MessageComposer.maximumLength)
+        draft.perform(.propose(full))
+        #expect(draft.issue == nil)
+
+        let refused = draft.perform(.propose(full + "b"))
+
+        #expect(refused.reachedLimit && refused.fieldNeedsUpdate)
+        #expect(draft.text == full)
+        #expect(draft.issue == .reachedLimit)
+        draft.perform(.deleteBackward)
+        #expect(draft.issue == nil)
+    }
+
+    /// Fails if the limit's notice takes the place of a failed save's,
+    /// which matters more: those words may be lost; or if a refusal under
+    /// it goes uncounted, so Home would not tell VoiceOver of it.
+    @Test func aFailedSaveOutranksTheLimit() {
+        let storage = FakeStorage()
+        let draft = store(storage: storage)
+        let full = String(repeating: "a", count: MessageComposer.maximumLength)
+        storage.failing = true
+        draft.perform(.propose(full))
+        #expect(draft.issue == .notSaved)
+
+        draft.perform(.propose(full + "b"))
+
+        #expect(draft.issue == .notSaved)
+        // Still counted, so Home tells VoiceOver the keystroke did nothing.
+        #expect(draft.refusals == 1)
+    }
+
+    /// Fails if a refusal straight after another is not counted, so Home
+    /// would tell VoiceOver only of the first: `issue` does not change
+    /// between them.
+    @Test func everyRefusalIsCounted() {
+        let draft = store(storage: FakeStorage())
+        let full = String(repeating: "a", count: MessageComposer.maximumLength)
+        draft.perform(.propose(full))
+        #expect(draft.refusals == 0)
+
+        draft.perform(.propose(full + "b"))
+        draft.perform(.propose(full + "c"))
+
+        #expect(draft.issue == .reachedLimit)
+        #expect(draft.refusals == 2)
+        draft.perform(.deleteBackward)
+        #expect(draft.refusals == 2)
+    }
+
+    /// Fails if a failed save or restore stops being told when it shows, or
+    /// the limit is told when it shows as well as on every refusal, which
+    /// would tell the first refusal twice.
+    @Test func onlyTheLimitIsToldOnEveryRefusalInstead() {
+        #expect(DraftIssue.notSaved.isAnnouncedWhenItShows)
+        #expect(DraftIssue.notRestored.isAnnouncedWhenItShows)
+        #expect(!DraftIssue.reachedLimit.isAnnouncedWhenItShows)
+    }
+
     // MARK: Messages
 
     /// Fails if a notice is missing words, or its short form grows too long
