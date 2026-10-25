@@ -101,9 +101,12 @@ final class SettingsTests: XCTestCase {
     /// included, so a repeated activation where that row was meets a row
     /// that only opens the next screen, not Back to Talking, which would
     /// close Settings onto Home (docs/DECISIONS.md, "Settings' first row,
-    /// placed from Home's frames"). Fails if Set Up Step by Step leaves that place
-    /// or is shorter or narrower than the row, if any other button lies
-    /// within the row's frame, or if the opening words are gone.
+    /// placed from Home's frames"). Fails if Set Up Step by Step's leading
+    /// edge, top or width differ from the row's by more than a point (a row
+    /// across the width would cover the spot and still let a look there
+    /// meet Back to Talking by centre), if it is shorter than the row, if
+    /// any other button lies within the row's frame, or if the opening
+    /// words are gone.
     @MainActor
     func testFamilySetupOpensWithSetUpStepByStepOverTheWholeRootRow() {
         continueAfterFailure = true
@@ -124,6 +127,10 @@ final class SettingsTests: XCTestCase {
                 guided.frame.insetBy(dx: -0.5, dy: -0.5).contains(rowFrame),
                 "Set Up Step by Step at \(guided.frame) does not cover the root row at \(rowFrame) (\(context))"
             )
+            // In the row's own frame, growing only downward.
+            XCTAssertEqual(guided.frame.minX, rowFrame.minX, accuracy: 1, "Set Up Step by Step's leading edge moved (\(context))")
+            XCTAssertEqual(guided.frame.minY, rowFrame.minY, accuracy: 1, "Set Up Step by Step's top moved (\(context))")
+            XCTAssertEqual(guided.frame.width, rowFrame.width, accuracy: 1, "Set Up Step by Step is not the row's width (\(context))")
             // Inset, so a row that only touches its edge does not count.
             let spot = rowFrame.insetBy(dx: 0.5, dy: 0.5)
             for button in app.buttons.allElementsBoundByIndex

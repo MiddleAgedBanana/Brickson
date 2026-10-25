@@ -203,7 +203,8 @@ build). Status: building (untested until CI passes).*
     closing.
   - `SettingsTests.testFamilySetupOpensWithSetUpStepByStepOverTheWholeRootRow`
     (UI, default and AX5): fails if Set Up Step by Step stops covering
-    the root row's frame, or another control meets that spot.
+    the root row's frame, leaves its leading edge, top or width by more
+    than a point, or another control meets that spot.
   - Device checks (Codex): where a pointer rests after choosing the root's
     row, with Snap to Item, on an iPad and an iPhone.
 
