@@ -179,7 +179,9 @@ status line, and this record's *Not verified* brought up to date.
   - `HomeLayoutEngineFontTests.theMessageFollowsThePersonsTextSize`:
     the message capped at the largest size its widest word fits, as
     before (its cap is then below the person's size at the largest
-    sizes). It measures with UIKit, so it was not run here; CI runs it.
+    sizes), or a word too wide even at the default size set in lines,
+    where SwiftUI would cut it short instead of wrapping it (Codex, on
+    `80c9a0b`). It measures with UIKit, so it was not run here; CI runs it.
   - `ChainEngineTests.backToTalkingOverPhrasesClosesOnlyUnderALookItReachesUnasked`
     and `theHeldGuideLinkWouldSoundTheAlarm`: Settings' frames back at
     the old bar, or the guide link's chains clearing.

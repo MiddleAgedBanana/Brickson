@@ -195,7 +195,11 @@ struct LabelFont: Equatable {
     func messageFit(for text: String, at size: DynamicTypeSize, width: CGFloat) -> MessageFit {
         let steps = Self.steps(downFrom: size)
         let smallest = steps.last ?? size
-        guard let step = choices(for: text, systemImage: nil, steps: steps, width: width).first?.step else {
+        // `choices` ends with the smallest size even when the word does not
+        // fit there, so the size it picks is measured again.
+        guard let step = choices(for: text, systemImage: nil, steps: steps, width: width).first?.step,
+              widestWord(text, at: steps[step]) <= width - WordFit.widthSlack
+        else {
             return MessageFit(lines: nil, smallestScale: 1, cap: smallest)
         }
         let own = pointSize(at: size)
