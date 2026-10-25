@@ -1,0 +1,40 @@
+{
+  "schema": 1,
+  "baseCommit": "37c2e0b23b0261728f04eb651f94981d30b673b0",
+  "source": "git archive of fetched main, separate build directory; no source edits",
+  "toolchain": "Xcode 27.1 (27A9275), XcodeGen 2.46.0",
+  "simulator": "same iPad Pro 13-inch (M5), iOS27.0, Full Screen portrait, full keyboard prepared but not opened by selected case",
+  "test": "LaunchTests/testLargestTextKeepsQuickControlWordsVisible()",
+  "launch": "fresh isolated test storage, English, AX5, separate light/dark launches; script boot wait and warm-up enabled",
+  "summary": {
+    "result": "Failed",
+    "totalTestCount": 1,
+    "passedTests": 0,
+    "failedTests": 1,
+    "skippedTests": 0,
+    "expectedFailures": 0
+  },
+  "exitStatus": 65,
+  "failure": "Same four 30-second Speaking waits at lines126/145 in light/dark; no rendered-word assertion failed",
+  "interpretation": "The failure reproduces without Duo implementation. It is not established as caused by this layout. This selected-case result does not turn the full current failed suites into passes or establish a synthesis/callback cause.",
+  "resultBundle": "/private/tmp/brickson-duo-ui-baseline-37c2e0b/build/TestResults/duo-speech-baseline/ui-destination.xcresult",
+  "log": "/private/tmp/brickson-duo-speech-baseline.log",
+  "images": [
+    {
+      "path": "baseline-ipad-ax5-dark-speaking.png",
+      "attachmentName": "AX5, dark, phrase spoken_0_6F304FCA-E808-48C2-AD35-7156AED4F8D0.png",
+      "sourceExportedFileName": "F21B5077-7E00-402A-B689-E1C650E013AA.png",
+      "sha256": "dd19809fd1f0d13a536756cbaff270349ef215e8cf387ba9a5fe4fb7a0181f65",
+      "modified": false
+    },
+    {
+      "path": "baseline-ipad-ax5-light-speaking.png",
+      "attachmentName": "AX5, light, phrase spoken_0_78B7140B-39B1-4735-BC5F-BADE4262A04D.png",
+      "sourceExportedFileName": "F45DFF9C-4B10-4F0C-8F6D-CAC99409303D.png",
+      "sha256": "df156ef81f84bdac1df477cd4adc00d2a8a5ea329edfa364a281a55e827bf6c9",
+      "modified": false
+    }
+  ],
+  "audioSourceChanged": false,
+  "speechBehaviorChangedToPassTest": false
+}

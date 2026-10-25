@@ -5,7 +5,8 @@
   "wrapperId": "89:3",
   "specCommit": "1de1333",
   "sourceAppCodeBase": "6d040d5",
-  "sourceGeometry": "docs/evidence/2026-10-25-duo-design/candidate-geometry.json",
+  "sourceImplementation": "uncommitted production allocator after design87ddb14; copied into this host harness",
+  "sourceSnapshotSHA256": "06a6d97d6c261205756ca0bc41c02d68b9484510b412fbdfe04cbcf0c948f7a4",
   "coverage": {
     "screens": 84,
     "browsing": 24,
@@ -23,8 +24,27 @@
       "state": "Browsing",
       "screenId": "95:35",
       "cardId": "95:33",
-      "maxFrameError": 1.0172526060614473e-05,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-35"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-35",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3874",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 40,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 41,
+          "x": 455,
+          "y": 0
+        }
+      ]
     },
     {
       "case": "open-wide-default",
@@ -33,8 +53,27 @@
       "state": "Typing",
       "screenId": "95:110",
       "cardId": "95:108",
-      "maxFrameError": 1.0172526060614473e-05,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-110"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-110",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3875",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 40,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 41,
+          "x": 455,
+          "y": 0
+        }
+      ]
     },
     {
       "case": "open-wide-default",
@@ -43,8 +82,27 @@
       "state": "Alarm",
       "screenId": "95:518",
       "cardId": "95:516",
-      "maxFrameError": 1.0172526060614473e-05,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-518"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-518",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3876",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 40,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 41,
+          "x": 455,
+          "y": 0
+        }
+      ]
     },
     {
       "case": "open-wide-default",
@@ -53,8 +111,27 @@
       "state": "Settings Back cover",
       "screenId": "95:594",
       "cardId": "95:592",
-      "maxFrameError": 6.103515630684342e-06,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-594"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-594",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3877",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 40,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 41,
+          "x": 455,
+          "y": 0
+        }
+      ]
     },
     {
       "case": "open-wide-default",
@@ -63,8 +140,27 @@
       "state": "Browsing",
       "screenId": "95:617",
       "cardId": "95:615",
-      "maxFrameError": 1.0172526060614473e-05,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-617"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-617",
+      "wholeTiles": 4,
+      "scroll": 66,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3878",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 40,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 41,
+          "x": 455,
+          "y": 0
+        }
+      ]
     },
     {
       "case": "open-wide-default",
@@ -73,8 +169,27 @@
       "state": "Alarm",
       "screenId": "95:692",
       "cardId": "95:690",
-      "maxFrameError": 1.0172526060614473e-05,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-692"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-692",
+      "wholeTiles": 4,
+      "scroll": 66,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3879",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 40,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 41,
+          "x": 455,
+          "y": 0
+        }
+      ]
     },
     {
       "case": "open-wide-default",
@@ -83,8 +198,27 @@
       "state": "Settings Back cover",
       "screenId": "95:768",
       "cardId": "95:766",
-      "maxFrameError": 6.103515630684342e-06,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-768"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-768",
+      "wholeTiles": 4,
+      "scroll": 66,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3880",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 40,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 41,
+          "x": 455,
+          "y": 0
+        }
+      ]
     },
     {
       "case": "open-wide-default",
@@ -93,8 +227,27 @@
       "state": "Browsing",
       "screenId": "95:792",
       "cardId": "95:790",
-      "maxFrameError": 1.0172526060614473e-05,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-792"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-792",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3881",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 40,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 41,
+          "x": 455,
+          "y": 0
+        }
+      ]
     },
     {
       "case": "open-wide-default",
@@ -103,8 +256,27 @@
       "state": "Typing",
       "screenId": "95:867",
       "cardId": "95:865",
-      "maxFrameError": 1.0172526060614473e-05,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-867"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-867",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3882",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 40,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 41,
+          "x": 455,
+          "y": 0
+        }
+      ]
     },
     {
       "case": "open-wide-default",
@@ -113,8 +285,27 @@
       "state": "Alarm",
       "screenId": "95:1292",
       "cardId": "95:1290",
-      "maxFrameError": 1.0172526060614473e-05,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-1292"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-1292",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3883",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 40,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 41,
+          "x": 455,
+          "y": 0
+        }
+      ]
     },
     {
       "case": "open-wide-default",
@@ -123,8 +314,27 @@
       "state": "Settings Back cover",
       "screenId": "95:1368",
       "cardId": "95:1366",
-      "maxFrameError": 6.103515630684342e-06,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-1368"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-1368",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3884",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 40,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 41,
+          "x": 455,
+          "y": 0
+        }
+      ]
     },
     {
       "case": "open-wide-default",
@@ -133,8 +343,27 @@
       "state": "Browsing",
       "screenId": "95:1391",
       "cardId": "95:1389",
-      "maxFrameError": 1.0172526060614473e-05,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-1391"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-1391",
+      "wholeTiles": 4,
+      "scroll": 66,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3885",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 40,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 41,
+          "x": 455,
+          "y": 0
+        }
+      ]
     },
     {
       "case": "open-wide-default",
@@ -143,8 +372,27 @@
       "state": "Alarm",
       "screenId": "95:1466",
       "cardId": "95:1464",
-      "maxFrameError": 1.0172526060614473e-05,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-1466"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-1466",
+      "wholeTiles": 4,
+      "scroll": 66,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3886",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 40,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 41,
+          "x": 455,
+          "y": 0
+        }
+      ]
     },
     {
       "case": "open-wide-default",
@@ -153,8 +401,27 @@
       "state": "Settings Back cover",
       "screenId": "95:1542",
       "cardId": "95:1540",
-      "maxFrameError": 6.103515630684342e-06,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-1542"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-1542",
+      "wholeTiles": 4,
+      "scroll": 66,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3887",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 40,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 41,
+          "x": 455,
+          "y": 0
+        }
+      ]
     },
     {
       "case": "open-wide-reverse-ax5",
@@ -163,8 +430,27 @@
       "state": "Browsing",
       "screenId": "95:1568",
       "cardId": "95:1566",
-      "maxFrameError": 1.0172526060614473e-05,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-1568"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-1568",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3888",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 40,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 41,
+          "x": 455,
+          "y": 0
+        }
+      ]
     },
     {
       "case": "open-wide-reverse-ax5",
@@ -173,8 +459,27 @@
       "state": "Typing",
       "screenId": "95:1643",
       "cardId": "95:1641",
-      "maxFrameError": 1.0172526060614473e-05,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-1643"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-1643",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3889",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 40,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 41,
+          "x": 455,
+          "y": 0
+        }
+      ]
     },
     {
       "case": "open-wide-reverse-ax5",
@@ -183,8 +488,27 @@
       "state": "Alarm",
       "screenId": "95:1860",
       "cardId": "95:1858",
-      "maxFrameError": 1.0172526060614473e-05,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-1860"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-1860",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3890",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 40,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 41,
+          "x": 455,
+          "y": 0
+        }
+      ]
     },
     {
       "case": "open-wide-reverse-ax5",
@@ -193,8 +517,27 @@
       "state": "Settings Back cover",
       "screenId": "95:1936",
       "cardId": "95:1934",
-      "maxFrameError": 1.2207031204525265e-05,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-1936"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-1936",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3891",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 40,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 41,
+          "x": 455,
+          "y": 0
+        }
+      ]
     },
     {
       "case": "open-wide-reverse-ax5",
@@ -203,8 +546,27 @@
       "state": "Browsing",
       "screenId": "95:1959",
       "cardId": "95:1957",
-      "maxFrameError": 1.0172526060614473e-05,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-1959"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-1959",
+      "wholeTiles": 4,
+      "scroll": 82,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3892",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 40,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 41,
+          "x": 455,
+          "y": 0
+        }
+      ]
     },
     {
       "case": "open-wide-reverse-ax5",
@@ -213,8 +575,27 @@
       "state": "Alarm",
       "screenId": "95:2034",
       "cardId": "95:2032",
-      "maxFrameError": 1.0172526060614473e-05,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-2034"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-2034",
+      "wholeTiles": 4,
+      "scroll": 82,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3893",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 40,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 41,
+          "x": 455,
+          "y": 0
+        }
+      ]
     },
     {
       "case": "open-wide-reverse-ax5",
@@ -223,8 +604,27 @@
       "state": "Settings Back cover",
       "screenId": "95:2110",
       "cardId": "95:2108",
-      "maxFrameError": 1.2207031204525265e-05,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-2110"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-2110",
+      "wholeTiles": 4,
+      "scroll": 82,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3894",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 40,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 41,
+          "x": 455,
+          "y": 0
+        }
+      ]
     },
     {
       "case": "open-wide-reverse-ax5",
@@ -233,8 +633,27 @@
       "state": "Browsing",
       "screenId": "95:2134",
       "cardId": "95:2132",
-      "maxFrameError": 1.0172526060614473e-05,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-2134"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-2134",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3895",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 40,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 41,
+          "x": 455,
+          "y": 0
+        }
+      ]
     },
     {
       "case": "open-wide-reverse-ax5",
@@ -243,8 +662,27 @@
       "state": "Typing",
       "screenId": "95:2209",
       "cardId": "95:2207",
-      "maxFrameError": 1.0172526060614473e-05,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-2209"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-2209",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3896",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 40,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 41,
+          "x": 455,
+          "y": 0
+        }
+      ]
     },
     {
       "case": "open-wide-reverse-ax5",
@@ -253,8 +691,27 @@
       "state": "Alarm",
       "screenId": "95:2562",
       "cardId": "95:2560",
-      "maxFrameError": 1.0172526060614473e-05,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-2562"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-2562",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3897",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 40,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 41,
+          "x": 455,
+          "y": 0
+        }
+      ]
     },
     {
       "case": "open-wide-reverse-ax5",
@@ -263,8 +720,27 @@
       "state": "Settings Back cover",
       "screenId": "95:2638",
       "cardId": "95:2636",
-      "maxFrameError": 1.2207031204525265e-05,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-2638"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-2638",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3898",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 40,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 41,
+          "x": 455,
+          "y": 0
+        }
+      ]
     },
     {
       "case": "open-wide-reverse-ax5",
@@ -273,8 +749,27 @@
       "state": "Browsing",
       "screenId": "95:2661",
       "cardId": "95:2659",
-      "maxFrameError": 1.0172526060614473e-05,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-2661"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-2661",
+      "wholeTiles": 4,
+      "scroll": 82,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3899",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 40,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 41,
+          "x": 455,
+          "y": 0
+        }
+      ]
     },
     {
       "case": "open-wide-reverse-ax5",
@@ -283,8 +778,27 @@
       "state": "Alarm",
       "screenId": "95:2736",
       "cardId": "95:2734",
-      "maxFrameError": 1.0172526060614473e-05,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-2736"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-2736",
+      "wholeTiles": 4,
+      "scroll": 82,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3900",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 40,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 41,
+          "x": 455,
+          "y": 0
+        }
+      ]
     },
     {
       "case": "open-wide-reverse-ax5",
@@ -293,8 +807,27 @@
       "state": "Settings Back cover",
       "screenId": "95:2812",
       "cardId": "95:2810",
-      "maxFrameError": 1.2207031204525265e-05,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-2812"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-2812",
+      "wholeTiles": 4,
+      "scroll": 82,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3901",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 40,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 41,
+          "x": 455,
+          "y": 0
+        }
+      ]
     },
     {
       "case": "open-tall-default",
@@ -303,8 +836,27 @@
       "state": "Browsing",
       "screenId": "95:2838",
       "cardId": "95:2836",
-      "maxFrameError": 0,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-2838"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-2838",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3902",
+      "rawDivisionFrames": [
+        {
+          "height": 40,
+          "width": 669,
+          "x": 0,
+          "y": 455.5
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 41,
+          "width": 669,
+          "x": 0,
+          "y": 455
+        }
+      ]
     },
     {
       "case": "open-tall-default",
@@ -313,8 +865,27 @@
       "state": "Typing",
       "screenId": "95:2913",
       "cardId": "95:2911",
-      "maxFrameError": 0,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-2913"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-2913",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3903",
+      "rawDivisionFrames": [
+        {
+          "height": 40,
+          "width": 669,
+          "x": 0,
+          "y": 455.5
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 41,
+          "width": 669,
+          "x": 0,
+          "y": 455
+        }
+      ]
     },
     {
       "case": "open-tall-default",
@@ -323,8 +894,27 @@
       "state": "Alarm",
       "screenId": "95:3130",
       "cardId": "95:3128",
-      "maxFrameError": 0,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-3130"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-3130",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3904",
+      "rawDivisionFrames": [
+        {
+          "height": 40,
+          "width": 669,
+          "x": 0,
+          "y": 455.5
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 41,
+          "width": 669,
+          "x": 0,
+          "y": 455
+        }
+      ]
     },
     {
       "case": "open-tall-default",
@@ -333,8 +923,27 @@
       "state": "Settings Back cover",
       "screenId": "95:3206",
       "cardId": "95:3204",
-      "maxFrameError": 0,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-3206"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-3206",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3905",
+      "rawDivisionFrames": [
+        {
+          "height": 40,
+          "width": 669,
+          "x": 0,
+          "y": 455.5
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 41,
+          "width": 669,
+          "x": 0,
+          "y": 455
+        }
+      ]
     },
     {
       "case": "open-tall-default",
@@ -343,8 +952,27 @@
       "state": "Browsing",
       "screenId": "95:3229",
       "cardId": "95:3227",
-      "maxFrameError": 0,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-3229"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-3229",
+      "wholeTiles": 4,
+      "scroll": 14,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3906",
+      "rawDivisionFrames": [
+        {
+          "height": 40,
+          "width": 669,
+          "x": 0,
+          "y": 455.5
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 41,
+          "width": 669,
+          "x": 0,
+          "y": 455
+        }
+      ]
     },
     {
       "case": "open-tall-default",
@@ -353,8 +981,27 @@
       "state": "Alarm",
       "screenId": "95:3304",
       "cardId": "95:3302",
-      "maxFrameError": 0,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-3304"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-3304",
+      "wholeTiles": 4,
+      "scroll": 14,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3907",
+      "rawDivisionFrames": [
+        {
+          "height": 40,
+          "width": 669,
+          "x": 0,
+          "y": 455.5
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 41,
+          "width": 669,
+          "x": 0,
+          "y": 455
+        }
+      ]
     },
     {
       "case": "open-tall-default",
@@ -363,8 +1010,27 @@
       "state": "Settings Back cover",
       "screenId": "95:3380",
       "cardId": "95:3378",
-      "maxFrameError": 0,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-3380"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-3380",
+      "wholeTiles": 4,
+      "scroll": 14,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3908",
+      "rawDivisionFrames": [
+        {
+          "height": 40,
+          "width": 669,
+          "x": 0,
+          "y": 455.5
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 41,
+          "width": 669,
+          "x": 0,
+          "y": 455
+        }
+      ]
     },
     {
       "case": "open-tall-default",
@@ -373,8 +1039,27 @@
       "state": "Browsing",
       "screenId": "95:3404",
       "cardId": "95:3402",
-      "maxFrameError": 0,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-3404"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-3404",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3909",
+      "rawDivisionFrames": [
+        {
+          "height": 40,
+          "width": 669,
+          "x": 0,
+          "y": 455.5
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 41,
+          "width": 669,
+          "x": 0,
+          "y": 455
+        }
+      ]
     },
     {
       "case": "open-tall-default",
@@ -383,8 +1068,27 @@
       "state": "Typing",
       "screenId": "95:3479",
       "cardId": "95:3477",
-      "maxFrameError": 0,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-3479"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-3479",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3910",
+      "rawDivisionFrames": [
+        {
+          "height": 40,
+          "width": 669,
+          "x": 0,
+          "y": 455.5
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 41,
+          "width": 669,
+          "x": 0,
+          "y": 455
+        }
+      ]
     },
     {
       "case": "open-tall-default",
@@ -393,8 +1097,27 @@
       "state": "Alarm",
       "screenId": "95:3832",
       "cardId": "95:3830",
-      "maxFrameError": 0,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-3832"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-3832",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3911",
+      "rawDivisionFrames": [
+        {
+          "height": 40,
+          "width": 669,
+          "x": 0,
+          "y": 455.5
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 41,
+          "width": 669,
+          "x": 0,
+          "y": 455
+        }
+      ]
     },
     {
       "case": "open-tall-default",
@@ -403,8 +1126,27 @@
       "state": "Settings Back cover",
       "screenId": "95:3908",
       "cardId": "95:3906",
-      "maxFrameError": 0,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-3908"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-3908",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3912",
+      "rawDivisionFrames": [
+        {
+          "height": 40,
+          "width": 669,
+          "x": 0,
+          "y": 455.5
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 41,
+          "width": 669,
+          "x": 0,
+          "y": 455
+        }
+      ]
     },
     {
       "case": "open-tall-default",
@@ -413,8 +1155,27 @@
       "state": "Browsing",
       "screenId": "95:3931",
       "cardId": "95:3929",
-      "maxFrameError": 0,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-3931"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-3931",
+      "wholeTiles": 4,
+      "scroll": 14,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3913",
+      "rawDivisionFrames": [
+        {
+          "height": 40,
+          "width": 669,
+          "x": 0,
+          "y": 455.5
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 41,
+          "width": 669,
+          "x": 0,
+          "y": 455
+        }
+      ]
     },
     {
       "case": "open-tall-default",
@@ -423,8 +1184,27 @@
       "state": "Alarm",
       "screenId": "95:4006",
       "cardId": "95:4004",
-      "maxFrameError": 0,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-4006"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-4006",
+      "wholeTiles": 4,
+      "scroll": 14,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3914",
+      "rawDivisionFrames": [
+        {
+          "height": 40,
+          "width": 669,
+          "x": 0,
+          "y": 455.5
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 41,
+          "width": 669,
+          "x": 0,
+          "y": 455
+        }
+      ]
     },
     {
       "case": "open-tall-default",
@@ -433,8 +1213,27 @@
       "state": "Settings Back cover",
       "screenId": "95:4082",
       "cardId": "95:4080",
-      "maxFrameError": 0,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-4082"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-4082",
+      "wholeTiles": 4,
+      "scroll": 14,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3915",
+      "rawDivisionFrames": [
+        {
+          "height": 40,
+          "width": 669,
+          "x": 0,
+          "y": 455.5
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 41,
+          "width": 669,
+          "x": 0,
+          "y": 455
+        }
+      ]
     },
     {
       "case": "open-tall-reverse-default",
@@ -443,8 +1242,27 @@
       "state": "Browsing",
       "screenId": "95:4108",
       "cardId": "95:4106",
-      "maxFrameError": 0,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-4108"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-4108",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3916",
+      "rawDivisionFrames": [
+        {
+          "height": 40,
+          "width": 669,
+          "x": 0,
+          "y": 455.5
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 41,
+          "width": 669,
+          "x": 0,
+          "y": 455
+        }
+      ]
     },
     {
       "case": "open-tall-reverse-default",
@@ -453,8 +1271,27 @@
       "state": "Typing",
       "screenId": "95:4183",
       "cardId": "95:4181",
-      "maxFrameError": 0,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-4183"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-4183",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3917",
+      "rawDivisionFrames": [
+        {
+          "height": 40,
+          "width": 669,
+          "x": 0,
+          "y": 455.5
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 41,
+          "width": 669,
+          "x": 0,
+          "y": 455
+        }
+      ]
     },
     {
       "case": "open-tall-reverse-default",
@@ -463,8 +1300,27 @@
       "state": "Alarm",
       "screenId": "95:4400",
       "cardId": "95:4398",
-      "maxFrameError": 0,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-4400"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-4400",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3918",
+      "rawDivisionFrames": [
+        {
+          "height": 40,
+          "width": 669,
+          "x": 0,
+          "y": 455.5
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 41,
+          "width": 669,
+          "x": 0,
+          "y": 455
+        }
+      ]
     },
     {
       "case": "open-tall-reverse-default",
@@ -473,8 +1329,27 @@
       "state": "Settings Back cover",
       "screenId": "95:4476",
       "cardId": "95:4474",
-      "maxFrameError": 0,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-4476"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-4476",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3919",
+      "rawDivisionFrames": [
+        {
+          "height": 40,
+          "width": 669,
+          "x": 0,
+          "y": 455.5
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 41,
+          "width": 669,
+          "x": 0,
+          "y": 455
+        }
+      ]
     },
     {
       "case": "open-tall-reverse-default",
@@ -483,8 +1358,27 @@
       "state": "Browsing",
       "screenId": "95:4499",
       "cardId": "95:4497",
-      "maxFrameError": 0,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-4499"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-4499",
+      "wholeTiles": 4,
+      "scroll": 14,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3920",
+      "rawDivisionFrames": [
+        {
+          "height": 40,
+          "width": 669,
+          "x": 0,
+          "y": 455.5
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 41,
+          "width": 669,
+          "x": 0,
+          "y": 455
+        }
+      ]
     },
     {
       "case": "open-tall-reverse-default",
@@ -493,8 +1387,27 @@
       "state": "Alarm",
       "screenId": "95:4574",
       "cardId": "95:4572",
-      "maxFrameError": 0,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-4574"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-4574",
+      "wholeTiles": 4,
+      "scroll": 14,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3921",
+      "rawDivisionFrames": [
+        {
+          "height": 40,
+          "width": 669,
+          "x": 0,
+          "y": 455.5
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 41,
+          "width": 669,
+          "x": 0,
+          "y": 455
+        }
+      ]
     },
     {
       "case": "open-tall-reverse-default",
@@ -503,8 +1416,27 @@
       "state": "Settings Back cover",
       "screenId": "95:4650",
       "cardId": "95:4648",
-      "maxFrameError": 0,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-4650"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-4650",
+      "wholeTiles": 4,
+      "scroll": 14,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3922",
+      "rawDivisionFrames": [
+        {
+          "height": 40,
+          "width": 669,
+          "x": 0,
+          "y": 455.5
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 41,
+          "width": 669,
+          "x": 0,
+          "y": 455
+        }
+      ]
     },
     {
       "case": "open-tall-reverse-default",
@@ -513,8 +1445,27 @@
       "state": "Browsing",
       "screenId": "95:4674",
       "cardId": "95:4672",
-      "maxFrameError": 0,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-4674"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-4674",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3923",
+      "rawDivisionFrames": [
+        {
+          "height": 40,
+          "width": 669,
+          "x": 0,
+          "y": 455.5
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 41,
+          "width": 669,
+          "x": 0,
+          "y": 455
+        }
+      ]
     },
     {
       "case": "open-tall-reverse-default",
@@ -523,8 +1474,27 @@
       "state": "Typing",
       "screenId": "95:4749",
       "cardId": "95:4747",
-      "maxFrameError": 0,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-4749"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-4749",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3924",
+      "rawDivisionFrames": [
+        {
+          "height": 40,
+          "width": 669,
+          "x": 0,
+          "y": 455.5
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 41,
+          "width": 669,
+          "x": 0,
+          "y": 455
+        }
+      ]
     },
     {
       "case": "open-tall-reverse-default",
@@ -533,8 +1503,27 @@
       "state": "Alarm",
       "screenId": "95:5102",
       "cardId": "95:5100",
-      "maxFrameError": 0,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-5102"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-5102",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3925",
+      "rawDivisionFrames": [
+        {
+          "height": 40,
+          "width": 669,
+          "x": 0,
+          "y": 455.5
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 41,
+          "width": 669,
+          "x": 0,
+          "y": 455
+        }
+      ]
     },
     {
       "case": "open-tall-reverse-default",
@@ -543,8 +1532,27 @@
       "state": "Settings Back cover",
       "screenId": "95:5178",
       "cardId": "95:5176",
-      "maxFrameError": 0,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-5178"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-5178",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3926",
+      "rawDivisionFrames": [
+        {
+          "height": 40,
+          "width": 669,
+          "x": 0,
+          "y": 455.5
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 41,
+          "width": 669,
+          "x": 0,
+          "y": 455
+        }
+      ]
     },
     {
       "case": "open-tall-reverse-default",
@@ -553,8 +1561,27 @@
       "state": "Browsing",
       "screenId": "95:5201",
       "cardId": "95:5199",
-      "maxFrameError": 0,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-5201"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-5201",
+      "wholeTiles": 4,
+      "scroll": 14,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3927",
+      "rawDivisionFrames": [
+        {
+          "height": 40,
+          "width": 669,
+          "x": 0,
+          "y": 455.5
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 41,
+          "width": 669,
+          "x": 0,
+          "y": 455
+        }
+      ]
     },
     {
       "case": "open-tall-reverse-default",
@@ -563,8 +1590,27 @@
       "state": "Alarm",
       "screenId": "95:5276",
       "cardId": "95:5274",
-      "maxFrameError": 0,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-5276"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-5276",
+      "wholeTiles": 4,
+      "scroll": 14,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3928",
+      "rawDivisionFrames": [
+        {
+          "height": 40,
+          "width": 669,
+          "x": 0,
+          "y": 455.5
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 41,
+          "width": 669,
+          "x": 0,
+          "y": 455
+        }
+      ]
     },
     {
       "case": "open-tall-reverse-default",
@@ -573,8 +1619,27 @@
       "state": "Settings Back cover",
       "screenId": "95:5352",
       "cardId": "95:5350",
-      "maxFrameError": 0,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-5352"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-5352",
+      "wholeTiles": 4,
+      "scroll": 14,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3929",
+      "rawDivisionFrames": [
+        {
+          "height": 40,
+          "width": 669,
+          "x": 0,
+          "y": 455.5
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 41,
+          "width": 669,
+          "x": 0,
+          "y": 455
+        }
+      ]
     },
     {
       "case": "split-left-wide-default",
@@ -583,8 +1648,27 @@
       "state": "Browsing",
       "screenId": "95:5378",
       "cardId": "95:5376",
-      "maxFrameError": 1.0172526060614473e-05,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-5378"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-5378",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3930",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 13.5,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 14,
+          "x": 455,
+          "y": 0
+        }
+      ]
     },
     {
       "case": "split-left-wide-default",
@@ -593,8 +1677,27 @@
       "state": "Typing",
       "screenId": "95:5441",
       "cardId": "95:5439",
-      "maxFrameError": 1.0172526060614473e-05,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-5441"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-5441",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3931",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 13.5,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 14,
+          "x": 455,
+          "y": 0
+        }
+      ]
     },
     {
       "case": "split-left-wide-default",
@@ -603,8 +1706,27 @@
       "state": "Alarm",
       "screenId": "95:5600",
       "cardId": "95:5598",
-      "maxFrameError": 1.0172526060614473e-05,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-5600"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-5600",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3932",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 13.5,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 14,
+          "x": 455,
+          "y": 0
+        }
+      ]
     },
     {
       "case": "split-left-wide-default",
@@ -613,8 +1735,27 @@
       "state": "Settings Back cover",
       "screenId": "95:5664",
       "cardId": "95:5662",
-      "maxFrameError": 1.0172526003771054e-05,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-5664"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-5664",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3933",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 13.5,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 14,
+          "x": 455,
+          "y": 0
+        }
+      ]
     },
     {
       "case": "split-left-wide-default",
@@ -623,8 +1764,27 @@
       "state": "Browsing",
       "screenId": "95:5675",
       "cardId": "95:5673",
-      "maxFrameError": 1.0172526060614473e-05,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-5675"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-5675",
+      "wholeTiles": 0,
+      "scroll": 193,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3934",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 13.5,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 14,
+          "x": 455,
+          "y": 0
+        }
+      ]
     },
     {
       "case": "split-left-wide-default",
@@ -633,8 +1793,27 @@
       "state": "Alarm",
       "screenId": "95:5738",
       "cardId": "95:5736",
-      "maxFrameError": 1.0172526060614473e-05,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-5738"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-5738",
+      "wholeTiles": 0,
+      "scroll": 193,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3935",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 13.5,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 14,
+          "x": 455,
+          "y": 0
+        }
+      ]
     },
     {
       "case": "split-left-wide-default",
@@ -643,8 +1822,27 @@
       "state": "Settings Back cover",
       "screenId": "95:5802",
       "cardId": "95:5800",
-      "maxFrameError": 1.0172526003771054e-05,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-5802"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-5802",
+      "wholeTiles": 0,
+      "scroll": 193,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3936",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 13.5,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 14,
+          "x": 455,
+          "y": 0
+        }
+      ]
     },
     {
       "case": "split-left-wide-default",
@@ -653,8 +1851,27 @@
       "state": "Browsing",
       "screenId": "95:5814",
       "cardId": "95:5812",
-      "maxFrameError": 1.0172526060614473e-05,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-5814"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-5814",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3937",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 13.5,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 14,
+          "x": 455,
+          "y": 0
+        }
+      ]
     },
     {
       "case": "split-left-wide-default",
@@ -663,8 +1880,27 @@
       "state": "Typing",
       "screenId": "95:5877",
       "cardId": "95:5875",
-      "maxFrameError": 1.0172526060614473e-05,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-5877"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-5877",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3938",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 13.5,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 14,
+          "x": 455,
+          "y": 0
+        }
+      ]
     },
     {
       "case": "split-left-wide-default",
@@ -673,8 +1909,27 @@
       "state": "Alarm",
       "screenId": "95:6066",
       "cardId": "95:6064",
-      "maxFrameError": 1.0172526060614473e-05,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-6066"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-6066",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3939",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 13.5,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 14,
+          "x": 455,
+          "y": 0
+        }
+      ]
     },
     {
       "case": "split-left-wide-default",
@@ -683,8 +1938,27 @@
       "state": "Settings Back cover",
       "screenId": "95:6130",
       "cardId": "95:6128",
-      "maxFrameError": 1.0172526003771054e-05,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-6130"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-6130",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3940",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 13.5,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 14,
+          "x": 455,
+          "y": 0
+        }
+      ]
     },
     {
       "case": "split-left-wide-default",
@@ -693,8 +1967,27 @@
       "state": "Browsing",
       "screenId": "95:6141",
       "cardId": "95:6139",
-      "maxFrameError": 1.0172526060614473e-05,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-6141"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-6141",
+      "wholeTiles": 0,
+      "scroll": 193,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3941",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 13.5,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 14,
+          "x": 455,
+          "y": 0
+        }
+      ]
     },
     {
       "case": "split-left-wide-default",
@@ -703,8 +1996,27 @@
       "state": "Alarm",
       "screenId": "95:6204",
       "cardId": "95:6202",
-      "maxFrameError": 1.0172526060614473e-05,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-6204"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-6204",
+      "wholeTiles": 0,
+      "scroll": 193,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3942",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 13.5,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 14,
+          "x": 455,
+          "y": 0
+        }
+      ]
     },
     {
       "case": "split-left-wide-default",
@@ -713,8 +2025,27 @@
       "state": "Settings Back cover",
       "screenId": "95:6268",
       "cardId": "95:6266",
-      "maxFrameError": 1.0172526003771054e-05,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-6268"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-6268",
+      "wholeTiles": 0,
+      "scroll": 193,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3943",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 13.5,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 14,
+          "x": 455,
+          "y": 0
+        }
+      ]
     },
     {
       "case": "split-right-wide-reverse-default",
@@ -723,8 +2054,27 @@
       "state": "Browsing",
       "screenId": "95:6282",
       "cardId": "95:6280",
-      "maxFrameError": 0,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-6282"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-6282",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3944",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 13.5,
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 14,
+          "x": 0,
+          "y": 0
+        }
+      ]
     },
     {
       "case": "split-right-wide-reverse-default",
@@ -733,8 +2083,27 @@
       "state": "Typing",
       "screenId": "95:6356",
       "cardId": "95:6354",
-      "maxFrameError": 0,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-6356"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-6356",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3945",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 13.5,
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 14,
+          "x": 0,
+          "y": 0
+        }
+      ]
     },
     {
       "case": "split-right-wide-reverse-default",
@@ -743,8 +2112,27 @@
       "state": "Alarm",
       "screenId": "95:6513",
       "cardId": "95:6511",
-      "maxFrameError": 0,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-6513"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-6513",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3946",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 13.5,
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 14,
+          "x": 0,
+          "y": 0
+        }
+      ]
     },
     {
       "case": "split-right-wide-reverse-default",
@@ -753,8 +2141,27 @@
       "state": "Settings Back cover",
       "screenId": "95:6588",
       "cardId": "95:6586",
-      "maxFrameError": 0,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-6588"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-6588",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3947",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 13.5,
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 14,
+          "x": 0,
+          "y": 0
+        }
+      ]
     },
     {
       "case": "split-right-wide-reverse-default",
@@ -763,8 +2170,27 @@
       "state": "Browsing",
       "screenId": "95:6610",
       "cardId": "95:6608",
-      "maxFrameError": 0,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-6610"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-6610",
+      "wholeTiles": 0,
+      "scroll": 193,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3948",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 13.5,
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 14,
+          "x": 0,
+          "y": 0
+        }
+      ]
     },
     {
       "case": "split-right-wide-reverse-default",
@@ -773,8 +2199,27 @@
       "state": "Alarm",
       "screenId": "95:6684",
       "cardId": "95:6682",
-      "maxFrameError": 0,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-6684"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-6684",
+      "wholeTiles": 0,
+      "scroll": 193,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3949",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 13.5,
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 14,
+          "x": 0,
+          "y": 0
+        }
+      ]
     },
     {
       "case": "split-right-wide-reverse-default",
@@ -783,8 +2228,27 @@
       "state": "Settings Back cover",
       "screenId": "95:6759",
       "cardId": "95:6757",
-      "maxFrameError": 0,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-6759"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-6759",
+      "wholeTiles": 0,
+      "scroll": 193,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3950",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 13.5,
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 14,
+          "x": 0,
+          "y": 0
+        }
+      ]
     },
     {
       "case": "split-right-wide-reverse-default",
@@ -793,8 +2257,27 @@
       "state": "Browsing",
       "screenId": "95:6782",
       "cardId": "95:6780",
-      "maxFrameError": 0,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-6782"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-6782",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3951",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 13.5,
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 14,
+          "x": 0,
+          "y": 0
+        }
+      ]
     },
     {
       "case": "split-right-wide-reverse-default",
@@ -803,8 +2286,27 @@
       "state": "Typing",
       "screenId": "95:6856",
       "cardId": "95:6854",
-      "maxFrameError": 0,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-6856"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-6856",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3952",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 13.5,
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 14,
+          "x": 0,
+          "y": 0
+        }
+      ]
     },
     {
       "case": "split-right-wide-reverse-default",
@@ -813,8 +2315,27 @@
       "state": "Alarm",
       "screenId": "95:7056",
       "cardId": "95:7054",
-      "maxFrameError": 0,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-7056"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-7056",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3953",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 13.5,
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 14,
+          "x": 0,
+          "y": 0
+        }
+      ]
     },
     {
       "case": "split-right-wide-reverse-default",
@@ -823,8 +2344,27 @@
       "state": "Settings Back cover",
       "screenId": "95:7131",
       "cardId": "95:7129",
-      "maxFrameError": 0,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-7131"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-7131",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3954",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 13.5,
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 14,
+          "x": 0,
+          "y": 0
+        }
+      ]
     },
     {
       "case": "split-right-wide-reverse-default",
@@ -833,8 +2373,27 @@
       "state": "Browsing",
       "screenId": "95:7153",
       "cardId": "95:7151",
-      "maxFrameError": 0,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-7153"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-7153",
+      "wholeTiles": 0,
+      "scroll": 193,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3955",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 13.5,
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 14,
+          "x": 0,
+          "y": 0
+        }
+      ]
     },
     {
       "case": "split-right-wide-reverse-default",
@@ -843,8 +2402,27 @@
       "state": "Alarm",
       "screenId": "95:7227",
       "cardId": "95:7225",
-      "maxFrameError": 0,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-7227"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-7227",
+      "wholeTiles": 0,
+      "scroll": 193,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3956",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 13.5,
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 14,
+          "x": 0,
+          "y": 0
+        }
+      ]
     },
     {
       "case": "split-right-wide-reverse-default",
@@ -853,8 +2431,27 @@
       "state": "Settings Back cover",
       "screenId": "95:7302",
       "cardId": "95:7300",
-      "maxFrameError": 0,
-      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-7302"
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-7302",
+      "wholeTiles": 0,
+      "scroll": 193,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3957",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 13.5,
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 14,
+          "x": 0,
+          "y": 0
+        }
+      ]
     }
   ],
   "settingsRows": [
@@ -866,12 +2463,14 @@
       "rowId": "103:3853",
       "rowFrame": {
         "height": 78,
-        "width": 225.5,
-        "x": 625.5,
+        "width": 225,
+        "x": 626,
         "y": 203
       },
       "rowCrossesDivision": false,
-      "modeledNavigationBackSpotCrossesOcclusion": false
+      "modeledNavigationBackSpotCrossesOcclusion": false,
+      "rowCrossesPlannedDivision": false,
+      "modelAssumptions": "navigation64/bar8/gutter16/footer40; row185-to442, lines22-to65; not native Settings measurements"
     },
     {
       "case": "open-wide-default",
@@ -886,7 +2485,9 @@
         "y": 337
       },
       "rowCrossesDivision": true,
-      "modeledNavigationBackSpotCrossesOcclusion": false
+      "modeledNavigationBackSpotCrossesOcclusion": false,
+      "rowCrossesPlannedDivision": true,
+      "modelAssumptions": "navigation64/bar8/gutter16/footer40; row185-to442, lines22-to65; not native Settings measurements"
     },
     {
       "case": "open-wide-default",
@@ -896,12 +2497,14 @@
       "rowId": "103:3864",
       "rowFrame": {
         "height": 78,
-        "width": 225.5,
-        "x": 625.5,
+        "width": 225,
+        "x": 626,
         "y": 203
       },
       "rowCrossesDivision": false,
-      "modeledNavigationBackSpotCrossesOcclusion": false
+      "modeledNavigationBackSpotCrossesOcclusion": false,
+      "rowCrossesPlannedDivision": false,
+      "modelAssumptions": "navigation64/bar8/gutter16/footer40; row185-to442, lines22-to65; not native Settings measurements"
     },
     {
       "case": "open-wide-default",
@@ -916,7 +2519,9 @@
         "y": 337
       },
       "rowCrossesDivision": true,
-      "modeledNavigationBackSpotCrossesOcclusion": false
+      "modeledNavigationBackSpotCrossesOcclusion": false,
+      "rowCrossesPlannedDivision": true,
+      "modelAssumptions": "navigation64/bar8/gutter16/footer40; row185-to442, lines22-to65; not native Settings measurements"
     },
     {
       "case": "open-wide-reverse-ax5",
@@ -926,12 +2531,14 @@
       "rowId": "103:3875",
       "rowFrame": {
         "height": 78,
-        "width": 225.5,
-        "x": 625.5,
+        "width": 225,
+        "x": 626,
         "y": 203
       },
       "rowCrossesDivision": false,
-      "modeledNavigationBackSpotCrossesOcclusion": false
+      "modeledNavigationBackSpotCrossesOcclusion": false,
+      "rowCrossesPlannedDivision": false,
+      "modelAssumptions": "navigation64/bar8/gutter16/footer40; row185-to442, lines22-to65; not native Settings measurements"
     },
     {
       "case": "open-wide-reverse-ax5",
@@ -946,7 +2553,9 @@
         "y": 337
       },
       "rowCrossesDivision": true,
-      "modeledNavigationBackSpotCrossesOcclusion": false
+      "modeledNavigationBackSpotCrossesOcclusion": false,
+      "rowCrossesPlannedDivision": true,
+      "modelAssumptions": "navigation64/bar8/gutter16/footer40; row185-to442, lines22-to65; not native Settings measurements"
     },
     {
       "case": "open-wide-reverse-ax5",
@@ -956,12 +2565,14 @@
       "rowId": "103:3886",
       "rowFrame": {
         "height": 78,
-        "width": 225.5,
-        "x": 625.5,
+        "width": 225,
+        "x": 626,
         "y": 203
       },
       "rowCrossesDivision": false,
-      "modeledNavigationBackSpotCrossesOcclusion": false
+      "modeledNavigationBackSpotCrossesOcclusion": false,
+      "rowCrossesPlannedDivision": false,
+      "modelAssumptions": "navigation64/bar8/gutter16/footer40; row185-to442, lines22-to65; not native Settings measurements"
     },
     {
       "case": "open-wide-reverse-ax5",
@@ -976,7 +2587,9 @@
         "y": 337
       },
       "rowCrossesDivision": true,
-      "modeledNavigationBackSpotCrossesOcclusion": false
+      "modeledNavigationBackSpotCrossesOcclusion": false,
+      "rowCrossesPlannedDivision": true,
+      "modelAssumptions": "navigation64/bar8/gutter16/footer40; row185-to442, lines22-to65; not native Settings measurements"
     },
     {
       "case": "open-tall-default",
@@ -988,10 +2601,12 @@
         "height": 78,
         "width": 310.5,
         "x": 342.5,
-        "y": 312.5
+        "y": 311.5
       },
       "rowCrossesDivision": false,
-      "modeledNavigationBackSpotCrossesOcclusion": false
+      "modeledNavigationBackSpotCrossesOcclusion": false,
+      "rowCrossesPlannedDivision": false,
+      "modelAssumptions": "navigation64/bar8/gutter16/footer40; row185-to442, lines22-to65; not native Settings measurements"
     },
     {
       "case": "open-tall-default",
@@ -1006,7 +2621,9 @@
         "y": 467
       },
       "rowCrossesDivision": true,
-      "modeledNavigationBackSpotCrossesOcclusion": false
+      "modeledNavigationBackSpotCrossesOcclusion": false,
+      "rowCrossesPlannedDivision": true,
+      "modelAssumptions": "navigation64/bar8/gutter16/footer40; row185-to442, lines22-to65; not native Settings measurements"
     },
     {
       "case": "open-tall-default",
@@ -1018,10 +2635,12 @@
         "height": 78,
         "width": 310.5,
         "x": 342.5,
-        "y": 312.5
+        "y": 311.5
       },
       "rowCrossesDivision": false,
-      "modeledNavigationBackSpotCrossesOcclusion": false
+      "modeledNavigationBackSpotCrossesOcclusion": false,
+      "rowCrossesPlannedDivision": false,
+      "modelAssumptions": "navigation64/bar8/gutter16/footer40; row185-to442, lines22-to65; not native Settings measurements"
     },
     {
       "case": "open-tall-default",
@@ -1036,7 +2655,9 @@
         "y": 467
       },
       "rowCrossesDivision": true,
-      "modeledNavigationBackSpotCrossesOcclusion": false
+      "modeledNavigationBackSpotCrossesOcclusion": false,
+      "rowCrossesPlannedDivision": true,
+      "modelAssumptions": "navigation64/bar8/gutter16/footer40; row185-to442, lines22-to65; not native Settings measurements"
     },
     {
       "case": "open-tall-reverse-default",
@@ -1048,10 +2669,12 @@
         "height": 78,
         "width": 310.5,
         "x": 342.5,
-        "y": 312.5
+        "y": 311.5
       },
       "rowCrossesDivision": false,
-      "modeledNavigationBackSpotCrossesOcclusion": false
+      "modeledNavigationBackSpotCrossesOcclusion": false,
+      "rowCrossesPlannedDivision": false,
+      "modelAssumptions": "navigation64/bar8/gutter16/footer40; row185-to442, lines22-to65; not native Settings measurements"
     },
     {
       "case": "open-tall-reverse-default",
@@ -1066,7 +2689,9 @@
         "y": 467
       },
       "rowCrossesDivision": true,
-      "modeledNavigationBackSpotCrossesOcclusion": true
+      "modeledNavigationBackSpotCrossesOcclusion": true,
+      "rowCrossesPlannedDivision": true,
+      "modelAssumptions": "navigation64/bar8/gutter16/footer40; row185-to442, lines22-to65; not native Settings measurements"
     },
     {
       "case": "open-tall-reverse-default",
@@ -1078,10 +2703,12 @@
         "height": 78,
         "width": 310.5,
         "x": 342.5,
-        "y": 312.5
+        "y": 311.5
       },
       "rowCrossesDivision": false,
-      "modeledNavigationBackSpotCrossesOcclusion": false
+      "modeledNavigationBackSpotCrossesOcclusion": false,
+      "rowCrossesPlannedDivision": false,
+      "modelAssumptions": "navigation64/bar8/gutter16/footer40; row185-to442, lines22-to65; not native Settings measurements"
     },
     {
       "case": "open-tall-reverse-default",
@@ -1096,7 +2723,9 @@
         "y": 467
       },
       "rowCrossesDivision": true,
-      "modeledNavigationBackSpotCrossesOcclusion": true
+      "modeledNavigationBackSpotCrossesOcclusion": true,
+      "rowCrossesPlannedDivision": true,
+      "modelAssumptions": "navigation64/bar8/gutter16/footer40; row185-to442, lines22-to65; not native Settings measurements"
     },
     {
       "case": "split-left-wide-default",
@@ -1111,7 +2740,9 @@
         "y": 153.5
       },
       "rowCrossesDivision": false,
-      "modeledNavigationBackSpotCrossesOcclusion": false
+      "modeledNavigationBackSpotCrossesOcclusion": false,
+      "rowCrossesPlannedDivision": false,
+      "modelAssumptions": "navigation64/bar8/gutter16/footer40; row185-to442, lines22-to65; not native Settings measurements"
     },
     {
       "case": "split-left-wide-default",
@@ -1126,7 +2757,9 @@
         "y": 309
       },
       "rowCrossesDivision": false,
-      "modeledNavigationBackSpotCrossesOcclusion": false
+      "modeledNavigationBackSpotCrossesOcclusion": false,
+      "rowCrossesPlannedDivision": false,
+      "modelAssumptions": "navigation64/bar8/gutter16/footer40; row185-to442, lines22-to65; not native Settings measurements"
     },
     {
       "case": "split-left-wide-default",
@@ -1141,7 +2774,9 @@
         "y": 153.5
       },
       "rowCrossesDivision": false,
-      "modeledNavigationBackSpotCrossesOcclusion": false
+      "modeledNavigationBackSpotCrossesOcclusion": false,
+      "rowCrossesPlannedDivision": false,
+      "modelAssumptions": "navigation64/bar8/gutter16/footer40; row185-to442, lines22-to65; not native Settings measurements"
     },
     {
       "case": "split-left-wide-default",
@@ -1156,7 +2791,9 @@
         "y": 309
       },
       "rowCrossesDivision": false,
-      "modeledNavigationBackSpotCrossesOcclusion": false
+      "modeledNavigationBackSpotCrossesOcclusion": false,
+      "rowCrossesPlannedDivision": false,
+      "modelAssumptions": "navigation64/bar8/gutter16/footer40; row185-to442, lines22-to65; not native Settings measurements"
     },
     {
       "case": "split-right-wide-reverse-default",
@@ -1171,7 +2808,9 @@
         "y": 214
       },
       "rowCrossesDivision": false,
-      "modeledNavigationBackSpotCrossesOcclusion": false
+      "modeledNavigationBackSpotCrossesOcclusion": false,
+      "rowCrossesPlannedDivision": false,
+      "modelAssumptions": "navigation64/bar8/gutter16/footer40; row185-to442, lines22-to65; not native Settings measurements"
     },
     {
       "case": "split-right-wide-reverse-default",
@@ -1186,7 +2825,9 @@
         "y": 241
       },
       "rowCrossesDivision": false,
-      "modeledNavigationBackSpotCrossesOcclusion": false
+      "modeledNavigationBackSpotCrossesOcclusion": false,
+      "rowCrossesPlannedDivision": false,
+      "modelAssumptions": "navigation64/bar8/gutter16/footer40; row185-to442, lines22-to65; not native Settings measurements"
     },
     {
       "case": "split-right-wide-reverse-default",
@@ -1201,7 +2842,9 @@
         "y": 214
       },
       "rowCrossesDivision": false,
-      "modeledNavigationBackSpotCrossesOcclusion": false
+      "modeledNavigationBackSpotCrossesOcclusion": false,
+      "rowCrossesPlannedDivision": false,
+      "modelAssumptions": "navigation64/bar8/gutter16/footer40; row185-to442, lines22-to65; not native Settings measurements"
     },
     {
       "case": "split-right-wide-reverse-default",
@@ -1216,24 +2859,25 @@
         "y": 241
       },
       "rowCrossesDivision": false,
-      "modeledNavigationBackSpotCrossesOcclusion": false
+      "modeledNavigationBackSpotCrossesOcclusion": false,
+      "rowCrossesPlannedDivision": false,
+      "modelAssumptions": "navigation64/bar8/gutter16/footer40; row185-to442, lines22-to65; not native Settings measurements"
     }
   ],
   "validation": {
-    "targetMaxError": 1.2207031204525265e-05,
-    "tileMaxError": 0,
-    "rowMaxError": 0,
     "targetCount": 768,
+    "targetMaxError": 1.2207031204525265e-05,
     "tileCount": 480,
+    "tileMaxError": 0,
     "settingsRowCount": 24,
+    "rowMaxError": 0,
     "knownSettingsFoldCrossingScreens": 8,
-    "labelOverflows": [],
-    "descendantCount": 6474,
+    "descendantCount": 6558,
     "nodeTypeCounts": {
       "TEXT": 2404,
       "FRAME": 1319,
       "INSTANCE": 1915,
-      "RECTANGLE": 412,
+      "RECTANGLE": 496,
       "ELLIPSE": 350,
       "VECTOR": 74
     },
@@ -1246,29 +2890,329 @@
     ],
     "bounds": {
       "width": 7160,
-      "height": 12018
+      "height": 12218
     },
-    "scope": "Home item6 drawings complete; Settings model gaps and all runtime gates remain open",
-    "visual": "passing composition after drawing-only repairs; modeled Settings fold gaps intentionally shown",
+    "rawLabelOverflowCandidates": [
+      {
+        "id": "I97:4150;5915:37691;128:87684;0:11632",
+        "parent": "I97:4150;5915:37691;128:87684",
+        "name": "Symbol",
+        "x": -6.763635635375977,
+        "y": -6.763635635375977,
+        "width": 37.52727127075195,
+        "height": 37.52727127075195,
+        "parentW": 23.880990982055664,
+        "parentH": 23.880990982055664
+      },
+      {
+        "id": "I97:4150;5915:37691;128:87685;0:11632",
+        "parent": "I97:4150;5915:37691;128:87685",
+        "name": "Symbol",
+        "x": -6.763635635375977,
+        "y": -6.763635635375977,
+        "width": 37.52727127075195,
+        "height": 37.52727127075195,
+        "parentW": 23.880990982055664,
+        "parentH": 23.880990982055664
+      },
+      {
+        "id": "I97:4150;5915:37691;128:87686;0:11632",
+        "parent": "I97:4150;5915:37691;128:87686",
+        "name": "Symbol",
+        "x": -6.763635635375977,
+        "y": -6.763635635375977,
+        "width": 37.52727127075195,
+        "height": 37.52727127075195,
+        "parentW": 23.880990982055664,
+        "parentH": 23.880990982055664
+      },
+      {
+        "id": "I97:4293;5915:37691;5915:33972;5915:35200",
+        "parent": "I97:4293;5915:37691;5915:33972",
+        "name": "Symbol",
+        "x": -6.763635635375977,
+        "y": -6.763635635375977,
+        "width": 37.52727127075195,
+        "height": 37.52727127075195,
+        "parentW": 23.880990982055664,
+        "parentH": 23.880990982055664
+      },
+      {
+        "id": "I97:4293;5915:37691;5915:33973;5915:35200",
+        "parent": "I97:4293;5915:37691;5915:33973",
+        "name": "Symbol",
+        "x": -6.763635635375977,
+        "y": -6.763635635375977,
+        "width": 37.52727127075195,
+        "height": 37.52727127075195,
+        "parentW": 23.880990982055664,
+        "parentH": 23.880990982055664
+      },
+      {
+        "id": "I97:4293;5915:37691;5915:33974;5915:35200",
+        "parent": "I97:4293;5915:37691;5915:33974",
+        "name": "Symbol",
+        "x": -6.763635635375977,
+        "y": -6.763635635375977,
+        "width": 37.52727127075195,
+        "height": 37.52727127075195,
+        "parentW": 23.880990982055664,
+        "parentH": 23.880990982055664
+      },
+      {
+        "id": "I97:4575;5915:37691;128:87684;0:11632",
+        "parent": "I97:4575;5915:37691;128:87684",
+        "name": "Symbol",
+        "x": -6.763635635375977,
+        "y": -6.763635635375977,
+        "width": 37.52727127075195,
+        "height": 37.52727127075195,
+        "parentW": 23.880990982055664,
+        "parentH": 23.880990982055664
+      },
+      {
+        "id": "I97:4575;5915:37691;128:87685;0:11632",
+        "parent": "I97:4575;5915:37691;128:87685",
+        "name": "Symbol",
+        "x": -6.763635635375977,
+        "y": -6.763635635375977,
+        "width": 37.52727127075195,
+        "height": 37.52727127075195,
+        "parentW": 23.880990982055664,
+        "parentH": 23.880990982055664
+      },
+      {
+        "id": "I97:4575;5915:37691;128:87686;0:11632",
+        "parent": "I97:4575;5915:37691;128:87686",
+        "name": "Symbol",
+        "x": -6.763635635375977,
+        "y": -6.763635635375977,
+        "width": 37.52727127075195,
+        "height": 37.52727127075195,
+        "parentW": 23.880990982055664,
+        "parentH": 23.880990982055664
+      },
+      {
+        "id": "I97:4718;5915:37691;5915:33972;5915:35200",
+        "parent": "I97:4718;5915:37691;5915:33972",
+        "name": "Symbol",
+        "x": -6.763635635375977,
+        "y": -6.763635635375977,
+        "width": 37.52727127075195,
+        "height": 37.52727127075195,
+        "parentW": 23.880990982055664,
+        "parentH": 23.880990982055664
+      },
+      {
+        "id": "I97:4718;5915:37691;5915:33973;5915:35200",
+        "parent": "I97:4718;5915:37691;5915:33973",
+        "name": "Symbol",
+        "x": -6.763635635375977,
+        "y": -6.763635635375977,
+        "width": 37.52727127075195,
+        "height": 37.52727127075195,
+        "parentW": 23.880990982055664,
+        "parentH": 23.880990982055664
+      },
+      {
+        "id": "I97:4718;5915:37691;5915:33974;5915:35200",
+        "parent": "I97:4718;5915:37691;5915:33974",
+        "name": "Symbol",
+        "x": -6.763635635375977,
+        "y": -6.763635635375977,
+        "width": 37.52727127075195,
+        "height": 37.52727127075195,
+        "parentW": 23.880990982055664,
+        "parentH": 23.880990982055664
+      },
+      {
+        "id": "I97:4997;5915:37691;128:87684;0:11632",
+        "parent": "I97:4997;5915:37691;128:87684",
+        "name": "Symbol",
+        "x": -6.763635635375977,
+        "y": -6.763635635375977,
+        "width": 37.52727127075195,
+        "height": 37.52727127075195,
+        "parentW": 23.880990982055664,
+        "parentH": 23.880990982055664
+      },
+      {
+        "id": "I97:4997;5915:37691;128:87685;0:11632",
+        "parent": "I97:4997;5915:37691;128:87685",
+        "name": "Symbol",
+        "x": -6.763635635375977,
+        "y": -6.763635635375977,
+        "width": 37.52727127075195,
+        "height": 37.52727127075195,
+        "parentW": 23.880990982055664,
+        "parentH": 23.880990982055664
+      },
+      {
+        "id": "I97:4997;5915:37691;128:87686;0:11632",
+        "parent": "I97:4997;5915:37691;128:87686",
+        "name": "Symbol",
+        "x": -6.763635635375977,
+        "y": -6.763635635375977,
+        "width": 37.52727127075195,
+        "height": 37.52727127075195,
+        "parentW": 23.880990982055664,
+        "parentH": 23.880990982055664
+      },
+      {
+        "id": "I97:5140;5915:37691;5915:33972;5915:35200",
+        "parent": "I97:5140;5915:37691;5915:33972",
+        "name": "Symbol",
+        "x": -6.763635635375977,
+        "y": -6.763635635375977,
+        "width": 37.52727127075195,
+        "height": 37.52727127075195,
+        "parentW": 23.880990982055664,
+        "parentH": 23.880990982055664
+      },
+      {
+        "id": "I97:5140;5915:37691;5915:33973;5915:35200",
+        "parent": "I97:5140;5915:37691;5915:33973",
+        "name": "Symbol",
+        "x": -6.763635635375977,
+        "y": -6.763635635375977,
+        "width": 37.52727127075195,
+        "height": 37.52727127075195,
+        "parentW": 23.880990982055664,
+        "parentH": 23.880990982055664
+      },
+      {
+        "id": "I97:5140;5915:37691;5915:33974;5915:35200",
+        "parent": "I97:5140;5915:37691;5915:33974",
+        "name": "Symbol",
+        "x": -6.763635635375977,
+        "y": -6.763635635375977,
+        "width": 37.52727127075195,
+        "height": 37.52727127075195,
+        "parentW": 23.880990982055664,
+        "parentH": 23.880990982055664
+      },
+      {
+        "id": "I97:5419;5915:37691;128:87684;0:11632",
+        "parent": "I97:5419;5915:37691;128:87684",
+        "name": "Symbol",
+        "x": -6.763635635375977,
+        "y": -6.763635635375977,
+        "width": 37.52727127075195,
+        "height": 37.52727127075195,
+        "parentW": 23.880990982055664,
+        "parentH": 23.880990982055664
+      },
+      {
+        "id": "I97:5419;5915:37691;128:87685;0:11632",
+        "parent": "I97:5419;5915:37691;128:87685",
+        "name": "Symbol",
+        "x": -6.763635635375977,
+        "y": -6.763635635375977,
+        "width": 37.52727127075195,
+        "height": 37.52727127075195,
+        "parentW": 23.880990982055664,
+        "parentH": 23.880990982055664
+      },
+      {
+        "id": "I97:5419;5915:37691;128:87686;0:11632",
+        "parent": "I97:5419;5915:37691;128:87686",
+        "name": "Symbol",
+        "x": -6.763635635375977,
+        "y": -6.763635635375977,
+        "width": 37.52727127075195,
+        "height": 37.52727127075195,
+        "parentW": 23.880990982055664,
+        "parentH": 23.880990982055664
+      },
+      {
+        "id": "I97:5562;5915:37691;5915:33972;5915:35200",
+        "parent": "I97:5562;5915:37691;5915:33972",
+        "name": "Symbol",
+        "x": -6.763635635375977,
+        "y": -6.763635635375977,
+        "width": 37.52727127075195,
+        "height": 37.52727127075195,
+        "parentW": 23.880990982055664,
+        "parentH": 23.880990982055664
+      },
+      {
+        "id": "I97:5562;5915:37691;5915:33973;5915:35200",
+        "parent": "I97:5562;5915:37691;5915:33973",
+        "name": "Symbol",
+        "x": -6.763635635375977,
+        "y": -6.763635635375977,
+        "width": 37.52727127075195,
+        "height": 37.52727127075195,
+        "parentW": 23.880990982055664,
+        "parentH": 23.880990982055664
+      },
+      {
+        "id": "I97:5562;5915:37691;5915:33974;5915:35200",
+        "parent": "I97:5562;5915:37691;5915:33974",
+        "name": "Symbol",
+        "x": -6.763635635375977,
+        "y": -6.763635635375977,
+        "width": 37.52727127075195,
+        "height": 37.52727127075195,
+        "parentW": 23.880990982055664,
+        "parentH": 23.880990982055664
+      }
+    ],
+    "labelOverflows": [],
+    "rawLabelOverflowCandidatesExplanation": "24 unchanged glyph-only layers inside Apple keyboard kit Button subcomponents extend beyond their nominal symbol box. They are not Brickson Home/Settings labels and were not changed in this revision.",
+    "rawDivisionGuideCount": 84,
+    "enclosureGuideCount": 84,
+    "ownButtonAndRowCount": 1272,
+    "paletteBindings": [
+      {
+        "id": "VariableID:95:6",
+        "count": 516
+      },
+      {
+        "id": "VariableID:95:8",
+        "count": 60
+      },
+      {
+        "id": "VariableID:95:10",
+        "count": 60
+      },
+      {
+        "id": "VariableID:95:4",
+        "count": 456
+      },
+      {
+        "id": "VariableID:95:12",
+        "count": 24
+      }
+    ],
+    "visual": "Passing composition render with separate raw API/enclosure guides; known modeled Settings/fold intersections intentionally shown",
+    "scope": "Home item6 drawings complete; native Settings/R0-13, complete activation chains and physical testing remain separate gates",
     "runtimeProven": false,
     "fullChainVerified": false,
     "physicalInputVerified": false,
     "settingsNativeMeasured": false
   },
-  "status": "Scoped Home item6 candidate drawings complete; root controls linked Spec/code gate; broader Settings/R0-13/runtime/physical gates open",
+  "status": "84 stable linked screens updated and render-inspected for scoped Home item6; root controls code gate. Broader Settings/R0-13 and physical gates remain open.",
   "ownerChoice": "Keep the current rule and investigate another design. No paging, pinned prefix, new order or neighbour-rule exception.",
   "notes": [
-    "All target/control/phrase/Back frames use committed geometry; only labels/chrome are Figma stand-ins.",
+    "All revised target/control/phrase/Back frames use the named production pure-geometry export; only labels/chrome are Figma stand-ins.",
     "Family Setup rows consume unchanged SettingsRowPlace/#56 policy with nav64/footer40/wrapping model; four AX5 full-screen geometries cross division in both appearances.",
     "Keyboard alphanumeric labels use explicitly permitted Inter stand-in to avoid the connector's repeated cached SF glyphs; Apple layout/source sizes retained. One owned keyboard copy was expanded into editable layers during renderer diagnosis.",
     "Original Home/typing pages, prior owned options/observations history, repository, builds and simulators were not changed by the drawing task.",
-    "Node mutation list is cumulative: every created owned node received geometry, text or visual properties. Deleted descendants are retained in the historical create/delete ledger."
+    "Node mutation list is cumulative: every created owned node received geometry, text or visual properties. Deleted descendants are retained in the historical create/delete ledger.",
+    "Raw full-screen system division455.5\u2013495.5 remains unchanged; separate dashed whole-point allocation guide spans455\u2013496. Edge-clipped pane divisions have their own integral enclosure.",
+    "Revised production pure-type export supersedes the prior candidate geometry for these84 screens. Intermediate8diagnostic inputs are not additional drawn states.",
+    "All84 screen URLs, Palette variables, standard Apple kit assets, original Home/Typing pages, previous observations/options history and known Settings gap labels preserved.",
+    "Settings rows remain model hypotheses from unchanged policy: nav64, bar8, gutter16, footer40 and wrapping model. Native wide Settings row wrapping is known to differ; no Settings native clearance claim.",
+    "Target/Back error is within0.000012208pt Figma precision;480tile frames and24modeled rows match export exactly."
   ],
   "preexistingHomeNodeIdsMutated": [],
+  "sourceGeometry": "docs/evidence/2026-10-25-duo-design/candidate-geometry-enclosed.json",
   "renders": [
     "candidate-screens.png",
     "settings-wide-ax5-gap.png",
     "settings-tall-ax5-gap.png"
   ],
-  "limits": "Drawing evidence only. Native frames, actual keyboards and Settings wrapping/navigation, complete transition chains, and physical input remain separate checks. Existing AX5 Settings row/fold intersections remain broader R0-13 gaps."
+  "limits": "Drawing evidence only. Native window/control snapshots, actual keyboards and Settings wrapping/navigation, complete transition chains, and physical input remain separate checks. Existing AX5 Settings row/fold intersections remain broader R0-13 gaps.",
+  "scrollMeaning": "The scroll value is modeled trailing content beyond fixed D at zero offset, not a measured native maximum scrolling distance."
 }

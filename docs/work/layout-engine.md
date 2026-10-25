@@ -291,7 +291,8 @@ type that nothing calls yet, and Home moves onto its frames in item 4.
 
 PR #56 merged as `6d040d5`, clearing this job's alarm-path prerequisite.
 This work starts from its new Settings placement and accepted chain
-limits. No Home or Settings implementation changes in this design pass.
+limits. The first design pass changed no Home or Settings implementation;
+the linked Spec/drawings then preceded the local Home implementation below.
 
 [PR #55's dated Mac record](https://github.com/MiddleAgedBanana/Brickson/blob/cb4c965/docs/log/2026-10-25-mac-keyboard-checks.md)
 measured app code `8316743`, before PR #56. In Device Hub the closed
@@ -302,7 +303,9 @@ tall default/AX5 fit eight, and wide dark default/AX5 matched the open
 wide counts. The rendered wide fold crossed No, Conversation and phrase
 tiles. Existing open-Duo Home tests had eight passes, nine failures and
 two landscape skips. The record distinguishes frame-API disagreements
-from a pre-#56 Settings chain finding; none has been rescored on #56.
+from a pre-#56 Settings chain finding. The later item 6 regressions and
+native Back checks below use #56's placement; the earlier full-suite
+failures are not relabeled as passing.
 
 Follow-up measurements on app code `6d040d5` now record the system's exact
 [reserved rectangles and safe areas](../evidence/2026-10-25-duo-design/reservations.json).
@@ -421,7 +424,7 @@ completed Design gate or approval for pinned panes or paging.
 
 ### Resolved geometry for implementation
 
-The implementation will use typed division and occlusion inputs, keeping
+The local implementation uses typed division and occlusion inputs, keeping
 activity as a diagnostic property. Presence of a division selects an
 even phrase-column count even when its reported frame is inactive,
 zero-width or clipped at a window edge. Only a positive-area intersection
@@ -429,7 +432,7 @@ with the content requires an internal gap. A status occlusion already
 inside a safe-area stripe adds no second inset. Empty reservations keep
 the existing engine's complete output exactly.
 
-The engine will return allocation cells separately from occupied control
+The engine returns allocation cells separately from occupied control
 frames. Local camera fitting shortens only an affected target or shared
 message/status or mode group inside its unchanged allocation. Neighbours
 keep their cells. A surrounding standard stack holds the spare room;
@@ -437,6 +440,18 @@ padding must not silently enlarge the Button's accessibility target back
 over the camera. Widths and word/target floors are resolved before their
 heights and all derived placement. The renderer uses standard Buttons,
 eager stacks and one ordinary D ScrollView.
+
+The first native UI probe found a pixel-rounding overlap: No and
+Conversation ended at 455.6667pt against the API's 455.5pt division
+edge. Positive finite divisions are therefore enclosed outward in whole
+points for planning (455–496 for the measured 455.5–495.5 band). Raw API
+frames stay unchanged for evidence and final overlap checks; zero-area
+presence still selects even columns without consuming spacing. This is
+an explicit rounding allowance, not the API's margins added again. The
+strict native overlap assertion is unchanged. The original
+[candidate calculation](../evidence/2026-10-25-duo-design/candidate-geometry.json)
+remains the initial design record; its 25pt/13.5pt tall figures are
+superseded by the rounded calculation below.
 
 An internal vertical division uses the six-lane recipe above when its
 two sides meet the occupied controls' minima. Per-side lane widths may
@@ -461,9 +476,9 @@ the unchanged ChainEngine remains the independent activation check.
 
 Return A's optional growth in half-point steps until the bound holds,
 retaining the current primary/category sizes before consuming their
-growth. For the measured default tall inputs this returns 25pt: modes
-are 51.5pt, the safety row ends at 349pt, and B's rows occupy
-407.5–455.5 and 495.5–543.5. At AX5, retaining the existing 12pt C-to-B
+growth. With outward whole-point division planning, the measured default
+tall inputs return 27pt: modes are 50.5pt, the safety row ends at 347pt,
+and B's rows occupy 407–455 and 496–544. At AX5, retaining the existing 12pt C-to-B
 gap avoids widening the old Again envelope; only B-to-D gives back its
 2pt growth. The figure values are expected outputs of that rule, never
 device constants in the implementation.
@@ -472,9 +487,9 @@ When A's optional height is exhausted, continue the same half-point
 search through shared primary-row growth, then category growth, never
 through a word/target floor or with categories taller than primary
 controls. The five-metric/Bold Text regression exposed this need between
-the drawn extremes: xxxLarge returns 20.5pt from A and 3pt from primary
-growth; AX1 returns 7pt and 12pt. Their mode heights are 53.75/60.5pt and
-primary heights 61/52pt; both retain B at 407.5/495.5 and D at 555.5.
+the drawn extremes: xxxLarge returns 21pt from A and 4pt from primary
+growth; AX1 returns 6.5pt and 13.5pt. Their mode heights are 53.5/60.75pt
+and primary heights 60/50.5pt; both retain B at 407/496 and D at 556.
 These are derived outputs of the generic constraint, not text-size
 branches. The native unit check also retains the existing message-reading
 speaking-share bounds, rather than treating the well check as proof of
@@ -493,63 +508,146 @@ Visible tile intersections and the full accessibility frames of partial
 tiles are distinct checks; viewport clipping alone is not Snap-to-Item
 proof. The physical clipped-target check remains deferred.
 
-Candidate outputs from the [standalone geometry record](../evidence/2026-10-25-duo-design/candidate-geometry.json)
+Current outputs from the [production pure-geometry export](../evidence/2026-10-25-duo-design/candidate-geometry-enclosed.json)
 are below. These use the measured rectangles and the existing
-font-validated default/AX5 line metrics with Bold Text off. They are
-design calculations, not new runtime results. The existing no-region
-phone/iPad outputs and typing drawings remain the references there.
+font-validated default/AX5 line metrics with Bold Text off. The export
+also records eight intermediate metric cases and 400 comparisons with
+the unreserved legacy engine, with no mismatch. The five inner poses in
+the native comparison below independently check the full-screen outputs;
+the left/right panes still have only pure geometry and drawings for this
+revision. Existing no-region phone/iPad outputs and typing drawings remain
+the references there.
 
-| Supplied geometry | Default: whole tiles / scroll / Type | AX5: whole tiles / scroll / Type |
+| Supplied geometry | Default: whole tiles / trailing extent / Type | AX5: whole tiles / trailing extent / Type |
 |---|---|---|
 | Wide, upper camera | 8 / 0pt / available | 4 / 66pt / unavailable |
 | Wide, lower camera | 8 / 0pt / available | 4 / 82pt / unavailable |
-| Tall, right camera | 8 / 0pt / available | 4 / 13.5pt / unavailable |
-| Tall, left camera | 8 / 0pt / available | 4 / 13.5pt / unavailable |
+| Tall, right camera | 8 / 0pt / available | 4 / 14pt / unavailable |
+| Tall, left camera | 8 / 0pt / available | 4 / 14pt / unavailable |
 | Left pane | 8 / 0pt / available | 0 / 193pt / unavailable |
 | Right pane | 8 / 0pt / available | 0 / 193pt / unavailable |
+
+Trailing extent is full phrase content below fixed D, not a measurement
+of maximum scroll distance. The native closed-window observation adds
+6 whole tiles / 3pt trailing extent at default and 0 / 249pt at AX5.
+Closed has no individual expected-frame export in the comparison; its
+native state, appearance, raw-reservation and keyboard checks are
+reported separately from pure frame agreement.
 
 The AX5 panes leave a 55pt viewport against a 56pt tile floor: no whole
 tile fits. The design preserves that explicit capacity failure; it does
 not implement paging, shrink a floor or remove a safety row. Tall AX5's
-second safety row starts at 495.5 and ends at 574.5, beyond its existing
+second safety row starts at 496 and ends at 575, beyond its existing
 548pt keyboard band. Type therefore becomes unavailable under the
-existing policy. Inner-display keyboard dimensions still need native
-measurement before a broader keyboard-clearance claim.
+existing policy. With the full US keyboard and default app text, the measured keyboard top is 405pt in wide inner windows,
+601pt in tall inner windows and 374pt in the closed window. In all 12
+default typing captures, Emergency, Yes, No, Speak, Get Attention,
+Phrases, Clear and Put Back are wholly above it. Clear and Put Back were
+captured with an empty draft; their geometric coverage does not establish
+physical activation behavior. AX5 Type remains unavailable. Native pane
+keyboard clearance and broader keyboard configurations remain pending.
 
 The prototype's 12 cases have no new Stop/well chain paths or sampled
 Again-nearest points against their baselines, by centre and edge on a
 half-point mesh. Existing hazards remain recorded. This is limited
-planning evidence: the production allocator, Bold Text, intermediate
-sizes, typing/Settings chains, changed-window resting points and native
-frames all still require their regression gates. Back to Talking and
-the existing Settings row solver will consume the final Home frames;
+geometric evidence, not complete activation-chain proof. The production
+allocator and intermediate/Bold Text cases now have pure regressions;
+the [changed-window diagnostic](../evidence/2026-10-25-duo-design/transition-report.md)
+finds added hazards under hypothetical numerical coordinate hold/scaling.
+Its wide→tall selected-Conversation example reaches Get Attention where
+both old maps were inert and legacy-after settled. Actual OS mapping is
+unverified; no physical event or new exception is inferred. Activity-only
+geometry stays identical in ten scene/font cases. Keep this PR a draft;
+changed-window safety has not passed. Back to Talking and
+the unchanged Settings row solver consume the final Home frames;
 PR #56's accepted limits and tests remain intact.
+
+The [native frame comparison](../evidence/2026-10-25-duo-design/native-frame-comparison.md)
+and [per-capture receipts](../evidence/2026-10-25-duo-design/native-frame-comparison.json)
+cover 144 coherent captures across six poses and 24 default/AX5,
+requested-light/dark configurations. The five inner pose sets include
+both reversed rotations and a partially folded book pose; the sixth is
+closed. No current native Split View pane recheck is included.
+
+| Native geometry check | Result and limit |
+|---|---|
+| Exported occupied Home buttons | PASS: 1,220 comparisons, maximum delta 0.167pt |
+| Exported full phrase-tile frames | PASS: 800 comparisons, maximum delta 0.25pt |
+| Shared Home frames across state transitions | PASS: 1,884 comparisons exactly equal; baseline self-comparisons excluded |
+| Static Home controls | PASS in 120 Home captures: required controls present, within the coherent window and at least 44×44pt |
+| Raw fold/camera/status intersections | PASS for static controls and geometrically cropped tiles: zero strict positive-area intersections |
+| Full AX phrase-tile camera clearance | FAIL in 32 AX5 wide-reverse/book records; cropped portions stop before the camera, but full AX frames overlap it |
+| Default typing coverage | PASS in 12 captures for all eight controls named above |
+| Back to Talking | PASS in 24 Settings captures: contained within final native Phrases, with zero raw reservation intersections |
+| Open versus partially folded wide reverse | PASS: 412 shared button/tile frames exactly equal at the recorded 180° and 90.074° poses |
+
+Expected-frame agreement checks origins, sizes and far edges with a
+0.5pt tolerance. Reservation intersection checks use the unchanged raw
+API rectangles with no overlap tolerance. Tile cropping intersects each
+full AX frame with fixed browsing D and the coherent window, and while
+typing also with the area above the keyboard. The typing AX container
+expands, so its reported whole-tile count is not visible capacity. Neither
+geometric cropping nor the absence of a static intersection proves
+rendered clipping or physical Snap to Item behavior. Active-display
+appearance was not reviewed by this JSON comparison; XCUIScreen can
+capture the black inactive outer display.
+
+The final native unit gate passed with `CI=true`: 769 test cases,
+760 ordinary passes, zero failures, one existing #19 skip and eight
+strict expected failures. Coverage is 70.6% (6,898/9,769), catalog current.
+The result is `build/TestResults/duo-final-unit/unit-destination.xcresult`;
+the [receipt](../evidence/2026-10-25-duo-design/final-unit-results.json)
+also lists all seven passing keyboard argument rows, including the three
+new Duo measurements. Xcode counts their parent case once, so the
+provisional expectation of 772 was incorrect. No temporary probe is in
+this source. The complete standard UI suites each fail one Speaking-wait
+case, also reproduced on unchanged main on the same iPad. Root inspected
+default/AX5 light/dark captures on both families; this is not a full UI
+pass. [Combined UI receipt](../evidence/2026-10-25-duo-design/standard-ui-results.json).
+Actual pointer mapping across changed windows, final Duo active-display
+review, native pane rechecks and mounted-device tests remain open.
 
 ### Plan from the measured regions
 
 **Scoped drawing gate, 2026-10-25:** the
 [84-state candidate section](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=89-3)
-now draws the resolved default/AX5 frames: 24 browsing, 12 typing, 24
+now draws the revised enclosed default/AX5 frames: 24 browsing, 12 typing, 24
 alarm and 24 Settings covers, evenly split light/dark. The
 [saved overview](../evidence/2026-10-25-duo-design/candidate-screens.png)
 and [screen links and validation](../evidence/2026-10-25-duo-design/candidate-drawings.json)
-record the drawing check. Apple kit components supply system chrome and
+record the drawing check. All 84 screen links stay unchanged. Separate
+guides retain the raw 455.5–495.5pt band and show the allocator's
+455–496pt enclosure. The 768 Home/Back targets match the export within
+0.000012208pt Figma precision; all 480 tile frames and 24 modeled
+Settings rows match exactly, with no Brickson button-label overflow.
+Apple kit components supply system chrome and
 keyboards; Inter text is an explicitly labeled drawing substitute where
 the connector cannot render the system font. These are design frames,
 not native UI or keyboard measurements.
 
-Settings keeps its current row solver and PR #56's limits. Its derived
+Settings keeps its current row solver and PR #56's limits. Its modeled
 AX5 full-screen row crosses the fold in four geometries; the
 [wide](../evidence/2026-10-25-duo-design/settings-wide-ax5-gap.png) and
 [tall](../evidence/2026-10-25-duo-design/settings-tall-ax5-gap.png) drawings
-show that gap explicitly. It also exists with the unreserved engine:
+show that modeled gap explicitly. It also exists with the unreserved engine:
 wide AX5 moves from y336 to y337, crossing in both; tall AX5 stays at
 y467. This closes the drawing gate for item 6's Home scope, including
 the cover derived from Home. It does not complete R0-13's broader
 Settings/setup audit, approve an exception, or claim Settings fold
-clearance. Native navigation, wrapping and complete chain checks remain
-required. The owner confirmed keeping the current rule and investigating
-another design; no pinned panes or paging is selected.
+clearance. All 20 exported row models compared with native frames differ
+by more than 0.5pt: they assume a 64pt navigation bar, 40pt footer and
+modeled wrapping. For example, wide default is natively y201 rather than
+model y203; tall AX5 is natively (215.667,462,437.333,79.667) rather than
+model (211,467,442,79). The native audit records ten AX5 Settings
+row/fold intersections. Native Back containment above does not close
+these broader R0-13 Settings/setup gaps. Complete Settings chain and
+setup checks remain required. The owner confirmed keeping the current
+rule and investigating another design; no pinned panes or paging is
+selected.
+
+The original drawing gate was saved in `87ddb14`. The revised drawings
+and this updated Spec must be saved in another docs gate commit before
+the first implementation commit, which has not been made yet.
 
 Implementation files: `Brickson/Layout/HomeLayout.swift` owns typed inputs,
 allocation/occupied bounds, lanes and final derived outputs;
@@ -561,31 +659,36 @@ region test files under `BricksonTests/Layout/` check allocation, Home
 chains and the unchanged Settings solver separately. No Settings policy,
 project-format or fewer-tiles implementation is part of item 6.
 
-1. Use the linked Spec and drawings from the recorded full-screen and
+1. The linked Spec and drawings use the recorded full-screen and
    clipped Split View rectangles, both axes and reversed rotations,
    inactive and active reservations, default and AX5, light and dark,
    browsing/typing/alarm and the Settings cover. Keep readers and
-   reconstructed windows distinct; verify rendered targets independently.
-2. Write failing pure Swift Testing reproductions before implementation:
+   reconstructed windows distinct. The native frame comparison above is
+   independent of the pure export; rendered appearance remains separate.
+2. Failing pure Swift Testing reproductions precede the local implementation:
    division and camera separately, inactive/active stability, translated
    safe areas, both axes, resized windows and grown libraries at nonzero
    scroll offsets. Removing reservations, querying only active regions,
    double-offsetting a frame or using a content gap where a division
    intersects a scrolling viewport must make its corresponding check
    fail. A viewport wholly on one side needs no scrolling gap.
-3. Have the pure engine return typed reservation, lane/gap and viewport
-   geometry. Recalculate floors, fit/shortfall, keyboard availability,
-   Back to Talking and Settings placement from the final frames. Report
+3. The pure engine returns typed reservation, lane/gap and viewport
+   geometry, recalculating floors, fit/shortfall, keyboard availability,
+   Back to Talking and Settings placement from the final frames. It reports
    a shortfall rather than shrinking a target or hiding a control.
-4. Render with standard containers and existing controls. Score every
-   Home and Settings chain, by centre and edge, including folding from
+4. The local renderer uses standard containers and existing controls.
+   Complete the independent Home and Settings chain gates, by centre and
+   edge, including folding from
    old resting positions; preserve #56's tests and accepted limits.
-5. Run the full unit and standard iPhone/iPad UI gates, then fold-aware
-   Duo checks in native Hub orientations. Use one coherent accessibility
+5. The final unit gate above includes the added keyboard rows. Retain the
+   standard iPhone/iPad UI failure and main comparison while investigating
+   its cause; complete the remaining Duo pane checks.
+   Native full-screen/closed observations above use one coherent accessibility
    snapshot for window and control coordinates; preserve existing test
    strength. Check partially clipped accessibility targets on a device
    before claiming Snap to Item safety. Device comfort, audio, Phone
    handoff and the tracking dark area remain separate physical checks.
 
-No implementation or universal fold-clearance result is claimed by this
-plan. Its record is [the item 6 design log](../log/2026-10-25-duo-fold-design.md).
+Implementation remains uncommitted, and no universal fold-clearance,
+strong chain-safety or physical-input result is claimed. Its record is
+[the item 6 design log](../log/2026-10-25-duo-fold-design.md).

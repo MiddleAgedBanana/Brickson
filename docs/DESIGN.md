@@ -54,8 +54,11 @@ Phrases alone was a proposal that differed from the landed decision;
     [84-state resolved candidate section](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=89-3)
     completes the scoped Home drawings, with default/AX5 browsing,
     available typing, alarm and derived Settings covers in light/dark.
-    Existing AX5 Settings row/fold intersections are shown as unresolved
-    R0-13 gaps. Native rendering, complete chains and physical checks
+    Raw fold guides and their outward whole-point planning enclosure
+    are both drawn after the native pixel-rounding finding. Existing
+    AX5 Settings row/fold intersections are shown as unresolved R0-13
+    gaps; these rows are illustrative models, not native measurements.
+    Native rendering, complete chains and physical checks
     remain separate gates; the work file links the saved render and
     per-screen manifest.
 - **Claude Design prototype** (private artifact, shared by the owner when
