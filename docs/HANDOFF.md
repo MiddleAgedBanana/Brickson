@@ -96,7 +96,7 @@ Xcode 27.1 (27A9275); PR #20 landed in `d79d836`.
 
 ## Verification
 
-- **Mac keyboard checks, 2026-10-25**, main `8316743`, Xcode 27.1
+- **Mac Home and keyboard checks, 2026-10-25**, main `8316743`, Xcode 27.1
   (27A9275), iOS 27.0: on a 375×667 iPhone SE simulator the default-text
   keyboard probe passed and AX5 failed Home's conservative band check;
   with Larger Text Display Zoom (verified 320×568), both failed that
@@ -105,8 +105,21 @@ Xcode 27.1 (27A9275); PR #20 landed in `d79d836`.
   Manual AX5 typing on iPhone 17 and 13-inch iPad, portrait and also iPad
   landscape, kept the required communication controls fixed and above
   the full keyboard. Put Back was behind the phone's keyboard. No device
-  check ran; the ordered handoff stops at the owner-operated dimmed-control
-  check. [Measurements, failures and screenshots](log/2026-10-25-mac-keyboard-checks.md).
+  check passed. The current app was subsequently installed and launched
+  on a physical iPhone; the owner's informal handheld observation found
+  no outline on white disabled tiles, with outlines on keyboard keys and
+  coloured controls. Formal device testing is deferred until a mounted
+  setup is ready; independent Mac work continues at the owner's request.
+  The Home matrix found all eight starter phrases fitting on the 13-inch
+  iPad at default/AX4/AX5, standard and Larger Text Display Zoom, in both
+  orientations. Standard iPhone AX4/AX5 scrolls 4/52pt. Its zoomed 320×693
+  window scrolls 169pt at default; at AX4 its grid is only 7pt high and at
+  AX5 it has zero height below the window. Those access checks fail.
+  Duo's closed/open Home runs include failures; native Device Hub also
+  covered both inner orientations and a 130° partial pose. Three separate
+  cold iPhone boots passed the historical first-snapshot test without app
+  warm-up; the flake was not reproduced or fixed.
+  [Measurements, failures, limits and screenshots](log/2026-10-25-mac-keyboard-checks.md).
 
 - **PR #17 main refresh, 2026-10-23:** merged library main `48bcf73`
   without rebasing. Nine new guard/documentation findings are corrected;
@@ -214,16 +227,22 @@ Xcode 27.1 (27A9275); PR #20 landed in `d79d836`.
   simulators at the default and largest text sizes, which found the phone
   problems under *Known gaps* (docs/recon/2026-10-15/README.md, 2.1). No
   person has yet run the app and heard a phrase on record.
-- **Physical devices: none.** See *Checks that need a real device*.
+- **Physical device, 2026-10-25:** the current app installed and launched
+  on an iPhone 17 Pro Max, iOS 27.0.1. The owner supplied an informal
+  handheld gaze observation, recorded with its limits in
+  [the Mac check record](log/2026-10-25-mac-keyboard-checks.md).
+  No controlled device check has passed. Formal testing waits for a
+  mounted setup; see *Checks that need a real device*.
 - **No test sees** VoiceOver announcements being posted, the message's
   scroll reset, the missed-callback watchdog on a real synthesizer (it is
   unit-tested with fakes), or sound. Windowed iPad
-  sizes are untested. On iPhone Duo only the closed pose has run, in the
-  simulator on the owner's Mac (2026-10-23, the full UI suite: the
-  starter phrases scroll there, below); open and partly folded have not
-  ([`log/2026-10-23-large-content-and-iphone-duo.md`](log/2026-10-23-large-content-and-iphone-duo.md)). The first UI test on a
-  just-started CI simulator failed intermittently before PR #13's warm-up
-  launch (AGENTS.md, *Gotchas*). Apple's accessibility audit never sees
+  sizes are untested. The 2026-10-25 Mac run checked Duo closed, open,
+  partially open and rotated, with recorded failures and test-framework
+  limits; windowed Duo and its reserved fold/camera regions remain
+  unverified ([record](log/2026-10-25-mac-keyboard-checks.md)). The first
+  UI test on a just-started CI simulator failed intermittently before
+  PR #13's warm-up launch (AGENTS.md, *Gotchas*); three local cold boots
+  without warm-up did not reproduce it on 2026-10-25. Apple's accessibility audit never sees
   Home's "Speaking" line: audits wait for speech to finish, because one
   that ran while the line left reported text with no element (issue #30,
   [`log/2026-10-22-audit-still-screen.md`](log/2026-10-22-audit-still-screen.md)).
@@ -243,8 +262,12 @@ release in docs/ROADMAP.md when no thread has it yet.
   no longer does on the iPad mini and a zoomed 13-inch iPad in landscape
   at AX5, or on regular windows 667pt tall at AX3 (docs/DECISIONS.md,
   "Typing on Home", *Where the starter library fits, measured*).
-  iPhone Duo's outer display is predicted to fit at the default size,
-  not yet seen. What remains needs fewer tiles to a screen: drawn in
+  The 2026-10-25 simulator measurements replace Duo's outer-display
+  prediction: it scrolls 3pt at default, 201pt at AX4 and 249pt at AX5;
+  AX5 cannot show a whole tile even after scrolling. The zoomed iPhone
+  320×693 grid is only 7pt high at AX4 and zero-height at AX5. These
+  restricted windows need an arrangement that can show a whole row;
+  paging alone cannot make one fit. What remains needs fewer tiles to a screen: drawn in
   Figma as R1's direction, pages of whole rows with "More, 1 of 2" in
   the grid's last slot (docs/work/typing-on-home.md, *Fewer tiles to a
   screen*), not built, because touch, 1.0's only profile, may scroll.
@@ -518,20 +541,24 @@ release in docs/ROADMAP.md when no thread has it yet.
   Siri and Shortcuts, which 1.0 does not ship, were deleted on 2026-10-23
   ([`log/2026-10-23-accessibility-page-and-privacy-trim.md`](log/2026-10-23-accessibility-page-and-privacy-trim.md)
   keeps their words). *(App Store readiness and ASO)*
-- iPhone Duo: Brickson builds with the iOS 27.1 SDK, so Apple already
-  treats it as optimized for iPhone Duo, but it has run there only
-  closed, in the simulator: on the outer display the starter phrases
-  scroll at the default text size, and Settings' Back moves into a
-  column at the trailing edge
-  ([`log/2026-10-23-large-content-and-iphone-duo.md`](log/2026-10-23-large-content-and-iphone-duo.md)).
-  Open and half-folded have not run: no command-line way to fold the
-  simulator was found, and Xcode's Device Hub was not tried. The
-  inner display ignores the portrait-only setting, a fold can sit under
-  an odd column of Home, and CI has no Duo simulator; screenshots are
-  required from April 2027 (docs/DECISIONS.md, "iPhone Duo";
-  [`log/2026-10-23-iphone-duo-readiness.md`](log/2026-10-23-iphone-duo-readiness.md)).
-  *(R0 item 13: the open poses on the Mac in Device Hub, then the layout
-  engine, which builds the owner's two fold choices)*
+- iPhone Duo: the owner's Mac checked the current app closed (466×678),
+  open in wide (951×669) and tall (669×951) orientations, and partially
+  open at 130°, on 2026-10-25. Closed AX5 cannot show a complete phrase
+  tile; wide AX5 shows four complete tiles and scrolls 10pt; tall fits
+  all eight at default, AX4 and AX5. The 19 existing Home tests had one
+  closed audit failure, and nine open failures plus two landscape skips;
+  the open failures include portrait/window-API assumptions and a distinct
+  AX5 nearest-control finding. All five default typing tests passed open.
+  Device Hub rotation worked; the tested XCTest rotation request did not.
+  XCTest's inner captures were black inactive-outer images, so active
+  RocketSim images and coherent accessibility snapshots preserve the
+  evidence. The wide rendered fold crosses No, Conversation and phrase
+  tiles; fold/camera clearance, windowing and physical input remain
+  unverified. CI still has no Duo family; screenshots are required from
+  April 2027 (docs/DECISIONS.md, "iPhone Duo";
+  [Mac record](log/2026-10-25-mac-keyboard-checks.md)).
+  *(R0 item 13: Wave 3 item 6, after the owner's alarm-path merge gate;
+  Settings root rows stay with their current thread)*
 - The app icon is a placeholder; `design/brand/` is not installed. *(Release chores, R0 item 11)*
 - Siri's alternative name "Brick Son" (`INAlternativeAppNames`) has no
   effect yet: Apple applies it only to apps with Siri support, which
@@ -594,9 +621,11 @@ JSON project format is planned, not adopted: the owner's 2026-10-25
 handoff requires released Xcode 27.2 and its first fix release before
 the trial on the owner's Mac starts. XcodeGen stays until the gates hold (docs/DECISIONS.md, "Xcode's
 JSON project format"). iPhone
-Duo is R0 item 13: the closed pose has run in the simulator
-([`log/2026-10-23-large-content-and-iphone-duo.md`](log/2026-10-23-large-content-and-iphone-duo.md)),
-and open and half-folded come next, in Device Hub on the owner's Mac
+Duo is R0 item 13: closed, open, partly folded and rotated simulator
+measurements are recorded, with failures and unverified fold/camera and
+windowing checks ([Mac record](log/2026-10-25-mac-keyboard-checks.md)).
+The owner requires the alarm-path pull request to merge before Wave 3
+item 6 changes Home; the next implementation uses these measured spaces
 ([`log/2026-10-23-iphone-duo-readiness.md`](log/2026-10-23-iphone-duo-readiness.md), *Follow-ups*);
 recheck the minimum iOS against its two rules whenever Apple's next major
 release drops devices (docs/DECISIONS.md, "Minimum iOS, iPhone and
