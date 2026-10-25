@@ -63,10 +63,10 @@ instead of links (docs/DECISIONS.md, "Accessibility API coverage").
 Until Family Setup has been opened once, Home's message area says where
 setup is. Settings' Back to Talking sits over Home's Phrases, so a look
 still resting on it when Settings closes meets Phrases, which does
-nothing while the phrases show; on a phone, a look resting on the top of
-Settings' Family Setup row can still open Family Setup and close Settings
-over No (docs/DECISIONS.md, "Typing on Home" and "One chain engine for
-dwell safety").
+nothing while the phrases show; a look resting on Settings' Family Setup
+row can still open Family Setup and close Settings over No, and on the
+13-inch iPad over Get Attention, which sounds the alarm (docs/DECISIONS.md,
+"Typing on Home" and "One chain engine for dwell safety").
 "Speaking", "Sounding", audio failures, very low volume and a typed
 message that cannot be saved or restored share one passive status line
 under the message, in space always kept for it, and
@@ -427,11 +427,12 @@ release in docs/ROADMAP.md when no thread has it yet.
   on a phone at the default text size, and from Set Up Step by Step
   itself on every window where it shows. And Settings can close under
   a look nobody meant to close it with. Since 2026-10-24 Back to Talking
-  sits over Phrases, so choosing it meets only Phrases; what remains, on
-  the phone model, is a look resting on the top of the root's Family
-  Setup row, which opens Family Setup, finds Back to Talking nearest by
-  edge, and closes Settings over No (`SettingsOnHomeTests` pins it
-  strict on compact windows; docs/DECISIONS.md, "Typing on Home",
+  sits over Phrases, so choosing it meets only Phrases; what remains is
+  a look resting on the root's Family Setup row, which opens Family
+  Setup, finds Back to Talking nearest, and closes Settings over No on
+  the phone and over Get Attention (the alarm) or No on the 13-inch iPad,
+  where the row sits over Home's safety row (`SettingsOnHomeTests` pins
+  it strict on every window; docs/DECISIONS.md, "Typing on Home",
   *Settings closing, rescored*). Placing Family Setup's first rows for
   it is the fix, and a device check says whether it binds. The fix for
   the first, Learn About Each Way where Set Up Step by Step's row was,

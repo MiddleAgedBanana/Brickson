@@ -112,7 +112,11 @@ row clears the keyboard, with its test, hint and records (Codex);
 "Message full" for a change refused at the length limit, with its tests
 (Greptile); and the phrase tiles dimmed in place while typing, with the
 chain maps and tests that score them (Codex), with every refused
-keystroke at the limit told to VoiceOver (CodeRabbit).
+keystroke at the limit told to VoiceOver (CodeRabbit). Then, after the
+first UI run: the message drawn at the person's text size and scaled
+down to fit instead of capped (`MessageFit`), with its test; and Settings'
+unasked closing expected strictly on every window, with the iPad's
+finding recorded.
 
 ## Verified
 
@@ -130,8 +134,20 @@ keystroke at the limit told to VoiceOver (CodeRabbit).
 - **CI on `e682dc2`** (the second push): the unit tests passed on the
   iPad Pro 13-inch (M5) simulator, iOS 27.0, Xcode 27.1: 725 ran, 717
   passed, 0 failed, 1 skipped (issue #19's disabled reproduction), 7
-  expected failures, with the String Catalog up to date. The last push's
-  run is the check for the dimmed tiles and the per-refusal notice.
+  expected failures, with the String Catalog up to date. The UI tests
+  failed in 7 places. On the iPhone 17, four accessibility audits (Home
+  light and dark, the emergency phrases, the alarm sounding) reported
+  "Dynamic Type font sizes are partially unsupported" on the first-run
+  hint: the message, now 217 points wide beside Phrases and Type, was
+  capped at a smaller text size as the audit grew it. It is now drawn at
+  the person's own size in lines set for the largest size that fits,
+  scaled down to fit, as `FittedLabel` draws labels. On the 13-inch iPad,
+  `SettingsOnHomeTests` found Settings closed through Family Setup over
+  Get Attention, and at AX5 over No, in all three of its runs, where the
+  model had expected none (docs/DECISIONS.md, "Typing on Home",
+  *Settings closing, rescored*); it is now a strict known issue on every
+  window. The next push's run is the check for these, the dimmed tiles
+  and the per-refusal notice.
 - **What each new test fails on** (each was run against the change that
   should fail it, or the old code):
   - `backToTalkingClosesOntoPhrasesAlone`: Back to Talking as wide as
@@ -158,6 +174,10 @@ keystroke at the limit told to VoiceOver (CodeRabbit).
   - `DraftStoreTests.aRefusedEditSaysTheMessageIsFull` and
     `aFailedSaveOutranksTheLimit`: no notice for a refused edit, and the
     limit's notice replacing a failed save's.
+  - `HomeLayoutEngineFontTests.theMessageFollowsThePersonsTextSize`:
+    the message capped at the largest size its widest word fits, as
+    before (its cap is then below the person's size at the largest
+    sizes). It measures with UIKit, so it was not run here; CI runs it.
   - `ChainEngineTests.backToTalkingOverPhrasesClosesOnlyUnderALookItReachesUnasked`
     and `theHeldGuideLinkWouldSoundTheAlarm`: Settings' frames back at
     the old bar, or the guide link's chains clearing.
@@ -186,9 +206,10 @@ keystroke at the limit told to VoiceOver (CodeRabbit).
   forums give for a field new to the screen (set in `onAppear`, a new
   field may not take it yet); whether the keyboard comes at once on CI's
   simulators is the first UI run's to show.
-- **The iPads' indirect closings.** The model finds that Settings closed
-  through Family Setup lands on Type there, so `SettingsOnHomeTests`
-  expects none; CI's frames decide.
+- **The message at the person's size.** Whether SwiftUI scales the
+  message's set lines to fit inside its scroll view, so Apple's audit
+  passes on CI's phone and no word breaks: the next run's audits and
+  rendered-label checks.
 - **Typing at the largest text sizes** in the running app, the iPad's
   floating and split keyboards, other languages and iPhone Duo.
 - **The keyboards on 320-point windows and on a 375×667 phone at AX3 and
@@ -205,9 +226,9 @@ keystroke at the limit told to VoiceOver (CodeRabbit).
 
 ## Follow-ups
 
-1. **CI.** Watch the first run: focus in a `task`, the catalog check,
-   the strict known issue on the phone's indirect closings, the iPads'
-   expected none. *(this thread)*
+1. **CI.** Watch the run after the first UI failures: the message's
+   audits on the phone, and the strict known issue on Settings' unasked
+   closings on every window. *(this thread)*
 2. **For Codex on the owner's Mac:** run `KeyboardProbeTests` on a
    375×667 simulator with and without Display Zoom, which says whether
    the real keyboard would cover Speak or Get Attention there, and so
@@ -215,9 +236,11 @@ keystroke at the limit told to VoiceOver (CodeRabbit).
    AX5 on the iPhone 17 and 13-inch iPad simulators and note anything that
    moves or ends under the keyboard (docs/HANDOFF.md, *Known gaps*).
    *(Codex, through the owner)*
-3. **Settings' indirect closing** on phones (Family Setup's Back to
-   Talking, nearest a look on the top of the root's row): placing Family
-   Setup's first rows for it, and then the held guide link again.
+3. **Settings' indirect closing** (Family Setup's Back to Talking,
+   nearest a look on the root's row): over No on the phone, and over Get
+   Attention, the alarm, on the 13-inch iPad, where the root's row sits
+   over Home's safety row. Placing Family Setup's first rows for it
+   (ROADMAP Wave 3 item 7), and then the held guide link again.
    *(the next Settings thread)*
 4. **The owner's questions before R1**, each measured in "Typing on
    Home": by nearest centre, the top of a dimmed phrase nearest Clear or

@@ -219,8 +219,9 @@ the bar.
   "One chain engine for dwell safety") is scored again on the moved
   frames, in the unit tests' model and by `SettingsOnHomeTests` on CI.
   What remains is recorded there with numbers. *Result:* choosing Back
-  to Talking meets only Phrases; on the phone one closing nobody chose
-  remains, through Family Setup, over No.
+  to Talking meets only Phrases; one closing nobody chose remains,
+  through Family Setup: over No on the phone, and on CI's 13-inch iPad
+  over Get Attention, which sounds the alarm, or No.
 - **The held guide link** (Learn About Each Way, commit `1de50f5`) comes
   back only if its chains clear on the moved frames; otherwise it stays
   held, with the reason recorded (step 4 of *Plan*). *Result:* held: its

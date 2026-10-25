@@ -20,11 +20,11 @@ import XCTest
 ///   (`SettingsChains`, `ChainEngine`). Choosing Back to Talking never
 ///   closes Settings under the look. Two kinds of hazard are known and
 ///   expected, strictly, so each fails once it is gone: a held look saves
-///   an answer in the first step, and, where Back to Talking is Phrases'
-///   whole frame, as on a phone, a look on the top of the first screen's
-///   Family Setup row meets Back to Talking once Family Setup shows, so
-///   Settings closes under it (docs/DECISIONS.md, "One chain engine for
-///   dwell safety", "Typing on Home"). Any other hazard fails.
+///   an answer in the first step, and, on every window, a look on the
+///   first screen's Family Setup row meets Back to Talking once Family
+///   Setup shows, so Settings closes under it: over No on the phone, over
+///   Get Attention or No on the iPads (docs/DECISIONS.md, "One chain
+///   engine for dwell safety", "Typing on Home"). Any other hazard fails.
 ///
 /// "Nearest" is scored two ways, because how Snap to Item picks a target is
 /// a device check (docs/HANDOFF.md, *Checks that need a real device*): by
@@ -148,7 +148,7 @@ final class SettingsOnHomeTests: XCTestCase {
                 familySetup: Self.named(Self.onScreen(familySetup, in: window)),
                 firstStep: firstStep.map { Self.named(Self.onScreen($0, in: window)) }
             ),
-            window: window, isCompact: abs(way.width - phrases.width) <= 1, context: context
+            window: window, context: context
         )
 
         // Out: where Back to Talking was, Home.
@@ -198,11 +198,11 @@ final class SettingsOnHomeTests: XCTestCase {
     /// control the chains do not know, on choosing Back to Talking closing
     /// Settings under the look, and, strictly, once a known kind is no
     /// longer found: the first step's only where it was read, and Settings
-    /// closing under a look that reaches Back to Talking unasked only where
-    /// Back to Talking is Phrases' whole frame (`isCompact`).
+    /// closing under a look that reaches Back to Talking unasked on every
+    /// window.
     @MainActor
     private func checkChains(
-        home: [ScreenControl], screens: SettingsChains.Screens, window: CGRect, isCompact: Bool, context: String
+        home: [ScreenControl], screens: SettingsChains.Screens, window: CGRect, context: String
     ) {
         let homeControls = Self.onScreen(home, in: window)
         guard let frames = HomeChains.frames(from: Self.named(homeControls), categories: Self.everydayCategories) else {
@@ -245,14 +245,10 @@ final class SettingsOnHomeTests: XCTestCase {
         let chosen = closings.filter { $0.example.start.chosen?.name == SettingsChains.backToTalking }
         XCTAssertEqual(chosen.map(\.description), [], "choosing Back to Talking closes Settings under the look (\(context))")
         let unasked = closings.filter { $0.example.start.chosen?.name != SettingsChains.backToTalking }.map(\.description)
-        if isCompact {
-            XCTExpectFailure(
-                "docs/DECISIONS.md, \"Typing on Home\": Settings closes under a look that reaches Back to Talking unasked",
-                options: strict
-            ) {
-                XCTAssertEqual(unasked, [], "Settings closes under a look that reaches Back to Talking unasked (\(context))")
-            }
-        } else {
+        XCTExpectFailure(
+            "docs/DECISIONS.md, \"Typing on Home\": Settings closes under a look that reaches Back to Talking unasked",
+            options: strict
+        ) {
             XCTAssertEqual(unasked, [], "Settings closes under a look that reaches Back to Talking unasked (\(context))")
         }
     }

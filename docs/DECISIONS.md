@@ -2246,11 +2246,12 @@ engine, not five scripts".
     to the owner before a dwell, switch, head or gaze profile ships.
     *2026-10-24, item 5 (*Typing on Home*, *Settings closing,
     rescored*):* Back to Talking now sits over Phrases, and choosing it
-    meets only Phrases. One closing nobody chose remains on the phone
-    model: a look on the top band of the root's Family Setup row opens
-    Family Setup, whose Back to Talking is nearest it by edge, and
-    Settings closes over No. `SettingsOnHomeTests` pins such closings
-    strict on compact windows and expects none on the iPads.
+    meets only Phrases. One closing nobody chose remains: a look on the
+    root's Family Setup row opens Family Setup, whose Back to Talking is
+    then nearest it, and Settings closes under it, over No on the phone
+    and over Get Attention, which sounds the alarm, or No on the 13-inch
+    iPad (CI's frames, *Settings closing, rescored*). `SettingsOnHomeTests`
+    pins such closings strict on every window.
 
 *Before:* the nearest-control rules were written twice, in
 `HomeShapeTests` and in the UI tests' `ScreenControls`, and only single
@@ -2645,11 +2646,24 @@ plan's places (*Home's slot plan*).
   of Settings' Family Setup row opens Family Setup, whose Back to Talking
   is then nearest it by edge, and Settings closes with the look over No
   ("choosing familySetup → backToTalking (navigates) → No (speaks)", one
-  chain in the iPhone 17 model; `ChainEngineTests`). `SettingsOnHomeTests`
-  pins such closings as a strict known issue on compact windows. On the
-  iPads the model finds them landing on Type, so the UI test expects none
-  there; its first CI run is the evidence. Placement of Family Setup's
-  first rows is what removes the rest, scored with the same tests.
+  chain in the iPhone 17 model; `ChainEngineTests`). On the iPads the
+  model found them landing on Type, but CI's first run on PR #53 found
+  them on the 13-inch iPad too, and worse. There Settings' Family Setup
+  row (524, 216, 492 by 110 points in portrait) sits over Home's one-row
+  safety row (y 236 to 324), and Family Setup's first row starts lower
+  (y 342), so from the row's trailing end Back to Talking is the nearest
+  centre in Family Setup, and Settings closes with the look on Get
+  Attention, which sounds the alarm: by centre at the default size, in
+  portrait and in landscape, and by centre and by edge at AX5, where a
+  look on the row's top leading corner also closes it over No by edge.
+  `SettingsOnHomeTests` pins such closings as a strict known issue on
+  every window. It is a chain of three held activations from a family's
+  screen (Family Setup, Back to Talking, Get Attention); it is measured
+  here for the owner and not accepted. Placement of Family Setup's first
+  rows (ROADMAP Wave 3 item 7), so a look held on the root's row meets a
+  row that only navigates, is what removes it, scored with the same
+  tests, or its measured cost goes to the owner before a dwell, switch,
+  head or gaze profile ships.
 - **The held guide link stays held** (*One chain engine for dwell
   safety*, *Open: a held look saves an answer in Set Up Step by Step*).
   Modelled on the moved frames, Learn About Each Way still clears every

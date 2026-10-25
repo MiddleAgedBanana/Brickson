@@ -412,7 +412,10 @@ is the owner's decision (DECISIONS.md, "Get Attention in Settings' bar:
 the owner decides").* With item 2's scores: Family Setup's rows placed so that a look held after the root's
 row meets a row that only navigates, and the chain that follows Family
 Setup's first row into Set Up Step by Step and saves an answer broken
-by placement (docs/HANDOFF.md, *Known gaps*). Then a start-only Get
+by placement (docs/HANDOFF.md, *Known gaps*). *2026-10-25:* with item
+5's frames, a look held on the root's row closes Settings over Get
+Attention, which sounds the alarm, on the 13-inch iPad (DECISIONS.md,
+"Typing on Home"). Then a start-only Get
 Attention in Settings' bar, in its empty place, with the sound line
 moved where its neighbours neither speak nor change a setting. This
 comes before item 8, because item 8 lets setup answers change sizes.
