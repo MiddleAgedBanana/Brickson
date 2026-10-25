@@ -44,12 +44,12 @@ build). Status: building (untested until CI passes).*
     chain closing Settings onto No or Get Attention wherever the row
     sits: with the opening words there, Back to Talking is nearer the
     spot than the first row below them. So Set Up Step by Step takes the
-    row's place instead (*Spec*), and the words go above it where they
-    fit, under it where they do not. Measured in `ChainEngineTests`,
-    with no closings on any of CI's windows.
+    row's frame instead (*Spec*), and the words go beside, above or
+    under it. Measured in `ChainEngineTests`, with no closings on any of
+    CI's windows or on 630 swept ones (*Changed during the build*).
   - *Is Set Up Step by Step a decoy?* No. It is the row a family member
     most needs on arriving in Family Setup, and it was already first;
-    only its height and the words' side change.
+    only its frame and the words' side change.
 
 ## Spec
 
@@ -70,10 +70,13 @@ build). Status: building (untested until CI passes).*
     the first screenful. The note goes beside it where two columns fit
     (`SettingsLeadIn`), above it where it fits, else under it.
 - **Family Setup:** Set Up Step by Step takes the root's row as drawn
-  (`SettingsLanding`), across the whole width and at least as tall. The
-  opening words go above it where they fit in the room between the top
-  of the content and the row, and under it where they do not. The
-  check-in card, when due, and the setup warnings come after it, so a
+  (`SettingsLanding`): its leading edge, top and width, and at least its
+  height, growing downward where its own words need more lines
+  (`SettingsLeadIn.control(inPlaceOf:width:height:)`). The opening words
+  go beside it where the room at its leading side holds its words on
+  one line, as the root's note does, else above it where they fit in
+  the room between the top of the content and the row, else under it.
+  The check-in card, when due, and the setup warnings come after, so a
   card never moves it. The other rows follow unchanged.
 - **Every Settings screen** measures where it sits in the window
   (`SettingsScreenFrames`): the stack's frame from the cover, the
@@ -84,27 +87,44 @@ build). Status: building (untested until CI passes).*
   | Window | Root row | Note | Set Up Step by Step | Opening words |
   |---|---|---|---|---|
   | iPhone 17, default | 16, 312, 370 by 78 (held by Back's spot) | above | 16, 312, 370 by 78 | under |
-  | iPhone 17, AX5 | 16, 317, 370 by 145 | under | 16, 317, 370 by 145 | under |
-  | iPad 13-inch portrait, default | 822, 354, 194 by 78 (over Home's Settings) | beside | 16, 354, 1000 by 78 | above |
-  | iPad 13-inch portrait, AX5 | top 378 | under | at the row's top | above |
-  | iPad 13-inch landscape, default | top 355 | beside | at the row's top | above |
+  | iPhone 17, AX5 | 16, 317, 370 by 145 (computed, not pinned) | under | 16, 317, 370 by about 209 (three lines) | under |
+  | iPad 13-inch portrait, default | 822, 354, 194 by 78 (over Home's Settings) | beside | 822, 354, 194 by 78 | beside |
+  | iPad 13-inch portrait, AX5 | 574, 378, 442 by 80 | beside | 574, 378, 442 by about 145 (two lines) | under |
+  | iPad 13-inch landscape, default | 1098, 355, 262 by 78 (over Home's Settings) | beside | 1098, 355, 262 by 78 | beside |
+
+  Set Up Step by Step's heights are modelled from the Family Setup row
+  CI measured (its words are about half as wide again); `SettingsRowPlaceTests`
+  pins the root row's top on the phone, the iPad in portrait at both
+  sizes and in landscape.
 
 - **Input methods:** touch, VoiceOver and Full Keyboard Access meet the
   same controls in the same reading order (note, then row, or row, then
   words, as drawn). For dwell and switches, the chain model on CI's
   frames finds no chain that closes Settings under the look, on any of
-  the four windows it models (`SettingsChainsTests`).
+  the four windows it models, nor on 630 swept windows with Family
+  Setup's words modelled (`SettingsChainsTests`). By centre, on some
+  narrow windows at AX3 and AX5, Back to Talking can be the next control
+  at a corner of a large row; the look then lands on Home's quiet
+  controls, so nothing is said or sounded.
 - **Known issues kept strict, so they fail when they clear:**
-  - *iPhone at AX5:* the first step behind Set Up Step by Step shows only
-    Back, Back to Talking and Next above the fold, and three held looks
-    reach Back to Talking (familySetup, guidedSetup, Back to Talking,
-    then No or Get Attention; Again while something is spoken). Scoped in
-    `SettingsOnHomeTests` to a first step that shows no answer
-    (`SettingsChains.showsAnAnswer`).
-  - *A short, very wide window* (at least 1304 points wide and at most
-    667 tall, default text): Home's Settings' top leading corner lies as
+  - *iPhone at AX5* (predicted from PR #53's CI frames; this change's
+    CI run confirms it): the first step behind Set Up Step by Step shows
+    only Back, Back to Talking and Next above Next's top, and three held
+    looks reach Back to Talking (familySetup, guidedSetup, Back to
+    Talking, then No or Get Attention; Again while something is spoken);
+    a look that meets Next saves the step's answers. Scoped in
+    `SettingsOnHomeTests` to closings through a first step that shows no
+    answer above Next (`SettingsChains.showsAnAnswer`); any other closing
+    fails.
+  - *A short, very wide window* (wider than about 1300 points: the
+    sweep crosses it between 1296 and 1312; at most 667 tall, with 744
+    clear; default text): Home's Settings' top leading corner lies as
     near Back to Talking's centre as the row's, within half a point, as
     before (`SettingsRowPlaceTests.homesSettingsMeetsTheRow`).
+  - *The chain that saves an answer*, wider than before: from Home's
+    Settings it reaches Touch on every CI window, modelled, not only the
+    phone at the default size. Expected strictly wherever the first step
+    is read.
   - *The held guide link* (Learn About Each Way) still sounds the alarm
     and stays held (docs/DECISIONS.md, "Typing on Home", *The held guide
     link stays held*).
@@ -121,6 +141,15 @@ build). Status: building (untested until CI passes).*
   [iPad portrait, Home under the root](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=61-516).
   Drawn from the layout code's frames; not yet accepted by the owner.
 - **Concerns:**
+  - *A smaller row.* The root's row is 78 points tall at the default
+    size instead of 110, and on the iPad 194 wide instead of 492. Still
+    above every floor, but a smaller first target in Settings.
+  - *A scrolled first screen.* Set Up Step by Step takes the row's place
+    in the content. If Settings' first screen was scrolled when the row
+    was chosen (only where its content is taller than the screen), the
+    row's spot meets something else on Family Setup. Placing from the
+    scroll position would make a place depend on what the person did
+    (invariant 8); recorded as a known gap.
   - *Resting on empty space.* On the iPad the root's row now sits lower
     (354 instead of 216), so more of the first screen is empty space,
     and a look resting there with Snap to Item chooses the nearest
@@ -150,7 +179,7 @@ build). Status: building (untested until CI passes).*
   window); the iPad's emptier root. Each is checked by CI's UI tests
   on both families, which read the real frames.
 - **Proof:**
-  - `SettingsRowPlaceTests` (4,200 windows: 70 widths from 320 to 1432
+  - `SettingsRowPlaceTests` (4,200 windows: 70 widths from 320 to 1424
     points, six heights from 568 to 1376, five text sizes from the
     default to AX5, Bold Text off and on): the row stays on the first
     screenful; Home's Settings meets only the row; where Home under
@@ -161,13 +190,30 @@ build). Status: building (untested until CI passes).*
   - `SettingsScreenFramesTests`: fails if the content stops starting
     under the bar and a gutter.
   - `SettingsChainsTests`: on four modelled CI windows, no chain closes
-    Settings under the look; fails if Set Up Step by Step stops taking
-    the row's place.
-  - `SettingsOnHomeTests` (UI, both families): unasked closings asserted
-    empty except where the first step shows no answer; fails on any new
+    Settings under the look; on 630 swept windows (widths 320 to 1408
+    every 32 points, six heights, the default size, AX3 and AX5), none
+    either. The sweep fails with Set Up Step by Step across the width
+    (90 windows) or under the opening words (213).
+  - `SettingsLeadInTests.setUpStepByStepTakesTheRowsPlace`: fails if Set
+    Up Step by Step stops taking the row's frame or growing downward.
+  - `SettingsOnHomeTests` (UI, both families): closings asserted empty
+    except through a first step that shows no answer above Next; saves
+    expected strictly wherever the first step is read; fails on any new
     closing.
   - `SettingsTests.testFamilySetupOpensWithSetUpStepByStepOverTheWholeRootRow`
     (UI, default and AX5): fails if Set Up Step by Step stops covering
     the root row's frame, or another control meets that spot.
   - Device checks (Codex): where a pointer rests after choosing the root's
     row, with Snap to Item, on an iPad and an iPhone.
+
+## Changed during the build
+
+*2026-10-25.* The first version gave Set Up Step by Step the whole
+width at the root row's top, with the opening words above it where they
+fit. It found no closing on CI's four windows, but an independent review
+of the branch before it was pushed swept other windows and found
+Settings closing under the look on about a third of them at the default
+size: on the iPad, a row across the width puts its centre far from where
+a narrow root row was, so Back to Talking could be nearer the look. Set
+Up Step by Step now takes the row's own frame, and the unit tests sweep
+630 windows so a change like that fails before CI.

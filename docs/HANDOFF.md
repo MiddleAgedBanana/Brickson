@@ -65,11 +65,12 @@ setup is. Settings' Back to Talking sits over Home's Phrases, so a look
 still resting on it when Settings closes meets Phrases, which does
 nothing while the phrases show. Settings' Family Setup row is placed
 from Home's frames, and Family Setup opens with Set Up Step by Step in
-its place, so a look held on the row meets a row that only opens the
-next screen; only on a phone at its largest text size can a look held
-on through Set Up Step by Step still reach Back to Talking and close
-Settings over No or Get Attention (docs/DECISIONS.md, "Settings' first
-row, placed from Home's frames").
+its frame, so a look held on the row meets a row that only opens the
+next screen; modelled on CI's frames, only on a phone at its largest
+text size can a look held on through Set Up Step by Step still reach
+Back to Talking and close Settings over No or Get Attention, which CI's
+UI tests check (docs/DECISIONS.md, "Settings' first row, placed from
+Home's frames").
 "Speaking", "Sounding", audio failures, very low volume and a typed
 message that cannot be saved or restored share one passive status line
 under the message, in space always kept for it, and
@@ -427,24 +428,31 @@ release in docs/ROADMAP.md when no thread has it yet.
   safety"), and two hazards are open. A held look can follow Family Setup's first row into
   Set Up Step by Step and save an answer (it adds Touch and restarts the
   check-in clock; nothing reads the answers yet): from Home's Settings,
-  on every window CI runs since Set Up Step by Step took the root row's
-  place (on a phone at the default text size before), and from Set Up
-  Step by Step itself on every window where it shows. And Settings can
-  close under a look nobody meant to close it with, now only on a phone
-  at its largest text size: there Set Up Step by Step's first step shows
-  no answer above the fold, so a look held on through it meets Back to
-  Talking and closes Settings over No or Get Attention (the alarm).
-  Elsewhere, since 2026-10-25, Settings' Family Setup row is placed from
-  Home's frames and Set Up Step by Step takes its place in Family Setup,
-  so the look meets a row that only navigates; Back to Talking, over
-  Phrases since 2026-10-24, meets only Phrases when chosen
-  (`SettingsOnHomeTests` expects the phone's closing strictly where the
-  first step shows no answer, and fails on any other; docs/DECISIONS.md,
+  modelled on every window CI runs since Set Up Step by Step took the
+  root row's frame (on a phone at the default text size before), and
+  from Set Up Step by Step itself on every window where it shows; on a
+  phone at its largest text size, through Next, which saves the step's
+  answers. And Settings can close under a look nobody meant to close it
+  with, now only on a phone at its largest text size (predicted from
+  CI's frames): there Set Up Step by Step's first step shows no answer
+  above Next, so a look held on through it meets Back to Talking and
+  closes Settings over No or Get Attention (the alarm). Elsewhere, since
+  2026-10-25, Settings' Family Setup row is placed from Home's frames
+  and Set Up Step by Step takes its frame in Family Setup, so the look
+  meets a row that only navigates; Back to Talking, over Phrases since
+  2026-10-24, meets only Phrases when chosen (`SettingsOnHomeTests`
+  expects a closing strictly only through a first step that shows no
+  answer above Next, and fails on any other closing; docs/DECISIONS.md,
   "Settings' first row, placed from Home's frames"). Placing the first
   step's own rows is the fix for the phone, and a device check says
-  whether it binds. On short, very wide windows (at least 1304 points
-  wide and at most 667 tall), Home's Settings lies as near Back to
-  Talking as the row, as before. The fix for the first hazard, Learn
+  whether it binds. On short, very wide windows (wider than about 1300
+  points and at most 667 tall, at the default text size), Home's
+  Settings lies as near Back to Talking as the row, as before. If
+  Settings' first screen has been scrolled when its row is chosen,
+  which only happens where its content is taller than the screen, Set
+  Up Step by Step takes the row's place in the content, not on the
+  screen; placing it from the scroll position would make a place depend
+  on what the person did (invariant 8). The fix for the first hazard, Learn
   About Each Way where Set Up Step by Step's row was, was built and held
   on 2026-10-24, because its guide leads into the second; rescored on
   2026-10-25 it still would (its guide's Back to Talking closes Settings
@@ -574,10 +582,10 @@ through its guide, so it stays held for the next Settings thread
 (docs/DECISIONS.md, "Typing on Home", "One chain engine for dwell
 safety" and "Get Attention in Settings' bar: the owner decides"). On
 2026-10-25 it placed Settings' first row from Home's frames, with Set Up
-Step by Step in its place, which ends Settings closing under a look on
-CI's windows except a phone at its largest text size, where the first
-step's own rows are next (docs/DECISIONS.md, "Settings' first row,
-placed from Home's frames").
+Step by Step in its frame, which ends Settings closing under a look,
+modelled on CI's windows and 630 swept ones, except a phone at its
+largest text size, where the first step's own rows are next
+(docs/DECISIONS.md, "Settings' first row, placed from Home's frames").
 Every change follows AGENTS.md, *Apple's current frameworks first*: the
 legacy uses kept, and the moves still planned with who owns each, are in
 docs/DECISIONS.md under that title

@@ -417,11 +417,12 @@ by placement (docs/HANDOFF.md, *Known gaps*). *2026-10-25:* with item
 Attention, which sounds the alarm, on the 13-inch iPad (DECISIONS.md,
 "Typing on Home"). *2026-10-25, built (untested until CI passes):* the
 root's row is placed from Home's frames and Set Up Step by Step takes
-its place in Family Setup, so a look held on the row meets a row that
-only navigates on CI's windows; on a phone at its largest text size a
-look held on through Set Up Step by Step can still close Settings, and
-the chain that saves an answer remains (DECISIONS.md, "Settings' first
-row, placed from Home's frames"; work file
+its frame in Family Setup, so a look held on the row meets a row that
+only navigates, modelled on CI's windows and 630 swept ones; on a
+phone at its largest text size a look held on through Set Up Step by
+Step can still close Settings, and the chain that saves an answer
+remains, now on every CI window (DECISIONS.md, "Settings' first row,
+placed from Home's frames"; work file
 [`work/settings-row-place.md`](work/settings-row-place.md)). Then a start-only Get
 Attention in Settings' bar, in its empty place, with the sound line
 moved where its neighbours neither speak nor change a setting. This
