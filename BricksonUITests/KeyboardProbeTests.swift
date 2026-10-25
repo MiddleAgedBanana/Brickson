@@ -16,7 +16,7 @@ import XCTest
 ///    new numbers.
 /// 3. Opens Home in the same window and fails if any of Yes, No,
 ///    Emergency, Again or Get Attention reaches below the allowance's
-///    limit, so the keyboard would cover it once typing comes to Home.
+///    limit, so the keyboard would cover it while Home is typing.
 ///
 /// The UI tests compile `KeyboardAllowance` too (project.yml), so the rule
 /// is the app's own. The simulator must show the full software keyboard,
