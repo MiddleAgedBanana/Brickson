@@ -1,6 +1,6 @@
 # Settings' first row, placed from Home's frames
 
-*2026-10-25. Pull request #<n> (`claude/project-thread-h5wcx3`). The
+*2026-10-25. Pull request #56 (`claude/project-thread-h5wcx3`). The
 Settings' first row thread (a cloud session), ROADMAP Wave 3 item 7.*
 
 ## What changed and why
