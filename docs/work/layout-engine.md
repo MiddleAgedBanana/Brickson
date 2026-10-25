@@ -3,8 +3,10 @@
 *Roadmap: docs/ROADMAP.md, Wave 3 item 3, "The layout engine, with no
 screen change yet" (R0 item 3, and R1's profile layout engine); this
 file also covers items 4 (Home on the engine) and 6 (Home on iPhone Duo,
-in every pose). Owner: the Layout engine thread. Status: plan; items 3
-and 4 built.*
+in every pose). Owner: the Layout engine thread. Items 3, 4 and 5 are
+built. Item 6 is in design: the horizontal-fold scrolling choice below
+needs the owner before implementation. The original engine spec is kept
+as history; the dated item 6 section is the current continuation.*
 
 ## Intent
 
@@ -52,8 +54,9 @@ and 4 built.*
     under Emergency, which the slot plan's two-row safety row does not.
   - *Which windows can hold the starter library without scrolling, and
     at which text sizes?* And what happens where none can.
-  - *How does the engine take a fold?* The plan says this waits for R0
-    item 13's look at the open iPhone Duo, which has not happened.
+  - *How does the engine take a fold?* The original plan waited for R0
+    item 13's look. The 2026-10-25 Mac checks below now provide open and
+    partial-pose evidence; the horizontal scrolling case remains open.
 
 ## Spec
 
@@ -279,3 +282,120 @@ type that nothing calls yet, and Home moves onto its frames in item 4.
   - Floors ignore the person's text size:
     `controlsHoldOneLineOfTheirWords`.
   - No device check is added: nothing on screen changes.
+
+## Item 6: fold and camera design, 2026-10-25
+
+### Intent and evidence
+
+PR #56 merged as `6d040d5`, clearing this job's alarm-path prerequisite.
+This work starts from its new Settings placement and accepted chain
+limits. No Home or Settings implementation changes in this design pass.
+
+[PR #55's dated Mac record](https://github.com/MiddleAgedBanana/Brickson/blob/cb4c965/docs/log/2026-10-25-mac-keyboard-checks.md)
+measured app code `8316743`, before PR #56. In Device Hub the closed
+window was 466×678; the open inner window was 951×669 wide and 669×951
+tall. Open-wide AX5 showed four whole phrases and scrolled 10pt; open
+tall fit eight at default/AX4/AX5. The Hub's partial pose reported 130°;
+tall default/AX5 fit eight, and wide dark default/AX5 matched the open
+wide counts. The rendered wide fold crossed No, Conversation and phrase
+tiles. Existing open-Duo Home tests had eight passes, nine failures and
+two landscape skips. The record distinguishes frame-API disagreements
+from a pre-#56 Settings chain finding; none has been rescored on #56.
+
+Those observations establish the need for reserved-region layout. They
+do not provide the system's exact region rectangles, prove camera
+clearance or settle every window. Windowing and the second-window check
+remain open. A normal rectangular viewport is not fold-safe evidence.
+
+### Spec: what stays binding
+
+- Keep A → C → B → D, each control's logical order and neighbours,
+  Stop's well, target/word floors, first-activation speech and the fixed
+  frames across browsing, typing and alarm. Emergency never enters a
+  scrolling viewport. No new safety exception is accepted here.
+- Keep the owner's fold decision: spacing clears a division; no whole
+  region moves into one half. Division presence, including an inactive
+  division, selects even columns. Activity alone never changes a count.
+- Reserve the inner-camera geometry while inactive too. Starting Eye
+  Tracking or Head Tracking must not move targets. A simulator cannot
+  establish that this rectangle covers the physical dark area.
+- Derive all geometry from the supplied space, through the pure engine
+  and standard SwiftUI containers. No model, idiom, orientation or hinge
+  angle enters the product layout, and no custom input code is added.
+
+The Apple API, checked in current documentation and the installed SDK,
+is `GeometryProxy.reservedRegions(kind:options:layoutDirectionBehavior:)`,
+available behind `#available(iOS 27.1, *)`. Query `.division` and
+`.occlusion` separately with `.includeInactive`. Returned frames already
+include their margins. The shared `HomeLayout.Space(proxy)` adapter
+adds the reader's leading/top safe-area offset once to reach the engine's
+window coordinates; Home and Settings must use the same conversion.
+Empty regions and older systems retain their existing output.
+
+Sources: [Apple's query API](https://developer.apple.com/documentation/swiftui/geometryproxy/reservedregions(kind:options:layoutdirectionbehavior:)),
+[ReservedRegion](https://developer.apple.com/documentation/swiftui/reservedregion)
+and [Duo layout guidance](https://developer.apple.com/design/human-interface-guidelines/designing-for-iphone-duo).
+
+### Proposed vertical lanes; horizontal scrolling unresolved
+
+For a vertical division at regular widths, the candidate uses six virtual
+lanes. C is `Emergency, Yes, No | Again, Get Attention spanning two`.
+A keeps the message above the first three and Phrases/Type above the
+last three. B keeps Stop/Basics under Emergency, Needs under Yes,
+Conversation under No, Feelings under Again and Settings under Get
+Attention. Phrase columns are even, allocated from each side's room.
+This is a candidate to score, not a claim that floors or chains pass.
+
+A vertical gap stays aligned when a vertical grid scrolls. A horizontal
+gap inside one ScrollView does not: scrolling moves the gap away from the
+division, letting the next tile cross it. A fixed gap at the viewport
+instead needs a different content arrangement. The straightforward
+standard-container alternative is a pinned prefix above the division
+and a scrolling remainder below. With four columns, tiles 0–3 stay above;
+after the lower pane scrolls a row, their visible neighbours below change
+from 4–7 to 8–11. Stored order and row ownership survive, but the current
+continuous grid and spacing-only behaviour do not.
+
+**Owner choice before code:** keep the current rule while another
+spacing-only design is investigated; explicitly accept pinned-prefix
+scrolling; or bring whole-row paging forward into this R0 job. Moving all
+of D into one half remains rejected by the current decision. Paging is
+currently R1 work after the first R0 App Review build; this document
+does not move it earlier. Recommendation: retain the current rule until
+one alternative is explicitly chosen and scored. The drawings show
+candidate failures and trade-offs, not a completed Design gate.
+
+Figma: [the options page](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=73-3),
+[vertical lanes](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=74-139)
+and [horizontal scrolling counterexamples](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=74-190).
+The [saved render](../log/ui-test-evidence/2026-10-25-duo-design/duo-fold-options.png)
+keeps the proposed options visible without Figma access.
+
+### Plan after that choice
+
+1. Finish the chosen Spec and drawings for both axes, camera inactive and
+   active, default and AX5, light and dark, browsing/typing/alarm, and the
+   Settings cover. Record exact queried region rectangles in Device Hub;
+   illustrative bands in the drawings are not measurements.
+2. Write failing pure Swift Testing reproductions before implementation:
+   division and camera separately, inactive/active stability, translated
+   safe areas, both axes, resized windows and grown libraries at nonzero
+   scroll offsets. Removing reservations, querying only active regions,
+   double-offsetting a frame or using a single scrolling row gap must
+   make the corresponding check fail.
+3. Have the pure engine return typed reservation, lane/gap and viewport
+   geometry. Recalculate floors, fit/shortfall, keyboard availability,
+   Back to Talking and Settings placement from the final frames. Report
+   a shortfall rather than shrinking a target or hiding a control.
+4. Render with standard containers and existing controls. Score every
+   Home and Settings chain, by centre and edge, including folding from
+   old resting positions; preserve #56's tests and accepted limits.
+5. Run the full unit and standard iPhone/iPad UI gates, then fold-aware
+   Duo checks in native Hub orientations. Use one coherent accessibility
+   snapshot for window and control coordinates; preserve existing test
+   strength. Check partially clipped accessibility targets on a device
+   before claiming Snap to Item safety. Device comfort, audio, Phone
+   handoff and the tracking dark area remain separate physical checks.
+
+No implementation or universal fold-clearance result is claimed by this
+plan. Its record is [the item 6 design log](../log/2026-10-25-duo-fold-design.md).

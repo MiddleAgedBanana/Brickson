@@ -368,6 +368,11 @@ Fewer tiles to a screen is drawn as R1's direction, not built. Yes and
 No beside the message stays the owner's question before R1.
 
 **6. Home on iPhone Duo, in every pose.**
+*Design started 2026-10-25 after PR #56 merged; implementation waits for
+the horizontal scrolling choice in
+[the work file](work/layout-engine.md#item-6-fold-and-camera-design-2026-10-25).
+The current fold decision is unchanged. The draft shows candidates and
+their limits, not a completed layout or Design gate.*
 The owner's two fold choices (docs/DECISIONS.md, "iPhone Duo"): Home's
 controls kept off the fold, and an even number of columns on a display
 that folds, behind `#available(iOS 27.1, *)`. Apple's Eye Tracking and
