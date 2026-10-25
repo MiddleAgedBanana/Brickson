@@ -1,0 +1,2867 @@
+{
+  "appCodeBase": "6d040d5",
+  "checks": [
+    {
+      "name": "Software Return",
+      "result": "PASS for visible app state",
+      "soundVerified": false,
+      "steps": [
+        "Type Blue kites on test-only storage",
+        "HID text input hid keyboard; restore full keyboard with native Device > Keyboard > Toggle Software Keyboard",
+        "Press the visible software Return key",
+        "Speaking appeared; choose Phrases; last-spoken message shows Blue kites",
+        "Choose Type; draft still holds Blue kites"
+      ]
+    },
+    {
+      "name": "Clear",
+      "result": "PASS for empty field",
+      "steps": [
+        "Reopen Type with retained Blue kites and full keyboard",
+        "Activate Clear",
+        "Field empty; Clear and Speak disabled; full keyboard stays visible"
+      ]
+    },
+    {
+      "controlFramePoints": {
+        "height": 77,
+        "width": 122,
+        "x": 146,
+        "y": 547
+      },
+      "controlPresentInNativeVisibleAX": false,
+      "keyboardTopPoints": 546,
+      "name": "Put Back with full keyboard",
+      "note": "Do not activate through an AX path that bypasses the covering keyboard. No functional Put Back pass is claimed under this keyboard.",
+      "result": "FAIL for visual reachability"
+    }
+  ],
+  "date": "2026-10-25",
+  "environment": {
+    "appearance": "light",
+    "keyboard": "full US English software keyboard with predictions",
+    "runtime": "iOS Simulator 27.0",
+    "simulator": "iPhone 17",
+    "textSize": "AX5",
+    "toolchain": "Xcode 27.1 (27A9275)",
+    "windowPoints": {
+      "height": 874,
+      "width": 402
+    },
+    "windowing": "Full Screen"
+  },
+  "limitations": [
+    "No sound or physical Snap to Item proof",
+    "RocketSim keyboard summary said hidden even while rendered keys and predictions were visible; use image and actual frames",
+    "Do not interpret HID keyboard-hidden coordinates as software-keyboard measurements"
+  ],
+  "snapshotCuration": "Original snapshot data retained except machine-local simulator identifier; outer local preview URL omitted. Original receipts stay in ignored build evidence.",
+  "snapshots": {
+    "afterClear": {
+      "canvasSize": [
+        402,
+        874
+      ],
+      "capturedAt": 814632193.552097,
+      "elements": [
+        {
+          "frame": [
+            [
+              16,
+              286
+            ],
+            [
+              110,
+              79
+            ]
+          ],
+          "id": 1,
+          "label": "Yes",
+          "role": "button",
+          "stableKey": "button|Yes|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              134,
+              286
+            ],
+            [
+              110,
+              79
+            ]
+          ],
+          "id": 2,
+          "label": "No",
+          "role": "button",
+          "stableKey": "button|No|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              252,
+              286
+            ],
+            [
+              134,
+              79
+            ]
+          ],
+          "id": 3,
+          "label": "Emergency",
+          "role": "button",
+          "stableKey": "button|Emergency|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              252,
+              373
+            ],
+            [
+              134,
+              79
+            ]
+          ],
+          "id": 4,
+          "identifier": "getAttention",
+          "label": "Get Attention",
+          "role": "button",
+          "stableKey": "button|Get Attention||getAttention",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              16,
+              373
+            ],
+            [
+              228,
+              79
+            ]
+          ],
+          "id": 5,
+          "label": "Speak",
+          "role": "button",
+          "stableKey": "button|Speak|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              22,
+              112.33333333333333
+            ],
+            [
+              216,
+              29.999999999999986
+            ]
+          ],
+          "id": 6,
+          "label": "Horizontal scroll bar, 1 page",
+          "parentId": 5,
+          "role": "slider",
+          "stableKey": "slider|Horizontal scroll bar, 1 page|",
+          "state": 1,
+          "traits": [],
+          "value": "0%"
+        },
+        {
+          "frame": [
+            [
+              252,
+              70
+            ],
+            [
+              134,
+              99
+            ]
+          ],
+          "id": 7,
+          "identifier": "phrases",
+          "label": "Phrases",
+          "role": "button",
+          "stableKey": "button|Phrases||phrases",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              252,
+              177
+            ],
+            [
+              134,
+              99
+            ]
+          ],
+          "id": 8,
+          "identifier": "type",
+          "label": "Type",
+          "role": "button",
+          "stableKey": "button|Type||type",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              16,
+              216
+            ],
+            [
+              206,
+              58.666666666666686
+            ]
+          ],
+          "id": 9,
+          "label": "Speaking",
+          "role": "staticText",
+          "stableKey": "staticText|Speaking|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              134,
+              462
+            ],
+            [
+              122,
+              77
+            ]
+          ],
+          "id": 10,
+          "label": "Basics",
+          "role": "button",
+          "stableKey": "button|Basics|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              264,
+              462
+            ],
+            [
+              122,
+              77
+            ]
+          ],
+          "id": 11,
+          "identifier": "clear",
+          "label": "Clear",
+          "role": "button",
+          "stableKey": "button|Clear||clear",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              16,
+              547
+            ],
+            [
+              122,
+              77
+            ]
+          ],
+          "id": 12,
+          "label": "Conversation",
+          "role": "button",
+          "stableKey": "button|Conversation|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              146,
+              547
+            ],
+            [
+              122,
+              77
+            ]
+          ],
+          "id": 13,
+          "identifier": "putBack",
+          "label": "Put Back",
+          "role": "button",
+          "stableKey": "button|Put Back||putBack",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              276,
+              547
+            ],
+            [
+              110,
+              77
+            ]
+          ],
+          "id": 14,
+          "identifier": "settings",
+          "label": "Settings",
+          "role": "button",
+          "stableKey": "button|Settings||settings",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              16,
+              634
+            ],
+            [
+              118,
+              78
+            ]
+          ],
+          "id": 15,
+          "identifier": "phraseTile",
+          "label": "Maybe.",
+          "parentId": 14,
+          "role": "button",
+          "stableKey": "button|Maybe.||phraseTile",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              142,
+              634
+            ],
+            [
+              118,
+              78
+            ]
+          ],
+          "id": 16,
+          "identifier": "phraseTile",
+          "label": "I don't know.",
+          "parentId": 14,
+          "role": "button",
+          "stableKey": "button|I don't know.||phraseTile",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              268,
+              634
+            ],
+            [
+              118,
+              78
+            ]
+          ],
+          "id": 17,
+          "identifier": "phraseTile",
+          "label": "Please.",
+          "parentId": 14,
+          "role": "button",
+          "stableKey": "button|Please.||phraseTile",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              16,
+              720
+            ],
+            [
+              118,
+              78
+            ]
+          ],
+          "id": 18,
+          "identifier": "phraseTile",
+          "label": "Thank you.",
+          "parentId": 14,
+          "role": "button",
+          "stableKey": "button|Thank you.||phraseTile",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              142,
+              720
+            ],
+            [
+              118,
+              78
+            ]
+          ],
+          "id": 19,
+          "identifier": "phraseTile",
+          "label": "Wait a moment, please.",
+          "parentId": 14,
+          "role": "button",
+          "stableKey": "button|Wait a moment, please.||phraseTile",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              268,
+              720
+            ],
+            [
+              118,
+              78
+            ]
+          ],
+          "id": 20,
+          "identifier": "phraseTile",
+          "label": "I'm not finished.",
+          "parentId": 14,
+          "role": "button",
+          "stableKey": "button|I'm not finished.||phraseTile",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              16,
+              806
+            ],
+            [
+              118,
+              78
+            ]
+          ],
+          "id": 21,
+          "identifier": "phraseTile",
+          "label": "Hello.",
+          "parentId": 14,
+          "role": "button",
+          "stableKey": "button|Hello.||phraseTile",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              142,
+              806
+            ],
+            [
+              118,
+              78
+            ]
+          ],
+          "id": 22,
+          "identifier": "phraseTile",
+          "label": "Goodbye.",
+          "parentId": 14,
+          "role": "button",
+          "stableKey": "button|Goodbye.||phraseTile",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              0,
+              546
+            ],
+            [
+              402,
+              44
+            ]
+          ],
+          "id": 23,
+          "label": "Typing Predictions",
+          "parentId": 22,
+          "role": "group",
+          "stableKey": "group|Typing Predictions|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              0,
+              546
+            ],
+            [
+              134,
+              44
+            ]
+          ],
+          "id": 24,
+          "label": "I",
+          "parentId": 23,
+          "role": "button",
+          "stableKey": "button|I|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              134,
+              546
+            ],
+            [
+              134,
+              44
+            ]
+          ],
+          "id": 25,
+          "label": "The",
+          "parentId": 23,
+          "role": "button",
+          "stableKey": "button|The|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              268,
+              546
+            ],
+            [
+              134,
+              44
+            ]
+          ],
+          "id": 26,
+          "label": "I\u2019m",
+          "parentId": 23,
+          "role": "button",
+          "stableKey": "button|I\u2019m|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              4.666666666666657,
+              597
+            ],
+            [
+              39.333333333333336,
+              54
+            ]
+          ],
+          "id": 27,
+          "label": "Q",
+          "parentId": 14,
+          "role": "button",
+          "stableKey": "button|Q|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              44,
+              597
+            ],
+            [
+              39.66666666666666,
+              54
+            ]
+          ],
+          "id": 28,
+          "label": "W",
+          "parentId": 14,
+          "role": "button",
+          "stableKey": "button|W|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              83.66666666666666,
+              597
+            ],
+            [
+              39.33333333333334,
+              54
+            ]
+          ],
+          "id": 29,
+          "label": "E",
+          "parentId": 14,
+          "role": "button",
+          "stableKey": "button|E|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              122.99999999999999,
+              597
+            ],
+            [
+              39.66666666666667,
+              54
+            ]
+          ],
+          "id": 30,
+          "label": "R",
+          "parentId": 14,
+          "role": "button",
+          "stableKey": "button|R|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              162.66666666666666,
+              597
+            ],
+            [
+              39.33333333333334,
+              54
+            ]
+          ],
+          "id": 31,
+          "label": "T",
+          "parentId": 14,
+          "role": "button",
+          "stableKey": "button|T|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              202,
+              597
+            ],
+            [
+              39.66666666666666,
+              54
+            ]
+          ],
+          "id": 32,
+          "label": "Y",
+          "parentId": 14,
+          "role": "button",
+          "stableKey": "button|Y|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              241.66666666666669,
+              597
+            ],
+            [
+              39.333333333333314,
+              54
+            ]
+          ],
+          "id": 33,
+          "label": "U",
+          "parentId": 14,
+          "role": "button",
+          "stableKey": "button|U|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              281,
+              597
+            ],
+            [
+              39.666666666666686,
+              54
+            ]
+          ],
+          "id": 34,
+          "label": "I",
+          "parentId": 14,
+          "role": "button",
+          "stableKey": "button|I|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              320.66666666666663,
+              597
+            ],
+            [
+              39.333333333333314,
+              54
+            ]
+          ],
+          "id": 35,
+          "label": "O",
+          "parentId": 14,
+          "role": "button",
+          "stableKey": "button|O|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              360,
+              597
+            ],
+            [
+              39.666666666666686,
+              54
+            ]
+          ],
+          "id": 36,
+          "label": "P",
+          "parentId": 14,
+          "role": "button",
+          "stableKey": "button|P|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              24.333333333333318,
+              651
+            ],
+            [
+              39.33333333333334,
+              54
+            ]
+          ],
+          "id": 37,
+          "label": "A",
+          "parentId": 14,
+          "role": "button",
+          "stableKey": "button|A|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              63.66666666666666,
+              651
+            ],
+            [
+              39.66666666666666,
+              54
+            ]
+          ],
+          "id": 38,
+          "label": "S",
+          "parentId": 14,
+          "role": "button",
+          "stableKey": "button|S|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              103.33333333333331,
+              651
+            ],
+            [
+              39.33333333333334,
+              54
+            ]
+          ],
+          "id": 39,
+          "label": "D",
+          "parentId": 14,
+          "role": "button",
+          "stableKey": "button|D|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              142.66666666666666,
+              651
+            ],
+            [
+              39.66666666666666,
+              54
+            ]
+          ],
+          "id": 40,
+          "label": "F",
+          "parentId": 14,
+          "role": "button",
+          "stableKey": "button|F|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              182.33333333333334,
+              651
+            ],
+            [
+              39.33333333333334,
+              54
+            ]
+          ],
+          "id": 41,
+          "label": "G",
+          "parentId": 14,
+          "role": "button",
+          "stableKey": "button|G|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              221.66666666666666,
+              651
+            ],
+            [
+              39.66666666666666,
+              54
+            ]
+          ],
+          "id": 42,
+          "label": "H",
+          "parentId": 14,
+          "role": "button",
+          "stableKey": "button|H|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              261.33333333333326,
+              651
+            ],
+            [
+              39.333333333333314,
+              54
+            ]
+          ],
+          "id": 43,
+          "label": "J",
+          "parentId": 14,
+          "role": "button",
+          "stableKey": "button|J|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              300.66666666666663,
+              651
+            ],
+            [
+              39.666666666666686,
+              54
+            ]
+          ],
+          "id": 44,
+          "label": "K",
+          "parentId": 14,
+          "role": "button",
+          "stableKey": "button|K|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              340.33333333333326,
+              651
+            ],
+            [
+              39.333333333333314,
+              54
+            ]
+          ],
+          "id": 45,
+          "label": "L",
+          "parentId": 14,
+          "role": "button",
+          "stableKey": "button|L|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "actions": [
+            "Caps Lock"
+          ],
+          "frame": [
+            [
+              4.666666666666657,
+              705
+            ],
+            [
+              51.333333333333336,
+              54
+            ]
+          ],
+          "id": 46,
+          "identifier": "shift",
+          "label": "shift",
+          "parentId": 14,
+          "role": "button",
+          "stableKey": "button|shift||shift",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              63.66666666666666,
+              705
+            ],
+            [
+              39.66666666666666,
+              54
+            ]
+          ],
+          "id": 47,
+          "label": "Z",
+          "parentId": 14,
+          "role": "button",
+          "stableKey": "button|Z|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              103.33333333333331,
+              705
+            ],
+            [
+              39.33333333333334,
+              54
+            ]
+          ],
+          "id": 48,
+          "label": "X",
+          "parentId": 14,
+          "role": "button",
+          "stableKey": "button|X|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              142.66666666666666,
+              705
+            ],
+            [
+              39.66666666666666,
+              54
+            ]
+          ],
+          "id": 49,
+          "label": "C",
+          "parentId": 14,
+          "role": "button",
+          "stableKey": "button|C|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              182.33333333333334,
+              705
+            ],
+            [
+              39.33333333333334,
+              54
+            ]
+          ],
+          "id": 50,
+          "label": "V",
+          "parentId": 14,
+          "role": "button",
+          "stableKey": "button|V|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              221.66666666666666,
+              705
+            ],
+            [
+              39.66666666666666,
+              54
+            ]
+          ],
+          "id": 51,
+          "label": "B",
+          "parentId": 14,
+          "role": "button",
+          "stableKey": "button|B|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              261.33333333333326,
+              705
+            ],
+            [
+              39.333333333333314,
+              54
+            ]
+          ],
+          "id": 52,
+          "label": "N",
+          "parentId": 14,
+          "role": "button",
+          "stableKey": "button|N|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              300.66666666666663,
+              705
+            ],
+            [
+              39.666666666666686,
+              54
+            ]
+          ],
+          "id": 53,
+          "label": "M",
+          "parentId": 14,
+          "role": "button",
+          "stableKey": "button|M|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              348,
+              705
+            ],
+            [
+              51.666666666666686,
+              54
+            ]
+          ],
+          "id": 54,
+          "identifier": "delete",
+          "label": "delete",
+          "parentId": 14,
+          "role": "button",
+          "stableKey": "button|delete||delete",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              4.666666666666657,
+              759
+            ],
+            [
+              98.66666666666667,
+              54
+            ]
+          ],
+          "id": 55,
+          "identifier": "more",
+          "label": "numbers",
+          "parentId": 14,
+          "role": "button",
+          "stableKey": "button|numbers||more",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              103.3333333333333,
+              759
+            ],
+            [
+              197.33333333333331,
+              54
+            ]
+          ],
+          "id": 56,
+          "identifier": "space",
+          "label": "space",
+          "parentId": 14,
+          "role": "button",
+          "stableKey": "button|space||space",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              300.66666666666663,
+              759
+            ],
+            [
+              99,
+              54
+            ]
+          ],
+          "id": 57,
+          "identifier": "Return",
+          "label": "return",
+          "parentId": 14,
+          "role": "button",
+          "stableKey": "button|return||Return",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              8.47726568115926,
+              805.6989567998571
+            ],
+            [
+              68.0852958475086,
+              68.73516393505099
+            ]
+          ],
+          "id": 58,
+          "label": "Emoji",
+          "role": "button",
+          "stableKey": "button|Emoji|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              325.43743847133214,
+              805.3656234665239
+            ],
+            [
+              68.08529584750863,
+              68.73516393505099
+            ]
+          ],
+          "id": 59,
+          "identifier": "dictation",
+          "label": "Dictate",
+          "role": "button",
+          "stableKey": "button|Dictate||dictation",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              325.43743847133214,
+              805.3656234665239
+            ],
+            [
+              68.08529584750863,
+              68.73516393505099
+            ]
+          ],
+          "id": 60,
+          "identifier": "dictation",
+          "label": "Dictate",
+          "role": "button",
+          "stableKey": "button|Dictate||dictation",
+          "state": 1,
+          "traits": []
+        }
+      ],
+      "keyboard": {
+        "state": "hidden"
+      },
+      "perceptionIssues": [
+        {
+          "actionableDescendantCount": 0,
+          "code": "zero_size_elements_omitted",
+          "frame": [
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ]
+          ],
+          "omittedCount": 6,
+          "recoverySuggestion": "Give hidden accessibility elements a nonzero frame (1x1 points is enough) so they appear in elements output.",
+          "role": "element"
+        }
+      ],
+      "previousScreenHash": "a6e00966",
+      "screenHash": "a6e00966",
+      "scrollables": [],
+      "seq": 62
+    },
+    "afterReturn": {
+      "canvasSize": [
+        402,
+        874
+      ],
+      "capturedAt": 814632096.303442,
+      "elements": [
+        {
+          "frame": [
+            [
+              16,
+              286
+            ],
+            [
+              110,
+              79
+            ]
+          ],
+          "id": 1,
+          "label": "Yes",
+          "role": "button",
+          "stableKey": "button|Yes|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              134,
+              286
+            ],
+            [
+              110,
+              79
+            ]
+          ],
+          "id": 2,
+          "label": "No",
+          "role": "button",
+          "stableKey": "button|No|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              252,
+              286
+            ],
+            [
+              134,
+              79
+            ]
+          ],
+          "id": 3,
+          "label": "Emergency",
+          "role": "button",
+          "stableKey": "button|Emergency|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              252,
+              373
+            ],
+            [
+              134,
+              79
+            ]
+          ],
+          "id": 4,
+          "identifier": "getAttention",
+          "label": "Get Attention",
+          "role": "button",
+          "stableKey": "button|Get Attention||getAttention",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              16,
+              373
+            ],
+            [
+              228,
+              79
+            ]
+          ],
+          "id": 5,
+          "label": "Again",
+          "role": "button",
+          "stableKey": "button|Again|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              16,
+              70
+            ],
+            [
+              124,
+              137.33333333333331
+            ]
+          ],
+          "id": 6,
+          "label": "Blue kites",
+          "parentId": 5,
+          "role": "staticText",
+          "stableKey": "staticText|Blue kites|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              211,
+              70
+            ],
+            [
+              30,
+              137.33333333333331
+            ]
+          ],
+          "id": 7,
+          "label": "Vertical scroll bar, 1 page",
+          "parentId": 5,
+          "role": "slider",
+          "stableKey": "slider|Vertical scroll bar, 1 page|",
+          "state": 1,
+          "traits": [],
+          "value": "0%"
+        },
+        {
+          "frame": [
+            [
+              211,
+              70
+            ],
+            [
+              30,
+              137.33333333333331
+            ]
+          ],
+          "id": 8,
+          "label": "Vertical scroll bar, 1 page",
+          "parentId": 5,
+          "role": "slider",
+          "stableKey": "slider|Vertical scroll bar, 1 page|",
+          "state": 1,
+          "traits": [],
+          "value": "0%"
+        },
+        {
+          "frame": [
+            [
+              252,
+              70
+            ],
+            [
+              134,
+              99
+            ]
+          ],
+          "id": 9,
+          "identifier": "phrases",
+          "label": "Phrases",
+          "role": "button",
+          "stableKey": "button|Phrases||phrases",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              252,
+              177
+            ],
+            [
+              134,
+              99
+            ]
+          ],
+          "id": 10,
+          "identifier": "type",
+          "label": "Type",
+          "role": "button",
+          "stableKey": "button|Type||type",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              16,
+              216
+            ],
+            [
+              206,
+              58.666666666666686
+            ]
+          ],
+          "id": 11,
+          "label": "Speaking",
+          "role": "staticText",
+          "stableKey": "staticText|Speaking|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              134,
+              462
+            ],
+            [
+              122,
+              77
+            ]
+          ],
+          "id": 12,
+          "label": "Basics",
+          "role": "button",
+          "stableKey": "button|Basics|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              264,
+              462
+            ],
+            [
+              122,
+              77
+            ]
+          ],
+          "id": 13,
+          "label": "Needs",
+          "role": "button",
+          "stableKey": "button|Needs|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              16,
+              547
+            ],
+            [
+              122,
+              77
+            ]
+          ],
+          "id": 14,
+          "label": "Conversation",
+          "role": "button",
+          "stableKey": "button|Conversation|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              146,
+              547
+            ],
+            [
+              122,
+              77
+            ]
+          ],
+          "id": 15,
+          "label": "Feelings",
+          "role": "button",
+          "stableKey": "button|Feelings|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              276,
+              547
+            ],
+            [
+              110,
+              77
+            ]
+          ],
+          "id": 16,
+          "identifier": "settings",
+          "label": "Settings",
+          "role": "button",
+          "stableKey": "button|Settings||settings",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              16,
+              634
+            ],
+            [
+              118,
+              78
+            ]
+          ],
+          "id": 17,
+          "identifier": "phraseTile",
+          "label": "Maybe.",
+          "parentId": 16,
+          "role": "button",
+          "stableKey": "button|Maybe.||phraseTile",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              142,
+              634
+            ],
+            [
+              118,
+              78
+            ]
+          ],
+          "id": 18,
+          "identifier": "phraseTile",
+          "label": "I don't know.",
+          "parentId": 16,
+          "role": "button",
+          "stableKey": "button|I don't know.||phraseTile",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              268,
+              634
+            ],
+            [
+              118,
+              78
+            ]
+          ],
+          "id": 19,
+          "identifier": "phraseTile",
+          "label": "Please.",
+          "parentId": 16,
+          "role": "button",
+          "stableKey": "button|Please.||phraseTile",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              16,
+              720
+            ],
+            [
+              118,
+              78
+            ]
+          ],
+          "id": 20,
+          "identifier": "phraseTile",
+          "label": "Thank you.",
+          "parentId": 16,
+          "role": "button",
+          "stableKey": "button|Thank you.||phraseTile",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              142,
+              720
+            ],
+            [
+              118,
+              78
+            ]
+          ],
+          "id": 21,
+          "identifier": "phraseTile",
+          "label": "Wait a moment, please.",
+          "parentId": 16,
+          "role": "button",
+          "stableKey": "button|Wait a moment, please.||phraseTile",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              268,
+              720
+            ],
+            [
+              118,
+              78
+            ]
+          ],
+          "id": 22,
+          "identifier": "phraseTile",
+          "label": "I'm not finished.",
+          "parentId": 16,
+          "role": "button",
+          "stableKey": "button|I'm not finished.||phraseTile",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              16,
+              806
+            ],
+            [
+              118,
+              78
+            ]
+          ],
+          "id": 23,
+          "identifier": "phraseTile",
+          "label": "Hello.",
+          "parentId": 16,
+          "role": "button",
+          "stableKey": "button|Hello.||phraseTile",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              142,
+              806
+            ],
+            [
+              118,
+              78
+            ]
+          ],
+          "id": 24,
+          "identifier": "phraseTile",
+          "label": "Goodbye.",
+          "parentId": 16,
+          "role": "button",
+          "stableKey": "button|Goodbye.||phraseTile",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              353,
+              634
+            ],
+            [
+              30,
+              178
+            ]
+          ],
+          "id": 25,
+          "label": "Vertical scroll bar, 2 pages",
+          "role": "slider",
+          "stableKey": "slider|Vertical scroll bar, 2 pages|",
+          "state": 1,
+          "traits": [],
+          "value": "0%"
+        },
+        {
+          "frame": [
+            [
+              353,
+              634
+            ],
+            [
+              30,
+              178
+            ]
+          ],
+          "id": 26,
+          "label": "Vertical scroll bar, 2 pages",
+          "role": "slider",
+          "stableKey": "slider|Vertical scroll bar, 2 pages|",
+          "state": 1,
+          "traits": [],
+          "value": "0%"
+        }
+      ],
+      "keyboard": {
+        "state": "hidden"
+      },
+      "perceptionIssues": [],
+      "previousScreenHash": "5cd6dbf5",
+      "screenHash": "5cd6dbf5",
+      "scrollables": [],
+      "seq": 48
+    },
+    "beforeEntry": {
+      "canvasSize": [
+        402,
+        874
+      ],
+      "capturedAt": 814631887.149535,
+      "elements": [
+        {
+          "frame": [
+            [
+              16,
+              286
+            ],
+            [
+              110,
+              79
+            ]
+          ],
+          "id": 1,
+          "label": "Yes",
+          "role": "button",
+          "stableKey": "button|Yes|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              134,
+              286
+            ],
+            [
+              110,
+              79
+            ]
+          ],
+          "id": 2,
+          "label": "No",
+          "role": "button",
+          "stableKey": "button|No|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              252,
+              286
+            ],
+            [
+              134,
+              79
+            ]
+          ],
+          "id": 3,
+          "label": "Emergency",
+          "role": "button",
+          "stableKey": "button|Emergency|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              252,
+              373
+            ],
+            [
+              134,
+              79
+            ]
+          ],
+          "id": 4,
+          "identifier": "getAttention",
+          "label": "Get Attention",
+          "role": "button",
+          "stableKey": "button|Get Attention||getAttention",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              16,
+              373
+            ],
+            [
+              228,
+              79
+            ]
+          ],
+          "id": 5,
+          "label": "Speak",
+          "role": "button",
+          "stableKey": "button|Speak|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              22,
+              112.33333333333333
+            ],
+            [
+              216,
+              29.999999999999986
+            ]
+          ],
+          "id": 6,
+          "label": "Horizontal scroll bar, 1 page",
+          "parentId": 5,
+          "role": "slider",
+          "stableKey": "slider|Horizontal scroll bar, 1 page|",
+          "state": 1,
+          "traits": [],
+          "value": "0%"
+        },
+        {
+          "frame": [
+            [
+              252,
+              70
+            ],
+            [
+              134,
+              99
+            ]
+          ],
+          "id": 7,
+          "identifier": "phrases",
+          "label": "Phrases",
+          "role": "button",
+          "stableKey": "button|Phrases||phrases",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              252,
+              177
+            ],
+            [
+              134,
+              99
+            ]
+          ],
+          "id": 8,
+          "identifier": "type",
+          "label": "Type",
+          "role": "button",
+          "stableKey": "button|Type||type",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              134,
+              462
+            ],
+            [
+              122,
+              77
+            ]
+          ],
+          "id": 9,
+          "label": "Basics",
+          "role": "button",
+          "stableKey": "button|Basics|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              264,
+              462
+            ],
+            [
+              122,
+              77
+            ]
+          ],
+          "id": 10,
+          "identifier": "clear",
+          "label": "Clear",
+          "role": "button",
+          "stableKey": "button|Clear||clear",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              16,
+              547
+            ],
+            [
+              122,
+              77
+            ]
+          ],
+          "id": 11,
+          "label": "Conversation",
+          "role": "button",
+          "stableKey": "button|Conversation|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              146,
+              547
+            ],
+            [
+              122,
+              77
+            ]
+          ],
+          "id": 12,
+          "identifier": "putBack",
+          "label": "Put Back",
+          "role": "button",
+          "stableKey": "button|Put Back||putBack",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              276,
+              547
+            ],
+            [
+              110,
+              77
+            ]
+          ],
+          "id": 13,
+          "identifier": "settings",
+          "label": "Settings",
+          "role": "button",
+          "stableKey": "button|Settings||settings",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              16,
+              634
+            ],
+            [
+              118,
+              78
+            ]
+          ],
+          "id": 14,
+          "identifier": "phraseTile",
+          "label": "Maybe.",
+          "parentId": 13,
+          "role": "button",
+          "stableKey": "button|Maybe.||phraseTile",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              142,
+              634
+            ],
+            [
+              118,
+              78
+            ]
+          ],
+          "id": 15,
+          "identifier": "phraseTile",
+          "label": "I don't know.",
+          "parentId": 13,
+          "role": "button",
+          "stableKey": "button|I don't know.||phraseTile",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              268,
+              634
+            ],
+            [
+              118,
+              78
+            ]
+          ],
+          "id": 16,
+          "identifier": "phraseTile",
+          "label": "Please.",
+          "parentId": 13,
+          "role": "button",
+          "stableKey": "button|Please.||phraseTile",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              16,
+              720
+            ],
+            [
+              118,
+              78
+            ]
+          ],
+          "id": 17,
+          "identifier": "phraseTile",
+          "label": "Thank you.",
+          "parentId": 13,
+          "role": "button",
+          "stableKey": "button|Thank you.||phraseTile",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              142,
+              720
+            ],
+            [
+              118,
+              78
+            ]
+          ],
+          "id": 18,
+          "identifier": "phraseTile",
+          "label": "Wait a moment, please.",
+          "parentId": 13,
+          "role": "button",
+          "stableKey": "button|Wait a moment, please.||phraseTile",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              268,
+              720
+            ],
+            [
+              118,
+              78
+            ]
+          ],
+          "id": 19,
+          "identifier": "phraseTile",
+          "label": "I'm not finished.",
+          "parentId": 13,
+          "role": "button",
+          "stableKey": "button|I'm not finished.||phraseTile",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              16,
+              806
+            ],
+            [
+              118,
+              78
+            ]
+          ],
+          "id": 20,
+          "identifier": "phraseTile",
+          "label": "Hello.",
+          "parentId": 13,
+          "role": "button",
+          "stableKey": "button|Hello.||phraseTile",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              142,
+              806
+            ],
+            [
+              118,
+              78
+            ]
+          ],
+          "id": 21,
+          "identifier": "phraseTile",
+          "label": "Goodbye.",
+          "parentId": 13,
+          "role": "button",
+          "stableKey": "button|Goodbye.||phraseTile",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              0,
+              546
+            ],
+            [
+              402,
+              44
+            ]
+          ],
+          "id": 22,
+          "label": "Typing Predictions",
+          "parentId": 21,
+          "role": "group",
+          "stableKey": "group|Typing Predictions|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              4.666666666666657,
+              597
+            ],
+            [
+              39.333333333333336,
+              54
+            ]
+          ],
+          "id": 23,
+          "label": "Q",
+          "parentId": 13,
+          "role": "button",
+          "stableKey": "button|Q|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              44,
+              597
+            ],
+            [
+              39.66666666666666,
+              54
+            ]
+          ],
+          "id": 24,
+          "label": "W",
+          "parentId": 13,
+          "role": "button",
+          "stableKey": "button|W|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              83.66666666666666,
+              597
+            ],
+            [
+              39.33333333333334,
+              54
+            ]
+          ],
+          "id": 25,
+          "label": "E",
+          "parentId": 13,
+          "role": "button",
+          "stableKey": "button|E|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              122.99999999999999,
+              597
+            ],
+            [
+              39.66666666666667,
+              54
+            ]
+          ],
+          "id": 26,
+          "label": "R",
+          "parentId": 13,
+          "role": "button",
+          "stableKey": "button|R|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              162.66666666666666,
+              597
+            ],
+            [
+              39.33333333333334,
+              54
+            ]
+          ],
+          "id": 27,
+          "label": "T",
+          "parentId": 13,
+          "role": "button",
+          "stableKey": "button|T|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              202,
+              597
+            ],
+            [
+              39.66666666666666,
+              54
+            ]
+          ],
+          "id": 28,
+          "label": "Y",
+          "parentId": 13,
+          "role": "button",
+          "stableKey": "button|Y|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              241.66666666666669,
+              597
+            ],
+            [
+              39.333333333333314,
+              54
+            ]
+          ],
+          "id": 29,
+          "label": "U",
+          "parentId": 13,
+          "role": "button",
+          "stableKey": "button|U|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              281,
+              597
+            ],
+            [
+              39.666666666666686,
+              54
+            ]
+          ],
+          "id": 30,
+          "label": "I",
+          "parentId": 13,
+          "role": "button",
+          "stableKey": "button|I|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              320.66666666666663,
+              597
+            ],
+            [
+              39.333333333333314,
+              54
+            ]
+          ],
+          "id": 31,
+          "label": "O",
+          "parentId": 13,
+          "role": "button",
+          "stableKey": "button|O|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              360,
+              597
+            ],
+            [
+              39.666666666666686,
+              54
+            ]
+          ],
+          "id": 32,
+          "label": "P",
+          "parentId": 13,
+          "role": "button",
+          "stableKey": "button|P|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              24.333333333333318,
+              651
+            ],
+            [
+              39.33333333333334,
+              54
+            ]
+          ],
+          "id": 33,
+          "label": "A",
+          "parentId": 13,
+          "role": "button",
+          "stableKey": "button|A|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              63.66666666666666,
+              651
+            ],
+            [
+              39.66666666666666,
+              54
+            ]
+          ],
+          "id": 34,
+          "label": "S",
+          "parentId": 13,
+          "role": "button",
+          "stableKey": "button|S|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              103.33333333333331,
+              651
+            ],
+            [
+              39.33333333333334,
+              54
+            ]
+          ],
+          "id": 35,
+          "label": "D",
+          "parentId": 13,
+          "role": "button",
+          "stableKey": "button|D|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              142.66666666666666,
+              651
+            ],
+            [
+              39.66666666666666,
+              54
+            ]
+          ],
+          "id": 36,
+          "label": "F",
+          "parentId": 13,
+          "role": "button",
+          "stableKey": "button|F|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              182.33333333333334,
+              651
+            ],
+            [
+              39.33333333333334,
+              54
+            ]
+          ],
+          "id": 37,
+          "label": "G",
+          "parentId": 13,
+          "role": "button",
+          "stableKey": "button|G|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              221.66666666666666,
+              651
+            ],
+            [
+              39.66666666666666,
+              54
+            ]
+          ],
+          "id": 38,
+          "label": "H",
+          "parentId": 13,
+          "role": "button",
+          "stableKey": "button|H|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              261.33333333333326,
+              651
+            ],
+            [
+              39.333333333333314,
+              54
+            ]
+          ],
+          "id": 39,
+          "label": "J",
+          "parentId": 13,
+          "role": "button",
+          "stableKey": "button|J|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              300.66666666666663,
+              651
+            ],
+            [
+              39.666666666666686,
+              54
+            ]
+          ],
+          "id": 40,
+          "label": "K",
+          "parentId": 13,
+          "role": "button",
+          "stableKey": "button|K|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              340.33333333333326,
+              651
+            ],
+            [
+              39.333333333333314,
+              54
+            ]
+          ],
+          "id": 41,
+          "label": "L",
+          "parentId": 13,
+          "role": "button",
+          "stableKey": "button|L|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "actions": [
+            "Caps Lock"
+          ],
+          "frame": [
+            [
+              4.666666666666657,
+              705
+            ],
+            [
+              51.333333333333336,
+              54
+            ]
+          ],
+          "id": 42,
+          "identifier": "shift",
+          "label": "shift",
+          "parentId": 13,
+          "role": "button",
+          "stableKey": "button|shift||shift",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              63.66666666666666,
+              705
+            ],
+            [
+              39.66666666666666,
+              54
+            ]
+          ],
+          "id": 43,
+          "label": "Z",
+          "parentId": 13,
+          "role": "button",
+          "stableKey": "button|Z|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              103.33333333333331,
+              705
+            ],
+            [
+              39.33333333333334,
+              54
+            ]
+          ],
+          "id": 44,
+          "label": "X",
+          "parentId": 13,
+          "role": "button",
+          "stableKey": "button|X|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              142.66666666666666,
+              705
+            ],
+            [
+              39.66666666666666,
+              54
+            ]
+          ],
+          "id": 45,
+          "label": "C",
+          "parentId": 13,
+          "role": "button",
+          "stableKey": "button|C|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              182.33333333333334,
+              705
+            ],
+            [
+              39.33333333333334,
+              54
+            ]
+          ],
+          "id": 46,
+          "label": "V",
+          "parentId": 13,
+          "role": "button",
+          "stableKey": "button|V|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              221.66666666666666,
+              705
+            ],
+            [
+              39.66666666666666,
+              54
+            ]
+          ],
+          "id": 47,
+          "label": "B",
+          "parentId": 13,
+          "role": "button",
+          "stableKey": "button|B|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              261.33333333333326,
+              705
+            ],
+            [
+              39.333333333333314,
+              54
+            ]
+          ],
+          "id": 48,
+          "label": "N",
+          "parentId": 13,
+          "role": "button",
+          "stableKey": "button|N|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              300.66666666666663,
+              705
+            ],
+            [
+              39.666666666666686,
+              54
+            ]
+          ],
+          "id": 49,
+          "label": "M",
+          "parentId": 13,
+          "role": "button",
+          "stableKey": "button|M|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              348,
+              705
+            ],
+            [
+              51.666666666666686,
+              54
+            ]
+          ],
+          "id": 50,
+          "identifier": "delete",
+          "label": "delete",
+          "parentId": 13,
+          "role": "button",
+          "stableKey": "button|delete||delete",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              4.666666666666657,
+              759
+            ],
+            [
+              98.66666666666667,
+              54
+            ]
+          ],
+          "id": 51,
+          "identifier": "more",
+          "label": "numbers",
+          "parentId": 13,
+          "role": "button",
+          "stableKey": "button|numbers||more",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              103.3333333333333,
+              759
+            ],
+            [
+              197.33333333333331,
+              54
+            ]
+          ],
+          "id": 52,
+          "identifier": "space",
+          "label": "space",
+          "parentId": 13,
+          "role": "button",
+          "stableKey": "button|space||space",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              300.66666666666663,
+              759
+            ],
+            [
+              99,
+              54
+            ]
+          ],
+          "id": 53,
+          "identifier": "Return",
+          "label": "return",
+          "parentId": 13,
+          "role": "button",
+          "stableKey": "button|return||Return",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              8.47726568115926,
+              805.6989567998571
+            ],
+            [
+              68.0852958475086,
+              68.73516393505099
+            ]
+          ],
+          "id": 54,
+          "label": "Emoji",
+          "role": "button",
+          "stableKey": "button|Emoji|",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              325.43743847133214,
+              805.3656234665239
+            ],
+            [
+              68.08529584750863,
+              68.73516393505099
+            ]
+          ],
+          "id": 55,
+          "identifier": "dictation",
+          "label": "Dictate",
+          "role": "button",
+          "stableKey": "button|Dictate||dictation",
+          "state": 1,
+          "traits": []
+        },
+        {
+          "frame": [
+            [
+              325.43743847133214,
+              805.3656234665239
+            ],
+            [
+              68.08529584750863,
+              68.73516393505099
+            ]
+          ],
+          "id": 56,
+          "identifier": "dictation",
+          "label": "Dictate",
+          "role": "button",
+          "stableKey": "button|Dictate||dictation",
+          "state": 1,
+          "traits": []
+        }
+      ],
+      "keyboard": {
+        "state": "hidden"
+      },
+      "perceptionIssues": [
+        {
+          "actionableDescendantCount": 0,
+          "code": "zero_size_elements_omitted",
+          "frame": [
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ]
+          ],
+          "omittedCount": 6,
+          "recoverySuggestion": "Give hidden accessibility elements a nonzero frame (1x1 points is enough) so they appear in elements output.",
+          "role": "element"
+        }
+      ],
+      "previousScreenHash": "8270c004",
+      "screenHash": "8270c004",
+      "scrollables": [],
+      "seq": 10
+    }
+  },
+  "sourceChanges": "none"
+}
