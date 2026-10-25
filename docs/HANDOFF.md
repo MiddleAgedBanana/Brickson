@@ -246,8 +246,10 @@ Xcode 27.1 (27A9275); PR #20 landed in `d79d836`.
   partially open and rotated, with recorded failures and test-framework
   limits ([record](log/2026-10-25-mac-keyboard-checks.md)). Later item 6
   measurements queried the reserved regions and reached both native
-  Split View panes; avoidance and chain safety are not yet implemented
-  or verified ([design record](log/2026-10-25-duo-fold-design.md)). The first
+  Split View panes. The item 6 Spec and scoped drawings are linked, and
+  a local implementation candidate has passing targeted geometry/chain
+  tests; final native/rendered gates and publication remain pending
+  ([design record](log/2026-10-25-duo-fold-design.md)). The first
   UI test on a just-started CI simulator failed intermittently before
   PR #13's warm-up launch (AGENTS.md, *Gotchas*); three local cold boots
   without warm-up did not reproduce it on 2026-10-25. Apple's accessibility audit never sees
@@ -627,8 +629,12 @@ design pass has started after PR #56 merged. The continuation in
 now uses queried fold/camera rectangles and native left/right Split View
 measurements. The earlier horizontal-scrolling owner blocker is
 withdrawn: the measured full-screen tall phrase viewport is below the
-division. Right-pane AX5 still leaves no whole phrase tile visible. No
-reserved-region implementation or new exception is accepted. The
+division. Right-pane AX5 still leaves no whole phrase tile visible.
+The scoped 84-state drawings are complete; a local implementation
+candidate passed its 25-test geometry/chain gate, while full native
+suites, rendered checks and publication remain pending. No new exception
+is accepted. Existing AX5 Settings row/fold intersections remain broader
+R0-13 gaps, explicitly shown in the drawings. The
 same-app second-window attempt remains inconclusive; the temporary
 XCTest windowing probe skipped. Physical checks remain deferred.
 Its item 2, the chain engine, is built; a change

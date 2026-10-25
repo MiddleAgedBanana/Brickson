@@ -374,8 +374,10 @@ native Split View measurements are now in
 The initial horizontal-scrolling owner blocker is withdrawn because the
 measured tall phrase viewport is below the division. Right-pane AX5 has
 no whole phrase tile visible, and the second-window result remains
-inconclusive. The existing fold decision is unchanged; the Spec, drawings
-and safety tests remain to complete before an implementation claim.*
+inconclusive. The existing fold decision is unchanged. The Spec and
+84-state Home drawings are linked; the local implementation candidate
+has a passing 25-test geometry/chain gate. Full native suites, rendered
+UI checks and publication remain before an implementation claim.*
 The owner's two fold choices (docs/DECISIONS.md, "iPhone Duo"): Home's
 controls kept off the fold, and an even number of columns on a display
 that folds, behind `#available(iOS 27.1, *)`. Apple's Eye Tracking and

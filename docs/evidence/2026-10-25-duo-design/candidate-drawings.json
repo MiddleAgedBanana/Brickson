@@ -1,0 +1,1274 @@
+{
+  "fileKey": "zCYdh8hSJ9ZmrVhtealp8f",
+  "pageId": "73:2",
+  "sectionId": "89:2",
+  "wrapperId": "89:3",
+  "specCommit": "1de1333",
+  "sourceAppCodeBase": "6d040d5",
+  "sourceGeometry": "docs/evidence/2026-10-25-duo-design/candidate-geometry.json",
+  "coverage": {
+    "screens": 84,
+    "browsing": 24,
+    "typing": 12,
+    "alarm": 24,
+    "settingsBack": 24,
+    "light": 42,
+    "dark": 42
+  },
+  "screens": [
+    {
+      "case": "open-wide-default",
+      "text": "default",
+      "appearance": "Light",
+      "state": "Browsing",
+      "screenId": "95:35",
+      "cardId": "95:33",
+      "maxFrameError": 1.0172526060614473e-05,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-35"
+    },
+    {
+      "case": "open-wide-default",
+      "text": "default",
+      "appearance": "Light",
+      "state": "Typing",
+      "screenId": "95:110",
+      "cardId": "95:108",
+      "maxFrameError": 1.0172526060614473e-05,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-110"
+    },
+    {
+      "case": "open-wide-default",
+      "text": "default",
+      "appearance": "Light",
+      "state": "Alarm",
+      "screenId": "95:518",
+      "cardId": "95:516",
+      "maxFrameError": 1.0172526060614473e-05,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-518"
+    },
+    {
+      "case": "open-wide-default",
+      "text": "default",
+      "appearance": "Light",
+      "state": "Settings Back cover",
+      "screenId": "95:594",
+      "cardId": "95:592",
+      "maxFrameError": 6.103515630684342e-06,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-594"
+    },
+    {
+      "case": "open-wide-default",
+      "text": "AX5",
+      "appearance": "Light",
+      "state": "Browsing",
+      "screenId": "95:617",
+      "cardId": "95:615",
+      "maxFrameError": 1.0172526060614473e-05,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-617"
+    },
+    {
+      "case": "open-wide-default",
+      "text": "AX5",
+      "appearance": "Light",
+      "state": "Alarm",
+      "screenId": "95:692",
+      "cardId": "95:690",
+      "maxFrameError": 1.0172526060614473e-05,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-692"
+    },
+    {
+      "case": "open-wide-default",
+      "text": "AX5",
+      "appearance": "Light",
+      "state": "Settings Back cover",
+      "screenId": "95:768",
+      "cardId": "95:766",
+      "maxFrameError": 6.103515630684342e-06,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-768"
+    },
+    {
+      "case": "open-wide-default",
+      "text": "default",
+      "appearance": "Dark",
+      "state": "Browsing",
+      "screenId": "95:792",
+      "cardId": "95:790",
+      "maxFrameError": 1.0172526060614473e-05,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-792"
+    },
+    {
+      "case": "open-wide-default",
+      "text": "default",
+      "appearance": "Dark",
+      "state": "Typing",
+      "screenId": "95:867",
+      "cardId": "95:865",
+      "maxFrameError": 1.0172526060614473e-05,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-867"
+    },
+    {
+      "case": "open-wide-default",
+      "text": "default",
+      "appearance": "Dark",
+      "state": "Alarm",
+      "screenId": "95:1292",
+      "cardId": "95:1290",
+      "maxFrameError": 1.0172526060614473e-05,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-1292"
+    },
+    {
+      "case": "open-wide-default",
+      "text": "default",
+      "appearance": "Dark",
+      "state": "Settings Back cover",
+      "screenId": "95:1368",
+      "cardId": "95:1366",
+      "maxFrameError": 6.103515630684342e-06,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-1368"
+    },
+    {
+      "case": "open-wide-default",
+      "text": "AX5",
+      "appearance": "Dark",
+      "state": "Browsing",
+      "screenId": "95:1391",
+      "cardId": "95:1389",
+      "maxFrameError": 1.0172526060614473e-05,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-1391"
+    },
+    {
+      "case": "open-wide-default",
+      "text": "AX5",
+      "appearance": "Dark",
+      "state": "Alarm",
+      "screenId": "95:1466",
+      "cardId": "95:1464",
+      "maxFrameError": 1.0172526060614473e-05,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-1466"
+    },
+    {
+      "case": "open-wide-default",
+      "text": "AX5",
+      "appearance": "Dark",
+      "state": "Settings Back cover",
+      "screenId": "95:1542",
+      "cardId": "95:1540",
+      "maxFrameError": 6.103515630684342e-06,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-1542"
+    },
+    {
+      "case": "open-wide-reverse-ax5",
+      "text": "default",
+      "appearance": "Light",
+      "state": "Browsing",
+      "screenId": "95:1568",
+      "cardId": "95:1566",
+      "maxFrameError": 1.0172526060614473e-05,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-1568"
+    },
+    {
+      "case": "open-wide-reverse-ax5",
+      "text": "default",
+      "appearance": "Light",
+      "state": "Typing",
+      "screenId": "95:1643",
+      "cardId": "95:1641",
+      "maxFrameError": 1.0172526060614473e-05,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-1643"
+    },
+    {
+      "case": "open-wide-reverse-ax5",
+      "text": "default",
+      "appearance": "Light",
+      "state": "Alarm",
+      "screenId": "95:1860",
+      "cardId": "95:1858",
+      "maxFrameError": 1.0172526060614473e-05,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-1860"
+    },
+    {
+      "case": "open-wide-reverse-ax5",
+      "text": "default",
+      "appearance": "Light",
+      "state": "Settings Back cover",
+      "screenId": "95:1936",
+      "cardId": "95:1934",
+      "maxFrameError": 1.2207031204525265e-05,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-1936"
+    },
+    {
+      "case": "open-wide-reverse-ax5",
+      "text": "AX5",
+      "appearance": "Light",
+      "state": "Browsing",
+      "screenId": "95:1959",
+      "cardId": "95:1957",
+      "maxFrameError": 1.0172526060614473e-05,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-1959"
+    },
+    {
+      "case": "open-wide-reverse-ax5",
+      "text": "AX5",
+      "appearance": "Light",
+      "state": "Alarm",
+      "screenId": "95:2034",
+      "cardId": "95:2032",
+      "maxFrameError": 1.0172526060614473e-05,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-2034"
+    },
+    {
+      "case": "open-wide-reverse-ax5",
+      "text": "AX5",
+      "appearance": "Light",
+      "state": "Settings Back cover",
+      "screenId": "95:2110",
+      "cardId": "95:2108",
+      "maxFrameError": 1.2207031204525265e-05,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-2110"
+    },
+    {
+      "case": "open-wide-reverse-ax5",
+      "text": "default",
+      "appearance": "Dark",
+      "state": "Browsing",
+      "screenId": "95:2134",
+      "cardId": "95:2132",
+      "maxFrameError": 1.0172526060614473e-05,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-2134"
+    },
+    {
+      "case": "open-wide-reverse-ax5",
+      "text": "default",
+      "appearance": "Dark",
+      "state": "Typing",
+      "screenId": "95:2209",
+      "cardId": "95:2207",
+      "maxFrameError": 1.0172526060614473e-05,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-2209"
+    },
+    {
+      "case": "open-wide-reverse-ax5",
+      "text": "default",
+      "appearance": "Dark",
+      "state": "Alarm",
+      "screenId": "95:2562",
+      "cardId": "95:2560",
+      "maxFrameError": 1.0172526060614473e-05,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-2562"
+    },
+    {
+      "case": "open-wide-reverse-ax5",
+      "text": "default",
+      "appearance": "Dark",
+      "state": "Settings Back cover",
+      "screenId": "95:2638",
+      "cardId": "95:2636",
+      "maxFrameError": 1.2207031204525265e-05,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-2638"
+    },
+    {
+      "case": "open-wide-reverse-ax5",
+      "text": "AX5",
+      "appearance": "Dark",
+      "state": "Browsing",
+      "screenId": "95:2661",
+      "cardId": "95:2659",
+      "maxFrameError": 1.0172526060614473e-05,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-2661"
+    },
+    {
+      "case": "open-wide-reverse-ax5",
+      "text": "AX5",
+      "appearance": "Dark",
+      "state": "Alarm",
+      "screenId": "95:2736",
+      "cardId": "95:2734",
+      "maxFrameError": 1.0172526060614473e-05,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-2736"
+    },
+    {
+      "case": "open-wide-reverse-ax5",
+      "text": "AX5",
+      "appearance": "Dark",
+      "state": "Settings Back cover",
+      "screenId": "95:2812",
+      "cardId": "95:2810",
+      "maxFrameError": 1.2207031204525265e-05,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-2812"
+    },
+    {
+      "case": "open-tall-default",
+      "text": "default",
+      "appearance": "Light",
+      "state": "Browsing",
+      "screenId": "95:2838",
+      "cardId": "95:2836",
+      "maxFrameError": 0,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-2838"
+    },
+    {
+      "case": "open-tall-default",
+      "text": "default",
+      "appearance": "Light",
+      "state": "Typing",
+      "screenId": "95:2913",
+      "cardId": "95:2911",
+      "maxFrameError": 0,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-2913"
+    },
+    {
+      "case": "open-tall-default",
+      "text": "default",
+      "appearance": "Light",
+      "state": "Alarm",
+      "screenId": "95:3130",
+      "cardId": "95:3128",
+      "maxFrameError": 0,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-3130"
+    },
+    {
+      "case": "open-tall-default",
+      "text": "default",
+      "appearance": "Light",
+      "state": "Settings Back cover",
+      "screenId": "95:3206",
+      "cardId": "95:3204",
+      "maxFrameError": 0,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-3206"
+    },
+    {
+      "case": "open-tall-default",
+      "text": "AX5",
+      "appearance": "Light",
+      "state": "Browsing",
+      "screenId": "95:3229",
+      "cardId": "95:3227",
+      "maxFrameError": 0,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-3229"
+    },
+    {
+      "case": "open-tall-default",
+      "text": "AX5",
+      "appearance": "Light",
+      "state": "Alarm",
+      "screenId": "95:3304",
+      "cardId": "95:3302",
+      "maxFrameError": 0,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-3304"
+    },
+    {
+      "case": "open-tall-default",
+      "text": "AX5",
+      "appearance": "Light",
+      "state": "Settings Back cover",
+      "screenId": "95:3380",
+      "cardId": "95:3378",
+      "maxFrameError": 0,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-3380"
+    },
+    {
+      "case": "open-tall-default",
+      "text": "default",
+      "appearance": "Dark",
+      "state": "Browsing",
+      "screenId": "95:3404",
+      "cardId": "95:3402",
+      "maxFrameError": 0,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-3404"
+    },
+    {
+      "case": "open-tall-default",
+      "text": "default",
+      "appearance": "Dark",
+      "state": "Typing",
+      "screenId": "95:3479",
+      "cardId": "95:3477",
+      "maxFrameError": 0,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-3479"
+    },
+    {
+      "case": "open-tall-default",
+      "text": "default",
+      "appearance": "Dark",
+      "state": "Alarm",
+      "screenId": "95:3832",
+      "cardId": "95:3830",
+      "maxFrameError": 0,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-3832"
+    },
+    {
+      "case": "open-tall-default",
+      "text": "default",
+      "appearance": "Dark",
+      "state": "Settings Back cover",
+      "screenId": "95:3908",
+      "cardId": "95:3906",
+      "maxFrameError": 0,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-3908"
+    },
+    {
+      "case": "open-tall-default",
+      "text": "AX5",
+      "appearance": "Dark",
+      "state": "Browsing",
+      "screenId": "95:3931",
+      "cardId": "95:3929",
+      "maxFrameError": 0,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-3931"
+    },
+    {
+      "case": "open-tall-default",
+      "text": "AX5",
+      "appearance": "Dark",
+      "state": "Alarm",
+      "screenId": "95:4006",
+      "cardId": "95:4004",
+      "maxFrameError": 0,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-4006"
+    },
+    {
+      "case": "open-tall-default",
+      "text": "AX5",
+      "appearance": "Dark",
+      "state": "Settings Back cover",
+      "screenId": "95:4082",
+      "cardId": "95:4080",
+      "maxFrameError": 0,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-4082"
+    },
+    {
+      "case": "open-tall-reverse-default",
+      "text": "default",
+      "appearance": "Light",
+      "state": "Browsing",
+      "screenId": "95:4108",
+      "cardId": "95:4106",
+      "maxFrameError": 0,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-4108"
+    },
+    {
+      "case": "open-tall-reverse-default",
+      "text": "default",
+      "appearance": "Light",
+      "state": "Typing",
+      "screenId": "95:4183",
+      "cardId": "95:4181",
+      "maxFrameError": 0,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-4183"
+    },
+    {
+      "case": "open-tall-reverse-default",
+      "text": "default",
+      "appearance": "Light",
+      "state": "Alarm",
+      "screenId": "95:4400",
+      "cardId": "95:4398",
+      "maxFrameError": 0,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-4400"
+    },
+    {
+      "case": "open-tall-reverse-default",
+      "text": "default",
+      "appearance": "Light",
+      "state": "Settings Back cover",
+      "screenId": "95:4476",
+      "cardId": "95:4474",
+      "maxFrameError": 0,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-4476"
+    },
+    {
+      "case": "open-tall-reverse-default",
+      "text": "AX5",
+      "appearance": "Light",
+      "state": "Browsing",
+      "screenId": "95:4499",
+      "cardId": "95:4497",
+      "maxFrameError": 0,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-4499"
+    },
+    {
+      "case": "open-tall-reverse-default",
+      "text": "AX5",
+      "appearance": "Light",
+      "state": "Alarm",
+      "screenId": "95:4574",
+      "cardId": "95:4572",
+      "maxFrameError": 0,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-4574"
+    },
+    {
+      "case": "open-tall-reverse-default",
+      "text": "AX5",
+      "appearance": "Light",
+      "state": "Settings Back cover",
+      "screenId": "95:4650",
+      "cardId": "95:4648",
+      "maxFrameError": 0,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-4650"
+    },
+    {
+      "case": "open-tall-reverse-default",
+      "text": "default",
+      "appearance": "Dark",
+      "state": "Browsing",
+      "screenId": "95:4674",
+      "cardId": "95:4672",
+      "maxFrameError": 0,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-4674"
+    },
+    {
+      "case": "open-tall-reverse-default",
+      "text": "default",
+      "appearance": "Dark",
+      "state": "Typing",
+      "screenId": "95:4749",
+      "cardId": "95:4747",
+      "maxFrameError": 0,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-4749"
+    },
+    {
+      "case": "open-tall-reverse-default",
+      "text": "default",
+      "appearance": "Dark",
+      "state": "Alarm",
+      "screenId": "95:5102",
+      "cardId": "95:5100",
+      "maxFrameError": 0,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-5102"
+    },
+    {
+      "case": "open-tall-reverse-default",
+      "text": "default",
+      "appearance": "Dark",
+      "state": "Settings Back cover",
+      "screenId": "95:5178",
+      "cardId": "95:5176",
+      "maxFrameError": 0,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-5178"
+    },
+    {
+      "case": "open-tall-reverse-default",
+      "text": "AX5",
+      "appearance": "Dark",
+      "state": "Browsing",
+      "screenId": "95:5201",
+      "cardId": "95:5199",
+      "maxFrameError": 0,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-5201"
+    },
+    {
+      "case": "open-tall-reverse-default",
+      "text": "AX5",
+      "appearance": "Dark",
+      "state": "Alarm",
+      "screenId": "95:5276",
+      "cardId": "95:5274",
+      "maxFrameError": 0,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-5276"
+    },
+    {
+      "case": "open-tall-reverse-default",
+      "text": "AX5",
+      "appearance": "Dark",
+      "state": "Settings Back cover",
+      "screenId": "95:5352",
+      "cardId": "95:5350",
+      "maxFrameError": 0,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-5352"
+    },
+    {
+      "case": "split-left-wide-default",
+      "text": "default",
+      "appearance": "Light",
+      "state": "Browsing",
+      "screenId": "95:5378",
+      "cardId": "95:5376",
+      "maxFrameError": 1.0172526060614473e-05,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-5378"
+    },
+    {
+      "case": "split-left-wide-default",
+      "text": "default",
+      "appearance": "Light",
+      "state": "Typing",
+      "screenId": "95:5441",
+      "cardId": "95:5439",
+      "maxFrameError": 1.0172526060614473e-05,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-5441"
+    },
+    {
+      "case": "split-left-wide-default",
+      "text": "default",
+      "appearance": "Light",
+      "state": "Alarm",
+      "screenId": "95:5600",
+      "cardId": "95:5598",
+      "maxFrameError": 1.0172526060614473e-05,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-5600"
+    },
+    {
+      "case": "split-left-wide-default",
+      "text": "default",
+      "appearance": "Light",
+      "state": "Settings Back cover",
+      "screenId": "95:5664",
+      "cardId": "95:5662",
+      "maxFrameError": 1.0172526003771054e-05,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-5664"
+    },
+    {
+      "case": "split-left-wide-default",
+      "text": "AX5",
+      "appearance": "Light",
+      "state": "Browsing",
+      "screenId": "95:5675",
+      "cardId": "95:5673",
+      "maxFrameError": 1.0172526060614473e-05,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-5675"
+    },
+    {
+      "case": "split-left-wide-default",
+      "text": "AX5",
+      "appearance": "Light",
+      "state": "Alarm",
+      "screenId": "95:5738",
+      "cardId": "95:5736",
+      "maxFrameError": 1.0172526060614473e-05,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-5738"
+    },
+    {
+      "case": "split-left-wide-default",
+      "text": "AX5",
+      "appearance": "Light",
+      "state": "Settings Back cover",
+      "screenId": "95:5802",
+      "cardId": "95:5800",
+      "maxFrameError": 1.0172526003771054e-05,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-5802"
+    },
+    {
+      "case": "split-left-wide-default",
+      "text": "default",
+      "appearance": "Dark",
+      "state": "Browsing",
+      "screenId": "95:5814",
+      "cardId": "95:5812",
+      "maxFrameError": 1.0172526060614473e-05,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-5814"
+    },
+    {
+      "case": "split-left-wide-default",
+      "text": "default",
+      "appearance": "Dark",
+      "state": "Typing",
+      "screenId": "95:5877",
+      "cardId": "95:5875",
+      "maxFrameError": 1.0172526060614473e-05,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-5877"
+    },
+    {
+      "case": "split-left-wide-default",
+      "text": "default",
+      "appearance": "Dark",
+      "state": "Alarm",
+      "screenId": "95:6066",
+      "cardId": "95:6064",
+      "maxFrameError": 1.0172526060614473e-05,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-6066"
+    },
+    {
+      "case": "split-left-wide-default",
+      "text": "default",
+      "appearance": "Dark",
+      "state": "Settings Back cover",
+      "screenId": "95:6130",
+      "cardId": "95:6128",
+      "maxFrameError": 1.0172526003771054e-05,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-6130"
+    },
+    {
+      "case": "split-left-wide-default",
+      "text": "AX5",
+      "appearance": "Dark",
+      "state": "Browsing",
+      "screenId": "95:6141",
+      "cardId": "95:6139",
+      "maxFrameError": 1.0172526060614473e-05,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-6141"
+    },
+    {
+      "case": "split-left-wide-default",
+      "text": "AX5",
+      "appearance": "Dark",
+      "state": "Alarm",
+      "screenId": "95:6204",
+      "cardId": "95:6202",
+      "maxFrameError": 1.0172526060614473e-05,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-6204"
+    },
+    {
+      "case": "split-left-wide-default",
+      "text": "AX5",
+      "appearance": "Dark",
+      "state": "Settings Back cover",
+      "screenId": "95:6268",
+      "cardId": "95:6266",
+      "maxFrameError": 1.0172526003771054e-05,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-6268"
+    },
+    {
+      "case": "split-right-wide-reverse-default",
+      "text": "default",
+      "appearance": "Light",
+      "state": "Browsing",
+      "screenId": "95:6282",
+      "cardId": "95:6280",
+      "maxFrameError": 0,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-6282"
+    },
+    {
+      "case": "split-right-wide-reverse-default",
+      "text": "default",
+      "appearance": "Light",
+      "state": "Typing",
+      "screenId": "95:6356",
+      "cardId": "95:6354",
+      "maxFrameError": 0,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-6356"
+    },
+    {
+      "case": "split-right-wide-reverse-default",
+      "text": "default",
+      "appearance": "Light",
+      "state": "Alarm",
+      "screenId": "95:6513",
+      "cardId": "95:6511",
+      "maxFrameError": 0,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-6513"
+    },
+    {
+      "case": "split-right-wide-reverse-default",
+      "text": "default",
+      "appearance": "Light",
+      "state": "Settings Back cover",
+      "screenId": "95:6588",
+      "cardId": "95:6586",
+      "maxFrameError": 0,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-6588"
+    },
+    {
+      "case": "split-right-wide-reverse-default",
+      "text": "AX5",
+      "appearance": "Light",
+      "state": "Browsing",
+      "screenId": "95:6610",
+      "cardId": "95:6608",
+      "maxFrameError": 0,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-6610"
+    },
+    {
+      "case": "split-right-wide-reverse-default",
+      "text": "AX5",
+      "appearance": "Light",
+      "state": "Alarm",
+      "screenId": "95:6684",
+      "cardId": "95:6682",
+      "maxFrameError": 0,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-6684"
+    },
+    {
+      "case": "split-right-wide-reverse-default",
+      "text": "AX5",
+      "appearance": "Light",
+      "state": "Settings Back cover",
+      "screenId": "95:6759",
+      "cardId": "95:6757",
+      "maxFrameError": 0,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-6759"
+    },
+    {
+      "case": "split-right-wide-reverse-default",
+      "text": "default",
+      "appearance": "Dark",
+      "state": "Browsing",
+      "screenId": "95:6782",
+      "cardId": "95:6780",
+      "maxFrameError": 0,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-6782"
+    },
+    {
+      "case": "split-right-wide-reverse-default",
+      "text": "default",
+      "appearance": "Dark",
+      "state": "Typing",
+      "screenId": "95:6856",
+      "cardId": "95:6854",
+      "maxFrameError": 0,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-6856"
+    },
+    {
+      "case": "split-right-wide-reverse-default",
+      "text": "default",
+      "appearance": "Dark",
+      "state": "Alarm",
+      "screenId": "95:7056",
+      "cardId": "95:7054",
+      "maxFrameError": 0,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-7056"
+    },
+    {
+      "case": "split-right-wide-reverse-default",
+      "text": "default",
+      "appearance": "Dark",
+      "state": "Settings Back cover",
+      "screenId": "95:7131",
+      "cardId": "95:7129",
+      "maxFrameError": 0,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-7131"
+    },
+    {
+      "case": "split-right-wide-reverse-default",
+      "text": "AX5",
+      "appearance": "Dark",
+      "state": "Browsing",
+      "screenId": "95:7153",
+      "cardId": "95:7151",
+      "maxFrameError": 0,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-7153"
+    },
+    {
+      "case": "split-right-wide-reverse-default",
+      "text": "AX5",
+      "appearance": "Dark",
+      "state": "Alarm",
+      "screenId": "95:7227",
+      "cardId": "95:7225",
+      "maxFrameError": 0,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-7227"
+    },
+    {
+      "case": "split-right-wide-reverse-default",
+      "text": "AX5",
+      "appearance": "Dark",
+      "state": "Settings Back cover",
+      "screenId": "95:7302",
+      "cardId": "95:7300",
+      "maxFrameError": 0,
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-7302"
+    }
+  ],
+  "settingsRows": [
+    {
+      "case": "open-wide-default",
+      "text": "default",
+      "appearance": "Light",
+      "screenId": "95:594",
+      "rowId": "103:3853",
+      "rowFrame": {
+        "height": 78,
+        "width": 225.5,
+        "x": 625.5,
+        "y": 203
+      },
+      "rowCrossesDivision": false,
+      "modeledNavigationBackSpotCrossesOcclusion": false
+    },
+    {
+      "case": "open-wide-default",
+      "text": "AX5",
+      "appearance": "Light",
+      "screenId": "95:768",
+      "rowId": "103:3858",
+      "rowFrame": {
+        "height": 79,
+        "width": 442,
+        "x": 409,
+        "y": 337
+      },
+      "rowCrossesDivision": true,
+      "modeledNavigationBackSpotCrossesOcclusion": false
+    },
+    {
+      "case": "open-wide-default",
+      "text": "default",
+      "appearance": "Dark",
+      "screenId": "95:1368",
+      "rowId": "103:3864",
+      "rowFrame": {
+        "height": 78,
+        "width": 225.5,
+        "x": 625.5,
+        "y": 203
+      },
+      "rowCrossesDivision": false,
+      "modeledNavigationBackSpotCrossesOcclusion": false
+    },
+    {
+      "case": "open-wide-default",
+      "text": "AX5",
+      "appearance": "Dark",
+      "screenId": "95:1542",
+      "rowId": "103:3869",
+      "rowFrame": {
+        "height": 79,
+        "width": 442,
+        "x": 409,
+        "y": 337
+      },
+      "rowCrossesDivision": true,
+      "modeledNavigationBackSpotCrossesOcclusion": false
+    },
+    {
+      "case": "open-wide-reverse-ax5",
+      "text": "default",
+      "appearance": "Light",
+      "screenId": "95:1936",
+      "rowId": "103:3875",
+      "rowFrame": {
+        "height": 78,
+        "width": 225.5,
+        "x": 625.5,
+        "y": 203
+      },
+      "rowCrossesDivision": false,
+      "modeledNavigationBackSpotCrossesOcclusion": false
+    },
+    {
+      "case": "open-wide-reverse-ax5",
+      "text": "AX5",
+      "appearance": "Light",
+      "screenId": "95:2110",
+      "rowId": "103:3880",
+      "rowFrame": {
+        "height": 79,
+        "width": 442,
+        "x": 409,
+        "y": 337
+      },
+      "rowCrossesDivision": true,
+      "modeledNavigationBackSpotCrossesOcclusion": false
+    },
+    {
+      "case": "open-wide-reverse-ax5",
+      "text": "default",
+      "appearance": "Dark",
+      "screenId": "95:2638",
+      "rowId": "103:3886",
+      "rowFrame": {
+        "height": 78,
+        "width": 225.5,
+        "x": 625.5,
+        "y": 203
+      },
+      "rowCrossesDivision": false,
+      "modeledNavigationBackSpotCrossesOcclusion": false
+    },
+    {
+      "case": "open-wide-reverse-ax5",
+      "text": "AX5",
+      "appearance": "Dark",
+      "screenId": "95:2812",
+      "rowId": "103:3891",
+      "rowFrame": {
+        "height": 79,
+        "width": 442,
+        "x": 409,
+        "y": 337
+      },
+      "rowCrossesDivision": true,
+      "modeledNavigationBackSpotCrossesOcclusion": false
+    },
+    {
+      "case": "open-tall-default",
+      "text": "default",
+      "appearance": "Light",
+      "screenId": "95:3206",
+      "rowId": "103:3897",
+      "rowFrame": {
+        "height": 78,
+        "width": 310.5,
+        "x": 342.5,
+        "y": 312.5
+      },
+      "rowCrossesDivision": false,
+      "modeledNavigationBackSpotCrossesOcclusion": false
+    },
+    {
+      "case": "open-tall-default",
+      "text": "AX5",
+      "appearance": "Light",
+      "screenId": "95:3380",
+      "rowId": "103:3902",
+      "rowFrame": {
+        "height": 79,
+        "width": 442,
+        "x": 211,
+        "y": 467
+      },
+      "rowCrossesDivision": true,
+      "modeledNavigationBackSpotCrossesOcclusion": false
+    },
+    {
+      "case": "open-tall-default",
+      "text": "default",
+      "appearance": "Dark",
+      "screenId": "95:3908",
+      "rowId": "103:3908",
+      "rowFrame": {
+        "height": 78,
+        "width": 310.5,
+        "x": 342.5,
+        "y": 312.5
+      },
+      "rowCrossesDivision": false,
+      "modeledNavigationBackSpotCrossesOcclusion": false
+    },
+    {
+      "case": "open-tall-default",
+      "text": "AX5",
+      "appearance": "Dark",
+      "screenId": "95:4082",
+      "rowId": "103:3913",
+      "rowFrame": {
+        "height": 79,
+        "width": 442,
+        "x": 211,
+        "y": 467
+      },
+      "rowCrossesDivision": true,
+      "modeledNavigationBackSpotCrossesOcclusion": false
+    },
+    {
+      "case": "open-tall-reverse-default",
+      "text": "default",
+      "appearance": "Light",
+      "screenId": "95:4476",
+      "rowId": "103:3919",
+      "rowFrame": {
+        "height": 78,
+        "width": 310.5,
+        "x": 342.5,
+        "y": 312.5
+      },
+      "rowCrossesDivision": false,
+      "modeledNavigationBackSpotCrossesOcclusion": false
+    },
+    {
+      "case": "open-tall-reverse-default",
+      "text": "AX5",
+      "appearance": "Light",
+      "screenId": "95:4650",
+      "rowId": "103:3924",
+      "rowFrame": {
+        "height": 79,
+        "width": 442,
+        "x": 211,
+        "y": 467
+      },
+      "rowCrossesDivision": true,
+      "modeledNavigationBackSpotCrossesOcclusion": true
+    },
+    {
+      "case": "open-tall-reverse-default",
+      "text": "default",
+      "appearance": "Dark",
+      "screenId": "95:5178",
+      "rowId": "103:3930",
+      "rowFrame": {
+        "height": 78,
+        "width": 310.5,
+        "x": 342.5,
+        "y": 312.5
+      },
+      "rowCrossesDivision": false,
+      "modeledNavigationBackSpotCrossesOcclusion": false
+    },
+    {
+      "case": "open-tall-reverse-default",
+      "text": "AX5",
+      "appearance": "Dark",
+      "screenId": "95:5352",
+      "rowId": "103:3935",
+      "rowFrame": {
+        "height": 79,
+        "width": 442,
+        "x": 211,
+        "y": 467
+      },
+      "rowCrossesDivision": true,
+      "modeledNavigationBackSpotCrossesOcclusion": true
+    },
+    {
+      "case": "split-left-wide-default",
+      "text": "default",
+      "appearance": "Light",
+      "screenId": "95:5664",
+      "rowId": "103:3941",
+      "rowFrame": {
+        "height": 78,
+        "width": 210.5,
+        "x": 242.5,
+        "y": 153.5
+      },
+      "rowCrossesDivision": false,
+      "modeledNavigationBackSpotCrossesOcclusion": false
+    },
+    {
+      "case": "split-left-wide-default",
+      "text": "AX5",
+      "appearance": "Light",
+      "screenId": "95:5802",
+      "rowId": "103:3946",
+      "rowFrame": {
+        "height": 144,
+        "width": 437,
+        "x": 16,
+        "y": 309
+      },
+      "rowCrossesDivision": false,
+      "modeledNavigationBackSpotCrossesOcclusion": false
+    },
+    {
+      "case": "split-left-wide-default",
+      "text": "default",
+      "appearance": "Dark",
+      "screenId": "95:6130",
+      "rowId": "103:3951",
+      "rowFrame": {
+        "height": 78,
+        "width": 210.5,
+        "x": 242.5,
+        "y": 153.5
+      },
+      "rowCrossesDivision": false,
+      "modeledNavigationBackSpotCrossesOcclusion": false
+    },
+    {
+      "case": "split-left-wide-default",
+      "text": "AX5",
+      "appearance": "Dark",
+      "screenId": "95:6268",
+      "rowId": "103:3956",
+      "rowFrame": {
+        "height": 144,
+        "width": 437,
+        "x": 16,
+        "y": 309
+      },
+      "rowCrossesDivision": false,
+      "modeledNavigationBackSpotCrossesOcclusion": false
+    },
+    {
+      "case": "split-right-wide-reverse-default",
+      "text": "default",
+      "appearance": "Light",
+      "screenId": "95:6588",
+      "rowId": "103:3961",
+      "rowFrame": {
+        "height": 78,
+        "width": 353,
+        "x": 16,
+        "y": 214
+      },
+      "rowCrossesDivision": false,
+      "modeledNavigationBackSpotCrossesOcclusion": false
+    },
+    {
+      "case": "split-right-wide-reverse-default",
+      "text": "AX5",
+      "appearance": "Light",
+      "screenId": "95:6759",
+      "rowId": "103:3966",
+      "rowFrame": {
+        "height": 144,
+        "width": 353,
+        "x": 16,
+        "y": 241
+      },
+      "rowCrossesDivision": false,
+      "modeledNavigationBackSpotCrossesOcclusion": false
+    },
+    {
+      "case": "split-right-wide-reverse-default",
+      "text": "default",
+      "appearance": "Dark",
+      "screenId": "95:7131",
+      "rowId": "103:3971",
+      "rowFrame": {
+        "height": 78,
+        "width": 353,
+        "x": 16,
+        "y": 214
+      },
+      "rowCrossesDivision": false,
+      "modeledNavigationBackSpotCrossesOcclusion": false
+    },
+    {
+      "case": "split-right-wide-reverse-default",
+      "text": "AX5",
+      "appearance": "Dark",
+      "screenId": "95:7302",
+      "rowId": "103:3976",
+      "rowFrame": {
+        "height": 144,
+        "width": 353,
+        "x": 16,
+        "y": 241
+      },
+      "rowCrossesDivision": false,
+      "modeledNavigationBackSpotCrossesOcclusion": false
+    }
+  ],
+  "validation": {
+    "targetMaxError": 1.2207031204525265e-05,
+    "tileMaxError": 0,
+    "rowMaxError": 0,
+    "targetCount": 768,
+    "tileCount": 480,
+    "settingsRowCount": 24,
+    "knownSettingsFoldCrossingScreens": 8,
+    "labelOverflows": [],
+    "descendantCount": 6474,
+    "nodeTypeCounts": {
+      "TEXT": 2404,
+      "FRAME": 1319,
+      "INSTANCE": 1915,
+      "RECTANGLE": 412,
+      "ELLIPSE": 350,
+      "VECTOR": 74
+    },
+    "imageFilledNodes": [],
+    "fontFamilies": [
+      "Inter",
+      "SF Pro Rounded",
+      "SF Pro",
+      "SF Compact"
+    ],
+    "bounds": {
+      "width": 7160,
+      "height": 12018
+    },
+    "scope": "Home item6 drawings complete; Settings model gaps and all runtime gates remain open",
+    "visual": "passing composition after drawing-only repairs; modeled Settings fold gaps intentionally shown",
+    "runtimeProven": false,
+    "fullChainVerified": false,
+    "physicalInputVerified": false,
+    "settingsNativeMeasured": false
+  },
+  "status": "Scoped Home item6 candidate drawings complete; root controls linked Spec/code gate; broader Settings/R0-13/runtime/physical gates open",
+  "ownerChoice": "Keep the current rule and investigate another design. No paging, pinned prefix, new order or neighbour-rule exception.",
+  "notes": [
+    "All target/control/phrase/Back frames use committed geometry; only labels/chrome are Figma stand-ins.",
+    "Family Setup rows consume unchanged SettingsRowPlace/#56 policy with nav64/footer40/wrapping model; four AX5 full-screen geometries cross division in both appearances.",
+    "Keyboard alphanumeric labels use explicitly permitted Inter stand-in to avoid the connector's repeated cached SF glyphs; Apple layout/source sizes retained. One owned keyboard copy was expanded into editable layers during renderer diagnosis.",
+    "Original Home/typing pages, prior owned options/observations history, repository, builds and simulators were not changed by the drawing task.",
+    "Node mutation list is cumulative: every created owned node received geometry, text or visual properties. Deleted descendants are retained in the historical create/delete ledger."
+  ],
+  "preexistingHomeNodeIdsMutated": [],
+  "renders": [
+    "candidate-screens.png",
+    "settings-wide-ax5-gap.png",
+    "settings-tall-ax5-gap.png"
+  ],
+  "limits": "Drawing evidence only. Native frames, actual keyboards and Settings wrapping/navigation, complete transition chains, and physical input remain separate checks. Existing AX5 Settings row/fold intersections remain broader R0-13 gaps."
+}

@@ -4,9 +4,11 @@
 screen change yet" (R0 item 3, and R1's profile layout engine); this
 file also covers items 4 (Home on the engine) and 6 (Home on iPhone Duo,
 in every pose). Owner: the Layout engine thread. Items 3, 4 and 5 are
-built. Item 6 is in design: the horizontal-fold scrolling choice below
-needs the owner before implementation. The original engine spec is kept
-as history; the dated item 6 section is the current continuation.*
+built. Item 6 is in design from measured reservations; its earlier
+horizontal-scrolling blocker is withdrawn. The owner confirmed keeping
+the current rule and investigating another design. The original engine
+spec is kept as history; the dated item 6 section is the current
+continuation.*
 
 ## Intent
 
@@ -466,6 +468,18 @@ gap avoids widening the old Again envelope; only B-to-D gives back its
 2pt growth. The figure values are expected outputs of that rule, never
 device constants in the implementation.
 
+When A's optional height is exhausted, continue the same half-point
+search through shared primary-row growth, then category growth, never
+through a word/target floor or with categories taller than primary
+controls. The five-metric/Bold Text regression exposed this need between
+the drawn extremes: xxxLarge returns 20.5pt from A and 3pt from primary
+growth; AX1 returns 7pt and 12pt. Their mode heights are 53.75/60.5pt and
+primary heights 61/52pt; both retain B at 407.5/495.5 and D at 555.5.
+These are derived outputs of the generic constraint, not text-size
+branches. The native unit check also retains the existing message-reading
+speaking-share bounds, rather than treating the well check as proof of
+the separate reading hazard.
+
 Camera fitting follows the actual rectangles in every rotation. When a
 camera intersects D, crop D's fixed rectangular viewport toward that
 camera's nearest window edge and resolve its columns/floor again. No
@@ -513,12 +527,45 @@ PR #56's accepted limits and tests remain intact.
 
 ### Plan from the measured regions
 
-1. Finish the Spec and drawings from the recorded full-screen and clipped
-   Split View rectangles, both axes and reversed rotations, inactive and
-   active reservations, default and AX5, light and dark,
+**Scoped drawing gate, 2026-10-25:** the
+[84-state candidate section](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=89-3)
+now draws the resolved default/AX5 frames: 24 browsing, 12 typing, 24
+alarm and 24 Settings covers, evenly split light/dark. The
+[saved overview](../evidence/2026-10-25-duo-design/candidate-screens.png)
+and [screen links and validation](../evidence/2026-10-25-duo-design/candidate-drawings.json)
+record the drawing check. Apple kit components supply system chrome and
+keyboards; Inter text is an explicitly labeled drawing substitute where
+the connector cannot render the system font. These are design frames,
+not native UI or keyboard measurements.
+
+Settings keeps its current row solver and PR #56's limits. Its derived
+AX5 full-screen row crosses the fold in four geometries; the
+[wide](../evidence/2026-10-25-duo-design/settings-wide-ax5-gap.png) and
+[tall](../evidence/2026-10-25-duo-design/settings-tall-ax5-gap.png) drawings
+show that gap explicitly. It also exists with the unreserved engine:
+wide AX5 moves from y336 to y337, crossing in both; tall AX5 stays at
+y467. This closes the drawing gate for item 6's Home scope, including
+the cover derived from Home. It does not complete R0-13's broader
+Settings/setup audit, approve an exception, or claim Settings fold
+clearance. Native navigation, wrapping and complete chain checks remain
+required. The owner confirmed keeping the current rule and investigating
+another design; no pinned panes or paging is selected.
+
+Implementation files: `Brickson/Layout/HomeLayout.swift` owns typed inputs,
+allocation/occupied bounds, lanes and final derived outputs;
+`HomeReservedLayout.swift` resolves exclusions and ordinary growth;
+`HomeWellEnvelope.swift` supplies the geometric well constraint.
+`Brickson/Home/HomeView.swift` adapts system regions and renders those
+outputs with existing controls and standard stacks. The three reserved-
+region test files under `BricksonTests/Layout/` check allocation, Home
+chains and the unchanged Settings solver separately. No Settings policy,
+project-format or fewer-tiles implementation is part of item 6.
+
+1. Use the linked Spec and drawings from the recorded full-screen and
+   clipped Split View rectangles, both axes and reversed rotations,
+   inactive and active reservations, default and AX5, light and dark,
    browsing/typing/alarm and the Settings cover. Keep readers and
-   reconstructed windows distinct. These candidate observations do not
-   complete the Design gate.
+   reconstructed windows distinct; verify rendered targets independently.
 2. Write failing pure Swift Testing reproductions before implementation:
    division and camera separately, inactive/active stability, translated
    safe areas, both axes, resized windows and grown libraries at nonzero

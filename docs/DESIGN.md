@@ -50,9 +50,14 @@ Phrases alone was a proposal that differed from the landed decision;
   - [*Duo fold options*](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=73-3):
     the later measured-region panel and earlier lane candidates. The
     runtime rectangles supersede the first horizontal-scrolling blocking
-    conclusion; the counterexample is marked synthetic. Resolved control
-    frames and safety scores remain to be drawn and checked, so the
-    Design gate stays open.
+    conclusion; the counterexample is marked synthetic. The
+    [84-state resolved candidate section](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=89-3)
+    completes the scoped Home drawings, with default/AX5 browsing,
+    available typing, alarm and derived Settings covers in light/dark.
+    Existing AX5 Settings row/fold intersections are shown as unresolved
+    R0-13 gaps. Native rendering, complete chains and physical checks
+    remain separate gates; the work file links the saved render and
+    per-screen manifest.
 - **Claude Design prototype** (private artifact, shared by the owner when
   they choose): an iPhone 17 Home you can tap through (speak, type, alarm,
   Settings, Family Setup, Voice, Library, editor, delete question), and

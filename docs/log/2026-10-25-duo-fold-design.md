@@ -1,6 +1,6 @@
 # Duo fold design: measured regions and windowing
 
-*2026-10-25. Branch `codex/duo-reserved-regions`. Codex. Design draft;
+*2026-10-25. Pull request #58 (`codex/duo-reserved-regions`). Codex. Design draft;
 no implementation.*
 
 ## What changed and why
@@ -28,8 +28,11 @@ Design gate or approval for a new scrolling policy.
 
 ## Commits
 
-- This design record, the current work-file continuation and affected
-  HANDOFF/ROADMAP/DESIGN lines.
+- `fab71b2`: initial fold candidates and synthetic scrolling concern.
+- `23baaf0`: keep evidence outside the one-record log folder.
+- `57a0ef3`: replace assumed blocker with measured system regions.
+- `dfabb51`: merge current main and retain dated measurements.
+- `1de1333`: specify the measured allocation and camera geometry.
 - Starting app/test source: main `6d040d5`, including merged PR #56.
 - Dated measurement source: [PR #55, `cb4c965`](https://github.com/MiddleAgedBanana/Brickson/commit/cb4c965),
   whose measurements used app code `8316743` before #56.
@@ -94,7 +97,8 @@ cause of the skipped XCTest follows from it.
   tall baseline D starts; counterexample `74:190` is explicitly
   historical and synthetic. It changes 23 nodes created by this job and
   adds `84:2`–`84:95`; original Home pages remain untouched. The final
-  Design gate stays open.
+  Design gate was still open at that measured-panel step; the later
+  scoped candidate drawings below complete it.
 - The standalone candidate uses the existing font-validated metrics and
   unmodified ChainEngine. Across its 12 default/AX5 cases, independent
   half-point well samples and chain checks found no new Again points or
@@ -106,13 +110,49 @@ cause of the skipped XCTest follows from it.
   preserves a 13.5pt shortfall instead of claiming the earlier 11.5pt
   result was safe. Full production/typing/Settings/transition gates remain
   open; no known issue is widened or newly accepted by these calculations.
-- GitHub CI at the pushed `23baaf0`: both jobs passed. This does not
-  verify these later local docs or establish a fold-layout result.
+- The scoped Home drawing gate is complete at
+  [Figma section 89:3](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=89-3):
+  84 states, 42 light and 42 dark, with the
+  [saved overview](../evidence/2026-10-25-duo-design/candidate-screens.png)
+  and [per-screen manifest](../evidence/2026-10-25-duo-design/candidate-drawings.json).
+  Targets agree with the committed candidate within 0.000013pt; 480
+  tile frames and 24 modeled Settings rows match exactly. The four
+  AX5 full-screen Settings intersections are explicitly drawn as
+  existing broader R0-13 gaps; no Settings clearance is claimed. The
+  owner confirmed keeping the current rule and investigating another
+  design. No original Home drawing was changed.
+- Failing-first native reproductions ran before implementation: two
+  expected assertion failures in
+  `build/TestResults/duo-reservations-red/unit-destination.xcresult`.
+  A later interior zero-width division reproduction also failed before
+  its positive-area overlap fix, in
+  `build/TestResults/duo-zero-division-red/unit-destination.xcresult`.
+- The local implementation candidate's targeted native unit gate then
+  passed on Xcode 27.1 (27A9275), iPhone Duo simulator, iOS 27.1:
+  25 tests, zero failures/skips/expected failures. It covers all five
+  validated font metrics with Bold Text off/on, the 12 drawn extremes,
+  Home chains, unchanged Settings chains, final Back frames, the well
+  envelope, existing message-reading bounds, grown libraries and
+  warning reflow. Result:
+  `build/TestResults/duo-reservations-growth-checked/unit-destination.xcresult`;
+  log: `/private/tmp/brickson-duo-reservations-growth-checked.log`.
+  This is unit evidence, not rendered UI or physical input proof.
+- Before committing the completed drawing gate, the complete native unit
+  suite also passed on that candidate, Xcode 27.1 (27A9275), iPhone Duo
+  simulator, iOS 27.1: 765 ran, 756 passed, zero failed, existing issue
+  #19 skip and eight strict expected failures; coverage 70.3%, catalog
+  unchanged. Result:
+  `build/TestResults/duo-reservations-full-unit/unit-destination.xcresult`;
+  log: `/private/tmp/brickson-duo-reservations-full-unit.log`.
+  Native rendering and broader generic-input review remain separate.
+- GitHub CI at published `dfabb51`: both jobs passed. This does not
+  verify later local design or implementation work.
 
 ## Not verified
 
-- No reserved-region implementation or new fold-layout regression suite.
-  The ordinary unit gate is not a fold-layout safety result.
+- The local implementation candidate has targeted unit evidence, but
+  its full native suite, final rendered UI checks and publication remain
+  pending. The earlier ordinary unit gate is not fold-layout evidence.
 - Universal fold/camera clearance, floors, whole words, keyboard fit and
   complete Home/Settings held-activation chains for the proposed lanes
   and resized windows. The exact rectangles are now recorded; the camera
