@@ -660,3 +660,8 @@ Apple's design guidelines and Liquid Glass adoption were reviewed on
   microphone usage text the system shows when Brickson asks, a sentence in
   the privacy policy saying what happens to the call's audio, and a device
   check with a real call heard on both ends.
+- **Xcode's JSON project format.** Held since 2026-10-25 until Apple
+  releases Xcode 27.2. Then a trial on the owner's Mac converts a copy of
+  the generated project and compares it with XcodeGen's, and Brickson
+  switches in one pull request only when the gates hold
+  (docs/DECISIONS.md, "Xcode's JSON project format").

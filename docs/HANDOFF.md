@@ -525,7 +525,11 @@ in order (the rollback probe on the current Xcode, stores from every
 schema version, safety copies, export and import, the editing screens). Calls (R0 item 8) wait for a device build. Files under
 `.github/workflows` are committed by the owner (docs/SDLC.md, *Deploy*). The toolchain's follow-ups
 (Xcode's recommended settings, iOS 27 APIs behind `#available`) are in
-[`log/2026-10-21-toolchain.md`](log/2026-10-21-toolchain.md); iPhone
+[`log/2026-10-21-toolchain.md`](log/2026-10-21-toolchain.md). Xcode's
+JSON project format is planned, not adopted: when Apple releases Xcode
+27.2, a trial on the owner's Mac (a hand-off to an agent there) starts
+it, and XcodeGen stays until the gates hold (docs/DECISIONS.md, "Xcode's
+JSON project format"). iPhone
 Duo is R0 item 13: the closed pose has run in the simulator
 ([`log/2026-10-23-large-content-and-iphone-duo.md`](log/2026-10-23-large-content-and-iphone-duo.md)),
 and open and half-folded come next, in Device Hub on the owner's Mac
