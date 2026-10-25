@@ -368,7 +368,7 @@ candidate failures and trade-offs, not a completed Design gate.
 Figma: [the options page](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=73-3),
 [vertical lanes](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=74-139)
 and [horizontal scrolling counterexamples](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=74-190).
-The [saved render](../log/ui-test-evidence/2026-10-25-duo-design/duo-fold-options.png)
+The [saved render](../evidence/2026-10-25-duo-design/duo-fold-options.png)
 keeps the proposed options visible without Figma access.
 
 ### Plan after that choice

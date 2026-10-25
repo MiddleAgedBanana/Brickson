@@ -51,9 +51,11 @@ chain, camera or real-input safety.
 - Figma review: all four option groups were rendered and visually read.
   The labels distinguish measured canvas sizes from unmeasured bands and
   proposed frames. The saved screenshot is
-  `docs/log/ui-test-evidence/2026-10-25-duo-design/duo-fold-options.png`.
+  `docs/evidence/2026-10-25-duo-design/duo-fold-options.png`.
   The new page is `73:2`, wrapper `73:3`, vertical proposal `74:139`,
   counterexamples `74:190`. Existing Figma nodes were untouched.
+- Supporting images live in `docs/evidence/`, keeping only this PR's
+  one Markdown record under `docs/log/`. The render's bytes are unchanged.
 - GitHub CI: pending after the draft's first push.
 
 ## Not verified
