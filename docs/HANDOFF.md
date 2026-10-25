@@ -251,7 +251,7 @@ Xcode 27.1 (27A9275); PR #20 landed in `d79d836`.
   six native pose probes. The complete standard phone/iPad UI run fails
   one Speaking-wait case on each; unchanged main reproduces that failure
   on the same iPad. Default/AX5 light/dark captures were inspected on both
-  families; final Duo active-display checks and publication remain pending
+  families; representative Duo active-display captures were also inspected
   ([design record](log/2026-10-25-duo-fold-design.md)). The first
   UI test on a just-started CI simulator failed intermittently before
   PR #13's warm-up launch (AGENTS.md, *Gotchas*); three local cold boots
@@ -587,8 +587,10 @@ release in docs/ROADMAP.md when no thread has it yet.
   and four at AX5 (trailing content 14–82pt). Closed shows six at default
   (3pt trailing extent) and none at AX5 (249pt extent). Maximum scrolling
   was not measured. The measured pane inputs produce eight/zero whole
-  tiles at default/AX5 in pure tests; post-change native pane rendering
-  is still unchecked. Default inner-display typing keeps the core
+  tiles at default/AX5 in the earlier pure pane fixtures. The later native
+  paired left pane shows six/zero, with a newly returned inactive bottom
+  occlusion; original active-display captures are in the implementation
+  record. Other pane arrangements remain unverified. Default inner-display typing keeps the core
   controls, Clear and Put Back above the full US English keyboard;
   AX5 Type is unavailable. Native Settings Back stays within Phrases,
   but AX5 Settings rows still intersect the fold, as in the existing
@@ -604,7 +606,7 @@ release in docs/ROADMAP.md when no thread has it yet.
   app `8316743`'s failures before PR #56. Both current standard UI families
   fail the same Speaking-wait case; main reproduces it on the same iPad.
   Cause remains unestablished and the failed suites are retained.
-  Publication is pending. Physical testing stays deferred;
+  Physical testing stays deferred;
   CI still has no Duo family and screenshots are required from April 2027
   (docs/DECISIONS.md, "iPhone Duo"). *(R0 item 13 / Wave 3 item 6)*
 - The app icon is a placeholder; `design/brand/` is not installed. *(Release chores, R0 item 11)*
@@ -654,7 +656,9 @@ The scoped 84-state drawings are complete, with an outward whole-point
 fold allowance after a strict native overlap failure. The local engine
 passed the full 769-test unit suite and six native pose probes; standard
 phone/iPad UI gates fail a Speaking-wait case also reproduced on main.
-Final Duo active-display checks and publication remain pending. Changed-window diagnostics expose added paths under unverified
+Representative Duo active-display checks show the AX5 and Settings gaps;
+the paired left pane shows six/zero whole tiles at default/AX5.
+Changed-window diagnostics expose added paths under unverified
 coordinate maps, so folding safety has not passed and PR #58 stays a
 draft. No new exception is accepted. Existing AX5 Settings row/fold intersections remain broader
 R0-13 gaps, explicitly shown in the drawings. The

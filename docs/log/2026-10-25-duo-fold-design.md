@@ -1,7 +1,7 @@
 # Duo fold design: measured regions and windowing
 
 *2026-10-25. Pull request #58 (`codex/duo-reserved-regions`). Codex.
-Home implementation in progress; standard UI gates failed and publication pending.*
+Home implementation remains a draft; standard UI gates failed. Physical checks are deferred.*
 
 ## What changed and why
 
@@ -38,6 +38,10 @@ Design gate or approval for a new scrolling policy.
 - `1de1333`: specify the measured allocation and camera geometry.
 - `8f4a997`: revised whole-point fold guides, Spec and native receipts,
   saved before implementation.
+- `8b1365e`: first reserved-region implementation and regression tests.
+- `951b193`: merge owner-merged PR #57, main `a14c709`; proposal/docs only,
+  with app/test/script/project sources unchanged. R0 touch scrolling remains
+  permitted; the R1 fewer-tiles proposal does not authorize paging code.
 - Starting app/test source: main `6d040d5`, including merged PR #56.
 - Dated measurement source: [PR #55, `cb4c965`](https://github.com/MiddleAgedBanana/Brickson/commit/cb4c965),
   whose measurements used app code `8316743` before #56.
@@ -245,8 +249,8 @@ cause of the skipped XCTest follows from it.
   captures visibly retain Speaking and draw whole quick-control labels;
   [receipt](../evidence/2026-10-25-duo-design/standard-ipad-failure.json). The seven relevant
   speech/audio/launch-helper files match main `37c2e0b`; the failure is
-  not yet attributed to the new layout. The first full-run result will
-  be retained, followed by a bounded selected-case baseline comparison.
+  not yet attributed to the new layout. The first full-run result is
+  retained alongside the bounded selected-case baseline comparison.
   The phone family reports 51 total: 42 passed, one failed, six existing
   skips and two strict expected failures. Its same case has the same four
   waits, with no rendered-word failure. Unmodified
@@ -264,13 +268,58 @@ cause of the skipped XCTest follows from it.
 - GitHub CI at published `dfabb51`: both jobs passed. This does not
   verify later local design or implementation work.
 
+## Final active-display review and paired pane
+
+The [seven active-display captures and original-byte receipt](../evidence/2026-10-25-duo-design/active-display-results.json)
+come from implementation `8b1365e`, using the normal app rather than the
+black inactive display sometimes captured by XCTest. Root visually read
+all seven. This is representative default/light and AX5/dark evidence,
+not every appearance/pose combination.
+
+- **Pass, sampled default open Home:** all eight starter tiles are whole
+  in [wide Home](../evidence/2026-10-25-duo-design/active-wide-default.png).
+- **Capacity fails at AX5:** [wide](../evidence/2026-10-25-duo-design/active-wide-ax5-dark.png)
+  and [tall](../evidence/2026-10-25-duo-design/active-tall-ax5-dark.png)
+  show four whole tiles and a clipped second row. Quick-control words are
+  whole and Type is unavailable. These are not no-scroll passes.
+- **Settings fold/footer failures remain:** the actual Family Setup row
+  crosses the reserved band in [wide](../evidence/2026-10-25-duo-design/active-wide-ax5-settings.png)
+  and [tall](../evidence/2026-10-25-duo-design/active-tall-ax5-settings.png)
+  captures, with clipped explanatory text. Back remains whole. No new
+  Settings row policy is introduced here.
+- **Native left pane differs from the older pure fixture:**
+  [AX5](../evidence/2026-10-25-duo-design/active-left-pane-ax5.png) shows no
+  whole tile; [paired default](../evidence/2026-10-25-duo-design/active-left-pane-default.png)
+  shows six whole tiles and two partially clipped. Safari is its generic
+  Start Page, with no visited page or personal account content.
+  A temporary geometry-only print queried the paired scene: 469×669,
+  bottom inset34, inactive division x455.5–469 and newly returned inactive
+  bottom occlusion (215.667,611,58,37). Earlier fixture8/0 counts excluded
+  this occlusion; they are not the current paired pane's native capacity.
+  The suspected wider475.5pt paired window was not observed. The print
+  source was restored byte-for-byte; all nine final-unit source hashes
+  still match, and the restored normal app built and was reinstalled.
+  A [selected native pane probe](../evidence/2026-10-25-duo-design/paired-pane-results.json)
+  passed one test with zero failures/skips/expected failures, with 24
+  coherent snapshots across default/AX5 and light/dark. Every launch
+  asserted a pane width below 600pt. Browsing D is (16,371,437,240) at
+  default with 8pt trailing extent, and (16,572,437,39) at AX5 with 209pt
+  extent. These are content extents, not maximum measured scroll travel.
+  Default typing has keyboard top 405 (30 keys light, 34 dark); the core
+  controls, Clear and Put Back geometrically clear it and shared frames
+  remain fixed within the probe's 0.5pt native tolerance. This is not a
+  functional Clear/Put Back action, full UI-suite pass or sound test.
+  The summary retains an AVAudioSession runtime warning about synchronous
+  activation; no compiler warning was suppressed. The observation-only
+  test was removed, and all nine final-unit source hashes match again.
+
 ## Not verified
 
 - A green complete ordinary UI run: both local families fail the
   Speaking-wait case, also reproduced on unchanged main. The cause is
-  unestablished. Final Duo active-display appearance and pane checks
-  remain separate from the inspected standard phone/iPad captures.
-- Post-change native Split View pane rendering, all window sizes,
+  unestablished. Duo active-display captures are separate from the
+  inspected standard phone/iPad captures.
+- All post-change Split View arrangements, all window sizes,
   verified platform pointer mapping across changed windows and a successful
   second Brickson window. Hypothetical mappings already expose added paths
   in the diagnostic above; that gate has not passed. Native navigation/wrapping for all Settings/setup states is
@@ -284,9 +333,9 @@ cause of the skipped XCTest follows from it.
 
 ## Follow-ups
 
-- Finish the current ordinary native gates, active-display review and
-  independent verifier; publish this as the one item 6 PR. Keep full
-  source provenance and exact results here, including failures.
+- Retain this as the one draft item 6 PR, with full source provenance
+  and exact results, including failures. Complete the open UI, capacity,
+  native Settings and changed-window input gates before calling it ready.
 - Retain the existing fold decision. Reassess a policy decision only if
   a measured supported window requires changed order or neighbours.
   The generic counterexample alone did not establish that need.
