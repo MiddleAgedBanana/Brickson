@@ -2559,10 +2559,15 @@ every profile gets, even one that never uses Apple's keyboard.
   the same at the default and the largest size. The measured keyboards
   are rows in `KeyboardAllowanceTests`, and `KeyboardProbeTests` now runs
   on every UI run, failing if the live keyboard reaches higher than the
-  allowance or Home's safety row lower. Not covered yet, because nothing
-  has measured them: iPad windows smaller than their screen, where the
-  keyboard follows the screen; the floating and split iPad keyboards;
-  other languages; iPhone Duo's inner display (device check 6 in
+  allowance or Home's safety row lower. The 2026-10-25 Duo simulator
+  captures measured the full US English keyboard at default text:
+  its top was y405 in 951×669 inner windows, y601 in 669×951 inner
+  windows, and y374 in the 466×678 closed window. The existing allowance
+  covered these; no reference changed. AX5 Type was unavailable.
+  [Native receipts](evidence/2026-10-25-duo-design/native-frame-comparison.md).
+  Not covered yet: iPad and Duo windows smaller than their screen,
+  where the keyboard may follow the screen; floating and split iPad
+  keyboards; other languages; physical input (device check 6 in
   docs/log/2026-10-21-typing-foundation.md). *2026-10-23, the layout
   engine:* where the safety row's floors fit above the keyboard's room,
   the engine keeps it there, giving back growth and then gap; where they

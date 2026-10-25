@@ -49,26 +49,54 @@ import Foundation
 nonisolated struct HomeLayout: Equatable, Sendable {
     // MARK: Inputs
 
-    /// The space a window gives Home: everything the layout knows about
-    /// where it runs.
+    /// A system reservation, already including its margins, in the
+    /// reconstructed window's coordinates. Activity does not affect
+    /// allocation: starting tracking must not move a control.
+    struct ReservedRegion: Equatable, Sendable {
+        enum Kind: Equatable, Sendable { case division, occlusion }
+        var kind: Kind
+        var frame: CGRect
+        var isActive: Bool
+
+        init(kind: Kind, frame: CGRect, isActive: Bool = true) {
+            self.kind = kind
+            self.frame = frame
+            self.isActive = isActive
+        }
+    }
+
+    /// The space a window gives Home. No input names a device or pose.
     struct Space: Equatable, Sendable {
-        /// The window, in points.
         var size: CGSize
-        /// What the system keeps for itself at each edge: the status bar,
-        /// the home indicator, a camera housing, window controls.
         var safeArea: Insets
-        /// Regions the system reserves inside the window, in the window's
-        /// coordinates: a fold, a camera that can turn on
-        /// (`reservedRegions(kind:options:layoutDirectionBehavior:)`).
-        /// Reported, not yet avoided: how Home keeps clear of a fold is
-        /// settled once the open iPhone Duo has been looked at
-        /// (docs/work/layout-engine.md, *Spec*, *A fold*).
-        var reservedRegions: [CGRect]
+        var regions: [ReservedRegion]
+
+        /// Compatibility for callers that predate typed reservations.
+        /// A rectangle spanning a whole window axis is a division; other
+        /// rectangles are occlusions. The live adapter supplies kinds.
+        var reservedRegions: [CGRect] {
+            get { regions.map(\.frame) }
+            set { regions = Self.legacyRegions(newValue, size: size) }
+        }
 
         init(size: CGSize, safeArea: Insets = .zero, reservedRegions: [CGRect] = []) {
             self.size = size
             self.safeArea = safeArea
-            self.reservedRegions = reservedRegions
+            regions = Self.legacyRegions(reservedRegions, size: size)
+        }
+
+        init(size: CGSize, safeArea: Insets = .zero, regions: [ReservedRegion]) {
+            self.size = size
+            self.safeArea = safeArea
+            self.regions = regions
+        }
+
+        private static func legacyRegions(_ frames: [CGRect], size: CGSize) -> [ReservedRegion] {
+            frames.map { frame in
+                let spansAxis = (frame.minY <= 0 && frame.maxY >= size.height)
+                    || (frame.minX <= 0 && frame.maxX >= size.width)
+                return ReservedRegion(kind: spansAxis ? .division : .occlusion, frame: frame)
+            }
         }
     }
 
@@ -299,34 +327,34 @@ nonisolated struct HomeLayout: Equatable, Sendable {
     let isRegular: Bool
     let categoryArrangement: CategoryArrangement
     /// Every slot's frame, in the window's coordinates, leading edge first.
-    let frames: [Slot: CGRect]
-    let grid: Grid
+    private(set) var frames: [Slot: CGRect]
+    private(set) var grid: Grid
     /// The height of each row of the safety row.
-    let quickControlHeight: CGFloat
+    private(set) var quickControlHeight: CGFloat
     /// The height of a category, Stop's well and, outside the band, Settings.
-    let categoryHeight: CGFloat
+    private(set) var categoryHeight: CGFloat
     /// The gap between regions.
     let regionGap: CGFloat
     /// How much lower the categories sit than the gap alone would put
     /// them, so that a look resting in Stop's empty well meets Again or the
     /// category under it, never Yes: zero unless the safety row is short
     /// (docs/DECISIONS.md, "Get Attention and Stop on Home").
-    let wellDrop: CGFloat
+    private(set) var wellDrop: CGFloat
     /// Whether the starter library's largest category fits without
     /// scrolling: invariant 11 holds in this window at this text size.
-    let startersFit: Bool
+    private(set) var startersFit: Bool
     /// How much taller the content would have to be for it to fit: zero
     /// when it does.
-    let shortfall: CGFloat
+    private(set) var shortfall: CGFloat
     /// The room kept for Apple's keyboard (docs/DECISIONS.md, "Typing is a
     /// state of Home").
     let keyboard: KeyboardAllowance
     /// Whether the message, Phrases and Type (where Home has them) and the
     /// whole safety row end above the keyboard's room, so typing can leave
     /// them reachable.
-    let bandClearsKeyboard: Bool
+    private(set) var bandClearsKeyboard: Bool
     /// False where Settings has room only for its gear.
-    let settingsShowsName: Bool
+    private(set) var settingsShowsName: Bool
     /// Settings' Back to Talking, which closes Settings onto Home, in the
     /// window's coordinates; `.null` without Phrases. It lies inside
     /// Phrases' frame, and every point of it is nearer Phrases, by centre
@@ -339,7 +367,7 @@ nonisolated struct HomeLayout: Equatable, Sendable {
     /// the whole of Phrases, a look at a lower corner is nearer Get
     /// Attention's centre, or Again's, than Phrases' (docs/DECISIONS.md,
     /// "Typing on Home").
-    let backToTalking: CGRect
+    private(set) var backToTalking: CGRect
     /// Whether the message is wide enough for the starter library's widest
     /// word at the default text size (`MinimumWidths.message`): the message
     /// steps down only as far as its widest word needs, never below the
@@ -347,13 +375,62 @@ nonisolated struct HomeLayout: Equatable, Sendable {
     /// and Type, false only on compact windows narrower than 345 points
     /// with Bold Text on, where the trailing column is as wide as
     /// Emergency's bold word; never where the message spans the width.
-    let messageHoldsItsWords: Bool
+    private(set) var messageHoldsItsWords: Bool
     /// Whether every control above the phrase grid fits in the content,
     /// leaving the grid some height of its own. False only on a window too
     /// short for the safety row and categories at their floors.
-    let controlsFit: Bool
+    private(set) var controlsFit: Bool
     /// The slots a reserved region crosses.
-    let slotsInReservedRegions: Set<Slot>
+    private(set) var slotsInReservedRegions: Set<Slot>
+
+    /// Cells retained by the standard stacks before a local camera cut.
+    private(set) var allocationFrames: [Slot: CGRect]
+    /// An unsatisfied geometric constraint, never a hidden smaller target.
+    private(set) var reservationIssues: [HomeReservedLayout.Issue]
+
+    struct RegionGaps: Equatable, Sendable {
+        var aToC: CGFloat
+        var cToB: CGFloat
+        var bToD: CGFloat
+    }
+
+    /// Complete resolved gaps, including the well's ordinary drop.
+    var regionGaps: RegionGaps {
+        let a = allocatedUnion([.message, .statusLine, .phrases, .type])
+        let c = allocatedUnion(Slot.safetyRow)
+        let b = allocatedUnion(Slot.categoriesRegion)
+        return RegionGaps(aToC: c.minY - a.maxY, cToB: b.minY - c.maxY,
+            bToD: allocation(.phraseGrid).minY - b.maxY)
+    }
+
+    var safetyRowGap: CGFloat { rowGaps(in: Slot.safetyRow).first ?? 0 }
+    var categoryRowGaps: [CGFloat] { rowGaps(in: Slot.categoriesRegion) }
+
+    func allocation(_ slot: Slot) -> CGRect { allocationFrames[slot] ?? .null }
+
+    func allocationHeight(of slots: [Slot]) -> CGFloat { allocationBounds(of: slots).height }
+
+    func bounds(of slots: [Slot]) -> CGRect {
+        slots.map(frame).filter { !$0.isNull }.reduce(CGRect.null) { $0.union($1) }
+    }
+
+    func allocationBounds(of slots: [Slot]) -> CGRect { allocatedUnion(slots) }
+
+    func horizontalGap(from leading: Slot, to trailing: Slot) -> CGFloat {
+        allocation(trailing).minX - allocation(leading).maxX
+    }
+
+    private func allocatedUnion(_ slots: [Slot]) -> CGRect {
+        slots.map(allocation).filter { !$0.isNull }.reduce(CGRect.null) { $0.union($1) }
+    }
+
+    private func rowGaps(in slots: [Slot]) -> [CGFloat] {
+        let frames = slots.map(allocation).filter { !$0.isNull }
+        let tops = Set(frames.map(\.minY)).sorted()
+        return zip(tops, tops.dropFirst()).map { top, next in
+            next - (frames.filter { abs($0.minY - top) < 0.001 }.map(\.maxY).min() ?? top)
+        }
+    }
 
     /// The frame of `slot`, or `.null` for a slot this layout does not
     /// have (`slots`).
@@ -401,6 +478,39 @@ nonisolated struct HomeLayout: Equatable, Sendable {
     init(
         space: Space, profile: Profile = .touch, text: Text,
         largestCategory: Int = HomeLayout.referencePhraseCount, modes: Modes
+    ) {
+        self.init(unreservedSpace: Space(size: space.size, safeArea: space.safeArea),
+            profile: profile, text: text, largestCategory: largestCategory, modes: modes)
+        // A safe-area-only occlusion changes no interior allocation or
+        // baseline diagnostic. Division presence still chooses even lanes,
+        // including a zero-area or wholly edge-clipped reported frame.
+        guard space.regions.contains(where: { $0.kind == .division || HomeReservedLayout.overlaps($0.frame, content) }) else { return }
+        let resolved = HomeReservedLayout(base: self, space: space, profile: profile,
+            text: text, largestCategory: largestCategory)
+        allocationFrames = resolved.allocations
+        frames = resolved.frames
+        grid = resolved.grid
+        reservationIssues = resolved.issues
+        quickControlHeight = frame(.again).height
+        categoryHeight = frame(.stop).height
+        let safetyBottom = Slot.safetyRow.map(frame).map(\.maxY).max() ?? 0
+        let band = [Slot.phrases, .type, .statusLine].map(frame).filter { !$0.isNull }
+        bandClearsKeyboard = max(safetyBottom, band.map(\.maxY).max() ?? 0) <= keyboard.bandLimit + 0.001
+        settingsShowsName = frame(.settings).width >= MinimumWidths.forBoldText(text.boldText).settings
+        messageHoldsItsWords = frame(.message).width >= MinimumWidths.forBoldText(text.boldText).message
+        controlsFit = allocation(.phraseGrid).minY <= content.maxY + 0.001 && reservationIssues.isEmpty
+        let reference = grid.reflow(in: grid.frame, phraseCount: Self.referencePhraseCount)
+        shortfall = reference.shortfall
+        startersFit = shortfall <= 0.001
+        backToTalking = resolved.backToTalking
+        slotsInReservedRegions = Set(frames.filter { _, frame in
+            space.reservedRegions.contains { Self.overlap($0, frame) }
+        }.keys)
+    }
+
+    private init(
+        unreservedSpace space: Space, profile: Profile, text: Text,
+        largestCategory: Int, modes: Modes
     ) {
         let spacing = Self.controlSpacing
         let minimum = MinimumWidths.forBoldText(text.boldText)
@@ -702,6 +812,8 @@ nonisolated struct HomeLayout: Equatable, Sendable {
         grid = Grid(frame: gridFrame, columns: columns, phraseCount: largestCategory, tileFloor: tileFloor, spacing: spacing)
 
         self.frames = frames
+        allocationFrames = frames
+        reservationIssues = []
         controlsFit = gridTop <= content.maxY + 0.001
         slotsInReservedRegions = Set(frames.filter { _, frame in
             space.reservedRegions.contains { Self.overlap($0, frame) }
@@ -710,7 +822,7 @@ nonisolated struct HomeLayout: Equatable, Sendable {
 
     /// Whether two rectangles share some area; touching edges do not count.
     private static func overlap(_ a: CGRect, _ b: CGRect) -> Bool {
-        a.minX < b.maxX && b.minX < a.maxX && a.minY < b.maxY && b.minY < a.maxY
+        !a.isEmpty && !b.isEmpty && a.minX < b.maxX && b.minX < a.maxX && a.minY < b.maxY && b.minY < a.maxY
     }
 
     // MARK: Slots
@@ -813,41 +925,61 @@ nonisolated struct HomeLayout: Equatable, Sendable {
         let frame: CGRect
         let columns: Int
         let rows: Int
+        /// Smallest column width for conservative legacy consumers.
         let tileSize: CGSize
         let scrolls: Bool
         let spacing: CGFloat
-        /// The shortest a tile may be here (`TileFloor`).
         let tileFloor: CGFloat
+        /// Resolved, potentially unequal lanes, in `frame`'s coordinates.
+        let columnFrames: [CGRect]
+
+        var contentHeight: CGFloat { CGFloat(rows) * tileSize.height + CGFloat(max(0, rows - 1)) * spacing }
+        var shortfall: CGFloat { max(0, contentHeight - frame.height) }
 
         init(frame: CGRect, columns: Int, phraseCount: Int, tileFloor: CGFloat, spacing: CGFloat) {
+            let count = max(1, columns)
+            let width = max(0, (frame.width - CGFloat(count - 1) * spacing) / CGFloat(count))
+            let lanes = (0..<count).map {
+                CGRect(x: frame.minX + CGFloat($0) * (width + spacing), y: frame.minY,
+                    width: width, height: frame.height)
+            }
+            self.init(frame: frame, columnFrames: lanes, phraseCount: phraseCount, tileFloor: tileFloor, spacing: spacing)
+        }
+
+        init(frame: CGRect, columnFrames: [CGRect], phraseCount: Int, tileFloor: CGFloat, spacing: CGFloat) {
             self.frame = frame
-            self.columns = columns
+            let lanes = columnFrames.isEmpty ? [CGRect(x: frame.minX, y: frame.minY, width: max(0, frame.width), height: max(0, frame.height))] : columnFrames
+            self.columnFrames = lanes
+            columns = lanes.count
             self.spacing = spacing
             self.tileFloor = tileFloor
             rows = Self.rows(for: phraseCount, columns: columns)
-            let tileWidth = (frame.width - CGFloat(columns - 1) * spacing) / CGFloat(columns)
-            // Whole points, so tiles sit on whole points; the thousandth keeps
-            // a window that fits exactly from losing a point to rounding.
             let fitted = ((frame.height - CGFloat(rows - 1) * spacing) / CGFloat(rows) + 0.001).rounded(.down)
             scrolls = fitted < tileFloor
-            tileSize = CGSize(width: tileWidth, height: scrolls ? tileFloor : fitted)
+            tileSize = CGSize(width: lanes.map(\.width).min() ?? 0, height: scrolls ? tileFloor : fitted)
         }
 
-        /// Rows for `count` phrases: at least one.
+        /// A warning may take viewport height, never reclaim a reserved
+        /// camera strip or choose different column positions. The caller
+        /// places the resolved viewport, then supplies its local frame.
+        func reflow(in proposed: CGRect, phraseCount: Int) -> Grid {
+            let viewport = CGRect(origin: proposed.origin,
+                size: CGSize(width: max(0, min(frame.width, proposed.width)), height: max(0, min(frame.height, proposed.height))))
+            let lanes = columnFrames.map {
+                CGRect(x: viewport.minX + $0.minX - frame.minX, y: viewport.minY,
+                    width: $0.width, height: viewport.height)
+            }
+            return Grid(frame: viewport, columnFrames: lanes, phraseCount: phraseCount, tileFloor: tileFloor, spacing: spacing)
+        }
+
         static func rows(for count: Int, columns: Int) -> Int {
             max(1, (count + columns - 1) / columns)
         }
 
-        /// The tile at `row` and `column`, from 0, in the window's
-        /// coordinates. Rows past the region's foot are reached by
-        /// scrolling.
-        func tile(row: Int, column: Int) -> CGRect {
-            CGRect(
-                x: frame.minX + CGFloat(column) * (tileSize.width + spacing),
-                y: frame.minY + CGFloat(row) * (tileSize.height + spacing),
-                width: tileSize.width,
-                height: tileSize.height
-            )
+        func tile(row: Int, column: Int, scrollOffset: CGFloat = 0) -> CGRect {
+            let lane = columnFrames[column]
+            return CGRect(x: lane.minX, y: frame.minY + CGFloat(row) * (tileSize.height + spacing) - scrollOffset,
+                width: lane.width, height: tileSize.height)
         }
     }
 

@@ -1,7 +1,7 @@
 # Duo fold design: measured regions and windowing
 
-*2026-10-25. Pull request #58 (`codex/duo-reserved-regions`). Codex. Design draft;
-no implementation.*
+*2026-10-25. Pull request #58 (`codex/duo-reserved-regions`). Codex.
+Home implementation in progress; standard UI gates failed and publication pending.*
 
 ## What changed and why
 
@@ -9,9 +9,12 @@ Continued Wave 3 item 6 after PR #56 merged. A temporary geometry-only
 probe read the system's division and occlusion regions from the shared
 Home/Settings adapter on app code `6d040d5`. It left the layout inputs
 unchanged. The [13 region captures](../evidence/2026-10-25-duo-design/reservations.json)
-now supply the exact rectangles the first design draft lacked. Native
-Device Hub input also reached both Split View panes. No fold-avoidance
-implementation or new exception is included.
+supply the exact rectangles the first design draft lacked. Native
+Device Hub input also reached both Split View panes. Home now uses typed
+regions to allocate controls and a fixed phrase viewport around them.
+Activity changes consume the same space; no hinge angle or device model
+drives layout. Standard Buttons/stacks keep the existing logical order,
+word floors and controls; no paging or Settings policy is implemented.
 
 **Correction to this draft:** the earlier claim that item 6 needed an
 owner decision about horizontal scrolling was premature. The measured
@@ -33,17 +36,21 @@ Design gate or approval for a new scrolling policy.
 - `57a0ef3`: replace assumed blocker with measured system regions.
 - `dfabb51`: merge current main and retain dated measurements.
 - `1de1333`: specify the measured allocation and camera geometry.
+- `8f4a997`: revised whole-point fold guides, Spec and native receipts,
+  saved before implementation.
 - Starting app/test source: main `6d040d5`, including merged PR #56.
 - Dated measurement source: [PR #55, `cb4c965`](https://github.com/MiddleAgedBanana/Brickson/commit/cb4c965),
   whose measurements used app code `8316743` before #56.
 - Main `37c2e0b` (merged PR #55) is incorporated with a merge commit,
   preserving its dated QA record and the owner's stricter JSON-trial
-  timing. App, test, script and project sources still match `6d040d5`.
-- The work file now specifies allocation cells, local camera fitting,
-  even lanes, row-gap growth and final derived geometry. The
-  [candidate geometry](../evidence/2026-10-25-duo-design/candidate-geometry.json)
-  is a standalone host prototype used for the next drawings; it is not
-  production implementation or a native layout result.
+  timing. That merge's app/test/script/project sources matched `6d040d5`.
+- `87ddb14`: commit the scoped Spec and 84-state drawing gate before the
+  first implementation commit. Later drawings explicitly enclose the raw
+  fold to account for the native rounding finding below.
+- The [initial host prototype](../evidence/2026-10-25-duo-design/candidate-geometry.json)
+  remains historical. The [enclosed production export](../evidence/2026-10-25-duo-design/candidate-geometry-enclosed.json)
+  uses the current allocator; it is pure geometry, separately compared
+  with native snapshots. No generated project or temporary probe is committed.
 
 ## Verified
 
@@ -104,12 +111,11 @@ cause of the skipped XCTest follows from it.
   half-point well samples and chain checks found no new Again points or
   Stop/well paths. The geometric bounds include tie allowance. A
   default-tall candidate that only enlarged B's gap widened the existing
-  Again area; it was rejected. Returning 25pt of A growth avoids that
-  widening. At AX5, keeping both A-to-C and C-to-B at 12pt preserves the
-  baseline well geometry; only B-to-D returns its 2pt growth. This
-  preserves a 13.5pt shortfall instead of claiming the earlier 11.5pt
-  result was safe. Full production/typing/Settings/transition gates remain
-  open; no known issue is widened or newly accepted by these calculations.
+  Again area; it was rejected. Its initial 25pt A return and 13.5pt AX5
+  trailing extent were superseded by the outward-rounded production
+  calculation: 27pt A return and 14pt AX5 extent. A-to-C and C-to-B retain
+  their 12pt gaps at AX5; only B-to-D returns its 2pt growth. No known
+  issue is widened or newly accepted by these calculations.
 - The scoped Home drawing gate is complete at
   [Figma section 89:3](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=89-3):
   84 states, 42 light and 42 dark, with the
@@ -145,33 +151,149 @@ cause of the skipped XCTest follows from it.
   `build/TestResults/duo-reservations-full-unit/unit-destination.xcresult`;
   log: `/private/tmp/brickson-duo-reservations-full-unit.log`.
   Native rendering and broader generic-input review remain separate.
+- The first native wide probe failed a strict reservation assertion:
+  No and Conversation ended at x455.6667 against the raw division edge
+  x455.5, despite the pure target ending at 455.5. The
+  [initial native JSON](../evidence/2026-10-25-duo-design/native-wide-initial.json)
+  and [active-display image](../evidence/2026-10-25-duo-design/native-wide-initial.png)
+  retain that failure. The image is a later capture on the same initial
+  source, not the JSON snapshot's instant. Planning now encloses positive
+  divisions in whole points (455–496 here), while evidence and final
+  strict overlap checks keep the unmodified API rectangle.
+- Four additional reproductions failed before their fixes, then passed
+  4/4: simultaneous camera intervals are order-independent; narrowed
+  Get Attention recomputes its two-line floor; exterior-only occlusions
+  retain the complete legacy result; fractional divisions receive the
+  outward allowance. Results:
+  `build/TestResults/duo-review-red/unit-destination.xcresult` and
+  `build/TestResults/duo-review-focused/unit-destination.xcresult`.
+- The post-fix full native unit gate passed: **769 ran, 760 passed,
+  zero failed, one existing #19 skip, eight strict expected failures**;
+  coverage 70.6% (6,898/9,769), catalog unchanged. Xcode 27.1 (27A9275),
+  iPhone Duo simulator, iOS 27.1. Result:
+  `build/TestResults/duo-enclosed-full-unit/unit-destination.xcresult`;
+  log `/private/tmp/brickson-duo-enclosed-full-unit.log`. Three subsequent
+  keyboard rows use the same allowance. The final `CI=true` run also
+  passed with exactly the same totals and coverage, catalog current:
+  `build/TestResults/duo-final-unit/unit-destination.xcresult`, log
+  `/private/tmp/brickson-duo-final-unit.log`. Its result tree confirms all
+  seven keyboard argument rows passed, including the three new Duo rows.
+  Xcode counts the parent case once, so the provisional 772 expectation
+  was incorrect. [Final source and argument receipt](../evidence/2026-10-25-duo-design/final-unit-results.json).
+- Six selected native pose probes each passed one test with no failure,
+  skip or expected failure: open wide/tall, both reverse rotations,
+  reversed wide partially open, and closed. Native Hub rotations
+  preserved the live display; RocketSim read the partial angle as
+  90.07416534423828° before and after (distinct from the earlier 130°
+  baseline). Each probe freshly launched default/AX5 in light/dark and
+  retained one coherent ancestor-window snapshot per state. Results:
+  `build/TestResults/duo-runtime-{wide-rounded,rotated-probe,wide-reverse,book-probe,tall-reverse,closed-probe}/ui-destination.xcresult`;
+  logs `/private/tmp/brickson-duo-runtime-*.log`. These are selected
+  diagnostics, not the complete UI suite.
+- Independent [native frame audit](../evidence/2026-10-25-duo-design/native-frame-comparison.md)
+  and [receipts](../evidence/2026-10-25-duo-design/native-frame-comparison.json):
+  **144 captures**; 1,220 occupied button comparisons within 0.167pt and
+  800 full tile comparisons within 0.25pt of the pure inner geometry;
+  1,884 shared-state frames exactly equal. Strict raw-region checks
+  allow no tolerance: no static target or geometrically cropped tile
+  intersects a reservation. There are still 32 full AX tile/camera
+  intersections beyond the AX5 D viewport; cropped clearance is not
+  rendered clipping or Snap proof. Closed has no per-case pure export;
+  native state/appearance checks and the separate 400-case complete
+  legacy comparison cover different claims.
+- All 12 default typing captures place Emergency, Yes, No, Speak,
+  Get Attention, Phrases, Clear and Put Back above the full US
+  English keyboard (29 keys tall; 32 wide). Tops: wide y405, tall y601, closed y374. AX5 Type
+  is unavailable, so no AX5 inner keyboard claim follows. Typing's AX
+  ScrollView container grows 42pt in upper-wide, tall and closed captures,
+  and 58pt in lower-wide/book captures, while shared controls and full
+  tiles stay fixed; its containment count includes covered tiles and is not
+  visible capacity. Browsing shows 8 default/4 AX5 tiles open, and
+  6 default/0 AX5 closed. The native audit lists trailing content
+  extents, not measured maximum scroll distances.
+- Settings Back is wholly within final native Phrases in 24/24 captures.
+  Ten AX5 Settings row/fold intersection records remain, including the
+  duplicate partial pose. All 20 illustrative model rows differ from
+  native rows beyond 0.5pt; the drawing's 64pt navigation bar model is
+  labeled accordingly. This Home PR preserves the Settings solver and
+  PR #56's limits; broader R0-13 Settings/setup work is open.
+- A [bounded host diagnostic](../evidence/2026-10-25-duo-design/transition-report.md)
+  does **not** clear changed-window resting points. Under hypothetical
+  coordinate hold/scaling, it finds added hazards against the captured
+  legacy engine. Example: wide→tall, selected Conversation, quiet and
+  browsing, point (454.5,300.5); both before maps are inert, legacy-after
+  selects Emergency then settles, while candidate-after starts Get
+  Attention. All four rule/pointer pairs reproduce this numerical-map
+  example. Actual OS pointer mapping is unverified; no physical alarm
+  was observed and no passing test accepts the new path. Activity-only
+  geometry is stable in all ten scene/font cases. A separate 16-comparison
+  [quarter-turn supplement](../evidence/2026-10-25-duo-design/quarter-report.md)
+  removes that particular alarm example but still finds modeled additions:
+  a tall→wide Get Attention point reaches Clear instead of an inert
+  category. These transforms and dimmed-target eligibility are also
+  unverified. Same-window Home state regressions remain separately green. Keep this PR a draft;
+  this is neither a new policy exception nor completed folding safety.
+- The complete standard UI run **failed on both families**, exit 65.
+  The iPad case
+  `LaunchTests.testLargestTextKeepsQuickControlWordsVisible` has failed:
+  four 30-second Speaking waits in portrait AX5 light/dark. The completed
+  iPad family reports 51 total: 45 passed, one failed, two existing
+  opt-in skips and three strict expected failures. No rendered-word
+  assertion failed in that case. Unmodified native
+  [light](../evidence/2026-10-25-duo-design/standard-ipad-ax5-light-speaking.png)
+  and [dark](../evidence/2026-10-25-duo-design/standard-ipad-ax5-dark-speaking.png)
+  captures visibly retain Speaking and draw whole quick-control labels;
+  [receipt](../evidence/2026-10-25-duo-design/standard-ipad-failure.json). The seven relevant
+  speech/audio/launch-helper files match main `37c2e0b`; the failure is
+  not yet attributed to the new layout. The first full-run result will
+  be retained, followed by a bounded selected-case baseline comparison.
+  The phone family reports 51 total: 42 passed, one failed, six existing
+  skips and two strict expected failures. Its same case has the same four
+  waits, with no rendered-word failure. Unmodified
+  [phone light](../evidence/2026-10-25-duo-design/standard-iphone-ax5-light-speaking.png)
+  and [phone dark](../evidence/2026-10-25-duo-design/standard-iphone-ax5-dark-speaking.png)
+  captures also visibly retain Speaking. Root visually inspected both
+  families at default/AX5 in light/dark; the quick-control words are whole,
+  but that does not make either full suite pass. [Combined receipt](../evidence/2026-10-25-duo-design/standard-ui-results.json).
+  The selected comparison on unchanged main `37c2e0b` then reproduced
+  all four waits on the same iPad/runtime: one test ran, zero passed,
+  one failed, no skip/expected failure. [Baseline receipt and captures](../evidence/2026-10-25-duo-design/speech-baseline-results.json).
+  This establishes that the failure exists without the Duo change;
+  it does not identify synthesis flags, callback/task state or audible
+  output as its cause. No audio behavior or assertion was changed.
 - GitHub CI at published `dfabb51`: both jobs passed. This does not
   verify later local design or implementation work.
 
 ## Not verified
 
-- The local implementation candidate has targeted unit evidence, but
-  its full native suite, final rendered UI checks and publication remain
-  pending. The earlier ordinary unit gate is not fold-layout evidence.
-- Universal fold/camera clearance, floors, whole words, keyboard fit and
-  complete Home/Settings held-activation chains for the proposed lanes
-  and resized windows. The exact rectangles are now recorded; the camera
-  dark-area match still needs a real device.
-- A successful second Brickson window or the cause of its inconclusive
-  attempt; Split View persistence through rotation.
-- Live folding/input comfort, sound, Phone handoff and controlled
-  on-device input. Physical testing remains deferred until a mounted
-  setup is ready.
+- A green complete ordinary UI run: both local families fail the
+  Speaking-wait case, also reproduced on unchanged main. The cause is
+  unestablished. Final Duo active-display appearance and pane checks
+  remain separate from the inspected standard phone/iPad captures.
+- Post-change native Split View pane rendering, all window sizes,
+  verified platform pointer mapping across changed windows and a successful
+  second Brickson window. Hypothetical mappings already expose added paths
+  in the diagnostic above; that gate has not passed. Native navigation/wrapping for all Settings/setup states is
+  broader R0-13 work, with the AX5 intersections above still present.
+- Full AX tile camera clearance, rendered clipping and maximum scroll
+  travel. Physical Snap to Item, folding/input comfort, sound, Phone
+  handoff and the camera dark-area match need a real mounted device.
+  The owner deferred physical testing.
 - The JSON project trial: it still waits for released Xcode 27.2 and its
   first fix release; nothing is converted.
 
 ## Follow-ups
 
-- Finish Spec/Figma from the measured full-screen and clipped Split View
-  regions, then failing reproductions and implementation/chain/UI gates.
-  Keep this as the one item 6 PR.
-- Retain the existing fold decision. Reassess a policy decision only if an
-  actual supported window requires changed order or neighbours; the
-  generic counterexample alone does not establish that need.
-- Keep physical-input checks deferred. No new exception is approved by
-  these measurements.
+- Finish the current ordinary native gates, active-display review and
+  independent verifier; publish this as the one item 6 PR. Keep full
+  source provenance and exact results here, including failures.
+- Retain the existing fold decision. Reassess a policy decision only if
+  a measured supported window requires changed order or neighbours.
+  The generic counterexample alone did not establish that need.
+- A side-by-side status alternative was rejected before implementation:
+  docs/DECISIONS.md, "Home version 0 is a stand-in", reserves the line under
+  the message and two message lines. Changing that placement is outside
+  the owner's keep-the-current-rule direction. AX5 capacity remains an
+  explicit failure rather than a silent rule change.
+- Keep controlled physical-input checks deferred and do not present
+  simulator geometry as a completed R0-13 release gate.

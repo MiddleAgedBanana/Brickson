@@ -41,6 +41,20 @@ struct KeyboardAllowanceTests {
             window: CGSize(width: 402, height: 874), keyboardTop: 546,
             source: "iPhone 17 Pro, portrait, iOS 27.0 (reference app)"
         ),
+        // Coherent native snapshots, default text, full US English keyboard
+        // shown. docs/log/2026-10-25-duo-fold-design.md.
+        Measured(
+            window: CGSize(width: 951, height: 669), keyboardTop: 405,
+            source: "Duo inner wide, both rotations and partially open, iOS 27.1"
+        ),
+        Measured(
+            window: CGSize(width: 669, height: 951), keyboardTop: 601,
+            source: "Duo inner tall, both rotations, iOS 27.1"
+        ),
+        Measured(
+            window: CGSize(width: 466, height: 678), keyboardTop: 374,
+            source: "Duo closed, iOS 27.1"
+        ),
     ]
 
     /// Fails if any measured keyboard reaches higher than the allowance

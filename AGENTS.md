@@ -807,7 +807,11 @@ the time. Export them again after each new Xcode release.
   simctl` has no pose command, `XCUIDevice` has none, and turning a
   display off does not unfold it. On 2026-10-25 the authorized Mac run
   used Device Hub's Closed, Partially Open, Open and rotation controls;
-  RocketSim's `duo hinge` confirmed 0°, 130° and 180°. On the inner display,
+  RocketSim's `duo hinge` confirmed 0°, 130° and 180°. Later that day,
+  the installed CLI also provided `rocketsim duo pose closed|book|open`;
+  the selected native pose probes confirmed its book pose at about 90°.
+  This supersedes the earlier lack of CLI pose control, not the native
+  rotation/window-coordinate limits. On the inner display,
   the tested XCTest orientation request did not make the same turn, its screenshots
   captured the inactive outer display as black, and separate window/frame
   queries disagreed with the window and controls in one accessibility

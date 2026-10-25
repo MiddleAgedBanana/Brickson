@@ -645,9 +645,9 @@ setup checks remain required. The owner confirmed keeping the current
 rule and investigating another design; no pinned panes or paging is
 selected.
 
-The original drawing gate was saved in `87ddb14`. The revised drawings
-and this updated Spec must be saved in another docs gate commit before
-the first implementation commit, which has not been made yet.
+The original drawing gate was saved in `87ddb14`. Revised enclosure
+screens, the updated Spec and native receipts were committed in
+`8f4a997` before the first implementation commit.
 
 Implementation files: `Brickson/Layout/HomeLayout.swift` owns typed inputs,
 allocation/occupied bounds, lanes and final derived outputs;
@@ -689,6 +689,9 @@ project-format or fewer-tiles implementation is part of item 6.
    before claiming Snap to Item safety. Device comfort, audio, Phone
    handoff and the tracking dark area remain separate physical checks.
 
-Implementation remains uncommitted, and no universal fold-clearance,
-strong chain-safety or physical-input result is claimed. Its record is
+The implementation is retained in draft PR #58. No universal fold
+clearance, strong changed-window chain safety or physical-input result
+is claimed. Tall AX5 adds a capacity shortfall relative to the unreserved
+baseline; satisfying the existing rule remains an open design gate,
+not a newly accepted scrolling exception. Its record is
 [the item 6 design log](../log/2026-10-25-duo-fold-design.md).

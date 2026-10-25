@@ -368,16 +368,21 @@ Fewer tiles to a screen is drawn as R1's direction, not built. Yes and
 No beside the message stays the owner's question before R1.
 
 **6. Home on iPhone Duo, in every pose.**
-*Design started 2026-10-25 after PR #56 merged. Runtime reservation and
-native Split View measurements are now in
-[the work file](work/layout-engine.md#item-6-fold-and-camera-design-2026-10-25).
-The initial horizontal-scrolling owner blocker is withdrawn because the
-measured tall phrase viewport is below the division. Right-pane AX5 has
-no whole phrase tile visible, and the second-window result remains
-inconclusive. The existing fold decision is unchanged. The Spec and
-84-state Home drawings are linked; the local implementation candidate
-has a passing 25-test geometry/chain gate. Full native suites, rendered
-UI checks and publication remain before an implementation claim.*
+*Started 2026-10-25 after PR #56 merged. The [Spec and scoped 84-state
+Home drawings](work/layout-engine.md#item-6-fold-and-camera-design-2026-10-25)
+precede implementation. The local engine now allocates around typed fold
+and camera rectangles, including inactive regions, with even phrase lanes
+and outward rounding for native pixels. The full 769-test unit suite and
+six native pose diagnostics passed. Both complete standard UI families
+fail one Speaking-wait case, also reproduced on main on the same iPad;
+final Duo active-display review and publication remain pending. Open full-screen
+browsing shows eight default/four AX5 whole tiles; closed shows six/zero.
+AX5 scrolling/capacity failures, full AX tile camera overlaps beyond D and
+existing Settings row/fold intersections remain explicit. Changed-window
+chain diagnostics and broader R0-13 Settings/setup work are separate
+open gates. No pinned panes, paging or new rule exception is selected.
+The earlier horizontal-scrolling blocker is withdrawn: measured tall D
+starts below the fold. Native second-window behavior remains inconclusive.*
 The owner's two fold choices (docs/DECISIONS.md, "iPhone Duo"): Home's
 controls kept off the fold, and an even number of columns on a display
 that folds, behind `#available(iOS 27.1, *)`. Apple's Eye Tracking and
@@ -390,12 +395,11 @@ camera starts; whether that region covers the dark area is checked on a
 real iPhone Duo. How Home keeps clear of it is this item's to settle,
 with nothing moving when Eye Tracking or Head Tracking starts
 (invariant 8).
-*Rows:* section 10's `ReservedRegion`. *Needs:* the owner's Mac, to
-fold the iPhone Duo simulator in Xcode's Device Hub, the way Apple
-documents folding it (PR #43 found no command-line way); an agent
-drives Device Hub only with the owner's permission, which PR #43's
-thread asked for and did not get, so the owner may fold it by hand. A
-real iPhone Duo, when one is at hand. *Apple:*
+*Rows:* section 10's `ReservedRegion`. *Needs:* the owner's Mac, using
+Device Hub for native rotations and windowing. PR #43 found no CLI pose
+command; the authorized 2026-10-25 run subsequently verified RocketSim's
+`duo pose` control. A real iPhone Duo, when one is at hand, still supplies
+physical input and dark-area checks. *Apple:*
 [Designing for iPhone Duo](https://developer.apple.com/design/human-interface-guidelines/designing-for-iphone-duo),
 [`ReservedRegion`](https://developer.apple.com/documentation/swiftui/reservedregion)
 ("If your layout is a grid, use an even number of columns so your
@@ -569,7 +573,7 @@ TestFlight group before the gate passes, and it goes out once items 1 to
 | 10 | App Store readiness | Apple's current requirements, store text with no price words, accessibility and privacy labels, screenshots, review notes, the privacy policy's unbuilt sections built or deleted | App Store readiness and ASO | In progress (`docs/APP-STORE.md`, `docs/ASO.md`). The website's accessibility page, and the policy without the sections R0 does not ship, landed on 2026-10-23 ([`log/2026-10-23-accessibility-page-and-privacy-trim.md`](log/2026-10-23-accessibility-page-and-privacy-trim.md)); the policy's R0 sentences are marked true or deleted at release |
 | 11 | Release chores | The brand icon installed, a license decision, the App Store Connect record (after the name is confirmed), TestFlight to the owner and a small group that includes a person living with ALS and a speech-language pathologist | Owner, with items 9 and 10 | Waiting on decisions |
 | 12 | Plan and maintain | This roadmap, the decisions list, the handoff, the way of working ([`docs/SDLC.md`](SDLC.md)) | Roadmap, decisions and repo review | Landed with PR #15; each pull request keeps its own rows current |
-| 13 | Ready for iPhone Duo | Home, Settings and setup checked on iPhone Duo's outer and inner displays, open, partially folded and rotated, and in Split View, in the iPhone Duo simulator on the current Xcode; whatever that finds fixed, with the owner's two fold answers built and dwell scoring that covers folding; a Duo family in the UI tests once CI's image has the simulator; the Duo screenshots item 10 submits | A Mac thread for the simulator run, then the layout engine thread, which builds the owner's fold choices (docs/DECISIONS.md, "iPhone Duo", *The fold*) | Planned 2026-10-23: Apple's requirements and an assessment of Brickson against them ([`log/2026-10-23-iphone-duo-readiness.md`](log/2026-10-23-iphone-duo-readiness.md)). Brickson already builds with the iOS 27.1 SDK, so it is already treated as optimized for iPhone Duo. The 2026-10-25 Mac run used Device Hub closed, open, partly open at 130° and rotated, with current Home measurements and recorded test failures ([`log/2026-10-25-mac-keyboard-checks.md`](log/2026-10-25-mac-keyboard-checks.md)). Closed AX5 cannot show a whole tile; wide inner AX5 scrolls 10pt, and tall fits all eight starter phrases. The wide rendered hinge crosses controls. Fold/camera reserved-region support, windowing and real input remain unverified; PR #56 has since cleared the owner's merge gate for the implementation. Screenshots are required from April 2027. A change it makes to what a person sees starts with a work file ([`docs/SDLC.md`](SDLC.md)) |
+| 13 | Ready for iPhone Duo | Home, Settings and setup checked on iPhone Duo's outer and inner displays, open, partially folded and rotated, and in Split View, in the iPhone Duo simulator on the current Xcode; whatever that finds fixed, with the owner's two fold answers built and dwell scoring that covers folding; a Duo family in the UI tests once CI's image has the simulator; the Duo screenshots item 10 submits | A Mac thread for the simulator run, then the layout engine thread, which builds the owner's fold choices (docs/DECISIONS.md, "iPhone Duo", *The fold*) | In progress 2026-10-25: [item 6's Spec, drawings, engine and native geometry evidence](work/layout-engine.md#item-6-fold-and-camera-design-2026-10-25) follow the merged alarm-path prerequisite, PR #56. Six native pose diagnostics and a 769-test unit gate pass locally; both standard UI families fail a Speaking-wait case also reproduced on main. Publication, native pane rechecks, actual changed-window pointer mapping and Settings/setup remain open. Open default shows eight whole tiles; open AX5 four with 14–82pt trailing content. Closed default shows six and AX5 none. Full off-viewport AX tile camera overlaps and AX5 Settings row/fold intersections are recorded; no universal fold or physical input safety is claimed. Earlier `8316743` failures and the 130° baseline remain in [the Mac check log](log/2026-10-25-mac-keyboard-checks.md). Screenshots are required from April 2027. |
 
 **Left out of R0 on purpose:** stage profiles, prediction, recorded
 phrases, Siri and Shortcuts, caregiver alerts and the listener display.
