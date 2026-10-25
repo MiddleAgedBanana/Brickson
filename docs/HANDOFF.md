@@ -119,8 +119,11 @@ Xcode 27.1 (27A9275); PR #20 landed in `d79d836`.
   The Home matrix found all eight starter phrases fitting on the 13-inch
   iPad at default/AX4/AX5, standard and Larger Text Display Zoom, in both
   orientations. Standard iPhone AX4/AX5 scrolls 4/52pt. Its zoomed 320×693
-  window scrolls 169pt at default; at AX4 its grid is only 7pt high and at
-  AX5 it has zero height below the window. Those access checks fail.
+  window scrolls 169pt at default. A later native sample measured 329pt
+  at AX4 through its 7pt-high grid, with no whole tile at either end;
+  at AX5 the grid has zero height below the window. Those access checks
+  fail ([AX4 result and images](evidence/2026-10-25-duo-design/phone-zoom-ax4-scroll-results.json)).
+  Default zoom was restored and verified at 402×874 before cleanup.
   Duo's closed/open Home runs include failures; native Device Hub also
   covered both inner orientations and a 130° partial pose. Three separate
   cold iPhone boots passed the historical first-snapshot test without app
@@ -252,8 +255,9 @@ Xcode 27.1 (27A9275); PR #20 landed in `d79d836`.
   limits ([record](log/2026-10-25-mac-keyboard-checks.md)). Later item 6
   measurements queried the reserved regions and reached both native
   Split View panes. The item 6 Spec and scoped drawings are linked, and
-  the local implementation has a passing 775-test native unit gate
-  (including six later coherent-snapshot helper regressions) and six
+  the local implementation has a passing 777-test native unit gate
+  (including six coherent-snapshot helper regressions and the measured
+  mode-word inset correction) and six
   native pose probes on unchanged product source. The complete standard phone/iPad UI run fails
   one Speaking-wait case on each; unchanged main reproduces that failure
   on the same iPad. Default/AX5 light/dark captures were inspected on both
@@ -594,8 +598,11 @@ release in docs/ROADMAP.md when no thread has it yet.
   viewport. Clipping is not physical Snap proof. Browsing shows eight
   whole tiles at default text in all four full-screen open rotations,
   and four at AX5 (trailing content 14–82pt). Closed shows six at default
-  (3pt trailing extent) and none at AX5 (249pt extent). Maximum scrolling
-  was not measured. The measured pane inputs produce eight/zero whole
+  (3pt trailing extent) and none at AX5 (249pt extent). Later bounded native Basics/light probes
+  established actual top-to-bottom travel of 82pt in one wide AX5 window,
+  14pt in one tall AX5 window and 8pt in the paired default pane, each
+  after actual movement and aligned endpoints. These are three samples,
+  not maxima for every pose/category ([measurements](evidence/2026-10-25-duo-design/measured-scroll-results.json)). The measured pane inputs produce eight/zero whole
   tiles at default/AX5 in the earlier pure pane fixtures. The later native
   paired left pane shows six/zero, with a newly returned inactive bottom
   occlusion; original active-display captures are in the implementation
@@ -668,10 +675,15 @@ withdrawn: the measured full-screen tall phrase viewport is below the
 division. Right-pane AX5 still leaves no whole phrase tile visible.
 The scoped 84-state drawings are complete, with an outward whole-point
 fold allowance after a strict native overlap failure. The local engine
-passed the latest775-test unit suite, including six test-helper
-regressions, and six native pose probes on unchanged product source.
-The original complete phone/iPad UI runs fail a Speaking-wait case also
-reproduced on main.
+passed the latest777-test unit suite, including six test-helper
+regressions and the native mode-word inset correction, and six native pose probes on unchanged product source.
+The complete pre-width-correction phone/iPad UI runs fail a Speaking-wait
+case also reproduced on main. After correcting four word minima, the
+three selected cases per family have two default-audit passes and that
+same failed AX5 case; no full post-correction UI pass is claimed.
+The [word-floor receipt](evidence/2026-10-25-duo-design/native-mode-word-results.json)
+retains the failing reproduction and full unit gate; no font or placement
+rule changed.
 Representative Duo active-display checks show the AX5 and Settings gaps;
 the paired left pane shows six/zero whole tiles at default/AX5.
 Changed-window diagnostics expose added paths under unverified

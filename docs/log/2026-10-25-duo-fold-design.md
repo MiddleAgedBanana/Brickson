@@ -42,6 +42,12 @@ Design gate or approval for a new scrolling policy.
 - `951b193`: merge owner-merged PR #57, main `a14c709`; proposal/docs only,
   with app/test/script/project sources unchanged. R0 touch scrolling remains
   permitted; the R1 fewer-tiles proposal does not authorize paging code.
+- `b267881`, `515e913`: retain direct system-speech controls and raw/curated
+  trace hashes, without product audio changes.
+- `bc72b73`: coherent-snapshot helper, six regression tests and later
+  native/hosted receipts; product source remains unchanged.
+- Correct the mode-word inset minimums, retain the failing reproduction,
+  and record complete/selected UI and actual scroll measurements.
 - Starting app/test source: main `6d040d5`, including merged PR #56.
 - Dated measurement source: [PR #55, `cb4c965`](https://github.com/MiddleAgedBanana/Brickson/commit/cb4c965),
   whose measurements used app code `8316743` before #56.
@@ -397,6 +403,170 @@ activation warning remains unattributed and unsuppressed. The complete
 standard family UI rerun is recorded separately; neither the unit pass
 nor the two selected passes clears existing layout or input gates.
 
+## Complete ordinary UI rerun after the helper correction, before the mode-width correction
+
+On source `bc72b73824aae42a1d7dac42b434941ff8ee9e5b`, the complete ordinary UI
+run finished on both families:
+
+| Family | Total | Passed | Failed | Skipped | Expected failures |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| iPad | 51 | 45 | 1 | 2 | 3 |
+| iPhone | 51 | 42 | 1 | 6 | 2 |
+
+Each sole failed case was
+`LaunchTests.testLargestTextKeepsQuickControlWordsVisible`: four 30-second
+Speaking waits at lines 126 and 145 in light and dark. No rendered quick-word,
+geometry-matching or startup assertion failure was reported. The iPad's 64
+schema2 captures contain 1,008 button records; the phone's 54 contain 845. All
+recorded ancestor-window indices and frames are internally consistent. This
+does not prove every control's containment or physical safety. The
+original-byte AX5 [iPad
+light](../evidence/2026-10-25-duo-design/coherent-ipad-ax5-speaking-light.png),
+[iPad
+dark](../evidence/2026-10-25-duo-design/coherent-ipad-ax5-speaking-dark.png),
+[iPhone
+light](../evidence/2026-10-25-duo-design/coherent-iphone-ax5-speaking-light.png)
+and [iPhone
+dark](../evidence/2026-10-25-duo-design/coherent-iphone-ax5-speaking-dark.png)
+images show whole quick/mode/category words and emergency phrase labels while
+visibly retaining Speaking. The
+[iPad](../evidence/2026-10-25-duo-design/coherent-standard-ipad-results.json)
+and
+[iPhone](../evidence/2026-10-25-duo-design/coherent-standard-iphone-results.json)
+receipts retain exact sources and assertions.
+
+The phone's four Speaking assertions occurred at 21:46:41.572–21:48:23.777
+UTC, before the separately isolated font build began at about 21:50 UTC. The
+later one-worker font diagnostic and its Duo native case overlapped later
+portions of the phone family. This chronology makes no attribution of UI
+outcomes or cause to that concurrent diagnostic.
+
+## Mode words at their rendered inset
+
+The native app-hosted font probe found that Phrases and Type use 6pt on each
+horizontal side, while their existing minimum-width test subtracted 4pt. Under
+the existing measurement and WordFit slack, the measured target widths are at
+least 89/97pt for Phrases and 60/65pt for Type, with Bold Text off/on. The
+four declared minima now retain their prior conservative spare by adding 4pt:
+Phrases 90/98pt and Type 62/67pt. Again and Speak keep their existing 4pt
+insets. No font, shrink policy, target floor, order or placement rule changed.
+
+Before changing the four minima, the corrected font tests and synthetic
+camera-gap reproduction failed: 33 cases, 30 passed and 3 failed, with no
+skips or expected failures. The failed cases were the actual-inset minimum
+check, the camera-narrowed native word check, and the independent pure
+acceptance check. The translated 58×37 camera inputs are synthetic allocator
+fixtures, not observed platform poses. After the correction, the fresh full
+native unit gate passed: 777 total, 768 passed, zero failed, one existing
+issue #19 skip and eight strict expected failures; catalog current and 70.6%
+app-line coverage (6,898/9,769).
+
+The old/proposed host comparison is exactly equal for all 12 primary and 8
+intermediate recorded geometries, including frames, allocations, Back,
+D/capacities and sampled chains; both versions retain 400 legacy comparisons
+with zero mismatches. The synthetic camera-gap cases now use the existing
+camera-boundary fallback at widths 94/102pt instead of claiming that 86/94pt
+fits. These results do not validate unmeasured windows, native Settings chains
+or physical input.
+
+The post-correction selected ordinary UI run covered **three cases per
+family**. On each, the default light and dark Home accessibility audits
+passed; the AX5 quick-word case failed only its four existing Speaking waits.
+Each family therefore reports 3 total, 2 passed, 1 failed, no skips or
+expected failures. No rendered quick-word or geometry/window-matching
+assertion failure was reported. The iPad log retains ignored remote-element
+hierarchy `kAXErrorServerNotFound` diagnostics, which are not recorded startup
+assertion failures; no cause is inferred. **The complete 51-case suite has not
+been rerun after the minimum-width correction.** All capacity, native
+Settings, changed-window mapping and physical-input gates remain open.
+
+[Native font and red/green
+receipt](../evidence/2026-10-25-duo-design/native-mode-word-results.json) and
+[selected UI
+receipt](../evidence/2026-10-25-duo-design/mode-inset-selected-ui-results.json)
+retain hashes and exact scope. A [targeted chain
+comparison](../evidence/2026-10-25-duo-design/mode-minimum-chain-results.json)
+for only the two synthetic camera inputs scored 278,640 starts and 550,008
+chains per version with the unchanged engine: zero hazards and matching
+canonical activation traces. Starts correspond by normalized position within
+their old/new controls; this is sampled Home-only evidence, not continuous
+fixed-coordinate, Settings, platform mapping or physical-input proof.
+
+## Actual phrase scroll travel in three native samples
+
+A bounded native scroll probe on the isolated `bc72b73` source plus the four
+measured Home mode-word minima now establishes actual travel in three
+**Basics/light** samples: **82pt** in open wide AX5 (viewport16,485,835×126;
+four whole tiles at both ends), **14pt** in open tall AX5 (16,759,637×150;
+four whole tiles at both ends), and **8pt** in the paired default pane beside
+Safari (16,371,437×240; six whole tiles at both ends). Each selected case
+passed after three drags, actual uniform tile movement, aligned endpoints and
+two unchanged settled gesture outcomes; the paired measurement interval
+was15.655s (its complete test case16.999s). These are measured top-to-bottom
+deltas of the same identified tile, not inferred trailing extents. [Complete
+original measurement samples and source
+hashes](../evidence/2026-10-25-duo-design/measured-scroll-results.json) retain
+all96 full AX tile frames across12 settled samples. The frozen temporary
+probe's SHA256 begins `8c071063`; the measured four-minimum HomeLayout source
+is `93e3453c`. Neither probe is committed product code.
+
+The paired preparation was observed through native UI: hold Brickson's Home
+icon1.2s, select the visible Open in Split View action, select Safari, tap the
+divider, then make two separately observed Rotate Right turns to the sampled
+bottom-camera arrangement. A failed MobileBuild setup launch recovered after
+one simulator restart; it does not establish a product cause. The attempted
+pretest active screenshot did not produce a valid PNG and is excluded. The
+earlier [paired default
+image](../evidence/2026-10-25-duo-design/active-left-pane-default.png) is
+representative, **not simultaneous measurement evidence**. These three
+selected measurements do not cover every partial pose/camera position,
+category, appearance or library. All full AX frames remain intact: the
+separate audit's32 full tile/camera intersections are not erased or rechecked
+by viewport cropping. Camera clearance, rendered clipping and Snap/physical
+behavior are not established; original complete UI and capacity failures
+remain. Restricted zoomed-phone AX4 is recorded separately below; its zero-height
+AX5 grid remains unavailable, never0scroll.
+
+## Restricted zoomed-phone AX4 travel and restoration
+
+The restricted zoomed-phone AX4 range is now measured in one native simulator
+sample: **329pt** of actual top-to-bottom travel in the320×693 window, with
+the phrase viewport fixed at(16,651,288,7). The same Maybe tile moved from
+y651 to322; all eight full AX tile frames translated uniformly, the last row
+reached the bottom, and two further settled gestures left positions unchanged.
+The selected probe passed one case with no failure/skip/expected failure; its
+measurement interval was13.605594s. It used the recorded AX4 launch value
+`UICTContentSizeCategoryAccessibilityXXL`, fresh Basics/light and a standard
+drag beginning inside the7pt viewport before extending200pt upward within the
+ancestor window. [Full original samples, source and evidence
+hashes](../evidence/2026-10-25-duo-design/phone-zoom-ax4-scroll-results.json)
+retain all32 full tile frames. The source is `bc72b73` plus the four measured
+mode-word minima (HomeLayout SHA256 `93e3453c`); the temporary phone probe
+hash begins `9952eecd`, with the original Duo probe unchanged.
+
+**Whole-phrase access still fails:** zero complete tiles appear at both
+endpoints. Root reviewed the unmodified
+[top](../evidence/2026-10-25-duo-design/phone-zoom-ax4-scroll-top.png) and
+[bottom](../evidence/2026-10-25-duo-design/phone-zoom-ax4-scroll-bottom.png)
+captures: only a tiny blue tile edge is visible and Type remains
+white/unavailable. Those images are adjacent state captures, not simultaneous
+with the measurement snapshot. Scrolling a7pt viewport does not make it
+usable. This is one category/appearance/window and not a complete UI, camera,
+physical input or Snap pass; the previously observed zero-height zoomed AX5
+grid was not gestured and remains unavailable, never0scroll.
+
+Display Zoom restoration is verified separately. The operator observed the
+original Default selection, the Larger Text system apply/restart, then
+Default's Use Default confirmation. The existing
+`HomeReachabilityTests/testEveryHomeStateAtDefaultTextInPortrait` subsequently
+passed one case, zero failures/skips/expected failures. Its just-opened,
+emergency-selected and phrase-spoken schema2 captures each independently show
+both root and every button's ancestor window at**402×874**, confirming the app
+returned to standard Zoom. Curated restoration metadata and original raw
+hashes are included in the result JSON. The ordinary shared app and UI-test
+runner were reinstalled on both owned simulators, which were then shut down;
+these selected passes do not clear the complete UI Speaking-wait failure.
+
 ## Latest hosted startup failure
 
 [CI at `1322630`](../evidence/2026-10-25-duo-design/ci-startup-1322630/README.md)
@@ -434,8 +604,8 @@ was removed and only the owned simulator booted for it was shut down.
   second Brickson window. Hypothetical mappings already expose added paths
   in the diagnostic above; that gate has not passed. Native navigation/wrapping for all Settings/setup states is
   broader R0-13 work, with the AX5 intersections above still present.
-- Full AX tile camera clearance, rendered clipping and maximum scroll
-  travel. Physical Snap to Item, folding/input comfort, sound, Phone
+- Full AX tile camera clearance, rendered clipping and scroll travel
+  outside the three measured Basics/light samples. Physical Snap to Item, folding/input comfort, sound, Phone
   handoff and the camera dark-area match need a real mounted device.
   The owner deferred physical testing.
 - The JSON project trial still waits for released Xcode 27.2 and its

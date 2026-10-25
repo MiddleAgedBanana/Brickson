@@ -10,6 +10,35 @@ nonisolated struct HomeReservedRegionTests {
         messageLine: 35, statusLine: 19
     )
 
+    /// Same measured 58×37 camera size, translated within synthetic window
+    /// inputs so the optional 8pt clearance leaves exactly the old mode
+    /// minimum. These are allocator reproductions, not observed OS poses.
+    static func modeWordGapSpace(boldText: Bool) -> HomeLayout.Space {
+        HomeLayout.Space(
+            size: CGSize(width: boldText ? 858 : 842, height: 669),
+            safeArea: .init(top: 0, leading: 0, bottom: 34, trailing: 84),
+            regions: [
+                .init(kind: .division, frame: CGRect(x: 455.5, y: 0, width: 40, height: 669), isActive: false),
+                .init(kind: .occlusion, frame: CGRect(x: boldText ? 598 : 590, y: 21, width: 58, height: 37), isActive: false),
+            ]
+        )
+    }
+
+    /// Fails if the interval fitter accepts the old 86/94pt mode widths.
+    /// The independent 89/97 Phrases and 60/65 Type fixtures are from the
+    /// dated native font probe with actual 6pt sides and WordFit slack,
+    /// not from MinimumWidths. Rejection is allowed; false fit is not.
+    @Test func cameraGapsCannotClaimModeWordsFitBelowTheirNativeFloors() {
+        for (boldText, phrasesFloor, typeFloor) in [(false, CGFloat(89), CGFloat(60)), (true, CGFloat(97), CGFloat(65))] {
+            var text = Self.defaultText
+            text.boldText = boldText
+            let layout = HomeLayout(space: Self.modeWordGapSpace(boldText: boldText), text: text, modes: .phrasesAndTyping)
+            let accepted = layout.controlsFit && layout.reservationIssues.isEmpty
+            #expect(!accepted || layout.frame(.phrases).width >= phrasesFloor)
+            #expect(!accepted || layout.frame(.type).width >= typeFloor)
+        }
+    }
+
     /// Fails if the engine only reports a division or inactive camera
     /// instead of reserving space for it: the original regular allocation
     /// crosses the division with its message and controls, and places the

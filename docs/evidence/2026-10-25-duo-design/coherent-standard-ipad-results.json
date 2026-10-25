@@ -1,0 +1,170 @@
+{
+  "schema": 1,
+  "date": "2026-10-25",
+  "source": "bc72b73824aae42a1d7dac42b434941ff8ee9e5b",
+  "scope": "Completed full iPad UI family after the coherent-snapshot helper correction; phone results are separate.",
+  "resultBundle": "build/TestResults/coherent-helper-standard-ui/ui-ipad.xcresult",
+  "result": "Failed",
+  "destination": "iPad Pro 13-inch (M5,16GB), iOS Simulator27.0",
+  "counts": {
+    "totalTestCount": 51,
+    "passedTests": 45,
+    "failedTests": 1,
+    "skippedTests": 2,
+    "expectedFailures": 3
+  },
+  "failedCase": {
+    "test": "LaunchTests/testLargestTextKeepsQuickControlWordsVisible()",
+    "durationSeconds": 144.6218820810318,
+    "assertions": [
+      {
+        "message": "XCTAssertTrue failed - \"Speaking\" still showed 30 s later (AX5, light, phrase spoken): the phrase never ended",
+        "file": "LaunchTests.swift",
+        "line": 126
+      },
+      {
+        "message": "XCTAssertTrue failed - \"Speaking\" still showed 30 s later (AX5, light): the phrase never ended",
+        "file": "LaunchTests.swift",
+        "line": 145
+      },
+      {
+        "message": "XCTAssertTrue failed - \"Speaking\" still showed 30 s later (AX5, dark, phrase spoken): the phrase never ended",
+        "file": "LaunchTests.swift",
+        "line": 126
+      },
+      {
+        "message": "XCTAssertTrue failed - \"Speaking\" still showed 30 s later (AX5, dark): the phrase never ended",
+        "file": "LaunchTests.swift",
+        "line": 145
+      }
+    ],
+    "unexpectedWordOrGeometryAssertionFound": false,
+    "finding": "Exactly four 30-second Speaking waits failed: LaunchTests.swift126/145 in light and dark. No rendered quick-word assertion, geometry/window-matching error or AX startup error is reported in the completed test tree."
+  },
+  "schema2": {
+    "captures": 64,
+    "controlRecords": 1008,
+    "invalidAncestorMetadataCaptures": 0,
+    "representativeCaptures": [
+      {
+        "context": "AX5 light phrase spoken",
+        "exportedAttachment": "29E827CD-2358-409D-975B-70B3BA96B0CD.json",
+        "sha256": "f6fc3b66eab7dcdcdbf2db5df6f8acaefea6cff1949a98e86e541f990259754d",
+        "schemaVersion": 2,
+        "rootSnapshotFrame": {
+          "height": 1376,
+          "width": 1032,
+          "x": 0,
+          "y": 0
+        },
+        "windowFrames": [
+          {
+            "height": 1376,
+            "width": 1032,
+            "x": 0,
+            "y": 0
+          }
+        ],
+        "controls": 18,
+        "controlsByAncestorWindowIndex": {
+          "0": 18
+        },
+        "allAncestorMetadataConsistent": true
+      },
+      {
+        "context": "AX5 dark phrase spoken",
+        "exportedAttachment": "E9AE0106-C11D-4D46-B33A-8E48FEE6C7A2.json",
+        "sha256": "f6fc3b66eab7dcdcdbf2db5df6f8acaefea6cff1949a98e86e541f990259754d",
+        "schemaVersion": 2,
+        "rootSnapshotFrame": {
+          "height": 1376,
+          "width": 1032,
+          "x": 0,
+          "y": 0
+        },
+        "windowFrames": [
+          {
+            "height": 1376,
+            "width": 1032,
+            "x": 0,
+            "y": 0
+          }
+        ],
+        "controls": 18,
+        "controlsByAncestorWindowIndex": {
+          "0": 18
+        },
+        "allAncestorMetadataConsistent": true
+      },
+      {
+        "context": "Default typing",
+        "exportedAttachment": "41E1DBFF-8C88-4598-8753-FC8C0D99D5B8.json",
+        "sha256": "e0aaaed43e168d827e030334ac0a674292897db62d4c30f8b982862a037659a8",
+        "schemaVersion": 2,
+        "rootSnapshotFrame": {
+          "height": 1376,
+          "width": 1032,
+          "x": 0,
+          "y": 0
+        },
+        "windowFrames": [
+          {
+            "height": 1376,
+            "width": 1032,
+            "x": 0,
+            "y": 0
+          },
+          {
+            "height": 1376,
+            "width": 1032,
+            "x": 0,
+            "y": 0
+          },
+          {
+            "height": 1376,
+            "width": 1032,
+            "x": 0,
+            "y": 0
+          }
+        ],
+        "controls": 32,
+        "controlsByAncestorWindowIndex": {
+          "0": 20,
+          "2": 12
+        },
+        "allAncestorMetadataConsistent": true
+      }
+    ],
+    "limit": "Consistency of recorded ancestor indices/frames, not a full on-screen containment or physical-input proof; this ordinary iPad does not reproduce the Duo transposed-root case."
+  },
+  "screenshots": [
+    {
+      "context": "AX5 light Speaking full capture",
+      "file": "coherent-ipad-ax5-speaking-light.png",
+      "exportedAttachment": "3EF8CC07-D496-4323-AD46-E421A75EB346.png",
+      "sha256": "68c109b5f08e22ef83d172d8c58039f836bdb465344b8e0e2d133b6134fbdd43",
+      "bytes": 311893,
+      "originalExportBytesUnchanged": true,
+      "suggestedAttachmentName": "AX5, light, phrase spoken_0_99865BDC-E5BC-4531-882F-0D6065318B13.png",
+      "timestamp": 1792963684.335
+    },
+    {
+      "context": "AX5 dark Speaking full capture",
+      "file": "coherent-ipad-ax5-speaking-dark.png",
+      "exportedAttachment": "2961839A-C1D6-47F7-86FE-C937FEA986BD.png",
+      "sha256": "fa8ba69125fa7c71694e5f8c31f5c22211778ae8961d4ecebd5890588e9638ec",
+      "bytes": 310612,
+      "originalExportBytesUnchanged": true,
+      "suggestedAttachmentName": "AX5, dark, phrase spoken_0_4359C9E8-A090-4CFF-92D8-BAC5E5AA6C8D.png",
+      "timestamp": 1792963756.296
+    }
+  ],
+  "limits": [
+    "UI suite remains failed; unit gate is separate.",
+    "No phone-family conclusion in this receipt.",
+    "No audible-speech, physical-input or release-readiness claim.",
+    "Runtime audio-session warnings are retained by the bundle and do not establish the cause.",
+    "The exported archive includes unreviewed attachments; keep complete exports private."
+  ],
+  "visualReview": "Root viewed both original-byte full-screen images: the quick, mode and category words and all six emergency phrase labels are whole in these AX5 portrait samples, in light and dark. Both retain Speaking."
+}

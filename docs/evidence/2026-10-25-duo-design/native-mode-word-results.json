@@ -1,0 +1,342 @@
+{
+  "schema": 1,
+  "date": "2026-10-25",
+  "baseCommit": "bc72b73824aae42a1d7dac42b434941ff8ee9e5b",
+  "scope": "Curated native default-word measurements and completed regression receipts. The full406-row measurement dataset, original logs and build products remain private temporary evidence.",
+  "probe": {
+    "source": {
+      "file": "ModeFontMeasurementProbeTests.swift",
+      "privatePath": "/private/tmp/brickson-mode-font-probe/ModeFontMeasurementProbeTests.swift",
+      "sha256": "e88e9d7dca85ba081aac55b6205e465924f48b38839069e0f54507a74ef15303"
+    },
+    "sourceInputs": [
+      {
+        "path": "Brickson/Layout/LabelFont.swift",
+        "sha256": "595f475e635e4609eb99ab9433957cfde2197fb3a5a71b8aad7bb416b325d89a"
+      },
+      {
+        "path": "Brickson/Layout/WordFit.swift",
+        "sha256": "f38e1833d297603cd3ce41a0c6f118ea3428b6716036d3fc8b6d3733f8aabf3e"
+      },
+      {
+        "path": "Brickson/Layout/FittedLabel.swift",
+        "sha256": "ebd56321c38d41043d89c86380dea4936f01f5ea12ff00a3cd3b626fd781ac2f"
+      },
+      {
+        "path": "Brickson/Layout/HomeLayout.swift",
+        "sha256": "17e7799dd0ee6e897c0074024bb94e044bafab49b53142b8765a607a498fa8b8"
+      },
+      {
+        "path": "Brickson/Home/HomeView.swift",
+        "sha256": "60c8edd4c434258dcfd030dd8927948c020fc9fd3e5c5d2169bc01aee41cb40c"
+      },
+      {
+        "path": "Brickson/Home/HomeButtonStyle.swift",
+        "sha256": "878d458c24e8a1ccc0f75eb6a45659dfa73da31d321c5137d8f517129ff75d7a"
+      },
+      {
+        "path": "BricksonTests/Layout/StarterLabelFitTests.swift",
+        "sha256": "b93c57dac26232b0926d7e5f74a77a511f6113282b11ff38634c85df08877162"
+      },
+      {
+        "path": "BricksonTests/Layout/HomeLayoutEngineFontTests.swift",
+        "sha256": "8e47b2df6d52de9f871c6809ea31e7ae0c4afd4f5fe02cf643de45891ddb99d6"
+      }
+    ],
+    "sourceManifest": {
+      "privatePath": "/private/tmp/brickson-mode-font-probe/source-manifest.json",
+      "sha256": "902bbe865277f5499ee26ec22679253231dfcbe9d47ec0022b7068978e17e64a",
+      "limit": "Preparation-time manifest status is historical; actual execution is established by the separate passed native result below."
+    },
+    "nativeResult": {
+      "result": "Passed",
+      "counts": {
+        "totalTestCount": 1,
+        "passedTests": 1,
+        "failedTests": 0,
+        "skippedTests": 0,
+        "expectedFailures": 0
+      },
+      "privateResultBundle": "/private/tmp/brickson-mode-font-bc72b73/build/TestResults/ModeFontProbe.xcresult",
+      "summary": {
+        "privatePath": "/private/tmp/brickson-mode-font-probe/native-test-summary.json",
+        "sha256": "403afb40fbd430774e9c10c26564beec8ac0b70200da5d8c3453c354cd7f21e4"
+      }
+    },
+    "hostingContext": {
+      "hostBundleType": "app",
+      "hasUIApplicationDelegate": true,
+      "connectedWindowSceneCount": 1,
+      "operatingSystem": "Version 27.1 (Build 24A94425)",
+      "destination": "iPhone Duo simulator (dated measurement only)"
+    },
+    "recordCount": 406,
+    "rawMeasurements": {
+      "privatePath": "/private/tmp/brickson-mode-font-probe/native-results.json",
+      "sha256": "c96d4ac9497d7302018697eba59190af93b5e17b59f960b6bb7e5b1ba5d21737",
+      "bytes": 1675964,
+      "publishedRows": 6
+    }
+  },
+  "defaultMeasurements": [
+    {
+      "boldText": false,
+      "defaultLineHeight": 25,
+      "derivedWordTargetWidth": 89,
+      "pointSizeFromExistingBridge": 20,
+      "role": "Phrases",
+      "sideInset": 6,
+      "wholeLabelOneLineWidth": 75,
+      "widestWordWithExistingSlack": 77,
+      "words": [
+        {
+          "nativeSwiftUIDrawnWidth": 74.33333333333333,
+          "uiKitRoundedWidth": 75,
+          "word": "Phrases"
+        }
+      ]
+    },
+    {
+      "boldText": false,
+      "defaultLineHeight": 25,
+      "derivedWordTargetWidth": 60,
+      "pointSizeFromExistingBridge": 20,
+      "role": "Type",
+      "sideInset": 6,
+      "wholeLabelOneLineWidth": 46,
+      "widestWordWithExistingSlack": 48,
+      "words": [
+        {
+          "nativeSwiftUIDrawnWidth": 45.33333333333333,
+          "uiKitRoundedWidth": 46,
+          "word": "Type"
+        }
+      ]
+    },
+    {
+      "boldText": false,
+      "defaultLineHeight": 22,
+      "derivedWordTargetWidth": 67,
+      "pointSizeFromExistingBridge": 17,
+      "role": "Back to Talking",
+      "sideInset": 4,
+      "wholeLabelOneLineWidth": 121,
+      "widestWordWithExistingSlack": 59,
+      "words": [
+        {
+          "nativeSwiftUIDrawnWidth": 39.33333333333333,
+          "uiKitRoundedWidth": 40,
+          "word": "Back"
+        },
+        {
+          "nativeSwiftUIDrawnWidth": 16.333333333333332,
+          "uiKitRoundedWidth": 17,
+          "word": "to"
+        },
+        {
+          "nativeSwiftUIDrawnWidth": 56.666666666666664,
+          "uiKitRoundedWidth": 57,
+          "word": "Talking"
+        }
+      ]
+    },
+    {
+      "boldText": true,
+      "defaultLineHeight": 25,
+      "derivedWordTargetWidth": 97,
+      "pointSizeFromExistingBridge": 20,
+      "role": "Phrases",
+      "sideInset": 6,
+      "wholeLabelOneLineWidth": 83,
+      "widestWordWithExistingSlack": 85,
+      "words": [
+        {
+          "nativeSwiftUIDrawnWidth": 79.33333333333333,
+          "uiKitRoundedWidth": 83,
+          "word": "Phrases"
+        }
+      ]
+    },
+    {
+      "boldText": true,
+      "defaultLineHeight": 25,
+      "derivedWordTargetWidth": 65,
+      "pointSizeFromExistingBridge": 20,
+      "role": "Type",
+      "sideInset": 6,
+      "wholeLabelOneLineWidth": 51,
+      "widestWordWithExistingSlack": 53,
+      "words": [
+        {
+          "nativeSwiftUIDrawnWidth": 48.666666666666664,
+          "uiKitRoundedWidth": 51,
+          "word": "Type"
+        }
+      ]
+    },
+    {
+      "boldText": true,
+      "defaultLineHeight": 22,
+      "derivedWordTargetWidth": 74,
+      "pointSizeFromExistingBridge": 17,
+      "role": "Back to Talking",
+      "sideInset": 4,
+      "wholeLabelOneLineWidth": 132,
+      "widestWordWithExistingSlack": 66,
+      "words": [
+        {
+          "nativeSwiftUIDrawnWidth": 42,
+          "uiKitRoundedWidth": 44,
+          "word": "Back"
+        },
+        {
+          "nativeSwiftUIDrawnWidth": 17.666666666666664,
+          "uiKitRoundedWidth": 19,
+          "word": "to"
+        },
+        {
+          "nativeSwiftUIDrawnWidth": 61.33333333333333,
+          "uiKitRoundedWidth": 64,
+          "word": "Talking"
+        }
+      ]
+    }
+  ],
+  "measurementMeaning": [
+    "nativeSwiftUIDrawnWidth is the native default SwiftUI word width. uiKitRoundedWidth,wholeLabelOneLineWidth and widestWordWithExistingSlack retain the existing rounded-font/slack contract; these are distinct measures.",
+    "derivedWordTargetWidth is the widest word plus existing2pt WordFit slack and actual side insets: Phrases89/97,Type60/65,Back67/74 with Bold Text off/on.",
+    "Back67/74 is a word-only width, not a proposed whole-control minimum or proof of height/line fitting. Existing one-line Back131/142 and its two-line height rule are unchanged."
+  ],
+  "minimumCorrection": {
+    "reason": "ModeButton renders6pt sides; the former minimum-width font check subtracted4pt. Adding4pt total retains the previous conservative spare.",
+    "changes": [
+      {
+        "role": "Phrases",
+        "boldText": false,
+        "old": 86,
+        "new": 90
+      },
+      {
+        "role": "Phrases",
+        "boldText": true,
+        "old": 94,
+        "new": 98
+      },
+      {
+        "role": "Type",
+        "boldText": false,
+        "old": 58,
+        "new": 62
+      },
+      {
+        "role": "Type",
+        "boldText": true,
+        "old": 63,
+        "new": 67
+      }
+    ],
+    "sourceFile": "Brickson/Layout/HomeLayout.swift",
+    "sourceSHA256": "93e3453cde75578fb535e2ce796b156890c52e0b4bd88cb9f27956734dd8ca67",
+    "unchanged": "Fonts,default-size floor,WordFit slack,physical target floors,control order and placement policy. Again/Speak retain4pt side insets."
+  },
+  "nativeRegressions": {
+    "red": {
+      "result": "Failed",
+      "counts": {
+        "totalTestCount": 33,
+        "passedTests": 30,
+        "failedTests": 3,
+        "skippedTests": 0,
+        "expectedFailures": 0
+      },
+      "resultBundle": "build/TestResults/mode-inset-red/unit-destination.xcresult",
+      "summary": {
+        "privatePath": "/private/tmp/brickson-mode-inset-red-summary.json",
+        "sha256": "4cda0291acc1b3a5ae7a16e104cbdd7f91624da9684d77b1d26d1c64eafd0a61"
+      },
+      "log": {
+        "privatePath": "/private/tmp/brickson-mode-inset-red.log",
+        "sha256": "a1dd05761a0bb225ea982134227285d652c181f437616bd5df8ff455e0353fbc"
+      },
+      "failedCaseIdentifiers": [
+        "HomeReservedRegionTests/cameraGapsCannotClaimModeWordsFitBelowTheirNativeFloors()",
+        "HomeLayoutEngineFontTests/cameraNarrowedModesHoldTheirWords(boldText:)",
+        "HomeLayoutEngineFontTests/theNewControlsHoldTheirWords(boldText:)"
+      ]
+    },
+    "green": {
+      "result": "Passed",
+      "counts": {
+        "totalTestCount": 777,
+        "passedTests": 768,
+        "failedTests": 0,
+        "skippedTests": 1,
+        "expectedFailures": 8
+      },
+      "resultBundle": "build/TestResults/mode-inset-green/unit-destination.xcresult",
+      "summary": {
+        "privatePath": "/private/tmp/brickson-mode-inset-green-summary.json",
+        "sha256": "caec73afec9ca6dc4b8bc1de9254cc737d58e4f0cefb5fa24fd5a98722484ec2"
+      },
+      "log": {
+        "privatePath": "/private/tmp/brickson-mode-inset-green.log",
+        "sha256": "0d10b6bc493c2b067dc9c798e2c6c5d78a9c6363df6cef287d3df14c7c8c97db"
+      },
+      "failedCaseIdentifiers": []
+    },
+    "greenCoverage": {
+      "percent": 70.6,
+      "executedAppLines": 6898,
+      "totalAppLines": 9769
+    },
+    "greenCatalog": "Up to date with the code; retained native log.",
+    "greenExistingResults": "One existing issue#19 skip and eight strict expected failures; actual total777, not a projected count."
+  },
+  "hostComparison": {
+    "comparison": {
+      "privatePath": "/private/tmp/brickson-mode-minimum-proposal/comparison.json",
+      "sha256": "ef54c268236bdb5d6998ee369475872ddc09569e4544443926798c1ec2fc3203"
+    },
+    "primaryGeometries": 12,
+    "intermediateGeometries": 8,
+    "all20ExactlyEqual": true,
+    "modeledSettingsRows": {
+      "count": 12,
+      "exactlyEqual": true
+    },
+    "legacyOld": {
+      "comparisons": 400,
+      "mismatches": 0
+    },
+    "legacyCorrected": {
+      "comparisons": 400,
+      "mismatches": 0
+    },
+    "cameraFixtures": [
+      {
+        "case": "regular-camera-interval",
+        "oldPhrasesWidth": 86,
+        "correctedPhrasesWidth": 94,
+        "requiredNativeWordFloor": 89,
+        "oldAccepted": true,
+        "correctedAccepted": true
+      },
+      {
+        "case": "bold-camera-interval",
+        "oldPhrasesWidth": 94,
+        "correctedPhrasesWidth": 102,
+        "requiredNativeWordFloor": 97,
+        "oldAccepted": true,
+        "correctedAccepted": true
+      }
+    ],
+    "limit": "Pure fixture comparison, including modeled rows and sampled chains; not native platform poses,all windows,complete chains or physical-input proof. The translated camera inputs use measured58\u00d737 size but synthetic positions."
+  },
+  "limits": [
+    "The probe measures default-word/full-text sizing and existing LabelFont/WordFit choices; it does not render every fitted control,prove AX clipping,complete chains or physical input.",
+    "Two-line Back56pt rows are not a complete WordFit-height success: native default text fits,while the conservative measured text height can select the default fallback. No height rule was changed.",
+    "No validated all-font/pose joint-mode narrowing design or policy exception follows.",
+    "UI receipts remain separate: selected post-correction families each ran3cases with2passed/1Speaking-wait failure; no complete51-case post-minimum pass is claimed.",
+    "Private paths below/private/tmp and source-relative filenames identify retained local provenance without publishing a user directory,device UUID,personal phrase,family detail or full raw payload."
+  ]
+}

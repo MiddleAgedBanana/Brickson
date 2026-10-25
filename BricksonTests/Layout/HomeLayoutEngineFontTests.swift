@@ -45,10 +45,40 @@ struct HomeLayoutEngineFontTests {
     @Test(arguments: [false, true])
     func theNewControlsHoldTheirWords(boldText: Bool) {
         let minimum = HomeLayout.MinimumWidths.forBoldText(boldText)
-        let words: [(String, CGFloat)] = [("Phrases", minimum.phrases), ("Type", minimum.type), ("Again", minimum.again), ("Speak", minimum.again)]
-        for (word, width) in words {
-            let label = CGSize(width: width - 2 * Self.inset.horizontal, height: 10_000)
+        let words: [(String, CGFloat, CGFloat)] = [
+            ("Phrases", minimum.phrases, HomeLayout.selectableSideInset),
+            ("Type", minimum.type, HomeLayout.selectableSideInset),
+            ("Again", minimum.again, Self.inset.horizontal),
+            ("Speak", minimum.again, Self.inset.horizontal),
+        ]
+        for (word, width, sideInset) in words {
+            let label = CGSize(width: width - 2 * sideInset, height: 10_000)
             StarterLabelFitTests.expectFits(word, .quickControl, in: label, "\(word)'s narrowest slot", boldText: boldText)
+        }
+    }
+
+    /// Fails if camera fitting reports a valid layout but leaves a mode
+    /// narrower than its real words at the actual selectable inset. A
+    /// reserved input may instead report that it cannot fit; the fixture
+    /// must not turn rejection into a requirement to shrink the words.
+    @Test(arguments: [false, true])
+    func cameraNarrowedModesHoldTheirWords(boldText: Bool) {
+        let layout = HomeLayout(
+            space: HomeReservedRegionTests.modeWordGapSpace(boldText: boldText),
+            text: .measured(at: .large, boldText: boldText), modes: .phrasesAndTyping
+        )
+        if layout.controlsFit && layout.reservationIssues.isEmpty {
+            for (slot, word) in [(HomeLayout.Slot.phrases, "Phrases"), (.type, "Type")] {
+                let frame = layout.frame(slot)
+                StarterLabelFitTests.expectFits(
+                    word, .quickControl,
+                    in: CGSize(
+                        width: frame.width - 2 * HomeLayout.selectableSideInset,
+                        height: frame.height - 2 * Self.inset.vertical
+                    ),
+                    "camera-narrowed mode", boldText: boldText
+                )
+            }
         }
     }
 

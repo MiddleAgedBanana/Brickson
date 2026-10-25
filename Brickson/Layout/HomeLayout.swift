@@ -1018,12 +1018,12 @@ nonisolated struct HomeLayout: Equatable, Sendable {
 
         static let regular = MinimumWidths(
             message: 156, yesNo: 46, again: 70, emergency: 120, getAttention: 100, getAttentionOneLine: 134,
-            phrases: 86, type: 58, backToTalkingOneLine: 131,
+            phrases: 90, type: 62, backToTalkingOneLine: 131,
             category: 122, stop: 52, settings: 80, settingsSymbol: 44
         )
         static let boldText = MinimumWidths(
             message: 175, yesNo: 48, again: 75, emergency: 130, getAttention: 110, getAttentionOneLine: 147,
-            phrases: 94, type: 63, backToTalkingOneLine: 142,
+            phrases: 98, type: 67, backToTalkingOneLine: 142,
             category: 132, stop: 56, settings: 86, settingsSymbol: 44
         )
 

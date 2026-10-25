@@ -695,3 +695,33 @@ is claimed. Tall AX5 adds a capacity shortfall relative to the unreserved
 baseline; satisfying the existing rule remains an open design gate,
 not a newly accepted scrolling exception. Its record is
 [the item 6 design log](../log/2026-10-25-duo-fold-design.md).
+
+### Mode word-floor correction, 2026-10-25
+
+A native app-hosted font measurement found an inset mismatch in the
+existing contract: ModeButton uses6pt on each horizontal side, while its
+minimum-width test subtracted4pt. Phrases requires89/97pt and Type60/65pt
+with Bold Text off/on, including the existing WordFit slack and actual
+padding. Retain the prior conservative spare by raising the declared
+minimums4pt: Phrases90/98, Type62/67. Again and Speak keep their existing
+4pt insets and minimums. This corrects the current word-fit guarantee;
+font styles, default-size floors, control order and placement policy do
+not change.
+
+The failing native reproduction ran before the four-number correction:
+33 cases,30 passed and3 failed, with no skip/expected failure. It includes
+the corrected minimum-width font check, camera-fitted native font checks
+and an independent pure acceptance check. The camera inputs are synthetic
+window positions using a measured58×37 camera size, not observed OS poses.
+They exposed accepted86/94pt modes whose Phrases labels lacked the
+measured room. The existing camera-boundary fallback can provide94/102pt
+after the correction without a new allocation policy.
+
+Before implementation, the old/proposed host exports were compared:
+all12primary and8intermediate captured geometries, including state frames,
+allocations, D, Back, capacities and sampled chains, are exactly equal.
+Both versions also have400 legacy comparisons with zero mismatches.
+The existing scoped drawings therefore keep their geometry for those
+inputs. Native red/green results, selected family UI checks and final
+CI remain separate verification gates; this does not accept any new
+Settings, scrolling, camera-target or physical-input exception.

@@ -1,0 +1,1743 @@
+{
+  "schema": 1,
+  "date": "2026-10-25",
+  "scope": "Three selected native simulator scroll measurements; not a full Home/UI suite or every pose/category/appearance",
+  "source": {
+    "baseCommit": "bc72b73824aae42a1d7dac42b434941ff8ee9e5b",
+    "homeLayoutPath": "Brickson/Layout/HomeLayout.swift",
+    "homeLayoutSHA256": "93e3453cde75578fb535e2ce796b156890c52e0b4bd88cb9f27956734dd8ca67",
+    "isolatedProductDifferenceFromBase": {
+      "kind": "four previously measured whole-word minimum values",
+      "regular": {
+        "phrases": {
+          "from": 86,
+          "to": 90
+        },
+        "type": {
+          "from": 58,
+          "to": 62
+        }
+      },
+      "boldText": {
+        "phrases": {
+          "from": 94,
+          "to": 98
+        },
+        "type": {
+          "from": 63,
+          "to": 67
+        }
+      }
+    },
+    "temporaryProbeSHA256": "8c0710634f07694c9458a03f90b3e16d01191cae4948aee0d19281a884078cc9",
+    "temporaryProbeCommitted": false
+  },
+  "method": "Fresh Basics/light browsing; one coherent snapshot for each measurement; same (phraseTile,Maybe.) and eight full AX tile frames; aligned top, demonstrated uniform movement, aligned last-row bottom, then two unchanged settled gestures, bounded to12 attempts.",
+  "measurementSamplesRetainedUnmodified": true,
+  "cases": [
+    {
+      "case": "duo-wide-ax5",
+      "pose": "Open wide, sampled native orientation",
+      "resultBundleName": "ScrollTravelWideAX5.xcresult",
+      "selectedCaseCounts": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "expectedFailures": 0
+      },
+      "testCaseDurationSeconds": 16.114,
+      "ancestorWindow": {
+        "height": 669,
+        "width": 951,
+        "x": 0,
+        "y": 0
+      },
+      "phraseViewport": {
+        "height": 126,
+        "width": 835,
+        "x": 16,
+        "y": 485
+      },
+      "wholeTilesAtTop": 4,
+      "wholeTilesAtSettledBottom": 4,
+      "trackedTileTopY": 485,
+      "trackedTileBottomY": 403,
+      "measuredTopToBottomTravel": 82,
+      "originalMeasurementJSONSHA256": "ef50f07aa8225d8ee72b3a4e8383de64821648fbe9d79fafe1670564ef53e706",
+      "originalMeasurement": {
+        "actuationObserved": true,
+        "appearance": "light",
+        "attemptLimit": 12,
+        "cameraClearanceChecked": false,
+        "case": "duo-wide-ax5",
+        "category": "Basics",
+        "elapsed": "14.837246792 seconds",
+        "fullAXTileFramesPreserved": true,
+        "gestures": 3,
+        "maximumEstablishedInThisSample": true,
+        "observedTopToBottomTravel": 82,
+        "pixelAttachmentsMayCaptureInactiveDisplay": true,
+        "reason": "Aligned top, actual uniform movement, aligned bottom and two unchanged settled gestures",
+        "renderedClippingEstablished": false,
+        "samples": [
+          {
+            "ancestorWindow": {
+              "height": 669,
+              "width": 951,
+              "x": 0,
+              "y": 0
+            },
+            "elapsed": "8.243109833 seconds",
+            "fullAXTiles": [
+              {
+                "frame": {
+                  "height": 100,
+                  "width": 173.33333333333337,
+                  "x": 677.6666666666666,
+                  "y": 593
+                },
+                "label": "Goodbye."
+              },
+              {
+                "frame": {
+                  "height": 100,
+                  "width": 173.66666666666663,
+                  "x": 496,
+                  "y": 593
+                },
+                "label": "Hello."
+              },
+              {
+                "frame": {
+                  "height": 100,
+                  "width": 215.33333333333334,
+                  "x": 239.66666666666666,
+                  "y": 485
+                },
+                "label": "I don't know."
+              },
+              {
+                "frame": {
+                  "height": 100,
+                  "width": 215.33333333333334,
+                  "x": 239.66666666666666,
+                  "y": 593
+                },
+                "label": "I'm not finished."
+              },
+              {
+                "frame": {
+                  "height": 100,
+                  "width": 215.66666666666666,
+                  "x": 16,
+                  "y": 485
+                },
+                "label": "Maybe."
+              },
+              {
+                "frame": {
+                  "height": 100,
+                  "width": 173.66666666666663,
+                  "x": 496,
+                  "y": 485
+                },
+                "label": "Please."
+              },
+              {
+                "frame": {
+                  "height": 100,
+                  "width": 173.33333333333337,
+                  "x": 677.6666666666666,
+                  "y": 485
+                },
+                "label": "Thank you."
+              },
+              {
+                "frame": {
+                  "height": 100,
+                  "width": 215.66666666666666,
+                  "x": 16,
+                  "y": 593
+                },
+                "label": "Wait a moment, please."
+              }
+            ],
+            "phase": "top",
+            "phraseViewport": {
+              "height": 126,
+              "width": 835,
+              "x": 16,
+              "y": 485
+            },
+            "rootSnapshotFrame": {
+              "height": 951,
+              "width": 669,
+              "x": 0,
+              "y": 0
+            },
+            "trackedFrame": {
+              "height": 100,
+              "width": 215.66666666666666,
+              "x": 16,
+              "y": 485
+            },
+            "wholeTiles": 4
+          },
+          {
+            "ancestorWindow": {
+              "height": 669,
+              "width": 951,
+              "x": 0,
+              "y": 0
+            },
+            "elapsed": "10.621771167 seconds",
+            "fullAXTiles": [
+              {
+                "frame": {
+                  "height": 100,
+                  "width": 173.33333333333337,
+                  "x": 677.6666666666666,
+                  "y": 511
+                },
+                "label": "Goodbye."
+              },
+              {
+                "frame": {
+                  "height": 100,
+                  "width": 173.66666666666663,
+                  "x": 496,
+                  "y": 511
+                },
+                "label": "Hello."
+              },
+              {
+                "frame": {
+                  "height": 100,
+                  "width": 215.33333333333334,
+                  "x": 239.66666666666666,
+                  "y": 403
+                },
+                "label": "I don't know."
+              },
+              {
+                "frame": {
+                  "height": 100,
+                  "width": 215.33333333333334,
+                  "x": 239.66666666666666,
+                  "y": 511
+                },
+                "label": "I'm not finished."
+              },
+              {
+                "frame": {
+                  "height": 100,
+                  "width": 215.66666666666666,
+                  "x": 16,
+                  "y": 403
+                },
+                "label": "Maybe."
+              },
+              {
+                "frame": {
+                  "height": 100,
+                  "width": 173.66666666666663,
+                  "x": 496,
+                  "y": 403
+                },
+                "label": "Please."
+              },
+              {
+                "frame": {
+                  "height": 100,
+                  "width": 173.33333333333337,
+                  "x": 677.6666666666666,
+                  "y": 403
+                },
+                "label": "Thank you."
+              },
+              {
+                "frame": {
+                  "height": 100,
+                  "width": 215.66666666666666,
+                  "x": 16,
+                  "y": 511
+                },
+                "label": "Wait a moment, please."
+              }
+            ],
+            "phase": "after-drag-1",
+            "phraseViewport": {
+              "height": 126,
+              "width": 835,
+              "x": 16,
+              "y": 485
+            },
+            "rootSnapshotFrame": {
+              "height": 951,
+              "width": 669,
+              "x": 0,
+              "y": 0
+            },
+            "trackedFrame": {
+              "height": 100,
+              "width": 215.66666666666666,
+              "x": 16,
+              "y": 403
+            },
+            "wholeTiles": 4
+          },
+          {
+            "ancestorWindow": {
+              "height": 669,
+              "width": 951,
+              "x": 0,
+              "y": 0
+            },
+            "elapsed": "12.636892542000002 seconds",
+            "fullAXTiles": [
+              {
+                "frame": {
+                  "height": 100,
+                  "width": 173.33333333333337,
+                  "x": 677.6666666666666,
+                  "y": 511
+                },
+                "label": "Goodbye."
+              },
+              {
+                "frame": {
+                  "height": 100,
+                  "width": 173.66666666666663,
+                  "x": 496,
+                  "y": 511
+                },
+                "label": "Hello."
+              },
+              {
+                "frame": {
+                  "height": 100,
+                  "width": 215.33333333333334,
+                  "x": 239.66666666666666,
+                  "y": 403
+                },
+                "label": "I don't know."
+              },
+              {
+                "frame": {
+                  "height": 100,
+                  "width": 215.33333333333334,
+                  "x": 239.66666666666666,
+                  "y": 511
+                },
+                "label": "I'm not finished."
+              },
+              {
+                "frame": {
+                  "height": 100,
+                  "width": 215.66666666666666,
+                  "x": 16,
+                  "y": 403
+                },
+                "label": "Maybe."
+              },
+              {
+                "frame": {
+                  "height": 100,
+                  "width": 173.66666666666663,
+                  "x": 496,
+                  "y": 403
+                },
+                "label": "Please."
+              },
+              {
+                "frame": {
+                  "height": 100,
+                  "width": 173.33333333333337,
+                  "x": 677.6666666666666,
+                  "y": 403
+                },
+                "label": "Thank you."
+              },
+              {
+                "frame": {
+                  "height": 100,
+                  "width": 215.66666666666666,
+                  "x": 16,
+                  "y": 511
+                },
+                "label": "Wait a moment, please."
+              }
+            ],
+            "phase": "after-drag-2",
+            "phraseViewport": {
+              "height": 126,
+              "width": 835,
+              "x": 16,
+              "y": 485
+            },
+            "rootSnapshotFrame": {
+              "height": 951,
+              "width": 669,
+              "x": 0,
+              "y": 0
+            },
+            "trackedFrame": {
+              "height": 100,
+              "width": 215.66666666666666,
+              "x": 16,
+              "y": 403
+            },
+            "wholeTiles": 4
+          },
+          {
+            "ancestorWindow": {
+              "height": 669,
+              "width": 951,
+              "x": 0,
+              "y": 0
+            },
+            "elapsed": "14.639769750000001 seconds",
+            "fullAXTiles": [
+              {
+                "frame": {
+                  "height": 100,
+                  "width": 173.33333333333337,
+                  "x": 677.6666666666666,
+                  "y": 511
+                },
+                "label": "Goodbye."
+              },
+              {
+                "frame": {
+                  "height": 100,
+                  "width": 173.66666666666663,
+                  "x": 496,
+                  "y": 511
+                },
+                "label": "Hello."
+              },
+              {
+                "frame": {
+                  "height": 100,
+                  "width": 215.33333333333334,
+                  "x": 239.66666666666666,
+                  "y": 403
+                },
+                "label": "I don't know."
+              },
+              {
+                "frame": {
+                  "height": 100,
+                  "width": 215.33333333333334,
+                  "x": 239.66666666666666,
+                  "y": 511
+                },
+                "label": "I'm not finished."
+              },
+              {
+                "frame": {
+                  "height": 100,
+                  "width": 215.66666666666666,
+                  "x": 16,
+                  "y": 403
+                },
+                "label": "Maybe."
+              },
+              {
+                "frame": {
+                  "height": 100,
+                  "width": 173.66666666666663,
+                  "x": 496,
+                  "y": 403
+                },
+                "label": "Please."
+              },
+              {
+                "frame": {
+                  "height": 100,
+                  "width": 173.33333333333337,
+                  "x": 677.6666666666666,
+                  "y": 403
+                },
+                "label": "Thank you."
+              },
+              {
+                "frame": {
+                  "height": 100,
+                  "width": 215.66666666666666,
+                  "x": 16,
+                  "y": 511
+                },
+                "label": "Wait a moment, please."
+              }
+            ],
+            "phase": "after-drag-3",
+            "phraseViewport": {
+              "height": 126,
+              "width": 835,
+              "x": 16,
+              "y": 485
+            },
+            "rootSnapshotFrame": {
+              "height": 951,
+              "width": 669,
+              "x": 0,
+              "y": 0
+            },
+            "trackedFrame": {
+              "height": 100,
+              "width": 215.66666666666666,
+              "x": 16,
+              "y": 403
+            },
+            "wholeTiles": 4
+          }
+        ],
+        "schema": 1,
+        "schema2AttachmentsAreSeparateSnapshots": true,
+        "snapOrPhysicalInputProof": false,
+        "status": "MEASURED_IN_THIS_SAMPLE",
+        "trackedIdentity": {
+          "identifier": "phraseTile",
+          "label": "Maybe."
+        },
+        "unchangedSettledGestures": 2
+      },
+      "privateEvidenceHashReferences": [
+        {
+          "id": "wide.private.01",
+          "kind": "originalXCTestPixelAttachment",
+          "sha256": "8b0878276ea7ac5041b2e7e9679e63774547ffb5610addc65ee5dd4f02e5e65d",
+          "bytes": 38172
+        },
+        {
+          "id": "wide.private.02",
+          "kind": "schema2CaptureJSON",
+          "sha256": "31e96fa6f2a9db5fd94b6bd88db075a7df234380653a17f53cb7f44c5a4de00f",
+          "bytes": 8217
+        },
+        {
+          "id": "wide.private.03",
+          "kind": "rawAXText",
+          "sha256": "0ba0cf60200442e294e42b66eb1e1a410ad4317a2bdfbda6f5d1c1901fe55f5b",
+          "bytes": 5741
+        },
+        {
+          "id": "wide.private.04",
+          "kind": "rawAXText",
+          "sha256": "09321ce0cd38150c1729f2e3e5e7e087cfd515a3b585465958cd066b0e57db3e",
+          "bytes": 5741
+        },
+        {
+          "id": "wide.private.05",
+          "kind": "schema2CaptureJSON",
+          "sha256": "0a71c501c2a52947b2c73c175faebd6da2574f66bb9ca0e309349f67c4d3ce48",
+          "bytes": 8217
+        },
+        {
+          "id": "wide.private.06",
+          "kind": "originalXCTestPixelAttachment",
+          "sha256": "8b0878276ea7ac5041b2e7e9679e63774547ffb5610addc65ee5dd4f02e5e65d",
+          "bytes": 38172
+        },
+        {
+          "id": "wide.private.07",
+          "kind": "rawAXText",
+          "sha256": "0fbbc5ebc1ee76023a72bace05316812319db2113805de3dd07ca87991450622",
+          "bytes": 5741
+        },
+        {
+          "id": "wide.private.08",
+          "kind": "schema2CaptureJSON",
+          "sha256": "31e96fa6f2a9db5fd94b6bd88db075a7df234380653a17f53cb7f44c5a4de00f",
+          "bytes": 8217
+        },
+        {
+          "id": "wide.private.09",
+          "kind": "rawAXText",
+          "sha256": "9345e62d8b8b011ffaa4f42ec797acf70312a40565f47aefe21537023f347e03",
+          "bytes": 5735
+        },
+        {
+          "id": "wide.private.10",
+          "kind": "originalMeasurementJSON",
+          "sha256": "ef50f07aa8225d8ee72b3a4e8383de64821648fbe9d79fafe1670564ef53e706",
+          "bytes": 10135
+        },
+        {
+          "id": "wide.private.11",
+          "kind": "originalXCTestPixelAttachment",
+          "sha256": "8b0878276ea7ac5041b2e7e9679e63774547ffb5610addc65ee5dd4f02e5e65d",
+          "bytes": 38172
+        },
+        {
+          "id": "wide.private.12",
+          "kind": "originalXCTestPixelAttachment",
+          "sha256": "8b0878276ea7ac5041b2e7e9679e63774547ffb5610addc65ee5dd4f02e5e65d",
+          "bytes": 38172
+        },
+        {
+          "id": "wide.private.13",
+          "kind": "schema2CaptureJSON",
+          "sha256": "31e96fa6f2a9db5fd94b6bd88db075a7df234380653a17f53cb7f44c5a4de00f",
+          "bytes": 8217
+        },
+        {
+          "id": "wide.private.runnerLog",
+          "kind": "rawRunnerLog",
+          "sha256": "28afea97d173a888c7a3f267eea1b8779b75454fb0af3cde34d4a1b30946f6df",
+          "bytes": 13735
+        }
+      ]
+    },
+    {
+      "case": "duo-tall-ax5",
+      "pose": "Open tall, sampled native orientation",
+      "resultBundleName": "ScrollTravelTallAX5.xcresult",
+      "selectedCaseCounts": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "expectedFailures": 0
+      },
+      "testCaseDurationSeconds": 14.754,
+      "ancestorWindow": {
+        "height": 951,
+        "width": 669,
+        "x": 0,
+        "y": 0
+      },
+      "phraseViewport": {
+        "height": 150,
+        "width": 637,
+        "x": 16,
+        "y": 759
+      },
+      "wholeTilesAtTop": 4,
+      "wholeTilesAtSettledBottom": 4,
+      "trackedTileTopY": 759,
+      "trackedTileBottomY": 745,
+      "measuredTopToBottomTravel": 14,
+      "originalMeasurementJSONSHA256": "37a1b9cffbdeeac72c453e2492651d14d85be3ec375bdf8224c5e46a178b6e53",
+      "originalMeasurement": {
+        "actuationObserved": true,
+        "appearance": "light",
+        "attemptLimit": 12,
+        "cameraClearanceChecked": false,
+        "case": "duo-tall-ax5",
+        "category": "Basics",
+        "elapsed": "13.637016791 seconds",
+        "fullAXTileFramesPreserved": true,
+        "gestures": 3,
+        "maximumEstablishedInThisSample": true,
+        "observedTopToBottomTravel": 14,
+        "pixelAttachmentsMayCaptureInactiveDisplay": true,
+        "reason": "Aligned top, actual uniform movement, aligned bottom and two unchanged settled gestures",
+        "renderedClippingEstablished": false,
+        "samples": [
+          {
+            "ancestorWindow": {
+              "height": 951,
+              "width": 669,
+              "x": 0,
+              "y": 0
+            },
+            "elapsed": "7.243182416 seconds",
+            "fullAXTiles": [
+              {
+                "frame": {
+                  "height": 78,
+                  "width": 153.33333333333337,
+                  "x": 499.66666666666663,
+                  "y": 845
+                },
+                "label": "Goodbye."
+              },
+              {
+                "frame": {
+                  "height": 78,
+                  "width": 153,
+                  "x": 338.66666666666663,
+                  "y": 845
+                },
+                "label": "Hello."
+              },
+              {
+                "frame": {
+                  "height": 78,
+                  "width": 153.33333333333331,
+                  "x": 177.33333333333331,
+                  "y": 759
+                },
+                "label": "I don't know."
+              },
+              {
+                "frame": {
+                  "height": 78,
+                  "width": 153.33333333333331,
+                  "x": 177.33333333333331,
+                  "y": 845
+                },
+                "label": "I'm not finished."
+              },
+              {
+                "frame": {
+                  "height": 78,
+                  "width": 153.33333333333331,
+                  "x": 16,
+                  "y": 759
+                },
+                "label": "Maybe."
+              },
+              {
+                "frame": {
+                  "height": 78,
+                  "width": 153,
+                  "x": 338.66666666666663,
+                  "y": 759
+                },
+                "label": "Please."
+              },
+              {
+                "frame": {
+                  "height": 78,
+                  "width": 153.33333333333337,
+                  "x": 499.66666666666663,
+                  "y": 759
+                },
+                "label": "Thank you."
+              },
+              {
+                "frame": {
+                  "height": 78,
+                  "width": 153.33333333333331,
+                  "x": 16,
+                  "y": 845
+                },
+                "label": "Wait a moment, please."
+              }
+            ],
+            "phase": "top",
+            "phraseViewport": {
+              "height": 150,
+              "width": 637,
+              "x": 16,
+              "y": 759
+            },
+            "rootSnapshotFrame": {
+              "height": 951,
+              "width": 669,
+              "x": 0,
+              "y": 0
+            },
+            "trackedFrame": {
+              "height": 78,
+              "width": 153.33333333333331,
+              "x": 16,
+              "y": 759
+            },
+            "wholeTiles": 4
+          },
+          {
+            "ancestorWindow": {
+              "height": 951,
+              "width": 669,
+              "x": 0,
+              "y": 0
+            },
+            "elapsed": "9.447478 seconds",
+            "fullAXTiles": [
+              {
+                "frame": {
+                  "height": 78,
+                  "width": 153.33333333333337,
+                  "x": 499.66666666666663,
+                  "y": 831
+                },
+                "label": "Goodbye."
+              },
+              {
+                "frame": {
+                  "height": 78,
+                  "width": 153,
+                  "x": 338.66666666666663,
+                  "y": 831
+                },
+                "label": "Hello."
+              },
+              {
+                "frame": {
+                  "height": 78,
+                  "width": 153.33333333333331,
+                  "x": 177.33333333333331,
+                  "y": 745
+                },
+                "label": "I don't know."
+              },
+              {
+                "frame": {
+                  "height": 78,
+                  "width": 153.33333333333331,
+                  "x": 177.33333333333331,
+                  "y": 831
+                },
+                "label": "I'm not finished."
+              },
+              {
+                "frame": {
+                  "height": 78,
+                  "width": 153.33333333333331,
+                  "x": 16,
+                  "y": 745
+                },
+                "label": "Maybe."
+              },
+              {
+                "frame": {
+                  "height": 78,
+                  "width": 153,
+                  "x": 338.66666666666663,
+                  "y": 745
+                },
+                "label": "Please."
+              },
+              {
+                "frame": {
+                  "height": 78,
+                  "width": 153.33333333333337,
+                  "x": 499.66666666666663,
+                  "y": 745
+                },
+                "label": "Thank you."
+              },
+              {
+                "frame": {
+                  "height": 78,
+                  "width": 153.33333333333331,
+                  "x": 16,
+                  "y": 831
+                },
+                "label": "Wait a moment, please."
+              }
+            ],
+            "phase": "after-drag-1",
+            "phraseViewport": {
+              "height": 150,
+              "width": 637,
+              "x": 16,
+              "y": 759
+            },
+            "rootSnapshotFrame": {
+              "height": 951,
+              "width": 669,
+              "x": 0,
+              "y": 0
+            },
+            "trackedFrame": {
+              "height": 78,
+              "width": 153.33333333333331,
+              "x": 16,
+              "y": 745
+            },
+            "wholeTiles": 4
+          },
+          {
+            "ancestorWindow": {
+              "height": 951,
+              "width": 669,
+              "x": 0,
+              "y": 0
+            },
+            "elapsed": "11.449963583 seconds",
+            "fullAXTiles": [
+              {
+                "frame": {
+                  "height": 78,
+                  "width": 153.33333333333337,
+                  "x": 499.66666666666663,
+                  "y": 831
+                },
+                "label": "Goodbye."
+              },
+              {
+                "frame": {
+                  "height": 78,
+                  "width": 153,
+                  "x": 338.66666666666663,
+                  "y": 831
+                },
+                "label": "Hello."
+              },
+              {
+                "frame": {
+                  "height": 78,
+                  "width": 153.33333333333331,
+                  "x": 177.33333333333331,
+                  "y": 745
+                },
+                "label": "I don't know."
+              },
+              {
+                "frame": {
+                  "height": 78,
+                  "width": 153.33333333333331,
+                  "x": 177.33333333333331,
+                  "y": 831
+                },
+                "label": "I'm not finished."
+              },
+              {
+                "frame": {
+                  "height": 78,
+                  "width": 153.33333333333331,
+                  "x": 16,
+                  "y": 745
+                },
+                "label": "Maybe."
+              },
+              {
+                "frame": {
+                  "height": 78,
+                  "width": 153,
+                  "x": 338.66666666666663,
+                  "y": 745
+                },
+                "label": "Please."
+              },
+              {
+                "frame": {
+                  "height": 78,
+                  "width": 153.33333333333337,
+                  "x": 499.66666666666663,
+                  "y": 745
+                },
+                "label": "Thank you."
+              },
+              {
+                "frame": {
+                  "height": 78,
+                  "width": 153.33333333333331,
+                  "x": 16,
+                  "y": 831
+                },
+                "label": "Wait a moment, please."
+              }
+            ],
+            "phase": "after-drag-2",
+            "phraseViewport": {
+              "height": 150,
+              "width": 637,
+              "x": 16,
+              "y": 759
+            },
+            "rootSnapshotFrame": {
+              "height": 951,
+              "width": 669,
+              "x": 0,
+              "y": 0
+            },
+            "trackedFrame": {
+              "height": 78,
+              "width": 153.33333333333331,
+              "x": 16,
+              "y": 745
+            },
+            "wholeTiles": 4
+          },
+          {
+            "ancestorWindow": {
+              "height": 951,
+              "width": 669,
+              "x": 0,
+              "y": 0
+            },
+            "elapsed": "13.44744 seconds",
+            "fullAXTiles": [
+              {
+                "frame": {
+                  "height": 78,
+                  "width": 153.33333333333337,
+                  "x": 499.66666666666663,
+                  "y": 831
+                },
+                "label": "Goodbye."
+              },
+              {
+                "frame": {
+                  "height": 78,
+                  "width": 153,
+                  "x": 338.66666666666663,
+                  "y": 831
+                },
+                "label": "Hello."
+              },
+              {
+                "frame": {
+                  "height": 78,
+                  "width": 153.33333333333331,
+                  "x": 177.33333333333331,
+                  "y": 745
+                },
+                "label": "I don't know."
+              },
+              {
+                "frame": {
+                  "height": 78,
+                  "width": 153.33333333333331,
+                  "x": 177.33333333333331,
+                  "y": 831
+                },
+                "label": "I'm not finished."
+              },
+              {
+                "frame": {
+                  "height": 78,
+                  "width": 153.33333333333331,
+                  "x": 16,
+                  "y": 745
+                },
+                "label": "Maybe."
+              },
+              {
+                "frame": {
+                  "height": 78,
+                  "width": 153,
+                  "x": 338.66666666666663,
+                  "y": 745
+                },
+                "label": "Please."
+              },
+              {
+                "frame": {
+                  "height": 78,
+                  "width": 153.33333333333337,
+                  "x": 499.66666666666663,
+                  "y": 745
+                },
+                "label": "Thank you."
+              },
+              {
+                "frame": {
+                  "height": 78,
+                  "width": 153.33333333333331,
+                  "x": 16,
+                  "y": 831
+                },
+                "label": "Wait a moment, please."
+              }
+            ],
+            "phase": "after-drag-3",
+            "phraseViewport": {
+              "height": 150,
+              "width": 637,
+              "x": 16,
+              "y": 759
+            },
+            "rootSnapshotFrame": {
+              "height": 951,
+              "width": 669,
+              "x": 0,
+              "y": 0
+            },
+            "trackedFrame": {
+              "height": 78,
+              "width": 153.33333333333331,
+              "x": 16,
+              "y": 745
+            },
+            "wholeTiles": 4
+          }
+        ],
+        "schema": 1,
+        "schema2AttachmentsAreSeparateSnapshots": true,
+        "snapOrPhysicalInputProof": false,
+        "status": "MEASURED_IN_THIS_SAMPLE",
+        "trackedIdentity": {
+          "identifier": "phraseTile",
+          "label": "Maybe."
+        },
+        "unchangedSettledGestures": 2
+      },
+      "privateEvidenceHashReferences": [
+        {
+          "id": "tall.private.01",
+          "kind": "schema2CaptureJSON",
+          "sha256": "232088fdc23d02b127e131e46aaba7181a6d38968e261b189b7bc67a30a673e4",
+          "bytes": 8207
+        },
+        {
+          "id": "tall.private.02",
+          "kind": "originalXCTestPixelAttachment",
+          "sha256": "5d26661e5205097f6c89f35447e7b74afac0e132a7a7619fdeefa2cf10e734ba",
+          "bytes": 38172
+        },
+        {
+          "id": "tall.private.03",
+          "kind": "schema2CaptureJSON",
+          "sha256": "232088fdc23d02b127e131e46aaba7181a6d38968e261b189b7bc67a30a673e4",
+          "bytes": 8207
+        },
+        {
+          "id": "tall.private.04",
+          "kind": "originalXCTestPixelAttachment",
+          "sha256": "5d26661e5205097f6c89f35447e7b74afac0e132a7a7619fdeefa2cf10e734ba",
+          "bytes": 38172
+        },
+        {
+          "id": "tall.private.05",
+          "kind": "originalXCTestPixelAttachment",
+          "sha256": "5d26661e5205097f6c89f35447e7b74afac0e132a7a7619fdeefa2cf10e734ba",
+          "bytes": 38172
+        },
+        {
+          "id": "tall.private.06",
+          "kind": "schema2CaptureJSON",
+          "sha256": "51d2d488214ec0297baa8e9a7f83a106f7c1f048dcc602603202fd02346c592a",
+          "bytes": 8207
+        },
+        {
+          "id": "tall.private.07",
+          "kind": "schema2CaptureJSON",
+          "sha256": "232088fdc23d02b127e131e46aaba7181a6d38968e261b189b7bc67a30a673e4",
+          "bytes": 8207
+        },
+        {
+          "id": "tall.private.08",
+          "kind": "rawAXText",
+          "sha256": "737d172c9cbc7f4b0bc504836d072854e9cacab46d6be2091fdd357b73f8b109",
+          "bytes": 5279
+        },
+        {
+          "id": "tall.private.09",
+          "kind": "originalMeasurementJSON",
+          "sha256": "37a1b9cffbdeeac72c453e2492651d14d85be3ec375bdf8224c5e46a178b6e53",
+          "bytes": 10079
+        },
+        {
+          "id": "tall.private.10",
+          "kind": "rawAXText",
+          "sha256": "7e4ea315f83e0ca8afd01b2c9b4acdd00869d4f9174129c6042bafb95ead74c3",
+          "bytes": 5275
+        },
+        {
+          "id": "tall.private.11",
+          "kind": "originalXCTestPixelAttachment",
+          "sha256": "5d26661e5205097f6c89f35447e7b74afac0e132a7a7619fdeefa2cf10e734ba",
+          "bytes": 38172
+        },
+        {
+          "id": "tall.private.12",
+          "kind": "rawAXText",
+          "sha256": "5b39a74c45e0ffea5c58f751b1b2cdf8ed79fbdeee57aae222098c307e000909",
+          "bytes": 5279
+        },
+        {
+          "id": "tall.private.13",
+          "kind": "rawAXText",
+          "sha256": "bd744e49b89f13247fe264fd3490698458240152ae9ed90338617c222f42c56d",
+          "bytes": 5279
+        },
+        {
+          "id": "tall.private.runnerLog",
+          "kind": "rawRunnerLog",
+          "sha256": "c5114d8d8eeb408ad54faf6473dfc54f82edf2a34094b6ed70e3a7cbc48cd9e3",
+          "bytes": 13728
+        }
+      ]
+    },
+    {
+      "case": "duo-paired-default",
+      "pose": "Paired Brickson pane with Safari, sampled bottom-camera orientation",
+      "resultBundleName": "ScrollTravelPairedDefault.xcresult",
+      "selectedCaseCounts": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "expectedFailures": 0
+      },
+      "testCaseDurationSeconds": 16.999,
+      "ancestorWindow": {
+        "height": 669,
+        "width": 469,
+        "x": 0,
+        "y": 0
+      },
+      "phraseViewport": {
+        "height": 240,
+        "width": 437,
+        "x": 16,
+        "y": 371
+      },
+      "wholeTilesAtTop": 6,
+      "wholeTilesAtSettledBottom": 6,
+      "trackedTileTopY": 371,
+      "trackedTileBottomY": 363,
+      "measuredTopToBottomTravel": 8,
+      "originalMeasurementJSONSHA256": "aa8af00639f7757be9e50187d8cb7bb273775643494939eeb89ac4c5d7a72d51",
+      "originalMeasurement": {
+        "actuationObserved": true,
+        "appearance": "light",
+        "attemptLimit": 12,
+        "cameraClearanceChecked": false,
+        "case": "duo-paired-default",
+        "category": "Basics",
+        "elapsed": "15.655237750000001 seconds",
+        "fullAXTileFramesPreserved": true,
+        "gestures": 3,
+        "maximumEstablishedInThisSample": true,
+        "observedTopToBottomTravel": 8,
+        "pixelAttachmentsMayCaptureInactiveDisplay": true,
+        "reason": "Aligned top, actual uniform movement, aligned bottom and two unchanged settled gestures",
+        "renderedClippingEstablished": false,
+        "samples": [
+          {
+            "ancestorWindow": {
+              "height": 669,
+              "width": 469,
+              "x": 0,
+              "y": 0
+            },
+            "elapsed": "7.7901975 seconds",
+            "fullAXTiles": [
+              {
+                "frame": {
+                  "height": 56,
+                  "width": 214.33333333333334,
+                  "x": 238.66666666666666,
+                  "y": 563
+                },
+                "label": "Goodbye."
+              },
+              {
+                "frame": {
+                  "height": 56,
+                  "width": 214.66666666666666,
+                  "x": 16,
+                  "y": 563
+                },
+                "label": "Hello."
+              },
+              {
+                "frame": {
+                  "height": 56,
+                  "width": 214.33333333333334,
+                  "x": 238.66666666666666,
+                  "y": 371
+                },
+                "label": "I don't know."
+              },
+              {
+                "frame": {
+                  "height": 56,
+                  "width": 214.33333333333334,
+                  "x": 238.66666666666666,
+                  "y": 499
+                },
+                "label": "I'm not finished."
+              },
+              {
+                "frame": {
+                  "height": 56,
+                  "width": 214.66666666666666,
+                  "x": 16,
+                  "y": 371
+                },
+                "label": "Maybe."
+              },
+              {
+                "frame": {
+                  "height": 56,
+                  "width": 214.66666666666666,
+                  "x": 16,
+                  "y": 435
+                },
+                "label": "Please."
+              },
+              {
+                "frame": {
+                  "height": 56,
+                  "width": 214.33333333333334,
+                  "x": 238.66666666666666,
+                  "y": 435
+                },
+                "label": "Thank you."
+              },
+              {
+                "frame": {
+                  "height": 56,
+                  "width": 214.66666666666666,
+                  "x": 16,
+                  "y": 499
+                },
+                "label": "Wait a moment, please."
+              }
+            ],
+            "phase": "top",
+            "phraseViewport": {
+              "height": 240,
+              "width": 437,
+              "x": 16,
+              "y": 371
+            },
+            "rootSnapshotFrame": {
+              "height": 951,
+              "width": 669,
+              "x": 0,
+              "y": 0
+            },
+            "trackedFrame": {
+              "height": 56,
+              "width": 214.66666666666666,
+              "x": 16,
+              "y": 371
+            },
+            "wholeTiles": 6
+          },
+          {
+            "ancestorWindow": {
+              "height": 669,
+              "width": 469,
+              "x": 0,
+              "y": 0
+            },
+            "elapsed": "10.4767225 seconds",
+            "fullAXTiles": [
+              {
+                "frame": {
+                  "height": 56,
+                  "width": 214.33333333333334,
+                  "x": 238.66666666666666,
+                  "y": 555
+                },
+                "label": "Goodbye."
+              },
+              {
+                "frame": {
+                  "height": 56,
+                  "width": 214.66666666666666,
+                  "x": 16,
+                  "y": 555
+                },
+                "label": "Hello."
+              },
+              {
+                "frame": {
+                  "height": 56,
+                  "width": 214.33333333333334,
+                  "x": 238.66666666666666,
+                  "y": 363
+                },
+                "label": "I don't know."
+              },
+              {
+                "frame": {
+                  "height": 56,
+                  "width": 214.33333333333334,
+                  "x": 238.66666666666666,
+                  "y": 491
+                },
+                "label": "I'm not finished."
+              },
+              {
+                "frame": {
+                  "height": 56,
+                  "width": 214.66666666666666,
+                  "x": 16,
+                  "y": 363
+                },
+                "label": "Maybe."
+              },
+              {
+                "frame": {
+                  "height": 56,
+                  "width": 214.66666666666666,
+                  "x": 16,
+                  "y": 427
+                },
+                "label": "Please."
+              },
+              {
+                "frame": {
+                  "height": 56,
+                  "width": 214.33333333333334,
+                  "x": 238.66666666666666,
+                  "y": 427
+                },
+                "label": "Thank you."
+              },
+              {
+                "frame": {
+                  "height": 56,
+                  "width": 214.66666666666666,
+                  "x": 16,
+                  "y": 491
+                },
+                "label": "Wait a moment, please."
+              }
+            ],
+            "phase": "after-drag-1",
+            "phraseViewport": {
+              "height": 240,
+              "width": 437,
+              "x": 16,
+              "y": 371
+            },
+            "rootSnapshotFrame": {
+              "height": 951,
+              "width": 669,
+              "x": 0,
+              "y": 0
+            },
+            "trackedFrame": {
+              "height": 56,
+              "width": 214.66666666666666,
+              "x": 16,
+              "y": 363
+            },
+            "wholeTiles": 6
+          },
+          {
+            "ancestorWindow": {
+              "height": 669,
+              "width": 469,
+              "x": 0,
+              "y": 0
+            },
+            "elapsed": "12.969330208 seconds",
+            "fullAXTiles": [
+              {
+                "frame": {
+                  "height": 56,
+                  "width": 214.33333333333334,
+                  "x": 238.66666666666666,
+                  "y": 555
+                },
+                "label": "Goodbye."
+              },
+              {
+                "frame": {
+                  "height": 56,
+                  "width": 214.66666666666666,
+                  "x": 16,
+                  "y": 555
+                },
+                "label": "Hello."
+              },
+              {
+                "frame": {
+                  "height": 56,
+                  "width": 214.33333333333334,
+                  "x": 238.66666666666666,
+                  "y": 363
+                },
+                "label": "I don't know."
+              },
+              {
+                "frame": {
+                  "height": 56,
+                  "width": 214.33333333333334,
+                  "x": 238.66666666666666,
+                  "y": 491
+                },
+                "label": "I'm not finished."
+              },
+              {
+                "frame": {
+                  "height": 56,
+                  "width": 214.66666666666666,
+                  "x": 16,
+                  "y": 363
+                },
+                "label": "Maybe."
+              },
+              {
+                "frame": {
+                  "height": 56,
+                  "width": 214.66666666666666,
+                  "x": 16,
+                  "y": 427
+                },
+                "label": "Please."
+              },
+              {
+                "frame": {
+                  "height": 56,
+                  "width": 214.33333333333334,
+                  "x": 238.66666666666666,
+                  "y": 427
+                },
+                "label": "Thank you."
+              },
+              {
+                "frame": {
+                  "height": 56,
+                  "width": 214.66666666666666,
+                  "x": 16,
+                  "y": 491
+                },
+                "label": "Wait a moment, please."
+              }
+            ],
+            "phase": "after-drag-2",
+            "phraseViewport": {
+              "height": 240,
+              "width": 437,
+              "x": 16,
+              "y": 371
+            },
+            "rootSnapshotFrame": {
+              "height": 951,
+              "width": 669,
+              "x": 0,
+              "y": 0
+            },
+            "trackedFrame": {
+              "height": 56,
+              "width": 214.66666666666666,
+              "x": 16,
+              "y": 363
+            },
+            "wholeTiles": 6
+          },
+          {
+            "ancestorWindow": {
+              "height": 669,
+              "width": 469,
+              "x": 0,
+              "y": 0
+            },
+            "elapsed": "15.443304167 seconds",
+            "fullAXTiles": [
+              {
+                "frame": {
+                  "height": 56,
+                  "width": 214.33333333333334,
+                  "x": 238.66666666666666,
+                  "y": 555
+                },
+                "label": "Goodbye."
+              },
+              {
+                "frame": {
+                  "height": 56,
+                  "width": 214.66666666666666,
+                  "x": 16,
+                  "y": 555
+                },
+                "label": "Hello."
+              },
+              {
+                "frame": {
+                  "height": 56,
+                  "width": 214.33333333333334,
+                  "x": 238.66666666666666,
+                  "y": 363
+                },
+                "label": "I don't know."
+              },
+              {
+                "frame": {
+                  "height": 56,
+                  "width": 214.33333333333334,
+                  "x": 238.66666666666666,
+                  "y": 491
+                },
+                "label": "I'm not finished."
+              },
+              {
+                "frame": {
+                  "height": 56,
+                  "width": 214.66666666666666,
+                  "x": 16,
+                  "y": 363
+                },
+                "label": "Maybe."
+              },
+              {
+                "frame": {
+                  "height": 56,
+                  "width": 214.66666666666666,
+                  "x": 16,
+                  "y": 427
+                },
+                "label": "Please."
+              },
+              {
+                "frame": {
+                  "height": 56,
+                  "width": 214.33333333333334,
+                  "x": 238.66666666666666,
+                  "y": 427
+                },
+                "label": "Thank you."
+              },
+              {
+                "frame": {
+                  "height": 56,
+                  "width": 214.66666666666666,
+                  "x": 16,
+                  "y": 491
+                },
+                "label": "Wait a moment, please."
+              }
+            ],
+            "phase": "after-drag-3",
+            "phraseViewport": {
+              "height": 240,
+              "width": 437,
+              "x": 16,
+              "y": 371
+            },
+            "rootSnapshotFrame": {
+              "height": 951,
+              "width": 669,
+              "x": 0,
+              "y": 0
+            },
+            "trackedFrame": {
+              "height": 56,
+              "width": 214.66666666666666,
+              "x": 16,
+              "y": 363
+            },
+            "wholeTiles": 6
+          }
+        ],
+        "schema": 1,
+        "schema2AttachmentsAreSeparateSnapshots": true,
+        "snapOrPhysicalInputProof": false,
+        "status": "MEASURED_IN_THIS_SAMPLE",
+        "trackedIdentity": {
+          "identifier": "phraseTile",
+          "label": "Maybe."
+        },
+        "unchangedSettledGestures": 2
+      },
+      "privateEvidenceHashReferences": [
+        {
+          "id": "paired.private.01",
+          "kind": "schema2CaptureJSON",
+          "sha256": "7f485c72dcd417aac17ddeca69caada95ecf04fb4374f1f2ce447e27a7a8afba",
+          "bytes": 8565
+        },
+        {
+          "id": "paired.private.02",
+          "kind": "rawAXText",
+          "sha256": "a088d1ac985da5a74d92cd8fec383b433b464317fce07ba4266b9b8a9db024e8",
+          "bytes": 6537
+        },
+        {
+          "id": "paired.private.03",
+          "kind": "originalXCTestPixelAttachment",
+          "sha256": "8b0878276ea7ac5041b2e7e9679e63774547ffb5610addc65ee5dd4f02e5e65d",
+          "bytes": 38172
+        },
+        {
+          "id": "paired.private.04",
+          "kind": "schema2CaptureJSON",
+          "sha256": "040b30918f480a4a249a0bd1ee9484c07ca4c4ff45bda686ab5ebcfbe5a407f1",
+          "bytes": 8565
+        },
+        {
+          "id": "paired.private.05",
+          "kind": "schema2CaptureJSON",
+          "sha256": "7f485c72dcd417aac17ddeca69caada95ecf04fb4374f1f2ce447e27a7a8afba",
+          "bytes": 8565
+        },
+        {
+          "id": "paired.private.06",
+          "kind": "rawAXText",
+          "sha256": "6f6389dd0bc552fba761651c3480b5956acc91b2cc4d5c02839d8c561e0b0005",
+          "bytes": 6537
+        },
+        {
+          "id": "paired.private.07",
+          "kind": "originalXCTestPixelAttachment",
+          "sha256": "8b0878276ea7ac5041b2e7e9679e63774547ffb5610addc65ee5dd4f02e5e65d",
+          "bytes": 38172
+        },
+        {
+          "id": "paired.private.08",
+          "kind": "rawAXText",
+          "sha256": "7ba75780b2d478842f6307d40658200e28a2f579061c31dcebcdef156fd70103",
+          "bytes": 6533
+        },
+        {
+          "id": "paired.private.09",
+          "kind": "originalXCTestPixelAttachment",
+          "sha256": "8b0878276ea7ac5041b2e7e9679e63774547ffb5610addc65ee5dd4f02e5e65d",
+          "bytes": 38172
+        },
+        {
+          "id": "paired.private.10",
+          "kind": "schema2CaptureJSON",
+          "sha256": "7f485c72dcd417aac17ddeca69caada95ecf04fb4374f1f2ce447e27a7a8afba",
+          "bytes": 8565
+        },
+        {
+          "id": "paired.private.11",
+          "kind": "originalMeasurementJSON",
+          "sha256": "aa8af00639f7757be9e50187d8cb7bb273775643494939eeb89ac4c5d7a72d51",
+          "bytes": 10086
+        },
+        {
+          "id": "paired.private.12",
+          "kind": "originalXCTestPixelAttachment",
+          "sha256": "8b0878276ea7ac5041b2e7e9679e63774547ffb5610addc65ee5dd4f02e5e65d",
+          "bytes": 38172
+        },
+        {
+          "id": "paired.private.13",
+          "kind": "rawAXText",
+          "sha256": "121e549e77af171b15f357ddcc55b076a2152f0f7c5ac7783020211f74d483d5",
+          "bytes": 6537
+        },
+        {
+          "id": "paired.private.runnerLog",
+          "kind": "rawRunnerLog",
+          "sha256": "ba4bdca378f69b0adc0a6dcb39143afb19f750fe208210ed9687610c754d3afe",
+          "bytes": 14104
+        }
+      ]
+    }
+  ],
+  "pairedPreparation": {
+    "provenance": "Parent operator observed native UI sequence; not reconstructed from a test success",
+    "steps": [
+      "Home: Brickson icon held1.2seconds",
+      "Visible Open in Split View selected",
+      "Safari icon selected",
+      "Divider tapped to pair",
+      "Two separately observed Rotate Right turns to sampled bottom-camera orientation"
+    ],
+    "newLiveReservationQueryInScrollProbe": false
+  },
+  "representativeImage": {
+    "path": "active-left-pane-default.png",
+    "role": "Previously committed representative of the paired default arrangement; not a simultaneous scroll measurement image",
+    "simultaneousWithTheseMeasurements": false
+  },
+  "limitations": [
+    "Only Basics, light appearance, eight starter phrases, the sampled wide/tall AX5 and paired default arrangements are measured. Other camera positions, partial angles, Bold Text, categories and grown libraries are not covered.",
+    "Actual movement and endpoints now establish82/14/8pt travel in these samples; they do not remove current clipping/no-scroll failures or establish a universal maximum.",
+    "All full AX tile frames are retained. The prior separate native audit recorded32 full AX tile/camera intersections outside the viewport; these measurements neither erase nor independently remeasure that count.",
+    "The current schema2 attachment snapshots and XCTest pixel attachments are separate observations, not simultaneous frames. Pixel attachments may be inactive outer-display captures.",
+    "The operator visually observed six whole paired default tiles and two clipped tiles; no file image of that final CUA observation was retained as simultaneous evidence here.",
+    "An earlier active-image attempt failed and did not produce a valid PNG; it is excluded. The earlier committed representative is not substituted for current measurement pixels.",
+    "A MobileBuild launch failed during setup; one simulator restart recovered before the completed paired test. No product cause is established by that setup outcome.",
+    "Restricted zoomed-phone AX4 travel remains a separate pending check. Zero-height zoomed-phone AX5 is unavailable, not0scroll."
+  ],
+  "priorFullAXTileCameraIntersectionCount": {
+    "count": 32,
+    "source": "native-frame-comparison.json",
+    "newlyCheckedHere": false
+  },
+  "cameraClearanceChecked": false,
+  "activeDisplayPixelsCheckedInTheseMeasurements": false,
+  "renderedClippingEstablished": false,
+  "snapOrPhysicalInputProof": false,
+  "fullUISuitePass": false
+}
