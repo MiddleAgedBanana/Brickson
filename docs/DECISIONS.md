@@ -287,8 +287,11 @@ formatter, `xcprojformatter`, that rewrites a file in its canonical form.
 
 **Step 1, the trial.** It needs the owner's Mac (a hand-off to an agent
 there), and it commits nothing but its record in `docs/log/`. It starts
-when Apple's releases feed lists Xcode 27.2, or a later Xcode, as a
-release, and that Xcode is on the Mac.
+only after Xcode 27.2 is released and has its first fix release, and the
+current released Xcode is on the Mac. The owner set this stricter trial
+timing in the 2026-10-25 Mac handoff; before that, the trial could begin
+at the initial release, while the switch already waited for a subsequent
+release. Apple's releases feed verifies both prerequisites.
 
 1. Clone the repository again, into a folder of its own outside the
    owner's working checkout, and run `xcodegen generate` in it. Every
@@ -354,8 +357,8 @@ release, and that Xcode is on the Mac.
 
 Reverting that pull request brings XcodeGen back.
 
-**Revisit** when Apple releases Xcode 27.2 (start step 1), when a gate
-changes, or when the owner asks.
+**Revisit** when the first fix release after Xcode 27.2 is released
+(start step 1), when a gate changes, or when the owner asks.
 
 ## Build with Apple's current Xcode
 

@@ -96,6 +96,18 @@ Xcode 27.1 (27A9275); PR #20 landed in `d79d836`.
 
 ## Verification
 
+- **Mac keyboard checks, 2026-10-25**, main `8316743`, Xcode 27.1
+  (27A9275), iOS 27.0: on a 375×667 iPhone SE simulator the default-text
+  keyboard probe passed and AX5 failed Home's conservative band check;
+  with Larger Text Display Zoom (verified 320×568), both failed that
+  check. All four keyboard-allowance measurements passed with the full
+  software keyboard. Type is already disabled in those restricted cases.
+  Manual AX5 typing on iPhone 17 and 13-inch iPad, portrait and also iPad
+  landscape, kept the required communication controls fixed and above
+  the full keyboard. Put Back was behind the phone's keyboard. No device
+  check ran; the ordered handoff stops at the owner-operated dimmed-control
+  check. [Measurements, failures and screenshots](log/2026-10-25-mac-keyboard-checks.md).
+
 - **PR #17 main refresh, 2026-10-23:** merged library main `48bcf73`
   without rebasing. Nine new guard/documentation findings are corrected;
   the xargs optional-argument finding was rejected against GNU documentation
@@ -367,12 +379,18 @@ release in docs/ROADMAP.md when no thread has it yet.
   with `userInterfaceLevel = .elevated` in `PaletteTests`
   ([`log/2026-10-23-show-borders-and-large-content.md`](log/2026-10-23-show-borders-and-large-content.md), *Follow-ups*). *(the next
   accessibility thread)*
-- Typing on Home (since 2026-10-24) is checked only on CI's iPad and
+- Typing on Home (since 2026-10-24) has automated coverage on CI's iPad and
   iPhone simulators, in portrait, at the default text size, with the full
   software keyboard (`TypingOnHomeTests`); `KeyboardProbeTests` checks the
-  safety row against the keyboard's room in every orientation and text
-  size. Not checked: typing at the largest text sizes in the running
-  app, the iPad's floating and split keyboards, other languages, iPhone
+  safety row against the keyboard's room at default and AX5, in portrait
+  and, on iPad, landscape. Manual AX5 checks on the owner's Mac
+  (2026-10-25) kept the required communication controls above the full
+  keyboard on iPhone 17 and the 13-inch iPad in both iPad orientations.
+  Put Back was covered on the phone (y=547–624, keyboard top 546);
+  its placement needs a follow-up, with a native-input reproduction before
+  a fix. The iPad's Clear, Put Back and Return responded in Device Hub.
+  [Record and screenshots](log/2026-10-25-mac-keyboard-checks.md).
+  Not checked: the iPad's floating and split keyboards, other languages, iPhone
   Duo's inner display (`KeyboardAllowance`'s *Not covered yet* in
   docs/DECISIONS.md, "Typing is a state of Home"), and on a real device
   whether the cursor and keyboard come at once when Type is chosen by
@@ -381,18 +399,15 @@ release in docs/ROADMAP.md when no thread has it yet.
   users (docs/DECISIONS.md, "Return speaks"; the checks in
   [`log/2026-10-21-typing-foundation.md`](log/2026-10-21-typing-foundation.md)).
   The status line's "Message not saved", "Message not restored" and
-  "Message full" are unit-tested only. For Codex on the owner's Mac: run the keyboard probe,
-  which covers every orientation and text size, on a 375×667 simulator
-  (an iPhone SE, if the current Xcode still offers one), with Display
-  Zoom set to Larger Text and without it
-  (`DESTINATION='platform=iOS Simulator,id=<udid>' scripts/test.sh ui
-  '-only-testing:BricksonUITests/KeyboardProbeTests'`), which says
-  whether the real keyboard would cover Speak or Get Attention there, and
-  so whether Type, dimmed there today, could be offered; and type
-  on Home by hand at AX5 on the iPhone 17 and 13-inch iPad simulators,
-  noting anything that moves or ends under the keyboard. The device
-  checks are in *Checks that need a real device*. *(Codex on the owner's
-  Mac, then the owner's devices)*
+  "Message full" are unit-tested only. The 2026-10-25 keyboard probes
+  measured 375×667 and its zoomed 320×568 window, at default and AX5.
+  Standard AX5 projects a 3pt keyboard overlap at Again/Get Attention;
+  zoomed AX5 projects larger overlaps. Zoomed default clears the keyboard
+  measured by 18pt but fails the conservative band, so that one result
+  does not establish that Type can be enabled. Probe and Home are separate
+  launches; no actual keyboard covered Home in these restricted states.
+  The device checks are in *Checks that need a real device*. *(Codex on
+  the owner's Mac, then the owner's devices)*
 - No editing, export or import screens. The library core (`LibraryEdit`,
   `LibraryEditor`, `LibraryImport`, `BackupCodec`) is tested code that
   nothing calls yet. A Replace that would remove the person's own words
@@ -575,9 +590,9 @@ schema version, safety copies, export and import, the editing screens). Calls (R
 `.github/workflows` are committed by the owner (docs/SDLC.md, *Deploy*). The toolchain's follow-ups
 (Xcode's recommended settings, iOS 27 APIs behind `#available`) are in
 [`log/2026-10-21-toolchain.md`](log/2026-10-21-toolchain.md). Xcode's
-JSON project format is planned, not adopted: when Apple releases Xcode
-27.2, a trial on the owner's Mac (a hand-off to an agent there) starts
-it, and XcodeGen stays until the gates hold (docs/DECISIONS.md, "Xcode's
+JSON project format is planned, not adopted: the owner's 2026-10-25
+handoff requires released Xcode 27.2 and its first fix release before
+the trial on the owner's Mac starts. XcodeGen stays until the gates hold (docs/DECISIONS.md, "Xcode's
 JSON project format"). iPhone
 Duo is R0 item 13: the closed pose has run in the simulator
 ([`log/2026-10-23-large-content-and-iphone-duo.md`](log/2026-10-23-large-content-and-iphone-duo.md)),
