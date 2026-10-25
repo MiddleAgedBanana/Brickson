@@ -3,15 +3,15 @@ import SwiftUI
 /// Family Setup: everything a family member configures, one screen below
 /// Settings' root.
 ///
-/// It opens on a block of passive text at least as tall as the root's Family
-/// Setup row as drawn (`SettingsLanding`), so the spot just activated holds
-/// nothing that can be activated again (AGENTS.md, invariant 10). Opening
-/// it once marks Family Setup as opened, which ends Home's first-run hint.
+/// Set Up Step by Step takes the place of the root's Family Setup row as
+/// drawn (`SettingsLanding`), across the width and at least as tall, so a
+/// look still resting where that row was meets a row that only opens the
+/// next screen, and never Back to Talking, which would close Settings onto
+/// Home (AGENTS.md, invariant 10; docs/DECISIONS.md, "Settings' first row,
+/// placed from Home's frames"). The opening words go above it where they
+/// fit and under it where they do not (`SettingsLeadIn`). Opening it once
+/// marks Family Setup as opened, which ends Home's first-run hint.
 struct FamilySetupView: View {
-    /// The least height of the root's Family Setup label, before its button
-    /// style adds insets, and of this screen's opening text.
-    static let openingHeight: CGFloat = 96
-
     @Environment(SetupStore.self) private var setup
     @Environment(SettingsLanding.self) private var landing: SettingsLanding?
     /// The check-in card was showing while this screen was open. Its place
@@ -20,19 +20,24 @@ struct FamilySetupView: View {
 
     var body: some View {
         SettingsScreen(title: "Family Setup") {
-            SettingsParagraph("This is where a family member or carer sets up \(AppName.display): the voice it speaks with, help with reaching the screen, and how to keep it open. Nothing here is needed to start talking.")
-                .frame(minHeight: max(Self.openingHeight, landing?.rootRowHeight ?? 0), alignment: .topLeading)
-                .accessibilityElement(children: .combine)
-                .accessibilityIdentifier("familySetupOpening")
+            SettingsLeadInLayout(placement: placement, controlFirst: false, spacing: SettingsMetrics.rowSpacing) {
+                SettingsParagraph("This is where a family member or carer sets up \(AppName.display): the voice it speaks with, help with reaching the screen, and how to keep it open. Nothing here is needed to start talking.")
+                    .accessibilityElement(children: .combine)
+                    .accessibilityIdentifier("familySetupOpening")
 
+                NavigationLink(value: SettingsRoute.guidedSetup(.access)) {
+                    // As tall as the place it is given.
+                    SettingsRowLabel(title: "Set Up Step by Step", systemImage: "list.number")
+                        .frame(maxHeight: .infinity)
+                }
+                .settingsRowStyle()
+                .accessibilityIdentifier("guidedSetup")
+            }
+
+            // Under Set Up Step by Step, so a card that comes and goes never
+            // moves it.
             CheckInCard(keepsItsPlace: checkInWasShown)
             SetupIssueText()
-
-            NavigationLink(value: SettingsRoute.guidedSetup(.access)) {
-                SettingsRowLabel(title: "Set Up Step by Step", systemImage: "list.number")
-            }
-            .settingsRowStyle()
-            .accessibilityIdentifier("guidedSetup")
 
             NavigationLink(value: SettingsRoute.voice) {
                 SettingsRowLabel(title: "Voice Settings", systemImage: "waveform")
@@ -82,6 +87,11 @@ struct FamilySetupView: View {
             }
             setup.update { $0.familySetupOpened = true }
         }
+    }
+
+    private var placement: SettingsLeadInLayout.Placement {
+        guard let row = landing?.rootRow else { return .atTheTop }
+        return .across(top: row.minY, minHeight: row.height)
     }
 }
 

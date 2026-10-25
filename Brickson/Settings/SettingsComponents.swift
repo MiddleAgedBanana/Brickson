@@ -15,13 +15,19 @@ enum SettingsMetrics {
     /// may reach it by a stray dwell, so its controls keep Home's size
     /// rather than a list row's.
     static let rowHeight: CGFloat = 64
+    /// The name of each screen's content as a coordinate space, from the
+    /// top leading corner of its first view (`SettingsScreen`). Every
+    /// screen's content starts at the same height, under the same safety
+    /// bar and navigation bar, so a frame measured in one screen's content
+    /// means the same place in the next (`SettingsLanding`).
+    nonisolated static let contentSpace = "settingsContent"
 }
 
 /// A full-width row that opens another screen or does one thing. The words
 /// wrap between words beside the icon, never shrinking; a full-width row
 /// leaves room for every word with its icon (AGENTS.md, "Words never
-/// break"). Settings' root gives its row half the width only where the
-/// half holds the words on one line (`SettingsRootColumns`).
+/// break"). Settings' root gives its row a narrower width only where it
+/// holds the words on one line (`SettingsRowPlace`).
 struct SettingsRowLabel: View {
     let title: Text
     let systemImage: String
@@ -227,20 +233,132 @@ struct SettingsCard<Content: View>: View {
 
 /// A scrolling Settings screen with the shared gutters, scroll activity and
 /// title.
+///
+/// It gives its content where the screen sits in the window
+/// (`\.settingsScreenFrames`), from the cover's navigation stack and what
+/// the screen keeps at its top for the navigation bar, and names its
+/// content as a coordinate space (`SettingsMetrics.contentSpace`).
 struct SettingsScreen<Content: View>: View {
     let title: LocalizedStringKey
     @ViewBuilder let content: Content
+
+    @Environment(\.settingsCover) private var cover
+    /// What the system keeps at each edge of this screen: the navigation
+    /// bar at its top.
+    @State private var safeArea: HomeLayout.Insets?
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: SettingsMetrics.rowSpacing) {
                 content
             }
+            .coordinateSpace(.named(SettingsMetrics.contentSpace))
             .padding(SettingsMetrics.gutter)
+            .environment(\.settingsScreenFrames, frames)
         }
+        .onGeometryChange(for: HomeLayout.Insets.self) { proxy in
+            let insets = proxy.safeAreaInsets
+            return HomeLayout.Insets(top: insets.top, leading: insets.leading, bottom: insets.bottom, trailing: insets.trailing)
+        } action: { safeArea = $0 }
         .recordsSettingsScrolling()
         .background(Palette.screen)
         .navigationTitle(title)
         .toolbarTitleDisplayMode(.inline)
+    }
+
+    private var frames: SettingsScreenFrames? {
+        guard let cover, let safeArea else { return nil }
+        return SettingsScreenFrames(stack: cover.stack, safeArea: safeArea, gutter: SettingsMetrics.gutter)
+    }
+}
+
+/// What Settings' cover gives every screen in it (`SettingsView`): Home's
+/// frames in the same window and at the same text size, and the frame of
+/// the navigation stack the screens are pages of, in the window.
+nonisolated struct SettingsCover: Equatable, Sendable {
+    let home: HomeLayout
+    let stack: CGRect
+}
+
+extension EnvironmentValues {
+    /// Set by Settings' cover; nil anywhere else.
+    @Entry var settingsCover: SettingsCover? = nil
+    /// Where this Settings screen sits in the window, once it has measured
+    /// what it keeps for its navigation bar (`SettingsScreen`).
+    @Entry var settingsScreenFrames: SettingsScreenFrames? = nil
+}
+
+/// Places a Settings screen's first control and the words about it where
+/// `SettingsLeadIn` says, with the control where `placement` puts it. It
+/// measures the control with its words on one line and at each width it
+/// might get, and the words at the width they get. Its two views are the
+/// control and the words, in the order VoiceOver reads them.
+nonisolated struct SettingsLeadInLayout: Layout {
+    /// Where the control goes, in the content.
+    enum Placement: Equatable, Sendable {
+        /// Where `SettingsRowPlace` puts Settings' first row, from Home's
+        /// frames and where the screen sits in the window.
+        case fromHome(HomeLayout, SettingsScreenFrames)
+        /// Across the width at `top`, and at least `minHeight` tall:
+        /// Family Setup's Set Up Step by Step, in the place of the row that
+        /// opened it.
+        case across(top: CGFloat, minHeight: CGFloat)
+        /// Across the width at the top, until anything else is known.
+        case atTheTop
+    }
+
+    let placement: Placement
+    /// Whether the control comes first; otherwise the words do.
+    let controlFirst: Bool
+    /// The gap between the control and the words: the rows' gap.
+    let spacing: CGFloat
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        leadIn(width: proposal.width, subviews: subviews)?.size ?? .zero
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        guard let leadIn = leadIn(width: bounds.width, subviews: subviews) else { return }
+        let frames = controlFirst ? [leadIn.control, leadIn.words] : [leadIn.words, leadIn.control]
+        for (subview, frame) in zip(subviews, frames) {
+            subview.place(
+                at: CGPoint(x: bounds.minX + frame.minX, y: bounds.minY + frame.minY),
+                proposal: ProposedViewSize(width: frame.width, height: frame.height)
+            )
+        }
+    }
+
+    /// Nothing but the control and the words is placed: a lead-in has
+    /// exactly these two.
+    private func leadIn(width: CGFloat?, subviews: Subviews) -> SettingsLeadIn? {
+        guard subviews.count == 2 else { return nil }
+        let control = subviews[controlFirst ? 0 : 1]
+        let words = subviews[controlFirst ? 1 : 0]
+        let idealWidth = control.sizeThatFits(.unspecified).width
+        let height = { (proposed: CGFloat) in control.sizeThatFits(ProposedViewSize(width: proposed, height: nil)).height }
+        // Asked for its own width, it stacks at the control's.
+        let width = width.flatMap { $0.isFinite ? $0 : nil } ?? idealWidth
+        let frame: CGRect
+        switch placement {
+        case .fromHome(let home, let screen):
+            let row = SettingsRowPlace(
+                home: home, rowIdealWidth: idealWidth, rowHeight: height, content: screen.content, navigationBar: screen.navigationBar
+            ).row
+            // At the trailing side, as `SettingsRowPlace` puts it, and never
+            // wider than the content this screen was given.
+            let rowWidth = min(row.width, width)
+            frame = CGRect(
+                x: width - rowWidth, y: row.minY - screen.content.minY,
+                width: rowWidth, height: rowWidth == row.width ? row.height : height(rowWidth)
+            )
+        case .across(let top, let minHeight):
+            frame = CGRect(x: 0, y: top, width: width, height: max(minHeight, height(width)))
+        case .atTheTop:
+            frame = CGRect(x: 0, y: 0, width: width, height: height(width))
+        }
+        return SettingsLeadIn(
+            width: width, spacing: spacing, control: frame, besideWidth: idealWidth,
+            wordsHeight: { words.sizeThatFits(ProposedViewSize(width: $0, height: nil)).height }
+        )
     }
 }

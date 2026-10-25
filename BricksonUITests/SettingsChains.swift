@@ -91,6 +91,16 @@ nonisolated enum SettingsChains {
         return (ChainMap(states: states), unknown)
     }
 
+    /// Whether the first step, as it shows without scrolling, has anything
+    /// besides Back, Back to Talking and Next: an answer, or Clear My
+    /// Choices under them. On a phone at the largest text sizes its words
+    /// fill the screen above Next, and a look held where Set Up Step by
+    /// Step was then meets Back to Talking instead (docs/DECISIONS.md,
+    /// "Settings' first row, placed from Home's frames").
+    static func showsAnAnswer(_ firstStep: [(name: String, frame: CGRect)]) -> Bool {
+        firstStep.contains { ![backToTalking, back, firstStepNext].contains($0.name) }
+    }
+
     /// Where chains through Settings start in `map`: Home's Settings button
     /// chosen in `home`, and every control of Settings' first screens
     /// chosen, each with the look at its centre and across it.

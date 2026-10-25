@@ -96,18 +96,16 @@ final class SettingsTests: XCTestCase {
         assertReachable("backToTalking", in: app, context: "privacy policy")
     }
 
-    /// Family Setup opens on passive text over the whole of the root's
-    /// Family Setup row as drawn, its button style's insets included, so a
-    /// repeated activation where that row was lands on words (Codex,
-    /// PR #23). Fails if the opening is sized from the row's label alone,
-    /// or if any button on Family Setup lies within the row's frame.
-    ///
-    /// The opening's accessibility frame is its words' own bounds, not the
-    /// block they are laid out in (CI on PR #27: 42.5pt of text in a block
-    /// sized for a 110pt row), so the block's lower edge is read from the
-    /// first row below it, less the spacing between rows.
+    /// Family Setup opens with Set Up Step by Step over the whole of the
+    /// root's Family Setup row as drawn, its button style's insets
+    /// included, so a repeated activation where that row was only opens
+    /// the next screen, and never meets Back to Talking, which would close
+    /// Settings onto Home (docs/DECISIONS.md, "Settings' first row, placed
+    /// from Home's frames"). Fails if Set Up Step by Step leaves that place
+    /// or is shorter or narrower than the row, if any other button lies
+    /// within the row's frame, or if the opening words are gone.
     @MainActor
-    func testFamilySetupOpensOnTextOverTheWholeRootRow() {
+    func testFamilySetupOpensWithSetUpStepByStepOverTheWholeRootRow() {
         continueAfterFailure = true
         for textSize in [UITestTextSize.large, .ax5] {
             let app = openSettings(textSize: textSize)
@@ -118,24 +116,18 @@ final class SettingsTests: XCTestCase {
 
             open("familySetup", in: app, waitingFor: "Family Setup")
             let opening = app.descendants(matching: .any)["familySetupOpening"]
-            let firstRow = app.buttons["guidedSetup"]
-            let secondRow = app.buttons["voiceSettings"]
-            XCTAssertTrue(opening.waitForExistence(timeout: 10), "the opening text is missing (\(context))")
-            XCTAssertTrue(secondRow.waitForExistence(timeout: 10), "voiceSettings is missing (\(context))")
+            let guided = app.buttons["guidedSetup"]
+            XCTAssertTrue(guided.waitForExistence(timeout: 10), "guidedSetup is missing (\(context))")
+            XCTAssertTrue(opening.exists, "the opening words are missing (\(context))")
             attachCapture(app, name: context)
-            XCTAssertLessThanOrEqual(
-                opening.frame.minY, rowFrame.minY + 0.5,
-                "the opening text starts below the root row's top (\(context)): \(opening.frame) against \(rowFrame)"
-            )
-            let spacing = secondRow.frame.minY - firstRow.frame.maxY
-            XCTAssertGreaterThanOrEqual(
-                firstRow.frame.minY - spacing, rowFrame.maxY - 0.5,
-                "the opening block ends above the root row's lower edge (\(context)): Set Up Step by Step at \(firstRow.frame), \(spacing)pt between rows, root row \(rowFrame)"
+            XCTAssertTrue(
+                guided.frame.insetBy(dx: -0.5, dy: -0.5).contains(rowFrame),
+                "Set Up Step by Step at \(guided.frame) does not cover the root row at \(rowFrame) (\(context))"
             )
             // Inset, so a row that only touches its edge does not count.
             let spot = rowFrame.insetBy(dx: 0.5, dy: 0.5)
             for button in app.buttons.allElementsBoundByIndex
-            where button.exists && button.frame.intersects(spot) && button.isHittable {
+            where button.exists && button.identifier != "guidedSetup" && button.frame.intersects(spot) && button.isHittable {
                 XCTFail("\(button.label) lies where the root's Family Setup row was (\(context)): \(button.frame) against \(rowFrame)")
             }
         }
