@@ -108,8 +108,8 @@ build). Status: building (untested until CI passes).*
   and Settings closes onto Home's Emergency, which switches Home to the
   emergency phrases; nothing is said or sounded.
 - **Known issues kept strict, so they fail when they clear:**
-  - *iPhone at AX5* (predicted from PR #53's CI frames; this change's
-    CI run confirms or clears it): the first step behind Set Up Step by Step shows
+  - *iPhone at AX5* (predicted from PR #53's CI frames; found by this
+    change's first CI run): the first step behind Set Up Step by Step shows
     only Back, Back to Talking and Next above Next's top, and three held
     looks reach Back to Talking (familySetup, guidedSetup, Back to
     Talking, then No or Get Attention; Again while something is spoken);
@@ -123,9 +123,10 @@ build). Status: building (untested until CI passes).*
     near Back to Talking's centre as the row's, within half a point, as
     before (`SettingsRowPlaceTests.homesSettingsMeetsTheRow`).
   - *The chain that saves an answer*, wider than before: from Home's
-    Settings it reaches Touch on every CI window, modelled, not only the
-    phone at the default size. Expected strictly wherever the first step
-    is read.
+    Settings it reaches one of the first step's answers on every CI
+    window (Next on the phone at AX5), modelled and on this change's
+    first CI run, not only the phone at the default size. Expected
+    strictly wherever the first step is read.
   - *The held guide link* (Learn About Each Way) still sounds the alarm
     and stays held (docs/DECISIONS.md, "Typing on Home", *The held guide
     link stays held*).

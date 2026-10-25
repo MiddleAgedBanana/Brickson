@@ -76,15 +76,46 @@ fails on the first version (90 windows) and on the old Family Setup
 - `771bd79` The pull request's number in this record.
 - `74457d1` The UI test pins Set Up Step by Step's leading edge, top and
   width to the row's.
+- `4e34c0a` Each commit listed in this record.
+- `b9da7a9` The phone at AX5 called a prediction until CI read it.
+- CI's first results in these records (the commit that adds this line).
 
 ## Verified
 
 - **Not built on a Mac.** This is a cloud session with no Xcode; GitHub
-  CI is the build, and nothing here is described as working until it
-  passes. The SwiftUI views and the UI tests were not compiled here.
+  CI is the build. The SwiftUI views and the UI tests were not compiled
+  here.
+- **GitHub CI's first full run** (run 40183035156, attempt 1, on
+  `4e34c0a`: the iPad Pro 13-inch (M5) and iPhone 17 simulators, iOS
+  27.0, with the current Xcode release; portrait at the default size
+  and at AX5, and the iPad in landscape). The unit
+  tests passed. Every UI test passed except the first of the iPad run,
+  `GetAttentionOnHomeTests.testTheAlarmStartsAndStopsAtDefaultText`,
+  whose launch could not reach the simulator's accessibility server
+  (`kAXErrorServerNotFound`; AGENTS.md, *Gotchas*, "A just-started
+  simulator is slow, and the first UI test pays for it"); the job was
+  re-run once.
+  - `SettingsOnHomeTests` read the real frames. No chain closed Settings
+    under the look on the iPad (portrait at both sizes, and landscape)
+    or on the phone at the default size. On the phone at AX5 the
+    predicted closing came: from Family Setup's row or from Set Up Step
+    by Step, a held look went through the first step to Back to Talking
+    and closed Settings onto No or Get Attention (strict, and matched).
+    The chain that saves an answer was found on every window: Touch,
+    Voice Control or Switch Control on the iPad, Touch or Voice Control
+    on the phone, and Next on the phone at AX5.
+  - The root's row sat where the model puts it, read from the points the
+    chain engine looked at: tops at 312 (phone), 317 (phone at AX5), 354
+    (iPad in portrait), 355 (landscape) and 378 (iPad at AX5), and
+    leading edges within about two points. Settings had measured itself
+    before the row was chosen.
+  - `SettingsTests.testFamilySetupOpensWithSetUpStepByStepOverTheWholeRootRow`
+    passed on both devices at the default size and at AX5: Set Up Step
+    by Step's leading edge, top and width matched the root row's within
+    a point.
 - **Pure-Swift tests on Linux** (Swift 6.4.1, a SwiftPM harness that
   compiles the layout types, the chain engine and their tests with
-  default main-actor isolation, release mode): 101 tests pass, the known
+  default main-actor isolation, release mode): 102 tests pass, the known
   issues among them as recorded.
   - `SettingsRowPlaceTests` sweeps 4,200 windows (70 widths from 320 to
     1424 points, six heights from 568 to 1376, five text sizes, Bold
@@ -132,18 +163,13 @@ fails on the first version (90 windows) and on the old Family Setup
 
 ## Not verified
 
-- The app has not been built or run. The UI tests that read the real
-  frames (`SettingsOnHomeTests`,
-  `SettingsTests.testFamilySetupOpensWithSetUpStepByStepOverTheWholeRootRow`)
-  run first on CI.
-- The phone at AX5 is predicted, not measured: from PR #53's CI frames,
-  Set Up Step by Step's first step shows no answer above Next, so a held
-  look through it closes Settings, and a look on Next saves the answers.
-  `SettingsOnHomeTests` expects both strictly there; CI says whether the
-  prediction holds.
-- Whether the measured frames arrive in time: the row sits at the top
-  of the content until Settings has measured itself, as before. If CI
-  shows the row there, the measurement is late, not the rule.
+- The app has not been run outside CI's simulators.
+- The by-centre corner where Settings closes onto Emergency is modelled
+  only: the chain engine does not count Emergency as a hazard, so CI's
+  run neither shows nor rules it out.
+- Whether the measured frames always arrive in time: on CI they did; the
+  row sits at the top of the content until Settings has measured itself,
+  as before.
 - Resting rather than activating: on the iPad the root's first screen
   has more empty space, where a resting look with Snap to Item meets
   Back to Talking and closes Settings onto Phrases (nothing speaks). Not

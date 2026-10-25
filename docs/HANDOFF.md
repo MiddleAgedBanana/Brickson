@@ -66,13 +66,13 @@ still resting on it when Settings closes meets Phrases, which does
 nothing while the phrases show. Settings' Family Setup row is placed
 from Home's frames, and Family Setup opens with Set Up Step by Step in
 its frame, so a look held on the row meets a row that only opens the
-next screen. Modelled on CI's frames, the exceptions are on a phone at
-its largest text size: by centre, a look at the row's top trailing
-corner meets Back to Talking and closes Settings onto Home's Emergency
-(nothing is said), and a look held on through Set Up Step by Step can
-reach Back to Talking and close Settings over No or Get Attention,
-which CI's UI tests check (docs/DECISIONS.md, "Settings' first row,
-placed from Home's frames").
+next screen. The exceptions are on a phone at its largest text size:
+by centre, a look at the row's top trailing corner meets Back to
+Talking and closes Settings onto Home's Emergency (nothing is said;
+modelled), and a look held on through Set Up Step by Step reaches Back
+to Talking and closes Settings over No or Get Attention, which CI's UI
+tests found on PR #56's first run and expect strictly
+(docs/DECISIONS.md, "Settings' first row, placed from Home's frames").
 "Speaking", "Sounding", audio failures, very low volume and a typed
 message that cannot be saved or restored share one passive status line
 under the message, in space always kept for it, and
@@ -428,15 +428,16 @@ release in docs/ROADMAP.md when no thread has it yet.
   first screens (`SettingsOnHomeTests` with the chain engine, on CI's
   iPad and iPhone; docs/DECISIONS.md, "One chain engine for dwell
   safety"), and two hazards are open. A held look can follow Family Setup's first row into
-  Set Up Step by Step and save an answer (it adds Touch and restarts the
-  check-in clock; nothing reads the answers yet): from Home's Settings,
-  modelled on every window CI runs since Set Up Step by Step took the
-  root row's frame (on a phone at the default text size before), and
+  Set Up Step by Step and save an answer (Touch, Voice Control or Switch
+  Control, whichever it meets, and it restarts the check-in clock;
+  nothing reads the answers yet): from Home's Settings, on every window
+  CI runs since Set Up Step by Step took the root row's frame (on a
+  phone at the default text size before), and
   from Set Up Step by Step itself on every window where it shows; on a
   phone at its largest text size, through Next, which saves the step's
   answers. And Settings can close under a look nobody meant to close it
-  with, now only on a phone at its largest text size (predicted from
-  CI's frames): there Set Up Step by Step's first step shows no answer
+  with, now only on a phone at its largest text size (found on CI's
+  iPhone 17 at AX5): there Set Up Step by Step's first step shows no answer
   above Next, so a look held on through it meets Back to Talking and
   closes Settings over No or Get Attention (the alarm). Elsewhere, since
   2026-10-25, Settings' Family Setup row is placed from Home's frames
@@ -584,8 +585,9 @@ through its guide, so it stays held for the next Settings thread
 (docs/DECISIONS.md, "Typing on Home", "One chain engine for dwell
 safety" and "Get Attention in Settings' bar: the owner decides"). On
 2026-10-25 it placed Settings' first row from Home's frames, with Set Up
-Step by Step in its frame, which ends Settings closing under a look,
-modelled on CI's windows and 630 swept ones, except a phone at its
+Step by Step in its frame, which ends Settings closing under a look on
+CI's windows (modelled, and measured by PR #56's first CI run) and on
+630 swept ones (modelled), except a phone at its
 largest text size, where the first step's own rows are next
 (docs/DECISIONS.md, "Settings' first row, placed from Home's frames").
 Every change follows AGENTS.md, *Apple's current frameworks first*: the

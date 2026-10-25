@@ -2383,10 +2383,12 @@ engine, not five scripts".
     milder than the hazard below: it adds Touch and restarts the
     check-in clock, and nothing reads the answers yet. *2026-10-25,
     item 7:* wider. With Set Up Step by Step in the root row's frame, the
-    look held from Home's Settings reaches Touch on every CI window,
-    modelled, not only the phone at the default size, and on the phone
-    at its largest size Next, which saves the step's answers, can be met
-    instead; `SettingsOnHomeTests` expects it strictly wherever the first
+    look held from Home's Settings saves an answer on every CI window,
+    not only the phone at the default size: it meets one of the first
+    answers (Touch, Voice Control or Switch Control), or, on the phone
+    at its largest size, Next, which saves the step's answers. Modelled,
+    and found on each window by PR #56's first CI run.
+    `SettingsOnHomeTests` expects it strictly wherever the first
     step is read (*Settings' first row, placed from Home's frames*,
     *What it costs, for the owner to weigh*).
     *Tried 2026-10-24 and held* (ROADMAP Wave 3 item 7,
@@ -2876,7 +2878,8 @@ plan's places (*Home's slot plan*).
   with Set Up Step by Step in the root row's frame (*Settings' first
   row, placed from Home's frames*): the link still sounds the alarm, and
   it no longer clears every chain that saves an answer, since Home's
-  Settings still leads a held look to Touch. It stays held.
+  Settings still leads a held look to the first step's answers. It
+  stays held.
 - **Where the starter library fits, measured** (*The layout engine*,
   *Where the starter library fits*: its slot-plan column is now Home's):
   every iPad window CI runs, in both orientations, at every text size, as
@@ -3197,7 +3200,9 @@ change.
   Attention. A row that only navigates has to be at the spot itself.
 - **What remains, each a strict known issue that fails when it clears:**
   - *The phone at its largest size* (predicted from CI's frames of PR
-    #53; this change's CI run confirms or clears it). The root's row
+    #53, and found by this change's first CI run, on the iPhone 17 at
+    AX5: a look held from Family Setup's row or from Set Up Step by Step
+    closed Settings onto No or Get Attention). The root's row
     can't sit where both Back's spot and the first step are safe, and
     Set Up Step by Step's first step then shows only Back, Back to
     Talking and Next above Next's top, so a look held through Set Up
@@ -3214,17 +3219,20 @@ change.
     point, as it did before (`SettingsRowPlaceTests.homesSettingsMeetsTheRow`).
   - *The held guide link* still sounds the alarm, and it would no
     longer clear every chain that saves an answer: Home's Settings
-    still leads a held look to Touch (*Typing on Home*, *The held guide
-    link stays held*). It stays held.
+    still leads a held look to the first step's answers (*Typing on
+    Home*, *The held guide link stays held*). It stays held.
 - **What it costs, for the owner to weigh:**
   - *More held looks save an answer.* The chain from Home's Settings
-    through Family Setup and Set Up Step by Step to Touch, the first
-    answer, was found only on the phone at the default size; modelled on
-    CI's frames it is now found on every CI window, and on the phone at
-    its largest size Next can save the answers (*One chain engine for
+    through Family Setup and Set Up Step by Step to one of the first
+    step's answers was found only on the phone at the default size. It
+    is now found on every CI window, modelled and on this change's first
+    CI run: on the iPad it meets Touch, Voice Control or Switch Control,
+    on the phone Touch or Voice Control, and on the phone at its largest
+    size Next, which saves the step's answers (*One chain engine for
     dwell safety*, *Open: a held look saves an answer in Set Up Step by
-    Step*). It adds Touch and restarts the check-in clock; nothing reads
-    the answers yet. Milder than a closing, but wider.
+    Step*). It saves the answer it meets and restarts the check-in
+    clock; nothing reads the answers yet. Milder than a closing, but
+    wider.
   - *A smaller row.* The root's row is 78 points tall at the default
     size instead of 110 (Family Setup no longer needs a tall row for its
     opening words to cover), and on the 13-inch iPad 194 points wide
