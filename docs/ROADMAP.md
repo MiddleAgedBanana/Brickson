@@ -415,7 +415,19 @@ Setup's first row into Set Up Step by Step and saves an answer broken
 by placement (docs/HANDOFF.md, *Known gaps*). *2026-10-25:* with item
 5's frames, a look held on the root's row closes Settings over Get
 Attention, which sounds the alarm, on the 13-inch iPad (DECISIONS.md,
-"Typing on Home"). Then a start-only Get
+"Typing on Home"). *2026-10-25, built (PR #56):* the
+root's row is placed from Home's frames and Set Up Step by Step takes
+its frame in Family Setup, so a look held on the row meets a row that
+only navigates, modelled and on CI's first run, except by centre at
+one corner on narrow windows at the largest sizes, where Settings
+closes onto Home's Emergency (modelled); on a phone at its largest
+text size a look held on through Set Up Step by Step still closes
+Settings over No or Get Attention (found on CI), and the chain that
+saves an answer remains, now on every CI window, which the owner
+accepted on 2026-10-25 until the first step's own rows are placed
+(DECISIONS.md, "Settings' first row,
+placed from Home's frames"; work file
+[`work/settings-row-place.md`](work/settings-row-place.md)). Then a start-only Get
 Attention in Settings' bar, in its empty place, with the sound line
 moved where its neighbours neither speak nor change a setting. This
 comes before item 8, because item 8 lets setup answers change sizes.

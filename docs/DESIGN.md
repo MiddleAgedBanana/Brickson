@@ -569,7 +569,15 @@ a held activation meets next*). Below the band:
   It did (PR #33): the landed root's row sits over that spot again, now
   with Family Setup's passive opening under it, and the work file
   [`work/settings-on-home.md`](work/settings-on-home.md) scores two
-  steps of the chain.
+  steps of the chain. *2026-10-25:* the passive opening is gone from
+  that spot. With Snap to Item, a look over words still meets the
+  nearest control, which was Back to Talking, so Settings closed onto
+  Home (docs/DECISIONS.md, "Typing on Home", *Settings closing,
+  rescored*). The root's row is now placed from Home's frames, and Family
+  Setup opens with Set Up Step by Step in that row's frame, its words
+  beside, above or under it (docs/DECISIONS.md, "Settings' first row,
+  placed from Home's frames";
+  [`work/settings-row-place.md`](work/settings-row-place.md)).
 - **Family Setup**: the landed rows are Set Up Step by Step, Voice
   Settings, Reaching the Screen, Keep Brickson Open, Privacy Policy and
   About, each a standard control. The Library row joins them when its
