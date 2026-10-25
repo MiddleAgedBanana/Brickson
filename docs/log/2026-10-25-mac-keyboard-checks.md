@@ -51,9 +51,9 @@ probe in both runs; no first-launch timeout was reproduced here.
 
 Screenshots of every failed configuration, captured by the tests:
 
-- [Standard AX5 Home](ui-test-evidence/2026-10-25-keyboard-checks/keyboard-se-standard-ax5-home.png)
-- [Zoomed default Home](ui-test-evidence/2026-10-25-keyboard-checks/keyboard-se-zoomed-default-home.png)
-- [Zoomed AX5 Home](ui-test-evidence/2026-10-25-keyboard-checks/keyboard-se-zoomed-ax5-home.png)
+- [Standard AX5 Home](../evidence/2026-10-25-keyboard-checks/keyboard-se-standard-ax5-home.png)
+- [Zoomed default Home](../evidence/2026-10-25-keyboard-checks/keyboard-se-zoomed-default-home.png)
+- [Zoomed AX5 Home](../evidence/2026-10-25-keyboard-checks/keyboard-se-zoomed-ax5-home.png)
 
 The test's unconditional band assertion fails even where Home already
 disables Type. That distinction matters when reading these failures.
@@ -94,10 +94,10 @@ clearance evidence. Device Hub's **Device > Keyboard > Toggle Software
 Keyboard** restored it; the final pictures below visibly include it.
 Only the final, visible-keyboard snapshots support the clearance claims.
 
-- [iPhone AX5 keyboard and covered Put Back](ui-test-evidence/2026-10-25-keyboard-checks/iphone17-ax5-keyboard.png)
-- [iPad AX5 portrait keyboard](ui-test-evidence/2026-10-25-keyboard-checks/ipad-ax5-portrait-full-keyboard.png)
-- [iPad AX5 landscape keyboard](ui-test-evidence/2026-10-25-keyboard-checks/ipad-ax5-landscape-full-keyboard.png)
-- [Before/after control frames](ui-test-evidence/2026-10-25-keyboard-checks/ax5-frames.json)
+- [iPhone AX5 keyboard and covered Put Back](../evidence/2026-10-25-keyboard-checks/iphone17-ax5-keyboard.png)
+- [iPad AX5 portrait keyboard](../evidence/2026-10-25-keyboard-checks/ipad-ax5-portrait-full-keyboard.png)
+- [iPad AX5 landscape keyboard](../evidence/2026-10-25-keyboard-checks/ipad-ax5-landscape-full-keyboard.png)
+- [Before/after control frames](../evidence/2026-10-25-keyboard-checks/ax5-frames.json)
 
 Put Back's covered position needs a layout answer; this record does not
 move a control or accept an exception. The existing default-size typing
@@ -115,7 +115,7 @@ the actual app window. The temporary harness measured Basics and Needs,
 two starter categories with eight phrases each, from the top of the grid
 and after swiping to the bottom. It did not change the app's layout or
 weaken an existing assertion. The numbers are in
-[the saved measurement file](ui-test-evidence/2026-10-25-home-checks/home-measurements.json)
+[the saved measurement file](../evidence/2026-10-25-home-checks/home-measurements.json)
 (raw copy: `build/evidence/2026-10-25/home-measurements.json`). The curated
 file contains 70 records. The raw aggregate has 73, including one duplicate
 failed AX4 swipe attempt and two earlier open-Duo duplicates; their failures
@@ -162,12 +162,12 @@ The AX5 result does not supply a scroll range.
 
 Screenshots of the phone failures:
 
-- [Standard AX4](ui-test-evidence/2026-10-25-home-checks/iphone17-standard-light-ax4-portrait-Basics-top.png)
-- [Standard AX5](ui-test-evidence/2026-10-25-home-checks/iphone17-standard-light-ax5-portrait-Basics-top.png)
-- [Zoomed default](ui-test-evidence/2026-10-25-home-checks/iphone17-zoomed-light-default-portrait-Basics-top.png)
-- [Zoomed AX4](ui-test-evidence/2026-10-25-home-checks/iphone17-zoomed-restricted-light-ax4-Basics-restricted.png)
-- [Zoomed AX5, light](ui-test-evidence/2026-10-25-home-checks/iphone17-zoomed-restricted-light-ax5-Basics-restricted.png)
-- [Zoomed AX5, dark](ui-test-evidence/2026-10-25-home-checks/iphone17-zoomed-restricted-dark-ax5-Basics-restricted.png)
+- [Standard AX4](../evidence/2026-10-25-home-checks/iphone17-standard-light-ax4-portrait-Basics-top.png)
+- [Standard AX5](../evidence/2026-10-25-home-checks/iphone17-standard-light-ax5-portrait-Basics-top.png)
+- [Zoomed default](../evidence/2026-10-25-home-checks/iphone17-zoomed-light-default-portrait-Basics-top.png)
+- [Zoomed AX4](../evidence/2026-10-25-home-checks/iphone17-zoomed-restricted-light-ax4-Basics-restricted.png)
+- [Zoomed AX5, light](../evidence/2026-10-25-home-checks/iphone17-zoomed-restricted-light-ax5-Basics-restricted.png)
+- [Zoomed AX5, dark](../evidence/2026-10-25-home-checks/iphone17-zoomed-restricted-dark-ax5-Basics-restricted.png)
 
 These are fit measurements, not new accepted exceptions. R0's touch
 profile permits scrolling; a future dwell, switch, head or gaze profile
@@ -206,11 +206,11 @@ reported partially unsupported Dynamic Type on **Sounding**. This is an
 accessibility finding, not audit-service timeout code -56; no retry or
 exception was added. Its cause has not been established or fixed.
 
-- [Closed default](ui-test-evidence/2026-10-25-home-checks/duo-closed-light-default-portrait-Basics-top.png)
-- [Closed AX4](ui-test-evidence/2026-10-25-home-checks/duo-closed-light-ax4-portrait-Needs-top.png)
-- [Closed AX5, top](ui-test-evidence/2026-10-25-home-checks/duo-closed-light-ax5-portrait-Needs-top.png)
-- [Closed AX5, after scrolling](ui-test-evidence/2026-10-25-home-checks/duo-closed-light-ax5-portrait-Needs-bottom.png)
-- [Sounding audit failure](ui-test-evidence/2026-10-25-home-checks/duo-closed-default-sounding-audit-failure.png)
+- [Closed default](../evidence/2026-10-25-home-checks/duo-closed-light-default-portrait-Basics-top.png)
+- [Closed AX4](../evidence/2026-10-25-home-checks/duo-closed-light-ax4-portrait-Needs-top.png)
+- [Closed AX5, top](../evidence/2026-10-25-home-checks/duo-closed-light-ax5-portrait-Needs-top.png)
+- [Closed AX5, after scrolling](../evidence/2026-10-25-home-checks/duo-closed-light-ax5-portrait-Needs-bottom.png)
+- [Sounding audit failure](../evidence/2026-10-25-home-checks/duo-closed-default-sounding-audit-failure.png)
 
 Device Hub then showed the hinge at 180°, confirming the fully open pose.
 The active inner display showed Home at 951×669pt. The default-text
@@ -306,12 +306,12 @@ captures. The wide bottom row is partly clipped until it scrolls, as the
 10pt measurement records. This visual check is limited to the captured
 states, not a complete rendered-word test of every phrase and pose.
 
-- [Open wide AX5, active display](ui-test-evidence/2026-10-25-home-checks/duo-open-wide-ax5-basics-active-display.png)
-- [Open wide AX5, fold](ui-test-evidence/2026-10-25-home-checks/duo-open-wide-ax5-fold.png)
-- [Open tall AX5, active display](ui-test-evidence/2026-10-25-home-checks/duo-open-tall-ax5-basics-active-display.png)
-- [Open tall AX5, fold](ui-test-evidence/2026-10-25-home-checks/duo-open-tall-ax5-fold.png)
-- [Partial wide AX5, dark active display](ui-test-evidence/2026-10-25-home-checks/duo-partial-wide-ax5-dark-active-display.png)
-- [Partial wide AX5, dark fold](ui-test-evidence/2026-10-25-home-checks/duo-partial-wide-ax5-dark-fold.png)
+- [Open wide AX5, active display](../evidence/2026-10-25-home-checks/duo-open-wide-ax5-basics-active-display.png)
+- [Open wide AX5, fold](../evidence/2026-10-25-home-checks/duo-open-wide-ax5-fold.png)
+- [Open tall AX5, active display](../evidence/2026-10-25-home-checks/duo-open-tall-ax5-basics-active-display.png)
+- [Open tall AX5, fold](../evidence/2026-10-25-home-checks/duo-open-tall-ax5-fold.png)
+- [Partial wide AX5, dark active display](../evidence/2026-10-25-home-checks/duo-partial-wide-ax5-dark-active-display.png)
+- [Partial wide AX5, dark fold](../evidence/2026-10-25-home-checks/duo-partial-wide-ax5-dark-fold.png)
 
 Raw exports remain in `build/evidence/2026-10-25/`, under
 `home-duo-open-native-wide`, `home-duo-open-native-tall`,
@@ -334,7 +334,7 @@ The selected test reads Home's full accessibility snapshot immediately
 after the launch helper finds Yes, the path of the historical first-test
 `kAXErrorServerNotFound` failure.
 
-[Cold-run summaries](ui-test-evidence/2026-10-25-home-checks/cold-launches.json)
+[Cold-run summaries](../evidence/2026-10-25-home-checks/cold-launches.json)
 preserve the results. The raw summary is
 `build/evidence/2026-10-25/cold-launches.json`; local logs are
 `/private/tmp/brickson-cold-iphone-1.log`,
@@ -409,6 +409,13 @@ The result is
 `/private/tmp/brickson-post-alarm-docs-unit.log`. Relative to refreshed
 `main`, this PR changes no app or test source.
 
+**Review correction:** screenshots and JSON now live in
+`docs/evidence/`, rather than `docs/log/ui-test-evidence/`. The earlier
+placement conflicted with the one-new-file rule in `docs/log/README.md`.
+Only this Markdown record is added under `docs/log/`; the evidence bytes
+and all measurement values are unchanged. `git diff --check` passes,
+and the documentation suite passes all 45 checks after the move.
+
 The two keyboard runs used:
 
 ```sh
@@ -445,6 +452,12 @@ with the String Catalog unchanged. Its result is
 committed regression test is claimed.
 
 ## Not verified
+
+Hosted CI for the final correction head is not yet verified. The full
+local UI suite was not rerun for this documentation-only job; selected
+checks, failures and skips are recorded above. The native unit gate
+does not stand in for either missing result. Earlier hosted runs were
+cancelled before the complete suite finished.
 
 | Ordered handoff check | Status / next step |
 |---|---|
