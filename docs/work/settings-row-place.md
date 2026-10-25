@@ -109,7 +109,7 @@ build). Status: building (untested until CI passes).*
   emergency phrases; nothing is said or sounded.
 - **Known issues kept strict, so they fail when they clear:**
   - *iPhone at AX5* (predicted from PR #53's CI frames; this change's
-    CI run confirms it): the first step behind Set Up Step by Step shows
+    CI run confirms or clears it): the first step behind Set Up Step by Step shows
     only Back, Back to Talking and Next above Next's top, and three held
     looks reach Back to Talking (familySetup, guidedSetup, Back to
     Talking, then No or Get Attention; Again while something is spoken);
