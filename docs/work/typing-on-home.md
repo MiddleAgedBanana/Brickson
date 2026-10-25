@@ -1,7 +1,10 @@
 # Typing on Home
 
 *Roadmap: Wave 3 item 5 (R0 items 5 and 9). Owner: the Typing on Home
-thread (a cloud session; GitHub CI is its build). Status: plan.*
+thread (a cloud session; GitHub CI is its build). Status: built
+2026-10-24, untested until CI passes
+([`log/2026-10-24-typing-on-home.md`](../log/2026-10-24-typing-on-home.md);
+docs/DECISIONS.md, "Typing on Home").*
 
 ## Intent
 
@@ -186,10 +189,15 @@ its top edge as a place a look rests on:
 
 ### Settings over Home
 
-Settings' **Back to Talking takes Phrases' frame exactly**, worked out by
-the same engine from the same window and text size, so closing Settings
+Settings' **Back to Talking takes Phrases' frame**, worked out by the
+same engine from the same window and text size, so closing Settings
 lands on Phrases, which only picks a mode and does nothing while browsing
 (Settings always closes onto browsing, since opening it left typing).
+*Built:* exactly Phrases' frame on compact widths; on regular ones,
+where Phrases spans two columns and a look at its lower corners is
+nearer Again's or Get Attention's centre, centred over Phrases, as tall,
+and at most a column wide (`HomeLayout.backToTalking`; docs/DECISIONS.md,
+"Typing on Home").
 Its words are in the category font, on one line where the column holds
 them (131pt, 142pt with Bold Text) and on two where it does not, which is
 why Phrases is at least 56pt tall on those windows. Get Attention's
@@ -199,10 +207,14 @@ the bar.
 - **Rescored:** *Open: Settings closes under the look* (docs/DECISIONS.md,
   "One chain engine for dwell safety") is scored again on the moved
   frames, in the unit tests' model and by `SettingsOnHomeTests` on CI.
-  What remains is recorded there with numbers.
+  What remains is recorded there with numbers. *Result:* choosing Back
+  to Talking meets only Phrases; on the phone one closing nobody chose
+  remains, through Family Setup, over No.
 - **The held guide link** (Learn About Each Way, commit `1de50f5`) comes
   back only if its chains clear on the moved frames; otherwise it stays
-  held, with the reason recorded (*Settings, the guide link*, in *Plan*).
+  held, with the reason recorded (step 4 of *Plan*). *Result:* held: its
+  guide's Back to Talking closes Settings over Get Attention in three
+  chains on the phone model.
 
 ### Fewer tiles to a screen (R1, drawn, not built)
 

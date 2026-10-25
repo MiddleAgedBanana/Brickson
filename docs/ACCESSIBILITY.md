@@ -73,11 +73,11 @@ test is named for what would make it fail.
 | Siri and App Intents (1; add) | Nothing yet | R2 "Siri and Shortcuts", fixed phrases only | 3 |
 | Vocal Shortcuts (1; system) | System, with a guide in Family Setup's Calls, Siri and Shortcuts | A Get Attention shortcut to point it at: R2 | 3 |
 | Dynamic Type, Bold Text, Reduce Motion (1; has it) | Text styles on Home; UI tests at the largest size; with Bold Text off and on every starter label keeps its words whole, dropping its icon first (`WordFit`, `StarterLabelFitTests`, `HomeLayoutEngineFontTests`) | — | 6 |
-| Phrase board and typing (2; has it) | The board is on Home; typing is not on `main` yet | Typing: R0-5. A touch profile: R1 | 8 |
+| Phrase board and typing (2; has it) | The board is on Home, and typing since 2026-10-24 (Wave 3 item 5; docs/DECISIONS.md, "Typing on Home") | Typing: R0-5. A touch profile: R1 | 8 |
 | Live Speech (2; system) | System, with a guide in Family Setup's Calls, Siri and Shortcuts | Being heard on calls: R0-8, held | 4 |
 | Voice Control (2; has it) | Every Home control is a labelled standard button; the fixed controls' names start with their visible words, Again also answers to "Repeat", Get Attention to "Help" and Stop to "Stop Alert", and no two controls on Home share a name in any state of the starter library, the alarm sounding included (`HomeControlNames`) | Collisions in a library a family has grown: R0-6 | 3 |
 | AssistiveTouch, Touch Accommodations (2; system) | Standard buttons; Touch Accommodations' guide in Reaching the Screen | Device check of the guide's steps | 2 |
-| Word prediction (2; add) | Nothing yet | Apple's keyboard suggestions with typing: R0-5. A prediction strip: R2 | 8 |
+| Word prediction (2; add) | Apple's keyboard suggestions while typing on Home (2026-10-24) | A prediction strip: R2 | 8 |
 | HomeKit (2; add, needs a decision) | Nothing yet | Not in 1.0; controlling devices beyond the iPhone or iPad is the owner's decision under invariant 9 | 10 |
 | Apple Watch (2; system, a watch app later) | System; Live Speech on the watch has a guide in Calls, Siri and Shortcuts | A watch app: Later | 10 |
 | Text size, contrast (2; has it) | Contrast measured in `PaletteTests` | Kept | 6 |
@@ -101,7 +101,7 @@ test is named for what would make it fail.
 | Accessibility Nutrition Labels (all; add) | Nothing yet | R0-10 | 9 |
 | Privacy manifest (all; partly) | In place, no data collected, pinned by `AppBundleTests` | Kept | — |
 | Sync between a person's devices (all; skip) | None | No iCloud sync in 1.0 (docs/DECISIONS.md) | — |
-| The reference app's two safety bugs: the keyboard covering Get Attention, and a crash deleting a category (all; must fix) | Not ported; each became a rule | Typing never hides the call for help (R0-5); never roll back a cascade delete (R0-6; docs/LESSONS.md) | 8 |
+| The reference app's two safety bugs: the keyboard covering Get Attention, and a crash deleting a category (all; must fix) | Not ported; each became a rule | Typing never hides the call for help (R0-5: in place on Home since 2026-10-24, with the windows where the keyboard's room still reaches the safety row named in docs/DECISIONS.md, "Typing on Home"); never roll back a cascade delete (R0-6; docs/LESSONS.md) | 8 |
 
 ## 1. Switch Control, Full Keyboard Access and scan order
 
@@ -124,7 +124,7 @@ the same place in the order in every state.
 | Full Keyboard Access | Running the device from a physical keyboard | 1–2 | System, since 13.4.1 | **System.** Standard buttons: in place. Focus order test: **R1** (keyboard and Voice Control profile) | UI: Tab order with `typeKey`. Device |
 | Full Keyboard Access status | Knowing whether it is on | 1–2 | — | **N/A**: Apple offers no flag; the family chooses the profile | — |
 | `accessibilityElement(children:)` | `.contain` makes a region; `.combine` merges passive text | 1–4 | 13.0 | **In place**: `.combine` on passive text only (Speaking indicator, warnings); `.contain` on Home's four regions (`HomeRegion`). Never `.combine` or `.ignore` over buttons | UI: every control is its own button, inside its region (`HomeAccessibilityOrderTests`). Review |
-| `accessibilitySortPriority(_:)` | Order among elements at the same level | 2–4 | 14.0 | **In place** on Home's regions: SwiftUI orders elements of equal priority by where they are, which puts the message above the quick controls first, so each region has a fixed priority (`HomeRegion.sortPriority`). Never from usage (invariant 8); inside a region, Again comes after Emergency and Settings after the categories (`HomeRegion.lastInRegion`, 2026-10-23) | Unit: `HomeRegionTests`. UI: `HomeAccessibilityOrderTests`. Device: whether Switch Control and Full Keyboard Access follow it (Apple does not say) |
+| `accessibilitySortPriority(_:)` | Order among elements at the same level | 2–4 | 14.0 | **In place** on Home's regions: SwiftUI orders elements of equal priority by where they are, which puts the message above the quick controls first, so each region has a fixed priority (`HomeRegion.sortPriority`). Never from usage (invariant 8); inside a region, Again comes after Emergency and Settings after the categories (`HomeRegion.lastInRegion`, 2026-10-23); Phrases and Type after the message, and while typing Speak, Clear and Put Back in their slots' places (2026-10-24) | Unit: `HomeRegionTests`. UI: `HomeAccessibilityOrderTests`. Device: whether Switch Control and Full Keyboard Access follow it (Apple does not say) |
 | `accessibilityRespondsToUserInteraction(_:)` | Telling the switch and keyboard cursor to skip passive text | 2–4 | 15.0 | **Not used yet**: only if a device check finds the cursor stopping on the message, the Speaking indicator or a warning (the next item 3 work). Never on a button | Device. Review |
 | `focusable(_:interactions:)` | Making a non-button view take keyboard focus | 1–2 | 17.0 | **N/A** while every control is a button | Review |
 | `focusSection()` | Guiding focus movement | — | macOS 13 only | **N/A**: Apple lists no iOS version | — |
@@ -161,7 +161,7 @@ pointer input*).
 |---|---|---|---|---|---|
 | Voice Control | Running the device by voice ("Tap Yes", "Show numbers") | 1–2 | System, since 13.0 | **System.** Every Home control is a labelled standard button: in place. Setup text: **in place**, in Reaching the Screen | Audit (in place). Device: "Show numbers" numbers every control |
 | Voice Control flexible item names ("say what you see") | Naming a control in your own words | 1–2 | System, 27.0 | **System.** Nothing to build; good labels are what it needs | Device |
-| `accessibilityInputLabels(_:)` | Extra names to say or type, the visible words first | 1–2 | 14.0 | **In place** on Yes, No, Emergency and Again (`HomeControlNames`): the visible words first; Again also answers to "Repeat". Categories and phrases answer to their own words only | Unit: `ControlNamesTests` (the visible words first, no repeated or empty name) |
+| `accessibilityInputLabels(_:)` | Extra names to say or type, the visible words first | 1–2 | 14.0 | **In place** on Yes, No, Emergency and Again (`HomeControlNames`): the visible words first; Again also answers to "Repeat". Categories, phrases, Phrases, Type, Speak, Clear and Put Back answer to their own words only | Unit: `ControlNamesTests` (the visible words first, no repeated or empty name) |
 | Voice Control name collisions | Two visible controls answering to one name | 1–2 | — | **In place** for the starter set: no two controls on Home, input labels included, share a name in any category's state (`HomeNameCollisionTests`, comparing names without case, accents or punctuation); no "Yes." or "No." tiles, unique category names (`StarterPhrasesTests`). For a library a family has grown: **R0-6**, with `HomeControlNames.collisions`. Never rename a person's phrase (invariant 7) | Unit. Device |
 | Vocal Shortcuts | A person's own sound runs an action | 1–2 | System, since 18.0 | **System.** Setup text: **in place**, in Calls, Siri and Shortcuts (2026-10-23). A Get Attention shortcut to run: **R2** | Device |
 | Listen for Atypical Speech | Siri listens for a wider range of speech; Apple names ALS | 1–2 | System, since 18.0 | **System.** Setup text: **in place**, in Calls, Siri and Shortcuts, with Apple's English (U.S.) limit and Siri Pause Time | Device: the guide's steps |
@@ -218,7 +218,7 @@ pointer input*).
 | `playsSound` trait | Tells VoiceOver a control makes its own sound | 1–2 | 13.0 | **In place** on Home's Get Attention (R0-4) | Device |
 | `accessibilityRotor`, `AccessibilityRotorEntry` | Jumping between categories or phrases | 1–2 | 15.0; 16.0 | **Later**. Never ordered by use (invariant 8) | Unit: entries in stored order. Device |
 | `AccessibilityNotification.Announcement` with a priority | Telling a VoiceOver user about a sound problem without moving focus | 1–2 | 17.0 | **In place** (`AudioSafetyPolicy`, `HomeView`) | Unit: `AudioSafetyPolicyTests`. Device: heard once, in full |
-| `AccessibilityNotification.ScreenChanged`, `LayoutChanged` | Moving VoiceOver to a new screen | 1–2 | 17.0 | **Not posted on Home, on purpose.** Typing and Settings decide for their screens (R0-5, R0-7) | Review. Device |
+| `AccessibilityNotification.ScreenChanged`, `LayoutChanged` | Moving VoiceOver to a new screen | 1–2 | 17.0 | **Not posted on Home, on purpose.** Typing posts none either (2026-10-24): Type moves the text cursor into the field, not VoiceOver's place; whether VoiceOver should follow is a device check. Settings decides for its screens (R0-7) | Review. Device |
 | `AccessibilityFocusState` | Reading or moving VoiceOver's focus | 1–2 | 15.0 | **Never on Home**: focus never moves when a phrase speaks or a warning shows | Review. Device |
 | `accessibilityCustomContent`, `AXCustomContent` | Extra facts read on request | 1–2 | 16.0; 14.0 | **R1**: "recorded" on a recorded phrase's tile | Unit. Device |
 | Accessibility Reader | A system reading view of any app's text | 1–2 | System, since 26.0 | **System.** Works because the setup guide is real text | Device |
@@ -279,19 +279,19 @@ pointer input*).
 
 | API or feature | What it is for | Stage | iOS | Status in Brickson | Checked by |
 |---|---|---|---|---|---|
-| Typing on Apple's keyboard by eye, head or dwell (Zoom on Keyboard Keys, Key Dwell Time, Extended Predictions) | Faster pointer typing | 2–3 | System, 18.0 and 26 | **R0-5** keeps Apple's keyboard. Gaze and head typing sizes: **R1** | UI: the keyboard probe. Device |
-| Slide to Type with the dwell pointer | Drawing a word with the pointer | 1–3 | System, 26.0 (iPhone) | **System.** The composer takes whole-word changes: **R0-5** | Unit. Device |
-| Hover Typing | A larger copy of what is typed | 1–3 | System, since 18.0 | **System.** A standard text field: **R0-5** | UI. Device: it never covers the quick controls |
-| Key Repeat, Slow Keys, Sticky Keys | Physical-keyboard settings | 1–2 | System | **System.** Return speaks once: **R0-5** | Unit. Device |
-| QuickType and inline predictions | Apple's word suggestions | 1–3 | System; inline 17.0 | **R0-5**, left on (Typing foundation's decision) | UI: the keyboard height includes the bar. Device |
+| Typing on Apple's keyboard by eye, head or dwell (Zoom on Keyboard Keys, Key Dwell Time, Extended Predictions) | Faster pointer typing | 2–3 | System, 18.0 and 26 | **In place** (R0-5): Home types with Apple's keyboard. Gaze and head typing sizes: **R1** | UI: the keyboard probe. Device |
+| Slide to Type with the dwell pointer | Drawing a word with the pointer | 1–3 | System, 26.0 (iPhone) | **System.** The composer takes whole-word changes: **in place** (R0-5) | Unit. Device |
+| Hover Typing | A larger copy of what is typed | 1–3 | System, since 18.0 | **System.** A standard text field: **in place** (R0-5) | UI. Device: it never covers the quick controls |
+| Key Repeat, Slow Keys, Sticky Keys | Physical-keyboard settings | 1–2 | System | **System.** Return speaks once: **in place** (R0-5) | Unit. Device |
+| QuickType and inline predictions | Apple's word suggestions | 1–3 | System; inline 17.0 | **In place** (R0-5), left on (Typing foundation's decision) | UI: the keyboard height includes the bar. Device |
 | `inlinePredictionType` | Turning inline predictions off in one field | 2–3 | 17.0 (UIKit) | **Later**, only if a device check shows they confuse gaze typing | Unit |
-| `autocorrectionDisabled`, `textInputAutocapitalization`, `keyboardType` | How Apple's keyboard behaves in the field | 1–3 | 13.0; 15.0; 13.0 | **R0-5** | UI |
-| `submitLabel`, `onSubmit`, or a typed line break | Return speaks | 1–3 | 15.0 | **R0-5** ("Return speaks") | Unit. UI. Device |
-| Writing Tools; `writingToolsBehavior(_:)` | Apple Intelligence rewriting text | 1–3 | 18.0 | **R0-5** ("Writing Tools off while typing"), and the phrase editor: **R0-6**. Brickson never rewrites what a person says (invariant 9) | Review. Device |
+| `autocorrectionDisabled`, `textInputAutocapitalization`, `keyboardType` | How Apple's keyboard behaves in the field | 1–3 | 13.0; 15.0; 13.0 | **In place** (R0-5): sentences capitalized and the default keyboard, autocorrection left on (`typingFieldTraits()`) | UI |
+| `submitLabel`, `onSubmit`, or a typed line break | Return speaks | 1–3 | 15.0 | **In place** (R0-5, "Return speaks"): a typed line break | Unit. UI. Device |
+| Writing Tools; `writingToolsBehavior(_:)` | Apple Intelligence rewriting text | 1–3 | 18.0 | **In place** on Home's field (R0-5, "Writing Tools off while typing"), and the phrase editor: **R0-6**. Brickson never rewrites what a person says (invariant 9) | Review. Device |
 | Write with Siri | Siri composes or rewrites selected text | 1–3 | System, 27.0 | **System.** A device check of whether it can reach Brickson's field | Device |
 | `conversationContext` (`UIConversationContext`) | Giving the keyboard a conversation for smart replies | — | 18.4 | **Never**: it invites system-written replies | Review |
 | `application(_:shouldAllowExtensionPointIdentifier:)` | Refusing third-party keyboards | 1–3 | 8.0 | **In place** (R0-5): `BricksonAppDelegate`, through `UIApplicationDelegateAdaptor`, refuses custom keyboards only ("Third-party keyboards refused in 1.0") | Unit: `BricksonAppDelegateTests`, the running app's delegate included. Device: a third-party keyboard does not appear |
-| `ignoresSafeArea(_:edges:)` with `.keyboard` | Nothing moves when the keyboard shows | 1–3 | 14.0 | **R0-5** (invariant 11) | UI: frames equal before and after the keyboard |
+| `ignoresSafeArea(_:edges:)` with `.keyboard` | Nothing moves when the keyboard shows | 1–3 | 14.0 | **In place** on Home and Settings (R0-5, invariant 11) | UI: frames equal before and after the keyboard (`TypingOnHomeTests`) |
 | Keyboard frame notices, `UIKeyboardLayoutGuide` | Measuring the real keyboard | 1–3 | 3.2; 15.0 | **Not used**: the keyboard probe reads SwiftUI's own keyboard edge instead, and the room Home keeps is a tested rule (`KeyboardAllowance`, R0-5) | UI: `KeyboardProbeTests` on every UI run. Device: real keyboard heights |
 | `GCKeyboard.coalesced` | Whether a hardware keyboard is connected | 1–2 | 14.0 | **Later**, only if the layout needs it. Never moves a control | Unit. Device |
 | Dictation | Speech to text in the field | 1–2 | System; clean-up 27 | **System.** The composer accepts whole-field changes: **R0-5** | Unit. Device |

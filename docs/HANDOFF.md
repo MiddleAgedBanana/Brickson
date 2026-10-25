@@ -14,8 +14,10 @@ Ten threads are working in parallel on the first release, R0.
 ## What the app does today
 
 What it is written to do (*Verification* says how much has been seen). A
-Home with a safety row of two rows (Yes, No and Emergency; Again and Get
-Attention, Get Attention directly under Emergency), everyday categories
+Home with the message and, beside it, Phrases above Type; a safety row
+in one row on regular widths (Emergency, Yes, No, Again and Get
+Attention) and two on compact ones (Yes, No and Emergency; Again and Get
+Attention, Get Attention directly under Emergency); everyday categories
 with Stop's well at their leading top and Settings at their trailing
 end, and tiles from a neutral starter set, every frame from the layout
 engine, from the space the window gives it (docs/DECISIONS.md, "The
@@ -24,15 +26,22 @@ Home"): four category buttons that never scroll sideways, and three
 phrase columns on every iPhone at its standard Display Zoom (two on 375
 and 390-point phones with Bold Text). A tile
 speaks at once, in the person's Personal Voice when one exists and is
-allowed; the sentence stays on screen in two reserved lines across the
-width, and a longer message scrolls inside them. No label breaks a
+allowed; the sentence stays on screen in the message's reserved lines,
+and a longer message scrolls inside them. Type opens Apple's keyboard
+with the message being typed in the message's place: Speak, in Again's
+place, or Return says the whole message and keeps it; Phrases goes back
+to the phrases and keeps it too; Clear and Put Back take two category
+cells while the other categories are dimmed and the phrase grid is
+empty; Emergency leaves typing for the emergency phrases; nothing moves
+when the keyboard shows. The message is kept on the device across
+launches until it is cleared (docs/DECISIONS.md, "Typing on Home"). No label breaks a
 word: each drops its icon first, then shrinks only as far as it must,
 never below the default size, in lines of whole words. A phrase the system cuts off (a call, Siri, lost
 headphones) shows "Stopped" with Again to repeat it. Emergency opens the
 emergency phrases and says nothing. VoiceOver, Switch Control and Full
 Keyboard Access reach Yes, No, Emergency and Get Attention first, then
-Again, the message, Stop while it shows, the categories and Settings, and
-the phrases, each region as a group, and Voice Control also takes
+Again, the message, Phrases and Type, Stop while it shows, the categories
+and Settings, and the phrases, each region as a group, and Voice Control also takes
 "Repeat" for Again and "Help" for Get Attention (docs/DECISIONS.md,
 "Home's scan order and names" and "Settings on Home"). Get Attention
 starts the alarm at once and only starts it; while it sounds, Stop shows
@@ -52,12 +61,15 @@ Apple's user guides on 2026-10-23. Brickson asks for full screen in
 Assistive Access, and inside it the guides give written Settings paths
 instead of links (docs/DECISIONS.md, "Accessibility API coverage").
 Until Family Setup has been opened once, Home's message area says where
-setup is. Back to Talking's centre lies over Emergency, never over a
-control that speaks, though a look near its leading edge rests over No
-once Home returns (docs/DECISIONS.md, "Settings on Home" and "One chain
-engine for dwell safety").
-"Speaking", "Sounding", audio failures and very low volume share one
-passive status line under the message, in space always kept for it, and
+setup is. Settings' Back to Talking sits over Home's Phrases, so a look
+still resting on it when Settings closes meets Phrases, which does
+nothing while the phrases show; on a phone, a look resting on the top of
+Settings' Family Setup row can still open Family Setup and close Settings
+over No (docs/DECISIONS.md, "Typing on Home" and "One chain engine for
+dwell safety").
+"Speaking", "Sounding", audio failures, very low volume and a typed
+message that cannot be saved or restored share one passive status line
+under the message, in space always kept for it, and
 VoiceOver announces the warnings, every failed or cut-off alarm
 included. If the
 library cannot be saved, the app speaks from a filled in-memory library
@@ -213,18 +225,18 @@ release in docs/ROADMAP.md when no thread has it yet.
   not measured gaze, switch or head floors per input profile (R1). By
   the engine's model the phrase grid still scrolls (invariant 11) on
   phones smaller than the Pro Max at AX5, on the iPhone 17 at AX3 with
-  Bold Text, on a 375×667 phone above the default size or with Bold
-  Text, on the iPad mini and a zoomed 13-inch iPad in landscape at AX5,
-  on 320pt windows at every size, and, as the categories sit lower to
-  keep Yes off Stop's well, on windows 604 to 720pt wide and 667pt tall
-  at AX3, by up to 7.5pt; it no longer does on a 375×667
-  phone at the default size or on an 11-inch iPad in landscape
-  (docs/DECISIONS.md, "The layout engine", *Where the starter library
-  fits*). iPhone Duo's outer display is predicted to fit at the default
-  size, not yet seen. What remains needs an arrangement with fewer tiles
-  to a screen, a design question (Figma, then the owner) before R1's
-  dwell, switch, head and gaze profiles. *(a design thread, then the
-  owner)*
+  Bold Text, on a 375×667 phone at every size (at the default size by
+  half a point, since typing came to Home), on 320pt windows at every
+  size, and on compact windows 667pt tall at AX3; with typing on Home it
+  no longer does on the iPad mini and a zoomed 13-inch iPad in landscape
+  at AX5, or on regular windows 667pt tall at AX3 (docs/DECISIONS.md,
+  "Typing on Home", *Where the starter library fits, measured*).
+  iPhone Duo's outer display is predicted to fit at the default size,
+  not yet seen. What remains needs fewer tiles to a screen: drawn in
+  Figma as R1's direction, pages of whole rows with "More, 1 of 2" in
+  the grid's last slot (docs/work/typing-on-home.md, *Fewer tiles to a
+  screen*), not built, because touch, 1.0's only profile, may scroll.
+  *(R1's profile work, then the owner)*
 - The slot plan has no answer yet for more than four everyday categories
   (docs/DECISIONS.md, "Home's slot plan", *Open*): editing and import
   must not add a fifth until it does. Meanwhile Home keeps the fourth and
@@ -249,8 +261,10 @@ release in docs/ROADMAP.md when no thread has it yet.
   `HomeLayoutEngineTests`). It is the only hazard the chain engine finds
   in Home's states
   (`HomeLayoutEngineTests.noChainOnTheEnginesFramesMeetsAHazardButStopsWell`).
-  In the slot plan's arrangement (item 5) it is gone on regular widths,
-  where Emergency is above the well. *(owner if it stays)*
+  Since typing came to Home (2026-10-24) it is gone on regular widths,
+  where Emergency is above the well; on compact widths, while typing,
+  Again's slot shows Speak, which says the typed message
+  (docs/DECISIONS.md, "Typing on Home"). *(owner if it stays)*
 - An alarm warning nobody acts on ("Alert stopped", "Alert failed") keeps
   Home's status line until Get Attention sounds again, so a later cut-off
   phrase, low volume or failed session shows second; VoiceOver still
@@ -277,26 +291,34 @@ release in docs/ROADMAP.md when no thread has it yet.
   "Settings on Home"): a device check (Snap to Item by nearest centre or
   nearest edge) decides whether placement can remove it, or its measured
   cost goes to the owner before a dwell, switch, head or gaze profile
-  ships. On the layout engine's frames as Home has them (since
-  2026-10-24) it is the same, at most 57% by centre and 51% by edge.
-  **Owner question, before R1:** with Phrases and Type beside the
-  message, as the slot plan places them for typing (item 5), it grows to
-  up to 97% by centre and 89% by edge on compact widths, 68% and 62% on
-  regular ones, and no placement inside the slot plan removes it. Accept
-  that as a named exception to invariant 10, or ask for another
-  placement (docs/DECISIONS.md, "The layout engine", *Home on the
-  engine*). *(the owner, before R1's profiles)*
-- Phrases and Type have no place on Home yet (docs/DECISIONS.md, "Home's
-  slot plan"). Until they are built, Emergency stays at the safety row's
-  first-row trailing end, under Back to Talking, which
-  `SettingsOnHomeTests` checks, and Get Attention sits under it in a
-  second row rather than at the slot plan's place (docs/DECISIONS.md,
-  "Settings on Home" and "Get Attention and Stop on Home"). The engine
-  has the slot plan's arrangement ready for them (`HomeLayout.Modes`);
-  in it, on compact windows, Get Attention takes two lines in A's
-  narrow trailing column, so the safety row needs 64pt and the starter
-  library no longer fits a 375×667 phone (docs/DECISIONS.md, "The layout
-  engine", *Home on the engine*). *(Wave 3 item 5)*
+  ships. On the layout engine's frames without Phrases and Type it was
+  at most 57% by centre and 51% by edge. Since typing came to Home
+  (2026-10-24), Phrases and Type are beside the message, as the slot
+  plan places them, and it is up to 97% by centre and 89% by edge on
+  compact widths, 68% and 62% on regular ones; no placement inside the
+  slot plan removes it. **Owner question, before R1:** accept that as a
+  named exception to invariant 10, or ask for another placement
+  (docs/DECISIONS.md, "The layout engine", *Home on the engine*; "Typing
+  on Home" left it as it was). *(the owner, before R1's profiles)*
+- While typing, a look resting on the top edge of the empty phrase grid
+  can meet Clear or Put Back, which change the message unasked (neither
+  loses words: Put Back only brings back what Clear took, and Clear can
+  be undone once). Every cell of the band, and the second row of three
+  columns, borders the grid, so no pair of cells removes it; open, not
+  accepted, pinned strict in `HomeLayoutEngineTests` (docs/DECISIONS.md,
+  "Typing on Home", *Open: the empty phrase grid borders Clear and Put
+  Back*). *(owner, before R1's profiles)*
+- While typing, on windows the keyboard's room reaches, some of the
+  safety row ends inside it: Speak and Get Attention on 320pt windows from
+  the default size (Yes, No and Emergency too from AX3) and on a 375×667
+  phone from AX3, and the whole row on the iPad mini and a zoomed
+  13-inch iPad in landscape from AX3. Phrases stays above it and puts the
+  keyboard away, so each is two activations away there. The keyboards on
+  these windows are not measured (the room is the tallest keyboard
+  measured on their shape), so whether they cover anything is a device
+  check; each is a measured exception for the owner, pinned strict
+  (docs/DECISIONS.md, "Typing on Home", *The keyboard's room,
+  measured*). *(owner, after the keyboard check on these windows)*
 - A label with a word too wide for its slot even at the default text size
   is cut short with an ellipsis when it is one word, but in a phrase of
   several words that word can wrap mid-word. No starter label has one
@@ -304,20 +326,24 @@ release in docs/ROADMAP.md when no thread has it yet.
   import exists; those must keep every word within the narrowest tile, or
   the layout engine must give it room. *(Library editing and backup format,
   with the layout engine)*
-- In the slot plan's arrangement (item 5), on windows under 345pt with
-  Bold Text, the message beside Phrases and Type is too narrow for
-  "understand." (docs/DECISIONS.md, "The layout engine", *The message on
-  the narrowest windows*). Home today, whose message spans the width,
-  and its Bold Text tiles keep the word whole. *(Wave 3 item 5)*
+- On windows under 345pt with Bold Text, the message beside Phrases and
+  Type is too narrow for "understand.", which can break there; since
+  typing came to Home (2026-10-24) this is Home's (docs/DECISIONS.md,
+  "The layout engine", *The message on the narrowest windows*; "Typing on
+  Home"). 320pt windows need their own arrangement. *(the layout engine,
+  a new thread)*
 - The running app's frames are not compared with the engine's point by
   point: the UI tests check what the engine predicts for CI's iPhone and
   iPad (fits, on screen, fixed places), not each frame
   ([`log/2026-10-24-home-on-the-layout-engine.md`](log/2026-10-24-home-on-the-layout-engine.md)).
   *(Wave 3 item 5, or a Mac thread)*
-- Settings' Back to Talking breaks "Talking" across two lines ("Talk-",
-  "ing") on CI's iPhone at the largest text size, in the half of the bar
-  it keeps beside Get Attention's place (seen in PR #33's captures; the
-  same on the base branch). *(Settings, with the next accessibility pass)*
+- Settings' Back to Talking broke "Talking" across two lines ("Talk-",
+  "ing") on CI's iPhone at the largest text size (PR #33's captures).
+  Since 2026-10-24 it takes Phrases' frame and a `FittedLabel` in the
+  categories' font, which keeps words whole, drops the icon first and
+  takes two lines where it must (docs/DECISIONS.md, "Typing on Home");
+  no test reads its rendered words back yet. *(the next accessibility
+  pass: add it to the rendered-label test)*
 - The rendered-label test reads the five English quick-control labels
   (Yes, No, Emergency, Get Attention, Again) only, not phrases or categories; `StarterLabelFitTests` measures every
   starter label against its narrowest slot instead. *(Accessibility
@@ -336,23 +362,31 @@ release in docs/ROADMAP.md when no thread has it yet.
   with `userInterfaceLevel = .elevated` in `PaletteTests`
   ([`log/2026-10-23-show-borders-and-large-content.md`](log/2026-10-23-show-borders-and-large-content.md), *Follow-ups*). *(the next
   accessibility thread)*
-- No typing on Home. The room it must leave for Apple's keyboard is a
-  tested rule, `KeyboardAllowance`, and every UI run checks the live
-  keyboard and Home's safety row against it (`KeyboardProbeTests`);
-  keyboards from other apps are refused (docs/DECISIONS.md, "Typing is a
-  state of Home" and "Third-party keyboards refused in 1.0"). On CI's
-  windows both of the safety row's rows already end above the
-  allowance's limit. On shorter wide windows (a 13-inch iPad with Display
-  Zoom at Larger Text, an iPad mini in landscape) they do not, so the
-  typing state needs C in one row there, which needs A's trailing column
-  (Phrases and Type) that the typing state brings (docs/DECISIONS.md,
-  "Get Attention and Stop on Home", *Open: typing needs C in one row*).
-  The typing rules (`MessageComposer`), the saved message (`DraftStore`)
-  and the keyboard probe are in `Brickson/Typing`, waiting for Home's
-  typing state ([`log/2026-10-23-keyboard-allowance.md`](log/2026-10-23-keyboard-allowance.md),
-  *Follow-ups*; [`log/2026-10-21-typing-foundation.md`](log/2026-10-21-typing-foundation.md),
-  *For the next typing thread*). *(a new typing thread, once ROADMAP R0
-  items 3 and 9 allow it)*
+- Typing on Home (since 2026-10-24) is checked only on CI's iPad and
+  iPhone simulators, in portrait, at the default text size, with the full
+  software keyboard (`TypingOnHomeTests`); `KeyboardProbeTests` checks the
+  safety row against the keyboard's room in every orientation and text
+  size. Not checked: typing at the largest text sizes in the running
+  app, the iPad's floating and split keyboards, other languages, iPhone
+  Duo's inner display (`KeyboardAllowance`'s *Not covered yet* in
+  docs/DECISIONS.md, "Typing is a state of Home"), and on a real device
+  whether the cursor and keyboard come at once when Type is chosen by
+  Switch Control, Voice Control or a dwell, what a look slipping off the
+  keyboard's top row meets, and Return among the letter keys for dwell
+  users (docs/DECISIONS.md, "Return speaks"; the checks in
+  [`log/2026-10-21-typing-foundation.md`](log/2026-10-21-typing-foundation.md)).
+  The status line's "Message not saved" and "Message not restored" are
+  unit-tested only. For Codex on the owner's Mac: run the keyboard probe,
+  which covers every orientation and text size, on a 375×667 simulator
+  (an iPhone SE, if the current Xcode still offers one), with Display
+  Zoom set to Larger Text and without it
+  (`DESTINATION='platform=iOS Simulator,id=<udid>' scripts/test.sh ui
+  '-only-testing:BricksonUITests/KeyboardProbeTests'`), which says
+  whether the real keyboard covers Speak or Get Attention there; and type
+  on Home by hand at AX5 on the iPhone 17 and 13-inch iPad simulators,
+  noting anything that moves or ends under the keyboard. The device
+  checks are in *Checks that need a real device*. *(Codex on the owner's
+  Mac, then the owner's devices)*
 - No editing, export or import screens. The library core (`LibraryEdit`,
   `LibraryEditor`, `LibraryImport`, `BackupCodec`) is tested code that
   nothing calls yet. A Replace that would remove the person's own words
@@ -385,18 +419,23 @@ release in docs/ROADMAP.md when no thread has it yet.
   Set Up Step by Step and save an answer (it adds Touch and restarts the
   check-in clock; nothing reads the answers yet): from Home's Settings
   on a phone at the default text size, and from Set Up Step by Step
-  itself on every window where it shows. And Settings closes under the
-  look: where the pointer goes back to the look, a look near Back to
-  Talking's leading edge rests over No once Home returns, and on the
-  phone at the largest size its lower edge rests over Get Attention.
-  Placing Back to Talking over harmless controls is the fix for the
-  second, and a device check says whether it binds. *(ROADMAP Wave 3
-  item 5, which brings Phrases, with Back to Talking proposed over its
-  frame in docs/DESIGN.md; item 4 left Back to Talking where it was)*
-  The fix for the first, Learn About Each Way where Set Up Step by
-  Step's row was, was built and held on 2026-10-24, because its guide
-  leads into the second hazard; it comes back with that placement
-  ([`log/2026-10-24-settings-chains.md`](log/2026-10-24-settings-chains.md)).
+  itself on every window where it shows. And Settings can close under
+  a look nobody meant to close it with. Since 2026-10-24 Back to Talking
+  sits over Phrases, so choosing it meets only Phrases; what remains, on
+  the phone model, is a look resting on the top of the root's Family
+  Setup row, which opens Family Setup, finds Back to Talking nearest by
+  edge, and closes Settings over No (`SettingsOnHomeTests` pins it
+  strict on compact windows; docs/DECISIONS.md, "Typing on Home",
+  *Settings closing, rescored*). Placing Family Setup's first rows for
+  it is the fix, and a device check says whether it binds. The fix for
+  the first, Learn About Each Way where Set Up Step by Step's row was,
+  was built and held on 2026-10-24, because its guide leads into the
+  second hazard; rescored on the moved frames, it still would (its
+  guide's Back to Talking closes Settings over Get Attention in three
+  chains), so it stays held
+  ([`log/2026-10-24-settings-chains.md`](log/2026-10-24-settings-chains.md);
+  docs/DECISIONS.md, "Typing on Home", *The held guide link stays
+  held*). *(the next Settings thread)*
   Not scored yet: the chain through iOS's Personal Voice question once
   the Ask button shows (after answering, the look rests where the
   question's button was, over whatever Voice Settings has there); Voice
@@ -450,8 +489,8 @@ release in docs/ROADMAP.md when no thread has it yet.
   because the kept one is gone, no line says so yet
   ([`log/2026-10-22-voice-screen.md`](log/2026-10-22-voice-screen.md),
   *Follow-ups*). *(the next Settings thread)*
-- The privacy policy still describes R0 features not built yet (typing's
-  kept message, editing, exported backups); each is built or
+- The privacy policy still describes R0 features not built yet
+  (editing, exported backups); each is built or
   its sentence deleted before release (docs/APP-STORE.md, section 3, lists
   each sentence). The sections for recorded phrases, caregiver alerts and
   Siri and Shortcuts, which 1.0 does not ship, were deleted on 2026-10-23
@@ -505,15 +544,18 @@ long-term vision, the direction behind it, is its *Where this goes*.
 The next pull requests, in order, with which may run side by side and
 which change Home, are its
 [Wave 3](ROADMAP.md#wave-3-the-next-pull-requests-in-order) (planned
-2026-10-23): typing on Home is its item 5, next now that Home is on the
-layout engine (item 4). Its item 2, the chain engine, is built; a change
+2026-10-23): items 1 to 5 and 7 are built, typing on Home (item 5) on
+2026-10-24 ([`log/2026-10-24-typing-on-home.md`](log/2026-10-24-typing-on-home.md),
+*Follow-ups*); next on Home is item 6, iPhone Duo in every pose, which
+needs the owner's Mac. Its item 2, the chain engine, is built; a change
 that moves a control keeps its tests passing. Item 7 scored Get
 Attention in Settings' bar, which would sound the alarm unasked, for the
 owner to decide, and built a fix for the chain that saves a setup
 answer, held until Back to Talking is placed over harmless controls:
-item 4 left it where it was, so that is item 5's (docs/DECISIONS.md,
-"One chain engine for dwell safety" and "Get Attention in Settings'
-bar: the owner decides").
+item 5 placed it over Phrases, and the fix still sounds the alarm
+through its guide, so it stays held for the next Settings thread
+(docs/DECISIONS.md, "Typing on Home", "One chain engine for dwell
+safety" and "Get Attention in Settings' bar: the owner decides").
 Every change follows AGENTS.md, *Apple's current frameworks first*: the
 legacy uses kept, and the moves still planned with who owns each, are in
 docs/DECISIONS.md under that title
@@ -558,8 +600,9 @@ What is left of item 3's list, in order, is in
 The layout engine, Wave 3's item 3 in [docs/ROADMAP.md](ROADMAP.md), is
 built, and Home is on it (item 4; docs/work/layout-engine.md and
 [`log/2026-10-24-home-on-the-layout-engine.md`](log/2026-10-24-home-on-the-layout-engine.md),
-*Follow-ups*); the layout's next step is item 5, typing, with the slot
-plan's Phrases and Type; input profiles and the phone on its side wait until R0's
+*Follow-ups*); item 5, typing, brought the slot plan's Phrases and
+Type and its one-row C ([`log/2026-10-24-typing-on-home.md`](log/2026-10-24-typing-on-home.md));
+input profiles and the phone on its side wait until R0's
 first build has gone to App Review. The earlier order is in
 [`log/2026-10-21-phone-layout.md`](log/2026-10-21-phone-layout.md).
 
@@ -587,6 +630,7 @@ Simulators cannot show these. Record each result in a `docs/log/` file
 | Whether a lingering look re-fires a dwell | How much repeat protection matters |
 | Whether Snap to Item ignores controls scrolled off screen | Whether scrolling can keep family controls out of reach, and whether the chain engine may keep scoring only the controls in the window |
 | What the real software keyboard covers in each orientation (CI measures the simulator's on every UI run; a device, other languages and windowed iPads are not measured), that a third-party keyboard never appears in Brickson, and typing checks 1–8 in [`log/2026-10-21-typing-foundation.md`](log/2026-10-21-typing-foundation.md) | `KeyboardAllowance`'s references, the typing layout (docs/LESSONS.md, "Test with the real software keyboard"), the word row, Return under dwell, and whether Brickson needs its own keyboard |
+| Typing on Home by touch, Switch Control, Voice Control ("Tap Type"), Full Keyboard Access and Dwell with Snap to Item: Type brings the cursor and Apple's keyboard at once; Speak and Return say the message; Clear, then Put Back; Phrases puts the keyboard away and keeps the message; a look slipping off the keyboard's top row meets nothing that speaks or changes the message; and, on an iPhone SE with Display Zoom and at AX3 without it, whether the real keyboard covers Speak or Get Attention | docs/DECISIONS.md, "Typing on Home" (*The keyboard's room, measured*; *Open: the empty phrase grid borders Clear and Put Back*) and "Return speaks" |
 | Get Attention heard from the next room, on the speaker and over Bluetooth | The alarm's sound and level, and the replacement tone |
 | A phrase spoken while Get Attention sounds is understood over the tone at 0.32 | `AttentionAlertStatus.toneVolumeWhileSpeaking` |
 | A phone call, Siri and another app's alarm during a phrase and during Get Attention: each stops and shows "Stopped — Again" or "Alert stopped", and nothing restarts by itself, on iOS 26 and iOS 27 | Interruption handling and the iOS 27 notices (docs/DECISIONS.md, "Audio session notices") |
@@ -606,7 +650,7 @@ Simulators cannot show these. Record each result in a `docs/log/` file
 | On a folding iPhone, open, partially folded and closed, and in Stage Manager, Slide Over and iPhone Mirroring windows: nothing safety-critical is hidden or split, nothing a person uses sits in the fold, Dwell keeps working as the phone folds and unfolds, Eye Tracking and Head Tracking (which Apple says work only fully open) come back when it opens fully with nothing moved, and whether the inner camera's reserved region covers the area that goes dark while either is on (the iPhone Duo simulator shows the layout first: R0 item 13; Wave 3 item 6) | Layouts from the space available; docs/DECISIONS.md, "iPhone Duo" |
 | Eye Tracking and Dwell on an external display | Whether gaze profiles hold off the built-in screen |
 | Switch Control with Auto Scanning, Group Items on and off, and Auto Tap: the scan steps to Emergency, Yes and No from every Home state, and whether Home's regions become scan groups | Scan order and grouping (docs/ACCESSIBILITY.md, section 1) |
-| With VoiceOver, Switch Control (item and group scanning) and Full Keyboard Access, Home is reached as Yes, No, Emergency, Get Attention, Again, then the message, Stop while it shows, the categories and Settings, the phrases, in every state; what each says on entering a region; whether the cursor stops on the message or the status line; Voice Control's "Show names" shows each control's visible words and "Tap Repeat" presses Again | "Home's scan order and names": the order, unlabelled regions, and whether `accessibilityRespondsToUserInteraction` is needed |
+| With VoiceOver, Switch Control (item and group scanning) and Full Keyboard Access, Home is reached as Yes, No, Emergency, Get Attention, Again, then the message, Phrases and Type, Stop while it shows, the categories and Settings, the phrases, in every state; what each says on entering a region; whether the cursor stops on the message or the status line; Voice Control's "Show names" shows each control's visible words and "Tap Repeat" presses Again | "Home's scan order and names": the order, unlabelled regions, and whether `accessibilityRespondsToUserInteraction` is needed |
 | With VoiceOver on, a phrase tile with and without the `startsMediaSession` trait: does VoiceOver stay quiet while the phrase speaks | Whether phrase tiles carry the trait (R0 item 4) |
 | Brickson inside Assistive Access with `UISupportsFullScreenInAssistiveAccess`: its window size (all the space above the Back button), whether Eye Tracking and Switch Control work there, and that the guides show no Open … Settings button and say to leave Assistive Access first | Assistive Access support (R0 item 7; Wave 3 item 1) |
 | Guided Access with each input method, and with a short Display Auto-Lock while Brickson keeps the screen awake | Setup advice, and invariant 12 under Guided Access |
@@ -653,7 +697,7 @@ Simulators cannot show these. Record each result in a `docs/log/` file
   Billing → AI usage.
 - The [website](https://middleagedbanana.github.io/Brickson/), its
   [privacy policy](https://middleagedbanana.github.io/Brickson/privacy/)
-  (Effective October 23, 2026, since PR #40) and its
+  (Effective October 24, 2026, since typing came to Home; the page since PR #40) and its
   [accessibility page](https://middleagedbanana.github.io/Brickson/accessibility/)
   (since PR #40; the App Store's Accessibility URL) publish after each
   merge; on 2026-10-15 the first two matched `site/` byte for byte. The

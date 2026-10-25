@@ -1513,11 +1513,17 @@ never where it is.
   window (*Get Attention and Stop on Home*): only one row of 88pt
   controls fits above the worst-case keyboard (*Typing is a state of
   Home*), so typing comes to Home only once C is one row there, or the
-  engine otherwise keeps all of C above the keyboard.
+  engine otherwise keeps all of C above the keyboard. *2026-10-24:* C is
+  one row on regular widths (*Typing on Home*), and the windows where it
+  still ends in the keyboard's room are listed there.
 - **Settings covers Home with its own safety bar at Home's frames:** Back
   to Talking over A's trailing column (so it closes onto Phrases or Type)
   and Get Attention over the message's footprint, so the controls a look reaches when Settings opens or closes
-  are the harmless ones.
+  are the harmless ones. *2026-10-24 (*Typing on Home*):* Back to Talking
+  over Phrases alone, as docs/DESIGN.md proposed: over the whole column,
+  Phrases and Type tie, and a repeat on Type would reopen typing. Get
+  Attention's place stays empty (*Get Attention in Settings' bar: the
+  owner decides*).
 - **Identifiers.** Each slot has a stable accessibility identifier, named
   for the slot, not for its label (for example the Again well keeps its
   identifier while it shows Speak). UI tests and captures compare frames by
@@ -1604,6 +1610,8 @@ docs/work/layout-engine.md; the record is
   Attention's two lines in A's narrow column (*Home on the engine*), the
   slot plan no longer fits the 375×667 phone at all.
   `theStarterLibraryFitsWhereTheTableSays` pins both modes.
+  *2026-10-24:* Home has Phrases and Type, so the slot plan's column is
+  Home's (*Typing on Home*, *Where the starter library fits, measured*).
 - **The message on the narrowest windows.** Known limit, not accepted:
   below 345 points with Bold Text on, the message beside Phrases and Type
   is narrower than "understand." in its font at the default size, so the
@@ -1612,6 +1620,8 @@ docs/work/layout-engine.md; the record is
   it there. *2026-10-24:* not on Home, whose message spans the width; it
   stays for the slot plan, which item 5 brings. Item 4 built no
   arrangement for 320-point windows (*Home on the engine*).
+  *2026-10-24:* item 5 brought it to Home (*Typing on Home*, *The
+  message on the narrowest windows*).
 - **Bold Text tiles on 375 and 390-point phones.** Found while measuring:
   "understand." in the compact tile font with Bold Text is about 107
   points wide, so a tile needs 118 points with the slack and inset, and
@@ -1801,7 +1811,11 @@ row's and Settings' arrangements below: the safety row is two rows on
 every window (Yes, No and Emergency; Again and Get Attention), and
 Settings takes the categories' last cell in each of their three
 arrangements, showing its gear alone where its word does not fit.
-Emergency still ends the first row, under Back to Talking.
+Emergency still ends the first row, under Back to Talking. *2026-10-24,
+Typing on Home:* Back to Talking now sits over Home's Phrases, from Home's
+own engine, so where this section puts Emergency or the root's Family
+Setup row under Back to Talking, read Phrases and the root's trailing
+half; regular widths have the slot plan's one-row C (*Typing on Home*).
 
 - **Settings is the last cell of region B,** at the trailing end of the
   categories, where *Home's slot plan* puts it: a column as tall as the
@@ -1902,7 +1916,7 @@ Emergency still ends the first row, under Back to Talking.
   in docs/HANDOFF.md, *Known gaps*.
 - **From Settings, Yes, No and Emergency are two activations away:**
   Back to Talking, whose spot lands nearest Emergency on Home, then the
-  control. The cover is the family's screen, not a Home state, and opens
+  control. *2026-10-24:* its spot lands on Phrases (*Typing on Home*). The cover is the family's screen, not a Home state, and opens
   on the way back and Get Attention's place (AGENTS.md, *Family controls
   stay out of the person's path*; *Settings is a cover with a fixed
   safety bar*). Home's Settings button makes that reachable by a stray
@@ -2061,7 +2075,9 @@ ROADMAP R0 item 4 ([`work/get-attention-on-home.md`](work/get-attention-on-home.
   (`AudioSafetyPolicy.ambientIssue`), not from the line. Whether a newer
   problem should take the line, or the person should be able to set the
   warning aside, is for the next audio thread. Found in review of PR #38.
-- **Open: typing needs C in one row.** Only one row of 88pt controls fits
+- **Open: typing needs C in one row.** *2026-10-24: built* (*Typing on
+  Home*): C is one row on regular widths, and what still meets the
+  keyboard's room is listed there. Only one row of 88pt controls fits
   above the worst-case software keyboard (*Typing is a state of Home*),
   so before typing comes to Home, C becomes one row on wide windows (the
   slot plan's own C), or the engine keeps all of it above the keyboard
@@ -2203,7 +2219,10 @@ engine, not five scripts".
     Phrases and the proposed Back to Talking over its frame
     (docs/DESIGN.md). Words alone would not do it: wherever a look rests, Snap to
     Item picks the nearest control, and below the words that is an
-    answer.
+    answer. *2026-10-24, item 5:* rescored on the moved frames and still
+    held: the guide's Back to Talking, nearest the look, closes Settings
+    over Home's Get Attention in three chains on the phone model
+    (*Typing on Home*, *The held guide link stays held*).
   - **Open: Settings closes under the look.** New. Back to Talking
     closes Settings onto Home, under the look. Its centre is over
     Emergency (*Settings on Home*), but where the pointer goes back to
@@ -2220,6 +2239,13 @@ engine, not five scripts".
     chains into it), in ROADMAP Wave 3 item 4 (*2026-10-24:* item 5;
     item 4 left Settings as it was), or the measured cost goes
     to the owner before a dwell, switch, head or gaze profile ships.
+    *2026-10-24, item 5 (*Typing on Home*, *Settings closing,
+    rescored*):* Back to Talking now sits over Phrases, and choosing it
+    meets only Phrases. One closing nobody chose remains on the phone
+    model: a look on the top band of the root's Family Setup row opens
+    Family Setup, whose Back to Talking is nearest it by edge, and
+    Settings closes over No. `SettingsOnHomeTests` pins such closings
+    strict on compact windows and expects none on the iPads.
 
 *Before:* the nearest-control rules were written twice, in
 `HomeShapeTests` and in the UI tests' `ScreenControls`, and only single
@@ -2462,6 +2488,216 @@ How the message being typed behaves (`MessageComposer`, `DraftStore`):
   "Message not restored". The message is never logged and never put in a
   crash message.
 
+## Typing on Home
+
+*2026-10-24. Default, adopted by the Add typing to Home thread
+(docs/ROADMAP.md, Wave 3 item 5; R0 items 5 and 9): routine choices,
+reversible if the owner objects. It accepts no exception to an
+invariant: what it measures stays open for the owner.* The intent, spec
+and plan are [`work/typing-on-home.md`](work/typing-on-home.md), with the
+Figma screens it links; the record is
+[`log/2026-10-24-typing-on-home.md`](log/2026-10-24-typing-on-home.md).
+It builds what *Typing is a state of Home*, *Typing uses Apple's
+keyboard*, *Return speaks* and *The typed message* decided, in the slot
+plan's places (*Home's slot plan*).
+
+- **Home lays out with both modes** (`HomeLayout`,
+  `Modes.phrasesAndTyping`). A gains its trailing column, Phrases above
+  Type beside the message. On regular widths C becomes the slot plan's
+  one row, Emergency, Yes, No, Again and Get Attention, with Stop's well
+  under Emergency; compact widths keep two rows (Yes, No and Emergency;
+  Again and Get Attention). `Modes.phrasesOnly` stays in the engine as
+  the comparison for the owner's question on Yes and No (below).
+- **Phrases and Type are a mode switch's two segments**, each a standard
+  `Button`. The one whose mode is on shows selected (its ring, a check
+  mark where there is room, and the Selected trait, as a category does),
+  and choosing it again does nothing, so a repeat after either meets the
+  same control and stops there. Phrases is selected while browsing.
+  Their names are their words alone: "Type", not "Keyboard" or "Write",
+  which someone might want to say.
+- **Typing.** Type turns typing on and puts the cursor in the field, which
+  opens Apple's keyboard. Nothing moves. The field takes the message's
+  frame: a standard `TextField` (vertical, `typingFieldTraits()`), named
+  "Message" for assistive technologies, its edge in the control fill
+  (3:1 or better against the screen, `PaletteTests`) and its words in
+  primary ink. It shows no placeholder: the system's placeholder grey is
+  not pinned and measures under 4.5:1 (invariant 6), and a cursor in an
+  empty field beside Type already says what it is for. **Speak** takes
+  Again's slot and is disabled while there is nothing to say; Return
+  speaks too; both say the whole message and keep it.
+- **Clear and Put Back take two category cells** while typing
+  (`HomeLayout.TypingCells`), away from the message and from Speak, each
+  disabled while it cannot act. Placed by scoring every pair of cells in
+  every typing state (`HomeLayoutEngineTests`): never the cell under
+  Stop's well, which a look held after Stop meets, nor the one beside it,
+  which a look resting in the empty well meets. Three columns (phones):
+  Clear in the second category's cell (top row, trailing) and Put Back in
+  the fourth's (second row, middle, beside Settings). Two columns and the
+  band: the third's and the fourth's. "Put Back", not "Undo", which Voice
+  Control uses for its own command.
+- **The other categories are dimmed** while typing: disabled in their own
+  cells, none shown selected. Choosing one would leave typing and fill
+  the empty phrase grid with phrases under a look resting there, so the
+  next activation would speak unasked. A category is two activations away
+  while typing (Phrases, then the category); Emergency stays one.
+- **The phrase grid is empty while typing**, its frame kept: nothing that
+  speaks sits under the keyboard, and lowering the keyboard reveals
+  nothing that speaks.
+- **Leaving typing.** Phrases leaves it and keeps the message for the next
+  Type; Emergency leaves it for the emergency phrases (invariant 2);
+  Settings leaves it before it opens, so Settings always closes onto the
+  phrases. Yes, No, Get Attention and Stop work as always and typing
+  stays. Lowering the keyboard (the iPad's hide-keyboard key, or a
+  hardware keyboard) keeps typing on, and Type brings the keyboard back.
+- **Scan order** (`HomeRegion`): Yes, No, Emergency, Get Attention and
+  Again in the safety row wherever each stands (Emergency leads the row
+  on regular widths), then the message, Phrases and Type in A, then Stop,
+  the categories and Settings, then the tiles. While typing, Speak is
+  reached in Again's place and Clear and Put Back in their cells'. No two
+  of Home's names match in any state (`ControlNamesTests`).
+- **The status line** (`HomeStatusLine`): an audio problem, then the alarm
+  sounding, then speaking, then the message's own problem ("Message not
+  saved", "Message not restored"), which lasts until the next save and
+  so waits behind what is about sound now. Each of those is announced to
+  VoiceOver when it appears (invariants 4 and 5). While typing, a phrase
+  cut off names Phrases first ("Stopped: Phrases"), since Again's slot
+  shows Speak.
+- **The app keeps the message** (`BricksonApp` owns one `DraftStore`, in
+  Application Support/Typing, or the UI tests' own storage under test): it
+  is restored at launch without speaking or opening typing, and saved
+  again when the app goes to the background after a failed save
+  (`retrySave()`), as *The typed message* says.
+- **Get Attention on one line beside the message.** On compact widths the
+  trailing column is at least as wide as "Get Attention" on one line
+  wherever the message keeps its own minimum width
+  (`MinimumWidths.getAttentionOneLine`), so Get Attention and Emergency
+  take one line on phones at the default size.
+- **Phrases' and Type's floor and growth.** Each is at least the profile's
+  floor and one line of the quick controls' words, and 56 points where
+  Settings' Back to Talking, which takes Phrases' place, needs two lines
+  of the categories' font (narrower than 131 points, 142 with Bold Text:
+  `twoLineCategoryHeight`); A is at least two of them and a gap. They grow
+  toward the safety row's height after the safety row grows, and give that
+  growth back first where the keyboard's room is short.
+- **Settings' Back to Talking over Phrases** (`HomeLayout.backToTalking`,
+  `SettingsSafetyBar`). Settings lays out Home's engine for the same
+  window and text size and puts Back to Talking inside Phrases' frame, so
+  a look still resting on it once Settings closes meets Phrases, which
+  does nothing while the phrases show. On compact widths it is Phrases'
+  frame. On regular widths Phrases spans the two columns above Again and
+  Get Attention, and a look at its lower corners is nearer their centres
+  than Phrases', so Back to Talking is centred over Phrases, as tall, and
+  at most one column wide: a point at its foot `dx` from Phrases' centre
+  stays nearer that centre while `dx < (a² + d² − d·h) / 2a` (with Get
+  Attention's centre `a` across and `d` down from Phrases', and Phrases
+  `h` tall), less two points for a tie. On CI's 13-inch iPad, and on every
+  window 874 points tall or taller, that is one column (193.6 points in
+  portrait, 262.4 in landscape); on some shorter regular windows it is
+  narrower. `HomeLayoutEngineTests.backToTalkingClosesOntoPhrasesAlone`
+  checks points across it on every window the engine's tests lay out.
+  Its words are in the categories' font, on
+  one line or two, and drop the icon before they shrink. Get Attention's
+  empty place keeps the bar's leading side (*Get Attention in Settings'
+  bar: the owner decides*), the bar ends 8 points under Back to Talking,
+  and every Settings screen starts there. Settings' first screen keeps
+  its columns: the Family Setup row on the trailing half, the note on the
+  leading. *Before:* Back to Talking filled the bar's trailing half, with
+  its centre over Emergency (*Settings on Home*), and the slot plan put it
+  over the whole trailing column, where Phrases and Type tie and a repeat
+  on Type would reopen typing (docs/DESIGN.md, *What a held activation
+  meets next*).
+- **Settings closing, rescored** (*One chain engine for dwell safety*,
+  *Open: Settings closes under the look*). Choosing Back to Talking now
+  meets only Phrases, by both rules and both pointers, in the unit tests'
+  model and on CI's iPad and iPhone (`SettingsOnHomeTests`). What remains
+  is a closing nobody chose. On the phone, a look resting on the top band
+  of Settings' Family Setup row opens Family Setup, whose Back to Talking
+  is then nearest it by edge, and Settings closes with the look over No
+  ("choosing familySetup → backToTalking (navigates) → No (speaks)", one
+  chain in the iPhone 17 model; `ChainEngineTests`). `SettingsOnHomeTests`
+  pins such closings as a strict known issue on compact windows. On the
+  iPads the model finds them landing on Type, so the UI test expects none
+  there; its first CI run is the evidence. Placement of Family Setup's
+  first rows is what removes the rest, scored with the same tests.
+- **The held guide link stays held** (*One chain engine for dwell
+  safety*, *Open: a held look saves an answer in Set Up Step by Step*).
+  Modelled on the moved frames, Learn About Each Way still clears every
+  chain that saves an answer, but the guide it opens has Back to Talking
+  nearest the look, and Settings then closes with the look over Home's
+  Get Attention: three chains sound the alarm on the phone model
+  ("choosing learnAboutEachWay → backToTalking (navigates) → getAttention
+  (alarms)"). A milder hazard is not traded for a worse one, so commit
+  `1de50f5` stays out. `ChainEngineTests.theHeldGuideLinkWouldSoundTheAlarm`
+  pins why, and fails once it no longer would.
+- **Where the starter library fits, measured** (*The layout engine*,
+  *Where the starter library fits*: its slot-plan column is now Home's):
+  every iPad window CI runs, in both orientations, at every text size, as
+  before; the iPad mini and a zoomed 13-inch iPad in landscape now at
+  every size (through AX3 before); the iPhones as before. The 375×667
+  phone at the default size is now half a point short, so its phrase grid
+  scrolls by under a point: A is three points taller with Phrases and
+  Type, and the categories sit half a point lower to keep Yes off Stop's
+  well (`wellDrop`). The gap and well rules are not weakened to win it
+  back; touch may scroll (invariant 11 binds the dwell, switch, head and
+  gaze profiles, which R1 brings with fewer tiles, below). 320-point
+  windows never fit, as before.
+- **The message on the narrowest windows** (*The layout engine*, *The
+  message on the narrowest windows*) is now Home's: below 345 points
+  with Bold Text on, "understand." is wider than the message beside
+  Phrases and Type at the default size, and can break there. Still a
+  strict known issue, now reachable; 320-point windows (an iPhone with
+  Display Zoom, a narrow iPad window) need their own arrangement.
+- **The keyboard's room, measured** (*Typing is a state of Home*, the band
+  rule). On CI's iPhone 17 and 13-inch iPad in both orientations, at every
+  text size, the message, Phrases, Type and the whole safety row end
+  above the room kept for the keyboard
+  (`HomeLayoutEngineTests.theSafetyRowEndsAboveTheKeyboard`, and
+  `TypingOnHomeTests` against the live keyboard at the default size).
+  Where they do not, by the engine: on 320-point windows, Speak and Get
+  Attention from the default size, and Yes, No and Emergency too from
+  AX3; on the 375×667 phone, Speak and Get Attention from AX3; on the
+  iPad mini and the zoomed 13-inch iPad in landscape, the whole safety
+  row from AX3 (through AX1 it fits, where Home without typing kept
+  today's sizes and ended in the room). Phrases, at the top of A, stays
+  above the room everywhere, and choosing it puts the keyboard away, so
+  each covered control is two activations away there, not one. The room
+  kept is the tallest keyboard measured on each window's shape; the real
+  keyboards on these windows are not measured, so whether they cover
+  anything is a device check. Each is a measured exception for the
+  owner, pinned strict in
+  `HomeLayoutEngineTests.theStarterLibraryFitsWhereTheTableSays`; none is
+  accepted here.
+- **Open: the empty phrase grid borders Clear and Put Back.** Scored on
+  the engine's frames with the grid's top edge sampled every 4 points
+  (`HomeLayoutEngineTests.typingChainsMeetOnlyTheEmptyGridsClearAndPutBack`):
+  every cell of the band, and the second row of three columns, borders
+  the empty grid, so a look resting on its top edge can meet Clear or
+  Put Back. No pair of cells removes it. Neither loses words (Put Back
+  only refills an empty message with the words just cleared, and Clear
+  can be undone once by Put Back), but each changes the message unasked:
+  an open hazard under invariant 10, for the owner before a dwell,
+  switch, head or gaze profile ships, pinned as a strict known issue so
+  it fails when it goes. While typing, the top of Stop's well is nearest
+  Speak where it was nearest Again (*Get Attention and Stop on Home*,
+  *Open: the top of Stop's well is nearest Again*); the same test allows
+  only that and the grid's finding.
+- **Fewer tiles to a screen, for R1** (drawn, not built; the work file's
+  *Fewer tiles to a screen*). Where the starter library's largest
+  category does not fit at the floors, a dwell, switch, head or gaze
+  profile shows pages of whole rows, and the grid's last slot becomes
+  **More, 1 of 2**, a standard `Button` that only shows the next page
+  (from the last, the first) and stays in that slot on every page. Not
+  built now: touch is the only profile 1.0 ships, and scrolling is its
+  cheaper path.
+- **Not decided here: whether Yes and No may border the message**
+  (*Home's slot plan*, *Open hazard, not accepted: Yes and No border the
+  message*), which the owner decides before R1. Typing keeps the frames
+  that question measured.
+
+*Before:* typing was built and tested below Home (`MessageComposer`,
+`DraftStore`, `KeyboardAllowance`) with nothing on Home to open it, and
+Home laid out without A's trailing column (*Home on the engine*).
+
 ## Personal Voice permission is asked at launch, for now
 
 *2026-10-10. Default, from the reference app. 2026-10-21: the moment is
@@ -2530,7 +2766,10 @@ the project. Reversible if the owner objects.*
 Settings is a full-screen cover. Because it hides Home's quick controls,
 every Settings screen sits under one fixed row (`SettingsSafetyBar`): a
 place reserved for a start-only Get Attention at the top leading edge and Back to Talking at
-the top trailing edge, at the same frames on every screen. Get
+the top trailing edge, at the same frames on every screen. *2026-10-24:*
+Back to Talking takes the frame of Home's Phrases, worked out by Home's
+engine for the same window and text size (*Typing on Home*); the
+leading side keeps Get Attention's place. Get
 Attention's place is kept empty until Home shows Get Attention and Stop:
 the alarm exists (`AttentionAlertPlayer`), but starting it here while Home
 has no Stop would leave it sounding with no way to stop it. Because the
