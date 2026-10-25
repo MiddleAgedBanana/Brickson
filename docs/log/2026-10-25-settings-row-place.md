@@ -91,12 +91,16 @@ fails on the first version (90 windows) and on the old Family Setup
   `4e34c0a`: the iPad Pro 13-inch (M5) and iPhone 17 simulators, iOS
   27.0, with the current Xcode release; portrait at the default size
   and at AX5, and the iPad in landscape). The unit
-  tests passed. Every UI test passed except the first of the iPad run,
+  tests passed. Every other UI test passed, was skipped for a stated
+  reason (opt-in probes, landscape on the portrait-only iPhone) or
+  failed as strictly expected, except the first of the iPad run,
   `GetAttentionOnHomeTests.testTheAlarmStartsAndStopsAtDefaultText`,
   whose launch could not reach the simulator's accessibility server
   (`kAXErrorServerNotFound`; AGENTS.md, *Gotchas*, "A just-started
-  simulator is slow, and the first UI test pays for it"); the job was
-  re-run once.
+  simulator is slow, and the first UI test pays for it", where a slow
+  first launch is the likely cause). Its one re-run was cancelled by
+  the next push and gave no UI result; the run on the next head
+  re-checks it.
   - `SettingsOnHomeTests` read the real frames. No chain closed Settings
     under the look on the iPad (portrait at both sizes, and landscape)
     or on the phone at the default size. On the phone at AX5 the
@@ -141,7 +145,9 @@ fails on the first version (90 windows) and on the old Family Setup
     windows (widths 320 to 1408 every 32 points, six heights, the
     default size, AX3 and AX5, Bold Text off), with Family Setup's words
     modelled from CI's measurements (`SweptFamilySetup`). No closing, no
-    unexpected hazard. Mutated to the first version it fails on 90
+    unexpected hazard, through Settings' first screen and Family Setup;
+    the first step is not drawn, so narrow windows at large text sizes
+    other than CI's phone are not scored through it. Mutated to the first version it fails on 90
     windows, and with the opening words over Set Up Step by Step, on 213.
     A wider scratch sweep (4,200 windows, both Bold Text settings) found
     no closing either. A probe on the same model found that by centre,

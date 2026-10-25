@@ -874,9 +874,11 @@ through its guide, so it stays held for the next Settings thread
 safety" and "Get Attention in Settings' bar: the owner decides"). On
 2026-10-25 it placed Settings' first row from Home's frames, with Set Up
 Step by Step in its frame, which ends Settings closing under a look on
-CI's windows (modelled, and measured by PR #56's first CI run) and on
-630 swept ones (modelled), except a phone at its
-largest text size, where the first step's own rows are next
+CI's windows (modelled, and measured by PR #56's first CI run), except
+a phone at its largest text size, where the first step's own rows are
+next; on 630 swept windows (modelled) it ends the closings through
+Settings' first screen and Family Setup, but the sweep does not draw
+the first step
 (docs/DECISIONS.md, "Settings' first row, placed from Home's frames").
 Every change follows AGENTS.md, *Apple's current frameworks first*: the
 legacy uses kept, and the moves still planned with who owns each, are in
