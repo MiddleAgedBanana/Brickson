@@ -2387,8 +2387,9 @@ engine, not five scripts".
     not only the phone at the default size: it meets one of the first
     answers (Touch, Voice Control or Switch Control), or, on the phone
     at its largest size, Next, which saves the step's answers. Modelled,
-    and found on each window by PR #56's first CI run.
-    `SettingsOnHomeTests` expects it strictly wherever the first
+    and found on each window by PR #56's first CI run; the owner
+    accepted it on 2026-10-25 until the first step's own rows are
+    placed. `SettingsOnHomeTests` expects it strictly wherever the first
     step is read (*Settings' first row, placed from Home's frames*,
     *What it costs, for the owner to weigh*).
     *Tried 2026-10-24 and held* (ROADMAP Wave 3 item 7,
@@ -3232,7 +3233,10 @@ change.
     dwell safety*, *Open: a held look saves an answer in Set Up Step by
     Step*). It saves the answer it meets and restarts the check-in
     clock; nothing reads the answers yet. Milder than a closing, but
-    wider.
+    wider. *The owner accepted it on 2026-10-25* (a decision card,
+    after Codex's review of PR #56 asked for the owner's call), until
+    the next Settings change places the first step's own rows; that
+    change removes it, not a later decision.
   - *A smaller row.* The root's row is 78 points tall at the default
     size instead of 110 (Family Setup no longer needs a tall row for its
     opening words to cover), and on the 13-inch iPad 194 points wide

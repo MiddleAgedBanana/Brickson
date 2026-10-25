@@ -430,9 +430,10 @@ release in docs/ROADMAP.md when no thread has it yet.
   safety"), and two hazards are open. A held look can follow Family Setup's first row into
   Set Up Step by Step and save an answer (Touch, Voice Control or Switch
   Control, whichever it meets, and it restarts the check-in clock;
-  nothing reads the answers yet): from Home's Settings, on every window
-  CI runs since Set Up Step by Step took the root row's frame (on a
-  phone at the default text size before), and
+  nothing reads the answers yet; the owner accepted it on 2026-10-25
+  until the first step's own rows are placed): from Home's Settings, on
+  every window CI runs since Set Up Step by Step took the root row's
+  frame (on a phone at the default text size before), and
   from Set Up Step by Step itself on every window where it shows; on a
   phone at its largest text size, through Next, which saves the step's
   answers. And Settings can close under a look nobody meant to close it

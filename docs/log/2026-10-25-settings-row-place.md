@@ -78,7 +78,9 @@ fails on the first version (90 windows) and on the old Family Setup
   width to the row's.
 - `4e34c0a` Each commit listed in this record.
 - `b9da7a9` The phone at AX5 called a prediction until CI read it.
-- CI's first results in these records (the commit that adds this line).
+- `7400011` CI's first results in these records.
+- The owner's acceptance of the wider saves chain (the commit that adds
+  this line).
 
 ## Verified
 
@@ -190,8 +192,10 @@ fails on the first version (90 windows) and on the old Family Setup
    to Talking, is nearest the spot; the strict expectation in
    `SettingsOnHomeTests` then fails and comes out.
 2. *The chain that saves an answer* (the next Settings thread): still
-   open and wider; the held guide link stays held (docs/DECISIONS.md,
-   "Typing on Home", *The held guide link stays held*).
+   open and wider, which the owner accepted on 2026-10-25 until the
+   first step's own rows are placed (asked after Codex's review); the
+   held guide link stays held (docs/DECISIONS.md, "Typing on Home",
+   *The held guide link stays held*).
 3. *Short, very wide windows* (the layout engine's thread): Home's
    Settings lies as near Back to Talking as the row on windows wider
    than about 1300 points and at most 667 tall, as before.
