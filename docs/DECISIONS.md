@@ -61,6 +61,7 @@ holds.
 | iPhone Duo: optimized by building with the current SDK, Duo screenshots in every submission, ready before the first, one layout for every pose, the hinge driving nothing, no arrangement view on Home, the system's bars in Settings, one window; and, by the owner's choice, Home's controls kept off the fold and an even column count on a display that folds | "iPhone Duo" (iPhone Duo readiness) |
 | The exceptions to Apple's current frameworks first, and the moves made and planned | "Apple's current frameworks first" (the rule is the owner's, 2026-10-22) |
 | The accessibility coverage list and its choices: full screen in Assistive Access and no separate scene, no programmatic Guided Access, assistive-technology flags that only suggest, phrases in the person's voice with VoiceOver on, late-stage boards as an R1 profile, and what waits or is never used | "Accessibility API coverage" (Accessibility coverage checklist) |
+| XcodeGen stays until Xcode's JSON project format passes a trial on the owner's Mac and its gates; then one pull request switches | "Xcode's JSON project format" (Plan for Xcode's new JSON project format, 2026-10-25) |
 
 Recorded here:
 
@@ -187,6 +188,170 @@ committed (it is in `.gitignore`). Every machine, and CI, generates it.
 This keeps project settings reviewable as plain text and avoids merge
 conflicts in the project file. Agents never open the project in Xcode
 (docs/LESSONS.md, "Never open the project in Xcode from an agent").
+Xcode's new JSON project format may replace this arrangement; the plan
+is the next entry.
+
+## Xcode's JSON project format
+
+*2026-10-25. Default: the owner left routine choices to the project, and
+asked on 2026-10-25 for this to be planned. Reversible if the owner
+objects.*
+
+**Decision.** Brickson keeps generating its project with XcodeGen for
+now (*Generated Xcode project*, above). Xcode's JSON project format is
+planned in three steps: a trial on the owner's Mac once an Xcode that
+writes the format is released, gates the trial must pass, and then one
+pull request that commits a JSON project and retires XcodeGen. Nothing is
+converted or committed before that pull request. If every gate holds,
+switching is the default; the trial's record says so, or says why not.
+
+**What the format is.** Read on 2026-10-25 in Apple's article "Updating
+your Xcode project configuration file format", Xcode 27.2 RC's release
+notes and the format's repository (`apple/xcode-project-format`). Inside
+every `.xcodeproj` folder, one file holds the project's configuration:
+its files, targets, build phases and build settings. Until now that file
+has been `project.pbxproj`, a property list in which objects point at
+each other by long random identifiers, so one change in Xcode edits
+several distant places. That is why it is hard to review and prone to
+merge conflicts. Xcode 27.2 adds `project.xcproj`, a JSON5 file that
+names things instead of numbering them where it can, keeps a file's
+target membership next to the file, writes only values that differ from
+the defaults, and is built so that one action in Xcode makes one change
+in the file. New projects use it by default from Xcode 27.2; an existing
+project switches in the File inspector (Project Format: JSON), which is
+new in 27.2. Apple says every Xcode 27 reads it. The format is open
+source: a Swift library (version 0.1.0; first commit 2026-09-16) and a
+formatter, `xcprojformatter`, that rewrites a file in its canonical form.
+
+**Why not now.**
+
+- Brickson does not have the problem the format solves. Its project file
+  is never committed: `project.yml` is the reviewed text, XcodeGen writes
+  a fresh project on every Mac and CI run, and git ignores it, so no pull
+  request can conflict over it.
+- Xcode 27.2 is a release candidate (27B48, 2026-10-19, Apple's releases
+  feed read 2026-10-25), and Brickson builds only with released Xcode
+  (*Build with Apple's current Xcode*). The current release, 27.1, reads
+  the format but has no way to switch a project to it.
+- It is new. Apple's library is at 0.1.0. Tuist's XcodeProj, the library
+  XcodeGen and Tuist build on, calls its own support experimental,
+  checked "against Apple's own library and hand written projects, not
+  against a corpus of real Xcode output". XcodeGen still writes only
+  `project.pbxproj` (release 2.46.0, July 2026); its issue #1655, asking
+  how the format affects it, had no answer when read.
+- Sources disagree on whether Xcode 27.0 and 27.1 open the format. Apple
+  says they do; Tuist's changelog of 2026-09-17, written for 27.2's first
+  beta, says earlier versions cannot read it. Apple's word stands until
+  the trial checks it, because a CI machine that lags behind Apple would
+  stop building.
+- Waiting costs nothing. Because the project is generated, converting it
+  takes the same few steps however large the app grows.
+
+**What it would give Brickson.**
+
+- Xcode's own project editor becomes usable. Today any change made there
+  is thrown away by the next `xcodegen generate`.
+- Xcode's recommended settings are taken as a reviewed change instead of
+  copied by hand into `project.yml` (docs/log/2026-10-21-toolchain.md,
+  *Follow-ups*).
+- One outside tool fewer: XcodeGen is installed from Homebrew, at
+  whatever version is newest, on every CI run and on the Mac.
+- With the sources in synchronized folders, which the format supports,
+  adding or removing a file changes no project file, so there is nothing
+  to regenerate.
+- Agents edit the project as plain text, which Apple names as a goal of
+  the format.
+
+**What it would not fix, and what it costs.**
+
+- Conflicts become rarer, not impossible: two changes to the same
+  setting still conflict.
+- Schemes stay separate `.xcscheme` files inside the project folder; the
+  format covers only the configuration file.
+- Comments do not survive. Apple's library reads comments in the file and
+  drops them, and Xcode uses that library to read and write projects. The
+  reasons written beside settings in `project.yml` (warnings are errors,
+  background audio, Assistive Access, the test helpers compiled into two
+  targets) move into this file, which already holds most of them.
+- It does not bring CodeQL to the Swift code (*Code scanning*, below):
+  CodeQL cannot follow a build with Xcode 27. A committed project might
+  even make default setup add Swift by itself, as it once added Python,
+  and fail; while the ruleset requires CodeQL results, that could block
+  every merge.
+- The reference app's lesson returns: an agent's Xcode tool rewrote a
+  committed project and broke the build (docs/LESSONS.md, "Never open
+  the project in Xcode from an agent"). Readable diffs and CI make such a
+  rewrite visible; they do not stop it.
+- XcodeGen learning to write the format would change nothing here: the
+  generated project is not committed either way.
+
+**Step 1, the trial.** It needs the owner's Mac (a hand-off to an agent
+there), and it commits nothing but its record in `docs/log/`. It starts
+when Apple's releases feed lists Xcode 27.2, or a later Xcode, as a
+release, and that Xcode is on the Mac.
+
+1. Run `xcodegen generate`, then copy the project folder outside the
+   checkout. The owner switches the copy to JSON in Xcode's File
+   inspector, because agents never open a project in Xcode; if that
+   Xcode offers a command-line switch, an agent uses it instead.
+2. For each target in both configurations, compare
+   `xcodebuild -showBuildSettings -json` from the generated and the
+   converted project. They must match, apart from the project file's
+   own name.
+3. Compare the files each target compiles and copies, from the two
+   builds' logs. They must match.
+4. Run `scripts/test.sh` and `scripts/test.sh ui` against the converted
+   project (a local change that skips `xcodegen generate`, never
+   committed). Every test must pass, with the same counts as on `main`.
+5. Run `xcprojformatter` on Xcode's output. Record whether Xcode already
+   writes the canonical form.
+6. If an older Xcode 27 is still installed, build the converted project
+   with it, which settles whether earlier releases read the format.
+7. In the copy, add one file to a target and change one setting, and
+   record the diffs. Each should be one change in one place.
+8. Record the file's length beside `project.pbxproj`'s, and the list of
+   recommended settings Xcode offers for the project.
+
+**Step 2, the gates.** The switch waits until all of these hold:
+
+- The Xcode that CI and the Mac use is a release that writes the format,
+  and its release notes list no open known issue under Project Format.
+- At least one Xcode release has followed the first one that writes the
+  format (a 27.2 fix release or 27.3), so the format has had one round of
+  fixes.
+- The trial found the same build settings and the same files, every test
+  passing, and Xcode's output already in canonical form.
+- No code pull request is open, because the switch changes how every pull
+  request builds, and no App Store build is being prepared
+  (docs/ROADMAP.md, *Release gate*).
+
+**Step 3, the switch.** One pull request, which:
+
+- Commits `Brickson.xcodeproj/project.xcproj` and its shared schemes, and
+  stops ignoring the project folder while still ignoring each person's
+  `xcuserdata`.
+- Keeps the sources in synchronized folders, with the test helpers that
+  two targets compile as the folders' exceptions.
+- Moves every reason in `project.yml`'s comments into this file, then
+  deletes `project.yml`.
+- Changes `scripts/test.sh` to build the committed project, and adds a
+  check that fails when the project file is missing, when a
+  `project.pbxproj` comes back, or when the file is not in canonical
+  form; how it checks is that pull request's choice.
+- Hands the owner the `.github/workflows/tests.yml` without its XcodeGen
+  steps, which the owner commits (AGENTS.md, *Gotchas*).
+- Checks CodeQL's default setup the day it lands, and has the owner
+  remove Swift from it if GitHub added it.
+- Rewrites this entry and *Generated Xcode project* with "Before" lines,
+  and updates what cites `project.yml` or XcodeGen: AGENTS.md (*Build
+  and test* and the review rules), the review skill, README.md,
+  docs/GETTING_STARTED.md, docs/LESSONS.md's rule and
+  `scripts/test-runner.py`.
+
+Reverting that pull request brings XcodeGen back.
+
+**Revisit** when Apple releases Xcode 27.2 (start step 1), when a gate
+changes, or when the owner asks.
 
 ## Build with Apple's current Xcode
 
