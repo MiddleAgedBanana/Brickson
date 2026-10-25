@@ -315,6 +315,17 @@ not every appearance/pose combination.
 
 ## Not verified
 
+The [later speech-status diagnostic](../evidence/2026-10-25-duo-design/speech-diagnostic/README.md)
+reproduced the separate post-activation timeout: 232 watchdog checks over
+239 seconds, progress delivered through the matching token, and underlying
+speaking/unpaused flags with no finish/cancel callback. Three direct AV
+controls reproduced the raw state without Brickson's speech wrapper.
+This narrows attribution without establishing an SDK defect, identifying
+the cause, explaining the historical blank first launch or making the
+full UI gates pass. Both source diagnostics were removed byte-for-byte;
+no production audio behavior or wait assertion changed. The control app
+was removed and only the owned simulator booted for it was shut down.
+
 - A green complete ordinary UI run: both local families fail the
   Speaking-wait case, also reproduced on unchanged main. The cause is
   unestablished. Duo active-display captures are separate from the

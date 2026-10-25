@@ -1,0 +1,46 @@
+SYSTEM-SPEECH-CONTROL elapsed=8.3e-08 seconds event=configuration audio=playback configurePlayback=true usesApplicationAudioSession=true voiceMode=production rate=0.5
+SYSTEM-SPEECH-CONTROL elapsed=0.07720925 seconds event=setCategorySucceeded category=playback mode=default options=none
+SYSTEM-SPEECH-CONTROL elapsed=0.096698 seconds event=setActiveSucceeded 
+SYSTEM-SPEECH-CONTROL elapsed=0.177113792 seconds event=voiceSelection language=en installedCount=68 usableSystemCount=68 chosenID=nil automaticPersonalVoiceID=nil personalVoicesAllowed=false
+SYSTEM-SPEECH-CONTROL elapsed=0.178136417 seconds event=voiceResolved systemVoiceID=com.apple.voice.super-compact.en-US.Samantha language=en-US quality=0 novelty=false
+SYSTEM-SPEECH-CONTROL elapsed=0.178161167 seconds event=speakBefore isSpeaking=false isPaused=false delegateRetained=true utteranceRetained=true
+SYSTEM-SPEECH-CONTROL elapsed=0.184688792 seconds event=speakReturned isSpeaking=false isPaused=false delegateRetained=true utteranceRetained=true
+SYSTEM-SPEECH-CONTROL elapsed=0.184742125 seconds event=sample second=0 isSpeaking=false isPaused=false delegateRetained=true utteranceRetained=true
+SYSTEM-SPEECH-CONTROL elapsed=0.25488025 seconds event=didStart 
+SYSTEM-SPEECH-CONTROL elapsed=1.146000417 seconds event=willSpeak through=4
+SYSTEM-SPEECH-CONTROL elapsed=1.203271208 seconds event=sample second=1 isSpeaking=true isPaused=false delegateRetained=true utteranceRetained=true
+SYSTEM-SPEECH-CONTROL elapsed=2.218152958 seconds event=sample second=2 isSpeaking=true isPaused=false delegateRetained=true utteranceRetained=true
+SYSTEM-SPEECH-CONTROL elapsed=3.234587458 seconds event=sample second=3 isSpeaking=true isPaused=false delegateRetained=true utteranceRetained=true
+SYSTEM-SPEECH-CONTROL elapsed=4.246981333 seconds event=sample second=4 isSpeaking=true isPaused=false delegateRetained=true utteranceRetained=true
+SYSTEM-SPEECH-CONTROL elapsed=5.230097583000001 seconds event=sample second=5 isSpeaking=true isPaused=false delegateRetained=true utteranceRetained=true
+SYSTEM-SPEECH-CONTROL elapsed=6.202636458 seconds event=sample second=6 isSpeaking=true isPaused=false delegateRetained=true utteranceRetained=true
+SYSTEM-SPEECH-CONTROL elapsed=7.220838208 seconds event=sample second=7 isSpeaking=true isPaused=false delegateRetained=true utteranceRetained=true
+SYSTEM-SPEECH-CONTROL elapsed=8.210652542 seconds event=sample second=8 isSpeaking=true isPaused=false delegateRetained=true utteranceRetained=true
+SYSTEM-SPEECH-CONTROL elapsed=9.22664875 seconds event=sample second=9 isSpeaking=true isPaused=false delegateRetained=true utteranceRetained=true
+SYSTEM-SPEECH-CONTROL elapsed=10.213281624999999 seconds event=sample second=10 isSpeaking=true isPaused=false delegateRetained=true utteranceRetained=true
+SYSTEM-SPEECH-CONTROL elapsed=11.218231583 seconds event=sample second=11 isSpeaking=true isPaused=false delegateRetained=true utteranceRetained=true
+SYSTEM-SPEECH-CONTROL elapsed=12.216459041999999 seconds event=sample second=12 isSpeaking=true isPaused=false delegateRetained=true utteranceRetained=true
+SYSTEM-SPEECH-CONTROL elapsed=13.221388292 seconds event=sample second=13 isSpeaking=true isPaused=false delegateRetained=true utteranceRetained=true
+SYSTEM-SPEECH-CONTROL elapsed=14.230719417 seconds event=sample second=14 isSpeaking=true isPaused=false delegateRetained=true utteranceRetained=true
+SYSTEM-SPEECH-CONTROL elapsed=15.208144292 seconds event=sample second=15 isSpeaking=true isPaused=false delegateRetained=true utteranceRetained=true
+SYSTEM-SPEECH-CONTROL elapsed=16.235134 seconds event=sample second=16 isSpeaking=true isPaused=false delegateRetained=true utteranceRetained=true
+SYSTEM-SPEECH-CONTROL elapsed=17.2232325 seconds event=sample second=17 isSpeaking=true isPaused=false delegateRetained=true utteranceRetained=true
+SYSTEM-SPEECH-CONTROL elapsed=18.20096425 seconds event=sample second=18 isSpeaking=true isPaused=false delegateRetained=true utteranceRetained=true
+SYSTEM-SPEECH-CONTROL elapsed=19.243609958 seconds event=sample second=19 isSpeaking=true isPaused=false delegateRetained=true utteranceRetained=true
+SYSTEM-SPEECH-CONTROL elapsed=20.227673875 seconds event=sample second=20 isSpeaking=true isPaused=false delegateRetained=true utteranceRetained=true
+SYSTEM-SPEECH-CONTROL elapsed=21.205301125 seconds event=sample second=21 isSpeaking=true isPaused=false delegateRetained=true utteranceRetained=true
+SYSTEM-SPEECH-CONTROL elapsed=22.238339917 seconds event=sample second=22 isSpeaking=true isPaused=false delegateRetained=true utteranceRetained=true
+SYSTEM-SPEECH-CONTROL elapsed=23.216816041999998 seconds event=sample second=23 isSpeaking=true isPaused=false delegateRetained=true utteranceRetained=true
+SYSTEM-SPEECH-CONTROL elapsed=24.192854167 seconds event=sample second=24 isSpeaking=true isPaused=false delegateRetained=true utteranceRetained=true
+SYSTEM-SPEECH-CONTROL elapsed=25.218254124999998 seconds event=sample second=25 isSpeaking=true isPaused=false delegateRetained=true utteranceRetained=true
+SYSTEM-SPEECH-CONTROL elapsed=26.222475333 seconds event=sample second=26 isSpeaking=true isPaused=false delegateRetained=true utteranceRetained=true
+SYSTEM-SPEECH-CONTROL elapsed=27.211771208 seconds event=sample second=27 isSpeaking=true isPaused=false delegateRetained=true utteranceRetained=true
+SYSTEM-SPEECH-CONTROL elapsed=28.227657792 seconds event=sample second=28 isSpeaking=true isPaused=false delegateRetained=true utteranceRetained=true
+SYSTEM-SPEECH-CONTROL elapsed=29.222993292 seconds event=sample second=29 isSpeaking=true isPaused=false delegateRetained=true utteranceRetained=true
+SYSTEM-SPEECH-CONTROL elapsed=30.208827333 seconds event=sample second=30 isSpeaking=true isPaused=false delegateRetained=true utteranceRetained=true
+SYSTEM-SPEECH-CONTROL elapsed=31.230841374999997 seconds event=sample second=31 isSpeaking=true isPaused=false delegateRetained=true utteranceRetained=true
+SYSTEM-SPEECH-CONTROL elapsed=32.221843 seconds event=sample second=32 isSpeaking=true isPaused=false delegateRetained=true utteranceRetained=true
+SYSTEM-SPEECH-CONTROL elapsed=33.201417667 seconds event=sample second=33 isSpeaking=true isPaused=false delegateRetained=true utteranceRetained=true
+SYSTEM-SPEECH-CONTROL elapsed=34.248114292 seconds event=sample second=34 isSpeaking=true isPaused=false delegateRetained=true utteranceRetained=true
+SYSTEM-SPEECH-CONTROL elapsed=35.224701292 seconds event=sample second=35 isSpeaking=true isPaused=false delegateRetained=true utteranceRetained=true
+SYSTEM-SPEECH-CONTROL elapsed=35.224837917 seconds event=samplingComplete isSpeaking=true isPaused=false delegateRetained=true utteranceRetained=true

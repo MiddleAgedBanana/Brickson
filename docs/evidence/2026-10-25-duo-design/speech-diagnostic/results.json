@@ -1,0 +1,83 @@
+{
+  "schema": 1,
+  "date": "2026-10-25",
+  "kind": "temporary observation-only app diagnostic, not a completed test suite",
+  "baseCommit": "132263011a870645e2c63903a17d22065702d703",
+  "simulator": "iPad Pro13 M5 16GB, iOS27.0, portrait",
+  "configuration": "AX5, light, English/en_US, isolated fresh test storage,short idle timeouts",
+  "activation": "Native Device Hub pointer selected Emergency, then Yes. MobileBuildMCP tap returned success without a screen change and is not counted as an activation.",
+  "traceRecords": 240,
+  "watchdogTicks": 232,
+  "observedElapsedSeconds": 239.25622170802671,
+  "callbackKinds": [
+    "willSpeak through4 enqueued, delivered, identity matched, currenttoken1 received"
+  ],
+  "finishCallbacks": 0,
+  "cancelCallbacks": 0,
+  "tickFlags": "active token1; AV isSpeaking=true,isPaused=false; quietChecks0; speech lease held",
+  "nativeAXSpeakingPresent": true,
+  "visibleSpeakingScreenshot": "ipad-speaking.png",
+  "screenshotSHA256": "cc755dcedf44432ffcf5f2356894adbb7d74caf626411b61bcc584141956c0d6",
+  "trace": "app-trace.txt",
+  "sourceRestored": true,
+  "limits": [
+    "Instrumentation may perturb timing; this is one native reproduction, not universal causal proof.",
+    "No raw phrase,draft or category text was logged by the diagnostic hooks.",
+    "Main-actor watchdog resumed and progress traversed the existing dispatch/matching path; no finish callback entered that path during this interval.",
+    "Does not identify why the system remained speaking, prove audible output, or reproduce the historical first-launch blank screen.",
+    "Original failed uninstrumented UI suites and unchanged-main failure remain retained."
+  ],
+  "originalTracePath": "/private/tmp/brickson-speech-probe-trace.txt",
+  "controls": [
+    {
+      "mode": "playback",
+      "trace": "playback-trace.txt",
+      "samples": 36,
+      "lastSample": "SYSTEM-SPEECH-CONTROL elapsed=35.224701292 seconds event=sample second=35 isSpeaking=true isPaused=false delegateRetained=true utteranceRetained=true",
+      "didStart": 1,
+      "willSpeak": 1,
+      "didFinish": 0,
+      "didCancel": 0,
+      "samplingComplete": "SYSTEM-SPEECH-CONTROL elapsed=35.224837917 seconds event=samplingComplete isSpeaking=true isPaused=false delegateRetained=true utteranceRetained=true",
+      "configuration": "SYSTEM-SPEECH-CONTROL elapsed=8.3e-08 seconds event=configuration audio=playback configurePlayback=true usesApplicationAudioSession=true voiceMode=production rate=0.5",
+      "voice": "SYSTEM-SPEECH-CONTROL elapsed=0.178136417 seconds event=voiceResolved systemVoiceID=com.apple.voice.super-compact.en-US.Samantha language=en-US quality=0 novelty=false",
+      "sha256": "6585240da09c337ad1b7a5cdfeaaec11fdd6473d0e6344c84a54e7c63c9b47de"
+    },
+    {
+      "mode": "system-managed",
+      "trace": "system-managed-trace.txt",
+      "samples": 36,
+      "lastSample": "SYSTEM-SPEECH-CONTROL elapsed=35.054115708000005 seconds event=sample second=35 isSpeaking=true isPaused=false delegateRetained=true utteranceRetained=true",
+      "didStart": 1,
+      "willSpeak": 1,
+      "didFinish": 0,
+      "didCancel": 0,
+      "samplingComplete": "SYSTEM-SPEECH-CONTROL elapsed=35.054215083 seconds event=samplingComplete isSpeaking=true isPaused=false delegateRetained=true utteranceRetained=true",
+      "configuration": "SYSTEM-SPEECH-CONTROL elapsed=4.2e-08 seconds event=configuration audio=system-managed configurePlayback=false usesApplicationAudioSession=false voiceMode=production rate=0.5",
+      "voice": "SYSTEM-SPEECH-CONTROL elapsed=0.033629458 seconds event=voiceResolved systemVoiceID=com.apple.voice.super-compact.en-US.Samantha language=en-US quality=0 novelty=false",
+      "sha256": "4e132e9ea8351e337c7af36206c5e96d9056ba39b6e83d84f4c1869e279295d3"
+    },
+    {
+      "mode": "nil-voice",
+      "trace": "nil-voice-trace.txt",
+      "samples": 36,
+      "lastSample": "SYSTEM-SPEECH-CONTROL elapsed=35.089716916 seconds event=sample second=35 isSpeaking=true isPaused=false delegateRetained=true utteranceRetained=true",
+      "didStart": 1,
+      "willSpeak": 1,
+      "didFinish": 0,
+      "didCancel": 0,
+      "samplingComplete": "SYSTEM-SPEECH-CONTROL elapsed=35.089935790999995 seconds event=samplingComplete isSpeaking=true isPaused=false delegateRetained=true utteranceRetained=true",
+      "configuration": "SYSTEM-SPEECH-CONTROL elapsed=4.1e-08 seconds event=configuration audio=playback configurePlayback=true usesApplicationAudioSession=true voiceMode=nil rate=0.5",
+      "voice": "SYSTEM-SPEECH-CONTROL elapsed=0.061505541 seconds event=voiceResolved voice=nil",
+      "sha256": "3d7fdb44bdfd8fa12fda9c8ed07ed2473551996c104d4b741b2a3664dbd037d2"
+    }
+  ],
+  "controlSource": "control-source",
+  "rootCause": "Unestablished. The direct AV control reproduces the raw state without Brickson wrappers; this is not proof of an SDK defect or physical-device behavior.",
+  "appVoiceComparability": "The app trace did not record its resolved voice identifier,rate or activation result; the held lease alone does not prove activation succeeded. The control follows the same source selection algorithm but constructor order,bundle,authorization and automatic start differ.",
+  "sources": [
+    "https://developer.apple.com/documentation/avfaudio/avspeechsynthesizer",
+    "https://developer.apple.com/documentation/avfaudio/avspeechsynthesizerdelegate/speechsynthesizer(_:didfinish:)",
+    "https://developer.apple.com/documentation/avfaudio/avspeechsynthesizer/usesapplicationaudiosession"
+  ]
+}

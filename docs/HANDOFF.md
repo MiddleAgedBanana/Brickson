@@ -240,8 +240,13 @@ Xcode 27.1 (27A9275); PR #20 landed in `d79d836`.
   No controlled device check has passed. Formal testing waits for a
   mounted setup; see *Checks that need a real device*.
 - **No test sees** VoiceOver announcements being posted, the message's
-  scroll reset, the missed-callback watchdog on a real synthesizer (it is
-  unit-tested with fakes), or sound. Windowed iPad
+  scroll reset, the missed-callback watchdog on a physical device (it is
+  unit-tested with fakes), or sound. A later temporary simulator trace
+  observed 232 real-synthesizer watchdog checks over 239 seconds: progress
+  reached the tracker, but the system stayed speaking/unpaused without a
+  finish/cancel callback. Three isolated AV controls also timed out without
+  Brickson's wrapper; cause remains unidentified, with no audio or wait
+  change ([diagnostic](evidence/2026-10-25-duo-design/speech-diagnostic/README.md)). Windowed iPad
   sizes are untested. The 2026-10-25 Mac run checked Duo closed, open,
   partially open and rotated, with recorded failures and test-framework
   limits ([record](log/2026-10-25-mac-keyboard-checks.md)). Later item 6
