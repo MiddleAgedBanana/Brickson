@@ -35,7 +35,11 @@ not a grown library's maximum capacity.
 ## Commits
 
 - This documentation commit.
-- Measurement source: [PR #55 source commit](https://github.com/MiddleAgedBanana/Brickson/commit/dd0aba6a788fa78d973fa389658eff2176a78efc).
+- Measurement source: [PR #55 source commit](https://github.com/MiddleAgedBanana/Brickson/commit/cb4c965).
+- Main refresh incorporates PR #56 (`6d040d5`) by merge commit. Measurements
+  remain dated to app code `8316743`, before its Settings change. Relative
+  to refreshed main, this branch changes only the proposal, this log and
+  the affected HANDOFF lines.
 
 ## Verified
 
@@ -52,6 +56,13 @@ not a grown library's maximum capacity.
   The proposal preserves the failing fit results.
 - Documentation checks: all five Python suites passed: docs45, hooks124, site7, runner54, Xcode selection21 (251 total); diff check passed.
 - Full Mac unit suite before this commit: 728 tests:720passed,0failed,1existing issue#19skip,7strict expected failures; String Catalog unchanged. Result: `build/TestResults/fewer-tiles-unit/unit-destination.xcresult`; log: `/private/tmp/brickson-fewer-tiles-unit.log`.
+- After the main refresh, the full native gate passed on byte-identical
+  app/test sources: 740 tests, 731 passed, 0 failed, the existing issue #19
+  skip and 8 strict expected failures; String Catalog unchanged, coverage
+  67.7%. Result:
+  `build/TestResults/post-alarm-docs-unit/unit-destination.xcresult`; log:
+  `/private/tmp/brickson-post-alarm-docs-unit.log`. Only documentation
+  differs from that tested tree.
 - GitHub CI for this PR: pending after the first push.
 
 ## Not verified

@@ -48,7 +48,11 @@ maximum capacity of a grown library.
 | 951×669, Duo open | Wide, native Hub pose | AX5 | 4 × 1 | 4 | 10pt | 3 plus More, three pages |
 | 669×951, Duo open | Tall, rotated in Hub | Default / AX4 / AX5 | 3 × 3 | 8 | 0pt | Keep 8, one page |
 
-Source: [the 70-record measurement file](https://github.com/MiddleAgedBanana/Brickson/blob/dd0aba6a788fa78d973fa389658eff2176a78efc/docs/log/ui-test-evidence/2026-10-25-home-checks/home-measurements.json). The standard phone leaves 246pt of grid
+Source: [the 70-record measurement file](https://github.com/MiddleAgedBanana/Brickson/blob/cb4c965/docs/log/ui-test-evidence/2026-10-25-home-checks/home-measurements.json).
+Measurements used app code `8316743`, before PR #56 changed Settings
+placement. That change is incorporated into this docs branch; it does
+not replace the dated measurements with a new Home or Settings run.
+The standard phone leaves 246pt of grid
 height at AX4 and 198pt at AX5. Both use a 78pt tile floor and 8pt gap:
 two rows fit, so six slots become five phrases plus More. The zoomed
 phone's default grid is 167pt tall: four slots become three plus More.
@@ -106,7 +110,8 @@ Before a later implementation:
   Simple rectangular fit is not proof of Duo fold/camera clearance.
 - Check Figma, labels, floors and the final row in the running app.
   Existing message/Stop-well and Clear/Put Back hazards remain open;
-  open-wide AX5 also has a separate Settings nearest-control test failure.
+  open-wide AX5 also had a separate Settings nearest-control test failure
+  on the pre-#56 source; that result has not been rescored on new main.
   The informal handheld Eye Tracking observation does not close them.
 
 This proposal does not change R0's scrolling implementation. R1 paging
