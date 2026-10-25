@@ -396,6 +396,19 @@ continue work that does not need a person testing the iPhone.
 
 ## Verified
 
+**Main refresh after the measurements:** PR #56 merged as `6d040d5` while
+this record was being finished. Its source is incorporated by a merge
+commit, preserving its new Settings placement and the owner's accepted
+chain limits. The measurements above remain a dated record of app code
+`8316743`, before that change; the old Duo Settings finding has not been
+rescored on the new app. The native gate on the refreshed source passed:
+740 tests, 731 passed, 0 failed, the existing issue #19 skip and 8 strict
+expected failures. Coverage is 67.7%; the String Catalog is unchanged.
+The result is
+`build/TestResults/post-alarm-docs-unit/unit-destination.xcresult`; log
+`/private/tmp/brickson-post-alarm-docs-unit.log`. Relative to refreshed
+`main`, this PR changes no app or test source.
+
 The two keyboard runs used:
 
 ```sh
@@ -441,7 +454,7 @@ committed regression test is claimed.
 | Calls and Add Audio in Calls on a physical iPhone | NOT RUN; needs a device and the owner. |
 | First-launch flake diagnosis | NOT REPRODUCED in 3 separate local cold boots without app warm-up; selected first-snapshot test passes 3/3. Cause unresolved; no app fix. |
 | Fewer-tiles proposal | NEXT as a separate docs-only job. The completed measurements establish whole-row capacity; restricted zoomed windows and closed Duo AX5 first need an arrangement that can show a whole tile. Scroll-range limits remain explicit above. |
-| Wave 3 item 6 | NOT STARTED. The owner's alarm-path merge prerequisite still applies. Settings root rows are untouched. |
+| Wave 3 item 6 | NEXT as a separate implementation PR. PR #56 merged after these measurements, clearing the owner's alarm-path prerequisite. This record changes no Settings or Home code. |
 | JSON project trial | DEFERRED. The owner now requires released Xcode 27.2 and its first fix release before even the trial. Apple's releases and system-requirements pages, read 2026-10-25, list 27.2 RC and stable 27.1. XcodeGen stays in place. |
 
 No physical-device sound, Switch Control, Dwell, Eye Tracking or Snap to
@@ -463,8 +476,9 @@ Connect account are unchanged.
    native input; investigate the Sounding audit finding and the existing
    Duo window/rotation test failures before choosing any small fix. Keep
    the restricted zoomed-phone scroll-range limits explicit. Windowing,
-   second-window and reserved-fold/camera checks remain separate. Do not
-   change Settings root rows while their thread works.
+   second-window and reserved-fold/camera checks remain separate. PR #56
+   has now merged; use its Settings placement and accepted chain limits
+   as the starting point for the separate Wave 3 item 6 job.
 3. **First-launch work:** no code change from the three passing cold
    attempts. Preserve a reproduction and investigate before choosing a
    fix; deterministic safety-band, rotation and audit findings are separate.

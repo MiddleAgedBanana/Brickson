@@ -63,10 +63,16 @@ instead of links (docs/DECISIONS.md, "Accessibility API coverage").
 Until Family Setup has been opened once, Home's message area says where
 setup is. Settings' Back to Talking sits over Home's Phrases, so a look
 still resting on it when Settings closes meets Phrases, which does
-nothing while the phrases show; a look resting on Settings' Family Setup
-row can still open Family Setup and close Settings over No, and on the
-13-inch iPad over Get Attention, which sounds the alarm (docs/DECISIONS.md,
-"Typing on Home" and "One chain engine for dwell safety").
+nothing while the phrases show. Settings' Family Setup row is placed
+from Home's frames, and Family Setup opens with Set Up Step by Step in
+its frame, so a look held on the row meets a row that only opens the
+next screen. The exceptions are on a phone at its largest text size:
+by centre, a look at the row's top trailing corner meets Back to
+Talking and closes Settings onto Home's Emergency (nothing is said;
+modelled), and a look held on through Set Up Step by Step reaches Back
+to Talking and closes Settings over No or Get Attention, which CI's UI
+tests found on PR #56's first run and expect strictly
+(docs/DECISIONS.md, "Settings' first row, placed from Home's frames").
 "Speaking", "Sounding", audio failures, very low volume and a typed
 message that cannot be saved or restored share one passive status line
 under the message, in space always kept for it, and
@@ -460,24 +466,40 @@ release in docs/ROADMAP.md when no thread has it yet.
   first screens (`SettingsOnHomeTests` with the chain engine, on CI's
   iPad and iPhone; docs/DECISIONS.md, "One chain engine for dwell
   safety"), and two hazards are open. A held look can follow Family Setup's first row into
-  Set Up Step by Step and save an answer (it adds Touch and restarts the
-  check-in clock; nothing reads the answers yet): from Home's Settings
-  on a phone at the default text size, and from Set Up Step by Step
-  itself on every window where it shows. And Settings can close under
-  a look nobody meant to close it with. Since 2026-10-24 Back to Talking
-  sits over Phrases, so choosing it meets only Phrases; what remains is
-  a look resting on the root's Family Setup row, which opens Family
-  Setup, finds Back to Talking nearest, and closes Settings over No on
-  the phone and over Get Attention (the alarm) or No on the 13-inch iPad,
-  where the row sits over Home's safety row (`SettingsOnHomeTests` pins
-  it strict on every window; docs/DECISIONS.md, "Typing on Home",
-  *Settings closing, rescored*). Placing Family Setup's first rows for
-  it is the fix, and a device check says whether it binds. The fix for
-  the first, Learn About Each Way where Set Up Step by Step's row was,
-  was built and held on 2026-10-24, because its guide leads into the
-  second hazard; rescored on the moved frames, it still would (its
-  guide's Back to Talking closes Settings over Get Attention in three
-  chains), so it stays held
+  Set Up Step by Step and save an answer (Touch, Voice Control or Switch
+  Control, whichever it meets, and it restarts the check-in clock;
+  nothing reads the answers yet; the owner accepted it on 2026-10-25
+  until the first step's own rows are placed): from Home's Settings, on
+  every window CI runs since Set Up Step by Step took the root row's
+  frame (on a phone at the default text size before), and
+  from Set Up Step by Step itself on every window where it shows; on a
+  phone at its largest text size, through Next, which saves the step's
+  answers. And Settings can close under a look nobody meant to close it
+  with, now only on a phone at its largest text size (found on CI's
+  iPhone 17 at AX5): there Set Up Step by Step's first step shows no answer
+  above Next, so a look held on through it meets Back to Talking and
+  closes Settings over No or Get Attention (the alarm). Elsewhere, since
+  2026-10-25, Settings' Family Setup row is placed from Home's frames
+  and Set Up Step by Step takes its frame in Family Setup, so the look
+  meets a row that only navigates; Back to Talking, over Phrases since
+  2026-10-24, meets only Phrases when chosen (`SettingsOnHomeTests`
+  expects a closing strictly only through a first step that shows no
+  answer above Next, and fails on any other closing; docs/DECISIONS.md,
+  "Settings' first row, placed from Home's frames"). Placing the first
+  step's own rows is the fix for the phone, and a device check says
+  whether it binds. On short, very wide windows (wider than about 1300
+  points and at most 667 tall, at the default text size), Home's
+  Settings lies as near Back to Talking as the row, as before. If
+  Settings' first screen has been scrolled when its row is chosen,
+  which only happens where its content is taller than the screen, Set
+  Up Step by Step takes the row's place in the content, not on the
+  screen; placing it from the scroll position would make a place depend
+  on what the person did (invariant 8). The fix for the first hazard, Learn
+  About Each Way where Set Up Step by Step's row was, was built and held
+  on 2026-10-24, because its guide leads into the second; rescored on
+  2026-10-25 it still would (its guide's Back to Talking closes Settings
+  over Get Attention), and it no longer clears every chain that saves an
+  answer, so it stays held
   ([`log/2026-10-24-settings-chains.md`](log/2026-10-24-settings-chains.md);
   docs/DECISIONS.md, "Typing on Home", *The held guide link stays
   held*). *(the next Settings thread)*
@@ -541,14 +563,15 @@ release in docs/ROADMAP.md when no thread has it yet.
   Siri and Shortcuts, which 1.0 does not ship, were deleted on 2026-10-23
   ([`log/2026-10-23-accessibility-page-and-privacy-trim.md`](log/2026-10-23-accessibility-page-and-privacy-trim.md)
   keeps their words). *(App Store readiness and ASO)*
-- iPhone Duo: the owner's Mac checked the current app closed (466×678),
+- iPhone Duo: the owner's Mac checked app code `8316743`, before PR #56,
+  closed (466×678),
   open in wide (951×669) and tall (669×951) orientations, and partially
   open at 130°, on 2026-10-25. Closed AX5 cannot show a complete phrase
   tile; wide AX5 shows four complete tiles and scrolls 10pt; tall fits
   all eight at default, AX4 and AX5. The 19 existing Home tests had one
   closed audit failure, and nine open failures plus two landscape skips;
-  the open failures include portrait/window-API assumptions and a distinct
-  AX5 nearest-control finding. All five default typing tests passed open.
+  the pre-PR #56 open failures include portrait/window-API assumptions
+  and a distinct AX5 nearest-control finding, not yet rescored after it. All five default typing tests passed open.
   Device Hub rotation worked; the tested XCTest rotation request did not.
   XCTest's inner captures were black inactive-outer images, so active
   RocketSim images and coherent accessibility snapshots preserve the
@@ -557,8 +580,7 @@ release in docs/ROADMAP.md when no thread has it yet.
   unverified. CI still has no Duo family; screenshots are required from
   April 2027 (docs/DECISIONS.md, "iPhone Duo";
   [Mac record](log/2026-10-25-mac-keyboard-checks.md)).
-  *(R0 item 13: Wave 3 item 6, after the owner's alarm-path merge gate;
-  Settings root rows stay with their current thread)*
+  *(R0 item 13: Wave 3 item 6; PR #56 has cleared the owner's merge gate)*
 - The app icon is a placeholder; `design/brand/` is not installed. *(Release chores, R0 item 11)*
 - Siri's alternative name "Brick Son" (`INAlternativeAppNames`) has no
   effect yet: Apple applies it only to apps with Siri support, which
@@ -604,7 +626,13 @@ answer, held until Back to Talking is placed over harmless controls:
 item 5 placed it over Phrases, and the fix still sounds the alarm
 through its guide, so it stays held for the next Settings thread
 (docs/DECISIONS.md, "Typing on Home", "One chain engine for dwell
-safety" and "Get Attention in Settings' bar: the owner decides").
+safety" and "Get Attention in Settings' bar: the owner decides"). On
+2026-10-25 it placed Settings' first row from Home's frames, with Set Up
+Step by Step in its frame, which ends Settings closing under a look on
+CI's windows (modelled, and measured by PR #56's first CI run) and on
+630 swept ones (modelled), except a phone at its
+largest text size, where the first step's own rows are next
+(docs/DECISIONS.md, "Settings' first row, placed from Home's frames").
 Every change follows AGENTS.md, *Apple's current frameworks first*: the
 legacy uses kept, and the moves still planned with who owns each, are in
 docs/DECISIONS.md under that title
@@ -624,8 +652,8 @@ JSON project format"). iPhone
 Duo is R0 item 13: closed, open, partly folded and rotated simulator
 measurements are recorded, with failures and unverified fold/camera and
 windowing checks ([Mac record](log/2026-10-25-mac-keyboard-checks.md)).
-The owner requires the alarm-path pull request to merge before Wave 3
-item 6 changes Home; the next implementation uses these measured spaces
+PR #56 has cleared the owner's alarm-path merge prerequisite for Wave 3
+item 6; its implementation now uses these measured spaces
 ([`log/2026-10-23-iphone-duo-readiness.md`](log/2026-10-23-iphone-duo-readiness.md), *Follow-ups*);
 recheck the minimum iOS against its two rules whenever Apple's next major
 release drops devices (docs/DECISIONS.md, "Minimum iOS, iPhone and

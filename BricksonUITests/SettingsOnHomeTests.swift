@@ -17,14 +17,17 @@ import XCTest
 ///   shows, Set Up Step by Step's first step, and has the chain engine
 ///   follow every chain of held activations from Home's Settings and from
 ///   each control of those screens, out to Home and back
-///   (`SettingsChains`, `ChainEngine`). Choosing Back to Talking never
-///   closes Settings under the look. Two kinds of hazard are known and
-///   expected, strictly, so each fails once it is gone: a held look saves
-///   an answer in the first step, and, on every window, a look on the
-///   first screen's Family Setup row meets Back to Talking once Family
-///   Setup shows, so Settings closes under it: over No on the phone, over
-///   Get Attention or No on the iPads (docs/DECISIONS.md, "One chain
-///   engine for dwell safety", "Typing on Home"). Any other hazard fails.
+///   (`SettingsChains`, `ChainEngine`). No chain closes Settings under the
+///   look: the first screen's Family Setup row sits where Home's frames
+///   say it is safe, and Set Up Step by Step takes its place on Family
+///   Setup (docs/DECISIONS.md, "Settings' first row, placed from Home's
+///   frames"). Two hazards are known and expected, strictly, so each fails
+///   once it is gone: wherever the first step was read, a held look saves
+///   an answer, through an answer or through Next, which saves them
+///   (docs/DECISIONS.md, "One chain engine for dwell safety"); where the
+///   first step shows no answer above Next, as on a phone at the largest
+///   text size, a held look that reaches it from Set Up Step by Step meets
+///   Back to Talking, and Settings closes under it. Any other hazard fails.
 ///
 /// "Nearest" is scored two ways, because how Snap to Item picks a target is
 /// a device check (docs/HANDOFF.md, *Checks that need a real device*): by
@@ -196,10 +199,12 @@ final class SettingsOnHomeTests: XCTestCase {
     /// Settings' first screens (`SettingsChains`), and attaches what it
     /// finds. Fails on a hazard of any other kind than the two known, on a
     /// control the chains do not know, on choosing Back to Talking closing
-    /// Settings under the look, and, strictly, once a known kind is no
-    /// longer found: the first step's only where it was read, and Settings
-    /// closing under a look that reaches Back to Talking unasked on every
-    /// window.
+    /// Settings under the look, and on any other chain closing it except
+    /// through a first step that shows no answer above Next; and,
+    /// strictly, once a known hazard is no longer found where it is
+    /// expected: a held look saving an answer, an answer or Next, wherever
+    /// the first step was read, and Settings closing through a first step
+    /// that shows no answer.
     @MainActor
     private func checkChains(
         home: [ScreenControl], screens: SettingsChains.Screens, window: CGRect, context: String
@@ -233,6 +238,8 @@ final class SettingsOnHomeTests: XCTestCase {
         XCTAssertEqual(findings(.unexpected), [], "a chain through Settings meets a new hazard (\(context))")
         let strict = XCTExpectedFailure.Options()
         strict.isStrict = true
+        // Only the first step's controls save, so no save can be found
+        // where it was not read.
         if screens.firstStep != nil {
             XCTExpectFailure(
                 "docs/DECISIONS.md, \"One chain engine for dwell safety\": a held look saves an answer in Set Up Step by Step",
@@ -241,15 +248,38 @@ final class SettingsOnHomeTests: XCTestCase {
                 XCTAssertEqual(findings(.savesAnAnswer), [], "a held look saves an answer (\(context))")
             }
         }
-        let closings = ChainFinding.findings(in: hazards.filter { SettingsChains.kind(of: $0) == .closesUnderTheLook })
-        let chosen = closings.filter { $0.example.start.chosen?.name == SettingsChains.backToTalking }
-        XCTAssertEqual(chosen.map(\.description), [], "choosing Back to Talking closes Settings under the look (\(context))")
-        let unasked = closings.filter { $0.example.start.chosen?.name != SettingsChains.backToTalking }.map(\.description)
-        XCTExpectFailure(
-            "docs/DECISIONS.md, \"Typing on Home\": Settings closes under a look that reaches Back to Talking unasked",
-            options: strict
-        ) {
-            XCTAssertEqual(unasked, [], "Settings closes under a look that reaches Back to Talking unasked (\(context))")
+        let closings = hazards.filter { SettingsChains.kind(of: $0) == .closesUnderTheLook }
+        let chosen = closings.filter { $0.start.chosen?.name == SettingsChains.backToTalking }
+        XCTAssertEqual(
+            ChainFinding.findings(in: chosen).map(\.description), [], "choosing Back to Talking closes Settings under the look (\(context))"
+        )
+        let unasked = closings.filter { $0.start.chosen?.name != SettingsChains.backToTalking }
+        let throughFirstStep = unasked.filter { chain in
+            chain.start.state == SettingsChains.firstStep || chain.steps.contains { $0.state == SettingsChains.firstStep }
+        }
+        let elsewhere = unasked.filter { chain in
+            chain.start.state != SettingsChains.firstStep && !chain.steps.contains { $0.state == SettingsChains.firstStep }
+        }
+        XCTAssertEqual(
+            ChainFinding.findings(in: elsewhere).map(\.description), [],
+            "Settings closes under a look that reaches Back to Talking unasked (\(context))"
+        )
+        let answerShows = screens.firstStep.map(SettingsChains.showsAnAnswer) ?? true
+        if answerShows {
+            XCTAssertEqual(
+                ChainFinding.findings(in: throughFirstStep).map(\.description), [],
+                "Settings closes under a look that reaches Back to Talking from the first step (\(context))"
+            )
+        } else {
+            XCTExpectFailure(
+                "docs/DECISIONS.md, \"Settings' first row, placed from Home's frames\": a first step that shows no answer leaves a held look on Back to Talking",
+                options: strict
+            ) {
+                XCTAssertEqual(
+                    ChainFinding.findings(in: throughFirstStep).map(\.description), [],
+                    "Settings closes under a look that reaches Back to Talking from the first step (\(context))"
+                )
+            }
         }
     }
 

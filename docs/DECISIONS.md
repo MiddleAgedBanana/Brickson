@@ -2071,7 +2071,7 @@ half; regular widths have the slot plan's one-row C (*Typing on Home*).
   foot of the cover (*Settings is a cover with a fixed safety bar*), so
   the root's Family Setup row starts under the bar, over the spot where
   Home's Settings was. Where half the width holds the row's words on one
-  line (`SettingsRootColumns`, which measures the row; a `ViewThatFits`
+  line (`SettingsRootColumns`, now `SettingsLeadIn`, which measures the row; a `ViewThatFits`
   failed Apple's audit here, as it had for labels), the row takes the bar's
   trailing column, under Back to Talking and as wide, with the note
   beside it; on phones it spans the width. At the foot, the sound line's
@@ -2087,7 +2087,10 @@ half; regular widths have the slot plan's one-row C (*Typing on Home*).
   to Talking nearest by centre on the iPad, where a full-width row's
   centre is mid-window, and by edge on the iPhone at the largest text
   size, where the sound line, kept tall enough for its longest warning,
-  sat between them.
+  sat between them. *2026-10-25:* the row no longer starts under the
+  bar: it is placed from Home's frames, and Family Setup's Set Up Step
+  by Step takes its place (*Settings' first row, placed from Home's
+  frames*).
 - **The next held activation is scored, not fixed.** After Family
   Setup's row, the chain goes on as the work file's table says: Set Up
   Step by Step on a phone at the default size; Back to Talking by centre
@@ -2096,7 +2099,13 @@ half; regular widths have the slot plan's one-row C (*Typing on Home*).
   phone at the largest size, Back to Talking or the navigation bar's
   back button. None speaks, alarms or deletes. Breaking it needs Family
   Setup's own rows placed for it, which is the Settings chain scoring
-  in docs/HANDOFF.md, *Known gaps*.
+  in docs/HANDOFF.md, *Known gaps*. *2026-10-25:* they are; modelled,
+  the next held activation after the root's row is Set Up Step by Step,
+  which takes the row's frame, by edge on every window, and by centre
+  except at the row's top trailing corner on narrow windows at the
+  largest sizes, CI's iPhone at AX5 among them, where Back to Talking
+  is next and Settings closes onto Home's Emergency (*Settings' first
+  row, placed from Home's frames*).
 - **From Settings, Yes, No and Emergency are two activations away:**
   Back to Talking, whose spot lands nearest Emergency on Home, then the
   control. *2026-10-24:* its spot lands on Phrases (*Typing on Home*). The cover is the family's screen, not a Home state, and opens
@@ -2381,7 +2390,17 @@ engine, not five scripts".
     the first answers (CI on PR #49: 7 chains on the iPhone, 6 on the
     iPad in portrait and in landscape, 4 at its largest size). It is
     milder than the hazard below: it adds Touch and restarts the
-    check-in clock, and nothing reads the answers yet.
+    check-in clock, and nothing reads the answers yet. *2026-10-25,
+    item 7:* wider. With Set Up Step by Step in the root row's frame, the
+    look held from Home's Settings saves an answer on every CI window,
+    not only the phone at the default size: it meets one of the first
+    answers (Touch, Voice Control or Switch Control), or, on the phone
+    at its largest size, Next, which saves the step's answers. Modelled,
+    and found on each window by PR #56's first CI run; the owner
+    accepted it on 2026-10-25 until the first step's own rows are
+    placed. `SettingsOnHomeTests` expects it strictly wherever the first
+    step is read (*Settings' first row, placed from Home's frames*,
+    *What it costs, for the owner to weigh*).
     *Tried 2026-10-24 and held* (ROADMAP Wave 3 item 7,
     [`log/2026-10-24-settings-chains.md`](log/2026-10-24-settings-chains.md)):
     the first step opening on its words, filled down to where Family
@@ -2429,7 +2448,14 @@ engine, not five scripts".
     then nearest it, and Settings closes under it, over No on the phone
     and over Get Attention, which sounds the alarm, or No on the 13-inch
     iPad (CI's frames, *Settings closing, rescored*). `SettingsOnHomeTests`
-    pins such closings strict on every window.
+    pins such closings strict on every window. *2026-10-25, item 7:*
+    removed by placement, modelled on CI's windows and across 630 swept
+    ones: the root's row is placed from Home's frames and Set Up Step by
+    Step takes its frame in Family Setup, so the look meets a row that
+    only navigates. One closing is still expected strictly, on the phone
+    at its largest size, where Set Up Step by Step's first step shows no
+    answer above Next and its Back to Talking is nearest (*Settings'
+    first row, placed from Home's frames*). Untested until CI runs it.
 
 *Before:* the nearest-control rules were written twice, in
 `HomeShapeTests` and in the UI tests' `ScreenControls`, and only single
@@ -2812,7 +2838,10 @@ plan's places (*Home's slot plan*).
   bar: the owner decides*), the bar ends 8 points under Back to Talking,
   and every Settings screen starts there. Settings' first screen keeps
   its columns: the Family Setup row on the trailing half, the note on the
-  leading. *Before:* Back to Talking filled the bar's trailing half, with
+  leading. *2026-10-25:* the row's top and width now come from Home's
+  frames, over Home's Settings button on the 13-inch iPad, with the note
+  beside it where the room holds the row's words on one line (*Settings'
+  first row, placed from Home's frames*). *Before:* Back to Talking filled the bar's trailing half, with
   its centre over Emergency (*Settings on Home*), and the slot plan put it
   over the whole trailing column, where Phrases and Type tie and a repeat
   on Type would reopen typing (docs/DESIGN.md, *What a held activation
@@ -2842,7 +2871,10 @@ plan's places (*Home's slot plan*).
   rows (ROADMAP Wave 3 item 7), so a look held on the root's row meets a
   row that only navigates, is what removes it, scored with the same
   tests, or its measured cost goes to the owner before a dwell, switch,
-  head or gaze profile ships.
+  head or gaze profile ships. *2026-10-25:* item 7 did, modelled on
+  CI's windows and across 630 swept ones, except the phone at its
+  largest size, still strictly expected; untested until CI runs it
+  (*Settings' first row, placed from Home's frames*).
 - **The held guide link stays held** (*One chain engine for dwell
   safety*, *Open: a held look saves an answer in Set Up Step by Step*).
   Modelled on the moved frames, Learn About Each Way still clears every
@@ -2852,7 +2884,12 @@ plan's places (*Home's slot plan*).
   ("choosing learnAboutEachWay → backToTalking (navigates) → getAttention
   (alarms)"). A milder hazard is not traded for a worse one, so commit
   `1de50f5` stays out. `ChainEngineTests.theHeldGuideLinkWouldSoundTheAlarm`
-  pins why, and fails once it no longer would.
+  pins why, and fails once it no longer would. *2026-10-25:* rescored
+  with Set Up Step by Step in the root row's frame (*Settings' first
+  row, placed from Home's frames*): the link still sounds the alarm, and
+  it no longer clears every chain that saves an answer, since Home's
+  Settings still leads a held look to the first step's answers. It
+  stays held.
 - **Where the starter library fits, measured** (*The layout engine*,
   *Where the starter library fits*: its slot-plan column is now Home's):
   every iPad window CI runs, in both orientations, at every text size, as
@@ -3031,15 +3068,22 @@ Get Attention and Stop since *Get Attention and Stop on Home*; the place
 stays empty: scored on 2026-10-24, Get Attention there would sound the
 alarm unasked, and what happens to the place is the owner's decision
 (*Get Attention in Settings' bar: the owner decides*). Under the bar is a `NavigationStack(path:)`
-whose root holds only a large Family Setup row and a sentence; every
+whose root holds only a Family Setup row and a sentence; every
 setting is a screen below, so a stray dwell that opens Settings meets
 only the way back, Get Attention and one row that navigates. Family
-Setup opens on passive text at least as tall as that row
-(`FamilySetupView.openingHeight`), so nothing that can be activated sits
-under the spot just activated. With Snap to Item the nearest control is
-then a row that only navigates on a phone at the default text size, and
-can be Back to Talking elsewhere (*Settings on Home*); chains through
-Settings are not fully scored yet (docs/HANDOFF.md, *Known gaps*).
+Setup opens with Set Up Step by Step in that row's frame, at least as
+tall, so a look still resting where the row was meets a row that only
+opens the next screen (*Settings' first row, placed from Home's
+frames*, which places the row from Home's frames and records its cost:
+on the iPad it is smaller than the large row it was, 194 by 78 points
+instead of 492 by 110). *Before (reversed 2026-10-25):* Family Setup opened on passive
+text at least as tall as that row (`FamilySetupView.openingHeight`), so
+nothing that can be activated sat under the spot just activated; but
+with Snap to Item the nearest control was then Back to Talking on most
+windows, and Settings closed onto Home under the look, over Get
+Attention on the 13-inch iPad (*Typing on Home*, *Settings closing,
+rescored*). Words over the spot cannot stop that, so a row that only
+navigates now takes it.
 
 Family Setup's rows: Set Up Step by Step, Voice Settings, Reaching the
 Screen, Keep Brickson Open (Guided Access and Assistive Access), Calls,
@@ -3069,6 +3113,166 @@ Before: the reference app put Back to Talking top-leading and Get
 Attention trailing. Brickson swaps them so Back to Talking lands over
 Home's trailing column (Clear and Type in the planned Home) and Get
 Attention over the message, whose nearest Home control is Yes.
+
+## Settings' first row, placed from Home's frames
+
+*2026-10-25. Default, adopted by the Settings' first row thread
+(docs/ROADMAP.md, Wave 3 item 7): routine choices, reversible if the
+owner objects. It accepts no exception to an invariant: what it measures
+stays open for the owner.* The intent, spec and plan are
+[`work/settings-row-place.md`](work/settings-row-place.md), with the
+Figma screens it links; the record is
+[`log/2026-10-25-settings-row-place.md`](log/2026-10-25-settings-row-place.md).
+Everything below was modelled on PR #53's CI frames in the unit tests,
+not drawn by the app: it is untested until CI's UI tests pass on this
+change.
+
+- **What it fixes.** CI's first run on PR #53 found a closing nobody
+  chose (*Typing on Home*, *Settings closing, rescored*): on the 13-inch
+  iPad a look held on Settings' Family Setup row opened Family Setup,
+  whose Back to Talking was then the nearest control, and Settings
+  closed with the look over Get Attention, which sounds the alarm; on
+  the phone it closed over No.
+- **The root's row is placed from Home's frames** (`SettingsRowPlace`),
+  as Home lies under the cover in the same window, with every Settings
+  screen measuring where it sits (`SettingsScreenFrames`: the stack from
+  the cover, the navigation bar from the screen's own safe area):
+  - its top is the highest in the content where every point of its top
+    edge lies nearer, by centre and by edge, a Home control that only
+    switches what Home shows (Phrases, Type, Emergency, the categories,
+    Settings) than one that speaks or sounds (Yes, No, Again, Get
+    Attention, Stop, the phrase tiles), by 8 points;
+  - where Home under the spot of Settings' Back button speaks or sounds,
+    which on CI's windows is the phone, the row is held at the lowest top
+    that keeps that spot nearer the row than Back to Talking by 8
+    points, so going back from Family Setup never meets Back to Talking;
+  - its width is the narrowest that serves: over Home's Settings
+    button, else the trailing half, else the whole width, and it never
+    leaves the first screenful. Its note goes beside it where the room
+    there holds the row's words on one line, above it where the note
+    fits, else under it (`SettingsLeadIn`, formerly
+    `SettingsRootColumns`).
+
+  On CI's windows: the iPhone 17 at 16, 312, 370 by 78 (held by Back's
+  spot); the 13-inch iPad in portrait at 822, 354, 194 by 78, over
+  Home's Settings button; at its largest size, top 378, 442 wide; in
+  landscape, top 355, over Home's Settings. `SettingsRowPlaceTests` pins
+  those four tops (and the phone's Back limit, 312); the phone at its
+  largest size computes to top 317 and is not pinned. Until the screen
+  has measured itself, the row sits at the top of the content, as
+  before.
+- **Family Setup's Set Up Step by Step takes the row's frame**: the
+  root's row as it was drawn when chosen (`SettingsLanding`), with the
+  same leading edge, top and width, and at least as tall, growing
+  downward where its own words need more lines
+  (`SettingsLeadIn.control(inPlaceOf:width:height:)`). Family Setup's
+  opening words go beside it where the room at its leading side holds
+  its words on one line, as the root's note does, else above it where
+  they fit, else under it; the check-in card and the setup warnings
+  come after, so a card never moves it. A look still resting where the
+  row was meets a row that only opens the next screen, except by centre
+  at one corner on narrow windows (*By centre*, below). On CI's windows:
+  on the phone, across the width at 312 with the words under it; on the
+  13-inch iPad in portrait and in landscape, over Home's Settings with
+  the words beside it; at the iPad's largest size, 442 wide and two
+  lines tall, with the words under it.
+  - *Modelled on CI's frames* (`SettingsChainsTests.theRowPlacedFromHomesFramesClosesNothingUnderTheLook`),
+    no chain closes Settings under the look on the iPhone 17 or on the
+    13-inch iPad in portrait at the default and the largest size or in
+    landscape.
+  - *Across 630 windows* (`noSweptWindowClosesSettingsUnderTheLook`:
+    widths from 320 to 1408 every 32 points, six heights from 568 to
+    1376, the default size, AX3 and AX5), with Family Setup's words
+    modelled from CI's measurements, no chain closes Settings under the
+    look and nothing new is met. The first step is not drawn there.
+    With the opening words over Set Up Step by Step, as before, 213 of
+    those windows close Settings onto Home's Get Attention or No; with
+    Set Up Step by Step across the width at the row's top, the first
+    version of this change, 90 do (an independent review of the branch,
+    before it was pushed, found that version's closings).
+  - *By centre*, on narrow windows at the largest sizes, Back to Talking
+    is the nearest next control at the root row's top trailing corner,
+    and a held look there closes Settings onto Home's Emergency, which
+    switches Home to the emergency phrases. Nothing is said or sounded,
+    and the chain engine scores Emergency as switching what Home shows,
+    not as a hazard. Modelled, it happens on CI's iPhone 17 at AX5, on
+    the six 384-point-wide AX5 windows of the 630, and across all 4,200
+    windows of `SettingsRowPlaceTests` with both Bold Text settings on
+    36: from 384 to 416 points wide at AX5, and 336 wide at AX3 with Bold
+    Text on (a probe on the unit tests' model, not a committed test).
+- **Why not keep Family Setup's opening words over the spot.** The brief
+  proposed moving Family Setup's first row up under the root's row and
+  keeping the opening words over the spot (*Settings is a cover with a
+  fixed safety bar*). Modelled on CI's frames, every place the root's
+  row could take on the phone, at the default size and at the largest,
+  then left Back to Talking nearer the spot than the first row below the
+  words at some point of the row, so Settings closed onto No or Get
+  Attention. A row that only navigates has to be at the spot itself.
+- **What remains, each a strict known issue that fails when it clears:**
+  - *The phone at its largest size* (predicted from CI's frames of PR
+    #53, and found by this change's first CI run, on the iPhone 17 at
+    AX5: a look held from Family Setup's row or from Set Up Step by Step
+    closed Settings onto No or Get Attention). The root's row
+    can't sit where both Back's spot and the first step are safe, and
+    Set Up Step by Step's first step then shows only Back, Back to
+    Talking and Next above Next's top, so a look held through Set Up
+    Step by Step meets Back to Talking and Settings closes over No or
+    Get Attention (Again while something is spoken); a look that meets
+    Next saves the step's answers. `SettingsOnHomeTests` expects the
+    closing strictly only through a first step that shows no answer
+    above Next (`SettingsChains.showsAnAnswer`), and fails on any other
+    closing. Placing the first step's own rows is what removes it.
+  - *A short, very wide window* (wider than about 1300 points: the
+    sweep crosses it between 1296 and 1312; at most 667 tall, with 744
+    clear; at the default size): Home's Settings' top leading corner
+    lies as near Back to Talking's centre as the row's, within half a
+    point, as it did before (`SettingsRowPlaceTests.homesSettingsMeetsTheRow`).
+  - *The held guide link* still sounds the alarm, and it would no
+    longer clear every chain that saves an answer: Home's Settings
+    still leads a held look to the first step's answers (*Typing on
+    Home*, *The held guide link stays held*). It stays held.
+- **What it costs, for the owner to weigh:**
+  - *More held looks save an answer.* The chain from Home's Settings
+    through Family Setup and Set Up Step by Step to one of the first
+    step's answers was found only on the phone at the default size. It
+    is now found on every CI window, modelled and on this change's first
+    CI run: on the iPad it meets Touch, Voice Control or Switch Control,
+    on the phone Touch or Voice Control, and on the phone at its largest
+    size Next, which saves the step's answers (*One chain engine for
+    dwell safety*, *Open: a held look saves an answer in Set Up Step by
+    Step*). It saves the answer it meets and restarts the check-in
+    clock; nothing reads the answers yet. Milder than a closing, but
+    wider. *The owner accepted it on 2026-10-25* (a decision card,
+    after Codex's review of PR #56 asked for the owner's call), until
+    the next Settings change places the first step's own rows; that
+    change removes it, not a later decision.
+  - *A smaller row.* The root's row is 78 points tall at the default
+    size instead of 110 (Family Setup no longer needs a tall row for its
+    opening words to cover), and on the 13-inch iPad 194 points wide
+    instead of 492, over Home's Settings. It stays above every floor.
+  - *Emptier space on the iPad.* The root's row sits lower than before
+    (354 instead of 216 in portrait), so more of Settings' first screen
+    is empty, and a look resting on that space with Snap to Item meets
+    Back to Talking near the top, which closes Settings onto Phrases;
+    nothing is said or sounded. The chain engine follows activations,
+    not rests, so it does not score this.
+  - *A scrolled first screen.* Set Up Step by Step takes the row's place
+    in the content, as if Settings' first screen were at its top. If it
+    has been scrolled when the row is chosen (only where its content is
+    taller than the screen, as at large text sizes), Family Setup opens
+    at its top and
+    the row's spot meets something else. Placing it from the scroll
+    position would make a place depend on what the person did
+    (invariant 8), so it is a known gap (docs/HANDOFF.md, *Known gaps*).
+
+  Where a pointer rests after an activation, and how Snap to Item
+  picks, need a real device (docs/HANDOFF.md, "Checks that need a real
+  device").
+
+*Before:* the root's row started right under the bar, on the trailing
+half where two columns fit (*Settings on Home*), and Family Setup opened
+on passive words at least as tall as the row
+(`FamilySetupView.openingHeight`), with Set Up Step by Step under them.
 
 ## Speed is a set of fixed choices
 

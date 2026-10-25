@@ -415,7 +415,19 @@ Setup's first row into Set Up Step by Step and saves an answer broken
 by placement (docs/HANDOFF.md, *Known gaps*). *2026-10-25:* with item
 5's frames, a look held on the root's row closes Settings over Get
 Attention, which sounds the alarm, on the 13-inch iPad (DECISIONS.md,
-"Typing on Home"). Then a start-only Get
+"Typing on Home"). *2026-10-25, built (PR #56):* the
+root's row is placed from Home's frames and Set Up Step by Step takes
+its frame in Family Setup, so a look held on the row meets a row that
+only navigates, modelled and on CI's first run, except by centre at
+one corner on narrow windows at the largest sizes, where Settings
+closes onto Home's Emergency (modelled); on a phone at its largest
+text size a look held on through Set Up Step by Step still closes
+Settings over No or Get Attention (found on CI), and the chain that
+saves an answer remains, now on every CI window, which the owner
+accepted on 2026-10-25 until the first step's own rows are placed
+(DECISIONS.md, "Settings' first row,
+placed from Home's frames"; work file
+[`work/settings-row-place.md`](work/settings-row-place.md)). Then a start-only Get
 Attention in Settings' bar, in its empty place, with the sound line
 moved where its neighbours neither speak nor change a setting. This
 comes before item 8, because item 8 lets setup answers change sizes.
@@ -547,7 +559,7 @@ TestFlight group before the gate passes, and it goes out once items 1 to
 | 10 | App Store readiness | Apple's current requirements, store text with no price words, accessibility and privacy labels, screenshots, review notes, the privacy policy's unbuilt sections built or deleted | App Store readiness and ASO | In progress (`docs/APP-STORE.md`, `docs/ASO.md`). The website's accessibility page, and the policy without the sections R0 does not ship, landed on 2026-10-23 ([`log/2026-10-23-accessibility-page-and-privacy-trim.md`](log/2026-10-23-accessibility-page-and-privacy-trim.md)); the policy's R0 sentences are marked true or deleted at release |
 | 11 | Release chores | The brand icon installed, a license decision, the App Store Connect record (after the name is confirmed), TestFlight to the owner and a small group that includes a person living with ALS and a speech-language pathologist | Owner, with items 9 and 10 | Waiting on decisions |
 | 12 | Plan and maintain | This roadmap, the decisions list, the handoff, the way of working ([`docs/SDLC.md`](SDLC.md)) | Roadmap, decisions and repo review | Landed with PR #15; each pull request keeps its own rows current |
-| 13 | Ready for iPhone Duo | Home, Settings and setup checked on iPhone Duo's outer and inner displays, open, partially folded and rotated, and in Split View, in the iPhone Duo simulator on the current Xcode; whatever that finds fixed, with the owner's two fold answers built and dwell scoring that covers folding; a Duo family in the UI tests once CI's image has the simulator; the Duo screenshots item 10 submits | A Mac thread for the simulator run, then the layout engine thread, which builds the owner's fold choices (docs/DECISIONS.md, "iPhone Duo", *The fold*) | Planned 2026-10-23: Apple's requirements and an assessment of Brickson against them ([`log/2026-10-23-iphone-duo-readiness.md`](log/2026-10-23-iphone-duo-readiness.md)). Brickson already builds with the iOS 27.1 SDK, so it is already treated as optimized for iPhone Duo. The 2026-10-25 Mac run used Device Hub closed, open, partly open at 130° and rotated, with current Home measurements and recorded test failures ([`log/2026-10-25-mac-keyboard-checks.md`](log/2026-10-25-mac-keyboard-checks.md)). Closed AX5 cannot show a whole tile; wide inner AX5 scrolls 10pt, and tall fits all eight starter phrases. The wide rendered hinge crosses controls. Fold/camera reserved-region support, windowing and real input remain unverified; the owner's alarm-path merge gate still precedes the implementation. Screenshots are required from April 2027. A change it makes to what a person sees starts with a work file ([`docs/SDLC.md`](SDLC.md)) |
+| 13 | Ready for iPhone Duo | Home, Settings and setup checked on iPhone Duo's outer and inner displays, open, partially folded and rotated, and in Split View, in the iPhone Duo simulator on the current Xcode; whatever that finds fixed, with the owner's two fold answers built and dwell scoring that covers folding; a Duo family in the UI tests once CI's image has the simulator; the Duo screenshots item 10 submits | A Mac thread for the simulator run, then the layout engine thread, which builds the owner's fold choices (docs/DECISIONS.md, "iPhone Duo", *The fold*) | Planned 2026-10-23: Apple's requirements and an assessment of Brickson against them ([`log/2026-10-23-iphone-duo-readiness.md`](log/2026-10-23-iphone-duo-readiness.md)). Brickson already builds with the iOS 27.1 SDK, so it is already treated as optimized for iPhone Duo. The 2026-10-25 Mac run used Device Hub closed, open, partly open at 130° and rotated, with current Home measurements and recorded test failures ([`log/2026-10-25-mac-keyboard-checks.md`](log/2026-10-25-mac-keyboard-checks.md)). Closed AX5 cannot show a whole tile; wide inner AX5 scrolls 10pt, and tall fits all eight starter phrases. The wide rendered hinge crosses controls. Fold/camera reserved-region support, windowing and real input remain unverified; PR #56 has since cleared the owner's merge gate for the implementation. Screenshots are required from April 2027. A change it makes to what a person sees starts with a work file ([`docs/SDLC.md`](SDLC.md)) |
 
 **Left out of R0 on purpose:** stage profiles, prediction, recorded
 phrases, Siri and Shortcuts, caregiver alerts and the listener display.

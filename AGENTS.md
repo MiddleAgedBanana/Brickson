@@ -547,8 +547,9 @@ the failure.
   `SpeedChoice`, `WordFit`, `HomeRegion`, `HomeControlNames`,
   `HomeStatusLine`, `HomeButtonLook`, `LibrarySnapshot`, `LibraryEdit`,
   `LibraryRules`, `LibraryImport`, `LibraryEditor`, `BackupCodec`,
-  `EmergencyRepair`, `SettingsRootColumns`, `KeyboardAllowance`,
-  `SettingsAppLink`, `HomeLayout`.
+  `EmergencyRepair`, `SettingsLeadIn`, `SettingsRowPlace`,
+  `SettingsScreenFrames`, `KeyboardAllowance`, `SettingsAppLink`,
+  `HomeLayout`.
   Views only read them.
 - **Run it, don't just read it.** Layout and flow changes are checked in the
   running app on an iPad and an iPhone simulator, at default and
@@ -840,7 +841,7 @@ the time. Export them again after each new Xcode release.
   layout*), and on PR #33 Settings' root, built with one, was reported as
   clipped text belonging to no element on the phone. Choose arrangements
   in a plain type and place each view once (`WordFit`,
-  `SettingsRootColumns`).
+  `SettingsLeadIn`).
 - **CI results can be read without a Mac.** A failed UI test's result
   keeps a screen recording of the whole test, and each `.xcresult` has a
   `database.sqlite3` listing every activity and attachment with its time

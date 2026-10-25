@@ -9,7 +9,10 @@ import SwiftUI
 /// start-only Get Attention kept empty at its leading side (docs/DECISIONS.md,
 /// "Settings is a cover with a fixed safety bar", "Typing on Home"). The
 /// settings themselves start a screen below the root, so a stray dwell that
-/// opens Settings meets only the way back and the one Family Setup row.
+/// opens Settings meets only the way back and the one Family Setup row,
+/// which sits where Home's own frames say a look resting on it is safe
+/// (`SettingsRowPlace`; docs/DECISIONS.md, "Settings' first row, placed
+/// from Home's frames").
 ///
 /// When nobody has used it for 90 seconds it goes back to its root and
 /// stays open; only Back to Talking closes it (docs/DECISIONS.md, "Settings
@@ -18,9 +21,7 @@ import SwiftUI
 /// At the foot of the cover, a line kept for it shows any sound problem,
 /// because the cover hides Home's: a sample that cannot be heard always
 /// says why (AGENTS.md, invariant 4). It sits below the screens rather
-/// than under the bar, so each screen starts right under the bar, where
-/// the root's Family Setup row covers the spot Home's Settings was
-/// (docs/DECISIONS.md, "Settings on Home").
+/// than under the bar, so each screen starts right under the bar.
 struct SettingsView: View {
     let close: () -> Void
 
@@ -32,6 +33,9 @@ struct SettingsView: View {
     @State private var path: [SettingsRoute] = []
     @State private var activity: SettingsActivity
     @State private var landing = SettingsLanding()
+    /// The navigation stack's height, once measured: the cover less the
+    /// safety bar and the sound line.
+    @State private var stackHeight: CGFloat?
 
     /// - Parameter idleLimit: `SettingsIdleClock.standardLimit`, or the
     ///   short limit UI tests ask for (`AppTimeouts`).
@@ -47,6 +51,14 @@ struct SettingsView: View {
             // Back to Talking lands where Home's Phrases is.
             let space = HomeLayout.Space(proxy)
             let home = HomeLayout(space: space, text: text, modes: .phrasesAndTyping)
+            // The stack starts under the bar, in the window's coordinates;
+            // until its height is measured, it is taken to reach the foot
+            // of the cover.
+            let stackTop = home.backToTalking.maxY + SettingsSafetyBar.gapBelow
+            let stack = CGRect(
+                x: space.safeArea.leading, y: stackTop, width: proxy.size.width,
+                height: stackHeight ?? max(0, space.size.height - space.safeArea.bottom - stackTop)
+            )
             VStack(spacing: 0) {
                 SettingsSafetyBar(backToTalking: home.backToTalking, safeArea: space.safeArea, close: close)
                 NavigationStack(path: $path) {
@@ -58,6 +70,8 @@ struct SettingsView: View {
                 // A new identity after an idle reset rebuilds every screen
                 // scrolled to the top, as if Settings had just opened.
                 .id(activity.resetCount)
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { stackHeight = $0 }
+                .environment(\.settingsCover, SettingsCover(home: home, stack: stack))
                 SettingsAudioStatus()
             }
         }
@@ -221,96 +235,65 @@ private struct SettingsAudioStatus: View {
 }
 
 /// The root's Family Setup row as drawn, its button style's insets
-/// included. Family Setup's opening text is at least this tall, so the
-/// whole of the spot just activated lands on words (AGENTS.md,
-/// invariant 10). It is measured, because the style's insets are the
-/// system's, not ours.
+/// included, in its screen's content (`SettingsMetrics.contentSpace`).
+/// Family Setup's Set Up Step by Step takes this place, at least as tall,
+/// so a look still resting where the row was meets a row that only opens
+/// the next screen (AGENTS.md, invariant 10; docs/DECISIONS.md, "Settings'
+/// first row, placed from Home's frames"). It is measured, because the
+/// style's insets are the system's, not ours.
 @Observable
 final class SettingsLanding {
-    var rootRowHeight: CGFloat = 0
+    var rootRow: CGRect?
 }
 
 /// Settings' first screen: one large way into Family Setup, and a short
 /// note on what lies there. Nothing here changes a setting.
 ///
-/// The row starts right under the safety bar, over the spot where Home's
-/// Settings was, so a look still resting there meets a row that only
-/// navigates (docs/DECISIONS.md, "Settings on Home"). Where half the width
-/// holds the row's words on one line, the row takes the trailing half, with
-/// the note beside it (`SettingsRootColumns`). Across a wide window, a
-/// full-width row's centre lies farther from that spot than Back to
-/// Talking's, so by the nearest centre a held look could close Settings
-/// again (modelled from CI's frames on PR #33). Where half the width is too
-/// narrow, as on a phone, the row spans the width, which keeps its words
-/// whole.
+/// The row sits where `SettingsRowPlace` puts it from Home's frames, so a
+/// look resting where Home's Settings was meets it, and a look that reaches
+/// Back to Talking from the screen it opens closes Settings onto a Home
+/// control that only switches what Home shows (docs/DECISIONS.md,
+/// "Settings' first row, placed from Home's frames"). The note goes beside
+/// the row where the room there holds the row's words on one line, and
+/// otherwise above it or under it (`SettingsLeadIn`).
 struct SettingsRootView: View {
+    var body: some View {
+        SettingsScreen(title: "Settings") {
+            SettingsRootLeadIn()
+        }
+    }
+}
+
+/// The root's row and note, placed from Home's frames once the screen knows
+/// where it sits in the window; at the top of the content until then.
+private struct SettingsRootLeadIn: View {
+    @Environment(\.settingsCover) private var cover
+    @Environment(\.settingsScreenFrames) private var frames
     @Environment(SettingsLanding.self) private var landing: SettingsLanding?
 
     var body: some View {
-        SettingsScreen(title: "Settings") {
-            // The rows' gap, between the two columns too.
-            SettingsRootLayout(spacing: SettingsMetrics.rowSpacing) {
-                familySetup
-                note
-            }
+        SettingsLeadInLayout(placement: placement, controlFirst: true, spacing: SettingsMetrics.rowSpacing) {
+            familySetup
+            note
         }
+    }
+
+    private var placement: SettingsLeadInLayout.Placement {
+        guard let cover, let frames else { return .atTheTop }
+        return .fromHome(cover.home, frames)
     }
 
     private var familySetup: some View {
         NavigationLink(value: SettingsRoute.familySetup) {
-            familySetupLabel
+            SettingsRowLabel(title: "Family Setup", systemImage: "person.2.fill")
         }
         .settingsRowStyle()
-        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { landing?.rootRowHeight = $0 }
+        .onGeometryChange(for: CGRect.self) { $0.frame(in: .named(SettingsMetrics.contentSpace)) } action: { landing?.rootRow = $0 }
         .accessibilityIdentifier("familySetup")
-    }
-
-    private var familySetupLabel: some View {
-        SettingsRowLabel(title: "Family Setup", systemImage: "person.2.fill")
-            .frame(minHeight: FamilySetupView.openingHeight)
     }
 
     private var note: some View {
         SettingsParagraph("Voices, help with reaching the screen, keeping \(AppName.display) open, and the privacy policy are in Family Setup.")
-    }
-}
-
-/// Places Settings' root where `SettingsRootColumns` says: its first view is
-/// the Family Setup row, its second the note. It measures the row with its
-/// words on one line, then each view at the width it gets.
-nonisolated struct SettingsRootLayout: Layout {
-    let spacing: CGFloat
-
-    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-        columns(width: proposal.width, subviews: subviews)?.size ?? .zero
-    }
-
-    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-        guard let columns = columns(width: bounds.width, subviews: subviews) else { return }
-        for (subview, frame) in zip(subviews, [columns.row, columns.note]) {
-            subview.place(
-                at: CGPoint(x: bounds.minX + frame.minX, y: bounds.minY + frame.minY),
-                proposal: ProposedViewSize(width: frame.width, height: frame.height)
-            )
-        }
-    }
-
-    /// Nothing but the row and the note is placed: the root has exactly
-    /// these two.
-    private func columns(width: CGFloat?, subviews: Subviews) -> SettingsRootColumns? {
-        guard subviews.count == 2 else { return nil }
-        let row = subviews[0]
-        let note = subviews[1]
-        let rowIdealWidth = row.sizeThatFits(.unspecified).width
-        // Asked for its own width, the root stacks at the row's.
-        let width = width.flatMap { $0.isFinite ? $0 : nil } ?? rowIdealWidth
-        return SettingsRootColumns(
-            width: width,
-            spacing: spacing,
-            rowIdealWidth: rowIdealWidth,
-            rowHeight: { row.sizeThatFits(ProposedViewSize(width: $0, height: nil)).height },
-            noteHeight: { note.sizeThatFits(ProposedViewSize(width: $0, height: nil)).height }
-        )
     }
 }
 
