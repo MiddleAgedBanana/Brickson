@@ -9,14 +9,17 @@ import OSLog
 /// The draft on screen is the one in `composer`, and a failed save never
 /// takes it away. The words stay on screen and in memory, `issue` becomes
 /// `.notSaved` so Home can say so in its reserved warning space (invariant
-/// 5), and the next edit or `retrySave()` tries again.
+/// 5), and the next edit or `retrySave()` tries again. An edit refused at
+/// the length limit is told the same way (`.reachedLimit`), so words that
+/// do not go in never vanish without a reason.
 ///
 /// Restoring at launch only reads: it never speaks and never opens typing.
 @MainActor
 @Observable
 final class DraftStore {
     private(set) var composer: MessageComposer
-    /// Set while the draft cannot be kept; Home shows it as passive text.
+    /// Set while the draft cannot be kept, or after an edit was refused
+    /// at the length limit; Home shows it as passive text.
     private(set) var issue: DraftIssue?
     @ObservationIgnored private let save: (String) throws -> Void
     @ObservationIgnored private let logger = Logger(subsystem: AppLog.subsystem, category: "typing")
@@ -57,12 +60,18 @@ final class DraftStore {
 
     /// Applies one edit, saves the draft if it changed (or if the last save
     /// failed), and returns what the edit did. The caller passes
-    /// `textToSpeak` to the speech engine; this type never speaks.
+    /// `textToSpeak` to the speech engine; this type never speaks. An edit
+    /// refused at the length limit sets `.reachedLimit` until the next
+    /// change is saved, unless a failed save, which matters more, is being
+    /// shown.
     @discardableResult
     func perform(_ edit: MessageComposer.Edit) -> MessageComposer.Outcome {
         let outcome = composer.apply(edit)
         if outcome.draftChanged || issue == .notSaved {
             persist()
+        }
+        if outcome.reachedLimit, issue != .notSaved {
+            issue = .reachedLimit
         }
         return outcome
     }
@@ -95,14 +104,19 @@ final class DraftStore {
     }
 }
 
-/// Why the typed message cannot be kept. Shown as passive text in Home's
-/// reserved warning space, never as a dialog: it adds no control and moves
-/// nothing (invariant 4's rule for warnings, applied to typing).
+/// Why the typed message cannot be kept, or why a change did not go in.
+/// Shown as passive text in Home's reserved warning space, never as a
+/// dialog: it adds no control and moves nothing (invariant 4's rule for
+/// warnings, applied to typing).
 nonisolated enum DraftIssue: CaseIterable, Equatable, Sendable {
     /// The last change could not be saved. The message is still on screen.
     case notSaved
     /// The message typed before the app last closed could not be read back.
     case notRestored
+    /// The last change would have taken the message past
+    /// `MessageComposer.maximumLength`, so it was refused whole
+    /// (docs/DECISIONS.md, "The typed message").
+    case reachedLimit
 
     /// Short enough for the warning space, like "Volume low".
     var compactMessage: String {
@@ -111,6 +125,8 @@ nonisolated enum DraftIssue: CaseIterable, Equatable, Sendable {
             String(localized: "Message not saved")
         case .notRestored:
             String(localized: "Message not restored")
+        case .reachedLimit:
+            String(localized: "Message full")
         }
     }
 
@@ -121,6 +137,8 @@ nonisolated enum DraftIssue: CaseIterable, Equatable, Sendable {
             String(localized: "This message is not being saved. It stays on screen, but it may be lost if the app closes.")
         case .notRestored:
             String(localized: "The message you were typing before the app closed could not be restored.")
+        case .reachedLimit:
+            String(localized: "This message is as long as it can be, so the last change was not added.")
         }
     }
 
@@ -130,6 +148,8 @@ nonisolated enum DraftIssue: CaseIterable, Equatable, Sendable {
             "externaldrive.badge.exclamationmark"
         case .notRestored:
             "exclamationmark.bubble"
+        case .reachedLimit:
+            "text.badge.xmark"
         }
     }
 }

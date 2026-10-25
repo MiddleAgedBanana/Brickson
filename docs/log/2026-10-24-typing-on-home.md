@@ -40,7 +40,9 @@ What a person sees:
 - **The message is kept.** The app keeps one `DraftStore`, so the message
   survives a relaunch until it is cleared, and a failed save or restore
   shows "Message not saved" or "Message not restored" on the status line,
-  after the audio problems, the alarm and speaking.
+  after the audio problems, the alarm and speaking. A change refused at
+  the 2,000-character limit shows "Message full" there until the next
+  change is saved.
 - **Settings closes onto Phrases.** Settings lays out Home's engine for
   its own window and puts Back to Talking over Home's Phrases
   (`HomeLayout.backToTalking`): exactly Phrases' frame on phones, centred
@@ -62,6 +64,10 @@ What was settled along the way, each recorded in "Typing on Home":
   the call for help"), and the second push keeps the rule instead: no
   typing on those windows at those sizes until the real keyboards there
   are measured or the owner accepts an exception.
+- **A change refused at the length limit says so.** The first push let
+  the field put the words back without a reason, though
+  `MessageComposer` reports the refusal; Greptile's review found it, and
+  `DraftStore` now sets `DraftIssue.reachedLimit`.
 
 - **Where Clear and Put Back go**, by scoring every pair of category cells
   in every typing state: never under or beside Stop's well.
@@ -85,8 +91,10 @@ the spec and plan), one task each: the layout engine and chain maps with
 their tests; Home's typing state, the app's message and the names,
 regions and status line with their tests; Settings' bar over Phrases with
 its tests; the UI tests; and this record with the String Catalog and the
-documents. Then, after Codex's review: Type offered only where the
-safety row clears the keyboard, with its test, hint and records.
+documents. Then, after the reviews: Type offered only where the safety
+row clears the keyboard, with its test, hint and records (Codex); and
+"Message full" for a change refused at the length limit, with its tests
+(Greptile).
 
 ## Verified
 
@@ -99,7 +107,8 @@ safety row clears the keyboard, with its test, hint and records.
   issues the decisions name. `ControlNamesTests`, `HomeRegionTests` and
   `SettingsRootColumnsTests` also passed there (17 tests), with a
   harness-only stand-in for `String(localized:)`, which Linux Foundation
-  lacks.
+  lacks, and so did `DraftStoreTests` and `MessageComposerTests` (70
+  tests), with stand-ins for OSLog and the Application Support folder.
 - **What each new test fails on** (each was run against the change that
   should fail it, or the old code):
   - `backToTalkingClosesOntoPhrasesAlone`: Back to Talking as wide as
@@ -118,6 +127,9 @@ safety row clears the keyboard, with its test, hint and records.
   - `typeIsOfferedOnlyWhereTheSafetyRowClearsTheKeyboard`: Type offered
     on every window, as the first push did (it fails on the zoomed
     13-inch iPad in landscape at AX5, Codex's case).
+  - `DraftStoreTests.aRefusedEditSaysTheMessageIsFull` and
+    `aFailedSaveOutranksTheLimit`: no notice for a refused edit, and the
+    limit's notice replacing a failed save's.
   - `ChainEngineTests.backToTalkingOverPhrasesClosesOnlyUnderALookItReachesUnasked`
     and `theHeldGuideLinkWouldSoundTheAlarm`: Settings' frames back at
     the old bar, or the guide link's chains clearing.

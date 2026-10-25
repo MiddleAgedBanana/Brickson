@@ -160,7 +160,9 @@ keyboard's room, measured*).
   keeps typing; Type brings the keyboard back.
 - **The status line** shows, in this order: an audio problem; the alarm
   sounding; speaking; and a draft that cannot be saved or was not
-  restored ("Message not saved", "Message not restored"). Each draft
+  restored ("Message not saved", "Message not restored"), or a change
+  refused at the length limit ("Message full", added after Greptile's
+  review of PR #53). Each draft
   problem is announced to VoiceOver when it appears, like the audio ones
   (invariants 4 and 5). While typing, a phrase cut off mid-sentence names
   Phrases, then Again ("Stopped: Phrases"), since Again's slot shows

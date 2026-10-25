@@ -329,6 +329,42 @@ struct DraftStoreTests {
         #expect(file.url.path(percentEncoded: false) == expected.path(percentEncoded: false))
     }
 
+    // MARK: The length limit
+
+    /// Fails if an edit refused at the length limit passes silently: the
+    /// field puts the words back as they were, so Home must say why
+    /// (`DraftIssue.reachedLimit`), until the next change is saved.
+    @Test func aRefusedEditSaysTheMessageIsFull() {
+        let storage = FakeStorage()
+        let draft = store(storage: storage)
+        let full = String(repeating: "a", count: MessageComposer.maximumLength)
+        draft.perform(.propose(full))
+        #expect(draft.issue == nil)
+
+        let refused = draft.perform(.propose(full + "b"))
+
+        #expect(refused.reachedLimit && refused.fieldNeedsUpdate)
+        #expect(draft.text == full)
+        #expect(draft.issue == .reachedLimit)
+        draft.perform(.deleteBackward)
+        #expect(draft.issue == nil)
+    }
+
+    /// Fails if the limit's notice takes the place of a failed save's,
+    /// which matters more: those words may be lost.
+    @Test func aFailedSaveOutranksTheLimit() {
+        let storage = FakeStorage()
+        let draft = store(storage: storage)
+        let full = String(repeating: "a", count: MessageComposer.maximumLength)
+        storage.failing = true
+        draft.perform(.propose(full))
+        #expect(draft.issue == .notSaved)
+
+        draft.perform(.propose(full + "b"))
+
+        #expect(draft.issue == .notSaved)
+    }
+
     // MARK: Messages
 
     /// Fails if a notice is missing words, or its short form grows too long

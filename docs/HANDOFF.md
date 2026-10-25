@@ -376,8 +376,8 @@ release in docs/ROADMAP.md when no thread has it yet.
   keyboard's top row meets, and Return among the letter keys for dwell
   users (docs/DECISIONS.md, "Return speaks"; the checks in
   [`log/2026-10-21-typing-foundation.md`](log/2026-10-21-typing-foundation.md)).
-  The status line's "Message not saved" and "Message not restored" are
-  unit-tested only. For Codex on the owner's Mac: run the keyboard probe,
+  The status line's "Message not saved", "Message not restored" and
+  "Message full" are unit-tested only. For Codex on the owner's Mac: run the keyboard probe,
   which covers every orientation and text size, on a 375×667 simulator
   (an iPhone SE, if the current Xcode still offers one), with Display
   Zoom set to Larger Text and without it

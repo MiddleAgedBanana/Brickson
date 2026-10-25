@@ -2477,6 +2477,11 @@ How the message being typed behaves (`MessageComposer`, `DraftStore`):
   an accidental paste cannot speak for many minutes. An edit that would
   pass the limit is refused whole and nothing is cut short. A longer
   message restored from an older version is kept whole (invariant 7).
+  *2026-10-24, typing on Home:* a refused edit says so, as "Message full"
+  on Home's status line, announced to VoiceOver, until the next change is
+  saved (`DraftIssue.reachedLimit`; Greptile's review of PR #53 found the
+  first push let the words vanish without a reason). A failed save's
+  notice, which matters more, is never replaced by it.
 - **Kept across launches.** The message is saved after every change to a
   small file, Application Support/Typing/draft.txt, written in one step
   so a crash leaves the old or the new message and never part of either.
@@ -2562,8 +2567,9 @@ plan's places (*Home's slot plan*).
   of Home's names match in any state (`ControlNamesTests`).
 - **The status line** (`HomeStatusLine`): an audio problem, then the alarm
   sounding, then speaking, then the message's own problem ("Message not
-  saved", "Message not restored"), which lasts until the next save and
-  so waits behind what is about sound now. Each of those is announced to
+  saved", "Message not restored", or "Message full" after a change
+  refused at the length limit), which lasts until the next save and so
+  waits behind what is about sound now. Each of those is announced to
   VoiceOver when it appears (invariants 4 and 5). While typing, a phrase
   cut off names Phrases first ("Stopped: Phrases"), since Again's slot
   shows Speak.

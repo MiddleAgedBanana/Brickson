@@ -313,6 +313,9 @@
     "Message" : {
       "comment" : "What VoiceOver calls the field on Home where a message is typed."
     },
+    "Message full" : {
+
+    },
     "Message not restored" : {
 
     },
@@ -650,6 +653,9 @@
 
     },
     "This library is too large to fit in one backup. Nothing was saved." : {
+
+    },
+    "This message is as long as it can be, so the last change was not added." : {
 
     },
     "This message is not being saved. It stays on screen, but it may be lost if the app closes." : {
