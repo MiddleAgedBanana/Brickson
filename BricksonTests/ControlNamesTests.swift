@@ -30,7 +30,8 @@ struct ControlNamesTests {
 
     /// Fails if the fixed controls or the wells' controls change their
     /// names or order without docs/DECISIONS.md, "Home's scan order and
-    /// names" and "Get Attention and Stop on Home", changing too.
+    /// names", "Get Attention and Stop on Home" and "Typing on Home",
+    /// changing too.
     @Test func theFixedControlsAndTheirNamesAreTheDecidedOnes() {
         #expect(HomeControlNames.fixed.map(\.inputLabels) == [
             ["Yes"],
@@ -38,10 +39,15 @@ struct ControlNamesTests {
             ["Emergency"],
             ["Get Attention", "Help"],
             ["Again", "Repeat"],
+            ["Phrases"],
+            ["Type"],
             ["Settings"],
         ])
         #expect(HomeControlNames.wells.map(\.inputLabels) == [
             ["Stop", "Stop Alert"],
+            ["Speak"],
+            ["Clear"],
+            ["Put Back"],
         ])
     }
 
@@ -80,8 +86,9 @@ struct ControlNamesTests {
     // MARK: Home's screen
 
     /// Fails if `onHome` leaves out the fixed controls, Stop (on screen
-    /// while the alarm sounds, whichever category shows), the category row
-    /// or the phrase tiles, which would let a collision through unseen.
+    /// while the alarm sounds, whichever category shows), typing's Speak,
+    /// Clear and Put Back, the category row or the phrase tiles, which
+    /// would let a collision through unseen.
     @Test func homeListsEveryControlOnTheScreen() {
         #expect(HomeControlNames.collisions(among: HomeControlNames.onHome(categoryRow: [], phrases: ["Help!"])) == ["help"])
         #expect(HomeControlNames.collisions(among: HomeControlNames.onHome(categoryRow: [], phrases: ["Stop."])) == ["stop"])
@@ -91,5 +98,11 @@ struct ControlNamesTests {
         #expect(HomeControlNames.collisions(among: HomeControlNames.onHome(categoryRow: [], phrases: ["Repeat"])) == ["repeat"])
         #expect(HomeControlNames.collisions(among: HomeControlNames.onHome(categoryRow: ["Needs"], phrases: ["Needs"])) == ["needs"])
         #expect(HomeControlNames.collisions(among: HomeControlNames.onHome(categoryRow: [], phrases: ["Settings."])) == ["settings"])
+        // Typing's controls, Speak, Clear and Put Back as if each showed.
+        #expect(HomeControlNames.collisions(among: HomeControlNames.onHome(categoryRow: ["Phrases"], phrases: [])) == ["phrases"])
+        #expect(HomeControlNames.collisions(among: HomeControlNames.onHome(categoryRow: [], phrases: ["Type"])) == ["type"])
+        #expect(HomeControlNames.collisions(among: HomeControlNames.onHome(categoryRow: [], phrases: ["Speak."])) == ["speak"])
+        #expect(HomeControlNames.collisions(among: HomeControlNames.onHome(categoryRow: [], phrases: ["Clear!"])) == ["clear"])
+        #expect(HomeControlNames.collisions(among: HomeControlNames.onHome(categoryRow: [], phrases: ["Put back."])) == ["put back"])
     }
 }

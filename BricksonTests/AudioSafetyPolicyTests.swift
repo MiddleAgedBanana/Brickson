@@ -359,6 +359,20 @@ struct AudioSafetyPolicyTests {
         #expect(HomeStatusLine(issue: nil, alarmIsSounding: false, isSpeaking: false) == nil)
     }
 
+    /// A typed message that cannot be kept (docs/DECISIONS.md, "Typing on
+    /// Home") shows on the same line, after everything that is about sound:
+    /// it lasts until the next save, and the others are what the person
+    /// cannot hear now. Fails if it hides a problem, the alarm or speech, or
+    /// stops showing when nothing else does.
+    @Test func aDraftThatCannotBeKeptShowsWhenNothingAboutSoundDoes() {
+        #expect(HomeStatusLine(issue: .lowOutputVolume, alarmIsSounding: false, isSpeaking: false, draftIssue: .notSaved) == .issue(.lowOutputVolume))
+        #expect(HomeStatusLine(issue: nil, alarmIsSounding: true, isSpeaking: false, draftIssue: .notSaved) == .sounding)
+        #expect(HomeStatusLine(issue: nil, alarmIsSounding: false, isSpeaking: true, draftIssue: .notRestored) == .speaking)
+        #expect(HomeStatusLine(issue: nil, alarmIsSounding: false, isSpeaking: false, draftIssue: .notSaved) == .draft(.notSaved))
+        #expect(HomeStatusLine(issue: nil, alarmIsSounding: false, isSpeaking: false, draftIssue: .notRestored) == .draft(.notRestored))
+        #expect(HomeStatusLine(issue: nil, alarmIsSounding: false, isSpeaking: false, draftIssue: nil) == nil)
+    }
+
     /// VoiceOver hears the whole sentence, which names the control to use,
     /// not the short text the warning strip shows.
     @Test func announcementsSayTheFullSentence() {

@@ -149,7 +149,13 @@ nonisolated struct DraftFile: Equatable, Sendable {
     /// The app's draft folder. Moving it would leave every existing draft
     /// behind, so `DraftStoreTests` pins it.
     static var applicationSupport: DraftFile {
-        DraftFile(directory: URL.applicationSupportDirectory.appending(path: "Typing", directoryHint: .isDirectory))
+        DraftFile(directory: directory(in: .applicationSupportDirectory))
+    }
+
+    /// The draft's folder among the app's own files: Application Support in
+    /// the app, the test storage under UI tests (`LaunchOptions.filesDirectory`).
+    static func directory(in files: URL) -> URL {
+        files.appending(path: "Typing", directoryHint: .isDirectory)
     }
 
     /// The saved draft, or "" when there is none. Bytes that are not valid

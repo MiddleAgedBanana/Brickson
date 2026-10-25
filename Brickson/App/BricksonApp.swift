@@ -3,8 +3,8 @@ import SwiftUI
 import UIKit
 
 /// The app's entry point. It opens the phrase library, creates the one
-/// speech engine and the Get Attention alarm, and hands them to every screen
-/// through the environment.
+/// speech engine, the Get Attention alarm and the typed draft, and hands
+/// them to every screen through the environment.
 @main
 struct BricksonApp: App {
     /// Refuses keyboards from other apps (`BricksonAppDelegate`).
@@ -14,6 +14,9 @@ struct BricksonApp: App {
     @State private var speech: SpeechService
     @State private var attention: AttentionAlertPlayer
     @State private var setup: SetupStore
+    /// The message being typed on Home, kept across launches
+    /// (Application Support/Typing; test storage under UI tests).
+    @State private var drafts: DraftStore
     /// Whether Settings covers Home. Home's Settings button opens it; UI
     /// tests can open it at launch (`--screen=settings`).
     @State private var showsSettings: Bool
@@ -39,6 +42,7 @@ struct BricksonApp: App {
         _speech = State(initialValue: audio.speech)
         _attention = State(initialValue: audio.attention)
         _setup = State(initialValue: SetupStore(defaults: launch.settings))
+        _drafts = State(initialValue: DraftStore(directory: DraftFile.directory(in: launch.filesDirectory)))
         _showsSettings = State(initialValue: launch.startScreen == .settings)
 
         let opened = launch.openLibrary()
@@ -62,6 +66,7 @@ struct BricksonApp: App {
                 .environment(speech)
                 .environment(attention)
                 .environment(setup)
+                .environment(drafts)
                 .environment(\.showsSetupHint, FirstRunHint.isShown(for: setup.record))
                 .environment(\.isVolatileStore, isVolatileStore)
                 .environment(\.phraseLibraryIssue, phraseLibraryIssue)
@@ -78,6 +83,10 @@ struct BricksonApp: App {
                 audioSafety.refreshOutputVolume()
                 attention.checkHealth()
                 speech.refreshPersonalVoiceAvailability()
+            } else if phase == .background {
+                // A save that failed while typing gets one more try before
+                // the app may be closed (`DraftStore`).
+                drafts.retrySave()
             }
         }
     }

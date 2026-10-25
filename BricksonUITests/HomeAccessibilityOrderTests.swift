@@ -3,15 +3,16 @@ import XCTest
 
 /// The order in which assistive technologies reach Home's controls
 /// (docs/ACCESSIBILITY.md, section 1): Yes, No, Emergency and Get Attention
-/// first, then Again, all in the safety row; then Stop while the alarm
+/// first, then Again, all in the safety row, wherever each stands in it;
+/// then Phrases and Type, beside the message; then Stop while the alarm
 /// sounds, the categories in the library's order and Settings; then the
 /// phrase tiles, each group inside its own region, the same in every state.
 /// With Switch Control's auto scanning, every step before Emergency, Yes and
 /// No is time spent waiting, so they come first although the message sits
 /// above them on screen, and Again comes after Get Attention although it
 /// sits at the leading end of their row (docs/DECISIONS.md, "Home's scan
-/// order and names", "Settings on Home" and "Get Attention and Stop on
-/// Home").
+/// order and names", "Settings on Home", "Get Attention and Stop on Home"
+/// and "Typing on Home").
 ///
 /// The order is read from the accessibility tree the app hands to
 /// VoiceOver, Switch Control and Full Keyboard Access, as XCTest sees it.
@@ -39,6 +40,8 @@ final class HomeAccessibilityOrderTests: XCTestCase {
             (label: "Emergency", region: safety),
             (label: "Get Attention", region: safety),
             (label: "Again", region: safety),
+            (label: "Phrases", region: message),
+            (label: "Type", region: message),
         ] + everydayCategories.map { (label: $0, region: categories) }
         + [(label: "Settings", region: categories)]
 
