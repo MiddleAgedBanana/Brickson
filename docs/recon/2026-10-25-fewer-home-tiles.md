@@ -47,6 +47,9 @@ maximum capacity of a grown library.
 | 951×669, Duo open | Wide, native Hub pose | Default / AX4 | 4 × 2 | 8 | 0pt | Keep 8, one page |
 | 951×669, Duo open | Wide, native Hub pose | AX5 | 4 × 1 | 4 | 10pt | 3 plus More, three pages |
 | 669×951, Duo open | Tall, rotated in Hub | Default / AX4 / AX5 | 3 × 3 | 8 | 0pt | Keep 8, one page |
+| 469×669, native left pane, bottom safe area 34pt | Wide Split View | Default | 3 × 3 | 8 | Not measured | Keep 8, one page |
+| 469×669, native right pane, bottom/trailing safe areas 34/84pt | Wide Split View, reversed | Default | 3 × 2 | 6 | Not measured | 5 plus More, two pages |
+| Same right pane | Wide Split View, reversed | AX5 | 3 × 0 | 0 | Not measured | Unresolved: no whole row fits |
 
 Source: [the 70-record measurement file](https://github.com/MiddleAgedBanana/Brickson/blob/cb4c965/docs/log/ui-test-evidence/2026-10-25-home-checks/home-measurements.json).
 Measurements used app code `8316743`, before PR #56 changed Settings
@@ -72,6 +75,16 @@ At the Hub's reported 130° partial pose, tall 669×951 showed all eight
 phrases with zero scroll at default/AX5. Wide 951×669 in dark showed
 eight/zero at default and four/10pt at AX5, matching open-wide geometry.
 These static visibility checks do not verify fold or camera safety.
+
+The later [native Split View record](https://github.com/MiddleAgedBanana/Brickson/blob/dfabb51/docs/log/2026-10-25-duo-fold-design.md)
+uses unchanged app code `6d040d5`, after PR #56. The left pane shows eight
+whole tiles at default; the right shows six and two partially clipped.
+At AX5 the right shows only part of the first row. Although both windows
+are 469×669, the right reader is only 385×635 because of its safe areas.
+These supplemental counts are observed before fold/camera avoidance;
+their maximum scroll ranges were not measured. The later even-column
+layout must recalculate them. More's capacity above is a proposal for
+the current frames, not proof that a future layout fits.
 
 **Paging alone cannot fix the restricted zoomed phone.** AX4 leaves only
 7pt at y=651; AX5 leaves zero height at y=706, outside the 693pt window.

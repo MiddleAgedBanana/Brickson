@@ -31,6 +31,10 @@ those tall default/AX5 results, and in wide dark matches open wide
 (default eight/zero scroll; AX5 four/10pt). Fold/camera safety remains
 unverified; these counts describe the eight-phrase starter category,
 not a grown library's maximum capacity.
+The later native Split View captures add default left/right visibility
+of eight/six and no whole tile at right-pane AX5. Scroll ranges were not
+measured there. Both panes report a clipped division; a later even-column
+layout must recalculate capacity from its final frames.
 
 ## Commits
 
@@ -40,6 +44,9 @@ not a grown library's maximum capacity.
   remain dated to app code `8316743`, before its Settings change. Relative
   to refreshed main, this branch changes only the proposal, this log and
   the affected HANDOFF lines.
+- Main `37c2e0b` incorporates merged PR #55 by a further merge commit.
+  Supplemented the proposal with native pane observations from the
+  item 6 design record, still without app changes.
 
 ## Verified
 
@@ -63,7 +70,16 @@ not a grown library's maximum capacity.
   `build/TestResults/post-alarm-docs-unit/unit-destination.xcresult`; log:
   `/private/tmp/brickson-post-alarm-docs-unit.log`. Only documentation
   differs from that tested tree.
-- GitHub CI for this PR: pending after the first push.
+- GitHub CI on `4231d21`: units passed; the UI job was cancelled at its
+  75-minute execution limit after a real iPad first-test failure at
+  `LaunchHelpers.swift:93` (`kAXErrorServerNotFound`). This is not a
+  green UI run. The [separate Mac follow-up](https://github.com/MiddleAgedBanana/Brickson/pull/59)
+  retains its recovered frame and startup investigation; cause unresolved.
+- The subsequent full native gate passed on the same app/test sources:
+  740 ran, 731 passed, 0 failed, existing #19 skip, 8 strict expected
+  failures, coverage 67.7%, catalog unchanged. Result:
+  `build/TestResults/duo-probe-restored-unit/unit-destination.xcresult`.
+  Final documentation checks pass; new-head hosted CI remains required.
 
 ## Not verified
 
