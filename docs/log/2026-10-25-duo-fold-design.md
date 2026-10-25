@@ -36,6 +36,11 @@ Design gate or approval for a new scrolling policy.
 - Main `37c2e0b` (merged PR #55) is incorporated with a merge commit,
   preserving its dated QA record and the owner's stricter JSON-trial
   timing. App, test, script and project sources still match `6d040d5`.
+- The work file now specifies allocation cells, local camera fitting,
+  even lanes, row-gap growth and final derived geometry. The
+  [candidate geometry](../evidence/2026-10-25-duo-design/candidate-geometry.json)
+  is a standalone host prototype used for the next drawings; it is not
+  production implementation or a native layout result.
 
 ## Verified
 
@@ -90,6 +95,17 @@ cause of the skipped XCTest follows from it.
   historical and synthetic. It changes 23 nodes created by this job and
   adds `84:2`–`84:95`; original Home pages remain untouched. The final
   Design gate stays open.
+- The standalone candidate uses the existing font-validated metrics and
+  unmodified ChainEngine. Across its 12 default/AX5 cases, independent
+  half-point well samples and chain checks found no new Again points or
+  Stop/well paths. The geometric bounds include tie allowance. A
+  default-tall candidate that only enlarged B's gap widened the existing
+  Again area; it was rejected. Returning 25pt of A growth avoids that
+  widening. At AX5, keeping both A-to-C and C-to-B at 12pt preserves the
+  baseline well geometry; only B-to-D returns its 2pt growth. This
+  preserves a 13.5pt shortfall instead of claiming the earlier 11.5pt
+  result was safe. Full production/typing/Settings/transition gates remain
+  open; no known issue is widened or newly accepted by these calculations.
 - GitHub CI at the pushed `23baaf0`: both jobs passed. This does not
   verify these later local docs or establish a fold-layout result.
 

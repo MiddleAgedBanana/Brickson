@@ -417,6 +417,100 @@ show the corrected region maps and identify the old scrolling example
 as synthetic. These are observations and unfinished candidates, not a
 completed Design gate or approval for pinned panes or paging.
 
+### Resolved geometry for implementation
+
+The implementation will use typed division and occlusion inputs, keeping
+activity as a diagnostic property. Presence of a division selects an
+even phrase-column count even when its reported frame is inactive,
+zero-width or clipped at a window edge. Only a positive-area intersection
+with the content requires an internal gap. A status occlusion already
+inside a safe-area stripe adds no second inset. Empty reservations keep
+the existing engine's complete output exactly.
+
+The engine will return allocation cells separately from occupied control
+frames. Local camera fitting shortens only an affected target or shared
+message/status or mode group inside its unchanged allocation. Neighbours
+keep their cells. A surrounding standard stack holds the spare room;
+padding must not silently enlarge the Button's accessibility target back
+over the camera. Widths and word/target floors are resolved before their
+heights and all derived placement. The renderer uses standard Buttons,
+eager stacks and one ordinary D ScrollView.
+
+An internal vertical division uses the six-lane recipe above when its
+two sides meet the occupied controls' minima. Per-side lane widths may
+differ; the right group need not inherit the widest left category's
+width six times. Four phrase columns use two on each side where their
+words fit; otherwise choose two. Their common row floor is the maximum
+required by any actual column, not their average width. Edge-clipped
+Split View divisions need no interior gap where the existing margin
+already clears them; they still select an even count.
+
+For a horizontal division, preserve logical row membership and enlarge
+the existing gap at the intersected boundary. Give back growth, never a
+floor, where needed. The final Stop-well geometry constrains that growth:
+compare Again with each category/Settings competitor in well-local
+coordinates. A centre-distance squared-difference change is affine, so
+its minimum occurs at a corner; include a conservative distance/tie
+allowance. The edge comparison bounds the gain in Again's distance
+against competitor movement. Regular-wide geometry instead has a direct
+empty-envelope bound where a nearer category excludes Again everywhere
+in the well. These are sizing constraints, not a second chain simulator;
+the unchanged ChainEngine remains the independent activation check.
+
+Return A's optional growth in half-point steps until the bound holds,
+retaining the current primary/category sizes before consuming their
+growth. For the measured default tall inputs this returns 25pt: modes
+are 51.5pt, the safety row ends at 349pt, and B's rows occupy
+407.5–455.5 and 495.5–543.5. At AX5, retaining the existing 12pt C-to-B
+gap avoids widening the old Again envelope; only B-to-D gives back its
+2pt growth. The figure values are expected outputs of that rule, never
+device constants in the implementation.
+
+Camera fitting follows the actual rectangles in every rotation. When a
+camera intersects D, crop D's fixed rectangular viewport toward that
+camera's nearest window edge and resolve its columns/floor again. No
+spacer scrolls with the content through an exclusion. Resizing for a
+library warning retains the resolved column lanes and camera limits.
+Static controls prefer an extra 8pt clearance where their word floor
+fits, falling back to the reported boundary if necessary. D uses that
+already-margin-inclusive boundary with no extra clearance. These are
+explicit layout gaps, never the API's margins added a second time.
+Visible tile intersections and the full accessibility frames of partial
+tiles are distinct checks; viewport clipping alone is not Snap-to-Item
+proof. The physical clipped-target check remains deferred.
+
+Candidate outputs from the [standalone geometry record](../evidence/2026-10-25-duo-design/candidate-geometry.json)
+are below. These use the measured rectangles and the existing
+font-validated default/AX5 line metrics with Bold Text off. They are
+design calculations, not new runtime results. The existing no-region
+phone/iPad outputs and typing drawings remain the references there.
+
+| Supplied geometry | Default: whole tiles / scroll / Type | AX5: whole tiles / scroll / Type |
+|---|---|---|
+| Wide, upper camera | 8 / 0pt / available | 4 / 66pt / unavailable |
+| Wide, lower camera | 8 / 0pt / available | 4 / 82pt / unavailable |
+| Tall, right camera | 8 / 0pt / available | 4 / 13.5pt / unavailable |
+| Tall, left camera | 8 / 0pt / available | 4 / 13.5pt / unavailable |
+| Left pane | 8 / 0pt / available | 0 / 193pt / unavailable |
+| Right pane | 8 / 0pt / available | 0 / 193pt / unavailable |
+
+The AX5 panes leave a 55pt viewport against a 56pt tile floor: no whole
+tile fits. The design preserves that explicit capacity failure; it does
+not implement paging, shrink a floor or remove a safety row. Tall AX5's
+second safety row starts at 495.5 and ends at 574.5, beyond its existing
+548pt keyboard band. Type therefore becomes unavailable under the
+existing policy. Inner-display keyboard dimensions still need native
+measurement before a broader keyboard-clearance claim.
+
+The prototype's 12 cases have no new Stop/well chain paths or sampled
+Again-nearest points against their baselines, by centre and edge on a
+half-point mesh. Existing hazards remain recorded. This is limited
+planning evidence: the production allocator, Bold Text, intermediate
+sizes, typing/Settings chains, changed-window resting points and native
+frames all still require their regression gates. Back to Talking and
+the existing Settings row solver will consume the final Home frames;
+PR #56's accepted limits and tests remain intact.
+
 ### Plan from the measured regions
 
 1. Finish the Spec and drawings from the recorded full-screen and clipped
