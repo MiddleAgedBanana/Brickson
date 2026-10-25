@@ -190,6 +190,19 @@ struct LabelFont: Equatable {
         ).first ?? WordFit.Choice(step: 0, showsIcon: false)
     }
 
+    /// How a passage that scrolls when it is long, such as Home's message,
+    /// fits `width` at the person's text size `size` (`MessageFit`).
+    func messageFit(for text: String, at size: DynamicTypeSize, width: CGFloat) -> MessageFit {
+        let steps = Self.steps(downFrom: size)
+        let smallest = steps.last ?? size
+        guard let step = choices(for: text, systemImage: nil, steps: steps, width: width).first?.step else {
+            return MessageFit(lines: nil, smallestScale: 1, cap: smallest)
+        }
+        let own = pointSize(at: size)
+        let scale = own > 0 ? min(1, pointSize(at: smallest) / own) : 1
+        return MessageFit(lines: lines(text, width: width, at: steps[step]), smallestScale: scale, cap: size)
+    }
+
     private func uiFont(at size: DynamicTypeSize) -> UIFont {
         .systemFont(ofSize: pointSize(at: size), weight: boldText ? Self.boldTextUIFontWeight : weight.uiFontWeight)
     }
@@ -210,6 +223,30 @@ struct LabelFont: Equatable {
         @unknown default: .body
         }
     }
+}
+
+/// How a passage that scrolls when it is long fits its width, by
+/// `FittedLabel`'s steps: it shrinks only as far as its widest word needs,
+/// never below the default size (AGENTS.md, "Words never break"), and only
+/// the width matters. Where that word fits at one of the text sizes from the
+/// person's own down to the default, the passage is set in the lines it
+/// takes at the largest such size and drawn at the person's own size,
+/// which SwiftUI scales down to fit (`minimumScaleFactor`), so it keeps
+/// following Dynamic Type for Apple's accessibility audit. A cap on its text
+/// size instead was reported as "Dynamic Type font sizes are partially
+/// unsupported" once Phrases and Type narrowed Home's message on phones.
+/// Where no size fits that word, it is capped at the default size and
+/// wraps as it must.
+struct MessageFit: Equatable {
+    /// The lines the passage is set in, or nil where its widest word fits no
+    /// size.
+    let lines: [String]?
+    /// The smallest scale SwiftUI may draw it at: the default size's share
+    /// of the person's own, or 1 where it is not set in lines.
+    let smallestScale: CGFloat
+    /// The largest text size it is drawn at (`textSize`): the person's own
+    /// where it is set in lines, which limits nothing.
+    let cap: DynamicTypeSize
 }
 
 extension View {

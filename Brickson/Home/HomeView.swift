@@ -360,12 +360,12 @@ private struct MessageField: View {
 /// The message itself. Two lines of the message font at the person's text
 /// size are always reserved, by an invisible placeholder, so nothing below
 /// moves when a message appears or changes. A longer message scrolls inside
-/// them. It steps down through Apple's text sizes only as far as its widest
-/// word needs to fit the width, never below the default size (AGENTS.md,
-/// "Words never break"). Every phrase start, Again included, shows the
-/// message from the top. Before anything is spoken it shows a placeholder,
-/// or, until Family Setup has been opened once, the line that tells a family
-/// where setup is (`FirstRunHint`).
+/// them. It shrinks only as far as its widest word needs to fit the width,
+/// never below the default size, set in lines and drawn at the person's own
+/// size, scaled down to fit (`MessageFit`). Every phrase start, Again
+/// included, shows the message from the top. Before anything is spoken it
+/// shows a placeholder, or, until Family Setup has been opened once, the
+/// line that tells a family where setup is (`FirstRunHint`).
 private struct MessageText: View {
     @Environment(SpeechService.self) private var speech
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -387,12 +387,20 @@ private struct MessageText: View {
             .accessibilityHidden(true)
             .overlay(alignment: .topLeading) {
                 GeometryReader { proxy in
+                    let fit = font.legible(legibilityWeight).messageFit(for: text, at: dynamicTypeSize, width: proxy.size.width)
                     ScrollView {
                         // Primary ink, not the system's secondary gray, which
-                        // measures under 4.5:1 (invariant 6).
-                        Text(verbatim: text)
+                        // measures under 4.5:1 (invariant 6). The same view
+                        // whichever way it fits, so the audit compares it
+                        // with itself as the text grows.
+                        Text(verbatim: fit.lines.map { $0.joined(separator: "\n") } ?? text)
                             .font(font.font)
-                            .textSize(fittedSize(text, width: proxy.size.width))
+                            .lineLimit(fit.lines.map { max($0.count, 1) })
+                            .minimumScaleFactor(fit.smallestScale)
+                            .textSize(fit.cap)
+                            // The words without the line breaks, for
+                            // VoiceOver, Voice Control and the UI tests.
+                            .accessibilityLabel(Text(verbatim: text))
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     .scrollBounceBehavior(.basedOnSize)
@@ -402,15 +410,6 @@ private struct MessageText: View {
                     .id(speech.phraseStartCount)
                 }
             }
-    }
-
-    /// The largest text size, from the person's own down to the default, at
-    /// which the message's widest word fits the width. Only the width
-    /// matters: a long message scrolls.
-    private func fittedSize(_ text: String, width: CGFloat) -> DynamicTypeSize {
-        let steps = LabelFont.steps(downFrom: dynamicTypeSize)
-        let first = LabelFont.message.legible(legibilityWeight).choices(for: text, systemImage: nil, steps: steps, width: width).first
-        return steps[first?.step ?? steps.count - 1]
     }
 }
 

@@ -1147,7 +1147,12 @@ How it behaves, and where it knowingly falls short:
   reserves two lines of its font at the person's text size; a longer
   message scrolls inside them. It steps down through Apple's text sizes
   only while its widest word is wider than the row, never below the
-  default size (2026-10-21, *Home's stand-in layout*). Every phrase start,
+  default size (2026-10-21, *Home's stand-in layout*). Since 2026-10-25
+  (PR #53) it is drawn at the person's own size in the lines it takes at
+  that smaller size, and SwiftUI scales it down to fit (`MessageFit`),
+  as labels are drawn: capping its text size instead was reported by
+  Apple's audit as "Dynamic Type font sizes are partially unsupported"
+  once Phrases and Type narrowed it on phones. Every phrase start,
   including Again and the same phrase chosen again, shows the message from
   the top. *Before:* it never shrank (`0260099`, which reversed shrinking
   to half), and on 2026-10-21 PR #13 gave compact widths one reserved line
