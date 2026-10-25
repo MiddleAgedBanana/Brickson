@@ -1,11 +1,11 @@
 SYSTEM-SPEECH-CONTROL elapsed=4.1e-08 seconds event=configuration audio=playback configurePlayback=true usesApplicationAudioSession=true voiceMode=nil rate=0.5
 SYSTEM-SPEECH-CONTROL elapsed=0.052324958 seconds event=setCategorySucceeded category=playback mode=default options=none
-SYSTEM-SPEECH-CONTROL elapsed=0.061453958 seconds event=setActiveSucceeded 
+SYSTEM-SPEECH-CONTROL elapsed=0.061453958 seconds event=setActiveSucceeded
 SYSTEM-SPEECH-CONTROL elapsed=0.061505541 seconds event=voiceResolved voice=nil
 SYSTEM-SPEECH-CONTROL elapsed=0.061533291 seconds event=speakBefore isSpeaking=false isPaused=false delegateRetained=true utteranceRetained=true
 SYSTEM-SPEECH-CONTROL elapsed=0.061683708 seconds event=speakReturned isSpeaking=false isPaused=false delegateRetained=true utteranceRetained=true
 SYSTEM-SPEECH-CONTROL elapsed=0.061749583 seconds event=sample second=0 isSpeaking=false isPaused=false delegateRetained=true utteranceRetained=true
-SYSTEM-SPEECH-CONTROL elapsed=0.104274125 seconds event=didStart 
+SYSTEM-SPEECH-CONTROL elapsed=0.104274125 seconds event=didStart
 SYSTEM-SPEECH-CONTROL elapsed=0.730503166 seconds event=willSpeak through=4
 SYSTEM-SPEECH-CONTROL elapsed=1.064446875 seconds event=sample second=1 isSpeaking=true isPaused=false delegateRetained=true utteranceRetained=true
 SYSTEM-SPEECH-CONTROL elapsed=2.106011625 seconds event=sample second=2 isSpeaking=true isPaused=false delegateRetained=true utteranceRetained=true

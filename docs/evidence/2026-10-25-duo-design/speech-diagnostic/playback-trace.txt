@@ -1,12 +1,12 @@
 SYSTEM-SPEECH-CONTROL elapsed=8.3e-08 seconds event=configuration audio=playback configurePlayback=true usesApplicationAudioSession=true voiceMode=production rate=0.5
 SYSTEM-SPEECH-CONTROL elapsed=0.07720925 seconds event=setCategorySucceeded category=playback mode=default options=none
-SYSTEM-SPEECH-CONTROL elapsed=0.096698 seconds event=setActiveSucceeded 
+SYSTEM-SPEECH-CONTROL elapsed=0.096698 seconds event=setActiveSucceeded
 SYSTEM-SPEECH-CONTROL elapsed=0.177113792 seconds event=voiceSelection language=en installedCount=68 usableSystemCount=68 chosenID=nil automaticPersonalVoiceID=nil personalVoicesAllowed=false
 SYSTEM-SPEECH-CONTROL elapsed=0.178136417 seconds event=voiceResolved systemVoiceID=com.apple.voice.super-compact.en-US.Samantha language=en-US quality=0 novelty=false
 SYSTEM-SPEECH-CONTROL elapsed=0.178161167 seconds event=speakBefore isSpeaking=false isPaused=false delegateRetained=true utteranceRetained=true
 SYSTEM-SPEECH-CONTROL elapsed=0.184688792 seconds event=speakReturned isSpeaking=false isPaused=false delegateRetained=true utteranceRetained=true
 SYSTEM-SPEECH-CONTROL elapsed=0.184742125 seconds event=sample second=0 isSpeaking=false isPaused=false delegateRetained=true utteranceRetained=true
-SYSTEM-SPEECH-CONTROL elapsed=0.25488025 seconds event=didStart 
+SYSTEM-SPEECH-CONTROL elapsed=0.25488025 seconds event=didStart
 SYSTEM-SPEECH-CONTROL elapsed=1.146000417 seconds event=willSpeak through=4
 SYSTEM-SPEECH-CONTROL elapsed=1.203271208 seconds event=sample second=1 isSpeaking=true isPaused=false delegateRetained=true utteranceRetained=true
 SYSTEM-SPEECH-CONTROL elapsed=2.218152958 seconds event=sample second=2 isSpeaking=true isPaused=false delegateRetained=true utteranceRetained=true

@@ -18,6 +18,9 @@ blank screen. No production behavior or assertion changed.
 unmodified [visible Speaking capture](ipad-speaking.png) retain the data.
 The three control traces are [playback](playback-trace.txt),
 [system-managed](system-managed-trace.txt), and [nil voice](nil-voice-trace.txt).
+Control trace files omit line-end whitespace; results retain both original
+and curated hashes. Scalar fields and ordering are unchanged, and raw local
+originals remain retained. The PNG and control source are unchanged.
 The first two resolved the simulator's system Samantha identifier; no
 Personal Voice was requested or logged. Thirty-six samples include the
 initial second-zero sample before speaking became true.
