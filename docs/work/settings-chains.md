@@ -197,3 +197,12 @@ once Back to Talking is over harmless controls (ROADMAP Wave 3 item 5;
 item 4 left it where it was),
 rescored on that pull request's frames (docs/DECISIONS.md, "One chain
 engine for dwell safety"). The Figma screens show the held design.
+
+*2026-10-25.* Rescored after item 5 and again after Settings' first row
+moved (docs/DECISIONS.md, "Settings' first row, placed from Home's
+frames"; [`settings-row-place.md`](settings-row-place.md)): Set Up Step
+by Step now takes the root row's place in Family Setup, and the link
+would still sound the alarm through its guide, so it stays held. The
+*Spec*'s places above are measured from the old Family Setup, where Set
+Up Step by Step sat under the opening words; a pull request that brings
+the link back places it from the new one.
