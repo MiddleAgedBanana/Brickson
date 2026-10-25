@@ -2480,8 +2480,10 @@ How the message being typed behaves (`MessageComposer`, `DraftStore`):
   *2026-10-24, typing on Home:* a refused edit says so, as "Message full"
   on Home's status line, announced to VoiceOver, until the next change is
   saved (`DraftIssue.reachedLimit`; Greptile's review of PR #53 found the
-  first push let the words vanish without a reason). A failed save's
-  notice, which matters more, is never replaced by it.
+  first push let the words vanish without a reason). Every refusal is
+  announced, a second in a row included (`DraftStore.refusals`;
+  CodeRabbit's review), since each is a keystroke that did nothing. A
+  failed save's notice, which matters more, is never replaced by it.
 - **Kept across launches.** The message is saved after every change to a
   small file, Application Support/Typing/draft.txt, written in one step
   so a crash leaves the old or the new message and never part of either.
@@ -2582,7 +2584,8 @@ plan's places (*Home's slot plan*).
   saved", "Message not restored", or "Message full" after a change
   refused at the length limit), which lasts until the next save and so
   waits behind what is about sound now. Each of those is announced to
-  VoiceOver when it appears (invariants 4 and 5). While typing, a phrase
+  VoiceOver when it appears (invariants 4 and 5), and "Message full" on
+  every refusal. While typing, a phrase
   cut off names Phrases first ("Stopped: Phrases"), since Again's slot
   shows Speak.
 - **The app keeps the message** (`BricksonApp` owns one `DraftStore`, in

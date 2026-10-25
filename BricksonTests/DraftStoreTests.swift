@@ -365,6 +365,33 @@ struct DraftStoreTests {
         #expect(draft.issue == .notSaved)
     }
 
+    /// Fails if a refusal straight after another is not counted, so Home
+    /// would tell VoiceOver only of the first: `issue` does not change
+    /// between them.
+    @Test func everyRefusalIsCounted() {
+        let draft = store(storage: FakeStorage())
+        let full = String(repeating: "a", count: MessageComposer.maximumLength)
+        draft.perform(.propose(full))
+        #expect(draft.refusals == 0)
+
+        draft.perform(.propose(full + "b"))
+        draft.perform(.propose(full + "c"))
+
+        #expect(draft.issue == .reachedLimit)
+        #expect(draft.refusals == 2)
+        draft.perform(.deleteBackward)
+        #expect(draft.refusals == 2)
+    }
+
+    /// Fails if a failed save or restore stops being told when it shows, or
+    /// the limit is told when it shows as well as on every refusal, which
+    /// would tell the first refusal twice.
+    @Test func onlyTheLimitIsToldOnEveryRefusalInstead() {
+        #expect(DraftIssue.notSaved.isAnnouncedWhenItShows)
+        #expect(DraftIssue.notRestored.isAnnouncedWhenItShows)
+        #expect(!DraftIssue.reachedLimit.isAnnouncedWhenItShows)
+    }
+
     // MARK: Messages
 
     /// Fails if a notice is missing words, or its short form grows too long

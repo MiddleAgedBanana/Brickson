@@ -79,6 +79,11 @@ What was settled along the way, each recorded in "Typing on Home":
   centre, a look near the top of a tile is still nearer the centre of the
   shorter cell above, so the finding is narrower, not gone, and stays
   open for the owner, pinned strict.
+- **Every refused keystroke at the limit is told.** CodeRabbit's review
+  found that a second refusal in a row was not announced, since the
+  issue did not change; `DraftStore.refusals` counts each one and Home
+  tells VoiceOver of each. A failed save is still told once, when it
+  shows: the words go in as they are typed.
 
 - **Where Clear and Put Back go**, by scoring every pair of category cells
   in every typing state: never under or beside Stop's well.
@@ -106,7 +111,8 @@ documents. Then, after the reviews: Type offered only where the safety
 row clears the keyboard, with its test, hint and records (Codex);
 "Message full" for a change refused at the length limit, with its tests
 (Greptile); and the phrase tiles dimmed in place while typing, with the
-chain maps and tests that score them (Codex).
+chain maps and tests that score them (Codex), with every refused
+keystroke at the limit told to VoiceOver (CodeRabbit).
 
 ## Verified
 
@@ -119,13 +125,13 @@ chain maps and tests that score them (Codex).
   strict known issues the decisions name. `ControlNamesTests`, `HomeRegionTests` and
   `SettingsRootColumnsTests` also passed there (17 tests), with a
   harness-only stand-in for `String(localized:)`, which Linux Foundation
-  lacks, and so did `DraftStoreTests` and `MessageComposerTests` (70
-  tests), with stand-ins for OSLog and the Application Support folder.
+  lacks, and so did `DraftStoreTests` and `MessageComposerTests` (72
+  tests after the reviews), with stand-ins for OSLog and the Application Support folder.
 - **CI on `e682dc2`** (the second push): the unit tests passed on the
   iPad Pro 13-inch (M5) simulator, iOS 27.0, Xcode 27.1: 725 ran, 717
   passed, 0 failed, 1 skipped (issue #19's disabled reproduction), 7
   expected failures, with the String Catalog up to date. The last push's
-  run is the check for the dimmed tiles.
+  run is the check for the dimmed tiles and the per-refusal notice.
 - **What each new test fails on** (each was run against the change that
   should fail it, or the old code):
   - `backToTalkingClosesOntoPhrasesAlone`: Back to Talking as wide as
@@ -143,6 +149,9 @@ chain maps and tests that score them (Codex).
     the phrase grid empty while typing, as the first push had it (Clear
     or Put Back met by edge), and the tiles speaking while typing; and,
     strictly, the centre's finding gone.
+  - `DraftStoreTests.everyRefusalIsCounted` and
+    `onlyTheLimitIsToldOnEveryRefusalInstead`: a second refusal in a row
+    not counted, and the limit told when it shows as well.
   - `typeIsOfferedOnlyWhereTheSafetyRowClearsTheKeyboard`: Type offered
     on every window, as the first push did (it fails on the zoomed
     13-inch iPad in landscape at AX5, Codex's case).

@@ -21,6 +21,10 @@ final class DraftStore {
     /// Set while the draft cannot be kept, or after an edit was refused
     /// at the length limit; Home shows it as passive text.
     private(set) var issue: DraftIssue?
+    /// How many edits have been refused at the length limit. `issue` stays
+    /// `.reachedLimit` through refusals in a row, so Home tells VoiceOver
+    /// of each one by this count: every keystroke refused is a new event.
+    private(set) var refusals = 0
     @ObservationIgnored private let save: (String) throws -> Void
     @ObservationIgnored private let logger = Logger(subsystem: AppLog.subsystem, category: "typing")
 
@@ -70,8 +74,11 @@ final class DraftStore {
         if outcome.draftChanged || issue == .notSaved {
             persist()
         }
-        if outcome.reachedLimit, issue != .notSaved {
-            issue = .reachedLimit
+        if outcome.reachedLimit {
+            if issue != .notSaved {
+                issue = .reachedLimit
+            }
+            refusals += 1
         }
         return outcome
     }
@@ -140,6 +147,15 @@ nonisolated enum DraftIssue: CaseIterable, Equatable, Sendable {
         case .reachedLimit:
             String(localized: "This message is as long as it can be, so the last change was not added.")
         }
+    }
+
+    /// Whether VoiceOver is told of it when it shows. A failed save or
+    /// restore is told once, when it shows: the words are still on screen
+    /// and go in as they are typed. An edit refused at the length limit is
+    /// told on every refusal instead (`DraftStore.refusals`), since each
+    /// one is a keystroke that did nothing.
+    var isAnnouncedWhenItShows: Bool {
+        self != .reachedLimit
     }
 
     var systemImage: String {
