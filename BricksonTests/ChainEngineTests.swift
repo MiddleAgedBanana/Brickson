@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+@testable import Brickson
 
 /// The chain engine itself (`ChainEngine`), on small made-up screens, so
 /// each rule it follows is pinned before any real screen relies on it. Each
@@ -354,6 +355,127 @@ extension HomeChainsTests {
     }
 }
 
+/// Typing on Home for the engine (`HomeChains`, docs/DECISIONS.md, "Typing
+/// on Home"): what each control does while typing and while browsing with a
+/// draft, as Home's code does it.
+struct HomeChainsTypingTests {
+    private static let names = ["Basics", "Needs", "Feelings", "Conversation"]
+    private static let frames = HomeChains.Frames(
+        yes: CGRect(x: 0, y: 100, width: 40, height: 40),
+        no: CGRect(x: 48, y: 100, width: 40, height: 40),
+        emergency: CGRect(x: 96, y: 100, width: 88, height: 40),
+        again: CGRect(x: 0, y: 148, width: 88, height: 40),
+        getAttention: CGRect(x: 96, y: 148, width: 88, height: 40),
+        stop: CGRect(x: 0, y: 200, width: 40, height: 40),
+        settings: CGRect(x: 144, y: 248, width: 40, height: 40),
+        categories: [
+            ("Basics", CGRect(x: 48, y: 200, width: 40, height: 40)), ("Needs", CGRect(x: 96, y: 200, width: 88, height: 40)),
+            ("Feelings", CGRect(x: 0, y: 248, width: 40, height: 40)), ("Conversation", CGRect(x: 48, y: 248, width: 88, height: 40)),
+        ],
+        tiles: [CGRect(x: 0, y: 300, width: 88, height: 60)],
+        phrases: CGRect(x: 96, y: 0, width: 88, height: 40),
+        type: CGRect(x: 96, y: 48, width: 88, height: 40),
+        typing: HomeChains.Typing(field: CGRect(x: 0, y: 0, width: 88, height: 88), clearCell: 1, putBackCell: 3, grid: CGRect(x: 0, y: 300, width: 184, height: 200))
+    )
+
+    private static func controls(_ state: HomeChains.State) -> [String: ChainControl] {
+        let map = HomeChains.map(frames)
+        let name = HomeChains.name(of: state, categories: names)
+        return Dictionary((map.states[name] ?? []).map { ($0.name, $0) }, uniquingKeysWith: { first, _ in first })
+    }
+
+    private static func typing(_ draft: HomeChains.Draft = .empty, showing: Int? = 0, hasSpoken: Bool = false) -> HomeChains.State {
+        HomeChains.State(hasSpoken: hasSpoken, showing: showing, sounding: false, typing: true, draft: draft)
+    }
+
+    /// Fails if a typing state goes missing, or a map without typing's
+    /// frames gains states: typing or not, with each draft, on top of
+    /// spoken or not, each category or Emergency, and the alarm.
+    @Test func typingStatesAreInTheMapOnlyWithTypingsFrames() {
+        #expect(HomeChains.map(Self.frames).states.count == 2 * 5 * 2 * 2 * 3)
+        var browsing = Self.frames
+        browsing.typing = nil
+        #expect(HomeChains.map(browsing).states.count == 2 * 5 * 2)
+    }
+
+    /// Fails if Speak speaks with nothing to say (it is disabled then), if
+    /// it stops speaking a written draft, or if the field does anything.
+    @Test func speakSpeaksOnlyAWrittenDraft() {
+        #expect(Self.controls(Self.typing(.empty))[HomeChains.speak]?.effect == .nothing)
+        #expect(Self.controls(Self.typing(.cleared))[HomeChains.speak]?.effect == .nothing)
+        #expect(Self.controls(Self.typing(.written))[HomeChains.speak]?.effect == .speaks)
+        #expect(Self.controls(Self.typing(.written))[HomeChains.again] == nil)
+        #expect(Self.controls(Self.typing(.written))[HomeChains.field]?.effect == .nothing)
+    }
+
+    /// Fails if Clear or Put Back acts when it cannot (each is disabled
+    /// then), if either stops changing the draft when it can, or if they
+    /// leave their cells.
+    @Test func clearAndPutBackActOnlyWhenTheyCan() {
+        let written = Self.controls(Self.typing(.written))
+        #expect(written[HomeChains.clear]?.effect == .changesData)
+        #expect(written[HomeChains.clear]?.leadsTo == HomeChains.name(of: Self.typing(.cleared), categories: Self.names))
+        #expect(written[HomeChains.putBack]?.effect == .nothing)
+        #expect(written[HomeChains.clear]?.frame == Self.frames.categories[1].frame)
+        #expect(written[HomeChains.putBack]?.frame == Self.frames.categories[3].frame)
+        let cleared = Self.controls(Self.typing(.cleared))
+        #expect(cleared[HomeChains.clear]?.effect == .nothing)
+        #expect(cleared[HomeChains.putBack]?.effect == .changesData)
+        #expect(cleared[HomeChains.putBack]?.leadsTo == HomeChains.name(of: Self.typing(.written), categories: Self.names))
+        let empty = Self.controls(Self.typing(.empty))
+        #expect(empty[HomeChains.clear]?.effect == .nothing && empty[HomeChains.putBack]?.effect == .nothing)
+    }
+
+    /// Fails if a category does anything while typing (dimmed: choosing one
+    /// would fill the empty grid with phrases under a look resting there),
+    /// if Emergency stops leaving typing for the emergency phrases, or if a
+    /// phrase tile shows while typing.
+    @Test func whileTypingTheCategoriesAreDimmedAndEmergencyLeaves() {
+        let typing = Self.controls(Self.typing(.written))
+        #expect(typing["Basics"]?.effect == .nothing && typing["Feelings"]?.effect == .nothing)
+        #expect(typing["Needs"] == nil && typing["Conversation"] == nil)
+        #expect(typing[HomeChains.phraseTile] == nil)
+        var leaving = Self.typing(.written)
+        leaving.typing = false
+        leaving.showing = nil
+        #expect(typing[HomeChains.emergency]?.leadsTo == HomeChains.name(of: leaving, categories: Self.names))
+        // Even with the emergency phrases showing before typing.
+        let fromEmergency = Self.controls(Self.typing(.written, showing: nil))
+        #expect(fromEmergency[HomeChains.emergency]?.effect == .navigates)
+        #expect(typing[HomeChains.settings]?.leadsTo == HomeChains.settingsRoot)
+    }
+
+    /// Fails if Phrases or Type stop working like a segmented control's
+    /// segments: each only picks its own mode, keeps the draft, and does
+    /// nothing while its mode is on.
+    @Test func phrasesAndTypeEachPickTheirOwnMode() {
+        var browsing = Self.typing(.written)
+        browsing.typing = false
+        let typing = Self.controls(Self.typing(.written))
+        #expect(typing[HomeChains.type]?.effect == .nothing)
+        #expect(typing[HomeChains.phrases]?.leadsTo == HomeChains.name(of: browsing, categories: Self.names))
+        let browse = Self.controls(browsing)
+        #expect(browse[HomeChains.phrases]?.effect == .nothing)
+        #expect(browse[HomeChains.type]?.leadsTo == HomeChains.name(of: Self.typing(.written), categories: Self.names))
+        #expect(browse[HomeChains.again] != nil && browse[HomeChains.speak] == nil)
+        #expect(browse["Needs"]?.effect == .navigates && browse[HomeChains.phraseTile]?.effect == .speaks)
+    }
+
+    /// Fails if the empty phrase grid stops being a place a look rests on
+    /// while typing, or becomes one while the phrases show.
+    @Test func theEmptyGridIsARestingPlaceOnlyWhileTyping() {
+        let map = HomeChains.map(Self.frames)
+        let typing = HomeChains.name(of: Self.typing(), categories: Self.names)
+        var browsing = Self.typing()
+        browsing.typing = false
+        let browse = HomeChains.name(of: browsing, categories: Self.names)
+        #expect(map.resting[typing]?.map(\.name) == [HomeChains.emptyWell, HomeChains.emptyGrid])
+        #expect(map.resting[browse]?.map(\.name) == [HomeChains.emptyWell])
+        // Browsing with an empty draft keeps the name it had before typing.
+        #expect(browse == "Home, nothing spoken, Basics showing, quiet")
+    }
+}
+
 /// Settings' first screens for the engine (`SettingsChains`): what each
 /// control does, and the two kinds of hazard found through them.
 struct SettingsChainsTests {
@@ -441,14 +563,14 @@ struct SettingsChainsTests {
         #expect(SettingsChains.kind(of: chain(Self.home, tile, .returnsToLook, .settles)) == nil)
     }
 
-    /// Main's CI frames for an iPhone at the default text size (Home as it
-    /// launches, Settings' first screen and Family Setup as they first
-    /// show; the first step's rows placed as Step 2's are, since CI has not
-    /// captured it). Fails if the chains through them meet a hazard of a
-    /// new kind, or stop finding the two known ones: Home's Settings,
-    /// Family Setup and Set Up Step by Step lead a held look to save Touch
-    /// (docs/HANDOFF.md, *Known gaps*), and Back to Talking's corner closes
-    /// Settings over No.
+    /// Main's CI frames for an iPhone at the default text size before typing
+    /// came to Home (Home as it launched, Settings' first screen and Family
+    /// Setup as they first showed; the first step's rows placed as Step 2's
+    /// are, since CI had not captured it). Fails if the chains through them
+    /// meet a hazard of a new kind, or stop finding the two kinds known
+    /// then: Home's Settings, Family Setup and Set Up Step by Step lead a
+    /// held look to save Touch (docs/HANDOFF.md, *Known gaps*), and Back to
+    /// Talking's corner closes Settings over No.
     @Test func aPhoneAsCIReadsItHasOnlyTheKnownKinds() throws {
         let categories = ["Basics", "Needs", "Conversation", "Feelings"]
         var read: [(name: String, frame: CGRect)] = [
@@ -491,5 +613,97 @@ struct SettingsChainsTests {
         #expect(paths(.unexpected) == [])
         #expect(paths(.savesAnAnswer).contains("choosing settings → familySetup (navigates) → guidedSetup (navigates) → Touch (changesData)"))
         #expect(paths(.closesUnderTheLook).contains("choosing backToTalking → No (speaks)"))
+    }
+
+    /// The iPhone 17 at the default text size with typing on Home: Home's
+    /// frames from the layout engine, typing states included, and Back to
+    /// Talking over Phrases (`HomeLayout.backToTalking`). Settings' screens
+    /// are CI's frames above, raised by as much as the bar is now shorter:
+    /// it ends 8 points under Back to Talking, 64 points tall, where it was
+    /// 78. `link` adds Learn About Each Way where Set Up Step by Step's row
+    /// was, with the answers a row lower, and the guide it opens, as held
+    /// commit `1de50f5` placed them.
+    private static func phoneWithTyping(link: Bool) -> (map: ChainMap, starts: [ChainStart]) {
+        let layout = HomeLayout(
+            space: .init(size: CGSize(width: 402, height: 874), safeArea: .init(top: 62, leading: 0, bottom: 34, trailing: 0)),
+            text: HomeLayoutEngineTests.defaultText, modes: .phrasesAndTyping
+        )
+        let backToTalking = layout.backToTalking
+        let rise = backToTalking.maxY < Self.backToTalking.maxY ? Self.backToTalking.maxY - backToTalking.maxY : 0
+        func row(_ y: CGFloat) -> CGRect { Self.row(y - rise) }
+        let back = Self.back.offsetBy(dx: 0, dy: -rise)
+        let next = CGRect(x: 0, y: 694.3, width: 402, height: 110)
+        let answers = ["Touch", "Voice Control", "Switch Control", "Eye Tracking", "Head Tracking"]
+        let firstStep: [(name: String, frame: CGRect)] = link
+            ? [("learnAboutEachWay", row(362))] + answers.enumerated().map { ($1, row(456 + 94 * CGFloat($0))) }
+            : (answers + ["Someone else helps"]).enumerated().map { ($1, row(335 + 94 * CGFloat($0))) }
+        let screens = SettingsChains.Screens(
+            root: [
+                (SettingsChains.backToTalking, backToTalking),
+                (SettingsChains.familySetupRow, CGRect(x: 16, y: 236 - rise, width: 370, height: 110)),
+            ],
+            familySetup: [
+                (SettingsChains.backToTalking, backToTalking), (SettingsChains.back, back),
+                (SettingsChains.guidedSetupRow, row(362)), ("voiceSettings", row(456)),
+                ("reachingTheScreen", row(550)), ("keepOpen", row(644)),
+                ("callsSiriAndShortcuts", row(738)), ("moreAccessibility", row(832)),
+            ],
+            firstStep: [(SettingsChains.backToTalking, backToTalking), (SettingsChains.back, back)] + firstStep
+                + [(SettingsChains.firstStepNext, next)]
+        )
+        let categories = (1...HomeLayout.categoryCapacity).map { "category \($0)" }
+        let atRest = HomeChains.name(of: HomeChains.State(), categories: categories)
+        var settings = SettingsChains.map(screens, closingOnto: atRest).map
+        if link {
+            // Main's chains do not know the held link: it only opens the
+            // guide, which opens on Back and Back to Talking alone.
+            settings.states[SettingsChains.firstStep] = settings.states[SettingsChains.firstStep]?.map { control in
+                control.name == "learnAboutEachWay" ? ChainControl(control.name, control.frame, .navigates, leadsTo: "guide") : control
+            }
+            settings.states["guide"] = [
+                ChainControl(SettingsChains.backToTalking, backToTalking, .navigates, leadsTo: atRest),
+                ChainControl(SettingsChains.back, back, .navigates, leadsTo: SettingsChains.firstStep),
+            ]
+        }
+        let map = HomeLayoutEngineTests.chainMap(layout, typing: true).merging(settings)
+        let starts = SettingsChains.starts(in: map, home: atRest)
+            + (link ? map.everyStart().filter { $0.state == "guide" } : [])
+        return (map, starts)
+    }
+
+    /// Fails if choosing Back to Talking, over Phrases, closes Settings
+    /// under the look on the phone, or if anything new is met; and pins
+    /// what is left, so it fails once that goes too: a look on the top of
+    /// the first screen's Family Setup row meets Back to Talking once
+    /// Family Setup shows, by the nearest edge, and the closed Settings
+    /// leaves it over No; and the known held look that saves Touch
+    /// (docs/DECISIONS.md, "Typing on Home").
+    @Test func backToTalkingOverPhrasesClosesOnlyUnderALookItReachesUnasked() {
+        let phone = Self.phoneWithTyping(link: false)
+        let hazards = phone.map.hazards(from: phone.starts)
+        func findings(_ kind: SettingsChains.Kind) -> [ChainFinding] {
+            ChainFinding.findings(in: hazards.filter { SettingsChains.kind(of: $0) == kind })
+        }
+        #expect(findings(.unexpected).map(\.path) == [])
+        #expect(findings(.closesUnderTheLook).filter { $0.example.start.chosen?.name == SettingsChains.backToTalking }.map(\.path) == [])
+        #expect(findings(.closesUnderTheLook).map(\.path) == ["choosing familySetup → backToTalking (navigates) → No (speaks)"])
+        #expect(findings(.savesAnAnswer).map(\.path).contains("choosing settings → familySetup (navigates) → guidedSetup (navigates) → Touch (changesData)"))
+    }
+
+    /// Why the guide link stays held (docs/DECISIONS.md, "Typing on Home"):
+    /// on the same phone it still ends every chain that saves an answer,
+    /// but the guide it opens has only Back and Back to Talking near the
+    /// look, so a held look closes Settings, and the closed Settings leaves
+    /// the look on the link's row, whose top is over Home's Get Attention:
+    /// the alarm sounds unasked. Fails once a chain through the link no
+    /// longer sounds it, so the link can be scored to come back.
+    @Test func theHeldGuideLinkWouldSoundTheAlarm() {
+        let phone = Self.phoneWithTyping(link: true)
+        let hazards = phone.map.hazards(from: phone.starts)
+        func paths(_ kind: SettingsChains.Kind) -> [String] {
+            ChainFinding.findings(in: hazards.filter { SettingsChains.kind(of: $0) == kind }).map(\.path)
+        }
+        #expect(paths(.savesAnAnswer) == [])
+        #expect(paths(.closesUnderTheLook).contains("choosing learnAboutEachWay → backToTalking (navigates) → getAttention (alarms)"))
     }
 }
