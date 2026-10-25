@@ -2360,7 +2360,10 @@ every profile gets, even one that never uses Apple's keyboard.
   the 13-inch iPad in landscape with Display Zoom and the iPad mini in
   landscape from AX3), it says so (`bandClearsKeyboard`). Each is a
   measured exception for the owner, pinned as a strict known issue in
-  `HomeLayoutEngineTests` (*The layout engine*).
+  `HomeLayoutEngineTests` (*The layout engine*). *2026-10-24, typing on
+  Home:* there Home does not offer typing, and Type is dimmed
+  (`HomeLayout.offersTyping`; *Typing on Home*, *The keyboard's room,
+  measured*).
 - The reference app's measurements on iOS 27.0 simulators with the full
   software keyboard: a 13-inch iPad in landscape, keyboard top at 534 of
   1032 points; the same iPad with Display Zoom set to Larger Text, 276 of
@@ -2516,7 +2519,9 @@ plan's places (*Home's slot plan*).
   Their names are their words alone: "Type", not "Keyboard" or "Write",
   which someone might want to say.
 - **Typing.** Type turns typing on and puts the cursor in the field, which
-  opens Apple's keyboard. Nothing moves. The field takes the message's
+  opens Apple's keyboard. Nothing moves. Type is offered only where the
+  whole safety row ends above the keyboard's room, and is dimmed
+  elsewhere (*The keyboard's room, measured*, below). The field takes the message's
   frame: a standard `TextField` (vertical, `typingFieldTraits()`), named
   "Message" for assistive technologies, its edge in the control fill
   (3:1 or better against the screen, `PaletteTests`) and its words in
@@ -2658,15 +2663,27 @@ plan's places (*Home's slot plan*).
   AX3; on the 375×667 phone, Speak and Get Attention from AX3; on the
   iPad mini and the zoomed 13-inch iPad in landscape, the whole safety
   row from AX3 (through AX1 it fits, where Home without typing kept
-  today's sizes and ended in the room). Phrases, at the top of A, stays
-  above the room everywhere, and choosing it puts the keyboard away, so
-  each covered control is two activations away there, not one. The room
-  kept is the tallest keyboard measured on each window's shape; the real
-  keyboards on these windows are not measured, so whether they cover
-  anything is a device check. Each is a measured exception for the
-  owner, pinned strict in
-  `HomeLayoutEngineTests.theStarterLibraryFitsWhereTheTableSays`; none is
-  accepted here.
+  today's sizes and ended in the room). Each is pinned strict in
+  `HomeLayoutEngineTests.theStarterLibraryFitsWhereTheTableSays`.
+  **There, Home does not offer typing** (`HomeLayout.offersTyping`,
+  `HomeLayoutEngineTests.typeIsOfferedOnlyWhereTheSafetyRowClearsTheKeyboard`):
+  Type stays in its place, dimmed, and its VoiceOver hint says why, so
+  the keyboard never covers a call for help (AGENTS.md, *Design rules for
+  dwell, switch and pointer input*, "Typing never hides the call for
+  help"; invariants 2 and 10). Where the room goes while typing (the
+  window turns or shrinks, or the text grows), the keyboard is put away
+  and the field is dimmed too; typing stays on, so the phrase grid stays
+  empty under a look that rested on the keys, and Phrases leaves typing
+  as before. The cost: no typing on Home on those windows at those
+  sizes. A first draft of this pull request offered Type there anyway,
+  with each covered control two activations away through Phrases;
+  Codex's review (PR #53) held that against the rule, and this is the
+  reversible default that keeps it. The room kept is the tallest
+  keyboard measured on each window's shape; the real keyboards on these
+  windows are not measured, so measuring them (a Codex check on the
+  owner's Mac) may give room back. Offering typing there with the
+  covered controls two activations away would be an exception for the
+  owner to accept; none is accepted here.
 - **Open: the empty phrase grid borders Clear and Put Back.** Scored on
   the engine's frames with the grid's top edge sampled every 4 points
   (`HomeLayoutEngineTests.typingChainsMeetOnlyTheEmptyGridsClearAndPutBack`):

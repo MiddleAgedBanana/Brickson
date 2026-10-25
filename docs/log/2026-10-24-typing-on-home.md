@@ -29,6 +29,14 @@ What a person sees:
   phrase grid is empty while typing. Phrases leaves typing and keeps the
   message; Emergency leaves it for the emergency phrases; Settings leaves
   it before it opens. Nothing moves when the keyboard shows.
+- **No typing where the keyboard would cover the call for help.** Type is
+  offered only where the message, Phrases, Type and the whole safety row
+  end above the room kept for the keyboard (`HomeLayout.offersTyping`).
+  On 320-point windows, a 375×667 phone from AX3, and the iPad mini and
+  a zoomed 13-inch iPad in landscape from AX3, Type is dimmed, with a
+  VoiceOver hint saying why; if the room goes while typing, the keyboard
+  is put away and the field is dimmed, and typing stays on, so the grid
+  stays empty.
 - **The message is kept.** The app keeps one `DraftStore`, so the message
   survives a relaunch until it is cleared, and a failed save or restore
   shows "Message not saved" or "Message not restored" on the status line,
@@ -46,6 +54,14 @@ What a person sees:
   same page.
 
 What was settled along the way, each recorded in "Typing on Home":
+
+- **Type is dimmed where the keyboard would cover the safety row.** The
+  pull request's first push offered Type there too, with the covered
+  controls two activations away through Phrases, and recorded it for the
+  owner. Codex's review held that against AGENTS.md ("Typing never hides
+  the call for help"), and the second push keeps the rule instead: no
+  typing on those windows at those sizes until the real keyboards there
+  are measured or the owner accepts an exception.
 
 - **Where Clear and Put Back go**, by scoring every pair of category cells
   in every typing state: never under or beside Stop's well.
@@ -69,7 +85,8 @@ the spec and plan), one task each: the layout engine and chain maps with
 their tests; Home's typing state, the app's message and the names,
 regions and status line with their tests; Settings' bar over Phrases with
 its tests; the UI tests; and this record with the String Catalog and the
-documents.
+documents. Then, after Codex's review: Type offered only where the
+safety row clears the keyboard, with its test, hint and records.
 
 ## Verified
 
@@ -98,6 +115,9 @@ documents.
     beside Stop's well.
   - `typingChainsMeetOnlyTheEmptyGridsClearAndPutBack`: any other hazard
     while typing, and, strictly, the grid's finding gone.
+  - `typeIsOfferedOnlyWhereTheSafetyRowClearsTheKeyboard`: Type offered
+    on every window, as the first push did (it fails on the zoomed
+    13-inch iPad in landscape at AX5, Codex's case).
   - `ChainEngineTests.backToTalkingOverPhrasesClosesOnlyUnderALookItReachesUnasked`
     and `theHeldGuideLinkWouldSoundTheAlarm`: Settings' frames back at
     the old bar, or the guide link's chains clearing.
@@ -107,8 +127,8 @@ documents.
   `HomeLayoutEngineTests` for every window they list. The numbers in
   "Typing on Home" come from there.
 - **The String Catalog** was edited by hand (this session cannot run
-  `xcstringstool`): "Phrases", "Type", "Clear", "Put Back" and "Message"
-  added with their comments; the project files' catalog tool found every
+  `xcstringstool`): "Phrases", "Type", "Clear", "Put Back", "Message" and
+  Type's dimmed hint added with their comments; the project files' catalog tool found every
   key the code uses and none it does not. CI's catalog check is the
   proof.
 - `scripts/test-docs.py`, `scripts/test-site.py` and
@@ -133,7 +153,10 @@ documents.
   floating and split keyboards, other languages and iPhone Duo.
 - **The keyboards on 320-point windows and on a 375×667 phone at AX3 and
   AX5**, where by the engine Speak and Get Attention end inside the room
-  kept for the keyboard: not measured anywhere.
+  kept for the keyboard and Type is dimmed: not measured anywhere. No CI
+  window dims Type, so the dimmed Type, its hint and putting the keyboard
+  away when the room goes are checked only on the engine's frames and by
+  reading the code.
 - **Every device check**: gaze, Dwell, Snap to Item, Switch Control and
   Voice Control typing, Return among the letter keys, sound
   (docs/HANDOFF.md, *Checks that need a real device*, the typing row).
@@ -142,12 +165,13 @@ documents.
 
 ## Follow-ups
 
-1. **CI.** Watch the first run: focus in `onAppear`, the catalog check,
+1. **CI.** Watch the first run: focus in a `task`, the catalog check,
    the strict known issue on the phone's indirect closings, the iPads'
    expected none. *(this thread)*
 2. **For Codex on the owner's Mac:** run `KeyboardProbeTests` on a
    375×667 simulator with and without Display Zoom, which says whether
-   the real keyboard covers Speak or Get Attention there; type on Home at
+   the real keyboard would cover Speak or Get Attention there, and so
+   whether Type, dimmed there today, could be offered; type on Home at
    AX5 on the iPhone 17 and 13-inch iPad simulators and note anything that
    moves or ends under the keyboard (docs/HANDOFF.md, *Known gaps*).
    *(Codex, through the owner)*
@@ -156,14 +180,15 @@ documents.
    Setup's first rows for it, and then the held guide link again.
    *(the next Settings thread)*
 4. **The owner's questions before R1**, each measured in "Typing on
-   Home": the empty phrase grid beside Clear and Put Back; the windows
-   where the keyboard's room reaches the safety row; Yes and No beside
-   the message. *(the owner)*
+   Home": the empty phrase grid beside Clear and Put Back; whether to
+   offer typing, with the covered controls two activations away, where
+   Type is dimmed today; Yes and No beside the message. *(the owner)*
 5. **Fewer tiles to a screen**, from the Figma direction, with R1's
    profiles. *(R1, Wave 3 item 8)*
 6. **320-point windows** need their own arrangement: the message there
    is too narrow for "understand." with Bold Text, the starter library
-   never fits, and the keyboard's room reaches Speak and Get Attention.
+   never fits, and the keyboard's room reaches Speak and Get Attention,
+   so Type is dimmed there.
    *(the layout engine, a new thread)*
 7. **Back to Talking's rendered words** join the rendered-label UI test.
    *(the next accessibility pass)*

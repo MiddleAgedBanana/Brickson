@@ -364,6 +364,9 @@
     "Not Now" : {
 
     },
+    "Not available at this text size in this window: the keyboard would cover Emergency, Yes, No and Get Attention." : {
+      "comment" : "VoiceOver hint on Home's Type while it is dimmed, because the window has no room for the safety buttons above the keyboard."
+    },
     "Nothing to turn on. If tapping is hard, Touch Accommodations can help: Hold Duration ignores touches shorter than a set time, Ignore Repeat treats several quick touches as one, and Tap Assistance uses the first or last place touched." : {
 
     },

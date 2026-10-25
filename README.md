@@ -46,7 +46,9 @@ The initial implementation includes:
   Speak or Return says the message, Phrases goes back to the phrases,
   and Clear and Put Back each have a fixed place. The message is kept on
   the device until it is cleared, and nothing on Home moves when the
-  keyboard shows.
+  keyboard shows. On the smallest windows at the largest text sizes,
+  where the keyboard would cover Emergency, Yes, No or Get Attention,
+  Type is dimmed instead.
 - Settings for the family, opened from Home's Settings button: voices,
   setup guides and the privacy policy.
 - Speech through Apple's built-in speech system, with Personal Voice

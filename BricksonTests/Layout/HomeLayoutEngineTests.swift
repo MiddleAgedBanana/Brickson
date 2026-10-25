@@ -1187,6 +1187,34 @@ struct HomeLayoutEngineTests {
         }
     }
 
+    /// Typing never hides the call for help (AGENTS.md, *Design rules for
+    /// dwell, switch and pointer input*): Home offers Type only where the
+    /// message, Phrases, Type and the whole safety row end above the
+    /// keyboard's room, and never without typing (docs/DECISIONS.md,
+    /// "Typing on Home", *The keyboard's room, measured*). Fails if Type is
+    /// offered where the keyboard would cover Emergency, Yes, No, Speak or
+    /// Get Attention, as on the zoomed 13-inch iPad in landscape at AX5, or
+    /// withheld where they clear, as on CI's iPhone 17 at AX5.
+    @Test func typeIsOfferedOnlyWhereTheSafetyRowClearsTheKeyboard() {
+        var faults: [String] = []
+        for (layout, _, context) in Self.everyLayout
+        where layout.offersTyping != (layout.modes == .phrasesAndTyping && layout.bandClearsKeyboard) {
+            faults.append("offers typing \(layout.offersTyping), band clears \(layout.bandClearsKeyboard) (\(context))")
+        }
+        let count = faults.count
+        #expect(count == 0, "first: \(faults.first ?? "")")
+        let zoomed = HomeLayout(
+            space: .init(size: CGSize(width: 1032, height: 774), safeArea: .init(top: 32, leading: 0, bottom: 20, trailing: 0)),
+            text: Self.largestText, modes: .phrasesAndTyping
+        )
+        #expect(!zoomed.offersTyping)
+        let phone = HomeLayout(
+            space: .init(size: CGSize(width: 402, height: 874), safeArea: .init(top: 62, leading: 0, bottom: 34, trailing: 0)),
+            text: Self.largestText, modes: .phrasesAndTyping
+        )
+        #expect(phone.offersTyping)
+    }
+
     // MARK: The windows people use
 
     /// A full-screen window and how far up the text sizes it holds the

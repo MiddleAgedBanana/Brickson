@@ -118,6 +118,12 @@ widths keep today's two rows (Yes, No, Emergency; Again, Get Attention).
 
 Choosing **Type** turns typing on and puts the cursor in the field, so
 Apple's keyboard opens (*Typing uses Apple's keyboard*). Nothing moves.
+Type is offered only where the whole safety row ends above the room kept
+for the keyboard (`HomeLayout.offersTyping`); elsewhere it is dimmed, with
+a VoiceOver hint saying why, and if the room goes while typing the
+keyboard is put away and the field dimmed, typing staying on (added after
+Codex's review of PR #53; docs/DECISIONS.md, "Typing on Home", *The
+keyboard's room, measured*).
 
 - **The field** takes the message's frame: a standard `TextField`
   (`axis: .vertical`, `typingFieldTraits()`), showing the draft, named

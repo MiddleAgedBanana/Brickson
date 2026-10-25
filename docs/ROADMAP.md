@@ -359,9 +359,10 @@ Clear and Put Back in two category cells placed by scoring; Settings'
 Back to Talking sits over Phrases, so choosing it closes onto Phrases;
 the privacy policy covers typed and dictated words. The held guide
 link stays held: rescored, its guide still closes Settings over Get
-Attention. Measured and left for the owner: the empty phrase grid
-beside Clear and Put Back, the windows where the keyboard's room
-reaches the safety row, and the 375×667 phone's half point of scroll.
+Attention. Where the keyboard's room reaches the safety row, Type is
+dimmed, so the keyboard never covers a call for help. Measured and left
+for the owner: the empty phrase grid beside Clear and Put Back, and the
+375×667 phone's half point of scroll.
 Fewer tiles to a screen is drawn as R1's direction, not built. Yes and
 No beside the message stays the owner's question before R1.
 

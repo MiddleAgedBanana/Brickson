@@ -26,11 +26,13 @@ import SwiftUI
 /// the engine gives it, so the frames are the engine's and right-to-left
 /// languages mirror them.
 ///
-/// Typing is a state of Home (docs/DECISIONS.md, "Typing on Home"): Type
-/// puts the field in the message's place and opens Apple's keyboard, Speak
-/// takes Again's place, Clear and Put Back take two categories' places
-/// (`HomeLayout.typingCells`), the other categories are dimmed, and the
-/// phrase grid is empty, so nothing that speaks sits under the keyboard.
+/// Typing is a state of Home (docs/DECISIONS.md, "Typing on Home"): Type,
+/// offered where the whole safety row ends above the keyboard's room
+/// (`HomeLayout.offersTyping`), puts the field in the message's place and
+/// opens Apple's keyboard, Speak takes Again's place, Clear and Put Back
+/// take two categories' places (`HomeLayout.typingCells`), the other
+/// categories are dimmed, and the phrase grid is empty, so nothing that
+/// speaks sits under the keyboard.
 /// Nothing moves. Everything a person needs while typing is above the room
 /// the keyboard takes (`KeyboardAllowance`; docs/LESSONS.md, "Lay out
 /// against a measured keyboard"). Phrases, Emergency and Settings leave
@@ -131,6 +133,13 @@ struct HomeView: View {
             }
             .padding(.horizontal, HomeLayout.margins.horizontal)
             .padding(.vertical, HomeLayout.margins.vertical)
+            // Where the room above the keyboard goes while typing, the
+            // keyboard goes away; typing, and the message, stay.
+            .onChange(of: layout.offersTyping) { _, offers in
+                if !offers {
+                    fieldIsFocused = false
+                }
+            }
         }
         // The keyboard overlays the bottom of Home instead of pushing it up,
         // so no control moves when it appears (invariant 11), and the
@@ -192,6 +201,15 @@ extension HomeLayout.Space {
 /// the message's frame. Settings' Back to Talking sits over Phrases
 /// (`SettingsSafetyBar`), so closing Settings lands on a control that does
 /// nothing while the phrases show.
+///
+/// Type is offered only where the whole safety row ends above the room
+/// kept for the keyboard (`HomeLayout.offersTyping`), because typing never
+/// hides the call for help. Elsewhere it stays in its place, dimmed, and
+/// tells VoiceOver why; where the room goes while typing (the window
+/// turns or shrinks, or the text grows), the keyboard is put away and the
+/// field is dimmed too, so nothing reveals phrases under a resting look and
+/// Phrases still leaves typing (docs/DECISIONS.md, "Typing on Home", *The
+/// keyboard's room, measured*).
 private struct MessageRegion: View {
     let layout: HomeLayout
     /// One line of the message font at the person's text size.
@@ -209,7 +227,11 @@ private struct MessageRegion: View {
             VStack(alignment: .leading, spacing: HomeLayout.statusSpacing) {
                 Group {
                     if isTyping {
-                        MessageField(lines: max(1, Int((message.height - 2 * MessageField.inset) / max(1, messageLine))), isFocused: fieldIsFocused)
+                        MessageField(
+                            lines: max(1, Int((message.height - 2 * MessageField.inset) / max(1, messageLine))),
+                            isAvailable: layout.offersTyping,
+                            isFocused: fieldIsFocused
+                        )
                     } else {
                         MessageText()
                     }
@@ -224,6 +246,15 @@ private struct MessageRegion: View {
                     .accessibilityIdentifier("phrases")
                 ModeButton(names: HomeControlNames.type, systemImage: "keyboard.fill", isSelected: isTyping, action: startTyping)
                     .sized(as: .type, in: layout)
+                    .disabled(!layout.offersTyping)
+                    .accessibilityHint(
+                        layout.offersTyping
+                            ? Text(verbatim: "")
+                            : Text(
+                                "Not available at this text size in this window: the keyboard would cover Emergency, Yes, No and Get Attention.",
+                                comment: "VoiceOver hint on Home's Type while it is dimmed, because the window has no room for the safety buttons above the keyboard."
+                            )
+                    )
                     .accessibilityIdentifier("type")
             }
         }
@@ -264,13 +295,17 @@ private struct ModeButton: View {
 /// 4.5:1 (invariant 6). Its edge is the control fill, which stands out
 /// from the screen at 3:1 or better (`PaletteTests`), and its words are
 /// primary ink. It takes the cursor just after it appears, which opens the
-/// keyboard.
+/// keyboard, and is dimmed while the window has no room for the safety row
+/// above the keyboard (`HomeLayout.offersTyping`).
 private struct MessageField: View {
     @Environment(DraftStore.self) private var drafts
     @Environment(SpeechService.self) private var speech
     /// How many lines show before the field scrolls: as many as the
     /// message's frame holds.
     let lines: Int
+    /// Whether the keyboard may open: false where it would cover the
+    /// safety row.
+    let isAvailable: Bool
     let isFocused: FocusState<Bool>.Binding
     @State private var text = ""
 
@@ -286,6 +321,7 @@ private struct MessageField: View {
         .foregroundStyle(.primary)
         .lineLimit(lines)
         .focused(isFocused)
+        .disabled(!isAvailable)
         .accessibilityIdentifier("messageField")
         .padding(Self.inset)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -300,7 +336,9 @@ private struct MessageField: View {
         // appears: set as it appears, a new field may not be ready to take
         // it yet.
         .task {
-            isFocused.wrappedValue = true
+            if isAvailable {
+                isFocused.wrappedValue = true
+            }
         }
         .onChange(of: text) { _, proposed in
             let outcome = drafts.perform(.propose(proposed))

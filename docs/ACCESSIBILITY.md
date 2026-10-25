@@ -101,7 +101,7 @@ test is named for what would make it fail.
 | Accessibility Nutrition Labels (all; add) | Nothing yet | R0-10 | 9 |
 | Privacy manifest (all; partly) | In place, no data collected, pinned by `AppBundleTests` | Kept | — |
 | Sync between a person's devices (all; skip) | None | No iCloud sync in 1.0 (docs/DECISIONS.md) | — |
-| The reference app's two safety bugs: the keyboard covering Get Attention, and a crash deleting a category (all; must fix) | Not ported; each became a rule | Typing never hides the call for help (R0-5: in place on Home since 2026-10-24, with the windows where the keyboard's room still reaches the safety row named in docs/DECISIONS.md, "Typing on Home"); never roll back a cascade delete (R0-6; docs/LESSONS.md) | 8 |
+| The reference app's two safety bugs: the keyboard covering Get Attention, and a crash deleting a category (all; must fix) | Not ported; each became a rule | Typing never hides the call for help (R0-5: in place on Home since 2026-10-24; where the keyboard's room would reach the safety row, Type is dimmed, docs/DECISIONS.md, "Typing on Home"); never roll back a cascade delete (R0-6; docs/LESSONS.md) | 8 |
 
 ## 1. Switch Control, Full Keyboard Access and scan order
 

@@ -308,17 +308,18 @@ release in docs/ROADMAP.md when no thread has it yet.
   accepted, pinned strict in `HomeLayoutEngineTests` (docs/DECISIONS.md,
   "Typing on Home", *Open: the empty phrase grid borders Clear and Put
   Back*). *(owner, before R1's profiles)*
-- While typing, on windows the keyboard's room reaches, some of the
-  safety row ends inside it: Speak and Get Attention on 320pt windows from
-  the default size (Yes, No and Emergency too from AX3) and on a 375×667
-  phone from AX3, and the whole row on the iPad mini and a zoomed
-  13-inch iPad in landscape from AX3. Phrases stays above it and puts the
-  keyboard away, so each is two activations away there. The keyboards on
-  these windows are not measured (the room is the tallest keyboard
-  measured on their shape), so whether they cover anything is a device
-  check; each is a measured exception for the owner, pinned strict
-  (docs/DECISIONS.md, "Typing on Home", *The keyboard's room,
-  measured*). *(owner, after the keyboard check on these windows)*
+- No typing on Home where the keyboard's room reaches the safety row:
+  320pt windows at every size, a 375×667 phone from AX3, and the iPad
+  mini and a zoomed 13-inch iPad in landscape from AX3. There Type is
+  dimmed, with a VoiceOver hint saying why, so the keyboard never covers
+  Emergency, Yes, No, Speak or Get Attention; if the room goes while
+  typing, the keyboard is put away and typing stays on with the grid
+  empty (`HomeLayout.offersTyping`; docs/DECISIONS.md, "Typing on Home",
+  *The keyboard's room, measured*). The keyboards on these windows are
+  not measured (the room is the tallest keyboard measured on their
+  shape), so measuring them may give typing back; offering it with the
+  covered controls two activations away would be an exception for the
+  owner. *(Codex's keyboard check, then the owner)*
 - A label with a word too wide for its slot even at the default text size
   is cut short with an ellipsis when it is one word, but in a phrase of
   several words that word can wrap mid-word. No starter label has one
@@ -382,7 +383,8 @@ release in docs/ROADMAP.md when no thread has it yet.
   Zoom set to Larger Text and without it
   (`DESTINATION='platform=iOS Simulator,id=<udid>' scripts/test.sh ui
   '-only-testing:BricksonUITests/KeyboardProbeTests'`), which says
-  whether the real keyboard covers Speak or Get Attention there; and type
+  whether the real keyboard would cover Speak or Get Attention there, and
+  so whether Type, dimmed there today, could be offered; and type
   on Home by hand at AX5 on the iPhone 17 and 13-inch iPad simulators,
   noting anything that moves or ends under the keyboard. The device
   checks are in *Checks that need a real device*. *(Codex on the owner's
@@ -630,7 +632,7 @@ Simulators cannot show these. Record each result in a `docs/log/` file
 | Whether a lingering look re-fires a dwell | How much repeat protection matters |
 | Whether Snap to Item ignores controls scrolled off screen | Whether scrolling can keep family controls out of reach, and whether the chain engine may keep scoring only the controls in the window |
 | What the real software keyboard covers in each orientation (CI measures the simulator's on every UI run; a device, other languages and windowed iPads are not measured), that a third-party keyboard never appears in Brickson, and typing checks 1–8 in [`log/2026-10-21-typing-foundation.md`](log/2026-10-21-typing-foundation.md) | `KeyboardAllowance`'s references, the typing layout (docs/LESSONS.md, "Test with the real software keyboard"), the word row, Return under dwell, and whether Brickson needs its own keyboard |
-| Typing on Home by touch, Switch Control, Voice Control ("Tap Type"), Full Keyboard Access and Dwell with Snap to Item: Type brings the cursor and Apple's keyboard at once; Speak and Return say the message; Clear, then Put Back; Phrases puts the keyboard away and keeps the message; a look slipping off the keyboard's top row meets nothing that speaks or changes the message; and, on an iPhone SE with Display Zoom and at AX3 without it, whether the real keyboard covers Speak or Get Attention | docs/DECISIONS.md, "Typing on Home" (*The keyboard's room, measured*; *Open: the empty phrase grid borders Clear and Put Back*) and "Return speaks" |
+| Typing on Home by touch, Switch Control, Voice Control ("Tap Type"), Full Keyboard Access and Dwell with Snap to Item: Type brings the cursor and Apple's keyboard at once; Speak and Return say the message; Clear, then Put Back; Phrases puts the keyboard away and keeps the message; a look slipping off the keyboard's top row meets nothing that speaks or changes the message; and, on an iPhone SE with Display Zoom and at AX3 without it, where Type is dimmed, whether the real keyboard would cover Speak or Get Attention | docs/DECISIONS.md, "Typing on Home" (*The keyboard's room, measured*; *Open: the empty phrase grid borders Clear and Put Back*) and "Return speaks" |
 | Get Attention heard from the next room, on the speaker and over Bluetooth | The alarm's sound and level, and the replacement tone |
 | A phrase spoken while Get Attention sounds is understood over the tone at 0.32 | `AttentionAlertStatus.toneVolumeWhileSpeaking` |
 | A phone call, Siri and another app's alarm during a phrase and during Get Attention: each stops and shows "Stopped — Again" or "Alert stopped", and nothing restarts by itself, on iOS 26 and iOS 27 | Interruption handling and the iOS 27 notices (docs/DECISIONS.md, "Audio session notices") |

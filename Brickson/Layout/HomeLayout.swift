@@ -373,6 +373,17 @@ nonisolated struct HomeLayout: Equatable, Sendable {
         Slot.controls.filter(slots.contains)
     }
 
+    /// Whether Home offers Type: only where there is typing to pick and
+    /// the message, Phrases, Type and the whole safety row end above the
+    /// keyboard's room (`bandClearsKeyboard`), because typing never hides
+    /// the call for help (AGENTS.md, *Design rules for dwell, switch and
+    /// pointer input*). Elsewhere Type stays in its place, dimmed
+    /// (docs/DECISIONS.md, "Typing on Home", *The keyboard's room,
+    /// measured*).
+    var offersTyping: Bool {
+        modes == .phrasesAndTyping && bandClearsKeyboard
+    }
+
     /// The category cells that show Clear and Put Back while typing
     /// (`TypingCells`).
     var typingCells: TypingCells {
