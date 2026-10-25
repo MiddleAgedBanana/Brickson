@@ -68,8 +68,14 @@ fails on the first version (90 windows) and on the old Family Setup
 - `f0570e1` The code and tests: `SettingsRowPlace`, `SettingsScreenFrames`,
   `SettingsLeadIn`, the two screens, the chain model and the UI tests.
 - `2fefecf` The records, for the first version.
-- Set Up Step by Step in the row's frame, the window sweep, the UI test
-  scoped to the first step, and the records corrected to match.
+- `86287ed` Set Up Step by Step in the row's frame, the window sweep and
+  the UI test scoped to the first step.
+- `6aa63af` The records corrected to match, with the costs.
+- `32924c4` A save check that could no longer fail, dropped.
+- `ae17e08` The corner where Settings closes onto Emergency, named.
+- `771bd79` The pull request's number in this record.
+- `74457d1` The UI test pins Set Up Step by Step's leading edge, top and
+  width to the row's.
 
 ## Verified
 
