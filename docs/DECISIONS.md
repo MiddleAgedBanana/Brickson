@@ -290,27 +290,31 @@ there), and it commits nothing but its record in `docs/log/`. It starts
 when Apple's releases feed lists Xcode 27.2, or a later Xcode, as a
 release, and that Xcode is on the Mac.
 
-1. Run `xcodegen generate`, then copy the project folder outside the
-   checkout. The owner switches the copy to JSON in Xcode's File
+1. Clone the repository again, into a folder of its own outside the
+   owner's working checkout, and run `xcodegen generate` in it. Every
+   later step works in this trial clone, so the owner's checkout is never
+   touched, and the project never moves, so no path in it changes.
+2. Before converting, record in the trial clone, for each target in both
+   configurations, `xcodebuild -showBuildSettings -json`, the files each
+   target compiles and copies (from a build's log), and a copy of
+   `project.pbxproj`.
+3. The owner switches the trial clone's project to JSON in Xcode's File
    inspector, because agents never open a project in Xcode; if that
    Xcode offers a command-line switch, an agent uses it instead.
-2. For each target in both configurations, compare
-   `xcodebuild -showBuildSettings -json` from the generated and the
-   converted project. They must match, apart from the project file's
-   own name.
-3. Compare the files each target compiles and copies, from the two
-   builds' logs. They must match.
-4. Run `scripts/test.sh` and `scripts/test.sh ui` against the converted
-   project (a local change that skips `xcodegen generate`, never
-   committed). Every test must pass, with the same counts as on `main`.
-5. Run `xcprojformatter` on Xcode's output. Record whether Xcode already
+4. Record the same settings and files again. They must match the first
+   recording, apart from any setting that names the project file itself.
+5. In the trial clone only, change `scripts/test.sh` so it skips
+   `xcodegen generate`, which would replace the converted project, and
+   run `scripts/test.sh` and `scripts/test.sh ui`. Every test must pass,
+   with the same counts as on `main`. The change is never committed.
+6. Run `xcprojformatter` on Xcode's output. Record whether Xcode already
    writes the canonical form.
-6. If an older Xcode 27 is still installed, build the converted project
+7. If an older Xcode 27 is still installed, build the converted project
    with it, which settles whether earlier releases read the format.
-7. In the copy, add one file to a target and change one setting, and
-   record the diffs. Each should be one change in one place.
-8. Record the file's length beside `project.pbxproj`'s, and the list of
-   recommended settings Xcode offers for the project.
+8. In the trial clone, add one file to a target and change one setting,
+   and record the diffs. Each should be one change in one place.
+9. Record the JSON file's length beside the saved `project.pbxproj`'s,
+   and the list of recommended settings Xcode offers for the project.
 
 **Step 2, the gates.** The switch waits until all of these hold:
 

@@ -78,7 +78,7 @@ One commit: the plan in the four documents and this record.
   claim about what Xcode writes comes from Apple's pages and library, not
   from Xcode itself.
 - That Xcode 27.0 and 27.1 open a JSON project (Apple says so; Tuist says
-  not): step 6 of the trial checks it.
+  not): step 7 of the trial checks it.
 - That Xcode drops comments when it rewrites the file: inferred from
   Apple's library, which Xcode uses.
 - Whether a CodeQL default setup adds Swift by itself once a project is
@@ -88,10 +88,10 @@ One commit: the plan in the four documents and this record.
 
 - **When Apple releases Xcode 27.2:** the trial in docs/DECISIONS.md,
   "Xcode's JSON project format", *Step 1, the trial*, on the owner's Mac
-  as a hand-off to an agent there. The owner makes the one switch in
-  Xcode, on a copy outside the checkout. Its record goes in a new file
+  as a hand-off to an agent there, in a second clone of the repository.
+  The owner makes the one switch in Xcode. Its record goes in a new file
   here. The toolchain's "recommended settings" follow-up can be read in
-  the same sitting (step 8). *(The owner's Mac)*
+  the same sitting (step 9). *(The owner's Mac)*
 - **When the gates hold:** the switching pull request, *Step 3, the
   switch*, with the workflow file handed to the owner. *(A cloud thread,
   then the owner)*
