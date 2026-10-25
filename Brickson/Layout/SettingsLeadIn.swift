@@ -8,10 +8,11 @@ import Foundation
 /// The control's frame comes first, chosen for a look still resting where
 /// the last control was (AGENTS.md, invariant 10). On Settings' first
 /// screen it is the Family Setup row, where `SettingsRowPlace` puts it from
-/// Home's frames; on Family Setup it is Set Up Step by Step, across the
-/// width at that row's top and at least as tall, so a look still resting
-/// where the row was meets a row that only opens the next screen
-/// (docs/DECISIONS.md, "Settings' first row, placed from Home's frames").
+/// Home's frames; on Family Setup it is Set Up Step by Step, in that row's
+/// own frame and at least as tall (`control(inPlaceOf:width:height:)`), so
+/// a look still resting where the row was meets a row that only opens the
+/// next screen (docs/DECISIONS.md, "Settings' first row, placed from
+/// Home's frames").
 /// The words go beside the control where the room at its leading side is
 /// at least as wide as the control's words on one line, so they read as
 /// its label; elsewhere above it where they fit between the top of the
@@ -45,6 +46,18 @@ nonisolated struct SettingsLeadIn: Equatable, Sendable {
             let fitsAbove = wordsHeight + spacing <= control.minY
             words = CGRect(x: 0, y: fitsAbove ? 0 : control.maxY + spacing, width: width, height: wordsHeight)
         }
+    }
+
+    /// Family Setup's Set Up Step by Step, in the place of the row that
+    /// opened it: the same leading edge, top and width, within `width`, and
+    /// at least as tall, growing downward where its own words need more
+    /// lines. Both frames are in their screens' content.
+    static func control(inPlaceOf row: CGRect, width: CGFloat, height: (CGFloat) -> CGFloat) -> CGRect {
+        let controlWidth = min(row.width, width)
+        return CGRect(
+            x: min(max(0, row.minX), width - controlWidth), y: row.minY,
+            width: controlWidth, height: max(row.height, height(controlWidth))
+        )
     }
 
     /// The words beside the control.

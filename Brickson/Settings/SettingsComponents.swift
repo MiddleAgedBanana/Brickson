@@ -299,10 +299,10 @@ nonisolated struct SettingsLeadInLayout: Layout {
         /// Where `SettingsRowPlace` puts Settings' first row, from Home's
         /// frames and where the screen sits in the window.
         case fromHome(HomeLayout, SettingsScreenFrames)
-        /// Across the width at `top`, and at least `minHeight` tall:
-        /// Family Setup's Set Up Step by Step, in the place of the row that
-        /// opened it.
-        case across(top: CGFloat, minHeight: CGFloat)
+        /// In the place of the row that opened this screen, measured in
+        /// its own screen's content: Family Setup's Set Up Step by Step
+        /// (`SettingsLeadIn.control(inPlaceOf:width:height:)`).
+        case inPlaceOf(CGRect)
         /// Across the width at the top, until anything else is known.
         case atTheTop
     }
@@ -351,8 +351,8 @@ nonisolated struct SettingsLeadInLayout: Layout {
                 x: width - rowWidth, y: row.minY - screen.content.minY,
                 width: rowWidth, height: rowWidth == row.width ? row.height : height(rowWidth)
             )
-        case .across(let top, let minHeight):
-            frame = CGRect(x: 0, y: top, width: width, height: max(minHeight, height(width)))
+        case .inPlaceOf(let row):
+            frame = SettingsLeadIn.control(inPlaceOf: row, width: width, height: height)
         case .atTheTop:
             frame = CGRect(x: 0, y: 0, width: width, height: height(width))
         }

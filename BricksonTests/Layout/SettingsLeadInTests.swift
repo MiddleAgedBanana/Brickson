@@ -45,8 +45,23 @@ struct SettingsLeadInTests {
         #expect(!short.isTwoColumns)
     }
 
+    /// Fails if Family Setup's Set Up Step by Step stops taking the frame
+    /// of the root's row that opened it (its leading edge, top and width),
+    /// stops growing downward where its own words need more lines, grows
+    /// shorter than the row, or leaves a content narrower than the row's
+    /// screen: a look still resting where the row was must meet it.
+    @Test func setUpStepByStepTakesTheRowsPlace() {
+        let row = CGRect(x: 806.4, y: 138, width: 193.6, height: 78)
+        #expect(SettingsLeadIn.control(inPlaceOf: row, width: 1000, height: { _ in 64 }) == row)
+        #expect(SettingsLeadIn.control(inPlaceOf: row, width: 1000, height: { $0 < 245 ? 110 : 78 }) == CGRect(x: 806.4, y: 138, width: 193.6, height: 110))
+        let across = CGRect(x: 0, y: 90, width: 370, height: 78)
+        #expect(SettingsLeadIn.control(inPlaceOf: across, width: 370, height: { _ in 78 }) == across)
+        #expect(SettingsLeadIn.control(inPlaceOf: row, width: 900, height: { _ in 78 }) == CGRect(x: 706.4, y: 138, width: 193.6, height: 78))
+        #expect(SettingsLeadIn.control(inPlaceOf: across, width: 320, height: { _ in 78 }) == CGRect(x: 0, y: 90, width: 320, height: 78))
+    }
+
     /// Fails if words go beside a row that spans the width, as on a phone
-    /// and for Family Setup's Set Up Step by Step.
+    /// and for Family Setup's Set Up Step by Step where the row did.
     @Test func aRowAcrossTheWidthHasTheWordsAboveOrUnder() {
         #expect(!Self.leadIn(width: 370, control: CGRect(x: 0, y: 0, width: 370, height: 78)).isTwoColumns)
         #expect(!Self.leadIn(width: 1000, control: CGRect(x: 0, y: 200, width: 1000, height: 78)).isTwoColumns)

@@ -4,13 +4,15 @@ import SwiftUI
 /// Settings' root.
 ///
 /// Set Up Step by Step takes the place of the root's Family Setup row as
-/// drawn (`SettingsLanding`), across the width and at least as tall, so a
-/// look still resting where that row was meets a row that only opens the
-/// next screen, and never Back to Talking, which would close Settings onto
-/// Home (AGENTS.md, invariant 10; docs/DECISIONS.md, "Settings' first row,
-/// placed from Home's frames"). The opening words go above it where they
-/// fit and under it where they do not (`SettingsLeadIn`). Opening it once
-/// marks Family Setup as opened, which ends Home's first-run hint.
+/// drawn (`SettingsLanding`), in its frame and at least as tall, so a look
+/// still resting where that row was meets a row that only opens the next
+/// screen, and not Back to Talking, which would close Settings onto Home
+/// (AGENTS.md, invariant 10; docs/DECISIONS.md, "Settings' first row,
+/// placed from Home's frames"). The opening words go beside it where the
+/// room there holds its words on one line, as the root's note does, and
+/// otherwise above it where they fit and under it where they do not
+/// (`SettingsLeadIn`). Opening it once marks Family Setup as opened, which
+/// ends Home's first-run hint.
 struct FamilySetupView: View {
     @Environment(SetupStore.self) private var setup
     @Environment(SettingsLanding.self) private var landing: SettingsLanding?
@@ -91,7 +93,7 @@ struct FamilySetupView: View {
 
     private var placement: SettingsLeadInLayout.Placement {
         guard let row = landing?.rootRow else { return .atTheTop }
-        return .across(top: row.minY, minHeight: row.height)
+        return .inPlaceOf(row)
     }
 }
 

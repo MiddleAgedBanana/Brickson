@@ -537,15 +537,19 @@ struct SettingsChainsTests {
     }
 
     /// Fails if the first step counts as showing an answer with only Back,
-    /// Back to Talking and Next on its first screen, as on a phone at the
-    /// largest text size, or as showing none with an answer or Clear My
-    /// Choices there: the UI test expects a different known hazard in each.
-    @Test func theFirstStepShowsAnAnswerOnlyWithMoreThanBackAndNext() {
-        let fixed = ModelledWindow.phone.firstStep.filter { $0.name == SettingsChains.firstStepNext }
-            + [(SettingsChains.backToTalking, Self.backToTalking), (SettingsChains.back, Self.back)]
+    /// Back to Talking and Next on its first screen, or with answers only
+    /// under Next's top, where Next covers them, as on a phone at the
+    /// largest text size; or as showing none with an answer or Clear My
+    /// Choices above Next: the UI test expects Settings to close through
+    /// the first step only where it shows none.
+    @Test func theFirstStepShowsAnAnswerOnlyAboveNext() {
+        let next = ModelledWindow.phone.firstStep.filter { $0.name == SettingsChains.firstStepNext }
+        let fixed = next + [(SettingsChains.backToTalking, Self.backToTalking), (SettingsChains.back, Self.back)]
         #expect(!SettingsChains.showsAnAnswer(fixed))
+        #expect(!SettingsChains.showsAnAnswer(fixed + [("Touch", Self.row(700)), ("Voice Control", Self.row(794))]))
         #expect(SettingsChains.showsAnAnswer(ModelledWindow.phone.firstStep))
         #expect(SettingsChains.showsAnAnswer(fixed + [("Clear My Choices", Self.row(600))]))
+        #expect(SettingsChains.showsAnAnswer([("Touch", Self.row(700))]))
     }
 
     /// Fails if a control the chains do not know is scored as harmless
@@ -647,11 +651,19 @@ struct SettingsChainsTests {
         /// width: one line where it is that wide, two below.
         let rowIdealWidth: CGFloat
         let rowHeights: (oneLine: CGFloat, twoLines: CGFloat)
+        /// Set Up Step by Step with its words on one line, and its height at
+        /// a width: one line where it is that wide, two below. Modelled from
+        /// the Family Setup row CI measured, since this change is the first
+        /// to draw it narrower than the content: its words are about a
+        /// third wider, and two lines of them fit within the row's 64-point
+        /// least height at the default text size.
+        let guidedIdealWidth: CGFloat
+        let guidedHeights: (oneLine: CGFloat, twoLines: CGFloat)
         /// The standard Back button on the screens below the root.
         let back: CGRect
-        /// Family Setup's opening words: their height where CI measured
-        /// it, otherwise the 110 points CI drew the block at, which they
-        /// fit within.
+        /// Family Setup's opening words: their height across the content
+        /// where CI measured it, otherwise the 110 points CI drew the block
+        /// at, which they fit within. Narrower, they keep their area.
         let words: CGFloat
         /// Family Setup's rows: how tall, and how far apart.
         let familyRow: (height: CGFloat, step: CGFloat)
@@ -662,6 +674,7 @@ struct SettingsChainsTests {
         static let phone = ModelledWindow(
             name: "iPhone 17", size: CGSize(width: 402, height: 874), safeArea: .init(top: 62, leading: 0, bottom: 34, trailing: 0),
             text: HomeLayoutEngineTests.defaultText, rowIdealWidth: 185, rowHeights: (78, 110),
+            guidedIdealWidth: 245, guidedHeights: (78, 78),
             back: CGRect(x: 16, y: 152, width: 44, height: 44), words: 110, familyRow: (78, 94),
             firstStep: answers(x: 16, width: 370, top: 322.67, height: 78, step: 94, clearAt: 910.67)
                 + [(SettingsChains.firstStepNext, CGRect(x: 0, y: 694.33, width: 402, height: 110))]
@@ -669,6 +682,7 @@ struct SettingsChainsTests {
         static let padPortrait = ModelledWindow(
             name: "iPad portrait", size: CGSize(width: 1032, height: 1376), safeArea: .init(top: 32, leading: 0, bottom: 20, trailing: 0),
             text: HomeLayoutEngineTests.defaultText, rowIdealWidth: 185, rowHeights: (78, 110),
+            guidedIdealWidth: 245, guidedHeights: (78, 78),
             back: CGRect(x: 10, y: 146, width: 44, height: 44), words: 110, familyRow: (78, 94),
             firstStep: answers(x: 16, width: 1000, top: 295, height: 78, step: 94, clearAt: 883)
                 + [(SettingsChains.firstStepNext, CGRect(x: 0, y: 1210, width: 1032, height: 110))]
@@ -676,6 +690,7 @@ struct SettingsChainsTests {
         static let padPortraitLargest = ModelledWindow(
             name: "iPad portrait, AX5", size: CGSize(width: 1032, height: 1376), safeArea: .init(top: 32, leading: 0, bottom: 20, trailing: 0),
             text: HomeLayoutEngineTests.largestText, rowIdealWidth: 442, rowHeights: (80, 144.67),
+            guidedIdealWidth: 604, guidedHeights: (80, 144.67),
             back: CGRect(x: 10, y: 157, width: 44, height: 44), words: 249.5, familyRow: (80, 96),
             firstStep: answers(x: 16, width: 1000, top: 451.5, height: 80, step: 96, clearAt: 1051.5)
                 + [(SettingsChains.firstStepNext, CGRect(x: 0, y: 1164, width: 1032, height: 112))]
@@ -683,6 +698,7 @@ struct SettingsChainsTests {
         static let padLandscape = ModelledWindow(
             name: "iPad landscape", size: CGSize(width: 1376, height: 1032), safeArea: .init(top: 32, leading: 0, bottom: 20, trailing: 0),
             text: HomeLayoutEngineTests.defaultText, rowIdealWidth: 185, rowHeights: (78, 110),
+            guidedIdealWidth: 245, guidedHeights: (78, 78),
             back: CGRect(x: 10, y: 146, width: 44, height: 44), words: 110, familyRow: (78, 94),
             firstStep: answers(x: 16, width: 1344, top: 295, height: 78, step: 94, clearAt: 883)
                 + [(SettingsChains.firstStepNext, CGRect(x: 0, y: 866, width: 1376, height: 110))]
@@ -704,14 +720,16 @@ struct SettingsChainsTests {
     /// above the 40-point sound line, and its bar keeps 64 points, as CI
     /// drew them (`SettingsScreenFrames`); the root's row sits where
     /// `SettingsRowPlace` puts it; on Family Setup, Set Up Step by Step
-    /// takes its place across the width and at least as tall, with the
-    /// opening words above it where they fit and under it where they do
-    /// not, and the other rows after them (`SettingsLeadIn`). Only what
-    /// shows without scrolling is kept. `link` puts Learn About Each Way on
-    /// the first step where Set Up Step by Step is, with the answers a row
-    /// lower, and the guide it opens, as held commit `1de50f5` placed them
-    /// (docs/DECISIONS.md, "Typing on Home").
-    private static func modelled(_ window: ModelledWindow, link: Bool = false) -> (map: ChainMap, starts: [ChainStart], row: CGRect) {
+    /// takes its frame, at least as tall, with the opening words beside it,
+    /// above it or under it, and the other rows after them
+    /// (`SettingsLeadIn`). Only what shows without scrolling is kept.
+    /// `link` puts Learn About Each Way on the first step where Set Up Step
+    /// by Step is, with the answers a row lower, and the guide it opens, as
+    /// held commit `1de50f5` placed them (docs/DECISIONS.md, "Typing on
+    /// Home").
+    private static func modelled(
+        _ window: ModelledWindow, link: Bool = false
+    ) -> (map: ChainMap, starts: [ChainStart], row: CGRect, guided: CGRect) {
         let layout = HomeLayout(space: .init(size: window.size, safeArea: window.safeArea), text: window.text, modes: .phrasesAndTyping)
         let backToTalking = layout.backToTalking
         let stackTop = backToTalking.maxY + 8
@@ -727,10 +745,17 @@ struct SettingsChainsTests {
             rowHeight: { $0 >= window.rowIdealWidth ? window.rowHeights.oneLine : window.rowHeights.twoLines },
             content: screen.content, navigationBar: screen.navigationBar
         ).row
-        let guided = CGRect(
-            x: screen.content.minX, y: rootRow.minY, width: screen.content.width, height: max(window.familyRow.height, rootRow.height)
+        let content = screen.content
+        let leadIn = SettingsLeadIn(
+            width: content.width, spacing: 16,
+            control: SettingsLeadIn.control(
+                inPlaceOf: rootRow.offsetBy(dx: -content.minX, dy: -content.minY), width: content.width,
+                height: { $0 >= window.guidedIdealWidth ? window.guidedHeights.oneLine : window.guidedHeights.twoLines }
+            ),
+            besideWidth: window.guidedIdealWidth,
+            wordsHeight: { window.words * max(1, content.width / $0) }
         )
-        let wordsFitAbove = window.words + 16 <= rootRow.minY - screen.content.minY
+        let guided = leadIn.control.offsetBy(dx: content.minX, dy: content.minY)
         func rows(_ names: [String], from top: CGFloat) -> [(name: String, frame: CGRect)] {
             names.enumerated().map {
                 ($1, CGRect(x: screen.content.minX, y: top + window.familyRow.step * CGFloat($0), width: screen.content.width, height: window.familyRow.height))
@@ -738,7 +763,7 @@ struct SettingsChainsTests {
         }
         let familyRows = rows(
             ["voiceSettings", "reachingTheScreen", "keepOpen", "callsSiriAndShortcuts", "moreAccessibility", "privacyPolicy", "about"],
-            from: guided.maxY + 16 + (wordsFitAbove ? 0 : window.words + 16)
+            from: content.minY + leadIn.size.height + 16
         )
         let firstStep = link
             ? [("learnAboutEachWay", guided)] + rows(ModelledWindow.answerNames, from: guided.maxY + 16)
@@ -773,10 +798,10 @@ struct SettingsChainsTests {
         let map = HomeLayoutEngineTests.chainMap(layout, typing: true).merging(settings)
         let starts = SettingsChains.starts(in: map, home: atRest)
             + (link ? map.everyStart().filter { $0.state == "guide" } : [])
-        return (map, starts, rootRow)
+        return (map, starts, rootRow, guided)
     }
 
-    private static func paths(_ kind: SettingsChains.Kind, in model: (map: ChainMap, starts: [ChainStart], row: CGRect)) -> [String] {
+    private static func paths(_ kind: SettingsChains.Kind, in model: (map: ChainMap, starts: [ChainStart], row: CGRect, guided: CGRect)) -> [String] {
         let hazards = model.map.hazards(from: model.starts)
         return ChainFinding.findings(in: hazards.filter { SettingsChains.kind(of: $0) == kind }).map(\.path)
     }
@@ -786,22 +811,126 @@ struct SettingsChainsTests {
     /// `SettingsRowPlace` puts it and Set Up Step by Step in its place on
     /// Family Setup: fails if any chain closes Settings under the look, or
     /// anything new is met (docs/DECISIONS.md, "Settings' first row, placed
-    /// from Home's frames"). Put back at the top of the content, the row
-    /// leaves every iPad here with a held look that closes Settings onto
-    /// Get Attention; with Family Setup opening on words over the row's
-    /// place, as before, the phone's look on the row closes it over No.
-    /// Pins the known held look that saves Touch (docs/HANDOFF.md, *Known
+    /// from Home's frames"). Put back across the top of the content, the
+    /// row leaves the iPad at AX5 with held looks through the first step
+    /// that close Settings onto No and Get Attention; across many more
+    /// windows, `noSweptWindowClosesSettingsUnderTheLook` fails too. Pins
+    /// the known held look that saves Touch (docs/HANDOFF.md, *Known
     /// gaps*), so it fails once that goes too.
     @Test func theRowPlacedFromHomesFramesClosesNothingUnderTheLook() {
         for window in [ModelledWindow.phone, .padPortrait, .padPortraitLargest, .padLandscape] {
             let model = Self.modelled(window)
             #expect(Self.paths(.unexpected, in: model) == [], "\(window.name)")
-            #expect(Self.paths(.closesUnderTheLook, in: model) == [], "\(window.name), row \(model.row)")
+            #expect(Self.paths(.closesUnderTheLook, in: model) == [], "\(window.name), row \(model.row), Set Up Step by Step \(model.guided)")
             #expect(
                 Self.paths(.savesAnAnswer, in: model).contains("choosing settings → familySetup (navigates) → guidedSetup (navigates) → Touch (changesData)"),
                 "\(window.name)"
             )
         }
+    }
+
+    /// Family Setup as the sweep draws it over a window of
+    /// `SettingsRowPlaceTests.everyWindow`, with the root's row where
+    /// `SettingsRowPlace` puts it. The words are modelled, since CI draws
+    /// only its own windows:
+    /// - A row's words at a text size: Family Setup's row with its words on
+    ///   one line, as `SettingsRowPlaceTests` models it from CI, less the
+    ///   icon, its gap and the button's insets (`overhead`), is 6.66 ems of
+    ///   SF Pro Semibold; Set Up Step by Step's words are 9.82 ems, wrapped
+    ///   between words, and each line is a category line tall over the
+    ///   row's least height of 64 points, with 14 points of insets.
+    /// - Family Setup's opening words (190 characters): each character 0.4
+    ///   of the body size wide and each line 1.25 of it tall, with the body
+    ///   size from 17 points at the default size to 50 at AX5 in proportion
+    ///   to the category line; at AX5 across CI's iPad they are 250 points
+    ///   tall, where CI measured 249.5.
+    /// - Back is 44 points square, 16 points in and 10 down from the bar's
+    ///   top, and Family Setup's other rows are as tall as the root's row
+    ///   across the content, 16 points apart. Only what shows above the
+    ///   sound line is kept.
+    struct SweptFamilySetup {
+        let guided: CGRect
+        let screens: SettingsChains.Screens
+
+        static let guidedWords: [CGFloat] = [1.74, 1.16, 2.32, 1.16, 2.32]
+
+        init(_ window: SettingsRowPlaceTests.Window, text: HomeLayout.Text, row: CGRect) {
+            let line = text.categoryLine
+            let overhead = 36 + line
+            let em = (window.rowIdealWidth(text: text) - overhead) / 6.66
+            let guidedIdeal = overhead + em * (Self.guidedWords.reduce(0, +) + 0.28 * CGFloat(Self.guidedWords.count - 1))
+            func guidedHeight(_ width: CGFloat) -> CGFloat {
+                let room = (width - overhead) / em
+                var lines: CGFloat = 1
+                var current: CGFloat = 0
+                for word in Self.guidedWords {
+                    let next = current == 0 ? word : current + 0.28 + word
+                    if next > room, current > 0 {
+                        lines += 1
+                        current = word
+                    } else {
+                        current = next
+                    }
+                }
+                return max(64, lines * line) + 14
+            }
+            let body = 17 + (50 - 17) * (line - 22) / (65 - 22)
+            let content = window.content
+            let leadIn = SettingsLeadIn(
+                width: content.width, spacing: 16,
+                control: SettingsLeadIn.control(
+                    inPlaceOf: row.offsetBy(dx: -content.minX, dy: -content.minY), width: content.width, height: guidedHeight
+                ),
+                besideWidth: guidedIdeal,
+                wordsHeight: { ceil(190 / max(1, $0 / (0.4 * body))) * 1.25 * body }
+            )
+            guided = leadIn.control.offsetBy(dx: content.minX, dy: content.minY)
+            let back = CGRect(x: window.navigationBar.minX + 16, y: window.navigationBar.minY + 10, width: 44, height: 44)
+            let rowHeight = window.rowHeight(text: text, width: content.width)
+            let rows = ["voiceSettings", "reachingTheScreen", "keepOpen", "callsSiriAndShortcuts", "moreAccessibility", "privacyPolicy", "about"]
+                .enumerated().map { index, name in
+                    (name, CGRect(
+                        x: content.minX, y: content.minY + leadIn.size.height + 16 + (rowHeight + 16) * CGFloat(index),
+                        width: content.width, height: rowHeight
+                    ))
+                }
+            let shown = CGRect(x: 0, y: 0, width: window.size.width, height: content.maxY + 16)
+            let backToTalking = window.home.backToTalking
+            screens = SettingsChains.Screens(
+                root: [(SettingsChains.backToTalking, backToTalking), (SettingsChains.familySetupRow, row)],
+                familySetup: ([(SettingsChains.backToTalking, backToTalking), (SettingsChains.back, back), (SettingsChains.guidedSetupRow, guided)] + rows)
+                    .filter { $0.1.intersects(shown) },
+                firstStep: nil
+            )
+        }
+    }
+
+    /// Across `SettingsRowPlaceTests.everyWindow` at the default size, AX3
+    /// and AX5, Bold Text off, every 32 points of width: fails if any chain
+    /// through Settings' first screen and Family Setup closes Settings under
+    /// the look or meets anything new (docs/DECISIONS.md, "Settings' first
+    /// row, placed from Home's frames"), with the words modelled as
+    /// `SweptFamilySetup` says. The first step is not drawn here: what it
+    /// meets is CI's to read (`SettingsOnHomeTests`). With Set Up Step by
+    /// Step across the width at the row's top instead, 90 of the 630
+    /// windows close Settings under the look; with the opening words over
+    /// it, as before this change, 213 do, onto Home's Get Attention or No.
+    @Test func noSweptWindowClosesSettingsUnderTheLook() {
+        let categories = (1...HomeLayout.categoryCapacity).map { "category \($0)" }
+        let atRest = HomeChains.name(of: HomeChains.State(), categories: categories)
+        let lines = Set(HomeLayoutEngineTests.textSizes.filter { ["default", "AX3", "AX5"].contains($0.name) }.map(\.text.categoryLine))
+        var scored = 0
+        for (window, text, place) in SettingsRowPlaceTests.everyWindow
+        where !text.boldText && lines.contains(text.categoryLine) && Int(window.size.width - 320) % 32 == 0 {
+            scored += 1
+            let swept = SweptFamilySetup(window, text: text, row: place.row)
+            let map = HomeLayoutEngineTests.chainMap(window.home, typing: true)
+                .merging(SettingsChains.map(swept.screens, closingOnto: atRest).map)
+            let hazards = map.hazards(from: SettingsChains.starts(in: map, home: atRest))
+            let found = ChainFinding.findings(in: hazards.filter { SettingsChains.kind(of: $0) != .savesAnAnswer })
+            #expect(found.map(\.path) == [], "\(window.context): row \(place.row), Set Up Step by Step \(swept.guided)")
+        }
+        #expect(scored == 630)
     }
 
     /// Why the guide link stays held (docs/DECISIONS.md, "Typing on Home"):

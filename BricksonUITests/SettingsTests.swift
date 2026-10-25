@@ -98,10 +98,10 @@ final class SettingsTests: XCTestCase {
 
     /// Family Setup opens with Set Up Step by Step over the whole of the
     /// root's Family Setup row as drawn, its button style's insets
-    /// included, so a repeated activation where that row was only opens
-    /// the next screen, and never meets Back to Talking, which would close
-    /// Settings onto Home (docs/DECISIONS.md, "Settings' first row, placed
-    /// from Home's frames"). Fails if Set Up Step by Step leaves that place
+    /// included, so a repeated activation where that row was meets a row
+    /// that only opens the next screen, not Back to Talking, which would
+    /// close Settings onto Home (docs/DECISIONS.md, "Settings' first row,
+    /// placed from Home's frames"). Fails if Set Up Step by Step leaves that place
     /// or is shorter or narrower than the row, if any other button lies
     /// within the row's frame, or if the opening words are gone.
     @MainActor
