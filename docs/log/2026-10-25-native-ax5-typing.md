@@ -1,6 +1,7 @@
 # Native AX5 typing and first-launch follow-up
 
-*2026-10-25. Codex. Documentation and simulator evidence only.*
+*2026-10-25. Pull request #59 (`codex/ax5-typing-follow-up`). Codex.
+Documentation and simulator evidence only.*
 
 ## What changed and why
 
@@ -11,6 +12,11 @@ This follow-up records both on unchanged app code `6d040d5`, after PR #56.
 Main `37c2e0b` supplies the merged PR #55 notes. No app or test changes.
 The same Mac-check follow-up also investigates a new CI startup failure
 with recovered visual evidence and three bounded local comparisons.
+
+## Commits
+
+- `7f7b9c5`: record native AX5 Return and covered Put Back.
+- `7f9eb2c`: record startup comparisons and the recovered CI frame.
 
 ## Verified
 
@@ -46,6 +52,15 @@ existing issue #19 skip and eight strict expected failures; coverage
 67.7%, String Catalog unchanged. Result:
 `build/TestResults/duo-probe-restored-unit/unit-destination.xcresult`;
 log: `/private/tmp/brickson-duo-probe-restored-unit.log`.
+
+Hosted Unit and UI checks passed on `7f9eb2c`,
+[Tests run 40206848388](https://github.com/MiddleAgedBanana/Brickson/actions/runs/40206848388).
+The review corrections clarify the recorded iPad reachability and Return
+observations and add this PR's identity and commit provenance. App,
+tests, scripts and project are byte-identical to `6d040d5`, so the native
+740-test receipt above applies without repeating a build. All five
+Python suites and the diff check pass again. Hosted checks are still
+required on the review-correction head.
 
 ## First-launch follow-up
 
@@ -118,7 +133,8 @@ terminates it.
 - Sound, real tracking, Snap to Item, Switch Control, mounting/calibration
   or Phone handoff. The informal earlier handheld observation is not a
   controlled device pass; physical checks remain deferred.
-- Final-head hosted CI before this PR runs.
+- Hosted CI on the review-correction head; the green run above covers
+  `7f9eb2c` only.
 - The startup failure's cause or a fix. Three selected-case local passes
   do not establish a full UI-suite pass or reproduce GitHub's machine.
 

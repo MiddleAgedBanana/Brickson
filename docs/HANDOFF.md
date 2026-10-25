@@ -427,8 +427,9 @@ release in docs/ROADMAP.md when no thread has it yet.
   full keyboard. The visible software Return key submitted the message,
   and reopening Type retained the draft. This proves visible state,
   not sound ([follow-up](log/2026-10-25-native-ax5-typing.md)). Put Back's
-  placement still needs a layout answer. The iPad's Clear, Put Back and
-  Return responded in Device Hub.
+  placement still needs a layout answer. On iPad, Clear and Put Back
+  were observed, and Device Hub checked their reachability. Native
+  Device Hub activation of Return changed the last-spoken display.
   [Record and screenshots](log/2026-10-25-mac-keyboard-checks.md).
   Not checked: the iPad's floating and split keyboards, other languages, iPhone
   Duo's inner display (`KeyboardAllowance`'s *Not covered yet* in
