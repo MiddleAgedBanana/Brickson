@@ -1,0 +1,1748 @@
+[
+  {
+    "configuration": "iphone17-ax5",
+    "window": [
+      402,
+      874
+    ],
+    "before": [
+      {
+        "label": "Yes",
+        "frame": [
+          [
+            16,
+            286
+          ],
+          [
+            110,
+            79
+          ]
+        ]
+      },
+      {
+        "label": "No",
+        "frame": [
+          [
+            134,
+            286
+          ],
+          [
+            110,
+            79
+          ]
+        ]
+      },
+      {
+        "label": "Emergency",
+        "frame": [
+          [
+            252,
+            286
+          ],
+          [
+            134,
+            79
+          ]
+        ]
+      },
+      {
+        "identifier": "getAttention",
+        "label": "Get Attention",
+        "frame": [
+          [
+            252,
+            373
+          ],
+          [
+            134,
+            79
+          ]
+        ]
+      },
+      {
+        "label": "Again",
+        "frame": [
+          [
+            16,
+            373
+          ],
+          [
+            228,
+            79
+          ]
+        ]
+      },
+      {
+        "identifier": "phrases",
+        "label": "Phrases",
+        "frame": [
+          [
+            252,
+            70
+          ],
+          [
+            134,
+            99
+          ]
+        ]
+      },
+      {
+        "identifier": "type",
+        "label": "Type",
+        "frame": [
+          [
+            252,
+            177
+          ],
+          [
+            134,
+            99
+          ]
+        ]
+      },
+      {
+        "label": "Basics",
+        "frame": [
+          [
+            134,
+            462
+          ],
+          [
+            122,
+            77
+          ]
+        ]
+      },
+      {
+        "label": "Needs",
+        "frame": [
+          [
+            264,
+            462
+          ],
+          [
+            122,
+            77
+          ]
+        ]
+      },
+      {
+        "label": "Conversation",
+        "frame": [
+          [
+            16,
+            547
+          ],
+          [
+            122,
+            77
+          ]
+        ]
+      },
+      {
+        "label": "Feelings",
+        "frame": [
+          [
+            146,
+            547
+          ],
+          [
+            122,
+            77
+          ]
+        ]
+      },
+      {
+        "identifier": "settings",
+        "label": "Settings",
+        "frame": [
+          [
+            276,
+            547
+          ],
+          [
+            110,
+            77
+          ]
+        ]
+      },
+      {
+        "identifier": "phraseTile",
+        "label": "Maybe.",
+        "frame": [
+          [
+            16,
+            634
+          ],
+          [
+            118,
+            78
+          ]
+        ]
+      },
+      {
+        "identifier": "phraseTile",
+        "label": "I don't know.",
+        "frame": [
+          [
+            142,
+            634
+          ],
+          [
+            118,
+            78
+          ]
+        ]
+      },
+      {
+        "identifier": "phraseTile",
+        "label": "Please.",
+        "frame": [
+          [
+            268,
+            634
+          ],
+          [
+            118,
+            78
+          ]
+        ]
+      },
+      {
+        "identifier": "phraseTile",
+        "label": "Thank you.",
+        "frame": [
+          [
+            16,
+            720
+          ],
+          [
+            118,
+            78
+          ]
+        ]
+      },
+      {
+        "identifier": "phraseTile",
+        "label": "Wait a moment, please.",
+        "frame": [
+          [
+            142,
+            720
+          ],
+          [
+            118,
+            78
+          ]
+        ]
+      },
+      {
+        "identifier": "phraseTile",
+        "label": "I'm not finished.",
+        "frame": [
+          [
+            268,
+            720
+          ],
+          [
+            118,
+            78
+          ]
+        ]
+      },
+      {
+        "identifier": "phraseTile",
+        "label": "Hello.",
+        "frame": [
+          [
+            16,
+            806
+          ],
+          [
+            118,
+            78
+          ]
+        ]
+      },
+      {
+        "identifier": "phraseTile",
+        "label": "Goodbye.",
+        "frame": [
+          [
+            142,
+            806
+          ],
+          [
+            118,
+            78
+          ]
+        ]
+      }
+    ],
+    "withKeyboard": [
+      {
+        "label": "Yes",
+        "frame": [
+          [
+            16,
+            286
+          ],
+          [
+            110,
+            79
+          ]
+        ]
+      },
+      {
+        "label": "No",
+        "frame": [
+          [
+            134,
+            286
+          ],
+          [
+            110,
+            79
+          ]
+        ]
+      },
+      {
+        "label": "Emergency",
+        "frame": [
+          [
+            252,
+            286
+          ],
+          [
+            134,
+            79
+          ]
+        ]
+      },
+      {
+        "identifier": "getAttention",
+        "label": "Get Attention",
+        "frame": [
+          [
+            252,
+            373
+          ],
+          [
+            134,
+            79
+          ]
+        ]
+      },
+      {
+        "label": "Speak",
+        "frame": [
+          [
+            16,
+            373
+          ],
+          [
+            228,
+            79
+          ]
+        ]
+      },
+      {
+        "identifier": "phrases",
+        "label": "Phrases",
+        "frame": [
+          [
+            252,
+            70
+          ],
+          [
+            134,
+            99
+          ]
+        ]
+      },
+      {
+        "identifier": "type",
+        "label": "Type",
+        "frame": [
+          [
+            252,
+            177
+          ],
+          [
+            134,
+            99
+          ]
+        ]
+      },
+      {
+        "label": "Basics",
+        "frame": [
+          [
+            134,
+            462
+          ],
+          [
+            122,
+            77
+          ]
+        ]
+      },
+      {
+        "identifier": "clear",
+        "label": "Clear",
+        "frame": [
+          [
+            264,
+            462
+          ],
+          [
+            122,
+            77
+          ]
+        ]
+      },
+      {
+        "label": "Conversation",
+        "frame": [
+          [
+            16,
+            547
+          ],
+          [
+            122,
+            77
+          ]
+        ]
+      },
+      {
+        "identifier": "putBack",
+        "label": "Put Back",
+        "frame": [
+          [
+            146,
+            547
+          ],
+          [
+            122,
+            77
+          ]
+        ]
+      },
+      {
+        "identifier": "settings",
+        "label": "Settings",
+        "frame": [
+          [
+            276,
+            547
+          ],
+          [
+            110,
+            77
+          ]
+        ]
+      },
+      {
+        "identifier": "phraseTile",
+        "label": "Maybe.",
+        "frame": [
+          [
+            16,
+            634
+          ],
+          [
+            118,
+            78
+          ]
+        ]
+      },
+      {
+        "identifier": "phraseTile",
+        "label": "I don't know.",
+        "frame": [
+          [
+            142,
+            634
+          ],
+          [
+            118,
+            78
+          ]
+        ]
+      },
+      {
+        "identifier": "phraseTile",
+        "label": "Please.",
+        "frame": [
+          [
+            268,
+            634
+          ],
+          [
+            118,
+            78
+          ]
+        ]
+      },
+      {
+        "identifier": "phraseTile",
+        "label": "Thank you.",
+        "frame": [
+          [
+            16,
+            720
+          ],
+          [
+            118,
+            78
+          ]
+        ]
+      },
+      {
+        "identifier": "phraseTile",
+        "label": "Wait a moment, please.",
+        "frame": [
+          [
+            142,
+            720
+          ],
+          [
+            118,
+            78
+          ]
+        ]
+      },
+      {
+        "identifier": "phraseTile",
+        "label": "I'm not finished.",
+        "frame": [
+          [
+            268,
+            720
+          ],
+          [
+            118,
+            78
+          ]
+        ]
+      },
+      {
+        "identifier": "phraseTile",
+        "label": "Hello.",
+        "frame": [
+          [
+            16,
+            806
+          ],
+          [
+            118,
+            78
+          ]
+        ]
+      },
+      {
+        "identifier": "phraseTile",
+        "label": "Goodbye.",
+        "frame": [
+          [
+            142,
+            806
+          ],
+          [
+            118,
+            78
+          ]
+        ]
+      }
+    ],
+    "predictionRow": [
+      [
+        [
+          0,
+          546
+        ],
+        [
+          402,
+          44
+        ]
+      ]
+    ]
+  },
+  {
+    "configuration": "ipad-ax5-portrait",
+    "window": [
+      1032,
+      1376
+    ],
+    "before": [
+      {
+        "label": "Yes",
+        "frame": [
+          [
+            217.5,
+            258
+          ],
+          [
+            193.5,
+            88
+          ]
+        ]
+      },
+      {
+        "label": "No",
+        "frame": [
+          [
+            419,
+            258
+          ],
+          [
+            194,
+            88
+          ]
+        ]
+      },
+      {
+        "label": "Emergency",
+        "frame": [
+          [
+            16,
+            258
+          ],
+          [
+            193.5,
+            88
+          ]
+        ]
+      },
+      {
+        "identifier": "getAttention",
+        "label": "Get Attention",
+        "frame": [
+          [
+            822.5,
+            258
+          ],
+          [
+            193.5,
+            88
+          ]
+        ]
+      },
+      {
+        "label": "Again",
+        "frame": [
+          [
+            621,
+            258
+          ],
+          [
+            193.5,
+            88
+          ]
+        ]
+      },
+      {
+        "identifier": "phrases",
+        "label": "Phrases",
+        "frame": [
+          [
+            621,
+            40
+          ],
+          [
+            395,
+            99
+          ]
+        ]
+      },
+      {
+        "identifier": "type",
+        "label": "Type",
+        "frame": [
+          [
+            621,
+            147
+          ],
+          [
+            395,
+            99
+          ]
+        ]
+      },
+      {
+        "label": "Basics",
+        "frame": [
+          [
+            16,
+            443
+          ],
+          [
+            193.5,
+            77
+          ]
+        ]
+      },
+      {
+        "label": "Needs",
+        "frame": [
+          [
+            217.5,
+            358
+          ],
+          [
+            193.5,
+            162
+          ]
+        ]
+      },
+      {
+        "label": "Conversation",
+        "frame": [
+          [
+            419,
+            358
+          ],
+          [
+            194,
+            162
+          ]
+        ]
+      },
+      {
+        "label": "Feelings",
+        "frame": [
+          [
+            621,
+            358
+          ],
+          [
+            193.5,
+            162
+          ]
+        ]
+      },
+      {
+        "identifier": "settings",
+        "label": "Settings",
+        "frame": [
+          [
+            822.5,
+            358
+          ],
+          [
+            193.5,
+            162
+          ]
+        ]
+      },
+      {
+        "identifier": "phraseTile",
+        "label": "Maybe.",
+        "frame": [
+          [
+            16,
+            532
+          ],
+          [
+            244,
+            404
+          ]
+        ]
+      },
+      {
+        "identifier": "phraseTile",
+        "label": "I don't know.",
+        "frame": [
+          [
+            268,
+            532
+          ],
+          [
+            244,
+            404
+          ]
+        ]
+      },
+      {
+        "identifier": "phraseTile",
+        "label": "Please.",
+        "frame": [
+          [
+            520,
+            532
+          ],
+          [
+            244,
+            404
+          ]
+        ]
+      },
+      {
+        "identifier": "phraseTile",
+        "label": "Thank you.",
+        "frame": [
+          [
+            772,
+            532
+          ],
+          [
+            244,
+            404
+          ]
+        ]
+      },
+      {
+        "identifier": "phraseTile",
+        "label": "Wait a moment, please.",
+        "frame": [
+          [
+            16,
+            944
+          ],
+          [
+            244,
+            404
+          ]
+        ]
+      },
+      {
+        "identifier": "phraseTile",
+        "label": "I'm not finished.",
+        "frame": [
+          [
+            268,
+            944
+          ],
+          [
+            244,
+            404
+          ]
+        ]
+      },
+      {
+        "identifier": "phraseTile",
+        "label": "Hello.",
+        "frame": [
+          [
+            520,
+            944
+          ],
+          [
+            244,
+            404
+          ]
+        ]
+      },
+      {
+        "identifier": "phraseTile",
+        "label": "Goodbye.",
+        "frame": [
+          [
+            772,
+            944
+          ],
+          [
+            244,
+            404
+          ]
+        ]
+      }
+    ],
+    "withKeyboard": [
+      {
+        "label": "Yes",
+        "frame": [
+          [
+            217.5,
+            258
+          ],
+          [
+            193.5,
+            88
+          ]
+        ]
+      },
+      {
+        "label": "No",
+        "frame": [
+          [
+            419,
+            258
+          ],
+          [
+            194,
+            88
+          ]
+        ]
+      },
+      {
+        "label": "Emergency",
+        "frame": [
+          [
+            16,
+            258
+          ],
+          [
+            193.5,
+            88
+          ]
+        ]
+      },
+      {
+        "identifier": "getAttention",
+        "label": "Get Attention",
+        "frame": [
+          [
+            822.5,
+            258
+          ],
+          [
+            193.5,
+            88
+          ]
+        ]
+      },
+      {
+        "label": "Speak",
+        "frame": [
+          [
+            621,
+            258
+          ],
+          [
+            193.5,
+            88
+          ]
+        ]
+      },
+      {
+        "identifier": "phrases",
+        "label": "Phrases",
+        "frame": [
+          [
+            621,
+            40
+          ],
+          [
+            395,
+            99
+          ]
+        ]
+      },
+      {
+        "identifier": "type",
+        "label": "Type",
+        "frame": [
+          [
+            621,
+            147
+          ],
+          [
+            395,
+            99
+          ]
+        ]
+      },
+      {
+        "label": "Basics",
+        "frame": [
+          [
+            16,
+            443
+          ],
+          [
+            193.5,
+            77
+          ]
+        ]
+      },
+      {
+        "label": "Needs",
+        "frame": [
+          [
+            217.5,
+            358
+          ],
+          [
+            193.5,
+            162
+          ]
+        ]
+      },
+      {
+        "identifier": "clear",
+        "label": "Clear",
+        "frame": [
+          [
+            419,
+            358
+          ],
+          [
+            194,
+            162
+          ]
+        ]
+      },
+      {
+        "identifier": "putBack",
+        "label": "Put Back",
+        "frame": [
+          [
+            621,
+            358
+          ],
+          [
+            193.5,
+            162
+          ]
+        ]
+      },
+      {
+        "identifier": "settings",
+        "label": "Settings",
+        "frame": [
+          [
+            822.5,
+            358
+          ],
+          [
+            193.5,
+            162
+          ]
+        ]
+      },
+      {
+        "identifier": "phraseTile",
+        "label": "Maybe.",
+        "frame": [
+          [
+            16,
+            532
+          ],
+          [
+            244,
+            404
+          ]
+        ]
+      },
+      {
+        "identifier": "phraseTile",
+        "label": "I don't know.",
+        "frame": [
+          [
+            268,
+            532
+          ],
+          [
+            244,
+            404
+          ]
+        ]
+      },
+      {
+        "identifier": "phraseTile",
+        "label": "Please.",
+        "frame": [
+          [
+            520,
+            532
+          ],
+          [
+            244,
+            404
+          ]
+        ]
+      },
+      {
+        "identifier": "phraseTile",
+        "label": "Thank you.",
+        "frame": [
+          [
+            772,
+            532
+          ],
+          [
+            244,
+            404
+          ]
+        ]
+      },
+      {
+        "identifier": "phraseTile",
+        "label": "Wait a moment, please.",
+        "frame": [
+          [
+            16,
+            944
+          ],
+          [
+            244,
+            404
+          ]
+        ]
+      },
+      {
+        "identifier": "phraseTile",
+        "label": "I'm not finished.",
+        "frame": [
+          [
+            268,
+            944
+          ],
+          [
+            244,
+            404
+          ]
+        ]
+      },
+      {
+        "identifier": "phraseTile",
+        "label": "Hello.",
+        "frame": [
+          [
+            520,
+            944
+          ],
+          [
+            244,
+            404
+          ]
+        ]
+      },
+      {
+        "identifier": "phraseTile",
+        "label": "Goodbye.",
+        "frame": [
+          [
+            772,
+            944
+          ],
+          [
+            244,
+            404
+          ]
+        ]
+      }
+    ],
+    "predictionRow": [
+      [
+        [
+          283,
+          979
+        ],
+        [
+          466,
+          49
+        ]
+      ]
+    ]
+  },
+  {
+    "configuration": "ipad-ax5-landscape",
+    "window": [
+      1376,
+      1032
+    ],
+    "before": [
+      {
+        "label": "Yes",
+        "frame": [
+          [
+            286.5,
+            258
+          ],
+          [
+            262.5,
+            88
+          ]
+        ]
+      },
+      {
+        "label": "No",
+        "frame": [
+          [
+            557,
+            258
+          ],
+          [
+            262,
+            88
+          ]
+        ]
+      },
+      {
+        "label": "Emergency",
+        "frame": [
+          [
+            16,
+            258
+          ],
+          [
+            262.5,
+            88
+          ]
+        ]
+      },
+      {
+        "identifier": "getAttention",
+        "label": "Get Attention",
+        "frame": [
+          [
+            1097.5,
+            258
+          ],
+          [
+            262.5,
+            88
+          ]
+        ]
+      },
+      {
+        "label": "Again",
+        "frame": [
+          [
+            827,
+            258
+          ],
+          [
+            262.5,
+            88
+          ]
+        ]
+      },
+      {
+        "identifier": "phrases",
+        "label": "Phrases",
+        "frame": [
+          [
+            827,
+            40
+          ],
+          [
+            533,
+            99
+          ]
+        ]
+      },
+      {
+        "identifier": "type",
+        "label": "Type",
+        "frame": [
+          [
+            827,
+            147
+          ],
+          [
+            533,
+            99
+          ]
+        ]
+      },
+      {
+        "label": "Basics",
+        "frame": [
+          [
+            16,
+            443
+          ],
+          [
+            262.5,
+            77
+          ]
+        ]
+      },
+      {
+        "label": "Basics",
+        "frame": [
+          [
+            16,
+            443
+          ],
+          [
+            262.5,
+            77
+          ]
+        ]
+      },
+      {
+        "label": "Needs",
+        "frame": [
+          [
+            286.5,
+            358
+          ],
+          [
+            262.5,
+            162
+          ]
+        ]
+      },
+      {
+        "label": "Needs",
+        "frame": [
+          [
+            286.5,
+            358
+          ],
+          [
+            262.5,
+            162
+          ]
+        ]
+      },
+      {
+        "label": "Conversation",
+        "frame": [
+          [
+            557,
+            358
+          ],
+          [
+            262,
+            162
+          ]
+        ]
+      },
+      {
+        "label": "Feelings",
+        "frame": [
+          [
+            827,
+            358
+          ],
+          [
+            262.5,
+            162
+          ]
+        ]
+      },
+      {
+        "identifier": "settings",
+        "label": "Settings",
+        "frame": [
+          [
+            1097.5,
+            358
+          ],
+          [
+            262.5,
+            162
+          ]
+        ]
+      },
+      {
+        "identifier": "phraseTile",
+        "label": "Maybe.",
+        "frame": [
+          [
+            16,
+            532
+          ],
+          [
+            330,
+            232
+          ]
+        ]
+      },
+      {
+        "identifier": "phraseTile",
+        "label": "I don't know.",
+        "frame": [
+          [
+            354,
+            532
+          ],
+          [
+            330,
+            232
+          ]
+        ]
+      },
+      {
+        "identifier": "phraseTile",
+        "label": "Please.",
+        "frame": [
+          [
+            692,
+            532
+          ],
+          [
+            330,
+            232
+          ]
+        ]
+      },
+      {
+        "identifier": "phraseTile",
+        "label": "Thank you.",
+        "frame": [
+          [
+            1030,
+            532
+          ],
+          [
+            330,
+            232
+          ]
+        ]
+      },
+      {
+        "identifier": "phraseTile",
+        "label": "Wait a moment, please.",
+        "frame": [
+          [
+            16,
+            772
+          ],
+          [
+            330,
+            232
+          ]
+        ]
+      },
+      {
+        "identifier": "phraseTile",
+        "label": "I'm not finished.",
+        "frame": [
+          [
+            354,
+            772
+          ],
+          [
+            330,
+            232
+          ]
+        ]
+      },
+      {
+        "identifier": "phraseTile",
+        "label": "Hello.",
+        "frame": [
+          [
+            692,
+            772
+          ],
+          [
+            330,
+            232
+          ]
+        ]
+      },
+      {
+        "identifier": "phraseTile",
+        "label": "Goodbye.",
+        "frame": [
+          [
+            1030,
+            772
+          ],
+          [
+            330,
+            232
+          ]
+        ]
+      }
+    ],
+    "withKeyboard": [
+      {
+        "label": "Yes",
+        "frame": [
+          [
+            286.5,
+            258
+          ],
+          [
+            262.5,
+            88
+          ]
+        ]
+      },
+      {
+        "label": "No",
+        "frame": [
+          [
+            557,
+            258
+          ],
+          [
+            262,
+            88
+          ]
+        ]
+      },
+      {
+        "label": "Emergency",
+        "frame": [
+          [
+            16,
+            258
+          ],
+          [
+            262.5,
+            88
+          ]
+        ]
+      },
+      {
+        "identifier": "getAttention",
+        "label": "Get Attention",
+        "frame": [
+          [
+            1097.5,
+            258
+          ],
+          [
+            262.5,
+            88
+          ]
+        ]
+      },
+      {
+        "label": "Speak",
+        "frame": [
+          [
+            827,
+            258
+          ],
+          [
+            262.5,
+            88
+          ]
+        ]
+      },
+      {
+        "identifier": "phrases",
+        "label": "Phrases",
+        "frame": [
+          [
+            827,
+            40
+          ],
+          [
+            533,
+            99
+          ]
+        ]
+      },
+      {
+        "identifier": "type",
+        "label": "Type",
+        "frame": [
+          [
+            827,
+            147
+          ],
+          [
+            533,
+            99
+          ]
+        ]
+      },
+      {
+        "label": "Basics",
+        "frame": [
+          [
+            16,
+            443
+          ],
+          [
+            262.5,
+            77
+          ]
+        ]
+      },
+      {
+        "label": "Needs",
+        "frame": [
+          [
+            286.5,
+            358
+          ],
+          [
+            262.5,
+            162
+          ]
+        ]
+      },
+      {
+        "label": "Needs",
+        "frame": [
+          [
+            286.5,
+            358
+          ],
+          [
+            262.5,
+            162
+          ]
+        ]
+      },
+      {
+        "identifier": "clear",
+        "label": "Clear",
+        "frame": [
+          [
+            557,
+            358
+          ],
+          [
+            262,
+            162
+          ]
+        ]
+      },
+      {
+        "identifier": "putBack",
+        "label": "Put Back",
+        "frame": [
+          [
+            827,
+            358
+          ],
+          [
+            262.5,
+            162
+          ]
+        ]
+      },
+      {
+        "identifier": "settings",
+        "label": "Settings",
+        "frame": [
+          [
+            1097.5,
+            358
+          ],
+          [
+            262.5,
+            162
+          ]
+        ]
+      },
+      {
+        "identifier": "phraseTile",
+        "label": "Maybe.",
+        "frame": [
+          [
+            16,
+            532
+          ],
+          [
+            330,
+            232
+          ]
+        ]
+      },
+      {
+        "identifier": "phraseTile",
+        "label": "I don't know.",
+        "frame": [
+          [
+            354,
+            532
+          ],
+          [
+            330,
+            232
+          ]
+        ]
+      },
+      {
+        "identifier": "phraseTile",
+        "label": "Please.",
+        "frame": [
+          [
+            692,
+            532
+          ],
+          [
+            330,
+            232
+          ]
+        ]
+      },
+      {
+        "identifier": "phraseTile",
+        "label": "Thank you.",
+        "frame": [
+          [
+            1030,
+            532
+          ],
+          [
+            330,
+            232
+          ]
+        ]
+      },
+      {
+        "identifier": "phraseTile",
+        "label": "Wait a moment, please.",
+        "frame": [
+          [
+            16,
+            772
+          ],
+          [
+            330,
+            232
+          ]
+        ]
+      },
+      {
+        "identifier": "phraseTile",
+        "label": "I'm not finished.",
+        "frame": [
+          [
+            354,
+            772
+          ],
+          [
+            330,
+            232
+          ]
+        ]
+      },
+      {
+        "identifier": "phraseTile",
+        "label": "Hello.",
+        "frame": [
+          [
+            692,
+            772
+          ],
+          [
+            330,
+            232
+          ]
+        ]
+      },
+      {
+        "identifier": "phraseTile",
+        "label": "Goodbye.",
+        "frame": [
+          [
+            1030,
+            772
+          ],
+          [
+            330,
+            232
+          ]
+        ]
+      }
+    ],
+    "predictionRow": [
+      [
+        [
+          352,
+          540
+        ],
+        [
+          672,
+          49
+        ]
+      ]
+    ]
+  }
+]

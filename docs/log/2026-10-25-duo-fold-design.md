@@ -33,6 +33,9 @@ Design gate or approval for a new scrolling policy.
 - Starting app/test source: main `6d040d5`, including merged PR #56.
 - Dated measurement source: [PR #55, `cb4c965`](https://github.com/MiddleAgedBanana/Brickson/commit/cb4c965),
   whose measurements used app code `8316743` before #56.
+- Main `37c2e0b` (merged PR #55) is incorporated with a merge commit,
+  preserving its dated QA record and the owner's stricter JSON-trial
+  timing. App, test, script and project sources still match `6d040d5`.
 
 ## Verified
 
@@ -87,8 +90,8 @@ cause of the skipped XCTest follows from it.
   historical and synthetic. It changes 23 nodes created by this job and
   adds `84:2`–`84:95`; original Home pages remain untouched. The final
   Design gate stays open.
-- GitHub CI at the pushed `23baaf0`, 10:18 a.m. EDT: unit tests passed;
-  UI tests still running. This does not verify these later local docs.
+- GitHub CI at the pushed `23baaf0`: both jobs passed. This does not
+  verify these later local docs or establish a fold-layout result.
 
 ## Not verified
 
