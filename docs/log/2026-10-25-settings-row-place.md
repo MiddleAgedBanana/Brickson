@@ -105,11 +105,18 @@ fails on the first version (90 windows) and on the old Family Setup
     unexpected hazard. Mutated to the first version it fails on 90
     windows, and with the opening words over Set Up Step by Step, on 213.
     A wider scratch sweep (4,200 windows, both Bold Text settings) found
-    no closing either; by centre, Back to Talking can be the next control
-    at a corner of a large row on some narrow windows at AX3 and AX5, and
-    the look then lands on Home's quiet controls.
+    no closing either. A probe on the same model found that by centre,
+    at the root row's top trailing corner, Back to Talking is the next
+    control on 36 of those windows (384 to 416 points wide at AX5, and
+    336 at AX3 with Bold Text on) and on CI's iPhone 17 at AX5; the look
+    then closes Settings onto Home's Emergency, which switches Home to
+    the emergency phrases and says nothing. The engine does not count
+    that as a hazard; the records name it.
   - `SettingsLeadInTests.setUpStepByStepTakesTheRowsPlace` and
     `SettingsChainsTests.theFirstStepShowsAnAnswerOnlyAboveNext`.
+  - A second independent review of the rebuilt branch, before the first
+    push, found a UI check that could no longer fail (removed) and three
+    overstatements in these records (corrected), and no bug in the code.
   - `theHeldGuideLinkWouldSoundTheAlarm` rescored: the held guide link
     still sounds the alarm, and no longer clears every save chain.
 - `scripts/test-docs.py`, `scripts/test-hooks.py` and

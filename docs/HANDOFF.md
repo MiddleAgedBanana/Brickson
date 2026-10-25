@@ -66,11 +66,13 @@ still resting on it when Settings closes meets Phrases, which does
 nothing while the phrases show. Settings' Family Setup row is placed
 from Home's frames, and Family Setup opens with Set Up Step by Step in
 its frame, so a look held on the row meets a row that only opens the
-next screen; modelled on CI's frames, only on a phone at its largest
-text size can a look held on through Set Up Step by Step still reach
-Back to Talking and close Settings over No or Get Attention, which CI's
-UI tests check (docs/DECISIONS.md, "Settings' first row, placed from
-Home's frames").
+next screen. Modelled on CI's frames, the exceptions are on a phone at
+its largest text size: by centre, a look at the row's top trailing
+corner meets Back to Talking and closes Settings onto Home's Emergency
+(nothing is said), and a look held on through Set Up Step by Step can
+reach Back to Talking and close Settings over No or Get Attention,
+which CI's UI tests check (docs/DECISIONS.md, "Settings' first row,
+placed from Home's frames").
 "Speaking", "Sounding", audio failures, very low volume and a typed
 message that cannot be saved or restored share one passive status line
 under the message, in space always kept for it, and

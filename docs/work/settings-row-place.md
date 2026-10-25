@@ -102,10 +102,11 @@ build). Status: building (untested until CI passes).*
   words, as drawn). For dwell and switches, the chain model on CI's
   frames finds no chain that closes Settings under the look, on any of
   the four windows it models, nor on 630 swept windows with Family
-  Setup's words modelled (`SettingsChainsTests`). By centre, on some
-  narrow windows at AX3 and AX5, Back to Talking can be the next control
-  at a corner of a large row; the look then lands on Home's quiet
-  controls, so nothing is said or sounded.
+  Setup's words modelled (`SettingsChainsTests`). By centre, on narrow
+  windows at the largest sizes (CI's iPhone 17 at AX5 among them), Back
+  to Talking is the next control at the root row's top trailing corner,
+  and Settings closes onto Home's Emergency, which switches Home to the
+  emergency phrases; nothing is said or sounded.
 - **Known issues kept strict, so they fail when they clear:**
   - *iPhone at AX5* (predicted from PR #53's CI frames; this change's
     CI run confirms it): the first step behind Set Up Step by Step shows

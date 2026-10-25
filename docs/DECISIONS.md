@@ -2092,11 +2092,11 @@ half; regular widths have the slot plan's one-row C (*Typing on Home*).
   Setup's own rows placed for it, which is the Settings chain scoring
   in docs/HANDOFF.md, *Known gaps*. *2026-10-25:* they are; modelled,
   the next held activation after the root's row is Set Up Step by Step,
-  which takes the row's frame, on CI's windows and by edge on every
-  swept window; by centre, Back to Talking can be next at a corner of a
-  large row on some narrow windows at AX3 and AX5, closing Settings onto
-  Home's quiet controls (*Settings' first row, placed from Home's
-  frames*).
+  which takes the row's frame, by edge on every window, and by centre
+  except at the row's top trailing corner on narrow windows at the
+  largest sizes, CI's iPhone at AX5 among them, where Back to Talking
+  is next and Settings closes onto Home's Emergency (*Settings' first
+  row, placed from Home's frames*).
 - **From Settings, Yes, No and Emergency are two activations away:**
   Back to Talking, whose spot lands nearest Emergency on Home, then the
   control. *2026-10-24:* its spot lands on Phrases (*Typing on Home*). The cover is the family's screen, not a Home state, and opens
@@ -3157,7 +3157,8 @@ change.
   its words on one line, as the root's note does, else above it where
   they fit, else under it; the check-in card and the setup warnings
   come after, so a card never moves it. A look still resting where the
-  row was meets a row that only opens the next screen. On CI's windows:
+  row was meets a row that only opens the next screen, except by centre
+  at one corner on narrow windows (*By centre*, below). On CI's windows:
   on the phone, across the width at 312 with the words under it; on the
   13-inch iPad in portrait and in landscape, over Home's Settings with
   the words beside it; at the iPad's largest size, 442 wide and two
@@ -3176,11 +3177,16 @@ change.
     Set Up Step by Step across the width at the row's top, the first
     version of this change, 90 do (an independent review of the branch,
     before it was pushed, found that version's closings).
-  - *By centre*, on some narrow windows at AX3 and AX5, Back to Talking
-    can still be the nearest next control at a corner of a large row:
-    a held look there closes Settings, but onto Home's quiet controls
-    (Phrases, Type or a category), so nothing is said or sounded, and
-    the chain engine does not count it as a closing under the look.
+  - *By centre*, on narrow windows at the largest sizes, Back to Talking
+    is the nearest next control at the root row's top trailing corner,
+    and a held look there closes Settings onto Home's Emergency, which
+    switches Home to the emergency phrases. Nothing is said or sounded,
+    and the chain engine scores Emergency as switching what Home shows,
+    not as a hazard. Modelled, it happens on CI's iPhone 17 at AX5, on
+    the six 384-point-wide AX5 windows of the 630, and across all 4,200
+    windows of `SettingsRowPlaceTests` with both Bold Text settings on
+    36: from 384 to 416 points wide at AX5, and 336 wide at AX3 with Bold
+    Text on (a probe on the unit tests' model, not a committed test).
 - **Why not keep Family Setup's opening words over the spot.** The brief
   proposed moving Family Setup's first row up under the root's row and
   keeping the opening words over the spot (*Settings is a cover with a
