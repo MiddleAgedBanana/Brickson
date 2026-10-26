@@ -1488,9 +1488,11 @@ device-specific interfaces."
   that each text follows it: drawing a stepped-down label at a smaller
   text size (`dynamicTypeSize`) was reported as not supporting Dynamic
   Type, and letting `ViewThatFits` pick the size swapped the label for
-  another view as the text grew, reported as clipped. The phrase grid is
-  always a scroll view, turned off where the tiles fit, for the same
-  reason.
+  another view as the text grew, reported as clipped. The phrase grid
+  remains one scroll view as the text grows, preserving the same views
+  for the audit. Before 2026-10-26 it was turned off where the tiles fit;
+  the drag reproduction corrected that configuration (*Phrase-grid drag
+  cancellation*).
 - **Home's own button style.** Home's controls use `HomeButtonStyle`
   instead of `.borderedProminent`: that style's margins left too little
   width in a phone's three-column grid for the starter words at their
@@ -1580,6 +1582,56 @@ running on these windows):
   fit; `HomeLayoutTests` checks them. On the 13-inch iPad the tiles are
   about 276, 236, 161 and 121pt (portrait and landscape, default and
   AX5) since *Get Attention and Stop on Home*, against 110pt.
+
+## Phrase-grid drag cancellation
+
+*2026-10-26. Bug repair in PR #58, following the owner's drag-investigation
+request. No layout or input-profile exception is accepted.*
+
+A fitting phrase grid still needs Apple's native pan handling: a vertical
+attempt to scroll must not speak a phrase on release. A verified 80pt
+tile-start drag on the shared app spoke its starting phrase while its
+coordinates were correct. Earlier long gutter/tile paths passing did not
+cover that input. The recovered private AX5 alternative reproduced the
+original gutter failure in its matching tall window; changing only the
+same two scroll modifiers made its light/dark reproductions pass. The
+[record and counterfactual evidence](log/2026-10-25-duo-fold-design.md#pr-58-continuation-and-drag-investigation-2026-10-26)
+retain those limits and the rejected experiments.
+
+- Keep the same `ScrollView`, eager grid and standard labelled `Button`s,
+  including their identity as Dynamic Type changes. Remove the fitting-
+  content `scrollDisabled` modifier and use
+  `scrollBounceBehavior(.always)` on the vertical phrase view. Removing
+  `scrollDisabled` alone, while retaining `.basedOnSize`, did not repair
+  the measured short drag. No custom gesture or touch threshold is added.
+- Keep typing's `.disabled(isTyping)` and the fixed fold/camera viewport
+  cap. The layout engine, columns, target floors, capacity and static Home
+  frames do not change. Only phrase content may bounce transiently during
+  a deliberate touch drag; when all eight tiles fit, every tile must
+  settle back to its prior frame. First taps and held presses still
+  speak through the ordinary Button action.
+- This is the current touch profile's drag behavior. Invariant 11's
+  no-scroll requirement for future dwell, switch, head and gaze profiles
+  remains binding, as do their target floors and physical-input gates.
+  Simulator pan cancellation does not verify those input methods.
+
+**Before:** fitting content disabled its scroll view and used
+`.scrollBounceBehavior(.basedOnSize)`. Keeping one scroll view protected
+view identity for the audit; that rationale remains. The configuration
+also let the measured drag activate a phrase, so it is replaced rather
+than retained as an exception. Apple's
+[always](https://developer.apple.com/documentation/swiftui/scrollbouncebehavior/always.md)
+documentation describes bounce independent of content size; the
+cancellation result is established by the native reproductions, not a
+promise inferred from that documentation. Final shared-app selections
+pass the five drag/hold/first-tap/settled-frame regressions and both existing
+slow-press cases on each of Duo, iPad and iPhone: seven per family, without
+skips or expected failures. The final-source unit gate passes 778 total
+(769 passed, zero failed, one existing #19 skip and eight strict expected
+failures), with a current catalog. Full ordinary local UI/verifier results
+and new-head hosted CI remain separate and pending in the implementation
+log; current-head PR checks govern review readiness. No physical Touch
+Accommodations, dwell or AXPress result is inferred.
 
 ## Home's slot plan
 

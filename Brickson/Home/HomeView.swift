@@ -1074,13 +1074,13 @@ private struct PhraseGrid: View {
                     .accessibilityIdentifier("phraseTile")
                 }
 
-                // Always the same scroll view, turned off where the tiles fit,
-                // so the tiles stay the same views when the grid starts to
-                // scroll as the text grows (Apple's accessibility audit
-                // compares each one with itself).
+                // Keep native pan cancellation even when every tile fits:
+                // a scroll attempt must not become a Button activation.
+                // A deliberate touch drag may bounce the phrase content;
+                // its settled frames and the fixed Home controls stay put.
+                // docs/DECISIONS.md, "Phrase-grid drag cancellation".
                 ScrollView { grid }
-                    .scrollDisabled(!(sizing.scrolls || phrases.count > sizing.rows * sizing.columns))
-                    .scrollBounceBehavior(.basedOnSize)
+                    .scrollBounceBehavior(.always)
                     .disabled(isTyping)
                     // The scroll view itself ends at the fixed camera
                     // boundary. Capping tile sizing alone would still let

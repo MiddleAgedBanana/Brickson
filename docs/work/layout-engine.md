@@ -557,8 +557,10 @@ finds added hazards under hypothetical numerical coordinate hold/scaling.
 Its wide→tall selected-Conversation example reaches Get Attention where
 both old maps were inert and legacy-after settled. Actual OS mapping is
 unverified; no physical event or new exception is inferred. Activity-only
-geometry stays identical in ten scene/font cases. Keep this PR a draft;
-changed-window safety has not passed. Back to Talking and
+geometry stays identical in ten scene/font cases. Changed-window safety
+has not passed. The owner's 2026-10-26 continuation permits review of
+PR #58's narrow fold/camera and AX3 scope after current-head CI; this
+broader release gate remains open. Back to Talking and
 the unchanged Settings row solver consume the final Home frames;
 PR #56's accepted limits and tests remain intact.
 
@@ -689,7 +691,12 @@ project-format or fewer-tiles implementation is part of item 6.
    before claiming Snap to Item safety. Device comfort, audio, Phone
    handoff and the tracking dark area remain separate physical checks.
 
-The implementation is retained in draft PR #58. No universal fold
+The implementation is retained in PR #58. Its 2026-10-26 continuation
+merges #59's documentation and repairs the verified drag-to-speech bug
+before finishing the scoped fold/camera and AX3 review. The repair keeps
+standard Buttons and the same ScrollView, enabling native pan cancellation
+on fitting content without changing engine frames, floors or capacity
+(*Phrase-grid drag repair, 2026-10-26*, below). No universal fold
 clearance, strong changed-window chain safety or physical-input result
 is claimed. Tall AX5 adds a capacity shortfall relative to the unreserved
 baseline; satisfying the existing rule remains an open design gate,
@@ -822,3 +829,69 @@ changed-window, clipped-target or physical-input gate.
    and the scoped Back cover, then the full native unit and applicable UI
    gates. Physical Snap to Item and changed-window pointer mapping remain
    separate; no simulator or design drawing establishes those results.
+
+### Phrase-grid drag repair, 2026-10-26
+
+**Intent:** an attempt to scroll must not speak a phrase. An 80pt drag
+starting and ending inside a fitting shared-app tile did speak, with
+verified coordinates. The recovered private AX5 source also reproduces
+its original gutter failure in the matching 164pt tall viewport. Its
+capacity alternative remains unselected; its source is used only for the
+bounded counterfactual (docs/DECISIONS.md, "Phrase-grid drag cancellation").
+
+**Spec:** retain the existing labelled Buttons, eager stacks, single
+ScrollView identity, typing disable and camera/fold frame cap. Remove
+fitting-content `scrollDisabled` and change `.basedOnSize` to `.always`
+for native vertical bounce/pan handling. Only the phrase content may
+bounce during a deliberate touch drag; static controls remain fixed and
+all fitting tiles must settle back to their previous frames. The engine,
+columns, target floors, no-scroll fit/capacity results and region placement
+are unchanged. First activation and held presses still speak; no custom
+gesture, timing guard, pointer handling or input-profile exception is
+introduced. The current release has only the touch profile. Future dwell,
+switch, head and gaze profiles still owe invariant 11 and physical checks.
+
+**Plan and evidence before the repair commit:**
+
+1. Keep the failing shared 80pt reproduction and its persistent spoken
+   message, not only the transient Speaking label. Preserve the first
+   coordinate rejection, earlier long-path passes and all failed candidates;
+   those long paths did not expose this shorter drag.
+2. Change only the two scroll modifiers. Removing `scrollDisabled` alone
+   failed; empty TapGesture experiments also failed and were discarded.
+   The selected shared drag and two existing slow-press tests pass.
+3. Check the same repair against the recovered private source: all 87 App
+   hashes match its historical manifest, with 83 identical to `6b1d4e8`
+   and four intentional private changes. The matching-geometry AX5 gutter
+   reproduction fails before the scroll-only change; light/dark gutter
+   and 80pt tile-start cases pass after it. Restore every original private
+   App hash. All 87 restored App hashes were verified inside ignored
+   `build/recovered-private-source.tar.gz`; the two private bundles are
+   retained under `build/TestResults/original-drag-{red,green}/`.
+   This does not rerun the missing embedded four-model JSON or the private
+   alternative's full flow/suite, and does not select it.
+4. `PhraseDragTests` keeps fresh storage, the unchanged full audit,
+   coherent ancestor-window geometry, checked live coordinates, gutter
+   and 80pt tile-start paths, message-area-only speech detection, first
+   tap after each drag, a 1.5s held press and static/fitting settled-frame
+   comparisons at the existing half-point native allowance. Changing
+   drag cancellation, swallowing a first tap/hold or reflowing a fitting
+   surface must fail the corresponding test. Final shared-app selections
+   pass all five class cases and both existing slow-press cases on each
+   of Duo, iPad and iPhone: 7 passed per family, zero failed/skipped/expected
+   failures, in `build/TestResults/pr58-final-{duo,ipad,iphone}/ui-destination.xcresult`.
+   The full final-source unit gate passes 778 total (769 passed, zero
+   failed, one existing #19 skip and eight strict expected failures),
+   catalog current with `CI=true`, coverage 71.1% (7,026/9,875), in
+   `build/TestResults/pr58-final-unit/unit-destination.xcresult`.
+   Complete ordinary local UI/verifier results and new-head hosted CI
+   remain pending; current-head PR checks govern review readiness. The
+   auxiliary AX bridge returned no usable elements, so no AXPress
+   activation was attempted or verified.
+
+The [single implementation record](../log/2026-10-25-duo-fold-design.md#pr-58-continuation-and-drag-investigation-2026-10-26)
+keeps source-specific red/green results and limits. Keyboard dismissal,
+Put Back placement, the private AX5 capacity design and startup-flake
+cause/fix remain out of this repair. Simulator checks do not prove sound,
+physical touch accommodations, dwell/Snap, folding comfort or future-profile
+no-scroll behavior.

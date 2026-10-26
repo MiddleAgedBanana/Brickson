@@ -1,0 +1,129 @@
+{
+  "schema": 1,
+  "date": "2026-10-26",
+  "baseMain": "e568aa7",
+  "priorPRHead": "6b1d4e8",
+  "appChange": "PhraseGrid removes fitting scrollDisabled and uses native vertical always bounce; no engine or frame allocation change",
+  "sourceSHA256": {
+    "Brickson/Home/HomeView.swift": "b27257f1e9ec78ca6b67f79e13a2bad55f3843958a8dbe09a5688fb414a4f6a3",
+    "BricksonUITests/PhraseDragTests.swift": "95ed0a8a52825fc222c78d34d47b940adcc17f4c1fa85c62bd9df795695e23c7"
+  },
+  "unit": {
+    "bundle": "build/TestResults/pr58-final-unit/unit-destination.xcresult",
+    "passed": 769,
+    "failed": 0,
+    "skipped": 1,
+    "expectedFailures": 8,
+    "catalog": "current, CI=true",
+    "appLineCoverage": {
+      "percent": 71.1,
+      "executed": 7026,
+      "total": 9875
+    }
+  },
+  "uiRuns": [
+    {
+      "bundle": "build/TestResults/drag-short-red-window/ui-destination.xcresult",
+      "passed": 0,
+      "failed": 1,
+      "skipped": 0,
+      "expectedFailures": 0,
+      "failures": [
+        "XCTAssertFalse failed - A vertical phrase-grid drag spoke a phrase"
+      ]
+    },
+    {
+      "bundle": "build/TestResults/drag-short-green/ui-destination.xcresult",
+      "passed": 2,
+      "failed": 1,
+      "skipped": 0,
+      "expectedFailures": 0,
+      "failures": [
+        "XCTAssertFalse failed - A vertical phrase-grid drag spoke a phrase"
+      ]
+    },
+    {
+      "bundle": "build/TestResults/drag-native-tap-green/ui-destination.xcresult",
+      "passed": 2,
+      "failed": 1,
+      "skipped": 0,
+      "expectedFailures": 0,
+      "failures": [
+        "XCTAssertFalse failed - A vertical phrase-grid drag spoke a phrase"
+      ]
+    },
+    {
+      "bundle": "build/TestResults/drag-content-tap-green/ui-destination.xcresult",
+      "passed": 0,
+      "failed": 1,
+      "skipped": 0,
+      "expectedFailures": 0,
+      "failures": [
+        "XCTAssertFalse failed - A vertical phrase-grid drag spoke a phrase"
+      ]
+    },
+    {
+      "bundle": "build/TestResults/drag-content-tap-enabled/ui-destination.xcresult",
+      "passed": 0,
+      "failed": 1,
+      "skipped": 0,
+      "expectedFailures": 0,
+      "failures": [
+        "XCTAssertFalse failed - A vertical phrase-grid drag spoke a phrase"
+      ]
+    },
+    {
+      "bundle": "build/TestResults/drag-native-pan-green/ui-destination.xcresult",
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "expectedFailures": 0,
+      "failures": []
+    },
+    {
+      "bundle": "build/TestResults/pr58-final-duo/ui-destination.xcresult",
+      "passed": 7,
+      "failed": 0,
+      "skipped": 0,
+      "expectedFailures": 0,
+      "failures": []
+    },
+    {
+      "bundle": "build/TestResults/pr58-final-ipad/ui-destination.xcresult",
+      "passed": 7,
+      "failed": 0,
+      "skipped": 0,
+      "expectedFailures": 0,
+      "failures": []
+    },
+    {
+      "bundle": "build/TestResults/pr58-final-iphone/ui-destination.xcresult",
+      "passed": 7,
+      "failed": 0,
+      "skipped": 0,
+      "expectedFailures": 0,
+      "failures": []
+    }
+  ],
+  "standardPhone": "PASS 7/7 final selected regressions, no skips or expected failures",
+  "fullStandardLocalUI": "pending independent verifier at this committed checkpoint; see current PR58 verification report for final result",
+  "hostedCI": "required on pushed head; see PR58 checks",
+  "AXPress": {
+    "attempted": false,
+    "reason": "Auxiliary bridge returned zero elements and zero canvas for active Duo inner display; not an App blankness finding"
+  },
+  "scopeLimits": [
+    "Sound and physical input not verified",
+    "Private AX5 capacity alternative unselected",
+    "Keyboard dismissal, Put Back placement and startup cause remain open",
+    "No claim for broader Duo, changed-window, Settings or future profile release gates"
+  ],
+  "pythonChecks": {
+    "docs": 45,
+    "hooks": 124,
+    "site": 7,
+    "runner": 54,
+    "selectXcode": 21,
+    "failed": 0
+  }
+}

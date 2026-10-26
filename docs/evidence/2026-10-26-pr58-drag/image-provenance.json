@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "screenshot": {
+    "path": "drag-spoke-before-fix.png",
+    "source": "Last frame exported with ffmpeg from the failed shared iPad test recording; not an exact assertion-time screenshot",
+    "sourceBundle": "build/TestResults/drag-short-red-window/ui-destination.xcresult",
+    "recordingSHA256": "3d90800951f402d7e77e224eaafbded7109a041fad9983ddabd2df59879abdc3",
+    "imageSHA256": "f74ae248b414d0b77f029f23cdbe2b3964d0804b21811a4d2fd34eaf5bd6b650",
+    "visibleResult": "Wait a moment, please. and Speaking after the verified 80pt tile-start drag"
+  },
+  "originalDuoCaptureLimit": "XCTest may capture inactive outer display; no black frame is presented as Home rendering or app blankness."
+}

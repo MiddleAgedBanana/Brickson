@@ -1,0 +1,64 @@
+{
+  "schema": 1,
+  "date": "2026-10-26",
+  "appSource": "PR58 6b1d4e8 with documentation-only main e568aa7 merged; no app-source changes",
+  "tests": [
+    {
+      "bundle": "build/TestResults/drag-red/ui-destination.xcresult",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "expectedFailures": 0,
+      "failures": []
+    },
+    {
+      "bundle": "build/TestResults/drag-duo-original/ui-destination.xcresult",
+      "passed": 0,
+      "failed": 1,
+      "skipped": 0,
+      "expectedFailures": 0,
+      "failures": [
+        "XCTAssertEqualWithAccuracy failed: (\"506.3333333333333\") is not equal to (\"162.66666666666669\") +/- (\"0.5\")"
+      ]
+    },
+    {
+      "bundle": "build/TestResults/drag-duo-opposite/ui-destination.xcresult",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "expectedFailures": 0,
+      "failures": []
+    },
+    {
+      "bundle": "build/TestResults/drag-duo-audit/ui-destination.xcresult",
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0,
+      "expectedFailures": 0,
+      "failures": []
+    },
+    {
+      "bundle": "build/TestResults/drag-duo-final/ui-destination.xcresult",
+      "passed": 2,
+      "failed": 2,
+      "skipped": 0,
+      "expectedFailures": 0,
+      "failures": [
+        "XCTAssertEqual failed: (\"(16.0, 556.0000000000001, 637.0, 352.9999999999999)\") is not equal to (\"(16.0, 556.0, 637.0, 353.0)\") - Live and coherent viewport frames disagree",
+        "XCTAssertEqual failed: (\"(16.0, 556.0000000000001, 637.0, 352.9999999999999)\") is not equal to (\"(16.0, 556.0, 637.0, 353.0)\") - Live and coherent viewport frames disagree"
+      ]
+    },
+    {
+      "bundle": "build/TestResults/drag-duo-default-final/ui-destination.xcresult",
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0,
+      "expectedFailures": 0,
+      "failures": []
+    }
+  ],
+  "earlierPrivatePrototypeAvailable": false,
+  "earlierPrivateFailureCause": "not established; separate coordinate controls do not certify later input",
+  "originalProbeFullFileSHA256": "48f4db38699cd79cd7081e4866803c1084a310557e2f33a9a5fafa610bedfe16",
+  "currentTestFileSHA256": "dd610e816192d8d35994bacd539268897af8ea6ee1263a700a18ac8a55237496"
+}

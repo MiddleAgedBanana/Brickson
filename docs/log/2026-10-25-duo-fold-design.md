@@ -858,9 +858,12 @@ was removed and only the owned simulator booted for it was shut down.
 
 ## Follow-ups
 
-- Retain this as the one draft item 6 PR, with full source provenance
-  and exact results, including failures. Complete the open UI, capacity,
-  native Settings and changed-window input gates before calling it ready.
+- The owner's 2026-10-26 continuation narrows this same PR to fold/camera
+  allocation and the measured AX3 capacity correction, with a main merge
+  incorporating #59 and the drag investigation/repair below. Marking that scope
+  ready requires current-head CI. The broader AX5, native Settings,
+  changed-window and physical-input gates remain open release work; no
+  exception to a layout or safety invariant is accepted here.
 - Retain the existing fold decision. Reassess a policy decision only if
   a measured supported window requires changed order or neighbours.
   The generic counterexample alone did not establish that need.
@@ -880,3 +883,209 @@ was removed and only the owned simulator booted for it was shut down.
   rule exception. The current placement rule remains in force.
 - Keep controlled physical-input checks deferred and do not present
   simulator geometry as a completed R0-13 release gate.
+
+## PR #58 continuation and drag investigation, 2026-10-26
+
+The continuation stays in its own worktree and updates the existing PR.
+Its remote branch was already checked out elsewhere, so the local
+`codex/finish-duo-drag` branch tracks it without changing that other
+checkout. Main `e568aa7` (#59) is incorporated by a merge, preserving both
+sets of HANDOFF observations. No new PR, rebase, main push or PR merge is
+part of this continuation.
+
+### Earlier failures and the coordinate defect
+
+The earlier chat's two failed tests used an **unselected private AX5
+alternative**, not the shared app at `6b1d4e8`. Both recorded no Speaking
+before/after the pristine accessibility audit and Speaking after their
+gutter gesture. The light case's persistent message became "I'm not
+finished." The opposite dark case failed the same quiet-screen assertion.
+Those failures remain failures; later passing long gestures alone did not
+explain them.
+
+The [recovered original gesture](../evidence/2026-10-26-pr58-drag/original-gutter-gesture.txt)
+pressed for 0.05s at 90% of the live phrase ScrollView's height in the
+first column gutter, dragged slowly to 10%, then held for 0.1s. Calling
+the gutter "inert" was an unsupported test assumption. The earlier
+coordinate controls were separate launches, not the actual post-audit
+input, so the opposite control's matching points cannot certify the later
+gesture. On the shared app, a new first-pose check rejected an actual
+180-degree coordinate disagreement before it could inject input. That is
+a real test-coordinate defect, but it does not by itself attribute either
+original dispatch.
+
+The private `/private/tmp` folder initially appeared unavailable, so the
+first phase recovered only a source excerpt and receipts from the earlier
+chat. That source-availability limit is superseded by the exact recovery
+and bounded counterfactual below. The original embedded four-model JSON
+remains unavailable; no full original flow/suite rerun is claimed.
+
+### Initial checks that did not expose the app bug
+
+The app was unchanged during these checks. The first
+[receipt set](../evidence/2026-10-26-pr58-drag/results.json) is a frozen
+record of that phase, including its then-unavailable-source status; it is
+not the final diagnosis or verification of the later fix.
+
+| Check | Result and meaning |
+|---|---|
+| Original gutter gesture, unchanged app, iPad default/light | PASS: no speech. |
+| Tall Duo, first orientation, default/light | FAIL before input: intended gutter start `(162.667,873.7)` resolved to `(506.333,77.3)` in a `669×951` window. No drag was injected. [Coordinate receipt](../evidence/2026-10-26-pr58-drag/rejected-coordinate.txt). |
+| Opposite tall Duo, default/dark, original gesture | PASS: coordinates matched, no speech. |
+| Opposite tall Duo, default/dark and AX5/dark, full audit then original gesture | PASS: both cases, no speech. |
+| Initial AX5/light and dark cases, gutter and long tile-start paths | PASS: both cases after the full audit, no speech. These did not cover an 80pt drag released inside its starting tile. |
+| First expanded default cases | FAIL before input only because exact CGRect equality rejected `556.0000000000001` against `556`. Replaced with the existing half-point native rounding allowance; no speech or coordinate-dispatch assertion was removed. |
+| Corrected expanded default/light and dark cases, gutter and long tile-start paths | PASS: both cases after the full audit, no speech. |
+
+Measured with the current released Xcode, recorded as Xcode 27.1
+(27A9275), XcodeGen 2.46.0; iPad Pro 13-inch (M5), iOS 27.0; Duo inner
+display open/flat, tall `669×951`, iOS 27.1, standard Zoom, English,
+default and AX5 text, light/dark as listed. Phrases mode has no keyboard.
+XCTest's Duo captures may show the inactive outer display; they are not
+rendered Home or blank-canvas evidence. The rejected input has no app
+screen defect to photograph; its coordinate receipt is the evidence.
+Native bundles and captures are kept under
+`build/TestResults/drag-*` and `build/drag-*-attachments`.
+
+### Shared-app failing reproduction and selected repair
+
+A shorter, verified **80pt tile-start drag** exposed the shared-app bug.
+The drag began and ended inside the same fitting "Wait a moment, please."
+tile, and releasing it spoke that phrase. The test used fresh storage,
+no prior speech, the unchanged full accessibility audit and coordinates
+checked against the coherent window/viewport before injection. This is
+app behavior beyond the separate coordinate problem: an ordinary attempt
+to scroll could activate the starting phrase.
+
+| Candidate/check | Result |
+|---|---|
+| Shared app, verified 80pt tile-start drag before the fix | **FAIL**, 0 passed / 1 failed in `build/TestResults/drag-short-red-window/ui-destination.xcresult`. The [recording's last frame](../evidence/2026-10-26-pr58-drag/drag-spoke-before-fix.png) shows the persistent phrase and Speaking; it is not presented as an exact assertion-time image. |
+| Remove `scrollDisabled` only, retaining `.basedOnSize` | **FAIL**, `drag-short-green`: the short-drag case still failed; the two existing slow-press cases passed. Removing the disable alone was insufficient. |
+| Empty TapGesture experiments outside/inside the scroll content, with pan disabled/enabled | **FAIL** for the measured drag; all were discarded. No gesture experiment enters the shared app. |
+| Remove `scrollDisabled` and change `.basedOnSize` to `.always` | **PASS**, initial selected shared run: the default/light drag case and both existing `SlowPressTests` cases, 3 passed. The final expanded selections below pass all 7 cases on each of Duo/iPad/iPhone; the full final-source unit gate also passes. Complete ordinary local UI/verifier results and new-head hosted CI remain separate. |
+
+The selected app change is only those two phrase-ScrollView modifiers.
+It retains the same standard labelled Buttons, eager grid, ScrollView
+identity, `.disabled(isTyping)` and fixed viewport cap. It changes no
+layout-engine output, static Home frame, floor, column, ordering or
+capacity rule. Native pan handling remains available when all tiles fit.
+Only phrase content can bounce transiently during a deliberate touch
+drag, and fitting content must settle to the original frames. No timer,
+custom gesture, pointer handling, input threshold or app input guard was
+added. This does not identify an internal framework implementation or
+establish physical-input behavior.
+
+Apple's [coordinate documentation](https://developer.apple.com/documentation/xcuiautomation/xcuielement/coordinate(withnormalizedoffset:).md)
+defines screenPoint from the element frame and normalized offset. Its
+[scrollDisabled](https://developer.apple.com/documentation/swiftui/view/scrolldisabled(_:).md),
+[bounce modifier](https://developer.apple.com/documentation/swiftui/view/scrollbouncebehavior(_:axes:).md)
+and [always](https://developer.apple.com/documentation/swiftui/scrollbouncebehavior/always.md)
+documentation were read before the repair. The independent
+[SwiftLee example](https://www.avanderlee.com/swiftui/scrollview-bounce-behavior/)
+demonstrates content-size-based and always bounce, but does not prove
+Button cancellation. The native red/green experiment establishes that
+result. The initial decision against a speculative modifier change is
+superseded by this failing reproduction and its isolated repair.
+
+### Recovered original source and counterfactual
+
+All **87 original private App files** were recovered and verified against
+their historical hashes: 83 match shared baseline `6b1d4e8`; four contain
+the intended private AX5 changes. The recovered original HomeView hash is
+`805ab978f65ac6f35f2dfd107b781b46d21ef8e07d1e109a7ac9d230e8dc28cd`.
+The [source and result receipt](../evidence/2026-10-26-pr58-drag/original-counterfactual.json)
+records the exact before/counterfactual hashes and restoration. After
+restoration, the private source was preserved in ignored
+`build/recovered-private-source.tar.gz`; every one of the 87 original App
+hashes was verified inside that archive. Its SHA256 is
+`93a2803015269e312eec44a767c4061d152842641cd5f053f4b877576fcc174c`.
+The two result bundles are retained separately at
+`build/TestResults/original-drag-red/ui-destination.xcresult` and
+`build/TestResults/original-drag-green/ui-destination.xcresult`.
+Archiving the duplicate historical tree also removes its old Markdown
+and test fixtures from recursive documentation discovery without changing
+the checker; the root's post-archive documentation check passes 45 tests.
+
+On that original App source, fresh AX5 direct launch without an orientation
+setter, the full audit, a matching tall viewport **164pt high with eight
+whole tiles**, and verified coordinates reproduced the original gutter
+failure: **0 passed / 1 failed**, the same quiet-screen assertion. Changing
+**only** the two scroll modifiers above then passed the light and dark
+cases: **2 passed / 0 failed**, each exercising the original gutter and
+80pt tile-start paths. All 87 private App hashes were restored afterward.
+The repair therefore addresses the reproduced original gesture as well
+as the shared-app short drag; the coordinate defect is not the whole
+explanation.
+
+This is a bounded matching-geometry reproduction, not a claim that the
+unavailable embedded four-model JSON or the original test's whole flow
+was rerun. The private alternative is not selected, promoted or verified
+by a complete suite. Its capacity/layout design remains outside this PR.
+
+### Regression scope and remaining gates
+
+The five-case `PhraseDragTests` class uses real Home, fresh test-only
+storage and no prior speech. Its four text/appearance cases exercise both
+the original gutter path and an 80pt tile-start path after the unchanged
+full accessibility audit. Geometry comes from one snapshot on each side,
+relative to each target's ancestor window; live window origins are
+accounted for separately and live-coordinate disagreement fails before
+input. The existing half-point native allowance handles rounding, not
+misdirected input.
+
+Persistent-message checks are restricted to `homeRegion.message` and
+include all eight phrases plus Yes/No, alongside Speaking/Sounding, so
+finished speech or a tile's own text cannot hide or imitate activation.
+After each silent drag, static Home frames must match; when all eight
+tiles fit, their settled frames must match too. A subsequent first tap
+must speak, and a separate fresh AX5 1.5s held press must speak through
+the ordinary Button action. A regression in cancellation, first tap/hold
+or settled fitting frames must fail the corresponding test.
+
+The **final shared-app Duo selected run passes 7/7**, with zero skips or
+expected failures: all five `PhraseDragTests` cases and both existing
+`SlowPressTests` cases. This includes the fresh AX5 1.5s hold, the first
+ordinary tap after each silent drag, static-control frame comparisons and
+settled tile-frame comparisons where all eight tiles fit. The run uses
+the open/flat tall Duo window, default/AX5 text and light/dark as selected
+by the tests, with no software keyboard. Bundle:
+`build/TestResults/pr58-final-duo/ui-destination.xcresult`; raw log:
+`/private/tmp/brickson-pr58-final-duo.log`. This result is stronger than
+the initial three-case selection but is not a complete ordinary UI run.
+
+The same **seven selected regressions also pass on each standard iPad and
+iPhone**, with zero failures, skips or expected failures. Their bundles
+are `build/TestResults/pr58-final-ipad/ui-destination.xcresult` and
+`build/TestResults/pr58-final-iphone/ui-destination.xcresult`. These runs
+exercise default/AX5 text and light/dark as selected by the tests; they do
+not substitute for the complete ordinary UI suites. Complete ordinary
+local UI/verifier results and new-head hosted CI remain **pending** at
+this checkpoint. Current-head PR checks are authoritative for the review-
+readiness gate.
+
+An auxiliary RocketSim AX bridge probe returned no rows and a zero-sized
+canvas on both reads, so AXPress was **not attempted**. This leaves that
+activation path unverified; it is not evidence that the app displayed a
+blank canvas. The XCTest passes above and physical-input limits below
+remain separate from that unavailable bridge observation.
+
+The pre-repair full native unit gate passed **778 total = 769 passed /
+0 failed / 1 existing #19 skip / 8 strict expected failures**, catalog
+current, **71.2%** app-line coverage. This remains baseline evidence.
+The **full final-source unit gate now also passes 778 total = 769 passed /
+0 failed / 1 existing #19 skip / 8 strict expected failures**, catalog
+current under `CI=true`, with **71.1% (7,026/9,875)** app-line coverage.
+Bundle: `build/TestResults/pr58-final-unit/unit-destination.xcresult`.
+The selected UI passes above and final unit pass do not pre-empt the
+complete ordinary local UI/verifier results or new-head hosted CI.
+Current-head hosted CI remains required before marking #58 ready.
+
+The private AX5 alternative, automatic keyboard dismissal, Put Back
+placement and startup-flake cause/fix stay open in HANDOFF and are not
+implemented by this PR. No new future-profile scrolling exception is
+accepted: invariant 11 and the physical target floors remain binding for
+dwell, switch, head and gaze profiles. The touch-profile pan check does
+not verify those profiles, sound, physical Touch Accommodations, Snap to
+Item, every Duo pose, changed-window pointer mapping or release readiness.
+The public accessibility page's existing high-level claims remain true;
+no physical-input claim or page wording changes with this repair.
