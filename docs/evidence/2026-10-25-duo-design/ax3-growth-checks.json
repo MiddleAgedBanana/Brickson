@@ -1,0 +1,191 @@
+{
+  "schema": 1,
+  "diagnosticOnly": true,
+  "nativeValidation": false,
+  "selectedReturnPerCategoryRow": 2,
+  "candidateChecks": {
+    "addsVsBaseline": [],
+    "addsVsCurrent": [],
+    "BackNearestFailures": 0,
+    "BackUnchanged": true,
+    "categoryGrowthReturnedPerRow": 2,
+    "categoryHeight": 63,
+    "categoryWordFloor": 61,
+    "currentReadingShare": {
+      "centre": 0.6727272727272727,
+      "edge": 0.5412416851441242
+    },
+    "D": {
+      "height": 208,
+      "width": 835,
+      "x": 16,
+      "y": 403
+    },
+    "frames": {
+      "again": {
+        "height": 65,
+        "width": 122,
+        "x": 496,
+        "y": 184
+      },
+      "category0": {
+        "height": 63,
+        "width": 141,
+        "x": 16,
+        "y": 330
+      },
+      "category1": {
+        "height": 134,
+        "width": 141,
+        "x": 165,
+        "y": 259
+      },
+      "category2": {
+        "height": 134,
+        "width": 141,
+        "x": 314,
+        "y": 259
+      },
+      "category3": {
+        "height": 134,
+        "width": 122,
+        "x": 496,
+        "y": 259
+      },
+      "emergency": {
+        "height": 65,
+        "width": 141,
+        "x": 16,
+        "y": 184
+      },
+      "getAttention": {
+        "height": 65,
+        "width": 225,
+        "x": 626,
+        "y": 184
+      },
+      "message": {
+        "height": 118,
+        "width": 439,
+        "x": 16,
+        "y": 8
+      },
+      "no": {
+        "height": 65,
+        "width": 141,
+        "x": 314,
+        "y": 184
+      },
+      "phrases": {
+        "height": 79,
+        "width": 355,
+        "x": 496,
+        "y": 8
+      },
+      "settings": {
+        "height": 134,
+        "width": 225,
+        "x": 626,
+        "y": 259
+      },
+      "statusLine": {
+        "height": 44,
+        "width": 439,
+        "x": 16,
+        "y": 130
+      },
+      "stop": {
+        "height": 63,
+        "width": 141,
+        "x": 16,
+        "y": 259
+      },
+      "type": {
+        "height": 79,
+        "width": 355,
+        "x": 496,
+        "y": 95
+      },
+      "yes": {
+        "height": 65,
+        "width": 141,
+        "x": 165,
+        "y": 184
+      }
+    },
+    "pointwiseVsBaseline": {
+      "candidateAgainPoints": 0,
+      "newAgainPoints": 0,
+      "otherHarmfulWellNeighbours": [],
+      "rulePointComparisons": 71882
+    },
+    "pointwiseVsCurrent": {
+      "candidateAgainPoints": 0,
+      "newAgainPoints": 0,
+      "otherHarmfulWellNeighbours": [],
+      "rulePointComparisons": 71882
+    },
+    "productionWellCertificate": true,
+    "readingShare": {
+      "centre": 0.6727272727272727,
+      "edge": 0.5412416851441242
+    },
+    "shortfall": 0
+  },
+  "secondPassComparison": {
+    "changed": [
+      {
+        "afterCategory": 63,
+        "afterD": {
+          "height": 208,
+          "width": 835,
+          "x": 16,
+          "y": 403
+        },
+        "afterShortfall": 0,
+        "beforeShortfall": 4,
+        "bold": false,
+        "case": "open-wide-reverse-ax5",
+        "changedKeys": [
+          "allocationFrames",
+          "categoryHeight",
+          "currentShortfall",
+          "D",
+          "frames",
+          "gridDetails"
+        ],
+        "font": "AX3"
+      }
+    ],
+    "diagnosticOnly": true,
+    "exactlyUnchanged": 59,
+    "safeOriginalGuard": true,
+    "totalRecordedInputs": 60
+  },
+  "grownLibraryComparison": {
+    "allowedDynamicChanges": "Grid rows and phrase tile heights/content/scroll change with library size.",
+    "diagnosticOnly": true,
+    "libraryCounts": [
+      8,
+      24
+    ],
+    "recordedInputs": 60,
+    "safeOriginalGuard": true,
+    "staticGeometryChanges": []
+  },
+  "sourceManifest": {
+    "BricksonUITests/ChainEngine.swift": "86319eb37482eb4813ea89474726481fa0fec5202d5512f41a3f67d676f7a555",
+    "BricksonUITests/HomeChains.swift": "5f61405767c2f18b16936c19b93fccedb8609da819aedf043f3049c9b9c1ca1b",
+    "HomeLayout.swift": "93e3453cde75578fb535e2ce796b156890c52e0b4bd88cb9f27956734dd8ca67",
+    "HomeReservedLayout.swift": "c80ccec73ac408fbf52880e1a569ef9c7a483a7f079b31315c363ed43c3255ec",
+    "HomeWellEnvelope.swift": "0155cf09d87ad76cfde461c634ff2b5f4a435cda856dce97b0caf3c8ff4fff2c",
+    "KeyboardAllowance.swift": "84ea194ea4fc4e13048e55055ae9513b34716a667992965cc6228abfdfa129f8",
+    "docs/evidence/2026-10-25-duo-design/reservations.json": "c9e84968bef5159d74436945f3fb90a204e1ca047003718b3382c40deef41161"
+  },
+  "privateDiagnosticSourceSHA256": {
+    "HomeReservedLayout-proposed.swift": "491549cb983d21eac53528f9f0998c518ff63288e2fbda08e84d58c9c3007111",
+    "capacity-recovery-host.swift": "5596d0a832f2ccaebceccf02544a66f5134e91d09cab57ae22e9dd39e3f43bea",
+    "capacity-recovery-grown-host.swift": "27c389c19a9148a74e4b16d3c03b4dd338f7a4c1c1b0ab7f60a557652ac78527"
+  },
+  "limits": "Host diagnostics only. No native rendering, universal hazard-area equivalence, physical pointer mapping or AX5 capacity result is established by the positive AX3 candidate."
+}

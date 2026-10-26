@@ -582,6 +582,83 @@ already used the same12GB iPad model/runtime; another matching control
 is not missing evidence. No timeout, retry or product audio change is
 justified by these results.
 
+## AX3 reference-capacity design addendum, 2026-10-25
+
+The generic capacity audit found one recoverable intermediate-size
+deficit: the recorded lower-camera wide input at AX3, Bold Text off,
+changes from baseline shortfall 0 to reserved shortfall 4pt while its
+category rows retain optional growth. The linked
+[Spec and plan](../work/layout-engine.md#reference-capacity-growth-return-spec-and-plan-2026-10-25)
+now require a guarded second pass through existing optional growth,
+after the unchanged original selection and only from an already
+issue-free, fully well-certified candidate. Use the fixed eight-phrase
+reference before family-library reflow, preserve the selected gap
+recipe, retain the original on ties and keep all residual failures
+explicit. This is an existing-rule capacity retry; no gap, floor,
+neighbour, status, mode, Back or Settings policy changes.
+
+The smallest return in the existing search preference order is 2pt from
+each category row, 65→63pt against a 61pt word floor. B's spanning targets
+become 134pt; D moves from `(16,407,835,204)` to `(16,403,835,208)`,
+so both 100pt tile rows and their 8pt gap fit. A/C/message/status/modes,
+Back `(593.2,8,160.6,79)` and Type unavailability are unchanged.
+The [geometry](../evidence/2026-10-25-duo-design/ax3-growth-geometry.json)
+is a host drawing input, not a native observation. The
+[compact checks](../evidence/2026-10-25-duo-design/ax3-growth-checks.json)
+retain the unchanged full production well certificate, zero added
+sampled Home-chain signatures versus baseline/current, zero Back-nearest
+failures and unchanged message-reading shares. The exploratory generic
+retry leaves 59 of 60 recorded space/font/Bold outputs exactly unchanged;
+only the intended AX3 case changes. A count 8/24 comparison changes no
+static geometry. No proposed host source is published or applied by
+this design work.
+
+[Figma section 122:3874](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=122-3874)
+and its [saved render](../evidence/2026-10-25-duo-design/ax3-growth-comparison.png)
+add 16 before/after states in light/dark: browsing, alarm, retained
+typing with the keyboard lowered, and a scoped Settings Back cover.
+All 292 checked control, viewport, tile and Back rectangles agree with
+the JSON within 0.0002pt. The
+[manifest](../evidence/2026-10-25-duo-design/ax3-growth-drawings.json)
+records all created/mutated IDs, 333 editable text nodes and no
+image-filled nodes. Original 84 drawings and original Home pages are
+unchanged. The first composition exposed black fallback paints for
+aliased gray tokens and missing dark chrome context; only these new
+nodes were corrected to existing palette fallbacks and Apple chrome
+modes, then the revised render was visually inspected.
+
+SF Pro remains a connector limitation: a fresh Semibold 20 text probe
+returned width 0 and `hasMissingFont=true`. The new drawings explicitly
+use the existing documented Inter stand-in and default-floor label
+sizes. Editable geometry/appearance inspection passed; a native AX3
+SF fitted-typography pass is not claimed. Settings body/row geometry is
+not reconstructed here. Full native word/frame checks, unchanged
+complete safety suites and applicable UI gates remain required.
+
+The [bounded negative results](../evidence/2026-10-25-duo-design/ax3-growth-capacity-limits.json)
+remain visible: tall AX5 has a 14pt current deficit and at least 12pt
+missing with minimum region gaps and binding 8pt internal spacing.
+The 1pt B/1pt D gap hypothesis is outside the current Spec and is not
+selected. Wide AX5 has no optional height in the measured inputs and
+retains 66/82pt total shortfalls. No universal impossibility, AX5 fix,
+new scrolling exception, physical Snap or changed-window proof follows.
+
+This Spec/plan and drawing addition is prepared for a documentation-only
+gate commit before any capacity-retry code commit. No production/test
+source or simulator was changed by the drawing work; root's independent
+native unit receipt is a separate pre-commit requirement.
+
+Before this design-only gate commit, root's fresh full native unit run
+passed on unchanged `35bed06` app/test sources: **777 total, 768 passed,
+zero failed, one existing issue #19 skip and eight strict expected
+failures**. The catalog is current; coverage is 70.5% (6,885/9,769).
+The script selected a 13-inch iPad Pro (M5), iOS 27.0; recorded Xcode 27.1
+(27A9275). Result:
+`build/TestResults/pr58-growth-design/unit-ipad.xcresult`; retained raw
+log: `/private/tmp/brickson-pr58-growth-design-unit.log`. The script shut
+down the simulator it booted. This validates the unchanged source before
+the docs commit, not an implementation of the proposed capacity retry.
+
 ## Not verified
 
 The [later speech-status diagnostic](../evidence/2026-10-25-duo-design/speech-diagnostic/README.md)

@@ -725,3 +725,98 @@ The existing scoped drawings therefore keep their geometry for those
 inputs. Native red/green results, selected family UI checks and final
 CI remain separate verification gates; this does not accept any new
 Settings, scrolling, camera-target or physical-input exception.
+
+### Reference-capacity growth return: Spec and plan, 2026-10-25
+
+The lower-camera wide space exposes one omitted retry between the drawn
+extremes. At the existing measured AX3 line metrics (53/49/59/44pt,
+Bold Text off), the unreserved eight-phrase reference fits. The selected
+reserved candidate has no allocation issues, but its final lanes raise
+the common tile floor to 100pt and the camera crops D to 204pt: two rows
+need 208pt. Its category rows still hold 4pt of optional growth above
+their 61pt word floor. This is a new 4pt reference-capacity deficit, not
+permission to scroll or a reason to change the fixed 8pt internal gaps.
+
+**Spec.** Keep the entire original candidate-selection pass, including
+its gap choice and first issue-free acceptance. Compare its final grid
+shortfall with the unreserved baseline reflowed for the fixed reference
+eight phrases. If it adds no shortfall, return the exact original result.
+If it adds shortfall, retry only when that original result is issue-free
+and passes the unchanged full `HomeWellEnvelope.preserves` certificate;
+otherwise retain the original frames and diagnostics unchanged. This
+repair recovers capacity from an already valid selection, not unrelated
+allocation or safety failures.
+
+The second pass keeps the selected gap recipe and existing optional
+growth budgets, in their present preference order: A, then primary rows,
+then category rows, with the existing half-point steps. Select the first
+eligible result reaching the reference target within that order. If none
+reaches it, retain the eligible result with strictly least remaining
+shortfall, keeping the original on ties. Every trial must satisfy normal
+allocation issues, final word/target floors and exclusions, and the full
+unchanged well certificate for every reservation kind. No runtime chain
+scoring, device/text-size branch, floor reduction, changed neighbour or
+new gap measure enters this search. Empty reservations retain the exact
+legacy output. The objective always uses eight phrases before a family's
+actual library is reflowed, so adding words cannot move static controls.
+
+The bounded design returns 2pt from each category row, not the full 4pt
+available. Stop and Basics become 63pt high; the spanning B targets
+become 134pt. D changes `(16,407,835,204)` to `(16,403,835,208)` and holds
+eight 100pt tiles with 8pt row gaps. A, C, message/status/modes, centred
+Back `(593.2,8,160.6,79)` and Type's unavailable state stay unchanged.
+The [exact before/after geometry](../evidence/2026-10-25-duo-design/ax3-growth-geometry.json)
+and [bounded checks](../evidence/2026-10-25-duo-design/ax3-growth-checks.json)
+are host evidence, not a native rendering result. The exploratory
+second pass leaves 59 of 60 captured space/font/Bold outputs exactly
+unchanged; only this AX3 case changes. Repeating all 60 with 24 phrases
+changes no static geometry. The compact receipts retain those limits.
+
+[Figma section 122:3874](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=122-3874)
+adds 16 isolated before/after drawings: browsing, alarm, retained typing
+with the keyboard lowered, and a scoped Settings Back cover, each in
+light/dark. The existing 84 drawings remain unchanged. The
+[saved render](../evidence/2026-10-25-duo-design/ax3-growth-comparison.png)
+and [manifest/validation](../evidence/2026-10-25-duo-design/ax3-growth-drawings.json)
+record 292 exact target/viewport/tile/Back checks within 0.0002pt,
+333 editable text layers and no image-filled nodes. These are geometry
+drawings using the documented Inter stand-in at default-floor label
+sizes, not a native AX3 fitted-type sample. A fresh SF Pro connector
+probe measured zero width with `hasMissingFont=true`; no passing SF
+typography check is claimed. Apple kit chrome and existing palette
+tokens are reused; no global type/style or original Home frame changed.
+The scoped cover draws Back only, with no new Settings row geometry or
+claim to close broader R0-13 Settings/setup gaps.
+
+This is a partial repair. The [bounded capacity limits](../evidence/2026-10-25-duo-design/ax3-growth-capacity-limits.json)
+retain tall AX5's 14pt observed deficit: even minimum region gaps with
+fixed 8pt internal gaps leave 12pt missing. The 1pt/1pt B/D-gap hypothesis
+changes the binding 8pt measure and is not selected. Wide AX5 has no
+optional height in these inputs and retains 66/82pt total shortfalls.
+These results do not prove universal impossibility or close any AX5,
+changed-window, clipped-target or physical-input gate.
+
+**Plan before the next code commit:**
+
+1. Commit this Spec/plan and the linked isolated drawings before a code
+   commit, following SDLC's Design/Build gates. Keep the one item 6 PR;
+   no Settings policy or unrelated source changes enter this repair.
+2. Add a failing Swift Testing reproduction for the recorded lower-camera
+   AX3 input: reference shortfall 0, eight whole tiles, category 63 rather
+   than 61, and unchanged 8pt/10pt gaps, A/C/Back and camera boundary. It
+   must fail if the retry is removed or consumes all optional growth.
+3. Implement only the guarded second pass, retaining the original result
+   exactly when no new reference deficit exists or the original is unsafe.
+   Preserve finite search order and explicit residual shortfall; no weaker
+   certificate, new known issue or hidden invalid-candidate fallback.
+4. Test reference-library independence at 8/24 phrases, all captured
+   geometries/five metrics/Bold states, exact unaffected choices, no-region
+   legacy output, translated/RTL/multiple regions and warning reflow.
+   Rerun unchanged well, Home/Settings chain, message-reading and Back
+   checks, including retained typing with Clear 2/Put Back 3. The bounded
+   host samples do not replace those gates.
+5. Verify native SF word/target floors, fixed frames across affected
+   states and appearances, camera/division rounding, Type/keyboard policy
+   and the scoped Back cover, then the full native unit and applicable UI
+   gates. Physical Snap to Item and changed-window pointer mapping remain
+   separate; no simulator or design drawing establishes those results.

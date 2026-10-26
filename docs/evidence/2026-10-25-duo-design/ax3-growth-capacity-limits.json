@@ -1,0 +1,116 @@
+{
+  "schema": 1,
+  "diagnosticOnly": true,
+  "nativeValidation": false,
+  "scope": "Recorded geometries and existing font fixtures only; not universal impossibility. The AX3 repair does not close AX5 capacity.",
+  "ax5Rows": [
+    {
+      "case": "open-wide-default",
+      "font": "AX5",
+      "bold": false,
+      "baseShortfall": 10,
+      "currentShortfall": 66,
+      "categoryHeight": 77,
+      "quickHeight": 79
+    },
+    {
+      "case": "open-wide-default",
+      "font": "AX5",
+      "bold": true,
+      "baseShortfall": 66,
+      "currentShortfall": 66,
+      "categoryHeight": 77,
+      "quickHeight": 79
+    },
+    {
+      "case": "open-wide-reverse-ax5",
+      "font": "AX5",
+      "bold": false,
+      "baseShortfall": 10,
+      "currentShortfall": 82,
+      "categoryHeight": 77,
+      "quickHeight": 79
+    },
+    {
+      "case": "open-wide-reverse-ax5",
+      "font": "AX5",
+      "bold": true,
+      "baseShortfall": 66,
+      "currentShortfall": 82,
+      "categoryHeight": 77,
+      "quickHeight": 79
+    },
+    {
+      "case": "open-tall-default",
+      "font": "AX5",
+      "bold": false,
+      "baseShortfall": 0,
+      "currentShortfall": 14,
+      "categoryHeight": 77,
+      "quickHeight": 79
+    },
+    {
+      "case": "open-tall-default",
+      "font": "AX5",
+      "bold": true,
+      "baseShortfall": 0,
+      "currentShortfall": 14,
+      "categoryHeight": 77,
+      "quickHeight": 79
+    },
+    {
+      "case": "open-tall-reverse-default",
+      "font": "AX5",
+      "bold": false,
+      "baseShortfall": 0,
+      "currentShortfall": 14,
+      "categoryHeight": 77,
+      "quickHeight": 79
+    },
+    {
+      "case": "open-tall-reverse-default",
+      "font": "AX5",
+      "bold": true,
+      "baseShortfall": 0,
+      "currentShortfall": 14,
+      "categoryHeight": 77,
+      "quickHeight": 79
+    }
+  ],
+  "tallAX5FixedSpacingBound": {
+    "window": {
+      "width": 669,
+      "height": 951
+    },
+    "availableBelowFold": 413,
+    "minimumRequiredBelowFold": 425,
+    "minimumRegionGapsDeficit": 12,
+    "currentGapDeficit": 14,
+    "internalSpacing": 8,
+    "targetHeightLowerBounds": {
+      "quick": 79,
+      "category": 77,
+      "tile": 78
+    }
+  },
+  "unselectedHypothesis": {
+    "BVerticalGap": 1,
+    "DVerticalGap": 1,
+    "selected": false,
+    "reason": "Changes binding 8pt internal spacing; outside current Spec. All 12 exploratory candidates also fail the existing production well certificate."
+  },
+  "wideAX5": {
+    "optionalHeightInRecordedInputs": 0,
+    "upperCameraTotalShortfall": 66,
+    "lowerCameraTotalShortfall": 82
+  },
+  "sourceManifest": {
+    "BricksonUITests/ChainEngine.swift": "86319eb37482eb4813ea89474726481fa0fec5202d5512f41a3f67d676f7a555",
+    "BricksonUITests/HomeChains.swift": "5f61405767c2f18b16936c19b93fccedb8609da819aedf043f3049c9b9c1ca1b",
+    "HomeLayout.swift": "93e3453cde75578fb535e2ce796b156890c52e0b4bd88cb9f27956734dd8ca67",
+    "HomeReservedLayout.swift": "c80ccec73ac408fbf52880e1a569ef9c7a483a7f079b31315c363ed43c3255ec",
+    "HomeWellEnvelope.swift": "0155cf09d87ad76cfde461c634ff2b5f4a435cda856dce97b0caf3c8ff4fff2c",
+    "KeyboardAllowance.swift": "84ea194ea4fc4e13048e55055ae9513b34716a667992965cc6228abfdfa129f8",
+    "docs/evidence/2026-10-25-duo-design/reservations.json": "c9e84968bef5159d74436945f3fb90a204e1ca047003718b3382c40deef41161"
+  }
+}
