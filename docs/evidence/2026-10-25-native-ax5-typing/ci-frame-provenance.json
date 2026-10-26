@@ -1,0 +1,12 @@
+{
+  "originalAttachmentTimestamp": "2026-10-25T13:12:00.371+0000",
+  "originalAttachmentFilename": "kXCTAttachmentScreenRecording_0_4F02670C-7555-4E6C-9625-CFAB0D5EBB9F.mp4",
+  "videoDurationSeconds": 78.353333,
+  "frameIndexZeroBased": 168,
+  "framePTSSeconds": 71.078333,
+  "failureRecordedUTC": "2026-10-25T13:13:18.498Z",
+  "transformation": "one decoded video frame; native2064x2752 pixels, no crop/rescale/annotation",
+  "sourceArtifact": "https://github.com/MiddleAgedBanana/Brickson/actions/runs/40195916540/artifacts/12601418702",
+  "sourceJob": "https://github.com/MiddleAgedBanana/Brickson/actions/runs/40195916540/job/121176591223",
+  "interpretation": "White content and system status bar, no Home controls visible in this decoded frame. Appearance alone does not establish the cause or exact failure instant."
+}

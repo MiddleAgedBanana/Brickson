@@ -247,8 +247,14 @@ Xcode 27.1 (27A9275); PR #20 landed in `d79d836`.
   limits; windowed Duo and its reserved fold/camera regions remain
   unverified ([record](log/2026-10-25-mac-keyboard-checks.md)). The first
   UI test on a just-started CI simulator failed intermittently before
-  PR #13's warm-up launch (AGENTS.md, *Gotchas*); three local cold boots
-  without warm-up did not reproduce it on 2026-10-25. Apple's accessibility audit never sees
+  PR #13's warm-up launch (AGENTS.md, *Gotchas*). A later PR #57 CI run
+  failed its first Yes lookup after an automation-session timeout; that
+  job eventually reached its 75-minute limit. The exact failing Get
+  Attention test passed locally on two fresh iPad installations without
+  app warm-up and one independently reset, normally warmed control.
+  The three older cold-phone snapshot checks also passed. The cause
+  remains unresolved ([follow-up and recovered CI frame](log/2026-10-25-native-ax5-typing.md)).
+  Apple's accessibility audit never sees
   Home's "Speaking" line: audits wait for speech to finish, because one
   that ran while the line left reported text with no element (issue #30,
   [`log/2026-10-22-audit-still-screen.md`](log/2026-10-22-audit-still-screen.md)).
@@ -418,9 +424,15 @@ release in docs/ROADMAP.md when no thread has it yet.
   and, on iPad, landscape. Manual AX5 checks on the owner's Mac
   (2026-10-25) kept the required communication controls above the full
   keyboard on iPhone 17 and the 13-inch iPad in both iPad orientations.
-  Put Back was covered on the phone (y=547–624, keyboard top 546);
-  its placement needs a follow-up, with a native-input reproduction before
-  a fix. The iPad's Clear, Put Back and Return responded in Device Hub.
+  Put Back was covered on the phone (y=547–624, keyboard top 546).
+  A later native-input check on app code `6d040d5` reproduced that
+  coverage; Clear emptied the field, but Put Back remained behind the
+  full keyboard. The visible software Return key submitted the message,
+  and reopening Type retained the draft. This proves visible state,
+  not sound ([follow-up](log/2026-10-25-native-ax5-typing.md)). Put Back's
+  placement still needs a layout answer. On iPad, Clear and Put Back
+  were observed, and Device Hub checked their reachability. Native
+  Device Hub activation of Return changed the last-spoken display.
   [Record and screenshots](log/2026-10-25-mac-keyboard-checks.md).
   Not checked: the iPad's floating and split keyboards, other languages, iPhone
   Duo's inner display (`KeyboardAllowance`'s *Not covered yet* in
