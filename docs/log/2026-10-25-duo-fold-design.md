@@ -627,6 +627,14 @@ aliased gray tokens and missing dark chrome context; only these new
 nodes were corrected to existing palette fallbacks and Apple chrome
 modes, then the revised render was visually inspected.
 
+Before the capacity-retry code commit, a copy review found generic
+word-fit fixtures displayed with Basics selected. Only the new section's
+96 phrase instances were corrected to Basics' exact shipped order in
+`Brickson/Resources/StarterPhrases.json` (source hash and slot order in
+the manifest); all 292 bound rectangles remain unchanged. The corrected
+composition PNG was visually inspected. Original 84 drawings and global
+component sources remain unchanged; no native typography pass is claimed.
+
 SF Pro remains a connector limitation: a fresh Semibold 20 text probe
 returned width 0 and `hasMissingFont=true`. The new drawings explicitly
 use the existing documented Inter stand-in and default-floor label

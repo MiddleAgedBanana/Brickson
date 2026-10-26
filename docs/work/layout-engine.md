@@ -779,8 +779,10 @@ light/dark. The existing 84 drawings remain unchanged. The
 [saved render](../evidence/2026-10-25-duo-design/ax3-growth-comparison.png)
 and [manifest/validation](../evidence/2026-10-25-duo-design/ax3-growth-drawings.json)
 record 292 exact target/viewport/tile/Back checks within 0.0002pt,
-333 editable text layers and no image-filled nodes. These are geometry
-drawings using the documented Inter stand-in at default-floor label
+333 editable text layers and no image-filled nodes. The drawings show
+Basics in the exact shipped `StarterPhrases.json` order; the later copy
+correction changed 96 phrase instances with no frame changes. These
+geometry drawings use the documented Inter stand-in at default-floor label
 sizes, not a native AX3 fitted-type sample. A fresh SF Pro connector
 probe measured zero width with `hasMissingFont=true`; no passing SF
 typography check is claimed. Apple kit chrome and existing palette
