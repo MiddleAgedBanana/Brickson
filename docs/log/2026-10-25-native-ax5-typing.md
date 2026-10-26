@@ -17,6 +17,8 @@ with recovered visual evidence and three bounded local comparisons.
 
 - `7f7b9c5`: record native AX5 Return and covered Put Back.
 - `7f9eb2c`: record startup comparisons and the recovered CI frame.
+- `edbf6b8`: clarify native iPad observations and retain check provenance.
+- Merge current main `a14c709` without rewriting history; documentation only.
 
 ## Verified
 
@@ -59,8 +61,9 @@ The review corrections clarify the recorded iPad reachability and Return
 observations and add this PR's identity and commit provenance. App,
 tests, scripts and project are byte-identical to `6d040d5`, so the native
 740-test receipt above applies without repeating a build. All five
-Python suites and the diff check pass again. Hosted checks are still
-required on the review-correction head.
+Python suites and the diff check pass again. Hosted Unit/UI subsequently passed on review-correction head `edbf6b8`,
+[Tests run 40214788443](https://github.com/MiddleAgedBanana/Brickson/actions/runs/40214788443).
+That result predates the documentation-only main refresh below.
 
 ## First-launch follow-up
 
@@ -125,6 +128,32 @@ failure and no app-owned blocking path has been established. A future
 recurrence needs a sample of the stalled process before another test
 terminates it.
 
+## Main refresh, 2026-10-25
+
+Incorporated owner-merged PR #57 through main `a14c709` with a merge
+commit, as AGENTS requires when main moves. PR #56 was already an
+ancestor of this branch; no app or test implementation was missing.
+The merge adds main's fewer-tiles log/proposal and keeps both HANDOFF
+updates. App, tests, scripts, workflow and project sources are unchanged
+from this PR's previously green head. No paging or product change is
+included.
+
+Before the merge commit, a fresh complete native unit run passed on the
+script-selected iPad Pro 13-inch (M5) simulator, iOS 27.0, with recorded
+Xcode 27.1 (27A9275): **740 total, 731 passed, zero failed, one existing
+issue #19 skip and eight strict expected failures**. The String Catalog
+is current; coverage is 67.7% (5,950/8,795). The result bundle is
+`build/TestResults/pr59-main-refresh/unit-ipad.xcresult`; the retained
+private log is `/private/tmp/brickson-pr59-main-refresh-unit.log`.
+The run finished normally after the CPU-active font checks; no run was
+restarted. A later sampling attempt found the test host had already
+exited, so no stack sample or new failure is claimed.
+
+The documentation check and diff check passed after this record was
+updated. Hosted checks on the new merge head are still required; the
+older green run is not presented as a new-head result. No generated
+project or temporary measurement source is committed.
+
 ## Not verified
 
 - Put Back's functionality with a covering keyboard, a fix for its
@@ -133,8 +162,8 @@ terminates it.
 - Sound, real tracking, Snap to Item, Switch Control, mounting/calibration
   or Phone handoff. The informal earlier handheld observation is not a
   controlled device pass; physical checks remain deferred.
-- Hosted CI on the review-correction head; the green run above covers
-  `7f9eb2c` only.
+- Hosted CI on the new main-merge head; the two earlier green runs
+  above belong to their recorded commits.
 - The startup failure's cause or a fix. Three selected-case local passes
   do not establish a full UI-suite pass or reproduce GitHub's machine.
 

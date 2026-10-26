@@ -282,7 +282,10 @@ release in docs/ROADMAP.md when no thread has it yet.
   paging alone cannot make one fit. What remains needs fewer tiles to a screen: drawn in
   Figma as R1's direction, pages of whole rows with "More, 1 of 2" in
   the grid's last slot (docs/work/typing-on-home.md, *Fewer tiles to a
-  screen*), not built, because touch, 1.0's only profile, may scroll.
+  screen*), not built, because touch, 1.0's only profile, may scroll. The
+  [measured fewer-tiles proposal](recon/2026-10-25-fewer-home-tiles.md)
+  now records current whole-row capacities, More's slot cost and windows
+  where no complete row fits; it changes no code or release boundary.
   *(R1's profile work, then the owner)*
 - The slot plan has no answer yet for more than four everyday categories
   (docs/DECISIONS.md, "Home's slot plan", *Open*): editing and import
