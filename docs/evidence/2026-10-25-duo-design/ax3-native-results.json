@@ -1,0 +1,316 @@
+{
+  "schema": 1,
+  "scope": "AX3 capacity-retry source gate and selected fullscreen lower-camera wide native geometry, with separate active-image/manual baseline/trace receipts. Not a full current UI pass.",
+  "status": "Selected native geometry passed; automatic keyboard dismissal failed on both uninstrumented baseline and candidate; full current standard UI failed on both families.",
+  "source": {
+    "recordedFileSHA256": {
+      "Brickson/Layout/HomeLayout.swift": "93e3453cde75578fb535e2ce796b156890c52e0b4bd88cb9f27956734dd8ca67",
+      "Brickson/Layout/HomeReservedLayout.swift": "8323e3096b5361ec7ce49fbdadaaacaa1381b555865669d1719ee12f2dd9f78b",
+      "Brickson/Layout/HomeWellEnvelope.swift": "0155cf09d87ad76cfde461c634ff2b5f4a435cda856dce97b0caf3c8ff4fff2c",
+      "Brickson/Layout/KeyboardAllowance.swift": "84ea194ea4fc4e13048e55055ae9513b34716a667992965cc6228abfdfa129f8",
+      "Brickson/Home/HomeView.swift": "60c8edd4c434258dcfd030dd8927948c020fc9fd3e5c5d2169bc01aee41cb40c",
+      "BricksonTests/Layout/HomeReservedRegionTests.swift": "6b31814bd5b2d0c8ba5f8bdad5962f462ad924b36baa2e2480a5e331167616fd"
+    },
+    "isolatedNativeSUTMatchesSharedHomeViewAndReservedLayout": true,
+    "temporaryNativeProbeSHA256": "f618dc21130d43b56be897d6f219c961eb1f3977c555a16c9fdde8c72a27ebe6",
+    "temporaryProbeSourceNotPublished": true,
+    "designGateCommitsBeforeCapacityRetryCodeCommit": [
+      "a622cec",
+      "9de5092"
+    ]
+  },
+  "gates": {
+    "unmatchedFilter": {
+      "executed": 0,
+      "status": "REJECTED by script; not a passing test run",
+      "reason": "Swift Testing function filter omitted parentheses",
+      "privateLog": "/private/tmp/brickson-pr58-growth-red.log",
+      "logSHA256": "1f4189ce37eb818312e7dde66198280a22ed9e5ce2b8bd684f46cbb67ebde241"
+    },
+    "failingFirstMatched": {
+      "test": "HomeReservedRegionTests/cameraCapacityReturnsOnlyTheOptionalGrowthItNeeds()",
+      "total": 1,
+      "passed": 0,
+      "failed": 1,
+      "skipped": 0,
+      "expectedFailures": 0,
+      "status": "FAILED before production change",
+      "privateLog": "/private/tmp/brickson-pr58-growth-red-matched.log",
+      "logSHA256": "83a3290f6bc31efff651eed135449b1147b6d5077d93a3bdce7abd274823895c",
+      "resultBundle": "build/TestResults/pr58-growth-red-matched/unit-ipad.xcresult"
+    },
+    "fullNativeUnit": {
+      "total": 778,
+      "passed": 769,
+      "failed": 0,
+      "skipped": 1,
+      "skip": "existing issue #19",
+      "expectedFailures": 8,
+      "strictDecisionNamedExpectedFailures": true,
+      "coveragePercent": 71.2,
+      "coveredAppLines": 7027,
+      "totalAppLines": 9876,
+      "stringCatalog": "up to date",
+      "recordedXcode": "27.1 (27A9275)",
+      "recordedXcodeGen": "2.46.0",
+      "destination": "13-inch iPad Pro (M5), iOS Simulator 27.0",
+      "resultBundle": "build/TestResults/pr58-growth-green/unit-ipad.xcresult",
+      "privateLog": "/private/tmp/brickson-pr58-growth-green.log",
+      "logSHA256": "42f8277e14bc95d621d6003d909631bf23d06de118180b981031e2fbc698bb0e",
+      "summarySHA256": "8a8e304c33bc15cedb3cb664d0667f36f0cbf1b02be0b484d17df34468df7433",
+      "databaseSHA256": "b5d553e6c24eaa6f12e394f623362d6adf8dfd5a40fc6daa6ed6242e936bebf3"
+    },
+    "fullCurrentStandardUI": "FAILED. iPad: 51 total, 45 passed, 1 failed, 2 skipped, 3 expected failures. iPhone: 51 total, 42 passed, 1 failed, 6 skipped, 2 expected failures. Each sole failed case has four Speaking waits. Script exit 65; see ax3-growth-ui-results.json.",
+    "nativeSelected": {
+      "total": 2,
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0,
+      "expectedFailures": 0
+    },
+    "pythonChecks": {
+      "total": 251,
+      "passed": 251,
+      "bySuite": {
+        "docs": 45,
+        "hooks": 124,
+        "site": 7,
+        "runner": 54,
+        "selector": 21
+      },
+      "source": "Root complete Python receipt; docs45 repeated separately after this evidence/log insertion."
+    },
+    "fullCurrentStandardUIReceipt": {
+      "file": "ax3-growth-ui-results.json",
+      "sha256": "5a080336650c324c1d5820d8dcac3d90304926c0f5dabb2bbc79eb6f26c86f2e"
+    }
+  },
+  "nativeFixture": {
+    "dynamicType": "AX3 / UICTContentSizeCategoryAccessibilityXL",
+    "appearances": [
+      "light",
+      "dark"
+    ],
+    "window": {
+      "x": 0,
+      "y": 0,
+      "width": 951,
+      "height": 669
+    },
+    "rootSnapshotFrame": {
+      "x": 0,
+      "y": 0,
+      "width": 669,
+      "height": 951
+    },
+    "coherentAncestorIsFrameBasis": true,
+    "rootIsTransposed": true,
+    "safeAreas": {
+      "top": 0,
+      "leading": 0,
+      "bottom": 34,
+      "trailing": 84
+    },
+    "recordedRuntime": "iOS Simulator 27.1 (24A94425)",
+    "freshTestStorage": true,
+    "fullSoftwareKeyboard": "absent in the automatic probe; Type unavailable",
+    "silentAttentionStandIn": true
+  },
+  "samples": {
+    "total": 10,
+    "home": 8,
+    "rootSettingsBackOnly": 2,
+    "phasesPerAppearance": [
+      "browsing-type-unavailable",
+      "alarm-sounding",
+      "alarm-stopped",
+      "settings-root-back-only",
+      "settings-returned-to-phrases"
+    ]
+  },
+  "homeGeometry": {
+    "D": {
+      "x": 16,
+      "y": 403,
+      "width": 835,
+      "height": 208
+    },
+    "wholeBasicsTilesPerHomeSample": 8,
+    "tileHeight": 100,
+    "rowY": [
+      403,
+      511
+    ],
+    "lastRowBottom": 611,
+    "TypeEnabled": false,
+    "keyboards": 0,
+    "storageWarning": false,
+    "fullTileFramesInsideDAndWindow": true,
+    "fullTileInstancesChecked": 64,
+    "targetFloor44Passed": true,
+    "modelComponentTolerancePoints": 0.5,
+    "maxTileComponentDifferencePoints": 0.1666666666666572,
+    "stateFrameComparisons": 120,
+    "maxStateFrameDifferencePoints": 0,
+    "DUnchanged": true,
+    "crossAppearanceFrameComparisons": 83,
+    "maxCrossAppearanceFrameDifferencePoints": 0
+  },
+  "rawReservationCheck": {
+    "source": "Previously queried actual lower-camera wide pose, reused as raw rectangles; this diagnostic did not re-query reservation APIs.",
+    "division": {
+      "x": 455.5,
+      "y": 0,
+      "width": 40,
+      "height": 669
+    },
+    "camera": {
+      "x": 215.66666666666666,
+      "y": 611,
+      "width": 58,
+      "height": 37
+    },
+    "overlapRule": "Strict positive-area intersection using raw rectangles; no rounding tolerance.",
+    "homeTargetsChecked": 162,
+    "fullPhraseTileInstancesIncluded": 64,
+    "rootBackInstancesChecked": 2,
+    "targetReservationPairsChecked": 328,
+    "intersections": 0,
+    "boundaryNote": "The last phrase row ends at camera y=611. D spans the division, while its individual target lanes avoid it."
+  },
+  "rootBack": {
+    "samples": 2,
+    "actualFrame": {
+      "x": 593.3333333333333,
+      "y": 8,
+      "width": 160.33333333333326,
+      "height": 79
+    },
+    "unchangedModelFrame": {
+      "x": 593.2,
+      "y": 8,
+      "width": 160.6,
+      "height": 79
+    },
+    "phrasesFrame": {
+      "x": 496,
+      "y": 8,
+      "width": 355,
+      "height": 79
+    },
+    "withinPhrases": true,
+    "centredAtSameHeight": true,
+    "backActivationReturnedHome": true,
+    "backCentreNearestOnReturn": "Phrases under both existing nearest-helper centre and edge rules; asserted by passing selected cases.",
+    "scopeLimit": "Root Back only. No complete Back-surface chain proof, Family Setup, guide or other Settings placement validation."
+  },
+  "initialWrongPaneFailure": {
+    "selectedTests": {
+      "total": 2,
+      "passed": 0,
+      "failed": 2,
+      "skipped": 0,
+      "expectedFailures": 0
+    },
+    "reason": "Probe required fullscreen 951x669 but coherent ancestor was retained Split View 469x669 in both cases.",
+    "observedAncestorWindow": {
+      "x": 0,
+      "y": 0,
+      "width": 469,
+      "height": 669
+    },
+    "operatorActionReported": "Native central-divider drag restored fullscreen before the unchanged probe was run again.",
+    "operatorMethodReference": "https://support.apple.com/en-ie/guide/iphone/iphrj13y9uxz/ios",
+    "interpretation": "First failure remains a failed pose precondition; fullscreen pass does not erase it or validate that smaller pane."
+  },
+  "images": {
+    "manifest": "ax3-native-images.json",
+    "browsing": [
+      "ax3-native-light.jpg",
+      "ax3-native-dark.jpg"
+    ],
+    "scope": "Whole eight Basics and quick/category/mode labels reviewed in the two optimized active browsing images; no pixel-to-point floor inference.",
+    "originalAutomaticXCUIScreenPNGCount": 10,
+    "originalAutomaticPNGsByteIdentical": true,
+    "automaticPNG_SHA256": "8b0878276ea7ac5041b2e7e9679e63774547ffb5610addc65ee5dd4f02e5e65d",
+    "automaticPNGsRemainPrivate": "Inactive-display limitation retained; no state/appearance visual proof from them."
+  },
+  "manualTyping": {
+    "unverifiedCLITap": "Reported success but no confirmed Type activation; not a typing pass.",
+    "candidateTall": "ax3-native-tall-typing-light.jpg",
+    "candidateWideKeyboardPersists": "ax3-native-wide-typing-light.jpg",
+    "manualLoweringOnly": "ax3-native-wide-manually-lowered-light.jpg",
+    "observations": "Confirmed tall full keyboard partly covers Put Back; native rotation retains typing and the keyboard at the settled wide observation. Later eight whole dimmed tiles follow explicit manual keyboard lowering, never an automatic-dismiss pass.",
+    "baselineReceipt": "ax3-native-baseline-results.json",
+    "baselineOnlyTraceReceipt": "ax3-native-trace-results.json",
+    "introducedVsBaseline": "Visible persistence reproduced on fresh uninstrumented 35bed06 and candidate; mechanism unresolved. Only baseline has the separate boolean trace."
+  },
+  "hostComparisons": {
+    "scope": "Bounded private proposal host comparison before the production implementation; not a native-renderer or all-input proof. The production source/hash and native unit gate are recorded separately.",
+    "privateProposalSourceSHA256": "491549cb983d21eac53528f9f0998c518ff63288e2fbda08e84d58c9c3007111",
+    "receipts": [
+      {
+        "file": "ax3-native-host-comparison.json",
+        "sha256": "22108df1e781e988a375273545287beffc255c7ba21cc5cb2b9444673803cd0f"
+      },
+      {
+        "file": "ax3-native-grown-library-comparison.json",
+        "sha256": "afd847473ebb6a6bc0d98358dbb4d33f952c85161352dac0d6d9e10cc6601552"
+      }
+    ],
+    "completeRecordedInputs": 60,
+    "exactlyUnchanged": 59,
+    "changedInput": "Lower-camera wide geometry at AX3, Bold Text off: optional category rows65 to63; D407/204 to403/208; reference shortfall4 to0.",
+    "grownLibraryComparison": "Counts8 and24 on all60 inputs: zero static-geometry changes; content rows/tile heights may change."
+  },
+  "privateProvenance": {
+    "isolatedSUT": "/private/tmp/brickson-ax3-capacity-native.0tVWNZ",
+    "fullscreenBundle": "/private/tmp/brickson-ax3-capacity-native.0tVWNZ/build/TestResults/ax3-native-fullscreen/ui-destination.xcresult",
+    "fullscreenLogSHA256": "1c8a87322587343ad71ff05fee29257575e0c5d33422868eaae26b6ef072951d",
+    "fullscreenSummarySHA256": "e2bf47d53a91ae71f48f42a463700cf92aa194f295fbc40bb5483e95adb8cbdf",
+    "rawAttachmentCount": 32,
+    "rawAttachmentManifestSHA256": "09d5f56271226875f994855cbbef2cc125a0d4ae4fca10e58afaa83452074628",
+    "rawAttachmentIndexSHA256": "4ef36af8409af5d6e1cf3282c643ffe26e7ab11b4a65058ab1ed707dbdf92b8b",
+    "diagnosticAttachmentSHA256": [
+      "07f817a637287cc29938fc4f298107ec60451c74eb0606d1efb738f71615bb8c",
+      "e932ff14b76e92376e833fd95996ccd95ff197de811170724d4a281008ea9760"
+    ],
+    "initialWrongPaneLogSHA256": "19d2f9a252e497202bdbde42c14a37d5ec85ca454470e27c5131f0d6c7e0698a",
+    "fullscreenLog": "/private/tmp/brickson-pr58-ax3-native-fullscreen.log",
+    "initialWrongPaneLog": "/private/tmp/brickson-pr58-ax3-native.log",
+    "initialWrongPaneBundle": "/private/tmp/brickson-ax3-capacity-native.0tVWNZ/build/TestResults/ax3-native/ui-destination.xcresult",
+    "rawAttachmentsDirectory": "/private/tmp/brickson-ax3-capacity-probe/attachments-fullscreen"
+  },
+  "runtimeWarnings": {
+    "nativeSelected": 2,
+    "kind": "AVAudioSession synchronous activation main-thread responsiveness warning; retained without causal conclusion."
+  },
+  "notVerified": [
+    "A green full current standard UI gate: both families completed with one failed Speaking-wait case each; see ax3-growth-ui-results.json. Earlier complete UI/CI results belong to their recorded sources.",
+    "Automatic keyboard dismissal after rotation: failed in the recorded manual baseline and candidate samples; no fix.",
+    "Camera/division API re-query during this selected probe; strict checks reuse previously queried raw rectangles.",
+    "Complete Settings Back-surface/multi-step chains, Family Setup or other Settings placement.",
+    "Nonempty draft retention, speech/sound, actual scroll gestures, physical input or Snap to Item.",
+    "Continuous changed-window mapping, all windows/text sizes, and target floors inferred from optimized JPEG pixels.",
+    "A causal mechanism for keyboard persistence; baseline boolean log and images are separate artifacts, and instrumentation may perturb."
+  ],
+  "remainingDesignReview": {
+    "scope": "Source-level review of eight recorded AX5 tall/wide and Bold off/on fixtures; no new optimizer/native run.",
+    "alternativesReviewed": [
+      "Hybrid C/B row composition",
+      "Asymmetric or staggered phrase rows",
+      "Shaped/split D",
+      "Reclaiming disabled-control space"
+    ],
+    "finding": "No additional supported allocation found within the searched current contract; not a universal impossibility proof.",
+    "textHeightTiersPoints": [
+      78,
+      100
+    ],
+    "activeTouchPhysicalFloorPoints": 44,
+    "AX5IsTextSizeNotPhysicalProfile": true,
+    "floorsOrRowPolicyChanged": false,
+    "nativeTierTightnessCalibration": "Optional evidence calibration, not a required gate or demonstrated repair. No extra sweep performed.",
+    "privateReviewSHA256": "2940c475650728840e2b1bb00bee207ab148bbeefc0874363a80f11f0be13b78"
+  }
+}

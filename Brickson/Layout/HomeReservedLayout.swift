@@ -97,12 +97,64 @@ nonisolated struct HomeReservedLayout {
             return failed
         }
 
+        // Both capacities use the fixed reference library. A family's
+        // added phrases must not enter control sizing.
+        let referenceShortfall = base.grid.reflow(in: base.grid.frame,
+            phraseCount: HomeLayout.referencePhraseCount).shortfall
+
+        func recoverCapacity(from original: Candidate, smallerGaps: Bool) -> Candidate {
+            func safe(_ trial: Candidate) -> Bool {
+                trial.issues.isEmpty && HomeWellEnvelope.preserves(base.frames, trial.frames)
+            }
+            guard safe(original) else { return original }
+            var best = original
+            let modeSteps = Int((returnable / 0.5).rounded(.down))
+            let quickSteps = Int((quickGrowth / 0.5).rounded(.down))
+            let categorySteps = Int((categoryGrowth / 0.5).rounded(.down))
+
+            func returning(quick: CGFloat, category: CGFloat) -> Candidate? {
+                for step in 0...max(0, modeSteps) {
+                    let trial = Self.allocate(base: base, space: space, profile: profile, text: text,
+                        vertical: vertical, horizontal: horizontal, occlusions: occlusions,
+                        modeReturn: CGFloat(step) * 0.5, quickReturn: quick, categoryReturn: category,
+                        smallerGaps: smallerGaps)
+                    guard safe(trial) else { continue }
+                    if trial.grid.shortfall < best.grid.shortfall - 0.001 { best = trial }
+                    if trial.grid.shortfall <= referenceShortfall + 0.001 { return trial }
+                }
+                return nil
+            }
+
+            // Keep the existing preference order in finite half-point
+            // sweeps: A, shared primary growth, then category growth.
+            if let trial = returning(quick: 0, category: 0) { return trial }
+            if quickSteps > 0 {
+                for step in 1...quickSteps {
+                    if let trial = returning(quick: CGFloat(step) * 0.5, category: 0) { return trial }
+                }
+            }
+            if categorySteps > 0 {
+                for step in 1...categorySteps {
+                    if let trial = returning(quick: CGFloat(quickSteps) * 0.5, category: CGFloat(step) * 0.5) { return trial }
+                }
+            }
+            // Ties keep the original; any residual shortage stays visible.
+            return best
+        }
+
         var chosen = resolve(smallerGaps: false)
+        var chosenSmallerGaps = false
         // Controls are allocated from the reference library, never from a
         // person's added phrases. More phrases change only D's rows.
         if chosen.grid.shortfall > 0.001 && base.regionGap > HomeLayout.minimumRegionSpacing + 0.001 {
             let compacted = resolve(smallerGaps: true)
-            if compacted.grid.shortfall < chosen.grid.shortfall && compacted.issues.isEmpty { chosen = compacted }
+            if compacted.grid.shortfall < chosen.grid.shortfall && compacted.issues.isEmpty {
+                chosen = compacted
+                chosenSmallerGaps = true
+            }
+        }
+        if chosen.grid.shortfall > referenceShortfall + 0.001 {
+            chosen = recoverCapacity(from: chosen, smallerGaps: chosenSmallerGaps)
         }
         allocations = chosen.allocations
         frames = chosen.frames

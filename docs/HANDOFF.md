@@ -255,20 +255,28 @@ Xcode 27.1 (27A9275); PR #20 landed in `d79d836`.
   limits ([record](log/2026-10-25-mac-keyboard-checks.md)). Later item 6
   measurements queried the reserved regions and reached both native
   Split View panes. The item 6 Spec and scoped drawings are linked, and
-  the local implementation has a passing 777-test native unit gate
-  (including six coherent-snapshot helper regressions and the measured
-  mode-word inset correction) and six
-  native pose probes on unchanged product source. The complete standard phone/iPad UI run fails
-  one Speaking-wait case on each; unchanged main reproduces that failure
-  on the same iPad. Default/AX5 light/dark captures were inspected on both
+  earlier PR #58 head `35bed06` has a green
+  [hosted run](https://github.com/MiddleAgedBanana/Brickson/actions/runs/40244703180):
+  777 unit cases and 51 UI cases per standard family completed. The AX3
+  capacity correction passes 778 native unit cases (769 passed, zero
+  failed, one existing #19 skip and eight strict expected failures), with
+  a current catalog and 71.2% coverage. Two focused light/dark native
+  probes show eight whole Basics tiles after returning 4pt of optional
+  category growth; 59 of 60 modeled static layouts remain exactly
+  unchanged. Its full standard UI run completed 51 cases per family, with
+  one failed AX5 Speaking-wait case each and no other unexpected assertion
+  ([receipt](evidence/2026-10-25-duo-design/ax3-growth-ui-results.json)). Earlier complete local
+  runs failed one Speaking-wait case per family; unchanged main reproduces
+  it on the same iPad, with cause unresolved. Default/AX5 captures were inspected on both
   families; representative Duo active-display captures were also inspected
   ([design record](log/2026-10-25-duo-fold-design.md)). The first UI test still
   intermittently shows a blank canvas and fails AX startup on CI despite
-  PR #13's warm-up launch. The latest retained
+  PR #13's warm-up launch. The earlier retained
   [hosted receipt](evidence/2026-10-25-duo-design/ci-startup-1322630/README.md)
   has no app stack establishing a cause. Three local cold controls on the
   matching12GB iPad/runtime passed on 2026-10-25; two were unwarmed and one
-  used the CI-shaped warm-up. They do not explain the hosted failure. Apple's accessibility audit never sees
+  used the CI-shaped warm-up. Those controls and the later green hosted
+  run do not explain that failure. Apple's accessibility audit never sees
   Home's "Speaking" line: audits wait for speech to finish, because one
   that ran while the line left reported text with no element (issue #30,
   [`log/2026-10-22-audit-still-screen.md`](log/2026-10-22-audit-still-screen.md)).
@@ -380,10 +388,15 @@ release in docs/ROADMAP.md when no thread has it yet.
   320pt windows at every size, a 375×667 phone from AX3, and the iPad
   mini and a zoomed 13-inch iPad in landscape from AX3. There Type is
   dimmed, with a VoiceOver hint saying why, so the keyboard never covers
-  Emergency, Yes, No, Speak or Get Attention; if the room goes while
-  typing, the keyboard is put away and typing stays on with the phrases
-  dimmed (`HomeLayout.offersTyping`; docs/DECISIONS.md, "Typing on Home",
-  *The keyboard's room, measured*). The keyboards on these windows are
+  Emergency, Yes, No, Speak or Get Attention on entry. If the room goes
+  while typing, the intended behavior is to put the keyboard away while
+  typing stays on and the phrases stay dimmed (`HomeLayout.offersTyping`;
+  docs/DECISIONS.md, "Typing on Home", *The keyboard's room, measured*).
+  A native Duo AX3 tall-to-wide transition instead left the keyboard
+  visible on both `35bed06` and the local capacity candidate. A private
+  baseline-only trace reports focus false at the settled wide observation;
+  the keyboard remains visible. Cause is unresolved and no focus fix is claimed
+  ([record](log/2026-10-25-duo-fold-design.md)). The keyboards on these windows are
   not measured (the room is the tallest keyboard measured on their
   shape), so measuring them may give typing back; offering it with the
   covered controls two activations away would be an exception for the
@@ -439,8 +452,12 @@ release in docs/ROADMAP.md when no thread has it yet.
   (2026-10-25) kept the required communication controls above the full
   keyboard on iPhone 17 and the 13-inch iPad in both iPad orientations.
   Put Back was covered on the phone (y=547–624, keyboard top 546);
-  its placement needs a follow-up, with a native-input reproduction before
-  a fix. The iPad's Clear, Put Back and Return responded in Device Hub.
+  its placement still needs a fix. The separate
+  [PR #59](https://github.com/MiddleAgedBanana/Brickson/pull/59) records
+  native Return submitting and retaining a message, Clear emptying it,
+  and Put Back still covered. Its current `0d87ae1` hosted unit/UI checks
+  are green; it remains open and unmerged. The original iPad Clear,
+  Put Back and Return observations were in Device Hub.
   [Record and screenshots](log/2026-10-25-mac-keyboard-checks.md).
   The later item 6 probes also measured default-text full-screen Duo
   typing in both axes with the full US English keyboard; the core controls,
@@ -624,9 +641,15 @@ release in docs/ROADMAP.md when no thread has it yet.
   [native comparison](evidence/2026-10-25-duo-design/native-frame-comparison.md)
   distinguish native measurements from the illustrative Settings model.
   The [earlier Mac record](log/2026-10-25-mac-keyboard-checks.md) preserves
-  app `8316743`'s failures before PR #56. Both current standard UI families
-  fail the same Speaking-wait case; main reproduces it on the same iPad.
-  Cause remains unestablished and the failed suites are retained.
+  app `8316743`'s failures before PR #56. Earlier local standard UI suites
+  fail the same Speaking-wait case also reproduced on main; their cause
+  is unresolved and the failed suites are retained. Earlier `35bed06`
+  has green hosted unit/UI checks. The AX3 growth correction
+  passes 778 native unit cases and two focused light/dark probes; its
+  full standard UI run completed 51 cases per family with one failed
+  AX5 Speaking-wait case each. Retained typing from tall to wide
+  leaves the keyboard visible on baseline and candidate; a baseline-only
+  trace also reports focus false. This separate failure remains unresolved.
   Physical testing stays deferred;
   CI still has no Duo family and screenshots are required from April 2027
   (docs/DECISIONS.md, "iPhone Duo"). *(R0 item 13 / Wave 3 item 6)*
@@ -675,15 +698,21 @@ withdrawn: the measured full-screen tall phrase viewport is below the
 division. Right-pane AX5 still leaves no whole phrase tile visible.
 The scoped 84-state drawings are complete, with an outward whole-point
 fold allowance after a strict native overlap failure. The local engine
-passed the latest777-test unit suite, including six test-helper
-regressions and the native mode-word inset correction, and six native pose probes on unchanged product source.
-The complete pre-width-correction phone/iPad UI runs fail a Speaking-wait
-case also reproduced on main. After correcting four word minima, the
-three selected cases per family have two default-audit passes and that
-same failed AX5 case; no full post-correction UI pass is claimed.
+passed the earlier 777-case unit gate, including six test-helper
+regressions and the native mode-word inset correction; `35bed06` also has
+51 UI cases per standard family in a green hosted run. The AX3
+correction returns only optional category growth after final lane/camera
+allocation: its 778-case native unit gate and two focused light/dark
+probes pass, with eight whole Basics tiles and unchanged root Back. Its
+full standard UI run completed all 51 cases per family with one failed
+AX5 Speaking-wait case each and no other unexpected assertion. Earlier complete and selected local
+Speaking-wait failures remain recorded with cause unresolved.
 The [word-floor receipt](evidence/2026-10-25-duo-design/native-mode-word-results.json)
-retains the failing reproduction and full unit gate; no font or placement
-rule changed.
+retains that separate failing reproduction and unit gate. AX5 capacity
+remains open; retained typing from tall to wide also leaves the keyboard
+visible on baseline and candidate; the baseline-only trace reports focus
+false. No font, spacing,
+floor or placement rule changed.
 Representative Duo active-display checks show the AX5 and Settings gaps;
 the paired left pane shows six/zero whole tiles at default/AX5.
 Changed-window diagnostics expose added paths under unverified

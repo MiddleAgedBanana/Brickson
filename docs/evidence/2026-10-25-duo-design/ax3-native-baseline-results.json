@@ -1,0 +1,53 @@
+{
+  "schema": 1,
+  "scope": "Completed manual typing/rotation comparison, optimized active images and app-only baseline build; no full UI pass or root-cause claim.",
+  "baselineCommit": "35bed061651d3c1ba9e81e671ed9fce2a0df8334",
+  "introducedVsBaseline": "Visible keyboard persistence after native tall-to-wide rotation reproduces on the fresh uninstrumented 35bed06 baseline and candidate; not a candidate-only observation. No causal mechanism is established.",
+  "sourceVerification": {
+    "trackedAppFileCount": 87,
+    "swiftFileCount": 74,
+    "otherAppFileCount": 13,
+    "allMatchCommit": true,
+    "manifestSHA256": "0240aa04b907f1c448c1582e0e48202eb5157646c501c934c9ceca688d09dc17",
+    "scope": "All tracked files below Brickson/; does not claim a test/script/project manifest."
+  },
+  "build": {
+    "kind": "Fresh app-only Debug iOS Simulator build",
+    "status": "BUILD SUCCEEDED",
+    "logSHA256": "8f1234237311f2459b452c158cbd7cb1ebb4051547b57b9924e025e29f249f6c",
+    "runtimeTestsClaimed": false,
+    "warning": "One AppIntents metadata-extraction skipped warning; no dependency found. Not a compiler-warning or startup-cause conclusion.",
+    "productFileSHA256": {
+      "Brickson": "10f3d08b5bb3a948127e4df49bb8f78836eaadda6e6379ef89a0e1eab8caf063",
+      "Brickson.debug.dylib": "fd2507262d07bb372248eb61f9b649e874838b4e4d56f1752f0eff7460ffd11f",
+      "Info.plist": "9196139b3237a049f0b6f37fc2b4c3829d7dc66fc36e1199bc53987d3cdf7ecb"
+    }
+  },
+  "operatorReportedPreconditions": [
+    "Baseline app source was not edited.",
+    "Full-software-keyboard show preference was restored before the fresh tall launch.",
+    "Normal Type activation opened the full keyboard automatically.",
+    "Native Controls Rotate Left then changed tall to wide; the keyboard remained visible at the settled observation."
+  ],
+  "images": [
+    "ax3-native-baseline-tall-typing-light.jpg",
+    "ax3-native-baseline-wide-typing-light.jpg"
+  ],
+  "imageProvenance": "ax3-native-images.json",
+  "enabledStateLimit": "Root reports Type and field disabled in wide. These JPEG/capture receipts contain no AX isEnabled values; the independent visual review does not certify those booleans.",
+  "traceScope": "The separate boolean trace is instrumented baseline 35bed06 only; no candidate FocusState trace was taken.",
+  "causality": "Unresolved. A baseline-only boolean trace is recorded separately; no fix or framework attribution.",
+  "provenance": {
+    "privateCurationSHA256": "7bdf2a2fb8324ed219cd408ce5c21e30f2ee848e651bf70cedb6950af98d69d7",
+    "sourceManifestSHA256": "0240aa04b907f1c448c1582e0e48202eb5157646c501c934c9ceca688d09dc17",
+    "privateBuildLog": "/private/tmp/brickson-pr58-ax3-baseline-build.log",
+    "installReceiptSHA256": "b49c030a305c0efd9b11859e3f952864f303eb0977960066d6958711540b9d13",
+    "freshLaunchReceiptSHA256": "88e808e10dc0f88aaa59b1ecc9b405d44c55b61a0fe8fe0a546b22e1a7c43c65"
+  },
+  "limits": [
+    "No complete UI suite, automatic-dismiss fix or continuous transition geometry is established.",
+    "No retained nonempty draft, phrase activation, sound or physical input proof.",
+    "No AX enabled-state assertion is derived from optimized JPEG appearance.",
+    "The successful baseline build is app-only; it is not a unit/UI test receipt."
+  ]
+}

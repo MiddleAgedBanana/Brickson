@@ -1,0 +1,11 @@
+{
+  "allowedDynamicChanges": "Grid rows and phrase tile heights/content/scroll change with library size.",
+  "diagnosticOnly": true,
+  "libraryCounts": [
+    8,
+    24
+  ],
+  "recordedInputs": 60,
+  "safeOriginalGuard": true,
+  "staticGeometryChanges": []
+}

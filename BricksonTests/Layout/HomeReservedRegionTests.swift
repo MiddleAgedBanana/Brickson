@@ -408,11 +408,60 @@ nonisolated struct HomeReservedRegionTests {
         }
     }
 
+    /// Fails if camera fitting adds starter scroll while optional category
+    /// growth remains, or if recovery consumes more growth than needed.
+    /// The first input is recorded AX3 geometry; the other camera positions
+    /// exercise derived recovery and an explicitly unattainable target.
+    @Test func cameraCapacityReturnsOnlyTheOptionalGrowthItNeeds() {
+        let scenario = Self.scenarios[1]
+        let text = HomeLayout.Text(quickControlLine: 53, categoryLine: 49,
+            messageLine: 59, statusLine: 44)
+        let withoutCamera = HomeLayout(space: .init(size: scenario.size, safeArea: scenario.safe,
+            regions: scenario.regions.filter { $0.frame.minY != 611 }),
+            text: text, modes: .phrasesAndTyping)
+        for (cameraTop, categoryHeight, shortfall) in [
+            (CGFloat(611), CGFloat(63), CGFloat(0)),
+            (610, 62.5, 0), (609, 62, 0), (599, 61, 8),
+        ] {
+            let regions = scenario.regions.map { region in
+                HomeLayout.ReservedRegion(kind: region.kind,
+                    frame: region.frame.minY == 611
+                        ? region.frame.offsetBy(dx: 0, dy: cameraTop - 611) : region.frame,
+                    isActive: region.isActive)
+            }
+            let layout = HomeLayout(space: .init(size: scenario.size, safeArea: scenario.safe,
+                regions: regions), text: text, modes: .phrasesAndTyping)
+            #expect(layout.reservationIssues.isEmpty)
+            #expect(abs(layout.shortfall - shortfall) < 0.001)
+            #expect(abs(layout.categoryHeight - categoryHeight) < 0.001)
+            #expect(layout.categoryHeight >= 61)
+            #expect(abs(layout.frame(.category(0)).minY - layout.frame(.stop).maxY - 8) < 0.001)
+            #expect(abs(layout.grid.frame.minY - layout.frame(.category(0)).maxY - 10) < 0.001)
+            #expect(abs(layout.grid.frame.maxY - cameraTop) < 0.001)
+            #expect(layout.grid.tileFloor == 100)
+            #expect(HomeWellEnvelope.preserves(withoutCamera.frames, layout.frames))
+            for slot in [.message, .statusLine, .phrases, .type] + HomeLayout.Slot.safetyRow {
+                #expect(layout.frame(slot) == withoutCamera.frame(slot))
+            }
+            #expect(layout.backToTalking == withoutCamera.backToTalking)
+            if shortfall == 0 {
+                #expect(!layout.grid.scrolls)
+                for index in 0..<HomeLayout.referencePhraseCount {
+                    let tile = layout.grid.tile(row: index / layout.grid.columns,
+                        column: index % layout.grid.columns)
+                    #expect(layout.grid.frame.contains(tile))
+                }
+            } else {
+                #expect(layout.grid.scrolls)
+            }
+        }
+    }
+
     /// Fails if a grown library enters the sizing decision above D and
     /// moves any target, rather than adding only phrase rows at the floor.
     @Test(arguments: scenarios)
     func addingPhrasesNeverMovesTheControls(scenario: Scenario) {
-        for text in [Self.defaultText, HomeLayoutEngineTests.largestText] {
+        for text in HomeLayoutEngineTests.textSizes.map(\.text) {
             let starter = scenario.layout(text: text)
             let grown = scenario.layout(text: text, phrases: 40)
             #expect(grown.frames == starter.frames, "\(scenario.name)")

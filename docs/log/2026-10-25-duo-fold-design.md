@@ -1,7 +1,7 @@
 # Duo fold design: measured regions and windowing
 
 *2026-10-25. Pull request #58 (`codex/duo-reserved-regions`). Codex.
-Home implementation remains a draft; standard UI gates failed. Physical checks are deferred.*
+Home implementation remains a draft; the capacity retry's full UI rerun fails one speech-wait case per family. Physical checks are deferred.*
 
 ## What changed and why
 
@@ -48,6 +48,9 @@ Design gate or approval for a new scrolling policy.
   native/hosted receipts; product source remains unchanged.
 - Correct the mode-word inset minimums, retain the failing reproduction,
   and record complete/selected UI and actual scroll measurements.
+- `a622cec`, `9de5092`: commit the AX3 reference-capacity Spec and Figma
+  drawings, then align their labels with shipped Basics, before the
+  capacity-retry source commit.
 - Starting app/test source: main `6d040d5`, including merged PR #56.
 - Dated measurement source: [PR #55, `cb4c965`](https://github.com/MiddleAgedBanana/Brickson/commit/cb4c965),
   whose measurements used app code `8316743` before #56.
@@ -476,8 +479,9 @@ Each family therefore reports 3 total, 2 passed, 1 failed, no skips or
 expected failures. No rendered quick-word or geometry/window-matching
 assertion failure was reported. The iPad log retains ignored remote-element
 hierarchy `kAXErrorServerNotFound` diagnostics, which are not recorded startup
-assertion failures; no cause is inferred. **The complete 51-case suite has not
-been rerun after the minimum-width correction.** All capacity, native
+assertion failures; no cause is inferred. **At this selected run, the complete
+51-case suite had not been rerun after the minimum-width correction.**
+The later hosted `35bed06` run passed, as recorded below. Capacity, native
 Settings, changed-window mapping and physical-input gates remain open.
 
 [Native font and red/green
@@ -651,8 +655,8 @@ selected. Wide AX5 has no optional height in the measured inputs and
 retains 66/82pt total shortfalls. No universal impossibility, AX5 fix,
 new scrolling exception, physical Snap or changed-window proof follows.
 
-This Spec/plan and drawing addition is prepared for a documentation-only
-gate commit before any capacity-retry code commit. No production/test
+This Spec/plan and drawing addition was committed in `a622cec` and
+`9de5092` before the capacity-retry source commit. No production/test
 source or simulator was changed by the drawing work; root's independent
 native unit receipt is a separate pre-commit requirement.
 
@@ -667,6 +671,152 @@ log: `/private/tmp/brickson-pr58-growth-design-unit.log`. The script shut
 down the simulator it booted. This validates the unchanged source before
 the docs commit, not an implementation of the proposed capacity retry.
 
+## AX3 growth retry: native receipts and gates
+
+The guarded capacity retry is implemented after the original selection,
+only from an issue-free, fully well-certified layout with new fixed-eight
+reference excess. It returns optional growth in the existing half-point
+order, preserves the selected gap recipe, retains the original on ties
+and uses the best strict improvement if the target cannot be reached.
+Family-library reflow follows that choice; no floor, spacing, status,
+neighbour, mode, Back or Settings policy changes. The compact
+[60-input host comparison](../evidence/2026-10-25-duo-design/ax3-native-host-comparison.json)
+retains 59 exact matches and only the intended AX3 change; the
+[count 8/24 comparison](../evidence/2026-10-25-duo-design/ax3-native-grown-library-comparison.json)
+retains zero static geometry changes. These are private-proposal host
+comparisons, separately scoped from production/native proof.
+
+The first unparenthesized Swift Testing filter ran zero tests and was
+rejected. The correctly matched
+`cameraCapacityReturnsOnlyTheOptionalGrowthItNeeds()` ran **one test and
+failed** before implementation. Its camera cases cover 4/5/6pt deficits
+and an unattainable case retaining 8pt shortfall. Removing the retry or
+returning all growth instead of the minimum would break its expectations.
+The fresh full native gate then passed: **778 total, 769 passed, zero
+failed, one existing issue #19 skip and eight strict expected failures**;
+catalog current, coverage **71.2% (7,027/9,876)**. Recorded Xcode 27.1
+(27A9275), 13-inch iPad Pro (M5), iOS 27.0. Result:
+`build/TestResults/pr58-growth-green/unit-ipad.xcresult`; raw logs:
+`/private/tmp/brickson-pr58-growth-red.log`,
+`/private/tmp/brickson-pr58-growth-red-matched.log` and
+`/private/tmp/brickson-pr58-growth-green.log`. The
+[compact source/gate receipt](../evidence/2026-10-25-duo-design/ax3-native-results.json)
+retains full hashes, including HomeReservedLayout `8323e309` and unchanged
+HomeView `60c8edd4`. All 251 Python checks passed (45 docs, 124 hooks,
+7 site, 54 runner and 21 selector); docs and the diff check were repeated
+after this evidence insertion.
+
+Before this retry, [hosted Tests at `35bed06`](https://github.com/MiddleAgedBanana/Brickson/actions/runs/40244703180)
+passed: unit 777 total, 768 passed, zero failed, one existing skip and
+eight strict expected failures; iPad UI 51 total, 46 passed, zero failed,
+two skipped and three expected failures; iPhone UI 51 total, 43 passed,
+zero failed, six skipped and two expected failures. Both first default
+Get Attention and AX5 word/Speaking-wait cases passed. Earlier failures
+remain historical evidence with causes unresolved. **The new full
+standard iPad/iPhone UI run on the capacity-retry source completed with
+exit 65:** iPad **51 = 45 passed / 1 failed / 2 skipped / 3 expected**;
+iPhone **51 = 42 / 1 / 6 / 2**. Each failed only
+`LaunchTests/testLargestTextKeepsQuickControlWordsVisible()`, with four
+30-second Speaking waits at lines 126/145 in light/dark; case durations
+146.055s and 144.969s. No other unexpected assertion failed. First default
+Get Attention/startup and ordinary typing cases passed. These results
+do not identify the retained speech or intermittent startup cause.
+
+The [complete current UI receipt and original-byte light/dark images](../evidence/2026-10-25-duo-design/ax3-growth-ui-results.json)
+keep both families separate from the selected Duo probe. Bundles:
+`build/TestResults/pr58-growth-ui/ui-ipad.xcresult` and
+`build/TestResults/pr58-growth-ui/ui-iphone.xcresult`; complete script log:
+`/private/tmp/brickson-pr58-growth-ui.log`. The failure output retains the
+unformatted xcodebuild stream. The script shut down both simulators it
+booted; neither a wait nor a test was weakened or retried.
+
+The temporary fullscreen lower-camera wide Duo AX3 native probe passed
+**two selected light/dark cases**, iOS 27.1. The unchanged initial probe
+failed both because its retained Split View ancestor was 469×669, not
+the required 951×669. Root restored fullscreen with the native divider,
+then ran the same probe; both failed-pose receipts remain private.
+Neither the later pass nor the unit gate validates that smaller pane or
+a full Home UI suite.
+
+There are **10 coherent samples: eight Home and two root Settings
+Back-only**. The same-snapshot control ancestor is 951×669 while the
+root is transposed 669×951. Every Home sample has D `(16,403,835,208)`,
+eight whole 100pt Basics tiles, Type unavailable, zero keyboards and no
+storage warning. All 64 full tile instances lie within D/window. Native
+tile-model differences are at most 0.167pt under the 0.5pt model
+comparison. **Strict overlap has no tolerance:** 328 target/raw-region
+pairs have zero overlaps. Checks reuse the previously queried division
+`(455.5,0,40,669)` and camera `(215.6667,611,58,37)`, not a new API query.
+D spans the division; its individual target lanes avoid it and the last
+row ends at camera y611. All 120 shared-state and 83 cross-appearance
+frame comparisons match exactly; D is unchanged.
+
+Root Back `(593.3333,8,160.3333,79)` is contained in and centred over
+Phrases, within 0.267pt of its unchanged model. Back returns Home and
+its centre is nearest Phrases under both existing helper rules. This
+is not a complete Back-surface, Family Setup or chain proof. Two
+AVAudioSession activation warnings remain; the alarm stand-in is silent,
+so only app state is checked.
+
+Reviewed active [light](../evidence/2026-10-25-duo-design/ax3-native-light.jpg)
+and [dark](../evidence/2026-10-25-duo-design/ax3-native-dark.jpg) images show
+whole eight Basics phrases and quick/category/mode labels. They are
+optimized 800×562 JPEGs taken separately from coherent AX samples;
+their pixels establish no native point-size or target-floor proof.
+The [image manifest](../evidence/2026-10-25-duo-design/ax3-native-images.json)
+records original-byte equality and capture hashes. All ten original
+XCUIScreen PNGs remain byte-identical inactive-display captures, with no
+per-state or appearance proof.
+
+Manual typing records a separate **automatic-dismiss failure**. The
+confirmed [tall keyboard](../evidence/2026-10-25-duo-design/ax3-native-tall-typing-light.jpg)
+partly covers Put Back; after native rotation,
+[wide typing](../evidence/2026-10-25-duo-design/ax3-native-wide-typing-light.jpg)
+still shows the keyboard. The later
+[eight dimmed whole tiles](../evidence/2026-10-25-duo-design/ax3-native-wide-manually-lowered-light.jpg)
+follow explicit Device Hub keyboard lowering, never an automatic pass.
+An earlier CLI tap reported success without confirmed Type activation
+and is not a typing pass.
+
+A fresh app-only build from all **87 app files verified against
+`35bed06`** reproduced visible persistence after normal tall Type
+activation and native rotation. The
+[baseline receipt](../evidence/2026-10-25-duo-design/ax3-native-baseline-results.json)
+retains build/product and separate tall/wide image hashes. The
+show-keyboard preference was restored before the fresh launch. The
+build succeeded with a metadata-extraction warning; it is not a unit/UI
+receipt. Visible persistence occurs on both uninstrumented baseline and
+candidate, with no causal mechanism established.
+
+The [nine-event boolean trace](../evidence/2026-10-25-duo-design/ax3-native-trace-results.json)
+is **baseline `35bed06` only**, using a temporary private HomeView overlay;
+the candidate has no binding trace. Availability changes true→false.
+The getter immediately after the false write remains true, then the
+parent FocusState callback reports true→false with availability false.
+No later focus-true event or field task is in the retained markers.
+The separate settled wide image still shows the keyboard. This does
+not establish a failed setter or an SDK defect: instrumentation can
+perturb scheduling and logs/images are not atomic binding/keyboard
+proof. No focus or keyboard fix was applied.
+
+The operator's cleanup receipt reports stopping the traced app,
+successfully installing the uninstrumented capacity candidate, removing
+the temporary runner and shutting down only the task-owned Duo. Shared
+and restored-candidate HomeView/Layout hashes match; receipt/product
+hashes are retained. No post-cleanup launch check is claimed. Current
+ordinary UI testing is separate. AX5 capacity, native Settings chains,
+changed-window mapping and deferred physical checks remain open.
+
+A bounded source/design review found no additional supported allocation
+within the current contract after checking hybrid C/B rows, asymmetric
+or staggered phrase rows, a shaped D and reclaiming disabled-control
+space. This is not a universal impossibility proof or a new optimizer
+run. The current AX5 78/100pt tile heights are conservative word-fitting
+tiers, distinct from the active touch profile's 44pt physical floor;
+AX5 is a text size, not a separate physical profile. No floor or row
+policy changed. Native tier-tightness calibration is optional evidence,
+not a required gate or demonstrated repair; no further sweep was run.
+
 ## Not verified
 
 The [later speech-status diagnostic](../evidence/2026-10-25-duo-design/speech-diagnostic/README.md)
@@ -680,10 +830,16 @@ full UI gates pass. Both source diagnostics were removed byte-for-byte;
 no production audio behavior or wait assertion changed. The control app
 was removed and only the owned simulator booted for it was shut down.
 
-- A green complete ordinary UI run: both local families fail the
-  Speaking-wait case, also reproduced on unchanged main. The cause is
-  unestablished. Duo active-display captures are separate from the
-  inspected standard phone/iPad captures.
+- A green complete ordinary UI run on the capacity-retry source: each
+  family completed 51 cases with one failed AX5 Speaking-wait case and
+  four failed waits. Earlier local failures, also
+  reproduced on unchanged main, remain recorded above; later hosted
+  `35bed06` passed. No cause or speech fix is established. Duo active
+  captures are separate from standard phone/iPad captures.
+- Automatic software-keyboard dismissal after tall-to-wide rotation:
+  visible persistence reproduces on baseline and candidate. The
+  baseline-only binding trace does not identify the cause or validate
+  a fix; later manual keyboard lowering is not an automatic pass.
 - All post-change Split View arrangements, all window sizes,
   verified platform pointer mapping across changed windows and a successful
   second Brickson window. Hypothetical mappings already expose added paths
