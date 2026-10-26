@@ -1,0 +1,89 @@
+{
+  "records": [
+    {
+      "activationPoint": {
+        "x": 201,
+        "y": 103.33333333333333
+      },
+      "context": "AX5-dark-portrait-actual-root-fixed-point",
+      "oldVisibleRow": {
+        "height": 144.66666666666666,
+        "width": 370,
+        "x": 16,
+        "y": 31
+      },
+      "requestedDragDistance": 100,
+      "rowHittable": false,
+      "scroll": {
+        "height": 528,
+        "width": 402,
+        "x": 0,
+        "y": 177
+      },
+      "scrollDelta": 286,
+      "scrollVisible": {
+        "height": 528,
+        "width": 402,
+        "x": 0,
+        "y": 177
+      },
+      "state": "beforeFixedPointEntry",
+      "unscrolledRow": {
+        "height": 144.66666666666669,
+        "width": 370,
+        "x": 16,
+        "y": 317
+      },
+      "window": {
+        "height": 874,
+        "width": 402,
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "context": "AX5-dark-portrait-actual-root-fixed-point",
+      "row": {
+        "height": 144.66666666666669,
+        "width": 370,
+        "x": 16,
+        "y": 317
+      },
+      "scroll": {
+        "height": 528,
+        "width": 402,
+        "x": 0,
+        "y": 177
+      },
+      "scrollVisible": {
+        "height": 528,
+        "width": 402,
+        "x": 0,
+        "y": 177
+      },
+      "state": "beforeScroll",
+      "window": {
+        "height": 874,
+        "width": 402,
+        "x": 0,
+        "y": 0
+      }
+    }
+  ],
+  "imageProvenance": [
+    {
+      "file": "iphone-overscrolled-probe.png",
+      "attachment": {
+        "configurationName": "Test Scheme Action",
+        "deviceId": "B903B710-750E-4330-86C8-000B3DAB7C23",
+        "deviceName": "Brickson Settings Check iPhone",
+        "exportedFileName": "9C2AA762-6544-4244-B80F-611D29FB6710.png",
+        "isAssociatedWithFailure": false,
+        "suggestedHumanReadableName": "actual-scroll-root-immediately-before-entry-AX5-dark-portrait_0_FB562BE5-2C2D-4603-B3D6-B24276DB5F7A.png",
+        "timestamp": 1793046814.134
+      },
+      "resultBundle": "build/TestResults/settings-actual-root-scroll/ui-destination.xcresult"
+    }
+  ],
+  "result": "Probe precondition failure: row offscreen; no Family Setup entry attempted."
+}

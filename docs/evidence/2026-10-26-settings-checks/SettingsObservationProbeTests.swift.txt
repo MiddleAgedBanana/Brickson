@@ -1,0 +1,171 @@
+import UIKit
+import XCTest
+
+/// Temporary observation harness. Remove before committing the docs-only report.
+final class SettingsObservationProbeTests: XCTestCase {
+    override func setUpWithError() throws {
+        continueAfterFailure = true
+    }
+
+    @MainActor
+    func testSettingsAndFamilySetupObservationMatrix() throws {
+        for orientation in [UIDeviceOrientation.portrait, .landscapeLeft] {
+            for (size, appearance) in [
+                (UITestTextSize.large, UITestAppearance.light),
+                (.ax3, .light),
+                (.ax3, .dark),
+            ] {
+                let context = name(size, appearance, orientation)
+                let app = launchedApp(
+                    textSize: size, appearance: appearance, orientation: orientation,
+                    shortTimeouts: false
+                )
+                checkAppearance(app, appearance: appearance, context: context)
+                let homeSettings = app.buttons["settings"]
+                XCTAssertTrue(homeSettings.waitForExistence(timeout: 10), context)
+                homeSettings.tap()
+                let root = app.buttons["familySetup"]
+                XCTAssertTrue(root.waitForExistence(timeout: 10), context)
+                let row = root.frame
+                attachCapture(app, name: "observation-root-\(context)")
+                report(app, context: context, state: "root", values: ["row": frame(row)])
+
+                open("familySetup", leaving: "familySetup", in: app, context: context)
+                let guided = app.buttons["guidedSetup"]
+                XCTAssertTrue(guided.waitForExistence(timeout: 10), context)
+                attachCapture(app, name: "observation-family-\(context)")
+                report(app, context: context, state: "family", values: [
+                    "rootRow": frame(row), "guided": frame(guided.frame),
+                ])
+                XCTAssertTrue(app.descendants(matching: .any)["familySetupOpening"].exists, context)
+                XCTAssertEqual(guided.frame.minX, row.minX, accuracy: 1, "leading edge: \(context)")
+                XCTAssertEqual(guided.frame.minY, row.minY, accuracy: 1, "top: \(context)")
+                XCTAssertEqual(guided.frame.width, row.width, accuracy: 1, "width: \(context)")
+                XCTAssertGreaterThanOrEqual(guided.frame.height + 1, row.height, "height: \(context)")
+                for button in app.buttons.allElementsBoundByIndex
+                where button.exists && button.identifier != "guidedSetup"
+                    && button.isHittable && button.frame.intersects(row.insetBy(dx: 0.5, dy: 0.5)) {
+                    XCTFail("\(button.label) overlaps root row in Family Setup: \(context)")
+                }
+
+                if guided.isHittable {
+                    open("guidedSetup", leaving: "guidedSetup", in: app, context: context)
+                    attachCapture(app, name: "observation-first-step-\(context)")
+                    report(app, context: context, state: "firstStep", values: ["rootRow": frame(row)])
+                }
+                app.terminate()
+            }
+        }
+    }
+
+    @MainActor
+    func testScrolledSettingsRowObservation() throws {
+        for orientation in [UIDeviceOrientation.portrait, .landscapeLeft] {
+            for size in [UITestTextSize.ax3, .ax5] {
+                let context = name(size, .dark, orientation)
+                let app = launchedApp(
+                    textSize: size, appearance: .dark, orientation: orientation,
+                    shortTimeouts: false
+                )
+                checkAppearance(app, appearance: .dark, context: context)
+                let homeSettings = app.buttons["settings"]
+                XCTAssertTrue(homeSettings.waitForExistence(timeout: 10), context)
+                homeSettings.tap()
+                let root = app.buttons["familySetup"]
+                XCTAssertTrue(root.waitForExistence(timeout: 10), context)
+                let unscrolled = root.frame
+                attachCapture(app, name: "scroll-root-before-\(context)")
+
+                let scroll = app.scrollViews.firstMatch
+                XCTAssertTrue(scroll.waitForExistence(timeout: 10), "root scroll view: \(context)")
+                let visible = scroll.frame.intersection(app.frame)
+                let distance = min(120, max(60, unscrolled.minY - visible.minY - 20))
+                let start = app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(
+                    dx: visible.midX, dy: min(visible.maxY - 35, max(visible.midY, visible.minY + distance + 35))
+                ))
+                let end = start.withOffset(CGVector(dx: 0, dy: -distance))
+                start.press(forDuration: 0.1, thenDragTo: end)
+                let scrolled = root.frame
+                attachCapture(app, name: "scroll-root-after-\(context)")
+                report(app, context: context, state: "scrolledRoot", values: [
+                    "unscrolledRow": frame(unscrolled), "visibleRow": frame(scrolled),
+                    "scrollDelta": unscrolled.minY - scrolled.minY,
+                    "rowHittable": root.isHittable,
+                ])
+                guard root.isHittable else {
+                    XCTFail("Family Setup was no longer hittable after the modest scroll: \(context)")
+                    app.terminate()
+                    continue
+                }
+
+                open("familySetup", leaving: "familySetup", in: app, context: context)
+                let guided = app.buttons["guidedSetup"]
+                XCTAssertTrue(guided.waitForExistence(timeout: 10), context)
+                attachCapture(app, name: "scroll-family-opened-\(context)")
+                let spot = CGPoint(x: scrolled.midX, y: scrolled.midY)
+                let homeNames: Set<String> = [
+                    "Yes", "No", "Emergency", "Again", "getAttention", "phrases", "type", "settings",
+                    "Basics", "Needs", "Conversation", "Feelings", "phraseTile",
+                ]
+                let controls = try screenControls(in: app).filter {
+                    !homeNames.contains($0.name) && $0.frame.intersects(app.frame)
+                }
+                let nearest = nearestControls(to: spot, among: controls)
+                report(app, context: context, state: "scrolledFamily", values: [
+                    "unscrolledRow": frame(unscrolled), "visibleRow": frame(scrolled),
+                    "guided": frame(guided.frame), "oldVisibleCentre": ["x": spot.x, "y": spot.y],
+                    "buttonsContainingOldCentre": controls.filter { $0.frame.contains(spot) }.map(\.name).sorted(),
+                    "nearestByCentre": nearest.byCentre.sorted(), "nearestByEdge": nearest.byEdge.sorted(),
+                ])
+                app.terminate()
+            }
+        }
+    }
+
+    @MainActor
+    private func open(_ identifier: String, leaving: String, in app: XCUIApplication, context: String) {
+        app.buttons[identifier].tap()
+        let gone = expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: app.buttons[leaving])
+        XCTAssertEqual(XCTWaiter.wait(for: [gone], timeout: 10), .completed, context)
+    }
+
+    private func name(_ size: UITestTextSize, _ appearance: UITestAppearance, _ orientation: UIDeviceOrientation) -> String {
+        "\(size.name.replacingOccurrences(of: " ", with: "-"))-\(appearance.rawValue)-requested-\(orientation.isLandscape ? "landscape" : "portrait")"
+    }
+
+    private func frame(_ rect: CGRect) -> [String: CGFloat] {
+        ["x": rect.minX, "y": rect.minY, "width": rect.width, "height": rect.height]
+    }
+
+    @MainActor
+    private func checkAppearance(_ app: XCUIApplication, appearance: UITestAppearance, context: String) {
+        guard let brightness = backgroundBrightness(of: app, name: "appearance-\(context)") else {
+            XCTFail("Could not measure the rendered appearance: \(context)")
+            return
+        }
+        report(app, context: context, state: "homeAppearance", values: ["backgroundBrightness": brightness])
+        if appearance == .dark {
+            XCTAssertLessThan(brightness, 0.5, "The rendered Home is not dark: \(context)")
+        } else {
+            XCTAssertGreaterThan(brightness, 0.5, "The rendered Home is not light: \(context)")
+        }
+    }
+
+    @MainActor
+    private func report(_ app: XCUIApplication, context: String, state: String, values: [String: Any]) {
+        var record = values
+        record["context"] = context
+        record["state"] = state
+        record["window"] = frame(app.windows.firstMatch.frame)
+        do {
+            let data = try JSONSerialization.data(withJSONObject: record, options: [.sortedKeys, .prettyPrinted])
+            let attachment = XCTAttachment(data: data, uniformTypeIdentifier: "public.json")
+            attachment.name = "settings-observation-\(state)-\(context).json"
+            attachment.lifetime = .keepAlways
+            add(attachment)
+            print("SETTINGS-OBSERVATION \(String(decoding: data, as: UTF8.self))")
+        } catch {
+            XCTFail("Could not encode the observation: \(error)")
+        }
+    }
+}

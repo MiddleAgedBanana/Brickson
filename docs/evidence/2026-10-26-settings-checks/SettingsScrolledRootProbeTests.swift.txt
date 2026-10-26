@@ -1,0 +1,127 @@
+import XCTest
+
+/// Temporary observation harness. Remove before committing the docs-only report.
+final class SettingsScrolledRootProbeTests: XCTestCase {
+    override func setUpWithError() throws {
+        continueAfterFailure = true
+    }
+
+    @MainActor
+    func testActualSettingsRootScrollAndFixedPointEntry() throws {
+        let app = launchedApp(textSize: .ax5, appearance: .dark, shortTimeouts: false)
+        let homeSettings = app.buttons["settings"]
+        XCTAssertTrue(homeSettings.waitForExistence(timeout: 10), "Home Settings is missing")
+        homeSettings.tap()
+        let row = app.buttons["familySetup"]
+        XCTAssertTrue(row.waitForExistence(timeout: 10), "Settings root is missing")
+
+        // Home remains beneath the cover. Select the scroll view that owns
+        // this screen's row rather than the first scroll view in the tree.
+        let scroll = try XCTUnwrap(
+            app.scrollViews.allElementsBoundByIndex.first { $0.buttons["familySetup"].exists },
+            "No scroll view contains Settings' Family Setup row"
+        )
+        let unscrolled = row.frame
+        let visible = scroll.frame.intersection(app.frame)
+        attachCapture(app, name: "actual-scroll-root-before-AX5-dark-portrait")
+        report(app, state: "beforeScroll", values: [
+            "row": frame(unscrolled), "scroll": frame(scroll.frame), "scrollVisible": frame(visible),
+        ])
+
+        let distance = min(100, max(0, unscrolled.midY - visible.minY - 15))
+        XCTAssertGreaterThanOrEqual(distance, 60, "The row has too little room for this bounded scroll")
+        guard distance >= 60 else { return }
+        let startY = min(visible.maxY - 25, max(unscrolled.maxY + 35, visible.minY + distance + 25))
+        let start = app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(
+            dx: visible.midX - app.frame.minX, dy: startY - app.frame.minY
+        ))
+        let end = start.withOffset(CGVector(dx: 0, dy: -distance))
+        start.press(forDuration: 0.1, thenDragTo: end, withVelocity: .slow, thenHoldForDuration: 0.5)
+
+        // XCTest waits for the drag to finish. Read the visible frame after
+        // the drag, then activate that exact window point, with no element
+        // tap that can scroll the row into a different position first.
+        let oldVisible = row.frame
+        let point = CGPoint(x: oldVisible.midX, y: oldVisible.midY)
+        let delta = unscrolled.minY - oldVisible.minY
+        attachCapture(app, name: "actual-scroll-root-immediately-before-entry-AX5-dark-portrait")
+        report(app, state: "beforeFixedPointEntry", values: [
+            "unscrolledRow": frame(unscrolled), "oldVisibleRow": frame(oldVisible),
+            "scroll": frame(scroll.frame), "scrollVisible": frame(visible),
+            "scrollDelta": delta, "activationPoint": pointValue(point), "rowHittable": row.isHittable,
+            "requestedDragDistance": distance,
+        ])
+        XCTAssertGreaterThan(delta, 1, "The actual Settings root did not retain a scroll offset")
+        XCTAssertTrue(visible.insetBy(dx: 0, dy: 10).contains(point), "The activation centre left the visible scroll region")
+        XCTAssertTrue(row.isHittable, "Family Setup is not hittable after scrolling")
+        guard delta > 1, visible.insetBy(dx: 0, dy: 10).contains(point), row.isHittable else { return }
+
+        app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(
+            dx: point.x - app.frame.minX, dy: point.y - app.frame.minY
+        )).tap()
+        let gone = expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: row)
+        XCTAssertEqual(XCTWaiter.wait(for: [gone], timeout: 10), .completed, "Fixed-point tap did not leave Settings' root")
+        let guided = app.buttons["guidedSetup"]
+        XCTAssertTrue(guided.waitForExistence(timeout: 10), "Family Setup did not open")
+        attachCapture(app, name: "actual-scroll-family-opened-AX5-dark-portrait")
+
+        let homeNames: Set<String> = [
+            "Yes", "No", "Emergency", "Again", "getAttention", "phrases", "type", "settings",
+            "Basics", "Needs", "Conversation", "Feelings", "phraseTile",
+        ]
+        let controls = try screenControls(in: app).filter {
+            !homeNames.contains($0.name) && $0.frame.intersects(app.frame)
+        }
+        func sample(_ location: CGPoint) -> [String: Any] {
+            let nearest = nearestControls(to: location, among: controls)
+            return [
+                "point": pointValue(location),
+                "containing": controls.filter { $0.frame.contains(location) }.map(\.name).sorted(),
+                "nearestByCentre": nearest.byCentre.sorted(), "nearestByEdge": nearest.byEdge.sorted(),
+            ]
+        }
+        let inset = oldVisible.insetBy(dx: 0.5, dy: 0.5)
+        let locations = [
+            CGPoint(x: inset.minX, y: inset.minY), CGPoint(x: inset.midX, y: inset.minY), CGPoint(x: inset.maxX, y: inset.minY),
+            CGPoint(x: inset.minX, y: inset.midY), CGPoint(x: inset.midX, y: inset.midY), CGPoint(x: inset.maxX, y: inset.midY),
+            CGPoint(x: inset.minX, y: inset.maxY), CGPoint(x: inset.midX, y: inset.maxY), CGPoint(x: inset.maxX, y: inset.maxY),
+        ]
+        report(app, state: "familyAfterFixedPointEntry", values: [
+            "unscrolledRow": frame(unscrolled), "oldVisibleRow": frame(oldVisible),
+            "guided": frame(guided.frame), "scrollDelta": delta,
+            "activationPoint": pointValue(point), "atActivationPoint": sample(point),
+            "gridSamples": locations.map(sample),
+            "buttonsOverlappingOldVisibleRow": controls.filter { $0.frame.intersects(inset) }.map(\.name).sorted(),
+            "controls": controls.map { control -> [String: Any] in
+                ["name": control.name, "frame": frame(control.frame)]
+            },
+        ])
+        app.terminate()
+    }
+
+    private func frame(_ value: CGRect) -> [String: CGFloat] {
+        ["x": value.minX, "y": value.minY, "width": value.width, "height": value.height]
+    }
+
+    private func pointValue(_ value: CGPoint) -> [String: CGFloat] {
+        ["x": value.x, "y": value.y]
+    }
+
+    @MainActor
+    private func report(_ app: XCUIApplication, state: String, values: [String: Any]) {
+        var record = values
+        record["state"] = state
+        record["context"] = "AX5-dark-portrait-actual-root-fixed-point"
+        record["window"] = frame(app.windows.firstMatch.frame)
+        do {
+            let data = try JSONSerialization.data(withJSONObject: record, options: [.sortedKeys, .prettyPrinted])
+            let attachment = XCTAttachment(data: data, uniformTypeIdentifier: "public.json")
+            attachment.name = "actual-settings-scroll-\(state).json"
+            attachment.lifetime = .keepAlways
+            add(attachment)
+            print("ACTUAL-SETTINGS-SCROLL \(String(decoding: data, as: UTF8.self))")
+        } catch {
+            XCTFail("Could not encode the scroll observation: \(error)")
+        }
+    }
+}
