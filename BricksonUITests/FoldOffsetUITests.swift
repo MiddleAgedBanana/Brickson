@@ -21,14 +21,12 @@ final class FoldOffsetUITests: XCTestCase {
         let ordinary = launchedApp(appearance: appearance, shortTimeouts: false)
         let baseline = try button("phrases", in: ordinary.snapshot())
         attachCapture(ordinary, name: "top-division-\(appearance.rawValue)-ordinary")
-        ordinary.terminate()
 
         let app = launchedApp(
             appearance: appearance,
             arguments: ["--layout-fixture=top-division"],
             shortTimeouts: false
         )
-        defer { app.terminate() }
         let home = try app.snapshot()
         let phrases = try button("phrases", in: home)
         let type = try button("type", in: home)
