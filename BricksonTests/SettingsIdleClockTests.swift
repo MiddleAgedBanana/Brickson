@@ -102,4 +102,37 @@ struct SettingsIdleClockTests {
 
         #expect(clock.isDue(at: start + .seconds(3)))
     }
+
+    @Test func settingsActivityTracksResetCountAndHolds() {
+        let activity = SettingsActivity(limit: .zero)
+        #expect(activity.resetCount == 0)
+        #expect(activity.resetIfDue())
+        #expect(activity.resetCount == 1)
+
+        activity.setHold(.alarm, true)
+        #expect(activity.clock.isHeld)
+        #expect(!activity.resetIfDue())
+        #expect(activity.resetCount == 1)
+
+        activity.setHold(.alarm, false)
+        #expect(!activity.clock.isHeld)
+        activity.recordActivity()
+        #expect(activity.resetIfDue())
+        #expect(activity.resetCount == 2)
+    }
+
+    @Test func guidedSetupStepOrdersFiveStepsAndStopsAtReady() {
+        #expect(GuidedSetupStep.count == 5)
+        let expected: [(GuidedSetupStep, Int, GuidedSetupStep?)] = [
+            (.access, 1, .voice),
+            (.voice, 2, .turnOn),
+            (.turnOn, 3, .keepOpen),
+            (.keepOpen, 4, .ready),
+            (.ready, 5, nil),
+        ]
+        for (step, number, next) in expected {
+            #expect(step.number == number)
+            #expect(step.next == next)
+        }
+    }
 }

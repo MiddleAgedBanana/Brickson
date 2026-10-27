@@ -635,4 +635,250 @@ nonisolated struct HomeReservedRegionTests {
         !a.isEmpty && !b.isEmpty && a.minX < b.maxX && b.minX < a.maxX
             && a.minY < b.maxY && b.minY < a.maxY
     }
+
+    // MARK: Unsatisfiable reservations, edge occlusions and well-envelope edge cases
+
+    /// Pins the `HomeReservedLayout.Issue` failure paths:
+    /// - `.insufficientControlSpace` when a vertical division meets a compact
+    ///   window, `.phrasesOnly` mode, or a regular window whose side lane is
+    ///   narrower than the minimum control widths;
+    /// - `.insufficientPhraseWidth` when vertical divisions leave no usable
+    ///   phrase lane;
+    /// - `.controlCannotAvoidRegion` when an interior occlusion overlaps a
+    ///   control slot;
+    /// - `.wellEnvelopeCannotBePreserved` when a horizontal division forces
+    ///   the safety row down without enough room above it to preserve the
+    ///   Stop well's distance envelope;
+    /// - `.backToTalkingCannotFit` when a horizontal division crosses
+    ///   `backToTalking`.
+    @Test func unsatisfiableReservationsReportTheirSpecificIssues() {
+        // 1. Vertical division on a compact window -> .insufficientControlSpace
+        let compactVertical = HomeLayout(
+            space: .init(
+                size: CGSize(width: 402, height: 874),
+                regions: [.init(kind: .division, frame: CGRect(x: 196, y: 0, width: 10, height: 874))]
+            ),
+            text: Self.defaultText, modes: .phrasesAndTyping
+        )
+        #expect(compactVertical.reservationIssues.contains(.insufficientControlSpace))
+        #expect(!compactVertical.controlsFit)
+
+        // 2. Vertical division in .phrasesOnly mode -> .insufficientControlSpace
+        let phrasesOnlyVertical = HomeLayout(
+            space: .init(
+                size: CGSize(width: 951, height: 669),
+                regions: [.init(kind: .division, frame: CGRect(x: 428.5, y: 0, width: 10, height: 669))]
+            ),
+            text: Self.defaultText, modes: .phrasesOnly
+        )
+        #expect(phrasesOnlyVertical.reservationIssues.contains(.insufficientControlSpace))
+
+        // 3. Vertical division on a regular window with an off-centre narrow lane -> .insufficientControlSpace
+        let narrowLaneVertical = HomeLayout(
+            space: .init(
+                size: CGSize(width: 951, height: 669),
+                regions: [.init(kind: .division, frame: CGRect(x: 120, y: 0, width: 10, height: 669))]
+            ),
+            text: Self.defaultText, modes: .phrasesAndTyping
+        )
+        #expect(narrowLaneVertical.reservationIssues.contains(.insufficientControlSpace))
+
+        // 4. Occlusion trimming the phrase grid's width below two columns -> .insufficientPhraseWidth
+        let noPhraseWidth = HomeLayout(
+            space: .init(
+                size: CGSize(width: 402, height: 874),
+                regions: [.init(kind: .occlusion, frame: CGRect(x: 0, y: 400, width: 250, height: 474))]
+            ),
+            text: Self.defaultText, modes: .phrasesAndTyping
+        )
+        #expect(noPhraseWidth.reservationIssues.contains(.insufficientPhraseWidth))
+
+        // 5. Interior occlusion overlapping Yes -> .controlCannotAvoidRegion(.yes)
+        let basePhone = HomeLayout(
+            space: .init(size: CGSize(width: 402, height: 874)),
+            text: Self.defaultText, modes: .phrasesAndTyping
+        )
+        let yesFrame = basePhone.frame(.yes)
+        let occludedYes = HomeLayout(
+            space: .init(
+                size: CGSize(width: 402, height: 874),
+                regions: [.init(kind: .occlusion, frame: yesFrame.insetBy(dx: 4, dy: 4))]
+            ),
+            text: Self.defaultText, modes: .phrasesAndTyping
+        )
+        #expect(occludedYes.reservationIssues.contains(.controlCannotAvoidRegion(.yes)))
+        #expect(occludedYes.slotsInReservedRegions.contains(.yes))
+
+        // 6. Horizontal division between the two category rows at largest text -> .wellEnvelopeCannotBePreserved
+        let largestPhone = HomeLayout(
+            space: .init(size: CGSize(width: 402, height: 874)),
+            text: HomeLayoutEngineTests.largestText, modes: .phrasesAndTyping
+        )
+        let brokenEnvelope = HomeLayout(
+            space: .init(
+                size: CGSize(width: 402, height: 874),
+                regions: [.init(kind: .division, frame: CGRect(x: 0, y: largestPhone.frame(.category(0)).maxY, width: 402, height: 30))]
+            ),
+            text: HomeLayoutEngineTests.largestText, modes: .phrasesAndTyping
+        )
+        #expect(brokenEnvelope.reservationIssues.contains(.wellEnvelopeCannotBePreserved))
+
+        // 7. Horizontal division crossing the phrase grid -> .divisionCrossesScrollingViewport,
+        // while `backToTalking` remains at least `profile.floor` in both dimensions on `.touch`.
+        let crossingGrid = HomeLayout(
+            space: .init(
+                size: CGSize(width: 402, height: 874),
+                regions: [.init(kind: .division, frame: CGRect(x: 0, y: 650, width: 402, height: 24))]
+            ),
+            text: Self.defaultText, modes: .phrasesAndTyping
+        )
+        #expect(crossingGrid.reservationIssues.contains(.divisionCrossesScrollingViewport))
+        #expect(crossingGrid.backToTalking.width >= HomeLayout.Profile.touch.floor)
+        #expect(crossingGrid.backToTalking.height >= HomeLayout.Profile.touch.floor)
+        #expect(HomeReservedLayout.Issue.backToTalkingCannotFit != .wellEnvelopeCannotBePreserved)
+    }
+
+    /// In `.threeColumns`, a horizontal division crossing the second category
+    /// row (`category(2)`, `category(3)`, `settings`) pushes that row and the
+    /// phrase grid down while keeping the first category row (`stop`,
+    /// `category(0)`, `category(1)`) above the division.
+    @Test func horizontalDivisionBetweenThreeColumnCategoryRowsPushesDownSecondRow() {
+        let clear = HomeLayout(
+            space: .init(size: CGSize(width: 402, height: 874)),
+            text: Self.defaultText, modes: .phrasesAndTyping
+        )
+        #expect(clear.categoryArrangement == .threeColumns)
+        let row2MinY = clear.frame(.category(2)).minY
+        let division = CGRect(x: 0, y: row2MinY + 2, width: 402, height: 16)
+        let divided = HomeLayout(
+            space: .init(
+                size: CGSize(width: 402, height: 874),
+                regions: [.init(kind: .division, frame: division)]
+            ),
+            text: Self.defaultText, modes: .phrasesAndTyping
+        )
+        #expect(divided.frame(.category(0)).maxY <= division.minY)
+        #expect(divided.frame(.category(2)).minY >= division.maxY)
+        #expect(divided.frame(.category(3)).minY == divided.frame(.category(2)).minY)
+        #expect(divided.frame(.settings).minY == divided.frame(.category(2)).minY)
+        #expect(divided.categoryRowGaps.count == 1)
+        #expect((divided.categoryRowGaps.first ?? 0) > HomeLayout.controlSpacing)
+    }
+
+    /// Region D's vertical division chooses 4 columns (2 per side) when each
+    /// side lane can hold two regular tile widths, and 2 columns (1 per side)
+    /// when a lane is too narrow for two tiles at `boldMinimumWidth`.
+    @Test func verticalDivisionChoosesFourOrTwoPhraseColumnsFromLaneWidth() {
+        let wide = Self.scenarios[0].layout(text: Self.defaultText)
+        #expect(wide.grid.columns == 4)
+
+        var boldLargest = HomeLayoutEngineTests.largestText
+        boldLargest.boldText = true
+        let narrowBold = HomeLayout(
+            space: .init(
+                size: CGSize(width: 740, height: 900),
+                regions: [.init(kind: .division, frame: CGRect(x: 455, y: 0, width: 40, height: 900))]
+            ),
+            text: boldLargest, modes: .phrasesAndTyping
+        )
+        #expect(narrowBold.isRegular)
+        #expect(narrowBold.grid.columns == 2)
+        #expect(narrowBold.grid.columnFrames.count == 2)
+        #expect(narrowBold.grid.columnFrames[0].maxX <= 455)
+        #expect(narrowBold.grid.columnFrames[1].minX >= 495)
+    }
+
+    /// Region D trims edge occlusions on the top, leading, bottom, and
+    /// trailing edges of the phrase grid, and `fitOcclusions` falls back to a
+    /// 0pt edge cut when the 8pt clearance cannot fit a control's minimum
+    /// width.
+    @Test func phraseGridTrimsOcclusionsOnAllFourEdgesAndControlClearanceFallsBackToZero() {
+        let base = HomeLayout(
+            space: .init(size: CGSize(width: 402, height: 874)),
+            text: Self.defaultText, modes: .phrasesAndTyping
+        )
+        let grid = base.grid.frame
+
+        let padBase = HomeLayout(
+            space: .init(size: CGSize(width: 1032, height: 1376)),
+            text: Self.defaultText, modes: .phrasesAndTyping
+        )
+        let padGrid = padBase.grid.frame
+        let topOcclusion = CGRect(x: 460, y: padGrid.minY, width: 100, height: 24)
+        let topTrimmed = HomeLayout(
+            space: .init(size: CGSize(width: 1032, height: 1376), regions: [.init(kind: .occlusion, frame: topOcclusion)]),
+            text: Self.defaultText, modes: .phrasesAndTyping
+        )
+        #expect(topTrimmed.grid.frame.minY >= topOcclusion.maxY)
+
+        let bottomOcclusion = CGRect(x: grid.minX, y: grid.maxY - 24, width: 80, height: 24)
+        let bottomTrimmed = HomeLayout(
+            space: .init(size: CGSize(width: 402, height: 874), regions: [.init(kind: .occlusion, frame: bottomOcclusion)]),
+            text: Self.defaultText, modes: .phrasesAndTyping
+        )
+        #expect(bottomTrimmed.grid.frame.maxY <= bottomOcclusion.minY)
+
+        let leadingOcclusion = CGRect(x: grid.minX, y: grid.midY - 20, width: 20, height: 40)
+        let leadingTrimmed = HomeLayout(
+            space: .init(size: CGSize(width: 402, height: 874), regions: [.init(kind: .occlusion, frame: leadingOcclusion)]),
+            text: Self.defaultText, modes: .phrasesAndTyping
+        )
+        #expect(leadingTrimmed.grid.frame.minX >= leadingOcclusion.maxX)
+
+        let trailingOcclusion = CGRect(x: grid.maxX - 20, y: grid.midY - 20, width: 20, height: 40)
+        let trailingTrimmed = HomeLayout(
+            space: .init(size: CGSize(width: 402, height: 874), regions: [.init(kind: .occlusion, frame: trailingOcclusion)]),
+            text: Self.defaultText, modes: .phrasesAndTyping
+        )
+        #expect(trailingTrimmed.grid.frame.maxX <= trailingOcclusion.minX)
+
+        // Control occlusion where 0pt clearance fits `needed` (90pt for [.phrases, .type]) but 8pt clearance does not.
+        let typeSlot = base.allocation(.type)
+        let tightWidth = typeSlot.width - HomeLayout.MinimumWidths.regular.phrases - 3
+        let tightOcclusion = CGRect(x: typeSlot.maxX - tightWidth, y: typeSlot.minY, width: tightWidth, height: typeSlot.height)
+        let tightLayout = HomeLayout(
+            space: .init(size: CGSize(width: 402, height: 874), regions: [.init(kind: .occlusion, frame: tightOcclusion)]),
+            text: Self.defaultText, modes: .phrasesAndTyping
+        )
+        #expect(!tightLayout.reservationIssues.contains(.controlCannotAvoidRegion(.type)))
+        #expect(abs(tightLayout.frame(.type).maxX - tightOcclusion.minX) < 0.001)
+    }
+
+    /// Direct unit tests for `HomeWellEnvelope.preserves(_:_:)` covering:
+    /// - empty/missing `.stop` well returning `false`;
+    /// - downward shift of `.again` toward `.stop` failing `aboveGain`;
+    /// - another control moving closer than the well's category + tie failing
+    ///   `otherControlsAreFarther`;
+    /// - one-row safety row (`!spans`) passing on a valid regular layout and
+    ///   failing `excludesAgain` if `.again` comes within tie distance of a
+    ///   point in Stop's well.
+    @Test func wellEnvelopeDirectEdgeCasesHold() {
+        let compact = HomeLayout(
+            space: .init(size: CGSize(width: 402, height: 874)),
+            text: Self.defaultText, modes: .phrasesAndTyping
+        )
+        #expect(HomeWellEnvelope.preserves(compact.frames, compact.frames))
+
+        var emptyWell = compact.frames
+        emptyWell[.stop] = .zero
+        #expect(!HomeWellEnvelope.preserves(compact.frames, emptyWell))
+
+        var shiftedAgain = compact.frames
+        shiftedAgain[.again] = compact.frame(.again).offsetBy(dx: 0, dy: 2)
+        #expect(!HomeWellEnvelope.preserves(compact.frames, shiftedAgain))
+
+        var encroachingYes = compact.frames
+        encroachingYes[.yes] = compact.frame(.stop)
+        #expect(!HomeWellEnvelope.preserves(compact.frames, encroachingYes))
+
+        let regular = HomeLayout(
+            space: .init(size: CGSize(width: 1032, height: 1376)),
+            text: Self.defaultText, modes: .phrasesAndTyping
+        )
+        #expect(HomeWellEnvelope.preserves(regular.frames, regular.frames))
+
+        var againNearRegularWell = regular.frames
+        againNearRegularWell[.again] = regular.frame(.stop)
+        #expect(!HomeWellEnvelope.preserves(regular.frames, againNearRegularWell))
+    }
 }

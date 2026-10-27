@@ -75,5 +75,8 @@ struct CategorySelectionTests {
         let two = Array(0..<2)
         #expect(CategorySelection.inCell(2, of: two, cells: 4).isEmpty)
         #expect(CategorySelection.inCell(3, of: two, cells: 4).isEmpty)
+        #expect(CategorySelection.inCell(-1, of: four, cells: 4).isEmpty)
+        #expect(CategorySelection.inCell(4, of: four, cells: 4).isEmpty)
+        #expect(CategorySelection.inCell(0, of: four, cells: 0).isEmpty)
     }
 }

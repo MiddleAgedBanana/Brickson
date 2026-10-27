@@ -106,6 +106,22 @@ Xcode 27.1 (27A9275); PR #20 landed in `d79d836`.
 
 ## Verification
 
+- **Pure-Swift unit test coverage, 2026-10-27**, Xcode 27.1 (27A9275),
+  iPad Pro 13-inch (M5) simulator, iOS 27.0: 19 Swift Testing unit tests
+  added across `HomeLayoutEngineTests`, `HomeReservedRegionTests`,
+  `HomeLayoutEngineFontTests`, `ChainEngineTests`,
+  `SettingsIdleClockTests`, `LibraryRulesTests` and
+  `CategorySelectionTests` pin pure-Swift helpers and edge cases in the
+  layout engine (`HomeLayout`, `HomeReservedLayout`, `HomeWellEnvelope`,
+  `LabelFont`), the chain-scoring engine (`ChainEngine`, `HomeChains`),
+  `SettingsActivity`, `GuidedSetupStep`, `LibraryEditRejection` and
+  `CategorySelection` without modifying production code. The full local
+  unit gate passed 799 native unit cases (790 passed, zero failed, one
+  existing #19 skip and eight strict expected failures), 45 docs/site/runner
+  tests and 124 hook tests, with an unchanged String Catalog and 72.1%
+  app line coverage (7,136 of 9,903 lines)
+  ([`log/2026-10-27-pure-swift-unit-tests.md`](log/2026-10-27-pure-swift-unit-tests.md)).
+
 - **Mac Home and keyboard checks, 2026-10-25**, main `8316743`, Xcode 27.1
   (27A9275), iOS 27.0: on a 375×667 iPhone SE simulator the default-text
   keyboard probe passed and AX5 failed Home's conservative band check;

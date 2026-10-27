@@ -21,4 +21,24 @@ struct LibraryRulesTests {
     @Test func aNewCategoryStartsWithAListedSymbol() {
         #expect(LibraryRules.symbolChoices.contains(LibraryRules.newCategorySymbol))
     }
+
+    @Test func everyLibraryEditRejectionCaseHasANonEmptyUserFacingMessage() {
+        let cases: [LibraryEditRejection] = [
+            .emptyName,
+            .emptyText,
+            .duplicateCategoryName,
+            .duplicatePhrase,
+            .reservedCategoryName,
+            .unknownSymbol,
+            .emergencyCategoryCannotBeDeleted,
+            .emergencyCategoryNeedsAPhrase,
+            .libraryNeedsACategory,
+            .notFound,
+            .libraryNeedsRepair,
+        ]
+        for rejection in cases {
+            #expect(!rejection.message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+        }
+        #expect(Set(cases.map(\.message)).count == cases.count)
+    }
 }
