@@ -54,7 +54,9 @@ coverage" and "Apple's current frameworks first"):
       `Xcode 27+` alongside iOS 27.0.
   - Added **`## New since this list was written`** covering 18 verified Apple
     additions across `Accessibility`, `SwiftUI`, `UIKit`, `AVFAudio`,
-    `AppIntents` and `XCUIAutomation`, and updated `## Newer than iOS 26.0`.
+    `AppIntents` and `XCUIAutomation` (including `AVAudioSession.isOutputMuted`
+    at iOS 26.0 and softening `XCUIDevice.Button.volumeUp` / `.volumeDown` for
+    simulator audio notifications), and updated `## Newer than iOS 26.0`.
 - **`docs/HANDOFF.md`**: recorded the audit under *Verification*, adding the two
   follow-ups.
 
