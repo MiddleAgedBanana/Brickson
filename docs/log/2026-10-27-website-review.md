@@ -1,6 +1,6 @@
 # Website review, accessibility page update, and largest-text layout fixes
 
-*2026-10-27. Pull request (`codex/website-review`). The website review
+*2026-10-27. Pull request #61 (`codex/website-review`). The website review
 thread, on a Mac with Xcode 27.1 (27A9275) and an iPhone 17 simulator on
 iOS 27.0.*
 
@@ -23,9 +23,9 @@ in WebKit across light and dark appearances.
   - Added `aria-current="page"` to the `brickson` home link in
     `site/index.html`'s header so VoiceOver reports the current page on
     Home just as it does on Accessibility and Privacy.
-  - Wrapped the two plain-text `ajdedmon12@gmail.com` occurrences in
+  - Wrapped the two plain-text support email occurrences in
     `site/privacy/index.html` (`Who we are` and `If you contact us`) in
-    `<a href="mailto:ajdedmon12@gmail.com">ajdedmon12@gmail.com</a>` to
+    `mailto:` links to
     match the `Contact` section (`PrivacyPolicyDocument` strips anchor tags
     while keeping their text, so the in-app copy is unchanged).
   - Added `<meta name="text-scale" content="scale">` to all three pages so

@@ -3491,7 +3491,9 @@ Accessibility URL for the App Store product page (APP-STORE.md, section
 4), linked from every page of the website. It describes only what
 docs/ACCESSIBILITY.md marks *In place*, each with how it was checked, in
 plain words for families. It never says "works with" for something not
-checked on a real device, says plainly at the top that nothing has been,
+checked on a real device, says plainly at the top that no controlled check has
+been done on a real device (recording the informal handheld Eye Tracking
+observation of 2026-10-25 with its limits),
 names no planned feature, and lists the known limits a family would meet
 (from docs/HANDOFF.md, *Known gaps*). When a device check is done, the
 page names the device and the date. Why: Apple's labels cover only some
