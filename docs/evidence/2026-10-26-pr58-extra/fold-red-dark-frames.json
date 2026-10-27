@@ -1,0 +1,29 @@
+{
+  "actualOSPoseClaimed" : false,
+  "appearance" : "dark",
+  "expectedFirstRowTop" : 62,
+  "fixturePhrases" : {
+    "height" : 88,
+    "width" : 395,
+    "x" : 621,
+    "y" : 40
+  },
+  "fixtureType" : {
+    "height" : 88,
+    "width" : 395,
+    "x" : 621,
+    "y" : 136
+  },
+  "ordinaryPhrases" : {
+    "height" : 88,
+    "width" : 395,
+    "x" : 621,
+    "y" : 40
+  },
+  "syntheticDivision" : {
+    "height" : 10,
+    "width" : 1032,
+    "x" : 0,
+    "y" : 52
+  }
+}

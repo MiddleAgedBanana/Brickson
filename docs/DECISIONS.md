@@ -1488,9 +1488,11 @@ device-specific interfaces."
   that each text follows it: drawing a stepped-down label at a smaller
   text size (`dynamicTypeSize`) was reported as not supporting Dynamic
   Type, and letting `ViewThatFits` pick the size swapped the label for
-  another view as the text grew, reported as clipped. The phrase grid is
-  always a scroll view, turned off where the tiles fit, for the same
-  reason.
+  another view as the text grew, reported as clipped. The phrase grid
+  remains one scroll view as the text grows, preserving the same views
+  for the audit. Before 2026-10-26 it was turned off where the tiles fit;
+  the drag reproduction corrected that configuration (*Phrase-grid drag
+  cancellation*).
 - **Home's own button style.** Home's controls use `HomeButtonStyle`
   instead of `.borderedProminent`: that style's margins left too little
   width in a phone's three-column grid for the starter words at their
@@ -1580,6 +1582,89 @@ running on these windows):
   fit; `HomeLayoutTests` checks them. On the 13-inch iPad the tiles are
   about 276, 236, 161 and 121pt (portrait and landscape, default and
   AX5) since *Get Attention and Stop on Home*, against 110pt.
+
+## Phrase-grid drag cancellation
+
+*2026-10-26. Bug repair in PR #58, following the owner's drag-investigation
+request. No layout or input-profile exception is accepted.*
+
+A fitting phrase grid still needs Apple's native pan handling: a vertical
+attempt to scroll must not speak a phrase on release. A verified 80pt
+tile-start drag on the shared app spoke its starting phrase while its
+coordinates were correct. Earlier long gutter/tile paths passing did not
+cover that input. The recovered private AX5 alternative reproduced the
+original gutter failure in its matching tall window; changing only the
+same two scroll modifiers made its light/dark reproductions pass. The
+[record and counterfactual evidence](log/2026-10-25-duo-fold-design.md#pr-58-continuation-and-drag-investigation-2026-10-26)
+retain those limits and the rejected experiments.
+
+- Keep the same `ScrollView`, eager grid and standard labelled `Button`s,
+  including their identity as Dynamic Type changes. Remove the fitting-
+  content `scrollDisabled` modifier and use
+  `scrollBounceBehavior(.always)` on the vertical phrase view. Removing
+  `scrollDisabled` alone, while retaining `.basedOnSize`, did not repair
+  the measured short drag. No custom gesture or touch threshold is added.
+- Keep typing's `.disabled(isTyping)` and the fixed fold/camera viewport
+  cap. The layout engine, columns, target floors, capacity and static Home
+  frames do not change. Only phrase content may bounce transiently during
+  a deliberate touch drag; when all eight tiles fit, every tile must
+  settle back to its prior frame. First taps and held presses still
+  speak through the ordinary Button action.
+- This is the current touch profile's drag behavior. Invariant 11's
+  no-scroll requirement for future dwell, switch, head and gaze profiles
+  remains binding, as do their target floors and physical-input gates.
+  Simulator pan cancellation does not verify those input methods.
+
+**Before:** fitting content disabled its scroll view and used
+`.scrollBounceBehavior(.basedOnSize)`. Keeping one scroll view protected
+view identity for the audit; that rationale remains. The configuration
+also let the measured drag activate a phrase, so it is replaced rather
+than retained as an exception. Apple's
+[always](https://developer.apple.com/documentation/swiftui/scrollbouncebehavior/always.md)
+documentation describes bounce independent of content size; the
+cancellation result is established by the native reproductions, not a
+promise inferred from that documentation. Final shared-app selections
+pass the five drag/hold/first-tap/settled-frame regressions and both existing
+slow-press cases on each of Duo, iPad and iPhone: seven per family, without
+skips or expected failures. The pre-extra-batch unit gate passed 778 total
+(769 passed, zero failed, one existing #19 skip and eight strict expected
+failures), with a current catalog. Later pre-extra-batch hosted Unit/UI
+checks pass; complete local UI still fails only the existing AX5 Speaking
+waits. These results do not verify the owner-authorized extra batch:
+consume the first region's already allocated top inset in the renderer,
+and add a dedicated native case whose eight-tile-fit precondition and
+settled comparisons cannot be bypassed. Its
+[Intent, Spec and Plan](work/layout-engine.md#owner-authorized-renderer-and-fitting-test-review-batch)
+precede implementation. P1 now has a native failing-first reproduction:
+light/dark iPad cases both fail, with the first row y40 instead of y62
+crossing a synthetic y52–62 reservation, and Back at y62 misaligned with
+Phrases. The standard renderer spacer now consumes
+`allocation(.message).minY - content.minY`; unit checks pin the nonzero
+and zero-inset paths. P2's default cases now require actual eight-tile fit
+and compare settled tiles unconditionally. The affected final-source
+iPad selection passes 10/10, with seven retained runtime audio-session
+diagnostics; ordinary zero-inset captures match across 40 control-frame
+comparisons. The same 1pt clipped-viewport App variant passes without
+required-fit flags and fails before input with them, proving the guard;
+all 153 frozen Swift/project-source hashes are restored. The affected
+final iPhone selection also passes 10/10 with retained runtime diagnostics.
+Extra-batch full units pass 781 total (772 passed, zero failed, one existing
+#19 skip and eight strict expected failures), with a current catalog and
+71.2% coverage. The new accessor reads existing allocations; allocator
+mathematics are unchanged. The final affected Duo selection passes 7/7,
+zero failures/skips/expected failures, with seven retained runtime audio
+warnings. It uses actual OS-reported space in the opposite tall open/flat
+180-degree window, without the synthetic reservation fixture; coordinate
+and default-fit guards pass. New-head hosted CI and review resolution
+remain pending after the single authorized push; PR #58 is still a draft
+with two conversations open at this recorded checkpoint. Live PR state
+provides the later result. The FoldOffset evidence is synthetic fixture
+evidence, not a new OS-pose or physical result. No allocator
+behavior, floor, capacity or input-profile rule changes, and no new
+repair-loop budget is implied. PR #58
+remains a draft until that batch is tested and its findings handled;
+current-head PR checks govern review readiness. No physical Touch
+Accommodations, dwell or AXPress result is inferred.
 
 ## Home's slot plan
 
@@ -2559,10 +2644,15 @@ every profile gets, even one that never uses Apple's keyboard.
   the same at the default and the largest size. The measured keyboards
   are rows in `KeyboardAllowanceTests`, and `KeyboardProbeTests` now runs
   on every UI run, failing if the live keyboard reaches higher than the
-  allowance or Home's safety row lower. Not covered yet, because nothing
-  has measured them: iPad windows smaller than their screen, where the
-  keyboard follows the screen; the floating and split iPad keyboards;
-  other languages; iPhone Duo's inner display (device check 6 in
+  allowance or Home's safety row lower. The 2026-10-25 Duo simulator
+  captures measured the full US English keyboard at default text:
+  its top was y405 in 951×669 inner windows, y601 in 669×951 inner
+  windows, and y374 in the 466×678 closed window. The existing allowance
+  covered these; no reference changed. AX5 Type was unavailable.
+  [Native receipts](evidence/2026-10-25-duo-design/native-frame-comparison.md).
+  Not covered yet: iPad and Duo windows smaller than their screen,
+  where the keyboard may follow the screen; floating and split iPad
+  keyboards; other languages; physical input (device check 6 in
   docs/log/2026-10-21-typing-foundation.md). *2026-10-23, the layout
   engine:* where the safety row's floors fit above the keyboard's room,
   the engine keeps it there, giving back growth and then gap; where they

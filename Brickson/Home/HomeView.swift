@@ -85,7 +85,8 @@ struct HomeView: View {
                 modes: .phrasesAndTyping
             )
 
-            VStack(alignment: .leading, spacing: layout.regionGap) {
+            VStack(alignment: .leading, spacing: 0) {
+                Spacer(minLength: 0).frame(height: layout.firstRegionTopInset)
                 MessageRegion(
                     layout: layout,
                     messageLine: text.messageLine,
@@ -95,8 +96,9 @@ struct HomeView: View {
                     showPhrases: { leaveTyping() },
                     startTyping: { startTyping() }
                 )
-                .frame(height: layout.height(of: [.message, .statusLine]), alignment: .top)
+                .frame(height: layout.allocationHeight(of: [.message, .statusLine]), alignment: .top)
                 .homeRegion(.message)
+                Spacer(minLength: 0).frame(height: layout.regionGaps.aToC)
                 SafetyRow(
                     layout: layout,
                     isTyping: isTyping,
@@ -107,8 +109,9 @@ struct HomeView: View {
                         selectedCategoryID = emergency?.uuid
                     }
                 )
-                .frame(height: layout.height(of: HomeLayout.Slot.safetyRow))
+                .frame(height: layout.allocationHeight(of: HomeLayout.Slot.safetyRow))
                 .homeRegion(.safety)
+                Spacer(minLength: 0).frame(height: layout.regionGaps.cToB)
                 CategoriesAndSettings(
                     layout: layout,
                     categories: CategorySelection.shownInCategoryRow(ordered),
@@ -117,19 +120,23 @@ struct HomeView: View {
                     select: { selectedCategoryID = $0 },
                     showsSettings: $showsSettings
                 )
-                .frame(height: layout.height(of: HomeLayout.Slot.categoriesRegion))
+                .frame(height: layout.allocationHeight(of: HomeLayout.Slot.categoriesRegion))
                 .homeRegion(.categories)
-                .padding(.top, layout.wellDrop)
-                PhraseGrid(
-                    category: selected,
-                    isTyping: isTyping,
-                    layout: layout.grid,
-                    largestCategoryCount: largestCategoryCount,
-                    tileFont: layout.isRegular ? .regularTile : .compactTile
-                )
+                Spacer(minLength: 0).frame(height: layout.regionGaps.bToD)
+                HStack(spacing: 0) {
+                    Spacer(minLength: 0).frame(width: layout.grid.frame.minX - layout.content.minX)
+                    PhraseGrid(
+                        category: selected,
+                        isTyping: isTyping,
+                        layout: layout.grid,
+                        largestCategoryCount: largestCategoryCount,
+                        tileFont: layout.isRegular ? .regularTile : .compactTile
+                    )
+                    .frame(width: layout.grid.frame.width)
+                    Spacer(minLength: 0).frame(width: layout.content.maxX - layout.grid.frame.maxX)
+                }
                 .frame(maxHeight: .infinity)
-                .homeRegion(.phrases)
-                LibraryWarnings()
+                LibraryWarnings(topSpacing: layout.regionGap)
             }
             .padding(.horizontal, HomeLayout.margins.horizontal)
             .padding(.vertical, HomeLayout.margins.vertical)
@@ -181,13 +188,33 @@ extension HomeLayout.Space {
     /// Talking lands on Phrases' frame.
     init(_ proxy: GeometryProxy) {
         let insets = proxy.safeAreaInsets
+        let regions: [HomeLayout.ReservedRegion]
+        if #available(iOS 27.1, *) {
+            // Both queries include inactive regions so switching an input
+            // method on cannot move a target. Apple returns reader-local
+            // frames with margins included; translate to window coordinates
+            // once, using the same safe-area origin as Home and Settings.
+            regions = proxy.reservedRegions(kind: .division, options: .includeInactive, layoutDirectionBehavior: .mirrors).map {
+                HomeLayout.ReservedRegion(kind: .division, frame: $0.frame.offsetBy(dx: insets.leading, dy: insets.top), isActive: $0.isActive)
+            } + proxy.reservedRegions(kind: .occlusion, options: .includeInactive, layoutDirectionBehavior: .mirrors).map {
+                HomeLayout.ReservedRegion(kind: .occlusion, frame: $0.frame.offsetBy(dx: insets.leading, dy: insets.top), isActive: $0.isActive)
+            }
+        } else {
+            regions = []
+        }
         self.init(
             size: CGSize(
                 width: proxy.size.width + insets.leading + insets.trailing,
                 height: proxy.size.height + insets.top + insets.bottom
             ),
-            safeArea: HomeLayout.Insets(top: insets.top, leading: insets.leading, bottom: insets.bottom, trailing: insets.trailing)
+            safeArea: HomeLayout.Insets(top: insets.top, leading: insets.leading, bottom: insets.bottom, trailing: insets.trailing),
+            regions: regions
         )
+        #if DEBUG
+        // Both Home and Settings use this reader, so the test reservation
+        // reaches their real views in the same available coordinate space.
+        self = LaunchOptions.current.applyingLayoutFixture(to: self)
+        #endif
     }
 }
 
@@ -223,7 +250,7 @@ private struct MessageRegion: View {
 
     var body: some View {
         let message = layout.frame(.message)
-        HStack(alignment: .top, spacing: HomeLayout.controlSpacing) {
+        HStack(alignment: .top, spacing: layout.horizontalGap(from: .message, to: .phrases)) {
             VStack(alignment: .leading, spacing: HomeLayout.statusSpacing) {
                 Group {
                     if isTyping {
@@ -240,6 +267,7 @@ private struct MessageRegion: View {
                 StatusLines(width: layout.frame(.statusLine).width, isCovered: isCovered, isTyping: isTyping)
             }
             .frame(width: message.width, alignment: .leading)
+            .homeAllocation(of: [.message, .statusLine], in: layout)
             VStack(spacing: HomeLayout.controlSpacing) {
                 ModeButton(names: HomeControlNames.phrases, systemImage: "square.grid.2x2.fill", isSelected: !isTyping, action: showPhrases)
                     .sized(as: .phrases, in: layout)
@@ -589,6 +617,7 @@ private struct StatusLines: View {
 private struct LibraryWarnings: View {
     @Environment(\.isVolatileStore) private var isVolatileStore
     @Environment(\.phraseLibraryIssue) private var phraseLibraryIssue
+    let topSpacing: CGFloat
 
     var body: some View {
         if isVolatileStore || phraseLibraryIssue != nil {
@@ -606,6 +635,7 @@ private struct LibraryWarnings: View {
             .font(LabelFont.status.font)
             .frame(maxWidth: .infinity, alignment: .leading)
             .allowsHitTesting(false)
+            .padding(.top, topSpacing)
         }
     }
 
@@ -657,25 +687,24 @@ private struct SafetyRow: View {
 
     var body: some View {
         if layout.isRegular && layout.modes == .phrasesAndTyping {
-            HStack(spacing: HomeLayout.controlSpacing) {
-                emergencyButton
-                yes
-                no
-                againOrSpeak
-                getAttention
-            }
+            HomeControlRow(layout: layout, slots: [.emergency, .yes, .no, .again, .getAttention], control: control)
         } else {
-            VStack(alignment: .leading, spacing: HomeLayout.controlSpacing) {
-                HStack(spacing: HomeLayout.controlSpacing) {
-                    yes
-                    no
-                    emergencyButton
-                }
-                HStack(spacing: HomeLayout.controlSpacing) {
-                    againOrSpeak
-                    getAttention
-                }
+            VStack(alignment: .leading, spacing: layout.safetyRowGap) {
+                HomeControlRow(layout: layout, slots: [.yes, .no, .emergency], control: control)
+                HomeControlRow(layout: layout, slots: [.again, .getAttention], control: control)
             }
+        }
+    }
+
+    @ViewBuilder
+    private func control(_ slot: HomeLayout.Slot) -> some View {
+        switch slot {
+        case .emergency: emergencyButton
+        case .yes: yes
+        case .no: no
+        case .again: againOrSpeak
+        case .getAttention: getAttention
+        default: EmptyView()
         }
     }
 
@@ -811,47 +840,41 @@ private struct CategoriesAndSettings: View {
     @Binding var showsSettings: Bool
 
     var body: some View {
-        let spacing = HomeLayout.controlSpacing
         switch layout.categoryArrangement {
         case .band:
-            HStack(alignment: .top, spacing: spacing) {
-                VStack(spacing: spacing) {
-                    stop
-                    cell(0)
+            HomeControlRow(layout: layout, slots: [.stop, .category(1), .category(2), .category(3), .settings]) { slot in
+                if slot == .stop {
+                    VStack(spacing: layout.categoryRowGaps[0]) {
+                        stop
+                        cell(0)
+                    }
+                } else {
+                    control(slot)
                 }
-                cell(1)
-                cell(2)
-                cell(3)
-                settings
             }
         case .threeColumns:
-            VStack(alignment: .leading, spacing: spacing) {
-                HStack(spacing: spacing) {
-                    stop
-                    cell(0)
-                    cell(1)
-                }
-                HStack(spacing: spacing) {
-                    cell(2)
-                    cell(3)
-                    settings
-                }
+            VStack(alignment: .leading, spacing: layout.categoryRowGaps[0]) {
+                HomeControlRow(layout: layout, slots: [.stop, .category(0), .category(1)], control: control)
+                HomeControlRow(layout: layout, slots: [.category(2), .category(3), .settings], control: control)
             }
         case .twoColumns:
-            VStack(alignment: .leading, spacing: spacing) {
-                HStack(spacing: spacing) {
-                    stop
-                    cell(0)
-                }
-                HStack(spacing: spacing) {
-                    cell(1)
-                    cell(2)
-                }
-                HStack(spacing: spacing) {
-                    cell(3)
-                    settings
-                }
+            VStack(alignment: .leading, spacing: 0) {
+                HomeControlRow(layout: layout, slots: [.stop, .category(0)], control: control)
+                Spacer(minLength: 0).frame(height: layout.categoryRowGaps[0])
+                HomeControlRow(layout: layout, slots: [.category(1), .category(2)], control: control)
+                Spacer(minLength: 0).frame(height: layout.categoryRowGaps[1])
+                HomeControlRow(layout: layout, slots: [.category(3), .settings], control: control)
             }
+        }
+    }
+
+    @ViewBuilder
+    private func control(_ slot: HomeLayout.Slot) -> some View {
+        switch slot {
+        case .stop: stop
+        case .category(let index): cell(index)
+        case .settings: settings
+        default: EmptyView()
         }
     }
 
@@ -1037,16 +1060,12 @@ private struct PhraseGrid: View {
 
     var body: some View {
         GeometryReader { proxy in
-            let sizing = HomeLayout.Grid(
-                frame: CGRect(origin: .zero, size: proxy.size),
-                columns: layout.columns,
-                phraseCount: largestCategoryCount,
-                tileFloor: layout.tileFloor,
-                spacing: HomeLayout.controlSpacing
-            )
+            // A warning can reduce D's height, but never its resolved
+            // column lanes or its fixed camera/fold exclusion.
+            let sizing = layout.reflow(in: CGRect(origin: .zero, size: proxy.size), phraseCount: largestCategoryCount)
             if let category {
                 let phrases = category.phrasesInOrder
-                let grid = FixedColumns(phrases, columns: sizing.columns) { phrase in
+                let grid = FixedColumns(phrases, layout: sizing) { phrase in
                     Button {
                         speech.speak(phrase.text)
                     } label: {
@@ -1061,17 +1080,23 @@ private struct PhraseGrid: View {
                     .accessibilityIdentifier("phraseTile")
                 }
 
-                // Always the same scroll view, turned off where the tiles fit,
-                // so the tiles stay the same views when the grid starts to
-                // scroll as the text grows (Apple's accessibility audit
-                // compares each one with itself).
+                // Keep native pan cancellation even when every tile fits:
+                // a scroll attempt must not become a Button activation.
+                // A deliberate touch drag may bounce the phrase content;
+                // its settled frames and the fixed Home controls stay put.
+                // docs/DECISIONS.md, "Phrase-grid drag cancellation".
                 ScrollView { grid }
-                    .scrollDisabled(!(sizing.scrolls || phrases.count > sizing.rows * sizing.columns))
-                    .scrollBounceBehavior(.basedOnSize)
+                    .scrollBounceBehavior(.always)
                     .disabled(isTyping)
+                    // The scroll view itself ends at the fixed camera
+                    // boundary. Capping tile sizing alone would still let
+                    // scrolled content paint through the excluded strip.
+                    .frame(width: sizing.frame.width, height: sizing.frame.height, alignment: .topLeading)
+                    .homeRegion(.phrases)
             } else if phraseLibraryIssue == nil {
                 Text("No phrases yet.")
                     .font(.title2)
+                    .homeRegion(.phrases)
             }
         }
     }
@@ -1079,39 +1104,50 @@ private struct PhraseGrid: View {
 
 // MARK: - Fixed columns
 
-/// Items in rows of `columns` equal cells, in order, with
-/// `HomeLayout.controlSpacing` between them. A short last row keeps its cells
-/// at the leading edge, at the same width and place as the rows above, so a
-/// slot is in the same place whatever fills it (invariant 8).
+/// Items in the engine's ordered column lanes, with its gaps between them.
+/// A fold can separate two pairs of differently sized lanes. A short last
+/// row keeps its cells at the same widths and places as the rows above, so
+/// a slot is in the same place whatever fills it (invariant 8).
 ///
 /// It is built from plain stacks rather than a lazy grid: lazy rows disappear
 /// while Apple's accessibility audit increases the text size, so the audit
 /// cannot compare them (docs/log/2026-10-21-ui-test-diagnosis.md).
 private struct FixedColumns<Item: Identifiable, Cell: View>: View {
     let items: [Item]
-    let columns: Int
+    let layout: HomeLayout.Grid
     let cell: (Item) -> Cell
 
-    init(_ items: [Item], columns: Int, @ViewBuilder cell: @escaping (Item) -> Cell) {
+    init(_ items: [Item], layout: HomeLayout.Grid, @ViewBuilder cell: @escaping (Item) -> Cell) {
         self.items = items
-        self.columns = max(columns, 1)
+        self.layout = layout
         self.cell = cell
     }
 
     var body: some View {
+        let columns = layout.columns
         VStack(spacing: HomeLayout.controlSpacing) {
             ForEach(Array(stride(from: 0, to: items.count, by: columns)), id: \.self) { start in
-                HStack(spacing: HomeLayout.controlSpacing) {
-                    ForEach(items[start..<min(start + columns, items.count)]) { item in
-                        cell(item)
-                            .frame(maxWidth: .infinity)
+                HStack(spacing: 0) {
+                    ForEach(items[start..<min(start + columns, items.count)].enumerated(), id: \.element.id) { column, item in
+                        HStack(spacing: 0) {
+                            if column > 0 {
+                                Spacer(minLength: 0).frame(width: layout.columnFrames[column].minX - layout.columnFrames[column - 1].maxX)
+                            }
+                            cell(item)
+                                .frame(width: layout.columnFrames[column].width)
+                        }
                     }
                     // Empty cells keep a short row's tiles at the full rows'
                     // width and place.
-                    ForEach(0..<(columns - min(columns, items.count - start)), id: \.self) { _ in
-                        Color.clear
-                            .frame(maxWidth: .infinity, maxHeight: 0)
-                            .accessibilityHidden(true)
+                    ForEach(min(columns, items.count - start)..<columns, id: \.self) { column in
+                        HStack(spacing: 0) {
+                            if column > 0 {
+                                Spacer(minLength: 0).frame(width: layout.columnFrames[column].minX - layout.columnFrames[column - 1].maxX)
+                            }
+                            Color.clear
+                                .frame(width: layout.columnFrames[column].width, height: 0)
+                                .accessibilityHidden(true)
+                        }
                     }
                 }
             }
@@ -1121,12 +1157,62 @@ private struct FixedColumns<Item: Identifiable, Cell: View>: View {
 
 // MARK: - Regions
 
+/// A fixed logical row. Its cells and the gaps between them come from the
+/// engine; a division widens a gap without changing the control order.
+private struct HomeControlRow<Control: View>: View {
+    let layout: HomeLayout
+    let slots: [HomeLayout.Slot]
+    @ViewBuilder let control: (HomeLayout.Slot) -> Control
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 0) {
+            ForEach(slots.enumerated(), id: \.element) { index, slot in
+                HStack(alignment: .top, spacing: 0) {
+                    if index > 0 {
+                        Spacer(minLength: 0).frame(width: layout.horizontalGap(from: slots[index - 1], to: slot))
+                    }
+                    control(slot)
+                }
+            }
+        }
+    }
+}
+
+/// Spare room belongs to the surrounding stack, outside the target. A
+/// camera can shorten a control inside its fixed cell without padding the
+/// Button's accessibility frame back across the excluded rectangle.
+private struct HomeAllocation<Content: View>: View {
+    let occupied: CGRect
+    let allocation: CGRect
+    let content: Content
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Spacer(minLength: 0).frame(height: occupied.minY - allocation.minY)
+            HStack(spacing: 0) {
+                Spacer(minLength: 0).frame(width: occupied.minX - allocation.minX)
+                content.frame(width: occupied.width, height: occupied.height)
+                Spacer(minLength: 0).frame(width: allocation.maxX - occupied.maxX)
+            }
+            Spacer(minLength: 0).frame(height: allocation.maxY - occupied.maxY)
+        }
+        .frame(width: allocation.width, height: allocation.height)
+    }
+}
+
 private extension View {
     /// Sizes this view to `slot`'s frame in `layout`. The stacks around it
     /// place it, in the engine's order, so its frame is the engine's.
     func sized(as slot: HomeLayout.Slot, in layout: HomeLayout) -> some View {
-        let frame = layout.frame(slot)
-        return self.frame(width: frame.width, height: frame.height)
+        homeAllocation(slot, in: layout)
+    }
+
+    func homeAllocation(_ slot: HomeLayout.Slot, in layout: HomeLayout) -> some View {
+        HomeAllocation(occupied: layout.frame(slot), allocation: layout.allocation(slot), content: self)
+    }
+
+    func homeAllocation(of slots: [HomeLayout.Slot], in layout: HomeLayout) -> some View {
+        HomeAllocation(occupied: layout.bounds(of: slots), allocation: layout.allocationBounds(of: slots), content: self)
     }
 
     /// Makes this view one of Home's regions: an accessibility container, so

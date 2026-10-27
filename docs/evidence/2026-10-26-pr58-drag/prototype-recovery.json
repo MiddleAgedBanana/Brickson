@@ -1,0 +1,34 @@
+{
+  "schema": 1,
+  "baselineCommit": "6b1d4e8b257e7dec2aa05b0aca2ab14f1444a49d",
+  "recoveredAppFiles": 87,
+  "historicalAppHashesVerified": true,
+  "otherAppFilesMatchBaseline": 83,
+  "intentionalPrivateChanges": [
+    {
+      "path": "Brickson/Home/HomeView.swift",
+      "baselineSHA256": "60c8edd4c434258dcfd030dd8927948c020fc9fd3e5c5d2169bc01aee41cb40c",
+      "recoveredSHA256": "805ab978f65ac6f35f2dfd107b781b46d21ef8e07d1e109a7ac9d230e8dc28cd"
+    },
+    {
+      "path": "Brickson/Layout/HomeLayout.swift",
+      "baselineSHA256": "93e3453cde75578fb535e2ce796b156890c52e0b4bd88cb9f27956734dd8ca67",
+      "recoveredSHA256": "2937d2ef093ed181f8c5f452a121c796a86925d3503f55125abfb9e903212efd"
+    },
+    {
+      "path": "Brickson/Layout/HomeLayoutText.swift",
+      "baselineSHA256": "4602930de0e5e669edac4d8ebf7e86e0aec0fdc9b963016e51b555c17d6b13aa",
+      "recoveredSHA256": "ed5c41c43675702090347a64981f46f5858ec11d8fb986b21aacf11b1208f614"
+    },
+    {
+      "path": "Brickson/Layout/HomeReservedLayout.swift",
+      "baselineSHA256": "8323e3096b5361ec7ce49fbdadaaacaa1381b555865669d1719ee12f2dd9f78b",
+      "recoveredSHA256": "0af6216b0c978c90c5bc20dd586aacf5de95059827703294988ff583580fc1c9"
+    }
+  ],
+  "originalAuditPrefixSHA256": "77cc94ad5cdc0be3f15d709bf32cba143e660b743402993ef5cf2a48113f1a7f",
+  "originalAuditPrefixCharacters": 26796,
+  "embeddedModelJSONRecovered": false,
+  "privateAppCodeIncludedInPR": false,
+  "location": "Ignored build/recovered-private-source.tar.gz; archive app hashes verified"
+}

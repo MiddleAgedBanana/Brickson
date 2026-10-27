@@ -1,0 +1,2242 @@
+{
+  "stage": "initial candidate before review fixes and whole-point division enclosure",
+  "toolchain": "Xcode27.1 (27A9275), Duo simulator iOS27.1; open-wide; English; Bold Text off",
+  "result": "FAIL: native No and Conversation AX frames end at455.66666666666663, crossing raw API division starting455.5. Assertion kept strict. Other recorded actions are observations, not a complete UI or input safety pass.",
+  "resultBundle": "build/TestResults/duo-runtime-wide-probe/ui-destination.xcresult",
+  "log": "/private/tmp/brickson-duo-runtime-wide-probe.log",
+  "binarySHA256": "520e86a748ce2b1623e03babab71a5ea955397f616ebaafec6e9570b81dd0ddd",
+  "snapshotCount": 10,
+  "limits": [
+    "No physical input, sound or Snap to Item evidence.",
+    "Settings row/fold intersections are existing broader R0-13 gaps.",
+    "During typing, AX scroll-container height changed314\u2192356 while tile target frames remained fixed; do not equate this container frame with visible clipping or physical snap behavior.",
+    "Maximum scroll range not measured by this probe."
+  ],
+  "records": [
+    {
+      "configuration": "AX5-dark",
+      "state": "home",
+      "rootFrame": {
+        "height": 951,
+        "width": 669,
+        "x": 0,
+        "y": 0
+      },
+      "windowFrames": [
+        {
+          "height": 669,
+          "width": 951,
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "selectedWindow": {
+        "height": 669,
+        "width": 951,
+        "x": 0,
+        "y": 0
+      },
+      "windowSource": "snapshot ancestor window 0",
+      "allFramesFromOneSnapshot": true,
+      "phraseViewport": {
+        "height": 142,
+        "width": 835,
+        "x": 16,
+        "y": 485
+      },
+      "wholePhraseCount": 4,
+      "keyCount": 0,
+      "buttonsCrossingDivisionFixture": [
+        "No",
+        "Conversation",
+        "phraseTile",
+        "phraseTile"
+      ],
+      "buttons": [
+        {
+          "identifier": "",
+          "label": "Yes",
+          "frame": {
+            "height": 79,
+            "width": 141.33333333333331,
+            "x": 165,
+            "y": 224
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "",
+          "label": "No",
+          "frame": {
+            "height": 79,
+            "width": 141.33333333333331,
+            "x": 314.3333333333333,
+            "y": 224
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "",
+          "label": "Emergency",
+          "frame": {
+            "height": 79,
+            "width": 141,
+            "x": 16,
+            "y": 224
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "getAttention",
+          "label": "Get Attention",
+          "frame": {
+            "height": 79,
+            "width": 225.33333333333337,
+            "x": 625.6666666666666,
+            "y": 224
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "",
+          "label": "Again",
+          "frame": {
+            "height": 79,
+            "width": 122,
+            "x": 495.66666666666663,
+            "y": 224
+          },
+          "enabled": false,
+          "selected": false
+        },
+        {
+          "identifier": "phrases",
+          "label": "Phrases",
+          "frame": {
+            "height": 99,
+            "width": 173.66666666666663,
+            "x": 495.66666666666663,
+            "y": 8
+          },
+          "enabled": true,
+          "selected": true
+        },
+        {
+          "identifier": "type",
+          "label": "Type",
+          "frame": {
+            "height": 99,
+            "width": 173.66666666666663,
+            "x": 495.66666666666663,
+            "y": 115
+          },
+          "enabled": false,
+          "selected": false
+        },
+        {
+          "identifier": "",
+          "label": "Basics",
+          "frame": {
+            "height": 77,
+            "width": 141,
+            "x": 16,
+            "y": 398
+          },
+          "enabled": true,
+          "selected": true
+        },
+        {
+          "identifier": "",
+          "label": "Needs",
+          "frame": {
+            "height": 162,
+            "width": 141.33333333333331,
+            "x": 165,
+            "y": 313
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "",
+          "label": "Conversation",
+          "frame": {
+            "height": 162,
+            "width": 141.33333333333331,
+            "x": 314.3333333333333,
+            "y": 313
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "",
+          "label": "Feelings",
+          "frame": {
+            "height": 162,
+            "width": 122,
+            "x": 495.66666666666663,
+            "y": 313
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "settings",
+          "label": "Settings",
+          "frame": {
+            "height": 162,
+            "width": 225.33333333333337,
+            "x": 625.6666666666666,
+            "y": 313
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "phraseTile",
+          "label": "Maybe.",
+          "frame": {
+            "height": 100,
+            "width": 215.66666666666666,
+            "x": 16,
+            "y": 485
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "phraseTile",
+          "label": "I don't know.",
+          "frame": {
+            "height": 100,
+            "width": 215.99999999999997,
+            "x": 239.66666666666666,
+            "y": 485
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "phraseTile",
+          "label": "Please.",
+          "frame": {
+            "height": 100,
+            "width": 173.66666666666663,
+            "x": 495.66666666666663,
+            "y": 485
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "phraseTile",
+          "label": "Thank you.",
+          "frame": {
+            "height": 100,
+            "width": 173.66666666666663,
+            "x": 677.3333333333333,
+            "y": 485
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "phraseTile",
+          "label": "Wait a moment, please.",
+          "frame": {
+            "height": 100,
+            "width": 215.66666666666666,
+            "x": 16,
+            "y": 593
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "phraseTile",
+          "label": "I'm not finished.",
+          "frame": {
+            "height": 100,
+            "width": 215.99999999999997,
+            "x": 239.66666666666666,
+            "y": 593
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "phraseTile",
+          "label": "Hello.",
+          "frame": {
+            "height": 100,
+            "width": 173.66666666666663,
+            "x": 495.66666666666663,
+            "y": 593
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "phraseTile",
+          "label": "Goodbye.",
+          "frame": {
+            "height": 100,
+            "width": 173.66666666666663,
+            "x": 677.3333333333333,
+            "y": 593
+          },
+          "enabled": true,
+          "selected": false
+        }
+      ]
+    },
+    {
+      "configuration": "AX5-dark",
+      "state": "settings",
+      "rootFrame": {
+        "height": 951,
+        "width": 669,
+        "x": 0,
+        "y": 0
+      },
+      "windowFrames": [
+        {
+          "height": 669,
+          "width": 951,
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "selectedWindow": {
+        "height": 669,
+        "width": 951,
+        "x": 0,
+        "y": 0
+      },
+      "windowSource": "snapshot ancestor window 0",
+      "allFramesFromOneSnapshot": true,
+      "wholePhraseCount": 0,
+      "keyCount": 0,
+      "buttonsCrossingDivisionFixture": [
+        "familySetup"
+      ],
+      "buttons": [
+        {
+          "identifier": "backToTalking",
+          "label": "Back to Talking",
+          "frame": {
+            "height": 99,
+            "width": 160.66666666666663,
+            "x": 502,
+            "y": 8
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "familySetup",
+          "label": "Family Setup",
+          "frame": {
+            "height": 79.66666666666663,
+            "width": 437.33333333333337,
+            "x": 413.66666666666663,
+            "y": 336
+          },
+          "enabled": true,
+          "selected": false
+        }
+      ]
+    },
+    {
+      "configuration": "AX5-light",
+      "state": "home",
+      "rootFrame": {
+        "height": 951,
+        "width": 669,
+        "x": 0,
+        "y": 0
+      },
+      "windowFrames": [
+        {
+          "height": 669,
+          "width": 951,
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "selectedWindow": {
+        "height": 669,
+        "width": 951,
+        "x": 0,
+        "y": 0
+      },
+      "windowSource": "snapshot ancestor window 0",
+      "allFramesFromOneSnapshot": true,
+      "phraseViewport": {
+        "height": 142,
+        "width": 835,
+        "x": 16,
+        "y": 485
+      },
+      "wholePhraseCount": 4,
+      "keyCount": 0,
+      "buttonsCrossingDivisionFixture": [
+        "No",
+        "Conversation",
+        "phraseTile",
+        "phraseTile"
+      ],
+      "buttons": [
+        {
+          "identifier": "",
+          "label": "Yes",
+          "frame": {
+            "height": 79,
+            "width": 141.33333333333331,
+            "x": 165,
+            "y": 224
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "",
+          "label": "No",
+          "frame": {
+            "height": 79,
+            "width": 141.33333333333331,
+            "x": 314.3333333333333,
+            "y": 224
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "",
+          "label": "Emergency",
+          "frame": {
+            "height": 79,
+            "width": 141,
+            "x": 16,
+            "y": 224
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "getAttention",
+          "label": "Get Attention",
+          "frame": {
+            "height": 79,
+            "width": 225.33333333333337,
+            "x": 625.6666666666666,
+            "y": 224
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "",
+          "label": "Again",
+          "frame": {
+            "height": 79,
+            "width": 122,
+            "x": 495.66666666666663,
+            "y": 224
+          },
+          "enabled": false,
+          "selected": false
+        },
+        {
+          "identifier": "phrases",
+          "label": "Phrases",
+          "frame": {
+            "height": 99,
+            "width": 173.66666666666663,
+            "x": 495.66666666666663,
+            "y": 8
+          },
+          "enabled": true,
+          "selected": true
+        },
+        {
+          "identifier": "type",
+          "label": "Type",
+          "frame": {
+            "height": 99,
+            "width": 173.66666666666663,
+            "x": 495.66666666666663,
+            "y": 115
+          },
+          "enabled": false,
+          "selected": false
+        },
+        {
+          "identifier": "",
+          "label": "Basics",
+          "frame": {
+            "height": 77,
+            "width": 141,
+            "x": 16,
+            "y": 398
+          },
+          "enabled": true,
+          "selected": true
+        },
+        {
+          "identifier": "",
+          "label": "Needs",
+          "frame": {
+            "height": 162,
+            "width": 141.33333333333331,
+            "x": 165,
+            "y": 313
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "",
+          "label": "Conversation",
+          "frame": {
+            "height": 162,
+            "width": 141.33333333333331,
+            "x": 314.3333333333333,
+            "y": 313
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "",
+          "label": "Feelings",
+          "frame": {
+            "height": 162,
+            "width": 122,
+            "x": 495.66666666666663,
+            "y": 313
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "settings",
+          "label": "Settings",
+          "frame": {
+            "height": 162,
+            "width": 225.33333333333337,
+            "x": 625.6666666666666,
+            "y": 313
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "phraseTile",
+          "label": "Maybe.",
+          "frame": {
+            "height": 100,
+            "width": 215.66666666666666,
+            "x": 16,
+            "y": 485
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "phraseTile",
+          "label": "I don't know.",
+          "frame": {
+            "height": 100,
+            "width": 215.99999999999997,
+            "x": 239.66666666666666,
+            "y": 485
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "phraseTile",
+          "label": "Please.",
+          "frame": {
+            "height": 100,
+            "width": 173.66666666666663,
+            "x": 495.66666666666663,
+            "y": 485
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "phraseTile",
+          "label": "Thank you.",
+          "frame": {
+            "height": 100,
+            "width": 173.66666666666663,
+            "x": 677.3333333333333,
+            "y": 485
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "phraseTile",
+          "label": "Wait a moment, please.",
+          "frame": {
+            "height": 100,
+            "width": 215.66666666666666,
+            "x": 16,
+            "y": 593
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "phraseTile",
+          "label": "I'm not finished.",
+          "frame": {
+            "height": 100,
+            "width": 215.99999999999997,
+            "x": 239.66666666666666,
+            "y": 593
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "phraseTile",
+          "label": "Hello.",
+          "frame": {
+            "height": 100,
+            "width": 173.66666666666663,
+            "x": 495.66666666666663,
+            "y": 593
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "phraseTile",
+          "label": "Goodbye.",
+          "frame": {
+            "height": 100,
+            "width": 173.66666666666663,
+            "x": 677.3333333333333,
+            "y": 593
+          },
+          "enabled": true,
+          "selected": false
+        }
+      ]
+    },
+    {
+      "configuration": "AX5-light",
+      "state": "settings",
+      "rootFrame": {
+        "height": 951,
+        "width": 669,
+        "x": 0,
+        "y": 0
+      },
+      "windowFrames": [
+        {
+          "height": 669,
+          "width": 951,
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "selectedWindow": {
+        "height": 669,
+        "width": 951,
+        "x": 0,
+        "y": 0
+      },
+      "windowSource": "snapshot ancestor window 0",
+      "allFramesFromOneSnapshot": true,
+      "wholePhraseCount": 0,
+      "keyCount": 0,
+      "buttonsCrossingDivisionFixture": [
+        "familySetup"
+      ],
+      "buttons": [
+        {
+          "identifier": "backToTalking",
+          "label": "Back to Talking",
+          "frame": {
+            "height": 99,
+            "width": 160.66666666666663,
+            "x": 502,
+            "y": 8
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "familySetup",
+          "label": "Family Setup",
+          "frame": {
+            "height": 79.66666666666663,
+            "width": 437.33333333333337,
+            "x": 413.66666666666663,
+            "y": 336
+          },
+          "enabled": true,
+          "selected": false
+        }
+      ]
+    },
+    {
+      "configuration": "default-dark",
+      "state": "home",
+      "rootFrame": {
+        "height": 951,
+        "width": 669,
+        "x": 0,
+        "y": 0
+      },
+      "windowFrames": [
+        {
+          "height": 669,
+          "width": 951,
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "selectedWindow": {
+        "height": 669,
+        "width": 951,
+        "x": 0,
+        "y": 0
+      },
+      "windowSource": "snapshot ancestor window 0",
+      "allFramesFromOneSnapshot": true,
+      "phraseViewport": {
+        "height": 314,
+        "width": 835,
+        "x": 16,
+        "y": 313
+      },
+      "wholePhraseCount": 8,
+      "keyCount": 0,
+      "buttonsCrossingDivisionFixture": [
+        "No",
+        "Conversation",
+        "phraseTile",
+        "phraseTile"
+      ],
+      "buttons": [
+        {
+          "identifier": "",
+          "label": "Yes",
+          "frame": {
+            "height": 55,
+            "width": 141.33333333333331,
+            "x": 165,
+            "y": 116
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "",
+          "label": "No",
+          "frame": {
+            "height": 55,
+            "width": 141.33333333333331,
+            "x": 314.3333333333333,
+            "y": 116
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "",
+          "label": "Emergency",
+          "frame": {
+            "height": 55,
+            "width": 141,
+            "x": 16,
+            "y": 116
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "getAttention",
+          "label": "Get Attention",
+          "frame": {
+            "height": 55,
+            "width": 225.33333333333337,
+            "x": 625.6666666666666,
+            "y": 116
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "",
+          "label": "Again",
+          "frame": {
+            "height": 55,
+            "width": 122,
+            "x": 495.66666666666663,
+            "y": 116
+          },
+          "enabled": false,
+          "selected": false
+        },
+        {
+          "identifier": "phrases",
+          "label": "Phrases",
+          "frame": {
+            "height": 44,
+            "width": 173.66666666666663,
+            "x": 495.66666666666663,
+            "y": 8
+          },
+          "enabled": true,
+          "selected": true
+        },
+        {
+          "identifier": "type",
+          "label": "Type",
+          "frame": {
+            "height": 44,
+            "width": 173.66666666666663,
+            "x": 495.66666666666663,
+            "y": 60
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "",
+          "label": "Basics",
+          "frame": {
+            "height": 55,
+            "width": 141,
+            "x": 16,
+            "y": 246
+          },
+          "enabled": true,
+          "selected": true
+        },
+        {
+          "identifier": "",
+          "label": "Needs",
+          "frame": {
+            "height": 118,
+            "width": 141.33333333333331,
+            "x": 165,
+            "y": 183
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "",
+          "label": "Conversation",
+          "frame": {
+            "height": 118,
+            "width": 141.33333333333331,
+            "x": 314.3333333333333,
+            "y": 183
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "",
+          "label": "Feelings",
+          "frame": {
+            "height": 118,
+            "width": 122,
+            "x": 495.66666666666663,
+            "y": 183
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "settings",
+          "label": "Settings",
+          "frame": {
+            "height": 118,
+            "width": 225.33333333333337,
+            "x": 625.6666666666666,
+            "y": 183
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "phraseTile",
+          "label": "Maybe.",
+          "frame": {
+            "height": 153,
+            "width": 215.66666666666666,
+            "x": 16,
+            "y": 313
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "phraseTile",
+          "label": "I don't know.",
+          "frame": {
+            "height": 153,
+            "width": 215.99999999999997,
+            "x": 239.66666666666666,
+            "y": 313
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "phraseTile",
+          "label": "Please.",
+          "frame": {
+            "height": 153,
+            "width": 173.66666666666663,
+            "x": 495.66666666666663,
+            "y": 313
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "phraseTile",
+          "label": "Thank you.",
+          "frame": {
+            "height": 153,
+            "width": 173.66666666666663,
+            "x": 677.3333333333333,
+            "y": 313
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "phraseTile",
+          "label": "Wait a moment, please.",
+          "frame": {
+            "height": 153,
+            "width": 215.66666666666666,
+            "x": 16,
+            "y": 474
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "phraseTile",
+          "label": "I'm not finished.",
+          "frame": {
+            "height": 153,
+            "width": 215.99999999999997,
+            "x": 239.66666666666666,
+            "y": 474
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "phraseTile",
+          "label": "Hello.",
+          "frame": {
+            "height": 153,
+            "width": 173.66666666666663,
+            "x": 495.66666666666663,
+            "y": 474
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "phraseTile",
+          "label": "Goodbye.",
+          "frame": {
+            "height": 153,
+            "width": 173.66666666666663,
+            "x": 677.3333333333333,
+            "y": 474
+          },
+          "enabled": true,
+          "selected": false
+        }
+      ]
+    },
+    {
+      "configuration": "default-dark",
+      "state": "settings",
+      "rootFrame": {
+        "height": 951,
+        "width": 669,
+        "x": 0,
+        "y": 0
+      },
+      "windowFrames": [
+        {
+          "height": 669,
+          "width": 951,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 669,
+          "width": 951,
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "selectedWindow": {
+        "height": 669,
+        "width": 951,
+        "x": 0,
+        "y": 0
+      },
+      "windowSource": "snapshot ancestor window 0",
+      "allFramesFromOneSnapshot": true,
+      "wholePhraseCount": 0,
+      "keyCount": 0,
+      "buttonsCrossingDivisionFixture": [],
+      "buttons": [
+        {
+          "identifier": "backToTalking",
+          "label": "Back to Talking",
+          "frame": {
+            "height": 44,
+            "width": 160.66666666666663,
+            "x": 502,
+            "y": 8
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "familySetup",
+          "label": "Family Setup",
+          "frame": {
+            "height": 78,
+            "width": 225.33333333333337,
+            "x": 625.6666666666666,
+            "y": 201
+          },
+          "enabled": true,
+          "selected": false
+        }
+      ]
+    },
+    {
+      "configuration": "default-dark",
+      "state": "typing",
+      "rootFrame": {
+        "height": 951,
+        "width": 669,
+        "x": 0,
+        "y": 0
+      },
+      "windowFrames": [
+        {
+          "height": 669,
+          "width": 951,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 669,
+          "width": 951,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 669,
+          "width": 951,
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "selectedWindow": {
+        "height": 669,
+        "width": 951,
+        "x": 0,
+        "y": 0
+      },
+      "windowSource": "snapshot ancestor window 0",
+      "allFramesFromOneSnapshot": true,
+      "phraseViewport": {
+        "height": 356,
+        "width": 835,
+        "x": 16,
+        "y": 313
+      },
+      "wholePhraseCount": 8,
+      "keyCount": 32,
+      "keyboardTop": 405,
+      "clearPutBackCoverage": [
+        {
+          "clearsKeyboard": true,
+          "frame": {
+            "height": 118,
+            "width": 141.33333333333331,
+            "x": 314.3333333333333,
+            "y": 183
+          },
+          "name": "clear",
+          "result": "PASS geometric coverage"
+        },
+        {
+          "clearsKeyboard": true,
+          "frame": {
+            "height": 118,
+            "width": 122,
+            "x": 495.66666666666663,
+            "y": 183
+          },
+          "name": "putBack",
+          "result": "PASS geometric coverage"
+        }
+      ],
+      "buttonsCrossingDivisionFixture": [
+        "No",
+        "clear",
+        "phraseTile",
+        "phraseTile",
+        "The"
+      ],
+      "buttons": [
+        {
+          "identifier": "",
+          "label": "Yes",
+          "frame": {
+            "height": 55,
+            "width": 141.33333333333331,
+            "x": 165,
+            "y": 116
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "",
+          "label": "No",
+          "frame": {
+            "height": 55,
+            "width": 141.33333333333331,
+            "x": 314.3333333333333,
+            "y": 116
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "",
+          "label": "Emergency",
+          "frame": {
+            "height": 55,
+            "width": 141,
+            "x": 16,
+            "y": 116
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "getAttention",
+          "label": "Get Attention",
+          "frame": {
+            "height": 55,
+            "width": 225.33333333333337,
+            "x": 625.6666666666666,
+            "y": 116
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "",
+          "label": "Speak",
+          "frame": {
+            "height": 55,
+            "width": 122,
+            "x": 495.66666666666663,
+            "y": 116
+          },
+          "enabled": false,
+          "selected": false
+        },
+        {
+          "identifier": "phrases",
+          "label": "Phrases",
+          "frame": {
+            "height": 44,
+            "width": 173.66666666666663,
+            "x": 495.66666666666663,
+            "y": 8
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "type",
+          "label": "Type",
+          "frame": {
+            "height": 44,
+            "width": 173.66666666666663,
+            "x": 495.66666666666663,
+            "y": 60
+          },
+          "enabled": true,
+          "selected": true
+        },
+        {
+          "identifier": "",
+          "label": "Basics",
+          "frame": {
+            "height": 55,
+            "width": 141,
+            "x": 16,
+            "y": 246
+          },
+          "enabled": false,
+          "selected": false
+        },
+        {
+          "identifier": "",
+          "label": "Needs",
+          "frame": {
+            "height": 118,
+            "width": 141.33333333333331,
+            "x": 165,
+            "y": 183
+          },
+          "enabled": false,
+          "selected": false
+        },
+        {
+          "identifier": "clear",
+          "label": "Clear",
+          "frame": {
+            "height": 118,
+            "width": 141.33333333333331,
+            "x": 314.3333333333333,
+            "y": 183
+          },
+          "enabled": false,
+          "selected": false
+        },
+        {
+          "identifier": "putBack",
+          "label": "Put Back",
+          "frame": {
+            "height": 118,
+            "width": 122,
+            "x": 495.66666666666663,
+            "y": 183
+          },
+          "enabled": false,
+          "selected": false
+        },
+        {
+          "identifier": "settings",
+          "label": "Settings",
+          "frame": {
+            "height": 118,
+            "width": 225.33333333333337,
+            "x": 625.6666666666666,
+            "y": 183
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "phraseTile",
+          "label": "Maybe.",
+          "frame": {
+            "height": 153,
+            "width": 215.66666666666666,
+            "x": 16,
+            "y": 313
+          },
+          "enabled": false,
+          "selected": false
+        },
+        {
+          "identifier": "phraseTile",
+          "label": "I don't know.",
+          "frame": {
+            "height": 153,
+            "width": 215.99999999999997,
+            "x": 239.66666666666666,
+            "y": 313
+          },
+          "enabled": false,
+          "selected": false
+        },
+        {
+          "identifier": "phraseTile",
+          "label": "Please.",
+          "frame": {
+            "height": 153,
+            "width": 173.66666666666663,
+            "x": 495.66666666666663,
+            "y": 313
+          },
+          "enabled": false,
+          "selected": false
+        },
+        {
+          "identifier": "phraseTile",
+          "label": "Thank you.",
+          "frame": {
+            "height": 153,
+            "width": 173.66666666666663,
+            "x": 677.3333333333333,
+            "y": 313
+          },
+          "enabled": false,
+          "selected": false
+        },
+        {
+          "identifier": "phraseTile",
+          "label": "Wait a moment, please.",
+          "frame": {
+            "height": 153,
+            "width": 215.66666666666666,
+            "x": 16,
+            "y": 474
+          },
+          "enabled": false,
+          "selected": false
+        },
+        {
+          "identifier": "phraseTile",
+          "label": "I'm not finished.",
+          "frame": {
+            "height": 153,
+            "width": 215.99999999999997,
+            "x": 239.66666666666666,
+            "y": 474
+          },
+          "enabled": false,
+          "selected": false
+        },
+        {
+          "identifier": "phraseTile",
+          "label": "Hello.",
+          "frame": {
+            "height": 153,
+            "width": 173.66666666666663,
+            "x": 495.66666666666663,
+            "y": 474
+          },
+          "enabled": false,
+          "selected": false
+        },
+        {
+          "identifier": "phraseTile",
+          "label": "Goodbye.",
+          "frame": {
+            "height": 153,
+            "width": 173.66666666666663,
+            "x": 677.3333333333333,
+            "y": 474
+          },
+          "enabled": false,
+          "selected": false
+        },
+        {
+          "identifier": "",
+          "label": "I",
+          "frame": {
+            "height": 44,
+            "width": 267,
+            "x": 75,
+            "y": 405
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "",
+          "label": "The",
+          "frame": {
+            "height": 44,
+            "width": 267,
+            "x": 342,
+            "y": 405
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "",
+          "label": "I\u2019m",
+          "frame": {
+            "height": 44,
+            "width": 267,
+            "x": 609,
+            "y": 405
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "",
+          "label": "More",
+          "frame": {
+            "height": 24,
+            "width": 46.00000000000001,
+            "x": 19.51991360491356,
+            "y": 417
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "dictation",
+          "label": "Dictate",
+          "frame": {
+            "height": 68.73516393505099,
+            "width": 68.08529584750863,
+            "x": 874.4374384713321,
+            "y": 603.6989567998571
+          },
+          "enabled": false,
+          "selected": false
+        },
+        {
+          "identifier": "shift",
+          "label": "shift",
+          "frame": {
+            "height": 51.66666666666663,
+            "width": 102.66666666666669,
+            "x": 83,
+            "y": 557.6666666666666
+          },
+          "enabled": true,
+          "selected": true
+        },
+        {
+          "identifier": "emoji",
+          "label": "Emoji",
+          "frame": {
+            "height": 51.66666666666663,
+            "width": 73.66666666666669,
+            "x": 194,
+            "y": 609.3333333333334
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "dictation",
+          "label": "Dictate",
+          "frame": {
+            "height": 51.66666666666663,
+            "width": 73.66666666666663,
+            "x": 689.3333333333334,
+            "y": 609.3333333333334
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "Return",
+          "label": "return",
+          "frame": {
+            "height": 51.66666666666663,
+            "width": 111,
+            "x": 763,
+            "y": 609.3333333333334
+          },
+          "enabled": true,
+          "selected": false
+        }
+      ]
+    },
+    {
+      "configuration": "default-light",
+      "state": "home",
+      "rootFrame": {
+        "height": 951,
+        "width": 669,
+        "x": 0,
+        "y": 0
+      },
+      "windowFrames": [
+        {
+          "height": 669,
+          "width": 951,
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "selectedWindow": {
+        "height": 669,
+        "width": 951,
+        "x": 0,
+        "y": 0
+      },
+      "windowSource": "snapshot ancestor window 0",
+      "allFramesFromOneSnapshot": true,
+      "phraseViewport": {
+        "height": 314,
+        "width": 835,
+        "x": 16,
+        "y": 313
+      },
+      "wholePhraseCount": 8,
+      "keyCount": 0,
+      "buttonsCrossingDivisionFixture": [
+        "No",
+        "Conversation",
+        "phraseTile",
+        "phraseTile"
+      ],
+      "buttons": [
+        {
+          "identifier": "",
+          "label": "Yes",
+          "frame": {
+            "height": 55,
+            "width": 141.33333333333331,
+            "x": 165,
+            "y": 116
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "",
+          "label": "No",
+          "frame": {
+            "height": 55,
+            "width": 141.33333333333331,
+            "x": 314.3333333333333,
+            "y": 116
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "",
+          "label": "Emergency",
+          "frame": {
+            "height": 55,
+            "width": 141,
+            "x": 16,
+            "y": 116
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "getAttention",
+          "label": "Get Attention",
+          "frame": {
+            "height": 55,
+            "width": 225.33333333333337,
+            "x": 625.6666666666666,
+            "y": 116
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "",
+          "label": "Again",
+          "frame": {
+            "height": 55,
+            "width": 122,
+            "x": 495.66666666666663,
+            "y": 116
+          },
+          "enabled": false,
+          "selected": false
+        },
+        {
+          "identifier": "phrases",
+          "label": "Phrases",
+          "frame": {
+            "height": 44,
+            "width": 173.66666666666663,
+            "x": 495.66666666666663,
+            "y": 8
+          },
+          "enabled": true,
+          "selected": true
+        },
+        {
+          "identifier": "type",
+          "label": "Type",
+          "frame": {
+            "height": 44,
+            "width": 173.66666666666663,
+            "x": 495.66666666666663,
+            "y": 60
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "",
+          "label": "Basics",
+          "frame": {
+            "height": 55,
+            "width": 141,
+            "x": 16,
+            "y": 246
+          },
+          "enabled": true,
+          "selected": true
+        },
+        {
+          "identifier": "",
+          "label": "Needs",
+          "frame": {
+            "height": 118,
+            "width": 141.33333333333331,
+            "x": 165,
+            "y": 183
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "",
+          "label": "Conversation",
+          "frame": {
+            "height": 118,
+            "width": 141.33333333333331,
+            "x": 314.3333333333333,
+            "y": 183
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "",
+          "label": "Feelings",
+          "frame": {
+            "height": 118,
+            "width": 122,
+            "x": 495.66666666666663,
+            "y": 183
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "settings",
+          "label": "Settings",
+          "frame": {
+            "height": 118,
+            "width": 225.33333333333337,
+            "x": 625.6666666666666,
+            "y": 183
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "phraseTile",
+          "label": "Maybe.",
+          "frame": {
+            "height": 153,
+            "width": 215.66666666666666,
+            "x": 16,
+            "y": 313
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "phraseTile",
+          "label": "I don't know.",
+          "frame": {
+            "height": 153,
+            "width": 215.99999999999997,
+            "x": 239.66666666666666,
+            "y": 313
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "phraseTile",
+          "label": "Please.",
+          "frame": {
+            "height": 153,
+            "width": 173.66666666666663,
+            "x": 495.66666666666663,
+            "y": 313
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "phraseTile",
+          "label": "Thank you.",
+          "frame": {
+            "height": 153,
+            "width": 173.66666666666663,
+            "x": 677.3333333333333,
+            "y": 313
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "phraseTile",
+          "label": "Wait a moment, please.",
+          "frame": {
+            "height": 153,
+            "width": 215.66666666666666,
+            "x": 16,
+            "y": 474
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "phraseTile",
+          "label": "I'm not finished.",
+          "frame": {
+            "height": 153,
+            "width": 215.99999999999997,
+            "x": 239.66666666666666,
+            "y": 474
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "phraseTile",
+          "label": "Hello.",
+          "frame": {
+            "height": 153,
+            "width": 173.66666666666663,
+            "x": 495.66666666666663,
+            "y": 474
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "phraseTile",
+          "label": "Goodbye.",
+          "frame": {
+            "height": 153,
+            "width": 173.66666666666663,
+            "x": 677.3333333333333,
+            "y": 474
+          },
+          "enabled": true,
+          "selected": false
+        }
+      ]
+    },
+    {
+      "configuration": "default-light",
+      "state": "settings",
+      "rootFrame": {
+        "height": 951,
+        "width": 669,
+        "x": 0,
+        "y": 0
+      },
+      "windowFrames": [
+        {
+          "height": 669,
+          "width": 951,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 669,
+          "width": 951,
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "selectedWindow": {
+        "height": 669,
+        "width": 951,
+        "x": 0,
+        "y": 0
+      },
+      "windowSource": "snapshot ancestor window 0",
+      "allFramesFromOneSnapshot": true,
+      "wholePhraseCount": 0,
+      "keyCount": 0,
+      "buttonsCrossingDivisionFixture": [],
+      "buttons": [
+        {
+          "identifier": "backToTalking",
+          "label": "Back to Talking",
+          "frame": {
+            "height": 44,
+            "width": 160.66666666666663,
+            "x": 502,
+            "y": 8
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "familySetup",
+          "label": "Family Setup",
+          "frame": {
+            "height": 78,
+            "width": 225.33333333333337,
+            "x": 625.6666666666666,
+            "y": 201
+          },
+          "enabled": true,
+          "selected": false
+        }
+      ]
+    },
+    {
+      "configuration": "default-light",
+      "state": "typing",
+      "rootFrame": {
+        "height": 951,
+        "width": 669,
+        "x": 0,
+        "y": 0
+      },
+      "windowFrames": [
+        {
+          "height": 669,
+          "width": 951,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 669,
+          "width": 951,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 669,
+          "width": 951,
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "selectedWindow": {
+        "height": 669,
+        "width": 951,
+        "x": 0,
+        "y": 0
+      },
+      "windowSource": "snapshot ancestor window 0",
+      "allFramesFromOneSnapshot": true,
+      "phraseViewport": {
+        "height": 356,
+        "width": 835,
+        "x": 16,
+        "y": 313
+      },
+      "wholePhraseCount": 8,
+      "keyCount": 32,
+      "keyboardTop": 405,
+      "clearPutBackCoverage": [
+        {
+          "clearsKeyboard": true,
+          "frame": {
+            "height": 118,
+            "width": 141.33333333333331,
+            "x": 314.3333333333333,
+            "y": 183
+          },
+          "name": "clear",
+          "result": "PASS geometric coverage"
+        },
+        {
+          "clearsKeyboard": true,
+          "frame": {
+            "height": 118,
+            "width": 122,
+            "x": 495.66666666666663,
+            "y": 183
+          },
+          "name": "putBack",
+          "result": "PASS geometric coverage"
+        }
+      ],
+      "buttonsCrossingDivisionFixture": [
+        "No",
+        "clear",
+        "phraseTile",
+        "phraseTile",
+        ""
+      ],
+      "buttons": [
+        {
+          "identifier": "",
+          "label": "Yes",
+          "frame": {
+            "height": 55,
+            "width": 141.33333333333331,
+            "x": 165,
+            "y": 116
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "",
+          "label": "No",
+          "frame": {
+            "height": 55,
+            "width": 141.33333333333331,
+            "x": 314.3333333333333,
+            "y": 116
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "",
+          "label": "Emergency",
+          "frame": {
+            "height": 55,
+            "width": 141,
+            "x": 16,
+            "y": 116
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "getAttention",
+          "label": "Get Attention",
+          "frame": {
+            "height": 55,
+            "width": 225.33333333333337,
+            "x": 625.6666666666666,
+            "y": 116
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "",
+          "label": "Speak",
+          "frame": {
+            "height": 55,
+            "width": 122,
+            "x": 495.66666666666663,
+            "y": 116
+          },
+          "enabled": false,
+          "selected": false
+        },
+        {
+          "identifier": "phrases",
+          "label": "Phrases",
+          "frame": {
+            "height": 44,
+            "width": 173.66666666666663,
+            "x": 495.66666666666663,
+            "y": 8
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "type",
+          "label": "Type",
+          "frame": {
+            "height": 44,
+            "width": 173.66666666666663,
+            "x": 495.66666666666663,
+            "y": 60
+          },
+          "enabled": true,
+          "selected": true
+        },
+        {
+          "identifier": "",
+          "label": "Basics",
+          "frame": {
+            "height": 55,
+            "width": 141,
+            "x": 16,
+            "y": 246
+          },
+          "enabled": false,
+          "selected": false
+        },
+        {
+          "identifier": "",
+          "label": "Needs",
+          "frame": {
+            "height": 118,
+            "width": 141.33333333333331,
+            "x": 165,
+            "y": 183
+          },
+          "enabled": false,
+          "selected": false
+        },
+        {
+          "identifier": "clear",
+          "label": "Clear",
+          "frame": {
+            "height": 118,
+            "width": 141.33333333333331,
+            "x": 314.3333333333333,
+            "y": 183
+          },
+          "enabled": false,
+          "selected": false
+        },
+        {
+          "identifier": "putBack",
+          "label": "Put Back",
+          "frame": {
+            "height": 118,
+            "width": 122,
+            "x": 495.66666666666663,
+            "y": 183
+          },
+          "enabled": false,
+          "selected": false
+        },
+        {
+          "identifier": "settings",
+          "label": "Settings",
+          "frame": {
+            "height": 118,
+            "width": 225.33333333333337,
+            "x": 625.6666666666666,
+            "y": 183
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "phraseTile",
+          "label": "Maybe.",
+          "frame": {
+            "height": 153,
+            "width": 215.66666666666666,
+            "x": 16,
+            "y": 313
+          },
+          "enabled": false,
+          "selected": false
+        },
+        {
+          "identifier": "phraseTile",
+          "label": "I don't know.",
+          "frame": {
+            "height": 153,
+            "width": 215.99999999999997,
+            "x": 239.66666666666666,
+            "y": 313
+          },
+          "enabled": false,
+          "selected": false
+        },
+        {
+          "identifier": "phraseTile",
+          "label": "Please.",
+          "frame": {
+            "height": 153,
+            "width": 173.66666666666663,
+            "x": 495.66666666666663,
+            "y": 313
+          },
+          "enabled": false,
+          "selected": false
+        },
+        {
+          "identifier": "phraseTile",
+          "label": "Thank you.",
+          "frame": {
+            "height": 153,
+            "width": 173.66666666666663,
+            "x": 677.3333333333333,
+            "y": 313
+          },
+          "enabled": false,
+          "selected": false
+        },
+        {
+          "identifier": "phraseTile",
+          "label": "Wait a moment, please.",
+          "frame": {
+            "height": 153,
+            "width": 215.66666666666666,
+            "x": 16,
+            "y": 474
+          },
+          "enabled": false,
+          "selected": false
+        },
+        {
+          "identifier": "phraseTile",
+          "label": "I'm not finished.",
+          "frame": {
+            "height": 153,
+            "width": 215.99999999999997,
+            "x": 239.66666666666666,
+            "y": 474
+          },
+          "enabled": false,
+          "selected": false
+        },
+        {
+          "identifier": "phraseTile",
+          "label": "Hello.",
+          "frame": {
+            "height": 153,
+            "width": 173.66666666666663,
+            "x": 495.66666666666663,
+            "y": 474
+          },
+          "enabled": false,
+          "selected": false
+        },
+        {
+          "identifier": "phraseTile",
+          "label": "Goodbye.",
+          "frame": {
+            "height": 153,
+            "width": 173.66666666666663,
+            "x": 677.3333333333333,
+            "y": 474
+          },
+          "enabled": false,
+          "selected": false
+        },
+        {
+          "identifier": "",
+          "label": "",
+          "frame": {
+            "height": 44,
+            "width": 267,
+            "x": 75,
+            "y": 405
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "",
+          "label": "",
+          "frame": {
+            "height": 44,
+            "width": 267,
+            "x": 342,
+            "y": 405
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "",
+          "label": "",
+          "frame": {
+            "height": 44,
+            "width": 267,
+            "x": 609,
+            "y": 405
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "",
+          "label": "More",
+          "frame": {
+            "height": 24,
+            "width": 46.00000000000001,
+            "x": 19.51991360491356,
+            "y": 417
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "dictation",
+          "label": "Dictate",
+          "frame": {
+            "height": 68.73516393505099,
+            "width": 68.08529584750863,
+            "x": 874.4374384713321,
+            "y": 603.6989567998571
+          },
+          "enabled": false,
+          "selected": false
+        },
+        {
+          "identifier": "shift",
+          "label": "shift",
+          "frame": {
+            "height": 51.66666666666663,
+            "width": 102.66666666666669,
+            "x": 83,
+            "y": 557.6666666666666
+          },
+          "enabled": true,
+          "selected": true
+        },
+        {
+          "identifier": "emoji",
+          "label": "Emoji",
+          "frame": {
+            "height": 51.66666666666663,
+            "width": 73.66666666666669,
+            "x": 194,
+            "y": 609.3333333333334
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "dictation",
+          "label": "Dictate",
+          "frame": {
+            "height": 51.66666666666663,
+            "width": 73.66666666666663,
+            "x": 689.3333333333334,
+            "y": 609.3333333333334
+          },
+          "enabled": true,
+          "selected": false
+        },
+        {
+          "identifier": "Return",
+          "label": "return",
+          "frame": {
+            "height": 51.66666666666663,
+            "width": 111,
+            "x": 763,
+            "y": 609.3333333333334
+          },
+          "enabled": true,
+          "selected": false
+        }
+      ]
+    }
+  ],
+  "image": {
+    "path": "native-wide-initial.png",
+    "source": "RocketSim active-display capture of the same production source candidate after the native probe; test-only default-light launch. XCTest screen images were black inactive-outer-display captures and are not visual Home proof.",
+    "sameInstantAsXCTestSnapshot": false
+  }
+}

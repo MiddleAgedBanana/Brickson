@@ -1,0 +1,9 @@
+{
+  "baseCommit": "bc72b73824aae42a1d7dac42b434941ff8ee9e5b",
+  "sourceSHA256": {
+    "Brickson/Layout/HomeLayout.swift": "93e3453cde75578fb535e2ce796b156890c52e0b4bd88cb9f27956734dd8ca67",
+    "BricksonTests/Layout/HomeLayoutEngineFontTests.swift": "3dee7de4356f425f2ee6e634dd92e09957db956ceeab6b85e1f3be780aed735b",
+    "BricksonTests/Layout/HomeReservedRegionTests.swift": "09dce640f2d6961b33defeeebe4c2d3222a7f4a987f984358a672199b4eec869"
+  },
+  "scope": "Current working-tree hashes collected after the completed results; not embedded source hashes from xcresult. The operator owns the build/source chronology."
+}

@@ -121,7 +121,7 @@ extension XCTestCase {
         add(tree)
 
         if let snapshot = try? app.snapshot() {
-            let capture = ControlCapture(window: app.frame, root: snapshot)
+            let capture = ControlCapture(root: snapshot)
             if let json = try? JSONEncoder.sortedPretty.encode(capture) {
                 let frames = XCTAttachment(data: json, uniformTypeIdentifier: "public.json")
                 frames.name = name + "-buttons.json"
@@ -148,11 +148,25 @@ extension XCTestCase {
             XCTFail("\(label) is missing (\(context))", file: file, line: line)
             return
         }
-        let frame = control.frame
+        let identity = SnapshotControlGeometry.Identity(identifier: control.identifier, label: control.label)
+        let located: SnapshotControlGeometry.Located
+        do {
+            located = try SnapshotControlGeometry.locate(
+                in: app.snapshot(), frame: { $0.frame }, isWindow: { $0.elementType == .window },
+                target: identity,
+                identity: { $0.elementType == .button ? .init(identifier: $0.identifier, label: $0.label) : nil },
+                children: { $0.children }
+            )
+        } catch {
+            let reason = (error as? SnapshotControlGeometry.Failure).map { String(describing: $0) } ?? "snapshotUnavailable"
+            XCTFail("\(label) has no unique coherent control/window geometry (\(context)): \(reason)", file: file, line: line)
+            return
+        }
+        let frame = located.control
         XCTAssertTrue(control.isHittable, "\(label) cannot be activated (\(context)); frame \(frame)", file: file, line: line)
         XCTAssertTrue(
-            app.frame.insetBy(dx: -1, dy: -1).contains(frame),
-            "\(label) is not wholly on screen (\(context)): frame \(frame), window \(app.frame)",
+            located.window.insetBy(dx: -1, dy: -1).contains(frame),
+            "\(label) is not wholly on screen (\(context)): frame \(frame), window \(located.window)",
             file: file, line: line
         )
         XCTAssertGreaterThanOrEqual(frame.width, 44, "\(label) is narrower than 44pt (\(context))", file: file, line: line)
@@ -301,17 +315,28 @@ private struct ControlCapture: Encodable {
         let y: Double
         let width: Double
         let height: Double
+        let hasAncestorWindow: Bool
+        let ancestorWindowIndex: Int?
+        let ancestorWindowFrame: [String: Double]?
     }
 
-    let window: [String: Double]
+    let schemaVersion = 2
+    let rootSnapshotFrame: [String: Double]
+    let windowFrames: [[String: Double]]
     let controls: [Control]
 
     @MainActor
-    init(window: CGRect, root: any XCUIElementSnapshot) {
-        self.window = ["x": window.minX, "y": window.minY, "width": window.width, "height": window.height]
+    init(root: any XCUIElementSnapshot) {
+        self.rootSnapshotFrame = Self.rect(root.frame)
+        var windows: [[String: Double]] = []
         var controls: [Control] = []
-        var pending: [any XCUIElementSnapshot] = [root]
-        while let element = pending.popLast() {
+        var pending: [(any XCUIElementSnapshot, Int?)] = [(root, nil)]
+        while let (element, inheritedWindow) = pending.popLast() {
+            var window = inheritedWindow
+            if element.elementType == .window {
+                window = windows.count
+                windows.append(Self.rect(element.frame))
+            }
             if element.elementType == .button {
                 controls.append(Control(
                     label: element.label,
@@ -321,12 +346,20 @@ private struct ControlCapture: Encodable {
                     x: element.frame.minX,
                     y: element.frame.minY,
                     width: element.frame.width,
-                    height: element.frame.height
+                    height: element.frame.height,
+                    hasAncestorWindow: window != nil,
+                    ancestorWindowIndex: window,
+                    ancestorWindowFrame: window.map { windows[$0] }
                 ))
             }
-            pending.append(contentsOf: element.children.reversed())
+            pending.append(contentsOf: element.children.reversed().map { ($0, window) })
         }
+        self.windowFrames = windows
         self.controls = controls
+    }
+
+    private static func rect(_ frame: CGRect) -> [String: Double] {
+        ["x": frame.minX, "y": frame.minY, "width": frame.width, "height": frame.height]
     }
 }
 

@@ -1,0 +1,118 @@
+{
+  "schema": 1,
+  "date": "2026-10-25",
+  "productAndTestSourceMatchesPublishedHead": "132263011a870645e2c63903a17d22065702d703",
+  "pose": "fully open,951x669 visually verified full-screen before tests; original helpers still request orientations",
+  "toolchain": "Xcode27.1(27A9275),XcodeGen2.46.0,Duo simulator iOS27.1",
+  "result": "FAILED,exit65",
+  "counts": {
+    "totalTestCount": 19,
+    "passedTests": 8,
+    "failedTests": 9,
+    "skippedTests": 2,
+    "expectedFailures": 0
+  },
+  "firstReportedFailurePerFailedTest": [
+    {
+      "failureText": "XCTAssertTrue failed - Get Attention is not wholly on screen (just opened; default text, landscape, iPhone): frame (626.0, 116.0, 225.0, 55.0), window (0.0, 0.0, 669.0, 951.0)",
+      "targetName": "BricksonUITests",
+      "testIdentifier": 7,
+      "testIdentifierString": "HomeReachabilityTests/testEveryHomeStateAtDefaultTextInLandscape()",
+      "testIdentifierURL": "test://com.apple.xcode/Brickson/BricksonUITests/HomeReachabilityTests/testEveryHomeStateAtDefaultTextInLandscape",
+      "testName": "testEveryHomeStateAtDefaultTextInLandscape()"
+    },
+    {
+      "failureText": "XCTAssertTrue failed - Get Attention is not wholly on screen (just opened; default text, portrait, iPhone): frame (626.0, 116.0, 225.0, 55.0), window (0.0, 0.0, 669.0, 951.0)",
+      "targetName": "BricksonUITests",
+      "testIdentifier": 8,
+      "testIdentifierString": "HomeReachabilityTests/testEveryHomeStateAtDefaultTextInPortrait()",
+      "testIdentifierURL": "test://com.apple.xcode/Brickson/BricksonUITests/HomeReachabilityTests/testEveryHomeStateAtDefaultTextInPortrait",
+      "testName": "testEveryHomeStateAtDefaultTextInPortrait()"
+    },
+    {
+      "failureText": "XCTAssertTrue failed - Get Attention is not wholly on screen (just opened; AX5 text, landscape, iPhone): frame (626.0, 224.0, 225.0, 79.0), window (0.0, 0.0, 669.0, 951.0)",
+      "targetName": "BricksonUITests",
+      "testIdentifier": 9,
+      "testIdentifierString": "HomeReachabilityTests/testEveryHomeStateAtTheLargestTextInLandscape()",
+      "testIdentifierURL": "test://com.apple.xcode/Brickson/BricksonUITests/HomeReachabilityTests/testEveryHomeStateAtTheLargestTextInLandscape",
+      "testName": "testEveryHomeStateAtTheLargestTextInLandscape()"
+    },
+    {
+      "failureText": "XCTAssertTrue failed - Get Attention is not wholly on screen (just opened; AX5 text, portrait, iPhone): frame (626.0, 224.0, 225.0, 79.0), window (0.0, 0.0, 669.0, 951.0)",
+      "targetName": "BricksonUITests",
+      "testIdentifier": 10,
+      "testIdentifierString": "HomeReachabilityTests/testEveryHomeStateAtTheLargestTextInPortrait()",
+      "testIdentifierURL": "test://com.apple.xcode/Brickson/BricksonUITests/HomeReachabilityTests/testEveryHomeStateAtTheLargestTextInPortrait",
+      "testName": "testEveryHomeStateAtTheLargestTextInPortrait()"
+    },
+    {
+      "failureText": "XCTAssertEqual failed: (\"XCTWaiterResult(rawValue: 2)\") is not equal to (\"XCTWaiterResult(rawValue: 1)\") - the window did not turn to portrait",
+      "targetName": "BricksonUITests",
+      "testIdentifier": 11,
+      "testIdentifierString": "SettingsOnHomeTests/testOpeningSettingsFromHomeAtDefaultText()",
+      "testIdentifierURL": "test://com.apple.xcode/Brickson/BricksonUITests/SettingsOnHomeTests/testOpeningSettingsFromHomeAtDefaultText",
+      "testName": "testOpeningSettingsFromHomeAtDefaultText()"
+    },
+    {
+      "failureText": "XCTAssertEqual failed: (\"XCTWaiterResult(rawValue: 2)\") is not equal to (\"XCTWaiterResult(rawValue: 1)\") - the window did not turn to portrait",
+      "targetName": "BricksonUITests",
+      "testIdentifier": 12,
+      "testIdentifierString": "SettingsOnHomeTests/testOpeningSettingsFromHomeAtTheLargestText()",
+      "testIdentifierURL": "test://com.apple.xcode/Brickson/BricksonUITests/SettingsOnHomeTests/testOpeningSettingsFromHomeAtTheLargestText",
+      "testName": "testOpeningSettingsFromHomeAtTheLargestText()"
+    },
+    {
+      "failureText": "XCTAssertEqual failed: (\"XCTWaiterResult(rawValue: 2)\") is not equal to (\"XCTWaiterResult(rawValue: 1)\") - the window did not turn to portrait",
+      "targetName": "BricksonUITests",
+      "testIdentifier": 1,
+      "testIdentifierString": "GetAttentionOnHomeTests/testTheAlarmStartsAndStopsAtDefaultText()",
+      "testIdentifierURL": "test://com.apple.xcode/Brickson/BricksonUITests/GetAttentionOnHomeTests/testTheAlarmStartsAndStopsAtDefaultText",
+      "testName": "testTheAlarmStartsAndStopsAtDefaultText()"
+    },
+    {
+      "failureText": "XCTAssertEqual failed: (\"XCTWaiterResult(rawValue: 2)\") is not equal to (\"XCTWaiterResult(rawValue: 1)\") - the window did not turn to portrait",
+      "targetName": "BricksonUITests",
+      "testIdentifier": 2,
+      "testIdentifierString": "GetAttentionOnHomeTests/testTheAlarmStartsAndStopsAtTheLargestText()",
+      "testIdentifierURL": "test://com.apple.xcode/Brickson/BricksonUITests/GetAttentionOnHomeTests/testTheAlarmStartsAndStopsAtTheLargestText",
+      "testName": "testTheAlarmStartsAndStopsAtTheLargestText()"
+    },
+    {
+      "failureText": "XCTAssertEqual failed: (\"XCTWaiterResult(rawValue: 2)\") is not equal to (\"XCTWaiterResult(rawValue: 1)\") - Home did not finish laying out (default text, landscape: false)",
+      "targetName": "BricksonUITests",
+      "testIdentifier": 6,
+      "testIdentifierString": "HomeLayoutTests/testTheStarterLibraryFitsWithoutScrolling()",
+      "testIdentifierURL": "test://com.apple.xcode/Brickson/BricksonUITests/HomeLayoutTests/testTheStarterLibraryFitsWithoutScrolling",
+      "testName": "testTheStarterLibraryFitsWithoutScrolling()"
+    }
+  ],
+  "additionalMaterialFindings": [
+    "Raw log also records AX5 starter tiles5-8 clipped, independent of requested-orientation failures.",
+    "Raw log records Family Setup BackButton->backToTalking->getAttention (alarms),centre/returnsToLook,point903,163; outside the accepted first-step-only exception.",
+    "Separate app.frame metadata669x951 conflicts with coherent treeWindow951x669; correcting metadata does not remove the Native Settings chain.",
+    "Existing accepted save-answer/first-step closure findings are separate strict expected assertions inside otherwise failed cases."
+  ],
+  "screenshots": [
+    {
+      "file": "open-home-before-tests.png",
+      "sha256": "b41e98af1cd42853ca151dd9eaa250ceca0b2926d1f3f59541aa266d6a98551b",
+      "originalBytesUnchanged": true
+    },
+    {
+      "file": "native-family-back-right-ax5.png",
+      "sha256": "1ea412583127c98ab96497f635af187bcc336548579137e3cf8a8a8911513183",
+      "originalBytesUnchanged": true
+    }
+  ],
+  "familyBackScreenshotContext": "Separate manual AX5/dark launch on the same current implementation and open pose; visually confirms standard Back at the right. Not the same instant/appearance as the AX5/light failing test.",
+  "resultBundle": "build/TestResults/duo-current-open-home/ui-destination.xcresult",
+  "log": "/private/tmp/brickson-duo-current-open-home.log",
+  "limits": [
+    "Original19test assertions and orientation/idiom guards were unchanged.",
+    "One-snapshot target/ancestor helper correction is only proposed under/private/tmp, not yet applied or tested.",
+    "Original captures may show inactive display; active preflight and manual Family Setup screenshots are distinct evidence.",
+    "No physical pointer motion, alarm activation, sound or release readiness is established by modeled chain output.",
+    "Unchanged main37c2e0b selected AX5 Settings comparison reproduces the exact Family Setup-start chain at903,163. One test ran and failed; this is pre-existing and remains unaccepted."
+  ],
+  "nativeSettingsBaseline": "native-settings-chain-results.json"
+}

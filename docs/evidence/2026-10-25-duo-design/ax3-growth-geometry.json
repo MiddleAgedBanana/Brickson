@@ -1,0 +1,904 @@
+{
+  "baseline" : {
+    "allocationFrames" : {
+      "again" : {
+        "height" : 65,
+        "width" : 160.59999999999999,
+        "x" : 521.79999999999995,
+        "y" : 184
+      },
+      "category0" : {
+        "height" : 65,
+        "width" : 160.59999999999999,
+        "x" : 16,
+        "y" : 332
+      },
+      "category1" : {
+        "height" : 138,
+        "width" : 160.59999999999999,
+        "x" : 184.59999999999999,
+        "y" : 259
+      },
+      "category2" : {
+        "height" : 138,
+        "width" : 160.59999999999999,
+        "x" : 353.19999999999999,
+        "y" : 259
+      },
+      "category3" : {
+        "height" : 138,
+        "width" : 160.59999999999999,
+        "x" : 521.79999999999995,
+        "y" : 259
+      },
+      "emergency" : {
+        "height" : 65,
+        "width" : 160.59999999999999,
+        "x" : 16,
+        "y" : 184
+      },
+      "getAttention" : {
+        "height" : 65,
+        "width" : 160.59999999999999,
+        "x" : 690.39999999999998,
+        "y" : 184
+      },
+      "message" : {
+        "height" : 118,
+        "width" : 497.79999999999995,
+        "x" : 16,
+        "y" : 8
+      },
+      "no" : {
+        "height" : 65,
+        "width" : 160.59999999999999,
+        "x" : 353.19999999999999,
+        "y" : 184
+      },
+      "phraseGrid" : {
+        "height" : 220,
+        "width" : 835,
+        "x" : 16,
+        "y" : 407
+      },
+      "phrases" : {
+        "height" : 79,
+        "width" : 329.19999999999999,
+        "x" : 521.79999999999995,
+        "y" : 8
+      },
+      "settings" : {
+        "height" : 138,
+        "width" : 160.59999999999999,
+        "x" : 690.39999999999998,
+        "y" : 259
+      },
+      "statusLine" : {
+        "height" : 44,
+        "width" : 497.79999999999995,
+        "x" : 16,
+        "y" : 130
+      },
+      "stop" : {
+        "height" : 65,
+        "width" : 160.59999999999999,
+        "x" : 16,
+        "y" : 259
+      },
+      "type" : {
+        "height" : 79,
+        "width" : 329.19999999999999,
+        "x" : 521.79999999999995,
+        "y" : 95
+      },
+      "yes" : {
+        "height" : 65,
+        "width" : 160.59999999999999,
+        "x" : 184.59999999999999,
+        "y" : 184
+      }
+    },
+    "BackToTalking" : {
+      "height" : 79,
+      "width" : 160.59999999999999,
+      "x" : 606.10000000000002,
+      "y" : 8
+    },
+    "frames" : {
+      "again" : {
+        "height" : 65,
+        "width" : 160.59999999999999,
+        "x" : 521.79999999999995,
+        "y" : 184
+      },
+      "category0" : {
+        "height" : 65,
+        "width" : 160.59999999999999,
+        "x" : 16,
+        "y" : 332
+      },
+      "category1" : {
+        "height" : 138,
+        "width" : 160.59999999999999,
+        "x" : 184.59999999999999,
+        "y" : 259
+      },
+      "category2" : {
+        "height" : 138,
+        "width" : 160.59999999999999,
+        "x" : 353.19999999999999,
+        "y" : 259
+      },
+      "category3" : {
+        "height" : 138,
+        "width" : 160.59999999999999,
+        "x" : 521.79999999999995,
+        "y" : 259
+      },
+      "emergency" : {
+        "height" : 65,
+        "width" : 160.59999999999999,
+        "x" : 16,
+        "y" : 184
+      },
+      "getAttention" : {
+        "height" : 65,
+        "width" : 160.59999999999999,
+        "x" : 690.39999999999998,
+        "y" : 184
+      },
+      "message" : {
+        "height" : 118,
+        "width" : 497.79999999999995,
+        "x" : 16,
+        "y" : 8
+      },
+      "no" : {
+        "height" : 65,
+        "width" : 160.59999999999999,
+        "x" : 353.19999999999999,
+        "y" : 184
+      },
+      "phraseGrid" : {
+        "height" : 220,
+        "width" : 835,
+        "x" : 16,
+        "y" : 407
+      },
+      "phrases" : {
+        "height" : 79,
+        "width" : 329.19999999999999,
+        "x" : 521.79999999999995,
+        "y" : 8
+      },
+      "settings" : {
+        "height" : 138,
+        "width" : 160.59999999999999,
+        "x" : 690.39999999999998,
+        "y" : 259
+      },
+      "statusLine" : {
+        "height" : 44,
+        "width" : 497.79999999999995,
+        "x" : 16,
+        "y" : 130
+      },
+      "stop" : {
+        "height" : 65,
+        "width" : 160.59999999999999,
+        "x" : 16,
+        "y" : 259
+      },
+      "type" : {
+        "height" : 79,
+        "width" : 329.19999999999999,
+        "x" : 521.79999999999995,
+        "y" : 95
+      },
+      "yes" : {
+        "height" : 65,
+        "width" : 160.59999999999999,
+        "x" : 184.59999999999999,
+        "y" : 184
+      }
+    },
+    "grid" : {
+      "columnFrames" : [
+        {
+          "height" : 220,
+          "width" : 202.75,
+          "x" : 16,
+          "y" : 407
+        },
+        {
+          "height" : 220,
+          "width" : 202.75,
+          "x" : 226.75,
+          "y" : 407
+        },
+        {
+          "height" : 220,
+          "width" : 202.75,
+          "x" : 437.5,
+          "y" : 407
+        },
+        {
+          "height" : 220,
+          "width" : 202.75,
+          "x" : 648.25,
+          "y" : 407
+        }
+      ],
+      "columns" : 4,
+      "contentHeight" : 220,
+      "frame" : {
+        "height" : 220,
+        "width" : 835,
+        "x" : 16,
+        "y" : 407
+      },
+      "rows" : 2,
+      "shortfall" : 0,
+      "spacing" : 8,
+      "tileFloor" : 72,
+      "tileHeight" : 106,
+      "tiles" : [
+        {
+          "height" : 106,
+          "width" : 202.75,
+          "x" : 16,
+          "y" : 407
+        },
+        {
+          "height" : 106,
+          "width" : 202.75,
+          "x" : 226.75,
+          "y" : 407
+        },
+        {
+          "height" : 106,
+          "width" : 202.75,
+          "x" : 437.5,
+          "y" : 407
+        },
+        {
+          "height" : 106,
+          "width" : 202.75,
+          "x" : 648.25,
+          "y" : 407
+        },
+        {
+          "height" : 106,
+          "width" : 202.75,
+          "x" : 16,
+          "y" : 521
+        },
+        {
+          "height" : 106,
+          "width" : 202.75,
+          "x" : 226.75,
+          "y" : 521
+        },
+        {
+          "height" : 106,
+          "width" : 202.75,
+          "x" : 437.5,
+          "y" : 521
+        },
+        {
+          "height" : 106,
+          "width" : 202.75,
+          "x" : 648.25,
+          "y" : 521
+        }
+      ],
+      "tileWidth" : 202.75
+    }
+  },
+  "candidate" : {
+    "allocationFrames" : {
+      "again" : {
+        "height" : 65,
+        "width" : 122,
+        "x" : 496,
+        "y" : 184
+      },
+      "category0" : {
+        "height" : 63,
+        "width" : 141,
+        "x" : 16,
+        "y" : 330
+      },
+      "category1" : {
+        "height" : 134,
+        "width" : 141,
+        "x" : 165,
+        "y" : 259
+      },
+      "category2" : {
+        "height" : 134,
+        "width" : 141,
+        "x" : 314,
+        "y" : 259
+      },
+      "category3" : {
+        "height" : 134,
+        "width" : 122,
+        "x" : 496,
+        "y" : 259
+      },
+      "emergency" : {
+        "height" : 65,
+        "width" : 141,
+        "x" : 16,
+        "y" : 184
+      },
+      "getAttention" : {
+        "height" : 65,
+        "width" : 225,
+        "x" : 626,
+        "y" : 184
+      },
+      "message" : {
+        "height" : 118,
+        "width" : 439,
+        "x" : 16,
+        "y" : 8
+      },
+      "no" : {
+        "height" : 65,
+        "width" : 141,
+        "x" : 314,
+        "y" : 184
+      },
+      "phraseGrid" : {
+        "height" : 208,
+        "width" : 835,
+        "x" : 16,
+        "y" : 403
+      },
+      "phrases" : {
+        "height" : 79,
+        "width" : 355,
+        "x" : 496,
+        "y" : 8
+      },
+      "settings" : {
+        "height" : 134,
+        "width" : 225,
+        "x" : 626,
+        "y" : 259
+      },
+      "statusLine" : {
+        "height" : 44,
+        "width" : 439,
+        "x" : 16,
+        "y" : 130
+      },
+      "stop" : {
+        "height" : 63,
+        "width" : 141,
+        "x" : 16,
+        "y" : 259
+      },
+      "type" : {
+        "height" : 79,
+        "width" : 355,
+        "x" : 496,
+        "y" : 95
+      },
+      "yes" : {
+        "height" : 65,
+        "width" : 141,
+        "x" : 165,
+        "y" : 184
+      }
+    },
+    "BackToTalking" : {
+      "height" : 79,
+      "width" : 160.59999999999999,
+      "x" : 593.20000000000005,
+      "y" : 8
+    },
+    "frames" : {
+      "again" : {
+        "height" : 65,
+        "width" : 122,
+        "x" : 496,
+        "y" : 184
+      },
+      "category0" : {
+        "height" : 63,
+        "width" : 141,
+        "x" : 16,
+        "y" : 330
+      },
+      "category1" : {
+        "height" : 134,
+        "width" : 141,
+        "x" : 165,
+        "y" : 259
+      },
+      "category2" : {
+        "height" : 134,
+        "width" : 141,
+        "x" : 314,
+        "y" : 259
+      },
+      "category3" : {
+        "height" : 134,
+        "width" : 122,
+        "x" : 496,
+        "y" : 259
+      },
+      "emergency" : {
+        "height" : 65,
+        "width" : 141,
+        "x" : 16,
+        "y" : 184
+      },
+      "getAttention" : {
+        "height" : 65,
+        "width" : 225,
+        "x" : 626,
+        "y" : 184
+      },
+      "message" : {
+        "height" : 118,
+        "width" : 439,
+        "x" : 16,
+        "y" : 8
+      },
+      "no" : {
+        "height" : 65,
+        "width" : 141,
+        "x" : 314,
+        "y" : 184
+      },
+      "phraseGrid" : {
+        "height" : 208,
+        "width" : 835,
+        "x" : 16,
+        "y" : 403
+      },
+      "phrases" : {
+        "height" : 79,
+        "width" : 355,
+        "x" : 496,
+        "y" : 8
+      },
+      "settings" : {
+        "height" : 134,
+        "width" : 225,
+        "x" : 626,
+        "y" : 259
+      },
+      "statusLine" : {
+        "height" : 44,
+        "width" : 439,
+        "x" : 16,
+        "y" : 130
+      },
+      "stop" : {
+        "height" : 63,
+        "width" : 141,
+        "x" : 16,
+        "y" : 259
+      },
+      "type" : {
+        "height" : 79,
+        "width" : 355,
+        "x" : 496,
+        "y" : 95
+      },
+      "yes" : {
+        "height" : 65,
+        "width" : 141,
+        "x" : 165,
+        "y" : 184
+      }
+    },
+    "grid" : {
+      "columnFrames" : [
+        {
+          "height" : 208,
+          "width" : 215.5,
+          "x" : 16,
+          "y" : 403
+        },
+        {
+          "height" : 208,
+          "width" : 215.5,
+          "x" : 239.5,
+          "y" : 403
+        },
+        {
+          "height" : 208,
+          "width" : 173.5,
+          "x" : 496,
+          "y" : 403
+        },
+        {
+          "height" : 208,
+          "width" : 173.5,
+          "x" : 677.5,
+          "y" : 403
+        }
+      ],
+      "columns" : 4,
+      "contentHeight" : 208,
+      "frame" : {
+        "height" : 208,
+        "width" : 835,
+        "x" : 16,
+        "y" : 403
+      },
+      "rows" : 2,
+      "shortfall" : 0,
+      "spacing" : 8,
+      "tileFloor" : 100,
+      "tileHeight" : 100,
+      "tiles" : [
+        {
+          "height" : 100,
+          "width" : 215.5,
+          "x" : 16,
+          "y" : 403
+        },
+        {
+          "height" : 100,
+          "width" : 215.5,
+          "x" : 239.5,
+          "y" : 403
+        },
+        {
+          "height" : 100,
+          "width" : 173.5,
+          "x" : 496,
+          "y" : 403
+        },
+        {
+          "height" : 100,
+          "width" : 173.5,
+          "x" : 677.5,
+          "y" : 403
+        },
+        {
+          "height" : 100,
+          "width" : 215.5,
+          "x" : 16,
+          "y" : 511
+        },
+        {
+          "height" : 100,
+          "width" : 215.5,
+          "x" : 239.5,
+          "y" : 511
+        },
+        {
+          "height" : 100,
+          "width" : 173.5,
+          "x" : 496,
+          "y" : 511
+        },
+        {
+          "height" : 100,
+          "width" : 173.5,
+          "x" : 677.5,
+          "y" : 511
+        }
+      ],
+      "tileWidth" : 173.5
+    }
+  },
+  "current" : {
+    "allocationFrames" : {
+      "again" : {
+        "height" : 65,
+        "width" : 122,
+        "x" : 496,
+        "y" : 184
+      },
+      "category0" : {
+        "height" : 65,
+        "width" : 141,
+        "x" : 16,
+        "y" : 332
+      },
+      "category1" : {
+        "height" : 138,
+        "width" : 141,
+        "x" : 165,
+        "y" : 259
+      },
+      "category2" : {
+        "height" : 138,
+        "width" : 141,
+        "x" : 314,
+        "y" : 259
+      },
+      "category3" : {
+        "height" : 138,
+        "width" : 122,
+        "x" : 496,
+        "y" : 259
+      },
+      "emergency" : {
+        "height" : 65,
+        "width" : 141,
+        "x" : 16,
+        "y" : 184
+      },
+      "getAttention" : {
+        "height" : 65,
+        "width" : 225,
+        "x" : 626,
+        "y" : 184
+      },
+      "message" : {
+        "height" : 118,
+        "width" : 439,
+        "x" : 16,
+        "y" : 8
+      },
+      "no" : {
+        "height" : 65,
+        "width" : 141,
+        "x" : 314,
+        "y" : 184
+      },
+      "phraseGrid" : {
+        "height" : 204,
+        "width" : 835,
+        "x" : 16,
+        "y" : 407
+      },
+      "phrases" : {
+        "height" : 79,
+        "width" : 355,
+        "x" : 496,
+        "y" : 8
+      },
+      "settings" : {
+        "height" : 138,
+        "width" : 225,
+        "x" : 626,
+        "y" : 259
+      },
+      "statusLine" : {
+        "height" : 44,
+        "width" : 439,
+        "x" : 16,
+        "y" : 130
+      },
+      "stop" : {
+        "height" : 65,
+        "width" : 141,
+        "x" : 16,
+        "y" : 259
+      },
+      "type" : {
+        "height" : 79,
+        "width" : 355,
+        "x" : 496,
+        "y" : 95
+      },
+      "yes" : {
+        "height" : 65,
+        "width" : 141,
+        "x" : 165,
+        "y" : 184
+      }
+    },
+    "BackToTalking" : {
+      "height" : 79,
+      "width" : 160.59999999999999,
+      "x" : 593.20000000000005,
+      "y" : 8
+    },
+    "frames" : {
+      "again" : {
+        "height" : 65,
+        "width" : 122,
+        "x" : 496,
+        "y" : 184
+      },
+      "category0" : {
+        "height" : 65,
+        "width" : 141,
+        "x" : 16,
+        "y" : 332
+      },
+      "category1" : {
+        "height" : 138,
+        "width" : 141,
+        "x" : 165,
+        "y" : 259
+      },
+      "category2" : {
+        "height" : 138,
+        "width" : 141,
+        "x" : 314,
+        "y" : 259
+      },
+      "category3" : {
+        "height" : 138,
+        "width" : 122,
+        "x" : 496,
+        "y" : 259
+      },
+      "emergency" : {
+        "height" : 65,
+        "width" : 141,
+        "x" : 16,
+        "y" : 184
+      },
+      "getAttention" : {
+        "height" : 65,
+        "width" : 225,
+        "x" : 626,
+        "y" : 184
+      },
+      "message" : {
+        "height" : 118,
+        "width" : 439,
+        "x" : 16,
+        "y" : 8
+      },
+      "no" : {
+        "height" : 65,
+        "width" : 141,
+        "x" : 314,
+        "y" : 184
+      },
+      "phraseGrid" : {
+        "height" : 204,
+        "width" : 835,
+        "x" : 16,
+        "y" : 407
+      },
+      "phrases" : {
+        "height" : 79,
+        "width" : 355,
+        "x" : 496,
+        "y" : 8
+      },
+      "settings" : {
+        "height" : 138,
+        "width" : 225,
+        "x" : 626,
+        "y" : 259
+      },
+      "statusLine" : {
+        "height" : 44,
+        "width" : 439,
+        "x" : 16,
+        "y" : 130
+      },
+      "stop" : {
+        "height" : 65,
+        "width" : 141,
+        "x" : 16,
+        "y" : 259
+      },
+      "type" : {
+        "height" : 79,
+        "width" : 355,
+        "x" : 496,
+        "y" : 95
+      },
+      "yes" : {
+        "height" : 65,
+        "width" : 141,
+        "x" : 165,
+        "y" : 184
+      }
+    },
+    "grid" : {
+      "columnFrames" : [
+        {
+          "height" : 204,
+          "width" : 215.5,
+          "x" : 16,
+          "y" : 407
+        },
+        {
+          "height" : 204,
+          "width" : 215.5,
+          "x" : 239.5,
+          "y" : 407
+        },
+        {
+          "height" : 204,
+          "width" : 173.5,
+          "x" : 496,
+          "y" : 407
+        },
+        {
+          "height" : 204,
+          "width" : 173.5,
+          "x" : 677.5,
+          "y" : 407
+        }
+      ],
+      "columns" : 4,
+      "contentHeight" : 208,
+      "frame" : {
+        "height" : 204,
+        "width" : 835,
+        "x" : 16,
+        "y" : 407
+      },
+      "rows" : 2,
+      "shortfall" : 4,
+      "spacing" : 8,
+      "tileFloor" : 100,
+      "tileHeight" : 100,
+      "tiles" : [
+        {
+          "height" : 100,
+          "width" : 215.5,
+          "x" : 16,
+          "y" : 407
+        },
+        {
+          "height" : 100,
+          "width" : 215.5,
+          "x" : 239.5,
+          "y" : 407
+        },
+        {
+          "height" : 100,
+          "width" : 173.5,
+          "x" : 496,
+          "y" : 407
+        },
+        {
+          "height" : 100,
+          "width" : 173.5,
+          "x" : 677.5,
+          "y" : 407
+        },
+        {
+          "height" : 100,
+          "width" : 215.5,
+          "x" : 16,
+          "y" : 515
+        },
+        {
+          "height" : 100,
+          "width" : 215.5,
+          "x" : 239.5,
+          "y" : 515
+        },
+        {
+          "height" : 100,
+          "width" : 173.5,
+          "x" : 496,
+          "y" : 515
+        },
+        {
+          "height" : 100,
+          "width" : 173.5,
+          "x" : 677.5,
+          "y" : 515
+        }
+      ],
+      "tileWidth" : 173.5
+    }
+  },
+  "diagnosticOnly" : true,
+  "geometrySource" : "reservations.json\/open-wide-reverse-ax5",
+  "HomeLayoutSHA256" : "93e3453cde75578fb535e2ce796b156890c52e0b4bd88cb9f27956734dd8ca67",
+  "nativeValidation" : false,
+  "referencePhrases" : 8,
+  "sourceAppHead" : "35bed06",
+  "states" : "One fixed allocation serves browsing, persisted typing (Type unavailable), alarm and Settings cover. Keep same words\/controls as existing84-state drawings. Clear cell2 and Put Back cell3; Back unchanged. Additional native word\/frame\/chain gates required.",
+  "textMetrics" : {
+    "boldText" : false,
+    "categoryLine" : 49,
+    "messageLine" : 59,
+    "quickControlLine" : 53,
+    "statusLine" : 44
+  }
+}

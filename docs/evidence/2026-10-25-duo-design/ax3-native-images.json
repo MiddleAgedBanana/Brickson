@@ -1,0 +1,118 @@
+{
+  "schema": 1,
+  "images": [
+    {
+      "file": "ax3-native-light.jpg",
+      "sha256": "c70bd57eca11b8975851a3522ce33cdde24d7d8f28dbe2c10eadb4c0d6260188",
+      "bytes": 97666,
+      "sourceBasename": "manual-light-native.jpg",
+      "captureReceiptSHA256": "3f2e197e2699afa4e37355949b129fb30fecab3ebf4cf62b9823658da952fecc",
+      "format": "image/jpeg",
+      "optimizedPixelWidth": 800,
+      "optimizedPixelHeight": 562,
+      "byteIdenticalToReceiptOriginal": true,
+      "scope": "Candidate fullscreen AX3 browsing, light; whole eight Basics and quick/category/mode words reviewed."
+    },
+    {
+      "file": "ax3-native-dark.jpg",
+      "sha256": "3169eccd171e84a8143f4ab900dd8a59db31d6c14e6e5b577abbf34dddee976c",
+      "bytes": 94804,
+      "sourceBasename": "manual-dark-native.jpg",
+      "captureReceiptSHA256": "6ca03ff4e73cfc47deb5b794cbaf57467087cd6165fd58d1132a5abb2d3c368e",
+      "format": "image/jpeg",
+      "optimizedPixelWidth": 800,
+      "optimizedPixelHeight": 562,
+      "byteIdenticalToReceiptOriginal": true,
+      "scope": "Candidate fullscreen AX3 browsing, dark; same limited visual check."
+    },
+    {
+      "file": "ax3-native-tall-typing-light.jpg",
+      "sha256": "1a53ceb46493fc5f56238d717b46e9933ffec62da769aad63a41bc0f3c00e832",
+      "bytes": 75103,
+      "sourceBasename": "manual-tall-confirmed-typing-light.jpg",
+      "captureReceiptSHA256": "0777d0e35abfdea96599cc4eda5b50d6452c8388214b5ce25a9e6619ea3a8a6e",
+      "format": "image/jpeg",
+      "optimizedPixelWidth": 562,
+      "optimizedPixelHeight": 800,
+      "byteIdenticalToReceiptOriginal": true,
+      "scope": "Candidate manual tall typing: full keyboard; Put Back partly covered."
+    },
+    {
+      "file": "ax3-native-wide-typing-light.jpg",
+      "sha256": "6f5839e3f9133472427cded0799e1c72a0b4257cf11d066c9f44806c1cfdb4eb",
+      "bytes": 80609,
+      "sourceBasename": "manual-wide-retained-typing-light.jpg",
+      "captureReceiptSHA256": "1e12ad18106ed85df1ae6f7f6bc261a736218898e4e3f030786e342056864e0e",
+      "format": "image/jpeg",
+      "optimizedPixelWidth": 800,
+      "optimizedPixelHeight": 562,
+      "byteIdenticalToReceiptOriginal": true,
+      "scope": "Candidate after native rotation: keyboard still visible; automatic dismissal failed in this sample."
+    },
+    {
+      "file": "ax3-native-wide-manually-lowered-light.jpg",
+      "sha256": "5991b5345d69aafa5a278deac5e9517b462de7594a654844c23f0be53905d5ac",
+      "bytes": 87364,
+      "sourceBasename": "manual-wide-manually-lowered-light.jpg",
+      "captureReceiptSHA256": "4fa17422fb1f8da7ad2ec61a130bec5de2dade34a741085751d356b2e3d8204e",
+      "format": "image/jpeg",
+      "optimizedPixelWidth": 800,
+      "optimizedPixelHeight": 562,
+      "byteIdenticalToReceiptOriginal": true,
+      "scope": "Candidate after explicit manual keyboard lowering: eight whole dimmed Basics labels; not automatic dismissal."
+    },
+    {
+      "file": "ax3-native-baseline-tall-typing-light.jpg",
+      "sha256": "27505eff687a95363fd2879c313a3c4859ee610840dda95bc0016fe1cc6f9542",
+      "bytes": 75631,
+      "sourceBasename": "baseline-tall-confirmed-typing-light.jpg",
+      "captureReceiptSHA256": "82eb20713f078769e6a916c7a6a5f9d67d8e61c3c408c07a43edd3d0fd017241",
+      "format": "image/jpeg",
+      "optimizedPixelWidth": 562,
+      "optimizedPixelHeight": 800,
+      "byteIdenticalToReceiptOriginal": true,
+      "scope": "Fresh uninstrumented 35bed06 baseline, tall typing: full keyboard opened after normal Type activation."
+    },
+    {
+      "file": "ax3-native-baseline-wide-typing-light.jpg",
+      "sha256": "4d9db600bbe3f8da69d9556ce1b85debd6c583255d26bc24cf533b1eda6aaa78",
+      "bytes": 78942,
+      "sourceBasename": "baseline-wide-after-rotation-light.jpg",
+      "captureReceiptSHA256": "6278832fda1c0e1439587a60db6165df93a5e45578e2dfe3c7f9918334fb7da6",
+      "format": "image/jpeg",
+      "optimizedPixelWidth": 800,
+      "optimizedPixelHeight": 562,
+      "byteIdenticalToReceiptOriginal": true,
+      "scope": "Uninstrumented 35bed06 baseline after rotation: visible keyboard persistence reproduces."
+    },
+    {
+      "file": "ax3-native-trace-tall-typing-light.jpg",
+      "sha256": "b71472fc22308044b0b9cc1eb5928628add7f5230bae928304e5d2edc093b471",
+      "bytes": 75634,
+      "sourceBasename": "focus-tall-confirmed-typing-light.jpg",
+      "captureReceiptSHA256": "88aa333b397fca4ab84010e90a02b372f5057d6e9c3b041e2252829a3244109d",
+      "format": "image/jpeg",
+      "optimizedPixelWidth": 562,
+      "optimizedPixelHeight": 800,
+      "byteIdenticalToReceiptOriginal": true,
+      "scope": "Separate instrumented 35bed06 baseline-only trace, tall keyboard image."
+    },
+    {
+      "file": "ax3-native-trace-wide-typing-light.jpg",
+      "sha256": "2e490ce0ef240d14f3423c5852bfb408c86c77ace6dfc3099c92da5d5346f8a4",
+      "bytes": 79008,
+      "sourceBasename": "focus-wide-after-rotation-light.jpg",
+      "captureReceiptSHA256": "e3aa96e373a6dc8ffa7753162e4304ed070d2586bf125a1d571606442c0573d0",
+      "format": "image/jpeg",
+      "optimizedPixelWidth": 800,
+      "optimizedPixelHeight": 562,
+      "byteIdenticalToReceiptOriginal": true,
+      "scope": "Separate instrumented 35bed06 baseline-only trace, settled wide keyboard image; not atomic with binding log."
+    }
+  ],
+  "limits": [
+    "Optimized MobileBuildMCP active-display JPEG pixels, not native point or target-floor measurements.",
+    "Separate captures, not simultaneous with coherent AX samples or trace log events.",
+    "Nine images copied unchanged. Reviewed EXIF contains only ColorSpace and pixel width/height; no GPS, author or private phrase/draft metadata."
+  ]
+}

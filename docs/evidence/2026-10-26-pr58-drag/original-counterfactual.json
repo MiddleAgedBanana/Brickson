@@ -1,0 +1,39 @@
+{
+  "schema": 1,
+  "date": "2026-10-26",
+  "baseline": "6b1d4e8",
+  "recoveredAppFiles": 87,
+  "intentionalPrivateChanges": 4,
+  "other83MatchBaseline": true,
+  "allHistoricalAppHashesVerified": true,
+  "oldHomeViewSHA256": "805ab978f65ac6f35f2dfd107b781b46d21ef8e07d1e109a7ac9d230e8dc28cd",
+  "counterfactualHomeViewSHA256": "ee5d6dad6c3a98bf9a8bd207dceda02d371dea362c479a03d695f0ddf43a07aa",
+  "change": "Only scrollDisabled removed and scrollBounceBehavior basedOnSize changed to always",
+  "reproduction": "Fresh AX5 direct launch, no orientation setter, full audit, eight whole tiles in 164pt viewport, verified coordinate relation, original gutter drag then 80pt tile-start drag",
+  "tests": [
+    {
+      "bundle": "build/TestResults/original-drag-red/ui-destination.xcresult",
+      "passed": 0,
+      "failed": 1,
+      "skipped": 0,
+      "expectedFailures": 0,
+      "failures": [
+        "XCTAssertFalse failed - A vertical phrase-grid drag spoke a phrase"
+      ]
+    },
+    {
+      "bundle": "build/TestResults/original-drag-green/ui-destination.xcresult",
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0,
+      "expectedFailures": 0,
+      "failures": []
+    }
+  ],
+  "originalSourceRestoredAfterComparison": true,
+  "privateAlternativeSelected": false,
+  "privateFullSuiteRun": false,
+  "note": "Exact App source recovered; original audit body prefix hash matches history. Embedded four-model JSON was unavailable; this is a bounded matching-geometry reproduction, not a rerun of its full flow.",
+  "archive": "build/recovered-private-source.tar.gz",
+  "archiveSHA256": "93a2803015269e312eec44a767c4061d152842641cd5f053f4b877576fcc174c"
+}

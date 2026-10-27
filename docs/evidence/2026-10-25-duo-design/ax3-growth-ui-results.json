@@ -1,0 +1,349 @@
+{
+  "schema": 1,
+  "scope": "Complete standard iPad and iPhone UI run after the AX3 capacity retry. The retained whole-screen captures are AX5 emergency-category states, not AX3/Basics capacity proof.",
+  "result": "FAILED",
+  "scriptExitCode": 65,
+  "exitCodeSource": "Completed root-operated test script; both family logs record status 65.",
+  "combinedCounts": {
+    "total": 102,
+    "passed": 87,
+    "failed": 2,
+    "skipped": 8,
+    "expectedFailures": 5
+  },
+  "source": {
+    "recordedFileSHA256": {
+      "Brickson/Layout/HomeLayout.swift": "93e3453cde75578fb535e2ce796b156890c52e0b4bd88cb9f27956734dd8ca67",
+      "Brickson/Layout/HomeReservedLayout.swift": "8323e3096b5361ec7ce49fbdadaaacaa1381b555865669d1719ee12f2dd9f78b",
+      "Brickson/Layout/HomeWellEnvelope.swift": "0155cf09d87ad76cfde461c634ff2b5f4a435cda856dce97b0caf3c8ff4fff2c",
+      "Brickson/Layout/KeyboardAllowance.swift": "84ea194ea4fc4e13048e55055ae9513b34716a667992965cc6228abfdfa129f8",
+      "Brickson/Home/HomeView.swift": "60c8edd4c434258dcfd030dd8927948c020fc9fd3e5c5d2169bc01aee41cb40c",
+      "BricksonTests/Layout/HomeReservedRegionTests.swift": "6b31814bd5b2d0c8ba5f8bdad5962f462ad924b36baa2e2480a5e331167616fd"
+    },
+    "currentFilesMatchRecordedHashes": true,
+    "sourceScope": "Capacity-retry files recorded at the completed native gate; no source commit is inferred from these working-tree hashes."
+  },
+  "recordedToolchain": {
+    "Xcode": "27.1 (27A9275)",
+    "XcodeGen": "2.46.0"
+  },
+  "fullNativeUnitGate": {
+    "total": 778,
+    "passed": 769,
+    "failed": 0,
+    "skipped": 1,
+    "skip": "existing issue #19",
+    "strictExpectedFailures": 8,
+    "coveragePercent": 71.2,
+    "coveredAppLines": 7027,
+    "totalAppLines": 9876,
+    "catalog": "current",
+    "receipt": "ax3-native-results.json",
+    "rawGateLogSHA256": "42f8277e14bc95d621d6003d909631bf23d06de118180b981031e2fbc698bb0e"
+  },
+  "families": {
+    "ipad": {
+      "result": "FAILED",
+      "counts": {
+        "total": 51,
+        "passed": 45,
+        "failed": 1,
+        "skipped": 2,
+        "expectedFailures": 3
+      },
+      "recordedDestination": {
+        "family": "ipad",
+        "model": "iPad Pro 13-inch (M5), 16GB",
+        "runtime": "iOS Simulator 27.0 (24A434)",
+        "windowPoints": {
+          "x": 0,
+          "y": 0,
+          "width": 1032,
+          "height": 1376
+        }
+      },
+      "failedCase": {
+        "identifier": "LaunchTests/testLargestTextKeepsQuickControlWordsVisible()",
+        "durationSeconds": 146.055,
+        "unexpectedAssertions": 4,
+        "kind": "Speaking remained after each existing 30-second wait",
+        "sourceLines": [
+          126,
+          145
+        ],
+        "stages": [
+          "AX5 light phrase spoken",
+          "AX5 light after phrase",
+          "AX5 dark phrase spoken",
+          "AX5 dark after phrase"
+        ],
+        "otherUnexpectedAssertionsReported": 0,
+        "renderedQuickWordOrGeometryMatchingFailureReported": false
+      },
+      "firstDefaultGetAttentionCase": {
+        "identifier": "GetAttentionOnHomeTests/testTheAlarmStartsAndStopsAtDefaultText()",
+        "result": "PASSED",
+        "limit": "Ordinary script-prepared launch; does not establish a startup cause or cold-install result."
+      },
+      "runtimeWarnings": {
+        "count": 19,
+        "uniqueMessages": [
+          {
+            "count": 4,
+            "message": "SessionCore.mm:631   This method can lead to UI unresponsiveness if called on the main thread while the audio session is active."
+          },
+          {
+            "count": 15,
+            "message": "AVAudioSession_iOS.mm:978   This method can lead to UI unresponsiveness if called on the main thread. Consider using the asynchronous activate/deactivate API instead for calls from the main thread."
+          }
+        ],
+        "causeAssigned": false
+      },
+      "schema2AX5Case": {
+        "captures": 6,
+        "rawControlRecords": 112,
+        "ancestorMetadataConsistent": 112,
+        "windowCountInEach": 1,
+        "rootAndAncestorWindowEqualInEach": true,
+        "windowFrame": {
+          "x": 0,
+          "y": 0,
+          "width": 1032,
+          "height": 1376
+        },
+        "deduplicationApplied": false,
+        "captureSHA256": [
+          {
+            "capture": "AX5, dark, phrase spoken-buttons",
+            "rawControlCount": 18,
+            "sha256": "f6fc3b66eab7dcdcdbf2db5df6f8acaefea6cff1949a98e86e541f990259754d"
+          },
+          {
+            "capture": "AX5, dark, emergency selected-buttons",
+            "rawControlCount": 18,
+            "sha256": "0bbfb44e86f81bb0a4e726e3f6d83086be547121934db481330e93d044d72a4e"
+          },
+          {
+            "capture": "AX5, dark, just opened-buttons",
+            "rawControlCount": 20,
+            "sha256": "c1069098128495e0b6ff902927b326a758c59ac3aa60e8f918a8308035e3dedb"
+          },
+          {
+            "capture": "AX5, light, phrase spoken-buttons",
+            "rawControlCount": 18,
+            "sha256": "f6fc3b66eab7dcdcdbf2db5df6f8acaefea6cff1949a98e86e541f990259754d"
+          },
+          {
+            "capture": "AX5, light, emergency selected-buttons",
+            "rawControlCount": 18,
+            "sha256": "0bbfb44e86f81bb0a4e726e3f6d83086be547121934db481330e93d044d72a4e"
+          },
+          {
+            "capture": "AX5, light, just opened-buttons",
+            "rawControlCount": 20,
+            "sha256": "c1069098128495e0b6ff902927b326a758c59ac3aa60e8f918a8308035e3dedb"
+          }
+        ],
+        "limit": "These six AX5-case captures only, not a complete family capture inventory or target containment/physical-input proof."
+      },
+      "images": [
+        {
+          "file": "ax3-growth-ui-ipad-light.png",
+          "appearance": "light",
+          "stage": "AX5, phrase spoken",
+          "wholeScreenNotButtonCrop": true,
+          "widthPixels": 2064,
+          "heightPixels": 2752,
+          "sha256": "9192d7f09abfb8bb74c7e68d1e5f0bf64436af5dedfa6eb83bcc9288f16f7fa7",
+          "originalByteEquality": true
+        },
+        {
+          "file": "ax3-growth-ui-ipad-dark.png",
+          "appearance": "dark",
+          "stage": "AX5, phrase spoken",
+          "wholeScreenNotButtonCrop": true,
+          "widthPixels": 2064,
+          "heightPixels": 2752,
+          "sha256": "eec642fa661b38ba46129aaad40baf0356a1c720348caff3961512535a59ac3d",
+          "originalByteEquality": true
+        }
+      ],
+      "rootVisualReview": {
+        "quickLabelsWholeInLightAndDark": true,
+        "SpeakingVisible": true,
+        "categoryShowing": "Emergency",
+        "doesNotProveEightBasicsTilesAtAX5": true,
+        "content": "Generic app/test content only",
+        "limit": "Visual review of four original whole-screen snapshots, not continuous operation, measured contrast or sound."
+      },
+      "scriptReportedShutdown": "Task-owned simulator shutdown recorded after this family; no separate live-state query by reviewer.",
+      "provenance": {
+        "resultBundle": "build/TestResults/pr58-growth-ui/ui-ipad.xcresult",
+        "databaseSHA256": "c1d2997deba784f3a572b22cc54bae5c7c15458038cea33aa411aa1fb62ab1a6",
+        "summarySHA256": "fbacaaf6dfb7a53e2fb68d2937a7579c04f2ec73788c63962a73f9f64fd87447",
+        "AX5CaseAttachmentManifestSHA256": "eb86dd7678062a4089ef1fb88b9501bbb616dfedfad45195a326d4598cb41e16",
+        "exportedAX5CaseAttachments": 187
+      }
+    },
+    "iphone": {
+      "result": "FAILED",
+      "counts": {
+        "total": 51,
+        "passed": 42,
+        "failed": 1,
+        "skipped": 6,
+        "expectedFailures": 2
+      },
+      "recordedDestination": {
+        "family": "iphone",
+        "model": "iPhone 17",
+        "runtime": "iOS Simulator 27.0 (24A434)",
+        "windowPoints": {
+          "x": 0,
+          "y": 0,
+          "width": 402,
+          "height": 874
+        }
+      },
+      "failedCase": {
+        "identifier": "LaunchTests/testLargestTextKeepsQuickControlWordsVisible()",
+        "durationSeconds": 144.969,
+        "unexpectedAssertions": 4,
+        "kind": "Speaking remained after each existing 30-second wait",
+        "sourceLines": [
+          126,
+          145
+        ],
+        "stages": [
+          "AX5 light phrase spoken",
+          "AX5 light after phrase",
+          "AX5 dark phrase spoken",
+          "AX5 dark after phrase"
+        ],
+        "otherUnexpectedAssertionsReported": 0,
+        "renderedQuickWordOrGeometryMatchingFailureReported": false
+      },
+      "firstDefaultGetAttentionCase": {
+        "identifier": "GetAttentionOnHomeTests/testTheAlarmStartsAndStopsAtDefaultText()",
+        "result": "PASSED",
+        "limit": "Ordinary script-prepared launch; does not establish a startup cause or cold-install result."
+      },
+      "runtimeWarnings": {
+        "count": 19,
+        "uniqueMessages": [
+          {
+            "count": 4,
+            "message": "SessionCore.mm:631   This method can lead to UI unresponsiveness if called on the main thread while the audio session is active."
+          },
+          {
+            "count": 15,
+            "message": "AVAudioSession_iOS.mm:978   This method can lead to UI unresponsiveness if called on the main thread. Consider using the asynchronous activate/deactivate API instead for calls from the main thread."
+          }
+        ],
+        "causeAssigned": false
+      },
+      "schema2AX5Case": {
+        "captures": 6,
+        "rawControlRecords": 112,
+        "ancestorMetadataConsistent": 112,
+        "windowCountInEach": 1,
+        "rootAndAncestorWindowEqualInEach": true,
+        "windowFrame": {
+          "x": 0,
+          "y": 0,
+          "width": 402,
+          "height": 874
+        },
+        "deduplicationApplied": false,
+        "captureSHA256": [
+          {
+            "capture": "AX5, dark, phrase spoken-buttons",
+            "rawControlCount": 18,
+            "sha256": "2a057226c42f4ec6bbfa665dc413dca7f040a0ad3be36c807ce9579727c4f0d3"
+          },
+          {
+            "capture": "AX5, dark, emergency selected-buttons",
+            "rawControlCount": 18,
+            "sha256": "0d3111c7b15a25a040da809bef5d5b60c5a1e4949fecb7543497a027bc626562"
+          },
+          {
+            "capture": "AX5, dark, just opened-buttons",
+            "rawControlCount": 20,
+            "sha256": "fb75e8f575e797661f7f761cb567687970bd665d6432757c777d2ab79a2bb55b"
+          },
+          {
+            "capture": "AX5, light, phrase spoken-buttons",
+            "rawControlCount": 18,
+            "sha256": "2a057226c42f4ec6bbfa665dc413dca7f040a0ad3be36c807ce9579727c4f0d3"
+          },
+          {
+            "capture": "AX5, light, emergency selected-buttons",
+            "rawControlCount": 18,
+            "sha256": "0d3111c7b15a25a040da809bef5d5b60c5a1e4949fecb7543497a027bc626562"
+          },
+          {
+            "capture": "AX5, light, just opened-buttons",
+            "rawControlCount": 20,
+            "sha256": "fb75e8f575e797661f7f761cb567687970bd665d6432757c777d2ab79a2bb55b"
+          }
+        ],
+        "limit": "These six AX5-case captures only, not a complete family capture inventory or target containment/physical-input proof."
+      },
+      "images": [
+        {
+          "file": "ax3-growth-ui-iphone-light.png",
+          "appearance": "light",
+          "stage": "AX5, phrase spoken",
+          "wholeScreenNotButtonCrop": true,
+          "widthPixels": 1206,
+          "heightPixels": 2622,
+          "sha256": "0d853a2fff96faf3e1e30a02deb9e3f8cfc3e163e492f1fd51ba705b53f20e91",
+          "originalByteEquality": true
+        },
+        {
+          "file": "ax3-growth-ui-iphone-dark.png",
+          "appearance": "dark",
+          "stage": "AX5, phrase spoken",
+          "wholeScreenNotButtonCrop": true,
+          "widthPixels": 1206,
+          "heightPixels": 2622,
+          "sha256": "962495d38e9d838d76bca1693aed31ca344390bdd95776b4336a4ec3460141e9",
+          "originalByteEquality": true
+        }
+      ],
+      "rootVisualReview": {
+        "quickLabelsWholeInLightAndDark": true,
+        "SpeakingVisible": true,
+        "categoryShowing": "Emergency",
+        "doesNotProveEightBasicsTilesAtAX5": true,
+        "content": "Generic app/test content only",
+        "limit": "Visual review of four original whole-screen snapshots, not continuous operation, measured contrast or sound."
+      },
+      "scriptReportedShutdown": "Task-owned simulator shutdown recorded after this family; no separate live-state query by reviewer.",
+      "provenance": {
+        "resultBundle": "build/TestResults/pr58-growth-ui/ui-iphone.xcresult",
+        "databaseSHA256": "a206c5e0ff41abed531272cdd05a46b0b53eba1e569c5f42d4c27319c8351093",
+        "summarySHA256": "72319a586f15fd04603efef3ff6c573d39ae8815f840c35532d41382f0b58e76",
+        "AX5CaseAttachmentManifestSHA256": "6a3f94c071cbc0d303dcdf160070b5261a93bbac0dd5e8708d180fba63269460",
+        "exportedAX5CaseAttachments": 187
+      }
+    }
+  },
+  "unexpectedAssertionsAcrossFamilies": 8,
+  "otherUnexpectedAssertionsReported": 0,
+  "scriptShutdownBothOwnedSimulatorsReported": true,
+  "provenance": {
+    "privateFinalLogBasename": "brickson-pr58-growth-ui.log",
+    "finalScriptLogSHA256": "7c616f63f7ae910de63f21e50b5e06bf7d4ff2c11787929047c47eeb7fcc9a2a",
+    "privateRawFilesRetained": true,
+    "publicRawLogsOrFullAXExports": false
+  },
+  "limits": [
+    "The full standard UI gate failed; selected native passes and the green 778-test unit gate do not clear it.",
+    "No audio, framework or startup cause and no Speaking-wait fix is established. Historical unchanged-main reproduction remains separate.",
+    "Four AX5 images show the emergency category and do not prove eight Basics tiles fit at AX5.",
+    "Whole quick labels were visually reviewed; screenshots/AX JSONs are separate capture artifacts, and no timestamp difference is classified as an error.",
+    "Schema-2 findings cover six raw-control JSONs per AX5 case, not all family attachments, rendered clipping or continuous geometry.",
+    "No sound, physical input, Snap to Item or changed-window pointer-mapping proof."
+  ]
+}

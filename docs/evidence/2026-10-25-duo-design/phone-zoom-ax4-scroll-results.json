@@ -1,0 +1,774 @@
+{
+  "schema": 1,
+  "date": "2026-10-25",
+  "scope": "One selected phone AX4/Display Zoom scroll-travel case plus one existing default-portrait restoration test; not a full UI suite or access pass",
+  "source": {
+    "baseCommit": "bc72b73824aae42a1d7dac42b434941ff8ee9e5b",
+    "homeLayoutPath": "Brickson/Layout/HomeLayout.swift",
+    "homeLayoutSHA256": "93e3453cde75578fb535e2ce796b156890c52e0b4bd88cb9f27956734dd8ca67",
+    "isolatedProductDifferenceFromBase": {
+      "regular": {
+        "phrases": {
+          "from": 86,
+          "to": 90
+        },
+        "type": {
+          "from": 58,
+          "to": 62
+        }
+      },
+      "boldText": {
+        "phrases": {
+          "from": 94,
+          "to": 98
+        },
+        "type": {
+          "from": 63,
+          "to": 67
+        }
+      }
+    },
+    "phoneProbeSHA256": "9952eecd52f23ddc04d31ab9786dc7cc93878eefbde1f8a3999765b0be7672db",
+    "phoneProbeCommitted": false,
+    "originalThreeCaseProbeUnchangedSHA256": "8c0710634f07694c9458a03f90b3e16d01191cae4948aee0d19281a884078cc9"
+  },
+  "environment": {
+    "simulatorModel": "iPhone17",
+    "runtime": "iOS Simulator27.0",
+    "appearance": "light",
+    "category": "Basics",
+    "library": "fresh isolated eight public starter phrases",
+    "displayZoom": "Larger Text",
+    "textSizeRequested": "UICTContentSizeCategoryAccessibilityXXL"
+  },
+  "selectedProbeCounts": {
+    "total": 1,
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "expectedFailures": 0
+  },
+  "originalMeasurementJSONSHA256": "0609f5d636dd228c8bd5d9891dfc0ba9935780f1b880b13bb336dfbcdd80a9a2",
+  "originalMeasurement": {
+    "actuationObserved": true,
+    "appearance": "light",
+    "attemptLimit": 12,
+    "cameraClearanceChecked": false,
+    "case": "phone-zoom-ax4",
+    "category": "Basics",
+    "elapsed": "13.605594 seconds",
+    "fullAXTileFramesPreserved": true,
+    "gesture": "start inside phrase viewport, extend upward up to200pt within ancestor window",
+    "gestures": 3,
+    "maximumEstablishedInThisSample": true,
+    "observedTopToBottomTravel": 329,
+    "pixelAttachmentsMayCaptureInactiveDisplay": true,
+    "reason": "Aligned top, actual uniform movement, aligned bottom and two unchanged settled gestures",
+    "renderedClippingEstablished": false,
+    "samples": [
+      {
+        "ancestorWindow": {
+          "height": 693,
+          "width": 320,
+          "x": 0,
+          "y": 0
+        },
+        "elapsed": "6.526433875 seconds",
+        "fullAXTiles": [
+          {
+            "frame": {
+              "height": 78,
+              "width": 140,
+              "x": 164,
+              "y": 909
+            },
+            "label": "Goodbye."
+          },
+          {
+            "frame": {
+              "height": 78,
+              "width": 140,
+              "x": 16,
+              "y": 909
+            },
+            "label": "Hello."
+          },
+          {
+            "frame": {
+              "height": 78,
+              "width": 140,
+              "x": 164,
+              "y": 651
+            },
+            "label": "I don't know."
+          },
+          {
+            "frame": {
+              "height": 78,
+              "width": 140,
+              "x": 164,
+              "y": 823
+            },
+            "label": "I'm not finished."
+          },
+          {
+            "frame": {
+              "height": 78,
+              "width": 140,
+              "x": 16,
+              "y": 651
+            },
+            "label": "Maybe."
+          },
+          {
+            "frame": {
+              "height": 78,
+              "width": 140,
+              "x": 16,
+              "y": 737
+            },
+            "label": "Please."
+          },
+          {
+            "frame": {
+              "height": 78,
+              "width": 140,
+              "x": 164,
+              "y": 737
+            },
+            "label": "Thank you."
+          },
+          {
+            "frame": {
+              "height": 78,
+              "width": 140,
+              "x": 16,
+              "y": 823
+            },
+            "label": "Wait a moment, please."
+          }
+        ],
+        "phase": "top",
+        "phraseViewport": {
+          "height": 7,
+          "width": 288,
+          "x": 16,
+          "y": 651
+        },
+        "rootSnapshotFrame": {
+          "height": 693,
+          "width": 320,
+          "x": 0,
+          "y": 0
+        },
+        "trackedFrame": {
+          "height": 78,
+          "width": 140,
+          "x": 16,
+          "y": 651
+        },
+        "wholeTiles": 0
+      },
+      {
+        "ancestorWindow": {
+          "height": 693,
+          "width": 320,
+          "x": 0,
+          "y": 0
+        },
+        "elapsed": "9.281524292 seconds",
+        "fullAXTiles": [
+          {
+            "frame": {
+              "height": 78,
+              "width": 140,
+              "x": 164,
+              "y": 580
+            },
+            "label": "Goodbye."
+          },
+          {
+            "frame": {
+              "height": 78,
+              "width": 140,
+              "x": 16,
+              "y": 580
+            },
+            "label": "Hello."
+          },
+          {
+            "frame": {
+              "height": 78,
+              "width": 140,
+              "x": 164,
+              "y": 322
+            },
+            "label": "I don't know."
+          },
+          {
+            "frame": {
+              "height": 78,
+              "width": 140,
+              "x": 164,
+              "y": 494
+            },
+            "label": "I'm not finished."
+          },
+          {
+            "frame": {
+              "height": 78,
+              "width": 140,
+              "x": 16,
+              "y": 322
+            },
+            "label": "Maybe."
+          },
+          {
+            "frame": {
+              "height": 78,
+              "width": 140,
+              "x": 16,
+              "y": 408
+            },
+            "label": "Please."
+          },
+          {
+            "frame": {
+              "height": 78,
+              "width": 140,
+              "x": 164,
+              "y": 408
+            },
+            "label": "Thank you."
+          },
+          {
+            "frame": {
+              "height": 78,
+              "width": 140,
+              "x": 16,
+              "y": 494
+            },
+            "label": "Wait a moment, please."
+          }
+        ],
+        "phase": "after-drag-1",
+        "phraseViewport": {
+          "height": 7,
+          "width": 288,
+          "x": 16,
+          "y": 651
+        },
+        "rootSnapshotFrame": {
+          "height": 693,
+          "width": 320,
+          "x": 0,
+          "y": 0
+        },
+        "trackedFrame": {
+          "height": 78,
+          "width": 140,
+          "x": 16,
+          "y": 322
+        },
+        "wholeTiles": 0
+      },
+      {
+        "ancestorWindow": {
+          "height": 693,
+          "width": 320,
+          "x": 0,
+          "y": 0
+        },
+        "elapsed": "11.357054416999999 seconds",
+        "fullAXTiles": [
+          {
+            "frame": {
+              "height": 78,
+              "width": 140,
+              "x": 164,
+              "y": 580
+            },
+            "label": "Goodbye."
+          },
+          {
+            "frame": {
+              "height": 78,
+              "width": 140,
+              "x": 16,
+              "y": 580
+            },
+            "label": "Hello."
+          },
+          {
+            "frame": {
+              "height": 78,
+              "width": 140,
+              "x": 164,
+              "y": 322
+            },
+            "label": "I don't know."
+          },
+          {
+            "frame": {
+              "height": 78,
+              "width": 140,
+              "x": 164,
+              "y": 494
+            },
+            "label": "I'm not finished."
+          },
+          {
+            "frame": {
+              "height": 78,
+              "width": 140,
+              "x": 16,
+              "y": 322
+            },
+            "label": "Maybe."
+          },
+          {
+            "frame": {
+              "height": 78,
+              "width": 140,
+              "x": 16,
+              "y": 408
+            },
+            "label": "Please."
+          },
+          {
+            "frame": {
+              "height": 78,
+              "width": 140,
+              "x": 164,
+              "y": 408
+            },
+            "label": "Thank you."
+          },
+          {
+            "frame": {
+              "height": 78,
+              "width": 140,
+              "x": 16,
+              "y": 494
+            },
+            "label": "Wait a moment, please."
+          }
+        ],
+        "phase": "after-drag-2",
+        "phraseViewport": {
+          "height": 7,
+          "width": 288,
+          "x": 16,
+          "y": 651
+        },
+        "rootSnapshotFrame": {
+          "height": 693,
+          "width": 320,
+          "x": 0,
+          "y": 0
+        },
+        "trackedFrame": {
+          "height": 78,
+          "width": 140,
+          "x": 16,
+          "y": 322
+        },
+        "wholeTiles": 0
+      },
+      {
+        "ancestorWindow": {
+          "height": 693,
+          "width": 320,
+          "x": 0,
+          "y": 0
+        },
+        "elapsed": "13.450887709 seconds",
+        "fullAXTiles": [
+          {
+            "frame": {
+              "height": 78,
+              "width": 140,
+              "x": 164,
+              "y": 580
+            },
+            "label": "Goodbye."
+          },
+          {
+            "frame": {
+              "height": 78,
+              "width": 140,
+              "x": 16,
+              "y": 580
+            },
+            "label": "Hello."
+          },
+          {
+            "frame": {
+              "height": 78,
+              "width": 140,
+              "x": 164,
+              "y": 322
+            },
+            "label": "I don't know."
+          },
+          {
+            "frame": {
+              "height": 78,
+              "width": 140,
+              "x": 164,
+              "y": 494
+            },
+            "label": "I'm not finished."
+          },
+          {
+            "frame": {
+              "height": 78,
+              "width": 140,
+              "x": 16,
+              "y": 322
+            },
+            "label": "Maybe."
+          },
+          {
+            "frame": {
+              "height": 78,
+              "width": 140,
+              "x": 16,
+              "y": 408
+            },
+            "label": "Please."
+          },
+          {
+            "frame": {
+              "height": 78,
+              "width": 140,
+              "x": 164,
+              "y": 408
+            },
+            "label": "Thank you."
+          },
+          {
+            "frame": {
+              "height": 78,
+              "width": 140,
+              "x": 16,
+              "y": 494
+            },
+            "label": "Wait a moment, please."
+          }
+        ],
+        "phase": "after-drag-3",
+        "phraseViewport": {
+          "height": 7,
+          "width": 288,
+          "x": 16,
+          "y": 651
+        },
+        "rootSnapshotFrame": {
+          "height": 693,
+          "width": 320,
+          "x": 0,
+          "y": 0
+        },
+        "trackedFrame": {
+          "height": 78,
+          "width": 140,
+          "x": 16,
+          "y": 322
+        },
+        "wholeTiles": 0
+      }
+    ],
+    "schema": 1,
+    "schema2AttachmentsAreSeparateSnapshots": true,
+    "snapOrPhysicalInputProof": false,
+    "status": "MEASURED_IN_THIS_SAMPLE",
+    "textSizeRequested": "UICTContentSizeCategoryAccessibilityXXL",
+    "trackedIdentity": {
+      "identifier": "phraseTile",
+      "label": "Maybe."
+    },
+    "unchangedSettledGestures": 2
+  },
+  "measuredTopToBottomTravel": 329,
+  "trackedTileTopY": 651,
+  "trackedTileBottomY": 322,
+  "wholeTilesAtTop": 0,
+  "wholeTilesAtBottom": 0,
+  "wholePhraseAccessPass": false,
+  "noScrollFitPass": false,
+  "method": "Standard XCTest drag starts inside the7pt phrase viewport, then extends upward200pt in the same column within its ancestor window. Top alignment, eight uniformly translated full tile frames, aligned bottom and two unchanged settled gesture outcomes establish travel in this sample.",
+  "images": [
+    {
+      "role": "top",
+      "plannedPublicFilename": "phone-zoom-ax4-scroll-top.png",
+      "sha256": "a741c1033084fa00f7ebd23dd1195fe65269735e2aee4e2edbacc66ef6fde832",
+      "originalBytesUnmodified": true,
+      "reviewedBy": "parent operator",
+      "observedWholePhrase": false,
+      "observation": "Only a tiny blue tile edge is visible; no whole phrase. Type is white/unavailable.",
+      "simultaneousWithMeasurementSnapshot": false
+    },
+    {
+      "role": "bottom",
+      "plannedPublicFilename": "phone-zoom-ax4-scroll-bottom.png",
+      "sha256": "69b44e45d35734f8bd2837763b14d0bbf6dec10fb5dc8ba80beadf40230813c2",
+      "originalBytesUnmodified": true,
+      "reviewedBy": "parent operator",
+      "observedWholePhrase": false,
+      "observation": "Only a tiny blue tile edge is visible; no whole phrase. Type is white/unavailable.",
+      "simultaneousWithMeasurementSnapshot": false
+    }
+  ],
+  "restoration": {
+    "originalDefaultSelectionObservedByOperator": true,
+    "largerTextSystemApplyRestartObservedByOperator": true,
+    "defaultReselectionUseDefaultConfirmationObservedByOperator": true,
+    "existingTest": "HomeReachabilityTests/testEveryHomeStateAtDefaultTextInPortrait",
+    "resultBundleName": "PhoneZoomRestoredDefault.xcresult",
+    "counts": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "expectedFailures": 0
+    },
+    "postRestoreAppWindowVerified": true,
+    "rootAndAncestorWindowSize": [
+      402,
+      874
+    ],
+    "capturedStates": [
+      {
+        "phase": "emergency phrases showing",
+        "schemaVersion": 2,
+        "rootSnapshotFrame": {
+          "height": 874,
+          "width": 402,
+          "x": 0,
+          "y": 0
+        },
+        "windowFrames": [
+          {
+            "height": 874,
+            "width": 402,
+            "x": 0,
+            "y": 0
+          }
+        ],
+        "buttonCount": 18,
+        "allButtonAncestorMetadataValid": true,
+        "privateEvidenceId": "restore.private.01",
+        "sha256": "3a91b2c6dce74b26042711aacab0291657b6e015512e659676571d09cc3be330"
+      },
+      {
+        "phase": "just opened",
+        "schemaVersion": 2,
+        "rootSnapshotFrame": {
+          "height": 874,
+          "width": 402,
+          "x": 0,
+          "y": 0
+        },
+        "windowFrames": [
+          {
+            "height": 874,
+            "width": 402,
+            "x": 0,
+            "y": 0
+          }
+        ],
+        "buttonCount": 20,
+        "allButtonAncestorMetadataValid": true,
+        "privateEvidenceId": "restore.private.03",
+        "sha256": "ba040ac7046f90a1ea316fe85b88182ed8f1584370fe61c385aa7dd4b10e0830"
+      },
+      {
+        "phase": "a phrase just spoken",
+        "schemaVersion": 2,
+        "rootSnapshotFrame": {
+          "height": 874,
+          "width": 402,
+          "x": 0,
+          "y": 0
+        },
+        "windowFrames": [
+          {
+            "height": 874,
+            "width": 402,
+            "x": 0,
+            "y": 0
+          }
+        ],
+        "buttonCount": 18,
+        "allButtonAncestorMetadataValid": true,
+        "privateEvidenceId": "restore.private.07",
+        "sha256": "362b12aaea2a9cb4b72982060f4175022f9d87d34e362611d584d1e354da90c7"
+      }
+    ],
+    "summarySHA256": "9233cbc56dca21d74fc01b540bace06dcb325f3edc4ed59961d407fc895eeb29",
+    "scope": "Default restoration verified by the existing selected test and three schema2 app captures; simulator/app cleanup is separately owned by the parent"
+  },
+  "privateEvidenceHashReferences": [
+    {
+      "id": "phone.private.01",
+      "kind": "schema2CaptureJSON",
+      "sha256": "db8bdd3e083b6a3694b89b18642fe151d885f7e471388cabed030a781d63f2b5",
+      "bytes": 8021
+    },
+    {
+      "id": "phone.private.02",
+      "kind": "rawAXText",
+      "sha256": "fc893d6261024eebd23513592beb799633e4b4de71770f5c952bbae488f2e3e5",
+      "bytes": 5274
+    },
+    {
+      "id": "phone.private.03",
+      "kind": "originalXCTestPixelAttachment",
+      "sha256": "69b44e45d35734f8bd2837763b14d0bbf6dec10fb5dc8ba80beadf40230813c2",
+      "bytes": 180257
+    },
+    {
+      "id": "phone.private.04",
+      "kind": "rawAXText",
+      "sha256": "db3e5d8a61fbe087df420c648ecd95e06853201c8d5f3ce530bb91229e5d04f6",
+      "bytes": 5274
+    },
+    {
+      "id": "phone.private.05",
+      "kind": "schema2CaptureJSON",
+      "sha256": "499bdac4921c0c6006d952c37d7f556fd30524bf2b15f61f1e5816a1f4131260",
+      "bytes": 8021
+    },
+    {
+      "id": "phone.private.06",
+      "kind": "schema2CaptureJSON",
+      "sha256": "db8bdd3e083b6a3694b89b18642fe151d885f7e471388cabed030a781d63f2b5",
+      "bytes": 8021
+    },
+    {
+      "id": "phone.private.07",
+      "kind": "rawAXText",
+      "sha256": "75b09b35a00381685f9ecb30d65d6087a8d0fdb8437f9cf37bfb00d67354c2f6",
+      "bytes": 5270
+    },
+    {
+      "id": "phone.private.08",
+      "kind": "originalXCTestPixelAttachment",
+      "sha256": "a741c1033084fa00f7ebd23dd1195fe65269735e2aee4e2edbacc66ef6fde832",
+      "bytes": 180212
+    },
+    {
+      "id": "phone.private.09",
+      "kind": "rawAXText",
+      "sha256": "6c017dd2f198e6154bea4cf2f6fc8e55689d2ca95595763286b368dc5377ddd9",
+      "bytes": 5274
+    },
+    {
+      "id": "phone.private.10",
+      "kind": "originalMeasurementJSON",
+      "sha256": "0609f5d636dd228c8bd5d9891dfc0ba9935780f1b880b13bb336dfbcdd80a9a2",
+      "bytes": 9458
+    },
+    {
+      "id": "phone.private.11",
+      "kind": "originalXCTestPixelAttachment",
+      "sha256": "69b44e45d35734f8bd2837763b14d0bbf6dec10fb5dc8ba80beadf40230813c2",
+      "bytes": 180257
+    },
+    {
+      "id": "phone.private.12",
+      "kind": "schema2CaptureJSON",
+      "sha256": "db8bdd3e083b6a3694b89b18642fe151d885f7e471388cabed030a781d63f2b5",
+      "bytes": 8021
+    },
+    {
+      "id": "phone.private.13",
+      "kind": "originalXCTestPixelAttachment",
+      "sha256": "69b44e45d35734f8bd2837763b14d0bbf6dec10fb5dc8ba80beadf40230813c2",
+      "bytes": 180257
+    },
+    {
+      "id": "phone.private.nativeSummary",
+      "kind": "rawNativeResultSummary",
+      "sha256": "b090bd2d8139c3da269f2417bd1ae85a749b1334e7d150209ad93d3fc4d4c4cf",
+      "bytes": 1012
+    },
+    {
+      "id": "restore.private.nativeSummary",
+      "kind": "rawNativeResultSummary",
+      "sha256": "9233cbc56dca21d74fc01b540bace06dcb325f3edc4ed59961d407fc895eeb29",
+      "bytes": 1284
+    },
+    {
+      "id": "restore.private.01",
+      "kind": "schema2CaptureJSON",
+      "sha256": "3a91b2c6dce74b26042711aacab0291657b6e015512e659676571d09cc3be330",
+      "bytes": 7265
+    },
+    {
+      "id": "restore.private.02",
+      "kind": "originalXCTestPixelAttachment",
+      "sha256": "4c8bb5e1c5d898db25b5ab4784742ff391634734bb7d41dff74ee3f93cc7288c",
+      "bytes": 153656
+    },
+    {
+      "id": "restore.private.03",
+      "kind": "schema2CaptureJSON",
+      "sha256": "ba040ac7046f90a1ea316fe85b88182ed8f1584370fe61c385aa7dd4b10e0830",
+      "bytes": 8033
+    },
+    {
+      "id": "restore.private.04",
+      "kind": "rawAXText",
+      "sha256": "c0fb49d07bfcab35c5a168e77de2d2efd79893370756782fd9ab1a0d27524d15",
+      "bytes": 5995
+    },
+    {
+      "id": "restore.private.05",
+      "kind": "rawAXText",
+      "sha256": "3ad6cdea15aefc50a2700d30de36c4a05bc66b6f7e2276b2668e6b7859e84114",
+      "bytes": 6260
+    },
+    {
+      "id": "restore.private.06",
+      "kind": "originalXCTestPixelAttachment",
+      "sha256": "1ffc94aed8428d70dc5d9e4d6a1973a5c51417291bbf9fd72b0c55f243608cce",
+      "bytes": 147926
+    },
+    {
+      "id": "restore.private.07",
+      "kind": "schema2CaptureJSON",
+      "sha256": "362b12aaea2a9cb4b72982060f4175022f9d87d34e362611d584d1e354da90c7",
+      "bytes": 7264
+    },
+    {
+      "id": "restore.private.08",
+      "kind": "originalXCTestPixelAttachment",
+      "sha256": "dc4c514025a8d3411b0e3785586c78f84d69ff5672b5bc62458d3bf3526a626d",
+      "bytes": 152341
+    },
+    {
+      "id": "restore.private.09",
+      "kind": "rawAXText",
+      "sha256": "0884638e90fd83b629aa8f3c69aa1df9295b78e6714c0d2fe6dfdd9e5e95a895",
+      "bytes": 6203
+    }
+  ],
+  "limitations": [
+    "The successful measurement does not make a7pt viewport usable: no whole phrase is visible at either endpoint. Type remains unavailable.",
+    "Only Basics/light/AX4 at the sampled320\u00d7693 zoomed window is measured; no other category, appearance, library, keyboard or physical input is covered.",
+    "All original full AX tile frames remain in the measurement. The schema2/pixel attachments are separate snapshots, not simultaneous screenshot/AX proof.",
+    "The pixel observations are limited to the two original endpoint captures reviewed by the operator; no broad clipping, camera or contrast check follows.",
+    "Previously observed zoomed AX5 has a zero-height grid below the window. It was not rerun or gestured here and remains unavailable, not0scroll.",
+    "This selected pass/restoration test does not clear the separate complete UI Speaking-wait failures or prove sound/Snap/Dwell safety."
+  ],
+  "cameraClearanceChecked": false,
+  "snapOrPhysicalInputProof": false,
+  "fullUISuitePass": false,
+  "cleanup": {
+    "ordinarySharedAppAndUITestRunnerRestoredOnBothOwnedSimulators": true,
+    "ownedSimulatorsShutDownAfterward": true,
+    "physicalDeviceActionsPerformed": false
+  }
+}

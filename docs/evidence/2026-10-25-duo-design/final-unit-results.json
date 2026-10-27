@@ -1,0 +1,69 @@
+{
+  "schema": 1,
+  "command": "CI=true DESTINATION='platform=iOS Simulator,id=<Duo simulator>' TEST_RESULTS_DIR=build/TestResults/duo-final-unit scripts/test.sh unit",
+  "toolchain": "Xcode27.1 (27A9275), XcodeGen2.46.0",
+  "simulator": "iPhone Duo, iOS27.1",
+  "summary": {
+    "result": "Passed",
+    "totalTestCount": 769,
+    "passedTests": 760,
+    "failedTests": 0,
+    "skippedTests": 1,
+    "expectedFailures": 8
+  },
+  "coverage": {
+    "percent": 70.6,
+    "executedAppLines": 6898,
+    "totalAppLines": 9769
+  },
+  "catalog": "up to date, CI=true forbids rewriting",
+  "temporaryProbePresent": false,
+  "keyboardArgumentRows": [
+    {
+      "measurement": "13-inch iPad, landscape, Display Zoom Larger Text, iOS 27.0 (reference app), window 1032.0\u00d7774.0",
+      "result": "Passed"
+    },
+    {
+      "measurement": "13-inch iPad, landscape, Full Screen, iOS 26.5 and 27.0, window 1376.0\u00d71032.0",
+      "result": "Passed"
+    },
+    {
+      "measurement": "13-inch iPad, portrait, Full Screen, iOS 26.5 and 27.0, window 1032.0\u00d71376.0",
+      "result": "Passed"
+    },
+    {
+      "measurement": "Duo closed, iOS 27.1, window 466.0\u00d7678.0",
+      "result": "Passed"
+    },
+    {
+      "measurement": "Duo inner tall, both rotations, iOS 27.1, window 669.0\u00d7951.0",
+      "result": "Passed"
+    },
+    {
+      "measurement": "Duo inner wide, both rotations and partially open, iOS 27.1, window 951.0\u00d7669.0",
+      "result": "Passed"
+    },
+    {
+      "measurement": "iPhone 17 Pro, portrait, iOS 27.0 (reference app), window 402.0\u00d7874.0",
+      "result": "Passed"
+    }
+  ],
+  "countInterpretation": "Xcode counts the parameterized parent case once; its seven argument children passed. Adding three rows did not increase totalTestCount to the provisional772 expectation.",
+  "sourceSHA256": {
+    "Brickson/Home/HomeView.swift": "60c8edd4c434258dcfd030dd8927948c020fc9fd3e5c5d2169bc01aee41cb40c",
+    "Brickson/Layout/HomeLayout.swift": "17e7799dd0ee6e897c0074024bb94e044bafab49b53142b8765a607a498fa8b8",
+    "Brickson/Layout/HomeReservedLayout.swift": "c80ccec73ac408fbf52880e1a569ef9c7a483a7f079b31315c363ed43c3255ec",
+    "Brickson/Layout/HomeWellEnvelope.swift": "0155cf09d87ad76cfde461c634ff2b5f4a435cda856dce97b0caf3c8ff4fff2c",
+    "Brickson/Layout/KeyboardAllowance.swift": "84ea194ea4fc4e13048e55055ae9513b34716a667992965cc6228abfdfa129f8",
+    "BricksonTests/Layout/KeyboardAllowanceTests.swift": "a199250cb36b5afd642c7c9b91dcdc04c108c99dc09741319b81e494e9a7bbfc",
+    "BricksonTests/Layout/HomeReservedRegionTests.swift": "cf8a36d16e1bc45264656869bcf144022eda56fbd4b85a05506a6722f1e24eb4",
+    "BricksonTests/Layout/HomeReservedRegionChainTests.swift": "4a7218d33340e79e4a3e29d7912a4739c5724eaa0bb4e901fbb5922ee8b66b6c",
+    "BricksonTests/Layout/SettingsReservedRegionChainTests.swift": "1382f977d60606aa996d0c326da7180dd645227af99393382535443f0c01928d"
+  },
+  "resultBundle": "build/TestResults/duo-final-unit/unit-destination.xcresult",
+  "log": "/private/tmp/brickson-duo-final-unit.log",
+  "limits": [
+    "This is native unit evidence, not a full UI suite, audible speech, rendered clipping or physical pointer proof.",
+    "The full ordinary UI suites failed a Speaking-wait case, also reproduced on unchanged main."
+  ]
+}

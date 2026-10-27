@@ -28,8 +28,11 @@ import Foundation
 /// What it does not cover yet, because nothing has measured it: an iPad
 /// window smaller than its screen (Stage Manager, Slide Over, windowed
 /// apps), where the keyboard follows the screen, not the window; the
-/// floating and split iPad keyboards; a keyboard in another language; and
-/// the iPhone Duo's inner display. Those are device check 6 in
+/// floating and split iPad keyboards; and a keyboard in another language.
+/// The 2026-10-25 Duo simulator run measured its full-screen inner display
+/// at the default text size in both axes with the full US English keyboard;
+/// the existing allowance covered it. Windowed Duo keyboards and live
+/// physical input remain unchecked. Those are device check 6 in
 /// docs/log/2026-10-21-typing-foundation.md. Keyboards from other apps
 /// never appear in Brickson (`BricksonAppDelegate`), so the measured
 /// keyboards are the only ones the band meets.

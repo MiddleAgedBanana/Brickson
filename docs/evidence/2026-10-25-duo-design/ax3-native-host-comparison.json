@@ -1,0 +1,30 @@
+{
+  "changed": [
+    {
+      "afterCategory": 63,
+      "afterD": {
+        "height": 208,
+        "width": 835,
+        "x": 16,
+        "y": 403
+      },
+      "afterShortfall": 0,
+      "beforeShortfall": 4,
+      "bold": false,
+      "case": "open-wide-reverse-ax5",
+      "changedKeys": [
+        "allocationFrames",
+        "categoryHeight",
+        "currentShortfall",
+        "D",
+        "frames",
+        "gridDetails"
+      ],
+      "font": "AX3"
+    }
+  ],
+  "diagnosticOnly": true,
+  "exactlyUnchanged": 59,
+  "safeOriginalGuard": true,
+  "totalRecordedInputs": 60
+}

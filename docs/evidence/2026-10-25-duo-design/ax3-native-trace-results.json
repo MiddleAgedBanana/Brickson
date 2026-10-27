@@ -1,0 +1,144 @@
+{
+  "schema": 1,
+  "scope": "One root-operated instrumented baseline AX3 tall-typing to wide-lower rotation cycle; read-only artifact review. No automated UI-test pass or product fix.",
+  "diagnosticOnly": true,
+  "sourceProvenance": {
+    "base": "35bed061651d3c1ba9e81e671ed9fce2a0df8334",
+    "traceOnlyAsRecorded": true,
+    "actualPrivateHomeViewMatchesRecordedTraceHash": true,
+    "traceHomeViewSHA256": "5048116b2c384de832fdc4b91e8121ebba60c01615fffc564708a8b1137620b1",
+    "originalHomeViewSHA256": "60c8edd4c434258dcfd030dd8927948c020fc9fd3e5c5d2169bc01aee41cb40c",
+    "basis": "Private source-provenance record, matching overlaid HomeView, tool install/launch receipts and retained product hashes. This is not a new complete build-source audit."
+  },
+  "candidateWasInstrumented": false,
+  "observations": {
+    "availabilityCallbackTrueToFalseObserved": true,
+    "immediateGetterAfterFalseAssignmentStillTrue": true,
+    "subsequentParentFocusTrueToFalseWithAvailableFalse": true,
+    "laterFocusTrueInRetainedMarkers": false,
+    "laterMessageFieldTaskInRetainedMarkers": false,
+    "tallSoftwareKeyboardVisuallyVisible": true,
+    "settledWideSoftwareKeyboardVisuallyVisible": true
+  },
+  "events": [
+    {
+      "sequence": 1,
+      "marker": "offers.before",
+      "booleans": {
+        "old": false,
+        "new": true,
+        "focus": false
+      }
+    },
+    {
+      "sequence": 2,
+      "marker": "offers.after",
+      "booleans": {
+        "old": false,
+        "new": true,
+        "focus": false
+      }
+    },
+    {
+      "sequence": 3,
+      "marker": "field.appear",
+      "booleans": {
+        "available": true,
+        "focus": false
+      }
+    },
+    {
+      "sequence": 4,
+      "marker": "task.before",
+      "booleans": {
+        "available": true,
+        "focus": false
+      }
+    },
+    {
+      "sequence": 5,
+      "marker": "task.after",
+      "booleans": {
+        "available": true,
+        "focus": false
+      }
+    },
+    {
+      "sequence": 6,
+      "marker": "focus.changed",
+      "booleans": {
+        "old": false,
+        "new": true,
+        "available": true
+      }
+    },
+    {
+      "sequence": 7,
+      "marker": "offers.before",
+      "booleans": {
+        "old": true,
+        "new": false,
+        "focus": true
+      }
+    },
+    {
+      "sequence": 8,
+      "marker": "offers.after",
+      "booleans": {
+        "old": true,
+        "new": false,
+        "focus": true
+      }
+    },
+    {
+      "sequence": 9,
+      "marker": "focus.changed",
+      "booleans": {
+        "old": true,
+        "new": false,
+        "available": false
+      }
+    }
+  ],
+  "conclusion": "The app availability callback ran and the parent FocusState subsequently reported false. The software keyboard remained visibly present in the following settled wide screenshot. The persistence mechanism is unresolved; no cause or fix is established.",
+  "images": [
+    "ax3-native-trace-tall-typing-light.jpg",
+    "ax3-native-trace-wide-typing-light.jpg"
+  ],
+  "imageProvenance": "ax3-native-images.json",
+  "fixApplied": false,
+  "limits": [
+    "The immediate after-setter getter remains true in this trace; the later focus.changed event records false. This does not prove the setter failed.",
+    "The nine retained markers contain no subsequent focus-true event or task. Absence is bounded to this captured log, not all possible framework/internal activity.",
+    "Logs and screenshots are separate artifacts, not an atomic XCTest snapshot of binding and keyboard state. JPEG dimensions are optimized image pixels, not window-point measurements.",
+    "Instrumentation adds logging/observation and can perturb scheduling. One cycle does not identify an SDK/framework defect or justify a speculative product change.",
+    "Baseline 35bed06 trace-only private overlay; no capacity-retry change. Source-to-build provenance is bounded to the recorded overlay, install/launch and product hashes, not a new complete build audit."
+  ],
+  "rawProvenanceSHA256": {
+    "privateTraceReceipt": "b6cb49ad25a85ccffb030d052abba911e43d4444c3ff517ec433e226675bbd05",
+    "booleanMarkers": "82790e9c92dfce20b639396aa16234684cd9ec9e03fac26a00e0c40b98d19acd",
+    "sourceRecord": "1245ae7d31c42dd98595da292665eb4820bdff7bf06013f850c1a15261aa8d03",
+    "installReceipt": "957b3ad808f90a3f53929df69d0a1f97e7d7991d37782add21168b4f4927b62f",
+    "launchReceipt": "cbdfc146e0c4c9ac6fa7337709b4a5203eb115b5b7a4f52ffd9d0acd0097facb"
+  },
+  "operatorRecordedCleanup": {
+    "receiptSHA256": "c9688d2803297749a82e93d18da80429a1053589578ccbdc0e6d5cbc9bfb2460",
+    "instrumentedAppStoppedExitCode": 0,
+    "uninstrumentedCandidateInstallStatus": "SUCCEEDED",
+    "installReceiptSHA256": "b4c2de1f2b382a1e10a3ba65cda623051ab36c49205b6ba3df665f57f3e39269",
+    "temporaryRunnerUninstallExitCode": 0,
+    "taskOwnedDuoShutdownExitCode": 0,
+    "sharedAndRestoredCandidateSourceHashes": {
+      "Brickson/Home/HomeView.swift": "60c8edd4c434258dcfd030dd8927948c020fc9fd3e5c5d2169bc01aee41cb40c",
+      "Brickson/Layout/HomeReservedLayout.swift": "8323e3096b5361ec7ce49fbdadaaacaa1381b555865669d1719ee12f2dd9f78b"
+    },
+    "restoredProductFileSHA256": {
+      "Brickson": "919999eb561bd1b149df2776d36cd5f984adb4ad1ee72d7c36a6d5be2ef719a9",
+      "Brickson.debug.dylib": "2e6c841d9706d752c26f38d1a706732f67100c896f859446d9bad868d346d0e5"
+    },
+    "limits": [
+      "Source hashes and successful install receipt do not prove a later app launch; none is claimed after cleanup.",
+      "Only the task-owned Duo simulator and diagnostic runner were changed."
+    ]
+  }
+}

@@ -1,0 +1,146 @@
+{
+  "schema": 1,
+  "capturedDate": "2026-10-25",
+  "sourceCommit": "8b1365eb116528637483b1ba72bb1b57a86afbd6",
+  "toolchain": "Xcode 27.1 (27A9275), Duo simulator iOS 27.1",
+  "captureTool": "RocketSim active-display screenshot",
+  "images": [
+    {
+      "file": "active-wide-default.png",
+      "originalPath": "/private/tmp/brickson-duo-final-wide-default.png",
+      "sha256": "6bcf7f51d9c9391ed23ecb34f6d31a7ec49c21449a2a52efc7099c0d835685a0",
+      "pixelSize": [
+        2853,
+        2007
+      ],
+      "pose": "951x669 open, camera upper-right",
+      "text": "default",
+      "appearance": "light",
+      "observation": "Eight whole starter tiles; whole quick-control labels."
+    },
+    {
+      "file": "active-wide-ax5-dark.png",
+      "originalPath": "/private/tmp/brickson-duo-final-wide-ax5-dark.png",
+      "sha256": "715b5b252ae1260d0d9be770a7365b3f8448edaab5a343da8f059db42b602003",
+      "pixelSize": [
+        2853,
+        2007
+      ],
+      "pose": "951x669 open, camera upper-right",
+      "text": "AX5",
+      "appearance": "dark",
+      "observation": "Four whole starter tiles and a clipped second row; Type unavailable."
+    },
+    {
+      "file": "active-wide-ax5-settings.png",
+      "originalPath": "/private/tmp/brickson-duo-final-wide-ax5-settings.png",
+      "sha256": "651186b33687fa9bf783907420c5436558e59a770882caca8ea3248afa5a5ff6",
+      "pixelSize": [
+        2853,
+        2007
+      ],
+      "pose": "951x669 open, camera upper-right",
+      "text": "AX5",
+      "appearance": "dark",
+      "observation": "Back whole; Family Setup crosses division; footer clipped."
+    },
+    {
+      "file": "active-tall-ax5-dark.png",
+      "originalPath": "/private/tmp/brickson-duo-final-tall-ax5-dark.png",
+      "sha256": "82a13c34b569419e8b1cb5b604e9d82a2252bf8e02ae5f25a1de73728cd0fe0b",
+      "pixelSize": [
+        2007,
+        2853
+      ],
+      "pose": "669x951 open, camera right",
+      "text": "AX5",
+      "appearance": "dark",
+      "observation": "Four whole starter tiles and a clipped second row; Type unavailable."
+    },
+    {
+      "file": "active-tall-ax5-settings.png",
+      "originalPath": "/private/tmp/brickson-duo-final-tall-ax5-settings.png",
+      "sha256": "1e0ddf810a36af15f3897f013ddf8a28f69cea6dc86574d20755a9b892f8d265",
+      "pixelSize": [
+        2007,
+        2853
+      ],
+      "pose": "669x951 open, camera right",
+      "text": "AX5",
+      "appearance": "dark",
+      "observation": "Back whole; Family Setup crosses horizontal division; footer clipped."
+    },
+    {
+      "file": "active-left-pane-ax5.png",
+      "originalPath": "/private/tmp/brickson-duo-final-left-pane-ax5.png",
+      "sha256": "83a3073198a7d5a84fd4ce4d63f27b4784bf2f812fe4a0f7b20fe846743ac929",
+      "pixelSize": [
+        2853,
+        2007
+      ],
+      "pose": "left Split View pane beside Safari Start Page, before pairing divider tap",
+      "text": "AX5",
+      "appearance": "dark",
+      "observation": "No whole tile; first row partly visible. No keyboard claim."
+    },
+    {
+      "file": "active-left-pane-default.png",
+      "originalPath": "/private/tmp/brickson-duo-final-left-pane-default.png",
+      "sha256": "2a742c4eb1943948bf21dae98dc1c32a8452763e88502d2572fa092b89dfba52",
+      "pixelSize": [
+        2853,
+        2007
+      ],
+      "pose": "left Split View pane beside Safari Start Page, after pairing divider tap",
+      "text": "default",
+      "appearance": "light",
+      "observation": "Six whole tiles and two partly clipped. Bottom inactive occlusion differs from earlier fixture."
+    }
+  ],
+  "bytePolicy": "Original PNG files copied unchanged, no crop, resize, overlay or retouch. Tool viewer may downsample its displayed preview.",
+  "visualReview": "Root visually inspected all seven original captures. Representative Duo appearances only; not all pose/text/appearance combinations visually reviewed.",
+  "limits": [
+    "Screenshots do not establish exact control frames, maximum scroll range, sound, actual pointer mapping or physical Snap behavior.",
+    "Safari contains only its generic Start Page onboarding and default favorites; no visited page or personal account content.",
+    "The paired default pane differs from earlier pure fixtures because a newly returned inactive bottom occlusion trims the phrase viewport."
+  ],
+  "pairedSpaceQuery": {
+    "purpose": "Observed paired scene, not a hypothetical475.5pt window",
+    "temporaryDiagnostic": "Print Space size, safeArea, typed reserved geometry and activity only; no phrase/draft data; removed byte for byte",
+    "size": [
+      469,
+      669
+    ],
+    "safeArea": {
+      "top": 0,
+      "leading": 0,
+      "bottom": 34,
+      "trailing": 0
+    },
+    "initialRegions": [],
+    "settledRegions": [
+      {
+        "kind": "division",
+        "frame": [
+          455.5,
+          0,
+          13.5,
+          669
+        ],
+        "isActive": false
+      },
+      {
+        "kind": "occlusion",
+        "frame": [
+          215.66666666666666,
+          611,
+          57.99999999999997,
+          37
+        ],
+        "isActive": false
+      }
+    ],
+    "sourceRestoredSHA256": "60c8edd4c434258dcfd030dd8927948c020fc9fd3e5c5d2169bc01aee41cb40c",
+    "note": "Includes inactive home-indicator-region geometry. No wider paired window was observed; synthetic475.5 edge-overlap hypothesis is not a reproduced native failure."
+  }
+}

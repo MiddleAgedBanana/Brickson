@@ -76,6 +76,44 @@ struct LaunchOptionsTests {
         #expect(options.unrecognized == typos)
     }
 
+    // Accepting a typo, or enabling a synthetic reservation for the
+    // person's ordinary storage, fails this fixture boundary.
+    @Test func theLayoutFixtureRequiresDebugAndTestStorage() {
+        #expect(LaunchOptions.standard.layoutFixture == nil)
+        #expect(LaunchOptions.standard.activeLayoutFixture == nil)
+        let ordinary = LaunchOptions.parse(["--layout-fixture=top-division"])
+        #expect(ordinary.layoutFixture == .topDivision)
+        #expect(ordinary.activeLayoutFixture == nil)
+        #expect(ordinary.unrecognized.isEmpty)
+        for storage in ["--test-storage", "--fresh-test-storage"] {
+            let options = LaunchOptions.parse([storage, "--layout-fixture=top-division"])
+            #expect(options.activeLayoutFixture == (LaunchOptions.readsLaunchArguments ? .topDivision : nil))
+        }
+        let typos = ["--layout-fixture", "--layout-fixture=", "--layout-fixture=Top-Division", "--layout-fixture=other"]
+        let options = LaunchOptions.parse(typos)
+        #expect(options.layoutFixture == nil)
+        #expect(options.unrecognized == typos)
+    }
+
+    // A fixture must use the supplied window and safe area rather than a
+    // device table. Moving the band outside the first row, or allowing it
+    // into an ordinary launch, fails these independent 12/10pt bounds.
+    @Test func theTopDivisionFixtureUsesOnlyTheAvailableSpace() {
+        let source = HomeLayout.Space(
+            size: CGSize(width: 500, height: 900),
+            safeArea: .init(top: 30, leading: 12, bottom: 20, trailing: 18),
+            regions: [.init(kind: .occlusion, frame: CGRect(x: 100, y: 400, width: 40, height: 30))]
+        )
+        #expect(LaunchOptions.standard.applyingLayoutFixture(to: source) == source)
+        let ordinary = LaunchOptions.parse(["--layout-fixture=top-division"])
+        #expect(ordinary.applyingLayoutFixture(to: source) == source)
+        let options = LaunchOptions.parse(["--fresh-test-storage", "--layout-fixture=top-division"])
+        let fixture = options.applyingLayoutFixture(to: source)
+        #expect(fixture.size == source.size)
+        #expect(fixture.safeArea == source.safeArea)
+        #expect(fixture.regions == [.init(kind: .division, frame: CGRect(x: 0, y: 50, width: 500, height: 10), isActive: false)])
+    }
+
     // A typo must be reported, not silently interpreted as light or dark.
     @Test func malformedAppearanceArgumentsAreReportedWithoutAnOverride() {
         let arguments = ["--appearance", "--appearance=", "--appearance=system", "--appearance=DARK"]

@@ -1,0 +1,3218 @@
+{
+  "fileKey": "zCYdh8hSJ9ZmrVhtealp8f",
+  "pageId": "73:2",
+  "sectionId": "89:2",
+  "wrapperId": "89:3",
+  "specCommit": "1de1333",
+  "sourceAppCodeBase": "6d040d5",
+  "sourceImplementation": "uncommitted production allocator after design87ddb14; copied into this host harness",
+  "sourceSnapshotSHA256": "06a6d97d6c261205756ca0bc41c02d68b9484510b412fbdfe04cbcf0c948f7a4",
+  "coverage": {
+    "screens": 84,
+    "browsing": 24,
+    "typing": 12,
+    "alarm": 24,
+    "settingsBack": 24,
+    "light": 42,
+    "dark": 42
+  },
+  "screens": [
+    {
+      "case": "open-wide-default",
+      "text": "default",
+      "appearance": "Light",
+      "state": "Browsing",
+      "screenId": "95:35",
+      "cardId": "95:33",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-35",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3874",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 40,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 41,
+          "x": 455,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "case": "open-wide-default",
+      "text": "default",
+      "appearance": "Light",
+      "state": "Typing",
+      "screenId": "95:110",
+      "cardId": "95:108",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-110",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3875",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 40,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 41,
+          "x": 455,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "case": "open-wide-default",
+      "text": "default",
+      "appearance": "Light",
+      "state": "Alarm",
+      "screenId": "95:518",
+      "cardId": "95:516",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-518",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3876",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 40,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 41,
+          "x": 455,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "case": "open-wide-default",
+      "text": "default",
+      "appearance": "Light",
+      "state": "Settings Back cover",
+      "screenId": "95:594",
+      "cardId": "95:592",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-594",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3877",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 40,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 41,
+          "x": 455,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "case": "open-wide-default",
+      "text": "AX5",
+      "appearance": "Light",
+      "state": "Browsing",
+      "screenId": "95:617",
+      "cardId": "95:615",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-617",
+      "wholeTiles": 4,
+      "scroll": 66,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3878",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 40,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 41,
+          "x": 455,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "case": "open-wide-default",
+      "text": "AX5",
+      "appearance": "Light",
+      "state": "Alarm",
+      "screenId": "95:692",
+      "cardId": "95:690",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-692",
+      "wholeTiles": 4,
+      "scroll": 66,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3879",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 40,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 41,
+          "x": 455,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "case": "open-wide-default",
+      "text": "AX5",
+      "appearance": "Light",
+      "state": "Settings Back cover",
+      "screenId": "95:768",
+      "cardId": "95:766",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-768",
+      "wholeTiles": 4,
+      "scroll": 66,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3880",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 40,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 41,
+          "x": 455,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "case": "open-wide-default",
+      "text": "default",
+      "appearance": "Dark",
+      "state": "Browsing",
+      "screenId": "95:792",
+      "cardId": "95:790",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-792",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3881",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 40,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 41,
+          "x": 455,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "case": "open-wide-default",
+      "text": "default",
+      "appearance": "Dark",
+      "state": "Typing",
+      "screenId": "95:867",
+      "cardId": "95:865",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-867",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3882",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 40,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 41,
+          "x": 455,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "case": "open-wide-default",
+      "text": "default",
+      "appearance": "Dark",
+      "state": "Alarm",
+      "screenId": "95:1292",
+      "cardId": "95:1290",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-1292",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3883",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 40,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 41,
+          "x": 455,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "case": "open-wide-default",
+      "text": "default",
+      "appearance": "Dark",
+      "state": "Settings Back cover",
+      "screenId": "95:1368",
+      "cardId": "95:1366",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-1368",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3884",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 40,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 41,
+          "x": 455,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "case": "open-wide-default",
+      "text": "AX5",
+      "appearance": "Dark",
+      "state": "Browsing",
+      "screenId": "95:1391",
+      "cardId": "95:1389",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-1391",
+      "wholeTiles": 4,
+      "scroll": 66,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3885",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 40,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 41,
+          "x": 455,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "case": "open-wide-default",
+      "text": "AX5",
+      "appearance": "Dark",
+      "state": "Alarm",
+      "screenId": "95:1466",
+      "cardId": "95:1464",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-1466",
+      "wholeTiles": 4,
+      "scroll": 66,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3886",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 40,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 41,
+          "x": 455,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "case": "open-wide-default",
+      "text": "AX5",
+      "appearance": "Dark",
+      "state": "Settings Back cover",
+      "screenId": "95:1542",
+      "cardId": "95:1540",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-1542",
+      "wholeTiles": 4,
+      "scroll": 66,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3887",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 40,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 41,
+          "x": 455,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "case": "open-wide-reverse-ax5",
+      "text": "default",
+      "appearance": "Light",
+      "state": "Browsing",
+      "screenId": "95:1568",
+      "cardId": "95:1566",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-1568",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3888",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 40,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 41,
+          "x": 455,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "case": "open-wide-reverse-ax5",
+      "text": "default",
+      "appearance": "Light",
+      "state": "Typing",
+      "screenId": "95:1643",
+      "cardId": "95:1641",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-1643",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3889",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 40,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 41,
+          "x": 455,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "case": "open-wide-reverse-ax5",
+      "text": "default",
+      "appearance": "Light",
+      "state": "Alarm",
+      "screenId": "95:1860",
+      "cardId": "95:1858",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-1860",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3890",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 40,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 41,
+          "x": 455,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "case": "open-wide-reverse-ax5",
+      "text": "default",
+      "appearance": "Light",
+      "state": "Settings Back cover",
+      "screenId": "95:1936",
+      "cardId": "95:1934",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-1936",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3891",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 40,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 41,
+          "x": 455,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "case": "open-wide-reverse-ax5",
+      "text": "AX5",
+      "appearance": "Light",
+      "state": "Browsing",
+      "screenId": "95:1959",
+      "cardId": "95:1957",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-1959",
+      "wholeTiles": 4,
+      "scroll": 82,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3892",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 40,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 41,
+          "x": 455,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "case": "open-wide-reverse-ax5",
+      "text": "AX5",
+      "appearance": "Light",
+      "state": "Alarm",
+      "screenId": "95:2034",
+      "cardId": "95:2032",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-2034",
+      "wholeTiles": 4,
+      "scroll": 82,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3893",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 40,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 41,
+          "x": 455,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "case": "open-wide-reverse-ax5",
+      "text": "AX5",
+      "appearance": "Light",
+      "state": "Settings Back cover",
+      "screenId": "95:2110",
+      "cardId": "95:2108",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-2110",
+      "wholeTiles": 4,
+      "scroll": 82,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3894",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 40,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 41,
+          "x": 455,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "case": "open-wide-reverse-ax5",
+      "text": "default",
+      "appearance": "Dark",
+      "state": "Browsing",
+      "screenId": "95:2134",
+      "cardId": "95:2132",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-2134",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3895",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 40,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 41,
+          "x": 455,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "case": "open-wide-reverse-ax5",
+      "text": "default",
+      "appearance": "Dark",
+      "state": "Typing",
+      "screenId": "95:2209",
+      "cardId": "95:2207",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-2209",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3896",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 40,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 41,
+          "x": 455,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "case": "open-wide-reverse-ax5",
+      "text": "default",
+      "appearance": "Dark",
+      "state": "Alarm",
+      "screenId": "95:2562",
+      "cardId": "95:2560",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-2562",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3897",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 40,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 41,
+          "x": 455,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "case": "open-wide-reverse-ax5",
+      "text": "default",
+      "appearance": "Dark",
+      "state": "Settings Back cover",
+      "screenId": "95:2638",
+      "cardId": "95:2636",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-2638",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3898",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 40,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 41,
+          "x": 455,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "case": "open-wide-reverse-ax5",
+      "text": "AX5",
+      "appearance": "Dark",
+      "state": "Browsing",
+      "screenId": "95:2661",
+      "cardId": "95:2659",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-2661",
+      "wholeTiles": 4,
+      "scroll": 82,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3899",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 40,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 41,
+          "x": 455,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "case": "open-wide-reverse-ax5",
+      "text": "AX5",
+      "appearance": "Dark",
+      "state": "Alarm",
+      "screenId": "95:2736",
+      "cardId": "95:2734",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-2736",
+      "wholeTiles": 4,
+      "scroll": 82,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3900",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 40,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 41,
+          "x": 455,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "case": "open-wide-reverse-ax5",
+      "text": "AX5",
+      "appearance": "Dark",
+      "state": "Settings Back cover",
+      "screenId": "95:2812",
+      "cardId": "95:2810",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-2812",
+      "wholeTiles": 4,
+      "scroll": 82,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3901",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 40,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 41,
+          "x": 455,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "case": "open-tall-default",
+      "text": "default",
+      "appearance": "Light",
+      "state": "Browsing",
+      "screenId": "95:2838",
+      "cardId": "95:2836",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-2838",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3902",
+      "rawDivisionFrames": [
+        {
+          "height": 40,
+          "width": 669,
+          "x": 0,
+          "y": 455.5
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 41,
+          "width": 669,
+          "x": 0,
+          "y": 455
+        }
+      ]
+    },
+    {
+      "case": "open-tall-default",
+      "text": "default",
+      "appearance": "Light",
+      "state": "Typing",
+      "screenId": "95:2913",
+      "cardId": "95:2911",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-2913",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3903",
+      "rawDivisionFrames": [
+        {
+          "height": 40,
+          "width": 669,
+          "x": 0,
+          "y": 455.5
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 41,
+          "width": 669,
+          "x": 0,
+          "y": 455
+        }
+      ]
+    },
+    {
+      "case": "open-tall-default",
+      "text": "default",
+      "appearance": "Light",
+      "state": "Alarm",
+      "screenId": "95:3130",
+      "cardId": "95:3128",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-3130",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3904",
+      "rawDivisionFrames": [
+        {
+          "height": 40,
+          "width": 669,
+          "x": 0,
+          "y": 455.5
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 41,
+          "width": 669,
+          "x": 0,
+          "y": 455
+        }
+      ]
+    },
+    {
+      "case": "open-tall-default",
+      "text": "default",
+      "appearance": "Light",
+      "state": "Settings Back cover",
+      "screenId": "95:3206",
+      "cardId": "95:3204",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-3206",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3905",
+      "rawDivisionFrames": [
+        {
+          "height": 40,
+          "width": 669,
+          "x": 0,
+          "y": 455.5
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 41,
+          "width": 669,
+          "x": 0,
+          "y": 455
+        }
+      ]
+    },
+    {
+      "case": "open-tall-default",
+      "text": "AX5",
+      "appearance": "Light",
+      "state": "Browsing",
+      "screenId": "95:3229",
+      "cardId": "95:3227",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-3229",
+      "wholeTiles": 4,
+      "scroll": 14,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3906",
+      "rawDivisionFrames": [
+        {
+          "height": 40,
+          "width": 669,
+          "x": 0,
+          "y": 455.5
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 41,
+          "width": 669,
+          "x": 0,
+          "y": 455
+        }
+      ]
+    },
+    {
+      "case": "open-tall-default",
+      "text": "AX5",
+      "appearance": "Light",
+      "state": "Alarm",
+      "screenId": "95:3304",
+      "cardId": "95:3302",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-3304",
+      "wholeTiles": 4,
+      "scroll": 14,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3907",
+      "rawDivisionFrames": [
+        {
+          "height": 40,
+          "width": 669,
+          "x": 0,
+          "y": 455.5
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 41,
+          "width": 669,
+          "x": 0,
+          "y": 455
+        }
+      ]
+    },
+    {
+      "case": "open-tall-default",
+      "text": "AX5",
+      "appearance": "Light",
+      "state": "Settings Back cover",
+      "screenId": "95:3380",
+      "cardId": "95:3378",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-3380",
+      "wholeTiles": 4,
+      "scroll": 14,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3908",
+      "rawDivisionFrames": [
+        {
+          "height": 40,
+          "width": 669,
+          "x": 0,
+          "y": 455.5
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 41,
+          "width": 669,
+          "x": 0,
+          "y": 455
+        }
+      ]
+    },
+    {
+      "case": "open-tall-default",
+      "text": "default",
+      "appearance": "Dark",
+      "state": "Browsing",
+      "screenId": "95:3404",
+      "cardId": "95:3402",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-3404",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3909",
+      "rawDivisionFrames": [
+        {
+          "height": 40,
+          "width": 669,
+          "x": 0,
+          "y": 455.5
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 41,
+          "width": 669,
+          "x": 0,
+          "y": 455
+        }
+      ]
+    },
+    {
+      "case": "open-tall-default",
+      "text": "default",
+      "appearance": "Dark",
+      "state": "Typing",
+      "screenId": "95:3479",
+      "cardId": "95:3477",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-3479",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3910",
+      "rawDivisionFrames": [
+        {
+          "height": 40,
+          "width": 669,
+          "x": 0,
+          "y": 455.5
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 41,
+          "width": 669,
+          "x": 0,
+          "y": 455
+        }
+      ]
+    },
+    {
+      "case": "open-tall-default",
+      "text": "default",
+      "appearance": "Dark",
+      "state": "Alarm",
+      "screenId": "95:3832",
+      "cardId": "95:3830",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-3832",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3911",
+      "rawDivisionFrames": [
+        {
+          "height": 40,
+          "width": 669,
+          "x": 0,
+          "y": 455.5
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 41,
+          "width": 669,
+          "x": 0,
+          "y": 455
+        }
+      ]
+    },
+    {
+      "case": "open-tall-default",
+      "text": "default",
+      "appearance": "Dark",
+      "state": "Settings Back cover",
+      "screenId": "95:3908",
+      "cardId": "95:3906",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-3908",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3912",
+      "rawDivisionFrames": [
+        {
+          "height": 40,
+          "width": 669,
+          "x": 0,
+          "y": 455.5
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 41,
+          "width": 669,
+          "x": 0,
+          "y": 455
+        }
+      ]
+    },
+    {
+      "case": "open-tall-default",
+      "text": "AX5",
+      "appearance": "Dark",
+      "state": "Browsing",
+      "screenId": "95:3931",
+      "cardId": "95:3929",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-3931",
+      "wholeTiles": 4,
+      "scroll": 14,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3913",
+      "rawDivisionFrames": [
+        {
+          "height": 40,
+          "width": 669,
+          "x": 0,
+          "y": 455.5
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 41,
+          "width": 669,
+          "x": 0,
+          "y": 455
+        }
+      ]
+    },
+    {
+      "case": "open-tall-default",
+      "text": "AX5",
+      "appearance": "Dark",
+      "state": "Alarm",
+      "screenId": "95:4006",
+      "cardId": "95:4004",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-4006",
+      "wholeTiles": 4,
+      "scroll": 14,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3914",
+      "rawDivisionFrames": [
+        {
+          "height": 40,
+          "width": 669,
+          "x": 0,
+          "y": 455.5
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 41,
+          "width": 669,
+          "x": 0,
+          "y": 455
+        }
+      ]
+    },
+    {
+      "case": "open-tall-default",
+      "text": "AX5",
+      "appearance": "Dark",
+      "state": "Settings Back cover",
+      "screenId": "95:4082",
+      "cardId": "95:4080",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-4082",
+      "wholeTiles": 4,
+      "scroll": 14,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3915",
+      "rawDivisionFrames": [
+        {
+          "height": 40,
+          "width": 669,
+          "x": 0,
+          "y": 455.5
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 41,
+          "width": 669,
+          "x": 0,
+          "y": 455
+        }
+      ]
+    },
+    {
+      "case": "open-tall-reverse-default",
+      "text": "default",
+      "appearance": "Light",
+      "state": "Browsing",
+      "screenId": "95:4108",
+      "cardId": "95:4106",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-4108",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3916",
+      "rawDivisionFrames": [
+        {
+          "height": 40,
+          "width": 669,
+          "x": 0,
+          "y": 455.5
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 41,
+          "width": 669,
+          "x": 0,
+          "y": 455
+        }
+      ]
+    },
+    {
+      "case": "open-tall-reverse-default",
+      "text": "default",
+      "appearance": "Light",
+      "state": "Typing",
+      "screenId": "95:4183",
+      "cardId": "95:4181",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-4183",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3917",
+      "rawDivisionFrames": [
+        {
+          "height": 40,
+          "width": 669,
+          "x": 0,
+          "y": 455.5
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 41,
+          "width": 669,
+          "x": 0,
+          "y": 455
+        }
+      ]
+    },
+    {
+      "case": "open-tall-reverse-default",
+      "text": "default",
+      "appearance": "Light",
+      "state": "Alarm",
+      "screenId": "95:4400",
+      "cardId": "95:4398",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-4400",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3918",
+      "rawDivisionFrames": [
+        {
+          "height": 40,
+          "width": 669,
+          "x": 0,
+          "y": 455.5
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 41,
+          "width": 669,
+          "x": 0,
+          "y": 455
+        }
+      ]
+    },
+    {
+      "case": "open-tall-reverse-default",
+      "text": "default",
+      "appearance": "Light",
+      "state": "Settings Back cover",
+      "screenId": "95:4476",
+      "cardId": "95:4474",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-4476",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3919",
+      "rawDivisionFrames": [
+        {
+          "height": 40,
+          "width": 669,
+          "x": 0,
+          "y": 455.5
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 41,
+          "width": 669,
+          "x": 0,
+          "y": 455
+        }
+      ]
+    },
+    {
+      "case": "open-tall-reverse-default",
+      "text": "AX5",
+      "appearance": "Light",
+      "state": "Browsing",
+      "screenId": "95:4499",
+      "cardId": "95:4497",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-4499",
+      "wholeTiles": 4,
+      "scroll": 14,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3920",
+      "rawDivisionFrames": [
+        {
+          "height": 40,
+          "width": 669,
+          "x": 0,
+          "y": 455.5
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 41,
+          "width": 669,
+          "x": 0,
+          "y": 455
+        }
+      ]
+    },
+    {
+      "case": "open-tall-reverse-default",
+      "text": "AX5",
+      "appearance": "Light",
+      "state": "Alarm",
+      "screenId": "95:4574",
+      "cardId": "95:4572",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-4574",
+      "wholeTiles": 4,
+      "scroll": 14,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3921",
+      "rawDivisionFrames": [
+        {
+          "height": 40,
+          "width": 669,
+          "x": 0,
+          "y": 455.5
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 41,
+          "width": 669,
+          "x": 0,
+          "y": 455
+        }
+      ]
+    },
+    {
+      "case": "open-tall-reverse-default",
+      "text": "AX5",
+      "appearance": "Light",
+      "state": "Settings Back cover",
+      "screenId": "95:4650",
+      "cardId": "95:4648",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-4650",
+      "wholeTiles": 4,
+      "scroll": 14,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3922",
+      "rawDivisionFrames": [
+        {
+          "height": 40,
+          "width": 669,
+          "x": 0,
+          "y": 455.5
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 41,
+          "width": 669,
+          "x": 0,
+          "y": 455
+        }
+      ]
+    },
+    {
+      "case": "open-tall-reverse-default",
+      "text": "default",
+      "appearance": "Dark",
+      "state": "Browsing",
+      "screenId": "95:4674",
+      "cardId": "95:4672",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-4674",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3923",
+      "rawDivisionFrames": [
+        {
+          "height": 40,
+          "width": 669,
+          "x": 0,
+          "y": 455.5
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 41,
+          "width": 669,
+          "x": 0,
+          "y": 455
+        }
+      ]
+    },
+    {
+      "case": "open-tall-reverse-default",
+      "text": "default",
+      "appearance": "Dark",
+      "state": "Typing",
+      "screenId": "95:4749",
+      "cardId": "95:4747",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-4749",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3924",
+      "rawDivisionFrames": [
+        {
+          "height": 40,
+          "width": 669,
+          "x": 0,
+          "y": 455.5
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 41,
+          "width": 669,
+          "x": 0,
+          "y": 455
+        }
+      ]
+    },
+    {
+      "case": "open-tall-reverse-default",
+      "text": "default",
+      "appearance": "Dark",
+      "state": "Alarm",
+      "screenId": "95:5102",
+      "cardId": "95:5100",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-5102",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3925",
+      "rawDivisionFrames": [
+        {
+          "height": 40,
+          "width": 669,
+          "x": 0,
+          "y": 455.5
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 41,
+          "width": 669,
+          "x": 0,
+          "y": 455
+        }
+      ]
+    },
+    {
+      "case": "open-tall-reverse-default",
+      "text": "default",
+      "appearance": "Dark",
+      "state": "Settings Back cover",
+      "screenId": "95:5178",
+      "cardId": "95:5176",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-5178",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3926",
+      "rawDivisionFrames": [
+        {
+          "height": 40,
+          "width": 669,
+          "x": 0,
+          "y": 455.5
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 41,
+          "width": 669,
+          "x": 0,
+          "y": 455
+        }
+      ]
+    },
+    {
+      "case": "open-tall-reverse-default",
+      "text": "AX5",
+      "appearance": "Dark",
+      "state": "Browsing",
+      "screenId": "95:5201",
+      "cardId": "95:5199",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-5201",
+      "wholeTiles": 4,
+      "scroll": 14,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3927",
+      "rawDivisionFrames": [
+        {
+          "height": 40,
+          "width": 669,
+          "x": 0,
+          "y": 455.5
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 41,
+          "width": 669,
+          "x": 0,
+          "y": 455
+        }
+      ]
+    },
+    {
+      "case": "open-tall-reverse-default",
+      "text": "AX5",
+      "appearance": "Dark",
+      "state": "Alarm",
+      "screenId": "95:5276",
+      "cardId": "95:5274",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-5276",
+      "wholeTiles": 4,
+      "scroll": 14,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3928",
+      "rawDivisionFrames": [
+        {
+          "height": 40,
+          "width": 669,
+          "x": 0,
+          "y": 455.5
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 41,
+          "width": 669,
+          "x": 0,
+          "y": 455
+        }
+      ]
+    },
+    {
+      "case": "open-tall-reverse-default",
+      "text": "AX5",
+      "appearance": "Dark",
+      "state": "Settings Back cover",
+      "screenId": "95:5352",
+      "cardId": "95:5350",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-5352",
+      "wholeTiles": 4,
+      "scroll": 14,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3929",
+      "rawDivisionFrames": [
+        {
+          "height": 40,
+          "width": 669,
+          "x": 0,
+          "y": 455.5
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 41,
+          "width": 669,
+          "x": 0,
+          "y": 455
+        }
+      ]
+    },
+    {
+      "case": "split-left-wide-default",
+      "text": "default",
+      "appearance": "Light",
+      "state": "Browsing",
+      "screenId": "95:5378",
+      "cardId": "95:5376",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-5378",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3930",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 13.5,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 14,
+          "x": 455,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "case": "split-left-wide-default",
+      "text": "default",
+      "appearance": "Light",
+      "state": "Typing",
+      "screenId": "95:5441",
+      "cardId": "95:5439",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-5441",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3931",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 13.5,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 14,
+          "x": 455,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "case": "split-left-wide-default",
+      "text": "default",
+      "appearance": "Light",
+      "state": "Alarm",
+      "screenId": "95:5600",
+      "cardId": "95:5598",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-5600",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3932",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 13.5,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 14,
+          "x": 455,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "case": "split-left-wide-default",
+      "text": "default",
+      "appearance": "Light",
+      "state": "Settings Back cover",
+      "screenId": "95:5664",
+      "cardId": "95:5662",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-5664",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3933",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 13.5,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 14,
+          "x": 455,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "case": "split-left-wide-default",
+      "text": "AX5",
+      "appearance": "Light",
+      "state": "Browsing",
+      "screenId": "95:5675",
+      "cardId": "95:5673",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-5675",
+      "wholeTiles": 0,
+      "scroll": 193,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3934",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 13.5,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 14,
+          "x": 455,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "case": "split-left-wide-default",
+      "text": "AX5",
+      "appearance": "Light",
+      "state": "Alarm",
+      "screenId": "95:5738",
+      "cardId": "95:5736",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-5738",
+      "wholeTiles": 0,
+      "scroll": 193,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3935",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 13.5,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 14,
+          "x": 455,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "case": "split-left-wide-default",
+      "text": "AX5",
+      "appearance": "Light",
+      "state": "Settings Back cover",
+      "screenId": "95:5802",
+      "cardId": "95:5800",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-5802",
+      "wholeTiles": 0,
+      "scroll": 193,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3936",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 13.5,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 14,
+          "x": 455,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "case": "split-left-wide-default",
+      "text": "default",
+      "appearance": "Dark",
+      "state": "Browsing",
+      "screenId": "95:5814",
+      "cardId": "95:5812",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-5814",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3937",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 13.5,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 14,
+          "x": 455,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "case": "split-left-wide-default",
+      "text": "default",
+      "appearance": "Dark",
+      "state": "Typing",
+      "screenId": "95:5877",
+      "cardId": "95:5875",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-5877",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3938",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 13.5,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 14,
+          "x": 455,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "case": "split-left-wide-default",
+      "text": "default",
+      "appearance": "Dark",
+      "state": "Alarm",
+      "screenId": "95:6066",
+      "cardId": "95:6064",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-6066",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3939",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 13.5,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 14,
+          "x": 455,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "case": "split-left-wide-default",
+      "text": "default",
+      "appearance": "Dark",
+      "state": "Settings Back cover",
+      "screenId": "95:6130",
+      "cardId": "95:6128",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-6130",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3940",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 13.5,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 14,
+          "x": 455,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "case": "split-left-wide-default",
+      "text": "AX5",
+      "appearance": "Dark",
+      "state": "Browsing",
+      "screenId": "95:6141",
+      "cardId": "95:6139",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-6141",
+      "wholeTiles": 0,
+      "scroll": 193,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3941",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 13.5,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 14,
+          "x": 455,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "case": "split-left-wide-default",
+      "text": "AX5",
+      "appearance": "Dark",
+      "state": "Alarm",
+      "screenId": "95:6204",
+      "cardId": "95:6202",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-6204",
+      "wholeTiles": 0,
+      "scroll": 193,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3942",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 13.5,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 14,
+          "x": 455,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "case": "split-left-wide-default",
+      "text": "AX5",
+      "appearance": "Dark",
+      "state": "Settings Back cover",
+      "screenId": "95:6268",
+      "cardId": "95:6266",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-6268",
+      "wholeTiles": 0,
+      "scroll": 193,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3943",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 13.5,
+          "x": 455.5,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 14,
+          "x": 455,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "case": "split-right-wide-reverse-default",
+      "text": "default",
+      "appearance": "Light",
+      "state": "Browsing",
+      "screenId": "95:6282",
+      "cardId": "95:6280",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-6282",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3944",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 13.5,
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 14,
+          "x": 0,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "case": "split-right-wide-reverse-default",
+      "text": "default",
+      "appearance": "Light",
+      "state": "Typing",
+      "screenId": "95:6356",
+      "cardId": "95:6354",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-6356",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3945",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 13.5,
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 14,
+          "x": 0,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "case": "split-right-wide-reverse-default",
+      "text": "default",
+      "appearance": "Light",
+      "state": "Alarm",
+      "screenId": "95:6513",
+      "cardId": "95:6511",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-6513",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3946",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 13.5,
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 14,
+          "x": 0,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "case": "split-right-wide-reverse-default",
+      "text": "default",
+      "appearance": "Light",
+      "state": "Settings Back cover",
+      "screenId": "95:6588",
+      "cardId": "95:6586",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-6588",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3947",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 13.5,
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 14,
+          "x": 0,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "case": "split-right-wide-reverse-default",
+      "text": "AX5",
+      "appearance": "Light",
+      "state": "Browsing",
+      "screenId": "95:6610",
+      "cardId": "95:6608",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-6610",
+      "wholeTiles": 0,
+      "scroll": 193,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3948",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 13.5,
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 14,
+          "x": 0,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "case": "split-right-wide-reverse-default",
+      "text": "AX5",
+      "appearance": "Light",
+      "state": "Alarm",
+      "screenId": "95:6684",
+      "cardId": "95:6682",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-6684",
+      "wholeTiles": 0,
+      "scroll": 193,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3949",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 13.5,
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 14,
+          "x": 0,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "case": "split-right-wide-reverse-default",
+      "text": "AX5",
+      "appearance": "Light",
+      "state": "Settings Back cover",
+      "screenId": "95:6759",
+      "cardId": "95:6757",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-6759",
+      "wholeTiles": 0,
+      "scroll": 193,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3950",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 13.5,
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 14,
+          "x": 0,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "case": "split-right-wide-reverse-default",
+      "text": "default",
+      "appearance": "Dark",
+      "state": "Browsing",
+      "screenId": "95:6782",
+      "cardId": "95:6780",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-6782",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3951",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 13.5,
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 14,
+          "x": 0,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "case": "split-right-wide-reverse-default",
+      "text": "default",
+      "appearance": "Dark",
+      "state": "Typing",
+      "screenId": "95:6856",
+      "cardId": "95:6854",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-6856",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3952",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 13.5,
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 14,
+          "x": 0,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "case": "split-right-wide-reverse-default",
+      "text": "default",
+      "appearance": "Dark",
+      "state": "Alarm",
+      "screenId": "95:7056",
+      "cardId": "95:7054",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-7056",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3953",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 13.5,
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 14,
+          "x": 0,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "case": "split-right-wide-reverse-default",
+      "text": "default",
+      "appearance": "Dark",
+      "state": "Settings Back cover",
+      "screenId": "95:7131",
+      "cardId": "95:7129",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-7131",
+      "wholeTiles": 8,
+      "scroll": 0,
+      "typingAvailable": true,
+      "allocationGuideId": "109:3954",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 13.5,
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 14,
+          "x": 0,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "case": "split-right-wide-reverse-default",
+      "text": "AX5",
+      "appearance": "Dark",
+      "state": "Browsing",
+      "screenId": "95:7153",
+      "cardId": "95:7151",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-7153",
+      "wholeTiles": 0,
+      "scroll": 193,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3955",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 13.5,
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 14,
+          "x": 0,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "case": "split-right-wide-reverse-default",
+      "text": "AX5",
+      "appearance": "Dark",
+      "state": "Alarm",
+      "screenId": "95:7227",
+      "cardId": "95:7225",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-7227",
+      "wholeTiles": 0,
+      "scroll": 193,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3956",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 13.5,
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 14,
+          "x": 0,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "case": "split-right-wide-reverse-default",
+      "text": "AX5",
+      "appearance": "Dark",
+      "state": "Settings Back cover",
+      "screenId": "95:7302",
+      "cardId": "95:7300",
+      "url": "https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=95-7302",
+      "wholeTiles": 0,
+      "scroll": 193,
+      "typingAvailable": false,
+      "allocationGuideId": "109:3957",
+      "rawDivisionFrames": [
+        {
+          "height": 669,
+          "width": 13.5,
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "plannedDivisionFrames": [
+        {
+          "height": 669,
+          "width": 14,
+          "x": 0,
+          "y": 0
+        }
+      ]
+    }
+  ],
+  "settingsRows": [
+    {
+      "case": "open-wide-default",
+      "text": "default",
+      "appearance": "Light",
+      "screenId": "95:594",
+      "rowId": "103:3853",
+      "rowFrame": {
+        "height": 78,
+        "width": 225,
+        "x": 626,
+        "y": 203
+      },
+      "rowCrossesDivision": false,
+      "modeledNavigationBackSpotCrossesOcclusion": false,
+      "rowCrossesPlannedDivision": false,
+      "modelAssumptions": "navigation64/bar8/gutter16/footer40; row185-to442, lines22-to65; not native Settings measurements"
+    },
+    {
+      "case": "open-wide-default",
+      "text": "AX5",
+      "appearance": "Light",
+      "screenId": "95:768",
+      "rowId": "103:3858",
+      "rowFrame": {
+        "height": 79,
+        "width": 442,
+        "x": 409,
+        "y": 337
+      },
+      "rowCrossesDivision": true,
+      "modeledNavigationBackSpotCrossesOcclusion": false,
+      "rowCrossesPlannedDivision": true,
+      "modelAssumptions": "navigation64/bar8/gutter16/footer40; row185-to442, lines22-to65; not native Settings measurements"
+    },
+    {
+      "case": "open-wide-default",
+      "text": "default",
+      "appearance": "Dark",
+      "screenId": "95:1368",
+      "rowId": "103:3864",
+      "rowFrame": {
+        "height": 78,
+        "width": 225,
+        "x": 626,
+        "y": 203
+      },
+      "rowCrossesDivision": false,
+      "modeledNavigationBackSpotCrossesOcclusion": false,
+      "rowCrossesPlannedDivision": false,
+      "modelAssumptions": "navigation64/bar8/gutter16/footer40; row185-to442, lines22-to65; not native Settings measurements"
+    },
+    {
+      "case": "open-wide-default",
+      "text": "AX5",
+      "appearance": "Dark",
+      "screenId": "95:1542",
+      "rowId": "103:3869",
+      "rowFrame": {
+        "height": 79,
+        "width": 442,
+        "x": 409,
+        "y": 337
+      },
+      "rowCrossesDivision": true,
+      "modeledNavigationBackSpotCrossesOcclusion": false,
+      "rowCrossesPlannedDivision": true,
+      "modelAssumptions": "navigation64/bar8/gutter16/footer40; row185-to442, lines22-to65; not native Settings measurements"
+    },
+    {
+      "case": "open-wide-reverse-ax5",
+      "text": "default",
+      "appearance": "Light",
+      "screenId": "95:1936",
+      "rowId": "103:3875",
+      "rowFrame": {
+        "height": 78,
+        "width": 225,
+        "x": 626,
+        "y": 203
+      },
+      "rowCrossesDivision": false,
+      "modeledNavigationBackSpotCrossesOcclusion": false,
+      "rowCrossesPlannedDivision": false,
+      "modelAssumptions": "navigation64/bar8/gutter16/footer40; row185-to442, lines22-to65; not native Settings measurements"
+    },
+    {
+      "case": "open-wide-reverse-ax5",
+      "text": "AX5",
+      "appearance": "Light",
+      "screenId": "95:2110",
+      "rowId": "103:3880",
+      "rowFrame": {
+        "height": 79,
+        "width": 442,
+        "x": 409,
+        "y": 337
+      },
+      "rowCrossesDivision": true,
+      "modeledNavigationBackSpotCrossesOcclusion": false,
+      "rowCrossesPlannedDivision": true,
+      "modelAssumptions": "navigation64/bar8/gutter16/footer40; row185-to442, lines22-to65; not native Settings measurements"
+    },
+    {
+      "case": "open-wide-reverse-ax5",
+      "text": "default",
+      "appearance": "Dark",
+      "screenId": "95:2638",
+      "rowId": "103:3886",
+      "rowFrame": {
+        "height": 78,
+        "width": 225,
+        "x": 626,
+        "y": 203
+      },
+      "rowCrossesDivision": false,
+      "modeledNavigationBackSpotCrossesOcclusion": false,
+      "rowCrossesPlannedDivision": false,
+      "modelAssumptions": "navigation64/bar8/gutter16/footer40; row185-to442, lines22-to65; not native Settings measurements"
+    },
+    {
+      "case": "open-wide-reverse-ax5",
+      "text": "AX5",
+      "appearance": "Dark",
+      "screenId": "95:2812",
+      "rowId": "103:3891",
+      "rowFrame": {
+        "height": 79,
+        "width": 442,
+        "x": 409,
+        "y": 337
+      },
+      "rowCrossesDivision": true,
+      "modeledNavigationBackSpotCrossesOcclusion": false,
+      "rowCrossesPlannedDivision": true,
+      "modelAssumptions": "navigation64/bar8/gutter16/footer40; row185-to442, lines22-to65; not native Settings measurements"
+    },
+    {
+      "case": "open-tall-default",
+      "text": "default",
+      "appearance": "Light",
+      "screenId": "95:3206",
+      "rowId": "103:3897",
+      "rowFrame": {
+        "height": 78,
+        "width": 310.5,
+        "x": 342.5,
+        "y": 311.5
+      },
+      "rowCrossesDivision": false,
+      "modeledNavigationBackSpotCrossesOcclusion": false,
+      "rowCrossesPlannedDivision": false,
+      "modelAssumptions": "navigation64/bar8/gutter16/footer40; row185-to442, lines22-to65; not native Settings measurements"
+    },
+    {
+      "case": "open-tall-default",
+      "text": "AX5",
+      "appearance": "Light",
+      "screenId": "95:3380",
+      "rowId": "103:3902",
+      "rowFrame": {
+        "height": 79,
+        "width": 442,
+        "x": 211,
+        "y": 467
+      },
+      "rowCrossesDivision": true,
+      "modeledNavigationBackSpotCrossesOcclusion": false,
+      "rowCrossesPlannedDivision": true,
+      "modelAssumptions": "navigation64/bar8/gutter16/footer40; row185-to442, lines22-to65; not native Settings measurements"
+    },
+    {
+      "case": "open-tall-default",
+      "text": "default",
+      "appearance": "Dark",
+      "screenId": "95:3908",
+      "rowId": "103:3908",
+      "rowFrame": {
+        "height": 78,
+        "width": 310.5,
+        "x": 342.5,
+        "y": 311.5
+      },
+      "rowCrossesDivision": false,
+      "modeledNavigationBackSpotCrossesOcclusion": false,
+      "rowCrossesPlannedDivision": false,
+      "modelAssumptions": "navigation64/bar8/gutter16/footer40; row185-to442, lines22-to65; not native Settings measurements"
+    },
+    {
+      "case": "open-tall-default",
+      "text": "AX5",
+      "appearance": "Dark",
+      "screenId": "95:4082",
+      "rowId": "103:3913",
+      "rowFrame": {
+        "height": 79,
+        "width": 442,
+        "x": 211,
+        "y": 467
+      },
+      "rowCrossesDivision": true,
+      "modeledNavigationBackSpotCrossesOcclusion": false,
+      "rowCrossesPlannedDivision": true,
+      "modelAssumptions": "navigation64/bar8/gutter16/footer40; row185-to442, lines22-to65; not native Settings measurements"
+    },
+    {
+      "case": "open-tall-reverse-default",
+      "text": "default",
+      "appearance": "Light",
+      "screenId": "95:4476",
+      "rowId": "103:3919",
+      "rowFrame": {
+        "height": 78,
+        "width": 310.5,
+        "x": 342.5,
+        "y": 311.5
+      },
+      "rowCrossesDivision": false,
+      "modeledNavigationBackSpotCrossesOcclusion": false,
+      "rowCrossesPlannedDivision": false,
+      "modelAssumptions": "navigation64/bar8/gutter16/footer40; row185-to442, lines22-to65; not native Settings measurements"
+    },
+    {
+      "case": "open-tall-reverse-default",
+      "text": "AX5",
+      "appearance": "Light",
+      "screenId": "95:4650",
+      "rowId": "103:3924",
+      "rowFrame": {
+        "height": 79,
+        "width": 442,
+        "x": 211,
+        "y": 467
+      },
+      "rowCrossesDivision": true,
+      "modeledNavigationBackSpotCrossesOcclusion": true,
+      "rowCrossesPlannedDivision": true,
+      "modelAssumptions": "navigation64/bar8/gutter16/footer40; row185-to442, lines22-to65; not native Settings measurements"
+    },
+    {
+      "case": "open-tall-reverse-default",
+      "text": "default",
+      "appearance": "Dark",
+      "screenId": "95:5178",
+      "rowId": "103:3930",
+      "rowFrame": {
+        "height": 78,
+        "width": 310.5,
+        "x": 342.5,
+        "y": 311.5
+      },
+      "rowCrossesDivision": false,
+      "modeledNavigationBackSpotCrossesOcclusion": false,
+      "rowCrossesPlannedDivision": false,
+      "modelAssumptions": "navigation64/bar8/gutter16/footer40; row185-to442, lines22-to65; not native Settings measurements"
+    },
+    {
+      "case": "open-tall-reverse-default",
+      "text": "AX5",
+      "appearance": "Dark",
+      "screenId": "95:5352",
+      "rowId": "103:3935",
+      "rowFrame": {
+        "height": 79,
+        "width": 442,
+        "x": 211,
+        "y": 467
+      },
+      "rowCrossesDivision": true,
+      "modeledNavigationBackSpotCrossesOcclusion": true,
+      "rowCrossesPlannedDivision": true,
+      "modelAssumptions": "navigation64/bar8/gutter16/footer40; row185-to442, lines22-to65; not native Settings measurements"
+    },
+    {
+      "case": "split-left-wide-default",
+      "text": "default",
+      "appearance": "Light",
+      "screenId": "95:5664",
+      "rowId": "103:3941",
+      "rowFrame": {
+        "height": 78,
+        "width": 210.5,
+        "x": 242.5,
+        "y": 153.5
+      },
+      "rowCrossesDivision": false,
+      "modeledNavigationBackSpotCrossesOcclusion": false,
+      "rowCrossesPlannedDivision": false,
+      "modelAssumptions": "navigation64/bar8/gutter16/footer40; row185-to442, lines22-to65; not native Settings measurements"
+    },
+    {
+      "case": "split-left-wide-default",
+      "text": "AX5",
+      "appearance": "Light",
+      "screenId": "95:5802",
+      "rowId": "103:3946",
+      "rowFrame": {
+        "height": 144,
+        "width": 437,
+        "x": 16,
+        "y": 309
+      },
+      "rowCrossesDivision": false,
+      "modeledNavigationBackSpotCrossesOcclusion": false,
+      "rowCrossesPlannedDivision": false,
+      "modelAssumptions": "navigation64/bar8/gutter16/footer40; row185-to442, lines22-to65; not native Settings measurements"
+    },
+    {
+      "case": "split-left-wide-default",
+      "text": "default",
+      "appearance": "Dark",
+      "screenId": "95:6130",
+      "rowId": "103:3951",
+      "rowFrame": {
+        "height": 78,
+        "width": 210.5,
+        "x": 242.5,
+        "y": 153.5
+      },
+      "rowCrossesDivision": false,
+      "modeledNavigationBackSpotCrossesOcclusion": false,
+      "rowCrossesPlannedDivision": false,
+      "modelAssumptions": "navigation64/bar8/gutter16/footer40; row185-to442, lines22-to65; not native Settings measurements"
+    },
+    {
+      "case": "split-left-wide-default",
+      "text": "AX5",
+      "appearance": "Dark",
+      "screenId": "95:6268",
+      "rowId": "103:3956",
+      "rowFrame": {
+        "height": 144,
+        "width": 437,
+        "x": 16,
+        "y": 309
+      },
+      "rowCrossesDivision": false,
+      "modeledNavigationBackSpotCrossesOcclusion": false,
+      "rowCrossesPlannedDivision": false,
+      "modelAssumptions": "navigation64/bar8/gutter16/footer40; row185-to442, lines22-to65; not native Settings measurements"
+    },
+    {
+      "case": "split-right-wide-reverse-default",
+      "text": "default",
+      "appearance": "Light",
+      "screenId": "95:6588",
+      "rowId": "103:3961",
+      "rowFrame": {
+        "height": 78,
+        "width": 353,
+        "x": 16,
+        "y": 214
+      },
+      "rowCrossesDivision": false,
+      "modeledNavigationBackSpotCrossesOcclusion": false,
+      "rowCrossesPlannedDivision": false,
+      "modelAssumptions": "navigation64/bar8/gutter16/footer40; row185-to442, lines22-to65; not native Settings measurements"
+    },
+    {
+      "case": "split-right-wide-reverse-default",
+      "text": "AX5",
+      "appearance": "Light",
+      "screenId": "95:6759",
+      "rowId": "103:3966",
+      "rowFrame": {
+        "height": 144,
+        "width": 353,
+        "x": 16,
+        "y": 241
+      },
+      "rowCrossesDivision": false,
+      "modeledNavigationBackSpotCrossesOcclusion": false,
+      "rowCrossesPlannedDivision": false,
+      "modelAssumptions": "navigation64/bar8/gutter16/footer40; row185-to442, lines22-to65; not native Settings measurements"
+    },
+    {
+      "case": "split-right-wide-reverse-default",
+      "text": "default",
+      "appearance": "Dark",
+      "screenId": "95:7131",
+      "rowId": "103:3971",
+      "rowFrame": {
+        "height": 78,
+        "width": 353,
+        "x": 16,
+        "y": 214
+      },
+      "rowCrossesDivision": false,
+      "modeledNavigationBackSpotCrossesOcclusion": false,
+      "rowCrossesPlannedDivision": false,
+      "modelAssumptions": "navigation64/bar8/gutter16/footer40; row185-to442, lines22-to65; not native Settings measurements"
+    },
+    {
+      "case": "split-right-wide-reverse-default",
+      "text": "AX5",
+      "appearance": "Dark",
+      "screenId": "95:7302",
+      "rowId": "103:3976",
+      "rowFrame": {
+        "height": 144,
+        "width": 353,
+        "x": 16,
+        "y": 241
+      },
+      "rowCrossesDivision": false,
+      "modeledNavigationBackSpotCrossesOcclusion": false,
+      "rowCrossesPlannedDivision": false,
+      "modelAssumptions": "navigation64/bar8/gutter16/footer40; row185-to442, lines22-to65; not native Settings measurements"
+    }
+  ],
+  "validation": {
+    "targetCount": 768,
+    "targetMaxError": 1.2207031204525265e-05,
+    "tileCount": 480,
+    "tileMaxError": 0,
+    "settingsRowCount": 24,
+    "rowMaxError": 0,
+    "knownSettingsFoldCrossingScreens": 8,
+    "descendantCount": 6558,
+    "nodeTypeCounts": {
+      "TEXT": 2404,
+      "FRAME": 1319,
+      "INSTANCE": 1915,
+      "RECTANGLE": 496,
+      "ELLIPSE": 350,
+      "VECTOR": 74
+    },
+    "imageFilledNodes": [],
+    "fontFamilies": [
+      "Inter",
+      "SF Pro Rounded",
+      "SF Pro",
+      "SF Compact"
+    ],
+    "bounds": {
+      "width": 7160,
+      "height": 12218
+    },
+    "rawLabelOverflowCandidates": [
+      {
+        "id": "I97:4150;5915:37691;128:87684;0:11632",
+        "parent": "I97:4150;5915:37691;128:87684",
+        "name": "Symbol",
+        "x": -6.763635635375977,
+        "y": -6.763635635375977,
+        "width": 37.52727127075195,
+        "height": 37.52727127075195,
+        "parentW": 23.880990982055664,
+        "parentH": 23.880990982055664
+      },
+      {
+        "id": "I97:4150;5915:37691;128:87685;0:11632",
+        "parent": "I97:4150;5915:37691;128:87685",
+        "name": "Symbol",
+        "x": -6.763635635375977,
+        "y": -6.763635635375977,
+        "width": 37.52727127075195,
+        "height": 37.52727127075195,
+        "parentW": 23.880990982055664,
+        "parentH": 23.880990982055664
+      },
+      {
+        "id": "I97:4150;5915:37691;128:87686;0:11632",
+        "parent": "I97:4150;5915:37691;128:87686",
+        "name": "Symbol",
+        "x": -6.763635635375977,
+        "y": -6.763635635375977,
+        "width": 37.52727127075195,
+        "height": 37.52727127075195,
+        "parentW": 23.880990982055664,
+        "parentH": 23.880990982055664
+      },
+      {
+        "id": "I97:4293;5915:37691;5915:33972;5915:35200",
+        "parent": "I97:4293;5915:37691;5915:33972",
+        "name": "Symbol",
+        "x": -6.763635635375977,
+        "y": -6.763635635375977,
+        "width": 37.52727127075195,
+        "height": 37.52727127075195,
+        "parentW": 23.880990982055664,
+        "parentH": 23.880990982055664
+      },
+      {
+        "id": "I97:4293;5915:37691;5915:33973;5915:35200",
+        "parent": "I97:4293;5915:37691;5915:33973",
+        "name": "Symbol",
+        "x": -6.763635635375977,
+        "y": -6.763635635375977,
+        "width": 37.52727127075195,
+        "height": 37.52727127075195,
+        "parentW": 23.880990982055664,
+        "parentH": 23.880990982055664
+      },
+      {
+        "id": "I97:4293;5915:37691;5915:33974;5915:35200",
+        "parent": "I97:4293;5915:37691;5915:33974",
+        "name": "Symbol",
+        "x": -6.763635635375977,
+        "y": -6.763635635375977,
+        "width": 37.52727127075195,
+        "height": 37.52727127075195,
+        "parentW": 23.880990982055664,
+        "parentH": 23.880990982055664
+      },
+      {
+        "id": "I97:4575;5915:37691;128:87684;0:11632",
+        "parent": "I97:4575;5915:37691;128:87684",
+        "name": "Symbol",
+        "x": -6.763635635375977,
+        "y": -6.763635635375977,
+        "width": 37.52727127075195,
+        "height": 37.52727127075195,
+        "parentW": 23.880990982055664,
+        "parentH": 23.880990982055664
+      },
+      {
+        "id": "I97:4575;5915:37691;128:87685;0:11632",
+        "parent": "I97:4575;5915:37691;128:87685",
+        "name": "Symbol",
+        "x": -6.763635635375977,
+        "y": -6.763635635375977,
+        "width": 37.52727127075195,
+        "height": 37.52727127075195,
+        "parentW": 23.880990982055664,
+        "parentH": 23.880990982055664
+      },
+      {
+        "id": "I97:4575;5915:37691;128:87686;0:11632",
+        "parent": "I97:4575;5915:37691;128:87686",
+        "name": "Symbol",
+        "x": -6.763635635375977,
+        "y": -6.763635635375977,
+        "width": 37.52727127075195,
+        "height": 37.52727127075195,
+        "parentW": 23.880990982055664,
+        "parentH": 23.880990982055664
+      },
+      {
+        "id": "I97:4718;5915:37691;5915:33972;5915:35200",
+        "parent": "I97:4718;5915:37691;5915:33972",
+        "name": "Symbol",
+        "x": -6.763635635375977,
+        "y": -6.763635635375977,
+        "width": 37.52727127075195,
+        "height": 37.52727127075195,
+        "parentW": 23.880990982055664,
+        "parentH": 23.880990982055664
+      },
+      {
+        "id": "I97:4718;5915:37691;5915:33973;5915:35200",
+        "parent": "I97:4718;5915:37691;5915:33973",
+        "name": "Symbol",
+        "x": -6.763635635375977,
+        "y": -6.763635635375977,
+        "width": 37.52727127075195,
+        "height": 37.52727127075195,
+        "parentW": 23.880990982055664,
+        "parentH": 23.880990982055664
+      },
+      {
+        "id": "I97:4718;5915:37691;5915:33974;5915:35200",
+        "parent": "I97:4718;5915:37691;5915:33974",
+        "name": "Symbol",
+        "x": -6.763635635375977,
+        "y": -6.763635635375977,
+        "width": 37.52727127075195,
+        "height": 37.52727127075195,
+        "parentW": 23.880990982055664,
+        "parentH": 23.880990982055664
+      },
+      {
+        "id": "I97:4997;5915:37691;128:87684;0:11632",
+        "parent": "I97:4997;5915:37691;128:87684",
+        "name": "Symbol",
+        "x": -6.763635635375977,
+        "y": -6.763635635375977,
+        "width": 37.52727127075195,
+        "height": 37.52727127075195,
+        "parentW": 23.880990982055664,
+        "parentH": 23.880990982055664
+      },
+      {
+        "id": "I97:4997;5915:37691;128:87685;0:11632",
+        "parent": "I97:4997;5915:37691;128:87685",
+        "name": "Symbol",
+        "x": -6.763635635375977,
+        "y": -6.763635635375977,
+        "width": 37.52727127075195,
+        "height": 37.52727127075195,
+        "parentW": 23.880990982055664,
+        "parentH": 23.880990982055664
+      },
+      {
+        "id": "I97:4997;5915:37691;128:87686;0:11632",
+        "parent": "I97:4997;5915:37691;128:87686",
+        "name": "Symbol",
+        "x": -6.763635635375977,
+        "y": -6.763635635375977,
+        "width": 37.52727127075195,
+        "height": 37.52727127075195,
+        "parentW": 23.880990982055664,
+        "parentH": 23.880990982055664
+      },
+      {
+        "id": "I97:5140;5915:37691;5915:33972;5915:35200",
+        "parent": "I97:5140;5915:37691;5915:33972",
+        "name": "Symbol",
+        "x": -6.763635635375977,
+        "y": -6.763635635375977,
+        "width": 37.52727127075195,
+        "height": 37.52727127075195,
+        "parentW": 23.880990982055664,
+        "parentH": 23.880990982055664
+      },
+      {
+        "id": "I97:5140;5915:37691;5915:33973;5915:35200",
+        "parent": "I97:5140;5915:37691;5915:33973",
+        "name": "Symbol",
+        "x": -6.763635635375977,
+        "y": -6.763635635375977,
+        "width": 37.52727127075195,
+        "height": 37.52727127075195,
+        "parentW": 23.880990982055664,
+        "parentH": 23.880990982055664
+      },
+      {
+        "id": "I97:5140;5915:37691;5915:33974;5915:35200",
+        "parent": "I97:5140;5915:37691;5915:33974",
+        "name": "Symbol",
+        "x": -6.763635635375977,
+        "y": -6.763635635375977,
+        "width": 37.52727127075195,
+        "height": 37.52727127075195,
+        "parentW": 23.880990982055664,
+        "parentH": 23.880990982055664
+      },
+      {
+        "id": "I97:5419;5915:37691;128:87684;0:11632",
+        "parent": "I97:5419;5915:37691;128:87684",
+        "name": "Symbol",
+        "x": -6.763635635375977,
+        "y": -6.763635635375977,
+        "width": 37.52727127075195,
+        "height": 37.52727127075195,
+        "parentW": 23.880990982055664,
+        "parentH": 23.880990982055664
+      },
+      {
+        "id": "I97:5419;5915:37691;128:87685;0:11632",
+        "parent": "I97:5419;5915:37691;128:87685",
+        "name": "Symbol",
+        "x": -6.763635635375977,
+        "y": -6.763635635375977,
+        "width": 37.52727127075195,
+        "height": 37.52727127075195,
+        "parentW": 23.880990982055664,
+        "parentH": 23.880990982055664
+      },
+      {
+        "id": "I97:5419;5915:37691;128:87686;0:11632",
+        "parent": "I97:5419;5915:37691;128:87686",
+        "name": "Symbol",
+        "x": -6.763635635375977,
+        "y": -6.763635635375977,
+        "width": 37.52727127075195,
+        "height": 37.52727127075195,
+        "parentW": 23.880990982055664,
+        "parentH": 23.880990982055664
+      },
+      {
+        "id": "I97:5562;5915:37691;5915:33972;5915:35200",
+        "parent": "I97:5562;5915:37691;5915:33972",
+        "name": "Symbol",
+        "x": -6.763635635375977,
+        "y": -6.763635635375977,
+        "width": 37.52727127075195,
+        "height": 37.52727127075195,
+        "parentW": 23.880990982055664,
+        "parentH": 23.880990982055664
+      },
+      {
+        "id": "I97:5562;5915:37691;5915:33973;5915:35200",
+        "parent": "I97:5562;5915:37691;5915:33973",
+        "name": "Symbol",
+        "x": -6.763635635375977,
+        "y": -6.763635635375977,
+        "width": 37.52727127075195,
+        "height": 37.52727127075195,
+        "parentW": 23.880990982055664,
+        "parentH": 23.880990982055664
+      },
+      {
+        "id": "I97:5562;5915:37691;5915:33974;5915:35200",
+        "parent": "I97:5562;5915:37691;5915:33974",
+        "name": "Symbol",
+        "x": -6.763635635375977,
+        "y": -6.763635635375977,
+        "width": 37.52727127075195,
+        "height": 37.52727127075195,
+        "parentW": 23.880990982055664,
+        "parentH": 23.880990982055664
+      }
+    ],
+    "labelOverflows": [],
+    "rawLabelOverflowCandidatesExplanation": "24 unchanged glyph-only layers inside Apple keyboard kit Button subcomponents extend beyond their nominal symbol box. They are not Brickson Home/Settings labels and were not changed in this revision.",
+    "rawDivisionGuideCount": 84,
+    "enclosureGuideCount": 84,
+    "ownButtonAndRowCount": 1272,
+    "paletteBindings": [
+      {
+        "id": "VariableID:95:6",
+        "count": 516
+      },
+      {
+        "id": "VariableID:95:8",
+        "count": 60
+      },
+      {
+        "id": "VariableID:95:10",
+        "count": 60
+      },
+      {
+        "id": "VariableID:95:4",
+        "count": 456
+      },
+      {
+        "id": "VariableID:95:12",
+        "count": 24
+      }
+    ],
+    "visual": "Passing composition render with separate raw API/enclosure guides; known modeled Settings/fold intersections intentionally shown",
+    "scope": "Home item6 drawings complete; native Settings/R0-13, complete activation chains and physical testing remain separate gates",
+    "runtimeProven": false,
+    "fullChainVerified": false,
+    "physicalInputVerified": false,
+    "settingsNativeMeasured": false
+  },
+  "status": "84 stable linked screens updated and render-inspected for scoped Home item6; root controls code gate. Broader Settings/R0-13 and physical gates remain open.",
+  "ownerChoice": "Keep the current rule and investigate another design. No paging, pinned prefix, new order or neighbour-rule exception.",
+  "notes": [
+    "All revised target/control/phrase/Back frames use the named production pure-geometry export; only labels/chrome are Figma stand-ins.",
+    "Family Setup rows consume unchanged SettingsRowPlace/#56 policy with nav64/footer40/wrapping model; four AX5 full-screen geometries cross division in both appearances.",
+    "Keyboard alphanumeric labels use explicitly permitted Inter stand-in to avoid the connector's repeated cached SF glyphs; Apple layout/source sizes retained. One owned keyboard copy was expanded into editable layers during renderer diagnosis.",
+    "Original Home/typing pages, prior owned options/observations history, repository, builds and simulators were not changed by the drawing task.",
+    "Node mutation list is cumulative: every created owned node received geometry, text or visual properties. Deleted descendants are retained in the historical create/delete ledger.",
+    "Raw full-screen system division455.5\u2013495.5 remains unchanged; separate dashed whole-point allocation guide spans455\u2013496. Edge-clipped pane divisions have their own integral enclosure.",
+    "Revised production pure-type export supersedes the prior candidate geometry for these84 screens. Intermediate8diagnostic inputs are not additional drawn states.",
+    "All84 screen URLs, Palette variables, standard Apple kit assets, original Home/Typing pages, previous observations/options history and known Settings gap labels preserved.",
+    "Settings rows remain model hypotheses from unchanged policy: nav64, bar8, gutter16, footer40 and wrapping model. Native wide Settings row wrapping is known to differ; no Settings native clearance claim.",
+    "Target/Back error is within0.000012208pt Figma precision;480tile frames and24modeled rows match export exactly."
+  ],
+  "preexistingHomeNodeIdsMutated": [],
+  "sourceGeometry": "docs/evidence/2026-10-25-duo-design/candidate-geometry-enclosed.json",
+  "renders": [
+    "candidate-screens.png",
+    "settings-wide-ax5-gap.png",
+    "settings-tall-ax5-gap.png"
+  ],
+  "limits": "Drawing evidence only. Native window/control snapshots, actual keyboards and Settings wrapping/navigation, complete transition chains, and physical input remain separate checks. Existing AX5 Settings row/fold intersections remain broader R0-13 gaps.",
+  "scrollMeaning": "The scroll value is modeled trailing content beyond fixed D at zero offset, not a measured native maximum scrolling distance."
+}

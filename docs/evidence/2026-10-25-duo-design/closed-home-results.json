@@ -1,0 +1,49 @@
+{
+  "schema": 1,
+  "date": "2026-10-25",
+  "productAndTestSourceMatchesPublishedHead": "132263011a870645e2c63903a17d22065702d703",
+  "implementationCommit": "8b1365eb116528637483b1ba72bb1b57a86afbd6",
+  "pose": "closed,466x678 observed in test context",
+  "toolchain": "Xcode27.1(27A9275),XcodeGen2.46.0,Duo simulator iOS27.1",
+  "result": "FAILED,exit65",
+  "counts": {
+    "totalTestCount": 19,
+    "passedTests": 14,
+    "failedTests": 1,
+    "skippedTests": 2,
+    "expectedFailures": 2
+  },
+  "failures": [
+    {
+      "failureText": "failed - Accessibility audit (the alarm sounding; default text, portrait, iPhone, window (466.0, 678.0); type 65536): Dynamic Type font sizes are partially unsupported on \"Sounding\" (identifier \"\", frame (52.0, 85.5, 68.0, 18.0)). User will not be able to change the font size of this SwiftUI.AccessibilityNode",
+      "targetName": "BricksonUITests",
+      "testIdentifier": 1,
+      "testIdentifierString": "GetAttentionOnHomeTests/testTheAlarmStartsAndStopsAtDefaultText()",
+      "testIdentifierURL": "test://com.apple.xcode/Brickson/BricksonUITests/GetAttentionOnHomeTests/testTheAlarmStartsAndStopsAtDefaultText",
+      "testName": "testTheAlarmStartsAndStopsAtDefaultText()"
+    }
+  ],
+  "screenshots": [
+    {
+      "file": "closed-home-sounding-audit.png",
+      "exportedAttachment": "74AEB744-8C9B-412C-B32F-EE4AB38A5AEF.png",
+      "sha256": "a7387f892e87e42836927bbb3a9853f3600ae899924fcc04dbff269e03a4677d",
+      "originalBytesUnchanged": true
+    },
+    {
+      "file": "closed-home-ax5-sounding.png",
+      "exportedAttachment": "2B7C6AEF-788E-4F07-A49F-BFE3236C5647.png",
+      "sha256": "e28209ed4fb0c7bb0da38e22c54e211a951d1eb3398e7c87b18acc6ff7d75b86",
+      "originalBytesUnchanged": true
+    }
+  ],
+  "resultBundle": "build/TestResults/duo-current-closed-home/ui-destination.xcresult",
+  "log": "/private/tmp/brickson-duo-current-closed-home.log",
+  "limits": [
+    "The original six Home UI classes were unmodified;19 cases ran.",
+    "One default Sounding Dynamic Type audit finding; no -56 service timeout retry or new exception was applied.",
+    "AX5 alarm case passed; the default audit failure is not waived by that pass.",
+    "Two existing phone-idiom landscape skips and two strict expected failures remain. These do not prove no scrolling or physical input/audio.",
+    "Independent app.frame/control queries in these original helpers are not coherent snapshot evidence; the separate six-pose probes retain that distinction."
+  ]
+}

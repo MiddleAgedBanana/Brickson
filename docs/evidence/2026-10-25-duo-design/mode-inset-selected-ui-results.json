@@ -1,0 +1,134 @@
+{
+  "schema": 1,
+  "date": "2026-10-25",
+  "scope": "Post-minimum selected UI checks only. Read/export of completed metadata; no builds, native simulator actions, source/public edits or remote mutation.",
+  "baseCommit": "bc72b73824aae42a1d7dac42b434941ff8ee9e5b",
+  "sourceManifest": "mode-inset-source-manifest.json",
+  "families": [
+    {
+      "family": "ipad",
+      "resultBundle": "build/TestResults/mode-inset-selected-ui/ui-ipad.xcresult",
+      "result": "Failed",
+      "counts": {
+        "totalTestCount": 3,
+        "passedTests": 2,
+        "failedTests": 1,
+        "skippedTests": 0,
+        "expectedFailures": 0
+      },
+      "startUTC": "2026-10-25T22:34:22.997000+00:00",
+      "finishUTC": "2026-10-25T22:37:13.088000+00:00",
+      "model": "iPad Pro 13-inch (M5)",
+      "runtime": "27.0",
+      "cases": [
+        {
+          "name": "testHomeInDarkModePassesTheAccessibilityAudit()",
+          "result": "Passed"
+        },
+        {
+          "name": "testHomePassesTheAccessibilityAudit()",
+          "result": "Passed"
+        },
+        {
+          "name": "testLargestTextKeepsQuickControlWordsVisible()",
+          "result": "Failed"
+        }
+      ],
+      "failedCase": "LaunchTests/testLargestTextKeepsQuickControlWordsVisible()",
+      "assertions": [
+        {
+          "message": "XCTAssertTrue failed - \"Speaking\" still showed 30 s later (AX5, light, phrase spoken): the phrase never ended",
+          "file": "LaunchTests.swift",
+          "line": 126
+        },
+        {
+          "message": "XCTAssertTrue failed - \"Speaking\" still showed 30 s later (AX5, light): the phrase never ended",
+          "file": "LaunchTests.swift",
+          "line": 145
+        },
+        {
+          "message": "XCTAssertTrue failed - \"Speaking\" still showed 30 s later (AX5, dark, phrase spoken): the phrase never ended",
+          "file": "LaunchTests.swift",
+          "line": 126
+        },
+        {
+          "message": "XCTAssertTrue failed - \"Speaking\" still showed 30 s later (AX5, dark): the phrase never ended",
+          "file": "LaunchTests.swift",
+          "line": 145
+        }
+      ],
+      "otherAssertionFailuresReported": false,
+      "wordOrGeometryAssertionFailureReported": false
+    },
+    {
+      "family": "iphone",
+      "resultBundle": "build/TestResults/mode-inset-selected-ui/ui-iphone.xcresult",
+      "result": "Failed",
+      "counts": {
+        "totalTestCount": 3,
+        "passedTests": 2,
+        "failedTests": 1,
+        "skippedTests": 0,
+        "expectedFailures": 0
+      },
+      "startUTC": "2026-10-25T22:37:52.895000+00:00",
+      "finishUTC": "2026-10-25T22:40:41.313000+00:00",
+      "model": "iPhone 17",
+      "runtime": "27.0",
+      "cases": [
+        {
+          "name": "testHomeInDarkModePassesTheAccessibilityAudit()",
+          "result": "Passed"
+        },
+        {
+          "name": "testHomePassesTheAccessibilityAudit()",
+          "result": "Passed"
+        },
+        {
+          "name": "testLargestTextKeepsQuickControlWordsVisible()",
+          "result": "Failed"
+        }
+      ],
+      "failedCase": "LaunchTests/testLargestTextKeepsQuickControlWordsVisible()",
+      "assertions": [
+        {
+          "message": "XCTAssertTrue failed - \"Speaking\" still showed 30 s later (AX5, light, phrase spoken): the phrase never ended",
+          "file": "LaunchTests.swift",
+          "line": 126
+        },
+        {
+          "message": "XCTAssertTrue failed - \"Speaking\" still showed 30 s later (AX5, light): the phrase never ended",
+          "file": "LaunchTests.swift",
+          "line": 145
+        },
+        {
+          "message": "XCTAssertTrue failed - \"Speaking\" still showed 30 s later (AX5, dark, phrase spoken): the phrase never ended",
+          "file": "LaunchTests.swift",
+          "line": 126
+        },
+        {
+          "message": "XCTAssertTrue failed - \"Speaking\" still showed 30 s later (AX5, dark): the phrase never ended",
+          "file": "LaunchTests.swift",
+          "line": 145
+        }
+      ],
+      "otherAssertionFailuresReported": false,
+      "wordOrGeometryAssertionFailureReported": false
+    }
+  ],
+  "logProvenance": {
+    "file": "brickson-mode-inset-selected-ui.log (private temporary original)",
+    "sha256": "48e527980dfd7ab8f7a96df50a4cba90eca8ca9dd57feea5c2aff9d601b8d8ca"
+  },
+  "diagnosticLimit": {
+    "ignoredRemoteAXHierarchyMessages": 8,
+    "finding": "Raw iPad log contains ignored remote-element kAXErrorServerNotFound diagnostics. These are not recorded test/startup assertion failures and establish no cause."
+  },
+  "conclusion": "Both families ran three selected cases: two default appearance accessibility audits passed and the AX5 case failed its four existing Speaking waits. No rendered quick-word or geometry/window-matching assertion failure was reported. No complete51-case post-minimum UI pass is claimed.",
+  "notVerified": [
+    "Complete51-case UI suite on final corrected minima",
+    "Speech completion/cause",
+    "Physical input/audio/release readiness",
+    "Other native poses or window mappings"
+  ]
+}

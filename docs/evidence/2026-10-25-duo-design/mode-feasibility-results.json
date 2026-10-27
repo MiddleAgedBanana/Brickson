@@ -1,0 +1,1445 @@
+{
+  "existingBounds" : {
+    "backOneLineBold" : 142,
+    "backOneLineRegular" : 131,
+    "backTwoLineHeight" : 56,
+    "phrasesBold" : 94,
+    "phrasesRegular" : 86,
+    "touchFloor" : 44,
+    "typeBold" : 63,
+    "typeRegular" : 58
+  },
+  "genericGeometryChecks" : [
+    {
+      "allBackSamplesNearestPhrases" : true,
+      "back" : {
+        "height" : 44,
+        "width" : 131,
+        "x" : 496,
+        "y" : 8
+      },
+      "boldText" : false,
+      "case" : "open-wide-default",
+      "modelBackLimit" : null,
+      "modelQuietTop" : 203,
+      "modelRowAfter" : {
+        "height" : 78,
+        "width" : 225,
+        "x" : 626,
+        "y" : 203
+      },
+      "modelRowBefore" : {
+        "height" : 78,
+        "width" : 225,
+        "x" : 626,
+        "y" : 203
+      },
+      "modeMinimumSide" : 44,
+      "phrases" : {
+        "height" : 44,
+        "width" : 131,
+        "x" : 496,
+        "y" : 8
+      },
+      "text" : "default",
+      "type" : {
+        "height" : 44,
+        "width" : 131,
+        "x" : 496,
+        "y" : 60
+      },
+      "widthHypothesis" : 131,
+      "wrongBackSamples" : [
+
+      ]
+    },
+    {
+      "allBackSamplesNearestPhrases" : true,
+      "back" : {
+        "height" : 99,
+        "width" : 131,
+        "x" : 496,
+        "y" : 8
+      },
+      "boldText" : false,
+      "case" : "open-wide-default",
+      "modelBackLimit" : null,
+      "modelQuietTop" : 337,
+      "modelRowAfter" : {
+        "height" : 79,
+        "width" : 442,
+        "x" : 409,
+        "y" : 337
+      },
+      "modelRowBefore" : {
+        "height" : 79,
+        "width" : 442,
+        "x" : 409,
+        "y" : 337
+      },
+      "modeMinimumSide" : 99,
+      "phrases" : {
+        "height" : 99,
+        "width" : 131,
+        "x" : 496,
+        "y" : 8
+      },
+      "text" : "AX5",
+      "type" : {
+        "height" : 99,
+        "width" : 131,
+        "x" : 496,
+        "y" : 115
+      },
+      "widthHypothesis" : 131,
+      "wrongBackSamples" : [
+
+      ]
+    },
+    {
+      "allBackSamplesNearestPhrases" : true,
+      "back" : {
+        "height" : 44,
+        "width" : 131,
+        "x" : 496,
+        "y" : 8
+      },
+      "boldText" : false,
+      "case" : "open-wide-reverse-ax5",
+      "modelBackLimit" : null,
+      "modelQuietTop" : 203,
+      "modelRowAfter" : {
+        "height" : 78,
+        "width" : 225,
+        "x" : 626,
+        "y" : 203
+      },
+      "modelRowBefore" : {
+        "height" : 78,
+        "width" : 225,
+        "x" : 626,
+        "y" : 203
+      },
+      "modeMinimumSide" : 44,
+      "phrases" : {
+        "height" : 44,
+        "width" : 131,
+        "x" : 496,
+        "y" : 8
+      },
+      "text" : "default",
+      "type" : {
+        "height" : 44,
+        "width" : 131,
+        "x" : 496,
+        "y" : 60
+      },
+      "widthHypothesis" : 131,
+      "wrongBackSamples" : [
+
+      ]
+    },
+    {
+      "allBackSamplesNearestPhrases" : true,
+      "back" : {
+        "height" : 99,
+        "width" : 131,
+        "x" : 496,
+        "y" : 8
+      },
+      "boldText" : false,
+      "case" : "open-wide-reverse-ax5",
+      "modelBackLimit" : null,
+      "modelQuietTop" : 337,
+      "modelRowAfter" : {
+        "height" : 79,
+        "width" : 442,
+        "x" : 409,
+        "y" : 337
+      },
+      "modelRowBefore" : {
+        "height" : 79,
+        "width" : 442,
+        "x" : 409,
+        "y" : 337
+      },
+      "modeMinimumSide" : 99,
+      "phrases" : {
+        "height" : 99,
+        "width" : 131,
+        "x" : 496,
+        "y" : 8
+      },
+      "text" : "AX5",
+      "type" : {
+        "height" : 99,
+        "width" : 131,
+        "x" : 496,
+        "y" : 115
+      },
+      "widthHypothesis" : 131,
+      "wrongBackSamples" : [
+
+      ]
+    },
+    {
+      "allBackSamplesNearestPhrases" : true,
+      "back" : {
+        "height" : 50.5,
+        "width" : 131,
+        "x" : 446,
+        "y" : 90
+      },
+      "boldText" : false,
+      "case" : "open-tall-default",
+      "modelBackLimit" : 456.5,
+      "modelQuietTop" : 486.5,
+      "modelRowAfter" : {
+        "height" : 78,
+        "width" : 637,
+        "x" : 16,
+        "y" : 456.5
+      },
+      "modelRowBefore" : {
+        "height" : 78,
+        "width" : 310.5,
+        "x" : 342.5,
+        "y" : 311.5
+      },
+      "modeMinimumSide" : 50.5,
+      "phrases" : {
+        "height" : 50.5,
+        "width" : 131,
+        "x" : 446,
+        "y" : 90
+      },
+      "text" : "default",
+      "type" : {
+        "height" : 50.5,
+        "width" : 131,
+        "x" : 446,
+        "y" : 148.5
+      },
+      "widthHypothesis" : 131,
+      "wrongBackSamples" : [
+
+      ]
+    },
+    {
+      "allBackSamplesNearestPhrases" : true,
+      "back" : {
+        "height" : 99,
+        "width" : 131,
+        "x" : 446,
+        "y" : 90
+      },
+      "boldText" : false,
+      "case" : "open-tall-default",
+      "modelBackLimit" : 404,
+      "modelQuietTop" : 679,
+      "modelRowAfter" : {
+        "height" : 79,
+        "width" : 442,
+        "x" : 211,
+        "y" : 404
+      },
+      "modelRowBefore" : {
+        "height" : 79,
+        "width" : 442,
+        "x" : 211,
+        "y" : 467
+      },
+      "modeMinimumSide" : 99,
+      "phrases" : {
+        "height" : 99,
+        "width" : 131,
+        "x" : 446,
+        "y" : 90
+      },
+      "text" : "AX5",
+      "type" : {
+        "height" : 99,
+        "width" : 131,
+        "x" : 446,
+        "y" : 197
+      },
+      "widthHypothesis" : 131,
+      "wrongBackSamples" : [
+
+      ]
+    },
+    {
+      "allBackSamplesNearestPhrases" : true,
+      "back" : {
+        "height" : 50.5,
+        "width" : 131,
+        "x" : 446,
+        "y" : 90
+      },
+      "boldText" : false,
+      "case" : "open-tall-reverse-default",
+      "modelBackLimit" : 456.5,
+      "modelQuietTop" : 486.5,
+      "modelRowAfter" : {
+        "height" : 78,
+        "width" : 637,
+        "x" : 16,
+        "y" : 456.5
+      },
+      "modelRowBefore" : {
+        "height" : 78,
+        "width" : 310.5,
+        "x" : 342.5,
+        "y" : 311.5
+      },
+      "modeMinimumSide" : 50.5,
+      "phrases" : {
+        "height" : 50.5,
+        "width" : 131,
+        "x" : 446,
+        "y" : 90
+      },
+      "text" : "default",
+      "type" : {
+        "height" : 50.5,
+        "width" : 131,
+        "x" : 446,
+        "y" : 148.5
+      },
+      "widthHypothesis" : 131,
+      "wrongBackSamples" : [
+
+      ]
+    },
+    {
+      "allBackSamplesNearestPhrases" : true,
+      "back" : {
+        "height" : 99,
+        "width" : 131,
+        "x" : 446,
+        "y" : 90
+      },
+      "boldText" : false,
+      "case" : "open-tall-reverse-default",
+      "modelBackLimit" : 404,
+      "modelQuietTop" : 679,
+      "modelRowAfter" : {
+        "height" : 79,
+        "width" : 442,
+        "x" : 211,
+        "y" : 404
+      },
+      "modelRowBefore" : {
+        "height" : 79,
+        "width" : 442,
+        "x" : 211,
+        "y" : 467
+      },
+      "modeMinimumSide" : 99,
+      "phrases" : {
+        "height" : 99,
+        "width" : 131,
+        "x" : 446,
+        "y" : 90
+      },
+      "text" : "AX5",
+      "type" : {
+        "height" : 99,
+        "width" : 131,
+        "x" : 446,
+        "y" : 197
+      },
+      "widthHypothesis" : 131,
+      "wrongBackSamples" : [
+
+      ]
+    },
+    {
+      "allBackSamplesNearestPhrases" : true,
+      "back" : {
+        "height" : 46.5,
+        "width" : 131,
+        "x" : 312.66666666666663,
+        "y" : 8
+      },
+      "boldText" : false,
+      "case" : "split-left-wide-default",
+      "modelBackLimit" : 142.5,
+      "modelQuietTop" : 267.5,
+      "modelRowAfter" : {
+        "height" : 78,
+        "width" : 210.5,
+        "x" : 242.5,
+        "y" : 142.5
+      },
+      "modelRowBefore" : {
+        "height" : 78,
+        "width" : 210.5,
+        "x" : 242.5,
+        "y" : 153.5
+      },
+      "modeMinimumSide" : 46.5,
+      "phrases" : {
+        "height" : 46.5,
+        "width" : 131,
+        "x" : 312.66666666666663,
+        "y" : 8
+      },
+      "text" : "default",
+      "type" : {
+        "height" : 46.5,
+        "width" : 131,
+        "x" : 312.66666666666663,
+        "y" : 62.5
+      },
+      "widthHypothesis" : 131,
+      "wrongBackSamples" : [
+
+      ]
+    },
+    {
+      "allBackSamplesNearestPhrases" : true,
+      "back" : {
+        "height" : 99,
+        "width" : 131,
+        "x" : 312.66666666666663,
+        "y" : 8
+      },
+      "boldText" : false,
+      "case" : "split-left-wide-default",
+      "modelBackLimit" : 303,
+      "modelQuietTop" : 435,
+      "modelRowAfter" : {
+        "height" : 144,
+        "width" : 437,
+        "x" : 16,
+        "y" : 303
+      },
+      "modelRowBefore" : {
+        "height" : 144,
+        "width" : 437,
+        "x" : 16,
+        "y" : 309
+      },
+      "modeMinimumSide" : 99,
+      "phrases" : {
+        "height" : 99,
+        "width" : 131,
+        "x" : 312.66666666666663,
+        "y" : 8
+      },
+      "text" : "AX5",
+      "type" : {
+        "height" : 99,
+        "width" : 131,
+        "x" : 312.66666666666663,
+        "y" : 115
+      },
+      "widthHypothesis" : 131,
+      "wrongBackSamples" : [
+
+      ]
+    },
+    {
+      "allBackSamplesNearestPhrases" : true,
+      "back" : {
+        "height" : 44,
+        "width" : 131,
+        "x" : 235,
+        "y" : 8
+      },
+      "boldText" : false,
+      "case" : "split-right-wide-reverse-default",
+      "modelBackLimit" : 212,
+      "modelQuietTop" : 293,
+      "modelRowAfter" : {
+        "height" : 78,
+        "width" : 353,
+        "x" : 16,
+        "y" : 212
+      },
+      "modelRowBefore" : {
+        "height" : 78,
+        "width" : 353,
+        "x" : 16,
+        "y" : 214
+      },
+      "modeMinimumSide" : 44,
+      "phrases" : {
+        "height" : 44,
+        "width" : 131,
+        "x" : 235,
+        "y" : 8
+      },
+      "text" : "default",
+      "type" : {
+        "height" : 44,
+        "width" : 131,
+        "x" : 235,
+        "y" : 60
+      },
+      "widthHypothesis" : 131,
+      "wrongBackSamples" : [
+
+      ]
+    },
+    {
+      "allBackSamplesNearestPhrases" : true,
+      "back" : {
+        "height" : 99,
+        "width" : 131,
+        "x" : 235,
+        "y" : 8
+      },
+      "boldText" : false,
+      "case" : "split-right-wide-reverse-default",
+      "modelBackLimit" : 240,
+      "modelQuietTop" : 435,
+      "modelRowAfter" : {
+        "height" : 144,
+        "width" : 353,
+        "x" : 16,
+        "y" : 240
+      },
+      "modelRowBefore" : {
+        "height" : 144,
+        "width" : 353,
+        "x" : 16,
+        "y" : 241
+      },
+      "modeMinimumSide" : 99,
+      "phrases" : {
+        "height" : 99,
+        "width" : 131,
+        "x" : 235,
+        "y" : 8
+      },
+      "text" : "AX5",
+      "type" : {
+        "height" : 99,
+        "width" : 131,
+        "x" : 235,
+        "y" : 115
+      },
+      "widthHypothesis" : 131,
+      "wrongBackSamples" : [
+
+      ]
+    },
+    {
+      "allBackSamplesNearestPhrases" : true,
+      "back" : {
+        "height" : 53.5,
+        "width" : 131,
+        "x" : 446,
+        "y" : 90
+      },
+      "boldText" : false,
+      "case" : "open-tall-default",
+      "modelBackLimit" : 460.5,
+      "modelQuietTop" : 486.5,
+      "modelRowAfter" : {
+        "height" : 78,
+        "width" : 637,
+        "x" : 16,
+        "y" : 460.5
+      },
+      "modelRowBefore" : {
+        "height" : 78,
+        "width" : 310.5,
+        "x" : 342.5,
+        "y" : 314.5
+      },
+      "modeMinimumSide" : 53.5,
+      "phrases" : {
+        "height" : 53.5,
+        "width" : 131,
+        "x" : 446,
+        "y" : 90
+      },
+      "text" : "xxxLarge",
+      "type" : {
+        "height" : 53.5,
+        "width" : 131,
+        "x" : 446,
+        "y" : 151.5
+      },
+      "widthHypothesis" : 131,
+      "wrongBackSamples" : [
+
+      ]
+    },
+    {
+      "allBackSamplesNearestPhrases" : true,
+      "back" : {
+        "height" : 53.5,
+        "width" : 142,
+        "x" : 446,
+        "y" : 90
+      },
+      "boldText" : true,
+      "case" : "open-tall-default",
+      "modelBackLimit" : 467.5,
+      "modelQuietTop" : 486.5,
+      "modelRowAfter" : {
+        "height" : 78,
+        "width" : 637,
+        "x" : 16,
+        "y" : 467.5
+      },
+      "modelRowBefore" : {
+        "height" : 78,
+        "width" : 310.5,
+        "x" : 342.5,
+        "y" : 314.5
+      },
+      "modeMinimumSide" : 53.5,
+      "phrases" : {
+        "height" : 53.5,
+        "width" : 142,
+        "x" : 446,
+        "y" : 90
+      },
+      "text" : "xxxLarge",
+      "type" : {
+        "height" : 53.5,
+        "width" : 142,
+        "x" : 446,
+        "y" : 151.5
+      },
+      "widthHypothesis" : 142,
+      "wrongBackSamples" : [
+
+      ]
+    },
+    {
+      "allBackSamplesNearestPhrases" : true,
+      "back" : {
+        "height" : 60.75,
+        "width" : 131,
+        "x" : 446,
+        "y" : 90
+      },
+      "boldText" : false,
+      "case" : "open-tall-default",
+      "modelBackLimit" : 467.75,
+      "modelQuietTop" : 485.75,
+      "modelRowAfter" : {
+        "height" : 78,
+        "width" : 637,
+        "x" : 16,
+        "y" : 467.75
+      },
+      "modelRowBefore" : {
+        "height" : 78,
+        "width" : 262.69767441860466,
+        "x" : 390.30232558139534,
+        "y" : 260.75
+      },
+      "modeMinimumSide" : 60.75,
+      "phrases" : {
+        "height" : 60.75,
+        "width" : 131,
+        "x" : 446,
+        "y" : 90
+      },
+      "text" : "AX1",
+      "type" : {
+        "height" : 60.75,
+        "width" : 131,
+        "x" : 446,
+        "y" : 158.75
+      },
+      "widthHypothesis" : 131,
+      "wrongBackSamples" : [
+
+      ]
+    },
+    {
+      "allBackSamplesNearestPhrases" : true,
+      "back" : {
+        "height" : 60.75,
+        "width" : 142,
+        "x" : 446,
+        "y" : 90
+      },
+      "boldText" : true,
+      "case" : "open-tall-default",
+      "modelBackLimit" : 474.75,
+      "modelQuietTop" : 485.75,
+      "modelRowAfter" : {
+        "height" : 78,
+        "width" : 637,
+        "x" : 16,
+        "y" : 474.75
+      },
+      "modelRowBefore" : {
+        "height" : 78,
+        "width" : 262.69767441860466,
+        "x" : 390.30232558139534,
+        "y" : 260.75
+      },
+      "modeMinimumSide" : 60.75,
+      "phrases" : {
+        "height" : 60.75,
+        "width" : 142,
+        "x" : 446,
+        "y" : 90
+      },
+      "text" : "AX1",
+      "type" : {
+        "height" : 60.75,
+        "width" : 142,
+        "x" : 446,
+        "y" : 158.75
+      },
+      "widthHypothesis" : 142,
+      "wrongBackSamples" : [
+
+      ]
+    },
+    {
+      "allBackSamplesNearestPhrases" : true,
+      "back" : {
+        "height" : 53.5,
+        "width" : 131,
+        "x" : 446,
+        "y" : 90
+      },
+      "boldText" : false,
+      "case" : "open-tall-reverse-default",
+      "modelBackLimit" : 460.5,
+      "modelQuietTop" : 486.5,
+      "modelRowAfter" : {
+        "height" : 78,
+        "width" : 637,
+        "x" : 16,
+        "y" : 460.5
+      },
+      "modelRowBefore" : {
+        "height" : 78,
+        "width" : 310.5,
+        "x" : 342.5,
+        "y" : 314.5
+      },
+      "modeMinimumSide" : 53.5,
+      "phrases" : {
+        "height" : 53.5,
+        "width" : 131,
+        "x" : 446,
+        "y" : 90
+      },
+      "text" : "xxxLarge",
+      "type" : {
+        "height" : 53.5,
+        "width" : 131,
+        "x" : 446,
+        "y" : 151.5
+      },
+      "widthHypothesis" : 131,
+      "wrongBackSamples" : [
+
+      ]
+    },
+    {
+      "allBackSamplesNearestPhrases" : true,
+      "back" : {
+        "height" : 53.5,
+        "width" : 142,
+        "x" : 446,
+        "y" : 90
+      },
+      "boldText" : true,
+      "case" : "open-tall-reverse-default",
+      "modelBackLimit" : 467.5,
+      "modelQuietTop" : 486.5,
+      "modelRowAfter" : {
+        "height" : 78,
+        "width" : 637,
+        "x" : 16,
+        "y" : 467.5
+      },
+      "modelRowBefore" : {
+        "height" : 78,
+        "width" : 310.5,
+        "x" : 342.5,
+        "y" : 314.5
+      },
+      "modeMinimumSide" : 53.5,
+      "phrases" : {
+        "height" : 53.5,
+        "width" : 142,
+        "x" : 446,
+        "y" : 90
+      },
+      "text" : "xxxLarge",
+      "type" : {
+        "height" : 53.5,
+        "width" : 142,
+        "x" : 446,
+        "y" : 151.5
+      },
+      "widthHypothesis" : 142,
+      "wrongBackSamples" : [
+
+      ]
+    },
+    {
+      "allBackSamplesNearestPhrases" : true,
+      "back" : {
+        "height" : 60.75,
+        "width" : 131,
+        "x" : 446,
+        "y" : 90
+      },
+      "boldText" : false,
+      "case" : "open-tall-reverse-default",
+      "modelBackLimit" : 467.75,
+      "modelQuietTop" : 485.75,
+      "modelRowAfter" : {
+        "height" : 78,
+        "width" : 637,
+        "x" : 16,
+        "y" : 467.75
+      },
+      "modelRowBefore" : {
+        "height" : 78,
+        "width" : 262.69767441860466,
+        "x" : 390.30232558139534,
+        "y" : 260.75
+      },
+      "modeMinimumSide" : 60.75,
+      "phrases" : {
+        "height" : 60.75,
+        "width" : 131,
+        "x" : 446,
+        "y" : 90
+      },
+      "text" : "AX1",
+      "type" : {
+        "height" : 60.75,
+        "width" : 131,
+        "x" : 446,
+        "y" : 158.75
+      },
+      "widthHypothesis" : 131,
+      "wrongBackSamples" : [
+
+      ]
+    },
+    {
+      "allBackSamplesNearestPhrases" : true,
+      "back" : {
+        "height" : 60.75,
+        "width" : 142,
+        "x" : 446,
+        "y" : 90
+      },
+      "boldText" : true,
+      "case" : "open-tall-reverse-default",
+      "modelBackLimit" : 474.75,
+      "modelQuietTop" : 485.75,
+      "modelRowAfter" : {
+        "height" : 78,
+        "width" : 637,
+        "x" : 16,
+        "y" : 474.75
+      },
+      "modelRowBefore" : {
+        "height" : 78,
+        "width" : 262.69767441860466,
+        "x" : 390.30232558139534,
+        "y" : 260.75
+      },
+      "modeMinimumSide" : 60.75,
+      "phrases" : {
+        "height" : 60.75,
+        "width" : 142,
+        "x" : 446,
+        "y" : 90
+      },
+      "text" : "AX1",
+      "type" : {
+        "height" : 60.75,
+        "width" : 142,
+        "x" : 446,
+        "y" : 158.75
+      },
+      "widthHypothesis" : 142,
+      "wrongBackSamples" : [
+
+      ]
+    }
+  ],
+  "method" : "Necessary-condition host study. Existing recorded minimum widths131regular\/142Bold keep default Back text on one line; no94pt\/two-line word floor inferred. Source ChainEngine and SettingsRowPlace unchanged except host CoreGraphics import. Back-return geometry sampled45points\/both rules; Family\/native actual Back tested all rules\/pointers. No complete guide or new native\/SF proof.",
+  "nativeAX5WindowChainChecks" : [
+    {
+      "back" : {
+        "height" : 99,
+        "width" : 160.59999999999999,
+        "x" : 593.20000000000005,
+        "y" : 8
+      },
+      "directBackHazards" : [
+
+      ],
+      "familyBackCentreChains" : [
+        {
+          "end" : "settles",
+          "path" : "choosing BackButton → backToTalking (navigates) → phrases (nothing)",
+          "pointer" : "staysOnControl",
+          "rule" : "centre"
+        },
+        {
+          "end" : "settles",
+          "path" : "choosing BackButton → backToTalking (navigates) → phrases (nothing)",
+          "pointer" : "staysOnControl",
+          "rule" : "edge"
+        },
+        {
+          "end" : "hazard",
+          "path" : "choosing BackButton → backToTalking (navigates) → getAttention (alarms)",
+          "pointer" : "returnsToLook",
+          "rule" : "centre"
+        },
+        {
+          "end" : "settles",
+          "path" : "choosing BackButton → backToTalking (navigates) → type (navigates)",
+          "pointer" : "returnsToLook",
+          "rule" : "edge"
+        }
+      ],
+      "modeWidth" : 355,
+      "nativeBackRowMarginByCentre" : -91.735600387026039,
+      "rootFamilySampledHazardExamples" : [
+        "choosing BackButton in Family Setup, looking at (903.0, 163.0), by centre, pointer returnsToLook: BackButton (navigates) in Family Setup, chosen → backToTalking (navigates) in Settings → getAttention (alarms) in Home; hazard",
+        "choosing BackButton in Family Setup, looking at (884.5, 144.5), by centre, pointer returnsToLook: BackButton (navigates) in Family Setup, chosen → backToTalking (navigates) in Settings → getAttention (alarms) in Home; hazard",
+        "choosing BackButton in Family Setup, looking at (884.5, 163.0), by centre, pointer returnsToLook: BackButton (navigates) in Family Setup, chosen → backToTalking (navigates) in Settings → getAttention (alarms) in Home; hazard",
+        "choosing BackButton in Family Setup, looking at (884.5, 181.5), by centre, pointer returnsToLook: BackButton (navigates) in Family Setup, chosen → backToTalking (navigates) in Settings → getAttention (alarms) in Home; hazard",
+        "choosing BackButton in Family Setup, looking at (903.0, 144.5), by centre, pointer returnsToLook: BackButton (navigates) in Family Setup, chosen → backToTalking (navigates) in Settings → getAttention (alarms) in Home; hazard",
+        "choosing BackButton in Family Setup, looking at (903.0, 181.5), by centre, pointer returnsToLook: BackButton (navigates) in Family Setup, chosen → backToTalking (navigates) in Settings → getAttention (alarms) in Home; hazard",
+        "choosing BackButton in Family Setup, looking at (921.5, 144.5), by centre, pointer returnsToLook: BackButton (navigates) in Family Setup, chosen → backToTalking (navigates) in Settings → getAttention (alarms) in Home; hazard",
+        "choosing BackButton in Family Setup, looking at (921.5, 163.0), by centre, pointer returnsToLook: BackButton (navigates) in Family Setup, chosen → backToTalking (navigates) in Settings → getAttention (alarms) in Home; hazard"
+      ],
+      "rootFamilySampledHazardPaths" : [
+        "choosing BackButton → backToTalking (navigates) → getAttention (alarms)"
+      ],
+      "row" : {
+        "height" : 79.666666666666629,
+        "width" : 437.33333333333337,
+        "x" : 413.66666666666663,
+        "y" : 336
+      },
+      "rowSource" : "fixed-actual-native-row"
+    },
+    {
+      "back" : {
+        "height" : 99,
+        "width" : 160.59999999999999,
+        "x" : 593.20000000000005,
+        "y" : 8
+      },
+      "directBackHazards" : [
+
+      ],
+      "familyBackCentreChains" : [
+        {
+          "end" : "settles",
+          "path" : "choosing BackButton → backToTalking (navigates) → phrases (nothing)",
+          "pointer" : "staysOnControl",
+          "rule" : "centre"
+        },
+        {
+          "end" : "settles",
+          "path" : "choosing BackButton → backToTalking (navigates) → phrases (nothing)",
+          "pointer" : "staysOnControl",
+          "rule" : "edge"
+        },
+        {
+          "end" : "hazard",
+          "path" : "choosing BackButton → backToTalking (navigates) → getAttention (alarms)",
+          "pointer" : "returnsToLook",
+          "rule" : "centre"
+        },
+        {
+          "end" : "settles",
+          "path" : "choosing BackButton → backToTalking (navigates) → type (navigates)",
+          "pointer" : "returnsToLook",
+          "rule" : "edge"
+        }
+      ],
+      "modeWidth" : 355,
+      "nativeBackRowMarginByCentre" : -93.983091294067066,
+      "rootFamilySampledHazardExamples" : [
+        "choosing BackButton in Family Setup, looking at (903.0, 163.0), by centre, pointer returnsToLook: BackButton (navigates) in Family Setup, chosen → backToTalking (navigates) in Settings → getAttention (alarms) in Home; hazard",
+        "choosing BackButton in Family Setup, looking at (884.5, 144.5), by centre, pointer returnsToLook: BackButton (navigates) in Family Setup, chosen → backToTalking (navigates) in Settings → getAttention (alarms) in Home; hazard",
+        "choosing BackButton in Family Setup, looking at (884.5, 163.0), by centre, pointer returnsToLook: BackButton (navigates) in Family Setup, chosen → backToTalking (navigates) in Settings → getAttention (alarms) in Home; hazard",
+        "choosing BackButton in Family Setup, looking at (884.5, 181.5), by centre, pointer returnsToLook: BackButton (navigates) in Family Setup, chosen → backToTalking (navigates) in Settings → getAttention (alarms) in Home; hazard",
+        "choosing BackButton in Family Setup, looking at (903.0, 144.5), by centre, pointer returnsToLook: BackButton (navigates) in Family Setup, chosen → backToTalking (navigates) in Settings → getAttention (alarms) in Home; hazard",
+        "choosing BackButton in Family Setup, looking at (903.0, 181.5), by centre, pointer returnsToLook: BackButton (navigates) in Family Setup, chosen → backToTalking (navigates) in Settings → getAttention (alarms) in Home; hazard",
+        "choosing BackButton in Family Setup, looking at (921.5, 144.5), by centre, pointer returnsToLook: BackButton (navigates) in Family Setup, chosen → backToTalking (navigates) in Settings → getAttention (alarms) in Home; hazard",
+        "choosing BackButton in Family Setup, looking at (921.5, 163.0), by centre, pointer returnsToLook: BackButton (navigates) in Family Setup, chosen → backToTalking (navigates) in Settings → getAttention (alarms) in Home; hazard"
+      ],
+      "rootFamilySampledHazardPaths" : [
+        "choosing BackButton → backToTalking (navigates) → getAttention (alarms)"
+      ],
+      "row" : {
+        "height" : 79,
+        "width" : 442,
+        "x" : 409,
+        "y" : 337
+      },
+      "rowSource" : "unchanged-solver-model-row"
+    },
+    {
+      "back" : {
+        "height" : 99,
+        "width" : 131,
+        "x" : 496,
+        "y" : 8
+      },
+      "directBackHazards" : [
+
+      ],
+      "familyBackCentreChains" : [
+        {
+          "end" : "leaves for Unmodeled guide",
+          "path" : "choosing BackButton → familySetup (navigates) → guidedSetup (navigates)",
+          "pointer" : "staysOnControl",
+          "rule" : "centre"
+        },
+        {
+          "end" : "leaves for Unmodeled guide",
+          "path" : "choosing BackButton → familySetup (navigates) → guidedSetup (navigates)",
+          "pointer" : "staysOnControl",
+          "rule" : "edge"
+        },
+        {
+          "end" : "settles",
+          "path" : "choosing BackButton → familySetup (navigates)",
+          "pointer" : "returnsToLook",
+          "rule" : "centre"
+        },
+        {
+          "end" : "settles",
+          "path" : "choosing BackButton → familySetup (navigates)",
+          "pointer" : "returnsToLook",
+          "rule" : "edge"
+        }
+      ],
+      "modeWidth" : 131,
+      "nativeBackRowMarginByCentre" : 13.101608318443766,
+      "rootFamilySampledHazardExamples" : [
+        "choosing BackButton in Family Setup, looking at (884.5, 144.5), by centre, pointer returnsToLook: BackButton (navigates) in Family Setup, chosen → backToTalking (navigates) in Settings → getAttention (alarms) in Home; hazard",
+        "choosing BackButton in Family Setup, looking at (903.0, 144.5), by centre, pointer returnsToLook: BackButton (navigates) in Family Setup, chosen → backToTalking (navigates) in Settings → getAttention (alarms) in Home; hazard",
+        "choosing BackButton in Family Setup, looking at (921.5, 144.5), by centre, pointer returnsToLook: BackButton (navigates) in Family Setup, chosen → backToTalking (navigates) in Settings → getAttention (alarms) in Home; hazard"
+      ],
+      "rootFamilySampledHazardPaths" : [
+        "choosing BackButton → backToTalking (navigates) → getAttention (alarms)"
+      ],
+      "row" : {
+        "height" : 79.666666666666629,
+        "width" : 437.33333333333337,
+        "x" : 413.66666666666663,
+        "y" : 336
+      },
+      "rowSource" : "fixed-actual-native-row"
+    },
+    {
+      "back" : {
+        "height" : 99,
+        "width" : 131,
+        "x" : 496,
+        "y" : 8
+      },
+      "directBackHazards" : [
+
+      ],
+      "familyBackCentreChains" : [
+        {
+          "end" : "leaves for Unmodeled guide",
+          "path" : "choosing BackButton → familySetup (navigates) → guidedSetup (navigates)",
+          "pointer" : "staysOnControl",
+          "rule" : "centre"
+        },
+        {
+          "end" : "leaves for Unmodeled guide",
+          "path" : "choosing BackButton → familySetup (navigates) → guidedSetup (navigates)",
+          "pointer" : "staysOnControl",
+          "rule" : "edge"
+        },
+        {
+          "end" : "settles",
+          "path" : "choosing BackButton → familySetup (navigates)",
+          "pointer" : "returnsToLook",
+          "rule" : "centre"
+        },
+        {
+          "end" : "settles",
+          "path" : "choosing BackButton → familySetup (navigates)",
+          "pointer" : "returnsToLook",
+          "rule" : "edge"
+        }
+      ],
+      "modeWidth" : 131,
+      "nativeBackRowMarginByCentre" : 10.85411741140274,
+      "rootFamilySampledHazardExamples" : [
+        "choosing BackButton in Family Setup, looking at (884.5, 144.5), by centre, pointer returnsToLook: BackButton (navigates) in Family Setup, chosen → backToTalking (navigates) in Settings → getAttention (alarms) in Home; hazard",
+        "choosing BackButton in Family Setup, looking at (903.0, 144.5), by centre, pointer returnsToLook: BackButton (navigates) in Family Setup, chosen → backToTalking (navigates) in Settings → getAttention (alarms) in Home; hazard",
+        "choosing BackButton in Family Setup, looking at (921.5, 144.5), by centre, pointer returnsToLook: BackButton (navigates) in Family Setup, chosen → backToTalking (navigates) in Settings → getAttention (alarms) in Home; hazard"
+      ],
+      "rootFamilySampledHazardPaths" : [
+        "choosing BackButton → backToTalking (navigates) → getAttention (alarms)"
+      ],
+      "row" : {
+        "height" : 79,
+        "width" : 442,
+        "x" : 409,
+        "y" : 337
+      },
+      "rowSource" : "unchanged-solver-model-row"
+    },
+    {
+      "back" : {
+        "height" : 99,
+        "width" : 142,
+        "x" : 496,
+        "y" : 8
+      },
+      "directBackHazards" : [
+
+      ],
+      "familyBackCentreChains" : [
+        {
+          "end" : "leaves for Unmodeled guide",
+          "path" : "choosing BackButton → familySetup (navigates) → guidedSetup (navigates)",
+          "pointer" : "staysOnControl",
+          "rule" : "centre"
+        },
+        {
+          "end" : "leaves for Unmodeled guide",
+          "path" : "choosing BackButton → familySetup (navigates) → guidedSetup (navigates)",
+          "pointer" : "staysOnControl",
+          "rule" : "edge"
+        },
+        {
+          "end" : "settles",
+          "path" : "choosing BackButton → familySetup (navigates)",
+          "pointer" : "returnsToLook",
+          "rule" : "centre"
+        },
+        {
+          "end" : "settles",
+          "path" : "choosing BackButton → familySetup (navigates)",
+          "pointer" : "returnsToLook",
+          "rule" : "edge"
+        }
+      ],
+      "modeWidth" : 142,
+      "nativeBackRowMarginByCentre" : 7.8503988053079752,
+      "rootFamilySampledHazardExamples" : [
+        "choosing BackButton in Family Setup, looking at (884.5, 144.5), by centre, pointer returnsToLook: BackButton (navigates) in Family Setup, chosen → backToTalking (navigates) in Settings → getAttention (alarms) in Home; hazard",
+        "choosing BackButton in Family Setup, looking at (903.0, 144.5), by centre, pointer returnsToLook: BackButton (navigates) in Family Setup, chosen → backToTalking (navigates) in Settings → getAttention (alarms) in Home; hazard",
+        "choosing BackButton in Family Setup, looking at (921.5, 144.5), by centre, pointer returnsToLook: BackButton (navigates) in Family Setup, chosen → backToTalking (navigates) in Settings → getAttention (alarms) in Home; hazard"
+      ],
+      "rootFamilySampledHazardPaths" : [
+        "choosing BackButton → backToTalking (navigates) → getAttention (alarms)"
+      ],
+      "row" : {
+        "height" : 79.666666666666629,
+        "width" : 437.33333333333337,
+        "x" : 413.66666666666663,
+        "y" : 336
+      },
+      "rowSource" : "fixed-actual-native-row"
+    },
+    {
+      "back" : {
+        "height" : 99,
+        "width" : 142,
+        "x" : 496,
+        "y" : 8
+      },
+      "directBackHazards" : [
+
+      ],
+      "familyBackCentreChains" : [
+        {
+          "end" : "leaves for Unmodeled guide",
+          "path" : "choosing BackButton → familySetup (navigates) → guidedSetup (navigates)",
+          "pointer" : "staysOnControl",
+          "rule" : "centre"
+        },
+        {
+          "end" : "leaves for Unmodeled guide",
+          "path" : "choosing BackButton → familySetup (navigates) → guidedSetup (navigates)",
+          "pointer" : "staysOnControl",
+          "rule" : "edge"
+        },
+        {
+          "end" : "settles",
+          "path" : "choosing BackButton → familySetup (navigates)",
+          "pointer" : "returnsToLook",
+          "rule" : "centre"
+        },
+        {
+          "end" : "settles",
+          "path" : "choosing BackButton → familySetup (navigates)",
+          "pointer" : "returnsToLook",
+          "rule" : "edge"
+        }
+      ],
+      "modeWidth" : 142,
+      "nativeBackRowMarginByCentre" : 5.6029078982669489,
+      "rootFamilySampledHazardExamples" : [
+        "choosing BackButton in Family Setup, looking at (884.5, 144.5), by centre, pointer returnsToLook: BackButton (navigates) in Family Setup, chosen → backToTalking (navigates) in Settings → getAttention (alarms) in Home; hazard",
+        "choosing BackButton in Family Setup, looking at (903.0, 144.5), by centre, pointer returnsToLook: BackButton (navigates) in Family Setup, chosen → backToTalking (navigates) in Settings → getAttention (alarms) in Home; hazard",
+        "choosing BackButton in Family Setup, looking at (921.5, 144.5), by centre, pointer returnsToLook: BackButton (navigates) in Family Setup, chosen → backToTalking (navigates) in Settings → getAttention (alarms) in Home; hazard"
+      ],
+      "rootFamilySampledHazardPaths" : [
+        "choosing BackButton → backToTalking (navigates) → getAttention (alarms)"
+      ],
+      "row" : {
+        "height" : 79,
+        "width" : 442,
+        "x" : 409,
+        "y" : 337
+      },
+      "rowSource" : "unchanged-solver-model-row"
+    },
+    {
+      "back" : {
+        "height" : 99,
+        "width" : 86,
+        "x" : 496,
+        "y" : 8
+      },
+      "directBackHazards" : [
+
+      ],
+      "familyBackCentreChains" : [
+        {
+          "end" : "leaves for Unmodeled guide",
+          "path" : "choosing BackButton → familySetup (navigates) → guidedSetup (navigates)",
+          "pointer" : "staysOnControl",
+          "rule" : "centre"
+        },
+        {
+          "end" : "leaves for Unmodeled guide",
+          "path" : "choosing BackButton → familySetup (navigates) → guidedSetup (navigates)",
+          "pointer" : "staysOnControl",
+          "rule" : "edge"
+        },
+        {
+          "end" : "settles",
+          "path" : "choosing BackButton → familySetup (navigates)",
+          "pointer" : "returnsToLook",
+          "rule" : "centre"
+        },
+        {
+          "end" : "settles",
+          "path" : "choosing BackButton → familySetup (navigates)",
+          "pointer" : "returnsToLook",
+          "rule" : "edge"
+        }
+      ],
+      "modeWidth" : 86,
+      "nativeBackRowMarginByCentre" : 34.657331446658191,
+      "rootFamilySampledHazardExamples" : [
+
+      ],
+      "rootFamilySampledHazardPaths" : [
+
+      ],
+      "row" : {
+        "height" : 79.666666666666629,
+        "width" : 437.33333333333337,
+        "x" : 413.66666666666663,
+        "y" : 336
+      },
+      "rowSource" : "fixed-actual-native-row"
+    },
+    {
+      "back" : {
+        "height" : 99,
+        "width" : 86,
+        "x" : 496,
+        "y" : 8
+      },
+      "directBackHazards" : [
+
+      ],
+      "familyBackCentreChains" : [
+        {
+          "end" : "leaves for Unmodeled guide",
+          "path" : "choosing BackButton → familySetup (navigates) → guidedSetup (navigates)",
+          "pointer" : "staysOnControl",
+          "rule" : "centre"
+        },
+        {
+          "end" : "leaves for Unmodeled guide",
+          "path" : "choosing BackButton → familySetup (navigates) → guidedSetup (navigates)",
+          "pointer" : "staysOnControl",
+          "rule" : "edge"
+        },
+        {
+          "end" : "settles",
+          "path" : "choosing BackButton → familySetup (navigates)",
+          "pointer" : "returnsToLook",
+          "rule" : "centre"
+        },
+        {
+          "end" : "settles",
+          "path" : "choosing BackButton → familySetup (navigates)",
+          "pointer" : "returnsToLook",
+          "rule" : "edge"
+        }
+      ],
+      "modeWidth" : 86,
+      "nativeBackRowMarginByCentre" : 32.409840539617164,
+      "rootFamilySampledHazardExamples" : [
+
+      ],
+      "rootFamilySampledHazardPaths" : [
+
+      ],
+      "row" : {
+        "height" : 79,
+        "width" : 442,
+        "x" : 409,
+        "y" : 337
+      },
+      "rowSource" : "unchanged-solver-model-row"
+    },
+    {
+      "back" : {
+        "height" : 99,
+        "width" : 94,
+        "x" : 496,
+        "y" : 8
+      },
+      "directBackHazards" : [
+
+      ],
+      "familyBackCentreChains" : [
+        {
+          "end" : "leaves for Unmodeled guide",
+          "path" : "choosing BackButton → familySetup (navigates) → guidedSetup (navigates)",
+          "pointer" : "staysOnControl",
+          "rule" : "centre"
+        },
+        {
+          "end" : "leaves for Unmodeled guide",
+          "path" : "choosing BackButton → familySetup (navigates) → guidedSetup (navigates)",
+          "pointer" : "staysOnControl",
+          "rule" : "edge"
+        },
+        {
+          "end" : "settles",
+          "path" : "choosing BackButton → familySetup (navigates)",
+          "pointer" : "returnsToLook",
+          "rule" : "centre"
+        },
+        {
+          "end" : "settles",
+          "path" : "choosing BackButton → familySetup (navigates)",
+          "pointer" : "returnsToLook",
+          "rule" : "edge"
+        }
+      ],
+      "modeWidth" : 94,
+      "nativeBackRowMarginByCentre" : 30.817098134362368,
+      "rootFamilySampledHazardExamples" : [
+
+      ],
+      "rootFamilySampledHazardPaths" : [
+
+      ],
+      "row" : {
+        "height" : 79.666666666666629,
+        "width" : 437.33333333333337,
+        "x" : 413.66666666666663,
+        "y" : 336
+      },
+      "rowSource" : "fixed-actual-native-row"
+    },
+    {
+      "back" : {
+        "height" : 99,
+        "width" : 94,
+        "x" : 496,
+        "y" : 8
+      },
+      "directBackHazards" : [
+
+      ],
+      "familyBackCentreChains" : [
+        {
+          "end" : "leaves for Unmodeled guide",
+          "path" : "choosing BackButton → familySetup (navigates) → guidedSetup (navigates)",
+          "pointer" : "staysOnControl",
+          "rule" : "centre"
+        },
+        {
+          "end" : "leaves for Unmodeled guide",
+          "path" : "choosing BackButton → familySetup (navigates) → guidedSetup (navigates)",
+          "pointer" : "staysOnControl",
+          "rule" : "edge"
+        },
+        {
+          "end" : "settles",
+          "path" : "choosing BackButton → familySetup (navigates)",
+          "pointer" : "returnsToLook",
+          "rule" : "centre"
+        },
+        {
+          "end" : "settles",
+          "path" : "choosing BackButton → familySetup (navigates)",
+          "pointer" : "returnsToLook",
+          "rule" : "edge"
+        }
+      ],
+      "modeWidth" : 94,
+      "nativeBackRowMarginByCentre" : 28.569607227321342,
+      "rootFamilySampledHazardExamples" : [
+
+      ],
+      "rootFamilySampledHazardPaths" : [
+
+      ],
+      "row" : {
+        "height" : 79,
+        "width" : 442,
+        "x" : 409,
+        "y" : 337
+      },
+      "rowSource" : "unchanged-solver-model-row"
+    }
+  ],
+  "sampledNativeBackWidthBounds" : [
+    {
+      "condition" : "existing ChainEngine unique row under both rules",
+      "firstFailingWidthAt45BackSamples" : 114.04723476408981,
+      "maximumPassingWidthAt45BackSamples" : 114.04723469167948,
+      "rowSource" : "actual-native-row"
+    },
+    {
+      "condition" : "unchanged SettingsRowPlace8pt margin under both rules",
+      "firstFailingWidthAt45BackSamples" : 98.550613183062524,
+      "maximumPassingWidthAt45BackSamples" : 98.550613110652193,
+      "rowSource" : "actual-native-row"
+    },
+    {
+      "condition" : "existing ChainEngine unique row under both rules",
+      "firstFailingWidthAt45BackSamples" : 109.55749270413071,
+      "maximumPassingWidthAt45BackSamples" : 109.55749263172038,
+      "rowSource" : "unchanged-model-row"
+    },
+    {
+      "condition" : "unchanged SettingsRowPlace8pt margin under both rules",
+      "firstFailingWidthAt45BackSamples" : 94.067345837596804,
+      "maximumPassingWidthAt45BackSamples" : 94.067345765186474,
+      "rowSource" : "unchanged-model-row"
+    }
+  ]
+}

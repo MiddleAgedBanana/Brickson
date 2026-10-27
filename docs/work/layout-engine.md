@@ -3,8 +3,12 @@
 *Roadmap: docs/ROADMAP.md, Wave 3 item 3, "The layout engine, with no
 screen change yet" (R0 item 3, and R1's profile layout engine); this
 file also covers items 4 (Home on the engine) and 6 (Home on iPhone Duo,
-in every pose). Owner: the Layout engine thread. Status: plan; items 3
-and 4 built.*
+in every pose). Owner: the Layout engine thread. Items 3, 4 and 5 are
+built. Item 6 is in design from measured reservations; its earlier
+horizontal-scrolling blocker is withdrawn. The owner confirmed keeping
+the current rule and investigating another design. The original engine
+spec is kept as history; the dated item 6 section is the current
+continuation.*
 
 ## Intent
 
@@ -52,8 +56,9 @@ and 4 built.*
     under Emergency, which the slot plan's two-row safety row does not.
   - *Which windows can hold the starter library without scrolling, and
     at which text sizes?* And what happens where none can.
-  - *How does the engine take a fold?* The plan says this waits for R0
-    item 13's look at the open iPhone Duo, which has not happened.
+  - *How does the engine take a fold?* The original plan waited for R0
+    item 13's look. The 2026-10-25 Mac checks below now provide open and
+    partial-pose evidence; the horizontal scrolling case remains open.
 
 ## Spec
 
@@ -279,3 +284,759 @@ type that nothing calls yet, and Home moves onto its frames in item 4.
   - Floors ignore the person's text size:
     `controlsHoldOneLineOfTheirWords`.
   - No device check is added: nothing on screen changes.
+
+## Item 6: fold and camera design, 2026-10-25
+
+### Intent and evidence
+
+PR #56 merged as `6d040d5`, clearing this job's alarm-path prerequisite.
+This work starts from its new Settings placement and accepted chain
+limits. The first design pass changed no Home or Settings implementation;
+the linked Spec/drawings then preceded the local Home implementation below.
+
+[PR #55's dated Mac record](https://github.com/MiddleAgedBanana/Brickson/blob/cb4c965/docs/log/2026-10-25-mac-keyboard-checks.md)
+measured app code `8316743`, before PR #56. In Device Hub the closed
+window was 466×678; the open inner window was 951×669 wide and 669×951
+tall. Open-wide AX5 showed four whole phrases and scrolled 10pt; open
+tall fit eight at default/AX4/AX5. The Hub's partial pose reported 130°;
+tall default/AX5 fit eight, and wide dark default/AX5 matched the open
+wide counts. The rendered wide fold crossed No, Conversation and phrase
+tiles. Existing open-Duo Home tests had eight passes, nine failures and
+two landscape skips. The record distinguishes frame-API disagreements
+from a pre-#56 Settings chain finding. The later item 6 regressions and
+native Back checks below use #56's placement; the earlier full-suite
+failures are not relabeled as passing.
+
+Follow-up measurements on app code `6d040d5` now record the system's exact
+[reserved rectangles and safe areas](../evidence/2026-10-25-duo-design/reservations.json).
+The full-screen wide window is 951×669 with an 84pt trailing safe area;
+its division is x 455.5–495.5, rather than the centre of the 867pt-wide
+reader. The full-screen tall window is 669×951 with top/bottom safe areas
+82/34pt; its division is y 455.5–495.5 in window coordinates. Fully-open
+and 130° records have the same division rectangle and different activity.
+The temporary probe only queried geometry; it changed no layout input.
+
+The inactive camera moves with the supplied geometry, not with a device
+branch. The four native rotations reported these window rectangles:
+
+| Window | Camera x, y, width, height (pt) |
+|---|---|
+| Wide | 677.33, 21, 58, 37 |
+| Tall | 611, 677.33, 37, 58 |
+| Reversed wide | 215.67, 611, 58, 37 |
+| Reversed tall | 21, 215.67, 37, 58 |
+
+Native Split View gives narrower, asymmetric spaces. The measured left
+pane is 469×669, bottom safe area 34pt, with a division clipped to its
+trailing 13.5pt and no occlusion. The measured reversed right pane is
+469×669 but its reader is only 385×635 because of the 84pt trailing and
+34pt bottom safe areas; its division is clipped to the leading 13.5pt.
+Its active status occlusion already lies inside that trailing safe area.
+At AX5 no whole phrase tile is visible in the right-pane sample. Use the
+actual rectangles without assuming equal usable panes, adding margins
+twice, or centring a fold in the reader.
+
+A tall rotation after each sampled Split View arrangement returned a
+full-screen 669×951 window. A same-app second selection produced a brief
+blank area and then App Library; second-window behaviour remains
+inconclusive. A bounded XCTest attempt skipped while the SpringBoard
+icon was unhittable. Native input later worked; the Mac preview could
+lag the simulator. None of these is a layout-safety pass.
+
+### Spec: what stays binding
+
+- Keep A → C → B → D, each control's logical order and neighbours,
+  Stop's well, target/word floors, first-activation speech and the fixed
+  frames across browsing, typing and alarm. Emergency never enters a
+  scrolling viewport. No new safety exception is accepted here.
+- Keep the owner's fold decision: spacing clears a division; no whole
+  region moves into one half. Division presence, including an inactive
+  division, selects even columns. Activity alone never changes a count.
+- Reserve the inner-camera geometry while inactive too. Starting Eye
+  Tracking or Head Tracking must not move targets. A simulator cannot
+  establish that this rectangle covers the physical dark area.
+- Derive all geometry from the supplied space, through the pure engine
+  and standard SwiftUI containers. No model, idiom, orientation or hinge
+  angle enters the product layout, and no custom input code is added.
+
+The Apple API, checked in current documentation and the installed SDK,
+is `GeometryProxy.reservedRegions(kind:options:layoutDirectionBehavior:)`,
+available behind `#available(iOS 27.1, *)`. Query `.division` and
+`.occlusion` separately with `.includeInactive`. Returned frames already
+include their margins. The shared `HomeLayout.Space(proxy)` adapter
+adds the reader's leading/top safe-area offset once to reach the engine's
+window coordinates; Home and Settings must use the same conversion.
+Empty regions and older systems retain their existing output.
+
+Sources: [Apple's query API](https://developer.apple.com/documentation/swiftui/geometryproxy/reservedregions(kind:options:layoutdirectionbehavior:)),
+[ReservedRegion](https://developer.apple.com/documentation/swiftui/reservedregion)
+and [Duo layout guidance](https://developer.apple.com/design/human-interface-guidelines/designing-for-iphone-duo).
+
+### Proposed lanes and the measured horizontal division
+
+For a vertical division at regular widths, the candidate uses six virtual
+lanes. C is `Emergency, Yes, No | Again, Get Attention spanning two`.
+A keeps the message above the first three and Phrases/Type above the
+last three. B keeps Stop/Basics under Emergency, Needs under Yes,
+Conversation under No, Feelings under Again and Settings under Get
+Attention. Phrase columns are even, allocated from each side's room.
+This is a candidate to score, not a claim that floors or chains pass.
+
+**Correction to the initial draft:** the measured full-screen tall
+phrase viewport already begins below the horizontal division: y 502 at
+default, 612 at AX4 and 660 at AX5, against a band ending at 495.5.
+It therefore does not need a gap moving through scrolling content in
+that observed geometry. The earlier owner-blocking conclusion is
+withdrawn; it was based on a generic layout before the system's
+rectangles were read. Growing the existing gaps between ordered rows
+can clear the division while leaving D on the same side it already uses.
+
+The generic counterexample remains a regression case: if a division
+intersects a scrolling viewport, a gap inside its content moves with the
+scroll and cannot guarantee clearance. First test the existing spacing,
+order and neighbour rules against each measured and resized space. A
+changed scrolling policy or neighbour relationship would still need a
+decision, but none is selected or requested by this correction. Pinned
+panes and paging remain unapproved alternatives, not prerequisites
+established by the tall measurement.
+
+Camera avoidance must also be local to the affected rows or viewport.
+Insetting all of wide Home below the upper camera would disable Type at
+default text: its minimum safety bottom would be 216pt, beyond the
+171pt keyboard band. Instead, investigate the free interval beside the
+camera for A's modes; for the reversed bottom camera, shorten D's fixed
+viewport before considering any other band. On tall windows inspect
+each affected row, including A and C in the reversed rotation, rather
+than assuming the camera occupies a remembered corner. Final floors,
+keyboard availability and chain scores must use the resolved frames.
+
+Figma: [the options page](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=73-3),
+[vertical lanes](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=74-139)
+and [horizontal scrolling counterexamples](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=74-190).
+The [saved render](../evidence/2026-10-25-duo-design/duo-fold-options.png)
+keeps the first proposed options visible without Figma access. Its bands
+were illustrative; the runtime rectangles above supersede its blocking
+conclusion. The [measured panel](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=84-2)
+and [updated render](../evidence/2026-10-25-duo-design/duo-measured-regions.png)
+show the corrected region maps and identify the old scrolling example
+as synthetic. These are observations and unfinished candidates, not a
+completed Design gate or approval for pinned panes or paging.
+
+### Resolved geometry for implementation
+
+The local implementation uses typed division and occlusion inputs, keeping
+activity as a diagnostic property. Presence of a division selects an
+even phrase-column count even when its reported frame is inactive,
+zero-width or clipped at a window edge. Only a positive-area intersection
+with the content requires an internal gap. A status occlusion already
+inside a safe-area stripe adds no second inset. Empty reservations keep
+the existing engine's complete output exactly.
+
+The engine returns allocation cells separately from occupied control
+frames. Local camera fitting shortens only an affected target or shared
+message/status or mode group inside its unchanged allocation. Neighbours
+keep their cells. A surrounding standard stack holds the spare room;
+padding must not silently enlarge the Button's accessibility target back
+over the camera. Widths and word/target floors are resolved before their
+heights and all derived placement. The renderer uses standard Buttons,
+eager stacks and one ordinary D ScrollView.
+
+The first native UI probe found a pixel-rounding overlap: No and
+Conversation ended at 455.6667pt against the API's 455.5pt division
+edge. Positive finite divisions are therefore enclosed outward in whole
+points for planning (455–496 for the measured 455.5–495.5 band). Raw API
+frames stay unchanged for evidence and final overlap checks; zero-area
+presence still selects even columns without consuming spacing. This is
+an explicit rounding allowance, not the API's margins added again. The
+strict native overlap assertion is unchanged. The original
+[candidate calculation](../evidence/2026-10-25-duo-design/candidate-geometry.json)
+remains the initial design record; its 25pt/13.5pt tall figures are
+superseded by the rounded calculation below.
+
+An internal vertical division uses the six-lane recipe above when its
+two sides meet the occupied controls' minima. Per-side lane widths may
+differ; the right group need not inherit the widest left category's
+width six times. Four phrase columns use two on each side where their
+words fit; otherwise choose two. Their common row floor is the maximum
+required by any actual column, not their average width. Edge-clipped
+Split View divisions need no interior gap where the existing margin
+already clears them; they still select an even count.
+
+For a horizontal division, preserve logical row membership and enlarge
+the existing gap at the intersected boundary. Give back growth, never a
+floor, where needed. The final Stop-well geometry constrains that growth:
+compare Again with each category/Settings competitor in well-local
+coordinates. A centre-distance squared-difference change is affine, so
+its minimum occurs at a corner; include a conservative distance/tie
+allowance. The edge comparison bounds the gain in Again's distance
+against competitor movement. Regular-wide geometry instead has a direct
+empty-envelope bound where a nearer category excludes Again everywhere
+in the well. These are sizing constraints, not a second chain simulator;
+the unchanged ChainEngine remains the independent activation check.
+
+Return A's optional growth in half-point steps until the bound holds,
+retaining the current primary/category sizes before consuming their
+growth. With outward whole-point division planning, the measured default
+tall inputs return 27pt: modes are 50.5pt, the safety row ends at 347pt,
+and B's rows occupy 407–455 and 496–544. At AX5, retaining the existing 12pt C-to-B
+gap avoids widening the old Again envelope; only B-to-D gives back its
+2pt growth. The figure values are expected outputs of that rule, never
+device constants in the implementation.
+
+When A's optional height is exhausted, continue the same half-point
+search through shared primary-row growth, then category growth, never
+through a word/target floor or with categories taller than primary
+controls. The five-metric/Bold Text regression exposed this need between
+the drawn extremes: xxxLarge returns 21pt from A and 4pt from primary
+growth; AX1 returns 6.5pt and 13.5pt. Their mode heights are 53.5/60.75pt
+and primary heights 60/50.5pt; both retain B at 407/496 and D at 556.
+These are derived outputs of the generic constraint, not text-size
+branches. The native unit check also retains the existing message-reading
+speaking-share bounds, rather than treating the well check as proof of
+the separate reading hazard.
+
+Camera fitting follows the actual rectangles in every rotation. When a
+camera intersects D, crop D's fixed rectangular viewport toward that
+camera's nearest window edge and resolve its columns/floor again. No
+spacer scrolls with the content through an exclusion. Resizing for a
+library warning retains the resolved column lanes and camera limits.
+Static controls prefer an extra 8pt clearance where their word floor
+fits, falling back to the reported boundary if necessary. D uses that
+already-margin-inclusive boundary with no extra clearance. These are
+explicit layout gaps, never the API's margins added a second time.
+Visible tile intersections and the full accessibility frames of partial
+tiles are distinct checks; viewport clipping alone is not Snap-to-Item
+proof. The physical clipped-target check remains deferred.
+
+Current outputs from the [production pure-geometry export](../evidence/2026-10-25-duo-design/candidate-geometry-enclosed.json)
+are below. These use the measured rectangles and the existing
+font-validated default/AX5 line metrics with Bold Text off. The export
+also records eight intermediate metric cases and 400 comparisons with
+the unreserved legacy engine, with no mismatch. The five inner poses in
+the native comparison below independently check the full-screen outputs;
+the left/right panes still have only pure geometry and drawings for this
+revision. Existing no-region phone/iPad outputs and typing drawings remain
+the references there.
+
+| Supplied geometry | Default: whole tiles / trailing extent / Type | AX5: whole tiles / trailing extent / Type |
+|---|---|---|
+| Wide, upper camera | 8 / 0pt / available | 4 / 66pt / unavailable |
+| Wide, lower camera | 8 / 0pt / available | 4 / 82pt / unavailable |
+| Tall, right camera | 8 / 0pt / available | 4 / 14pt / unavailable |
+| Tall, left camera | 8 / 0pt / available | 4 / 14pt / unavailable |
+| Left pane | 8 / 0pt / available | 0 / 193pt / unavailable |
+| Right pane | 8 / 0pt / available | 0 / 193pt / unavailable |
+
+Trailing extent is full phrase content below fixed D, not a measurement
+of maximum scroll distance. The native closed-window observation adds
+6 whole tiles / 3pt trailing extent at default and 0 / 249pt at AX5.
+Closed has no individual expected-frame export in the comparison; its
+native state, appearance, raw-reservation and keyboard checks are
+reported separately from pure frame agreement.
+
+The AX5 panes leave a 55pt viewport against a 56pt tile floor: no whole
+tile fits. The design preserves that explicit capacity failure; it does
+not implement paging, shrink a floor or remove a safety row. Tall AX5's
+second safety row starts at 496 and ends at 575, beyond its existing
+548pt keyboard band. Type therefore becomes unavailable under the
+existing policy. With the full US keyboard and default app text, the measured keyboard top is 405pt in wide inner windows,
+601pt in tall inner windows and 374pt in the closed window. In all 12
+default typing captures, Emergency, Yes, No, Speak, Get Attention,
+Phrases, Clear and Put Back are wholly above it. Clear and Put Back were
+captured with an empty draft; their geometric coverage does not establish
+physical activation behavior. AX5 Type remains unavailable. Native pane
+keyboard clearance and broader keyboard configurations remain pending.
+
+The prototype's 12 cases have no new Stop/well chain paths or sampled
+Again-nearest points against their baselines, by centre and edge on a
+half-point mesh. Existing hazards remain recorded. This is limited
+geometric evidence, not complete activation-chain proof. The production
+allocator and intermediate/Bold Text cases now have pure regressions;
+the [changed-window diagnostic](../evidence/2026-10-25-duo-design/transition-report.md)
+finds added hazards under hypothetical numerical coordinate hold/scaling.
+Its wide→tall selected-Conversation example reaches Get Attention where
+both old maps were inert and legacy-after settled. Actual OS mapping is
+unverified; no physical event or new exception is inferred. Activity-only
+geometry stays identical in ten scene/font cases. Changed-window safety
+has not passed. The owner's 2026-10-26 continuation permits review of
+PR #58's narrow fold/camera and AX3 scope after current-head CI; this
+broader release gate remains open. Back to Talking and
+the unchanged Settings row solver consume the final Home frames;
+PR #56's accepted limits and tests remain intact.
+
+The [native frame comparison](../evidence/2026-10-25-duo-design/native-frame-comparison.md)
+and [per-capture receipts](../evidence/2026-10-25-duo-design/native-frame-comparison.json)
+cover 144 coherent captures across six poses and 24 default/AX5,
+requested-light/dark configurations. The five inner pose sets include
+both reversed rotations and a partially folded book pose; the sixth is
+closed. No current native Split View pane recheck is included.
+
+| Native geometry check | Result and limit |
+|---|---|
+| Exported occupied Home buttons | PASS: 1,220 comparisons, maximum delta 0.167pt |
+| Exported full phrase-tile frames | PASS: 800 comparisons, maximum delta 0.25pt |
+| Shared Home frames across state transitions | PASS: 1,884 comparisons exactly equal; baseline self-comparisons excluded |
+| Static Home controls | PASS in 120 Home captures: required controls present, within the coherent window and at least 44×44pt |
+| Raw fold/camera/status intersections | PASS for static controls and geometrically cropped tiles: zero strict positive-area intersections |
+| Full AX phrase-tile camera clearance | FAIL in 32 AX5 wide-reverse/book records; cropped portions stop before the camera, but full AX frames overlap it |
+| Default typing coverage | PASS in 12 captures for all eight controls named above |
+| Back to Talking | PASS in 24 Settings captures: contained within final native Phrases, with zero raw reservation intersections |
+| Open versus partially folded wide reverse | PASS: 412 shared button/tile frames exactly equal at the recorded 180° and 90.074° poses |
+
+Expected-frame agreement checks origins, sizes and far edges with a
+0.5pt tolerance. Reservation intersection checks use the unchanged raw
+API rectangles with no overlap tolerance. Tile cropping intersects each
+full AX frame with fixed browsing D and the coherent window, and while
+typing also with the area above the keyboard. The typing AX container
+expands, so its reported whole-tile count is not visible capacity. Neither
+geometric cropping nor the absence of a static intersection proves
+rendered clipping or physical Snap to Item behavior. Active-display
+appearance was not reviewed by this JSON comparison; XCUIScreen can
+capture the black inactive outer display.
+
+The final native unit gate passed with `CI=true`: 769 test cases,
+760 ordinary passes, zero failures, one existing #19 skip and eight
+strict expected failures. Coverage is 70.6% (6,898/9,769), catalog current.
+The result is `build/TestResults/duo-final-unit/unit-destination.xcresult`;
+the [receipt](../evidence/2026-10-25-duo-design/final-unit-results.json)
+also lists all seven passing keyboard argument rows, including the three
+new Duo measurements. Xcode counts their parent case once, so the
+provisional expectation of 772 was incorrect. No temporary probe is in
+this source. The complete standard UI suites each fail one Speaking-wait
+case, also reproduced on unchanged main on the same iPad. Root inspected
+default/AX5 light/dark captures on both families; this is not a full UI
+pass. [Combined UI receipt](../evidence/2026-10-25-duo-design/standard-ui-results.json).
+Actual pointer mapping across changed windows, final Duo active-display
+review, native pane rechecks and mounted-device tests remain open.
+
+### Plan from the measured regions
+
+**Scoped drawing gate, 2026-10-25:** the
+[84-state candidate section](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=89-3)
+now draws the revised enclosed default/AX5 frames: 24 browsing, 12 typing, 24
+alarm and 24 Settings covers, evenly split light/dark. The
+[saved overview](../evidence/2026-10-25-duo-design/candidate-screens.png)
+and [screen links and validation](../evidence/2026-10-25-duo-design/candidate-drawings.json)
+record the drawing check. All 84 screen links stay unchanged. Separate
+guides retain the raw 455.5–495.5pt band and show the allocator's
+455–496pt enclosure. The 768 Home/Back targets match the export within
+0.000012208pt Figma precision; all 480 tile frames and 24 modeled
+Settings rows match exactly, with no Brickson button-label overflow.
+Apple kit components supply system chrome and
+keyboards; Inter text is an explicitly labeled drawing substitute where
+the connector cannot render the system font. These are design frames,
+not native UI or keyboard measurements.
+
+Settings keeps its current row solver and PR #56's limits. Its modeled
+AX5 full-screen row crosses the fold in four geometries; the
+[wide](../evidence/2026-10-25-duo-design/settings-wide-ax5-gap.png) and
+[tall](../evidence/2026-10-25-duo-design/settings-tall-ax5-gap.png) drawings
+show that modeled gap explicitly. It also exists with the unreserved engine:
+wide AX5 moves from y336 to y337, crossing in both; tall AX5 stays at
+y467. This closes the drawing gate for item 6's Home scope, including
+the cover derived from Home. It does not complete R0-13's broader
+Settings/setup audit, approve an exception, or claim Settings fold
+clearance. All 20 exported row models compared with native frames differ
+by more than 0.5pt: they assume a 64pt navigation bar, 40pt footer and
+modeled wrapping. For example, wide default is natively y201 rather than
+model y203; tall AX5 is natively (215.667,462,437.333,79.667) rather than
+model (211,467,442,79). The native audit records ten AX5 Settings
+row/fold intersections. Native Back containment above does not close
+these broader R0-13 Settings/setup gaps. Complete Settings chain and
+setup checks remain required. The owner confirmed keeping the current
+rule and investigating another design; no pinned panes or paging is
+selected.
+
+The original drawing gate was saved in `87ddb14`. Revised enclosure
+screens, the updated Spec and native receipts were committed in
+`8f4a997` before the first implementation commit.
+
+Implementation files: `Brickson/Layout/HomeLayout.swift` owns typed inputs,
+allocation/occupied bounds, lanes and final derived outputs;
+`HomeReservedLayout.swift` resolves exclusions and ordinary growth;
+`HomeWellEnvelope.swift` supplies the geometric well constraint.
+`Brickson/Home/HomeView.swift` adapts system regions and renders those
+outputs with existing controls and standard stacks. The three reserved-
+region test files under `BricksonTests/Layout/` check allocation, Home
+chains and the unchanged Settings solver separately. No Settings policy,
+project-format or fewer-tiles implementation is part of item 6.
+
+1. The linked Spec and drawings use the recorded full-screen and
+   clipped Split View rectangles, both axes and reversed rotations,
+   inactive and active reservations, default and AX5, light and dark,
+   browsing/typing/alarm and the Settings cover. Keep readers and
+   reconstructed windows distinct. The native frame comparison above is
+   independent of the pure export; rendered appearance remains separate.
+2. Failing pure Swift Testing reproductions precede the local implementation:
+   division and camera separately, inactive/active stability, translated
+   safe areas, both axes, resized windows and grown libraries at nonzero
+   scroll offsets. Removing reservations, querying only active regions,
+   double-offsetting a frame or using a content gap where a division
+   intersects a scrolling viewport must make its corresponding check
+   fail. A viewport wholly on one side needs no scrolling gap.
+3. The pure engine returns typed reservation, lane/gap and viewport
+   geometry, recalculating floors, fit/shortfall, keyboard availability,
+   Back to Talking and Settings placement from the final frames. It reports
+   a shortfall rather than shrinking a target or hiding a control.
+4. The local renderer uses standard containers and existing controls.
+   Complete the independent Home and Settings chain gates, by centre and
+   edge, including folding from
+   old resting positions; preserve #56's tests and accepted limits.
+5. The final unit gate above includes the added keyboard rows. Retain the
+   standard iPhone/iPad UI failure and main comparison while investigating
+   its cause; complete the remaining Duo pane checks.
+   Native full-screen/closed observations above use one coherent accessibility
+   snapshot for window and control coordinates; preserve existing test
+   strength. Check partially clipped accessibility targets on a device
+   before claiming Snap to Item safety. Device comfort, audio, Phone
+   handoff and the tracking dark area remain separate physical checks.
+
+The implementation is retained in PR #58. Its 2026-10-26 continuation
+merges #59's documentation and repairs the verified drag-to-speech bug
+before finishing the scoped fold/camera and AX3 review. The repair keeps
+standard Buttons and the same ScrollView, enabling native pan cancellation
+on fitting content without changing engine frames, floors or capacity
+(*Phrase-grid drag repair, 2026-10-26*, below). No universal fold
+clearance, strong changed-window chain safety or physical-input result
+is claimed. Tall AX5 adds a capacity shortfall relative to the unreserved
+baseline; satisfying the existing rule remains an open design gate,
+not a newly accepted scrolling exception. Its record is
+[the item 6 design log](../log/2026-10-25-duo-fold-design.md).
+
+### Mode word-floor correction, 2026-10-25
+
+A native app-hosted font measurement found an inset mismatch in the
+existing contract: ModeButton uses6pt on each horizontal side, while its
+minimum-width test subtracted4pt. Phrases requires89/97pt and Type60/65pt
+with Bold Text off/on, including the existing WordFit slack and actual
+padding. Retain the prior conservative spare by raising the declared
+minimums4pt: Phrases90/98, Type62/67. Again and Speak keep their existing
+4pt insets and minimums. This corrects the current word-fit guarantee;
+font styles, default-size floors, control order and placement policy do
+not change.
+
+The failing native reproduction ran before the four-number correction:
+33 cases,30 passed and3 failed, with no skip/expected failure. It includes
+the corrected minimum-width font check, camera-fitted native font checks
+and an independent pure acceptance check. The camera inputs are synthetic
+window positions using a measured58×37 camera size, not observed OS poses.
+They exposed accepted86/94pt modes whose Phrases labels lacked the
+measured room. The existing camera-boundary fallback can provide94/102pt
+after the correction without a new allocation policy.
+
+Before implementation, the old/proposed host exports were compared:
+all12primary and8intermediate captured geometries, including state frames,
+allocations, D, Back, capacities and sampled chains, are exactly equal.
+Both versions also have400 legacy comparisons with zero mismatches.
+The existing scoped drawings therefore keep their geometry for those
+inputs. Native red/green results, selected family UI checks and final
+CI remain separate verification gates; this does not accept any new
+Settings, scrolling, camera-target or physical-input exception.
+
+### Reference-capacity growth return: Spec and plan, 2026-10-25
+
+The lower-camera wide space exposes one omitted retry between the drawn
+extremes. At the existing measured AX3 line metrics (53/49/59/44pt,
+Bold Text off), the unreserved eight-phrase reference fits. The selected
+reserved candidate has no allocation issues, but its final lanes raise
+the common tile floor to 100pt and the camera crops D to 204pt: two rows
+need 208pt. Its category rows still hold 4pt of optional growth above
+their 61pt word floor. This is a new 4pt reference-capacity deficit, not
+permission to scroll or a reason to change the fixed 8pt internal gaps.
+
+**Spec.** Keep the entire original candidate-selection pass, including
+its gap choice and first issue-free acceptance. Compare its final grid
+shortfall with the unreserved baseline reflowed for the fixed reference
+eight phrases. If it adds no shortfall, return the exact original result.
+If it adds shortfall, retry only when that original result is issue-free
+and passes the unchanged full `HomeWellEnvelope.preserves` certificate;
+otherwise retain the original frames and diagnostics unchanged. This
+repair recovers capacity from an already valid selection, not unrelated
+allocation or safety failures.
+
+The second pass keeps the selected gap recipe and existing optional
+growth budgets, in their present preference order: A, then primary rows,
+then category rows, with the existing half-point steps. Select the first
+eligible result reaching the reference target within that order. If none
+reaches it, retain the eligible result with strictly least remaining
+shortfall, keeping the original on ties. Every trial must satisfy normal
+allocation issues, final word/target floors and exclusions, and the full
+unchanged well certificate for every reservation kind. No runtime chain
+scoring, device/text-size branch, floor reduction, changed neighbour or
+new gap measure enters this search. Empty reservations retain the exact
+legacy output. The objective always uses eight phrases before a family's
+actual library is reflowed, so adding words cannot move static controls.
+
+The bounded design returns 2pt from each category row, not the full 4pt
+available. Stop and Basics become 63pt high; the spanning B targets
+become 134pt. D changes `(16,407,835,204)` to `(16,403,835,208)` and holds
+eight 100pt tiles with 8pt row gaps. A, C, message/status/modes, centred
+Back `(593.2,8,160.6,79)` and Type's unavailable state stay unchanged.
+The [exact before/after geometry](../evidence/2026-10-25-duo-design/ax3-growth-geometry.json)
+and [bounded checks](../evidence/2026-10-25-duo-design/ax3-growth-checks.json)
+are host evidence, not a native rendering result. The exploratory
+second pass leaves 59 of 60 captured space/font/Bold outputs exactly
+unchanged; only this AX3 case changes. Repeating all 60 with 24 phrases
+changes no static geometry. The compact receipts retain those limits.
+
+[Figma section 122:3874](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=122-3874)
+adds 16 isolated before/after drawings: browsing, alarm, retained typing
+with the keyboard lowered, and a scoped Settings Back cover, each in
+light/dark. The existing 84 drawings remain unchanged. The
+[saved render](../evidence/2026-10-25-duo-design/ax3-growth-comparison.png)
+and [manifest/validation](../evidence/2026-10-25-duo-design/ax3-growth-drawings.json)
+record 292 exact target/viewport/tile/Back checks within 0.0002pt,
+333 editable text layers and no image-filled nodes. The drawings show
+Basics in the exact shipped `StarterPhrases.json` order; the later copy
+correction changed 96 phrase instances with no frame changes. These
+geometry drawings use the documented Inter stand-in at default-floor label
+sizes, not a native AX3 fitted-type sample. A fresh SF Pro connector
+probe measured zero width with `hasMissingFont=true`; no passing SF
+typography check is claimed. Apple kit chrome and existing palette
+tokens are reused; no global type/style or original Home frame changed.
+The scoped cover draws Back only, with no new Settings row geometry or
+claim to close broader R0-13 Settings/setup gaps.
+
+This is a partial repair. The [bounded capacity limits](../evidence/2026-10-25-duo-design/ax3-growth-capacity-limits.json)
+retain tall AX5's 14pt observed deficit: even minimum region gaps with
+fixed 8pt internal gaps leave 12pt missing. The 1pt/1pt B/D-gap hypothesis
+changes the binding 8pt measure and is not selected. Wide AX5 has no
+optional height in these inputs and retains 66/82pt total shortfalls.
+These results do not prove universal impossibility or close any AX5,
+changed-window, clipped-target or physical-input gate.
+
+**Plan before the next code commit:**
+
+1. Commit this Spec/plan and the linked isolated drawings before a code
+   commit, following SDLC's Design/Build gates. Keep the one item 6 PR;
+   no Settings policy or unrelated source changes enter this repair.
+2. Add a failing Swift Testing reproduction for the recorded lower-camera
+   AX3 input: reference shortfall 0, eight whole tiles, category 63 rather
+   than 61, and unchanged 8pt/10pt gaps, A/C/Back and camera boundary. It
+   must fail if the retry is removed or consumes all optional growth.
+3. Implement only the guarded second pass, retaining the original result
+   exactly when no new reference deficit exists or the original is unsafe.
+   Preserve finite search order and explicit residual shortfall; no weaker
+   certificate, new known issue or hidden invalid-candidate fallback.
+4. Test reference-library independence at 8/24 phrases, all captured
+   geometries/five metrics/Bold states, exact unaffected choices, no-region
+   legacy output, translated/RTL/multiple regions and warning reflow.
+   Rerun unchanged well, Home/Settings chain, message-reading and Back
+   checks, including retained typing with Clear 2/Put Back 3. The bounded
+   host samples do not replace those gates.
+5. Verify native SF word/target floors, fixed frames across affected
+   states and appearances, camera/division rounding, Type/keyboard policy
+   and the scoped Back cover, then the full native unit and applicable UI
+   gates. Physical Snap to Item and changed-window pointer mapping remain
+   separate; no simulator or design drawing establishes those results.
+
+### Phrase-grid drag repair, 2026-10-26
+
+**Intent:** an attempt to scroll must not speak a phrase. An 80pt drag
+starting and ending inside a fitting shared-app tile did speak, with
+verified coordinates. The recovered private AX5 source also reproduces
+its original gutter failure in the matching 164pt tall viewport. Its
+capacity alternative remains unselected; its source is used only for the
+bounded counterfactual (docs/DECISIONS.md, "Phrase-grid drag cancellation").
+
+**Spec:** retain the existing labelled Buttons, eager stacks, single
+ScrollView identity, typing disable and camera/fold frame cap. Remove
+fitting-content `scrollDisabled` and change `.basedOnSize` to `.always`
+for native vertical bounce/pan handling. Only the phrase content may
+bounce during a deliberate touch drag; static controls remain fixed and
+all fitting tiles must settle back to their previous frames. The engine,
+columns, target floors, no-scroll fit/capacity results and region placement
+are unchanged. First activation and held presses still speak; no custom
+gesture, timing guard, pointer handling or input-profile exception is
+introduced. The current release has only the touch profile. Future dwell,
+switch, head and gaze profiles still owe invariant 11 and physical checks.
+
+**Plan and evidence before the repair commit:**
+
+1. Keep the failing shared 80pt reproduction and its persistent spoken
+   message, not only the transient Speaking label. Preserve the first
+   coordinate rejection, earlier long-path passes and all failed candidates;
+   those long paths did not expose this shorter drag.
+2. Change only the two scroll modifiers. Removing `scrollDisabled` alone
+   failed; empty TapGesture experiments also failed and were discarded.
+   The selected shared drag and two existing slow-press tests pass.
+3. Check the same repair against the recovered private source: all 87 App
+   hashes match its historical manifest, with 83 identical to `6b1d4e8`
+   and four intentional private changes. The matching-geometry AX5 gutter
+   reproduction fails before the scroll-only change; light/dark gutter
+   and 80pt tile-start cases pass after it. Restore every original private
+   App hash. All 87 restored App hashes were verified inside ignored
+   `build/recovered-private-source.tar.gz`; the two private bundles are
+   retained under `build/TestResults/original-drag-{red,green}/`.
+   This does not rerun the missing embedded four-model JSON or the private
+   alternative's full flow/suite, and does not select it.
+4. `PhraseDragTests` keeps fresh storage, the unchanged full audit,
+   coherent ancestor-window geometry, checked live coordinates, gutter
+   and 80pt tile-start paths, message-area-only speech detection, first
+   tap after each drag, a 1.5s held press and static/fitting settled-frame
+   comparisons at the existing half-point native allowance. Changing
+   drag cancellation, swallowing a first tap/hold or reflowing a fitting
+   surface must fail the corresponding test. Final shared-app selections
+   pass all five class cases and both existing slow-press cases on each
+   of Duo, iPad and iPhone: 7 passed per family, zero failed/skipped/expected
+   failures, in `build/TestResults/pr58-final-{duo,ipad,iphone}/ui-destination.xcresult`.
+   The full final-source unit gate passes 778 total (769 passed, zero
+   failed, one existing #19 skip and eight strict expected failures),
+   catalog current with `CI=true`, coverage 71.1% (7,026/9,875), in
+   `build/TestResults/pr58-final-unit/unit-destination.xcresult`.
+   Complete ordinary local UI/verifier results and new-head hosted CI
+   remain pending; current-head PR checks govern review readiness. The
+   auxiliary AX bridge returned no usable elements, so no AXPress
+   activation was attempted or verified.
+
+The [single implementation record](../log/2026-10-25-duo-fold-design.md#pr-58-continuation-and-drag-investigation-2026-10-26)
+keeps source-specific red/green results and limits. Keyboard dismissal,
+Put Back placement, the private AX5 capacity design and startup-flake
+cause/fix remain out of this repair. Simulator checks do not prove sound,
+physical touch accommodations, dwell/Snap, folding comfort or future-profile
+no-scroll behavior.
+
+### Owner-authorized renderer and fitting-test review batch
+
+**Authorization and scope:** after the two post-green fix pushes, the
+owner explicitly authorized **one additional repair batch** for the two
+verified review findings below. This is a specific extension of this PR's
+repair budget, not a reset of the two-round rule or authority for another
+review loop. Keep PR #58 a draft while this batch is unverified. The full
+original prototype is lost and is excluded from further investigation;
+the ordinary-app drag reproduction remains the repair's basis.
+
+**Intent:** render the positions the existing layout engine already
+allocated, including its first vertical reservation, and prove that the
+native drag regression actually exercises a fitting eight-tile surface.
+Neither repair changes layout-engine behavior, target floors, capacity,
+column order, spacing policy or any input-profile invariant.
+
+**Spec, before implementation:**
+
+- **P1, missing initial region offset:** Home's renderer must consume the
+  already allocated vertical distance between the content top and its
+  first region's top. An inter-region spacer cannot represent this
+  initial distance. Use the engine's allocation, once, in the standard
+  SwiftUI stack; do not recompute reservations, move only one control,
+  name a device, adjust a target floor or change the allocator. Paths
+  whose first allocation begins at the content top retain zero inset
+  and their existing frames exactly.
+- **P2, guaranteed fitting native check:** add a dedicated actual-app case
+  with a hard precondition that all eight starter tiles fit wholly in
+  the coherent visible viewport/window before input. Its settled-tile
+  comparison is unconditional; it must not disappear behind a runtime
+  `if fittingGrid` branch, skip, new known issue or assertion weakening.
+  Exercise the quiet drag and first intentional tap through standard
+  controls. Keep the existing negative speech/alarm, live-coordinate,
+  static-frame and native half-point comparison checks. No synthetic
+  fit claim, forced content offset or test-only target shrinking may
+  substitute for observing the actual fitting surface.
+
+**Plan, before implementation:**
+
+1. Add a rendered failing reproduction where the engine's first region
+   begins below the content top, and compare the actual rendered controls
+   with those existing allocations. It must fail with the missing inset
+   and pass when the renderer consumes it. Include a zero-inset control
+   proving ordinary frames are unchanged; do not alter engine expectations
+   to match the old renderer.
+2. Add the dedicated fitting native case before claiming that coverage.
+   Fail if any of the eight tiles is missing or not wholly visible, and
+   compare every fitting tile's settled frame after the drag. A fixture
+   that stops fitting must fail the precondition rather than pass by
+   bypassing the comparisons. Retain first-activation and held-press
+   coverage alongside it.
+3. Implement only P1's missing initial stack inset and P2's test coverage;
+   group the verified fixes and their evidence in this one authorized
+   batch. Root coordinates the failing-first/native red-green runs. No
+   result for either new check is claimed at this planning checkpoint.
+4. Run the required full unit script and affected native tests, record
+   the final head's CI and reconcile the two open review conversations.
+   Mark ready only after the resulting head's checks pass and findings
+   are handled. Report any later defect as a grouped remaining issue;
+   this authorization does not permit another automatic repair batch.
+
+Before this extra batch, hosted Unit/UI checks passed: units **778 =
+769 passed / 0 failed / 1 existing #19 skip / 8 strict expected failures**,
+coverage **71.1%**; UI **56 per family**, iPad **51 passed / 0 failed /
+2 skipped / 3 expected**, iPhone **48 / 0 / 6 / 2**. Complete local UI
+also ran 56 per family: iPad **50 / 1 / 2 / 3**, iPhone **47 / 1 / 6 / 2**;
+each failed only the pre-existing AX5 Speaking waits. Those are pre-batch
+results, not verification of the planned inset/test repairs. PR #58 is a
+draft with two Greptile conversations open; Codex review is still running
+and the security review completed with no reported findings at this
+checkpoint.
+
+The private AX5 alternative, keyboard dismissal, Put Back placement and
+startup-flake cause/fix remain open and outside this batch. Future-profile
+no-scroll requirements, mounted-device checks, sound and broader Duo
+release gates remain binding; no exception or release-readiness claim is
+introduced.
+
+**Implementation checkpoint after the failing native reproduction:**
+`FoldOffsetUITests` ran on iPad at default text in light and dark:
+**0 passed / 2 failed**, with eight intended assertion failures and no
+skips, expected failures or reported runtime warnings. The independently
+expected first-row top is y62; Home's Phrases rendered at y40 and crossed
+the synthetic y52–62 reservation. Settings' Back rendered at y62, so its
+alignment with Home's y40 Phrases also failed. This is a synthetic
+reservation fixture, not an observed OS fold pose; the retained images
+paint no fold stripe. The frame JSON, not a drawn stripe, establishes
+the reserved band. The [red evidence](../log/2026-10-25-duo-fold-design.md#extra-batch-rendered-red-result-and-unverified-implementation)
+keeps original-byte Home/Settings images and provenance.
+
+P1 now adds an initial standard stack spacer using
+`layout.firstRegionTopInset`, derived from
+`allocation(.message).minY - content.minY`. No pure allocation algorithm
+changes. Unit pins for the nonzero inset and existing zero-inset matrix
+are added, with their results still pending. P2 now makes the default
+light/dark cases require actual eight-tile fit before input and compare
+their settled tiles unconditionally. AX5's conditional comparison remains
+appropriate for legitimate overflowing touch windows; the default fit
+precondition is not applied by shrinking AX5 targets.
+
+The final affected iPad selection now passes **10/10**, zero failures,
+skips or expected failures: FoldOffset 2, PhraseDrag 5, SlowPress 2 and
+HomeLayout 1, in `build/TestResults/pr58-extra-final-ipad/ui-destination.xcresult`.
+Seven runtime audio-session diagnostics remain recorded; no compiler
+warning was suppressed. The [zero-inset comparison](../evidence/2026-10-26-pr58-extra/ordinary-zero-inset-comparison.json)
+keeps 20 ordinary control frames per appearance, 40 total, exactly equal
+before/after (maximum delta 0.0pt and matching raw capture JSON hashes).
+
+P2's temporary viewport-only 1pt clipping variant leaves tile layout
+unchanged. The selected test passes 1/1 without required-fitting flags;
+the same App variant fails 0/1 with them, at the exact fit requirement
+before input and with zero gesture-injection activities. Native bottom
+values 1347/1348 establish a 1pt deficit beyond the 0.5pt allowance.
+[Receipts and frozen-source restoration](../evidence/2026-10-26-pr58-extra/validation.json)
+verify both edited files and all 153 Swift/project-source hashes restored
+to final. Temporary variants remain only in ignored worktree `build/`.
+The affected final iPhone selection also passes **10/10**, with the same
+case scope and zero failures/skips/expected failures; runtime audio-session
+diagnostics remain recorded. Bundle:
+`build/TestResults/pr58-extra-final-iphone/ui-destination.xcresult`.
+Full units pass **781 = 772 passed / 0 failed / 1 existing #19 skip /
+8 strict expected failures**, catalog current with `CI=true`, coverage
+**71.2% (7,054/9,903)**, in
+`build/TestResults/pr58-extra-final-unit/unit-destination.xcresult`.
+The accessor reads existing geometry; allocator mathematics are unchanged.
+
+The final affected Duo selection also passes **7/7**, zero failures,
+skips or expected failures, with seven retained runtime audio-session
+warnings, in `build/TestResults/pr58-extra-final-duo/ui-destination.xcresult`.
+Device Hub prepared its opposite tall inner window, open/flat at 180
+degrees; the seven cases read actual OS Duo space without the synthetic
+reservation fixture. Coordinate guards and default fitting preconditions
+passed. All 153 source hashes match final, and the three task-owned
+simulators are shut down.
+
+At this recorded pre-push checkpoint, the local unit and affected native
+gates pass; only new-head hosted CI and review resolution remain pending
+after the single authorized push. The two conversations remain open and
+PR #58 remains a draft at this checkpoint; live PR checks/review state
+provide the subsequent result without a documentation-only status push.
+The earlier full ordinary local UI results belong to `4c02a0c`; the new
+selected runs do not constitute full ordinary UI on the new source.
+No Release archive, physical-input/sound result or broader release gate
+is claimed.

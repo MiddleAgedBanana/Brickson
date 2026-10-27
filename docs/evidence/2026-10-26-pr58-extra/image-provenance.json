@@ -1,0 +1,222 @@
+{
+  "schema": 1,
+  "date": "2026-10-26",
+  "imagesAndMeasurements": [
+    {
+      "file": "docs/evidence/2026-10-26-pr58-extra/fold-red-dark-back-alignment.json",
+      "test": "FoldOffsetUITests/testTheFirstRowClearsATopDivisionInDarkMode()",
+      "attachmentName": "top-division-dark-back-alignment_0_8A764807-B44A-47B4-8A77-03F65005C1C8.json",
+      "exportedFile": "AC4F48CB-8D13-4EFE-BB6D-858812ED1A4C.json",
+      "sha256": "51e6daba439bdea1230edb954b91cfe054efb794c843047c82e8fe3be21dfcd1",
+      "timestamp": 1793068246.822,
+      "sourceBundle": "build/TestResults/pr58-extra-fold-red/ui-destination.xcresult",
+      "syntheticReservation": true,
+      "actualOSPoseClaimed": false
+    },
+    {
+      "file": "docs/evidence/2026-10-26-pr58-extra/fold-red-dark-settings.png",
+      "test": "FoldOffsetUITests/testTheFirstRowClearsATopDivisionInDarkMode()",
+      "attachmentName": "top-division-dark-settings_0_CEBD9F3C-6F96-47D4-B2A0-121824F5802B.png",
+      "exportedFile": "002DBB38-7867-47F5-8EF0-AA98622BCBED.png",
+      "sha256": "31267bd3c467eeb7f5677792cb9731a2516793340e9b65d58d3570fad8f58689",
+      "timestamp": 1793068246.638,
+      "sourceBundle": "build/TestResults/pr58-extra-fold-red/ui-destination.xcresult",
+      "syntheticReservation": true,
+      "actualOSPoseClaimed": false
+    },
+    {
+      "file": "docs/evidence/2026-10-26-pr58-extra/fold-red-dark-frames.json",
+      "test": "FoldOffsetUITests/testTheFirstRowClearsATopDivisionInDarkMode()",
+      "attachmentName": "top-division-dark-frames_0_A351225E-5323-47D6-9951-91F34494DC7E.json",
+      "exportedFile": "0B5792FF-4F52-406F-8F7B-BA38D2F60873.json",
+      "sha256": "f962705bff43eb3993e96819637cda4aa004da97b373a66dab1b4f224d4fd976",
+      "timestamp": 1793068244.3,
+      "sourceBundle": "build/TestResults/pr58-extra-fold-red/ui-destination.xcresult",
+      "syntheticReservation": true,
+      "actualOSPoseClaimed": false
+    },
+    {
+      "file": "docs/evidence/2026-10-26-pr58-extra/fold-red-dark-home.png",
+      "test": "FoldOffsetUITests/testTheFirstRowClearsATopDivisionInDarkMode()",
+      "attachmentName": "top-division-dark-home_0_2E7C264B-04A4-4BBD-A3A4-590F7CFE96FF.png",
+      "exportedFile": "3B1C8A7F-84C1-442A-9C6D-E720F8101CE1.png",
+      "sha256": "a772a79a57a74a1bdc25f2e488a50e5dd14088151e9503bf1a8789c235575f99",
+      "timestamp": 1793068244.164,
+      "sourceBundle": "build/TestResults/pr58-extra-fold-red/ui-destination.xcresult",
+      "syntheticReservation": true,
+      "actualOSPoseClaimed": false
+    },
+    {
+      "file": "docs/evidence/2026-10-26-pr58-extra/fold-red-light-back-alignment.json",
+      "test": "FoldOffsetUITests/testTheFirstRowClearsATopDivisionInLightMode()",
+      "attachmentName": "top-division-light-back-alignment_0_183F3DE8-63A3-411A-A779-BE526CA7C125.json",
+      "exportedFile": "0CFE6515-015C-48D9-BDBA-8BE9EFA40532.json",
+      "sha256": "51e6daba439bdea1230edb954b91cfe054efb794c843047c82e8fe3be21dfcd1",
+      "timestamp": 1793068261.057,
+      "sourceBundle": "build/TestResults/pr58-extra-fold-red/ui-destination.xcresult",
+      "syntheticReservation": true,
+      "actualOSPoseClaimed": false
+    },
+    {
+      "file": "docs/evidence/2026-10-26-pr58-extra/fold-red-light-settings.png",
+      "test": "FoldOffsetUITests/testTheFirstRowClearsATopDivisionInLightMode()",
+      "attachmentName": "top-division-light-settings_0_67DD585A-B273-44EC-84FB-E686E4EBCAD2.png",
+      "exportedFile": "CB5DB496-6A19-45CD-A2BD-0C3A582E60CE.png",
+      "sha256": "86d81272127f2ddd88b14a0e9793a89af7127078f5587ae70e795687e8cb144c",
+      "timestamp": 1793068260.876,
+      "sourceBundle": "build/TestResults/pr58-extra-fold-red/ui-destination.xcresult",
+      "syntheticReservation": true,
+      "actualOSPoseClaimed": false
+    },
+    {
+      "file": "docs/evidence/2026-10-26-pr58-extra/fold-red-light-frames.json",
+      "test": "FoldOffsetUITests/testTheFirstRowClearsATopDivisionInLightMode()",
+      "attachmentName": "top-division-light-frames_0_81293483-9C7A-42AF-8A18-2BCB59F3EF7C.json",
+      "exportedFile": "82E2CBA4-0AF9-4DB2-9961-894EC9E6FBE6.json",
+      "sha256": "efbe51b91ab3d94453994acf85a61fe6f52071a614b0049c41dfd269ec265dee",
+      "timestamp": 1793068258.814,
+      "sourceBundle": "build/TestResults/pr58-extra-fold-red/ui-destination.xcresult",
+      "syntheticReservation": true,
+      "actualOSPoseClaimed": false
+    },
+    {
+      "file": "docs/evidence/2026-10-26-pr58-extra/fold-red-light-home.png",
+      "test": "FoldOffsetUITests/testTheFirstRowClearsATopDivisionInLightMode()",
+      "attachmentName": "top-division-light-home_0_95F25210-AC11-4BA5-A21C-C86626C126FD.png",
+      "exportedFile": "FCA22D5B-0F9B-4BCF-B9C9-1695BFDF9AA9.png",
+      "sha256": "4829750a0b55a2bbad59d4706924b48a4ff043f0ab0bfbec1779470cc7d8a1d1",
+      "timestamp": 1793068258.68,
+      "sourceBundle": "build/TestResults/pr58-extra-fold-red/ui-destination.xcresult",
+      "syntheticReservation": true,
+      "actualOSPoseClaimed": false
+    },
+    {
+      "file": "docs/evidence/2026-10-26-pr58-extra/fold-green-ipad-dark-back-alignment.json",
+      "test": "FoldOffsetUITests/testTheFirstRowClearsATopDivisionInDarkMode()",
+      "attachmentName": "top-division-dark-back-alignment_0_FF41118E-2B08-462D-B37C-CCE04DD8C962.json",
+      "exportedFile": "89035B41-74E2-44B4-8976-9EADF045F102.json",
+      "sha256": "2e00c90ddfd209f73556b22978647470ecb6368953941ef0314614bf647eb547",
+      "timestamp": 1793068499.335,
+      "sourceBundle": "build/TestResults/pr58-extra-final-ipad/ui-destination.xcresult",
+      "syntheticReservation": true,
+      "actualOSPoseClaimed": false
+    },
+    {
+      "file": "docs/evidence/2026-10-26-pr58-extra/fold-green-ipad-dark-settings.png",
+      "test": "FoldOffsetUITests/testTheFirstRowClearsATopDivisionInDarkMode()",
+      "attachmentName": "top-division-dark-settings_0_B952A2A9-82BD-40E0-BC80-F15FAF3A971D.png",
+      "exportedFile": "C7FE88BA-4E9F-483E-8488-95A057DE1167.png",
+      "sha256": "128abbabaf697098d7c73edabc94f454ba02c958b1084357714273f70ade6be0",
+      "timestamp": 1793068499.15,
+      "sourceBundle": "build/TestResults/pr58-extra-final-ipad/ui-destination.xcresult",
+      "syntheticReservation": true,
+      "actualOSPoseClaimed": false
+    },
+    {
+      "file": "docs/evidence/2026-10-26-pr58-extra/fold-green-ipad-dark-frames.json",
+      "test": "FoldOffsetUITests/testTheFirstRowClearsATopDivisionInDarkMode()",
+      "attachmentName": "top-division-dark-frames_0_9B56E73E-6C06-4EA6-BE8D-865ED21C3C5A.json",
+      "exportedFile": "2F2B07A0-878D-400E-94D1-2192E38420C2.json",
+      "sha256": "404d5a81b4ac583392d1c431f3a343593191680bf491c32c62d9dd20d971c0d4",
+      "timestamp": 1793068497.234,
+      "sourceBundle": "build/TestResults/pr58-extra-final-ipad/ui-destination.xcresult",
+      "syntheticReservation": true,
+      "actualOSPoseClaimed": false
+    },
+    {
+      "file": "docs/evidence/2026-10-26-pr58-extra/fold-green-ipad-dark-home.png",
+      "test": "FoldOffsetUITests/testTheFirstRowClearsATopDivisionInDarkMode()",
+      "attachmentName": "top-division-dark-home_0_6A0063CA-8BF8-49F1-A3D1-50C880FC092F.png",
+      "exportedFile": "61A542FA-6E38-46F2-83D2-9FC103923216.png",
+      "sha256": "519370eba6ae76a869c7f292200599a132cee961bb4896896101095689529701",
+      "timestamp": 1793068497.102,
+      "sourceBundle": "build/TestResults/pr58-extra-final-ipad/ui-destination.xcresult",
+      "syntheticReservation": true,
+      "actualOSPoseClaimed": false
+    },
+    {
+      "file": "docs/evidence/2026-10-26-pr58-extra/fold-green-ipad-light-back-alignment.json",
+      "test": "FoldOffsetUITests/testTheFirstRowClearsATopDivisionInLightMode()",
+      "attachmentName": "top-division-light-back-alignment_0_D37716B1-3204-4261-A2B4-E80D560F8C5B.json",
+      "exportedFile": "EB9943DE-30AC-4770-BF1D-F54B1FB44AD6.json",
+      "sha256": "2e00c90ddfd209f73556b22978647470ecb6368953941ef0314614bf647eb547",
+      "timestamp": 1793068513.724,
+      "sourceBundle": "build/TestResults/pr58-extra-final-ipad/ui-destination.xcresult",
+      "syntheticReservation": true,
+      "actualOSPoseClaimed": false
+    },
+    {
+      "file": "docs/evidence/2026-10-26-pr58-extra/fold-green-ipad-light-settings.png",
+      "test": "FoldOffsetUITests/testTheFirstRowClearsATopDivisionInLightMode()",
+      "attachmentName": "top-division-light-settings_0_99289AF9-913B-4302-AFD9-E0868DD51710.png",
+      "exportedFile": "6AA44D6E-1383-4790-9503-CF8A5B4F4541.png",
+      "sha256": "650b7ebdda13941feeb733f7395343aecab7f8ef7f40d4449ff5e04b3cd86d46",
+      "timestamp": 1793068513.505,
+      "sourceBundle": "build/TestResults/pr58-extra-final-ipad/ui-destination.xcresult",
+      "syntheticReservation": true,
+      "actualOSPoseClaimed": false
+    },
+    {
+      "file": "docs/evidence/2026-10-26-pr58-extra/fold-green-ipad-light-frames.json",
+      "test": "FoldOffsetUITests/testTheFirstRowClearsATopDivisionInLightMode()",
+      "attachmentName": "top-division-light-frames_0_BDB4EFA4-0457-4841-AD20-D1582AE36B4E.json",
+      "exportedFile": "715CE9C9-7F95-498C-AB15-F2D311589B4C.json",
+      "sha256": "d9a4e05e39e4ee6609095c87bc11cdf725cf573fb4f221c6a23bfe808a52f77d",
+      "timestamp": 1793068511.437,
+      "sourceBundle": "build/TestResults/pr58-extra-final-ipad/ui-destination.xcresult",
+      "syntheticReservation": true,
+      "actualOSPoseClaimed": false
+    },
+    {
+      "file": "docs/evidence/2026-10-26-pr58-extra/fold-green-ipad-light-home.png",
+      "test": "FoldOffsetUITests/testTheFirstRowClearsATopDivisionInLightMode()",
+      "attachmentName": "top-division-light-home_0_46637458-AA04-4BD6-ACA9-511AD44B4A42.png",
+      "exportedFile": "AA811833-EADB-4E4D-A583-0661B623D3F2.png",
+      "sha256": "30b7dff366d07fd23b43bc269b3ddcb5efecfd6edc5d72d7e0904ae8131ac8c3",
+      "timestamp": 1793068511.289,
+      "sourceBundle": "build/TestResults/pr58-extra-final-ipad/ui-destination.xcresult",
+      "syntheticReservation": true,
+      "actualOSPoseClaimed": false
+    },
+    {
+      "file": "docs/evidence/2026-10-26-pr58-extra/fit-control-tile-coordinates.txt",
+      "test": "PhraseDragTests/testDefaultLight()",
+      "attachmentName": "phrase-drag-coordinates_0_330B0C34-EFC8-4770-AF17-DABA11D0DEE1.txt",
+      "exportedFile": "49031918-9C91-4A1D-A247-80E5E738294C.txt",
+      "sha256": "a4b113cdfc0ea0011cfcd7571c55c968046f158bf730be346b92cc686c3e9169",
+      "timestamp": 1793068931.282,
+      "sourceBundle": "build/TestResults/pr58-extra-fit-control/ui-destination.xcresult",
+      "temporaryMutation": true
+    },
+    {
+      "file": "docs/evidence/2026-10-26-pr58-extra/fit-control-gutter-coordinates.txt",
+      "test": "PhraseDragTests/testDefaultLight()",
+      "attachmentName": "phrase-drag-coordinates_0_743813E5-C91F-4BF6-9687-3307DB5A73D4.txt",
+      "exportedFile": "F74F9BFD-72CC-4253-9692-E1D2DBF1650E.txt",
+      "sha256": "776266c454590b5f11b9531e9ee943037e60279f370875e7d8c9095f1ebb1cc7",
+      "timestamp": 1793068911.343,
+      "sourceBundle": "build/TestResults/pr58-extra-fit-control/ui-destination.xcresult",
+      "temporaryMutation": true
+    },
+    {
+      "file": "docs/evidence/2026-10-26-pr58-extra/fit-guard-before-input.png",
+      "test": "PhraseDragTests/testDefaultLight()",
+      "attachmentName": "before-phrase-drag_0_470743C1-6AFF-4679-B800-9A5DF3B9192B.png",
+      "exportedFile": "E71C8D03-1628-4D6C-8516-AD2828A20CD8.png",
+      "sha256": "635973e78b3210c94f350a78720ba3e73ddf5b7b24906e0471c157d43e210b5c",
+      "timestamp": 1793069053.288,
+      "sourceBundle": "build/TestResults/pr58-extra-fit-guard-red/ui-destination.xcresult",
+      "temporaryMutation": true
+    },
+    {
+      "file": "docs/evidence/2026-10-26-pr58-extra/fit-guard-gutter-coordinates.txt",
+      "test": "PhraseDragTests/testDefaultLight()",
+      "attachmentName": "phrase-drag-coordinates_0_31772C31-99B1-413E-A055-2835C205887F.txt",
+      "exportedFile": "1DB999BC-462D-47FD-9B7C-7A3E12F3C58E.txt",
+      "sha256": "776266c454590b5f11b9531e9ee943037e60279f370875e7d8c9095f1ebb1cc7",
+      "timestamp": 1793069053.171,
+      "sourceBundle": "build/TestResults/pr58-extra-fit-guard-red/ui-destination.xcresult",
+      "temporaryMutation": true
+    }
+  ]
+}

@@ -36,6 +36,9 @@ import SwiftData
 ///   (`SilentAttentionTonePlayback`) instead of the real one, so UI tests
 ///   sound and stop the alarm without sound and without depending on the
 ///   simulator's audio.
+/// - `--layout-fixture=top-division`: with test storage only, replace the
+///   reported reservations with a synthetic horizontal band through the
+///   first Home row. This checks the real renderer against the allocator.
 ///
 /// Text size still uses UIKit's `-UIPreferredContentSizeCategoryName`
 /// argument. Appearance needs an app-local option because command-line
@@ -82,6 +85,10 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
         case silent
     }
 
+    nonisolated enum LayoutFixture: String, Equatable, Sendable {
+        case topDivision = "top-division"
+    }
+
     var storage = Storage.standard
     var usesShortTimeouts = false
     var startScreen = StartScreen.home
@@ -92,6 +99,8 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
     var personalVoice: PersonalVoiceTrial?
     /// Nil is the app's own: the real tone.
     var attentionTone: AttentionTone?
+    /// Never applied to ordinary storage or in a release build.
+    var layoutFixture: LayoutFixture?
     /// Arguments written like these options but not understood: a misspelt
     /// name, an unknown value. They are logged at launch, so a typo in a
     /// test shows up instead of quietly running with the defaults.
@@ -149,11 +158,34 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
                 options.personalVoice = PersonalVoiceTrial(rawValue: value)
             case ("attention-tone", let value?) where AttentionTone(rawValue: value) != nil:
                 options.attentionTone = AttentionTone(rawValue: value)
+            case ("layout-fixture", let value?) where LayoutFixture(rawValue: value) != nil:
+                options.layoutFixture = LayoutFixture(rawValue: value)
             default:
                 options.unrecognized.append(argument)
             }
         }
         return options
+    }
+
+    var activeLayoutFixture: LayoutFixture? {
+        guard Self.readsLaunchArguments, storage != .standard else { return nil }
+        return layoutFixture
+    }
+
+    /// A synthetic reservation relative to this window's available space,
+    /// never to a device identity. The ordinary allocator is unchanged.
+    func applyingLayoutFixture(to space: HomeLayout.Space) -> HomeLayout.Space {
+        guard activeLayoutFixture == .topDivision else { return space }
+        var fixture = space
+        fixture.regions = [.init(
+            kind: .division,
+            frame: CGRect(
+                x: 0, y: space.safeArea.top + HomeLayout.margins.vertical + 12,
+                width: space.size.width, height: 10
+            ),
+            isActive: false
+        )]
+        return fixture
     }
 
     // MARK: - Where things are saved

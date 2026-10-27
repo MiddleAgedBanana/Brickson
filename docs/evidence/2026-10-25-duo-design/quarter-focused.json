@@ -1,0 +1,1084 @@
+{
+  "assumptions": [
+    "No activation chosen at the transition: all starts use ChainStart.resting in the preserved Home state.",
+    "Semantic samples pair relative points in each version's own old control/text region; these are not identical physical coordinates.",
+    "Shared-physical samples use the intersection of both old semantic regions, so their old window coordinates are identical.",
+    "Only exact quarter-turn formulas are used: (x,y)->(y,Wbefore-x) and(x,y)->(Hbefore-y,x). Both versions' mapped points must remain inside the destination window.",
+    "Fixed endpoints are wide-upper-camera and tall-right-camera. Their fixed-camera locations match the second formula wide-to-tall and the first tall-to-wide; alternatives are labeled cameraRotationConsistent=false. Status bars/safe areas are OS layout inputs, not a rigid-camera transform.",
+    "Actual OS pointer/focus mapping across folding, rotation or resizing is unverified. These are hypothetical bounds, not physical Eye/Head/Switch proof.",
+    "Home typing state is preserved with the keyboard already lowered. Key-to-Home transitions during keyboard dismissal are not modeled.",
+    "HomeChains retains Type transitions even where offersTyping is false; flagged paths through unavailable Type are overapproximations.",
+    "Starter counts8/8/6/6 and Emergency6 trim tile controls in every reached state. Targets retain full layout frames if any part is visible; source tile look areas are clipped to viewport/window at scroll offset0.",
+    "A hazardous tie branch is unsafe. Leaves and depth limits are unscored, not safe. Settings-cover/first-step transitions are outside this Home-only map.",
+    "Fixed controls/tiles use2\u00d72steps (9samples); message/status and empty well use4\u00d74steps (25samples), half a point inside each clipped source rectangle.",
+    "Apple limits Eye/Head tracking to fully open inner display; this model does not claim tracking remains active during a fold pose change.",
+    "Dimmed controls/tiles remain no-op targets in HomeChains; actual Snap eligibility is a separate deferred physical check."
+  ],
+  "diagnosticOnly": true,
+  "physicalPointerMappingVerified": false,
+  "priorConversationPoint": [
+    {
+      "cameraRotationConsistent": false,
+      "candidateAfter": {
+        "paths": [
+          {
+            "end": "settles",
+            "path": [
+              "category 4 (navigates)",
+              "category 4 (nothing)"
+            ],
+            "pointer": "staysOnControl",
+            "rule": "centre"
+          },
+          {
+            "end": "settles",
+            "path": [
+              "category 4 (navigates)",
+              "category 4 (nothing)"
+            ],
+            "pointer": "returnsToLook",
+            "rule": "centre"
+          },
+          {
+            "end": "settles",
+            "path": [
+              "category 4 (navigates)",
+              "category 4 (nothing)"
+            ],
+            "pointer": "staysOnControl",
+            "rule": "edge"
+          },
+          {
+            "end": "settles",
+            "path": [
+              "category 4 (navigates)",
+              "category 4 (nothing)"
+            ],
+            "pointer": "returnsToLook",
+            "rule": "edge"
+          }
+        ],
+        "point": {
+          "x": 300.5,
+          "y": 496.5
+        },
+        "state": "Home, nothing spoken, category 3 showing, quiet"
+      },
+      "candidateBefore": {
+        "paths": [
+          {
+            "end": "repeats",
+            "path": [
+              "category 3 (nothing)"
+            ],
+            "pointer": "staysOnControl",
+            "rule": "centre"
+          },
+          {
+            "end": "settles",
+            "path": [
+              "category 3 (nothing)"
+            ],
+            "pointer": "returnsToLook",
+            "rule": "centre"
+          },
+          {
+            "end": "repeats",
+            "path": [
+              "category 3 (nothing)"
+            ],
+            "pointer": "staysOnControl",
+            "rule": "edge"
+          },
+          {
+            "end": "settles",
+            "path": [
+              "category 3 (nothing)"
+            ],
+            "pointer": "returnsToLook",
+            "rule": "edge"
+          }
+        ],
+        "point": {
+          "x": 454.5,
+          "y": 300.5
+        },
+        "state": "Home, nothing spoken, category 3 showing, quiet"
+      },
+      "legacyAfter": {
+        "paths": [
+          {
+            "end": "settles",
+            "path": [
+              "category 4 (navigates)",
+              "category 4 (nothing)"
+            ],
+            "pointer": "staysOnControl",
+            "rule": "centre"
+          },
+          {
+            "end": "settles",
+            "path": [
+              "category 4 (navigates)",
+              "category 4 (nothing)"
+            ],
+            "pointer": "returnsToLook",
+            "rule": "centre"
+          },
+          {
+            "end": "hazard",
+            "path": [
+              "phraseTile (speaks)"
+            ],
+            "pointer": "staysOnControl",
+            "rule": "edge"
+          },
+          {
+            "end": "hazard",
+            "path": [
+              "phraseTile (speaks)"
+            ],
+            "pointer": "returnsToLook",
+            "rule": "edge"
+          }
+        ],
+        "point": {
+          "x": 300.5,
+          "y": 496.5
+        },
+        "state": "Home, nothing spoken, category 3 showing, quiet"
+      },
+      "legacyBefore": {
+        "paths": [
+          {
+            "end": "repeats",
+            "path": [
+              "category 3 (nothing)"
+            ],
+            "pointer": "staysOnControl",
+            "rule": "centre"
+          },
+          {
+            "end": "settles",
+            "path": [
+              "category 3 (nothing)"
+            ],
+            "pointer": "returnsToLook",
+            "rule": "centre"
+          },
+          {
+            "end": "repeats",
+            "path": [
+              "category 3 (nothing)"
+            ],
+            "pointer": "staysOnControl",
+            "rule": "edge"
+          },
+          {
+            "end": "settles",
+            "path": [
+              "category 3 (nothing)"
+            ],
+            "pointer": "returnsToLook",
+            "rule": "edge"
+          }
+        ],
+        "point": {
+          "x": 454.5,
+          "y": 300.5
+        },
+        "state": "Home, nothing spoken, category 3 showing, quiet"
+      },
+      "mapping": "quarter-y-WminusX"
+    },
+    {
+      "cameraRotationConsistent": true,
+      "candidateAfter": {
+        "paths": [
+          {
+            "end": "settles",
+            "path": [
+              "category 1 (navigates)",
+              "category 1 (nothing)"
+            ],
+            "pointer": "staysOnControl",
+            "rule": "centre"
+          },
+          {
+            "end": "settles",
+            "path": [
+              "category 1 (navigates)",
+              "category 1 (nothing)"
+            ],
+            "pointer": "returnsToLook",
+            "rule": "centre"
+          },
+          {
+            "end": "settles",
+            "path": [
+              "category 1 (navigates)",
+              "category 1 (nothing)"
+            ],
+            "pointer": "staysOnControl",
+            "rule": "edge"
+          },
+          {
+            "end": "settles",
+            "path": [
+              "category 1 (navigates)",
+              "category 1 (nothing)"
+            ],
+            "pointer": "returnsToLook",
+            "rule": "edge"
+          }
+        ],
+        "point": {
+          "x": 368.5,
+          "y": 454.5
+        },
+        "state": "Home, nothing spoken, category 3 showing, quiet"
+      },
+      "candidateBefore": {
+        "paths": [
+          {
+            "end": "repeats",
+            "path": [
+              "category 3 (nothing)"
+            ],
+            "pointer": "staysOnControl",
+            "rule": "centre"
+          },
+          {
+            "end": "settles",
+            "path": [
+              "category 3 (nothing)"
+            ],
+            "pointer": "returnsToLook",
+            "rule": "centre"
+          },
+          {
+            "end": "repeats",
+            "path": [
+              "category 3 (nothing)"
+            ],
+            "pointer": "staysOnControl",
+            "rule": "edge"
+          },
+          {
+            "end": "settles",
+            "path": [
+              "category 3 (nothing)"
+            ],
+            "pointer": "returnsToLook",
+            "rule": "edge"
+          }
+        ],
+        "point": {
+          "x": 454.5,
+          "y": 300.5
+        },
+        "state": "Home, nothing spoken, category 3 showing, quiet"
+      },
+      "legacyAfter": {
+        "paths": [
+          {
+            "end": "settles",
+            "path": [
+              "category 4 (navigates)",
+              "category 4 (nothing)"
+            ],
+            "pointer": "staysOnControl",
+            "rule": "centre"
+          },
+          {
+            "end": "settles",
+            "path": [
+              "category 4 (navigates)",
+              "category 4 (nothing)"
+            ],
+            "pointer": "returnsToLook",
+            "rule": "centre"
+          },
+          {
+            "end": "settles",
+            "path": [
+              "category 4 (navigates)",
+              "category 4 (nothing)"
+            ],
+            "pointer": "staysOnControl",
+            "rule": "edge"
+          },
+          {
+            "end": "settles",
+            "path": [
+              "category 4 (navigates)",
+              "category 4 (nothing)"
+            ],
+            "pointer": "returnsToLook",
+            "rule": "edge"
+          }
+        ],
+        "point": {
+          "x": 368.5,
+          "y": 454.5
+        },
+        "state": "Home, nothing spoken, category 3 showing, quiet"
+      },
+      "legacyBefore": {
+        "paths": [
+          {
+            "end": "repeats",
+            "path": [
+              "category 3 (nothing)"
+            ],
+            "pointer": "staysOnControl",
+            "rule": "centre"
+          },
+          {
+            "end": "settles",
+            "path": [
+              "category 3 (nothing)"
+            ],
+            "pointer": "returnsToLook",
+            "rule": "centre"
+          },
+          {
+            "end": "repeats",
+            "path": [
+              "category 3 (nothing)"
+            ],
+            "pointer": "staysOnControl",
+            "rule": "edge"
+          },
+          {
+            "end": "settles",
+            "path": [
+              "category 3 (nothing)"
+            ],
+            "pointer": "returnsToLook",
+            "rule": "edge"
+          }
+        ],
+        "point": {
+          "x": 454.5,
+          "y": 300.5
+        },
+        "state": "Home, nothing spoken, category 3 showing, quiet"
+      },
+      "mapping": "quarter-HminusY-x"
+    }
+  ],
+  "representativeAddedHypotheticalHazards": [
+    {
+      "cameraRotationConsistent": true,
+      "examples": [
+        {
+          "candidateAfter": {
+            "x": 368.5,
+            "y": 86.5
+          },
+          "candidateAfterOutcome": {
+            "ends": [
+              "hazard"
+            ],
+            "hazard": true,
+            "paths": [
+              "No (speaks); hazard"
+            ],
+            "unscored": false
+          },
+          "candidateBefore": {
+            "x": 86.5,
+            "y": 300.5
+          },
+          "candidateBeforeOutcome": {
+            "ends": [
+              "settles"
+            ],
+            "hazard": false,
+            "paths": [
+              "category 1 (navigates) \u2192 category 1 (nothing); settles"
+            ],
+            "unscored": false
+          },
+          "legacyAfter": {
+            "x": 368.5,
+            "y": 86.5
+          },
+          "legacyAfterOutcome": {
+            "ends": [
+              "repeats"
+            ],
+            "hazard": false,
+            "paths": [
+              "phrases (nothing); repeats"
+            ],
+            "unscored": false
+          },
+          "legacyBefore": {
+            "x": 86.5,
+            "y": 300.5
+          },
+          "legacyBeforeOutcome": {
+            "ends": [
+              "settles"
+            ],
+            "hazard": false,
+            "paths": [
+              "category 1 (navigates) \u2192 category 1 (nothing); settles"
+            ],
+            "unscored": false
+          },
+          "path": [
+            "No (speaks)"
+          ],
+          "pointer": "staysOnControl",
+          "role": "category 1",
+          "rule": "centre",
+          "sample": 5,
+          "state": "Home, nothing spoken, Emergency showing, quiet",
+          "strongestTransitionAddition": true,
+          "usesUnavailableTypeTransition": false
+        },
+        {
+          "candidateAfter": {
+            "x": 368.5,
+            "y": 86.5
+          },
+          "candidateAfterOutcome": {
+            "ends": [
+              "hazard"
+            ],
+            "hazard": true,
+            "paths": [
+              "No (speaks); hazard"
+            ],
+            "unscored": false
+          },
+          "candidateBefore": {
+            "x": 86.5,
+            "y": 300.5
+          },
+          "candidateBeforeOutcome": {
+            "ends": [
+              "settles"
+            ],
+            "hazard": false,
+            "paths": [
+              "category 1 (navigates) \u2192 category 1 (nothing); settles"
+            ],
+            "unscored": false
+          },
+          "legacyAfter": {
+            "x": 368.5,
+            "y": 86.5
+          },
+          "legacyAfterOutcome": {
+            "ends": [
+              "settles"
+            ],
+            "hazard": false,
+            "paths": [
+              "phrases (nothing); settles"
+            ],
+            "unscored": false
+          },
+          "legacyBefore": {
+            "x": 86.5,
+            "y": 300.5
+          },
+          "legacyBeforeOutcome": {
+            "ends": [
+              "settles"
+            ],
+            "hazard": false,
+            "paths": [
+              "category 1 (navigates) \u2192 category 1 (nothing); settles"
+            ],
+            "unscored": false
+          },
+          "path": [
+            "No (speaks)"
+          ],
+          "pointer": "returnsToLook",
+          "role": "category 1",
+          "rule": "centre",
+          "sample": 5,
+          "state": "Home, nothing spoken, Emergency showing, quiet",
+          "strongestTransitionAddition": true,
+          "usesUnavailableTypeTransition": false
+        }
+      ],
+      "from": "open-wide-default",
+      "mapping": "quarter-HminusY-x",
+      "sourceDomain": "shared-physical-region",
+      "text": "default",
+      "to": "open-tall-default"
+    },
+    {
+      "cameraRotationConsistent": true,
+      "examples": [
+        {
+          "candidateAfter": {
+            "x": 310.5,
+            "y": 222.5
+          },
+          "candidateAfterOutcome": {
+            "ends": [
+              "hazard"
+            ],
+            "hazard": true,
+            "paths": [
+              "clear (changesData); hazard"
+            ],
+            "unscored": false
+          },
+          "candidateBefore": {
+            "x": 446.5,
+            "y": 310.5
+          },
+          "candidateBeforeOutcome": {
+            "ends": [
+              "repeats"
+            ],
+            "hazard": false,
+            "paths": [
+              "getAttention (nothing); repeats"
+            ],
+            "unscored": false
+          },
+          "legacyAfter": {
+            "x": 310.5,
+            "y": 222.5
+          },
+          "legacyAfterOutcome": {
+            "ends": [
+              "repeats"
+            ],
+            "hazard": false,
+            "paths": [
+              "category 2 (nothing); repeats"
+            ],
+            "unscored": false
+          },
+          "legacyBefore": {
+            "x": 446.5,
+            "y": 310.5
+          },
+          "legacyBeforeOutcome": {
+            "ends": [
+              "repeats"
+            ],
+            "hazard": false,
+            "paths": [
+              "getAttention (nothing); repeats"
+            ],
+            "unscored": false
+          },
+          "path": [
+            "clear (changesData)"
+          ],
+          "pointer": "staysOnControl",
+          "role": "getAttention",
+          "rule": "centre",
+          "sample": 0,
+          "state": "Home, nothing spoken, Emergency showing, sounding, typing, draft written",
+          "strongestTransitionAddition": true,
+          "usesUnavailableTypeTransition": false
+        },
+        {
+          "candidateAfter": {
+            "x": 310.5,
+            "y": 222.5
+          },
+          "candidateAfterOutcome": {
+            "ends": [
+              "hazard"
+            ],
+            "hazard": true,
+            "paths": [
+              "clear (changesData); hazard"
+            ],
+            "unscored": false
+          },
+          "candidateBefore": {
+            "x": 446.5,
+            "y": 310.5
+          },
+          "candidateBeforeOutcome": {
+            "ends": [
+              "settles"
+            ],
+            "hazard": false,
+            "paths": [
+              "getAttention (nothing); settles"
+            ],
+            "unscored": false
+          },
+          "legacyAfter": {
+            "x": 310.5,
+            "y": 222.5
+          },
+          "legacyAfterOutcome": {
+            "ends": [
+              "settles"
+            ],
+            "hazard": false,
+            "paths": [
+              "category 2 (nothing); settles"
+            ],
+            "unscored": false
+          },
+          "legacyBefore": {
+            "x": 446.5,
+            "y": 310.5
+          },
+          "legacyBeforeOutcome": {
+            "ends": [
+              "settles"
+            ],
+            "hazard": false,
+            "paths": [
+              "getAttention (nothing); settles"
+            ],
+            "unscored": false
+          },
+          "path": [
+            "clear (changesData)"
+          ],
+          "pointer": "returnsToLook",
+          "role": "getAttention",
+          "rule": "centre",
+          "sample": 0,
+          "state": "Home, nothing spoken, Emergency showing, sounding, typing, draft written",
+          "strongestTransitionAddition": true,
+          "usesUnavailableTypeTransition": false
+        },
+        {
+          "candidateAfter": {
+            "x": 310.5,
+            "y": 222.5
+          },
+          "candidateAfterOutcome": {
+            "ends": [
+              "hazard"
+            ],
+            "hazard": true,
+            "paths": [
+              "clear (changesData); hazard"
+            ],
+            "unscored": false
+          },
+          "candidateBefore": {
+            "x": 446.5,
+            "y": 310.5
+          },
+          "candidateBeforeOutcome": {
+            "ends": [
+              "repeats"
+            ],
+            "hazard": false,
+            "paths": [
+              "getAttention (nothing); repeats"
+            ],
+            "unscored": false
+          },
+          "legacyAfter": {
+            "x": 310.5,
+            "y": 222.5
+          },
+          "legacyAfterOutcome": {
+            "ends": [
+              "repeats"
+            ],
+            "hazard": false,
+            "paths": [
+              "category 2 (nothing); repeats"
+            ],
+            "unscored": false
+          },
+          "legacyBefore": {
+            "x": 446.5,
+            "y": 310.5
+          },
+          "legacyBeforeOutcome": {
+            "ends": [
+              "repeats"
+            ],
+            "hazard": false,
+            "paths": [
+              "getAttention (nothing); repeats"
+            ],
+            "unscored": false
+          },
+          "path": [
+            "clear (changesData)"
+          ],
+          "pointer": "staysOnControl",
+          "role": "getAttention",
+          "rule": "edge",
+          "sample": 0,
+          "state": "Home, nothing spoken, Emergency showing, sounding, typing, draft written",
+          "strongestTransitionAddition": true,
+          "usesUnavailableTypeTransition": false
+        },
+        {
+          "candidateAfter": {
+            "x": 310.5,
+            "y": 222.5
+          },
+          "candidateAfterOutcome": {
+            "ends": [
+              "hazard"
+            ],
+            "hazard": true,
+            "paths": [
+              "clear (changesData); hazard"
+            ],
+            "unscored": false
+          },
+          "candidateBefore": {
+            "x": 446.5,
+            "y": 310.5
+          },
+          "candidateBeforeOutcome": {
+            "ends": [
+              "settles"
+            ],
+            "hazard": false,
+            "paths": [
+              "getAttention (nothing); settles"
+            ],
+            "unscored": false
+          },
+          "legacyAfter": {
+            "x": 310.5,
+            "y": 222.5
+          },
+          "legacyAfterOutcome": {
+            "ends": [
+              "settles"
+            ],
+            "hazard": false,
+            "paths": [
+              "category 2 (nothing); settles"
+            ],
+            "unscored": false
+          },
+          "legacyBefore": {
+            "x": 446.5,
+            "y": 310.5
+          },
+          "legacyBeforeOutcome": {
+            "ends": [
+              "settles"
+            ],
+            "hazard": false,
+            "paths": [
+              "getAttention (nothing); settles"
+            ],
+            "unscored": false
+          },
+          "path": [
+            "clear (changesData)"
+          ],
+          "pointer": "returnsToLook",
+          "role": "getAttention",
+          "rule": "edge",
+          "sample": 0,
+          "state": "Home, nothing spoken, Emergency showing, sounding, typing, draft written",
+          "strongestTransitionAddition": true,
+          "usesUnavailableTypeTransition": false
+        }
+      ],
+      "from": "open-tall-default",
+      "mapping": "quarter-y-WminusX",
+      "sourceDomain": "shared-physical-region",
+      "text": "default",
+      "to": "open-wide-default"
+    },
+    {
+      "cameraRotationConsistent": true,
+      "examples": [
+        {
+          "candidateAfter": {
+            "x": 405.5,
+            "y": 690.9
+          },
+          "candidateAfterOutcome": {
+            "ends": [
+              "hazard"
+            ],
+            "hazard": true,
+            "paths": [
+              "putBack (changesData); hazard"
+            ],
+            "unscored": false
+          },
+          "candidateBefore": {
+            "x": 690.9,
+            "y": 263.5
+          },
+          "candidateBeforeOutcome": {
+            "ends": [
+              "repeats"
+            ],
+            "hazard": false,
+            "paths": [
+              "getAttention (nothing); repeats"
+            ],
+            "unscored": false
+          },
+          "legacyAfter": {
+            "x": 405.5,
+            "y": 690.9
+          },
+          "legacyAfterOutcome": {
+            "ends": [
+              "repeats"
+            ],
+            "hazard": false,
+            "paths": [
+              "phraseTile (nothing); repeats"
+            ],
+            "unscored": false
+          },
+          "legacyBefore": {
+            "x": 690.9,
+            "y": 263.5
+          },
+          "legacyBeforeOutcome": {
+            "ends": [
+              "repeats"
+            ],
+            "hazard": false,
+            "paths": [
+              "getAttention (nothing); repeats"
+            ],
+            "unscored": false
+          },
+          "path": [
+            "putBack (changesData)"
+          ],
+          "pointer": "staysOnControl",
+          "role": "getAttention",
+          "rule": "centre",
+          "sample": 1,
+          "state": "Home, nothing spoken, Emergency showing, sounding, typing, draft cleared",
+          "strongestTransitionAddition": true,
+          "usesUnavailableTypeTransition": false
+        },
+        {
+          "candidateAfter": {
+            "x": 405.5,
+            "y": 690.9
+          },
+          "candidateAfterOutcome": {
+            "ends": [
+              "hazard"
+            ],
+            "hazard": true,
+            "paths": [
+              "putBack (changesData); hazard"
+            ],
+            "unscored": false
+          },
+          "candidateBefore": {
+            "x": 690.9,
+            "y": 263.5
+          },
+          "candidateBeforeOutcome": {
+            "ends": [
+              "settles"
+            ],
+            "hazard": false,
+            "paths": [
+              "getAttention (nothing); settles"
+            ],
+            "unscored": false
+          },
+          "legacyAfter": {
+            "x": 405.5,
+            "y": 690.9
+          },
+          "legacyAfterOutcome": {
+            "ends": [
+              "settles"
+            ],
+            "hazard": false,
+            "paths": [
+              "phraseTile (nothing); settles"
+            ],
+            "unscored": false
+          },
+          "legacyBefore": {
+            "x": 690.9,
+            "y": 263.5
+          },
+          "legacyBeforeOutcome": {
+            "ends": [
+              "settles"
+            ],
+            "hazard": false,
+            "paths": [
+              "getAttention (nothing); settles"
+            ],
+            "unscored": false
+          },
+          "path": [
+            "putBack (changesData)"
+          ],
+          "pointer": "returnsToLook",
+          "role": "getAttention",
+          "rule": "centre",
+          "sample": 1,
+          "state": "Home, nothing spoken, Emergency showing, sounding, typing, draft cleared",
+          "strongestTransitionAddition": true,
+          "usesUnavailableTypeTransition": false
+        },
+        {
+          "candidateAfter": {
+            "x": 405.5,
+            "y": 690.9
+          },
+          "candidateAfterOutcome": {
+            "ends": [
+              "hazard"
+            ],
+            "hazard": true,
+            "paths": [
+              "putBack (changesData); hazard"
+            ],
+            "unscored": false
+          },
+          "candidateBefore": {
+            "x": 690.9,
+            "y": 263.5
+          },
+          "candidateBeforeOutcome": {
+            "ends": [
+              "repeats"
+            ],
+            "hazard": false,
+            "paths": [
+              "getAttention (nothing); repeats"
+            ],
+            "unscored": false
+          },
+          "legacyAfter": {
+            "x": 405.5,
+            "y": 690.9
+          },
+          "legacyAfterOutcome": {
+            "ends": [
+              "repeats"
+            ],
+            "hazard": false,
+            "paths": [
+              "phraseTile (nothing); repeats"
+            ],
+            "unscored": false
+          },
+          "legacyBefore": {
+            "x": 690.9,
+            "y": 263.5
+          },
+          "legacyBeforeOutcome": {
+            "ends": [
+              "repeats"
+            ],
+            "hazard": false,
+            "paths": [
+              "getAttention (nothing); repeats"
+            ],
+            "unscored": false
+          },
+          "path": [
+            "putBack (changesData)"
+          ],
+          "pointer": "staysOnControl",
+          "role": "getAttention",
+          "rule": "edge",
+          "sample": 1,
+          "state": "Home, nothing spoken, Emergency showing, sounding, typing, draft cleared",
+          "strongestTransitionAddition": true,
+          "usesUnavailableTypeTransition": false
+        },
+        {
+          "candidateAfter": {
+            "x": 405.5,
+            "y": 690.9
+          },
+          "candidateAfterOutcome": {
+            "ends": [
+              "hazard"
+            ],
+            "hazard": true,
+            "paths": [
+              "putBack (changesData); hazard"
+            ],
+            "unscored": false
+          },
+          "candidateBefore": {
+            "x": 690.9,
+            "y": 263.5
+          },
+          "candidateBeforeOutcome": {
+            "ends": [
+              "settles"
+            ],
+            "hazard": false,
+            "paths": [
+              "getAttention (nothing); settles"
+            ],
+            "unscored": false
+          },
+          "legacyAfter": {
+            "x": 405.5,
+            "y": 690.9
+          },
+          "legacyAfterOutcome": {
+            "ends": [
+              "settles"
+            ],
+            "hazard": false,
+            "paths": [
+              "phraseTile (nothing); settles"
+            ],
+            "unscored": false
+          },
+          "legacyBefore": {
+            "x": 690.9,
+            "y": 263.5
+          },
+          "legacyBeforeOutcome": {
+            "ends": [
+              "settles"
+            ],
+            "hazard": false,
+            "paths": [
+              "getAttention (nothing); settles"
+            ],
+            "unscored": false
+          },
+          "path": [
+            "putBack (changesData)"
+          ],
+          "pointer": "returnsToLook",
+          "role": "getAttention",
+          "rule": "edge",
+          "sample": 1,
+          "state": "Home, nothing spoken, Emergency showing, sounding, typing, draft cleared",
+          "strongestTransitionAddition": true,
+          "usesUnavailableTypeTransition": false
+        }
+      ],
+      "from": "open-wide-default",
+      "mapping": "quarter-HminusY-x",
+      "sourceDomain": "shared-physical-region",
+      "text": "AX5",
+      "to": "open-tall-default"
+    }
+  ],
+  "sourceSnapshotSHA256": "06a6d97d6c261205756ca0bc41c02d68b9484510b412fbdfe04cbcf0c948f7a4"
+}

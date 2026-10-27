@@ -34,7 +34,7 @@ Phrases alone was a proposal that differed from the landed decision;
 ## Where the drawings are
 
 - **Figma file** in the owner's account,
-  https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f. Three pages:
+  https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f. Pages include:
   - *Foundations*: read me, colour tokens with contrast, the type ladder,
     slot sizes per device.
   - *Home*: iPhone 17, iPhone SE class, iPad Pro 13-inch portrait and
@@ -44,6 +44,23 @@ Phrases alone was a proposal that differed from the landed decision;
   - *Settings and Library*: Settings root, Family Setup, Voice, the
     Library list, the phrase editor and its delete question, on iPhone 17
     and iPad landscape.
+  - *Typing on Home*: the later phone/iPad browsing and typing drawings
+    linked from the typing work file; use these over the historical Home
+    page where the placements differ.
+  - [*Duo fold options*](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=73-3):
+    the later measured-region panel and earlier lane candidates. The
+    runtime rectangles supersede the first horizontal-scrolling blocking
+    conclusion; the counterexample is marked synthetic. The
+    [84-state resolved candidate section](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=89-3)
+    completes the scoped Home drawings, with default/AX5 browsing,
+    available typing, alarm and derived Settings covers in light/dark.
+    Raw fold guides and their outward whole-point planning enclosure
+    are both drawn after the native pixel-rounding finding. Existing
+    AX5 Settings row/fold intersections are shown as unresolved R0-13
+    gaps; these rows are illustrative models, not native measurements.
+    Native rendering, complete chains and physical checks
+    remain separate gates; the work file links the saved render and
+    per-screen manifest.
 - **Claude Design prototype** (private artifact, shared by the owner when
   they choose): an iPhone 17 Home you can tap through (speak, type, alarm,
   Settings, Family Setup, Voice, Library, editor, delete question), and

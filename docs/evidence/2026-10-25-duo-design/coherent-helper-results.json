@@ -1,0 +1,181 @@
+{
+  "schema": 1,
+  "date": "2026-10-25",
+  "scope": "Test measurement correction only; no app source, orientation assertions, floors, waits, skips or chain policy changed.",
+  "nativeReproduction": {
+    "source": "1322630",
+    "receipt": "open-home-results.json",
+    "observation": "Independent application frame669x951 disagrees with same-tree window951x669 and right-hand button coordinates."
+  },
+  "red": {
+    "kind": "Controlled unit reproduction of the existing root-frame substitution in a new shared test seam. These tests did not exist on main.",
+    "mutation": "Use frame(root) instead of propagating the target ancestor window; no expectation changes.",
+    "result": "FAILED,exit65",
+    "counts": {
+      "totalTestCount": 6,
+      "passedTests": 3,
+      "failedTests": 3,
+      "skippedTests": 0,
+      "expectedFailures": 0
+    },
+    "failedCases": [
+      "aTransposedRootDoesNotReplaceTheControlsWindow",
+      "anotherWindowBeforeTheTargetDoesNotChangeItsCoordinates",
+      "aTargetWithoutAWindowAncestorIsRejected"
+    ],
+    "bundle": "build/TestResults/coherent-helper-red/unit-destination.xcresult"
+  },
+  "sourceSHA256": {
+    "BricksonUITests/LaunchHelpers.swift": "2b686c4997f8184083dc829c3a090e216e684f794f170ab8de985d29caf98aaa",
+    "BricksonUITests/SnapshotControlGeometry.swift": "b015c18e8b66d20c0b1ac548782c323b8b9c1213ceec4fb2091ed1bf0a155036",
+    "BricksonTests/SnapshotControlGeometryTests.swift": "109621ac804fb13c4726a1ec474cb69265883311b362143600c2614d4537c22d",
+    "project.yml": "13063f24d65b6e61bef6ebcca141ed7f0976f35be5e5e8379c19796abd1dec83"
+  },
+  "captureSchema": {
+    "version": 2,
+    "fields": [
+      "rootSnapshotFrame",
+      "windowFrames",
+      "controls.hasAncestorWindow",
+      "controls.ancestorWindowIndex",
+      "controls.ancestorWindowFrame"
+    ],
+    "retains": "Every button from all windows including keyboard buttons, original traversal order; no deduplication or root-window fallback.",
+    "oldEvidence": "Existing schema1 receipts remain unchanged."
+  },
+  "limits": [
+    "The pure resolver and selected live adapter/keyboard captures passed their respective checks. The combined selected run remains failed and does not replace the complete standard UI gate.",
+    "The original open19 failures are retained; a measurement correction does not clear actual orientation, clipping, Settings chains, changed-window safety or physical input."
+  ],
+  "green": {
+    "result": "PASSED,exit0",
+    "fullUnitCounts": {
+      "totalTestCount": 775,
+      "passedTests": 766,
+      "failedTests": 0,
+      "skippedTests": 1,
+      "expectedFailures": 8
+    },
+    "bundle": "build/TestResults/coherent-helper-green/unit-destination.xcresult",
+    "coverage": "70.5%,6889/9769 app lines",
+    "toolchain": "Xcode27.1(27A9275),XcodeGen2.46.0,Duo simulator iOS27.1",
+    "catalog": "Current; no catalog edit",
+    "regressionCases": [
+      {
+        "name": "aTransposedRootDoesNotReplaceTheControlsWindow()",
+        "result": "Passed",
+        "nodeIdentifier": "SnapshotControlGeometryTests/aTransposedRootDoesNotReplaceTheControlsWindow()"
+      },
+      {
+        "name": "anotherWindowBeforeTheTargetDoesNotChangeItsCoordinates()",
+        "result": "Passed",
+        "nodeIdentifier": "SnapshotControlGeometryTests/anotherWindowBeforeTheTargetDoesNotChangeItsCoordinates()"
+      },
+      {
+        "name": "theSelectedControlsWholeIdentityExcludesADifferentPrediction()",
+        "result": "Passed",
+        "nodeIdentifier": "SnapshotControlGeometryTests/theSelectedControlsWholeIdentityExcludesADifferentPrediction()"
+      },
+      {
+        "name": "aTargetWithoutAWindowAncestorIsRejected()",
+        "result": "Passed",
+        "nodeIdentifier": "SnapshotControlGeometryTests/aTargetWithoutAWindowAncestorIsRejected()"
+      },
+      {
+        "name": "aMissingTargetIsRejected()",
+        "result": "Passed",
+        "nodeIdentifier": "SnapshotControlGeometryTests/aMissingTargetIsRejected()"
+      },
+      {
+        "name": "ambiguousSemanticMatchesAreRejected()",
+        "result": "Passed",
+        "nodeIdentifier": "SnapshotControlGeometryTests/ambiguousSemanticMatchesAreRejected()"
+      }
+    ]
+  },
+  "nativeAdapterCheck": {
+    "counts": {
+      "totalTestCount": 3,
+      "passedTests": 2,
+      "failedTests": 1,
+      "skippedTests": 0,
+      "expectedFailures": 0
+    },
+    "result": "FAILED overall,exit65; two cases passed and original Settings case remains failed",
+    "passedCases": [
+      "HomeReachabilityTests/testEveryHomeStateAtDefaultTextInPortrait()",
+      "TypingOnHomeTests/testTypeOpensTheKeyboardAndMovesNothing()"
+    ],
+    "failedCase": "SettingsOnHomeTests/testOpeningSettingsFromHomeAtTheLargestText()",
+    "failures": [
+      "Original portrait request not satisfied by open inner display",
+      "Unwrapped Family Setup Back centre903,163 -> backToTalking -> getAttention (alarms) remains at SettingsOnHomeTests.swift:263"
+    ],
+    "zeroNewGeometryMatchingErrors": true,
+    "context": "Duo simulator iOS27.1,requested portrait,actual951x669,default/light Home+typing,AX5/light Settings; full US English software keyboard with prediction row",
+    "captures": [
+      {
+        "file": "coherent-open-default-buttons.json",
+        "sha256": "988e0755167a180a173d45ac11322c1e12e139bb61d347b7055154182a1dfee2",
+        "originalBytesUnchanged": true,
+        "rootSnapshotFrame": {
+          "height": 951,
+          "width": 669,
+          "x": 0,
+          "y": 0
+        },
+        "windowFrames": [
+          {
+            "height": 669,
+            "width": 951,
+            "x": 0,
+            "y": 0
+          }
+        ],
+        "buttonCount": 20,
+        "buttonCountsByAncestorIndex": {
+          "0": 20
+        }
+      },
+      {
+        "file": "coherent-open-typing-buttons.json",
+        "sha256": "3133540013b90b5428fdd18c18d2510ff18350414d67a967e34448c52db521ac",
+        "originalBytesUnchanged": true,
+        "rootSnapshotFrame": {
+          "height": 951,
+          "width": 669,
+          "x": 0,
+          "y": 0
+        },
+        "windowFrames": [
+          {
+            "height": 669,
+            "width": 951,
+            "x": 0,
+            "y": 0
+          },
+          {
+            "height": 669,
+            "width": 951,
+            "x": 0,
+            "y": 0
+          },
+          {
+            "height": 669,
+            "width": 951,
+            "x": 0,
+            "y": 0
+          }
+        ],
+        "buttonCount": 29,
+        "buttonCountsByAncestorIndex": {
+          "0": 20,
+          "2": 9
+        }
+      }
+    ],
+    "keyboardCapture": "29 Button entries:20 in ancestorWindow0 and9 in ancestorWindow2; three window records retained. The adjacent textual AX capture has29 Button entries and40 Key entries. JSON producer retains Buttons; separate Key elements are outside that schema, unchanged from schema1. These separate attachments are not one simultaneous snapshot.",
+    "runtimeWarning": "AVAudioSession reports synchronous activation may lead to UI unresponsiveness. It is retained, not attributed as startup cause or suppressed.",
+    "bundle": "build/TestResults/coherent-helper-duo-ui/ui-destination.xcresult"
+  }
+}

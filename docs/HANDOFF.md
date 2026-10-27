@@ -27,7 +27,11 @@ phrase columns on every iPhone at its standard Display Zoom (two on 375
 and 390-point phones with Bold Text). A tile
 speaks at once, in the person's Personal Voice when one exists and is
 allowed; the sentence stays on screen in the message's reserved lines,
-and a longer message scrolls inside them. Type opens Apple's keyboard
+and a longer message scrolls inside them. The phrase grid keeps native
+pan cancellation even when its tiles fit, so a deliberate vertical drag
+can bounce only its content rather than speak. Static Home controls stay
+fixed, and fitting tiles must return to their frames when the drag
+settles (docs/DECISIONS.md, "Phrase-grid drag cancellation"). Type opens Apple's keyboard
 with the message being typed in the message's place: Speak, in Again's
 place, or Return says the whole message and keeps it; Phrases goes back
 to the phrases and keeps it too; Clear and Put Back take two category
@@ -119,8 +123,11 @@ Xcode 27.1 (27A9275); PR #20 landed in `d79d836`.
   The Home matrix found all eight starter phrases fitting on the 13-inch
   iPad at default/AX4/AX5, standard and Larger Text Display Zoom, in both
   orientations. Standard iPhone AX4/AX5 scrolls 4/52pt. Its zoomed 320×693
-  window scrolls 169pt at default; at AX4 its grid is only 7pt high and at
-  AX5 it has zero height below the window. Those access checks fail.
+  window scrolls 169pt at default. A later native sample measured 329pt
+  at AX4 through its 7pt-high grid, with no whole tile at either end;
+  at AX5 the grid has zero height below the window. Those access checks
+  fail ([AX4 result and images](evidence/2026-10-25-duo-design/phone-zoom-ax4-scroll-results.json)).
+  Default zoom was restored and verified at 402×874 before cleanup.
   Duo's closed/open Home runs include failures; native Device Hub also
   covered both inner orientations and a 130° partial pose. Three separate
   cold iPhone boots passed the historical first-snapshot test without app
@@ -240,20 +247,46 @@ Xcode 27.1 (27A9275); PR #20 landed in `d79d836`.
   No controlled device check has passed. Formal testing waits for a
   mounted setup; see *Checks that need a real device*.
 - **No test sees** VoiceOver announcements being posted, the message's
-  scroll reset, the missed-callback watchdog on a real synthesizer (it is
-  unit-tested with fakes), or sound. Windowed iPad
+  scroll reset, the missed-callback watchdog on a physical device (it is
+  unit-tested with fakes), or sound. A later temporary simulator trace
+  observed 232 real-synthesizer watchdog checks over 239 seconds: progress
+  reached the tracker, but the system stayed speaking/unpaused without a
+  finish/cancel callback. Three isolated AV controls also timed out without
+  Brickson's wrapper; cause remains unidentified, with no audio or wait
+  change ([diagnostic](evidence/2026-10-25-duo-design/speech-diagnostic/README.md)). Windowed iPad
   sizes are untested. The 2026-10-25 Mac run checked Duo closed, open,
   partially open and rotated, with recorded failures and test-framework
-  limits; windowed Duo and its reserved fold/camera regions remain
-  unverified ([record](log/2026-10-25-mac-keyboard-checks.md)). The first
-  UI test on a just-started CI simulator failed intermittently before
-  PR #13's warm-up launch (AGENTS.md, *Gotchas*). A later PR #57 CI run
-  failed its first Yes lookup after an automation-session timeout; that
-  job eventually reached its 75-minute limit. The exact failing Get
-  Attention test passed locally on two fresh iPad installations without
-  app warm-up and one independently reset, normally warmed control.
-  The three older cold-phone snapshot checks also passed. The cause
-  remains unresolved ([follow-up and recovered CI frame](log/2026-10-25-native-ax5-typing.md)).
+  limits ([record](log/2026-10-25-mac-keyboard-checks.md)). Later item 6
+  measurements queried the reserved regions and reached both native
+  Split View panes. The item 6 Spec and scoped drawings are linked, and
+  earlier PR #58 head `35bed06` has a green
+  [hosted run](https://github.com/MiddleAgedBanana/Brickson/actions/runs/40244703180):
+  777 unit cases and 51 UI cases per standard family completed. The AX3
+  capacity correction passes 778 native unit cases (769 passed, zero
+  failed, one existing #19 skip and eight strict expected failures), with
+  a current catalog and 71.2% coverage. Two focused light/dark native
+  probes show eight whole Basics tiles after returning 4pt of optional
+  category growth; 59 of 60 modeled static layouts remain exactly
+  unchanged. Its full standard UI run completed 51 cases per family, with
+  one failed AX5 Speaking-wait case each and no other unexpected assertion
+  ([receipt](evidence/2026-10-25-duo-design/ax3-growth-ui-results.json)). Earlier complete local
+  runs failed one Speaking-wait case per family; unchanged main reproduces
+  it on the same iPad, with cause unresolved. Default/AX5 captures were inspected on both
+  families; representative Duo active-display captures were also inspected
+  ([design record](log/2026-10-25-duo-fold-design.md)). The first UI test still
+  intermittently shows a blank canvas and fails AX startup on CI despite
+  PR #13's warm-up launch. The earlier retained
+  [hosted receipt](evidence/2026-10-25-duo-design/ci-startup-1322630/README.md)
+  has no app stack establishing a cause. Three local cold controls on the
+  matching12GB iPad/runtime passed on 2026-10-25; two were unwarmed and one
+  used the CI-shaped warm-up. Those controls and the later green hosted
+  run do not explain that failure. A later PR #57 CI run failed its first
+  Yes lookup after an automation-session timeout; that job eventually
+  reached its 75-minute limit. The exact failing Get Attention test passed
+  locally on two fresh iPad installations without app warm-up and one
+  independently reset, normally warmed control. The three older cold-phone
+  snapshot checks also passed. The cause remains unresolved
+  ([follow-up and recovered CI frame](log/2026-10-25-native-ax5-typing.md)).
   Apple's accessibility audit never sees
   Home's "Speaking" line: audits wait for speech to finish, because one
   that ran while the line left reported text with no element (issue #30,
@@ -366,10 +399,15 @@ release in docs/ROADMAP.md when no thread has it yet.
   320pt windows at every size, a 375×667 phone from AX3, and the iPad
   mini and a zoomed 13-inch iPad in landscape from AX3. There Type is
   dimmed, with a VoiceOver hint saying why, so the keyboard never covers
-  Emergency, Yes, No, Speak or Get Attention; if the room goes while
-  typing, the keyboard is put away and typing stays on with the phrases
-  dimmed (`HomeLayout.offersTyping`; docs/DECISIONS.md, "Typing on Home",
-  *The keyboard's room, measured*). The keyboards on these windows are
+  Emergency, Yes, No, Speak or Get Attention on entry. If the room goes
+  while typing, the intended behavior is to put the keyboard away while
+  typing stays on and the phrases stay dimmed (`HomeLayout.offersTyping`;
+  docs/DECISIONS.md, "Typing on Home", *The keyboard's room, measured*).
+  A native Duo AX3 tall-to-wide transition instead left the keyboard
+  visible on both `35bed06` and the local capacity candidate. A private
+  baseline-only trace reports focus false at the settled wide observation;
+  the keyboard remains visible. Cause is unresolved and no focus fix is claimed
+  ([record](log/2026-10-25-duo-fold-design.md)). The keyboards on these windows are
   not measured (the room is the tallest keyboard measured on their
   shape), so measuring them may give typing back; offering it with the
   covered controls two activations away would be an exception for the
@@ -429,13 +467,20 @@ release in docs/ROADMAP.md when no thread has it yet.
   coverage; Clear emptied the field, but Put Back remained behind the
   full keyboard. The visible software Return key submitted the message,
   and reopening Type retained the draft. This proves visible state,
-  not sound ([follow-up](log/2026-10-25-native-ax5-typing.md)). Put Back's
+  not sound ([follow-up](log/2026-10-25-native-ax5-typing.md)). That record
+  landed in [PR #59](https://github.com/MiddleAgedBanana/Brickson/pull/59),
+  now merged as `e568aa7`; its `0d87ae1` hosted unit/UI checks passed.
+  Put Back's
   placement still needs a layout answer. On iPad, Clear and Put Back
   were observed, and Device Hub checked their reachability. Native
   Device Hub activation of Return changed the last-spoken display.
   [Record and screenshots](log/2026-10-25-mac-keyboard-checks.md).
-  Not checked: the iPad's floating and split keyboards, other languages, iPhone
-  Duo's inner display (`KeyboardAllowance`'s *Not covered yet* in
+  The later item 6 probes also measured default-text full-screen Duo
+  typing in both axes with the full US English keyboard; the core controls,
+  Clear and Put Back were geometrically uncovered. AX5 Type was unavailable.
+  [Receipts](evidence/2026-10-25-duo-design/native-frame-comparison.md).
+  Not checked: windowed iPad/Duo keyboards, the iPad's floating and split
+  keyboards, other languages (`KeyboardAllowance`'s *Not covered yet* in
   docs/DECISIONS.md, "Typing is a state of Home"), and on a real device
   whether the cursor and keyboard come at once when Type is chosen by
   Switch Control, Voice Control or a dwell, what a look slipping off the
@@ -584,24 +629,121 @@ release in docs/ROADMAP.md when no thread has it yet.
   Siri and Shortcuts, which 1.0 does not ship, were deleted on 2026-10-23
   ([`log/2026-10-23-accessibility-page-and-privacy-trim.md`](log/2026-10-23-accessibility-page-and-privacy-trim.md)
   keeps their words). *(App Store readiness and ASO)*
-- iPhone Duo: the owner's Mac checked app code `8316743`, before PR #56,
-  closed (466×678),
-  open in wide (951×669) and tall (669×951) orientations, and partially
-  open at 130°, on 2026-10-25. Closed AX5 cannot show a complete phrase
-  tile; wide AX5 shows four complete tiles and scrolls 10pt; tall fits
-  all eight at default, AX4 and AX5. The 19 existing Home tests had one
-  closed audit failure, and nine open failures plus two landscape skips;
-  the pre-PR #56 open failures include portrait/window-API assumptions
-  and a distinct AX5 nearest-control finding, not yet rescored after it. All five default typing tests passed open.
-  Device Hub rotation worked; the tested XCTest rotation request did not.
-  XCTest's inner captures were black inactive-outer images, so active
-  RocketSim images and coherent accessibility snapshots preserve the
-  evidence. The wide rendered fold crosses No, Conversation and phrase
-  tiles; fold/camera clearance, windowing and physical input remain
-  unverified. CI still has no Duo family; screenshots are required from
-  April 2027 (docs/DECISIONS.md, "iPhone Duo";
-  [Mac record](log/2026-10-25-mac-keyboard-checks.md)).
-  *(R0 item 13: Wave 3 item 6; PR #56 has cleared the owner's merge gate)*
+- iPhone Duo: Wave 3 item 6 now allocates Home from typed fold and
+  camera rectangles, including inactive regions, with even phrase lanes.
+  In six native simulator poses, strict checks found no fold/camera
+  intersection in static Home controls or geometrically cropped tiles;
+  32 full AX tile/camera intersections remain off the AX5 browsing
+  viewport. Clipping is not physical Snap proof. Browsing shows eight
+  whole tiles at default text in all four full-screen open rotations,
+  and four at AX5 (trailing content 14–82pt). Closed shows six at default
+  (3pt trailing extent) and none at AX5 (249pt extent). Later bounded native Basics/light probes
+  established actual top-to-bottom travel of 82pt in one wide AX5 window,
+  14pt in one tall AX5 window and 8pt in the paired default pane, each
+  after actual movement and aligned endpoints. These are three samples,
+  not maxima for every pose/category ([measurements](evidence/2026-10-25-duo-design/measured-scroll-results.json)). The measured pane inputs produce eight/zero whole
+  tiles at default/AX5 in the earlier pure pane fixtures. The later native
+  paired left pane shows six/zero, with a newly returned inactive bottom
+  occlusion; original active-display captures are in the implementation
+  record. Other pane arrangements remain unverified. Default inner-display typing keeps the core
+  controls, Clear and Put Back above the full US English keyboard;
+  AX5 Type is unavailable. Settings' root Back stays within Phrases,
+  but AX5 rows still intersect the fold. The original current19-case Home
+  checks fail in closed/open poses (1/9 failed cases respectively).
+  Native Family Setup's standard Back is trailing; its AX5 chain reaches
+  Back to Talking and Get Attention. Unchanged main reproduces that exact
+  path, outside the accepted first-step-only scope. The
+  [native comparison](evidence/2026-10-25-duo-design/native-settings-chain-results.json)
+  retains it as an open baseline failure. A [changed-window diagnostic](evidence/2026-10-25-duo-design/transition-report.md)
+  finds added hazards under hypothetical pointer-coordinate maps;
+  actual platform mapping is unknown, so that gate has not passed.
+  PR #58's review scope is fold/camera allocation, the measured AX3
+  capacity correction and the verified drag-to-speech repair; it does not
+  close every Duo release gate.
+  Settings/setup remain broader R0-13 work;
+  no new exception is accepted. The
+  [implementation record](log/2026-10-25-duo-fold-design.md) and
+  [native comparison](evidence/2026-10-25-duo-design/native-frame-comparison.md)
+  distinguish native measurements from the illustrative Settings model.
+  The [earlier Mac record](log/2026-10-25-mac-keyboard-checks.md) preserves
+  app `8316743`'s failures before PR #56. Earlier local standard UI suites
+  fail the same Speaking-wait case also reproduced on main; their cause
+  is unresolved and the failed suites are retained. Earlier `35bed06`
+  has green hosted unit/UI checks. The AX3 growth correction
+  passes 778 native unit cases and two focused light/dark probes; its
+  full standard UI run completed 51 cases per family with one failed
+  AX5 Speaking-wait case each. Retained typing from tall to wide
+  leaves the keyboard visible on baseline and candidate; a baseline-only
+  trace also reports focus false. This separate failure remains unresolved.
+  Physical testing stays deferred;
+  CI still has no Duo family and screenshots are required from April 2027
+  (docs/DECISIONS.md, "iPhone Duo"). *(R0 item 13 / Wave 3 item 6)*
+- **Open, outside PR #58:** the private AX5 capacity alternative is
+  unselected and is not part of the shared app; automatic keyboard
+  dismissal after a tall-to-wide Duo turn still fails; Put Back remains
+  covered by the phone's AX5 keyboard; and the intermittent startup flake
+  has no established cause or fix. The drag investigation first found a
+  reflected XCTest coordinate and passing long paths; a later verified
+  80pt tile-start drag proved a shared-app bug by speaking on release.
+  The repair keeps native pan handling even when tiles fit, using the
+  same standard Buttons and ScrollView with no fitting-content disable
+  and `.scrollBounceBehavior(.always)`. Removing the disable alone failed.
+  The recovered private AX5 source also reproduces the original gutter
+  failure; only these two scroll modifiers change its light/dark result
+  to passing. Its full flow/suite and capacity design remain unselected
+  and unverified. [Failures, source recovery and bounded passes](log/2026-10-25-duo-fold-design.md#pr-58-continuation-and-drag-investigation-2026-10-26).
+  Before the extra batch, selected runs passed all seven cases on each of
+  Duo, iPad and iPhone: the five `PhraseDragTests` cases (including the
+  1.5s hold, first taps and static/fitting settled frames) plus two existing
+  slow-press cases, with no skips or expected failures. The pre-extra-batch
+  unit gate passed 778 total: 769 passed, zero failed, one existing #19
+  skip and eight strict expected failures; catalog current with `CI=true`,
+  coverage 71.1% (7,026/9,875). The later pre-extra-batch hosted checks
+  pass units and all 56 UI cases per family (iPad 51 passed / 0 failed /
+  2 skipped / 3 expected; iPhone 48 / 0 / 6 / 2). Complete local UI on
+  `4c02a0c` ran 56 per family but each failed only the old AX5 Speaking waits
+  (iPad 50 / 1 / 2 / 3; iPhone 47 / 1 / 6 / 2). PR #58 is still a draft:
+  the owner authorized one extra repair batch after two post-green fix
+  pushes, for the missing renderer initial-region top inset and a native
+  test that must prove all eight tiles fit before its unconditional
+  settled-frame comparison. [Intent, Spec and Plan](work/layout-engine.md#owner-authorized-renderer-and-fitting-test-review-batch)
+  preceded implementation. P1's native default-text light/dark iPad
+  reproduction fails both cases with eight intended assertions: Phrases
+  y40 instead of the independently expected y62 crosses a synthetic
+  y52–62 band, while Settings' Back is y62. [Original images, frame JSON
+  and provenance](log/2026-10-25-duo-fold-design.md#extra-batch-rendered-red-result-and-unverified-implementation)
+  distinguish this fixture from an actual OS pose. The renderer now
+  consumes the allocated first inset through a standard spacer; P2 now
+  requires actual fit in the default light/dark native cases and compares
+  their settled tiles unconditionally. The affected final-source iPad
+  selection passes 10/10 without skips or expected failures; seven runtime
+  audio-session diagnostics are retained. Ordinary zero-inset frames
+  match exactly across 40 light/dark comparisons. A 1pt clipped-viewport
+  App variant passes with the fit flags off and fails before input with
+  them on, proving the guard; all 153 Swift/project-source hashes were
+  restored. [Green and mutation evidence](log/2026-10-25-duo-fold-design.md#extra-batch-ipad-green-and-fitting-guard-proof).
+  The affected final iPhone selection also passes 10/10 with retained
+  runtime audio diagnostics. Extra-batch full units pass 781 total:
+  772 passed, zero failed, one existing #19 skip and eight strict expected
+  failures; catalog current under `CI=true`, coverage 71.2% (7,054/9,903).
+  The final affected Duo selection passes 7/7, zero failures/skips/expected
+  failures, with seven retained runtime audio warnings, on the actual
+  OS-reported opposite tall open/flat window (180 degrees), without a
+  synthetic reservation fixture. Coordinate and default fitting guards
+  passed; all 153 source hashes match final and all three owned simulators
+  are shut down. At this recorded pre-push checkpoint only new-head hosted
+  CI and review resolution remain pending after the single authorized
+  push; live PR checks/review state provide the subsequent result. These
+  selections are not new full ordinary UI runs; no Release/device proof
+  is inferred. Two Greptile conversations
+  remain open, Codex review is running and security review completed with
+  no reported findings at this checkpoint. The extra batch needs its own
+  final-source gates; current-head PR checks govern review readiness. The recovered
+  private source is preserved in ignored `build/recovered-private-source.tar.gz`,
+  with all 87 restored App hashes verified inside the archive. Engine
+  geometry, floors and capacity are unchanged; the renderer is corrected
+  to consume those allocations. No input-profile rule or
+  release exception is accepted.
 - The app icon is a placeholder; `design/brand/` is not installed. *(Release chores, R0 item 11)*
 - Siri's alternative name "Brick Son" (`INAlternativeAppNames`) has no
   effect yet: Apple applies it only to apps with Siri support, which
@@ -638,8 +780,42 @@ which change Home, are its
 [Wave 3](ROADMAP.md#wave-3-the-next-pull-requests-in-order) (planned
 2026-10-23): items 1 to 5 and 7 are built, typing on Home (item 5) on
 2026-10-24 ([`log/2026-10-24-typing-on-home.md`](log/2026-10-24-typing-on-home.md),
-*Follow-ups*); next on Home is item 6, iPhone Duo in every pose, which
-needs the owner's Mac. Its item 2, the chain engine, is built; a change
+*Follow-ups*); next on Home is item 6, iPhone Duo in every pose. Its Mac
+design pass has started after PR #56 merged. The continuation in
+[the layout-engine work file](work/layout-engine.md#item-6-fold-and-camera-design-2026-10-25)
+now uses queried fold/camera rectangles and native left/right Split View
+measurements. The earlier horizontal-scrolling owner blocker is
+withdrawn: the measured full-screen tall phrase viewport is below the
+division. Right-pane AX5 still leaves no whole phrase tile visible.
+The scoped 84-state drawings are complete, with an outward whole-point
+fold allowance after a strict native overlap failure. The local engine
+passed the earlier 777-case unit gate, including six test-helper
+regressions and the native mode-word inset correction; `35bed06` also has
+51 UI cases per standard family in a green hosted run. The AX3
+correction returns only optional category growth after final lane/camera
+allocation: its 778-case native unit gate and two focused light/dark
+probes pass, with eight whole Basics tiles and unchanged root Back. Its
+full standard UI run completed all 51 cases per family with one failed
+AX5 Speaking-wait case each and no other unexpected assertion. Earlier complete and selected local
+Speaking-wait failures remain recorded with cause unresolved.
+The [word-floor receipt](evidence/2026-10-25-duo-design/native-mode-word-results.json)
+retains that separate failing reproduction and unit gate. AX5 capacity
+remains open; retained typing from tall to wide also leaves the keyboard
+visible on baseline and candidate; the baseline-only trace reports focus
+false. No font, spacing,
+floor or placement rule changed.
+Representative Duo active-display checks show the AX5 and Settings gaps;
+the paired left pane shows six/zero whole tiles at default/AX5.
+Changed-window diagnostics expose added paths under unverified
+coordinate maps, so folding safety has not passed. PR #58's narrow
+fold/camera and AX3 correction, including the drag-to-speech repair,
+can be reviewed separately after its current-head checks pass; that is
+not a release-readiness claim.
+No new exception is accepted. Existing AX5 Settings row/fold intersections remain broader
+R0-13 gaps, explicitly shown in the drawings. The
+same-app second-window attempt remains inconclusive; the temporary
+XCTest windowing probe skipped. Physical checks remain deferred.
+Its item 2, the chain engine, is built; a change
 that moves a control keeps its tests passing. Item 7 scored Get
 Attention in Settings' bar, which would sound the alarm unasked, for the
 owner to decide, and built a fix for the chain that saves a setup
@@ -670,9 +846,11 @@ JSON project format is planned, not adopted: the owner's 2026-10-25
 handoff requires released Xcode 27.2 and its first fix release before
 the trial on the owner's Mac starts. XcodeGen stays until the gates hold (docs/DECISIONS.md, "Xcode's
 JSON project format"). iPhone
-Duo is R0 item 13: closed, open, partly folded and rotated simulator
-measurements are recorded, with failures and unverified fold/camera and
-windowing checks ([Mac record](log/2026-10-25-mac-keyboard-checks.md)).
+Duo is R0 item 13: the earlier closed/open/partly folded/rotated failures
+remain in the [Mac record](log/2026-10-25-mac-keyboard-checks.md); item 6's
+[reserved-region implementation](log/2026-10-25-duo-fold-design.md) adds
+native geometry and unit evidence while broader Settings/setup, windowing
+and physical checks remain open.
 PR #56 has cleared the owner's alarm-path merge prerequisite for Wave 3
 item 6; its implementation now uses these measured spaces
 ([`log/2026-10-23-iphone-duo-readiness.md`](log/2026-10-23-iphone-duo-readiness.md), *Follow-ups*);

@@ -1,0 +1,130 @@
+{
+  "date": "2026-10-25",
+  "source": {
+    "head": "132263011a870645e2c63903a17d22065702d703",
+    "run": 40224730784,
+    "job": 121263578369,
+    "artifact": 12612143704,
+    "zipBytes": 51556450,
+    "zipSHA256": "1cc9cc4a8c4dc23fe4028c8fa5c55111df68abb7bcccab8c9e7933f427a1e92e",
+    "bundle": "ui-ipad.xcresult"
+  },
+  "test": {
+    "identifier": "GetAttentionOnHomeTests/testTheAlarmStartsAndStopsAtDefaultText()",
+    "durationSeconds": 81.903205037117,
+    "result": "Failure",
+    "sourceLocation": "BricksonUITests/LaunchHelpers.swift:93",
+    "error": "Failed to get matching snapshots: Error getting main window kAXErrorServerNotFound"
+  },
+  "visual": {
+    "result": "Blank white Brickson screen in inspected late and final retained frames; no Home controls visible.",
+    "samples": [
+      {
+        "file": "blank-startup-15s.png",
+        "mediaSample": "15s and byte-identical 30s frame",
+        "observation": "White Brickson canvas; no Home controls"
+      },
+      {
+        "file": "blank-startup-final.png",
+        "mediaSample": "final decoded frame",
+        "observation": "White Brickson canvas; no Home controls"
+      }
+    ],
+    "video": {
+      "file": "first-launch-recording.mp4 (retained in original CI artifact)",
+      "sha256": "871935f8cf7bf29f2cd24f10305ebe519226e310b051f3ddba6afff5631412f7",
+      "bytes": 8941317,
+      "width": 2064,
+      "height": 2752,
+      "frames": 174,
+      "containerDurationSeconds": 39.666667,
+      "lastDecodedFramePTSSeconds": 35.788333,
+      "creationTimeUTC": "2026-10-25T19:24:28Z"
+    },
+    "timingLimit": "Media duration and PTS do not span the 81.903-second test. No verified mapping establishes that a selected frame is the exact failure instant, or that the canvas stayed blank for the whole test."
+  },
+  "timelineUTC": [
+    {
+      "time": "19:24:26.984",
+      "event": "Test begins"
+    },
+    {
+      "time": "19:24:29.072",
+      "event": "Launch activity begins"
+    },
+    {
+      "time": "19:24:34.796",
+      "event": "XCTest reports app process running foreground"
+    },
+    {
+      "time": "19:24:35.489",
+      "event": "XCTest requests app automation session with 60-second timeout"
+    },
+    {
+      "time": "19:24:42.425\u201319:24:42.663",
+      "event": "App stdout emits audio-factory/session warning and simulator Personal Voice unsupported message"
+    },
+    {
+      "time": "19:25:35.520",
+      "event": "Automation session times out (60.032-second activity)"
+    },
+    {
+      "time": "19:25:41.818\u201319:25:41.820",
+      "event": "Animation and event-loop AX monitoring both return kAXErrorServerNotFound"
+    },
+    {
+      "time": "19:25:43.898\u201319:25:45.982",
+      "event": "Three Yes-button hierarchy snapshot requests"
+    },
+    {
+      "time": "19:25:45.991",
+      "event": "Main-window snapshot failure recorded; test never reaches alarm activation"
+    },
+    {
+      "time": "19:25:48.628",
+      "event": "First test teardown ends"
+    }
+  ],
+  "diagnostics": {
+    "retainedDiagnosticFiles": 6,
+    "retainedAppStdout": true,
+    "appFirstProcessStdoutLines": 5,
+    "appFirstProcessFinding": "Only three framework/simulator messages after header/blank line; no app error, fatal exception, or crash stack present in that block. These messages do not identify a cause.",
+    "retainedRunnerStdout": true,
+    "runnerWarning": "Duplicate UIAccessibilityLoaderWebShared implementation warning; relevance to this failure is unestablished.",
+    "firstCaseAttachments": [
+      "Screen recording",
+      "Yes-query debug description (query chain only; no app hierarchy)"
+    ],
+    "appCrashOrSampleFound": false,
+    "diagnosticLeafFinding": "No .ips/.crash, app hang sample, spindump or symbolicated app-thread stack recovered among the six diagnostic leaves or first-case attachments.",
+    "issueSourceContext": {
+      "frameAddresses": 107,
+      "symbolizedFrames": 0,
+      "finding": "Unsymbolicated addresses belong to the XCTest failure/source context; they do not establish an app-thread crash or hang stack."
+    },
+    "testErrorsCount": 0,
+    "collectionLimit": "scripts/test.sh requests -collect-test-diagnostics never; absence of a crash/sample in this artifact does not prove the app neither crashed nor hung."
+  },
+  "conclusion": "This independently corroborates a blank-canvas startup symptom together with an automation-session timeout and failed AX main-window retrieval. It does not show a correctly rendered Home hidden only from AX. There is no recovered app stack to locate blocked code or assign cause to the app, OS, audio, storage, or XCTest.",
+  "notVerified": [
+    "Exact frame-to-failure wall-clock mapping",
+    "Continuous visual state throughout the whole test",
+    "App main-thread or other thread stack during the failure",
+    "Root cause or newly introduced regression",
+    "Physical-device behavior"
+  ],
+  "privacy": "Only curated metadata and reviewed neutral original-byte frames are committed; complete artifact, session and stdout remain private temporary evidence.",
+  "screenshots": [
+    {
+      "file": "blank-startup-15s.png",
+      "sha256": "20299419fcda1458e25cb9a89701174a71538ce19f13d8e210f6eb7837833ddb",
+      "originalBytesUnchanged": true
+    },
+    {
+      "file": "blank-startup-final.png",
+      "sha256": "4f8fb611bfecd5b1802c9f63bf70e677819ae68e4bf69e06d44880af440e0a37",
+      "originalBytesUnchanged": true
+    }
+  ]
+}

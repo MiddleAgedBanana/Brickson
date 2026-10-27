@@ -1,0 +1,199 @@
+{
+  "schema": 1,
+  "date": "2026-10-25",
+  "source": "bc72b73824aae42a1d7dac42b434941ff8ee9e5b",
+  "scope": "Completed full iPhone UI family after the coherent-snapshot helper correction; sourcebc72b73 before the later minimum-width correction.",
+  "resultBundle": "build/TestResults/coherent-helper-standard-ui/ui-iphone.xcresult",
+  "result": "Failed",
+  "destination": "iPhone17, iOS Simulator27.0",
+  "familyStartUTC": "2026-10-25T21:40:19.531000+00:00",
+  "familyFinishUTC": "2026-10-25T21:57:48.466000+00:00",
+  "counts": {
+    "totalTestCount": 51,
+    "passedTests": 42,
+    "failedTests": 1,
+    "skippedTests": 6,
+    "expectedFailures": 2
+  },
+  "failedCase": {
+    "test": "LaunchTests/testLargestTextKeepsQuickControlWordsVisible()",
+    "durationSeconds": 143.86442005634308,
+    "startUTC": "2026-10-25T21:46:02.013000+00:00",
+    "finishUTC": "2026-10-25T21:48:25.877420+00:00",
+    "assertions": [
+      {
+        "message": "XCTAssertTrue failed - \"Speaking\" still showed 30 s later (AX5, light, phrase spoken): the phrase never ended",
+        "file": "LaunchTests.swift",
+        "line": 126
+      },
+      {
+        "message": "XCTAssertTrue failed - \"Speaking\" still showed 30 s later (AX5, light): the phrase never ended",
+        "file": "LaunchTests.swift",
+        "line": 145
+      },
+      {
+        "message": "XCTAssertTrue failed - \"Speaking\" still showed 30 s later (AX5, dark, phrase spoken): the phrase never ended",
+        "file": "LaunchTests.swift",
+        "line": 126
+      },
+      {
+        "message": "XCTAssertTrue failed - \"Speaking\" still showed 30 s later (AX5, dark): the phrase never ended",
+        "file": "LaunchTests.swift",
+        "line": 145
+      }
+    ],
+    "issueTimestamps": [
+      {
+        "timestampUTC": "2026-10-25T21:46:41.572000+00:00",
+        "message": "XCTAssertTrue failed - \"Speaking\" still showed 30 s later (AX5, light, phrase spoken): the phrase never ended"
+      },
+      {
+        "timestampUTC": "2026-10-25T21:47:12.216000+00:00",
+        "message": "XCTAssertTrue failed - \"Speaking\" still showed 30 s later (AX5, light): the phrase never ended"
+      },
+      {
+        "timestampUTC": "2026-10-25T21:47:53.331000+00:00",
+        "message": "XCTAssertTrue failed - \"Speaking\" still showed 30 s later (AX5, dark, phrase spoken): the phrase never ended"
+      },
+      {
+        "timestampUTC": "2026-10-25T21:48:23.777000+00:00",
+        "message": "XCTAssertTrue failed - \"Speaking\" still showed 30 s later (AX5, dark): the phrase never ended"
+      }
+    ],
+    "unexpectedWordOrGeometryAssertionFound": false,
+    "finding": "One failed case, exactly four 30-second Speaking waits: LaunchTests.swift126/145 in light and dark. No rendered quick-word assertion, geometry/window-matching error or AX startup error is reported in the completed test tree."
+  },
+  "schema2": {
+    "captures": 54,
+    "controlRecords": 845,
+    "invalidAncestorMetadataCaptures": 0,
+    "representativeCaptures": [
+      {
+        "context": "AX5 light phrase spoken",
+        "exportedAttachment": "2C4501C7-9E08-4C86-871B-2E1991D7E61C.json",
+        "sha256": "2a057226c42f4ec6bbfa665dc413dca7f040a0ad3be36c807ce9579727c4f0d3",
+        "schemaVersion": 2,
+        "rootSnapshotFrame": {
+          "height": 874,
+          "width": 402,
+          "x": 0,
+          "y": 0
+        },
+        "windowFrames": [
+          {
+            "height": 874,
+            "width": 402,
+            "x": 0,
+            "y": 0
+          }
+        ],
+        "controls": 18,
+        "controlsByAncestorWindowIndex": {
+          "0": 18
+        },
+        "allAncestorMetadataConsistent": true
+      },
+      {
+        "context": "AX5 dark phrase spoken",
+        "exportedAttachment": "015A43B2-05F4-402C-9869-03EC61A63109.json",
+        "sha256": "2a057226c42f4ec6bbfa665dc413dca7f040a0ad3be36c807ce9579727c4f0d3",
+        "schemaVersion": 2,
+        "rootSnapshotFrame": {
+          "height": 874,
+          "width": 402,
+          "x": 0,
+          "y": 0
+        },
+        "windowFrames": [
+          {
+            "height": 874,
+            "width": 402,
+            "x": 0,
+            "y": 0
+          }
+        ],
+        "controls": 18,
+        "controlsByAncestorWindowIndex": {
+          "0": 18
+        },
+        "allAncestorMetadataConsistent": true
+      },
+      {
+        "context": "Default typing",
+        "exportedAttachment": "D831AF39-DEA4-4F47-BAC8-EDF2EE89B2B3.json",
+        "sha256": "1805a15efb3139d3b2fc872d06ff214e650074636e01d11ad6bd2297fb60b59e",
+        "schemaVersion": 2,
+        "rootSnapshotFrame": {
+          "height": 874,
+          "width": 402,
+          "x": 0,
+          "y": 0
+        },
+        "windowFrames": [
+          {
+            "height": 874,
+            "width": 402,
+            "x": 0,
+            "y": 0
+          },
+          {
+            "height": 874,
+            "width": 402,
+            "x": 0,
+            "y": 0
+          },
+          {
+            "height": 874,
+            "width": 402,
+            "x": 0,
+            "y": 0
+          }
+        ],
+        "controls": 28,
+        "controlsByAncestorWindowIndex": {
+          "0": 20,
+          "2": 8
+        },
+        "allAncestorMetadataConsistent": true
+      }
+    ],
+    "limit": "Recorded ancestor indices and frames are internally consistent; this is not a full on-screen containment, Duo transposition, chain or physical-input proof."
+  },
+  "screenshots": [
+    {
+      "context": "AX5 light phrase spoken",
+      "file": "coherent-iphone-ax5-speaking-light.png",
+      "exportedAttachment": "0C3BA1E4-1D0C-4368-8D65-08696CAE41E5.png",
+      "sha256": "507de034467b64832370c9f03f01e59d2240c541008d0f2a3bcf0cb1df73ee40",
+      "bytes": 264321,
+      "originalExportBytesUnchanged": true,
+      "timestampUTC": "2026-10-25T21:46:41.839000+00:00",
+      "suggestedAttachmentName": "AX5, light, phrase spoken_0_B38F5F7D-E9B0-48C9-B735-0CFFA81F398D.png"
+    },
+    {
+      "context": "AX5 dark phrase spoken",
+      "file": "coherent-iphone-ax5-speaking-dark.png",
+      "exportedAttachment": "B5E1C49D-29D0-43A5-A2F0-D4350AE6D135.png",
+      "sha256": "65e36744a915b759da5deb932bc5ebfbe7629d128f2e115f3c85eea5915624e7",
+      "bytes": 260853,
+      "originalExportBytesUnchanged": true,
+      "timestampUTC": "2026-10-25T21:47:53.409000+00:00",
+      "suggestedAttachmentName": "AX5, dark, phrase spoken_0_188C9565-A650-4BE2-86FD-E476E756469C.png"
+    }
+  ],
+  "visualReview": "Root viewed both original-byte full-screen AX5 portrait images: quick, mode and category words and all six emergency phrase labels are whole in light/dark; Speaking remains visible.",
+  "concurrentDiagnostic": {
+    "provenance": "Timing and isolation of the font diagnostic reported by the primary operator; not inferred from the UI bundle.",
+    "fontBuildStartUTC": "2026-10-25T21:50:00Z (approximate, operator-reported17:50EDT)",
+    "fontNativeCaseUTC": "Operator-reported start2026-10-25T21:55:38Z, ending around21:56UTC (17:55:38\u201317:56EDT).",
+    "isolation": "Separate temporary build, one worker, native font case on Duo while phone family continued.",
+    "chronology": "All four recorded phone Speaking assertions occurred21:46:41.572\u201321:48:23.777UTC; their case ended21:48:25.877UTC, before the reported font build began. The diagnostic overlapped later portions of the phone family only.",
+    "attribution": "Concurrency is recorded without attributing any UI outcome or cause to the font diagnostic."
+  },
+  "limits": [
+    "The phone UI gate remains failed; no complete UI pass claim.",
+    "Audio-session runtime warnings remain in the bundle; no causal conclusion.",
+    "No audible-speech or physical-input proof.",
+    "Complete exports contain unreviewed attachments and remain private."
+  ]
+}

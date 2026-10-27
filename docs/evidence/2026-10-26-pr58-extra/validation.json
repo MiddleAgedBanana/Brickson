@@ -1,0 +1,389 @@
+{
+  "schema": 1,
+  "date": "2026-10-26",
+  "parentHead": "4c02a0c041739535aa959c6a29e2646f2cb3bfda",
+  "ownerAuthorization": "One additional repair batch after the two post-green fix pushes",
+  "runs": {
+    "foldRed": {
+      "bundle": "build/TestResults/pr58-extra-fold-red/ui-destination.xcresult",
+      "total": 2,
+      "passed": 0,
+      "failed": 2,
+      "skipped": 0,
+      "expectedFailures": 0,
+      "runtimeWarnings": [],
+      "firstFailures": [
+        {
+          "failureText": "XCTAssertEqualWithAccuracy failed: (\"40.0\") is not equal to (\"62.0\") +/- (\"0.5\") - Home discarded the allocator's initial fold offset",
+          "targetName": "BricksonUITests",
+          "testIdentifier": 1,
+          "testIdentifierString": "FoldOffsetUITests/testTheFirstRowClearsATopDivisionInDarkMode()",
+          "testIdentifierURL": "test://com.apple.xcode/Brickson/BricksonUITests/FoldOffsetUITests/testTheFirstRowClearsATopDivisionInDarkMode",
+          "testName": "testTheFirstRowClearsATopDivisionInDarkMode()"
+        },
+        {
+          "failureText": "XCTAssertEqualWithAccuracy failed: (\"40.0\") is not equal to (\"62.0\") +/- (\"0.5\") - Home discarded the allocator's initial fold offset",
+          "targetName": "BricksonUITests",
+          "testIdentifier": 2,
+          "testIdentifierString": "FoldOffsetUITests/testTheFirstRowClearsATopDivisionInLightMode()",
+          "testIdentifierURL": "test://com.apple.xcode/Brickson/BricksonUITests/FoldOffsetUITests/testTheFirstRowClearsATopDivisionInLightMode",
+          "testName": "testTheFirstRowClearsATopDivisionInLightMode()"
+        }
+      ]
+    },
+    "finalIPad": {
+      "bundle": "build/TestResults/pr58-extra-final-ipad/ui-destination.xcresult",
+      "total": 10,
+      "passed": 10,
+      "failed": 0,
+      "skipped": 0,
+      "expectedFailures": 0,
+      "runtimeWarnings": [
+        {
+          "issueType": "Runtime Warning",
+          "message": "           SessionCore.mm:631   This method can lead to UI unresponsiveness if called on the main thread while the audio session is active."
+        },
+        {
+          "issueType": "Runtime Warning",
+          "message": "    AVAudioSession_iOS.mm:978   This method can lead to UI unresponsiveness if called on the main thread. Consider using the asynchronous activate/deactivate API instead for calls from the main thread."
+        },
+        {
+          "issueType": "Runtime Warning",
+          "message": "    AVAudioSession_iOS.mm:978   This method can lead to UI unresponsiveness if called on the main thread. Consider using the asynchronous activate/deactivate API instead for calls from the main thread."
+        },
+        {
+          "issueType": "Runtime Warning",
+          "message": "    AVAudioSession_iOS.mm:978   This method can lead to UI unresponsiveness if called on the main thread. Consider using the asynchronous activate/deactivate API instead for calls from the main thread."
+        },
+        {
+          "issueType": "Runtime Warning",
+          "message": "    AVAudioSession_iOS.mm:978   This method can lead to UI unresponsiveness if called on the main thread. Consider using the asynchronous activate/deactivate API instead for calls from the main thread."
+        },
+        {
+          "issueType": "Runtime Warning",
+          "message": "    AVAudioSession_iOS.mm:978   This method can lead to UI unresponsiveness if called on the main thread. Consider using the asynchronous activate/deactivate API instead for calls from the main thread."
+        },
+        {
+          "issueType": "Runtime Warning",
+          "message": "    AVAudioSession_iOS.mm:978   This method can lead to UI unresponsiveness if called on the main thread. Consider using the asynchronous activate/deactivate API instead for calls from the main thread."
+        }
+      ],
+      "firstFailures": []
+    },
+    "fitControl": {
+      "bundle": "build/TestResults/pr58-extra-fit-control/ui-destination.xcresult",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "expectedFailures": 0,
+      "runtimeWarnings": [
+        {
+          "issueType": "Runtime Warning",
+          "message": "    AVAudioSession_iOS.mm:978   This method can lead to UI unresponsiveness if called on the main thread. Consider using the asynchronous activate/deactivate API instead for calls from the main thread."
+        }
+      ],
+      "firstFailures": []
+    },
+    "fitGuardRed": {
+      "bundle": "build/TestResults/pr58-extra-fit-guard-red/ui-destination.xcresult",
+      "total": 1,
+      "passed": 0,
+      "failed": 1,
+      "skipped": 0,
+      "expectedFailures": 0,
+      "runtimeWarnings": [],
+      "firstFailures": [
+        {
+          "failureText": "XCTAssertTrue failed - The default drag fixture must fit all eight tiles inside its viewport before input",
+          "targetName": "BricksonUITests",
+          "testIdentifier": 1,
+          "testIdentifierString": "PhraseDragTests/testDefaultLight()",
+          "testIdentifierURL": "test://com.apple.xcode/Brickson/BricksonUITests/PhraseDragTests/testDefaultLight",
+          "testName": "testDefaultLight()"
+        }
+      ]
+    },
+    "finalIPhone": {
+      "bundle": "build/TestResults/pr58-extra-final-iphone/ui-destination.xcresult",
+      "total": 10,
+      "passed": 10,
+      "failed": 0,
+      "skipped": 0,
+      "expectedFailures": 0,
+      "runtimeWarnings": [
+        {
+          "issueType": "Runtime Warning",
+          "message": "           SessionCore.mm:631   This method can lead to UI unresponsiveness if called on the main thread while the audio session is active."
+        },
+        {
+          "issueType": "Runtime Warning",
+          "message": "    AVAudioSession_iOS.mm:978   This method can lead to UI unresponsiveness if called on the main thread. Consider using the asynchronous activate/deactivate API instead for calls from the main thread."
+        },
+        {
+          "issueType": "Runtime Warning",
+          "message": "    AVAudioSession_iOS.mm:978   This method can lead to UI unresponsiveness if called on the main thread. Consider using the asynchronous activate/deactivate API instead for calls from the main thread."
+        },
+        {
+          "issueType": "Runtime Warning",
+          "message": "    AVAudioSession_iOS.mm:978   This method can lead to UI unresponsiveness if called on the main thread. Consider using the asynchronous activate/deactivate API instead for calls from the main thread."
+        },
+        {
+          "issueType": "Runtime Warning",
+          "message": "    AVAudioSession_iOS.mm:978   This method can lead to UI unresponsiveness if called on the main thread. Consider using the asynchronous activate/deactivate API instead for calls from the main thread."
+        },
+        {
+          "issueType": "Runtime Warning",
+          "message": "    AVAudioSession_iOS.mm:978   This method can lead to UI unresponsiveness if called on the main thread. Consider using the asynchronous activate/deactivate API instead for calls from the main thread."
+        },
+        {
+          "issueType": "Runtime Warning",
+          "message": "    AVAudioSession_iOS.mm:978   This method can lead to UI unresponsiveness if called on the main thread. Consider using the asynchronous activate/deactivate API instead for calls from the main thread."
+        },
+        {
+          "issueType": "Runtime Warning",
+          "message": "    AVAudioSession_iOS.mm:978   This method can lead to UI unresponsiveness if called on the main thread. Consider using the asynchronous activate/deactivate API instead for calls from the main thread."
+        }
+      ],
+      "firstFailures": []
+    },
+    "finalDuo": {
+      "bundle": "build/TestResults/pr58-extra-final-duo/ui-destination.xcresult",
+      "total": 7,
+      "passed": 7,
+      "failed": 0,
+      "skipped": 0,
+      "expectedFailures": 0,
+      "runtimeWarnings": [
+        {
+          "issueType": "Runtime Warning",
+          "message": "           SessionCore.mm:631   This method can lead to UI unresponsiveness if called on the main thread while the audio session is active."
+        },
+        {
+          "issueType": "Runtime Warning",
+          "message": "    AVAudioSession_iOS.mm:978   This method can lead to UI unresponsiveness if called on the main thread. Consider using the asynchronous activate/deactivate API instead for calls from the main thread."
+        },
+        {
+          "issueType": "Runtime Warning",
+          "message": "    AVAudioSession_iOS.mm:978   This method can lead to UI unresponsiveness if called on the main thread. Consider using the asynchronous activate/deactivate API instead for calls from the main thread."
+        },
+        {
+          "issueType": "Runtime Warning",
+          "message": "    AVAudioSession_iOS.mm:978   This method can lead to UI unresponsiveness if called on the main thread. Consider using the asynchronous activate/deactivate API instead for calls from the main thread."
+        },
+        {
+          "issueType": "Runtime Warning",
+          "message": "    AVAudioSession_iOS.mm:978   This method can lead to UI unresponsiveness if called on the main thread. Consider using the asynchronous activate/deactivate API instead for calls from the main thread."
+        },
+        {
+          "issueType": "Runtime Warning",
+          "message": "    AVAudioSession_iOS.mm:978   This method can lead to UI unresponsiveness if called on the main thread. Consider using the asynchronous activate/deactivate API instead for calls from the main thread."
+        },
+        {
+          "issueType": "Runtime Warning",
+          "message": "    AVAudioSession_iOS.mm:978   This method can lead to UI unresponsiveness if called on the main thread. Consider using the asynchronous activate/deactivate API instead for calls from the main thread."
+        }
+      ],
+      "firstFailures": []
+    },
+    "finalUnit": {
+      "bundle": "build/TestResults/pr58-extra-final-unit/unit-destination.xcresult",
+      "total": 781,
+      "passed": 772,
+      "failed": 0,
+      "skipped": 1,
+      "expectedFailures": 8,
+      "runtimeWarnings": [],
+      "firstFailures": []
+    }
+  },
+  "fitMutation": {
+    "shippingChange": false,
+    "mutation": "Only ScrollView.frame height becomes min(sizing.frame.height, sizing.contentHeight - 1); tile layout is untouched",
+    "mutantHomeSHA256": "b73d06e73a6691bef25efb8cbf7ee795dced34978b4058ede060328e90d4dad5",
+    "controlTestSHA256": "dc79988b55d77d4fcc5ddd0f613d7dc86d19a7da6b538cb4e61f7eee19ca7946",
+    "controlRequiredFittingFlags": false,
+    "guardRequiredFittingFlags": true,
+    "guardTestSHA256": "3cc27b7d1c0e419e6970f77eb91bb8974f27232ef89eb48fb8a3ee002c636655",
+    "guardFailedBeforeInput": true,
+    "dragInjectionActivitiesInGuardRun": 0,
+    "nativeViewportBottom": 1347,
+    "nativeLastTileBottom": 1348,
+    "nativeContainmentTolerance": 0.5,
+    "restoredHomeSHA256": "9e138c5143faabbec738e92141253bd77af0a5244b10f56f37aad2ac676b2f0e",
+    "restoredFrozenSwiftAndProjectFiles": 153
+  },
+  "finalSourceSHA256": {
+    "Brickson/App/AppAudio.swift": "ade8e152a1603c70672346a0388d22748ab7946e9200360ebd91df8ccf480339",
+    "Brickson/App/AppLog.swift": "18dbd157bc0ad469098ee56e06c3999c74582e708a9737e9ff111592438d9163",
+    "Brickson/App/AppName.swift": "88405ac8f922168434bccc720c465aeb6ad01d10815f148972e374fc641771bc",
+    "Brickson/App/AppTimeouts.swift": "5cdac9ec6407acd4acf62d1c376adc7f6e72abfa768064f4242d2b7ecef5d55b",
+    "Brickson/App/BricksonApp.swift": "c9f3c29d1a2828c93710f80cf9e58e1d7ff40f9aa8f33680ad34616e711ec483",
+    "Brickson/App/BricksonAppDelegate.swift": "a89f34aebec46ecb60f5e65d4e34463b973f8968503ace78aa3d542fc41aaef4",
+    "Brickson/App/LaunchOptions.swift": "885bfd2e7d64ef978513140ccdaa47e47fef68452b4f88a747540cd1de67c33f",
+    "Brickson/App/ScreenWakePolicy.swift": "1cd135b1473edb2caa62b0884bdd6fa07f0a18de70da30d5d1fb51ab574d6a6a",
+    "Brickson/Attention/AttentionAlertPlayer.swift": "811597d4f1bed890564e3df34d8c5da66183b0448b0383a42ff9cc59d7e532ab",
+    "Brickson/Attention/AttentionAlertStatus.swift": "b35847d7f61dab721b80fd9fb40df1664fd552c3a6b959bbeb667652a93340db",
+    "Brickson/Attention/AttentionTonePlayback.swift": "6cd81dfcaee1a8dd725f986af4b30f95f47cc7792be875b592b85d0ba1faa03f",
+    "Brickson/FirstRun/CheckInPolicy.swift": "b975f4a8de02998ea6326f0770a2ca6c1b0ff5b50dca7f5576a642d0943d79bb",
+    "Brickson/FirstRun/FirstRunHint.swift": "d5fffe6f5be493c88ac5d3b71c18ae362310d6c988c0cc179aa7a632a1da0c52",
+    "Brickson/FirstRun/GuidedSetupView.swift": "54a7f7c63ceaa6c94594dbb32eeb9fd4ba98de3f94835fd3e88d3162e5aaf1d6",
+    "Brickson/FirstRun/SetupRecord.swift": "30d001b6d32580e262dddb1a1b3293a483a6d2b28d90726c5eb7b54c88086259",
+    "Brickson/FirstRun/SetupStore.swift": "da35605d95e8f1a7aae740c6fdc3fcd0f8478f104a5ae7b6f0d4ab8da2922ce6",
+    "Brickson/Home/CategorySelection.swift": "58315997db376914fa4c672e85149268d7f687470d1b298be1bb8cf531f35013",
+    "Brickson/Home/ControlNames.swift": "bc752b391ee25140c73ac4c0d9a780c69d97ef4c2b3a61f6a7d85776e2b43a77",
+    "Brickson/Home/HomeButtonLook.swift": "f7a15814d5dca20b432efb72d718c7f66c3367bcb543bc0eda6d3437f4fd9167",
+    "Brickson/Home/HomeButtonStyle.swift": "878d458c24e8a1ccc0f75eb6a45659dfa73da31d321c5137d8f517129ff75d7a",
+    "Brickson/Home/HomeRegion.swift": "d56be44b188b93be9d85161348fe41092054ed761f4b09297adecbc6e9b199a0",
+    "Brickson/Home/HomeView.swift": "9e138c5143faabbec738e92141253bd77af0a5244b10f56f37aad2ac676b2f0e",
+    "Brickson/Home/Palette.swift": "e8b938f58431a9d0f2b7c46290d56425088a591800d8b80b3c03e87e64c96708",
+    "Brickson/Layout/FittedLabel.swift": "ebd56321c38d41043d89c86380dea4936f01f5ea12ff00a3cd3b626fd781ac2f",
+    "Brickson/Layout/FittedLine.swift": "2d7b6152978ea9156bc5a3addd9cccbcc678d2fa7eab5fe0a7ee398bd7c4e9ba",
+    "Brickson/Layout/HomeLayout.swift": "83a6089bd2984368ba7f5bbfc8f0a8f5336b043bbfaf1aeb43cfdc35be235b5a",
+    "Brickson/Layout/HomeLayoutText.swift": "4602930de0e5e669edac4d8ebf7e86e0aec0fdc9b963016e51b555c17d6b13aa",
+    "Brickson/Layout/HomeReservedLayout.swift": "8323e3096b5361ec7ce49fbdadaaacaa1381b555865669d1719ee12f2dd9f78b",
+    "Brickson/Layout/HomeWellEnvelope.swift": "0155cf09d87ad76cfde461c634ff2b5f4a435cda856dce97b0caf3c8ff4fff2c",
+    "Brickson/Layout/KeyboardAllowance.swift": "84ea194ea4fc4e13048e55055ae9513b34716a667992965cc6228abfdfa129f8",
+    "Brickson/Layout/LabelFont.swift": "595f475e635e4609eb99ab9433957cfde2197fb3a5a71b8aad7bb416b325d89a",
+    "Brickson/Layout/SettingsLeadIn.swift": "087273cad92f622cd09ca7a4c46c86d7eb0d9d82c87bc5c03cba01936ef80133",
+    "Brickson/Layout/SettingsRowPlace.swift": "db91246c9fba82bc5beeaa03cb07625a204e54d64828acbf108b9d1197d1fb50",
+    "Brickson/Layout/SettingsScreenFrames.swift": "77816b10173e28d4d8c2b32c7e2deb48a18f3b01d3b1cac47447a0aed3487a06",
+    "Brickson/Layout/WordFit.swift": "f38e1833d297603cd3ce41a0c6f118ea3428b6716036d3fc8b6d3733f8aabf3e",
+    "Brickson/Library/BackupCodec.swift": "1dfaffc3cd3078a0bfa466d349fa350e0be9533691771fd7dcee0919c1a3fa01",
+    "Brickson/Library/EmergencyRepair.swift": "fcfa7cfe246f6fa39e72900864efd8784b914b4a3115178d83762315d3025a29",
+    "Brickson/Library/LibraryEdit.swift": "c2f556d6a781e4cd209232612a3a1c015c33e8390240cea3621777871a2a9486",
+    "Brickson/Library/LibraryEditor.swift": "6b4b194549179d584a95953445896e1c837a716d7b765e0f9802d46aeea85a6e",
+    "Brickson/Library/LibraryImport.swift": "6089c507d3ec0bde031c1afdd0ff8c5c61d8d9e8b09a54079701b6b9b74908df",
+    "Brickson/Library/LibraryRules.swift": "f06a9ee725f34f33db99dc0da35a52c55f5981780d5e8923bda4d22d96ec95c9",
+    "Brickson/Library/LibrarySnapshot.swift": "37635066a42d203d7cd63a311cc755834b07f76c032a32c9d4a71c9a769ed647",
+    "Brickson/Library/PhraseLibrarySchema.swift": "6b89bc95dda9c98776a2af3b630dd54902e50bf6fad75786d1ae4ff5c6c2a1e5",
+    "Brickson/Library/PhraseLibraryStore.swift": "826393af9daa4bcc56d6822009bb637399b86fa8d00eebe9215d31ba4b3fc04f",
+    "Brickson/Library/StarterLibrary.swift": "b41212bfcec5eed237ea47366d4bebc86fa465dd6fea2a2e8773b4193b2f29e5",
+    "Brickson/Settings/FamilySetupView.swift": "43f9c4035b5e6eef870b2094f25211e016b5c62bfb0c8ec91dd3edecc70a90d1",
+    "Brickson/Settings/MoreSetupGuides.swift": "453fbf84a6ed99c2efc37aa7fce8cc2d04d819aa2a3ebc4d23b92c051f0c1613",
+    "Brickson/Settings/PersonalVoiceGuidance.swift": "4ad01b10e894086cc0fdfab26a556b41fc84167f2d89a32a7c1dd0c5ab4e7701",
+    "Brickson/Settings/PrivacyPolicyDocument.swift": "41bfbbb7812fb0e34de2bd41c55c6f59d369881fd25b83f8887a4586b8596e1e",
+    "Brickson/Settings/PrivacyPolicyView.swift": "4ce92ce90176ae7a0b5358b995a1ff224443dff4bb513ca0e2427746debc0569",
+    "Brickson/Settings/SettingsActivity.swift": "97e8d8adb0344dd57f8cca7350918a3c42a8cc3fe38d8741973e0e17a639c1f2",
+    "Brickson/Settings/SettingsAppLink.swift": "f3849ee9626ce530b918791de2c4de8e0123f25e44560d960223e7848895ceaa",
+    "Brickson/Settings/SettingsComponents.swift": "488f3d1e67aedb20b8e30b5a0bd0dc16fb336906d7b583cb32ebd4fcc775274b",
+    "Brickson/Settings/SettingsIdleClock.swift": "748b92fc23f65817f033b7b9015d904b63edbc6c35e4d1e972e8ff717249e279",
+    "Brickson/Settings/SettingsRoute.swift": "c4d317fd777027cc61c946fc42c24b31353e329744ac4e37ff0db7b69ad2f6b0",
+    "Brickson/Settings/SettingsView.swift": "cd6b60807cc3e43e444e7f95be15acdfd4ff33668fb5a26860c6355bf120d9aa",
+    "Brickson/Settings/SetupGuides.swift": "aeb091d2136893853ec193e83a99c07b492f38217b1766fac0a4c8e3948fb546",
+    "Brickson/Settings/SpeedChoice.swift": "d1e9895ddda3499df0cab0e7a231b14a3786a97ff62c5f2d9dcb65638461fefb",
+    "Brickson/Settings/VoiceList.swift": "270e69d2b4c8160a05ea160002e8e98e2aad815b66cbf0da88c39e048f965a50",
+    "Brickson/Settings/VoiceSettingsView.swift": "0d0bdea1187fa3103332635d99728fe809b9b12b977c027f7d2ab3dd286ab54f",
+    "Brickson/Speech/AudioSafetyMonitor.swift": "f4bfa3a73aa37ba1ec2ba553512b4ea16ca873100b08f663317de14d27b4dbf2",
+    "Brickson/Speech/AudioSafetyPolicy.swift": "b713714424f3a9653496bebfdb12c188986fc5ef1fb8fb5e558f20ff020add4a",
+    "Brickson/Speech/AudioSessionCoordinator.swift": "d94b093031b34a0d1ffbc6b368766a7948142e885e3de5b7576a543895a7dc41",
+    "Brickson/Speech/AudioSessionEvents.swift": "4b9be5f9e6a3be58441d3a029797d2ffa6eb1bcb5abb27931f178657f6933bcc",
+    "Brickson/Speech/PersonalVoiceAskPolicy.swift": "09d7f8c2f41becf9c0ec7e73f8a8695f420ca66ba444aee6a84c5e4481180a98",
+    "Brickson/Speech/SpeechRateSteps.swift": "721ab0e162efd54d7dc7ac599a70266210c64dd5986392e9120f0e71cf2a06c6",
+    "Brickson/Speech/SpeechService.swift": "a6c344f009aaca8ab6e3ebcf874aaafc4e1e105d21d4e17fe552ade3b0486418",
+    "Brickson/Speech/SpeechSynthesizing.swift": "38030e1c95fc2fde7184169c608f71583afa278c81f9e470844dd0500fcb4288",
+    "Brickson/Speech/SpokenUtteranceTracker.swift": "6361aced3a7fed62d35907aac2f0497155b58d2fd9642171ae8fa58c0e17b853",
+    "Brickson/Speech/VoiceSelection.swift": "f82d02f89714aa817ab6d37a2051274a775ca0ec6475efe0262f95f9d905ed10",
+    "Brickson/Typing/DraftStore.swift": "68429a5cea632cf168239bb13b1f60709ce709f1d6df9cdcaa7972eac9e7962d",
+    "Brickson/Typing/KeyboardProbeScreen.swift": "2d412cce958651b2af87b60ccb860e0c3d9fff873d43d1b2271f21a174dae28b",
+    "Brickson/Typing/MessageComposer.swift": "042ce85e03d156336a4b451152252a0d835ea4a286b877c73fc0502af7541f23",
+    "Brickson/Typing/TypingFieldTraits.swift": "4d7a1c88461825d1aa89f67839467af9cca59d357092b3126cc7dba4bb290030",
+    "BricksonTests/AccessibilityAuditRunnerTests.swift": "1d221a5dea77d0f5aafd467c7b267d3520edeefd0b2542cd3885a2c8e921acff",
+    "BricksonTests/AppBundleTests.swift": "d8a565f5d094e9423e3d1f3829242293a70b77020b89c572a43131305bf26911",
+    "BricksonTests/AttentionAlertPlayerTests.swift": "80181eef6b4847b39384ef67de71561c516aa458eb995dbcd097b619d022fd50",
+    "BricksonTests/AttentionAlertStatusTests.swift": "1caf3d4513d8968f4b15369b7d03620ce56eb9aa603ee46104a939cfc0094e20",
+    "BricksonTests/AudioSafetyMonitorTests.swift": "8a95b776515f045a294d3c1c67f3347b473a58d93727f0dba1e687682b5628c3",
+    "BricksonTests/AudioSafetyPolicyTests.swift": "6b11e130696df7a16f03b806775d9e333dc803e0c4f7a1dcddff63b8985fd918",
+    "BricksonTests/AudioSessionCoordinatorTests.swift": "660a22ac3a35e67541f44e1c476a8ef3e8dc311db27eae706d93b0b375c75c36",
+    "BricksonTests/AudioSessionEventsTests.swift": "5563e0bcebae68eb4d50f43a94d040ba2f378dc52faecf5e97abd49393036b6f",
+    "BricksonTests/AudioTestDoubles.swift": "19e90eceaa6045771cc35a1115e1cb8b2c5909abc9478f328187861b8c13375f",
+    "BricksonTests/BackupCodecTests.swift": "9da68be60b10c4b612f2ca4aeaef88f3261f5a669aab64a81d1a282425dcebdf",
+    "BricksonTests/BricksonAppDelegateTests.swift": "9fac09438d785b2ccbe1ec29a3af2f3e3b7d3aed160471a34c291685cbe634b4",
+    "BricksonTests/CategorySelectionTests.swift": "4a5f3148ca4a4044162e327e8faf200d8570577c9a933f94417c69c1805883c0",
+    "BricksonTests/ChainEngineTests.swift": "91bde13127797208680edead50bab1815530d54e1f105d5d1f2f12b625fb3652",
+    "BricksonTests/ControlNamesTests.swift": "81827ca0a4c006673f57325de5b15fecc1bb9d5887d0cb3c68d1feda825c7727",
+    "BricksonTests/DraftStoreTests.swift": "14233206845cab8aed66d133b49d46005de91a7027a44d1dab3ca8c5f1b4afcc",
+    "BricksonTests/EmergencyRepairTests.swift": "838dfa744661f270fb6d55c7ca310fb968380fbfb8b988d70f1d779d03c33952",
+    "BricksonTests/HomeButtonLookTests.swift": "65a9720197aa043880d94ed02173463018e15d80d50477563b64863e82990abc",
+    "BricksonTests/HomeNameCollisionTests.swift": "90cf37cd570a35f4a2155bd5be53bac4fc01f4583ab7d0c3772199c5d6d0cdc4",
+    "BricksonTests/HomeRegionTests.swift": "02c28f4fa1daaa2a2801259fb7bb5bff535edafa79f015d1431eb7e3ef9649ff",
+    "BricksonTests/LaunchOptionsTests.swift": "4aef1085f5a887e1066d32523775f0052c728b0a4a93ac25a6a7404ecaaa4c85",
+    "BricksonTests/Layout/HomeLayoutEngineFontTests.swift": "3dee7de4356f425f2ee6e634dd92e09957db956ceeab6b85e1f3be780aed735b",
+    "BricksonTests/Layout/HomeLayoutEngineTests.swift": "db4b907879cd8a99b0a2eac13ba91ee00c6ec6279dc55211334e8bc184c9e4d7",
+    "BricksonTests/Layout/HomeReservedRegionChainTests.swift": "4a7218d33340e79e4a3e29d7912a4739c5724eaa0bb4e901fbb5922ee8b66b6c",
+    "BricksonTests/Layout/HomeReservedRegionTests.swift": "22045e62e088d57464dca3beeec44e932fc9e0f3bc57c02cc8590be2069df12b",
+    "BricksonTests/Layout/KeyboardAllowanceTests.swift": "a199250cb36b5afd642c7c9b91dcdc04c108c99dc09741319b81e494e9a7bbfc",
+    "BricksonTests/Layout/SettingsLeadInTests.swift": "b9b3d0df8792bbfa426c0c219047269e33421bfb74749fca1bc1d04e8655d1e9",
+    "BricksonTests/Layout/SettingsReservedRegionChainTests.swift": "1382f977d60606aa996d0c326da7180dd645227af99393382535443f0c01928d",
+    "BricksonTests/Layout/SettingsRowPlaceTests.swift": "8af0da32ea1e2040251b52eb04944f14a371779e95901948986075c25b404625",
+    "BricksonTests/Layout/SettingsScreenFramesTests.swift": "9b92c1f948275e86e5b861d97d17c1230e04bdf2a89756648268fce98936fc74",
+    "BricksonTests/Layout/StarterLabelFitTests.swift": "b93c57dac26232b0926d7e5f74a77a511f6113282b11ff38634c85df08877162",
+    "BricksonTests/Layout/WordFitTests.swift": "5db60c5a615f888846bc21aa4d038ec2811ac837e05d89ddd8b784155e975a9f",
+    "BricksonTests/LibraryEditTests.swift": "6467dec22b2a82a00dbe2d126b31ae84798b826890499772632267e4770e8ebe",
+    "BricksonTests/LibraryEditorTests.swift": "2334206036c382aa82c29e4125ca8fc419f6e5265868a5e738bc6795d7edb024",
+    "BricksonTests/LibraryFixtures.swift": "d7918979eeec0c1360c18761b8c1a65938932f215cbd47cc11216dcdb89f0e8e",
+    "BricksonTests/LibraryRulesTests.swift": "e5c472aaf13112eb0c55237533ade277e00dc4e1fc91bd2cd87a0223cc56a6d0",
+    "BricksonTests/MessageComposerTests.swift": "414d4e7e29369f2a2f344bc7c0213235eb7b8f7399aaeaa4f5db34457f4e161f",
+    "BricksonTests/OffMainThreadCallbackTests.swift": "d2f7dab463feec539189b945c345b2b667dc0f3f1e60bac5b524cd829824ef77",
+    "BricksonTests/PaletteTests.swift": "83a5469076c5ee3f9bbcae42f853244cb8fcf308b8a850c908c588aba63af265",
+    "BricksonTests/PersonalVoiceAskPolicyTests.swift": "2b0630547d4a679d2f32cddc0d16b003b50cc4c1e7e1adc3ea0b84aa064d7204",
+    "BricksonTests/PersonalVoiceGuidanceTests.swift": "5d305876d44ad26332b28f2dadf5e94f08780ff2f10444393c7dafbbf116727b",
+    "BricksonTests/PhraseLibraryTests.swift": "c3db9379e25a98d97275ae4ab5ac0a09b5d2733ac0a622f960ec0a7a03aaf960",
+    "BricksonTests/PrivacyPolicyDocumentTests.swift": "5e1cfb02603dc585f9eb637c8d6af86b48698cf21591fdea45fb9f81d47de249",
+    "BricksonTests/RenderedWordsTests.swift": "bd07385eaf6bd7b049cc9082c310b4aaadf0753b987b8733210825588e6e9069",
+    "BricksonTests/ScreenWakePolicyTests.swift": "11e4860c803f61c081279981ace4bf1c99b106528f25f39fb558d3b87139042d",
+    "BricksonTests/SettingsAppLinkTests.swift": "186c7005e67fa32bdaaf5b779b45094cd22d5fa4229369f545981b86922c36cd",
+    "BricksonTests/SettingsIdleClockTests.swift": "700d2fc9e0411ca712844c45f5cebb8f96510eac59e4ba04007285e7adf1b4b3",
+    "BricksonTests/SetupRecordTests.swift": "0b3735116a21208329620283298f9fa41269213ea81fba63572da8d71f5fe419",
+    "BricksonTests/SetupStoreTests.swift": "f57b268173ebaada34aec6ff41d6e4cd6fdf0828bbe380e23d6fb59005b1e883",
+    "BricksonTests/SnapshotControlGeometryTests.swift": "109621ac804fb13c4726a1ec474cb69265883311b362143600c2614d4537c22d",
+    "BricksonTests/SpeechRateStepsTests.swift": "93b7d7ce4bbc56ad91fb9dbbf24b6622bdd045038d8e4b6e752110fc9650eee0",
+    "BricksonTests/SpeechServiceTests.swift": "a0d80d26532bae4330c5c3682d474a9487373778cdd2380ffeabfea4aeb55c59",
+    "BricksonTests/SpeedChoiceTests.swift": "5dbe8b466980535bb8a05285726378b577b1bb8a5191f11cf11bade68d253280",
+    "BricksonTests/SpokenUtteranceTrackerTests.swift": "2a246905e498014ec9e88ec443718366105a0c5c076f82c295a36ccfadedae29",
+    "BricksonTests/StarterPhrasesTests.swift": "139d4a87f8c8bb6f20cbd666a07d1bc1c44a03d5b5e7abe08537ee8100afe83b",
+    "BricksonTests/SwiftDataBehaviourTests.swift": "4187525e801aa59b54ef770ea670b60c62ce9b3216d10ce383944b57b5d50676",
+    "BricksonTests/VoiceListTests.swift": "c884c71d2c91de07edcbcf1a14339c403c6ffc97d2136825bbd522a4cdf0676d",
+    "BricksonTests/VoiceSelectionTests.swift": "63e566f47fdb6e73268e0ce27036825e18ae5e0a9860170d727fa85b41fc8b26",
+    "BricksonUITests/AccessibilityAuditRunner.swift": "31aff766d7f350303212fda74423505ddeb8256973fa46a57dcb73ffdae45b4a",
+    "BricksonUITests/ChainEngine.swift": "86319eb37482eb4813ea89474726481fa0fec5202d5512f41a3f67d676f7a555",
+    "BricksonUITests/FoldOffsetUITests.swift": "e24eb99bc4e87b44c184faa522a6b667424518896bc4c161d1838b609d99af6c",
+    "BricksonUITests/GetAttentionOnHomeTests.swift": "76671819e91cac1160b3b279a9e8971e0370ce856522f862eef1d019f1dc5d27",
+    "BricksonUITests/HeldSlideProbeTests.swift": "674e48baacbd89d9a5045e1b39439986f092e305fe0fc12d6ad4989611f71eae",
+    "BricksonUITests/HomeAccessibilityOrderTests.swift": "cc2cea8c12bad3f9dee2d16a37038afba330afa970d80a241be9ebf5b6ed6e42",
+    "BricksonUITests/HomeChains.swift": "5f61405767c2f18b16936c19b93fccedb8609da819aedf043f3049c9b9c1ca1b",
+    "BricksonUITests/HomeLayoutTests.swift": "0fa8dda858ad0ceb849bbfd02ff5b72b9e92e73c7e3a566ebcf839bfdaa83ffa",
+    "BricksonUITests/HomeReachabilityTests.swift": "f760590d12ca4f7db8f8d7d44e78d87a08d30863e496eef03f050acd068ee9db",
+    "BricksonUITests/KeyboardProbeTests.swift": "3691843b248cd36eada2b648d4218c5ce87398335fe87077622497c3609964d4",
+    "BricksonUITests/LaunchHelpers.swift": "2b686c4997f8184083dc829c3a090e216e684f794f170ab8de985d29caf98aaa",
+    "BricksonUITests/LaunchTests.swift": "e0f5a20170d8d9278703f7271e78fb9107d72c2b9c5e6546faaf76e25c2166d9",
+    "BricksonUITests/PhraseDragTests.swift": "3cc27b7d1c0e419e6970f77eb91bb8974f27232ef89eb48fb8a3ee002c636655",
+    "BricksonUITests/RenderedWords.swift": "41e365e69bbefcf4f4ec34723c9bb001b0fe7d94cdd7923d4ef3c6517446703a",
+    "BricksonUITests/ScreenControls.swift": "d9c013876807291383c54dfe84d31412902afc812cf5c4a3cb992826f1f5b8c9",
+    "BricksonUITests/SettingsChains.swift": "d7d117c6df7aa4cd8680788503a93e220bccb3b41d0ea5d6d120d207400d1ab5",
+    "BricksonUITests/SettingsOnHomeTests.swift": "2c52b1203155f581e5accc8e4febd6454f6d6ce67d6729588a7dc25fefb503a6",
+    "BricksonUITests/SettingsTests.swift": "fce209f2134d83afd477847b5fd6a128a515840b3c1935e853dde2c16e5ab8e0",
+    "BricksonUITests/SlowPressTests.swift": "63451b9d2a59a88d27c4e2a00831c5f3ebc516fc29ca0faab006842b4eff24e3",
+    "BricksonUITests/SnapshotControlGeometry.swift": "b015c18e8b66d20c0b1ac548782c323b8b9c1213ceec4fb2091ed1bf0a155036",
+    "BricksonUITests/TypingOnHomeTests.swift": "8d46ad5708a988bdc87fcf66653c8469d11edc0e177c2589bcb88fb0d3df3cb1",
+    "project.yml": "13063f24d65b6e61bef6ebcca141ed7f0976f35be5e5e8379c19796abd1dec83"
+  },
+  "pending": [
+    "new-head hosted CI after the single authorized batch push"
+  ],
+  "limits": [
+    "Synthetic reservation, not an observed OS pose",
+    "No physical input or sound verification",
+    "No Release archive/runtime claim",
+    "Full original prototype lost and excluded; no further prototype investigation",
+    "Private AX5 alternative, keyboard dismissal, Put Back placement and startup/Speaking-wait causes remain open",
+    "Earlier full local ordinary UI results apply to 4c02a0c; final full ordinary UI requires new-head hosted CI"
+  ],
+  "finalUnitCoverage": {
+    "percent": 71.2,
+    "executedLines": 7054,
+    "totalLines": 9903,
+    "catalog": "current under CI=true"
+  },
+  "simulatorCleanup": "All three task-owned simulators shut down after their final runs; no other simulator shut down"
+}

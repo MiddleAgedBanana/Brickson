@@ -1,0 +1,135 @@
+{
+  "scope": "Only the two synthetic camera boundary inputs. Existing HomeChains mapper keeps typing even when Type is unavailable; Settings is outside its map. State/control-index/normalized-position sample correspondence. Report-only, no native or policy change.",
+  "records": [
+    {
+      "case": "regular842",
+      "sampling": "standard2x2",
+      "stateCount": 120,
+      "startCountOld": 23220,
+      "startCountProposed": 23220,
+      "chainCountOld": 47508,
+      "chainCountProposed": 47508,
+      "oldHazardChains": 0,
+      "proposedHazardChains": 0,
+      "addedHazardPathsConditions": [],
+      "removedHazardPathsConditions": [],
+      "addedSampledHazardTraces": 0,
+      "removedSampledHazardTraces": 0,
+      "addedAllTraces": 0,
+      "removedAllTraces": 0,
+      "addedTraceExamples": [],
+      "removedTraceExamples": [],
+      "wrongBackSamplesOld": [],
+      "wrongBackSamplesProposed": [],
+      "typingOffered": false,
+      "traceHashOld": "daec32df546309a9e42eb430e392bd05c4658e0128fddefb79ba72578a4fd30f",
+      "traceHashProposed": "daec32df546309a9e42eb430e392bd05c4658e0128fddefb79ba72578a4fd30f"
+    },
+    {
+      "case": "regular842",
+      "sampling": "targeted8x4",
+      "stateCount": 120,
+      "startCountOld": 116100,
+      "startCountProposed": 116100,
+      "chainCountOld": 227496,
+      "chainCountProposed": 227496,
+      "oldHazardChains": 0,
+      "proposedHazardChains": 0,
+      "addedHazardPathsConditions": [],
+      "removedHazardPathsConditions": [],
+      "addedSampledHazardTraces": 0,
+      "removedSampledHazardTraces": 0,
+      "addedAllTraces": 0,
+      "removedAllTraces": 0,
+      "addedTraceExamples": [],
+      "removedTraceExamples": [],
+      "wrongBackSamplesOld": [],
+      "wrongBackSamplesProposed": [],
+      "typingOffered": false,
+      "traceHashOld": "16e9829da6a5e70735277a1bb6471f2f41f857ea8629fbaffc2b392796e983cd",
+      "traceHashProposed": "16e9829da6a5e70735277a1bb6471f2f41f857ea8629fbaffc2b392796e983cd"
+    },
+    {
+      "case": "bold858",
+      "sampling": "standard2x2",
+      "stateCount": 120,
+      "startCountOld": 23220,
+      "startCountProposed": 23220,
+      "chainCountOld": 47508,
+      "chainCountProposed": 47508,
+      "oldHazardChains": 0,
+      "proposedHazardChains": 0,
+      "addedHazardPathsConditions": [],
+      "removedHazardPathsConditions": [],
+      "addedSampledHazardTraces": 0,
+      "removedSampledHazardTraces": 0,
+      "addedAllTraces": 0,
+      "removedAllTraces": 0,
+      "addedTraceExamples": [],
+      "removedTraceExamples": [],
+      "wrongBackSamplesOld": [],
+      "wrongBackSamplesProposed": [],
+      "typingOffered": false,
+      "traceHashOld": "daec32df546309a9e42eb430e392bd05c4658e0128fddefb79ba72578a4fd30f",
+      "traceHashProposed": "daec32df546309a9e42eb430e392bd05c4658e0128fddefb79ba72578a4fd30f"
+    },
+    {
+      "case": "bold858",
+      "sampling": "targeted8x4",
+      "stateCount": 120,
+      "startCountOld": 116100,
+      "startCountProposed": 116100,
+      "chainCountOld": 227496,
+      "chainCountProposed": 227496,
+      "oldHazardChains": 0,
+      "proposedHazardChains": 0,
+      "addedHazardPathsConditions": [],
+      "removedHazardPathsConditions": [],
+      "addedSampledHazardTraces": 0,
+      "removedSampledHazardTraces": 0,
+      "addedAllTraces": 0,
+      "removedAllTraces": 0,
+      "addedTraceExamples": [],
+      "removedTraceExamples": [],
+      "wrongBackSamplesOld": [],
+      "wrongBackSamplesProposed": [],
+      "typingOffered": false,
+      "traceHashOld": "c7ab0b700985377af3cab7b45b1c149c2cfedd4c3b2405ffca88932014c76149",
+      "traceHashProposed": "c7ab0b700985377af3cab7b45b1c149c2cfedd4c3b2405ffca88932014c76149"
+    }
+  ],
+  "sourceManifest": {
+    "scope": "Only regular842 and Bold858 camera-gap inputs from the four-minimum correction, old/proposed snapshots retained in proposal. No new native evidence or generalized geometry sweep.",
+    "sourceSHA256": {
+      "BricksonUITests/ChainEngine.swift": "86319eb37482eb4813ea89474726481fa0fec5202d5512f41a3f67d676f7a555",
+      "BricksonUITests/HomeChains.swift": "5f61405767c2f18b16936c19b93fccedb8609da819aedf043f3049c9b9c1ca1b",
+      "BricksonTests/Layout/HomeLayoutEngineTests.swift": "db4b907879cd8a99b0a2eac13ba91ee00c6ec6279dc55211334e8bc184c9e4d7"
+    },
+    "helperSHA256": "632051fbe361d4a263ea0b0d8381181e13db0e663a18fd950ba7327ef112fa80",
+    "proposalSources": {
+      "method": "Existing full host export, unchanged old harness versus copy replacing exactly one current HomeLayout source block; archived LegacyHomeLayout and ChainEngine unchanged. No native/App/Xcode build.",
+      "sourceHomeLayoutSHA256": "17e7799dd0ee6e897c0074024bb94e044bafab49b53142b8765a607a498fa8b8",
+      "proposedHomeLayoutSHA256": "93e3453cde75578fb535e2ce796b156890c52e0b4bd88cb9f27956734dd8ca67",
+      "oldHarnessSHA256": "1bb2a7fa5c84e807ea7645749b0a1268a0b6c342e588a8a4a55e7421dea1c2c5",
+      "proposedHarnessSHA256": "fdfae12829d64d5d71f8db7fc3c8fb8fe1008b5aa3868b126bc012cc0671aca0"
+    },
+    "generatedHostSourceSHA256": {
+      "old": "f8782befedcb50c6457d54bd516e55c0118ec3a7ea9e974cc8c77bbf734c7aa6",
+      "proposed": "4688f9d785ab68e7d457b64bdab834b101f9268b1ea2cbfa47bee50820e268c5"
+    },
+    "retainedRawTraceArtifacts": [
+      {
+        "file": "old-traces.json.gz",
+        "uncompressedSHA256": "06a4b19205878bf47374c14341537abf72bb83b5c642117781c0f22b60a6a68a",
+        "uncompressedBytes": 85579627,
+        "compressedBytes": 2138988
+      },
+      {
+        "file": "proposed-traces.json.gz",
+        "uncompressedSHA256": "723be01347ce7a813952129a6234d08af1b19ea38a988e2965a0e7615f587ea4",
+        "uncompressedBytes": 85579633,
+        "compressedBytes": 2138998
+      }
+    ]
+  }
+}

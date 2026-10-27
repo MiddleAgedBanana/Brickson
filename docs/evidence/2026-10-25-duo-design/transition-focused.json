@@ -1,0 +1,714 @@
+{
+  "diagnosticOnly": true,
+  "note": "No chosen activation at transition; all4before/after outcomes under both nearest rules/pointers, depth6. Hypothetical window mappings, keyboard lowered. No policy exception or physical/input proof.",
+  "physicalMappingVerified": false,
+  "probes": [
+    {
+      "candidateAfter": {
+        "chains": [
+          {
+            "end": "hazard",
+            "path": [
+              "getAttention (alarms)"
+            ],
+            "pointer": "staysOnControl",
+            "rule": "centre"
+          },
+          {
+            "end": "hazard",
+            "path": [
+              "getAttention (alarms)"
+            ],
+            "pointer": "returnsToLook",
+            "rule": "centre"
+          },
+          {
+            "end": "hazard",
+            "path": [
+              "getAttention (alarms)"
+            ],
+            "pointer": "staysOnControl",
+            "rule": "edge"
+          },
+          {
+            "end": "hazard",
+            "path": [
+              "getAttention (alarms)"
+            ],
+            "pointer": "returnsToLook",
+            "rule": "edge"
+          }
+        ],
+        "offersTyping": true,
+        "point": {
+          "x": 454.5,
+          "y": 300.5
+        },
+        "state": "Home, nothing spoken, category 3 showing, quiet"
+      },
+      "candidateBefore": {
+        "chains": [
+          {
+            "end": "repeats",
+            "path": [
+              "category 3 (nothing)"
+            ],
+            "pointer": "staysOnControl",
+            "rule": "centre"
+          },
+          {
+            "end": "settles",
+            "path": [
+              "category 3 (nothing)"
+            ],
+            "pointer": "returnsToLook",
+            "rule": "centre"
+          },
+          {
+            "end": "repeats",
+            "path": [
+              "category 3 (nothing)"
+            ],
+            "pointer": "staysOnControl",
+            "rule": "edge"
+          },
+          {
+            "end": "settles",
+            "path": [
+              "category 3 (nothing)"
+            ],
+            "pointer": "returnsToLook",
+            "rule": "edge"
+          }
+        ],
+        "offersTyping": true,
+        "point": {
+          "x": 454.5,
+          "y": 300.5
+        },
+        "state": "Home, nothing spoken, category 3 showing, quiet"
+      },
+      "legacyAfter": {
+        "chains": [
+          {
+            "end": "settles",
+            "path": [
+              "Emergency (navigates)",
+              "Emergency (nothing)"
+            ],
+            "pointer": "staysOnControl",
+            "rule": "centre"
+          },
+          {
+            "end": "settles",
+            "path": [
+              "Emergency (navigates)",
+              "Emergency (nothing)"
+            ],
+            "pointer": "returnsToLook",
+            "rule": "centre"
+          },
+          {
+            "end": "settles",
+            "path": [
+              "Emergency (navigates)",
+              "Emergency (nothing)"
+            ],
+            "pointer": "staysOnControl",
+            "rule": "edge"
+          },
+          {
+            "end": "settles",
+            "path": [
+              "Emergency (navigates)",
+              "Emergency (nothing)"
+            ],
+            "pointer": "returnsToLook",
+            "rule": "edge"
+          }
+        ],
+        "offersTyping": true,
+        "point": {
+          "x": 454.5,
+          "y": 300.5
+        },
+        "state": "Home, nothing spoken, category 3 showing, quiet"
+      },
+      "legacyBefore": {
+        "chains": [
+          {
+            "end": "repeats",
+            "path": [
+              "category 3 (nothing)"
+            ],
+            "pointer": "staysOnControl",
+            "rule": "centre"
+          },
+          {
+            "end": "settles",
+            "path": [
+              "category 3 (nothing)"
+            ],
+            "pointer": "returnsToLook",
+            "rule": "centre"
+          },
+          {
+            "end": "repeats",
+            "path": [
+              "category 3 (nothing)"
+            ],
+            "pointer": "staysOnControl",
+            "rule": "edge"
+          },
+          {
+            "end": "settles",
+            "path": [
+              "category 3 (nothing)"
+            ],
+            "pointer": "returnsToLook",
+            "rule": "edge"
+          }
+        ],
+        "offersTyping": true,
+        "point": {
+          "x": 454.5,
+          "y": 300.5
+        },
+        "state": "Home, nothing spoken, category 3 showing, quiet"
+      },
+      "mapping": "held-window-point",
+      "name": "shared physical Conversation point starts alarm after wide-to-tall",
+      "sameOldPhysicalPoint": true,
+      "sourceRole": "category 3"
+    },
+    {
+      "candidateAfter": {
+        "chains": [
+          {
+            "end": "hazard",
+            "path": [
+              "Speak (speaks)"
+            ],
+            "pointer": "staysOnControl",
+            "rule": "centre"
+          },
+          {
+            "end": "hazard",
+            "path": [
+              "Speak (speaks)"
+            ],
+            "pointer": "returnsToLook",
+            "rule": "centre"
+          },
+          {
+            "end": "hazard",
+            "path": [
+              "Speak (speaks)"
+            ],
+            "pointer": "staysOnControl",
+            "rule": "edge"
+          },
+          {
+            "end": "hazard",
+            "path": [
+              "Speak (speaks)"
+            ],
+            "pointer": "returnsToLook",
+            "rule": "edge"
+          }
+        ],
+        "offersTyping": true,
+        "point": {
+          "x": 549.5,
+          "y": 173.75
+        },
+        "state": "Home, nothing spoken, category 1 showing, quiet, typing, draft written"
+      },
+      "candidateBefore": {
+        "chains": [
+          {
+            "end": "settles",
+            "path": [
+              "type (nothing)"
+            ],
+            "pointer": "staysOnControl",
+            "rule": "centre"
+          },
+          {
+            "end": "settles",
+            "path": [
+              "type (nothing)"
+            ],
+            "pointer": "returnsToLook",
+            "rule": "centre"
+          },
+          {
+            "end": "settles",
+            "path": [
+              "type (nothing)"
+            ],
+            "pointer": "staysOnControl",
+            "rule": "edge"
+          },
+          {
+            "end": "settles",
+            "path": [
+              "type (nothing)"
+            ],
+            "pointer": "returnsToLook",
+            "rule": "edge"
+          }
+        ],
+        "offersTyping": true,
+        "point": {
+          "x": 549.5,
+          "y": 173.75
+        },
+        "state": "Home, nothing spoken, category 1 showing, quiet, typing, draft written"
+      },
+      "legacyAfter": {
+        "chains": [
+          {
+            "end": "repeats",
+            "path": [
+              "putBack (nothing)"
+            ],
+            "pointer": "staysOnControl",
+            "rule": "centre"
+          },
+          {
+            "end": "settles",
+            "path": [
+              "putBack (nothing)"
+            ],
+            "pointer": "returnsToLook",
+            "rule": "centre"
+          },
+          {
+            "end": "repeats",
+            "path": [
+              "putBack (nothing)"
+            ],
+            "pointer": "staysOnControl",
+            "rule": "edge"
+          },
+          {
+            "end": "settles",
+            "path": [
+              "putBack (nothing)"
+            ],
+            "pointer": "returnsToLook",
+            "rule": "edge"
+          }
+        ],
+        "offersTyping": true,
+        "point": {
+          "x": 549.5,
+          "y": 194
+        },
+        "state": "Home, nothing spoken, category 1 showing, quiet, typing, draft written"
+      },
+      "legacyBefore": {
+        "chains": [
+          {
+            "end": "settles",
+            "path": [
+              "type (nothing)"
+            ],
+            "pointer": "staysOnControl",
+            "rule": "centre"
+          },
+          {
+            "end": "settles",
+            "path": [
+              "type (nothing)"
+            ],
+            "pointer": "returnsToLook",
+            "rule": "centre"
+          },
+          {
+            "end": "settles",
+            "path": [
+              "type (nothing)"
+            ],
+            "pointer": "staysOnControl",
+            "rule": "edge"
+          },
+          {
+            "end": "settles",
+            "path": [
+              "type (nothing)"
+            ],
+            "pointer": "returnsToLook",
+            "rule": "edge"
+          }
+        ],
+        "offersTyping": true,
+        "point": {
+          "x": 549.5,
+          "y": 194
+        },
+        "state": "Home, nothing spoken, category 1 showing, quiet, typing, draft written"
+      },
+      "mapping": "held-window-point",
+      "name": "semantic Type centres meet Speak after tall-to-wide",
+      "sameOldPhysicalPoint": false,
+      "sourceRole": "type"
+    },
+    {
+      "candidateAfter": {
+        "chains": [
+          {
+            "end": "hazard",
+            "path": [
+              "No (speaks)"
+            ],
+            "pointer": "staysOnControl",
+            "rule": "centre"
+          },
+          {
+            "end": "hazard",
+            "path": [
+              "No (speaks)"
+            ],
+            "pointer": "returnsToLook",
+            "rule": "centre"
+          },
+          {
+            "end": "repeats",
+            "path": [
+              "messageField (nothing)"
+            ],
+            "pointer": "staysOnControl",
+            "rule": "edge"
+          },
+          {
+            "end": "settles",
+            "path": [
+              "messageField (nothing)"
+            ],
+            "pointer": "returnsToLook",
+            "rule": "edge"
+          }
+        ],
+        "offersTyping": true,
+        "point": {
+          "x": 365.5,
+          "y": 60.5
+        },
+        "state": "Home, nothing spoken, Emergency showing, quiet, typing"
+      },
+      "candidateBefore": {
+        "chains": [
+          {
+            "end": "repeats",
+            "path": [
+              "type (nothing)"
+            ],
+            "pointer": "staysOnControl",
+            "rule": "centre"
+          },
+          {
+            "end": "settles",
+            "path": [
+              "type (nothing)"
+            ],
+            "pointer": "returnsToLook",
+            "rule": "centre"
+          },
+          {
+            "end": "repeats",
+            "path": [
+              "type (nothing)"
+            ],
+            "pointer": "staysOnControl",
+            "rule": "edge"
+          },
+          {
+            "end": "settles",
+            "path": [
+              "type (nothing)"
+            ],
+            "pointer": "returnsToLook",
+            "rule": "edge"
+          }
+        ],
+        "offersTyping": true,
+        "point": {
+          "x": 365.5,
+          "y": 60.5
+        },
+        "state": "Home, nothing spoken, Emergency showing, quiet, typing"
+      },
+      "legacyAfter": {
+        "chains": [
+          {
+            "end": "repeats",
+            "path": [
+              "messageField (nothing)"
+            ],
+            "pointer": "staysOnControl",
+            "rule": "centre"
+          },
+          {
+            "end": "settles",
+            "path": [
+              "messageField (nothing)"
+            ],
+            "pointer": "returnsToLook",
+            "rule": "centre"
+          },
+          {
+            "end": "repeats",
+            "path": [
+              "messageField (nothing)"
+            ],
+            "pointer": "staysOnControl",
+            "rule": "edge"
+          },
+          {
+            "end": "settles",
+            "path": [
+              "messageField (nothing)"
+            ],
+            "pointer": "returnsToLook",
+            "rule": "edge"
+          }
+        ],
+        "offersTyping": true,
+        "point": {
+          "x": 365.5,
+          "y": 60.5
+        },
+        "state": "Home, nothing spoken, Emergency showing, quiet, typing"
+      },
+      "legacyBefore": {
+        "chains": [
+          {
+            "end": "repeats",
+            "path": [
+              "type (nothing)"
+            ],
+            "pointer": "staysOnControl",
+            "rule": "centre"
+          },
+          {
+            "end": "settles",
+            "path": [
+              "type (nothing)"
+            ],
+            "pointer": "returnsToLook",
+            "rule": "centre"
+          },
+          {
+            "end": "repeats",
+            "path": [
+              "type (nothing)"
+            ],
+            "pointer": "staysOnControl",
+            "rule": "edge"
+          },
+          {
+            "end": "settles",
+            "path": [
+              "type (nothing)"
+            ],
+            "pointer": "returnsToLook",
+            "rule": "edge"
+          }
+        ],
+        "offersTyping": true,
+        "point": {
+          "x": 365.5,
+          "y": 60.5
+        },
+        "state": "Home, nothing spoken, Emergency showing, quiet, typing"
+      },
+      "mapping": "held-window-point",
+      "name": "shared physical Type point speaks No after closed-to-wide",
+      "sameOldPhysicalPoint": true,
+      "sourceRole": "type"
+    },
+    {
+      "candidateAfter": {
+        "chains": [
+          {
+            "end": "hazard",
+            "path": [
+              "No (speaks)"
+            ],
+            "pointer": "staysOnControl",
+            "rule": "centre"
+          },
+          {
+            "end": "hazard",
+            "path": [
+              "No (speaks)"
+            ],
+            "pointer": "returnsToLook",
+            "rule": "centre"
+          },
+          {
+            "end": "repeats",
+            "path": [
+              "phrases (nothing)"
+            ],
+            "pointer": "staysOnControl",
+            "rule": "edge"
+          },
+          {
+            "end": "settles",
+            "path": [
+              "phrases (nothing)"
+            ],
+            "pointer": "returnsToLook",
+            "rule": "edge"
+          }
+        ],
+        "offersTyping": true,
+        "point": {
+          "x": 367.4223974763406,
+          "y": 86.00224215246637
+        },
+        "state": "Home, nothing spoken, Emergency showing, quiet"
+      },
+      "candidateBefore": {
+        "chains": [
+          {
+            "end": "settles",
+            "path": [
+              "type (navigates)",
+              "type (nothing)"
+            ],
+            "pointer": "staysOnControl",
+            "rule": "centre"
+          },
+          {
+            "end": "settles",
+            "path": [
+              "type (navigates)",
+              "type (nothing)"
+            ],
+            "pointer": "returnsToLook",
+            "rule": "centre"
+          },
+          {
+            "end": "settles",
+            "path": [
+              "type (navigates)",
+              "type (nothing)"
+            ],
+            "pointer": "staysOnControl",
+            "rule": "edge"
+          },
+          {
+            "end": "settles",
+            "path": [
+              "type (navigates)",
+              "type (nothing)"
+            ],
+            "pointer": "returnsToLook",
+            "rule": "edge"
+          }
+        ],
+        "offersTyping": true,
+        "point": {
+          "x": 522.3,
+          "y": 60.5
+        },
+        "state": "Home, nothing spoken, Emergency showing, quiet"
+      },
+      "legacyAfter": {
+        "chains": [
+          {
+            "end": "repeats",
+            "path": [
+              "phrases (nothing)"
+            ],
+            "pointer": "staysOnControl",
+            "rule": "centre"
+          },
+          {
+            "end": "settles",
+            "path": [
+              "phrases (nothing)"
+            ],
+            "pointer": "returnsToLook",
+            "rule": "centre"
+          },
+          {
+            "end": "repeats",
+            "path": [
+              "phrases (nothing)"
+            ],
+            "pointer": "staysOnControl",
+            "rule": "edge"
+          },
+          {
+            "end": "settles",
+            "path": [
+              "phrases (nothing)"
+            ],
+            "pointer": "returnsToLook",
+            "rule": "edge"
+          }
+        ],
+        "offersTyping": true,
+        "point": {
+          "x": 367.4223974763406,
+          "y": 86.00224215246637
+        },
+        "state": "Home, nothing spoken, Emergency showing, quiet"
+      },
+      "legacyBefore": {
+        "chains": [
+          {
+            "end": "repeats",
+            "path": [
+              "Again (nothing)"
+            ],
+            "pointer": "staysOnControl",
+            "rule": "centre"
+          },
+          {
+            "end": "settles",
+            "path": [
+              "Again (nothing)"
+            ],
+            "pointer": "returnsToLook",
+            "rule": "centre"
+          },
+          {
+            "end": "settles",
+            "path": [
+              "type (navigates)",
+              "type (nothing)"
+            ],
+            "pointer": "staysOnControl",
+            "rule": "edge"
+          },
+          {
+            "end": "settles",
+            "path": [
+              "type (navigates)",
+              "type (nothing)"
+            ],
+            "pointer": "returnsToLook",
+            "rule": "edge"
+          }
+        ],
+        "offersTyping": true,
+        "point": {
+          "x": 522.3,
+          "y": 60.5
+        },
+        "state": "Home, nothing spoken, Emergency showing, quiet"
+      },
+      "mapping": "normalized-window",
+      "name": "shared physical Type point speaks No under normalized wide-to-tall",
+      "sameOldPhysicalPoint": true,
+      "sourceRole": "type"
+    }
+  ],
+  "sourceSnapshotSHA256": "06a6d97d6c261205756ca0bc41c02d68b9484510b412fbdfe04cbcf0c948f7a4"
+}

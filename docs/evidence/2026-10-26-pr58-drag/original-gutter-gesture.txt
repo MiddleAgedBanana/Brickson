@@ -1,0 +1,18 @@
+Recovered verbatim from the earlier chat's saved source read, not from a surviving prototype folder.
+Original file: OptionalLabelHomeAuditTests.swift
+Recorded full-file SHA256: 48f4db38699cd79cd7081e4866803c1084a310557e2f33a9a5fafa610bedfe16
+The excerpt does not establish the rest of the private prototype's current contents.
+
+    @MainActor
+    private func dragGridGutter(_ app: XCUIApplication, model: Model) throws {
+        try require(model.grid.lanes.count >= 2, "No measured gutter for drag")
+        let d = model.grid.frame.cg, a = model.grid.lanes[0].cg, b = model.grid.lanes[1].cg
+        try require(b.minX - a.maxX >= 7, "No inert between-column gutter")
+        let fraction = ((a.maxX + b.minX) / 2 - d.minX) / d.width
+        let query = app.scrollViews.matching(identifier: Self.regionID)
+        try require(query.count == 1, "Missing/ambiguous phrase scroll view")
+        let view = query.element(boundBy: 0)
+        let start = view.coordinate(withNormalizedOffset: CGVector(dx: fraction, dy: 0.9))
+        let end = view.coordinate(withNormalizedOffset: CGVector(dx: fraction, dy: 0.1))
+        start.press(forDuration: 0.05, thenDragTo: end, withVelocity: .slow, thenHoldForDuration: 0.1)
+    }
