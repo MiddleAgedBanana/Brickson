@@ -1,0 +1,58 @@
+{
+  "date": "2026-10-26",
+  "appSourceBase": "e568aa73b0fae5d1aa4cf54ea8b95d2a6bf849ea",
+  "branch": "codex/settings-simulator-checks",
+  "toolchain": {
+    "Xcode": "27.1",
+    "build": "27A9275",
+    "XcodeGen": "2.46.0"
+  },
+  "devices": {
+    "ipad": {
+      "model": "iPad Pro 13-inch (M5)",
+      "runtime": "iOS 27.0",
+      "udid": "568DD6B0-68BC-403F-90D4-E75A6A0813A8"
+    },
+    "iphone": {
+      "model": "iPhone 17",
+      "runtime": "iOS 27.0",
+      "udid": "B903B710-750E-4330-86C8-000B3DAB7C23"
+    }
+  },
+  "launch": {
+    "storage": "fresh test-only storage",
+    "shortTimeouts": false,
+    "AX3": "UICTContentSizeCategoryAccessibilityXL",
+    "AX5": "UICTContentSizeCategoryAccessibilityXXXL",
+    "appearance": "debug --appearance=light|dark with rendered Home brightness gate"
+  },
+  "physicalDevices": {
+    "result": "UNVERIFIED",
+    "reason": "No connected available physical iPad or iPhone; no human-operated trial"
+  },
+  "command": "CI=true DESTINATION=platform=iOS Simulator,id=<udid> TEST_RESULTS_DIR=build/TestResults/settings-observation-<family> scripts/test.sh ui -only-testing:BricksonUITests/SettingsObservationProbeTests",
+  "limitations": [
+    "iPhone landscape request retains portrait app window",
+    "No system accessibility audit or rendered-pixel contrast measurement at AX3",
+    "No pointer behavior inferred from simulator frames"
+  ],
+  "startupFailureImage": {
+    "file": "iphone-startup-failure-final-frame.png",
+    "sourceResultBundle": "build/TestResults/settings-observation-iphone/ui-destination.xcresult",
+    "sourceAttachmentFile": "D47DF198-95F3-461A-92BD-950D4E8E948B.mp4",
+    "sourceAttachmentName": "Screen Recording 2026-10-26 at 04.24.30 PM.mp4",
+    "lastAvailableFramePTSSeconds": 66.491667,
+    "containerDurationSeconds": 74.503333,
+    "method": "ffmpeg -ss 66.49 -i <source> -frames:v 1 <output>",
+    "limitation": "Decoded final available video frame, not claimed to be the exact failure instant."
+  },
+  "discardedScrollProbe": {
+    "test": "SettingsObservationProbeTests.testScrolledSettingsRowObservation",
+    "reason": "Used app.scrollViews.firstMatch, which could be Home beneath the cover; zero root-row displacement does not establish that the actual Settings ScrollView cannot scroll. Scroll results from this harness are not used as gap evidence."
+  },
+  "correctedScrollCommand": "CI=true DESTINATION='platform=iOS Simulator,id=B903B710-750E-4330-86C8-000B3DAB7C23' TEST_RESULTS_DIR=build/TestResults/settings-actual-root-scroll-slow scripts/test.sh ui '-only-testing:BricksonUITests/SettingsScrolledRootProbeTests'",
+  "correctedScrollSource": "SettingsScrolledRootProbeTests.swift.txt",
+  "correctedScrollOutcome": "90pt retained offset; fixed centre tap opened Family Setup; old centre contains no button on the child screen, with guidedSetup nearest by centre and edge.",
+  "overscrolledProbe": "Fast-drag initial corrected probe retained 286pt offset and the row became nonhittable; no entry was attempted. Slow drag plus 0.5s end hold was the diagnostic change, not an app change.",
+  "initialCorrectedProbeDragCall": "start.press(forDuration: 0.1, thenDragTo: end)"
+}

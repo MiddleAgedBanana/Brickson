@@ -1,0 +1,320 @@
+{
+  "records": [
+    {
+      "activationPoint": {
+        "x": 201,
+        "y": 299.33333333333337
+      },
+      "atActivationPoint": {
+        "containing": [],
+        "nearestByCentre": [
+          "guidedSetup"
+        ],
+        "nearestByEdge": [
+          "guidedSetup"
+        ],
+        "point": {
+          "x": 201,
+          "y": 299.33333333333337
+        }
+      },
+      "buttonsOverlappingOldVisibleRow": [
+        "BackButton",
+        "guidedSetup"
+      ],
+      "context": "AX5-dark-portrait-actual-root-fixed-point",
+      "controls": [
+        {
+          "frame": {
+            "height": 209.66666666666663,
+            "width": 370,
+            "x": 16,
+            "y": 317
+          },
+          "name": "guidedSetup"
+        },
+        {
+          "frame": {
+            "height": 44,
+            "width": 44,
+            "x": 16,
+            "y": 187
+          },
+          "name": "BackButton"
+        },
+        {
+          "frame": {
+            "height": 99,
+            "width": 134,
+            "x": 252,
+            "y": 70
+          },
+          "name": "backToTalking"
+        }
+      ],
+      "gridSamples": [
+        {
+          "containing": [
+            "BackButton"
+          ],
+          "nearestByCentre": [
+            "BackButton"
+          ],
+          "nearestByEdge": [
+            "BackButton"
+          ],
+          "point": {
+            "x": 16.5,
+            "y": 227.5
+          }
+        },
+        {
+          "containing": [],
+          "nearestByCentre": [
+            "backToTalking"
+          ],
+          "nearestByEdge": [
+            "backToTalking"
+          ],
+          "point": {
+            "x": 201,
+            "y": 227.5
+          }
+        },
+        {
+          "containing": [],
+          "nearestByCentre": [
+            "backToTalking"
+          ],
+          "nearestByEdge": [
+            "backToTalking"
+          ],
+          "point": {
+            "x": 385.5,
+            "y": 227.5
+          }
+        },
+        {
+          "containing": [],
+          "nearestByCentre": [
+            "BackButton"
+          ],
+          "nearestByEdge": [
+            "guidedSetup"
+          ],
+          "point": {
+            "x": 16.5,
+            "y": 299.33333333333337
+          }
+        },
+        {
+          "containing": [],
+          "nearestByCentre": [
+            "guidedSetup"
+          ],
+          "nearestByEdge": [
+            "guidedSetup"
+          ],
+          "point": {
+            "x": 201,
+            "y": 299.33333333333337
+          }
+        },
+        {
+          "containing": [],
+          "nearestByCentre": [
+            "backToTalking"
+          ],
+          "nearestByEdge": [
+            "guidedSetup"
+          ],
+          "point": {
+            "x": 385.5,
+            "y": 299.33333333333337
+          }
+        },
+        {
+          "containing": [
+            "guidedSetup"
+          ],
+          "nearestByCentre": [
+            "BackButton"
+          ],
+          "nearestByEdge": [
+            "guidedSetup"
+          ],
+          "point": {
+            "x": 16.5,
+            "y": 371.1666666666667
+          }
+        },
+        {
+          "containing": [
+            "guidedSetup"
+          ],
+          "nearestByCentre": [
+            "guidedSetup"
+          ],
+          "nearestByEdge": [
+            "guidedSetup"
+          ],
+          "point": {
+            "x": 201,
+            "y": 371.1666666666667
+          }
+        },
+        {
+          "containing": [
+            "guidedSetup"
+          ],
+          "nearestByCentre": [
+            "guidedSetup"
+          ],
+          "nearestByEdge": [
+            "guidedSetup"
+          ],
+          "point": {
+            "x": 385.5,
+            "y": 371.1666666666667
+          }
+        }
+      ],
+      "guided": {
+        "height": 209.66666666666663,
+        "width": 370,
+        "x": 16,
+        "y": 317
+      },
+      "oldVisibleRow": {
+        "height": 144.66666666666669,
+        "width": 370,
+        "x": 16,
+        "y": 227
+      },
+      "scrollDelta": 90,
+      "state": "familyAfterFixedPointEntry",
+      "unscrolledRow": {
+        "height": 144.66666666666669,
+        "width": 370,
+        "x": 16,
+        "y": 317
+      },
+      "window": {
+        "height": 874,
+        "width": 402,
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "activationPoint": {
+        "x": 201,
+        "y": 299.33333333333337
+      },
+      "context": "AX5-dark-portrait-actual-root-fixed-point",
+      "oldVisibleRow": {
+        "height": 144.66666666666669,
+        "width": 370,
+        "x": 16,
+        "y": 227
+      },
+      "requestedDragDistance": 100,
+      "rowHittable": true,
+      "scroll": {
+        "height": 528,
+        "width": 402,
+        "x": 0,
+        "y": 177
+      },
+      "scrollDelta": 90,
+      "scrollVisible": {
+        "height": 528,
+        "width": 402,
+        "x": 0,
+        "y": 177
+      },
+      "state": "beforeFixedPointEntry",
+      "unscrolledRow": {
+        "height": 144.66666666666669,
+        "width": 370,
+        "x": 16,
+        "y": 317
+      },
+      "window": {
+        "height": 874,
+        "width": 402,
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "context": "AX5-dark-portrait-actual-root-fixed-point",
+      "row": {
+        "height": 144.66666666666669,
+        "width": 370,
+        "x": 16,
+        "y": 317
+      },
+      "scroll": {
+        "height": 528,
+        "width": 402,
+        "x": 0,
+        "y": 177
+      },
+      "scrollVisible": {
+        "height": 528,
+        "width": 402,
+        "x": 0,
+        "y": 177
+      },
+      "state": "beforeScroll",
+      "window": {
+        "height": 874,
+        "width": 402,
+        "x": 0,
+        "y": 0
+      }
+    }
+  ],
+  "imageProvenance": [
+    {
+      "file": "iphone-actual-scroll-family-opened-AX5-dark-portrait.png",
+      "attachment": {
+        "configurationName": "Test Scheme Action",
+        "deviceId": "B903B710-750E-4330-86C8-000B3DAB7C23",
+        "deviceName": "Brickson Settings Check iPhone",
+        "exportedFileName": "CC6B6309-9955-4F03-B279-FE8BE7157FFC.png",
+        "isAssociatedWithFailure": false,
+        "suggestedHumanReadableName": "actual-scroll-family-opened-AX5-dark-portrait_0_45114A4A-B77A-43AA-AE67-93523FE8C824.png",
+        "timestamp": 1793046931.435
+      },
+      "resultBundle": "build/TestResults/settings-actual-root-scroll-slow/ui-destination.xcresult"
+    },
+    {
+      "file": "iphone-actual-scroll-root-immediately-before-entry-AX5-dark-portrait.png",
+      "attachment": {
+        "configurationName": "Test Scheme Action",
+        "deviceId": "B903B710-750E-4330-86C8-000B3DAB7C23",
+        "deviceName": "Brickson Settings Check iPhone",
+        "exportedFileName": "FC8FB9AD-0D2F-4C31-A0D9-F698833F5D5E.png",
+        "isAssociatedWithFailure": false,
+        "suggestedHumanReadableName": "actual-scroll-root-immediately-before-entry-AX5-dark-portrait_0_708C66F4-173F-4444-83E8-B9C781A6B0DD.png",
+        "timestamp": 1793046928.007
+      },
+      "resultBundle": "build/TestResults/settings-actual-root-scroll-slow/ui-destination.xcresult"
+    },
+    {
+      "file": "iphone-actual-scroll-root-before-AX5-dark-portrait.png",
+      "attachment": {
+        "configurationName": "Test Scheme Action",
+        "deviceId": "B903B710-750E-4330-86C8-000B3DAB7C23",
+        "deviceName": "Brickson Settings Check iPhone",
+        "exportedFileName": "E1F5CF0B-7038-4C3E-B938-C75853ADF32C.png",
+        "isAssociatedWithFailure": false,
+        "suggestedHumanReadableName": "actual-scroll-root-before-AX5-dark-portrait_0_DD27D711-85BC-4D49-A7D7-C597C7D98BC0.png",
+        "timestamp": 1793046926.231
+      },
+      "resultBundle": "build/TestResults/settings-actual-root-scroll-slow/ui-destination.xcresult"
+    }
+  ]
+}

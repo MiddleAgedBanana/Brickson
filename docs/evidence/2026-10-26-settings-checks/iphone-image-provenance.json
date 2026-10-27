@@ -1,0 +1,28 @@
+[
+  {
+    "attachment": {
+      "configurationName": "Test Scheme Action",
+      "deviceId": "B903B710-750E-4330-86C8-000B3DAB7C23",
+      "deviceName": "Brickson Settings Check iPhone",
+      "exportedFileName": "5A2F2AE7-1C91-42E7-A892-785FB07838DC.png",
+      "isAssociatedWithFailure": false,
+      "suggestedHumanReadableName": "observation-family-AX3-text-dark-requested-portrait_0_5ECEB7F7-47A3-479D-80B3-0E8FF090617A.png",
+      "timestamp": 1793046432.596
+    },
+    "file": "iphone-observation-family-AX3-text-dark-requested-portrait.png",
+    "test": "SettingsObservationProbeTests/testSettingsAndFamilySetupObservationMatrix()"
+  },
+  {
+    "attachment": {
+      "configurationName": "Test Scheme Action",
+      "deviceId": "B903B710-750E-4330-86C8-000B3DAB7C23",
+      "deviceName": "Brickson Settings Check iPhone",
+      "exportedFileName": "0DB85D55-47A4-4A27-81AB-B198535A4428.png",
+      "isAssociatedWithFailure": false,
+      "suggestedHumanReadableName": "observation-root-AX3-text-dark-requested-portrait_0_051742E7-3231-46B0-82AE-90311C4F702C.png",
+      "timestamp": 1793046429.512
+    },
+    "file": "iphone-observation-root-AX3-text-dark-requested-portrait.png",
+    "test": "SettingsObservationProbeTests/testSettingsAndFamilySetupObservationMatrix()"
+  }
+]

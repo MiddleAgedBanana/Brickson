@@ -509,7 +509,13 @@ release in docs/ROADMAP.md when no thread has it yet.
   which only happens where its content is taller than the screen, Set
   Up Step by Step takes the row's place in the content, not on the
   screen; placing it from the scroll position would make a place depend
-  on what the person did (invariant 8). The fix for the first hazard, Learn
+  on what the person did (invariant 8). The 2026-10-26 Mac check measured
+  matching unscrolled AX3 row frames in light and dark, in both iPad
+  orientations and phone portrait. On the phone at AX5, a 90pt root scroll
+  reproduced the gap: the old row centre became empty space on Family
+  Setup. Physical held-look checks remain unverified; the
+  [record includes screenshots and a mounted-device procedure](log/2026-10-26-settings-simulator-checks.md).
+  The fix for the first hazard, Learn
   About Each Way where Set Up Step by Step's row was, was built and held
   on 2026-10-24, because its guide leads into the second; rescored on
   2026-10-25 it still would (its guide's Back to Talking closes Settings
@@ -718,7 +724,7 @@ Simulators cannot show these. Record each result in a `docs/log/` file
 | D4: Personal Voice access turned off in the Settings app while Brickson waits in the background; on return a phrase speaks in another voice, and turning access back on brings the Personal Voice back | "A Personal Voice is used only while it is allowed" |
 | D5: with two Personal Voices, the order the system lists them in, and whether each keeps its identifier across a relaunch, a restore and Share Across Devices | "Automatic keeps the person's Personal Voice" |
 | Personal Voice appears and is chosen once permission is given, and keeps speaking after the screen locks | Voice choice and when to ask |
-| Opening Settings by a stray dwell, and leaving it by Back to Talking, lands on nothing that speaks or alarms (`SettingsOnHomeTests` scores it on the simulator's frames); the idle reset under real dwell | Settings' safety bar and root (docs/DECISIONS.md, "Settings is a cover with a fixed safety bar") |
+| Opening Settings by a stray dwell, and leaving it by Back to Talking, lands on nothing that speaks or alarms (`SettingsOnHomeTests` scores it on the simulator's frames); the idle reset under real dwell. Physical iPad and iPhone checks remain unverified; use the [2026-10-26 mounted-device procedure](log/2026-10-26-settings-simulator-checks.md#environment-and-settings-for-the-physical-run), including the phone at AX5. | Settings' safety bar and root (docs/DECISIONS.md, "Settings is a cover with a fixed safety bar") |
 | Each Family Setup guide's steps match the device, on iOS 26 and iOS 27, iPhone, iPad and (Live Speech) Apple Watch, and Brickson works inside Guided Access and Assistive Access | Family Setup's guides ([`log/2026-10-23-apples-doors-in-family-setup.md`](log/2026-10-23-apples-doors-in-family-setup.md)) |
 | Open Personal Voice Settings and Open Dwell Control Settings open the right page | `AccessibilitySettings.openSettings(for:)` |
 | Each input method reaches every control: touch, Voice Control, Switch Control, Full Keyboard Access, AssistiveTouch Dwell, head tracking, Eye Tracking | That standard buttons are the whole integration (invariant 1) |
