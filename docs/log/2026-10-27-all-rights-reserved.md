@@ -76,3 +76,16 @@ local results alone do not establish that its unit and UI jobs passed.
 ## Follow-ups
 
 Any future grant of broader reuse rights remains an owner decision.
+
+## Latest main refresh
+
+Merged main `bae6887` after PRs #61 and #62 landed; Git merged the
+shared decision and handoff records cleanly. Narrowed the owner-status
+sentence to the remaining questions, as requested in review, so it no
+longer dates the October 27 licensing choice to October 21. The copyright
+publication exception remains the scope explicitly authorized by the owner.
+
+The refresh passed `CI=true scripts/test.sh unit`: 781 cases, 772 passed,
+zero failures, one existing skip and eight expected failures; 71.2% app
+line coverage. Documentation checks passed all 45 tests. Fresh-head GitHub
+CI remains required before merging.

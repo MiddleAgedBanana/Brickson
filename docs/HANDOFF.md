@@ -106,6 +106,21 @@ Xcode 27.1 (27A9275); PR #20 landed in `d79d836`.
 
 ## Verification
 
+- **App Store listing drafts (`docs/ASO.md` and `docs/APP-STORE.md`), 2026-10-27:**
+  updated the store-text drafts (`Name`, `Subtitle`, `Keywords`, `Promotional text`,
+  `Description` and `What's New`), the screenshot table and the App Review notes
+  template to use `[App Name]` as a placeholder until the final name is
+  confirmed in App Store Connect, with no price or cost words. Removed the five
+  `[needs: …]` tags from the description draft for features now built on `main`
+  (`Get Attention`, `layout engine`, `word fitting`, `typing` and `voice choice
+  in Settings`), added a clean 1.0 paste-ready description block with the four
+  remaining items omitted (three unbuilt features: profiles, editing, and
+  backup; and one verification gate: real-device checks of each input method),
+  and drafted a concrete first `What's New` entry. Checked character and byte
+  counts against Apple's limits and verified with `python3 scripts/test-docs.py`
+  (45 tests).
+  [Record](log/2026-10-27-app-store-listing-drafts.md).
+
 - **Accessibility reference audit (`docs/ACCESSIBILITY.md`), 2026-10-27:**
   confirmed every API and feature row in `docs/ACCESSIBILITY.md` against
   `developer.apple.com` (reading `.md` symbol pages and the framework update
@@ -771,8 +786,8 @@ release in docs/ROADMAP.md when no thread has it yet.
 
 ## Next steps, in order
 
-For the owner (everything else was decided on 2026-10-21 by default and
-can be reversed; docs/DECISIONS.md):
+For the owner (the remaining questions are listed in docs/DECISIONS.md,
+*Waiting on the owner*):
 
 1. Answer the few questions that are yours, in docs/DECISIONS.md,
    *Waiting on the owner*: the final name (and with it the bundle
@@ -998,7 +1013,10 @@ Simulators cannot show these. Record each result in a `docs/log/` file
   [privacy policy](https://middleagedbanana.github.io/Brickson/privacy/)
   (Effective October 24, 2026, since typing came to Home; the page since PR #40) and its
   [accessibility page](https://middleagedbanana.github.io/Brickson/accessibility/)
-  (since PR #40; the App Store's Accessibility URL) publish after each
+  (since PR #40; the App Store's Accessibility URL, updated 2026-10-27 for
+  current Home, Settings and simulator checks, with Largest Text layout fixes
+  and a Safari VoiceOver walk on iOS 27.0:
+  [`log/2026-10-27-website-review.md`](log/2026-10-27-website-review.md)) publish after each
   merge; on 2026-10-15 the first two matched `site/` byte for byte. The
   support page's "in development" lines change at release, and the
   accessibility page changes with every device check and every row of

@@ -3510,7 +3510,9 @@ Accessibility URL for the App Store product page (APP-STORE.md, section
 4), linked from every page of the website. It describes only what
 docs/ACCESSIBILITY.md marks *In place*, each with how it was checked, in
 plain words for families. It never says "works with" for something not
-checked on a real device, says plainly at the top that nothing has been,
+checked on a real device, says plainly at the top that no controlled check has
+been done on a real device (recording the informal handheld Eye Tracking
+observation of 2026-10-25 with its limits),
 names no planned feature, and lists the known limits a family would meet
 (from docs/HANDOFF.md, *Known gaps*). When a device check is done, the
 page names the device and the date. Why: Apple's labels cover only some
@@ -3528,8 +3530,8 @@ request that ships one. "Brickson works with Apple's accessibility
 features" became "If you use Apple's accessibility features … iOS runs
 them": a privacy policy has no need to claim what nobody has checked on a
 device, and the accessibility page says what is checked. The policy's
-sentences about R0 features not built yet (typing's kept message,
-editing, exported backups) stay: each is built or deleted
+sentences about R0 features not built yet (editing, exported backups;
+typing's kept message landed 2026-10-24) stay: each is built or deleted
 before release (APP-STORE.md, section 3). The in-app copy is the same
 file (*The privacy policy ships inside the app*), so it changed with the
 page.
