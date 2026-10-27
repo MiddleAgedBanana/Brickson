@@ -117,8 +117,10 @@ Xcode 27.1 (27A9275); PR #20 landed in `d79d836`.
   versions, `hoverEffect`, `accessibilityInputLabels`, Voice Settings,
   `accessibilityValue` / `accessibilityHint`, `DraftIssue` announcements and
   Dictation), and added a *New since this list was written* section covering 18
-  Apple additions across iOS 18, iOS 26 and iOS 27. Verified with
-  `python3 scripts/test-docs.py` (45 tests).
+  Apple additions across iOS 18, iOS 26 and iOS 27. Follow-ups added:
+  real-device check of `.default` audio session behavior when another app speaks,
+  and evaluating `AccessibilitySettings.OpenSettingsAction(for: .assistiveTouchDevices)`
+  for the setup guide. Verified with `python3 scripts/test-docs.py` (45 tests).
   [Record](log/2026-10-27-accessibility-reference-audit.md).
 
 - **Mac Home and keyboard checks, 2026-10-25**, main `8316743`, Xcode 27.1
