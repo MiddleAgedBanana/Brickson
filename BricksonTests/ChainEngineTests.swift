@@ -949,4 +949,87 @@ struct SettingsChainsTests {
         #expect(Self.paths(.closesUnderTheLook, in: phone).contains("choosing learnAboutEachWay → backToTalking (navigates) → getAttention (alarms)"))
         #expect(Self.paths(.savesAnAnswer, in: phone) == ["choosing settings → familySetup (navigates) → guidedSetup (navigates) → Touch (changesData)"])
     }
+
+    /// `ChainEngine` edge cases, `CustomStringConvertible` descriptions,
+    /// `HomeChains` fallbacks, and `SettingsChains.kind(of:)` on Settings' own
+    /// screens.
+    @Test func chainEngineEdgeCasesDescriptionsAndChainHelpersHold() {
+        let emptyControls: [String: CGRect] = [:]
+        let nearestEmpty = ChainEngine.nearest(to: CGPoint(x: 10, y: 10), among: emptyControls)
+        #expect(nearestEmpty.byCentre.isEmpty && nearestEmpty.byEdge.isEmpty)
+
+        // Empty state produces `.nothingNear` from a resting start, and an
+        // unmapped state produces `.leaves(state)`.
+        let emptyStateMap = ChainMap(
+            states: ["empty": []],
+            resting: ["empty": [(name: "blank", frame: CGRect(x: 0, y: 0, width: 40, height: 40))]]
+        )
+        let fromRestingInEmpty = emptyStateMap.chains(
+            from: [ChainStart(state: "empty", look: CGPoint(x: 10, y: 10), chosen: nil, restingOn: nil)]
+        )
+        #expect(fromRestingInEmpty.allSatisfy { $0.end == .nothingNear })
+        #expect(fromRestingInEmpty.first?.start.description == "resting on the screen in empty, looking at (10.0, 10.0)")
+
+        let unmappedStart = ChainStart(state: "outside", look: CGPoint(x: 5, y: 5), chosen: nil, restingOn: "margin")
+        let fromUnmapped = emptyStateMap.chains(from: [unmappedStart])
+        #expect(fromUnmapped.count == 4)
+        #expect(fromUnmapped.allSatisfy { $0.end == .leaves("outside") })
+        #expect(fromUnmapped.first?.end.description == "leaves for outside")
+        #expect(emptyStateMap.hazards(from: [unmappedStart]).isEmpty)
+
+        // Control navigating into an empty state ends at `.nothingNear`.
+        let navToEmpty = ChainControl("goEmpty", CGRect(x: 0, y: 0, width: 44, height: 44), .navigates, leadsTo: "empty")
+        let mapToEmpty = ChainMap(states: ["start": [navToEmpty], "empty": []])
+        let chainsToEmpty = mapToEmpty.chains(from: [.choosing(navToEmpty, in: "start")])
+        #expect(chainsToEmpty.allSatisfy { $0.end == .nothingNear })
+        #expect(chainsToEmpty.first?.end.description == "meets nothing")
+
+        // `ChainEffect.movesThings` is a hazard, and `CustomStringConvertible`
+        // formats controls, starts, ends, chains, and findings.
+        #expect(ChainEffect.movesThings.isHazard)
+        let moving = ChainControl("reorder", CGRect(x: 0, y: 0, width: 44, height: 44), .movesThings)
+        #expect(moving.description == "reorder (movesThings)")
+        #expect(ChainEnd.hazard.description == "hazard")
+        #expect(ChainEnd.repeats.description == "repeats")
+        #expect(ChainEnd.settles.description == "settles")
+        #expect(ChainEnd.tooLong.description == "too long")
+
+        // `ChainMap.merging(_:)` overwrites shared keys with the other map's entries.
+        let merged = emptyStateMap.merging(ChainMap(
+            states: ["empty": [moving]],
+            resting: ["empty": [(name: "replaced", frame: CGRect(x: 0, y: 0, width: 20, height: 20))]]
+        ))
+        #expect(merged.states["empty"] == [moving])
+        #expect(merged.resting["empty"]?.map(\.name) == ["replaced"])
+
+        // `HomeChains.atRest(categoryCount:)`, `HomeChains.name(of:categories:)`
+        // fallback for out-of-range category index and `.cleared` draft, and
+        // `HomeChains.frames(from:categories:)` returning `nil` when a fixed
+        // control is missing.
+        #expect(HomeChains.atRest(categoryCount: 4) == HomeChains.State(hasSpoken: false, showing: 0, sounding: false))
+        #expect(HomeChains.atRest(categoryCount: 0) == HomeChains.State(hasSpoken: false, showing: nil, sounding: false))
+        let outOfRange = HomeChains.State(hasSpoken: true, showing: 9, sounding: true, typing: true, draft: .cleared)
+        #expect(HomeChains.name(of: outOfRange, categories: ["Basics"]) == "Home, spoken, category 10 showing, sounding, typing, draft cleared")
+        #expect(HomeChains.frames(from: [], categories: ["Basics"]) == nil)
+
+        // `SettingsChains.kind(of:)` returns `.unexpected` when a hazard occurs
+        // on `SettingsChains.root` or `SettingsChains.familySetup`.
+        let rootHazard = ChainControl("surprise", Self.row(300), .speaks)
+        let back = ChainControl(SettingsChains.back, Self.back, .navigates, leadsTo: SettingsChains.root)
+        let chainOnRoot = Chain(
+            start: .choosing(back, in: SettingsChains.familySetup),
+            rule: .centre,
+            pointer: .staysOnControl,
+            steps: [
+                ChainStep(state: SettingsChains.familySetup, control: back, asked: true),
+                ChainStep(state: SettingsChains.root, control: rootHazard, asked: false),
+            ],
+            end: .hazard
+        )
+        #expect(SettingsChains.kind(of: chainOnRoot) == .unexpected)
+        #expect(chainOnRoot.description.contains("surprise (speaks)"))
+        let findings = ChainFinding.findings(in: [chainOnRoot])
+        #expect(findings.count == 1)
+        #expect(findings.first?.description.contains("surprise (speaks)") == true)
+    }
 }

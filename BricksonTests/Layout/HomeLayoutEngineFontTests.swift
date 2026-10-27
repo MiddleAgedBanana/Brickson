@@ -200,4 +200,93 @@ struct HomeLayoutEngineFontTests {
         #expect(largest == HomeLayout.referencePhraseCount)
         #expect(library.categories.filter { !$0.isEmergency }.count == HomeLayout.categoryCapacity)
     }
+
+    // MARK: LabelFont lineChoice, choice, Weight and TextStyle branches
+
+    /// `LabelFont.lineChoice(for:systemImage:steps:width:)` keeps the icon when
+    /// it fits at the first step, drops the decorative icon before shrinking
+    /// words when the word fits without the icon at step 0, steps down to a
+    /// smaller `DynamicTypeSize` when the word alone is too wide at step 0,
+    /// and returns a sensible fallback when `steps` is empty.
+    @Test func lineChoiceDropsIconBeforeShrinkingAndStepsDownWhenNeeded() {
+        let font = LabelFont.category
+        let steps = LabelFont.steps(downFrom: .accessibility3)
+        let word = "Settings"
+        let icon = "gearshape.fill"
+
+        let wordAtTop = font.lineWidth(word, at: .accessibility3)
+        let iconAtTop = font.iconAdvance(icon, at: .accessibility3)
+
+        let wideEnoughForBoth = font.lineChoice(
+            for: word, systemImage: icon, steps: steps, width: wordAtTop + iconAtTop + WordFit.widthSlack
+        )
+        #expect(wideEnoughForBoth == WordFit.Choice(step: 0, showsIcon: true))
+
+        let wideEnoughForWordOnly = font.lineChoice(
+            for: word, systemImage: icon, steps: steps, width: wordAtTop + WordFit.widthSlack
+        )
+        #expect(wideEnoughForWordOnly == WordFit.Choice(step: 0, showsIcon: false))
+
+        let wordAtLarge = font.lineWidth(word, at: .large)
+        let steppedDown = font.lineChoice(
+            for: word, systemImage: icon, steps: steps, width: wordAtLarge + WordFit.widthSlack
+        )
+        #expect(steppedDown.step > 0)
+        #expect(steppedDown.step < steps.count)
+        #expect(!steppedDown.showsIcon)
+
+        let tooNarrowEvenAtLarge = font.lineChoice(
+            for: word, systemImage: icon, steps: steps, width: wordAtLarge - 5
+        )
+        #expect(tooNarrowEvenAtLarge == WordFit.Choice(step: steps.count - 1, showsIcon: false))
+
+        let emptySteps = font.lineChoice(for: word, systemImage: icon, steps: [], width: 200)
+        #expect(emptySteps == WordFit.Choice(step: 0, showsIcon: false))
+    }
+
+    /// `LabelFont.choice(for:systemImage:steps:size:)` drops the decorative
+    /// icon at step 0 when keeping the icon forces an extra wrapped line that
+    /// exceeds the available height, while the words without the icon fit on
+    /// fewer lines at that same text size.
+    @Test func choiceDropsIconBeforeShrinkingWhenIconWrappingExceedsHeight() {
+        let font = LabelFont.category
+        let steps = LabelFont.steps(downFrom: .accessibility2)
+        let text = "Everyday Words"
+        let icon = "star.fill"
+        let topSize = DynamicTypeSize.accessibility2
+
+        let oneLineWidth = font.lineWidth(text, at: topSize)
+        let iconAdvance = font.iconAdvance(icon, at: topSize)
+        let oneLineHeight = font.lineHeight(at: topSize)
+
+        // Width holds `text` on 1 line without the icon, but with `iconAdvance`
+        // subtracted it wraps to 2 lines, exceeding `oneLineHeight + 1`.
+        let box = CGSize(width: oneLineWidth + WordFit.widthSlack, height: oneLineHeight + 1)
+        #expect(oneLineWidth + iconAdvance > box.width)
+
+        let chosen = font.choice(for: text, systemImage: icon, steps: steps, size: box)
+        #expect(chosen == WordFit.Choice(step: 0, showsIcon: false))
+
+        let emptySteps = font.choice(for: text, systemImage: icon, steps: [], size: box)
+        #expect(emptySteps == WordFit.Choice(step: 0, showsIcon: false))
+    }
+
+    /// Every `Font.TextStyle` case and `LabelFont.Weight` case resolves a
+    /// valid `UIFont` and SwiftUI `Font` with positive point size and line
+    /// height across Bold Text off and on.
+    @Test func everyTextStyleAndWeightResolvesPositiveMetrics() {
+        let styles: [Font.TextStyle] = [
+            .largeTitle, .title, .title2, .title3, .headline, .subheadline,
+            .body, .callout, .footnote, .caption, .caption2,
+        ]
+        for style in styles {
+            for weight in [LabelFont.Weight.regular, .semibold] {
+                for bold in [false, true] {
+                    let labelFont = LabelFont(textStyle: style, weight: weight, boldText: bold)
+                    #expect(labelFont.pointSize(at: .large) > 0)
+                    #expect(labelFont.lineHeight(at: .large) >= labelFont.pointSize(at: .large))
+                }
+            }
+        }
+    }
 }

@@ -1426,6 +1426,221 @@ struct HomeLayoutEngineTests {
         let floor: CGFloat = modes == .phrasesOnly ? 44 : HomeLayout.twoLineQuickControlHeight
         #expect(zoomed.quickControlHeight == floor && zoomed.regionGap == HomeLayout.minimumRegionSpacing)
     }
+
+    // MARK: Computed geometry, grid math and legacy region helpers
+
+    /// `safetyRowGap` is zero when the safety row fits on one row (`isRegular`
+    /// with `.phrasesAndTyping`) and equals the vertical gap between Yes and
+    /// Again when the safety row wraps to two rows. With a horizontal division
+    /// between those two rows, `safetyRowGap` grows past `controlSpacing`.
+    @Test func safetyRowGapReflectsOneRowTwoRowAndDividedSafetyRows() {
+        let regularTyping = HomeLayout(
+            space: .init(size: CGSize(width: 1032, height: 1376)),
+            text: Self.defaultText, modes: .phrasesAndTyping
+        )
+        #expect(regularTyping.isRegular)
+        #expect(regularTyping.safetyRowGap == 0)
+
+        let compactTyping = HomeLayout(
+            space: .init(size: CGSize(width: 402, height: 874)),
+            text: Self.defaultText, modes: .phrasesAndTyping
+        )
+        #expect(!compactTyping.isRegular)
+        #expect(abs(compactTyping.safetyRowGap - HomeLayout.controlSpacing) < 0.001)
+        #expect(abs(compactTyping.safetyRowGap - (compactTyping.frame(.again).minY - compactTyping.frame(.yes).maxY)) < 0.001)
+
+        let regularPhrasesOnly = HomeLayout(
+            space: .init(size: CGSize(width: 1032, height: 1376)),
+            text: Self.defaultText, modes: .phrasesOnly
+        )
+        #expect(abs(regularPhrasesOnly.safetyRowGap - HomeLayout.controlSpacing) < 0.001)
+
+        let secondSafetyTop = compactTyping.frame(.again).minY
+        let divided = HomeLayout(
+            space: .init(
+                size: CGSize(width: 402, height: 874),
+                regions: [.init(kind: .division, frame: CGRect(x: 0, y: secondSafetyTop + 2, width: 402, height: 20))]
+            ),
+            text: Self.defaultText, modes: .phrasesAndTyping
+        )
+        #expect(divided.safetyRowGap > HomeLayout.controlSpacing)
+        #expect(abs(divided.safetyRowGap - (divided.allocation(.again).minY - divided.allocation(.yes).maxY)) < 0.001)
+    }
+
+    /// `categoryRowGaps` follows the three category arrangements: `[gap]` in
+    /// `.band` (between `.stop` and `.category(0)` in the leading column) and
+    /// `.threeColumns`, and `[firstToSecond, secondToThird]` in `.twoColumns`.
+    @Test func categoryRowGapsFollowTheThreeArrangements() {
+        let band = HomeLayout(
+            space: .init(size: CGSize(width: 1032, height: 1376)),
+            text: Self.defaultText, modes: .phrasesAndTyping
+        )
+        #expect(band.categoryArrangement == .band)
+        #expect(band.categoryRowGaps.count == 1)
+        #expect(abs((band.categoryRowGaps.first ?? 0) - HomeLayout.controlSpacing) < 0.001)
+
+        let threeColumns = HomeLayout(
+            space: .init(size: CGSize(width: 402, height: 874)),
+            text: Self.defaultText, modes: .phrasesAndTyping
+        )
+        #expect(threeColumns.categoryArrangement == .threeColumns)
+        #expect(threeColumns.categoryRowGaps.count == 1)
+        #expect(abs((threeColumns.categoryRowGaps.first ?? 0) - HomeLayout.controlSpacing) < 0.001)
+
+        let twoColumns = HomeLayout(
+            space: .init(size: CGSize(width: 320, height: 874)),
+            text: Self.defaultText, modes: .phrasesAndTyping
+        )
+        #expect(twoColumns.categoryArrangement == .twoColumns)
+        #expect(twoColumns.categoryRowGaps.count == 2)
+        #expect(twoColumns.categoryRowGaps.allSatisfy { abs($0 - HomeLayout.controlSpacing) < 0.001 })
+    }
+
+    /// `bounds(of:)`, `height(of:)`, `allocationBounds(of:)`,
+    /// `allocationHeight(of:)`, and `horizontalGap(from:to:)` measure both the
+    /// occupied target frames and the full allocated slots (which differ when
+    /// a camera occlusion trims a slot's outer edge), and return `.null` or `0`
+    /// when a slot is absent.
+    @Test func boundsHeightAllocationAndHorizontalGapHelpersPinOccupiedAndAllocatedFrames() {
+        let layout = HomeLayout(
+            space: .init(
+                size: CGSize(width: 951, height: 669),
+                safeArea: .init(top: 0, leading: 0, bottom: 34, trailing: 84),
+                regions: [
+                    .init(kind: .division, frame: CGRect(x: 455.5, y: 0, width: 40, height: 669)),
+                    .init(kind: .occlusion, frame: CGRect(x: 677.3333333333334, y: 21, width: 58, height: 37)),
+                ]
+            ),
+            text: Self.defaultText, modes: .phrasesAndTyping
+        )
+
+        #expect(layout.bounds(of: []).isNull)
+        #expect(layout.height(of: []) == 0)
+        #expect(layout.allocationBounds(of: []).isNull)
+        #expect(layout.allocationHeight(of: []) == 0)
+
+        let phrasesOnly = HomeLayout(
+            space: .init(size: CGSize(width: 402, height: 874)),
+            text: Self.defaultText, modes: .phrasesOnly
+        )
+        #expect(phrasesOnly.bounds(of: [.phrases, .type]).isNull)
+        #expect(phrasesOnly.height(of: [.phrases, .type]) == 0)
+        #expect(phrasesOnly.allocationBounds(of: [.phrases, .type]).isNull)
+        #expect(phrasesOnly.frame(.phrases).isNull)
+        #expect(phrasesOnly.allocation(.phrases).isNull)
+
+        let rowSlots: [HomeLayout.Slot] = [.message, .phrases, .type]
+        let expectedOccupied = rowSlots.map(layout.frame).reduce(CGRect.null, { $0.union($1) })
+        let expectedAllocated = rowSlots.map(layout.allocation).reduce(CGRect.null, { $0.union($1) })
+        #expect(layout.bounds(of: rowSlots) == expectedOccupied)
+        #expect(layout.height(of: rowSlots) == expectedOccupied.height)
+        #expect(layout.allocationBounds(of: rowSlots) == expectedAllocated)
+        #expect(layout.allocationHeight(of: rowSlots) == expectedAllocated.height)
+        #expect(layout.frame(.type).width < layout.allocation(.type).width)
+        #expect(layout.bounds(of: [.type]).width < layout.allocationBounds(of: [.type]).width)
+
+        #expect(abs(layout.horizontalGap(from: .yes, to: .no) - HomeLayout.controlSpacing) < 0.001)
+    }
+
+    /// `Grid` handles empty `columnFrames`, non-positive column counts,
+    /// `contentHeight`, `shortfall`, and `tile(row:column:scrollOffset:)` with
+    /// non-zero scroll offsets.
+    @Test func gridHandlesEmptyColumnFramesScrollOffsetsAndShortfall() {
+        let emptyColumns = HomeLayout.Grid(
+            frame: CGRect(x: 16, y: 300, width: 308, height: 200),
+            columnFrames: [],
+            phraseCount: 0,
+            tileFloor: 72,
+            spacing: 12
+        )
+        #expect(emptyColumns.columns == 1)
+        #expect(emptyColumns.rows == 1)
+        #expect(emptyColumns.columnFrames == [CGRect(x: 16, y: 300, width: 308, height: 200)])
+        #expect(emptyColumns.tileSize.width == 308)
+        #expect(emptyColumns.tileSize.height == 200)
+        #expect(!emptyColumns.scrolls)
+        #expect(emptyColumns.shortfall == 0)
+
+        let zeroColumns = HomeLayout.Grid(
+            frame: CGRect(x: 16, y: 300, width: 308, height: 200),
+            columns: 0,
+            phraseCount: 0,
+            tileFloor: 72,
+            spacing: 12
+        )
+        #expect(zeroColumns.columns == 1)
+
+        let scrolling = HomeLayout.Grid(
+            frame: CGRect(x: 16, y: 300, width: 316, height: 150),
+            columns: 2,
+            phraseCount: 6,
+            tileFloor: 72,
+            spacing: 12
+        )
+        #expect(scrolling.rows == 3)
+        #expect(scrolling.contentHeight == CGFloat(3 * 72 + 2 * 12))
+        #expect(scrolling.scrolls)
+        #expect(scrolling.shortfall == CGFloat(240 - 150))
+
+        let rowZero = scrolling.tile(row: 0, column: 0, scrollOffset: 0)
+        let rowZeroScrolled = scrolling.tile(row: 0, column: 0, scrollOffset: 35)
+        #expect(rowZeroScrolled.minX == rowZero.minX)
+        #expect(rowZeroScrolled.minY == rowZero.minY - 35)
+        #expect(rowZeroScrolled.size == rowZero.size)
+    }
+
+    /// `Space.reservedRegions` getter and setter round-trip regions and
+    /// classify full-width horizontal bands and full-height vertical bands as
+    /// `.division` while partial rectangles become `.occlusion`.
+    @Test func spaceReservedRegionsGetterAndSetterClassifyDivisionsAndOcclusions() {
+        let size = CGSize(width: 951, height: 669)
+        let horizontal = CGRect(x: 0, y: 320, width: 951, height: 20)
+        let vertical = CGRect(x: 460, y: 0, width: 20, height: 669)
+        let partial = CGRect(x: 867, y: 295, width: 84, height: 80)
+
+        var space = HomeLayout.Space(size: size, reservedRegions: [horizontal, partial])
+        #expect(space.reservedRegions == [horizontal, partial])
+        #expect(space.regions == [
+            .init(kind: .division, frame: horizontal),
+            .init(kind: .occlusion, frame: partial),
+        ])
+
+        space.reservedRegions = [vertical]
+        #expect(space.reservedRegions == [vertical])
+        #expect(space.regions == [.init(kind: .division, frame: vertical)])
+
+        let withInactive = HomeLayout.Space(
+            size: size,
+            regions: [
+                .init(kind: .division, frame: horizontal, isActive: true),
+                .init(kind: .occlusion, frame: partial, isActive: false),
+            ]
+        )
+        #expect(withInactive.reservedRegions == [horizontal, partial])
+    }
+
+    /// `Slot.description` names every slot deterministically for failure output.
+    @Test func slotDescriptionNamesEverySlot() {
+        let expected: [(HomeLayout.Slot, String)] = [
+            (.message, "message"),
+            (.statusLine, "statusLine"),
+            (.phrases, "phrases"),
+            (.type, "type"),
+            (.yes, "yes"),
+            (.no, "no"),
+            (.emergency, "emergency"),
+            (.again, "again"),
+            (.getAttention, "getAttention"),
+            (.stop, "stop"),
+            (.category(0), "category0"),
+            (.category(3), "category3"),
+            (.settings, "settings"),
+            (.phraseGrid, "phraseGrid"),
+        ]
+        for (slot, name) in expected {
+            #expect(slot.description == name)
+        }
+    }
 }
 
 // MARK: - Helpers
