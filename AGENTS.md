@@ -474,6 +474,9 @@ the failure.
   in `docs/DECISIONS.md` and `docs/HANDOFF.md` is also permitted. This is
   a specific exception for those facts and attribution, not permission
   to publish other family identities, medical details or private documents.
+  On 2026-10-27 the owner also authorized Avery Dedmon's copyright
+  attribution in `LICENSE` and the README's license notice, and recording
+  that licensing choice in `docs/DECISIONS.md` and its `docs/log/` record.
 - Text anywhere that says what Brickson costs (an amount, "free" or
   "paid") before docs/DECISIONS.md records the owner's decision ("Price
   not decided"). "Free" about something else, such as Xcode or GitHub
