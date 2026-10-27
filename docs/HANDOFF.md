@@ -106,6 +106,21 @@ Xcode 27.1 (27A9275); PR #20 landed in `d79d836`.
 
 ## Verification
 
+- **Accessibility reference audit (`docs/ACCESSIBILITY.md`), 2026-10-27:**
+  confirmed every API and feature row in `docs/ACCESSIBILITY.md` against
+  `developer.apple.com` (reading `.md` symbol pages and the framework update
+  pages for `Accessibility`, `SwiftUI`, `UIKit`, `AVFAudio`, `AppIntents` and
+  `XCUIAutomation`) and independent accessibility references. Corrected stale
+  API names, minimum iOS versions and `main` implementation statuses (including
+  `.spokenAudio` mode, `UIConversationContext` / `UITextInputDelegate`,
+  `AccessibilitySettings.showBordersEnabled`, per-case `AccessibilitySettings.Feature`
+  versions, `hoverEffect`, `accessibilityInputLabels`, Voice Settings,
+  `accessibilityValue` / `accessibilityHint`, `DraftIssue` announcements and
+  Dictation), and added a *New since this list was written* section covering 18
+  Apple additions across iOS 18, iOS 26 and iOS 27. Verified with
+  `python3 scripts/test-docs.py` (45 tests).
+  [Record](log/2026-10-27-accessibility-reference-audit.md).
+
 - **Mac Home and keyboard checks, 2026-10-25**, main `8316743`, Xcode 27.1
   (27A9275), iOS 27.0: on a 375×667 iPhone SE simulator the default-text
   keyboard probe passed and AX5 failed Home's conservative band check;
