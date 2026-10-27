@@ -28,9 +28,6 @@ in WebKit across light and dark appearances.
     `mailto:` links to
     match the `Contact` section (`PrivacyPolicyDocument` strips anchor tags
     while keeping their text, so the in-app copy is unchanged).
-  - Added `<meta name="text-scale" content="scale">` to all three pages so
-    browsers that support OS-level text scaling follow the user's text-size
-    preference automatically.
 - **Current state on `site/index.html` and `site/accessibility/index.html`:**
   - On `site/index.html`, updated `"made only of Apple's standard buttons"`
     to `"made only of Apple's standard controls"` since Home now includes
