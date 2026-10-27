@@ -106,6 +106,21 @@ Xcode 27.1 (27A9275); PR #20 landed in `d79d836`.
 
 ## Verification
 
+- **App Store listing drafts (`docs/ASO.md` and `docs/APP-STORE.md`), 2026-10-27:**
+  updated the store-text drafts (`Name`, `Subtitle`, `Keywords`, `Promotional text`,
+  `Description` and `What's New`), the screenshot table and the App Review notes
+  template to use `[App Name]` as a placeholder until the final name is
+  confirmed in App Store Connect, with no price or cost words. Removed the five
+  `[needs: …]` tags from the description draft for features now built on `main`
+  (`Get Attention`, `layout engine`, `word fitting`, `typing` and `voice choice
+  in Settings`), added a clean 1.0 paste-ready description block with the four
+  remaining items omitted (three unbuilt features: profiles, editing, and
+  backup; and one verification gate: real-device checks of each input method),
+  and drafted a concrete first `What's New` entry. Checked character and byte
+  counts against Apple's limits and verified with `python3 scripts/test-docs.py`
+  (45 tests).
+  [Record](log/2026-10-27-app-store-listing-drafts.md).
+
 - **Accessibility reference audit (`docs/ACCESSIBILITY.md`), 2026-10-27:**
   confirmed every API and feature row in `docs/ACCESSIBILITY.md` against
   `developer.apple.com` (reading `.md` symbol pages and the framework update
