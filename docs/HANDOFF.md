@@ -981,7 +981,10 @@ Simulators cannot show these. Record each result in a `docs/log/` file
   [privacy policy](https://middleagedbanana.github.io/Brickson/privacy/)
   (Effective October 24, 2026, since typing came to Home; the page since PR #40) and its
   [accessibility page](https://middleagedbanana.github.io/Brickson/accessibility/)
-  (since PR #40; the App Store's Accessibility URL) publish after each
+  (since PR #40; the App Store's Accessibility URL, updated 2026-10-27 for
+  current Home, Settings and simulator checks, with Largest Text layout fixes
+  and a Safari VoiceOver walk on iOS 27.0:
+  [`log/2026-10-27-website-review.md`](log/2026-10-27-website-review.md)) publish after each
   merge; on 2026-10-15 the first two matched `site/` byte for byte. The
   support page's "in development" lines change at release, and the
   accessibility page changes with every device check and every row of
