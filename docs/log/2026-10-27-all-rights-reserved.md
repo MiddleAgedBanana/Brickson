@@ -1,6 +1,6 @@
 # Explicit all-rights-reserved notice
 
-*2026-10-27. Branch `codex/all-rights-reserved`. Codex; owner-requested.*
+*2026-10-27. Pull request #65 (`codex/all-rights-reserved`). Codex; owner-requested.*
 
 ## What changed and why
 
@@ -24,10 +24,19 @@ The shared briefing records the owner's authorization for the copyright
 attribution in these notices and the licensing decision record. This
 exception covers the developer's name, not other personal information.
 
+The refresh after PR #63 merged incorporates main `a3456c6` without
+conflicts. That main already raises the UI job's limit from 75 to 120
+minutes and removes redundant termination calls in the fold-offset UI
+test. The old-head UI job timed out; the refreshed head needs its own
+green CI run. The same update completes the change-log metadata requested
+in review.
+
 ## Commits
 
-The licensing notice and related documentation are delivered together on
-`codex/all-rights-reserved`.
+- `79e6571`: add the all-rights-reserved notice and project records.
+- `1ebcbd9`: rename the notice to `LICENSE.md` and update references.
+- This merge incorporates main `a3456c6` and completes the PR/commit
+  metadata in this record.
 
 ## Verified
 
@@ -50,6 +59,10 @@ The licensing notice and related documentation are delivered together on
   `79e6571:LICENSE`; README links resolve to the new filename.
 - Rechecked commit `79e6571` after the owner registered the existing SSH
   key for signing: GitHub reported `verified: true`, reason `valid`.
+- Repeated `CI=true scripts/test.sh unit` after the clean merge of main
+  `a3456c6`: the same 781-case result passed, with zero unexpected failures,
+  71.2% line coverage and no catalog change. The refreshed head's GitHub
+  unit/UI results remain a separate gate.
 - `git diff --check`: passed.
 - Reviewed the notice and README together for matching permission wording,
   applicable-law and GitHub-term exceptions, and third-party terms.
