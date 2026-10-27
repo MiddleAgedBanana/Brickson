@@ -1,0 +1,39 @@
+{
+  "schema": 1,
+  "beforeBundle": "build/TestResults/pr58-extra-fold-red/ui-destination.xcresult",
+  "afterBundle": "build/TestResults/pr58-extra-final-ipad/ui-destination.xcresult",
+  "coordinateSpace": "Each control relative to its own coherent ancestor window",
+  "tolerancePoints": 0.5,
+  "comparisons": [
+    {
+      "appearance": "light",
+      "controlCount": 20,
+      "maximumFrameDelta": 0.0,
+      "windows": [
+        {
+          "height": 1376,
+          "width": 1032,
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "beforeCaptureSHA256": "9489bd6449a473ac394e4ead3c4665cf89cfe6e3eaef96bc2c85802479b0148c",
+      "afterCaptureSHA256": "9489bd6449a473ac394e4ead3c4665cf89cfe6e3eaef96bc2c85802479b0148c"
+    },
+    {
+      "appearance": "dark",
+      "controlCount": 20,
+      "maximumFrameDelta": 0.0,
+      "windows": [
+        {
+          "height": 1376,
+          "width": 1032,
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "beforeCaptureSHA256": "9489bd6449a473ac394e4ead3c4665cf89cfe6e3eaef96bc2c85802479b0148c",
+      "afterCaptureSHA256": "9489bd6449a473ac394e4ead3c4665cf89cfe6e3eaef96bc2c85802479b0148c"
+    }
+  ]
+}

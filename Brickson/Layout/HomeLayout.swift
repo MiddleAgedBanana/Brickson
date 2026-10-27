@@ -403,6 +403,13 @@ nonisolated struct HomeLayout: Equatable, Sendable {
             bToD: allocation(.phraseGrid).minY - b.maxY)
     }
 
+    /// A division through region A can move every row down together.
+    /// Relative row gaps retain no record of that initial translation.
+    /// Home consumes this inset before its first standard container.
+    var firstRegionTopInset: CGFloat {
+        allocation(.message).minY - content.minY
+    }
+
     var safetyRowGap: CGFloat { rowGaps(in: Slot.safetyRow).first ?? 0 }
     var categoryRowGaps: [CGFloat] { rowGaps(in: Slot.categoriesRegion) }
 

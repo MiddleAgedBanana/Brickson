@@ -86,6 +86,7 @@ struct HomeView: View {
             )
 
             VStack(alignment: .leading, spacing: 0) {
+                Spacer(minLength: 0).frame(height: layout.firstRegionTopInset)
                 MessageRegion(
                     layout: layout,
                     messageLine: text.messageLine,
@@ -209,6 +210,11 @@ extension HomeLayout.Space {
             safeArea: HomeLayout.Insets(top: insets.top, leading: insets.leading, bottom: insets.bottom, trailing: insets.trailing),
             regions: regions
         )
+        #if DEBUG
+        // Both Home and Settings use this reader, so the test reservation
+        // reaches their real views in the same available coordinate space.
+        self = LaunchOptions.current.applyingLayoutFixture(to: self)
+        #endif
     }
 }
 

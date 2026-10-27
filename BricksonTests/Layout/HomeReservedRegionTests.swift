@@ -601,8 +601,29 @@ nonisolated struct HomeReservedRegionTests {
                 #expect(clear.grid.columns == columns)
                 #expect(clear.frames == clear.allocationFrames)
                 #expect(clear.reservationIssues.isEmpty)
+                #expect(clear.firstRegionTopInset == 0)
             }
         }
+    }
+
+    /// Returning zero for the first row's displaced origin fails this.
+    /// Relative row gaps cannot encode a translation of every row; Home
+    /// must reserve the independently known 22pt before drawing region A.
+    @Test func aDivisionThroughTheFirstRowKeepsItsInitialTopInset() {
+        let layout = HomeLayout(
+            space: .init(
+                size: CGSize(width: 951, height: 669),
+                safeArea: .init(top: 0, leading: 0, bottom: 34, trailing: 84),
+                regions: [.init(kind: .division, frame: CGRect(x: 0, y: 20, width: 951, height: 10))]
+            ),
+            text: Self.defaultText, modes: .phrasesAndTyping
+        )
+        #expect(layout.reservationIssues.isEmpty)
+        #expect(layout.content.minY == 8)
+        #expect(layout.firstRegionTopInset == 22)
+        #expect(layout.allocation(.message).minY == 30)
+        #expect(layout.frame(.phrases).minY == 30)
+        #expect(layout.backToTalking.minY == 30)
     }
 
     private static func expectClose(_ actual: CGRect, _ expected: CGRect, _ context: String) {

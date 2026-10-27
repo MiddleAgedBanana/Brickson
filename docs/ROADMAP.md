@@ -400,10 +400,38 @@ The private AX5 alternative, keyboard dismissal, Put Back placement and
 startup-flake cause/fix remain separate open work. Final selected runs
 pass all five expanded drag/hold/first-tap/settled-frame cases and both
 existing slow-press cases on each of Duo, iPad and iPhone, with no skips
-or expected failures. Final units pass 778 total: 769 passed, zero failed,
+or expected failures. Pre-extra-batch units passed 778 total: 769 passed, zero failed,
 one existing #19 skip and eight strict expected failures, catalog current.
-Complete ordinary local UI/verifier results and new-head hosted CI remain
-pending; current-head PR checks govern readiness.*
+Later pre-extra-batch hosted Unit/UI checks pass; full local UI still
+fails only the existing AX5 Speaking waits. The owner authorized one
+extra batch after two post-green fix pushes: consume the renderer's
+missing first-region top inset from the existing allocation and add a
+native case that must prove all eight tiles fit before its unconditional
+settled-frame comparison. The [written plan](work/layout-engine.md#owner-authorized-renderer-and-fitting-test-review-batch)
+precedes implementation. The native synthetic-reservation reproduction
+fails both iPad light/dark cases (eight intended assertions): the first
+row renders at y40 instead of y62 and Back alignment fails. The renderer
+now consumes the existing first allocation's inset, and default light/
+dark drag cases require actual fit and unconditional settled comparisons.
+The affected iPad selection passes 10/10 with seven retained runtime
+session diagnostics; 40 zero-inset frame comparisons match exactly.
+A viewport-only 1pt deficit passes with required-fit flags off and fails
+before input with them on; all 153 frozen Swift/project-source hashes
+are restored. The affected final iPhone selection passes 10/10, with
+runtime audio diagnostics retained; full units pass 781 total (772 passed,
+zero failed, one existing #19 skip and eight strict expected failures),
+catalog current, coverage 71.2%. Allocator mathematics remain unchanged.
+The final affected Duo selection passes 7/7, zero failures/skips/expected
+failures, with seven retained runtime audio warnings, using actual OS
+space in the opposite tall open/flat 180-degree window; coordinate and
+default-fit guards pass. All 153 source hashes match final and all three
+owned simulators are shut down. New-head hosted CI and review resolution
+remain pending at this pre-push checkpoint after the single authorized
+push; live PR state provides the later result. Earlier complete local UI belongs to
+`4c02a0c`; new affected selections are not full ordinary UI. No actual
+OS-pose, Release archive or physical claim is made. PR #58 remains a draft
+with two review conversations open. No allocator, floor, capacity or
+future-profile rule changes; current-head PR checks govern readiness.*
 The owner's two fold choices (docs/DECISIONS.md, "iPhone Duo"): Home's
 controls kept off the fold, and an even number of columns on a display
 that folds, behind `#available(iOS 27.1, *)`. Apple's Eye Tracking and

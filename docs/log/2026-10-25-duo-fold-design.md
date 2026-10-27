@@ -914,11 +914,18 @@ gesture. On the shared app, a new first-pose check rejected an actual
 a real test-coordinate defect, but it does not by itself attribute either
 original dispatch.
 
-The private `/private/tmp` folder initially appeared unavailable, so the
-first phase recovered only a source excerpt and receipts from the earlier
-chat. That source-availability limit is superseded by the exact recovery
-and bounded counterfactual below. The original embedded four-model JSON
-remains unavailable; no full original flow/suite rerun is claimed.
+**Full original prototype: prototype lost, not reproducible.** The original
+`/private/tmp` folder has no surviving copy, and its embedded four-model
+JSON remains unavailable. The prototype-only failure is excluded from
+remaining work; the independently reproduced ordinary-app failure is the
+basis of this repair.
+
+The first phase recovered only a source excerpt and receipts from the
+earlier chat. The exact App-source recovery and bounded counterfactual
+below supersede that App-source limit, but do not reconstruct the full
+original prototype flow or suite. No further prototype investigation is
+part of this PR. The recovered source and private builds are preserved
+inside this worktree's ignored `build/` directory.
 
 ### Initial checks that did not expose the app bug
 
@@ -1089,3 +1096,172 @@ not verify those profiles, sound, physical Touch Accommodations, Snap to
 Item, every Duo pose, changed-window pointer mapping or release readiness.
 The public accessibility page's existing high-level claims remain true;
 no physical-input claim or page wording changes with this repair.
+
+### One extra repair batch authorized before implementation
+
+After two post-green fix pushes, the owner explicitly authorized **one
+additional repair batch** for the verified P1 renderer and P2 native-fit
+coverage findings. The
+[Intent, Spec and Plan](../work/layout-engine.md#owner-authorized-renderer-and-fitting-test-review-batch)
+are written before implementation. The owner's full-original-prototype
+clarification above is unchanged: that prototype is lost, its failure is
+excluded from remaining work, and no further prototype investigation is
+part of this batch.
+
+| Checkpoint before this extra batch | Result |
+|---|---|
+| Hosted Unit tests | **PASS**, 778 total = 769 passed / 0 failed / 1 existing #19 skip / 8 strict expected failures; coverage 71.1%. |
+| Hosted UI tests | **PASS**, 56 per family: iPad 51 passed / 0 failed / 2 skipped / 3 expected; iPhone 48 / 0 / 6 / 2. |
+| Complete local UI | **FAIL**, 56 per family: iPad 50 / 1 / 2 / 3; iPhone 47 / 1 / 6 / 2. Each failure is only the existing AX5 Speaking waits; no cause or startup fix is claimed. |
+| Review status | PR #58 remains a **draft**, with two Greptile conversations open. Codex review is running; security review completed with no reported findings. |
+| P1 rendered first-region inset reproduction and repair | **NOT RUN / NOT IMPLEMENTED at this planning checkpoint**; root will retain failing-first and red/green evidence. |
+| P2 guaranteed fitting native case | **NOT RUN / NOT IMPLEMENTED at this planning checkpoint**; an unconditional eight-tile-fit precondition and settled-frame comparison are required. |
+
+P1 consumes only the initial top inset already allocated by the engine;
+the renderer currently starts its first region at the content top and
+therefore misses that reservation. Inter-region gaps already exist and
+do not cover this initial offset. The correction must use the existing
+allocation once in the standard stack, leaving zero-inset paths and
+allocator behavior unchanged. The rendered regression must fail before
+the correction; a pure allocator pass alone cannot verify its renderer.
+
+P2 must demonstrate actual fitting coverage rather than conditionally
+comparing tiles only if a runtime surface happens to fit. The dedicated
+native case must require all eight starter tiles wholly visible before
+input, keep all negative speech/alarm and first-tap checks, and compare
+all fitting tiles unconditionally after settling. A nonfitting launch is
+a failure, never a new skip or known issue. No target floor, engine
+capacity, control order, spacing policy or future-profile rule changes.
+
+The extra batch stays within this one PR. Its final-source unit/native
+and hosted CI results are pending, and the current green hosted checks
+do not verify these proposed changes. The four excluded work items and
+physical/release gates remain open. This one authorization does not start
+another repair loop after the batch.
+
+### Extra-batch rendered red result and unverified implementation
+
+P1's failing-first native run is **FAIL, 0 passed / 2 failed**, with eight
+intended assertion failures across iPad default-text light/dark cases.
+No test was skipped or expected to fail, and the result reports no runtime
+warnings. Bundle:
+`build/TestResults/pr58-extra-fold-red/ui-destination.xcresult`; raw log:
+`/private/tmp/brickson-pr58-extra-fold-red.log`.
+
+The expected first-row top is independently fixed at **y62**. Home's
+actual Phrases starts at **y40**, intersecting the synthetic reservation
+at **y52–62**; Settings' Back starts at **y62**, so it also fails alignment
+with Home's Phrases. The missing initial 22pt renderer inset explains both
+paths without changing the allocator.
+
+| Retained original evidence | Home | Settings | Measurements |
+|---|---|---|---|
+| Default/light | [Original PNG](../evidence/2026-10-26-pr58-extra/fold-red-light-home.png) | [Original PNG](../evidence/2026-10-26-pr58-extra/fold-red-light-settings.png) | [Frames and reservation](../evidence/2026-10-26-pr58-extra/fold-red-light-frames.json), [Back alignment](../evidence/2026-10-26-pr58-extra/fold-red-light-back-alignment.json) |
+| Default/dark | [Original PNG](../evidence/2026-10-26-pr58-extra/fold-red-dark-home.png) | [Original PNG](../evidence/2026-10-26-pr58-extra/fold-red-dark-settings.png) | [Frames and reservation](../evidence/2026-10-26-pr58-extra/fold-red-dark-frames.json), [Back alignment](../evidence/2026-10-26-pr58-extra/fold-red-dark-back-alignment.json) |
+
+[Attachment provenance and hashes](../evidence/2026-10-26-pr58-extra/image-provenance.json)
+identify the original exports. This uses a **synthetic reservation fixture**,
+not an actual OS-reported pose. No fold stripe is painted in the images;
+the frame JSON establishes the y52–62 band, and the images preserve the
+rendered controls. No physical fold or camera conclusion follows.
+
+The P1 implementation now inserts the existing allocated initial inset
+through a standard spacer, `layout.firstRegionTopInset`, whose accessor is
+`allocation(.message).minY - content.minY`. The pure allocator is unchanged.
+Unit checks pin the nonzero inset and the existing zero-inset matrix;
+their results are not yet reported. Default paths with zero inset retain
+the same placement recipe.
+
+P2's default light/dark cases now require actual eight-tile fit before
+input, with unconditional settled-tile comparisons. AX5 may legitimately
+overflow in the current touch profile, so its conditional fitting check
+remains; no floor, capacity or future-profile requirement is relaxed.
+The ten affected iPad UI cases are running. Their pass, the fit-precondition
+mutation proof, full unit gate and affected phone/Duo runs remain
+**pending**. The red result proves the reproduction, not that the new
+renderer or strengthened fit checks pass.
+
+### Extra-batch iPad green and fitting-guard proof
+
+The affected final-source iPad selection now **PASSES 10/10**, with zero
+failures, skips or expected failures: two `FoldOffsetUITests`, five
+`PhraseDragTests`, two `SlowPressTests` and one `HomeLayoutTests` case.
+Bundle: `build/TestResults/pr58-extra-final-ipad/ui-destination.xcresult`.
+The result retains **seven runtime audio-session diagnostics**; compiler
+warnings were not suppressed and this result does not claim an audio
+repair. [Run summaries and frozen-source hashes](../evidence/2026-10-26-pr58-extra/validation.json)
+keep them with the assertions and mutation evidence.
+
+| Final iPad synthetic fixture | Home | Settings | Measurements |
+|---|---|---|---|
+| Default/light | [Original PNG](../evidence/2026-10-26-pr58-extra/fold-green-ipad-light-home.png) | [Original PNG](../evidence/2026-10-26-pr58-extra/fold-green-ipad-light-settings.png) | [Frames](../evidence/2026-10-26-pr58-extra/fold-green-ipad-light-frames.json), [Back alignment](../evidence/2026-10-26-pr58-extra/fold-green-ipad-light-back-alignment.json) |
+| Default/dark | [Original PNG](../evidence/2026-10-26-pr58-extra/fold-green-ipad-dark-home.png) | [Original PNG](../evidence/2026-10-26-pr58-extra/fold-green-ipad-dark-settings.png) | [Frames](../evidence/2026-10-26-pr58-extra/fold-green-ipad-dark-frames.json), [Back alignment](../evidence/2026-10-26-pr58-extra/fold-green-ipad-dark-back-alignment.json) |
+
+These remain synthetic-reservation fixtures, not actual OS fold poses.
+The [ordinary zero-inset comparison](../evidence/2026-10-26-pr58-extra/ordinary-zero-inset-comparison.json)
+independently compares the pre-fix ordinary Home captures in the red run
+with the final ordinary captures: **20 control frames in each of light
+and dark, 40 comparisons, maximum delta 0.0pt**. Each appearance's raw
+capture JSON hashes are identical before and after. This is frame/capture
+agreement, not a claim of identical screenshot pixels or unmeasured poses.
+
+P2 also has an explicit coverage mutation proof. The temporary App variant
+changes only the ScrollView frame height to
+`min(sizing.frame.height, sizing.contentHeight - 1)`, leaving tile layout
+unchanged. With required-fitting flags off, the selected test **PASSES
+1/1**. With those flags on and the **same App variant**, it **FAILS 0/1**
+with the exact requirement that all eight tiles fit before input. The
+native viewport ends at **y1347**, while the last tile ends at **y1348**:
+the 1pt deficit exceeds the existing 0.5pt allowance. The guard run has
+**zero gesture-injection activities**, so this failure proves the fitting
+precondition rather than a later drag outcome. [Before-input capture](../evidence/2026-10-26-pr58-extra/fit-guard-before-input.png),
+[coordinate/geometry receipt](../evidence/2026-10-26-pr58-extra/fit-guard-gutter-coordinates.txt)
+and [provenance](../evidence/2026-10-26-pr58-extra/image-provenance.json)
+retain the evidence.
+
+Both edited files and **all 153 frozen Swift/project-source hashes** were
+restored exactly to the final source after the comparison; temporary
+variants are backed up only inside this worktree's ignored `build/`.
+No mutation or disabled fit requirement is part of the proposed change.
+The affected final-source **iPhone selection also PASSES 10/10**, zero
+failures, skips or expected failures, with the same FoldOffset 2,
+PhraseDrag 5, SlowPress 2 and HomeLayout 1 scope. Bundle:
+`build/TestResults/pr58-extra-final-iphone/ui-destination.xcresult`.
+Its audio-session runtime diagnostics are retained; no audio fix or
+compiler-warning suppression is claimed.
+
+The extra batch's **full unit gate PASSES 781 total = 772 passed /
+0 failed / 1 existing #19 skip / 8 strict expected failures**, catalog
+current under `CI=true`, coverage **71.2% (7,054/9,903)**. Bundle:
+`build/TestResults/pr58-extra-final-unit/unit-destination.xcresult`.
+The allocation mathematics are unchanged; the new accessor only reads
+the existing first-region inset for the renderer.
+
+The affected final **Duo selection PASSES 7/7**, zero failures, skips or
+expected failures, with **seven runtime audio-session warnings retained**.
+Bundle: `build/TestResults/pr58-extra-final-duo/ui-destination.xcresult`;
+raw log: `/private/tmp/brickson-pr58-extra-final-duo.log`. Device Hub
+prepared the opposite tall inner window, fully open/flat at 180 degrees.
+These seven cases consume the actual OS-reported Duo space, without the
+synthetic top-reservation fixture. Coordinate guards passed, and the
+default cases proved eight-tile fit before input; the result does not
+cover every Duo pose or changed-window input mapping.
+
+All 153 Swift/project-source hashes still match the frozen final source,
+and all three task-owned simulators are shut down. The public
+[validation receipt](../evidence/2026-10-26-pr58-extra/validation.json)
+retains the final counts and raw runtime diagnostics. No runtime warning
+or compiler diagnostic was suppressed.
+
+**Recorded pre-push checkpoint:** local unit and affected native gates
+above pass. New-head hosted CI and review resolution remain pending
+after the one owner-authorized push; PR #58 is still a draft with two
+review conversations open at this checkpoint. The live PR checks and
+conversation state provide the subsequent result; no later documentation-
+only status push is part of this batch.
+The earlier full ordinary local UI results belong to `4c02a0c`; the new
+iPad/iPhone affected selections are not full ordinary UI runs on the new
+source. No new complete ordinary UI pass, Release archive, device-input
+result or sound proof is claimed.
+The four excluded work items and all physical/future-profile gates remain
+open.

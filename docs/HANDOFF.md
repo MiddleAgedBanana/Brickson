@@ -686,18 +686,57 @@ release in docs/ROADMAP.md when no thread has it yet.
   failure; only these two scroll modifiers change its light/dark result
   to passing. Its full flow/suite and capacity design remain unselected
   and unverified. [Failures, source recovery and bounded passes](log/2026-10-25-duo-fold-design.md#pr-58-continuation-and-drag-investigation-2026-10-26).
-  The final shared-app selected runs pass all seven cases on each of
+  Before the extra batch, selected runs passed all seven cases on each of
   Duo, iPad and iPhone: the five `PhraseDragTests` cases (including the
   1.5s hold, first taps and static/fitting settled frames) plus two existing
-  slow-press cases, with no skips or expected failures. The final-source
-  unit gate passes 778 total: 769 passed, zero failed, one existing #19
+  slow-press cases, with no skips or expected failures. The pre-extra-batch
+  unit gate passed 778 total: 769 passed, zero failed, one existing #19
   skip and eight strict expected failures; catalog current with `CI=true`,
-  coverage 71.1% (7,026/9,875). Complete ordinary local UI/verifier results
-  and new-head hosted CI remain pending at this checkpoint; current-head
-  PR checks govern review readiness. The recovered
+  coverage 71.1% (7,026/9,875). The later pre-extra-batch hosted checks
+  pass units and all 56 UI cases per family (iPad 51 passed / 0 failed /
+  2 skipped / 3 expected; iPhone 48 / 0 / 6 / 2). Complete local UI on
+  `4c02a0c` ran 56 per family but each failed only the old AX5 Speaking waits
+  (iPad 50 / 1 / 2 / 3; iPhone 47 / 1 / 6 / 2). PR #58 is still a draft:
+  the owner authorized one extra repair batch after two post-green fix
+  pushes, for the missing renderer initial-region top inset and a native
+  test that must prove all eight tiles fit before its unconditional
+  settled-frame comparison. [Intent, Spec and Plan](work/layout-engine.md#owner-authorized-renderer-and-fitting-test-review-batch)
+  preceded implementation. P1's native default-text light/dark iPad
+  reproduction fails both cases with eight intended assertions: Phrases
+  y40 instead of the independently expected y62 crosses a synthetic
+  y52–62 band, while Settings' Back is y62. [Original images, frame JSON
+  and provenance](log/2026-10-25-duo-fold-design.md#extra-batch-rendered-red-result-and-unverified-implementation)
+  distinguish this fixture from an actual OS pose. The renderer now
+  consumes the allocated first inset through a standard spacer; P2 now
+  requires actual fit in the default light/dark native cases and compares
+  their settled tiles unconditionally. The affected final-source iPad
+  selection passes 10/10 without skips or expected failures; seven runtime
+  audio-session diagnostics are retained. Ordinary zero-inset frames
+  match exactly across 40 light/dark comparisons. A 1pt clipped-viewport
+  App variant passes with the fit flags off and fails before input with
+  them on, proving the guard; all 153 Swift/project-source hashes were
+  restored. [Green and mutation evidence](log/2026-10-25-duo-fold-design.md#extra-batch-ipad-green-and-fitting-guard-proof).
+  The affected final iPhone selection also passes 10/10 with retained
+  runtime audio diagnostics. Extra-batch full units pass 781 total:
+  772 passed, zero failed, one existing #19 skip and eight strict expected
+  failures; catalog current under `CI=true`, coverage 71.2% (7,054/9,903).
+  The final affected Duo selection passes 7/7, zero failures/skips/expected
+  failures, with seven retained runtime audio warnings, on the actual
+  OS-reported opposite tall open/flat window (180 degrees), without a
+  synthetic reservation fixture. Coordinate and default fitting guards
+  passed; all 153 source hashes match final and all three owned simulators
+  are shut down. At this recorded pre-push checkpoint only new-head hosted
+  CI and review resolution remain pending after the single authorized
+  push; live PR checks/review state provide the subsequent result. These
+  selections are not new full ordinary UI runs; no Release/device proof
+  is inferred. Two Greptile conversations
+  remain open, Codex review is running and security review completed with
+  no reported findings at this checkpoint. The extra batch needs its own
+  final-source gates; current-head PR checks govern review readiness. The recovered
   private source is preserved in ignored `build/recovered-private-source.tar.gz`,
-  with all 87 restored App hashes verified inside the archive. Static
-  geometry, floors and capacity are unchanged; no input-profile rule or
+  with all 87 restored App hashes verified inside the archive. Engine
+  geometry, floors and capacity are unchanged; the renderer is corrected
+  to consume those allocations. No input-profile rule or
   release exception is accepted.
 - The app icon is a placeholder; `design/brand/` is not installed. *(Release chores, R0 item 11)*
 - Siri's alternative name "Brick Son" (`INAlternativeAppNames`) has no

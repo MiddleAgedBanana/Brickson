@@ -1626,11 +1626,44 @@ cancellation result is established by the native reproductions, not a
 promise inferred from that documentation. Final shared-app selections
 pass the five drag/hold/first-tap/settled-frame regressions and both existing
 slow-press cases on each of Duo, iPad and iPhone: seven per family, without
-skips or expected failures. The final-source unit gate passes 778 total
+skips or expected failures. The pre-extra-batch unit gate passed 778 total
 (769 passed, zero failed, one existing #19 skip and eight strict expected
-failures), with a current catalog. Full ordinary local UI/verifier results
-and new-head hosted CI remain separate and pending in the implementation
-log; current-head PR checks govern review readiness. No physical Touch
+failures), with a current catalog. Later pre-extra-batch hosted Unit/UI
+checks pass; complete local UI still fails only the existing AX5 Speaking
+waits. These results do not verify the owner-authorized extra batch:
+consume the first region's already allocated top inset in the renderer,
+and add a dedicated native case whose eight-tile-fit precondition and
+settled comparisons cannot be bypassed. Its
+[Intent, Spec and Plan](work/layout-engine.md#owner-authorized-renderer-and-fitting-test-review-batch)
+precede implementation. P1 now has a native failing-first reproduction:
+light/dark iPad cases both fail, with the first row y40 instead of y62
+crossing a synthetic y52–62 reservation, and Back at y62 misaligned with
+Phrases. The standard renderer spacer now consumes
+`allocation(.message).minY - content.minY`; unit checks pin the nonzero
+and zero-inset paths. P2's default cases now require actual eight-tile fit
+and compare settled tiles unconditionally. The affected final-source
+iPad selection passes 10/10, with seven retained runtime audio-session
+diagnostics; ordinary zero-inset captures match across 40 control-frame
+comparisons. The same 1pt clipped-viewport App variant passes without
+required-fit flags and fails before input with them, proving the guard;
+all 153 frozen Swift/project-source hashes are restored. The affected
+final iPhone selection also passes 10/10 with retained runtime diagnostics.
+Extra-batch full units pass 781 total (772 passed, zero failed, one existing
+#19 skip and eight strict expected failures), with a current catalog and
+71.2% coverage. The new accessor reads existing allocations; allocator
+mathematics are unchanged. The final affected Duo selection passes 7/7,
+zero failures/skips/expected failures, with seven retained runtime audio
+warnings. It uses actual OS-reported space in the opposite tall open/flat
+180-degree window, without the synthetic reservation fixture; coordinate
+and default-fit guards pass. New-head hosted CI and review resolution
+remain pending after the single authorized push; PR #58 is still a draft
+with two conversations open at this recorded checkpoint. Live PR state
+provides the later result. The FoldOffset evidence is synthetic fixture
+evidence, not a new OS-pose or physical result. No allocator
+behavior, floor, capacity or input-profile rule changes, and no new
+repair-loop budget is implied. PR #58
+remains a draft until that batch is tested and its findings handled;
+current-head PR checks govern review readiness. No physical Touch
 Accommodations, dwell or AXPress result is inferred.
 
 ## Home's slot plan

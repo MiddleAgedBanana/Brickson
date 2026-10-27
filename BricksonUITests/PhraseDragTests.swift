@@ -8,10 +8,14 @@ final class PhraseDragTests: XCTestCase {
     override func setUpWithError() throws { continueAfterFailure = false }
 
     @MainActor
-    func testDefaultLight() throws { try checkDrags(textSize: .large, appearance: .light) }
+    func testDefaultLight() throws {
+        try checkDrags(textSize: .large, appearance: .light, requiresFittingGrid: true)
+    }
 
     @MainActor
-    func testDefaultDark() throws { try checkDrags(textSize: .large, appearance: .dark) }
+    func testDefaultDark() throws {
+        try checkDrags(textSize: .large, appearance: .dark, requiresFittingGrid: true)
+    }
 
     @MainActor
     func testAX5Light() throws { try checkDrags(textSize: .ax5, appearance: .light) }
@@ -42,14 +46,22 @@ final class PhraseDragTests: XCTestCase {
     }
 
     @MainActor
-    private func checkDrags(textSize: UITestTextSize, appearance: UITestAppearance) throws {
+    private func checkDrags(
+        textSize: UITestTextSize, appearance: UITestAppearance, requiresFittingGrid: Bool = false
+    ) throws {
         for startsOnTile in [false, true] {
-            try checkDrag(textSize: textSize, appearance: appearance, startsOnTile: startsOnTile)
+            try checkDrag(
+                textSize: textSize, appearance: appearance,
+                startsOnTile: startsOnTile, requiresFittingGrid: requiresFittingGrid
+            )
         }
     }
 
     @MainActor
-    private func checkDrag(textSize: UITestTextSize, appearance: UITestAppearance, startsOnTile: Bool) throws {
+    private func checkDrag(
+        textSize: UITestTextSize, appearance: UITestAppearance,
+        startsOnTile: Bool, requiresFittingGrid: Bool
+    ) throws {
         let app = launchedApp(textSize: textSize, appearance: appearance)
         defer { app.terminate() }
         try assertPassesAccessibilityAudit(app, context: "before phrase drag")
@@ -100,6 +112,13 @@ final class PhraseDragTests: XCTestCase {
         receipt.lifetime = .keepAlways
         add(receipt)
         attachCapture(app, name: "before-phrase-drag")
+        let fittingGrid = tiles.allSatisfy { viewport.insetBy(dx: -0.5, dy: -0.5).contains($0.frame) }
+        // The default fixtures pin the known-fitting baseline on the
+        // script's standard destinations. A viewport shrink must fail
+        // before input, rather than silently dropping settlement coverage.
+        if requiresFittingGrid {
+            XCTAssertTrue(fittingGrid, "The default drag fixture must fit all eight tiles inside its viewport before input")
+        }
         let messages = tiles.map(\.label) + ["Yes.", "No."]
         let messageRegion = app.descendants(matching: .any)["homeRegion.message"]
         XCTAssertTrue(messageRegion.exists)
@@ -140,8 +159,7 @@ final class PhraseDragTests: XCTestCase {
         try assertUnchanged(beforeFrames.staticButtons, afterFrames.staticButtons, context: "static Home controls")
         // An overflowing touch library may scroll. A fitting grid must
         // settle with every tile where it started, at native precision.
-        let fittingGrid = tiles.allSatisfy { viewport.insetBy(dx: -0.5, dy: -0.5).contains($0.frame) }
-        if fittingGrid {
+        if requiresFittingGrid || fittingGrid {
             try assertUnchanged(beforeFrames.tiles, afterFrames.tiles, context: "fitting phrase grid")
         }
 

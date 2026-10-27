@@ -895,3 +895,148 @@ Put Back placement, the private AX5 capacity design and startup-flake
 cause/fix remain out of this repair. Simulator checks do not prove sound,
 physical touch accommodations, dwell/Snap, folding comfort or future-profile
 no-scroll behavior.
+
+### Owner-authorized renderer and fitting-test review batch
+
+**Authorization and scope:** after the two post-green fix pushes, the
+owner explicitly authorized **one additional repair batch** for the two
+verified review findings below. This is a specific extension of this PR's
+repair budget, not a reset of the two-round rule or authority for another
+review loop. Keep PR #58 a draft while this batch is unverified. The full
+original prototype is lost and is excluded from further investigation;
+the ordinary-app drag reproduction remains the repair's basis.
+
+**Intent:** render the positions the existing layout engine already
+allocated, including its first vertical reservation, and prove that the
+native drag regression actually exercises a fitting eight-tile surface.
+Neither repair changes layout-engine behavior, target floors, capacity,
+column order, spacing policy or any input-profile invariant.
+
+**Spec, before implementation:**
+
+- **P1, missing initial region offset:** Home's renderer must consume the
+  already allocated vertical distance between the content top and its
+  first region's top. An inter-region spacer cannot represent this
+  initial distance. Use the engine's allocation, once, in the standard
+  SwiftUI stack; do not recompute reservations, move only one control,
+  name a device, adjust a target floor or change the allocator. Paths
+  whose first allocation begins at the content top retain zero inset
+  and their existing frames exactly.
+- **P2, guaranteed fitting native check:** add a dedicated actual-app case
+  with a hard precondition that all eight starter tiles fit wholly in
+  the coherent visible viewport/window before input. Its settled-tile
+  comparison is unconditional; it must not disappear behind a runtime
+  `if fittingGrid` branch, skip, new known issue or assertion weakening.
+  Exercise the quiet drag and first intentional tap through standard
+  controls. Keep the existing negative speech/alarm, live-coordinate,
+  static-frame and native half-point comparison checks. No synthetic
+  fit claim, forced content offset or test-only target shrinking may
+  substitute for observing the actual fitting surface.
+
+**Plan, before implementation:**
+
+1. Add a rendered failing reproduction where the engine's first region
+   begins below the content top, and compare the actual rendered controls
+   with those existing allocations. It must fail with the missing inset
+   and pass when the renderer consumes it. Include a zero-inset control
+   proving ordinary frames are unchanged; do not alter engine expectations
+   to match the old renderer.
+2. Add the dedicated fitting native case before claiming that coverage.
+   Fail if any of the eight tiles is missing or not wholly visible, and
+   compare every fitting tile's settled frame after the drag. A fixture
+   that stops fitting must fail the precondition rather than pass by
+   bypassing the comparisons. Retain first-activation and held-press
+   coverage alongside it.
+3. Implement only P1's missing initial stack inset and P2's test coverage;
+   group the verified fixes and their evidence in this one authorized
+   batch. Root coordinates the failing-first/native red-green runs. No
+   result for either new check is claimed at this planning checkpoint.
+4. Run the required full unit script and affected native tests, record
+   the final head's CI and reconcile the two open review conversations.
+   Mark ready only after the resulting head's checks pass and findings
+   are handled. Report any later defect as a grouped remaining issue;
+   this authorization does not permit another automatic repair batch.
+
+Before this extra batch, hosted Unit/UI checks passed: units **778 =
+769 passed / 0 failed / 1 existing #19 skip / 8 strict expected failures**,
+coverage **71.1%**; UI **56 per family**, iPad **51 passed / 0 failed /
+2 skipped / 3 expected**, iPhone **48 / 0 / 6 / 2**. Complete local UI
+also ran 56 per family: iPad **50 / 1 / 2 / 3**, iPhone **47 / 1 / 6 / 2**;
+each failed only the pre-existing AX5 Speaking waits. Those are pre-batch
+results, not verification of the planned inset/test repairs. PR #58 is a
+draft with two Greptile conversations open; Codex review is still running
+and the security review completed with no reported findings at this
+checkpoint.
+
+The private AX5 alternative, keyboard dismissal, Put Back placement and
+startup-flake cause/fix remain open and outside this batch. Future-profile
+no-scroll requirements, mounted-device checks, sound and broader Duo
+release gates remain binding; no exception or release-readiness claim is
+introduced.
+
+**Implementation checkpoint after the failing native reproduction:**
+`FoldOffsetUITests` ran on iPad at default text in light and dark:
+**0 passed / 2 failed**, with eight intended assertion failures and no
+skips, expected failures or reported runtime warnings. The independently
+expected first-row top is y62; Home's Phrases rendered at y40 and crossed
+the synthetic y52–62 reservation. Settings' Back rendered at y62, so its
+alignment with Home's y40 Phrases also failed. This is a synthetic
+reservation fixture, not an observed OS fold pose; the retained images
+paint no fold stripe. The frame JSON, not a drawn stripe, establishes
+the reserved band. The [red evidence](../log/2026-10-25-duo-fold-design.md#extra-batch-rendered-red-result-and-unverified-implementation)
+keeps original-byte Home/Settings images and provenance.
+
+P1 now adds an initial standard stack spacer using
+`layout.firstRegionTopInset`, derived from
+`allocation(.message).minY - content.minY`. No pure allocation algorithm
+changes. Unit pins for the nonzero inset and existing zero-inset matrix
+are added, with their results still pending. P2 now makes the default
+light/dark cases require actual eight-tile fit before input and compare
+their settled tiles unconditionally. AX5's conditional comparison remains
+appropriate for legitimate overflowing touch windows; the default fit
+precondition is not applied by shrinking AX5 targets.
+
+The final affected iPad selection now passes **10/10**, zero failures,
+skips or expected failures: FoldOffset 2, PhraseDrag 5, SlowPress 2 and
+HomeLayout 1, in `build/TestResults/pr58-extra-final-ipad/ui-destination.xcresult`.
+Seven runtime audio-session diagnostics remain recorded; no compiler
+warning was suppressed. The [zero-inset comparison](../evidence/2026-10-26-pr58-extra/ordinary-zero-inset-comparison.json)
+keeps 20 ordinary control frames per appearance, 40 total, exactly equal
+before/after (maximum delta 0.0pt and matching raw capture JSON hashes).
+
+P2's temporary viewport-only 1pt clipping variant leaves tile layout
+unchanged. The selected test passes 1/1 without required-fitting flags;
+the same App variant fails 0/1 with them, at the exact fit requirement
+before input and with zero gesture-injection activities. Native bottom
+values 1347/1348 establish a 1pt deficit beyond the 0.5pt allowance.
+[Receipts and frozen-source restoration](../evidence/2026-10-26-pr58-extra/validation.json)
+verify both edited files and all 153 Swift/project-source hashes restored
+to final. Temporary variants remain only in ignored worktree `build/`.
+The affected final iPhone selection also passes **10/10**, with the same
+case scope and zero failures/skips/expected failures; runtime audio-session
+diagnostics remain recorded. Bundle:
+`build/TestResults/pr58-extra-final-iphone/ui-destination.xcresult`.
+Full units pass **781 = 772 passed / 0 failed / 1 existing #19 skip /
+8 strict expected failures**, catalog current with `CI=true`, coverage
+**71.2% (7,054/9,903)**, in
+`build/TestResults/pr58-extra-final-unit/unit-destination.xcresult`.
+The accessor reads existing geometry; allocator mathematics are unchanged.
+
+The final affected Duo selection also passes **7/7**, zero failures,
+skips or expected failures, with seven retained runtime audio-session
+warnings, in `build/TestResults/pr58-extra-final-duo/ui-destination.xcresult`.
+Device Hub prepared its opposite tall inner window, open/flat at 180
+degrees; the seven cases read actual OS Duo space without the synthetic
+reservation fixture. Coordinate guards and default fitting preconditions
+passed. All 153 source hashes match final, and the three task-owned
+simulators are shut down.
+
+At this recorded pre-push checkpoint, the local unit and affected native
+gates pass; only new-head hosted CI and review resolution remain pending
+after the single authorized push. The two conversations remain open and
+PR #58 remains a draft at this checkpoint; live PR checks/review state
+provide the subsequent result without a documentation-only status push.
+The earlier full ordinary local UI results belong to `4c02a0c`; the new
+selected runs do not constitute full ordinary UI on the new source.
+No Release archive, physical-input/sound result or broader release gate
+is claimed.
