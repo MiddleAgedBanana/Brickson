@@ -797,17 +797,17 @@ release in docs/ROADMAP.md when no thread has it yet.
   effect yet: Apple applies it only to apps with Siri support, which
   Brickson does not have (docs/DECISIONS.md, "App identity"). *(R2 Siri
   and Shortcuts)*
-- No license file, so all rights are reserved; the bundle identifier
-  contains the owner's first name and is permanent after the first upload. *(owner)*
+- The bundle identifier contains the owner's first name and is permanent
+  after the first upload. *(owner)*
 
 ## Next steps, in order
 
-For the owner (everything else was decided on 2026-10-21 by default and
-can be reversed; docs/DECISIONS.md):
+For the owner (the remaining questions are listed in docs/DECISIONS.md,
+*Waiting on the owner*):
 
 1. Answer the few questions that are yours, in docs/DECISIONS.md,
    *Waiting on the owner*: the final name (and with it the bundle
-   identifier), the price, how the name is said, the license, and your
+   identifier), the price, how the name is said, and your
    EU trader status (needed before the App Store release in the EU).
    Everything App Store Connect will ask, in order, is in
    [docs/APP-STORE.md](APP-STORE.md), section 1.

@@ -20,12 +20,31 @@ taken back. Until one is answered, nothing hard to undo is done under it.
 | Is "Brickson" the final name, and so what is the bundle identifier? | Keep Brickson (retained publicly on 2026-10-12), with a bundle identifier that contains no personal name | The bundle identifier is public and can never change after the first upload; today's `family.avery.brickson` contains the owner's first name (*App identity*) |
 | What does Brickson cost? | No recommendation: the owner's call, before the first submission | Until then nothing anywhere states a price (*Price not decided*), and no purchase code is built |
 | How is "Brickson" said? | Tell an agent how it sounds; it sets a sound-alike spelling in `APP_SPOKEN_NAME` | VoiceOver and Siri say the name; only the owner knows how it should sound |
-| Should the code have a license? | Not yet: keep all rights reserved | A license can be added later, but one that has been granted cannot be withdrawn from copies already taken |
 | Is the owner a "trader" under the EU's Digital Services Act? | Decide when the App Store Connect record is made; if yes, publish a dedicated contact rather than a home address | App Store Connect asks before the app can be offered in the EU, and a trader's contact details are shown publicly |
 
 Owner steps that are actions, not decisions: the Team ID in
 `project.yml`, device runs, committing workflow files (docs/SDLC.md,
 *Deploy*), and every step in App Store Connect.
+
+## Brickson's code is all rights reserved
+
+*Owner, 2026-10-27.* Keep Brickson's original source code and accompanying
+documentation proprietary. The root `LICENSE.md` records the copyright notice
+and reservation of rights. Reuse, modification and redistribution require
+the copyright holder's prior written permission, except as permitted by
+applicable law or the GitHub Terms of Service. Permitted viewing and
+forking on GitHub do not grant an open-source license or general reuse
+permission. Third-party material retains its applicable terms.
+
+The owner wants to retain control over reuse of Brickson's code. The
+README explains the notice and how to request permission; adding an
+open-source license is not authorized by this decision.
+
+**Before:** no license file, with all rights reserved by default, and the
+licensing question still listed as waiting on the owner. The owner now
+explicitly chose the all-rights-reserved notice, rather than granting a
+general reuse license. Record:
+[`log/2026-10-27-all-rights-reserved.md`](log/2026-10-27-all-rights-reserved.md).
 
 ## Decided by default on 2026-10-21
 

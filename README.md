@@ -159,6 +159,9 @@ are still necessary for audio, dwell, Eye Tracking and other access methods.
 
 ## Contributing
 
+Before reusing or modifying Brickson's code, read the [license notice](LICENSE.md)
+and obtain any required written permission.
+
 Read [AGENTS.md](AGENTS.md) before changing code. It defines the project's
 accessibility, privacy and safety requirements, along with the review
 workflow. These constraints apply to human and AI-assisted contributions.
@@ -213,5 +216,14 @@ date, and accessibility page changes an updated "Last updated" date.
 
 ## License
 
-No license has been granted yet. The source is publicly visible, but it is
-not currently offered under an open-source license.
+Copyright (c) 2026 Avery Dedmon. **All rights reserved.**
+
+Brickson's original source code and accompanying documentation are
+proprietary. Reusing, modifying, or redistributing them requires Avery
+Dedmon's prior written permission, except as permitted by applicable law
+or the GitHub Terms of Service. Public visibility and permitted viewing or
+forking on GitHub do not grant an open-source license or general reuse
+permission. Third-party material retains its applicable terms.
+
+See [LICENSE.md](LICENSE.md) for the full notice. To request permission, use the
+contact details on the [website](https://middleagedbanana.github.io/Brickson/).
