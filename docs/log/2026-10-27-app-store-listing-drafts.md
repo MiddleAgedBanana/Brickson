@@ -54,7 +54,8 @@ words (docs/DECISIONS.md, "App Store category" and "Waiting on the owner"):
     `main`.
   - Updated section 8's App Review notes template on Personal Voice to describe
     the actual first-launch prompt behavior (`AppAudio.personalVoiceAskPolicy(for: nil)`
-    asks at launch).
+    asks at launch), and clarified section 13 to distinguish the completed Settings UI
+    from the pending first-launch authorization switch.
 - **`docs/HANDOFF.md`**: recorded the update under *Verification*, distinguishing
   the three unbuilt features from the real-device verification gate.
 

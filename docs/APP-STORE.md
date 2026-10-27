@@ -581,7 +581,7 @@ testers](https://developer.apple.com/help/app-store-connect/test-a-beta-version/
 | Change | Why the store needs it | Owner thread |
 |---|---|---|
 | In-app Privacy row: the policy text inside the app, plus a way to open the web page | Guideline 5.1.1(i) | Done 2026-10-21 (`Settings > Privacy`, `SFSafariViewController`) |
-| Personal Voice explained before the system question, with "Not now" | 5.1.1(iv); a calmer first launch for the reviewer | Done 2026-10-21 (Settings and first run) |
+| Personal Voice explained before the system question, with "Not now" | 5.1.1(iv); a calmer first launch for the reviewer | Settings UI in place (2026-10-21); first-launch flow asks at launch until device check D1 permits switching production policy (Settings and first run) |
 | A replaced bundle ID, and `DEVELOPMENT_TEAM` | Step 2 and 3 of the owner's list | Toolchain, after the owner's answer |
 | The brand icon in Icon Composer, with dark and tinted variants | 2.1 (no placeholders) | Release chores (R0 item 11) |
 | Dark variants for every colour asset; UI tests in dark and at AX3 and AX5; a Grayscale pass | Accessibility labels (section 4) | Dark colour assets and UI tests on Home are in place; Grayscale pass and remaining R0 screens stay with Test seams and CI evidence |
