@@ -131,10 +131,10 @@ hard requirements, checked against Apple's pages on 2026-10-21:
 | Built with the Xcode and SDK that Apple's *Upcoming requirements* page names (when checked on 2026-10-21, it named the release and SDK required since 2026-04-28) | CI and the Mac use the current Xcode (docs/DECISIONS.md, "Build with Apple's current Xcode") | [Upcoming requirements](https://developer.apple.com/news/upcoming-requirements/) |
 | Approved reasons for "required reason" APIs in a privacy manifest (since 2024-05-01) | `PrivacyInfo.xcprivacy` declares UserDefaults reason CA92.1, no tracking, no collected data; `AppBundleTests` pins it | same |
 | Answers to the updated age-rating questions (since 2026-01-31) | Drafted in section 6 | same |
-| A privacy policy URL, and a link inside the app "in an easily accessible manner" | The URL exists; **the in-app link does not yet** (Settings and first run thread) | [Guideline 5.1.1(i)](https://developer.apple.com/app-store/review/guidelines/#data-collection-and-storage) |
+| A privacy policy URL, and a link inside the app "in an easily accessible manner" | The URL exists, and `Settings > Privacy` shows the policy inside the app and opens the web page in an in-app sheet (`SFSafariViewController`, 2026-10-21) | [Guideline 5.1.1(i)](https://developer.apple.com/app-store/review/guidelines/#data-collection-and-storage) |
 | A support URL that "must lead to actual contact information" | The support page has the contact email | [Platform version information](https://developer.apple.com/help/app-store-connect/reference/app-information/platform-version-information) |
-| Final versions only: "placeholder text, empty websites, and other temporary content should be scrubbed"; tested on a device | Home is a stand-in, the icon a placeholder, and nothing has run on a device yet | [Guideline 2.1](https://developer.apple.com/app-store/review/guidelines/#app-completeness) |
-| Enough lasting use to be "app-like" | A stand-in Home would risk this; R0 fixes it | [Guideline 4.2](https://developer.apple.com/app-store/review/guidelines/#minimum-functionality) |
+| Final versions only: "placeholder text, empty websites, and other temporary content should be scrubbed"; tested on a device | Home, typing, Get Attention and Settings are built; the app icon is still a placeholder, editing and backup screens are not yet built, and nothing has run on a device yet | [Guideline 2.1](https://developer.apple.com/app-store/review/guidelines/#app-completeness) |
+| Enough lasting use to be "app-like" | Home speaks the starter phrases and any typed message; editing and backup complete R0 | [Guideline 4.2](https://developer.apple.com/app-store/review/guidelines/#minimum-functionality) |
 | Export compliance | `ITSAppUsesNonExemptEncryption = NO` in `project.yml` skips the question on every upload | `project.yml` |
 | At least one iPhone and one 13-inch iPad screenshot | Plan in section 9 | [Screenshot specifications](https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications) |
 | From April 2027: "iOS and iPadOS apps must be built with the iOS & iPadOS 27 SDK or later, and target iOS 15 or later" (read 2026-10-23) | Met: built with the iOS 27.1 SDK, targets iOS 26.0 | [Submitting](https://developer.apple.com/app-store/submitting/) |
@@ -205,11 +205,11 @@ setup) and leaving Settings.
 | [Sufficient Contrast](https://developer.apple.com/help/app-store-connect/manage-app-accessibility/sufficient-contrast-evaluation-criteria): text about 4.5:1, controls 3:1 by default | Invariant 6 already demands it, in light, dark and Increase Contrast, including system components | Every colour pair on every 1.0 screen pinned in `PaletteTests`; a rendered check (Test seams thread) | Yes, once evidence covers every screen |
 | [Dark Interface](https://developer.apple.com/help/app-store-connect/manage-app-accessibility/dark-interface-evaluation-criteria): every common task stays dark in Dark Mode | Colour assets need dark variants; the launch screen already follows the system | UI tests in dark appearance on every screen | Yes, once evidence covers every screen |
 | [Differentiate Without Color Alone](https://developer.apple.com/help/app-store-connect/manage-app-accessibility/differentiate-without-color-alone-evaluation-criteria) | Selected states use a symbol or text as well as colour (the selected category already shows a check mark) | A Grayscale walk-through of every screen | Yes |
-| [Larger Text](https://developer.apple.com/help/app-store-connect/manage-app-accessibility/larger-text-evaluation-criteria): text grows to at least 200% without overlap or severe truncation | Words never break and never render below their default size (AGENTS.md); phone labels clip at the largest sizes today | UI tests at AX3 and AX5 on iPhone and iPad, screenshots checked by a person | Yes, once the Phone layout and word fitting work lands |
-| [Reduced Motion](https://developer.apple.com/help/app-store-connect/manage-app-accessibility/reduced-motion-evaluation-criteria): no problematic motion, or it is replaced when Reduce Motion is on | Get Attention's visual state must not flash or blink; any animation respects Reduce Motion | A review of every animation and symbol effect | Yes |
+| [Larger Text](https://developer.apple.com/help/app-store-connect/manage-app-accessibility/larger-text-evaluation-criteria): text grows to at least 200% without overlap or severe truncation | Words never break and never render below their default size (AGENTS.md); `LabelFont` fits whole words on Home (2026-10-23) | UI tests at AX3 and AX5 on iPhone and iPad, screenshots checked by a person | Yes, once every 1.0 screen is checked at AX3 and AX5 |
+| [Reduced Motion](https://developer.apple.com/help/app-store-connect/manage-app-accessibility/reduced-motion-evaluation-criteria): no problematic motion, or it is replaced when Reduce Motion is on | Get Attention's visual state does not flash or blink; any animation respects Reduce Motion | A review of every animation and symbol effect | Yes |
 | [VoiceOver](https://developer.apple.com/help/app-store-connect/manage-app-accessibility/voiceover-evaluation-criteria): every common task with VoiceOver alone; Apple asks for skilled testing on every device type | Standard buttons with labels; announcements for audio problems | A skilled VoiceOver run of every task on a real iPhone and a real iPad, logged in `docs/log/` | Only after that run |
-| [Voice Control](https://developer.apple.com/help/app-store-connect/manage-app-accessibility/voice-control-evaluation-criteria): every common task by voice alone; names match visible text; text fields accept dictation | Standard buttons; input labels, if added, start with the visible text | A Voice Control run of every task on a real iPhone and iPad | Only after that run |
-| [Captions](https://developer.apple.com/help/app-store-connect/manage-app-accessibility/captions-evaluation-criteria): Apple also accepts "text transcripts of audio-only content, such as… spoken dialogue" | Every phrase Brickson speaks is already shown as text in the message row; every other sound (Get Attention, voice samples) would need visible text too | A check that no sound plays without matching text | Candidate; decide when Get Attention and the voice picker land |
+| [Voice Control](https://developer.apple.com/help/app-store-connect/manage-app-accessibility/voice-control-evaluation-criteria): every common task by voice alone; names match visible text; text fields accept dictation | Standard buttons; input labels start with the visible text | A Voice Control run of every task on a real iPhone and iPad | Only after that run |
+| [Captions](https://developer.apple.com/help/app-store-connect/manage-app-accessibility/captions-evaluation-criteria): Apple also accepts "text transcripts of audio-only content, such as… spoken dialogue" | Every phrase Brickson speaks is shown as text in the message row; Get Attention shows its active state on screen; voice samples speak the visible sample sentence | A check that no sound plays without matching text | Candidate; decide after the rendered check of every screen |
 | [Audio Descriptions](https://developer.apple.com/help/app-store-connect/manage-app-accessibility/audio-descriptions-evaluation-criteria): narration of on-screen video | Brickson has no video | — | No |
 
 **Input methods without a label.** Switch Control, Eye Tracking, head
@@ -372,46 +372,45 @@ App Review reads these privately. The Notes field takes up to 4,000 bytes
 information](https://developer.apple.com/help/app-store-connect/reference/app-information/platform-version-information)).
 Guideline 2.3.1(a) asks for new features to be described "with specificity",
 and 2.5.4 allows background audio only "for their intended purposes". Paste
-this, after deleting every bracketed sentence whose feature is not in the
-build (1,865 bytes as drafted):
+this, replacing `[App Name]` with the confirmed App Store name (1,781 bytes as
+drafted):
 
-> Brickson is a communication app (AAC) for people who cannot speak, such as
-> people living with ALS. A person chooses a phrase and the device says it
-> aloud. Everything stays on the device: there is no account, no sign-in, no
-> server and no network code. Touch is enough to test every feature; no Eye
-> Tracking or Switch Control setup is needed.
+> [App Name] is a communication app (AAC) for people who cannot speak, such as
+> people living with ALS. A person chooses a phrase or types a message and the
+> device says it aloud. Everything stays on the device: there is no account,
+> no sign-in, no server and no network code. Touch is enough to test every
+> feature; no Eye Tracking or Switch Control setup is needed.
 >
-> To hear speech: on Home, tap any phrase. It speaks at once and stays on
-> screen; Again repeats it.
+> To hear speech: on Home, tap any phrase, or tap Type, enter a message and tap
+> Speak. It speaks at once and stays on screen; Again repeats it.
 >
-> Personal Voice: at first launch the system asks whether Brickson may use
-> your Personal Voice. Allowing or declining both work; if you decline, or
-> the device has no Personal Voice, Brickson uses a standard system voice.
-> [After the first-run screens ship: the question appears only after Brickson
-> explains it, from a button the person chooses, with a "Not now" choice.]
+> Personal Voice: on Home or in Settings > Voice Settings, choosing Allow
+> Personal Voice explains the permission and offers Allow Personal Voice or Not
+> Now before the system prompt appears. Allowing or declining both work; if
+> you decline, or the device has no Personal Voice, [App Name] uses a standard
+> system voice.
 >
 > Background audio (UIBackgroundModes: audio, guideline 2.5.4): people who
 > cannot speak must be heard even if the device locks mid-sentence. To see
-> it: choose a long phrase, then lock the device; speech continues. Brickson
-> plays audio only when the person chooses a phrase [or starts Get
-> Attention]; it never plays silent audio to stay running.
+> it: choose a long phrase, then lock the device; speech continues. [App Name]
+> plays audio only when the person chooses a phrase or starts Get Attention;
+> it never plays silent audio to stay running.
 >
-> [Get Attention: tap Get Attention to play a repeating tone that calls
+> Get Attention: tap Get Attention to play a repeating tone that calls
 > someone to the room. It plays even with the silent switch on and keeps
 > playing while the device is locked, until someone taps Stop (Voice
 > Control also accepts "Stop Alert"), which is a separate button in a
-> different place so a resting gaze cannot stop the
-> call by accident. It contacts nobody.]
+> different place so a resting gaze cannot stop the call by accident. It
+> contacts nobody.
 >
 > Emergency: shows a set of urgent phrases. It does not call or message
 > anyone.
 >
-> The screen stays on while Brickson is open because many people who use it
+> The screen stays on while [App Name] is open because many people who use it
 > cannot unlock their device.
 >
-> Brickson provides no healthcare service and makes no medical claims.
-> [needs: the Privacy row in Settings; until then delete this sentence: The
-> privacy policy link is in Settings > Privacy.]
+> [App Name] provides no healthcare service and makes no medical claims. The
+> privacy policy is in Settings > Privacy.
 
 Also: **no sign-in** (leave the demo account empty). Give a phone number App
 Review can reach.
@@ -581,12 +580,12 @@ testers](https://developer.apple.com/help/app-store-connect/test-a-beta-version/
 
 | Change | Why the store needs it | Owner thread |
 |---|---|---|
-| In-app Privacy row: the policy text inside the app, plus a way to open the web page | Guideline 5.1.1(i) | Settings and first run |
-| Personal Voice explained before the system question, with "Not now" | 5.1.1(iv); a calmer first launch for the reviewer | Settings and first run |
+| In-app Privacy row: the policy text inside the app, plus a way to open the web page | Guideline 5.1.1(i) | Done 2026-10-21 (`Settings > Privacy`, `SFSafariViewController`) |
+| Personal Voice explained before the system question, with "Not now" | 5.1.1(iv); a calmer first launch for the reviewer | Done 2026-10-21 (Settings and first run) |
 | A replaced bundle ID, and `DEVELOPMENT_TEAM` | Step 2 and 3 of the owner's list | Toolchain, after the owner's answer |
 | The brand icon in Icon Composer, with dark and tinted variants | 2.1 (no placeholders) | Release chores (R0 item 11) |
-| Dark variants for every colour asset; UI tests in dark and at AX3 and AX5; a Grayscale pass | Accessibility labels (section 4) | Test seams and CI evidence; Phone layout and word fitting |
-| Get Attention without flashing; Reduce Motion respected | Reduced Motion label | Speech engine and Get Attention |
+| Dark variants for every colour asset; UI tests in dark and at AX3 and AX5; a Grayscale pass | Accessibility labels (section 4) | Dark colour assets and UI tests on Home are in place; Grayscale pass and remaining R0 screens stay with Test seams and CI evidence |
+| Get Attention without flashing; Reduce Motion respected | Reduced Motion label | Done 2026-10-23 (Speech engine and Get Attention) |
 | A `site/accessibility/` page for the Accessibility URL | Section 4 | Done 2026-10-23; every pull request keeps it true (AGENTS.md, *Where things are*) |
 | Delete the policy's unbuilt sections before 1.0 | Section 3 | The three sections 1.0 does not ship were deleted 2026-10-23; the R0 rows left are marked true or deleted at release (App Store readiness and ASO) |
 | An age-range check only if needed, opened from Settings, never over Home or at first launch | Section 6 | Settings and first run, after the decision |
