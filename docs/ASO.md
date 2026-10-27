@@ -6,14 +6,14 @@ it in the few seconds they look at it. This file holds the research and the
 drafts. What App Store Connect asks for, and the owner's checklist, are in
 [APP-STORE.md](APP-STORE.md).
 
-**Status (2026-10-21):** drafts. Nothing has been entered in App Store
-Connect. Every draft uses Brickson, which the owner retained publicly on
-2026-10-12; confirming it is one of the owner's open questions
-(docs/DECISIONS.md, *Waiting on the owner*). App Store Connect confirms it
-only when the record is created, and *If the name is taken* has the
-fallbacks. Nothing here
-states a price: the price is not decided (docs/DECISIONS.md, "Price not
-decided"), so no draft says "free", "paid" or an amount.
+**Status (2026-10-27):** drafts, updated against the current `main` build.
+Nothing has been entered in App Store Connect. Every store-text draft below
+uses `[App Name]` as a placeholder for the app name until the final name is
+confirmed in App Store Connect (docs/DECISIONS.md, *Waiting on the owner*; the
+working name is Brickson, retained publicly on 2026-10-12, and *If the name is
+taken* has the fallbacks). Nothing here states a price: the price is not
+decided (docs/DECISIONS.md, "Price not decided"), so no draft mentions any
+price or cost word.
 
 ## Contents
 
@@ -136,13 +136,16 @@ What this says:
 ## The store text
 
 All drafts are in English (U.S.). Other stores are under *Other
-English-speaking stores*. Counts were measured with a script.
+English-speaking stores*. Counts were measured with a script. Every draft uses
+`[App Name]` as the placeholder for the app name (8 characters when replaced
+with the working name).
 
 ### Name (30 characters)
 
-**`Brickson: AAC for ALS`** (21 characters). The brand, then what it is and
-who it is for, in the two words people search for. Keep "Brickson" first so
-the name stays the brand when it is shortened under the icon.
+**`[App Name]: AAC for ALS`** (23 characters with `[App Name]`, 21 characters
+with an 8-character brand name). The brand, then what it is and who it is for,
+in the two words people search for. Keep `[App Name]` first so the name stays
+the brand when it is shortened under the icon.
 
 ### Subtitle (30 characters)
 
@@ -165,66 +168,119 @@ Other options: `Phrases that speak at once` (26), `Speak with phrases you choose
 communication,nonverbal,speak,talk,voice,eye,gaze,switch,assistive,augmentative,board,mnd,type
 ```
 
-94 bytes. Words already in the name and subtitle (brickson, aac, for, als,
-phrases, and, text, to, speech; at, every and stage with the R1 subtitle)
-are left out, because Apple already
-combines them with these. "mnd" stays because some US caregivers use it.
+94 bytes (comma-separated, no spaces after commas, no plurals of words already
+included, no category names or competitor names). Words already in the name
+and subtitle (`[App Name]`, `aac`, `for`, `als`, `phrases`, `and`, `text`,
+`to`, `speech`; `at`, `every` and `stage` with the R1 subtitle) are left out,
+because Apple already combines them with these. `mnd` stays because some US
+caregivers use it.
+
+Once the R1 subtitle `Text to speech at every stage` ships, `phrase` moves
+from the subtitle into the keyword field (96 bytes):
+
+```
+communication,phrase,nonverbal,speak,talk,voice,eye,gaze,switch,assistive,augmentative,board,mnd
+```
 
 ### Promotional text (170 characters, can change any time)
 
-> Choose a phrase and Brickson says it at once, in your own Personal Voice
+> Choose a phrase and [App Name] says it at once, in your own Personal Voice
 > if you made one. Yes, No and Emergency are always on screen, and the
 > buttons never move.
 
-161 characters. Change it for each release to say what is new.
+163 characters with `[App Name]` (161 characters with an 8-character brand
+name). Change it for each release to say what is new, and never put a price
+in it.
 
 ### Description (4,000 characters)
 
-The draft below is 2,382 characters. **Every line tagged `[needs: …]` may
-only go in once that feature is in the build being submitted**: Guideline
-2.3.1 rejects descriptions that claim what the app doesn't do. Remove the
-tags before pasting. Text with no tag describes what is built today.
+The master draft below is 2,449 characters with `[App Name]` (and the
+`[needs: …]` tags), or 2,298 characters when the tags are stripped. **Every
+line tagged `[needs: …]` may only go in once that feature is in the build
+being submitted**: Guideline 2.3.1 rejects descriptions that claim what the
+app doesn't do. Remove the tags before pasting. Text with no tag describes
+what is built on `main` today (Home on the layout engine, whole-word fitting,
+Get Attention and Stop, Typing with draft persistence, and Voice Settings with
+Personal Voice).
 
 ```
-Brickson speaks for you. Choose a phrase and your iPhone or iPad says it out loud, at once, in your own Personal Voice if you have made one.
+[App Name] speaks for you. Choose a phrase and your iPhone or iPad says it out loud, at once, in your own Personal Voice if you have made one.
 
-Brickson is built for people living with ALS (also called MND), at every stage. [needs: profiles (R1); until then end the paragraph here] As the way you use your device changes, from touch to switches to your eyes, the buttons can grow and spread out, but they never move. You never have to learn a new layout.
+[App Name] is built for people living with ALS (also called MND). [needs: at every stage; profiles (R1); until then end the paragraph here] As the way you use your device changes, from touch to switches to your eyes, the buttons can grow and spread out, but they never move. You never have to learn a new layout.
 
 SPEAKS THE FIRST TIME
 • Every phrase speaks on the first tap, with no extra step to confirm.
 • Yes, No and Emergency are always on screen.
 • Emergency opens a set of urgent phrases straight away.
 • The sentence stays on screen in large type, so the person you are talking to can read it too. Again repeats it.
-• Get Attention plays a loud tone until someone stops it, from a separate button. [needs: Get Attention]
+• Get Attention plays a loud tone until someone stops it, from a separate button.
 
 WORKS THE WAY YOU DO
-• Every button is a standard button, so Brickson works with the ways Apple devices can be controlled: touch, Switch Control, Voice Control, Full Keyboard Access, Dwell, head tracking and Eye Tracking. [needs: device checks of each input method]
-• Large buttons and generous spacing, sized from the space on your screen. [needs: layout engine]
-• Words never break in the middle, and text follows the size you set for your device. [needs: word fitting]
+• Every button is a standard button, so [App Name] works with the ways Apple devices can be controlled: touch, Switch Control, Voice Control, Full Keyboard Access, Dwell, head tracking and Eye Tracking. [needs: device checks of each input method]
+• Large buttons and generous spacing, sized from the space on your screen.
+• Words never break in the middle, and text follows the size you set for your device.
 • Speech plays even with the silent switch on, and keeps playing if the screen locks.
-• The screen stays on while Brickson is open, so you are never locked out.
+• The screen stays on while [App Name] is open, so you are never locked out.
 
 YOUR WORDS, YOUR VOICE
 • Starts with a set of everyday phrases: basics, needs, conversation, feelings and emergency.
-• Type anything and Brickson says it. Your message is kept if the app closes. [needs: typing]
+• Type anything and [App Name] says it. Your message is kept if the app closes.
 • Add, change and arrange your own phrases with your family. Changes are made in a separate edit mode, so speaking never changes your phrases. [needs: editing]
 • Save a backup of your phrases to Files. [needs: backup]
-• Uses your Personal Voice when you allow it. [needs: voice choice in Settings] Or choose any voice on your device.
+• Uses your Personal Voice when you allow it. Or choose any supported voice for your language on your device, and set the speaking speed that suits you.
 
 PRIVATE BY DESIGN
 • No account. No ads. No tracking.
-• Your phrases stay on your device. Brickson has no servers and never sends your words anywhere.
+• Your phrases stay on your device. [App Name] has no servers and never sends your words anywhere.
 
 A NOTE ON SAFETY
-Brickson does not call anyone. Emergency shows phrases for the people nearby. Please keep another way to call for help, and a simple backup way to communicate, such as a letter board.
+[App Name] does not call anyone. Emergency shows phrases for the people nearby. Please keep another way to call for help, and a simple backup way to communicate, such as a letter board.
 
-Brickson is a communication app. It does not diagnose or treat any condition.
+[App Name] is a communication app. It does not diagnose or treat any condition.
+```
+
+If 1.0 is submitted before profiles (R1), the real-device input checks, the
+phrase editor screens, or the backup screens land, paste this 1,816-character
+version with those four `[needs: …]` items omitted so every line is true of
+the build today:
+
+```
+[App Name] speaks for you. Choose a phrase and your iPhone or iPad says it out loud, at once, in your own Personal Voice if you have made one.
+
+[App Name] is built for people living with ALS (also called MND). Every button stays in the same place, so you never have to learn a new layout.
+
+SPEAKS THE FIRST TIME
+• Every phrase speaks on the first tap, with no extra step to confirm.
+• Yes, No and Emergency are always on screen.
+• Emergency opens a set of urgent phrases straight away.
+• The sentence stays on screen in large type, so the person you are talking to can read it too. Again repeats it.
+• Get Attention plays a loud tone until someone stops it, from a separate button.
+
+WORKS THE WAY YOU DO
+• Large buttons and generous spacing, sized from the space on your screen.
+• Words never break in the middle, and text follows the size you set for your device.
+• Speech plays even with the silent switch on, and keeps playing if the screen locks.
+• The screen stays on while [App Name] is open, so you are never locked out.
+
+YOUR WORDS, YOUR VOICE
+• Starts with a set of everyday phrases: basics, needs, conversation, feelings and emergency.
+• Type anything and [App Name] says it. Your message is kept if the app closes.
+• Uses your Personal Voice when you allow it. Or choose any supported voice for your language on your device, and set the speaking speed that suits you.
+
+PRIVATE BY DESIGN
+• No account. No ads. No tracking.
+• Your phrases stay on your device. [App Name] has no servers and never sends your words anywhere.
+
+A NOTE ON SAFETY
+[App Name] does not call anyone. Emergency shows phrases for the people nearby. Please keep another way to call for help, and a simple backup way to communicate, such as a letter board.
+
+[App Name] is a communication app. It does not diagnose or treat any condition.
 ```
 
 Notes on the draft:
 
-- The starter categories listed must match `StarterPhrases.json` in the
-  submitted build (Library editing and backup format thread).
+- The starter categories listed (`Basics`, `Needs`, `Conversation`, `Feelings`
+  and `Emergency`) match `StarterPhrases.json` in the repository today.
 - "Feelings" names a category, not words about anyone's condition
   (AGENTS.md, invariant 7). Check its phrases before release.
 - The safety note answers what a reviewer, or a family, will ask first:
@@ -236,8 +292,31 @@ Notes on the draft:
 
 ### What's New
 
-Not shown for a first version. From 1.1 on: one plain line per change that
-a person would notice, never "bug fixes and improvements" alone.
+App Store Connect does not show a *What's New in this Version* field on version
+1.0; it requires one (up to 4,000 characters) starting with the first update
+after launch, and Guideline 2.3.12 requires user-facing changes to be listed
+clearly in order of importance, never "bug fixes and improvements" alone.
+
+**First update entry (1.1, 382 characters with tags; 326 characters without
+tags — remove any line whose feature is already in 1.0 or not in 1.1):**
+
+```
+• Add, change and arrange your own phrases and categories in a separate edit mode, so speaking never changes your words. [needs: editing]
+• Save a backup of your phrases to Files and restore it on another device. [needs: backup]
+• Choose a stage profile in Settings to make buttons and spacing larger as your reach changes, without moving where anything sits. [needs: profiles (R1)]
+```
+
+**First release summary (for TestFlight *What to Test* or launch notes, 504
+characters):**
+
+```
+First release of [App Name].
+• Speak everyday phrases with one tap in Basics, Needs, Conversation, Feelings and Emergency.
+• Yes, No, Emergency, Again and Get Attention (with a separate Stop button) stay on screen.
+• Type anything to speak aloud, with your draft saved on your device until you clear it.
+• Choose your Personal Voice or any supported voice for your language on your device, and set your speaking speed in Settings.
+• Everything runs on your device with no account, no ads and no tracking.
+```
 
 ### Support and marketing URLs
 
@@ -255,11 +334,11 @@ at a glance.
 
 | # | Caption | What the capture shows | Waits for |
 | --- | --- | --- | --- |
-| 1 | Choose a phrase. Brickson says it. | Home with the message row showing a spoken phrase | Home version 1 |
-| 2 | Yes, No and Emergency are always there. | Home with the safety row in view, Emergency phrases open | Home version 1 |
-| 3 | Type anything, and it speaks. | Typing on Home with Apple's keyboard up and the safety row above it | Typing |
-| 4 | Buttons grow with you. They never move. | Two captures side by side: default and a larger profile, same positions | Profiles (R1) |
-| 5 | Your own voice, your own words. | Voice settings with Personal Voice chosen, or the phrase editor | Settings, editing |
+| 1 | Choose a phrase. [App Name] says it. | Home with the message row showing a spoken phrase | Built on `main` (capture when app icon lands) |
+| 2 | Yes, No and Emergency are always there. | Home with the safety row in view, Emergency phrases open | Built on `main` (capture when app icon lands) |
+| 3 | Type anything, and it speaks. | Typing on Home with Apple's keyboard up and the safety row above it | Built on `main` (capture when app icon lands) |
+| 4 | Buttons grow with you. They never move. | Two captures side by side: default and a larger profile, same positions | Profiles (R1; for 1.0 use "Large text, large buttons." at AX3/AX5) |
+| 5 | Your own voice, your own words. | Voice settings with Personal Voice chosen, or the phrase editor | Voice settings built on `main`; phrase editor waits for editing |
 
 - Until profiles exist (R1), number 4 becomes "Large text, large buttons."
   with Home at a large accessibility text size.
@@ -288,7 +367,7 @@ A 20 to 25 second screen recording, no music needed, captions on screen
    anything."
 4. (15 to 21 s) The same Home in a larger profile. Caption: "Bigger when you
    need it. Never moved."
-5. (21 to 25 s) Brickson's name and icon.
+5. (21 to 25 s) [App Name]'s name and icon.
 
 Record it with Switch Control or Dwell on screen only after those are
 checked on a real device. Spoken narration needs a caption track or on-screen
@@ -304,10 +383,10 @@ localization (APP-STORE.md, section 10), so:
 
 | Locale | Stores | Name | Subtitle | Keywords |
 | --- | --- | --- | --- | --- |
-| English (U.S.) | US | `Brickson: AAC for ALS` | `Phrases and text to speech` | as above |
-| English (Canada) | Canada | `Brickson: AAC for ALS` | `Phrases and text to speech` | as US |
-| English (U.K.) | UK, Ireland | `Brickson: AAC for MND` | `Phrases and text to speech` | below |
-| English (Australia) | Australia, New Zealand | `Brickson: AAC for MND` | `Phrases and text to speech` | below |
+| English (U.S.) | US | `[App Name]: AAC for ALS` | `Phrases and text to speech` | as above |
+| English (Canada) | Canada | `[App Name]: AAC for ALS` | `Phrases and text to speech` | as US |
+| English (U.K.) | UK, Ireland | `[App Name]: AAC for MND` | `Phrases and text to speech` | below |
+| English (Australia) | Australia, New Zealand | `[App Name]: AAC for MND` | `Phrases and text to speech` | below |
 
 UK and Australia keywords (99 bytes):
 
@@ -318,7 +397,7 @@ communication,aid,motor,neurone,nonverbal,speak,talk,voice,eye,gaze,switch,assis
 The subtitle changes to `Text to speech at every stage` in every locale
 once profiles ship (see *Subtitle*).
 
-In the UK and Australian descriptions, the second paragraph begins "Brickson
+In the UK and Australian descriptions, the second paragraph begins "[App Name]
 is built for people living with MND (also called ALS)". The rest of the text
 is the same; British spelling needs no other change in this draft.
 
@@ -334,8 +413,8 @@ front of someone who is trying to speak.
 - **Never ask automatically.** No `requestReview` on Home or during
   communication, ever: a review prompt is a sheet over the controls a
   person may need (AGENTS.md, invariants 2 and 10). Apple's own guidance is
-  to ask at a natural pause; Brickson has none on Home.
-- **A "Rate Brickson" row in Settings**, below the family controls, opens
+  to ask at a natural pause; [App Name] has none on Home.
+- **A "Rate [App Name]" row in Settings**, below the family controls, opens
   the App Store's write-review page
   (`https://apps.apple.com/app/id<APP_ID>?action=write-review`) for whoever
   chooses it. Needs the app's Apple ID, which exists only after the record is
@@ -350,18 +429,21 @@ Apple refuses a name another app already uses. The checks so far are in
 developer named Brickson in the US, UK, Canada or Australia stores, and no
 US trademark). The EU, UK and Canadian trademark registers were not checked;
 TMview (https://www.tmdn.org/tmview/) blocks automated searches, and the
-owner can search it for "Brickson" in a browser in about five minutes.
+owner can search it for the working name in a browser in about five minutes.
 
-If App Store Connect says the name is in use, try, in order:
+If App Store Connect says the planned `[App Name]: AAC for ALS` is in use,
+try, in order:
 
-1. `Brickson AAC` (12 characters)
-2. `Brickson: AAC Voice` (19)
+1. `[App Name] AAC` (12 characters with an 8-character brand name)
+2. `[App Name]: AAC Voice` (19 characters with an 8-character brand name)
 
-Apple checks the whole name, so `Brickson: AAC for ALS` may be available even
-when plain "Brickson" is taken; try the planned name first.
+Apple checks the whole name, so `[App Name]: AAC for ALS` may be available
+even when plain `[App Name]` is taken; try the planned name first.
 
-The name on the Home Screen comes from the build (`CFBundleDisplayName`), not
-from App Store Connect, and can stay "Brickson" either way.
+The name on the Home Screen comes from the build (`CFBundleDisplayName`,
+configured via `APP_DISPLAY_NAME` in `project.yml`), not from App Store Connect;
+update `APP_DISPLAY_NAME` to the confirmed App Store name before archiving the
+release build.
 
 ## After launch
 
