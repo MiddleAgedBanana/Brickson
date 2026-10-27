@@ -4,11 +4,11 @@
 
 ## What changed and why
 
-Added 19 deterministic Swift Testing (`@Test`) unit tests across seven test
-files to pin existing pure-Swift behaviour in the layout engine, the
-chain-scoring engine, and supporting model types, with no changes to
-production code (docs/DECISIONS.md, "The layout engine", "One chain engine
-for dwell safety", and "Apple's current frameworks first"):
+Added 18 deterministic Swift Testing (`@Test`) unit tests and extended one
+existing test suite across seven test files to pin existing pure-Swift behaviour
+in the layout engine, the chain-scoring engine, and supporting model types,
+with no changes to production code (docs/DECISIONS.md, "The layout engine",
+"One chain engine for dwell safety", and "Apple's current frameworks first"):
 
 - **`BricksonTests/Layout/HomeLayoutEngineTests.swift`** (6 tests):
   - `safetyRowGapReflectsOneRowTwoRowAndDividedSafetyRows`: pins
@@ -23,10 +23,10 @@ for dwell safety", and "Apple's current frameworks first"):
     `horizontalGaps(in:)` on occupied and allocated frames, including empty
     slot lists and single-slot rows.
   - `gridHandlesEmptyColumnFramesScrollOffsetsAndShortfall`: pins
-    `HomeLayout.Grid` when initialized with empty `columnFrames` (`columns == 0`,
-    `rows == 0`, `tileSize == .zero`, `tileFrames.isEmpty`, `scrollOffset`
-    clamped to `0`), as well as `reflow(in:phraseCount:)` and `scrollOffset(for:)`
-    clamping on scrolling grids.
+    `HomeLayout.Grid` when initialized with empty `columnFrames` (defaults
+    to 1 column and 1 row at `tileSize == .zero`, `tileFrames.isEmpty`,
+    `scrollOffset` clamped to `0`), as well as `reflow(in:phraseCount:)` and
+    `scrollOffset(for:)` on scrolling grids.
   - `spaceReservedRegionsGetterAndSetterClassifyDivisionsAndOcclusions`:
     pins `HomeLayout.Space.reservedRegions` getter and setter classification
     of full-span bands vs. edge/corner occlusions, plus `Region.isDivision`
@@ -75,16 +75,16 @@ for dwell safety", and "Apple's current frameworks first"):
     states.
 - **`BricksonTests/SettingsIdleClockTests.swift`** (2 tests):
   - `settingsActivityTracksResetCountAndHolds`: pins `SettingsActivity`
-    `userDidAct()`, `hold()`, `release()`, and `idleTimeDidPass()`.
+    `recordActivity()`, `setHold(_:_:)`, `resetCount`, and `resetIfDue()`.
   - `guidedSetupStepOrdersFiveStepsAndStopsAtReady`: pins `GuidedSetupStep`
-    ordering, titles, symbols, `isLast`, and `next`.
+    count, step numbers (`number`), and `next` progression stopping at `ready`.
 - **`BricksonTests/LibraryRulesTests.swift`** (1 test):
   - `everyLibraryEditRejectionCaseHasANonEmptyUserFacingMessage`: pins
-    `LibraryEditRejection.message` across all eight rejection cases.
-- **`BricksonTests/CategorySelectionTests.swift`** (1 test):
+    `LibraryEditRejection.message` across all 11 rejection cases.
+- **`BricksonTests/CategorySelectionTests.swift`** (1 test extended):
   - `theLastCellHoldsEveryCategoryFromThereOn`: pins
-    `CategorySelection.lastCell(in:selectedID:visibleCells:)` across empty,
-    non-overflowing, overflowing, and selected-overflow category lists.
+    `CategorySelection.inCell(_:of:cells:)` across empty, non-overflowing,
+    overflowing, and negative/out-of-range cell indices.
 
 ## Commits
 
@@ -105,18 +105,19 @@ for dwell safety", and "Apple's current frameworks first"):
 - What would make the new tests fail:
   - Changing `HomeLayout.safetyRowGap`, `categoryRowGaps`, `bounds(of:)`,
     `height(of:)`, `allocation(_:)`, `horizontalGaps(in:)`, `Grid` empty
-    column handling or scroll offset clamping, `Space.reservedRegions`
-    classification, or `Slot.description`.
-  - Changing `HomeReservedLayout` issue reporting, `.threeColumns`
-    horizontal division splitting, vertical division 4-vs-2 column selection,
-    viewport edge-occlusion trimming, `fitOcclusions` clearance fallback, or
-    `HomeWellEnvelope.preserves(_:_:)`.
+    column handling (1 column / 1 row fallback) or scroll offset clamping,
+    `Space.reservedRegions` classification, or `Slot.description`.
+  - Changing `HomeReservedLayout` issue reporting for the five satisfiable/unsatisfiable
+    failure paths, `.threeColumns` horizontal division splitting, vertical division
+    4-vs-2 column selection, viewport edge-occlusion trimming, `fitOcclusions`
+    clearance fallback, or `HomeWellEnvelope.preserves(_:_:)`.
   - Changing `LabelFont.lineChoice` or `LabelFont.choice` icon-before-shrink
     ordering or `Style`/`Weight` font resolution.
   - Changing `NearestRule`, `ChainMap`, or `HomeChains` state naming and
     step descriptions.
-  - Changing `SettingsActivity`, `GuidedSetupStep`, `LibraryEditRejection`,
-    or `CategorySelection.lastCell`.
+  - Changing `SettingsActivity.recordActivity()`, `setHold(_:_:)`, or
+    `resetIfDue()`; `GuidedSetupStep.number` or `next`;
+    `LibraryEditRejection.message`; or `CategorySelection.inCell(_:of:cells:)`.
 
 ## Not verified
 

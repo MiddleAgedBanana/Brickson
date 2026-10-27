@@ -648,9 +648,7 @@ nonisolated struct HomeReservedRegionTests {
     ///   control slot;
     /// - `.wellEnvelopeCannotBePreserved` when a horizontal division forces
     ///   the safety row down without enough room above it to preserve the
-    ///   Stop well's distance envelope;
-    /// - `.backToTalkingCannotFit` when a horizontal division crosses
-    ///   `backToTalking`.
+    ///   Stop well's distance envelope.
     @Test func unsatisfiableReservationsReportTheirSpecificIssues() {
         // 1. Vertical division on a compact window -> .insufficientControlSpace
         let compactVertical = HomeLayout(
@@ -735,7 +733,6 @@ nonisolated struct HomeReservedRegionTests {
         #expect(crossingGrid.reservationIssues.contains(.divisionCrossesScrollingViewport))
         #expect(crossingGrid.backToTalking.width >= HomeLayout.Profile.touch.floor)
         #expect(crossingGrid.backToTalking.height >= HomeLayout.Profile.touch.floor)
-        #expect(HomeReservedLayout.Issue.backToTalkingCannotFit != .wellEnvelopeCannotBePreserved)
     }
 
     /// In `.threeColumns`, a horizontal division crossing the second category
