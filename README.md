@@ -159,7 +159,7 @@ are still necessary for audio, dwell, Eye Tracking and other access methods.
 
 ## Contributing
 
-Before reusing or modifying Brickson's code, read the [license notice](LICENSE)
+Before reusing or modifying Brickson's code, read the [license notice](LICENSE.md)
 and obtain any required written permission.
 
 Read [AGENTS.md](AGENTS.md) before changing code. It defines the project's
@@ -225,5 +225,5 @@ or the GitHub Terms of Service. Public visibility and permitted viewing or
 forking on GitHub do not grant an open-source license or general reuse
 permission. Third-party material retains its applicable terms.
 
-See [LICENSE](LICENSE) for the full notice. To request permission, use the
+See [LICENSE.md](LICENSE.md) for the full notice. To request permission, use the
 contact details on the [website](https://middleagedbanana.github.io/Brickson/).

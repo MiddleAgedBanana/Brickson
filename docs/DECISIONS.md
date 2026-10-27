@@ -29,7 +29,7 @@ Owner steps that are actions, not decisions: the Team ID in
 ## Brickson's code is all rights reserved
 
 *Owner, 2026-10-27.* Keep Brickson's original source code and accompanying
-documentation proprietary. The root `LICENSE` records the copyright notice
+documentation proprietary. The root `LICENSE.md` records the copyright notice
 and reservation of rights. Reuse, modification and redistribution require
 the copyright holder's prior written permission, except as permitted by
 applicable law or the GitHub Terms of Service. Permitted viewing and

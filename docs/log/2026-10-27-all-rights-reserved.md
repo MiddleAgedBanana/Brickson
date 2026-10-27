@@ -4,7 +4,7 @@
 
 ## What changed and why
 
-Added the root `LICENSE` with Avery Dedmon's copyright notice and an
+Added the root `LICENSE.md` with Avery Dedmon's copyright notice and an
 explicit reservation of rights for Brickson's original source code and
 accompanying documentation. Reuse requires prior written permission,
 subject to applicable law and GitHub's terms. Third-party material keeps
@@ -15,6 +15,10 @@ points to the website's contact details. The owner's choice is recorded in
 docs/DECISIONS.md, "Brickson's code is all rights reserved". Handoff and
 roadmap wording no longer list licensing as an outstanding owner decision.
 No open-source license is granted.
+
+The owner requested the `.md` extension to match the repository's other
+documents. The follow-up renames the notice without changing its text
+and updates every active filename reference.
 
 The shared briefing records the owner's authorization for the copyright
 attribution in these notices and the licensing decision record. This
@@ -40,6 +44,12 @@ The licensing notice and related documentation are delivered together on
   the existing disabled SwiftData rollback crash reproduction for issue
   #19 (`SwiftDataBehaviourTests`); no test was newly disabled or changed.
   Reported app line coverage was 71.2%; the String Catalog stayed current.
+- Repeated the full unit gate after the owner's `LICENSE.md` rename:
+  the same 781-case result passed, with zero unexpected failures and no
+  catalog change. The renamed notice is byte-for-byte identical to
+  `79e6571:LICENSE`; README links resolve to the new filename.
+- Rechecked commit `79e6571` after the owner registered the existing SSH
+  key for signing: GitHub reported `verified: true`, reason `valid`.
 - `git diff --check`: passed.
 - Reviewed the notice and README together for matching permission wording,
   applicable-law and GitHub-term exceptions, and third-party terms.
