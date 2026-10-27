@@ -72,6 +72,12 @@ words (docs/DECISIONS.md, "App Store category" and "Waiting on the owner"):
   [Platform version information](https://developer.apple.com/help/app-store-connect/reference/app-information/platform-version-information)
   and `CFBundleDisplayName` (`https://developer.apple.com/documentation/bundleresources/information-property-list/cfbundledisplayname.md`),
   plus independent ASO metadata guides.
+- Confirmed "speech keeps playing if the screen locks" is true of `main`: `project.yml`
+  declares `UIBackgroundModes: [audio]` (verified by unit test `speechCanPlayInTheBackground()`
+  in `AppBundleTests`), `AudioSessionCoordinator` uses category `.playback` (invariant 4),
+  and physical device verification is tracked under item D3 in `docs/HANDOFF.md`.
+- Confirmed section 13 of `docs/APP-STORE.md` keeps "Personal Voice explained before the
+  system question" marked as Pending until device check D1 permits switching the production policy.
 - Computed exact character and byte counts using Python against Apple's field
   limits.
 - Ran `python3 scripts/test-docs.py` (45 tests) and `python3 scripts/test-site.py`
