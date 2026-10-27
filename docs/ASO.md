@@ -194,8 +194,8 @@ in it.
 
 ### Description (4,000 characters)
 
-The master draft below is 2,013 characters with `[App Name]` (and the
-`[needs: …]` tags), or 1,813 characters when the tags are stripped. **Every
+The master draft below is 2,449 characters with `[App Name]` (and the
+`[needs: …]` tags), or 2,298 characters when the tags are stripped. **Every
 line tagged `[needs: …]` may only go in once that feature is in the build
 being submitted**: Guideline 2.3.1 rejects descriptions that claim what the
 app doesn't do. Remove the tags before pasting. Text with no tag describes
@@ -206,7 +206,7 @@ Personal Voice).
 ```
 [App Name] speaks for you. Choose a phrase and your iPhone or iPad says it out loud, at once, in your own Personal Voice if you have made one.
 
-[App Name] is built for people living with ALS (also called MND), at every stage. [needs: profiles (R1); until then end the paragraph here] As the way you use your device changes, from touch to switches to your eyes, the buttons can grow and spread out, but they never move. You never have to learn a new layout.
+[App Name] is built for people living with ALS (also called MND). [needs: at every stage; profiles (R1); until then end the paragraph here] As the way you use your device changes, from touch to switches to your eyes, the buttons can grow and spread out, but they never move. You never have to learn a new layout.
 
 SPEAKS THE FIRST TIME
 • Every phrase speaks on the first tap, with no extra step to confirm.
@@ -227,7 +227,7 @@ YOUR WORDS, YOUR VOICE
 • Type anything and [App Name] says it. Your message is kept if the app closes.
 • Add, change and arrange your own phrases with your family. Changes are made in a separate edit mode, so speaking never changes your phrases. [needs: editing]
 • Save a backup of your phrases to Files. [needs: backup]
-• Uses your Personal Voice when you allow it. Or choose any voice on your device, and set the speaking speed that suits you.
+• Uses your Personal Voice when you allow it. Or choose any supported voice for your language on your device, and set the speaking speed that suits you.
 
 PRIVATE BY DESIGN
 • No account. No ads. No tracking.
@@ -240,7 +240,7 @@ A NOTE ON SAFETY
 ```
 
 If 1.0 is submitted before profiles (R1), the real-device input checks, the
-phrase editor screens, or the backup screens land, paste this 1,354-character
+phrase editor screens, or the backup screens land, paste this 1,816-character
 version with those four `[needs: …]` items omitted so every line is true of
 the build today:
 
@@ -265,7 +265,7 @@ WORKS THE WAY YOU DO
 YOUR WORDS, YOUR VOICE
 • Starts with a set of everyday phrases: basics, needs, conversation, feelings and emergency.
 • Type anything and [App Name] says it. Your message is kept if the app closes.
-• Uses your Personal Voice when you allow it. Or choose any voice on your device, and set the speaking speed that suits you.
+• Uses your Personal Voice when you allow it. Or choose any supported voice for your language on your device, and set the speaking speed that suits you.
 
 PRIVATE BY DESIGN
 • No account. No ads. No tracking.
@@ -297,7 +297,7 @@ App Store Connect does not show a *What's New in this Version* field on version
 after launch, and Guideline 2.3.12 requires user-facing changes to be listed
 clearly in order of importance, never "bug fixes and improvements" alone.
 
-**First update entry (1.1, 355 characters with tags; 300 characters without
+**First update entry (1.1, 382 characters with tags; 326 characters without
 tags — remove any line whose feature is already in 1.0 or not in 1.1):**
 
 ```
@@ -306,7 +306,7 @@ tags — remove any line whose feature is already in 1.0 or not in 1.1):**
 • Choose a stage profile in Settings to make buttons and spacing larger as your reach changes, without moving where anything sits. [needs: profiles (R1)]
 ```
 
-**First release summary (for TestFlight *What to Test* or launch notes, 466
+**First release summary (for TestFlight *What to Test* or launch notes, 504
 characters):**
 
 ```
@@ -314,7 +314,7 @@ First release of [App Name].
 • Speak everyday phrases with one tap in Basics, Needs, Conversation, Feelings and Emergency.
 • Yes, No, Emergency, Again and Get Attention (with a separate Stop button) stay on screen.
 • Type anything to speak aloud, with your draft saved on your device until you clear it.
-• Choose your Personal Voice or any voice on your device, and set your speaking speed in Settings.
+• Choose your Personal Voice or any supported voice for your language on your device, and set your speaking speed in Settings.
 • Everything runs on your device with no account, no ads and no tracking.
 ```
 
@@ -440,8 +440,10 @@ try, in order:
 Apple checks the whole name, so `[App Name]: AAC for ALS` may be available
 even when plain `[App Name]` is taken; try the planned name first.
 
-The name on the Home Screen comes from the build (`CFBundleDisplayName`), not
-from App Store Connect, and can stay `[App Name]` either way.
+The name on the Home Screen comes from the build (`CFBundleDisplayName`,
+configured via `APP_DISPLAY_NAME` in `project.yml`), not from App Store Connect;
+update `APP_DISPLAY_NAME` to the confirmed App Store name before archiving the
+release build.
 
 ## After launch
 

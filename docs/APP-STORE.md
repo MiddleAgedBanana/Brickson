@@ -131,7 +131,7 @@ hard requirements, checked against Apple's pages on 2026-10-21:
 | Built with the Xcode and SDK that Apple's *Upcoming requirements* page names (when checked on 2026-10-21, it named the release and SDK required since 2026-04-28) | CI and the Mac use the current Xcode (docs/DECISIONS.md, "Build with Apple's current Xcode") | [Upcoming requirements](https://developer.apple.com/news/upcoming-requirements/) |
 | Approved reasons for "required reason" APIs in a privacy manifest (since 2024-05-01) | `PrivacyInfo.xcprivacy` declares UserDefaults reason CA92.1, no tracking, no collected data; `AppBundleTests` pins it | same |
 | Answers to the updated age-rating questions (since 2026-01-31) | Drafted in section 6 | same |
-| A privacy policy URL, and a link inside the app "in an easily accessible manner" | The URL exists, and `Settings > Privacy` shows the policy inside the app and opens the web page in an in-app sheet (`SFSafariViewController`, 2026-10-21) | [Guideline 5.1.1(i)](https://developer.apple.com/app-store/review/guidelines/#data-collection-and-storage) |
+| A privacy policy URL, and a link inside the app "in an easily accessible manner" | The URL exists, and `Settings > Family Setup > Privacy Policy` shows the policy inside the app and opens the web page in an in-app sheet (`SFSafariViewController`, 2026-10-21) | [Guideline 5.1.1(i)](https://developer.apple.com/app-store/review/guidelines/#data-collection-and-storage) |
 | A support URL that "must lead to actual contact information" | The support page has the contact email | [Platform version information](https://developer.apple.com/help/app-store-connect/reference/app-information/platform-version-information) |
 | Final versions only: "placeholder text, empty websites, and other temporary content should be scrubbed"; tested on a device | Home, typing, Get Attention and Settings are built; the app icon is still a placeholder, editing and backup screens are not yet built, and nothing has run on a device yet | [Guideline 2.1](https://developer.apple.com/app-store/review/guidelines/#app-completeness) |
 | Enough lasting use to be "app-like" | Home speaks the starter phrases and any typed message; editing and backup complete R0 | [Guideline 4.2](https://developer.apple.com/app-store/review/guidelines/#minimum-functionality) |
@@ -384,11 +384,11 @@ drafted):
 > To hear speech: on Home, tap any phrase, or tap Type, enter a message and tap
 > Speak. It speaks at once and stays on screen; Again repeats it.
 >
-> Personal Voice: on Home or in Settings > Voice Settings, choosing Allow
-> Personal Voice explains the permission and offers Allow Personal Voice or Not
-> Now before the system prompt appears. Allowing or declining both work; if
-> you decline, or the device has no Personal Voice, [App Name] uses a standard
-> system voice.
+> Personal Voice: on first launch, if the device supports Personal Voice,
+> iOS asks whether to allow [App Name] to use it. You can also review or
+> request permission later in Settings > Voice Settings. Allowing or
+> declining both work; if you decline, or the device has no Personal Voice,
+> [App Name] uses a standard system voice.
 >
 > Background audio (UIBackgroundModes: audio, guideline 2.5.4): people who
 > cannot speak must be heard even if the device locks mid-sentence. To see
@@ -410,7 +410,7 @@ drafted):
 > cannot unlock their device.
 >
 > [App Name] provides no healthcare service and makes no medical claims. The
-> privacy policy is in Settings > Privacy.
+> privacy policy is in Settings > Family Setup > Privacy Policy.
 
 Also: **no sign-in** (leave the demo account empty). Give a phone number App
 Review can reach.

@@ -114,9 +114,11 @@ Xcode 27.1 (27A9275); PR #20 landed in `d79d836`.
   `[needs: …]` tags from the description draft for features now built on `main`
   (`Get Attention`, `layout engine`, `word fitting`, `typing` and `voice choice
   in Settings`), added a clean 1.0 paste-ready description block with the four
-  remaining unbuilt items omitted, and drafted a concrete first `What's New`
-  entry. Checked character and byte counts against Apple's limits and verified
-  with `python3 scripts/test-docs.py` (45 tests).
+  remaining items omitted (three unbuilt features: profiles, editing, and
+  backup; and one verification gate: real-device checks of each input method),
+  and drafted a concrete first `What's New` entry. Checked character and byte
+  counts against Apple's limits and verified with `python3 scripts/test-docs.py`
+  (45 tests).
   [Record](log/2026-10-27-app-store-listing-drafts.md).
 
 - **Mac Home and keyboard checks, 2026-10-25**, main `8316743`, Xcode 27.1
