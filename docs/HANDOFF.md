@@ -1043,7 +1043,8 @@ Simulators cannot show these. Record each result in a `docs/log/` file
 
 - The `main` ruleset matched docs/DECISIONS.md on 2026-10-15 (GitHub's
   API); its required checks are "Unit tests" and "UI tests".
-  The UI job now allows 75 minutes for both device families, and Home's
+  The unit job allows 60 minutes and the UI job 120 for both device
+  families (docs/DECISIONS.md, "Tests"). Home's
   layout test uses bounded live queries while retaining every tile's
   visibility and position checks. After incorporating `main` at `d79d836`,
   its audit helper also keeps issue-time captures and native XCTest
@@ -1065,6 +1066,12 @@ Simulators cannot show these. Record each result in a `docs/log/` file
   as `313de2c`. No host audio service or setting was changed.
   Earlier-head CI also failed, with its native audit evidence now retained
   ([`log/2026-10-22-ci-home-test.md`](log/2026-10-22-ci-home-test.md)).
+- The unit job took 36 to 39 minutes on 2026-10-30 under its old
+  limit of 40; the dwell chain sweeps were most of it. The chain engine
+  now costs about half as much with the same results, and the limit is
+  60 ([record](log/2026-10-30-unit-test-time.md)). The Settings sweep's
+  remaining cost is `SetupAnswersPlace`, app code, left to the next
+  Settings thread.
 - CodeQL scans the workflow files and the Python scripts, not the Swift
   code, on purpose (docs/DECISIONS.md, *Code scanning*); the failed Swift
   attempt of 2026-10-10 is still listed on the Tool status page.

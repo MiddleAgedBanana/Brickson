@@ -752,26 +752,30 @@ the time. Export them again after each new Xcode release.
   several flags as an array, not one string.
 - **A failing `xcodebuild test` can sit for minutes collecting
   diagnostics**; `scripts/test.sh` passes `-collect-test-diagnostics never`.
-- **The unit job uses most of its 40 minutes.** On 2026-10-30 it took
-  27 to 39 minutes, and one run each of pull requests #69 and #70 was
-  stopped at the limit with every test it had reported passing. #69's
-  machine was slow (starting the simulator and building took 16 minutes
-  instead of 10); by #70, `main`'s own completed run took 38 minutes,
-  16 of them starting and building, so a normal run now ends within
-  about two minutes of the limit. The next pull request that adds unit
-  tests first cuts what the sweeps cost, or has the owner raise the
-  limit. The
-  unit tests are main-actor isolated by
-  default, so they share the main thread and the job takes about the sum
-  of every test's time; run together, a suite's reported time includes
-  waiting for the others. Time a long new sweep on its own and say in the
-  pull request what it adds. A run stopped at the limit with no failure
+- **The unit job's time is mostly the dwell chain sweeps.** Its limit
+  is 60 minutes (docs/DECISIONS.md, "Tests"). On 2026-10-30, under the
+  old limit of 40, it took 36 to 39 minutes, about 16 of them starting
+  the simulator and building, and one run each of pull requests #69 and
+  #70 was stopped at 40 with every test it had reported passing. The
+  same day the chain engine was made about half as costly, with the
+  same results (docs/DECISIONS.md, "One chain engine for dwell safety").
+  The unit tests are main-actor isolated by default, so they share the
+  main thread and the job takes about the sum of every test's time; run
+  together, a suite's reported time includes waiting for the others.
+  Each test's own time is in its result bundle: the `.xcresult`'s
+  `database.sqlite3`, table `TestCaseRuns`, column `duration`; the query
+  is in the record below. Time a long new sweep on its own and say in
+  the pull request what it adds. The engine runs millions of times in a
+  build that is not optimised, so keep its inner loops plain, and pin
+  any shortcut with a test that compares it with the plain way
+  (`ChainEngineTests`). A run stopped at the limit with no failure
   is re-run once only if the steps it did not change (the Python
   checks, starting the simulator and building) took clearly longer than
   on `main`'s last run; a second stop, or a stop on a machine as fast as
   usual, is real, so cut what the tests cost without weakening any. The limit is in `.github/workflows/tests.yml`,
   which a cloud agent cannot push. The measurements are in
-  [`docs/log/2026-10-30-sizes-switched-on.md`](docs/log/2026-10-30-sizes-switched-on.md).
+  [`docs/log/2026-10-30-sizes-switched-on.md`](docs/log/2026-10-30-sizes-switched-on.md)
+  and [`docs/log/2026-10-30-unit-test-time.md`](docs/log/2026-10-30-unit-test-time.md).
 - **A just-started simulator is slow, and the first UI test pays for it.**
   On GitHub's busy machines, one run found Again still off when the test
   read it straight after a tap, and the re-run's first launch timed out,

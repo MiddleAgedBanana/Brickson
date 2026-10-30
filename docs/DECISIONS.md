@@ -2606,6 +2606,18 @@ engine, not five scripts".
     control that only opens the guide (*The first step's own rows*).
     `SettingsOnHomeTests` fails on any closing.
 
+- **What it costs.** *2026-10-30:* the unit tests run the engine
+  millions of times in a build that is not optimised, and its sweeps
+  were most of the unit job's time. It now makes each state ready the
+  first time a chain reaches it, builds the starts through Settings for
+  Settings' screens alone (`ChainMap.starts(in:)`), finds the nearest
+  control with plain loops and keeps the chain it follows in place,
+  which about halves what the sweeps cost. Every result is the same: a
+  fingerprint of the starts, chains, hazards and findings of 1,542 of
+  the sweeps' inputs matched before and after, and `ChainEngineTests`
+  pins each shortcut against the plain way. Record:
+  [`log/2026-10-30-unit-test-time.md`](log/2026-10-30-unit-test-time.md).
+
 *Before:* the nearest-control rules were written twice, in
 `HomeShapeTests` and in the UI tests' `ScreenControls`, and only single
 hops were scored: the spots where Home's Settings, Back to Talking and
@@ -4249,6 +4261,17 @@ unit tests, even when what it checks lives with the UI tests, which is
 then compiled into both (*Apple's current frameworks first*). GitHub
 runs both on every pull request (`.github/workflows/tests.yml`); a pull
 request merges only when they pass.
+
+- **2026-10-30, default, reversible:** the unit job may run for 60
+  minutes and the UI job for 120 (`timeout-minutes` in `tests.yml`).
+  The unit job had 40, and that day a normal run took 36 to 39 minutes,
+  half of it starting the simulator and building, which a slow machine
+  stretches by up to six minutes; one run each of #69 and #70 was
+  stopped at 40 with nothing failed. Sixty leaves room for a slow
+  machine and new tests and still stops a hung run within the hour.
+  The owner commits the change, because a cloud agent cannot push
+  workflows. Record:
+  [`log/2026-10-30-unit-test-time.md`](log/2026-10-30-unit-test-time.md).
 
 ## Reviews, updates and GitHub settings
 

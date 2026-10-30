@@ -115,11 +115,18 @@ nonisolated enum SettingsChains {
     /// Where chains through Settings start in `map`: Home's Settings button
     /// chosen in `home`, and every control of Settings' first screens and
     /// the guide's cover chosen, each with the look at its centre and
-    /// across it.
+    /// across it. In state-name order, as `ChainMap.everyStart()` gives
+    /// them, but built for these states alone rather than for all of Home's.
     static func starts(in map: ChainMap, home: String) -> [ChainStart] {
         let screens: Set = [root, familySetup, firstStep, eachWay]
-        return map.everyStart().filter { start in
-            screens.contains(start.state) || (start.state == home && start.chosen?.name == HomeChains.settings)
+        return map.states.keys.sorted().flatMap { state in
+            if screens.contains(state) {
+                return map.starts(in: state)
+            }
+            if state == home {
+                return map.starts(in: state).filter { $0.chosen?.name == HomeChains.settings }
+            }
+            return []
         }
     }
 
