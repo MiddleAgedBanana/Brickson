@@ -26,19 +26,18 @@ import Foundation
 /// closed, so an answer changed in Family Setup moves nothing under it:
 /// Settings' places are worked out from Home's frames (`SettingsCover`).
 ///
-/// Held: until the owner says what Home does where a window cannot hold
-/// the sizes an answer asks for, Home keeps touch's sizes for everyone,
-/// whatever the answer (`followsTheAnswer`; docs/DECISIONS.md, "Sizes that
-/// follow how the screen is reached", *Held until the owner answers*).
+/// Switched on by the owner on 2026-10-30 (docs/DECISIONS.md, "Sizes that
+/// follow how the screen is reached", *Switched on by the owner*).
 nonisolated enum ProfileChoice {
-    /// Whether Home follows Family Setup's answer. Off until the owner
-    /// answers the question this choice waits on (docs/DECISIONS.md,
-    /// *Waiting on the owner*): taking a smaller profile where a window
-    /// cannot hold the one asked for is an exception to invariant 11's
-    /// floors, and only the owner can accept one. Until then Home has the
-    /// sizes it has always had, and only a UI test that asks follows the
-    /// answer (`LaunchOptions`).
-    static let followsTheAnswer = false
+    /// Whether Home follows Family Setup's answer. On since the owner chose
+    /// the largest sizes that fit where a window cannot hold the ones asked
+    /// for (2026-10-30). Off holds Home at touch's sizes for every answer,
+    /// as before then, with only a UI test that asks following the answer
+    /// (`LaunchOptions`): the line a build changes if it must go out
+    /// without the larger sizes (docs/ROADMAP.md, R0's *Release gate*),
+    /// with the pin in `ProfileChoiceTests` reversed and `HomeSizesTests`
+    /// asking for `--home-profile=from-answer` again.
+    static let followsTheAnswer = true
 
     /// The profile Home asks for: the one `methods` asks for when Home
     /// `followsAnswer`, otherwise touch's, whatever the answer.

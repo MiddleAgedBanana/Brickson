@@ -20,11 +20,11 @@ struct BricksonApp: App {
     /// Whether Settings covers Home. Home's Settings button opens it; UI
     /// tests can open it at launch (`--screen=settings`).
     @State private var showsSettings: Bool
-    /// The sizes Home asks for: touch's until the owner switches on sizes
-    /// that follow the answer, then Family Setup's answer when Settings
-    /// last closed, so an answer changed there moves nothing under
-    /// Settings, whose places come from Home's frames (`ProfileChoice`); a
-    /// UI test's own in a debug build with test storage (`LaunchOptions`).
+    /// The sizes Home asks for: Family Setup's answer when Settings last
+    /// closed, while the owner's switch has Home follow it, so an answer
+    /// changed there moves nothing under Settings, whose places come from
+    /// Home's frames (`ProfileChoice`); a UI test's own in a debug build
+    /// with test storage (`LaunchOptions`).
     @State private var requestedProfile: HomeLayout.Profile
     private let container: ModelContainer
     private let isVolatileStore: Bool
@@ -80,7 +80,9 @@ struct BricksonApp: App {
                 .environment(\.phraseLibraryIssue, phraseLibraryIssue)
                 .environment(\.appTimeouts, launch.timeouts)
                 .environment(\.requestedHomeProfile, requestedProfile)
-                .environment(\.homeSizesFollowTheAnswer, Self.followsAnswer(launch))
+                // The owner's switch, not a test's fixed sizes, decides,
+                // so Settings' UI tests draw the first step as people see it.
+                .environment(\.homeSizesFollowTheAnswer, ProfileChoice.followsTheAnswer || launch.activeHomeFollowsAnswer)
                 .preferredColorScheme(testColorScheme)
                 .onChange(of: showsSettings) { _, shows in
                     // Settings has closed: Home takes the sizes the answer
@@ -113,9 +115,9 @@ struct BricksonApp: App {
             ?? ProfileChoice.requestedForHome(by: answer.plannedAccessMethods, followsAnswer: followsAnswer(launch))
     }
 
-    /// Whether Home's sizes follow Family Setup's answer: once the owner
-    /// switches that on (`ProfileChoice.followsTheAnswer`), or for a UI
-    /// test that asks, never while a test has fixed the sizes.
+    /// Whether Home's sizes follow Family Setup's answer: while the owner's
+    /// switch is on (`ProfileChoice.followsTheAnswer`), or for a UI test
+    /// that asks, never while a test has fixed the sizes.
     private static func followsAnswer(_ launch: LaunchOptions) -> Bool {
         launch.activeHomeProfile == nil && (ProfileChoice.followsTheAnswer || launch.activeHomeFollowsAnswer)
     }
@@ -141,7 +143,8 @@ extension EnvironmentValues {
     /// The sizes Home and Settings lay Home out at (`ProfileChoice`):
     /// touch's, the ones Home has always had, unless the app sets them.
     @Entry var requestedHomeProfile: HomeLayout.Profile = .touch
-    /// Whether Home's sizes follow Family Setup's answer, so the first
-    /// step may say so (`ProfileChoice.followsTheAnswer`).
+    /// Whether the first step says what its answers do to Home's sizes:
+    /// while the owner's switch has them follow the answer
+    /// (`ProfileChoice.followsTheAnswer`), even where a UI test fixes them.
     @Entry var homeSizesFollowTheAnswer = false
 }

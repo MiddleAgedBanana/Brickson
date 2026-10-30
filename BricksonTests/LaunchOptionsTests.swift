@@ -97,8 +97,9 @@ struct LaunchOptionsTests {
 
     // Letting a test's sizes reach the person's own storage, or a typo
     // through, fails this: only test storage in a debug build takes them.
-    // So does a person's launch following the answer while the owner's
-    // switch is off (`ProfileChoice.followsTheAnswer`).
+    // So does `from-answer` reaching a person's launch, which would follow
+    // the answer even where the owner's switch holds the sizes
+    // (`ProfileChoice.followsTheAnswer`).
     @Test func homeSizesFromATestRequireDebugAndTestStorage() {
         #expect(LaunchOptions.standard.homeProfile == nil)
         #expect(LaunchOptions.standard.activeHomeProfile == nil)
