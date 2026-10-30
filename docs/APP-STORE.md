@@ -128,7 +128,7 @@ hard requirements, checked against Apple's pages on 2026-10-21:
 
 | Requirement | Brickson today | Source |
 |---|---|---|
-| Built with the Xcode and SDK that Apple's *Upcoming requirements* page names (when checked on 2026-10-21, it named the release and SDK required since 2026-04-28) | CI and the Mac use the current Xcode (docs/DECISIONS.md, "Build with Apple's current Xcode") | [Upcoming requirements](https://developer.apple.com/news/upcoming-requirements/) |
+| Built with the Xcode and SDK that Apple's *Upcoming requirements* page names (when checked on 2026-10-21, it named the release and SDK required since 2026-04-28) | The Mac uses the current Xcode; CI uses the newest release GitHub's machine has, which on 2026-10-30 was 27.1 while Apple's current release was 27.2; CI moves to 27.2 by itself once GitHub installs Apple's released build and Apple's releases feed lists it (docs/DECISIONS.md, "Build with Apple's current Xcode") | [Upcoming requirements](https://developer.apple.com/news/upcoming-requirements/) |
 | Approved reasons for "required reason" APIs in a privacy manifest (since 2024-05-01) | `PrivacyInfo.xcprivacy` declares UserDefaults reason CA92.1, no tracking, no collected data; `AppBundleTests` pins it | same |
 | Answers to the updated age-rating questions (since 2026-01-31) | Drafted in section 6 | same |
 | A privacy policy URL, and a link inside the app "in an easily accessible manner" | The URL exists, and `Settings > Family Setup > Privacy Policy` shows the policy inside the app and opens the web page in an in-app sheet (`SFSafariViewController`, 2026-10-21) | [Guideline 5.1.1(i)](https://developer.apple.com/app-store/review/guidelines/#data-collection-and-storage) |
@@ -137,7 +137,7 @@ hard requirements, checked against Apple's pages on 2026-10-21:
 | Enough lasting use to be "app-like" | Home speaks the starter phrases and any typed message; editing and backup complete R0 | [Guideline 4.2](https://developer.apple.com/app-store/review/guidelines/#minimum-functionality) |
 | Export compliance | `ITSAppUsesNonExemptEncryption = NO` in `project.yml` skips the question on every upload | `project.yml` |
 | At least one iPhone and one 13-inch iPad screenshot | Plan in section 9 | [Screenshot specifications](https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications) |
-| From April 2027: "iOS and iPadOS apps must be built with the iOS & iPadOS 27 SDK or later, and target iOS 15 or later" (read 2026-10-23) | Met: built with the iOS 27.1 SDK, targets iOS 26.0 | [Submitting](https://developer.apple.com/app-store/submitting/) |
+| From April 2027: "iOS and iPadOS apps must be built with the iOS & iPadOS 27 SDK or later, and target iOS 15 or later" (read 2026-10-23) | Met: built with the iOS 27 SDK (27.1 on CI and 27.2 on the owner's Mac, 2026-10-30), targets iOS 26.0 | [Submitting](https://developer.apple.com/app-store/submitting/) |
 | From April 2027: "any apps or games submitted will need to include screenshots for iPhone Duo" (read 2026-10-23) | Planned for every submission, the first included (docs/DECISIONS.md, "iPhone Duo"; section 9) | [Apple Developer News, 2026-10-05](https://developer.apple.com/news/?id=kkphp5qo) |
 
 ## 3. The privacy policy must match the build

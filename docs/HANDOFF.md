@@ -255,8 +255,14 @@ Xcode 27.1 (27A9275); PR #20 landed in `d79d836`.
 - **GitHub CI** since PR #12 (merged 2026-10-21) builds with Apple's
   newest released Xcode, chosen on GitHub's `xcode-27` image (27.1,
   27A9275, on 2026-10-21), and tests on an iPad Pro 13-inch (M5)
-  simulator on iOS 27.0, the only iOS runtime there
-  ([`log/2026-10-21-toolchain.md`](log/2026-10-21-toolchain.md)). Since
+  simulator on iOS 27.0
+  ([`log/2026-10-21-toolchain.md`](log/2026-10-21-toolchain.md)); the
+  image's other iOS runtime, 27.1, holds only iPhone Duo. On 2026-10-30
+  CI was still on 27.1: Apple released Xcode 27.2 (27B52) on 2026-10-29,
+  but GitHub's image held only its release candidate, and CI moves by
+  itself once GitHub installs the release and Apple's releases feed
+  lists it
+  ([`log/2026-10-30-xcode-27-2.md`](log/2026-10-30-xcode-27-2.md)). Since
   PR #13 the UI tests run on the newest iPad Pro 13-inch and then the
   newest standard iPhone, after a warm-up launch, and fail when no test
   ran ([`log/2026-10-21-test-seams.md`](log/2026-10-21-test-seams.md)).
@@ -278,6 +284,15 @@ Xcode 27.1 (27A9275); PR #20 landed in `d79d836`.
   ([`log/2026-10-23-keyboard-allowance.md`](log/2026-10-23-keyboard-allowance.md)).
   Before PR #12, CI used Xcode 26.6 and iOS 26.5; 10 of 11 runs on
   `9362eca` were green, and the failure was simulator infrastructure.
+- **The owner's Mac, 2026-10-30**, Xcode 27.2 (27B52, Swift 6.4.2, iOS
+  27.2 SDK), main `23c1ac4` in a separate clone: the app, unit tests and
+  UI tests built for the simulator, and the app for a device in Release,
+  with no compiler warning or error; the unit suite passed on an iPad Pro
+  13-inch (M5), iOS 27.2 (24B8117): 799 ran, 790 passed, 1 skipped
+  (issue #19), 8 expected failures, catalog unchanged. The UI tests and
+  the iPhone Duo simulator were not run on 27.2. Of the Mac's two iOS
+  27.2 runtimes, 24B91016s holds only iPhone Duo and 24B8117 every other
+  iPhone and iPad ([`log/2026-10-30-xcode-27-2.md`](log/2026-10-30-xcode-27-2.md)).
 - **A Mac, 2026-10-21** (PR #13's diagnosis), iPhone 17 and iPad Pro
   13-inch (M5) simulators on iOS 27.0: 17 UI tests passed on each, with
   strict accessibility audits in light and dark, Home's controls
@@ -890,7 +905,9 @@ schema version, safety copies, export and import, the editing screens). Calls (R
 [`log/2026-10-21-toolchain.md`](log/2026-10-21-toolchain.md). Xcode's
 JSON project format is planned, not adopted: the owner's 2026-10-25
 handoff requires released Xcode 27.2 and its first fix release before
-the trial on the owner's Mac starts. XcodeGen stays until the gates hold (docs/DECISIONS.md, "Xcode's
+the trial on the owner's Mac starts. The first half is met: Apple
+released 27.2 on 2026-10-29 and the owner's Mac has it; the trial starts
+when 27.2's first fix release (27.2.1 or 27.3) is out. XcodeGen stays until the gates hold (docs/DECISIONS.md, "Xcode's
 JSON project format"). iPhone
 Duo is R0 item 13: the earlier closed/open/partly folded/rotated failures
 remain in the [Mac record](log/2026-10-25-mac-keyboard-checks.md); item 6's

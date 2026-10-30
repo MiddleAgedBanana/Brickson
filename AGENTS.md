@@ -829,6 +829,15 @@ the time. Export them again after each new Xcode release.
   [`docs/log/2026-10-25-mac-keyboard-checks.md`](docs/log/2026-10-25-mac-keyboard-checks.md).
   `DESTINATION='platform=iOS Simulator,id=<udid>' scripts/test.sh ui`
   runs the UI tests on whichever display is showing.
+- **iPhone Duo has an iOS runtime of its own.** From Xcode 27.2, a Mac
+  lists two runtimes with the same iOS version: one holds only iPhone
+  Duo, and its identifier names the device after the version
+  (`com.apple.CoreSimulator.SimRuntime.iOS-27-2-iPhone19-4`); the other,
+  with the plain identifier, holds every other iPhone and iPad. Keep
+  both. `scripts/choose-simulator.py` reads both kinds of identifier
+  (before 2026-10-30 it ignored the Duo's, so a Duo `DESTINATION` was
+  refused); `xcrun simctl list runtimes` shows which build is which
+  ([`docs/log/2026-10-30-xcode-27-2.md`](docs/log/2026-10-30-xcode-27-2.md)).
 - **Simulator audio is unreliable.** Every sound check needs a real device.
 - **Apple's accessibility audit can time out on CI** with domain
   `com.apple.xcode.xctest.accessibilityAudit`, code `-56`. The UI suite

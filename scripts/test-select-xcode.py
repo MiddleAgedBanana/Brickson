@@ -114,6 +114,36 @@ class ChooseTests(unittest.TestCase):
     def test_without_the_feed_names_decide(self):
         self.assertEqual(self.choose(*self.GITHUB_XCODE_27), "Xcode.app")
 
+    # GitHub's xcode-27 image of 2026-10-26 holds Xcode 27.2's release
+    # candidate (27B48), with the plain 27.2 names linked to it, while Apple
+    # released 27.2 as a different build (27B52) on 2026-10-29. Taking the
+    # candidate because its version, or the name of a link to it, matches
+    # Apple's release fails this test, before and after Apple's feed lists
+    # the release.
+    GITHUB_XCODE_27_RC = (("Xcode_27.app", "27.0", "27A266a"),
+                          ("Xcode_27.1.app", "27.1", "27A9275"),
+                          "Xcode.app -> Xcode_27.1.app",
+                          ("Xcode_27.2_Release_Candidate.app", "27.2", "27B48"),
+                          "Xcode_27.2.app -> Xcode_27.2_Release_Candidate.app",
+                          "Xcode_27.2.0.app -> Xcode_27.2_Release_Candidate.app")
+    RELEASED_27_2 = feed("Xcode 27.2 (27B52)") + APPLE_FEED
+
+    def test_a_candidate_apple_released_as_another_build_is_skipped(self):
+        for feed_text in (APPLE_FEED, self.RELEASED_27_2):
+            with self.subTest(feed_text=feed_text):
+                self.assertEqual(self.choose(*self.GITHUB_XCODE_27_RC,
+                                             feed_text=feed_text),
+                                 "Xcode_27.1.app")
+
+    # Staying on 27.1 once GitHub installs Apple's 27.2 build beside the
+    # candidate fails this test.
+    def test_takes_the_release_once_github_installs_it(self):
+        self.assertEqual(self.choose(("Xcode_27.1.app", "27.1", "27A9275"),
+                                     ("Xcode_27.2_Release_Candidate.app", "27.2", "27B48"),
+                                     ("Xcode_27.2.app", "27.2", "27B52"),
+                                     feed_text=self.RELEASED_27_2),
+                         "Xcode_27.2.app")
+
     # For an app outside /Applications, either name is enough: the link's
     # or the app's own. Reading only one of them fails this test.
     def test_either_name_marks_a_linked_app_as_a_beta(self):

@@ -53,8 +53,11 @@ def version_tuple(text):
 
 def runtime_version(runtime):
     """The iOS version of a runtime key such as
-    `com.apple.CoreSimulator.SimRuntime.iOS-26-5`; None for other platforms."""
-    match = re.search(r"\.SimRuntime\.iOS-(\d+)-(\d+)(?:-(\d+))?$", runtime)
+    `com.apple.CoreSimulator.SimRuntime.iOS-26-5`; None for other platforms.
+    A runtime made for one device names it after the version: from Xcode
+    27.2, iPhone Duo's is `...SimRuntime.iOS-27-2-iPhone19-4`."""
+    match = re.search(r"\.SimRuntime\.iOS-(\d+)-(\d+)(?:-(\d+))?(?:-[A-Za-z][\w-]*)?$",
+                      runtime)
     if not match:
         return None
     return tuple(int(part or 0) for part in match.groups())
