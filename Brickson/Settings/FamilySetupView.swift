@@ -14,6 +14,8 @@ import SwiftUI
 /// (`SettingsLeadIn`). Opening it once marks Family Setup as opened, which
 /// ends Home's first-run hint.
 struct FamilySetupView: View {
+    @Binding var path: [SettingsRoute]
+
     @Environment(SetupStore.self) private var setup
     @Environment(SettingsLanding.self) private var landing: SettingsLanding?
     /// The check-in card was showing while this screen was open. Its place
@@ -33,12 +35,16 @@ struct FamilySetupView: View {
                         .frame(maxHeight: .infinity)
                 }
                 .settingsRowStyle()
+                // The first step's Learn About Each Way takes this place.
+                .onGeometryChange(for: CGRect.self) { $0.frame(in: .named(SettingsMetrics.contentSpace)) } action: {
+                    landing?.guidedRow = $0
+                }
                 .accessibilityIdentifier("guidedSetup")
             }
 
             // Under Set Up Step by Step, so a card that comes and goes never
             // moves it.
-            CheckInCard(keepsItsPlace: checkInWasShown)
+            CheckInCard(keepsItsPlace: checkInWasShown, path: $path)
             SetupIssueText()
 
             NavigationLink(value: SettingsRoute.voice) {
@@ -99,7 +105,11 @@ struct FamilySetupView: View {
 
 /// Every three months, a passive card asks whether how the person reaches
 /// the screen has changed (`CheckInPolicy`). Its three buttons sit apart,
-/// and none of them changes how Brickson speaks.
+/// and none of them changes how Brickson speaks. Go Through Setup Again
+/// answers the check-in as it opens the first step, with the answers as
+/// they are: going through setup again is what the card asks for, and the
+/// first step's Next only moves on (docs/DECISIONS.md, "The first step's
+/// own rows"). A failed save keeps the card and says so, and opens nothing.
 ///
 /// Once it is answered, passive words take its place at the card's own size
 /// until Family Setup closes. Otherwise the rows below would move up under
@@ -107,6 +117,7 @@ struct FamilySetupView: View {
 /// could open one of them (AGENTS.md, invariant 10).
 private struct CheckInCard: View {
     let keepsItsPlace: Bool
+    @Binding var path: [SettingsRoute]
     @Environment(SetupStore.self) private var setup
     @Environment(SettingsActivity.self) private var activity: SettingsActivity?
 
@@ -135,7 +146,10 @@ private struct CheckInCard: View {
         SettingsCard {
             SettingsHeading("Time for a check-in")
             SettingsParagraph("Needs can change. Is the screen still reached the same way? Going through setup again takes a few minutes.")
-            NavigationLink(value: SettingsRoute.guidedSetup(.access)) {
+            Button {
+                activity?.recordActivity()
+                setup.goThroughSetupAgain(path: &path, now: .now)
+            } label: {
                 SettingsRowLabel(title: "Go Through Setup Again", systemImage: "list.number")
             }
             .settingsRowStyle()

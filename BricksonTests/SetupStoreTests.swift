@@ -95,4 +95,49 @@ struct SetupStoreTests {
         #expect(store.issue == .unreadableRecordSetAside)
         #expect(defaults.data(forKey: SetupStore.setAsideKey) == data)
     }
+
+    // MARK: Go Through Setup Again
+
+    /// The check-in card's Go Through Setup Again answers the check-in,
+    /// with the answers as they are, and only then opens the first step.
+    /// Fails if it opens anything else, or if the answer is not kept.
+    @Test func goingThroughSetupAgainAnswersTheCheckInThenOpensTheFirstStep() {
+        let defaults = makeDefaults()
+        let store = SetupStore(defaults: defaults, now: launch)
+        store.update { CheckInPolicy.answered(&$0, methods: [.eyeTracking], now: launch) }
+        let due = launch.addingTimeInterval(100 * 24 * 60 * 60)
+        var path: [SettingsRoute] = [.familySetup]
+
+        store.goThroughSetupAgain(path: &path, now: due)
+
+        #expect(path == [.familySetup, .guidedSetup(.access)])
+        #expect(store.record.accessMethods == [.eyeTracking])
+        #expect(store.record.answeredAt == due)
+        #expect(store.issue == nil)
+        #expect(SetupStore(defaults: defaults, now: due).record == store.record)
+    }
+
+    /// A failed save opens nothing and changes nothing, so the card stays
+    /// due and Family Setup shows the warning (invariant 5). Fails if the
+    /// first step opens anyway, or if the screen shows a check-in answer
+    /// that was not kept.
+    @Test func goingThroughSetupAgainOpensNothingWhenTheCheckInCannotBeSaved() {
+        let defaults = makeDefaults()
+        _ = SetupStore(defaults: defaults, now: launch)
+        let store = SetupStore(defaults: defaults, now: launch, encode: { _ in throw EncodingFailed() })
+        let before = store.record
+        let due = launch.addingTimeInterval(100 * 24 * 60 * 60)
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "UTC")!
+        #expect(CheckInPolicy.isDue(before, now: due, calendar: calendar))
+        var path: [SettingsRoute] = [.familySetup]
+
+        store.goThroughSetupAgain(path: &path, now: due)
+
+        #expect(path == [.familySetup], "the first step must not open after a failed save")
+        #expect(store.record == before, "the screen must not show a change that was not kept")
+        #expect(store.issue == .couldNotSave)
+        #expect(CheckInPolicy.isDue(store.record, now: due, calendar: calendar), "the card must stay")
+        #expect(SetupStore(defaults: defaults, now: launch).record == before)
+    }
 }

@@ -14,20 +14,19 @@ import XCTest
 ///   (docs/DECISIONS.md, "Typing on Home"). Before typing came to Home, it
 ///   was nearest Emergency, and before that Again, which speaks.
 /// - Chains: on the way in, it also reads Family Setup and, where its row
-///   shows, Set Up Step by Step's first step, and has the chain engine
-///   follow every chain of held activations from Home's Settings and from
-///   each control of those screens, out to Home and back
-///   (`SettingsChains`, `ChainEngine`). No chain closes Settings under the
-///   look: the first screen's Family Setup row sits where Home's frames
-///   say it is safe, and Set Up Step by Step takes its place on Family
-///   Setup (docs/DECISIONS.md, "Settings' first row, placed from Home's
-///   frames"). Two hazards are known and expected, strictly, so each fails
-///   once it is gone: wherever the first step was read, a held look saves
-///   an answer, through an answer or through Next, which saves them
-///   (docs/DECISIONS.md, "One chain engine for dwell safety"); where the
-///   first step shows no answer above Next, as on a phone at the largest
-///   text size, a held look that reaches it from Set Up Step by Step meets
-///   Back to Talking, and Settings closes under it. Any other hazard fails.
+///   shows, Set Up Step by Step's first step and the guide that step's
+///   Learn About Each Way opens, and has the chain engine follow every
+///   chain of held activations from Home's Settings and from each control
+///   of those screens, out to Home and back (`SettingsChains`,
+///   `ChainEngine`). No chain closes Settings under the look: the first
+///   screen's Family Setup row sits where Home's frames say it is safe, Set
+///   Up Step by Step takes its place on Family Setup, Learn About Each Way
+///   takes that place on the first step, and the guide's one control, Done,
+///   lies in Back to Talking's frame (docs/DECISIONS.md, "Settings' first
+///   row, placed from Home's frames", "The first step's own rows"). No
+///   chain saves an answer: the answers start below every place a look
+///   can be resting on the way in, and Next only moves on. Any hazard
+///   fails.
 ///
 /// "Nearest" is scored two ways, because how Snap to Item picks a target is
 /// a device check (docs/HANDOFF.md, *Checks that need a real device*): by
@@ -140,16 +139,22 @@ final class SettingsOnHomeTests: XCTestCase {
         let familySetup = try Self.onCover(screenControls(in: app))
         attachCapture(app, name: "family-setup-opened-\(context)".replacingOccurrences(of: ", ", with: "-"))
         var firstStep: [ScreenControl]?
+        var eachWay: [ScreenControl]?
         if Self.onScreen(familySetup, in: window).contains(where: { $0.name == SettingsChains.guidedSetupRow }) {
             open("guidedSetup", leaving: "guidedSetup", in: app, context: context)
-            firstStep = try Self.onCover(screenControls(in: app))
+            let step = try Self.onCover(screenControls(in: app))
+            firstStep = step
             attachCapture(app, name: "first-step-opened-\(context)".replacingOccurrences(of: ", ", with: "-"))
+            if Self.onScreen(step, in: window).contains(where: { $0.name == SettingsChains.learnAboutEachWay }) {
+                eachWay = try readTheGuide(over: step, in: app, backToTalking: way, window: window, context: context)
+            }
         }
         checkChains(
             home: home, screens: SettingsChains.Screens(
                 root: Self.named(Self.onScreen(cover, in: window)),
                 familySetup: Self.named(Self.onScreen(familySetup, in: window)),
-                firstStep: firstStep.map { Self.named(Self.onScreen($0, in: window)) }
+                firstStep: firstStep.map { Self.named(Self.onScreen($0, in: window)) },
+                eachWay: eachWay.map { Self.named(Self.onScreen($0, in: window)) }
             ),
             window: window, context: context
         )
@@ -195,16 +200,44 @@ final class SettingsOnHomeTests: XCTestCase {
         XCTAssertEqual(XCTWaiter.wait(for: [gone], timeout: 10), .completed, "\(name) did not open its screen (\(context))")
     }
 
+    /// Opens the guide with the first step's Learn About Each Way, reads its
+    /// controls, checks that Done lies in Back to Talking's frame, and
+    /// closes it with Done. The step stays in the accessibility tree beneath
+    /// the guide, as Home does beneath Settings, so the step's controls are
+    /// left out.
+    @MainActor
+    private func readTheGuide(
+        over step: [ScreenControl], in app: XCUIApplication, backToTalking: CGRect, window: CGRect, context: String
+    ) throws -> [ScreenControl] {
+        app.buttons[SettingsChains.learnAboutEachWay].tap()
+        let done = app.buttons[SettingsChains.eachWayDone]
+        XCTAssertTrue(done.waitForExistence(timeout: 10), "Learn About Each Way did not open the guide (\(context))")
+        let stepNames = Set(step.map(\.name))
+        let guide = try Self.onCover(screenControls(in: app)).filter { !stepNames.contains($0.name) }
+        attachCapture(app, name: "each-way-opened-\(context)".replacingOccurrences(of: ", ", with: "-"))
+        let frame = done.frame
+        for (edge, actual, expected) in [
+            ("left", frame.minX, backToTalking.minX),
+            ("top", frame.minY, backToTalking.minY),
+            ("right", frame.maxX, backToTalking.maxX),
+            ("bottom", frame.maxY, backToTalking.maxY),
+        ] {
+            XCTAssertEqual(actual, expected, accuracy: 1, "Done's \(edge) edge is not Back to Talking's (\(context))")
+        }
+        done.tap()
+        let closed = expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: done)
+        XCTAssertEqual(XCTWaiter.wait(for: [closed], timeout: 10), .completed, "Done did not close the guide (\(context))")
+        XCTAssertTrue(
+            app.buttons[SettingsChains.learnAboutEachWay].waitForExistence(timeout: 10), "Done did not return to the first step (\(context))"
+        )
+        return guide
+    }
+
     /// Follows every chain from Home's Settings and from each control of
-    /// Settings' first screens (`SettingsChains`), and attaches what it
-    /// finds. Fails on a hazard of any other kind than the two known, on a
-    /// control the chains do not know, on choosing Back to Talking closing
-    /// Settings under the look, and on any other chain closing it except
-    /// through a first step that shows no answer above Next; and,
-    /// strictly, once a known hazard is no longer found where it is
-    /// expected: a held look saving an answer, an answer or Next, wherever
-    /// the first step was read, and Settings closing through a first step
-    /// that shows no answer.
+    /// Settings' first screens and the guide's cover (`SettingsChains`),
+    /// and attaches what it finds. Fails on any hazard, of the two kinds
+    /// the chains sort or any other, and on a control the chains do not
+    /// know.
     @MainActor
     private func checkChains(
         home: [ScreenControl], screens: SettingsChains.Screens, window: CGRect, context: String
@@ -236,51 +269,8 @@ final class SettingsOnHomeTests: XCTestCase {
         add(report)
 
         XCTAssertEqual(findings(.unexpected), [], "a chain through Settings meets a new hazard (\(context))")
-        let strict = XCTExpectedFailure.Options()
-        strict.isStrict = true
-        // Only the first step's controls save, so no save can be found
-        // where it was not read.
-        if screens.firstStep != nil {
-            XCTExpectFailure(
-                "docs/DECISIONS.md, \"One chain engine for dwell safety\": a held look saves an answer in Set Up Step by Step",
-                options: strict
-            ) {
-                XCTAssertEqual(findings(.savesAnAnswer), [], "a held look saves an answer (\(context))")
-            }
-        }
-        let closings = hazards.filter { SettingsChains.kind(of: $0) == .closesUnderTheLook }
-        let chosen = closings.filter { $0.start.chosen?.name == SettingsChains.backToTalking }
-        XCTAssertEqual(
-            ChainFinding.findings(in: chosen).map(\.description), [], "choosing Back to Talking closes Settings under the look (\(context))"
-        )
-        let unasked = closings.filter { $0.start.chosen?.name != SettingsChains.backToTalking }
-        let throughFirstStep = unasked.filter { chain in
-            chain.start.state == SettingsChains.firstStep || chain.steps.contains { $0.state == SettingsChains.firstStep }
-        }
-        let elsewhere = unasked.filter { chain in
-            chain.start.state != SettingsChains.firstStep && !chain.steps.contains { $0.state == SettingsChains.firstStep }
-        }
-        XCTAssertEqual(
-            ChainFinding.findings(in: elsewhere).map(\.description), [],
-            "Settings closes under a look that reaches Back to Talking unasked (\(context))"
-        )
-        let answerShows = screens.firstStep.map(SettingsChains.showsAnAnswer) ?? true
-        if answerShows {
-            XCTAssertEqual(
-                ChainFinding.findings(in: throughFirstStep).map(\.description), [],
-                "Settings closes under a look that reaches Back to Talking from the first step (\(context))"
-            )
-        } else {
-            XCTExpectFailure(
-                "docs/DECISIONS.md, \"Settings' first row, placed from Home's frames\": a first step that shows no answer leaves a held look on Back to Talking",
-                options: strict
-            ) {
-                XCTAssertEqual(
-                    ChainFinding.findings(in: throughFirstStep).map(\.description), [],
-                    "Settings closes under a look that reaches Back to Talking from the first step (\(context))"
-                )
-            }
-        }
+        XCTAssertEqual(findings(.closesUnderTheLook), [], "a held look closes Settings under the look (\(context))")
+        XCTAssertEqual(findings(.savesAnAnswer), [], "a held look saves an answer in Set Up Step by Step (\(context))")
     }
 
     // MARK: Reading the screen

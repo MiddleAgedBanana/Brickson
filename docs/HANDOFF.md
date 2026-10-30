@@ -70,13 +70,16 @@ still resting on it when Settings closes meets Phrases, which does
 nothing while the phrases show. Settings' Family Setup row is placed
 from Home's frames, and Family Setup opens with Set Up Step by Step in
 its frame, so a look held on the row meets a row that only opens the
-next screen. The exceptions are on a phone at its largest text size:
-by centre, a look at the row's top trailing corner meets Back to
-Talking and closes Settings onto Home's Emergency (nothing is said;
-modelled), and a look held on through Set Up Step by Step reaches Back
-to Talking and closes Settings over No or Get Attention, which CI's UI
-tests found on PR #56's first run and expect strictly
-(docs/DECISIONS.md, "Settings' first row, placed from Home's frames").
+next screen. Its first step opens with Learn About Each Way in that
+frame, whose guide opens as a cover of its own with Done where Back to
+Talking is, and starts its answers below every place a look can be
+resting on the way in; Next only moves on, and the check-in card's Go
+Through Setup Again answers the check-in (docs/DECISIONS.md, "The
+first step's own rows"; modelled, untested until CI runs it). The
+exception is on narrow windows at the largest text sizes: by centre, a
+look at the row's top trailing corner meets Back to Talking and closes
+Settings onto Home's Emergency (nothing is said; modelled;
+docs/DECISIONS.md, "Settings' first row, placed from Home's frames").
 "Speaking", "Sounding", audio failures, very low volume and a typed
 message that cannot be saved or restored share one passive status line
 under the message, in space always kept for it, and
@@ -573,29 +576,20 @@ release in docs/ROADMAP.md when no thread has it yet.
 - Chains of activations through Settings' screens are scored on its
   first screens (`SettingsOnHomeTests` with the chain engine, on CI's
   iPad and iPhone; docs/DECISIONS.md, "One chain engine for dwell
-  safety"), and two hazards are open. A held look can follow Family Setup's first row into
-  Set Up Step by Step and save an answer (Touch, Voice Control or Switch
-  Control, whichever it meets, and it restarts the check-in clock;
-  nothing reads the answers yet; the owner accepted it on 2026-10-25
-  until the first step's own rows are placed): from Home's Settings, on
-  every window CI runs since Set Up Step by Step took the root row's
-  frame (on a phone at the default text size before), and
-  from Set Up Step by Step itself on every window where it shows; on a
-  phone at its largest text size, through Next, which saves the step's
-  answers. And Settings can close under a look nobody meant to close it
-  with, now only on a phone at its largest text size (found on CI's
-  iPhone 17 at AX5): there Set Up Step by Step's first step shows no answer
-  above Next, so a look held on through it meets Back to Talking and
-  closes Settings over No or Get Attention (the alarm). Elsewhere, since
-  2026-10-25, Settings' Family Setup row is placed from Home's frames
-  and Set Up Step by Step takes its frame in Family Setup, so the look
-  meets a row that only navigates; Back to Talking, over Phrases since
-  2026-10-24, meets only Phrases when chosen (`SettingsOnHomeTests`
-  expects a closing strictly only through a first step that shows no
-  answer above Next, and fails on any other closing; docs/DECISIONS.md,
-  "Settings' first row, placed from Home's frames"). Placing the first
-  step's own rows is the fix for the phone, and a device check says
-  whether it binds. On short, very wide windows (wider than about 1300
+  safety"). Since 2026-10-30 no hazard is open there in the models: a
+  held look no longer saves a setup answer or closes Settings under the
+  look, on CI's windows or on 630 swept ones, and `SettingsOnHomeTests`
+  fails on any (docs/DECISIONS.md, "The first step's own rows").
+  Settings' Family Setup row is placed from Home's frames, Set Up Step
+  by Step takes its frame in Family Setup, and Learn About Each Way
+  takes that frame on the first step; its guide opens as a cover of its
+  own with Done in Back to Talking's frame, the answers start below
+  every place a look can be resting on the way in, and Next only moves
+  on (the check-in card's Go Through Setup Again answers the check-in
+  instead). Untested in the app until CI runs this change, and a device
+  check says whether it binds. On narrow or short windows at large text
+  sizes the first step's first screenful shows no answer, so a family
+  scrolls to answer. On short, very wide windows (wider than about 1300
   points and at most 667 tall, at the default text size), Home's
   Settings lies as near Back to Talking as the row, as before. If
   Settings' first screen has been scrolled when its row is chosen,
@@ -608,23 +602,17 @@ release in docs/ROADMAP.md when no thread has it yet.
   reproduced the gap: the old row centre became empty space on Family
   Setup. Physical held-look checks remain unverified; the
   [record includes screenshots and a mounted-device procedure](log/2026-10-26-settings-simulator-checks.md).
-  The fix for the first hazard, Learn
-  About Each Way where Set Up Step by Step's row was, was built and held
-  on 2026-10-24, because its guide leads into the second; rescored on
-  2026-10-25 it still would (its guide's Back to Talking closes Settings
-  over Get Attention), and it no longer clears every chain that saves an
-  answer, so it stays held
-  ([`log/2026-10-24-settings-chains.md`](log/2026-10-24-settings-chains.md);
-  docs/DECISIONS.md, "Typing on Home", *The held guide link stays
-  held*). *(the next Settings thread)*
+  *(a device check, then the next Settings thread)*
   Not scored yet: the chain through iOS's Personal Voice question once
   the Ask button shows (after answering, the look rests where the
   question's button was, over whatever Voice Settings has there); Voice
   Settings itself, where a look held after Family Setup's Voice Settings
   row can rest over choices that play a sample and set a voice or a
   speed; the check-in card's
-  rows in Family Setup (no test can make a check-in due yet); Family
-  Setup scrolled before a row is chosen; and Settings' other screens.
+  rows in Family Setup (no test can make a check-in due yet), and where
+  a look rests on the first step after its Go Through Setup Again;
+  Family Setup scrolled before a row is chosen; the first step's guide
+  scrolled; and Settings' other screens.
   Answers change no size yet; scoring comes before they do
   ([`log/2026-10-21-settings-and-first-run.md`](log/2026-10-21-settings-and-first-run.md),
   follow-up 10). *(Settings' other screens: a new thread, before ROADMAP
@@ -874,10 +862,20 @@ through its guide, so it stays held for the next Settings thread
 safety" and "Get Attention in Settings' bar: the owner decides"). On
 2026-10-25 it placed Settings' first row from Home's frames, with Set Up
 Step by Step in its frame, which ends Settings closing under a look on
-CI's windows (modelled, and measured by PR #56's first CI run) and on
-630 swept ones (modelled), except a phone at its
-largest text size, where the first step's own rows are next
+CI's windows (modelled, and measured by PR #56's first CI run), except
+a phone at its largest text size, where the first step's own rows are
+next; on 630 swept windows (modelled) it ends the closings through
+Settings' first screen and Family Setup, but the sweep does not draw
+the first step
 (docs/DECISIONS.md, "Settings' first row, placed from Home's frames").
+On 2026-10-30 it placed the first step's own rows: Learn About Each Way
+in Set Up Step by Step's frame, its guide a cover with Done in Back to
+Talking's frame, the answers below every place a look can be resting,
+and Next only moving on, which ends, modelled on CI's windows and on
+the 630 swept ones now drawn through the first step, both the closing
+on the phone at its largest size and every held look that saved a
+setup answer; untested until CI runs it (docs/DECISIONS.md, "The first
+step's own rows").
 Every change follows AGENTS.md, *Apple's current frameworks first*: the
 legacy uses kept, and the moves still planned with who owns each, are in
 docs/DECISIONS.md under that title

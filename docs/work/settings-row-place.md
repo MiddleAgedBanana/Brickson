@@ -116,7 +116,8 @@ build). Status: building (untested until CI passes).*
     a look that meets Next saves the step's answers. Scoped in
     `SettingsOnHomeTests` to closings through a first step that shows no
     answer above Next (`SettingsChains.showsAnAnswer`); any other closing
-    fails.
+    fails. *2026-10-30:* removed, modelled, and `showsAnAnswer` with it
+    (docs/DECISIONS.md, "The first step's own rows").
   - *A short, very wide window* (wider than about 1300 points: the
     sweep crosses it between 1296 and 1312; at most 667 tall, with 744
     clear; default text): Home's Settings' top leading corner lies as
@@ -126,10 +127,12 @@ build). Status: building (untested until CI passes).*
     Settings it reaches one of the first step's answers on every CI
     window (Next on the phone at AX5), modelled and on this change's
     first CI run, not only the phone at the default size. Expected
-    strictly wherever the first step is read.
+    strictly wherever the first step is read. *2026-10-30:* removed,
+    modelled; `SettingsOnHomeTests` fails on any save.
   - *The held guide link* (Learn About Each Way) still sounds the alarm
     and stays held (docs/DECISIONS.md, "Typing on Home", *The held guide
-    link stays held*).
+    link stays held*). *2026-10-30:* brought back, with its guide as a
+    cover.
 - **Colours:** none new.
 - **Privacy policy:** nothing it says changes.
 - **Screens:** [Settings' first row, placed from Home's frames](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f/?node-id=61-266):

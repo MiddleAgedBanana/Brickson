@@ -140,6 +140,53 @@ final class SettingsTests: XCTestCase {
         }
     }
 
+    /// The first step of Set Up Step by Step opens on Learn About Each Way,
+    /// in Set Up Step by Step's frame as Family Setup drew it, so a repeated
+    /// activation where that row was meets a control that only opens the
+    /// guide, never an answer, which saves (docs/DECISIONS.md, "The first
+    /// step's own rows"). Fails if Learn About Each Way's leading edge, top
+    /// or width differ from the row's by more than a point, if it is
+    /// shorter than the row, if any other button lies within the row's
+    /// frame, if the first answer starts less than a row's gap below it, or
+    /// if the question is gone.
+    @MainActor
+    func testTheFirstStepOpensWithLearnAboutEachWayOverSetUpStepByStep() {
+        continueAfterFailure = true
+        for textSize in [UITestTextSize.large, .ax5] {
+            let app = openSettings(textSize: textSize)
+            let context = "Step 1 of 5, \(textSize.name)"
+            open("familySetup", in: app, waitingFor: "Family Setup")
+            let row = app.buttons["guidedSetup"]
+            XCTAssertTrue(row.waitForExistence(timeout: 10), "guidedSetup is missing (\(context))")
+            let rowFrame = row.frame
+
+            open("guidedSetup", in: app, waitingFor: "Step 1 of 5")
+            let link = app.buttons["learnAboutEachWay"]
+            XCTAssertTrue(link.waitForExistence(timeout: 10), "learnAboutEachWay is missing (\(context))")
+            // Wait for Family Setup's row to go, so the step is read where it rests.
+            let gone = expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: row)
+            XCTAssertEqual(XCTWaiter.wait(for: [gone], timeout: 10), .completed, "Family Setup did not go (\(context))")
+            XCTAssertTrue(app.staticTexts["How is the screen reached?"].exists, "the question is missing (\(context))")
+            attachCapture(app, name: context)
+            XCTAssertEqual(link.frame.minX, rowFrame.minX, accuracy: 1, "Learn About Each Way's leading edge moved (\(context))")
+            XCTAssertEqual(link.frame.minY, rowFrame.minY, accuracy: 1, "Learn About Each Way's top moved (\(context))")
+            XCTAssertEqual(link.frame.width, rowFrame.width, accuracy: 1, "Learn About Each Way is not the row's width (\(context))")
+            XCTAssertGreaterThanOrEqual(
+                link.frame.height, rowFrame.height - 1, "Learn About Each Way is shorter than the row (\(context))"
+            )
+            let spot = rowFrame.insetBy(dx: 0.5, dy: 0.5)
+            for button in app.buttons.allElementsBoundByIndex
+            where button.exists && button.identifier != "learnAboutEachWay" && button.frame.intersects(spot) && button.isHittable {
+                XCTFail("\(button.label) lies where Set Up Step by Step was (\(context)): \(button.frame) against \(rowFrame)")
+            }
+            let first = app.buttons["Touch"]
+            XCTAssertTrue(first.exists, "the first answer is missing (\(context))")
+            XCTAssertGreaterThanOrEqual(
+                first.frame.minY, link.frame.maxY + 16 - 1, "the first answer starts too near Learn About Each Way (\(context))"
+            )
+        }
+    }
+
     /// App Review Guideline 5.1.1(i): the policy is inside the app. It is
     /// the public page's own words.
     @MainActor
@@ -244,6 +291,16 @@ final class SettingsTests: XCTestCase {
         open("familySetup", in: app, waitingFor: "Family Setup")
         open("guidedSetup", in: app, waitingFor: "Step 1 of 5")
         try assertPassesAccessibilityAudit(app, context: "Step 1 of 5, light")
+
+        // The first step's guide, a cover of its own.
+        app.buttons["learnAboutEachWay"].tap()
+        let done = app.buttons["eachWayDone"]
+        XCTAssertTrue(done.waitForExistence(timeout: 10), "Learn About Each Way did not open the guide")
+        attachCapture(app, name: "Each Way guide")
+        try assertPassesAccessibilityAudit(app, context: "Each Way guide, light")
+        done.tap()
+        let closed = expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: done)
+        XCTAssertEqual(XCTWaiter.wait(for: [closed], timeout: 10), .completed, "Done did not close the guide")
 
         for step in 2...5 {
             app.buttons["guidedSetupNext"].tap()
@@ -390,17 +447,19 @@ final class SettingsTests: XCTestCase {
         open("familySetup", in: app, waitingFor: "Family Setup")
         open("guidedSetup", in: app, waitingFor: "Step 1 of 5")
 
-        app.buttons["Eye Tracking"].tap()
-        XCTAssertTrue(app.buttons["Eye Tracking"].isSelected, "choosing an answer did not select it")
+        // The first answer, which shows without scrolling at the default
+        // text size: the answers start below Learn About Each Way.
+        app.buttons["Touch"].tap()
+        XCTAssertTrue(app.buttons["Touch"].isSelected, "choosing an answer did not select it")
         // A second activation keeps it chosen: answers only select.
-        app.buttons["Eye Tracking"].tap()
-        XCTAssertTrue(app.buttons["Eye Tracking"].isSelected, "a repeated activation undid the answer")
+        app.buttons["Touch"].tap()
+        XCTAssertTrue(app.buttons["Touch"].isSelected, "a repeated activation undid the answer")
 
         for step in 2...5 {
             app.buttons["guidedSetupNext"].tap()
             XCTAssertTrue(app.navigationBars["Step \(step) of 5"].waitForExistence(timeout: 10), "step \(step) did not open")
         }
-        XCTAssertTrue(app.staticTexts["Eye Tracking"].exists, "the summary does not list the answer")
+        XCTAssertTrue(app.staticTexts["Touch"].exists, "the summary does not list the answer")
 
         app.buttons["guidedSetupNext"].tap()
         XCTAssertTrue(app.navigationBars["Family Setup"].waitForExistence(timeout: 10), "Done did not return to Family Setup")

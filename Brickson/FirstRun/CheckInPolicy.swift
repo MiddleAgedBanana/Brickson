@@ -61,4 +61,11 @@ nonisolated enum CheckInPolicy {
         record.answerAccessMethods(methods, at: now)
         record.checkInsStopped = false
     }
+
+    /// The family chose to go through setup again from the check-in card:
+    /// that answers it, with the answers as they are, which the first step
+    /// then changes if anything has.
+    static func wentThroughAgain(_ record: inout SetupRecord, now: Date) {
+        answered(&record, methods: record.accessMethods ?? [], now: now)
+    }
 }

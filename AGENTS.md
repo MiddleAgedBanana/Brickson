@@ -551,8 +551,8 @@ the failure.
   `HomeStatusLine`, `HomeButtonLook`, `LibrarySnapshot`, `LibraryEdit`,
   `LibraryRules`, `LibraryImport`, `LibraryEditor`, `BackupCodec`,
   `EmergencyRepair`, `SettingsLeadIn`, `SettingsRowPlace`,
-  `SettingsScreenFrames`, `KeyboardAllowance`, `SettingsAppLink`,
-  `HomeLayout`.
+  `SettingsScreenFrames`, `SetupAnswersPlace`, `KeyboardAllowance`,
+  `SettingsAppLink`, `HomeLayout`.
   Views only read them.
 - **Run it, don't just read it.** Layout and flow changes are checked in the
   running app on an iPad and an iPhone simulator, at default and
@@ -599,6 +599,10 @@ the failure.
   old version (`docs/archive/README.md`).
   If this briefing or the documentation is wrong, record the problem and
   propose its correction in the work log; do not silently work around it.
+- **Keep evidence where later work finds it.** Evidence that later work
+  needs (prototypes, screenshots, logs, receipts) goes in a git-ignored
+  folder inside the worktree or under `docs/log/`, never in `/tmp` and
+  never only in a chat (a `/tmp` prototype was lost on 2026-10-27).
 - **Start of a session:** `git status`, `git log --oneline -15`, then
   `git fetch origin`. Read `AGENTS.md`, `docs/HANDOFF.md`,
   `docs/DECISIONS.md` and the newest `docs/log/` records from the fetched

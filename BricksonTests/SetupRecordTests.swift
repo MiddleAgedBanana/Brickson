@@ -99,6 +99,29 @@ struct SetupRecordTests {
         #expect(CheckInPolicy.isDue(record, now: later, calendar: calendar))
     }
 
+    /// Going through setup again from the card answers the check-in with
+    /// the answers as they are, since the first step's Next only moves on
+    /// (docs/DECISIONS.md, "The first step's own rows"). Fails if the
+    /// answers change, if the next check-in is not three months away, or
+    /// if a family that had stopped check-ins would not be asked again.
+    @Test func goingThroughSetupAgainAnswersTheCheckInWithTheAnswersAsTheyAre() {
+        let due = calendar.date(byAdding: .month, value: 3, to: launch)!
+        var record = SetupRecord(createdAt: launch)
+        CheckInPolicy.answered(&record, methods: [.eyeTracking, .someoneElse], now: launch)
+        #expect(CheckInPolicy.isDue(record, now: due, calendar: calendar))
+
+        CheckInPolicy.wentThroughAgain(&record, now: due)
+        #expect(record.accessMethods == [.eyeTracking, .someoneElse])
+        #expect(!CheckInPolicy.isDue(record, now: days(80, after: due), calendar: calendar))
+        #expect(CheckInPolicy.isDue(record, now: calendar.date(byAdding: .month, value: 3, to: due)!, calendar: calendar))
+        #expect(CheckInPolicy.afterword(for: record) == .answered)
+
+        var neverAnswered = SetupRecord(createdAt: launch)
+        CheckInPolicy.wentThroughAgain(&neverAnswered, now: due)
+        #expect(neverAnswered.plannedAccessMethods == nil)
+        #expect(!CheckInPolicy.isDue(neverAnswered, now: days(80, after: due), calendar: calendar))
+    }
+
     /// Once the card is answered on screen, passive words take its place,
     /// so the rows below never move up under the spot just activated
     /// (AGENTS.md, invariant 10). Each answer gets its own words.

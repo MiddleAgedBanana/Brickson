@@ -2504,7 +2504,13 @@ engine, not five scripts".
     accepted it on 2026-10-25 until the first step's own rows are
     placed. `SettingsOnHomeTests` expects it strictly wherever the first
     step is read (*Settings' first row, placed from Home's frames*,
-    *What it costs, for the owner to weigh*).
+    *What it costs, for the owner to weigh*). *2026-10-30:* removed by
+    placement, modelled on CI's windows and across the 630 swept ones:
+    the first step opens on Learn About Each Way in Set Up Step by Step's
+    frame, its guide is a cover with Done in Back to Talking's frame,
+    the answers start below every place a look can be resting on the
+    way in, and Next only moves on (*The first step's own rows*).
+    `SettingsOnHomeTests` fails on any save. Untested until CI runs it.
     *Tried 2026-10-24 and held* (ROADMAP Wave 3 item 7,
     [`log/2026-10-24-settings-chains.md`](log/2026-10-24-settings-chains.md)):
     the first step opening on its words, filled down to where Family
@@ -2560,6 +2566,10 @@ engine, not five scripts".
     at its largest size, where Set Up Step by Step's first step shows no
     answer above Next and its Back to Talking is nearest (*Settings'
     first row, placed from Home's frames*). Untested until CI runs it.
+    *2026-10-30:* that one too, modelled: Learn About Each Way takes Set
+    Up Step by Step's frame on the first step, so the look meets a
+    control that only opens the guide (*The first step's own rows*).
+    `SettingsOnHomeTests` fails on any closing.
 
 *Before:* the nearest-control rules were written twice, in
 `HomeShapeTests` and in the UI tests' `ScreenControls`, and only single
@@ -2983,7 +2993,9 @@ plan's places (*Home's slot plan*).
   head or gaze profile ships. *2026-10-25:* item 7 did, modelled on
   CI's windows and across 630 swept ones, except the phone at its
   largest size, still strictly expected; untested until CI runs it
-  (*Settings' first row, placed from Home's frames*).
+  (*Settings' first row, placed from Home's frames*). *2026-10-30:* the
+  phone at its largest size too, modelled (*The first step's own
+  rows*).
 - **The held guide link stays held** (*One chain engine for dwell
   safety*, *Open: a held look saves an answer in Set Up Step by Step*).
   Modelled on the moved frames, Learn About Each Way still clears every
@@ -2998,7 +3010,12 @@ plan's places (*Home's slot plan*).
   row, placed from Home's frames*): the link still sounds the alarm, and
   it no longer clears every chain that saves an answer, since Home's
   Settings still leads a held look to the first step's answers. It
-  stays held.
+  stays held. *2026-10-30:* brought back, with its guide as a cover of
+  its own whose one control, Done, lies in Back to Talking's frame, and
+  with the answers placed below every place a look can be resting
+  (*The first step's own rows*). Pushed, the guide would still sound
+  the alarm (`SettingsChainsTests.aPushedGuideWouldSoundTheAlarm`, which
+  replaces `theHeldGuideLinkWouldSoundTheAlarm`).
 - **Where the starter library fits, measured** (*The layout engine*,
   *Where the starter library fits*: its slot-plan column is now Home's):
   every iPad window CI runs, in both orientations, at every text size, as
@@ -3194,6 +3211,12 @@ Attention on the 13-inch iPad (*Typing on Home*, *Settings closing,
 rescored*). Words over the spot cannot stop that, so a row that only
 navigates now takes it.
 
+*2026-10-30:* one screen opens over the cover instead of in its stack:
+the first step's guide (*The first step's own rows*), a cover of its own
+whose bar holds Done in Back to Talking's frame and keeps Get
+Attention's place empty, with the sound line at its foot. Back to
+Talking is one activation away, on the step beneath.
+
 Family Setup's rows: Set Up Step by Step, Voice Settings, Reaching the
 Screen, Keep Brickson Open (Guided Access and Assistive Access), Calls,
 Siri and Shortcuts, More Accessibility Settings, Privacy Policy and
@@ -3285,15 +3308,19 @@ change.
   13-inch iPad in portrait and in landscape, over Home's Settings with
   the words beside it; at the iPad's largest size, 442 wide and two
   lines tall, with the words under it.
-  - *Modelled on CI's frames* (`SettingsChainsTests.theRowPlacedFromHomesFramesClosesNothingUnderTheLook`),
+  - *Modelled on CI's frames* (`SettingsChainsTests.theRowPlacedFromHomesFramesClosesNothingUnderTheLook`,
+    since 2026-10-30 `theFirstStepsOwnRowsCloseNothingAndSaveNothingUnderTheLook`),
     no chain closes Settings under the look on the iPhone 17 or on the
     13-inch iPad in portrait at the default and the largest size or in
     landscape.
-  - *Across 630 windows* (`noSweptWindowClosesSettingsUnderTheLook`:
+  - *Across 630 windows* (`noSweptWindowClosesSettingsUnderTheLook`,
+    since 2026-10-30 `noSweptWindowClosesSettingsOrSavesAnAnswerUnderTheLook`,
+    which draws the first step too:
     widths from 320 to 1408 every 32 points, six heights from 568 to
     1376, the default size, AX3 and AX5), with Family Setup's words
     modelled from CI's measurements, no chain closes Settings under the
-    look and nothing new is met. The first step is not drawn there.
+    look and nothing new is met. Until 2026-10-30 the first step was not
+    drawn there.
     With the opening words over Set Up Step by Step, as before, 213 of
     those windows close Settings onto Home's Get Attention or No; with
     Set Up Step by Step across the width at the row's top, the first
@@ -3331,6 +3358,7 @@ change.
     closing strictly only through a first step that shows no answer
     above Next (`SettingsChains.showsAnAnswer`), and fails on any other
     closing. Placing the first step's own rows is what removes it.
+    *2026-10-30:* removed, modelled (*The first step's own rows*).
   - *A short, very wide window* (wider than about 1300 points: the
     sweep crosses it between 1296 and 1312; at most 667 tall, with 744
     clear; at the default size): Home's Settings' top leading corner
@@ -3340,6 +3368,8 @@ change.
     longer clear every chain that saves an answer: Home's Settings
     still leads a held look to the first step's answers (*Typing on
     Home*, *The held guide link stays held*). It stays held.
+    *2026-10-30:* brought back with its guide as a cover, and the
+    answers placed (*The first step's own rows*).
 - **What it costs, for the owner to weigh:**
   - *More held looks save an answer.* The chain from Home's Settings
     through Family Setup and Set Up Step by Step to one of the first
@@ -3354,7 +3384,8 @@ change.
     wider. *The owner accepted it on 2026-10-25* (a decision card,
     after Codex's review of PR #56 asked for the owner's call), until
     the next Settings change places the first step's own rows; that
-    change removes it, not a later decision.
+    change removes it, not a later decision. *2026-10-30:* removed,
+    modelled, Next's save included (*The first step's own rows*).
   - *A smaller row.* The root's row is 78 points tall at the default
     size instead of 110 (Family Setup no longer needs a tall row for its
     opening words to cover), and on the 13-inch iPad 194 points wide
@@ -3382,6 +3413,105 @@ change.
 half where two columns fit (*Settings on Home*), and Family Setup opened
 on passive words at least as tall as the row
 (`FamilySetupView.openingHeight`), with Set Up Step by Step under them.
+
+## The first step's own rows
+
+*2026-10-30. Default, adopted by the Settings thread after PR #56
+(docs/ROADMAP.md, Wave 3 item 7): routine choices, reversible if the
+owner objects. It accepts no exception to an invariant.* The record is
+[`log/2026-10-30-first-step-rows.md`](log/2026-10-30-first-step-rows.md).
+Everything below was modelled in the unit tests on CI's frames of PR #56
+and on 630 swept windows, not drawn by the app: it is untested until
+CI's UI tests pass on this change.
+
+- **What it fixes.** The two hazards PR #56 left (*Settings' first row,
+  placed from Home's frames*, *What remains, each a strict known issue
+  that fails when it clears* and *What it costs, for the owner to
+  weigh*): a look held on Home's Settings went through Family Setup and Set Up
+  Step by Step to one of the first step's answers, which saved it, on
+  every CI window (the owner accepted that on 2026-10-25 until this
+  change); and on the phone at its largest text size the first step
+  showed no answer above Next, so a look held on through it met Back to
+  Talking, and Settings closed over No or Get Attention.
+- **Learn About Each Way takes Set Up Step by Step's place.** The first
+  step opens on Learn About Each Way, in Set Up Step by Step's frame as
+  Family Setup drew it (`SettingsLanding.guidedRow`), at least as tall,
+  with the question and its sentence beside it, above it or under it
+  (`SettingsLeadIn`), as Family Setup's opening words go. A look still
+  resting where Set Up Step by Step was meets a control that only opens
+  a guide.
+- **The answers start below every place a look can be resting on the
+  way in** (`SetupAnswersPlace`): at the highest top under the link and
+  its words where every point, every 4 points, across Home's Settings,
+  the root's Family Setup row and Set Up Step by Step lies nearer Learn
+  About Each Way than the first answer, by centre and by edge, by 8
+  points (`SettingsRowPlace.margin`), with the answer at its least
+  height, 64 points, so a taller one is farther. Lower answers are
+  farther still. Modelled on CI's windows, in the window: 572 on the
+  iPhone 17 (322.67 before), 553 on the 13-inch iPad in portrait and
+  552 in landscape, 763 on the iPad at AX5, and below the window on the
+  phone at AX5, whose first screenful then shows no answer, as before.
+- **The guide is a cover of its own** (`EachWayCover`), not a pushed
+  screen. Pushed like Family Setup's other guides, it would have only
+  Back and Back to Talking near the look, so a held look on Learn About
+  Each Way would close Settings with the look over Home's Get Attention
+  on the phone, which sounds the alarm
+  (`SettingsChainsTests.aPushedGuideWouldSoundTheAlarm`; why the link
+  was held on 2026-10-24, *Typing on Home*, *The held guide link stays
+  held*). The cover has one control, Done, in Back to Talking's frame
+  from Home's engine for the same window and text size
+  (`SettingsSafetyBar`, `way: .done`); Get Attention's place is kept
+  empty, as in Settings' bar, and the sound line is at its foot. Done
+  returns to the step, where a pointer still on it meets Back to
+  Talking, which closes Settings onto Home's Phrases, and a look gone
+  back to where it was meets Learn About Each Way again, and settles.
+  Settings' idle reset closes it with the step. It departs from
+  *Settings is a cover with a fixed safety bar*, one bar on every
+  screen, only in its trailing control: Done where Back to Talking is,
+  with Back to Talking one activation away on the step beneath.
+- **Next only moves on.** Next used to save the step's answers once
+  more, even unchanged (*Setup answers are kept as offered, never as
+  completed*). With the answers placed, a look at the lower part of
+  Home's Settings lies nearer Next than Learn About Each Way on short
+  windows and at large text sizes, so a held look met Next and saved:
+  on CI's phone at AX5, modelled, and on 212 of the 630 swept windows
+  (135 at AX5, 75 at AX3, and two 568 points tall at the default size).
+  Now Next only navigates on every step, and the check-in card's Go
+  Through Setup Again answers the check-in as it opens the first step,
+  with the answers as they are (`CheckInPolicy.wentThroughAgain`):
+  going through setup again is what the card asks for. A failed save
+  keeps the card, says so and opens nothing
+  (`SetupStoreTests.goingThroughSetupAgainOpensNothingWhenTheCheckInCannotBeSaved`).
+  Walking the steps without the card and changing nothing no longer
+  restarts the check-in clock, and a held look that walks them no
+  longer clears Stop Asking.
+- **Measured, in the models.** On CI's windows
+  (`SettingsChainsTests.theFirstStepsOwnRowsCloseNothingAndSaveNothingUnderTheLook`:
+  the iPhone 17 and the 13-inch iPad in portrait at the default and
+  the largest sizes, and the iPad in landscape), no chain closes
+  Settings under the look, saves an answer or meets anything new. Nor
+  on any of the 630 swept windows
+  (`noSweptWindowClosesSettingsOrSavesAnAnswerUnderTheLook`), which now
+  draws the first step and the guide, with the step's words modelled
+  (`SweptFamilySetup`). `SettingsOnHomeTests` opens the guide from the
+  first step, checks that Done lies in Back to Talking's frame, scores
+  the chains through it with the rest, and fails on any hazard.
+- **What it costs.** The answers start lower on every window, so on
+  narrow or short windows at large text sizes the first screenful shows
+  the question and the link but no answer, and a family scrolls to
+  answer. The first step has one more control. Going through the steps
+  answers a check-in only from the card, or by choosing an answer.
+- **Not scored:** the check-in card's rows (no test can make a check-in
+  due); where a look rests after Go Through Setup Again, over whatever
+  the first step has at that spot, as when it was a link; the steps
+  after the first; and the guide scrolled. Where a pointer rests after
+  an activation, and how Snap to Item picks, need a real device
+  (docs/HANDOFF.md, "Checks that need a real device").
+
+*Before:* the first step opened on its question with the answers under
+it (Touch at 322.67 on the iPhone 17), Next saved the answers, and the
+guide link, built on 2026-10-24 as commit `1de50f5` with a pushed guide,
+was held.
 
 ## Speed is a set of fixed choices
 
@@ -3436,9 +3566,12 @@ uses its largest sizes. `SetupStore` keeps the record as JSON in
 UserDefaults; a change is saved before it is shown, a failed save changes
 nothing and shows a passive line, and an unreadable record is moved to
 `setupRecord.unreadable`, never deleted. Each answer is saved the moment
-it is chosen, so leaving a step by Back or Back to Talking keeps it; Next
-saves the answer once more, even unchanged, because going through the
-step again is what a check-in asks for.
+it is chosen, so leaving a step by Back or Back to Talking keeps it.
+*2026-10-30:* Next only moves on, and the check-in card's Go Through
+Setup Again answers the check-in, with the answers as they are (*The
+first step's own rows*). *Before:* Next saved the answer once more, even
+unchanged, because going through the step again is what a check-in asks
+for; a held look that met it saved too.
 
 Set Up Step by Step has five steps, each a pushed screen with Next in a
 fixed bar at the bottom: how the screen is reached, the voice, turning
@@ -3475,7 +3608,9 @@ Three calendar months after setup was last answered (or after the first
 launch), Family Setup shows a passive card asking whether anything has
 changed, with Go Through Setup Again, Not Now (30 days) and Stop Asking
 (until the access question is answered again). It never appears on Home
-and is never a pop-up (`CheckInPolicy`). Once it is answered on screen,
+and is never a pop-up (`CheckInPolicy`). *2026-10-30:* Go Through Setup
+Again answers it as it opens the first step, with the answers as they
+are (`CheckInPolicy.wentThroughAgain`; *The first step's own rows*). Once it is answered on screen,
 passive words take its place at the card's own size until Family Setup
 closes (`CheckInPolicy.afterword`), so the rows below never move up under
 the button just chosen (invariant 10). These times use `Date` and
