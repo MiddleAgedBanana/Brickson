@@ -1,6 +1,6 @@
 # An "in active development" note at the top of the README
 
-*2026-10-30. This pull request (`claude/project-thread-sxky71`). A cloud
+*2026-10-30. Pull request #67 (`claude/project-thread-sxky71`). A cloud
 thread, which cannot build or run the app.*
 
 ## What changed and why
@@ -26,18 +26,24 @@ badges, so none was added.
 
 ## Commits
 
-- The commit on `claude/project-thread-sxky71`: the alert and this record.
+- `f6b59ee`: the alert and this record.
+- The next commit: this record's header, *Verified* and *Not verified*
+  corrected after review.
 
 ## Verified
 
-- `python3 scripts/test-docs.py` passed (45 tests) in the cloud session.
-- GitHub CI on this pull request (unit and UI tests): see the pull
-  request's checks. Nothing about the app changed.
+- In the cloud session: `python3 scripts/test-docs.py` passed (45 tests)
+  and `python3 scripts/test-hooks.py` passed (124 tests).
+- After the first push, GitHub's own page for this branch's README drew
+  the note as a warning alert (its HTML has `markdown-alert-warning`).
 
 ## Not verified
 
-- How GitHub draws the alert was not looked at in a browser from this
-  session; the syntax is GitHub's documented alert form.
+- GitHub CI's unit and UI tests were still running when this record was
+  written; the pull request's checks hold their result. Nothing about the
+  app changed.
+- The alert was not looked at by eye in a browser, in light or dark
+  appearance; only the rendered HTML was checked.
 
 ## Follow-ups
 
