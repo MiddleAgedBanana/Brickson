@@ -150,6 +150,29 @@ reported finishing after 165 seconds. Run alone, its word sweep took 30
 seconds, its place sweep 35 and its chain sweep 73. #69 added about two
 minutes to a normal run.
 
+## This pull request's unit tests
+
+This pull request's first run (a3f2609) passed its UI tests on the iPad
+and the iPhone, and its unit job was cancelled at the 40-minute limit
+with no test failed. Its one re-run passed in 38.6 minutes, and
+`main`'s own run after #69 merged (44e68a6) took 38.0. Building is
+timed from the end of the hook tests to the first test:
+
+| Step | main at 44e68a6 | the cancelled run | its re-run |
+|---|---|---|---|
+| `test-hooks.py`, 124 tests | 98.6 s | 107.1 s | 87.4 s |
+| `test-runner.py`, 56 tests | 46.9 s | 56.1 s | 40.3 s |
+| Starting the simulator and building | 16.0 min | 19.0 min | 17.3 min |
+| The tests | 18.7 min | stopped after about 18 min | 18.4 min |
+| The whole job | 38.0 min | stopped at 40 min | 38.6 min |
+
+So on that afternoon's machines a normal run ended within two minutes
+of the limit. The re-run ran 823 tests: 814 passed, 0 failed, 1 skipped
+and 8 expected failures, as on `main`. The UI job of that `main` run
+never started: it was still queued when the run was marked failed as
+its unit job ended, so `main` at 44e68a6 has no UI result of its own.
+This pull request's UI run, on a branch started from it, passed.
+
 ## Commits
 
 - 1e537fe: Name external TestFlight beside App Review in the handoff's
@@ -161,7 +184,19 @@ minutes to a normal run.
 ## Verified
 
 - Made in a cloud session, so nothing was built with Xcode. GitHub CI
-  is the build, and the new UI test first runs there.
+  is the build, and the new UI test first ran there.
+- **GitHub CI on a3f2609** (run 41081103096): the UI tests passed on
+  the iPad Pro 13-inch (M5) and iPhone 17 simulators (iOS 27.0), 61
+  tests on each: 59 passed and 2 skipped on the iPad, 55 passed and 6
+  skipped on the iPhone, the same skips as #69's run. Both
+  `HomeSizesTests` passed on both. On the iPad in portrait, at Eye
+  Tracking's sizes: Apple's audit over Home, light and dark, at the
+  default and the largest text size, with every word of Home's controls
+  drawn whole; Settings' first screen, Family Setup and the first step,
+  sentence included, audited over that Home; and touch's sizes once
+  Touch alone is chosen. The Settings UI tests, which now draw the
+  first step with its sentence, passed. The unit tests passed on the
+  re-run (*This pull request's unit tests*).
 - **Linux, Swift 6.4.1.** The layout and chain unit tests, built from
   this branch's files, were run with the switch on, in 12 minutes. They
   include `ProfileChoiceTests` and the Settings chain sweep that now
@@ -181,20 +216,14 @@ minutes to a normal run.
 - No person has used the larger sizes on a device. The switch and head
   floors are proposals from studies, none with Apple's Head Tracking or
   Eye Tracking, or with people with ALS.
-- Apple's audit and the drawn words at the larger sizes, until this pull
-  request's CI runs `HomeSizesTests`. The audit cannot judge comfort,
-  and the words are read only on the iPad in portrait at the larger
-  sizes. No CI window holds head tracking's or Switch Control's sizes,
-  so those are checked only by the layout engine's unit tests.
-- Settings' first screen, Family Setup and the first step over the
-  larger Home, and the first step with its sentence in every Settings
-  UI test, until this pull request's CI runs them. The heights pinned
-  in `ChainEngineTests`' `ModelledWindow` were measured without the
-  sentence; the unit sweep models it.
-- Whether Vision reads every label whole beside its icon. At the larger
-  sizes the controls have room for their icons, and a symbol read as a
-  letter joined to a word would fail the whole-word match. The kept
-  captures show which, if it happens.
+- Apple's audit and the drawn words at the larger sizes in any window
+  but CI's iPad in portrait. The audit cannot judge comfort. No CI
+  window holds head tracking's or Switch Control's sizes, so those are
+  checked only by the layout engine's unit tests.
+- The heights pinned in `ChainEngineTests`' `ModelledWindow` were
+  measured without the first step's sentence. The unit sweep models
+  it, and this run's captures are not yet compared with the model
+  (*Follow-ups*).
 - Why the slow machine was slow. GitHub does not say which machine a
   job ran on.
 - How CI's speed compares with the Linux timings. They show what each
@@ -216,7 +245,16 @@ minutes to a normal run.
   *Checks that need a real device*).
 - Compare the first step's measured heights in this pull request's
   captures with `ModelledWindow`'s model of the sentence, and pin them.
-- If unit jobs keep ending near 40 minutes on normal machines, raising
-  the limit is a change to `.github/workflows/tests.yml`, which the owner
-  pastes (AGENTS.md, *Gotchas*). The other way is to cut what a sweep
-  costs without weakening it. Neither is needed yet.
+- Unit jobs now end within two minutes of their 40-minute limit
+  (*This pull request's unit tests*). Raising the limit is a change to
+  `.github/workflows/tests.yml`, which the owner pastes (AGENTS.md,
+  *Gotchas*); the other way is to cut what the sweeps cost without
+  weakening them. One of them is needed before the next pull request
+  that adds unit tests.
+- Lines from earlier pull requests still say "untested until CI runs
+  it" though those pull requests merged on green CI: docs/HANDOFF.md on
+  the first step's own rows (three places), docs/ROADMAP.md's
+  2026-10-30 entry for them, and docs/DECISIONS.md under *The first
+  step's own rows*, *Settings' first row, placed from Home's frames* and
+  #53's record. A docs pass checks each against its pull request's CI
+  run and corrects it.

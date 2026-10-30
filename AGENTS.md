@@ -753,10 +753,11 @@ the time. Export them again after each new Xcode release.
 - **A failing `xcodebuild test` can sit for minutes collecting
   diagnostics**; `scripts/test.sh` passes `-collect-test-diagnostics never`.
 - **The unit job uses most of its 40 minutes.** On 2026-10-30 it took
-  27 to 33 minutes, and one run of pull request #69 was stopped at the
-  limit with every test it had reported passing: on that machine the
-  unchanged Python checks took about twice as long as usual, and
-  starting the simulator and building took 16 minutes instead of 10. The
+  27 to 39 minutes, and one run each of pull requests #69 and #70 was
+  stopped at the limit with every test it had reported passing: on those
+  machines the unchanged Python checks took up to twice as long as
+  usual, and starting the simulator and building took 16 to 19 minutes
+  instead of 10. The
   unit tests are main-actor isolated by
   default, so they share the main thread and the job takes about the sum
   of every test's time; run together, a suite's reported time includes

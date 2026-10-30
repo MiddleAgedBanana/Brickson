@@ -34,8 +34,8 @@ place, and new sizes show as Settings closes. By the engine, every
 phone tested keeps touch's sizes at every text size, and every iPad in
 portrait takes Eye Tracking's (head tracking's on the iPad mini with
 Bold Text). `HomeSizesTests` checks a person's first launch at those
-sizes, with Apple's audit and the drawn words (untested until CI runs
-it); the other UI tests ask for touch's. Four category buttons that never scroll sideways, and three
+sizes, with Apple's audit and the drawn words (passed on CI's iPad and
+iPhone simulators, #70); the other UI tests ask for touch's. Four category buttons that never scroll sideways, and three
 phrase columns on every iPhone at its standard Display Zoom (two on 375
 and 390-point phones with Bold Text). A tile
 speaks at once, in the person's Personal Voice when one exists and is
@@ -656,7 +656,7 @@ release in docs/ROADMAP.md when no thread has it yet.
   Since 2026-10-30, answers change Home's sizes as Settings closes;
   Settings' first screens over a larger Home are scored
   (`ProfileChoiceTests`), and `HomeSizesTests` audits them over the
-  larger Home a person's first launch has (untested until CI runs it);
+  larger Home a person's first launch has (passed on CI, #70);
   the screens above are not
   ([`log/2026-10-21-settings-and-first-run.md`](log/2026-10-21-settings-and-first-run.md),
   follow-up 10). *(Settings' other screens: a new thread)*
