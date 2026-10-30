@@ -254,7 +254,14 @@ documents can be read alongside.
     exception is named, measured and recorded in docs/DECISIONS.md.
 11. **No scrolling on Home for the starter library** in any dwell, switch,
     head or gaze profile on any supported device and window, and never
-    shrink targets below the profile's floor to avoid it. Every size comes
+    shrink targets below the profile's floor to avoid it. The floor is
+    that of the profile the window takes: where a window cannot hold the
+    floors an answer asks for without scrolling, Home takes the largest
+    smaller profile it holds, touch's last, with every floor of the one
+    taken (owner, 2026-10-30; docs/DECISIONS.md, "Sizes that follow how
+    the screen is reached"). Where even touch's sizes scroll, a dwell,
+    switch, head or gaze answer still breaks this invariant there
+    (docs/HANDOFF.md, *Known gaps*). Every size comes
     from the tested layout engine. A library a family has grown may scroll
     at the floor. Nothing reflows when the keyboard appears.
 12. **The screen never locks while Brickson is open** (`ScreenWakePolicy`).
@@ -755,10 +762,12 @@ the time. Export them again after each new Xcode release.
   of every test's time; run together, a suite's reported time includes
   waiting for the others. Time a long new sweep on its own and say in the
   pull request what it adds. A run stopped at the limit with no failure
-  is re-run once; a second stop is real, so cut what the tests cost
-  without weakening any. The limit is in `.github/workflows/tests.yml`,
+  is re-run once only if the steps it did not change (the Python
+  checks, starting the simulator and building) took clearly longer than
+  on `main`'s last run; a second stop, or a stop on a machine as fast as
+  usual, is real, so cut what the tests cost without weakening any. The limit is in `.github/workflows/tests.yml`,
   which a cloud agent cannot push. The measurements are in
-  [`docs/log/2026-10-30-unit-job-time-and-testflight-wording.md`](docs/log/2026-10-30-unit-job-time-and-testflight-wording.md).
+  [`docs/log/2026-10-30-sizes-switched-on.md`](docs/log/2026-10-30-sizes-switched-on.md).
 - **A just-started simulator is slow, and the first UI test pays for it.**
   On GitHub's busy machines, one run found Again still off when the test
   read it straight after a tap, and the re-run's first launch timed out,

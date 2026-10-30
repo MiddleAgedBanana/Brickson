@@ -3,8 +3,8 @@
 *Roadmap: Wave 3 item 8 (R1, the profile layout engine and who chooses
 the profile), started early by the owner on 2026-10-30. Owner: the
 item 8 thread (a cloud session; GitHub CI is its build). Status:
-built and held until the owner answers the fallback (CI green, merged
-in #69 on 2026-10-30).*
+built (CI green, merged in #69), then switched on when the owner chose
+the largest sizes that fit, both on 2026-10-30.*
 
 ## Intent
 
@@ -263,9 +263,8 @@ Not yet accepted by the owner: the owner's merge accepts them.
   on every phone. Recommended and built; the alternatives are scrolling
   at the sizes asked for (invariant 11 rules it out for the starter
   library) or fewer tiles to a screen (a new arrangement, which item 9's
-  fewer-tiles work would bring). The decision card in the item 8 thread
-  asks the owner, and until the owner answers Home keeps touch's sizes
-  for everyone (*Changed during the build*).
+  fewer-tiles work would bring). The owner chose it on 2026-10-30
+  (*Changed during the build*).
 - **Yes and No still border the message.** The open hazard from item 4
   (docs/DECISIONS.md, "Home's slot plan", *Open hazard, not accepted*)
   stays: a look resting on the message is nearest Yes or No over up to
@@ -293,8 +292,12 @@ Not yet accepted by the owner: the owner's merge accepts them.
   rests need a real device (a Codex handoff).
 - **The first step's question heights on CI predate the new sentence.**
   `SettingsChainsTests.SweptFamilySetup` models the sentence's height;
-  CI's measured frames, pinned in the chain tests, were taken before it,
-  so CI's first run measures it.
+  CI's measured frames, pinned in the chain tests, were taken before it.
+  From the pull request that switched the sizes on, every Settings UI
+  test draws the sentence (it follows the owner's switch, not a test's
+  fixed sizes), so the first step's audit and `SettingsOnHomeTests`'
+  measured chains include it; the pinned heights in `ModelledWindow`
+  are compared with that run's captures in a later pull request.
 
 ## Plan
 
@@ -332,13 +335,15 @@ Not yet accepted by the owner: the owner's merge accepts them.
     - `theLargestProfileThatHoldsIsTaken`, the windows table, the dwell
       chains, Settings closing onto other sizes, the Yes and No share,
       Settings' chains over a larger Home, and a fold or a camera.
-  - `HomeSizesTests` (UI, both families): with Home following the
-    answer (`--home-profile=from-answer`), fails if an iPad in portrait
-    shows Home smaller than Eye Tracking's floors before any answer, a
-    phone shows larger than touch's, or Home stays larger after Touch is
-    chosen and Settings closes; launched as a person launches it, fails
-    if Home is larger than touch's or the first step speaks of sizes
-    while they are held.
+  - `HomeSizesTests` (UI, both families): launched as a person launches
+    it, fails if an iPad in portrait shows Home smaller than Eye
+    Tracking's floors before any answer, a phone shows other frames than
+    touch's, the first step does not say what the answers do, or Home
+    stays larger after Touch is chosen and Settings closes; and, at the
+    default and the largest text size, light and dark, if Apple's
+    accessibility audit finds anything or a control's words are not
+    drawn whole (the quick controls everywhere, and Phrases, Type and
+    the everyday categories at the larger sizes).
   - Device checks (Codex, and the owner's devices): which flags each
     input method turns on; dwell comfort at each profile's floors on an
     iPad with Eye Tracking and Head Tracking, and with Switch Control's
@@ -365,8 +370,14 @@ sentence on sizes is hidden, and only UI tests on test storage follow
 the answer (`--home-profile=from-answer`). Everything above is built
 and checked on every CI run; one pull request turns the switch on once
 the owner chooses the largest sizes that fit (docs/DECISIONS.md, "Sizes
-that follow how the screen is reached", *Held until the owner
-answers*).
+that follow how the screen is reached", *Switched on by the owner*).
+
+*2026-10-30, after #69 merged.* The owner chose the largest sizes that
+fit, and the next pull request switched them on
+([`log/2026-10-30-sizes-switched-on.md`](../log/2026-10-30-sizes-switched-on.md)).
+Whether Back to Talking keeps touch's frame under them was asked
+separately, since the card about the fallback did not ask it; it is
+built as recommended until the owner answers.
 
 *2026-10-30, after the first push.* CodeRabbit's review, and the
 independent review, found that the arrangement chosen at touch's gap
