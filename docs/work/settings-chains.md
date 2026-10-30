@@ -3,7 +3,8 @@
 *Roadmap: Wave 3 item 7 (R0 items 4 and 7). Owner: the Settings' chains
 thread (a cloud session; GitHub CI is its build). Status: held on
 2026-10-24; the link waits for ROADMAP Wave 3 item 5, since item 4 left
-Back to Talking where it was (*Held*, below).*
+Back to Talking where it was (*Held*, below). Built on 2026-10-30, with
+its guide as a cover and the answers placed (*Built*, below).*
 
 ## Intent
 
@@ -206,3 +207,35 @@ would still sound the alarm through its guide, so it stays held. The
 *Spec*'s places above are measured from the old Family Setup, where Set
 Up Step by Step sat under the opening words; a pull request that brings
 the link back places it from the new one.
+
+## Built
+
+*2026-10-30* (docs/DECISIONS.md, "The first step's own rows";
+[`log/2026-10-30-first-step-rows.md`](../log/2026-10-30-first-step-rows.md)).
+The *Spec* above is kept as it was planned; what was built differs in
+four ways, each from scoring the chains on PR #56's CI frames:
+
+- **Where the link sits.** In Set Up Step by Step's frame as Family
+  Setup drew it (`SettingsLanding.guidedRow`), at least as tall, with
+  the question beside it, above it or under it (`SettingsLeadIn`), not
+  under a block filled down to the row's top.
+- **Where the answers start.** Not one row lower, but where every point
+  of Home's Settings, the root's row and Set Up Step by Step lies nearer
+  the link than the first answer (`SetupAnswersPlace`): on the phone,
+  Home's Settings lies under the link, and an answer a row lower was
+  still the nearest control to its lower part.
+- **Where it leads.** The same guide, as a cover of its own
+  (`EachWayCover`) with one control, Done, in Back to Talking's frame,
+  instead of a pushed screen with Back and Back to Talking near the
+  look: pushed, it still closes Settings over Get Attention on the
+  phone (`SettingsChainsTests.aPushedGuideWouldSoundTheAlarm`).
+- **Next only moves on.** Placed, the answers left Next as the nearest
+  control to a look at the lower part of Home's Settings on short
+  windows and at large text sizes (CI's phone at AX5; 212 of 630 swept
+  windows), and Next saved the answers. The check-in card's Go Through
+  Setup Again now answers the check-in instead.
+
+The tests named in *Plan* were replaced by those in the log: the UI
+tests open the guide and fail on any hazard, and the unit tests draw the
+first step and the guide on CI's windows and across the 630-window
+sweep.

@@ -100,7 +100,9 @@ fails on the first version (90 windows) and on the old Family Setup
   simulator is slow, and the first UI test pays for it", where a slow
   first launch is the likely cause). Its one re-run was cancelled by
   the next push and gave no UI result; the run on the next head
-  re-checks it.
+  re-checks it. *Re-checked 2026-10-30:* the run on the pull request's
+  final head, `f44f17f` (Actions run 40188414972), passed both the
+  unit and the UI tests.
   - `SettingsOnHomeTests` read the real frames. No chain closed Settings
     under the look on the iPad (portrait at both sizes, and landscape)
     or on the phone at the default size. On the phone at AX5 the
