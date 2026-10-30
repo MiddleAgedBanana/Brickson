@@ -44,14 +44,14 @@ nonisolated struct HomeReservedLayout {
                 && $0.minX > base.content.minX && $0.maxX < base.content.maxX
         }
         let horizontal = divisions.first { $0.width >= $0.height && Self.overlaps($0, base.content) }
-        let modeFloor = max(profile.floor, text.quickControlLine + 2 * HomeLayout.labelInset.vertical,
+        let modeFloor = max(profile.quickControlFloor, text.quickControlLine + 2 * HomeLayout.labelInset.vertical,
             base.backToTalking.width < minimum.backToTalkingOneLine - 0.001 ? HomeLayout.twoLineCategoryHeight : 0)
         let returnable = base.modes == .phrasesAndTyping ? max(0, min(
             2 * (base.frame(.phrases).height - modeFloor), base.frame(.message).height - 2 * text.messageLine)) : 0
 
-        let quickFloor = max(profile.floor, text.quickControlLine + 2 * HomeLayout.labelInset.vertical,
+        let quickFloor = max(profile.quickControlFloor, text.quickControlLine + 2 * HomeLayout.labelInset.vertical,
             base.frame(.getAttention).width < minimum.getAttentionOneLine - 0.001 ? HomeLayout.twoLineQuickControlHeight : 0)
-        let categoryFloor = max(profile.floor, text.categoryLine + 2 * HomeLayout.labelInset.vertical)
+        let categoryFloor = max(profile.categoryFloor, text.categoryLine + 2 * HomeLayout.labelInset.vertical)
         let quickGrowth = max(0, base.quickControlHeight - max(quickFloor, categoryFloor))
         let categoryGrowth = max(0, base.categoryHeight - categoryFloor)
 
@@ -146,7 +146,7 @@ nonisolated struct HomeReservedLayout {
         var chosenSmallerGaps = false
         // Controls are allocated from the reference library, never from a
         // person's added phrases. More phrases change only D's rows.
-        if chosen.grid.shortfall > 0.001 && base.regionGap > HomeLayout.minimumRegionSpacing + 0.001 {
+        if chosen.grid.shortfall > 0.001 && base.regionGap > profile.minimumRegionSpacing + 0.001 {
             let compacted = resolve(smallerGaps: true)
             if compacted.grid.shortfall < chosen.grid.shortfall && compacted.issues.isEmpty {
                 chosen = compacted
@@ -173,7 +173,7 @@ nonisolated struct HomeReservedLayout {
                                  occlusions: [CGRect], modeReturn: CGFloat, quickReturn: CGFloat,
                                  categoryReturn: CGFloat, smallerGaps: Bool,
                                  minimumQuickHeight: CGFloat = 0, minimumModeHeight: CGFloat = 0) -> Candidate {
-        let spacing = HomeLayout.controlSpacing
+        let spacing = base.spacing
         let minimum = HomeLayout.MinimumWidths.forBoldText(text.boldText)
         var cells = base.frames
         var faults: [Issue] = []
@@ -228,7 +228,7 @@ nonisolated struct HomeReservedLayout {
             }
         }
         if smallerGaps {
-            let cut = base.regionGap - HomeLayout.minimumRegionSpacing
+            let cut = base.regionGap - profile.minimumRegionSpacing
             // A horizontal division pins a later row: returning A-to-C
             // would move the first safety row without gaining viewport.
             let upper = horizontal == nil ? cut : 0
@@ -245,9 +245,10 @@ nonisolated struct HomeReservedLayout {
                 let leading = (left - 2 * spacing) / 3
                 let again = max(minimum.category, (right - 2 * spacing) / 3)
                 let attention = right - again - spacing
-                if leading < max(minimum.category, minimum.emergency, profile.floor)
-                    || again < max(minimum.again, minimum.category, profile.floor)
-                    || attention < max(minimum.getAttention, profile.floor) {
+                let floor = max(profile.quickControlFloor, profile.categoryFloor)
+                if leading < max(minimum.category, minimum.emergency, floor)
+                    || again < max(minimum.again, minimum.category, floor)
+                    || attention < max(minimum.getAttention, profile.quickControlFloor) {
                     faults.append(.insufficientControlSpace)
                 } else {
                     let origins = [base.content.minX, base.content.minX + leading + spacing,
@@ -320,10 +321,10 @@ nonisolated struct HomeReservedLayout {
         let fitted = fitOcclusions(cells, occlusions: occlusions, base: base, minimum: minimum, floor: profile.floor)
         var occupied = fitted.frames
         faults += fitted.issues
-        let quickFloor = max(profile.floor, text.quickControlLine + 2 * HomeLayout.labelInset.vertical,
+        let quickFloor = max(profile.quickControlFloor, text.quickControlLine + 2 * HomeLayout.labelInset.vertical,
             occupied[.getAttention]!.width < minimum.getAttentionOneLine - 0.001 ? HomeLayout.twoLineQuickControlHeight : 0)
         let back = backFrame(base: base, frames: occupied)
-        let modeFloor = base.modes == .phrasesAndTyping ? max(profile.floor,
+        let modeFloor = base.modes == .phrasesAndTyping ? max(profile.quickControlFloor,
             text.quickControlLine + 2 * HomeLayout.labelInset.vertical,
             back.width < minimum.backToTalkingOneLine - 0.001 ? HomeLayout.twoLineCategoryHeight : 0) : 0
         if occupied[.again]!.height < quickFloor - 0.001
@@ -361,7 +362,7 @@ nonisolated struct HomeReservedLayout {
         var gridFault = false
         let grid = phraseGrid(frame: viewport, vertical: vertical,
             hasDivision: space.regions.contains { $0.kind == .division }, regular: base.isRegular,
-            boldText: text.boldText, floor: profile.floor, insufficientWidth: &gridFault)
+            boldText: text.boldText, floor: profile.tileFloor, spacing: spacing, insufficientWidth: &gridFault)
         if gridFault { faults.append(.insufficientPhraseWidth) }
         for slot in base.slots where slot != .phraseGrid {
             let frame = occupied[slot]!
@@ -399,7 +400,7 @@ nonisolated struct HomeReservedLayout {
             else if slot == .getAttention { needed = max(minimum.getAttention, floor) }
             else { needed = present.map { minimumWidth($0, frames: cells, base: base, minimum: minimum, floor: floor) }.max()! }
             var chosen: (start: CGFloat, end: CGFloat)?
-            for clearance in [HomeLayout.controlSpacing, CGFloat(0)] {
+            for clearance in [base.spacing, CGFloat(0)] {
                 var intervals: [(start: CGFloat, end: CGFloat)] = [(bounds.minX, bounds.maxX)]
                 for cut in cuts.sorted(by: { $0.minX < $1.minX }) {
                     let leading = cut.minX - clearance, trailing = cut.maxX + clearance
@@ -447,8 +448,8 @@ nonisolated struct HomeReservedLayout {
     }
 
     private static func phraseGrid(frame: CGRect, vertical: CGRect?, hasDivision: Bool, regular: Bool,
-                                   boldText: Bool, floor: CGFloat, insufficientWidth: inout Bool) -> HomeLayout.Grid {
-        let spacing = HomeLayout.controlSpacing
+                                   boldText: Bool, floor: CGFloat, spacing: CGFloat,
+                                   insufficientWidth: inout Bool) -> HomeLayout.Grid {
         let minimum = regular ? (boldText ? HomeLayout.regularTile.boldMinimumWidth : HomeLayout.regularTile.minimumWidth)
             : (boldText ? HomeLayout.compactTile.boldMinimumWidth : HomeLayout.compactTile.minimumWidth)
         var columns: [CGRect] = []

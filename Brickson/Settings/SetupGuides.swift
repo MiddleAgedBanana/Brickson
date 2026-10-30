@@ -37,12 +37,13 @@ struct EachWayCover: View {
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.legibilityWeight) private var legibilityWeight
+    @Environment(\.requestedHomeProfile) private var requestedProfile
 
     var body: some View {
         let text = HomeLayout.Text.measured(at: dynamicTypeSize, boldText: legibilityWeight == .bold)
         GeometryReader { proxy in
             let space = HomeLayout.Space(proxy)
-            let home = HomeLayout(space: space, text: text, modes: .phrasesAndTyping)
+            let home = ProfileChoice.layout(requested: requestedProfile, space: space, text: text, modes: .phrasesAndTyping)
             VStack(spacing: 0) {
                 SettingsSafetyBar(backToTalking: home.backToTalking, safeArea: space.safeArea, way: .done, close: close)
                 ScrollView {

@@ -61,8 +61,10 @@ The initial implementation includes:
 - Unit tests for core logic and simulator UI tests for the initial Home flow.
 
 Phrase editing and backup export are not implemented yet. Home's layout comes from one tested layout
-engine, at touch sizes; sizes for switches, head and eye tracking, and validation across access methods, remain
-planned work. See the [handoff](docs/HANDOFF.md) for verification evidence,
+engine, at touch sizes; larger sizes for switches, head and eye
+tracking are built but not yet switched on, and still need checking
+with people on real devices, and validation across access methods
+remains planned work. See the [handoff](docs/HANDOFF.md) for verification evidence,
 known limitations and next steps.
 
 ## Design principles

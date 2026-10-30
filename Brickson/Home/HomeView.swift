@@ -56,6 +56,9 @@ import SwiftUI
 struct HomeView: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.legibilityWeight) private var legibilityWeight
+    /// The sizes Family Setup's answer asked for when Settings last closed
+    /// (`BricksonApp`).
+    @Environment(\.requestedHomeProfile) private var requestedProfile
     @Query private var categories: [PhraseCategory]
     @State private var selectedCategoryID: UUID?
     /// Whether Home is typing. Type turns it on; Phrases, Emergency and
@@ -78,7 +81,10 @@ struct HomeView: View {
         let text = HomeLayout.Text.measured(at: dynamicTypeSize, boldText: legibilityWeight == .bold)
 
         GeometryReader { proxy in
-            let layout = HomeLayout(
+            // The sizes Family Setup's answer asks for, as large as this
+            // window holds (`ProfileChoice`).
+            let layout = ProfileChoice.layout(
+                requested: requestedProfile,
                 space: HomeLayout.Space(proxy),
                 text: text,
                 largestCategory: largestCategoryCount,
@@ -268,7 +274,7 @@ private struct MessageRegion: View {
             }
             .frame(width: message.width, alignment: .leading)
             .homeAllocation(of: [.message, .statusLine], in: layout)
-            VStack(spacing: HomeLayout.controlSpacing) {
+            VStack(spacing: layout.spacing) {
                 ModeButton(names: HomeControlNames.phrases, systemImage: "square.grid.2x2.fill", isSelected: !isTyping, action: showPhrases)
                     .sized(as: .phrases, in: layout)
                     .accessibilityIdentifier("phrases")
@@ -915,6 +921,7 @@ private struct CategoriesAndSettings: View {
                 CategoryCell(
                     categories: CategorySelection.inCell(index, of: categories, cells: HomeLayout.categoryCapacity),
                     buttonHeight: layout.categoryHeight,
+                    spacing: layout.spacing,
                     selectedID: selectedID,
                     select: select
                 )
@@ -991,13 +998,14 @@ private struct StopWell: View {
 private struct CategoryCell: View {
     let categories: ArraySlice<PhraseCategory>
     let buttonHeight: CGFloat
+    let spacing: CGFloat
     let selectedID: UUID?
     let select: (UUID) -> Void
 
     var body: some View {
         if categories.count > 1 {
             ScrollView {
-                VStack(spacing: HomeLayout.controlSpacing) {
+                VStack(spacing: spacing) {
                     ForEach(categories) { category in
                         button(category)
                             .frame(height: buttonHeight)
@@ -1125,7 +1133,7 @@ private struct FixedColumns<Item: Identifiable, Cell: View>: View {
 
     var body: some View {
         let columns = layout.columns
-        VStack(spacing: HomeLayout.controlSpacing) {
+        VStack(spacing: layout.spacing) {
             ForEach(Array(stride(from: 0, to: items.count, by: columns)), id: \.self) { start in
                 HStack(spacing: 0) {
                     ForEach(items[start..<min(start + columns, items.count)].enumerated(), id: \.element.id) { column, item in

@@ -370,7 +370,10 @@ built for Eye Tracking.
   the space available"). For gaze at about 45 cm the reference used phrase
   tiles of at least 110pt, quick controls of at least 88pt and categories
   of at least 72pt, sized on a 13-inch iPad (about 132 points per inch);
-  held at the densest screen they are about 136, 109 and 89pt.
+  held at the densest screen they are about 136, 109 and 89pt. The
+  switch and head floors, and which profile Family Setup's answer gives,
+  are in docs/DECISIONS.md, "Sizes that follow how the screen is
+  reached".
 - **Keep corners clear.** Dwell hot corners (top-left starts Eye Tracking
   recalibration by default), window controls and the home indicator. Never
   hide a standard Back button to clear a corner; guide people to move the
@@ -552,7 +555,7 @@ the failure.
   `LibraryRules`, `LibraryImport`, `LibraryEditor`, `BackupCodec`,
   `EmergencyRepair`, `SettingsLeadIn`, `SettingsRowPlace`,
   `SettingsScreenFrames`, `SetupAnswersPlace`, `KeyboardAllowance`,
-  `SettingsAppLink`, `HomeLayout`.
+  `SettingsAppLink`, `HomeLayout`, `ProfileChoice`.
   Views only read them.
 - **Run it, don't just read it.** Layout and flow changes are checked in the
   running app on an iPad and an iPhone simulator, at default and

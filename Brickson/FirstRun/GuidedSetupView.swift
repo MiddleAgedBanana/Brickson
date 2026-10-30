@@ -166,16 +166,27 @@ private struct SetupAccessQuestion: View {
     @Environment(\.settingsCover) private var cover
     @Environment(\.settingsScreenFrames) private var frames
     @Environment(SettingsLanding.self) private var landing: SettingsLanding?
+    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverIsOn
+    @Environment(\.accessibilitySwitchControlEnabled) private var switchControlIsOn
+    @Environment(\.homeSizesFollowTheAnswer) private var sizesFollowTheAnswer
 
     var body: some View {
         SettingsLeadInLayout(placement: placement, controlFirst: false, spacing: SettingsMetrics.rowSpacing) {
             VStack(alignment: .leading, spacing: SettingsMetrics.rowSpacing) {
                 SettingsHeading("How is the screen reached?")
-                // Nothing reads these answers yet, so the words promise no
-                // change to the buttons; the layout engine adds that sentence
-                // when it reads them
-                // (docs/log/2026-10-21-settings-and-first-run.md, follow-up 5).
                 SettingsParagraph("Choose every way that is used now. Each answer is saved as soon as it is chosen.")
+                // Home's sizes follow the answers once the owner switches
+                // that on (`ProfileChoice.followsTheAnswer`); until then
+                // nothing says they do.
+                if sizesFollowTheAnswer {
+                    SettingsParagraph("Home's buttons take the size the answers need, as large as this screen has room for, and are largest until something is chosen. The new size shows when Settings closes.")
+                }
+                // What iOS reports only suggests an answer, and the words
+                // depend on it alone, never on the answers, so nothing moves
+                // under a choice just made.
+                if let suggestion = ProfileChoice.suggestion(voiceOver: voiceOverIsOn, switchControl: switchControlIsOn) {
+                    SettingsParagraph(Self.words(for: suggestion))
+                }
             }
 
             Button(action: learnAboutEachWay) {
@@ -216,6 +227,13 @@ private struct SetupAccessQuestion: View {
     private var placement: SettingsLeadInLayout.Placement {
         guard let row = landing?.guidedRow else { return .atTheTop }
         return .inPlaceOf(row)
+    }
+
+    private static func words(for suggestion: ProfileChoice.Suggestion) -> LocalizedStringKey {
+        switch suggestion {
+        case .switchControlIsOn: "Switch Control is on, so Switch Control may be one of the answers."
+        case .voiceOverIsOn: "VoiceOver is on, so Touch may be one of the answers."
+        }
     }
 
     /// The least height of the link and its words: down to a row's gap

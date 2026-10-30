@@ -809,7 +809,13 @@ struct SettingsChainsTests {
                 inPlaceOf: guided.offsetBy(dx: -content.minX, dy: -content.minY), width: content.width, height: guidedHeight
             ),
             besideWidth: window.guidedIdealWidth,
-            wordsHeight: { window.question * max(1, content.width / $0) }
+            // CI measured the question and its first sentence before the
+            // sentence on sizes came; that one is modelled as the sweep
+            // models it (`SweptFamilySetup.sizesHeight`).
+            wordsHeight: {
+                window.question * max(1, content.width / $0)
+                    + SweptFamilySetup.sizesHeight($0, body: 17 + (50 - 17) * (window.text.categoryLine - 22) / (65 - 22))
+            }
         )
         let link = question.control.offsetBy(dx: content.minX, dy: content.minY)
         let place = SetupAnswersPlace(
@@ -915,12 +921,14 @@ struct SettingsChainsTests {
     ///   size from 17 points at the default size to 50 at AX5 in proportion
     ///   to the category line; at AX5 across CI's iPad they are 250 points
     ///   tall, where CI measured 249.5.
-    /// - The first step's question and its sentence: each word half its
+    /// - The first step's question and its sentences: each word half its
     ///   letters' size wide per letter, wrapped between words, each line 1.2
     ///   of the size tall, the question at 1.25 of the body size and 16
-    ///   points above the sentence. Across CI's phone and iPad at the
-    ///   default size and AX5 they are 82, 601, 62 and 211 points tall,
-    ///   where CI measured 84.67, 588.33, 63 and 208.5.
+    ///   points above each sentence. Across CI's phone and iPad at the
+    ///   default size and AX5 the question and its first sentence are 82,
+    ///   601, 62 and 211 points tall, where CI measured 84.67, 588.33, 63
+    ///   and 208.5. The sentence on sizes, shown only once Home's sizes
+    ///   follow the answer, is modelled the same way and not yet measured.
     /// - Back is 44 points square, 16 points in and 10 down from the bar's
     ///   top, and Family Setup's other rows are as tall as the root's row
     ///   across the content, 16 points apart. Only what shows above the
@@ -944,6 +952,7 @@ struct SettingsChainsTests {
         static let guidedWords: [CGFloat] = [1.74, 1.16, 2.32, 1.16, 2.32]
         static let question = "How is the screen reached?"
         static let sentence = "Choose every way that is used now. Each answer is saved as soon as it is chosen."
+        static let sizes = "Home's buttons take the size the answers need, as large as this screen has room for, and are largest until something is chosen. The new size shows when Settings closes."
 
         /// How many lines `text` takes in `room` at `size`, wrapped between
         /// words.
@@ -963,9 +972,22 @@ struct SettingsChainsTests {
             return lines
         }
 
-        /// The question and its sentence at `width`.
+        /// The question and its two sentences at `width`.
         static func questionHeight(_ width: CGFloat, body: CGFloat) -> CGFloat {
             lines(question, room: width, size: 1.25 * body) * 1.2 * 1.25 * body + 16 + lines(sentence, room: width, size: body) * 1.2 * body
+                + sizesHeight(width, body: body)
+        }
+
+        /// The sentence on Home's sizes, 16 points under the first, shown
+        /// only once Home's sizes follow the answer
+        /// (`ProfileChoice.followsTheAnswer`). While they are held the
+        /// sweep scores the first step as everyone gets it; the
+        /// `--home-profile=from-answer` UI test shows the sentence but
+        /// scores no chain, and the pull request that switches the sizes
+        /// on scores it here.
+        static func sizesHeight(_ width: CGFloat, body: CGFloat) -> CGFloat {
+            guard ProfileChoice.followsTheAnswer else { return 0 }
+            return 16 + lines(sizes, room: width, size: body) * 1.2 * body
         }
 
         init(_ window: SettingsRowPlaceTests.Window, text: HomeLayout.Text, row: CGRect) {

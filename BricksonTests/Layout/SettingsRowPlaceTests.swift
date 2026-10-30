@@ -18,9 +18,14 @@ struct SettingsRowPlaceTests {
         let navigationBar: CGRect
         let context: String
 
-        init(size: CGSize, safeArea: HomeLayout.Insets, text: HomeLayout.Text, context: String) {
+        /// `requested`, the profile Family Setup's answer asks for, gives
+        /// Home the sizes `ProfileChoice` takes in this window; touch's by
+        /// default.
+        init(size: CGSize, safeArea: HomeLayout.Insets, text: HomeLayout.Text, context: String,
+             requested: HomeLayout.Profile = .touch) {
             self.size = size
-            home = HomeLayout(space: .init(size: size, safeArea: safeArea), text: text, modes: .phrasesAndTyping)
+            home = ProfileChoice.layout(requested: requested, space: .init(size: size, safeArea: safeArea),
+                text: text, modes: .phrasesAndTyping)
             navigationBar = CGRect(
                 x: safeArea.leading, y: home.backToTalking.maxY + 8,
                 width: size.width - safeArea.leading - safeArea.trailing, height: 64
