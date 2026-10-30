@@ -190,12 +190,7 @@ documents can be read alongside.
 
 1. **Every interactive element is a standard SwiftUI `Button`** (or a
    standard system control) with an accessibility label, and a target of at
-   least 44×44pt, larger where the active profile sets a higher floor.
-   Settings' Back to Talking keeps touch's frame under a larger profile,
-   an exception the owner accepted so that a look resting there as
-   Settings closes meets only Phrases (owner, 2026-10-30;
-   docs/DECISIONS.md, "Sizes that follow how the screen is reached",
-   *Back to Talking keeps touch's frame*). Never
+   least 44×44pt, larger where the active profile sets a higher floor. Never
    gesture-only controls, and never custom input, switch, head or gaze code:
    every Apple input method and VoiceOver find standard buttons through the
    accessibility tree, and that is the whole integration.
@@ -759,10 +754,13 @@ the time. Export them again after each new Xcode release.
   diagnostics**; `scripts/test.sh` passes `-collect-test-diagnostics never`.
 - **The unit job uses most of its 40 minutes.** On 2026-10-30 it took
   27 to 39 minutes, and one run each of pull requests #69 and #70 was
-  stopped at the limit with every test it had reported passing: on those
-  machines the unchanged Python checks took up to twice as long as
-  usual, and starting the simulator and building took 16 to 19 minutes
-  instead of 10. The
+  stopped at the limit with every test it had reported passing. #69's
+  machine was slow (starting the simulator and building took 16 minutes
+  instead of 10); by #70, `main`'s own completed run took 38 minutes,
+  16 of them starting and building, so a normal run now ends within
+  about two minutes of the limit. The next pull request that adds unit
+  tests first cuts what the sweeps cost, or has the owner raise the
+  limit. The
   unit tests are main-actor isolated by
   default, so they share the main thread and the job takes about the sum
   of every test's time; run together, a suite's reported time includes

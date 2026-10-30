@@ -3644,8 +3644,9 @@ where iOS 26 and iOS 27 name a step differently, the words fit both.
 ## Sizes that follow how the screen is reached
 
 *2026-10-30. Default, adopted 2026-10-30 (Wave 3 item 8): the owner left
-these choices to the project, except the fallback below, which is the
-owner's (2026-10-30). Reversible if the owner objects.* Home's sizes and
+these choices to the project, except the fallback and Back to Talking's
+frame below, which are the owner's (2026-10-30). Reversible if the owner
+objects.* Home's sizes and
 spacing follow Family Setup's answer to how the screen is reached
 (*Setup answers are kept as offered, never as completed*), and no
 control changes place relative to the others when they change
@@ -3811,7 +3812,8 @@ Talking keeps touch's frame*). The work file is
 *Before:* Home had touch's sizes in every window and nothing read the
 answer; `HomeLayout.Profile` had only touch's floors, and a larger
 profile's own Back to Talking was never measured. From #69 until the
-owner's answer the sizes were built and held, touch's for everyone.
+owner chose the fallback the sizes were built and held, touch's for
+everyone.
 
 ## Items 8 and 9 come before the first App Review build
 

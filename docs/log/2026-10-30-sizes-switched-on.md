@@ -31,12 +31,12 @@ because only the owner could accept that reading of invariant 11.
 Later the same day the owner answered the second card, "Keep Settings'
 Back to Talking at today's size when Home's buttons grow?", with "Keep
 it at today's size". So Back to Talking keeps touch's frame under the
-larger sizes, smaller than their floors: an exception to invariant 1
-that the owner has now accepted, and that AGENTS.md's invariant 1 now
-names (docs/DECISIONS.md, "Sizes that follow how the screen is
-reached", *Back to Talking keeps touch's frame*). The switch went ahead
-of this answer, as one line to undo; Codex's review asked that this
-pull request not merge before it, and it did not.
+larger sizes, smaller than their floors: an exception to invariant 1's
+larger floors that the owner has now accepted (docs/DECISIONS.md,
+"Sizes that follow how the screen is reached", *Back to Talking keeps
+touch's frame*). The switch went ahead of this answer, as one line to
+undo; Codex's review of `ProfileChoice.swift` asked that this pull
+request not merge before it, and the answer came first.
 
 Two things the owner's card did not settle:
 
@@ -48,10 +48,10 @@ Two things the owner's card did not settle:
   accepted, and the owner was told when this pull request opened.
 - **Back to Talking's frame.** #69's record said switching on would
   also accept Settings' way back at touch's size under the larger
-  sizes. The card did not ask that, so a second card does. The switch
-  went ahead of that answer because it is one line to undo; the answer
-  holds a build with the larger sizes back from App Review and external
-  TestFlight groups, as the three dwell hazards do.
+  sizes. The card did not ask that, so a second card asked it. The
+  switch went ahead of that answer because it is one line to undo; the
+  owner then kept touch's frame (above), so it no longer holds a build
+  back. The three dwell hazards still do.
 
 **In the code and the rules:**
 
@@ -74,16 +74,16 @@ Two things the owner's card did not settle:
   narrower reading of an invariant, made by the owner's choice, and no
   wider than it.
 - docs/DECISIONS.md records the answer:
-  - *Waiting on the owner* swaps the answered question for the one
-    still open: whether Settings' Back to Talking keeps touch's frame
-    under the larger sizes. The owner's card did not ask that, so a
-    second card does, and touch's frame stays as recommended until the
-    answer comes. With each profile's own frame, a look resting on
+  - *Waiting on the owner* drops the answered question. For a few
+    hours it held the next one, whether Settings' Back to Talking keeps
+    touch's frame under the larger sizes, which the owner's card did
+    not ask, so a second card asked it, with touch's frame kept as
+    recommended until the answer came. With each profile's own frame, a look resting on
     Back to Talking as Settings closes meets Type, Get Attention or
     Again. With touch's frame it meets only Phrases.
-    The owner answered it later that day, keeping touch's frame, and
-    the row went, with the lines in docs/HANDOFF.md and
-    docs/ROADMAP.md that waited on it.
+    The owner kept touch's frame later that day, and that row went
+    too, with the lines in docs/HANDOFF.md and docs/ROADMAP.md that
+    waited on it.
   - *Layouts from the space available* now states the new rule, with
     a *Before* line, and *Fewer tiles to a screen, for R1* says where
     fewer tiles would still help.
@@ -206,8 +206,9 @@ This pull request's UI run, on a branch started from it, passed.
   skipped on the iPhone, the same skips as #69's run. Both
   `HomeSizesTests` passed on both. On the iPad in portrait, at Eye
   Tracking's sizes: Apple's audit over Home, light and dark, at the
-  default and the largest text size, with every word of Home's controls
-  drawn whole; Settings' first screen, Family Setup and the first step,
+  default and the largest text size, with the words of Yes, No,
+  Emergency, Get Attention, Again, Phrases, Type and the four everyday
+  categories drawn whole; Settings' first screen, Family Setup and the first step,
   sentence included, audited over that Home; and touch's sizes once
   Touch alone is chosen. The Settings UI tests, which now draw the
   first step with its sentence, passed. The unit tests passed on the
@@ -223,8 +224,10 @@ This pull request's UI run, on a branch started from it, passed.
   change does not alter.
 - `python3 -I scripts/test-docs.py`, `scripts/test-hooks.py` and
   `scripts/test-site.py` pass.
-- The timings above come from the GitHub Actions logs of runs
-  41040560867 (main), 41031065358 and 41042583501 (both attempts).
+- The timings above come from the GitHub Actions logs: #69's table
+  from runs 41040560867 (main), 41031065358 and 41042583501 (both
+  attempts); this pull request's from 41071401771 (main at 44e68a6)
+  and 41081103096 (both attempts).
 
 ## Not verified
 
@@ -262,7 +265,16 @@ This pull request's UI run, on a branch started from it, passed.
 - Lines from earlier pull requests still say "untested until CI runs
   it" though those pull requests merged on green CI: docs/HANDOFF.md on
   the first step's own rows (three places), docs/ROADMAP.md's
-  2026-10-30 entry for them, and docs/DECISIONS.md under *The first
-  step's own rows*, *Settings' first row, placed from Home's frames* and
-  #53's record. A docs pass checks each against its pull request's CI
-  run and corrects it.
+  2026-10-30 entry for them, and docs/DECISIONS.md under *One chain
+  engine for dwell safety* (two places), *Typing on Home*, *Settings'
+  first row, placed from Home's frames* and *The first step's own rows*.
+  A docs pass checks each against its pull request's CI run and
+  corrects it.
+- Which floors Settings holds under a larger profile is not recorded.
+  The profiles' floors are Home's (phrase tiles, quick controls,
+  categories); Settings' controls keep their 64-point minimum height in
+  every profile (`SettingsMetrics.rowHeight`), and the guide's Done sits
+  in Back to Talking's frame on its cover. The owner's answer named
+  only Back to Talking. Found by this pull request's independent check;
+  the next Settings thread records it in docs/DECISIONS.md, measured,
+  for the owner to accept or change.

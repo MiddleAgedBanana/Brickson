@@ -386,8 +386,7 @@ release in docs/ROADMAP.md when no thread has it yet.
   Talking keeps touch's frame under the larger sizes, smaller than their
   floors, an exception to invariant 1 the owner accepted on 2026-10-30
   (same section, *Back to Talking keeps touch's frame*).
-  *(the owner, before the larger sizes go to App Review or external
-  testers; device checks)* At
+  *(device checks, before the larger sizes go to App Review)* At
   touch's sizes, by the engine's model the phrase grid still scrolls (invariant 11) on
   phones smaller than the Pro Max at AX5, on the iPhone 17 at AX3 with
   Bold Text, on a 375×667 phone at every size (at the default size by
