@@ -45,9 +45,30 @@ nonisolated enum ChainEngine {
     static func nearest<Item>(
         to point: CGPoint, among items: [Item], by rule: NearestRule, frame: (Item) -> CGRect
     ) -> [Item] {
-        let distances = items.map { rule.distance(from: point, to: frame($0)) }
-        guard let closest = distances.min() else { return [] }
-        return items.indices.filter { distances[$0] - closest < tie }.map { items[$0] }
+        nearest(to: point, among: items.map(frame), by: rule).map { items[$0] }
+    }
+
+    /// The places in `frames` of the frames nearest `point` by `rule`, with
+    /// every one within `tie` of the nearest, in their original order.
+    /// Plain loops over frames: the sweeps ask this millions of times, in
+    /// test builds that are not optimised.
+    static func nearest(to point: CGPoint, among frames: [CGRect], by rule: NearestRule) -> [Int] {
+        guard !frames.isEmpty else { return [] }
+        var distances: [CGFloat] = []
+        distances.reserveCapacity(frames.count)
+        for frame in frames {
+            distances.append(rule.distance(from: point, to: frame))
+        }
+        // As `min()` finds it: the first, then any that is less.
+        var closest = distances[0]
+        for distance in distances where distance < closest {
+            closest = distance
+        }
+        var found: [Int] = []
+        for index in distances.indices where distances[index] - closest < tie {
+            found.append(index)
+        }
+        return found
     }
 
     /// What a held activation meets at `point` among `frames`, by nearest
@@ -66,14 +87,22 @@ nonisolated enum ChainEngine {
     /// `rows` down its height, half a point in from its edges, so each lies
     /// inside it.
     static func points(across frame: CGRect, columns: Int = 8, rows: Int = 4) -> [CGPoint] {
-        (0...columns).flatMap { column in
-            (0...rows).map { row in
-                CGPoint(
+        var points: [CGPoint] = []
+        for column in 0...columns {
+            for row in 0...rows {
+                points.append(CGPoint(
                     x: frame.minX + 0.5 + (frame.width - 1) * CGFloat(column) / CGFloat(max(columns, 1)),
                     y: frame.minY + 0.5 + (frame.height - 1) * CGFloat(row) / CGFloat(max(rows, 1))
-                )
+                ))
             }
         }
+        return points
+    }
+
+    /// The looks `ChainMap.everyStart()` takes across a frame: its centre,
+    /// its corners and the middles of its edges, half a point in.
+    static func looks(across frame: CGRect) -> [CGPoint] {
+        points(across: frame, columns: 2, rows: 2)
     }
 }
 
@@ -284,17 +313,26 @@ nonisolated struct ChainMap: Sendable {
     /// its centre and at the other points `lookPoints` gives across it, and
     /// from those points across every resting place. In state-name order,
     /// so results read the same on every run.
-    func everyStart(lookPoints: (CGRect) -> [CGPoint] = { ChainEngine.points(across: $0, columns: 2, rows: 2) }) -> [ChainStart] {
-        states.keys.sorted().flatMap { state in
-            let chosen = (states[state] ?? []).flatMap { control in
-                [ChainStart.choosing(control, in: state)]
-                    + lookPoints(control.frame).filter { $0 != control.centre }.map { ChainStart.choosing(control, in: state, lookingAt: $0) }
+    func everyStart(lookPoints: (CGRect) -> [CGPoint] = ChainEngine.looks(across:)) -> [ChainStart] {
+        states.keys.sorted().flatMap { starts(in: $0, lookPoints: lookPoints) }
+    }
+
+    /// `everyStart()`'s starts in `state` alone, in the same order, so a
+    /// sweep that scores a few states of a large map builds only theirs.
+    func starts(in state: String, lookPoints: (CGRect) -> [CGPoint] = ChainEngine.looks(across:)) -> [ChainStart] {
+        var found: [ChainStart] = []
+        for control in states[state] ?? [] {
+            found.append(.choosing(control, in: state))
+            for look in lookPoints(control.frame) where look != control.centre {
+                found.append(.choosing(control, in: state, lookingAt: look))
             }
-            let resting = (resting[state] ?? []).flatMap { region in
-                lookPoints(region.frame).map { ChainStart.resting(at: $0, on: region.name, in: state) }
-            }
-            return chosen + resting
         }
+        for region in resting[state] ?? [] {
+            for look in lookPoints(region.frame) {
+                found.append(.resting(at: look, on: region.name, in: state))
+            }
+        }
+        return found
     }
 
     /// Every chain from `starts`, under every rule and pointer given.
@@ -321,18 +359,29 @@ nonisolated struct ChainMap: Sendable {
         from starts: [ChainStart], rules: [NearestRule], pointers: [ChainPointer], depth: Int, hazardsOnly: Bool
     ) -> [Chain] {
         let compiled = CompiledMap(self)
-        var found: [Chain] = []
+        var walk = Walk(map: compiled, depth: depth, hazardsOnly: hazardsOnly)
+        var previous: (start: ChainStart, place: (state: Int, chosen: Int?)?)?
         for start in starts {
+            // `everyStart()` gives each control's starts one after another:
+            // where the state and the control are the ones before, so is
+            // the place.
+            let place: (state: Int, chosen: Int?)?
+            if let previous, previous.start.state == start.state, previous.start.chosen == start.chosen {
+                place = previous.place
+            } else {
+                place = compiled.place(of: start)
+            }
+            previous = (start, place)
             for pointer in pointers {
                 if pointer == .staysOnControl, let chosen = start.chosen, start.look != chosen.centre {
                     continue
                 }
                 for rule in rules {
-                    compiled.follow(start, rule: rule, pointer: pointer, depth: depth, hazardsOnly: hazardsOnly, into: &found)
+                    walk.follow(start, at: place, rule: rule, pointer: pointer)
                 }
             }
         }
-        return found
+        return walk.found
     }
 
     /// The chains from `start` under one rule and one pointer: more than
@@ -341,9 +390,10 @@ nonisolated struct ChainMap: Sendable {
     /// another, nobody chose it from there, and where it ties, which one
     /// the pointer takes is aiming, not a chain (`ChainEngine.tie`).
     func follow(_ start: ChainStart, rule: NearestRule, pointer: ChainPointer, depth: Int = ChainEngine.depth) -> [Chain] {
-        var found: [Chain] = []
-        CompiledMap(self).follow(start, rule: rule, pointer: pointer, depth: depth, hazardsOnly: false, into: &found)
-        return found
+        let compiled = CompiledMap(self)
+        var walk = Walk(map: compiled, depth: depth, hazardsOnly: false)
+        walk.follow(start, at: compiled.place(of: start), rule: rule, pointer: pointer)
+        return walk.found
     }
 }
 
@@ -351,118 +401,177 @@ nonisolated struct ChainMap: Sendable {
 /// state by number, and what the pointer meets at a spot worked out once
 /// per arrangement of frames. A screen's states often share their frames
 /// and differ only in what the controls do (on Home, every state but those
-/// with Stop), so a run asks the same question many times.
+/// with Stop), so a run asks the same question many times. Each state is
+/// made ready the first time a chain needs it: a sweep through Settings
+/// merges all of Home's states into its map and reaches few of them.
 private nonisolated final class CompiledMap {
     private struct Key: Hashable {
         let layout: Int
-        let rule: NearestRule
         let x: Double
         let y: Double
     }
 
     let names: [String]
     let controls: [[ChainControl]]
-    /// For each state and control, the state it leads to; nil when the map
-    /// does not hold it.
-    private let targets: [[Int?]]
     private let numbers: [String: Int]
-    /// For each state, its controls' places in its list by name.
-    private let byName: [[String: [Int]]]
-    private let layouts: [Int]
-    private var memo: [Key: [Int]] = [:]
+    /// For each state made ready, each control's next state by number; nil
+    /// when the map does not hold it.
+    private var targets: [[Int?]]
+    /// For each state made ready, its controls' places in its list by name.
+    private var byName: [[String: [Int]]]
+    /// For each state, its arrangement of frames by number, shared by the
+    /// states with the same frames; -1 until the state is made ready.
+    private var layouts: [Int]
+    private var arrangements: [[CGRect]] = []
+    /// What the pointer meets, one table for each rule.
+    private var byCentre: [Key: [Int]] = [:]
+    private var byEdge: [Key: [Int]] = [:]
 
     init(_ map: ChainMap) {
         let names = map.states.keys.sorted()
-        let numbers = Dictionary(uniqueKeysWithValues: names.enumerated().map { ($1, $0) })
-        let controls = names.map { map.states[$0] ?? [] }
         self.names = names
-        self.numbers = numbers
-        self.controls = controls
-        byName = controls.map { list in Dictionary(grouping: list.indices, by: { list[$0].name }) }
-        targets = controls.indices.map { state in
-            controls[state].map { control in
-                guard let name = control.leadsTo else { return state }
-                return numbers[name]
-            }
+        numbers = Dictionary(uniqueKeysWithValues: names.enumerated().map { ($1, $0) })
+        controls = names.map { map.states[$0] ?? [] }
+        targets = Array(repeating: [], count: names.count)
+        byName = Array(repeating: [:], count: names.count)
+        layouts = Array(repeating: -1, count: names.count)
+    }
+
+    /// Makes `state` ready, once.
+    private func ready(_ state: Int) {
+        guard layouts[state] < 0 else { return }
+        let list = controls[state]
+        targets[state] = list.map { control in
+            guard let name = control.leadsTo else { return state }
+            return numbers[name]
         }
-        var arrangements: [[CGRect]] = []
-        layouts = controls.map { list in
-            let frames = list.map(\.frame)
-            if let known = arrangements.firstIndex(of: frames) { return known }
+        byName[state] = Dictionary(grouping: list.indices, by: { list[$0].name })
+        let frames = list.map(\.frame)
+        if let known = arrangements.firstIndex(of: frames) {
+            layouts[state] = known
+        } else {
             arrangements.append(frames)
-            return arrangements.count - 1
+            layouts[state] = arrangements.count - 1
         }
     }
 
-    func follow(
-        _ start: ChainStart,
-        rule: NearestRule,
-        pointer: ChainPointer,
-        depth: Int,
-        hazardsOnly: Bool,
-        into found: inout [Chain]
-    ) {
-        guard let state = numbers[start.state] else {
-            if !hazardsOnly {
-                found.append(Chain(start: start, rule: rule, pointer: pointer, steps: [], end: .leaves(start.state)))
-            }
-            return
-        }
-        let met = met(at: start.look, in: state, by: rule)
-        var walk = Walk(map: self, start: start, rule: rule, pointer: pointer, depth: depth, hazardsOnly: hazardsOnly)
-        walk.visited = [(state, start.look)]
-        if let chosen = start.chosen {
-            guard let index = byName[state][chosen.name]?.first(where: { controls[state][$0] == chosen }), met == [index] else {
-                return
-            }
-            walk.activate(index, in: state, asked: true)
-        } else if met.isEmpty {
-            walk.record(.nothingNear)
-        } else {
-            for index in met {
-                walk.activate(index, in: state, asked: false)
-            }
-        }
-        found += walk.found
+    /// Where `start` is: its state by number, nil when the map does not
+    /// hold it; and for a chosen start, its control's place in that
+    /// state's list, nil when the state does not hold that control.
+    func place(of start: ChainStart) -> (state: Int, chosen: Int?)? {
+        guard let state = numbers[start.state] else { return nil }
+        guard let chosen = start.chosen else { return (state, nil) }
+        ready(state)
+        let index = byName[state][chosen.name]?.first { controls[state][$0] == chosen }
+        return (state, index)
     }
 
     func target(of control: Int, in state: Int) -> Int? {
-        targets[state][control]
+        ready(state)
+        return targets[state][control]
     }
 
     /// The controls of `state` nearest `spot` by `rule`, by their place in
     /// the state's list, ties included.
     func met(at spot: CGPoint, in state: Int, by rule: NearestRule) -> [Int] {
-        let key = Key(layout: layouts[state], rule: rule, x: Double(spot.x), y: Double(spot.y))
-        if let known = memo[key] { return known }
-        let list = controls[state]
-        let found = ChainEngine.nearest(to: spot, among: Array(list.indices), by: rule) { list[$0].frame }
-        memo[key] = found
+        ready(state)
+        let layout = layouts[state]
+        let key = Key(layout: layout, x: Double(spot.x), y: Double(spot.y))
+        switch rule {
+        case .centre:
+            if let known = byCentre[key] { return known }
+        case .edge:
+            if let known = byEdge[key] { return known }
+        }
+        let found = ChainEngine.nearest(to: spot, among: arrangements[layout], by: rule)
+        switch rule {
+        case .centre: byCentre[key] = found
+        case .edge: byEdge[key] = found
+        }
         return found
     }
 }
 
-/// Following one start under one rule and one pointer, depth first: the
-/// steps and the spots met so far grow as the chain goes on and shrink as
-/// it comes back to follow the next branch of a tie.
+/// Following starts one at a time, under one rule and one pointer each,
+/// depth first: the steps and the spots met so far grow as a chain goes on
+/// and shrink as it comes back to follow the next branch of a tie. One walk
+/// follows every start of a run and keeps the chains found in order.
 private nonisolated struct Walk {
+    /// One activation of the chain so far, made into a `ChainStep` only
+    /// for a chain that is kept.
+    struct Step {
+        let state: Int
+        let control: Int
+        let asked: Bool
+    }
+
+    /// A state and spot the chain has met a control at.
+    struct Visit {
+        let state: Int
+        let spot: CGPoint
+    }
+
     let map: CompiledMap
-    let start: ChainStart
-    let rule: NearestRule
-    let pointer: ChainPointer
     let depth: Int
     /// Whether to keep only the chains that end in a hazard.
     let hazardsOnly: Bool
-    /// The chain so far.
-    var steps: [ChainStep] = []
-    /// Each state and spot the chain has met a control at, the latest
-    /// last: coming back to one, nothing new can happen.
-    var visited: [(state: Int, spot: CGPoint)] = []
+    /// The start, rule and pointer being followed.
+    var start = ChainStart(state: "", look: .zero, chosen: nil, restingOn: nil)
+    var rule = NearestRule.centre
+    var pointer = ChainPointer.staysOnControl
+    /// The chain so far: its first `stepCount` steps. Kept in place and
+    /// overwritten rather than appended and removed, which costs more in
+    /// test builds that are not optimised.
+    var steps: [Step]
+    var stepCount = 0
+    /// Each state and spot the chain has met a control at, the first
+    /// `visitCount`, the latest last: coming back to one, nothing new can
+    /// happen.
+    var visited: [Visit]
+    var visitCount = 0
     var found: [Chain] = []
+
+    init(map: CompiledMap, depth: Int, hazardsOnly: Bool) {
+        self.map = map
+        self.depth = depth
+        self.hazardsOnly = hazardsOnly
+        // A chain has at most `depth` steps, and one more spot met than
+        // steps followed on from: the start's.
+        steps = Array(repeating: Step(state: 0, control: 0, asked: false), count: max(depth, 1))
+        visited = Array(repeating: Visit(state: 0, spot: .zero), count: max(depth, 1) + 1)
+    }
+
+    /// Follows `start`, at `place` in the map (`CompiledMap.place(of:)`),
+    /// under `rule` and `pointer`.
+    mutating func follow(_ start: ChainStart, at place: (state: Int, chosen: Int?)?, rule: NearestRule, pointer: ChainPointer) {
+        self.start = start
+        self.rule = rule
+        self.pointer = pointer
+        guard let place else {
+            if !hazardsOnly {
+                found.append(Chain(start: start, rule: rule, pointer: pointer, steps: [], end: .leaves(start.state)))
+            }
+            return
+        }
+        let met = map.met(at: start.look, in: place.state, by: rule)
+        visited[0] = Visit(state: place.state, spot: start.look)
+        visitCount = 1
+        if start.chosen != nil {
+            guard let index = place.chosen, met.count == 1, met[0] == index else { return }
+            activate(index, in: place.state, asked: true)
+        } else if met.isEmpty {
+            record(.nothingNear)
+        } else {
+            for index in met {
+                activate(index, in: place.state, asked: false)
+            }
+        }
+    }
 
     mutating func record(_ end: ChainEnd) {
         if !hazardsOnly || end == .hazard {
-            found.append(Chain(start: start, rule: rule, pointer: pointer, steps: steps, end: end))
+            let made = steps[..<stepCount].map { ChainStep(state: map.names[$0.state], control: map.controls[$0.state][$0.control], asked: $0.asked) }
+            found.append(Chain(start: start, rule: rule, pointer: pointer, steps: made, end: end))
         }
     }
 
@@ -470,17 +579,21 @@ private nonisolated struct Walk {
     /// meets next.
     mutating func activate(_ index: Int, in state: Int, asked: Bool) {
         let control = map.controls[state][index]
-        steps.append(ChainStep(state: map.names[state], control: control, asked: asked))
-        defer { steps.removeLast() }
+        steps[stepCount] = Step(state: state, control: index, asked: asked)
+        stepCount += 1
+        defer { stepCount -= 1 }
         if !asked && control.effect.isHazard { return record(.hazard) }
-        if steps.count >= depth { return record(.tooLong) }
+        if stepCount >= depth { return record(.tooLong) }
         guard let next = map.target(of: index, in: state) else { return record(.leaves(control.leadsTo ?? "")) }
         let spot = pointer == .staysOnControl ? control.centre : start.look
-        if visited.contains(where: { $0.state == next && $0.spot == spot }) { return record(.settles) }
+        for position in 0..<visitCount where visited[position].state == next && visited[position].spot == spot {
+            return record(.settles)
+        }
         let met = map.met(at: spot, in: next, by: rule)
         if met.isEmpty { return record(.nothingNear) }
-        visited.append((next, spot))
-        defer { visited.removeLast() }
+        visited[visitCount] = Visit(state: next, spot: spot)
+        visitCount += 1
+        defer { visitCount -= 1 }
         for other in met {
             if map.controls[next][other] == control {
                 record(.repeats)
