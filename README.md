@@ -1,5 +1,12 @@
 # Brickson
 
+> [!WARNING]
+> **In active development.** Brickson is a work in progress and is not yet
+> on the App Store. Its features, and its name, may change before release.
+> It is not ready for dependable daily communication: physical-device
+> accessibility and audio checks are still outstanding, and simulator tests
+> do not establish reliability for someone who depends on it to communicate.
+
 **Communication that stays familiar as needs change.**
 
 Brickson is an iPhone and iPad app in development for people living with
@@ -16,11 +23,6 @@ controls keep their relative positions.
 [Privacy policy](https://middleagedbanana.github.io/Brickson/privacy/) ·
 [Accessibility](https://middleagedbanana.github.io/Brickson/accessibility/) ·
 [Development status](docs/HANDOFF.md)
-
-> **Early development — not ready for dependable daily communication.**
-> The app is not yet released, and physical-device
-> accessibility and audio validation are still outstanding. Simulator tests
-> do not establish reliability for someone who depends on it to communicate.
 
 ## Why Brickson?
 
