@@ -466,10 +466,10 @@ release in docs/ROADMAP.md when no thread has it yet.
   plan places them, and it is up to 97% by centre and 89% by edge on
   compact widths, 68% and 62% on regular ones; no placement inside the
   slot plan removes it. **Owner question, before a build with the
-  larger sizes goes to App Review:** accept that as a
+  larger sizes goes to App Review or an external TestFlight group:** accept that as a
   named exception to invariant 10, or ask for another placement
   (docs/DECISIONS.md, "The layout engine", *Home on the engine*; "Typing
-  on Home" left it as it was). *(the owner, before the larger sizes go to App Review)*
+  on Home" left it as it was). *(the owner, before the larger sizes go to App Review or external testers)*
 - While typing, by nearest centre, a look resting in the top band of a
   dimmed phrase tile in the grid's top row (up to about 40% of its
   height on iPads, a fifth on phones), or between two of them, is nearer
@@ -481,7 +481,7 @@ release in docs/ROADMAP.md when no thread has it yet.
   dimmed, except over the empty cells of a grown library's category with
   fewer phrases than the grid has columns: when editing or import ships,
   score typing with the shown category's own tiles. Open, not accepted, pinned strict in `HomeLayoutEngineTests`
-  (docs/DECISIONS.md, "Typing on Home", *Open: by centre, dimmed phrases border Clear and Put Back*). *(owner, before the larger sizes go to App Review)*
+  (docs/DECISIONS.md, "Typing on Home", *Open: by centre, dimmed phrases border Clear and Put Back*). *(owner, before the larger sizes go to App Review or external testers)*
 - No typing on Home where the keyboard's room reaches the safety row:
   320pt windows at every size, a 375×667 phone from AX3, and the iPad
   mini and a zoomed 13-inch iPad in landscape from AX3. There Type is
@@ -838,8 +838,8 @@ For the owner (the remaining questions are listed in docs/DECISIONS.md,
    and what Home does where a window cannot hold the larger sizes an
    answer asks for, which also accepts Settings' way back at touch's
    size under them (until then the larger sizes are held, and Home
-   keeps touch's). Before a build with the larger sizes goes to App Review,
-   also the three dwell hazards still open: whether Yes and No may
+   keeps touch's). Before a build with the larger sizes goes to App Review
+   or an external TestFlight group, also the three dwell hazards still open: whether Yes and No may
    border the message, the top of Stop's well nearest Again, and dimmed
    phrases bordering Clear and Put Back (*Known gaps*). Each must be
    gone, or accepted by you, before then.
