@@ -279,8 +279,8 @@ Not yet accepted by the owner: the owner's merge accepts them.
   profile: the top of Stop's well nearest Again, and dimmed phrases
   bordering Clear and Put Back by centre. So this pull request adds all
   three to R0's *Release gate*: no build with the larger sizes goes to
-  an external TestFlight group or App Review until the owner has
-  answered them.
+  an external TestFlight group or App Review until each is gone or the
+  owner has accepted it.
 - **An iPad on touch shows larger sizes until someone answers**, once
   the sizes are switched on. That is the existing decision ("the
   largest sizes when nobody answers"); the first step's new sentence

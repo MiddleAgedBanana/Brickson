@@ -3727,8 +3727,10 @@ touch's sizes for everyone. The work file is
   well is nearest Again*) and, by centre, dimmed phrases bordering
   Clear and Put Back (*Typing on Home*, *Open: by centre, dimmed
   phrases border Clear and Put Back*). So no build with the larger
-  sizes goes to App Review or to an external TestFlight group until the
-  owner has answered all three (docs/ROADMAP.md, R0's *Release gate*).
+  sizes goes to App Review or to an external TestFlight group until each
+  of the three is gone or the owner has accepted it (docs/ROADMAP.md,
+  R0's *Release gate*); an answer that does not accept one leaves it
+  to be removed by placement first.
 - **The fallback, waiting on the owner.** Taking smaller sizes where a
   window cannot hold the larger ones keeps every place and every floor
   of the sizes taken, but it changes *Layouts from the space

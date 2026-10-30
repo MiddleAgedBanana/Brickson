@@ -826,7 +826,8 @@ For the owner (the remaining questions are listed in docs/DECISIONS.md,
    keeps touch's). Before a build with the larger sizes goes to App Review,
    also the three dwell hazards still open: whether Yes and No may
    border the message, the top of Stop's well nearest Again, and dimmed
-   phrases bordering Clear and Put Back (*Known gaps*).
+   phrases bordering Clear and Put Back (*Known gaps*). Each must be
+   gone, or accepted by you, before then.
    Everything App Store Connect will ask, in order, is in
    [docs/APP-STORE.md](APP-STORE.md), section 1.
 2. Run the app once yourself and hear a phrase ([local setup](GETTING_STARTED.md)).

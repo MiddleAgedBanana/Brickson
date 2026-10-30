@@ -74,10 +74,12 @@ items 8 and 9 come before the first App Review build (docs/DECISIONS.md,
 wants the app complete before it is submitted. docs/ROADMAP.md no longer
 holds them until that build, stage profiles are no longer left out of
 R0, and R0's *Release gate* now says no build with the larger sizes
-goes to App Review or an external TestFlight group until the owner has
-answered the three dwell hazards still open: whether Yes and No may
-border the message, the top of Stop's well nearest Again, and dimmed
-phrases bordering Clear and Put Back by centre.
+goes to App Review or an external TestFlight group until each of the
+three dwell hazards still open is gone or accepted by the owner: Yes
+and No bordering the message, the top of Stop's well nearest Again,
+and dimmed phrases bordering Clear and Put Back by centre (CodeRabbit's
+review of the second push: an answer alone, one that did not accept a
+hazard, would have passed the gate as first written).
 
 ## Commits
 
