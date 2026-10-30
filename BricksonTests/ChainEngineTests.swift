@@ -927,8 +927,8 @@ struct SettingsChainsTests {
     ///   points above each sentence. Across CI's phone and iPad at the
     ///   default size and AX5 the question and its first sentence are 82,
     ///   601, 62 and 211 points tall, where CI measured 84.67, 588.33, 63
-    ///   and 208.5 before the sentence on sizes came, modelled the same
-    ///   way and not yet measured.
+    ///   and 208.5. The sentence on sizes, shown only once Home's sizes
+    ///   follow the answer, is modelled the same way and not yet measured.
     /// - Back is 44 points square, 16 points in and 10 down from the bar's
     ///   top, and Family Setup's other rows are as tall as the root's row
     ///   across the content, 16 points apart. Only what shows above the
@@ -978,9 +978,12 @@ struct SettingsChainsTests {
                 + sizesHeight(width, body: body)
         }
 
-        /// The sentence on Home's sizes, 16 points under the first.
+        /// The sentence on Home's sizes, 16 points under the first, shown
+        /// only once Home's sizes follow the answer
+        /// (`ProfileChoice.followsTheAnswer`).
         static func sizesHeight(_ width: CGFloat, body: CGFloat) -> CGFloat {
-            16 + lines(sizes, room: width, size: body) * 1.2 * body
+            guard ProfileChoice.followsTheAnswer else { return 0 }
+            return 16 + lines(sizes, room: width, size: body) * 1.2 * body
         }
 
         init(_ window: SettingsRowPlaceTests.Window, text: HomeLayout.Text, row: CGRect) {

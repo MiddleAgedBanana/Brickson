@@ -97,6 +97,10 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
     static let homeProfiles: [String: HomeLayout.Profile] = [
         "touch": .touch, "switch-control": .switchControl, "head-tracking": .headTracking, "eye-tracking": .eyeTracking,
     ]
+    /// The `--home-profile` value that has Home follow Family Setup's
+    /// answer, as it will for everyone once the owner switches that on
+    /// (`ProfileChoice.followsTheAnswer`).
+    static let homeSizesFromTheAnswer = "from-answer"
 
     var storage = Storage.standard
     var usesShortTimeouts = false
@@ -112,6 +116,8 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
     var layoutFixture: LayoutFixture?
     /// Never applied to ordinary storage or in a release build.
     var homeProfile: HomeLayout.Profile?
+    /// Never applied to ordinary storage or in a release build.
+    var homeFollowsAnswer = false
     /// Arguments written like these options but not understood: a misspelt
     /// name, an unknown value. They are logged at launch, so a typo in a
     /// test shows up instead of quietly running with the defaults.
@@ -173,6 +179,8 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
                 options.layoutFixture = LayoutFixture(rawValue: value)
             case ("home-profile", let value?) where homeProfiles[value] != nil:
                 options.homeProfile = homeProfiles[value]
+            case ("home-profile", let value?) where value == homeSizesFromTheAnswer:
+                options.homeFollowsAnswer = true
             default:
                 options.unrecognized.append(argument)
             }
@@ -190,6 +198,13 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
     var activeHomeProfile: HomeLayout.Profile? {
         guard Self.readsLaunchArguments, storage != .standard else { return nil }
         return homeProfile
+    }
+
+    /// Whether a test asked Home to follow Family Setup's answer while the
+    /// owner's switch is off, only with test storage in a debug build.
+    var activeHomeFollowsAnswer: Bool {
+        guard Self.readsLaunchArguments, storage != .standard else { return false }
+        return homeFollowsAnswer
     }
 
     /// A synthetic reservation relative to this window's available space,

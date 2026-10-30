@@ -25,7 +25,27 @@ import Foundation
 /// Home and Settings read the profile asked for when Settings last
 /// closed, so an answer changed in Family Setup moves nothing under it:
 /// Settings' places are worked out from Home's frames (`SettingsCover`).
+///
+/// Held: until the owner says what Home does where a window cannot hold
+/// the sizes an answer asks for, Home keeps touch's sizes for everyone,
+/// whatever the answer (`followsTheAnswer`; docs/DECISIONS.md, "Sizes that
+/// follow how the screen is reached", *Held until the owner answers*).
 nonisolated enum ProfileChoice {
+    /// Whether Home follows Family Setup's answer. Off until the owner
+    /// answers the question this choice waits on (docs/DECISIONS.md,
+    /// *Waiting on the owner*): taking a smaller profile where a window
+    /// cannot hold the one asked for is an exception to invariant 11's
+    /// floors, and only the owner can accept one. Until then Home has the
+    /// sizes it has always had, and only a UI test that asks follows the
+    /// answer (`LaunchOptions`).
+    static let followsTheAnswer = false
+
+    /// The profile Home asks for: the one `methods` asks for when Home
+    /// `followsAnswer`, otherwise touch's, whatever the answer.
+    static func requestedForHome(by methods: Set<AccessMethod>?, followsAnswer: Bool) -> HomeLayout.Profile {
+        followsAnswer ? requested(by: methods) : .touch
+    }
+
     /// The profile `methods`, Family Setup's answer, asks for: the largest
     /// any of them needs, and Eye Tracking's when there is no answer.
     static func requested(by methods: Set<AccessMethod>?) -> HomeLayout.Profile {

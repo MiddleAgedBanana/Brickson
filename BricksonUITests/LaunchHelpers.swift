@@ -31,14 +31,17 @@ enum UITestAppearance: String {
 }
 
 /// Home's sizes (`ProfileChoice` in the app). Tests written for touch's
-/// sizes ask for them; `fromTheAnswer` leaves Family Setup's answer to
-/// decide, as it does for everyone, the largest until anyone answers.
+/// sizes ask for them; `fromTheAnswer` has Family Setup's answer decide,
+/// the largest until anyone answers, as it will for everyone once the
+/// owner switches that on; `asShipped` asks for nothing, as a person's
+/// launch does.
 enum UITestSizes: String {
     case touch
     case switchControl = "switch-control"
     case headTracking = "head-tracking"
     case eyeTracking = "eye-tracking"
-    case fromTheAnswer
+    case fromTheAnswer = "from-answer"
+    case asShipped
 }
 
 /// Where the launched app keeps what it saves (`LaunchOptions` in the app).
@@ -90,7 +93,7 @@ extension XCTestCase {
         app.launchArguments = [
             storage == .fresh ? "--fresh-test-storage" : "--test-storage",
         ] + (shortTimeouts ? ["--short-timeouts"] : [])
-            + (sizes == .fromTheAnswer ? [] : ["--home-profile=\(sizes.rawValue)"]) + [
+            + (sizes == .asShipped ? [] : ["--home-profile=\(sizes.rawValue)"]) + [
             "--appearance=\(appearance.rawValue)",
             "-UIPreferredContentSizeCategoryName", textSize.rawValue,
             // Tests find controls by their English labels.

@@ -97,12 +97,24 @@ struct LaunchOptionsTests {
 
     // Letting a test's sizes reach the person's own storage, or a typo
     // through, fails this: only test storage in a debug build takes them.
+    // So does a person's launch following the answer while the owner's
+    // switch is off (`ProfileChoice.followsTheAnswer`).
     @Test func homeSizesFromATestRequireDebugAndTestStorage() {
         #expect(LaunchOptions.standard.homeProfile == nil)
         #expect(LaunchOptions.standard.activeHomeProfile == nil)
+        #expect(LaunchOptions.standard.activeHomeFollowsAnswer == false)
         let ordinary = LaunchOptions.parse(["--home-profile=touch"])
         #expect(ordinary.homeProfile == .touch)
         #expect(ordinary.activeHomeProfile == nil)
+        let ordinaryAnswer = LaunchOptions.parse(["--home-profile=from-answer"])
+        #expect(ordinaryAnswer.homeFollowsAnswer)
+        #expect(ordinaryAnswer.activeHomeFollowsAnswer == false)
+        for storage in ["--test-storage", "--fresh-test-storage"] {
+            let options = LaunchOptions.parse([storage, "--home-profile=from-answer"])
+            #expect(options.activeHomeFollowsAnswer == LaunchOptions.readsLaunchArguments)
+            #expect(options.activeHomeProfile == nil)
+            #expect(options.unrecognized.isEmpty)
+        }
         let values: [String: HomeLayout.Profile] = [
             "touch": .touch, "switch-control": .switchControl, "head-tracking": .headTracking, "eye-tracking": .eyeTracking,
         ]
@@ -113,9 +125,10 @@ struct LaunchOptionsTests {
                 #expect(options.unrecognized.isEmpty)
             }
         }
-        let typos = ["--home-profile", "--home-profile=", "--home-profile=Touch", "--home-profile=gaze"]
+        let typos = ["--home-profile", "--home-profile=", "--home-profile=Touch", "--home-profile=gaze", "--home-profile=answer"]
         let options = LaunchOptions.parse(["--test-storage"] + typos)
         #expect(options.homeProfile == nil)
+        #expect(options.homeFollowsAnswer == false)
         #expect(options.unrecognized == typos)
     }
 

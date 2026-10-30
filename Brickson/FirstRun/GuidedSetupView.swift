@@ -168,14 +168,19 @@ private struct SetupAccessQuestion: View {
     @Environment(SettingsLanding.self) private var landing: SettingsLanding?
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverIsOn
     @Environment(\.accessibilitySwitchControlEnabled) private var switchControlIsOn
+    @Environment(\.homeSizesFollowTheAnswer) private var sizesFollowTheAnswer
 
     var body: some View {
         SettingsLeadInLayout(placement: placement, controlFirst: false, spacing: SettingsMetrics.rowSpacing) {
             VStack(alignment: .leading, spacing: SettingsMetrics.rowSpacing) {
                 SettingsHeading("How is the screen reached?")
                 SettingsParagraph("Choose every way that is used now. Each answer is saved as soon as it is chosen.")
-                // Home's sizes follow the answers (`ProfileChoice`).
-                SettingsParagraph("Home's buttons take the size the answers need, as large as this screen has room for, and are largest until something is chosen. The new size shows when Settings closes.")
+                // Home's sizes follow the answers once the owner switches
+                // that on (`ProfileChoice.followsTheAnswer`); until then
+                // nothing says they do.
+                if sizesFollowTheAnswer {
+                    SettingsParagraph("Home's buttons take the size the answers need, as large as this screen has room for, and are largest until something is chosen. The new size shows when Settings closes.")
+                }
                 // What iOS reports only suggests an answer, and the words
                 // depend on it alone, never on the answers, so nothing moves
                 // under a choice just made.
