@@ -95,8 +95,10 @@ Also in this pull request, PR #56's leftovers:
   check-in test was run from a copy, since its file also tests a
   SwiftUI type. The scratch package's full run also fails 30 cases of
   `HomeReservedRegionTests.everyMeasuredTextSizeAndBoldTextKeepsTargetsClear`,
-  whose files this change does not touch: a Linux-only difference, not
-  investigated (CI is the check).
+  whose files this change does not touch. They pass on `main`'s CI, so
+  the difference lies between the scratch package on Linux and the iOS
+  build; its cause is unknown, since it was not investigated (CI is the
+  check).
 - What each new test fails on:
   - `SetupAnswersPlaceTests`: an answer top where a point of the
     arrivals is as near the first answer as the link, or one more than a

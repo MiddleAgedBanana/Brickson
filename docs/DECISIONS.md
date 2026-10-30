@@ -3319,7 +3319,8 @@ change.
     widths from 320 to 1408 every 32 points, six heights from 568 to
     1376, the default size, AX3 and AX5), with Family Setup's words
     modelled from CI's measurements, no chain closes Settings under the
-    look and nothing new is met. The first step is not drawn there.
+    look and nothing new is met. Until 2026-10-30 the first step was not
+    drawn there.
     With the opening words over Set Up Step by Step, as before, 213 of
     those windows close Settings onto Home's Get Attention or No; with
     Set Up Step by Step across the width at the row's top, the first
