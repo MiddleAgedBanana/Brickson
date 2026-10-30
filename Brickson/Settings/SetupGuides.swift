@@ -16,6 +16,52 @@ struct ReachingTheScreenView: View {
     }
 }
 
+/// The same guide, opened from the first step of Set Up Step by Step's
+/// Learn About Each Way, as a cover of its own over Settings
+/// (docs/DECISIONS.md, "The first step's own rows").
+///
+/// A look still resting where Learn About Each Way was meets only words
+/// here, and a look held on through them meets whatever control is
+/// nearest. On a Settings screen that would be Back to Talking, which
+/// closes Settings onto Home under the look: on a phone, over No or Get
+/// Attention. So the guide has one control, Done, in Back to Talking's
+/// frame, from Home's engine for the same window and text size as
+/// Settings' bar (`SettingsSafetyBar`). Done returns to the step, where a
+/// pointer still on it meets Back to Talking, which closes Settings onto
+/// Home's Phrases, and a look gone back to where it was meets Learn About
+/// Each Way again. The place for Get Attention is kept empty, as in
+/// Settings' bar, and the sound line sits at the foot. Settings' idle
+/// reset closes it with the step.
+struct EachWayCover: View {
+    let close: () -> Void
+
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.legibilityWeight) private var legibilityWeight
+
+    var body: some View {
+        let text = HomeLayout.Text.measured(at: dynamicTypeSize, boldText: legibilityWeight == .bold)
+        GeometryReader { proxy in
+            let space = HomeLayout.Space(proxy)
+            let home = HomeLayout(space: space, text: text, modes: .phrasesAndTyping)
+            VStack(spacing: 0) {
+                SettingsSafetyBar(backToTalking: home.backToTalking, safeArea: space.safeArea, way: .done, close: close)
+                ScrollView {
+                    VStack(alignment: .leading, spacing: SettingsMetrics.rowSpacing) {
+                        SettingsHeading("Reaching the Screen")
+                        ReachingTheScreenContent(methods: Set(AccessMethod.allCases))
+                    }
+                    .padding(SettingsMetrics.gutter)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .recordsSettingsScrolling()
+                SettingsAudioStatus()
+            }
+        }
+        .ignoresSafeArea(.keyboard)
+        .background(Palette.screen)
+    }
+}
+
 /// The guide's sections for `methods`, shared with step 3 of Set Up Step by
 /// Step, which shows only the methods chosen in step 1.
 struct ReachingTheScreenContent: View {

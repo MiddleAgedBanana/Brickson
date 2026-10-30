@@ -115,7 +115,7 @@ struct SettingsView: View {
     private func destination(for route: SettingsRoute) -> some View {
         switch route {
         case .familySetup:
-            FamilySetupView()
+            FamilySetupView(path: $path)
         case .guidedSetup(let step):
             GuidedSetupView(step: step, path: $path)
         case .voice:
@@ -157,25 +157,43 @@ struct SettingsView: View {
 /// which the owner decides on (docs/DECISIONS.md, "Get Attention in
 /// Settings' bar: the owner decides"). The bar ends a gap below Back to
 /// Talking, so every screen starts at the same height.
+///
+/// The guide that the first step of Set Up Step by Step opens as a cover
+/// of its own has the same bar with Done in Back to Talking's place
+/// (`EachWayCover`; docs/DECISIONS.md, "The first step's own rows").
 struct SettingsSafetyBar: View {
     /// The room between Back to Talking and the screen below it.
     static let gapBelow: CGFloat = 8
+
+    /// What the bar's one control does.
+    enum Way {
+        /// Closes Settings onto Home.
+        case backToTalking
+        /// Closes the guide over Settings.
+        case done
+    }
 
     /// Back to Talking's frame, in the window's coordinates.
     let backToTalking: CGRect
     /// What the system keeps at the window's edges: the bar starts inside
     /// them, as the engine's frames do.
     let safeArea: HomeLayout.Insets
+    var way: Way = .backToTalking
     let close: () -> Void
 
     var body: some View {
         Button(action: close) {
-            FittedLabel(
-                String(localized: "Back to Talking"), systemImage: "bubble.left.and.text.bubble.right.fill", font: .category
-            )
+            switch way {
+            case .backToTalking:
+                FittedLabel(
+                    String(localized: "Back to Talking"), systemImage: "bubble.left.and.text.bubble.right.fill", font: .category
+                )
+            case .done:
+                FittedLabel(String(localized: "Done"), systemImage: "checkmark", font: .category)
+            }
         }
         .buttonStyle(HomeButtonStyle(fill: Palette.phraseFill))
-        .accessibilityIdentifier("backToTalking")
+        .accessibilityIdentifier(way == .backToTalking ? "backToTalking" : "eachWayDone")
         .frame(width: backToTalking.width, height: backToTalking.height)
         // Leading, so the bar mirrors with the language, as Home does.
         .padding(.leading, backToTalking.minX - safeArea.leading)
@@ -186,12 +204,13 @@ struct SettingsSafetyBar: View {
 }
 
 /// Sound problems while Settings covers Home, as passive text in a line kept
-/// for it at the foot of the cover, so nothing moves when one appears
+/// for it at the foot of the cover (and of the guide that covers Settings,
+/// `EachWayCover`), so nothing moves when one appears
 /// (AGENTS.md, invariant 4). The words are `AudioSafetyPolicy`'s for a
 /// screen over Home: they name Back, then Again or Get Attention. Home's own
 /// warnings still announce each problem to VoiceOver under the cover, in
 /// the same words, so this line does not announce them again.
-private struct SettingsAudioStatus: View {
+struct SettingsAudioStatus: View {
     @Environment(SpeechService.self) private var speech
     @Environment(AudioSafetyMonitor.self) private var audioSafety
     @Environment(AttentionAlertPlayer.self) private var attention
@@ -234,16 +253,19 @@ private struct SettingsAudioStatus: View {
     }
 }
 
-/// The root's Family Setup row as drawn, its button style's insets
-/// included, in its screen's content (`SettingsMetrics.contentSpace`).
-/// Family Setup's Set Up Step by Step takes this place, at least as tall,
-/// so a look still resting where the row was meets a row that only opens
-/// the next screen (AGENTS.md, invariant 10; docs/DECISIONS.md, "Settings'
-/// first row, placed from Home's frames"). It is measured, because the
-/// style's insets are the system's, not ours.
+/// The root's Family Setup row and Family Setup's Set Up Step by Step as
+/// drawn, their button style's insets included, each in its screen's
+/// content (`SettingsMetrics.contentSpace`). Set Up Step by Step takes the
+/// root row's place, at least as tall, and the first step's Learn About
+/// Each Way takes Set Up Step by Step's, so a look still resting where a
+/// row was meets a control that only opens the next screen (AGENTS.md,
+/// invariant 10; docs/DECISIONS.md, "Settings' first row, placed from
+/// Home's frames", "The first step's own rows"). They are measured,
+/// because the style's insets are the system's, not ours.
 @Observable
 final class SettingsLanding {
     var rootRow: CGRect?
+    var guidedRow: CGRect?
 }
 
 /// Settings' first screen: one large way into Family Setup, and a short
