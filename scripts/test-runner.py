@@ -357,6 +357,15 @@ IPAD_AND_IPHONE = {
                       device("iPhone 17", "PHONE")],
 }
 
+# The owner's Mac with Xcode 27.2 (2026-10-30): two iOS 27.2 runtimes, one
+# for iPhone Duo alone, whose key names the device after the version.
+XCODE_27_2_RUNTIMES = {
+    runtime("27.0"): [device("iPad Pro 13-inch (M5)", "OLDER-PAD")],
+    runtime("27.2"): [device("iPad Pro 13-inch (M5)", "PAD"),
+                      device("iPhone 17", "PHONE")],
+    runtime("27.2") + "-iPhone19-4": [device("iPhone Duo", "DUO")],
+}
+
 
 class FamilyTests(unittest.TestCase):
     """Which simulators each mode runs on. UI tests run on an iPad and an
@@ -414,6 +423,16 @@ class FamilyTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("Testing Brickson on: id=SEVENTEEN", result.stdout)
 
+    # With Xcode 27.2's two iOS 27.2 runtimes, the default UI run stays on
+    # the newest iPad Pro and the standard iPhone. Taking iPhone Duo, the
+    # one device on its own runtime, as the iPhone fails this test.
+    def test_the_duo_runtime_does_not_change_the_default_simulators(self):
+        result = run_script("exit 0", destination=None, sdk="27.2",
+                            devices=XCODE_27_2_RUNTIMES)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual([destination for _, destination in actions(result)],
+                         ["id=PAD", "id=PAD", "id=PHONE", "id=PHONE"])
+
     # Treating an unknown family as the default fails this test.
     def test_an_unknown_family_is_refused(self):
         result = run_script("exit 0", mode="unit", destination=None, family="android",
@@ -451,6 +470,17 @@ class DestinationTests(unittest.TestCase):
                                      runtime("27.2"): [device("iPhone 17", "TOO-NEW")]})
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(actions(result)[-1], ("test-without-building", "id=USABLE"))
+
+    # From Xcode 27.2, iPhone Duo has a runtime of its own whose key names
+    # the device after the version (seen on the owner's Mac, 2026-10-30).
+    # Reading only plain version keys refuses the documented way to run
+    # the UI tests on a Duo simulator, and fails this test.
+    def test_a_duo_simulator_on_its_own_runtime_is_tested_by_its_id(self):
+        result = run_script("exit 0", destination="platform=iOS Simulator,id=DUO",
+                            sdk="27.2", devices=XCODE_27_2_RUNTIMES)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(actions(result)[-1], ("test-without-building", "id=DUO"))
+        self.assertIn("iOS 27.2", result.stderr)
 
     # Testing on a named simulator older than the deployment target, which
     # the app cannot install on, fails this test.
