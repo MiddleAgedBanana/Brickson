@@ -155,13 +155,17 @@ not have, so Q16 asks for the variant or a recorded reason.
 
 - f774a1f: the quality bar, its decision, and the lines of the other
   documents that point to it.
-- The commit after f774a1f on the branch: CodeRabbit's review answered
-  (Q27 named in the before-pilot list, no standing urgent-fix exception,
-  the owner's hazard step matching Q2, docs/APP-STORE.md's device line,
-  and this record's header and *Not verified*), and Codex's review of
-  it answered: Q3 no longer lets the owner accept a window where the
-  starter library scrolls, which would have been a new exception to
-  invariant 11; that scrolling is removed before App Review.
+- 9c647ae: CodeRabbit's review answered (Q27 named in the before-pilot
+  list, no standing urgent-fix exception, the owner's hazard step
+  matching Q2, docs/APP-STORE.md's device line, and this record's
+  header and *Not verified*).
+- 321810e: Codex's review answered. Q3 no longer lets the owner accept
+  a window where the starter library scrolls, which would have been a
+  new exception to invariant 11; that scrolling is removed before App
+  Review.
+- The commit after 321810e: CodeRabbit's second review answered (the
+  Q5 device-check row names TestFlight's crash feedback), and this
+  list corrected to one line per commit.
 
 ## Verified
 
