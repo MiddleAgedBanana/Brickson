@@ -150,9 +150,9 @@ still needs, so it finishes R0's Home before it serves R1's profiles,
 and the chain engine scores the chains R0 items 4, 7 and 13 must score.
 Typing (R0 item 5) and iPhone Duo (R0 item 13) then take their turns on
 Home. R1's own changes to what a person sees, the profiles of items 8
-and 9, wait until R0's first build has gone to App Review, because R0
-leaves stage profiles out on purpose; until then no profile reaches a
-screen.
+and 9, come before R0's first App Review build: the owner wants the app
+complete before it is submitted (owner, 2026-10-30; DECISIONS.md,
+"Items 8 and 9 come before the first App Review build").
 Siri and Shortcuts stay in R2: their work file (item 10) waits for the
 owner, because writing it now would start an R2 item ahead of its
 release.
@@ -162,11 +162,12 @@ release.
 - **One Home pull request at a time.** Items 4, 5, 6, 8 and 9 change
   Home's code, so they go in that order, each after the one before has
   merged. The others run beside them.
-- **R1's profiles after R0's first App Review build.** Items 8 and 9,
-  their work file included, start once R0's first build has passed its
-  *Release gate* and gone to App Review, so that build carries no stage
-  profile (*Left out of R0 on purpose*). Starting them sooner would move
-  an R1 item ahead of its release, which is the owner's call.
+- **R1's profiles before R0's first App Review build.** *Owner,
+  2026-10-30:* items 8 and 9 are built now, and the first build sent to
+  App Review carries them (DECISIONS.md, "Items 8 and 9 come before the
+  first App Review build"). *Before:* they started only once R0's first
+  build had passed its *Release gate* and gone to App Review, so that
+  build carried no stage profile.
 - **Cloud first.** Every item can be written in a cloud session, with
   GitHub CI as its build. Item 6 also needs the owner's Mac, because
   folding the iPhone Duo simulator needs Xcode's Device Hub, and CI's
@@ -175,7 +176,8 @@ release.
 - **Design before code.** An item that changes what a person sees starts
   with a work file and the Figma frames docs/SDLC.md asks for in its
   *Design* stage. Item 3's work file covers items 4 and 6; items 8
-  and 9 get their own once R0's first build has gone to App Review.
+  and 9 get their own (item 8's is
+  [`work/sizes-that-follow-reach.md`](work/sizes-that-follow-reach.md)).
 - **Start now:** items 1, 2 and 3, side by side; none touches Home.
   Then item 7 once 2 has merged, and item 4 once 2 and 3 have. Item 10
   waits for the owner's yes.
@@ -201,8 +203,8 @@ release.
 | 5 | Typing on Home | R0 item 5 | Yes | Cloud |
 | 6 | Home on iPhone Duo, in every pose | R0 item 13 | Yes | The owner's Mac |
 | 7 | Settings' chains, and Get Attention in Settings | R0 items 4 and 7 | No | Cloud |
-| 8 | Sizes that follow how the person reaches the screen | R1, the profile layout engine and who chooses the profile | Yes | Cloud, after R0's first App Review build |
-| 9 | The late-stage profile: Yes and No, and the rest board | R1, the profile layout engine | Yes | Cloud, after R0's first App Review build |
+| 8 | Sizes that follow how the person reaches the screen | R1, the profile layout engine and who chooses the profile | Yes | Cloud |
+| 9 | The late-stage profile: Yes and No, and the rest board | R1, the profile layout engine | Yes | Cloud |
 | 10 | Siri and Shortcuts, the work file | R2, Siri and Shortcuts | No (documents) | The owner's yes; otherwise R2 |
 
 **1. Apple's doors in Family Setup.** *Built 2026-10-23
@@ -505,7 +507,15 @@ comes before item 8, because item 8 lets setup answers change sizes.
 *Rows:* section 10's Get Attention ("In Settings: later"). *Needs:*
 cloud and CI. *Apple:* no new API.
 
-**8. Sizes that follow how the person reaches the screen.** Family
+**8. Sizes that follow how the person reaches the screen.** *2026-10-30,
+built (untested until CI runs it):* four profiles' floors, the largest
+sizes any answer needs and Eye Tracking's with none, taken where the
+window holds them and smaller ones where it does not, every control in
+its place, and the flags suggesting an answer in the first step
+(DECISIONS.md, "Sizes that follow how the screen is reached"; work file
+[`work/sizes-that-follow-reach.md`](work/sizes-that-follow-reach.md)).
+What to do where a window cannot hold the sizes asked for waits on the
+owner. Family
 Setup already asks how the screen is reached (`SetupRecord`: touch,
 Voice Control, Switch Control, Eye Tracking, Head Tracking, someone else
 helps), and Home's sizes and spacing come to follow that answer, with
@@ -517,7 +527,7 @@ Control may suggest an answer in Family Setup, never change one
 (docs/DECISIONS.md, "Accessibility API coverage").
 *Rows:* section 7's assistive-technology flags; section 1's point
 scanning; section 2's Eye Tracking and Head Tracking profiles.
-*Needs:* R0's first build gone to App Review; cloud and CI; device
+*Needs:* cloud and CI; device
 checks afterwards (which flags each input method turns on; comfortable
 dwell and target sizes). *Owner:* the gaze floors are the reference
 app's (docs/DECISIONS.md, "Layouts from the space available"); floors
@@ -539,8 +549,8 @@ Get Attention and Emergency keep their places relative to each other
 and grow, and the phrase area shows fewer, larger tiles from a category
 the family chooses (docs/DECISIONS.md, "Accessibility API coverage").
 Emergency stays visible (invariant 2).
-*Rows:* the map's "Yes/No mode" and "Rest board". *Needs:* R0's
-first build gone to App Review; cloud and CI. *Owner:* the late stage's
+*Rows:* the map's "Yes/No mode" and "Rest board". *Needs:* cloud
+and CI, once item 8 has merged (one Home pull request at a time). *Owner:* the late stage's
 floors are new, so this item's work file proposes them, measured, as
 defaults the owner can overrule. *Apple:* the pages item 3 rests on.
 
@@ -573,8 +583,8 @@ in the HIG (the app's name in every phrase; at most 10), and
 [Hardware interactions](https://developer.apple.com/documentation/appintents/hardware-interactions)
 for the Action button.
 
-**After Wave 3.** These are R1's too, so they also wait until R0's first
-build has gone to App Review. The phone on its side (the phone as a
+**After Wave 3.** These are R1's too, and, unlike items 8 and 9, they
+still wait until R0's first build has gone to App Review. The phone on its side (the phone as a
 first-class device), once the engine's tests show a sideways phone with
 no scrolling (docs/DECISIONS.md, "Orientations"); a printable board that
 mirrors the screen, once item 4 gives it Home's frames; recorded
@@ -607,7 +617,11 @@ touches has a recorded result.
 
 **Release gate.** No build goes to App Review until: the R0 items below
 are complete, including item 11's TestFlight pilot; the device checks they
-touch are logged in `docs/log/`; UI tests are green on an iPhone and an
+touch are logged in `docs/log/`; Wave 3 items 8 and 9 are complete,
+and the owner has answered whether Yes and No may border the message,
+since no build with their larger sizes goes to App Review or to an
+external TestFlight group while that hazard is open (DECISIONS.md,
+"Sizes that follow how the screen is reached"); UI tests are green on an iPhone and an
 iPad at the default and largest text sizes, light and dark; item 13's
 iPhone Duo checks are logged and its screenshots made; and the
 privacy policy, README and website say only what the build does. A
@@ -632,9 +646,13 @@ TestFlight group before the gate passes, and it goes out once items 1 to
 | 12 | Plan and maintain | This roadmap, the decisions list, the handoff, the way of working ([`docs/SDLC.md`](SDLC.md)) | Roadmap, decisions and repo review | Landed with PR #15; each pull request keeps its own rows current |
 | 13 | Ready for iPhone Duo | Home, Settings and setup checked on iPhone Duo's outer and inner displays, open, partially folded and rotated, and in Split View, in the iPhone Duo simulator on the current Xcode; whatever that finds fixed, with the owner's two fold answers built and dwell scoring that covers folding; a Duo family in the UI tests once CI's image has the simulator; the Duo screenshots item 10 submits | A Mac thread for the simulator run, then the layout engine thread, which builds the owner's fold choices (docs/DECISIONS.md, "iPhone Duo", *The fold*) | In progress 2026-10-25: [item 6's Spec, drawings, engine and native geometry evidence](work/layout-engine.md#item-6-fold-and-camera-design-2026-10-25) follow the merged alarm-path prerequisite, PR #56. Before the capacity retry, PR #58 `35bed06` passed hosted checks: 777 unit cases and 51 UI cases per standard family. The AX3 growth correction passes 778 native unit cases and two focused light/dark probes, recovering 4pt so eight whole Basics tiles fit in the measured lower-camera wide window; its full standard UI run completed 51 cases per family with one failed AX5 Speaking-wait case each and no other unexpected assertion. Earlier local Speaking-wait failures and their unresolved cause remain recorded. Retained typing from tall to wide leaves the keyboard visible on baseline and candidate; a baseline-only trace reports focus false. Cause is unresolved. Actual changed-window pointer mapping, other pane arrangements and broader Settings/setup remain open; The owner's 2026-10-26 continuation scopes PR #58 review to fold/camera allocation, the measured AX3 correction and its verified drag-to-speech repair after current-head CI; the same standard ScrollView keeps native pan cancellation on fitting content without changing static geometry, engine floors or capacity (docs/DECISIONS.md, "Phrase-grid drag cancellation"). Broader Duo release gates and physical testing remain open. Open default shows eight whole tiles; open AX5 four with 14–82pt trailing content. Closed default shows six and AX5 none. Full off-viewport AX tile camera overlaps and AX5 Settings row/fold intersections are recorded; no universal fold or physical input safety is claimed. Earlier `8316743` failures and the 130° baseline remain in [the Mac check log](log/2026-10-25-mac-keyboard-checks.md). Screenshots are required from April 2027. |
 
-**Left out of R0 on purpose:** stage profiles, prediction, recorded
-phrases, Siri and Shortcuts, caregiver alerts and the listener display.
-Each is better built on R0's foundations than before them.
+**Left out of R0 on purpose:** prediction, recorded phrases, Siri and
+Shortcuts, caregiver alerts and the listener display. Each is better
+built on R0's foundations than before them. *2026-10-30:* stage
+profiles came in, as Wave 3 items 8 and 9, because the owner wants
+them in the first build sent to App Review (DECISIONS.md, "Items 8 and
+9 come before the first App Review build"). *Before:* stage profiles
+led this list.
 
 ## R1 "Follows you"
 

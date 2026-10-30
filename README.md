@@ -53,6 +53,10 @@ The initial implementation includes:
   Type is dimmed instead.
 - Settings for the family, opened from Home's Settings button: voices,
   setup guides and the privacy policy.
+- Home's sizes follow Family Setup's answer to how the screen is
+  reached: larger buttons and phrases for switches, head tracking and
+  Eye Tracking, and the largest until anyone answers, wherever the
+  window has room; every button keeps its place at every size.
 - Speech through Apple's built-in speech system, with Personal Voice
   selection when permission and availability allow it.
 - Local phrase storage with SwiftData, without CloudKit sync.
@@ -61,8 +65,9 @@ The initial implementation includes:
 - Unit tests for core logic and simulator UI tests for the initial Home flow.
 
 Phrase editing and backup export are not implemented yet. Home's layout comes from one tested layout
-engine, at touch sizes; sizes for switches, head and eye tracking, and validation across access methods, remain
-planned work. See the [handoff](docs/HANDOFF.md) for verification evidence,
+engine; the sizes for switches, head and eye tracking are proposals that
+still need checking with people on real devices, and validation across
+access methods remains planned work. See the [handoff](docs/HANDOFF.md) for verification evidence,
 known limitations and next steps.
 
 ## Design principles
