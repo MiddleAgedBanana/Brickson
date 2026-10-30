@@ -3876,20 +3876,22 @@ assembled" is the phrase the owner took up for what is missing.
 - **Before the pilot.** Every gate passes before the external pilot
   except those that need the pilot or the final build (Q5's whole
   TestFlight period, Q9's last seven days, the testers' sessions in Q11
-  and Q13, Q28 and Q29), so the people who test it, a person living with
-  ALS among them, are given a build that already passed everything they
-  are not needed for.
+  and Q13, Q27, the pilot itself, Q28 and Q29), so the people who test
+  it, a person living with ALS among them, are given a build that
+  already passed everything they are not needed for.
 - **Later releases** run again every gate their changes touch, and
   always Q9, Q21 and Q29; a gate carried over names the release it last
   passed in. The bar then costs what a change touches, not a full rerun.
-- **An urgent fix is the owner's call.** How a fix for a fault that
-  stops someone communicating (a phrase that does not speak, Emergency
-  out of reach, a crash) goes to App Review is decided by the owner when
-  one is needed, not in advance. Recommended then: CI, the gates the
-  fix touches and the owner's check of the fix on a device, and the
-  whole bar at the next release, because holding such a fix for weeks
-  of TestFlight would leave people without a voice, the harm the bar
-  exists to prevent.
+- **An urgent fix is the owner's call.** A fix for a fault that stops
+  someone communicating (a phrase that does not speak, Emergency out of
+  reach, a crash) passes the whole bar like any release, unless the
+  owner, when one is needed, decides that this fix goes to App Review
+  sooner. There is no standing exception, so docs/ROADMAP.md,
+  docs/HANDOFF.md, docs/APP-STORE.md and docs/SDLC.md say the whole bar
+  holds. Recommended for that moment: CI, the gates the fix touches and
+  the owner's check of the fix on a device, and the whole bar at the
+  next release, because holding such a fix for weeks of TestFlight would
+  leave people without a voice, the harm the bar exists to prevent.
 - **What it collects and what it adds.** Already open, now gating every
   release: the open dwell hazards (Q2), Settings' floors under a larger
   profile (Q3), the device-check table (Q4 and Q12 to Q14), R0 item 9's

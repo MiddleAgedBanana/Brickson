@@ -663,16 +663,19 @@ what passes and who checks it:
 - **Before the external pilot** (Q27), every gate passes except these,
   which finish during or after it: Q5, which runs through the whole
   TestFlight period; Q9's seven days on the build sent to App Review;
-  the testers' sessions in Q11 and Q13; Q28; and Q29. The owner's own
+  the testers' sessions in Q11 and Q13; Q27, the pilot itself; Q28; and
+  Q29. The owner's own
   device gates run on the internal TestFlight build first
   (docs/APP-STORE.md, section 12, step 2). Whatever the pilot finds goes
   back through the gates it touches.
 - A later release runs again every gate its changes touch, and always
   Q9, Q21 and Q29; a gate carried over names the release it last passed
   in. A gate that records a number keeps it as the next release's
-  baseline, so nothing gets slower or costlier unnoticed. How an urgent
-  fix after a release is handled is the owner's call when one is needed
-  (docs/DECISIONS.md, "Every release passes the quality bar").
+  baseline, so nothing gets slower or costlier unnoticed. An urgent fix
+  after a release (a phrase that does not speak, a crash) passes the
+  whole bar too, unless the owner, when one is needed, decides that this
+  fix goes sooner; there is no standing exception (docs/DECISIONS.md,
+  "Every release passes the quality bar").
 - The owner's gates are run from written steps: before the owner's
   first device run, a thread writes the step-by-step procedure for each
   of them, with what success looks like, as the 2026-10-26 mounted-device

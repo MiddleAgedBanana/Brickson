@@ -1,7 +1,7 @@
 # The quality bar: gates every release passes before App Review
 
-*2026-10-30. Pull request on `claude/project-thread-qohc42`. A cloud
-thread working on docs only; nothing was built or run.*
+*2026-10-30. Pull request #72 (`claude/project-thread-qohc42`). A cloud
+thread working on documents only; the app was not built or run.*
 
 ## What changed and why
 
@@ -57,14 +57,16 @@ and AGENTS.md, *Workflow rules*, now says so.
 How the bar runs: every gate passes before App Review; before the
 external pilot, every gate passes except those that need the pilot
 or the final build (Q5's whole TestFlight period, Q9's last seven days,
-the testers' sessions in Q11 and Q13, Q28 and Q29), and the owner's
+the testers' sessions in Q11 and Q13, Q27, the pilot itself, Q28 and
+Q29), and the owner's
 device gates run on the internal TestFlight build first. A thread
 writes the step-by-step procedure for each owner gate before the
 owner's first device run. A later release reruns the gates its changes
-touch, and always Q9, Q21 and Q29. How an urgent fix after a release is
-handled (a phrase that does not speak, a crash) is the owner's call
-when one is needed; docs/DECISIONS.md records a recommendation for that
-moment rather than a rule made in advance.
+touch, and always Q9, Q21 and Q29. An urgent fix after a release (a
+phrase that does not speak, a crash) passes the whole bar too, unless
+the owner, when one is needed, decides that this fix goes sooner;
+docs/DECISIONS.md records a recommendation for that moment, not a
+standing exception.
 
 The decision is recorded in docs/DECISIONS.md, "Every release passes
 the quality bar": the bar is the owner's; the gates, their numbers and
@@ -151,8 +153,12 @@ not have, so Q16 asks for the variant or a recorded reason.
 
 ## Commits
 
-- The branch's one commit after `main` at `9fe02ef`: the quality bar,
-  its decision, and the lines of the other documents that point to it.
+- f774a1f: the quality bar, its decision, and the lines of the other
+  documents that point to it.
+- The commit after f774a1f on the branch: CodeRabbit's review answered
+  (Q27 named in the before-pilot list, no standing urgent-fix exception,
+  the owner's hazard step matching Q2, docs/APP-STORE.md's device line,
+  and this record's header and *Not verified*).
 
 ## Verified
 
@@ -180,8 +186,9 @@ not have, so Q16 asks for the variant or a recorded reason.
 
 ## Not verified
 
-- Nothing was built or run: this pull request changes documents only,
-  and CI is its check.
+- No app build, device run or gate was run: this pull request changes
+  documents only, and CI is the app's check. Only the Python document
+  and guard checks above ran.
 - No gate has passed. Every *Today* line describes R0 as it stands; none
   is a measurement made by this pull request.
 - The numbers the project chose (half a second to the first sound and

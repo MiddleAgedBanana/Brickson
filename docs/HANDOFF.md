@@ -842,12 +842,16 @@ For the owner (the remaining questions are listed in docs/DECISIONS.md,
 1. Answer the few questions that are yours, in docs/DECISIONS.md,
    *Waiting on the owner*: the final name (and with it the bundle
    identifier), the price, how the name is said, and your EU trader
-   status (needed before the App Store release in the EU). Before a
-   build with the larger sizes goes to App Review or an external
-   TestFlight group, also the three dwell hazards still open: whether Yes
-   and No may border the message, the top of Stop's well nearest Again,
-   and dimmed phrases bordering Clear and Put Back (*Known gaps*). Each
-   hazard must be gone, or accepted by you, before then. And how long
+   status (needed before the App Store release in the EU). Before any
+   build goes to the external TestFlight pilot or App Review, every
+   dwell hazard in docs/ROADMAP.md, *The quality bar*, Q2 (five today)
+   must be gone, or accepted by you. Three wait on your answer: whether
+   Yes and No may border the message, the top of Stop's well nearest
+   Again, and dimmed phrases bordering Clear and Put Back (*Known gaps*).
+   The other two, Again nearest Stop's empty well in a library with
+   fewer than three everyday categories and iPhone Duo's chain from
+   Family Setup at the largest text size, come to you only if a thread
+   cannot remove them by placement. And how long
    you want to use each TestFlight build yourself before it goes
    further (recommended: two weeks before the pilot, seven days on the
    build sent to App Review).
