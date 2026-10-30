@@ -745,6 +745,20 @@ the time. Export them again after each new Xcode release.
   several flags as an array, not one string.
 - **A failing `xcodebuild test` can sit for minutes collecting
   diagnostics**; `scripts/test.sh` passes `-collect-test-diagnostics never`.
+- **The unit job uses most of its 40 minutes.** On 2026-10-30 it took
+  27 to 33 minutes, and one run of pull request #69 was stopped at the
+  limit with every test it had reported passing: on that machine the
+  unchanged Python checks took about twice as long as usual, and
+  starting the simulator and building took 16 minutes instead of 10. The
+  unit tests are main-actor isolated by
+  default, so they share the main thread and the job takes about the sum
+  of every test's time; run together, a suite's reported time includes
+  waiting for the others. Time a long new sweep on its own and say in the
+  pull request what it adds. A run stopped at the limit with no failure
+  is re-run once; a second stop is real, so cut what the tests cost
+  without weakening any. The limit is in `.github/workflows/tests.yml`,
+  which a cloud agent cannot push. The measurements are in
+  [`docs/log/2026-10-30-unit-job-time-and-testflight-wording.md`](docs/log/2026-10-30-unit-job-time-and-testflight-wording.md).
 - **A just-started simulator is slow, and the first UI test pays for it.**
   On GitHub's busy machines, one run found Again still off when the test
   read it straight after a tap, and the re-run's first launch timed out,

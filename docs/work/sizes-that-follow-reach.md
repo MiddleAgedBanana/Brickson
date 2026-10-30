@@ -3,8 +3,8 @@
 *Roadmap: Wave 3 item 8 (R1, the profile layout engine and who chooses
 the profile), started early by the owner on 2026-10-30. Owner: the
 item 8 thread (a cloud session; GitHub CI is its build). Status:
-built and held until the owner answers the fallback (untested until CI
-passes).*
+built and held until the owner answers the fallback (CI green, merged
+in #69 on 2026-10-30).*
 
 ## Intent
 

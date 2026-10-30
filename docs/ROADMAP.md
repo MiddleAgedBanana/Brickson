@@ -507,8 +507,9 @@ comes before item 8, because item 8 lets setup answers change sizes.
 *Rows:* section 10's Get Attention ("In Settings: later"). *Needs:*
 cloud and CI. *Apple:* no new API.
 
-**8. Sizes that follow how the person reaches the screen.** *2026-10-30,
-built (untested until CI runs it):* four profiles' floors, the largest
+**8. Sizes that follow how the person reaches the screen.** *Built
+2026-10-30, #69, CI green
+([`log/2026-10-30-sizes-that-follow-reach.md`](log/2026-10-30-sizes-that-follow-reach.md)):* four profiles' floors, the largest
 sizes any answer needs and Eye Tracking's with none, taken where the
 window holds them and smaller ones where it does not, every control in
 its place, and the flags suggesting an answer in the first step

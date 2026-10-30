@@ -860,7 +860,8 @@ long-term vision, the direction behind it, is its *Where this goes*.
 The next pull requests, in order, with which may run side by side and
 which change Home, are its
 [Wave 3](ROADMAP.md#wave-3-the-next-pull-requests-in-order) (planned
-2026-10-23): items 1 to 5 and 7 are built, typing on Home (item 5) on
+2026-10-23): items 1 to 5, 7 and 8 are built (item 8's sizes held until
+the owner answers, 2026-10-30), typing on Home (item 5) on
 2026-10-24 ([`log/2026-10-24-typing-on-home.md`](log/2026-10-24-typing-on-home.md),
 *Follow-ups*); next on Home is item 6, iPhone Duo in every pose. Its Mac
 design pass has started after PR #56 merged. The continuation in
