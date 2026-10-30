@@ -515,7 +515,9 @@ its place, and the flags suggesting an answer in the first step
 (DECISIONS.md, "Sizes that follow how the screen is reached"; work file
 [`work/sizes-that-follow-reach.md`](work/sizes-that-follow-reach.md)).
 What to do where a window cannot hold the sizes asked for waits on the
-owner. Family
+owner, and until the owner answers the sizes are held: Home keeps
+touch's for everyone (DECISIONS.md, "Sizes that follow how the screen is
+reached", *Held until the owner answers*). Family
 Setup already asks how the screen is reached (`SetupRecord`: touch,
 Voice Control, Switch Control, Eye Tracking, Head Tracking, someone else
 helps), and Home's sizes and spacing come to follow that answer, with
@@ -618,10 +620,13 @@ touches has a recorded result.
 **Release gate.** No build goes to App Review until: the R0 items below
 are complete, including item 11's TestFlight pilot; the device checks they
 touch are logged in `docs/log/`; Wave 3 items 8 and 9 are complete,
-and the owner has answered whether Yes and No may border the message,
-since no build with their larger sizes goes to App Review or to an
-external TestFlight group while that hazard is open (DECISIONS.md,
-"Sizes that follow how the screen is reached"); UI tests are green on an iPhone and an
+with item 8's sizes switched on once the owner has said what Home does
+where a window cannot hold them; and the owner has answered the three
+dwell hazards still open (whether Yes and No may border the message,
+the top of Stop's well nearest Again, and dimmed phrases bordering
+Clear and Put Back by centre), since no build with the larger sizes
+goes to App Review or to an external TestFlight group while one is
+open (DECISIONS.md, "Sizes that follow how the screen is reached"); UI tests are green on an iPhone and an
 iPad at the default and largest text sizes, light and dark; item 13's
 iPhone Duo checks are logged and its screenshots made; and the
 privacy policy, README and website say only what the build does. A

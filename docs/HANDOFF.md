@@ -22,16 +22,19 @@ with Stop's well at their leading top and Settings at their trailing
 end, and tiles from a neutral starter set, every frame from the layout
 engine, from the space the window gives it (docs/DECISIONS.md, "The
 layout engine", *Home on the engine*, and "Get Attention and Stop on
-Home"). Its sizes and gaps follow Family Setup's answer to how the
-screen is reached: touch's for touch, Voice Control and someone
-helping, larger ones for Switch Control, Head Tracking and Eye Tracking,
-the largest any answer needs, and Eye Tracking's until anyone answers,
-wherever the window holds them without scrolling, else smaller ones,
-touch's last; nothing changes place, and new sizes show as Settings
-closes. Every phone tested keeps touch's sizes at every text size, and
-every iPad in portrait takes Eye Tracking's (docs/DECISIONS.md, "Sizes
-that follow how the screen is reached"; untested until CI runs it).
-Four category buttons that never scroll sideways, and three
+Home"). Its sizes are touch's for everyone. Sizes that follow Family
+Setup's answer to how the screen is reached are built and held until
+the owner answers (docs/DECISIONS.md, "Sizes that follow how the screen
+is reached", *Held until the owner answers*): touch's for touch, Voice
+Control and someone helping, larger ones for Switch Control, Head
+Tracking and Eye Tracking, the largest any answer needs, and Eye
+Tracking's until anyone answers, wherever the window holds them
+without scrolling, else smaller ones, touch's last; nothing changes
+place, and new sizes show as Settings closes. By the engine, every
+phone tested would keep touch's sizes at every text size, and every
+iPad in portrait would take Eye Tracking's (head tracking's on the iPad
+mini with Bold Text); only `HomeSizesTests`
+turns them on (untested until CI runs it). Four category buttons that never scroll sideways, and three
 phrase columns on every iPhone at its standard Display Zoom (two on 375
 and 390-point phones with Bold Text). A tile
 speaks at once, in the person's Personal Voice when one exists and is
@@ -84,9 +87,10 @@ frame, whose guide opens as a cover of its own with Done where Back to
 Talking is, and starts its answers below every place a look can be
 resting on the way in; Next only moves on, and the check-in card's Go
 Through Setup Again answers the check-in (docs/DECISIONS.md, "The
-first step's own rows"; modelled, untested until CI runs it). It says
-what the answer does to Home's sizes and, where iOS reports Switch
-Control or VoiceOver on, which answer may fit, choosing nothing. The
+first step's own rows"; modelled, untested until CI runs it). Where
+iOS reports Switch Control or VoiceOver on, it says which answer may
+fit, choosing nothing; once the sizes are switched on, it also says
+what the answer does to them. The
 exception is on narrow windows at the largest text sizes: by centre, a
 look at the row's top trailing corner meets Back to Talking and closes
 Settings onto Home's Emergency (nothing is said; modelled;
@@ -359,12 +363,13 @@ Xcode 27.1 (27A9275); PR #20 landed in `d79d836`.
 Each names who closes it: *(owner)*, the thread working on it, or the
 release in docs/ROADMAP.md when no thread has it yet.
 
-- Home's sizes follow Family Setup's answer since 2026-10-30
-  (docs/DECISIONS.md, "Sizes that follow how the screen is reached"),
-  but the switch and head floors are proposals no person has tried on a
-  device, no phone holds more than touch's sizes, and where a window
-  cannot hold the sizes asked for it takes smaller ones, which waits on
-  the owner (*Waiting on the owner*). *(the owner; device checks)* At
+- Home has touch's sizes for everyone: sizes that follow Family
+  Setup's answer are built (2026-10-30) and held until the owner says
+  what Home does where a window cannot hold the sizes asked for
+  (docs/DECISIONS.md, "Sizes that follow how the screen is reached",
+  *Held until the owner answers*; *Waiting on the owner*). The switch
+  and head floors are proposals no person has tried on a device, and no
+  phone holds more than touch's sizes. *(the owner; device checks)* At
   touch's sizes, by the engine's model the phrase grid still scrolls (invariant 11) on
   phones smaller than the Pro Max at AX5, on the iPhone 17 at AX3 with
   Bold Text, on a 375×667 phone at every size (at the default size by
@@ -445,10 +450,11 @@ release in docs/ROADMAP.md when no thread has it yet.
   (2026-10-24), Phrases and Type are beside the message, as the slot
   plan places them, and it is up to 97% by centre and 89% by edge on
   compact widths, 68% and 62% on regular ones; no placement inside the
-  slot plan removes it. **Owner question, before R1:** accept that as a
+  slot plan removes it. **Owner question, before a build with the
+  larger sizes goes to App Review:** accept that as a
   named exception to invariant 10, or ask for another placement
   (docs/DECISIONS.md, "The layout engine", *Home on the engine*; "Typing
-  on Home" left it as it was). *(the owner, before R1's profiles)*
+  on Home" left it as it was). *(the owner, before the larger sizes go to App Review)*
 - While typing, by nearest centre, a look resting in the top band of a
   dimmed phrase tile in the grid's top row (up to about 40% of its
   height on iPads, a fifth on phones), or between two of them, is nearer
@@ -460,7 +466,7 @@ release in docs/ROADMAP.md when no thread has it yet.
   dimmed, except over the empty cells of a grown library's category with
   fewer phrases than the grid has columns: when editing or import ships,
   score typing with the shown category's own tiles. Open, not accepted, pinned strict in `HomeLayoutEngineTests`
-  (docs/DECISIONS.md, "Typing on Home", *Open: by centre, dimmed phrases border Clear and Put Back*). *(owner, before R1's profiles)*
+  (docs/DECISIONS.md, "Typing on Home", *Open: by centre, dimmed phrases border Clear and Put Back*). *(owner, before the larger sizes go to App Review)*
 - No typing on Home where the keyboard's room reaches the safety row:
   320pt windows at every size, a 375×667 phone from AX3, and the iPad
   mini and a zoomed 13-inch iPad in landscape from AX3. There Type is
@@ -628,9 +634,10 @@ release in docs/ROADMAP.md when no thread has it yet.
   a look rests on the first step after its Go Through Setup Again;
   Family Setup scrolled before a row is chosen; the first step's guide
   scrolled; and Settings' other screens.
-  Answers change Home's sizes as Settings closes since 2026-10-30, and
-  Settings' first screens over a larger Home are scored
-  (`ProfileChoiceTests`); the screens above are not
+  Once the sizes that follow the answers are switched on, answers
+  change Home's sizes as Settings closes; Settings' first screens over
+  a larger Home are already scored (`ProfileChoiceTests`); the screens
+  above are not
   ([`log/2026-10-21-settings-and-first-run.md`](log/2026-10-21-settings-and-first-run.md),
   follow-up 10). *(Settings' other screens: a new thread)*
 - CI compiles only the Debug configuration. Warnings are errors in
@@ -814,8 +821,12 @@ For the owner (the remaining questions are listed in docs/DECISIONS.md,
    identifier), the price, how the name is said, your
    EU trader status (needed before the App Store release in the EU),
    and what Home does where a window cannot hold the larger sizes an
-   answer asks for. Before a build with the larger sizes goes to App
-   Review, also whether Yes and No may border the message (*Known gaps*).
+   answer asks for, which also accepts Settings' way back at touch's
+   size under them (until then the larger sizes are held, and Home
+   keeps touch's). Before a build with the larger sizes goes to App Review,
+   also the three dwell hazards still open: whether Yes and No may
+   border the message, the top of Stop's well nearest Again, and dimmed
+   phrases bordering Clear and Put Back (*Known gaps*).
    Everything App Store Connect will ask, in order, is in
    [docs/APP-STORE.md](APP-STORE.md), section 1.
 2. Run the app once yourself and hear a phrase ([local setup](GETTING_STARTED.md)).
@@ -950,8 +961,8 @@ built, and Home is on it (item 4; docs/work/layout-engine.md and
 *Follow-ups*); item 5, typing, brought the slot plan's Phrases and
 Type and its one-row C ([`log/2026-10-24-typing-on-home.md`](log/2026-10-24-typing-on-home.md));
 input profiles came with item 8 (2026-10-30,
-[`log/2026-10-30-sizes-that-follow-reach.md`](log/2026-10-30-sizes-that-follow-reach.md)),
-and the late-stage profile, item 9, comes next, both before R0's first
+[`log/2026-10-30-sizes-that-follow-reach.md`](log/2026-10-30-sizes-that-follow-reach.md);
+held until the owner answers), and the late-stage profile, item 9, comes next, both before R0's first
 App Review build (owner, 2026-10-30); the phone on its side waits until
 that build has gone to App Review. The earlier order is in
 [`log/2026-10-21-phone-layout.md`](log/2026-10-21-phone-layout.md).
@@ -990,7 +1001,7 @@ Simulators cannot show these. Record each result in a `docs/log/` file
 | Unplugging headphones during a phrase and during Get Attention | Output loss: speech carries on, the alarm stops and says so |
 | Whether the tone player ever reads as not playing for a moment while it plays (route changes, Bluetooth) | Whether the once-a-second health check needs a second look before stopping the alarm |
 | Comfortable dwell time and movement tolerance | Setup recommendations per profile |
-| Each profile's floors on an iPad with a person using Eye Tracking, Head Tracking and Switch Control's point scanning, at the default text size and AX3 | Whether the switch and head floors proposed in docs/DECISIONS.md, "Sizes that follow how the screen is reached", hold, before R1's sizes reach App Review |
+| Each profile's floors on an iPad with a person using Eye Tracking, Head Tracking and Switch Control's point scanning, at the default text size and AX3 | Whether the switch and head floors proposed in docs/DECISIONS.md, "Sizes that follow how the screen is reached", hold, before the larger sizes reach App Review |
 | Whether Guided Access works together with Eye Tracking | Setup recommendations |
 | Which phrases people reach for, and how many categories can be scanned by eye | The starter library |
 | "Open Brickson" by Siri and Voice Control, said by a few people, and how VoiceOver reads the icon | `APP_SPOKEN_NAME` and the alternative names |

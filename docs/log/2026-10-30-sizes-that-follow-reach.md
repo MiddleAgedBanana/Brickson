@@ -7,9 +7,11 @@ build.*
 ## What changed and why
 
 Home had one set of sizes, touch's, and nothing read Family Setup's
-answer to how the screen is reached. Now Home's sizes and spacing follow
-that answer (docs/DECISIONS.md, "Sizes that follow how the screen is
-reached"; work file
+answer to how the screen is reached. Now sizes and spacing that follow
+that answer are built, and held until the owner answers what Home does
+where a window cannot hold the sizes asked for (docs/DECISIONS.md,
+"Sizes that follow how the screen is reached", *Held until the owner
+answers*; work file
 [`work/sizes-that-follow-reach.md`](../work/sizes-that-follow-reach.md)):
 
 - **Four profiles** (`HomeLayout.Profile`): touch (44 points, 8 apart,
@@ -26,22 +28,45 @@ reached"; work file
   scrolling, and nothing touch's sizes have there (the arrangement,
   typing, whole words) is lost (`HomeLayout.holdsProfile`,
   `ProfileChoice.keepsEverything`); otherwise the largest smaller one,
-  and touch's last. No phone holds more than touch's; every iPad in
-  portrait holds Eye Tracking's.
+  and touch's last. A profile also holds only where every column keeps
+  its words at the profile's own, wider gap
+  (`HomeLayout.arrangementHoldsItsWords`, after CodeRabbit's review). No
+  phone holds more than touch's; every iPad in portrait holds Eye
+  Tracking's, except the iPad mini with Bold Text, which holds head
+  tracking's.
 - **Nothing changes place.** The arrangement is chosen at touch's gap
   in every profile, so only sizes and gaps differ (invariant 8).
 - **Back to Talking keeps touch's frame**, and the profile changes only
   as Settings closes, so nothing moves under a look while Settings is
   open, and a look still resting on Back to Talking meets Phrases.
 - **A fold or a camera across Home** keeps touch's sizes.
-- **Family Setup's first step** says what the answer does, and, where
-  iOS reports Switch Control or VoiceOver on, which answer may fit,
-  choosing nothing (SwiftUI's `accessibilitySwitchControlEnabled` and
-  `accessibilityVoiceOverEnabled`, iOS 15 and later).
+- **Family Setup's first step** says, where iOS reports Switch Control
+  or VoiceOver on, which answer may fit, choosing nothing (SwiftUI's
+  `accessibilitySwitchControlEnabled` and
+  `accessibilityVoiceOverEnabled`, iOS 15 and later), and, once the
+  sizes are switched on, what the answer does to them.
+- **Held.** Codex's review of the first push found the fallback (smaller
+  sizes where a window cannot hold the ones asked for) active while the
+  owner had not accepted it, an exception to invariant 11's floors. So
+  `ProfileChoice.followsTheAnswer` is off: Home asks for touch's sizes
+  for every answer (`ProfileChoice.requestedForHome`), as before this
+  change, and the first step says nothing about sizes. One pull request
+  turns it on once the owner answers.
 - **UI tests** launch at touch's sizes unless they ask
   (`--home-profile`, debug builds with test storage only), so the
-  existing tests keep measuring what they did; `HomeSizesTests` launches
-  with the answer.
+  existing tests keep measuring what they did. `HomeSizesTests` launches
+  once following the answer (`--home-profile=from-answer`) and once as a
+  person's launch, which must keep touch's sizes and say nothing about
+  them. Each compares Home's quick controls, edge by edge, with a launch
+  at touch's sizes, and runs with Settings' idle reset at its real
+  length, so Settings cannot reset itself while the test walks Family
+  Setup.
+- **The privacy policy** (`site/privacy/index.html`, the app's copy
+  too, Effective October 30, 2026): *How you control the app* said
+  Brickson "only learns which button you chose". It now also says that
+  Family Setup's first step reads whether VoiceOver or Switch Control is
+  on, only to suggest an answer, and that this stays on the device and
+  is not saved.
 
 The same pull request records the owner's decision of 2026-10-30 that
 items 8 and 9 come before the first App Review build (docs/DECISIONS.md,
@@ -50,16 +75,31 @@ wants the app complete before it is submitted. docs/ROADMAP.md no longer
 holds them until that build, stage profiles are no longer left out of
 R0, and R0's *Release gate* now says no build with the larger sizes
 goes to App Review or an external TestFlight group until the owner has
-answered whether Yes and No may border the message.
+answered the three dwell hazards still open: whether Yes and No may
+border the message, the top of Stop's well nearest Again, and dimmed
+phrases bordering Clear and Put Back by centre.
 
 ## Commits
 
 - `7a51022` Write the work file for sizes that follow how the screen is
   reached.
 - `d3750b1` Size Home from Family Setup's answer.
-- The commit adding this record: the decisions, the roadmap with items
-  8 and 9 no longer gated, the handoff, the accessibility map, the
-  website's accessibility page, the README and AGENTS.md.
+- `f259234` Record sizes that follow reach, and items 8 and 9 before
+  App Review: the decisions, the roadmap with items 8 and 9 no longer
+  gated, the handoff, the accessibility map, the website's
+  accessibility page, the README and AGENTS.md.
+- After Codex's and CodeRabbit's reviews and an independent review
+  (four reviewers, each finding checked by a second): hold Home's sizes
+  at touch's until the owner answers (the switch, the test-only
+  override, the hidden sentence and their tests); take a larger profile
+  only where its columns keep their words; pin Back to Talking's size
+  under the larger profiles; the privacy policy's sentence; and the
+  records: the three open hazards in the release gate, the fallback's
+  reading of invariant 11 for the owner, the shortfall figures for every
+  phone tested, 2.6 degrees for an Eye Tracking tile, and the
+  accessibility map's rows and legend. The website's accessibility page
+  goes back to its earlier words, which stay true while the sizes are
+  held.
 
 ## Verified
 
@@ -77,6 +117,21 @@ answered whether Yes and No may border the message.
   Apple's frameworks is its check. The 117 known issues recorded are the
   existing strict ones; this change adds none.
 - New tests and the change that makes each fail, run on Linux:
+  - `homeKeepsTouchsSizesUntilTheOwnerAnswers` failed to build before
+    the switch existed, and fails if the switch is turned on or a held
+    Home asks for other sizes than touch's.
+  - `aProfileHoldsOnlyWhereEveryWordFitsAsAtTouchsSizes` failed before
+    `arrangementHoldsItsWords` with 1,042 cases, first at 680×744 at
+    Switch Control's sizes (categories 120 points wide where their words
+    need 122); with it, the windows table changed only for the iPad mini
+    in portrait with Bold Text (head tracking's, pinned in
+    `eyeTableWithBoldText`).
+  - `backToTalkingUnderALargerProfileIsTouchsAsRecorded` pins Back to
+    Talking at touch's frame under a larger profile, never under 44
+    points, and no smaller than measured (126.4 wide, 64 tall, below the
+    larger floors: an exception named in the decision, after the
+    independent review); it fails with each profile's own Back to
+    Talking.
   - `noControlChangesPlaceBetweenProfiles` failed when Home's
     arrangement was chosen at the profile's own gap (first at 680×568
     at Switch Control's sizes).
@@ -88,6 +143,17 @@ answered whether Yes and No may border the message.
     Again, by centre, on windows 1352 to 1416 points wide).
   - The rest fail if a mapping, a floor, a gap, the windows table, a
     chain finding, the Yes and No share or a fold's sizes change.
+- After the review fixes, the whole Linux run again: 132 tests in 12
+  suites, all passing but the same Linux-only check of
+  `backToTalkingUsesTheFinalPhrasesFrame` (5 issues at one line, touch's
+  frames, which the change leaves as they were); the Back to Talking
+  test, written after that run started, passed on its own.
+- The shortfalls in the records were measured on Linux with the
+  layout engine over `HomeLayoutEngineTests.windows` and every text
+  size, Bold Text off and on: at head tracking's sizes every phone is
+  84 (iPhone 17 Pro Max) to 635 (a zoomed 375×667 phone) points short,
+  at Eye Tracking's 304 to 871; the iPad mini in landscape is 30 to 58
+  short at head tracking's (58 at AX5) and 197 at Eye Tracking's.
 - `scripts/test-docs.py`, `scripts/test-hooks.py` and
   `scripts/test-site.py` pass.
 - The String Catalog has the three new sentences; no key the code uses
@@ -121,13 +187,41 @@ answered whether Yes and No may border the message.
 
 - **The owner:** what Home does where a window cannot hold the sizes
   asked for (built: the largest smaller ones; docs/DECISIONS.md,
-  *Waiting on the owner*), and, before a build with the larger sizes
-  goes to App Review, whether Yes and No may border the message.
+  *Waiting on the owner*), and with it Settings' way back at touch's
+  size under the larger ones. Until then the sizes are held. If the owner
+  chooses the largest that fit, one pull request sets
+  `ProfileChoice.followsTheAnswer` to true and its pinned test with it;
+  another answer is built first. That pull request also runs Home's
+  accessibility audits and the rendered-label check at the larger
+  sizes, which no UI test does while they are held (the independent
+  review's finding), and records in AGENTS.md's invariant 11 that the
+  floor a window must not go below is that of the sizes it takes.
+  Before a build with the larger sizes goes to App Review, also the
+  three open dwell hazards: Yes and No bordering the message, the top
+  of Stop's well nearest Again, and dimmed phrases bordering Clear and
+  Put Back by centre.
 - **Device checks** (Codex and the owner's devices): each profile's
   floors with a person using Eye Tracking, Head Tracking and Switch
   Control's point scanning on an iPad; which flags each input method
   turns on.
 - **Wave 3 item 9**, the late-stage profile, once this has merged.
+
+## Review findings not taken
+
+- CodeRabbit's suggestion to skip the reserved layout's search for a
+  larger profile, which a fold or a camera across Home never keeps: it
+  saves time only, on the few windows with a fold or a camera, and an
+  early return would leave such a layout's frames unresolved for any
+  later caller.
+- The independent review's finding that Settings over head tracking's
+  and Switch Control's Home is never scored: measured, each request
+  scored 126 windows at its own profile with no finding, and the Eye
+  Tracking request 114 at Eye Tracking's and 12 at head tracking's, so
+  the claim in the decision holds; the test was left as it is.
+- That every existing UI test runs at touch's sizes: true, and right
+  while the sizes are held, since touch's are what every person gets.
+  The pull request that switches them on runs Home's audits and the
+  rendered-label check at the larger sizes (*Follow-ups*).
 
 ## Sources for the proposed floors
 

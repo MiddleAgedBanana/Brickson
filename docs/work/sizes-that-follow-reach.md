@@ -3,7 +3,8 @@
 *Roadmap: Wave 3 item 8 (R1, the profile layout engine and who chooses
 the profile), started early by the owner on 2026-10-30. Owner: the
 item 8 thread (a cloud session; GitHub CI is its build). Status:
-building (untested until CI passes).*
+built and held until the owner answers the fallback (untested until CI
+passes).*
 
 ## Intent
 
@@ -92,7 +93,7 @@ Eye Tracking and Head Tracking guides give.
 | Touch | 44 pt (7 mm) | 44 pt | 44 pt | 8 pt | Home's sizes until now, unchanged |
 | Switch Control | 110 pt (17 mm, about 2.1°) | 88 pt (14 mm, 1.7°) | 72 pt (11 mm, 1.4°) | 12 pt | The same as head tracking's, for point scanning and Switch Control's head mode |
 | Head tracking | 110 pt (17 mm, about 2.1°) | 88 pt (14 mm, 1.7°) | 72 pt (11 mm, 1.4°) | 12 pt | **Proposed, the owner can overrule.** The reference app's gaze numbers taken as points at the densest screen |
-| Eye Tracking | 136 pt (21 mm, about 2.7°) | 109 pt (17 mm, 2.1°) | 89 pt (14 mm, 1.7°) | 15 pt | The reference app's 110, 88 and 72 points on a 13-inch iPad (about 132 points per inch), held at 163 |
+| Eye Tracking | 136 pt (21 mm, about 2.6°) | 109 pt (17 mm, 2.1°) | 89 pt (14 mm, 1.7°) | 15 pt | The reference app's 110, 88 and 72 points on a 13-inch iPad (about 132 points per inch), held at 163 |
 
 Why head tracking's numbers are these, from the research read for this
 item (the sources are in the log):
@@ -119,7 +120,10 @@ Home's layout: the sizes asked for if the window holds them, else the
 largest smaller sizes it holds, Eye Tracking's, then head tracking's
 (Switch Control's are the same), and touch's last. A profile holds in a
 window (`HomeLayout.holdsProfile`) when every control and every tile is
-at least its floor in both directions, the starter library fits without
+at least its floor in both directions, every width test that chose the
+arrangement at touch's gap still passes at the profile's own gap
+(`arrangementHoldsItsWords`: a wider gap narrows the columns, and no
+column may be narrower than its words), the starter library fits without
 scrolling, and nothing overlaps; and it is taken only where it keeps
 everything touch's sizes have there: the same arrangement and columns,
 typing, and every word of the message and of Settings' name
@@ -127,24 +131,29 @@ typing, and every word of the message and of Settings' name
 
 With Eye Tracking's sizes asked for, as they are until anyone answers
 (measured by `ProfileChoiceTests.theWindowsPeopleUseTakeTheSizesTheTableSays`,
-the same with Bold Text off and on):
+the same with Bold Text off and on but for the iPad mini in portrait):
 
 | Window | Default | xxxLarge | AX1 | AX3 | AX5 |
 |---|---|---|---|---|---|
 | Every phone tested (iPhone 17, 17 Pro Max, 16e, 375×667, 320×568) | Touch | Touch | Touch | Touch | Touch |
 | 13-inch iPad, portrait and landscape | Eye | Eye | Eye | Eye | Eye |
 | 11-inch iPad and iPad mini, portrait | Eye | Eye | Eye | Eye | Eye |
+| iPad mini, portrait, Bold Text | Head | Head | Head | Head | Head |
 | 11-inch iPad, landscape | Head | Head | Head | Head | Touch |
 | 13-inch iPad, landscape, zoomed (1032×774) | Touch | Touch | Touch | Head | Touch |
 | iPad mini, landscape | Touch | Touch | Touch | Touch | Touch |
 
 No phone holds even head tracking's sizes: the starter library is 84 to
-331 points short there, and 304 to 552 at Eye Tracking's. On the iPad
-mini in landscape head tracking's are 30 points short. On the 11-inch
+635 points short there (the iPhone 17 Pro Max least, a zoomed 375×667
+phone most), and 304 to 871 at Eye Tracking's. On the iPad mini in
+landscape head tracking's are 30 to 58 points short. On the 11-inch
 iPad in landscape at AX5, head tracking's hold but leave the safety row
 too tall for the keyboard's room, so typing would be lost; touch's keep
 it. With head tracking's or Switch Control's asked for, each window
-takes the table's sizes, capped at those.
+takes the table's sizes, capped at those. With Bold Text on the iPad
+mini in portrait, Eye Tracking's 15-point gap leaves five columns of
+130.4 points where the widest bold word needs 132, so head tracking's
+are taken.
 
 ### Home
 
@@ -177,7 +186,8 @@ takes the table's sizes, capped at those.
 - A new sentence after the first line says what the answer does:
   "Home's buttons take the size the answers need, as large as this
   screen has room for, and are largest until something is chosen. The
-  new size shows when Settings closes."
+  new size shows when Settings closes." It shows only once Home follows
+  the answer (*Changed during the build*).
 - Where iOS reports Switch Control on: "Switch Control is on, so Switch
   Control may be one of the answers." Otherwise, where VoiceOver is on:
   "VoiceOver is on, so Touch may be one of the answers." Nothing is
@@ -188,7 +198,7 @@ takes the table's sizes, capped at those.
   (iOS 15 and later, so no `#available`).
 - The answers start below the new words, as they started below the
   question (`SetupAnswersPlace`, whose `earliest` is measured under
-  them); the chain model counts the sentence's height
+  them); the chain model counts the sentence's height once it shows
   (`SettingsChainsTests.SweptFamilySetup`).
 
 ### Input methods
@@ -204,16 +214,23 @@ takes the table's sizes, capped at those.
   over a larger Home is scored too, and closes nothing and saves nothing
   under a held look
   (`noSettingsChainOverALargerProfileClosesSettingsOrSavesAnAnswer`).
-  The open hazard of Yes and No bordering the message is no larger at
-  the larger sizes than at touch's
+  The open hazard of Yes and No bordering the message stays within
+  touch's worst pinned shares (68% by centre and 62% by edge on regular
+  widths, 97% and 89% on compact ones) at the larger sizes, a bound,
+  not a window-by-window comparison
   (`yesAndNoBorderNoMoreOfTheMessageAtALargerProfile`); it is not
-  removed (*Concerns*).
+  removed, and neither are the top of Stop's well nearest Again and the
+  dimmed phrases bordering Clear and Put Back by centre (*Concerns*).
 
 ### Colours, privacy policy and screens
 
 - **Colours:** none new.
-- **Privacy policy:** nothing it says changes. The answer was already
-  kept on the device; it is now also read there.
+- **Privacy policy:** one sentence changes. *How you control the app*
+  said Brickson "only learns which button you chose"; the first step
+  now also reads whether VoiceOver or Switch Control is on, to suggest
+  an answer, so the sentence says that, and that it stays on the
+  device. The answer was already kept on the device; it is now also
+  read there.
 - **Screens:** see *Screens drawn* below.
 
 ### Screens drawn
@@ -247,23 +264,31 @@ Not yet accepted by the owner: the owner's merge accepts them.
   at the sizes asked for (invariant 11 rules it out for the starter
   library) or fewer tiles to a screen (a new arrangement, which item 9's
   fewer-tiles work would bring). The decision card in the item 8 thread
-  asks the owner.
+  asks the owner, and until the owner answers Home keeps touch's sizes
+  for everyone (*Changed during the build*).
 - **Yes and No still border the message.** The open hazard from item 4
   (docs/DECISIONS.md, "Home's slot plan", *Open hazard, not accepted*)
   stays: a look resting on the message is nearest Yes or No over up to
-  97% of it by centre on compact windows. The larger sizes do not make
-  it worse, measured, but the roadmap says no dwell, switch, head or gaze
-  size ships until it is gone or the owner accepts it. So this pull
-  request adds that to R0's *Release gate*: no build with the larger
-  sizes goes to TestFlight or App Review until the owner has answered
-  that question.
-- **An iPad on touch shows larger sizes until someone answers.** That is
-  the existing decision ("the largest sizes when nobody answers"); the
-  first step's new sentence tells the family.
+  97% of it by centre on compact windows. At the larger sizes, in every
+  window swept where they hold, the share stays within touch's worst
+  case (a bound, measured; not window by window: at head tracking's
+  sizes it is up to about a point more than touch's in the same window,
+  at Eye Tracking's never more), but the roadmap says no dwell, switch,
+  head or gaze size ships until it is gone or the owner accepts it. The
+  same holds for the other two hazards the chain tests allow at every
+  profile: the top of Stop's well nearest Again, and dimmed phrases
+  bordering Clear and Put Back by centre. So this pull request adds all
+  three to R0's *Release gate*: no build with the larger sizes goes to
+  an external TestFlight group or App Review until the owner has
+  answered them.
+- **An iPad on touch shows larger sizes until someone answers**, once
+  the sizes are switched on. That is the existing decision ("the
+  largest sizes when nobody answers"); the first step's new sentence
+  tells the family.
 - **The floors are proposals from studies, not from people with ALS.**
   None of the studies tested Apple's own Eye Tracking or Head Tracking,
   or people with ALS. A device check with a person using each method
-  comes before R1 ships (*Proof*).
+  comes before the larger sizes go to App Review (*Proof*).
 - **Simulator evidence only.** Comfort, Snap to Item and where a pointer
   rests need a real device (a Codex handoff).
 - **The first step's question heights on CI predate the new sentence.**
@@ -307,10 +332,13 @@ Not yet accepted by the owner: the owner's merge accepts them.
     - `theLargestProfileThatHoldsIsTaken`, the windows table, the dwell
       chains, Settings closing onto other sizes, the Yes and No share,
       Settings' chains over a larger Home, and a fold or a camera.
-  - `HomeSizesTests` (UI, both families): fails if an iPad in portrait
+  - `HomeSizesTests` (UI, both families): with Home following the
+    answer (`--home-profile=from-answer`), fails if an iPad in portrait
     shows Home smaller than Eye Tracking's floors before any answer, a
     phone shows larger than touch's, or Home stays larger after Touch is
-    chosen and Settings closes.
+    chosen and Settings closes; launched as a person launches it, fails
+    if Home is larger than touch's or the first step speaks of sizes
+    while they are held.
   - Device checks (Codex, and the owner's devices): which flags each
     input method turns on; dwell comfort at each profile's floors on an
     iPad with Eye Tracking and Head Tracking, and with Switch Control's
@@ -322,5 +350,32 @@ Not yet accepted by the owner: the owner's merge accepts them.
 Settings. Measured, a look resting on it after an answer changed the
 sizes met Type at its foot, and on windows 1352 to 1416 points wide, by
 nearest centre, Get Attention or Again. Back to Talking now keeps
-touch's frame in every profile, over Phrases on every Home it can close
-onto (`closingSettingsOntoOtherSizesMeetsOnlyPhrases`).
+touch's frame in every profile, and every point of it is nearer Phrases,
+by centre and by edge, than any other control on every Home it can
+close onto (`closingSettingsOntoOtherSizesMeetsOnlyPhrases`); on
+compact widths it reaches a few points past a larger profile's Phrases,
+into the gap toward the message.
+
+*2026-10-30, after the first push.* Codex's review of PR #69 found that
+taking smaller sizes where a window cannot hold the ones asked for is
+an exception to invariant 11's floors, active while the owner has not
+accepted it. So the sizes are held: `ProfileChoice.followsTheAnswer` is
+off, Home asks for touch's sizes for every answer, the first step's
+sentence on sizes is hidden, and only UI tests on test storage follow
+the answer (`--home-profile=from-answer`). Everything above is built
+and checked on every CI run; one pull request turns the switch on once
+the owner chooses the largest sizes that fit (docs/DECISIONS.md, "Sizes
+that follow how the screen is reached", *Held until the owner
+answers*).
+
+*2026-10-30, after the first push.* CodeRabbit's review, and the
+independent review, found that the arrangement chosen at touch's gap
+could leave a larger profile's columns narrower than their words: at
+680×744 at Switch Control's sizes, categories 120 points wide where the
+widest needs 122 (1,042 such cases across the swept windows). A profile
+now holds only where every width test that chose the arrangement passes
+at its own gap too (`HomeLayout.arrangementHoldsItsWords`), checked
+slot by slot against the words' minimums
+(`aProfileHoldsOnlyWhereEveryWordFitsAsAtTouchsSizes`). The only window
+in the table it changes is the iPad mini in portrait with Bold Text,
+which takes head tracking's.

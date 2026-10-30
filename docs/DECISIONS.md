@@ -21,7 +21,7 @@ taken back. Until one is answered, nothing hard to undo is done under it.
 | What does Brickson cost? | No recommendation: the owner's call, before the first submission | Until then nothing anywhere states a price (*Price not decided*), and no purchase code is built |
 | How is "Brickson" said? | Tell an agent how it sounds; it sets a sound-alike spelling in `APP_SPOKEN_NAME` | VoiceOver and Siri say the name; only the owner knows how it should sound |
 | Is the owner a "trader" under the EU's Digital Services Act? | Decide when the App Store Connect record is made; if yes, publish a dedicated contact rather than a home address | App Store Connect asks before the app can be offered in the EU, and a trader's contact details are shown publicly |
-| Where a window cannot hold the larger sizes an answer asks for, what does Home do? | Take the largest smaller sizes it holds, and touch's last (built, 2026-10-30) | It keeps every place and every floor of the sizes taken; scrolling breaks invariant 11 for the starter library, and fewer tiles is a new arrangement. It changes *Layouts from the space available* (*Sizes that follow how the screen is reached*) |
+| Where a window cannot hold the larger sizes an answer asks for, what does Home do? | Take the largest smaller sizes it holds, and touch's last (built and held, 2026-10-30: until answered, Home keeps touch's sizes for everyone) | It keeps every place and every floor of the sizes taken; scrolling breaks invariant 11 for the starter library, and fewer tiles is a new arrangement. It would change *Layouts from the space available*, and read invariant 11's "never shrink targets below the profile's floor" as the floor of the sizes taken, not of those asked for: on every phone, and on the iPad mini in landscape, a gaze, head or switch answer would get touch's 44-point targets. So Home does not follow the answer until this is answered; switching on also accepts Settings' way back at touch's size under the larger ones (*Sizes that follow how the screen is reached*, *Back to Talking keeps touch's frame*) |
 
 Owner steps that are actions, not decisions: the Team ID in
 `project.yml`, device runs, committing workflow files (docs/SDLC.md,
@@ -81,7 +81,7 @@ holds.
 | iPhone Duo: optimized by building with the current SDK, Duo screenshots in every submission, ready before the first, one layout for every pose, the hinge driving nothing, no arrangement view on Home, the system's bars in Settings, one window; and, by the owner's choice, Home's controls kept off the fold and an even column count on a display that folds | "iPhone Duo" (iPhone Duo readiness) |
 | The exceptions to Apple's current frameworks first, and the moves made and planned | "Apple's current frameworks first" (the rule is the owner's, 2026-10-22) |
 | The accessibility coverage list and its choices: full screen in Assistive Access and no separate scene, no programmatic Guided Access, assistive-technology flags that only suggest, phrases in the person's voice with VoiceOver on, late-stage boards as an R1 profile, and what waits or is never used | "Accessibility API coverage" (Accessibility coverage checklist) |
-| Home's sizes from Family Setup's answer: four profiles' floors (switch and head proposed), the largest any answer needs, Eye Tracking's with no answer, the largest the window holds, touch's arrangement and Back to Talking, flags that only suggest | "Sizes that follow how the screen is reached" (Wave 3 item 8, 2026-10-30) |
+| Home's sizes from Family Setup's answer: four profiles' floors (switch and head proposed), the largest any answer needs, Eye Tracking's with no answer, the largest the window holds, touch's arrangement and Back to Talking, flags that only suggest; built and held, touch's for everyone until the owner answers | "Sizes that follow how the screen is reached" (Wave 3 item 8, 2026-10-30) |
 | XcodeGen stays until Xcode's JSON project format passes a trial on the owner's Mac and its gates; then one pull request switches | "Xcode's JSON project format" (Plan for Xcode's new JSON project format, 2026-10-25) |
 
 Recorded here:
@@ -107,7 +107,8 @@ Recorded here:
   features the system reports may suggest a profile, never switch it.
   *2026-10-30:* through Family Setup's answer, with the flags suggesting
   an answer in its first step (*Sizes that follow how the screen is
-  reached*).
+  reached*); the sizes are built and held until the owner answers, so
+  for now the answer chooses nothing on Home.
 - **No rating prompt on Home.** Brickson never asks for a review on its
   own; a "Rate Brickson" row, if added, lives on a family Settings screen.
 - **Copilot's "Review new pushes" stays off.** Each review spends the
@@ -146,15 +147,16 @@ containers, "instead of building device-specific interfaces" (AGENTS.md,
   reference app's gaze floors of 110, 88 and 72pt were sized on a 13-inch
   iPad (about 132 points per inch); held at the densest screen they are
   about 136, 109 and 89pt. Invariant 11 forbids shrinking a target below
-  its profile's floor, and only the owner can change a floor.
-  *2026-10-30:* where a window cannot hold a profile's floors, Home takes
-  the largest smaller profile it holds, with every floor of the one
-  taken, and touch's last (*Sizes that follow how the screen is
-  reached*); built as the recommendation and waiting on the owner
-  (*Waiting on the owner*). Switch and head floors are in the same
-  entry. *Before:* where a window could not hold them, the arrangement
-  changed (fewer tiles to a screen, a different split), never the
-  floor.
+  its profile's floor, and only the owner can change a floor. Where a
+  window cannot hold a profile's floors, the arrangement changes (fewer
+  tiles to a screen, a different split), never the floor.
+  *2026-10-30:* the recommendation that Home instead take the largest
+  smaller profile the window holds, with every floor of the one taken,
+  and touch's last, is built and held, not in use: it waits on the
+  owner (*Waiting on the owner*), and until then Home keeps touch's
+  sizes for everyone (*Sizes that follow how the screen is reached*,
+  *Held until the owner answers*). Switch and head floors are in the
+  same entry.
 - The 2026-10-15 layout blueprint
   (`docs/recon/2026-10-15/layout-blueprint.md`) keyed density, profiles and
   the keyboard band to device tables; those parts are replaced by this
@@ -3114,11 +3116,14 @@ plan's places (*Home's slot plan*).
   profile shows pages of whole rows, and the grid's last slot becomes
   **More, 1 of 2**, a standard `Button` that only shows the next page
   (from the last, the first) and stays in that slot on every page. Not
-  built now: touch is the only profile 1.0 ships, and scrolling is its
+  built now: it is one of the owner's answers to what Home does where a
+  window cannot hold the sizes asked for (*Waiting on the owner*), and
+  until it is answered Home keeps touch's sizes, where scrolling is the
   cheaper path.
 - **Not decided here: whether Yes and No may border the message**
   (*Home's slot plan*, *Open hazard, not accepted: Yes and No border the
-  message*), which the owner decides before R1. Typing keeps the frames
+  message*), which the owner decides before a build with the larger
+  sizes goes to App Review. Typing keeps the frames
   that question measured.
 
 *Before:* typing was built and tested below Home (`MessageComposer`,
@@ -3615,10 +3620,12 @@ where iOS 26 and iOS 27 name a step differently, the words fit both.
 *2026-10-30. Default, adopted 2026-10-30 (Wave 3 item 8): the owner left
 these choices to the project, except the fallback below, which waits on
 the owner. Reversible if the owner objects.* Home's sizes and spacing
-follow Family Setup's answer to how the screen is reached (*Setup
-answers are kept as offered, never as completed*), and no control
-changes place relative to the others when they change (invariant 8).
-The work file is
+are built to follow Family Setup's answer to how the screen is reached
+(*Setup answers are kept as offered, never as completed*), and no
+control changes place relative to the others when they change
+(invariant 8). The switch is held off until the owner answers the
+fallback (*Held until the owner answers*): until then Home keeps
+touch's sizes for everyone. The work file is
 [`work/sizes-that-follow-reach.md`](work/sizes-that-follow-reach.md).
 
 - **Four profiles** (`HomeLayout.Profile`), each a set of floors held
@@ -3650,18 +3657,23 @@ The work file is
 - **Where each profile holds.** A window takes the sizes asked for
   where it holds them, else the largest smaller ones it holds (Eye
   Tracking's, head tracking's, touch's). A profile holds where every
-  control and tile meets its floor in both directions, the starter
-  library fits without scrolling and nothing overlaps
-  (`HomeLayout.holdsProfile`), and is taken only where it keeps
+  control and tile meets its floor in both directions, every width test
+  that chose the arrangement at touch's gap still passes at the
+  profile's own, wider gap, so no column is narrower than its words
+  (`HomeLayout.arrangementHoldsItsWords`, found by CodeRabbit's review
+  of PR #69), the starter library fits without scrolling and nothing
+  overlaps (`HomeLayout.holdsProfile`), and is taken only where it keeps
   everything touch's sizes have there: the arrangement and columns,
   typing, and every word of the message and of Settings' name
   (`ProfileChoice.keepsEverything`). With Eye Tracking's asked for,
   measured: every phone tested takes touch's at every text size (head
-  tracking's leave the starter library 84 to 331 points short); every
+  tracking's leave the starter library 84 to 635 points short, Eye
+  Tracking's 304 to 871); every
   iPad in portrait and the 13-inch iPad in landscape take Eye Tracking's
-  at every text size; the 11-inch iPad in landscape takes head
+  at every text size, except the iPad mini in portrait with Bold Text,
+  which takes head tracking's; the 11-inch iPad in landscape takes head
   tracking's to AX3 and touch's at AX5; the iPad mini in landscape takes
-  touch's (head tracking's are 30 points short). The full table is in
+  touch's (head tracking's are 30 to 58 points short). The full table is in
   the work file and pinned in `ProfileChoiceTests`.
 - **The arrangement is touch's.** Whether Home is regular or compact,
   how the categories sit and the grid's columns are chosen at touch's
@@ -3676,7 +3688,17 @@ The work file is
   profile's own, a look resting on it as Settings closed onto other
   sizes met Type, and on windows 1352 to 1416 points wide, by nearest
   centre, Get Attention or Again (measured; *Changed during the build*
-  in the work file). With touch's, it meets only Phrases.
+  in the work file). With touch's, every point of it is nearest Phrases,
+  by centre and by edge, on every Home it can close onto; it need not
+  lie inside a larger profile's Phrases, which on compact widths starts
+  a few points further in. So under a larger profile the way back is
+  smaller than that profile's floors, an exception to invariant 1's
+  larger floors: measured across the swept iPad windows, it is never
+  under 44 points and as small as 126.4 points wide and 64 tall, where
+  Eye Tracking's floors are 109 and 89 and head tracking's 88 and 72
+  (`ProfileChoiceTests.backToTalkingUnderALargerProfileIsTouchsAsRecorded`;
+  found by the independent review of PR #69). It is the owner's to
+  accept with the sizes (*Held until the owner answers*).
 - **A fold or a camera across Home keeps touch's sizes** (*iPhone
   Duo*), because no fold check has measured larger ones.
 - **What iOS reports only suggests.** Set Up Step by Step's first step
@@ -3690,12 +3712,23 @@ The work file is
 - **Dwell safety, measured.** Chains of held activations on each larger
   profile's frames, browsing and typing, by nearest centre and nearest
   edge, meet nothing touch's frames do not; Settings over a larger Home
-  closes nothing and saves nothing under a held look; and Yes and No
-  border no more of the message than at touch's sizes. That hazard is
+  closes nothing and saves nothing under a held look; and in every
+  window swept where a larger profile holds, Yes and No border no more
+  of the message than touch's worst case pinned in the engine's tests
+  (68% by centre and 62% by edge on regular widths, 97% and 89% on
+  compact ones), a bound, not a window-by-window comparison: at head
+  tracking's sizes the share is up to about a point more than touch's
+  in the same window (0.8 by centre, 1.2 by edge, in 154 of 396
+  windows), and at Eye Tracking's never more. That hazard is
   not removed (*Home's slot plan*, *Open hazard, not accepted: Yes and
-  No border the message*), so no build with the larger sizes goes to
-  App Review or to an external TestFlight group until the owner has
-  answered it (docs/ROADMAP.md, R0's *Release gate*).
+  No border the message*), and neither are two others the chain tests
+  allow at every profile as at touch's: the top of Stop's well nearest
+  Again (*Get Attention and Stop on Home*, *Open: the top of Stop's
+  well is nearest Again*) and, by centre, dimmed phrases bordering
+  Clear and Put Back (*Typing on Home*, *Open: by centre, dimmed
+  phrases border Clear and Put Back*). So no build with the larger
+  sizes goes to App Review or to an external TestFlight group until the
+  owner has answered all three (docs/ROADMAP.md, R0's *Release gate*).
 - **The fallback, waiting on the owner.** Taking smaller sizes where a
   window cannot hold the larger ones keeps every place and every floor
   of the sizes taken, but it changes *Layouts from the space
@@ -3704,6 +3737,24 @@ The work file is
   the sizes asked for (invariant 11 rules it out for the starter
   library) or fewer tiles to a screen (an arrangement of its own, as
   Wave 3 item 9 brings). In *Waiting on the owner*.
+- **Held until the owner answers.** Every window that cannot hold Eye
+  Tracking's, every phone among them, would take smaller sizes than the
+  answer asks for, an exception to invariant 11's floors that only the
+  owner can accept (Codex's review of PR #69). So Home does not follow
+  the answer yet: `ProfileChoice.followsTheAnswer` is off, Home asks for
+  touch's sizes for every answer (`ProfileChoice.requestedForHome`),
+  the first step says nothing about sizes, and only a UI test on test
+  storage in a debug build follows the answer (`--home-profile=from-answer`,
+  `HomeSizesTests`). The profiles, the choice and its checks are built
+  and run on every CI run. If the owner chooses the largest sizes that
+  fit, and accepts Back to Talking's smaller frame (above), one pull
+  request turns the switch on, with the first step's sentence on
+  sizes, records in AGENTS.md (invariant 11) that the floor a window
+  must not go below is the floor of the sizes it takes, and runs Home's accessibility audits and the rendered-label
+  check at the larger sizes too, which no UI test does while they are
+  held; if the owner chooses another way, that way is built first. The three
+  open dwell hazards (above) hold a build with the larger sizes back
+  from App Review and external testers, not the switch.
 
 *Before:* Home had touch's sizes in every window and nothing read the
 answer; `HomeLayout.Profile` had only touch's floors, and a larger
