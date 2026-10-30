@@ -58,17 +58,16 @@ struct ProfileChoiceTests {
         #expect(ProfileChoice.suggestion(voiceOver: true, switchControl: true)?.answer == .switchControl)
     }
 
-    // MARK: Held until the owner answers
+    // MARK: Switched on by the owner
 
-    /// Home follows the answer only once the owner has said what it does
-    /// where a window cannot hold the sizes asked for (docs/DECISIONS.md,
-    /// "Sizes that follow how the screen is reached", *Held until the owner
-    /// answers*). Fails if the switch is turned on without that answer, if
-    /// a held Home asks for anything but touch's sizes, the ones it has
-    /// always had, for any answer, or if a Home that follows the answer
-    /// asks for other sizes than the answer does.
-    @Test func homeKeepsTouchsSizesUntilTheOwnerAnswers() {
-        #expect(ProfileChoice.followsTheAnswer == false)
+    /// Home follows the answer since the owner chose the largest sizes
+    /// that fit (docs/DECISIONS.md, "Sizes that follow how the screen is
+    /// reached", *Switched on by the owner*). Fails if the switch is off,
+    /// if a held Home asks for anything but touch's sizes, the ones it had
+    /// before, for any answer, or if a Home that follows the answer asks
+    /// for other sizes than the answer does.
+    @Test func homeFollowsTheAnswerSinceTheOwnerSwitchedItOn() {
+        #expect(ProfileChoice.followsTheAnswer)
         let answers: [Set<AccessMethod>?] = [nil, []] + AccessMethod.allCases.map { [$0] } + [Set(AccessMethod.allCases)]
         for answer in answers {
             #expect(ProfileChoice.requestedForHome(by: answer, followsAnswer: false) == .touch, "\(String(describing: answer))")

@@ -175,9 +175,10 @@ private struct SetupAccessQuestion: View {
             VStack(alignment: .leading, spacing: SettingsMetrics.rowSpacing) {
                 SettingsHeading("How is the screen reached?")
                 SettingsParagraph("Choose every way that is used now. Each answer is saved as soon as it is chosen.")
-                // Home's sizes follow the answers once the owner switches
-                // that on (`ProfileChoice.followsTheAnswer`); until then
-                // nothing says they do.
+                // Only where the owner's switch has Home follow the
+                // answers (`ProfileChoice.followsTheAnswer`), or a UI test
+                // asks it to; a test that fixes Home's sizes still shows
+                // it, so the step is tested as people see it.
                 if sizesFollowTheAnswer {
                     SettingsParagraph("Home's buttons take the size the answers need, as large as this screen has room for, and are largest until something is chosen. The new size shows when Settings closes.")
                 }

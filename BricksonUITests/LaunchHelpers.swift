@@ -32,9 +32,8 @@ enum UITestAppearance: String {
 
 /// Home's sizes (`ProfileChoice` in the app). Tests written for touch's
 /// sizes ask for them; `fromTheAnswer` has Family Setup's answer decide,
-/// the largest until anyone answers, as it will for everyone once the
-/// owner switches that on; `asShipped` asks for nothing, as a person's
-/// launch does.
+/// the largest until anyone answers, even where the owner's switch holds
+/// the sizes; `asShipped` asks for nothing, as a person's launch does.
 enum UITestSizes: String {
     case touch
     case switchControl = "switch-control"

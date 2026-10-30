@@ -43,9 +43,9 @@ import SwiftData
 ///   with test storage only, Home asks for these sizes whatever Family
 ///   Setup's answer, so tests written for touch's sizes keep them
 ///   (`ProfileChoice`). `--home-profile=from-answer` has Home follow the
-///   answer, as it will for everyone once the owner switches that on.
-///   Without either, Home is as everyone gets it: touch's sizes while
-///   they are held (`ProfileChoice.followsTheAnswer`).
+///   answer even where the owner's switch holds the sizes. Without either,
+///   Home is as everyone gets it: following the answer while the switch
+///   is on (`ProfileChoice.followsTheAnswer`).
 ///
 /// Text size still uses UIKit's `-UIPreferredContentSizeCategoryName`
 /// argument. Appearance needs an app-local option because command-line
@@ -101,7 +101,7 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
         "touch": .touch, "switch-control": .switchControl, "head-tracking": .headTracking, "eye-tracking": .eyeTracking,
     ]
     /// The `--home-profile` value that has Home follow Family Setup's
-    /// answer, as it will for everyone once the owner switches that on
+    /// answer even where the owner's switch holds the sizes
     /// (`ProfileChoice.followsTheAnswer`).
     static let homeSizesFromTheAnswer = "from-answer"
 

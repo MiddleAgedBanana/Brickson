@@ -979,12 +979,10 @@ struct SettingsChainsTests {
         }
 
         /// The sentence on Home's sizes, 16 points under the first, shown
-        /// only once Home's sizes follow the answer
-        /// (`ProfileChoice.followsTheAnswer`). While they are held the
-        /// sweep scores the first step as everyone gets it; the
-        /// `--home-profile=from-answer` UI test shows the sentence but
-        /// scores no chain, and the pull request that switches the sizes
-        /// on scores it here.
+        /// only where Home's sizes follow the answer
+        /// (`ProfileChoice.followsTheAnswer`), so the sweep scores the
+        /// first step as everyone gets it: with the sentence while the
+        /// owner's switch is on, without it if a build holds the sizes.
         static func sizesHeight(_ width: CGFloat, body: CGFloat) -> CGFloat {
             guard ProfileChoice.followsTheAnswer else { return 0 }
             return 16 + lines(sizes, room: width, size: body) * 1.2 * body
