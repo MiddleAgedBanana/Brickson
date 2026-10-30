@@ -247,10 +247,11 @@ struct ChainEngineTests {
         #expect(starts.filter { $0.restingOn == "words" && $0.state == "b" }.count == 9)
     }
 
-    /// Fails if one state's starts stop being exactly `everyStart()`'s for
-    /// that state, in the same order, or `everyStart()` stops being each
-    /// state's in name order: a sweep that scores a few states of a large
-    /// map builds only theirs, and must score what the whole map would.
+    /// Fails if `everyStart()`, or one state's starts, stop being what the
+    /// plain way lists, in the same order: each state in name order, its
+    /// controls chosen with the look at the centre and then across, then
+    /// its resting places. A sweep that scores a few states of a large map
+    /// builds only theirs, and must score what the whole map would.
     @Test func oneStatesStartsAreEveryStartsForIt() {
         let one = ChainControl("one", Self.frame(0, 0), .nothing)
         let two = ChainControl("two", Self.frame(60, 0), .speaks)
@@ -258,11 +259,23 @@ struct ChainEngineTests {
             states: ["b": [two, one], "a": [one], "c": []],
             resting: ["b": [("words", Self.frame(0, 60))], "c": [("well", Self.frame(60, 60))]]
         )
-        let every = map.everyStart()
-        for state in ["a", "b", "c", "missing"] {
-            #expect(map.starts(in: state) == every.filter { $0.state == state })
+        // The plain way, as `everyStart()` was written before it was built
+        // from `starts(in:)`.
+        let plain = map.states.keys.sorted().flatMap { state in
+            let chosen = (map.states[state] ?? []).flatMap { control in
+                [ChainStart.choosing(control, in: state)]
+                    + ChainEngine.points(across: control.frame, columns: 2, rows: 2).filter { $0 != control.centre }
+                    .map { ChainStart.choosing(control, in: state, lookingAt: $0) }
+            }
+            let resting = (map.resting[state] ?? []).flatMap { region in
+                ChainEngine.points(across: region.frame, columns: 2, rows: 2).map { ChainStart.resting(at: $0, on: region.name, in: state) }
+            }
+            return chosen + resting
         }
-        #expect(every == ["a", "b", "c"].flatMap { map.starts(in: $0) })
+        #expect(map.everyStart() == plain)
+        for state in ["a", "b", "c", "missing"] {
+            #expect(map.starts(in: state) == plain.filter { $0.state == state })
+        }
         #expect(map.starts(in: "b").count == 9 + 9 + 9)
     }
 

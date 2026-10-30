@@ -42,8 +42,8 @@ request's unit tests*). Two changes:
      removes from; one walk serves every start of a call; a run of
      starts on the same control finds its place in the map once.
 
-The tests and their coverage are unchanged. Four small tests are added,
-each pinning one shortcut against the plain way (*Verified*).
+Every existing test, and what it covers, is unchanged. Four small tests
+are added, each pinning one shortcut against the plain way (*Verified*).
 
 ## Where the time went
 
@@ -74,10 +74,12 @@ sqlite3 'file:unit-ipad.xcresult/database.sqlite3?mode=ro' \
 
 ## Commits
 
-- The engine's speedup and its four tests.
-- This record, docs/HANDOFF.md, AGENTS.md's gotcha and
+- c69ad55: the engine's speedup and its four tests.
+- e1cd546: this record, docs/HANDOFF.md, AGENTS.md's gotcha and
   docs/DECISIONS.md.
-- The owner's commit raising the limit in `.github/workflows/tests.yml`.
+- The commits after it: answers to review (the starts test compared with
+  the plain way), and, once the owner makes it, the one-line commit
+  raising the limit in `.github/workflows/tests.yml` (*Not verified*).
 
 ## Verified
 
@@ -124,8 +126,11 @@ itself is not committed.
   minutes. That is an estimate until CI measures it.
 - **The new tests,** each run on Linux and seen failing on the change
   named:
-  - `ChainEngineTests.oneStatesStartsAreEveryStartsForIt()`: fails if
-    `starts(in:)` drops a state's resting places (tried).
+  - `ChainEngineTests.oneStatesStartsAreEveryStartsForIt()`: compares
+    `everyStart()` and each state's starts with the plain way, as
+    `everyStart()` was written before; fails if `starts(in:)` drops a
+    state's resting places or lists them before its controls (both
+    tried).
   - `ChainEngineTests.chainsFromARunOfStartsAreEachStartsOwn()`: fails
     if a run of starts reuses the place of a control with the same name
     (tried: the second phrase tile lost every chain), or of the same
