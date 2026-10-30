@@ -229,7 +229,11 @@ which agents also act through, can bypass it (*Deploy*).
   around that (release notes, review notes, store text with no price
   words, screenshots, the checklist in `docs/APP-STORE.md`,
   kept by the App Store work), and never create, sign in to or change
-  anything in App Store Connect.
+  anything in App Store Connect. No build goes to App Review until every
+  gate of [`ROADMAP.md`](ROADMAP.md), *The quality bar*, has passed, the
+  owner's own "would I recommend this to someone?" last (owner,
+  2026-10-30; docs/DECISIONS.md, "Every release passes the quality
+  bar").
 
 **Workflow files are an owner step.** Cloud agents' GitHub access cannot
 change files under `.github/workflows`. The agent finishes the file and

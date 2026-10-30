@@ -385,7 +385,12 @@ release in docs/ROADMAP.md when no thread has it yet.
   reached", *The fallback, the owner's choice*). Settings' Back to
   Talking keeps touch's frame under the larger sizes, smaller than their
   floors, an exception to invariant 1 the owner accepted on 2026-10-30
-  (same section, *Back to Talking keeps touch's frame*).
+  (same section, *Back to Talking keeps touch's frame*). Which floors
+  Settings' other controls hold under a larger profile is not recorded:
+  they keep 64-point rows in every profile (`SettingsMetrics.rowHeight`),
+  and the guide's Done sits in Back to Talking's frame; the next
+  Settings thread measures it and puts it to the owner (docs/ROADMAP.md,
+  *The quality bar*, Q3).
   *(device checks, before the larger sizes go to App Review)* At
   touch's sizes, by the engine's model the phrase grid still scrolls (invariant 11) on
   phones smaller than the Pro Max at AX5, on the iPhone 17 at AX3 with
@@ -842,20 +847,30 @@ For the owner (the remaining questions are listed in docs/DECISIONS.md,
    TestFlight group, also the three dwell hazards still open: whether Yes
    and No may border the message, the top of Stop's well nearest Again,
    and dimmed phrases bordering Clear and Put Back (*Known gaps*). Each
-   hazard must be gone, or accepted by you, before then.
+   hazard must be gone, or accepted by you, before then. And how long
+   you want to use each TestFlight build yourself before it goes
+   further (recommended: two weeks before the pilot, seven days on the
+   build sent to App Review).
    Everything App Store Connect will ask, in order, is in
    [docs/APP-STORE.md](APP-STORE.md), section 1.
-2. Run the app once yourself and hear a phrase ([local setup](GETTING_STARTED.md)).
-3. Put your Team ID in `project.yml` (`DEVELOPMENT_TEAM`), then run the app
+2. Read docs/ROADMAP.md, *The quality bar*: the 29 gates every release
+   passes before App Review, your "would I recommend this to someone?"
+   last. Each says who checks it; the ones marked owner are yours, on
+   your own iPhone and iPad, once you have a device build (step 4).
+3. Run the app once yourself and hear a phrase ([local setup](GETTING_STARTED.md)).
+4. Put your Team ID in `project.yml` (`DEVELOPMENT_TEAM`), then run the app
    on your iPhone and iPad and work through *Checks that need a real device*.
-4. Review the starter phrases (`Brickson/Resources/StarterPhrases.json`): two
+5. Review the starter phrases (`Brickson/Resources/StarterPhrases.json`): two
    are near duplicates, and "Please move me." could be clearer.
-5. Delete the failed Swift configuration on the Tool status page
+6. Delete the failed Swift configuration on the Tool status page
    (docs/DECISIONS.md, *Code scanning*).
-6. You can delete the `xcode-skills` folder in `~/code/brickson`: its
+7. You can delete the `xcode-skills` folder in `~/code/brickson`: its
    skills are installed where agents load them.
 
-For agents: R0 in [docs/ROADMAP.md](ROADMAP.md), in order; the owner's
+For agents: no build goes to App Review until every gate of
+docs/ROADMAP.md, *The quality bar*, has passed, the owner's answer last
+(owner, 2026-10-30); a pull request that moves a gate edits its *Today*
+line. R0 in [docs/ROADMAP.md](ROADMAP.md), in order; the owner's
 long-term vision, the direction behind it, is its *Where this goes*.
 The next pull requests, in order, with which may run side by side and
 which change Home, are its
@@ -1038,6 +1053,11 @@ Simulators cannot show these. Record each result in a `docs/log/` file
 | Which of the VoiceOver, Switch Control and AssistiveTouch flags each input method turns on | Profile suggestions (R1) |
 | With a real finger at an accessibility text size, in the shipped build: press Yes slowly (about half a second) and lift, then a phrase tile; then hold Yes, slide onto No and lift, and hold a phrase tile, slide onto the next and lift; also with Touch Accommodations' Hold Duration on, and with AssistiveTouch Dwell. Each press speaks; a slide says the control it began on or nothing, never the next. In a window where Settings shows its gear alone (iPhone Duo's outer display with Bold Text on is one; [`log/2026-10-23-settings-on-home.md`](log/2026-10-23-settings-on-home.md)): tap the gear (Settings opens); hold it until its large copy shows and lift, and record whether Settings opened (opening means a real finger is not swallowed as XCTest's touch was); hold it and slide onto each control beside, above and below it, and lift: Settings opens or nothing happens, never anything else; dwell on it; and press Yes and a phrase tile slowly there: each speaks. The simulator results these confirm are in [`log/2026-10-23-large-content-and-iphone-duo.md`](log/2026-10-23-large-content-and-iphone-duo.md) | That Home speaks on a slow real press and a slide never says the next control; from the gear, whether a real finger's held press is swallowed as XCTest's was, and whether the gear keeps the viewer (docs/DECISIONS.md, "Show Borders and the Large Content Viewer on Home") |
 | Show Borders on, in light and dark, with and without Increase Contrast: every Home control shows its border, a press thickens it, a selected category and Emergency show their inner ring, measured on the rendered pixels; Settings' system buttons show theirs | "Show Borders and the Large Content Viewer on Home"; Show Borders on Settings and setup |
+| In the build that ships: the time from an activation completing to a phrase's first sound, read frame by frame from a screen recording with sound, for the default voice and a Personal Voice | docs/ROADMAP.md, *The quality bar*, Q6 (the default voice within half a second) |
+| A cold launch's time to first frame with Instruments' App Launch template on the oldest device at hand; Brickson reopening on Home with the typed message after the system ended it in the background; no bright flash at launch in dark mode | Q7 |
+| 100 activations with the Hangs instrument at 100 ms on the oldest device at hand, and the device's Hang Detection (Settings > Developer) on through the TestFlight period | Q5 |
+| Eight hours on the iPad with Brickson in front under Guided Access, and four on the iPhone, unplugged, with a Performance Trace in Power Profiler mode: the screen never dims or locks, everything works at the end, battery used per hour at touch's and Eye Tracking's setup, and no resource report for Brickson in Analytics Data; then, attached to Xcode on the Mac, memory out of the gauge's warning region with no growth across 100 phrases, and the thermal state never serious | Q8 |
+| Two hours each on the mounted iPad with Eye Tracking and Dwell with Snap to Item, Head Tracking with Dwell, Switch Control's auto scanning and its point scanning, and half an hour each on the iPhone with Switch Control and Eye Tracking, following Q11's script: every activation not meant and where the pointer rested before it, activations per common task, recalibrations and rests | Q11, and invariant 10 over hours rather than one activation |
 
 ## Repository, CI and website
 

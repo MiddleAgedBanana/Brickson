@@ -123,7 +123,10 @@ every App Review submission until R0 is complete, including item 11's
 TestFlight pilot. That pilot is the one external TestFlight group allowed
 before the gate passes: it goes out once R0 items 1 to 10 are complete and
 the rest of the gate holds (device checks logged, UI tests green, and the
-policy, README and website true to the build). The App Store adds these
+policy, README and website true to the build). Every release also passes
+every gate of docs/ROADMAP.md, *The quality bar*, before App Review, the
+owner's own "would I recommend this to someone?" last (owner,
+2026-10-30). The App Store adds these
 hard requirements, checked against Apple's pages on 2026-10-21:
 
 | Requirement | Brickson today | Source |
@@ -557,9 +560,14 @@ testers](https://developer.apple.com/help/app-store-connect/test-a-beta-version/
 1. Gate for the pilot: R0 items 1 to 10 done, device checks logged in
    `docs/log/`, UI tests green on iPhone and iPad at default and largest
    text, light and dark; policy, README and website say only what the build
-   does. The pilot itself is R0 item 11, so it is not a condition here.
+   does; and every gate of docs/ROADMAP.md, *The quality bar*, except the
+   few it names as finishing during or after the pilot (several of them
+   run on step 2's internal build). The pilot itself is R0 item 11, so it
+   is not a condition here.
 2. Internal build to the owner's own iPhone and iPad. Run the device checks
-   in docs/HANDOFF.md.
+   in docs/HANDOFF.md, and live with the build for the time the quality
+   bar asks before the pilot (its Q9, recommended and waiting on the
+   owner).
 3. External group "First testers": a few people living with ALS, family
    members, and a speech-language pathologist. Beta App Description: what
    Brickson is, in two sentences. What to Test: speak a phrase with your usual
@@ -572,9 +580,10 @@ testers](https://developer.apple.com/help/app-store-connect/test-a-beta-version/
    build yourself once it is approved. Then invite testers by email or a
    public link from the group's Testers tab
    ([invite external testers](https://developer.apple.com/help/app-store-connect/test-a-beta-version/invite-external-testers)).
-4. Fix and re-test. When the pilot is done and the whole gate holds (R0
-   item 11 included), choose the build on the version page and submit 1.0
-   to App Review (section 1, steps 12 to 14).
+4. Fix and re-test. When the pilot is done, the whole gate holds (R0
+   item 11 included) and every gate of the quality bar has passed, the
+   owner's answer last, choose the build on the version page and submit
+   1.0 to App Review (section 1, steps 12 to 14).
 
 ## 13. Changes this needs in the app, and who owns them
 
