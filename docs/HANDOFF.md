@@ -257,7 +257,8 @@ Xcode 27.1 (27A9275); PR #20 landed in `d79d836`.
   image's other iOS runtime, 27.1, holds only iPhone Duo. On 2026-10-30
   CI was still on 27.1: Apple released Xcode 27.2 (27B52) on 2026-10-29,
   but GitHub's image held only its release candidate, and CI moves by
-  itself when GitHub installs the release
+  itself once GitHub installs the release and Apple's releases feed
+  lists it
   ([`log/2026-10-30-xcode-27-2.md`](log/2026-10-30-xcode-27-2.md)). Since
   PR #13 the UI tests run on the newest iPad Pro 13-inch and then the
   newest standard iPhone, after a warm-up launch, and fail when no test
