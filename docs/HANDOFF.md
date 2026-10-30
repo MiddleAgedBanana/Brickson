@@ -384,9 +384,8 @@ release in docs/ROADMAP.md when no thread has it yet.
   gets touch's (docs/DECISIONS.md, "Sizes that follow how the screen is
   reached", *The fallback, the owner's choice*). Settings' Back to
   Talking keeps touch's frame under the larger sizes, smaller than their
-  floors, until the owner answers (*Waiting on the owner*); the sizes
-  were switched on before that answer, so it holds a build with them
-  back from App Review and external testers.
+  floors, an exception to invariant 1 the owner accepted on 2026-10-30
+  (same section, *Back to Talking keeps touch's frame*).
   *(the owner, before the larger sizes go to App Review or external
   testers; device checks)* At
   touch's sizes, by the engine's model the phrase grid still scrolls (invariant 11) on
@@ -841,9 +840,7 @@ For the owner (the remaining questions are listed in docs/DECISIONS.md,
    identifier), the price, how the name is said, and your EU trader
    status (needed before the App Store release in the EU). Before a
    build with the larger sizes goes to App Review or an external
-   TestFlight group, also whether Settings' way back keeps
-   touch's size under the larger sizes (built that way, as
-   recommended), and the three dwell hazards still open: whether Yes
+   TestFlight group, also the three dwell hazards still open: whether Yes
    and No may border the message, the top of Stop's well nearest Again,
    and dimmed phrases bordering Clear and Put Back (*Known gaps*). Each
    hazard must be gone, or accepted by you, before then.

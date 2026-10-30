@@ -190,7 +190,12 @@ documents can be read alongside.
 
 1. **Every interactive element is a standard SwiftUI `Button`** (or a
    standard system control) with an accessibility label, and a target of at
-   least 44×44pt, larger where the active profile sets a higher floor. Never
+   least 44×44pt, larger where the active profile sets a higher floor.
+   Settings' Back to Talking keeps touch's frame under a larger profile,
+   an exception the owner accepted so that a look resting there as
+   Settings closes meets only Phrases (owner, 2026-10-30;
+   docs/DECISIONS.md, "Sizes that follow how the screen is reached",
+   *Back to Talking keeps touch's frame*). Never
    gesture-only controls, and never custom input, switch, head or gaze code:
    every Apple input method and VoiceOver find standard buttons through the
    accessibility tree, and that is the whole integration.

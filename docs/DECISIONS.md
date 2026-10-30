@@ -21,7 +21,6 @@ taken back. Until one is answered, nothing hard to undo is done under it.
 | What does Brickson cost? | No recommendation: the owner's call, before the first submission | Until then nothing anywhere states a price (*Price not decided*), and no purchase code is built |
 | How is "Brickson" said? | Tell an agent how it sounds; it sets a sound-alike spelling in `APP_SPOKEN_NAME` | VoiceOver and Siri say the name; only the owner knows how it should sound |
 | Is the owner a "trader" under the EU's Digital Services Act? | Decide when the App Store Connect record is made; if yes, publish a dedicated contact rather than a home address | App Store Connect asks before the app can be offered in the EU, and a trader's contact details are shown publicly |
-| Under the larger sizes, does Settings' Back to Talking keep touch's frame? | Keep it (built; asked 2026-10-30, after the owner chose the largest sizes that fit), answered before a build with the larger sizes goes to App Review or an external TestFlight group | With each profile's own frame, a look resting on it as Settings closes onto the new sizes meets Type, and on windows 1352 to 1416 points wide Get Attention or Again; with touch's, only Phrases. Touch's frame is as small as 126.4 by 64 points under the larger floors, an exception to invariant 1's larger floors (*Sizes that follow how the screen is reached*, *Back to Talking keeps touch's frame*) |
 
 Owner steps that are actions, not decisions: the Team ID in
 `project.yml`, device runs, committing workflow files (docs/SDLC.md,
@@ -81,7 +80,7 @@ holds.
 | iPhone Duo: optimized by building with the current SDK, Duo screenshots in every submission, ready before the first, one layout for every pose, the hinge driving nothing, no arrangement view on Home, the system's bars in Settings, one window; and, by the owner's choice, Home's controls kept off the fold and an even column count on a display that folds | "iPhone Duo" (iPhone Duo readiness) |
 | The exceptions to Apple's current frameworks first, and the moves made and planned | "Apple's current frameworks first" (the rule is the owner's, 2026-10-22) |
 | The accessibility coverage list and its choices: full screen in Assistive Access and no separate scene, no programmatic Guided Access, assistive-technology flags that only suggest, phrases in the person's voice with VoiceOver on, late-stage boards as an R1 profile, and what waits or is never used | "Accessibility API coverage" (Accessibility coverage checklist) |
-| Home's sizes from Family Setup's answer: four profiles' floors (switch and head proposed), the largest any answer needs, Eye Tracking's with no answer, the largest the window holds, touch's arrangement and Back to Talking, flags that only suggest; on since the owner chose the largest sizes that fit (2026-10-30), with Back to Talking's frame waiting on the owner | "Sizes that follow how the screen is reached" (Wave 3 item 8, 2026-10-30) |
+| Home's sizes from Family Setup's answer: four profiles' floors (switch and head proposed), the largest any answer needs, Eye Tracking's with no answer, the largest the window holds, touch's arrangement and Back to Talking, flags that only suggest; on since the owner chose the largest sizes that fit (2026-10-30), with Back to Talking at touch's frame by the owner's answer the same day | "Sizes that follow how the screen is reached" (Wave 3 item 8, 2026-10-30) |
 | XcodeGen stays until Xcode's JSON project format passes a trial on the owner's Mac and its gates; then one pull request switches | "Xcode's JSON project format" (Plan for Xcode's new JSON project format, 2026-10-25) |
 
 Recorded here:
@@ -3651,8 +3650,8 @@ spacing follow Family Setup's answer to how the screen is reached
 (*Setup answers are kept as offered, never as completed*), and no
 control changes place relative to the others when they change
 (invariant 8). Built held, they were switched on when the owner chose
-the fallback (*Switched on by the owner*); whether Settings' way back
-keeps touch's frame under them still waits on the owner (*Back to
+the fallback (*Switched on by the owner*), and Settings' way back keeps
+touch's frame under them, the owner's answer the same day (*Back to
 Talking keeps touch's frame*). The work file is
 [`work/sizes-that-follow-reach.md`](work/sizes-that-follow-reach.md).
 
@@ -3728,10 +3727,12 @@ Talking keeps touch's frame*). The work file is
   found by the independent review of PR #69). #69 recorded that
   switching on would also accept this; the owner's card did not ask it,
   so it was asked of the owner when the sizes were switched on, with
-  keeping touch's frame recommended and built (*Waiting on the owner*).
-  Not yet accepted: the switch came first because it is one line to
-  undo, and no build with the larger sizes goes to App Review or an
-  external TestFlight group until the owner answers.
+  keeping touch's frame recommended and built. *Accepted by the owner,
+  2026-10-30:* asked "Keep Settings' Back to Talking at today's size
+  when Home's buttons grow?", the owner chose "Keep it at today's
+  size". The switch had gone first, as one line to undo, and the
+  answer came before any build with the larger sizes went to App
+  Review or an external TestFlight group.
 - **A fold or a camera across Home keeps touch's sizes** (*iPhone
   Duo*), because no fold check has measured larger ones.
 - **What iOS reports only suggests.** Set Up Step by Step's first step
@@ -3802,10 +3803,10 @@ Talking keeps touch's frame*). The work file is
   test on test storage following the answer
   (`--home-profile=from-answer`); holding them again also reverses the
   pin in `ProfileChoiceTests` and points `HomeSizesTests` back to
-  `--home-profile=from-answer`. The three open dwell hazards (above),
-  and the open question of Back to Talking's frame (*Back to Talking
-  keeps touch's frame*), hold a build with the larger sizes back from
-  App Review and external testers, not the switch.
+  `--home-profile=from-answer`. The three open dwell hazards (above)
+  hold a build with the larger sizes back from App Review and external
+  testers, not the switch. Back to Talking's frame no longer does: the
+  owner kept touch's (*Back to Talking keeps touch's frame*).
 
 *Before:* Home had touch's sizes in every window and nothing read the
 answer; `HomeLayout.Profile` had only touch's floors, and a larger

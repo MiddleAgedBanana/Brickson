@@ -376,8 +376,8 @@ that follow how the screen is reached", *Switched on by the owner*).
 fit, and the next pull request switched them on
 ([`log/2026-10-30-sizes-switched-on.md`](../log/2026-10-30-sizes-switched-on.md)).
 Whether Back to Talking keeps touch's frame under them was asked
-separately, since the card about the fallback did not ask it; it is
-built as recommended until the owner answers.
+separately, since the card about the fallback did not ask it. The
+owner kept it, as recommended and built.
 
 *2026-10-30, after the first push.* CodeRabbit's review, and the
 independent review, found that the arrangement chosen at touch's gap

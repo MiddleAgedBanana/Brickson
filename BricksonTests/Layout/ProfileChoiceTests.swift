@@ -486,8 +486,8 @@ struct ProfileChoiceTests {
     /// Back to Talking keeps touch's frame in every profile
     /// (`closingSettingsOntoOtherSizesMeetsOnlyPhrases`), so under a larger
     /// profile it is smaller than that profile's floors: an exception to
-    /// invariant 1's larger floors, named, measured and waiting on the
-    /// owner with the sizes (docs/DECISIONS.md, "Sizes that follow how the
+    /// invariant 1's larger floors, named, measured and accepted by the
+    /// owner (docs/DECISIONS.md, "Sizes that follow how the
     /// screen is reached", *Back to Talking keeps touch's frame*). Fails if
     /// it is not touch's wherever a larger profile is taken, if it is ever
     /// below touch's own 44-point floor, or if it is smaller than the

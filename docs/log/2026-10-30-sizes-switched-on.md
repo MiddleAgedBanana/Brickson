@@ -28,6 +28,16 @@ sizes asked for (docs/DECISIONS.md, "Sizes that follow how the screen
 is reached", *Switched on by the owner*). #69 had built the sizes held
 because only the owner could accept that reading of invariant 11.
 
+Later the same day the owner answered the second card, "Keep Settings'
+Back to Talking at today's size when Home's buttons grow?", with "Keep
+it at today's size". So Back to Talking keeps touch's frame under the
+larger sizes, smaller than their floors: an exception to invariant 1
+that the owner has now accepted, and that AGENTS.md's invariant 1 now
+names (docs/DECISIONS.md, "Sizes that follow how the screen is
+reached", *Back to Talking keeps touch's frame*). The switch went ahead
+of this answer, as one line to undo; Codex's review asked that this
+pull request not merge before it, and it did not.
+
 Two things the owner's card did not settle:
 
 - **Scrolling at touch's sizes.** The card said the phrases never
@@ -71,6 +81,9 @@ Two things the owner's card did not settle:
     answer comes. With each profile's own frame, a look resting on
     Back to Talking as Settings closes meets Type, Get Attention or
     Again. With touch's frame it meets only Phrases.
+    The owner answered it later that day, keeping touch's frame, and
+    the row went, with the lines in docs/HANDOFF.md and
+    docs/ROADMAP.md that waited on it.
   - *Layouts from the space available* now states the new rule, with
     a *Before* line, and *Fewer tiles to a screen, for R1* says where
     fewer tiles would still help.
@@ -179,7 +192,9 @@ This pull request's UI run, on a branch started from it, passed.
   hazard lines. Written before #69 merged, and carried onto the merged
   `main`.
 - The commits after it: the gotcha and this record, the switch and its
-  tests, and the documents for the owner's answer.
+  tests, the documents for the owner's first answer, the accessibility
+  page's room for typing (CodeRabbit), this pull request's CI results,
+  and the owner's answer about Back to Talking.
 
 ## Verified
 
@@ -231,13 +246,6 @@ This pull request's UI run, on a branch started from it, passed.
 
 ## Follow-ups
 
-- *(owner, before App Review or an external TestFlight group)* Answer
-  whether Back to Talking keeps touch's frame under the larger sizes
-  (the card in the item 8 thread). The switch went ahead of this
-  answer, which #69's record had made a condition of switching on. If the owner chooses
-  the larger frame, it is built with a placement that keeps Type, Get
-  Attention and Again from under a resting look, or the hazard goes to
-  the owner measured.
 - *(owner, before App Review or an external TestFlight group)* The three
   open dwell hazards, unchanged (docs/HANDOFF.md, *Known gaps*).
 - *(device checks)* The floors' comfort with Eye Tracking, Head Tracking

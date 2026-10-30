@@ -520,8 +520,8 @@ its place, and the flags suggesting an answer in the first step
 Where a window cannot hold the sizes asked for, it takes the largest
 smaller ones it holds, touch's last, the owner's choice (DECISIONS.md,
 "Sizes that follow how the screen is reached", *Switched on by the
-owner*); whether Settings' Back to Talking keeps touch's frame under the
-larger sizes waits on the owner, built as recommended. Family
+owner*); Settings' Back to Talking keeps touch's frame under the
+larger sizes, the owner's answer the same day. Family
 Setup already asks how the screen is reached (`SetupRecord`: touch,
 Voice Control, Switch Control, Eye Tracking, Head Tracking, someone else
 helps), and Home's sizes and spacing come to follow that answer, with
@@ -628,9 +628,7 @@ with item 8's sizes switched on (the owner chose the largest sizes that
 fit, 2026-10-30); and each of the three dwell hazards
 still open (Yes and No bordering the message, the top of Stop's well
 nearest Again, and dimmed phrases bordering Clear and Put Back by
-centre) is gone or accepted by the owner, and the owner has answered
-whether Settings' Back to Talking keeps touch's frame under the larger
-sizes (DECISIONS.md, "Waiting on the owner"), since no build with the
+centre) is gone or accepted by the owner, since no build with the
 larger sizes goes to App Review or to an external TestFlight group
 while any of these is open (DECISIONS.md, "Sizes that follow how the screen is reached"); UI tests are green on an iPhone and an
 iPad at the default and largest text sizes, light and dark; item 13's
