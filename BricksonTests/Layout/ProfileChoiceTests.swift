@@ -58,6 +58,25 @@ struct ProfileChoiceTests {
         #expect(ProfileChoice.suggestion(voiceOver: true, switchControl: true)?.answer == .switchControl)
     }
 
+    // MARK: Held until the owner answers
+
+    /// Home follows the answer only once the owner has said what it does
+    /// where a window cannot hold the sizes asked for (docs/DECISIONS.md,
+    /// "Sizes that follow how the screen is reached", *Held until the owner
+    /// answers*). Fails if the switch is turned on without that answer, if
+    /// a held Home asks for anything but touch's sizes, the ones it has
+    /// always had, for any answer, or if a Home that follows the answer
+    /// asks for other sizes than the answer does.
+    @Test func homeKeepsTouchsSizesUntilTheOwnerAnswers() {
+        #expect(ProfileChoice.followsTheAnswer == false)
+        let answers: [Set<AccessMethod>?] = [nil, []] + AccessMethod.allCases.map { [$0] } + [Set(AccessMethod.allCases)]
+        for answer in answers {
+            #expect(ProfileChoice.requestedForHome(by: answer, followsAnswer: false) == .touch, "\(String(describing: answer))")
+            #expect(ProfileChoice.requestedForHome(by: answer, followsAnswer: true) == ProfileChoice.requested(by: answer),
+                    "\(String(describing: answer))")
+        }
+    }
+
     // MARK: The floors
 
     /// Fails if touch's floors and gaps are not the ones Home has had
@@ -222,6 +241,47 @@ struct ProfileChoiceTests {
         #expect((held[.eyeTracking] ?? 0) > 0 && (held[.headTracking] ?? 0) > 0 && held[.switchControl] == held[.headTracking])
     }
 
+    /// Fails if a profile holds where its larger gap narrows a control or a
+    /// phrase tile below the width its words need (`MinimumWidths`, the
+    /// tiles' minimums) while touch's sizes in the same window keep it at
+    /// least that wide. The arrangement is chosen at touch's gap and the
+    /// profile's own gap narrows its columns, so a five-column Home just
+    /// wide enough at touch's gap, or a three-column grid, can be too
+    /// narrow at a larger one (CodeRabbit's review of PR #69).
+    @Test func aProfileHoldsOnlyWhereEveryWordFitsAsAtTouchsSizes() {
+        var faults: [String] = []
+        for (_, text, touch, larger, context) in Self.everyLayout {
+            let minimum = HomeLayout.MinimumWidths.forBoldText(text.boldText)
+            func words(_ slot: Slot) -> CGFloat {
+                switch slot {
+                case .yes, .no: minimum.yesNo
+                case .again: minimum.again
+                case .emergency: minimum.emergency
+                case .getAttention: minimum.getAttention
+                case .phrases: minimum.phrases
+                case .type: minimum.type
+                case .stop: minimum.stop
+                case .category: minimum.category
+                case .settings: minimum.settingsSymbol
+                case .message: minimum.message
+                case .statusLine, .phraseGrid: 0
+                }
+            }
+            let tile = touch.isRegular ? HomeLayout.regularTile : HomeLayout.compactTile
+            let tileWords = text.boldText ? tile.boldMinimumWidth : tile.minimumWidth
+            for layout in larger where layout.holdsProfile {
+                for slot in layout.slots
+                where touch.frame(slot).width >= words(slot) - 0.001 && layout.frame(slot).width < words(slot) - 0.001 {
+                    faults.append("\(slot) \(layout.frame(slot).width) wide, touch's \(touch.frame(slot).width) (\(layout.profile), \(context))")
+                }
+                if touch.grid.tileSize.width >= tileWords - 0.001 && layout.grid.tileSize.width < tileWords - 0.001 {
+                    faults.append("tiles \(layout.grid.tileSize.width) wide, touch's \(touch.grid.tileSize.width) (\(layout.profile), \(context))")
+                }
+            }
+        }
+        #expect(faults.isEmpty, "\(faults.count), first: \(faults.first ?? "")")
+    }
+
     /// Fails if Home's sizes are not the largest of the profile asked for
     /// and the smaller ones that hold in the window without losing what
     /// touch's sizes have there (`keepsEverything`), or touch's: never a
@@ -259,8 +319,8 @@ struct ProfileChoiceTests {
     /// answers, at each text size of `HomeLayoutEngineTests.textSizes`,
     /// smallest first, the same with Bold Text off and on. No phone holds
     /// a larger profile at any text size: head tracking's sizes leave the
-    /// starter library 84 to 331 points short there, Eye Tracking's 304 to
-    /// 552. Every iPad in portrait holds Eye Tracking's at every size.
+    /// starter library 84 to 635 points short there, Eye Tracking's 304 to
+    /// 871. Every iPad in portrait holds Eye Tracking's at every size.
     /// docs/DECISIONS.md, "Sizes that follow how the screen is reached",
     /// *Where each profile holds*, has this table.
     static let eyeTable: [String: [Profile]] = [
@@ -279,22 +339,31 @@ struct ProfileChoiceTests {
         // typing.
         "11-inch iPad, landscape": [.headTracking, .headTracking, .headTracking, .headTracking, .touch],
         "iPad mini": Array(repeating: .eyeTracking, count: 5),
-        // Head tracking's leave the starter library 30 points short.
+        // Head tracking's leave the starter library 30 to 58 points short.
         "iPad mini, landscape": Array(repeating: .touch, count: 5),
     ]
 
+    /// Where Bold Text changes what `eyeTable` says: on the iPad mini in
+    /// portrait, Eye Tracking's 15-point gap leaves five columns of 130.4
+    /// points, narrower than the widest bold word one carries (132), so
+    /// head tracking's are taken (`HomeLayout.arrangementHoldsItsWords`).
+    static let eyeTableWithBoldText: [String: [Profile]] = [
+        "iPad mini": Array(repeating: .headTracking, count: 5),
+    ]
+
     /// Fails if a window people use takes other sizes than `eyeTable`
-    /// when Eye Tracking's are asked for, or, for head tracking's and
+    /// (`eyeTableWithBoldText` where Bold Text is on and it has the
+    /// window) when Eye Tracking's are asked for, or, for head tracking's and
     /// Switch Control's, other than the table's capped at the one asked
     /// for: update the table and the decision then.
     @Test(arguments: HomeLayoutEngineTests.windows.indices)
     func theWindowsPeopleUseTakeTheSizesTheTableSays(window index: Int) {
         let window = HomeLayoutEngineTests.windows[index]
         let space = HomeLayout.Space(size: window.size, safeArea: .init(top: window.top, leading: 0, bottom: window.bottom, trailing: 0))
-        let table = Self.eyeTable[window.name] ?? []
-        #expect(table.count == HomeLayoutEngineTests.textSizes.count, "\(window.name)")
+        #expect(Self.eyeTable[window.name]?.count == HomeLayoutEngineTests.textSizes.count, "\(window.name)")
         for (size, (name, plain)) in HomeLayoutEngineTests.textSizes.enumerated() {
             for boldText in [false, true] {
+                let table = (boldText ? Self.eyeTableWithBoldText[window.name] : nil) ?? Self.eyeTable[window.name] ?? []
                 var text = plain
                 text.boldText = boldText
                 let context = "\(window.name), \(name), Bold Text \(boldText)"
@@ -413,6 +482,42 @@ struct ProfileChoiceTests {
         let count = faults.count
         #expect(count == 0, "first: \(faults.first ?? "")")
         #expect(windows > 100, "\(windows)")
+    }
+
+    /// Back to Talking keeps touch's frame in every profile
+    /// (`closingSettingsOntoOtherSizesMeetsOnlyPhrases`), so under a larger
+    /// profile it is smaller than that profile's floors: an exception to
+    /// invariant 1's larger floors, named, measured and waiting on the
+    /// owner with the sizes (docs/DECISIONS.md, "Sizes that follow how the
+    /// screen is reached", *Back to Talking keeps touch's frame*). Fails if
+    /// it is not touch's wherever a larger profile is taken, if it is ever
+    /// below touch's own 44-point floor, or if it is smaller than the
+    /// smallest recorded there: 126.4 points wide and 64 tall.
+    @Test func backToTalkingUnderALargerProfileIsTouchsAsRecorded() {
+        var smallest = CGSize(width: CGFloat.infinity, height: .infinity)
+        var held = 0
+        var faults: [String] = []
+        for (name, text) in HomeLayoutEngineTests.textSizes {
+            for height: CGFloat in [744, 834, 1032, 1133, 1210, 1376] {
+                for width in stride(from: CGFloat(600), through: 1432, by: 16) {
+                    let space = HomeLayout.Space(size: CGSize(width: width, height: height), safeArea: SettingsRowPlaceTests.padSafeArea)
+                    let touch = HomeLayout(space: space, text: text, modes: .phrasesAndTyping)
+                    for requested in [Profile.headTracking, .eyeTracking] {
+                        let layout = ProfileChoice.layout(requested: requested, space: space, text: text, modes: .phrasesAndTyping)
+                        guard layout.profile != .touch else { continue }
+                        held += 1
+                        let back = layout.backToTalking
+                        if back != touch.backToTalking { faults.append("\(back), touch's \(touch.backToTalking) (\(layout.profile), \(width)×\(height), \(name))") }
+                        if back.width < 44 || back.height < 44 { faults.append("\(back) under 44 (\(layout.profile), \(width)×\(height), \(name))") }
+                        smallest = CGSize(width: min(smallest.width, back.width), height: min(smallest.height, back.height))
+                    }
+                }
+            }
+        }
+        let count = faults.count
+        #expect(count == 0, "first: \(faults.first ?? "")")
+        #expect(held > 100, "\(held)")
+        #expect(smallest.width >= 126.4 - 0.5 && smallest.height >= 64 - 0.5, "\(smallest)")
     }
 
     /// The open hazard (docs/DECISIONS.md, "Home's slot plan", *Open

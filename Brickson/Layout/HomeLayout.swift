@@ -135,7 +135,7 @@ nonisolated struct HomeLayout: Equatable, Sendable {
         case headTracking
         /// The reference app's gaze sizes, 110, 88 and 72 points on a
         /// 13-inch iPad at about 132 points per inch, held at 163: tiles
-        /// 136 points (21 mm, about 2.7 degrees at 46 cm), quick controls
+        /// 136 points (21 mm, about 2.6 degrees at 46 cm), quick controls
         /// 109, categories 89, and its 12-point gaps held the same way.
         case eyeTracking
 
@@ -446,17 +446,21 @@ nonisolated struct HomeLayout: Equatable, Sendable {
     /// False where Settings has room only for its gear.
     private(set) var settingsShowsName: Bool
     /// Settings' Back to Talking, which closes Settings onto Home, in the
-    /// window's coordinates; `.null` without Phrases. It lies inside
-    /// Phrases' frame, and every point of it is nearer Phrases, by centre
-    /// and by edge, than any other control, so a look still resting on it
-    /// once Settings closes meets Phrases, which does nothing while the
-    /// phrases show (Settings always closes onto them). In every profile it
-    /// is touch's, in the same window: an answer changed in Family Setup
-    /// can close Settings onto other sizes than it opened over, and touch's
-    /// Back to Talking lies within Phrases in each, where a larger
-    /// profile's, closing onto smaller sizes, meets Type at its foot and,
-    /// on the widest windows, Get Attention or Again (`ProfileChoiceTests`;
-    /// docs/DECISIONS.md, "Sizes that follow how the screen is reached"). On compact widths
+    /// window's coordinates; `.null` without Phrases. At touch's sizes it
+    /// lies inside Phrases' frame, and every point of it is nearer Phrases,
+    /// by centre and by edge, than any other control, so a look still
+    /// resting on it once Settings closes meets Phrases, which does nothing
+    /// while the phrases show (Settings always closes onto them). In every
+    /// profile it is touch's, in the same window: an answer changed in
+    /// Family Setup can close Settings onto other sizes than it opened
+    /// over, and every point of touch's Back to Talking is nearest Phrases
+    /// on Home at each (a larger profile's Phrases can start a few points
+    /// further in, so it need not lie inside), where a larger profile's
+    /// own, closing onto smaller sizes, meets Type at its foot and, on the
+    /// widest windows, Get Attention or Again (`ProfileChoiceTests`). So it
+    /// is smaller than a larger profile's floors, an exception recorded in
+    /// docs/DECISIONS.md, "Sizes that follow how the screen is reached",
+    /// *Back to Talking keeps touch's frame*. On compact widths
     /// it is Phrases' frame. On regular ones, where Phrases spans the two
     /// columns above Again and Get Attention, it is centred over Phrases,
     /// as tall, and at most one column wide, narrower on short windows: on
@@ -485,7 +489,8 @@ nonisolated struct HomeLayout: Equatable, Sendable {
     private(set) var reservationIssues: [HomeReservedLayout.Issue]
     /// Whether this window holds the layout's profile: every control at
     /// least the profile's floors in each direction, every phrase tile at
-    /// least its floor, the starter
+    /// least its floor, every column as wide for its words as the
+    /// arrangement promised (`arrangementHoldsItsWords`), the starter
     /// library without scrolling, and nothing a reserved region left
     /// unsatisfied. Touch's sizes apply anywhere; a larger profile only
     /// where it holds (`ProfileChoice`). A window with a fold or a camera
@@ -495,6 +500,13 @@ nonisolated struct HomeLayout: Equatable, Sendable {
     /// measured a larger profile (docs/DECISIONS.md, "Sizes that follow
     /// how the screen is reached").
     private(set) var holdsProfile: Bool
+    /// Whether every width test that chose the arrangement at touch's gap
+    /// (five columns, the grid's columns, three category columns) also
+    /// passes at the profile's own gap, which narrows the columns: where
+    /// it does not, a column would be narrower than the words it carries,
+    /// and the profile does not hold (`holdsProfile`). Always true for
+    /// touch's.
+    private(set) var arrangementHoldsItsWords: Bool
 
     struct RegionGaps: Equatable, Sendable {
         var aToC: CGFloat
@@ -728,20 +740,29 @@ nonisolated struct HomeLayout: Equatable, Sendable {
         // The categories region's arrangement and widths.
         let categories = CategoryWidths(contentWidth: width, isRegular: isRegular, fifth: fifth, minimum: minimum, spacing: spacing)
         categoryArrangement = categories.arrangement
+        let categoriesHoldTheirWords = categories.arrangement != .threeColumns
+            || categories.stop >= max(minimum.stop, minimum.settingsSymbol) - 0.001
         settingsShowsName = categories.settings >= minimum.settings
         let categoryRows = categories.arrangement == .twoColumns ? 3 : 2
 
         // The phrase grid: fixed columns from the width, and the shortest
         // tile that holds the starter phrases at the tiles' width.
         let columns: Int
+        let tileMinimum: CGFloat
         if isRegular {
-            let tileMinimum = text.boldText ? Self.regularTile.boldMinimumWidth : Self.regularTile.minimumWidth
+            tileMinimum = text.boldText ? Self.regularTile.boldMinimumWidth : Self.regularTile.minimumWidth
             columns = (width - 3 * arrangementSpacing) / 4 >= tileMinimum ? 4 : 3
         } else {
-            let tileMinimum = text.boldText ? Self.compactTile.boldMinimumWidth : Self.compactTile.minimumWidth
+            tileMinimum = text.boldText ? Self.compactTile.boldMinimumWidth : Self.compactTile.minimumWidth
             columns = (width - 2 * arrangementSpacing) / 3 >= tileMinimum ? 3 : 2
         }
         let tileWidth = (width - CGFloat(columns - 1) * spacing) / CGFloat(columns)
+        // The tests above again, at the profile's own gap: the wider grid
+        // and five columns were chosen because their words fit at touch's.
+        let widerGrid = columns == (isRegular ? 4 : 3)
+        arrangementHoldsItsWords = (!isRegular || fifth >= minimum.regularColumn - 0.001)
+            && (!widerGrid || tileWidth >= tileMinimum - 0.001)
+            && categoriesHoldTheirWords
         let tileFloor = TileFloor.height(
             for: tileWidth, in: isRegular ? Self.regularTile.floors : Self.compactTile.floors,
             boldText: text.boldText, profileFloor: profile.tileFloor
@@ -953,7 +974,8 @@ nonisolated struct HomeLayout: Equatable, Sendable {
     /// Whether `layout` keeps every promise of its profile (`holdsProfile`).
     private static func meetsFloors(_ layout: HomeLayout) -> Bool {
         let profile = layout.profile
-        guard layout.startersFit && layout.controlsFit && layout.reservationIssues.isEmpty else { return false }
+        guard layout.startersFit && layout.controlsFit && layout.reservationIssues.isEmpty
+            && layout.arrangementHoldsItsWords else { return false }
         func holds(_ frame: CGRect, _ floor: CGFloat) -> Bool {
             frame.width >= floor - 0.001 && frame.height >= floor - 0.001
         }
