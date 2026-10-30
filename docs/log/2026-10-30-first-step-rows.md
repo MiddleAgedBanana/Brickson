@@ -39,7 +39,8 @@ Attention. This change removes both, in the models (docs/DECISIONS.md,
   AX5. The owner's acceptance ended with this change, so Next stopped
   saving, and the check-in card's Go Through Setup Again answers the
   check-in as it opens the first step, with the answers as they are
-  (`CheckInPolicy.wentThroughAgain`). A failed save there keeps the card,
+  (`CheckInPolicy.wentThroughAgain`, through
+  `SetupStore.goThroughSetupAgain`). A failed save there keeps the card,
   shows the setup warning and opens nothing.
 
 The chain map (`SettingsChains`) knows the link (opens the guide), the
@@ -78,6 +79,8 @@ Also in this pull request, PR #56's leftovers:
 - `a0527e6` Place the first setup step's own rows (app, unit and UI
   tests).
 - The documentation commit that adds this file, and the AGENTS.md rule.
+- After Codex's review: the check-in card's action moves into
+  `SetupStore.goThroughSetupAgain`, with tests that make its save fail.
 
 ## Verified
 
@@ -111,6 +114,13 @@ Also in this pull request, PR #56's leftovers:
   - `goingThroughSetupAgainAnswersTheCheckInWithTheAnswersAsTheyAre`:
     the card's answer changing the answers, or not restarting the
     check-in clock.
+  - `SetupStoreTests.goingThroughSetupAgainAnswersTheCheckInThenOpensTheFirstStep`
+    and `goingThroughSetupAgainOpensNothingWhenTheCheckInCannotBeSaved`
+    (added for Codex's review): the card's action opening the first step
+    after a failed save (checked: with the save's result ignored, the
+    second fails), keeping an answer that was not saved, or opening
+    anything but the first step. Run on Linux with a stand-in for
+    Apple's `Logger`.
   - `testTheFirstStepOpensWithLearnAboutEachWayOverSetUpStepByStep` (UI,
     default and AX5): the link off Set Up Step by Step's frame by more
     than a point, shorter than it, another button in that frame, or the
@@ -133,7 +143,8 @@ Also in this pull request, PR #56's leftovers:
   sound line's height are modelled, checked only against CI's phone and
   iPad at the default size and AX5.
 - The check-in card's new button: no UI test can make a check-in due,
-  so its tap, its afterword and its failed save were not run.
+  so its tap and its afterword were not run in the app; its action,
+  failed save included, is unit-tested through `SetupStore`.
 - Where a pointer rests after an activation, and how Snap to Item picks:
   device checks (docs/HANDOFF.md, "Checks that need a real device").
 - VoiceOver, Voice Control and Switch Control on the guide's cover.

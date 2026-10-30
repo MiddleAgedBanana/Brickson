@@ -3479,9 +3479,11 @@ CI's UI tests pass on this change.
   Through Setup Again answers the check-in as it opens the first step,
   with the answers as they are (`CheckInPolicy.wentThroughAgain`):
   going through setup again is what the card asks for. A failed save
-  keeps the card, says so and opens nothing. Walking the steps without
-  the card and changing nothing no longer restarts the check-in clock,
-  and a held look that walks them no longer clears Stop Asking.
+  keeps the card, says so and opens nothing
+  (`SetupStoreTests.goingThroughSetupAgainOpensNothingWhenTheCheckInCannotBeSaved`).
+  Walking the steps without the card and changing nothing no longer
+  restarts the check-in clock, and a held look that walks them no
+  longer clears Stop Asking.
 - **Measured, in the models.** On CI's windows
   (`SettingsChainsTests.theFirstStepsOwnRowsCloseNothingAndSaveNothingUnderTheLook`:
   the iPhone 17 and the 13-inch iPad in portrait at the default and

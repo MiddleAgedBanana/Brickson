@@ -78,6 +78,16 @@ final class SetupStore {
         return true
     }
 
+    /// Go Through Setup Again, on Family Setup's check-in card: answers the
+    /// check-in with the answers as they are (`CheckInPolicy.wentThroughAgain`),
+    /// then opens the first step of Set Up Step by Step. A failed save opens
+    /// nothing, so the card stays and Family Setup shows `issue`
+    /// (docs/DECISIONS.md, "The first step's own rows").
+    func goThroughSetupAgain(path: inout [SettingsRoute], now: Date) {
+        guard update({ CheckInPolicy.wentThroughAgain(&$0, now: now) }) else { return }
+        path.append(.guidedSetup(.access))
+    }
+
     @discardableResult
     private func save(_ candidate: SetupRecord) -> Bool {
         do {

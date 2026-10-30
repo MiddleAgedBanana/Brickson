@@ -148,8 +148,7 @@ private struct CheckInCard: View {
             SettingsParagraph("Needs can change. Is the screen still reached the same way? Going through setup again takes a few minutes.")
             Button {
                 activity?.recordActivity()
-                guard setup.update({ CheckInPolicy.wentThroughAgain(&$0, now: .now) }) else { return }
-                path.append(.guidedSetup(.access))
+                setup.goThroughSetupAgain(path: &path, now: .now)
             } label: {
                 SettingsRowLabel(title: "Go Through Setup Again", systemImage: "list.number")
             }
