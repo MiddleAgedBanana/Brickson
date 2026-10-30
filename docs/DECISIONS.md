@@ -248,10 +248,13 @@ formatter, `xcprojformatter`, that rewrites a file in its canonical form.
   is never committed: `project.yml` is the reviewed text, XcodeGen writes
   a fresh project on every Mac and CI run, and git ignores it, so no pull
   request can conflict over it.
-- Xcode 27.2 is a release candidate (27B48, 2026-10-19, Apple's releases
-  feed read 2026-10-25), and Brickson builds only with released Xcode
-  (*Build with Apple's current Xcode*). The current release, 27.1, reads
-  the format but has no way to switch a project to it.
+- Xcode 27.2 was a release candidate when this was written (27B48,
+  2026-10-19, Apple's releases feed read 2026-10-25), and Brickson builds
+  only with released Xcode (*Build with Apple's current Xcode*). Its
+  predecessor, 27.1, reads the format but has no way to switch a project
+  to it. Apple released 27.2 (27B52) on 2026-10-29, and the owner's Mac
+  has it; the trial still waits for 27.2's first fix release (step 1,
+  below).
 - It is new. Apple's library is at 0.1.0. Tuist's XcodeProj, the library
   XcodeGen and Tuist build on, calls its own support experimental,
   checked "against Apple's own library and hand written projects, not
@@ -427,10 +430,28 @@ anything the new Xcode reports.
   warning says so, and a pull request moves both jobs to it. Cloud agents
   cannot change workflow files (AGENTS.md, *Gotchas*), so the owner, or an
   agent on the owner's Mac, commits that change.
+- **When the Mac moves first.** Apple can release an Xcode on the Mac App
+  Store before its releases feed lists it, and GitHub installs it days
+  later; a release candidate can also differ from the release. Xcode
+  27.2 is that case: Apple released it (27B52) on 2026-10-29, while on
+  2026-10-30 the feed still listed only its release candidate (27B48)
+  and GitHub's `xcode-27` image (20261026) held only that candidate,
+  in `Xcode_27.2_Release_Candidate.app` with `Xcode_27.2.app` linked to
+  it. CI stays on the newest release that machine has (27.1) and moves
+  by itself once GitHub installs Apple's build and the feed lists it
+  (`scripts/test-select-xcode.py`, the 2026-10-26 image). Building CI
+  with the candidate meanwhile was rejected: it is not the build Apple
+  released. Until CI moves, the owner's Mac is where the newer Xcode is
+  checked, in the pull request that records the move
+  (docs/log/2026-10-30-xcode-27-2.md); nothing in the repository
+  changes to name it.
 - **Simulators.** `scripts/test.sh` tests on the newest iPad simulator,
   and runs UI tests on the newest standard iPhone too, each between the
   deployment target and the SDK of the Xcode in use. No version is
-  written into it.
+  written into it. A runtime made for one device, such as iPhone Duo's
+  own runtime from Xcode 27.2, counts by its iOS version too, so a Duo
+  simulator can be named as the destination; the default choices stay
+  the iPad Pro and the standard iPhone.
 - **Documents** say "the current Xcode release", not a number. A dated
   record of what something was checked on (the tables in
   docs/HANDOFF.md) keeps its version: that is history, not a pin.

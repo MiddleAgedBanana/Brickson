@@ -13,6 +13,16 @@ or into iTerm2 or Warp if you use one of those.
    iPhone and iPad simulators (apps that pretend to be a device on your
    Mac).
 
+   A simulator runs on a *runtime*, a copy of iOS made for the Mac. Xcode
+   may install two runtimes with the same iOS version, for example two
+   called "iOS 27.2" with different build numbers in brackets. One is
+   only for iPhone Duo, Apple's folding iPhone, and the other is for every
+   other iPhone and iPad. Keep both. To see which is which, run
+   `xcrun simctl list runtimes` in Terminal: the Duo's line ends with an
+   identifier that names the device after the version (such as
+   `iOS-27-2-iPhone19-4`), and the other's ends with the version alone
+   (`iOS-27-2`).
+
 2. **Install XcodeGen**, the tool that creates the Xcode project (more on
    why below). If you have just installed Homebrew, first run the commands
    its installer printed under *Next steps*; until you do, Terminal answers
