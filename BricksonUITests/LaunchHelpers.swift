@@ -30,6 +30,17 @@ enum UITestAppearance: String {
     case dark
 }
 
+/// Home's sizes (`ProfileChoice` in the app). Tests written for touch's
+/// sizes ask for them; `fromTheAnswer` leaves Family Setup's answer to
+/// decide, as it does for everyone, the largest until anyone answers.
+enum UITestSizes: String {
+    case touch
+    case switchControl = "switch-control"
+    case headTracking = "head-tracking"
+    case eyeTracking = "eye-tracking"
+    case fromTheAnswer
+}
+
 /// Where the launched app keeps what it saves (`LaunchOptions` in the app).
 enum UITestStorage {
     /// Test-only storage, erased first: the starter phrases, no saved
@@ -44,7 +55,8 @@ extension XCTestCase {
     /// Launches Brickson the way every UI test should: on test-only storage,
     /// with short idle limits (unless `shortTimeouts` is false, for a test
     /// slower than they are), in English, at the given text size,
-    /// appearance and orientation. It waits for Home (unless
+    /// appearance and orientation, with Home at touch's sizes unless
+    /// `sizes` asks for others. It waits for Home (unless
     /// `waitsForHome` is false, for a test that starts on another screen)
     /// and fails if Home says changes won't be kept, which would mean the
     /// test storage did not open.
@@ -59,6 +71,7 @@ extension XCTestCase {
         appearance: UITestAppearance = .light,
         orientation: UIDeviceOrientation = .portrait,
         storage: UITestStorage = .fresh,
+        sizes: UITestSizes = .touch,
         arguments: [String] = [],
         shortTimeouts: Bool = true,
         waitsForHome: Bool = true,
@@ -76,7 +89,8 @@ extension XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = [
             storage == .fresh ? "--fresh-test-storage" : "--test-storage",
-        ] + (shortTimeouts ? ["--short-timeouts"] : []) + [
+        ] + (shortTimeouts ? ["--short-timeouts"] : [])
+            + (sizes == .fromTheAnswer ? [] : ["--home-profile=\(sizes.rawValue)"]) + [
             "--appearance=\(appearance.rawValue)",
             "-UIPreferredContentSizeCategoryName", textSize.rawValue,
             // Tests find controls by their English labels.

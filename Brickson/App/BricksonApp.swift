@@ -20,6 +20,11 @@ struct BricksonApp: App {
     /// Whether Settings covers Home. Home's Settings button opens it; UI
     /// tests can open it at launch (`--screen=settings`).
     @State private var showsSettings: Bool
+    /// The sizes Home asks for: Family Setup's answer when Settings last
+    /// closed, so an answer changed there moves nothing under Settings,
+    /// whose places come from Home's frames (`ProfileChoice`); a UI test's
+    /// own in a debug build with test storage (`LaunchOptions`).
+    @State private var requestedProfile: HomeLayout.Profile
     private let container: ModelContainer
     private let isVolatileStore: Bool
     private let phraseLibraryIssue: PhraseLibraryIssue?
@@ -41,7 +46,9 @@ struct BricksonApp: App {
         _audioSafety = State(initialValue: audio.safety)
         _speech = State(initialValue: audio.speech)
         _attention = State(initialValue: audio.attention)
-        _setup = State(initialValue: SetupStore(defaults: launch.settings))
+        let setup = SetupStore(defaults: launch.settings)
+        _setup = State(initialValue: setup)
+        _requestedProfile = State(initialValue: Self.requestedProfile(answer: setup.record, launch: launch))
         _drafts = State(initialValue: DraftStore(directory: DraftFile.directory(in: launch.filesDirectory)))
         _showsSettings = State(initialValue: launch.startScreen == .settings)
 
@@ -71,7 +78,15 @@ struct BricksonApp: App {
                 .environment(\.isVolatileStore, isVolatileStore)
                 .environment(\.phraseLibraryIssue, phraseLibraryIssue)
                 .environment(\.appTimeouts, launch.timeouts)
+                .environment(\.requestedHomeProfile, requestedProfile)
                 .preferredColorScheme(testColorScheme)
+                .onChange(of: showsSettings) { _, shows in
+                    // Settings has closed: Home takes the sizes the answer
+                    // now asks for.
+                    if !shows {
+                        requestedProfile = Self.requestedProfile(answer: setup.record, launch: launch)
+                    }
+                }
         }
         .modelContainer(container)
         .onChange(of: scenePhase, initial: true) { _, phase in
@@ -89,6 +104,10 @@ struct BricksonApp: App {
                 drafts.retrySave()
             }
         }
+    }
+
+    private static func requestedProfile(answer: SetupRecord, launch: LaunchOptions) -> HomeLayout.Profile {
+        launch.activeHomeProfile ?? ProfileChoice.requested(by: answer.plannedAccessMethods)
     }
 
     /// Release launches always use .standard, whose appearance is nil.
@@ -109,4 +128,8 @@ extension EnvironmentValues {
     @Entry var isVolatileStore: Bool = false
     /// Set when the starter phrases could not be prepared at launch.
     @Entry var phraseLibraryIssue: PhraseLibraryIssue? = nil
+    /// The sizes Home and Settings lay Home out at (`ProfileChoice`): the
+    /// largest, as for a question nobody has answered, unless the app sets
+    /// them.
+    @Entry var requestedHomeProfile: HomeLayout.Profile = .eyeTracking
 }

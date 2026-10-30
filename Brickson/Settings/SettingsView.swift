@@ -28,6 +28,7 @@ struct SettingsView: View {
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.legibilityWeight) private var legibilityWeight
+    @Environment(\.requestedHomeProfile) private var requestedProfile
     @Environment(AttentionAlertPlayer.self) private var attention
     @Environment(SpeechService.self) private var speech
     @State private var path: [SettingsRoute] = []
@@ -50,7 +51,10 @@ struct SettingsView: View {
             // Home's own engine, given the same window and text size, so
             // Back to Talking lands where Home's Phrases is.
             let space = HomeLayout.Space(proxy)
-            let home = HomeLayout(space: space, text: text, modes: .phrasesAndTyping)
+            // Home's sizes as they were when Settings opened, so an answer
+            // changed here moves nothing (`ProfileChoice`). Back to Talking
+            // is touch's in every profile (`HomeLayout.backToTalking`).
+            let home = ProfileChoice.layout(requested: requestedProfile, space: space, text: text, modes: .phrasesAndTyping)
             // The stack starts under the bar, in the window's coordinates;
             // until its height is measured, it is taken to reach the foot
             // of the cover.

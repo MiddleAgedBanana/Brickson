@@ -112,39 +112,124 @@ nonisolated struct HomeLayout: Equatable, Sendable {
     }
 
     /// How the person reaches the screen. Each profile sets the floors no
-    /// target goes below and the sizes targets grow to where there is room
-    /// (docs/DECISIONS.md, "Layouts from the space available"). Only touch
-    /// is defined until the profiles of docs/ROADMAP.md, Wave 3 items 8 and
-    /// 9, which come after R0's first build has gone to App Review.
-    enum Profile: Equatable, Sendable {
+    /// target goes below, in each direction, the gaps between them, and the
+    /// sizes targets grow to where there is room (docs/DECISIONS.md,
+    /// "Layouts from the space available" and "Sizes that follow how the
+    /// screen is reached"). A profile changes sizes and spacing only: the
+    /// arrangement comes from the window alone, so every control keeps its
+    /// place relative to the others in every profile (invariant 8).
+    ///
+    /// Floors are physical sizes held at the densest supported screens, 163
+    /// points per inch, so a target is at least that big on every screen
+    /// and bigger on most. Family Setup's answer picks one
+    /// (`ProfileChoice`); Voice Control and someone else helping use
+    /// touch's.
+    enum Profile: Int, CaseIterable, Comparable, Sendable {
+        /// Apple's 44 by 44 points (invariant 1): about 6.9 mm.
         case touch
+        /// As head tracking's: Switch Control's gliding cursor and its own
+        /// head mode pick a point, as a head pointer does.
+        case switchControl
+        /// Tiles 110 points (17 mm, about 2.1 degrees at the 46 cm Apple's
+        /// guide gives), quick controls 88 (14 mm), categories 72 (11 mm).
+        case headTracking
+        /// The reference app's gaze sizes, 110, 88 and 72 points on a
+        /// 13-inch iPad at about 132 points per inch, held at 163: tiles
+        /// 136 points (21 mm, about 2.7 degrees at 46 cm), quick controls
+        /// 109, categories 89, and its 12-point gaps held the same way.
+        case eyeTracking
 
-        /// The smallest any target may be, in each direction. For touch,
-        /// Apple's 44 by 44 points (invariant 1): about 6.9 mm on the
-        /// densest supported screens (163 points per inch), more on the
-        /// rest.
-        var floor: CGFloat {
+        static func < (a: Profile, b: Profile) -> Bool { a.rawValue < b.rawValue }
+
+        /// Yes, No, Emergency, Again, Get Attention, Phrases and Type: the
+        /// smallest each may be, in each direction.
+        var quickControlFloor: CGFloat {
             switch self {
             case .touch: 44
+            case .switchControl, .headTracking: 88
+            case .eyeTracking: 109
             }
         }
 
-        /// How tall Yes, No, Emergency, Again and Get Attention grow where
-        /// there is room: today's sizes, 64 points on compact widths and 88
-        /// on regular ones (docs/DECISIONS.md, "Home's stand-in layout").
-        func quickControlHeight(isRegular: Bool) -> CGFloat {
+        /// The categories, Stop's well and Settings.
+        var categoryFloor: CGFloat {
             switch self {
-            case .touch: isRegular ? 88 : 64
+            case .touch: 44
+            case .switchControl, .headTracking: 72
+            case .eyeTracking: 89
             }
+        }
+
+        /// A phrase tile, in each direction. Its words may need it taller
+        /// (`TileFloor`).
+        var tileFloor: CGFloat {
+            switch self {
+            case .touch: 44
+            case .switchControl, .headTracking: 110
+            case .eyeTracking: 136
+            }
+        }
+
+        /// The smallest any target may be, in each direction. For touch,
+        /// Apple's 44 by 44 points (invariant 1).
+        var floor: CGFloat { min(quickControlFloor, categoryFloor, tileFloor) }
+
+        /// The gap between controls inside a region: touch's 8 points, and
+        /// for a resting pointer the 12 points Apple's Human Interface
+        /// Guidelines give around a control with a bezel ("about 12 points
+        /// of padding"), the reference app's gaze gap, which Eye Tracking
+        /// holds at the densest screen, as its floors.
+        var controlSpacing: CGFloat {
+            switch self {
+            case .touch: 8
+            case .switchControl, .headTracking: 12
+            case .eyeTracking: 15
+            }
+        }
+
+        /// The smallest gap between regions: 2 points more than the gap
+        /// between controls, more than the half point the chain checks count
+        /// as a tie, so a look resting in a well keeps meeting the control in
+        /// its own region first (`HomeLayoutEngineTests`).
+        var minimumRegionSpacing: CGFloat { controlSpacing + 2 }
+
+        /// The gap between regions where there is room.
+        var regionSpacing: CGFloat { controlSpacing + 4 }
+
+        /// How tall Yes, No, Emergency, Again and Get Attention grow where
+        /// there is room: touch's sizes, 64 points on compact widths and 88
+        /// on regular ones (docs/DECISIONS.md, "Home's stand-in layout"), or
+        /// the profile's floor where that is taller.
+        func quickControlHeight(isRegular: Bool) -> CGFloat {
+            max(quickControlFloor, isRegular ? 88 : 64)
         }
 
         /// How tall the categories, Stop and Settings grow where there is
-        /// room: today's sizes, 48 points on compact widths and 72 on
-        /// regular ones.
+        /// room: touch's sizes, 48 points on compact widths and 72 on
+        /// regular ones, or the profile's floor where that is taller.
         func categoryHeight(isRegular: Bool) -> CGFloat {
-            switch self {
-            case .touch: isRegular ? 72 : 48
+            max(categoryFloor, isRegular ? 72 : 48)
+        }
+
+        /// This profile and the smaller ones a window too small for it
+        /// falls back to, largest first, ending with touch, each strictly
+        /// smaller than the one before (Switch Control's sizes are head
+        /// tracking's, so a window falls from head tracking straight to
+        /// touch). `ProfileChoice` takes the first one the window holds.
+        var withSmallerOnes: [Profile] {
+            var ladder = [self]
+            for smaller in Profile.allCases.reversed() where smaller < self {
+                if let last = ladder.last, smaller.isSmaller(than: last) { ladder.append(smaller) }
             }
+            return ladder
+        }
+
+        /// Every floor and gap of this profile is at most `other`'s, and one
+        /// is smaller.
+        func isSmaller(than other: Profile) -> Bool {
+            let mine = [quickControlFloor, categoryFloor, tileFloor, controlSpacing]
+            let theirs = [other.quickControlFloor, other.categoryFloor, other.tileFloor, other.controlSpacing]
+            return zip(mine, theirs).allSatisfy { $0 <= $1 } && mine != theirs
         }
     }
 
@@ -323,6 +408,11 @@ nonisolated struct HomeLayout: Equatable, Sendable {
     /// Whether Home has Phrases and Type, and with them the slot plan's own
     /// arrangements (`Modes`).
     let modes: Modes
+    /// The profile whose floors, gaps and sizes this layout has.
+    let profile: Profile
+    /// The gap between controls inside a region: the profile's
+    /// (`Profile.controlSpacing`).
+    let spacing: CGFloat
     /// Three columns or five, chosen from the width.
     let isRegular: Bool
     let categoryArrangement: CategoryArrangement
@@ -360,7 +450,13 @@ nonisolated struct HomeLayout: Equatable, Sendable {
     /// Phrases' frame, and every point of it is nearer Phrases, by centre
     /// and by edge, than any other control, so a look still resting on it
     /// once Settings closes meets Phrases, which does nothing while the
-    /// phrases show (Settings always closes onto them). On compact widths
+    /// phrases show (Settings always closes onto them). In every profile it
+    /// is touch's, in the same window: an answer changed in Family Setup
+    /// can close Settings onto other sizes than it opened over, and touch's
+    /// Back to Talking lies within Phrases in each, where a larger
+    /// profile's, closing onto smaller sizes, meets Type at its foot and,
+    /// on the widest windows, Get Attention or Again (`ProfileChoiceTests`;
+    /// docs/DECISIONS.md, "Sizes that follow how the screen is reached"). On compact widths
     /// it is Phrases' frame. On regular ones, where Phrases spans the two
     /// columns above Again and Get Attention, it is centred over Phrases,
     /// as tall, and at most one column wide, narrower on short windows: on
@@ -387,6 +483,18 @@ nonisolated struct HomeLayout: Equatable, Sendable {
     private(set) var allocationFrames: [Slot: CGRect]
     /// An unsatisfied geometric constraint, never a hidden smaller target.
     private(set) var reservationIssues: [HomeReservedLayout.Issue]
+    /// Whether this window holds the layout's profile: every control at
+    /// least the profile's floors in each direction, every phrase tile at
+    /// least its floor, the starter
+    /// library without scrolling, and nothing a reserved region left
+    /// unsatisfied. Touch's sizes apply anywhere; a larger profile only
+    /// where it holds (`ProfileChoice`). A window with a fold or a camera
+    /// across Home holds no profile but touch for now: the reserved layout
+    /// chooses its lanes and its grid's columns from the floors, so a
+    /// larger floor could choose different ones, and no fold check has
+    /// measured a larger profile (docs/DECISIONS.md, "Sizes that follow
+    /// how the screen is reached").
+    private(set) var holdsProfile: Bool
 
     struct RegionGaps: Equatable, Sendable {
         var aToC: CGFloat
@@ -513,13 +621,20 @@ nonisolated struct HomeLayout: Equatable, Sendable {
         slotsInReservedRegions = Set(frames.filter { _, frame in
             space.reservedRegions.contains { Self.overlap($0, frame) }
         }.keys)
+        holdsProfile = profile == .touch && Self.meetsFloors(self)
     }
 
     private init(
         unreservedSpace space: Space, profile: Profile, text: Text,
         largestCategory: Int, modes: Modes
     ) {
-        let spacing = Self.controlSpacing
+        let spacing = profile.controlSpacing
+        // Every choice of arrangement (three columns or five, the grid's
+        // columns, the categories' rows) is made with touch's gap, so a
+        // window has the same arrangement in every profile and no control
+        // changes place relative to the others (invariant 8). The
+        // profile's gap only sets the widths and heights within it.
+        let arrangementSpacing = Self.controlSpacing
         let minimum = MinimumWidths.forBoldText(text.boldText)
         let safe = space.safeArea
         let content = CGRect(
@@ -530,6 +645,8 @@ nonisolated struct HomeLayout: Equatable, Sendable {
         )
         self.content = content
         self.modes = modes
+        self.profile = profile
+        self.spacing = spacing
         let width = content.width
         keyboard = KeyboardAllowance(windowSize: space.size)
 
@@ -538,7 +655,7 @@ nonisolated struct HomeLayout: Equatable, Sendable {
         // one-row safety row also needs Phrases and Type above Again and
         // Get Attention (`Modes`).
         let fifth = (width - 4 * spacing) / 5
-        let isRegular = fifth >= minimum.regularColumn
+        let isRegular = (width - 4 * arrangementSpacing) / 5 >= minimum.regularColumn
         self.isRegular = isRegular
         let safetyInOneRow = isRegular && modes == .phrasesAndTyping
 
@@ -587,10 +704,10 @@ nonisolated struct HomeLayout: Equatable, Sendable {
         let insets = 2 * Self.labelInset.vertical
         let getAttentionTakesTwoLines = getAttentionWidth < minimum.getAttentionOneLine - 0.001
         let quickFloor = max(
-            profile.floor, text.quickControlLine + insets,
+            profile.quickControlFloor, text.quickControlLine + insets,
             getAttentionTakesTwoLines ? Self.twoLineQuickControlHeight : 0
         )
-        let categoryFloor = max(profile.floor, text.categoryLine + insets)
+        let categoryFloor = max(profile.categoryFloor, text.categoryLine + insets)
         // Phrases and Type: one line of their words, which fit the trailing
         // column on one line wherever it is. Settings' Back to Talking sits
         // over Phrases (`backToTalking`), in the categories' font, so where
@@ -599,7 +716,7 @@ nonisolated struct HomeLayout: Equatable, Sendable {
         let backToTalkingWidth = isRegular ? fifth : trailingWidth
         let backToTalkingTakesTwoLines = backToTalkingWidth < minimum.backToTalkingOneLine - 0.001
         let modeFloor = max(
-            profile.floor, text.quickControlLine + insets,
+            profile.quickControlFloor, text.quickControlLine + insets,
             backToTalkingTakesTwoLines ? Self.twoLineCategoryHeight : 0
         )
         let messageBlock = 2 * text.messageLine + Self.statusSpacing + text.statusLine
@@ -609,7 +726,7 @@ nonisolated struct HomeLayout: Equatable, Sendable {
         let quickRows = safetyInOneRow ? 1 : 2
 
         // The categories region's arrangement and widths.
-        let categories = CategoryWidths(contentWidth: width, isRegular: isRegular, fifth: fifth, minimum: minimum)
+        let categories = CategoryWidths(contentWidth: width, isRegular: isRegular, fifth: fifth, minimum: minimum, spacing: spacing)
         categoryArrangement = categories.arrangement
         settingsShowsName = categories.settings >= minimum.settings
         let categoryRows = categories.arrangement == .twoColumns ? 3 : 2
@@ -619,15 +736,15 @@ nonisolated struct HomeLayout: Equatable, Sendable {
         let columns: Int
         if isRegular {
             let tileMinimum = text.boldText ? Self.regularTile.boldMinimumWidth : Self.regularTile.minimumWidth
-            columns = (width - 3 * spacing) / 4 >= tileMinimum ? 4 : 3
+            columns = (width - 3 * arrangementSpacing) / 4 >= tileMinimum ? 4 : 3
         } else {
             let tileMinimum = text.boldText ? Self.compactTile.boldMinimumWidth : Self.compactTile.minimumWidth
-            columns = (width - 2 * spacing) / 3 >= tileMinimum ? 3 : 2
+            columns = (width - 2 * arrangementSpacing) / 3 >= tileMinimum ? 3 : 2
         }
         let tileWidth = (width - CGFloat(columns - 1) * spacing) / CGFloat(columns)
         let tileFloor = TileFloor.height(
             for: tileWidth, in: isRegular ? Self.regularTile.floors : Self.compactTile.floors,
-            boldText: text.boldText, profileFloor: profile.floor
+            boldText: text.boldText, profileFloor: profile.tileFloor
         )
         let referenceRows = Grid.rows(for: Self.referencePhraseCount, columns: columns)
 
@@ -675,9 +792,9 @@ nonisolated struct HomeLayout: Equatable, Sendable {
 
         // What the starter library needs at every floor, with the drop the
         // floors need. Growth only makes the drop smaller.
-        let floorDrop = dropKeepingYesOffTheWell(quick: quickFloor, gap: Self.minimumRegionSpacing, category: categoryFloor)
+        let floorDrop = dropKeepingYesOffTheWell(quick: quickFloor, gap: profile.minimumRegionSpacing, category: categoryFloor)
         let needed = messageRegionFloor + stack(quickRows, of: quickFloor) + stack(categoryRows, of: categoryFloor)
-            + stack(referenceRows, of: tileFloor) + 3 * Self.minimumRegionSpacing + floorDrop
+            + stack(referenceRows, of: tileFloor) + 3 * profile.minimumRegionSpacing + floorDrop
         var spare = content.height - needed
         startersFit = spare >= -0.001
         shortfall = max(0, -spare)
@@ -685,13 +802,13 @@ nonisolated struct HomeLayout: Equatable, Sendable {
         // Growth, in order, where there is room: the gaps between regions,
         // the safety row, Phrases and Type, the categories. The phrase grid
         // takes the rest.
-        var gap = Self.minimumRegionSpacing
+        var gap = profile.minimumRegionSpacing
         var quick = quickFloor
         var messageRegion = messageRegionFloor
         var category = categoryFloor
         let quickTarget = max(quickFloor, profile.quickControlHeight(isRegular: isRegular))
         if spare > 0 {
-            let gapGrowth = min(spare, 3 * (Self.regionSpacing - Self.minimumRegionSpacing))
+            let gapGrowth = min(spare, 3 * (profile.regionSpacing - profile.minimumRegionSpacing))
             gap += gapGrowth / 3
             spare -= gapGrowth
             let quickGrowth = min(spare, CGFloat(quickRows) * (quickTarget - quickFloor))
@@ -726,7 +843,7 @@ nonisolated struct HomeLayout: Equatable, Sendable {
             let quickCut = min(max(0, safetyBottom - limit), CGFloat(quickRows) * (quick - quickFloor))
             quick -= quickCut / CGFloat(quickRows)
             safetyBottom -= quickCut
-            let gapCut = min(max(0, safetyBottom - limit), gap - Self.minimumRegionSpacing)
+            let gapCut = min(max(0, safetyBottom - limit), gap - profile.minimumRegionSpacing)
             gap -= gapCut
             safetyBottom -= gapCut
         }
@@ -804,6 +921,10 @@ nonisolated struct HomeLayout: Equatable, Sendable {
         } else {
             backToTalking = .null
         }
+        if profile != .touch {
+            backToTalking = HomeLayout(unreservedSpace: space, profile: .touch, text: text,
+                largestCategory: largestCategory, modes: modes).backToTalking
+        }
 
         // B: Stop's well, the categories and Settings, lower by the drop
         // that keeps Yes off the well.
@@ -825,6 +946,23 @@ nonisolated struct HomeLayout: Equatable, Sendable {
         slotsInReservedRegions = Set(frames.filter { _, frame in
             space.reservedRegions.contains { Self.overlap($0, frame) }
         }.keys)
+        holdsProfile = false
+        holdsProfile = Self.meetsFloors(self)
+    }
+
+    /// Whether `layout` keeps every promise of its profile (`holdsProfile`).
+    private static func meetsFloors(_ layout: HomeLayout) -> Bool {
+        let profile = layout.profile
+        guard layout.startersFit && layout.controlsFit && layout.reservationIssues.isEmpty else { return false }
+        func holds(_ frame: CGRect, _ floor: CGFloat) -> Bool {
+            frame.width >= floor - 0.001 && frame.height >= floor - 0.001
+        }
+        for slot in layout.controls {
+            let floor = Slot.categoriesRegion.contains(slot) ? profile.categoryFloor : profile.quickControlFloor
+            guard holds(layout.frame(slot), floor) else { return false }
+        }
+        return layout.grid.columnFrames.allSatisfy { $0.width >= profile.tileFloor - 0.001 }
+            && layout.grid.tileSize.height >= profile.tileFloor - 0.001
     }
 
     /// Whether two rectangles share some area; touching edges do not count.
@@ -1062,16 +1200,21 @@ nonisolated struct HomeLayout: Equatable, Sendable {
         let stop: CGFloat
         let settings: CGFloat
 
-        init(contentWidth: CGFloat, isRegular: Bool, fifth: CGFloat, minimum: MinimumWidths) {
-            let spacing = HomeLayout.controlSpacing
+        /// Three columns or two are chosen with touch's gap, so every
+        /// profile has the same rows; `spacing`, the profile's, sets the
+        /// widths.
+        init(contentWidth: CGFloat, isRegular: Bool, fifth: CGFloat, minimum: MinimumWidths, spacing: CGFloat) {
             if isRegular {
                 (arrangement, category, stop, settings) = (.band, fifth, fifth, fifth)
                 return
             }
-            let threeColumn = max(minimum.category, (contentWidth - 2 * spacing) / 3)
-            let rest = contentWidth - 2 * spacing - 2 * threeColumn
-            if rest >= max(minimum.stop, minimum.settingsSymbol) {
-                (arrangement, category, stop, settings) = (.threeColumns, threeColumn, rest, rest)
+            func threeColumns(_ spacing: CGFloat) -> (category: CGFloat, rest: CGFloat) {
+                let category = max(minimum.category, (contentWidth - 2 * spacing) / 3)
+                return (category, contentWidth - 2 * spacing - 2 * category)
+            }
+            if threeColumns(HomeLayout.controlSpacing).rest >= max(minimum.stop, minimum.settingsSymbol) {
+                let cells = threeColumns(spacing)
+                (arrangement, category, stop, settings) = (.threeColumns, cells.category, cells.rest, cells.rest)
             } else {
                 let half = max(0, contentWidth - spacing) / 2
                 (arrangement, category, stop, settings) = (.twoColumns, half, half, half)

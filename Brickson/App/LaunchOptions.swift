@@ -39,6 +39,10 @@ import SwiftData
 /// - `--layout-fixture=top-division`: with test storage only, replace the
 ///   reported reservations with a synthetic horizontal band through the
 ///   first Home row. This checks the real renderer against the allocator.
+/// - `--home-profile=touch|switch-control|head-tracking|eye-tracking`:
+///   with test storage only, Home asks for these sizes whatever Family
+///   Setup's answer, so tests written for touch's sizes keep them
+///   (`ProfileChoice`). Without it, the answer decides, as for everyone.
 ///
 /// Text size still uses UIKit's `-UIPreferredContentSizeCategoryName`
 /// argument. Appearance needs an app-local option because command-line
@@ -89,6 +93,11 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
         case topDivision = "top-division"
     }
 
+    /// The `--home-profile` values, each a profile's sizes.
+    static let homeProfiles: [String: HomeLayout.Profile] = [
+        "touch": .touch, "switch-control": .switchControl, "head-tracking": .headTracking, "eye-tracking": .eyeTracking,
+    ]
+
     var storage = Storage.standard
     var usesShortTimeouts = false
     var startScreen = StartScreen.home
@@ -101,6 +110,8 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
     var attentionTone: AttentionTone?
     /// Never applied to ordinary storage or in a release build.
     var layoutFixture: LayoutFixture?
+    /// Never applied to ordinary storage or in a release build.
+    var homeProfile: HomeLayout.Profile?
     /// Arguments written like these options but not understood: a misspelt
     /// name, an unknown value. They are logged at launch, so a typo in a
     /// test shows up instead of quietly running with the defaults.
@@ -160,6 +171,8 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
                 options.attentionTone = AttentionTone(rawValue: value)
             case ("layout-fixture", let value?) where LayoutFixture(rawValue: value) != nil:
                 options.layoutFixture = LayoutFixture(rawValue: value)
+            case ("home-profile", let value?) where homeProfiles[value] != nil:
+                options.homeProfile = homeProfiles[value]
             default:
                 options.unrecognized.append(argument)
             }
@@ -170,6 +183,13 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
     var activeLayoutFixture: LayoutFixture? {
         guard Self.readsLaunchArguments, storage != .standard else { return nil }
         return layoutFixture
+    }
+
+    /// The sizes a test asked Home for, only with test storage in a debug
+    /// build: never for the person's own answer.
+    var activeHomeProfile: HomeLayout.Profile? {
+        guard Self.readsLaunchArguments, storage != .standard else { return nil }
+        return homeProfile
     }
 
     /// A synthetic reservation relative to this window's available space,

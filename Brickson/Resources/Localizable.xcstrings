@@ -259,6 +259,9 @@
     "Hold Duration sets how long a switch must be held before it counts. Ignore Repeat ignores a press that comes again too soon." : {
 
     },
+    "Home's buttons take the size the answers need, as large as this screen has room for, and are largest until something is chosen. The new size shows when Settings closes." : {
+
+    },
     "How is the screen reached?" : {
 
     },
@@ -595,6 +598,9 @@
     "Switch Control" : {
 
     },
+    "Switch Control is on, so Switch Control may be one of the answers." : {
+
+    },
     "Switch Control timing" : {
 
     },
@@ -749,6 +755,9 @@
 
     },
     "Voice Settings" : {
+
+    },
+    "VoiceOver is on, so Touch may be one of the answers." : {
 
     },
     "Voices, help with reaching the screen, keeping %@ open, and the privacy policy are in Family Setup." : {
