@@ -718,9 +718,12 @@ what passes and who checks it:
   2026-10-30), and which floors Settings' other controls hold under a
   larger profile, measured and put to the owner (they keep 64-point rows
   in every profile). Where the starter library still scrolls at touch's
-  sizes (invariant 11), it stops scrolling, or the owner accepts each
-  window that still does. *Checks:* a thread measures; the owner
-  accepts or changes. *Today:* Settings' floors not recorded
+  sizes, a dwell, switch, head or gaze answer breaks invariant 11 there,
+  so the scrolling is removed before App Review (R0 item 3). The bar
+  adds no exception to the invariant: only a change to invariant 11
+  itself, made by the owner and recorded in docs/DECISIONS.md, could
+  leave a window scrolling. *Checks:* a thread measures; the owner
+  accepts or changes a floor. *Today:* Settings' floors not recorded
   ([`log/2026-10-30-sizes-switched-on.md`](log/2026-10-30-sizes-switched-on.md),
   *Follow-ups*); by the engine's model the phrase grid still scrolls at
   touch's sizes on phones smaller than the Pro Max at AX5, on the
