@@ -42,7 +42,10 @@ import SwiftData
 /// - `--home-profile=touch|switch-control|head-tracking|eye-tracking`:
 ///   with test storage only, Home asks for these sizes whatever Family
 ///   Setup's answer, so tests written for touch's sizes keep them
-///   (`ProfileChoice`). Without it, the answer decides, as for everyone.
+///   (`ProfileChoice`). `--home-profile=from-answer` has Home follow the
+///   answer, as it will for everyone once the owner switches that on.
+///   Without either, Home is as everyone gets it: touch's sizes while
+///   they are held (`ProfileChoice.followsTheAnswer`).
 ///
 /// Text size still uses UIKit's `-UIPreferredContentSizeCategoryName`
 /// argument. Appearance needs an app-local option because command-line
