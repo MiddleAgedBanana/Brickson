@@ -29,6 +29,9 @@ final class HomeSizesTests: XCTestCase {
     /// answer.
     private static let sizesSentence =
         "Home's buttons take the size the answers need, as large as this screen has room for, and are largest until something is chosen. The new size shows when Settings closes."
+    /// The first step's sentence before it, shown whatever the sizes do.
+    private static let leadSentence =
+        "Choose every way that is used now. Each answer is saved as soon as it is chosen."
 
     override func setUpWithError() throws {
         continueAfterFailure = true
@@ -51,6 +54,14 @@ final class HomeSizesTests: XCTestCase {
         guard let b else { return false }
         return abs(a.minX - b.minX) <= 0.5 && abs(a.minY - b.minY) <= 0.5
             && abs(a.width - b.width) <= 0.5 && abs(a.height - b.height) <= 0.5
+    }
+
+    /// Whatever element carries these words in its label. A query by
+    /// identifier, such as `app.staticTexts["…"]`, throws for a string
+    /// longer than 128 characters, as the sizes sentence is.
+    @MainActor
+    private func text(_ words: String, in app: XCUIApplication) -> XCUIElement {
+        app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", words)).firstMatch
     }
 
     /// Opens Family Setup's first step from Home and returns its Touch
@@ -85,7 +96,8 @@ final class HomeSizesTests: XCTestCase {
             XCTAssertTrue(Self.same(frame, touch[name]), "\(name) at \(frame), touch's \(String(describing: touch[name])) (\(context))")
         }
         _ = openFirstStep(app, context: context)
-        XCTAssertFalse(app.staticTexts[Self.sizesSentence].exists, "the first step says sizes follow the answers (\(context))")
+        XCTAssertTrue(text(Self.leadSentence, in: app).exists, "the first step's words did not show (\(context))")
+        XCTAssertFalse(text(Self.sizesSentence, in: app).exists, "the first step says sizes follow the answers (\(context))")
     }
 
     /// With Home following the answer: fails if, before anyone answers,
@@ -124,7 +136,7 @@ final class HomeSizesTests: XCTestCase {
 
         // Touch alone, chosen in Family Setup's first step.
         let touch = openFirstStep(app, context: context)
-        XCTAssertTrue(app.staticTexts[Self.sizesSentence].exists, "the first step does not say what the answers do (\(context))")
+        XCTAssertTrue(text(Self.sizesSentence, in: app).exists, "the first step does not say what the answers do (\(context))")
         touch.tap()
         let chosen = expectation(for: NSPredicate(format: "isSelected == true"), evaluatedWith: touch)
         XCTAssertEqual(XCTWaiter.wait(for: [chosen], timeout: 10), .completed, "Touch was not chosen (\(context))")

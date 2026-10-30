@@ -154,6 +154,18 @@ phrases bordering Clear and Put Back by centre.
   84 (iPhone 17 Pro Max) to 635 (a zoomed 375×667 phone) points short,
   at Eye Tracking's 304 to 871; the iPad mini in landscape is 30 to 58
   short at head tracking's (58 at AX5) and 197 at Eye Tracking's.
+- CI on the first push (run 41031065358, the current Xcode on GitHub's
+  image, iOS 27.0 simulators): the unit tests passed. The UI tests
+  passed on the iPad Pro 13-inch (57 passed, 2 skipped) and the iPhone
+  17 (53 passed, 6 skipped) except `HomeSizesTests`' one query for the
+  first step's sentence on sizes, which XCTest refused because a query
+  by identifier is limited to 128 characters and the sentence is
+  longer. The rest of that test passed: following the answer, Home on
+  the 13-inch iPad in portrait met Eye Tracking's floors before an
+  answer, and its quick controls were no taller than touch's 88 points
+  once Touch was chosen. The test now finds the sentence by its label,
+  and compares frames with a launch at touch's sizes instead of that
+  88-point bound.
 - `scripts/test-docs.py`, `scripts/test-hooks.py` and
   `scripts/test-site.py` pass.
 - The String Catalog has the three new sentences; no key the code uses
@@ -166,9 +178,10 @@ phrases bordering Clear and Put Back by centre.
 
 ## Not verified
 
-- Nothing was built with Xcode or run on a simulator before the first
-  push: CI is the first build of the app, its unit tests on Apple's
-  frameworks and the UI tests, `HomeSizesTests` among them.
+- Nothing was built with Xcode or run on a simulator by this session:
+  CI is the build. The changes after the first push (the hold, the word
+  check, `HomeSizesTests` as rewritten) were first built by the second
+  push's run.
 - The first step's question heights that CI measured for the chain
   tests were taken before its new sentence; the sentence's height is
   modelled (`SettingsChainsTests.SweptFamilySetup`), and CI's run is
