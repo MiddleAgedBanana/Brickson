@@ -968,9 +968,11 @@ what passes and who checks it:
   and dark at the default size and AX5; Settings, Family Setup and the
   privacy policy light and dark at the default size, and Settings,
   Family Setup and the first step again over the larger Home
-  (`HomeSizesTests`); Home's emergency and alarm states, Voice Settings,
-  the guides, the Each Way guide and the step-by-step setup in light
-  only, at the default size; typing not at all.
+  (`HomeSizesTests`); Home's alarm state in light only, at the default
+  size and AX5, and in the iPad's landscape at the default size; Home's
+  emergency state, Voice Settings, the guides, the Each Way guide and
+  the step-by-step setup in light only, at the default size; typing not
+  at all.
 - **Q23. Every label earned.** Each Accessibility Nutrition Label
   Brickson declares meets Apple's criteria for every common task
   (docs/APP-STORE.md, section 4), because "users must be able to
@@ -1056,12 +1058,15 @@ touches has a recorded result.
 are complete, including item 11's TestFlight pilot; the device checks they
 touch are logged in `docs/log/`; Wave 3 items 8 and 9 are complete,
 with item 8's sizes switched on (the owner chose the largest sizes that
-fit, 2026-10-30); and each of the three dwell hazards
-still open (Yes and No bordering the message, the top of Stop's well
-nearest Again, and dimmed phrases bordering Clear and Put Back by
-centre) is gone or accepted by the owner, since no build with the
-larger sizes goes to App Review or to an external TestFlight group
-while any of these is open (DECISIONS.md, "Sizes that follow how the screen is reached"); UI tests are green on an iPhone and an
+fit, 2026-10-30); and every dwell hazard still open is gone or
+accepted by the owner, five today (*The quality bar*, Q2): the three
+the larger sizes left (Yes and No bordering the message, the top of
+Stop's well nearest Again, and dimmed phrases bordering Clear and Put
+Back by centre; DECISIONS.md, "Sizes that follow how the screen is reached"),
+Again nearest Stop's empty well with fewer than three everyday
+categories, and the iPhone Duo chain at AX5 from Family Setup's Back,
+since no build goes to App Review or to an external TestFlight group
+while any of these is open; UI tests are green on an iPhone and an
 iPad at the default and largest text sizes, light and dark; item 13's
 iPhone Duo checks are logged and its screenshots made; and the
 privacy policy, README and website say only what the build does. A

@@ -163,15 +163,28 @@ not have, so Q16 asks for the variant or a recorded reason.
   a window where the starter library scrolls, which would have been a
   new exception to invariant 11; that scrolling is removed before App
   Review.
-- The commit after 321810e: CodeRabbit's second review answered (the
-  Q5 device-check row names TestFlight's crash feedback), and this
-  list corrected to one line per commit.
+- 6014a4d: CodeRabbit's second review answered (the Q5 device-check
+  row names TestFlight's crash feedback), and this list corrected to
+  one line per commit.
+- The commit after 6014a4d: a final check's findings. R0's *Release
+  gate* named three dwell hazards where Q2 names five; Q22's *Today*
+  left out the alarm state's audits at AX5 and in the iPad's landscape
+  (`GetAttentionOnHomeTests`); and this record listed fewer of the
+  checks that ran than it said.
 
 ## Verified
 
-- `python3 scripts/test-docs.py`: 45 tests, OK, in the cloud
-  container on 2026-10-30. It checks that every cited section title and
-  relative link resolves; it does not check the wording.
+- In the cloud container on 2026-10-30 and 2026-10-31, on the final
+  documents: `python3 scripts/test-docs.py` (45 tests, OK; every cited
+  section title and relative link resolves, though it does not check
+  the wording), `scripts/test-hooks.py` (124 tests, OK),
+  `scripts/test-site.py` (7, OK), `scripts/test-runner.py` (56, OK)
+  and `scripts/test-select-xcode.py` (23, OK).
+- GitHub CI on 6014a4d (run 41130391375, Xcode 27.1): the unit tests
+  passed (823 ran, 0 failed). The UI tests failed once, only in the
+  first iPad test, on "kAXErrorServerNotFound" after a 60-second
+  automation setup, the startup failure docs/HANDOFF.md records. A
+  single re-run of that job passed on the iPad and the iPhone 17.
 - Every quote from Apple in the bar and in docs/DECISIONS.md was
   checked by script against the text copied from its page on
   2026-10-30, word for word apart from typographic apostrophes and
@@ -194,12 +207,16 @@ not have, so Q16 asks for the variant or a recorded reason.
 ## Not verified
 
 - No app build, device run or gate was run: this pull request changes
-  documents only, and CI is the app's check. Only the Python document
-  and guard checks above ran.
+  documents only, and CI is the app's check. Outside CI, only the
+  Python checks above ran.
+- The text copied from Apple's pages for the quote check was not kept
+  in the repository; checking again means fetching each page's `.md`
+  form from the list above.
 - No gate has passed. Every *Today* line describes R0 as it stands; none
   is a measurement made by this pull request.
 - The numbers the project chose (half a second to the first sound and
-  50 ms between releases, eight hours, two hours per input method,
+  50 ms between releases, one second to the first frame, eight hours,
+  two hours per input method,
   1 in 20 misses at the floors, three first-time people, the TestFlight
   weeks) are defaults, not measurements; the first device runs may show
   that one should change.
