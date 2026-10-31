@@ -44,7 +44,9 @@ actually use?
   how, what to do next. Each pull request's record is its own file in
   `docs/log/`; the history before 2026-10-21 is `docs/HANDOFF-LOG.md`.
 - **`docs/ROADMAP.md`**: the releases, in the order a person meets the
-  disease, and which thread or person owns each item.
+  disease, and which thread or person owns each item; and
+  *The quality bar*, the gates every release passes before App Review,
+  the owner's "would I recommend this to someone?" last.
 - **`docs/SDLC.md`**: how this project runs as a software factory, stage
   by stage (plan, design, build, test, deploy, maintain), with each
   stage's gate. A feature that changes what a person sees or hears starts
@@ -602,8 +604,9 @@ the failure.
   verified, what was not; the template is `docs/log/README.md`), the lines
   of `docs/HANDOFF.md` your change makes untrue edited in place (never
   appended to), this file for any new rule or gotcha, `docs/DECISIONS.md`
-  for decisions, `docs/ROADMAP.md` when an item starts, lands or moves,
-  `README.md` when setup or behaviour changes. Record reversals and their
+  for decisions, `docs/ROADMAP.md` when an item starts, lands or moves
+  and when the change moves a gate of its quality bar (that gate's Today
+  line), `README.md` when setup or behaviour changes. Record reversals and their
   reasons, so the next agent does not redo what was undone. Before a
   rewrite that removes information from HANDOFF or this file, snapshot the
   old version (`docs/archive/README.md`).
