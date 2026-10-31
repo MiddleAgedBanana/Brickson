@@ -166,11 +166,16 @@ not have, so Q16 asks for the variant or a recorded reason.
 - 6014a4d: CodeRabbit's second review answered (the Q5 device-check
   row names TestFlight's crash feedback), and this list corrected to
   one line per commit.
-- The commit after 6014a4d: a final check's findings. R0's *Release
+- 5baac9b: a final check's findings. R0's *Release
   gate* named three dwell hazards where Q2 names five; Q22's *Today*
   left out the alarm state's audits at AX5 and in the iPad's landscape
   (`GetAttentionOnHomeTests`); and this record listed fewer of the
   checks that ran than it said.
+- The commit after 5baac9b: CodeRabbit's third review answered.
+  docs/HANDOFF.md, docs/APP-STORE.md and docs/SDLC.md said that no
+  build goes to App Review before the whole bar passes, without the
+  owner's call on one urgent fix that docs/DECISIONS.md and the roadmap
+  record; each now points to it.
 
 ## Verified
 

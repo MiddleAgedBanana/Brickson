@@ -3886,9 +3886,9 @@ assembled" is the phrase the owner took up for what is missing.
   someone communicating (a phrase that does not speak, Emergency out of
   reach, a crash) passes the whole bar like any release, unless the
   owner, when one is needed, decides that this fix goes to App Review
-  sooner. There is no standing exception, so docs/ROADMAP.md,
+  sooner. There is no standing exception: docs/ROADMAP.md,
   docs/HANDOFF.md, docs/APP-STORE.md and docs/SDLC.md say the whole bar
-  holds. Recommended for that moment: CI, the gates the fix touches and
+  holds, and point here for the owner's call on one fix. Recommended for that moment: CI, the gates the fix touches and
   the owner's check of the fix on a device, and the whole bar at the
   next release, because holding such a fix for weeks of TestFlight would
   leave people without a voice, the harm the bar exists to prevent.

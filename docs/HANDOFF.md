@@ -873,7 +873,9 @@ For the owner (the remaining questions are listed in docs/DECISIONS.md,
 
 For agents: no build goes to App Review until every gate of
 docs/ROADMAP.md, *The quality bar*, has passed, the owner's answer last
-(owner, 2026-10-30); a pull request that moves a gate edits its *Today*
+(owner, 2026-10-30), unless the owner decides that one urgent fix goes
+sooner (docs/DECISIONS.md, "Every release passes the quality bar"); a
+pull request that moves a gate edits its *Today*
 line. R0 in [docs/ROADMAP.md](ROADMAP.md), in order; the owner's
 long-term vision, the direction behind it, is its *Where this goes*.
 The next pull requests, in order, with which may run side by side and

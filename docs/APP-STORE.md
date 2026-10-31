@@ -126,7 +126,9 @@ the rest of the gate holds (device checks logged, UI tests green, and the
 policy, README and website true to the build). Every release also passes
 every gate of docs/ROADMAP.md, *The quality bar*, before App Review, the
 owner's own "would I recommend this to someone?" last (owner,
-2026-10-30). The App Store adds these
+2026-10-30), unless the owner decides that one urgent fix after a
+release goes sooner (docs/DECISIONS.md, "Every release passes the
+quality bar"). The App Store adds these
 hard requirements, checked against Apple's pages on 2026-10-21:
 
 | Requirement | Brickson today | Source |

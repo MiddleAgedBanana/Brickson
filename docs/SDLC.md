@@ -233,7 +233,8 @@ which agents also act through, can bypass it (*Deploy*).
   gate of [`ROADMAP.md`](ROADMAP.md), *The quality bar*, has passed, the
   owner's own "would I recommend this to someone?" last (owner,
   2026-10-30; docs/DECISIONS.md, "Every release passes the quality
-  bar").
+  bar"). Only the owner can send an urgent fix sooner, decided for that
+  one fix, as that decision says.
 
 **Workflow files are an owner step.** Cloud agents' GitHub access cannot
 change files under `.github/workflows`. The agent finishes the file and
