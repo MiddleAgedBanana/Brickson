@@ -387,8 +387,15 @@ release in docs/ROADMAP.md when no thread has it yet.
   reached", *The fallback, the owner's choice*). Settings' Back to
   Talking keeps touch's frame under the larger sizes, smaller than their
   floors, an exception to invariant 1 the owner accepted on 2026-10-30
-  (same section, *Back to Talking keeps touch's frame*).
-  *(device checks, before the larger sizes go to App Review)* At
+  (same section, *Back to Talking keeps touch's frame*). Which floors
+  Settings' other controls hold under a larger profile is not recorded:
+  its rows keep a 64-point minimum height in every profile
+  (`SettingsMetrics.rowHeight`), the navigation bar's standard Back
+  buttons keep the system's size, and the guide's Done sits in Back to
+  Talking's frame; the next Settings thread measures them and puts them
+  to the owner (docs/ROADMAP.md, *The quality bar*, Q3).
+  *(device checks, before any build goes to App Review: docs/ROADMAP.md,
+  *The quality bar*, Q3 and Q13)* At
   touch's sizes, by the engine's model the phrase grid still scrolls (invariant 11) on
   phones smaller than the Pro Max at AX5, on the iPhone 17 at AX3 with
   Bold Text, on a 375×667 phone at every size (at the default size by
@@ -409,7 +416,8 @@ release in docs/ROADMAP.md when no thread has it yet.
   [measured fewer-tiles proposal](recon/2026-10-25-fewer-home-tiles.md)
   now records current whole-row capacities, More's slot cost and windows
   where no complete row fits; it changes no code or release boundary.
-  *(R1's profile work, then the owner)*
+  *(R0 item 3, before App Review: docs/ROADMAP.md, *The quality bar*,
+  Q3; then the owner)*
 - The slot plan has no answer yet for more than four everyday categories
   (docs/DECISIONS.md, "Home's slot plan", *Open*): editing and import
   must not add a fifth until it does. Meanwhile Home keeps the fourth and
@@ -469,11 +477,12 @@ release in docs/ROADMAP.md when no thread has it yet.
   (2026-10-24), Phrases and Type are beside the message, as the slot
   plan places them, and it is up to 97% by centre and 89% by edge on
   compact widths, 68% and 62% on regular ones; no placement inside the
-  slot plan removes it. **Owner question, before a build with the
-  larger sizes goes to App Review or an external TestFlight group:** accept that as a
+  slot plan removes it. **Owner question, before any build goes to App
+  Review or the external TestFlight pilot (docs/ROADMAP.md, *The quality
+  bar*, Q2):** accept that as a
   named exception to invariant 10, or ask for another placement
   (docs/DECISIONS.md, "The layout engine", *Home on the engine*; "Typing
-  on Home" left it as it was). *(the owner, before the larger sizes go to App Review or external testers)*
+  on Home" left it as it was). *(the owner, before any build goes to App Review or the external pilot)*
 - While typing, by nearest centre, a look resting in the top band of a
   dimmed phrase tile in the grid's top row (up to about 40% of its
   height on iPads, a fifth on phones), or between two of them, is nearer
@@ -485,7 +494,7 @@ release in docs/ROADMAP.md when no thread has it yet.
   dimmed, except over the empty cells of a grown library's category with
   fewer phrases than the grid has columns: when editing or import ships,
   score typing with the shown category's own tiles. Open, not accepted, pinned strict in `HomeLayoutEngineTests`
-  (docs/DECISIONS.md, "Typing on Home", *Open: by centre, dimmed phrases border Clear and Put Back*). *(owner, before the larger sizes go to App Review or external testers)*
+  (docs/DECISIONS.md, "Typing on Home", *Open: by centre, dimmed phrases border Clear and Put Back*). *(owner, before any build goes to App Review or the external pilot)*
 - No typing on Home where the keyboard's room reaches the safety row:
   320pt windows at every size, a 375×667 phone from AX3, and the iPad
   mini and a zoomed 13-inch iPad in landscape from AX3. There Type is
@@ -528,10 +537,12 @@ release in docs/ROADMAP.md when no thread has it yet.
   takes two lines where it must (docs/DECISIONS.md, "Typing on Home");
   no test reads its rendered words back yet. *(the next accessibility
   pass: add it to the rendered-label test)*
-- The rendered-label test reads the five English quick-control labels
-  (Yes, No, Emergency, Get Attention, Again) only, not phrases or categories; `StarterLabelFitTests` measures every
-  starter label against its narrowest slot instead. *(Accessibility
-  coverage checklist)*
+- The rendered-label tests read the five English quick-control labels
+  (Yes, No, Emergency, Get Attention, Again), and, on an iPad in
+  portrait at Home's larger sizes, Phrases, Type and the everyday
+  categories (`HomeSizesTests`); never a phrase tile, and nothing at
+  AX3. `StarterLabelFitTests` measures every starter label against its
+  narrowest slot instead. *(Accessibility coverage checklist)*
 - The Get Attention tone is the reference app's placeholder; a
   harmonic-rich replacement and its level under speech need a listening
   check on a device (docs/DECISIONS.md, "Get Attention"). *(owner, with a
@@ -836,30 +847,58 @@ release in docs/ROADMAP.md when no thread has it yet.
 ## Next steps, in order
 
 For the owner (the remaining questions are listed in docs/DECISIONS.md,
-*Waiting on the owner*):
+*Waiting on the owner*, and every one a release needs in
+docs/ROADMAP.md, *The quality bar*, Q24):
 
 1. Answer the few questions that are yours, in docs/DECISIONS.md,
    *Waiting on the owner*: the final name (and with it the bundle
    identifier), the price, how the name is said, and your EU trader
-   status (needed before the App Store release in the EU). Before a
-   build with the larger sizes goes to App Review or an external
-   TestFlight group, also the three dwell hazards still open: whether Yes
-   and No may border the message, the top of Stop's well nearest Again,
-   and dimmed phrases bordering Clear and Put Back (*Known gaps*). Each
-   hazard must be gone, or accepted by you, before then.
+   status (needed before the App Store release in the EU). Before any
+   build goes to the external TestFlight pilot or App Review, every
+   dwell hazard in docs/ROADMAP.md, *The quality bar*, Q2 (five today,
+   plus iPhone Duo's changed-window finding) must be gone, or accepted
+   by you. Three wait on your answer, once the
+   Snap to Item device check (Q12) has measured them: whether Yes and No
+   may border the message, the top of Stop's well nearest Again, and
+   dimmed phrases bordering Clear and Put Back (*Known gaps*). The other
+   two, Again nearest Stop's empty well in a library with fewer than
+   three everyday categories and iPhone Duo's chain from Family Setup at
+   the largest text size, come to you only if a thread cannot remove
+   them by placement. So does the changed-window finding (a look resting
+   on iPhone Duo before the window changes meets Get Attention, Speak,
+   No or Clear after it), once a device has shown how the pointer really
+   moves when the window changes (R0 item 13; *Known gaps*). Also before
+   then: whether Get Attention goes in
+   Settings' bar (docs/DECISIONS.md, "Get Attention in Settings' bar:
+   the owner decides"), and, once a thread has measured them, Settings'
+   floors under a larger profile (Q3). (How long you use each TestFlight
+   build yourself is answered: two weeks before the pilot, seven days
+   on the build sent to App Review, your choice on 2026-11-01.)
    Everything App Store Connect will ask, in order, is in
    [docs/APP-STORE.md](APP-STORE.md), section 1.
-2. Run the app once yourself and hear a phrase ([local setup](GETTING_STARTED.md)).
-3. Put your Team ID in `project.yml` (`DEVELOPMENT_TEAM`), then run the app
+2. Read docs/ROADMAP.md, *The quality bar*: the 29 gates every release
+   passes before App Review, your "would I recommend this to someone?"
+   last. Each says who checks it. The ones marked owner are yours: the
+   device gates on your own iPhone and iPad with the build that will
+   ship, from TestFlight once the App Store Connect record exists (a
+   build from step 4 lets you rehearse them but passes none), and the
+   rest as written answers.
+3. Run the app once yourself and hear a phrase ([local setup](GETTING_STARTED.md)).
+4. Put your Team ID in `project.yml` (`DEVELOPMENT_TEAM`), then run the app
    on your iPhone and iPad and work through *Checks that need a real device*.
-4. Review the starter phrases (`Brickson/Resources/StarterPhrases.json`): two
+5. Review the starter phrases (`Brickson/Resources/StarterPhrases.json`): two
    are near duplicates, and "Please move me." could be clearer.
-5. Delete the failed Swift configuration on the Tool status page
+6. Delete the failed Swift configuration on the Tool status page
    (docs/DECISIONS.md, *Code scanning*).
-6. You can delete the `xcode-skills` folder in `~/code/brickson`: its
+7. You can delete the `xcode-skills` folder in `~/code/brickson`: its
    skills are installed where agents load them.
 
-For agents: R0 in [docs/ROADMAP.md](ROADMAP.md), in order; the owner's
+For agents: no build goes to App Review until every gate of
+docs/ROADMAP.md, *The quality bar*, has passed, the owner's answer last
+(owner, 2026-10-30), unless the owner decides that one urgent fix goes
+sooner (docs/DECISIONS.md, "Every release passes the quality bar"); a
+pull request that moves a gate edits its *Today*
+line. R0 in [docs/ROADMAP.md](ROADMAP.md), in order; the owner's
 long-term vision, the direction behind it, is its *Where this goes*.
 The next pull requests, in order, with which may run side by side and
 which change Home, are its
@@ -1043,6 +1082,11 @@ Simulators cannot show these. Record each result in a `docs/log/` file
 | Which of the VoiceOver, Switch Control and AssistiveTouch flags each input method turns on | Profile suggestions (R1) |
 | With a real finger at an accessibility text size, in the shipped build: press Yes slowly (about half a second) and lift, then a phrase tile; then hold Yes, slide onto No and lift, and hold a phrase tile, slide onto the next and lift; also with Touch Accommodations' Hold Duration on, and with AssistiveTouch Dwell. Each press speaks; a slide says the control it began on or nothing, never the next. In a window where Settings shows its gear alone (iPhone Duo's outer display with Bold Text on is one; [`log/2026-10-23-settings-on-home.md`](log/2026-10-23-settings-on-home.md)): tap the gear (Settings opens); hold it until its large copy shows and lift, and record whether Settings opened (opening means a real finger is not swallowed as XCTest's touch was); hold it and slide onto each control beside, above and below it, and lift: Settings opens or nothing happens, never anything else; dwell on it; and press Yes and a phrase tile slowly there: each speaks. The simulator results these confirm are in [`log/2026-10-23-large-content-and-iphone-duo.md`](log/2026-10-23-large-content-and-iphone-duo.md) | That Home speaks on a slow real press and a slide never says the next control; from the gear, whether a real finger's held press is swallowed as XCTest's was, and whether the gear keeps the viewer (docs/DECISIONS.md, "Show Borders and the Large Content Viewer on Home") |
 | Show Borders on, in light and dark, with and without Increase Contrast: every Home control shows its border, a press thickens it, a selected category and Emergency show their inner ring, measured on the rendered pixels; Settings' system buttons show theirs | "Show Borders and the Large Content Viewer on Home"; Show Borders on Settings and setup |
+| In the build that ships: the time from an activation completing to a phrase's first sound, read frame by frame from a screen recording with sound, as the median of ten activations each for the default voice and a Personal Voice | docs/ROADMAP.md, *The quality bar*, Q6 (the default voice's median within half a second) |
+| A cold launch's time to first frame with Instruments' App Launch template on the oldest device at hand (within 400 ms); Brickson reopening on Home with the typed message after the system ended it in the background; no flash at launch before Home, in light or dark mode | Q7 |
+| 100 activations with the Hangs instrument at 100 ms on the oldest device at hand, and the device's Hang Detection (Settings > Developer > Hang Detection, at its shortest threshold) on through the TestFlight period; a thread reads the crash reports in Xcode's Crashes organizer and the crash feedback testers send through that period, and every crash and hang found is fixed | Q5 |
+| Eight hours on the iPad with Brickson in front under Guided Access, and four on the iPhone, unplugged, with a Performance Trace in Power Profiler mode: the screen never dims or locks, everything works at the end, battery used per hour at touch's and Eye Tracking's setup, and no `EXC_RESOURCE` or `JetsamEvent` report for Brickson in Analytics Data; then, attached to Xcode on the Mac, memory out of the gauge's warning region with no growth across 100 phrases, and the thermal state never serious | Q8 |
+| Two hours each on the mounted iPad with Eye Tracking and Dwell with Snap to Item, Head Tracking with Dwell, Switch Control's auto scanning and its Gliding Cursor (point scanning), and half an hour each on the iPhone with Switch Control and Eye Tracking, following Q11's script: every activation not meant and where the pointer rested before it, activations per common task, recalibrations and rests | Q11, and invariant 10 over hours rather than one activation |
 
 ## Repository, CI and website
 

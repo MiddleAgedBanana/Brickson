@@ -12,8 +12,10 @@ a reasonable default that the owner can overrule.
 
 *2026-10-21.* On 2026-10-21 the owner asked to focus on building the app
 and to leave the logistics to the project. These are the only questions
-left for the owner, because each is personal, sets a price, or cannot be
-taken back. Until one is answered, nothing hard to undo is done under it.
+of logistics left for the owner, because each is personal, sets a price,
+or cannot be taken back; every owner question a release needs, these
+included, is listed in docs/ROADMAP.md, *The quality bar*, Q24. Until
+one is answered, nothing hard to undo is done under it.
 
 | Question | Recommended | Why |
 |---|---|---|
@@ -82,6 +84,7 @@ holds.
 | The accessibility coverage list and its choices: full screen in Assistive Access and no separate scene, no programmatic Guided Access, assistive-technology flags that only suggest, phrases in the person's voice with VoiceOver on, late-stage boards as an R1 profile, and what waits or is never used | "Accessibility API coverage" (Accessibility coverage checklist) |
 | Home's sizes from Family Setup's answer: four profiles' floors (switch and head proposed), the largest any answer needs, Eye Tracking's with no answer, the largest the window holds, touch's arrangement and Back to Talking, flags that only suggest; on since the owner chose the largest sizes that fit (2026-10-30), with Back to Talking at touch's frame by the owner's answer the same day | "Sizes that follow how the screen is reached" (Wave 3 item 8, 2026-10-30) |
 | XcodeGen stays until Xcode's JSON project format passes a trial on the owner's Mac and its gates; then one pull request switches | "Xcode's JSON project format" (Plan for Xcode's new JSON project format, 2026-10-25) |
+| The quality bar's gates, their numbers and who checks each (the bar itself, that it holds every release back from App Review, and Q9's TestFlight time, answered 2026-11-01, are the owner's) | "Every release passes the quality bar" (2026-10-30) |
 | The voice list read away from the main thread, one read at a time, with phrases before it arrives spoken in the system's default voice | "The voice list never holds up launch" (Fix the iPad first-launch CI flake, 2026-11-01) |
 
 Recorded here:
@@ -3843,6 +3846,107 @@ gone to App Review, and stage profiles are no longer left out of R0.
 gate* and gone to App Review, so that build carried no stage profile,
 because R0 left stage profiles out on purpose and starting them sooner
 would move an R1 item ahead of its release, which was the owner's call.
+
+## Every release passes the quality bar
+
+*Owner, 2026-10-30: the bar, and that no build goes to App Review until
+it passes. Default, adopted 2026-10-30: its gates, their numbers and who
+checks each; the owner can change any of them. Owner, 2026-11-01: how
+long the owner lives with each TestFlight build (Q9).* Every gate of
+docs/ROADMAP.md, *The quality bar*, passes before a build goes to App
+Review, each with a `docs/log/` record of what passed, on what and
+when, and the last gate is the owner's own yes
+to "would I recommend this to someone?". The bar adds to R0's *Release
+gate* and holds for every release after it.
+
+The owner set the standard in two messages on 2026-10-30: the app must
+be complete, and feel ready, before it is ever submitted for review;
+and the owner will not put their name on something they would not
+recommend to someone, which today they would not. "Designed rather than
+assembled" is the phrase the owner took up for what is missing.
+
+- **Gates, not impressions.** "Feels ready" cannot be checked, so each
+  gate says what passes and who checks it: CI, a thread, the owner on
+  their own devices, or the TestFlight testers. Simulator evidence never
+  passes a gate the owner or the testers check, a wider rule than
+  AGENTS.md, *Workflow rules*, which names gaze comfort, sound and Snap
+  to Item. An exception the owner accepts is recorded here, covers only
+  what it names, and never sets aside an invariant beyond what that
+  invariant itself allows. The owner's eye (Q21) and answer (Q29) stay
+  gates of their own: the rest exist to earn them.
+- **The numbers and where they come from.** Apple's: no main-thread
+  work over 100 ms for an activation and no hang from 250 ms (Q5,
+  "Improving app responsiveness" and "Understanding hangs in your
+  app"), half a second for a response with no other feedback (Q6,
+  Apple's WWDC23 session on hangs, taken as the median of ten
+  activations), and a first frame within 400 ms (Q7, the goal Apple's
+  WWDC19 session "Optimizing App Launch" sets; Apple's documentation
+  gives no limit, and the HIG says people sometimes "don't want to wait
+  more than a couple of seconds"). The project's defaults, each the
+  smallest amount that tests what its gate names: no release's median,
+  for either voice, more than 50 ms slower than the last (Q6, about
+  what a frame-by-frame reading can tell apart), eight hours with the
+  screen on (Q8, a day kept open), two hours per input method on the
+  iPad and half an hour on the iPhone (Q11, long enough for tiredness
+  and drift), fewer than 1 in 20 meant activations missing at the
+  floors (Q13), three first-time people (Q25). The TestFlight weeks
+  (Q9) are the owner's answer of 2026-11-01. A gate that records a
+  number keeps it as the next release's baseline, so no release gets
+  slower or costlier unnoticed.
+- **Before the pilot.** Every gate passes before the external pilot
+  except those that need the pilot or the final build (Q5's crash and
+  hang reports through the whole TestFlight period, Q9's last seven
+  days, the testers' sessions in Q11 and Q13, Q27, the pilot itself,
+  Q28 and Q29), so the people who test it, a person living with ALS
+  among them, are given a build that already passed everything they
+  are not needed for.
+- **The build that is submitted** is the one the owner (Q9) and the
+  pilot (Q27) have used for its last seven days. A build changed after
+  the pilot's reports goes back to both, and the gates its changes
+  touch run again.
+- **Later releases** run again every gate their changes touch, and
+  always Q9, Q21 and Q29; a gate carried over names the release it last
+  passed in. The bar then costs what a change touches, not a full rerun.
+- **An urgent fix is the owner's call.** A fix for a fault that stops
+  someone communicating (a phrase that does not speak, Emergency out of
+  reach, a crash) passes the whole bar like any release, unless the
+  owner, when one is needed, decides that this fix goes to App Review
+  sooner. There is no standing exception: docs/ROADMAP.md,
+  docs/HANDOFF.md, docs/APP-STORE.md and docs/SDLC.md say the whole bar
+  holds, and point here for the owner's call on one fix. No call skips
+  CI, since a pull request merges only on green CI (AGENTS.md, *Build
+  and test*), or AGENTS.md's invariants. Recommended for that moment,
+  beyond those: the gates the fix touches and the owner's check of the
+  fix on a device, and the whole bar at the next release, because
+  holding such a fix for weeks of TestFlight would leave people without
+  a voice, the harm the bar exists to prevent.
+- **What it collects and what it adds.** Already open, now gating every
+  release: the open dwell hazards (Q2), Settings' floors under a larger
+  profile (Q3), the device-check table (Q4 and Q12 to Q14), R0 item 9's
+  screens (Q15) and R0 item 11's pilot (Q27). New: speed and launch, a
+  whole day with the screen on, long sessions per input method, Apple's
+  design guidelines screen by screen, system components measured,
+  nothing tuned by eye, first-time people, a comparison with the AAC
+  apps families use today, and the owner's answer.
+
+**TestFlight time (Q9), the owner's answer.** R0 item 11 already
+sends TestFlight builds to the owner and then to the pilot. On
+2026-11-01 the owner chose the recommendation: two weeks of daily use of
+the internal build before the pilot, and seven days on the exact build
+before App Review. TestFlight is where problems should be found
+(docs/SDLC.md, *Deploy*); Apple asks developers to "continue
+distributing builds until all issues are resolved before you submit
+your app for review"; and the owner is the first person who will notice
+what feels wrong.
+
+*Before (2026-10-30 to 2026-11-01):* the TestFlight time was a row of
+*Waiting on the owner*, and Q9 stood as recommended until the owner
+answered.
+
+*Before:* R0's *Release gate* listed what R0 must build and check;
+nothing said how fast the app must be, how long it must hold up in use,
+how a screen is judged designed, or that the owner's own answer comes
+last.
 
 ## Check-ins come every three months
 
