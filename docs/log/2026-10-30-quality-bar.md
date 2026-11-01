@@ -265,7 +265,7 @@ says otherwise.
   docs/APP-STORE.md. The owner said there was no rush and that it could
   go in this pull request, rather than in a follow-up, after CI was
   green.
-- The commit after 8404f84: a full second check on 2026-11-01 of every
+- 77df227: a full second check on 2026-11-01 of every
   *Today* line against the code, and of every quotation and statement
   about Apple against Apple's pages fetched that day (*Verified*), with
   GitHub Copilot's review of 8404f84. What it corrected: *Today* lines
@@ -283,6 +283,9 @@ says otherwise.
   ships and naming Get Attention in Settings' bar; docs/APP-STORE.md's
   pilot condition and submit step naming the bar; and this record's
   page list, now with every page linked and the quotations' table.
+- The commit after 77df227: this record's line on 8404f84's UI tests,
+  which said the next push had stopped them; they had finished, with
+  the one iPad failure *Verified* now describes.
 
 ## Verified
 
@@ -300,7 +303,13 @@ says otherwise.
 - GitHub CI on ea0fd12 (run 41152170391): the unit and UI tests passed
   on the first attempt. On 8404f84 (run 41272443216) the unit tests
   passed in 38 minutes, close to the job's 40-minute limit (AGENTS.md,
-  *Gotchas*); the next push stopped its UI tests.
+  *Gotchas*). The UI tests passed on the iPhone 17 (61 ran, 0 failed)
+  and failed one iPad test as it launched the app: the test runner could
+  not close the app left by the test before it ("Failed to terminate",
+  `FoldOffsetUITests`, light mode, the second test of the run). That is
+  the failure [the 2026-10-23 record](2026-10-23-accessibility-page-and-privacy-trim.md)
+  met on the iPad, in code this pull request does not touch, and its
+  cause is not established. The next commit's run tests the same code.
 - Every quotation from Apple in the bar, docs/DECISIONS.md and
   docs/APP-STORE.md's changed lines was checked on 2026-10-30 against
   the text copied from its page, and again on 2026-11-01 against each
