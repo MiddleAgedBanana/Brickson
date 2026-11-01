@@ -46,6 +46,15 @@ import SwiftUI
 /// fits*), for a library larger than the starter one, or where a library
 /// warning takes its room.
 ///
+/// The rest board (docs/DECISIONS.md, "The late-stage profile"): where
+/// Family Setup's second step chose one category, Home shows only its
+/// phrases and Emergency's, in fewer, larger tiles, and dims the other
+/// categories in their places. It asks for the late stage's sizes, as
+/// large as the window holds, and Yes, No, Emergency, Again and Get
+/// Attention grow toward 4 degrees of the person's view. Every control
+/// keeps its place relative to the others, and nothing moves between the
+/// board's phrases and Emergency's.
+///
 /// Each region is an accessibility container, and assistive technologies
 /// reach them in a fixed order that differs from the one on screen: Yes,
 /// No, Emergency and Get Attention first, then Again, the message with
@@ -56,9 +65,9 @@ import SwiftUI
 struct HomeView: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.legibilityWeight) private var legibilityWeight
-    /// The sizes Family Setup's answer asked for when Settings last closed
-    /// (`BricksonApp`).
-    @Environment(\.requestedHomeProfile) private var requestedProfile
+    /// The sizes and the rest board Family Setup's choices asked for when
+    /// Settings last closed (`BricksonApp`).
+    @Environment(\.homeRequest) private var homeRequest
     @Query private var categories: [PhraseCategory]
     @State private var selectedCategoryID: UUID?
     /// Whether Home is typing. Type turns it on; Phrases, Emergency and
@@ -75,16 +84,25 @@ struct HomeView: View {
 
     var body: some View {
         let ordered = PhraseCategory.orderedForDisplay(categories)
-        let selected = CategorySelection.resolve(ordered, selectedID: selectedCategoryID)
         let emergency = CategorySelection.emergency(in: ordered)
-        let largestCategoryCount = ordered.map(\.phrasesInOrder.count).max() ?? 0
+        // The rest board's category, where it is still an everyday one of
+        // the library: only it and Emergency show, so the grid's rows come
+        // from the larger of the two (docs/DECISIONS.md, "The late-stage
+        // profile").
+        let board = homeRequest.restBoard.flatMap { chosen in
+            ordered.first { $0.uuid == chosen.category && !$0.isEmergency }
+        }
+        let selected = CategorySelection.resolve(ordered, selectedID: selectedCategoryID, restBoard: board?.uuid)
+        let largestCategoryCount = ordered
+            .filter { board == nil || $0 === board || $0 === emergency }
+            .map { $0.phrases?.count ?? 0 }.max() ?? 0
         let text = HomeLayout.Text.measured(at: dynamicTypeSize, boldText: legibilityWeight == .bold)
 
         GeometryReader { proxy in
-            // The sizes Family Setup's answer asks for, as large as this
-            // window holds (`ProfileChoice`).
-            let layout = ProfileChoice.layout(
-                requested: requestedProfile,
+            // The sizes Family Setup's choices ask for, as large as this
+            // window holds, with the rest board where one is chosen
+            // (`ProfileChoice.Request`).
+            let layout = homeRequest.layout(
                 space: HomeLayout.Space(proxy),
                 text: text,
                 largestCategory: largestCategoryCount,
@@ -122,6 +140,7 @@ struct HomeView: View {
                     layout: layout,
                     categories: CategorySelection.shownInCategoryRow(ordered),
                     selectedID: isTyping ? nil : selected?.uuid,
+                    restBoard: board?.uuid,
                     typingCells: isTyping ? layout.typingCells : nil,
                     select: { selectedCategoryID = $0 },
                     showsSettings: $showsSettings
@@ -839,6 +858,9 @@ private struct CategoriesAndSettings: View {
     let layout: HomeLayout
     let categories: [PhraseCategory]
     let selectedID: UUID?
+    /// The rest board's category: every other one is dimmed in its place.
+    /// Nil where Home shows every category.
+    let restBoard: UUID?
     /// While typing, the cells that show Clear and Put Back; the other
     /// categories are dimmed then. Nil while the phrases show.
     let typingCells: HomeLayout.TypingCells?
@@ -903,7 +925,8 @@ private struct CategoriesAndSettings: View {
     /// (`HomeLayout.typingCells`), and the others' categories are dimmed:
     /// choosing one would leave typing and turn the dimmed phrases under a
     /// look resting there into phrases that speak (docs/DECISIONS.md,
-    /// "Typing on Home").
+    /// "Typing on Home"). On the rest board, every category but the
+    /// board's is dimmed in its place, so nothing moves (invariant 8).
     @ViewBuilder
     private func cell(_ index: Int) -> some View {
         Group {
@@ -923,6 +946,7 @@ private struct CategoriesAndSettings: View {
                     buttonHeight: layout.categoryHeight,
                     spacing: layout.spacing,
                     selectedID: selectedID,
+                    restBoard: restBoard,
                     select: select
                 )
                 .disabled(typingCells != nil)
@@ -994,12 +1018,14 @@ private struct StopWell: View {
 /// Control. Every category has the side inset of a control that shows
 /// selected, which the ring never reaches, so its words keep their place
 /// whether it is selected or not (`HomeLayout.selectableSideInset`). An
-/// empty cell shows nothing and is hidden from assistive technologies.
+/// empty cell shows nothing and is hidden from assistive technologies. On
+/// the rest board, a category other than the board's is dimmed.
 private struct CategoryCell: View {
     let categories: ArraySlice<PhraseCategory>
     let buttonHeight: CGFloat
     let spacing: CGFloat
     let selectedID: UUID?
+    let restBoard: UUID?
     let select: (UUID) -> Void
 
     var body: some View {
@@ -1036,6 +1062,7 @@ private struct CategoryCell: View {
             isSelected: isSelected,
             sideInset: HomeLayout.selectableSideInset
         ))
+        .disabled(restBoard.map { $0 != category.uuid } ?? false)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }

@@ -154,13 +154,13 @@ final class SettingsTests: XCTestCase {
         continueAfterFailure = true
         for textSize in [UITestTextSize.large, .ax5] {
             let app = openSettings(textSize: textSize)
-            let context = "Step 1 of 5, \(textSize.name)"
+            let context = "Step 1 of 6, \(textSize.name)"
             open("familySetup", in: app, waitingFor: "Family Setup")
             let row = app.buttons["guidedSetup"]
             XCTAssertTrue(row.waitForExistence(timeout: 10), "guidedSetup is missing (\(context))")
             let rowFrame = row.frame
 
-            open("guidedSetup", in: app, waitingFor: "Step 1 of 5")
+            open("guidedSetup", in: app, waitingFor: "Step 1 of 6")
             let link = app.buttons["learnAboutEachWay"]
             XCTAssertTrue(link.waitForExistence(timeout: 10), "learnAboutEachWay is missing (\(context))")
             // Wait for Family Setup's row to go, so the step is read where it rests.
@@ -289,8 +289,8 @@ final class SettingsTests: XCTestCase {
         continueAfterFailure = true
         let app = openSettings()
         open("familySetup", in: app, waitingFor: "Family Setup")
-        open("guidedSetup", in: app, waitingFor: "Step 1 of 5")
-        try assertPassesAccessibilityAudit(app, context: "Step 1 of 5, light")
+        open("guidedSetup", in: app, waitingFor: "Step 1 of 6")
+        try assertPassesAccessibilityAudit(app, context: "Step 1 of 6, light")
 
         // The first step's guide, a cover of its own.
         app.buttons["learnAboutEachWay"].tap()
@@ -302,11 +302,11 @@ final class SettingsTests: XCTestCase {
         let closed = expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: done)
         XCTAssertEqual(XCTWaiter.wait(for: [closed], timeout: 10), .completed, "Done did not close the guide")
 
-        for step in 2...5 {
+        for step in 2...6 {
             app.buttons["guidedSetupNext"].tap()
-            XCTAssertTrue(app.navigationBars["Step \(step) of 5"].waitForExistence(timeout: 10), "step \(step) did not open")
-            attachCapture(app, name: "Step \(step) of 5")
-            try assertPassesAccessibilityAudit(app, context: "Step \(step) of 5, light")
+            XCTAssertTrue(app.navigationBars["Step \(step) of 6"].waitForExistence(timeout: 10), "step \(step) did not open")
+            attachCapture(app, name: "Step \(step) of 6")
+            try assertPassesAccessibilityAudit(app, context: "Step \(step) of 6, light")
         }
     }
 
@@ -445,7 +445,7 @@ final class SettingsTests: XCTestCase {
     func testTheStepByStepSetupWalksToTheEnd() {
         let app = openSettings()
         open("familySetup", in: app, waitingFor: "Family Setup")
-        open("guidedSetup", in: app, waitingFor: "Step 1 of 5")
+        open("guidedSetup", in: app, waitingFor: "Step 1 of 6")
 
         // The first answer, which shows without scrolling at the default
         // text size: the answers start below Learn About Each Way.
@@ -455,11 +455,16 @@ final class SettingsTests: XCTestCase {
         app.buttons["Touch"].tap()
         XCTAssertTrue(app.buttons["Touch"].isSelected, "a repeated activation undid the answer")
 
-        for step in 2...5 {
+        for step in 2...6 {
             app.buttons["guidedSetupNext"].tap()
-            XCTAssertTrue(app.navigationBars["Step \(step) of 5"].waitForExistence(timeout: 10), "step \(step) did not open")
+            XCTAssertTrue(app.navigationBars["Step \(step) of 6"].waitForExistence(timeout: 10), "step \(step) did not open")
+            if step == 2 {
+                // Until a category is chosen, Home shows every category.
+                XCTAssertTrue(app.buttons["restBoardEveryCategory"].isSelected, "Every Category is not chosen before anything is")
+            }
         }
         XCTAssertTrue(app.staticTexts["Touch"].exists, "the summary does not list the answer")
+        XCTAssertTrue(app.staticTexts["Home shows every category."].exists, "the summary does not say which phrases Home shows")
 
         app.buttons["guidedSetupNext"].tap()
         XCTAssertTrue(app.navigationBars["Family Setup"].waitForExistence(timeout: 10), "Done did not return to Family Setup")

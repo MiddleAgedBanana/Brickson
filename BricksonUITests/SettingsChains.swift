@@ -30,7 +30,7 @@ nonisolated enum SettingsChains {
     /// The states, by the titles the screens show.
     static let root = HomeChains.settingsRoot
     static let familySetup = "Family Setup"
-    static let firstStep = "Step 1 of 5"
+    static let firstStep = "Step 1 of 6"
     /// The Reaching the Screen guide, opened from the first step.
     static let eachWay = "Each Way"
 
@@ -42,7 +42,7 @@ nonisolated enum SettingsChains {
     /// Next, on every step of Set Up Step by Step.
     static let firstStepNext = "guidedSetupNext"
     /// Where the first step's Next leads.
-    static let secondStep = "Step 2 of 5"
+    static let secondStep = "Step 2 of 6"
     /// The first step's way into the guide, and the guide's way out.
     static let learnAboutEachWay = "learnAboutEachWay"
     static let eachWayDone = "eachWayDone"

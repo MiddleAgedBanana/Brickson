@@ -121,14 +121,18 @@ struct SettingsIdleClockTests {
         #expect(activity.resetCount == 2)
     }
 
-    @Test func guidedSetupStepOrdersFiveStepsAndStopsAtReady() {
-        #expect(GuidedSetupStep.count == 5)
+    /// Fails if a step is lost, moved or numbered wrongly: the rest
+    /// board's question comes straight after the first step's answer, which
+    /// it builds on (docs/DECISIONS.md, "The late-stage profile").
+    @Test func guidedSetupStepOrdersSixStepsAndStopsAtReady() {
+        #expect(GuidedSetupStep.count == 6)
         let expected: [(GuidedSetupStep, Int, GuidedSetupStep?)] = [
-            (.access, 1, .voice),
-            (.voice, 2, .turnOn),
-            (.turnOn, 3, .keepOpen),
-            (.keepOpen, 4, .ready),
-            (.ready, 5, nil),
+            (.access, 1, .restBoard),
+            (.restBoard, 2, .voice),
+            (.voice, 3, .turnOn),
+            (.turnOn, 4, .keepOpen),
+            (.keepOpen, 5, .ready),
+            (.ready, 6, nil),
         ]
         for (step, number, next) in expected {
             #expect(step.number == number)

@@ -1,13 +1,16 @@
+import SwiftData
 import SwiftUI
 
-/// Set Up Step by Step: five short screens a family member goes through
+/// Set Up Step by Step: six short screens a family member goes through
 /// once, and again at each check-in.
 ///
 /// 1. How is the screen reached? (any number of answers)
-/// 2. The voice and speed.
-/// 3. Turning on what was chosen in step 1.
-/// 4. Keeping Brickson open.
-/// 5. A summary.
+/// 2. Which phrases does Home show? (every category, or one: the rest
+///    board)
+/// 3. The voice and speed.
+/// 4. Turning on what was chosen in step 1.
+/// 5. Keeping Brickson open.
+/// 6. A summary.
 ///
 /// Every step can be left at any time with the standard Back button or
 /// Back to Talking; each answer is saved the moment it is chosen, and
@@ -62,6 +65,8 @@ struct GuidedSetupView: View {
                 activity?.recordActivity()
                 showsEachWay = true
             }
+        case .restBoard:
+            SetupRestBoardQuestion(chosen: setup.record.restBoardCategory, saveFailed: saveFailed, choose: chooseRestBoard)
         case .voice:
             SettingsHeading("Choose the voice")
             VoiceContent()
@@ -91,6 +96,7 @@ struct GuidedSetupView: View {
         } else {
             SettingsParagraph("No way of reaching the screen was chosen.")
         }
+        RestBoardSummary(chosen: setup.record.restBoardCategory)
         SettingsParagraph("Everything here can be changed later in Family Setup. In about three months, Family Setup will ask whether anything has changed.")
     }
 
@@ -115,6 +121,13 @@ struct GuidedSetupView: View {
     private func answer(_ methods: Set<AccessMethod>) {
         activity?.recordActivity()
         saveFailed = !setup.update { CheckInPolicy.answered(&$0, methods: methods, now: .now) }
+    }
+
+    /// Saves the rest board's category, or nil for every category, at
+    /// once, as `answer` does.
+    private func chooseRestBoard(_ category: UUID?) {
+        activity?.recordActivity()
+        saveFailed = !setup.update { $0.chooseRestBoard(category) }
     }
 
     private func advance() {
@@ -251,5 +264,74 @@ private struct SetupAccessQuestion: View {
             answerHeight: SettingsMetrics.rowHeight, earliest: link.maxY + SettingsMetrics.rowSpacing
         )
         return max(0, place.top - origin.y - SettingsMetrics.rowSpacing)
+    }
+}
+
+/// The second step's question: which phrases Home shows (docs/DECISIONS.md,
+/// "The late-stage profile").
+///
+/// Every Category, then each everyday category in Home's order, by its own
+/// name, shown as written. Choices only ever select: choosing the chosen
+/// one again keeps it, and choosing another moves the choice (AGENTS.md,
+/// invariant 10). They start under the heading and its words, so neither
+/// Next, where a held look arrives from the first step, nor the standard
+/// Back button, where one arrives from the third, has a choice nearest it.
+/// A choice the library no longer has as an everyday category shows as
+/// Every Category, as Home does (`RestBoard`).
+private struct SetupRestBoardQuestion: View {
+    let chosen: UUID?
+    let saveFailed: Bool
+    let choose: (UUID?) -> Void
+
+    @Query private var categories: [PhraseCategory]
+
+    var body: some View {
+        let everyday = CategorySelection.shownInCategoryRow(PhraseCategory.orderedForDisplay(categories))
+        let current = everyday.first { $0.uuid == chosen }?.uuid
+
+        SettingsHeading("Which phrases does Home show?")
+        SettingsParagraph("Home can show one category's phrases, and Emergency's, in fewer, larger buttons, with Yes, No, Emergency, Again and Get Attention as large as this screen has room for. The other categories stay where they are, dimmed, so nothing moves. The change shows when Settings closes.")
+
+        choice(Text("Every Category"), isChosen: current == nil, identifier: "restBoardEveryCategory") {
+            choose(nil)
+        }
+        ForEach(everyday) { category in
+            // A category's name is the family's own words, never translated.
+            choice(Text(verbatim: category.name), isChosen: current == category.uuid, identifier: "restBoardCategory") {
+                choose(category.uuid)
+            }
+        }
+
+        if saveFailed {
+            SettingsParagraph("That answer could not be saved. Try again.")
+        }
+    }
+
+    private func choice(_ title: Text, isChosen: Bool, identifier: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            SettingsRowLabel(text: title, systemImage: isChosen ? "checkmark.circle.fill" : "circle")
+        }
+        .buttonStyle(.borderedProminent)
+        .tint(isChosen ? Palette.phraseFill : Palette.controlFill)
+        .accessibilityAddTraits(isChosen ? .isSelected : [])
+        .accessibilityIdentifier(identifier)
+    }
+}
+
+/// The summary's line about the second step: every category, or the rest
+/// board's category by its own name. A choice the library no longer has
+/// as an everyday category reads as every category, as Home shows it.
+private struct RestBoardSummary: View {
+    let chosen: UUID?
+
+    @Query private var categories: [PhraseCategory]
+
+    var body: some View {
+        if let board = categories.first(where: { $0.uuid == chosen && !$0.isEmergency }) {
+            SettingsParagraph("Home shows one category's phrases, with larger buttons:")
+            SettingsParagraph(verbatim: board.name)
+        } else {
+            SettingsParagraph("Home shows every category.")
+        }
     }
 }
