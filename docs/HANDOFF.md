@@ -35,7 +35,18 @@ phone tested keeps touch's sizes at every text size, and every iPad in
 portrait takes Eye Tracking's (head tracking's on the iPad mini with
 Bold Text). `HomeSizesTests` checks a person's first launch at those
 sizes, with Apple's audit and the drawn words (passed on CI's iPad and
-iPhone simulators, #70); the other UI tests ask for touch's. Four category buttons that never scroll sideways, and three
+iPhone simulators, #70); the other UI tests ask for touch's. A family
+can choose a rest board in Set Up Step by Step's second step, "Which
+phrases does Home show?": Home then shows that category's phrases and
+Emergency's in fewer, larger tiles, dims the other categories in their
+places, asks for the late stage's sizes (proposed), and grows Yes, No,
+Emergency, Again and Get Attention toward 4 degrees of the person's
+view while the tiles stay as tall, as the window has room; by the
+engine, every iPad in portrait but the iPad mini, and the 13-inch iPad
+in landscape, take the late stage's sizes, and phones touch's (head
+tracking's on the Pro Max) (docs/DECISIONS.md, "The late-stage
+profile"; untested in the app until CI runs `HomeRestBoardTests`).
+Four category buttons that never scroll sideways, and three
 phrase columns on every iPhone at its standard Display Zoom (two on 375
 and 390-point phones with Bold Text). A tile
 speaks at once, in the person's Personal Voice when one exists and is
@@ -395,7 +406,18 @@ release in docs/ROADMAP.md when no thread has it yet.
   Talking's frame; the next Settings thread measures them and puts them
   to the owner (docs/ROADMAP.md, *The quality bar*, Q3).
   *(device checks, before any build goes to App Review: docs/ROADMAP.md,
-  *The quality bar*, Q3 and Q13)* At
+  *The quality bar*, Q3 and Q13)* The rest board's late-stage sizes
+  (2026-11-01) are proposals too: their 136-point floors and the safety
+  row's growth toward 4 degrees rest on a study with a phone's camera
+  and people without ALS, not Apple's Eye Tracking. On four columns the
+  board's safety row grows out of the tiles (302 points tall on the
+  13-inch iPad in portrait, where every category's are 350), and on the
+  iPhone 17 Pro Max the board's head tracking sizes make its tiles 110
+  points tall where touch's with every category are 138; the owner can
+  cap the growth or keep touch's there (docs/DECISIONS.md, "The
+  late-stage profile", *Where the board's sizes hold*).
+  *(device checks: docs/ROADMAP.md, *The quality bar*, Q11 and Q13; then
+  the owner)* At
   touch's sizes, by the engine's model the phrase grid still scrolls (invariant 11) on
   phones smaller than the Pro Max at AX5, on the iPhone 17 at AX3 with
   Bold Text, on a 375×667 phone at every size (at the default size by
@@ -903,8 +925,10 @@ long-term vision, the direction behind it, is its *Where this goes*.
 The next pull requests, in order, with which may run side by side and
 which change Home, are its
 [Wave 3](ROADMAP.md#wave-3-the-next-pull-requests-in-order) (planned
-2026-10-23): items 1 to 5, 7 and 8 are built (item 8's sizes on since
-2026-10-30), typing on Home (item 5) on
+2026-10-23): items 1 to 5 and 7 to 9 are built (item 8's sizes on since
+2026-10-30; item 9, the late-stage profile and the rest board, on
+2026-11-01, [`log/2026-11-01-late-stage-profile.md`](log/2026-11-01-late-stage-profile.md),
+*Follow-ups*), typing on Home (item 5) on
 2026-10-24 ([`log/2026-10-24-typing-on-home.md`](log/2026-10-24-typing-on-home.md),
 *Follow-ups*); next on Home is item 6, iPhone Duo in every pose. Its Mac
 design pass has started after PR #56 merged. The continuation in
@@ -1024,7 +1048,7 @@ built, and Home is on it (item 4; docs/work/layout-engine.md and
 Type and its one-row C ([`log/2026-10-24-typing-on-home.md`](log/2026-10-24-typing-on-home.md));
 input profiles came with item 8 (2026-10-30,
 [`log/2026-10-30-sizes-that-follow-reach.md`](log/2026-10-30-sizes-that-follow-reach.md);
-switched on the same day, [`log/2026-10-30-sizes-switched-on.md`](log/2026-10-30-sizes-switched-on.md)), and the late-stage profile, item 9, comes next, both before R0's first
+switched on the same day, [`log/2026-10-30-sizes-switched-on.md`](log/2026-10-30-sizes-switched-on.md)), and the late-stage profile with the rest board with item 9 (2026-11-01), both before R0's first
 App Review build (owner, 2026-10-30); the phone on its side waits until
 that build has gone to App Review. The earlier order is in
 [`log/2026-10-21-phone-layout.md`](log/2026-10-21-phone-layout.md).
@@ -1064,7 +1088,7 @@ Simulators cannot show these. Record each result in a `docs/log/` file
 | Unplugging headphones during a phrase and during Get Attention | Output loss: speech carries on, the alarm stops and says so |
 | Whether the tone player ever reads as not playing for a moment while it plays (route changes, Bluetooth) | Whether the once-a-second health check needs a second look before stopping the alarm |
 | Comfortable dwell time and movement tolerance | Setup recommendations per profile |
-| Each profile's floors on an iPad with a person using Eye Tracking, Head Tracking and Switch Control's point scanning, at the default text size and AX3 | Whether the switch and head floors proposed in docs/DECISIONS.md, "Sizes that follow how the screen is reached", hold, before the larger sizes reach App Review |
+| Each profile's floors on an iPad with a person using Eye Tracking, Head Tracking and Switch Control's point scanning, at the default text size and AX3, and the rest board's late-stage sizes with Eye Tracking | Whether the switch and head floors proposed in docs/DECISIONS.md, "Sizes that follow how the screen is reached", and the late stage's floors and 4-degree growth proposed in "The late-stage profile", hold, before the larger sizes reach App Review |
 | Whether Guided Access works together with Eye Tracking | Setup recommendations |
 | Which phrases people reach for, and how many categories can be scanned by eye | The starter library |
 | "Open Brickson" by Siri and Voice Control, said by a few people, and how VoiceOver reads the icon | `APP_SPOKEN_NAME` and the alternative names |

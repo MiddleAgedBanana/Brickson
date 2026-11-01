@@ -4,7 +4,8 @@
 the first App Review build by the owner's decision of 2026-10-30
 (docs/DECISIONS.md, "Items 8 and 9 come before the first App Review
 build"). Owner: the item 9 thread (a cloud session; GitHub CI is its
-build). Status: plan.*
+build). Status: built, in review; untested in the app until CI runs
+it.*
 
 ## Intent
 
@@ -87,9 +88,11 @@ build). Status: plan.*
     the four the roadmap names, and Again, which shares their row.
     Phrases and Type, which only change Home's mode, stay at Eye
     Tracking's floor, and the categories at their floor.
-  - *How far?* Each row of the safety row grows toward 206 points where
-    there is room once the board fits, and never into the keyboard's
-    room, so typing stays wherever it would be without the board.
+  - *How far?* Each row of the safety row grows toward 206 points, out
+    of what is left once the board fits at the tile floor, only while
+    the board's tiles stay at least as tall as it, and never into the
+    keyboard's room, so typing stays wherever it would be without the
+    board.
   - *What are the late stage's floors?* Proposed in the spec, as
     defaults the owner can overrule.
   - *Who chooses, and where?* The family, in a new second step of Set
@@ -154,10 +157,13 @@ every state, as now (invariant 10).
   showing at the same profile, so the message, Phrases, Type and the
   categories keep the same sizes with or without the board. Then each
   row of the safety row grows on, toward 206 points (4 degrees at
-  46 cm), from what is left once the board's rows fit at the tile
-  floor, and never past the keyboard's room (`KeyboardAllowance`), so
-  Type is offered wherever it is without the board. The grid takes the
-  rest. Phrases and Type keeping their sizes is what keeps Settings'
+  46 cm), out of what is left once the board's rows fit at the tile
+  floor. The safety row and the board's tiles share that room: the
+  safety row grows only while the tiles stay at least as tall as it,
+  then both grow equally, so the phrases never become the smallest
+  targets on the board for the safety row's sake. It never passes the
+  keyboard's room (`KeyboardAllowance`), so Type is offered wherever it
+  is without the board. The grid takes the rest. Phrases and Type keeping their sizes is what keeps Settings'
   Back to Talking, which is touch's frame with every category, nearest
   Phrases on the board's Home.
 - **A fold or a camera across Home** (iPhone Duo): the board shows in
@@ -216,10 +222,61 @@ board asks for them.
 
 ### Where each profile holds
 
-Measured by `ProfileChoiceTests.theRestBoardTakesTheSizesTheTableSays`
-over `HomeLayoutEngineTests.windows`, with a six-phrase board and the
-starter library's Emergency (six phrases), and filled in from it during
-the build.
+Measured during the build over `HomeLayoutEngineTests.windows`, with a
+six-phrase board (Conversation) and the starter library's Emergency (six
+phrases), against the same windows with every category and Eye
+Tracking's sizes asked for (no answer). The profile each window takes at
+every text size and with Bold Text is pinned in
+`LateStageProfileTests.boardTable` (`theRestBoardTakesTheSizesTheTableSays`);
+the sizes below are the engine's at the default and the largest text
+size (the quick controls' height, a tile's width × height, and the
+grid's rows).
+
+| Window | Text | Every category | Yes and No | Tiles | Rest board | Yes and No | Tiles | Rows |
+|---|---|---|---|---|---|---|---|---|
+| iPhone 17 | default | touch | 64 | 118×111 | touch | 118 | 118×117 | 2, from 3 |
+| iPhone 17 | AX5 | touch | 79 | 118×78, scrolls | touch | 87 | 118×87 | 2, from 3 |
+| iPhone 17 Pro Max | default | touch | 64 | 131×138 | head tracking | 107 | 128×110 | 2, from 3 |
+| iPhone 17 Pro Max | AX5 | touch | 79 | 131×86 | head tracking | 93 | 128×110 | 2, from 3 |
+| iPhone 16e | default | touch | 64 | 114×106 | touch | 114 | 114×113 | 2, from 3 |
+| iPhone 16e | AX5 | touch | 79 | 114×78, scrolls | touch | 83 | 114×83 | 2, from 3 |
+| 375×667 phone | default | touch | 44 | 109×99, scrolls | touch | 97 | 109×99 | 2, from 3 |
+| 375×667 phone | AX5 | touch | 79 | 109×99, scrolls | touch | 79 | 109×99, scrolls | 2, from 3 |
+| 375×667 phone, zoomed | both | touch | 64, 79 | 140×78, scrolls | touch | 64, 79 | 140×78, scrolls | 3, from 4 |
+| 13-inch iPad | both | Eye Tracking | 109 | 239×350 | late stage | 206 | 239×302 | 2 |
+| 13-inch iPad, landscape | both | Eye Tracking | 109 | 325×178 | late stage | 155 | 325×155 | 2 |
+| 13-inch iPad, landscape, zoomed | default | touch | 88 | 244×143 | touch | 88 | 244×143 | 2 |
+| 13-inch iPad, landscape, zoomed | AX5 | touch | 79 | 244×110 | touch | 79 | 244×110 | 2 |
+| 11-inch iPad | both | Eye Tracking | 109 | 189×267 | late stage | 206 | 189×219 | 2 |
+| 11-inch iPad, landscape | default | head tracking | 88 | 286×137 | head tracking | 92 | 286×135 | 2 |
+| 11-inch iPad, landscape | AX5 | touch | 79 | 288×139 | touch | 79 | 288×139 | 2 |
+| iPad mini | both | Eye Tracking | 109 | 167×229 | Eye Tracking | 189 | 167×189 | 2 |
+| iPad mini, landscape | both | touch | 88, 79 | 269×143, 269×95 | touch | 88, 79 | 269×143, 269×95 | 2 |
+
+What it shows:
+
+- **iPads in portrait and the 13-inch iPad in landscape take the late
+  stage's sizes** at every text size. The iPad mini in portrait takes
+  Eye Tracking's: its five columns, 130.4 points wide, hold 109-point
+  controls but not 136-point ones; with Bold Text it takes head
+  tracking's, as it does with every category.
+- **Phones take touch's**, except the iPhone 17 Pro Max, where the
+  board's two rows leave room for head tracking's. There the tiles are
+  110 points tall, head tracking's floor, where touch's were 138 with
+  every category: every other target is larger, and the tiles are
+  shorter. On the other phones the board's two rows give both the
+  safety row and the tiles more height, and on the iPhone 17 and 16e
+  at AX5 the phrases stop scrolling.
+- **On four columns the tiles give height to Yes and No.** Every
+  starter category already fits four columns in two rows, so the board
+  has as many rows as every category there, and the safety row's
+  growth comes out of the tiles: on the 13-inch iPad in portrait Yes
+  and No reach 206 points and the tiles go from 350 to 302 points
+  tall; in landscape both meet at 155.
+- **Where typing's room or the window leaves nothing over**, the board
+  changes only what the phrase area holds (the 13-inch iPad zoomed, the
+  11-inch iPad in landscape at AX5, the iPad mini in landscape, the
+  zoomed phone).
 
 ### Set Up Step by Step's second step
 
@@ -227,10 +284,11 @@ the build.
   phrases Home shows**, the voice, turning on what was chosen, keeping
   Brickson open, and the summary (`GuidedSetupStep.restBoard`).
 - The step's words: the heading "Which phrases does Home show?", and
-  "Home can show one category's phrases, and Emergency's, with Yes, No,
-  Emergency and Get Attention as large as this screen has room for. The
-  other categories stay where they are, dimmed, so nothing moves. The
-  change shows when Settings closes."
+  "Home can show one category's phrases, and Emergency's, in fewer,
+  larger buttons, with Yes, No, Emergency, Again and Get Attention as
+  large as this screen has room for. The other categories stay where
+  they are, dimmed, so nothing moves. The change shows when Settings
+  closes."
 - The choices: Every Category, then each everyday category in Home's
   order, by its own name, shown as written (`Text(verbatim:)`). Each
   only selects: choosing the chosen one again keeps it, and choosing
@@ -293,8 +351,17 @@ the build.
 - **On four columns the tiles give height to Yes and No.** Every
   starter category already fits four columns in two rows, so there the
   board's grid has as many rows as Home's without it, and the safety
-  row's growth comes from the tiles. Measured in the table; the owner
-  can choose to cap the growth instead.
+  row's growth comes from the tiles, never past where they would be
+  shorter than it (on the 13-inch iPad in portrait, tiles 302 points
+  tall where they were 350). The owner can choose to cap the growth
+  instead.
+- **On the iPhone 17 Pro Max the tiles are shorter than without the
+  board.** The board's two rows let the window hold head tracking's
+  sizes, so every target but the tiles grows, and the tiles go from
+  touch's 138 points to head tracking's 110 (*Where each profile
+  holds*). Taking touch's there instead would keep the tiles taller and
+  every other target smaller; the rule that a window takes the largest
+  sizes it holds decides, as it does everywhere else.
 - **The controls' frames now follow the library, on the board only.**
   Without the board they never do: the grid leaves room for the starter
   library's largest category. With it, the room is for the board or
@@ -326,7 +393,6 @@ the build.
     library when Settings closes and kept while it is open.
   - `SettingsRoute.swift`, `GuidedSetupView.swift`: the second step and
     the summary's line.
-  - `LaunchOptions.swift`: `--home-profile=late-stage` for UI tests.
   - The String Catalog; the tests below; the records
     (docs/DECISIONS.md, docs/ROADMAP.md, docs/HANDOFF.md,
     docs/ACCESSIBILITY.md, `README.md`, `AGENTS.md`'s plain types, a
@@ -348,7 +414,8 @@ the build.
   - A held look meeting something new: the chain sweeps above.
   - UI tests that count the steps: each names six now.
 - **Proof:**
-  - `ProfileChoiceTests`, each with the change that makes it fail:
+  - `LateStageProfileTests` (new) and `ProfileChoiceTests`, each with
+    the change that makes it fail:
     - a rest board asks for the late stage's sizes, and no board the
       answers' (fails if a board leaves the profile to the answers, or
       no answer asks for the late stage's);
@@ -372,7 +439,11 @@ the build.
   - `SetupRecordTests`: a record saved before the board decodes with
     none; a choice survives a round trip.
   - `CategorySelectionTests`: with a board, the board's category shows
-    unless Emergency's was chosen, and no other category can be.
+    unless Emergency's was chosen, and no other category can be; a
+    board gone from the library shows as every category does; the
+    board's view of the library keeps every category, in order, with
+    its phrase count.
+  - `SettingsIdleClockTests`: six steps, the board's second.
   - `HomeRestBoardTests` (UI, both families): choosing a category in
     the second step, then closing Settings, shows the board: the other
     categories dimmed, the board's phrases showing, Yes taller than
@@ -383,3 +454,32 @@ the build.
   - Device checks (Codex and the owner's devices): the late stage's
     floors and the 4-degree growth with a person using Eye Tracking on
     an iPad (the quality bar's Q11 and Q13).
+
+## Changed during the build
+
+- **The safety row shares the room with the tiles.** The first rule
+  grew the safety row first, all the way toward 206 points, and gave the
+  tiles what was left. The engine tests found that it starved the tiles
+  on phones: on the iPhone 17 the board's tiles were 78 points tall
+  where every category's were 111, and on the 13-inch iPad in landscape
+  they sat at their 136-point floor. The safety row now grows only while
+  the tiles stay at least as tall as it, then both grow equally
+  (`theSafetyRowGrowsTowardFourDegreesWhileTheTilesStayAsTall`): on the
+  iPhone 17, Yes and No 118 points and tiles 117.
+- **The windows table was measured, not guessed.** The plan expected
+  touch's sizes on every phone; the iPhone 17 Pro Max takes head
+  tracking's with the board, the 11-inch iPad in landscape head
+  tracking's to AX3, and the iPad mini in portrait Eye Tracking's, or
+  head tracking's with Bold Text.
+- **The Yes and No share is compared window by window.** The plan
+  bounded it by touch's pinned worst shares everywhere, but at 672×667
+  Home with every category already passes the compact bound (97.1% by
+  centre), since the engine's pin is measured at one height. The test
+  now checks that the board never borders more of the message than the
+  same window and profile with every category, and the pinned bounds
+  where the window is at least 744 points tall.
+- **No `--home-profile=late-stage`.** The UI tests choose the board in
+  the second step and let Home ask for what a person's launch asks for,
+  so a launch option that fixes the late stage's sizes would only test
+  a combination no one gets: the late stage's sizes with every
+  category.
