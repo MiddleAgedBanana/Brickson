@@ -160,8 +160,12 @@ final class FakeVoiceCatalog: SpeechVoiceCatalog {
         deliver(answer ?? voices)
     }
 
+    /// Every voice a phrase asked to load, in order.
+    private(set) var loadedIDs: [String] = []
+
     func voiceIsAvailable(identifier: String) -> Bool {
-        !missingIDs.contains(identifier)
+        loadedIDs.append(identifier)
+        return !missingIDs.contains(identifier)
     }
 }
 

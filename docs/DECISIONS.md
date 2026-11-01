@@ -3996,8 +3996,11 @@ So:
   until the service answers, so a request while one is out is remembered
   and read as soon as that one answers, however many came meanwhile
   (`SpeechService.refreshVoices()`). Each list is used as it arrives,
-  filtered by the Personal Voice permission as it is then (*A Personal
-  Voice is used only while it is allowed*).
+  filtered by the Personal Voice permission as it is then, and a change
+  to the permission applies to the list already held at once, so a
+  Personal Voice whose access was just turned off is never asked for
+  while the new list is coming (*A Personal Voice is used only while it
+  is allowed*).
 
 The cost: someone who chose a voice, or has a Personal Voice, can hear
 the system's voice for a phrase spoken before the list arrives. On CI's

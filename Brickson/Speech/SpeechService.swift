@@ -214,12 +214,25 @@ final class SpeechService {
     /// was turned off must not be asked for (docs/DECISIONS.md, "A Personal
     /// Voice is used only while it is allowed"). Speaks nothing.
     func refreshPersonalVoiceAvailability() {
-        personalVoiceStatus = personalVoice.status
-        refreshVoices()
+        receivePersonalVoiceStatus(personalVoice.status)
     }
 
     private func receivePersonalVoiceAnswer(_ status: AVSpeechSynthesizer.PersonalVoiceAuthorizationStatus) {
+        receivePersonalVoiceStatus(status)
+    }
+
+    /// Keeps the permission and applies it to the list already held at
+    /// once, then asks for the voices again. The new list can take a while
+    /// (`refreshVoices()`), and until it arrives a Personal Voice whose
+    /// access was just turned off must be neither asked for nor offered
+    /// (docs/DECISIONS.md, "A Personal Voice is used only while it is
+    /// allowed"). A voice just allowed comes with the new list.
+    private func receivePersonalVoiceStatus(_ status: AVSpeechSynthesizer.PersonalVoiceAuthorizationStatus) {
         personalVoiceStatus = status
+        availableVoices = VoiceSelection.usableVoices(
+            availableVoices,
+            personalVoiceAllowed: status == .authorized
+        )
         refreshVoices()
     }
 

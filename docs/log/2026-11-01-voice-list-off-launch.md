@@ -42,9 +42,12 @@ voice list never holds up launch"):
   request while it waits (the app coming to the front, the Personal
   Voice answer, the system's voices-changed notice) is read once more
   as soon as it answers. Each list is used as it arrives, filtered by
-  the Personal Voice permission as it is then, not when the read began
-  (docs/DECISIONS.md, "A Personal Voice is used only while it is
-  allowed").
+  the Personal Voice permission as it is then, not when the read began,
+  and a change to the permission applies to the list already held at
+  once: a Personal Voice whose access was just turned off is neither
+  asked for nor offered while the new list is coming (docs/DECISIONS.md,
+  "A Personal Voice is used only while it is allowed"; found by Codex's
+  review of the first push).
 
 The test step was not changed: the warm-up in `scripts/test.sh` stays
 (it also wakes the voice service before the tests), and no test is
@@ -137,10 +140,13 @@ cold service.
 
 ## Commits
 
-- The fix and its tests: `SpeechSynthesizing.swift`,
+- 2f003bf: the fix and its tests: `SpeechSynthesizing.swift`,
   `SpeechService.swift`, the test doubles and the new tests.
-- This record, docs/DECISIONS.md, docs/HANDOFF.md, AGENTS.md's two
-  gotchas and the warm-up's comment in `scripts/test.sh`.
+- 3c14c75: this record, docs/DECISIONS.md, docs/HANDOFF.md,
+  docs/ACCESSIBILITY.md, AGENTS.md's two gotchas and the warm-up's
+  comment in `scripts/test.sh`.
+- The commit after them: a change to the Personal Voice permission
+  applies to the held list at once (Codex's finding), with its test.
 
 ## Verified
 
@@ -167,6 +173,11 @@ New tests, and what makes each fail:
 - `SpeechServiceTests.aListThatArrivesAfterAccessWasTurnedOffLeavesOutThePersonalVoice()`:
   fails if a list is filtered by the Personal Voice permission as it
   was when the read began.
+- `SpeechServiceTests.turningAccessOffDropsTheHeldPersonalVoiceAtOnce()`:
+  fails if turning access off reaches the held list only when the new
+  read answers, so that a phrase meanwhile asks for the Personal Voice
+  (`FakeVoiceCatalog.loadedIDs` records each voice a phrase asks to
+  load).
 
 `FakeVoiceCatalog` answers at once unless told to hold its answers, so
 every existing speech test runs as before.
