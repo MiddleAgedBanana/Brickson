@@ -146,15 +146,54 @@ private nonisolated struct UtteranceReference: @unchecked Sendable {
 }
 
 /// The installed voices, as a seam so tests can make a chosen voice
-/// disappear between the list being read and the phrase being spoken.
+/// disappear between the list being read and the phrase being spoken, and
+/// hold the list back as a slow voice service does.
 @MainActor
 protocol SpeechVoiceCatalog {
-    func installedVoices() -> [VoiceDescriptor]
+    /// Reads the installed voices and hands them to `deliver` on the main
+    /// actor, without ever making the main thread wait for them: the
+    /// system's voice service took more than a minute to answer its first
+    /// request on simulators that had just started (docs/DECISIONS.md, "The
+    /// voice list never holds up launch"). The answer may come at once or
+    /// much later.
+    func readInstalledVoices(then deliver: @escaping @MainActor ([VoiceDescriptor]) -> Void)
+    /// Whether a listed voice still loads. Asked only while a list is
+    /// held, so the voice service has already answered once.
     func voiceIsAvailable(identifier: String) -> Bool
 }
 
 struct SystemVoiceCatalog: SpeechVoiceCatalog {
-    func installedVoices() -> [VoiceDescriptor] {
+    /// What reads the list: the system's voice service, unless a test
+    /// gives a stand-in to see which thread it runs on
+    /// (`OffMainThreadCallbackTests`).
+    private let read: @Sendable () -> [VoiceDescriptor]
+
+    init(read: @escaping @Sendable () -> [VoiceDescriptor] = { SystemVoiceCatalog.systemVoices() }) {
+        self.read = read
+    }
+
+    func readInstalledVoices(then deliver: @escaping @MainActor ([VoiceDescriptor]) -> Void) {
+        let read = self.read
+        Task {
+            let voices = await Self.readAwayFromTheMainThread(read)
+            deliver(voices)
+        }
+    }
+
+    /// `@concurrent` runs the read on the concurrent pool. Without it, the
+    /// project's approachable concurrency would run this nonisolated async
+    /// function on its caller's actor, the main actor, and the launch
+    /// would wait for the voice service again. The read blocks the pool
+    /// thread it runs on until the service answers, so the speech service
+    /// keeps only one read out at a time (`SpeechService.refreshVoices()`).
+    @concurrent
+    nonisolated static func readAwayFromTheMainThread(
+        _ read: @Sendable () -> [VoiceDescriptor]
+    ) async -> [VoiceDescriptor] {
+        read()
+    }
+
+    nonisolated static func systemVoices() -> [VoiceDescriptor] {
         AVSpeechSynthesisVoice.speechVoices().map(VoiceDescriptor.init)
     }
 
@@ -227,7 +266,9 @@ final class StandInPersonalVoice: PersonalVoiceAuthorizing {
     }
 }
 
-extension VoiceDescriptor {
+/// Nonisolated, as the types are, so the list is turned into descriptors on
+/// the thread that read it (`SystemVoiceCatalog.systemVoices()`).
+nonisolated extension VoiceDescriptor {
     init(_ voice: AVSpeechSynthesisVoice) {
         self.init(
             id: voice.identifier,
@@ -240,7 +281,7 @@ extension VoiceDescriptor {
     }
 }
 
-extension VoiceQuality {
+nonisolated extension VoiceQuality {
     init(_ quality: AVSpeechSynthesisVoiceQuality) {
         switch quality {
         case .premium: self = .premium
