@@ -44,7 +44,7 @@ nonisolated struct HomeReservedLayout {
                 && $0.minX > base.content.minX && $0.maxX < base.content.maxX
         }
         let horizontal = divisions.first { $0.width >= $0.height && Self.overlaps($0, base.content) }
-        let modeFloor = max(profile.quickControlFloor, text.quickControlLine + 2 * HomeLayout.labelInset.vertical,
+        let modeFloor = max(profile.modeControlFloor, text.quickControlLine + 2 * HomeLayout.labelInset.vertical,
             base.backToTalking.width < minimum.backToTalkingOneLine - 0.001 ? HomeLayout.twoLineCategoryHeight : 0)
         let returnable = base.modes == .phrasesAndTyping ? max(0, min(
             2 * (base.frame(.phrases).height - modeFloor), base.frame(.message).height - 2 * text.messageLine)) : 0
@@ -324,7 +324,7 @@ nonisolated struct HomeReservedLayout {
         let quickFloor = max(profile.quickControlFloor, text.quickControlLine + 2 * HomeLayout.labelInset.vertical,
             occupied[.getAttention]!.width < minimum.getAttentionOneLine - 0.001 ? HomeLayout.twoLineQuickControlHeight : 0)
         let back = backFrame(base: base, frames: occupied)
-        let modeFloor = base.modes == .phrasesAndTyping ? max(profile.quickControlFloor,
+        let modeFloor = base.modes == .phrasesAndTyping ? max(profile.modeControlFloor,
             text.quickControlLine + 2 * HomeLayout.labelInset.vertical,
             back.width < minimum.backToTalkingOneLine - 0.001 ? HomeLayout.twoLineCategoryHeight : 0) : 0
         if occupied[.again]!.height < quickFloor - 0.001

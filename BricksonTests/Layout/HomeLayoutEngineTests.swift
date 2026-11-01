@@ -940,14 +940,16 @@ struct HomeLayoutEngineTests {
     /// Without `typing`, Type leads to typing, which the map does not have,
     /// so a chain stops there. With it, the map has typing too, and every
     /// state has the largest category's tiles, as many as show without
-    /// scrolling: speaking while browsing, dimmed while typing.
-    static func chainMap(_ layout: HomeLayout, typing: Bool = false) -> ChainMap {
+    /// scrolling: speaking while browsing, dimmed while typing. With
+    /// `restBoard`, the rest board's category by its place: only it or
+    /// Emergency's phrases show, and the other categories are dimmed.
+    static func chainMap(_ layout: HomeLayout, typing: Bool = false, restBoard: Int? = nil) -> ChainMap {
         let categories = (0..<HomeLayout.categoryCapacity).map { (name: "category \($0 + 1)", frame: layout.frame(.category($0))) }
         let hasModes = layout.modes == .phrasesAndTyping
         var tiles: [CGRect] = []
         if typing {
             let grid = layout.grid
-            for index in 0..<HomeLayout.referencePhraseCount {
+            for index in 0..<layout.phraseArea.room {
                 let tile = grid.tile(row: index / grid.columns, column: index % grid.columns)
                 if tile.minY < grid.frame.maxY { tiles.append(tile) }
             }
@@ -959,7 +961,8 @@ struct HomeLayoutEngineTests {
             phrases: hasModes ? layout.frame(.phrases) : nil, type: hasModes ? layout.frame(.type) : nil,
             typing: typing && hasModes ? HomeChains.Typing(
                 field: layout.frame(.message), clearCell: layout.typingCells.clear, putBackCell: layout.typingCells.putBack
-            ) : nil
+            ) : nil,
+            restBoard: restBoard
         ))
     }
 

@@ -42,6 +42,15 @@ import Foundation
 /// so, with the height it lacks: a target is never made smaller than its
 /// floor to avoid scrolling (invariant 11).
 ///
+/// On the rest board (`PhraseArea.restBoard`; docs/DECISIONS.md, "The
+/// late-stage profile"), the grid leaves room for the board's phrases or
+/// Emergency's instead of the starter library's largest category. Every
+/// slot keeps its place, and every frame above the safety row and every
+/// size but the safety row's are those of the same window with every
+/// category; then the safety row grows on toward 4 degrees
+/// (`restBoardQuickControlHeight`), while the board's tiles stay at
+/// least as tall as it, never past the keyboard's room.
+///
 /// Home has its frames from it (docs/ROADMAP.md, Wave 3 items 4 and 5;
 /// docs/work/layout-engine.md, docs/work/typing-on-home.md), with both
 /// modes, browsing and typing (`Modes.phrasesAndTyping`), and so does
@@ -138,6 +147,14 @@ nonisolated struct HomeLayout: Equatable, Sendable {
         /// 136 points (21 mm, about 2.6 degrees at 46 cm), quick controls
         /// 109, categories 89, and its 12-point gaps held the same way.
         case eyeTracking
+        /// The late stage (docs/DECISIONS.md, "The late-stage profile"),
+        /// asked for only with the rest board (`ProfileChoice`): Eye
+        /// Tracking's tiles, categories and gaps, Yes, No, Emergency, Again
+        /// and Get Attention never smaller than a tile (136 points, about
+        /// 2.6 degrees), and Phrases and Type at Eye Tracking's 109, since
+        /// they only change what Home shows. Proposed, the owner can
+        /// overrule.
+        case lateStage
 
         static func < (a: Profile, b: Profile) -> Bool { a.rawValue < b.rawValue }
 
@@ -148,6 +165,17 @@ nonisolated struct HomeLayout: Equatable, Sendable {
             case .touch: 44
             case .switchControl, .headTracking: 88
             case .eyeTracking: 109
+            case .lateStage: 136
+            }
+        }
+
+        /// Phrases and Type, which only pick Home's mode: the quick
+        /// controls' floor, but for the late stage's, which keeps Eye
+        /// Tracking's so the room goes to the safety row.
+        var modeControlFloor: CGFloat {
+            switch self {
+            case .lateStage: Profile.eyeTracking.quickControlFloor
+            default: quickControlFloor
             }
         }
 
@@ -156,7 +184,7 @@ nonisolated struct HomeLayout: Equatable, Sendable {
             switch self {
             case .touch: 44
             case .switchControl, .headTracking: 72
-            case .eyeTracking: 89
+            case .eyeTracking, .lateStage: 89
             }
         }
 
@@ -166,13 +194,13 @@ nonisolated struct HomeLayout: Equatable, Sendable {
             switch self {
             case .touch: 44
             case .switchControl, .headTracking: 110
-            case .eyeTracking: 136
+            case .eyeTracking, .lateStage: 136
             }
         }
 
         /// The smallest any target may be, in each direction. For touch,
         /// Apple's 44 by 44 points (invariant 1).
-        var floor: CGFloat { min(quickControlFloor, categoryFloor, tileFloor) }
+        var floor: CGFloat { min(quickControlFloor, modeControlFloor, categoryFloor, tileFloor) }
 
         /// The gap between controls inside a region: touch's 8 points, and
         /// for a resting pointer the 12 points Apple's Human Interface
@@ -183,7 +211,7 @@ nonisolated struct HomeLayout: Equatable, Sendable {
             switch self {
             case .touch: 8
             case .switchControl, .headTracking: 12
-            case .eyeTracking: 15
+            case .eyeTracking, .lateStage: 15
             }
         }
 
@@ -202,6 +230,12 @@ nonisolated struct HomeLayout: Equatable, Sendable {
         /// the profile's floor where that is taller.
         func quickControlHeight(isRegular: Bool) -> CGFloat {
             max(quickControlFloor, isRegular ? 88 : 64)
+        }
+
+        /// How tall Phrases and Type grow where there is room: as the quick
+        /// controls do, from their own floor.
+        func modeControlHeight(isRegular: Bool) -> CGFloat {
+            max(modeControlFloor, isRegular ? 88 : 64)
         }
 
         /// How tall the categories, Stop and Settings grow where there is
@@ -227,9 +261,17 @@ nonisolated struct HomeLayout: Equatable, Sendable {
         /// Every floor and gap of this profile is at most `other`'s, and one
         /// is smaller.
         func isSmaller(than other: Profile) -> Bool {
-            let mine = [quickControlFloor, categoryFloor, tileFloor, controlSpacing]
-            let theirs = [other.quickControlFloor, other.categoryFloor, other.tileFloor, other.controlSpacing]
+            let mine = [quickControlFloor, modeControlFloor, categoryFloor, tileFloor, controlSpacing]
+            let theirs = [other.quickControlFloor, other.modeControlFloor, other.categoryFloor, other.tileFloor, other.controlSpacing]
             return zip(mine, theirs).allSatisfy { $0 <= $1 } && mine != theirs
+        }
+
+        /// The floor of the control in `slot`, in each direction: the
+        /// categories', Phrases and Type's, or the quick controls'.
+        func floor(of slot: Slot) -> CGFloat {
+            if Slot.categoriesRegion.contains(slot) { return categoryFloor }
+            if slot == .phrases || slot == .type { return modeControlFloor }
+            return quickControlFloor
         }
     }
 
@@ -257,6 +299,29 @@ nonisolated struct HomeLayout: Equatable, Sendable {
         /// the compact and regular arrangements above. Home's
         /// (docs/DECISIONS.md, "Typing on Home").
         case phrasesAndTyping
+    }
+
+    /// What the phrase area holds, and so how many phrases the grid leaves
+    /// room for (docs/DECISIONS.md, "The late-stage profile").
+    enum PhraseArea: Equatable, Sendable {
+        /// Every category, one at a time: room for the starter library's
+        /// largest (`referencePhraseCount`). Home as it has always been.
+        case everyCategory
+        /// The rest board (`RestBoard`): the category the family chose and
+        /// Emergency's phrases, with room for `phrases`, the larger of the
+        /// two. The other categories stay in their places, dimmed, so
+        /// nothing moves; the grid keeps the window's columns and takes
+        /// fewer rows where it can, and the safety row grows toward
+        /// `restBoardQuickControlHeight`.
+        case restBoard(phrases: Int)
+
+        /// How many phrases the grid leaves room for without scrolling.
+        var room: Int {
+            switch self {
+            case .everyCategory: HomeLayout.referencePhraseCount
+            case .restBoard(let phrases): max(1, phrases)
+            }
+        }
     }
 
     /// One line of each of Home's label styles at the person's text size,
@@ -339,6 +404,14 @@ nonisolated struct HomeLayout: Equatable, Sendable {
     /// library with more scrolls at the tiles' floor; one with fewer gets
     /// taller tiles. The controls' frames never follow the library.
     static let referencePhraseCount = 8
+    /// How tall each row of the safety row grows toward on the rest board,
+    /// where there is room once the board fits: 4 degrees at the 46 cm
+    /// Apple's guides give, held at 163 points per inch (32.1 mm, 206
+    /// points). A study of gaze pointing on a phone found 4 degrees "an
+    /// optimal 'sweet spot' across all screen regions and face-to-screen
+    /// distances" (Namnakani and others, CHI 2025). Proposed, the owner can
+    /// overrule.
+    static let restBoardQuickControlHeight: CGFloat = 206
 
     /// The narrowest compact tile: the starter library's widest word,
     /// "understand.", at the default size with `WordFit.widthSlack` and the
@@ -408,6 +481,10 @@ nonisolated struct HomeLayout: Equatable, Sendable {
     /// Whether Home has Phrases and Type, and with them the slot plan's own
     /// arrangements (`Modes`).
     let modes: Modes
+    /// What the phrase area holds: every category, or the rest board.
+    /// Under a fold or a camera, always every category's frames
+    /// (`init(space:profile:text:largestCategory:modes:phraseArea:)`).
+    let phraseArea: PhraseArea
     /// The profile whose floors, gaps and sizes this layout has.
     let profile: Profile
     /// The gap between controls inside a region: the profile's
@@ -431,7 +508,9 @@ nonisolated struct HomeLayout: Equatable, Sendable {
     /// (docs/DECISIONS.md, "Get Attention and Stop on Home").
     private(set) var wellDrop: CGFloat
     /// Whether the starter library's largest category fits without
-    /// scrolling: invariant 11 holds in this window at this text size.
+    /// scrolling, or on the rest board the board's phrases and
+    /// Emergency's (`phraseArea`): invariant 11 holds in this window at
+    /// this text size.
     private(set) var startersFit: Bool
     /// How much taller the content would have to be for it to fit: zero
     /// when it does.
@@ -492,7 +571,8 @@ nonisolated struct HomeLayout: Equatable, Sendable {
     /// least its floor, every column as wide for its words as the
     /// arrangement promised (`arrangementHoldsItsWords`), the starter
     /// library without scrolling, and nothing a reserved region left
-    /// unsatisfied. Touch's sizes apply anywhere; a larger profile only
+    /// unsatisfied; on the rest board, its phrases and Emergency's without
+    /// scrolling. Touch's sizes apply anywhere; a larger profile only
     /// where it holds (`ProfileChoice`). A window with a fold or a camera
     /// across Home holds no profile but touch for now: the reserved layout
     /// chooses its lanes and its grid's columns from the floors, so a
@@ -604,14 +684,22 @@ nonisolated struct HomeLayout: Equatable, Sendable {
 
     init(
         space: Space, profile: Profile = .touch, text: Text,
-        largestCategory: Int = HomeLayout.referencePhraseCount, modes: Modes
+        largestCategory: Int = HomeLayout.referencePhraseCount, modes: Modes,
+        phraseArea: PhraseArea = .everyCategory
     ) {
-        self.init(unreservedSpace: Space(size: space.size, safeArea: space.safeArea),
-            profile: profile, text: text, largestCategory: largestCategory, modes: modes)
+        let unreserved = Space(size: space.size, safeArea: space.safeArea)
+        self.init(unreservedSpace: unreserved,
+            profile: profile, text: text, largestCategory: largestCategory, modes: modes, phraseArea: phraseArea)
         // A safe-area-only occlusion changes no interior allocation or
         // baseline diagnostic. Division presence still chooses even lanes,
         // including a zero-area or wholly edge-clipped reported frame.
         guard space.regions.contains(where: { $0.kind == .division || HomeReservedLayout.overlaps($0.frame, content) }) else { return }
+        // Under a fold or a camera the rest board shows in the frames every
+        // category has: no fold check has measured the board's.
+        if phraseArea != .everyCategory {
+            self.init(unreservedSpace: unreserved,
+                profile: profile, text: text, largestCategory: largestCategory, modes: modes, phraseArea: .everyCategory)
+        }
         let resolved = HomeReservedLayout(base: self, space: space, profile: profile,
             text: text, largestCategory: largestCategory)
         allocationFrames = resolved.allocations
@@ -626,7 +714,7 @@ nonisolated struct HomeLayout: Equatable, Sendable {
         settingsShowsName = frame(.settings).width >= MinimumWidths.forBoldText(text.boldText).settings
         messageHoldsItsWords = frame(.message).width >= MinimumWidths.forBoldText(text.boldText).message
         controlsFit = allocation(.phraseGrid).minY <= content.maxY + 0.001 && reservationIssues.isEmpty
-        let reference = grid.reflow(in: grid.frame, phraseCount: Self.referencePhraseCount)
+        let reference = grid.reflow(in: grid.frame, phraseCount: self.phraseArea.room)
         shortfall = reference.shortfall
         startersFit = shortfall <= 0.001
         backToTalking = resolved.backToTalking
@@ -638,7 +726,7 @@ nonisolated struct HomeLayout: Equatable, Sendable {
 
     private init(
         unreservedSpace space: Space, profile: Profile, text: Text,
-        largestCategory: Int, modes: Modes
+        largestCategory: Int, modes: Modes, phraseArea: PhraseArea
     ) {
         let spacing = profile.controlSpacing
         // Every choice of arrangement (three columns or five, the grid's
@@ -657,6 +745,7 @@ nonisolated struct HomeLayout: Equatable, Sendable {
         )
         self.content = content
         self.modes = modes
+        self.phraseArea = phraseArea
         self.profile = profile
         self.spacing = spacing
         let width = content.width
@@ -728,7 +817,7 @@ nonisolated struct HomeLayout: Equatable, Sendable {
         let backToTalkingWidth = isRegular ? fifth : trailingWidth
         let backToTalkingTakesTwoLines = backToTalkingWidth < minimum.backToTalkingOneLine - 0.001
         let modeFloor = max(
-            profile.quickControlFloor, text.quickControlLine + insets,
+            profile.modeControlFloor, text.quickControlLine + insets,
             backToTalkingTakesTwoLines ? Self.twoLineCategoryHeight : 0
         )
         let messageBlock = 2 * text.messageLine + Self.statusSpacing + text.statusLine
@@ -767,7 +856,13 @@ nonisolated struct HomeLayout: Equatable, Sendable {
             for: tileWidth, in: isRegular ? Self.regularTile.floors : Self.compactTile.floors,
             boldText: text.boldText, profileFloor: profile.tileFloor
         )
-        let referenceRows = Grid.rows(for: Self.referencePhraseCount, columns: columns)
+        // The rows the grid leaves room for: the starter library's largest
+        // category's, or the rest board's (`PhraseArea`). Everything but
+        // the safety row grows as if every category showed
+        // (`everydayRows`), so the board changes no size above the grid but
+        // the safety row's.
+        let referenceRows = Grid.rows(for: phraseArea.room, columns: columns)
+        let everydayRows = Grid.rows(for: Self.referencePhraseCount, columns: columns)
 
         func stack(_ rows: Int, of height: CGFloat) -> CGFloat {
             CGFloat(rows) * height + CGFloat(max(0, rows - 1)) * spacing
@@ -811,14 +906,16 @@ nonisolated struct HomeLayout: Equatable, Sendable {
             return drop
         }
 
-        // What the starter library needs at every floor, with the drop the
-        // floors need. Growth only makes the drop smaller.
+        // What the starter library needs at every floor (or the rest board,
+        // where it shows), with the drop the floors need. Growth only makes
+        // the drop smaller.
         let floorDrop = dropKeepingYesOffTheWell(quick: quickFloor, gap: profile.minimumRegionSpacing, category: categoryFloor)
-        let needed = messageRegionFloor + stack(quickRows, of: quickFloor) + stack(categoryRows, of: categoryFloor)
-            + stack(referenceRows, of: tileFloor) + 3 * profile.minimumRegionSpacing + floorDrop
-        var spare = content.height - needed
-        startersFit = spare >= -0.001
-        shortfall = max(0, -spare)
+        let aboveTheGrid = messageRegionFloor + stack(quickRows, of: quickFloor) + stack(categoryRows, of: categoryFloor)
+            + 3 * profile.minimumRegionSpacing + floorDrop
+        let needed = aboveTheGrid + stack(referenceRows, of: tileFloor)
+        startersFit = content.height - needed >= -0.001
+        shortfall = max(0, needed - content.height)
+        var spare = content.height - aboveTheGrid - stack(everydayRows, of: tileFloor)
 
         // Growth, in order, where there is room: the gaps between regions,
         // the safety row, Phrases and Type, the categories. The phrase grid
@@ -836,9 +933,9 @@ nonisolated struct HomeLayout: Equatable, Sendable {
             quick += quickGrowth / CGFloat(quickRows)
             spare -= quickGrowth
             if modes == .phrasesAndTyping {
-                // Phrases and Type grow to the safety row's height, and the
-                // message with them.
-                let modeTarget = max(messageRegionFloor, 2 * max(modeFloor, quickTarget) + spacing)
+                // Phrases and Type grow to the safety row's height (their
+                // own, for the late stage's), and the message with them.
+                let modeTarget = max(messageRegionFloor, 2 * max(modeFloor, profile.modeControlHeight(isRegular: isRegular)) + spacing)
                 let modeGrowth = min(spare, modeTarget - messageRegionFloor)
                 messageRegion += modeGrowth
                 spare -= modeGrowth
@@ -867,6 +964,32 @@ nonisolated struct HomeLayout: Equatable, Sendable {
             let gapCut = min(max(0, safetyBottom - limit), gap - profile.minimumRegionSpacing)
             gap -= gapCut
             safetyBottom -= gapCut
+        }
+        // The rest board: each row of the safety row grows on toward
+        // `restBoardQuickControlHeight` from the room the board's rows leave,
+        // as long as the board's tiles stay at least as tall as it, so the
+        // two share the room from where they are as tall: the tiles never
+        // shrink to their floor to make Yes and No larger. It never grows
+        // into the keyboard's room, so Type is offered wherever it is
+        // without the board. Nothing above it changes: Phrases and Type keep
+        // the height they have with every category, which keeps Settings'
+        // Back to Talking nearest Phrases.
+        if phraseArea != .everyCategory {
+            let rows = CGFloat(referenceRows)
+            let left = content.height - messageRegion - 3 * gap - stack(quickRows, of: quick)
+                - stack(categoryRows, of: min(category, quick)) - stack(referenceRows, of: tileFloor)
+                - dropKeepingYesOffTheWell(quick: quick, gap: gap, category: min(category, quick))
+            let tile = tileFloor + max(0, left) / rows
+            let room = modes == .phrasesAndTyping ? limit - safetyBottom : .infinity
+            let perRow = min(
+                Self.restBoardQuickControlHeight - quick,
+                (tile - quick) / (1 + CGFloat(quickRows) / rows),
+                room / CGFloat(quickRows),
+                left / CGFloat(quickRows)
+            )
+            let growth = CGFloat(quickRows) * max(0, perRow)
+            quick += growth / CGFloat(quickRows)
+            safetyBottom += growth
         }
         bandClearsKeyboard = safetyBottom <= limit + 0.001
         // A category is never taller than the safety row, which stays the
@@ -942,9 +1065,9 @@ nonisolated struct HomeLayout: Equatable, Sendable {
         } else {
             backToTalking = .null
         }
-        if profile != .touch {
+        if profile != .touch || phraseArea != .everyCategory {
             backToTalking = HomeLayout(unreservedSpace: space, profile: .touch, text: text,
-                largestCategory: largestCategory, modes: modes).backToTalking
+                largestCategory: largestCategory, modes: modes, phraseArea: .everyCategory).backToTalking
         }
 
         // B: Stop's well, the categories and Settings, lower by the drop
@@ -980,8 +1103,7 @@ nonisolated struct HomeLayout: Equatable, Sendable {
             frame.width >= floor - 0.001 && frame.height >= floor - 0.001
         }
         for slot in layout.controls {
-            let floor = Slot.categoriesRegion.contains(slot) ? profile.categoryFloor : profile.quickControlFloor
-            guard holds(layout.frame(slot), floor) else { return false }
+            guard holds(layout.frame(slot), profile.floor(of: slot)) else { return false }
         }
         return layout.grid.columnFrames.allSatisfy { $0.width >= profile.tileFloor - 0.001 }
             && layout.grid.tileSize.height >= profile.tileFloor - 0.001

@@ -13,11 +13,15 @@ struct ProfileChoiceTests {
     // MARK: The profile an answer asks for
 
     /// Fails if a question never answered, or cleared, asks for anything
-    /// but the largest sizes (docs/ROADMAP.md, Wave 3 item 8).
+    /// but the largest sizes an answer asks for (docs/ROADMAP.md, Wave 3
+    /// item 8). The late stage's are larger still, and only the rest board
+    /// asks for them (docs/DECISIONS.md, "The late-stage profile";
+    /// `RestBoardTests`).
     @Test func noAnswerAsksForTheLargestSizes() {
         #expect(ProfileChoice.requested(by: nil) == .eyeTracking)
         #expect(ProfileChoice.requested(by: []) == .eyeTracking)
-        #expect(Profile.allCases.max() == .eyeTracking)
+        #expect(AccessMethod.allCases.map(ProfileChoice.profile(for:)).max() == .eyeTracking)
+        #expect(Profile.allCases.max() == .lateStage)
     }
 
     /// Fails if one way of reaching the screen asks for other sizes than
@@ -219,7 +223,8 @@ struct ProfileChoiceTests {
                     frame.width < floor - 0.001 || frame.height < floor - 0.001
                 }
                 for slot in layout.controls {
-                    let floor = Slot.categoriesRegion.contains(slot) ? profile.categoryFloor : profile.quickControlFloor
+                    let floor = Slot.categoriesRegion.contains(slot) ? profile.categoryFloor
+                        : slot == .phrases || slot == .type ? profile.modeControlFloor : profile.quickControlFloor
                     if short(layout.frame(slot), floor) { faults.append("\(slot) \(layout.frame(slot)) (\(profile), \(context))") }
                 }
                 let grid = layout.grid
@@ -354,7 +359,9 @@ struct ProfileChoiceTests {
     /// (`eyeTableWithBoldText` where Bold Text is on and it has the
     /// window) when Eye Tracking's are asked for, or, for head tracking's and
     /// Switch Control's, other than the table's capped at the one asked
-    /// for: update the table and the decision then.
+    /// for: update the table and the decision then. The late stage's are
+    /// asked for only with the rest board, which has a table of its own
+    /// (`LateStageProfileTests.boardTable`).
     @Test(arguments: HomeLayoutEngineTests.windows.indices)
     func theWindowsPeopleUseTakeTheSizesTheTableSays(window index: Int) {
         let window = HomeLayoutEngineTests.windows[index]
@@ -366,7 +373,7 @@ struct ProfileChoiceTests {
                 var text = plain
                 text.boldText = boldText
                 let context = "\(window.name), \(name), Bold Text \(boldText)"
-                for requested in Profile.allCases {
+                for requested in Profile.allCases where requested != .lateStage {
                     let taken = ProfileChoice.layout(requested: requested, space: space, text: text, modes: .phrasesAndTyping).profile
                     let expected = table.indices.contains(size) ? table[size] : .touch
                     // Where Eye Tracking's or head tracking's sizes are taken,
@@ -411,36 +418,49 @@ struct ProfileChoiceTests {
     /// none of the windows.
     @Test(arguments: [Profile.headTracking, .eyeTracking])
     func noChainAtALargerProfileMeetsANewHazard(profile: Profile) {
-        let dimmedPhrase = "a dimmed phrase"
         let held = Self.heldWindows(profile)
         var unexpected: [String] = []
         for (index, (layout, context)) in held.enumerated() {
-            let typing = index % 2 == 0
-            let map = HomeLayoutEngineTests.chainMap(layout, typing: typing)
-            var resting: [ChainStart] = []
-            if typing {
-                let grid = layout.grid
-                let categories = (0..<HomeLayout.categoryCapacity).map { "category \($0 + 1)" }
-                let topRow = (0..<min(grid.columns, HomeLayout.referencePhraseCount)).map { grid.tile(row: 0, column: $0) }
-                let states = HomeChains.states(categoryCount: categories.count, typing: true).filter(\.typing)
-                    .map { HomeChains.name(of: $0, categories: categories) }
-                let points = topRow.flatMap { ChainEngine.points(across: $0, columns: 2, rows: 2) }
-                resting = states.flatMap { state in points.map { ChainStart.resting(at: $0, on: dimmedPhrase, in: state) } }
-            }
-            for finding in ChainFinding.findings(in: map.hazards(from: map.everyStart() + resting)) {
-                let start = finding.example.start
-                let fromTheWell = start.chosen?.name == HomeChains.stop || start.restingOn == HomeChains.emptyWell
-                let met = finding.example.hazard?.control.name
-                let againAboveTheWell = !layout.isRegular
-                let byCentreOnly = finding.under.allSatisfy { $0.hasPrefix(NearestRule.centre.rawValue) }
-                if againAboveTheWell && fromTheWell && (met == HomeChains.again || met == HomeChains.speak) { continue }
-                if start.restingOn == dimmedPhrase && byCentreOnly && (met == HomeChains.clear || met == HomeChains.putBack) { continue }
-                unexpected.append("\(finding) (\(context), typing \(typing))")
-            }
+            unexpected += Self.unexpectedChainFindings(in: layout, typing: index % 2 == 0, context: context)
         }
         let count = unexpected.count
         #expect(count == 0, "first: \(unexpected.first ?? "")")
         #expect(held.count > 20, "\(held.count)")
+    }
+
+    /// The findings of chains of held activations on `layout`'s frames, in
+    /// every state of Home, browsing and, with `typing`, typing too, from
+    /// every control chosen and every place a look rests, the dimmed top
+    /// row of phrases included, beyond the two touch's frames already have
+    /// and the engine tests pin: Stop's well's top nearest Again where
+    /// Again is above it, and, by centre only, a dimmed phrase nearest
+    /// Clear or Put Back while typing. With `restBoard`, on the rest board
+    /// showing that category.
+    static func unexpectedChainFindings(in layout: HomeLayout, typing: Bool, restBoard: Int? = nil, context: String) -> [String] {
+        let dimmedPhrase = "a dimmed phrase"
+        let map = HomeLayoutEngineTests.chainMap(layout, typing: typing, restBoard: restBoard)
+        var resting: [ChainStart] = []
+        if typing {
+            let grid = layout.grid
+            let categories = (0..<HomeLayout.categoryCapacity).map { "category \($0 + 1)" }
+            let topRow = (0..<min(grid.columns, layout.phraseArea.room)).map { grid.tile(row: 0, column: $0) }
+            let states = HomeChains.states(categoryCount: categories.count, typing: true, restBoard: restBoard).filter(\.typing)
+                .map { HomeChains.name(of: $0, categories: categories) }
+            let points = topRow.flatMap { ChainEngine.points(across: $0, columns: 2, rows: 2) }
+            resting = states.flatMap { state in points.map { ChainStart.resting(at: $0, on: dimmedPhrase, in: state) } }
+        }
+        var unexpected: [String] = []
+        for finding in ChainFinding.findings(in: map.hazards(from: map.everyStart() + resting)) {
+            let start = finding.example.start
+            let fromTheWell = start.chosen?.name == HomeChains.stop || start.restingOn == HomeChains.emptyWell
+            let met = finding.example.hazard?.control.name
+            let againAboveTheWell = !layout.isRegular
+            let byCentreOnly = finding.under.allSatisfy { $0.hasPrefix(NearestRule.centre.rawValue) }
+            if againAboveTheWell && fromTheWell && (met == HomeChains.again || met == HomeChains.speak) { continue }
+            if start.restingOn == dimmedPhrase && byCentreOnly && (met == HomeChains.clear || met == HomeChains.putBack) { continue }
+            unexpected.append("\(finding) (\(context), typing \(typing))")
+        }
+        return unexpected
     }
 
     /// An answer changed in Family Setup closes Settings onto other sizes

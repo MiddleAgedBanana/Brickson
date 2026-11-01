@@ -15,6 +15,10 @@ import Foundation
 /// while browsing, so every state has one: empty, written (Speak and Clear
 /// act), or cleared (Put Back acts).
 ///
+/// On the rest board (docs/DECISIONS.md, "The late-stage profile") only the
+/// board's category or Emergency's phrases show, and every other category
+/// is dimmed in place, so each does nothing; typing is as without it.
+///
 /// The names are the ones the UI tests read Home's controls by
 /// (`screenControls(in:)`): the accessibility identifier where a control
 /// has one, its label otherwise. The unit tests build it from the layout's
@@ -103,6 +107,9 @@ nonisolated enum HomeChains {
         /// What typing shows, where it is known. Nil: the map has no typing
         /// states, and a chain that chooses Type ends there.
         var typing: Typing?
+        /// The rest board's category, by its place in `categories`; nil
+        /// where Home shows every category.
+        var restBoard: Int? = nil
     }
 
     /// Home's frames while typing.
@@ -140,16 +147,17 @@ nonisolated enum HomeChains {
     }
 
     /// Where Home starts: nothing spoken, the first everyday category
-    /// showing, the alarm quiet.
-    static func atRest(categoryCount: Int) -> State {
-        State(hasSpoken: false, showing: categoryCount > 0 ? 0 : nil, sounding: false)
+    /// showing (the rest board's, where it shows), the alarm quiet.
+    static func atRest(categoryCount: Int, restBoard: Int? = nil) -> State {
+        State(hasSpoken: false, showing: restBoard ?? (categoryCount > 0 ? 0 : nil), sounding: false)
     }
 
     /// Every state, for a library of `categoryCount` everyday categories:
     /// with `typing`, typing and browsing with each draft; without it,
-    /// browsing with an empty draft.
-    static func states(categoryCount: Int, typing: Bool = false) -> [State] {
-        let showing: [Int?] = [nil] + (0..<categoryCount).map { Optional($0) }
+    /// browsing with an empty draft. With `restBoard`, only its category
+    /// or Emergency's phrases show.
+    static func states(categoryCount: Int, typing: Bool = false, restBoard: Int? = nil) -> [State] {
+        let showing: [Int?] = [nil] + (restBoard.map { [$0] } ?? Array(0..<categoryCount)).map { Optional($0) }
         let modes = typing ? [false, true] : [false]
         let drafts = typing ? Draft.allCases : [.empty]
         return [false, true].flatMap { hasSpoken in
@@ -185,7 +193,7 @@ nonisolated enum HomeChains {
         let names = frames.categories.map(\.name)
         var states: [String: [ChainControl]] = [:]
         var resting: [String: [(name: String, frame: CGRect)]] = [:]
-        for state in Self.states(categoryCount: names.count, typing: frames.typing != nil) {
+        for state in Self.states(categoryCount: names.count, typing: frames.typing != nil, restBoard: frames.restBoard) {
             func after(_ change: (inout State) -> Void) -> String {
                 var next = state
                 change(&next)
@@ -226,6 +234,9 @@ nonisolated enum HomeChains {
                     // Dimmed while typing: choosing one would leave typing
                     // and turn the dimmed tiles under a look resting there
                     // into phrases that speak.
+                    controls.append(ChainControl(category.name, category.frame, .nothing))
+                } else if let board = frames.restBoard, index != board {
+                    // Dimmed on the rest board.
                     controls.append(ChainControl(category.name, category.frame, .nothing))
                 } else {
                     controls.append(
