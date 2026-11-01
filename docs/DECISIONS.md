@@ -3861,12 +3861,44 @@ Step by Step. The work file is
   moves under Settings while it is open.
 - **A step, not a Family Setup row.** Family Setup's rows are where a
   held look arrives from Settings' first screen, and every new row there
-  is a new place for it to land. The step's choices sit under its
-  heading and words; a held look arrives on Next, in the bar every step
-  shares, or on the standard Back button, and neither has a choice
-  nearest it. The choices only select (invariant 10), each is saved the
-  moment it is chosen, and the summary says which phrases Home shows.
-  The family's category names are shown as written, never translated.
+  is a new place for it to land. A held look arrives at the step on the
+  first step's Next, in the bar every step shares, or on the standard
+  Back button, above the step's words. The choices only select
+  (invariant 10), each is saved the moment it is chosen, and the
+  summary says which phrases Home shows. The family's category names
+  are shown as written, never translated.
+- **Where the second step's choices start.** A look resting anywhere on
+  Next as the step appears meets Next again: every choice keeps every
+  point of Next nearer Next than itself, by nearest centre and by
+  nearest edge, with 8 points to spare (`SetupChoicesPlace`, from Next's
+  frame at the screen's foot, `SettingsScreenFrames.foot`). Each choice
+  follows the heading and words, or the choice before it, where it
+  holds there. From the first that does not, the rest start together
+  just below the bar, at the first top where every one of them holds,
+  and the family scrolls to them past a gap where a choice would meet
+  the look. On an iPad at the default size every choice follows the
+  words. On a phone none can sit just above the bar, because a
+  full-width Next's top corners are nearer a choice's centre there than
+  Next's own: on the iPhone 17 at the default size, Every Category and
+  the first category stay under the words and the other three start
+  below the bar. Across the 630 swept windows the first screenful shows
+  at least one choice on 97 of the 140 phone-height windows at the
+  default size, and on every window from 1,000 points tall; at AX3 and
+  AX5 on a phone the words alone fill it. Putting every choice below
+  the bar wherever the whole column cannot stay under the words, as
+  this pull request first did after the review, showed none on any
+  phone-height window, so Every Category, the choice that keeps Home as
+  it is, needed a scroll everywhere a phone is used; an independent
+  review found it. The step is a surface of the chain engine
+  (`SettingsChains`), read in the app on CI's iPad and iPhone by
+  `SettingsOnHomeTests` and modelled across 630 windows
+  (`SettingsChainsTests.SweptFamilySetup`), and no chain through it
+  saves a choice. With the choices right under the words, as the step
+  was first built, a held look that chose Next and stayed on Next's top
+  edge met a choice above the bar or under it, and saved it, on 203 of
+  the 630 windows (53 at the default text size, 99 at AX3, 51 at AX5);
+  Codex's review of pull request #74 found the step unscored. The steps
+  after it are not followed (docs/HANDOFF.md, *Known gaps*).
 - **The late stage's floors** (`HomeLayout.Profile.lateStage`), held at
   163 points per inch (*Layouts from the space available*), angles at
   46 cm:
@@ -3881,8 +3913,8 @@ Step by Step. The work file is
   than a phrase tile, the reference app's 136-point gaze tile. Phrases
   and Type only change what Home shows, so they keep Eye Tracking's 109
   and the room goes to the controls the roadmap names. The 4 degrees
-  come from a study of gaze pointing on a phone (Namnakani, Abdrabou,
-  Grizou and Khamis, "Stretch Gaze Targets Out", CHI 2025; 24 people, an
+  come from a study of gaze pointing on a phone ("Stretch Gaze Targets
+  Out", CHI 2025, https://doi.org/10.1145/3706598.3713092; 24 people, an
   iPhone X's front camera, 25 to 49 cm away): "targets with a visual
   angle of 4° serve as an optimal 'sweet spot' across all screen regions
   and face-to-screen distances", with gaze less accurate up and down
@@ -3939,7 +3971,8 @@ Step by Step. The work file is
   every profile the board takes, meet nothing touch's frames with every
   category do not; Back to Talking meets only Phrases on every Home it
   can close onto, with or without the board; Settings over the board's
-  Home closes nothing and saves nothing under a held look; and Yes and
+  Home, the second step included, closes nothing and saves nothing
+  under a held look; and Yes and
   No border no more of the message than in the same window and profile
   with every category, and no more than the shares pinned in the
   engine's tests (*Sizes that follow how the screen is reached*,

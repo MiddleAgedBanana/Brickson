@@ -45,7 +45,8 @@ view while the tiles stay as tall, as the window has room; by the
 engine, every iPad in portrait but the iPad mini, and the 13-inch iPad
 in landscape, take the late stage's sizes, and phones touch's (head
 tracking's on the Pro Max) (docs/DECISIONS.md, "The late-stage
-profile"; untested in the app until CI runs `HomeRestBoardTests`).
+profile"; `HomeRestBoardTests` checks it in the app on CI's iPad and
+iPhone simulators, #74).
 Four category buttons that never scroll sideways, and three
 phrase columns on every iPhone at its standard Display Zoom (two on 375
 and 390-point phones with Bold Text). A tile
@@ -562,7 +563,9 @@ release in docs/ROADMAP.md when no thread has it yet.
 - The rendered-label tests read the five English quick-control labels
   (Yes, No, Emergency, Get Attention, Again), and, on an iPad in
   portrait at Home's larger sizes, Phrases, Type and the everyday
-  categories (`HomeSizesTests`); never a phrase tile, and nothing at
+  categories (`HomeSizesTests`), and on the rest board, on CI's iPhone
+  and iPad, the quick controls and every everyday category, dimmed or
+  not (`HomeRestBoardTests`); never a phrase tile, and nothing at
   AX3. `StarterLabelFitTests` measures every starter label against its
   narrowest slot instead. *(Accessibility coverage checklist)*
 - The Get Attention tone is the reference app's placeholder; a
@@ -647,12 +650,19 @@ release in docs/ROADMAP.md when no thread has it yet.
   neither comes with Get Attention's, if it comes. *(the owner, then a
   new thread)*
 - Chains of activations through Settings' screens are scored on its
-  first screens (`SettingsOnHomeTests` with the chain engine, on CI's
-  iPad and iPhone; docs/DECISIONS.md, "One chain engine for dwell
-  safety"). Since 2026-10-30 no hazard is open there in the models: a
-  held look no longer saves a setup answer or closes Settings under the
-  look, on CI's windows or on 630 swept ones, and `SettingsOnHomeTests`
-  fails on any (docs/DECISIONS.md, "The first step's own rows").
+  first screens and on Set Up Step by Step's first two steps
+  (`SettingsOnHomeTests` with the chain engine, on CI's iPad and
+  iPhone; docs/DECISIONS.md, "One chain engine for dwell safety"). The
+  steps after the second (the voice, turning on what was chosen,
+  keeping Brickson open, the summary) are not followed: a look held on
+  Next walks into them unscored, as it did into every step after the
+  first before 2026-11-01. Since 2026-10-30 no hazard is open on the
+  scored screens in the models: a held look no longer saves a setup
+  answer or closes Settings under the look, on CI's windows or on 630
+  swept ones, and `SettingsOnHomeTests` fails on any (docs/DECISIONS.md,
+  "The first step's own rows"); each of the second step's choices lies
+  where a look resting on Next meets Next again (docs/DECISIONS.md, "The
+  late-stage profile", *Where the second step's choices start*).
   Settings' Family Setup row is placed from Home's frames, Set Up Step
   by Step takes its frame in Family Setup, and Learn About Each Way
   takes that frame on the first step; its guide opens as a cover of its
@@ -662,7 +672,12 @@ release in docs/ROADMAP.md when no thread has it yet.
   instead). Untested in the app until CI runs this change, and a device
   check says whether it binds. On narrow or short windows at large text
   sizes the first step's first screenful shows no answer, so a family
-  scrolls to answer. On short, very wide windows (wider than about 1300
+  scrolls to answer. On a phone the second step's first screenful shows
+  only the choices that can sit under its words without meeting a look
+  on Next (Every Category and the first category on the iPhone 17 at the
+  default size, none at AX3 and larger, where the words fill it), and
+  the rest start below the bar, past a gap, where the family scrolls to
+  them. On short, very wide windows (wider than about 1300
   points and at most 667 tall, at the default text size), Home's
   Settings lies as near Back to Talking as the row, as before. If
   Settings' first screen has been scrolled when its row is chosen,

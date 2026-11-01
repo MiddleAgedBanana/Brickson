@@ -563,8 +563,9 @@ the failure.
   `HomeStatusLine`, `HomeButtonLook`, `LibrarySnapshot`, `LibraryEdit`,
   `LibraryRules`, `LibraryImport`, `LibraryEditor`, `BackupCodec`,
   `EmergencyRepair`, `SettingsLeadIn`, `SettingsRowPlace`,
-  `SettingsScreenFrames`, `SetupAnswersPlace`, `KeyboardAllowance`,
-  `SettingsAppLink`, `HomeLayout`, `ProfileChoice`, `RestBoard`.
+  `SettingsScreenFrames`, `SetupAnswersPlace`, `SetupChoicesPlace`,
+  `KeyboardAllowance`, `SettingsAppLink`, `HomeLayout`, `ProfileChoice`,
+  `RestBoard`.
   Views only read them.
 - **Run it, don't just read it.** Layout and flow changes are checked in the
   running app on an iPad and an iPhone simulator, at default and
@@ -824,11 +825,16 @@ the time. Export them again after each new Xcode release.
   Vision's accurate mode also misread a clear `No` as `ON`; the fast mode
   read it and rejected the old clipped captures. Keep whole-word matching
   (case-insensitive), with no language correction or recognition hints.
-  The recognizer lives in `RenderedWords` (Vision's `RecognizeTextRequest`).
-  The unit tests run it on kept whole and clipped captures
-  (`RenderedWordsTests`, `BricksonTests/RenderedLabels`) and pin its
-  settings, so a change that stops it reading whole words, accepts part
-  of one, or turns on correction or hints fails there first.
+  The fast mode also read nothing in a whole `No` small on a tall
+  button, and `Attention,` for a whole `Attention` (PR #74), so a tall
+  capture is also read in a band around its drawn words, and
+  punctuation read around a word is dropped; neither can add a letter
+  that was not drawn. The recognizer lives in `RenderedWords` (Vision's
+  `RecognizeTextRequest`). The unit tests run it on kept whole, clipped
+  and tall captures (`RenderedWordsTests`, `BricksonTests/RenderedLabels`)
+  and pin its settings, so a change that stops it reading whole words,
+  accepts part of one, or turns on correction or hints fails there
+  first.
 - **Measuring the keyboard:** `KeyboardProbeTests` runs on every UI run.
   For each orientation and text size it opens a debug-only probe screen
   (`--screen=keyboard-probe`) instead of Home, prints one

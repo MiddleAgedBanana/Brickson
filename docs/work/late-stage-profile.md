@@ -191,8 +191,9 @@ Why these:
   phrase tile at the late stage: 136 points is the reference app's gaze
   tile, the largest size it used every day.
 - They grow toward 4 degrees: in a study of gaze pointing on a phone
-  (Namnakani, Abdrabou, Grizou and Khamis, "Stretch Gaze Targets Out",
-  CHI 2025; 24 people, an iPhone X's front camera, 25 to 49 cm away),
+  ("Stretch Gaze Targets Out", CHI 2025,
+  https://doi.org/10.1145/3706598.3713092; 24 people, an iPhone X's
+  front camera, 25 to 49 cm away),
   "targets with a visual angle of 4° serve as an optimal 'sweet spot'
   across all screen regions and face-to-screen distances", and gaze was
   less accurate up and down than across. The safety row grows in
@@ -297,9 +298,21 @@ What it shows:
   says "That answer could not be saved. Try again."
 - Where a held look arrives: on Next, in the fixed bar at the bottom of
   every step, from the first step, or on the standard Back button from
-  the third. The choices sit under the heading and the words, so
-  neither place has a choice nearest it; Next and Back only navigate.
-  `SettingsChains` keeps not following the second step, as before.
+  the third; Next and Back only navigate. Every choice lies where every
+  point of Next is nearer Next than the choice, by centre and by edge,
+  with 8 points to spare (`SetupChoicesPlace`): each under the words, or
+  the choice before it, where it holds there, and from the first that
+  does not, the rest just below the bar, where the family scrolls to
+  them. The step is a surface of the chain engine (`SettingsChains`):
+  `SettingsOnHomeTests` reads it on CI's windows and the 630-window
+  sweep models it. *Changed after Codex's review of pull request #74:*
+  the spec first put the choices under the words and left the step
+  unscored, and scoring it found a held look on Next saving a choice on
+  203 of the 630 windows. The first fix moved the whole column below
+  the bar wherever it could not all stay under the words, which left
+  every phone's first screenful without a choice; now the choices that
+  hold stay (docs/DECISIONS.md, "The late-stage profile", *Where the
+  second step's choices start*).
 - The summary adds one line: "Home shows every category.", or "Home
   shows one category's phrases, with larger buttons:" and the
   category's name.

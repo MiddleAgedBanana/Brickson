@@ -1063,9 +1063,10 @@ what passes and who checks it:
   *Checks:* CI and a thread for the captures and pairs; the owner, or a
   proficient tester, on device. *Today:* the rendered-label checks read
   the five quick controls at the default size and AX5, light and dark,
-  on CI's iPhone and iPad (`LaunchTests`, `HomeSizesTests`), and
-  Phrases, Type and the everyday categories only at Home's larger sizes
-  on an iPad in portrait (`HomeSizesTests`); nothing at AX3, no phrase
+  on CI's iPhone and iPad (`LaunchTests`, `HomeSizesTests`), with the
+  everyday categories too on the rest board (`HomeRestBoardTests`), and
+  Phrases, Type and the everyday categories at Home's larger sizes on
+  an iPad in portrait (`HomeSizesTests`); nothing at AX3, no phrase
   tile, no other screen's labels; no device run.
 
 ### Complete, and true
