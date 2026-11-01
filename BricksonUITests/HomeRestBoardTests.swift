@@ -65,7 +65,7 @@ final class HomeRestBoardTests: XCTestCase {
     /// Waits for `element` to match `format`, and fails with `message` if
     /// it does not within ten seconds.
     @MainActor
-    private func wait(for element: XCUIElement, _ format: String, _ message: String) {
+    private func waitUntil(_ element: XCUIElement, matches format: String, _ message: String) {
         let matched = expectation(for: NSPredicate(format: format), evaluatedWith: element)
         XCTAssertEqual(XCTWaiter.wait(for: [matched], timeout: 10), .completed, message)
     }
@@ -99,12 +99,12 @@ final class HomeRestBoardTests: XCTestCase {
         attachCapture(app, name: "the second step before \(label ?? identifier), \(context)")
         try assertPassesAccessibilityAudit(app, context: "Step 2 of 6, \(context)")
         choice.tap()
-        wait(for: choice, "isSelected == true", "\(label ?? identifier) was not chosen (\(context))")
+        waitUntil(choice, matches: "isSelected == true", "\(label ?? identifier) was not chosen (\(context))")
         // Choices only select: a second activation keeps it chosen.
         choice.tap()
-        wait(for: choice, "isSelected == true", "a second activation undid \(label ?? identifier) (\(context))")
+        waitUntil(choice, matches: "isSelected == true", "a second activation undid \(label ?? identifier) (\(context))")
         backToTalking.tap()
-        wait(for: backToTalking, "exists == false", "Settings did not close (\(context))")
+        waitUntil(backToTalking, matches: "exists == false", "Settings did not close (\(context))")
     }
 
     /// Fails if Conversation, chosen in the second step, does not become
@@ -129,7 +129,7 @@ final class HomeRestBoardTests: XCTestCase {
 
         try choose("restBoardCategory", label: Self.board, in: app, context: context)
         let basics = app.buttons["Basics"]
-        wait(for: basics, "isEnabled == false", "Basics was not dimmed once the board was chosen (\(context))")
+        waitUntil(basics, matches: "isEnabled == false", "Basics was not dimmed once the board was chosen (\(context))")
         attachCapture(app, name: "the rest board, \(context)")
         for name in Self.everyday where name != Self.board {
             XCTAssertFalse(app.buttons[name].isEnabled, "\(name) is not dimmed on the board (\(context))")
@@ -164,7 +164,7 @@ final class HomeRestBoardTests: XCTestCase {
         // Emergency's phrases, then the board's again, with nothing moved.
         let fixed = frames(of: Self.fixedControls, in: app)
         app.buttons["Emergency"].tap()
-        wait(for: board, "isSelected == false", "Emergency did not leave the board's phrases (\(context))")
+        waitUntil(board, matches: "isSelected == false", "Emergency did not leave the board's phrases (\(context))")
         let emergencyTiles = tileLabels(in: app)
         XCTAssertNotEqual(emergencyTiles, boardTiles, "Emergency shows the board's phrases (\(context))")
         XCTAssertFalse(emergencyTiles.isEmpty, "Emergency shows no phrases (\(context))")
@@ -173,12 +173,12 @@ final class HomeRestBoardTests: XCTestCase {
             XCTAssertTrue(Self.same(frame, fixed[name]), "\(name) at \(frame) with Emergency, \(String(describing: fixed[name])) on the board (\(context))")
         }
         board.tap()
-        wait(for: board, "isSelected == true", "\(Self.board) did not bring the board's phrases back (\(context))")
+        waitUntil(board, matches: "isSelected == true", "\(Self.board) did not bring the board's phrases back (\(context))")
         XCTAssertEqual(tileLabels(in: app), boardTiles, "the board's phrases changed after Emergency (\(context))")
 
         // Every Category puts Home back.
         try choose("restBoardEveryCategory", label: nil, in: app, context: context)
-        wait(for: basics, "isEnabled == true", "Basics stayed dimmed after Every Category (\(context))")
+        waitUntil(basics, matches: "isEnabled == true", "Basics stayed dimmed after Every Category (\(context))")
         attachCapture(app, name: "Home after Every Category, \(context)")
         for name in Self.everyday {
             XCTAssertTrue(app.buttons[name].isEnabled, "\(name) stayed dimmed after Every Category (\(context))")
