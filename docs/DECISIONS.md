@@ -3619,8 +3619,9 @@ the project. Reversible if the owner objects.*
 `SetupRecord` keeps what Family Setup learned: whether it was opened, how
 the screen is reached (`AccessMethod`: touch, Voice Control, Switch
 Control, Eye Tracking, Head Tracking, someone else helps), when that was
-answered, the check-in state, and since 2026-11-01 which category the
-rest board shows, if any (*The late-stage profile*).
+answered, the check-in state, and since 2026-11-01 the rest board's
+chosen category, if any: Home shows every category where that category
+is no longer in the library (*The late-stage profile*).
 Nothing is recorded as "setup completed": a family can stop at any
 step. `plannedAccessMethods` is nil
 when nobody answered or every choice was cleared, and the layout then
@@ -3657,7 +3658,8 @@ Apple's features live: Touch Accommodations, Switch Control's switches
 and timing, and eye trackers made for iPad extend Reaching the Screen,
 so step 3 of Set Up Step by Step shows them for the ways chosen in step
 1; Auto-Lock and Guided Access's Display Auto-Lock extend Keep Brickson
-Open, and so step 4 (steps 4 and 5 since 2026-11-01). Two new screens hold the rest: Calls, Siri and
+Open, and so step 4. Since 2026-11-01 those are steps 4 and 5
+respectively, after the rest board's step. Two new screens hold the rest: Calls, Siri and
 Shortcuts (Live Speech on iPhone, iPad and Apple Watch, Vocal Shortcuts,
 Listen for Atypical Speech, the Action button) and More Accessibility
 Settings (the Accessibility Shortcut, Zoom, Share Accessibility
