@@ -351,9 +351,10 @@ struct LateStageProfileTests {
     /// control chosen or place a look rests, beyond the two findings
     /// touch's frames with every category already have and the engine
     /// tests pin (`ProfileChoiceTests.unexpectedChainFindings`). The board
-    /// is each of the four category cells in turn. Fails too if the profile
-    /// is taken in too few windows to count.
-    @Test(arguments: [Profile.touch, .eyeTracking, .lateStage])
+    /// is each of the four category cells in turn, at every profile the
+    /// board takes (`Profile.lateStage.withSmallerOnes`). Fails too if the
+    /// profile is taken in too few windows to count.
+    @Test(arguments: Profile.lateStage.withSmallerOnes)
     func noChainOnTheRestBoardMeetsANewHazard(profile: Profile) {
         let windows = Self.boardWindows(profile, every: 64)
         var unexpected: [String] = []
@@ -376,7 +377,7 @@ struct LateStageProfileTests {
     /// (68% by centre and 62% by edge on regular widths, 97% and 89% on
     /// compact ones). Shorter windows can pass those with every category
     /// too: the engine tests measure them at one height.
-    @Test(arguments: [Profile.touch, .eyeTracking, .lateStage])
+    @Test(arguments: Profile.lateStage.withSmallerOnes)
     func yesAndNoBorderNoMoreOfTheMessageOnTheRestBoard(profile: Profile) {
         var faults: [String] = []
         for (layout, space, text, context) in Self.boardWindows(profile, every: 32) {
