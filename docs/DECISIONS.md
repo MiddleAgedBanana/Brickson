@@ -3202,7 +3202,8 @@ afterwards on the Voice screen.
 
 Whatever the policy, the service reads the system's status at launch,
 before any answer (so someone who allowed it before speaks in their own
-voice from the first phrase), after every answer, and each time the app
+voice from the first phrase after the voice list arrives: "The voice list
+never holds up launch"), after every answer, and each time the app
 comes back to the front (`refreshPersonalVoiceAvailability()`), with the
 voice list each time: access can be turned on or off, and a voice made,
 in the Settings app while Brickson waits.
