@@ -715,7 +715,7 @@ what passes and who checks it:
   Duo at AX5, the chain that starts at Family Setup's Back and reaches
   Back to Talking and Get Attention (R0 item 13). Also open under R0
   item 13: on iPhone Duo, a look resting before the window changes
-  meets Get Attention or Speak after it, under pointer mappings that
+  meets Get Attention, Speak, No or Clear after it, under pointer mappings that
   are only hypotheses until a device shows the real one (docs/HANDOFF.md,
   *Known gaps*). The chain engine scores every screen the
   release ships, including those not scored yet (iOS's Personal Voice
@@ -1132,13 +1132,16 @@ are complete, including item 11's TestFlight pilot; the device checks they
 touch are logged in `docs/log/`; Wave 3 items 8 and 9 are complete,
 with item 8's sizes switched on (the owner chose the largest sizes that
 fit, 2026-10-30); and every dwell hazard still open is gone or
-accepted by the owner, five today (*The quality bar*, Q2): the three
+accepted by the owner, five today plus iPhone Duo's changed-window
+finding (*The quality bar*, Q2): the three
 the larger sizes left (Yes and No bordering the message, the top of
 Stop's well nearest Again, and dimmed phrases bordering Clear and Put
 Back by centre; DECISIONS.md, "Sizes that follow how the screen is reached"),
 Again nearest Stop's empty well with fewer than three everyday
-categories, and the iPhone Duo chain at AX5 from Family Setup's Back,
-since no build goes to App Review or to an external TestFlight group
+categories, the iPhone Duo chain at AX5 from Family Setup's Back, and,
+on iPhone Duo, a look resting before the window changes meeting Get
+Attention, Speak, No or Clear after it (R0 item 13), since no build goes
+to App Review or to an external TestFlight group
 while any of these is open; UI tests are green on an iPhone and an
 iPad at the default and largest text sizes, light and dark; item 13's
 iPhone Duo checks are logged and its screenshots made; and the

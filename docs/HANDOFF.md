@@ -851,15 +851,20 @@ docs/ROADMAP.md, *The quality bar*, Q24):
    identifier), the price, how the name is said, and your EU trader
    status (needed before the App Store release in the EU). Before any
    build goes to the external TestFlight pilot or App Review, every
-   dwell hazard in docs/ROADMAP.md, *The quality bar*, Q2 (five today)
-   must be gone, or accepted by you. Three wait on your answer, once the
+   dwell hazard in docs/ROADMAP.md, *The quality bar*, Q2 (five today,
+   plus iPhone Duo's changed-window finding) must be gone, or accepted
+   by you. Three wait on your answer, once the
    Snap to Item device check (Q12) has measured them: whether Yes and No
    may border the message, the top of Stop's well nearest Again, and
    dimmed phrases bordering Clear and Put Back (*Known gaps*). The other
    two, Again nearest Stop's empty well in a library with fewer than
    three everyday categories and iPhone Duo's chain from Family Setup at
    the largest text size, come to you only if a thread cannot remove
-   them by placement. Also before then: whether Get Attention goes in
+   them by placement. So does the changed-window finding (a look resting
+   on iPhone Duo before the window changes meets Get Attention, Speak,
+   No or Clear after it), once a device has shown how the pointer really
+   moves when the window changes (R0 item 13; *Known gaps*). Also before
+   then: whether Get Attention goes in
    Settings' bar (docs/DECISIONS.md, "Get Attention in Settings' bar:
    the owner decides"), and, once a thread has measured them, Settings'
    floors under a larger profile (Q3). (How long you use each TestFlight

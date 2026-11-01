@@ -83,7 +83,8 @@ project thread, and it is recorded as the owner's answer.
 
 What it folds in, already open before today: the five open dwell
 hazards (Q2; R0's *Release gate* named three, and the other two were
-only in docs/HANDOFF.md, *Known gaps*), Settings' floors under a larger profile, which were only in a
+only in docs/HANDOFF.md, *Known gaps*) and iPhone Duo's changed-window
+finding (Q2, from the same *Known gaps*), Settings' floors under a larger profile, which were only in a
 work log's follow-ups and are now also in docs/HANDOFF.md, *Known gaps*
 (Q3), the device-check table (Q4, Q12 to Q14), R0 item 9's screens
 (Q15) and R0 item 11's pilot (Q27). What it adds: speed and launch, a
@@ -283,9 +284,16 @@ says otherwise.
   ships and naming Get Attention in Settings' bar; docs/APP-STORE.md's
   pilot condition and submit step naming the bar; and this record's
   page list, now with every page linked and the quotations' table.
-- The commit after 77df227: this record's line on 8404f84's UI tests,
-  which said the next push had stopped them; they had finished, with
-  the one iPad failure *Verified* now describes.
+- f9e6563: this record's line on 8404f84's UI tests, which said the
+  next push had stopped them; they had finished, with the one iPad
+  failure *Verified* now describes.
+- The commit after f9e6563: CodeRabbit's review of f9e6563 answered.
+  R0's *Release gate* and the owner's step in docs/HANDOFF.md counted
+  five hazards without iPhone Duo's changed-window finding, which Q2
+  lists as open; both now name it. Q2 named two of the controls the
+  [changed-window report](../evidence/2026-10-25-duo-design/transition-report.md)
+  reaches (Get Attention and Speak); it now names all four, with No and
+  Clear.
 
 ## Verified
 
