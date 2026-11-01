@@ -52,6 +52,48 @@ struct SetupStoreTests {
         #expect(relaunched.record.familySetupOpened == false)
     }
 
+    /// The second step's choice of which phrases Home shows, saved through
+    /// `SetupRecord.chooseRestBoard` as `GuidedSetupView` saves it: fails if
+    /// a choice or Every Category that could not be saved reports success,
+    /// changes the board on screen or after a relaunch, or leaves no
+    /// warning (invariant 5).
+    @Test func aFailedRestBoardChoiceKeepsTheBoardItHad() {
+        let defaults = makeDefaults()
+        let conversation = UUID()
+        let saved = SetupStore(defaults: defaults, now: launch)
+        #expect(saved.update { $0.chooseRestBoard(conversation) })
+        let store = SetupStore(defaults: defaults, now: launch, encode: { _ in throw EncodingFailed() })
+        #expect(store.record.restBoardCategory == conversation)
+
+        let another = store.update { $0.chooseRestBoard(UUID()) }
+        #expect(!another)
+        #expect(store.record.restBoardCategory == conversation, "the screen must not show a choice that was not kept")
+        #expect(store.issue == .couldNotSave)
+
+        let everyCategory = store.update { $0.chooseRestBoard(nil) }
+        #expect(!everyCategory)
+        #expect(store.record.restBoardCategory == conversation, "the screen must not show Every Category when it was not kept")
+        #expect(store.issue == .couldNotSave)
+
+        #expect(SetupStore(defaults: defaults, now: launch).record.restBoardCategory == conversation)
+    }
+
+    /// A first choice that cannot be saved leaves Home with every category:
+    /// fails if the board on screen or after a relaunch is the choice that
+    /// was not kept.
+    @Test func aFailedFirstRestBoardChoiceLeavesEveryCategory() {
+        let defaults = makeDefaults()
+        _ = SetupStore(defaults: defaults, now: launch)
+        let store = SetupStore(defaults: defaults, now: launch, encode: { _ in throw EncodingFailed() })
+
+        let chosen = store.update { $0.chooseRestBoard(UUID()) }
+
+        #expect(!chosen)
+        #expect(store.record.restBoardCategory == nil)
+        #expect(store.issue == .couldNotSave)
+        #expect(SetupStore(defaults: defaults, now: launch).record.restBoardCategory == nil)
+    }
+
     @Test func theNextSuccessfulSaveClearsTheWarning() {
         let defaults = makeDefaults()
         var failing = true
