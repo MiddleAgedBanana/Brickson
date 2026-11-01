@@ -114,12 +114,15 @@ profile"; work file [`work/late-stage-profile.md`](../work/late-stage-profile.md
     element (type 2); default light and dark and AX5 light passed. The
     accessibility tree captured at the finding holds every word visible
     on the screen, and the run's recording shows only the audit's own
-    text-size changes. It is the same finding, at AX5 with no element,
-    that `LaunchTests` met once on 2026-10-22 on Home without the board,
-    whose cause was not found either
-    (docs/log/2026-10-22-library-reconciliation.md). Nothing was
-    suppressed, retried or changed for it; if it comes back on the next
-    run, it is a real finding to explain before the pull request merges.
+    text-size changes. `LaunchTests` met the same finding at AX5 on
+    2026-10-22, and it was traced to Home's "Speaking" line leaving the
+    screen while the audit read it, so audits now wait for speech to
+    finish (issue #30, docs/log/2026-10-22-audit-still-screen.md); this
+    test speaks nothing before its audits, and nothing else was seen to
+    change by itself. Nothing was
+    suppressed, retried or changed for it. Its cause is not known, so it
+    stays open: a later clean run does not explain it, and a recurrence
+    is a real finding to explain before the pull request merges.
 
 ## Commits
 
@@ -140,10 +143,12 @@ profile"; work file [`work/late-stage-profile.md`](../work/late-stage-profile.md
   and its choices started clear of Next; `2e88f93`, the failing saves
   of the choice; `64d4c91`, the study cited by title in the layout
   engine; `f38fe2b`, the choices that hold kept under the words, and
-  the rest board UI test scrolling to a choice below the bar; then
-  these records, the review's changes to them.
+  the rest board UI test scrolling to a choice below the bar.
 - After CI's first UI run: `0132a59`, short words on tall buttons read
-  in a band, and punctuation around a word dropped.
+  in a band, and punctuation around a word dropped; `1394062`, the
+  review's changes to these records and the first UI run's findings.
+- After CodeRabbit's second review: the setup decision's step count
+  and this file's audit finding kept open.
 
 ## Verified
 

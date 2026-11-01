@@ -3619,8 +3619,10 @@ the project. Reversible if the owner objects.*
 `SetupRecord` keeps what Family Setup learned: whether it was opened, how
 the screen is reached (`AccessMethod`: touch, Voice Control, Switch
 Control, Eye Tracking, Head Tracking, someone else helps), when that was
-answered, and the check-in state. Nothing is recorded as "setup
-completed": a family can stop at any step. `plannedAccessMethods` is nil
+answered, the check-in state, and since 2026-11-01 which category the
+rest board shows, if any (*The late-stage profile*).
+Nothing is recorded as "setup completed": a family can stop at any
+step. `plannedAccessMethods` is nil
 when nobody answered or every choice was cleared, and the layout then
 uses its largest sizes. `SetupStore` keeps the record as JSON in
 UserDefaults; a change is saved before it is shown, a failed save changes
@@ -3633,10 +3635,16 @@ first step's own rows*). *Before:* Next saved the answer once more, even
 unchanged, because going through the step again is what a check-in asks
 for; a held look that met it saved too.
 
-Set Up Step by Step has five steps, each a pushed screen with Next in a
-fixed bar at the bottom: how the screen is reached, the voice, turning
-on what was chosen, keeping Brickson open, and a summary. A held look on
-Next can walk the steps; that only navigates, and Back undoes it. Guides
+*2026-11-01:* the rest board's choice is the second step, "Which
+phrases does Home show?" (*The late-stage profile*), so turning on what
+was chosen is now step 4 and keeping Brickson open step 5. *Before:*
+five steps, with those two at 3 and 4.
+
+Set Up Step by Step has six steps, each a pushed screen with Next in a
+fixed bar at the bottom: how the screen is reached, which phrases Home
+shows, the voice, turning on what was chosen, keeping Brickson open,
+and a summary. A held look on Next can walk the steps; that only
+navigates, and Back undoes it. Guides
 name Apple's own menus, checked against Apple's support pages on
 2026-10-21, and again, with the guides Wave 3 item 1 added, against
 Apple's iPhone, iPad and Apple Watch User Guides for iOS 26 and iOS 27
@@ -3649,7 +3657,7 @@ Apple's features live: Touch Accommodations, Switch Control's switches
 and timing, and eye trackers made for iPad extend Reaching the Screen,
 so step 3 of Set Up Step by Step shows them for the ways chosen in step
 1; Auto-Lock and Guided Access's Display Auto-Lock extend Keep Brickson
-Open, and so step 4. Two new screens hold the rest: Calls, Siri and
+Open, and so step 4 (steps 4 and 5 since 2026-11-01). Two new screens hold the rest: Calls, Siri and
 Shortcuts (Live Speech on iPhone, iPad and Apple Watch, Vocal Shortcuts,
 Listen for Atypical Speech, the Action button) and More Accessibility
 Settings (the Accessibility Shortcut, Zoom, Share Accessibility
