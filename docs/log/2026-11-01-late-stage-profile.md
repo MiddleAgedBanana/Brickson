@@ -123,6 +123,29 @@ profile"; work file [`work/late-stage-profile.md`](../work/late-stage-profile.md
     suppressed, retried or changed for it. Its cause is not known, so it
     stays open: a later clean run does not explain it, and a recurrence
     is a real finding to explain before the pull request merges.
+  - *It came back on the second run* (`5a8a91a`), the only failure of
+    that run: the same words, on the iPad at AX5 in dark, while the
+    iPhone passed every test. CI's iPad was the iPad Pro 13-inch (M5)
+    simulator on iOS 27.0 (24A434), with the iOS 27.1 SDK, on an M1
+    virtual Mac (the bundle's Devices and SDKs tables). What both runs'
+    bundles show, read on Linux: the AX5 dark screen is the AX5 light
+    screen with every pixel outside the filled controls inverted, and
+    the trees match; every drawn word lies inside an element whose label
+    holds it, and the only ink outside every element is the window's
+    resize grabber, pixel for pixel the same on the default dark board,
+    which passes; each audit shows one text-size sweep, and every frame
+    of the failing audit's sweep is a frame the passing default dark
+    audit also showed; Apple's own issue carries no element, rect or
+    location, and its screenshot is the test's capture from before the
+    audit. So where Apple's detector sees text cannot be found from the
+    bundles. The open candidates are the off categories' words at full
+    AX5 size inside their outlines, white on black only in dark; the
+    message drawn whole on two lines; and words from two controls read
+    as one line, which only dark allows. A probe on a Mac, masking one
+    region at a time and changing one look at a time in a throwaway
+    worktree, is the next step; the evidence and scripts are kept
+    outside the repository with the project's notes
+    (`pr74-audit-probe`).
 
 ## Commits
 
@@ -192,6 +215,11 @@ the app, its SwiftUI views and its UI tests.
   `testTheRestBoardShowsOneCategoryAndEveryCategoryPutsHomeBack` passed
   on both: the second step and the board worked in the app as first
   built, before the review's changes.
+- **CI on `5a8a91a`**, with the review's changes and the word reader's
+  band: the unit job passed; the UI job passed every test on the
+  iPhone, the rest board's words included, and on the iPad every test
+  but the AX5 dark audit finding above (the iPad's words, the tall
+  "No" included, were read whole).
 - **The sizes the UI tests expect** were read from the engine for CI's
   windows: on the iPhone 17 at the default size, Yes 64 points tall
   with every category and 118 on the board (tiles 111 and 117); on the
@@ -285,8 +313,10 @@ the app, its SwiftUI views and its UI tests.
   until CI's unit job; the band's rows were checked on every kept
   capture by the same arithmetic in Python (only the tall "No" has one,
   rows 90 to 321 of 412).
-- **Whether the AX5 dark audit finding comes back** is shown only by
-  the next UI run; its cause is not known.
+- **Where Apple's audit sees text on the iPad board at AX5 in dark.**
+  The finding came back on the second run, so it is real and must be
+  explained before the pull request merges; the bundles cannot locate
+  it (above).
 - **Comfort.** The floors and the 4-degree growth have not been tried
   by a person, or with Apple's Eye Tracking; simulator evidence never
   shows gaze comfort or where Snap to Item lands (docs/HANDOFF.md,
