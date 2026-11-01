@@ -156,6 +156,34 @@ struct OffMainThreadCallbackTests {
         #expect(standIn.status == .denied)
     }
 
+    /// The system's voice service took more than a minute to answer its
+    /// first request on CI simulators that had just started, and while the
+    /// main thread waited the app sat on its launch screen, so UI tests
+    /// timed out before Home appeared (docs/DECISIONS.md, "The voice list
+    /// never holds up launch"). The system catalog reads away from the main
+    /// thread and hands the list back on it. The stand-in reader says where
+    /// it ran in the voice it returns. Fails if the read runs on the main
+    /// thread, including if `@concurrent` is dropped, or if the list never
+    /// arrives.
+    @Test @MainActor func theSystemVoiceListIsReadAwayFromTheMainThread() async {
+        let catalog = SystemVoiceCatalog(read: {
+            let place = Thread.isMainThread ? "main thread" : "elsewhere"
+            return [VoiceDescriptor(id: place, name: place, languageCode: "en-US", quality: .standard, isPersonalVoice: false)]
+        })
+        var delivered: [VoiceDescriptor]?
+        var deliveredOnMain: Bool?
+
+        catalog.readInstalledVoices { voices in
+            delivered = voices
+            deliveredOnMain = Thread.isMainThread
+        }
+        let arrived = await waitUntil { delivered != nil }
+
+        #expect(arrived)
+        #expect(delivered?.map(\.id) == ["elsewhere"])
+        #expect(deliveredOnMain == true)
+    }
+
     /// AVAudioPlayer gives no thread guarantee for its delegate either.
     @Test @MainActor func toneReportsCanArriveOnABackgroundThread() async throws {
         let playback = try SystemAttentionTonePlayback.bundled()

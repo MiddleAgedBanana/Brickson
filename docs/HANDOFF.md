@@ -39,7 +39,9 @@ iPhone simulators, #70); the other UI tests ask for touch's. Four category butto
 phrase columns on every iPhone at its standard Display Zoom (two on 375
 and 390-point phones with Bold Text). A tile
 speaks at once, in the person's Personal Voice when one exists and is
-allowed; the sentence stays on screen in the message's reserved lines,
+allowed (in the system's voice while the voice list is being read,
+which nothing waits for: docs/DECISIONS.md, "The voice list never holds
+up launch"); the sentence stays on screen in the message's reserved lines,
 and a longer message scrolls inside them. The phrase grid keeps native
 pan cancellation even when its tiles fit, so a deliberate vertical drag
 can bounce only its content rather than speak. Static Home controls stay
@@ -354,20 +356,20 @@ Xcode 27.1 (27A9275); PR #20 landed in `d79d836`.
   runs failed one Speaking-wait case per family; unchanged main reproduces
   it on the same iPad, with cause unresolved. Default/AX5 captures were inspected on both
   families; representative Duo active-display captures were also inspected
-  ([design record](log/2026-10-25-duo-fold-design.md)). The first UI test still
-  intermittently shows a blank canvas and fails AX startup on CI despite
-  PR #13's warm-up launch. The earlier retained
-  [hosted receipt](evidence/2026-10-25-duo-design/ci-startup-1322630/README.md)
-  has no app stack establishing a cause. Three local cold controls on the
-  matching12GB iPad/runtime passed on 2026-10-25; two were unwarmed and one
-  used the CI-shaped warm-up. Those controls and the later green hosted
-  run do not explain that failure. A later PR #57 CI run failed its first
-  Yes lookup after an automation-session timeout; that job eventually
-  reached its 75-minute limit. The exact failing Get Attention test passed
-  locally on two fresh iPad installations without app warm-up and one
-  independently reset, normally warmed control. The three older cold-phone
-  snapshot checks also passed. The cause remains unresolved
+  ([design record](log/2026-10-25-duo-fold-design.md)). The first UI test
+  intermittently showed a blank canvas and failed AX startup on CI despite
+  PR #13's warm-up launch, and local cold controls passed
   ([follow-up and recovered CI frame](log/2026-10-25-native-ax5-typing.md)).
+  The cause, found on 2026-11-01 in the app's own log inside each failed
+  run's result bundle: the app read the voice list on its main thread
+  before its first frame, and a just-started simulator's voice service
+  took more than 60 seconds to answer, so XCTest's automation session
+  gave up. Since #73 the list is read away from the main thread
+  (docs/DECISIONS.md, "The voice list never holds up launch"). Its first
+  CI run passed, and on the iPhone simulator the first three launches
+  were driven while the voice service had not yet answered; one green
+  run does not prove the failure gone
+  ([cause, evidence and how to read the app's log](log/2026-11-01-voice-list-off-launch.md)).
   Apple's accessibility audit never sees
   Home's "Speaking" line: audits wait for speech to finish, because one
   that ran while the line left reported text with no element (issue #30,
@@ -685,6 +687,7 @@ release in docs/ROADMAP.md when no thread has it yet.
   Personal Voice answer (the closure handed to the system, built by
   `SystemPersonalVoice.forwardingAnswer`, and the answer awaited through
   `SpeechService`) and a session notice are tested from a background
+  thread, and the voice list is tested to be read away from the main
   thread (docs/LESSONS.md). *(R0, item 4)*
 - The audio session stays active after speech, so other apps' audio does
   not resume by itself. This is a decision, not an oversight
@@ -769,9 +772,10 @@ release in docs/ROADMAP.md when no thread has it yet.
 - **Open, outside PR #58:** the private AX5 capacity alternative is
   unselected and is not part of the shared app; automatic keyboard
   dismissal after a tall-to-wide Duo turn still fails; Put Back remains
-  covered by the phone's AX5 keyboard; and the intermittent startup flake
-  has no established cause or fix. The drag investigation first found a
-  reflected XCTest coordinate and passing long paths; a later verified
+  covered by the phone's AX5 keyboard. (The intermittent startup flake's
+  cause was found on 2026-11-01 and fixed by #73: *Verification*.) The
+  drag investigation first found a reflected XCTest coordinate and
+  passing long paths; a later verified
   80pt tile-start drag proved a shared-app bug by speaking on release.
   The repair keeps native pan handling even when tiles fit, using the
   same standard Buttons and ScrollView with no fitting-content disable
@@ -1037,6 +1041,7 @@ Simulators cannot show these. Record each result in a `docs/log/` file
 | D1: with no question at launch, a Personal Voice allowed after a phrase has been spoken speaks in the next phrase, after a voice-list refresh, a rebuilt synthesizer or only a relaunch (docs/recon/2026-10-15/directions/onboarding-and-settings.md, 2.5). Run from Xcode with `--personal-voice=ask-from-settings` added to the scheme's arguments (Product > Scheme > Edit Scheme > Run > Arguments), and ask with Voice Settings' Ask to Use Personal Voice | Whether the app may switch to `PersonalVoiceAskPolicy.fromSettings` (docs/DECISIONS.md, "Personal Voice permission is asked at launch, for now") |
 | In the same run: iOS's question appears over Voice Settings, which is still there after a wait of over 90 seconds; after Allow or Don't Allow the card shows the answer, "Answered. …" sits where the button was, nothing below the card moved, and Open Personal Voice Settings appears only after leaving and reopening Voice Settings | "Asking for Personal Voice from Voice Settings" |
 | D4: Personal Voice access turned off in the Settings app while Brickson waits in the background; on return a phrase speaks in another voice, and turning access back on brings the Personal Voice back | "A Personal Voice is used only while it is allowed" |
+| Restart the device, then open Brickson at once: Home appears without waiting; a phrase chosen straight away speaks at once (in the system's voice if the voice list has not arrived); how long the list takes; the first phrase after it is in the chosen voice or Personal Voice; whether that first phrase itself waits | "The voice list never holds up launch" |
 | D5: with two Personal Voices, the order the system lists them in, and whether each keeps its identifier across a relaunch, a restore and Share Across Devices | "Automatic keeps the person's Personal Voice" |
 | Personal Voice appears and is chosen once permission is given, and keeps speaking after the screen locks | Voice choice and when to ask |
 | Opening Settings by a stray dwell, and leaving it by Back to Talking, lands on nothing that speaks or alarms (`SettingsOnHomeTests` scores it on the simulator's frames); the idle reset under real dwell. Physical iPad and iPhone checks remain unverified; use the [2026-10-26 mounted-device procedure](log/2026-10-26-settings-simulator-checks.md#environment-and-settings-for-the-physical-run), including the phone at AX5. | Settings' safety bar and root (docs/DECISIONS.md, "Settings is a cover with a fixed safety bar") |

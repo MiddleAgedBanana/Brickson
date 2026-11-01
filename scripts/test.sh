@@ -193,7 +193,10 @@ show_full_keyboard() {
 # The first launch of the app on a simulator that has just started can be
 # very slow. On CI the first UI test has failed that way while every later
 # one passed (docs/HANDOFF.md; AGENTS.md, Gotchas), so the app is installed
-# and launched once, on test-only storage, before the tests start. This
+# and launched once, on test-only storage, before the tests start. The
+# failure's cause was the app waiting for the system's voice service before
+# its first frame, fixed in the app on 2026-11-01; the warm-up stays, as it
+# also wakes that service (docs/log/2026-11-01-voice-list-off-launch.md). This
 # only prepares the simulator: no test is retried or skipped, and if the
 # warm-up itself fails, the script says so and the tests run anyway, so
 # their results show what is wrong.

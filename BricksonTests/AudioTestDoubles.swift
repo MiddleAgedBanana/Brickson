@@ -119,24 +119,53 @@ final class FakeSynthesizerFactory {
     }
 }
 
+/// Answers each read with `voices` at once, unless `holdsAnswers`: then
+/// each read waits until the test answers it, as the system's voice service
+/// kept reads waiting for tens of seconds on a simulator that had just
+/// started (docs/DECISIONS.md, "The voice list never holds up launch").
 @MainActor
 final class FakeVoiceCatalog: SpeechVoiceCatalog {
     var voices: [VoiceDescriptor]
     /// Voices that are listed but no longer load.
     var missingIDs: Set<String> = []
+    var holdsAnswers: Bool
     private(set) var readCount = 0
+    private var heldReads: [@MainActor ([VoiceDescriptor]) -> Void] = []
 
-    init(voices: [VoiceDescriptor] = []) {
+    /// Reads that are waiting for an answer.
+    var waitingReadCount: Int { heldReads.count }
+
+    init(voices: [VoiceDescriptor] = [], holdsAnswers: Bool = false) {
         self.voices = voices
+        self.holdsAnswers = holdsAnswers
     }
 
-    func installedVoices() -> [VoiceDescriptor] {
+    func readInstalledVoices(then deliver: @escaping @MainActor ([VoiceDescriptor]) -> Void) {
         readCount += 1
-        return voices
+        if holdsAnswers {
+            heldReads.append(deliver)
+        } else {
+            deliver(voices)
+        }
     }
+
+    /// Answers the oldest waiting read with `answer`, or with `voices` as
+    /// they are now.
+    func answerWaitingRead(with answer: [VoiceDescriptor]? = nil) {
+        guard !heldReads.isEmpty else {
+            Issue.record("No read is waiting for an answer")
+            return
+        }
+        let deliver = heldReads.removeFirst()
+        deliver(answer ?? voices)
+    }
+
+    /// Every voice a phrase asked to load, in order.
+    private(set) var loadedIDs: [String] = []
 
     func voiceIsAvailable(identifier: String) -> Bool {
-        !missingIDs.contains(identifier)
+        loadedIDs.append(identifier)
+        return !missingIDs.contains(identifier)
     }
 }
 
@@ -289,13 +318,15 @@ struct AudioHarness {
 
     /// `personalVoiceStatus` is what the system reports before anything is
     /// asked; `askPolicy` is today's `.atLaunch` unless a test says
-    /// otherwise.
+    /// otherwise; `holdsVoiceLists` keeps every read of the voice list
+    /// waiting, from the one at launch on, until the test answers it.
     init(
         voices: [VoiceDescriptor] = [],
         settings: UserDefaults = freshDefaults(),
         policy: AudioSessionLeasePolicy = .keepActive,
         personalVoiceStatus: AVSpeechSynthesizer.PersonalVoiceAuthorizationStatus = .notDetermined,
-        askPolicy: PersonalVoiceAskPolicy = .atLaunch
+        askPolicy: PersonalVoiceAskPolicy = .atLaunch,
+        holdsVoiceLists: Bool = false
     ) {
         let center = NotificationCenter()
         let sessionIdentity = NSObject()
@@ -308,7 +339,7 @@ struct AudioHarness {
             events: events,
             policy: policy
         )
-        let catalog = FakeVoiceCatalog(voices: voices)
+        let catalog = FakeVoiceCatalog(voices: voices, holdsAnswers: holdsVoiceLists)
         let synthesizers = FakeSynthesizerFactory()
         let personalVoice = FakePersonalVoice(status: personalVoiceStatus)
         let speechSleeper = ManualSleeper()

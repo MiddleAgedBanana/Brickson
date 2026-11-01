@@ -23,7 +23,10 @@ final class SpeechService {
     /// only while Brickson is allowed anyway; a list read before access was
     /// turned off is filtered too (docs/DECISIONS.md, "A Personal Voice is
     /// used only while it is allowed"). Read again after every change to
-    /// `personalVoiceStatus`.
+    /// `personalVoiceStatus`. Empty until the first list arrives, which on
+    /// a simulator that has just started took more than a minute; meanwhile
+    /// phrases speak in the system's default voice (docs/DECISIONS.md, "The
+    /// voice list never holds up launch").
     private(set) var availableVoices: [VoiceDescriptor] = []
     /// The Personal Voice Automatic speaks in, kept while it exists so a
     /// second one never takes over (docs/DECISIONS.md, "Automatic keeps the
@@ -39,7 +42,8 @@ final class SpeechService {
     var automaticVoice: VoiceDescriptor? { selectVoice(chosenID: nil, from: availableVoices) }
     /// The voice the next phrase is spoken in, as far as the voice list
     /// knows. Each phrase still checks that its voice loads, and falls to
-    /// the next one if not (`resolveVoiceIdentifier`).
+    /// the next one if not, and while the list is being read speaks in the
+    /// system's default voice (`resolveVoiceIdentifier`).
     var currentVoice: VoiceDescriptor? { selectVoice(chosenID: selectedVoiceID, from: availableVoices) }
     /// When the app asks for Personal Voice permission. The Voice screen
     /// offers its own Ask button only under `.fromSettings`.
@@ -82,6 +86,10 @@ final class SpeechService {
     @ObservationIgnored private let notificationCenter: NotificationCenter
     @ObservationIgnored private let sleep: @MainActor @Sendable (Duration) async -> Void
     @ObservationIgnored private var voicesObserver: (any NSObjectProtocol)?
+    /// True while a read of the voice list is out (`refreshVoices()`).
+    @ObservationIgnored private var isReadingVoices = false
+    /// A change asked for while a read was out, to be read when it answers.
+    @ObservationIgnored private var anotherVoiceReadIsWanted = false
     private let logger = Logger(subsystem: AppLog.subsystem, category: "speech")
     static let voiceIDKey = "selectedVoiceID"
     static let rateKey = "speechRate"
@@ -119,8 +127,8 @@ final class SpeechService {
         selectedVoiceID = settings.string(forKey: Self.voiceIDKey)
         automaticPersonalVoiceID = settings.string(forKey: Self.automaticPersonalVoiceIDKey)
         // What the system already knows, before the list is read: someone
-        // who allowed Brickson before speaks in their own voice from the
-        // first phrase, without waiting for an answer.
+        // who allowed Brickson before speaks in their own voice as soon as
+        // the list arrives, without waiting for an answer to a question.
         personalVoiceStatus = personalVoice.status
         // Presence check rather than float(forKey:): an absent key reads as 0,
         // which is also AVSpeechUtteranceMinimumSpeechRate — a value a user
@@ -175,9 +183,9 @@ final class SpeechService {
 
     /// The Voice screen's explained button: asks for permission (the system
     /// shows its question only the first time), waits for the answer, then
-    /// reads the voices again so the next phrase can use the person's
-    /// voice. Speaks nothing by itself. Returns the answer, for the screen to
-    /// say what happens next.
+    /// asks for the voices again so the phrases after they arrive can use
+    /// the person's voice. Speaks nothing by itself. Returns the answer,
+    /// for the screen to say what happens next.
     ///
     /// A second call while the first still waits, such as a double tap or a
     /// held look before the question covers the screen, asks nothing more
@@ -207,12 +215,25 @@ final class SpeechService {
     /// was turned off must not be asked for (docs/DECISIONS.md, "A Personal
     /// Voice is used only while it is allowed"). Speaks nothing.
     func refreshPersonalVoiceAvailability() {
-        personalVoiceStatus = personalVoice.status
-        refreshVoices()
+        receivePersonalVoiceStatus(personalVoice.status)
     }
 
     private func receivePersonalVoiceAnswer(_ status: AVSpeechSynthesizer.PersonalVoiceAuthorizationStatus) {
+        receivePersonalVoiceStatus(status)
+    }
+
+    /// Keeps the permission and applies it to the list already held at
+    /// once, then asks for the voices again. The new list can take a while
+    /// (`refreshVoices()`), and until it arrives a Personal Voice whose
+    /// access was just turned off must be neither asked for nor offered
+    /// (docs/DECISIONS.md, "A Personal Voice is used only while it is
+    /// allowed"). A voice just allowed comes with the new list.
+    private func receivePersonalVoiceStatus(_ status: AVSpeechSynthesizer.PersonalVoiceAuthorizationStatus) {
         personalVoiceStatus = status
+        availableVoices = VoiceSelection.usableVoices(
+            availableVoices,
+            personalVoiceAllowed: status == .authorized
+        )
         refreshVoices()
     }
 
@@ -239,7 +260,8 @@ final class SpeechService {
     /// last-spoken, so Again never replays it. As with phrase tiles, a held
     /// look re-firing the same control while its sample still plays is
     /// absorbed rather than restarting it. A voice row's sample plays in
-    /// that row's voice, whichever voice is chosen.
+    /// that row's voice, whichever voice is chosen, except while the voice
+    /// list is being read (`resolveVoiceIdentifier`).
     func preview(from control: VoicePreviewControl) {
         guard !absorbsRepeat(of: .preview(control)) else {
             logger.info("Absorbed repeat activation of the voice sample still playing")
@@ -474,7 +496,16 @@ final class SpeechService {
     /// the cached voice list can be stale (voice uninstalled or Personal Voice
     /// re-recorded while the app was suspended), and a single failed lookup
     /// must fall to the next-best voice, not to the system default.
+    ///
+    /// Nil while the list is being read: the voice service may then be as
+    /// slow as at launch, and asking it for a voice by name, here and again
+    /// in the synthesizer, would make the phrase wait for it on the main
+    /// thread. The phrase goes to the synthesizer at once in the system's
+    /// default voice instead, and so does a voice row's sample, though the
+    /// row names another voice (docs/DECISIONS.md, "The voice list never
+    /// holds up launch").
     private func resolveVoiceIdentifier(chosenID: String?) -> String? {
+        guard !isReadingVoices else { return nil }
         var candidates = availableVoices
         var cacheWasStale = false
         var resolved: String?
@@ -508,12 +539,51 @@ final class SpeechService {
         )
     }
 
+    /// Asks for the installed voices, and returns at once: nothing waits
+    /// for them, launch included (docs/DECISIONS.md, "The voice list never
+    /// holds up launch"). While a read is out, a phrase goes to the
+    /// synthesizer at once in the system's default voice
+    /// (`resolveVoiceIdentifier`).
+    ///
+    /// One read at a time: the system's read blocks the thread it runs on
+    /// until the voice service answers, which on a simulator that has just
+    /// started took more than a minute. A request while a read is out is
+    /// remembered, and one more read starts as soon as that one answers,
+    /// however many requests came meanwhile, so the latest change is never
+    /// missed.
     private func refreshVoices() {
+        guard !isReadingVoices else {
+            anotherVoiceReadIsWanted = true
+            return
+        }
+        isReadingVoices = true
+        startVoiceRead()
+    }
+
+    private func startVoiceRead() {
+        voiceCatalog.readInstalledVoices { [weak self] voices in
+            self?.receiveVoices(voices)
+        }
+    }
+
+    /// Applies a list as it arrives, filtered by the permission as it is
+    /// now rather than when the read began: access turned off while the
+    /// list was coming keeps the Personal Voice out of it (docs/DECISIONS.md,
+    /// "A Personal Voice is used only while it is allowed"). A list that a
+    /// later request overtook is still applied, being newer than the one
+    /// held, and the read for that request starts straight after.
+    private func receiveVoices(_ voices: [VoiceDescriptor]) {
         availableVoices = VoiceSelection.usableVoices(
-            voiceCatalog.installedVoices(),
+            voices,
             personalVoiceAllowed: personalVoiceStatus == .authorized
         )
         keepAutomaticPersonalVoice()
+        if anotherVoiceReadIsWanted {
+            anotherVoiceReadIsWanted = false
+            startVoiceRead()
+        } else {
+            isReadingVoices = false
+        }
     }
 
     /// Remembers the Personal Voice Automatic now speaks in, when it is a

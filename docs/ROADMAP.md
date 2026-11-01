@@ -400,8 +400,9 @@ scroll disable and use native always-bounce pan handling. Static frames,
 engine capacity and floors stay unchanged; fitting phrase content must
 settle back after a deliberate touch drag. Shared and recovered-private
 red/green checks are in [the continuation record](log/2026-10-25-duo-fold-design.md#pr-58-continuation-and-drag-investigation-2026-10-26).
-The private AX5 alternative, keyboard dismissal, Put Back placement and
-startup-flake cause/fix remain separate open work. Final selected runs
+The private AX5 alternative, keyboard dismissal and Put Back placement
+remain separate open work; the startup flake's cause was found and fixed
+by #73 ([record](log/2026-11-01-voice-list-off-launch.md)). Final selected runs
 pass all five expanded drag/hold/first-tap/settled-frame cases and both
 existing slow-press cases on each of Duo, iPad and iPhone, with no skips
 or expected failures. Pre-extra-batch units passed 778 total: 769 passed, zero failed,

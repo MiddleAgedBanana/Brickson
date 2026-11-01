@@ -781,11 +781,15 @@ the time. Export them again after each new Xcode release.
   [`docs/log/2026-10-30-sizes-switched-on.md`](docs/log/2026-10-30-sizes-switched-on.md)
   and [`docs/log/2026-10-30-unit-test-time.md`](docs/log/2026-10-30-unit-test-time.md).
 - **A just-started simulator is slow, and the first UI test pays for it.**
-  On GitHub's busy machines, one run found Again still off when the test
-  read it straight after a tap, and the re-run's first launch timed out,
-  both on code that was green on `main` (cause not established; a slow
-  first launch is the likely one; on 2026-10-21 the first test failed with
-  "kAXErrorServerNotFound" and the next took 187 s). `scripts/test.sh`
+  Its voice service took more than 60 s to answer its first request on
+  CI. Until 2026-11-01 the app waited for it on its main thread before
+  its first frame, so XCTest's automation session gave up and the first
+  test failed with "kAXErrorServerNotFound" while re-runs passed
+  (docs/log/2026-11-01-voice-list-off-launch.md). Never put a call to a
+  system service that can be slow on the main thread at launch
+  (docs/DECISIONS.md, "The voice list never holds up launch"). One run
+  also found Again still off when the test read it straight after a tap,
+  on code that was green on `main`. `scripts/test.sh`
   starts each simulator, one a `DESTINATION` names included, and waits for
   it to finish starting (`xcrun simctl bootstatus <udid> -b`); it shuts down
   devices it booted after their run. Before UI tests it also launches the app once (a warm-up,
@@ -906,7 +910,11 @@ the time. Export them again after each new Xcode release.
   and its file in `Data/` (`data.<id>`). Images and recordings are stored
   as they are; text and JSON are zstd-compressed. `sqlite3` (or Python),
   `zstd` and `ffmpeg` read them on Linux; how it was done for issue #30 is
-  in `docs/log/2026-10-22-audit-still-screen.md`.
+  in `docs/log/2026-10-22-audit-still-screen.md`. The app's own output,
+  per launch, and the test runner's log are in the bundle's diagnostics
+  folder (`Actions.diagnosticsRef`): read them before blaming the machine
+  for a UI failure. How to unpack it is in
+  `docs/log/2026-11-01-voice-list-off-launch.md`.
 - **A crash cannot be a known issue.** `withKnownIssue` does not survive a
   crash; commit the reproduction disabled, naming its issue.
 - **Lazy Forms unload rows far off screen**, so a missing element in a UI
