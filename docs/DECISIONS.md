@@ -3985,13 +3985,19 @@ So:
 - **The list is read away from the main thread** and handed back on it
   (`SystemVoiceCatalog`, through a `@concurrent` function), and nothing
   waits for it: Home draws at once.
-- **Before the first list arrives, a phrase speaks at once in the
-  system's default voice.** With no list there is no voice to ask for,
-  and asking the system for the chosen voice by its identifier would
-  wait for the same slow service, on the main thread, at the moment the
-  person chose a phrase. The chosen voice, or the person's Personal
-  Voice, speaks from the first phrase after the list arrives. Nothing
-  waits before speaking (invariant 2).
+- **While the list is being read, a phrase speaks at once in the
+  system's default voice:** before the first list arrives, and while a
+  later read is out (after the app comes back to the front, the system's
+  voices change, Personal Voice is answered or media services reset).
+  Before the first list there is no voice to ask for; and asking the
+  system for a voice by its identifier, as each phrase does to check its
+  voice still loads and the synthesizer does again, would wait for the
+  same service, on the main thread, at the moment the person chose a
+  phrase. A later read normally answers in under a tenth of a second,
+  so this matters only when the service is slow, which is when waiting
+  would hurt most. The chosen voice, or the person's Personal Voice,
+  speaks from the first phrase after the list arrives. Nothing waits
+  before speaking (invariant 2).
 - **One read at a time.** The system's read holds the thread it runs on
   until the service answers, so a request while one is out is remembered
   and read as soon as that one answers, however many came meanwhile
@@ -4003,10 +4009,12 @@ So:
   is allowed*).
 
 The cost: someone who chose a voice, or has a Personal Voice, can hear
-the system's voice for a phrase spoken before the list arrives. On CI's
-simulators the list arrived in under a tenth of a second once the
-service had answered once; on a device that has just restarted it is
-not measured (docs/HANDOFF.md, *Checks that need a real device*).
+the system's voice for a phrase spoken while a list is being read, and
+meanwhile Voice Settings' "Speaking with" line still names the voice
+from the list held. On CI's simulators the list arrived in under a
+tenth of a second once the service had answered once; on a device, and
+on one that has just restarted, it is not measured (docs/HANDOFF.md,
+*Checks that need a real device*).
 
 Not chosen: keeping the read where it was and making CI wait longer for
 the voice service before the first test. That would hide the wait from

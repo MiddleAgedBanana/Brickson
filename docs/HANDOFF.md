@@ -39,9 +39,9 @@ iPhone simulators, #70); the other UI tests ask for touch's. Four category butto
 phrase columns on every iPhone at its standard Display Zoom (two on 375
 and 390-point phones with Bold Text). A tile
 speaks at once, in the person's Personal Voice when one exists and is
-allowed (in the system's voice before the voice list arrives, which
-nothing waits for: docs/DECISIONS.md, "The voice list never holds up
-launch"); the sentence stays on screen in the message's reserved lines,
+allowed (in the system's voice while the voice list is being read,
+which nothing waits for: docs/DECISIONS.md, "The voice list never holds
+up launch"); the sentence stays on screen in the message's reserved lines,
 and a longer message scrolls inside them. The phrase grid keeps native
 pan cancellation even when its tiles fit, so a deliberate vertical drag
 can bounce only its content rather than speak. Static Home controls stay

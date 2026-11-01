@@ -30,13 +30,17 @@ voice list never holds up launch"):
 - **The list is read away from the main thread** and handed back on it
   (`SystemVoiceCatalog.readInstalledVoices(then:)`, through a
   `@concurrent` function). Home draws without waiting for it.
-- **A phrase chosen before the list arrives speaks at once,** in the
-  system's default voice: with no list there is no voice to ask for,
-  and asking the system for a voice by name would wait for the same
-  slow service, on the main thread, at the moment the person chose a
-  phrase. The chosen voice, or the person's Personal Voice, speaks from
-  the first phrase after the list arrives. Nothing asks for a
-  confirmation or waits before speaking (invariant 2).
+- **A phrase chosen while the list is being read speaks at once,** in
+  the system's default voice: before the first list there is no voice
+  to ask for, and asking the system for a voice by name, as each phrase
+  does to check its voice loads, would wait for the same slow service,
+  on the main thread, at the moment the person chose a phrase. That
+  holds for later reads too (after the app comes back to the front, a
+  media-services reset and the rest), which normally answer in under a
+  tenth of a second. The chosen voice, or the person's Personal Voice,
+  speaks from the first phrase after the list arrives. Nothing asks for
+  a confirmation or waits before speaking (invariant 2). Later reads
+  were added after Copilot's review of the first push.
 - **One read at a time.** The system's read holds the thread it runs on
   until the service answers, so `SpeechService` keeps one read out; a
   request while it waits (the app coming to the front, the Personal
@@ -145,8 +149,11 @@ cold service.
 - 3c14c75: this record, docs/DECISIONS.md, docs/HANDOFF.md,
   docs/ACCESSIBILITY.md, AGENTS.md's two gotchas and the warm-up's
   comment in `scripts/test.sh`.
-- The commit after them: a change to the Personal Voice permission
-  applies to the held list at once (Codex's finding), with its test.
+- 06c62c6: a change to the Personal Voice permission applies to the
+  held list at once (Codex's and Copilot's finding), with its test.
+- The commit after it: no voice is looked up while a read is out
+  (Copilot's finding about a media-services reset), with its test, and
+  the accessibility page's Personal Voice sentence.
 
 ## Verified
 
@@ -175,9 +182,13 @@ New tests, and what makes each fail:
   was when the read began.
 - `SpeechServiceTests.turningAccessOffDropsTheHeldPersonalVoiceAtOnce()`:
   fails if turning access off reaches the held list only when the new
-  read answers, so that a phrase meanwhile asks for the Personal Voice
+  read answers, so that Settings meanwhile still offers the Personal
+  Voice.
+- `SpeechServiceTests.aPhraseWhileTheListIsReadAgainAsksForNoVoice()`:
+  after a media-services reset, with the new read not back; fails if a
+  phrase looks a voice up while a read is out
   (`FakeVoiceCatalog.loadedIDs` records each voice a phrase asks to
-  load).
+  load), or if the chosen voice does not come back once it answers.
 
 `FakeVoiceCatalog` answers at once unless told to hold its answers, so
 every existing speech test runs as before.
@@ -192,11 +203,6 @@ every existing speech test runs as before.
   the first phrase, on the main thread. On CI the voice service had
   always answered before the first phrase until now; the first UI tests
   (the fold and Get Attention tests) speak no phrase.
-- **After a media-services reset,** each phrase checks its voice on the
-  main thread (`voiceIsAvailable`) with the list read before the reset,
-  while the restarted service may be slow. Not made worse here (the old
-  code read the whole list on the main thread at that moment), and not
-  measured.
 - Whether CI's next runs are free of the failure. Five failures in the
   runs read, so one green run does not prove it; the next weeks of runs
   on `main` will.

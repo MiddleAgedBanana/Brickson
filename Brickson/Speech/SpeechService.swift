@@ -42,7 +42,8 @@ final class SpeechService {
     var automaticVoice: VoiceDescriptor? { selectVoice(chosenID: nil, from: availableVoices) }
     /// The voice the next phrase is spoken in, as far as the voice list
     /// knows. Each phrase still checks that its voice loads, and falls to
-    /// the next one if not (`resolveVoiceIdentifier`).
+    /// the next one if not, and while the list is being read speaks in the
+    /// system's default voice (`resolveVoiceIdentifier`).
     var currentVoice: VoiceDescriptor? { selectVoice(chosenID: selectedVoiceID, from: availableVoices) }
     /// When the app asks for Personal Voice permission. The Voice screen
     /// offers its own Ask button only under `.fromSettings`.
@@ -494,7 +495,14 @@ final class SpeechService {
     /// the cached voice list can be stale (voice uninstalled or Personal Voice
     /// re-recorded while the app was suspended), and a single failed lookup
     /// must fall to the next-best voice, not to the system default.
+    ///
+    /// Nil while the list is being read: the voice service may then be as
+    /// slow as at launch, and asking it for a voice by name, here and again
+    /// in the synthesizer, would make the phrase wait for it on the main
+    /// thread. The phrase speaks at once in the system's default voice
+    /// instead (docs/DECISIONS.md, "The voice list never holds up launch").
     private func resolveVoiceIdentifier(chosenID: String?) -> String? {
+        guard !isReadingVoices else { return nil }
         var candidates = availableVoices
         var cacheWasStale = false
         var resolved: String?
@@ -530,9 +538,8 @@ final class SpeechService {
 
     /// Asks for the installed voices, and returns at once: nothing waits
     /// for them, launch included (docs/DECISIONS.md, "The voice list never
-    /// holds up launch"). Until the first list arrives a phrase speaks at
-    /// once in the system's default voice, because `resolveVoiceIdentifier`
-    /// finds no voice to ask for.
+    /// holds up launch"). While a read is out, a phrase speaks at once in
+    /// the system's default voice (`resolveVoiceIdentifier`).
     ///
     /// One read at a time: the system's read blocks the thread it runs on
     /// until the voice service answers, which on a simulator that has just

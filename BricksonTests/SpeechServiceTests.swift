@@ -713,6 +713,34 @@ struct SpeechServiceTests {
         #expect(harness.catalog.readCount == 3)
     }
 
+    /// A later read, such as the one after a media-services reset or on
+    /// coming back to the front, can meet a voice service as slow as at
+    /// launch, and asking it for the held list's voice by name would make
+    /// the phrase wait for it on the main thread. While a read is out, a
+    /// phrase speaks at once in the system's default voice and asks for no
+    /// voice; the chosen voice speaks again once the list arrives. Fails if
+    /// a phrase looks a voice up while a read is out.
+    @Test func aPhraseWhileTheListIsReadAgainAsksForNoVoice() {
+        let chosen = VoiceDescriptor(id: "chosen", name: "Chosen", languageCode: "en-US", quality: .premium, isPersonalVoice: false)
+        let harness = AudioHarness(voices: [chosen], holdsVoiceLists: true)
+        harness.catalog.answerWaitingRead()
+        harness.speech.selectedVoiceID = "chosen"
+
+        harness.notifications.mediaServicesReset()
+        harness.speech.speak("Water, please.")
+
+        #expect(harness.catalog.waitingReadCount == 1)
+        #expect(harness.synthesizer.requests.map(\.text) == ["Water, please."])
+        #expect(harness.synthesizer.requests.last?.voiceIdentifier == nil)
+        #expect(harness.catalog.loadedIDs.isEmpty)
+
+        harness.catalog.answerWaitingRead()
+        harness.speech.speak("Thank you.")
+
+        #expect(harness.synthesizer.requests.last?.voiceIdentifier == "chosen")
+        #expect(harness.catalog.loadedIDs == ["chosen"])
+    }
+
     // MARK: Personal Voice
 
     private let ownVoice = VoiceDescriptor(id: "own", name: "Own", languageCode: "en-US", quality: .standard, isPersonalVoice: true)
@@ -885,16 +913,20 @@ struct SpeechServiceTests {
         harness.catalog.answerWaitingRead(with: [systemVoice, ownVoice])
 
         #expect(harness.speech.availableVoices == [systemVoice])
+
+        harness.catalog.answerWaitingRead(with: [systemVoice, ownVoice])
         harness.speech.speak("Hello.")
+
+        #expect(harness.speech.availableVoices == [systemVoice])
         #expect(harness.synthesizer.requests.last?.voiceIdentifier == "system")
     }
 
     /// Access turned off while Brickson waited, with a list read while it
     /// was on still held, and the new read not back yet: the held list
-    /// drops the Personal Voice at once, so a phrase never asks for it and
-    /// Settings never offers it (docs/DECISIONS.md, "A Personal Voice is
-    /// used only while it is allowed"). Fails if the permission reaches the
-    /// list only when the new read answers.
+    /// drops the Personal Voice at once, so Settings never offers it and
+    /// no phrase after the read asks for it (docs/DECISIONS.md, "A Personal
+    /// Voice is used only while it is allowed"). Fails if the permission
+    /// reaches the list only when the new read answers.
     @Test func turningAccessOffDropsTheHeldPersonalVoiceAtOnce() {
         let harness = AudioHarness(
             voices: [systemVoice, ownVoice],
@@ -907,12 +939,11 @@ struct SpeechServiceTests {
         harness.personalVoice.status = .denied
 
         harness.speech.refreshPersonalVoiceAvailability()
-        harness.speech.speak("Hello.")
 
         #expect(harness.catalog.waitingReadCount == 1)
         #expect(harness.speech.availableVoices == [systemVoice])
-        #expect(harness.synthesizer.requests.last?.voiceIdentifier == "system")
-        #expect(!harness.catalog.loadedIDs.contains("own"))
+        #expect(!harness.speech.hasPersonalVoice)
+        #expect(harness.speech.currentVoice == systemVoice)
     }
 
     /// A voice allowed or made while Brickson waited is used from the next
