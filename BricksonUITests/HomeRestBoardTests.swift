@@ -27,6 +27,8 @@ final class HomeRestBoardTests: XCTestCase {
     /// one the board shows.
     private static let everyday = ["Basics", "Needs", "Conversation", "Feelings"]
     private static let board = "Conversation"
+    /// The second step's question.
+    private static let question = "Which phrases does Home show?"
     private static let boardPhrases = 6
     /// The quick controls, whose words every window must draw whole.
     private static let quickControls = ["Yes", "No", "Emergency", "Get Attention", "Again"]
@@ -70,11 +72,37 @@ final class HomeRestBoardTests: XCTestCase {
         XCTAssertEqual(XCTWaiter.wait(for: [matched], timeout: 10), .completed, message)
     }
 
+    /// Whether `choice` lies whole above Next, where it can be activated.
+    @MainActor
+    private func isAboveNext(_ choice: XCUIElement, in app: XCUIApplication) -> Bool {
+        choice.isHittable && choice.frame.maxY <= app.buttons["guidedSetupNext"].frame.minY + 0.5
+    }
+
+    /// Scrolls the second step until `choice` lies whole above Next, as a
+    /// family scrolls to the choices that start below the bar
+    /// (`SetupChoicesPlace`), then captures the step. Fails if eight
+    /// swipes do not bring it there.
+    @MainActor
+    private func scrollAboveNext(_ choice: XCUIElement, named name: String, in app: XCUIApplication, context: String) {
+        let step = app.scrollViews.containing(NSPredicate(format: "label == %@", Self.question)).firstMatch
+        var swipes = 0
+        while !isAboveNext(choice, in: app), swipes < 8 {
+            step.swipeUp()
+            swipes += 1
+        }
+        XCTAssertTrue(isAboveNext(choice, in: app), "\(name) at \(choice.frame) is not above Next after \(swipes) swipes (\(context))")
+        if swipes > 0 {
+            attachCapture(app, name: "the second step scrolled to \(name), \(context)")
+        }
+    }
+
     /// Opens Set Up Step by Step's second step from Home, chooses the
     /// choice `identifier` labelled `label` (any label where nil), and
     /// closes Settings with Back to Talking. Fails if the step does not
-    /// open, the choice is not chosen, a second activation undoes it, or
-    /// Settings does not close.
+    /// open, Every Category is not on its first screenful, above Next (it
+    /// holds under the words on every window CI runs at the default size:
+    /// `SetupChoicesPlaceTests`), the choice is not chosen, a second
+    /// activation undoes it, or Settings does not close.
     @MainActor
     private func choose(_ identifier: String, label: String?, in app: XCUIApplication, context: String) throws {
         app.buttons["Settings"].tap()
@@ -87,7 +115,7 @@ final class HomeRestBoardTests: XCTestCase {
             XCTAssertTrue(app.navigationBars[title].waitForExistence(timeout: 10), "\(title) did not open (\(context))")
         }
         XCTAssertTrue(
-            app.staticTexts["Which phrases does Home show?"].waitForExistence(timeout: 10),
+            app.staticTexts[Self.question].waitForExistence(timeout: 10),
             "the second step does not ask which phrases Home shows (\(context))"
         )
         var choices = app.buttons.matching(identifier: identifier)
@@ -96,8 +124,14 @@ final class HomeRestBoardTests: XCTestCase {
         }
         let choice = choices.firstMatch
         XCTAssertTrue(choice.waitForExistence(timeout: 10), "the second step shows no \(label ?? identifier) (\(context))")
+        let everyCategory = app.buttons["restBoardEveryCategory"]
+        XCTAssertTrue(
+            isAboveNext(everyCategory, in: app),
+            "Every Category at \(everyCategory.frame) is not on the step's first screenful, above Next (\(context))"
+        )
         attachCapture(app, name: "the second step before \(label ?? identifier), \(context)")
         try assertPassesAccessibilityAudit(app, context: "Step 2 of 6, \(context)")
+        scrollAboveNext(choice, named: label ?? identifier, in: app, context: context)
         choice.tap()
         waitUntil(choice, matches: "isSelected == true", "\(label ?? identifier) was not chosen (\(context))")
         // Choices only select: a second activation keeps it chosen.

@@ -1058,9 +1058,9 @@ struct SettingsChainsTests {
     /// - The second step: its question and its sentence, modelled as the
     ///   first step's are, 16 points apart, then Every Category and the
     ///   four everyday categories Home holds at most, each as tall as the
-    ///   root's row across the content, 16 points apart, from where
-    ///   `SetupChoicesPlace` starts them, with Back and Next where the
-    ///   first step has them. Everything in the window is kept.
+    ///   root's row across the content, where `SetupChoicesPlace` places
+    ///   them, with Back and Next where the first step has them.
+    ///   Everything in the window is kept.
     struct SweptFamilySetup {
         let guided: CGRect
         let screens: SettingsChains.Screens
@@ -1108,17 +1108,16 @@ struct SettingsChainsTests {
         }
 
         /// The second step's choices across `content`, under its words or
-        /// lower, where `SetupChoicesPlace` puts them from `next`.
+        /// below the bar, where `SetupChoicesPlace` places them from
+        /// `next`.
         static func restBoardChoices(content: CGRect, next: CGRect, body: CGFloat, rowHeight: CGFloat) -> [(name: String, frame: CGRect)] {
             let heights = restBoardChoiceNames.map { _ in rowHeight }
             let place = SetupChoicesPlace(
                 next: next, choicesMinX: content.minX, choicesWidth: content.width, heights: heights, spacing: 16,
                 earliest: content.minY + restBoardWordsHeight(content.width, body: body) + 16
             )
-            var y = place.top
-            return restBoardChoiceNames.map { name in
-                defer { y += rowHeight + 16 }
-                return (name, CGRect(x: content.minX, y: y, width: content.width, height: rowHeight))
+            return zip(restBoardChoiceNames, place.tops).map { name, top in
+                (name, CGRect(x: content.minX, y: top, width: content.width, height: rowHeight))
             }
         }
 

@@ -27,7 +27,7 @@ import XCTest
 ///   Home's frames", "The first step's own rows"). No chain saves an
 ///   answer: the first step's answers start below every place a look can
 ///   be resting on the way in, Next only moves on, and the second step's
-///   choices start where a look resting on Next meets Next again
+///   choices lie where a look resting on Next meets Next again
 ///   (`SetupChoicesPlace`; docs/DECISIONS.md, "The late-stage profile").
 ///   Any hazard fails.
 ///

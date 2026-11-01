@@ -25,7 +25,7 @@ import SwiftUI
 /// the Screen guide as a cover of its own (`EachWayCover`), and starts its
 /// answers below every place a look can be resting on the way in
 /// (`SetupAccessQuestion`; docs/DECISIONS.md, "The first step's own rows").
-/// The second step starts its choices where a look resting on Next meets
+/// The second step places its choices where a look resting on Next meets
 /// Next again (`SetupRestBoardQuestion`; docs/DECISIONS.md, "The
 /// late-stage profile").
 struct GuidedSetupView: View {
@@ -277,10 +277,11 @@ private struct SetupAccessQuestion: View {
 /// name, shown as written. Choices only ever select: choosing the chosen
 /// one again keeps it, and choosing another moves the choice (AGENTS.md,
 /// invariant 10). A look arrives here on the first step's Next, in the
-/// same bar as this step's, so the choices start where every point of Next
-/// lies nearer Next than any choice (`SetupChoicesPlace`): under the words
-/// where the whole column holds there, and otherwise below the bar, where
-/// the family scrolls to them. The standard Back button, where a look
+/// same bar as this step's, so every choice lies where every point of
+/// Next is nearer Next than the choice (`SetupChoicesPlace`): each under
+/// the words, or the choice before it, where it holds there, and from the
+/// first that does not, the rest below the bar, where the family scrolls
+/// to them. The standard Back button, where a look
 /// arrives from the third step, sits in the navigation bar above the
 /// words. A choice the library no longer has as an everyday category shows
 /// as Every Category, as Home does (`RestBoard`).
@@ -331,8 +332,8 @@ private struct SetupRestBoardQuestion: View {
 
 /// Places the second step's words at the top of its content and its
 /// choices where `SetupChoicesPlace` says, each measured at the width it
-/// gets and the choices `spacing` apart, with anything after the choices
-/// (the save-failure line) under the last. Its views are the words, then
+/// gets, with anything after the choices (the save-failure line)
+/// `spacing` under the last. Its views are the words, then
 /// the choices, then the rest, in the order VoiceOver reads them. It is
 /// the step's only view, so its top is the content's.
 nonisolated struct SetupChoicesLayout: Layout {
@@ -368,16 +369,17 @@ nonisolated struct SetupChoicesLayout: Layout {
         guard let words = heights.first else { return [] }
         let choiceHeights = Array(heights.dropFirst().prefix(choices))
         let earliest = words + spacing
-        var y = earliest
-        if let screen {
-            let origin = screen.content.origin
-            y = SetupChoicesPlace(
-                next: screen.foot, choicesMinX: origin.x, choicesWidth: width, heights: choiceHeights,
-                spacing: spacing, earliest: origin.y + earliest
-            ).top - origin.y
-        }
+        let origin = screen?.content.origin ?? .zero
+        let tops = SetupChoicesPlace(
+            next: screen?.foot ?? .zero, choicesMinX: origin.x, choicesWidth: width, heights: choiceHeights,
+            spacing: spacing, earliest: origin.y + earliest
+        ).tops.map { $0 - origin.y }
         var frames = [CGRect(x: 0, y: 0, width: width, height: words)]
-        for height in heights.dropFirst() {
+        var y = earliest
+        for (index, height) in heights.dropFirst().enumerated() {
+            if index < tops.count {
+                y = tops[index]
+            }
             frames.append(CGRect(x: 0, y: y, width: width, height: height))
             y += height + spacing
         }

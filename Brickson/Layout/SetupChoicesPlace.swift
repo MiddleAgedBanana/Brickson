@@ -1,6 +1,6 @@
 import Foundation
 
-/// Where the second step of Set Up Step by Step starts its choices, in the
+/// Where the second step of Set Up Step by Step places its choices, in the
 /// window, from Next's frame. Plain logic, tested without a screen
 /// (docs/DECISIONS.md, "The late-stage profile", *Where the second step's
 /// choices start*).
@@ -14,14 +14,16 @@ import Foundation
 /// edge, with `SettingsRowPlace.margin` to spare: then a held look on Next
 /// meets Next again, which only moves on.
 ///
-/// The choices follow the step's words where the whole column holds there.
-/// Where it does not, as on a short window or at a large text size, where
-/// they would run down to or under the bar, they start at the first top
-/// below the bar at which every choice holds, so the step's first
-/// screenful shows none and the family scrolls to them.
+/// Each choice follows the words, or the choice before it, where it holds
+/// there. From the first that does not, as on a phone, where a full-width
+/// Next's corners reach up into the screen above the bar, the rest start
+/// together at the first top below the bar at which every one of them
+/// holds: the step's first screenful shows the choices that hold under
+/// the words, and the family scrolls to the rest, past a gap where a
+/// choice would meet a look on Next.
 nonisolated struct SetupChoicesPlace: Equatable, Sendable {
-    /// The first choice's top, in the window.
-    let top: CGFloat
+    /// Each choice's top, in the window, in order.
+    let tops: [CGFloat]
 
     /// - Parameters:
     ///   - next: Next's frame, in the window.
@@ -32,46 +34,61 @@ nonisolated struct SetupChoicesPlace: Equatable, Sendable {
     ///   - earliest: the highest top the step's words leave for the
     ///     choices, in the window.
     init(next: CGRect, choicesMinX: CGFloat, choicesWidth: CGFloat, heights: [CGFloat], spacing: CGFloat, earliest: CGFloat) {
+        func stacked(from top: CGFloat, _ heights: ArraySlice<CGFloat>) -> [CGFloat] {
+            var y = top
+            return heights.map { height in
+                defer { y += height + spacing }
+                return y
+            }
+        }
         guard !heights.isEmpty, !next.isEmpty else {
-            top = earliest
+            tops = stacked(from: earliest, heights[...])
             return
         }
-        // Next's edge, every 4 points: a choice lies wholly above or below
-        // Next, so the point of Next nearest it, by centre or by edge,
-        // lies on Next's edge rather than inside it.
+        // Next's edge, every 4 points: a choice that holds lies wholly
+        // above or below Next, so the point of Next nearest it, by centre
+        // or by edge, lies on Next's edge rather than inside it.
         let points = SettingsRowPlace.points(across: next, every: 4).filter {
             $0.x == next.minX || $0.x == next.maxX || $0.y == next.minY || $0.y == next.maxY
         }
-        func holds(_ top: CGFloat) -> Bool {
-            var y = top
-            for height in heights {
-                let choice = CGRect(x: choicesMinX, y: y, width: choicesWidth, height: height)
-                guard points.allSatisfy({ SettingsRowPlace.isNearer($0, toOneOf: [next], thanAny: [choice], margin: SettingsRowPlace.margin) })
-                else { return false }
-                y += height + spacing
-            }
-            return true
+        func holds(_ top: CGFloat, _ height: CGFloat) -> Bool {
+            let choice = CGRect(x: choicesMinX, y: top, width: choicesWidth, height: height)
+            return points.allSatisfy { SettingsRowPlace.isNearer($0, toOneOf: [next], thanAny: [choice], margin: SettingsRowPlace.margin) }
         }
-        if holds(earliest) {
-            top = earliest
+        // Under the words, each choice after the one before, while each
+        // holds.
+        var under: [CGFloat] = []
+        var y = earliest
+        for height in heights {
+            guard holds(y, height) else { break }
+            under.append(y)
+            y += height + spacing
+        }
+        let rest = heights[under.count...]
+        guard !rest.isEmpty else {
+            tops = under
             return
         }
-        // Lower, the column first runs into Next and then past it. Every
-        // point holds once the first choice's top is farther below it than
-        // Next's centre is from it, by more than the margin, and lower
-        // choices are farther still: down 8 points at a time to the first
-        // top that holds, then back up a point at a time while it holds,
-        // never above the bar's foot.
+        func restHolds(_ top: CGFloat) -> Bool {
+            zip(stacked(from: top, rest), rest).allSatisfy { holds($0, $1) }
+        }
+        // Below the bar, every point holds once the first of the rest is
+        // farther below it than Next's centre is from it, by more than the
+        // margin, and the ones after it are farther still: down 8 points
+        // at a time to the first top that holds, then back up a point at a
+        // time while it holds, never above the bar's foot or the place
+        // under the words.
+        let highest = max(y, next.maxY)
         let deepest = points.map { $0.y + SettingsRowPlace.centreDistance(from: $0, to: next) }.max().map { $0 + SettingsRowPlace.margin + 1 }
-            ?? earliest
-        var coarse = max(earliest, next.maxY)
-        while coarse < deepest, !holds(coarse) {
+            ?? highest
+        var coarse = highest
+        while coarse < deepest, !restHolds(coarse) {
             coarse += 8
         }
         var found = coarse
-        while found - 1 >= max(earliest, next.maxY), found - 1 > coarse - 8, holds(found - 1) {
+        while found - 1 >= highest, found - 1 > coarse - 8, restHolds(found - 1) {
             found -= 1
         }
-        top = found
+        tops = under + stacked(from: found, rest)
     }
 }
