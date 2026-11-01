@@ -169,8 +169,33 @@ cold service.
 ## Verified
 
 This thread runs in the cloud and cannot build with Xcode, so GitHub CI
-is the build, and until it passes the change is untested. The cause was
-read from the five failed runs' result bundles (above), on Linux.
+is the build. The cause was read from the five failed runs' result
+bundles (above), on Linux.
+
+CI on 95cd885 (run 41299504030) passed at its first attempt, on GitHub's
+Mac machine with iOS 27.0 simulators:
+
+- **Unit tests** (iPad Pro 13-inch (M5) simulator, 22 minutes): 1,163
+  test runs, 1,145 passed, 17 expected failures (known issues marked
+  with `withKnownIssue`, none added here) and one disabled crash
+  reproduction (issue #19). The six new tests below ran and passed.
+- **UI tests**: 61 on the iPad Pro 13-inch (M5) simulator and 61 on the
+  iPhone 17 simulator, none failed.
+- **The first launches, from the app's own log** in each bundle (read as
+  above). On the iPhone, the voice service did not answer at all during
+  the first three launches, which ran for about 7 to 10 seconds each,
+  and XCTest's automation session still started about 0.4 seconds after
+  the Personal Voice status line, the last line a failing launch used to
+  log; their tests passed. Before this change, a launch whose voice
+  service had not answered showed only its launch screen. On the iPad,
+  the service answered the first launch 1.1 seconds after that line, and
+  the automation session had started before it answered. Across the run,
+  every one of the iPad's 85 launches got a reply from the service, and
+  only those first three of the iPhone's 77 did not.
+
+This run's iPad did not meet the minute-long wait of the failed runs.
+The run shows that launch no longer waits for the voice service, not
+that the iPad's slow first answer cannot come back (*Not verified*).
 
 New tests, and what makes each fail:
 

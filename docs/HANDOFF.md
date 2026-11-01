@@ -365,8 +365,10 @@ Xcode 27.1 (27A9275); PR #20 landed in `d79d836`.
   before its first frame, and a just-started simulator's voice service
   took more than 60 seconds to answer, so XCTest's automation session
   gave up. Since #73 the list is read away from the main thread
-  (docs/DECISIONS.md, "The voice list never holds up launch"); untested
-  until CI runs it, and one green run does not prove the failure gone
+  (docs/DECISIONS.md, "The voice list never holds up launch"). Its first
+  CI run passed, and on the iPhone simulator the first three launches
+  were driven while the voice service had not yet answered; one green
+  run does not prove the failure gone
   ([cause, evidence and how to read the app's log](log/2026-11-01-voice-list-off-launch.md)).
   Apple's accessibility audit never sees
   Home's "Speaking" line: audits wait for speech to finish, because one
