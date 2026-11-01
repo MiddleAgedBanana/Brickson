@@ -4269,7 +4269,7 @@ request merges only when they pass.
   stretches by up to six minutes; one run each of #69 and #70 was
   stopped at 40 with nothing failed. Sixty leaves room for a slow
   machine and new tests and still stops a hung run within the hour.
-  The owner commits the change, because a cloud agent cannot push
+  The owner committed the change, because a cloud agent cannot push
   workflows. Record:
   [`log/2026-10-30-unit-test-time.md`](log/2026-10-30-unit-test-time.md).
 

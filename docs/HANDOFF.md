@@ -1068,8 +1068,9 @@ Simulators cannot show these. Record each result in a `docs/log/` file
   ([`log/2026-10-22-ci-home-test.md`](log/2026-10-22-ci-home-test.md)).
 - The unit job took 36 to 39 minutes on 2026-10-30 under its old
   limit of 40; the dwell chain sweeps were most of it. The chain engine
-  now costs about half as much with the same results, and the limit is
-  60 ([record](log/2026-10-30-unit-test-time.md)). The Settings sweep's
+  now costs about half as much with the same results: the job's next
+  two runs took 24.4 and 28.2 minutes, and the limit is 60
+  ([record](log/2026-10-30-unit-test-time.md)). The Settings sweep's
   remaining cost is `SetupAnswersPlace`, app code, left to the next
   Settings thread.
 - CodeQL scans the workflow files and the Python scripts, not the Swift

@@ -758,7 +758,8 @@ the time. Export them again after each new Xcode release.
   the simulator and building, and one run each of pull requests #69 and
   #70 was stopped at 40 with every test it had reported passing. The
   same day the chain engine was made about half as costly, with the
-  same results (docs/DECISIONS.md, "One chain engine for dwell safety").
+  same results, and the job's next two runs took 24.4 and 28.2 minutes
+  (docs/DECISIONS.md, "One chain engine for dwell safety").
   The unit tests are main-actor isolated by default, so they share the
   main thread and the job takes about the sum of every test's time; run
   together, a suite's reported time includes waiting for the others.

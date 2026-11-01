@@ -19,7 +19,7 @@ request's unit tests*). Two changes:
    and for new tests, and still stops a hung run within the hour. The UI
    job keeps its 120 (docs/HANDOFF.md said 75; that line is corrected
    here). GitHub's own ceiling for a job on its machines is six hours.
-   A cloud agent cannot push `.github/workflows/`, so the owner commits
+   A cloud agent cannot push `.github/workflows/`, so the owner committed
    this one line on the branch (AGENTS.md, *Gotchas*). Decision:
    docs/DECISIONS.md, "Tests".
 2. **The dwell chain engine costs about half as much, with every result
@@ -77,15 +77,19 @@ sqlite3 'file:unit-ipad.xcresult/database.sqlite3?mode=ro' \
 - c69ad55: the engine's speedup and its four tests.
 - e1cd546: this record, docs/HANDOFF.md, AGENTS.md's gotcha and
   docs/DECISIONS.md.
-- The commits after it: answers to review (the starts test compared with
-  the plain way), and, once the owner makes it, the one-line commit
-  raising the limit in `.github/workflows/tests.yml` (*Not verified*).
+- a538f41: answers to review (the starts test compared with the plain
+  way) and this record tidied.
+- 3feb192, the owner's: the unit job's limit raised from 40 to 60
+  minutes in `.github/workflows/tests.yml`.
+- The commit after it: GitHub CI's results (*GitHub CI*) added to this
+  record, docs/HANDOFF.md and AGENTS.md before merging, at the owner's
+  choice.
 
 ## Verified
 
-Nothing here was built with Xcode: this thread runs in the cloud, so
-GitHub CI is the build. On Linux (Swift 6.4.1, four cores), a Swift
-package linked to the repository's own files: `ChainEngine`,
+This thread runs in the cloud and cannot build with Xcode, so GitHub CI
+is the build (*GitHub CI*, below). On Linux (Swift 6.4.1, four cores),
+a Swift package linked to the repository's own files: `ChainEngine`,
 `HomeChains`, `SettingsChains`, the layout types they score, and the
 unit tests that drive them (`ChainEngineTests`, the layout engine's,
 `ProfileChoiceTests`, `SettingsReservedRegionChainTests` and the rest
@@ -121,9 +125,10 @@ itself is not committed.
   | `noChainOnTheEnginesFramesMeetsAHazardButStopsWell(boldText:)` | 73 | 47 |
   | `heldActivationsAddNoHazardPaths(boldText:)` | 27 | 13 |
 
-  Scaling each of CI's test times by its own Linux ratio gives about
-  10.4 minutes of tests instead of 18.5, so a job of about 28 to 31
-  minutes. That is an estimate until CI measures it.
+  Before CI ran, scaling each of CI's test times by its own Linux ratio
+  gave an estimate of about 10.4 minutes of tests instead of 18.5, and
+  a job of about 28 to 31 minutes. CI then measured about 12.4 minutes
+  of tests and jobs of 24.4 and 28.2 minutes (*GitHub CI*).
 - **The new tests,** each run on Linux and seen failing on the change
   named:
   - `ChainEngineTests.oneStatesStartsAreEveryStartsForIt()`: compares
@@ -143,16 +148,54 @@ itself is not committed.
 - `scripts/test-docs.py`, `scripts/test-hooks.py` and
   `scripts/test-site.py` pass.
 
+### GitHub CI
+
+Both runs used GitHub's `xcode-27` image with Xcode 27.1 (its iOS 27.1
+SDK): the unit tests on the iPad Pro 13-inch (M5) simulator, the UI
+tests on it and on the iPhone 17, all iOS 27.0. Each test's time is
+from the run's result bundle (the query above). The comparison is
+`main`'s run on 9fe02ef (run 41115662253), whose unit job took 36.2
+minutes.
+
+- **a538f41** (run 41123722058): both jobs green, so the build (warnings
+  are errors) passed. The unit job took 24.4 minutes. The UI job took
+  73.0 minutes on the iPad and the iPhone, including
+  `SettingsOnHomeTests`, which runs the engine on the running app's
+  frames.
+- **3feb192**, with the owner's limit (run 41271701390): both jobs
+  green. `tests.yml` differs from `main` only in the unit job's
+  `timeout-minutes`, 40 to 60; both job names, which the `main` ruleset
+  requires, are unchanged. The unit job took 28.2 minutes, under the
+  new limit and the old one. Its tests took as long as on a538f41; the
+  3.8 minutes more were spent outside them, building, starting the
+  simulator and in the Python checks. The UI job took 70.4 minutes,
+  with the same passes and skips as on `main`.
+- **The same results on both:** 827 tests (`main`'s 823 and the four
+  new), whose runs end as on `main`: 1,139 passed (`main`'s 1,135 and
+  the four new), 17 expected failures and 1 skip.
+
+| Test | `main` (s) | a538f41 (s) | 3feb192 (s) |
+|---|---|---|---|
+| All unit tests | 1,143 | 746 | 737 |
+| `finalHomeFramesAddNoSettingsHazardPaths(boldText:)` | 237 | 15 | 16 |
+| `typingChainsMeetOnlyClearAndPutBackByCentreFromTheDimmedPhrases(boldText:)` | 183 | 139 | 121 |
+| `noSweptWindowClosesSettingsOrSavesAnAnswerUnderTheLook()` | 169 | 106 | 97 |
+| `yesAndNoStillBorderTheMessage(modes:)` | 90 | 86 | 91 |
+| `noChainAtALargerProfileMeetsANewHazard(profile:)` | 72 | 41 | 45 |
+| `noChainOnTheEnginesFramesMeetsAHazardButStopsWell(boldText:)` | 68 | 49 | 46 |
+| `heldActivationsAddNoHazardPaths(boldText:)` | 21 | 15 | 14 |
+
 ## Not verified
 
-- Any of it with Xcode, on a Mac or on CI, until this pull request's
-  CI run: the build (warnings are errors), the unit tests' results and
-  the unit job's new time.
-- The UI tests that use the engine (`SettingsOnHomeTests`, Home's
-  chains on the running app's frames). The engine is shared, and its
-  results are the same, but they run only on CI.
-- That the job's limit is 60 until the owner's commit to
-  `.github/workflows/tests.yml` is on the branch.
+- A Release build. CI builds Debug only. Only test-target files and
+  documents changed; `scripts/test.sh device -configuration Release` on
+  a Mac would show any warning only Release sees.
+- The Linux results by anyone else: the fingerprint and each new test
+  seen failing on its change ran in this thread's package, which is not
+  committed. A Mac run with each change applied would repeat the
+  second.
+- How near the job comes to 60 minutes on a slow machine. Two runs are
+  measured, 24.4 and 28.2 minutes.
 
 ## Follow-ups
 
@@ -166,9 +209,10 @@ itself is not committed.
 - **An optimised test build would roughly halve the rest.** Built with
   `-O` on Linux, the same 177 tests took 390 seconds instead of 634.
   It changes how `BricksonTests` is built (`project.yml`), and
-  debugging a test gets harder, so it is a choice for later, if the job
-  grows again.
+  debugging a test gets harder, so it is left for the thread that next
+  finds the unit job near its limit.
 - **Running suites side by side.** The unit tests share the main thread
   because of the project's default isolation. Marking the long sweeps
   `nonisolated` would let them run in parallel; it is a larger change
-  to how the tests run, and nothing needs it yet.
+  to how the tests run, and nothing needs it yet. The same thread
+  weighs it against `-O`.
