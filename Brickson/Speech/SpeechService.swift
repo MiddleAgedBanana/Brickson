@@ -260,7 +260,8 @@ final class SpeechService {
     /// last-spoken, so Again never replays it. As with phrase tiles, a held
     /// look re-firing the same control while its sample still plays is
     /// absorbed rather than restarting it. A voice row's sample plays in
-    /// that row's voice, whichever voice is chosen.
+    /// that row's voice, whichever voice is chosen, except while the voice
+    /// list is being read (`resolveVoiceIdentifier`).
     func preview(from control: VoicePreviewControl) {
         guard !absorbsRepeat(of: .preview(control)) else {
             logger.info("Absorbed repeat activation of the voice sample still playing")
@@ -499,8 +500,10 @@ final class SpeechService {
     /// Nil while the list is being read: the voice service may then be as
     /// slow as at launch, and asking it for a voice by name, here and again
     /// in the synthesizer, would make the phrase wait for it on the main
-    /// thread. The phrase speaks at once in the system's default voice
-    /// instead (docs/DECISIONS.md, "The voice list never holds up launch").
+    /// thread. The phrase goes to the synthesizer at once in the system's
+    /// default voice instead, and so does a voice row's sample, though the
+    /// row names another voice (docs/DECISIONS.md, "The voice list never
+    /// holds up launch").
     private func resolveVoiceIdentifier(chosenID: String?) -> String? {
         guard !isReadingVoices else { return nil }
         var candidates = availableVoices
@@ -538,8 +541,9 @@ final class SpeechService {
 
     /// Asks for the installed voices, and returns at once: nothing waits
     /// for them, launch included (docs/DECISIONS.md, "The voice list never
-    /// holds up launch"). While a read is out, a phrase speaks at once in
-    /// the system's default voice (`resolveVoiceIdentifier`).
+    /// holds up launch"). While a read is out, a phrase goes to the
+    /// synthesizer at once in the system's default voice
+    /// (`resolveVoiceIdentifier`).
     ///
     /// One read at a time: the system's read blocks the thread it runs on
     /// until the voice service answers, which on a simulator that has just

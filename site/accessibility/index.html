@@ -95,8 +95,8 @@
 
 <h2 id="speech">Speech</h2>
 <h3>Personal Voice</h3>
-<p>If you have made a Personal Voice and allow Brickson to use it, Brickson speaks your phrases in your own voice, unless another voice is chosen in Brickson's Voice Settings. iOS speaks the words; Brickson never receives the voice itself. While iOS is still telling Brickson which voices are on the device, as it does just after Brickson opens, a phrase speaks straight away in iOS's own voice rather than waiting.</p>
-<p class="small"><strong>How it's checked:</strong> unit tests of how the voice is chosen. Nobody has heard Brickson speak on a real device yet.</p>
+<p>If you have made a Personal Voice and allow Brickson to use it, Brickson speaks your phrases in your own voice, unless another voice is chosen in Brickson's Voice Settings. iOS speaks the words; Brickson never receives the voice itself. While iOS is still telling Brickson which voices are on the device, as it does just after Brickson opens, Brickson does not wait for the answer: it hands each phrase to iOS straight away, to speak in iOS's own voice.</p>
+<p class="small"><strong>How it's checked:</strong> unit tests of how the voice is chosen, and that a phrase is handed to iOS without waiting for the list of voices. Nobody has heard Brickson speak on a real device yet.</p>
 <h3>When speech is cut off</h3>
 <p>If a phrase is cut off, for example by a phone call, Siri or unplugged headphones, Brickson shows "Stopped" on screen, and Again says the phrase again. A line on screen also says when the volume is very low. These words sit in space kept for them, so nothing else on the screen moves.</p>
 <p class="small"><strong>How it's checked:</strong> unit tests of when "Stopped" and the volume line show, and of Again. The kept space is from a reading of the code. Calls and headphones need a real device, so this has not been seen in use yet.</p>

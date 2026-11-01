@@ -30,17 +30,22 @@ voice list never holds up launch"):
 - **The list is read away from the main thread** and handed back on it
   (`SystemVoiceCatalog.readInstalledVoices(then:)`, through a
   `@concurrent` function). Home draws without waiting for it.
-- **A phrase chosen while the list is being read speaks at once,** in
-  the system's default voice: before the first list there is no voice
-  to ask for, and asking the system for a voice by name, as each phrase
-  does to check its voice loads, would wait for the same slow service,
-  on the main thread, at the moment the person chose a phrase. That
-  holds for later reads too (after the app comes back to the front, a
-  media-services reset and the rest), which normally answer in under a
-  tenth of a second. The chosen voice, or the person's Personal Voice,
-  speaks from the first phrase after the list arrives. Nothing asks for
-  a confirmation or waits before speaking (invariant 2). Later reads
-  were added after Copilot's review of the first push.
+- **A phrase chosen while the list is being read goes to the synthesizer
+  at once,** in the system's default voice (whether the synthesizer
+  itself then waits for a cold voice service is under *Not verified*):
+  before the first list there is no voice to ask for, and asking the
+  system for a voice by name, as each phrase does to check its voice
+  loads, would wait for the same slow service, on the main thread, at
+  the moment the person chose a phrase. That holds for later reads too
+  (after the app comes back to the front, a media-services reset and the
+  rest), which on CI's simulators answered in under a tenth of a second.
+  The chosen voice, or the person's Personal Voice, speaks from the
+  first phrase after the list arrives. Nothing asks for a confirmation,
+  and Brickson waits for nothing before handing the phrase over
+  (invariant 2). Later reads were added after Copilot's review of the
+  first push. The same holds for Voice Settings' samples, so for that
+  moment a voice row's Hear plays in the system's voice though the row
+  names another (*Follow-ups*).
 - **One read at a time.** The system's read holds the thread it runs on
   until the service answers, so `SpeechService` keeps one read out; a
   request while it waits (the app coming to the front, the Personal
@@ -151,9 +156,15 @@ cold service.
   comment in `scripts/test.sh`.
 - 06c62c6: a change to the Personal Voice permission applies to the
   held list at once (Codex's and Copilot's finding), with its test.
-- The commit after it: no voice is looked up while a read is out
-  (Copilot's finding about a media-services reset), with its test, and
-  the accessibility page's Personal Voice sentence.
+- 95cd885: no voice is looked up while a read is out (Copilot's finding
+  about a media-services reset), with its test, and the accessibility
+  page's Personal Voice sentence.
+- The commits after it: wording only, from CodeRabbit's reviews. The
+  Personal Voice permission decision says the Personal Voice speaks from
+  the first phrase after the list arrives; this record, the decision
+  and the accessibility page say a phrase is handed to the synthesizer
+  at once rather than that it is heard at once; the Voice Settings gap
+  above is recorded; and the CI results below.
 
 ## Verified
 
@@ -216,6 +227,18 @@ every existing speech test runs as before.
   `simctl spawn defaults write`) then took four to six minutes. Whether
   `simctl boot` already waits for the boot to finish was not checked.
   Not this flake's cause. *(the next tests/CI thread)*
+- While a voice list is being read, Voice Settings names voices that a
+  phrase or a sample does not use yet: the "Speaking with" line names
+  the voice from the list held, and a voice row's Hear plays its sample
+  in the system's voice (CodeRabbit's review of 95cd885). A read starts
+  each time the app comes back to the front, and on CI's simulators a
+  later read answered in under a tenth of a second. Not changed here:
+  looking the row's voice up could freeze the app, Get Attention in
+  Settings included, on a slow service, and dimming every Hear during
+  each read would flash them on every return.
+  A sample that waits for its own voice, or a line saying the list is
+  being read, is the fix to weigh (docs/DECISIONS.md, "The voice list
+  never holds up launch"). *(the next Voice Settings thread)*
 - If the first-launch failure comes back with this fix in, read the
   app's log from that run's bundle (above) before changing the warm-up.
   *(whoever sees it)*
