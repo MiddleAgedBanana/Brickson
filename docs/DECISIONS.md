@@ -21,7 +21,6 @@ taken back. Until one is answered, nothing hard to undo is done under it.
 | What does Brickson cost? | No recommendation: the owner's call, before the first submission | Until then nothing anywhere states a price (*Price not decided*), and no purchase code is built |
 | How is "Brickson" said? | Tell an agent how it sounds; it sets a sound-alike spelling in `APP_SPOKEN_NAME` | VoiceOver and Siri say the name; only the owner knows how it should sound |
 | Is the owner a "trader" under the EU's Digital Services Act? | Decide when the App Store Connect record is made; if yes, publish a dedicated contact rather than a home address | App Store Connect asks before the app can be offered in the EU, and a trader's contact details are shown publicly |
-| How long does the owner use each TestFlight build before it goes further? (2026-10-30) | Two weeks of daily use of the internal build before the external pilot, and seven days on the exact build before App Review | It is the owner's own time on their own devices; *Every release passes the quality bar*, Q9 |
 
 Owner steps that are actions, not decisions: the Team ID in
 `project.yml`, device runs, committing workflow files (docs/SDLC.md,
@@ -3836,9 +3835,8 @@ would move an R1 item ahead of its release, which was the owner's call.
 
 *Owner, 2026-10-30: the bar, and that no build goes to App Review until
 it passes. Default, adopted 2026-10-30: its gates, their numbers and who
-checks each; the owner can change any of them. Waiting on the owner:
-how long the owner lives with each TestFlight build (Q9; *Waiting on
-the owner*).* Every gate of docs/ROADMAP.md, *The quality bar*, passes
+checks each; the owner can change any of them. Owner, 2026-11-01:
+how long the owner lives with each TestFlight build (Q9).* Every gate of docs/ROADMAP.md, *The quality bar*, passes
 before a build goes to App Review, each with a `docs/log/` record of
 what passed, on what and when, and the last gate is the owner's own yes
 to "would I recommend this to someone?". The bar adds to R0's *Release
@@ -3870,7 +3868,8 @@ assembled" is the phrase the owner took up for what is missing.
   a day kept open), two hours per input method on the iPad and half an
   hour on the iPhone (Q11, long enough for tiredness and drift), fewer
   than 1 in 20 meant activations missing at the floors (Q13), three
-  first-time people (Q25), and the TestFlight weeks (Q9). A gate that
+  first-time people (Q25). The TestFlight weeks (Q9) are the owner's
+  answer of 2026-11-01. A gate that
   records a number keeps it as the next release's baseline, so no
   release gets slower or costlier unnoticed.
 - **Before the pilot.** Every gate passes before the external pilot
@@ -3901,15 +3900,19 @@ assembled" is the phrase the owner took up for what is missing.
   nothing tuned by eye, first-time people, a comparison with the AAC
   apps families use today, and the owner's answer.
 
-**Waiting on the owner: TestFlight time (Q9).** R0 item 11 already
-sends TestFlight builds to the owner and then to the pilot. Recommended:
-two weeks of daily use of the internal build before the pilot, and
-seven days on the exact build before App Review. TestFlight is where
-problems should be found (docs/SDLC.md, *Deploy*); Apple asks
-developers to "continue distributing builds until all issues are
-resolved before you submit your app for review"; and the owner is the
-first person who will notice what feels wrong. Until the owner answers,
-Q9 stands as recommended.
+**TestFlight time (Q9), the owner's answer.** R0 item 11 already
+sends TestFlight builds to the owner and then to the pilot. On
+2026-11-01 the owner chose the recommendation: two weeks of daily use of
+the internal build before the pilot, and seven days on the exact build
+before App Review. TestFlight is where problems should be found
+(docs/SDLC.md, *Deploy*); Apple asks developers to "continue
+distributing builds until all issues are resolved before you submit
+your app for review"; and the owner is the first person who will notice
+what feels wrong.
+
+*Before (2026-10-30 to 2026-11-01):* the TestFlight time was a row of
+*Waiting on the owner*, and Q9 stood as recommended until the owner
+answered.
 
 *Before:* R0's *Release gate* listed what R0 must build and check;
 nothing said how fast the app must be, how long it must hold up in use,

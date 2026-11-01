@@ -792,8 +792,8 @@ what passes and who checks it:
   gauge, never reaches serious, which Apple says "reduces performance".
   *Checks:* owner, then a thread reading the trace; a thread for the
   attached run. *Today:* not run.
-- **Q9. The owner lives with it.** Recommended, and the owner decides
-  (docs/DECISIONS.md, *Waiting on the owner*). The owner keeps the
+- **Q9. The owner lives with it.** The owner's answer of 2026-11-01
+  (docs/DECISIONS.md, "Every release passes the quality bar"). The owner keeps the
   internal TestFlight build on their own iPhone and iPad and uses it
   every day for at least two weeks before the external pilot, with a
   dated list of anything that felt slow, surprising, cramped or unclear;
@@ -1004,7 +1004,8 @@ what passes and who checks it:
   status).
   *Checks:* a thread lists what is open; the owner answers. *Today:* no
   editing or backup screens; Personal Voice is asked at first launch
-  without explanation; every owner question listed is open.
+  without explanation; every owner question listed is open except the
+  TestFlight time of Q9, answered on 2026-11-01.
 - **Q25. The first five minutes.** At least three people who have never
   seen Brickson, given no help, each speak a phrase within a minute of
   first opening it, find Emergency, and find where setup lives; a family

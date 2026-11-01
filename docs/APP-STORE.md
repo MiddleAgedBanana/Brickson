@@ -568,8 +568,8 @@ testers](https://developer.apple.com/help/app-store-connect/test-a-beta-version/
    is not a condition here.
 2. Internal build to the owner's own iPhone and iPad. Run the device checks
    in docs/HANDOFF.md, and live with the build for the time the quality
-   bar asks before the pilot (its Q9, recommended and waiting on the
-   owner).
+   bar asks before the pilot (its Q9: two weeks of daily use, the
+   owner's answer of 2026-11-01).
 3. External group "First testers": a few people living with ALS, family
    members, and a speech-language pathologist. Beta App Description: what
    Brickson is, in two sentences. What to Test: speak a phrase with your usual

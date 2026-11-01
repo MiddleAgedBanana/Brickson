@@ -851,10 +851,9 @@ For the owner (the remaining questions are listed in docs/DECISIONS.md,
    The other two, Again nearest Stop's empty well in a library with
    fewer than three everyday categories and iPhone Duo's chain from
    Family Setup at the largest text size, come to you only if a thread
-   cannot remove them by placement. And how long
-   you want to use each TestFlight build yourself before it goes
-   further (recommended: two weeks before the pilot, seven days on the
-   build sent to App Review).
+   cannot remove them by placement. (How long you use each TestFlight
+   build yourself is answered: two weeks before the pilot, seven days
+   on the build sent to App Review, your choice on 2026-11-01.)
    Everything App Store Connect will ask, in order, is in
    [docs/APP-STORE.md](APP-STORE.md), section 1.
 2. Read docs/ROADMAP.md, *The quality bar*: the 29 gates every release

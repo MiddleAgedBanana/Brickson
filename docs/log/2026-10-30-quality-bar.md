@@ -70,10 +70,12 @@ standing exception.
 
 The decision is recorded in docs/DECISIONS.md, "Every release passes
 the quality bar": the bar is the owner's; the gates, their numbers and
-who checks each are defaults the owner can change. One gate waits on the
-owner: how long the owner lives with each TestFlight build (Q9),
+who checks each are defaults the owner can change. One gate waited on
+the owner: how long the owner lives with each TestFlight build (Q9),
 recommended at two weeks before the pilot and seven days on the exact
-build before App Review, now a row of *Waiting on the owner*.
+build before App Review. On 2026-11-01, while this pull request was
+open, the owner chose the recommendation on a decision card in the
+project thread, and it is recorded as the owner's answer.
 
 What it folds in, already open before today: the three dwell hazards
 (Q2), Settings' floors under a larger profile, which were only in a
@@ -171,11 +173,16 @@ not have, so Q16 asks for the variant or a recorded reason.
   left out the alarm state's audits at AX5 and in the iPad's landscape
   (`GetAttentionOnHomeTests`); and this record listed fewer of the
   checks that ran than it said.
-- The commit after 5baac9b: CodeRabbit's third review answered.
+- ea0fd12: CodeRabbit's third review answered.
   docs/HANDOFF.md, docs/APP-STORE.md and docs/SDLC.md said that no
   build goes to App Review before the whole bar passes, without the
   owner's call on one urgent fix that docs/DECISIONS.md and the roadmap
   record; each now points to it.
+- The commit after ea0fd12: the owner's answer to Q9 (2026-11-01)
+  recorded in docs/DECISIONS.md, the roadmap's Q9 and Q24, docs/HANDOFF.md
+  and docs/APP-STORE.md. The owner said there was no rush and that it
+  could go in this pull request, rather than in a follow-up, after CI
+  was green.
 
 ## Verified
 
@@ -190,6 +197,8 @@ not have, so Q16 asks for the variant or a recorded reason.
   first iPad test, on "kAXErrorServerNotFound" after a 60-second
   automation setup, the startup failure docs/HANDOFF.md records. A
   single re-run of that job passed on the iPad and the iPhone 17.
+- GitHub CI on ea0fd12 (run 41152170391): the unit and UI tests passed
+  on the first attempt.
 - Every quote from Apple in the bar and in docs/DECISIONS.md was
   checked by script against the text copied from its page on
   2026-10-30, word for word apart from typographic apostrophes and
@@ -222,14 +231,12 @@ not have, so Q16 asks for the variant or a recorded reason.
 - The numbers the project chose (half a second to the first sound and
   50 ms between releases, one second to the first frame, eight hours,
   two hours per input method,
-  1 in 20 misses at the floors, three first-time people, the TestFlight
-  weeks) are defaults, not measurements; the first device runs may show
+  1 in 20 misses at the floors, three first-time people) are defaults,
+  not measurements; the first device runs may show
   that one should change.
 
 ## Follow-ups
 
-- *(owner)* How long to live with each TestFlight build (Q9): the card
-  in the thread, or docs/DECISIONS.md, *Waiting on the owner*.
 - *(next Settings thread)* Measure which floors Settings' controls hold
   under a larger profile and put it to the owner (Q3).
 - *(a docs pass)* The stale "untested until CI runs it" lines (Q26),
