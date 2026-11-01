@@ -111,7 +111,9 @@ to undo; step 5 is, so it waits for the name.
     `https://middleagedbanana.github.io/Brickson/accessibility/`, after
     checking that the page matches the build.
 14. **Submit for review** with *Manually release this version*, so nothing
-    goes live until you press Release.
+    goes live until you press Release, and only once every gate of
+    docs/ROADMAP.md, *The quality bar*, has passed, your own "would I
+    recommend this to someone?" last (section 2).
 15. **After release:** publish the accessibility labels (Apple only allows it
     once a version is live), check the product page on a phone, and put the
     membership renewal date in your calendar.
@@ -122,8 +124,15 @@ The project's release gate (docs/ROADMAP.md, R0, *Release gate*) holds
 every App Review submission until R0 is complete, including item 11's
 TestFlight pilot. That pilot is the one external TestFlight group allowed
 before the gate passes: it goes out once R0 items 1 to 10 are complete and
-the rest of the gate holds (device checks logged, UI tests green, and the
-policy, README and website true to the build). The App Store adds these
+the rest of the gate holds (device checks logged, UI tests green, the
+policy, README and website true to the build, and every gate of
+docs/ROADMAP.md, *The quality bar*, passed except the few it names as
+finishing during or after the pilot). Every release also passes
+every gate of docs/ROADMAP.md, *The quality bar*, before App Review, the
+owner's own "would I recommend this to someone?" last (owner,
+2026-10-30), unless the owner decides that one urgent fix after a
+release goes sooner (docs/DECISIONS.md, "Every release passes the
+quality bar"). The App Store adds these
 hard requirements, checked against Apple's pages on 2026-10-21:
 
 | Requirement | Brickson today | Source |
@@ -133,7 +142,7 @@ hard requirements, checked against Apple's pages on 2026-10-21:
 | Answers to the updated age-rating questions (since 2026-01-31) | Drafted in section 6 | same |
 | A privacy policy URL, and a link inside the app "in an easily accessible manner" | The URL exists, and `Settings > Family Setup > Privacy Policy` shows the policy inside the app and opens the web page in an in-app sheet (`SFSafariViewController`, 2026-10-21) | [Guideline 5.1.1(i)](https://developer.apple.com/app-store/review/guidelines/#data-collection-and-storage) |
 | A support URL that "must lead to actual contact information" | The support page has the contact email | [Platform version information](https://developer.apple.com/help/app-store-connect/reference/app-information/platform-version-information) |
-| Final versions only: "placeholder text, empty websites, and other temporary content should be scrubbed"; tested on a device | Home, typing, Get Attention and Settings are built; the app icon is still a placeholder, editing and backup screens are not yet built, and nothing has run on a device yet | [Guideline 2.1](https://developer.apple.com/app-store/review/guidelines/#app-completeness) |
+| Final versions only: "placeholder text, empty websites, and other temporary content should be scrubbed"; tested on a device | Home, typing, Get Attention and Settings are built; the app icon is still a placeholder, editing and backup screens are not yet built, and the app has been installed and launched once on an iPhone (2026-10-25) but no device check has passed (docs/HANDOFF.md, *Verification*) | [Guideline 2.1](https://developer.apple.com/app-store/review/guidelines/#app-completeness) |
 | Enough lasting use to be "app-like" | Home speaks the starter phrases and any typed message; editing and backup complete R0 | [Guideline 4.2](https://developer.apple.com/app-store/review/guidelines/#minimum-functionality) |
 | Export compliance | `ITSAppUsesNonExemptEncryption = NO` in `project.yml` skips the question on every upload | `project.yml` |
 | At least one iPhone and one 13-inch iPad screenshot | Plan in section 9 | [Screenshot specifications](https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications) |
@@ -557,9 +566,14 @@ testers](https://developer.apple.com/help/app-store-connect/test-a-beta-version/
 1. Gate for the pilot: R0 items 1 to 10 done, device checks logged in
    `docs/log/`, UI tests green on iPhone and iPad at default and largest
    text, light and dark; policy, README and website say only what the build
-   does. The pilot itself is R0 item 11, so it is not a condition here.
+   does; and every gate of docs/ROADMAP.md, *The quality bar*, except the
+   few it names as finishing during or after the pilot (several of them
+   run on step 2's internal build). The pilot itself is R0 item 11, so it
+   is not a condition here.
 2. Internal build to the owner's own iPhone and iPad. Run the device checks
-   in docs/HANDOFF.md.
+   in docs/HANDOFF.md, and live with the build for the time the quality
+   bar asks before the pilot (its Q9: two weeks of daily use, the
+   owner's answer of 2026-11-01).
 3. External group "First testers": a few people living with ALS, family
    members, and a speech-language pathologist. Beta App Description: what
    Brickson is, in two sentences. What to Test: speak a phrase with your usual
@@ -572,9 +586,14 @@ testers](https://developer.apple.com/help/app-store-connect/test-a-beta-version/
    build yourself once it is approved. Then invite testers by email or a
    public link from the group's Testers tab
    ([invite external testers](https://developer.apple.com/help/app-store-connect/test-a-beta-version/invite-external-testers)).
-4. Fix and re-test. When the pilot is done and the whole gate holds (R0
-   item 11 included), choose the build on the version page and submit 1.0
-   to App Review (section 1, steps 12 to 14).
+4. Fix and re-test. A build changed after the pilot's reports goes back
+   to the external group and to the owner for seven days, and the gates
+   its changes touch run again (the quality bar's Q9 and Q27). Upload it
+   as an ordinary build: one uploaded as TestFlight Internal Only can
+   never be submitted. When the pilot is done, the whole gate holds (R0
+   item 11 included) and every gate of the quality bar has passed, the
+   owner's answer last, choose the build on the version page and submit
+   1.0 to App Review (section 1, steps 12 to 14).
 
 ## 13. Changes this needs in the app, and who owns them
 
