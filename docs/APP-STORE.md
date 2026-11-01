@@ -111,7 +111,9 @@ to undo; step 5 is, so it waits for the name.
     `https://middleagedbanana.github.io/Brickson/accessibility/`, after
     checking that the page matches the build.
 14. **Submit for review** with *Manually release this version*, so nothing
-    goes live until you press Release.
+    goes live until you press Release, and only once every gate of
+    docs/ROADMAP.md, *The quality bar*, has passed, your own "would I
+    recommend this to someone?" last (section 2).
 15. **After release:** publish the accessibility labels (Apple only allows it
     once a version is live), check the product page on a phone, and put the
     membership renewal date in your calendar.
@@ -122,8 +124,10 @@ The project's release gate (docs/ROADMAP.md, R0, *Release gate*) holds
 every App Review submission until R0 is complete, including item 11's
 TestFlight pilot. That pilot is the one external TestFlight group allowed
 before the gate passes: it goes out once R0 items 1 to 10 are complete and
-the rest of the gate holds (device checks logged, UI tests green, and the
-policy, README and website true to the build). Every release also passes
+the rest of the gate holds (device checks logged, UI tests green, the
+policy, README and website true to the build, and every gate of
+docs/ROADMAP.md, *The quality bar*, passed except the few it names as
+finishing during or after the pilot). Every release also passes
 every gate of docs/ROADMAP.md, *The quality bar*, before App Review, the
 owner's own "would I recommend this to someone?" last (owner,
 2026-10-30), unless the owner decides that one urgent fix after a
@@ -582,7 +586,11 @@ testers](https://developer.apple.com/help/app-store-connect/test-a-beta-version/
    build yourself once it is approved. Then invite testers by email or a
    public link from the group's Testers tab
    ([invite external testers](https://developer.apple.com/help/app-store-connect/test-a-beta-version/invite-external-testers)).
-4. Fix and re-test. When the pilot is done, the whole gate holds (R0
+4. Fix and re-test. A build changed after the pilot's reports goes back
+   to the external group and to the owner for seven days, and the gates
+   its changes touch run again (the quality bar's Q9 and Q27). Upload it
+   as an ordinary build: one uploaded as TestFlight Internal Only can
+   never be submitted. When the pilot is done, the whole gate holds (R0
    item 11 included) and every gate of the quality bar has passed, the
    owner's answer last, choose the build on the version page and submit
    1.0 to App Review (section 1, steps 12 to 14).

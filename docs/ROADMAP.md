@@ -620,7 +620,8 @@ Low priority; it changes nothing in R0 item 13.
 
 *Owner, 2026-10-30: the bar, and that it holds every release back from
 App Review until it passes. Default, the same day: the gates, their
-numbers and who checks each, which the owner can change
+numbers and who checks each, which the owner can change. Owner,
+2026-11-01: how long the owner lives with each TestFlight build (Q9)
 (docs/DECISIONS.md, "Every release passes the quality bar").*
 
 The owner's test for Brickson is one question: **would I recommend this
@@ -654,15 +655,20 @@ what passes and who checks it:
 
 - A gate passes when a `docs/log/` record says what passed, on what and
   when. A gate with no record has not passed, and simulator evidence
-  never passes a gate the owner or the testers check (AGENTS.md,
-  *Workflow rules*; Apple: "Switch Control isn't available on
-  Simulator").
+  never passes a gate the owner or the testers check (the bar's own
+  rule, wider than AGENTS.md, *Workflow rules*, which names gaze
+  comfort, sound and Snap to Item; Apple: "Switch Control isn't
+  available on Simulator").
+- An exception a gate lets the owner accept is named and recorded in
+  docs/DECISIONS.md, covers only what it names, and never sets aside an
+  invariant of AGENTS.md beyond what that invariant itself allows.
 - Every release, starting with R0, passes every gate before App Review
   ("App Review" here is the App Store submission, not the TestFlight
   review the pilot's first build also gets).
 - **Before the external pilot** (Q27), every gate passes except these,
-  which finish during or after it: Q5, which runs through the whole
-  TestFlight period; Q9's seven days on the build sent to App Review;
+  which finish during or after it: Q5's crash and hang reports, which
+  run through the whole TestFlight period (its run of 100 activations
+  passes before); Q9's seven days on the build sent to App Review;
   the testers' sessions in Q11 and Q13; Q27, the pilot itself; Q28; and
   Q29. The owner's own
   device gates run on the internal TestFlight build first
@@ -680,8 +686,9 @@ what passes and who checks it:
   first device run, a thread writes the step-by-step procedure for each
   of them, with what success looks like, as the 2026-10-26 mounted-device
   procedure did for Settings.
-- *Today* says where R0 stands on 2026-10-30. A pull request that moves
-  a gate edits its *Today* line, as it edits the rows below.
+- *Today* says where R0 stands on 2026-10-30, unless the line gives a
+  later date. A pull request that moves a gate edits its *Today* line,
+  as it edits the rows below.
 
 ### It never lets the person down
 
@@ -691,8 +698,10 @@ what passes and who checks it:
   dark; no unexplained skip, and every `withKnownIssue` strict and
   naming its decision; and the Release
   configuration built with no warning (`scripts/test.sh device
-  -configuration Release`), because Apple asks that the release build
-  be tested "in a variety of conditions before submitting". *Checks:*
+  -configuration Release`). Apple asks that the release build itself be
+  tested "in a variety of conditions before submitting"; the device
+  gates below do that on the TestFlight build, which is a release
+  build. *Checks:*
   CI; a thread on the Mac for the Release build. *Today:* every pull
   request merges on green CI; the Release configuration has not been
   built since warnings became errors (docs/HANDOFF.md, *Known gaps*).
@@ -702,22 +711,30 @@ what passes and who checks it:
   bordering the message; the top of Stop's well nearest Again; by
   centre, dimmed phrases bordering Clear and Put Back; Again nearest
   Stop's empty well in a library with fewer than three everyday
-  categories, reachable once editing ships; and, on iPhone Duo at AX5,
-  the chain that starts at Family Setup's Back and reaches Back to
-  Talking and Get Attention (R0 item 13). The chain engine scores every screen the
+  categories, reachable once editing or import ships; and, on iPhone
+  Duo at AX5, the chain that starts at Family Setup's Back and reaches
+  Back to Talking and Get Attention (R0 item 13). Also open under R0
+  item 13: on iPhone Duo, a look resting before the window changes
+  meets Get Attention or Speak after it, under pointer mappings that
+  are only hypotheses until a device shows the real one (docs/HANDOFF.md,
+  *Known gaps*). The chain engine scores every screen the
   release ships, including those not scored yet (iOS's Personal Voice
   question, Voice Settings, the check-in rows, Family Setup and the
   first step's guide scrolled, Settings' other screens, and the library
   screens once built), and finds nothing new. *Checks:* a thread and CI
-  score; the owner decides each hazard after the Snap to Item device
-  check (Q12). *Today:* five open; the unscored screens are in
-  docs/HANDOFF.md, *Known gaps*.
+  score; after the Snap to Item device check (Q12), the owner decides
+  each hazard that placement does not remove. *Today:* five open, plus
+  iPhone Duo's changed-window finding; the Duo chain was scored on
+  2026-10-25's app and not again since Settings changed on 2026-10-30;
+  the unscored screens are in docs/HANDOFF.md, *Known gaps*.
 - **Q3. Every floor named.** Every control on every screen meets the
   floor of the sizes its window takes, or is an exception the owner
   accepted: Settings' Back to Talking at touch's frame (accepted
   2026-10-30), and which floors Settings' other controls hold under a
-  larger profile, measured and put to the owner (they keep 64-point rows
-  in every profile). Where the starter library still scrolls at touch's
+  larger profile, measured and put to the owner (their rows keep a
+  64-point minimum height in every profile, the navigation bar's
+  standard Back buttons keep the system's size, and the first step's
+  guide has Done in Back to Talking's frame). Where the starter library still scrolls at touch's
   sizes, a dwell, switch, head or gaze answer breaks invariant 11 there,
   so the scrolling is removed before App Review (R0 item 3). The bar
   adds no exception to the invariant: only a change to invariant 11
@@ -728,21 +745,27 @@ what passes and who checks it:
   *Follow-ups*); by the engine's model the phrase grid still scrolls at
   touch's sizes on phones smaller than the Pro Max at AX5, on the
   iPhone 17 at AX3 with Bold Text, on a 375×667 phone at every size, on
-  320-point windows, on compact windows 667 points tall at AX3, and on
-  iPhone Duo's outer display (docs/HANDOFF.md, *Known gaps*; R0 item 3).
+  320-point windows and on compact windows 667 points tall at AX3; and,
+  measured on simulators on 2026-10-25's app, on iPhone Duo's outer
+  display at the default size, AX4 and AX5, its inner display at AX5,
+  and the iPhone 17 at AX4 (docs/HANDOFF.md, *Known gaps* and
+  *Verification*; R0 item 3).
 - **Q4. Every device check, sound first.** Every row of docs/HANDOFF.md,
   *Checks that need a real device*, that the release touches passes on
   the owner's iPhone and iPad, or the owner accepts its result as a
-  named exception. Sound comes first: speech with the silent switch on
-  and after a call; a phrase cut off by a call, Siri or lost headphones;
+  named exception. Sound comes first: speech in Silent mode (set with
+  the Ring/Silent switch, or the Action button on an iPhone that has
+  one) and after a call; a phrase cut off by a call, Siri or lost headphones;
   the device locked during a phrase and during Get Attention; Bluetooth;
   Get Attention heard from the next room; a phrase understood over the
   tone. The final Get Attention tone is chosen by listening. *Checks:*
   owner. *Today:* none run; the tone is the reference app's placeholder.
-- **Q5. No crash and no hang.** Crashes come from TestFlight's crash
-  feedback (TestFlight testers share crash reports "regardless of the
-  device settings", Apple says) and hangs from the device's own Hang
-  Detection (Settings > Developer), which reports from 250 ms. Every
+- **Q5. No crash and no hang.** Crashes come from Xcode's Crashes
+  organizer, where TestFlight testers' crash reports arrive "regardless
+  of the device settings" for sharing diagnostics, Apple says, and from
+  the crash feedback testers send through TestFlight; hangs come from
+  the device's own Hang Detection (Settings > Developer > Hang
+  Detection, its threshold at the shortest, 250 ms). Every
   crash and every hang found during TestFlight is fixed, with a test
   that reproduces it where one can, and the build sent to App Review
   has none in its own seven days (Q9). In a run of 100 activations on
@@ -750,7 +773,10 @@ what passes and who checks it:
   100 ms, no activation keeps the main thread busy for longer (Apple:
   "100 ms is the maximum delay for discrete user interaction before a
   delay becomes noticeable"). *Checks:* owner, with a thread reading
-  the reports and traces. *Today:* no device build yet.
+  the reports and traces. *Today:* not run: no TestFlight build yet (it
+  waits for the App Store Connect record), and no Hangs trace; the one
+  device build, installed on an iPhone on 2026-10-25, was not used for
+  this.
 
 ### It feels right in the hand
 
@@ -761,29 +787,40 @@ what passes and who checks it:
   Voice, as the median of ten activations. The default voice's median
   is within half a second (Apple's WWDC23 session on hangs: "If you
   have a request-response style interaction, 500 ms without any
-  additional feedback might be OK"), and no later release's median is
-  more than 50 ms slower than the last. *Checks:* owner records; a
+  additional feedback might be OK"); a Personal Voice's median over half
+  a second goes to the owner, with what the app can change and what
+  iOS's own synthesis takes; and no later release's median, for either
+  voice, is more than 50 ms slower than the last. *Checks:* owner records; a
   thread reads the recording. *Today:* not measured.
 - **Q7. It opens fast and comes back as it was.** A cold launch reaches
-  its first frame within one second on the oldest device at hand,
-  measured with Instruments' App Launch template (Apple's measure of
-  launch time is "the time to first frame"; the HIG says people
-  sometimes "don't want to wait more than a couple of seconds"). The
-  launch screen shows no flash before Home, light or dark (Apple: "Even
-  temporary flashes of bright content may cause discomfort"). After the
-  system ends Brickson in the background, it reopens on Home with the
-  typed message kept. *Checks:* a thread on the Mac with the owner's
-  device attached, or the owner. *Today:* not measured; the launch
-  screen is the system background (`UILaunchScreen` is empty).
+  its first frame within 400 ms on the oldest device at hand, measured
+  with Instruments' App Launch template (Apple's measure of launch time
+  is "the time to first frame", and its WWDC19 session on launch sets
+  the goal of "rendering our first frame within 400 milliseconds"; the
+  HIG says people sometimes "don't want to wait more than a couple of
+  seconds"). The launch screen shows no flash before Home, light or
+  dark (the HIG asks that the launch screen match "the device's current
+  orientation and appearance mode"; for a dark interface Apple adds:
+  "Even temporary flashes of bright content may cause discomfort").
+  After the system ends Brickson in the background, it reopens on Home
+  with the typed message kept. *Checks:* a thread on the Mac with the
+  owner's device attached, or the owner. *Today:* launch time not
+  measured; the typed message coming back after the app is ended and
+  opened again is tested on CI's simulators
+  (`TypingOnHomeTests.testTheMessageSurvivesARelaunch`), not after the
+  system ends it on a device; the launch screen is the system background
+  (`UILaunchScreen` is empty).
 - **Q8. A whole day with the screen on.** Two runs.
   *Unplugged, by the owner:* eight hours on the owner's iPad with
   Brickson in front under Guided Access, and four on the iPhone,
   recorded with the device's own Performance Trace in Power Profiler
-  mode (it records up to 10 hours without Xcode, and reports power as
-  zero while charging). The screen never dims or locks (invariant 12);
-  everything works at the end as at the start; battery used per hour is
-  recorded at touch's and at Eye Tracking's setup; and no resource report
-  for Brickson (CPU, wakeups or memory) appears in Settings > Privacy &
+  mode (it records up to 10 hours without Xcode, and Instruments shows
+  overall system power as zero while the device charges). The screen
+  never dims or locks (invariant 12); everything works at the end as at
+  the start; battery used per hour is recorded at touch's and at Eye
+  Tracking's setup; and no resource report for Brickson (an
+  `EXC_RESOURCE` report for CPU, memory, disk writes or wakeups, or a
+  `JetsamEvent` report naming it) appears in Settings > Privacy &
   Security > Analytics & Improvements > Analytics Data.
   *Attached, by a thread on the Mac:* with the device connected to
   Xcode, memory stays out of the memory gauge's warning region and
@@ -798,16 +835,22 @@ what passes and who checks it:
   every day for at least two weeks before the external pilot, with a
   dated list of anything that felt slow, surprising, cramped or unclear;
   each item is fixed, scheduled or dismissed with a reason. The exact
-  build sent to App Review has been on the owner's devices for at least
-  seven days with nothing new on that list. *Checks:* owner. *Today:*
+  build sent to App Review (uploaded as an ordinary build, since one
+  uploaded as TestFlight Internal Only cannot be submitted) has been on
+  the owner's devices for at least seven days with nothing new on that
+  list. *Checks:* owner. *Today:*
   waits for the App Store Connect record, which waits for the name.
-- **Q10. Every window and every pose.** Turned, in Split View, Slide
-  Over and Stage Manager on iPad at any width the window allows, with
-  Display Zoom on iPhone, with the keyboard shown and hidden, and in
-  iPhone Duo's poses (R0 item 13): nothing that calls for help is
-  hidden, covered or split, and no control moves between states.
-  *Checks:* CI's UI tests where a simulator can show it, a thread on the
-  Mac for iPhone Duo, the owner on device. *Today:* iPhone Duo's open
+- **Q10. Every window and every pose.** Turned; on iPad in Windowed
+  Apps (alone and side by side with another app), Slide Over and Stage
+  Manager at any width the window allows; with Display Zoom on iPhone;
+  with the keyboard shown and hidden; and in iPhone Duo's poses and
+  Split View (R0 item 13): nothing that calls for help is hidden,
+  covered or split, and no control moves between states. *Checks:*
+  CI's UI tests where a simulator can show it, a thread on the Mac for
+  iPhone Duo, the owner on device. *Today:* CI checks the iPad turned
+  and Home with the keyboard shown and hidden; Display Zoom, measured on
+  the Mac on 2026-10-25, leaves the zoomed iPhone with no whole phrase
+  at AX4 and AX5 (docs/HANDOFF.md, *Verification*); iPhone Duo's open
   items are R0 item 13's; windowed iPads not checked.
 
 ### Hours under Switch Control, Eye Tracking, a head pointer and dwell
@@ -818,7 +861,7 @@ what passes and who checks it:
   [procedure](log/2026-10-26-settings-simulator-checks.md#environment-and-settings-for-the-physical-run)),
   at least two hours each with Eye Tracking and Dwell with Snap to
   Item, Head Tracking with Dwell, Switch Control's auto scanning, and
-  Switch Control's point scanning; on the iPhone, at least half an hour
+  Switch Control's Gliding Cursor (point scanning); on the iPhone, at least half an hour
   each with Switch Control and Eye Tracking. Each session follows the
   same script: speak from every category; type and speak a message;
   answer Yes and No; open Emergency and come back; start and stop Get
@@ -847,22 +890,26 @@ what passes and who checks it:
   run.
 - **Q13. The floors are comfortable.** Each profile's floors on an iPad
   with a person using Eye Tracking, Head Tracking and Switch Control's
-  point scanning, at the default text size and AX3, and the late-stage
+  Gliding Cursor, at the default text size and AX3, and the late-stage
   profile's once it is built. It passes when fewer than 1 in 20 meant
   activations miss their control at the floors; otherwise the owner
   changes the floors and it runs again. The switch and head floors,
   which are proposals, are confirmed or changed by the owner.
   *Checks:* owner and the testers. *Today:* not run.
-- **Q14. Every input method gets the same app.** Apple's test, for each
-  one: "A user can perform all tasks within your app using only Switch
-  Control", and likewise with touch, Voice Control ("Show names", "Show
-  numbers", "Tap Repeat", "Tap Help"), Full Keyboard Access, VoiceOver,
-  AssistiveTouch Dwell, Head Tracking and Eye Tracking. Home is reached
-  in its documented order in every state (docs/DECISIONS.md, "Home's
-  scan order and names"); from every Home state, Yes, No and Emergency
-  are the first three items Switch Control scans with Group Items off,
-  and are in the first group it offers with Group Items on; and a
-  Switch Control double activation never makes a phrase stutter.
+- **Q14. Every input method gets the same app.** Apple's test for
+  VoiceOver, Voice Control and Switch Control ("A user can perform all
+  tasks within your app using only Switch Control"), applied here to
+  every input method: touch, Voice Control ("Show names", "Show
+  numbers", and "Tap" with each control's visible words and with its
+  other names, such as Brickson's "Tap Repeat" for Again and "Tap Help"
+  for Get Attention), Full Keyboard Access, VoiceOver, AssistiveTouch
+  Dwell, Head Tracking and Eye Tracking. Home is reached in its
+  documented order in every state (docs/DECISIONS.md, "Home's scan
+  order and names"); from every Home state, whenever scanning starts
+  from the beginning (Focused Item After Tap set to do so), Yes, No and
+  Emergency are the first three items Switch Control scans with Group
+  Items off, and are in the first group it offers with Group Items on;
+  and a Switch Control double activation never makes a phrase stutter.
   *Checks:* owner. *Today:* not run.
 
 ### Every screen looks designed
@@ -872,15 +919,21 @@ what passes and who checks it:
   (R0 item 9). A thread compares the running app's captures (iPhone and
   iPad, default and largest text, light and dark) with the frames, and
   each difference is fixed or the frame is changed with its reason.
-  *Checks:* a thread; the owner accepts the frames. *Today:* Home,
-  typing, Settings over Home and the fewer-tiles pages are drawn; the
-  library screens are not; no capture has been compared with a frame.
+  *Checks:* a thread; the owner accepts the frames. *Today:* drawn from
+  the layout engine's frames, not from the running app: Home (browsing,
+  typing, the alarm and the larger sizes), Settings over Home, Settings'
+  root and Family Setup, the first step, the fewer-tiles pages and
+  iPhone Duo's fold; the Library list and the phrase editor are drawn
+  for their look only, not as a flow (docs/DESIGN.md); the Privacy
+  Policy screen is not drawn; no capture of the running app has been
+  compared with a frame.
 - **Q16. Apple's guidelines, screen by screen.** For each screen, a
   thread records a pass against the Human Interface Guidelines, each
   item ticked with a capture or given a named reason the owner accepts:
   - *Layout:* sizes from the window's space and size classes, never the
     device ("Determine layout based on size classes, not device type or
-    orientation"); nothing outside the safe area; every function
+    orientation"); no content or control outside the safe area, while
+    backgrounds reach the window's edges, as the HIG asks; every function
     reachable in compact and regular widths and in a resized iPad
     window; tiles in a row share their edges.
   - *Type:* system text styles that follow Dynamic Type; no Ultralight,
@@ -888,9 +941,11 @@ what passes and who checks it:
     size; at AX5 nothing cut short that was whole at the largest
     standard size; the same order of importance at every size.
   - *Colour:* each colour works in light, dark and Increase Contrast,
-    and each custom colour has an increased-contrast variant or a
-    recorded reason for one value (docs/DECISIONS.md, "Solid fills on
-    Home, system glass elsewhere", keeps one value per role today); one
+    and each custom colour has light and dark variants, each with an
+    increased-contrast option, as the HIG asks, or a recorded reason for
+    fewer (docs/DECISIONS.md, "Solid fills on Home, system glass
+    elsewhere", keeps one value per role, the same in light and dark,
+    today); one
     meaning per colour; never colour alone; system colours through
     their names, never their values.
   - *Buttons:* every hit region at least 44 by 44 points and the
@@ -910,10 +965,13 @@ what passes and who checks it:
     or repeats; no motion on what is done often, such as speaking; no
     control waits for an animation.
   - *Writing:* one list of terms, used everywhere; one capitalization
-    style per kind of element; button labels are verbs or standard
-    words such as Done; no "we"; instructions in words that hold for
-    every input method, never "click", and "tap" only where only a
-    finger can do it; every warning says what happened and what to do,
+    style per kind of element; a button that starts an action is a
+    verb, as the HIG asks "almost always", or a standard word such as
+    Done, and answer, phrase and category buttons are named by what they
+    say; no "we"; instructions in words that hold for every input method
+    (Brickson's rule, stricter than the HIG's "describe gestures
+    correctly on each device"): never "click", and "tap" only where only
+    a finger can do it; every warning says what happened and what to do,
     without blame.
   - *Launch and icon:* the launch screen as Q7 asks, with no words or
     logo; the icon as Q20 asks.
@@ -939,9 +997,9 @@ what passes and who checks it:
   its screen, by a thread and then by the owner: the same name for the
   same thing everywhere, plain and calm words, no placeholder, nothing
   about a person's condition (invariant 7); and the starter phrases
-  reviewed by the owner. *Checks:* a thread, then the owner. *Today:*
-  the starter phrases wait for the owner (docs/HANDOFF.md, *Next steps,
-  in order*).
+  reviewed by the owner. *Checks:* a thread, then the owner. *Today:* no
+  thread has read the String Catalog screen by screen; the starter
+  phrases wait for the owner (docs/HANDOFF.md, *Next steps, in order*).
 - **Q20. Finished edges.** The release icon is installed: made in Icon
   Composer from artwork the owner approved, the same shapes in its
   default, dark, clear and tinted appearances, with no words and no
@@ -950,7 +1008,8 @@ what passes and who checks it:
   left anywhere (App Review Guideline 2.1: "placeholder text, empty
   websites, and other temporary content should be scrubbed"). *Checks:*
   a thread; the owner approves the artwork. *Today:* the icon is a
-  placeholder.
+  placeholder, and so is the Get Attention tone (Q4); no thread has
+  listed the empty, warning and failure states.
 - **Q21. The owner's eye.** The owner goes through every screen on both
   devices, light and dark, at the default and largest text sizes, and
   marks each one "designed" or writes down what feels assembled. It
@@ -967,12 +1026,15 @@ what passes and who checks it:
   screens in your app"). *Checks:* CI. *Today:* Home is audited light
   and dark at the default size and AX5; Settings, Family Setup and the
   privacy policy light and dark at the default size, and Settings,
-  Family Setup and the first step again over the larger Home
-  (`HomeSizesTests`); Home's alarm state in light only, at the default
-  size and AX5, and in the iPad's landscape at the default size; Home's
-  emergency state, Voice Settings, the guides, the Each Way guide and
-  the step-by-step setup in light only, at the default size; typing not
-  at all.
+  Family Setup and the first step again, in light at the default size,
+  over Home as a first launch shows it, with the larger sizes on the
+  iPad (`HomeSizesTests`); Home's emergency state in light at the
+  default size, and light and dark at AX5 after a phrase (`LaunchTests`);
+  Home's alarm state in light only, at the default size and AX5, and in
+  the iPad's landscape at the default size; Voice Settings, the guides,
+  the Each Way guide and the step-by-step setup in light only, at the
+  default size; typing, Family Setup's check-in card and the web
+  version's sheet not at all.
 - **Q23. Every label earned.** Each Accessibility Nutrition Label
   Brickson declares meets Apple's criteria for every common task
   (docs/APP-STORE.md, section 4), because "users must be able to
@@ -981,14 +1043,19 @@ what passes and who checks it:
   and iPad, logged; a Grayscale walk-through of every screen; every
   label on every screen read back whole from captures at AX3 and AX5,
   not only the quick controls; every colour pair pinned in
-  `PaletteTests`. Apple's audit is not enough on its own: "eliminating
+  `PaletteTests`; for Dark Interface, every common task staying dark in
+  the dark appearance with no bright flash (Q7 and Q22's dark audits);
+  for Reduced Motion, Q16's motion pass with Reduce Motion on. Apple's
+  audit is not enough on its own: "eliminating
   all audit issues that Accessibility Inspector reports doesn't
   guarantee a fully accessible app".
   *Checks:* CI and a thread for the captures and pairs; the owner, or a
   proficient tester, on device. *Today:* the rendered-label checks read
-  the five quick controls, and Phrases, Type and the everyday categories
-  only at the larger sizes on an iPad in portrait (`HomeSizesTests`); no
-  other screen's labels; no device run.
+  the five quick controls at the default size and AX5, light and dark,
+  on CI's iPhone and iPad (`LaunchTests`, `HomeSizesTests`), and
+  Phrases, Type and the everyday categories only at Home's larger sizes
+  on an iPad in portrait (`HomeSizesTests`); nothing at AX3, no phrase
+  tile, no other screen's labels; no device run.
 
 ### Complete, and true
 
@@ -1010,8 +1077,9 @@ what passes and who checks it:
   seen Brickson, given no help, each speak a phrase within a minute of
   first opening it, find Emergency, and find where setup lives; a family
   member finishes Family Setup's first step without asking anyone. Each
-  is timed, and every place they hesitated is recorded. *Checks:* owner
-  or the testers. *Today:* not run.
+  is timed, and every place they hesitated is recorded. *Checks:* the
+  owner, with people found before the pilot (the testers' first
+  sessions are a further check, not the pass). *Today:* not run.
 - **Q26. Every word outside the app is true.** The privacy policy, the
   website and its accessibility page, the README, the App Store text and
   the App Review notes say only what the release does (R0's *Release
@@ -1026,9 +1094,11 @@ what passes and who checks it:
 - **Q27. The pilot.** The external TestFlight group (R0 item 11)
   includes a person living with ALS on their own input method, family
   members and a speech-language pathologist, and has used the build
-  that goes to App Review. Every report is fixed, scheduled or
-  dismissed with a reason, and none about a missed or unmeant
-  activation is open. *Checks:* the testers; a thread triages. *Today:*
+  that goes to App Review: a build changed after the pilot's reports
+  goes back to the group for Q9's seven days, and the gates its changes
+  touch run again, before it is submitted. Every report is
+  fixed, scheduled or dismissed with a reason, and none about a missed
+  or unmeant activation is open. *Checks:* the testers; a thread triages. *Today:*
   waits for the App Store Connect record.
 - **Q28. Better than what families use today.** A thread and the owner
   count the activations and time the common tasks take by touch, Switch
@@ -1040,13 +1110,15 @@ what passes and who checks it:
   *Today:* not done.
 - **Q29. "Would I recommend this to someone?"** Last, the owner answers
   yes for this build, in writing, and the release's `docs/log/` record
-  keeps the answer. Until then nothing goes to App Review. *Checks:*
+  keeps the answer. Until then nothing goes to App Review, except an
+  urgent fix the owner decides goes sooner (*How it is kept*). *Checks:*
   owner. *Today:* no; on 2026-10-30 the owner said they would not
   recommend it yet.
 
 The pages quoted here were read on developer.apple.com and
-support.apple.com on 2026-10-30; each is linked in
-[`log/2026-10-30-quality-bar.md`](log/2026-10-30-quality-bar.md).
+support.apple.com on 2026-10-30 and checked again on 2026-11-01; each
+is linked in [`log/2026-10-30-quality-bar.md`](log/2026-10-30-quality-bar.md),
+with the page and heading each quotation comes from.
 
 ## R0 "A voice you can rely on"
 
@@ -1076,8 +1148,9 @@ functionality guidelines (2.1 and 4.2). That pilot is the one external
 TestFlight group before the gate passes, and it goes out once items 1 to
 10 are complete and the rest of the gate holds. Beyond this list, every
 gate of *The quality bar* passes before App Review, the owner's own
-answer last, and before the pilot every gate except the few the bar
-names as finishing during or after it (owner, 2026-10-30).
+answer last (owner, 2026-10-30), and before the pilot every gate except
+the few the bar names as finishing during or after it (the bar's
+default; docs/DECISIONS.md, "Every release passes the quality bar").
 
 | # | Item | What it delivers | Owner | Status (2026-10-21) |
 |---|---|---|---|---|

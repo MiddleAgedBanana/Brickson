@@ -21,13 +21,14 @@ grouped as:
 
 - **It never lets the person down** (Q1 to Q5): every check green,
   including a warning-free Release build; no open dwell hazard (five
-  are open: the three already recorded, Again nearest Stop's empty well
-  in a library with fewer than three everyday categories, and iPhone
-  Duo's AX5 chain from Family Setup); every floor named; every device
-  check the release touches, sound first; no crash and no hang.
+  are open, all already in docs/HANDOFF.md, *Known gaps*: the three
+  R0's *Release gate* named, Again nearest Stop's empty well in a
+  library with fewer than three everyday categories, and iPhone Duo's
+  AX5 chain from Family Setup); every floor named; every device check
+  the release touches, sound first; no crash and no hang.
 - **It feels right in the hand** (Q6 to Q10): the default voice
   speaking within half a second (the median of ten activations), a
-  first frame within one second that comes back as it was, a whole day
+  first frame within 400 ms and an app that comes back as it was, a whole day
   with the screen on (an unplugged run by the owner and a run attached
   to the Mac by a thread), the owner living with the build, every
   window and pose.
@@ -50,16 +51,19 @@ grouped as:
   comparison with the apps families use today, and "Would I recommend
   this to someone?"
 
-Each gate has a *Today* line for R0 on 2026-10-30, so the distance to
-App Review is visible; pull requests that move a gate edit that line,
-and AGENTS.md, *Workflow rules*, now says so.
+Each gate has a *Today* line for R0 on 2026-10-30 (Q24's also records
+the owner's answer to Q9 of 2026-11-01), so the distance to App Review
+is visible; pull requests that move a gate edit that line, and
+AGENTS.md, *Workflow rules*, now says so.
 
 How the bar runs: every gate passes before App Review; before the
 external pilot, every gate passes except those that need the pilot
-or the final build (Q5's whole TestFlight period, Q9's last seven days,
-the testers' sessions in Q11 and Q13, Q27, the pilot itself, Q28 and
-Q29), and the owner's
-device gates run on the internal TestFlight build first. A thread
+or the final build (Q5's crash and hang reports through the whole
+TestFlight period, Q9's last seven days, the testers' sessions in Q11
+and Q13, Q27, the pilot itself, Q28 and Q29), and the owner's
+device gates run on the internal TestFlight build first. The build
+submitted is the one the owner and the pilot used for its last seven
+days; a build changed after the pilot goes back to both. A thread
 writes the step-by-step procedure for each owner gate before the
 owner's first device run. A later release reruns the gates its changes
 touch, and always Q9, Q21 and Q29. An urgent fix after a release (a
@@ -77,8 +81,9 @@ build before App Review. On 2026-11-01, while this pull request was
 open, the owner chose the recommendation on a decision card in the
 project thread, and it is recorded as the owner's answer.
 
-What it folds in, already open before today: the three dwell hazards
-(Q2), Settings' floors under a larger profile, which were only in a
+What it folds in, already open before today: the five open dwell
+hazards (Q2; R0's *Release gate* named three, and the other two were
+only in docs/HANDOFF.md, *Known gaps*), Settings' floors under a larger profile, which were only in a
 work log's follow-ups and are now also in docs/HANDOFF.md, *Known gaps*
 (Q3), the device-check table (Q4, Q12 to Q14), R0 item 9's screens
 (Q15) and R0 item 11's pilot (Q27). What it adds: speed and launch, a
@@ -98,12 +103,18 @@ look, as docs/HANDOFF.md, *Verification*, records.
 
 ## Apple's pages behind the gates
 
-Read on 2026-10-30 as Markdown (the page's path with `.md` appended):
+Read on 2026-10-30 and checked again on 2026-11-01. Developer
+documentation and Human Interface Guidelines pages were read as
+Markdown (the page's path with `.md` appended); the App Store Connect
+and App Review help pages, the App Review Guidelines, the App Review
+page, the WWDC sessions and the support.apple.com guides have no
+Markdown form and were read as their web pages.
 
 - Human Interface Guidelines: [Layout](https://developer.apple.com/design/human-interface-guidelines/layout),
   [Materials](https://developer.apple.com/design/human-interface-guidelines/materials),
   [Typography](https://developer.apple.com/design/human-interface-guidelines/typography),
   [Color](https://developer.apple.com/design/human-interface-guidelines/color),
+  [Dark Mode](https://developer.apple.com/design/human-interface-guidelines/dark-mode),
   [Buttons](https://developer.apple.com/design/human-interface-guidelines/buttons),
   [Motion](https://developer.apple.com/design/human-interface-guidelines/motion),
   [Accessibility](https://developer.apple.com/design/human-interface-guidelines/accessibility)
@@ -116,29 +127,58 @@ Read on 2026-10-30 as Markdown (the page's path with `.md` appended):
 - Accessibility: [Performing accessibility testing for your app](https://developer.apple.com/documentation/accessibility/performing-accessibility-testing-for-your-app),
   [Performing accessibility audits for your app](https://developer.apple.com/documentation/accessibility/performing-accessibility-audits-for-your-app),
   the [Accessibility Nutrition Labels overview](https://developer.apple.com/help/app-store-connect/manage-app-accessibility/overview-of-accessibility-nutrition-labels)
-  and its evaluation criteria for VoiceOver, Voice Control, Larger Text,
-  Sufficient Contrast, Dark Interface, Differentiate Without Color Alone
-  and Reduced Motion; Apple's iPhone and iPad User Guides for Eye
-  Tracking, Head Tracking, AssistiveTouch and Switch Control
-  (support.apple.com).
+  and its evaluation criteria for
+  [VoiceOver](https://developer.apple.com/help/app-store-connect/manage-app-accessibility/voiceover-evaluation-criteria),
+  [Voice Control](https://developer.apple.com/help/app-store-connect/manage-app-accessibility/voice-control-evaluation-criteria),
+  [Larger Text](https://developer.apple.com/help/app-store-connect/manage-app-accessibility/larger-text-evaluation-criteria),
+  [Sufficient Contrast](https://developer.apple.com/help/app-store-connect/manage-app-accessibility/sufficient-contrast-evaluation-criteria),
+  [Dark Interface](https://developer.apple.com/help/app-store-connect/manage-app-accessibility/dark-interface-evaluation-criteria),
+  [Differentiate Without Color Alone](https://developer.apple.com/help/app-store-connect/manage-app-accessibility/differentiate-without-color-alone-evaluation-criteria)
+  and [Reduced Motion](https://developer.apple.com/help/app-store-connect/manage-app-accessibility/reduced-motion-evaluation-criteria).
+- Apple's user guides (support.apple.com): Eye Tracking on
+  [iPad](https://support.apple.com/guide/ipad/control-ipad-with-the-movement-of-your-eyes-ipad2cd35723/ipados)
+  and [iPhone](https://support.apple.com/guide/iphone/control-iphone-with-the-movement-of-your-eyes-iph66057d0f6/ios);
+  Head Tracking on [iPad](https://support.apple.com/guide/ipad/control-ipad-with-the-movement-of-your-head-ipad06393f31/ipados)
+  and [iPhone](https://support.apple.com/guide/iphone/control-iphone-with-the-movement-of-your-head-iph9c3dc17cf/ios);
+  AssistiveTouch on [iPad](https://support.apple.com/guide/ipad/use-assistivetouch-ipad9a2466d3/ipados)
+  and [iPhone](https://support.apple.com/guide/iphone/use-assistivetouch-iph96b21954/ios);
+  setting up Switch Control on [iPad](https://support.apple.com/guide/ipad/set-up-and-turn-on-switch-control-ipad93dce3d5/ipados)
+  and [iPhone](https://support.apple.com/guide/iphone/set-up-and-turn-on-switch-control-iph400b2f114/ios)
+  (Group Items; Focused Item After Tap), and
+  [selecting items with it](https://support.apple.com/guide/ipad/select-items-perform-actions-and-more-ipad850ed4e3/ipados)
+  (Gliding Cursor, once called point scanning);
+  [Multitasking & Gestures settings](https://support.apple.com/guide/ipad/change-multitasking-gestures-settings-ipad-ipad2q9j404h2/ipados)
+  (Windowed Apps and Stage Manager; the iPad guide no longer says Split
+  View); [Guided Access](https://support.apple.com/guide/ipad/lock-ipad-to-one-app-ipada16d1374/ipados);
+  and [the Action button](https://support.apple.com/guide/iphone/use-and-customize-the-action-button-iphe89d61d66/ios),
+  which takes the Ring/Silent switch's place on some iPhones.
 - Performance: [Improving app responsiveness](https://developer.apple.com/documentation/xcode/improving-app-responsiveness)
   (100 ms for a discrete interaction),
   [Understanding hangs in your app](https://developer.apple.com/documentation/xcode/understanding-hangs-in-your-app)
-  (tools report from 250 ms),
+  (most of Apple's tools report from 250 ms; the Hangs instrument can
+  be set lower), the WWDC22 session
+  [Track down hangs with Xcode and on-device detection](https://developer.apple.com/videos/play/wwdc2022/10082/)
+  (Hang Detection's shortest threshold is 250 ms),
   [Reducing your app's launch time](https://developer.apple.com/documentation/xcode/reducing-your-app-s-launch-time)
-  (time to first frame; no limit in milliseconds is published),
+  (time to first frame; the page names no limit), the WWDC19 session
+  [Optimizing App Launch](https://developer.apple.com/videos/play/wwdc2019/423/)
+  (a goal of 400 ms to the first frame),
   [Measuring your app's power use with Power Profiler](https://developer.apple.com/documentation/xcode/measuring-your-app-s-power-use-with-power-profiler)
-  (up to 10 hours on the device; zero while charging),
+  (up to 10 hours on the device; overall system power shown as zero
+  while charging),
   [Reducing your app's memory use](https://developer.apple.com/documentation/xcode/reducing-your-app-s-memory-use),
-  [`ProcessInfo.ThermalState`](https://developer.apple.com/documentation/foundation/processinfo/thermalstate-swift.enum),
-  [Acquiring crash reports and diagnostic logs](https://developer.apple.com/documentation/xcode/acquiring-crash-reports-and-diagnostic-logs)
-  (TestFlight testers share crash reports whatever their settings), and
-  the WWDC23 session [Analyze hangs with Instruments](https://developer.apple.com/videos/play/wwdc2023/10248/)
+  [`ProcessInfo.ThermalState`](https://developer.apple.com/documentation/foundation/processinfo/thermalstate-swift.enum)
+  and its [`serious`](https://developer.apple.com/documentation/foundation/processinfo/thermalstate-swift.enum/serious)
+  case, [Acquiring crash reports and diagnostic logs](https://developer.apple.com/documentation/xcode/acquiring-crash-reports-and-diagnostic-logs)
+  (TestFlight testers share crash reports whatever their settings;
+  `JetsamEvent` reports), [`EXC_RESOURCE`](https://developer.apple.com/documentation/xcode/exc_resource),
+  and the WWDC23 session [Analyze hangs with Instruments](https://developer.apple.com/videos/play/wwdc2023/10248/)
   (half a second for a response with no other feedback).
 - Release: the [TestFlight overview](https://developer.apple.com/help/app-store-connect/test-a-beta-version/testflight-overview)
   (builds testable for 90 days; "continue distributing builds until all
   issues are resolved"),
-  [Add internal testers](https://developer.apple.com/help/app-store-connect/test-a-beta-version/add-internal-testers),
+  [Add internal testers](https://developer.apple.com/help/app-store-connect/test-a-beta-version/add-internal-testers)
+  (a TestFlight Internal Only build cannot be submitted),
   [View tester feedback](https://developer.apple.com/help/app-store-connect/test-a-beta-version/view-tester-feedback),
   the [App Review Guidelines](https://developer.apple.com/app-store/review/guidelines/)
   (Before You Submit, 2.1 and 4),
@@ -147,11 +187,53 @@ Read on 2026-10-30 as Markdown (the page's path with `.md` appended):
   [Test your app on compatible devices](https://developer.apple.com/help/app-review/before-submitting-for-review/test-compatible-devices)
   and [Testing a release build](https://developer.apple.com/documentation/xcode/testing-a-release-build).
 
-Two things these pages changed in the draft: Apple publishes no launch
-time limit, so Q7's one second is the project's default, beside the
-HIG's "a couple of seconds"; and the HIG asks for an increased-contrast
-variant of each custom colour, which Brickson's one value per role does
-not have, so Q16 asks for the variant or a recorded reason.
+Four things these pages changed. In the draft: Apple's documentation
+gives no launch-time limit, so Q7 first had one second as the project's
+default, beside the HIG's "a couple of seconds"; and the HIG asks that
+each custom colour have light and dark variants, each with "an
+increased contrast option", which Brickson's one value per role, the
+same in light and dark, does not have, so Q16 asks for the variants or
+a recorded reason. On 2026-11-01: the WWDC19 session's goal of 400 ms
+to the first frame replaced Q7's one second, since the bar takes
+Apple's number where Apple gives one; and Q14's "Tap Repeat" and "Tap
+Help", which had sat among Apple's Voice Control commands, are
+Brickson's own extra names for Again and Get Attention, and are now
+called that.
+
+### The quotations, checked word for word on 2026-11-01
+
+Each quotation in the bar and in docs/DECISIONS.md, the page it comes
+from and the heading it sits under. Every one matched its page word
+for word, apart from Apple's curly apostrophes, except where a note
+says otherwise.
+
+| Quotation | Page | Under |
+|---|---|---|
+| "Make improvements to your app and continue distributing builds until all issues are resolved before you submit your app for review" (also in DECISIONS, shortened) | TestFlight overview | the introduction |
+| "Apple customers place a high value on products that are simple, refined, innovative, and easy to use" | App Review Guidelines | 4. Design |
+| "Switch Control isn't available on Simulator" | Performing accessibility testing for your app | Test with assistive technologies, Switch Control |
+| "in a variety of conditions before submitting" | Testing a release build | Overview |
+| "regardless of the device settings" | Acquiring crash reports and diagnostic logs | Collect crash reports from TestFlight and the App Store |
+| "100 ms is the maximum delay for discrete user interaction before a delay becomes noticeable" | Improving app responsiveness | Write performance tests to ensure main-thread-bound code completes fast |
+| "If you have a request-response style interaction, 500 ms without any additional feedback might be OK" | WWDC23, Analyze hangs with Instruments | the transcript, at 5:43 |
+| "the time to first frame" | Reducing your app's launch time | Reduce the complexity of your initial views |
+| "rendering our first frame within 400 milliseconds" | WWDC19, Optimizing App Launch | the transcript, at about 5:00 |
+| "don't want to wait more than a couple of seconds" (also in DECISIONS) | HIG, Launching | Best practices |
+| "the device's current orientation and appearance mode" | HIG, Launching | Launch screens |
+| "Even temporary flashes of bright content may cause discomfort" | Dark Interface evaluation criteria | Goals; said of a dark interface, so Q7 now pairs it with the HIG's line above for light and dark |
+| "reduces performance" | `ProcessInfo.ThermalState.serious` | Discussion |
+| "about a foot and a half away from your face" | Eye Tracking user guides, iPad and iPhone | Before you begin |
+| "A user can perform all tasks within your app using only Switch Control" | Performing accessibility testing for your app | Diagnose and address accessibility issues; Apple gives it for VoiceOver, Voice Control and Switch Control, and Q14 now says it applies it to the rest |
+| "Show names", "Show numbers" | Performing accessibility testing for your app | Test with assistive technologies, Voice Control's commands |
+| "Determine layout based on size classes, not device type or orientation" | HIG, Layout | Size classes |
+| "Don't use Liquid Glass in the content layer" | HIG, Materials | Liquid Glass |
+| "describe gestures correctly on each device" | HIG, Writing | Best practices |
+| "almost always" (best to use a verb) | HIG, Writing | Best practices |
+| "an increased contrast option" (this record) | HIG, Color | Best practices |
+| "placeholder text, empty websites, and other temporary content should be scrubbed" (also in docs/APP-STORE.md) | App Review Guidelines | 2.1 App Completeness |
+| "make sure to run an audit for each of the screens in your app" | Performing accessibility audits for your app | Run an audit for every screen |
+| "users must be able to complete all of the common tasks of your app using that feature" | Accessibility Nutrition Labels overview | Planning for your responses |
+| "eliminating all audit issues that Accessibility Inspector reports doesn't guarantee a fully accessible app" | Performing accessibility audits for your app | Add audits to your UI tests |
 
 ## Commits
 
@@ -178,16 +260,34 @@ not have, so Q16 asks for the variant or a recorded reason.
   build goes to App Review before the whole bar passes, without the
   owner's call on one urgent fix that docs/DECISIONS.md and the roadmap
   record; each now points to it.
-- The commit after ea0fd12: the owner's answer to Q9 (2026-11-01)
-  recorded in docs/DECISIONS.md, the roadmap's Q9 and Q24, docs/HANDOFF.md
-  and docs/APP-STORE.md. The owner said there was no rush and that it
-  could go in this pull request, rather than in a follow-up, after CI
-  was green.
+- 8404f84: the owner's answer to Q9 (2026-11-01) recorded in
+  docs/DECISIONS.md, the roadmap's Q9 and Q24, docs/HANDOFF.md and
+  docs/APP-STORE.md. The owner said there was no rush and that it could
+  go in this pull request, rather than in a follow-up, after CI was
+  green.
+- The commit after 8404f84: a full second check on 2026-11-01 of every
+  *Today* line against the code, and of every quotation and statement
+  about Apple against Apple's pages fetched that day (*Verified*), with
+  GitHub Copilot's review of 8404f84. What it corrected: *Today* lines
+  that were wrong (Q5's "no device build", Q15's undrawn library
+  screens, Q22's emergency-state audits) or left out what a reader
+  needs (Q2, Q3, Q7, Q10, Q19, Q20, Q23); Q7's first frame from one
+  second to Apple's 400 ms goal; Apple's current names (Silent mode and
+  the Action button, Gliding Cursor, Windowed Apps, Xcode's Crashes
+  organizer, `EXC_RESOURCE` and `JetsamEvent` reports); a build changed
+  after the pilot going back to the pilot and the owner for seven days
+  (Q27, Copilot), uploaded as an ordinary build since a TestFlight
+  Internal Only build cannot be submitted (Q9); Q29 naming the
+  urgent-fix call (Copilot); Q25 checked before the pilot rather than
+  by it; the owner's steps in docs/HANDOFF.md asking for the build that
+  ships and naming Get Attention in Settings' bar; docs/APP-STORE.md's
+  pilot condition and submit step naming the bar; and this record's
+  page list, now with every page linked and the quotations' table.
 
 ## Verified
 
-- In the cloud container on 2026-10-30 and 2026-10-31, on the final
-  documents: `python3 scripts/test-docs.py` (45 tests, OK; every cited
+- In the cloud container on 2026-10-30, 2026-10-31 and 2026-11-01, the
+  last on the final documents: `python3 scripts/test-docs.py` (45 tests, OK; every cited
   section title and relative link resolves, though it does not check
   the wording), `scripts/test-hooks.py` (124 tests, OK),
   `scripts/test-site.py` (7, OK), `scripts/test-runner.py` (56, OK)
@@ -198,42 +298,63 @@ not have, so Q16 asks for the variant or a recorded reason.
   automation setup, the startup failure docs/HANDOFF.md records. A
   single re-run of that job passed on the iPad and the iPhone 17.
 - GitHub CI on ea0fd12 (run 41152170391): the unit and UI tests passed
-  on the first attempt.
-- Every quote from Apple in the bar and in docs/DECISIONS.md was
-  checked by script against the text copied from its page on
-  2026-10-30, word for word apart from typographic apostrophes and
-  quotation marks.
-- Every *Today* line was checked against `main` at `9fe02ef`: Q22's
-  list is the calls to `assertPassesAccessibilityAudit` in
-  `BricksonUITests` (Home light and dark at the default size and AX5 in
-  `LaunchTests`; Settings, Family Setup and the privacy policy light and
-  dark in `SettingsTests`, and again over the larger Home in
-  `HomeSizesTests`; the emergency and alarm states, Voice Settings, the
-  guides and the step-by-step setup in light only); Q23's is the
-  rendered-label checks in `LaunchTests` and `HomeSizesTests`; Q2's
-  hazards and Q3's windows are those in docs/HANDOFF.md, *Known gaps*.
-- A review pass by a second agent, reading the change cold, found
-  contradictions and checks too loose to pass or fail; each was fixed
-  before the pull request opened (the urgent-fix rule, the before-pilot
-  list, five hazards rather than three, the *Today* lines of Q1, Q3,
-  Q22, Q23 and Q29, and pass conditions for Q5, Q6, Q8, Q13 and Q14).
+  on the first attempt. On 8404f84 (run 41272443216) the unit tests
+  passed in 38 minutes, close to the job's 40-minute limit (AGENTS.md,
+  *Gotchas*); the next push stopped its UI tests.
+- Every quotation from Apple in the bar, docs/DECISIONS.md and
+  docs/APP-STORE.md's changed lines was checked on 2026-10-30 against
+  the text copied from its page, and again on 2026-11-01 against each
+  page fetched that day: each matches word for word, apart from Apple's
+  curly apostrophes (the table above). The second check found two
+  phrases set among Apple's that were Brickson's ("Tap Repeat", "Tap
+  Help"), one said only of a dark interface ("Even temporary flashes"),
+  and one that asks for the release build to be tested, not only built
+  ("in a variety of conditions"); each is now worded for what it is.
+- On 2026-11-01, 97 statements about what Apple says or how its tools
+  and settings work, other than quotations, were checked against the
+  same pages: 75 held as written, and the 22 that were partly off (a
+  name Apple has since changed, a tool or report named loosely, a
+  rule of Brickson's presented as Apple's, a number Apple does give)
+  are corrected.
+- Every *Today* line was checked against `main` at `9fe02ef` on
+  2026-10-30, and again on 2026-11-01 against the same code, by two
+  agents reading the tests, the views and the records: of 61 items
+  (the 29 *Today* lines, the R0 *Release gate*, and the lines this pull
+  request added to docs/HANDOFF.md, docs/DECISIONS.md, docs/APP-STORE.md,
+  docs/SDLC.md and AGENTS.md), 40 held, 6 were wrong and 15 left out
+  something a reader needs; each is corrected. Q22's list is now every
+  call to `assertPassesAccessibilityAudit` in `BricksonUITests` with the
+  appearance, text size and device it runs at; Q23's is every
+  `RenderedWords` check; Q2's hazards and Q3's windows are those in
+  docs/HANDOFF.md, *Known gaps* and *Verification*. A third agent
+  checked the documents against each other (counts, gate numbers,
+  dates, the owner's answers, the urgent-fix rule) and found 17
+  smaller mismatches, also corrected.
+- A review pass by a second agent, reading the change cold before the
+  pull request opened, found contradictions and checks too loose to
+  pass or fail; each was fixed then (the urgent-fix rule, the
+  before-pilot list, five hazards rather than three in Q2, the *Today*
+  lines of Q1, Q3, Q22, Q23 and Q29, and pass conditions for Q5, Q6,
+  Q8, Q13 and Q14), except that docs/HANDOFF.md's owner step and R0's
+  *Release gate* still said three hazards until 9c647ae and 5baac9b.
 
 ## Not verified
 
 - No app build, device run or gate was run: this pull request changes
   documents only, and CI is the app's check. Outside CI, only the
   Python checks above ran.
-- The text copied from Apple's pages for the quote check was not kept
-  in the repository; checking again means fetching each page's `.md`
-  form from the list above.
+- Apple's pages themselves are not kept in the repository (they are
+  Apple's); the table above keeps each quotation's page and heading, so
+  checking again means fetching that page from the list.
+- CI on the final commit is shown on the pull request, not recorded
+  here: a record cannot name the result of the commit that adds it.
 - No gate has passed. Every *Today* line describes R0 as it stands; none
   is a measurement made by this pull request.
-- The numbers the project chose (half a second to the first sound and
-  50 ms between releases, one second to the first frame, eight hours,
-  two hours per input method,
-  1 in 20 misses at the floors, three first-time people) are defaults,
-  not measurements; the first device runs may show
-  that one should change.
+- The numbers the project chose (50 ms between releases, eight hours,
+  two hours per input method, 1 in 20 misses at the floors, three
+  first-time people), and its use of Apple's half second and 400 ms as
+  pass limits, are defaults, not measurements; the first device runs
+  may show that one should change.
 
 ## Follow-ups
 
