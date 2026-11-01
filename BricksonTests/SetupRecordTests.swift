@@ -48,6 +48,40 @@ struct SetupRecordTests {
         #expect(try JSONDecoder().decode(SetupRecord.self, from: data) == record)
     }
 
+    // MARK: The rest board
+
+    /// Fails if a record starts with a rest board chosen, if choosing one
+    /// is not kept through a round trip, if Every Category does not clear
+    /// it, or if choosing one answers the access question or a check-in
+    /// (docs/DECISIONS.md, "The late-stage profile").
+    @Test func aRestBoardIsChosenKeptAndCleared() throws {
+        var record = SetupRecord(createdAt: launch)
+        #expect(record.restBoardCategory == nil)
+        let category = UUID()
+        record.chooseRestBoard(category)
+        #expect(record.restBoardCategory == category)
+        #expect(record.accessMethods == nil && record.answeredAt == nil)
+        let data = try JSONEncoder().encode(record)
+        #expect(try JSONDecoder().decode(SetupRecord.self, from: data).restBoardCategory == category)
+        record.chooseRestBoard(nil)
+        #expect(record.restBoardCategory == nil)
+    }
+
+    /// A record saved before the board has no `restBoardCategory` key.
+    /// Fails if it no longer reads (the store would set it aside and the
+    /// family's answers would be lost), or reads with a board chosen.
+    @Test func aRecordSavedBeforeTheRestBoardReadsWithNone() throws {
+        var record = SetupRecord(createdAt: launch)
+        record.answerAccessMethods([.eyeTracking], at: launch)
+        var object = try #require(JSONSerialization.jsonObject(with: JSONEncoder().encode(record)) as? [String: Any])
+        object.removeValue(forKey: "restBoardCategory")
+        let old = try JSONSerialization.data(withJSONObject: object)
+        let read = try JSONDecoder().decode(SetupRecord.self, from: old)
+        #expect(read.restBoardCategory == nil)
+        #expect(read.accessMethods == [.eyeTracking])
+        #expect(read.version == SetupRecord.currentVersion)
+    }
+
     // MARK: First-run hint
 
     @Test func theHintShowsUntilFamilySetupIsOpened() {

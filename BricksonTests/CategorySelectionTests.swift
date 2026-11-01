@@ -79,4 +79,42 @@ struct CategorySelectionTests {
         #expect(CategorySelection.inCell(4, of: four, cells: 4).isEmpty)
         #expect(CategorySelection.inCell(0, of: four, cells: 0).isEmpty)
     }
+
+    // MARK: The rest board (docs/DECISIONS.md, "The late-stage profile")
+
+    /// Fails if the board shows anything but its own category or
+    /// Emergency's: every other category is dimmed there, so a remembered
+    /// choice of one would show phrases no button on the screen leads to.
+    @Test func theRestBoardShowsItsCategoryOrEmergency() {
+        #expect(CategorySelection.resolve(ordered, selectedID: nil, restBoard: feelings.uuid) === feelings)
+        #expect(CategorySelection.resolve(ordered, selectedID: everyday.uuid, restBoard: feelings.uuid) === feelings)
+        #expect(CategorySelection.resolve(ordered, selectedID: UUID(), restBoard: feelings.uuid) === feelings)
+        #expect(CategorySelection.resolve(ordered, selectedID: emergency.uuid, restBoard: feelings.uuid) === emergency)
+    }
+
+    /// Fails if a board the library no longer holds, or Emergency named as
+    /// one, changes what Home shows: Home then shows every category as it
+    /// would with no board.
+    @Test func aBoardNotInTheLibraryShowsAsEveryCategoryDoes() {
+        #expect(CategorySelection.resolve(ordered, selectedID: feelings.uuid, restBoard: UUID()) === feelings)
+        #expect(CategorySelection.resolve(ordered, selectedID: nil, restBoard: UUID()) === everyday)
+        #expect(CategorySelection.resolve(ordered, selectedID: feelings.uuid, restBoard: emergency.uuid) === feelings)
+        #expect(CategorySelection.resolve(ordered, selectedID: nil, restBoard: nil) === everyday)
+    }
+
+    /// Fails if the board's view of the library loses a category, its order,
+    /// which one is Emergency, or a phrase count, from which the grid's
+    /// rows are sized.
+    @Test func theBoardsLibraryKeepsEachCategoryInOrder() throws {
+        for (order, text) in ["Yes please", "Not now", "Later"].enumerated() {
+            container.mainContext.insert(Phrase(text: text, sortOrder: order, category: feelings))
+        }
+        try container.mainContext.save()
+        let library = CategorySelection.restBoardLibrary(ordered)
+        #expect(library == [
+            RestBoard.Category(id: emergency.uuid, isEmergency: true, phrases: 0),
+            RestBoard.Category(id: everyday.uuid, isEmergency: false, phrases: 0),
+            RestBoard.Category(id: feelings.uuid, isEmergency: false, phrases: 3),
+        ])
+    }
 }

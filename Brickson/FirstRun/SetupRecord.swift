@@ -40,6 +40,13 @@ nonisolated struct SetupRecord: Codable, Equatable, Sendable {
     var accessMethods: Set<AccessMethod>?
     /// When the access question was last answered.
     var answeredAt: Date?
+    /// The everyday category Home's rest board shows, chosen in Set Up Step
+    /// by Step's second step (docs/DECISIONS.md, "The late-stage profile"),
+    /// or nil for every category: nobody chose one, or Every Category was
+    /// chosen again. Only which category, never its words. Records saved
+    /// before the board read as nil, since a missing optional decodes as
+    /// nil, so the version stays the same.
+    var restBoardCategory: UUID?
     /// Not Now on a check-in: ask again after this.
     var checkInSnoozedUntil: Date?
     /// Stop Asking on a check-in.
@@ -54,6 +61,12 @@ nonisolated struct SetupRecord: Codable, Equatable, Sendable {
     var plannedAccessMethods: Set<AccessMethod>? {
         guard let accessMethods, !accessMethods.isEmpty else { return nil }
         return accessMethods
+    }
+
+    /// Chooses the rest board's category, or every category with nil. Not
+    /// an answer to the check-in: only the access question is.
+    mutating func chooseRestBoard(_ category: UUID?) {
+        restBoardCategory = category
     }
 
     /// Records an answer to "How is the screen reached?". Answering also
