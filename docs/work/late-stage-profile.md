@@ -4,7 +4,7 @@
 the first App Review build by the owner's decision of 2026-10-30
 (docs/DECISIONS.md, "Items 8 and 9 come before the first App Review
 build"). Owner: the item 9 thread (a cloud session; GitHub CI is its
-build). Status: intent.*
+build). Status: spec.*
 
 ## Intent
 
@@ -112,3 +112,194 @@ build). Status: intent.*
   - *What if the chosen category is gone?* Home shows every category,
     and the step shows Every category chosen. A library reset, the only
     way a category can go today, makes new categories.
+
+## Spec
+
+### The rest board on Home
+
+Set Up Step by Step's second step saves the family's choice
+(`SetupRecord.restBoardCategory`): one everyday category, or none.
+Home shows the rest board while the choice is a category in the library
+(`RestBoard`), read when Settings last closed, as the sizes are.
+
+| Home's state | What the board changes | Where everything sits |
+|---|---|---|
+| Browsing, the board's category showing | Its cell shows selected; the other categories are dimmed, standard buttons that are disabled; the grid shows its phrases | Every control in its place |
+| Browsing, Emergency's phrases showing | The board's cell is not selected, and choosing it shows the board's phrases again; the others stay dimmed | Every control in its place |
+| Typing | Nothing new: Speak, Clear and Put Back take their places, and every other category and every tile is dimmed, as without the board, whichever cell is the board's | Every control in its place |
+| The alarm sounding | Nothing new: Stop shows in its well | Every control in its place |
+| Settings over Home | Settings' places come from the board's frames | Settings' rows as they are placed now |
+
+Nothing on Home chooses or leaves the board: only the second step does,
+and its change shows when Settings closes. Emergency stays visible and
+one activation from every state, and switches straight to its phrases
+(invariant 2). Get Attention, Yes and No are one activation away in
+every state, as now (invariant 10).
+
+### The engine
+
+- **What the phrase area holds** is a new input to `HomeLayout`
+  (`PhraseArea`): every category, with room for the starter library's
+  largest (eight phrases, as now), or the rest board, with room for the
+  board's phrases or Emergency's, whichever has more. The grid's columns
+  come from the width as always, so a tile keeps its place; its rows
+  come from that count.
+- **Every place stays.** The board changes no arrangement: the same
+  compact or regular Home, the same category arrangement, the same
+  grid columns, every control in the same region, row and column
+  (`noControlChangesPlaceOnTheRestBoard`, every window the profile tests
+  sweep, both text extremes, at every profile).
+- **What grows, and in what order.** The gaps between regions, Phrases
+  and Type, and the categories grow as they would with every category
+  showing at the same profile, so the message, Phrases, Type and the
+  categories keep the same sizes with or without the board. Then each
+  row of the safety row grows on, toward 206 points (4 degrees at
+  46 cm), from what is left once the board's rows fit at the tile
+  floor, and never past the keyboard's room (`KeyboardAllowance`), so
+  Type is offered wherever it is without the board. The grid takes the
+  rest. Phrases and Type keeping their sizes is what keeps Settings'
+  Back to Talking, which is touch's frame with every category, nearest
+  Phrases on the board's Home.
+- **A fold or a camera across Home** (iPhone Duo): the board shows in
+  touch's frames with every category, since no fold check has measured
+  the board's frames there.
+
+### The floors
+
+Floors are physical sizes held at the densest supported screens, about
+163 points per inch (docs/DECISIONS.md, "Layouts from the space
+available"); angles are at 46 cm, the distance Apple's Eye Tracking and
+Head Tracking guides give. **Proposed, the owner can overrule.**
+
+| Profile | Phrase tiles | Yes, No, Emergency, Again, Get Attention | Phrases and Type | Categories, Stop, Settings | Gap | Safety row grows toward |
+|---|---|---|---|---|---|---|
+| Eye Tracking (today) | 136 pt (2.6°) | 109 pt (2.1°) | 109 pt (2.1°) | 89 pt (1.7°) | 15 pt | 109 pt |
+| The late stage | 136 pt (2.6°) | **136 pt (2.6°)** | 109 pt (2.1°) | 89 pt (1.7°) | 15 pt | **206 pt (4.0°)**, with the rest board |
+
+Why these:
+
+- The tiles, categories and gap are Eye Tracking's: the reference app's
+  gaze sizes held at the densest screen. The late stage asks for no
+  smaller target anywhere.
+- Yes, No, Emergency, Again and Get Attention are never smaller than a
+  phrase tile at the late stage: 136 points is the reference app's gaze
+  tile, the largest size it used every day.
+- They grow toward 4 degrees: in a study of gaze pointing on a phone
+  (Namnakani, Abdrabou, Grizou and Khamis, "Stretch Gaze Targets Out",
+  CHI 2025; 24 people, an iPhone X's front camera, 25 to 49 cm away),
+  "targets with a visual angle of 4° serve as an optimal 'sweet spot'
+  across all screen regions and face-to-screen distances", and gaze was
+  less accurate up and down than across. The safety row grows in
+  height, the direction the study found harder; its widths come from
+  the window's arrangement.
+- Phrases and Type keep Eye Tracking's 109 points: they only change
+  what Home shows, so the room goes to the four controls the roadmap
+  names.
+- None of this was tested with people with ALS or with Apple's own Eye
+  Tracking, so the floors are proposals until the device checks
+  (*Concerns*).
+
+### The profile asked for
+
+| Family Setup's choices | Sizes asked for |
+|---|---|
+| A rest board, whatever the first step's answers | The late stage's |
+| No rest board | As before: the first step's answers decide, Eye Tracking's with no answer |
+
+`ProfileChoice.request` makes this choice from `SetupRecord` and the
+library. A window that cannot hold the late stage's sizes takes the
+largest smaller ones it holds, Eye Tracking's, then head tracking's,
+touch's last (`Profile.withSmallerOnes`), each with the board's
+content and growth. The late stage's floors are a profile like the
+others, so the engine and its tests treat them as one; only the rest
+board asks for them.
+
+### Where each profile holds
+
+Measured by `ProfileChoiceTests.theRestBoardTakesTheSizesTheTableSays`
+over `HomeLayoutEngineTests.windows`, with a six-phrase board and the
+starter library's Emergency (six phrases), and filled in from it during
+the build.
+
+### Set Up Step by Step's second step
+
+- The steps become six: how the screen is reached, then **which
+  phrases Home shows**, the voice, turning on what was chosen, keeping
+  Brickson open, and the summary (`GuidedSetupStep.restBoard`).
+- The step's words: the heading "Which phrases does Home show?", and
+  "Home can show one category's phrases, and Emergency's, with Yes, No,
+  Emergency and Get Attention as large as this screen has room for. The
+  other categories stay where they are, dimmed, so nothing moves. The
+  change shows when Settings closes."
+- The choices: Every Category, then each everyday category in Home's
+  order, by its own name, shown as written (`Text(verbatim:)`). Each
+  only selects: choosing the chosen one again keeps it, and choosing
+  another moves the choice (invariant 10). Each is saved the moment it
+  is chosen (`SetupStore.update`); a failed save changes nothing and
+  says "That answer could not be saved. Try again."
+- Where a held look arrives: on Next, in the fixed bar at the bottom of
+  every step, from the first step, or on the standard Back button from
+  the third. The choices sit under the heading and the words, so
+  neither place has a choice nearest it; Next and Back only navigate.
+  `SettingsChains` keeps not following the second step, as before.
+- The summary adds one line: "Home shows every category.", or "Home
+  shows one category's phrases, with larger buttons:" and the
+  category's name.
+
+### Input methods
+
+- **Touch, Voice Control, Full Keyboard Access, VoiceOver:** the same
+  standard buttons in the same order. A dimmed category is a disabled
+  standard button, which VoiceOver reads as dimmed and which does
+  nothing, as the categories do while typing.
+- **Dwell, head, gaze and switch auto-select:** chains of held
+  activations are scored on the board's frames, browsing and typing, by
+  nearest centre and nearest edge, at every profile that holds and on
+  phones at touch's sizes, and meet nothing beyond the findings touch's
+  frames already have and the engine tests pin
+  (`noChainOnTheRestBoardMeetsANewHazard`). The open hazard of Yes and
+  No bordering the message stays within touch's pinned worst shares on
+  the board too (`yesAndNoBorderNoMoreOfTheMessageOnTheRestBoard`).
+  Settings' Back to Talking meets only Phrases on every Home it can
+  close onto, with or without the board
+  (`closingSettingsOntoTheRestBoardMeetsOnlyPhrases`), and Settings
+  over the board's Home closes nothing and saves nothing under a held
+  look (`noSettingsChainOverTheRestBoardClosesSettingsOrSavesAnAnswer`).
+
+### Colours, privacy policy and screens
+
+- **Colours:** none new. A dimmed category has the dimmed look every
+  disabled control on Home has (`HomeButtonLook`).
+- **Privacy policy:** no sentence changes. The choice is one of "Your
+  settings", kept on the device, and holds no phrase words, only which
+  category.
+- **Screens:** captured from the running app by the board's UI test on
+  CI, on an iPad and an iPhone, and listed in the log.
+
+### Concerns
+
+- **The floors and the 4-degree growth are proposals.** The study
+  behind 4 degrees used a phone's camera, not Apple's Eye Tracking, and
+  people without ALS. The late stage gets its own device session in the
+  quality bar's Q11 and Q13 before any build with it goes to App
+  Review.
+- **The three open dwell hazards apply here too.** Yes and No bordering
+  the message, the top of Stop's well nearest Again on compact widths,
+  and, by centre, dimmed phrases bordering Clear and Put Back while
+  typing stay as R0's *Release gate* records them: no build with the
+  larger sizes, the board's included, goes to an external TestFlight
+  group or App Review until each is gone or the owner accepts it. The
+  board adds none (tested).
+- **On four columns the tiles give height to Yes and No.** Every
+  starter category already fits four columns in two rows, so there the
+  board's grid has as many rows as Home's without it, and the safety
+  row's growth comes from the tiles. Measured in the table; the owner
+  can choose to cap the growth instead.
+- **The controls' frames now follow the library, on the board only.**
+  Without the board they never do: the grid leaves room for the starter
+  library's largest category. With it, the room is for the board or
+  Emergency, read when Settings closes and kept until it closes again,
+  so a library change cannot move anything under Settings. The editing
+  pull request (R2) keeps the count while edit mode is open.
+- **Simulator evidence only.** Comfort, Snap to Item and where a resting
+  look lands need a real device.
