@@ -82,6 +82,7 @@ holds.
 | The accessibility coverage list and its choices: full screen in Assistive Access and no separate scene, no programmatic Guided Access, assistive-technology flags that only suggest, phrases in the person's voice with VoiceOver on, late-stage boards as an R1 profile, and what waits or is never used | "Accessibility API coverage" (Accessibility coverage checklist) |
 | Home's sizes from Family Setup's answer: four profiles' floors (switch and head proposed), the largest any answer needs, Eye Tracking's with no answer, the largest the window holds, touch's arrangement and Back to Talking, flags that only suggest; on since the owner chose the largest sizes that fit (2026-10-30), with Back to Talking at touch's frame by the owner's answer the same day | "Sizes that follow how the screen is reached" (Wave 3 item 8, 2026-10-30) |
 | XcodeGen stays until Xcode's JSON project format passes a trial on the owner's Mac and its gates; then one pull request switches | "Xcode's JSON project format" (Plan for Xcode's new JSON project format, 2026-10-25) |
+| The voice list read away from the main thread, one read at a time, with phrases before it arrives spoken in the system's default voice | "The voice list never holds up launch" (Fix the iPad first-launch CI flake, 2026-11-01) |
 
 Recorded here:
 
@@ -3964,6 +3965,49 @@ Personal Voice is turned on, and a Personal Voice that leaves the list
 while the screen is open says it can't be used while Personal Voice is
 turned off (`VoiceList.missingVoiceNote`, `VoiceList.goneVoiceNote`;
 2026-10-22).
+
+## The voice list never holds up launch
+
+*2026-11-01. The project's choice, made by the thread "Fix the iPad
+first-launch CI flake" at the coordinator's direction. Reversible if the
+owner objects.*
+
+Brickson reads the system's list of voices to know which voice to speak
+in. Until 2026-11-01 it read the list on the main thread while it
+started, before Home's first frame. On CI simulators that had just
+started, the system's voice service took 12 to 54 seconds to answer that
+first request, and in every failed first UI test more than 60: the app
+showed only its launch screen until it answered, XCTest gave up waiting
+for it, and the test failed (docs/log/2026-11-01-voice-list-off-launch.md).
+For a person, that is an app that does not open when they need to speak.
+So:
+
+- **The list is read away from the main thread** and handed back on it
+  (`SystemVoiceCatalog`, through a `@concurrent` function), and nothing
+  waits for it: Home draws at once.
+- **Before the first list arrives, a phrase speaks at once in the
+  system's default voice.** With no list there is no voice to ask for,
+  and asking the system for the chosen voice by its identifier would
+  wait for the same slow service, on the main thread, at the moment the
+  person chose a phrase. The chosen voice, or the person's Personal
+  Voice, speaks from the first phrase after the list arrives. Nothing
+  waits before speaking (invariant 2).
+- **One read at a time.** The system's read holds the thread it runs on
+  until the service answers, so a request while one is out is remembered
+  and read as soon as that one answers, however many came meanwhile
+  (`SpeechService.refreshVoices()`). Each list is used as it arrives,
+  filtered by the Personal Voice permission as it is then (*A Personal
+  Voice is used only while it is allowed*).
+
+The cost: someone who chose a voice, or has a Personal Voice, can hear
+the system's voice for a phrase spoken before the list arrives. On CI's
+simulators the list arrived in under a tenth of a second once the
+service had answered once; on a device that has just restarted it is
+not measured (docs/HANDOFF.md, *Checks that need a real device*).
+
+Not chosen: keeping the read where it was and making CI wait longer for
+the voice service before the first test. That would hide the wait from
+the tests and leave it in front of people.
 
 ## Voice Settings keeps its places while it is open
 
