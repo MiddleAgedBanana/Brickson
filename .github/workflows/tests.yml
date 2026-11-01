@@ -39,7 +39,7 @@ jobs:
   unit:
     name: Unit tests
     runs-on: xcode-27
-    timeout-minutes: 40
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v7
       - name: Check the Xcode choice

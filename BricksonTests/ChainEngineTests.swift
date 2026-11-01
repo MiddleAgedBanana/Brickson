@@ -247,6 +247,54 @@ struct ChainEngineTests {
         #expect(starts.filter { $0.restingOn == "words" && $0.state == "b" }.count == 9)
     }
 
+    /// Fails if `everyStart()`, or one state's starts, stop being what the
+    /// plain way lists, in the same order: each state in name order, its
+    /// controls chosen with the look at the centre and then across, then
+    /// its resting places. A sweep that scores a few states of a large map
+    /// builds only theirs, and must score what the whole map would.
+    @Test func oneStatesStartsAreEveryStartsForIt() {
+        let one = ChainControl("one", Self.frame(0, 0), .nothing)
+        let two = ChainControl("two", Self.frame(60, 0), .speaks)
+        let map = ChainMap(
+            states: ["b": [two, one], "a": [one], "c": []],
+            resting: ["b": [("words", Self.frame(0, 60))], "c": [("well", Self.frame(60, 60))]]
+        )
+        // The plain way, as `everyStart()` was written before it was built
+        // from `starts(in:)`.
+        let plain = map.states.keys.sorted().flatMap { state in
+            let chosen = (map.states[state] ?? []).flatMap { control in
+                [ChainStart.choosing(control, in: state)]
+                    + ChainEngine.points(across: control.frame, columns: 2, rows: 2).filter { $0 != control.centre }
+                    .map { ChainStart.choosing(control, in: state, lookingAt: $0) }
+            }
+            let resting = (map.resting[state] ?? []).flatMap { region in
+                ChainEngine.points(across: region.frame, columns: 2, rows: 2).map { ChainStart.resting(at: $0, on: region.name, in: state) }
+            }
+            return chosen + resting
+        }
+        #expect(map.everyStart() == plain)
+        for state in ["a", "b", "c", "missing"] {
+            #expect(map.starts(in: state) == plain.filter { $0.state == state })
+        }
+        #expect(map.starts(in: "b").count == 9 + 9 + 9)
+    }
+
+    /// Fails if the chains from a run of starts differ from each start's
+    /// own: the engine finds a run of starts' control once, and must find
+    /// it again for another control of the same name (the next phrase
+    /// tile) and for the same control in the next state.
+    @Test func chainsFromARunOfStartsAreEachStartsOwn() {
+        let first = ChainControl("tile", Self.frame(0, 0), .speaks)
+        let second = ChainControl("tile", Self.frame(120, 0), .nothing)
+        let onward = ChainControl("onward", Self.frame(60, 0), .navigates, leadsTo: "b")
+        let map = ChainMap(states: ["a": [first, second, onward], "b": [onward, first]])
+        let starts = map.everyStart()
+        let chains = map.chains(from: starts)
+        #expect(chains == starts.flatMap { map.chains(from: [$0]) })
+        #expect(chains.contains { $0.start.chosen == second })
+        #expect(chains.contains { $0.start.state == "b" && $0.start.chosen == onward })
+    }
+
     /// Fails if findings stop grouping one path's chains, or lose a rule or
     /// pointer that found it.
     @Test func findingsGroupChainsByPath() {
@@ -287,6 +335,16 @@ struct HomeChainsTests {
     @Test func everyStateIsInTheMap() {
         #expect(HomeChains.map(Self.frames).states.count == 2 * 3 * 2)
         #expect(HomeChains.states(categoryCount: 0).count == 4)
+    }
+
+    /// Fails if keeping only the hazards loses one, or keeps a chain that
+    /// ended otherwise: the sweeps score windows by `hazards(from:)` alone.
+    @Test func hazardsAreTheChainsThatEndInOne() {
+        let map = HomeChains.map(Self.frames)
+        let starts = map.everyStart()
+        let hazards = map.hazards(from: starts)
+        #expect(!hazards.isEmpty)
+        #expect(hazards == map.chains(from: starts).filter { $0.end == .hazard })
     }
 
     /// Fails if Again speaks before anything has been spoken (it is
@@ -543,6 +601,30 @@ struct SettingsChainsTests {
         #expect(eachWay.count == 1)
         #expect(eachWay[SettingsChains.eachWayDone]?.leadsTo == SettingsChains.firstStep)
         #expect(eachWay[SettingsChains.eachWayDone]?.effect == .navigates)
+    }
+
+    /// Fails if the starts through Settings stop being what filtering every
+    /// start of the merged map gives: Home's Settings button chosen in the
+    /// state Settings closes onto, and every start on Settings' screens, in
+    /// the same order. They are built for those states alone, so a sweep
+    /// skips the many Home states it merges in.
+    @Test func startsThroughSettingsAreEveryStartOnItsScreens() {
+        let settings = ChainControl(
+            HomeChains.settings, CGRect(x: 268, y: 376, width: 118, height: 48), .navigates, leadsTo: SettingsChains.root
+        )
+        let yes = ChainControl(HomeChains.yes, CGRect(x: 16, y: 172, width: 86, height: 64), .speaks)
+        let home = ChainMap(
+            states: [Self.home: [yes, settings], "Elsewhere": [yes, settings]],
+            resting: [Self.home: [("the message", CGRect(x: 16, y: 60, width: 370, height: 100))]]
+        )
+        let map = home.merging(SettingsChains.map(Self.screens, closingOnto: Self.home).map)
+        let screens: Set = [SettingsChains.root, SettingsChains.familySetup, SettingsChains.firstStep, SettingsChains.eachWay]
+        let starts = SettingsChains.starts(in: map, home: Self.home)
+        #expect(starts == map.everyStart().filter { start in
+            screens.contains(start.state) || (start.state == Self.home && start.chosen?.name == HomeChains.settings)
+        })
+        #expect(starts.contains { $0.state == Self.home })
+        #expect(Set(starts.map(\.state)) == screens.union([Self.home]))
     }
 
     /// Fails if a control the chains do not know is scored as harmless
