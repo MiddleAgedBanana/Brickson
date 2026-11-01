@@ -409,8 +409,8 @@ nonisolated struct HomeLayout: Equatable, Sendable {
     /// Apple's guides give, held at 163 points per inch (32.1 mm, 206
     /// points). A study of gaze pointing on a phone found 4 degrees "an
     /// optimal 'sweet spot' across all screen regions and face-to-screen
-    /// distances" (Namnakani and others, CHI 2025). Proposed, the owner can
-    /// overrule.
+    /// distances" ("Stretch Gaze Targets Out", CHI 2025). Proposed, the
+    /// owner can overrule.
     static let restBoardQuickControlHeight: CGFloat = 206
 
     /// The narrowest compact tile: the starter library's widest word,
