@@ -4,7 +4,7 @@
 the first App Review build by the owner's decision of 2026-10-30
 (docs/DECISIONS.md, "Items 8 and 9 come before the first App Review
 build"). Owner: the item 9 thread (a cloud session; GitHub CI is its
-build). Status: spec.*
+build). Status: plan.*
 
 ## Intent
 
@@ -303,3 +303,83 @@ the build.
   pull request (R2) keeps the count while edit mode is open.
 - **Simulator evidence only.** Comfort, Snap to Item and where a resting
   look lands need a real device.
+
+## Plan
+
+- **Files that change** (all this thread's):
+  - `HomeLayout.swift`: the late stage's profile and its floors, a
+    floor and a height of their own for Phrases and Type, what the
+    phrase area holds, the board's growth, Back to Talking from touch's
+    frames with every category, and the board left out under a fold.
+  - `RestBoard.swift` (new): the family's choice resolved against the
+    library, with the count the grid leaves room for.
+  - `ProfileChoice.swift`: what Home asks for (`Request`), made from
+    the setup record and the library, and the layout for it.
+  - `SetupRecord.swift`: the choice, saved with the record, read as
+    none from records saved before it.
+  - `CategorySelection.swift`: the board's category, or Emergency's.
+  - `HomeView.swift`: the request, the dimmed categories, the grid's
+    count.
+  - `SettingsView.swift`, `SetupGuides.swift`: the same request, so
+    Settings' places come from the Home it covers.
+  - `BricksonApp.swift`: the request, read from the record and the
+    library when Settings closes and kept while it is open.
+  - `SettingsRoute.swift`, `GuidedSetupView.swift`: the second step and
+    the summary's line.
+  - `LaunchOptions.swift`: `--home-profile=late-stage` for UI tests.
+  - The String Catalog; the tests below; the records
+    (docs/DECISIONS.md, docs/ROADMAP.md, docs/HANDOFF.md,
+    docs/ACCESSIBILITY.md, `README.md`, `AGENTS.md`'s plain types, a
+    `docs/log/` file, and the website's accessibility page only where a
+    sentence becomes untrue).
+- **Order of work:** one pull request: this file, then tests first and
+  the code for the engine and the choice, then Home, Settings and the
+  step, then the measured tables and the records.
+- **Risks, and how each is checked:**
+  - Home without the board changing by accident: every existing engine
+    and profile test runs unchanged on it, apart from the ones that list
+    the profiles, which gain the late stage.
+  - The board scrolling, losing typing or a word: a profile holds on
+    the board only where every floor is met, the board's rows fit and
+    everything touch's sizes keep is kept (the same checks as item 8's,
+    run on the board's layouts).
+  - Settings placed from another Home than the one it covers: Home and
+    Settings read the same request, kept while Settings is open.
+  - A held look meeting something new: the chain sweeps above.
+  - UI tests that count the steps: each names six now.
+- **Proof:**
+  - `ProfileChoiceTests`, each with the change that makes it fail:
+    - a rest board asks for the late stage's sizes, and no board the
+      answers' (fails if a board leaves the profile to the answers, or
+      no answer asks for the late stage's);
+    - the late stage's floors and the 206-point growth (fails if a floor
+      changes, or a tile, category or gap is smaller than Eye
+      Tracking's);
+    - `noControlChangesPlaceOnTheRestBoard` (fails if the board changes
+      the grid's columns or any arrangement);
+    - the board keeps the message, Phrases, Type and the categories at
+      their sizes without it, and grows only the safety row (fails if
+      the board's growth comes before Phrases and Type's, which would
+      let the keyboard's give-back shrink Phrases);
+    - the safety row never passes the keyboard's room on the board
+      where typing is offered without it;
+    - the board holds only where its floors are met and its rows fit;
+    - the windows table; the dwell chains; Back to Talking onto the
+      board; the Yes and No share; Settings over the board; a fold.
+  - `RestBoardTests` (new): no choice, a choice gone, Emergency chosen
+    (impossible from the step, refused all the same), the count from
+    the larger of the board and Emergency.
+  - `SetupRecordTests`: a record saved before the board decodes with
+    none; a choice survives a round trip.
+  - `CategorySelectionTests`: with a board, the board's category shows
+    unless Emergency's was chosen, and no other category can be.
+  - `HomeRestBoardTests` (UI, both families): choosing a category in
+    the second step, then closing Settings, shows the board: the other
+    categories dimmed, the board's phrases showing, Yes taller than
+    before, and Emergency's phrases reachable and back; at the default
+    and the largest text size, light and dark, Apple's accessibility
+    audit finds nothing and every control's words are drawn whole.
+    Every Category gives back Home as it was.
+  - Device checks (Codex and the owner's devices): the late stage's
+    floors and the 4-degree growth with a person using Eye Tracking on
+    an iPad (the quality bar's Q11 and Q13).
