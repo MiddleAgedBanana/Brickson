@@ -14,19 +14,22 @@ import XCTest
 ///   (docs/DECISIONS.md, "Typing on Home"). Before typing came to Home, it
 ///   was nearest Emergency, and before that Again, which speaks.
 /// - Chains: on the way in, it also reads Family Setup and, where its row
-///   shows, Set Up Step by Step's first step and the guide that step's
-///   Learn About Each Way opens, and has the chain engine follow every
-///   chain of held activations from Home's Settings and from each control
-///   of those screens, out to Home and back (`SettingsChains`,
-///   `ChainEngine`). No chain closes Settings under the look: the first
-///   screen's Family Setup row sits where Home's frames say it is safe, Set
-///   Up Step by Step takes its place on Family Setup, Learn About Each Way
-///   takes that place on the first step, and the guide's one control, Done,
-///   lies in Back to Talking's frame (docs/DECISIONS.md, "Settings' first
-///   row, placed from Home's frames", "The first step's own rows"). No
-///   chain saves an answer: the answers start below every place a look
-///   can be resting on the way in, and Next only moves on. Any hazard
-///   fails.
+///   shows, Set Up Step by Step's first step, the guide that step's Learn
+///   About Each Way opens, and the second step, which the first step's
+///   Next opens, and has the chain engine follow every chain of held
+///   activations from Home's Settings and from each control of those
+///   screens, out to Home and back (`SettingsChains`, `ChainEngine`). No
+///   chain closes Settings under the look: the first screen's Family Setup
+///   row sits where Home's frames say it is safe, Set Up Step by Step takes
+///   its place on Family Setup, Learn About Each Way takes that place on
+///   the first step, and the guide's one control, Done, lies in Back to
+///   Talking's frame (docs/DECISIONS.md, "Settings' first row, placed from
+///   Home's frames", "The first step's own rows"). No chain saves an
+///   answer: the first step's answers start below every place a look can
+///   be resting on the way in, Next only moves on, and the second step's
+///   choices start where a look resting on Next meets Next again
+///   (`SetupChoicesPlace`; docs/DECISIONS.md, "The late-stage profile").
+///   Any hazard fails.
 ///
 /// "Nearest" is scored two ways, because how Snap to Item picks a target is
 /// a device check (docs/HANDOFF.md, *Checks that need a real device*): by
@@ -140,6 +143,7 @@ final class SettingsOnHomeTests: XCTestCase {
         attachCapture(app, name: "family-setup-opened-\(context)".replacingOccurrences(of: ", ", with: "-"))
         var firstStep: [ScreenControl]?
         var eachWay: [ScreenControl]?
+        var secondStep: [ScreenControl]?
         if Self.onScreen(familySetup, in: window).contains(where: { $0.name == SettingsChains.guidedSetupRow }) {
             open("guidedSetup", leaving: "guidedSetup", in: app, context: context)
             let step = try Self.onCover(screenControls(in: app))
@@ -148,13 +152,23 @@ final class SettingsOnHomeTests: XCTestCase {
             if Self.onScreen(step, in: window).contains(where: { $0.name == SettingsChains.learnAboutEachWay }) {
                 eachWay = try readTheGuide(over: step, in: app, backToTalking: way, window: window, context: context)
             }
+            // The second step, through Next, in the bar at the foot of
+            // every step, read once the first step has gone.
+            open(SettingsChains.firstStepNext, leaving: SettingsChains.learnAboutEachWay, in: app, context: context)
+            XCTAssertTrue(
+                app.navigationBars[SettingsChains.secondStep].waitForExistence(timeout: 10),
+                "Next did not open the second step (\(context))"
+            )
+            secondStep = try Self.onCover(screenControls(in: app))
+            attachCapture(app, name: "second-step-opened-\(context)".replacingOccurrences(of: ", ", with: "-"))
         }
         checkChains(
             home: home, screens: SettingsChains.Screens(
                 root: Self.named(Self.onScreen(cover, in: window)),
                 familySetup: Self.named(Self.onScreen(familySetup, in: window)),
                 firstStep: firstStep.map { Self.named(Self.onScreen($0, in: window)) },
-                eachWay: eachWay.map { Self.named(Self.onScreen($0, in: window)) }
+                eachWay: eachWay.map { Self.named(Self.onScreen($0, in: window)) },
+                secondStep: secondStep.map { Self.named(Self.onScreen($0, in: window)) }
             ),
             window: window, context: context
         )
@@ -234,8 +248,8 @@ final class SettingsOnHomeTests: XCTestCase {
     }
 
     /// Follows every chain from Home's Settings and from each control of
-    /// Settings' first screens and the guide's cover (`SettingsChains`),
-    /// and attaches what it finds. Fails on any hazard, of the two kinds
+    /// Settings' first screens, the guide's cover and the second step
+    /// (`SettingsChains`), and attaches what it finds. Fails on any hazard, of the two kinds
     /// the chains sort or any other, and on a control the chains do not
     /// know.
     @MainActor

@@ -19,6 +19,19 @@ struct SettingsScreenFramesTests {
         )
         #expect(frames.navigationBar == CGRect(x: 0, y: 142, width: 402, height: 64))
         #expect(frames.content == CGRect(x: 16, y: 222, width: 370, height: 562))
+        #expect(frames.foot == CGRect(x: 0, y: 800, width: 402, height: 0))
+    }
+
+    /// Set Up Step by Step's bar, kept at the screen's foot: fails if the
+    /// foot stops being the bar's frame across the stack, which places the
+    /// second step's choices (`SetupChoicesPlace`), or if the content stops
+    /// ending a gutter above it.
+    @Test func theFootIsTheBarAcrossTheStack() {
+        let frames = SettingsScreenFrames(
+            stack: Self.phoneStack, safeArea: HomeLayout.Insets(top: 64, leading: 0, bottom: 110, trailing: 0), gutter: 16
+        )
+        #expect(frames.foot == CGRect(x: 0, y: 690, width: 402, height: 110))
+        #expect(frames.content.maxY == frames.foot.minY - 16)
     }
 
     /// Fails if the safe area at the stack's sides or foot stops narrowing
@@ -30,6 +43,7 @@ struct SettingsScreenFramesTests {
         )
         #expect(frames.navigationBar == CGRect(x: 62, y: 100, width: 750, height: 50))
         #expect(frames.content == CGRect(x: 88, y: 166, width: 678, height: 98))
+        #expect(frames.foot == CGRect(x: 62, y: 280, width: 750, height: 20))
         let tiny = SettingsScreenFrames(
             stack: CGRect(x: 0, y: 0, width: 20, height: 20), safeArea: HomeLayout.Insets(top: 64, leading: 0, bottom: 0, trailing: 0),
             gutter: 16
