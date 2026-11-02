@@ -48,8 +48,8 @@ import SwiftUI
 ///
 /// The rest board (docs/DECISIONS.md, "The late-stage profile"): where
 /// Family Setup's second step chose one category, Home shows only its
-/// phrases and Emergency's, in fewer, larger tiles, and dims the other
-/// categories in their places. It asks for the late stage's sizes, as
+/// phrases and Emergency's, and dims the other categories in their
+/// places. It asks for the late stage's sizes, as
 /// large as the window holds, and Yes, No, Emergency, Again and Get
 /// Attention grow toward 4 degrees of the person's view. Every control
 /// keeps its place relative to the others, and nothing moves between the

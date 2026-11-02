@@ -300,7 +300,7 @@ private struct SetupRestBoardQuestion: View {
         SetupChoicesLayout(screen: frames, choices: everyday.count + 1, spacing: SettingsMetrics.rowSpacing) {
             VStack(alignment: .leading, spacing: SettingsMetrics.rowSpacing) {
                 SettingsHeading("Which phrases does Home show?")
-                SettingsParagraph("Home can show one category's phrases, and Emergency's, in fewer, larger buttons, with Yes, No, Emergency, Again and Get Attention as large as this screen has room for. The other categories stay where they are, dimmed, so nothing moves. The change shows when Settings closes.")
+                SettingsParagraph("Home can show one category's phrases, and Emergency's, with Yes, No, Emergency, Again and Get Attention as large as this screen has room for. The other categories stay where they are, dimmed, so nothing moves. The change shows when Settings closes.")
             }
 
             choice(Text("Every Category"), isChosen: current == nil, identifier: "restBoardEveryCategory") {
@@ -397,7 +397,7 @@ private struct RestBoardSummary: View {
 
     var body: some View {
         if let board = categories.first(where: { $0.uuid == chosen && !$0.isEmergency }) {
-            SettingsParagraph("Home shows one category's phrases, with larger buttons:")
+            SettingsParagraph("Home shows one category's phrases:")
             SettingsParagraph(verbatim: board.name)
         } else {
             SettingsParagraph("Home shows every category.")

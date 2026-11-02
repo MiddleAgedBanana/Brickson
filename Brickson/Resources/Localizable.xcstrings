@@ -262,13 +262,13 @@
     "Hold Duration sets how long a switch must be held before it counts. Ignore Repeat ignores a press that comes again too soon." : {
 
     },
-    "Home can show one category's phrases, and Emergency's, in fewer, larger buttons, with Yes, No, Emergency, Again and Get Attention as large as this screen has room for. The other categories stay where they are, dimmed, so nothing moves. The change shows when Settings closes." : {
+    "Home can show one category's phrases, and Emergency's, with Yes, No, Emergency, Again and Get Attention as large as this screen has room for. The other categories stay where they are, dimmed, so nothing moves. The change shows when Settings closes." : {
 
     },
     "Home shows every category." : {
 
     },
-    "Home shows one category's phrases, with larger buttons:" : {
+    "Home shows one category's phrases:" : {
 
     },
     "Home's buttons take the size the answers need, as large as this screen has room for, and are largest until something is chosen. The new size shows when Settings closes." : {
