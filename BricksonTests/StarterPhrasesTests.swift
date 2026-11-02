@@ -126,6 +126,20 @@ struct StarterPhrasesTests {
         }
     }
 
+    /// Fails if an everyday starter category makes a rest board of a size
+    /// the layout tests do not measure (`LateStageProfileTests.boardPhrases`),
+    /// or if they measure one no starter category makes: measure a new size
+    /// there, and record its sizes (docs/DECISIONS.md, "The late-stage
+    /// profile"), in the change that makes it.
+    @Test func everyStarterRestBoardIsOneTheLayoutTestsMeasure() {
+        let categories = library.categories.map {
+            RestBoard.Category(id: $0.id, isEmergency: $0.isEmergency, phrases: $0.phrases.count)
+        }
+        let boards = categories.filter { !$0.isEmergency }.compactMap { RestBoard(choice: $0.id, in: categories)?.phrases }
+        #expect(boards.count == categories.count - 1)
+        #expect(Set(boards) == Set(LateStageProfileTests.boardPhrases), "\(boards)")
+    }
+
     /// A misspelled SF Symbol name draws nothing at all, with no error.
     @Test func everyCategorySymbolExists() {
         for category in library.categories {
