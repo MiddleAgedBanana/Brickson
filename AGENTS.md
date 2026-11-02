@@ -829,10 +829,14 @@ the time. Export them again after each new Xcode release.
   button, and `Attention,` for a whole `Attention` (PR #74), so a tall
   capture is also read in a band around its drawn words, and
   punctuation read around a word is dropped; neither can add a letter
-  that was not drawn. The recognizer lives in `RenderedWords` (Vision's
-  `RecognizeTextRequest`). The unit tests run it on kept whole, clipped
-  and tall captures (`RenderedWordsTests`, `BricksonTests/RenderedLabels`)
-  and pin its settings, so a change that stops it reading whole words,
+  that was not drawn. A row drawn all the way across a capture is a
+  button's border, not words: Home draws one round every control in
+  dark mode, and counted as words it made the band the whole capture,
+  which read a whole `No` as `I`. The recognizer lives in
+  `RenderedWords` (Vision's `RecognizeTextRequest`). The unit tests run
+  it on kept whole, clipped and tall captures, with a border and
+  without (`RenderedWordsTests`, `BricksonTests/RenderedLabels`), and
+  pin its settings, so a change that stops it reading whole words,
   accepts part of one, or turns on correction or hints fails there
   first.
 - **Measuring the keyboard:** `KeyboardProbeTests` runs on every UI run.

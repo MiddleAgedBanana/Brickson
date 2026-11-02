@@ -22,7 +22,10 @@ import Vision
 /// are kept too, both drawn whole: the iPad's "No" at the default text
 /// size, small on a tall button, where the whole capture read nothing
 /// (no-tall.png), and the iPhone's "Get Attention" at the largest size in
-/// dark, read as "Attention," (getattention-dark.png).
+/// dark, read as "Attention," (getattention-dark.png). So is a third, from
+/// the same test on the owner's Mac: that "No" in dark mode, with the
+/// white border every Home control draws there, whose whole capture read
+/// "I" (no-tall-edge.png).
 struct RenderedWordsTests {
     // Accurate mode, a second language, language correction or supplied
     // words each fail this.
@@ -54,6 +57,13 @@ struct RenderedWordsTests {
         #expect(RenderedWords.show("No", in: words), "recognized \(words)")
     }
 
+    /// The same, with a border round the button: fails if the border's
+    /// rows count as words, so the band is the whole capture again.
+    @Test func aShortWordOnATallButtonWithABorderIsRead() async throws {
+        let words = try await RenderedWords.read(contentsOf: capture(of: "No", state: "tall-edge"))
+        #expect(RenderedWords.show("No", in: words), "recognized \(words)")
+    }
+
     /// A mark read beside a word is not part of it: fails if "Attention,"
     /// does not count as Attention.
     @Test func aMarkBesideAWordIsNotPartOfIt() async throws {
@@ -71,17 +81,20 @@ struct RenderedWordsTests {
         #expect(!RenderedWords.show("No", in: ["Not"]))
     }
 
-    /// The band: on the tall "No", rows around the word, at most
-    /// `bandMultiple` times its height and at least its 27 rows; on every
-    /// other kept capture, whole or clipped, none, so each is read as it
-    /// always was. Fails if the band cuts a short capture, a clipped one
-    /// or one with a border, or leaves the tall one whole.
+    /// The band: on each tall "No", with a border or without, rows around
+    /// the word, at most `bandMultiple` times its height and at least its
+    /// 27 rows; on every other kept capture, whole or clipped, none, so
+    /// each is read as it always was. Fails if the band cuts a short
+    /// capture or a clipped one, or leaves a tall one whole, as it did
+    /// when a button's border counted as words.
     @Test func onlyATallCaptureHasABand() throws {
-        let tall = try #require(image(capture(of: "No", state: "tall")))
-        let band = try #require(RenderedWords.band(of: tall))
-        #expect(band.width == tall.width)
-        #expect(band.height < tall.height)
-        #expect(band.height >= RenderedWords.bandMultiple * 27)
+        for state in ["tall", "tall-edge"] {
+            let tall = try #require(image(capture(of: "No", state: state)))
+            let band = try #require(RenderedWords.band(of: tall), "\(state)")
+            #expect(band.width == tall.width, "\(state)")
+            #expect(band.height < tall.height, "\(state)")
+            #expect(band.height >= RenderedWords.bandMultiple * 27, "\(state)")
+        }
         for label in ["Yes", "No", "Emergency", "Again"] {
             for state in ["whole", "clipped"] {
                 let kept = try #require(image(capture(of: label, state: state)))

@@ -55,9 +55,15 @@ nonisolated enum RenderedWords {
     /// their height and centred on them; nil where that is the whole
     /// capture or nothing is drawn. Drawn means far from the capture's
     /// commonest colour, its fill, in the columns clear of its rounded
-    /// corners. A crop only leaves pixels out, so a word clipped in
-    /// `image` is clipped in its band too, and a capture with a border
-    /// across it, or words most of its height, is never cut.
+    /// corners. A row drawn in every one of those columns is not words
+    /// but an edge: the border Home draws round every control in dark
+    /// mode, with Show Borders on and when a control is off
+    /// (`HomeButtonLook`), or the screen beyond a control. Counted as
+    /// words, the border made a tall dark "No"'s band the whole capture,
+    /// which read "I" (pull request #74, on the owner's Mac). A crop only
+    /// leaves pixels out, so a word clipped in `image` is clipped in its
+    /// band too, and a capture with words most of its height is never
+    /// cut.
     static func band(of image: CGImage) -> CGImage? {
         let width = image.width
         let height = image.height
@@ -86,18 +92,18 @@ nonisolated enum RenderedWords {
         guard let commonest = counts.indices.max(by: { counts[$0] < counts[$1] }) else { return nil }
         let fill = (red: (commonest >> 8) << 4 | 8, green: ((commonest >> 4) & 15) << 4 | 8, blue: (commonest & 15) << 4 | 8)
         let columns = (width / 8)..<(width - width / 8)
-        func isDrawn(_ y: Int) -> Bool {
+        func holdsWords(_ y: Int) -> Bool {
             var drawn = 0
             for x in columns {
                 let pixel = colour(x, y)
                 if abs(pixel.red - fill.red) + abs(pixel.green - fill.green) + abs(pixel.blue - fill.blue) > 120 {
                     drawn += 1
-                    if drawn == 2 { return true }
                 }
             }
-            return false
+            return drawn >= 2 && drawn < columns.count
         }
-        guard let top = (0..<height).first(where: isDrawn), let bottom = (0..<height).last(where: isDrawn) else { return nil }
+        guard let top = (0..<height).first(where: holdsWords), let bottom = (0..<height).last(where: holdsWords)
+        else { return nil }
         let bandHeight = bandMultiple * (bottom - top + 1)
         guard bandHeight < height else { return nil }
         let bandTop = min(max(0, (top + bottom + 1) / 2 - bandHeight / 2), height - bandHeight)
