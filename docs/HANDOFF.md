@@ -948,6 +948,8 @@ which change Home, are its
 2026-10-23): items 1 to 5 and 7 to 9 are built (item 8's sizes on since
 2026-10-30; item 9, the late-stage profile and the rest board, on
 2026-11-01, [`log/2026-11-01-late-stage-profile.md`](log/2026-11-01-late-stage-profile.md),
+*Follow-ups*, and its boards of eight phrases on 2026-11-02,
+[`log/2026-11-02-rest-boards-of-eight.md`](log/2026-11-02-rest-boards-of-eight.md),
 *Follow-ups*), typing on Home (item 5) on
 2026-10-24 ([`log/2026-10-24-typing-on-home.md`](log/2026-10-24-typing-on-home.md),
 *Follow-ups*); next on Home is item 6, iPhone Duo in every pose. Its Mac

@@ -554,7 +554,9 @@ out.
 
 **9. The late-stage profile: Yes and No, and the rest board.** *Built
 2026-11-01
-([`log/2026-11-01-late-stage-profile.md`](log/2026-11-01-late-stage-profile.md)):*
+([`log/2026-11-01-late-stage-profile.md`](log/2026-11-01-late-stage-profile.md);
+boards of eight phrases measured 2026-11-02,
+[`log/2026-11-02-rest-boards-of-eight.md`](log/2026-11-02-rest-boards-of-eight.md)):*
 a rest board the family chooses in Set Up Step by Step's new second
 step, one category's phrases and Emergency's with the other categories
 dimmed in place, and the late stage's sizes, proposed, with Yes, No,

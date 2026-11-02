@@ -16,9 +16,13 @@ profile"; work file [`work/late-stage-profile.md`](../work/late-stage-profile.md
 - **What the person sees.** With a category chosen, when Settings
   closes, Home shows only that category's phrases, and Emergency's when
   Emergency is chosen. The other categories stay in their places,
-  dimmed. Yes, No, Emergency, Again and Get Attention
-  grow toward 4 degrees of the person's view (206 points at 46 cm), as
-  far as the window has room while the tiles stay as tall. Home asks for
+  dimmed. (*Corrected 2026-11-02:* this said "in fewer, larger
+  tiles", untrue on every iPad and with a board of eight phrases on a
+  phone;
+  [`2026-11-02-rest-boards-of-eight.md`](2026-11-02-rest-boards-of-eight.md).)
+  Yes, No, Emergency, Again and Get Attention grow toward 4 degrees of
+  the person's view (206 points at 46 cm), as far as the window has
+  room while the tiles stay as tall. Home asks for
   the late stage's sizes and takes the largest the window holds. Every
   Category gives back Home as it was. Nothing moves between the board's
   phrases and Emergency's.
@@ -77,10 +81,7 @@ profile"; work file [`work/late-stage-profile.md`](../work/late-stage-profile.md
     1,000 points tall, at least one on all 70 at the default size (60
     before), 53 of 70 at AX3 (23 before) and 26 of 70 at AX5 (none
     before). At AX3 and AX5 on a phone the words fill the first
-    screenful whatever the choices do. With the step's shorter words
-    since 2026-11-02 (*Boards of eight phrases*, below), the same model
-    shows 99 of the 140, and 55 and 28 of 70; the iPhone 17 still shows
-    two. The same review showed `HomeRestBoardTests` tapping a
+    screenful whatever the choices do. The same review showed `HomeRestBoardTests` tapping a
     choice that now starts below the bar on the iPhone, trusting
     XCUITest to scroll it out from under Next: the test now scrolls
     until the choice is whole above Next, and fails if Every Category
@@ -198,30 +199,6 @@ profile"; work file [`work/late-stage-profile.md`](../work/late-stage-profile.md
     `PaletteTests` now measures (docs/HANDOFF.md, *Known gaps*). The
     follow-up's report and evidence (1.4 GB) are beside the first, under
     `build/audit-probe/followup/`.
-- **Boards of eight phrases** (2026-11-02). Every board test measured
-  a board of six phrases, while Basics and Needs, half the starter
-  categories, make boards of eight. Measured with the same engine, a
-  board of eight takes the same sizes and frames as one of six on
-  every iPad window in the windows table (four columns hold either in
-  two rows; a resized iPad window with three columns can differ), and
-  on a phone keeps every category's rows, so Yes
-  and No grow out of the tiles' height (on the iPhone 17 both are 92
-  points tall, where the tiles were 111 with every category), the
-  iPhone 17 Pro Max takes touch's sizes instead of head tracking's,
-  and where every category's phrases scroll, the board scrolls too and
-  nothing grows. Every board test in `LateStageProfileTests` now runs
-  with both boards (`boardPhrases`, `boardTableForEight`), and
-  `StarterPhrasesTests.everyStarterRestBoardIsOneTheLayoutTestsMeasure`
-  fails if the starter library makes a board of a size they do not
-  measure. The same measurements showed the second step's "in fewer,
-  larger buttons" untrue on every iPad and with a board of eight on a
-  phone, and the summary's "with larger buttons" with it: the step
-  now says "Home can show one category's phrases, and Emergency's, with
-  Yes, No, Emergency, Again and Get Attention as large as this screen
-  has room for. ..." and the summary "Home shows one category's
-  phrases:". The decision, the work file (its own table for boards of
-  eight), docs/HANDOFF.md, docs/ACCESSIBILITY.md, two code comments
-  and the website's accessibility page say the same.
 
 ## Commits
 
@@ -265,13 +242,6 @@ profile"; work file [`work/late-stage-profile.md`](../work/late-stage-profile.md
   largest, every "control" drawing the border where the field does
   not), with the
   board described on the page and how it is checked.
-- After measuring boards of eight phrases: `7f75369`, every board test
-  on boards of six and eight, with the starter library's check;
-  `615254e`, the step's words and summary line; `133f502`, these
-  records; then one independent review's corrections (a missed Known
-  gaps entry, two "fewer, larger tiles" left in records marked built,
-  where a board of six stops the scrolling, resized iPad windows with
-  three columns, and the website's rows and tile heights).
 
 ## Verified
 
@@ -305,20 +275,6 @@ the app, its SwiftUI views and its UI tests.
   - `SetupStoreTests`, in a second package with `SetupStore` and a
     stand-in for `os.Logger`, passed with the two new failing-save
     tests.
-  - With boards of eight phrases and the step's shorter words
-    (2026-11-02): the whole suite, 217 tests in 19 suites, the same
-    three Linux-only failures with the same 843 and 5 issues, and
-    nothing else, so `LateStageProfileTests` with both boards, the
-    630-window sweep and the Settings sweeps over the larger profiles
-    with the new words all passed. Changing `boardTableForEight`'s Pro
-    Max row to head tracking's failed the table test 10 times (five
-    text sizes, Bold Text off and on), so the eight-phrase table is
-    read. The step's model with the new words reproduces the old
-    counts with the old words (97 of 140, and 53 and 26 of 70) before
-    giving the new ones. `StarterPhrasesTests` needs the app's bundle:
-    the starter JSON's counts (Basics 8, Needs 8, Conversation 6,
-    Feelings 6, Emergency 6) give the boards of six and eight its new
-    test expects.
 - **CI on the first push** (`12d95a4`): the unit job passed in about
   20 minutes, the first build of the app, its views and its tests, with
   warnings as errors and the String Catalog matching the code. The UI
@@ -482,19 +438,12 @@ the app, its SwiftUI views and its UI tests.
   Done, uses Home's button style and so draws the border),
   `PhraseDragTests`' `testDefaultDark` and `testAX5Dark`, and
   `FoldOffsetUITests.testTheFirstRowClearsATopDivisionInDarkMode`.
-- **Rest boards of eight phrases in the app.** Since 2026-11-02 every
-  unit test of the board runs with boards of six and eight phrases,
-  but the UI tests choose Conversation (six), so no test has drawn a
-  board of eight on a phone, where its frames differ from six's. On
-  the iPad, the owner's Mac (before the border, *What clears it*) ran
-  Apple's audit at AX5 in dark on the Basics and Needs boards, which
-  passed; that is the only check of a board of eight in the app.
-  `StarterPhrasesTests.everyStarterRestBoardIsOneTheLayoutTestsMeasure`
-  needs the app's bundle, so CI's unit job is its first run.
-- **The step's new words in the app.** The second step and the summary
-  have their shorter words only in the code; CI's run of the push that
-  carries them is the first time `SettingsOnHomeTests` and
-  `HomeRestBoardTests` read them.
+- **Rest boards of eight phrases.** Every board test, sizes, chains and
+  shares, uses a board of six phrases (`LateStageProfileTests.board`),
+  and the UI tests choose Conversation (six). Basics and Needs hold
+  eight, and on a phone's three columns their board keeps three rows,
+  so its frames differ from the measured ones; nothing has measured
+  them.
 - **Comfort.** The floors and the 4-degree growth have not been tried
   by a person, or with Apple's Eye Tracking; simulator evidence never
   shows gaze comfort or where Snap to Item lands (docs/HANDOFF.md,
@@ -505,7 +454,8 @@ the app, its SwiftUI views and its UI tests.
   multitasking screen only the message field's outline may come under
   3:1. Since CodeRabbit's review of `827a33d` it also describes the
   rest board (what Home shows, the sizes each kind of window takes with
-  boards of six and eight phrases, and how it is checked), because the board made two of its sentences
+  a six-phrase board, that eight-phrase boards are not measured, and
+  how it is checked), because the board made two of its sentences
   untrue: that an iPhone keeps touch's sizes, and that Eye Tracking's
   are the largest. The border's sentences rest on the unit tests and on
   Apple's audit, which has run with the border only on the owner's Mac
@@ -519,15 +469,9 @@ the app, its SwiftUI views and its UI tests.
   115 seconds run one test at a time, as the unit job runs them: the
   Settings chains over the board 37 s, the Yes and No shares 27 s, Back
   to Talking onto the board 23 s, the board's chains 16 s, the place
-  check 10 s, the rest under 2 s together. With boards of eight
-  phrases too (2026-11-02), `LateStageProfileTests` took 210 s in one
-  run; one test at a time, the Settings chains over the boards 79 s,
-  the Yes and No shares 55 s, Back to Talking onto the boards 34 s, the
-  boards' chains 33 s, and the five sweeps over every window 14 to 20 s
-  each, about 13 s of each being the shared windows they build once in
-  one run. So the boards of eight add about 95 s there. CI's result
-  bundle has the Mac's figure (`TestCaseRuns.duration`; AGENTS.md,
-  *Gotchas*, the unit job's time).
+  check 10 s, the rest under 2 s together. CI's result bundle has the
+  Mac's figure (`TestCaseRuns.duration`; AGENTS.md, *Gotchas*, the unit
+  job's time).
 
 ## Follow-ups
 
@@ -535,10 +479,9 @@ the app, its SwiftUI views and its UI tests.
   board, with a person using Eye Tracking on an iPad (docs/ROADMAP.md,
   *The quality bar*, Q11 and Q13): the owner and Codex.
 - **The owner may overrule** the late stage's floors, the 4-degree
-  growth, the growth out of the tiles on four columns and with a board
-  of eight phrases on a phone, and head tracking's sizes on the iPhone
-  17 Pro Max with a board of six (docs/DECISIONS.md, "The late-stage
-  profile", *Where the board's sizes hold*).
+  growth, the growth out of the tiles on four columns, and head
+  tracking's sizes on the iPhone 17 Pro Max (docs/DECISIONS.md, "The
+  late-stage profile", *Where the board's sizes hold*).
 - **Settings' floors under the late stage**, with the other larger
   profiles': the next Settings thread (docs/ROADMAP.md, *The quality
   bar*, Q3).
