@@ -83,7 +83,11 @@ it.*
     six-phrase board has two rows instead of three, so its tiles are
     taller. On four columns every starter category already fits in two
     rows, so the tiles keep at least the profile's floor and give some
-    of their height to Yes and No (measured in the spec).
+    of their height to Yes and No (measured in the spec). *Added after
+    the build:* an eight-phrase board (Basics, Needs) keeps three rows
+    on three columns, as every category does, so on a phone its tiles
+    give height to Yes and No too; only a six-phrase board on a phone
+    has fewer rows.
   - *What grows?* The safety row: Yes, No, Emergency and Get Attention,
     the four the roadmap names, and Again, which shares their row.
     Phrases and Type, which only change Home's mode, stay at Eye
@@ -279,17 +283,47 @@ What it shows:
   11-inch iPad in landscape at AX5, the iPad mini in landscape, the
   zoomed phone).
 
+*Added after the build: boards of eight phrases.* The table above
+measured only a six-phrase board, and the starter library also makes
+boards of eight (Basics, Needs). Measured the same way on 2026-11-02,
+every iPad takes the same sizes and frames with eight phrases as with
+six: four columns hold either in two rows. On the phones a board of
+eight keeps every category's three rows, so the safety row's growth
+comes out of the tiles, and the iPhone 17 Pro Max takes touch's sizes
+instead of head tracking's (`LateStageProfileTests.boardTableForEight`).
+Every test of the board above runs with both boards.
+
+| Window | Text | Board of eight | Yes and No | Tiles | Rows |
+|---|---|---|---|---|---|
+| iPhone 17 | default | touch | 92 | 118×92 | 3 |
+| iPhone 17 | AX5 | touch | 79 | 118×78, scrolls | 3 |
+| iPhone 17 Pro Max | default | touch | 109 | 131×108 | 3 |
+| iPhone 17 Pro Max | AX5 | touch | 83 | 131×83 | 3 |
+| iPhone 16e | default | touch | 89 | 114×89 | 3 |
+| iPhone 16e | AX5 | touch | 79 | 114×78, scrolls | 3 |
+| 375×667 phone | both | touch | 44, 79 | 109×99, scrolls | 3 |
+| 375×667 phone, zoomed | both | touch | 64, 79 | 140×78, scrolls | 4 |
+
+Where every category's phrases scroll, a board of eight scrolls the
+same and nothing grows; a board of six stops the scrolling on the
+iPhone 17 and 16e at AX5. Tiles are whole points tall, so they can end
+up to a point shorter than Yes and No (108 against 108.8 on the Pro
+Max).
+
 ### Set Up Step by Step's second step
 
 - The steps become six: how the screen is reached, then **which
   phrases Home shows**, the voice, turning on what was chosen, keeping
   Brickson open, and the summary (`GuidedSetupStep.restBoard`).
 - The step's words: the heading "Which phrases does Home show?", and
-  "Home can show one category's phrases, and Emergency's, in fewer,
-  larger buttons, with Yes, No, Emergency, Again and Get Attention as
-  large as this screen has room for. The other categories stay where
-  they are, dimmed, so nothing moves. The change shows when Settings
-  closes."
+  "Home can show one category's phrases, and Emergency's, with Yes, No,
+  Emergency, Again and Get Attention as large as this screen has room
+  for. The other categories stay where they are, dimmed, so nothing
+  moves. The change shows when Settings closes." *Changed after the
+  build:* the words first said the phrases show "in fewer, larger
+  buttons", which the measurements (*Where each profile holds*) show
+  untrue on four columns and with a board of eight on a phone, where
+  the tiles give height to Yes and No.
 - The choices: Every Category, then each everyday category in Home's
   order, by its own name, shown as written (`Text(verbatim:)`). Each
   only selects: choosing the chosen one again keeps it, and choosing
@@ -314,8 +348,8 @@ What it shows:
   hold stay (docs/DECISIONS.md, "The late-stage profile", *Where the
   second step's choices start*).
 - The summary adds one line: "Home shows every category.", or "Home
-  shows one category's phrases, with larger buttons:" and the
-  category's name.
+  shows one category's phrases:" and the category's name (first "...
+  phrases, with larger buttons:", changed with the step's words).
 
 ### Input methods
 
@@ -496,3 +530,11 @@ What it shows:
   so a launch option that fixes the late stage's sizes would only test
   a combination no one gets: the late stage's sizes with every
   category.
+- **Boards of eight phrases were measured after the build.** The board
+  tests used only a six-phrase board, while Basics and Needs, half the
+  starter categories, make boards of eight. Measured on 2026-11-02 (*Where
+  each profile holds*), every board test now runs with both, and
+  `StarterPhrasesTests` fails if the starter library makes a board of
+  another size. The measurements also showed the step's "fewer, larger
+  buttons" untrue on every iPad and with a board of eight on a phone,
+  so the step and its summary line no longer say it.

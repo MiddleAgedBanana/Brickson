@@ -37,15 +37,16 @@ Bold Text). `HomeSizesTests` checks a person's first launch at those
 sizes, with Apple's audit and the drawn words (passed on CI's iPad and
 iPhone simulators, #70); the other UI tests ask for touch's. A family
 can choose a rest board in Set Up Step by Step's second step, "Which
-phrases does Home show?": Home then shows that category's phrases and
-Emergency's in fewer, larger tiles, dims the other categories in their
-places, asks for the late stage's sizes (proposed), and grows Yes, No,
-Emergency, Again and Get Attention toward 4 degrees of the person's
-view while the tiles stay as tall, as the window has room; by the
-engine, every iPad in portrait but the iPad mini, and the 13-inch iPad
-in landscape, take the late stage's sizes, and phones touch's (head
-tracking's on the Pro Max) (docs/DECISIONS.md, "The late-stage
-profile"; `HomeRestBoardTests` checks it in the app on CI's iPad and
+phrases does Home show?": Home then shows only that category's phrases
+and Emergency's, dims the other categories in their places, asks for
+the late stage's sizes (proposed), and grows Yes, No, Emergency, Again
+and Get Attention toward 4 degrees of the person's view while the
+tiles stay as tall, as the window has room. By the engine, with the
+starter library's boards of six and eight phrases, every iPad in
+portrait but the iPad mini, and the 13-inch iPad in landscape, take
+the late stage's sizes, and phones touch's (head tracking's on the Pro
+Max with a board of six) (docs/DECISIONS.md, "The late-stage profile";
+`HomeRestBoardTests` checks a board of six in the app on CI's iPad and
 iPhone simulators, #74).
 Four category buttons that never scroll sideways, and three
 phrase columns on every iPhone at its standard Display Zoom (two on 375
