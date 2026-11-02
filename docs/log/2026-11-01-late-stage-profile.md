@@ -231,7 +231,13 @@ profile"; work file [`work/late-stage-profile.md`](../work/late-stage-profile.md
   kept capture; then an independent review's corrections to these
   records and two comments (Settings' safety bar draws the border too,
   docs/DESIGN.md's selection ring, quality gate Q17, and what is and is
-  not yet verified on CI).
+  not yet verified on CI) in `827a33d`.
+- After CodeRabbit's review of `827a33d`: the website's accessibility
+  page and `README.md`, where the board and the dark border had made
+  sentences untrue (an iPhone keeping touch's sizes, Eye Tracking's the
+  largest, every "control" drawing the border where the field does
+  not), with the
+  board described on the page and how it is checked.
 
 ## Verified
 
@@ -428,19 +434,32 @@ the app, its SwiftUI views and its UI tests.
   Done, uses Home's button style and so draws the border),
   `PhraseDragTests`' `testDefaultDark` and `testAX5Dark`, and
   `FoldOffsetUITests.testTheFirstRowClearsATopDivisionInDarkMode`.
+- **Rest boards of eight phrases.** Every board test, sizes, chains and
+  shares, uses a board of six phrases (`LateStageProfileTests.board`),
+  and the UI tests choose Conversation (six). Basics and Needs hold
+  eight, and on a phone's three columns their board keeps three rows,
+  so its frames differ from the measured ones; nothing has measured
+  them.
 - **Comfort.** The floors and the 4-degree growth have not been tried
   by a person, or with Apple's Eye Tracking; simulator evidence never
   shows gaze comfort or where Snap to Item lands (docs/HANDOFF.md,
   "Checks that need a real device").
-- **The website's accessibility page** now says every Home control
-  draws a border in Dark Mode, that Apple's audit reads each button's
-  words as its own, and that on a lifted multitasking screen only the
-  message field's outline may come under 3:1. Those sentences rest on
-  the unit tests and on Apple's audit in the UI tests, which has run
-  with the border only on the owner's Mac (Xcode 27.2, iOS 27.2
-  simulators) so far; CI's run of the push that carries it is still to
-  come, and no device has checked them. It still says nothing about the
-  rest board.
+- **The website's accessibility page** now says every Home button, and
+  Back to Talking in Settings, draws a border in Dark Mode, that Apple's
+  audit reads each button's words as its own, and that on a lifted
+  multitasking screen only the message field's outline may come under
+  3:1. Since CodeRabbit's review of `827a33d` it also describes the
+  rest board (what Home shows, the sizes each kind of window takes with
+  a six-phrase board, that eight-phrase boards are not measured, and
+  how it is checked), because the board made two of its sentences
+  untrue: that an iPhone keeps touch's sizes, and that Eye Tracking's
+  are the largest. The border's sentences rest on the unit tests and on
+  Apple's audit, which has run with the border only on the owner's Mac
+  (Xcode 27.2, iOS 27.2 simulators) so far; the board's on the unit
+  tests and `HomeRestBoardTests`, which passed on CI's iPhone and, but
+  for the AX5 dark audit, its iPad on `5a8a91a`, and on the owner's Mac
+  with the border. CI's run of the push that carries them is still to
+  come, and no device has checked them.
 - **How long the new sweeps add to CI's unit job on its Mac.** On the
   Linux package, a debug build like CI's, the two new suites took about
   115 seconds run one test at a time, as the unit job runs them: the
@@ -465,6 +484,3 @@ the app, its SwiftUI views and its UI tests.
 - **Editing (R2)** keeps the board's phrase count while edit mode is
   open, as Settings does now, so a phrase added on Home moves nothing
   until it closes.
-- **The website's accessibility page** may describe the rest board once
-  CI's UI tests have passed, saying how it was checked: the release
-  documentation work (R0 item 10).
