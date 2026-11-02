@@ -46,8 +46,9 @@ starter library's boards of six and eight phrases, every iPad in
 portrait but the iPad mini, and the 13-inch iPad in landscape, take
 the late stage's sizes, and phones touch's (head tracking's on the Pro
 Max with a board of six) (docs/DECISIONS.md, "The late-stage profile";
-`HomeRestBoardTests` checks a board of six in the app on CI's iPad and
-iPhone simulators, #74).
+`HomeRestBoardTests` checks a board of six in the app, and Apple's
+audit and the drawn words on a board of eight, on CI's iPad and iPhone
+simulators, #74 and #75).
 Four category buttons that never scroll sideways, and three
 phrase columns on every iPhone at its standard Display Zoom (two on 375
 and 390-point phones with Bold Text). A tile
@@ -567,9 +568,10 @@ release in docs/ROADMAP.md when no thread has it yet.
 - The rendered-label tests read the five English quick-control labels
   (Yes, No, Emergency, Get Attention, Again), and, on an iPad in
   portrait at Home's larger sizes, Phrases, Type and the everyday
-  categories (`HomeSizesTests`), and on the rest board, on CI's iPhone
-  and iPad, the quick controls and every everyday category, dimmed or
-  not (`HomeRestBoardTests`); never a phrase tile, and nothing at
+  categories (`HomeSizesTests`), and on rest boards of six and eight
+  phrases, on CI's iPhone and iPad, the quick controls and every
+  everyday category, dimmed or not (`HomeRestBoardTests`); never a
+  phrase tile, and nothing at
   AX3. `StarterLabelFitTests` measures every starter label against its
   narrowest slot instead. *(Accessibility coverage checklist)*
 - The Get Attention tone is the reference app's placeholder; a

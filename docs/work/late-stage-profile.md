@@ -294,7 +294,9 @@ over every window run both boards. On the phones a board of
 eight keeps every category's three rows, so the safety row's growth
 comes out of the tiles, and the iPhone 17 Pro Max takes touch's sizes
 instead of head tracking's (`LateStageProfileTests.boardTableForEight`).
-Every test of the board above runs with both boards.
+Every unit test of the board above runs with both boards, and in the
+app `HomeRestBoardTests` runs Apple's audit and reads the drawn words
+on Needs, a board of eight, as it does on Conversation.
 
 | Window | Text | Board of eight | Yes and No | Tiles | Rows |
 |---|---|---|---|---|---|

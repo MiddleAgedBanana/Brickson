@@ -16,21 +16,29 @@ import XCTest
 /// The board is Conversation, the starter library's everyday category with
 /// six phrases, as many as Emergency, so on the iPhone's three columns the
 /// grid shows two rows instead of three; the iPad's four columns hold
-/// every category in two rows already. The flow walks Settings to the second step, so it
-/// launches without the short idle limits, which could reset Settings
-/// part way.
+/// every category in two rows already. Apple's audit and the drawn words
+/// are checked on Needs too, a board of eight phrases, which keeps every
+/// category's three rows on the iPhone, so its tiles give Yes and No some
+/// of their height and its words sit in other frames than a board of
+/// six's (`LateStageProfileTests.boardTableForEight`). The flow walks
+/// Settings to the second step, so it launches without the short idle
+/// limits, which could reset Settings part way.
 final class HomeRestBoardTests: XCTestCase {
     /// The late stage's floors (`HomeLayout.Profile.lateStage`): quick
     /// controls and phrase tiles.
     private static let lateQuickFloor: CGFloat = 136
     private static let lateTileFloor: CGFloat = 136
     /// The starter library's everyday categories, in Home's order, and the
-    /// one the board shows.
+    /// one the board shows, with its number of phrases.
     private static let everyday = ["Basics", "Needs", "Conversation", "Feelings"]
     private static let board = "Conversation"
+    private static let boardPhrases = 6
+    /// The board of eight phrases whose audit and drawn words are checked
+    /// too.
+    private static let boardOfEight = "Needs"
+    private static let boardOfEightPhrases = 8
     /// The second step's question.
     private static let question = "Which phrases does Home show?"
-    private static let boardPhrases = 6
     /// The quick controls, whose words every window must draw whole.
     private static let quickControls = ["Yes", "No", "Emergency", "Get Attention", "Again"]
     /// The controls that keep their frames between the board's phrases and
@@ -227,22 +235,42 @@ final class HomeRestBoardTests: XCTestCase {
     }
 
     /// The board at the default and the largest text size, light and dark.
-    /// Fails if a launch does not keep the board, if the words of a quick
-    /// control or an everyday category, dimmed or not, are not each drawn
-    /// whole (`RenderedWords`, without the expected words or language
-    /// correction), or if Apple's accessibility audit finds anything.
+    /// Fails as `assertPassesTheAuditAndDrawsItsWordsWhole` says.
     @MainActor
     func testTheRestBoardPassesTheAuditAndDrawsItsWordsWhole() async throws {
+        try await assertPassesTheAuditAndDrawsItsWordsWhole(board: Self.board, phrases: Self.boardPhrases)
+    }
+
+    /// The same on a board of eight phrases, Needs. Fails as
+    /// `assertPassesTheAuditAndDrawsItsWordsWhole` says.
+    @MainActor
+    func testABoardOfEightPassesTheAuditAndDrawsItsWordsWhole() async throws {
+        try await assertPassesTheAuditAndDrawsItsWordsWhole(board: Self.boardOfEight, phrases: Self.boardOfEightPhrases)
+    }
+
+    /// Chooses `board` in the second step, then launches at the default and
+    /// the largest text size, light and dark. Fails if the board does not
+    /// show `phrases` phrases once chosen, if a launch does not keep the
+    /// board, if the words of a quick control or an everyday category,
+    /// dimmed or not, are not each drawn whole (`RenderedWords`, without
+    /// the expected words or language correction), or if Apple's
+    /// accessibility audit finds anything.
+    @MainActor
+    private func assertPassesTheAuditAndDrawsItsWordsWhole(board: String, phrases: Int) async throws {
         let first = launchedApp(sizes: .asShipped, shortTimeouts: false)
-        try choose("restBoardCategory", label: Self.board, in: first, context: "choosing the board")
+        try choose("restBoardCategory", label: board, in: first, context: "choosing \(board)")
+        let dimmed = try XCTUnwrap(Self.everyday.first(where: { $0 != board }))
+        waitUntil(first.buttons[dimmed], matches: "isEnabled == false", "\(dimmed) was not dimmed once \(board) was chosen")
+        let chosenTiles = tileLabels(in: first)
+        XCTAssertEqual(chosenTiles.count, phrases, "the \(board) board shows \(chosenTiles) after it was chosen")
         for textSize in [UITestTextSize.large, .ax5] {
             for appearance in [UITestAppearance.light, .dark] {
                 // The same storage, so the board chosen above is kept.
                 let app = launchedApp(textSize: textSize, appearance: appearance, storage: .kept, sizes: .asShipped)
                 let window = app.windows.firstMatch.frame
-                let context = "the rest board, \(textSize.name), \(appearance.rawValue), window \(window.size)"
+                let context = "the \(board) board, \(textSize.name), \(appearance.rawValue), window \(window.size)"
                 attachCapture(app, name: context)
-                XCTAssertFalse(app.buttons["Basics"].isEnabled, "the board was not kept across a launch (\(context))")
+                XCTAssertFalse(app.buttons[dimmed].isEnabled, "the board was not kept across a launch (\(context))")
                 for label in Self.quickControls + Self.everyday {
                     let control = app.buttons[label]
                     XCTAssertTrue(control.exists, "\(label) is missing (\(context))")
