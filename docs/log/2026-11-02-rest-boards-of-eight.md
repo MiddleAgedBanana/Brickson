@@ -29,10 +29,14 @@ waiting for CI; #74 merged first, so the work is here.
     file has which).
   - Tiles are whole points tall, so they can end up to a point shorter
     than Yes and No (108 against 108.8 on the Pro Max with eight).
-- **Every rest-board unit test runs on both boards.**
+- **Every layout test of the board runs on both boards.**
   `LateStageProfileTests.boardPhrases` is `[6, 8]`; each sweep, chain
   and share runs with both, with a windows table for eight
   (`boardTableForEight`: the same as six's but the Pro Max's row).
+  `RestBoardTests` already checked the phrase count of a board of eight
+  and of six; its two request tests use Conversation alone, as a
+  request passes the board's count to the layout unchanged
+  (`ProfileChoice.Request.phraseArea`).
   `StarterPhrasesTests.everyStarterRestBoardIsOneTheLayoutTestsMeasure`
   fails if the starter library makes a board of a size those tests do
   not measure, or if they measure one it does not make.
@@ -41,8 +45,10 @@ waiting for CI; #74 merged first, so the work is here.
   and dark, runs Apple's audit and reads the drawn words of the quick
   controls and the everyday categories, as it does on Conversation
   (`testABoardOfEightPassesTheAuditAndDrawsItsWordsWhole`). It first
-  checks that the board shows eight phrases, so the test fails rather
-  than goes on passing if Needs stops being a board of eight.
+  checks that Needs is chosen, with the other three categories dimmed
+  and eight phrases showing, so the test fails rather than goes on
+  passing if Needs stops being a board of eight, and each launch checks
+  the other three are still dimmed.
 - **The second step's words.** They said the board shows its phrases
   "in fewer, larger buttons", and the summary "with larger buttons":
   untrue on every iPad and with a board of eight on a phone. The step
@@ -76,8 +82,8 @@ waiting for CI; #74 merged first, so the work is here.
 
 ## Commits
 
-- `d626454`: every rest-board unit test on boards of six and eight,
-  with the starter library's check.
+- `d626454`: every layout test of the board on boards of six and
+  eight, with the starter library's check.
 - `3ccb69d`: the second step's words and summary line.
 - `7a38f33`: the records.
 - `ae2a133`: the independent review's corrections.

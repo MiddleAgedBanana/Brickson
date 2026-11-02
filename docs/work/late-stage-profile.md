@@ -294,9 +294,10 @@ over every window run both boards. On the phones a board of
 eight keeps every category's three rows, so the safety row's growth
 comes out of the tiles, and the iPhone 17 Pro Max takes touch's sizes
 instead of head tracking's (`LateStageProfileTests.boardTableForEight`).
-Every unit test of the board above runs with both boards, and in the
-app `HomeRestBoardTests` runs Apple's audit and reads the drawn words
-on Needs, a board of eight, as it does on Conversation.
+Every layout test of the board (`LateStageProfileTests`) runs with
+both boards, and in the app `HomeRestBoardTests` runs Apple's audit
+and reads the drawn words on Needs, a board of eight, as it does on
+Conversation.
 
 | Window | Text | Board of eight | Yes and No | Tiles | Rows |
 |---|---|---|---|---|---|
@@ -541,7 +542,8 @@ Max).
 - **Boards of eight phrases were measured after the build.** The board
   tests used only a six-phrase board, while Basics and Needs, half the
   starter categories, make boards of eight. Measured on 2026-11-02 (*Where
-  each profile holds*), every board test now runs with both, and
+  each profile holds*), every layout test of the board now runs with
+  both, and
   `StarterPhrasesTests` fails if the starter library makes a board of
   another size. The measurements also showed the step's "fewer, larger
   buttons" untrue on every iPad and with a board of eight on a phone,

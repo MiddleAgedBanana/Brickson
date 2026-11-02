@@ -249,18 +249,24 @@ final class HomeRestBoardTests: XCTestCase {
     }
 
     /// Chooses `board` in the second step, then launches at the default and
-    /// the largest text size, light and dark. Fails if the board does not
-    /// show `phrases` phrases once chosen, if a launch does not keep the
-    /// board, if the words of a quick control or an everyday category,
-    /// dimmed or not, are not each drawn whole (`RenderedWords`, without
-    /// the expected words or language correction), or if Apple's
-    /// accessibility audit finds anything.
+    /// the largest text size, light and dark. Fails if, once chosen, the
+    /// board is not enabled and chosen with every other everyday category
+    /// dimmed and `phrases` phrases showing; if a launch does not keep
+    /// every other category dimmed; if the words of a quick control or an
+    /// everyday category, dimmed or not, are not each drawn whole
+    /// (`RenderedWords`, without the expected words or language
+    /// correction); or if Apple's accessibility audit finds anything.
     @MainActor
     private func assertPassesTheAuditAndDrawsItsWordsWhole(board: String, phrases: Int) async throws {
         let first = launchedApp(sizes: .asShipped, shortTimeouts: false)
         try choose("restBoardCategory", label: board, in: first, context: "choosing \(board)")
-        let dimmed = try XCTUnwrap(Self.everyday.first(where: { $0 != board }))
-        waitUntil(first.buttons[dimmed], matches: "isEnabled == false", "\(dimmed) was not dimmed once \(board) was chosen")
+        let dimmed = Self.everyday.filter { $0 != board }
+        XCTAssertEqual(dimmed.count, Self.everyday.count - 1, "\(board) is not an everyday category")
+        for name in dimmed {
+            waitUntil(first.buttons[name], matches: "isEnabled == false", "\(name) was not dimmed once \(board) was chosen")
+        }
+        XCTAssertTrue(first.buttons[board].isEnabled, "\(board) is dimmed on its own board")
+        XCTAssertTrue(first.buttons[board].isSelected, "\(board) is not chosen on its own board")
         let chosenTiles = tileLabels(in: first)
         XCTAssertEqual(chosenTiles.count, phrases, "the \(board) board shows \(chosenTiles) after it was chosen")
         for textSize in [UITestTextSize.large, .ax5] {
@@ -270,7 +276,9 @@ final class HomeRestBoardTests: XCTestCase {
                 let window = app.windows.firstMatch.frame
                 let context = "the \(board) board, \(textSize.name), \(appearance.rawValue), window \(window.size)"
                 attachCapture(app, name: context)
-                XCTAssertFalse(app.buttons[dimmed].isEnabled, "the board was not kept across a launch (\(context))")
+                for name in dimmed {
+                    XCTAssertFalse(app.buttons[name].isEnabled, "\(name) is not dimmed: the board was not kept across a launch (\(context))")
+                }
                 for label in Self.quickControls + Self.everyday {
                     let control = app.buttons[label]
                     XCTAssertTrue(control.exists, "\(label) is missing (\(context))")
