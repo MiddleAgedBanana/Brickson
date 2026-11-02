@@ -411,13 +411,16 @@ release in docs/ROADMAP.md when no thread has it yet.
   *The quality bar*, Q3 and Q13)* The rest board's late-stage sizes
   (2026-11-01) are proposals too: their 136-point floors and the safety
   row's growth toward 4 degrees rest on a study with a phone's camera
-  and people without ALS, not Apple's Eye Tracking. On four columns the
-  board's safety row grows out of the tiles (302 points tall on the
-  13-inch iPad in portrait, where every category's are 350), and on the
-  iPhone 17 Pro Max the board's head tracking sizes make its tiles 110
-  points tall where touch's with every category are 138; the owner can
-  cap the growth or keep touch's there (docs/DECISIONS.md, "The
-  late-stage profile", *Where the board's sizes hold*).
+  and people without ALS, not Apple's Eye Tracking. Where the board has
+  as many rows as every category (four columns, and a board of eight
+  phrases on a phone), its safety row grows out of the tiles (302 points
+  tall on the 13-inch iPad in portrait, where every category's are 350;
+  92 on the iPhone 17 with Basics, where they are 111), and on the
+  iPhone 17 Pro Max a board of six takes head tracking's sizes, which
+  make its tiles 110 points tall where touch's with every category are
+  138 (with a board of eight it keeps touch's, and its tiles are 108);
+  the owner can cap the growth or keep touch's there (docs/DECISIONS.md,
+  "The late-stage profile", *Where the board's sizes hold*).
   *(device checks: docs/ROADMAP.md, *The quality bar*, Q11 and Q13; then
   the owner)* At
   touch's sizes, by the engine's model the phrase grid still scrolls (invariant 11) on

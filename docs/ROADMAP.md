@@ -564,7 +564,9 @@ Emergency, Again and Get Attention grown toward 4 degrees
 map's Yes/No mode and rest board as one profile of the engine: Yes, No,
 Get Attention and Emergency keep their places relative to each other
 and grow, and the phrase area shows fewer, larger tiles from a category
-the family chooses (docs/DECISIONS.md, "Accessibility API coverage").
+the family chooses (docs/DECISIONS.md, "Accessibility API coverage");
+as built, only the chosen category shows, and its tiles are fewer and
+larger only in some windows.
 Emergency stays visible (invariant 2).
 *Rows:* the map's "Yes/No mode" and "Rest board". *Needs:* cloud
 and CI, once item 8 has merged (one Home pull request at a time). *Owner:* the late stage's

@@ -200,16 +200,17 @@ profile"; work file [`work/late-stage-profile.md`](../work/late-stage-profile.md
     `build/audit-probe/followup/`.
 - **Boards of eight phrases** (2026-11-02). Every board test measured
   a board of six phrases, while Basics and Needs, half the starter
-  categories, make boards of eight. Measured with the same engine on
-  every window the tests use, a board of eight takes the same sizes
-  and frames as one of six on every iPad (four columns hold either in
-  two rows), and on a phone keeps every category's three rows, so Yes
+  categories, make boards of eight. Measured with the same engine, a
+  board of eight takes the same sizes and frames as one of six on
+  every iPad window in the windows table (four columns hold either in
+  two rows; a resized iPad window with three columns can differ), and
+  on a phone keeps every category's rows, so Yes
   and No grow out of the tiles' height (on the iPhone 17 both are 92
   points tall, where the tiles were 111 with every category), the
   iPhone 17 Pro Max takes touch's sizes instead of head tracking's,
   and where every category's phrases scroll, the board scrolls too and
-  nothing grows. Every test in `LateStageProfileTests` now runs with
-  both boards (`boardPhrases`, `boardTableForEight`), and
+  nothing grows. Every board test in `LateStageProfileTests` now runs
+  with both boards (`boardPhrases`, `boardTableForEight`), and
   `StarterPhrasesTests.everyStarterRestBoardIsOneTheLayoutTestsMeasure`
   fails if the starter library makes a board of a size they do not
   measure. The same measurements showed the second step's "in fewer,
@@ -264,9 +265,13 @@ profile"; work file [`work/late-stage-profile.md`](../work/late-stage-profile.md
   largest, every "control" drawing the border where the field does
   not), with the
   board described on the page and how it is checked.
-- After measuring boards of eight phrases: every board test on boards
-  of six and eight, the starter library's check, the step's words and
-  summary line, and these records.
+- After measuring boards of eight phrases: `7f75369`, every board test
+  on boards of six and eight, with the starter library's check;
+  `615254e`, the step's words and summary line; `133f502`, these
+  records; then one independent review's corrections (a missed Known
+  gaps entry, two "fewer, larger tiles" left in records marked built,
+  where a board of six stops the scrolling, resized iPad windows with
+  three columns, and the website's rows and tile heights).
 
 ## Verified
 

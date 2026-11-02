@@ -14,8 +14,9 @@ import XCTest
 /// nothing about gaze comfort, which needs a device (docs/HANDOFF.md).
 ///
 /// The board is Conversation, the starter library's everyday category with
-/// six phrases, as many as Emergency, so the grid shows fewer rows than
-/// with every category. The flow walks Settings to the second step, so it
+/// six phrases, as many as Emergency, so on the iPhone's three columns the
+/// grid shows two rows instead of three; the iPad's four columns hold
+/// every category in two rows already. The flow walks Settings to the second step, so it
 /// launches without the short idle limits, which could reset Settings
 /// part way.
 final class HomeRestBoardTests: XCTestCase {

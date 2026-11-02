@@ -3969,9 +3969,13 @@ Step by Step. The work file is
   at AX3, head tracking's; the iPad mini in landscape touch's; phones
   touch's, except the iPhone 17 Pro Max with a board of six, whose two
   rows hold head tracking's. Both boards take the same sizes on every
-  iPad, whose four columns hold six or eight phrases in two rows; on a
+  iPad window in the table, whose four columns hold six or eight
+  phrases in two rows; on a
   phone's three columns a board of eight keeps every category's three
-  rows, so the Pro Max takes touch's with it. Three consequences: where
+  rows, so the Pro Max takes touch's with it. A resized iPad window
+  narrow enough for three columns (600 to 672 points wide, to 720 with
+  Bold Text) can take different sizes with the two boards: the sweeps
+  over every window run both. Three consequences: where
   the board has as many rows as every category (four columns, and a
   board of eight on a phone), the safety row's growth comes out of the
   tiles (the 13-inch iPad in portrait: Yes and No 206 points, tiles 302
@@ -3979,10 +3983,12 @@ Step by Step. The work file is
   the tiles were 111); on the Pro Max with a board of six the tiles are
   head tracking's 110 points where touch's with every category were
   138, while every other target grows; and where every category's
-  phrases scroll on a phone (for example the 375 by 667 window, and the
-  iPhone 17 and 16e at AX5), a board of eight scrolls as they do and
-  nothing grows, while a board of six stops the scrolling on the iPhone
-  17 and 16e. The owner can cap the growth, or keep touch's on the Pro Max,
+  phrases scroll on a phone, a board of eight scrolls as they do and
+  nothing grows, while a board of six, a row shorter, stops the
+  scrolling in some of those windows (the 375 by 667 window to AX1, the
+  iPhone 17 and 16e at AX5 with Bold Text off, the iPhone 17 at AX3 with
+  Bold Text) and not in others (the 375 by 667 window at AX3 and AX5,
+  the zoomed 320-point window, AX5 with Bold Text). The owner can cap the growth, or keep touch's on the Pro Max,
   instead.
 - **A fold or a camera across Home** shows the board in every
   category's frames at touch's sizes, because no fold check has
@@ -4454,7 +4460,9 @@ choices it makes:
   No, Get Attention and Emergency keep their relative places and grow,
   and the phrase area shows fewer, larger tiles from a category the
   family chooses. Emergency stays visible (invariant 2). *Built
-  2026-11-01* (*The late-stage profile*).
+  2026-11-01* (*The late-stage profile*), showing only the chosen
+  category; its tiles are fewer and larger only in some windows, and
+  elsewhere give height to Yes and No.
 - **Waiting, each with a work file first:** a watch app, a start-only
   Get Attention control (never a toggle), an on-device partner view,
   custom VoiceOver rotors, pronunciation with SSML or IPA, keyboard

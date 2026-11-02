@@ -286,8 +286,11 @@ What it shows:
 *Added after the build: boards of eight phrases.* The table above
 measured only a six-phrase board, and the starter library also makes
 boards of eight (Basics, Needs). Measured the same way on 2026-11-02,
-every iPad takes the same sizes and frames with eight phrases as with
-six: four columns hold either in two rows. On the phones a board of
+every iPad window in the table takes the same sizes and frames with
+eight phrases as with six: four columns hold either in two rows. A
+resized iPad window narrow enough for three columns (600 to 672 points
+wide, to 720 with Bold Text) can differ, as a phone does; the sweeps
+over every window run both boards. On the phones a board of
 eight keeps every category's three rows, so the safety row's growth
 comes out of the tiles, and the iPhone 17 Pro Max takes touch's sizes
 instead of head tracking's (`LateStageProfileTests.boardTableForEight`).
@@ -305,8 +308,11 @@ Every test of the board above runs with both boards.
 | 375×667 phone, zoomed | both | touch | 64, 79 | 140×78, scrolls | 4 |
 
 Where every category's phrases scroll, a board of eight scrolls the
-same and nothing grows; a board of six stops the scrolling on the
-iPhone 17 and 16e at AX5. Tiles are whole points tall, so they can end
+same and nothing grows. A board of six, a row shorter, stops the
+scrolling on the 375×667 phone to AX1, on the iPhone 17 and 16e at AX5
+with Bold Text off and on the iPhone 17 at AX3 with Bold Text, but not
+on the 375×667 phone at AX3 and AX5, the zoomed phone, or at AX5 with
+Bold Text. Tiles are whole points tall, so they can end
 up to a point shorter than Yes and No (108 against 108.8 on the Pro
 Max).
 
