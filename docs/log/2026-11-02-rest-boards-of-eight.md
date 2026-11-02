@@ -52,16 +52,19 @@ waiting for CI; #74 merged first, so the work is here.
 - **The second step's words.** They said the board shows its phrases
   "in fewer, larger buttons", and the summary "with larger buttons":
   untrue on every iPad and with a board of eight on a phone. The step
-  now says "Home can show one category's phrases, and Emergency's,
+  now says "Home can show one category's phrases or Emergency's,
   with Yes, No, Emergency, Again and Get Attention as large as this
   screen has room for. The other categories stay where they are,
   dimmed, so nothing moves. The change shows when Settings closes.",
-  and the summary "Home shows one category's phrases:". The chain
-  sweep's copy of the words (`ChainEngineTests`) and the String Catalog
-  follow. With the shorter words, the step's model shows a choice on the
-  first screenful on 99 of the 140 phone-height windows at the default
-  size (97 before), 55 and 28 of 70 at AX3 and AX5 (53 and 26); the
-  iPhone 17 still shows two.
+  and the summary "Home shows one category's phrases:". The words
+  first said "one category's phrases, and Emergency's", which
+  CodeRabbit read, rightly, as both at once; Home shows one or the
+  other, so they say "or". The chain sweep's copy of the words
+  (`ChainEngineTests`) and the String Catalog follow. With the shorter
+  words, the step's model shows a choice on the first screenful on 100
+  of the 140 phone-height windows at the default size (97 before), and
+  on 56 and 28 of the 70 from 1,000 points tall at AX3 and AX5 (53 and
+  26); the iPhone 17 still shows two.
 - **The records.** The decision (*Where the board's sizes hold*, the
   dwell-safety bullet, the screenful count, and the coverage decision's
   note), the work file (its own table for boards of eight),
@@ -88,9 +91,12 @@ waiting for CI; #74 merged first, so the work is here.
 - `7a38f33`: the records.
 - `ae2a133`: the independent review's corrections.
 - `c40c2f9`: the UI test on Needs, with its records.
-- Then this file, with the pointers to it, and #74's log: the commits
-  above had added this work to it, and it goes back to its merged text
-  with the one correction.
+- `1f4f36a`: this file, with the pointers to it, and #74's log: the
+  commits above had added this work to it, and it goes back to its
+  merged text with the one correction.
+- Then the first reviews' fixes: Copilot's (every other category
+  checked dimmed on the board of eight; "every rest-board unit test"
+  narrowed to the layout tests) and CodeRabbit's ("or Emergency's").
 
 ## Verified
 
@@ -111,8 +117,13 @@ the change and the first run of its UI test.
 - **The eight-phrase table is read:** changing `boardTableForEight`'s
   Pro Max row to head tracking's failed the table test 10 times (five
   text sizes, Bold Text off and on).
+- **With the step's final words** ("or Emergency's"):
+  `ChainEngineTests`, `SettingsChainsTests`, `SetupChoicesPlaceTests`
+  and `LateStageProfileTests` again, 57 tests in 6 suites, all passed.
 - **The step's model:** with the old words it reproduces the old counts
-  (97 of 140, and 53 and 26 of 70) before giving the new ones.
+  (97 of 140, and 53 and 26 of 70), and with "and Emergency's" the
+  counts recorded before the change to "or" (99, 55 and 28), before
+  giving the new ones.
 - **The starter library's boards:** the starter JSON's counts (Basics 8,
   Needs 8, Conversation 6, Feelings 6, Emergency 6) give the boards of
   six and eight the new `StarterPhrasesTests` test expects; the test

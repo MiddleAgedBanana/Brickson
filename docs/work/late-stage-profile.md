@@ -325,7 +325,7 @@ Max).
   phrases Home shows**, the voice, turning on what was chosen, keeping
   Brickson open, and the summary (`GuidedSetupStep.restBoard`).
 - The step's words: the heading "Which phrases does Home show?", and
-  "Home can show one category's phrases, and Emergency's, with Yes, No,
+  "Home can show one category's phrases or Emergency's, with Yes, No,
   Emergency, Again and Get Attention as large as this screen has room
   for. The other categories stay where they are, dimmed, so nothing
   moves. The change shows when Settings closes." *Changed after the

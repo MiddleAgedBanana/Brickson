@@ -3892,7 +3892,7 @@ Step by Step. The work file is
   Next's own: on the iPhone 17 at the default size, Every Category and
   the first category stay under the words and the other three start
   below the bar. Across the 630 swept windows the first screenful shows
-  at least one choice on 99 of the 140 phone-height windows at the
+  at least one choice on 100 of the 140 phone-height windows at the
   default size, and on every window from 1,000 points tall; at AX3 and
   AX5 on a phone the words alone fill it. Putting every choice below
   the bar wherever the whole column cannot stay under the words, as

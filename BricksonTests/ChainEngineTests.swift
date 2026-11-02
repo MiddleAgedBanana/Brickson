@@ -1070,7 +1070,7 @@ struct SettingsChainsTests {
         static let sentence = "Choose every way that is used now. Each answer is saved as soon as it is chosen."
         static let sizes = "Home's buttons take the size the answers need, as large as this screen has room for, and are largest until something is chosen. The new size shows when Settings closes."
         static let restBoardQuestion = "Which phrases does Home show?"
-        static let restBoardSentence = "Home can show one category's phrases, and Emergency's, with Yes, No, Emergency, Again and Get Attention as large as this screen has room for. The other categories stay where they are, dimmed, so nothing moves. The change shows when Settings closes."
+        static let restBoardSentence = "Home can show one category's phrases or Emergency's, with Yes, No, Emergency, Again and Get Attention as large as this screen has room for. The other categories stay where they are, dimmed, so nothing moves. The change shows when Settings closes."
         /// The second step's choices, by the names the UI test reads:
         /// Every Category, then the most everyday categories Home holds.
         static let restBoardChoiceNames = ["restBoardEveryCategory"]
