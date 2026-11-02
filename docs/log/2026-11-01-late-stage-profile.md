@@ -138,14 +138,39 @@ profile"; work file [`work/late-stage-profile.md`](../work/late-stage-profile.md
     audit also showed; Apple's own issue carries no element, rect or
     location, and its screenshot is the test's capture from before the
     audit. So where Apple's detector sees text cannot be found from the
-    bundles. The open candidates are the off categories' words at full
-    AX5 size inside their outlines, white on black only in dark; the
-    message drawn whole on two lines; and words from two controls read
-    as one line, which only dark allows. A probe on a Mac, masking one
-    region at a time and changing one look at a time in a throwaway
-    worktree, is the next step; the evidence and scripts are kept
-    outside the repository with the project's notes
-    (`pr74-audit-probe`).
+    bundles.
+  - *Where it is, found on the owner's Mac* (2026-11-02; Xcode 27.2,
+    the iPad Pro 13-inch (M5) simulator on iOS 27.2, the window
+    1032 by 1376; a throwaway worktree at `5a8a91a`, nothing committed).
+    The unchanged test failed with CI's exact words on the first try,
+    so the finding is not tied to iOS 27.0. Then about 70 launches of
+    the board at AX5 in dark, each audited, with debug-only probe code
+    that painted rectangles over parts of the screen or changed one look
+    at a time. Apple's element detection alone raises it, with no
+    text-size sweep running, and only at AX5 in dark: AX4 to the default
+    size in dark, and AX5 in light, pass. It is in the phrase grid's
+    first row: the first lines of tiles 1 and 2, "Give me a" and "Can
+    you", each fill their tile at AX5, and the detector reads them as
+    one line across the 15-point gap between the tiles, which is black
+    in dark and white in light. A line across two buttons belongs to
+    neither, so it is reported on no element. Covering either tile, or
+    either of those two lines in its tile's own blue, clears it; so does
+    a white strip in that gap alone, while strips in every other gap
+    leave it raised. The finding also needs other phrase text on the
+    screen: tile 4's "I don't" and either tile of the second row (each
+    is enough; covering both clears it); text outside the grid does not
+    stand in for them. Nothing outside the grid is involved: covering
+    everything below the status bar clears it, while covering the
+    message, Phrases and Type, the safety row, each category or Settings
+    leaves it raised, and so do the off categories drawn filled, the off
+    categories enabled, no selection ring and no scroll bars. Vision's fast recognizer, run
+    on the same captures, reads "Give me a Can you" as one line in every
+    capture that raised the finding, and two lines in light. So the
+    accessibility tree is right (every word is inside the button whose
+    label holds it) and Apple's detector joins two buttons' words that
+    stand close together on a dark gap. The full report and its
+    evidence (2.9 GB, mostly result bundles) are on the owner's Mac,
+    git-ignored, under the probe session's `build/audit-probe/`.
 
 ## Commits
 
@@ -313,10 +338,9 @@ the app, its SwiftUI views and its UI tests.
   until CI's unit job; the band's rows were checked on every kept
   capture by the same arithmetic in Python (only the tall "No" has one,
   rows 90 to 321 of 412).
-- **Where Apple's audit sees text on the iPad board at AX5 in dark.**
-  The finding came back on the second run, so it is real and must be
-  explained before the pull request merges; the bundles cannot locate
-  it (above).
+- **What clears the audit finding on CI.** It was located on a Mac
+  (above); how it is resolved, and whether that holds on CI's iOS 27.0
+  simulator, is not yet shown.
 - **Comfort.** The floors and the 4-degree growth have not been tried
   by a person, or with Apple's Eye Tracking; simulator evidence never
   shows gaze comfort or where Snap to Item lands (docs/HANDOFF.md,
