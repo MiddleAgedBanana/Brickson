@@ -171,6 +171,30 @@ profile"; work file [`work/late-stage-profile.md`](../work/late-stage-profile.md
     stand close together on a dark gap. The full report and its
     evidence (2.9 GB, mostly result bundles) are on the owner's Mac,
     git-ignored, under the probe session's `build/audit-probe/`.
+  - *What clears it, and the owner's fix* (2026-11-02, the same Mac
+    and simulator, a fresh throwaway worktree at `5a8a91a`). Only the
+    Conversation board raises it: at AX5 in dark the Basics, Needs and
+    Feelings boards, Every Category, the late stage's sizes with every
+    category, Home with no answers, and the Conversation board in
+    landscape all pass. Two remedies were tried. Show Borders' 2-point
+    white border on every control, always or in dark mode only, cleared
+    it on every one of those screens with nothing moved, and with it
+    built in, every audit in the unchanged `HomeRestBoardTests` and
+    `HomeSizesTests` passed. A late-stage gap of 20, 24 or 30 points
+    cleared it too, but each re-set the first tile's words, so those
+    runs could not tell the wider gap from the new line breaks. The
+    owner chose the border, in dark mode only (docs/DECISIONS.md, "Show
+    Borders and the Large Content Viewer on Home"): `HomeButtonLook`
+    draws Show Borders' look whenever Home is dark. With the border, the
+    word reader read the board's whole tall "No" in dark as "I": the
+    border's rows counted as drawn words, so the band was the whole
+    capture again. A row drawn all the way across a capture no longer
+    counts (`RenderedWords`), and that capture is kept
+    (`no-tall-edge.png`). The border also carries every button's edge
+    on the lighter screen iPad multitasking gives a dark window, which
+    `PaletteTests` now measures (docs/HANDOFF.md, *Known gaps*). The
+    follow-up's report and evidence (1.4 GB) are beside the first, under
+    `build/audit-probe/followup/`.
 
 ## Commits
 
@@ -197,6 +221,14 @@ profile"; work file [`work/late-stage-profile.md`](../work/late-stage-profile.md
   review's changes to these records and the first UI run's findings.
 - After CodeRabbit's second review: the setup decision's step count
   and this file's audit finding kept open.
+- After CodeRabbit's third review: `fb377f7`, the stored choice and the
+  moved step numbers named plainly in docs/DECISIONS.md.
+- After the audit finding came back: `e80f995`, what the second run and
+  its bundles showed; `6d26f70`, where it is, found on the owner's Mac.
+- The owner's fix: `5666c07`, the border on every Home control in dark
+  mode; then the word reader leaving a border out of its band, with
+  its kept capture; and the lifted screen measured, with these
+  records.
 
 ## Verified
 
@@ -245,6 +277,35 @@ the app, its SwiftUI views and its UI tests.
   iPhone, the rest board's words included, and on the iPad every test
   but the AX5 dark audit finding above (the iPad's words, the tall
   "No" included, were read whole).
+- **The owner's fix, on the owner's Mac** (2026-11-02; Xcode 27.2,
+  iOS 27.2 simulators, a throwaway worktree at `5a8a91a` with the fix's
+  code and tests applied, nothing committed there):
+  - *Failing first:* with the old word reader and the new tests and
+    capture, `RenderedWordsTests` ran 8 tests and 2 failed, as they
+    should: `aShortWordOnATallButtonWithABorderIsRead` (recognized
+    `["I"]`) and the bordered case of `onlyATallCaptureHasABand` (no
+    band).
+  - *The full unit suite* with the fix: 869 tests, 860 passed, none
+    failed, 1 skipped and 8 expected failures, as on `main`; the Python
+    checks passed, the String Catalog was unchanged, and the build had
+    no warning. Every new and changed test passed, the lifted screen's
+    included.
+  - *UI tests* that read drawn words or audit the board,
+    `HomeRestBoardTests`, `HomeSizesTests` and `LaunchTests`, on the
+    iPad Pro 13-inch (M5) and the iPhone 17, portrait, the full
+    software keyboard: 13 tests on each, 12 passed.
+    `testTheRestBoardPassesTheAuditAndDrawsItsWordsWhole` passed on
+    both, its AX5 dark audit included, and no word failed to read. The
+    one failure on each,
+    `LaunchTests.testLargestTextKeepsQuickControlWordsVisible` ("Speaking"
+    still showing 30 s after a phrase at AX5), failed the same way on
+    unchanged `5a8a91a` on the same simulator and is recorded on this
+    Mac before (docs/log/2026-10-25-duo-fold-design.md); it passed on
+    CI's last run.
+  - *Nothing moved:* the board's 18 control frames matched the earlier
+    runs with and without the border, control for control, and the
+    captures show a thin white border on every control, with the
+    selected category's black ring inside it.
 - **The sizes the UI tests expect** were read from the engine for CI's
   windows: on the iPhone 17 at the default size, Yes 64 points tall
   with every category and 118 on the board (tiles 111 and 117); on the
@@ -323,6 +384,15 @@ the app, its SwiftUI views and its UI tests.
     letter or with one added matching once punctuation is dropped; and
     a band cut from any other kept capture, whole or clipped, or none
     from the tall one.
+  - With the owner's fix: `inDarkModeEveryControlLooksAsItDoesWithShowBorders`,
+    and the look's other tests over Show Borders and dark mode both,
+    fail if dark mode draws no border or rings other than Show
+    Borders'; `aShortWordOnATallButtonWithABorderIsRead` and the
+    bordered case in `onlyATallCaptureHasABand` fail if a border's rows
+    count as words; `primaryInkIsReadableOnTheLiftedScreenInDarkMode`
+    fails if the border or primary ink comes under 4.5:1 on iPad
+    multitasking's lifted dark screen, or the lift does not reach the
+    screen's colour.
 - **The String Catalog** gained the step's five strings by hand, in
   Xcode's own format; CI's unit run checks it against the code.
 
@@ -338,15 +408,20 @@ the app, its SwiftUI views and its UI tests.
   until CI's unit job; the band's rows were checked on every kept
   capture by the same arithmetic in Python (only the tall "No" has one,
   rows 90 to 321 of 412).
-- **What clears the audit finding on CI.** It was located on a Mac
-  (above); how it is resolved, and whether that holds on CI's iOS 27.0
-  simulator, is not yet shown.
+- **What clears the audit finding on CI.** On the owner's Mac (iOS
+  27.2) the border in dark mode cleared it; whether it holds on CI's
+  iOS 27.0 simulator is shown only by CI's run of the push that carries
+  it.
 - **Comfort.** The floors and the 4-degree growth have not been tried
   by a person, or with Apple's Eye Tracking; simulator evidence never
   shows gaze comfort or where Snap to Item lands (docs/HANDOFF.md,
   "Checks that need a real device").
-- **The website's accessibility page** says nothing about the rest
-  board yet; none of its sentences became untrue.
+- **The website's accessibility page** now says every Home control
+  draws a border in Dark Mode, that Apple's audit reads each button's
+  words as its own, and that on a lifted multitasking screen only the
+  message field's outline may come under 3:1. Those sentences rest on
+  the unit tests and CI's audit, not a device. It still says nothing
+  about the rest board.
 - **How long the new sweeps add to CI's unit job on its Mac.** On the
   Linux package, a debug build like CI's, the two new suites took about
   115 seconds run one test at a time, as the unit job runs them: the

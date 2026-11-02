@@ -573,15 +573,14 @@ release in docs/ROADMAP.md when no thread has it yet.
   check on a device (docs/DECISIONS.md, "Get Attention"). *(owner, with a
   device build)*
 - In dark mode, iPad multitasking can lift a window's background from
-  black to the elevated gray, and `PaletteTests` measures the fills' edges
-  against black only. Against `#1C1C1E` (a commonly reported value, not
-  read from Apple) the accent, control and Emergency fills come to 2.84
-  to 2.96:1, under invariant 6's 3:1 (Get Attention's and Stop's, 3.39
-  and 3.11:1, clear it).
-  With Show Borders on, the border carries the edge. First step: measure
-  with `userInterfaceLevel = .elevated` in `PaletteTests`
-  ([`log/2026-10-23-show-borders-and-large-content.md`](log/2026-10-23-show-borders-and-large-content.md), *Follow-ups*). *(the next
-  accessibility thread)*
+  black to the elevated gray. Against `#1C1C1E` (a commonly reported
+  value, not read from Apple) the accent, control and Emergency fills
+  come to 2.84 to 2.96:1, under invariant 6's 3:1. Since 2026-11-02
+  every Home button draws a white border in dark mode, and `PaletteTests`
+  measures it against the lifted screen (4.5:1 or better), so no button's
+  fill meets that screen. The message field's 2pt border is still the
+  control fill there (2.84:1 against `#1C1C1E`); `PaletteTests` does not
+  measure it. *(the next accessibility thread)*
 - Typing on Home (since 2026-10-24) has automated coverage on CI's iPad and
   iPhone simulators, in portrait, at the default text size, with the full
   software keyboard (`TypingOnHomeTests`); `KeyboardProbeTests` checks the
@@ -1048,7 +1047,8 @@ row in [`ACCESSIBILITY.md`](ACCESSIBILITY.md), with its release and
 roadmap item; what each R0 item picks up from it, in order, is in
 [`log/2026-10-21-accessibility-coverage.md`](log/2026-10-21-accessibility-coverage.md),
 *Follow-ups*. Item 3's scan order, regions and Voice Control names are
-done, and so is Home's border under Show Borders; the Large Content
+done, and so is Home's border under Show Borders, drawn in dark mode
+with the setting off too since 2026-11-02 (pull request #74); the Large Content
 Viewer stays off Home's controls other than Settings' gear, because on
 simulators a slow press with it spoke nothing (docs/DECISIONS.md, "Show
 Borders and the Large Content Viewer on Home";
@@ -1120,7 +1120,7 @@ Simulators cannot show these. Record each result in a `docs/log/` file
 | Guided Access with each input method, and with a short Display Auto-Lock while Brickson keeps the screen awake | Setup advice, and invariant 12 under Guided Access |
 | Which of the VoiceOver, Switch Control and AssistiveTouch flags each input method turns on | Profile suggestions (R1) |
 | With a real finger at an accessibility text size, in the shipped build: press Yes slowly (about half a second) and lift, then a phrase tile; then hold Yes, slide onto No and lift, and hold a phrase tile, slide onto the next and lift; also with Touch Accommodations' Hold Duration on, and with AssistiveTouch Dwell. Each press speaks; a slide says the control it began on or nothing, never the next. In a window where Settings shows its gear alone (iPhone Duo's outer display with Bold Text on is one; [`log/2026-10-23-settings-on-home.md`](log/2026-10-23-settings-on-home.md)): tap the gear (Settings opens); hold it until its large copy shows and lift, and record whether Settings opened (opening means a real finger is not swallowed as XCTest's touch was); hold it and slide onto each control beside, above and below it, and lift: Settings opens or nothing happens, never anything else; dwell on it; and press Yes and a phrase tile slowly there: each speaks. The simulator results these confirm are in [`log/2026-10-23-large-content-and-iphone-duo.md`](log/2026-10-23-large-content-and-iphone-duo.md) | That Home speaks on a slow real press and a slide never says the next control; from the gear, whether a real finger's held press is swallowed as XCTest's was, and whether the gear keeps the viewer (docs/DECISIONS.md, "Show Borders and the Large Content Viewer on Home") |
-| Show Borders on, in light and dark, with and without Increase Contrast: every Home control shows its border, a press thickens it, a selected category and Emergency show their inner ring, measured on the rendered pixels; Settings' system buttons show theirs | "Show Borders and the Large Content Viewer on Home"; Show Borders on Settings and setup |
+| Show Borders on, in light and dark, with and without Increase Contrast, and Show Borders off in dark: every Home control shows its border, a press thickens it, a selected category and Emergency show their inner ring, measured on the rendered pixels; Settings' system buttons show theirs | "Show Borders and the Large Content Viewer on Home"; Show Borders on Settings and setup |
 | In the build that ships: the time from an activation completing to a phrase's first sound, read frame by frame from a screen recording with sound, as the median of ten activations each for the default voice and a Personal Voice | docs/ROADMAP.md, *The quality bar*, Q6 (the default voice's median within half a second) |
 | A cold launch's time to first frame with Instruments' App Launch template on the oldest device at hand (within 400 ms); Brickson reopening on Home with the typed message after the system ended it in the background; no flash at launch before Home, in light or dark mode | Q7 |
 | 100 activations with the Hangs instrument at 100 ms on the oldest device at hand, and the device's Hang Detection (Settings > Developer > Hang Detection, at its shortest threshold) on through the TestFlight period; a thread reads the crash reports in Xcode's Crashes organizer and the crash feedback testers send through that period, and every crash and hang found is fixed | Q5 |

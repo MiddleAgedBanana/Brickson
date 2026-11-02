@@ -76,7 +76,7 @@ holds.
 | Home first with setup as a place in Settings, the Settings root, the voice picker, the Privacy row, the largest sizes when nobody answers setup, an "Anything changed?" check-in every three months that waits 30 days after Not Now | "First launch opens Home; setup lives in Settings", "Settings is a cover with a fixed safety bar", "Settings resets when idle and never closes", "Setup answers are kept as offered, never as completed", "Check-ins come every three months", "The privacy policy ships inside the app", "Speed is a set of fixed choices" (Settings and first run; PR #23) |
 | Voice Settings keeping its rows and words in place while voices change, and an explained Ask button for Personal Voice that moves nothing and adds no button on the visit that asked (switched on after device check D1) | "Voice Settings keeps its places while it is open", "Asking for Personal Voice from Voice Settings", and a paragraph in "A Personal Voice is used only while it is allowed" (Voice screen in Settings, 2026-10-22) |
 | Home's scan order (Yes, No and Emergency first, regions as containers) and the names Voice Control and Full Keyboard Access use, the visible words first | "Home's scan order and names" (Accessibility implementation, first pass) |
-| Home's border, pressed and selection rings under Show Borders, and no Large Content Viewer on Home's controls except Settings' gear where it shows alone (with it, a slow press speaks nothing) | "Show Borders and the Large Content Viewer on Home" (Accessibility pass two) |
+| Home's border, pressed and selection rings under Show Borders and, by the owner's choice (2026-11-02), always in dark mode, and no Large Content Viewer on Home's controls except Settings' gear where it shows alone (with it, a slow press speaks nothing) | "Show Borders and the Large Content Viewer on Home" (Accessibility pass two; Wave 3 item 9) |
 | Get Attention on Home under Emergency, Stop in a well of its own with a category under it, "Help" as Get Attention's other name, the status line's order, a silent stand-in tone for UI tests | "Get Attention and Stop on Home" (Get Attention and Stop on Home; PR #38) |
 | A compiler warning fails the build in every target and configuration | "Warnings are errors" (Warnings as errors) |
 | iPhone Duo: optimized by building with the current SDK, Duo screenshots in every submission, ready before the first, one layout for every pose, the hinge driving nothing, no arrangement view on Home, the system's bars in Settings, one window; and, by the owner's choice, Home's controls kept off the fold and an even column count on a display that folds | "iPhone Duo" (iPhone Duo readiness) |
@@ -4522,7 +4522,34 @@ R0 item 3's accessibility work (docs/ACCESSIBILITY.md, section 6;
   selected control would look the same pressed as not. The rings drawn
   from the edge stay within the label inset (4pt), which a label's words
   never cross; the selection ring keeps its place, 2 to 5pt in. With the
-  setting off nothing changes.
+  setting off nothing changes (but see the next point for dark mode).
+- **In dark mode every control draws the border, Show Borders on or
+  not** (2026-11-02, the owner's choice on pull request #74, from three
+  offered: this, a wider gap between the late stage's controls, or
+  recording the finding below as Apple's false positive, with a strict
+  expected failure and a report to Apple). Apple's accessibility audit
+  failed the Conversation rest board on the 13-inch iPad simulator at the
+  largest text size in dark mode, with "Potentially inaccessible text"
+  belonging to no element, on CI and on the owner's Mac (Xcode 27.2,
+  iOS 27.2). Masking parts of the screen there showed it read the first
+  lines of the first two phrase tiles, "Give me a" and "Can you", as one
+  line across the black 15pt gap between them; in light mode the white
+  gap kept them apart, and every word was in its own button's label.
+  With this border in dark mode, the audit passed on that board, on the
+  other boards and on every other Home state tried, with nothing moved.
+  A late-stage gap of 20, 24 or 30pt cleared it too, but re-set the first
+  tile's words, so those runs could not show which change did it
+  ([`log/2026-11-01-late-stage-profile.md`](log/2026-11-01-late-stage-profile.md)).
+  The border also gives every control in dark mode a 21:1 edge against
+  the black screen instead of a fill's 3.5:1, and an edge measured at
+  4.5:1 or better against the lighter screen iPad multitasking can give
+  a window, where the fills' own edges come under 3:1 (`PaletteTests`).
+  The pressed and selection rings follow it as under Show Borders, so in
+  dark mode the pressed ring is 4pt and the selection ring black. Light
+  mode with Show Borders off is unchanged. The UI tests' word reader
+  counted the border's rows as words and misread a whole "No" as "I";
+  it now leaves out rows drawn all the way across a capture (AGENTS.md,
+  *Gotchas*, "Accessibility frames do not prove visible words fit").
 - **Measured, not eyeballed** (invariant 6). The rings are drawn in plain
   black and white. `HomeButtonLook`, a plain type, says which rings each
   state and setting draws (`HomeButtonLookTests`); `PaletteTests`
