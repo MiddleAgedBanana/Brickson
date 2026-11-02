@@ -4542,11 +4542,16 @@ R0 item 3's accessibility work (docs/ACCESSIBILITY.md, section 6;
   ([`log/2026-11-01-late-stage-profile.md`](log/2026-11-01-late-stage-profile.md)).
   The border also gives every control in dark mode a 21:1 edge against
   the black screen instead of a fill's 3.5:1, and an edge measured at
-  4.5:1 or better against the lighter screen iPad multitasking can give
-  a window, where the fills' own edges come under 3:1 (`PaletteTests`).
-  The pressed and selection rings follow it as under Show Borders, so in
-  dark mode the pressed ring is 4pt and the selection ring black. Light
-  mode with Show Borders off is unchanged. The UI tests' word reader
+  4.5:1 or better (`PaletteTests`) against the lighter screen iPad
+  multitasking can give a window, where the accent, control and
+  Emergency fills' own edges come to 2.84 to 2.96:1 against `#1C1C1E`,
+  a commonly reported value not read from Apple (docs/HANDOFF.md,
+  *Known gaps*). The pressed and selection rings follow it as under Show
+  Borders, so in dark mode the pressed ring is 4pt and the selection ring
+  black. Light mode with Show Borders off is unchanged. Settings' safety
+  bar (Back to Talking, and Learn About Each Way's Done: `SettingsSafetyBar`)
+  uses Home's button style, so it draws the border in dark mode too,
+  inside its frame, with nothing moved. The UI tests' word reader
   counted the border's rows as words and misread a whole "No" as "I";
   it now leaves out rows drawn all the way across a capture (AGENTS.md,
   *Gotchas*, "Accessibility frames do not prove visible words fit").
@@ -4557,7 +4562,9 @@ R0 item 3's accessibility work (docs/ACCESSIBILITY.md, section 6;
   Increase Contrast, and checks that primary ink and the screen's colour
   are the system's label and background colours. Settings and setup use
   the system's bordered style, which follows the setting itself (a device
-  check).
+  check), except Settings' safety bar (Back to Talking, and Learn About
+  Each Way's Done), which uses Home's button style and draws its border
+  under Show Borders and in dark mode.
 - **No Large Content Viewer on Home's controls, except Settings' gear**
   (measured 2026-10-23 on Yes, No and the phrase tiles). The coverage
   list planned it for every label the fitting type shrinks, and PR #35

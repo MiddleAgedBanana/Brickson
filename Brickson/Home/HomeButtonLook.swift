@@ -70,10 +70,11 @@ nonisolated struct HomeButtonLook: Equatable, Sendable {
     /// The border of a control that is off, and of every control with Show
     /// Borders on or in dark mode.
     static let borderWidth: CGFloat = 2
-    /// The pressed ring with Show Borders off.
+    /// The pressed ring without the border: light mode with Show Borders
+    /// off.
     static let pressedWidth: CGFloat = 3
-    /// The pressed ring with Show Borders on: twice the border, so a press
-    /// still shows.
+    /// The pressed ring with the border (Show Borders on, or dark mode):
+    /// twice the border, so a press still shows.
     static let pressedWidthWithBorders: CGFloat = 2 * borderWidth
     static let selectionInset: CGFloat = 2
     static let selectionWidth: CGFloat = 3

@@ -163,11 +163,15 @@ Rules the pairs enforce:
 - White on system red (3.55:1) and system orange (2.2:1) are forbidden
   (AGENTS.md). `emergency` and `attention` replace them.
 - A selected control (Type while typing, the voice in use, the open
-  category) shows a 3pt white stroke inside its edge. The fill does not
-  change, so the label keeps its ratio.
+  category) shows a 3pt stroke 2pt inside its edge: white in light mode
+  with Show Borders off. With Show Borders on, and on every control in
+  Home's button style in dark mode, it takes the screen's colour (white
+  in light, black in dark) inside a 2pt `label`-coloured border at the
+  edge (docs/DECISIONS.md, "Show Borders and the Large Content Viewer on
+  Home"). The fill does not change, so the label keeps its ratio.
 - A pressed control shows a `label`-coloured ring inside its edge, as
-  Again does today (docs/DECISIONS.md, "Home version 0 is a stand-in");
-  the fill and label do not change.
+  Again does today (docs/DECISIONS.md, "Home version 0 is a stand-in"),
+  4pt wherever the border is drawn; the fill and label do not change.
 - Wells are hidden from accessibility and carry no text; they exist so a
   control that is absent in one state leaves its frame visibly reserved.
 

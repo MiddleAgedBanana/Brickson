@@ -226,9 +226,12 @@ profile"; work file [`work/late-stage-profile.md`](../work/late-stage-profile.md
 - After the audit finding came back: `e80f995`, what the second run and
   its bundles showed; `6d26f70`, where it is, found on the owner's Mac.
 - The owner's fix: `5666c07`, the border on every Home control in dark
-  mode; then the word reader leaving a border out of its band, with
-  its kept capture; and the lifted screen measured, with these
-  records.
+  mode; `79f62d0`, the lifted screen measured, with these records;
+  `9ef5d91`, the word reader leaving a border out of its band, with its
+  kept capture; then an independent review's corrections to these
+  records and two comments (Settings' safety bar draws the border too,
+  docs/DESIGN.md's selection ring, quality gate Q17, and what is and is
+  not yet verified on CI).
 
 ## Verified
 
@@ -398,20 +401,33 @@ the app, its SwiftUI views and its UI tests.
 
 ## Not verified
 
-- **Anything in the app after the review:** `SetupChoicesLayout`, the
-  foot it reads, and the scrolling in `HomeRestBoardTests` are untested
-  until CI runs them. The sweep's word heights are estimates; the
-  second step's real frames are read only on CI's two simulators, by
-  `SettingsOnHomeTests`.
+- **The sweep's word heights** are estimates. The second step's real
+  frames are read only on CI's two simulators, by
+  `SettingsOnHomeTests`, which passed on `5a8a91a` with
+  `SetupChoicesLayout`, its foot and the scrolling in
+  `HomeRestBoardTests` (under Verified).
 - **The word reader's band and trimming** run only on a Mac: Vision has
-  no Linux build. That the band reads the kept tall "No" is untested
-  until CI's unit job; the band's rows were checked on every kept
-  capture by the same arithmetic in Python (only the tall "No" has one,
-  rows 90 to 321 of 412).
+  no Linux build. CI's unit job on `5a8a91a` read the kept tall "No" in
+  its band and passed. The border rule (a row drawn in every column
+  clear of the corners is an edge, not words) and the bordered capture,
+  `no-tall-edge.png`, have run only on the owner's Mac
+  (`RenderedWordsTests`: two failing first, then passing); CI's unit job
+  runs them first on the push that carries them. Two kept captures now
+  have a band, the tall "No" with and without a border. The earlier
+  Python check of the band's rows used the old rule and did not cover
+  the bordered capture.
 - **What clears the audit finding on CI.** On the owner's Mac (iOS
   27.2) the border in dark mode cleared it; whether it holds on CI's
   iOS 27.0 simulator is shown only by CI's run of the push that carries
   it.
+- **The other dark-mode UI tests with the border.** The owner's Mac ran
+  only `HomeRestBoardTests`, `HomeSizesTests` and `LaunchTests`. CI's
+  run of the push is the first with the border for
+  `SettingsTests.testSettingsScreensPassTheAccessibilityAudit` (Settings
+  in dark, whose safety bar, Back to Talking or Learn About Each Way's
+  Done, uses Home's button style and so draws the border),
+  `PhraseDragTests`' `testDefaultDark` and `testAX5Dark`, and
+  `FoldOffsetUITests.testTheFirstRowClearsATopDivisionInDarkMode`.
 - **Comfort.** The floors and the 4-degree growth have not been tried
   by a person, or with Apple's Eye Tracking; simulator evidence never
   shows gaze comfort or where Snap to Item lands (docs/HANDOFF.md,
@@ -420,8 +436,11 @@ the app, its SwiftUI views and its UI tests.
   draws a border in Dark Mode, that Apple's audit reads each button's
   words as its own, and that on a lifted multitasking screen only the
   message field's outline may come under 3:1. Those sentences rest on
-  the unit tests and CI's audit, not a device. It still says nothing
-  about the rest board.
+  the unit tests and on Apple's audit in the UI tests, which has run
+  with the border only on the owner's Mac (Xcode 27.2, iOS 27.2
+  simulators) so far; CI's run of the push that carries it is still to
+  come, and no device has checked them. It still says nothing about the
+  rest board.
 - **How long the new sweeps add to CI's unit job on its Mac.** On the
   Linux package, a debug build like CI's, the two new suites took about
   115 seconds run one test at a time, as the unit job runs them: the

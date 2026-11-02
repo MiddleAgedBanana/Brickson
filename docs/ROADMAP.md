@@ -997,8 +997,12 @@ what passes and who checks it:
   as Apple's contrast criteria ask; its words and edges are measured
   (invariant 6), as is dark mode's lifted background in iPad
   multitasking. *Checks:* a thread from UI tests' captures;
-  `PaletteTests` pins the pairs. *Today:* none measured (docs/DESIGN.md,
-  *Apple's guidelines and Liquid Glass*; docs/HANDOFF.md, *Known gaps*).
+  `PaletteTests` pins the pairs. *Today:* no system component measured
+  (docs/DESIGN.md, *Apple's guidelines and Liquid Glass*). On dark
+  mode's lifted background, `PaletteTests` measures the border every
+  Home button draws in dark mode and primary ink, with and without
+  Increase Contrast, since pull request #74; the message field's edge
+  there is not measured (docs/HANDOFF.md, *Known gaps*).
 - **Q18. Nothing tuned by eye.** Every size, gap, corner radius, colour
   and font in view code comes from the layout engine, `Palette` or the
   tokens in docs/DESIGN.md; a thread lists every other number or colour
