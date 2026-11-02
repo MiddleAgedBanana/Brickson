@@ -20,6 +20,8 @@ nonisolated enum SettingsRoute: Hashable, Sendable {
 /// The steps of Set Up Step by Step, in order.
 nonisolated enum GuidedSetupStep: Int, CaseIterable, Hashable, Sendable {
     case access
+    /// Which phrases Home shows: every category, or the rest board.
+    case restBoard
     case voice
     case turnOn
     case keepOpen
@@ -29,7 +31,7 @@ nonisolated enum GuidedSetupStep: Int, CaseIterable, Hashable, Sendable {
         GuidedSetupStep(rawValue: rawValue + 1)
     }
 
-    /// "Step 2 of 5", for the screen's title area.
+    /// "Step 2 of 6", for the screen's title area.
     var number: Int { rawValue + 1 }
     static var count: Int { allCases.count }
 }

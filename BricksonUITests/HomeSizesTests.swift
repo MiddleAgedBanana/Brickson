@@ -82,11 +82,11 @@ final class HomeSizesTests: XCTestCase {
         let guided = app.buttons["guidedSetup"].firstMatch
         XCTAssertTrue(guided.waitForExistence(timeout: 10), "Family Setup shows no Set Up Step by Step (\(context))")
         try assertPassesAccessibilityAudit(app, context: "Family Setup, \(context)")
-        open(guided, waitingFor: "Step 1 of 5", in: app, context: context)
+        open(guided, waitingFor: "Step 1 of 6", in: app, context: context)
         let touch = app.buttons["Touch"]
         XCTAssertTrue(touch.waitForExistence(timeout: 10), "the first step shows no Touch (\(context))")
         attachCapture(app, name: "the first step, \(context)")
-        try assertPassesAccessibilityAudit(app, context: "Step 1 of 5, \(context)")
+        try assertPassesAccessibilityAudit(app, context: "Step 1 of 6, \(context)")
         return touch
     }
 

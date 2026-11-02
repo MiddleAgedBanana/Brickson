@@ -35,7 +35,19 @@ phone tested keeps touch's sizes at every text size, and every iPad in
 portrait takes Eye Tracking's (head tracking's on the iPad mini with
 Bold Text). `HomeSizesTests` checks a person's first launch at those
 sizes, with Apple's audit and the drawn words (passed on CI's iPad and
-iPhone simulators, #70); the other UI tests ask for touch's. Four category buttons that never scroll sideways, and three
+iPhone simulators, #70); the other UI tests ask for touch's. A family
+can choose a rest board in Set Up Step by Step's second step, "Which
+phrases does Home show?": Home then shows that category's phrases and
+Emergency's in fewer, larger tiles, dims the other categories in their
+places, asks for the late stage's sizes (proposed), and grows Yes, No,
+Emergency, Again and Get Attention toward 4 degrees of the person's
+view while the tiles stay as tall, as the window has room; by the
+engine, every iPad in portrait but the iPad mini, and the 13-inch iPad
+in landscape, take the late stage's sizes, and phones touch's (head
+tracking's on the Pro Max) (docs/DECISIONS.md, "The late-stage
+profile"; `HomeRestBoardTests` checks it in the app on CI's iPad and
+iPhone simulators, #74).
+Four category buttons that never scroll sideways, and three
 phrase columns on every iPhone at its standard Display Zoom (two on 375
 and 390-point phones with Bold Text). A tile
 speaks at once, in the person's Personal Voice when one exists and is
@@ -395,7 +407,18 @@ release in docs/ROADMAP.md when no thread has it yet.
   Talking's frame; the next Settings thread measures them and puts them
   to the owner (docs/ROADMAP.md, *The quality bar*, Q3).
   *(device checks, before any build goes to App Review: docs/ROADMAP.md,
-  *The quality bar*, Q3 and Q13)* At
+  *The quality bar*, Q3 and Q13)* The rest board's late-stage sizes
+  (2026-11-01) are proposals too: their 136-point floors and the safety
+  row's growth toward 4 degrees rest on a study with a phone's camera
+  and people without ALS, not Apple's Eye Tracking. On four columns the
+  board's safety row grows out of the tiles (302 points tall on the
+  13-inch iPad in portrait, where every category's are 350), and on the
+  iPhone 17 Pro Max the board's head tracking sizes make its tiles 110
+  points tall where touch's with every category are 138; the owner can
+  cap the growth or keep touch's there (docs/DECISIONS.md, "The
+  late-stage profile", *Where the board's sizes hold*).
+  *(device checks: docs/ROADMAP.md, *The quality bar*, Q11 and Q13; then
+  the owner)* At
   touch's sizes, by the engine's model the phrase grid still scrolls (invariant 11) on
   phones smaller than the Pro Max at AX5, on the iPhone 17 at AX3 with
   Bold Text, on a 375×667 phone at every size (at the default size by
@@ -540,7 +563,9 @@ release in docs/ROADMAP.md when no thread has it yet.
 - The rendered-label tests read the five English quick-control labels
   (Yes, No, Emergency, Get Attention, Again), and, on an iPad in
   portrait at Home's larger sizes, Phrases, Type and the everyday
-  categories (`HomeSizesTests`); never a phrase tile, and nothing at
+  categories (`HomeSizesTests`), and on the rest board, on CI's iPhone
+  and iPad, the quick controls and every everyday category, dimmed or
+  not (`HomeRestBoardTests`); never a phrase tile, and nothing at
   AX3. `StarterLabelFitTests` measures every starter label against its
   narrowest slot instead. *(Accessibility coverage checklist)*
 - The Get Attention tone is the reference app's placeholder; a
@@ -548,15 +573,14 @@ release in docs/ROADMAP.md when no thread has it yet.
   check on a device (docs/DECISIONS.md, "Get Attention"). *(owner, with a
   device build)*
 - In dark mode, iPad multitasking can lift a window's background from
-  black to the elevated gray, and `PaletteTests` measures the fills' edges
-  against black only. Against `#1C1C1E` (a commonly reported value, not
-  read from Apple) the accent, control and Emergency fills come to 2.84
-  to 2.96:1, under invariant 6's 3:1 (Get Attention's and Stop's, 3.39
-  and 3.11:1, clear it).
-  With Show Borders on, the border carries the edge. First step: measure
-  with `userInterfaceLevel = .elevated` in `PaletteTests`
-  ([`log/2026-10-23-show-borders-and-large-content.md`](log/2026-10-23-show-borders-and-large-content.md), *Follow-ups*). *(the next
-  accessibility thread)*
+  black to the elevated gray. Against `#1C1C1E` (a commonly reported
+  value, not read from Apple) the accent, control and Emergency fills
+  come to 2.84 to 2.96:1, under invariant 6's 3:1. Since 2026-11-02
+  every Home button draws a white border in dark mode, and `PaletteTests`
+  measures it against the lifted screen (4.5:1 or better), so no button's
+  fill meets that screen. The message field's 2pt border is still the
+  control fill there (2.84:1 against `#1C1C1E`); `PaletteTests` does not
+  measure it. *(the next accessibility thread)*
 - Typing on Home (since 2026-10-24) has automated coverage on CI's iPad and
   iPhone simulators, in portrait, at the default text size, with the full
   software keyboard (`TypingOnHomeTests`); `KeyboardProbeTests` checks the
@@ -625,12 +649,19 @@ release in docs/ROADMAP.md when no thread has it yet.
   neither comes with Get Attention's, if it comes. *(the owner, then a
   new thread)*
 - Chains of activations through Settings' screens are scored on its
-  first screens (`SettingsOnHomeTests` with the chain engine, on CI's
-  iPad and iPhone; docs/DECISIONS.md, "One chain engine for dwell
-  safety"). Since 2026-10-30 no hazard is open there in the models: a
-  held look no longer saves a setup answer or closes Settings under the
-  look, on CI's windows or on 630 swept ones, and `SettingsOnHomeTests`
-  fails on any (docs/DECISIONS.md, "The first step's own rows").
+  first screens and on Set Up Step by Step's first two steps
+  (`SettingsOnHomeTests` with the chain engine, on CI's iPad and
+  iPhone; docs/DECISIONS.md, "One chain engine for dwell safety"). The
+  steps after the second (the voice, turning on what was chosen,
+  keeping Brickson open, the summary) are not followed: a look held on
+  Next walks into them unscored, as it did into every step after the
+  first before 2026-11-01. Since 2026-10-30 no hazard is open on the
+  scored screens in the models: a held look no longer saves a setup
+  answer or closes Settings under the look, on CI's windows or on 630
+  swept ones, and `SettingsOnHomeTests` fails on any (docs/DECISIONS.md,
+  "The first step's own rows"); each of the second step's choices lies
+  where a look resting on Next meets Next again (docs/DECISIONS.md, "The
+  late-stage profile", *Where the second step's choices start*).
   Settings' Family Setup row is placed from Home's frames, Set Up Step
   by Step takes its frame in Family Setup, and Learn About Each Way
   takes that frame on the first step; its guide opens as a cover of its
@@ -640,7 +671,12 @@ release in docs/ROADMAP.md when no thread has it yet.
   instead). Untested in the app until CI runs this change, and a device
   check says whether it binds. On narrow or short windows at large text
   sizes the first step's first screenful shows no answer, so a family
-  scrolls to answer. On short, very wide windows (wider than about 1300
+  scrolls to answer. On a phone the second step's first screenful shows
+  only the choices that can sit under its words without meeting a look
+  on Next (Every Category and the first category on the iPhone 17 at the
+  default size, none at AX3 and larger, where the words fill it), and
+  the rest start below the bar, past a gap, where the family scrolls to
+  them. On short, very wide windows (wider than about 1300
   points and at most 667 tall, at the default text size), Home's
   Settings lies as near Back to Talking as the row, as before. If
   Settings' first screen has been scrolled when its row is chosen,
@@ -903,8 +939,10 @@ long-term vision, the direction behind it, is its *Where this goes*.
 The next pull requests, in order, with which may run side by side and
 which change Home, are its
 [Wave 3](ROADMAP.md#wave-3-the-next-pull-requests-in-order) (planned
-2026-10-23): items 1 to 5, 7 and 8 are built (item 8's sizes on since
-2026-10-30), typing on Home (item 5) on
+2026-10-23): items 1 to 5 and 7 to 9 are built (item 8's sizes on since
+2026-10-30; item 9, the late-stage profile and the rest board, on
+2026-11-01, [`log/2026-11-01-late-stage-profile.md`](log/2026-11-01-late-stage-profile.md),
+*Follow-ups*), typing on Home (item 5) on
 2026-10-24 ([`log/2026-10-24-typing-on-home.md`](log/2026-10-24-typing-on-home.md),
 *Follow-ups*); next on Home is item 6, iPhone Duo in every pose. Its Mac
 design pass has started after PR #56 merged. The continuation in
@@ -1009,7 +1047,8 @@ row in [`ACCESSIBILITY.md`](ACCESSIBILITY.md), with its release and
 roadmap item; what each R0 item picks up from it, in order, is in
 [`log/2026-10-21-accessibility-coverage.md`](log/2026-10-21-accessibility-coverage.md),
 *Follow-ups*. Item 3's scan order, regions and Voice Control names are
-done, and so is Home's border under Show Borders; the Large Content
+done, and so is Home's border under Show Borders, drawn in dark mode
+with the setting off too since 2026-11-02 (pull request #74); the Large Content
 Viewer stays off Home's controls other than Settings' gear, because on
 simulators a slow press with it spoke nothing (docs/DECISIONS.md, "Show
 Borders and the Large Content Viewer on Home";
@@ -1024,7 +1063,7 @@ built, and Home is on it (item 4; docs/work/layout-engine.md and
 Type and its one-row C ([`log/2026-10-24-typing-on-home.md`](log/2026-10-24-typing-on-home.md));
 input profiles came with item 8 (2026-10-30,
 [`log/2026-10-30-sizes-that-follow-reach.md`](log/2026-10-30-sizes-that-follow-reach.md);
-switched on the same day, [`log/2026-10-30-sizes-switched-on.md`](log/2026-10-30-sizes-switched-on.md)), and the late-stage profile, item 9, comes next, both before R0's first
+switched on the same day, [`log/2026-10-30-sizes-switched-on.md`](log/2026-10-30-sizes-switched-on.md)), and the late-stage profile with the rest board with item 9 (2026-11-01), both before R0's first
 App Review build (owner, 2026-10-30); the phone on its side waits until
 that build has gone to App Review. The earlier order is in
 [`log/2026-10-21-phone-layout.md`](log/2026-10-21-phone-layout.md).
@@ -1064,7 +1103,7 @@ Simulators cannot show these. Record each result in a `docs/log/` file
 | Unplugging headphones during a phrase and during Get Attention | Output loss: speech carries on, the alarm stops and says so |
 | Whether the tone player ever reads as not playing for a moment while it plays (route changes, Bluetooth) | Whether the once-a-second health check needs a second look before stopping the alarm |
 | Comfortable dwell time and movement tolerance | Setup recommendations per profile |
-| Each profile's floors on an iPad with a person using Eye Tracking, Head Tracking and Switch Control's point scanning, at the default text size and AX3 | Whether the switch and head floors proposed in docs/DECISIONS.md, "Sizes that follow how the screen is reached", hold, before the larger sizes reach App Review |
+| Each profile's floors on an iPad with a person using Eye Tracking, Head Tracking and Switch Control's point scanning, at the default text size and AX3, and the rest board's late-stage sizes with Eye Tracking | Whether the switch and head floors proposed in docs/DECISIONS.md, "Sizes that follow how the screen is reached", and the late stage's floors and 4-degree growth proposed in "The late-stage profile", hold, before the larger sizes reach App Review |
 | Whether Guided Access works together with Eye Tracking | Setup recommendations |
 | Which phrases people reach for, and how many categories can be scanned by eye | The starter library |
 | "Open Brickson" by Siri and Voice Control, said by a few people, and how VoiceOver reads the icon | `APP_SPOKEN_NAME` and the alternative names |
@@ -1081,7 +1120,7 @@ Simulators cannot show these. Record each result in a `docs/log/` file
 | Guided Access with each input method, and with a short Display Auto-Lock while Brickson keeps the screen awake | Setup advice, and invariant 12 under Guided Access |
 | Which of the VoiceOver, Switch Control and AssistiveTouch flags each input method turns on | Profile suggestions (R1) |
 | With a real finger at an accessibility text size, in the shipped build: press Yes slowly (about half a second) and lift, then a phrase tile; then hold Yes, slide onto No and lift, and hold a phrase tile, slide onto the next and lift; also with Touch Accommodations' Hold Duration on, and with AssistiveTouch Dwell. Each press speaks; a slide says the control it began on or nothing, never the next. In a window where Settings shows its gear alone (iPhone Duo's outer display with Bold Text on is one; [`log/2026-10-23-settings-on-home.md`](log/2026-10-23-settings-on-home.md)): tap the gear (Settings opens); hold it until its large copy shows and lift, and record whether Settings opened (opening means a real finger is not swallowed as XCTest's touch was); hold it and slide onto each control beside, above and below it, and lift: Settings opens or nothing happens, never anything else; dwell on it; and press Yes and a phrase tile slowly there: each speaks. The simulator results these confirm are in [`log/2026-10-23-large-content-and-iphone-duo.md`](log/2026-10-23-large-content-and-iphone-duo.md) | That Home speaks on a slow real press and a slide never says the next control; from the gear, whether a real finger's held press is swallowed as XCTest's was, and whether the gear keeps the viewer (docs/DECISIONS.md, "Show Borders and the Large Content Viewer on Home") |
-| Show Borders on, in light and dark, with and without Increase Contrast: every Home control shows its border, a press thickens it, a selected category and Emergency show their inner ring, measured on the rendered pixels; Settings' system buttons show theirs | "Show Borders and the Large Content Viewer on Home"; Show Borders on Settings and setup |
+| Show Borders on, in light and dark, with and without Increase Contrast, and Show Borders off in dark: every Home control shows its border, a press thickens it, a selected category and Emergency show their inner ring, measured on the rendered pixels; Settings' system buttons show theirs | "Show Borders and the Large Content Viewer on Home"; Show Borders on Settings and setup |
 | In the build that ships: the time from an activation completing to a phrase's first sound, read frame by frame from a screen recording with sound, as the median of ten activations each for the default voice and a Personal Voice | docs/ROADMAP.md, *The quality bar*, Q6 (the default voice's median within half a second) |
 | A cold launch's time to first frame with Instruments' App Launch template on the oldest device at hand (within 400 ms); Brickson reopening on Home with the typed message after the system ended it in the background; no flash at launch before Home, in light or dark mode | Q7 |
 | 100 activations with the Hangs instrument at 100 ms on the oldest device at hand, and the device's Hang Detection (Settings > Developer > Hang Detection, at its shortest threshold) on through the TestFlight period; a thread reads the crash reports in Xcode's Crashes organizer and the crash feedback testers send through that period, and every crash and hang found is fixed | Q5 |

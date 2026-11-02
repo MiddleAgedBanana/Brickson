@@ -17,15 +17,21 @@ nonisolated struct SettingsScreenFrames: Equatable, Sendable {
     let navigationBar: CGRect
     /// The content, in the window.
     let content: CGRect
+    /// What the screen keeps at its foot, in the window, across the stack:
+    /// Set Up Step by Step's bar with Next and Done (`GuidedSetupView`);
+    /// empty, at the stack's foot, on a screen that keeps nothing there.
+    let foot: CGRect
 
     /// - Parameters:
     ///   - stack: the navigation stack's frame, in the window.
     ///   - safeArea: what the screen keeps at each edge of the stack: the
-    ///     navigation bar at the top.
+    ///     navigation bar at the top, and a bar at the foot where the
+    ///     screen has one.
     ///   - gutter: the room between the screen's edges and its content
     ///     (`SettingsMetrics.gutter`).
     init(stack: CGRect, safeArea: HomeLayout.Insets, gutter: CGFloat) {
         navigationBar = CGRect(x: stack.minX, y: stack.minY, width: stack.width, height: safeArea.top)
+        foot = CGRect(x: stack.minX, y: stack.maxY - max(0, safeArea.bottom), width: stack.width, height: max(0, safeArea.bottom))
         content = CGRect(
             x: stack.minX + safeArea.leading + gutter,
             y: stack.minY + safeArea.top + gutter,

@@ -63,9 +63,14 @@ The initial implementation includes:
 Phrase editing and backup export are not implemented yet. Home's layout comes from one tested layout
 engine. Its sizes follow Family Setup's answer about how the screen is
 reached: larger for switches, head and eye tracking where the window
-has room (an iPhone keeps touch sizes). They still need checking with
-people on real devices, and validation across access methods remains
-planned work. See the [handoff](docs/HANDOFF.md) for verification evidence,
+has room (an iPhone keeps touch sizes). For the late stage, a family can
+choose a rest board in Set Up Step by Step: Home then shows only one
+category's phrases (and the emergency phrases from Emergency), with Yes,
+No, Emergency, Again and Get Attention growing taller where the screen
+has room, up to 206 points, sometimes at the cost of shorter phrase
+buttons, and the other categories stay in place, dimmed. These
+sizes still need checking with people on real devices, and validation
+across access methods remains planned work. See the [handoff](docs/HANDOFF.md) for verification evidence,
 known limitations and next steps.
 
 ## Design principles

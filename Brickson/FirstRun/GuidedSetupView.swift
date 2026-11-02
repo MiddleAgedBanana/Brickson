@@ -1,13 +1,16 @@
+import SwiftData
 import SwiftUI
 
-/// Set Up Step by Step: five short screens a family member goes through
+/// Set Up Step by Step: six short screens a family member goes through
 /// once, and again at each check-in.
 ///
 /// 1. How is the screen reached? (any number of answers)
-/// 2. The voice and speed.
-/// 3. Turning on what was chosen in step 1.
-/// 4. Keeping Brickson open.
-/// 5. A summary.
+/// 2. Which phrases does Home show? (every category, or one: the rest
+///    board)
+/// 3. The voice and speed.
+/// 4. Turning on what was chosen in step 1.
+/// 5. Keeping Brickson open.
+/// 6. A summary.
 ///
 /// Every step can be left at any time with the standard Back button or
 /// Back to Talking; each answer is saved the moment it is chosen, and
@@ -22,6 +25,9 @@ import SwiftUI
 /// the Screen guide as a cover of its own (`EachWayCover`), and starts its
 /// answers below every place a look can be resting on the way in
 /// (`SetupAccessQuestion`; docs/DECISIONS.md, "The first step's own rows").
+/// The second step places its choices where a look resting on Next meets
+/// Next again (`SetupRestBoardQuestion`; docs/DECISIONS.md, "The
+/// late-stage profile").
 struct GuidedSetupView: View {
     let step: GuidedSetupStep
     @Binding var path: [SettingsRoute]
@@ -62,6 +68,8 @@ struct GuidedSetupView: View {
                 activity?.recordActivity()
                 showsEachWay = true
             }
+        case .restBoard:
+            SetupRestBoardQuestion(chosen: setup.record.restBoardCategory, saveFailed: saveFailed, choose: chooseRestBoard)
         case .voice:
             SettingsHeading("Choose the voice")
             VoiceContent()
@@ -91,6 +99,7 @@ struct GuidedSetupView: View {
         } else {
             SettingsParagraph("No way of reaching the screen was chosen.")
         }
+        RestBoardSummary(chosen: setup.record.restBoardCategory)
         SettingsParagraph("Everything here can be changed later in Family Setup. In about three months, Family Setup will ask whether anything has changed.")
     }
 
@@ -115,6 +124,13 @@ struct GuidedSetupView: View {
     private func answer(_ methods: Set<AccessMethod>) {
         activity?.recordActivity()
         saveFailed = !setup.update { CheckInPolicy.answered(&$0, methods: methods, now: .now) }
+    }
+
+    /// Saves the rest board's category, or nil for every category, at
+    /// once, as `answer` does.
+    private func chooseRestBoard(_ category: UUID?) {
+        activity?.recordActivity()
+        saveFailed = !setup.update { $0.chooseRestBoard(category) }
     }
 
     private func advance() {
@@ -251,5 +267,140 @@ private struct SetupAccessQuestion: View {
             answerHeight: SettingsMetrics.rowHeight, earliest: link.maxY + SettingsMetrics.rowSpacing
         )
         return max(0, place.top - origin.y - SettingsMetrics.rowSpacing)
+    }
+}
+
+/// The second step's question: which phrases Home shows (docs/DECISIONS.md,
+/// "The late-stage profile").
+///
+/// Every Category, then each everyday category in Home's order, by its own
+/// name, shown as written. Choices only ever select: choosing the chosen
+/// one again keeps it, and choosing another moves the choice (AGENTS.md,
+/// invariant 10). A look arrives here on the first step's Next, in the
+/// same bar as this step's, so every choice lies where every point of
+/// Next is nearer Next than the choice (`SetupChoicesPlace`): each under
+/// the words, or the choice before it, where it holds there, and from the
+/// first that does not, the rest below the bar, where the family scrolls
+/// to them. The standard Back button, where a look
+/// arrives from the third step, sits in the navigation bar above the
+/// words. A choice the library no longer has as an everyday category shows
+/// as Every Category, as Home does (`RestBoard`).
+private struct SetupRestBoardQuestion: View {
+    let chosen: UUID?
+    let saveFailed: Bool
+    let choose: (UUID?) -> Void
+
+    @Query private var categories: [PhraseCategory]
+    @Environment(\.settingsScreenFrames) private var frames
+
+    var body: some View {
+        let everyday = CategorySelection.shownInCategoryRow(PhraseCategory.orderedForDisplay(categories))
+        let current = everyday.first { $0.uuid == chosen }?.uuid
+
+        SetupChoicesLayout(screen: frames, choices: everyday.count + 1, spacing: SettingsMetrics.rowSpacing) {
+            VStack(alignment: .leading, spacing: SettingsMetrics.rowSpacing) {
+                SettingsHeading("Which phrases does Home show?")
+                SettingsParagraph("Home can show one category's phrases, and Emergency's, in fewer, larger buttons, with Yes, No, Emergency, Again and Get Attention as large as this screen has room for. The other categories stay where they are, dimmed, so nothing moves. The change shows when Settings closes.")
+            }
+
+            choice(Text("Every Category"), isChosen: current == nil, identifier: "restBoardEveryCategory") {
+                choose(nil)
+            }
+            ForEach(everyday) { category in
+                // A category's name is the family's own words, never translated.
+                choice(Text(verbatim: category.name), isChosen: current == category.uuid, identifier: "restBoardCategory") {
+                    choose(category.uuid)
+                }
+            }
+
+            if saveFailed {
+                SettingsParagraph("That answer could not be saved. Try again.")
+            }
+        }
+    }
+
+    private func choice(_ title: Text, isChosen: Bool, identifier: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            SettingsRowLabel(text: title, systemImage: isChosen ? "checkmark.circle.fill" : "circle")
+        }
+        .buttonStyle(.borderedProminent)
+        .tint(isChosen ? Palette.phraseFill : Palette.controlFill)
+        .accessibilityAddTraits(isChosen ? .isSelected : [])
+        .accessibilityIdentifier(identifier)
+    }
+}
+
+/// Places the second step's words at the top of its content and its
+/// choices where `SetupChoicesPlace` says, each measured at the width it
+/// gets, with anything after the choices (the save-failure line)
+/// `spacing` under the last. Its views are the words, then
+/// the choices, then the rest, in the order VoiceOver reads them. It is
+/// the step's only view, so its top is the content's.
+nonisolated struct SetupChoicesLayout: Layout {
+    /// Where the screen sits in the window, with Next at its foot; nil
+    /// until the screen knows, when the choices follow the words.
+    let screen: SettingsScreenFrames?
+    /// How many views after the words are choices.
+    let choices: Int
+    let spacing: CGFloat
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let width = Self.width(proposal.width, subviews: subviews)
+        return CGSize(width: width, height: placed(width: width, subviews: subviews).map(\.maxY).max() ?? 0)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        for (subview, frame) in zip(subviews, placed(width: bounds.width, subviews: subviews)) {
+            subview.place(
+                at: CGPoint(x: bounds.minX + frame.minX, y: bounds.minY + frame.minY),
+                proposal: ProposedViewSize(width: frame.width, height: frame.height)
+            )
+        }
+    }
+
+    /// The width given, or, asked for its own, the widest view's.
+    private static func width(_ proposed: CGFloat?, subviews: Subviews) -> CGFloat {
+        proposed.flatMap { $0.isFinite ? $0 : nil } ?? subviews.map { $0.sizeThatFits(.unspecified).width }.max() ?? 0
+    }
+
+    /// Each view's frame, from the layout's top-leading corner.
+    private func placed(width: CGFloat, subviews: Subviews) -> [CGRect] {
+        let heights = subviews.map { $0.sizeThatFits(ProposedViewSize(width: width, height: nil)).height }
+        guard let words = heights.first else { return [] }
+        let choiceHeights = Array(heights.dropFirst().prefix(choices))
+        let earliest = words + spacing
+        let origin = screen?.content.origin ?? .zero
+        let tops = SetupChoicesPlace(
+            next: screen?.foot ?? .zero, choicesMinX: origin.x, choicesWidth: width, heights: choiceHeights,
+            spacing: spacing, earliest: origin.y + earliest
+        ).tops.map { $0 - origin.y }
+        var frames = [CGRect(x: 0, y: 0, width: width, height: words)]
+        var y = earliest
+        for (index, height) in heights.dropFirst().enumerated() {
+            if index < tops.count {
+                y = tops[index]
+            }
+            frames.append(CGRect(x: 0, y: y, width: width, height: height))
+            y += height + spacing
+        }
+        return frames
+    }
+}
+
+/// The summary's line about the second step: every category, or the rest
+/// board's category by its own name. A choice the library no longer has
+/// as an everyday category reads as every category, as Home shows it.
+private struct RestBoardSummary: View {
+    let chosen: UUID?
+
+    @Query private var categories: [PhraseCategory]
+
+    var body: some View {
+        if let board = categories.first(where: { $0.uuid == chosen && !$0.isEmergency }) {
+            SettingsParagraph("Home shows one category's phrases, with larger buttons:")
+            SettingsParagraph(verbatim: board.name)
+        } else {
+            SettingsParagraph("Home shows every category.")
+        }
     }
 }

@@ -1,3 +1,4 @@
+import OSLog
 import SwiftData
 import SwiftUI
 import UIKit
@@ -20,12 +21,13 @@ struct BricksonApp: App {
     /// Whether Settings covers Home. Home's Settings button opens it; UI
     /// tests can open it at launch (`--screen=settings`).
     @State private var showsSettings: Bool
-    /// The sizes Home asks for: Family Setup's answer when Settings last
-    /// closed, while the owner's switch has Home follow it, so an answer
-    /// changed there moves nothing under Settings, whose places come from
-    /// Home's frames (`ProfileChoice`); a UI test's own in a debug build
+    /// What Home asks for: the sizes and the rest board Family Setup's
+    /// choices asked for when Settings last closed, while the owner's
+    /// switch has Home follow them, so a choice changed there moves nothing
+    /// under Settings, whose places come from Home's frames
+    /// (`ProfileChoice.Request`); a UI test's own sizes in a debug build
     /// with test storage (`LaunchOptions`).
-    @State private var requestedProfile: HomeLayout.Profile
+    @State private var homeRequest: ProfileChoice.Request
     private let container: ModelContainer
     private let isVolatileStore: Bool
     private let phraseLibraryIssue: PhraseLibraryIssue?
@@ -49,7 +51,6 @@ struct BricksonApp: App {
         _attention = State(initialValue: audio.attention)
         let setup = SetupStore(defaults: launch.settings)
         _setup = State(initialValue: setup)
-        _requestedProfile = State(initialValue: Self.requestedProfile(answer: setup.record, launch: launch))
         _drafts = State(initialValue: DraftStore(directory: DraftFile.directory(in: launch.filesDirectory)))
         _showsSettings = State(initialValue: launch.startScreen == .settings)
 
@@ -62,6 +63,8 @@ struct BricksonApp: App {
         container = library.container
         isVolatileStore = library.isVolatile
         phraseLibraryIssue = library.issue
+        // After the library opens: the rest board is one of its categories.
+        _homeRequest = State(initialValue: Self.homeRequest(record: setup.record, container: library.container, launch: launch))
     }
 
     var body: some Scene {
@@ -79,16 +82,16 @@ struct BricksonApp: App {
                 .environment(\.isVolatileStore, isVolatileStore)
                 .environment(\.phraseLibraryIssue, phraseLibraryIssue)
                 .environment(\.appTimeouts, launch.timeouts)
-                .environment(\.requestedHomeProfile, requestedProfile)
+                .environment(\.homeRequest, homeRequest)
                 // The owner's switch, not a test's fixed sizes, decides,
                 // so Settings' UI tests draw the first step as people see it.
                 .environment(\.homeSizesFollowTheAnswer, ProfileChoice.followsTheAnswer || launch.activeHomeFollowsAnswer)
                 .preferredColorScheme(testColorScheme)
                 .onChange(of: showsSettings) { _, shows in
-                    // Settings has closed: Home takes the sizes the answer
-                    // now asks for.
+                    // Settings has closed: Home takes the sizes and the
+                    // rest board Family Setup's choices now ask for.
                     if !shows {
-                        requestedProfile = Self.requestedProfile(answer: setup.record, launch: launch)
+                        homeRequest = Self.homeRequest(record: setup.record, container: container, launch: launch)
                     }
                 }
         }
@@ -110,9 +113,30 @@ struct BricksonApp: App {
         }
     }
 
-    private static func requestedProfile(answer: SetupRecord, launch: LaunchOptions) -> HomeLayout.Profile {
-        launch.activeHomeProfile
-            ?? ProfileChoice.requestedForHome(by: answer.plannedAccessMethods, followsAnswer: followsAnswer(launch))
+    private static func homeRequest(record: SetupRecord, container: ModelContainer, launch: LaunchOptions) -> ProfileChoice.Request {
+        ProfileChoice.request(
+            for: record,
+            library: restBoardLibrary(in: container),
+            followsAnswer: followsAnswer(launch),
+            fixed: launch.activeHomeProfile
+        )
+    }
+
+    /// The library as the rest board needs it, in Home's order
+    /// (`CategorySelection.restBoardLibrary`). Where it cannot be read,
+    /// Home recovers by showing every category, as with no board, at the
+    /// sizes the first step's answer asks for, and the choice stays saved
+    /// for the next time Settings closes.
+    private static func restBoardLibrary(in container: ModelContainer) -> [RestBoard.Category] {
+        do {
+            let categories = try container.mainContext.fetch(FetchDescriptor<PhraseCategory>())
+            return CategorySelection.restBoardLibrary(PhraseCategory.orderedForDisplay(categories))
+        } catch {
+            // The error is not logged as text: it may carry a category's name.
+            Logger(subsystem: AppLog.subsystem, category: "library")
+                .error("The rest board could not read the library; Home shows every category")
+            return []
+        }
     }
 
     /// Whether Home's sizes follow Family Setup's answer: while the owner's
@@ -140,9 +164,10 @@ extension EnvironmentValues {
     @Entry var isVolatileStore: Bool = false
     /// Set when the starter phrases could not be prepared at launch.
     @Entry var phraseLibraryIssue: PhraseLibraryIssue? = nil
-    /// The sizes Home and Settings lay Home out at (`ProfileChoice`):
-    /// touch's, the ones Home has always had, unless the app sets them.
-    @Entry var requestedHomeProfile: HomeLayout.Profile = .touch
+    /// What Home and Settings lay Home out for (`ProfileChoice.Request`):
+    /// touch's sizes with every category, Home as it has always been,
+    /// unless the app sets it.
+    @Entry var homeRequest: ProfileChoice.Request = .touch
     /// Whether the first step says what its answers do to Home's sizes:
     /// while the owner's switch has them follow the answer
     /// (`ProfileChoice.followsTheAnswer`), even where a UI test fixes them.

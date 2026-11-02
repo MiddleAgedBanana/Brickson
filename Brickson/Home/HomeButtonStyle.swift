@@ -20,8 +20,9 @@ import SwiftUI
 /// - Pressed: a primary-ink ring inside the edge, with the words and fill
 ///   unchanged. Fading would lighten the fill under the words below 4.5:1,
 ///   and shrinking would draw them below their default size.
-/// - Show Borders on: a primary-ink border at every control's edge, a wider
-///   pressed ring, and the selection ring in the screen's colour.
+/// - Show Borders on, and always in dark mode: a primary-ink border at every
+///   control's edge, a wider pressed ring, and the selection ring in the
+///   screen's colour.
 ///
 /// Every ring is black or white and clears 3:1 on every fill in every
 /// appearance (`PaletteTests.everyRingInkStandsOutFromEveryFill`), and every
@@ -52,7 +53,8 @@ struct HomeButtonStyle: ButtonStyle {
             isEnabled: isEnabled,
             isSelected: isSelected,
             isPressed: configuration.isPressed,
-            showsBorders: showsBorders
+            showsBorders: showsBorders,
+            darkMode: colorScheme == .dark
         )
         configuration.label
             // Room between the label and the edge. Small on purpose: the label

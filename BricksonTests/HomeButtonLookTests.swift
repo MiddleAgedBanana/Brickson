@@ -3,8 +3,8 @@ import Testing
 @testable import Brickson
 
 /// What a Home control draws around its words in each state, with Show
-/// Borders off and on (`HomeButtonLook`). The colours themselves are
-/// measured in `PaletteTests`.
+/// Borders off and on, in light and dark mode (`HomeButtonLook`). The
+/// colours themselves are measured in `PaletteTests`.
 struct HomeButtonLookTests {
     private typealias Ring = HomeButtonLook.Ring
 
@@ -36,11 +36,19 @@ struct HomeButtonLookTests {
         return CGFloat(differing.count) / 2
     }
 
-    /// Fails if Show Borders off changes how a control looks: these are the
-    /// rings Home drew before the setting was read.
-    @Test func withShowBordersOffEveryStateLooksAsItDidBefore() {
+    /// Every combination of the two things that give a control its edge.
+    private static let settings: [(showsBorders: Bool, darkMode: Bool)] = [
+        (false, false), (false, true), (true, false), (true, true),
+    ]
+
+    /// Fails if light mode with Show Borders off changes how a control
+    /// looks: these are the rings Home drew before the setting was read.
+    @Test func inLightModeWithShowBordersOffEveryStateLooksAsItDidBefore() {
         func look(_ isEnabled: Bool, _ isSelected: Bool, _ isPressed: Bool) -> HomeButtonLook {
-            HomeButtonLook(isEnabled: isEnabled, isSelected: isSelected, isPressed: isPressed, showsBorders: false)
+            HomeButtonLook(
+                isEnabled: isEnabled, isSelected: isSelected, isPressed: isPressed,
+                showsBorders: false, darkMode: false
+            )
         }
         let selection = Ring(ink: .white, inset: 2, width: 3)
         let pressed = Ring(ink: .primary, inset: 0, width: 3)
@@ -57,23 +65,47 @@ struct HomeButtonLookTests {
         }
     }
 
-    /// Fails if, with Show Borders on, any control in any state lacks a
-    /// primary-ink border at least `borderWidth` deep at its very edge, or
-    /// if the setting fills or empties a control.
-    @Test func withShowBordersOnEveryControlHasAPrimaryInkEdge() {
-        for state in Self.states {
-            let look = HomeButtonLook(
-                isEnabled: state.isEnabled, isSelected: state.isSelected,
-                isPressed: state.isPressed, showsBorders: true
-            )
-            let plain = HomeButtonLook(
-                isEnabled: state.isEnabled, isSelected: state.isSelected,
-                isPressed: state.isPressed, showsBorders: false
-            )
-            for depth in stride(from: CGFloat(0.25), to: HomeButtonLook.borderWidth, by: 0.5) {
-                #expect(look.ink(atDepth: depth) == .primary, "\(state), \(depth)pt in from the edge")
+    /// Fails if, with Show Borders on or in dark mode, any control in any
+    /// state lacks a primary-ink border at least `borderWidth` deep at its
+    /// very edge, or if either fills or empties a control.
+    @Test func withShowBordersOnOrInDarkModeEveryControlHasAPrimaryInkEdge() {
+        for setting in Self.settings where setting.showsBorders || setting.darkMode {
+            for state in Self.states {
+                let look = HomeButtonLook(
+                    isEnabled: state.isEnabled, isSelected: state.isSelected,
+                    isPressed: state.isPressed, showsBorders: setting.showsBorders, darkMode: setting.darkMode
+                )
+                let plain = HomeButtonLook(
+                    isEnabled: state.isEnabled, isSelected: state.isSelected,
+                    isPressed: state.isPressed, showsBorders: false, darkMode: false
+                )
+                for depth in stride(from: CGFloat(0.25), to: HomeButtonLook.borderWidth, by: 0.5) {
+                    #expect(look.ink(atDepth: depth) == .primary, "\(state), \(setting), \(depth)pt in from the edge")
+                }
+                #expect(look.isFilled == plain.isFilled, "\(state), \(setting)")
             }
-            #expect(look.isFilled == plain.isFilled, "\(state)")
+        }
+    }
+
+    /// Fails if a control in dark mode looks any different from the same
+    /// control with Show Borders on, in any state. A fill's own edge stands
+    /// out only about 3.5:1 from the black screen, and Apple's audit read
+    /// two neighbouring phrase tiles' first lines as one line across the
+    /// black gap between them, belonging to no control (pull request #74):
+    /// so in dark mode every control draws the border Show Borders draws,
+    /// and the pressed and selection rings that go with it
+    /// (docs/DECISIONS.md, "Show Borders and the Large Content Viewer on
+    /// Home").
+    @Test func inDarkModeEveryControlLooksAsItDoesWithShowBorders() {
+        for state in Self.states {
+            func look(showsBorders: Bool, darkMode: Bool) -> HomeButtonLook {
+                HomeButtonLook(
+                    isEnabled: state.isEnabled, isSelected: state.isSelected,
+                    isPressed: state.isPressed, showsBorders: showsBorders, darkMode: darkMode
+                )
+            }
+            #expect(look(showsBorders: false, darkMode: true) == look(showsBorders: true, darkMode: false), "\(state)")
+            #expect(look(showsBorders: true, darkMode: true) == look(showsBorders: true, darkMode: false), "\(state)")
         }
     }
 
@@ -87,14 +119,14 @@ struct HomeButtonLookTests {
     @Test func everyRingStaysInTheLabelsMargin() {
         #expect(HomeButtonLook.maximumDepth == HomeLayout.labelInset.horizontal + WordFit.widthSlack / 2)
         #expect(HomeLayout.labelInset.vertical >= HomeButtonLook.maximumDepth)
-        for showsBorders in [false, true] {
+        for setting in Self.settings {
             for state in Self.states {
                 let look = HomeButtonLook(
                     isEnabled: state.isEnabled, isSelected: state.isSelected,
-                    isPressed: state.isPressed, showsBorders: showsBorders
+                    isPressed: state.isPressed, showsBorders: setting.showsBorders, darkMode: setting.darkMode
                 )
                 for ring in look.rings {
-                    let context = "\(state), Show Borders \(showsBorders), \(ring)"
+                    let context = "\(state), \(setting), \(ring)"
                     #expect(ring.inset >= 0, "\(context)")
                     #expect(ring.width > 0, "\(context)")
                     #expect(ring.depth <= HomeButtonLook.maximumDepth, "\(context)")
@@ -115,16 +147,16 @@ struct HomeButtonLookTests {
     /// test read "Emergenc" (PR #38's CI). A category's label shrinks the
     /// same way at the largest sizes.
     @Test func noRingReachesTheWordsOfAControlThatShowsSelected() {
-        for showsBorders in [false, true] {
+        for setting in Self.settings {
             for state in Self.states {
                 let look = HomeButtonLook(
                     isEnabled: state.isEnabled, isSelected: state.isSelected,
-                    isPressed: state.isPressed, showsBorders: showsBorders
+                    isPressed: state.isPressed, showsBorders: setting.showsBorders, darkMode: setting.darkMode
                 )
                 for ring in look.rings {
                     #expect(
                         ring.depth < HomeLayout.selectableSideInset,
-                        "\(state), Show Borders \(showsBorders), \(ring)"
+                        "\(state), \(setting), \(ring)"
                     )
                 }
             }
@@ -135,28 +167,29 @@ struct HomeButtonLookTests {
     /// press does not visibly change a control, selected or not, or a
     /// selected control looks like one that is not. "Visibly" is at least
     /// a point of difference all the way round. Without the selection ring
-    /// taking the screen's ink under Show Borders, a selected control in
-    /// dark mode would look the same pressed as not: primary ink and the
-    /// usual selection ring are both white there.
+    /// taking the screen's ink with the border (under Show Borders, and in
+    /// dark mode), a selected control in dark mode would look the same
+    /// pressed as not: primary ink and the usual selection ring are both
+    /// white there.
     @Test func pressedSelectedAndNeitherLookDifferentInBothAppearances() {
-        for showsBorders in [false, true] {
-            for darkMode in [false, true] {
-                let setting = "Show Borders \(showsBorders ? "on" : "off"), \(darkMode ? "dark" : "light")"
-                for isSelected in [false, true] {
-                    let resting = HomeButtonLook(
-                        isEnabled: true, isSelected: isSelected, isPressed: false, showsBorders: showsBorders
-                    )
-                    let pressed = HomeButtonLook(
-                        isEnabled: true, isSelected: isSelected, isPressed: true, showsBorders: showsBorders
-                    )
-                    let points = Self.pointsThatDiffer(resting, pressed, darkMode: darkMode)
-                    #expect(points >= 1, "a press changes \(points)pt, \(isSelected ? "selected" : "not selected"), \(setting)")
-                }
-                let unselected = HomeButtonLook(isEnabled: true, isSelected: false, isPressed: false, showsBorders: showsBorders)
-                let selected = HomeButtonLook(isEnabled: true, isSelected: true, isPressed: false, showsBorders: showsBorders)
-                let points = Self.pointsThatDiffer(unselected, selected, darkMode: darkMode)
-                #expect(points >= 1, "selection changes \(points)pt, \(setting)")
+        for (showsBorders, darkMode) in Self.settings {
+            let setting = "Show Borders \(showsBorders ? "on" : "off"), \(darkMode ? "dark" : "light")"
+            func look(isSelected: Bool, isPressed: Bool) -> HomeButtonLook {
+                HomeButtonLook(
+                    isEnabled: true, isSelected: isSelected, isPressed: isPressed,
+                    showsBorders: showsBorders, darkMode: darkMode
+                )
             }
+            for isSelected in [false, true] {
+                let resting = look(isSelected: isSelected, isPressed: false)
+                let pressed = look(isSelected: isSelected, isPressed: true)
+                let points = Self.pointsThatDiffer(resting, pressed, darkMode: darkMode)
+                #expect(points >= 1, "a press changes \(points)pt, \(isSelected ? "selected" : "not selected"), \(setting)")
+            }
+            let unselected = look(isSelected: false, isPressed: false)
+            let selected = look(isSelected: true, isPressed: false)
+            let points = Self.pointsThatDiffer(unselected, selected, darkMode: darkMode)
+            #expect(points >= 1, "selection changes \(points)pt, \(setting)")
         }
     }
 
@@ -175,12 +208,12 @@ struct HomeButtonLookTests {
     /// Fails if the ink at a depth is not the last ring drawn there: the
     /// pressed ring is drawn over the selection ring and the border.
     @Test func theLastRingDrawnShows() {
-        let look = HomeButtonLook(isEnabled: true, isSelected: true, isPressed: true, showsBorders: true)
+        let look = HomeButtonLook(isEnabled: true, isSelected: true, isPressed: true, showsBorders: true, darkMode: false)
         #expect(look.ink(atDepth: 0.5) == .primary)
         #expect(look.ink(atDepth: 3.5) == .primary)
         #expect(look.ink(atDepth: 4.5) == .screen)
         #expect(look.ink(atDepth: 5.5) == nil)
-        let plain = HomeButtonLook(isEnabled: true, isSelected: false, isPressed: false, showsBorders: false)
+        let plain = HomeButtonLook(isEnabled: true, isSelected: false, isPressed: false, showsBorders: false, darkMode: false)
         #expect(plain.ink(atDepth: 0.5) == nil)
     }
 }

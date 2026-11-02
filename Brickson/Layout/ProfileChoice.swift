@@ -21,10 +21,15 @@ import Foundation
 ///   would scroll is not held (invariant 11).
 /// - What iOS reports about VoiceOver and Switch Control only suggests an
 ///   answer (`suggestion`); the profile comes from the answer alone.
+/// - A rest board (`RestBoard`) asks for the late stage's sizes, whatever
+///   the answer (docs/DECISIONS.md, "The late-stage profile"); only it
+///   does, so no answer still asks for Eye Tracking's, the largest an
+///   answer asks for.
 ///
-/// Home and Settings read the profile asked for when Settings last
-/// closed, so an answer changed in Family Setup moves nothing under it:
-/// Settings' places are worked out from Home's frames (`SettingsCover`).
+/// Home and Settings read what Home asked for when Settings last closed
+/// (`Request`), so a choice changed in Family Setup moves nothing under
+/// it: Settings' places are worked out from Home's frames
+/// (`SettingsCover`).
 ///
 /// Switched on by the owner on 2026-10-30 (docs/DECISIONS.md, "Sizes that
 /// follow how the screen is reached", *Switched on by the owner*).
@@ -39,15 +44,56 @@ nonisolated enum ProfileChoice {
     /// asking for `--home-profile=from-answer` again.
     static let followsTheAnswer = true
 
-    /// The profile Home asks for: the one `methods` asks for when Home
-    /// `followsAnswer`, otherwise touch's, whatever the answer.
-    static func requestedForHome(by methods: Set<AccessMethod>?, followsAnswer: Bool) -> HomeLayout.Profile {
-        followsAnswer ? requested(by: methods) : .touch
+    /// What Home asks for, read from Family Setup's choices and the library
+    /// when Settings closes and kept while it is open (`BricksonApp`).
+    struct Request: Equatable, Sendable {
+        /// The sizes asked for.
+        var profile: HomeLayout.Profile
+        /// The rest board, or nil for every category.
+        var restBoard: RestBoard?
+
+        /// Touch's sizes with every category: Home as it has always been.
+        static let touch = Request(profile: .touch, restBoard: nil)
+
+        /// What the phrase area holds.
+        var phraseArea: HomeLayout.PhraseArea {
+            restBoard.map { .restBoard(phrases: $0.phrases) } ?? .everyCategory
+        }
+
+        /// Home's layout in `space` for this request (`ProfileChoice.layout`).
+        func layout(
+            space: HomeLayout.Space, text: HomeLayout.Text,
+            largestCategory: Int = HomeLayout.referencePhraseCount, modes: HomeLayout.Modes
+        ) -> HomeLayout {
+            ProfileChoice.layout(requested: profile, space: space, text: text,
+                largestCategory: largestCategory, modes: modes, phraseArea: phraseArea)
+        }
     }
 
-    /// The profile `methods`, Family Setup's answer, asks for: the largest
-    /// any of them needs, and Eye Tracking's when there is no answer.
-    static func requested(by methods: Set<AccessMethod>?) -> HomeLayout.Profile {
+    /// What Home asks for with `record`, Family Setup's choices, and
+    /// `library`, in Home's order: the rest board where one is chosen and
+    /// still in the library, and the sizes `requestedForHome` gives, or
+    /// `fixed`, a UI test's own (`LaunchOptions`).
+    static func request(
+        for record: SetupRecord, library: [RestBoard.Category], followsAnswer: Bool,
+        fixed: HomeLayout.Profile? = nil
+    ) -> Request {
+        let board = RestBoard(choice: record.restBoardCategory, in: library)
+        let profile = fixed ?? requestedForHome(by: record.plannedAccessMethods, restBoard: board != nil, followsAnswer: followsAnswer)
+        return Request(profile: profile, restBoard: board)
+    }
+
+    /// The profile Home asks for: the one `methods` and the rest board ask
+    /// for when Home `followsAnswer`, otherwise touch's, whatever they are.
+    static func requestedForHome(by methods: Set<AccessMethod>?, restBoard: Bool = false, followsAnswer: Bool) -> HomeLayout.Profile {
+        followsAnswer ? requested(by: methods, restBoard: restBoard) : .touch
+    }
+
+    /// The profile Family Setup's choices ask for: the late stage's with a
+    /// rest board; otherwise the largest any of `methods`, the first
+    /// step's answers, needs, and Eye Tracking's when there is no answer.
+    static func requested(by methods: Set<AccessMethod>?, restBoard: Bool = false) -> HomeLayout.Profile {
+        if restBoard { return .lateStage }
         guard let methods, !methods.isEmpty else { return .eyeTracking }
         return methods.map(profile(for:)).max() ?? .eyeTracking
     }
@@ -64,17 +110,20 @@ nonisolated enum ProfileChoice {
         }
     }
 
-    /// Home's layout in `space` for the profile `requested`: the first of
-    /// it and the smaller ones (`Profile.withSmallerOnes`) that the window
-    /// holds (`HomeLayout.holdsProfile`) without losing anything touch's
-    /// sizes have there (`keepsEverything`), or touch's.
+    /// Home's layout in `space` for the profile `requested`, with
+    /// `phraseArea` in its phrase area: the first of it and the smaller
+    /// ones (`Profile.withSmallerOnes`) that the window holds
+    /// (`HomeLayout.holdsProfile`) without losing anything touch's sizes
+    /// have there with the same phrase area (`keepsEverything`), or
+    /// touch's.
     static func layout(
         requested: HomeLayout.Profile, space: HomeLayout.Space, text: HomeLayout.Text,
-        largestCategory: Int = HomeLayout.referencePhraseCount, modes: HomeLayout.Modes
+        largestCategory: Int = HomeLayout.referencePhraseCount, modes: HomeLayout.Modes,
+        phraseArea: HomeLayout.PhraseArea = .everyCategory
     ) -> HomeLayout {
-        let touch = HomeLayout(space: space, profile: .touch, text: text, largestCategory: largestCategory, modes: modes)
+        let touch = HomeLayout(space: space, profile: .touch, text: text, largestCategory: largestCategory, modes: modes, phraseArea: phraseArea)
         for profile in requested.withSmallerOnes where profile != .touch {
-            let layout = HomeLayout(space: space, profile: profile, text: text, largestCategory: largestCategory, modes: modes)
+            let layout = HomeLayout(space: space, profile: profile, text: text, largestCategory: largestCategory, modes: modes, phraseArea: phraseArea)
             if layout.holdsProfile && keepsEverything(layout, of: touch) { return layout }
         }
         return touch

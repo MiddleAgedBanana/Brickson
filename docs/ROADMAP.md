@@ -552,7 +552,15 @@ reports correctly only with Guided Access on (Apple: "The user must
 enable Guided Access for the correct value to return"), so it is left
 out.
 
-**9. The late-stage profile: Yes and No, and the rest board.** The
+**9. The late-stage profile: Yes and No, and the rest board.** *Built
+2026-11-01
+([`log/2026-11-01-late-stage-profile.md`](log/2026-11-01-late-stage-profile.md)):*
+a rest board the family chooses in Set Up Step by Step's new second
+step, one category's phrases and Emergency's with the other categories
+dimmed in place, and the late stage's sizes, proposed, with Yes, No,
+Emergency, Again and Get Attention grown toward 4 degrees
+(DECISIONS.md, "The late-stage profile"; work file
+[`work/late-stage-profile.md`](work/late-stage-profile.md)). The
 map's Yes/No mode and rest board as one profile of the engine: Yes, No,
 Get Attention and Emergency keep their places relative to each other
 and grow, and the phrase area shows fewer, larger tiles from a category
@@ -878,8 +886,8 @@ what passes and who checks it:
   other unmeant activation is removed by placement or accepted by the
   owner as a named exception; and no common task takes more activations
   than in the last release (R0's counts are the first baseline). Once
-  the late-stage profile (Wave 3 item 9) is built, it gets a session of
-  its own. *Checks:* owner, then the testers. *Today:* not run; no
+  the late-stage profile (Wave 3 item 9, built 2026-11-01) is in a
+  build, it gets a session of its own, on the rest board. *Checks:* owner, then the testers. *Today:* not run; no
   mounted setup yet.
 - **Q12. Snap to Item and Dwell, measured.** The device-check rows on
   Snap to Item (nearest centre or nearest edge, how far it jumps,
@@ -892,10 +900,12 @@ what passes and who checks it:
 - **Q13. The floors are comfortable.** Each profile's floors on an iPad
   with a person using Eye Tracking, Head Tracking and Switch Control's
   Gliding Cursor, at the default text size and AX3, and the late-stage
-  profile's once it is built. It passes when fewer than 1 in 20 meant
+  profile's on the rest board (built 2026-11-01), with its safety row
+  grown toward 4 degrees. It passes when fewer than 1 in 20 meant
   activations miss their control at the floors; otherwise the owner
-  changes the floors and it runs again. The switch and head floors,
-  which are proposals, are confirmed or changed by the owner.
+  changes the floors and it runs again. The switch, head and late-stage
+  floors, and the late stage's 4-degree growth, which are proposals, are
+  confirmed or changed by the owner.
   *Checks:* owner and the testers. *Today:* not run.
 - **Q14. Every input method gets the same app.** Apple's test for
   VoiceOver, Voice Control and Switch Control ("A user can perform all
@@ -987,8 +997,12 @@ what passes and who checks it:
   as Apple's contrast criteria ask; its words and edges are measured
   (invariant 6), as is dark mode's lifted background in iPad
   multitasking. *Checks:* a thread from UI tests' captures;
-  `PaletteTests` pins the pairs. *Today:* none measured (docs/DESIGN.md,
-  *Apple's guidelines and Liquid Glass*; docs/HANDOFF.md, *Known gaps*).
+  `PaletteTests` pins the pairs. *Today:* no system component measured
+  (docs/DESIGN.md, *Apple's guidelines and Liquid Glass*). On dark
+  mode's lifted background, `PaletteTests` measures the border every
+  Home button draws in dark mode and primary ink, with and without
+  Increase Contrast, since pull request #74; the message field's edge
+  there is not measured (docs/HANDOFF.md, *Known gaps*).
 - **Q18. Nothing tuned by eye.** Every size, gap, corner radius, colour
   and font in view code comes from the layout engine, `Palette` or the
   tokens in docs/DESIGN.md; a thread lists every other number or colour
@@ -1053,9 +1067,10 @@ what passes and who checks it:
   *Checks:* CI and a thread for the captures and pairs; the owner, or a
   proficient tester, on device. *Today:* the rendered-label checks read
   the five quick controls at the default size and AX5, light and dark,
-  on CI's iPhone and iPad (`LaunchTests`, `HomeSizesTests`), and
-  Phrases, Type and the everyday categories only at Home's larger sizes
-  on an iPad in portrait (`HomeSizesTests`); nothing at AX3, no phrase
+  on CI's iPhone and iPad (`LaunchTests`, `HomeSizesTests`), with the
+  everyday categories too on the rest board (`HomeRestBoardTests`), and
+  Phrases, Type and the everyday categories at Home's larger sizes on
+  an iPad in portrait (`HomeSizesTests`); nothing at AX3, no phrase
   tile, no other screen's labels; no device run.
 
 ### Complete, and true

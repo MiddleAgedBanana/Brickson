@@ -12,17 +12,21 @@ import Foundation
 ///   screen of its own, which only navigates and is not followed further.
 /// - Set Up Step by Step's first step: Back returns to Family Setup; Learn
 ///   About Each Way opens the Reaching the Screen guide as a cover of its
-///   own; Next opens the second step, which is not followed further; every
-///   other control saves the answers: the ways of reaching the screen and
-///   Clear My Choices.
+///   own; Next opens the second step; every other control saves the
+///   answers: the ways of reaching the screen and Clear My Choices.
 /// - The guide's cover: Done, in Back to Talking's frame, returns to the
 ///   first step. It has no other control near the look (docs/DECISIONS.md,
 ///   "The first step's own rows").
+/// - The second step, which phrases Home shows: Back returns to the first
+///   step; Next, in the same bar as the first step's, opens the third
+///   step, which is not followed further; every other control saves the
+///   choice: Every Category and each everyday category (docs/DECISIONS.md,
+///   "The late-stage profile").
 ///
 /// A control on the first screen, Family Setup or the guide's cover that
 /// this does not know is returned as unknown rather than guessed at, so a
-/// new one is described here before it is scored. On the first step,
-/// anything new is taken to save, which can only add hazards.
+/// new one is described here before it is scored. On the first and second
+/// steps, anything new is taken to save, which can only add hazards.
 ///
 /// Test infrastructure only, compiled into both test targets like
 /// `ChainEngine`.
@@ -30,7 +34,7 @@ nonisolated enum SettingsChains {
     /// The states, by the titles the screens show.
     static let root = HomeChains.settingsRoot
     static let familySetup = "Family Setup"
-    static let firstStep = "Step 1 of 5"
+    static let firstStep = "Step 1 of 6"
     /// The Reaching the Screen guide, opened from the first step.
     static let eachWay = "Each Way"
 
@@ -41,8 +45,10 @@ nonisolated enum SettingsChains {
     static let guidedSetupRow = "guidedSetup"
     /// Next, on every step of Set Up Step by Step.
     static let firstStepNext = "guidedSetupNext"
-    /// Where the first step's Next leads.
-    static let secondStep = "Step 2 of 5"
+    /// Where the first step's Next leads: which phrases Home shows.
+    static let secondStep = "Step 2 of 6"
+    /// Where the second step's Next leads, not followed further.
+    static let thirdStep = "Step 3 of 6"
     /// The first step's way into the guide, and the guide's way out.
     static let learnAboutEachWay = "learnAboutEachWay"
     static let eachWayDone = "eachWayDone"
@@ -59,6 +65,7 @@ nonisolated enum SettingsChains {
         var familySetup: [(name: String, frame: CGRect)]?
         var firstStep: [(name: String, frame: CGRect)]?
         var eachWay: [(name: String, frame: CGRect)]? = nil
+        var secondStep: [(name: String, frame: CGRect)]? = nil
     }
 
     /// The map of Settings' first screens, with Back to Talking leading to
@@ -109,16 +116,28 @@ nonisolated enum SettingsChains {
                 name == eachWayDone ? ChainControl(name, frame, .navigates, leadsTo: firstStep) : nil
             }
         }
+        if let list = screens.secondStep {
+            states[secondStep] = controls(list, on: secondStep) { name, frame in
+                switch name {
+                case back: ChainControl(name, frame, .navigates, leadsTo: firstStep)
+                case firstStepNext: ChainControl(name, frame, .navigates, leadsTo: thirdStep)
+                default: ChainControl(name, frame, .changesData)
+                }
+            }
+        }
         return (ChainMap(states: states), unknown)
     }
 
+    /// Settings' screens in the map, as against Home's states.
+    static let screens: Set = [root, familySetup, firstStep, eachWay, secondStep]
+
     /// Where chains through Settings start in `map`: Home's Settings button
-    /// chosen in `home`, and every control of Settings' first screens and
-    /// the guide's cover chosen, each with the look at its centre and
-    /// across it. In state-name order, as `ChainMap.everyStart()` gives
-    /// them, but built for these states alone rather than for all of Home's.
+    /// chosen in `home`, and every control of Settings' first screens, the
+    /// guide's cover and the second step chosen, each with the look at its
+    /// centre and across it. In state-name order, as `ChainMap.everyStart()`
+    /// gives them, but built for these states alone rather than for all of
+    /// Home's.
     static func starts(in map: ChainMap, home: String) -> [ChainStart] {
-        let screens: Set = [root, familySetup, firstStep, eachWay]
         return map.states.keys.sorted().flatMap { state in
             if screens.contains(state) {
                 return map.starts(in: state)
@@ -134,7 +153,9 @@ nonisolated enum SettingsChains {
     /// "One chain engine for dwell safety"), and anything else.
     enum Kind: String, CaseIterable, Sendable {
         /// A held look follows Set Up Step by Step into its first step and
-        /// saves an answer there, through an answer or Clear My Choices.
+        /// saves an answer there, through an answer or Clear My Choices, or
+        /// on into the second step and saves a choice of which phrases
+        /// Home shows.
         case savesAnAnswer
         /// Settings closes under the look: once Back to Talking has closed
         /// it, a pointer gone back to where the person looks rests over
@@ -148,8 +169,8 @@ nonisolated enum SettingsChains {
     /// The kind of hazard `chain` ended in; nil when it ended in none.
     static func kind(of chain: Chain) -> Kind? {
         guard let hazard = chain.hazard else { return nil }
-        if hazard.state == firstStep { return .savesAnAnswer }
-        let onHome = ![root, familySetup, firstStep, eachWay].contains(hazard.state)
+        if hazard.state == firstStep || hazard.state == secondStep { return .savesAnAnswer }
+        let onHome = !screens.contains(hazard.state)
         return onHome && chain.pointer == .returnsToLook ? .closesUnderTheLook : .unexpected
     }
 }

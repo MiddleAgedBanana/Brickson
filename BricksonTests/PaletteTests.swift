@@ -136,6 +136,39 @@ struct PaletteTests {
         }
     }
 
+    /// In dark mode, iPad multitasking can lift a window's screen from
+    /// black to the system's elevated background, where the fills' own
+    /// edges come to under 3:1 (docs/HANDOFF.md, *Known gaps*). In dark
+    /// mode every Home control draws a primary-ink border inside its edge
+    /// (`HomeButtonLook`, since pull request #74), and that border, white,
+    /// is what meets the lifted screen; primary ink's words (the message,
+    /// a control that is off) sit on it too. Fails if either comes under
+    /// 4.5:1 there, or if the lift does not reach the screen's colour.
+    @Test func primaryInkIsReadableOnTheLiftedScreenInDarkMode() {
+        for contrast in [UIAccessibilityContrast.normal, .high] {
+            let name = contrast == .high ? "dark, lifted, with Increase Contrast" : "dark, lifted"
+            let lifted = UITraitCollection { traits in
+                traits.userInterfaceStyle = .dark
+                traits.userInterfaceLevel = .elevated
+                traits.accessibilityContrast = contrast
+            }
+            let base = UITraitCollection { traits in
+                traits.userInterfaceStyle = .dark
+                traits.accessibilityContrast = contrast
+            }
+            let screen = UIColor.systemBackground.resolvedColor(with: lifted)
+            #expect(
+                Self.components(screen) != Self.components(UIColor.systemBackground.resolvedColor(with: base)),
+                "the screen did not lift, \(name)"
+            )
+            let border: UIColor = HomeButtonLook.Ink.primary.isWhite(inDarkMode: true) ? .white : .black
+            let borderRatio = Contrast.ratio(border, screen)
+            #expect(borderRatio >= 4.5, "the border on the screen, \(name): \(borderRatio):1")
+            let wordsRatio = Contrast.ratio(UIColor.label.resolvedColor(with: lifted), screen)
+            #expect(wordsRatio >= 4.5, "primary ink on the screen, \(name): \(wordsRatio):1")
+        }
+    }
+
     /// The rings are drawn in plain black and white. Primary ink must be
     /// the system's label colour, the words of a control that is off and
     /// the ink the tests above measure on the screen, and the screen's ink

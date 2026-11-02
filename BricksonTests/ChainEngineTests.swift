@@ -565,7 +565,12 @@ struct SettingsChainsTests {
             (SettingsChains.learnAboutEachWay, row(362)), ("Touch", row(572)), ("Voice Control", row(666)),
             (SettingsChains.firstStepNext, CGRect(x: 0, y: 694.3, width: 402, height: 110)),
         ],
-        eachWay: [(SettingsChains.eachWayDone, backToTalking)]
+        eachWay: [(SettingsChains.eachWayDone, backToTalking)],
+        secondStep: [
+            (SettingsChains.backToTalking, backToTalking), (SettingsChains.back, back),
+            ("restBoardEveryCategory", row(362)), ("restBoardCategory", row(456)), ("restBoardCategory", row(550)),
+            (SettingsChains.firstStepNext, CGRect(x: 0, y: 694.3, width: 402, height: 110)),
+        ]
     )
 
     private static func controls(_ map: ChainMap, _ state: String) -> [String: ChainControl] {
@@ -575,7 +580,10 @@ struct SettingsChainsTests {
     /// Fails if Back to Talking stops closing Settings onto Home from any
     /// screen, a row opens the wrong screen, anything on the first step but
     /// Back, Learn About Each Way and Next stops counting as saving an
-    /// answer, or the guide's Done stops returning to the first step.
+    /// answer, the guide's Done stops returning to the first step, or, on
+    /// the second step, Back stops returning to the first step, Next stops
+    /// leading on to the third, or a choice of which phrases Home shows
+    /// stops counting as saving one.
     @Test func eachControlDoesWhatSettingsDoes() {
         let built = SettingsChains.map(Self.screens, closingOnto: Self.home)
         #expect(built.unknown.isEmpty)
@@ -583,7 +591,8 @@ struct SettingsChainsTests {
         let familySetup = Self.controls(built.map, SettingsChains.familySetup)
         let firstStep = Self.controls(built.map, SettingsChains.firstStep)
         let eachWay = Self.controls(built.map, SettingsChains.eachWay)
-        for screen in [root, familySetup, firstStep] {
+        let secondStep = Self.controls(built.map, SettingsChains.secondStep)
+        for screen in [root, familySetup, firstStep, secondStep] {
             #expect(screen[SettingsChains.backToTalking]?.leadsTo == Self.home)
             #expect(screen[SettingsChains.backToTalking]?.effect == .navigates)
         }
@@ -601,6 +610,13 @@ struct SettingsChainsTests {
         #expect(eachWay.count == 1)
         #expect(eachWay[SettingsChains.eachWayDone]?.leadsTo == SettingsChains.firstStep)
         #expect(eachWay[SettingsChains.eachWayDone]?.effect == .navigates)
+        #expect(secondStep[SettingsChains.back]?.leadsTo == SettingsChains.firstStep)
+        #expect(secondStep[SettingsChains.back]?.effect == .navigates)
+        #expect(secondStep[SettingsChains.firstStepNext]?.leadsTo == SettingsChains.thirdStep)
+        #expect(secondStep[SettingsChains.firstStepNext]?.effect == .navigates)
+        let choices = (built.map.states[SettingsChains.secondStep] ?? []).filter { $0.name.hasPrefix("restBoard") }
+        #expect(choices.count == 3)
+        #expect(choices.allSatisfy { $0.effect == .changesData && $0.leadsTo == nil })
     }
 
     /// Fails if the starts through Settings stop being what filtering every
@@ -618,7 +634,10 @@ struct SettingsChainsTests {
             resting: [Self.home: [("the message", CGRect(x: 16, y: 60, width: 370, height: 100))]]
         )
         let map = home.merging(SettingsChains.map(Self.screens, closingOnto: Self.home).map)
-        let screens: Set = [SettingsChains.root, SettingsChains.familySetup, SettingsChains.firstStep, SettingsChains.eachWay]
+        let screens: Set = [
+            SettingsChains.root, SettingsChains.familySetup, SettingsChains.firstStep, SettingsChains.eachWay, SettingsChains.secondStep,
+        ]
+        #expect(SettingsChains.screens == screens)
         let starts = SettingsChains.starts(in: map, home: Self.home)
         #expect(starts == map.everyStart().filter { start in
             screens.contains(start.state) || (start.state == Self.home && start.chosen?.name == HomeChains.settings)
@@ -637,19 +656,26 @@ struct SettingsChainsTests {
         screens.familySetup?.append(("anotherNew", Self.row(550)))
         screens.firstStep = nil
         screens.eachWay?.append(("Open Dwell Control Settings", Self.row(600)))
+        screens.secondStep?.append(("somethingElse", Self.row(644)))
         let built = SettingsChains.map(screens, closingOnto: Self.home)
         #expect(built.unknown == ["somethingNew on Settings", "anotherNew on Family Setup", "Open Dwell Control Settings on Each Way"])
         #expect(Self.controls(built.map, SettingsChains.root)["somethingNew"] == nil)
         #expect(Self.controls(built.map, SettingsChains.eachWay)["Open Dwell Control Settings"] == nil)
         #expect(built.map.states[SettingsChains.firstStep] == nil)
+        // On the second step, as on the first, anything new is taken to
+        // save, which can only add hazards.
+        #expect(Self.controls(built.map, SettingsChains.secondStep)["somethingElse"]?.effect == .changesData)
         screens.eachWay = nil
-        #expect(SettingsChains.map(screens, closingOnto: Self.home).map.states[SettingsChains.eachWay] == nil)
+        screens.secondStep = nil
+        let unread = SettingsChains.map(screens, closingOnto: Self.home).map
+        #expect(unread.states[SettingsChains.eachWay] == nil)
+        #expect(unread.states[SettingsChains.secondStep] == nil)
     }
 
-    /// Fails if a hazard is put in the wrong kind: one on the first step
-    /// saves an answer; one on Home is Settings closing under the look only
-    /// while the pointer goes back to the look; anything else, the guide's
-    /// cover included, is new.
+    /// Fails if a hazard is put in the wrong kind: one on the first or the
+    /// second step saves an answer; one on Home is Settings closing under
+    /// the look only while the pointer goes back to the look; anything
+    /// else, the guide's cover included, is new.
     @Test func hazardsAreSortedIntoTheirKinds() {
         let tile = ChainControl("phraseTile", Self.row(400), .speaks)
         let answer = ChainControl("Touch", Self.row(335), .changesData)
@@ -665,6 +691,8 @@ struct SettingsChainsTests {
             )
         }
         #expect(SettingsChains.kind(of: chain(SettingsChains.firstStep, answer, .staysOnControl)) == .savesAnAnswer)
+        let choice = ChainControl("restBoardCategory", Self.row(456), .changesData)
+        #expect(SettingsChains.kind(of: chain(SettingsChains.secondStep, choice, .returnsToLook)) == .savesAnAnswer)
         #expect(SettingsChains.kind(of: chain(Self.home, tile, .returnsToLook)) == .closesUnderTheLook)
         #expect(SettingsChains.kind(of: chain(Self.home, tile, .staysOnControl)) == .unexpected)
         #expect(SettingsChains.kind(of: chain(Self.home, tile, .returnsToLook, .settles)) == nil)
@@ -1027,6 +1055,12 @@ struct SettingsChainsTests {
     ///   the phone at AX5, where this gives 35.5, 79.7 and 143.4. Everything
     ///   in the window is kept, as the UI test reads it.
     /// - The guide's cover: Done, in Back to Talking's frame.
+    /// - The second step: its question and its sentence, modelled as the
+    ///   first step's are, 16 points apart, then Every Category and the
+    ///   four everyday categories Home holds at most, each as tall as the
+    ///   root's row across the content, where `SetupChoicesPlace` places
+    ///   them, with Back and Next where the first step has them.
+    ///   Everything in the window is kept.
     struct SweptFamilySetup {
         let guided: CGRect
         let screens: SettingsChains.Screens
@@ -1035,6 +1069,12 @@ struct SettingsChainsTests {
         static let question = "How is the screen reached?"
         static let sentence = "Choose every way that is used now. Each answer is saved as soon as it is chosen."
         static let sizes = "Home's buttons take the size the answers need, as large as this screen has room for, and are largest until something is chosen. The new size shows when Settings closes."
+        static let restBoardQuestion = "Which phrases does Home show?"
+        static let restBoardSentence = "Home can show one category's phrases, and Emergency's, in fewer, larger buttons, with Yes, No, Emergency, Again and Get Attention as large as this screen has room for. The other categories stay where they are, dimmed, so nothing moves. The change shows when Settings closes."
+        /// The second step's choices, by the names the UI test reads:
+        /// Every Category, then the most everyday categories Home holds.
+        static let restBoardChoiceNames = ["restBoardEveryCategory"]
+            + Array(repeating: "restBoardCategory", count: HomeLayout.categoryCapacity)
 
         /// How many lines `text` takes in `room` at `size`, wrapped between
         /// words.
@@ -1058,6 +1098,27 @@ struct SettingsChainsTests {
         static func questionHeight(_ width: CGFloat, body: CGFloat) -> CGFloat {
             lines(question, room: width, size: 1.25 * body) * 1.2 * 1.25 * body + 16 + lines(sentence, room: width, size: body) * 1.2 * body
                 + sizesHeight(width, body: body)
+        }
+
+        /// The second step's question and its sentence at `width`, 16
+        /// points apart.
+        static func restBoardWordsHeight(_ width: CGFloat, body: CGFloat) -> CGFloat {
+            lines(restBoardQuestion, room: width, size: 1.25 * body) * 1.2 * 1.25 * body + 16
+                + lines(restBoardSentence, room: width, size: body) * 1.2 * body
+        }
+
+        /// The second step's choices across `content`, under its words or
+        /// below the bar, where `SetupChoicesPlace` places them from
+        /// `next`.
+        static func restBoardChoices(content: CGRect, next: CGRect, body: CGFloat, rowHeight: CGFloat) -> [(name: String, frame: CGRect)] {
+            let heights = restBoardChoiceNames.map { _ in rowHeight }
+            let place = SetupChoicesPlace(
+                next: next, choicesMinX: content.minX, choicesWidth: content.width, heights: heights, spacing: 16,
+                earliest: content.minY + restBoardWordsHeight(content.width, body: body) + 16
+            )
+            return zip(restBoardChoiceNames, place.tops).map { name, top in
+                (name, CGRect(x: content.minX, y: top, width: content.width, height: rowHeight))
+            }
         }
 
         /// The sentence on Home's sizes, 16 points under the first, shown
@@ -1147,18 +1208,26 @@ struct SettingsChainsTests {
                 firstStep: ([(SettingsChains.backToTalking, backToTalking), (SettingsChains.back, back), (SettingsChains.learnAboutEachWay, link)]
                     + answers + [(SettingsChains.firstStepNext, next)])
                     .filter { $0.1.intersects(inWindow) },
-                eachWay: [(SettingsChains.eachWayDone, backToTalking)]
+                eachWay: [(SettingsChains.eachWayDone, backToTalking)],
+                secondStep: ([(SettingsChains.backToTalking, backToTalking), (SettingsChains.back, back)]
+                    + Self.restBoardChoices(content: content, next: next, body: body, rowHeight: rowHeight)
+                    + [(SettingsChains.firstStepNext, next)])
+                    .filter { $0.1.intersects(inWindow) }
             )
         }
     }
 
     /// Across `SettingsRowPlaceTests.everyWindow` at the default size, AX3
     /// and AX5, Bold Text off, every 32 points of width: fails if any chain
-    /// through Settings' first screen, Family Setup, the first step and the
-    /// guide's cover closes Settings under the look, meets anything new or
-    /// saves an answer (docs/DECISIONS.md, "Settings' first row, placed
-    /// from Home's frames", "The first step's own rows"), with the words
-    /// modelled as `SweptFamilySetup` says. With Next saving the answers,
+    /// through Settings' first screen, Family Setup, the first step, the
+    /// guide's cover and the second step closes Settings under the look,
+    /// meets anything new or saves an answer (docs/DECISIONS.md, "Settings'
+    /// first row, placed from Home's frames", "The first step's own rows",
+    /// "The late-stage profile"), with the words modelled as
+    /// `SweptFamilySetup` says. With the second step's choices right under
+    /// its words, as it was first built, a held look that chose Next and
+    /// stayed on Next's top edge saved a choice on 203 of the windows (53
+    /// at the default size, 99 at AX3, 51 at AX5). With Next saving the answers,
     /// as it did, a held look saved them through Next on 212 of the
     /// windows (135 at AX5, 75 at AX3 and two 568 points tall at the
     /// default size), where Home's Settings lies low enough that a look at

@@ -76,13 +76,14 @@ holds.
 | Home first with setup as a place in Settings, the Settings root, the voice picker, the Privacy row, the largest sizes when nobody answers setup, an "Anything changed?" check-in every three months that waits 30 days after Not Now | "First launch opens Home; setup lives in Settings", "Settings is a cover with a fixed safety bar", "Settings resets when idle and never closes", "Setup answers are kept as offered, never as completed", "Check-ins come every three months", "The privacy policy ships inside the app", "Speed is a set of fixed choices" (Settings and first run; PR #23) |
 | Voice Settings keeping its rows and words in place while voices change, and an explained Ask button for Personal Voice that moves nothing and adds no button on the visit that asked (switched on after device check D1) | "Voice Settings keeps its places while it is open", "Asking for Personal Voice from Voice Settings", and a paragraph in "A Personal Voice is used only while it is allowed" (Voice screen in Settings, 2026-10-22) |
 | Home's scan order (Yes, No and Emergency first, regions as containers) and the names Voice Control and Full Keyboard Access use, the visible words first | "Home's scan order and names" (Accessibility implementation, first pass) |
-| Home's border, pressed and selection rings under Show Borders, and no Large Content Viewer on Home's controls except Settings' gear where it shows alone (with it, a slow press speaks nothing) | "Show Borders and the Large Content Viewer on Home" (Accessibility pass two) |
+| Home's border, pressed and selection rings under Show Borders and, by the owner's choice (2026-11-02), always in dark mode, and no Large Content Viewer on Home's controls except Settings' gear where it shows alone (with it, a slow press speaks nothing) | "Show Borders and the Large Content Viewer on Home" (Accessibility pass two; Wave 3 item 9) |
 | Get Attention on Home under Emergency, Stop in a well of its own with a category under it, "Help" as Get Attention's other name, the status line's order, a silent stand-in tone for UI tests | "Get Attention and Stop on Home" (Get Attention and Stop on Home; PR #38) |
 | A compiler warning fails the build in every target and configuration | "Warnings are errors" (Warnings as errors) |
 | iPhone Duo: optimized by building with the current SDK, Duo screenshots in every submission, ready before the first, one layout for every pose, the hinge driving nothing, no arrangement view on Home, the system's bars in Settings, one window; and, by the owner's choice, Home's controls kept off the fold and an even column count on a display that folds | "iPhone Duo" (iPhone Duo readiness) |
 | The exceptions to Apple's current frameworks first, and the moves made and planned | "Apple's current frameworks first" (the rule is the owner's, 2026-10-22) |
 | The accessibility coverage list and its choices: full screen in Assistive Access and no separate scene, no programmatic Guided Access, assistive-technology flags that only suggest, phrases in the person's voice with VoiceOver on, late-stage boards as an R1 profile, and what waits or is never used | "Accessibility API coverage" (Accessibility coverage checklist) |
 | Home's sizes from Family Setup's answer: four profiles' floors (switch and head proposed), the largest any answer needs, Eye Tracking's with no answer, the largest the window holds, touch's arrangement and Back to Talking, flags that only suggest; on since the owner chose the largest sizes that fit (2026-10-30), with Back to Talking at touch's frame by the owner's answer the same day | "Sizes that follow how the screen is reached" (Wave 3 item 8, 2026-10-30) |
+| The rest board, chosen in Set Up Step by Step's second step, and the late stage's floors (proposed): one category's phrases and Emergency's, the other categories dimmed in place, the safety row grown toward 4 degrees while the tiles stay as tall | "The late-stage profile" (Wave 3 item 9, 2026-11-01) |
 | XcodeGen stays until Xcode's JSON project format passes a trial on the owner's Mac and its gates; then one pull request switches | "Xcode's JSON project format" (Plan for Xcode's new JSON project format, 2026-10-25) |
 | The quality bar's gates, their numbers and who checks each (the bar itself, that it holds every release back from App Review, and Q9's TestFlight time, answered 2026-11-01, are the owner's) | "Every release passes the quality bar" (2026-10-30) |
 | The voice list read away from the main thread, one read at a time, with phrases before it arrives spoken in the system's default voice | "The voice list never holds up launch" (Fix the iPad first-launch CI flake, 2026-11-01) |
@@ -3618,8 +3619,11 @@ the project. Reversible if the owner objects.*
 `SetupRecord` keeps what Family Setup learned: whether it was opened, how
 the screen is reached (`AccessMethod`: touch, Voice Control, Switch
 Control, Eye Tracking, Head Tracking, someone else helps), when that was
-answered, and the check-in state. Nothing is recorded as "setup
-completed": a family can stop at any step. `plannedAccessMethods` is nil
+answered, the check-in state, and since 2026-11-01 the rest board's
+chosen category, if any: Home shows every category where that category
+is no longer in the library (*The late-stage profile*).
+Nothing is recorded as "setup completed": a family can stop at any
+step. `plannedAccessMethods` is nil
 when nobody answered or every choice was cleared, and the layout then
 uses its largest sizes. `SetupStore` keeps the record as JSON in
 UserDefaults; a change is saved before it is shown, a failed save changes
@@ -3632,10 +3636,16 @@ first step's own rows*). *Before:* Next saved the answer once more, even
 unchanged, because going through the step again is what a check-in asks
 for; a held look that met it saved too.
 
-Set Up Step by Step has five steps, each a pushed screen with Next in a
-fixed bar at the bottom: how the screen is reached, the voice, turning
-on what was chosen, keeping Brickson open, and a summary. A held look on
-Next can walk the steps; that only navigates, and Back undoes it. Guides
+*2026-11-01:* the rest board's choice is the second step, "Which
+phrases does Home show?" (*The late-stage profile*), so turning on what
+was chosen is now step 4 and keeping Brickson open step 5. *Before:*
+five steps, with those two at 3 and 4.
+
+Set Up Step by Step has six steps, each a pushed screen with Next in a
+fixed bar at the bottom: how the screen is reached, which phrases Home
+shows, the voice, turning on what was chosen, keeping Brickson open,
+and a summary. A held look on Next can walk the steps; that only
+navigates, and Back undoes it. Guides
 name Apple's own menus, checked against Apple's support pages on
 2026-10-21, and again, with the guides Wave 3 item 1 added, against
 Apple's iPhone, iPad and Apple Watch User Guides for iOS 26 and iOS 27
@@ -3648,7 +3658,8 @@ Apple's features live: Touch Accommodations, Switch Control's switches
 and timing, and eye trackers made for iPad extend Reaching the Screen,
 so step 3 of Set Up Step by Step shows them for the ways chosen in step
 1; Auto-Lock and Guided Access's Display Auto-Lock extend Keep Brickson
-Open, and so step 4. Two new screens hold the rest: Calls, Siri and
+Open, and so step 4. Since 2026-11-01 those are steps 4 and 5
+respectively, after the rest board's step. Two new screens hold the rest: Calls, Siri and
 Shortcuts (Live Speech on iPhone, iPad and Apple Watch, Vocal Shortcuts,
 Listen for Atypical Speech, the Action button) and More Accessibility
 Settings (the Accessibility Shortcut, Zoom, Share Accessibility
@@ -3698,7 +3709,9 @@ Talking keeps touch's frame*). The work file is
   own; several answers the largest any of them asks for, so a person
   who touches on good days and uses Eye Tracking on others has targets
   their eyes can hold every day; and no answer, never given or cleared,
-  Eye Tracking's, the largest.
+  Eye Tracking's, the largest an answer asks for. A fifth profile, the
+  late stage's, is larger still and asked for only with a rest board
+  (*The late-stage profile*).
 - **Where each profile holds.** A window takes the sizes asked for
   where it holds them, else the largest smaller ones it holds (Eye
   Tracking's, head tracking's, touch's). A profile holds where every
@@ -3831,6 +3844,160 @@ answer; `HomeLayout.Profile` had only touch's floors, and a larger
 profile's own Back to Talking was never measured. From #69 until the
 owner chose the fallback the sizes were built and held, touch's for
 everyone.
+
+## The late-stage profile
+
+*2026-11-01. Default, Wave 3 item 9: the owner left these choices to the
+project. The late stage's floors and the 4-degree growth are proposals,
+measured, that the owner can overrule, as docs/ROADMAP.md asked.
+Reversible if the owner objects.* The map's Yes/No mode and rest board
+(*Accessibility API coverage*, *Late-stage boards are a profile, not new
+screens*) are one profile of the layout engine and one choice in Set Up
+Step by Step. The work file is
+[`work/late-stage-profile.md`](work/late-stage-profile.md).
+
+- **The rest board.** A family can choose one everyday category in Set
+  Up Step by Step's second step, "Which phrases does Home show?"
+  (`SetupRecord.restBoardCategory`). Home then shows that category's
+  phrases, and Emergency's while Emergency is chosen, in fewer, larger
+  tiles, and dims the other categories in their places: disabled
+  standard buttons, drawn as categories are while typing. Nothing on
+  Home chooses or leaves the board, and Every Category gives back Home
+  as it was. A choice the library no longer has as an everyday category
+  (a library made again has new categories) shows as every category
+  (`RestBoard`). The choice shows when Settings closes, as sizes do:
+  Home and Settings share one request, read from the setup record and
+  the library as Settings closes (`ProfileChoice.Request`), so nothing
+  moves under Settings while it is open.
+- **A step, not a Family Setup row.** Family Setup's rows are where a
+  held look arrives from Settings' first screen, and every new row there
+  is a new place for it to land. A held look arrives at the step on the
+  first step's Next, in the bar every step shares, or on the standard
+  Back button, above the step's words. The choices only select
+  (invariant 10), each is saved the moment it is chosen, and the
+  summary says which phrases Home shows. The family's category names
+  are shown as written, never translated.
+- **Where the second step's choices start.** A look resting anywhere on
+  Next as the step appears meets Next again: every choice keeps every
+  point of Next nearer Next than itself, by nearest centre and by
+  nearest edge, with 8 points to spare (`SetupChoicesPlace`, from Next's
+  frame at the screen's foot, `SettingsScreenFrames.foot`). Each choice
+  follows the heading and words, or the choice before it, where it
+  holds there. From the first that does not, the rest start together
+  just below the bar, at the first top where every one of them holds,
+  and the family scrolls to them past a gap where a choice would meet
+  the look. On an iPad at the default size every choice follows the
+  words. On a phone none can sit just above the bar, because a
+  full-width Next's top corners are nearer a choice's centre there than
+  Next's own: on the iPhone 17 at the default size, Every Category and
+  the first category stay under the words and the other three start
+  below the bar. Across the 630 swept windows the first screenful shows
+  at least one choice on 97 of the 140 phone-height windows at the
+  default size, and on every window from 1,000 points tall; at AX3 and
+  AX5 on a phone the words alone fill it. Putting every choice below
+  the bar wherever the whole column cannot stay under the words, as
+  this pull request first did after the review, showed none on any
+  phone-height window, so Every Category, the choice that keeps Home as
+  it is, needed a scroll everywhere a phone is used; an independent
+  review found it. The step is a surface of the chain engine
+  (`SettingsChains`), read in the app on CI's iPad and iPhone by
+  `SettingsOnHomeTests` and modelled across 630 windows
+  (`SettingsChainsTests.SweptFamilySetup`), and no chain through it
+  saves a choice. With the choices right under the words, as the step
+  was first built, a held look that chose Next and stayed on Next's top
+  edge met a choice above the bar or under it, and saved it, on 203 of
+  the 630 windows (53 at the default text size, 99 at AX3, 51 at AX5);
+  Codex's review of pull request #74 found the step unscored. The steps
+  after it are not followed (docs/HANDOFF.md, *Known gaps*).
+- **The late stage's floors** (`HomeLayout.Profile.lateStage`), held at
+  163 points per inch (*Layouts from the space available*), angles at
+  46 cm:
+
+  | Profile | Phrase tiles | Yes, No, Emergency, Again, Get Attention | Phrases and Type | Categories, Stop, Settings | Gap | The safety row grows toward |
+  |---|---|---|---|---|---|---|
+  | Eye Tracking | 136 (2.6°) | 109 (2.1°) | 109 (2.1°) | 89 (1.7°) | 15 | 109, as touch's sizes grow |
+  | The late stage | 136 (2.6°) | **136 (2.6°)** | 109 (2.1°) | 89 (1.7°) | 15 | **206 (4.0°)**, on the rest board |
+
+  The tiles, categories and gap are Eye Tracking's, so the late stage
+  asks for no smaller target anywhere. The safety row is never smaller
+  than a phrase tile, the reference app's 136-point gaze tile. Phrases
+  and Type only change what Home shows, so they keep Eye Tracking's 109
+  and the room goes to the controls the roadmap names. The 4 degrees
+  come from a study of gaze pointing on a phone ("Stretch Gaze Targets
+  Out", CHI 2025, https://doi.org/10.1145/3706598.3713092; 24 people, an
+  iPhone X's front camera, 25 to 49 cm away): "targets with a visual
+  angle of 4° serve as an optimal 'sweet spot' across all screen regions
+  and face-to-screen distances", with gaze less accurate up and down
+  than across, so the safety row grows in height. No one with ALS, and
+  no one using Apple's Eye Tracking, took part, so the floors stay
+  proposals until the device checks (docs/ROADMAP.md, *The quality
+  bar*, Q11 and Q13).
+- **Asked for only with a board.** A rest board asks for the late
+  stage's sizes whatever the first step's answers; without one the
+  answers decide as before (*Sizes that follow how the screen is
+  reached*), and no answer still asks for Eye Tracking's, the largest
+  an answer asks for. A window takes the largest sizes it holds: the
+  late stage's, Eye Tracking's, head tracking's, touch's last, each
+  with the board's phrase area.
+- **What grows.** On the board every place stays: the same arrangement,
+  categories and grid columns, every control in its region, row and
+  column (invariant 8). The grid leaves room for the board's phrases or
+  Emergency's, whichever has more, instead of the starter library's
+  largest category. Every size but the safety row's, and every frame
+  above it, are those of the same window and profile with every
+  category; then each row of the safety row grows on toward 206 points,
+  out of what is left once the board fits at the tile floor, only while
+  the board's tiles stay at least as tall as it, then together with
+  them. It never grows into the keyboard's room, so typing is offered
+  wherever it is without the board, and Phrases and Type keep their
+  frames, so Settings' Back to Talking, touch's frame with every
+  category, still lies over Phrases. It is smaller than the late
+  stage's floors, as it is than Eye Tracking's: the owner's answer of
+  2026-10-30 keeps it at today's size whenever Home's buttons grow
+  (*Sizes that follow how the screen is reached*, *Back to Talking
+  keeps touch's frame*).
+- **Where the board's sizes hold**, measured with a six-phrase board
+  and the starter library's Emergency (`LateStageProfileTests.boardTable`;
+  the sizes are in the work file): every iPad in portrait but the
+  iPad mini, and the 13-inch iPad in landscape, take the late stage's at
+  every text size; the iPad mini in portrait Eye Tracking's (its
+  130-point columns hold 109-point controls, not 136), head tracking's
+  with Bold Text; the 11-inch iPad in landscape head tracking's to AX3
+  and touch's at AX5; the zoomed 13-inch iPad in landscape touch's but
+  at AX3, head tracking's; the iPad mini in landscape touch's; phones
+  touch's, except the iPhone 17 Pro Max, whose board of two rows holds
+  head tracking's. Two consequences: on four columns, where every
+  starter category already fits in two rows, the safety row's growth
+  comes out of the tiles (the 13-inch iPad in portrait: Yes and No 206
+  points, tiles 302 tall where they were 350); and on the Pro Max the
+  tiles are head tracking's 110 points where touch's with every
+  category were 138, while every other target grows. The owner can cap
+  the growth, or keep touch's on the Pro Max, instead.
+- **A fold or a camera across Home** shows the board in every
+  category's frames at touch's sizes, because no fold check has
+  measured the board's (*iPhone Duo*).
+- **Dwell safety, measured.** Chains of held activations on the board's
+  frames, browsing and typing, by nearest centre and nearest edge, at
+  every profile the board takes, meet nothing touch's frames with every
+  category do not; Back to Talking meets only Phrases on every Home it
+  can close onto, with or without the board; Settings over the board's
+  Home, the second step included, closes nothing and saves nothing
+  under a held look; and Yes and
+  No border no more of the message than in the same window and profile
+  with every category, and no more than the shares pinned in the
+  engine's tests (*Sizes that follow how the screen is reached*,
+  *Dwell safety, measured*) wherever the window is at least 744 points
+  tall. The three open hazards that hold back a build with the larger
+  sizes hold back the board's too (docs/ROADMAP.md, R0's *Release
+  gate*).
+- **The controls' frames follow the library, on the board only.** The
+  grid's room is the board's or Emergency's count, read when Settings
+  closes and kept until it closes again. Without the board nothing
+  follows the library.
+
+*Before:* Home had no late-stage profile, Yes and No were at most Eye
+Tracking's 109-point floor, the map's Yes/No mode and rest board rows
+said *add*, and Set Up Step by Step had five steps.
 
 ## Items 8 and 9 come before the first App Review build
 
@@ -4275,7 +4442,8 @@ choices it makes:
   mode and rest board become one R1 profile of the layout engine: Yes,
   No, Get Attention and Emergency keep their relative places and grow,
   and the phrase area shows fewer, larger tiles from a category the
-  family chooses. Emergency stays visible (invariant 2).
+  family chooses. Emergency stays visible (invariant 2). *Built
+  2026-11-01* (*The late-stage profile*).
 - **Waiting, each with a work file first:** a watch app, a start-only
   Get Attention control (never a toggle), an on-device partner view,
   custom VoiceOver rotors, pronunciation with SSML or IPA, keyboard
@@ -4354,7 +4522,39 @@ R0 item 3's accessibility work (docs/ACCESSIBILITY.md, section 6;
   selected control would look the same pressed as not. The rings drawn
   from the edge stay within the label inset (4pt), which a label's words
   never cross; the selection ring keeps its place, 2 to 5pt in. With the
-  setting off nothing changes.
+  setting off nothing changes (but see the next point for dark mode).
+- **In dark mode every control draws the border, Show Borders on or
+  not** (2026-11-02, the owner's choice on pull request #74, from three
+  offered: this, a wider gap between the late stage's controls, or
+  recording the finding below as Apple's false positive, with a strict
+  expected failure and a report to Apple). Apple's accessibility audit
+  failed the Conversation rest board on the 13-inch iPad simulator at the
+  largest text size in dark mode, with "Potentially inaccessible text"
+  belonging to no element, on CI and on the owner's Mac (Xcode 27.2,
+  iOS 27.2). Masking parts of the screen there showed it read the first
+  lines of the first two phrase tiles, "Give me a" and "Can you", as one
+  line across the black 15pt gap between them; in light mode the white
+  gap kept them apart, and every word was in its own button's label.
+  With this border in dark mode, the audit passed on that board, on the
+  other boards and on every other Home state tried, with nothing moved.
+  A late-stage gap of 20, 24 or 30pt cleared it too, but re-set the first
+  tile's words, so those runs could not show which change did it
+  ([`log/2026-11-01-late-stage-profile.md`](log/2026-11-01-late-stage-profile.md)).
+  The border also gives every control in dark mode a 21:1 edge against
+  the black screen instead of a fill's 3.5:1, and an edge measured at
+  4.5:1 or better (`PaletteTests`) against the lighter screen iPad
+  multitasking can give a window, where the accent, control and
+  Emergency fills' own edges come to 2.84 to 2.96:1 against `#1C1C1E`,
+  a commonly reported value not read from Apple (docs/HANDOFF.md,
+  *Known gaps*). The pressed and selection rings follow it as under Show
+  Borders, so in dark mode the pressed ring is 4pt and the selection ring
+  black. Light mode with Show Borders off is unchanged. Settings' safety
+  bar (Back to Talking, and Learn About Each Way's Done: `SettingsSafetyBar`)
+  uses Home's button style, so it draws the border in dark mode too,
+  inside its frame, with nothing moved. The UI tests' word reader
+  counted the border's rows as words and misread a whole "No" as "I";
+  it now leaves out rows drawn all the way across a capture (AGENTS.md,
+  *Gotchas*, "Accessibility frames do not prove visible words fit").
 - **Measured, not eyeballed** (invariant 6). The rings are drawn in plain
   black and white. `HomeButtonLook`, a plain type, says which rings each
   state and setting draws (`HomeButtonLookTests`); `PaletteTests`
@@ -4362,7 +4562,9 @@ R0 item 3's accessibility work (docs/ACCESSIBILITY.md, section 6;
   Increase Contrast, and checks that primary ink and the screen's colour
   are the system's label and background colours. Settings and setup use
   the system's bordered style, which follows the setting itself (a device
-  check).
+  check), except Settings' safety bar (Back to Talking, and Learn About
+  Each Way's Done), which uses Home's button style and draws its border
+  under Show Borders and in dark mode.
 - **No Large Content Viewer on Home's controls, except Settings' gear**
   (measured 2026-10-23 on Yes, No and the phrase tiles). The coverage
   list planned it for every label the fitting type shrinks, and PR #35
