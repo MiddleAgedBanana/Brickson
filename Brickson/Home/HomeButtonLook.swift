@@ -20,6 +20,13 @@ import Foundation
 ///   appearances: in dark mode, primary ink and the usual selection ring
 ///   are both white (docs/DECISIONS.md, "Show Borders and the Large Content
 ///   Viewer on Home").
+/// - Dark mode: the same as Show Borders, whether the setting is on or
+///   not. There a fill's edge is the one that stands out only 3.5:1, and
+///   Apple's accessibility audit, at the largest text size on the
+///   Conversation rest board, read the first lines of two neighbouring
+///   phrase tiles as one line across the black gap between them,
+///   belonging to no control (pull request #74). With a white border on
+///   each control it read each tile's words as that tile's.
 nonisolated struct HomeButtonLook: Equatable, Sendable {
     /// The colours a ring is drawn in, each black or white.
     /// `PaletteTests` measures each against every fill in light and dark
@@ -61,7 +68,7 @@ nonisolated struct HomeButtonLook: Equatable, Sendable {
     }
 
     /// The border of a control that is off, and of every control with Show
-    /// Borders on.
+    /// Borders on or in dark mode.
     static let borderWidth: CGFloat = 2
     /// The pressed ring with Show Borders off.
     static let pressedWidth: CGFloat = 3
@@ -87,7 +94,12 @@ nonisolated struct HomeButtonLook: Equatable, Sendable {
     /// The rings, drawn in order, each over the ones before.
     let rings: [Ring]
 
-    init(isEnabled: Bool, isSelected: Bool, isPressed: Bool, showsBorders: Bool) {
+    /// - Parameters:
+    ///   - showsBorders: whether Show Borders is on.
+    ///   - darkMode: whether Home is drawn in dark mode, which draws the
+    ///     border too.
+    init(isEnabled: Bool, isSelected: Bool, isPressed: Bool, showsBorders: Bool, darkMode: Bool) {
+        let hasBorder = showsBorders || darkMode
         guard isEnabled else {
             // Bordered with or without Show Borders, and never selected or
             // pressed while off.
@@ -96,12 +108,12 @@ nonisolated struct HomeButtonLook: Equatable, Sendable {
             return
         }
         var rings: [Ring] = []
-        if showsBorders {
+        if hasBorder {
             rings.append(Ring(ink: .primary, inset: 0, width: Self.borderWidth))
         }
         if isSelected {
             rings.append(Ring(
-                ink: showsBorders ? .screen : .white,
+                ink: hasBorder ? .screen : .white,
                 inset: Self.selectionInset,
                 width: Self.selectionWidth
             ))
@@ -110,7 +122,7 @@ nonisolated struct HomeButtonLook: Equatable, Sendable {
             rings.append(Ring(
                 ink: .primary,
                 inset: 0,
-                width: showsBorders ? Self.pressedWidthWithBorders : Self.pressedWidth
+                width: hasBorder ? Self.pressedWidthWithBorders : Self.pressedWidth
             ))
         }
         isFilled = true
