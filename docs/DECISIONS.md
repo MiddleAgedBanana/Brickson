@@ -4689,7 +4689,10 @@ request merges only when they pass.
   GitHub's three-processor machines that starved the app until iPad UI
   tests timed out, four runs in a row. No
   test shows the lock screen. A simulator someone else started is
-  watched but never paused. Measure again, and drop the pausing if it
+  watched but never paused. A watcher that has not begun 15 s after it
+  was started is left to begin, not stopped: just after a simulator
+  had started, one on GitHub's machine had not, and stopped then it
+  paused nothing and the iPad stalled again. Measure again, and drop the pausing if it
   no longer matters, when Apple changes the prewarm or GitHub's
   machines get more processors. Record:
   [`log/2026-11-03-ui-test-stall.md`](log/2026-11-03-ui-test-stall.md).

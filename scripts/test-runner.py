@@ -3,7 +3,9 @@
 simulator, check the simulator watcher it starts (simulator-load.py), and
 check that CI runs it with the newest released Xcode."""
 import argparse
+import contextlib
 import importlib.util
+import io
 import itertools
 import json
 import os
@@ -1130,19 +1132,96 @@ class SimulatorLoadTests(unittest.TestCase):
             time.sleep(0.05)
         return False
 
-    # `start` returning before the watcher is watching, or `stop`
-    # returning before its summary is written, fails this test. (Without
-    # --pause-posters: the stand-in's pids may be real processes here.)
+    # `start` returning before the watcher is watching, or not seeing that
+    # it is, `stop` returning before its summary is written, or a first
+    # line that does not say when the watcher began, fails this test.
+    # (Without --pause-posters: the stand-in's pids may be real processes
+    # here.)
     def test_start_waits_for_the_watcher_and_stop_for_its_summary(self):
         started = self.run_script("start", "--udid", "PAD", "--out", str(self.record),
                                   "--parent", str(os.getpid()), "--ps", str(self.ps))
         self.assertEqual(started.returncode, 0, started.stderr)
+        self.assertNotIn("has not begun", started.stderr)
         pid = int(started.stdout)
-        self.assertTrue(self.record.read_text().startswith("Watching simulator PAD\n"))
+        self.assertRegex(self.record.read_text(), r"\AWatching simulator PAD, from \d\d:\d\d:\d\d\n")
         stopped = self.run_script("stop", "--pid", str(pid), "--out", str(self.record))
         self.assertEqual(stopped.returncode, 0, stopped.stderr)
         self.assertEqual(self.record.read_text().splitlines()[-1], "Stopped.")
         self.assertIn("Processor time the simulator's processes used while watched:", stopped.stdout)
+
+    # A Mac busy starting a simulator can take longer than `start` waits
+    # to start Python: on GitHub's machine (run 41656480638) the iPad's
+    # watcher had not written its first line after 15 s, `start` killed
+    # it, nothing was paused and the iPad stalled again. Killing a watcher
+    # that is still starting, or reporting it as not started, fails this
+    # test. (wait=0: the watcher cannot have begun when `start` decides.)
+    def test_a_watcher_slow_to_start_is_left_to_start(self):
+        arguments = argparse.Namespace(udid="PAD", out=str(self.record), pause_posters=False,
+                                       ps=str(self.ps), parent=os.getpid())
+        printed, errors = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(printed), contextlib.redirect_stderr(errors):
+            status = self.module.start(arguments, wait=0)
+        self.assertEqual(status, 0, errors.getvalue())
+        pid = int(printed.getvalue())
+        self.addCleanup(self.end, pid)
+        self.assertIn("has not begun watching within 0 s; it is left to start", errors.getvalue())
+        self.assertTrue(self.wait_for(
+            lambda: self.record.read_text().startswith("Watching simulator PAD, from ")),
+            self.record.read_text())
+        stopped = self.run_script("stop", "--pid", str(pid), "--out", str(self.record))
+        self.assertEqual(stopped.returncode, 0, stopped.stderr)
+        self.assertEqual(self.record.read_text().splitlines()[-1], "Stopped.")
+
+    # A watcher that ends before it begins (here its arguments are refused)
+    # reported as started, as a watcher left to start would be, fails this
+    # test.
+    def test_a_watcher_that_ends_before_it_begins_is_reported_as_not_started(self):
+        arguments = argparse.Namespace(udid="PAD", out=str(self.record), pause_posters=False,
+                                       ps=str(self.ps), parent="not-a-pid")
+        printed, errors = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(printed), contextlib.redirect_stderr(errors):
+            status = self.module.start(arguments, wait=10)
+        self.assertEqual(status, 1, errors.getvalue())
+        self.assertEqual(printed.getvalue(), "")
+        self.assertIn("stopped as it started (status 2)", errors.getvalue())
+
+    # `stop` reporting a watcher that never began (ended by `stop` while
+    # still starting) as one that did not finish its record, which hides
+    # that nothing was paused, fails this test.
+    def test_stop_says_when_the_watcher_never_began(self):
+        starting = subprocess.Popen(["/bin/sleep", "30"])
+        self.addCleanup(starting.wait)
+        self.addCleanup(self.end, starting.pid)
+        self.record.write_text("")
+        errors = io.StringIO()
+        with contextlib.redirect_stderr(errors):
+            status = self.module.stop(argparse.Namespace(pid=starting.pid, out=str(self.record)),
+                                      wait=0.5)
+        self.assertEqual(status, 1)
+        self.assertIn("never began watching, so nothing was paused", errors.getvalue())
+
+    # The watcher's stderr is its record. Opened without appending, an
+    # error it writes after its lines (here a launchd_sim line it cannot
+    # read) lands at the start and overwrites them; that fails this test.
+    def test_the_watchers_own_errors_follow_its_lines(self):
+        (self.folder / "args").write_text(
+            f"x {LAUNCHD_SIM} {DEVICES}/PAD/data/var/run/launchd_bootstrap.plist\n")
+        started = self.run_script("start", "--udid", "PAD", "--out", str(self.record),
+                                  "--parent", str(os.getpid()), "--ps", str(self.ps))
+        self.assertEqual(started.returncode, 0, started.stderr)
+        pid = int(started.stdout)
+        self.addCleanup(self.end, pid)
+        self.assertTrue(self.wait_for(lambda: "ValueError" in self.record.read_text()),
+                        self.record.read_text())
+        lines = self.record.read_text().splitlines()
+        self.assertTrue(lines[0].startswith("Watching simulator PAD, from "), lines)
+        self.assertIn("Traceback (most recent call last):", lines[1:])
+
+    def end(self, pid):
+        try:
+            os.kill(pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
 
     # A watcher that keeps running after the test run is gone (killed, say)
     # would go on pausing processes of simulators other runs start; that
@@ -1172,8 +1251,8 @@ class SimulatorLoadTests(unittest.TestCase):
         self.assertEqual(self.module.watch(arguments, parent_alive=lambda pid: False), 0)
         self.assertLess(time.monotonic() - began, 10)
         lines = self.record.read_text().splitlines()
-        self.assertTrue(any(line.startswith("could not read the process list:") and "timed out" in line
-                            for line in lines), lines)
+        self.assertTrue(any(re.match(r"\d\d:\d\d:\d\d could not read the process list:", line)
+                            and "timed out" in line for line in lines), lines)
         self.assertEqual(lines[-1], "Stopped.")
         # A reading lists processes twice; both time-outs must fit in WAIT.
         self.assertLess(2 * simulator_load().PS_TIMEOUT, simulator_load().WAIT)

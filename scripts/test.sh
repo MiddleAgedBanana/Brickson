@@ -180,7 +180,7 @@ start_watcher() {
     if watcher_pid="$(/usr/bin/python3 -I scripts/simulator-load.py start --udid "$udid" \
         --out "$watcher_record" --parent "$$" "${pause[@]+"${pause[@]}"}")"; then
         if [ "${#pause[@]}" -gt 0 ]; then
-            echo "Watching the simulator's processes, its lock-screen wallpaper extensions paused: $watcher_record"
+            echo "Watching the simulator's processes, pausing its lock-screen wallpaper extensions: $watcher_record"
         else
             echo "Watching the simulator's processes (nothing paused: this run did not start it): $watcher_record"
         fi

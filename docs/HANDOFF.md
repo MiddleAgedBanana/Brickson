@@ -1149,7 +1149,9 @@ Simulators cannot show these. Record each result in a `docs/log/` file
   starved the simulator; since then
   `scripts/test.sh` pauses those extensions on a simulator it started
   and writes `simulator-load-<family>.txt` beside each result bundle:
-  read it first if a stall comes back
+  read it first if a stall comes back. New extension instances iOS
+  starts while the Mac is too starved to list processes get past the
+  pausing (seen once, on the iPhone)
   ([`log/2026-11-03-ui-test-stall.md`](log/2026-11-03-ui-test-stall.md)). Home's
   layout test uses bounded live queries while retaining every tile's
   visibility and position checks. After incorporating `main` at `d79d836`,

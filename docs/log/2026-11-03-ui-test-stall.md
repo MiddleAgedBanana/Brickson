@@ -72,7 +72,8 @@ both phases' process readings and the prewarm's scheduling lines.
 **The fix.** `scripts/test.sh` starts `scripts/simulator-load.py` as
 soon as a simulator has finished starting and stops it before the
 simulator is shut down, however the run ends (a failed build, failed
-tests, an unreadable summary, Control-C or a cancelled job). The
+tests, an unreadable summary or Control-C; a job GitHub cancels is not
+shown to: *Not verified*). The
 watcher pauses the lock-screen wallpaper extensions of a simulator the
 run started itself, and only those: a simulator someone else started
 is watched but never touched. It writes every reading to
@@ -93,6 +94,52 @@ shut down, it lets the paused extensions run again, so a simulator
 whose shutdown fails is not left with them stopped (Copilot's review).
 The unit run gets the same watcher, since the prewarm comes during its
 tests too.
+
+**A watcher slow to start.** The run on `d3a4202` (41656480638, iPad
+Pro 13-inch (M5) and iPhone 17, iOS 27.0) showed the fix could fail to
+take hold. On the iPad, `simulator-load.py start` began its 15-second
+wait 38.5 to 40.5 s after `test.sh` ran it, just after the simulator
+had finished starting (the job log's times and the record's creation
+time; the 40 s include the `/usr/bin/python3` stand-in, which the
+watcher itself does not go through). The watcher had not written its
+first line by the end of the wait, and `start` stopped it ("The
+simulator watcher did not start within 15 s"); its record stayed empty,
+with no error in it. On the iPhone, `start` also needed at least 38 s
+before its wait began, and its watcher began inside the wait. Nothing
+was paused on the iPad, and it stalled as before: the test runner
+logged 511 `PRPosterRootViewController` notifications (its `Session`
+log's `controllerClass` lines), from 26 processes, from 15:01:11 to
+15:03:04, while `HomeLayoutTests` ran. That test took 304.6 s, against
+102.6 s in the first split run with 13 extensions paused (no such
+notifications); its step across the burst took 171.5 s against 25.7 s,
+and the run was 1.2 to 2.2 times slower before it too. 35 tests had
+passed and 2 been skipped, none failed, when a push cancelled the job
+35 minutes into its tests. So `start` now leaves a watcher that has not
+begun when its wait ends to begin, prints its pid all the same, and
+says so in the job's log; once the watcher begins it pauses the
+extensions already running too, and `stop` stops it either way. A
+watcher that ends within the wait, before it begins, is still reported
+as not started, and one that never begins is named by `stop` at the end
+("never began watching, so nothing was paused"). The record's first
+line and each failed process list now carry the time, so a record shows
+when pausing began. The independent check of this change also found
+that `start` handed the watcher its record as stderr without appending,
+so an error the watcher wrote landed over its first lines; it appends
+now.
+
+**What pausing does not cover.** On the iPhone in the same run, the
+watcher paused 16 extensions at 14:49:29. From 14:54:49 to 14:56:38
+iOS started 27 new processes (three host `EmojiPosterFramework`
+controllers, so new wallpaper-extension instances), and every process
+list the watcher tried from 14:54:45 to 14:57:10 timed out, so it
+neither saw nor paused them. They sent 728 of the same notifications,
+14:55:05 to 14:56:49; the paused 16 sent none. The test running then,
+`HomeAccessibilityOrderTests`' quick-controls test at default text,
+took 169.5 s, against 48.9 s for its largest-text twin straight after;
+it passed. So a burst that starts new instances while the Mac is too
+starved to list its processes gets past the pausing. It was seen once,
+on the iPhone; the two iPad runs with the extensions paused (the
+probe's second phase and the first split run) started no new ones.
 
 **The split.** Before, one job ran the iPad then the iPhone and took
 about 105 of its 120 minutes (`main` 96, #75 101 and 106). Now each
@@ -274,18 +321,25 @@ AGENTS.md now names them, and their rounds come before Copilot's too.
   agent does when a request fails for lack of credits.
 - The commit after that: CodeRabbit and Greptile named among the
   automatic reviewers whose rounds come before Copilot's.
+- The commit after that: `start` no longer stops a watcher that is slow
+  to begin, `stop` names one that never began, the record appends the
+  watcher's errors and says when it began (the run on `d3a4202`).
 
 ## Verified
 
 - On Linux in the cloud session: `python3 scripts/test-runner.py`
-  (69 tests, 13 of them new), `test-docs.py`, `test-hooks.py` (134
+  (73 tests, 17 of them new), `test-docs.py`, `test-hooks.py` (134
   tests, 10 of them new) and
   `test-site.py` pass. The new tests and the change each would fail on:
   `SimulatorLoadTests` (matching PosterBoard, pausing another
   simulator's or the Mac's own processes, pausing a stopped one or one
   twice, pausing without `--pause-posters`, totals instead of the time
-  since the last reading, `start` not waiting for the watcher, `stop`
-  not waiting for its summary, a watcher outliving the test run, a
+  since the last reading, `start` not waiting for the watcher or not
+  seeing that it began, `start` stopping a watcher still starting or
+  reporting it as not started, `start` reporting a watcher that ended
+  before it began as started, `stop` not waiting for its summary or not
+  naming a watcher that never began, the watcher's errors written over
+  its lines, a first line or a failed list with no time, a watcher outliving the test run, a
   process list with no time limit or a time-out the watcher does not
   catch, looking up a simulator gone from the second list, leaving the
   paused extensions stopped, resuming after "Stopped.", resuming another
@@ -325,11 +379,18 @@ AGENTS.md now names them, and their rounds come before Copilot's too.
   tests passed; on the iPhone all 64 UI tests ran (58 passed, 6
   skipped, none failed) in 36.5 minutes; on the iPad the watcher paused
   13 wallpaper extensions at 13:29:44, 3.2 minutes before the first
-  test, and 57 of the 64 tests had passed, none failed, in 40.7 minutes
-  when the job was cancelled (`HomeLayoutTests` 102.6 s). "UI tests"
+  test, and 55 tests had passed and 2 been skipped, none failed, in
+  40.7 minutes when the job was cancelled (`HomeLayoutTests` 102.6 s). "UI tests"
   then failed, as it must when a family is cancelled. A cancelled
   bundle has no `database.sqlite3`; the counts came from the test
   runner's output in its `Staging` folder.
+- The run on `d3a4202` (41656480638), cancelled by the push of
+  `bee20dc`: the unit job passed in 32 minutes (its start and end in
+  GitHub's jobs list). The iPad's watcher never began and the iPad
+  stalled (*A watcher slow to start*, above). On the iPhone 47 tests had
+  passed and 6 been skipped, none failed, when the job was cancelled,
+  and new extension instances got past the pausing (*What pausing does
+  not cover*, above).
 - The Copilot record, by hand: fed the guard this thread's own request
   (owner, repository and pull request number as the tool sent them) as
   a `PostToolUse` event, it recorded `middleagedbanana/brickson#76` in
@@ -346,13 +407,22 @@ AGENTS.md now names them, and their rounds come before Copilot's too.
   fresh start, and still before the prewarm.
 - The watcher's readings once stopped for 113 s (11:38:45 to 11:40:38,
   during the paused prewarm) while the tests and the runner's log carried
-  on at their usual pace; no new extension started then. Why its process
-  listing was held up is not known. `scripts/simulator-load.py` reads
-  every process's path each time, and slow memory is one guess. A list
-  that now takes more than 5 s is recorded as "could not read the
-  process list", so a repeat will show whether `ps` was what waited.
+  on at their usual pace; no new extension started then. On the iPhone
+  in the run on `d3a4202`, `ps` timed out nine times in a row during the
+  burst (above), but that gap, 145 s, is about 50 s longer than nine
+  time-outs and their pauses: what else held the watcher (`ps` slow to
+  end once killed, or the watcher itself starved) is not known.
+- Keeping new extension instances paused during a burst that starves
+  `ps` (*What pausing does not cover*): not done, and seen once, on the
+  iPhone. *Follow-ups* has the options.
 - A whole iPad run with the watcher in `test.sh`: the first one was
-  cancelled by a push with 7 tests to go (above). Whether a matrix
+  cancelled by a push with 7 tests to go, and in the second the watcher
+  never began (above). Nor a run in which `start` left a slow watcher
+  to begin: on GitHub's machine that path has not happened yet.
+- A job GitHub cancels: in the run on `d3a4202` the runner's own
+  clean-up ended the iPhone's watcher at 15:28:31, 28 s after the
+  cancel, and its record has no summary, so whether `test.sh`'s trap
+  stopped it first is not known. Whether a matrix
   summary can really read as passed with a leg never run was not
   reproduced; the two jobs make the question moot.
 - `scripts/test.sh` with the watcher on the owner's Mac.
@@ -374,6 +444,14 @@ AGENTS.md now names them, and their rounds come before Copilot's too.
 - If an iPad stall comes back, read `simulator-load-ipad.txt` in the
   artifact first: whether the extensions were paused, and which process
   was busy. Owner of that: whichever thread meets it.
+- If new wallpaper-extension instances get past the pausing again
+  (*What pausing does not cover*), above all on the iPad, the options,
+  each to be tried first in a probe run on GitHub's machine: pause
+  PosterBoard too, which asks for the instances (whether SpringBoard
+  copes with it paused is the question); or list processes without
+  starting `ps` (the system's own process calls, from Python's standard
+  library), so a starved Mac still answers. Owner of that: whichever
+  thread meets it.
 - When Apple fixes the prewarm on the simulator, or the machines get
   more processors, the pausing can be measured again and dropped if it
   no longer matters (docs/DECISIONS.md, "Tests").

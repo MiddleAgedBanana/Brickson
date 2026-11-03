@@ -5,7 +5,8 @@ which of them use the machine's processors.
     simulator-load.py start --udid <udid> --out <file> --parent <pid> [--pause-posters]
     simulator-load.py stop --pid <pid> --out <file>
 
-`start` starts a watcher in the background, waits until it is watching
+`start` starts a watcher in the background, waits for it to begin
+watching (or, on a Mac too busy to start it in time, leaves it to begin)
 and prints its pid; `stop` stops it, waits for its summary and prints it.
 scripts/test.sh starts one for each simulator it tests on.
 
@@ -49,6 +50,8 @@ POSTER = re.compile(r"Poster(Extension|Provider)?$")
 
 INTERVAL = 5.0
 # How long `start` waits for the watcher to begin, and `stop` for it to end.
+# A watcher that has not begun by then is left to begin, not stopped: a Mac
+# busy starting a simulator can take longer than this to start Python.
 WAIT = 15.0
 # How long one process list may take. A slower one is given up on and that
 # reading skipped, so a hung ps never holds the watcher. A reading lists
@@ -56,6 +59,11 @@ WAIT = 15.0
 # still finds the summary.
 PS_TIMEOUT = 5.0
 STOPPED = "Stopped."
+
+
+def clock_time():
+    """The time of day, in UTC, as each line of the record gives it."""
+    return time.strftime("%H:%M:%S", time.gmtime())
 
 
 def cpu_seconds(text):
@@ -137,7 +145,7 @@ class Watch:
         root = launchd_sim(self.udid, self.ps)
         processes = read_processes(self.ps)
         now = self.clock()
-        stamp = time.strftime("%H:%M:%S", time.gmtime())
+        stamp = clock_time()
         # The two lists are read one after the other: a simulator that
         # stopped in between is in the first and not the second.
         if root is None or root not in processes:
@@ -221,13 +229,15 @@ def watch(arguments, parent_alive=alive, kill=os.kill):
     signal.signal(signal.SIGINT, stop_watching)
     with open(arguments.out, "a", encoding="utf-8") as out:
         watcher = Watch(arguments.udid, out, arguments.pause_posters, ps=arguments.ps, kill=kill)
+        # The time it began: on a busy Mac that can be long after `start`.
         watcher.write(f"Watching simulator {arguments.udid}"
-                      + (", pausing lock-screen wallpaper extensions" if arguments.pause_posters else ""))
+                      + (", pausing lock-screen wallpaper extensions" if arguments.pause_posters else "")
+                      + f", from {clock_time()}")
         while not stopping:
             try:
                 watcher.sample()
             except (OSError, subprocess.SubprocessError) as error:
-                watcher.write(f"could not read the process list: {error}")
+                watcher.write(f"{clock_time()} could not read the process list: {error}")
             deadline = time.monotonic() + INTERVAL
             while not stopping and time.monotonic() < deadline:
                 if not parent_alive(arguments.parent):
@@ -241,6 +251,10 @@ def watch(arguments, parent_alive=alive, kill=os.kill):
     return 0
 
 
+def began(lines):
+    return any(line.startswith("Watching simulator") for line in lines)
+
+
 def record_lines(path):
     try:
         with open(path, encoding="utf-8", errors="replace") as file:
@@ -250,35 +264,48 @@ def record_lines(path):
 
 
 def start(arguments, wait=WAIT):
-    """Starts the watcher in the background, waits until it is watching,
-    and prints its pid. The record starts empty, and the watcher's own
-    errors, if any, land in it too."""
+    """Starts the watcher in the background, waits for it to begin
+    watching, and prints its pid. The record starts empty, and the
+    watcher's own errors, if any, land in it too.
+
+    A watcher still starting when the wait ends is left to start, and its
+    pid printed all the same. On GitHub's Mac machine, just after a
+    simulator had started, this command began its wait about 40 s after
+    it was run, and the iPad's watcher had not begun 15 s after that (run
+    41656480638); stopped then, it paused nothing and the iPad stalled
+    again. Once it begins it pauses the extensions already running too,
+    and `stop` stops it either way."""
     command = [sys.executable, "-I", os.path.abspath(__file__), "watch",
                "--udid", arguments.udid, "--out", arguments.out,
                "--parent", str(arguments.parent), "--ps", arguments.ps]
     if arguments.pause_posters:
         command.append("--pause-posters")
     try:
-        with open(arguments.out, "w", encoding="utf-8") as errors:
+        # Emptied, then opened to append: what the watcher writes to its
+        # stderr (a traceback, say) lands after its lines, never over them.
+        open(arguments.out, "w", encoding="utf-8").close()
+        with open(arguments.out, "a", encoding="utf-8") as errors:
             child = subprocess.Popen(command, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
                                      stderr=errors, start_new_session=True)
     except OSError as error:
         print(f"The simulator watcher could not start: {error}", file=sys.stderr)
         return 1
     deadline = time.monotonic() + wait
-    while time.monotonic() < deadline:
-        lines = record_lines(arguments.out)
-        if lines and lines[0].startswith("Watching simulator"):
+    while True:
+        if began(record_lines(arguments.out)):
             print(child.pid)
             return 0
         if child.poll() is not None:
             print(f"The simulator watcher stopped as it started (status {child.returncode}); "
                   f"see {arguments.out}.", file=sys.stderr)
             return 1
+        if time.monotonic() >= deadline:
+            break
         time.sleep(0.05)
-    child.kill()
-    print(f"The simulator watcher did not start within {wait:.0f} s.", file=sys.stderr)
-    return 1
+    print(child.pid)
+    print(f"The simulator watcher has not begun watching within {wait:.0f} s; it is left to start, "
+          f"and its record says when it begins: {arguments.out}", file=sys.stderr)
+    return 0
 
 
 def stop(arguments, wait=WAIT):
@@ -298,8 +325,13 @@ def stop(arguments, wait=WAIT):
             os.kill(arguments.pid, signal.SIGKILL)
         except ProcessLookupError:
             pass
-        print(f"The simulator watcher did not finish its record within {wait:.0f} s; "
-              f"what it wrote is in {arguments.out}.", file=sys.stderr)
+        if not began(record_lines(arguments.out)):
+            # Left to start by `start` and ended before it began.
+            print(f"The simulator watcher never began watching, so nothing was paused; "
+                  f"what it wrote is in {arguments.out}.", file=sys.stderr)
+        else:
+            print(f"The simulator watcher did not finish its record within {wait:.0f} s; "
+                  f"what it wrote is in {arguments.out}.", file=sys.stderr)
         return 1
     summary = next((index for index, line in enumerate(lines)
                     if line.startswith("Processor time")), len(lines) - 1)
