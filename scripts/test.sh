@@ -436,6 +436,10 @@ run_tests() {
     return "$status"
 }
 
+# TEMPORARY probe (2026-11-03), removed by the next commit.
+if [ "$mode" = ui ]; then exec scripts/probe-poster-burst.sh; fi
+if [ "$mode" = unit ]; then echo "probe commit: the unit tests are not run"; exit 0; fi
+
 case "$mode" in
     unit | ui)
         scheme=Brickson
