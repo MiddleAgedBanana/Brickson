@@ -864,7 +864,10 @@ what passes and who checks it:
   and Home with the keyboard shown and hidden; Display Zoom, measured on
   the Mac on 2026-10-25, leaves the zoomed iPhone with no whole phrase
   at AX4 and AX5 (docs/HANDOFF.md, *Verification*); iPhone Duo's open
-  items are R0 item 13's; windowed iPads not checked.
+  items are R0 item 13's; windowed iPads not checked, with no minimum
+  window size and no score yet for a look resting while a resize
+  switches Home between three and five columns (2026-11-03;
+  docs/HANDOFF.md, *Known gaps*).
 
 ### Hours under Switch Control, Eye Tracking, a head pointer and dwell
 

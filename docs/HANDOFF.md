@@ -589,6 +589,27 @@ release in docs/ROADMAP.md when no thread has it yet.
   fill meets that screen. The message field's 2pt border is still the
   control fill there (2.84:1 against `#1C1C1E`); `PaletteTests` does not
   measure it. *(the next accessibility thread)*
+- iPad windows the person can resize have two gaps besides being
+  untested (*Verification*). No scene has a minimum window size, though
+  docs/LESSONS.md, "Windows need a minimum size", asks for one derived
+  from the safety controls at the largest text size: `BricksonApp`'s
+  `WindowGroup` sets no minimum frame and no `windowResizability`, and
+  the reference's `WindowSizePolicy` was not ported (docs/PORTING.md,
+  *Port and generalize*). And nothing scores a look resting through a
+  resize: Home takes three columns or five from the window's width
+  (`HomeLayout.isRegular`: five where each of five columns gets 122
+  points, 132 with Bold Text), so dragging an iPad window's edge across that width moves
+  controls under a look that has not moved. That is the kind of hazard
+  iPhone Duo's changed-window finding is (R0 item 13), and only iPhone
+  Duo's windows were checked for it. Its score belongs in the chain
+  engine, as a surface for windows that change, never a new script
+  (AGENTS.md, *Design rules for dwell, switch and pointer input*, "Score
+  chains with the one chain engine"); how iPadOS moves a pointer when a
+  window is resized is not known until a device shows it (*Checks that
+  need a real device*). Found
+  2026-11-03 from the owner's consultant notes
+  ([log](log/2026-11-03-agents-md-for-codex.md)). *(R0, docs/ROADMAP.md,
+  *The quality bar*, Q10; no thread has it yet)*
 - Typing on Home (since 2026-10-24) has automated coverage on CI's iPad and
   iPhone simulators, in portrait, at the default text size, with the full
   software keyboard (`TypingOnHomeTests`); `KeyboardProbeTests` checks the
@@ -936,13 +957,31 @@ docs/ROADMAP.md, *The quality bar*, Q24):
    (docs/DECISIONS.md, *Code scanning*).
 7. You can delete the `xcode-skills` folder in `~/code/brickson`: its
    skills are installed where agents load them.
+8. Optional: let Codex on your Mac read all of `AGENTS.md`. By default
+   it reads only the first 32 KiB, and the file is about 69 KB
+   (docs/DECISIONS.md, "AGENTS.md puts first what Codex reads"). In
+   Terminal, run this one line; it adds the setting at the top of
+   Codex's settings file, creating the file if needed, and does nothing
+   if the setting is already there:
+   `f=~/.codex/config.toml; mkdir -p ~/.codex; touch "$f"; command grep -q '^project_doc_max_bytes' "$f" || { printf 'project_doc_max_bytes = 131072\n' | cat - "$f" > "$f.new" && command mv "$f.new" "$f"; }`
+   Success: `command grep -n project_doc_max_bytes ~/.codex/config.toml`
+   prints `1:project_doc_max_bytes = 131072` (if you had set it before,
+   it prints your own line instead; any number larger than the file,
+   about 69,000 bytes today, works). Codex reads it when a new session
+   starts.
 
 For agents: no build goes to App Review until every gate of
 docs/ROADMAP.md, *The quality bar*, has passed, the owner's answer last
 (owner, 2026-10-30), unless the owner decides that one urgent fix goes
 sooner (docs/DECISIONS.md, "Every release passes the quality bar"); a
 pull request that moves a gate edits its *Today*
-line. R0 in [docs/ROADMAP.md](ROADMAP.md), in order; the owner's
+line. A candidate next job, for one cloud thread: before the owner's
+first device session, write the step-by-step procedure, with what
+success looks like, for each gate the owner checks and each row of
+*Checks that need a real device*, as the 2026-10-26 procedure did for
+Settings ([`log/2026-10-26-settings-simulator-checks.md`](log/2026-10-26-settings-simulator-checks.md));
+docs/ROADMAP.md, *The quality bar*, requires them, and none exists yet
+for the other gates. R0 in [docs/ROADMAP.md](ROADMAP.md), in order; the owner's
 long-term vision, the direction behind it, is its *Where this goes*.
 The next pull requests, in order, with which may run side by side and
 which change Home, are its
@@ -1122,6 +1161,7 @@ Simulators cannot show these. Record each result in a `docs/log/` file
 | Buttons under Increase Contrast and Reduce Transparency, measured on the rendered pixels | Contrast of system components (invariant 6) |
 | The screen never dims or locks during a long session | `ScreenWakePolicy` (invariant 12) |
 | On a folding iPhone, open, partially folded and closed, and in Stage Manager, Slide Over and iPhone Mirroring windows: nothing safety-critical is hidden or split, nothing a person uses sits in the fold, Dwell keeps working as the phone folds and unfolds, Eye Tracking and Head Tracking (which Apple says work only fully open) come back when it opens fully with nothing moved, and whether the inner camera's reserved region covers the area that goes dark while either is on (the iPhone Duo simulator shows the layout first: R0 item 13; Wave 3 item 6) | Layouts from the space available; docs/DECISIONS.md, "iPhone Duo" |
+| On an iPad with Brickson in a window you can resize (Stage Manager), with Eye Tracking and with AssistiveTouch Dwell, each with Snap to Item on: drag the window's edge across the width where Home switches between three and five columns, and record where the pointer is during and after the resize, whether it stays put or follows the gaze, and what it would activate when it comes to rest | Whether the chain engine needs a surface for iPad windows that change, and which pointer it scores (*Known gaps*; docs/ROADMAP.md, *The quality bar*, Q10) |
 | Eye Tracking and Dwell on an external display | Whether gaze profiles hold off the built-in screen |
 | Switch Control with Auto Scanning, Group Items on and off, and Auto Tap: the scan steps to Emergency, Yes and No from every Home state, and whether Home's regions become scan groups | Scan order and grouping (docs/ACCESSIBILITY.md, section 1) |
 | With VoiceOver, Switch Control (item and group scanning) and Full Keyboard Access, Home is reached as Yes, No, Emergency, Get Attention, Again, then the message, Phrases and Type, Stop while it shows, the categories and Settings, the phrases, in every state; what each says on entering a region; whether the cursor stops on the message or the status line; Voice Control's "Show names" shows each control's visible words and "Tap Repeat" presses Again | "Home's scan order and names": the order, unlabelled regions, and whether `accessibilityRespondsToUserInteraction` is needed |
