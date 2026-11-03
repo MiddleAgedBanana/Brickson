@@ -1343,8 +1343,25 @@ class GuardTests(unittest.TestCase):
                               {'owner': 5, 'repo': 'r', 'pullNumber': 12}]:
                 with self.subTest(arguments=arguments):
                     self.assertEqual(hook('PostToolUse', REVIEW_TOOL, arguments, folder), (0, '', ''))
-                    self.assertIsNone(decision(REVIEW_TOOL, arguments, folder))
             self.assertEqual(os.listdir(Path(folder) / '.git').count('brickson-copilot-reviews.json'), 0)
+
+    def test_a_copilot_request_for_no_readable_pull_request_is_refused(self):
+        # A request whose pull request the guard cannot read could be sent
+        # again and again, since nothing would record it: a tool of the same
+        # name from another server with other argument names, say (Copilot's
+        # review). Letting it through fails this test; GitHub's own tool
+        # always names owner, repo and pullNumber.
+        for name, arguments in [
+                (REVIEW_TOOL, {}),
+                (REVIEW_TOOL, {'owner': 'o', 'repo': 'r', 'pullNumber': 'twelve'}),
+                (REVIEW_TOOL, {'owner': 'o', 'repo': 'r', 'pullNumber': None}),
+                (REVIEW_TOOL, {'owner': 5, 'repo': 'r', 'pullNumber': 12}),
+                ('mcp__other__request_copilot_review', {'owner': 'o', 'repo': 'r', 'pull_number': 12})]:
+            with self.subTest(name=name, arguments=arguments):
+                self.assertEqual(decision(name, arguments, self.repo), 'deny')
+        self.assertIsNone(decision(REVIEW_TOOL, {'owner': 'o', 'repo': 'r', 'pullNumber': 12}, self.repo))
+        self.assertIsNone(decision('mcp__plugin_github_github__request_copilot_review',
+                                   {'owner': 'o', 'repo': 'r', 'pullNumber': 12}, self.repo))
 
     def test_a_new_pull_request_cannot_ask_for_copilot(self):
         # The reviewer field of create_pull_request is another door to a

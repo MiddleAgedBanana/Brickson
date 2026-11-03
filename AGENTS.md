@@ -660,7 +660,8 @@ above are backed by checks wherever a check can run:
   succeeds, the guard runs again and records the pull request in the Git
   folder of the session's project (`.git/brickson-copilot-reviews.json`,
   shared by the clone's worktrees, never committed), and it refuses a
-  second request on that pull request. A request that fails is not
+  second request on that pull request, and a request whose pull request
+  it cannot read, since nothing would record it. A request that fails is not
   recorded (the agent still says so in the thread and does not retry,
   *Reviews and updates on GitHub*); a request that ran but could not be
   recorded is told to the agent; a fresh clone starts with an empty

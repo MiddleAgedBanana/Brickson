@@ -14,7 +14,8 @@ simulator runs (everything started under that device's launchd_sim), and
 writes one line: the time, how much processor time the simulator and the
 whole Mac used since the last line, the Mac's load, and the simulator's
 busiest processes. When it is stopped (SIGTERM or SIGINT) it writes the
-processes that used the most time over the whole run, then "Stopped.".
+processes that used the most time over the whole run, lets any process it
+paused run again, then writes "Stopped.".
 It also stops by itself once the process named by --parent (the test run)
 is gone, so a test run that is killed never leaves it running.
 
@@ -28,8 +29,9 @@ render its pictures for about three minutes. On GitHub's Mac machines
 (three processors) that stalled the app under test until UI tests timed
 out (docs/log/2026-11-03-ui-test-stall.md). The tests never show the lock
 screen. A process is paused rather than ended because iOS would start an
-ended one again; it stays paused until the simulator is shut down after
-its run.
+ended one again. When the watcher stops, after the tests, it lets the
+paused ones run again (SIGCONT), so a simulator that is not shut down
+after its run is not left with them stopped.
 
 Only the processes of the one simulator named by --udid are read or
 paused, and only on a Mac: the process list comes from /bin/ps.
@@ -136,7 +138,9 @@ class Watch:
         processes = read_processes(self.ps)
         now = self.clock()
         stamp = time.strftime("%H:%M:%S", time.gmtime())
-        if root is None:
+        # The two lists are read one after the other: a simulator that
+        # stopped in between is in the first and not the second.
+        if root is None or root not in processes:
             self.write(f"{stamp} the simulator {self.udid} is not running")
             self.before, self.at = processes, now
             return
@@ -180,6 +184,22 @@ class Watch:
         if self.pause_posters:
             self.write(f"Paused {len(self.paused)} lock-screen wallpaper extension processes.")
 
+    def resume(self):
+        """Lets every paused process run again. One that has ended since
+        needs nothing."""
+        resumed, ended = 0, 0
+        for pid in sorted(self.paused):
+            try:
+                self.kill(pid, signal.SIGCONT)
+            except ProcessLookupError:
+                ended += 1
+            except OSError as error:
+                self.write(f"could not resume process {pid}: {error}")
+            else:
+                resumed += 1
+        if self.paused:
+            self.write(f"Resumed {resumed} of them" + (f"; {ended} had already ended." if ended else "."))
+
 
 def alive(pid):
     try:
@@ -191,7 +211,7 @@ def alive(pid):
     return True
 
 
-def watch(arguments, parent_alive=alive):
+def watch(arguments, parent_alive=alive, kill=os.kill):
     stopping = []
 
     def stop_watching(*_):
@@ -200,7 +220,7 @@ def watch(arguments, parent_alive=alive):
     signal.signal(signal.SIGTERM, stop_watching)
     signal.signal(signal.SIGINT, stop_watching)
     with open(arguments.out, "a", encoding="utf-8") as out:
-        watcher = Watch(arguments.udid, out, arguments.pause_posters, ps=arguments.ps)
+        watcher = Watch(arguments.udid, out, arguments.pause_posters, ps=arguments.ps, kill=kill)
         watcher.write(f"Watching simulator {arguments.udid}"
                       + (", pausing lock-screen wallpaper extensions" if arguments.pause_posters else ""))
         while not stopping:
@@ -216,6 +236,7 @@ def watch(arguments, parent_alive=alive):
                     break
                 time.sleep(0.2)
         watcher.summary()
+        watcher.resume()
         watcher.write(STOPPED)
     return 0
 

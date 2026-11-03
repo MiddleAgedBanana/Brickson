@@ -87,10 +87,12 @@ the 15 s that `stop` waits for the summary). A paused process rather than an end
 would start an ended extension again; the open-source CI tool `yeetd`
 pauses the same extensions the same way. Brickson does not use it: a
 script of its own does only this, only for the simulator under test,
-and installs nothing on the machine. No test shows the lock screen,
-and the simulator is shut down after its run, which ends the paused
-processes. The unit run gets the same watcher, since the prewarm comes
-during its tests too.
+and installs nothing on the machine. No test shows the lock screen.
+When the watcher stops, after the tests and before the simulator is
+shut down, it lets the paused extensions run again, so a simulator
+whose shutdown fails is not left with them stopped (Copilot's review).
+The unit run gets the same watcher, since the prewarm comes during its
+tests too.
 
 **The split.** Before, one job ran the iPad then the iPhone and took
 about 105 of its 120 minutes (`main` 96, #75 101 and 106). Now each
@@ -190,6 +192,42 @@ deeply nested records, unusable pull request numbers);
 `create_pull_request` among the tools the guard runs before, and the
 review tool off the deny list.
 
+**Copilot's review** (requested once by this thread, after Codex had
+reviewed the last push with no findings) raised four points. Two are
+fixed. The watcher read the simulator's launchd_sim and the process
+list one after the other, so a simulator that stopped in between made it
+raise and die without its summary; a simulator missing from the second
+list is now "not running". And it never let the extensions it paused
+run again, so a simulator whose shutdown failed stayed booted with them
+stopped; it now resumes them (SIGCONT) when it stops, after the tests
+and before the shutdown. Two are declined, each checked by a separate
+agent asked to refute the decline:
+
+- *Serialize the once-only check with a reservation* (High): two
+  sessions of one clone could both pass the check before either records
+  its request. Within one session that cannot happen: Claude Code runs
+  a tool that is not read-only, as GitHub's `request_copilot_review` is
+  not, only once the call before it has finished, its hooks after it
+  included, so a second call in the same message meets the record. The
+  race needs two agents on one clone asking Copilot to review the same
+  pull request at the same moment, which AGENTS.md gives to one agent.
+  A reservation written before the call would be left behind whenever
+  no hook runs after it (a call refused at a permission prompt or by
+  another hook, a session killed during the call), so it would need an
+  expiry, a hook after failures, and would refuse a legitimate request
+  meanwhile; the race's worst outcome is one extra review.
+- *Allow only `mcp__github__request_copilot_review` by its exact name*
+  (Medium): every GitHub rule in the guard matches the tool's name after
+  the server's on purpose, so GitHub's own server and the GitHub
+  plugin's (`mcp__plugin_github_github__`) are held to the same rules
+  and share one record; an exact name would refuse the plugin's route.
+  The refuting agent did find the real gap behind the finding: a request
+  whose pull request the guard could not read (a same-named tool from
+  another server with other argument names) was let through and never
+  recorded, so it could be sent again and again. The guard now refuses
+  such a request; GitHub's own tool always names `owner`, `repo` and
+  `pullNumber` (`test_a_copilot_request_for_no_readable_pull_request_is_refused`).
+
 ## Commits
 
 - `4a9dea4` the temporary probe (removed by the next commit).
@@ -214,12 +252,14 @@ review tool off the deny list.
 - The commit after that: what the split's first run and this thread's
   Copilot request showed, including that the guard did not run in this
   cloud thread (AGENTS.md, *Guardrails for agents*).
+- The commit after that: Copilot's review, the watcher's two fixes and
+  the guard refusing a request whose pull request it cannot read.
 
 ## Verified
 
 - On Linux in the cloud session: `python3 scripts/test-runner.py`
-  (66 tests, 10 of them new), `test-docs.py`, `test-hooks.py` (133
-  tests, 9 of them new) and
+  (69 tests, 13 of them new), `test-docs.py`, `test-hooks.py` (134
+  tests, 10 of them new) and
   `test-site.py` pass. The new tests and the change each would fail on:
   `SimulatorLoadTests` (matching PosterBoard, pausing another
   simulator's or the Mac's own processes, pausing a stopped one or one
@@ -227,7 +267,9 @@ review tool off the deny list.
   since the last reading, `start` not waiting for the watcher, `stop`
   not waiting for its summary, a watcher outliving the test run, a
   process list with no time limit or a time-out the watcher does not
-  catch);
+  catch, looking up a simulator gone from the second list, leaving the
+  paused extensions stopped, resuming after "Stopped.", resuming another
+  process, or stopping at one already ended);
   `WatcherTests` (pausing on a simulator the run did not start, the
   watcher starting before the simulator finished starting or stopping
   after it, any exit path that skips the stop, a parent id that is not
@@ -247,7 +289,8 @@ review tool off the deny list.
   working directory before the project, comparing names by case,
   skipping the checks for a call that names no event, a silent record
   failure (inside or outside a clone), a deeply nested record raising,
-  `create_pull_request`'s reviewers let through, and a settings file
+  `create_pull_request`'s reviewers let through, a request whose pull
+  request cannot be read let through, and a settings file
   without the `PostToolUse` hook or without `create_pull_request` in the
   guard's matcher. Each mutation was run and failed its test. The lock is
   not pinned by a test: a race test would pass by luck without it; the

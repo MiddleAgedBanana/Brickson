@@ -1043,6 +1043,57 @@ class SimulatorLoadTests(unittest.TestCase):
         watcher.summary()
         self.assertIn("Paused 2 lock-screen wallpaper extension processes.", self.record.read_text())
 
+    # The simulator's launchd_sim is in the first process list but gone
+    # from the second (the simulator stopped or restarted between them).
+    # Looking it up in the second list anyway raises, the watcher dies
+    # without its summary, and that fails this test (Copilot's review).
+    def test_a_simulator_gone_between_the_two_lists_is_not_running(self):
+        (self.folder / "table").write_text("".join(
+            line for line in process_table({}).splitlines(keepends=True)
+            if int(line.split()[0]) in (1, 200, 221, 300)))
+        watcher = self.watch(pause_posters=True)
+        watcher.sample()
+        self.assertEqual(self.kills, [])
+        self.assertIn("the simulator PAD is not running", self.record.read_text())
+
+    # Leaving the extensions stopped when the watcher stops, resuming any
+    # other process, or stopping at a process that is already gone fails
+    # this test: a simulator that is not shut down after its run (a failed
+    # shutdown) would keep its wallpaper extensions stopped (Copilot's
+    # review).
+    def test_the_paused_extensions_run_again_when_the_watcher_stops(self):
+        watcher = self.watch(pause_posters=True)
+        watcher.sample()
+        gone = []
+
+        def kill(pid, number):
+            self.kills.append((pid, number))
+            if pid in gone:
+                raise ProcessLookupError(pid)
+
+        watcher.kill = kill
+        gone.append(121)
+        watcher.resume()
+        self.assertEqual(self.kills, [(121, signal.SIGSTOP), (122, signal.SIGSTOP),
+                                      (121, signal.SIGCONT), (122, signal.SIGCONT)])
+        self.assertIn("Resumed 1 of them; 1 had already ended.", self.record.read_text())
+
+    # A watcher that stops without resuming what it paused, or resumes
+    # only after "Stopped." (when `stop` no longer waits), fails this test.
+    def test_the_watcher_resumes_what_it_paused_before_it_says_stopped(self):
+        for number in (signal.SIGTERM, signal.SIGINT):
+            self.addCleanup(signal.signal, number, signal.getsignal(number))
+        arguments = argparse.Namespace(udid="PAD", out=str(self.record), pause_posters=True,
+                                       ps=str(self.ps), parent=os.getpid())
+        kills = []
+        self.assertEqual(self.module.watch(arguments, parent_alive=lambda pid: False,
+                                           kill=lambda pid, number: kills.append((pid, number))), 0)
+        self.assertEqual(kills, [(121, signal.SIGSTOP), (122, signal.SIGSTOP),
+                                 (121, signal.SIGCONT), (122, signal.SIGCONT)])
+        lines = self.record.read_text().splitlines()
+        self.assertEqual(lines[-1], "Stopped.")
+        self.assertIn("Resumed 2 of them.", lines)
+
     # Pausing anything without --pause-posters fails this test.
     def test_without_pausing_nothing_is_paused(self):
         watcher = self.watch(pause_posters=False)

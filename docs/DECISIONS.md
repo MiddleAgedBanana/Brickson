@@ -4681,7 +4681,8 @@ request merges only when they pass.
   cannot push workflows.
 - **2026-11-03, default, reversible:** on a simulator `scripts/test.sh`
   started itself, `scripts/simulator-load.py` pauses (SIGSTOP) the
-  lock-screen wallpaper extensions for the whole run, and on every
+  lock-screen wallpaper extensions for the whole run, and lets them
+  run again when the run's tests are over; on every
   simulator it writes the processes that used the Mac's processors to
   `build/TestResults/simulator-load-<family>.txt`. About five minutes
   after a simulator starts, iOS prewarms its wallpaper gallery, and on

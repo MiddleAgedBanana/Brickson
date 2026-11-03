@@ -68,6 +68,11 @@ COPILOT_AGAIN = ('Copilot\'s review of {pull} was already requested from this cl
 # Where a clone keeps the pull requests whose Copilot review an agent has
 # requested: inside its Git folder, shared by its worktrees, never committed.
 COPILOT_RECORD = 'brickson-copilot-reviews.json'
+COPILOT_UNREADABLE = ('The guard cannot tell which pull request this Copilot review request '
+                      'is for, so it could not hold it to one request per pull request. '
+                      'Request it through GitHub\'s request_copilot_review, naming owner, '
+                      'repo and pullNumber '
+                      '(AGENTS.md, "Reviews and updates on GitHub").')
 COPILOT_UNRECORDED = ('Copilot\'s review of {pull} was requested, but the guard could not '
                       'record it ({why}), so it cannot refuse a second request. Do not '
                       'request it again on this pull request '
@@ -1662,7 +1667,10 @@ def read_copilot_record(path):
 
 def check_copilot_again(arguments, cwd):
     key = review_key(arguments)
-    path = key and copilot_record_path(cwd)
+    if key is None:
+        # Nothing would record it, so it could be sent again and again.
+        deny(COPILOT_UNREADABLE)
+    path = copilot_record_path(cwd)
     record = read_copilot_record(path) if path else {}
     if key in record:
         deny(COPILOT_AGAIN.format(pull=key, when=record[key]))
