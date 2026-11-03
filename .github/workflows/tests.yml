@@ -3,18 +3,22 @@
 #
 # Each job runs the same script you run on your Mac (scripts/test.sh): unit
 # tests on the newest iPad Pro 13-inch simulator the chosen Xcode can run,
-# UI tests on that iPad and then on the newest standard iPhone. Each job
-# keeps its result bundles (build/TestResults: every test, screenshots of
-# failures, the screens UI tests capture) as a download on the run's page
+# and UI tests on that iPad and on the newest standard iPhone, each family
+# on a machine of its own at the same time. "UI tests", the check the
+# `main` ruleset requires, passes only when both families' jobs passed.
+# Each job keeps its result bundles (build/TestResults: every test,
+# screenshots of failures, the screens UI tests capture, and which
+# simulator processes used the machine) as a download on the run's page
 # for 14 days, whether the tests passed or failed.
 #
-# Both jobs build with Apple's newest released Xcode, never a pinned one
-# (docs/DECISIONS.md, "Build with Apple's current Xcode"). `runs-on` names
-# GitHub's machine image for the current major Xcode (xcode-27 holds
-# Xcode 27); scripts/select-xcode.py picks the newest release installed on
-# it, and warns on the run when Apple has released a newer Xcode than the
-# machine has. When Apple releases the next major Xcode and GitHub
-# publishes its image, move both `runs-on` lines to it.
+# Every job that tests builds with Apple's newest released Xcode, never a
+# pinned one (docs/DECISIONS.md, "Build with Apple's current Xcode").
+# `runs-on` names GitHub's machine image for the current major Xcode
+# (xcode-27 holds Xcode 27); scripts/select-xcode.py picks the newest
+# release installed on it, and warns on the run when Apple has released a
+# newer Xcode than the machine has. When Apple releases the next major
+# Xcode and GitHub publishes its image, move both xcode `runs-on` lines to
+# it.
 name: Tests
 
 on:
@@ -74,10 +78,17 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
 
-  ui:
-    name: UI tests
+  # One job per device family, at the same time, so neither waits for the
+  # other and each has its own time limit (docs/DECISIONS.md, "Tests").
+  # Two jobs rather than a matrix, so the "UI tests" check below reads each
+  # family's own result: a matrix reports one result for all its legs, and
+  # that summary has been seen to read as passed when a leg never got a
+  # machine. scripts/test-runner.py checks that the two jobs stay the same
+  # apart from the family.
+  ui-ipad:
+    name: UI tests on iPad
     runs-on: xcode-27
-    timeout-minutes: 120
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v7
       - name: Use the newest released Xcode
@@ -91,12 +102,64 @@ jobs:
           brew install xcodegen
           brew list --versions xcodegen
       - name: Build the app and run the UI tests
+        env:
+          SIMULATOR_FAMILY: ipad
         run: scripts/test.sh ui
       - name: Keep the test results
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: ui-test-results
+          name: ui-test-results-ipad
           path: build/TestResults
           if-no-files-found: warn
           retention-days: 14
+
+  ui-iphone:
+    name: UI tests on iPhone
+    runs-on: xcode-27
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v7
+      - name: Use the newest released Xcode
+        run: |
+          xcode="$(python3 scripts/select-xcode.py choose)"
+          sudo xcode-select --switch "$xcode"
+      - name: Show the Xcode version
+        run: xcodebuild -version
+      - name: Install XcodeGen
+        run: |
+          brew install xcodegen
+          brew list --versions xcodegen
+      - name: Build the app and run the UI tests
+        env:
+          SIMULATOR_FAMILY: iphone
+        run: scripts/test.sh ui
+      - name: Keep the test results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ui-test-results-iphone
+          path: build/TestResults
+          if-no-files-found: warn
+          retention-days: 14
+
+  # The check the `main` ruleset requires by name. It runs however the
+  # family jobs ended, and fails unless both of them passed: a failed,
+  # cancelled or skipped family never reads as passed.
+  ui-result:
+    name: UI tests
+    needs: [ui-ipad, ui-iphone]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check that the UI tests passed on both families
+        env:
+          IPAD: ${{ needs.ui-ipad.result }}
+          IPHONE: ${{ needs.ui-iphone.result }}
+        run: |
+          if [ "$IPAD" != success ] || [ "$IPHONE" != success ]; then
+            echo "The UI tests did not pass on both families (iPad: $IPAD, iPhone: $IPHONE)."
+            exit 1
+          fi
+          echo "The UI tests passed on the iPad and the iPhone."

@@ -1,0 +1,153 @@
+Watching simulator 3CE49892-DF52-49A7-9D5F-68E49A7DD048
+11:12:35 simulator  210% mac  284% load 394.9 | STExtractionService 60%, diagnosticd 28%, mobileassetd 14%, apsd 11%, ScreenTimeWidgetIntentsExtension 9%, HealthMedicationsWidgetExtension 9%
+11:12:41 simulator  188% mac  245% load 417.9 | STExtractionService 52%, diagnosticd 26%, CalendarWidgetExtension 14%, apsd 12%, PassbookWidgetsExtension-iPhone 12%, SafariWidgetExtension 11%
+11:12:47 simulator  192% mac  248% load 426.0 | CalendarWidgetExtension 36%, diagnosticd 26%, RemindersWidgetExtension 16%, apsd 14%, SafariWidgetExtension 12%, WidgetRenderer_Default 10%
+11:12:57 simulator  161% mac  217% load 452.3 | MobileCal 60%, CalendarWidgetExtension 21%, diagnosticd 20%, HealthBalanceWidgetExtension 14%, apsd 12%, HearingWidgetExtension 10%
+11:13:03 simulator  232% mac  300% load 459.9 | MobileCal 40%, diagnosticd 33%, RemindersWidgetExtension 25%, HealthBalanceWidgetExtension 19%, apsd 17%, CalendarWidgetExtension 16%
+11:13:09 simulator  162% mac  247% load 469.3 | NewsTag 35%, diagnosticd 25%, AdaptiveMusicWidget 24%, CalendarWidgetExtension 19%, apsd 14%, PassbookWidgetsExtension-iPad 12%
+11:13:15 simulator  113% mac  177% load 483.2 | diagnosticd 25%, HealthCycleTrackingWidgetExtension 16%, apsd 14%, ShortcutsWidgetExtension 10%, CalendarWidgetExtension 10%, ScreenTimeWidgetExtension 7%
+11:13:20 simulator   85% mac  160% load 493.9 | diagnosticd 24%, ScreenTimeWidgetExtension 18%, apsd 16%, CalendarWidgetExtension 13%, trustd 2%, chronod 2%
+11:13:25 simulator   44% mac  188% load 506.2 | diagnosticd 21%, apsd 14%, trustd 2%, securityd 1%, SpringBoard 1%, logd 1%
+11:13:31 simulator   46% mac  284% load 537.0 | diagnosticd 22%, apsd 15%, trustd 2%, securityd 1%, SpringBoard 1%, cfprefsd 1%
+11:13:37 simulator   46% mac  268% load 550.7 | diagnosticd 21%, apsd 14%, trustd 2%, securityd 1%, SpringBoard 1%, amsengagementd 1%
+11:13:42 simulator   38% mac  197% load 562.4 | diagnosticd 18%, apsd 12%, trustd 2%, securityd 1%, logd 1%, SpringBoard 1%
+11:13:47 simulator   57% mac  154% load 568.2 | diagnosticd 22%, apsd 15%, trustd 2%, securityd 1%, SpringBoard 1%, cfprefsd 1%
+11:13:53 simulator  118% mac  198% load 548.4 | diagnosticd 33%, apsd 20%, SpringBoard 3%, dasd 3%, trustd 2%, installcoordinationd 2%
+11:13:59 simulator   66% mac  190% load 534.2 | diagnosticd 22%, installd 20%, apsd 15%, trustd 2%, securityd 1%, SpringBoard 1%
+11:14:04 simulator  102% mac  226% load 519.7 | diagnosticd 26%, installd 20%, apsd 17%, chronod 4%, SpringBoard 4%, RemindersWidgetExtension 4%
+11:14:13 simulator  164% mac  220% load 479.9 | diagnosticd 25%, SpringBoard 17%, healthd 11%, apsd 9%, coreidvd 9%, installd 8%
+11:14:19 simulator  146% mac  231% load 481.4 | Brickson 56%, healthd 20%, diagnosticd 19%, SpringBoard 14%, apsd 10%, backboardd 5%
+11:14:25 simulator  109% mac  200% load 484.9 | Brickson 61%, diagnosticd 20%, apsd 12%, SpringBoard 3%, backboardd 2%, trustd 2%
+11:14:31 simulator   93% mac  228% load 489.3 | diagnosticd 26%, apsd 17%, SetStoreUpdateService 9%, siriinferenced 2%, biomed 2%, trustd 2%
+11:14:36 simulator   75% mac  252% load 494.9 | diagnosticd 23%, apsd 16%, SetStoreUpdateService 9%, trustd 2%, launchd_sim 2%, SpringBoard 1%
+11:14:44 simulator   83% mac  207% load 475.9 | diagnosticd 25%, apsd 15%, mobileassetd 4%, siriknowledged 2%, trustd 2%, contactsd 2%
+11:14:49 simulator   59% mac  265% load 471.6 | diagnosticd 21%, apsd 14%, trustd 2%, cfprefsd 1%, securityd 1%, SpringBoard 1%
+11:14:55 simulator   55% mac  256% load 455.2 | diagnosticd 18%, apsd 12%, trustd 1%, cfprefsd 1%, storekitd 1%, securityd 1%
+11:15:00 simulator   52% mac  223% load 454.2 | diagnosticd 16%, apsd 12%, SpringBoard 4%, MTLCompilerService 2%, trustd 1%, securityd 1%
+11:15:06 simulator   46% mac  238% load 453.6 | diagnosticd 17%, apsd 13%, trustd 1%, storekitd 1%, securityd 1%, cfprefsd 1%
+11:15:11 simulator  119% mac  224% load 415.4 | diagnosticd 36%, apsd 14%, SpringBoard 10%, backboardd 4%, dasd 3%, launchd_sim 2%
+11:15:17 simulator  118% mac  232% load 400.4 | Brickson 44%, diagnosticd 23%, apsd 13%, SpringBoard 12%, backboardd 6%, trustd 2%
+11:15:22 simulator  145% mac  245% load 388.3 | Brickson 90%, diagnosticd 21%, apsd 13%, SpringBoard 3%, backboardd 2%, trustd 2%
+11:15:34 simulator  156% mac  188% load 380.9 | (SafariWidgetExte) 29%, SpringBoard 19%, diagnosticd 19%, mobileassetd 7%, fitcored 5%, apsd 4%
+11:15:42 simulator  213% mac  272% load 380.4 | diagnosticd 41%, icloudmailagent 14%, apsd 13%, mediaanalysisd 8%, promotedcontentd 6%, NewsToday2 5%
+11:15:48 simulator  194% mac  268% load 380.4 | diagnosticd 49%, mobileassetd 19%, NewsToday2 17%, apsd 17%, STExtractionService 16%, amsengagementd 16%
+11:16:02 simulator  182% mac  221% load 383.9 | diagnosticd 31%, PosterBoard 16%, NewsToday2 15%, healthappd 12%, apsd 11%, amsengagementd 8%
+11:16:08 simulator  287% mac  327% load 386.5 | healthappd 83%, PosterBoard 83%, diagnosticd 46%, apsd 15%, runningboardd 15%, HealthCycleTrackingWidgetExtension 7%
+11:16:34 simulator  162% mac  176% load 419.8 | EmojiPosterExtension 25%, PridePosterExtension 25%, PosterBoard 25%, RhizomePoster 14%, diagnosticd 14%, GradientPosterExtension 12%
+11:17:13 simulator  264% mac  288% load 494.1 | Unity2025Poster 34%, GradientPosterExtension 25%, MTLCompilerService 22%, ExtragalacticPoster 22%, KaleidoscopePoster 22%, WeatherPoster 19%
+11:18:31 simulator   60% mac   98% load 648.2 | diagnosticd 19%, runningboardd 6%, apsd 5%, PosterBoard 4%, InputUI 4%, backboardd 3%
+11:18:37 simulator  178% mac  231% load 638.8 | diagnosticd 34%, Brickson 21%, amsengagementd 19%, com.apple.MapKit.SnapshotService 18%, apsd 16%, SpringBoard 10%
+11:18:43 simulator  159% mac  232% load 629.0 | Brickson 62%, amsengagementd 41%, diagnosticd 29%, apsd 12%, trustd 2%, backboardd 1%
+11:18:54 simulator   93% mac  178% load 602.6 | diagnosticd 21%, BackgroundShortcutRunner 16%, Brickson 15%, amsengagementd 9%, apsd 9%, mobileassetd 3%
+11:19:06 simulator   93% mac  215% load 580.7 | BackgroundShortcutRunner 36%, diagnosticd 16%, intents_helper 11%, apsd 10%, amsengagementd 5%, Brickson 3%
+11:19:13 simulator  195% mac  249% load 562.1 | intents_helper 86%, diagnosticd 39%, amsengagementd 24%, apsd 15%, linkd 8%, Brickson 7%
+11:19:24 simulator  126% mac  154% load 563.0 | BackgroundShortcutRunner 36%, diagnosticd 31%, amsengagementd 10%, apsd 9%, com.apple.siri.embeddedspeech 7%, com.apple.datamigrator 3%
+11:19:31 simulator  265% mac  339% load 565.7 | BackgroundShortcutRunner 64%, diagnosticd 42%, amsengagementd 21%, apsd 20%, parsecd 18%, MobileCal 10%
+11:19:37 simulator  187% mac  235% load 566.5 | BackgroundShortcutRunner 103%, diagnosticd 25%, apsd 14%, translationd 11%, SpringBoard 8%, amsengagementd 6%
+11:19:44 simulator  224% mac  254% load 570.8 | BackgroundShortcutRunner 103%, Brickson 48%, diagnosticd 25%, apsd 12%, SpringBoard 9%, backboardd 5%
+11:19:50 simulator  193% mac  259% load 572.1 | Brickson 80%, amsengagementd 39%, diagnosticd 27%, apsd 14%, TrialArchivingService 7%, SpringBoard 3%
+11:19:55 simulator  167% mac  236% load 572.5 | amsengagementd 54%, diagnosticd 51%, nsurlsessiond 27%, apsd 16%, trustd 3%, dasd 3%
+11:20:01 simulator  196% mac  258% load 570.0 | diagnosticd 51%, nsurlsessiond 40%, amsengagementd 33%, apsd 15%, remotemanagementd 12%, SecuritySubscriber 7%
+11:20:06 simulator  147% mac  240% load 562.6 | amsengagementd 69%, diagnosticd 33%, apsd 15%, nsurlsessiond 6%, InteractiveLegacyProfilesSubscriber 4%, spotlightknowledged.updater 3%
+11:20:12 simulator  147% mac  240% load 544.4 | amsengagementd 91%, diagnosticd 30%, apsd 14%, trustd 1%, notifyd 1%, securityd 1%
+11:20:17 simulator  154% mac  255% load 534.6 | amsengagementd 97%, diagnosticd 31%, apsd 14%, trustd 1%, notifyd 1%, securityd 1%
+11:20:23 simulator  170% mac  238% load 517.0 | amsengagementd 75%, diagnosticd 30%, apsd 17%, SeymourEngagementExtension 8%, fitcored 5%, launchd_sim 3%
+11:20:28 simulator  182% mac  240% load 500.2 | amsengagementd 40%, diagnosticd 39%, GeneralMapsWidget 22%, apsd 17%, AMDEngagementExtension 11%, swcd 9%
+11:20:34 simulator  116% mac  205% load 480.8 | diagnosticd 26%, GeneralMapsWidget 25%, com.apple.MapKit.SnapshotService 19%, apsd 15%, launchd_sim 2%, cfprefsd 2%
+11:20:40 simulator   95% mac  210% load 472.3 | diagnosticd 30%, apsd 17%, SpringBoard 8%, backboardd 3%, amsengagementd 2%, trustd 2%
+11:20:45 simulator  140% mac  212% load 455.7 | Brickson 62%, diagnosticd 22%, apsd 11%, SpringBoard 11%, BackgroundShortcutRunner 10%, backboardd 5%
+11:20:54 simulator  155% mac  190% load 437.0 | BackgroundShortcutRunner 73%, Brickson 33%, diagnosticd 25%, apsd 9%, intents_helper 3%, notifyd 2%
+11:21:00 simulator  188% mac  315% load 425.8 | BackgroundShortcutRunner 91%, diagnosticd 42%, apsd 19%, Brickson 13%, dasd 3%, notifyd 2%
+11:21:05 simulator   79% mac  239% load 412.5 | diagnosticd 27%, apsd 18%, amsaccountsd 6%, trustd 2%, amsengagementd 2%, cloudd 1%
+11:21:10 simulator   95% mac  243% load 397.9 | diagnosticd 35%, apsd 18%, axassetsd 3%, nsurlsessiond 2%, dasd 2%, trustd 2%
+11:21:16 simulator  189% mac  239% load 386.0 | intelligenceflowd 72%, BackgroundShortcutRunner 69%, diagnosticd 21%, apsd 13%, siriactionsd 3%, trustd 1%
+11:21:21 simulator   89% mac  175% load 377.3 | intelligenceflowd 28%, diagnosticd 23%, apsd 15%, launchd_sim 3%, trustd 2%, cfprefsd 1%
+11:21:27 simulator   86% mac  222% load 363.5 | diagnosticd 33%, apsd 19%, dasd 2%, trustd 2%, securityd 1%, SpringBoard 1%
+11:21:32 simulator  121% mac  230% load 334.3 | diagnosticd 39%, apsd 16%, CategoriesService 6%, nsurlsessiond 3%, fileproviderd 3%, ManagedSettingsAgent 3%
+11:21:39 simulator  134% mac  208% load 322.8 | diagnosticd 36%, intelligenceflowd 26%, apsd 16%, intelligencecontextd 9%, SpringBoard 7%, nsurlsessiond 4%
+11:21:45 simulator  192% mac  233% load 319.1 | intelligencecontextd 63%, Brickson 55%, diagnosticd 23%, apsd 11%, SpringBoard 10%, assistantd 6%
+11:21:50 simulator  180% mac  255% load 320.5 | Brickson 73%, diagnosticd 30%, intelligencecontextd 25%, apsd 16%, SpringBoard 3%, backboardd 2%
+11:21:56 simulator  144% mac  231% load 303.8 | diagnosticd 36%, SafariLinkExtension 34%, apsd 15%, MobileCal 6%, linkd 2%, nsurlsessiond 2%
+11:22:01 simulator   97% mac  188% load 292.9 | SafariLinkExtension 46%, diagnosticd 20%, apsd 14%, SpringBoard 3%, launchd_sim 3%, trustd 2%
+11:22:07 simulator   98% mac  216% load 283.1 | diagnosticd 34%, apsd 18%, SafariLinkExtension 6%, dasd 2%, CalendarWidgetExtension 2%, chronod 2%
+11:22:12 simulator  133% mac  252% load 258.5 | diagnosticd 34%, MessagesActionExtension 17%, apsd 16%, CalendarWidgetExtension 11%, assistantd 3%, launchd_sim 2%
+11:22:18 simulator  113% mac  227% load 251.1 | diagnosticd 34%, apsd 17%, (intelligencetask) 7%, (mlhostd) 4%, trustd 2%, searchd 2%
+11:22:23 simulator  104% mac  190% load 238.5 | diagnosticd 31%, apsd 16%, cfprefsd 5%, nanotimekitcompaniond 4%, SpringBoard 3%, trustd 2%
+11:22:29 simulator  134% mac  223% load 224.5 | diagnosticd 38%, apsd 18%, cloudd 6%, assetsd 3%, assistantd 2%, homed 2%
+11:22:34 simulator  117% mac  231% load 211.2 | diagnosticd 31%, assetsd 18%, apsd 14%, cloudd 9%, triald 8%, trustd 6%
+11:22:40 simulator  102% mac  219% load 205.1 | diagnosticd 36%, apsd 18%, SpringBoard 8%, triald 5%, trustd 5%, backboardd 4%
+11:22:45 simulator  151% mac  225% load 198.9 | Brickson 71%, diagnosticd 27%, apsd 15%, SpringBoard 13%, backboardd 5%, trustd 1%
+11:22:51 simulator  186% mac  255% load 188.3 | Brickson 81%, diagnosticd 37%, apsd 18%, SpringBoard 4%, backboardd 2%, trustd 2%
+11:22:56 simulator  125% mac  220% load 179.2 | diagnosticd 39%, apsd 20%, searchd 4%, mobileassetd 3%, trustd 2%, securityd 2%
+11:23:02 simulator  118% mac  198% load 172.1 | diagnosticd 36%, apsd 21%, SpringBoard 4%, searchd 3%, cfprefsd 2%, trustd 2%
+11:23:07 simulator  146% mac  205% load 181.0 | diagnosticd 37%, apsd 17%, cfprefsd 4%, searchd 4%, nanoprefsyncd 3%, healthappd 3%
+11:23:13 simulator  100% mac  207% load 162.8 | diagnosticd 34%, apsd 22%, searchd 3%, trustd 2%, mobileassetd 2%, cfprefsd 1%
+11:23:18 simulator   76% mac  193% load 155.6 | diagnosticd 30%, apsd 20%, trustd 2%, securityd 1%, cfprefsd 1%, mobileassetd 1%
+11:23:24 simulator  111% mac  215% load 145.2 | diagnosticd 36%, apsd 19%, searchd 7%, spotlightknowledged.updater 3%, remindd 3%, cfprefsd 2%
+11:23:29 simulator  142% mac  234% load 139.4 | diagnosticd 37%, apsd 21%, searchd 11%, mobileassetd 4%, triald 3%, PasscodeSettingsSubscriber 3%
+11:23:35 simulator  131% mac  214% load 133.2 | diagnosticd 34%, apsd 18%, SpringBoard 9%, SetStoreUpdateService 7%, fileindexerd 5%, backboardd 3%
+11:23:41 simulator  108% mac  219% load 129.1 | diagnosticd 32%, apsd 18%, Brickson 17%, SpringBoard 9%, backboardd 4%, trustd 2%
+11:23:47 simulator  187% mac  273% load 123.7 | Brickson 98%, diagnosticd 33%, apsd 17%, SpringBoard 4%, backboardd 3%, trustd 2%
+11:23:52 simulator  168% mac  236% load 116.1 | diagnosticd 43%, apsd 18%, Brickson 18%, finhealthd 13%, spotlightknowledged.updater 8%, searchd 7%
+11:23:58 simulator  144% mac  223% load 107.7 | diagnosticd 44%, apsd 19%, cloudd 6%, searchd 6%, spotlightknowledged.updater 5%, mobileassetd 4%
+11:24:03 simulator  188% mac  260% load  99.8 | diagnosticd 49%, apsd 18%, cloudd 17%, nsurlsessiond 10%, triald 7%, healthappd 7%
+11:24:08 simulator  163% mac  252% load  92.7 | diagnosticd 45%, apsd 16%, dataaccessd 8%, assistant_service 8%, siriinferenced 8%, AccountSubscriber 7%
+11:24:14 simulator  154% mac  224% load  85.8 | diagnosticd 34%, apsd 17%, mobileassetd 14%, IntelligencePlatformComputeService 11%, siriinferenced 9%, dataaccessd 9%
+11:24:19 simulator  199% mac  249% load  79.4 | diagnosticd 33%, dataaccessd 26%, siriinferenced 25%, AuthenticationServicesAgent 25%, healthappd 20%, apsd 16%
+11:24:25 simulator  113% mac  185% load  75.6 | diagnosticd 28%, apsd 16%, healthappd 16%, dataaccessd 9%, AuthenticationServicesAgent 9%, siriinferenced 9%
+11:24:30 simulator  196% mac  234% load  70.1 | diagnosticd 34%, healthappd 30%, AuthenticationServicesAgent 21%, dataaccessd 17%, apsd 17%, siriinferenced 13%
+11:24:36 simulator  199% mac  246% load  69.4 | diagnosticd 49%, apsd 18%, CalendarWidgetExtension 18%, healthappd 14%, SpringBoard 11%, spotlightknowledged.updater 11%
+11:24:42 simulator  199% mac  240% load  67.7 | CalendarWidgetExtension 35%, diagnosticd 34%, Brickson 33%, apsd 15%, SpringBoard 12%, calaccessd 8%
+11:24:47 simulator  193% mac  238% load  67.8 | Brickson 98%, diagnosticd 32%, apsd 16%, SpringBoard 4%, SetStoreUpdateService 3%, MobileCal 3%
+11:24:53 simulator  116% mac  163% load  62.7 | diagnosticd 29%, apsd 17%, AppSSODaemon 10%, MobileCal 9%, Brickson 8%, GSSCred 7%
+11:24:58 simulator   63% mac  167% load  58.1 | diagnosticd 27%, apsd 17%, trustd 2%, securityd 1%, logd 1%, identityservicesd 1%
+11:25:04 simulator   57% mac  153% load  53.6 | diagnosticd 25%, apsd 16%, SpringBoard 2%, trustd 2%, securityd 1%, remindd 1%
+11:25:09 simulator   70% mac  164% load  49.7 | diagnosticd 32%, apsd 20%, trustd 2%, securityd 1%, cfprefsd 1%, logd 1%
+11:25:14 simulator   70% mac  210% load  46.0 | diagnosticd 32%, apsd 21%, trustd 2%, securityd 1%, logd 1%, cfprefsd 1%
+11:25:20 simulator   74% mac  158% load  45.1 | diagnosticd 34%, apsd 18%, dasd 2%, trustd 2%, assistantd 2%, cfprefsd 1%
+11:25:25 simulator  112% mac  149% load  41.6 | diagnosticd 38%, spotlightknowledged.updater 18%, apsd 17%, cfprefsd 15%, searchd 5%, trustd 2%
+11:25:30 simulator   62% mac  117% load  38.4 | diagnosticd 28%, apsd 18%, trustd 2%, securityd 1%, logd 1%, cfprefsd 1%
+11:25:36 simulator   65% mac  120% load  36.0 | diagnosticd 27%, apsd 16%, SpringBoard 4%, trustd 2%, backboardd 2%, securityd 1%
+11:25:41 simulator  118% mac  148% load  34.5 | Brickson 44%, diagnosticd 28%, apsd 15%, SpringBoard 7%, backboardd 4%, spotlightknowledged.updater 4%
+11:25:46 simulator  126% mac  164% load  36.7 | Brickson 56%, diagnosticd 31%, apsd 18%, SpringBoard 3%, backboardd 2%, trustd 2%
+11:25:52 simulator   65% mac   94% load  33.9 | diagnosticd 30%, apsd 19%, trustd 2%, securityd 1%, logd 1%, cfprefsd 1%
+11:25:57 simulator   91% mac  120% load  31.7 | diagnosticd 32%, apsd 18%, com.apple.MapKit.SnapshotService 18%, GeneralMapsWidget 3%, trustd 2%, chronod 1%
+11:26:02 simulator   69% mac  189% load  30.2 | diagnosticd 30%, apsd 19%, trustd 2%, SpringBoard 2%, securityd 1%, dataaccessd 1%
+11:26:08 simulator   66% mac  186% load  28.4 | diagnosticd 29%, apsd 18%, trustd 2%, securityd 1%, cfprefsd 1%, dasd 1%
+11:26:13 simulator   65% mac  215% load  29.0 | diagnosticd 28%, apsd 18%, trustd 2%, securityd 1%, dataaccessd 1%, logd 1%
+11:26:19 simulator   60% mac  197% load  27.2 | diagnosticd 26%, apsd 17%, trustd 2%, securityd 1%, logd 1%, cfprefsd 1%
+11:26:24 simulator   77% mac  218% load  26.2 | diagnosticd 30%, apsd 16%, axassetsd 5%, healthappd 5%, dasd 2%, trustd 1%
+11:26:30 simulator   83% mac  228% load  24.3 | diagnosticd 32%, apsd 18%, healthappd 15%, trustd 2%, healthd 1%, securityd 1%
+11:26:35 simulator   78% mac  199% load  25.5 | diagnosticd 27%, apsd 16%, SpringBoard 10%, backboardd 4%, trustd 2%, runningboardd 1%
+11:26:41 simulator  134% mac  191% load  30.1 | Brickson 53%, diagnosticd 27%, apsd 14%, SpringBoard 13%, backboardd 5%, spotlightknowledged.updater 4%
+11:26:46 simulator  138% mac  196% load  31.6 | Brickson 74%, diagnosticd 25%, apsd 14%, SpringBoard 3%, backboardd 3%, trustd 2%
+11:26:51 simulator   57% mac   86% load  29.2 | diagnosticd 26%, apsd 16%, trustd 2%, securityd 1%, logd 1%, cfprefsd 1%
+11:26:56 simulator   58% mac   87% load  27.0 | diagnosticd 26%, apsd 17%, trustd 2%, securityd 1%, cfprefsd 1%, logd 1%
+11:27:02 simulator   52% mac   81% load  24.9 | diagnosticd 22%, apsd 14%, SpringBoard 2%, trustd 2%, securityd 1%, logd 1%
+11:27:07 simulator   55% mac  201% load  24.1 | diagnosticd 24%, apsd 16%, trustd 2%, securityd 1%, cfprefsd 1%, identityservicesd 1%
+11:27:12 simulator   39% mac  211% load  24.7 | diagnosticd 16%, apsd 11%, homed 2%, trustd 1%, logd 1%, securityd 1%
+11:27:18 simulator   72% mac  138% load  30.3 | diagnosticd 28%, apsd 19%, ProtectedCloudKeySyncing 8%, trustd 2%, securityd 1%, cfprefsd 1%
+11:27:24 simulator   76% mac  219% load  29.8 | diagnosticd 31%, apsd 19%, cloudd 3%, trustd 2%, ProtectedCloudKeySyncing 2%, securityd 1%
+11:27:29 simulator   66% mac  202% load  27.6 | diagnosticd 30%, apsd 19%, trustd 2%, securityd 1%, cfprefsd 1%, dataaccessd 1%
+11:27:35 simulator   90% mac  154% load  25.8 | diagnosticd 35%, apsd 18%, SpringBoard 10%, backboardd 3%, dasd 2%, trustd 2%
+Processor time the simulator's processes used while watched:
+     252.6 s  diagnosticd
+     121.8 s  apsd
+      80.0 s  Brickson
+      44.7 s  BackgroundShortcutRunner
+      42.1 s  amsengagementd
+      29.3 s  SpringBoard
+      19.1 s  PosterBoard
+      15.6 s  healthappd
+      15.1 s  trustd
+      14.9 s  runningboardd
+      14.0 s  EmojiPosterExtension
+      14.0 s  Unity2025Poster
+      13.0 s  GradientPosterExtension
+      12.7 s  MTLCompilerService
+      12.4 s  CalendarWidgetExtension
+      12.0 s  cfprefsd
+      11.0 s  backboardd
+      10.5 s  MobileCal
+      10.4 s  RhizomePoster
+      10.1 s  nsurlsessiond

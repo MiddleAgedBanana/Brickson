@@ -1,0 +1,29 @@
+2026-11-03 11:15:24.382 Df dasd[3553:6731] [com.apple.duetactivityscheduler:lifecycle] SUBMITTED com.apple.springboard.posterboardupdate.prewarm:B21EF4 at priority 30 (Tue Nov  3 11:15:24 2026 - Tue Nov  3 11:20:24 2026)
+2026-11-03 11:15:24.382 Df dasd[3553:3c35] [com.apple.duetactivityscheduler:BGSTHelper] Submitted <_DASActivity: "com.apple.springboard.posterboardupdate.prewarm:B21EF4", Utility, 60s, [11/3/26, 11:15:24 AM - 11/3/26, 11:20:24 AM], Group: "com.apple.dasd.d
+2026-11-03 11:15:24.382 Df dasd[3553:3c35] [com.apple.duetactivityscheduler:BGSTHelper] submitTaskRequestWithIdentifier: Submitted BGSystemTask com.apple.springboard.posterboardupdate.prewarm (0x1094ca840)
+2026-11-03 11:15:24.425 Df dasd[3553:38fb] [com.apple.duetactivityscheduler:BGSTHelper] Skipping XPC_EVENT_PUBLISHER_ACTION_ADD since com.apple.springboard.posterboardupdate.prewarm already exists
+2026-11-03 11:15:52.700 Df dasd[3553:66ed] [com.apple.duetactivityscheduler:scoring] WARNING NO POLICIES APPLY TO Activity com.apple.springboard.posterboardupdate.prewarm:B21EF4: Optimal Score 1.0000 at 11/3/26, 11:15 AM
+2026-11-03 11:15:52.701 Df dasd[3553:66ed] [com.apple.duetactivityscheduler:scoring] com.apple.springboard.posterboardupdate.prewarm:B21EF4, Decision: CP Score: 1.000000}
+2026-11-03 11:15:52.701 Df dasd[3553:66ed] [com.apple.duetactivityscheduler:scoring] 'com.apple.springboard.posterboardupdate.prewarm:B21EF4' CurrentScore: 1.000000, ThresholdScore: 0.888670 DecisionToRun:1
+2026-11-03 11:15:52.701 Df dasd[3553:66ed] [com.apple.duetactivityscheduler:default] Running com.apple.springboard.posterboardupdate.prewarm:B21EF4 immediately on submission
+2026-11-03 11:15:52.701 Df dasd[3553:66ed] [com.apple.duetactivityscheduler:lifecycle(activityGroup)] With com.apple.springboard.posterboardupdate.prewarm:B21EF4 ...Tasks pre-running in group [com.apple.dasd.defaultIntensive] are 1!
+2026-11-03 11:15:52.724 Df dasd[3553:66ed] [com.apple.duetactivityscheduler:scoring] 'com.apple.routined.persistence.mirroring.post-install:F825B6' has compatibility score of 0.100000 with 'com.apple.springboard.posterboardupdate.prewarm:B21EF4'. Relaxing scor
+2026-11-03 11:15:52.815 Df dasd[3553:66ee] [com.apple.duetactivityscheduler:BGSTHelper] Initiating BGST: com.apple.springboard.posterboardupdate.prewarm (0x1094ca840)
+2026-11-03 11:15:55.231 Df dasd[3553:8f5d] [com.apple.duetactivityscheduler:BGSTHelper] Client (PID 3527) confirmed run for com.apple.springboard.posterboardupdate.prewarm (0x1094ca840)
+2026-11-03 11:15:55.306 Df dasd[3553:672f] [com.apple.duetactivityscheduler:lifecycle] STARTED <_DASActivity: "com.apple.springboard.posterboardupdate.prewarm:B21EF4", Utility, 60s, [11/3/26, 11:15:24 AM - 11/3/26, 11:20:24 AM], Started at 11/3/26, 11:15:5
+2026-11-03 11:15:55.306 Df dasd[3553:672f] [com.apple.duetactivityscheduler:lifecycle] Activity com.apple.springboard.posterboardupdate.prewarm has preventDeviceSleep 0. Externally Powered: 1
+2026-11-03 11:15:55.306 Df dasd[3553:672f] [com.apple.duetactivityscheduler:lifecycle(activityGroup)] With com.apple.springboard.posterboardupdate.prewarm:B21EF4 ...Tasks running in group [com.apple.dasd.defaultIntensive] are 1!
+2026-11-03 11:15:55.306 Df dasd[3553:672f] [com.apple.duetactivityscheduler:fairScheduling] Started com.apple.springboard.posterboardupdate.prewarm, total runtime from previous runs 0.0 mins, runtime limit 600
+2026-11-03 11:15:55.306 Df dasd[3553:672f] [com.apple.duetactivityscheduler:scoring] com.apple.springboard.posterboardupdate.prewarm:B21EF4, Decision: CP Score: 1.000000}
+2026-11-03 11:16:04.309 Df dasd[3553:8f4d] [com.apple.duetactivityscheduler:scoring] 'com.apple.spotlightknowledged.pipelines.embedding.index-processing.c:4B14CD' has compatibility score of 0.100000 with 'com.apple.springboard.posterboardupdate.prewarm:B21EF4'
+2026-11-03 11:18:44.594 Df dasd[3553:3bfb] [com.apple.duetactivityscheduler:BGSTHelper] Completed com.apple.springboard.posterboardupdate.prewarm (0x1094ca840)
+2026-11-03 11:18:44.595 Df dasd[3553:672e] [com.apple.duetactivityscheduler:lifecycle] COMPLETED <_DASActivity: "com.apple.springboard.posterboardupdate.prewarm:B21EF4", Utility, 60s, [11/3/26, 11:15:24 AM - 11/3/26, 11:20:24 AM], Started at 11/3/26, 11:15
+2026-11-03 11:18:44.595 Df dasd[3553:672e] [com.apple.duetactivityscheduler:ProgressReportingMonitor] [com.apple.springboard.posterboardupdate.prewarm:B21EF4] Ending progress monitoring
+2026-11-03 11:18:44.596 Df dasd[3553:672e] [com.apple.duetactivityscheduler:lifecycle(activityGroup)] NO LONGER RUNNING com.apple.springboard.posterboardupdate.prewarm:B21EF4 ...Tasks running in group [com.apple.dasd.defaultIntensive] are 1!
+2026-11-03 11:18:44.599 Df dasd[3553:672e] [com.apple.duetactivityscheduler:fairScheduling] Completed com.apple.springboard.posterboardupdate.prewarm, ran for 2.8 mins, total runtime 2.8 mins
+
+    923 11:15
+  23946 11:16
+  34045 11:17
+  10615 11:18
+      3 11:19

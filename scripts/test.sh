@@ -32,7 +32,10 @@
 #
 # Every test run keeps its results, with a screenshot of each UI test
 # failure, in build/TestResults/<mode>-<family>.xcresult (open it in Xcode),
-# and prints how many tests ran. A run in which no test ran fails.
+# and prints how many tests ran. A run in which no test ran fails. Beside
+# it, simulator-load-<family>.txt records which of the simulator's
+# processes used the Mac's processors while it was tested; on a simulator
+# this script started, the lock-screen wallpaper extensions are paused.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -160,9 +163,45 @@ cleanup_simulator() {
     fi
 }
 
+# Five or more minutes after a simulator starts, iOS prewarms its
+# lock-screen wallpaper gallery, and the wallpaper extensions render its
+# pictures for about three minutes. On GitHub's Mac machines that stalled
+# the app under test until UI tests timed out on the iPad
+# (docs/log/2026-11-03-ui-test-stall.md). No test shows the lock screen. scripts/simulator-load.py watches the simulator
+# while it is tested, pauses those extensions on a simulator this run
+# started (never on one someone else is using), and writes which processes
+# used the processors to $results_dir/simulator-load-<family>.txt.
+watcher_pid=""
+watcher_record=""
+
+start_watcher() {
+    local udid="$1" pause=()
+    [ "$udid" != "$owned_simulator" ] || pause=(--pause-posters)
+    if watcher_pid="$(/usr/bin/python3 -I scripts/simulator-load.py start --udid "$udid" \
+        --out "$watcher_record" --parent "$$" "${pause[@]+"${pause[@]}"}")"; then
+        if [ "${#pause[@]}" -gt 0 ]; then
+            echo "Watching the simulator's processes, pausing its lock-screen wallpaper extensions: $watcher_record"
+        else
+            echo "Watching the simulator's processes (nothing paused: this run did not start it): $watcher_record"
+        fi
+    else
+        watcher_pid=""
+        echo "warning: the simulator watcher did not start, so nothing is paused; the tests run anyway." >&2
+    fi
+}
+
+stop_watcher() {
+    local pid="$watcher_pid"
+    [ -n "$pid" ] || return 0
+    watcher_pid=""
+    /usr/bin/python3 -I scripts/simulator-load.py stop --pid "$pid" --out "$watcher_record" ||
+        echo "warning: the simulator watcher did not stop cleanly." >&2
+}
+
 finish() {
     local status=$?
     trap - EXIT
+    stop_watcher
     cleanup_simulator || { [ "$status" -ne 0 ] || status=1; }
     exit "$status"
 }
@@ -349,10 +388,11 @@ run_xcodebuild() {
 run_tests_on_simulator() {
     local family="$1" udid destination state status=0 catalog_status=0
     local results="$results_dir/$mode-$family.xcresult"
-    # Remove the last run's bundle first, so a run that stops before
-    # testing never leaves an old bundle that looks like its result.
-    # (xcodebuild also will not write over one.)
-    command rm -rf "$results" || return 1
+    watcher_record="$results_dir/simulator-load-$family.txt"
+    # Remove the last run's bundle and record first, so a run that stops
+    # before testing never leaves old ones that look like its own.
+    # (xcodebuild also will not write over a bundle.)
+    command rm -rf "$results" "$watcher_record" || return 1
     if [ "$family" = destination ]; then
         udid="$(destination_simulator)" || return 1
         # The same simulator, by id, for the wait and the build.
@@ -384,6 +424,8 @@ run_tests_on_simulator() {
         # timed out ("Timed out while launching application via Xcode").
         echo "Starting the simulator $udid and waiting for it"
         xcrun simctl bootstatus "$udid" -b || return 1
+        mkdir -p "$results_dir" || return 1
+        start_watcher "$udid"
         if [ "$mode" = ui ]; then
             show_full_keyboard "$udid" || return 1
         fi
@@ -432,6 +474,7 @@ run_tests_on_simulator() {
 run_tests() {
     local status=0
     run_tests_on_simulator "$1" || status=$?
+    stop_watcher
     cleanup_simulator || { [ "$status" -ne 0 ] || status=1; }
     return "$status"
 }

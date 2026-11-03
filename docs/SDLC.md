@@ -213,14 +213,16 @@ which agents also act through, can bypass it (*Deploy*).
 **What it means here.** Three kinds of release, each behind the owner.
 
 - **Into `main`.** Codex reviews every push to a pull request, GitHub
-  Copilot reviews each pull request once when it opens, and GitHub's AI
-  Scan posts security findings; all three review against AGENTS.md,
+  Copilot reviews a code pull request once after Codex's round is
+  answered, until the owner's subscription ends on 2026-11-09 (the
+  agent requests it; AGENTS.md, "Reviews and updates on GitHub"), and GitHub's AI Scan posts security findings; all three review against AGENTS.md,
   *Code Review Rules*, which is this project's `REVIEW.md` (p39). Their
   findings inform the owner; they never approve or block on their own
   (p38). The agent that opened the pull request answers every finding,
   fixing it or saying why not, and says in its ready message whether the
   findings are handled. **The owner merges.** Agents never merge, never
-  push to `main`, and never add Copilot as a reviewer.
+  push to `main`, and ask for Copilot only once, through its review
+  tool.
 - **The website** publishes itself from `site/` after each merge to
   `main` ("Publish website", `.github/workflows/pages.yml`).
 - **The app.** The owner archives a build on the Mac with the current
@@ -307,11 +309,12 @@ can hold that rule, a test (p50: add an eval for the incident).
   only Claude Code, not Codex or Jules, so GitHub's ruleset is the backstop
   for every agent, once the guardrails work makes it bind them (*Deploy*). A small `.claude/settings.json` hook that
   blocks `git add -A`, a push to `main` and edits to the generated Xcode
-  project would add a second line of defence for Claude Code; proposed,
-  not built.
+  project would add a second line of defence for Claude Code; the first
+  two were built on 2026-10-21 (AGENTS.md, *Guardrails for agents*), and
+  the generated project is never committed.
 - **Continuous evals in CI** (p34) need an API key and a budget in CI.
-  Codex and Copilot already review every pull request against the same
-  rules. Revisit if agent mistakes start to repeat; the evidence would be
+  Codex already reviews every pull request, and Copilot each code pull
+  request once, against the same rules. Revisit if agent mistakes start to repeat; the evidence would be
   the same lesson appearing twice in `docs/LESSONS.md`.
 - **Control bands** (p49) need a steady stream of runs to set a baseline;
   this project has a few CI runs a day. Every failure on `main` is looked

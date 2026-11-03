@@ -148,10 +148,15 @@ prints how much of the app's code the tests ran, and updates the String
 Catalog (`Brickson/Resources/Localizable.xcstrings`, every string people
 see, ready for translation) to match the code. If it changed, commit it
 with your change; GitHub's run fails when the committed catalog is out of
-date.
+date. Beside the results, `simulator-load-<family>.txt` records which of
+the simulator's processes kept the Mac's processors busy during the run.
+On a simulator the script started itself, it also pauses the lock-screen
+wallpaper extensions, which iOS otherwise starts a few minutes after the
+simulator boots and which slowed GitHub's machines until tests failed.
 
 GitHub Actions runs unit and UI tests for pull requests and pushes to
-`main`. Passing tests are required before merging. Physical-device checks
+`main`, with the iPad's and the iPhone's UI tests on two machines at the
+same time. Passing tests are required before merging. Physical-device checks
 are still necessary for audio, dwell, Eye Tracking and other access methods.
 
 ## Repository structure

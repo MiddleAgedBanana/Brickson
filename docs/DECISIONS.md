@@ -4664,6 +4664,38 @@ request merges only when they pass.
   The owner committed the change, because a cloud agent cannot push
   workflows. Record:
   [`log/2026-10-30-unit-test-time.md`](log/2026-10-30-unit-test-time.md).
+- **2026-11-03, default, reversible:** the UI tests run as one job per
+  device family, "UI tests on iPad" and "UI tests on iPhone", at the
+  same time, with 90 minutes each, and the check the `main` ruleset
+  requires, "UI tests", is a small job that passes only when both
+  passed. It runs `if: always()`, because GitHub reads a skipped
+  required check as passed. The families are two jobs, not a matrix,
+  so "UI tests" reads each one's own result: a matrix reports one
+  result for all its legs, and that summary was reported to read as
+  passed when a leg never got a machine (CodeRabbit's review of pull
+  request #76). `scripts/test-runner.py` checks that the two jobs stay
+  the same apart from the family. Before, one job ran both families one after
+  the other and took about 105 of its 120 minutes; each family takes
+  about 50 minutes or less. The cost is a second build on a second
+  machine. The owner committed the workflow, because a cloud agent
+  cannot push workflows.
+- **2026-11-03, default, reversible:** on a simulator `scripts/test.sh`
+  started itself, `scripts/simulator-load.py` pauses (SIGSTOP) the
+  lock-screen wallpaper extensions for the whole run, and lets them
+  run again when the run's tests are over; on every
+  simulator it writes the processes that used the Mac's processors to
+  `build/TestResults/simulator-load-<family>.txt`. About five minutes
+  after a simulator starts, iOS prewarms its wallpaper gallery, and on
+  GitHub's three-processor machines that starved the app until iPad UI
+  tests timed out, four runs in a row. No
+  test shows the lock screen. A simulator someone else started is
+  watched but never paused. A watcher that has not begun 15 s after it
+  was started is left to begin, not stopped: just after a simulator
+  had started, one on GitHub's machine had not, and stopped then it
+  paused nothing and the iPad stalled again. Measure again, and drop the pausing if it
+  no longer matters, when Apple changes the prewarm or GitHub's
+  machines get more processors. Record:
+  [`log/2026-11-03-ui-test-stall.md`](log/2026-11-03-ui-test-stall.md).
 
 ## Reviews, updates and GitHub settings
 
@@ -4676,9 +4708,46 @@ review setup does not quietly break them.
 
 ### Code review
 
+- **2026-11-03, owner, reversible:** Copilot reviews a pull request
+  once, after Codex's round is answered, until the owner's Copilot
+  subscription ends on 2026-11-09 (the owner had already cancelled
+  it). The owner turned off automatic Copilot review in
+  the repository's settings that day (it was already off for the
+  organisation), so Copilot reviews only when asked. Codex reviews when
+  a pull request opens and on each push; the agent answers and fixes
+  Codex's findings first, then Copilot is added once, so it sees the
+  fixed code and Codex's threads and does not repeat their findings.
+  CodeRabbit and Greptile also review by themselves, as far as their
+  free plans allow (the owner, that day), and their rounds are answered
+  before Copilot's too. A pull request that changes only
+  documents gets no Copilot review. The same day the owner chose that
+  the agent requests Copilot itself, so a pull request does not wait for
+  the owner overnight: once, through the GitHub tool
+  `request_copilot_review`, which the guard and `.claude/settings.json`
+  now let through. Every other way of asking for Copilot (`gh`, the
+  API, a pull request's reviewer field) and every Copilot task stay
+  refused. The guard records each request that succeeded in the clone's
+  Git folder and refuses a second one on the same pull request, from
+  any worktree of that clone (Codex's and CodeRabbit's review of pull
+  request #76: without it, "once" rested on AGENTS.md alone). A fresh
+  clone, such as a new cloud session, starts with an empty record, so
+  there "once" is still held by AGENTS.md and by review, and "after
+  Codex's round" always is. Where the guard does not run, as in a
+  Brickson cloud thread on 2026-11-03 (AGENTS.md, *Guardrails for
+  agents*), AGENTS.md and review hold all of it. Before: Copilot reviewed each pull request
+  once, when it opened (the bullet below), and earlier that day the
+  owner added it by hand. The month's AI credits were nearly spent by
+  2026-11-03, so a request that fails for lack of them, or because the
+  subscription has ended, is said in the pull request and the thread,
+  and the pull request goes on without Copilot: no retry, and the owner
+  does not add it, which would spend the same credits. When the subscription ends, the Copilot step goes:
+  no Copilot review from 2026-11-10, and a pull request removes it.
+  Record:
+  [`log/2026-11-03-ui-test-stall.md`](log/2026-11-03-ui-test-stall.md).
 - **2026-10-23, owner, reversible:** follow AGENTS.md, "Pushing to an open PR", to batch fixes and stop restarting green CI for polish; reason: PR #17. Before: only batching before each push was explicit.
 
-- Codex reviews every push to a pull request. GitHub Copilot (the owner's
+- *Until 2026-11-03 (the bullet above replaces the automatic review).*
+  Codex reviews every push to a pull request. GitHub Copilot (the owner's
   Copilot Pro plan) reviews each pull request **once, when it opens**,
   through the `main` ruleset's "Automatically request Copilot code review"
   rule, at Balanced effort. It does not review every push: each Copilot
@@ -4689,9 +4758,10 @@ review setup does not quietly break them.
 - *Added 2026-10-12.* Dependabot's pull requests get no automatic review
   from Copilot or Codex: PR #7, Dependabot's first, got neither, while
   PR #8, opened by an agent, got both. The owner requests a Copilot review
-  of one by hand when wanted. Only the owner requests Copilot reviews;
-  agents never add Copilot as a reviewer unless the owner asks, because
-  each review spends the owner's credits.
+  of one by hand when wanted. Only the owner requests Copilot's review
+  of a Dependabot pull request, because each review spends the owner's
+  credits; on its own pull requests an agent requests one once (since
+  2026-11-03, the first bullet).
 - Review guidance lives in AGENTS.md, *Code Review Rules*, which Codex,
   Copilot and Claude Code all read. `.github/copilot-instructions.md` only
   adds what is specific to Copilot and points back to AGENTS.md, so the
@@ -4834,6 +4904,6 @@ through its API on 2026-10-15:
 | Require branches to be up to date | Off | Each update reruns the Mac tests; `main` is tested again after every merge anyway. |
 | Require conversation resolution | On | Every Codex and Copilot comment, and every CodeQL alert posted on the pull request, gets an answer before a merge. AI Scan findings are answered too, by practice (*Code scanning* above). |
 | Require code scanning results | CodeQL: errors, high or higher | A workflow change that CodeQL flags as an error, or as a high or critical security problem, cannot merge. It did not cover Dependabot's first pull request, which got no CodeQL analysis before merging (*Code scanning* above). |
-| Automatically request Copilot code review | On; new pushes and drafts off | As above. |
+| Automatically request Copilot code review | Off since 2026-11-03 (on before, with new pushes and drafts off) | Copilot reviews once, after Codex's round is answered, when the agent requests it (*Code review* above). |
 | Block force pushes, restrict deletions | On | History on `main` never changes. |
 | Bypass | Repository admin, for pull requests only | The owner can still merge in an emergency, such as GitHub's Mac machines being down, but never push straight to `main`. |
