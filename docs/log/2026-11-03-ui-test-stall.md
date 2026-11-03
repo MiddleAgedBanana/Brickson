@@ -156,8 +156,9 @@ recorded. Only a request that ran is recorded: Claude Code runs
 fails, an MCP error result included (its hooks reference, read
 2026-11-03). A failed request is not counted, but the agent still
 follows AGENTS.md: it says so in the thread and the owner adds Copilot,
-because a request that timed out may have reached GitHub. A request
-that ran but could not be recorded exits 2, which shows the agent the
+because a request that timed out may have reached GitHub (unless it
+failed for lack of credits, as the paragraph before *Commits* says). A
+request that ran but could not be recorded exits 2, which shows the agent the
 message after a tool has run, so it knows the guard would not refuse a
 second one. A lock beside the record keeps two sessions of one clone
 from losing each other's entries. A fresh clone, such as a new cloud
@@ -228,6 +229,17 @@ agent asked to refute the decline:
   such a request; GitHub's own tool always names `owner`, `repo` and
   `pullNumber` (`test_a_copilot_request_for_no_readable_pull_request_is_refused`).
 
+**The end of Copilot's step.** After Copilot's review, the owner said
+the Copilot Pro subscription was already cancelled and ends on
+2026-11-09, and the month's AI credits were nearly spent. So AGENTS.md,
+"Reviews and updates on GitHub", docs/DECISIONS.md (*Code review*),
+docs/SDLC.md and docs/HANDOFF.md now date the step: no Copilot review
+from 2026-11-10. And a request that fails because the credits have run
+out, or because the subscription has ended, is said in the pull
+request's description and in the thread, and the pull request goes on
+without Copilot: the agent never retries, and the owner does not add
+Copilot, which would spend the same credits.
+
 ## Commits
 
 - `4a9dea4` the temporary probe (removed by the next commit).
@@ -254,6 +266,8 @@ agent asked to refute the decline:
   cloud thread (AGENTS.md, *Guardrails for agents*).
 - The commit after that: Copilot's review, the watcher's two fixes and
   the guard refusing a request whose pull request it cannot read.
+- The commit after that: the Copilot step's end (2026-11-09) and what an
+  agent does when a request fails for lack of credits.
 
 ## Verified
 
@@ -357,8 +371,14 @@ agent asked to refute the decline:
 - When Apple fixes the prewarm on the simulator, or the machines get
   more processors, the pausing can be measured again and dropped if it
   no longer matters (docs/DECISIONS.md, "Tests").
-- When the owner's Copilot subscription ends, the Copilot step in
-  AGENTS.md, "Reviews and updates on GitHub", goes.
+- From 2026-11-10, when the owner's Copilot subscription has ended, a
+  pull request removes the Copilot step: from AGENTS.md, "Reviews and
+  updates on GitHub", docs/DECISIONS.md (*Code review* and the ruleset
+  table), docs/SDLC.md and docs/HANDOFF.md (and AGENTS.md's "or
+  requests Copilot" for Dependabot's pull requests), and the guard's
+  allowance for `request_copilot_review` with its tests, so the guard
+  refuses every Copilot action again. Owner of that: the first thread after
+  2026-11-09.
 - *(owner)* The guard did not run in this cloud thread, and most of
   Brickson's agent work happens in such threads, so there its rules may
   rest on the agent and on review alone. Whether the project can load

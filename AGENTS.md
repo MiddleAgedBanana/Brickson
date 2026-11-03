@@ -161,8 +161,9 @@ stays reachable, behind `#available` when newer (docs/DECISIONS.md,
 **Reviews and updates on GitHub.** Codex reviews every push to a pull
 request that a person or agent opens. GitHub Copilot no longer reviews
 by itself (the owner turned that off on 2026-11-03), and each Copilot
-review spends the owner's monthly AI credits. Until the owner's Copilot
-subscription ends, the owner's order (2026-11-03) is staggered: the agent
+review spends the owner's monthly AI credits. The owner has cancelled
+the Copilot subscription, and it ends on 2026-11-09. Until then, the
+owner's order (2026-11-03) is staggered: the agent
 answers and fixes Codex's round first, then Copilot reviews the pull
 request once, so it sees the fixed code and Codex's threads instead of
 repeating them. A pull request that changes only documents gets no
@@ -172,9 +173,16 @@ has reviewed the latest push and every finding is fixed or answered, it
 calls the GitHub tool `request_copilot_review` once for that pull
 request, and never again on it, nor any other way (the guard refuses
 `gh`, the API, the reviewer field and a second request from the same
-clone; *Guardrails for agents*). If the tool is unavailable or refused,
-it says so in the thread and the owner adds Copilot under
-**Reviewers**. Neither reviews Dependabot's pull requests
+clone; *Guardrails for agents*). If the request fails because the
+month's AI credits have run out or the subscription has ended, the
+agent says so in the pull
+request's description and in the thread and goes on without Copilot:
+it never retries, and the owner does not add Copilot, which would spend
+the same credits. If the tool is unavailable or refused for another
+reason, it says so in the thread and the owner adds Copilot under
+**Reviewers**. From 2026-11-10 no pull request gets a Copilot review,
+and a pull request removes the step from this file, docs/DECISIONS.md
+and docs/SDLC.md. Neither reviews Dependabot's pull requests
 by itself. Both review against *Code Review Rules* below. GitHub's AI
 Scan also posts security findings after each push to such a pull request;
 answer them like review comments. It skips Dependabot's pull requests and

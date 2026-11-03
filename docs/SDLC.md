@@ -214,8 +214,8 @@ which agents also act through, can bypass it (*Deploy*).
 
 - **Into `main`.** Codex reviews every push to a pull request, GitHub
   Copilot reviews a code pull request once after Codex's round is
-  answered (the agent requests it; AGENTS.md, "Reviews and updates on
-  GitHub"), and GitHub's AI Scan posts security findings; all three review against AGENTS.md,
+  answered, until the owner's subscription ends on 2026-11-09 (the
+  agent requests it; AGENTS.md, "Reviews and updates on GitHub"), and GitHub's AI Scan posts security findings; all three review against AGENTS.md,
   *Code Review Rules*, which is this project's `REVIEW.md` (p39). Their
   findings inform the owner; they never approve or block on their own
   (p38). The agent that opened the pull request answers every finding,

@@ -4707,7 +4707,8 @@ review setup does not quietly break them.
 
 - **2026-11-03, owner, reversible:** Copilot reviews a pull request
   once, after Codex's round is answered, until the owner's Copilot
-  subscription ends. The owner turned off automatic Copilot review in
+  subscription ends on 2026-11-09 (the owner had already cancelled
+  it). The owner turned off automatic Copilot review in
   the repository's settings that day (it was already off for the
   organisation), so Copilot reviews only when asked. Codex reviews when
   a pull request opens and on each push; the agent answers and fixes
@@ -4729,8 +4730,13 @@ review setup does not quietly break them.
   Brickson cloud thread on 2026-11-03 (AGENTS.md, *Guardrails for
   agents*), AGENTS.md and review hold all of it. Before: Copilot reviewed each pull request
   once, when it opened (the bullet below), and earlier that day the
-  owner added it by hand. When the subscription ends, the Copilot step
-  goes. Record:
+  owner added it by hand. The month's AI credits were nearly spent by
+  2026-11-03, so a request that fails for lack of them, or because the
+  subscription has ended, is said in the pull request and the thread,
+  and the pull request goes on without Copilot: no retry, and the owner
+  does not add it, which would spend the same credits. When the subscription ends, the Copilot step goes:
+  no Copilot review from 2026-11-10, and a pull request removes it.
+  Record:
   [`log/2026-11-03-ui-test-stall.md`](log/2026-11-03-ui-test-stall.md).
 - **2026-10-23, owner, reversible:** follow AGENTS.md, "Pushing to an open PR", to batch fixes and stop restarting green CI for polish; reason: PR #17. Before: only batching before each push was explicit.
 
