@@ -1122,7 +1122,8 @@ class SimulatorLoadTests(unittest.TestCase):
         self.assertTrue(any(line.startswith("could not read the process list:") and "timed out" in line
                             for line in lines), lines)
         self.assertEqual(lines[-1], "Stopped.")
-        self.assertLess(simulator_load().PS_TIMEOUT, simulator_load().WAIT)
+        # A reading lists processes twice; both time-outs must fit in WAIT.
+        self.assertLess(2 * simulator_load().PS_TIMEOUT, simulator_load().WAIT)
 
 
 def workflow_jobs(text):
@@ -1173,6 +1174,12 @@ class WorkflowTests(unittest.TestCase):
     # either one job that tests both families, or a job that waits for the
     # family jobs, runs however they ended, and fails unless they passed
     # (docs/DECISIONS.md, "Tests").
+    # Renaming a required job, a "UI tests" job without `if: always()`, a
+    # family missing, the families run as a matrix (whose one summary
+    # result was reported as success with a family that never got a
+    # machine), the gate not reading each family's own result or not
+    # failing, or the two families' jobs differing in anything but the
+    # family fails this test.
     def test_the_required_checks_stay_and_ui_tests_needs_both_families(self):
         jobs = {job: "\n".join(lines) for job, lines in workflow_jobs(WORKFLOW.read_text()).items()}
 
@@ -1193,16 +1200,24 @@ class WorkflowTests(unittest.TestCase):
         self.assertRegex(result, r"(?m)^    if: *(\$\{\{ *)?always\(\)( *\}\})? *$",
                          "Without `if: always()`, a failed family skips the UI tests job, "
                          "and a skipped required check reads as passed.")
-        families = set()
+        families, steps = {}, set()
         for job in needed:
             with self.subTest(job=job):
                 body = jobs[job]
                 self.assertIn("scripts/test.sh ui", body)
-                self.assertRegex(body, r"SIMULATOR_FAMILY: *\$\{\{ *matrix\.family *\}\}")
-                families.update(re.findall(r"^ +- family: *(\w+) *$", body, re.M))
-                self.assertRegex(result, r"\$\{\{ *needs\." + re.escape(job) + r"\.result *\}\}")
-        self.assertEqual(families, {"ipad", "iphone"})
-        self.assertRegex(result, r'!= *"?success"?')
+                self.assertNotRegex(body, r"(?m)^    strategy:",
+                                    "A matrix reports one result for every family together.")
+                family = re.search(r"SIMULATOR_FAMILY: *(\w+) *$", body, re.M)
+                self.assertIsNotNone(family, body)
+                families[family.group(1)] = job
+                variable = re.search(r"(?m)^ +(\w+): *\$\{\{ *needs\." + re.escape(job)
+                                     + r"\.result *\}\} *$", result)
+                self.assertIsNotNone(variable, f"The UI tests job does not read {job}'s result.")
+                self.assertRegex(result, r'"\$' + variable.group(1) + r'" *!= *"?success"?')
+                display = {"ipad": "iPad", "iphone": "iPhone"}.get(family.group(1), family.group(1))
+                steps.add(body.replace(display, "FAMILY").replace(family.group(1), "family"))
+        self.assertEqual(set(families), {"ipad", "iphone"})
+        self.assertEqual(len(steps), 1, "The families' jobs differ in more than the family.")
         self.assertIn("exit 1", result)
 
     # Writing an Xcode version or app path into the workflow fails this test.

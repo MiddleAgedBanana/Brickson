@@ -965,7 +965,9 @@ the time. Export them again after each new Xcode release.
   split of 2026-11-03, "UI tests" is the small job that waits for both
   families; it keeps `if: always()`, because GitHub reads a skipped
   required check as passed, so without it a failed family would let a
-  pull request merge. `scripts/test-runner.py` checks both.
+  pull request merge. The families are two jobs, not a matrix, so it
+  reads each one's own result (docs/DECISIONS.md, "Tests").
+  `scripts/test-runner.py` checks all of this.
 - **iOS's lock-screen wallpaper prewarm starves a CI simulator.** About
   five minutes after a simulator starts, iOS runs SpringBoard's
   `posterboardupdate.prewarm` task, and some 14 wallpaper extensions

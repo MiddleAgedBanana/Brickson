@@ -49,9 +49,10 @@ INTERVAL = 5.0
 # How long `start` waits for the watcher to begin, and `stop` for it to end.
 WAIT = 15.0
 # How long one process list may take. A slower one is given up on and that
-# reading skipped, so a hung ps never holds the watcher; shorter than WAIT,
-# so `stop` still finds the summary.
-PS_TIMEOUT = 10.0
+# reading skipped, so a hung ps never holds the watcher. A reading lists
+# processes twice, so both together stay shorter than WAIT and `stop`
+# still finds the summary.
+PS_TIMEOUT = 5.0
 STOPPED = "Stopped."
 
 

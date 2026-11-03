@@ -80,9 +80,10 @@ is watched but never touched. It writes every reading to
 bundle, so CI keeps it in the artifact, and the run's log ends with
 the processes that used the most time. It stops by itself once the
 test run is gone, so a killed run never leaves it pausing other runs'
-simulators, and gives up on a process list that takes more than 10 s,
+simulators, and gives up on a process list that takes more than 5 s,
 writing so in the record, so a hung `ps` never holds it (CodeRabbit's
-review). A paused process rather than an ended one, because iOS
+review: a reading lists processes twice, and both together stay inside
+the 15 s that `stop` waits for the summary). A paused process rather than an ended one, because iOS
 would start an ended extension again; the open-source CI tool `yeetd`
 pauses the same extensions the same way. Brickson does not use it: a
 script of its own does only this, only for the simulator under test,
@@ -101,7 +102,15 @@ minutes of work), and their result bundles are kept as
 Linux machine that waits for both and fails unless both passed. It runs
 `if: always()`, because GitHub reads a skipped required check as
 passed: without it, a failed family would skip it and let a pull request
-merge. Each family now builds the app on its own machine, about ten
+merge. The owner's first commit of the split used a matrix, one job
+definition run once per family. CodeRabbit's review pointed out that a
+matrix reports one result for all its legs, and that a GitHub community
+report (discussion 211624, 2026-10-30, not confirmed by GitHub) saw that
+summary read as passed when a leg was never given a machine. So the
+families are now two jobs written out in full, `ui-ipad` and
+`ui-iphone`, and "UI tests" reads each one's own result; a workflow test
+checks that the two stay the same apart from the family, so one cannot
+drift from the other. Each family now builds the app on its own machine, about ten
 minutes more machine time per run; GitHub's Mac machines cost nothing
 for a public repository. Decision: docs/DECISIONS.md, "Tests".
 
@@ -147,8 +156,11 @@ the tool off the deny list while the guard still runs before it.
   `.github/workflows/tests.yml`, the text the thread prepared.
 - `4070060` the process list's time limit (below); `d627781` these
   records made true once the split was in, and the fourth stalled run.
-- The commit after them: the agent requests Copilot's review itself
-  (the guard, its settings, their tests and these records).
+- `bb61376` the agent requests Copilot's review itself (the guard, its
+  settings, their tests and these records).
+- The commit after it: the process list's limit lowered to 5 s, the
+  workflow test for two family jobs, and these records; then the
+  owner's commit of `tests.yml` with the two jobs.
 
 ## Verified
 
@@ -168,9 +180,11 @@ the tool off the deny list while the guard still runs before it.
   the script's own, a watcher failure that stops the tests or passes
   silently); `test_the_required_checks_stay_and_ui_tests_needs_both_families`
   (a renamed required job, a "UI tests" job without `if: always()`,
-  one family missing, the gate not reading the family jobs' result, or
-  not failing). Each mutation was run and failed its test. The workflow
-  test passes on `main`'s `tests.yml` and on the split.
+  needing only one family, both jobs on the same family, a matrix, the
+  two jobs differing apart from the family, the gate not reading one
+  family's result, or never failing). Each mutation was run and failed
+  its test. The workflow test passes on `main`'s single job and on the
+  two family jobs, and fails on the matrix.
 - On GitHub's Mac machine (run 41625185733, Xcode 27.1, iPad Pro 13-inch
   (M5), iOS 27.0, portrait and landscape at default and largest text,
   light and dark, the full software keyboard): the measurements above.
@@ -190,13 +204,15 @@ the tool off the deny list while the guard still runs before it.
   on at their usual pace; no new extension started then. Why its process
   listing was held up is not known. `scripts/simulator-load.py` reads
   every process's path each time, and slow memory is one guess. A list
-  that now takes more than 10 s is recorded as "could not read the
+  that now takes more than 5 s is recorded as "could not read the
   process list", so a repeat will show whether `ps` was what waited.
 - The iPhone family with the watcher first runs in this pull request's
   CI.
-- The split's first runs are this pull request's CI runs from `49bfdbd`
-  on; nothing ran it before. The new workflow test accepts both the old
-  single job and the split.
+- The split's first runs are this pull request's CI runs: the matrix
+  from `49bfdbd`, the two jobs from the owner's second commit of
+  `tests.yml`; nothing ran either before. Whether a matrix summary can
+  really read as passed with a leg never run was not reproduced; the two
+  jobs make the question moot.
 - `scripts/test.sh` with the watcher on the owner's Mac.
 
 ## Follow-ups

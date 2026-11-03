@@ -4669,7 +4669,12 @@ request merges only when they pass.
   same time, with 90 minutes each, and the check the `main` ruleset
   requires, "UI tests", is a small job that passes only when both
   passed. It runs `if: always()`, because GitHub reads a skipped
-  required check as passed. Before, one job ran both families one after
+  required check as passed. The families are two jobs, not a matrix,
+  so "UI tests" reads each one's own result: a matrix reports one
+  result for all its legs, and that summary was reported to read as
+  passed when a leg never got a machine (CodeRabbit's review of pull
+  request #76). `scripts/test-runner.py` checks that the two jobs stay
+  the same apart from the family. Before, one job ran both families one after
   the other and took about 105 of its 120 minutes; each family takes
   about 50 minutes or less. The cost is a second build on a second
   machine. The owner committed the workflow, because a cloud agent
