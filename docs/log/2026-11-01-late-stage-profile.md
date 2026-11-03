@@ -14,11 +14,15 @@ profile"; work file [`work/late-stage-profile.md`](../work/late-stage-profile.md
   and each everyday category by its own name. Each choice only selects
   and is saved at once; the summary says which phrases Home shows.
 - **What the person sees.** With a category chosen, when Settings
-  closes, Home shows that category's phrases, and Emergency's when
-  Emergency is chosen, in fewer, larger tiles. The other categories stay
-  in their places, dimmed. Yes, No, Emergency, Again and Get Attention
-  grow toward 4 degrees of the person's view (206 points at 46 cm), as
-  far as the window has room while the tiles stay as tall. Home asks for
+  closes, Home shows only that category's phrases, and Emergency's when
+  Emergency is chosen. The other categories stay in their places,
+  dimmed. (*Corrected 2026-11-02:* this said "in fewer, larger
+  tiles", untrue on every iPad and with a board of eight phrases on a
+  phone;
+  [`2026-11-02-rest-boards-of-eight.md`](2026-11-02-rest-boards-of-eight.md).)
+  Yes, No, Emergency, Again and Get Attention grow toward 4 degrees of
+  the person's view (206 points at 46 cm), as far as the window has
+  room while the tiles stay as tall. Home asks for
   the late stage's sizes and takes the largest the window holds. Every
   Category gives back Home as it was. Nothing moves between the board's
   phrases and Emergency's.

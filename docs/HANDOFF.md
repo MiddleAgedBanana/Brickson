@@ -37,16 +37,18 @@ Bold Text). `HomeSizesTests` checks a person's first launch at those
 sizes, with Apple's audit and the drawn words (passed on CI's iPad and
 iPhone simulators, #70); the other UI tests ask for touch's. A family
 can choose a rest board in Set Up Step by Step's second step, "Which
-phrases does Home show?": Home then shows that category's phrases and
-Emergency's in fewer, larger tiles, dims the other categories in their
-places, asks for the late stage's sizes (proposed), and grows Yes, No,
-Emergency, Again and Get Attention toward 4 degrees of the person's
-view while the tiles stay as tall, as the window has room; by the
-engine, every iPad in portrait but the iPad mini, and the 13-inch iPad
-in landscape, take the late stage's sizes, and phones touch's (head
-tracking's on the Pro Max) (docs/DECISIONS.md, "The late-stage
-profile"; `HomeRestBoardTests` checks it in the app on CI's iPad and
-iPhone simulators, #74).
+phrases does Home show?": Home then shows only that category's phrases
+and Emergency's, dims the other categories in their places, asks for
+the late stage's sizes (proposed), and grows Yes, No, Emergency, Again
+and Get Attention toward 4 degrees of the person's view while the
+tiles stay as tall, as the window has room. By the engine, with the
+starter library's boards of six and eight phrases, every iPad in
+portrait but the iPad mini, and the 13-inch iPad in landscape, take
+the late stage's sizes, and phones touch's (head tracking's on the Pro
+Max with a board of six) (docs/DECISIONS.md, "The late-stage profile";
+`HomeRestBoardTests` checks a board of six in the app, and Apple's
+audit and the drawn words on a board of eight, on CI's iPad and iPhone
+simulators, #74 and #75).
 Four category buttons that never scroll sideways, and three
 phrase columns on every iPhone at its standard Display Zoom (two on 375
 and 390-point phones with Bold Text). A tile
@@ -410,13 +412,16 @@ release in docs/ROADMAP.md when no thread has it yet.
   *The quality bar*, Q3 and Q13)* The rest board's late-stage sizes
   (2026-11-01) are proposals too: their 136-point floors and the safety
   row's growth toward 4 degrees rest on a study with a phone's camera
-  and people without ALS, not Apple's Eye Tracking. On four columns the
-  board's safety row grows out of the tiles (302 points tall on the
-  13-inch iPad in portrait, where every category's are 350), and on the
-  iPhone 17 Pro Max the board's head tracking sizes make its tiles 110
-  points tall where touch's with every category are 138; the owner can
-  cap the growth or keep touch's there (docs/DECISIONS.md, "The
-  late-stage profile", *Where the board's sizes hold*).
+  and people without ALS, not Apple's Eye Tracking. Where the board has
+  as many rows as every category (four columns, and a board of eight
+  phrases on a phone), its safety row grows out of the tiles (302 points
+  tall on the 13-inch iPad in portrait, where every category's are 350;
+  92 on the iPhone 17 with Basics, where they are 111), and on the
+  iPhone 17 Pro Max a board of six takes head tracking's sizes, which
+  make its tiles 110 points tall where touch's with every category are
+  138 (with a board of eight it keeps touch's, and its tiles are 108);
+  the owner can cap the growth or keep touch's there (docs/DECISIONS.md,
+  "The late-stage profile", *Where the board's sizes hold*).
   *(device checks: docs/ROADMAP.md, *The quality bar*, Q11 and Q13; then
   the owner)* At
   touch's sizes, by the engine's model the phrase grid still scrolls (invariant 11) on
@@ -563,9 +568,10 @@ release in docs/ROADMAP.md when no thread has it yet.
 - The rendered-label tests read the five English quick-control labels
   (Yes, No, Emergency, Get Attention, Again), and, on an iPad in
   portrait at Home's larger sizes, Phrases, Type and the everyday
-  categories (`HomeSizesTests`), and on the rest board, on CI's iPhone
-  and iPad, the quick controls and every everyday category, dimmed or
-  not (`HomeRestBoardTests`); never a phrase tile, and nothing at
+  categories (`HomeSizesTests`), and on rest boards of six and eight
+  phrases, on CI's iPhone and iPad, the quick controls and every
+  everyday category, dimmed or not (`HomeRestBoardTests`); never a
+  phrase tile, and nothing at
   AX3. `StarterLabelFitTests` measures every starter label against its
   narrowest slot instead. *(Accessibility coverage checklist)*
 - The Get Attention tone is the reference app's placeholder; a
@@ -942,6 +948,8 @@ which change Home, are its
 2026-10-23): items 1 to 5 and 7 to 9 are built (item 8's sizes on since
 2026-10-30; item 9, the late-stage profile and the rest board, on
 2026-11-01, [`log/2026-11-01-late-stage-profile.md`](log/2026-11-01-late-stage-profile.md),
+*Follow-ups*, and its boards of eight phrases on 2026-11-02,
+[`log/2026-11-02-rest-boards-of-eight.md`](log/2026-11-02-rest-boards-of-eight.md),
 *Follow-ups*), typing on Home (item 5) on
 2026-10-24 ([`log/2026-10-24-typing-on-home.md`](log/2026-10-24-typing-on-home.md),
 *Follow-ups*); next on Home is item 6, iPhone Duo in every pose. Its Mac

@@ -1,9 +1,9 @@
 import Foundation
 
 /// The rest board: one everyday category the family chose in Set Up Step by
-/// Step's second step, shown with Emergency's phrases in fewer, larger
-/// tiles, with Yes, No, Emergency, Again and Get Attention grown toward 4
-/// degrees, at the late stage's sizes (docs/DECISIONS.md, "The late-stage
+/// Step's second step, shown with Emergency's phrases, the grid's rows
+/// taken from the larger of the two, with Yes, No, Emergency, Again and
+/// Get Attention grown toward 4 degrees, at the late stage's sizes (docs/DECISIONS.md, "The late-stage
 /// profile"). The other categories stay in their places, dimmed, so nothing
 /// moves (invariant 8).
 ///

@@ -554,7 +554,9 @@ out.
 
 **9. The late-stage profile: Yes and No, and the rest board.** *Built
 2026-11-01
-([`log/2026-11-01-late-stage-profile.md`](log/2026-11-01-late-stage-profile.md)):*
+([`log/2026-11-01-late-stage-profile.md`](log/2026-11-01-late-stage-profile.md);
+boards of eight phrases measured 2026-11-02,
+[`log/2026-11-02-rest-boards-of-eight.md`](log/2026-11-02-rest-boards-of-eight.md)):*
 a rest board the family chooses in Set Up Step by Step's new second
 step, one category's phrases and Emergency's with the other categories
 dimmed in place, and the late stage's sizes, proposed, with Yes, No,
@@ -564,7 +566,9 @@ Emergency, Again and Get Attention grown toward 4 degrees
 map's Yes/No mode and rest board as one profile of the engine: Yes, No,
 Get Attention and Emergency keep their places relative to each other
 and grow, and the phrase area shows fewer, larger tiles from a category
-the family chooses (docs/DECISIONS.md, "Accessibility API coverage").
+the family chooses (docs/DECISIONS.md, "Accessibility API coverage");
+as built, only the chosen category shows, and its tiles are fewer and
+larger only in some windows.
 Emergency stays visible (invariant 2).
 *Rows:* the map's "Yes/No mode" and "Rest board". *Needs:* cloud
 and CI, once item 8 has merged (one Home pull request at a time). *Owner:* the late stage's
@@ -1068,7 +1072,8 @@ what passes and who checks it:
   proficient tester, on device. *Today:* the rendered-label checks read
   the five quick controls at the default size and AX5, light and dark,
   on CI's iPhone and iPad (`LaunchTests`, `HomeSizesTests`), with the
-  everyday categories too on the rest board (`HomeRestBoardTests`), and
+  everyday categories too on rest boards of six and eight phrases
+  (`HomeRestBoardTests`), and
   Phrases, Type and the everyday categories at Home's larger sizes on
   an iPad in portrait (`HomeSizesTests`); nothing at AX3, no phrase
   tile, no other screen's labels; no device run.

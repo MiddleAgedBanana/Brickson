@@ -10,9 +10,15 @@ struct LateStageProfileTests {
     typealias Profile = HomeLayout.Profile
     typealias Slot = HomeLayout.Slot
 
-    /// The board the measurements use: a six-phrase starter category
-    /// (Conversation or Feelings) with the starter Emergency, six too.
-    static let board = HomeLayout.PhraseArea.restBoard(phrases: 6)
+    /// The rest boards the starter library makes (`RestBoard.phrases`):
+    /// a category of six phrases (Conversation or Feelings) or of eight
+    /// (Basics or Needs), each with the starter Emergency's six.
+    /// `StarterPhrasesTests` fails if the starter library makes another.
+    nonisolated static let boardPhrases = [6, 8]
+
+    static func board(_ phrases: Int) -> HomeLayout.PhraseArea {
+        .restBoard(phrases: phrases)
+    }
 
     // MARK: The floors
 
@@ -49,13 +55,13 @@ struct LateStageProfileTests {
 
     // MARK: Every window
 
-    /// One window's Home at every profile, with every category and with the
-    /// board.
+    /// One window's Home at every profile, with every category and with
+    /// each board, by its phrases.
     struct Entry {
         let space: HomeLayout.Space
         let text: HomeLayout.Text
         let everyCategory: [Profile: HomeLayout]
-        let board: [Profile: HomeLayout]
+        let boards: [Int: [Profile: HomeLayout]]
         let context: String
     }
 
@@ -76,7 +82,8 @@ struct LateStageProfileTests {
                                 ($0, HomeLayout(space: space, profile: $0, text: text, modes: .phrasesAndTyping, phraseArea: area))
                             })
                         }
-                        entries.append(Entry(space: space, text: text, everyCategory: layouts(.everyCategory), board: layouts(board),
+                        let boards = Dictionary(uniqueKeysWithValues: boardPhrases.map { ($0, layouts(board($0))) })
+                        entries.append(Entry(space: space, text: text, everyCategory: layouts(.everyCategory), boards: boards,
                             context: "\(width)×\(height), \(name), Bold Text \(boldText)"))
                     }
                 }
@@ -85,7 +92,7 @@ struct LateStageProfileTests {
         return entries
     }()
 
-    /// Fails if, in any window, at any profile, the board's layout has
+    /// Fails if, in any window, at any profile, either board's layout has
     /// another arrangement than touch's with every category, a control in
     /// another region, row or column, other grid columns, or regions out of
     /// their order (invariant 8): the board changes sizes and the grid's
@@ -96,18 +103,20 @@ struct LateStageProfileTests {
             let touch = entry.everyCategory[.touch]!
             var expected = ProfileChoiceTests.places(touch)
             expected["grid"] = nil
-            for profile in Profile.allCases {
-                let layout = entry.board[profile]!
-                var places = ProfileChoiceTests.places(layout)
-                places["grid"] = nil
-                if layout.isRegular != touch.isRegular || layout.categoryArrangement != touch.categoryArrangement
-                    || layout.grid.columns != touch.grid.columns || places != expected {
-                    faults.append("\(profile) (\(entry.context))")
-                }
-                let regions: [[Slot]] = [[.message, .statusLine, .phrases, .type], Slot.safetyRow, Slot.categoriesRegion, [.phraseGrid]]
-                let bounds = regions.map(layout.bounds(of:))
-                if zip(bounds, bounds.dropFirst()).contains(where: { $0.maxY > $1.minY + 0.001 }) {
-                    faults.append("\(profile) regions out of order (\(entry.context))")
+            for phrases in Self.boardPhrases {
+                for profile in Profile.allCases {
+                    let layout = entry.boards[phrases]![profile]!
+                    var places = ProfileChoiceTests.places(layout)
+                    places["grid"] = nil
+                    if layout.isRegular != touch.isRegular || layout.categoryArrangement != touch.categoryArrangement
+                        || layout.grid.columns != touch.grid.columns || places != expected {
+                        faults.append("\(profile), board of \(phrases) (\(entry.context))")
+                    }
+                    let regions: [[Slot]] = [[.message, .statusLine, .phrases, .type], Slot.safetyRow, Slot.categoriesRegion, [.phraseGrid]]
+                    let bounds = regions.map(layout.bounds(of:))
+                    if zip(bounds, bounds.dropFirst()).contains(where: { $0.maxY > $1.minY + 0.001 }) {
+                        faults.append("\(profile), board of \(phrases), regions out of order (\(entry.context))")
+                    }
                 }
             }
         }
@@ -125,41 +134,43 @@ struct LateStageProfileTests {
     /// keyboard's room, where Home offers typing with every category. The
     /// first fails if the board's growth comes before Phrases and Type's:
     /// the keyboard's give-back then shrinks Phrases under Settings' Back
-    /// to Talking.
+    /// to Talking. Both boards.
     @Test func theRestBoardChangesOnlyTheSafetyRowAndTheGrid() {
         var faults: [String] = []
-        var grew = 0
+        var grew: [Int: Int] = [:]
         for entry in Self.everyWindow {
-            for profile in Profile.allCases {
-                let every = entry.everyCategory[profile]!
-                let board = entry.board[profile]!
-                let context = "\(profile), \(entry.context)"
-                for slot in [Slot.message, .statusLine, .phrases, .type] where board.frame(slot) != every.frame(slot) {
-                    faults.append("\(slot) \(board.frame(slot)), \(every.frame(slot)) without (\(context))")
+            for phrases in Self.boardPhrases {
+                for profile in Profile.allCases {
+                    let every = entry.everyCategory[profile]!
+                    let board = entry.boards[phrases]![profile]!
+                    let context = "\(profile), board of \(phrases), \(entry.context)"
+                    for slot in [Slot.message, .statusLine, .phrases, .type] where board.frame(slot) != every.frame(slot) {
+                        faults.append("\(slot) \(board.frame(slot)), \(every.frame(slot)) without (\(context))")
+                    }
+                    for slot in Slot.categoriesRegion where board.frame(slot).size != every.frame(slot).size {
+                        faults.append("\(slot) \(board.frame(slot).size), \(every.frame(slot).size) without (\(context))")
+                    }
+                    for slot in Slot.safetyRow where board.frame(slot).minX != every.frame(slot).minX || board.frame(slot).width != every.frame(slot).width {
+                        faults.append("\(slot) \(board.frame(slot)), \(every.frame(slot)) without (\(context))")
+                    }
+                    if board.regionGap != every.regionGap { faults.append("gap \(board.regionGap), \(every.regionGap) without (\(context))") }
+                    let ceiling = max(every.quickControlHeight, HomeLayout.restBoardQuickControlHeight)
+                    if board.quickControlHeight < every.quickControlHeight - 0.001 || board.quickControlHeight > ceiling + 0.001 {
+                        faults.append("safety row \(board.quickControlHeight), \(every.quickControlHeight) without (\(context))")
+                    }
+                    if board.quickControlHeight > every.quickControlHeight + 0.5 { grew[phrases, default: 0] += 1 }
+                    if every.offersTyping && !board.offersTyping { faults.append("typing lost (\(context))") }
+                    let safetyBottom = Slot.safetyRow.map(board.frame).map(\.maxY).max() ?? 0
+                    if every.offersTyping && safetyBottom > board.keyboard.bandLimit + 0.001 {
+                        faults.append("safety row ends at \(safetyBottom), the keyboard's limit \(board.keyboard.bandLimit) (\(context))")
+                    }
+                    if board.grid.columns != every.grid.columns { faults.append("columns (\(context))") }
                 }
-                for slot in Slot.categoriesRegion where board.frame(slot).size != every.frame(slot).size {
-                    faults.append("\(slot) \(board.frame(slot).size), \(every.frame(slot).size) without (\(context))")
-                }
-                for slot in Slot.safetyRow where board.frame(slot).minX != every.frame(slot).minX || board.frame(slot).width != every.frame(slot).width {
-                    faults.append("\(slot) \(board.frame(slot)), \(every.frame(slot)) without (\(context))")
-                }
-                if board.regionGap != every.regionGap { faults.append("gap \(board.regionGap), \(every.regionGap) without (\(context))") }
-                let ceiling = max(every.quickControlHeight, HomeLayout.restBoardQuickControlHeight)
-                if board.quickControlHeight < every.quickControlHeight - 0.001 || board.quickControlHeight > ceiling + 0.001 {
-                    faults.append("safety row \(board.quickControlHeight), \(every.quickControlHeight) without (\(context))")
-                }
-                if board.quickControlHeight > every.quickControlHeight + 0.5 { grew += 1 }
-                if every.offersTyping && !board.offersTyping { faults.append("typing lost (\(context))") }
-                let safetyBottom = Slot.safetyRow.map(board.frame).map(\.maxY).max() ?? 0
-                if every.offersTyping && safetyBottom > board.keyboard.bandLimit + 0.001 {
-                    faults.append("safety row ends at \(safetyBottom), the keyboard's limit \(board.keyboard.bandLimit) (\(context))")
-                }
-                if board.grid.columns != every.grid.columns { faults.append("columns (\(context))") }
             }
         }
         let count = faults.count
         #expect(count == 0, "first: \(faults.first ?? "")")
-        #expect(grew > 1000, "\(grew)")
+        #expect(Self.boardPhrases.allSatisfy { grew[$0, default: 0] > 1000 }, "\(grew)")
     }
 
     /// Fails where the board's safety row stops short of 206 points while
@@ -168,42 +179,49 @@ struct LateStageProfileTests {
     /// rows leave no more (the tiles at their floor, or the board
     /// scrolling). Fails too where the board grows the safety row taller
     /// than its tiles, beyond the point the grid's whole-point tiles round
-    /// away: the tiles never shrink to make Yes and No larger.
-    /// And fails if no window grows it all the way.
+    /// away: the tiles can give up height to Yes and No, but never end
+    /// more than that point shorter than them. And fails if no window
+    /// grows it all the way.
+    /// Both boards: a board of eight phrases has as many rows as every
+    /// category on a phone's columns, so there the safety row's growth
+    /// comes from the tiles' height alone.
     @Test func theSafetyRowGrowsTowardFourDegreesWhileTheTilesStayAsTall() {
         var faults: [String] = []
-        var reached = 0
+        var reached: [Int: Int] = [:]
         for entry in Self.everyWindow {
-            for profile in Profile.allCases {
-                let every = entry.everyCategory[profile]!
-                let board = entry.board[profile]!
-                let grid = board.grid.reflow(in: board.grid.frame, phraseCount: board.phraseArea.room)
-                let quick = board.quickControlHeight
-                // Tiles are whole points tall (`HomeLayout.Grid`), so up to a
-                // point shorter.
-                if quick > every.quickControlHeight + 0.5 && grid.tileSize.height < quick - 1 {
-                    faults.append("tiles \(grid.tileSize.height) under the safety row \(quick) (\(profile), \(entry.context))")
-                }
-                guard quick < HomeLayout.restBoardQuickControlHeight - 0.5 else {
-                    reached += 1
-                    continue
-                }
-                let safetyBottom = Slot.safetyRow.map(board.frame).map(\.maxY).max() ?? 0
-                let atTheKeyboard = safetyBottom >= board.keyboard.bandLimit - 0.5
-                // A taller safety row can need less of a drop under Stop's
-                // well (`HomeLayout.wellDrop`), and the grid takes what it
-                // gives back.
-                let givenBack = max(0, every.wellDrop - board.wellDrop) / CGFloat(grid.rows)
-                let asTall = grid.tileSize.height <= quick + 0.5 + givenBack
-                let gridAtItsFloor = grid.scrolls || grid.tileSize.height <= board.grid.tileFloor + 0.5
-                if !atTheKeyboard && !asTall && !gridAtItsFloor {
-                    faults.append("\(quick) with tiles \(grid.tileSize.height) tall (\(profile), \(entry.context))")
+            for phrases in Self.boardPhrases {
+                for profile in Profile.allCases {
+                    let every = entry.everyCategory[profile]!
+                    let board = entry.boards[phrases]![profile]!
+                    let context = "\(profile), board of \(phrases), \(entry.context)"
+                    let grid = board.grid.reflow(in: board.grid.frame, phraseCount: board.phraseArea.room)
+                    let quick = board.quickControlHeight
+                    // Tiles are whole points tall (`HomeLayout.Grid`), so up
+                    // to a point shorter.
+                    if quick > every.quickControlHeight + 0.5 && grid.tileSize.height < quick - 1 {
+                        faults.append("tiles \(grid.tileSize.height) under the safety row \(quick) (\(context))")
+                    }
+                    guard quick < HomeLayout.restBoardQuickControlHeight - 0.5 else {
+                        reached[phrases, default: 0] += 1
+                        continue
+                    }
+                    let safetyBottom = Slot.safetyRow.map(board.frame).map(\.maxY).max() ?? 0
+                    let atTheKeyboard = safetyBottom >= board.keyboard.bandLimit - 0.5
+                    // A taller safety row can need less of a drop under
+                    // Stop's well (`HomeLayout.wellDrop`), and the grid takes
+                    // what it gives back.
+                    let givenBack = max(0, every.wellDrop - board.wellDrop) / CGFloat(grid.rows)
+                    let asTall = grid.tileSize.height <= quick + 0.5 + givenBack
+                    let gridAtItsFloor = grid.scrolls || grid.tileSize.height <= board.grid.tileFloor + 0.5
+                    if !atTheKeyboard && !asTall && !gridAtItsFloor {
+                        faults.append("\(quick) with tiles \(grid.tileSize.height) tall (\(context))")
+                    }
                 }
             }
         }
         let count = faults.count
         #expect(count == 0, "first: \(faults.first ?? "")")
-        #expect(reached > 100, "\(reached)")
+        #expect(Self.boardPhrases.allSatisfy { reached[$0, default: 0] > 100 }, "\(reached)")
     }
 
     /// Fails if a board layout said to hold its profile has a control under
@@ -211,52 +229,64 @@ struct LateStageProfileTests {
     /// direction, gaps under the profile's, or a board that scrolls:
     /// measured from its frames, not from the engine's own check. Fails too
     /// if the late stage's sizes hold in no window, so the check cannot
-    /// pass by holding nothing.
+    /// pass by holding nothing. Both boards.
     @Test func theRestBoardHoldsOnlyWhereEveryFloorIsMet() {
-        var held: [Profile: Int] = [:]
+        var held: [Int: [Profile: Int]] = [:]
         var faults: [String] = []
         for entry in Self.everyWindow {
-            for (profile, layout) in entry.board where layout.holdsProfile {
-                held[profile, default: 0] += 1
-                func short(_ frame: CGRect, _ floor: CGFloat) -> Bool {
-                    frame.width < floor - 0.001 || frame.height < floor - 0.001
+            for phrases in Self.boardPhrases {
+                for (profile, layout) in entry.boards[phrases]! where layout.holdsProfile {
+                    held[phrases, default: [:]][profile, default: 0] += 1
+                    let context = "\(profile), board of \(phrases), \(entry.context)"
+                    func short(_ frame: CGRect, _ floor: CGFloat) -> Bool {
+                        frame.width < floor - 0.001 || frame.height < floor - 0.001
+                    }
+                    for slot in layout.controls where short(layout.frame(slot), profile.floor(of: slot)) {
+                        faults.append("\(slot) \(layout.frame(slot)) (\(context))")
+                    }
+                    let grid = layout.grid
+                    for column in 0..<grid.columns where short(grid.tile(row: 0, column: column), profile.tileFloor) {
+                        faults.append("tile \(column) \(grid.tile(row: 0, column: column)) (\(context))")
+                    }
+                    if grid.reflow(in: grid.frame, phraseCount: layout.phraseArea.room).scrolls || !layout.startersFit {
+                        faults.append("scrolls (\(context))")
+                    }
+                    if layout.regionGap < profile.minimumRegionSpacing - 0.001 { faults.append("gap (\(context))") }
                 }
-                for slot in layout.controls where short(layout.frame(slot), profile.floor(of: slot)) {
-                    faults.append("\(slot) \(layout.frame(slot)) (\(profile), \(entry.context))")
-                }
-                let grid = layout.grid
-                for column in 0..<grid.columns where short(grid.tile(row: 0, column: column), profile.tileFloor) {
-                    faults.append("tile \(column) \(grid.tile(row: 0, column: column)) (\(profile), \(entry.context))")
-                }
-                if grid.reflow(in: grid.frame, phraseCount: layout.phraseArea.room).scrolls || !layout.startersFit {
-                    faults.append("scrolls (\(profile), \(entry.context))")
-                }
-                if layout.regionGap < profile.minimumRegionSpacing - 0.001 { faults.append("gap (\(profile), \(entry.context))") }
             }
         }
         let count = faults.count
         #expect(count == 0, "first: \(faults.first ?? "")")
-        #expect((held[.lateStage] ?? 0) > 0 && (held[.eyeTracking] ?? 0) > 0, "\(held)")
+        for phrases in Self.boardPhrases {
+            let counts = held[phrases] ?? [:]
+            #expect((counts[.lateStage] ?? 0) > 0 && (counts[.eyeTracking] ?? 0) > 0, "board of \(phrases): \(counts)")
+        }
     }
 
     /// Fails if the board's sizes are not the largest of the late stage's
     /// and the smaller ones that hold in the window without losing what
     /// touch's sizes have there with the board (`keepsEverything`), or
-    /// touch's. Every third window above.
+    /// touch's. Every third window above, with both boards.
     @Test func theLargestProfileThatHoldsIsTakenOnTheRestBoard() {
         var faults: [String] = []
         for (index, entry) in Self.everyWindow.enumerated() where index % 3 == 0 {
-            let chosen = ProfileChoice.layout(requested: .lateStage, space: entry.space, text: entry.text, modes: .phrasesAndTyping, phraseArea: Self.board)
-            let taken = chosen.profile
-            let touch = entry.board[.touch]!
-            if chosen != entry.board[taken] { faults.append("\(taken)'s frames differ (\(entry.context))") }
-            if taken != .touch && !(chosen.holdsProfile && ProfileChoice.keepsEverything(chosen, of: touch)) {
-                faults.append("\(taken) does not hold (\(entry.context))")
-            }
-            for skipped in Profile.lateStage.withSmallerOnes where skipped > taken && skipped != .touch {
-                let layout = entry.board[skipped]!
-                if layout.holdsProfile && ProfileChoice.keepsEverything(layout, of: touch) {
-                    faults.append("\(taken) where \(skipped) holds (\(entry.context))")
+            for phrases in Self.boardPhrases {
+                let board = entry.boards[phrases]!
+                let chosen = ProfileChoice.layout(
+                    requested: .lateStage, space: entry.space, text: entry.text, modes: .phrasesAndTyping, phraseArea: Self.board(phrases)
+                )
+                let taken = chosen.profile
+                let touch = board[.touch]!
+                let context = "board of \(phrases), \(entry.context)"
+                if chosen != board[taken] { faults.append("\(taken)'s frames differ (\(context))") }
+                if taken != .touch && !(chosen.holdsProfile && ProfileChoice.keepsEverything(chosen, of: touch)) {
+                    faults.append("\(taken) does not hold (\(context))")
+                }
+                for skipped in Profile.lateStage.withSmallerOnes where skipped > taken && skipped != .touch {
+                    let layout = board[skipped]!
+                    if layout.holdsProfile && ProfileChoice.keepsEverything(layout, of: touch) {
+                        faults.append("\(taken) where \(skipped) holds (\(context))")
+                    }
                 }
             }
         }
@@ -266,12 +296,12 @@ struct LateStageProfileTests {
 
     // MARK: The windows people use
 
-    /// The profile Home has with the six-phrase board in each of
+    /// The profile Home has with a board of six phrases in each of
     /// `HomeLayoutEngineTests.windows`, at each text size of
     /// `HomeLayoutEngineTests.textSizes`, smallest first, the same with
     /// Bold Text off and on but where `boardTableWithBoldText` says.
     /// docs/DECISIONS.md, "The late-stage profile", *Where the board's
-    /// sizes hold*, has this table.
+    /// sizes hold*, has this table and `boardTableForEight`.
     static let boardTable: [String: [Profile]] = [
         "iPhone 17": Array(repeating: .touch, count: 5),
         // The board's two rows leave room for head tracking's sizes.
@@ -294,40 +324,56 @@ struct LateStageProfileTests {
         "iPad mini, landscape": Array(repeating: .touch, count: 5),
     ]
 
-    /// Where Bold Text changes what `boardTable` says: on the iPad mini in
-    /// portrait, as with every category, Eye Tracking's 15-point gap
-    /// leaves columns narrower than the widest bold word.
+    /// The same with a board of eight phrases. It takes a phone's three
+    /// columns in three rows, as every category does, so the iPhone 17 Pro
+    /// Max's window no longer holds head tracking's sizes; an iPad's four
+    /// columns take it in two rows, as they take six, and every iPad takes
+    /// the same sizes as with six.
+    static let boardTableForEight: [String: [Profile]] = boardTable.merging([
+        "iPhone 17 Pro Max": Array(repeating: .touch, count: 5),
+    ]) { $1 }
+
+    /// Where Bold Text changes what `boardTable` or `boardTableForEight`
+    /// says: on the iPad mini in portrait, as with every category, Eye
+    /// Tracking's 15-point gap leaves columns narrower than the widest bold
+    /// word.
     static let boardTableWithBoldText: [String: [Profile]] = [
         "iPad mini": Array(repeating: .headTracking, count: 5),
     ]
 
-    /// Fails if a window people use takes other sizes with the board than
-    /// `boardTable` says: update the table and the decision then.
+    /// Fails if a window people use takes other sizes with either board
+    /// than `boardTable` or `boardTableForEight` says: update the table and
+    /// the decision then.
     @Test(arguments: HomeLayoutEngineTests.windows.indices)
     func theRestBoardTakesTheSizesTheTableSays(window index: Int) {
         let window = HomeLayoutEngineTests.windows[index]
         let space = HomeLayout.Space(size: window.size, safeArea: .init(top: window.top, leading: 0, bottom: window.bottom, trailing: 0))
-        #expect(Self.boardTable[window.name]?.count == HomeLayoutEngineTests.textSizes.count, "\(window.name)")
-        for (size, (name, plain)) in HomeLayoutEngineTests.textSizes.enumerated() {
-            for boldText in [false, true] {
-                let table = (boldText ? Self.boardTableWithBoldText[window.name] : nil) ?? Self.boardTable[window.name] ?? []
-                var text = plain
-                text.boldText = boldText
-                let layout = ProfileChoice.layout(requested: .lateStage, space: space, text: text, modes: .phrasesAndTyping, phraseArea: Self.board)
-                let expected = table.indices.contains(size) ? table[size] : .touch
-                #expect(layout.profile == expected, "\(window.name), \(name), Bold Text \(boldText)")
+        for (phrases, boardTable) in [(6, Self.boardTable), (8, Self.boardTableForEight)] {
+            #expect(boardTable[window.name]?.count == HomeLayoutEngineTests.textSizes.count, "\(window.name)")
+            for (size, (name, plain)) in HomeLayoutEngineTests.textSizes.enumerated() {
+                for boldText in [false, true] {
+                    let table = (boldText ? Self.boardTableWithBoldText[window.name] : nil) ?? boardTable[window.name] ?? []
+                    var text = plain
+                    text.boldText = boldText
+                    let layout = ProfileChoice.layout(
+                        requested: .lateStage, space: space, text: text, modes: .phrasesAndTyping, phraseArea: Self.board(phrases)
+                    )
+                    let expected = table.indices.contains(size) ? table[size] : .touch
+                    #expect(layout.profile == expected, "\(window.name), \(name), Bold Text \(boldText), board of \(phrases)")
+                }
             }
         }
+        #expect(Self.boardPhrases == [6, 8], "a table for each board")
     }
 
     // MARK: Dwell safety on the board
 
     /// Windows from 320 to 1432 points wide, every `step`, at a small
     /// phone's, a large phone's and every iPad's height in both
-    /// orientations, at three text sizes, Bold Text off, with the board's
-    /// layout `ProfileChoice` gives when the late stage's sizes are asked
-    /// for, where it is `profile`'s.
-    static func boardWindows(_ profile: Profile, every step: CGFloat)
+    /// orientations, at three text sizes, Bold Text off, with the layout
+    /// `ProfileChoice` gives a board of `phrases` when the late stage's
+    /// sizes are asked for, where it is `profile`'s.
+    static func boardWindows(_ profile: Profile, phrases: Int, every step: CGFloat)
         -> [(layout: HomeLayout, space: HomeLayout.Space, text: HomeLayout.Text, context: String)] {
         var found: [(HomeLayout, HomeLayout.Space, HomeLayout.Text, String)] = []
         for (name, text) in [("default", HomeLayoutEngineTests.defaultText), ("xxxLarge", HomeLayoutEngineTests.largerText), ("AX5", HomeLayoutEngineTests.largestText)] {
@@ -336,9 +382,11 @@ struct LateStageProfileTests {
                     let phone = width < 600
                     let safeArea = phone ? HomeLayout.Insets(top: 62, leading: 0, bottom: 34, trailing: 0) : SettingsRowPlaceTests.padSafeArea
                     let space = HomeLayout.Space(size: CGSize(width: width, height: height), safeArea: safeArea)
-                    let layout = ProfileChoice.layout(requested: .lateStage, space: space, text: text, modes: .phrasesAndTyping, phraseArea: board)
+                    let layout = ProfileChoice.layout(
+                        requested: .lateStage, space: space, text: text, modes: .phrasesAndTyping, phraseArea: board(phrases)
+                    )
                     guard layout.profile == profile, layout.startersFit else { continue }
-                    found.append((layout, space, text, "\(width)×\(height), \(name), \(profile)"))
+                    found.append((layout, space, text, "\(width)×\(height), \(name), \(profile), board of \(phrases)"))
                 }
             }
         }
@@ -352,11 +400,11 @@ struct LateStageProfileTests {
     /// touch's frames with every category already have and the engine
     /// tests pin (`ProfileChoiceTests.unexpectedChainFindings`). The board
     /// is each of the four category cells in turn, at every profile the
-    /// board takes (`Profile.lateStage.withSmallerOnes`). Fails too if the
-    /// profile is taken in too few windows to count.
-    @Test(arguments: Profile.lateStage.withSmallerOnes)
-    func noChainOnTheRestBoardMeetsANewHazard(profile: Profile) {
-        let windows = Self.boardWindows(profile, every: 64)
+    /// board takes (`Profile.lateStage.withSmallerOnes`), with each board.
+    /// Fails too if the profile is taken in too few windows to count.
+    @Test(arguments: Profile.lateStage.withSmallerOnes, LateStageProfileTests.boardPhrases)
+    func noChainOnTheRestBoardMeetsANewHazard(profile: Profile, phrases: Int) {
+        let windows = Self.boardWindows(profile, phrases: phrases, every: 64)
         var unexpected: [String] = []
         for (index, (layout, _, _, context)) in windows.enumerated() {
             unexpected += ProfileChoiceTests.unexpectedChainFindings(
@@ -376,11 +424,11 @@ struct LateStageProfileTests {
     /// profile tests measure, more than touch's frames' worst pinned shares
     /// (68% by centre and 62% by edge on regular widths, 97% and 89% on
     /// compact ones). Shorter windows can pass those with every category
-    /// too: the engine tests measure them at one height.
-    @Test(arguments: Profile.lateStage.withSmallerOnes)
-    func yesAndNoBorderNoMoreOfTheMessageOnTheRestBoard(profile: Profile) {
+    /// too: the engine tests measure them at one height. Each board.
+    @Test(arguments: Profile.lateStage.withSmallerOnes, LateStageProfileTests.boardPhrases)
+    func yesAndNoBorderNoMoreOfTheMessageOnTheRestBoard(profile: Profile, phrases: Int) {
         var faults: [String] = []
-        for (layout, space, text, context) in Self.boardWindows(profile, every: 32) {
+        for (layout, space, text, context) in Self.boardWindows(profile, phrases: phrases, every: 32) {
             let share = Nearest.speakingShare(of: layout)
             let without = Nearest.speakingShare(of: HomeLayout(space: space, profile: profile, text: text, modes: .phrasesAndTyping))
             if share.centre > without.centre + 0.0001 || share.edge > without.edge + 0.0001 {
@@ -401,7 +449,7 @@ struct LateStageProfileTests {
     /// Fails if Back to Talking is not touch's frame with every category in
     /// every one of them, or if a look still resting anywhere on it meets
     /// anything but Phrases, by centre or by edge, on any of them. Phones
-    /// and iPads, at every text size.
+    /// and iPads, at every text size, with each board.
     @Test func closingSettingsOntoTheRestBoardMeetsOnlyPhrases() {
         var windows = 0
         var faults: [String] = []
@@ -413,7 +461,7 @@ struct LateStageProfileTests {
                     let space = HomeLayout.Space(size: CGSize(width: width, height: height), safeArea: safeArea)
                     let back = HomeLayout(space: space, text: text, modes: .phrasesAndTyping).backToTalking
                     let layouts = Profile.allCases.flatMap { requested in
-                        [HomeLayout.PhraseArea.everyCategory, Self.board].map {
+                        ([HomeLayout.PhraseArea.everyCategory] + Self.boardPhrases.map(Self.board)).map {
                             ProfileChoice.layout(requested: requested, space: space, text: text, modes: .phrasesAndTyping, phraseArea: $0)
                         }
                     }
@@ -441,8 +489,9 @@ struct LateStageProfileTests {
     /// chain through Settings' first screen, Family Setup, the first step
     /// and the guide's cover closes Settings under the look, meets anything
     /// new or saves an answer, as the swept windows with every category do
-    /// not, in phone and iPad windows at the board's sizes.
-    @Test func noSettingsChainOverTheRestBoardClosesSettingsOrSavesAnAnswer() {
+    /// not, in phone and iPad windows at the board's sizes, with each board.
+    @Test(arguments: LateStageProfileTests.boardPhrases)
+    func noSettingsChainOverTheRestBoardClosesSettingsOrSavesAnAnswer(phrases: Int) {
         let categories = (1...HomeLayout.categoryCapacity).map { "category \($0)" }
         var scored = 0
         var faults: [String] = []
@@ -452,9 +501,9 @@ struct LateStageProfileTests {
             for (index, size) in sizes.enumerated() {
                 let phone = size.width < 600
                 let safeArea = phone ? HomeLayout.Insets(top: 62, leading: 0, bottom: 34, trailing: 0) : SettingsRowPlaceTests.padSafeArea
-                let context = "\(size.width)×\(size.height), \(name)"
+                let context = "\(size.width)×\(size.height), \(name), board of \(phrases)"
                 let window = SettingsRowPlaceTests.Window(
-                    size: size, safeArea: safeArea, text: text, context: context, requested: .lateStage, phraseArea: Self.board
+                    size: size, safeArea: safeArea, text: text, context: context, requested: .lateStage, phraseArea: Self.board(phrases)
                 )
                 guard window.home.startersFit else { continue }
                 scored += 1
@@ -477,24 +526,26 @@ struct LateStageProfileTests {
 
     /// Fails if a window with a fold or a camera across Home lays the board
     /// out in other frames than touch's with every category, which no fold
-    /// check has measured, or takes a larger profile.
-    @Test func aFoldOrACameraShowsTheBoardInEveryCategorysFrames() {
+    /// check has measured, or takes a larger profile. Each board.
+    @Test(arguments: LateStageProfileTests.boardPhrases)
+    func aFoldOrACameraShowsTheBoardInEveryCategorysFrames(phrases: Int) {
         let size = CGSize(width: 1032, height: 1376)
         let fold = HomeLayout.ReservedRegion(kind: .division, frame: CGRect(x: 0, y: 680, width: size.width, height: 16))
         let camera = HomeLayout.ReservedRegion(kind: .occlusion, frame: CGRect(x: 480, y: 0, width: 72, height: 60))
         let text = HomeLayoutEngineTests.defaultText
+        let area = Self.board(phrases)
         for regions in [[fold], [camera], [fold, camera]] {
             let space = HomeLayout.Space(size: size, safeArea: SettingsRowPlaceTests.padSafeArea, regions: regions)
             let touch = HomeLayout(space: space, text: text, modes: .phrasesAndTyping)
-            let board = HomeLayout(space: space, text: text, largestCategory: 6, modes: .phrasesAndTyping, phraseArea: Self.board)
+            let board = HomeLayout(space: space, text: text, largestCategory: phrases, modes: .phrasesAndTyping, phraseArea: area)
             #expect(board.phraseArea == .everyCategory, "\(regions)")
             for slot in board.slots where slot != .phraseGrid {
                 #expect(board.frame(slot) == touch.frame(slot), "\(slot) \(regions)")
             }
-            #expect(ProfileChoice.layout(requested: .lateStage, space: space, text: text, modes: .phrasesAndTyping, phraseArea: Self.board).profile == .touch)
+            #expect(ProfileChoice.layout(requested: .lateStage, space: space, text: text, modes: .phrasesAndTyping, phraseArea: area).profile == .touch)
         }
         // The same window without them takes the late stage's.
         let clear = HomeLayout.Space(size: size, safeArea: SettingsRowPlaceTests.padSafeArea)
-        #expect(ProfileChoice.layout(requested: .lateStage, space: clear, text: text, modes: .phrasesAndTyping, phraseArea: Self.board).profile == .lateStage)
+        #expect(ProfileChoice.layout(requested: .lateStage, space: clear, text: text, modes: .phrasesAndTyping, phraseArea: area).profile == .lateStage)
     }
 }
