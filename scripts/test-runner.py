@@ -1,12 +1,17 @@
 #!/usr/bin/env python3
 """Exercise test.sh's error reporting and simulator choice without booting a
-simulator, and check that CI runs it with the newest released Xcode."""
+simulator, check the simulator watcher it starts (simulator-load.py), and
+check that CI runs it with the newest released Xcode."""
+import importlib.util
 import json
 import os
 from pathlib import Path
 import re
+import signal
 import subprocess
+import sys
 import tempfile
+import time
 import unittest
 
 SCRIPT = Path(__file__).resolve().with_name("test.sh")
@@ -79,6 +84,27 @@ case "$*" in
 esac
 """
 
+# Stands in for scripts/simulator-load.py: records each start and stop
+# among the simulator commands, and the test run's pid it was given.
+FAKE_SIMULATOR_LOAD = """\
+import os, sys
+from pathlib import Path
+arguments = sys.argv[1:]
+def value(name):
+    return arguments[arguments.index(name) + 1]
+with Path(os.environ["RUNNER_SIMCTL"]).open("a") as log:
+    if arguments[0] == "start":
+        Path(os.environ["RUNNER_LOAD_PARENT"]).write_text(value("--parent"))
+        pausing = "pausing" if "--pause-posters" in arguments else "watching"
+        log.write(f"load start {value('--udid')} {pausing} {Path(value('--out')).name}\\n")
+        status = int(os.environ.get("FIXTURE_LOAD_START_STATUS", "0"))
+        if status == 0:
+            print(4242)
+        sys.exit(status)
+    log.write(f"load stop {value('--pid')} {Path(value('--out')).name}\\n")
+    print("Processor time the simulator's processes used while watched: (fixture)")
+"""
+
 INFO_PLIST = """\
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -127,6 +153,7 @@ def run_script(build_body, mode="ui", destination="id=fixture-simulator",
         fixture_scripts.mkdir(parents=True)
         for name in ("test.sh", "choose-simulator.py"):
             (fixture_scripts / name).write_bytes((SCRIPT.parent / name).read_bytes())
+        (fixture_scripts / "simulator-load.py").write_text(FAKE_SIMULATOR_LOAD)
         for name, status in (("docs", docs_status), ("hooks", hooks_status)):
             (fixture_scripts / f"test-{name}.py").write_text(
                 "import os, sys\nfrom pathlib import Path\n"
@@ -155,6 +182,7 @@ def run_script(build_body, mode="ui", destination="id=fixture-simulator",
                            RUNNER_INVOCATIONS=f"{directory}/invocations",
                            RUNNER_EVENTS=f"{directory}/events",
                            RUNNER_SIMCTL=f"{directory}/simctl",
+                           RUNNER_LOAD_PARENT=f"{directory}/load-parent",
                            FIXTURE_DEVICES=str(devices_path),
                            FIXTURE_INFO_PLIST=str(plist_path),
                            FIXTURE_TARGET=target, FIXTURE_SDK=sdk,
@@ -179,6 +207,8 @@ def run_script(build_body, mode="ui", destination="id=fixture-simulator",
         stale = Path(directory, "TestResults", f"{mode}-ipad.xcresult", "stale")
         stale.parent.mkdir(parents=True)
         stale.write_text("from an earlier run")
+        stale_record = Path(directory, "TestResults", "simulator-load-ipad.txt")
+        stale_record.write_text("from an earlier run")
         result = subprocess.run(["/bin/bash", str(fixture_scripts / "test.sh"), mode, *arguments],
                                 env=environment, capture_output=True, text=True)
         result.events = lines(Path(directory, "events"))
@@ -187,6 +217,7 @@ def run_script(build_body, mode="ui", destination="id=fixture-simulator",
         result.invocations = len(result.calls)
         result.simctl = lines(Path(directory, "simctl"))
         result.stale_bundle_kept = stale.exists()
+        result.stale_record_kept = stale_record.exists()
         result.results_dir = f"{directory}/TestResults"
         result.catalog = catalog_path.read_text()
         return result
@@ -529,6 +560,7 @@ class PreparationTests(unittest.TestCase):
         self.assertEqual(result.simctl, [
             "simctl boot PAD",
             "simctl bootstatus PAD -b",
+            "load start PAD pausing simulator-load-ipad.txt",
             "simctl spawn PAD defaults write com.apple.keyboard.preferences "
             "AutomaticMinimizationEnabled -bool false",
             "simctl spawn PAD defaults write com.apple.keyboard.preferences "
@@ -538,6 +570,7 @@ class PreparationTests(unittest.TestCase):
             "simctl launch PAD fixture.brickson --fresh-test-storage",
             "sleep 15",
             "simctl terminate PAD fixture.brickson",
+            "load stop 4242 simulator-load-ipad.txt",
             "simctl shutdown PAD",
         ])
         self.assertIn("Warm-up: launched Brickson once before the tests", result.stdout)
@@ -636,6 +669,75 @@ class SimulatorLifecycleTests(unittest.TestCase):
                 self.assertNotIn("All UI tests passed.", result.stdout)
 
 
+class WatcherTests(unittest.TestCase):
+    """test.sh watches each simulator it tests on with
+    scripts/simulator-load.py, pausing the lock-screen wallpaper
+    extensions only on a simulator it started itself, and stops the
+    watcher before the simulator in every way a run can end
+    (docs/log/2026-11-03-ui-test-stall.md)."""
+
+    def phone_run(self, build_body="exit 0", state="Shutdown", mode="ui", **options):
+        return run_script(build_body, mode=mode, destination="platform=iOS Simulator,id=PHONE",
+                          devices={runtime("27.1"): [device("iPhone 17", "PHONE", state=state)]},
+                          **options)
+
+    def load_calls(self, result):
+        return [call for call in result.simctl if call.startswith(("load ", "simctl boot ",
+                                                                   "simctl shutdown "))]
+
+    # Pausing processes of a simulator someone else started, or not
+    # pausing them on one this run started, in either mode, fails this test.
+    def test_wallpaper_extensions_are_paused_only_on_a_simulator_this_run_started(self):
+        for mode in ("ui", "unit"):
+            for state, expected in (("Shutdown", "pausing"), ("Booted", "watching")):
+                with self.subTest(mode=mode, state=state):
+                    result = self.phone_run(state=state, mode=mode)
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    self.assertIn(f"load start PHONE {expected} simulator-load-destination.txt",
+                                  result.simctl)
+                    self.assertIn("load stop 4242 simulator-load-destination.txt", result.simctl)
+                    self.assertIn("Processor time the simulator's processes used while watched",
+                                  result.stdout)
+
+    # A watcher left running after its simulator stops, started before the
+    # simulator has finished starting, or still started after a failed
+    # start, fails this test.
+    def test_the_watcher_stops_before_the_simulator_however_the_run_ends(self):
+        cases = [
+            ('if [ "$action" = build-for-testing ]; then exit 65; fi', {}, 65),
+            ('if [ "$action" = test-without-building ]; then exit 66; fi', {}, 66),
+            ("exit 0", {"test_summary": None}, 1),
+            # Interrupted, as by Control-C or a cancelled CI job: the test
+            # run's pid, given to the watcher, is the script itself.
+            ('if [ "$action" = test-without-building ]; then kill -TERM "$(cat "$RUNNER_LOAD_PARENT")"; fi',
+             {}, 143),
+        ]
+        for body, options, status in cases:
+            with self.subTest(body=body, options=options):
+                result = self.phone_run(body, **options)
+                self.assertEqual(result.returncode, status, result.stderr)
+                self.assertEqual(self.load_calls(result), [
+                    "simctl boot PHONE", "load start PHONE pausing simulator-load-destination.txt",
+                    "load stop 4242 simulator-load-destination.txt", "simctl shutdown PHONE"])
+                self.assertLess(result.simctl.index("simctl bootstatus PHONE -b"),
+                                result.simctl.index("load start PHONE pausing simulator-load-destination.txt"))
+        result = self.phone_run(bootstatus_status=70)
+        self.assertEqual(self.load_calls(result), ["simctl boot PHONE", "simctl shutdown PHONE"])
+
+    # A watcher that cannot start stopping the tests, or passing silently,
+    # fails this test.
+    def test_a_watcher_that_does_not_start_is_reported_and_the_tests_still_run(self):
+        os.environ["FIXTURE_LOAD_START_STATUS"] = "1"
+        try:
+            result = self.phone_run()
+        finally:
+            del os.environ["FIXTURE_LOAD_START_STATUS"]
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("the simulator watcher did not start", result.stderr)
+        self.assertIn(("test-without-building", "id=PHONE"), actions(result))
+        self.assertFalse(any(call.startswith("load stop") for call in result.simctl))
+
+
 class EvidenceTests(unittest.TestCase):
     """What a run leaves behind: the tools that made it, a result bundle
     per simulator, and how many tests ran."""
@@ -721,6 +823,7 @@ class EvidenceTests(unittest.TestCase):
                             devices={runtime("27.1"): [device("iPad Pro 13-inch (M5)", "PAD")]})
         self.assertEqual(result.returncode, 65)
         self.assertFalse(result.stale_bundle_kept)
+        self.assertFalse(result.stale_record_kept)
 
 
 class DeviceBuildTests(unittest.TestCase):
@@ -834,6 +937,173 @@ class CoverageTests(unittest.TestCase):
         self.assertIn("could not read code coverage", result.stderr)
 
 
+# A stand-in for /bin/ps: it prints the files beside it, `args` for the
+# launchd_sim lookup and `table` for the process list.
+FAKE_PS = """#!/bin/bash
+case "$*" in
+    "-axww -o pid=,args=") cat "$(dirname "$0")/args" ;;
+    "-axww -o pid=,ppid=,stat=,time=,comm=") cat "$(dirname "$0")/table" ;;
+    *) echo "unexpected: ps $*" >&2; exit 1 ;;
+esac
+"""
+
+RUNTIME_ROOT = ("/Library/Developer/CoreSimulator/Volumes/iOS_24A/Library/Developer/CoreSimulator/"
+                "Profiles/Runtimes/iOS 27.0.simruntime/Contents/Resources/RuntimeRoot")
+LAUNCHD_SIM = "/Library/Developer/PrivateFrameworks/CoreSimulator.framework/Resources/bin/launchd_sim"
+DEVICES = "/Users/runner/Library/Developer/CoreSimulator/Devices"
+
+# Two simulators, PAD (launchd_sim 100) and OTHER (200), and the Mac.
+LAUNCHD_SIMS = f"""\
+    1 /sbin/launchd
+  100 {LAUNCHD_SIM} {DEVICES}/PAD/data/var/run/launchd_bootstrap.plist
+  200 {LAUNCHD_SIM} {DEVICES}/OTHER/data/var/run/launchd_bootstrap.plist
+"""
+
+
+def process_table(times):
+    """The Mac's process list, with each process's processor time."""
+    rows = [
+        (1, 0, "Ss", "/sbin/launchd"),
+        (100, 1, "Ss", LAUNCHD_SIM),
+        (110, 100, "S", f"{RUNTIME_ROOT}/System/Library/CoreServices/SpringBoard.app/SpringBoard"),
+        (120, 100, "S", f"{RUNTIME_ROOT}/System/Library/CoreServices/PosterBoard.app/PosterBoard"),
+        (121, 120, "R", f"{RUNTIME_ROOT}/System/Library/ExtensionKit/Extensions/"
+                        "EmojiPosterExtension.appex/EmojiPosterExtension"),
+        (122, 100, "S", f"{RUNTIME_ROOT}/System/Library/ExtensionKit/Extensions/"
+                        "AegirPoster.appex/AegirPoster"),
+        (123, 100, "T", f"{RUNTIME_ROOT}/System/Library/ExtensionKit/Extensions/"
+                        "PhotosPosterProvider.appex/PhotosPosterProvider"),
+        (200, 1, "Ss", LAUNCHD_SIM),
+        (221, 200, "R", f"{RUNTIME_ROOT}/System/Library/ExtensionKit/Extensions/"
+                        "EmojiPosterExtension.appex/EmojiPosterExtension"),
+        (300, 1, "S", "/Applications/Example.app/Contents/MacOS/GradientPosterExtension"),
+    ]
+    return "".join(f"{pid:5} {ppid:5} {state:4} {times.get(pid, '0:00.00'):>10} {path}\n"
+                   for pid, ppid, state, path in rows)
+
+
+def simulator_load():
+    """scripts/simulator-load.py as a module, without leaving a
+    __pycache__ folder in the checkout."""
+    spec = importlib.util.spec_from_file_location(
+        "simulator_load", SCRIPT.with_name("simulator-load.py"))
+    module = importlib.util.module_from_spec(spec)
+    writes, sys.dont_write_bytecode = sys.dont_write_bytecode, True
+    try:
+        spec.loader.exec_module(module)
+    finally:
+        sys.dont_write_bytecode = writes
+    return module
+
+
+class SimulatorLoadTests(unittest.TestCase):
+    """scripts/simulator-load.py pauses the lock-screen wallpaper
+    extensions of the one simulator it watches and nothing else, records
+    the processor time each of its processes used, and never outlives the
+    test run (docs/log/2026-11-03-ui-test-stall.md)."""
+
+    def setUp(self):
+        self.module = simulator_load()
+        folder = tempfile.TemporaryDirectory()
+        self.addCleanup(folder.cleanup)
+        self.folder = Path(folder.name)
+        self.ps = self.folder / "ps"
+        self.ps.write_text(FAKE_PS)
+        self.ps.chmod(0o755)
+        (self.folder / "args").write_text(LAUNCHD_SIMS)
+        self.times({})
+        self.record = self.folder / "record.txt"
+
+    def times(self, times):
+        (self.folder / "table").write_text(process_table(times))
+
+    def watch(self, pause_posters):
+        self.kills, self.now = [], 0.0
+        out = self.record.open("w")
+        self.addCleanup(out.close)
+        return self.module.Watch("PAD", out, pause_posters, ps=str(self.ps),
+                                 clock=lambda: self.now,
+                                 kill=lambda pid, number: self.kills.append((pid, number)))
+
+    # Matching PosterBoard, pausing another simulator's or the Mac's own
+    # processes, pausing one already stopped, or pausing one twice fails
+    # this test.
+    def test_only_this_simulators_wallpaper_extensions_are_paused_once(self):
+        watcher = self.watch(pause_posters=True)
+        watcher.sample()
+        watcher.sample()
+        self.assertEqual(self.kills, [(121, signal.SIGSTOP), (122, signal.SIGSTOP)])
+        record = self.record.read_text()
+        self.assertIn("paused EmojiPosterExtension (121)", record)
+        self.assertIn("paused AegirPoster (122)", record)
+        watcher.summary()
+        self.assertIn("Paused 2 lock-screen wallpaper extension processes.", self.record.read_text())
+
+    # Pausing anything without --pause-posters fails this test.
+    def test_without_pausing_nothing_is_paused(self):
+        watcher = self.watch(pause_posters=False)
+        watcher.sample()
+        watcher.sample()
+        self.assertEqual(self.kills, [])
+
+    # Reporting each process's total time instead of the time used since
+    # the last line, counting the Mac's or another simulator's processes as
+    # this simulator's, or misreading ps's longer times fails this test.
+    def test_each_line_reports_the_time_used_since_the_last(self):
+        watcher = self.watch(pause_posters=False)
+        self.times({121: "1:00.00", 110: "61:00.00", 221: "0:30.00", 300: "1-00:00:00"})
+        watcher.sample()
+        self.now = 5.0
+        self.times({121: "1:05.00", 110: "61:00.50", 221: "0:32.50", 300: "1-00:00:02.50"})
+        watcher.sample()
+        line = self.record.read_text().splitlines()[-1]
+        self.assertRegex(line, r" simulator +110% mac +210% load ")
+        self.assertTrue(line.endswith("| EmojiPosterExtension 100%, SpringBoard 10%"), line)
+        watcher.summary()
+        self.assertIn("     5.0 s  EmojiPosterExtension", self.record.read_text())
+        self.assertEqual(self.module.cpu_seconds("1-02:03:04.50"), 93784.5)
+
+    def run_script(self, *arguments):
+        return subprocess.run([sys.executable, "-I", str(SCRIPT.with_name("simulator-load.py")),
+                               *arguments], capture_output=True, text=True, timeout=60)
+
+    def wait_for(self, predicate, seconds=10):
+        deadline = time.monotonic() + seconds
+        while time.monotonic() < deadline:
+            if predicate():
+                return True
+            time.sleep(0.05)
+        return False
+
+    # `start` returning before the watcher is watching, or `stop`
+    # returning before its summary is written, fails this test. (Without
+    # --pause-posters: the stand-in's pids may be real processes here.)
+    def test_start_waits_for_the_watcher_and_stop_for_its_summary(self):
+        started = self.run_script("start", "--udid", "PAD", "--out", str(self.record),
+                                  "--parent", str(os.getpid()), "--ps", str(self.ps))
+        self.assertEqual(started.returncode, 0, started.stderr)
+        pid = int(started.stdout)
+        self.assertTrue(self.record.read_text().startswith("Watching simulator PAD\n"))
+        stopped = self.run_script("stop", "--pid", str(pid), "--out", str(self.record))
+        self.assertEqual(stopped.returncode, 0, stopped.stderr)
+        self.assertEqual(self.record.read_text().splitlines()[-1], "Stopped.")
+        self.assertIn("Processor time the simulator's processes used while watched:", stopped.stdout)
+
+    # A watcher that keeps running after the test run is gone (killed, say)
+    # would go on pausing processes of simulators other runs start; that
+    # fails this test.
+    def test_the_watcher_stops_when_the_test_run_is_gone(self):
+        gone = subprocess.Popen(["/bin/sh", "-c", "exit 0"])
+        gone.wait()
+        started = self.run_script("start", "--udid", "PAD", "--out", str(self.record),
+                                  "--parent", str(gone.pid), "--ps", str(self.ps))
+        self.assertEqual(started.returncode, 0, started.stderr)
+        self.assertTrue(self.wait_for(
+            lambda: self.record.read_text().splitlines()[-1:] == ["Stopped."]),
+            self.record.read_text())
+        self.assertIn(f"The test run ({gone.pid}) is gone.", self.record.read_text())
+
+
 def workflow_jobs(text):
     """Each job's id and its lines, without comments. Reads the layout
     tests.yml uses: job ids two spaces in, under a top-level `jobs:`."""
@@ -875,6 +1145,44 @@ class WorkflowTests(unittest.TestCase):
                     "without first choosing the newest released Xcode "
                     "(python3 scripts/select-xcode.py choose, then sudo "
                     "xcode-select --switch).")
+
+    # Renaming a job the `main` ruleset requires ("Unit tests", "UI tests"),
+    # or making "UI tests" a check that can pass while a family's UI tests
+    # failed, were cancelled or never ran, fails this test. "UI tests" is
+    # either one job that tests both families, or a job that waits for the
+    # family jobs, runs however they ended, and fails unless they passed
+    # (docs/DECISIONS.md, "Tests").
+    def test_the_required_checks_stay_and_ui_tests_needs_both_families(self):
+        jobs = {job: "\n".join(lines) for job, lines in workflow_jobs(WORKFLOW.read_text()).items()}
+
+        def name(body):
+            found = re.search(r"^    name: *(.+?) *$", body, re.M)
+            return found.group(1) if found else None
+
+        names = [name(body) for body in jobs.values()]
+        self.assertEqual(names.count("Unit tests"), 1, names)
+        self.assertEqual(names.count("UI tests"), 1, names)
+        result = next(body for body in jobs.values() if name(body) == "UI tests")
+        if "scripts/test.sh ui" in result:
+            self.assertNotIn("SIMULATOR_FAMILY", result)
+            return
+        needs = re.search(r"^    needs: *\[?([^\]\n]+)\]? *$", result, re.M)
+        self.assertIsNotNone(needs, "The UI tests job neither runs the tests nor waits for them.")
+        needed = [job.strip() for job in needs.group(1).split(",")]
+        self.assertRegex(result, r"(?m)^    if: *(\$\{\{ *)?always\(\)( *\}\})? *$",
+                         "Without `if: always()`, a failed family skips the UI tests job, "
+                         "and a skipped required check reads as passed.")
+        families = set()
+        for job in needed:
+            with self.subTest(job=job):
+                body = jobs[job]
+                self.assertIn("scripts/test.sh ui", body)
+                self.assertRegex(body, r"SIMULATOR_FAMILY: *\$\{\{ *matrix\.family *\}\}")
+                families.update(re.findall(r"^ +- family: *(\w+) *$", body, re.M))
+                self.assertRegex(result, r"\$\{\{ *needs\." + re.escape(job) + r"\.result *\}\}")
+        self.assertEqual(families, {"ipad", "iphone"})
+        self.assertRegex(result, r'!= *"?success"?')
+        self.assertIn("exit 1", result)
 
     # Writing an Xcode version or app path into the workflow fails this test.
     def test_the_workflow_names_no_xcode_version(self):

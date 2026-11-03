@@ -2,14 +2,21 @@
 """Watches one simulator's processes while its tests run, and writes down
 which of them use the machine's processors.
 
-    simulator-load.py watch --udid <udid> --out <file> [--pause-posters]
+    simulator-load.py start --udid <udid> --out <file> --parent <pid> [--pause-posters]
+    simulator-load.py stop --pid <pid> --out <file>
 
-Every few seconds it reads the Mac's process list, finds the processes the
+`start` starts a watcher in the background, waits until it is watching
+and prints its pid; `stop` stops it, waits for its summary and prints it.
+scripts/test.sh starts one for each simulator it tests on.
+
+Every few seconds the watcher reads the Mac's process list, finds the processes the
 simulator runs (everything started under that device's launchd_sim), and
 writes one line: the time, how much processor time the simulator and the
 whole Mac used since the last line, the Mac's load, and the simulator's
 busiest processes. When it is stopped (SIGTERM or SIGINT) it writes the
-processes that used the most time over the whole run.
+processes that used the most time over the whole run, then "Stopped.".
+It also stops by itself once the process named by --parent (the test run)
+is gone, so a test run that is killed never leaves it running.
 
 With --pause-posters it also pauses (SIGSTOP) the simulator's lock-screen
 wallpaper extensions as they start: processes whose name ends in "Poster",
@@ -37,6 +44,9 @@ import time
 POSTER = re.compile(r"Poster(Extension|Provider)?$")
 
 INTERVAL = 5.0
+# How long `start` waits for the watcher to begin, and `stop` for it to end.
+WAIT = 15.0
+STOPPED = "Stopped."
 
 
 def cpu_seconds(text):
@@ -164,16 +174,26 @@ class Watch:
             self.write(f"Paused {len(self.paused)} lock-screen wallpaper extension processes.")
 
 
-def watch(arguments):
+def alive(pid):
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    return True
+
+
+def watch(arguments, parent_alive=alive):
     stopping = []
 
-    def stop(*_):
+    def stop_watching(*_):
         stopping.append(True)
 
-    signal.signal(signal.SIGTERM, stop)
-    signal.signal(signal.SIGINT, stop)
+    signal.signal(signal.SIGTERM, stop_watching)
+    signal.signal(signal.SIGINT, stop_watching)
     with open(arguments.out, "a", encoding="utf-8") as out:
-        watcher = Watch(arguments.udid, out, arguments.pause_posters)
+        watcher = Watch(arguments.udid, out, arguments.pause_posters, ps=arguments.ps)
         watcher.write(f"Watching simulator {arguments.udid}"
                       + (", pausing lock-screen wallpaper extensions" if arguments.pause_posters else ""))
         while not stopping:
@@ -183,20 +203,103 @@ def watch(arguments):
                 watcher.write(f"could not read the process list: {error}")
             deadline = time.monotonic() + INTERVAL
             while not stopping and time.monotonic() < deadline:
+                if not parent_alive(arguments.parent):
+                    watcher.write(f"The test run ({arguments.parent}) is gone.")
+                    stopping.append(True)
+                    break
                 time.sleep(0.2)
         watcher.summary()
+        watcher.write(STOPPED)
     return 0
 
 
-def main():
+def record_lines(path):
+    try:
+        with open(path, encoding="utf-8", errors="replace") as file:
+            return file.read().splitlines()
+    except OSError:
+        return []
+
+
+def start(arguments, wait=WAIT):
+    """Starts the watcher in the background, waits until it is watching,
+    and prints its pid. The record starts empty, and the watcher's own
+    errors, if any, land in it too."""
+    command = [sys.executable, "-I", os.path.abspath(__file__), "watch",
+               "--udid", arguments.udid, "--out", arguments.out,
+               "--parent", str(arguments.parent), "--ps", arguments.ps]
+    if arguments.pause_posters:
+        command.append("--pause-posters")
+    try:
+        with open(arguments.out, "w", encoding="utf-8") as errors:
+            child = subprocess.Popen(command, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                                     stderr=errors, start_new_session=True)
+    except OSError as error:
+        print(f"The simulator watcher could not start: {error}", file=sys.stderr)
+        return 1
+    deadline = time.monotonic() + wait
+    while time.monotonic() < deadline:
+        lines = record_lines(arguments.out)
+        if lines and lines[0].startswith("Watching simulator"):
+            print(child.pid)
+            return 0
+        if child.poll() is not None:
+            print(f"The simulator watcher stopped as it started (status {child.returncode}); "
+                  f"see {arguments.out}.", file=sys.stderr)
+            return 1
+        time.sleep(0.05)
+    child.kill()
+    print(f"The simulator watcher did not start within {wait:.0f} s.", file=sys.stderr)
+    return 1
+
+
+def stop(arguments, wait=WAIT):
+    """Stops the watcher, waits for its summary and prints it."""
+    try:
+        os.kill(arguments.pid, signal.SIGTERM)
+    except ProcessLookupError:
+        pass
+    deadline = time.monotonic() + wait
+    while time.monotonic() < deadline:
+        lines = record_lines(arguments.out)
+        if lines and lines[-1] == STOPPED:
+            break
+        time.sleep(0.05)
+    else:
+        try:
+            os.kill(arguments.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+        print(f"The simulator watcher did not finish its record within {wait:.0f} s; "
+              f"what it wrote is in {arguments.out}.", file=sys.stderr)
+        return 1
+    summary = next((index for index, line in enumerate(lines)
+                    if line.startswith("Processor time")), len(lines) - 1)
+    print("\n".join(lines[summary:-1]))
+    print(f"The whole record: {arguments.out}")
+    return 0
+
+
+def parse(arguments=None):
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     commands = parser.add_subparsers(dest="command", required=True)
-    watching = commands.add_parser("watch")
-    watching.add_argument("--udid", required=True)
-    watching.add_argument("--out", required=True)
-    watching.add_argument("--pause-posters", action="store_true")
-    arguments = parser.parse_args()
-    return watch(arguments)
+    for name in ("start", "watch"):
+        command = commands.add_parser(name)
+        command.add_argument("--udid", required=True)
+        command.add_argument("--out", required=True)
+        command.add_argument("--parent", type=int, required=True)
+        command.add_argument("--pause-posters", action="store_true")
+        # scripts/test-runner.py gives a stand-in for ps.
+        command.add_argument("--ps", default="/bin/ps", help=argparse.SUPPRESS)
+    stopping = commands.add_parser("stop")
+    stopping.add_argument("--pid", type=int, required=True)
+    stopping.add_argument("--out", required=True)
+    return parser.parse_args(arguments)
+
+
+def main():
+    arguments = parse()
+    return {"start": start, "watch": watch, "stop": stop}[arguments.command](arguments)
 
 
 if __name__ == "__main__":
