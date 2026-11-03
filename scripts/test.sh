@@ -163,11 +163,11 @@ cleanup_simulator() {
     fi
 }
 
-# On GitHub's Mac machines a simulator's lock-screen wallpaper extensions
-# render hundreds of pictures for a minute or two, some minutes after it
-# starts, and leave the app under test almost no processor time: UI tests
-# then time out on the iPad (docs/log/2026-11-03-ui-test-stall.md). No test
-# shows the lock screen. scripts/simulator-load.py watches the simulator
+# Five or more minutes after a simulator starts, iOS prewarms its
+# lock-screen wallpaper gallery, and the wallpaper extensions render its
+# pictures for about three minutes. On GitHub's Mac machines that stalled
+# the app under test until UI tests timed out on the iPad
+# (docs/log/2026-11-03-ui-test-stall.md). No test shows the lock screen. scripts/simulator-load.py watches the simulator
 # while it is tested, pauses those extensions on a simulator this run
 # started (never on one someone else is using), and writes which processes
 # used the processors to $results_dir/simulator-load-<family>.txt.

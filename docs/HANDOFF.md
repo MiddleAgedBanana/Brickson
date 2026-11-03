@@ -294,9 +294,11 @@ Xcode 27.1 (27A9275); PR #20 landed in `d79d836`.
   itself once GitHub installs the release and Apple's releases feed
   lists it
   ([`log/2026-10-30-xcode-27-2.md`](log/2026-10-30-xcode-27-2.md)). Since
-  PR #13 the UI tests run on the newest iPad Pro 13-inch and then the
+  PR #13 the UI tests run on the newest iPad Pro 13-inch and the
   newest standard iPhone, after a warm-up launch, and fail when no test
-  ran ([`log/2026-10-21-test-seams.md`](log/2026-10-21-test-seams.md)).
+  ran ([`log/2026-10-21-test-seams.md`](log/2026-10-21-test-seams.md));
+  once the owner commits the workflow of 2026-11-03, each family runs as
+  a job of its own, at the same time.
   Since PR #28 each job keeps `build/TestResults` as a download on the
   run's page for 14 days, passed or failed, unless the job stopped
   before its tests started (a build failure leaves no bundle)
@@ -1139,8 +1141,17 @@ Simulators cannot show these. Record each result in a `docs/log/` file
 
 - The `main` ruleset matched docs/DECISIONS.md on 2026-10-15 (GitHub's
   API); its required checks are "Unit tests" and "UI tests".
-  The unit job allows 60 minutes and the UI job 120 for both device
-  families (docs/DECISIONS.md, "Tests"). Home's
+  The unit job allows 60 minutes. The UI job allowed 120 for both
+  device families and took about 105; the workflow of 2026-11-03, which
+  the owner commits on its pull request's branch, gives each family a
+  job of its own with 90 minutes, and "UI tests" becomes a job that
+  passes only when both passed (docs/DECISIONS.md, "Tests"). Three iPad
+  runs in a row stalled at the largest text size because iOS's
+  lock-screen wallpaper prewarm starved the simulator; since then
+  `scripts/test.sh` pauses those extensions on a simulator it started
+  and writes `simulator-load-<family>.txt` beside each result bundle:
+  read it first if a stall comes back
+  ([`log/2026-11-03-ui-test-stall.md`](log/2026-11-03-ui-test-stall.md)). Home's
   layout test uses bounded live queries while retaining every tile's
   visibility and position checks. After incorporating `main` at `d79d836`,
   its audit helper also keeps issue-time captures and native XCTest
@@ -1176,9 +1187,10 @@ Simulators cannot show these. Record each result in a `docs/log/` file
 - The docs cross-reference check reads every title a citation names,
   quoted titles starting with a small letter and titles after the first
   included: [record](log/2026-10-23-docs-check-gaps.md).
-- Codex reviews every push to a pull request, Copilot each pull request
-  once when it opens, AI Scan each push; none reviews Dependabot's pull
-  requests by itself. The AI credits they use show only in Settings →
+- Codex reviews every push to a pull request, Copilot a code pull
+  request once after Codex's round is answered, when the owner adds it
+  (since 2026-11-03; docs/DECISIONS.md, *Code review*), AI Scan each
+  push; none reviews Dependabot's pull requests by itself. The AI credits they use show only in Settings →
   Billing → AI usage.
 - The [website](https://middleagedbanana.github.io/Brickson/), its
   [privacy policy](https://middleagedbanana.github.io/Brickson/privacy/)

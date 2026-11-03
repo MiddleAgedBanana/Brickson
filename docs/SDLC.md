@@ -213,8 +213,9 @@ which agents also act through, can bypass it (*Deploy*).
 **What it means here.** Three kinds of release, each behind the owner.
 
 - **Into `main`.** Codex reviews every push to a pull request, GitHub
-  Copilot reviews each pull request once when it opens, and GitHub's AI
-  Scan posts security findings; all three review against AGENTS.md,
+  Copilot reviews a code pull request once after Codex's round is
+  answered (the owner adds it; AGENTS.md, "Reviews and updates on
+  GitHub"), and GitHub's AI Scan posts security findings; all three review against AGENTS.md,
   *Code Review Rules*, which is this project's `REVIEW.md` (p39). Their
   findings inform the owner; they never approve or block on their own
   (p38). The agent that opened the pull request answers every finding,

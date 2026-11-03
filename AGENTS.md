@@ -109,8 +109,12 @@ cannot be read, fails. A unit run also prints the app's code coverage and
 brings `Brickson/Resources/Localizable.xcstrings` up to date with the code
 (`xcstringstool sync` over the strings the build found); commit the
 updated catalog with your change. On CI a catalog that does not match the
-code fails the run and prints the difference. The iPad and the iPhone are
-both first-class: UI tests run on both every time.
+code fails the run and prints the difference. Beside each bundle,
+`build/TestResults/simulator-load-<family>.txt` records which of the
+simulator's processes used the Mac's processors, every five seconds; on
+a simulator the script started, `scripts/simulator-load.py` also pauses
+its lock-screen wallpaper extensions for the run (*Gotchas*). The iPad
+and the iPhone are both first-class: UI tests run on both every time.
 
 On a Mac, the unit suite must be **100% green before any commit**; for
 work made where nothing can be built, CI must be green before the pull
@@ -126,9 +130,14 @@ warning only the Release build sees (code under `#if DEBUG` differs).
 
 **GitHub CI** (`.github/workflows/tests.yml`) runs the unit and UI tests on
 GitHub's Mac machines for every pull request and every push to `main`.
-Each job keeps `build/TestResults` (the result bundles above) as a
-download on the run's page for 14 days, passed or failed: the artifacts
-`unit-test-results` and `ui-test-results`. A job that stops before its
+Once the owner commits the workflow of 2026-11-03, the UI tests run as
+one job per family, "UI tests on iPad" and "UI tests on iPhone", at the
+same time, and the job named "UI tests" passes only when both passed
+(docs/DECISIONS.md, "Tests"). Each job keeps `build/TestResults` (the
+result bundles and load records above) as a download on the run's page
+for 14 days, passed or failed: the artifacts `unit-test-results`,
+`ui-test-results-ipad` and `ui-test-results-iphone` (one
+`ui-test-results` before the split). A job that stops before its
 tests start (choosing Xcode, XcodeGen, a build failure) writes no
 bundle, so that job has no artifact, only a warning. A
 pull request merges only when CI is green.
@@ -151,12 +160,18 @@ stays reachable, behind `#available` when newer (docs/DECISIONS.md,
 "Minimum iOS, iPhone and iPad").
 
 **Reviews and updates on GitHub.** Codex reviews every push to a pull
-request that a person or agent opens, and GitHub Copilot reviews each such
-pull request once, when it opens. Neither reviews Dependabot's pull
-requests by itself. Each Copilot review spends the owner's monthly AI
-credits, so only the owner requests one (**Re-request review**, or a
-Dependabot pull request): agents never add Copilot as a reviewer unless
-the owner asks. Both review against *Code Review Rules* below. GitHub's AI
+request that a person or agent opens. GitHub Copilot no longer reviews
+by itself (the owner turned that off on 2026-11-03), and each Copilot
+review spends the owner's monthly AI credits. Until the owner's Copilot
+subscription ends, the owner's order (2026-11-03) is staggered: the agent
+answers and fixes Codex's round first, then Copilot reviews the pull
+request once, so it sees the fixed code and Codex's threads instead of
+repeating them. A pull request that changes only documents gets no
+Copilot review. The guard refuses an agent's Copilot request
+(*Guardrails for agents*), so the agent says in the thread that Codex's
+round is answered and the owner adds Copilot under **Reviewers**; agents
+never add Copilot themselves. Neither reviews Dependabot's pull requests
+by itself. Both review against *Code Review Rules* below. GitHub's AI
 Scan also posts security findings after each push to such a pull request;
 answer them like review comments. It skips Dependabot's pull requests and
 those from forks, and CodeQL did not analyse Dependabot's first one before
@@ -941,7 +956,24 @@ the time. Export them again after each new Xcode release.
   ruleset requires "Unit tests" and "UI tests" by name (docs/DECISIONS.md,
   "Reviews, updates and GitHub settings"). Renaming a job, or adding a path
   filter to the workflow, leaves every pull request waiting for a check
-  that never arrives until the owner updates the ruleset.
+  that never arrives until the owner updates the ruleset. Since the
+  split of 2026-11-03, "UI tests" is the small job that waits for both
+  families; it keeps `if: always()`, because GitHub reads a skipped
+  required check as passed, so without it a failed family would let a
+  pull request merge. `scripts/test-runner.py` checks both.
+- **iOS's lock-screen wallpaper prewarm starves a CI simulator.** About
+  five minutes after a simulator starts, iOS runs SpringBoard's
+  `posterboardupdate.prewarm` task, and some 14 wallpaper extensions
+  render the gallery's pictures for about three minutes. On GitHub's
+  three-processor machines that stalled iPad UI tests at the largest
+  text size, three runs in a row, until XCTest's queries timed out
+  (docs/log/2026-11-03-ui-test-stall.md). `scripts/test.sh` pauses
+  those extensions on a simulator it started; it never touches one it
+  did not start, so on a Mac a simulator left running is unprotected.
+  When a UI test is slow or times out on CI, read
+  `simulator-load-<family>.txt` in the artifact before changing a wait:
+  it shows whether the extensions were paused and which process was
+  busy. A longer wait would only hide a starved app.
 - **Cloud agents cannot change `.github/workflows/`.** On 2026-10-21 a
   cloud session's `git push` of `tests.yml` was refused ("refusing to
   allow an OAuth App to create or update workflow ... without `workflow`

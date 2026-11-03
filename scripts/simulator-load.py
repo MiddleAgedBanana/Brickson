@@ -21,12 +21,14 @@ is gone, so a test run that is killed never leaves it running.
 With --pause-posters it also pauses (SIGSTOP) the simulator's lock-screen
 wallpaper extensions as they start: processes whose name ends in "Poster",
 "PosterExtension" or "PosterProvider" (EmojiPosterExtension, AegirPoster,
-PhotosPosterProvider and the like; never PosterBoard itself). On GitHub's
-Mac machines those extensions render hundreds of lock-screen pictures a
-few minutes after the simulator starts, which leaves the app under test
-with almost no processor time for a minute or more
-(docs/log/2026-11-03-ui-test-stall.md). The tests never show the lock
-screen. A paused process is left paused; the simulator is shut down after
+PhotosPosterProvider and the like; never PosterBoard itself). Five or
+more minutes after a simulator starts, iOS runs a scheduled task that
+prewarms the lock-screen wallpaper gallery, and those extensions then
+render its pictures for about three minutes. On GitHub's Mac machines
+(three processors) that stalled the app under test until UI tests timed
+out (docs/log/2026-11-03-ui-test-stall.md). The tests never show the lock
+screen. A process is paused rather than ended because iOS would start an
+ended one again; it stays paused until the simulator is shut down after
 its run.
 
 Only the processes of the one simulator named by --udid are read or

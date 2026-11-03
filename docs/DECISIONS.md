@@ -4664,6 +4664,28 @@ request merges only when they pass.
   The owner committed the change, because a cloud agent cannot push
   workflows. Record:
   [`log/2026-10-30-unit-test-time.md`](log/2026-10-30-unit-test-time.md).
+- **2026-11-03, default, reversible:** the UI tests run as one job per
+  device family, "UI tests on iPad" and "UI tests on iPhone", at the
+  same time, with 90 minutes each, and the check the `main` ruleset
+  requires, "UI tests", is a small job that passes only when both
+  passed. It runs `if: always()`, because GitHub reads a skipped
+  required check as passed. Before, one job ran both families one after
+  the other and took about 105 of its 120 minutes; each family takes
+  about 50 minutes or less. The cost is a second build on a second
+  machine. The owner commits the workflow.
+- **2026-11-03, default, reversible:** on a simulator `scripts/test.sh`
+  started itself, `scripts/simulator-load.py` pauses (SIGSTOP) the
+  lock-screen wallpaper extensions for the whole run, and on every
+  simulator it writes the processes that used the Mac's processors to
+  `build/TestResults/simulator-load-<family>.txt`. About five minutes
+  after a simulator starts, iOS prewarms its wallpaper gallery, and on
+  GitHub's three-processor machines that starved the app until iPad UI
+  tests at the largest text size timed out, three runs in a row. No
+  test shows the lock screen. A simulator someone else started is
+  watched but never paused. Measure again, and drop the pausing if it
+  no longer matters, when Apple changes the prewarm or GitHub's
+  machines get more processors. Record:
+  [`log/2026-11-03-ui-test-stall.md`](log/2026-11-03-ui-test-stall.md).
 
 ## Reviews, updates and GitHub settings
 
@@ -4676,9 +4698,25 @@ review setup does not quietly break them.
 
 ### Code review
 
+- **2026-11-03, owner, reversible:** Copilot reviews a pull request
+  once, after Codex's round is answered, until the owner's Copilot
+  subscription ends. The owner turned off automatic Copilot review in
+  the repository's settings that day (it was already off for the
+  organisation), so Copilot reviews only when asked. Codex reviews when
+  a pull request opens and on each push; the agent answers and fixes
+  Codex's findings first, then the owner adds Copilot under
+  **Reviewers**, so Copilot sees the fixed code and Codex's threads and
+  does not repeat their findings. A pull request that changes only
+  documents gets no Copilot review. The agent cannot add Copilot itself:
+  the guard refuses it (AGENTS.md, *Guardrails for agents*), so it says
+  in the thread when Codex's round is answered. Before: Copilot reviewed
+  each pull request once, when it opened (the bullet below). When the
+  subscription ends, the Copilot step goes. Record:
+  [`log/2026-11-03-ui-test-stall.md`](log/2026-11-03-ui-test-stall.md).
 - **2026-10-23, owner, reversible:** follow AGENTS.md, "Pushing to an open PR", to batch fixes and stop restarting green CI for polish; reason: PR #17. Before: only batching before each push was explicit.
 
-- Codex reviews every push to a pull request. GitHub Copilot (the owner's
+- *Until 2026-11-03 (the bullet above replaces the automatic review).*
+  Codex reviews every push to a pull request. GitHub Copilot (the owner's
   Copilot Pro plan) reviews each pull request **once, when it opens**,
   through the `main` ruleset's "Automatically request Copilot code review"
   rule, at Balanced effort. It does not review every push: each Copilot
@@ -4834,6 +4872,6 @@ through its API on 2026-10-15:
 | Require branches to be up to date | Off | Each update reruns the Mac tests; `main` is tested again after every merge anyway. |
 | Require conversation resolution | On | Every Codex and Copilot comment, and every CodeQL alert posted on the pull request, gets an answer before a merge. AI Scan findings are answered too, by practice (*Code scanning* above). |
 | Require code scanning results | CodeQL: errors, high or higher | A workflow change that CodeQL flags as an error, or as a high or critical security problem, cannot merge. It did not cover Dependabot's first pull request, which got no CodeQL analysis before merging (*Code scanning* above). |
-| Automatically request Copilot code review | On; new pushes and drafts off | As above. |
+| Automatically request Copilot code review | Off since 2026-11-03 (on before, with new pushes and drafts off) | Copilot reviews once, after Codex's round is answered, when the owner adds it (*Code review* above). |
 | Block force pushes, restrict deletions | On | History on `main` never changes. |
 | Bypass | Repository admin, for pull requests only | The owner can still merge in an emergency, such as GitHub's Mac machines being down, but never push straight to `main`. |
