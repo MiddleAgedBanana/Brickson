@@ -180,6 +180,16 @@ build only in that it runs the same Python checks first):
   the narrowed headline, two lines extended and "below" made "above".
 - The byte offsets above were measured with Python on the committed
   file.
+- The owner's one line in docs/HANDOFF.md, step 8, taken from the file
+  as written, was run twice for each of twelve kinds of settings file,
+  under bash and zsh, in scratch home folders. CodeRabbit found two
+  faults in earlier versions: a key written with an indent or quotes was
+  missed and would have been added a second time, and then a
+  commented-out line stopped the setting being added at all. Every
+  result parses with Python's `tomllib`, and the top-level setting is
+  131072 or the number the file already set. A file that sets it only
+  inside a table, such as `[profiles.a]`, is left alone: Codex keeps its
+  default there, which is safer than risking a duplicate key.
 
 ## Not verified
 

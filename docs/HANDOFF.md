@@ -962,14 +962,14 @@ docs/ROADMAP.md, *The quality bar*, Q24):
    (docs/DECISIONS.md, "AGENTS.md puts first what Codex reads"). In
    Terminal, run this one line; it adds the setting at the top of
    Codex's settings file, creating the file if needed, and changes
-   nothing if the file already names the setting anywhere, however it
-   is written:
-   `f=~/.codex/config.toml; mkdir -p ~/.codex; touch "$f"; command grep -q 'project_doc_max_bytes' "$f" || { printf 'project_doc_max_bytes = 131072\n' | cat - "$f" > "$f.new" && command mv "$f.new" "$f"; }`
+   nothing if a line of the file already sets it, however the name is
+   written (a line starting with `#` is a comment and sets nothing):
+   `f=~/.codex/config.toml; mkdir -p ~/.codex; touch "$f"; command grep -Eq "^[[:space:]]*(\"project_doc_max_bytes\"|'project_doc_max_bytes'|project_doc_max_bytes)[[:space:]]*=" "$f" || { printf 'project_doc_max_bytes = 131072\n' | cat - "$f" > "$f.new" && command mv "$f.new" "$f"; }`
    Success: `command grep -n project_doc_max_bytes ~/.codex/config.toml`
-   prints `1:project_doc_max_bytes = 131072` (if you had set it before,
-   it prints your own line instead; any number larger than the file,
-   about 69,000 bytes today, works). Codex reads it when a new session
-   starts.
+   prints a line reading `1:project_doc_max_bytes = 131072` (if your
+   file already set it, it prints your own line instead; any number
+   larger than the file, about 69,000 bytes today, works). Codex reads
+   it when a new session starts.
 
 For agents: no build goes to App Review until every gate of
 docs/ROADMAP.md, *The quality bar*, has passed, the owner's answer last
