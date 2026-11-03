@@ -1186,8 +1186,9 @@ Simulators cannot show these. Record each result in a `docs/log/` file
 - The docs cross-reference check reads every title a citation names,
   quoted titles starting with a small letter and titles after the first
   included: [record](log/2026-10-23-docs-check-gaps.md).
-- Codex reviews every push to a pull request, Copilot a code pull
-  request once after Codex's round is answered, requested by the agent
+- Codex reviews every push to a pull request (CodeRabbit and Greptile
+  too, as far as their free plans allow), Copilot a code pull
+  request once after those rounds are answered, requested by the agent
   through `request_copilot_review` (from 2026-11-03 until the owner's
   subscription ends on 2026-11-09; docs/DECISIONS.md, *Code review*),
   AI Scan each

@@ -238,7 +238,11 @@ from 2026-11-10. And a request that fails because the credits have run
 out, or because the subscription has ended, is said in the pull
 request's description and in the thread, and the pull request goes on
 without Copilot: the agent never retries, and the owner does not add
-Copilot, which would spend the same credits.
+Copilot, which would spend the same credits. The owner also said that
+CodeRabbit and Greptile review by themselves, as far as their plans
+allow (CodeRabbit on a free trial, then its free tier for public
+repositories; Greptile on its free tier, out of usage that day), so
+AGENTS.md now names them, and their rounds come before Copilot's too.
 
 ## Commits
 
@@ -268,6 +272,8 @@ Copilot, which would spend the same credits.
   the guard refusing a request whose pull request it cannot read.
 - The commit after that: the Copilot step's end (2026-11-09) and what an
   agent does when a request fails for lack of credits.
+- The commit after that: CodeRabbit and Greptile named among the
+  automatic reviewers whose rounds come before Copilot's.
 
 ## Verified
 

@@ -4713,7 +4713,10 @@ review setup does not quietly break them.
   organisation), so Copilot reviews only when asked. Codex reviews when
   a pull request opens and on each push; the agent answers and fixes
   Codex's findings first, then Copilot is added once, so it sees the
-  fixed code and Codex's threads and does not repeat their findings. A pull request that changes only
+  fixed code and Codex's threads and does not repeat their findings.
+  CodeRabbit and Greptile also review by themselves, as far as their
+  free plans allow (the owner, that day), and their rounds are answered
+  before Copilot's too. A pull request that changes only
   documents gets no Copilot review. The same day the owner chose that
   the agent requests Copilot itself, so a pull request does not wait for
   the owner overnight: once, through the GitHub tool

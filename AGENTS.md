@@ -159,17 +159,23 @@ stays reachable, behind `#available` when newer (docs/DECISIONS.md,
 "Minimum iOS, iPhone and iPad").
 
 **Reviews and updates on GitHub.** Codex reviews every push to a pull
-request that a person or agent opens. GitHub Copilot no longer reviews
+request that a person or agent opens. CodeRabbit and Greptile, which
+the owner also installed, review pull requests by themselves too, as
+far as their plans allow: CodeRabbit on a free trial and then its more
+limited free tier for public repositories, Greptile on its free tier
+(out of usage on 2026-11-03). GitHub Copilot no longer reviews
 by itself (the owner turned that off on 2026-11-03), and each Copilot
 review spends the owner's monthly AI credits. The owner has cancelled
 the Copilot subscription, and it ends on 2026-11-09. Until then, the
 owner's order (2026-11-03) is staggered: the agent
-answers and fixes Codex's round first, then Copilot reviews the pull
-request once, so it sees the fixed code and Codex's threads instead of
-repeating them. A pull request that changes only documents gets no
+answers and fixes the automatic rounds first (Codex's, and CodeRabbit's
+or Greptile's when they review), then Copilot reviews the pull request
+once, so it sees the fixed code and their threads instead of repeating
+them. A pull request that changes only documents gets no
 Copilot review. The agent that opened the pull request requests it
 itself (owner, 2026-11-03), so nothing waits for the owner: once Codex
-has reviewed the latest push and every finding is fixed or answered, it
+has reviewed the latest push and every automatic reviewer's finding is
+fixed or answered, it
 calls the GitHub tool `request_copilot_review` once for that pull
 request, and never again on it, nor any other way (the guard refuses
 `gh`, the API, the reviewer field and a second request from the same
