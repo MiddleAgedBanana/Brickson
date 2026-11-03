@@ -24,6 +24,11 @@ Two kinds of reference are checked:
 
 Renaming a section or moving a file without updating what cites it fails
 here, which is how reviewers were twice sent to sections that did not exist.
+
+It also checks the start of AGENTS.md. Codex reads only its first 32 KiB by
+default, so the sections listed in CODEX_MUST_READ must open the file, in
+that order, after an introduction that names project_doc_max_bytes, and
+end within that limit.
 """
 from functools import cache
 from pathlib import Path
@@ -66,6 +71,24 @@ QUOTATIONS = {
     ('docs/DECISIONS.md', 'docs/HANDOFF.md',
      "Chains of activations through Settings' screens"),
 }
+
+# Codex reads only the first 32 KiB of the AGENTS.md files on its path by
+# default and drops the rest with nothing but a log line (OpenAI, "Custom
+# instructions with AGENTS.md": project_doc_max_bytes). These sections of AGENTS.md come
+# first, in this order, and end within that limit (docs/DECISIONS.md,
+# "AGENTS.md puts first what Codex reads").
+CODEX_READ_LIMIT = 32 * 1024
+CODEX_MUST_READ = (
+    "What this is and what's at stake",
+    'Non-negotiable invariants',
+    'The privacy policy is a promise',
+    'Layout on every device and window',
+    "Apple's current frameworks first",
+    'Design rules for dwell, switch and pointer input',
+    'Code Review Rules',
+    'Workflow rules',
+    'Working with the owner',
+)
 
 SOURCE_SUFFIXES = {'.md', '.swift', '.yml', '.yaml', '.sh', '.py', '.json'}
 
@@ -525,6 +548,78 @@ def all_section_titles(files):
         if path.suffix == '.md':
             titles |= sections(path.read_text())
     return titles
+
+
+LINE_BREAKS = '\n\r\x0b\x0c\x1c\x1d\x1e\x85\u2028\u2029'
+
+
+def without_fences_or_comments(text):
+    """Blank out fenced code and HTML comment blocks, in document order,
+    keeping every line break so line numbers still match. As in
+    CommonMark, a comment hides lines only when its `<!--` starts a line
+    (after up to three spaces), and runs through the line that holds
+    `-->`, or to the end if none does; a `<!--` in a code span or a
+    paragraph hides nothing, and a fence inside a comment opens nothing."""
+    output, fence, comment = [], None, False
+    for line in text.splitlines(keepends=True):
+        if comment:
+            comment = '-->' not in line
+        elif fence:
+            if re.fullmatch(r' {0,3}' + re.escape(fence[0]) + '{' + str(len(fence)) + r',}[ \t]*[\r\n]*', line):
+                fence = None
+        elif re.match(r' {0,3}<!--', line):
+            comment = '-->' not in line
+        elif ((opening := re.match(r' {0,3}(`{3,}|~{3,})(.*)', line))
+              and not (opening[1][0] == '`' and '`' in opening[2])):
+            fence = opening[1]
+        else:
+            output.append(line)
+            continue
+        output.append(''.join(c if c in LINE_BREAKS else ' ' for c in line))
+    return ''.join(output)
+
+
+def codex_cut_problems(data, must_read=CODEX_MUST_READ, limit=CODEX_READ_LIMIT):
+    """What is wrong with AGENTS.md, given as bytes, for an agent that reads
+    only its first `limit` bytes: the `must_read` sections must open it, in
+    order, after an introduction that names `project_doc_max_bytes`, and
+    end within the limit. Only `#` and `##` lines outside fenced code and
+    HTML comment blocks are seen as headings, and only they end a
+    section: a `---` line can be a thematic break rather than a heading's
+    underline. Missing a real heading only makes the end stricter, but
+    the order and the introduction do not see a Setext, empty or quoted
+    level-2 heading; and a `#` line that CommonMark does not read as a
+    heading (inside a raw HTML block such as `<div>`, after a form feed or
+    U+2028, or with a no-break space after its marks) still ends a
+    section here. AGENTS.md uses none of these."""
+    text = data.decode('utf-8')
+    starts, offset = [], 0
+    for line in text.splitlines(keepends=True):
+        starts.append(offset)
+        offset += len(line.encode('utf-8'))
+    readable = without_fences_or_comments(text)
+    lines = readable.splitlines()
+    found = [(level, title, starts[number]) for level, title, number in headings(readable)
+             if level <= 2 and HEADING.fullmatch(lines[number])]
+    second = [(title, start) for level, title, start in found if level == 2]
+    opening = [title for title, _ in second[:len(must_read)]]
+    if opening != list(must_read):
+        return [f'AGENTS.md must open with these sections, in this order: '
+                f'{"; ".join(must_read)}. It opens with: {"; ".join(opening) or "none"}']
+    problems = []
+    if b'project_doc_max_bytes' not in data[:second[0][1]]:
+        problems.append('AGENTS.md: its introduction, before the first section, must name '
+                        'project_doc_max_bytes, the setting that makes Codex read only the '
+                        'start of the file')
+    last = second[len(must_read) - 1][1]
+    end = next((start for _, _, start in found if start > last), len(data))
+    if end > limit:
+        problems.append(
+            f'AGENTS.md: the sections Codex must read end at byte {end}, past the {limit} '
+            f'it reads by default. Move how-it-works detail below "{must_read[-1]}", or '
+            f'shorten without dropping or weakening a rule; if neither is possible, ask '
+            f'the owner (docs/DECISIONS.md, "AGENTS.md puts first what Codex reads")')
+    return problems
 
 
 class CheckerTests(unittest.TestCase):
@@ -1008,6 +1103,84 @@ class CheckerTests(unittest.TestCase):
                      '    [ref]: docs/NO-SUCH-FILE.md', '[^note]: explanation']:
             with self.subTest(text=text):
                 self.assertEqual(broken_links(readme, text), [])
+
+
+class CodexCutTests(unittest.TestCase):
+    """A rule moved past what Codex reads of AGENTS.md by default must fail."""
+
+    MUST_READ = ('First', 'Second')
+
+    def problems(self, text, limit=64):
+        return codex_cut_problems(text.encode('utf-8'), self.MUST_READ, limit)
+
+    def test_sections_that_end_within_the_limit_pass(self):
+        text = 'Intro project_doc_max_bytes.\n\n## First\n\nA.\n\n## Second\n\nB.\n\n## Later\n' + 'x' * 200
+        self.assertEqual(self.problems(text), [])
+
+    def test_a_must_read_section_that_ends_past_the_limit_fails(self):
+        text = 'Intro project_doc_max_bytes.\n\n## First\n\nA.\n\n## Second\n\n' + 'B' * 60 + '\n\n## Later\n'
+        self.assertTrue(self.problems(text))
+
+    def test_the_limit_is_counted_in_bytes_not_characters(self):
+        # Twenty two-byte letters put Later 20 bytes further on than 20 characters.
+        text = 'project_doc_max_bytes\n## First\n## Second\n' + 'é' * 20 + '\n## Later\n'
+        characters = text.index('## Later')
+        byte_offset = len(text[:characters].encode('utf-8'))
+        self.assertEqual(byte_offset, characters + 20)
+        self.assertTrue(self.problems(text, limit=characters))
+        self.assertEqual(self.problems(text, limit=byte_offset), [])
+
+    def test_the_must_read_sections_come_first_and_in_order(self):
+        for headings_in_order in (['Second', 'First'], ['Other', 'First', 'Second'], ['First']):
+            text = 'project_doc_max_bytes\n' + ''.join(f'## {title}\n' for title in headings_in_order)
+            self.assertTrue(self.problems(text, limit=10_000), headings_in_order)
+
+    def test_a_heading_inside_fenced_code_is_not_a_section(self):
+        text = 'project_doc_max_bytes\n## First\n```\n## Later\n```\n## Second\nB.\n## Later\n' + 'x' * 100
+        self.assertEqual(self.problems(text), [])
+
+    def test_a_comment_marker_that_does_not_start_a_line_hides_nothing(self):
+        for text in ('project_doc_max_bytes\n## First\nAn unclosed `<!--`.\n## Second\nB.\n## Later\n',
+                     'project_doc_max_bytes\n## First\n<!--\n```\n-->\n## Second\nB.\n## Later\n'):
+            with self.subTest(text=text):
+                self.assertEqual(self.problems(text, limit=10_000), [])
+        text = 'project_doc_max_bytes\n## First\nSee <!--\n## Other\n-->\n## Second\n## Later\n'
+        self.assertTrue(self.problems(text, limit=10_000))
+
+    def test_a_comment_opened_inside_fenced_code_hides_nothing(self):
+        text = 'project_doc_max_bytes\n## First\n```html\n<!--\n```\n## Second\nB.\n## Later\n' + 'x' * 100
+        self.assertEqual(self.problems(text), [])
+
+    def test_the_introduction_must_name_project_doc_max_bytes(self):
+        for text in ('Intro.\n## First\n## Second\n## Later\n',
+                     'Intro.\n## First\nproject_doc_max_bytes\n## Second\n## Later\n',
+                     'Intro.\n## First\n## Second\n## Later\nproject_doc_max_bytes\n'):
+            with self.subTest(text=text):
+                self.assertTrue(self.problems(text, limit=10_000))
+
+    def test_a_subsection_of_the_last_must_read_section_counts_as_part_of_it(self):
+        text = 'project_doc_max_bytes\n## First\n## Second\n### Part\n' + 'B' * 60 + '\n## Later\n'
+        self.assertTrue(self.problems(text))
+
+    def test_a_heading_inside_an_html_comment_does_not_end_a_section(self):
+        for comment in ('<!--\n## Draft\n-->\n', '<!--\n## Draft\n'):
+            with self.subTest(comment=comment):
+                text = 'project_doc_max_bytes\n## First\n## Second\n' + comment + 'B' * 60 + '\n## Later\n'
+                self.assertTrue(self.problems(text))
+        # A comment never closed runs to the end, hiding a heading well past its first line.
+        text = 'project_doc_max_bytes\n## First\n## Second\n<!--\n\n\n## Later\n' + 'x' * 100
+        self.assertTrue(self.problems(text))
+
+    def test_only_a_hash_heading_ends_a_section(self):
+        # A thematic break after a list item, then two Setext headings,
+        # which the check does not count: it stops only stricter.
+        for lines in ('- Item\n  continued.\n---\n', 'Words\n---\n', 'Words\n===\n'):
+            with self.subTest(lines=lines):
+                text = 'project_doc_max_bytes\n## First\n## Second\n' + lines + 'B' * 60 + '\n## Later\n'
+                self.assertTrue(self.problems(text))
+
+    def test_agents_md_puts_what_codex_must_read_within_its_default_limit(self):
+        self.assertEqual(codex_cut_problems((ROOT / 'AGENTS.md').read_bytes()), [])
 
 
 class DocumentTests(unittest.TestCase):

@@ -5,6 +5,17 @@ agent working here: Codex and Jules read it directly, and Claude Code loads
 it through `CLAUDE.md` (which contains only `@AGENTS.md`). Put instructions
 here, not in an agent-specific file, so every agent gets the same rules.
 
+**Read all of it.** Codex reads only the first 32 KiB of `AGENTS.md` by
+default and drops the rest without saying so (OpenAI's
+[`project_doc_max_bytes`](https://developers.openai.com/codex/agent-configuration/agents-md)),
+and this file is longer. So the rules that protect the people using
+Brickson, the review rules and the workflow come first, through
+*Working with the owner*, and `scripts/test-docs.py` fails if they end
+past that point (docs/DECISIONS.md, "AGENTS.md puts first what Codex
+reads"). The sections after *Working with the owner* bind every agent
+just the same: if your copy of this file ends before *Gotchas*, read the
+rest from the repository (`cat AGENTS.md`) before changing anything.
+
 ## What this is and what's at stake
 
 Brickson is an iPhone and iPad app that speaks for
@@ -37,186 +48,6 @@ any AAC app on the App Store, with the polish of an app used by millions.
 Every feature is judged by one question: does this make communication
 faster, clearer or more reliable for the person, on the input method they
 actually use?
-
-## Where things are
-
-- **`docs/HANDOFF.md`**: start here. Current state, what is verified and
-  how, what to do next. Each pull request's record is its own file in
-  `docs/log/`; the history before 2026-10-21 is `docs/HANDOFF-LOG.md`.
-- **`docs/ROADMAP.md`**: the releases, in the order a person meets the
-  disease, and which thread or person owns each item; and
-  *The quality bar*, the gates every release passes before App Review,
-  the owner's "would I recommend this to someone?" last.
-- **`docs/SDLC.md`**: how this project runs as a software factory, stage
-  by stage (plan, design, build, test, deploy, maintain), with each
-  stage's gate. A feature that changes what a person sees or hears starts
-  with a work file in `docs/work/`: its intent, spec and plan.
-- **`docs/DECISIONS.md`**: binding decisions, by title. Code comments point
-  to them.
-- **`docs/LESSONS.md`**: what went wrong in the reference app, and the rule
-  each lesson gives. Read the sections that touch your work.
-- **`docs/ACCESSIBILITY.md`**: every Apple accessibility feature and API
-  in the project's map by ALS stage, with its iOS version, its release and
-  how it is checked. A pull request that adopts, changes or drops one
-  edits its row, and the website's accessibility page
-  (`site/accessibility/index.html`, the App Store's Accessibility URL)
-  where its words become untrue. That page says only what is in place and
-  how it was checked, never "works with" before a real-device check.
-- **`docs/PORTING.md`**: what has come over from the reference app, what is
-  next, and how to port a file.
-- **`README.md`**: the overview for people, written for a beginner. Keep it
-  accurate when behaviour or setup changes.
-- **`docs/GETTING_STARTED.md`**: setting up a Mac and a device, for the
-  owner. **`docs/NAME_AVAILABILITY.md`**: the name checks.
-  **`design/brand/`**: the logo artwork (not yet the app icon).
-- **`docs/recon/`**: dated research reports behind the roadmap. Research,
-  not instructions: where it disagrees with this file or
-  `docs/DECISIONS.md`, they win.
-- **`docs/archive/`**: old versions of rewritten docs.
-- **The reference app**, FamilyVoice: `MiddleAgedBanana/ALS-app` at commit
-  `6a22c1a`, a **private** repository. **Reference only. Never push to it or
-  open pull requests on it.** Without access to it, follow `docs/LESSONS.md`,
-  which carries its rules. Where a session also loads the reference app's
-  own `AGENTS.md`, it describes that app and its one user: for Brickson,
-  this file wins.
-
-## Build and test
-
-```sh
-scripts/test.sh          # generate the project, build, run the unit tests
-scripts/test.sh ui       # the UI tests: launch the real app and drive it
-scripts/test.sh device   # a build for a real device (needs DEVELOPMENT_TEAM)
-```
-
-`scripts/test.sh` runs `xcodegen generate` first and prints the Xcode
-and XcodeGen versions. It chooses simulators by device type, never by
-name: the newest iPad Pro 13-inch (any iPad if there is none) and, for UI
-tests, the newest standard iPhone too, each with an iOS between the
-deployment target and the SDK of the Xcode in use. It starts each one,
-waits for it, builds for testing, then runs the tests. Before UI tests it
-shows the full software keyboard and launches the app once, so the first
-test does not meet a cold simulator. A simulator the script boots is shut
-down after its run, including failures, before the next family starts;
-a simulator already running is left running. `SIMULATOR_FAMILY=iphone` runs one
-family; `DESTINATION='platform=iOS Simulator,name=iPhone 17' scripts/test.sh`
-names one simulator, which is started and waited for too. Anything after
-the mode goes to `xcodebuild`
-(`scripts/test.sh unit '-only-testing:BricksonTests/PaletteTests/theContrastFormulaMatchesWCAG()'`).
-Each run keeps its result bundle, with screenshots of UI-test failures and
-the captures UI tests attach, in `build/TestResults/<mode>-<family>.xcresult`,
-and prints how many tests ran; a run in which no test ran, or whose count
-cannot be read, fails. A unit run also prints the app's code coverage and
-brings `Brickson/Resources/Localizable.xcstrings` up to date with the code
-(`xcstringstool sync` over the strings the build found); commit the
-updated catalog with your change. On CI a catalog that does not match the
-code fails the run and prints the difference. Beside each bundle,
-`build/TestResults/simulator-load-<family>.txt` records which of the
-simulator's processes used the Mac's processors, every five seconds; on
-a simulator the script started, `scripts/simulator-load.py` also pauses
-its lock-screen wallpaper extensions for the run (*Gotchas*). The iPad
-and the iPhone are both first-class: UI tests run on both every time.
-
-On a Mac, the unit suite must be **100% green before any commit**; for
-work made where nothing can be built, CI must be green before the pull
-request merges. No exceptions and no unexplained skips. A known limitation is a strict `withKnownIssue`
-naming its decision, so it fails when it starts passing.
-
-**Warnings are errors** in every target and build configuration
-(`project.yml`; docs/DECISIONS.md, "Warnings are errors"): a compiler
-warning fails the build, on CI and on a Mac. Fix the code it names;
-never silence it. CI builds Debug only: before an archive,
-`scripts/test.sh device -configuration Release` on a Mac shows any
-warning only the Release build sees (code under `#if DEBUG` differs).
-
-**GitHub CI** (`.github/workflows/tests.yml`) runs the unit and UI tests on
-GitHub's Mac machines for every pull request and every push to `main`.
-Since 2026-11-03 the UI tests run as one job per family, "UI tests on
-iPad" and "UI tests on iPhone", at the same time, and the job named "UI
-tests" passes only when both passed (docs/DECISIONS.md, "Tests"). Each job keeps `build/TestResults` (the
-result bundles and load records above) as a download on the run's page
-for 14 days, passed or failed: the artifacts `unit-test-results`,
-`ui-test-results-ipad` and `ui-test-results-iphone` (one
-`ui-test-results` before the split). A job that stops before its
-tests start (choosing Xcode, XcodeGen, a build failure) writes no
-bundle, so that job has no artifact, only a warning. A
-pull request merges only when CI is green.
-
-**Build with Apple's current Xcode, never a pinned one** (owner,
-2026-10-21; docs/DECISIONS.md, "Build with Apple's current Xcode"). The
-toolchain is Apple's newest Xcode release (not a beta) with its SDKs and
-Swift compiler, on the owner's Mac and on CI. Never write an Xcode, SDK,
-simulator or runner version into the project, a script, a workflow or a
-document unless the owner asks for it: documents say "the current Xcode
-release". Look up what is current on Apple's releases page
-(https://developer.apple.com/news/releases/) and Xcode's system
-requirements (https://developer.apple.com/xcode/system-requirements/),
-never from memory. CI picks the newest released Xcode on GitHub's machine
-(`scripts/select-xcode.py`) and warns on the run when Apple has a newer
-one. The deployment target, the oldest iOS the app runs on, is a separate
-product decision, set by two rules: every device that can use eye
-tracking runs the app, and every accessibility API in the ALS-stage map
-stays reachable, behind `#available` when newer (docs/DECISIONS.md,
-"Minimum iOS, iPhone and iPad").
-
-**Reviews and updates on GitHub.** Codex reviews every push to a pull
-request that a person or agent opens. CodeRabbit and Greptile, which
-the owner also installed, review pull requests by themselves too, as
-far as their plans allow: CodeRabbit on a free trial and then its more
-limited free tier for public repositories, Greptile on its free tier
-(out of usage on 2026-11-03). GitHub Copilot no longer reviews
-by itself (the owner turned that off on 2026-11-03), and each Copilot
-review spends the owner's monthly AI credits. The owner has cancelled
-the Copilot subscription, and it ends on 2026-11-09. Until then, the
-owner's order (2026-11-03) is staggered: the agent
-answers and fixes the automatic rounds first (Codex's, and CodeRabbit's
-or Greptile's when they review), then Copilot reviews the pull request
-once, so it sees the fixed code and their threads instead of repeating
-them. A pull request that changes only documents gets no
-Copilot review. The agent that opened the pull request requests it
-itself (owner, 2026-11-03), so nothing waits for the owner: once Codex
-has reviewed the latest push and every automatic reviewer's finding is
-fixed or answered, it
-calls the GitHub tool `request_copilot_review` once for that pull
-request, and never again on it, nor any other way (the guard refuses
-`gh`, the API, the reviewer field and a second request from the same
-clone; *Guardrails for agents*). If the request fails because the
-month's AI credits have run out or the subscription has ended, the
-agent says so in the pull
-request's description and in the thread and goes on without Copilot:
-it never retries, and the owner does not add Copilot, which would spend
-the same credits. If the tool is unavailable or refused for another
-reason, it says so in the thread and the owner adds Copilot under
-**Reviewers**. From 2026-11-10 no pull request gets a Copilot review,
-and a pull request removes the step from this file, docs/DECISIONS.md
-and docs/SDLC.md. Neither reviews Dependabot's pull requests
-by itself. Both review against *Code Review Rules* below. GitHub's AI
-Scan also posts security findings after each push to such a pull request;
-answer them like review comments. It skips Dependabot's pull requests and
-those from forks, and CodeQL did not analyse Dependabot's first one before
-it merged, so treat a Dependabot pull request as not security-reviewed
-until the owner reads it or requests Copilot (docs/DECISIONS.md, *Code
-scanning*). Dependabot opens one pull request a month for new versions of
-the actions in `.github/workflows`, and one at once for a security fix.
-The intended repository settings, and why, are in docs/DECISIONS.md,
-"Reviews, updates and GitHub settings".
-
-**Pushing to an open PR.** Once CI is green, push again only if CI fails,
-a reviewer finds a real bug or a rule violation, or `main` moved and must
-be merged in. Batch cosmetic, wording and style findings into one otherwise
-needed push, or answer them in words and resolve the thread; never one
-push per finding. After the first green run, apply the existing
-[stop after two rounds rule](docs/log/2026-10-22-agent-guardrail-reconciliation.md#main-refresh-and-declined-findings-2026-10-23)
-as a limit of two fix pushes. A PR with owner-enabled auto-merge merges
-itself on green once its other merge requirements are met: after the final
-push, stop and let it. Agents never enable auto-merge or merge a PR.
-
-**Cloud agents** without Xcode (Claude Code on the web, Codex cloud, Jules)
-cannot build or run anything. Say so plainly, treat the change as untested
-until CI or a Mac run passes, and never describe unbuilt code as working.
-
-`Brickson.xcodeproj` is generated from `project.yml` and is not committed.
-Regenerate after adding, removing or renaming any file. Never edit the
-generated project, and never open it in Xcode from an agent.
 
 ## Non-negotiable invariants
 
@@ -607,7 +438,10 @@ the failure.
   appearance, multitasking mode, and which keyboard showed (the full
   software keyboard or the hardware-keyboard bar). Simulator evidence is
   never presented as proof of gaze comfort, sound or Snap to Item
-  behaviour.
+  behaviour. An activation, reachability or keyboard claim counts only
+  from a UI test through `launchedApp`, from Device Hub's own input on a
+  simulator or from a person's own input on a real device, never from an
+  automation tool's report (*Gotchas*).
 - **Time is `ContinuousClock`.** Elapsed time uses `ContinuousClock.Instant`;
   pure types take `now:` and never read a clock; `Date` is only for times
   people read (docs/LESSONS.md, "Timers use ContinuousClock").
@@ -650,11 +484,171 @@ the failure.
   needs (prototypes, screenshots, logs, receipts) goes in a git-ignored
   folder inside the worktree or under `docs/log/`, never in `/tmp` and
   never only in a chat (a `/tmp` prototype was lost on 2026-10-27).
+- **Rules that also live further down** (*Where things are*). The
+  reference app, FamilyVoice (`MiddleAgedBanana/ALS-app`, private), is
+  reference only: never push to it or open a pull request on it. Where a
+  session loads its own `AGENTS.md`, this file wins, and `docs/recon/`
+  never overrides this file or `docs/DECISIONS.md`. Read the sections of
+  `docs/LESSONS.md` that touch your work; it carries the reference app's
+  rules, so follow it without access to that app. A feature that changes
+  what a person sees or hears starts with a work file in `docs/work/`. A
+  pull request that adopts, changes or drops an accessibility feature or
+  API in `docs/ACCESSIBILITY.md`'s map edits its row there, and the
+  website's accessibility page where its words become untrue; that page
+  says only what is in place and how it was checked, never "works with"
+  before a real-device check.
 - **Start of a session:** `git status`, `git log --oneline -15`, then
   `git fetch origin`. Read `AGENTS.md`, `docs/HANDOFF.md`,
   `docs/DECISIONS.md` and the newest `docs/log/` records from the fetched
   `origin/main`, before changing anything. Another agent may have landed
   work since; the repository is the shared source of truth.
+
+## Working with the owner
+
+The owner is new to programming. Explain in plain words, without talking
+down: say what a thing is and why it matters before how. Make routine
+decisions yourself, state them, and keep going; ask only about real
+trade-offs, batched, with a recommendation. When something needs the owner
+to run a command on their Mac, give the exact command and what success
+looks like.
+
+## Build and test
+
+```sh
+scripts/test.sh          # generate the project, build, run the unit tests
+scripts/test.sh ui       # the UI tests: launch the real app and drive it
+scripts/test.sh device   # a build for a real device (needs DEVELOPMENT_TEAM)
+```
+
+On a Mac, the unit suite must be **100% green before any commit**; for
+work made where nothing can be built, CI must be green before the pull
+request merges. No exceptions and no unexplained skips. A known limitation is a strict `withKnownIssue`
+naming its decision, so it fails when it starts passing.
+
+**Warnings are errors** in every target and build configuration
+(`project.yml`; docs/DECISIONS.md, "Warnings are errors"): a compiler
+warning fails the build, on CI and on a Mac. Fix the code it names;
+never silence it. CI builds Debug only: before an archive,
+`scripts/test.sh device -configuration Release` on a Mac shows any
+warning only the Release build sees (code under `#if DEBUG` differs).
+
+**Pushing to an open PR.** Once CI is green, push again only if CI fails,
+a reviewer finds a real bug or a rule violation, or `main` moved and must
+be merged in. Batch cosmetic, wording and style findings into one otherwise
+needed push, or answer them in words and resolve the thread; never one
+push per finding. After the first green run, apply the existing
+[stop after two rounds rule](docs/log/2026-10-22-agent-guardrail-reconciliation.md#main-refresh-and-declined-findings-2026-10-23)
+as a limit of two fix pushes. A PR with owner-enabled auto-merge merges
+itself on green once its other merge requirements are met: after the final
+push, stop and let it. Agents never enable auto-merge or merge a PR.
+
+**Cloud agents** without Xcode (Claude Code on the web, Codex cloud, Jules)
+cannot build or run anything. Say so plainly, treat the change as untested
+until CI or a Mac run passes, and never describe unbuilt code as working.
+
+`Brickson.xcodeproj` is generated from `project.yml` and is not committed.
+Regenerate after adding, removing or renaming any file. Never edit the
+generated project, and never open it in Xcode from an agent.
+
+**Build with Apple's current Xcode, never a pinned one** (owner,
+2026-10-21; docs/DECISIONS.md, "Build with Apple's current Xcode"). The
+toolchain is Apple's newest Xcode release (not a beta) with its SDKs and
+Swift compiler, on the owner's Mac and on CI. Never write an Xcode, SDK,
+simulator or runner version into the project, a script, a workflow or a
+document unless the owner asks for it: documents say "the current Xcode
+release". Look up what is current on Apple's releases page
+(https://developer.apple.com/news/releases/) and Xcode's system
+requirements (https://developer.apple.com/xcode/system-requirements/),
+never from memory. CI picks the newest released Xcode on GitHub's machine
+(`scripts/select-xcode.py`) and warns on the run when Apple has a newer
+one. The deployment target, the oldest iOS the app runs on, is a separate
+product decision, set by two rules: every device that can use eye
+tracking runs the app, and every accessibility API in the ALS-stage map
+stays reachable, behind `#available` when newer (docs/DECISIONS.md,
+"Minimum iOS, iPhone and iPad").
+
+**Reviews and updates on GitHub.** Codex reviews every push to a pull
+request that a person or agent opens. CodeRabbit and Greptile, which
+the owner also installed, review pull requests by themselves too, as
+far as their plans allow: CodeRabbit on a free trial and then its more
+limited free tier for public repositories, Greptile on its free tier
+(out of usage on 2026-11-03). GitHub Copilot no longer reviews
+by itself (the owner turned that off on 2026-11-03), and each Copilot
+review spends the owner's monthly AI credits. The owner has cancelled
+the Copilot subscription, and it ends on 2026-11-09. Until then, the
+owner's order (2026-11-03) is staggered: the agent
+answers and fixes the automatic rounds first (Codex's, and CodeRabbit's
+or Greptile's when they review), then Copilot reviews the pull request
+once, so it sees the fixed code and their threads instead of repeating
+them. A pull request that changes only documents gets no
+Copilot review. The agent that opened the pull request requests it
+itself (owner, 2026-11-03), so nothing waits for the owner: once Codex
+has reviewed the latest push and every automatic reviewer's finding is
+fixed or answered, it
+calls the GitHub tool `request_copilot_review` once for that pull
+request, and never again on it, nor any other way (the guard refuses
+`gh`, the API, the reviewer field and a second request from the same
+clone; *Guardrails for agents*). If the request fails because the
+month's AI credits have run out or the subscription has ended, the
+agent says so in the pull
+request's description and in the thread and goes on without Copilot:
+it never retries, and the owner does not add Copilot, which would spend
+the same credits. If the tool is unavailable or refused for another
+reason, it says so in the thread and the owner adds Copilot under
+**Reviewers**. From 2026-11-10 no pull request gets a Copilot review,
+and a pull request removes the step from this file, docs/DECISIONS.md
+and docs/SDLC.md. Neither reviews Dependabot's pull requests
+by itself. Both review against *Code Review Rules* above. GitHub's AI
+Scan also posts security findings after each push to such a pull request;
+answer them like review comments. It skips Dependabot's pull requests and
+those from forks, and CodeQL did not analyse Dependabot's first one before
+it merged, so treat a Dependabot pull request as not security-reviewed
+until the owner reads it or requests Copilot (docs/DECISIONS.md, *Code
+scanning*). Dependabot opens one pull request a month for new versions of
+the actions in `.github/workflows`, and one at once for a security fix.
+The intended repository settings, and why, are in docs/DECISIONS.md,
+"Reviews, updates and GitHub settings".
+
+`scripts/test.sh` runs `xcodegen generate` first and prints the Xcode
+and XcodeGen versions. It chooses simulators by device type, never by
+name: the newest iPad Pro 13-inch (any iPad if there is none) and, for UI
+tests, the newest standard iPhone too, each with an iOS between the
+deployment target and the SDK of the Xcode in use. It starts each one,
+waits for it, builds for testing, then runs the tests. Before UI tests it
+shows the full software keyboard and launches the app once, so the first
+test does not meet a cold simulator. A simulator the script boots is shut
+down after its run, including failures, before the next family starts;
+a simulator already running is left running. `SIMULATOR_FAMILY=iphone` runs one
+family; `DESTINATION='platform=iOS Simulator,name=iPhone 17' scripts/test.sh`
+names one simulator, which is started and waited for too. Anything after
+the mode goes to `xcodebuild`
+(`scripts/test.sh unit '-only-testing:BricksonTests/PaletteTests/theContrastFormulaMatchesWCAG()'`).
+Each run keeps its result bundle, with screenshots of UI-test failures and
+the captures UI tests attach, in `build/TestResults/<mode>-<family>.xcresult`,
+and prints how many tests ran; a run in which no test ran, or whose count
+cannot be read, fails. A unit run also prints the app's code coverage and
+brings `Brickson/Resources/Localizable.xcstrings` up to date with the code
+(`xcstringstool sync` over the strings the build found); commit the
+updated catalog with your change. On CI a catalog that does not match the
+code fails the run and prints the difference. Beside each bundle,
+`build/TestResults/simulator-load-<family>.txt` records which of the
+simulator's processes used the Mac's processors, every five seconds; on
+a simulator the script started, `scripts/simulator-load.py` also pauses
+its lock-screen wallpaper extensions for the run (*Gotchas*). The iPad
+and the iPhone are both first-class: UI tests run on both every time.
+
+**GitHub CI** (`.github/workflows/tests.yml`) runs the unit and UI tests on
+GitHub's Mac machines for every pull request and every push to `main`.
+Since 2026-11-03 the UI tests run as one job per family, "UI tests on
+iPad" and "UI tests on iPhone", at the same time, and the job named "UI
+tests" passes only when both passed (docs/DECISIONS.md, "Tests"). Each job keeps `build/TestResults` (the
+result bundles and load records above) as a download on the run's page
+for 14 days, passed or failed: the artifacts `unit-test-results`,
+`ui-test-results-ipad` and `ui-test-results-iphone` (one
+`ui-test-results` before the split). A job that stops before its
+tests start (choosing Xcode, XcodeGen, a build failure) writes no
+bundle, so that job has no artifact, only a warning. A
+pull request merges only when CI is green.
 
 ## Guardrails for agents
 
@@ -714,6 +708,11 @@ above are backed by checks wherever a check can run:
   `QUOTATIONS` lists them as a quotation of that file. In this file, the
   review skill and `.github/copilot-instructions.md`, an italic title on
   its own must name a real section. Rename a section and update what cites it in the same commit.
+  It also fails when the sections Codex must read stop opening this
+  file, in their order, when the introduction stops naming
+  `project_doc_max_bytes`, or when they end past the 32 KiB Codex reads
+  by default (`CODEX_MUST_READ`; docs/DECISIONS.md, "AGENTS.md puts
+  first what Codex reads").
 - **The verifier.** `.claude/agents/verifier.md` is a report-only
   subagent: it runs the Python checks, reads the branch's CI run and says
   what was and was not verified. Run it before calling a pull request
@@ -721,14 +720,47 @@ above are backed by checks wherever a check can run:
 - **Issues.** `.github/ISSUE_TEMPLATE/something-went-wrong.yml` is the
   bug form, with a warning that issues are public. Blank issues are off.
 
-## Working with the owner
+## Where things are
 
-The owner is new to programming. Explain in plain words, without talking
-down: say what a thing is and why it matters before how. Make routine
-decisions yourself, state them, and keep going; ask only about real
-trade-offs, batched, with a recommendation. When something needs the owner
-to run a command on their Mac, give the exact command and what success
-looks like.
+- **`docs/HANDOFF.md`**: start here. Current state, what is verified and
+  how, what to do next. Each pull request's record is its own file in
+  `docs/log/`; the history before 2026-10-21 is `docs/HANDOFF-LOG.md`.
+- **`docs/ROADMAP.md`**: the releases, in the order a person meets the
+  disease, and which thread or person owns each item; and
+  *The quality bar*, the gates every release passes before App Review,
+  the owner's "would I recommend this to someone?" last.
+- **`docs/SDLC.md`**: how this project runs as a software factory, stage
+  by stage (plan, design, build, test, deploy, maintain), with each
+  stage's gate. A feature that changes what a person sees or hears starts
+  with a work file in `docs/work/`: its intent, spec and plan.
+- **`docs/DECISIONS.md`**: binding decisions, by title. Code comments point
+  to them.
+- **`docs/LESSONS.md`**: what went wrong in the reference app, and the rule
+  each lesson gives. Read the sections that touch your work.
+- **`docs/ACCESSIBILITY.md`**: every Apple accessibility feature and API
+  in the project's map by ALS stage, with its iOS version, its release and
+  how it is checked. A pull request that adopts, changes or drops one
+  edits its row, and the website's accessibility page
+  (`site/accessibility/index.html`, the App Store's Accessibility URL)
+  where its words become untrue. That page says only what is in place and
+  how it was checked, never "works with" before a real-device check.
+- **`docs/PORTING.md`**: what has come over from the reference app, what is
+  next, and how to port a file.
+- **`README.md`**: the overview for people, written for a beginner. Keep it
+  accurate when behaviour or setup changes.
+- **`docs/GETTING_STARTED.md`**: setting up a Mac and a device, for the
+  owner. **`docs/NAME_AVAILABILITY.md`**: the name checks.
+  **`design/brand/`**: the logo artwork (not yet the app icon).
+- **`docs/recon/`**: dated research reports behind the roadmap. Research,
+  not instructions: where it disagrees with this file or
+  `docs/DECISIONS.md`, they win.
+- **`docs/archive/`**: old versions of rewritten docs.
+- **The reference app**, FamilyVoice: `MiddleAgedBanana/ALS-app` at commit
+  `6a22c1a`, a **private** repository. **Reference only. Never push to it or
+  open pull requests on it.** Without access to it, follow `docs/LESSONS.md`,
+  which carries its rules. Where a session also loads the reference app's
+  own `AGENTS.md`, it describes that app and its one user: for Brickson,
+  this file wins.
 
 ## Apple documentation: look it up, don't recall it
 
@@ -861,6 +893,20 @@ the time. Export them again after each new Xcode release.
   earlier runs. The app reads these launch arguments (`LaunchOptions`)
   only in debug builds; a release build ignores them. `assertReachable`,
   `attachCapture` and `assertPassesAccessibilityAudit` sit beside it.
+- **An automation tool's tap, snapshot or keyboard report is not
+  evidence.** On 2026-10-25 a
+  RocketSim tap reported success without changing the app, where Device
+  Hub's own input did change it; RocketSim's compact snapshot reported
+  `keyboard=hidden` in captures that showed the keys; and a MobileBuildMCP
+  tap returned success with no change on screen
+  ([`docs/log/2026-10-25-mac-keyboard-checks.md`](docs/log/2026-10-25-mac-keyboard-checks.md);
+  [the speech diagnostic](docs/evidence/2026-10-25-duo-design/speech-diagnostic/README.md)).
+  Taps, snapshots and keyboard states that RocketSim, MobileBuildMCP,
+  AXe or any other automation tool reports are for looking around, never
+  evidence: an activation, reachability or keyboard claim counts only
+  from a UI test through `launchedApp`, from Device Hub's own input on a
+  simulator or from a person's own input on a real device, and a capture
+  counts only for what it visibly shows.
 - **Verify rendered appearance, not the setter's readback.** Command-line
   simulator runs on Xcode 27.1 reported `XCUIDevice.appearance == .dark`
   while the app stayed light. `launchedApp` uses debug-only
@@ -934,7 +980,20 @@ the time. Export them again after each new Xcode release.
   display. The record is
   [`docs/log/2026-10-25-mac-keyboard-checks.md`](docs/log/2026-10-25-mac-keyboard-checks.md).
   `DESTINATION='platform=iOS Simulator,id=<udid>' scripts/test.sh ui`
-  runs the UI tests on whichever display is showing.
+  runs the UI tests on whichever display is showing. Xcode 27.2's
+  [release notes](https://developer.apple.com/documentation/xcode-release-notes/xcode-27_2-release-notes)
+  (read 2026-11-03) list three Device Hub known issues on iPhone Duo:
+  its screenshots and recordings may be black for up to a few minutes
+  after it boots (187146039); VoiceOver, the Accessibility Inspector and
+  other accessibility tools cannot convey its screen within Device Hub
+  (187148389); and after switching between its inner and outer display,
+  modifier keys such as Shift and Command may stop working until you
+  click the visible screen (189465196). So wait a few minutes after a
+  boot before trusting a black capture, and never count an
+  accessibility reading of an iPhone Duo taken inside Device Hub as
+  evidence. The black XCTest captures of 2026-10-25, of the inactive
+  outer display on Xcode 27.1, are not among these. Whether XCTest's own
+  queries on an iPhone Duo are affected is not known.
 - **iPhone Duo has an iOS runtime of its own.** From Xcode 27.2, a Mac
   lists two runtimes with the same iOS version: one holds only iPhone
   Duo, and its identifier names the device after the version
@@ -960,14 +1019,24 @@ the time. Export them again after each new Xcode release.
   `--short-timeouts`, an alarm that ends) must be over, or unable to
   happen, before an audit. A wait is not a retry: the finding came from
   auditing a moving screen, not from the app.
-- **`ViewThatFits` fails Apple's audit around text.** The audit grows
-  the text and compares each text with itself, and `ViewThatFits` swaps
-  one view for another: labels built with it were reported as clipped or
-  as not following Dynamic Type (docs/DECISIONS.md, *Home's stand-in
-  layout*), and on PR #33 Settings' root, built with one, was reported as
-  clipped text belonging to no element on the phone. Choose arrangements
-  in a plain type and place each view once (`WordFit`,
-  `SettingsLeadIn`).
+- **`ViewThatFits` failed Apple's audit around text, here.** This is
+  the app's own finding on CI, on the Xcode of the time, not a rule
+  Apple documents: Apple's audit checks text for clipping and for
+  following Dynamic Type as it grows the text
+  ([Performing accessibility audits](https://developer.apple.com/documentation/accessibility/performing-accessibility-audits-for-your-app)),
+  and `ViewThatFits` swaps one view for another as the text grows. On
+  2026-10-21 Settings labels that used one to drop their icon where the
+  words did not fit failed the audit's Dynamic Type check ("partially
+  unsupported") on both devices and were reported as clipped on the
+  iPhone, on rows that had passed as plain labels
+  ([`docs/log/2026-10-21-settings-and-first-run.md`](docs/log/2026-10-21-settings-and-first-run.md));
+  on Home, a label whose size one picked was reported as clipped
+  (docs/DECISIONS.md, *Home's stand-in layout*, where drawing a label at
+  a smaller text size was a separate way reported as not following
+  Dynamic Type); and on PR #33 Settings' root, built with one, was
+  reported as clipped text belonging to no element on the phone
+  (docs/DECISIONS.md, *Settings on Home*). Choose arrangements in a
+  plain type and place each view once (`WordFit`, `SettingsLeadIn`).
 - **CI results can be read without a Mac.** A failed UI test's result
   keeps a screen recording of the whole test, and each `.xcresult` has a
   `database.sqlite3` listing every activity and attachment with its time

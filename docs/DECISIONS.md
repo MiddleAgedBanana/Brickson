@@ -4907,3 +4907,93 @@ through its API on 2026-10-15:
 | Automatically request Copilot code review | Off since 2026-11-03 (on before, with new pushes and drafts off) | Copilot reviews once, after Codex's round is answered, when the agent requests it (*Code review* above). |
 | Block force pushes, restrict deletions | On | History on `main` never changes. |
 | Bypass | Repository admin, for pull requests only | The owner can still merge in an emergency, such as GitHub's Mac machines being down, but never push straight to `main`. |
+
+## AGENTS.md puts first what Codex reads
+
+*2026-11-03. Default, from the owner's consultant notes; reversible if
+the owner objects
+([`log/2026-11-03-agents-md-for-codex.md`](log/2026-11-03-agents-md-for-codex.md)).*
+
+Codex reads `AGENTS.md` itself, but by default only the first 32 KiB of
+the AGENTS.md files on its path. OpenAI's documentation says Codex
+"stops adding files once the combined size reaches the limit defined by
+`project_doc_max_bytes` (32 KiB by default)"
+([Custom instructions with AGENTS.md](https://developers.openai.com/codex/agent-configuration/agents-md),
+read 2026-11-03), and Codex's own code cuts the file at that byte with
+nothing but a log line (`codex-rs/core/src/agents_md.rs` in
+`openai/codex` at `6b2a275`, read the same day; its issue #13386, open,
+reports the silent cut). On 2026-11-03, with pull request #76 merged,
+`AGENTS.md` was 64,681 bytes and the cut fell inside *Code Review
+Rules*: a Codex at default settings never saw *Not findings*,
+*Workflow rules*, *Guardrails for agents*, *Working with the owner* or
+*Gotchas*.
+
+- **The rules that protect people, the review rules and the workflow
+  come first.** `AGENTS.md` opens with *What this is and what's at
+  stake*, *Non-negotiable invariants*, *The privacy policy is a
+  promise*, *Layout on every device and window*, *Apple's current
+  frameworks first*, *Design rules for dwell, switch and pointer input*,
+  *Code Review Rules*, *Workflow rules* and *Working with the owner*, in
+  that order, and they end within the first 32 KiB (at byte 30,645 on
+  2026-11-03). *Build and test*, *Guardrails for agents*, *Where things
+  are*, Apple's documentation, *Skills* and *Gotchas* follow. The
+  sections were moved; the only other changes are the ones the log
+  lists (the sentences added, the rewritten `ViewThatFits` gotcha, a
+  narrowed gotcha headline and "below" made "above"). Within *Build and
+  test*, the commands and its rules come before how the script and CI
+  work.
+- **What a Codex at default settings no longer reads.** On `main`
+  before this, *Where things are* and *Build and test* came second and
+  third, so their rules were inside the cut; now these are past it.
+  From *Where things are*: that the reference app is reference only
+  (never pushed to, never given a pull request), that neither its own
+  `AGENTS.md` nor `docs/recon/` overrides this file, that an agent reads
+  the sections of `docs/LESSONS.md` that touch its work and follows it
+  without access to the reference app, that a feature starts with a
+  work file in `docs/work/`, and that a pull request that adopts,
+  changes or drops an accessibility feature or API edits its row, and
+  the website's accessibility page where its words become untrue, a
+  page that says only what is in place and how it was checked. These
+  are repeated in *Workflow rules* ("Rules that also live further
+  down"), so Codex still reads them. From *Build and test*: the rest of "Build with
+  Apple's current Xcode" (the cut falls in it; never pinning a version
+  is also a review rule, in *Tests, workflows and the rules
+  themselves*), including the two rules that set the deployment target;
+  "Reviews and updates on GitHub" (one Copilot request per pull
+  request, until 2026-11-09; GitHub's AI Scan findings answered like
+  review comments; a Dependabot pull request treated as not
+  security-reviewed); committing the String Catalog a unit run brings up
+  to date, which CI also checks; and how `scripts/test.sh` and CI work.
+  These are not repeated: the deployment target's two rules are
+  recorded in "Minimum iOS, iPhone and iPad" (the owner set the first
+  and left the rest to the project), which every session reads at its
+  start (*Workflow rules*, "Start of a session"); the Copilot
+  step ends on 2026-11-09; CI fails a catalog that does not match
+  the code; and repeating more would push *Build and test*'s own rules
+  past the cut in their place.
+- **Everything still binds.** The introduction says what Codex reads,
+  that the rest binds every agent just the same, and that an agent whose
+  copy ends before *Gotchas* reads the rest from the repository before
+  changing anything.
+- **A check holds the order.** `scripts/test-docs.py`
+  (`CODEX_MUST_READ`, `codex_cut_problems`) fails when those sections
+  stop opening the file in that order, when the introduction stops
+  naming `project_doc_max_bytes`, or when they end past byte 32,768.
+  When it fails, move how-it-works detail below *Working with the owner*
+  or shorten without dropping or weakening a rule; if neither is enough,
+  the owner decides.
+- **Why not every rule.** Reordering cannot put every rule within 32 KiB:
+  everything above *Gotchas* came to 49,240 bytes, and the sections
+  that come first already take 30,645 of its 32,768. Fitting every rule
+  would mean rewriting the invariants and the review rules much shorter,
+  which risks weakening them (*Code Review Rules*, *Tests, workflows and
+  the rules themselves*). A Codex on the owner's Mac reads the whole
+  file once `project_doc_max_bytes` in `~/.codex/config.toml` is at
+  least the file's size (131072 leaves room to grow). Whether Codex's
+  code review on GitHub, Codex cloud or Jules apply the same limit is
+  not documented, so the order assumes they might.
+
+Before: *What this is and what's at stake* was followed by *Where
+things are* and *Build and test*, ahead of the invariants; *Guardrails
+for agents* came between *Workflow rules* and *Working with the owner*;
+and *Gotchas* came last, as now.
