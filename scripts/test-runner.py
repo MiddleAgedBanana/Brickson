@@ -2,6 +2,7 @@
 """Exercise test.sh's error reporting and simulator choice without booting a
 simulator, check the simulator watcher it starts (simulator-load.py), and
 check that CI runs it with the newest released Xcode."""
+import argparse
 import importlib.util
 import json
 import os
@@ -940,6 +941,7 @@ class CoverageTests(unittest.TestCase):
 # A stand-in for /bin/ps: it prints the files beside it, `args` for the
 # launchd_sim lookup and `table` for the process list.
 FAKE_PS = """#!/bin/bash
+[ -e "$(dirname "$0")/hang" ] && exec sleep 30
 case "$*" in
     "-axww -o pid=,args=") cat "$(dirname "$0")/args" ;;
     "-axww -o pid=,ppid=,stat=,time=,comm=") cat "$(dirname "$0")/table" ;;
@@ -1102,6 +1104,25 @@ class SimulatorLoadTests(unittest.TestCase):
             lambda: self.record.read_text().splitlines()[-1:] == ["Stopped."]),
             self.record.read_text())
         self.assertIn(f"The test run ({gone.pid}) is gone.", self.record.read_text())
+
+    # A process list with no time limit, or a time-out the watcher does not
+    # catch, leaves a hung ps holding the watcher: it pauses nothing more
+    # and `stop` finds no summary. Either fails this test.
+    def test_a_process_list_that_hangs_is_given_up_on_and_the_watcher_carries_on(self):
+        (self.folder / "hang").touch()
+        self.module.PS_TIMEOUT = 0.5
+        for number in (signal.SIGTERM, signal.SIGINT):
+            self.addCleanup(signal.signal, number, signal.getsignal(number))
+        arguments = argparse.Namespace(udid="PAD", out=str(self.record), pause_posters=True,
+                                       ps=str(self.ps), parent=os.getpid())
+        began = time.monotonic()
+        self.assertEqual(self.module.watch(arguments, parent_alive=lambda pid: False), 0)
+        self.assertLess(time.monotonic() - began, 10)
+        lines = self.record.read_text().splitlines()
+        self.assertTrue(any(line.startswith("could not read the process list:") and "timed out" in line
+                            for line in lines), lines)
+        self.assertEqual(lines[-1], "Stopped.")
+        self.assertLess(simulator_load().PS_TIMEOUT, simulator_load().WAIT)
 
 
 def workflow_jobs(text):

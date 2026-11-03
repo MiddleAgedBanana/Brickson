@@ -48,6 +48,10 @@ POSTER = re.compile(r"Poster(Extension|Provider)?$")
 INTERVAL = 5.0
 # How long `start` waits for the watcher to begin, and `stop` for it to end.
 WAIT = 15.0
+# How long one process list may take. A slower one is given up on and that
+# reading skipped, so a hung ps never holds the watcher; shorter than WAIT,
+# so `stop` still finds the summary.
+PS_TIMEOUT = 10.0
 STOPPED = "Stopped."
 
 
@@ -66,7 +70,7 @@ def read_processes(ps="/bin/ps"):
     `comm` is the executable's path, which may hold spaces (a simulator
     runtime is "iOS 27.0.simruntime"), so it is the last column."""
     output = subprocess.run([ps, "-axww", "-o", "pid=,ppid=,stat=,time=,comm="],
-                            capture_output=True, text=True, check=True).stdout
+                            capture_output=True, text=True, check=True, timeout=PS_TIMEOUT).stdout
     processes = {}
     for line in output.splitlines():
         parts = line.split(None, 4)
@@ -83,7 +87,7 @@ def launchd_sim(udid, ps="/bin/ps"):
     """The pid of the simulator's own launchd, whose arguments name the
     device's folder; None while the device is not running."""
     output = subprocess.run([ps, "-axww", "-o", "pid=,args="],
-                            capture_output=True, text=True, check=True).stdout
+                            capture_output=True, text=True, check=True, timeout=PS_TIMEOUT).stdout
     for line in output.splitlines():
         pid, _, arguments = line.strip().partition(" ")
         if "launchd_sim" in arguments and f"/{udid}/" in arguments:
@@ -201,7 +205,7 @@ def watch(arguments, parent_alive=alive):
         while not stopping:
             try:
                 watcher.sample()
-            except (OSError, subprocess.CalledProcessError) as error:
+            except (OSError, subprocess.SubprocessError) as error:
                 watcher.write(f"could not read the process list: {error}")
             deadline = time.monotonic() + INTERVAL
             while not stopping and time.monotonic() < deadline:
