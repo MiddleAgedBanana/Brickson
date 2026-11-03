@@ -1170,7 +1170,6 @@ class GuardTests(unittest.TestCase):
         for name, arguments in [
                 ('mcp__github__merge_pull_request', {'pullNumber': 12}),
                 ('mcp__github__enable_pr_auto_merge', {'pullNumber': 12}),
-                ('mcp__github__request_copilot_review', {'pullNumber': 12}),
                 ('mcp__github__assign_copilot_to_issue', {'issueNumber': 1}),
                 ('mcp__github__create_pull_request_with_copilot', {}),
                 ('mcp__github__push_files', {'branch': 'main'}),
@@ -1187,6 +1186,20 @@ class GuardTests(unittest.TestCase):
                 ('mcp__github__update_pull_request', {'reviewers': ['MiddleAgedBanana']}),
                 ('mcp__github__pull_request_read', {'pullNumber': 12})]:
             self.assertIsNone(decision(name, arguments, self.repo), name)
+
+    # Copilot's review has one door: its own GitHub tool, which the agent
+    # uses once on a code pull request after Codex's round is answered
+    # (owner, 2026-11-03; AGENTS.md, "Reviews and updates on GitHub").
+    # Denying that tool, or letting a review be requested any other way,
+    # fails this test.
+    def test_copilots_review_is_requested_only_through_its_own_tool(self):
+        self.assertIsNone(decision('mcp__github__request_copilot_review',
+                                   {'owner': 'o', 'repo': 'r', 'pullNumber': 12}, self.repo))
+        self.assertEqual(decision('mcp__github__update_pull_request',
+                                  {'reviewers': ['copilot-pull-request-reviewer[bot]']}, self.repo), 'deny')
+        self.assertDenied('gh pr edit 12 --add-reviewer @copilot')
+        self.assertDenied("gh api -X POST repos/o/r/pulls/12/requested_reviewers"
+                          " -f 'reviewers[]=copilot-pull-request-reviewer[bot]'")
 
     def test_unreadable_input_decides_nothing(self):
         result = subprocess.run([sys.executable, str(GUARD)], input='not json',
@@ -1226,9 +1239,12 @@ class SettingsTests(unittest.TestCase):
 
     def test_merging_and_copilot_tools_are_denied_outright(self):
         deny = set(self.settings['permissions']['deny'])
-        for tool in ['merge_pull_request', 'enable_pr_auto_merge', 'request_copilot_review',
+        for tool in ['merge_pull_request', 'enable_pr_auto_merge',
                      'assign_copilot_to_issue', 'create_pull_request_with_copilot']:
             self.assertIn(f'mcp__github__{tool}', deny)
+        # Copilot's review tool is the one Copilot door agents may use
+        # (owner, 2026-11-03); the guard still runs before it.
+        self.assertNotIn('mcp__github__request_copilot_review', deny)
 
 
 if __name__ == '__main__':

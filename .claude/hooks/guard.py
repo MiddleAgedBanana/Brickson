@@ -13,7 +13,9 @@ It denies:
 - force pushes, and any push that would update main;
 - merging a pull request or turning on auto-merge, by gh, the GitHub API or
   a GitHub tool, and approving one;
-- the Copilot actions that spend the owner's credits;
+- the Copilot actions that spend the owner's credits, except a Copilot
+  review requested through its own GitHub tool (request_copilot_review),
+  which an agent uses once on a code pull request after Codex's round;
 - a GitHub tool that writes a file straight onto main.
 
 This is a guard against mistakes, not a sandbox: a determined command can
@@ -49,8 +51,10 @@ MERGE = ('Agents never merge, approve or auto-merge a pull request: the owner '
          'merges (AGENTS.md, "Branches and pull requests"). Say in the thread '
          'that the pull request is ready, and whether its reviews are answered.')
 COPILOT = ('Each Copilot review or Copilot task spends the owner\'s monthly AI '
-           'credits, so only the owner starts one (AGENTS.md, "Build and test", '
-           '"Reviews and updates on GitHub").')
+           'credits. An agent asks for Copilot\'s review only through the GitHub '
+           'tool request_copilot_review, once on a code pull request after Codex\'s '
+           'round is answered; every other Copilot action is the owner\'s '
+           '(AGENTS.md, "Build and test", "Reviews and updates on GitHub").')
 UNKNOWN = ('The guard cannot inspect this push/sync destination or API request body. '
            'Use an explicit feature branch or a readable request file '
            '(AGENTS.md, "Guardrails for agents").')
@@ -1578,8 +1582,9 @@ def check_github_tool(name, arguments):
     tool = name.rsplit('__', 1)[-1]
     if tool in ('merge_pull_request', 'enable_pr_auto_merge'):
         deny(MERGE)
-    if tool in ('request_copilot_review', 'assign_copilot_to_issue',
-                'create_pull_request_with_copilot'):
+    # request_copilot_review is the one Copilot door agents may use (owner,
+    # 2026-11-03); the hook still runs before it.
+    if tool in ('assign_copilot_to_issue', 'create_pull_request_with_copilot'):
         deny(COPILOT)
     if tool == 'assign_copilot_to_issue_with_intent' and arguments.get('is_suggestion') is not True:
         deny(COPILOT)

@@ -1187,8 +1187,9 @@ Simulators cannot show these. Record each result in a `docs/log/` file
   quoted titles starting with a small letter and titles after the first
   included: [record](log/2026-10-23-docs-check-gaps.md).
 - Codex reviews every push to a pull request, Copilot a code pull
-  request once after Codex's round is answered, when the owner adds it
-  (since 2026-11-03; docs/DECISIONS.md, *Code review*), AI Scan each
+  request once after Codex's round is answered, requested by the agent
+  through `request_copilot_review` (since 2026-11-03; docs/DECISIONS.md,
+  *Code review*), AI Scan each
   push; none reviews Dependabot's pull requests by itself. The AI credits they use show only in Settings →
   Billing → AI usage.
 - The [website](https://middleagedbanana.github.io/Brickson/), its
@@ -1208,7 +1209,8 @@ Simulators cannot show these. Record each result in a `docs/log/` file
   (`.claude/hooks/guard.py`; AGENTS.md, *Guardrails for agents*). Repository
   hooks are not loaded in multi-repository cloud sessions. The guard
   refuses `git add -A`, force pushes, pushes to `main`, merges, approvals
-  and Copilot actions. `scripts/test.sh` runs its tests and the docs
+  and Copilot actions other than one review requested through its own
+  tool. `scripts/test.sh` runs its tests and the docs
   cross-reference check (`scripts/test-docs.py`) before the unit tests.
   New issues start from the "Something went wrong" form; blank issues are
   off. Record: [`docs/log/2026-10-21-agent-guardrails.md`](log/2026-10-21-agent-guardrails.md).

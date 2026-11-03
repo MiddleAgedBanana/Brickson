@@ -166,10 +166,14 @@ subscription ends, the owner's order (2026-11-03) is staggered: the agent
 answers and fixes Codex's round first, then Copilot reviews the pull
 request once, so it sees the fixed code and Codex's threads instead of
 repeating them. A pull request that changes only documents gets no
-Copilot review. The guard refuses an agent's Copilot request
-(*Guardrails for agents*), so the agent says in the thread that Codex's
-round is answered and the owner adds Copilot under **Reviewers**; agents
-never add Copilot themselves. Neither reviews Dependabot's pull requests
+Copilot review. The agent that opened the pull request requests it
+itself (owner, 2026-11-03), so nothing waits for the owner: once Codex
+has reviewed the latest push and every finding is fixed or answered, it
+calls the GitHub tool `request_copilot_review` once for that pull
+request, and never again on it, nor any other way (the guard refuses
+`gh`, the API and the reviewer field; *Guardrails for agents*). If the
+tool is unavailable or refused, it says so in the thread and the owner
+adds Copilot under **Reviewers**. Neither reviews Dependabot's pull requests
 by itself. Both review against *Code Review Rules* below. GitHub's AI
 Scan also posts security findings after each push to such a pull request;
 answer them like review comments. It skips Dependabot's pull requests and
@@ -649,8 +653,10 @@ above are backed by checks wherever a check can run:
   or `.` and `git commit -a`; force pushes and any push that updates
   `main`; merging, auto-merging or approving a pull request (`gh`, the
   GitHub API or a GitHub tool); the Copilot actions that spend the owner's
-  credits; and a GitHub tool writing a file onto `main`. The same settings
-  deny the merge and Copilot tools outright. When the guard refuses, do
+  credits, except one Copilot review requested through
+  `request_copilot_review` (*Reviews and updates on GitHub*); and a
+  GitHub tool writing a file onto `main`. The same settings deny the
+  merge tools and the other Copilot tools outright. When the guard refuses, do
   not look for another way round: say in the thread what you needed and
   why. It is a guard against mistakes, not a sandbox, and it covers
   Claude Code only; Codex, Jules and the owner are held to the same rules

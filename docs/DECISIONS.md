@@ -4705,14 +4705,19 @@ review setup does not quietly break them.
   the repository's settings that day (it was already off for the
   organisation), so Copilot reviews only when asked. Codex reviews when
   a pull request opens and on each push; the agent answers and fixes
-  Codex's findings first, then the owner adds Copilot under
-  **Reviewers**, so Copilot sees the fixed code and Codex's threads and
-  does not repeat their findings. A pull request that changes only
-  documents gets no Copilot review. The agent cannot add Copilot itself:
-  the guard refuses it (AGENTS.md, *Guardrails for agents*), so it says
-  in the thread when Codex's round is answered. Before: Copilot reviewed
-  each pull request once, when it opened (the bullet below). When the
-  subscription ends, the Copilot step goes. Record:
+  Codex's findings first, then Copilot is added once, so it sees the
+  fixed code and Codex's threads and does not repeat their findings. A pull request that changes only
+  documents gets no Copilot review. The same day the owner chose that
+  the agent requests Copilot itself, so a pull request does not wait for
+  the owner overnight: once, through the GitHub tool
+  `request_copilot_review`, which the guard and `.claude/settings.json`
+  now let through. Every other way of asking for Copilot (`gh`, the
+  API, a pull request's reviewer field) and every Copilot task stay
+  refused, and the guard cannot count requests, so "once" is held by
+  AGENTS.md and by review. Before: Copilot reviewed each pull request
+  once, when it opened (the bullet below), and earlier that day the
+  owner added it by hand. When the subscription ends, the Copilot step
+  goes. Record:
   [`log/2026-11-03-ui-test-stall.md`](log/2026-11-03-ui-test-stall.md).
 - **2026-10-23, owner, reversible:** follow AGENTS.md, "Pushing to an open PR", to batch fixes and stop restarting green CI for polish; reason: PR #17. Before: only batching before each push was explicit.
 
@@ -4728,9 +4733,10 @@ review setup does not quietly break them.
 - *Added 2026-10-12.* Dependabot's pull requests get no automatic review
   from Copilot or Codex: PR #7, Dependabot's first, got neither, while
   PR #8, opened by an agent, got both. The owner requests a Copilot review
-  of one by hand when wanted. Only the owner requests Copilot reviews;
-  agents never add Copilot as a reviewer unless the owner asks, because
-  each review spends the owner's credits.
+  of one by hand when wanted. Only the owner requests Copilot's review
+  of a Dependabot pull request, because each review spends the owner's
+  credits; on its own pull requests an agent requests one once (since
+  2026-11-03, the first bullet).
 - Review guidance lives in AGENTS.md, *Code Review Rules*, which Codex,
   Copilot and Claude Code all read. `.github/copilot-instructions.md` only
   adds what is specific to Copilot and points back to AGENTS.md, so the
@@ -4873,6 +4879,6 @@ through its API on 2026-10-15:
 | Require branches to be up to date | Off | Each update reruns the Mac tests; `main` is tested again after every merge anyway. |
 | Require conversation resolution | On | Every Codex and Copilot comment, and every CodeQL alert posted on the pull request, gets an answer before a merge. AI Scan findings are answered too, by practice (*Code scanning* above). |
 | Require code scanning results | CodeQL: errors, high or higher | A workflow change that CodeQL flags as an error, or as a high or critical security problem, cannot merge. It did not cover Dependabot's first pull request, which got no CodeQL analysis before merging (*Code scanning* above). |
-| Automatically request Copilot code review | Off since 2026-11-03 (on before, with new pushes and drafts off) | Copilot reviews once, after Codex's round is answered, when the owner adds it (*Code review* above). |
+| Automatically request Copilot code review | Off since 2026-11-03 (on before, with new pushes and drafts off) | Copilot reviews once, after Codex's round is answered, when the agent requests it (*Code review* above). |
 | Block force pushes, restrict deletions | On | History on `main` never changes. |
 | Bypass | Repository admin, for pull requests only | The owner can still merge in an emergency, such as GitHub's Mac machines being down, but never push straight to `main`. |

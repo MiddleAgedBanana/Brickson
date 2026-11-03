@@ -116,14 +116,26 @@ extensions are called only for the lock screen and its gallery.
 **Also in this pull request.** The owner's review order of 2026-11-03,
 recorded where it was missing: Codex reviews when a pull request opens
 and on each push; the agent answers and fixes Codex's round first; then
-the owner adds Copilot once, so it sees the fixed code and Codex's
-threads; a pull request that changes only documents gets no Copilot
-review. The owner turned automatic Copilot review off that day. AGENTS.md,
-"Reviews and updates on GitHub", still said Copilot reviewed every pull
-request when it opened; it, docs/DECISIONS.md (*Code review* and the
-ruleset table), docs/SDLC.md and docs/HANDOFF.md now say what happens.
-The guard still refuses an agent's Copilot request, so the agent tells
-the owner when Codex's round is answered.
+Copilot reviews once, so it sees the fixed code and Codex's threads; a
+pull request that changes only documents gets no Copilot review. The
+owner turned automatic Copilot review off that day. AGENTS.md, "Reviews
+and updates on GitHub", still said Copilot reviewed every pull request
+when it opened; it, docs/DECISIONS.md (*Code review* and the ruleset
+table), docs/SDLC.md and docs/HANDOFF.md now say what happens.
+
+At first the owner was to add Copilot, because the guard refused every
+agent request for it. The owner asked whether agents could do it, since
+the owner may be asleep when a pull request is ready, and chose (on a
+decision card in the thread) that the agent requests it once per code
+pull request. So `.claude/hooks/guard.py` and `.claude/settings.json`
+now let through the GitHub tool `request_copilot_review`, and only it:
+`gh pr edit --add-reviewer`, the API's `requested_reviewers` and a pull
+request's reviewer field still refuse Copilot, and so do Copilot tasks
+and issue assignments. One door keeps "once" easy to see in a thread's
+history; the guard cannot count. `scripts/test-hooks.py` pins both: the
+tool allowed and the other ways refused
+(`test_copilots_review_is_requested_only_through_its_own_tool`), and
+the tool off the deny list while the guard still runs before it.
 
 ## Commits
 
@@ -133,8 +145,10 @@ the owner when Codex's round is answered.
 - `a47b95f` the records and the review order.
 - `49bfdbd` the workflow split: the owner's commit of
   `.github/workflows/tests.yml`, the text the thread prepared.
-- The commit after it: the process list's time limit (below) and these
-  records made true once the split was in.
+- `4070060` the process list's time limit (below); `d627781` these
+  records made true once the split was in, and the fourth stalled run.
+- The commit after them: the agent requests Copilot's review itself
+  (the guard, its settings, their tests and these records).
 
 ## Verified
 

@@ -214,14 +214,15 @@ which agents also act through, can bypass it (*Deploy*).
 
 - **Into `main`.** Codex reviews every push to a pull request, GitHub
   Copilot reviews a code pull request once after Codex's round is
-  answered (the owner adds it; AGENTS.md, "Reviews and updates on
+  answered (the agent requests it; AGENTS.md, "Reviews and updates on
   GitHub"), and GitHub's AI Scan posts security findings; all three review against AGENTS.md,
   *Code Review Rules*, which is this project's `REVIEW.md` (p39). Their
   findings inform the owner; they never approve or block on their own
   (p38). The agent that opened the pull request answers every finding,
   fixing it or saying why not, and says in its ready message whether the
   findings are handled. **The owner merges.** Agents never merge, never
-  push to `main`, and never add Copilot as a reviewer.
+  push to `main`, and ask for Copilot only once, through its review
+  tool.
 - **The website** publishes itself from `site/` after each merge to
   `main` ("Publish website", `.github/workflows/pages.yml`).
 - **The app.** The owner archives a build on the Mac with the current
