@@ -961,9 +961,10 @@ docs/ROADMAP.md, *The quality bar*, Q24):
    it reads only the first 32 KiB, and the file is about 69 KB
    (docs/DECISIONS.md, "AGENTS.md puts first what Codex reads"). In
    Terminal, run this one line; it adds the setting at the top of
-   Codex's settings file, creating the file if needed, and does nothing
-   if the setting is already there:
-   `f=~/.codex/config.toml; mkdir -p ~/.codex; touch "$f"; command grep -q '^project_doc_max_bytes' "$f" || { printf 'project_doc_max_bytes = 131072\n' | cat - "$f" > "$f.new" && command mv "$f.new" "$f"; }`
+   Codex's settings file, creating the file if needed, and changes
+   nothing if the file already names the setting anywhere, however it
+   is written:
+   `f=~/.codex/config.toml; mkdir -p ~/.codex; touch "$f"; command grep -q 'project_doc_max_bytes' "$f" || { printf 'project_doc_max_bytes = 131072\n' | cat - "$f" > "$f.new" && command mv "$f.new" "$f"; }`
    Success: `command grep -n project_doc_max_bytes ~/.codex/config.toml`
    prints `1:project_doc_max_bytes = 131072` (if you had set it before,
    it prints your own line instead; any number larger than the file,
