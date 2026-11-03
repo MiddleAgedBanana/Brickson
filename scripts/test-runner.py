@@ -4,6 +4,7 @@ simulator, check the simulator watcher it starts (simulator-load.py), and
 check that CI runs it with the newest released Xcode."""
 import argparse
 import importlib.util
+import itertools
 import json
 import os
 from pathlib import Path
@@ -12,6 +13,7 @@ import signal
 import subprocess
 import sys
 import tempfile
+import textwrap
 import time
 import unittest
 
@@ -1200,7 +1202,7 @@ class WorkflowTests(unittest.TestCase):
         self.assertRegex(result, r"(?m)^    if: *(\$\{\{ *)?always\(\)( *\}\})? *$",
                          "Without `if: always()`, a failed family skips the UI tests job, "
                          "and a skipped required check reads as passed.")
-        families, steps = {}, set()
+        families, steps, variables = {}, set(), []
         for job in needed:
             with self.subTest(job=job):
                 body = jobs[job]
@@ -1214,11 +1216,25 @@ class WorkflowTests(unittest.TestCase):
                                      + r"\.result *\}\} *$", result)
                 self.assertIsNotNone(variable, f"The UI tests job does not read {job}'s result.")
                 self.assertRegex(result, r'"\$' + variable.group(1) + r'" *!= *"?success"?')
+                variables.append(variable.group(1))
                 display = {"ipad": "iPad", "iphone": "iPhone"}.get(family.group(1), family.group(1))
                 steps.add(body.replace(display, "FAMILY").replace(family.group(1), "family"))
         self.assertEqual(set(families), {"ipad", "iphone"})
         self.assertEqual(len(steps), 1, "The families' jobs differ in more than the family.")
-        self.assertIn("exit 1", result)
+        # Run the check itself with every pair of results: it passes only
+        # when every family passed, so `&&` for `||`, or one family left
+        # out, fails here.
+        script = re.search(r"(?m)^( +)run: *\|\n((?:\1 +.*(?:\n|$))+)", result)
+        self.assertIsNotNone(script, "The UI tests job has no script to check the results.")
+        script = textwrap.dedent(script.group(2))
+        outcomes = ["success", "failure", "cancelled", "skipped"]
+        for chosen in itertools.product(outcomes, repeat=len(variables)):
+            with self.subTest(results=chosen):
+                environment = dict(os.environ, **dict(zip(variables, chosen)))
+                ran = subprocess.run(["bash", "-c", script], env=environment,
+                                     capture_output=True, text=True, timeout=30)
+                self.assertEqual(ran.returncode == 0, all(c == "success" for c in chosen),
+                                 ran.stdout + ran.stderr)
 
     # Writing an Xcode version or app path into the workflow fails this test.
     def test_the_workflow_names_no_xcode_version(self):
