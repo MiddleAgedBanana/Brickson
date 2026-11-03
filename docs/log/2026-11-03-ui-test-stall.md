@@ -211,6 +211,9 @@ review tool off the deny list.
   that ran and refuses a second one on the same pull request, and guards
   `create_pull_request`'s reviewers (Codex's, CodeRabbit's and the
   independent review).
+- The commit after that: what the split's first run and this thread's
+  Copilot request showed, including that the guard did not run in this
+  cloud thread (AGENTS.md, *Guardrails for agents*).
 
 ## Verified
 
@@ -253,7 +256,22 @@ review tool off the deny list.
   (M5), iOS 27.0, portrait and landscape at default and largest text,
   light and dark, the full software keyboard): the measurements above.
 - This pull request's own CI runs are the first runs of `test.sh` with
-  the watcher, on both families and in the unit job.
+  the watcher, on both families and in the unit job. The first run of
+  the two family jobs (41643818607, on `5dc9d6d`, iPad Pro 13-inch (M5)
+  and iPhone 17, iOS 27.0) was cancelled by the next push: the unit
+  tests passed; on the iPhone all 64 UI tests ran (58 passed, 6
+  skipped, none failed) in 36.5 minutes; on the iPad the watcher paused
+  13 wallpaper extensions at 13:29:44, 3.2 minutes before the first
+  test, and 57 of the 64 tests had passed, none failed, in 40.7 minutes
+  when the job was cancelled (`HomeLayoutTests` 102.6 s). "UI tests"
+  then failed, as it must when a family is cancelled. A cancelled
+  bundle has no `database.sqlite3`; the counts came from the test
+  runner's output in its `Staging` folder.
+- The Copilot record, by hand: fed the guard this thread's own request
+  (owner, repository and pull request number as the tool sent them) as
+  a `PostToolUse` event, it recorded `middleagedbanana/brickson#76` in
+  the clone's Git folder, then refused a second request on #76 and let
+  one on #77 through.
 
 ## Not verified
 
@@ -270,21 +288,23 @@ review tool off the deny list.
   every process's path each time, and slow memory is one guess. A list
   that now takes more than 5 s is recorded as "could not read the
   process list", so a repeat will show whether `ps` was what waited.
-- The iPhone family with the watcher first runs in this pull request's
-  CI.
-- The split's first runs are this pull request's CI runs: the matrix
-  from `49bfdbd`, the two jobs from the owner's second commit of
-  `tests.yml`; nothing ran either before. Whether a matrix summary can
-  really read as passed with a leg never run was not reproduced; the two
-  jobs make the question moot.
+- A whole iPad run with the watcher in `test.sh`: the first one was
+  cancelled by a push with 7 tests to go (above). Whether a matrix
+  summary can really read as passed with a leg never run was not
+  reproduced; the two jobs make the question moot.
 - `scripts/test.sh` with the watcher on the owner's Mac.
 - Whether the hook's `cwd` follows the session's `cd`, which no longer
   decides where the record is once `CLAUDE_PROJECT_DIR` is set.
-- The record of Copilot review requests in a real Claude Code session:
-  the hook tests feed the guard the events Claude Code sends, as its
-  hooks reference describes them, but the `PostToolUse` hook first runs
-  for real when an agent requests Copilot on a session that has loaded
-  the new settings.
+- The record of Copilot review requests in a live session. This thread
+  requested Copilot at 14:21 UTC, but the repository's hooks did not run
+  in this cloud thread at all: a `git add -A --dry-run`, which the guard
+  refuses, ran (Claude Code 2.1.317), and the request left no record.
+  The environment's documentation says a cloud thread applies a
+  repository's settings only in a project with one repository; this
+  thread had cloned only Brickson, and whether the project lists
+  another repository was not checked. The hook first runs for real in
+  a session that loads the repository's hooks, such as Claude Code on
+  the owner's Mac.
 
 ## Follow-ups
 
@@ -296,3 +316,8 @@ review tool off the deny list.
   no longer matters (docs/DECISIONS.md, "Tests").
 - When the owner's Copilot subscription ends, the Copilot step in
   AGENTS.md, "Reviews and updates on GitHub", goes.
+- *(owner)* The guard did not run in this cloud thread, and most of
+  Brickson's agent work happens in such threads, so there its rules may
+  rest on the agent and on review alone. Whether the project can load
+  it (the environment's documentation names a project with one
+  repository) is the owner's call, in the project's settings.

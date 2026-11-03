@@ -1207,7 +1207,9 @@ Simulators cannot show these. Record each result in a `docs/log/` file
 - Claude Code sessions with one repository run a guard before Bash and
   the selected GitHub tools named in `.claude/settings.json`
   (`.claude/hooks/guard.py`; AGENTS.md, *Guardrails for agents*). Repository
-  hooks are not loaded in multi-repository cloud sessions. The guard
+  hooks are not loaded in multi-repository cloud sessions, and on
+  2026-11-03 they were not loaded in a Brickson cloud thread with only
+  this repository cloned (AGENTS.md, *Guardrails for agents*). The guard
   refuses `git add -A`, force pushes, pushes to `main`, merges, approvals
   and Copilot actions other than one review requested through its own
   tool, and records that request in the clone's Git folder so a second

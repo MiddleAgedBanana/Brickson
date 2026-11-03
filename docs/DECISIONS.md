@@ -4724,7 +4724,9 @@ review setup does not quietly break them.
   request #76: without it, "once" rested on AGENTS.md alone). A fresh
   clone, such as a new cloud session, starts with an empty record, so
   there "once" is still held by AGENTS.md and by review, and "after
-  Codex's round" always is. Before: Copilot reviewed each pull request
+  Codex's round" always is. Where the guard does not run, as in a
+  Brickson cloud thread on 2026-11-03 (AGENTS.md, *Guardrails for
+  agents*), AGENTS.md and review hold all of it. Before: Copilot reviewed each pull request
   once, when it opened (the bullet below), and earlier that day the
   owner added it by hand. When the subscription ends, the Copilot step
   goes. Record:

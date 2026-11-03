@@ -680,6 +680,13 @@ above are backed by checks wherever a check can run:
   permission rules in a session with one repository. A cloud session that
   clones several repositories reads only plugin settings from them, so
   there the guard does not run and these rules are yours alone to keep.
+  On 2026-11-03 it did not run in a Brickson cloud thread either, though
+  that thread had cloned only this repository (Claude Code 2.1.317): a
+  `git add -A --dry-run`, which the guard refuses, ran, and the thread's
+  Copilot request left no record. The environment's documentation says
+  a cloud thread applies a repository's settings only in a project with
+  one repository. So in a cloud thread, check before relying on it:
+  where the guard runs, `git add -A --dry-run` is refused.
 - **Its tests.** `scripts/test-hooks.py` feeds the guard the calls it must
   refuse and the ones it must let through; `scripts/test.sh` runs it
   before the unit tests, so CI runs it. A new rule gets a test first.
