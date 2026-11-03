@@ -34,12 +34,12 @@ and `docs/SUCCESSOR-HANDOFF.md`. Here, read `docs/LESSONS.md`.
 |---|---|---|
 | 1 | Speech, the Get Attention alarm and audio safety | **Ported**, behind test seams (2026-10-21). Get Attention and Stop are on Home since PR #38 (2026-10-23; docs/DECISIONS.md, "Get Attention and Stop on Home"), and the status line reads the alarm's real state; the status strip is otherwise still Home's stand-in. |
 | 2 | Storage, editing logic and backup. Fix D28 here. | **Core written new** (editing rules, applier, backup format; D28 avoided by design: `rollback()` is never called, issue #19). Safety copies, export and import not yet. |
-| 3 | Text fitting and colour tokens | **Text fitting ported** (`WordFit`, `FittedLabel`, `FittedLine`). Three measured fills only (`Palette`). |
-| 4 | The layout engine, generalized to profiles | **Written new** (`HomeLayout`, 2026-10-23; docs/DECISIONS.md, "The layout engine"): touch only. Home takes every frame from it since 2026-10-24 (*Home on the engine*). The other profiles come with R1. |
-| 5 | Home and typing. Fix D27 here. | A stand-in Home only (docs/DECISIONS.md, "Home version 0 is a stand-in"). **Typing foundation built** (`Brickson/Typing`: `MessageComposer`, `DraftStore`, the keyboard probe); the typing state on Home not yet. |
+| 3 | Text fitting and colour tokens | **Text fitting ported** (`WordFit`, `FittedLabel`, `FittedLine`). Five measured fills only (`Palette`: phrases, controls, Emergency, Get Attention and Stop). |
+| 4 | The layout engine, generalized to profiles | **Written new** (`HomeLayout`, 2026-10-23; docs/DECISIONS.md, "The layout engine"). Home takes every frame from it since 2026-10-24 (*Home on the engine*). Its profiles came with ROADMAP Wave 3 items 8 and 9: sizes that follow how the screen is reached, switched on 2026-10-30, and the late-stage profile with the rest board, 2026-11-01 (docs/DECISIONS.md, "Sizes that follow how the screen is reached" and "The late-stage profile"). |
+| 5 | Home and typing. Fix D27 here. | Home keeps the stand-in's controls on the layout engine's frames (docs/DECISIONS.md, "Home version 0 is a stand-in"). **Typing built**: the foundation (`Brickson/Typing`: `MessageComposer`, `DraftStore`, the keyboard probe) on 2026-10-21, and the typing state on Home on 2026-10-24 (docs/DECISIONS.md, "Typing on Home"). D27 is designed out: the safety controls stay above the room kept for Apple's keyboard (`KeyboardAllowance`, checked on every UI run), and where that room reaches them, Type is dimmed (docs/HANDOFF.md, *Known gaps*). Its device checks remain. |
 | 6 | Editing screens. Build D24 and D25 here. | Not started. |
-| 7 | Settings and family setup for every input method | Not started. |
-| 8 | The snap-reach harness, as a test matrix per input method | Not started. |
+| 7 | Settings and family setup for every input method | **Written new**, from 2026-10-21 (PR #23; docs/DECISIONS.md, "Settings is a cover with a fixed safety bar"): Settings, Family Setup, Voice Settings and guides to Apple's features for each way of reaching the screen. Since 2026-10-30 Family Setup's answer to how the screen is reached sets Home's sizes (docs/DECISIONS.md, "Sizes that follow how the screen is reached"). `WindowSizePolicy` is not ported: no scene has a minimum window yet (docs/HANDOFF.md, *Known gaps*). |
+| 8 | The snap-reach harness, as a test matrix per input method | **Written new** as one chain engine (`ChainEngine`, 2026-10-23; docs/DECISIONS.md, "One chain engine for dwell safety"): it scores held activations on Home's and Settings' frames, at every profile's sizes since 2026-10-30, by nearest centre and nearest edge. The Snap to Item device check says which result binds. |
 
 ## Ported so far
 
@@ -72,6 +72,8 @@ unchanged apart from names.
 ## Still to port, by tier
 
 From the reference's own successor handoff, checked against its code.
+An item since ported or written new says what took its place
+(2026-11-03); the rest are still to come.
 
 **Almost as-is (general and tested):**
 - `Views/AudioSafetyStatusStrip` (step 1; Home's status area stands in for it).
@@ -81,30 +83,57 @@ From the reference's own successor handoff, checked against its code.
   library core; `PhraseEditor`'s logic is replaced by `LibraryEdit`).
 - `BackupImportQuestion` (step 6; the file format and the import rules
   are replaced by `BackupCodec` and `LibraryImport`).
-- `SettingsIdlePolicy` (on `ContinuousClock`) (step 7).
+- `SettingsIdlePolicy` (on `ContinuousClock`) (step 7). **Written new**
+  as `SettingsIdleClock` and `SettingsActivity`, on `ContinuousClock`,
+  keeping the reference's 90 seconds (docs/DECISIONS.md, "Settings resets
+  when idle and never closes").
 - The `Views/FamilyVoiceTheme.swift` tokens (step 3; add Bold Text and
   Increase Contrast).
 - `VoiceControlLabels` and its collision tests (step 5; compare every
-  alias, not only the first, and match visible text).
+  alias, not only the first, and match visible text). **Written new** as
+  `ControlNames` and `HomeControlNames`, the visible words first, whose
+  `collisions` compares every name a control answers to, with
+  `HomeNameCollisionTests` over every state of the starter library; a
+  family's own phrases are checked when editing arrives
+  (docs/DECISIONS.md, "Home's scan order and names").
 
 **Port and generalize:**
 - `BoardPlan`: the most valuable and the most tuned to one person.
   Generalize it to profiles (touch, voice, switch, head, gaze) and any
   library size. Define a position as a slot (region, row, column), so sizes
-  can change by profile while every control keeps its place.
+  can change by profile while every control keeps its place. **Written
+  new** as `HomeLayout`, with Home's slot plan (step 4; docs/DECISIONS.md,
+  "The layout engine").
 - `HomeView`, `SettingsView`, `SettingsOpening`, `TypeToSpeakView`,
   `EditSheets`, `VoicePickerView`: keep the structure; the geometry was
-  tuned to one window.
+  tuned to one window. **Written new**, all but `EditSheets` (step 6):
+  `HomeView` on the layout engine's frames, with the stand-in's controls
+  (step 5); `SettingsView` as a cover, opened from Home's Settings
+  button; typing on Home in place of `TypeToSpeakView`; and
+  `VoiceSettingsView` in place of `VoicePickerView` (docs/DECISIONS.md,
+  "Settings is a cover with a fixed safety bar", "Settings on Home",
+  "Typing on Home" and "Voice Settings keeps its places while it is
+  open").
 - `SettingsSafetyBarLayout`, `WindowSizePolicy` (steps 4 and 7): they
   check for an iPad; take their sizes from the window instead, and give
-  every scene the minimum window.
+  every scene the minimum window. `SettingsSafetyBarLayout` is **written
+  new** as `SettingsSafetyBar`, whose Back to Talking the layout engine
+  places over Home's Phrases, at touch's sizes in every profile
+  (docs/DECISIONS.md, "Settings is a cover with a fixed safety bar" and
+  "Sizes that follow how the screen is reached"); `WindowSizePolicy` is
+  not ported, and no scene has a minimum window yet (docs/HANDOFF.md,
+  *Known gaps*).
 - `CaregiverSetupView`: rewrite as setup for families on their own,
-  covering every input method.
+  covering every input method. **Written new** as `FamilySetupView` and
+  Set Up Step by Step (`GuidedSetupView`), whose answer to how the screen
+  is reached sets Home's sizes (docs/DECISIONS.md, "Sizes that follow how
+  the screen is reached").
 
 **Knowledge, not code:** the invariants and design rules (now in
 `AGENTS.md`), the accessibility verdicts in the reference's
 `docs/ACCESSIBILITY.md`, the snap-reach harness
-(`FamilyVoiceTests/SnapReach/`, `docs/snap-return/`), and the gotchas.
+(`FamilyVoiceTests/SnapReach/`, `docs/snap-return/`; written new as
+`ChainEngine`, step 8), and the gotchas.
 
 **Leave behind:** one person's phrases and the retired-seed repair,
 `docs/fixes/` as process, the reference's `docs/archive/`, the Voice
