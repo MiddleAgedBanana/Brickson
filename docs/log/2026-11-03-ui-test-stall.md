@@ -141,10 +141,54 @@ now let through the GitHub tool `request_copilot_review`, and only it:
 `gh pr edit --add-reviewer`, the API's `requested_reviewers` and a pull
 request's reviewer field still refuse Copilot, and so do Copilot tasks
 and issue assignments. One door keeps "once" easy to see in a thread's
-history; the guard cannot count. `scripts/test-hooks.py` pins both: the
-tool allowed and the other ways refused
-(`test_copilots_review_is_requested_only_through_its_own_tool`), and
-the tool off the deny list while the guard still runs before it.
+history. Codex and CodeRabbit then pointed out that, with the deny rule
+gone, nothing but AGENTS.md stopped a second request, which an agent
+that had lost its context could make. So the guard now also runs after
+the tool succeeds (a `PostToolUse` hook in `.claude/settings.json`) and
+records the pull request in the Git folder of the session's project
+(`CLAUDE_PROJECT_DIR`, the working directory only when none is named),
+`.git/brickson-copilot-reviews.json`, which every worktree of the clone
+shares and git never commits; before a request, it refuses one already
+recorded. Only a request that ran is recorded: Claude Code runs
+`PostToolUse` hooks after a tool succeeds and a separate event after one
+fails, an MCP error result included (its hooks reference, read
+2026-11-03). A failed request is not counted, but the agent still
+follows AGENTS.md: it says so in the thread and the owner adds Copilot,
+because a request that timed out may have reached GitHub. A request
+that ran but could not be recorded exits 2, which shows the agent the
+message after a tool has run, so it knows the guard would not refuse a
+second one. A lock beside the record keeps two sessions of one clone
+from losing each other's entries. A fresh clone, such as a new cloud
+session, starts with an empty record.
+
+An independent review of this change before it was pushed (subagents
+in the thread, each finding checked by a second one) also found that the record followed the session's
+working directory first, so a `cd` into another clone moved it, and that
+`create_pull_request`'s reviewer field reached Copilot without the guard
+running at all, while these records said the reviewer field was
+refused. Both are fixed: the project comes first, and the guard now runs
+before `create_pull_request` and refuses Copilot in its reviewers, as it
+does for `update_pull_request`. It also made the guard check every call
+whose event is not one of the two after a call, where it had skipped
+any call not named `PreToolUse`.
+
+`scripts/test-hooks.py` pins it all:
+`test_copilots_review_is_requested_only_through_its_own_tool` (the tool
+allowed, the other ways refused);
+`test_copilots_review_is_requested_once_per_pull_request` (a second
+request refused from the clone and its worktrees, whatever the case of
+the names; other pull requests allowed);
+`test_the_copilot_record_stays_with_the_sessions_project`;
+`test_only_a_successful_copilot_review_request_counts` (nothing recorded
+before the call, after a failure or for another tool);
+`test_a_call_without_its_event_is_checked_before_it_runs`;
+`test_a_request_the_guard_cannot_record_is_told_to_the_agent`;
+`test_an_unusable_copilot_record_never_crashes_the_guard` (damaged and
+deeply nested records, unusable pull request numbers);
+`test_a_new_pull_request_cannot_ask_for_copilot`; and, in
+`SettingsTests`, `test_the_guard_records_each_copilot_review_request_that_ran`,
+`create_pull_request` among the tools the guard runs before, and the
+review tool off the deny list.
 
 ## Commits
 
@@ -158,14 +202,21 @@ the tool off the deny list while the guard still runs before it.
   records made true once the split was in, and the fourth stalled run.
 - `bb61376` the agent requests Copilot's review itself (the guard, its
   settings, their tests and these records).
-- The commit after it: the process list's limit lowered to 5 s, the
-  workflow test for two family jobs, and these records; then the
-  owner's commit of `tests.yml` with the two jobs.
+- `3ea1eb7` the process list's limit lowered to 5 s, the workflow test
+  for two family jobs, and these records.
+- `5dc9d6d` the owner's commit of `tests.yml` with the two family jobs.
+- The commit after it: the workflow test runs the "UI tests" job's own
+  script with every pair of family results (CodeRabbit's review).
+- The commit after that: the guard records each Copilot review request
+  that ran and refuses a second one on the same pull request, and guards
+  `create_pull_request`'s reviewers (Codex's, CodeRabbit's and the
+  independent review).
 
 ## Verified
 
 - On Linux in the cloud session: `python3 scripts/test-runner.py`
-  (the 13 new tests among them), `test-docs.py`, `test-hooks.py` and
+  (66 tests, 10 of them new), `test-docs.py`, `test-hooks.py` (133
+  tests, 9 of them new) and
   `test-site.py` pass. The new tests and the change each would fail on:
   `SimulatorLoadTests` (matching PosterBoard, pausing another
   simulator's or the Mac's own processes, pausing a stopped one or one
@@ -182,9 +233,22 @@ the tool off the deny list while the guard still runs before it.
   (a renamed required job, a "UI tests" job without `if: always()`,
   needing only one family, both jobs on the same family, a matrix, the
   two jobs differing apart from the family, the gate not reading one
-  family's result, or never failing). Each mutation was run and failed
+  family's result, or a gate script that passes when one family did not,
+  such as `&&` for `||`: the test runs the gate's own script with every
+  pair of results, CodeRabbit's review). Each mutation was run and failed
   its test. The workflow test passes on `main`'s single job and on the
-  two family jobs, and fails on the matrix.
+  two family jobs, and fails on the matrix. The new hook tests (named
+  above) and the change each would fail on: not recording after a
+  request, not checking the record, recording before the call, after a
+  failure or for any tool, keeping the record per worktree, trying the
+  working directory before the project, comparing names by case,
+  skipping the checks for a call that names no event, a silent record
+  failure (inside or outside a clone), a deeply nested record raising,
+  `create_pull_request`'s reviewers let through, and a settings file
+  without the `PostToolUse` hook or without `create_pull_request` in the
+  guard's matcher. Each mutation was run and failed its test. The lock is
+  not pinned by a test: a race test would pass by luck without it; the
+  review saw one entry of eight lost without it.
 - On GitHub's Mac machine (run 41625185733, Xcode 27.1, iPad Pro 13-inch
   (M5), iOS 27.0, portrait and landscape at default and largest text,
   light and dark, the full software keyboard): the measurements above.
@@ -214,6 +278,13 @@ the tool off the deny list while the guard still runs before it.
   really read as passed with a leg never run was not reproduced; the two
   jobs make the question moot.
 - `scripts/test.sh` with the watcher on the owner's Mac.
+- Whether the hook's `cwd` follows the session's `cd`, which no longer
+  decides where the record is once `CLAUDE_PROJECT_DIR` is set.
+- The record of Copilot review requests in a real Claude Code session:
+  the hook tests feed the guard the events Claude Code sends, as its
+  hooks reference describes them, but the `PostToolUse` hook first runs
+  for real when an agent requests Copilot on a session that has loaded
+  the new settings.
 
 ## Follow-ups
 

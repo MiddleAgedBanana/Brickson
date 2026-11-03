@@ -171,9 +171,10 @@ itself (owner, 2026-11-03), so nothing waits for the owner: once Codex
 has reviewed the latest push and every finding is fixed or answered, it
 calls the GitHub tool `request_copilot_review` once for that pull
 request, and never again on it, nor any other way (the guard refuses
-`gh`, the API and the reviewer field; *Guardrails for agents*). If the
-tool is unavailable or refused, it says so in the thread and the owner
-adds Copilot under **Reviewers**. Neither reviews Dependabot's pull requests
+`gh`, the API, the reviewer field and a second request from the same
+clone; *Guardrails for agents*). If the tool is unavailable or refused,
+it says so in the thread and the owner adds Copilot under
+**Reviewers**. Neither reviews Dependabot's pull requests
 by itself. Both review against *Code Review Rules* below. GitHub's AI
 Scan also posts security findings after each push to such a pull request;
 answer them like review comments. It skips Dependabot's pull requests and
@@ -655,15 +656,26 @@ above are backed by checks wherever a check can run:
   GitHub API or a GitHub tool); the Copilot actions that spend the owner's
   credits, except one Copilot review requested through
   `request_copilot_review` (*Reviews and updates on GitHub*); and a
-  GitHub tool writing a file onto `main`. The same settings deny the
+  GitHub tool writing a file onto `main`. After a Copilot review request
+  succeeds, the guard runs again and records the pull request in the Git
+  folder of the session's project (`.git/brickson-copilot-reviews.json`,
+  shared by the clone's worktrees, never committed), and it refuses a
+  second request on that pull request. A request that fails is not
+  recorded (the agent still says so in the thread and does not retry,
+  *Reviews and updates on GitHub*); a request that ran but could not be
+  recorded is told to the agent; a fresh clone starts with an empty
+  record. The same settings deny the
   merge tools and the other Copilot tools outright. When the guard refuses, do
   not look for another way round: say in the thread what you needed and
   why. It is a guard against mistakes, not a sandbox, and it covers
   Claude Code only; Codex, Jules and the owner are held to the same rules
-  by review. Both policy hooks use `onFailure: "block"`, so a startup
+  by review. Both policy hooks, the ones before a call, use
+  `onFailure: "block"`, so a startup
   error, crash, invalid output or timeout blocks the original action in
   Claude Code 2.1.295 or later. Older or unknown runtimes do not establish
   that protection; confirm the runtime and hook reload before relying on it.
+  The recording hook after a Copilot request cannot block anything, since
+  the request has already run.
 - **Where the guard runs.** Claude Code reads a repository's hooks and
   permission rules in a session with one repository. A cloud session that
   clones several repositories reads only plugin settings from them, so

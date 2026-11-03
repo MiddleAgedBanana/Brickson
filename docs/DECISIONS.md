@@ -4718,8 +4718,13 @@ review setup does not quietly break them.
   `request_copilot_review`, which the guard and `.claude/settings.json`
   now let through. Every other way of asking for Copilot (`gh`, the
   API, a pull request's reviewer field) and every Copilot task stay
-  refused, and the guard cannot count requests, so "once" is held by
-  AGENTS.md and by review. Before: Copilot reviewed each pull request
+  refused. The guard records each request that succeeded in the clone's
+  Git folder and refuses a second one on the same pull request, from
+  any worktree of that clone (Codex's and CodeRabbit's review of pull
+  request #76: without it, "once" rested on AGENTS.md alone). A fresh
+  clone, such as a new cloud session, starts with an empty record, so
+  there "once" is still held by AGENTS.md and by review, and "after
+  Codex's round" always is. Before: Copilot reviewed each pull request
   once, when it opened (the bullet below), and earlier that day the
   owner added it by hand. When the subscription ends, the Copilot step
   goes. Record:

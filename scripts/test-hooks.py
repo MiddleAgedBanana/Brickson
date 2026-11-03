@@ -21,15 +21,42 @@ GUARD = ROOT / '.claude' / 'hooks' / 'guard.py'
 SETTINGS = ROOT / '.claude' / 'settings.json'
 
 
-def decision(tool_name, tool_input, cwd):
-    call = {'hook_event_name': 'PreToolUse', 'tool_name': tool_name,
+def session(project):
+    """The environment Claude Code gives a hook: this one's project, never
+    the clone the tests run in, so no test writes into a real record."""
+    environment = {k: v for k, v in os.environ.items() if k != 'CLAUDE_PROJECT_DIR'}
+    if project is not None:
+        environment['CLAUDE_PROJECT_DIR'] = str(project)
+    return environment
+
+
+def decision(tool_name, tool_input, cwd, project=None, event='PreToolUse'):
+    call = {'hook_event_name': event, 'tool_name': tool_name,
             'tool_input': tool_input, 'cwd': str(cwd)}
+    if event is None:
+        del call['hook_event_name']
     result = subprocess.run([sys.executable, str(GUARD)], input=json.dumps(call),
-                            capture_output=True, text=True, timeout=30)
+                            capture_output=True, text=True, timeout=30,
+                            env=session(cwd if project is None else project))
     assert result.returncode == 0, result.stderr
     if not result.stdout.strip():
         return None
     return json.loads(result.stdout)['hookSpecificOutput']['permissionDecision']
+
+
+REVIEW_TOOL = 'mcp__github__request_copilot_review'
+
+
+def hook(event, tool_name, tool_input, cwd, project=None, outside=False):
+    """The guard's exit code, output and error output for one hook event,
+    in a session whose project is `project` (cwd if not given), or with no
+    project at all when `outside`."""
+    call = {'hook_event_name': event, 'tool_name': tool_name,
+            'tool_input': tool_input, 'cwd': str(cwd)}
+    environment = session(None if outside else (cwd if project is None else project))
+    result = subprocess.run([sys.executable, str(GUARD)], input=json.dumps(call),
+                            capture_output=True, text=True, timeout=30, env=environment)
+    return result.returncode, result.stdout.strip(), result.stderr.strip()
 
 
 class GuardTests(unittest.TestCase):
@@ -1201,6 +1228,138 @@ class GuardTests(unittest.TestCase):
         self.assertDenied("gh api -X POST repos/o/r/pulls/12/requested_reviewers"
                           " -f 'reviewers[]=copilot-pull-request-reviewer[bot]'")
 
+    def test_copilots_review_is_requested_once_per_pull_request(self):
+        # A successful request is recorded in the clone's Git folder, so a
+        # second one on the same pull request is refused, from any worktree
+        # of that clone. Not recording after success, not checking the
+        # record, or keeping it per worktree fails this test.
+        with tempfile.TemporaryDirectory() as folder:
+            repo = Path(folder) / 'repo'
+            subprocess.run(['git', 'init', '-q', '-b', 'main', str(repo)], check=True)
+            subprocess.run(['git', '-C', str(repo), '-c', 'user.name=t',
+                            '-c', 'user.email=t@example.com', '-c', 'commit.gpgsign=false',
+                            '-c', 'core.hooksPath=/dev/null', 'commit', '-q',
+                            '--allow-empty', '-m', 'start'], check=True)
+            worktree = Path(folder) / 'worktree'
+            subprocess.run(['git', '-C', str(repo), 'worktree', 'add', '-q', '-b',
+                            'claude/other', str(worktree)], check=True)
+            review = {'owner': 'o', 'repo': 'r', 'pullNumber': 12}
+            self.assertEqual(hook('PreToolUse', REVIEW_TOOL, review, repo), (0, '', ''))
+            self.assertEqual(hook('PostToolUse', REVIEW_TOOL, review, repo), (0, '', ''))
+            for cwd, arguments in [(repo, review), (worktree, review),
+                                   (repo, {'owner': 'O', 'repo': 'R', 'pullNumber': '12'})]:
+                with self.subTest(cwd=cwd.name, arguments=arguments):
+                    self.assertEqual(decision(REVIEW_TOOL, arguments, cwd), 'deny')
+            code, output, _ = hook('PreToolUse', REVIEW_TOOL, review, worktree)
+            self.assertIn('already requested', output)
+            for arguments in [{'owner': 'o', 'repo': 'r', 'pullNumber': 13},
+                              {'owner': 'o', 'repo': 'other', 'pullNumber': 12}]:
+                with self.subTest(arguments=arguments):
+                    self.assertIsNone(decision(REVIEW_TOOL, arguments, repo))
+
+    def test_the_copilot_record_stays_with_the_sessions_project(self):
+        # A session that has moved into another clone still records in, and
+        # checks, its own project's record. Trying the working directory
+        # first fails this test.
+        with tempfile.TemporaryDirectory() as folder:
+            project, other = Path(folder) / 'project', Path(folder) / 'other'
+            for repo in (project, other):
+                subprocess.run(['git', 'init', '-q', '-b', 'main', str(repo)], check=True)
+            review = {'owner': 'o', 'repo': 'r', 'pullNumber': 12}
+            self.assertEqual(hook('PostToolUse', REVIEW_TOOL, review, other, project=project),
+                             (0, '', ''))
+            self.assertFalse((other / '.git' / 'brickson-copilot-reviews.json').exists())
+            self.assertEqual(decision(REVIEW_TOOL, review, project), 'deny')
+            self.assertEqual(decision(REVIEW_TOOL, review, other, project=project), 'deny')
+
+    def test_only_a_successful_copilot_review_request_counts(self):
+        # A request that is refused before it runs, or that fails, spends
+        # nothing and is not recorded. Recording before the call, or after
+        # a failure, fails this test.
+        with tempfile.TemporaryDirectory() as folder:
+            subprocess.run(['git', 'init', '-q', '-b', 'main', folder], check=True)
+            review = {'owner': 'o', 'repo': 'r', 'pullNumber': 12}
+            self.assertIsNone(decision(REVIEW_TOOL, review, folder))
+            self.assertIsNone(decision(REVIEW_TOOL, review, folder))
+            self.assertEqual(hook('PostToolUseFailure', REVIEW_TOOL, review, folder), (0, '', ''))
+            self.assertIsNone(decision(REVIEW_TOOL, review, folder))
+            # Another tool's success records nothing for this one.
+            self.assertEqual(hook('PostToolUse', 'mcp__github__update_pull_request',
+                                  {'owner': 'o', 'repo': 'r', 'pullNumber': 12}, folder),
+                             (0, '', ''))
+            self.assertIsNone(decision(REVIEW_TOOL, review, folder))
+
+    def test_a_call_without_its_event_is_checked_before_it_runs(self):
+        # Only the two events after a call skip the checks: a call that names
+        # no event, or an unknown one, is still refused. Skipping checks for
+        # anything but PreToolUse fails this test.
+        with tempfile.TemporaryDirectory() as folder:
+            subprocess.run(['git', 'init', '-q', '-b', 'main', folder], check=True)
+            review = {'owner': 'o', 'repo': 'r', 'pullNumber': 12}
+            self.assertEqual(hook('PostToolUse', REVIEW_TOOL, review, folder), (0, '', ''))
+            for event in (None, '', 'preToolUse', 'Something'):
+                with self.subTest(event=event):
+                    self.assertEqual(decision('Bash', {'command': 'git push origin main'},
+                                              folder, event=event), 'deny')
+                    self.assertEqual(decision(REVIEW_TOOL, review, folder, event=event), 'deny')
+
+    def test_a_request_the_guard_cannot_record_is_told_to_the_agent(self):
+        # The request has run, so nothing is blocked, but the agent is told
+        # (exit 2 shows Claude the message) that a second request would not
+        # be refused. Staying silent fails this test.
+        review = {'owner': 'o', 'repo': 'r', 'pullNumber': 12}
+        with tempfile.TemporaryDirectory() as folder:
+            subprocess.run(['git', 'init', '-q', '-b', 'main', folder], check=True)
+            (Path(folder) / '.git' / 'brickson-copilot-reviews.json').mkdir()
+            code, output, error = hook('PostToolUse', REVIEW_TOOL, review, folder)
+            self.assertEqual((code, output), (2, ''))
+            self.assertIn('could not record', error)
+            self.assertIn('o/r#12', error)
+            self.assertIsNone(decision(REVIEW_TOOL, review, folder))
+        with tempfile.TemporaryDirectory() as outside:
+            code, output, error = hook('PostToolUse', REVIEW_TOOL, review, outside, outside=True)
+            self.assertEqual((code, output), (2, ''))
+            self.assertIn('could not record', error)
+            self.assertEqual(hook('PreToolUse', REVIEW_TOOL, review, outside, outside=True),
+                             (0, '', ''))
+            self.assertEqual(os.listdir(outside), [])
+
+    def test_an_unusable_copilot_record_never_crashes_the_guard(self):
+        # A damaged record, or a call with no usable pull request number,
+        # neither crashes the guard (which would block the call) nor records
+        # anything. Letting a damaged record raise fails this test.
+        review = {'owner': 'o', 'repo': 'r', 'pullNumber': 12}
+        for damage in ('not json', '[' * 100000, '["a list"]'):
+            with self.subTest(damage=damage[:10]), tempfile.TemporaryDirectory() as folder:
+                subprocess.run(['git', 'init', '-q', '-b', 'main', folder], check=True)
+                (Path(folder) / '.git' / 'brickson-copilot-reviews.json').write_text(damage)
+                self.assertEqual(hook('PreToolUse', REVIEW_TOOL, review, folder), (0, '', ''))
+                self.assertEqual(hook('PostToolUse', REVIEW_TOOL, review, folder), (0, '', ''))
+                self.assertEqual(decision(REVIEW_TOOL, review, folder), 'deny')
+        with tempfile.TemporaryDirectory() as folder:
+            subprocess.run(['git', 'init', '-q', '-b', 'main', folder], check=True)
+            for arguments in [{}, {'owner': 'o', 'repo': 'r', 'pullNumber': 'twelve'},
+                              {'owner': 'o', 'repo': 'r', 'pullNumber': None},
+                              {'owner': 5, 'repo': 'r', 'pullNumber': 12}]:
+                with self.subTest(arguments=arguments):
+                    self.assertEqual(hook('PostToolUse', REVIEW_TOOL, arguments, folder), (0, '', ''))
+                    self.assertIsNone(decision(REVIEW_TOOL, arguments, folder))
+            self.assertEqual(os.listdir(Path(folder) / '.git').count('brickson-copilot-reviews.json'), 0)
+
+    def test_a_new_pull_request_cannot_ask_for_copilot(self):
+        # The reviewer field of create_pull_request is another door to a
+        # Copilot review; it is refused like update_pull_request's.
+        name = 'mcp__github__create_pull_request'
+        for reviewers in (['copilot-pull-request-reviewer[bot]'], ['human', 'Copilot'], 'copilot'):
+            with self.subTest(reviewers=reviewers):
+                self.assertEqual(decision(name, {'owner': 'o', 'repo': 'r', 'head': 'claude/x',
+                                                 'base': 'main', 'title': 't',
+                                                 'reviewers': reviewers}, self.repo), 'deny')
+        for arguments in ({'title': 't', 'reviewers': ['human']}, {'title': 't'},
+                          {'title': 't', 'reviewers': 5}):
+            with self.subTest(arguments=arguments):
+                self.assertIsNone(decision(name, arguments, self.repo))
+
     def test_unreadable_input_decides_nothing(self):
         result = subprocess.run([sys.executable, str(GUARD)], input='not json',
                                 capture_output=True, text=True)
@@ -1219,13 +1378,21 @@ class SettingsTests(unittest.TestCase):
         tools = ['merge_pull_request', 'enable_pr_auto_merge', 'request_copilot_review',
                  'assign_copilot_to_issue', 'assign_copilot_to_issue_with_intent', 'create_pull_request_with_copilot',
                  'push_files', 'create_or_update_file', 'delete_file',
-                 'pull_request_review_write', 'update_pull_request',
+                 'pull_request_review_write', 'create_pull_request', 'update_pull_request',
                  'issue_write', 'create_issue', 'update_issue']
         for tool in ['Bash'] + [f'mcp__github__{t}' for t in tools]:
             commands = [hook['command'] for group in groups
                         if re.fullmatch(group['matcher'], tool)
                         for hook in group['hooks']]
             self.assertTrue(any('.claude/hooks/guard.py' in c for c in commands), tool)
+
+    def test_the_guard_records_each_copilot_review_request_that_ran(self):
+        import re
+        groups = self.settings['hooks'].get('PostToolUse', [])
+        commands = [hook['command'] for group in groups
+                    if re.fullmatch(group['matcher'], REVIEW_TOOL)
+                    for hook in group['hooks']]
+        self.assertTrue(any('.claude/hooks/guard.py' in c for c in commands), commands)
 
     def test_policy_hook_failures_block_the_original_action(self):
         # Removing onFailure from either entry makes errors fail open.

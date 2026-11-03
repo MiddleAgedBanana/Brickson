@@ -1210,7 +1210,8 @@ Simulators cannot show these. Record each result in a `docs/log/` file
   hooks are not loaded in multi-repository cloud sessions. The guard
   refuses `git add -A`, force pushes, pushes to `main`, merges, approvals
   and Copilot actions other than one review requested through its own
-  tool. `scripts/test.sh` runs its tests and the docs
+  tool, and records that request in the clone's Git folder so a second
+  one on the same pull request is refused. `scripts/test.sh` runs its tests and the docs
   cross-reference check (`scripts/test-docs.py`) before the unit tests.
   New issues start from the "Something went wrong" form; blank issues are
   off. Record: [`docs/log/2026-10-21-agent-guardrails.md`](log/2026-10-21-agent-guardrails.md).
