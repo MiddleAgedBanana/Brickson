@@ -80,18 +80,15 @@ jobs:
 
   # One job per device family, at the same time, so neither waits for the
   # other and each has its own time limit (docs/DECISIONS.md, "Tests").
-  ui:
-    name: UI tests on ${{ matrix.name }}
+  # Two jobs rather than a matrix, so the "UI tests" check below reads each
+  # family's own result: a matrix reports one result for all its legs, and
+  # that summary has been seen to read as passed when a leg never got a
+  # machine. scripts/test-runner.py checks that the two jobs stay the same
+  # apart from the family.
+  ui-ipad:
+    name: UI tests on iPad
     runs-on: xcode-27
     timeout-minutes: 90
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - family: ipad
-            name: iPad
-          - family: iphone
-            name: iPhone
     steps:
       - uses: actions/checkout@v7
       - name: Use the newest released Xcode
@@ -106,33 +103,63 @@ jobs:
           brew list --versions xcodegen
       - name: Build the app and run the UI tests
         env:
-          SIMULATOR_FAMILY: ${{ matrix.family }}
+          SIMULATOR_FAMILY: ipad
         run: scripts/test.sh ui
       - name: Keep the test results
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: ui-test-results-${{ matrix.family }}
+          name: ui-test-results-ipad
+          path: build/TestResults
+          if-no-files-found: warn
+          retention-days: 14
+
+  ui-iphone:
+    name: UI tests on iPhone
+    runs-on: xcode-27
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v7
+      - name: Use the newest released Xcode
+        run: |
+          xcode="$(python3 scripts/select-xcode.py choose)"
+          sudo xcode-select --switch "$xcode"
+      - name: Show the Xcode version
+        run: xcodebuild -version
+      - name: Install XcodeGen
+        run: |
+          brew install xcodegen
+          brew list --versions xcodegen
+      - name: Build the app and run the UI tests
+        env:
+          SIMULATOR_FAMILY: iphone
+        run: scripts/test.sh ui
+      - name: Keep the test results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ui-test-results-iphone
           path: build/TestResults
           if-no-files-found: warn
           retention-days: 14
 
   # The check the `main` ruleset requires by name. It runs however the
-  # family jobs ended, and fails unless every one of them passed: a
-  # failed, cancelled or skipped family never reads as passed.
+  # family jobs ended, and fails unless both of them passed: a failed,
+  # cancelled or skipped family never reads as passed.
   ui-result:
     name: UI tests
-    needs: ui
+    needs: [ui-ipad, ui-iphone]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Check that the UI tests passed on every family
+      - name: Check that the UI tests passed on both families
         env:
-          FAMILIES: ${{ needs.ui.result }}
+          IPAD: ${{ needs.ui-ipad.result }}
+          IPHONE: ${{ needs.ui-iphone.result }}
         run: |
-          if [ "$FAMILIES" != success ]; then
-            echo "The UI tests did not pass on every family (result: $FAMILIES). The family jobs above say which."
+          if [ "$IPAD" != success ] || [ "$IPHONE" != success ]; then
+            echo "The UI tests did not pass on both families (iPad: $IPAD, iPhone: $IPHONE)."
             exit 1
           fi
           echo "The UI tests passed on the iPad and the iPhone."
