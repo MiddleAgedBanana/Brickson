@@ -7,14 +7,19 @@ owner's commit on the same branch, because a cloud agent cannot push
 
 ## What changed and why
 
-Nothing changes in the app. Three CI runs in a row stalled on the iPad
-at the largest text size: PR #75's two attempts (`HomeLayoutTests`,
-333.7 s, failing its 10-second layout wait, then 308.7 s against 122 to
-150 s on clean runs) and `main` at `17019ed` (run 41606540554,
-`GetAttentionOnHomeTests`' largest-text test failing after 301.6 s with
-"Timed out while evaluating UI query", three tries of 30 s). The app's
-own log in those bundles showed its main thread pausing 0.3 to 3 s
-between lines of trivial work: the app was not being given time to run.
+Nothing changes in the app. Four CI runs in a row stalled on the iPad:
+PR #75's two attempts (`HomeLayoutTests`, 333.7 s, failing its
+10-second layout wait, then 308.7 s against 122 to 150 s on clean runs)
+and both attempts of `main` at `17019ed` (run 41606540554: first
+`GetAttentionOnHomeTests`' largest-text test, failing after 301.6 s with
+"Timed out while evaluating UI query", three tries of 30 s; then
+`HomeLayoutTests` at the default text size in portrait, "Home did not
+finish laying out", its first launch holding the next off for about 3.5
+minutes where about 35 s is usual). The app's own log in those bundles
+showed its main thread pausing 0.3 to 3 s between lines of trivial
+work, and the gaps between XCTest's element-matching lines were 44 and
+136 ms where clean runs show 1 to 10: the app was not being given time
+to run.
 
 **The cause.** About five minutes after a simulator starts, iOS's
 background scheduler (`dasd`) runs SpringBoard's task
@@ -30,6 +35,7 @@ the poster accessibility notifications the test runner logs:
 | Run | Poster notifications during the tests | The test running then |
 |---|---|---|
 | `main` `17019ed`, attempt 1 | 534, 09:02:48 to 09:04:23 | `GetAttentionOnHomeTests` largest text: failed, 301.6 s |
+| `main` `17019ed`, attempt 2 | 882, 11:04:44 to 11:06:34 | `HomeLayoutTests` default text, portrait: failed (a launch held 11:03:48 to 11:07:18) |
 | PR #75, attempt 1 | 432, 12:48:09 to 12:49:38 | `HomeLayoutTests`: failed, 333.7 s |
 | PR #75, attempt 2 | 400, 14:30:11 to 14:31:24 | `HomeLayoutTests`: passed, 308.7 s |
 | `main` `c15f2a4`, `42f4570`, PR #74 `2b1a9d5`, `main` `0ee85c8` | none | no stall |
@@ -74,7 +80,9 @@ is watched but never touched. It writes every reading to
 bundle, so CI keeps it in the artifact, and the run's log ends with
 the processes that used the most time. It stops by itself once the
 test run is gone, so a killed run never leaves it pausing other runs'
-simulators. A paused process rather than an ended one, because iOS
+simulators, and gives up on a process list that takes more than 10 s,
+writing so in the record, so a hung `ps` never holds it (CodeRabbit's
+review). A paused process rather than an ended one, because iOS
 would start an ended extension again; the open-source CI tool `yeetd`
 pauses the same extensions the same way. Brickson does not use it: a
 script of its own does only this, only for the simulator under test,
@@ -122,19 +130,24 @@ the owner when Codex's round is answered.
 - `4a9dea4` the temporary probe (removed by the next commit).
 - `238d2fc` the watcher, its start and stop in `scripts/test.sh`, and
   their tests.
-- The records and the review order: the commit after it.
-- The workflow split: the owner's commit of `.github/workflows/tests.yml`.
+- `a47b95f` the records and the review order.
+- `49bfdbd` the workflow split: the owner's commit of
+  `.github/workflows/tests.yml`, the text the thread prepared.
+- The commit after it: the process list's time limit (below) and these
+  records made true once the split was in.
 
 ## Verified
 
 - On Linux in the cloud session: `python3 scripts/test-runner.py`
-  (the 12 new tests among them), `test-docs.py`, `test-hooks.py` and
+  (the 13 new tests among them), `test-docs.py`, `test-hooks.py` and
   `test-site.py` pass. The new tests and the change each would fail on:
   `SimulatorLoadTests` (matching PosterBoard, pausing another
   simulator's or the Mac's own processes, pausing a stopped one or one
   twice, pausing without `--pause-posters`, totals instead of the time
   since the last reading, `start` not waiting for the watcher, `stop`
-  not waiting for its summary, a watcher outliving the test run);
+  not waiting for its summary, a watcher outliving the test run, a
+  process list with no time limit or a time-out the watcher does not
+  catch);
   `WatcherTests` (pausing on a simulator the run did not start, the
   watcher starting before the simulator finished starting or stopping
   after it, any exit path that skips the stop, a parent id that is not
@@ -143,7 +156,7 @@ the owner when Codex's round is answered.
   (a renamed required job, a "UI tests" job without `if: always()`,
   one family missing, the gate not reading the family jobs' result, or
   not failing). Each mutation was run and failed its test. The workflow
-  test passes on today's `tests.yml` and on the split.
+  test passes on `main`'s `tests.yml` and on the split.
 - On GitHub's Mac machine (run 41625185733, Xcode 27.1, iPad Pro 13-inch
   (M5), iOS 27.0, portrait and landscape at default and largest text,
   light and dark, the full software keyboard): the measurements above.
@@ -162,11 +175,14 @@ the owner when Codex's round is answered.
   during the paused prewarm) while the tests and the runner's log carried
   on at their usual pace; no new extension started then. Why its process
   listing was held up is not known. `scripts/simulator-load.py` reads
-  every process's path each time, and slow memory is one guess.
-- The iPhone family with the watcher has not run yet.
-- The split runs only once the owner commits the workflow file; until
-  then CI runs the old single job, which the new workflow test also
-  accepts.
+  every process's path each time, and slow memory is one guess. A list
+  that now takes more than 10 s is recorded as "could not read the
+  process list", so a repeat will show whether `ps` was what waited.
+- The iPhone family with the watcher first runs in this pull request's
+  CI.
+- The split's first runs are this pull request's CI runs from `49bfdbd`
+  on; nothing ran it before. The new workflow test accepts both the old
+  single job and the split.
 - `scripts/test.sh` with the watcher on the owner's Mac.
 
 ## Follow-ups

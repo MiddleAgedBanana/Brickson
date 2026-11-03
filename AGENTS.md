@@ -130,10 +130,9 @@ warning only the Release build sees (code under `#if DEBUG` differs).
 
 **GitHub CI** (`.github/workflows/tests.yml`) runs the unit and UI tests on
 GitHub's Mac machines for every pull request and every push to `main`.
-Once the owner commits the workflow of 2026-11-03, the UI tests run as
-one job per family, "UI tests on iPad" and "UI tests on iPhone", at the
-same time, and the job named "UI tests" passes only when both passed
-(docs/DECISIONS.md, "Tests"). Each job keeps `build/TestResults` (the
+Since 2026-11-03 the UI tests run as one job per family, "UI tests on
+iPad" and "UI tests on iPhone", at the same time, and the job named "UI
+tests" passes only when both passed (docs/DECISIONS.md, "Tests"). Each job keeps `build/TestResults` (the
 result bundles and load records above) as a download on the run's page
 for 14 days, passed or failed: the artifacts `unit-test-results`,
 `ui-test-results-ipad` and `ui-test-results-iphone` (one
@@ -965,8 +964,8 @@ the time. Export them again after each new Xcode release.
   five minutes after a simulator starts, iOS runs SpringBoard's
   `posterboardupdate.prewarm` task, and some 14 wallpaper extensions
   render the gallery's pictures for about three minutes. On GitHub's
-  three-processor machines that stalled iPad UI tests at the largest
-  text size, three runs in a row, until XCTest's queries timed out
+  three-processor machines that stalled iPad UI tests, four runs in a
+  row, until XCTest's queries and the tests' waits timed out
   (docs/log/2026-11-03-ui-test-stall.md). `scripts/test.sh` pauses
   those extensions on a simulator it started; it never touches one it
   did not start, so on a Mac a simulator left running is unprotected.

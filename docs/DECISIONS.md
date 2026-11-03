@@ -4672,7 +4672,8 @@ request merges only when they pass.
   required check as passed. Before, one job ran both families one after
   the other and took about 105 of its 120 minutes; each family takes
   about 50 minutes or less. The cost is a second build on a second
-  machine. The owner commits the workflow.
+  machine. The owner committed the workflow, because a cloud agent
+  cannot push workflows.
 - **2026-11-03, default, reversible:** on a simulator `scripts/test.sh`
   started itself, `scripts/simulator-load.py` pauses (SIGSTOP) the
   lock-screen wallpaper extensions for the whole run, and on every
@@ -4680,7 +4681,7 @@ request merges only when they pass.
   `build/TestResults/simulator-load-<family>.txt`. About five minutes
   after a simulator starts, iOS prewarms its wallpaper gallery, and on
   GitHub's three-processor machines that starved the app until iPad UI
-  tests at the largest text size timed out, three runs in a row. No
+  tests timed out, four runs in a row. No
   test shows the lock screen. A simulator someone else started is
   watched but never paused. Measure again, and drop the pausing if it
   no longer matters, when Apple changes the prewarm or GitHub's

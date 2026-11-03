@@ -297,8 +297,8 @@ Xcode 27.1 (27A9275); PR #20 landed in `d79d836`.
   PR #13 the UI tests run on the newest iPad Pro 13-inch and the
   newest standard iPhone, after a warm-up launch, and fail when no test
   ran ([`log/2026-10-21-test-seams.md`](log/2026-10-21-test-seams.md));
-  once the owner commits the workflow of 2026-11-03, each family runs as
-  a job of its own, at the same time.
+  since 2026-11-03 each family runs as a job of its own, at the same
+  time.
   Since PR #28 each job keeps `build/TestResults` as a download on the
   run's page for 14 days, passed or failed, unless the job stopped
   before its tests started (a build failure leaves no bundle)
@@ -1142,12 +1142,11 @@ Simulators cannot show these. Record each result in a `docs/log/` file
 - The `main` ruleset matched docs/DECISIONS.md on 2026-10-15 (GitHub's
   API); its required checks are "Unit tests" and "UI tests".
   The unit job allows 60 minutes. The UI job allowed 120 for both
-  device families and took about 105; the workflow of 2026-11-03, which
-  the owner commits on its pull request's branch, gives each family a
-  job of its own with 90 minutes, and "UI tests" becomes a job that
-  passes only when both passed (docs/DECISIONS.md, "Tests"). Three iPad
-  runs in a row stalled at the largest text size because iOS's
-  lock-screen wallpaper prewarm starved the simulator; since then
+  device families and took about 105; since 2026-11-03 each family has
+  a job of its own with 90 minutes, and "UI tests" is a job that passes
+  only when both passed (docs/DECISIONS.md, "Tests"). Four iPad
+  runs in a row stalled because iOS's lock-screen wallpaper prewarm
+  starved the simulator; since then
   `scripts/test.sh` pauses those extensions on a simulator it started
   and writes `simulator-load-<family>.txt` beside each result bundle:
   read it first if a stall comes back
