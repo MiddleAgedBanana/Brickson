@@ -1173,11 +1173,55 @@ class SimulatorLoadTests(unittest.TestCase):
                    ticks=800, without=(122,), extra=reused)
         watcher.sample()
         line = self.record.read_text().splitlines()[-1]
-        self.assertRegex(line, r" simulator +140% mac +210% load +[\d.]+ list 0\.31 s \| ")
-        self.assertTrue(line.endswith("| EmojiPosterExtension 100%, KaleidoscopePoster 30%, "
+        # The newcomer under 122 counts 1.5 s over the 5.25 s from the
+        # first list, which it was not in, to its own reading: 29%.
+        self.assertRegex(line, r" simulator +139% mac +210% load +[\d.]+ list 0\.31 s \| ")
+        self.assertTrue(line.endswith("| EmojiPosterExtension 100%, KaleidoscopePoster 29%, "
                                       "SpringBoard 10%"), line)
         watcher.summary()
         self.assertIn("     5.0 s  EmojiPosterExtension", self.record.read_text())
+
+    # A reading reads each process's time at its own moment, and on a
+    # starved Mac one reading took 13.67 s (run 41757279440's iPhone).
+    # Counting every process over the time between the two lines' ends,
+    # as the watcher did until then, put the simulator at 845% of a
+    # three-processor Mac in the line after it. Counting a process over
+    # anything but the time between its own two readings, or a new one
+    # over the time since the last line ended rather than since its list
+    # was read, fails this test.
+    def test_a_slow_reading_does_not_swell_the_next_line(self):
+        watcher = self.watch(pause_posters=False)
+        details = self.system.details
+        # Processors' worth each one uses, and when it started. The
+        # newcomer starts during the first reading, after its list.
+        rates, started = {121: 1.0, 124: 0.5}, {121: -100.0, 124: 3.0}
+        step = [2.0]
+
+        def reading(pid):
+            self.now += step[0]
+            found = details(pid)
+            if found is None or pid not in rates:
+                return found
+            return (rates[pid] * (self.now - started[pid]), found[1])
+
+        self.system.details = reading
+        # Listed at 0, then its six processes read 2 s apart: 121 at 8,
+        # the reading over at 12.
+        watcher.sample()
+        step[0], self.now = 0.0, 15.0
+        newcomer = [(124, 100, "R", f"{EXTENSIONS}/KaleidoscopePoster.appex/KaleidoscopePoster", None)]
+        self.times({}, extra=newcomer)
+        watcher.sample()
+        line = self.record.read_text().splitlines()[-1]
+        # 121: 7 s over its own 7 s. 124: 6 s over the 15 s since the list
+        # it was not in, the longest it can have run unseen. Over the 3 s
+        # since the last line ended they were 233% and 200%.
+        self.assertRegex(line, r" simulator +140% ")
+        self.assertTrue(line.endswith("| EmojiPosterExtension 100%, KaleidoscopePoster 40%"), line)
+        watcher.summary()
+        record = self.record.read_text()
+        self.assertIn("     7.0 s  EmojiPosterExtension", record)
+        self.assertIn("     6.0 s  KaleidoscopePoster", record)
 
     # A check between lines (a reading made only to find new wallpaper
     # extensions) that misses a new one, writes a line of its own, or
@@ -1205,6 +1249,20 @@ class SimulatorLoadTests(unittest.TestCase):
         line = self.record.read_text().splitlines()[-1]
         self.assertRegex(line, r" simulator +70% ")
         self.assertTrue(line.endswith("| KaleidoscopePoster 50%, SpringBoard 20%"), line)
+
+    # A simulator that starts while watched gets a line at the first
+    # reading that finds it, its processes counted from the reading that
+    # found it not running. Raising there (the watcher would stop) or
+    # writing no line fails this test.
+    def test_a_simulator_that_starts_while_watched_is_counted_from_then(self):
+        watcher = self.watch(pause_posters=False)
+        self.times({}, without=(100,))
+        watcher.sample()
+        self.now = 5.0
+        self.times({110: 1.0})
+        watcher.sample()
+        line = self.record.read_text().splitlines()[-1]
+        self.assertTrue(line.endswith("| SpringBoard 20%"), line)
 
     # A check while the simulator is not running writes nothing: saying so
     # every second would bury the record's lines.

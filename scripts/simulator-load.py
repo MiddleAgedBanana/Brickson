@@ -317,7 +317,9 @@ class Watch:
         self.udid, self.out, self.pause_posters = udid, out, pause_posters
         self.system, self.clock, self.kill = system, clock, kill
         self.root = None  # the simulator's launchd_sim, once found
-        self.before, self.ticks, self.at = None, None, None
+        # The last line's processes, the processors' counts and when they
+        # were read, and when its process list was read.
+        self.before, self.ticks, self.at, self.listed = None, None, None, None
         self.totals = {}  # name -> cpu seconds used while watched
         self.paused = set()
 
@@ -346,27 +348,35 @@ class Watch:
         """Reads the process list and pauses any new wallpaper extension.
         With `line`, it also writes the record's line for the time since
         the last one; a reading without (a check, between lines) leaves
-        that line's counts where they were."""
+        that line's counts where they were.
+
+        Each process's time is read at its own moment, and on a starved
+        Mac a reading can take seconds (13.67 s once, in run
+        41757279440), so a line counts each process over the time between
+        its own two readings, and a new one over the time since the last
+        line's list, which it was not in, was read. Counted over the time
+        between the two lines' ends, as until then, the line after that
+        reading put the simulator at 845% of a three-processor Mac."""
         began = self.clock()
         table = self.system.table()
         root = self.simulator_root(table)
-        processes = {}  # pid -> (stopped, cpu seconds, path)
+        processes = {}  # pid -> (stopped, cpu seconds, path, when read)
         if root is not None:
             for pid in sorted(descendants(root, table)):
                 details = self.system.details(pid)
                 # None: it ended after the list was read.
                 if details is not None:
-                    processes[pid] = (table[pid][1],) + details
+                    processes[pid] = (table[pid][1],) + details + (self.clock(),)
         ticks = self.system.processor_ticks() if line else None
         now = self.clock()
         stamp = clock_time()
         if root is None:
             if line:
                 self.write(f"{stamp} the simulator {self.udid} is not running")
-                self.before, self.ticks, self.at = {}, ticks, now
+                self.before, self.ticks, self.at, self.listed = {}, ticks, now, began
             return
         if self.pause_posters:
-            for pid, (stopped, seconds, path) in processes.items():
+            for pid, (stopped, seconds, path, _) in processes.items():
                 if is_poster_extension(path) and not stopped and pid not in self.paused:
                     try:
                         self.kill(pid, signal.SIGSTOP)
@@ -380,25 +390,29 @@ class Watch:
             return
         if self.before is not None:
             elapsed = max(now - self.at, 1e-6)
-            used = {}
-            for pid, (_, seconds, path) in processes.items():
-                # A pid given to a new process counts from nothing.
+            used = {}  # name -> processors' worth used
+            for pid, (_, seconds, path, read) in processes.items():
                 earlier = self.before.get(pid)
-                delta = seconds - (earlier[1] if earlier and earlier[2] == path else 0.0)
+                if earlier and earlier[2] == path:
+                    delta, span = seconds - earlier[1], read - earlier[3]
+                else:
+                    # New, or a new process given an old pid: it counts
+                    # from nothing, over the longest it can have run.
+                    delta, span = seconds, read - self.listed
                 if delta <= 0:
                     continue
                 name = name_of(path)
-                used[name] = used.get(name, 0.0) + delta
+                used[name] = used.get(name, 0.0) + delta / max(span, 1e-6)
                 self.totals[name] = self.totals.get(name, 0.0) + delta
             busy = sum((after - before) % 2**32 for after, before
                        in zip(ticks, self.ticks)) / self.system.ticks_per_second
             load = os.getloadavg()[0] if hasattr(os, "getloadavg") else float("nan")
             busiest = sorted(used.items(), key=lambda item: -item[1])[:6]
             self.write(
-                f"{stamp} simulator {100 * sum(used.values()) / elapsed:4.0f}% "
+                f"{stamp} simulator {100 * sum(used.values()):4.0f}% "
                 f"mac {100 * busy / elapsed:4.0f}% load {load:5.1f} list {now - began:4.2f} s | "
-                + ", ".join(f"{name} {100 * seconds / elapsed:.0f}%" for name, seconds in busiest))
-        self.before, self.ticks, self.at = processes, ticks, now
+                + ", ".join(f"{name} {100 * share:.0f}%" for name, share in busiest))
+        self.before, self.ticks, self.at, self.listed = processes, ticks, now, began
 
     def summary(self):
         self.write("Processor time the simulator's processes used while watched:")
