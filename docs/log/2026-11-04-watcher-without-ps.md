@@ -157,11 +157,11 @@ ran in this run, twice every 5 s, and was itself part of the load.
 
 At the end as many paused processes were left to resume as had been
 paused first (13 and 16), but the record counted the ended ones without
-naming them, so the probe could not show whether the ones iOS ended were
-exactly the new instances; the "Resumed" line now names them, and this
+naming them, so the probe could not show whether the ones that had ended
+were exactly the new instances; the "Resumed" line now names them, and this
 pull request's run shows they were (below). What neither run settles:
-whether iOS ends a new instance because it is paused, and would start
-fewer if they ran.
+whether a new instance ends because it is paused, and whether iOS would
+start fewer if they ran.
 
 ## This pull request's run
 
@@ -184,12 +184,14 @@ job in 31 minutes, the iPad's UI tests in 38 and the iPhone's in 47
 | The watcher's own processor time | 12.0 s | 19.4 s | 6.9 s |
 | Tests | 62 passed, 2 skipped | 58 passed, 6 skipped | 1,215 passed, 17 known issues, 1 skipped |
 
-**Which instances iOS ended.** On each simulator the ones still there at
+**Which instances had ended.** On each simulator the ones still there at
 the end were the 13 or 16 with the lowest pids, all paused at the
 watcher's first reading, the same counts as in the probe. Every other
 paused instance had ended, including 5 on the iPad and 8 on the iPhone
-from that first reading. So iOS ended exactly the instances it started
-after its first set.
+from that first reading. So by the end every instance started after the
+first set had ended, and none of the first set had. The records do not
+say what ended them: the watcher only pauses and resumes, and a paused
+process cannot end by itself.
 
 **How long it went on.** New instances came in groups about every 20 s
 (on the iPad at 01:57:35, 01:57:57, 01:58:19, 01:58:41, 01:59:03 and
@@ -242,7 +244,7 @@ meanwhile; the line it wrote is the 845% one above.
 ## Verified
 
 - On Linux (this cloud thread; no Xcode): `scripts/test-runner.py` (85
-  tests; the 5 that need a Mac skipped), `scripts/test-docs.py`,
+  tests: 80 ran, and the 5 that need a Mac skipped), `scripts/test-docs.py`,
   `scripts/test-hooks.py`, `scripts/test-site.py` and
   `scripts/test-select-xcode.py`, all passing.
 - Fifteen faults planted in the watcher, one at a time, each failing
@@ -293,8 +295,8 @@ meanwhile; the line it wrote is the 845% one above.
 - That checking every second keeps a test's short wait from running out
   inside a burst. In this pull request's run every test passed, but the
   one that failed in the probe ran after the burst.
-- Why iOS ends the instances it started later, and whether it would
-  start fewer if they ran (above).
+- What ends the instances started after the first set, and why, and
+  whether iOS would start fewer if they ran (above).
 - `scripts/test.sh` with this watcher on the owner's Mac.
 
 ## Follow-ups
