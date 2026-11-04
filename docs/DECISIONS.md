@@ -4696,6 +4696,16 @@ request merges only when they pass.
   no longer matters, when Apple changes the prewarm or GitHub's
   machines get more processors. Record:
   [`log/2026-11-03-ui-test-stall.md`](log/2026-11-03-ui-test-stall.md).
+- **2026-11-04, default, reversible:** the watcher lists processes with
+  the Mac's own process calls (libproc and Mach, from Python's
+  `ctypes`), never by starting `ps`: on GitHub's starved Macs `ps` ran
+  past its limit reading after reading and one reading took about
+  160 s, so extensions iOS started meanwhile were not paused. While
+  pausing, it also reads the list every second between its five-second
+  lines, because iOS starts new wallpaper extensions during the prewarm
+  even with the first ones paused, and each runs flat out until a
+  reading finds it. Record:
+  [`log/2026-11-04-watcher-without-ps.md`](log/2026-11-04-watcher-without-ps.md).
 
 ## Reviews, updates and GitHub settings
 

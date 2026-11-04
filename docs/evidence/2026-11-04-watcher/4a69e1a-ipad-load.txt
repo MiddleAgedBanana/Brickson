@@ -1,0 +1,500 @@
+Watching simulator 3CE49892-DF52-49A7-9D5F-68E49A7DD048, pausing lock-screen wallpaper extensions, from 01:57:15
+01:57:16 paused Unity2025Poster (25942) after 2.0 s of processor time
+01:57:16 paused GradientPosterExtension (25944) after 2.2 s of processor time
+01:57:16 paused MercuryPosterExtension (25963) after 2.3 s of processor time
+01:57:16 paused EmojiPosterExtension (26037) after 2.8 s of processor time
+01:57:16 paused UnityPoster (26049) after 2.2 s of processor time
+01:57:16 paused ExtragalacticPoster (26057) after 2.0 s of processor time
+01:57:16 paused AegirPoster (26061) after 2.1 s of processor time
+01:57:16 paused WeatherPoster (26078) after 2.1 s of processor time
+01:57:16 paused CollectionsPoster (26091) after 2.2 s of processor time
+01:57:16 paused PhotosPosterProvider (26102) after 2.2 s of processor time
+01:57:16 paused ImagePlaygroundPosterExtension (26104) after 2.0 s of processor time
+01:57:16 paused PridePosterExtension (26106) after 2.2 s of processor time
+01:57:16 paused MercuryPosterExtension (26116) after 2.7 s of processor time
+01:57:16 paused EmojiPosterExtension (26289) after 2.7 s of processor time
+01:57:16 paused EmojiPosterExtension (26292) after 2.7 s of processor time
+01:57:16 paused GradientPosterExtension (26293) after 2.6 s of processor time
+01:57:16 paused GradientPosterExtension (26298) after 2.7 s of processor time
+01:57:16 paused MercuryPosterExtension (26325) after 0.9 s of processor time
+01:57:20 simulator  268% mac  301% load 251.3 list 0.25 s | STExtractionService 177%, nsurlsessiond 8%, remindd 7%, textunderstandingd 6%, intelligenceplatformd 6%, Spotlight 6%
+01:57:25 simulator  243% mac  300% load 273.6 list 0.00 s | STExtractionService 91%, IntentsExtension 27%, diagnosticd 9%, remindd 9%, amsengagementd 8%, intelligenceplatformd 8%
+01:57:31 simulator  249% mac  300% load 283.7 list 0.08 s | STExtractionService 60%, Spotlight 19%, intelligenceplatformd 14%, icloudmailagent 14%, NewsToday2 14%, ScreenTimeWidgetExtension 14%
+01:57:35 paused GradientPosterExtension (26468) after 0.4 s of processor time
+01:57:37 paused EmojiPosterExtension (26470) after 1.4 s of processor time
+01:57:37 paused EmojiPosterExtension (26471) after 1.3 s of processor time
+01:57:37 simulator  230% mac  300% load 293.7 list 0.09 s | EmojiPosterExtension 51%, intelligenceplatformd 31%, RemindersWidgetExtension 31%, PhotosReliveWidget 30%, icloudmailagent 27%, NewsTag 23%
+01:57:42 simulator  241% mac  300% load 302.3 list 0.00 s | NewsTag 36%, mobileassetd 29%, ScreenTimeWidgetExtension 28%, RemindersWidgetExtension 27%, intelligenceplatformd 22%, NewsToday2 17%
+01:57:48 simulator  273% mac  300% load 311.1 list 0.17 s | ScreenTimeAgent 38%, SleepWidgetExtension 36%, NewsToday2 34%, mobileassetd 22%, RemindersWidgetExtension 21%, PassbookLockedWidgetsExtension 16%
+01:57:53 simulator  275% mac  300% load 317.6 list 0.08 s | ShortcutsWidgetExtension 50%, HealthMedicationsWidgetExtension 39%, AccessibilityControlsExtension 37%, BarcodeScannerWidgetExtension 27%, PassbookLockedWidgetsExtension 25%, PeopleWidget_iOSExtension 21%
+01:57:57 paused GradientPosterExtension (26671) after 1.0 s of processor time
+01:57:57 paused GradientPosterExtension (26672) after 1.0 s of processor time
+01:57:57 paused EmojiPosterExtension (26673) after 0.9 s of processor time
+01:57:57 paused EmojiPosterExtension (26675) after 0.3 s of processor time
+01:57:59 simulator  276% mac  300% load 325.9 list 0.25 s | GradientPosterExtension 41%, HealthMentalHealthWidgetExtension 34%, FitnessWidget 26%, EmojiPosterExtension 25%, HealthBalanceWidgetExtension 24%, MirroredWidgetExtension 20%
+01:58:05 simulator  257% mac  300% load 335.4 list 0.27 s | NewsTodayIntents 46%, PassbookWidgetsExtension-iPhone 28%, MirroredWidgetExtension 23%, FitnessWidget 23%, SafariWidgetExtension 16%, diagnosticd 16%
+01:58:10 simulator  249% mac  300% load 344.0 list 0.03 s | SelectPerson_iOS 53%, PassbookWidgetsExtension-iPad 35%, SafariWidgetExtension 27%, diagnosticd 22%, SpringBoard 13%, FamilyControlsAgent 10%
+01:58:15 simulator  239% mac  300% load 358.0 list 0.01 s | fitnesscoachingd 40%, sociallayerd 38%, SafariBookmarksSyncAgent 36%, diagnosticd 16%, avatarsd 11%, diagnosticextensionsd 10%
+01:58:19 paused GradientPosterExtension (26782) after 1.0 s of processor time
+01:58:19 paused GradientPosterExtension (26783) after 0.9 s of processor time
+01:58:19 paused EmojiPosterExtension (26784) after 0.9 s of processor time
+01:58:19 paused EmojiPosterExtension (26786) after 0.3 s of processor time
+01:58:21 simulator  186% mac  300% load 380.7 list 0.00 s | CalendarWidgetExtension 45%, GradientPosterExtension 43%, EmojiPosterExtension 31%, diagnosticd 17%, logd_helper 16%, apsd 9%
+01:58:26 simulator  147% mac  300% load 384.4 list 0.00 s | CalendarWidgetExtension 67%, diagnosticd 18%, apsd 10%, SafariWidgetExtension 8%, HealthMentalHealthWidgetExtension 7%, PassbookWidgetsExtension-iPhone 7%
+01:58:32 simulator  181% mac  300% load 383.3 list 0.01 s | NewsTag 27%, diagnosticd 22%, HealthBalanceWidgetExtension 20%, HearingWidgetExtension 16%, AdaptiveMusicWidget 15%, apsd 10%
+01:58:38 simulator  145% mac  300% load 384.9 list 0.01 s | SleepWidgetExtension 23%, diagnosticd 20%, HealthMedicationsWidgetExtension 11%, apsd 11%, ScreenTimeWidgetExtension 10%, HealthCycleTrackingWidgetExtension 10%
+01:58:41 paused GradientPosterExtension (28069) after 0.9 s of processor time
+01:58:41 paused GradientPosterExtension (28070) after 0.9 s of processor time
+01:58:41 paused EmojiPosterExtension (28071) after 0.8 s of processor time
+01:58:41 paused EmojiPosterExtension (28072) after 0.8 s of processor time
+01:58:43 simulator  103% mac  300% load 392.1 list 0.00 s | GradientPosterExtension 39%, EmojiPosterExtension 36%, diagnosticd 13%, apsd 8%, runningboardd 2%, PosterBoard 1%
+01:58:49 simulator   34% mac  300% load 393.1 list 0.01 s | diagnosticd 15%, apsd 10%, trustd 1%, securityd 1%, SpringBoard 1%, logd 1%
+01:58:55 simulator   37% mac  300% load 393.7 list 0.00 s | diagnosticd 15%, apsd 11%, trustd 1%, DockFolderViewService 1%, securityd 1%, SpringBoard 1%
+01:59:03 paused GradientPosterExtension (29099) after 1.5 s of processor time
+01:59:03 paused GradientPosterExtension (29100) after 1.4 s of processor time
+01:59:03 paused EmojiPosterExtension (29101) after 1.3 s of processor time
+01:59:03 paused EmojiPosterExtension (29102) after 0.3 s of processor time
+01:59:03 simulator  123% mac  300% load 376.7 list 0.33 s | GradientPosterExtension 40%, EmojiPosterExtension 22%, diagnosticd 19%, apsd 12%, SpringBoard 4%, installd 1%
+01:59:08 simulator  127% mac  300% load 348.7 list 0.11 s | diagnosticd 26%, installd 19%, mobileassetd 11%, EmojiPosterExtension 9%, apsd 8%, dasd 7%
+01:59:13 simulator  176% mac  300% load 329.4 list 0.16 s | ShortcutsTopHitsExtension 57%, diagnosticd 15%, com.apple.StreamingUnzipService 13%, installd 12%, SpringBoard 9%, nsurlsessiond 5%
+01:59:18 simulator  154% mac  299% load 326.8 list 0.01 s | healthd 30%, diagnosticd 19%, SpringBoard 13%, coreidvd 12%, splashboardd 8%, apsd 7%
+01:59:24 paused GradientPosterExtension (29160) after 0.8 s of processor time
+01:59:24 simulator  158% mac  300% load 344.1 list 0.08 s | Brickson 55%, SpringBoard 35%, GradientPosterExtension 14%, diagnosticd 13%, assistantd 4%, MTLCompilerService 4%
+01:59:25 paused GradientPosterExtension (29163) after 0.6 s of processor time
+01:59:25 paused EmojiPosterExtension (29164) after 0.6 s of processor time
+01:59:26 paused EmojiPosterExtension (29168) after 1.4 s of processor time
+01:59:30 simulator  143% mac  300% load 359.4 list 0.01 s | EmojiPosterExtension 33%, diagnosticd 22%, Brickson 19%, GradientPosterExtension 11%, apsd 9%, amsengagementd 8%
+01:59:36 simulator  118% mac  294% load 339.3 list 0.01 s | diagnosticd 27%, apsd 10%, amsengagementd 9%, Brickson 7%, mobileassetd 7%, AppIntentsLiveEntityService 4%
+01:59:42 simulator  145% mac  278% load 306.8 list 0.25 s | diagnosticd 24%, amsengagementd 18%, icloudmailagent 13%, apsd 10%, SetStoreUpdateService 9%, jetpackassetd 5%
+01:59:48 simulator  220% mac  300% load 316.4 list 0.25 s | PosterBoard 32%, diagnosticd 30%, assistant_service 16%, STExtractionService 10%, mediaanalysisd 9%, apsd 8%
+01:59:53 simulator  218% mac  286% load 329.2 list 0.57 s | PosterBoard 73%, healthappd 36%, diagnosticd 32%, STExtractionService 31%, runningboardd 12%, apsd 8%
+01:59:55 paused EmojiPosterExtension (29526) after 1.7 s of processor time
+01:59:55 paused GradientPosterExtension (29527) after 1.6 s of processor time
+01:59:55 paused GradientPosterExtension (29528) after 1.2 s of processor time
+01:59:55 paused MercuryPosterExtension (29531) after 0.7 s of processor time
+01:59:55 paused MercuryPosterExtension (29533) after 0.2 s of processor time
+01:59:57 paused GradientPosterExtension (29538) after 1.3 s of processor time
+01:59:57 paused EmojiPosterExtension (29541) after 1.3 s of processor time
+01:59:57 paused EmojiPosterExtension (29542) after 1.0 s of processor time
+01:59:59 simulator  261% mac  314% load 343.1 list 0.01 s | GradientPosterExtension 74%, EmojiPosterExtension 70%, STExtractionService 29%, healthappd 27%, MercuryPosterExtension 17%, diagnosticd 12%
+02:00:05 simulator  149% mac  300% load 347.1 list 0.08 s | diagnosticd 24%, healthappd 19%, testmanagerd 9%, apsd 9%, voicebankingd 8%, amsengagementd 8%
+02:00:10 simulator  192% mac  300% load 353.8 list 0.09 s | BricksonUITests-Runner 41%, diagnosticd 29%, DTServiceHub 11%, apsd 8%, SpringBoard 8%, DockFolderViewService 8%
+02:00:15 paused EmojiPosterExtension (29973) after 0.8 s of processor time
+02:00:15 paused GradientPosterExtension (29974) after 1.2 s of processor time
+02:00:16 paused GradientPosterExtension (29977) after 1.8 s of processor time
+02:00:16 paused MercuryPosterExtension (29979) after 1.2 s of processor time
+02:00:16 paused MercuryPosterExtension (29980) after 1.0 s of processor time
+02:00:16 simulator  261% mac  300% load 384.6 list 0.49 s | GradientPosterExtension 47%, BricksonUITests-Runner 41%, MercuryPosterExtension 34%, EmojiPosterExtension 20%, SpringBoard 17%, PosterBoard 16%
+02:00:18 paused GradientPosterExtension (29983) after 1.5 s of processor time
+02:00:18 paused EmojiPosterExtension (29984) after 1.4 s of processor time
+02:00:18 paused EmojiPosterExtension (29985) after 1.4 s of processor time
+02:00:22 simulator  236% mac  300% load 394.6 list 0.01 s | EmojiPosterExtension 51%, NewsToday2 43%, GradientPosterExtension 28%, BricksonUITests-Runner 22%, SpringBoard 21%, diagnosticd 16%
+02:00:28 simulator  141% mac  291% load 403.9 list 0.56 s | NewsToday2 32%, diagnosticd 23%, SpringBoard 17%, amsengagementd 10%, apsd 8%, BricksonUITests-Runner 4%
+02:00:33 simulator  205% mac  311% load 412.2 list 0.01 s | Brickson 77%, diagnosticd 30%, amsengagementd 21%, NewsToday2 18%, SpringBoard 13%, apsd 9%
+02:00:36 paused EmojiPosterExtension (30675) after 1.0 s of processor time
+02:00:36 paused GradientPosterExtension (30676) after 1.0 s of processor time
+02:00:36 paused GradientPosterExtension (30677) after 0.8 s of processor time
+02:00:37 paused MercuryPosterExtension (30681) after 1.1 s of processor time
+02:00:38 paused MercuryPosterExtension (30684) after 1.4 s of processor time
+02:00:38 paused GradientPosterExtension (30685) after 1.4 s of processor time
+02:00:38 paused EmojiPosterExtension (30686) after 0.3 s of processor time
+02:00:38 simulator  243% mac  300% load 424.1 list 0.16 s | GradientPosterExtension 59%, MercuryPosterExtension 47%, Brickson 40%, EmojiPosterExtension 24%, GeneralMapsWidget 17%, diagnosticd 15%
+02:00:39 paused EmojiPosterExtension (30688) after 1.1 s of processor time
+02:00:44 simulator  209% mac  300% load 433.5 list 0.06 s | Brickson 75%, diagnosticd 26%, EmojiPosterExtension 18%, amsengagementd 17%, com.apple.MapKit.SnapshotService 13%, SpringBoard 11%
+02:00:50 simulator  185% mac  300% load 439.4 list 0.01 s | Brickson 73%, amsengagementd 26%, diagnosticd 20%, WidgetRenderer_Default 19%, BricksonUITests-Runner 10%, apsd 9%
+02:00:56 paused EmojiPosterExtension (31526) after 0.4 s of processor time
+02:00:56 paused GradientPosterExtension (31527) after 0.3 s of processor time
+02:00:56 simulator  210% mac  300% load 444.5 list 0.13 s | Brickson 69%, HealthCycleTrackingWidgetExtension 36%, amsengagementd 28%, diagnosticd 19%, SpringBoard 12%, apsd 9%
+02:00:58 paused GradientPosterExtension (31529) after 1.2 s of processor time
+02:00:58 paused MercuryPosterExtension (31530) after 1.1 s of processor time
+02:00:58 paused MercuryPosterExtension (31532) after 0.5 s of processor time
+02:00:59 paused GradientPosterExtension (31534) after 1.0 s of processor time
+02:01:00 paused EmojiPosterExtension (31536) after 1.2 s of processor time
+02:01:00 paused EmojiPosterExtension (31537) after 1.2 s of processor time
+02:01:02 simulator  209% mac  300% load 448.4 list 0.01 s | EmojiPosterExtension 38%, GradientPosterExtension 37%, MercuryPosterExtension 26%, Brickson 24%, diagnosticd 20%, SpringBoard 11%
+02:01:08 simulator  180% mac  300% load 449.1 list 0.02 s | Brickson 82%, diagnosticd 28%, nsurlsessiond 19%, amsengagementd 16%, apsd 9%, DTServiceHub 5%
+02:01:14 simulator  165% mac  300% load 452.3 list 0.01 s | amsengagementd 37%, diagnosticd 34%, nsurlsessiond 24%, Brickson 19%, SpringBoard 10%, apsd 10%
+02:01:18 paused EmojiPosterExtension (32603) after 1.0 s of processor time
+02:01:18 paused GradientPosterExtension (32604) after 0.7 s of processor time
+02:01:18 paused GradientPosterExtension (32605) after 0.5 s of processor time
+02:01:20 paused MercuryPosterExtension (32607) after 1.3 s of processor time
+02:01:20 paused MercuryPosterExtension (32608) after 1.2 s of processor time
+02:01:20 paused GradientPosterExtension (32609) after 1.2 s of processor time
+02:01:20 simulator  244% mac  300% load 450.9 list 0.18 s | Brickson 61%, MercuryPosterExtension 46%, GradientPosterExtension 44%, amsengagementd 40%, EmojiPosterExtension 18%, diagnosticd 14%
+02:01:22 paused EmojiPosterExtension (32612) after 2.3 s of processor time
+02:01:22 paused EmojiPosterExtension (32613) after 2.3 s of processor time
+02:01:26 simulator  231% mac  300% load 455.3 list 0.05 s | EmojiPosterExtension 78%, amsengagementd 71%, Brickson 40%, diagnosticd 19%, apsd 6%, BricksonUITests-Runner 3%
+02:01:32 simulator  162% mac  300% load 445.3 list 0.01 s | amsengagementd 73%, diagnosticd 25%, apsd 11%, Brickson 7%, SeymourEngagementExtension 6%, BricksonUITests-Runner 5%
+02:01:37 simulator  215% mac  300% load 438.2 list 0.00 s | BackgroundShortcutRunner 60%, diagnosticd 25%, Brickson 22%, amsengagementd 22%, testmanagerd 12%, apsd 9%
+02:01:40 paused EmojiPosterExtension (33444) after 1.0 s of processor time
+02:01:40 paused GradientPosterExtension (33445) after 1.0 s of processor time
+02:01:40 paused GradientPosterExtension (33446) after 0.7 s of processor time
+02:01:41 paused MercuryPosterExtension (33449) after 1.3 s of processor time
+02:01:41 paused MercuryPosterExtension (33450) after 1.2 s of processor time
+02:01:41 paused GradientPosterExtension (33451) after 1.1 s of processor time
+02:01:41 paused EmojiPosterExtension (33452) after 0.5 s of processor time
+02:01:43 paused EmojiPosterExtension (33455) after 1.3 s of processor time
+02:01:43 simulator  245% mac  300% load 436.3 list 0.01 s | EmojiPosterExtension 50%, GradientPosterExtension 49%, MercuryPosterExtension 44%, intents_helper 39%, diagnosticd 15%, Brickson 7%
+02:01:44 paused MercuryPosterExtension (33562) after 0.5 s of processor time
+02:01:49 simulator  202% mac  300% load 426.0 list 0.01 s | diagnosticd 38%, BackgroundShortcutRunner 21%, intents_helper 20%, STExtractionService 11%, SpringBoard 11%, Brickson 9%
+02:01:55 simulator  207% mac  300% load 422.8 list 0.96 s | Brickson 83%, BackgroundShortcutRunner 45%, diagnosticd 17%, parsecd 10%, apsd 7%, iconservicesagent 6%
+02:02:01 simulator  181% mac  300% load 431.9 list 0.07 s | BackgroundShortcutRunner 77%, Brickson 40%, diagnosticd 21%, apsd 10%, SpringBoard 4%, BricksonUITests-Runner 3%
+02:02:06 paused MercuryPosterExtension (34296) after 1.1 s of processor time
+02:02:06 simulator  219% mac  300% load 436.0 list 0.01 s | BackgroundShortcutRunner 90%, diagnosticd 24%, MercuryPosterExtension 22%, apsd 11%, translationd 8%, Brickson 7%
+02:02:12 simulator  126% mac  300% load 412.2 list 0.01 s | diagnosticd 29%, Brickson 23%, apsd 11%, testmanagerd 11%, SpringBoard 9%, BricksonUITests-Runner 4%
+02:02:17 simulator  201% mac  300% load 404.7 list 0.04 s | BackgroundShortcutRunner 65%, diagnosticd 33%, Brickson 28%, SpringBoard 20%, apsd 10%, backboardd 8%
+02:02:23 simulator  218% mac  300% load 402.4 list 0.00 s | BackgroundShortcutRunner 82%, Brickson 74%, diagnosticd 27%, apsd 8%, mobileassetd 4%, DTServiceHub 4%
+02:02:25 paused MercuryPosterExtension (35365) after 0.4 s of processor time
+02:02:25 paused MercuryPosterExtension (35366) after 0.3 s of processor time
+02:02:25 paused MercuryPosterExtension (35367) after 0.3 s of processor time
+02:02:29 simulator  162% mac  300% load 402.1 list 0.00 s | intelligenceflowd 38%, diagnosticd 24%, MercuryPosterExtension 17%, Brickson 15%, apsd 10%, com.apple.siri.embeddedspeech 9%
+02:02:34 simulator  179% mac  300% load 373.8 list 0.01 s | diagnosticd 33%, intelligenceflowd 27%, Brickson 21%, testmanagerd 16%, SpringBoard 11%, apsd 10%
+02:02:39 simulator  159% mac  300% load 360.9 list 0.01 s | intelligencecontextd 57%, diagnosticd 25%, Brickson 17%, apsd 10%, testmanagerd 8%, BricksonUITests-Runner 5%
+02:02:44 simulator  184% mac  300% load 335.8 list 0.08 s | Brickson 54%, diagnosticd 29%, intelligenceflowd 17%, SpringBoard 15%, apsd 9%, backboardd 8%
+02:02:47 paused MercuryPosterExtension (36227) after 0.6 s of processor time
+02:02:47 paused MercuryPosterExtension (36228) after 0.5 s of processor time
+02:02:47 paused MercuryPosterExtension (36230) after 0.5 s of processor time
+02:02:49 simulator  227% mac  300% load 314.0 list 0.01 s | Brickson 90%, MercuryPosterExtension 32%, diagnosticd 26%, apsd 8%, DTServiceHub 5%, SpringBoard 4%
+02:02:55 simulator  183% mac  300% load 300.5 list 0.02 s | MobileCal 79%, diagnosticd 22%, CalendarWidgetExtension 11%, Brickson 11%, apsd 9%, MTLCompilerService 7%
+02:03:00 simulator  226% mac  300% load 283.2 list 0.12 s | CalendarIntentsExtension 46%, MobileCal 39%, amsengagementd 36%, diagnosticd 22%, Brickson 16%, MauiAUSP 13%
+02:03:06 simulator  201% mac  300% load 267.1 list 0.10 s | amsengagementd 70%, SafariLinkExtension 29%, diagnosticd 27%, SpringBoard 10%, apsd 10%, backboardd 4%
+02:03:09 paused MercuryPosterExtension (37164) after 1.3 s of processor time
+02:03:09 paused MercuryPosterExtension (37165) after 1.3 s of processor time
+02:03:09 paused MercuryPosterExtension (37168) after 0.5 s of processor time
+02:03:11 simulator  255% mac  300% load 255.4 list 0.02 s | Brickson 89%, MercuryPosterExtension 60%, amsengagementd 35%, SafariLinkExtension 22%, diagnosticd 16%, apsd 6%
+02:03:17 simulator  194% mac  300% load 243.5 list 0.01 s | amsengagementd 43%, Brickson 40%, diagnosticd 29%, apsd 11%, MessagesActionExtension 10%, CalendarWidgetExtension 9%
+02:03:23 simulator  189% mac  300% load 230.0 list 0.03 s | diagnosticd 33%, Brickson 16%, MauiAUSP 12%, apsd 12%, BricksonUITests-Runner 6%, siriinferenced 6%
+02:03:29 simulator  184% mac  294% load 220.2 list 0.01 s | Brickson 33%, diagnosticd 32%, siriinferenced 13%, apsd 11%, SpringBoard 11%, triald 6%
+02:03:31 paused MercuryPosterExtension (38337) after 0.8 s of processor time
+02:03:31 paused MercuryPosterExtension (38338) after 0.7 s of processor time
+02:03:33 paused MercuryPosterExtension (38339) after 2.8 s of processor time
+02:03:35 simulator  211% mac  300% load 213.7 list 0.02 s | MercuryPosterExtension 101%, Brickson 71%, diagnosticd 14%, apsd 6%, DTServiceHub 5%, SpringBoard 2%
+02:03:40 simulator  156% mac  298% load 203.1 list 0.01 s | Brickson 31%, diagnosticd 30%, apsd 12%, BricksonUITests-Runner 9%, siriinferenced 8%, dataaccessd 6%
+02:03:45 simulator  211% mac  300% load 187.5 list 0.00 s | diagnosticd 34%, Brickson 14%, siriinferenced 14%, AuthenticationServicesAgent 13%, dataaccessd 13%, searchd 11%
+02:03:51 simulator  158% mac  299% load 173.4 list 0.01 s | diagnosticd 33%, Brickson 11%, apsd 10%, cloudd 9%, dataaccessd 8%, searchd 8%
+02:03:56 simulator  192% mac  287% load 160.0 list 0.01 s | Brickson 35%, diagnosticd 25%, SpringBoard 15%, dataaccessd 13%, AuthenticationServicesAgent 11%, apsd 9%
+02:04:02 simulator  214% mac  281% load 136.5 list 0.01 s | Brickson 84%, diagnosticd 25%, AuthenticationServicesAgent 18%, apsd 11%, Spotlight 8%, DeviceConfigurationSubscriber 5%
+02:04:07 simulator  164% mac  287% load 125.8 list 0.01 s | diagnosticd 28%, Brickson 25%, BricksonUITests-Runner 11%, apsd 10%, Spotlight 9%, healthappd 8%
+02:04:13 simulator  147% mac  199% load 116.3 list 0.01 s | healthappd 37%, diagnosticd 28%, apsd 11%, Brickson 11%, healthd 8%, BricksonUITests-Runner 6%
+02:04:19 simulator   92% mac  194% load 107.0 list 0.26 s | diagnosticd 24%, SpringBoard 12%, Brickson 12%, apsd 11%, BricksonUITests-Runner 7%, backboardd 6%
+02:04:24 simulator  160% mac  229% load  98.7 list 0.01 s | Brickson 110%, diagnosticd 18%, apsd 10%, DTServiceHub 5%, SpringBoard 2%, backboardd 2%
+02:04:31 simulator   86% mac  135% load  93.4 list 0.01 s | diagnosticd 25%, Brickson 20%, apsd 13%, BricksonUITests-Runner 11%, trustd 2%, notifyd 2%
+02:04:36 simulator   78% mac  191% load  86.4 list 0.01 s | diagnosticd 26%, apsd 15%, Brickson 11%, BricksonUITests-Runner 7%, backboardd 2%, trustd 2%
+02:04:42 simulator   76% mac  167% load  78.0 list 0.02 s | diagnosticd 25%, apsd 12%, BricksonUITests-Runner 8%, SpringBoard 6%, testmanagerd 4%, backboardd 3%
+02:04:47 simulator  150% mac  259% load  72.0 list 0.01 s | Brickson 86%, diagnosticd 20%, SpringBoard 12%, apsd 10%, backboardd 5%, DTServiceHub 2%
+02:04:53 simulator  123% mac  215% load  68.8 list 0.01 s | Brickson 61%, diagnosticd 22%, apsd 11%, BricksonUITests-Runner 10%, DTServiceHub 3%, SpringBoard 2%
+02:04:59 simulator   73% mac  122% load  65.9 list 0.01 s | diagnosticd 24%, apsd 14%, Brickson 11%, BricksonUITests-Runner 7%, backboardd 2%, SpringBoard 2%
+02:05:05 simulator   65% mac  140% load  60.8 list 0.01 s | diagnosticd 22%, apsd 12%, Brickson 8%, BricksonUITests-Runner 6%, backboardd 2%, trustd 2%
+02:05:11 simulator  142% mac  212% load  59.0 list 0.02 s | Brickson 61%, diagnosticd 22%, SpringBoard 14%, apsd 11%, BricksonUITests-Runner 7%, backboardd 6%
+02:05:17 simulator  100% mac  181% load  54.4 list 0.02 s | Brickson 50%, diagnosticd 19%, apsd 11%, DTServiceHub 3%, BricksonUITests-Runner 2%, SpringBoard 2%
+02:05:23 simulator   71% mac  110% load  53.2 list 0.01 s | diagnosticd 28%, apsd 15%, Brickson 8%, BricksonUITests-Runner 4%, trustd 2%, notifyd 2%
+02:05:29 simulator   84% mac  165% load  49.0 list 0.01 s | diagnosticd 26%, Brickson 17%, apsd 11%, BricksonUITests-Runner 10%, testmanagerd 4%, notifyd 2%
+02:05:35 simulator  134% mac  193% load  45.3 list 0.00 s | diagnosticd 43%, spotlightknowledged.updater 23%, apsd 14%, cfprefsd 9%, Brickson 9%, searchd 6%
+02:05:41 simulator  101% mac  169% load  42.0 list 0.00 s | diagnosticd 26%, Brickson 18%, MauiAUSP 13%, apsd 12%, BricksonUITests-Runner 9%, testmanagerd 5%
+02:05:47 simulator  100% mac  193% load  39.0 list 0.01 s | diagnosticd 34%, apsd 13%, spotlightknowledged.updater 10%, Brickson 9%, cfprefsd 7%, BricksonUITests-Runner 5%
+02:05:53 simulator  119% mac  225% load  41.7 list 0.00 s | Brickson 28%, diagnosticd 27%, SpringBoard 16%, apsd 11%, BricksonUITests-Runner 8%, backboardd 7%
+02:05:59 simulator  143% mac  268% load  44.2 list 0.00 s | Brickson 90%, diagnosticd 20%, apsd 12%, DTServiceHub 5%, SpringBoard 2%, trustd 1%
+02:06:05 simulator  100% mac  144% load  40.7 list 0.02 s | diagnosticd 26%, apsd 14%, RemindersIntentsExtension 13%, com.apple.MapKit.SnapshotService 12%, Brickson 8%, BricksonUITests-Runner 4%
+02:06:11 simulator  155% mac  231% load  37.4 list 0.01 s | RemindersWidgetExtension 29%, diagnosticd 29%, RemindersIntentsExtension 28%, Brickson 19%, apsd 12%, BricksonUITests-Runner 9%
+02:06:17 simulator   70% mac  136% load  34.6 list 0.01 s | diagnosticd 28%, apsd 14%, Brickson 8%, BricksonUITests-Runner 5%, trustd 2%, notifyd 2%
+02:06:23 simulator  114% mac  168% load  29.6 list 0.01 s | diagnosticd 30%, Brickson 18%, apsd 13%, MauiAUSP 13%, BricksonUITests-Runner 8%, healthappd 7%
+02:06:29 simulator   62% mac  145% load  30.1 list 0.02 s | diagnosticd 23%, apsd 13%, Brickson 8%, BricksonUITests-Runner 4%, trustd 1%, notifyd 1%
+02:06:35 simulator   87% mac  172% load  30.6 list 0.02 s | diagnosticd 30%, apsd 13%, BricksonUITests-Runner 10%, SpringBoard 9%, testmanagerd 4%, notifyd 2%
+02:06:40 simulator  162% mac  252% load  28.5 list 0.01 s | Brickson 97%, diagnosticd 22%, apsd 10%, SpringBoard 10%, backboardd 7%, DTServiceHub 3%
+02:06:46 simulator   86% mac  134% load  26.4 list 0.01 s | Brickson 28%, diagnosticd 25%, apsd 14%, BricksonUITests-Runner 3%, trustd 2%, DTServiceHub 2%
+02:06:52 simulator   73% mac  123% load  26.2 list 0.01 s | diagnosticd 29%, apsd 14%, Brickson 9%, BricksonUITests-Runner 4%, notifyd 2%, trustd 2%
+02:06:58 simulator   86% mac  182% load  27.4 list 0.01 s | diagnosticd 27%, Brickson 16%, apsd 13%, BricksonUITests-Runner 9%, testmanagerd 4%, notifyd 2%
+02:07:03 simulator   64% mac  123% load  23.5 list 0.01 s | diagnosticd 25%, apsd 12%, Brickson 7%, BricksonUITests-Runner 4%, notifyd 2%, trustd 2%
+02:07:09 simulator   94% mac  212% load  21.9 list 0.02 s | diagnosticd 24%, Brickson 16%, MauiAUSP 13%, apsd 11%, BricksonUITests-Runner 8%, testmanagerd 4%
+02:07:16 simulator   76% mac  116% load  20.2 list 0.02 s | diagnosticd 30%, apsd 15%, Brickson 9%, BricksonUITests-Runner 5%, notifyd 2%, trustd 2%
+02:07:21 simulator  135% mac  224% load  18.8 list 0.00 s | Brickson 48%, diagnosticd 25%, SpringBoard 14%, apsd 11%, backboardd 7%, BricksonUITests-Runner 6%
+02:07:27 simulator  124% mac  180% load  21.1 list 0.01 s | Brickson 68%, diagnosticd 23%, apsd 13%, DTServiceHub 3%, SpringBoard 2%, trustd 2%
+02:07:33 simulator   68% mac  107% load  19.5 list 0.01 s | diagnosticd 27%, apsd 14%, Brickson 7%, BricksonUITests-Runner 4%, trustd 2%, notifyd 2%
+02:07:38 simulator   84% mac  163% load  16.7 list 0.01 s | diagnosticd 28%, Brickson 15%, apsd 12%, BricksonUITests-Runner 8%, testmanagerd 4%, notifyd 2%
+02:07:44 simulator   75% mac  116% load  15.5 list 0.03 s | diagnosticd 31%, apsd 15%, Brickson 8%, BricksonUITests-Runner 5%, trustd 2%, notifyd 2%
+02:07:50 simulator  104% mac  186% load  14.6 list 0.01 s | diagnosticd 28%, Brickson 16%, MauiAUSP 13%, apsd 12%, BricksonUITests-Runner 7%, intelligencetasksd 5%
+02:07:56 simulator   63% mac  173% load  18.9 list 0.01 s | diagnosticd 24%, apsd 12%, Brickson 8%, BricksonUITests-Runner 4%, notifyd 2%, trustd 1%
+02:08:02 simulator  101% mac  173% load  17.4 list 0.01 s | diagnosticd 31%, apsd 13%, Brickson 12%, SpringBoard 11%, BricksonUITests-Runner 8%, backboardd 5%
+02:08:08 simulator  152% mac  240% load  17.7 list 0.01 s | Brickson 103%, diagnosticd 18%, apsd 11%, DTServiceHub 5%, SpringBoard 2%, backboardd 2%
+02:08:13 simulator  110% mac  173% load  17.7 list 0.04 s | Brickson 45%, diagnosticd 27%, apsd 13%, backboardd 5%, BricksonUITests-Runner 3%, notifyd 2%
+02:08:20 simulator   78% mac  189% load  16.6 list 0.00 s | Brickson 25%, diagnosticd 24%, apsd 11%, BricksonUITests-Runner 3%, backboardd 3%, notifyd 2%
+02:08:26 simulator  105% mac  146% load  15.4 list 0.00 s | Brickson 38%, diagnosticd 23%, apsd 12%, testmanagerd 9%, BricksonUITests-Runner 7%, SpringBoard 2%
+02:08:31 simulator  116% mac  188% load  14.2 list 0.00 s | Brickson 42%, diagnosticd 35%, apsd 12%, BricksonUITests-Runner 5%, notifyd 5%, testmanagerd 3%
+02:08:37 simulator   59% mac  128% load  13.1 list 0.01 s | diagnosticd 25%, apsd 14%, BricksonUITests-Runner 3%, backboardd 2%, trustd 2%, SpringBoard 2%
+02:08:42 simulator  149% mac  198% load  12.2 list 0.01 s | Brickson 83%, diagnosticd 21%, SpringBoard 11%, apsd 10%, backboardd 7%, DTServiceHub 3%
+02:08:48 simulator  118% mac  217% load  11.5 list 0.01 s | Brickson 40%, diagnosticd 20%, BricksonUITests-Runner 20%, apsd 10%, MTLCompilerService 5%, testmanagerd 5%
+02:08:54 simulator  118% mac  170% load  11.3 list 0.01 s | Brickson 39%, diagnosticd 25%, SpringBoard 13%, apsd 11%, testmanagerd 8%, backboardd 5%
+02:09:00 simulator  140% mac  221% load  10.8 list 0.00 s | Brickson 68%, diagnosticd 22%, BricksonUITests-Runner 16%, apsd 11%, testmanagerd 5%, DTServiceHub 3%
+02:09:06 simulator  110% mac  179% load  10.6 list 0.00 s | Brickson 31%, diagnosticd 26%, SpringBoard 14%, apsd 10%, testmanagerd 9%, backboardd 6%
+02:09:11 simulator  154% mac  201% load   9.8 list 0.01 s | Brickson 84%, diagnosticd 22%, BricksonUITests-Runner 12%, apsd 11%, DTServiceHub 5%, testmanagerd 4%
+02:09:17 simulator  112% mac  207% load  11.9 list 0.00 s | diagnosticd 29%, Brickson 25%, SpringBoard 16%, apsd 11%, testmanagerd 9%, backboardd 5%
+02:09:23 simulator  158% mac  193% load  13.8 list 0.01 s | Brickson 88%, diagnosticd 23%, apsd 12%, BricksonUITests-Runner 9%, DTServiceHub 5%, testmanagerd 4%
+02:09:29 simulator  102% mac  254% load  15.1 list 0.01 s | diagnosticd 30%, SpringBoard 16%, apsd 11%, testmanagerd 11%, BricksonUITests-Runner 8%, Brickson 8%
+02:09:35 simulator  155% mac  212% load  16.2 list 0.00 s | Brickson 97%, diagnosticd 22%, apsd 12%, DTServiceHub 4%, SpringBoard 3%, backboardd 2%
+02:09:41 simulator  119% mac  179% load  17.7 list 0.01 s | Brickson 40%, diagnosticd 33%, apsd 14%, backboardd 5%, BricksonUITests-Runner 3%, spotlightknowledged.updater 3%
+02:09:47 simulator   81% mac  170% load  16.4 list 0.01 s | diagnosticd 24%, Brickson 24%, apsd 13%, backboardd 3%, BricksonUITests-Runner 2%, trustd 2%
+02:09:53 simulator  121% mac  150% load  15.3 list 0.03 s | Brickson 52%, diagnosticd 23%, apsd 12%, testmanagerd 11%, BricksonUITests-Runner 7%, SpringBoard 2%
+02:09:58 simulator   98% mac  197% load  14.2 list 0.01 s | diagnosticd 35%, Brickson 25%, apsd 11%, BricksonUITests-Runner 5%, notifyd 4%, backboardd 4%
+02:10:04 simulator   87% mac  136% load  13.3 list 0.09 s | diagnosticd 28%, apsd 15%, Brickson 12%, SpringBoard 10%, backboardd 5%, BricksonUITests-Runner 2%
+02:10:10 simulator  154% mac  223% load  13.9 list 0.01 s | Brickson 99%, diagnosticd 18%, apsd 10%, DTServiceHub 5%, testmanagerd 3%, BricksonUITests-Runner 3%
+02:10:16 simulator   91% mac  188% load  12.8 list 0.02 s | diagnosticd 28%, BricksonUITests-Runner 14%, apsd 12%, SpringBoard 10%, testmanagerd 10%, backboardd 3%
+02:10:23 simulator  151% mac  193% load  12.5 list 0.00 s | Brickson 93%, diagnosticd 20%, apsd 11%, SpringBoard 6%, DTServiceHub 4%, backboardd 4%
+02:10:29 simulator   88% mac  203% load  11.6 list 0.00 s | diagnosticd 26%, BricksonUITests-Runner 16%, testmanagerd 12%, apsd 10%, SpringBoard 9%, backboardd 3%
+02:10:35 simulator  174% mac  239% load  11.8 list 0.02 s | Brickson 103%, diagnosticd 22%, apsd 11%, SpringBoard 8%, backboardd 5%, DTServiceHub 4%
+02:10:40 simulator  109% mac  249% load  13.3 list 0.01 s | Brickson 26%, diagnosticd 26%, BricksonUITests-Runner 13%, apsd 11%, testmanagerd 11%, SpringBoard 6%
+02:10:46 simulator  159% mac  214% load  15.0 list 0.01 s | Brickson 71%, diagnosticd 27%, apsd 11%, SpringBoard 10%, backboardd 6%, testmanagerd 3%
+02:10:52 simulator  134% mac  236% load  14.0 list 0.01 s | Brickson 48%, diagnosticd 26%, BricksonUITests-Runner 15%, apsd 11%, testmanagerd 10%, SpringBoard 4%
+02:10:59 simulator  129% mac  253% load  13.0 list 0.00 s | Brickson 53%, diagnosticd 23%, apsd 11%, SpringBoard 10%, backboardd 5%, managedappdistributiond 4%
+02:11:04 simulator  156% mac  225% load  12.4 list 0.01 s | Brickson 86%, diagnosticd 24%, apsd 12%, BricksonUITests-Runner 7%, testmanagerd 4%, DTServiceHub 3%
+02:11:10 simulator   95% mac  189% load  15.9 list 0.01 s | Brickson 31%, diagnosticd 28%, apsd 13%, backboardd 5%, BricksonUITests-Runner 3%, notifyd 2%
+02:11:16 simulator   92% mac  133% load  17.2 list 0.01 s | diagnosticd 29%, Brickson 18%, apsd 15%, BricksonUITests-Runner 9%, testmanagerd 4%, trustd 2%
+02:11:22 simulator  134% mac  210% load  16.0 list 0.00 s | Brickson 64%, diagnosticd 28%, apsd 12%, testmanagerd 9%, notifyd 3%, SpringBoard 3%
+02:11:28 simulator   92% mac  150% load  17.9 list 0.01 s | diagnosticd 30%, apsd 13%, Brickson 12%, com.apple.MapKit.SnapshotService 11%, backboardd 3%, BricksonUITests-Runner 3%
+02:11:34 simulator  110% mac  163% load  17.2 list 0.01 s | Brickson 30%, diagnosticd 26%, BricksonUITests-Runner 19%, apsd 11%, testmanagerd 7%, backboardd 3%
+02:11:40 simulator   76% mac  164% load  16.1 list 0.03 s | diagnosticd 26%, Brickson 16%, apsd 12%, backboardd 5%, BricksonUITests-Runner 4%, notifyd 2%
+02:11:46 simulator   86% mac  126% load  14.0 list 0.01 s | diagnosticd 28%, Brickson 23%, apsd 13%, backboardd 3%, BricksonUITests-Runner 3%, notifyd 2%
+02:11:52 simulator  101% mac  225% load  16.2 list 0.00 s | Brickson 43%, diagnosticd 20%, apsd 10%, testmanagerd 9%, BricksonUITests-Runner 6%, SpringBoard 2%
+02:11:58 simulator  110% mac  158% load  15.3 list 0.01 s | diagnosticd 35%, Brickson 34%, apsd 11%, BricksonUITests-Runner 6%, notifyd 4%, backboardd 4%
+02:12:03 simulator  101% mac  180% load  14.2 list 0.01 s | diagnosticd 27%, Brickson 18%, apsd 14%, SpringBoard 11%, BricksonUITests-Runner 7%, backboardd 5%
+02:12:09 simulator   60% mac  223% load  15.7 list 0.00 s | diagnosticd 22%, apsd 12%, DTServiceHub 4%, SpringBoard 4%, backboardd 3%, BricksonUITests-Runner 2%
+02:12:15 simulator  153% mac  188% load  14.5 list 0.01 s | Brickson 94%, diagnosticd 20%, apsd 11%, SpringBoard 7%, backboardd 5%, DTServiceHub 4%
+02:12:21 simulator  112% mac  206% load  14.3 list 0.03 s | Brickson 41%, diagnosticd 25%, apsd 12%, testmanagerd 8%, BricksonUITests-Runner 8%, backboardd 2%
+02:12:27 simulator   93% mac  132% load  13.2 list 0.01 s | Brickson 32%, diagnosticd 26%, apsd 13%, testmanagerd 3%, backboardd 3%, BricksonUITests-Runner 2%
+02:12:33 simulator   97% mac  177% load  12.7 list 0.00 s | Brickson 36%, diagnosticd 23%, apsd 11%, testmanagerd 8%, SpringBoard 3%, backboardd 3%
+02:12:39 simulator  112% mac  149% load  11.7 list 0.00 s | Brickson 46%, diagnosticd 23%, apsd 12%, testmanagerd 9%, BricksonUITests-Runner 7%, SpringBoard 2%
+02:12:44 simulator  119% mac  176% load  10.8 list 0.01 s | Brickson 73%, diagnosticd 18%, apsd 10%, testmanagerd 3%, BricksonUITests-Runner 2%, backboardd 2%
+02:12:50 simulator   81% mac  157% load  10.0 list 0.02 s | diagnosticd 24%, apsd 11%, BricksonUITests-Runner 9%, SpringBoard 8%, Brickson 6%, backboardd 5%
+02:12:56 simulator  153% mac  188% load  12.3 list 0.01 s | Brickson 96%, diagnosticd 21%, apsd 12%, DTServiceHub 4%, backboardd 3%, SpringBoard 3%
+02:13:02 simulator  124% mac  266% load  10.8 list 0.01 s | Brickson 35%, diagnosticd 28%, BricksonUITests-Runner 16%, testmanagerd 12%, apsd 11%, SpringBoard 7%
+02:13:07 simulator  154% mac  206% load  10.2 list 0.00 s | Brickson 78%, diagnosticd 25%, apsd 12%, SpringBoard 10%, backboardd 6%, BricksonUITests-Runner 3%
+02:13:14 simulator  128% mac  201% load  12.4 list 0.01 s | Brickson 46%, diagnosticd 25%, BricksonUITests-Runner 17%, apsd 12%, testmanagerd 9%, SpringBoard 3%
+02:13:20 simulator  127% mac  203% load  11.7 list 0.01 s | Brickson 47%, diagnosticd 27%, SpringBoard 13%, apsd 12%, backboardd 6%, testmanagerd 4%
+02:13:26 simulator  142% mac  188% load  10.9 list 0.01 s | Brickson 66%, diagnosticd 24%, BricksonUITests-Runner 16%, apsd 12%, testmanagerd 4%, DTServiceHub 3%
+02:13:31 simulator  121% mac  223% load  10.3 list 0.00 s | Brickson 38%, diagnosticd 27%, SpringBoard 14%, apsd 11%, testmanagerd 9%, backboardd 6%
+02:13:37 simulator  154% mac  197% load   8.9 list 0.01 s | Brickson 74%, diagnosticd 24%, BricksonUITests-Runner 16%, apsd 12%, testmanagerd 4%, DTServiceHub 4%
+02:13:43 simulator  108% mac  222% load   8.2 list 0.00 s | diagnosticd 30%, SpringBoard 18%, Brickson 13%, apsd 11%, testmanagerd 10%, backboardd 6%
+02:13:49 simulator  170% mac  245% load   8.0 list 0.01 s | Brickson 85%, diagnosticd 20%, kbd 17%, apsd 9%, backboardd 5%, DTServiceHub 4%
+02:13:55 simulator  122% mac  186% load   7.6 list 0.00 s | STExtractionService 53%, diagnosticd 20%, apsd 10%, Brickson 6%, kbd 4%, nsurlsessiond 4%
+02:14:00 simulator  198% mac  288% load   8.1 list 0.00 s | STExtractionService 63%, Brickson 56%, diagnosticd 21%, SpringBoard 11%, apsd 9%, BricksonUITests-Runner 7%
+02:14:05 simulator  219% mac  272% load  13.0 list 0.01 s | Brickson 81%, STExtractionService 69%, diagnosticd 20%, apsd 9%, SpringBoard 6%, BricksonUITests-Runner 6%
+02:14:10 simulator  192% mac  257% load  14.7 list 0.01 s | STExtractionService 59%, Brickson 58%, diagnosticd 21%, SpringBoard 16%, backboardd 9%, apsd 8%
+02:14:16 simulator  187% mac  298% load  19.3 list 0.01 s | STExtractionService 63%, Brickson 60%, diagnosticd 19%, apsd 8%, backboardd 5%, nsurlsessiond 4%
+02:14:22 simulator  111% mac  185% load  16.6 list 0.01 s | Brickson 29%, diagnosticd 25%, apsd 11%, SpringBoard 11%, BricksonUITests-Runner 9%, backboardd 7%
+02:14:29 simulator   74% mac  196% load  18.8 list 0.01 s | diagnosticd 24%, apsd 11%, BricksonUITests-Runner 7%, SpringBoard 6%, DTServiceHub 4%, testmanagerd 4%
+02:14:34 simulator  163% mac  249% load  17.6 list 0.01 s | Brickson 96%, diagnosticd 22%, apsd 10%, SpringBoard 9%, backboardd 6%, DTServiceHub 4%
+02:14:40 simulator   78% mac  124% load  16.3 list 0.01 s | diagnosticd 26%, Brickson 15%, apsd 13%, backboardd 5%, BricksonUITests-Runner 2%, trustd 2%
+02:14:46 simulator  146% mac  238% load  15.3 list 0.01 s | Brickson 66%, diagnosticd 24%, apsd 10%, SpringBoard 9%, BricksonUITests-Runner 7%, backboardd 6%
+02:14:52 simulator   97% mac  207% load  17.1 list 0.01 s | diagnosticd 24%, Brickson 20%, apsd 10%, SpringBoard 9%, BricksonUITests-Runner 8%, backboardd 6%
+02:14:58 simulator  142% mac  186% load  15.7 list 0.00 s | Brickson 80%, diagnosticd 22%, apsd 11%, backboardd 5%, DTServiceHub 5%, SpringBoard 3%
+02:15:04 simulator   87% mac  174% load  14.7 list 0.03 s | diagnosticd 25%, apsd 11%, BricksonUITests-Runner 9%, Brickson 9%, SpringBoard 9%, backboardd 6%
+02:15:10 simulator  154% mac  188% load  19.2 list 0.01 s | Brickson 94%, diagnosticd 21%, apsd 11%, DTServiceHub 4%, BricksonUITests-Runner 3%, testmanagerd 3%
+02:15:16 simulator  148% mac  242% load  22.7 list 0.00 s | Brickson 81%, diagnosticd 22%, apsd 10%, SpringBoard 9%, backboardd 5%, BricksonUITests-Runner 4%
+02:15:21 simulator   63% mac  161% load  20.9 list 0.07 s | diagnosticd 23%, apsd 11%, BricksonUITests-Runner 4%, SpringBoard 3%, DTServiceHub 3%, launchd_sim 2%
+02:15:26 simulator  148% mac  253% load  24.5 list 0.01 s | Brickson 88%, diagnosticd 21%, apsd 10%, SpringBoard 8%, backboardd 6%, DTServiceHub 2%
+02:15:32 simulator   80% mac  209% load  22.6 list 0.02 s | diagnosticd 23%, Brickson 14%, apsd 11%, SpringBoard 8%, backboardd 5%, BricksonUITests-Runner 3%
+02:15:38 simulator  133% mac  165% load  20.5 list 0.00 s | Brickson 81%, diagnosticd 20%, apsd 12%, DTServiceHub 4%, SpringBoard 2%, backboardd 1%
+02:15:44 simulator  118% mac  231% load  20.8 list 0.02 s | Brickson 33%, diagnosticd 27%, SpringBoard 15%, apsd 11%, testmanagerd 10%, backboardd 6%
+02:15:50 simulator  145% mac  198% load  19.2 list 0.01 s | Brickson 77%, diagnosticd 24%, apsd 12%, testmanagerd 8%, SpringBoard 6%, DTServiceHub 4%
+02:15:57 simulator  129% mac  243% load  22.3 list 0.00 s | Brickson 46%, diagnosticd 26%, apsd 11%, SpringBoard 11%, backboardd 5%, testmanagerd 4%
+02:16:03 simulator   87% mac  222% load  22.3 list 0.01 s | diagnosticd 27%, apsd 13%, Brickson 10%, SpringBoard 10%, backboardd 5%, DTServiceHub 3%
+02:16:08 simulator  152% mac  182% load  20.6 list 0.02 s | Brickson 95%, diagnosticd 20%, apsd 12%, DTServiceHub 5%, testmanagerd 3%, SpringBoard 2%
+02:16:14 simulator  119% mac  217% load  19.1 list 0.01 s | diagnosticd 24%, Brickson 21%, BricksonUITests-Runner 20%, apsd 11%, MauiAUSP 11%, testmanagerd 8%
+02:16:20 simulator  113% mac  175% load  18.0 list 0.00 s | diagnosticd 31%, Brickson 18%, SpringBoard 16%, apsd 12%, testmanagerd 10%, backboardd 5%
+02:16:25 simulator  153% mac  209% load  16.8 list 0.01 s | Brickson 98%, diagnosticd 20%, apsd 11%, DTServiceHub 5%, SpringBoard 2%, backboardd 2%
+02:16:31 simulator  112% mac  182% load  16.0 list 0.02 s | diagnosticd 24%, Brickson 20%, BricksonUITests-Runner 18%, apsd 12%, MauiAUSP 10%, testmanagerd 10%
+02:16:37 simulator  112% mac  222% load  15.2 list 0.01 s | diagnosticd 31%, SpringBoard 15%, Brickson 15%, apsd 13%, testmanagerd 9%, BricksonUITests-Runner 8%
+02:16:43 simulator   61% mac  249% load  14.3 list 0.01 s | diagnosticd 21%, apsd 11%, DTServiceHub 4%, SpringBoard 3%, BricksonUITests-Runner 3%, testmanagerd 3%
+02:16:48 simulator  156% mac  195% load  13.4 list 0.00 s | Brickson 88%, diagnosticd 23%, apsd 12%, SpringBoard 8%, backboardd 6%, DTServiceHub 3%
+02:16:53 simulator  118% mac  209% load  11.8 list 0.00 s | Brickson 34%, diagnosticd 24%, apsd 11%, com.apple.MapKit.SnapshotService 11%, SpringBoard 8%, backboardd 5%
+02:16:59 simulator  141% mac  207% load  12.1 list 0.00 s | Brickson 82%, diagnosticd 23%, apsd 12%, DTServiceHub 4%, SpringBoard 2%, backboardd 2%
+02:17:05 simulator  107% mac  168% load  16.2 list 0.00 s | diagnosticd 29%, Brickson 19%, SpringBoard 14%, apsd 12%, testmanagerd 9%, backboardd 6%
+02:17:11 simulator  140% mac  217% load  18.3 list 0.02 s | Brickson 88%, diagnosticd 20%, apsd 11%, DTServiceHub 5%, SpringBoard 2%, backboardd 2%
+02:17:17 simulator  159% mac  206% load  17.2 list 0.02 s | Brickson 92%, diagnosticd 23%, apsd 11%, SpringBoard 9%, backboardd 6%, DTServiceHub 4%
+02:17:23 simulator  104% mac  172% load  16.1 list 0.00 s | Brickson 34%, diagnosticd 25%, apsd 13%, SpringBoard 8%, backboardd 5%, BricksonUITests-Runner 3%
+02:17:29 simulator  137% mac  202% load  19.5 list 0.01 s | Brickson 75%, diagnosticd 24%, apsd 13%, DTServiceHub 4%, SpringBoard 3%, BricksonUITests-Runner 2%
+02:17:35 simulator  119% mac  192% load  18.3 list 0.02 s | Brickson 45%, diagnosticd 23%, apsd 11%, SpringBoard 8%, BricksonUITests-Runner 6%, backboardd 6%
+02:17:41 simulator  139% mac  215% load  16.9 list 0.00 s | Brickson 72%, diagnosticd 24%, apsd 11%, SpringBoard 8%, testmanagerd 6%, DTServiceHub 3%
+02:17:47 simulator   99% mac  186% load  18.8 list 0.01 s | diagnosticd 28%, Brickson 17%, BricksonUITests-Runner 13%, apsd 12%, testmanagerd 7%, backboardd 5%
+02:17:52 simulator  100% mac  185% load  17.3 list 0.00 s | diagnosticd 30%, Brickson 18%, apsd 13%, MauiAUSP 9%, BricksonUITests-Runner 7%, testmanagerd 4%
+02:17:58 simulator  155% mac  221% load  15.8 list 0.00 s | Brickson 87%, diagnosticd 23%, apsd 11%, SpringBoard 9%, backboardd 5%, DTServiceHub 3%
+02:18:04 simulator  100% mac  136% load  14.6 list 0.01 s | diagnosticd 27%, Brickson 26%, apsd 12%, testmanagerd 10%, SpringBoard 8%, BricksonUITests-Runner 3%
+02:18:09 simulator   95% mac  187% load  16.2 list 0.01 s | diagnosticd 29%, Brickson 20%, BricksonUITests-Runner 13%, apsd 12%, testmanagerd 4%, notifyd 3%
+02:18:16 simulator  112% mac  185% load  15.1 list 0.00 s | Brickson 29%, diagnosticd 28%, apsd 11%, SpringBoard 10%, BricksonUITests-Runner 8%, backboardd 5%
+02:18:21 simulator  134% mac  209% load  17.2 list 0.01 s | Brickson 79%, diagnosticd 19%, apsd 10%, DTServiceHub 5%, testmanagerd 4%, SpringBoard 4%
+02:18:27 simulator  115% mac  161% load  16.9 list 0.01 s | diagnosticd 31%, Brickson 27%, BricksonUITests-Runner 12%, apsd 12%, testmanagerd 9%, SpringBoard 6%
+02:18:33 simulator   76% mac  143% load  15.6 list 0.02 s | diagnosticd 29%, apsd 12%, Brickson 10%, BricksonUITests-Runner 4%, testmanagerd 4%, backboardd 3%
+02:18:39 simulator  116% mac  197% load  16.9 list 0.00 s | Brickson 49%, diagnosticd 22%, apsd 10%, SpringBoard 9%, backboardd 5%, BricksonUITests-Runner 4%
+02:18:45 simulator  136% mac  169% load  16.4 list 0.00 s | Brickson 65%, diagnosticd 27%, apsd 12%, SpringBoard 7%, testmanagerd 5%, DTServiceHub 3%
+02:18:51 simulator  102% mac  189% load  16.9 list 0.01 s | diagnosticd 28%, Brickson 22%, BricksonUITests-Runner 15%, apsd 12%, testmanagerd 7%, notifyd 3%
+02:18:56 simulator   85% mac  183% load  16.0 list 0.08 s | diagnosticd 30%, apsd 12%, BricksonUITests-Runner 9%, SpringBoard 6%, testmanagerd 4%, backboardd 3%
+02:19:02 simulator  168% mac  280% load  18.2 list 0.01 s | Brickson 111%, diagnosticd 20%, apsd 10%, SpringBoard 5%, backboardd 5%, DTServiceHub 4%
+02:19:08 simulator  108% mac  162% load  18.8 list 0.01 s | diagnosticd 28%, Brickson 27%, apsd 13%, testmanagerd 12%, BricksonUITests-Runner 8%, SpringBoard 6%
+02:19:14 simulator   86% mac  147% load  18.4 list 0.02 s | diagnosticd 29%, Brickson 15%, apsd 12%, backboardd 6%, BricksonUITests-Runner 6%, SpringBoard 2%
+02:19:20 simulator   92% mac  197% load  15.7 list 0.03 s | diagnosticd 32%, apsd 12%, BricksonUITests-Runner 8%, SpringBoard 7%, Brickson 6%, backboardd 4%
+02:19:26 simulator  149% mac  182% load  14.8 list 0.00 s | Brickson 93%, diagnosticd 21%, apsd 12%, DTServiceHub 4%, SpringBoard 3%, backboardd 2%
+02:19:31 simulator  118% mac  205% load  13.7 list 0.01 s | Brickson 32%, diagnosticd 29%, testmanagerd 13%, apsd 11%, BricksonUITests-Runner 10%, SpringBoard 7%
+02:19:38 simulator  108% mac  158% load  12.9 list 0.01 s | diagnosticd 36%, Brickson 23%, apsd 14%, BricksonUITests-Runner 12%, notifyd 4%, testmanagerd 4%
+02:19:44 simulator  117% mac  226% load  12.1 list 0.01 s | Brickson 53%, diagnosticd 21%, apsd 11%, SpringBoard 9%, backboardd 5%, BricksonUITests-Runner 3%
+02:19:50 simulator  131% mac  162% load  11.3 list 0.00 s | Brickson 65%, diagnosticd 24%, apsd 11%, SpringBoard 6%, testmanagerd 5%, DTServiceHub 3%
+02:19:55 simulator  105% mac  181% load  10.4 list 0.01 s | diagnosticd 30%, Brickson 22%, BricksonUITests-Runner 13%, apsd 12%, testmanagerd 7%, backboardd 5%
+02:20:01 simulator  102% mac  174% load  13.0 list 0.01 s | diagnosticd 32%, Brickson 21%, apsd 12%, BricksonUITests-Runner 6%, MauiAUSP 4%, testmanagerd 4%
+02:20:07 simulator  139% mac  190% load  12.1 list 0.01 s | Brickson 72%, diagnosticd 22%, apsd 11%, SpringBoard 10%, backboardd 6%, DTServiceHub 2%
+02:20:13 simulator  117% mac  256% load  13.0 list 0.01 s | Brickson 52%, diagnosticd 23%, apsd 10%, testmanagerd 9%, SpringBoard 7%, DTServiceHub 2%
+02:20:19 simulator  103% mac  150% load  14.3 list 0.00 s | diagnosticd 31%, Brickson 22%, BricksonUITests-Runner 15%, apsd 13%, testmanagerd 4%, notifyd 3%
+02:20:25 simulator  102% mac  211% load  16.5 list 0.01 s | diagnosticd 31%, Brickson 15%, apsd 11%, BricksonUITests-Runner 9%, SpringBoard 9%, backboardd 6%
+02:20:30 simulator  140% mac  194% load  14.3 list 0.01 s | Brickson 93%, diagnosticd 18%, apsd 10%, DTServiceHub 4%, SpringBoard 2%, backboardd 2%
+02:20:36 simulator  109% mac  148% load  13.1 list 0.01 s | Brickson 36%, diagnosticd 27%, apsd 14%, BricksonUITests-Runner 11%, testmanagerd 4%, backboardd 2%
+02:20:42 simulator  105% mac  204% load  12.3 list 0.01 s | Brickson 32%, diagnosticd 21%, BricksonUITests-Runner 18%, apsd 11%, testmanagerd 8%, backboardd 5%
+02:20:48 simulator   93% mac  129% load  11.5 list 0.01 s | diagnosticd 25%, Brickson 18%, BricksonUITests-Runner 16%, apsd 14%, testmanagerd 4%, backboardd 3%
+02:20:54 simulator   72% mac  170% load  10.8 list 0.01 s | diagnosticd 21%, BricksonUITests-Runner 15%, apsd 11%, testmanagerd 7%, SpringBoard 3%, backboardd 3%
+02:21:00 simulator  155% mac  193% load  12.7 list 0.01 s | Brickson 93%, diagnosticd 21%, apsd 11%, SpringBoard 8%, backboardd 5%, DTServiceHub 4%
+02:21:06 simulator   90% mac  164% load  11.0 list 0.01 s | Brickson 32%, diagnosticd 25%, apsd 13%, BricksonUITests-Runner 3%, backboardd 2%, trustd 2%
+02:21:12 simulator  136% mac  203% load  10.3 list 0.00 s | Brickson 39%, diagnosticd 27%, BricksonUITests-Runner 20%, apsd 12%, testmanagerd 11%, backboardd 6%
+02:21:18 simulator   90% mac  147% load   9.9 list 0.01 s | diagnosticd 24%, Brickson 17%, BricksonUITests-Runner 14%, apsd 13%, testmanagerd 4%, backboardd 3%
+02:21:24 simulator   83% mac  204% load  11.7 list 0.03 s | diagnosticd 22%, Brickson 20%, apsd 13%, BricksonUITests-Runner 8%, testmanagerd 4%, backboardd 3%
+02:21:30 simulator  125% mac  172% load  11.0 list 0.06 s | Brickson 47%, diagnosticd 24%, SpringBoard 12%, apsd 11%, backboardd 6%, BricksonUITests-Runner 5%
+02:21:36 simulator  124% mac  201% load  14.0 list 0.01 s | Brickson 68%, diagnosticd 22%, apsd 11%, BricksonUITests-Runner 3%, DTServiceHub 3%, SpringBoard 2%
+02:21:41 simulator  116% mac  159% load  15.0 list 0.01 s | Brickson 38%, diagnosticd 24%, BricksonUITests-Runner 16%, apsd 12%, testmanagerd 8%, backboardd 5%
+02:21:47 simulator  105% mac  194% load  17.3 list 0.00 s | Brickson 24%, BricksonUITests-Runner 23%, diagnosticd 21%, apsd 10%, testmanagerd 10%, backboardd 5%
+02:21:52 simulator   71% mac  108% load  16.0 list 0.00 s | diagnosticd 24%, apsd 14%, Brickson 14%, BricksonUITests-Runner 3%, backboardd 2%, trustd 2%
+02:21:59 simulator   93% mac  160% load  17.7 list 0.07 s | diagnosticd 27%, apsd 13%, BricksonUITests-Runner 13%, SpringBoard 9%, testmanagerd 6%, backboardd 5%
+02:22:04 simulator  166% mac  248% load  16.7 list 0.01 s | Brickson 111%, diagnosticd 19%, apsd 10%, DTServiceHub 5%, SpringBoard 4%, backboardd 4%
+02:22:09 simulator  120% mac  158% load  15.6 list 0.01 s | Brickson 51%, diagnosticd 27%, apsd 14%, backboardd 7%, BricksonUITests-Runner 4%, trustd 2%
+02:22:15 simulator  112% mac  196% load  17.6 list 0.02 s | Brickson 32%, diagnosticd 24%, apsd 11%, com.apple.MapKit.SnapshotService 10%, SpringBoard 9%, backboardd 6%
+02:22:21 simulator  159% mac  208% load  16.5 list 0.01 s | Brickson 103%, diagnosticd 23%, apsd 12%, DTServiceHub 4%, backboardd 2%, SpringBoard 2%
+02:22:27 simulator   77% mac  150% load  17.9 list 0.04 s | diagnosticd 26%, apsd 13%, SpringBoard 7%, backboardd 7%, Brickson 7%, BricksonUITests-Runner 3%
+02:22:32 simulator  162% mac  291% load  22.4 list 0.01 s | Brickson 111%, diagnosticd 18%, apsd 10%, backboardd 5%, DTServiceHub 4%, SpringBoard 4%
+02:22:37 simulator  109% mac  168% load  20.6 list 0.01 s | Brickson 52%, diagnosticd 25%, apsd 13%, backboardd 2%, BricksonUITests-Runner 2%, trustd 2%
+02:22:43 simulator  108% mac  141% load  21.4 list 0.01 s | Brickson 33%, diagnosticd 28%, apsd 14%, testmanagerd 6%, managedappdistributiond 5%, SpringBoard 3%
+02:22:49 simulator  126% mac  208% load  20.0 list 0.00 s | Brickson 55%, diagnosticd 22%, BricksonUITests-Runner 14%, apsd 11%, testmanagerd 11%, backboardd 2%
+02:22:54 simulator  146% mac  190% load  18.5 list 0.00 s | Brickson 77%, diagnosticd 23%, BricksonUITests-Runner 21%, apsd 10%, testmanagerd 3%, notifyd 2%
+02:23:00 simulator  136% mac  212% load  17.3 list 0.00 s | Brickson 87%, diagnosticd 19%, apsd 10%, BricksonUITests-Runner 8%, notifyd 2%, trustd 1%
+02:23:06 simulator  133% mac  191% load  16.1 list 0.03 s | Brickson 69%, diagnosticd 21%, apsd 10%, SpringBoard 10%, backboardd 5%, BricksonUITests-Runner 2%
+02:23:12 simulator  136% mac  190% load  15.1 list 0.00 s | Brickson 77%, diagnosticd 24%, apsd 12%, backboardd 4%, DTServiceHub 3%, BricksonUITests-Runner 2%
+02:23:17 simulator   99% mac  166% load  13.0 list 0.01 s | Brickson 31%, diagnosticd 22%, BricksonUITests-Runner 15%, apsd 11%, testmanagerd 5%, backboardd 2%
+02:23:23 simulator  124% mac  159% load  12.1 list 0.01 s | Brickson 57%, diagnosticd 21%, BricksonUITests-Runner 18%, apsd 11%, testmanagerd 5%, trustd 1%
+02:23:29 simulator  130% mac  215% load  11.9 list 0.01 s | Brickson 85%, diagnosticd 17%, apsd 9%, BricksonUITests-Runner 8%, notifyd 1%, logd 1%
+02:23:35 simulator  116% mac  178% load  13.0 list 0.01 s | Brickson 47%, diagnosticd 21%, apsd 10%, SpringBoard 9%, managedappdistributiond 5%, backboardd 5%
+02:23:41 simulator  154% mac  260% load  15.2 list 0.03 s | Brickson 98%, diagnosticd 22%, apsd 11%, backboardd 3%, DTServiceHub 3%, SpringBoard 2%
+02:23:47 simulator   76% mac  144% load  16.5 list 0.01 s | diagnosticd 24%, Brickson 22%, apsd 12%, BricksonUITests-Runner 2%, backboardd 2%, trustd 2%
+02:23:53 simulator  100% mac  198% load  16.7 list 0.00 s | Brickson 32%, diagnosticd 22%, apsd 10%, SpringBoard 9%, backboardd 6%, BricksonUITests-Runner 4%
+02:23:59 simulator  150% mac  222% load  15.5 list 0.01 s | Brickson 98%, diagnosticd 19%, apsd 10%, DTServiceHub 4%, backboardd 3%, SpringBoard 2%
+02:24:04 simulator  132% mac  170% load  14.5 list 0.03 s | Brickson 68%, diagnosticd 22%, apsd 11%, SpringBoard 9%, backboardd 5%, BricksonUITests-Runner 2%
+02:24:10 simulator  138% mac  249% load  14.1 list 0.01 s | Brickson 78%, diagnosticd 23%, apsd 12%, backboardd 5%, DTServiceHub 3%, BricksonUITests-Runner 2%
+02:24:16 simulator  103% mac  150% load  13.4 list 0.01 s | Brickson 31%, diagnosticd 26%, apsd 13%, MauiAUSP 7%, BricksonUITests-Runner 3%, backboardd 3%
+02:24:21 simulator  127% mac  197% load  12.4 list 0.01 s | Brickson 59%, diagnosticd 22%, apsd 11%, SpringBoard 10%, backboardd 6%, BricksonUITests-Runner 3%
+02:24:27 simulator  156% mac  250% load  16.2 list 0.00 s | Brickson 95%, diagnosticd 24%, apsd 12%, backboardd 4%, DTServiceHub 3%, SpringBoard 2%
+02:24:32 simulator   97% mac  137% load  15.0 list 0.01 s | diagnosticd 30%, Brickson 17%, apsd 14%, BricksonUITests-Runner 14%, testmanagerd 5%, backboardd 2%
+02:24:38 simulator  109% mac  188% load  12.9 list 0.00 s | Brickson 40%, diagnosticd 21%, testmanagerd 15%, apsd 12%, backboardd 4%, SpringBoard 2%
+02:24:45 simulator  112% mac  153% load  12.0 list 0.00 s | diagnosticd 29%, Brickson 27%, testmanagerd 15%, apsd 13%, BricksonUITests-Runner 8%, SpringBoard 3%
+02:24:51 simulator   80% mac  150% load  11.1 list 0.01 s | diagnosticd 24%, Brickson 20%, apsd 12%, backboardd 4%, testmanagerd 3%, BricksonUITests-Runner 3%
+02:24:56 simulator  117% mac  218% load  13.6 list 0.02 s | Brickson 42%, diagnosticd 20%, testmanagerd 20%, apsd 10%, BricksonUITests-Runner 9%, backboardd 4%
+02:25:01 simulator   86% mac  134% load  13.0 list 0.01 s | diagnosticd 28%, Brickson 13%, apsd 13%, BricksonUITests-Runner 10%, testmanagerd 4%, backboardd 3%
+02:25:07 simulator  101% mac  185% load  12.2 list 0.01 s | Brickson 32%, diagnosticd 23%, testmanagerd 13%, apsd 12%, backboardd 4%, SpringBoard 3%
+02:25:13 simulator   93% mac  137% load  13.9 list 0.00 s | diagnosticd 28%, Brickson 18%, apsd 14%, BricksonUITests-Runner 8%, testmanagerd 8%, SpringBoard 2%
+02:25:18 simulator  108% mac  193% load  12.3 list 0.04 s | diagnosticd 26%, Brickson 22%, SpringBoard 11%, apsd 11%, backboardd 8%, managedappdistributiond 4%
+02:25:24 simulator  166% mac  237% load  11.9 list 0.01 s | Brickson 116%, diagnosticd 18%, apsd 10%, DTServiceHub 5%, backboardd 2%, SpringBoard 2%
+02:25:30 simulator   85% mac  126% load  11.0 list 0.01 s | diagnosticd 26%, Brickson 23%, apsd 14%, testmanagerd 3%, BricksonUITests-Runner 2%, backboardd 2%
+02:25:36 simulator   93% mac  238% load  13.2 list 0.01 s | diagnosticd 27%, BricksonUITests-Runner 21%, apsd 10%, Brickson 8%, SpringBoard 7%, backboardd 4%
+02:25:42 simulator  164% mac  209% load  12.4 list 0.01 s | Brickson 114%, diagnosticd 18%, apsd 10%, DTServiceHub 4%, backboardd 3%, SpringBoard 3%
+02:25:47 simulator   89% mac  137% load  11.6 list 0.02 s | diagnosticd 27%, Brickson 22%, apsd 14%, BricksonUITests-Runner 6%, testmanagerd 4%, backboardd 3%
+02:25:53 simulator   86% mac  221% load  11.0 list 0.02 s | diagnosticd 26%, BricksonUITests-Runner 17%, apsd 10%, Brickson 8%, SpringBoard 7%, backboardd 4%
+02:25:59 simulator  171% mac  200% load  10.3 list 0.00 s | Brickson 116%, diagnosticd 19%, apsd 10%, DTServiceHub 5%, backboardd 3%, mlhostd 3%
+02:26:05 simulator   82% mac  219% load   9.7 list 0.00 s | Brickson 28%, diagnosticd 22%, apsd 11%, backboardd 4%, BricksonUITests-Runner 2%, SpringBoard 1%
+02:26:11 simulator  145% mac  195% load   9.1 list 0.01 s | Brickson 76%, diagnosticd 25%, apsd 11%, SpringBoard 9%, backboardd 6%, DTServiceHub 2%
+02:26:17 simulator   67% mac  190% load   8.7 list 0.01 s | diagnosticd 25%, apsd 11%, BricksonUITests-Runner 8%, testmanagerd 4%, SpringBoard 3%, DTServiceHub 2%
+02:26:23 simulator  175% mac  223% load   8.1 list 0.01 s | Brickson 107%, diagnosticd 22%, apsd 10%, SpringBoard 7%, backboardd 6%, DTServiceHub 4%
+02:26:29 simulator   91% mac  174% load   7.1 list 0.01 s | diagnosticd 30%, apsd 13%, Brickson 8%, BricksonUITests-Runner 8%, SpringBoard 7%, testmanagerd 4%
+02:26:35 simulator  172% mac  267% load  11.1 list 0.01 s | Brickson 122%, diagnosticd 18%, apsd 10%, DTServiceHub 5%, backboardd 3%, SpringBoard 3%
+02:26:41 simulator  107% mac  143% load  10.3 list 0.01 s | Brickson 39%, diagnosticd 27%, apsd 13%, testmanagerd 7%, backboardd 3%, SpringBoard 2%
+02:26:47 simulator   95% mac  173% load   9.6 list 0.00 s | Brickson 30%, diagnosticd 24%, apsd 12%, testmanagerd 10%, SpringBoard 3%, notifyd 2%
+02:26:53 simulator   71% mac  154% load   8.9 list 0.01 s | diagnosticd 23%, testmanagerd 14%, apsd 13%, SpringBoard 4%, backboardd 3%, trustd 2%
+02:26:58 simulator  152% mac  190% load   8.2 list 0.01 s | Brickson 86%, diagnosticd 21%, apsd 11%, SpringBoard 10%, backboardd 6%, DTServiceHub 2%
+02:27:04 simulator  131% mac  217% load  10.4 list 0.01 s | Brickson 77%, diagnosticd 19%, apsd 10%, testmanagerd 7%, DTServiceHub 3%, SpringBoard 3%
+02:27:10 simulator  112% mac  153% load  12.2 list 0.00 s | Brickson 38%, diagnosticd 28%, apsd 14%, testmanagerd 7%, backboardd 5%, SpringBoard 3%
+02:27:16 simulator   83% mac  209% load  11.4 list 0.02 s | diagnosticd 23%, Brickson 23%, apsd 11%, testmanagerd 8%, SpringBoard 3%, backboardd 2%
+02:27:22 simulator  113% mac  195% load  10.9 list 0.00 s | Brickson 38%, diagnosticd 22%, apsd 11%, testmanagerd 10%, SpringBoard 10%, backboardd 7%
+02:27:28 simulator  157% mac  202% load  10.2 list 0.01 s | Brickson 98%, diagnosticd 24%, apsd 12%, DTServiceHub 4%, backboardd 2%, SpringBoard 2%
+02:27:34 simulator   91% mac  169% load   9.5 list 0.01 s | diagnosticd 24%, Brickson 22%, apsd 12%, com.apple.MapKit.SnapshotService 10%, backboardd 4%, BricksonUITests-Runner 2%
+02:27:40 simulator  128% mac  171% load   8.2 list 0.01 s | Brickson 50%, diagnosticd 27%, BricksonUITests-Runner 20%, apsd 12%, testmanagerd 4%, notifyd 3%
+02:27:45 simulator  150% mac  259% load   7.8 list 0.08 s | Brickson 82%, diagnosticd 23%, apsd 12%, SpringBoard 10%, backboardd 6%, BricksonUITests-Runner 2%
+02:27:51 simulator  135% mac  167% load   7.6 list 0.02 s | Brickson 71%, diagnosticd 27%, apsd 14%, backboardd 4%, DTServiceHub 3%, BricksonUITests-Runner 2%
+02:27:57 simulator   74% mac  140% load  10.2 list 0.00 s | diagnosticd 24%, Brickson 19%, apsd 13%, BricksonUITests-Runner 2%, trustd 2%, backboardd 1%
+02:28:03 simulator   83% mac  197% load  10.2 list 0.01 s | diagnosticd 26%, BricksonUITests-Runner 23%, apsd 11%, testmanagerd 4%, SpringBoard 3%, notifyd 3%
+02:28:09 simulator  172% mac  224% load   9.6 list 0.00 s | Brickson 106%, diagnosticd 22%, apsd 12%, SpringBoard 8%, backboardd 6%, DTServiceHub 4%
+02:28:15 simulator  117% mac  200% load  11.8 list 0.01 s | Brickson 46%, diagnosticd 29%, apsd 13%, managedappdistributiond 6%, backboardd 4%, BricksonUITests-Runner 3%
+02:28:21 simulator  103% mac  158% load  10.9 list 0.00 s | diagnosticd 27%, Brickson 17%, apsd 14%, BricksonUITests-Runner 11%, SpringBoard 9%, backboardd 6%
+02:28:27 simulator  153% mac  262% load  15.0 list 0.01 s | Brickson 102%, diagnosticd 19%, apsd 11%, DTServiceHub 5%, backboardd 2%, SpringBoard 2%
+02:28:33 simulator  108% mac  194% load  13.9 list 0.01 s | Brickson 42%, diagnosticd 29%, apsd 13%, backboardd 5%, BricksonUITests-Runner 3%, notifyd 2%
+02:28:38 simulator  126% mac  154% load  12.9 list 0.02 s | Brickson 76%, diagnosticd 18%, apsd 11%, testmanagerd 6%, SpringBoard 2%, trustd 1%
+02:28:44 simulator  109% mac  189% load  12.1 list 0.01 s | Brickson 37%, diagnosticd 21%, BricksonUITests-Runner 13%, testmanagerd 12%, apsd 11%, backboardd 2%
+02:28:51 simulator  149% mac  176% load  13.7 list 0.00 s | Brickson 98%, diagnosticd 16%, apsd 10%, testmanagerd 8%, com.apple.datamigrator 4%, SpringBoard 2%
+02:28:57 simulator   94% mac  176% load  12.8 list 0.01 s | diagnosticd 24%, Brickson 20%, apsd 12%, testmanagerd 11%, BricksonUITests-Runner 8%, backboardd 3%
+02:29:02 simulator  132% mac  167% load  11.8 list 0.00 s | Brickson 61%, diagnosticd 21%, BricksonUITests-Runner 15%, apsd 11%, testmanagerd 8%, backboardd 3%
+02:29:08 simulator  121% mac  175% load  11.0 list 0.01 s | Brickson 61%, diagnosticd 21%, apsd 12%, testmanagerd 9%, SpringBoard 3%, backboardd 2%
+02:29:14 simulator  116% mac  169% load  10.3 list 0.00 s | Brickson 42%, diagnosticd 21%, testmanagerd 16%, apsd 11%, BricksonUITests-Runner 11%, backboardd 2%
+02:29:20 simulator  113% mac  155% load   9.6 list 0.00 s | Brickson 35%, diagnosticd 24%, testmanagerd 15%, apsd 13%, BricksonUITests-Runner 9%, backboardd 3%
+02:29:26 simulator  108% mac  185% load   8.5 list 0.01 s | Brickson 44%, diagnosticd 22%, apsd 13%, testmanagerd 8%, BricksonUITests-Runner 6%, backboardd 2%
+02:29:32 simulator  102% mac  192% load   8.7 list 0.01 s | Brickson 30%, diagnosticd 23%, SpringBoard 11%, apsd 11%, testmanagerd 6%, backboardd 6%
+02:29:38 simulator  161% mac  266% load  12.4 list 0.00 s | Brickson 105%, diagnosticd 20%, apsd 12%, DTServiceHub 5%, backboardd 2%, SpringBoard 2%
+02:29:44 simulator  102% mac  228% load  11.7 list 0.01 s | Brickson 38%, diagnosticd 27%, apsd 12%, backboardd 6%, BricksonUITests-Runner 4%, SpringBoard 2%
+02:29:50 simulator   99% mac  191% load  10.8 list 0.00 s | Brickson 37%, diagnosticd 22%, apsd 12%, backboardd 6%, BricksonUITests-Runner 5%, SpringBoard 2%
+02:29:55 simulator   79% mac  238% load  10.5 list 0.01 s | diagnosticd 22%, Brickson 19%, apsd 12%, backboardd 5%, BricksonUITests-Runner 4%, mlhostd 3%
+02:30:01 simulator  136% mac  218% load  10.5 list 0.01 s | Brickson 66%, diagnosticd 22%, SpringBoard 12%, apsd 11%, backboardd 6%, DTServiceHub 2%
+02:30:07 simulator  151% mac  245% load  10.2 list 0.01 s | Brickson 88%, diagnosticd 25%, apsd 12%, backboardd 6%, DTServiceHub 3%, SpringBoard 2%
+02:30:13 simulator   66% mac  189% load   9.5 list 0.01 s | diagnosticd 25%, apsd 13%, SpringBoard 5%, BricksonUITests-Runner 4%, backboardd 3%, trustd 2%
+02:30:19 simulator  180% mac  222% load   9.0 list 0.00 s | Brickson 109%, diagnosticd 22%, apsd 11%, SpringBoard 8%, backboardd 7%, DTServiceHub 4%
+02:30:25 simulator  106% mac  193% load   8.6 list 0.02 s | Brickson 45%, diagnosticd 27%, apsd 13%, notifyd 2%, backboardd 2%, BricksonUITests-Runner 2%
+02:30:30 simulator  119% mac  168% load   8.0 list 0.01 s | Brickson 38%, diagnosticd 22%, BricksonUITests-Runner 17%, testmanagerd 15%, apsd 11%, SpringBoard 3%
+02:30:36 simulator  110% mac  210% load   7.5 list 0.00 s | Brickson 43%, diagnosticd 23%, apsd 10%, SpringBoard 9%, backboardd 5%, testmanagerd 3%
+02:30:42 simulator  128% mac  183% load   6.7 list 0.01 s | Brickson 66%, diagnosticd 24%, apsd 13%, DTServiceHub 4%, SpringBoard 3%, backboardd 3%
+02:30:48 simulator   75% mac  117% load   6.6 list 0.04 s | diagnosticd 28%, apsd 15%, SpringBoard 7%, backboardd 3%, Brickson 3%, BricksonUITests-Runner 3%
+02:30:53 simulator  164% mac  299% load  10.7 list 0.00 s | Brickson 110%, diagnosticd 20%, apsd 11%, DTServiceHub 4%, backboardd 4%, SpringBoard 4%
+02:31:00 simulator   67% mac  175% load  12.6 list 0.01 s | diagnosticd 24%, apsd 12%, SpringBoard 6%, BricksonUITests-Runner 5%, backboardd 3%, launchd_sim 2%
+02:31:06 simulator  158% mac  207% load  11.9 list 0.01 s | Brickson 99%, diagnosticd 20%, apsd 11%, SpringBoard 6%, DTServiceHub 4%, backboardd 4%
+02:31:11 simulator  100% mac  196% load  11.0 list 0.01 s | Brickson 31%, diagnosticd 25%, apsd 12%, backboardd 6%, InputUI 4%, BricksonUITests-Runner 3%
+02:31:17 simulator   79% mac  118% load  10.6 list 0.01 s | diagnosticd 26%, apsd 13%, Brickson 13%, backboardd 5%, BricksonUITests-Runner 4%, trustd 2%
+02:31:23 simulator  116% mac  216% load  10.7 list 0.01 s | Brickson 52%, diagnosticd 21%, apsd 10%, SpringBoard 10%, backboardd 6%, BricksonUITests-Runner 2%
+02:31:29 simulator  141% mac  186% load  10.3 list 0.01 s | Brickson 77%, diagnosticd 23%, apsd 11%, backboardd 5%, SpringBoard 4%, DTServiceHub 3%
+02:31:35 simulator   80% mac  137% load   9.6 list 0.00 s | diagnosticd 27%, Brickson 14%, apsd 14%, backboardd 5%, BricksonUITests-Runner 4%, SpringBoard 2%
+02:31:41 simulator  102% mac  178% load   9.0 list 0.07 s | diagnosticd 30%, Brickson 23%, apsd 13%, backboardd 8%, BricksonUITests-Runner 3%, SpringBoard 3%
+02:31:47 simulator   92% mac  137% load   7.8 list 0.01 s | diagnosticd 29%, Brickson 19%, apsd 15%, backboardd 7%, BricksonUITests-Runner 3%, SpringBoard 2%
+02:31:53 simulator   76% mac  169% load   7.2 list 0.00 s | diagnosticd 26%, apsd 13%, Brickson 8%, MTLCompilerService 5%, backboardd 4%, BricksonUITests-Runner 2%
+02:31:59 simulator  167% mac  211% load   6.7 list 0.01 s | Brickson 88%, diagnosticd 25%, apsd 12%, SpringBoard 10%, backboardd 6%, DTServiceHub 3%
+02:32:05 simulator  108% mac  247% load  10.9 list 0.01 s | Brickson 44%, diagnosticd 24%, apsd 12%, backboardd 5%, SpringBoard 3%, BricksonUITests-Runner 2%
+02:32:11 simulator  112% mac  164% load  10.3 list 0.02 s | diagnosticd 28%, Brickson 25%, MauiAUSP 15%, apsd 12%, backboardd 6%, BricksonUITests-Runner 5%
+02:32:16 simulator   80% mac  142% load  10.0 list 0.00 s | diagnosticd 27%, apsd 14%, Brickson 11%, backboardd 5%, SpringBoard 2%, BricksonUITests-Runner 2%
+02:32:22 simulator   97% mac  173% load   8.9 list 0.01 s | diagnosticd 29%, Brickson 19%, apsd 12%, backboardd 10%, BricksonUITests-Runner 5%, kbd 3%
+02:32:28 simulator   95% mac  138% load   8.7 list 0.02 s | diagnosticd 26%, Brickson 25%, apsd 13%, SpringBoard 9%, backboardd 5%, BricksonUITests-Runner 2%
+02:32:34 simulator  161% mac  254% load   8.2 list 0.02 s | Brickson 99%, diagnosticd 22%, apsd 10%, backboardd 5%, DTServiceHub 5%, SpringBoard 4%
+02:32:39 simulator   69% mac  125% load   7.8 list 0.01 s | diagnosticd 28%, apsd 14%, backboardd 4%, SpringBoard 4%, BricksonUITests-Runner 3%, trustd 2%
+02:32:45 simulator  165% mac  230% load   7.3 list 0.00 s | Brickson 104%, diagnosticd 21%, apsd 10%, SpringBoard 7%, backboardd 5%, DTServiceHub 4%
+02:32:51 simulator   98% mac  173% load  12.2 list 0.01 s | Brickson 31%, diagnosticd 26%, apsd 12%, backboardd 6%, SpringBoard 2%, BricksonUITests-Runner 2%
+02:32:57 simulator  159% mac  206% load  13.2 list 0.01 s | Brickson 75%, diagnosticd 24%, com.apple.MapKit.SnapshotService 11%, apsd 11%, SpringBoard 9%, backboardd 6%
+02:33:03 simulator  119% mac  209% load  12.3 list 0.01 s | Brickson 53%, diagnosticd 24%, apsd 12%, backboardd 5%, SpringBoard 3%, DTServiceHub 3%
+02:33:08 simulator   78% mac  234% load  15.5 list 0.02 s | diagnosticd 27%, apsd 13%, SpringBoard 9%, testmanagerd 6%, backboardd 5%, trustd 2%
+Processor time the simulator's processes used while watched:
+     862.2 s  Brickson
+     516.0 s  diagnosticd
+     237.2 s  apsd
+     110.2 s  BricksonUITests-Runner
+     103.5 s  SpringBoard
+      68.4 s  backboardd
+      66.2 s  testmanagerd
+      39.5 s  amsengagementd
+      38.0 s  STExtractionService
+      33.2 s  EmojiPosterExtension
+      30.8 s  GradientPosterExtension
+      30.2 s  trustd
+      27.6 s  DTServiceHub
+      25.1 s  MercuryPosterExtension
+      24.5 s  BackgroundShortcutRunner
+      24.3 s  notifyd
+      19.5 s  logd
+      17.2 s  securityd
+      16.7 s  cfprefsd
+      14.6 s  runningboardd
+Paused 103 lock-screen wallpaper extension processes.
+Resumed 13 of them; 90 had already ended: 26289, 26292, 26293, 26298, 26325, 26468, 26470, 26471, 26671, 26672, 26673, 26675, 26782, 26783, 26784, 26786, 28069, 28070, 28071, 28072, 29099, 29100, 29101, 29102, 29160, 29163, 29164, 29168, 29526, 29527, 29528, 29531, 29533, 29538, 29541, 29542, 29973, 29974, 29977, 29979, 29980, 29983, 29984, 29985, 30675, 30676, 30677, 30681, 30684, 30685, 30686, 30688, 31526, 31527, 31529, 31530, 31532, 31534, 31536, 31537, 32603, 32604, 32605, 32607, 32608, 32609, 32612, 32613, 33444, 33445, 33446, 33449, 33450, 33451, 33452, 33455, 33562, 34296, 35365, 35366, 35367, 36227, 36228, 36230, 37164, 37165, 37168, 38337, 38338, 38339.
+Processor time the watcher itself used: 12.0 s
+Stopped.

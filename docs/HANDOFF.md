@@ -1190,10 +1190,16 @@ Simulators cannot show these. Record each result in a `docs/log/` file
   starved the simulator; since then
   `scripts/test.sh` pauses those extensions on a simulator it started
   and writes `simulator-load-<family>.txt` beside each result bundle:
-  read it first if a stall comes back. New extension instances iOS
-  starts while the Mac is too starved to list processes get past the
-  pausing (seen once, on the iPhone)
-  ([`log/2026-11-03-ui-test-stall.md`](log/2026-11-03-ui-test-stall.md)). Home's
+  read it first if a stall comes back
+  ([`log/2026-11-03-ui-test-stall.md`](log/2026-11-03-ui-test-stall.md)).
+  Since 2026-11-04 the watcher reads processes with the Mac's own calls,
+  never `ps`, which a starved Mac left it blind to for minutes, and
+  while pausing it looks for new extension instances every second: iOS
+  starts new ones during the prewarm even with the first ones paused (49
+  on the iPhone in the probe run, where one test's 10 s wait ran out
+  inside that burst). Each "paused" line says what the instance had
+  used
+  ([`log/2026-11-04-watcher-without-ps.md`](log/2026-11-04-watcher-without-ps.md)). Home's
   layout test uses bounded live queries while retaining every tile's
   visibility and position checks. After incorporating `main` at `d79d836`,
   its audit helper also keeps issue-time captures and native XCTest

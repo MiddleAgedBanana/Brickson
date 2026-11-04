@@ -4,6 +4,7 @@ simulator, check the simulator watcher it starts (simulator-load.py), and
 check that CI runs it with the newest released Xcode."""
 import argparse
 import contextlib
+import ctypes
 import importlib.util
 import io
 import itertools
@@ -18,6 +19,7 @@ import tempfile
 import textwrap
 import time
 import unittest
+from unittest import mock
 
 SCRIPT = Path(__file__).resolve().with_name("test.sh")
 WORKFLOW = SCRIPT.parent.parent / ".github" / "workflows" / "tests.yml"
@@ -942,50 +944,40 @@ class CoverageTests(unittest.TestCase):
         self.assertIn("could not read code coverage", result.stderr)
 
 
-# A stand-in for /bin/ps: it prints the files beside it, `args` for the
-# launchd_sim lookup and `table` for the process list.
-FAKE_PS = """#!/bin/bash
-[ -e "$(dirname "$0")/hang" ] && exec sleep 30
-case "$*" in
-    "-axww -o pid=,args=") cat "$(dirname "$0")/args" ;;
-    "-axww -o pid=,ppid=,stat=,time=,comm=") cat "$(dirname "$0")/table" ;;
-    *) echo "unexpected: ps $*" >&2; exit 1 ;;
-esac
-"""
-
+# A stand-in for the Mac's process calls (simulator-load.py's
+# ProcessFile): a JSON file the watcher reads afresh for each reading.
 RUNTIME_ROOT = ("/Library/Developer/CoreSimulator/Volumes/iOS_24A/Library/Developer/CoreSimulator/"
                 "Profiles/Runtimes/iOS 27.0.simruntime/Contents/Resources/RuntimeRoot")
 LAUNCHD_SIM = "/Library/Developer/PrivateFrameworks/CoreSimulator.framework/Resources/bin/launchd_sim"
 DEVICES = "/Users/runner/Library/Developer/CoreSimulator/Devices"
-
-# Two simulators, PAD (launchd_sim 100) and OTHER (200), and the Mac.
-LAUNCHD_SIMS = f"""\
-    1 /sbin/launchd
-  100 {LAUNCHD_SIM} {DEVICES}/PAD/data/var/run/launchd_bootstrap.plist
-  200 {LAUNCHD_SIM} {DEVICES}/OTHER/data/var/run/launchd_bootstrap.plist
-"""
+EXTENSIONS = f"{RUNTIME_ROOT}/System/Library/ExtensionKit/Extensions"
 
 
-def process_table(times):
-    """The Mac's process list, with each process's processor time."""
+def launchd_sim_arguments(device):
+    return [LAUNCHD_SIM, f"{DEVICES}/{device}/data/var/run/launchd_bootstrap.plist"]
+
+
+def process_table(times, ticks=0, ended=(), without=(), extra=()):
+    """Two simulators, PAD (launchd_sim 100) and OTHER (200), and the Mac,
+    with each process's processor time in seconds and the processors'
+    busy ticks. A process in `ended` ended before its details were read;
+    one in `without` is not listed; `extra` adds rows."""
     rows = [
-        (1, 0, "Ss", "/sbin/launchd"),
-        (100, 1, "Ss", LAUNCHD_SIM),
-        (110, 100, "S", f"{RUNTIME_ROOT}/System/Library/CoreServices/SpringBoard.app/SpringBoard"),
-        (120, 100, "S", f"{RUNTIME_ROOT}/System/Library/CoreServices/PosterBoard.app/PosterBoard"),
-        (121, 120, "R", f"{RUNTIME_ROOT}/System/Library/ExtensionKit/Extensions/"
-                        "EmojiPosterExtension.appex/EmojiPosterExtension"),
-        (122, 100, "S", f"{RUNTIME_ROOT}/System/Library/ExtensionKit/Extensions/"
-                        "AegirPoster.appex/AegirPoster"),
-        (123, 100, "T", f"{RUNTIME_ROOT}/System/Library/ExtensionKit/Extensions/"
-                        "PhotosPosterProvider.appex/PhotosPosterProvider"),
-        (200, 1, "Ss", LAUNCHD_SIM),
-        (221, 200, "R", f"{RUNTIME_ROOT}/System/Library/ExtensionKit/Extensions/"
-                        "EmojiPosterExtension.appex/EmojiPosterExtension"),
-        (300, 1, "S", "/Applications/Example.app/Contents/MacOS/GradientPosterExtension"),
+        (1, 0, "S", "/sbin/launchd", None),
+        (100, 1, "S", LAUNCHD_SIM, launchd_sim_arguments("PAD")),
+        (110, 100, "S", f"{RUNTIME_ROOT}/System/Library/CoreServices/SpringBoard.app/SpringBoard", None),
+        (120, 100, "S", f"{RUNTIME_ROOT}/System/Library/CoreServices/PosterBoard.app/PosterBoard", None),
+        (121, 120, "R", f"{EXTENSIONS}/EmojiPosterExtension.appex/EmojiPosterExtension", None),
+        (122, 100, "S", f"{EXTENSIONS}/AegirPoster.appex/AegirPoster", None),
+        (123, 100, "T", f"{EXTENSIONS}/PhotosPosterProvider.appex/PhotosPosterProvider", None),
+        (200, 1, "S", LAUNCHD_SIM, launchd_sim_arguments("OTHER")),
+        (221, 200, "R", f"{EXTENSIONS}/EmojiPosterExtension.appex/EmojiPosterExtension", None),
+        (300, 1, "S", "/Applications/Example.app/Contents/MacOS/GradientPosterExtension", None),
     ]
-    return "".join(f"{pid:5} {ppid:5} {state:4} {times.get(pid, '0:00.00'):>10} {path}\n"
-                   for pid, ppid, state, path in rows)
+    rows = [row for row in rows if row[0] not in without] + list(extra)
+    return json.dumps({"ticks": ticks, "processes": [
+        [pid, ppid, state, None if pid in ended else times.get(pid, 0.0), path, arguments]
+        for pid, ppid, state, path, arguments in rows]})
 
 
 def simulator_load():
@@ -1002,34 +994,55 @@ def simulator_load():
     return module
 
 
+def wait_for(predicate, seconds=10):
+    deadline = time.monotonic() + seconds
+    while time.monotonic() < deadline:
+        if predicate():
+            return True
+        time.sleep(0.05)
+    return False
+
+
+def end(pid):
+    try:
+        os.kill(pid, signal.SIGKILL)
+    except ProcessLookupError:
+        pass
+
+
 class SimulatorLoadTests(unittest.TestCase):
     """scripts/simulator-load.py pauses the lock-screen wallpaper
     extensions of the one simulator it watches and nothing else, records
     the processor time each of its processes used, and never outlives the
-    test run (docs/log/2026-11-03-ui-test-stall.md)."""
+    test run (docs/log/2026-11-03-ui-test-stall.md,
+    docs/log/2026-11-04-watcher-without-ps.md)."""
 
     def setUp(self):
         self.module = simulator_load()
         folder = tempfile.TemporaryDirectory()
         self.addCleanup(folder.cleanup)
         self.folder = Path(folder.name)
-        self.ps = self.folder / "ps"
-        self.ps.write_text(FAKE_PS)
-        self.ps.chmod(0o755)
-        (self.folder / "args").write_text(LAUNCHD_SIMS)
+        self.processes = self.folder / "processes.json"
         self.times({})
         self.record = self.folder / "record.txt"
 
-    def times(self, times):
-        (self.folder / "table").write_text(process_table(times))
+    def times(self, times, **options):
+        self.processes.write_text(process_table(times, **options))
 
     def watch(self, pause_posters):
         self.kills, self.now = [], 0.0
         out = self.record.open("w")
         self.addCleanup(out.close)
-        return self.module.Watch("PAD", out, pause_posters, ps=str(self.ps),
+        self.system = self.module.ProcessFile(str(self.processes))
+        return self.module.Watch("PAD", out, pause_posters, self.system,
                                  clock=lambda: self.now,
                                  kill=lambda pid, number: self.kills.append((pid, number)))
+
+    def arguments(self, **options):
+        values = dict(udid="PAD", out=str(self.record), pause_posters=True,
+                      processes=str(self.processes), parent=os.getpid())
+        values.update(options)
+        return argparse.Namespace(**values)
 
     # Matching PosterBoard, pausing another simulator's or the Mac's own
     # processes, pausing one already stopped, or pausing one twice fails
@@ -1045,22 +1058,51 @@ class SimulatorLoadTests(unittest.TestCase):
         watcher.summary()
         self.assertIn("Paused 2 lock-screen wallpaper extension processes.", self.record.read_text())
 
-    # The simulator's launchd_sim is in the first process list but gone
-    # from the second (the simulator stopped or restarted between them).
-    # Looking it up in the second list anyway raises, the watcher dies
-    # without its summary, and that fails this test (Copilot's review).
-    def test_a_simulator_gone_between_the_two_lists_is_not_running(self):
-        (self.folder / "table").write_text("".join(
-            line for line in process_table({}).splitlines(keepends=True)
-            if int(line.split()[0]) in (1, 200, 221, 300)))
+    # Each process is listed first and read in detail after, so it can end
+    # in between. Pausing or counting one whose details are gone, or
+    # raising (the watcher would die without its summary, as it did before
+    # Copilot's review of pull request #76), fails this test; so does
+    # taking a simulator whose launchd_sim's arguments can no longer be
+    # read (it is stopping) for a running one.
+    def test_a_process_that_ends_while_it_is_read_is_left_out(self):
         watcher = self.watch(pause_posters=True)
+        self.times({110: 1.0}, ended=(121,))
+        watcher.sample()
+        self.now = 5.0
+        self.times({110: 2.0}, ended=(121,))
+        watcher.sample()
+        self.assertEqual(self.kills, [(122, signal.SIGSTOP)])
+        self.assertTrue(self.record.read_text().splitlines()[-1].endswith("| SpringBoard 20%"))
+        watcher = self.watch(pause_posters=True)
+        self.processes.write_text(process_table({}).replace(
+            json.dumps(launchd_sim_arguments("PAD")), "null"))
         watcher.sample()
         self.assertEqual(self.kills, [])
         self.assertIn("the simulator PAD is not running", self.record.read_text())
 
+    # Reading launchd_sim's arguments, which reads that process's own
+    # memory, on every reading instead of once, or not finding the
+    # simulator again once it has started over under a new launchd_sim,
+    # fails this test.
+    def test_the_simulator_is_found_once_and_again_after_it_starts_over(self):
+        watcher = self.watch(pause_posters=True)
+        read = []
+        arguments = self.system.arguments
+        self.system.arguments = lambda pid: read.append(pid) or arguments(pid)
+        watcher.sample()
+        watcher.sample()
+        self.assertEqual(read, [100])
+        restarted = [(150, 1, "S", LAUNCHD_SIM, launchd_sim_arguments("PAD")),
+                     (151, 150, "R", f"{EXTENSIONS}/AegirPoster.appex/AegirPoster", None)]
+        self.times({}, without=(100, 110, 120, 121, 122, 123), extra=restarted)
+        watcher.sample()
+        self.assertEqual(read, [100, 200, 150])
+        self.assertEqual(self.kills, [(121, signal.SIGSTOP), (122, signal.SIGSTOP),
+                                      (151, signal.SIGSTOP)])
+
     # Leaving the extensions stopped when the watcher stops, resuming any
-    # other process, or stopping at a process that is already gone fails
-    # this test: a simulator that is not shut down after its run (a failed
+    # other process, stopping at a process that is already gone, or not
+    # naming the ones that had ended fails this test: a simulator that is not shut down after its run (a failed
     # shutdown) would keep its wallpaper extensions stopped (Copilot's
     # review).
     def test_the_paused_extensions_run_again_when_the_watcher_stops(self):
@@ -1078,17 +1120,15 @@ class SimulatorLoadTests(unittest.TestCase):
         watcher.resume()
         self.assertEqual(self.kills, [(121, signal.SIGSTOP), (122, signal.SIGSTOP),
                                       (121, signal.SIGCONT), (122, signal.SIGCONT)])
-        self.assertIn("Resumed 1 of them; 1 had already ended.", self.record.read_text())
+        self.assertIn("Resumed 1 of them; 1 had already ended: 121.", self.record.read_text())
 
     # A watcher that stops without resuming what it paused, or resumes
     # only after "Stopped." (when `stop` no longer waits), fails this test.
     def test_the_watcher_resumes_what_it_paused_before_it_says_stopped(self):
         for number in (signal.SIGTERM, signal.SIGINT):
             self.addCleanup(signal.signal, number, signal.getsignal(number))
-        arguments = argparse.Namespace(udid="PAD", out=str(self.record), pause_posters=True,
-                                       ps=str(self.ps), parent=os.getpid())
         kills = []
-        self.assertEqual(self.module.watch(arguments, parent_alive=lambda pid: False,
+        self.assertEqual(self.module.watch(self.arguments(), parent_alive=lambda pid: False,
                                            kill=lambda pid, number: kills.append((pid, number))), 0)
         self.assertEqual(kills, [(121, signal.SIGSTOP), (122, signal.SIGSTOP),
                                  (121, signal.SIGCONT), (122, signal.SIGCONT)])
@@ -1105,41 +1145,182 @@ class SimulatorLoadTests(unittest.TestCase):
 
     # Reporting each process's total time instead of the time used since
     # the last line, counting the Mac's or another simulator's processes as
-    # this simulator's, or misreading ps's longer times fails this test.
+    # this simulator's, counting a new process under an old one's pid as
+    # the old one, reading the Mac's busy time from anything but its
+    # processors' counters (or tripping when a counter wraps), or a list
+    # time that leaves out any part of the reading (listing, the details,
+    # the processors' counts), fails this test.
     def test_each_line_reports_the_time_used_since_the_last(self):
         watcher = self.watch(pause_posters=False)
-        self.times({121: "1:00.00", 110: "61:00.00", 221: "0:30.00", 300: "1-00:00:00"})
+
+        def taking(call, seconds):
+            def slow(*arguments):
+                self.now += seconds
+                return call(*arguments)
+            return slow
+
+        # A reading takes 0.2 s to list, 0.01 s for each of the
+        # simulator's six processes and 0.05 s to count: 0.31 s.
+        self.system.table = taking(self.system.table, 0.2)
+        self.system.details = taking(self.system.details, 0.01)
+        self.system.processor_ticks = taking(self.system.processor_ticks, 0.05)
+        self.times({121: 60.0, 110: 3660.0, 221: 30.0, 300: 86400.0, 122: 7.0},
+                   ticks=2**32 - 250)
         watcher.sample()
         self.now = 5.0
-        self.times({121: "1:05.00", 110: "61:00.50", 221: "0:32.50", 300: "1-00:00:02.50"})
+        reused = [(122, 100, "S", f"{EXTENSIONS}/KaleidoscopePoster.appex/KaleidoscopePoster", None)]
+        self.times({121: 65.0, 110: 3660.5, 221: 32.5, 300: 86402.5, 122: 1.5},
+                   ticks=800, without=(122,), extra=reused)
         watcher.sample()
         line = self.record.read_text().splitlines()[-1]
-        self.assertRegex(line, r" simulator +110% mac +210% load ")
-        self.assertTrue(line.endswith("| EmojiPosterExtension 100%, SpringBoard 10%"), line)
+        # The newcomer under 122 counts 1.5 s over the 5.25 s from the
+        # first list, which it was not in, to its own reading: 29%.
+        self.assertRegex(line, r" simulator +139% mac +210% load +[\d.]+ list 0\.31 s \| ")
+        self.assertTrue(line.endswith("| EmojiPosterExtension 100%, KaleidoscopePoster 29%, "
+                                      "SpringBoard 10%"), line)
         watcher.summary()
         self.assertIn("     5.0 s  EmojiPosterExtension", self.record.read_text())
-        self.assertEqual(self.module.cpu_seconds("1-02:03:04.50"), 93784.5)
+
+    # A reading reads each process's time at its own moment, and on a
+    # starved Mac one reading took 13.67 s (run 41757279440's iPhone).
+    # Counting every process over the time between the two lines' ends,
+    # as the watcher did until then, put the simulator at 845% of a
+    # three-processor Mac in the line after it. Counting a process over
+    # anything but the time between its own two readings, or a new one
+    # over the time since the last line ended rather than since its list
+    # was read, fails this test.
+    def test_a_slow_reading_does_not_swell_the_next_line(self):
+        watcher = self.watch(pause_posters=False)
+        details = self.system.details
+        # Processors' worth each one uses, and when it started. The
+        # newcomer starts during the first reading, after its list.
+        rates, started = {121: 1.0, 124: 0.5}, {121: -100.0, 124: 3.0}
+        step = [2.0]
+
+        def reading(pid):
+            self.now += step[0]
+            found = details(pid)
+            if found is None or pid not in rates:
+                return found
+            return (rates[pid] * (self.now - started[pid]), found[1])
+
+        self.system.details = reading
+        # Listed at 0, then its six processes read 2 s apart: 121 at 8,
+        # the reading over at 12.
+        watcher.sample()
+        step[0], self.now = 0.0, 15.0
+        newcomer = [(124, 100, "R", f"{EXTENSIONS}/KaleidoscopePoster.appex/KaleidoscopePoster", None)]
+        self.times({}, extra=newcomer)
+        watcher.sample()
+        line = self.record.read_text().splitlines()[-1]
+        # 121: 7 s over its own 7 s. 124: 6 s over the 15 s since the list
+        # it was not in, the longest it can have run unseen. Over the 3 s
+        # since the last line ended they were 233% and 200%.
+        self.assertRegex(line, r" simulator +140% ")
+        self.assertTrue(line.endswith("| EmojiPosterExtension 100%, KaleidoscopePoster 40%"), line)
+        watcher.summary()
+        record = self.record.read_text()
+        self.assertIn("     7.0 s  EmojiPosterExtension", record)
+        self.assertIn("     6.0 s  KaleidoscopePoster", record)
+
+    # A check between lines (a reading made only to find new wallpaper
+    # extensions) that misses a new one, writes a line of its own, or
+    # moves the time the next line counts from fails this test; so does a
+    # "paused" line that does not say how much processor time the
+    # extension had used.
+    def test_a_check_between_lines_pauses_new_extensions_and_leaves_the_line_alone(self):
+        watcher = self.watch(pause_posters=True)
+        watcher.sample()
+        written = len(self.record.read_text().splitlines())
+        self.now = 1.0
+        newcomer = [(124, 120, "R", f"{EXTENSIONS}/KaleidoscopePoster.appex/KaleidoscopePoster", None)]
+        self.times({124: 2.5}, extra=newcomer)
+        watcher.sample(line=False)
+        self.assertEqual(self.kills[-1], (124, signal.SIGSTOP))
+        lines = self.record.read_text().splitlines()
+        self.assertEqual(len(lines), written + 1, lines)
+        self.assertRegex(lines[-1], r"\A\d\d:\d\d:\d\d paused KaleidoscopePoster \(124\) "
+                                    r"after 2\.5 s of processor time\Z")
+        self.now = 5.0
+        self.times({124: 2.5, 110: 1.0}, extra=newcomer)
+        watcher.sample()
+        # Over the five seconds since the last line: counted from the
+        # check instead, SpringBoard would be 25% and the newcomer nothing.
+        line = self.record.read_text().splitlines()[-1]
+        self.assertRegex(line, r" simulator +70% ")
+        self.assertTrue(line.endswith("| KaleidoscopePoster 50%, SpringBoard 20%"), line)
+
+    # A simulator that starts while watched gets a line at the first
+    # reading that finds it, its processes counted from the reading that
+    # found it not running. Raising there (the watcher would stop) or
+    # writing no line fails this test.
+    def test_a_simulator_that_starts_while_watched_is_counted_from_then(self):
+        watcher = self.watch(pause_posters=False)
+        self.times({}, without=(100,))
+        watcher.sample()
+        self.now = 5.0
+        self.times({110: 1.0})
+        watcher.sample()
+        line = self.record.read_text().splitlines()[-1]
+        self.assertTrue(line.endswith("| SpringBoard 20%"), line)
+
+    # A check while the simulator is not running writes nothing: saying so
+    # every second would bury the record's lines.
+    def test_a_check_while_the_simulator_is_not_running_writes_nothing(self):
+        watcher = self.watch(pause_posters=True)
+        self.times({}, without=(100,))
+        watcher.sample()
+        watcher.sample(line=False)
+        lines = self.record.read_text().splitlines()
+        self.assertEqual(len(lines), 1, lines)
+        self.assertRegex(lines[0], r"the simulator PAD is not running\Z")
+
+    # While pausing, the watcher looks for new wallpaper extensions every
+    # second, between its five-second lines. Looking only when it writes a
+    # line, as it did before 2026-11-04, fails this test. The extensions
+    # here are this test's own children, since the watcher pauses them for
+    # real.
+    def test_a_new_extension_is_paused_at_the_next_check_not_the_next_line(self):
+        children = [subprocess.Popen(["sleep", "60"]) for _ in range(2)]
+        for child in children:
+            self.addCleanup(child.wait)
+            self.addCleanup(end, child.pid)
+        rows = [(child.pid, 100, "S", f"{EXTENSIONS}/{name}.appex/{name}", None)
+                for child, name in zip(children, ("AegirPoster", "MercuryPosterExtension"))]
+
+        def stopped(child):
+            pid, status = os.waitpid(child.pid, os.WNOHANG | os.WUNTRACED)
+            return pid == child.pid and os.WIFSTOPPED(status)
+
+        self.times({}, without=(121, 122), extra=rows[:1])
+        started = self.run_script("start", "--udid", "PAD", "--out", str(self.record),
+                                  "--parent", str(os.getpid()), "--pause-posters",
+                                  "--processes", str(self.processes))
+        self.assertEqual(started.returncode, 0, started.stderr)
+        pid = int(started.stdout.split()[0])
+        self.addCleanup(end, pid)
+        self.assertTrue(wait_for(lambda: stopped(children[0])), self.record.read_text())
+        self.times({}, without=(121, 122), extra=rows)
+        added = time.monotonic()
+        self.assertTrue(wait_for(lambda: stopped(children[1])), self.record.read_text())
+        self.assertLess(time.monotonic() - added, 3.0, self.record.read_text())
+        stop = self.run_script("stop", "--pid", str(pid), "--out", str(self.record))
+        self.assertEqual(stop.returncode, 0, stop.stderr)
+        self.assertIn("Resumed 2 of them.", self.record.read_text())
 
     def run_script(self, *arguments):
         return subprocess.run([sys.executable, "-I", str(SCRIPT.with_name("simulator-load.py")),
                                *arguments], capture_output=True, text=True, timeout=60)
 
-    def wait_for(self, predicate, seconds=10):
-        deadline = time.monotonic() + seconds
-        while time.monotonic() < deadline:
-            if predicate():
-                return True
-            time.sleep(0.05)
-        return False
-
     # `start` returning before the watcher is watching, or not seeing that
-    # it is, `stop` returning before its summary is written, or a first
-    # line that does not say when the watcher began, fails this test.
+    # it is, `stop` returning before its summary is written, a first line
+    # that does not say when the watcher began, or a summary that does not
+    # say how much processor time the watcher itself used, fails this test.
     # (Without --pause-posters: the stand-in's pids may be real processes
     # here.)
     def test_start_waits_for_the_watcher_and_stop_for_its_summary(self):
         started = self.run_script("start", "--udid", "PAD", "--out", str(self.record),
-                                  "--parent", str(os.getpid()), "--ps", str(self.ps))
+                                  "--parent", str(os.getpid()), "--processes", str(self.processes))
         self.assertEqual(started.returncode, 0, started.stderr)
         self.assertNotIn("has not begun", started.stderr)
         pid = int(started.stdout)
@@ -1148,6 +1329,7 @@ class SimulatorLoadTests(unittest.TestCase):
         self.assertEqual(stopped.returncode, 0, stopped.stderr)
         self.assertEqual(self.record.read_text().splitlines()[-1], "Stopped.")
         self.assertIn("Processor time the simulator's processes used while watched:", stopped.stdout)
+        self.assertRegex(stopped.stdout, r"\nProcessor time the watcher itself used: \d+\.\d s\n")
 
     # A Mac busy starting a simulator can take longer than `start` waits
     # to start Python: on GitHub's machine (run 41656480638) the iPad's
@@ -1156,16 +1338,14 @@ class SimulatorLoadTests(unittest.TestCase):
     # that is still starting, or reporting it as not started, fails this
     # test. (wait=0: the watcher cannot have begun when `start` decides.)
     def test_a_watcher_slow_to_start_is_left_to_start(self):
-        arguments = argparse.Namespace(udid="PAD", out=str(self.record), pause_posters=False,
-                                       ps=str(self.ps), parent=os.getpid())
         printed, errors = io.StringIO(), io.StringIO()
         with contextlib.redirect_stdout(printed), contextlib.redirect_stderr(errors):
-            status = self.module.start(arguments, wait=0)
+            status = self.module.start(self.arguments(pause_posters=False), wait=0)
         self.assertEqual(status, 0, errors.getvalue())
         pid = int(printed.getvalue())
-        self.addCleanup(self.end, pid)
+        self.addCleanup(end, pid)
         self.assertIn("has not begun watching within 0 s; it is left to start", errors.getvalue())
-        self.assertTrue(self.wait_for(
+        self.assertTrue(wait_for(
             lambda: self.record.read_text().startswith("Watching simulator PAD, from ")),
             self.record.read_text())
         stopped = self.run_script("stop", "--pid", str(pid), "--out", str(self.record))
@@ -1176,11 +1356,10 @@ class SimulatorLoadTests(unittest.TestCase):
     # reported as started, as a watcher left to start would be, fails this
     # test.
     def test_a_watcher_that_ends_before_it_begins_is_reported_as_not_started(self):
-        arguments = argparse.Namespace(udid="PAD", out=str(self.record), pause_posters=False,
-                                       ps=str(self.ps), parent="not-a-pid")
         printed, errors = io.StringIO(), io.StringIO()
         with contextlib.redirect_stdout(printed), contextlib.redirect_stderr(errors):
-            status = self.module.start(arguments, wait=10)
+            status = self.module.start(self.arguments(pause_posters=False, parent="not-a-pid"),
+                                       wait=10)
         self.assertEqual(status, 1, errors.getvalue())
         self.assertEqual(printed.getvalue(), "")
         self.assertIn("stopped as it started (status 2)", errors.getvalue())
@@ -1191,7 +1370,7 @@ class SimulatorLoadTests(unittest.TestCase):
     def test_stop_says_when_the_watcher_never_began(self):
         starting = subprocess.Popen(["/bin/sleep", "30"])
         self.addCleanup(starting.wait)
-        self.addCleanup(self.end, starting.pid)
+        self.addCleanup(end, starting.pid)
         self.record.write_text("")
         errors = io.StringIO()
         with contextlib.redirect_stderr(errors):
@@ -1201,27 +1380,20 @@ class SimulatorLoadTests(unittest.TestCase):
         self.assertIn("never began watching, so nothing was paused", errors.getvalue())
 
     # The watcher's stderr is its record. Opened without appending, an
-    # error it writes after its lines (here a launchd_sim line it cannot
-    # read) lands at the start and overwrites them; that fails this test.
+    # error it writes after its lines (here a process list it cannot
+    # parse) lands at the start and overwrites them; that fails this test.
     def test_the_watchers_own_errors_follow_its_lines(self):
-        (self.folder / "args").write_text(
-            f"x {LAUNCHD_SIM} {DEVICES}/PAD/data/var/run/launchd_bootstrap.plist\n")
+        self.processes.write_text("{")
         started = self.run_script("start", "--udid", "PAD", "--out", str(self.record),
-                                  "--parent", str(os.getpid()), "--ps", str(self.ps))
+                                  "--parent", str(os.getpid()), "--processes", str(self.processes))
         self.assertEqual(started.returncode, 0, started.stderr)
         pid = int(started.stdout)
-        self.addCleanup(self.end, pid)
-        self.assertTrue(self.wait_for(lambda: "ValueError" in self.record.read_text()),
+        self.addCleanup(end, pid)
+        self.assertTrue(wait_for(lambda: "JSONDecodeError" in self.record.read_text()),
                         self.record.read_text())
         lines = self.record.read_text().splitlines()
         self.assertTrue(lines[0].startswith("Watching simulator PAD, from "), lines)
         self.assertIn("Traceback (most recent call last):", lines[1:])
-
-    def end(self, pid):
-        try:
-            os.kill(pid, signal.SIGKILL)
-        except ProcessLookupError:
-            pass
 
     # A watcher that keeps running after the test run is gone (killed, say)
     # would go on pausing processes of simulators other runs start; that
@@ -1230,32 +1402,167 @@ class SimulatorLoadTests(unittest.TestCase):
         gone = subprocess.Popen(["/bin/sh", "-c", "exit 0"])
         gone.wait()
         started = self.run_script("start", "--udid", "PAD", "--out", str(self.record),
-                                  "--parent", str(gone.pid), "--ps", str(self.ps))
+                                  "--parent", str(gone.pid), "--processes", str(self.processes))
         self.assertEqual(started.returncode, 0, started.stderr)
-        self.assertTrue(self.wait_for(
+        self.assertTrue(wait_for(
             lambda: self.record.read_text().splitlines()[-1:] == ["Stopped."]),
             self.record.read_text())
         self.assertIn(f"The test run ({gone.pid}) is gone.", self.record.read_text())
 
-    # A process list with no time limit, or a time-out the watcher does not
-    # catch, leaves a hung ps holding the watcher: it pauses nothing more
-    # and `stop` finds no summary. Either fails this test.
-    def test_a_process_list_that_hangs_is_given_up_on_and_the_watcher_carries_on(self):
-        (self.folder / "hang").touch()
-        self.module.PS_TIMEOUT = 0.5
+    # A process list the watcher cannot read must cost it one reading, not
+    # the run: an error that escapes ends the watcher, so it pauses nothing
+    # more and `stop` finds no summary, and a failure written without its
+    # time cannot be placed against the test log. Either fails this test.
+    def test_a_process_list_that_cannot_be_read_is_written_down_and_the_watcher_carries_on(self):
+        self.processes.unlink()
         for number in (signal.SIGTERM, signal.SIGINT):
             self.addCleanup(signal.signal, number, signal.getsignal(number))
-        arguments = argparse.Namespace(udid="PAD", out=str(self.record), pause_posters=True,
-                                       ps=str(self.ps), parent=os.getpid())
-        began = time.monotonic()
-        self.assertEqual(self.module.watch(arguments, parent_alive=lambda pid: False), 0)
-        self.assertLess(time.monotonic() - began, 10)
+        self.assertEqual(self.module.watch(self.arguments(), parent_alive=lambda pid: False), 0)
         lines = self.record.read_text().splitlines()
-        self.assertTrue(any(re.match(r"\d\d:\d\d:\d\d could not read the process list:", line)
-                            and "timed out" in line for line in lines), lines)
+        self.assertTrue(any(re.match(r"\d\d:\d\d:\d\d could not read the process list: ", line)
+                            and "No such file" in line for line in lines), lines)
         self.assertEqual(lines[-1], "Stopped.")
-        # A reading lists processes twice; both time-outs must fit in WAIT.
-        self.assertLess(2 * simulator_load().PS_TIMEOUT, simulator_load().WAIT)
+
+    # The structures are read straight from the kernel's bytes, so a field
+    # of the wrong size shifts every field after it. A size that differs
+    # from xnu's bsd/sys/proc_info.h (struct proc_bsdshortinfo, 64 bytes;
+    # struct proc_taskinfo, 96) or mach/mach_time.h, or a field the watcher
+    # reads at another place or of another length, fails this test.
+    def test_the_structures_have_the_kernels_sizes(self):
+        sizes = {name: ctypes.sizeof(getattr(self.module, name))
+                 for name in ("ShortInfo", "TaskInfo", "Timebase")}
+        self.assertEqual(sizes, {"ShortInfo": 64, "TaskInfo": 96, "Timebase": 8})
+        # Where each field the watcher reads starts, and how long it is:
+        # padding can hide a field that is too short from the sizes alone.
+        fields = {name: (getattr(structure, name).offset, getattr(structure, name).size)
+                  for structure, names in ((self.module.ShortInfo, ("ppid", "status", "comm")),
+                                           (self.module.TaskInfo, ("total_user", "total_system")),
+                                           (self.module.Timebase, ("numer", "denom")))
+                  for name in names}
+        self.assertEqual(fields, {"ppid": (4, 4), "status": (12, 4), "comm": (16, 16),
+                                  "total_user": (16, 8), "total_system": (24, 8),
+                                  "numer": (0, 4), "denom": (4, 4)})
+
+
+@unittest.skipUnless(sys.platform == "darwin",
+                     "the Mac's process calls exist only on a Mac; CI's unit job runs these on one")
+class MacProcessesTests(unittest.TestCase):
+    """The process calls the watcher makes on a Mac read what /bin/ps reads,
+    give processor time in seconds, and start no process
+    (docs/log/2026-11-04-watcher-without-ps.md)."""
+
+    def setUp(self):
+        self.module = simulator_load()
+        self.system = self.module.MacProcesses()
+
+    def child(self, *command):
+        process = subprocess.Popen(command)
+        self.addCleanup(process.wait)
+        self.addCleanup(end, process.pid)
+        return process
+
+    # Reading a field from the wrong place, the wrong process's details,
+    # a stopped process as running, another user's process (launchd's) not
+    # at all, or a process's arguments wrongly, fails this test.
+    def test_each_process_reads_as_ps_reads_it(self):
+        sleeper = self.child("/bin/sleep", "60")
+        os.kill(sleeper.pid, signal.SIGSTOP)
+        self.assertTrue(wait_for(lambda: self.system.table().get(sleeper.pid, (0, False))[1]))
+        table = self.system.table()
+        self.assertEqual(table[sleeper.pid], (os.getpid(), True, "sleep"))
+        self.assertFalse(table[os.getpid()][1])
+        self.assertEqual(table[1][2], "launchd")
+        self.assertEqual(self.system.arguments(sleeper.pid), ["/bin/sleep", "60"])
+        _, path = self.system.details(sleeper.pid)
+        self.assertEqual(os.path.realpath(path), os.path.realpath("/bin/sleep"))
+        ppid, state, command = subprocess.run(
+            ["/bin/ps", "-o", "ppid=,stat=,comm=", "-p", str(sleeper.pid)],
+            capture_output=True, text=True, check=True).stdout.split(None, 2)
+        self.assertEqual((int(ppid), "T" in state, os.path.basename(command.strip())),
+                         (os.getpid(), True, "sleep"))
+
+    # Task times are in Mach time units, which are not nanoseconds on Apple
+    # silicon. Reading them as nanoseconds, or the processors' busy time
+    # from a copy that does not grow with the work done (host_statistics
+    # gave the same counts before and after this test's half second of work
+    # on GitHub's machine, run 41748946044), fails this test.
+    def test_processor_time_is_in_seconds(self):
+        # More asks than the kernel answers afresh in a second
+        # (HOST_STATISTICS_MAX_REQUESTS, 10), so a copy would be caught
+        # however few other programs are asking.
+        for _ in range(12):
+            self.system.processor_ticks()
+        own, used, ticks = (self.system.details(os.getpid())[0], time.process_time(),
+                            self.system.processor_ticks())
+        deadline = time.process_time() + 0.3
+        while time.process_time() < deadline:
+            pass
+        own = self.system.details(os.getpid())[0] - own
+        used = time.process_time() - used
+        busy = sum((after - before) % 2**32 for after, before
+                   in zip(self.system.processor_ticks(), ticks)) / self.system.ticks_per_second
+        self.assertAlmostEqual(own, used, delta=0.25 * used)
+        self.assertGreater(busy, 0.5 * used)
+
+    # A process that has ended has no details: reading something for it
+    # anyway (a reused buffer's last contents, say) fails this test.
+    def test_an_ended_process_has_no_details(self):
+        finished = subprocess.Popen(["/usr/bin/true"])
+        finished.wait()
+        self.assertIsNone(self.system.details(finished.pid))
+        self.assertNotIn(finished.pid, self.system.table())
+
+    # Starting a process to read anything (going back to ps, whose
+    # time-outs left the watcher blind for minutes on GitHub's machines)
+    # fails this test. Each call a reading makes runs, on this process
+    # (CI boots no simulator before this test, so a reading alone would
+    # not reach launchd_sim's arguments or a process's details), and then
+    # a whole reading: a simulator that is not running is said to be not
+    # running.
+    def test_a_reading_starts_no_process(self):
+        expected = subprocess.run(["/bin/ps", "-ww", "-o", "args=", "-p", str(os.getpid())],
+                                  capture_output=True, text=True, check=True).stdout.strip()
+        refuse = mock.Mock(side_effect=AssertionError("the watcher started a process"))
+        with tempfile.TemporaryFile("w+") as out, \
+                mock.patch.object(subprocess, "Popen", refuse), \
+                mock.patch.object(os, "posix_spawn", refuse), \
+                mock.patch.object(os, "fork", refuse), \
+                mock.patch.object(os, "system", refuse):
+            self.assertIn(os.getpid(), self.system.table())
+            self.assertEqual(" ".join(self.system.arguments(os.getpid())), expected)
+            self.assertIsNotNone(self.system.details(os.getpid()))
+            self.assertTrue(self.system.processor_ticks())
+            watcher = self.module.Watch("NO-SUCH-SIMULATOR", out, True, self.system)
+            watcher.sample()
+            out.seek(0)
+            self.assertRegex(out.read(), r"\A\d\d:\d\d:\d\d the simulator NO-SUCH-SIMULATOR is not running\n\Z")
+        refuse.assert_not_called()
+
+    # scripts/test.sh runs the watcher with the Mac's own /usr/bin/python3,
+    # which can be older than the python3 running these tests (3.9 on
+    # GitHub's machines). A call or syntax that interpreter lacks, or a
+    # process call that fails on a real Mac, fails this test: the record
+    # would end in a traceback or say the list could not be read.
+    def test_the_watcher_runs_under_the_macs_own_python(self):
+        with tempfile.TemporaryDirectory() as folder:
+            record = Path(folder) / "simulator-load.txt"
+            command = ["/usr/bin/python3", "-I", str(SCRIPT.with_name("simulator-load.py"))]
+            started = subprocess.run(
+                command + ["start", "--udid", "NO-SUCH-SIMULATOR", "--out", str(record),
+                           "--parent", str(os.getpid()), "--pause-posters"],
+                capture_output=True, text=True, timeout=120)
+            self.assertEqual(started.returncode, 0, started.stderr)
+            pid = int(started.stdout.split()[0])
+            self.addCleanup(end, pid)
+            self.assertTrue(wait_for(lambda: "is not running" in record.read_text(), seconds=30),
+                            record.read_text())
+            stopped = subprocess.run(command + ["stop", "--pid", str(pid), "--out", str(record)],
+                                     capture_output=True, text=True, timeout=120)
+            text = record.read_text()
+            self.assertEqual(stopped.returncode, 0, stopped.stderr + text)
+            self.assertEqual(text.splitlines()[-1], "Stopped.")
+            self.assertNotIn("Traceback", text)
+            self.assertNotIn("could not read", text)
 
 
 def workflow_jobs(text):

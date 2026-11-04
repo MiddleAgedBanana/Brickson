@@ -82,9 +82,14 @@ bundle, so CI keeps it in the artifact, and the run's log ends with
 the processes that used the most time. It stops by itself once the
 test run is gone, so a killed run never leaves it pausing other runs'
 simulators, and gives up on a process list that takes more than 5 s,
-writing so in the record, so a hung `ps` never holds it (CodeRabbit's
-review: a reading lists processes twice, and both together stay inside
-the 15 s that `stop` waits for the summary). A paused process rather than an ended one, because iOS
+writing so in the record (CodeRabbit's review: a reading lists
+processes twice, and both together stay inside the 15 s that `stop`
+waits for the summary). *Corrected 2026-11-04:* this said the limit
+meant a hung `ps` never held the watcher. It did not: Python still
+waits for a `ps` it has killed to end, and on `ec21266` (run
+41669225544) one iPad reading took about 160 s and one in the unit job
+about 175 s. The watcher has started no `ps` since
+([`2026-11-04-watcher-without-ps.md`](2026-11-04-watcher-without-ps.md)). A paused process rather than an ended one, because iOS
 would start an ended extension again; the open-source CI tool `yeetd`
 pauses the same extensions the same way. Brickson does not use it: a
 script of its own does only this, only for the simulator under test,
@@ -116,8 +121,12 @@ and the run was 1.2 to 2.2 times slower before it too. 35 tests had
 passed and 2 been skipped, none failed, when a push cancelled the job
 35 minutes into its tests. So `start` now leaves a watcher that has not
 begun when its wait ends to begin, prints its pid all the same, and
-says so in the job's log; once the watcher begins it pauses the
-extensions already running too, and `stop` stops it either way. A
+says so in the job's log; once the watcher begins, its first process
+list that it can read pauses the extensions already running too, and
+`stop` stops it either way. (*Corrected 2026-11-04:* this said
+beginning was enough. Beginning to watch is not pausing: on
+`ec21266`'s iPhone the first list the watcher could read came two
+minutes after it began.) A
 watcher that ends within the wait, before it begins, is still reported
 as not started, and one that never begins is named by `stop` at the end
 ("never began watching, so nothing was paused"). The record's first
@@ -412,13 +421,25 @@ AGENTS.md now names them, and their rounds come before Copilot's too.
   burst (above), but that gap, 145 s, is about 50 s longer than nine
   time-outs and their pauses: what else held the watcher (`ps` slow to
   end once killed, or the watcher itself starved) is not known.
+  *Since 2026-11-04* the watcher starts no `ps`, and each line says how
+  long its reading took; in the probe run beside this watcher, the new
+  one never went more than 13 s without a reading
+  ([`2026-11-04-watcher-without-ps.md`](2026-11-04-watcher-without-ps.md)).
 - Keeping new extension instances paused during a burst that starves
   `ps` (*What pausing does not cover*): not done, and seen once, on the
-  iPhone. *Follow-ups* has the options.
+  iPhone. *Follow-ups* has the options. *Done 2026-11-04,* with the
+  second of them: the watcher lists processes with the system's own
+  calls and paused 49 new instances on the iPhone and 17 on the iPad in
+  its probe run
+  ([`2026-11-04-watcher-without-ps.md`](2026-11-04-watcher-without-ps.md)).
 - A whole iPad run with the watcher in `test.sh`: the first one was
   cancelled by a push with 7 tests to go, and in the second the watcher
   never began (above). Nor a run in which `start` left a slow watcher
   to begin: on GitHub's machine that path has not happened yet.
+  *Both covered since, by the green run on `ec21266` (41669225544):*
+  the whole iPad suite passed with 13 extensions paused, and on the
+  iPhone `start` left its slow watcher to begin, which it did 11 s
+  later ([`2026-11-04-watcher-without-ps.md`](2026-11-04-watcher-without-ps.md)).
 - A job GitHub cancels: in the run on `d3a4202` the runner's own
   clean-up ended the iPhone's watcher at 15:28:31, 28 s after the
   cancel, and its record has no summary, so whether `test.sh`'s trap
