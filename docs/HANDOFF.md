@@ -954,10 +954,11 @@ docs/ROADMAP.md, *The quality bar*, Q24):
 4. Put your Team ID in `project.yml` (`DEVELOPMENT_TEAM`), then run the app
    on your iPhone and iPad and work through *Checks that need a real
    device* with [docs/DEVICE-CHECKS.md](DEVICE-CHECKS.md), starting with
-   its first session: Snap to Item and Dwell measured, the three dwell
-   hazards, the floors, and Settings by a stray dwell. Before it, an
-   agent can run Brickson's UI tests on each device from your Mac (its
-   A1): plug the device in, unlock it, and write "go" in the thread.
+   its first two sessions: Snap to Item and Dwell measured, the three
+   dwell hazards and Settings by a stray dwell, then the floors. Before
+   them, an agent can run Brickson's UI tests on each device from your
+   Mac (its A1): plug the device in, unlock it, and write "go" in the
+   thread.
 5. Review the starter phrases (`Brickson/Resources/StarterPhrases.json`): two
    are near duplicates, and "Please move me." could be clearer.
 6. Delete the failed Swift configuration on the Tool status page
@@ -986,7 +987,7 @@ sooner (docs/DECISIONS.md, "Every release passes the quality bar"); a
 pull request that moves a gate edits its *Today*
 line. The device procedures are written
 ([docs/DEVICE-CHECKS.md](DEVICE-CHECKS.md), 2026-11-04): the next device
-work is the owner's first session there, for which a thread makes the
+work is the owner's first two sessions there, for which a thread makes the
 look-target sheet and, when the owner writes "go" with a device on the
 cable, runs A1 over Remote Control; its record lists what else it
 leaves ([`log/2026-11-04-device-procedures.md`](log/2026-11-04-device-procedures.md),
@@ -1272,7 +1273,10 @@ settings, date) and summarise it here.
   2026-11-03 they were not loaded in a Brickson cloud thread with only
   this repository cloned (AGENTS.md, *Guardrails for agents*). The guard
   refuses `git add -A`, force pushes, pushes to `main`, merges, approvals
-  and every Copilot review or task. `scripts/test.sh` runs its tests and the docs
+  and Copilot reviews and tasks asked for by a Copilot tool, `gh`, the
+  REST API, a GitHub tool's reviewer or assignee field or a GraphQL agent
+  assignment; an `@copilot` mention and other GraphQL requests are held
+  by AGENTS.md alone. `scripts/test.sh` runs its tests and the docs
   cross-reference check (`scripts/test-docs.py`) before the unit tests.
   New issues start from the "Something went wrong" form; blank issues are
   off. Record: [`docs/log/2026-10-21-agent-guardrails.md`](log/2026-10-21-agent-guardrails.md).

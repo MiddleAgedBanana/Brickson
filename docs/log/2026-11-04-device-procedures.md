@@ -24,12 +24,17 @@ thread, which cannot build or run anything.*
     a session produced).
   - A *Coverage* table maps every row and gate to its procedure.
   - Procedure choices made here, each reversible: Fallback Action Tap
-    during dwell trials (as on 2026-10-26); 60 activations for F3, so
-    Q13's "fewer than 1 in 20" is at most 2 misses; F1 tries Dwell
-    Control off first, so a resting look can be read without firing;
-    Q8's iPad day as four hours at touch's answer and four with Eye
-    Tracking; a development build answers a row early, and the gate
-    passes when the same steps pass on the build that ships.
+    during dwell trials (as on 2026-10-26); 60 activations for F3 (its
+    list run again from the top), passing when the misses times 20 are
+    fewer than the activations made, so Q13's "fewer than 1 in 20" is at
+    most 2 misses in 60; F1 tries Dwell Control off first, so a resting
+    look can be read without firing; Q8's iPad day as four hours at
+    touch's answer and four with Eye Tracking; A2 times cold launches,
+    each after a restart, as Q7 says; the dwell checks run before the
+    sound checks Q4 puts first, because they decide design questions;
+    every step runs on both devices unless it names one; a development
+    build answers a row early, and the gate passes when the same steps
+    pass on the build that ships.
   - In place elsewhere: docs/HANDOFF.md's owner steps 2 and 4, its
     table's introduction and its next step for agents point to the new
     file, and step 8 (Codex reading all of `AGENTS.md`) is marked done
@@ -45,8 +50,11 @@ thread, which cannot build or run anything.*
   owner's instructions for this project say there is no Copilot review.
   Pull request #76 had let an agent ask for one Copilot review per pull
   request. This reverses that:
-  - `.claude/hooks/guard.py` refuses every Copilot review and Copilot
-    task again, by any tool; the record of requests
+  - `.claude/hooks/guard.py` again refuses a Copilot review or task
+    asked for by a Copilot tool, `gh`, the REST API, a GitHub tool's
+    reviewer or assignee field or a GraphQL agent assignment (other
+    GraphQL requests and an `@copilot` mention are held by AGENTS.md
+    alone); the record of requests
     (`.git/brickson-copilot-reviews.json`) and the hook that wrote it
     are gone, and an old record file can be deleted.
   - `.claude/settings.json` denies `request_copilot_review` outright
@@ -93,11 +101,17 @@ rechecked against Apple's pages:
 
 ## Apple's pages, checked
 
-Every Apple setting path and tool claim the procedures state was checked
-on 2026-11-04 by four checkers, against support.apple.com's iPhone and
-iPad guides for iOS 26 and 27 and developer.apple.com in its Markdown
-form. Of 88 claims, 60 were confirmed, 12 corrected and 16 not confirmed
-by any Apple page. Each claim, its status, Apple's words and the page are
+88 of the Apple setting paths and tool claims the procedures stated
+when the pull request opened were checked on 2026-11-04 by four
+checkers, against support.apple.com's iPhone and iPad guides for iOS 26
+and 27 and developer.apple.com in its Markdown form: 60 were confirmed,
+12 corrected and 16 not confirmed by any Apple page. The review below
+found 22 more, stated without a check or brought in by its fixes, and
+four more checkers checked them the same way: 20 confirmed and 2
+corrected (Console saves streamed messages only by Share or by copying,
+and Attention Aware Features has another path and fewer models on
+iPad). They are the evidence file's last group (*The review, and what
+it changed*). Each claim, its status, Apple's words and the page are
 in [`evidence/2026-11-04-device-procedures/apple-claims.json`](../evidence/2026-11-04-device-procedures/apple-claims.json).
 
 Corrections the procedures carry:
@@ -105,8 +119,9 @@ Corrections the procedures carry:
 - The dwell time is not on Eye Tracking's or Head Tracking's screen: it
   is Settings > Accessibility > Touch > AssistiveTouch > Dwell Control,
   with no unit given. Head Tracking's speed option is Pointer Speed.
-- Developer Mode appears once a device has been paired with a Mac;
-  after the restart, Enable and the passcode confirm it.
+- Developer Mode appears once pairing with a Mac has started, or if
+  the device was paired before; after the restart, swipe up, then
+  Enable and the passcode confirm it.
 - The 400 ms launch goal is from WWDC19's "Optimizing App Launch", not
   from Apple's launch-time article.
 - Point scanning is Switch Control Mode > Gliding Cursor; Apple's pages
@@ -127,8 +142,7 @@ Shortcut lists beyond Switch Control, VoiceOver, Voice Control,
 AssistiveTouch, Guided Access and Assistive Access; Eye Tracking on an
 external display and under Guided Access; Settings > Developer > Enable
 UI Automation (named only by community reports and Appium); `xctrace`'s
-device and launch flags; the Hangs instrument's option names and
-whether 100 ms is a setting; `XCUIVoiceOverService` on a device; whether
+device and launch flags; `XCUIVoiceOverService` on a device; whether
 a screen recording keeps an app's sound; stepping a video frame by
 frame in Photos (the procedures have a thread do it on the Mac); Switch
 Control's Tap Behavior options other than Auto Tap, and the names of
@@ -137,12 +151,84 @@ Personal Voice on iPhone and iPad (Brickson's own guide names one); the
 shortest Auto-Lock; and whether accessibility features work in iPhone
 Mirroring.
 
+## The review, and what it changed
+
+Before the first fix push, an independent review read the procedures
+against every HANDOFF row, every owner gate, the app's code, Apple's
+pages and the repository's rules, and a second reader tried to refute
+each finding. 65 findings held and 1 was rejected; CodeRabbit added 3
+small ones. All were fixed in one push, except where a choice is named
+below.
+
+- **Gates the procedures could pass without meeting.** A2 timed warm
+  launches, so it now times five cold launches, each after a restart,
+  as Q7 says, and records warm ones apart. F3's list held about 31
+  activations, not 60, and its rest board fewer: the list now runs again
+  from the top to 60, the pass is a rate (misses times 20 fewer than the
+  activations made), and a thread first confirms that the mounted iPad,
+  in portrait, took the profile under test. A new rule runs every step
+  on both devices unless it names one, as Q4 and Q6 ask. M2 now closes
+  Brickson first, so the recording shows a launch, and checks for a
+  flash in light as well as dark. A4 no longer passes growth that is
+  only explained. W1 checks every width the window allows and, while
+  typing, Speak and Phrases. G3 adds an untouched wait under Guided
+  Access. H2 has a pass line and keeps Q25's people found before the
+  pilot; H3 says where Brickson is better; L3 asks for a proficient
+  VoiceOver user.
+- **Steps that could not show their answer.** I5's double activation
+  is now made after the tap, with Focused Item After Tap resuming at the
+  item, since Apple says a second press within Auto Tap's wait opens the
+  Scanner menu. The log is streamed from Console before a step, since
+  Apple's guide does not say whether a device's earlier messages show
+  after Start. G2 says where each button is
+  and when it shows. P3, P4 and P5 set the voice or the fresh install
+  their answer needs. S4 accepts "Stopped — Again" after lost
+  headphones, which the app is built to show. S6 keeps VoiceOver
+  audible. F1 measures Head Tracking's dwell time too.
+- **Apple facts.** A JetsamEvent report lists every running process, so
+  M3 and Q8 now look for Brickson's entry with a `reason` key, the one
+  Apple marks as jettisoned. The Hangs threshold of 100 ms, which the
+  first check left unconfirmed, is one of four that Apple's Instruments
+  tutorial shows; A3 names it, and a run on an Xcode without it is
+  UNVERIFIED. Siri started by a button answers silently in Silent mode,
+  so S2 says how Siri was started. Switch Control's settings are on its
+  own screen, not Scanning Style's. Personal Voice's devices now give
+  Apple's support article's wider list beside the guides', and the hour
+  to make a voice, which no Apple page says, is gone.
+- **Rules.** AGENTS.md, HANDOFF, the decision and the guard's notes
+  said the guard refuses every way of asking for Copilot. It refuses the
+  Copilot tools, `gh`, the REST endpoints, a GitHub tool's reviewer or
+  assignee field and a GraphQL agent assignment, but not
+  other GraphQL requests or an `@copilot` mention in a comment. The
+  words now say so (AGENTS.md, *Reviews and updates on GitHub*). Choice:
+  the words were narrowed rather than the guard extended, because the
+  subscription ends on 2026-11-09, the guard is a guard against
+  mistakes, and covering every mutation and comment body is code and
+  tests for routes no agent takes by mistake. Reversible: a later pull
+  request can extend it. "The device's Team ID" is now the developer
+  account's, and Xcode 27 is no longer named in the procedures.
+- **Consistency.** The first session holds F1, F2 and F4 and the
+  second F3, as the order table always said; HANDOFF and the heading now
+  agree. The control is called Stop, its visible word, and Voice
+  Control tries "Tap Stop Alert" as its other name. Q4's sound-first
+  order is noted where the dwell checks run first.
+- **Rejected.** That Device Hub stopping Eye Tracking, Head Tracking and
+  Voice Control is an inference stated as Apple's: Apple's sentence is
+  quoted exactly, and the procedures draw the consequence in their own
+  words.
+- **Not taken.** Changing Q7 to warm launches, which the review offered
+  as the other way to match A2 to Q7: the gate stays as the owner set
+  it.
+
 ## Commits
 
 - `2acde95` Take Copilot out of the review process and refuse its review
   again.
-- The procedures, this record, its evidence and the edits to HANDOFF,
-  ROADMAP, AGENTS.md and SDLC.
+- `be30141` The procedures, this record, its evidence and the edits to
+  HANDOFF, ROADMAP, AGENTS.md and SDLC.
+- The review's fixes (*The review, and what it changed*), with the
+  Copilot wording in AGENTS.md, DECISIONS, HANDOFF and the guard's
+  notes, and ROADMAP's Q8 jetsam wording.
 
 ## Verified
 
@@ -153,6 +239,8 @@ calls skip, as they say) and `scripts/test-select-xcode.py` (23) pass,
 and `git diff --check` is clean.
 The new hook test, `test_no_agent_requests_copilots_review`, fails with
 the guard's Copilot refusal taken out (3 failures), so it can fail.
+The same checks pass again after the review's fixes. CI on `be30141`
+passed (unit tests, UI tests on iPad and iPhone, CodeQL).
 
 ## Not verified
 
@@ -169,8 +257,9 @@ the guard's Copilot refusal taken out (3 failures), so it can fail.
 
 ## Follow-ups
 
-- **Owner:** the first session (F1 to F4), and A1 on each device by
-  writing "go" in a thread with the device on the cable.
+- **Owner:** the first two sessions (F1, F2 and F4, then F3), and A1
+  on each device by writing "go" in a thread with the device on the
+  cable.
 - **Thread, before F1:** the look-target sheet from A1's captures or the
   layout engine's frames.
 - **Thread, when the procedures need them:** an opt-in UI test that

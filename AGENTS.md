@@ -576,10 +576,15 @@ limited free tier for public repositories, Greptile on its free tier
 answers and fixes every round. GitHub Copilot is no longer one of the
 reviewers: the owner's AI credits ran out on pull request #78
 (2026-11-04) and the subscription ends on 2026-11-09, so no agent
-requests a Copilot review or starts a Copilot task, by any tool, and
-the guard refuses every way of asking (*Guardrails for agents*;
-docs/DECISIONS.md, *Code review*). None of these reviewers reviews
-Dependabot's pull requests by itself. All of them review against
+requests a Copilot review or starts a Copilot task by any route: a
+Copilot tool, `gh`, the REST or GraphQL API, or an `@copilot` mention in
+a comment or review. The guard refuses the Copilot tools, `gh`'s
+reviewer, assignee and agent-task commands, the REST reviewer, assignee
+and task endpoints, a GitHub tool's reviewer or assignee field and a
+GraphQL agent assignment; other GraphQL requests and a mention are held
+by this rule alone (*Guardrails for
+agents*; docs/DECISIONS.md, *Code review*). None of these reviewers
+reviews Dependabot's pull requests by itself. All of them review against
 *Code Review Rules* above. GitHub's AI
 Scan also posts security findings after each push to such a pull request;
 answer them like review comments. It skips Dependabot's pull requests and
@@ -643,10 +648,11 @@ above are backed by checks wherever a check can run:
   write. It refuses, with the rule it breaks: `git add -A`, `--all`, `-u`
   or `.` and `git commit -a`; force pushes and any push that updates
   `main`; merging, auto-merging or approving a pull request (`gh`, the
-  GitHub API or a GitHub tool); every Copilot review and Copilot task
-  (*Reviews and updates on GitHub*); and a GitHub tool writing a file
-  onto `main`. The same settings deny the
-  merge tools and the Copilot tools outright. When the guard refuses, do
+  GitHub API or a GitHub tool); a Copilot review or Copilot task asked
+  for by a Copilot tool, `gh`, the REST API, a GitHub tool's reviewer
+  or assignee field or a GraphQL agent assignment (*Reviews and updates
+  on GitHub* says what only the rule holds); and a GitHub tool writing a file onto `main`. The same
+  settings deny the merge tools and the Copilot tools outright. When the guard refuses, do
   not look for another way round: say in the thread what you needed and
   why. It is a guard against mistakes, not a sandbox, and it covers
   Claude Code only; Codex, Jules and the owner are held to the same rules
@@ -660,10 +666,9 @@ above are backed by checks wherever a check can run:
   there the guard does not run and these rules are yours alone to keep.
   On 2026-11-03 it did not run in a Brickson cloud thread either, though
   that thread had cloned only this repository (Claude Code 2.1.317): a
-  `git add -A --dry-run`, which the guard refuses, ran, and the thread's
-  Copilot request left no record. The environment's documentation says
-  a cloud thread applies a repository's settings only in a project with
-  one repository. So in a cloud thread, check before relying on it:
+  `git add -A --dry-run`, which the guard refuses, ran. The
+  environment's documentation says a cloud thread applies a
+  repository's settings only in a project with one repository. So in a cloud thread, check before relying on it:
   where the guard runs, `git add -A --dry-run` is refused.
 - **Its tests.** `scripts/test-hooks.py` feeds the guard the calls it must
   refuse and the ones it must let through; `scripts/test.sh` runs it

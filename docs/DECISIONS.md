@@ -4726,10 +4726,15 @@ review setup does not quietly break them.
   2026-11-10, as it said it would: no agent requests a Copilot review or
   starts a Copilot task, and the guard and `.claude/settings.json`
   refuse `request_copilot_review` again, as they did before 2026-11-03,
-  with every other way of asking for Copilot (`gh`, the API, a pull
-  request's reviewer field). The guard's record of requests and its hook
-  after a call are gone; a `.git/brickson-copilot-reviews.json` left in
-  an older clone is no longer read and can be deleted. Codex, CodeRabbit
+  and the guard refuses the other Copilot tools, `gh`'s reviewer,
+  assignee and agent-task commands, the REST reviewer, assignee and task
+  endpoints, a GitHub tool's reviewer or assignee field and a GraphQL
+  agent assignment. Other GraphQL requests and an `@copilot` mention
+  in a comment or review are held by the rule alone, as the guard is a
+  guard against mistakes, not a sandbox (AGENTS.md, *Guardrails for
+  agents*). The guard's record of requests and its hook after a call
+  are gone; a `.git/brickson-copilot-reviews.json` left in an older
+  clone is no longer read and can be deleted. Codex, CodeRabbit
   and Greptile review as before, and the agent answers every round.
   `.github/copilot-instructions.md` and `.github/skills/code-review/`
   stay: they cost nothing, and they are the instructions Copilot would

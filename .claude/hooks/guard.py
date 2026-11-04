@@ -13,8 +13,11 @@ It denies:
 - force pushes, and any push that would update main;
 - merging a pull request or turning on auto-merge, by gh, the GitHub API or
   a GitHub tool, and approving one;
-- every Copilot review and Copilot task: Copilot is not part of the
-  review process, and each one would spend the owner's credits;
+- a Copilot review or Copilot task asked for by a Copilot tool, gh, the
+  REST API, a GitHub tool's reviewer or assignee field or a GraphQL agent
+  assignment: Copilot is not part of the review process, and each one
+  would spend the owner's credits (other GraphQL requests and an
+  @copilot mention are held by AGENTS.md alone);
 - a GitHub tool that writes a file straight onto main.
 
 This is a guard against mistakes, not a sandbox: a determined command can

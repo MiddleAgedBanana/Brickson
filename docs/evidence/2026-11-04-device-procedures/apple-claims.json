@@ -1,6 +1,6 @@
 {
  "checked": "2026-11-04",
- "about": "Each Apple setting path and tool claim docs/DEVICE-CHECKS.md states, checked against Apple pages (developer.apple.com in its .md form, support.apple.com). status: confirmed, corrected (correct_version is what the procedures say), or unconfirmed (Apple does not say; the procedures say so).",
+ "about": "88 of the Apple setting paths and tool claims docs/DEVICE-CHECKS.md stated when pull request #79 opened (the first four groups), and the ones its review found unchecked or brought in (the last group), checked against Apple pages (developer.apple.com in its .md form, support.apple.com). status: confirmed, corrected (correct_version is what the procedures say), or unconfirmed (Apple does not say; the procedures say so).",
  "groups": [
   {
    "group": "developer tools",
@@ -817,6 +817,209 @@
     }
    ],
    "more_findings": "1) Guided Access: \"Crash Detection and Emergency Services aren't available while using Guided Access. Exit Guided Access to use Crash Detection or to make emergency calls.\" (iOS 26 and 27 guides, 111795). The Accessibility Shortcut also does nothing during a session unless \"Accessibility Shortcut\" is turned on in Guided Access settings.\n2) Assistive Access: \"apps won't ask for permission to access information such as location, photos, and contacts\". Permissions are set during setup or under Settings > Apps > [app name] after exiting (https://support.apple.com/guide/assistive-access-iphone/understand-differences-assistive-access-dev473e94873/27/ios/27). Apple does not say whether the Personal Voice request is affected. An emergency call is still possible: triple-click, then Emergency, with no passcode.\n3) Personal Voice devices: the iOS 27 guide says \"available on iPhone 15 Pro models, iPhone 16 models and later\", and the iPadOS 27 guide says \"iPad mini (A17 Pro and later) and iPad models with M1 and later\". The older support article 104993 says iPhone 12 or later. The languages are English (U.S.), Mandarin Chinese (China mainland) and Spanish (Mexico), and a passcode must be set first.\n4) Silent mode: \"Clock alarms, audio apps such as Music, and many games play sounds through the built-in speaker, even when Silent mode is on.\" Siri opened with a button \"responds silently when iPhone is in Silent mode\".\n5) Auto-Lock: \"If you keep your iPhone on the Home Screen and don't take any action, your Auto-Lock time is reduced by half.\" With Attention Aware Features on, iPhone \"won't dim or lock as long as it detects attention\". Low Power Mode \"Sets Auto-Lock to 30 seconds\".\n6) iOS 27 has a separate Settings > Appearance pane, with Text Size, Bold Text, Liquid Glass and Display Zoom. Display & Brightness still holds Auto-Lock.\n7) For AAC audio in calls: Settings > Accessibility > Audio & Visual > Add Audio in Calls > \"Allow Apps to Add Audio in Calls\"."
+  },
+  {
+   "group": "review (checked after the first review, 2026-11-04)",
+   "claims": [
+    {
+     "id": "R1",
+     "claim": "Apple's \"Reducing your app's launch time\" page: a launch made right after the device is switched on and unlocked for the first time is a cold launch; force-quitting the app and then launching it gives a warm launch. Quote both. Also quote what the page says to do to measure a cold launch, if it says.",
+     "status": "confirmed",
+     "apple_says": "Reducing your app's launch time: \"This scenario, or a launch immediately after boot, is often referred to as a 'cold launch.'\" Under \"Profile your app's launch time\", among the situations to test: \"Switch the device on, unlock it for the first time, and then launch your app.\" and \"Force quit your app, and then launch it. The system will terminate your app process, and the system will perform a warm launch.\"",
+     "url": "https://developer.apple.com/documentation/xcode/reducing-your-app-s-launch-time.md",
+     "correct_version": "",
+     "notes": "The page says a launch \"immediately after boot\" is \"often referred to as a cold launch\". The bullet about switching the device on and unlocking it for the first time does not use the word \"cold\" itself, but it describes the same after-boot case. The force-quit bullet does say \"warm launch\". The page gives no separate step headed \"how to measure a cold launch\". What it says is \"Profile your app in Instruments by using the App Launch template\" and \"Profile your app's launch time in different situations to see how these factors affect the experience\", and the switch-on-and-unlock bullet is one of those situations. For field data it points to the Launch Time pane in the Xcode Organizer and to MetricKit. The page also calls warm and cold \"a spectrum\": \"Think of warm and cold launches as a spectrum.\""
+    },
+    {
+     "id": "R2",
+     "claim": "Apple's jetsam page (\"Identifying high-memory use with jetsam event reports\"): a JetsamEvent report lists the memory use of every app and system process on the device, and only the process that was jettisoned has the \"reason\" key.",
+     "status": "confirmed",
+     "apple_says": "Identifying high-memory use with jetsam event reports: \"Jetsam event reports differ from crash reports because they contain the overall memory use of all apps and system processes on a device\" and \"Search for the `reason` key to identify the jettisoned process and why the system jettisoned it. Only the jettisoned process has the reason key.\"",
+     "url": "https://developer.apple.com/documentation/xcode/identifying-high-memory-use-with-jetsam-event-reports.md",
+     "correct_version": "",
+     "notes": "The page also says \"The jetsam event report records how much memory each process used before jettisoning an app\". Memory is given as a count of memory pages (`rpages`), which you multiply by the header's `pageSize` to get bytes. Each process is one item in the report's `processes` array."
+    },
+    {
+     "id": "R3",
+     "claim": "Apple's \"Understanding hangs in your app\" page (or the Hangs instrument's documentation or WWDC23 session 10248): the Hangs instrument reports hangs of 250 ms or more by default and lets you choose a lower threshold. Does any Apple page name the threshold choices or say 100 ms is one?",
+     "status": "confirmed",
+     "apple_says": "Understanding hangs in your app: \"Most of Apple's developer tools start reporting issues when the period of unresponsiveness for the main run loop exceeds 250 ms. Some of them, like the Hangs instrument in the Instruments app, allow you to choose lower thresholds for reporting an unresponsive main run loop.\" Instruments tutorial \"Reducing main thread work by doing less\": \"By default, it only shows periods where the main thread is unresponsive for more than 250 ms\" and \"In the Hangs section of the recording options, you can choose different thresholds\". The same tutorial describes its screenshot as a \"radio button group labeled Reporting Threshold\" with \"Hangs (greater-than 500 milliseconds), Include Microhangs (greater-than 250 milliseconds), Include Brief Unresponsiveness (greater-than 100 milliseconds), and Include All Potential Interaction Delays (greater-than 33 milliseconds)\".",
+     "url": "https://developer.apple.com/tutorials/instruments/reducing-main-thread-work-by-doing-less",
+     "correct_version": "To match Apple's wording exactly: by default the Hangs instrument reports periods when the main thread is unresponsive for more than 250 ms (this is the Time Profiler template's default). In the Hangs section of the recording options, under Reporting Threshold, you can choose one of four thresholds: more than 500 ms, more than 250 ms (Include Microhangs, the default), more than 100 ms (Include Brief Unresponsiveness) or more than 33 ms (Include All Potential Interaction Delays).",
+     "notes": "In substance the claim holds. The only difference is wording: Apple says \"more than\" / \"exceeds\" / \"greater-than\" 250 ms, while WWDC23 session 10248 says \"most of our tools start reporting hangs by default starting at 250 ms, but we call these 'micro hangs'\". That transcript does not name the threshold choices or say how to change them. The four choices are named only in the tutorial's description of its screenshot (alt text), which I read from the tutorial's data file at https://developer.apple.com/tutorials/data/tutorials/instruments/reducing-main-thread-work-by-doing-less.json (tutorials have no .md form). The tutorial does not say which Xcode version it shows, so the labels may differ in Xcode 27. The tutorial \"Understanding synchronous and asynchronous hangs\" adds: \"exceed the configured threshold (250 ms in the Time Profiler template)\". An Apple Developer Tools Engineer also wrote in Apple's forums (https://developer.apple.com/forums/thread/763010): \"Instruments allows you to set the threshold to 100ms or even 33ms.\" So yes, 100 ms is one of the choices."
+    },
+    {
+     "id": "R4",
+     "claim": "Xcode: launch arguments for a run are added in Product > Scheme > Edit Scheme, the Run action, Arguments tab (\"Arguments Passed On Launch\").",
+     "status": "confirmed",
+     "apple_says": "Accessing data when the store changes (Core Data): \"Choose Product > Scheme > Edit Scheme, then choose the Run action, and add the following line under Arguments Passed on Launch\". Customizing the build schemes for a project (Xcode): \"specify that information on the Arguments tab of the Run, Test, or Profile build scheme action.\"",
+     "url": "https://developer.apple.com/documentation/coredata/accessing-data-when-the-store-changes.md",
+     "correct_version": "",
+     "notes": "The Xcode page (https://developer.apple.com/documentation/xcode/customizing-the-build-schemes-for-a-project.md) names the Arguments tab of the Run action and says \"Xcode passes command-line arguments directly to the launched process\". It does not give the menu path. The menu path and the field name come from the Core Data page. Apple spells the field \"Arguments Passed on Launch\" on the Core Data page and \"Arguments Passed On Launch\" on UIKit's \"Debugging focus issues in your app\". I found no Xcode 27 page that confirms the current label, so check it on screen."
+    },
+    {
+     "id": "R5",
+     "claim": "xcodebuild's -allowProvisioningUpdates option lets xcodebuild create or update provisioning profiles (Apple's xcodebuild documentation, a technical note, or an Xcode help page).",
+     "status": "confirmed",
+     "apple_says": "xcodebuild man page, quoted in full by an Apple DTS Engineer in Apple's Developer Forums (thread 764554, Oct 2024): \"-allowProvisioningUpdates Allow xcodebuild to communicate with the Apple Developer website. For automatically signed targets, xcodebuild will create and update profiles, app IDs, and certificates. For manually signed targets, xcodebuild will download missing or updated provisioning profiles. Requires a developer account to have been added in Xcode's Accounts preference pane.\" WWDC21 session 10204: \"`-allowProvisioningUpdates`, which gives permission for xcodebuild to communicate with the Apple Developer website.\"",
+     "url": "https://developer.apple.com/forums/thread/764554",
+     "correct_version": "",
+     "notes": "I found no developer.apple.com documentation page, technical note or Xcode release note that describes the flag. I checked TN3125, TN3161, TN2339, the Xcode 10 through 27.2 release notes and Xcode's distribution pages. The authoritative text is the xcodebuild man page that ships with Xcode (`man xcodebuild` on a Mac). Here it is quoted by an Apple DTS Engineer in a forum reply, which I read through WebFetch because the forum blocks direct downloads. The WWDC21 transcript (https://developer.apple.com/videos/play/wwdc2021/10204/) confirms only the \"communicate with the Apple Developer website\" part. Precisely: profiles are created and updated only for automatically signed targets; for manually signed targets xcodebuild only downloads missing or updated profiles. An App Store Connect API key (-authenticationKeyPath, -authenticationKeyID, -authenticationKeyIssuerID) can be used instead of an Xcode account sign-in (Xcode 13 release notes)."
+    },
+    {
+     "id": "R6",
+     "claim": "Device Hub: \"You can't access the camera or microphone while interacting with a physical device in Device Hub\" (page: Interacting with your app in Device Hub).",
+     "status": "confirmed",
+     "apple_says": "Interacting with your app in Device Hub, section \"Handle camera and microphone access conflicts on physical devices\": \"You can't access the camera or microphone while interacting with a physical device in Device Hub.\"",
+     "url": "https://developer.apple.com/documentation/xcode/interacting-with-your-app-in-device-hub.md",
+     "correct_version": "",
+     "notes": "The sentence matches word for word. The same section adds: \"Before you can start interacting with a physical device in Device Hub, quit any apps on the device that access the camera or microphone.\" It says that while you interact, lower-priority apps such as Camera and Voice Memos \"may record silence and empty video\". It also says that launching higher-priority apps such as Phone or FaceTime makes \"Device Hub stop the interaction\"; to continue, quit those apps and click View Screen again."
+    },
+    {
+     "id": "R7",
+     "claim": "The Mac's Console app shows log messages from a connected iPhone or iPad: select the device in the sidebar, then click Start in the toolbar to stream its messages (Console User Guide). Messages appear only while streaming: does the guide say Console keeps no earlier messages for a device, or can it show messages from before Start?",
+     "status": "confirmed",
+     "apple_says": "View log messages in Console on Mac (Console User Guide, macOS 27): \"Use Console to view log messages collected by your computer and other connected devices.\" Step 1: \"in the Devices list on the left, select the device you want to view log messages for (such as your Mac, iPhone, iPad, Apple Watch, or Apple TV). If you don't see the Devices list, click the Sidebar button in the Favorites bar.\" Step 2: \"Click Start in the toolbar.\" \"The log messages for the device appear in the window.\"",
+     "url": "https://support.apple.com/guide/console/log-messages-cnsl1012/1.1/mac/27",
+     "correct_version": "Select the iPhone or iPad in the Devices list on the left (click the Sidebar button in the Favorites bar if the list is hidden), then click Start in the toolbar; the device's log messages appear in the window. The guide does not say whether messages from before Start appear. For earlier messages, the guide points to a log archive (a system diagnostics report) instead of the live stream.",
+     "notes": "The steps are confirmed. The words \"Messages appear only while streaming\" are not Apple's: the guide does not say either way whether Console keeps or shows a device's messages from before Start. Related wording in the guide: Customize the log window (https://support.apple.com/guide/console/customize-the-log-window-cnsl35710/1.1/mac/27) says Clear \"hides log data collected to date and only shows new messages or activities\", and that the Now button works \"only when you're viewing the live stream of log messages\", not when \"browsing a log archive\". The linked topic Browse the log archive in Console on Mac (https://support.apple.com/guide/console/browse-the-log-archive-cnsl4f3fc2df/1.1/mac/27) is not listed in the guide's table of contents. It says: \"If you create a system diagnostics report, you can use Console to view, search, and sort it\". It describes a \"Showing pop-up menu\" with time ranges such as \"Last Hour\", and for other devices it says \"see Apple Developer website: Profiles and Logs\" (that page was not followed). Developer documentation, Generating Log Messages from Your Code (https://developer.apple.com/documentation/os/generating-log-messages-from-your-code.md), says: \"Normally, the system stores debug and info messages only in memory\". Do not write \"Console keeps no earlier messages\" as Apple's statement. The macOS 26 version of the page has the same steps, so the path is the same there."
+    },
+    {
+     "id": "R8",
+     "claim": "Console's menu item that includes info messages (Action > Include Info Messages) and the one for debug messages. Quote the guide's exact names.",
+     "status": "confirmed",
+     "apple_says": "Customize the log window in Console on Mac, section \"Include info or debug messages\": \"Include info messages: Choose Action > Include Info Messages.\" \"Include debug log messages: Choose Action > Include Debug Messages.\" \"To stop including these messages, choose the option again (so the checkmark is removed).\"",
+     "url": "https://support.apple.com/guide/console/customize-the-log-window-cnsl35710/1.1/mac/27",
+     "correct_version": "",
+     "notes": "The exact names are Action > Include Info Messages and Action > Include Debug Messages. Each is a checkmarked toggle. The same page notes: \"These options are only available in the Console live stream and aren't available when you're browsing a log archive, because info and debug log messages are automatically included in a log archive.\" The macOS 26 version of the page has the same text."
+    },
+    {
+     "id": "R9",
+     "claim": "Console can save or export the streamed messages (for example, select them and choose File > Save or Edit > Copy). Quote what the guide says.",
+     "status": "corrected",
+     "apple_says": "Share log messages, activities, or reports in Console on Mac: \"Select the item or items you want to share, click the Share button in the toolbar, then choose how to share.\" Keyboard shortcuts in Console on Mac: \"Copy selected log message text | Command-C\".",
+     "url": "https://support.apple.com/guide/console/share-log-messages-activities-or-reports-cnsl2356/1.1/mac/27",
+     "correct_version": "Select the log message or messages, click the Share button in the toolbar, then choose how to share them. To copy, select a log message and press Command-C (the guide calls this \"Copy selected log message text\"). The guide names no File > Save, Edit > Copy or export command for log messages.",
+     "notes": "The keyboard shortcuts page is https://support.apple.com/guide/console/keyboard-shortcuts-cnsl99a72ebe/mac. In the guide, the only File menu items are for reports and log files: File > Reveal in Finder and File > Move to Trash (View reports; Locate a log file). The Browse the log archive topic says \"Share the log archive\" and links to the same Share topic. The macOS 26 version of the Share page has the same text."
+    },
+    {
+     "id": "R10",
+     "claim": "Settings > Accessibility > Switch Control > Scanning Style is its own screen with Auto Scanning, Manual Scanning and Single Switch Step Scanning; Auto Scanning Time, Pause on First Item, Loops, Move Repeat, Tap Behavior, Focused Item After Tap, Hold Duration and Ignore Repeat are on Switch Control's own screen (iOS 27 iPhone guide, \"Set up Switch Control\" or \"Adjust Switch Control settings\").",
+     "status": "confirmed",
+     "apple_says": "iPhone User Guide (iOS 27), \"Set up and turn on Switch Control on iPhone\", Step 3: \"Go to Settings > Accessibility > Switch Control > Scanning Style, then choose one of the following: Auto Scanning ... Manual Scanning ... Single Switch Step Scanning\". Step 4: \"Go to Settings > Accessibility > Switch Control, then adjust any of the following: Auto Scanning Time ... Pause on First Item ... Loops ... Move Repeat ... Tap Behavior ... Focused Item After Tap ... Hold Duration ... Ignore Repeat\".",
+     "url": "https://support.apple.com/guide/iphone/set-up-and-turn-on-switch-control-iph400b2f114/27/ios/27",
+     "correct_version": "",
+     "notes": "The page's title is \"Set up and turn on Switch Control on iPhone\" (not \"Set up Switch Control\" or \"Adjust Switch Control settings\"); the scanning styles are in Step 3, \"Choose a scanning style\", and the other settings in Step 4, \"Fine-tune Switch Control settings\". Auto Scanning is \"the default scanning style\". Step 4 also lists Long Press, Scan Same Key After Tap, Always Tap Keyboard Keys, Extended Predictions, Sound Effects, Speech, Menu Items, Group Items, Large Cursor, Cursor Color, Saved Gestures and Confirm with Switch Control. The iOS 26 version of this page (…/26/ios/26) has the same paths and wording in Steps 3 and 4. The only difference is the Accessibility Shortcut tip, which names iPhone Duo and iPhone SE in iOS 27."
+    },
+    {
+     "id": "R11",
+     "claim": "Tap Behavior's Auto Tap: a second switch action within the Auto Tap interval shows the Scanner menu instead of tapping (iOS 27 guide; support article 119835).",
+     "status": "confirmed",
+     "apple_says": "iPhone User Guide (iOS 27), \"Set up and turn on Switch Control on iPhone\": \"Tap Behavior: Choose a tap behavior and set the interval for performing a second switch action to show the Scanner menu.\" Support article 119835: \"Turn on Auto Tap at Settings > Accessibility > Switch Control > Tap Behavior > Auto Tap. After you turn on Auto Tap, you can select an item and wait for the Auto Tap interval to finish.\" and \"If you turned on Auto Tap, use your switch within the Auto Tap interval, then select the gesture.\"",
+     "url": "https://support.apple.com/en-us/119835",
+     "correct_version": "",
+     "notes": "Also quoted: https://support.apple.com/guide/iphone/set-up-and-turn-on-switch-control-iph400b2f114/27/ios/27. Neither page says \"instead of tapping\" in so many words. Taken together they say the same thing: if you wait out the interval, the item is tapped; if you use the switch again within it, the menu opens and you pick the gesture. Article 119835 (published May 20, 2026) calls it \"the control menu\" or \"the menu that appears\". The iOS 27 guide calls it the \"Scanner menu\". The article gives the path as Settings > Accessibility > Switch Control > Tap Behavior > Auto Tap."
+    },
+    {
+     "id": "R12",
+     "claim": "Focused Item After Tap: the names of its choices (resume scanning at the item tapped, or start from the beginning). Quote Apple's words.",
+     "status": "confirmed",
+     "apple_says": "iPhone User Guide (iOS 27), \"Set up and turn on Switch Control on iPhone\": \"Focused Item After Tap: Choose whether Switch Control resumes scanning at an item you tap or from the beginning.\" Support article 119835: \"Choose whether Switch Control resumes scanning at an item you tap or from the beginning\".",
+     "url": "https://support.apple.com/guide/iphone/set-up-and-turn-on-switch-control-iph400b2f114/27/ios/27",
+     "correct_version": "",
+     "notes": "Apple confirms the two behaviours but gives no on-screen labels for the choices. The iPhone, iPad, iPod touch and Apple Vision Pro guides and article 119835 all use only the sentence quoted above. Describe the two behaviours in the document and do not present any label in quotation marks as Apple's."
+    },
+    {
+     "id": "R13",
+     "claim": "Switch Control's speech: a Speech setting in Switch Control's settings that speaks items as they are scanned. Quote its name and path.",
+     "status": "confirmed",
+     "apple_says": "iPhone User Guide (iOS 27), \"Set up and turn on Switch Control on iPhone\", Step 4: \"Go to Settings > Accessibility > Switch Control, then adjust any of the following: ... Speech: Speak items as they’re scanned.\" The step's introduction also says: \"you can change the scanning speed or have iPhone speak the highlighted items.\"",
+     "url": "https://support.apple.com/guide/iphone/set-up-and-turn-on-switch-control-iph400b2f114/27/ios/27",
+     "correct_version": "",
+     "notes": "The setting is named \"Speech\", at Settings > Accessibility > Switch Control > Speech. Article 119835 says the same thing in other words: \"Turn on sound effects or have items read aloud as they are scanned\". The iOS 26 guide has the same wording."
+    },
+    {
+     "id": "R14",
+     "claim": "Apple developer page \"Performing accessibility testing for your app\" says: \"A user can perform all tasks within your app using only Switch Control.\"",
+     "status": "confirmed",
+     "apple_says": "\"Performing accessibility testing for your app\" (Accessibility framework article), section \"Diagnose and address accessibility issues\", under \"Switch Control:\": \"A user can perform all tasks within your app using only Switch Control.\"",
+     "url": "https://developer.apple.com/documentation/accessibility/performing-accessibility-testing-for-your-app.md",
+     "correct_version": "",
+     "notes": "The page presents this as a list item in a checklist, after the line \"You can use the following list as a starting point for ensuring that your app provides a good experience in various accessibility categories.\" Two more items follow it: \"Switch Control can output all information in the app.\" and \"For each item in the UI, Switch Control reports the UI element name and status correctly.\" The same page says to \"Install your app on a physical device, since Switch Control isn’t available on Simulator.\""
+    },
+    {
+     "id": "R15",
+     "claim": "Group Items: \"Group items for faster navigation\". Quote what the guide says scanning does with groups.",
+     "status": "confirmed",
+     "apple_says": "iPhone User Guide (iOS 27), \"Set up and turn on Switch Control on iPhone\": \"Group Items: Group items for faster navigation.\" On \"Use Switch Control on iPhone to select items, perform actions, and more\" (iOS 27): \"Item mode: The cursor sequentially highlights items or groups of items.\"; \"If using Auto Scanning: Watch or listen as groups of items are sequentially highlighted.\"; \"When the group you want is highlighted ... Activate your Select Item switch.\"; \"Repeat steps 1 and 2 to scan and select an item within the group.\"",
+     "url": "https://support.apple.com/guide/iphone/select-items-perform-actions-and-more-iph8de250c54/27/ios/27",
+     "correct_version": "",
+     "notes": "The \"Group Items\" wording is from https://support.apple.com/guide/iphone/set-up-and-turn-on-switch-control-iph400b2f114/27/ios/27. With Single Switch Step Scanning, the guide says to \"Wait until the current group is automatically selected.\" Article 119835 (https://support.apple.com/en-us/119835) adds: \"When you select a group, highlighting continues with the items in the group.\" and \"To exit a group, use your switch when the dashed highlight around the group or item appears.\" It also lists \"Set whether items should be grouped while item scanning\" among the settings, and \"Turn off groups to scan items one at a time\" in the control menu's Settings. The iOS 26 guide has the same wording on groups."
+    },
+    {
+     "id": "R16",
+     "claim": "Personal Voice device support: Apple's iOS 27 iPhone guide names iPhone 15 Pro models and iPhone 16 models and later; the iPadOS 27 guide names iPad mini (A17 Pro) and iPads with M1 and later; support article 104993 lists iPhone 12 or later, iPad Air (5th generation) or later and iPad Pro 11-inch (3rd generation) or later. Quote each page's words.",
+     "status": "confirmed",
+     "apple_says": "iPhone User Guide (iOS 27), \"Record your Personal Voice on iPhone\": \"Personal Voice is available in English (U.S.), Mandarin Chinese (China mainland), and Spanish (Mexico) and is available on iPhone 15 Pro models, iPhone 16 models and later.\" iPad User Guide (iPadOS 27), \"Record your Personal Voice on iPad\": \"...is available on iPad mini (A17 Pro and later) and iPad models with M1 and later.\" Support article 104993, \"Create a Personal Voice on iPhone, iPad, or Mac\" (published October 13, 2025): \"iOS 17 or later / iPadOS 17 or later / macOS Sonoma 15 or later\", \"iPhone 12 or later\", \"iPad Air (5th generation) or later\", \"iPad Pro 11-inch (3rd generation) or later, 12.9-inch (5th generation) or later, or 13-inch (M4) or later\", \"Mac with Apple silicon\".",
+     "url": "https://support.apple.com/en-us/guide/iphone/record-your-personal-voice-iph51936468d/27/ios/27",
+     "correct_version": "Same substance; exact iPad wording is \"iPad mini (A17 Pro and later)\", not \"iPad mini (A17 Pro)\". Article 104993 also lists iPad Pro 12.9-inch (5th generation) or later, 13-inch (M4) or later and Mac with Apple silicon.",
+     "notes": "All three pages read 2026-11-04 (guide pages' metadata say os_version \"iOS 27\" / \"iPadOS 27\"). Other URLs: https://support.apple.com/en-us/guide/ipad/record-your-personal-voice-ipad474cabc0/27/ipados/27 and https://support.apple.com/en-us/104993. The pages disagree with each other: the iOS 27 / iPadOS 27 guides and apple.com/accessibility/features (footnotes 28-29: \"Personal Voice is available on iPhone 15 Pro models, iPhone 16 models and later, iPad mini (A17 Pro), iPad models with M1 and later, and Mac models with M1 and later\") name Apple Intelligence-class devices, while 104993 still lists the older iOS 17-era list. No Apple page read explains the difference (for example, whether older devices keep the older recording method). On iOS 26 and iPadOS 26 the guides' Personal Voice pages name no devices at all (\"Personal Voice is available on supported iPhone models and is not available in all languages\"). Settings path is the same in all: Settings > Accessibility > Personal Voice > Create a Personal Voice; a passcode must be set first."
+    },
+    {
+     "id": "R17",
+     "claim": "How long making a Personal Voice takes: does any Apple page give a time? (Support article 104993; Apple's iOS 26 \"All New Features\" list, which reportedly says \"in less than a minute, using only 10 recorded phrases\" on devices that support Apple Intelligence.) Quote what each says.",
+     "status": "confirmed",
+     "apple_says": "Apple's \"All New Features iOS 26\" PDF (Sept 2025), \"Faster and easier Personal Voice creation\": \"For users at risk of losing their ability to speak, Personal Voice uses on-device intelligence to create a smoother, more natural-sounding voice in less than a minute, using only 10 recorded phrases.\" Footnote 30: \"Available in English (US), Mandarin Chinese (China mainland), and Spanish (Mexico) on devices that support Apple Intelligence.\" Support article 104993 gives no time: \"you're asked read a series of sentences aloud\" ... \"Your recorded speech is then processed securely on device. You'll receive a notification when your Personal Voice is ready.\"",
+     "url": "https://www.apple.com/os/pdf/All_New_Features_iOS_26_Sept_2025.pdf",
+     "correct_version": "",
+     "notes": "apple.com/accessibility/features/ (Personal Voice section) says the same more precisely: \"Read through a series of 10 randomized phrases to record audio that can be used to generate a voice in under a minute that sounds similar to your own.\" and \"If you have difficulty pronouncing or reading full sentences, you can even create your Personal Voice using short, three-word phrases.\" So Apple's \"under a minute\" is the time to generate the voice from the 10 recorded phrases, not a total that includes recording. The iOS 27 and iPadOS 27 guide pages give no time. Support article 104993: https://support.apple.com/en-us/104993. apple.com/ios/ios-26/ itself now returns 404; the PDF was fetched from apple.com/os/pdf/."
+    },
+    {
+     "id": "R18",
+     "claim": "Siri in Silent mode: \"When you activate Siri with a button, Siri responds silently when iPhone is in Silent mode... When you activate Siri with your voice, Siri responds out loud.\" (iOS 27 guide.) Also which button starts Siri: side button on iPhones with Face ID, Home button on iPhones with one; top button or Home button on iPad.",
+     "status": "confirmed",
+     "apple_says": "iPhone User Guide (iOS 27), \"Turn on and activate Siri on iPhone\": \"Press and hold the side button (on an iPhone with Face ID or iPhone Duo) or press and hold the Home button (on iPhone SE).\" \"When you activate Siri with a button, Siri responds silently when iPhone is in Silent mode. When Silent mode is off, Siri responds out loud. When you activate Siri with your voice, Siri responds out loud.\" iPad User Guide (iPadOS 27): \"Press and hold the top button on an iPad with Touch ID, or press and hold the Home button on an iPad with a Home button.\" \"When you activate Siri with a button and iPad is muted, Siri responds silently. When you activate Siri with your voice, Siri responds out loud.\"",
+     "url": "https://support.apple.com/en-us/guide/iphone/turn-on-and-activate-siri-iph83aad8922/27/ios/27",
+     "correct_version": "",
+     "notes": "The iOS 27 guide adds iPhone Duo to the side-button case and names the Home-button iPhone as \"iPhone SE\"; the iOS 26 guide says \"On an iPhone with Face ID: Press and hold the side button. On an iPhone with a Home button: Press and hold the Home button.\" with the same Silent-mode sentence. On iPad Apple says \"muted\", not \"Silent mode\". The iPadOS 27 guide's top-button sentence literally says \"on an iPad with Touch ID\" and does not mention Face ID iPads. Both guides say this behaviour can be changed in Settings > Siri > Responses (\"Change how Siri responds\"). iPad page: https://support.apple.com/en-us/guide/ipad/turn-on-and-activate-siri-ipad4bce70ef/27/ipados/27"
+    },
+    {
+     "id": "R19",
+     "claim": "VoiceOver's Caption Panel: its path in Settings (Settings > Accessibility > VoiceOver > ...), and what it shows.",
+     "status": "confirmed",
+     "apple_says": "iPhone User Guide (iOS 27), \"Change your VoiceOver settings on iPhone\", section \"Adjust VoiceOver visuals\": \"Go to Settings > Accessibility > VoiceOver, then turn on any of the following: ... Caption Panel: The text spoken by VoiceOver is displayed at the bottom of the screen.\"",
+     "url": "https://support.apple.com/en-us/guide/iphone/change-your-voiceover-settings-iphfa3d32c50/27/ios/27",
+     "correct_version": "Settings > Accessibility > VoiceOver, then turn on Caption Panel (Apple puts it directly on the VoiceOver settings screen, no further submenu). It shows the text VoiceOver speaks at the bottom of the screen.",
+     "notes": "Identical wording in the iPadOS 27 guide (https://support.apple.com/en-us/guide/ipad/change-your-voiceover-settings-ipad67707d0d/27/ipados/27) and in the iOS 26 iPhone guide, so the path does not differ on iOS 26."
+    },
+    {
+     "id": "R20",
+     "claim": "Attention Aware Features (Settings > Accessibility > Face ID & Attention): keep the screen on (do not dim) while you look at it. Quote Apple.",
+     "status": "corrected",
+     "apple_says": "iPhone User Guide (iOS 27), \"Change Face ID and attention settings on iPhone\": \"iPhone can also reveal notifications and messages, keep the screen lit when you're reading, or lower the volume of alerts.\" \"Go to Settings > Accessibility > Face ID & Attention.\" \"Attention Aware Features: iPhone checks for attention before dimming the display, expanding a notification when locked, or lowering the volume of some alerts.\" iPad User Guide (iPadOS 27): \"Tap Face ID & Passcode.\" \"Have iPad check for attention before dimming the display, expanding a notification when locked, or lowering the volume of some alerts: Turn Attention Aware Features on or off.\"",
+     "url": "https://support.apple.com/en-us/guide/iphone/change-face-id-and-attention-settings-iph646624222/27/ios/27",
+     "correct_version": "On iPhone the claim is right: Settings > Accessibility > Face ID & Attention > Attention Aware Features; iPhone checks for attention before dimming, so it keeps the screen lit while you look. It only exists on devices with Face ID. On iPad, Apple's iPadOS 27 guide gives a different path, Settings > Face ID & Passcode > Attention Aware Features, and says only \"some iPad models\" with a TrueDepth camera do it. It does not stop Auto-Lock once you look away.",
+     "notes": "iOS 27 \"Keep the iPhone display on longer\": \"The iPhone display stays on while you're looking at it, but it dims and eventually locks (for your security) when you look away for a while.\" (https://support.apple.com/en-us/guide/iphone/keep-the-iphone-display-on-longer-iph7117338a8/27/ios/27). Support article \"About Face ID advanced technology\" (https://support.apple.com/en-us/102381) also gives the iPhone path Settings > Face ID & Passcode for Attention Aware Features. The iPhone guide notes \"These settings are turned off by default if you turn on VoiceOver when you first set up iPhone.\" The iOS 26 iPhone guide has the same path and wording as iOS 27. iPad page: https://support.apple.com/en-us/guide/ipad/change-face-id-and-attention-settings-ipad058b4a31/27/ipados/27"
+    },
+    {
+     "id": "R21",
+     "claim": "Settings > General > About shows the device's model name and the iOS version.",
+     "status": "confirmed",
+     "apple_says": "iPhone User Guide (iOS 27), \"Get information about your iPhone\": \"Tap General, then tap About. The items you can view include: Name, iOS software version, Model Name, Model Number...\" iPad User Guide (iPadOS 27): \"Tap General, then tap About. The items you can view include: Name, iPadOS software version, Model Name...\"",
+     "url": "https://support.apple.com/en-us/guide/iphone/get-information-about-your-iphone-iph3dd5fc7e/27/ios/27",
+     "correct_version": "",
+     "notes": "On iPad the version is labelled as the iPadOS software version. The iOS 26 guide lists \"iOS software version\" and \"Model name\" in the same place. iPad page: https://support.apple.com/en-us/guide/ipad/get-information-about-your-ipad-ipad63858994/27/ipados/27"
+    },
+    {
+     "id": "R22",
+     "claim": "Guided Access: \"Crash Detection and Emergency Services aren't available while using Guided Access.\" (iOS 27 guide.)",
+     "status": "confirmed",
+     "apple_says": "iPhone User Guide (iOS 27), \"Lock iPhone to one app with Guided Access\": \"Important: Crash Detection and Emergency Services aren't available while using Guided Access. Exit Guided Access to use Crash Detection or to make emergency calls.\"",
+     "url": "https://support.apple.com/en-us/guide/iphone/lock-iphone-to-one-app-iph7fad0d10/27/ios/27",
+     "correct_version": "",
+     "notes": "The iOS 26 iPhone guide has the same sentence. The iPadOS 27 Guided Access page (https://support.apple.com/en-us/guide/ipad/lock-ipad-to-one-app-ipada16d1374/27/ipados/27) does not contain it. The iOS 27 page also names the session settings Side Button, Volume Buttons, Motion, Software Keyboards, Pose Changes and Display Changes (iPhone Duo), Touch and Time Limit, and Display Auto-Lock in Guided Access settings."
+    }
+   ]
   }
  ]
 }

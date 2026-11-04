@@ -835,7 +835,9 @@ what passes and who checks it:
   the start; battery used per hour is recorded at touch's and at Eye
   Tracking's setup; and no resource report for Brickson (an
   `EXC_RESOURCE` report for CPU, memory, disk writes or wakeups, or a
-  `JetsamEvent` report naming it) appears in Settings > Privacy &
+  `JetsamEvent` report in which it is the process jettisoned, the one
+  with a `reason` key, since every such report lists every running
+  process) appears in Settings > Privacy &
   Security > Analytics & Improvements > Analytics Data.
   *Attached, by a thread on the Mac:* with the device connected to
   Xcode, memory stays out of the memory gauge's warning region and

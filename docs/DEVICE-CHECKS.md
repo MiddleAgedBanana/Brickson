@@ -10,9 +10,10 @@ and gate to its procedure.
 It follows the 2026-10-26 Settings procedure
 ([`log/2026-10-26-settings-simulator-checks.md`](log/2026-10-26-settings-simulator-checks.md#environment-and-settings-for-the-physical-run)),
 which stays the detailed procedure for Settings by a stray dwell (F4).
-Every Apple setting path and tool claim here was checked against
-Apple's own pages on 2026-11-04; the record of that check, with what
-Apple does not say, is
+The Apple setting paths and tool claims listed in
+[`evidence/2026-11-04-device-procedures/apple-claims.json`](evidence/2026-11-04-device-procedures/apple-claims.json)
+were checked against Apple's own pages on 2026-11-04; the record of
+that check, with what Apple does not say, is
 [`log/2026-11-04-device-procedures.md`](log/2026-11-04-device-procedures.md).
 
 ## Who does each step
@@ -58,14 +59,17 @@ that ships. Every record names its build.
 
 The checks already waiting come first, because they decide open design
 questions before any larger-size build goes to App Review (docs/ROADMAP.md,
-*The quality bar*, Q2, Q12 and Q13).
+*The quality bar*, Q2, Q12 and Q13). Q4 puts sound first; here the dwell
+checks run before it because they decide those questions, and Q4
+passes only once S1 to S6 have passed. The order of sessions changes no
+pass or fail.
 
 | When | What | Who | About how long |
 |---|---|---|---|
 | Once, before anything | *Before any check* | Owner, with a thread | An hour |
 | Any day the device is on the cable | A1, Brickson's UI tests on the device | Agent | One to two hours per device, unattended |
 | First session | F1 Snap to Item and Dwell measured, then F2 the three dwell hazards, then F4 Settings by a stray dwell | Owner | Two to three hours with rests |
-| Second session | F3 the floors | Owner, then the testers | About two hours |
+| Second session | F3 the floors | Owner (the testers repeat its list in the pilot) | About two hours |
 | Then, in any order | Sound (S1 to S6), Personal Voice (P1 to P5), every input method (I1 to I7), windows (W1 to W4), Apple's doors (G1 to G5), look (L1 to L4) | Owner, some with an agent | A session each |
 | On the release candidate | A2 to A4, M1 to M3 | Agent and owner | A day for M3 |
 | Through TestFlight | The long sessions (I7), H1 to H6 | Owner, then the testers | Weeks |
@@ -83,12 +87,13 @@ anything that breaks only on hardware before the owner spends time on it.
   call the device, for the sound checks. Wired or Bluetooth headphones,
   for S4.
 - **Owner:** for every agent run, the Mac with the checkout at
-  `~/code/brickson`, the device's Team ID in `project.yml`'s
-  `DEVELOPMENT_TEAM` line (a local change, never committed;
-  docs/GETTING_STARTED.md), the cable, and Developer Mode on the device:
-  Settings > Privacy & Security > Developer Mode, which appears only
-  once the device has been paired with the Mac. Turning it on asks to
-  restart; after the restart, tap Enable and enter the passcode.
+  `~/code/brickson`, your Apple Developer Team ID (docs/GETTING_STARTED.md,
+  *Run it on your own iPhone or iPad*, step 1) in `project.yml`'s
+  `DEVELOPMENT_TEAM` line (a local change, never committed), the cable,
+  and Developer Mode on the device: Settings > Privacy & Security >
+  Developer Mode, which appears once pairing with the Mac has started
+  (or if the device was paired before). Turning it on asks to restart;
+  after the restart, swipe up, tap Enable and enter the passcode.
 
 ### Keep the repository's rules
 
@@ -121,11 +126,18 @@ The repository is public. Before anything leaves a device:
   text size; light or dark; Bold Text, Increase Contrast, Reduce
   Transparency and Display Zoom; and, for a mounted device, the distance
   and the light.
-- **Thread:** turns the notes, recordings and traces into one
-  `docs/log/` record per session (the template is `docs/log/README.md`),
-  in a docs pull request, and edits the row's summary in
-  docs/HANDOFF.md, *Checks that need a real device*, and the gate's
-  *Today* line in docs/ROADMAP.md, *The quality bar*.
+- **Both devices.** Unless a step names one device, run it on the iPhone
+  and on the iPad. A row whose steps run on both passes, and counts
+  toward Q4, only when it passed on both, and the record names each
+  device's result. Where a device cannot run a step (no folding iPhone,
+  no Create a Personal Voice offered), the step is UNVERIFIED for that
+  device, with the reason.
+- **Thread:** turns the notes, recordings and traces into a docs pull
+  request with one new `docs/log/` record (AGENTS.md, *Workflow rules*;
+  the template is `docs/log/README.md`), one section per session when it
+  covers several. It edits the row's summary in docs/HANDOFF.md,
+  *Checks that need a real device*, and, when a gate's state changes,
+  that gate's *Today* line in docs/ROADMAP.md, *The quality bar*.
 
 ### Mount the device
 
@@ -191,13 +203,15 @@ iPad guides for iOS 26 and 27.
 - **Switch Control:** Settings > Accessibility > Switch Control >
   Switches > Add New Switch, then choose the source (External, Screen,
   Camera, Back Tap, Sound or AirPod Gestures) and the action (Select Item
-  for Auto Scanning, the default). The scanning style is in Scanning
-  Style (Auto Scanning, Manual Scanning, Single Switch Step Scanning);
-  the same screen lists Auto Scanning Time, Pause on First Item, Loops,
-  Move Repeat, Group Items ("Group items for faster navigation"), Tap
-  Behavior (with Auto Tap), Focused Item After Tap ("resumes scanning at
-  an item you tap or from the beginning"), Hold Duration and Ignore
-  Repeat. Point scanning is Switch Control Mode > Gliding Cursor. In item
+  for Auto Scanning, the default). The scanning style is a screen of its
+  own, Scanning Style (Auto Scanning, Manual Scanning, Single Switch Step
+  Scanning). Switch Control's own screen lists Auto Scanning Time, Pause
+  on First Item, Loops, Move Repeat, Group Items ("Group items for faster
+  navigation"), Tap Behavior (with Auto Tap), Focused Item After Tap
+  ("resumes scanning at an item you tap or from the beginning"), Hold
+  Duration and Ignore Repeat; turn Switch Control on at the top of that
+  screen, once the Accessibility Shortcut is set up. Point scanning is
+  Switch Control Mode > Gliding Cursor. In item
   mode, selecting an item opens the Scanner menu, where Tap activates
   it; with Group Items on, the first selection picks a group. Note Tap
   Behavior and Group Items in every record.
@@ -228,7 +242,10 @@ the largest sizes it holds, so the same answer can give different sizes
 on different windows (docs/DECISIONS.md, "Sizes that follow how the
 screen is reached"). The change shows when Settings closes. Note the
 answer; a thread works out which sizes the window took from the A1
-run's frames or the layout engine.
+run's frames or the layout engine. With one category chosen in the
+second step ("Which phrases does Home show?"), the rest board, Home asks
+for the late stage's sizes whatever the first answer is: keep Every
+Category chosen except in F3 step 4, and check it before each session.
 
 ### The look-target sheet
 
@@ -262,7 +279,7 @@ Several checks ask the owner to rest a look on exact points.
   use their own storage, never the phrases on the device; and they speak
   aloud.
 
-## First session: the checks already waiting
+## The checks already waiting
 
 ### F1. Snap to Item and Dwell, measured
 
@@ -329,15 +346,15 @@ Steps:
    Step the dwell time one Increment or Decrement and repeat, until the
    shortest value at which reading for a minute fires nothing; then do
    the same with Movement Tolerance. Note each value as shown.
-8. **Owner:** repeat steps 1 to 5 with Head Tracking, and, where a mouse
-   is at hand, with AssistiveTouch Dwell (noting whether Snap to Item
-   was offered).
+8. **Owner:** repeat steps 1 to 5 and step 7 with Head Tracking, and,
+   where a mouse is at hand, steps 1 to 5 with AssistiveTouch Dwell
+   (noting whether Snap to Item was offered).
 
-*Recorded when* every step has a result for Eye Tracking and Head
-Tracking. **Thread:** rescores the chain engine with the measured rule
-and pointer, lists which findings bind, and changes Family Setup's
-guides to recommend the measured dwell time and tolerance, in a pull
-request.
+*Recorded when* steps 1 to 7 have a result for Eye Tracking, and steps
+1 to 5 and 7 for Head Tracking. **Thread:** rescores the chain engine
+with the measured rule and pointer, lists which findings bind, and
+changes Family Setup's guides to recommend each method's measured dwell
+time and tolerance, in a pull request.
 
 ### F2. The three dwell hazards
 
@@ -347,7 +364,7 @@ is nearest Again; by centre, dimmed phrases border Clear and Put Back
 and "Typing on Home").*
 
 Set-up: as F1, with Dwell Control on, the sheet's points for each
-hazard, the volume comfortable for the room, and Stop Alert in reach.
+hazard, the volume comfortable for the room, and Stop in reach.
 Run each hazard on the iPad in portrait and landscape, and on the
 mounted iPhone, where they are largest: on regular widths Emergency sits
 above Stop's well, so the second hazard shows only on compact widths.
@@ -360,7 +377,7 @@ above Stop's well, so the second hazard shows only on compact widths.
    else does: note the point, what fired and how many times in each
    30 seconds.
 2. **The top of Stop's well is nearest Again. Owner.** Dwell on Get
-   Attention, then on Stop Alert. After Stop Alert, keep looking where it
+   Attention, then on Stop. After Stop, keep looking where it
    was for ten seconds. Then, with nothing sounding, rest the look on
    the top of the empty well for ten seconds. Repeat each five times.
    *Passes* when Again never fires (the look should meet a category or
@@ -388,23 +405,36 @@ late-stage sizes. The switch, head and late-stage floors are proposals
 until this passes (docs/DECISIONS.md, "Sizes that follow how the screen
 is reached" and "The late-stage profile").*
 
-1. **Agent:** writes a fixed list of 60 activations on the sheet: every
-   phrase tile of two categories, every category, Yes, No, Again,
-   Emergency and back, Type and Phrases, Get Attention and Stop Alert
-   twice, in a set order.
-2. **Owner:** for each of Eye Tracking, Head Tracking, and Switch
-   Control's Gliding Cursor: answer that method in Family Setup, close
-   Settings, and make the 60 activations, at the default text size and
-   again at AX3. Count a **miss** whenever an activation lands on another
-   control, needs a second try, or does not happen.
-3. **Owner:** choose the rest board (Set Up Step by Step's second step,
-   "Which phrases does Home show?", one everyday category) and make the
-   list's activations that the board shows, with Eye Tracking. Choose
-   Every Category afterwards.
-4. *Passes* for a profile when there are at most 2 misses in 60 (fewer
-   than 1 in 20). Otherwise the owner changes that profile's floors and
-   it runs again.
-5. **Owner:** confirms or changes the switch, head and late-stage
+1. **Agent:** writes a fixed list of activations on the sheet, in a set
+   order: every phrase tile of two categories, every category, Yes, No,
+   Again, Emergency and back, Type and Phrases, Get Attention and Stop
+   twice. With the starter library that is about 31, so the list
+   then starts again from the top until it holds exactly 60. The sheet
+   is made at AX3 as well as the default text size.
+2. **Thread:** before any run counts, confirms from A1's frames or the
+   layout engine that the mounted iPad, in portrait with Bold Text off,
+   takes the profile under test at each text size (*Choose Home's
+   sizes*), and the late stage's sizes for step 4. A run on a window
+   that took other sizes does not count: that profile and text size is
+   UNVERIFIED on this iPad, and runs again on an iPad or orientation
+   that takes it.
+3. **Owner:** on the mounted iPad, in portrait with Bold Text off, for
+   each of Eye Tracking, Head Tracking, and Switch Control's Gliding
+   Cursor: answer that method in Family Setup, close Settings, and make
+   the 60 activations, at the default text size and again at AX3. Count
+   a **miss** whenever an activation lands on another control, needs a
+   second try, or does not happen.
+4. **Owner:** on the same iPad, choose the rest board (Set Up Step by
+   Step's second step, "Which phrases does Home show?", one everyday
+   category) and, with Eye Tracking, make the list's activations that
+   the board shows, starting again from the top until there are 60.
+   Choose Every Category afterwards.
+5. *Passes* for a profile when, in each run of 60 on its own (each
+   text size, and the rest board), the misses times 20 are fewer than
+   the activations made: at most 2 misses in each 60 (fewer than 1 in
+   20). Otherwise the owner changes that profile's floors and it runs
+   again.
+6. **Owner:** confirms or changes the switch, head and late-stage
    floors, and the late stage's 4-degree growth, in words the thread
    records in docs/DECISIONS.md. The testers run the same list during the
    pilot.
@@ -472,12 +502,19 @@ everything else on hardware.*
    first frame"
    ([Reducing your app's launch time](https://developer.apple.com/documentation/xcode/reducing-your-app-s-launch-time)).
    From Terminal, `xcrun xctrace record` takes `--template`; read
-   `xcrun xctrace help record` on the Mac for its device and launch
-   options, which Apple's web pages do not show.
-2. **Agent:** five launches, each with Brickson ended first.
-3. *Passes* when every launch reaches its first frame within 400 ms (the
-   goal from Apple's WWDC19 session "Optimizing App Launch"). The record
-   keeps the median and the slowest as the next release's baseline.
+   `xcrun xctrace help record` on the Mac for its launch option and its
+   exact device flag. Apple's pages show only `--device-name` and
+   `--attach` (WWDC22).
+2. **Owner then Agent:** five cold launches. Before each, the owner
+   restarts the device and unlocks it, and the agent then launches
+   Brickson under App Launch. Apple calls a launch right after the
+   device is switched on and unlocked a cold launch, and one after the
+   app was force-quit a warm launch. Launches made
+   after only ending Brickson are recorded apart, as warm.
+3. *Passes* when every cold launch reaches its first frame within 400 ms
+   (the goal from Apple's WWDC19 session "Optimizing App Launch"). The
+   record keeps the median and the slowest of each kind as the next
+   release's baseline.
 4. Apple's pages do not say whether Instruments can attach to a
    TestFlight build. If it cannot, the build profiled is the same commit
    in the Release configuration, signed for development, and the record
@@ -485,12 +522,18 @@ everything else on hardware.*
 
 ### A3. Hangs (Q5)
 
-1. **Agent:** records a trace with the Hangs instrument, set to 100 ms,
-   on the oldest device at hand. The Hangs instrument is part of the
-   Time Profiler, CPU Profiler and Hitches templates; its threshold is
-   250 ms in Time Profiler and can be set lower. Xcode 27's `xcrun
+1. **Agent:** records a trace with the Hangs instrument on the oldest
+   device at hand, its Reporting Threshold (in the Hangs section of the
+   recording options) set to Include Brief Unresponsiveness (more than
+   100 ms), not the default, Include Microhangs (more than 250 ms). The
+   Hangs instrument is
+   part of the Time Profiler, CPU Profiler and Hitches templates and
+   reports more than 250 ms by default; Apple's Instruments tutorial
+   ("Reducing main thread work by doing less") shows four thresholds:
+   more than 500 ms, 250 ms (Include Microhangs), 100 ms (Include Brief
+   Unresponsiveness) and 33 ms. The current Xcode release's `xcrun
    xctrace record --show-recording-options` prints each instrument's
-   options, which is where the threshold's name is read.
+   options, which is where the names are read from the command line.
 2. **Owner:** makes 100 activations while it records, from a list the
    thread gives (phrases from every category, Yes, No, Again, Emergency
    and back, Type, a typed word, Speak, Phrases). A UI test could make
@@ -499,6 +542,8 @@ everything else on hardware.*
    than 100 ms. Apple: "100 ms is the maximum delay for discrete user
    interaction before a delay becomes noticeable"
    ([Improving app responsiveness](https://developer.apple.com/documentation/xcode/improving-app-responsiveness)).
+   If 100 ms cannot be chosen in the Xcode in use, the record names the
+   threshold used and this step is UNVERIFIED, not passed.
 4. **Owner:** through the whole TestFlight period, keeps the device's
    own Hang Detection on (Settings > Developer > Hang Detection, Hang
    Threshold at its shortest, 250 ms), which works for development and
@@ -517,20 +562,30 @@ everything else on hardware.*
    **Agent:** marks a generation after each set (Allocations' Mark
    Generation).
 3. *Passes* when memory never enters the gauge's yellow region (Apple:
-   "memory use high enough to trigger a warning"), and no generation
-   after the first keeps memory the first released (any growth is
-   explained or fixed).
+   "memory use high enough to trigger a warning"), and generations 2 to
+   5 show no memory that persists. Any growth fails until it is fixed,
+   or until the owner accepts it as a named exception in
+   docs/DECISIONS.md.
 4. **Agent:** reads the device's thermal condition in the Energy Impact
    view's timeline (Debug navigator > Energy Impact). *Passes* when it
    never reaches serious, which Apple says "reduces performance".
 
 ## Sound (Q4)
 
-All by ear, so all the owner's. Where a step names the log, a thread
-with the device attached to the Mac reads Brickson's log in the Mac's
-Console app (the device chosen in its sidebar, with info messages
-included, searched for Brickson's bundle identifier); the log never
-holds a person's words.
+All by ear, so all the owner's. Where a step names the log, the
+**Owner**, at the Mac with the device on the cable, starts the log
+before the step (Console is worked by clicking, so this is the owner's
+unless a thread on the Mac can operate its screen): in the Mac's
+Console app, select the device in
+the Devices list, choose Action > Include Info Messages, click Start in
+the toolbar, and search for Brickson's bundle identifier, its log's
+subsystem. Afterwards, select the messages, copy them with Command-C,
+and paste them into a plain-text file in `private/device-checks/` (or
+a thread on the Mac writes the clipboard there with `pbpaste`). The
+**Thread** reads that file. Apple's guide does not say whether Console
+shows a device's messages from before Start, so a log not streamed
+during the step is UNVERIFIED, not a pass. The log never holds a
+person's words.
 
 ### S1. Silent mode, and after a call
 
@@ -544,19 +599,31 @@ holds a person's words.
 ### S2. Calls, Siri and alarms, during a phrase and during Get Attention
 
 1. **Owner:** speak a long phrase and, while it speaks, (a) call the
-   device from the second phone, (b) start Siri (say "Siri" or "Hey
-   Siri", or hold the side button), and (c) let a Clock timer set a
-   minute earlier go off. Then do the same while Get Attention sounds.
+   device from the second phone, (b) start Siri by voice ("Siri" or
+   "Hey Siri"; if by a button instead, note which: the side button on
+   an iPhone with Face ID, the Home button where there is one, or the
+   top button on an iPad, which Apple names for iPads with Touch ID.
+   Apple says Siri started by a button answers silently in Silent mode
+   on an iPhone, or when an iPad is muted), and (c) let a Clock timer
+   set a minute earlier go off. Then
+   do the same while Get Attention sounds.
 2. *Passes* when each stops the sound, Home shows "Stopped — Again"
    (a phrase) or "Alert stopped" (Get Attention), Again or Get Attention
    brings it back, and **nothing restarts by itself** when the call,
    Siri or the alarm ends.
-3. On iOS 26 and on iOS 27, where devices on both are at hand; the
-   record names which.
+3. On iOS 26 and on iOS 27. With only one at hand, the record names
+   it, the other is UNVERIFIED and the row stays open. The record also
+   says whether Silent mode (on an iPad, mute) was on and how Siri was
+   started.
 4. **Thread:** from the log during (a): whether the system reported the
    cut-off phrase as finished ("A phrase was reported finished before
    its final word"), for the row on how often the 3-second window is
    relied on.
+5. **Owner:** speak several phrases to the end, uninterrupted, in the
+   default voice, a Personal Voice and each other voice offered.
+   **Thread:** for each voice, reads the log for "A phrase was reported
+   finished before its final word", for the row on whether a voice
+   reports its final word before finishing.
 
 ### S3. Locked
 
@@ -568,11 +635,15 @@ holds a person's words.
 
 1. **Owner:** with headphones in, speak a long phrase and unplug them
    (or switch Bluetooth headphones off). *Passes* when speech carries on
-   from the speaker. Then start Get Attention and do the same: *passes*
-   when the alarm stops and Home says so.
-2. **Owner:** start Get Attention and connect and disconnect Bluetooth
-   headphones five times. *Passes* when the alarm never stops except
-   when its output is lost. **Thread:** reads the log for "The Get
+   from the speaker or, if it stops, Home shows "Stopped — Again" and
+   Again speaks the phrase; note which happened. Then start Get
+   Attention and do the same: *passes* when the alarm stops and Home
+   says so.
+2. **Owner:** start Get Attention and connect Bluetooth headphones,
+   then disconnect them, restarting Get Attention after every
+   disconnect; five times. *Passes* when the alarm stops only at a
+   disconnect, never on connecting or with no change of output.
+   **Thread:** reads the log for "The Get
    Attention tone player stopped by itself" or "went quiet without a
    report", which would mean the health check needs a second look.
 
@@ -592,10 +663,14 @@ holds a person's words.
 
 1. **Owner:** put Brickson in the background, turn the volume right
    down, and come back. *Passes* when Home shows the low-volume line at
-   once ("Volume low").
-2. **Owner:** with VoiceOver on, repeat step 1, and cut a phrase off
-   with a call. *Passes* when VoiceOver announces each once, in full,
-   without moving its focus.
+   once ("Volume low"). Then, with that line showing, put Brickson in
+   the background, raise the volume well above a fifth, and come back.
+   *Passes* when the line is gone at once.
+2. **Owner:** with VoiceOver on, repeat step 1, lowering the volume to
+   one or two steps above silent (below a fifth, so "Volume low" shows
+   and VoiceOver can still be heard), and cut a phrase off with a call.
+   *Passes* when VoiceOver announces each once, in full, without moving
+   its focus.
 
 ## Speed and stamina
 
@@ -612,18 +687,22 @@ holds a person's words.
 3. **Thread:** reads the recording frame by frame on the Mac: for each
    activation, the frame where the press ends and the first sound of the
    phrase. The record says how each was found.
-4. *Passes* when the default voice's median is within half a second. A
-   Personal Voice's median over half a second goes to the owner with
+4. *Passes* when, on the iPhone and on the iPad, the default voice's
+   median is within half a second; the record gives a median for each
+   device and voice. A Personal Voice's median over half a second goes
+   to the owner with
    what the app can change and what iOS's own synthesis takes. No later
    release's median may be more than 50 ms slower than the last.
 
 ### M2. It opens as it was, with no flash (Q7)
 
-1. **Owner:** record the screen while opening Brickson from the Home
-   Screen, once in the light appearance and once in the dark.
-   **Thread:** steps through the frames. *Passes* when no
-   frame before Home shows bright content in dark, and the launch is
-   whole in light.
+1. **Owner:** close Brickson in the App Switcher (swipe it up), then
+   record the screen while opening it from the Home Screen, once in the
+   light appearance and once in the dark. **Thread:** steps through the
+   frames and confirms the launch screen appears in them; a recording
+   without it is UNVERIFIED. *Passes* when, in each appearance, every
+   frame before Home matches that appearance's background: no dark frame
+   in light, no bright frame in dark.
 2. **Owner:** type "test" on Home and put Brickson in the background.
    **Agent:** ends Brickson's process from the Mac with `devicectl` (its
    `device process` commands, read with `devicectl help device process`),
@@ -643,13 +722,20 @@ holds a person's words.
    four with touch's answer, the last four with Eye Tracking on and its
    answer (end Guided Access to turn Eye Tracking on, then start it
    again; the trace keeps running). Note the battery level every hour.
-   Then the iPhone, for four hours, at touch's answer.
+   A triple-click and the passcode end Guided Access. Then the iPhone,
+   for four hours, at touch's answer, without Guided Access: Apple's
+   iPhone guide says emergency calls and Crash Detection are not
+   available during it.
 3. *Passes* when the screen never dims or locks; at the end every
    control works as at the start (speak a phrase, Yes, No, Emergency
-   and back, Get Attention and Stop Alert, type and speak); and
+   and back, Get Attention and Stop, type and speak); and
    Settings > Privacy & Security > Analytics & Improvements > Analytics
    Data lists no report for Brickson (crash reports start with the
-   app's name) and no JetsamEvent report naming it.
+   app's name), and no JetsamEvent report from the session in which
+   Brickson's entry has a `reason` key. Every JetsamEvent report lists
+   every running process; Apple: "Only the jettisoned process has the
+   reason key." **Owner:** shares each JetsamEvent report from the
+   session to the Mac by AirDrop; **Thread:** reads them.
 4. **Owner:** stop the trace, then share it from Settings > Developer >
    Performance Trace to the Mac by AirDrop. **Thread:** opens it in
    Instruments and records battery used per hour at each setup. Apple
@@ -674,8 +760,12 @@ holds a person's words.
 Personal Voice needs a passcode and a device that supports it: Apple's
 iOS 27 guide names iPhone 15 Pro models, iPhone 16 models and later, and
 its iPadOS 27 guide names iPad mini (A17 Pro and later) and iPads with M1
-and later. A voice is made in Settings > Accessibility > Personal Voice >
-Create a Personal Voice, by reading phrases aloud. Apps may ask to use it
+and later, while Apple's support article 104993 lists iPhone 12 or
+later, iPad Air (5th generation) or later, and iPad Pro 11-inch (3rd
+generation), 12.9-inch (5th generation) or 13-inch (M4) or later. What
+counts is whether the device offers Create a Personal Voice. A voice is
+made in Settings > Accessibility > Personal Voice > Create a Personal
+Voice, by reading phrases aloud. Apps may ask to use it
 only while Allow Apps to Request to Use is on, on the same screen. All
 of this is by ear and in the owner's own voice, so all of it is the
 owner's, and nothing in that voice is kept in the repository.
@@ -716,8 +806,10 @@ Settings").*
 
 ### P3. Restart, then open at once
 
-1. **Owner:** restart the device, unlock it, open Brickson at once and
-   activate a phrase straight away. *Passes* when Home appears without
+1. **Owner:** with the Personal Voice allowed and in use (as P2 leaves
+   it), or else a voice chosen in Voice Settings that clearly differs
+   from the system's default (note which), restart the device, unlock
+   it, open Brickson at once and activate a phrase straight away. *Passes* when Home appears without
    waiting and the phrase speaks at once (in the system's voice if the
    voice list has not arrived).
 2. **Owner:** keep activating a phrase every few seconds. Note how long
@@ -726,20 +818,28 @@ Settings").*
 
 ### P4. D5, two Personal Voices
 
-1. **Owner:** with two Personal Voices made, note the order Voice
-   Settings lists them in. Then relaunch Brickson, restore the device
-   from a backup if one is planned anyway, and turn on Share Across
-   Devices (same screen; it keeps a copy in iCloud). After each, note
-   whether Brickson still chose the same voice.
-2. **Thread:** where identifiers are needed, a debug build's log gives
-   them; none logs them today, so this step adds one first. This row is
-   the last to run: it needs a second voice, which takes an hour to make.
+1. **Owner:** with two Personal Voices made and one chosen in Voice
+   Settings, relaunch Brickson, restore the device from a backup if one
+   is planned anyway, and turn on Share Across Devices (same screen; it
+   keeps a copy in iCloud). After each, note whether Brickson still
+   chose the same voice. Until a restore is done, that part is
+   UNVERIFIED and the row stays open.
+2. **Thread:** a debug build's log prints the order of the system's
+   voice list with each Personal Voice's identifier, and that order is
+   the system's (Voice Settings sorts them by name); none logs them
+   today, so this step adds one first. This row is the last to run: it
+   needs a second voice, made by reading phrases aloud and processed on
+   the device (Apple's iOS 26 feature list says under a minute from 10
+   phrases on devices with Apple Intelligence). Note how long it took.
 
 ### P5. Chosen once allowed, and on after locking
 
-1. **Owner:** on the shipping build, allow Personal Voice when iOS asks
-   at first launch. *Passes* when Automatic chooses it, a phrase speaks
-   in it, and a long phrase carries on after the device locks.
+1. **Owner:** on the shipping build, on a device where Brickson has
+   never been answered (delete it first if it has, only where it holds
+   nothing but the starter library), allow Personal Voice when iOS asks
+   at first launch. *Passes* when the Personal Voice is listed in Voice
+   Settings, Automatic chooses it, a phrase speaks in it, and a long
+   phrase carries on after the device locks.
 
 ## Every input method (Q14)
 
@@ -747,11 +847,16 @@ Apple's test, applied to every input method: "A user can perform all
 tasks within your app using only Switch Control." The tasks are
 docs/APP-STORE.md, section 4's common tasks. Each method below runs the
 **task list**: speak a phrase from every category; Yes; No; Again;
-Emergency and back; Get Attention and Stop Alert; Type, type "test",
-Speak, Clear, Put Back, Phrases; open Settings, Family Setup and Voice
-Settings, and leave by Back to Talking. Home's documented order is Yes,
+Emergency and back; Get Attention and Stop; Type, type "test",
+Speak, Clear, Put Back, Phrases; open Settings, Family Setup, Voice
+Settings and Privacy Policy (and close it), and leave by Back to
+Talking. First launch, with iOS's Personal Voice question, is a common
+task too, but it needs Brickson deleted first, which erases its
+library: each method does it once, on a device that holds only the
+starter library, and where that cannot be done it is UNVERIFIED for
+that method. Home's documented order is Yes,
 No, Emergency, Get Attention, Again, then the message, Phrases and Type,
-Stop Alert while it shows, the categories and Settings, then the phrases
+Stop while it shows, the categories and Settings, then the phrases
 (docs/DECISIONS.md, "Home's scan order and names").
 
 ### I1. Touch, slowly
@@ -766,10 +871,17 @@ and the Large Content Viewer on Home").*
    slide onto the next and lift; then the same with Touch Accommodations'
    Hold Duration on, and with AssistiveTouch Dwell. Then, in a window
    where Settings shows its gear alone, the gear steps the row lists.
+   **Thread:** names that window first, from A1's frames or the layout
+   engine (for example an iPad window narrowed in Stage Manager, or a
+   375-point-wide phone with Bold Text); if none is at hand, the gear
+   steps are UNVERIFIED.
 2. *Passes* when each press speaks, a slide says the control it began on
    or nothing, never the next, and a held press on the gear opens
    Settings or does nothing, never anything else. Record whether
    Settings opened on the held press and whether the large copy showed.
+3. **Owner:** the task list by touch, on the iPhone and the iPad.
+   *Passes* when every task is done and each control does what its
+   words say.
 
 ### I2. Voice Control
 
@@ -777,14 +889,17 @@ and the Large Content Viewer on Home").*
    each state: *passes* when each name shown is the control's visible
    words. "Show numbers": every control has one.
 2. **Owner:** the task list by "Tap" and each control's visible words,
-   then "Tap Repeat" (Again) and "Tap Help" (Get Attention). *Passes*
-   when each does what its words say.
+   then the other names: "Tap Repeat" (Again), "Tap Help" (Get
+   Attention) and "Tap Stop Alert" (Stop). *Passes* when each does what
+   its words say.
 3. **Owner:** "Tap Type", dictate a word into the message, "Tap Speak".
 
 ### I3. Full Keyboard Access
 
-1. **Owner:** from each Home state, press Tab and note the order.
-   *Passes* when it matches the documented order, and Space activates.
+1. **Owner:** from each Home state, press Tab and note the order, and
+   whether focus stops on the message or the status line. *Passes* when
+   the controls' order matches the documented order (judged on the
+   controls only), and Space activates.
 2. **Owner:** the task list from the keyboard.
 
 ### I4. VoiceOver
@@ -808,18 +923,26 @@ and the Large Content Viewer on Home").*
 
 ### I5. Switch Control
 
-1. **Owner:** Auto Scanning, Group Items off, Focused Item After Tap set
-   to start from the beginning. From each Home state (browsing, after a
-   phrase, Emergency, typing, Get Attention sounding), start scanning.
-   *Passes* when Yes, No and Emergency are the first three items. With
-   Group Items on: *passes* when they are in the first group offered,
-   and note whether Home's regions become groups.
+1. **Owner:** Auto Scanning, Focused Item After Tap set to start from
+   the beginning, and Speech on (Switch Control's own screen: "Speak
+   items as they're scanned"). From each Home state
+   (browsing, after a phrase, Emergency, typing, Get Attention
+   sounding), start scanning, with Group Items off and then on. Note the
+   whole scan order, whether the scan stops on the message or the status
+   line, and what is said on entering each group. *Passes* when Yes, No
+   and Emergency come first (the first three items, or the first group
+   offered) and the controls follow the documented order. Note whether
+   Home's regions become groups.
 2. **Owner:** with Tap Behavior's Auto Tap on, the task list. Note where
-   the scan goes after Stop Alert disappears.
-3. **Owner:** select a phrase twice quickly (a double activation).
-   *Passes* when it does not stutter. **Thread:** the log shows "Absorbed
-   repeat activation of the phrase still being spoken" when the second
-   arrived while the first spoke.
+   the scan goes after Stop disappears.
+3. **Owner:** set Focused Item After Tap to resume at the item tapped,
+   keep Auto Tap on and Ignore Repeat off, and note the settings. Select a long phrase and, once it is
+   tapped, select it again while it speaks. A second press within Auto
+   Tap's wait opens the Scanner menu instead (Apple), so wait for the
+   tap first. *Passes* when it does not stutter and the **Thread** finds
+   "Absorbed repeat activation of the phrase still being spoken" in the
+   log, streamed as *Sound (Q4)* describes; with no such line, the trial
+   is UNVERIFIED.
 4. **Owner:** the task list with Gliding Cursor (point scanning).
 5. A Mac's own Switch Control can control the iPhone or iPad on the same
    Wi-Fi and Apple Account (Apple: "Use Other Devices"), which lets the
@@ -835,8 +958,8 @@ and the Large Content Viewer on Home").*
 2. **Owner:** Get Attention from Home's own control, by touch, Dwell
    with Snap to Item, Switch Control and Voice Control ("Tap Help"):
    *passes* when it sounds with Silent mode on; a look held on Get
-   Attention never stops it; and a look still resting where Stop Alert
-   was after Stop Alert meets a category (F2 step 2 measures it).
+   Attention never stops it; and a look still resting where Stop
+   was after Stop meets a category (F2 step 2 measures it).
 3. **Agent then Owner:** which of the VoiceOver, Switch Control and
    AssistiveTouch flags each input method turns on. A thread writes an
    opt-in probe UI test that reports the system's flags (the test
@@ -893,10 +1016,18 @@ method, and typing checks 1 to 8 in
    Zoom on iOS 26), and at AX3 without it, where Type is dimmed: note
    whether the real keyboard would cover Speak or Get Attention (open
    Notes' keyboard at the same text size and compare).
-5. **Owner:** typing checks 1 to 8, as that record lists them; its
-   checks 3, 4 and 6's halves on Apple's keyboard need no Brickson build.
-   Check 7 needs Settings > Accessibility > Audio & Visual > Add Audio
-   in Calls.
+5. **Owner:** typing checks 1 to 8, as that record lists them; check 3,
+   the Apple-keyboard halves of checks 1 and 4, and the floating-keyboard
+   part of check 6 need no Brickson build (Notes or Live Speech). Check 7
+   needs Settings > Accessibility > Audio & Visual > Add Audio in Calls.
+   **Thread:** makes the throwaway builds checks 2, 4 and 8 need, as
+   that record describes them; they never ship.
+6. **Owner then Agent:** with another keyboard added and made current,
+   one with a candidate bar (Japanese or Chinese), open Type in each
+   orientation, or run A1's keyboard probe with it. **Thread:** records
+   the keyboard's top against the room `KeyboardAllowance` keeps. Until
+   this is done, keyboards in other languages stay unmeasured and the
+   row stays open.
 
 ## Windows and poses (Q10)
 
@@ -906,18 +1037,21 @@ method, and typing checks 1 to 8 in
    Full Screen Apps, Windowed Apps (alone and beside another app) and
    Stage Manager; Slide Over (iPadOS 26.2 or later: touch and hold the
    window controls, then Enter Slide Over); resize each window by its
-   bottom-right corner to its narrowest and widest; turn the device. On
-   the iPhone, Display Zoom on and off. In each, the keyboard shown and
-   hidden.
-2. *Passes* when nothing that calls for help (Yes, No, Emergency, Get
-   Attention, Again) is hidden, covered or split, and no control moves
-   between states. Note the narrowest width at which each passes.
+   bottom-right corner slowly from its narrowest to its widest, stopping
+   at every width where Home's arrangement or column count changes;
+   turn the device. On the iPhone, Display Zoom on and off. In each, the
+   keyboard shown and hidden.
+2. *Passes* when, at every width the window allows, nothing that calls
+   for help (Yes, No, Emergency, Get Attention and Again, and while
+   typing Speak and Phrases) is hidden, covered or split, and no control
+   moves between states. A width that fails is a FAIL, not a limit to
+   record.
 
 ### W2. A resize under a resting pointer
 
 1. **Owner:** Stage Manager, Eye Tracking, then AssistiveTouch Dwell,
-   each with Snap to Item. Drag the window's edge across the width where
-   Home changes between three and five columns. Note where the pointer
+   each with Snap to Item. Drag the window's bottom-right corner across
+   the width where Home changes between three and five columns. Note where the pointer
    is during and after, whether it stays or follows the look, and what it
    would activate when it comes to rest.
 2. *Recorded when* both methods have a result; a thread decides from it
@@ -956,8 +1090,15 @@ method, and typing checks 1 to 8 in
 
 ### G2. The buttons that open Settings
 
-1. **Owner:** choose Open Personal Voice Settings and Open Dwell Control
-   Settings. *Passes* when each opens its own page in the Settings app.
+1. **Owner:** Open Personal Voice Settings is in Brickson's Settings >
+   Family Setup > Voice Settings, and shows only while Brickson's
+   Personal Voice access is off (after Don't Allow, or with access
+   turned off as in P2 step 1), outside Assistive Access, and not on
+   the visit in which Ask to Use Personal Voice was chosen. Open Dwell
+   Control Settings is in Family Setup > Reaching the Screen, under Eye
+   Tracking and under Head Tracking. Choose each of the three. *Passes*
+   when the first opens Personal Voice's page and the others open Dwell
+   Control's, in the Settings app.
 2. **Agent:** a small UI test could tap each and read the Settings app's
    screen; not tried. Until it is, this is the owner's.
 
@@ -965,14 +1106,19 @@ method, and typing checks 1 to 8 in
 
 1. **Owner:** Settings > Accessibility > Guided Access, turn it on, set
    a passcode (Passcode Settings), turn on Accessibility Shortcut there,
-   and set Display Auto-Lock (on the same screen) to its shortest. Start it in Brickson with a
-   triple-click (Session Settings: leave Touch on). Apple: emergency
-   calls and Crash Detection are not available during Guided Access.
+   and set Display Auto-Lock (on the same screen) to its shortest. Start
+   it in Brickson with a triple-click (Session Settings: leave Touch
+   on). Apple's iPhone guide: emergency calls and Crash Detection are
+   not available during Guided Access.
 2. **Owner:** with each input method in turn (Eye Tracking first),
    run the task list.
-3. *Passes* when each input method works throughout, the screen never
-   locks while Brickson keeps it awake despite the short Display
-   Auto-Lock, and a triple-click and the passcode end the session.
+3. **Owner:** in a session with Display Auto-Lock at its shortest, set
+   the device down facing away from anyone and leave it untouched for
+   15 minutes, as in M4.
+4. *Passes* when each input method works throughout, the screen never
+   dims or locks during step 3's wait while Brickson keeps it awake
+   despite the short Display Auto-Lock, and a triple-click and the
+   passcode end the session.
 
 ### G4. Assistive Access
 
@@ -1011,9 +1157,10 @@ method, and typing checks 1 to 8 in
 ### L2. Show Borders
 
 1. **Owner:** Settings > Accessibility > Display & Text Size > Show
-   Borders. Screenshots of Home and Settings with it on, light and dark,
-   with and without Increase Contrast, and off in dark; one with a
-   button held down; one with a category selected and one in Emergency.
+   Borders. Screenshots of Home, Settings, and Family Setup with its
+   steps, with it on, light and dark, with and without Increase
+   Contrast, and off in dark; one with a button held down; one with a
+   category selected and one in Emergency.
 2. **Thread:** measures them. *Passes* when every Home control shows its
    border, a press thickens it, a selected category and Emergency show
    their inner ring, and Settings' system buttons show theirs.
@@ -1021,7 +1168,9 @@ method, and typing checks 1 to 8 in
 ### L3. Every label earned (Q23)
 
 1. **Owner:** the VoiceOver run (I4) and the Voice Control run (I2) of
-   every common task, on the iPhone and the iPad, logged.
+   every common task, on the iPhone and the iPad, logged. The VoiceOver
+   run is by someone proficient with VoiceOver (the owner if so,
+   otherwise a proficient tester), and the record says who, by role.
 2. **Owner:** Settings > Accessibility > Display & Text Size > Color
    Filters, on, Grayscale; walk every screen. *Passes* when nothing is
    told by colour alone.
@@ -1053,7 +1202,11 @@ method, and typing checks 1 to 8 in
    time each to speak a phrase (within a minute), find Emergency, and
    find where setup lives; a family member finishes Family Setup's first
    step without asking. Note every hesitation and where. No names in the
-   record.
+   record. The people are found before the external pilot.
+2. *Passes* when each of at least three people speaks a phrase within a
+   minute, finds Emergency and finds where setup lives, and the family
+   member finishes the first step without asking. The testers' first
+   sessions are a further check, not the pass.
 
 ### H3. Better than what families use (Q28)
 
@@ -1061,7 +1214,8 @@ method, and typing checks 1 to 8 in
    task by touch, Switch Control and Eye Tracking, in Brickson and in
    the leading AAC apps the owner can try (docs/ASO.md, *Competitors*).
    *Passes* when Brickson takes no more on every task both have, or the
-   owner accepts the difference with its reason.
+   owner accepts the difference with its reason, and the record says
+   where Brickson is better.
 
 ### H4. The phrases people reach for
 
@@ -1107,7 +1261,7 @@ first words:
 | Opening Settings by a stray dwell | F4 |
 | Each Family Setup guide's steps match the device | G1, G3, G4 |
 | Open Personal Voice Settings and Open Dwell Control Settings | G2 |
-| Each input method reaches every control | I2 to I6 |
+| Each input method reaches every control | I1 to I6 |
 | A Switch Control double activation | I5 |
 | How far Snap to Item jumps | F1 |
 | Whether Snap to Item and Dwell pick a target by its nearest centre or its nearest edge | F1, F2 |
@@ -1119,7 +1273,7 @@ first words:
 | A phrase spoken while Get Attention sounds | S5 |
 | A phone call, Siri and another app's alarm | S2 |
 | Lock the device during a long phrase | S3 |
-| Get Attention from Home's own control | I6, F2 |
+| Get Attention from Home's own control | I6, I5, F2 |
 | Whether a voice reports its final word before finishing | S2 |
 | Unplugging headphones | S4 |
 | Whether the tone player ever reads as not playing | S4 |
