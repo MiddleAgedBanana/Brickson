@@ -148,7 +148,11 @@ stepping on each other.
   Code loads it through `CLAUDE.md`). The playbook says to keep that file
   under a page (p23); this one is long on purpose, because its invariants
   are the safety rules every agent and reviewer must apply. Reference
-  material that no rule depends on belongs in `docs/`, not there.
+  material that no rule depends on belongs in `docs/`, not there. Codex
+  reads only its first 32 KiB by default, so the rules that protect
+  people, the review rules and the workflow come first, and
+  `scripts/test-docs.py` keeps them within that (docs/DECISIONS.md,
+  "AGENTS.md puts first what Codex reads").
 - **Test first** (AGENTS.md, *Workflow rules*): a failing test before new
   behaviour, a failing reproduction before a fix.
 - **Cloud agents cannot build Swift.** Claude Code on the web, Codex cloud
