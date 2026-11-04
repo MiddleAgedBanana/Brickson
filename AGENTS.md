@@ -713,6 +713,12 @@ above are backed by checks wherever a check can run:
   (`site/accessibility/index.html`, the App Store's Accessibility URL)
   where its words become untrue. That page says only what is in place and
   how it was checked, never "works with" before a real-device check.
+- **`docs/DEVICE-CHECKS.md`**: the step-by-step procedure, with what
+  passes, for every row of docs/HANDOFF.md, *Checks that need a real
+  device*, and every gate of docs/ROADMAP.md, *The quality bar*, that
+  the owner checks, each step marked as the owner's or one an agent
+  runs from the owner's Mac. A pull request that adds or changes a
+  device check or an owner gate edits its procedure there.
 - **`docs/PORTING.md`**: what has come over from the reference app, what is
   next, and how to port a file.
 - **`README.md`**: the overview for people, written for a beginner. Keep it

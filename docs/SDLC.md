@@ -209,8 +209,9 @@ which agents also act through, can bypass it (*Deploy*).
 **Done when:**
 - the required checks are green on the pull request's last commit;
 - the pull request says what ran where, and what was not checked;
-- any device check the change affects is listed in the table, with a
-  result once a device run has happened.
+- any device check the change affects is listed in the table, with its
+  procedure in `docs/DEVICE-CHECKS.md` and a result once a device run
+  has happened.
 
 ## 5. Deploy
 

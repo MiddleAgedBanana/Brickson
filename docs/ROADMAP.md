@@ -695,10 +695,12 @@ what passes and who checks it:
   whole bar too, unless the owner, when one is needed, decides that this
   fix goes sooner; there is no standing exception (docs/DECISIONS.md,
   "Every release passes the quality bar").
-- The owner's gates are run from written steps: before the owner's
-  first device run, a thread writes the step-by-step procedure for each
-  of them, with what success looks like, as the 2026-10-26 mounted-device
-  procedure did for Settings.
+- The owner's gates are run from written steps: docs/DEVICE-CHECKS.md
+  gives the step-by-step procedure for each of them, and for every row of
+  docs/HANDOFF.md, *Checks that need a real device*, with what success
+  looks like and which steps an agent runs from the owner's Mac
+  (2026-11-04). A pull request that adds or changes an owner gate edits
+  its procedure there.
 - *Today* says where R0 stands on 2026-10-30, unless the line gives a
   later date. A pull request that moves a gate edits its *Today* line,
   as it edits the rows below.
@@ -838,8 +840,8 @@ what passes and who checks it:
   *Attached, by a thread on the Mac:* with the device connected to
   Xcode, memory stays out of the memory gauge's warning region and
   shows no growth across 100 phrases (Instruments' Allocations
-  generations), and the thermal state, read from the Energy Impact
-  gauge, never reaches serious, which Apple says "reduces performance".
+  generations), and the thermal state, read in the Energy Impact
+  view's timeline, never reaches serious, which Apple says "reduces performance".
   *Checks:* owner, then a thread reading the trace; a thread for the
   attached run. *Today:* not run.
 - **Q9. The owner lives with it.** The owner's answer of 2026-11-01

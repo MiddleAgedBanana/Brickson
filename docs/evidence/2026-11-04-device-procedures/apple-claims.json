@@ -1,0 +1,822 @@
+{
+ "checked": "2026-11-04",
+ "about": "Each Apple setting path and tool claim docs/DEVICE-CHECKS.md states, checked against Apple pages (developer.apple.com in its .md form, support.apple.com). status: confirmed, corrected (correct_version is what the procedures say), or unconfirmed (Apple does not say; the procedures say so).",
+ "groups": [
+  {
+   "group": "developer tools",
+   "claims": [
+    {
+     "id": "A1",
+     "claim": "Developer Mode: needed on iOS 16+ to run from Xcode; Settings > Privacy & Security > Developer Mode; appears after connecting to Xcode; turning it on restarts the device and asks to confirm after the restart.",
+     "status": "corrected",
+     "apple_says": "\"In the Privacy & Security settings on the device, turn on the Developer Mode switch under Security... tap the Restart button in the alert. After the device restarts, another alert appears confirming that you want to turn on Developer Mode. In iOS and iPadOS, swipe up, tap Enable in the dialog, and enter your device passcode.\" Note: \"Developer Mode only appears in Settings if you initiate pairing or if you previously paired the device to a Mac.\" WWDC22 110344: \"required on iOS 16, iPadOS 16, and watchOS 9 to install, run, and debug your apps during development.\"",
+     "url": "https://developer.apple.com/documentation/xcode/enabling-developer-mode-on-a-device.md",
+     "correct_version": "On iOS/iPadOS 16 and later, Developer Mode must be on to run a build from Xcode. The switch is at Settings > Privacy & Security > Developer Mode (under Security). It only appears once you start pairing the device with a Mac (Device Hub) or if the device was paired before. Turn it on, tap Restart in the alert; after the restart, swipe up, tap Enable and enter the device passcode.",
+     "notes": "The current article does not name iOS 16; the iOS 16 requirement is from WWDC22 'Get to know Developer Mode' (https://developer.apple.com/videos/play/wwdc2022/110344/). Apple ties the switch's appearance to pairing, not to 'Xcode tried to run on it'. Confirm step is 'Enable' plus passcode. After turning it on, a Developer section appears in Settings."
+    },
+    {
+     "id": "A2",
+     "claim": "Running XCUITest UI tests on a physical device requires \"Enable UI Automation\" in Settings > Developer.",
+     "status": "unconfirmed",
+     "apple_says": "No Apple documentation or Apple-staff answer names this setting. The only Apple-hosted mentions are user forum posts: \"I can't seem to find documentation that says exactly what this does\" (thread 722521, no replies from Apple) and \"'Enable UI Automation' is already enabled in 'Settings' - 'Developer' menu\" (thread 740785, 0 replies).",
+     "url": "https://developer.apple.com/forums/thread/722521",
+     "correct_version": "",
+     "notes": "Searched: developer.apple.com .md pages (Running tests and interpreting results, Device Hub, Enabling Developer Mode, devicectl, Xcode 27 / 27.1 / 27.2 release notes), and searches of developer.apple.com and the forums for \"Enable UI Automation\". Only user posts and third-party (Appium) guides name it. Closest Apple statement: WWDC22 110344 says Developer Mode is needed if \"you want to use testing automation on your device\". The procedure should not say Apple requires the switch. It can say the setting exists under Settings > Developer, and that turning it on if a test fails to start is a step from community reports."
+    },
+    {
+     "id": "A3",
+     "claim": "xcodebuild runs tests on a connected device with -destination 'platform=iOS,id=<device identifier>'; \"xcrun devicectl list devices\" lists connected devices with identifiers.",
+     "status": "confirmed",
+     "apple_says": "TN2339: \"xcodebuild test -workspace MyApplication.xcworkspace -scheme iOSApp -destination 'platform=iOS,id=965058a1c30d845d0dcec81cd6b908650a0d701c'\"; id = \"The identifier of your device\". devicectl page: \"To get devices and identifiers you use in subsequent commands, enter the `devicectl list devices` or `devicectl device info details` command\". Xcode 27 release notes: \"'devicectl list devices' now shows a unique identifier for devices. If a UDID is available, that is presented, otherwise... the ECID... otherwise the CoreDevice identifier\".",
+     "url": "https://developer.apple.com/documentation/xcode/interacting-with-devices-using-the-command-line.md",
+     "correct_version": "",
+     "notes": "The -destination syntax is from the archived TN2339 (2017), https://developer.apple.com/library/archive/technotes/tn2339/_index.html; the current reference is `man xcodebuild`. Apple's devicectl page writes the command as `devicectl list devices` (no xcrun). The UDID is also in Device Hub: select device > Info > UDID field; use Edit Visibility if it is hidden (https://developer.apple.com/documentation/xcode/locating-device-identifiers.md). Apple: \"unlock the device before entering devicectl commands.\""
+    },
+    {
+     "id": "A4",
+     "claim": "Device Hub (Xcode 27): a physical device can be paired over a cable; wireless pairing needs iOS 27.",
+     "status": "confirmed",
+     "apple_says": "\"Important: Upgrade your iPhone or iPad to iOS or iPadOS 27 or later to wirelessly pair it; otherwise, use a cable.\" Cable: \"Connect the device with an appropriate cable to your Mac. If a Trust This Computer dialog appears on the device, tap Trust. In Device Hub, select the device in the sidebar and follow the instructions in the canvas. If a Pair button appears, click it.\"",
+     "url": "https://developer.apple.com/documentation/xcode/managing-your-simulated-and-physical-devices-in-device-hub.md",
+     "correct_version": "",
+     "notes": "Open Device Hub: run destination pop-up menu > Manage Devices…, or Xcode > Open Developer Tool > Device Hub. Wireless: Add Device button (+) > Pair Nearby Device…, with the device on the same Wi-Fi as the Mac. After cable pairing: \"You can disconnect the physical cable and run apps on the device through Xcode using Wi-Fi with IPv6 enabled on the same network.\" \"If you upgrade the operating system later, you'll need to pair the device again.\" Xcode 27 release notes say the same about iOS 27 network pairing."
+    },
+    {
+     "id": "A5a",
+     "claim": "xctrace record supports --template, --attach <pid or name>, --time-limit, and a device option.",
+     "status": "confirmed",
+     "apple_says": "WWDC22 code: \"xctrace record --template \\\"Game Memory\\\" --attach ModernRenderer --output ModernRenderer.trace --time-limit 30s\" and \"xctrace record --device-name \\\"<device name>\\\" --template ... --time-limit 30s\". Xcode 12 release notes: \"The `xctrace` command can now attach to an existing process by name using the `--attach` flag.\"",
+     "url": "https://developer.apple.com/videos/play/wwdc2022/10106/",
+     "correct_version": "",
+     "notes": "Xcode 12 notes: https://developer.apple.com/documentation/xcode-release-notes/xcode-12-release-notes.md. Apple's tool reference (https://developer.apple.com/documentation/xcode/xcode-command-line-tool-reference.md) says only: xctrace \"Record, import, export and symbolicate Instruments `.trace` files. To learn more about this command, enter `man xctrace` in Terminal.\" Attaching by pid is not shown on any Apple web page; attaching by name is."
+    },
+    {
+     "id": "A5b",
+     "claim": "\"xcrun xctrace record --template 'App Launch' --device <udid> --launch -- <path or bundle id>\" records an App Launch trace on a device; \"xcrun xctrace list templates\" lists templates.",
+     "status": "unconfirmed",
+     "apple_says": "No Apple web page shows `--device <udid>`, `--launch --`, or `xctrace list templates`. Apple sends readers to `man xctrace`. Instruments Help's command-line page still describes the removed `instruments` tool (\"instruments -t \\\"Allocations\\\" ...\"). Xcode 13 notes: \"The deprecated `instruments` command-line tool has been removed; instead, use `xctrace`.\"",
+     "url": "https://help.apple.com/instruments/mac/current/en.lproj/devb14ffaa5.html",
+     "correct_version": "",
+     "notes": "Searched developer.apple.com, the Instruments Help navigation, the Xcode 12–27 release notes and WWDC transcripts. Xcode 14 notes mention `xctrace list devices`. The procedure should have the tester check the exact flags with `xcrun xctrace help record` and `man xctrace` on the Mac rather than rely on this command line."
+    },
+    {
+     "id": "A6",
+     "claim": "Instruments' App Launch template measures time to first frame; Apple says a launch should render its first frame within 400 ms.",
+     "status": "corrected",
+     "apple_says": "Article: \"Profile your app in Instruments by using the App Launch template. During your launch, Instruments gathers a time profile and thread-state trace.\" \"Xcode Organizer and MetricKit both use the time to first frame as the measurement of launch time\". \"The launch-time metric measures the time from the user tapping the app icon on their Home screen to the app drawing its first frame to the screen.\" The 400 ms goal is only in WWDC19 session 423: \"we need to hit the goal of rendering our first frame within 400 milliseconds.\"",
+     "url": "https://developer.apple.com/documentation/xcode/reducing-your-app-s-launch-time.md",
+     "correct_version": "The App Launch template records a time profile and a thread-state trace during launch. Apple defines launch time (in Organizer and MetricKit) as the time from tapping the icon to the first frame drawn. The 400 ms first-frame goal comes from WWDC19 'Optimizing App Launch' (https://developer.apple.com/videos/play/wwdc2019/423/), not from the article.",
+     "notes": "The 'Reducing your app's launch time' article has no 400 ms figure. WWDC19 423 also says iOS takes part of that time, leaving \"about 300 milliseconds to create your views, load your content, and generate your first frame.\" For launch phases, the article points to the Time Profiler template's App Life Cycle timeline (\"initial frame rendering\")."
+    },
+    {
+     "id": "A7a",
+     "claim": "Apple's sentence: \"100 ms is the maximum delay for discrete user interaction before a delay becomes noticeable.\"",
+     "status": "confirmed",
+     "apple_says": "\"100 ms is the maximum delay for discrete user interaction before a delay becomes noticeable. However, be aware that some users are more sensitive to delays, so consider using a lower threshold.\"",
+     "url": "https://developer.apple.com/documentation/xcode/improving-app-responsiveness.md",
+     "correct_version": "",
+     "notes": "It is in the section 'Write performance tests to ensure main-thread-bound code completes fast'. The same page also says: \"If a delay in discrete user interaction becomes longer than 100 ms, it starts to become noticeable and causes a hang.\""
+    },
+    {
+     "id": "A7b",
+     "claim": "The Hangs instrument (or a 'Hangs' template) has a configurable threshold that can report hangs as short as 100 ms; find the exact option names.",
+     "status": "unconfirmed",
+     "apple_says": "\"Most of Apple's developer tools start reporting issues when the period of unresponsiveness for the main run loop exceeds 250 ms. Some of them, like the Hangs instrument in the Instruments app, allow you to choose lower thresholds\". \"Use the Time Profiler, CPU Profiler, or Hitches templates in Instruments... All these templates include the Hangs instruments\". Tutorial: \"exceed the configured threshold (250 ms in the Time Profiler template)\".",
+     "url": "https://developer.apple.com/documentation/xcode/understanding-hangs-in-your-app.md",
+     "correct_version": "Apple does not document a 'Hangs' template. The Hangs instrument is part of the Time Profiler, CPU Profiler and Hitches templates, and can also be added to any trace. Its threshold defaults to 250 ms and can be set lower. No Apple page gives the option names or says 100 ms is a choice.",
+     "notes": "Also read: Improving app responsiveness; https://developer.apple.com/tutorials/Instruments/understanding-synchronous-and-asynchronous-hangs; WWDC22 10082 (\"allows you to configure a hang duration threshold\"); WWDC23 10248. Xcode 27's `xcrun xctrace record --show-recording-options` prints a template's or instrument's recording options as JSON. The tester can use it to read the exact Hangs option names on the Mac."
+    },
+    {
+     "id": "A8",
+     "claim": "On-device Hang Detection: Settings > Developer > Hang Detection, with a chosen threshold; shortest 250 ms.",
+     "status": "confirmed",
+     "apple_says": "Docs: \"Enable on-device hang detection by opening the Settings app and navigating to Developer > Hang Detection.\" WWDC22: \"The Hang Threshold setting allows you to configure the minimum duration of hangs to detect. The shortest hang threshold is 250 milliseconds and can be bumped to 500 milliseconds or higher.\"",
+     "url": "https://developer.apple.com/documentation/xcode/improving-app-responsiveness.md",
+     "correct_version": "",
+     "notes": "The 250 ms minimum and the setting name 'Hang Threshold' come from WWDC22 10082 (https://developer.apple.com/videos/play/wwdc2022/10082/), not the article. The article says it \"works for development-signed builds and TestFlight builds\". The device \"captures a hang report that you can then analyze on your Mac\", and its tailspin files can be imported into Instruments."
+    },
+    {
+     "id": "A9",
+     "claim": "On-device Performance Trace: Settings > Developer > Performance Trace with a Power Profiler mode records without Xcode for up to 10 hours; the trace is shared to a Mac and opened in Instruments.",
+     "status": "confirmed",
+     "apple_says": "\"Open Settings, and navigate to Developer > Performance Trace. Turn on Performance Trace... Change the tracing mode to Power Profiler. Tap the switch next to your app's name\". Add the Performance Trace control in Control Center (Add button (+) > Add a Control). \"Tap the Performance Trace control... Performance Trace gathers data for up to 10 hours.\" To share: Settings > Developer > Performance Trace > \"Tap the Share button next to the trace file\", AirDrop to the Mac, then \"double-click the `*.aar` file... into a `*.atrc` file that you can open in Instruments.\"",
+     "url": "https://developer.apple.com/documentation/xcode/measuring-your-app-s-power-use-with-power-profiler.md",
+     "correct_version": "",
+     "notes": "\"Power Profiler is available on iPhone with iOS 26 or later, and iPad with iPadOS 26 or later.\" Start and stop are the same Control Center control (\"Tap the Performance Trace control again... to stop\"). If no app is switched on, \"Performance Trace only records overall system power metrics.\" While charging, \"Instruments reports the overall system power usage as `0`.\""
+    },
+    {
+     "id": "A10",
+     "claim": "Allocations 'Mark Generation' shows growth between marks; Xcode memory gauge has a warning region; Energy Impact gauge shows thermal state; 'serious' thermal state reduces performance.",
+     "status": "corrected",
+     "apple_says": "\"click the Mark Generation button in the Allocations instrument... Instruments organizes memory allocations by generation, separated at the times when you clicked Mark Generation.\" \"The yellow region of the memory gauge indicates memory use high enough to trigger a warning. The app risks termination by iOS if its memory use enters the red region.\" Energy Impact: \"The timeline reports the instantaneous energy use... along with the app's life-cycle state and the device's thermal condition.\" ThermalState.serious: \"The thermal state is high... The system takes moderate steps to reduce thermal state, which reduces performance.\"",
+     "url": "https://developer.apple.com/documentation/xcode/gathering-information-about-memory-use.md",
+     "correct_version": "Mark Generation, the memory gauge (yellow = warning, red = risk of termination) and 'serious reduces performance' are as claimed. Correction: the device's thermal condition appears in the Energy Impact view's timeline (Debug navigator > Energy Impact), not on the gauge itself.",
+     "notes": "Energy: https://developer.apple.com/documentation/xcode/analyzing-your-app-s-battery-use.md. Thermal: https://developer.apple.com/documentation/foundation/processinfo/thermalstate-swift.enum/serious.md (cases: nominal, fair, serious = \"The thermal state is high\", critical). On Simulator, \"the memory gauge always stays in the green (safe) region\", so gauge checks need a device. Xcode Help 'Test under adverse device conditions' covers simulating Fair, Serious and Critical thermal states on a connected device."
+    },
+    {
+     "id": "A11",
+     "claim": "XCUIDevice.Button cases: home, volumeUp, volumeDown, action, camera; no lock/side button case.",
+     "status": "confirmed",
+     "apple_says": "Cases listed: \"case home\", \"case volumeUp\", \"case volumeDown\", \"case action\", \"case camera\" (A physical button on an iOS device). There is no lock, side or power case.",
+     "url": "https://developer.apple.com/documentation/xcuiautomation/xcuidevice/button.md",
+     "correct_version": "",
+     "notes": "The documentation now lives under the XCUIAutomation framework (the old /xctest/ path returns 404). Apple's text for `action` describes the Apple Watch Ultra button. Check with `hasHardwareButton(_:)` before `press(_:)`."
+    },
+    {
+     "id": "A12a",
+     "claim": "XCUIVoiceOverService: availability and what it does.",
+     "status": "confirmed",
+     "apple_says": "Availability iOS 27.0+, iPadOS 27.0+ (also macOS, tvOS, visionOS, watchOS, Mac Catalyst 27.0). \"Provides programmatic control of VoiceOver for UI testing. Access this service through the @c voiceOverService property on @c XCUIDevice.\" Methods: enable(), disable(), isEnabled, currentSpeech(), moveForward(), moveBackward(), moveIn(), moveOut(); Output.utterance = \"What VoiceOver spoke for this element\".",
+     "url": "https://developer.apple.com/documentation/xcuiautomation/xcuivoiceoverservice.md",
+     "correct_version": "",
+     "notes": "Xcode 27 release notes: \"XCTest now includes XCUIVoiceOverService, a new UI testing API for verifying VoiceOver behavior in your app. Use it to drive VoiceOver from UI tests and validate focus, spoken output, and navigation across supported platforms.\" Errors: failedToStart, failedToStop, noSpeech, notRunning. The page metadata also lists \"Xcode: 16.3.0 -\", which looks like a metadata error; OS availability is 27.0."
+    },
+    {
+     "id": "A12b",
+     "claim": "Apple says XCUIVoiceOverService runs on physical devices.",
+     "status": "unconfirmed",
+     "apple_says": "No Apple page says whether it runs on physical devices or on Simulator. The class page, voiceOverService, enable(), Output, Error and the Xcode 27 / 27.2 release notes are silent on this.",
+     "url": "https://developer.apple.com/documentation/xcode-release-notes/xcode-27-release-notes.md",
+     "correct_version": "",
+     "notes": "Related: Apple's accessibility testing article says \"VoiceOver isn't available on Simulator\". Xcode 27 notes also fix \"The 'VoiceOver' toggle in the appearance settings inspector does not enable voiceover on the device\" (Device Hub). Neither statement is about XCUIVoiceOverService."
+    },
+    {
+     "id": "A13a",
+     "claim": "iOS screen recording: start from Control Center; microphone on/off.",
+     "status": "confirmed",
+     "apple_says": "\"Swipe down from the top-right corner of the screen to open Control Center. If you don't see the Screen Recording control, add it to Control Center... Tap [Screen Recording], then wait for the 3-second countdown\". With audio: \"Touch and hold [Screen Recording], tap Microphone to turn it on, then tap Start Recording.\" Stop on iPhone: Dynamic Island: \"Tap the red circle, then tap [Stop Screen Recording]\"; other models: \"Tap the timer (highlighted in red) in the top left of the screen, then tap Stop.\" iPad: \"tap the red button at the top of the screen, then tap Stop.\" Saved to Photos: \"Tap Collections, scroll down to Media Types, then tap Screen Recordings.\"",
+     "url": "https://support.apple.com/guide/iphone/take-a-screen-recording-iph52f6e1987/27/ios/27",
+     "correct_version": "",
+     "notes": "iPadOS 27 guide: https://support.apple.com/guide/ipad/take-a-screen-recording-ipaddf78ce08/27/ipados/27 (same steps). Both say: \"Some apps might not allow you to record their content, and you can't record your screen and use screen mirroring at the same time.\""
+    },
+    {
+     "id": "A13b",
+     "claim": "iOS screen recording records the app's own sound.",
+     "status": "unconfirmed",
+     "apple_says": "Apple does not say whether app or system audio is captured. The guide says only \"You can even turn on the microphone to add audio.\" The support article says \"you can start a screen recording and capture sound\" and then describes only the Microphone button.",
+     "url": "https://support.apple.com/en-us/102653",
+     "correct_version": "",
+     "notes": "Read the iOS 27 and iPadOS 27 'Take a screen recording' pages, 'Change the screen capture settings on iPhone', and support article 102653 (published September 14, 2026). The procedure should not promise app audio. The tester should check by playing the recording back."
+    },
+    {
+     "id": "A13c",
+     "claim": "A video's frames can be stepped one by one in Photos.",
+     "status": "unconfirmed",
+     "apple_says": "No Apple page describes frame-by-frame stepping. The nearest: \"Open a video, then play it. Pause the video on the frame you want to save. Tap [More], then tap Save Video Frame as Photo.\" The Edit screen has a \"frame viewer\" that is used for trimming.",
+     "url": "https://support.apple.com/guide/iphone/save-a-video-frame-as-a-photo-prpgpkjxvfn9/27/ios/27",
+     "correct_version": "",
+     "notes": "Also read 'Trim video length, adjust speed, and edit audio on iPhone' (iOS 27): https://support.apple.com/guide/iphone/trim-video-length-adjust-speed-and-edit-audio-iph1d1344a2d/27/ios/27."
+    },
+    {
+     "id": "A14",
+     "claim": "Apple states Switch Control, VoiceOver and Voice Control are not available on Simulator.",
+     "status": "confirmed",
+     "apple_says": "\"Install your app on a physical device, since VoiceOver isn't available on Simulator.\" \"Install your app on a physical device, since Voice Control isn't available on Simulator.\" \"Install your app on a physical device, since Switch Control isn't available on Simulator.\"",
+     "url": "https://developer.apple.com/documentation/accessibility/performing-accessibility-testing-for-your-app.md",
+     "correct_version": "",
+     "notes": "The page is under the Accessibility framework, not Xcode (/documentation/xcode/... returns 404). It also says Assistive Access isn't available on Simulator. It gives the paths Settings > Accessibility > VoiceOver, Settings > Accessibility > Voice Control, and Settings > Accessibility > Switch Control > Switches > Add New Switch. It recommends setting up the Accessibility Shortcut to turn each one off."
+    }
+   ],
+   "more_findings": "1) Xcode 27 release notes say Device Hub's appearance settings inspector has a VoiceOver toggle (\"Fixed: The 'VoiceOver' toggle in the appearance settings inspector does not enable voiceover on the device\"). They also say Device Hub now shows the device's UUID under 'Hardware Properties' and hides the CoreDevice ID by default. Copy the UDID field (Info > Edit Visibility) for xcodebuild. 2) Xcode 27 adds `xcrun xctrace record --show-recording-options`, which prints each template's or instrument's recording options as JSON, and `--recording-options <json>` to apply them. This is the reliable way to find the Hangs threshold option names on the Mac. 3) Apple: \"unlock the device before entering devicectl commands\", and after an OS upgrade a wirelessly paired device must be paired again. 4) Power Profiler: Xcode keeps the device awake while paired, and while charging Instruments reports system power as 0. Take power traces off the cable. 5) The iOS and iPadOS guides say you \"can't record your screen and use screen mirroring at the same time\", and some apps block recording. 6) Xcode 27.2 release notes: Device Hub \"is unable to customize the text size for a device running iOS 18 or earlier\" (not an issue for iOS 26+ test devices)."
+  },
+  {
+   "group": "Eye Tracking, Head Tracking and Dwell",
+   "claims": [
+    {
+     "id": "B1-path",
+     "claim": "Eye Tracking is turned on at Settings > Accessibility > Eye Tracking (iPhone and iPad).",
+     "status": "confirmed",
+     "apple_says": "Go to Settings > Accessibility > Eye Tracking, then turn on Eye Tracking.",
+     "url": "https://support.apple.com/guide/iphone/control-iphone-with-the-movement-of-your-eyes-iph66057d0f6/ios",
+     "correct_version": "",
+     "notes": "The iOS 27 page (its links point to /27/ios/27) and the iOS 26 page (https://support.apple.com/guide/iphone/control-iphone-with-the-movement-of-your-eyes-iph66057d0f6/26/ios/26) say the same. The iPad page has identical wording: https://support.apple.com/guide/ipad/control-ipad-with-the-movement-of-your-eyes-ipad2cd35723/27/ipados/27"
+    },
+    {
+     "id": "B1-calibration",
+     "claim": "Setup is a calibration in which you follow a dot with your eyes.",
+     "status": "confirmed",
+     "apple_says": "Follow the onscreen instructions to calibrate Eye Tracking. As a dot appears in different locations around the screen, follow its movement with your eyes. ... Note: You need to calibrate Eye Tracking every time you turn it on.",
+     "url": "https://support.apple.com/guide/iphone/control-iphone-with-the-movement-of-your-eyes-iph66057d0f6/ios",
+     "correct_version": "",
+     "notes": "The iPad page says the same."
+    },
+    {
+     "id": "B1-position",
+     "claim": "Positioning: put the device on a stable surface about a foot and a half from your face.",
+     "status": "confirmed",
+     "apple_says": "iPhone should be on a stable surface about a foot and a half away from your face.",
+     "url": "https://support.apple.com/guide/iphone/control-iphone-with-the-movement-of-your-eyes-iph66057d0f6/ios",
+     "correct_version": "",
+     "notes": "Apple also says: \"make sure that the camera has a clear view of your face and that your face is adequately lit.\" Eye Tracking uses \"the built-in, front-facing camera\". The iPad page has the same wording (\"iPad should be on a stable surface about a foot and a half away from your face\")."
+    },
+    {
+     "id": "B1-recalibrate",
+     "claim": "To recalibrate, dwell on a hot corner, or turn Eye Tracking off and on.",
+     "status": "confirmed",
+     "apple_says": "Look at the top-left corner of your screen and hold your gaze steady. ... When the dwell timer finishes, Eye Tracking calibration starts.",
+     "url": "https://support.apple.com/guide/iphone/control-iphone-with-the-movement-of-your-eyes-iph66057d0f6/ios",
+     "correct_version": "",
+     "notes": "Apple gives the corner as the manual way. It also says calibration starts by itself: \"If you change the position of your face or your iPhone, Eye Tracking calibration automatically starts if recalibration is needed.\" Turning it off and on is not given as a recalibration method, but it calibrates anyway because calibration is required \"every time you turn it on\"."
+    },
+    {
+     "id": "B1-options",
+     "claim": "Eye Tracking options are Snap to Item, Zoom on Keyboard Keys, Auto-Hide, Smoothing, and Dwell Control with its time.",
+     "status": "corrected",
+     "apple_says": "Go to Settings > Accessibility > Eye Tracking, then adjust any of the following: Smoothing ... Snap to Item ... Zoom on Keyboard Keys ... Auto-Hide ... Dwell Control: Turn Dwell Control on or off. To adjust settings for Dwell Control, such as the default dwell action and the duration of the dwell timer, see Set up Dwell Control. ... Show Face Guidance",
+     "url": "https://support.apple.com/guide/iphone/control-iphone-with-the-movement-of-your-eyes-iph66057d0f6/ios",
+     "correct_version": "Settings > Accessibility > Eye Tracking lists Smoothing, Snap to Item, Zoom on Keyboard Keys, Auto-Hide, Dwell Control (an on/off switch) and Show Face Guidance. Apple does not put the dwell time on this screen. It points to \"Set up Dwell Control\" (Settings > Accessibility > Touch > AssistiveTouch, then Dwell Control) for \"the default dwell action and the duration of the dwell timer\". Pointer size and colour are set in Settings > Accessibility > Pointer Control.",
+     "notes": "Apple's descriptions: Snap to Item: \"automatically move to the item on the screen that's closest to where you're looking\". Zoom on Keyboard Keys: \"zoom in on the section of the keyboard you're looking at. Dwell again on a key to tap it.\" Auto-Hide: \"The pointer automatically fades while your eyes are moving.\" Default behaviour: \"an outline appears around the item\", and the dwell action is \"tap, by default\". iOS 26 lists the same options."
+    },
+    {
+     "id": "B1-hotcorner",
+     "claim": "By default, the top-left hot corner starts Eye Tracking recalibration (AGENTS.md).",
+     "status": "confirmed",
+     "apple_says": "Look at the top-left corner of your screen and hold your gaze steady. ... Eye Tracking calibration starts. You can change which corner of the screen you need to look at to start recalibration or assign actions to other corners.",
+     "url": "https://support.apple.com/guide/iphone/control-iphone-with-the-movement-of-your-eyes-iph66057d0f6/ios",
+     "correct_version": "",
+     "notes": "Apple does not use the word \"default\", but it gives top-left as the corner and says it can be changed (under Set up Dwell Control > Hot Corners). The iPad page and the iOS 26 page say the same."
+    },
+    {
+     "id": "B2-path",
+     "claim": "Head Tracking's Settings path: is it Settings > Accessibility > Head Tracking, or under Switch Control or AssistiveTouch?",
+     "status": "confirmed",
+     "apple_says": "Tap Accessibility, tap Head Tracking, then turn on Head Tracking. ... Note: Head Tracking is available on iOS 26 and later.",
+     "url": "https://support.apple.com/guide/iphone/control-iphone-with-the-movement-of-your-head-iph9c3dc17cf/27/ios/27",
+     "correct_version": "Head Tracking has two separate entries. (1) On its own (iOS 26 and later): Settings > Accessibility > Head Tracking. It uses dwell and the AssistiveTouch menu. (2) As a Switch Control mode: Settings > Accessibility > Switch Control > Head Tracking for its options, then Settings > Accessibility > Switch Control > Switch Control Mode > Head Tracking. This mode activates with a Select Item switch or a facial expression. It is not under AssistiveTouch.",
+     "notes": "Switch Control page: \"Go to Settings > Accessibility > Switch Control > Head Tracking, turn on Head Tracking\" (https://support.apple.com/guide/iphone/select-items-perform-actions-and-more-iph8de250c54/27/ios/27). The iPad page says the same, with iPadOS 26 and later: https://support.apple.com/guide/ipad/control-ipad-with-the-movement-of-your-head-ipad06393f31/27/ipados/27. Positioning: \"about 18 inches away from your face\" on a stable surface. The iOS 26 page is the same."
+    },
+    {
+     "id": "B2-pointer",
+     "claim": "What moves the Head Tracking pointer.",
+     "status": "confirmed",
+     "apple_says": "An onscreen pointer follows the movement of your head ... The pointer always moves with your head no matter where you face. Moving faster makes the pointer move faster.",
+     "url": "https://support.apple.com/guide/iphone/control-iphone-with-the-movement-of-your-head-iph9c3dc17cf/27/ios/27",
+     "correct_version": "",
+     "notes": "It uses \"the built-in, front-facing camera\". \"When your head is pointed toward an item on the screen, an outline appears around the item.\""
+    },
+    {
+     "id": "B2-actions",
+     "claim": "A Head Tracking action is made by dwell or by facial expressions.",
+     "status": "confirmed",
+     "apple_says": "When you hold your head steady ... the dwell timer begins ... When the dwell timer finishes, an action—tap, by default—is performed. ... You can customize actions like a Single-Tap or Double Tap to different facial movements, like smiling, blinking, or scrunching your nose.",
+     "url": "https://support.apple.com/guide/iphone/control-iphone-with-the-movement-of-your-head-iph9c3dc17cf/27/ios/27",
+     "correct_version": "",
+     "notes": "For more gestures and button presses, Apple says to \"use the AssistiveTouch menu\"."
+    },
+    {
+     "id": "B2-options",
+     "claim": "Head Tracking options include Snap to Item, Movement speed and Dwell.",
+     "status": "corrected",
+     "apple_says": "Actions: Select a facial expression (like Raise Eyebrows or Open Mouth), then choose an action ... Sensitivity ... Pointer: ... move with face movements, when facing screen edges, or based on head position. Pointer Speed ... Snap to Item ... Dwell Control: Turn Dwell Control on or off.",
+     "url": "https://support.apple.com/guide/iphone/control-iphone-with-the-movement-of-your-head-iph9c3dc17cf/27/ios/27",
+     "correct_version": "The Head Tracking options are Actions (with Sensitivity), Pointer (move with face movements, when facing screen edges, or based on head position), Pointer Speed (not \"Movement speed\"), Snap to Item and Dwell Control (on/off). Dwell time and dwell action are set under Set up Dwell Control (Settings > Accessibility > Touch > AssistiveTouch).",
+     "notes": "The options step says only \"Go to the Settings app\", without naming the menu. The menu is presumably Accessibility > Head Tracking, where it is turned on. In Switch Control, the matching option is \"Tracking Mode\": With Face, When Facing Screen Edges, or Relative to Head. On iPad: \"To change the size or color of the Head Tracking pointer, go to Settings > Accessibility > Pointer Control.\""
+    },
+    {
+     "id": "B3-path",
+     "claim": "AssistiveTouch is at Settings > Accessibility > Touch > AssistiveTouch, and Dwell Control is turned on there.",
+     "status": "confirmed",
+     "apple_says": "Go to Settings > Accessibility > Touch > AssistiveTouch, then turn on Dwell Control.",
+     "url": "https://support.apple.com/guide/iphone/use-assistivetouch-iph96b21954/27/ios/27",
+     "correct_version": "",
+     "notes": "The iPad page is the same: https://support.apple.com/guide/ipad/use-assistivetouch-ipad9a2466d3/27/ipados/27. The iOS 26 page is the same: https://support.apple.com/guide/iphone/use-assistivetouch-iph96b21954/26/ios/26"
+    },
+    {
+     "id": "B3-dwell-settings",
+     "claim": "Dwell Control settings: dwell time (the countdown, in seconds), Movement Tolerance, Hot Corners and Fallback Action.",
+     "status": "corrected",
+     "apple_says": "Fallback Action: Turn on to revert the dwell action to the selected fallback action after performing an operation. Movement Tolerance: Adjust the distance the cursor can move while dwelling on an item. Hot Corners: Perform a selected action—such as take a screenshot, open Control Center, activate Siri, scroll, or use a shortcut—when the cursor dwells in a corner of the screen. ... Key Dwell Time: Under Keyboard ... You can also enter a number of seconds. ... Time needed to initiate a dwell action: Tap the Decrement button or the Increment button.",
+     "url": "https://support.apple.com/guide/iphone/use-assistivetouch-iph96b21954/27/ios/27",
+     "correct_version": "Dwell Control settings are Fallback Action, Movement Tolerance, Hot Corners, Keyboard options (Extended Predictions, Key Dwell Time, and on iPhone Slide to Type), and \"Time needed to initiate a dwell action\", set with the Decrement and Increment buttons. Apple gives seconds only for Key Dwell Time (\"You can also enter a number of seconds\"). It gives no unit or default for the main dwell time.",
+     "notes": "The iPad page lists the same items except Slide to Type. Apple's article 111775 says: \"Dwell has settings for Movement Tolerance and the amount of time before a selection action is carried out.\""
+    },
+    {
+     "id": "B3-devices",
+     "claim": "Pointer devices for AssistiveTouch: mouse, trackpad, joystick.",
+     "status": "confirmed",
+     "apple_says": "You can connect Bluetooth® and USB assistive pointer devices, such as trackpads, game controllers, and mouse devices. ... You can use AssistiveTouch with or without a compatible adaptive accessory (such as a joystick).",
+     "url": "https://support.apple.com/guide/iphone/use-assistivetouch-iph96b21954/27/ios/27",
+     "correct_version": "",
+     "notes": "The options below Pointer Devices are Devices, Mouse Keys, Pointer Style (\"Adjust the size, color, and auto-hide settings\"), Show Onscreen Keyboard, Sound on Click, Always Show Menu and Tracking Sensitivity. The iPad page is the same."
+    },
+    {
+     "id": "B3-snap",
+     "claim": "Snap to Item exists for the AssistiveTouch pointer.",
+     "status": "unconfirmed",
+     "apple_says": "To set additional options for your eye-tracking device, tap Devices (below Pointer Devices), tap the name of the device, then adjust ... Snap to Item",
+     "url": "https://support.apple.com/guide/ipad/control-ipad-with-the-movement-of-your-eyes-ipad2cd35723/27/ipados/27",
+     "correct_version": "",
+     "notes": "Apple documents Snap to Item under AssistiveTouch only for a Made for iPad (MFi) external eye-tracking device on iPad: Settings > Accessibility > Touch > AssistiveTouch > Devices > [device name]. The iPhone and iPad AssistiveTouch pages say nothing of Snap to Item for a mouse, trackpad or joystick. Searched: the AssistiveTouch pages (iOS 26 and 27, iPadOS 27), the Pointer Control pages and article 111775."
+    },
+    {
+     "id": "B4-path",
+     "claim": "Touch Accommodations is at Settings > Accessibility > Touch > Touch Accommodations.",
+     "status": "confirmed",
+     "apple_says": "Tap Accessibility, tap Touch, then tap Touch Accommodations. Tap Set Up Touch Accommodations, then follow the onscreen instructions. ... Tap Settings, then change any of the following",
+     "url": "https://support.apple.com/guide/iphone/adjust-how-iphone-responds-to-your-touch-iph77bcdd132/27/ios/27",
+     "correct_version": "",
+     "notes": "iOS 26 and iOS 27 differ. On iOS 26: \"Go to Settings > Accessibility > Touch > Touch Accommodations, then turn on Touch Accommodations\" (https://support.apple.com/guide/iphone/adjust-how-iphone-responds-to-your-touch-iph77bcdd132/26/ios/26). On iOS 27 there is a \"Set Up Touch Accommodations\" flow first, then a Settings screen. iPadOS 27 is the same as iOS 27 (\"Set up Touch Accommodations\"): https://support.apple.com/guide/ipad/adjust-how-ipad-responds-to-your-touch-ipadc70af050/27/ipados/27"
+    },
+    {
+     "id": "B4-hold",
+     "claim": "Hold Duration and what it means.",
+     "status": "confirmed",
+     "apple_says": "Respond to longer or shorter touches: Turn on Hold Duration, then tap the Decrement button or the Increment button to adjust the duration. Note: When you turn on Hold Duration, taps and swipes within the duration are ignored.",
+     "url": "https://support.apple.com/guide/iphone/adjust-how-iphone-responds-to-your-touch-iph77bcdd132/27/ios/27",
+     "correct_version": "",
+     "notes": "Related options: Swipe Gestures, Ignore Repeat (\"Treat multiple touches as a single touch\"), and Tap Assistance (Use Initial Touch Location or Use Final Touch Location, with Tap Assistance Gesture Delay)."
+    },
+    {
+     "id": "B4-shortcut",
+     "claim": "The Accessibility Shortcut can turn Touch Accommodations on or off.",
+     "status": "unconfirmed",
+     "apple_says": "(No statement found.)",
+     "url": "https://support.apple.com/guide/iphone/quickly-turn-accessibility-features-on-or-off-iph3e2e31a5/27/ios/27",
+     "correct_version": "",
+     "notes": "Neither the Touch Accommodations page (iOS 26 and 27, iPadOS 27) nor the Accessibility Shortcut page names Touch Accommodations as a shortcut feature. The Shortcut page has no list of features. Check on the device in Settings > Accessibility > Accessibility Shortcut."
+    },
+    {
+     "id": "B5-pointer",
+     "claim": "Pointer Control (Settings > Accessibility > Pointer Control) sets pointer size and colour.",
+     "status": "confirmed",
+     "apple_says": "Go to Settings > Accessibility > Pointer Control, then adjust any of the following: Increase Contrast, Automatically Hide Pointer, Color, Pointer Size, Scrolling Speed",
+     "url": "https://support.apple.com/guide/iphone/adjust-pointer-settings-iphec6e1e60b/27/ios/27",
+     "correct_version": "",
+     "notes": "iPad adds Pointer Animations and Trackpad Inertia (https://support.apple.com/guide/ipad/adjust-pointer-settings-ipad80138591/27/ipados/27). The Eye Tracking pages say: \"To change the size or color of the Eye Tracking pointer, go to Settings > Accessibility > Pointer Control.\" On iPhone, AssistiveTouch > Pointer Style also adjusts \"the size, color, and auto-hide settings\"."
+    },
+    {
+     "id": "B6-path",
+     "claim": "The Accessibility Shortcut is at Settings > Accessibility > Accessibility Shortcut. Triple-click the side button (Face ID devices) or the Home button to turn features on or off.",
+     "status": "confirmed",
+     "apple_says": "Go to Settings > Accessibility > Accessibility Shortcut, then select the features you want. ... Triple-click one of the following: The side button (on an iPhone with Face ID or iPhone Duo); The Home button (on iPhone SE)",
+     "url": "https://support.apple.com/guide/iphone/quickly-turn-accessibility-features-on-or-off-iph3e2e31a5/27/ios/27",
+     "correct_version": "iPhone: triple-click the side button (iPhone with Face ID or iPhone Duo) or the Home button (iPhone SE). iPad: triple-click the top button, or the Home button on an iPad that has one. With one feature selected it toggles at once. With several, a list appears and you tap the feature.",
+     "notes": "iPad page: \"The Home button (on an iPad with a Home button); The top button (on other iPad models)\" (https://support.apple.com/guide/ipad/quickly-turn-accessibility-features-on-or-off-ipad9a245f9e/27/ipados/27). Apple also says: \"If you select only one feature, the feature is immediately turned on or off when you click the button shortcut.\""
+    },
+    {
+     "id": "B6-features-confirmed",
+     "claim": "The Accessibility Shortcut can include Switch Control, VoiceOver, Guided Access, AssistiveTouch and Voice Control.",
+     "status": "confirmed",
+     "apple_says": "Switch Control: \"You can add Switch Control to Accessibility Shortcut\". VoiceOver: \"Use the Accessibility Shortcut if you've set it up to turn on VoiceOver.\" Voice Control: \"Use Accessibility Shortcut if you've set it up to turn on Voice Control.\" AssistiveTouch: \"To quickly turn AssistiveTouch on or off, you can set up the Accessibility Shortcut\". Guided Access: \"To add some features—like Assistive Access or Guided Access—to the Accessibility Shortcut, you need to set them up first.\"",
+     "url": "https://support.apple.com/guide/iphone/quickly-turn-accessibility-features-on-or-off-iph3e2e31a5/27/ios/27",
+     "correct_version": "",
+     "notes": "Other sources: https://support.apple.com/guide/iphone/set-up-and-turn-on-switch-control-iph400b2f114/27/ios/27 ; https://support.apple.com/guide/iphone/turn-on-and-practice-voiceover-iph3e2e415f/27/ios/27 ; https://support.apple.com/guide/iphone/use-voice-control-iph2c21a3c88/27/ios/27 ; https://support.apple.com/guide/iphone/use-assistivetouch-iph96b21954/27/ios/27. Assistive Access and Accessibility Reader are also named as shortcut features."
+    },
+    {
+     "id": "B6-features-unconfirmed",
+     "claim": "The Accessibility Shortcut can include Eye Tracking, Head Tracking and Full Keyboard Access.",
+     "status": "unconfirmed",
+     "apple_says": "(No statement found.)",
+     "url": "https://support.apple.com/guide/iphone/quickly-turn-accessibility-features-on-or-off-iph3e2e31a5/27/ios/27",
+     "correct_version": "",
+     "notes": "The Eye Tracking, Head Tracking and Full Keyboard Access pages (https://support.apple.com/guide/iphone/control-iphone-with-an-external-keyboard-ipha4375873f/27/ios/27, path \"Settings > Accessibility > Keyboards & Typing, tap Full Keyboard Access\") do not mention the Accessibility Shortcut. Apple's Shortcut pages and article 111771 give no feature list. A site:support.apple.com search for \"Eye Tracking\" \"Accessibility Shortcut\" found only the mobility overview pages. Check on the device's Accessibility Shortcut list."
+    },
+    {
+     "id": "B7-external-display",
+     "claim": "Whether Eye Tracking works with an external display or only on the built-in screen.",
+     "status": "unconfirmed",
+     "apple_says": "(No statement found.)",
+     "url": "https://support.apple.com/guide/ipad/control-ipad-with-the-movement-of-your-eyes-ipad2cd35723/27/ipados/27",
+     "correct_version": "",
+     "notes": "No Apple page read says anything about Eye Tracking and an external display. Searched: the Eye Tracking pages (iPhone and iPad), the mobility overviews, and site:support.apple.com \"Eye Tracking\" external display. The nearest statements: Eye Tracking \"uses the built-in, front-facing camera\". On iPhone Duo it \"works only when the device is fully open\". On iPad, a separate MFi eye-tracking device can be connected through AssistiveTouch."
+    },
+    {
+     "id": "B7-guided-access",
+     "claim": "Whether Eye Tracking works in Guided Access.",
+     "status": "unconfirmed",
+     "apple_says": "Allow Accessibility Shortcut during a session: Turn on Accessibility Shortcut. ... Important: Crash Detection and Emergency Services aren't available while using Guided Access.",
+     "url": "https://support.apple.com/guide/iphone/lock-iphone-to-one-app-iph7fad0d10/27/ios/27",
+     "correct_version": "",
+     "notes": "The Guided Access page does not mention Eye Tracking, Head Tracking or Dwell. Apple says only that the Accessibility Shortcut works during a session if it is turned on in Guided Access settings. On iPhone Duo, the Session Settings include Pose Changes and Display Changes."
+    }
+   ],
+   "more_findings": "iPhone Duo (iOS 27 guide): Eye Tracking and Head Tracking \"work only when the device is fully open; it isn't available when iPhone Duo is partially folded\". While either is on, \"the part of the inner display where the FaceTime camera sits is dark, so a control in that area can be hard to see\". Testers should check that no Brickson control sits there (https://support.apple.com/guide/iphone/control-iphone-with-the-movement-of-your-eyes-iph66057d0f6/ios).\n\nKeyboard: Apple's article 111775 says: \"When Dwell is enabled, the onscreen keyboard will always appear.\" So with AssistiveTouch Dwell on, expect the full software keyboard even with a hardware keyboard attached (https://support.apple.com/en-us/111775).\n\nEye Tracking pointer behaviour: with Snap to Item off, the dwell pointer appears where you look, and its circle fills before the action (\"tap, by default\"). By default an outline appears around the item being looked at. For scrolling and other gestures, Apple says to use the AssistiveTouch menu.\n\nSwitch Control has its own Eye Tracking and Head Tracking modes: Settings > Accessibility > Switch Control > Eye Tracking (Face Guidance; Dwell Control with Dwell Timeout and Movement Tolerance) and Settings > Accessibility > Switch Control > Switch Control Mode. Apple warns: \"When Switch Control is turned on, you can't use the standard gestures on the touchscreen to exit Switch Control.\" Set up the Accessibility Shortcut first (https://support.apple.com/guide/iphone/set-up-and-turn-on-switch-control-iph400b2f114/27/ios/27).\n\nSupported models: Eye Tracking runs on iPhone SE (3rd generation), iPhone 12 and later (including iPhone 16e, 17e, Air and iPhone Duo), and the listed iPads: iPad mini 6 and A17 Pro, iPad 10th generation and A16, iPad Air 4th generation and later, iPad Pro 11-inch 3rd generation and later, iPad Pro 12.9-inch 5th generation and later. Apple lists no models for Head Tracking (https://support.apple.com/guide/iphone/aside/iph06c826396/27/ios/27 ; https://support.apple.com/guide/ipad/aside/ipad94b399bf/27/ipados/27)."
+  },
+  {
+   "group": "Switch Control, Voice Control, keyboard and VoiceOver",
+   "claims": [
+    {
+     "id": "C1",
+     "claim": "Switch Control: Settings > Accessibility > Switch Control; add a switch via Switches > Add New Switch, sources External, Screen, Camera (and others such as Sound); assign the action Select Item / Move to Next Item.",
+     "status": "confirmed",
+     "apple_says": "\"Tap Accessibility, tap Switch Control, then tap Switches.\" \"Tap Add New Switch, then choose External, Screen, Camera, Back Tap, Sound, or AirPod Gestures.\" \"If you don't know which action to assign, choose Select Item, which is compatible with Auto Scanning (the default scanning style).\" Manual Scanning: \"Make sure the Move to Next Item action is assigned to one switch, and the Select Item action is assigned to another switch.\"",
+     "url": "https://support.apple.com/guide/iphone/set-up-and-turn-on-switch-control-iph400b2f114/27/ios/27",
+     "correct_version": "Settings > Accessibility > Switch Control > Switches > Add New Switch, then choose External, Screen, Camera, Back Tap, Sound or AirPod Gestures, and assign an action (Select Item for Auto Scanning; Move to Next Item plus Select Item for Manual Scanning; Move to Next Item for Single Switch Step Scanning). Turn it on at Settings > Accessibility > Switch Control.",
+     "notes": "Read in the iOS 27 iPhone guide. The iOS 26 guide has the same steps and source list. The iPadOS 27 guide gives the same list: https://support.apple.com/guide/ipad/set-up-and-turn-on-switch-control-ipad93dce3d5/27/ipados/27. An external Bluetooth switch must be paired first under Settings > Bluetooth, or it won't appear in the list."
+    },
+    {
+     "id": "C2",
+     "claim": "Scanning styles named Auto Scanning, Manual Scanning, Single Switch Step Scanning; settings Auto Scanning Time, Loops, Move Repeat, Pause on First Item.",
+     "status": "confirmed",
+     "apple_says": "\"Go to Settings > Accessibility > Switch Control > Scanning Style, then choose one of the following: Auto Scanning ... Manual Scanning ... Single Switch Step Scanning.\" \"Auto Scanning Time: Adjust the item scanning speed.\" \"Pause on First Item: Set scanning to pause on the first item in a group.\" \"Loops: Choose how many times to cycle through the screen before hiding Switch Control.\" \"Move Repeat: Set the delay before moving to the previous or next item while a switch is pressed.\"",
+     "url": "https://support.apple.com/guide/iphone/set-up-and-turn-on-switch-control-iph400b2f114/27/ios/27",
+     "correct_version": "",
+     "notes": "Auto Scanning is the default. Manual Scanning \"requires at least two switches\". Single Switch Step Scanning: \"if no action is taken within a specified duration, the current item is automatically selected.\" The iOS 26 and iPadOS 27 guides use the same wording."
+    },
+    {
+     "id": "C3",
+     "claim": "Switch Control's Group Items setting: exists on iOS 26/27, where it is, what it does.",
+     "status": "confirmed",
+     "apple_says": "Under \"Go to Settings > Accessibility > Switch Control, then adjust any of the following\": \"Group Items: Group items for faster navigation.\" Support article: \"Set whether items should be grouped while item scanning\"; from the Scanner menu's Settings: \"Turn off groups to scan items one at a time\".",
+     "url": "https://support.apple.com/guide/iphone/set-up-and-turn-on-switch-control-iph400b2f114/27/ios/27",
+     "correct_version": "Settings > Accessibility > Switch Control > Group Items. When it is on, item scanning first highlights groups. Selecting a group then scans the items inside it, so reaching a single item takes two selections.",
+     "notes": "The setting is in the iOS 26 and iOS 27 guides and in iPadOS 27. The use page says: \"Repeat steps 1 and 2 to scan and select an item within the group\" (https://support.apple.com/guide/iphone/select-items-perform-actions-and-more-iph8de250c54/27/ios/27). Second source: https://support.apple.com/en-us/119835."
+    },
+    {
+     "id": "C4",
+     "claim": "Tap Behavior options Default, Auto Tap, Always Tap; Auto Tap taps after an interval unless the switch is pressed again, which shows the Scanner menu.",
+     "status": "unconfirmed",
+     "apple_says": "\"Tap Behavior: Choose a tap behavior and set the interval for performing a second switch action to show the Scanner menu.\" (iOS 27 guide). \"Turn on Auto Tap at Settings > Accessibility > Switch Control > Tap Behavior > Auto Tap. After you turn on Auto Tap, you can select an item and wait for the Auto Tap interval to finish.\" \"If you turned on Auto Tap, use your switch within the Auto Tap interval, then select the gesture.\" (support article 119835)",
+     "url": "https://support.apple.com/en-us/119835",
+     "correct_version": "Settings > Accessibility > Switch Control > Tap Behavior > Auto Tap. With Auto Tap, a selected item is tapped when the Auto Tap interval ends. Using the switch again within that interval shows the Scanner menu instead, where you choose a gesture.",
+     "notes": "Apple confirms Auto Tap and how it behaves. No Apple page found names the other options \"Default\" or \"Always Tap\". The only \"Always Tap\" setting Apple documents is the separate \"Always Tap Keyboard Keys\". Searched the iOS 26 and 27 and iPadOS 27 setup pages, support articles 119835 and 118667, the Vision Pro Switch Control pages, and a site search of support.apple.com and developer.apple.com. Only third-party sites name Default and Always Tap. Treat those two names as what the device shows, not as Apple-documented. Also from the guide: \"the Scanner menu opens to show the available actions such as tap\" (iph8de250c54)."
+    },
+    {
+     "id": "C5",
+     "claim": "Focused Item After Tap: options First Item / Current Item and their meaning.",
+     "status": "unconfirmed",
+     "apple_says": "\"Focused Item After Tap: Choose whether Switch Control resumes scanning at an item you tap or from the beginning.\"",
+     "url": "https://support.apple.com/guide/iphone/set-up-and-turn-on-switch-control-iph400b2f114/27/ios/27",
+     "correct_version": "Settings > Accessibility > Switch Control > Focused Item After Tap: choose whether scanning resumes at the item you tapped or starts again from the beginning.",
+     "notes": "Apple confirms the setting and what it does (same wording in iOS 26, iPadOS 27 and visionOS). No Apple page names the options \"First Item\" and \"Current Item\" or gives a default. Those names come only from third-party guides (iMore, Beebom, AbleNet)."
+    },
+    {
+     "id": "C6",
+     "claim": "Point scanning: \"Gliding Cursor\" and \"Point Mode\" options such as Gliding and Single; how a person selects a point.",
+     "status": "corrected",
+     "apple_says": "\"Go to Settings > Accessibility > Switch Control > Switch Control Mode > then select Gliding Cursor.\" or \"Use item mode to select any item, then choose Gliding Cursor (in the Scanner menu).\" \"To position the vertical crosshair, activate your Select Item switch when the wide vertical band is over the item you want. Activate your Select Item switch again when the fine vertical line is over the item.\" The same is then done for the horizontal crosshair. \"In the Scanner menu, select the action you want\". \"To return to item mode, open the Scanner menu, then choose Item Mode.\"",
+     "url": "https://support.apple.com/guide/iphone/select-items-perform-actions-and-more-iph8de250c54/27/ios/27",
+     "correct_version": "On iOS 26 and 27, the mode is called Gliding Cursor and is chosen at Settings > Accessibility > Switch Control > Switch Control Mode > Gliding Cursor, or from the Scanner menu. To pick a point: press Select Item on the wide vertical band, again on the fine vertical line, then on the wide horizontal band and on the fine horizontal line, then choose an action in the Scanner menu. Item Mode in the Scanner menu goes back.",
+     "notes": "No Apple iOS 26/27 page has a \"Point Mode\" setting with \"Gliding\" and \"Single\" options. \"Point Mode\" appears only as an older Scanner menu label in support article 119835 (published May 20, 2026: \"Select Point Mode\"; to go back, \"Select Item Mode\"). The iPadOS 27 guide adds: \"If you change Switch Control Mode settings while Switch Control is turned on, you'll need to restart Switch Control to apply your changes.\" (https://support.apple.com/guide/ipad/select-items-perform-actions-and-more-ipad850ed4e3/27/ipados/27). Switch Control Mode also offers Head Tracking and Eye Tracking."
+    },
+    {
+     "id": "C7",
+     "claim": "Hold Duration and Ignore Repeat: what each does (a second press within the Ignore Repeat time is ignored?).",
+     "status": "confirmed",
+     "apple_says": "\"Hold Duration: Specify how long you need to press and hold a switch before it's accepted as a switch action.\" \"Ignore Repeat: Ignore accidental repeated switch triggers.\"",
+     "url": "https://support.apple.com/guide/iphone/set-up-and-turn-on-switch-control-iph400b2f114/27/ios/27",
+     "correct_version": "Hold Duration: how long a switch must be held before the press counts. Ignore Repeat: Switch Control ignores accidental repeated switch triggers.",
+     "notes": "Both are under Settings > Accessibility > Switch Control. The iPhone and iPad guides do not describe a time window. Only Apple's Mac guide gives one: \"Ignore switch repeats: The number of seconds during which repeated pressing of a switch is ignored.\" (https://support.apple.com/guide/mac-help/change-switch-control-settings-accessibility-mh43181/mac). Support article 119835: \"Set whether and how long you need to hold a switch down before it's accepted as a switch action\" and \"Have Switch Control ignore accidental repeated switch triggers\". Also related: Long Press, which runs a different action when a switch is held (\"Set whether a different action occurs when you press and hold a switch\")."
+    },
+    {
+     "id": "C8",
+     "claim": "Switch Control on iPhone/iPad can be controlled from a Mac's Switch Control (\"Use Other Devices\").",
+     "status": "confirmed",
+     "apple_says": "\"With Use Other Devices for Switch Control, you can control your other Apple devices remotely on the same Wi-Fi network without adjusting any switch connections.\" Under \"Use your Mac to control another device\": \"Turn on Switch Control on your Mac. Using your switch to navigate the Switch Control Home panel, select Devices. Select the device that you want to control, then select Connect.\" Mac guide: \"Devices: Shows available Apple devices that you can control using Switch Control on your Mac ... Your Mac, iPhone, iPad, and Apple TV 4K must be on the same Wi-Fi network, and you must be signed in to the same Apple Account on all the devices.\"",
+     "url": "https://support.apple.com/en-us/118667",
+     "correct_version": "From a Mac: turn on Switch Control on the Mac, then in the Switch Control Home panel choose Devices, choose the iPhone or iPad, then Connect. Both devices must be on the same Wi-Fi network and signed in to the same Apple Account.",
+     "notes": "Mac guide (macOS 27): https://support.apple.com/guide/mac-help/use-switch-control-mh43607/mac. Stopping: \"press and hold your switch for ten seconds. Your switch will control the original device again.\" Or from the Mac, Home panel > Devices > Disconnect. The opposite direction also works: on the iPhone, Scanner menu > Device > Use Other Device > Connect (the iPhone guide calls this \"Platform Switching\": https://support.apple.com/guide/iphone/control-several-devices-with-one-switch-iph626dd390a/27/ios/27). To let another device control a Mac, the Mac setting is \"Allow platform switching to control your computer\"."
+    },
+    {
+     "id": "C9",
+     "claim": "Voice Control: Settings > Accessibility > Voice Control; commands Show names, Show numbers, Tap <item name>, Show grid; turning on and off; iOS 27 \"Flexible Item Names\".",
+     "status": "confirmed",
+     "apple_says": "\"Tap Accessibility, tap Voice Control, tap Set Up Voice Control, then follow the onscreen instructions.\" Commands: \"Show names,\" \"Show numbers,\" or \"Show text numbers.\" \"Tap item name\". \"Show grid.\" \"Hide names,\" \"Hide numbers,\" or \"Hide grid\". On/off: \"Use Control Center if you've added Voice Control there. Use Accessibility Shortcut if you've set it up to turn on Voice Control. Siri: Ask Siri something like, 'Turn on Voice Control.'\" \"Flexible Item Names: With Apple Intelligence, you can refer to onscreen items in your own words instead of using their exact labels. This is turned on by default and can be turned off to use exact labels.\"",
+     "url": "https://support.apple.com/guide/iphone/use-voice-control-iph2c21a3c88/27/ios/27",
+     "correct_version": "First time: Settings > Accessibility > Voice Control > Set Up Voice Control, over Wi-Fi for a one-time download. When the Voice Control icon appears in the status bar, it is on. After that, turn it on or off with Control Center, the Accessibility Shortcut or Siri. Flexible Item Names is an option in Settings > Accessibility > Voice Control, on iOS 27 and iPadOS 27 only. It is on by default and needs Apple Intelligence.",
+     "notes": "The iOS 26 guide (https://support.apple.com/guide/iphone/use-voice-control-iph2c21a3c88/26/ios/26) has no Flexible Item Names. There, the setup path is \"Go to Settings > Accessibility > Voice Control. Tap Set Up Voice Control, then tap Continue\", and the options are named \"Customize Commands\" and \"Overlay\". iOS 27 renames them \"Commands\" and \"Continuous Overlay\". Flexible Item Names needs an Apple Intelligence-enabled iPhone (15 Pro or 15 Pro Max, or any iPhone 16 or later), or on iPad an iPad mini (A17 Pro or later) or an M1 or later model. The system language and the Voice Control language must both be English. Other commands: \"Stop listening\" / \"Start listening\" pause and resume; \"Show commands\" lists commands. While Voice Control is on, standard Dictation is unavailable. The iPadOS 27 page has the same wording: https://support.apple.com/guide/ipad/use-voice-control-ipad4b6c9ee4/27/ipados/27."
+    },
+    {
+     "id": "C10",
+     "claim": "Full Keyboard Access: Settings > Accessibility > Keyboards & Typing > Full Keyboard Access; Tab and arrow keys move focus, Space activates; Commands list.",
+     "status": "corrected",
+     "apple_says": "\"Go to Settings > Accessibility > Keyboards & Typing, tap Full Keyboard Access, then turn on Full Keyboard Access.\" Default commands: \"View available Full Keyboard Access commands: Tab-H\", \"Move forward: Tab\", \"Move backward: Shift-Tab\", \"Activate the selected item: Space bar\", \"Go to the Home Screen: Fn-H\". \"View a complete list of Full Keyboard Access commands and customize them: Tap Commands.\"",
+     "url": "https://support.apple.com/guide/iphone/control-iphone-with-an-external-keyboard-ipha4375873f/27/ios/27",
+     "correct_version": "Settings > Accessibility > Keyboards & Typing > Full Keyboard Access. Tab moves forward, Shift-Tab moves backward, and the Space bar activates the selected item. Tab-H shows the available commands. The full list, which you can customize, is in Full Keyboard Access > Commands.",
+     "notes": "Apple's default command table for iPhone and iPad does not list arrow keys for moving focus, so don't present them as Apple-documented. Arrow keys appear only in Apple's Mac keyboard-focus shortcuts. Other defaults: Fn-Up Arrow opens the App Switcher, Fn-C opens Control Center, Fn-N opens Notification Center. The iOS 26 page is identical. iPadOS 27: https://support.apple.com/guide/ipad/control-ipad-with-an-external-keyboard-ipad5f765d6f/27/ipados/27."
+    },
+    {
+     "id": "C11",
+     "claim": "VoiceOver: on/off via Settings > Accessibility > VoiceOver, Siri, or the Accessibility Shortcut; swipe right moves to the next item; double-tap activates.",
+     "status": "confirmed",
+     "apple_says": "\"Go to Settings > Accessibility > VoiceOver, then turn VoiceOver on or off.\" \"Use Control Center if you've added VoiceOver there.\" \"Use the Accessibility Shortcut if you've set it up to turn on VoiceOver.\" \"Siri: Ask Siri something like, 'Turn on VoiceOver.'\" Gestures: \"Select the next item: Swipe right\"; \"Activate the selected item: Double tap\".",
+     "url": "https://support.apple.com/guide/iphone/turn-on-and-practice-voiceover-iph3e2e415f/27/ios/27",
+     "correct_version": "",
+     "notes": "Gesture table: https://support.apple.com/guide/iphone/use-voiceover-gestures-iph3e2e2281/27/ios/27. \"When VoiceOver is on, you must use VoiceOver gestures to operate iPhone.\" Swipe left selects the previous item. A split tap also activates: touch and hold an item with one finger, then tap with another. Accessibility Shortcut: Settings > Accessibility > Accessibility Shortcut, then triple-click the side button (Face ID iPhone or iPhone Duo) or the Home button (iPhone SE). iPadOS 27 pages use the same wording."
+    }
+   ],
+   "more_findings": "With Switch Control on, the touchscreen's standard gestures can't be used to exit it. Apple: \"you can't use the standard gestures on the touchscreen to exit Switch Control.\" Turn it off from Settings with the switch, or triple-click the side, top or Home button through the Accessibility Shortcut (support article 119835: \"triple-click the Home button or the Side button ... at any time to exit Switch Control\").\n\nIn item mode, selecting an item opens the Scanner menu, and the person then chooses Tap. Apple: \"When the cursor is on the item you want, the Scanner menu opens to show the available actions such as tap\". With Group Items on, the first selection picks a group, not an item. So a single switch press does not tap a button unless Tap Behavior is set to Auto Tap. A tester checking \"speaks on first activation\" should record the Tap Behavior and Group Items settings in use.\n\nTo dismiss the Scanner menu without acting, \"activate your Select Item switch when the original item is highlighted and all the icons in the menu are dimmed.\"\n\nOn iPhone Duo, Switch Control's Head Tracking and Eye Tracking \"work only when the device is fully open\". While they're on, \"the part of the inner display where the FaceTime camera sits is dark, so a control in that area can be hard to see\" (iOS 27 guide, iph8de250c54).\n\nVoice Control needs Wi-Fi for its first one-time download. On iOS 27, Flexible Item Names is on by default, so a loosely worded \"Tap ...\" may still succeed. To test exact accessibility labels, turn off Settings > Accessibility > Voice Control > Flexible Item Names. On iOS 26 the setting doesn't exist.\n\nPages read: the iPhone guide for iOS 27 and iOS 26, the iPadOS 27 guide, support articles 119835 and 118667, and the macOS 27 Mac guide. All were fetched directly from support.apple.com."
+  },
+  {
+   "group": "Guided Access, Assistive Access, display and sound",
+   "claims": [
+    {
+     "id": "D1a",
+     "claim": "Guided Access is at Settings > Accessibility > Guided Access",
+     "status": "confirmed",
+     "apple_says": "Tap Accessibility, tap Guided Access, then turn on Guided Access.",
+     "url": "https://support.apple.com/guide/iphone/use-guided-access-iph7fad0d10/ios",
+     "correct_version": "",
+     "notes": "The iOS 27 iPhone guide (the page links to /27/ios/27). The iPadOS 27 guide gives the same path: https://support.apple.com/guide/ipad/lock-ipad-to-one-app-ipada16d1374/27/ipados/27"
+    },
+    {
+     "id": "D1b",
+     "claim": "Start Guided Access by triple-clicking the side button (or Home button)",
+     "status": "confirmed",
+     "apple_says": "Triple-click the side button on iPhone or top button on iPad. If your older device has a Home button, triple-click the Home button instead. ... If the Accessibility Shortcuts panel appears, tap Guided Access in the panel.",
+     "url": "https://support.apple.com/en-us/111795",
+     "correct_version": "Open the app, then triple-click the side button (iPhone), the top button (iPad) or the Home button (older devices). If a panel appears, tap Guided Access.",
+     "notes": "The iOS 27 user guide lists three ways to start: Siri (\"Turn on Guided Access\"), Control Center if Guided Access was added there, or the Accessibility Shortcut, which is the triple-click (Settings > Accessibility > Accessibility Shortcut)."
+    },
+    {
+     "id": "D1c",
+     "claim": "Guided Access has Passcode Settings",
+     "status": "confirmed",
+     "apple_says": "Tap Passcode Settings, tap Set Guided Access Passcode, then enter a passcode. ... Tap Passcode Settings, then turn on Face ID ... or Touch ID",
+     "url": "https://support.apple.com/guide/iphone/use-guided-access-iph7fad0d10/ios",
+     "correct_version": "",
+     "notes": ""
+    },
+    {
+     "id": "D1d",
+     "claim": "Guided Access has Time Limits",
+     "status": "confirmed",
+     "apple_says": "Tap Time Limits, tap Sound, then select a sound ... Tap Time Limits, then turn on Speak to hear the time remaining",
+     "url": "https://support.apple.com/guide/iphone/use-guided-access-iph7fad0d10/ios",
+     "correct_version": "",
+     "notes": "Time Limits (in settings: sound and speech) is separate from Time Limit (the per-session switch in Session Settings)."
+    },
+    {
+     "id": "D1e",
+     "claim": "The option that sets how long before the display locks in Guided Access is Display Auto-Lock",
+     "status": "confirmed",
+     "apple_says": "Set how long it takes iPhone to lock automatically: Tap Display Auto-Lock, then select an option.",
+     "url": "https://support.apple.com/guide/iphone/use-guided-access-iph7fad0d10/ios",
+     "correct_version": "Settings > Accessibility > Guided Access > Display Auto-Lock",
+     "notes": "111795: \"Display Auto-Lock: Set how quickly your device automatically locks when not in use during a Guided Access session.\""
+    },
+    {
+     "id": "D1f",
+     "claim": "How to end Guided Access",
+     "status": "confirmed",
+     "apple_says": "Triple-click the side button (on an iPhone with Face ID or iPhone Duo) or Home button (on iPhone SE), then enter your Guided Access passcode.",
+     "url": "https://support.apple.com/en-us/111795",
+     "correct_version": "Triple-click the side button (iPhone), top button (iPad) or Home button, authenticate with the Guided Access passcode, Face ID or Touch ID, then tap End (Resume continues the session).",
+     "notes": "111795: \"Tap Resume to continue the session. Tap End to end the session.\" The user guide quote is from https://support.apple.com/guide/iphone/use-guided-access-iph7fad0d10/ios"
+    },
+    {
+     "id": "D1g",
+     "claim": "Start-screen options: Side Button, Volume Buttons, Motion, Keyboards, Touch, Time Limit",
+     "status": "corrected",
+     "apple_says": "Tap Session Settings, then turn on or off any of the following: Side Button, Volume Buttons, Motion, Software Keyboards, ... Touch, Time Limit. Tap Done, then tap Start.",
+     "url": "https://support.apple.com/guide/iphone/use-guided-access-iph7fad0d10/ios",
+     "correct_version": "Tap Session Settings (older versions say Options) and set: Side Button (iPad: Top Button; older devices: Home Button), Volume Buttons, Motion, Software Keyboards, Touch, Time Limit. Then tap Done, then Start. iPhone Duo also has Pose Changes and Display Changes.",
+     "notes": "111795 says \"Tap Session Settings (or Options)\". It also says Volume Buttons, in iOS 26.1 or later, \"also disables the ability to change the volume using volume controls on Bluetooth headphones.\""
+    },
+    {
+     "id": "D2a",
+     "claim": "Settings > Accessibility > Assistive Access > Set Up Assistive Access",
+     "status": "confirmed",
+     "apple_says": "Go to Settings > Accessibility > Assistive Access, tap Set Up Assistive Access, then tap Continue.",
+     "url": "https://support.apple.com/guide/assistive-access-iphone/set-up-assistive-access-devcd5016d31/27/ios/27",
+     "correct_version": "",
+     "notes": ""
+    },
+    {
+     "id": "D2b",
+     "claim": "Adding an app to Assistive Access",
+     "status": "confirmed",
+     "apple_says": "Exit Assistive Access if it's active. ... Tap Accessibility, then tap Assistive Access. Tap Manage Apps. ... Add an app: Tap the Add button next to the app, then choose options for the app.",
+     "url": "https://support.apple.com/guide/assistive-access-iphone/add-remove-and-customize-apps-devd7d3e3b512/27/ios/27",
+     "correct_version": "During setup (Step 3), tap the Add button. Later: exit Assistive Access, then Settings > Accessibility > Assistive Access > Manage Apps, and tap the Add button next to the app.",
+     "notes": "Apple says non-optimized apps can be added \"in their original form\"."
+    },
+    {
+     "id": "D2c",
+     "claim": "An app not designed for Assistive Access is shown in a frame with a Back button",
+     "status": "confirmed",
+     "apple_says": "By default, the system draws apps in a reduced frame to fit them onscreen with the prominent Back button in Assistive Access. This frame matches the dimensions of a smaller iPhone or iPad screen",
+     "url": "https://developer.apple.com/documentation/accessibility/optimizing-your-app-for-assistive-access.md",
+     "correct_version": "",
+     "notes": ""
+    },
+    {
+     "id": "D2d",
+     "claim": "Exit Assistive Access by triple-click and passcode",
+     "status": "confirmed",
+     "apple_says": "Triple-click the side button (on an iPhone with Face ID) or the Home button (on other iPhone models), tap Exit Assistive Access, then enter the Assistive Access passcode.",
+     "url": "https://support.apple.com/guide/assistive-access-iphone/devdedddc678/27/ios/27",
+     "correct_version": "Triple-click the side button or Home button (iPad: top button or Home button), tap Exit Assistive Access, then enter the Assistive Access passcode (not the device passcode).",
+     "notes": "The iPad page is https://support.apple.com/guide/assistive-access-ipad/devdedddc678/27/ipados/27. To enter: Settings > Accessibility > Assistive Access > Start Assistive Access, then the passcode."
+    },
+    {
+     "id": "D2e",
+     "claim": "UISupportsFullScreenInAssistiveAccess (Info.plist) and what it changes",
+     "status": "confirmed",
+     "apple_says": "Adding this key to your app's Info.plist file with a value of YES allows your app's UI to expand into all the available space above the Back button in Assistive Access. It also lists your app as Optimized for Assistive Access in Settings",
+     "url": "https://developer.apple.com/documentation/bundleresources/information-property-list/uisupportsfullscreeninassistiveaccess.md",
+     "correct_version": "",
+     "notes": "A Boolean, iOS/iPadOS 17.0 and later. It is separate from UISupportsAssistiveAccess, which goes with the SwiftUI AssistiveAccess scene for a streamlined UI."
+    },
+    {
+     "id": "D3a",
+     "claim": "Create Personal Voice in Settings > Accessibility > Personal Voice",
+     "status": "confirmed",
+     "apple_says": "Tap Accessibility, then tap Personal Voice. Tap Create a Personal Voice, then follow the onscreen instructions.",
+     "url": "https://support.apple.com/guide/iphone/iph51936468d/ios",
+     "correct_version": "",
+     "notes": "\"To see the option to create your Personal Voice, you must first set a passcode.\" iPad: https://support.apple.com/guide/ipad/record-your-personal-voice-ipad474cabc0/27/ipados/27"
+    },
+    {
+     "id": "D3b",
+     "claim": "\"Allow Apps to Request to Use\" switch",
+     "status": "confirmed",
+     "apple_says": "To allow apps to request to use your Personal Voice, turn on Allow Apps to Request to Use.",
+     "url": "https://support.apple.com/104993",
+     "correct_version": "",
+     "notes": ""
+    },
+    {
+     "id": "D3c",
+     "claim": "A person turns off a single app's Personal Voice access later from a list of apps under Personal Voice",
+     "status": "unconfirmed",
+     "apple_says": "(Mac only) \"Allow applications to use your Personal Voice: View a list of apps that you've given permission to use your Personal Voice. You can add more apps or revoke an app's access.\"",
+     "url": "https://support.apple.com/guide/mac-help/change-personal-voice-settings-accessibility-mchl4b5f02ec/mac",
+     "correct_version": "",
+     "notes": "No Apple page describes a per-app list or a revoke step on iPhone or iPad. Read: the iOS 27 iPhone guide, the iPadOS 27 iPad guide, support 104993 and the developer page for requestPersonalVoiceAuthorization (its Discussion is empty). Searched support.apple.com and developer.apple.com."
+    },
+    {
+     "id": "D3d",
+     "claim": "Share Across Devices",
+     "status": "confirmed",
+     "apple_says": "To share your Personal Voice with your other devices, turn on Share Across Devices.",
+     "url": "https://support.apple.com/104993",
+     "correct_version": "",
+     "notes": "It needs two-factor authentication and the same Apple Account. It \"also securely stores a copy of your voice in iCloud\"."
+    },
+    {
+     "id": "D4a",
+     "claim": "Live Speech is at Settings > Accessibility > Live Speech",
+     "status": "confirmed",
+     "apple_says": "Tap Accessibility, tap Live Speech, then turn on Live Speech.",
+     "url": "https://support.apple.com/guide/iphone/iphcf92d2d9b/ios",
+     "correct_version": "",
+     "notes": "To use it: triple-click the side or Home button, then tap Live Speech if the Accessibility Shortcut has more than one feature."
+    },
+    {
+     "id": "D4b",
+     "claim": "Live Speech on Apple Watch: which watchOS and where in the Watch's settings",
+     "status": "confirmed",
+     "apple_says": "Go to the Settings app on your Apple Watch. Go to Accessibility > Live Speech, then turn on Live Speech. ... Triple-click the Digital Crown",
+     "url": "https://support.apple.com/guide/watch/type-to-speak-apd86a007717/watchos",
+     "correct_version": "watchOS 10 or later: the Settings app on Apple Watch > Accessibility > Live Speech. Use it by triple-clicking the Digital Crown.",
+     "notes": "The watchOS requirement comes from https://support.apple.com/105018: \"iOS 17, iPadOS 17, macOS Sonoma, watchOS 10, or later\"."
+    },
+    {
+     "id": "D5a",
+     "claim": "Settings > Accessibility > Display & Text Size > Larger Text, with Larger Accessibility Sizes",
+     "status": "confirmed",
+     "apple_says": "Tap Larger Text, then drag the slider to adjust the text size. For additional text sizes, turn on Larger Accessibility Sizes.",
+     "url": "https://support.apple.com/guide/iphone/iph3c076905a/ios",
+     "correct_version": "",
+     "notes": ""
+    },
+    {
+     "id": "D5b",
+     "claim": "Bold Text",
+     "status": "confirmed",
+     "apple_says": "Make text heavier: Turn on Bold Text.",
+     "url": "https://support.apple.com/guide/iphone/iph3c076905a/ios",
+     "correct_version": "",
+     "notes": "Under Settings > Accessibility > Display & Text Size. In iOS 27, Bold Text is also under Settings > Appearance."
+    },
+    {
+     "id": "D5c",
+     "claim": "Increase Contrast",
+     "status": "confirmed",
+     "apple_says": "Tap Accessibility, tap Display & Text Size, turn on Increase Contrast.",
+     "url": "https://support.apple.com/guide/iphone/iph3e2e1fb0/ios",
+     "correct_version": "",
+     "notes": ""
+    },
+    {
+     "id": "D5d",
+     "claim": "Reduce Transparency",
+     "status": "confirmed",
+     "apple_says": "Go to Settings > Accessibility > Display & Text Size. Turn on Reduce Transparency.",
+     "url": "https://support.apple.com/guide/iphone/iph3e2e1fb0/ios",
+     "correct_version": "",
+     "notes": ""
+    },
+    {
+     "id": "D5e",
+     "claim": "Color Filters > Grayscale",
+     "status": "confirmed",
+     "apple_says": "Tap Color Filters, turn on Color Filters, then tap a color filter to apply it.",
+     "url": "https://support.apple.com/guide/iphone/iph3e2e1fb0/ios",
+     "correct_version": "",
+     "notes": "The current guide says filters \"view the entire screen in grayscale\" but does not name the filter. The filter name \"Grayscale\" comes from an older article (https://support.apple.com/en-us/HT207025): \"you can choose from four preset filters: Grayscale, Red/Green for Protanopia, ...\"."
+    },
+    {
+     "id": "D5f",
+     "claim": "Button Shapes",
+     "status": "corrected",
+     "apple_says": "Tap Accessibility, then tap Display & Text Size. Turn on Show Borders.",
+     "url": "https://support.apple.com/guide/iphone/zokq2zmg6rn1/ios",
+     "correct_version": "Settings > Accessibility > Display & Text Size > Show Borders (the iOS 26 and iOS 27 guides both use this name).",
+     "notes": "The iOS 26 guide also says \"Turn on Show Borders\": https://support.apple.com/guide/iphone/iph3c076905a/26/ios/26. Only the older HT207025 still says \"Button Shapes\"."
+    },
+    {
+     "id": "D5g",
+     "claim": "Settings > Accessibility > Motion > Reduce Motion",
+     "status": "confirmed",
+     "apple_says": "Tap Accessibility, then tap Motion. ... Reduce Motion: Turn on.",
+     "url": "https://support.apple.com/guide/iphone/iph0b691d3ed/ios",
+     "correct_version": "",
+     "notes": ""
+    },
+    {
+     "id": "D6",
+     "claim": "Display Zoom: Settings > Display & Brightness > Display Zoom, options Default / Larger Text; restart required?",
+     "status": "corrected",
+     "apple_says": "Tap Appearance, tap Display Zoom, then tap Larger Text. Tap the Done button, then tap Use Zoomed.",
+     "url": "https://support.apple.com/guide/iphone/iphd6804774e/ios",
+     "correct_version": "iOS 27: Settings > Appearance > Display Zoom > Larger Text, then Done, then Use Zoomed. iOS 26: Settings > Display & Brightness > Display Zoom > Larger Text, then Done, then Use Zoomed.",
+     "notes": "The iOS 26 path is from https://support.apple.com/guide/iphone/iphd6804774e/26/ios/26. No Apple page I read names the other option \"Default\" or says the device restarts."
+    },
+    {
+     "id": "D7",
+     "claim": "Silent mode: Ring/Silent switch, or on iPhones with an Action button, the Action button or Control Center",
+     "status": "confirmed",
+     "apple_says": "On models with an Action button: Press and hold the Action button to turn Silent mode on. ... On models with a Ring/Silent switch: Flip the Ring/Silent switch toward the back of your iPhone to turn Silent mode on. Flip it toward the front to turn Silent mode off.",
+     "url": "https://support.apple.com/guide/iphone/silence-iphone-iph81c7fd7d1/27/ios/27",
+     "correct_version": "",
+     "notes": "Any model: \"Open Control Center, then tap the Silent mode button\", or Settings > Sounds & Haptics > Silent mode. The Action button silences only while its action is Silent Mode, which is \"(the default)\" (https://support.apple.com/guide/iphone/iphe89d61d66/27/ios/27)."
+    },
+    {
+     "id": "D8a",
+     "claim": "Settings > Display & Brightness > Auto-Lock",
+     "status": "confirmed",
+     "apple_says": "Go to Settings > Display & Brightness > Auto-Lock, then set a length of time.",
+     "url": "https://support.apple.com/guide/iphone/iph14a867ae/27/ios/27",
+     "correct_version": "",
+     "notes": ""
+    },
+    {
+     "id": "D8b",
+     "claim": "The shortest Auto-Lock option is 30 seconds",
+     "status": "unconfirmed",
+     "apple_says": "Low Power Mode ... Sets Auto-Lock to 30 seconds",
+     "url": "https://support.apple.com/101604",
+     "correct_version": "",
+     "notes": "No Apple page I read lists the Auto-Lock choices or names the shortest one. Read: the iOS 27 pages \"Keep the iPhone display on longer\", \"Set a passcode\" and \"Wake, unlock, and lock\", and support 101604."
+    },
+    {
+     "id": "D9a",
+     "claim": "Settings > Multitasking & Gestures: Full Screen Apps, Windowed Apps, Stage Manager",
+     "status": "confirmed",
+     "apple_says": "Tap Multitasking & Gestures, then select one of the following: Full Screen Apps ... Windowed Apps ... Stage Manager",
+     "url": "https://support.apple.com/guide/ipad/change-multitasking-gestures-settings-ipad-ipad2q9j404h2/27/ipados/27",
+     "correct_version": "",
+     "notes": "The iPadOS 26 guide also says \"Tap Multitasking & Gestures, then select Windowed Apps.\""
+    },
+    {
+     "id": "D9b",
+     "claim": "Slide Over in iPadOS 26 or 27",
+     "status": "confirmed",
+     "apple_says": "In iPadOS 26.2 or later, you can set one window as a Slide Over window ... Open an app, tap and hold the window controls button, then tap Enter Slide Over.",
+     "url": "https://support.apple.com/125309",
+     "correct_version": "Slide Over exists in iPadOS 26.2 or later: touch and hold the window controls, then tap Enter Slide Over (or drag an app from the Dock onto the left or right edge). To leave, use Exit Slide Over.",
+     "notes": "It is not in iPadOS 26.0 or 26.1."
+    },
+    {
+     "id": "D9c",
+     "claim": "Resize a window by dragging its corner",
+     "status": "confirmed",
+     "apple_says": "Resize a window: Drag the resize handle in the bottom-right corner of the window.",
+     "url": "https://support.apple.com/guide/ipad/work-with-multiple-windows-at-the-same-time-ipad08c9970c/27/ipados/27",
+     "correct_version": "",
+     "notes": "Needs Windowed Apps (or Stage Manager). Apple's pages differ slightly: 125309 says \"drag any corner or the handle in the bottom right corner\", and the Streamline page says \"drag from either of the bottom corners\"."
+    },
+    {
+     "id": "D10",
+     "claim": "Settings > Privacy & Security > Analytics & Improvements > Analytics Data lists crash and resource logs (names starting with the app's name, JetsamEvent)",
+     "status": "corrected",
+     "apple_says": "Open the Analytics & Improvements section of Settings on the device. ... Tap Analytics Data. Locate the log for your app. The log name starts with <AppBinaryName>_<DateTime> for crash reports, or JetsamEvent_<DateTime> for high-memory use crashes.",
+     "url": "https://developer.apple.com/documentation/xcode/acquiring-crash-reports-and-diagnostic-logs.md",
+     "correct_version": "Settings > Privacy & Security > Analytics & Improvements > Analytics Data. Crash reports start with the app's binary name and the date and time (<AppBinaryName>_<DateTime>). High-memory terminations are JetsamEvent_<DateTime>. To send one, select it, tap Share, then Mail.",
+     "notes": "\"Privacy & Security\" comes from https://support.apple.com/en-us/HT202100: \"go to Settings, tap Privacy & Security, then select Analytics or Analytics & Improvements\". The page does not say \"resource logs\"."
+    },
+    {
+     "id": "D11",
+     "claim": "Whether accessibility features such as Eye Tracking work in iPhone Mirroring",
+     "status": "unconfirmed",
+     "apple_says": "Access to the iPhone camera and mic is not available in iPhone Mirroring, including for Face ID or phone calls.",
+     "url": "https://support.apple.com/120421",
+     "correct_version": "",
+     "notes": "No Apple page says whether Eye Tracking or other iPhone accessibility features work in iPhone Mirroring. Read: support 120421 and the Mac User Guide \"Control your iPhone from your Mac\" (https://support.apple.com/guide/mac-help/control-your-iphone-from-your-mac-mchl444d53a6/mac). Apple also says \"Your iPhone stays locked\" and \"iPhone audio plays through your Mac\"."
+    },
+    {
+     "id": "D12",
+     "claim": "Invoke Siri: hold the side button, or say \"Siri\" / \"Hey Siri\"",
+     "status": "confirmed",
+     "apple_says": "Use your voice: Say \"Siri\" or \"Hey Siri.\" This option is only available if \"Siri\" or \"Hey Siri\" is turned on. ... Use the buttons on iPhone: Press and hold the side button (on an iPhone with Face ID or iPhone Duo) or press and hold the Home button (on iPhone SE).",
+     "url": "https://support.apple.com/guide/iphone/turn-on-and-activate-siri-iph83aad8922/27/ios/27",
+     "correct_version": "",
+     "notes": "With Siri AI, Siri also opens by swiping down from the top of the screen (Dynamic Island)."
+    }
+   ],
+   "more_findings": "1) Guided Access: \"Crash Detection and Emergency Services aren't available while using Guided Access. Exit Guided Access to use Crash Detection or to make emergency calls.\" (iOS 26 and 27 guides, 111795). The Accessibility Shortcut also does nothing during a session unless \"Accessibility Shortcut\" is turned on in Guided Access settings.\n2) Assistive Access: \"apps won't ask for permission to access information such as location, photos, and contacts\". Permissions are set during setup or under Settings > Apps > [app name] after exiting (https://support.apple.com/guide/assistive-access-iphone/understand-differences-assistive-access-dev473e94873/27/ios/27). Apple does not say whether the Personal Voice request is affected. An emergency call is still possible: triple-click, then Emergency, with no passcode.\n3) Personal Voice devices: the iOS 27 guide says \"available on iPhone 15 Pro models, iPhone 16 models and later\", and the iPadOS 27 guide says \"iPad mini (A17 Pro and later) and iPad models with M1 and later\". The older support article 104993 says iPhone 12 or later. The languages are English (U.S.), Mandarin Chinese (China mainland) and Spanish (Mexico), and a passcode must be set first.\n4) Silent mode: \"Clock alarms, audio apps such as Music, and many games play sounds through the built-in speaker, even when Silent mode is on.\" Siri opened with a button \"responds silently when iPhone is in Silent mode\".\n5) Auto-Lock: \"If you keep your iPhone on the Home Screen and don't take any action, your Auto-Lock time is reduced by half.\" With Attention Aware Features on, iPhone \"won't dim or lock as long as it detects attention\". Low Power Mode \"Sets Auto-Lock to 30 seconds\".\n6) iOS 27 has a separate Settings > Appearance pane, with Text Size, Bold Text, Liquid Glass and Display Zoom. Display & Brightness still holds Auto-Lock.\n7) For AAC audio in calls: Settings > Accessibility > Audio & Visual > Add Audio in Calls > \"Allow Apps to Add Audio in Calls\"."
+  }
+ ]
+}
