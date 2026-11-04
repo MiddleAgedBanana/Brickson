@@ -1147,10 +1147,23 @@ class SimulatorLoadTests(unittest.TestCase):
     # the last line, counting the Mac's or another simulator's processes as
     # this simulator's, counting a new process under an old one's pid as
     # the old one, reading the Mac's busy time from anything but its
-    # processors' counters (or tripping when a counter wraps), or leaving
-    # out how long the list took to read, fails this test.
+    # processors' counters (or tripping when a counter wraps), or a list
+    # time that leaves out any part of the reading (listing, the details,
+    # the processors' counts), fails this test.
     def test_each_line_reports_the_time_used_since_the_last(self):
         watcher = self.watch(pause_posters=False)
+
+        def taking(call, seconds):
+            def slow(*arguments):
+                self.now += seconds
+                return call(*arguments)
+            return slow
+
+        # A reading takes 0.2 s to list, 0.01 s for each of the
+        # simulator's six processes and 0.05 s to count: 0.31 s.
+        self.system.table = taking(self.system.table, 0.2)
+        self.system.details = taking(self.system.details, 0.01)
+        self.system.processor_ticks = taking(self.system.processor_ticks, 0.05)
         self.times({121: 60.0, 110: 3660.0, 221: 30.0, 300: 86400.0, 122: 7.0},
                    ticks=2**32 - 250)
         watcher.sample()
@@ -1158,12 +1171,9 @@ class SimulatorLoadTests(unittest.TestCase):
         reused = [(122, 100, "S", f"{EXTENSIONS}/KaleidoscopePoster.appex/KaleidoscopePoster", None)]
         self.times({121: 65.0, 110: 3660.5, 221: 32.5, 300: 86402.5, 122: 1.5},
                    ticks=800, without=(122,), extra=reused)
-        # The reading begins at 4.75 s and ends at 5 s.
-        clock = iter((4.75, 5.0))
-        watcher.clock = lambda: next(clock)
         watcher.sample()
         line = self.record.read_text().splitlines()[-1]
-        self.assertRegex(line, r" simulator +140% mac +210% load +[\d.]+ list 0\.25 s \| ")
+        self.assertRegex(line, r" simulator +140% mac +210% load +[\d.]+ list 0\.31 s \| ")
         self.assertTrue(line.endswith("| EmojiPosterExtension 100%, KaleidoscopePoster 30%, "
                                       "SpringBoard 10%"), line)
         watcher.summary()
@@ -1285,17 +1295,22 @@ class SimulatorLoadTests(unittest.TestCase):
     # The structures are read straight from the kernel's bytes, so a field
     # of the wrong size shifts every field after it. A size that differs
     # from xnu's bsd/sys/proc_info.h (struct proc_bsdshortinfo, 64 bytes;
-    # struct proc_taskinfo, 96) or mach/mach_time.h fails this test.
+    # struct proc_taskinfo, 96) or mach/mach_time.h, or a field the watcher
+    # reads at another place or of another length, fails this test.
     def test_the_structures_have_the_kernels_sizes(self):
         sizes = {name: ctypes.sizeof(getattr(self.module, name))
                  for name in ("ShortInfo", "TaskInfo", "Timebase")}
         self.assertEqual(sizes, {"ShortInfo": 64, "TaskInfo": 96, "Timebase": 8})
-        offsets = {name: getattr(structure, name).offset
-                   for structure, names in ((self.module.ShortInfo, ("ppid", "status", "comm")),
-                                            (self.module.TaskInfo, ("total_user", "total_system")))
-                   for name in names}
-        self.assertEqual(offsets, {"ppid": 4, "status": 12, "comm": 16,
-                                   "total_user": 16, "total_system": 24})
+        # Where each field the watcher reads starts, and how long it is:
+        # padding can hide a field that is too short from the sizes alone.
+        fields = {name: (getattr(structure, name).offset, getattr(structure, name).size)
+                  for structure, names in ((self.module.ShortInfo, ("ppid", "status", "comm")),
+                                           (self.module.TaskInfo, ("total_user", "total_system")),
+                                           (self.module.Timebase, ("numer", "denom")))
+                  for name in names}
+        self.assertEqual(fields, {"ppid": (4, 4), "status": (12, 4), "comm": (16, 16),
+                                  "total_user": (16, 8), "total_system": (24, 8),
+                                  "numer": (0, 4), "denom": (4, 4)})
 
 
 @unittest.skipUnless(sys.platform == "darwin",
@@ -1341,9 +1356,14 @@ class MacProcessesTests(unittest.TestCase):
     # gave the same counts before and after this test's half second of work
     # on GitHub's machine, run 41748946044), fails this test.
     def test_processor_time_is_in_seconds(self):
+        # More asks than the kernel answers afresh in a second
+        # (HOST_STATISTICS_MAX_REQUESTS, 10), so a copy would be caught
+        # however few other programs are asking.
+        for _ in range(12):
+            self.system.processor_ticks()
         own, used, ticks = (self.system.details(os.getpid())[0], time.process_time(),
                             self.system.processor_ticks())
-        deadline = time.process_time() + 0.5
+        deadline = time.process_time() + 0.3
         while time.process_time() < deadline:
             pass
         own = self.system.details(os.getpid())[0] - own
@@ -1361,22 +1381,57 @@ class MacProcessesTests(unittest.TestCase):
         self.assertIsNone(self.system.details(finished.pid))
         self.assertNotIn(finished.pid, self.system.table())
 
-    # Starting a process to read the list (going back to ps, whose
+    # Starting a process to read anything (going back to ps, whose
     # time-outs left the watcher blind for minutes on GitHub's machines)
-    # fails this test. A whole reading runs: a simulator that is not
-    # running is said to be not running.
+    # fails this test. Each call a reading makes runs, on this process
+    # (CI boots no simulator before this test, so a reading alone would
+    # not reach launchd_sim's arguments or a process's details), and then
+    # a whole reading: a simulator that is not running is said to be not
+    # running.
     def test_a_reading_starts_no_process(self):
+        expected = subprocess.run(["/bin/ps", "-ww", "-o", "args=", "-p", str(os.getpid())],
+                                  capture_output=True, text=True, check=True).stdout.strip()
         refuse = mock.Mock(side_effect=AssertionError("the watcher started a process"))
         with tempfile.TemporaryFile("w+") as out, \
                 mock.patch.object(subprocess, "Popen", refuse), \
                 mock.patch.object(os, "posix_spawn", refuse), \
                 mock.patch.object(os, "fork", refuse), \
                 mock.patch.object(os, "system", refuse):
+            self.assertIn(os.getpid(), self.system.table())
+            self.assertEqual(" ".join(self.system.arguments(os.getpid())), expected)
+            self.assertIsNotNone(self.system.details(os.getpid()))
+            self.assertTrue(self.system.processor_ticks())
             watcher = self.module.Watch("NO-SUCH-SIMULATOR", out, True, self.system)
             watcher.sample()
             out.seek(0)
             self.assertRegex(out.read(), r"\A\d\d:\d\d:\d\d the simulator NO-SUCH-SIMULATOR is not running\n\Z")
         refuse.assert_not_called()
+
+    # scripts/test.sh runs the watcher with the Mac's own /usr/bin/python3,
+    # which can be older than the python3 running these tests (3.9 on
+    # GitHub's machines). A call or syntax that interpreter lacks, or a
+    # process call that fails on a real Mac, fails this test: the record
+    # would end in a traceback or say the list could not be read.
+    def test_the_watcher_runs_under_the_macs_own_python(self):
+        with tempfile.TemporaryDirectory() as folder:
+            record = Path(folder) / "simulator-load.txt"
+            command = ["/usr/bin/python3", "-I", str(SCRIPT.with_name("simulator-load.py"))]
+            started = subprocess.run(
+                command + ["start", "--udid", "NO-SUCH-SIMULATOR", "--out", str(record),
+                           "--parent", str(os.getpid()), "--pause-posters"],
+                capture_output=True, text=True, timeout=120)
+            self.assertEqual(started.returncode, 0, started.stderr)
+            pid = int(started.stdout.split()[0])
+            self.addCleanup(end, pid)
+            self.assertTrue(wait_for(lambda: "is not running" in record.read_text(), seconds=30),
+                            record.read_text())
+            stopped = subprocess.run(command + ["stop", "--pid", str(pid), "--out", str(record)],
+                                     capture_output=True, text=True, timeout=120)
+            text = record.read_text()
+            self.assertEqual(stopped.returncode, 0, stopped.stderr + text)
+            self.assertEqual(text.splitlines()[-1], "Stopped.")
+            self.assertNotIn("Traceback", text)
+            self.assertNotIn("could not read", text)
 
 
 def workflow_jobs(text):
