@@ -77,6 +77,20 @@ by then, and the summary says how much the watcher used itself, so this
 pull request's own run, and every run after it, shows what the cadence
 saves and what it costs.
 
+**Each process counted over its own time.** In this pull request's CI
+run one iPhone reading took 13.67 s (at 02:04:16, with the Mac's load
+average at 421), and the line after it put the simulator at 845% of a
+Mac that has 300%. A reading reads each process's time at its own
+moment, but a line divided every process's time by the time between the
+two lines' ends: a process read early in the slow reading had seconds
+counted that were not in the line, and one that started during it had
+its whole life counted in the 3 s that followed. Now a line counts each
+process over the time between its own two readings, and a new one over
+the time since the list it was not in was read, the longest it can have
+run unseen. The summary's totals were right before and are unchanged.
+The probe's iPhone record has the same fault once (314% at 00:55:56,
+below).
+
 **What the green run's records say about which `ps` list was slow.** In
 the run on `ec21266` every time-out in the UI jobs was the first of a
 reading's two lists (`pid=,args=`: 6 on the iPad, 28 on the iPhone), and
@@ -133,19 +147,74 @@ logged 728, and the stalled iPad runs of 2026-11-03 400 to 882.
 
 The failed test was `HomeAccessibilityOrderTests`'
 quick-controls test at default text: "Needs was not selected" after
-10 s, at 00:55:55, with the Mac's three processors busy (the simulator
-alone at 314% in the line at 00:55:56, six new extensions taking most
-of it). It is the test the iPhone runs at that point; on `d3a4202` the
+10 s, at 00:55:55, with the Mac's three processors busy (295% in the
+line at 00:55:56, whose six busiest processes were six new extensions;
+its 314% for the simulator alone is more than the Mac has, the fault
+described above, after a 4.25 s reading). It is the test the iPhone
+runs at that point; on `d3a4202` the
 same test took 169.5 s in that window and passed. The `ps` probe also
 ran in this run, twice every 5 s, and was itself part of the load.
 
 At the end as many paused processes were left to resume as had been
 paused first (13 and 16), but the record counted the ended ones without
-naming them, so whether the ones iOS ended were exactly the new
-instances is not known; the "Resumed" line now names them. What the
-probe does not settle either: whether iOS ends a new instance because it
-is paused, and would start fewer if they ran; and whether the new
-instances come at the same rate in a run without the probe.
+naming them, so the probe could not show whether the ones iOS ended were
+exactly the new instances; the "Resumed" line now names them, and this
+pull request's run shows they were (below). What neither run settles:
+whether iOS ends a new instance because it is paused, and would start
+fewer if they ran.
+
+## This pull request's run
+
+Run 41757279440, on `4a69e1a`: the final watcher, with the check every
+second, before the counting fix above. All three jobs passed: the unit
+job in 31 minutes, the iPad's UI tests in 38 and the iPhone's in 47
+(51 and 48 in the green run on `ec21266`). Its records are in
+[`docs/evidence/2026-11-04-watcher/`](../evidence/2026-11-04-watcher/)
+(`4a69e1a-*`).
+
+| | iPad | iPhone | Unit job (iPad) |
+|---|---|---|---|
+| Watched | 01:57:15 to 02:33:08 | 01:59:16 to 02:41:31 | 02:04:48 to 02:25:58 |
+| Readings, longest gap between lines | 371, 8 s | 431, 22 s | 219, 14 s |
+| Time a reading took (median, 95th percentile, longest) | 0.01, 0.10, 0.96 s | 0.01, 0.54, 13.67 s | 0.01, 0.64, 6.19 s |
+| Paused at the watcher's first reading | 18 | 24 | 13 |
+| Paused after it | 85, until 02:03:33 | 101, until 02:07:33 | 10, 02:12:14 to 02:13:45 |
+| Their processor time when paused: median, longest, all | 1.0, 2.8, 85 s | 1.4, 4.6, 161 s | 1.1, 5.0, 22 s |
+| Still there to resume at the end | 13 of 103 | 16 of 125 | 13 of 23 |
+| The watcher's own processor time | 12.0 s | 19.4 s | 6.9 s |
+| Tests | 62 passed, 2 skipped | 58 passed, 6 skipped | 1,215 passed, 17 known issues, 1 skipped |
+
+**Which instances iOS ended.** On each simulator the ones still there at
+the end were the 13 or 16 with the lowest pids, all paused at the
+watcher's first reading, the same counts as in the probe. Every other
+paused instance had ended, including 5 on the iPad and 8 on the iPhone
+from that first reading. So iOS ended exactly the instances it started
+after its first set.
+
+**How long it went on.** New instances came in groups about every 20 s
+(on the iPad at 01:57:35, 01:57:57, 01:58:19, 01:58:41, 01:59:03 and
+on), for 6 minutes on the iPad and 8 on the iPhone after the first
+pause: 85 and 101 of them, against 17 and 49 over 2 and 3 minutes in
+the probe. A guess the records cannot confirm: iOS replaces, on a timer,
+an instance that does not answer, and ends the one it replaced. One run
+each, with the probe's `ps` watcher adding to the load in the probe,
+does not show whether pausing sooner made iOS start more.
+
+**Tests in the burst.** On the iPad the burst ran over the build, the
+warm-up and the first four test classes (HomeAccessibilityOrderTests
+began at 02:02:40); on the iPhone over the build, the warm-up and the
+first two classes (FoldOffsetUITests and GetAttentionOnHomeTests, from
+02:04:46). Every test passed. Two of the iPhone's took about twice as
+long as in the probe, where they ran before its burst: the fold test in
+light mode 65.9 s against 38.6 s, the alarm at default text 81.4 s
+against 32.6 s. The test that failed in the probe ran after the burst
+this time (from 02:08:29) and took 26.1 s.
+
+**What the watcher costs.** 12.0, 19.4 and 6.9 processor-seconds over
+36, 42 and 21 minutes: about 0.5% to 0.8% of one processor. On the
+iPhone, one reading took 13.67 s with the Mac's load average at 421,
+and the next, 3 s after it, paused the four extensions started
+meanwhile; the line it wrote is the 845% one above.
 
 ## Commits
 
@@ -161,12 +230,18 @@ instances come at the same rate in a run without the probe.
   lines.
 - `c620915` Name the paused processes that had ended when the watcher
   stops.
-- This record, the corrections to the 2026-11-03 record, and the lines
-  of `docs/HANDOFF.md` and `docs/DECISIONS.md` the change makes untrue.
+- `4a69e1a` This record, the corrections to the 2026-11-03 record, and
+  the lines of `docs/HANDOFF.md` and `docs/DECISIONS.md` the change
+  makes untrue.
+- `f5db260` Move the evidence records to `docs/evidence/`
+  (CodeRabbit's review: `docs/log/README.md` asks each pull request to
+  add one file to `docs/log/`).
+- `7b39b65` Count each process over its own time between readings.
+- This pull request's run in this record, with its load records.
 
 ## Verified
 
-- On Linux (this cloud thread; no Xcode): `scripts/test-runner.py` (83
+- On Linux (this cloud thread; no Xcode): `scripts/test-runner.py` (85
   tests; the 5 that need a Mac skipped), `scripts/test-docs.py`,
   `scripts/test-hooks.py`, `scripts/test-site.py` and
   `scripts/test-select-xcode.py`, all passing.
@@ -190,36 +265,47 @@ instances come at the same rate in a run without the probe.
   between lines*); no line for the watcher's own processor time
   (*start waits for the watcher*); and a "Resumed" line that does not
   name the ones that had ended (*the paused extensions run again*).
+- Six more for `7b39b65`, each failing *a slow reading does not swell
+  the next line* or the test named beside it: a known process counted
+  over the time between the lines' ends (the fault itself, which that
+  test reproduced first, at 233% and 200%); a new one counted from the
+  last line's end, or from after its list; every process's reading time
+  taken at the start of the reading; the list's time not kept after a
+  line (four tests); and not kept when the simulator is not running
+  (*a simulator that starts while watched*, where it would stop the
+  watcher).
 - On GitHub's Mac (run 41748946044's unit job, on `6eb2a8f`): the Mac
   tests that compare a stopped child process with what `/bin/ps` says
   of it (parent, stopped, name, arguments, path), that read an ended
   process as gone and that start no process all passed; the processor
   time test failed on `host_statistics`, which `2ac6ed2` replaced.
-- The probe run above.
+- On GitHub's Mac (this pull request's run 41757279440, on `4a69e1a`):
+  every Mac test, including the one that runs the watcher under
+  `/usr/bin/python3`, the Mac's own Python, which `test.sh` uses; the
+  check every second, the new lines and both UI suites (above).
+- The probe run and this pull request's run above.
 
 ## Not verified
 
-- The final watcher on a Mac: the Mac tests as they now stand
-  (including the one that runs the watcher under `/usr/bin/python3`,
-  the Mac's own Python, which `test.sh` uses), the check every second
-  and the new lines all run first in this pull request's CI run. Until
-  that run is green, treat them as untested.
-- That checking every second keeps the UI tests from failing during a
-  burst like the iPhone's. It shortens how long a new extension runs
-  before it is paused; whether that is enough is for the runs to show
-  ("paused ... after N s of processor time").
-- What the check every second costs on a starved Mac. The summary's new
-  line gives the watcher's own processor time per run.
-- Which paused processes iOS ended, why, and whether it would start
-  fewer new ones if they ran (above).
+- `7b39b65`'s counting on a Mac: it runs there first in this pull
+  request's next CI run. Its tests use a stand-in clock and process
+  list, there as here.
+- That checking every second keeps a test's short wait from running out
+  inside a burst. In this pull request's run every test passed, but the
+  one that failed in the probe ran after the burst.
+- Why iOS ends the instances it started later, and whether it would
+  start fewer if they ran (above).
 - `scripts/test.sh` with this watcher on the owner's Mac.
 
 ## Follow-ups
 
-- Read the "paused ... after N s" lines and the watcher's own time in
-  this pull request's CI run, and in the next runs, before changing the
-  cadence again. If new extensions still take the processors while a
-  test waits, the next option in
+- If new extensions still take the processors while a test waits (in
+  this pull request's run they slowed two iPhone tests about twofold and
+  failed none), the next option in
   [`2026-11-03-ui-test-stall.md`](2026-11-03-ui-test-stall.md),
   *Follow-ups*, is pausing PosterBoard, which asks for them, tried first
-  in a probe run on GitHub's machine. Owner: whichever thread meets it.
+  in a probe run on GitHub's machine. Read the "paused ... after N s"
+  and "Resumed" lines of the run that shows it first: in this pull
+  request's run, with its later instances paused, iOS went on replacing
+  them for 6 to 8 minutes.
+  Owner: whichever thread meets it.
