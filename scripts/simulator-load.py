@@ -10,13 +10,14 @@ watching (or, on a Mac too busy to start it in time, leaves it to begin)
 and prints its pid; `stop` stops it, waits for its summary and prints it.
 scripts/test.sh starts one for each simulator it tests on.
 
-Every few seconds the watcher reads the Mac's process list, finds the processes the
-simulator runs (everything started under that device's launchd_sim), and
-writes one line: the time, how much processor time the simulator and the
-whole Mac used since the last line, the Mac's load, and the simulator's
-busiest processes. When it is stopped (SIGTERM or SIGINT) it writes the
-processes that used the most time over the whole run, lets any process it
-paused run again, then writes "Stopped.".
+Every few seconds the watcher reads the Mac's process list, finds the
+processes the simulator runs (everything started under that device's
+launchd_sim), and writes one line: the time, how much processor time the
+simulator and the whole Mac used since the last line, the Mac's load, how
+long reading the list took, and the simulator's busiest processes. When
+it is stopped (SIGTERM or SIGINT) it writes the processes that used the
+most time over the whole run, lets any process it paused run again, then
+writes "Stopped.".
 It also stops by itself once the process named by --parent (the test run)
 is gone, so a test run that is killed never leaves it running.
 
@@ -34,10 +35,22 @@ ended one again. When the watcher stops, after the tests, it lets the
 paused ones run again (SIGCONT), so a simulator that is not shut down
 after its run is not left with them stopped.
 
-Only the processes of the one simulator named by --udid are read or
-paused, and only on a Mac: the process list comes from /bin/ps.
+The process list comes from the Mac's own process calls, made from
+Python through ctypes (MacProcesses): libproc's proc_listpids,
+proc_pidinfo and proc_pidpath, the sysctl that gives a process's
+arguments, and the Mach call that counts the processors' busy time. None
+of them starts a process. Until 2026-11-04 the watcher ran /bin/ps twice
+a reading instead. While GitHub's Mac was starved, ps ran past its time
+limit reading after reading, a ps killed for it still had to end before
+the watcher could go on (one reading took about 160 s), and wallpaper
+extensions started meanwhile were never paused
+(docs/log/2026-11-04-watcher-without-ps.md). Only the processes of the
+one simulator named by --udid are read in detail or paused, and only on
+a Mac.
 """
 import argparse
+import ctypes
+import json
 import os
 import re
 import signal
@@ -47,17 +60,14 @@ import time
 
 # Names of the lock-screen wallpaper extensions; PosterBoard does not match.
 POSTER = re.compile(r"Poster(Extension|Provider)?$")
+# The kernel's name for the simulator's own launchd.
+LAUNCHD_SIM = "launchd_sim"
 
 INTERVAL = 5.0
 # How long `start` waits for the watcher to begin, and `stop` for it to end.
 # A watcher that has not begun by then is left to begin, not stopped: a Mac
 # busy starting a simulator can take longer than this to start Python.
 WAIT = 15.0
-# How long one process list may take. A slower one is given up on and that
-# reading skipped, so a hung ps never holds the watcher. A reading lists
-# processes twice, so both together stay shorter than WAIT and `stop`
-# still finds the summary.
-PS_TIMEOUT = 5.0
 STOPPED = "Stopped."
 
 
@@ -66,44 +76,186 @@ def clock_time():
     return time.strftime("%H:%M:%S", time.gmtime())
 
 
-def cpu_seconds(text):
-    """ps's TIME column, [[dd-]hh:]mm:ss.ss, in seconds."""
-    days, _, clock = text.rpartition("-")
-    seconds = 0.0
-    for part in clock.split(":"):
-        seconds = seconds * 60 + float(part)
-    return seconds + (int(days) * 86400 if days else 0)
+class ShortInfo(ctypes.Structure):
+    """struct proc_bsdshortinfo (xnu, bsd/sys/proc_info.h), which the kernel
+    gives for any process, whoever runs it."""
+    _fields_ = [("pid", ctypes.c_uint32), ("ppid", ctypes.c_uint32), ("pgid", ctypes.c_uint32),
+                ("status", ctypes.c_uint32), ("comm", ctypes.c_char * 16),
+                ("flags", ctypes.c_uint32), ("uid", ctypes.c_uint32), ("gid", ctypes.c_uint32),
+                ("ruid", ctypes.c_uint32), ("rgid", ctypes.c_uint32), ("svuid", ctypes.c_uint32),
+                ("svgid", ctypes.c_uint32), ("rfu", ctypes.c_uint32)]
 
 
-def read_processes(ps="/bin/ps"):
-    """Every process on the Mac: pid -> (ppid, state, cpu seconds, path).
-
-    `comm` is the executable's path, which may hold spaces (a simulator
-    runtime is "iOS 27.0.simruntime"), so it is the last column."""
-    output = subprocess.run([ps, "-axww", "-o", "pid=,ppid=,stat=,time=,comm="],
-                            capture_output=True, text=True, check=True, timeout=PS_TIMEOUT).stdout
-    processes = {}
-    for line in output.splitlines():
-        parts = line.split(None, 4)
-        if len(parts) < 5:
-            continue
-        try:
-            processes[int(parts[0])] = (int(parts[1]), parts[2], cpu_seconds(parts[3]), parts[4])
-        except ValueError:
-            continue
-    return processes
+class TaskInfo(ctypes.Structure):
+    """struct proc_taskinfo (xnu, bsd/sys/proc_info.h), which the kernel
+    gives only for the caller's own user's processes; every simulator's
+    are the watcher's user's."""
+    _fields_ = ([(name, ctypes.c_uint64) for name in (
+                    "virtual_size", "resident_size", "total_user", "total_system",
+                    "threads_user", "threads_system")]
+                + [(name, ctypes.c_int32) for name in (
+                    "policy", "faults", "pageins", "cow_faults", "messages_sent",
+                    "messages_received", "syscalls_mach", "syscalls_unix", "csw",
+                    "threadnum", "numrunning", "priority")])
 
 
-def launchd_sim(udid, ps="/bin/ps"):
-    """The pid of the simulator's own launchd, whose arguments name the
-    device's folder; None while the device is not running."""
-    output = subprocess.run([ps, "-axww", "-o", "pid=,args="],
-                            capture_output=True, text=True, check=True, timeout=PS_TIMEOUT).stdout
-    for line in output.splitlines():
-        pid, _, arguments = line.strip().partition(" ")
-        if "launchd_sim" in arguments and f"/{udid}/" in arguments:
-            return int(pid)
-    return None
+class Timebase(ctypes.Structure):
+    """struct mach_timebase_info (mach/mach_time.h): Mach time units to
+    nanoseconds, numer / denom."""
+    _fields_ = [("numer", ctypes.c_uint32), ("denom", ctypes.c_uint32)]
+
+
+class MacProcesses:
+    """The Mac's own process calls, through ctypes. Each answers from the
+    kernel's tables and none starts a process, so a starved Mac answers as
+    soon as the watcher itself is given a moment to run. The only other
+    process's memory they read is launchd_sim's arguments, once.
+
+    Values are from xnu's headers (bsd/sys/proc_info.h, bsd/sys/proc.h,
+    bsd/sys/sysctl.h, osfmk/mach/host_info.h and osfmk/mach/machine.h)."""
+
+    PROC_ALL_PIDS = 1
+    PROC_PIDTASKINFO = 4
+    PROC_PIDT_SHORTBSDINFO = 13
+    PROC_PIDPATHINFO_MAXSIZE = 4096
+    SSTOP = 4  # stopped, as by SIGSTOP
+    CTL_KERN, KERN_ARGMAX, KERN_PROCARGS2 = 1, 8, 49
+    HOST_CPU_LOAD_INFO = 3
+    CPU_STATE_MAX = 4  # user, system, idle, nice
+
+    def __init__(self, library="/usr/lib/libSystem.B.dylib"):
+        lib = ctypes.CDLL(library, use_errno=True)
+        for name, result, arguments in (
+                ("proc_listpids", ctypes.c_int,
+                 [ctypes.c_uint32, ctypes.c_uint32, ctypes.c_void_p, ctypes.c_int]),
+                ("proc_pidinfo", ctypes.c_int,
+                 [ctypes.c_int, ctypes.c_int, ctypes.c_uint64, ctypes.c_void_p, ctypes.c_int]),
+                ("proc_pidpath", ctypes.c_int, [ctypes.c_int, ctypes.c_void_p, ctypes.c_uint32]),
+                ("sysctl", ctypes.c_int,
+                 [ctypes.POINTER(ctypes.c_int), ctypes.c_uint, ctypes.c_void_p,
+                  ctypes.POINTER(ctypes.c_size_t), ctypes.c_void_p, ctypes.c_size_t]),
+                ("mach_host_self", ctypes.c_uint32, []),
+                ("host_statistics", ctypes.c_int,
+                 [ctypes.c_uint32, ctypes.c_int, ctypes.c_void_p, ctypes.POINTER(ctypes.c_uint32)]),
+                ("mach_timebase_info", ctypes.c_int, [ctypes.POINTER(Timebase)])):
+            function = getattr(lib, name)
+            function.restype, function.argtypes = result, arguments
+        self.lib = lib
+        timebase = Timebase()
+        if lib.mach_timebase_info(ctypes.byref(timebase)) != 0 or not timebase.denom:
+            raise OSError("mach_timebase_info failed")
+        # Task times are in Mach time units, which are nanoseconds on Intel
+        # Macs but not on Apple silicon.
+        self.seconds_per_unit = timebase.numer / timebase.denom / 1e9
+        self.host = lib.mach_host_self()
+        self.ticks_per_second = os.sysconf("SC_CLK_TCK")
+        self.argmax = self.read_argmax()
+        self.info, self.task = ShortInfo(), TaskInfo()
+        self.path = ctypes.create_string_buffer(self.PROC_PIDPATHINFO_MAXSIZE)
+
+    @staticmethod
+    def failure(call):
+        number = ctypes.get_errno()
+        return OSError(number, f"{call}: {os.strerror(number)}")
+
+    def read_argmax(self):
+        names = (ctypes.c_int * 2)(self.CTL_KERN, self.KERN_ARGMAX)
+        value, size = ctypes.c_int(0), ctypes.c_size_t(ctypes.sizeof(ctypes.c_int))
+        if self.lib.sysctl(names, 2, ctypes.byref(value), ctypes.byref(size), None, 0) != 0:
+            raise self.failure("sysctl kern.argmax")
+        return value.value
+
+    def table(self):
+        """Every process on the Mac: pid -> (ppid, stopped, name), the name
+        being the kernel's, at most 16 characters. A process that ends
+        after the pids are listed is left out."""
+        size = self.lib.proc_listpids(self.PROC_ALL_PIDS, 0, None, 0)
+        if size <= 0:
+            raise self.failure("proc_listpids")
+        while True:
+            pids = (ctypes.c_int * (size // ctypes.sizeof(ctypes.c_int) + 64))()
+            used = self.lib.proc_listpids(self.PROC_ALL_PIDS, 0, pids, ctypes.sizeof(pids))
+            if used <= 0:
+                raise self.failure("proc_listpids")
+            if used < ctypes.sizeof(pids):
+                break
+            size = 2 * used  # More processes than room for them: list again.
+        table = {}
+        info, length = self.info, ctypes.sizeof(self.info)
+        for pid in pids[:used // ctypes.sizeof(ctypes.c_int)]:
+            if self.lib.proc_pidinfo(pid, self.PROC_PIDT_SHORTBSDINFO, 0,
+                                     ctypes.byref(info), length) == length:
+                table[pid] = (info.ppid, info.status == self.SSTOP,
+                              info.comm.decode(errors="replace"))
+        return table
+
+    def arguments(self, pid):
+        """A process's arguments, or None once it has ended (or if another
+        user runs it)."""
+        names = (ctypes.c_int * 3)(self.CTL_KERN, self.KERN_PROCARGS2, pid)
+        buffer, size = ctypes.create_string_buffer(self.argmax), ctypes.c_size_t(self.argmax)
+        if self.lib.sysctl(names, 3, buffer, ctypes.byref(size), None, 0) != 0 or size.value < 4:
+            return None
+        raw = buffer.raw[:size.value]
+        count = int.from_bytes(raw[:4], sys.byteorder)
+        # The number of arguments, the executable's path, the NULs that pad
+        # it, then the arguments (and then the environment, not read).
+        words = [word for word in raw[4:].split(b"\0")[1:] if word]
+        return [word.decode(errors="replace") for word in words[:count]]
+
+    def details(self, pid):
+        """A process's processor time so far, in seconds, and its
+        executable's path; None once it has ended."""
+        task, length = self.task, ctypes.sizeof(self.task)
+        if self.lib.proc_pidinfo(pid, self.PROC_PIDTASKINFO, 0, ctypes.byref(task), length) != length:
+            return None
+        if self.lib.proc_pidpath(pid, self.path, self.PROC_PIDPATHINFO_MAXSIZE) <= 0:
+            return None
+        return ((task.total_user + task.total_system) * self.seconds_per_unit,
+                self.path.value.decode(errors="replace"))
+
+    def processor_ticks(self):
+        """How long the Mac's processors have been busy, all of them
+        together: user, system and nice ticks (ticks_per_second a second),
+        each a counter that wraps at 2**32."""
+        ticks = (ctypes.c_uint32 * self.CPU_STATE_MAX)()
+        count = ctypes.c_uint32(self.CPU_STATE_MAX)
+        result = self.lib.host_statistics(self.host, self.HOST_CPU_LOAD_INFO, ticks,
+                                          ctypes.byref(count))
+        if result != 0:
+            raise OSError(f"host_statistics: kern_return_t {result}")
+        return (ticks[0], ticks[1], ticks[3])
+
+
+class ProcessFile:
+    """A stand-in for MacProcesses, for scripts/test-runner.py on any
+    machine: a JSON file, read afresh for each reading, of {"ticks": busy
+    ticks, "processes": [[pid, ppid, state, seconds, path, arguments],
+    ...]}. A process whose seconds are null ended before its details were
+    read."""
+
+    ticks_per_second = 100
+
+    def __init__(self, path):
+        self.path, self.rows, self.ticks = path, {}, 0
+
+    def table(self):
+        with open(self.path, encoding="utf-8") as file:
+            data = json.load(file)
+        self.rows = {row[0]: row for row in data["processes"]}
+        self.ticks = data["ticks"]
+        return {pid: (ppid, "T" in state, name_of(path)[:16])
+                for pid, ppid, state, _, path, _ in self.rows.values()}
+
+    def arguments(self, pid):
+        return self.rows[pid][5] if pid in self.rows else None
+
+    def details(self, pid):
+        row = self.rows.get(pid)
+        return None if row is None or row[3] is None else (row[3], row[4])
+
+    def processor_ticks(self):
+        return (self.ticks, 0, 0)
 
 
 def descendants(root, processes):
@@ -130,10 +282,11 @@ def is_poster_extension(path):
 
 
 class Watch:
-    def __init__(self, udid, out, pause_posters, ps="/bin/ps", clock=time.monotonic, kill=os.kill):
+    def __init__(self, udid, out, pause_posters, system, clock=time.monotonic, kill=os.kill):
         self.udid, self.out, self.pause_posters = udid, out, pause_posters
-        self.ps, self.clock, self.kill = ps, clock, kill
-        self.before, self.at = None, None
+        self.system, self.clock, self.kill = system, clock, kill
+        self.root = None  # the simulator's launchd_sim, once found
+        self.before, self.ticks, self.at = None, None, None
         self.totals = {}  # name -> cpu seconds used while watched
         self.paused = set()
 
@@ -141,22 +294,44 @@ class Watch:
         self.out.write(line + "\n")
         self.out.flush()
 
+    def simulator_root(self, table):
+        """The pid of the simulator's own launchd, whose arguments name the
+        device's folder; None while the device is not running. Reading a
+        process's arguments reads its memory, so they are read once: the
+        launchd_sim found stays the simulator's while it runs, and a new
+        one is looked for only once it has gone."""
+        if self.root in table and table[self.root][2] == LAUNCHD_SIM:
+            return self.root
+        self.root = None
+        for pid, (_, _, name) in table.items():
+            if name == LAUNCHD_SIM:
+                arguments = self.system.arguments(pid)
+                if arguments and f"/{self.udid}/" in " ".join(arguments):
+                    self.root = pid
+                    break
+        return self.root
+
     def sample(self):
-        root = launchd_sim(self.udid, self.ps)
-        processes = read_processes(self.ps)
+        began = self.clock()
+        table = self.system.table()
+        root = self.simulator_root(table)
+        processes = {}  # pid -> (stopped, cpu seconds, path)
+        if root is not None:
+            for pid in sorted(descendants(root, table)):
+                details = self.system.details(pid)
+                # None: it ended after the list was read.
+                if details is not None:
+                    processes[pid] = (table[pid][1],) + details
+        ticks = self.system.processor_ticks()
         now = self.clock()
         stamp = clock_time()
-        # The two lists are read one after the other: a simulator that
-        # stopped in between is in the first and not the second.
-        if root is None or root not in processes:
+        if root is None:
             self.write(f"{stamp} the simulator {self.udid} is not running")
-            self.before, self.at = processes, now
+            self.before, self.ticks, self.at = {}, ticks, now
             return
-        simulator = descendants(root, processes)
         if self.pause_posters:
-            for pid in sorted(simulator):
-                ppid, state, _, path = processes[pid]
-                if is_poster_extension(path) and "T" not in state and pid not in self.paused:
+            for pid, (stopped, _, path) in processes.items():
+                if is_poster_extension(path) and not stopped and pid not in self.paused:
                     try:
                         self.kill(pid, signal.SIGSTOP)
                     except OSError as error:
@@ -166,24 +341,25 @@ class Watch:
                         self.write(f"{stamp} paused {name_of(path)} ({pid})")
         if self.before is not None:
             elapsed = max(now - self.at, 1e-6)
-            used, everything = {}, 0.0
-            for pid, (_, _, seconds, path) in processes.items():
+            used = {}
+            for pid, (_, seconds, path) in processes.items():
+                # A pid given to a new process counts from nothing.
                 earlier = self.before.get(pid)
-                delta = seconds - (earlier[2] if earlier and earlier[3] == path else 0.0)
+                delta = seconds - (earlier[1] if earlier and earlier[2] == path else 0.0)
                 if delta <= 0:
                     continue
-                everything += delta
-                if pid in simulator:
-                    name = name_of(path)
-                    used[name] = used.get(name, 0.0) + delta
-                    self.totals[name] = self.totals.get(name, 0.0) + delta
+                name = name_of(path)
+                used[name] = used.get(name, 0.0) + delta
+                self.totals[name] = self.totals.get(name, 0.0) + delta
+            busy = sum((after - before) % 2**32 for after, before
+                       in zip(ticks, self.ticks)) / self.system.ticks_per_second
             load = os.getloadavg()[0] if hasattr(os, "getloadavg") else float("nan")
             busiest = sorted(used.items(), key=lambda item: -item[1])[:6]
             self.write(
                 f"{stamp} simulator {100 * sum(used.values()) / elapsed:4.0f}% "
-                f"mac {100 * everything / elapsed:4.0f}% load {load:5.1f} | "
+                f"mac {100 * busy / elapsed:4.0f}% load {load:5.1f} list {now - began:4.2f} s | "
                 + ", ".join(f"{name} {100 * seconds / elapsed:.0f}%" for name, seconds in busiest))
-        self.before, self.at = processes, now
+        self.before, self.ticks, self.at = processes, ticks, now
 
     def summary(self):
         self.write("Processor time the simulator's processes used while watched:")
@@ -227,8 +403,9 @@ def watch(arguments, parent_alive=alive, kill=os.kill):
 
     signal.signal(signal.SIGTERM, stop_watching)
     signal.signal(signal.SIGINT, stop_watching)
+    system = ProcessFile(arguments.processes) if arguments.processes else MacProcesses()
     with open(arguments.out, "a", encoding="utf-8") as out:
-        watcher = Watch(arguments.udid, out, arguments.pause_posters, ps=arguments.ps, kill=kill)
+        watcher = Watch(arguments.udid, out, arguments.pause_posters, system, kill=kill)
         # The time it began: on a busy Mac that can be long after `start`.
         watcher.write(f"Watching simulator {arguments.udid}"
                       + (", pausing lock-screen wallpaper extensions" if arguments.pause_posters else "")
@@ -236,7 +413,7 @@ def watch(arguments, parent_alive=alive, kill=os.kill):
         while not stopping:
             try:
                 watcher.sample()
-            except (OSError, subprocess.SubprocessError) as error:
+            except OSError as error:
                 watcher.write(f"{clock_time()} could not read the process list: {error}")
             deadline = time.monotonic() + INTERVAL
             while not stopping and time.monotonic() < deadline:
@@ -277,9 +454,11 @@ def start(arguments, wait=WAIT):
     and `stop` stops it either way."""
     command = [sys.executable, "-I", os.path.abspath(__file__), "watch",
                "--udid", arguments.udid, "--out", arguments.out,
-               "--parent", str(arguments.parent), "--ps", arguments.ps]
+               "--parent", str(arguments.parent)]
     if arguments.pause_posters:
         command.append("--pause-posters")
+    if arguments.processes:
+        command += ["--processes", arguments.processes]
     try:
         # Emptied, then opened to append: what the watcher writes to its
         # stderr (a traceback, say) lands after its lines, never over them.
@@ -349,8 +528,9 @@ def parse(arguments=None):
         command.add_argument("--out", required=True)
         command.add_argument("--parent", type=int, required=True)
         command.add_argument("--pause-posters", action="store_true")
-        # scripts/test-runner.py gives a stand-in for ps.
-        command.add_argument("--ps", default="/bin/ps", help=argparse.SUPPRESS)
+        # scripts/test-runner.py gives a stand-in for the Mac's process
+        # calls (ProcessFile).
+        command.add_argument("--processes", help=argparse.SUPPRESS)
     stopping = commands.add_parser("stop")
     stopping.add_argument("--pid", type=int, required=True)
     stopping.add_argument("--out", required=True)
