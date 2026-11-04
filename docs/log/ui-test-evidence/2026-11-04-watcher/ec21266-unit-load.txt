@@ -1,0 +1,270 @@
+Watching simulator 3CE49892-DF52-49A7-9D5F-68E49A7DD048, pausing lock-screen wallpaper extensions, from 16:06:14
+16:06:20 could not read the process list: Command '['/bin/ps', '-axww', '-o', 'pid=,args=']' timed out after 5.0 seconds
+16:06:36 could not read the process list: Command '['/bin/ps', '-axww', '-o', 'pid=,args=']' timed out after 5.0 seconds
+16:06:49 could not read the process list: Command '['/bin/ps', '-axww', '-o', 'pid=,args=']' timed out after 5.0 seconds
+16:07:00 could not read the process list: Command '['/bin/ps', '-axww', '-o', 'pid=,args=']' timed out after 5.0 seconds
+16:07:14 could not read the process list: Command '['/bin/ps', '-axww', '-o', 'pid=,args=']' timed out after 5.0 seconds
+16:07:42 could not read the process list: Command '['/bin/ps', '-axww', '-o', 'pid=,args=']' timed out after 5.0 seconds
+16:08:52 could not read the process list: Command '['/bin/ps', '-axww', '-o', 'pid=,args=']' timed out after 5.0 seconds
+16:10:36 could not read the process list: Command '['/bin/ps', '-axww', '-o', 'pid=,args=']' timed out after 5.0 seconds
+16:10:50 could not read the process list: Command '['/bin/ps', '-axww', '-o', 'pid=,args=']' timed out after 5.0 seconds
+16:11:02 could not read the process list: Command '['/bin/ps', '-axww', '-o', 'pid=,args=']' timed out after 5.0 seconds
+16:11:13 could not read the process list: Command '['/bin/ps', '-axww', '-o', 'pid=,args=']' timed out after 5.0 seconds
+16:11:27 could not read the process list: Command '['/bin/ps', '-axww', '-o', 'pid=,args=']' timed out after 5.0 seconds
+16:11:40 could not read the process list: Command '['/bin/ps', '-axww', '-o', 'pid=,args=']' timed out after 5.0 seconds
+16:11:47 paused CollectionsPoster (18214)
+16:11:47 paused GradientPosterExtension (18217)
+16:11:47 paused PhotosPosterProvider (18218)
+16:11:47 paused MercuryPosterExtension (18219)
+16:11:47 paused UnityPoster (18220)
+16:11:47 paused WeatherPoster (18222)
+16:11:47 paused AegirPoster (18228)
+16:11:47 paused EmojiPosterExtension (18258)
+16:11:47 paused ExtragalacticPoster (18260)
+16:11:47 paused PridePosterExtension (18264)
+16:11:47 paused ImagePlaygroundPosterExtension (18269)
+16:11:47 paused Unity2025Poster (18282)
+16:11:47 paused MercuryPosterExtension (18286)
+16:11:54 simulator  192% mac  235% load 790.4 | fitnesscoachingd 29%, diagnosticd 23%, SpringBoard 12%, diagnosticextensionsd 12%, FitnessIntelligenceInferenceService 11%, assistant_cdmd 11%
+16:12:01 simulator  167% mac  241% load 780.0 | SafariBookmarksSyncAgent 59%, fitnesscoachingd 28%, diagnosticd 14%, avatarsd 10%, apsd 8%, SpringBoard 7%
+16:12:07 simulator  176% mac  223% load 775.9 | sociallayerd 52%, diagnosticd 16%, FamilyControlsAgent 14%, PeopleWidget_iOSExtension 10%, SpringBoard 9%, SafariBookmarksSyncAgent 8%
+16:12:12 simulator  104% mac  203% load 747.7 | logd_helper 21%, diagnosticd 20%, AdaptiveMusicWidget 14%, apsd 11%, linkd 4%, logd 4%
+16:12:18 simulator  100% mac  177% load 698.3 | diagnosticd 28%, apsd 13%, logd_helper 6%, dasd 4%, SpringBoard 4%, siriknowledged 3%
+16:12:38 could not read the process list: Command '['/bin/ps', '-axww', '-o', 'pid=,args=']' timed out after 5.0 seconds
+16:12:48 simulator  163% mac  212% load 607.0 | diagnosticd 31%, NewsTag 14%, apsd 11%, amsengagementd 9%, SpringBoard 8%, healthd 7%
+16:12:54 simulator  262% mac  334% load 609.4 | NewsTodayIntents 70%, diagnosticd 62%, apsd 37%, amsengagementd 34%, NewsTag 26%, trustd 5%
+16:12:59 simulator  181% mac  274% load 597.8 | diagnosticd 63%, apsd 35%, NewsTag 32%, amsengagementd 29%, trustd 4%, securityd 3%
+16:13:05 simulator  204% mac  258% load 596.6 | NewsToday2 72%, diagnosticd 51%, apsd 28%, amsengagementd 26%, trustd 4%, NewsTag 3%
+16:13:10 simulator  148% mac  202% load 600.6 | amsengagementd 49%, diagnosticd 46%, apsd 30%, trustd 4%, appstored 2%, securityd 2%
+16:13:16 simulator  128% mac  249% load 592.4 | amsengagementd 38%, diagnosticd 35%, nsurlsessiond 33%, apsd 7%, SetStoreUpdateService 5%, trustd 2%
+16:13:21 simulator  115% mac  269% load 577.0 | amsengagementd 58%, diagnosticd 26%, nsurlsessiond 17%, apsd 6%, logd 1%, notifyd 1%
+16:13:26 simulator  170% mac  270% load 578.2 | amsengagementd 90%, diagnosticd 42%, apsd 25%, trustd 3%, securityd 2%, logd 1%
+16:13:32 simulator  178% mac  271% load 581.8 | amsengagementd 85%, diagnosticd 41%, apsd 26%, SeymourEngagementExtension 5%, trustd 4%, securityd 2%
+16:13:37 simulator  158% mac  215% load 576.6 | diagnosticd 47%, amsengagementd 29%, apsd 29%, NewsToday2 19%, AMDEngagementExtension 6%, swcd 6%
+16:13:44 simulator  116% mac  211% load 572.3 | NewsToday2 70%, diagnosticd 21%, apsd 13%, trustd 2%, launchd_sim 2%, cfprefsd 1%
+16:13:49 simulator   91% mac  251% load 573.8 | NewsToday2 43%, diagnosticd 19%, apsd 10%, WidgetRenderer_Default 5%, MTLCompilerService 3%, trustd 1%
+16:13:54 simulator   28% mac  239% load 576.1 | diagnosticd 13%, apsd 9%, trustd 1%, securityd 1%, SpringBoard 1%, cfprefsd 0%
+16:14:00 simulator   49% mac  204% load 577.5 | diagnosticd 23%, apsd 15%, SpringBoard 2%, trustd 2%, securityd 1%, logd 1%
+16:14:05 simulator   36% mac  282% load 577.2 | diagnosticd 17%, apsd 12%, trustd 1%, SpringBoard 1%, securityd 1%, logd 1%
+16:14:11 simulator   32% mac  293% load 576.2 | diagnosticd 16%, apsd 10%, trustd 1%, SpringBoard 1%, securityd 1%, logd 1%
+16:14:16 simulator   32% mac  286% load 580.0 | diagnosticd 14%, apsd 9%, SpringBoard 1%, chronod 1%, trustd 1%, securityd 1%
+16:14:21 simulator   46% mac  271% load 580.4 | diagnosticd 18%, apsd 11%, amsaccountsd 7%, amsengagementd 2%, trustd 2%, cloudd 1%
+16:14:27 simulator   32% mac  251% load 580.7 | diagnosticd 16%, apsd 10%, trustd 1%, securityd 1%, SpringBoard 1%, cfprefsd 0%
+16:14:32 simulator   33% mac  287% load 579.8 | diagnosticd 16%, apsd 11%, trustd 1%, SpringBoard 1%, securityd 1%, logd 1%
+16:14:38 simulator   38% mac  205% load 574.0 | diagnosticd 16%, apsd 11%, trustd 1%, securityd 1%, SpringBoard 1%, logd 1%
+16:14:43 simulator   51% mac  216% load 570.5 | diagnosticd 19%, apsd 12%, trustd 1%, SpringBoard 1%, securityd 1%, fitcored 1%
+16:14:49 simulator   78% mac  270% load 553.2 | diagnosticd 25%, apsd 16%, fitcored 2%, SpringBoard 1%, trustd 1%, cloudd 1%
+16:14:54 simulator  102% mac  266% load 539.6 | diagnosticd 49%, apsd 33%, trustd 4%, securityd 3%, cfprefsd 2%, logd 1%
+16:15:00 simulator  114% mac  220% load 527.7 | diagnosticd 55%, apsd 37%, trustd 4%, securityd 3%, SpringBoard 3%, logd 2%
+16:15:06 simulator  148% mac  234% load 514.0 | diagnosticd 61%, apsd 42%, trustd 4%, securityd 3%, cfprefsd 2%, logd 2%
+16:15:12 simulator  180% mac  237% load 500.3 | diagnosticd 46%, apsd 28%, mediaanalysisd 14%, MacinTalkAUSP 12%, SiriAUSP 11%, MauiAUSP 10%
+16:15:18 simulator  109% mac  205% load 503.1 | diagnosticd 52%, apsd 36%, trustd 4%, securityd 3%, cfprefsd 2%, logd 2%
+16:15:24 simulator  110% mac  265% load 503.5 | diagnosticd 50%, apsd 34%, testmanagerd 5%, trustd 4%, securityd 3%, cfprefsd 2%
+16:15:37 simulator  193% mac  215% load 509.4 | (MirroredWidgetEx) 23%, diagnosticd 23%, PhotosReliveWidget 23%, SafariWidgetExtension 22%, (RemindersWidgetE) 22%, BarcodeScannerWidgetExtension 19%
+16:15:50 simulator  220% mac  237% load 516.7 | RemindersWidgetExtension 37%, FitnessWidget 36%, AccessibilityControlsExtension 24%, IntentsExtension 20%, HealthCycleTrackingWidgetExtension 16%, installd 16%
+16:16:01 could not read the process list: Command '['/bin/ps', '-axww', '-o', 'pid=,args=']' timed out after 5.0 seconds
+16:16:16 could not read the process list: Command '['/bin/ps', '-axww', '-o', 'pid=,ppid=,stat=,time=,comm=']' timed out after 5.0 seconds
+16:16:27 simulator  194% mac  231% load 542.8 | Brickson 22%, diagnosticd 21%, ShortcutsWidgetExtension 19%, RemindersIntentsExtension 14%, HealthMedicationsWidgetExtension 12%, MirroredWidgetExtension 11%
+16:16:35 simulator  172% mac  276% load 546.0 | Brickson 93%, diagnosticd 16%, SafariWidgetExtension 14%, apsd 11%, PhotosReliveWidget 9%, ScreenTimeWidgetExtension 9%
+16:16:40 simulator  184% mac  237% load 548.8 | Brickson 112%, HealthCycleTrackingWidgetExtension 18%, diagnosticd 15%, apsd 10%, PhotosReliveWidget 8%, ScreenTimeWidgetExtension 6%
+16:16:46 simulator  177% mac  238% load 550.9 | Brickson 104%, ShortcutsWidgetExtension 13%, diagnosticd 13%, GeneralMapsWidget 10%, apsd 9%, ScreenTimeWidgetExtension 9%
+16:16:52 simulator  183% mac  228% load 553.6 | Brickson 98%, CalendarWidgetExtension 25%, diagnosticd 13%, GeneralMapsWidget 10%, PhotosReliveWidget 10%, ScreenTimeWidgetExtension 10%
+16:16:58 simulator  217% mac  237% load 554.6 | Brickson 92%, CalendarWidgetExtension 29%, PhotosReliveWidget 20%, ScreenTimeWidgetExtension 20%, GeneralMapsWidget 19%, diagnosticd 14%
+16:17:04 simulator  264% mac  296% load 556.7 | Brickson 107%, PhotosReliveWidget 36%, ScreenTimeWidgetExtension 35%, CalendarWidgetExtension 32%, diagnosticd 16%, apsd 10%
+16:17:09 simulator  237% mac  278% load 558.2 | Brickson 101%, RemindersWidgetExtension 40%, diagnosticd 16%, ScreenTimeWidgetExtension 14%, CalendarWidgetExtension 13%, PhotosReliveWidget 10%
+16:20:08 could not read the process list: Command '['/bin/ps', '-axww', '-o', 'pid=,args=']' timed out after 5.0 seconds
+16:20:13 simulator  210% mac  251% load 493.5 | Brickson 98%, diagnosticd 32%, apsd 20%, BackgroundShortcutRunner 13%, amsengagementd 9%, PosterBoard 4%
+16:20:18 simulator  176% mac  257% load 479.2 | Brickson 98%, GeneralMapsWidget 17%, diagnosticd 16%, apsd 11%, mapssyncd 4%, SpringBoard 1%
+16:20:30 simulator  198% mac  236% load 459.6 | Brickson 88%, BackgroundShortcutRunner 38%, diagnosticd 18%, com.apple.MapKit.SnapshotService 13%, GeneralMapsWidget 10%, apsd 8%
+16:20:37 simulator  267% mac  297% load 446.3 | Brickson 113%, BackgroundShortcutRunner 108%, diagnosticd 27%, apsd 10%, notifyd 3%, trustd 1%
+16:20:48 could not read the process list: Command '['/bin/ps', '-axww', '-o', 'pid=,ppid=,stat=,time=,comm=']' timed out after 5.0 seconds
+16:20:54 simulator  198% mac  266% load 413.5 | Brickson 102%, diagnosticd 32%, apsd 21%, BackgroundShortcutRunner 5%, FitnessIntelligenceSnapshotService 4%, trustd 2%
+16:21:01 simulator  177% mac  229% load 402.3 | Brickson 94%, diagnosticd 37%, apsd 27%, trustd 3%, securityd 2%, SpringBoard 2%
+16:21:07 simulator  188% mac  250% load 393.4 | Brickson 102%, diagnosticd 42%, apsd 30%, trustd 4%, securityd 2%, cfprefsd 1%
+16:21:15 simulator  195% mac  239% load 377.4 | Brickson 93%, intelligenceflowd 30%, diagnosticd 29%, apsd 21%, com.apple.datamigrator 4%, trustd 3%
+16:21:20 simulator  259% mac  299% load 370.6 | Brickson 114%, intelligenceflowd 61%, diagnosticd 39%, apsd 28%, trustd 3%, securityd 2%
+16:21:26 simulator  201% mac  258% load 366.3 | Brickson 100%, diagnosticd 44%, apsd 32%, trustd 4%, securityd 2%, cfprefsd 1%
+16:21:31 simulator  202% mac  255% load 359.5 | Brickson 101%, diagnosticd 44%, apsd 32%, trustd 4%, securityd 2%, cfprefsd 1%
+16:21:37 simulator  219% mac  280% load 349.5 | Brickson 99%, diagnosticd 49%, apsd 36%, trustd 4%, securityd 2%, cfprefsd 2%
+16:21:42 simulator  195% mac  250% load 331.7 | Brickson 100%, diagnosticd 41%, apsd 29%, modelcatalogd 3%, trustd 3%, securityd 2%
+16:21:49 simulator  194% mac  243% load 325.5 | Brickson 92%, diagnosticd 40%, apsd 29%, intelligencecontextd 16%, trustd 3%, securityd 2%
+16:21:54 simulator  265% mac  303% load 319.7 | Brickson 109%, intelligencecontextd 70%, diagnosticd 39%, apsd 27%, trustd 3%, securityd 2%
+16:22:00 simulator  213% mac  276% load 311.1 | Brickson 99%, diagnosticd 46%, apsd 33%, trustd 4%, securityd 2%, SpringBoard 2%
+16:22:05 simulator  156% mac  222% load 305.9 | Brickson 101%, diagnosticd 19%, apsd 17%, trustd 1%, securityd 1%, cfprefsd 1%
+16:22:11 simulator  165% mac  249% load 297.7 | Brickson 100%, diagnosticd 21%, apsd 16%, trustd 1%, remindd 1%, securityd 1%
+16:22:17 simulator  187% mac  237% load 284.6 | Brickson 99%, MobileCal 25%, intelligenceflowd 21%, diagnosticd 15%, apsd 11%, SpringBoard 2%
+16:22:26 simulator  216% mac  242% load 280.9 | Brickson 99%, MobileCal 52%, diagnosticd 21%, apsd 13%, CalendarWidgetExtension 12%, chronod 4%
+16:22:32 simulator  210% mac  263% load 277.8 | Brickson 96%, diagnosticd 44%, apsd 29%, CalendarWidgetExtension 5%, trustd 3%, intelligenceflowd 3%
+16:22:37 simulator  206% mac  267% load 268.4 | Brickson 104%, diagnosticd 43%, apsd 31%, trustd 3%, securityd 2%, cfprefsd 2%
+16:22:43 simulator  184% mac  251% load 264.4 | Brickson 100%, diagnosticd 39%, apsd 28%, trustd 4%, securityd 2%, cfprefsd 1%
+16:22:49 simulator  205% mac  260% load 260.9 | Brickson 101%, diagnosticd 48%, apsd 32%, trustd 4%, securityd 2%, cfprefsd 2%
+16:22:54 simulator  228% mac  282% load 255.1 | Brickson 99%, diagnosticd 53%, apsd 34%, remindd 4%, trustd 4%, securityd 3%
+16:23:00 simulator  197% mac  249% load 250.4 | Brickson 98%, diagnosticd 43%, apsd 30%, trustd 4%, securityd 2%, SpringBoard 2%
+16:23:06 simulator  205% mac  264% load 248.8 | Brickson 102%, diagnosticd 44%, apsd 31%, (managedappdistri) 6%, trustd 4%, securityd 2%
+16:23:11 simulator  222% mac  275% load 246.5 | Brickson 100%, diagnosticd 46%, apsd 33%, finhealthd 11%, trustd 4%, securityd 3%
+16:23:16 simulator  200% mac  255% load 240.1 | Brickson 100%, diagnosticd 33%, apsd 19%, launchd_sim 2%, nsurlsessiond 2%, trustd 2%
+16:23:22 simulator  136% mac  210% load 232.4 | Brickson 98%, diagnosticd 15%, apsd 11%, trustd 1%, nsurlsessiond 1%, dasd 1%
+16:23:28 simulator  149% mac  225% load 229.2 | Brickson 102%, diagnosticd 17%, apsd 14%, trustd 1%, SpringBoard 1%, securityd 1%
+16:23:33 simulator  213% mac  276% load 221.1 | Brickson 100%, diagnosticd 37%, apsd 18%, axassetsd 5%, nsurlsessiond 3%, mobileassetd 3%
+16:23:40 simulator  166% mac  229% load 217.5 | Brickson 98%, diagnosticd 22%, apsd 10%, CategoriesService 5%, DeviceConfigurationAgent 2%, ManagedSettingsAgent 2%
+16:23:48 simulator  172% mac  219% load 211.1 | Brickson 80%, diagnosticd 24%, SafariLinkExtension 19%, apsd 11%, MobileCal 7%, spotlightknowledged.updater 2%
+16:23:54 simulator  272% mac  328% load 212.4 | Brickson 128%, SafariLinkExtension 43%, diagnosticd 41%, apsd 29%, CalendarWidgetExtension 7%, trustd 3%
+16:23:59 simulator  191% mac  251% load 213.4 | Brickson 100%, diagnosticd 42%, apsd 30%, trustd 4%, securityd 2%, SpringBoard 2%
+16:24:05 simulator  204% mac  281% load 211.3 | Brickson 99%, diagnosticd 43%, apsd 30%, trustd 4%, securityd 2%, searchd 2%
+16:24:10 simulator  199% mac  265% load 209.1 | Brickson 101%, diagnosticd 45%, apsd 31%, trustd 4%, securityd 2%, cfprefsd 1%
+16:24:16 simulator  189% mac  255% load 207.8 | Brickson 99%, diagnosticd 43%, apsd 31%, trustd 4%, securityd 2%, cfprefsd 1%
+16:24:21 simulator  195% mac  261% load 207.6 | Brickson 100%, diagnosticd 43%, apsd 31%, trustd 4%, securityd 2%, cfprefsd 1%
+16:24:26 simulator  207% mac  283% load 204.8 | Brickson 100%, diagnosticd 46%, apsd 34%, trustd 4%, securityd 3%, cfprefsd 2%
+16:24:32 simulator  176% mac  240% load 201.4 | Brickson 99%, diagnosticd 36%, apsd 25%, trustd 3%, securityd 2%, cfprefsd 1%
+16:24:37 simulator  142% mac  223% load 195.5 | Brickson 102%, diagnosticd 16%, apsd 11%, trustd 1%, mobileassetd 1%, nsurlsessiond 1%
+16:24:43 simulator  156% mac  260% load 191.6 | Brickson 99%, diagnosticd 20%, apsd 15%, trustd 1%, SpringBoard 1%, akd 1%
+16:24:48 simulator  159% mac  254% load 186.6 | Brickson 100%, diagnosticd 23%, apsd 14%, dasd 2%, trustd 1%, securityd 1%
+16:24:53 simulator  138% mac  237% load 183.1 | Brickson 100%, diagnosticd 15%, apsd 11%, trustd 1%, SpringBoard 1%, cfprefsd 1%
+16:24:58 simulator  200% mac  271% load 180.7 | Brickson 99%, diagnosticd 37%, apsd 11%, fitcored 4%, akd 4%, adprivacyd 3%
+16:25:04 simulator  141% mac  235% load 178.7 | Brickson 101%, diagnosticd 16%, apsd 11%, SpringBoard 2%, trustd 1%, cfprefsd 1%
+16:25:09 simulator  200% mac  261% load 170.3 | Brickson 99%, diagnosticd 24%, MessagesActionExtension 16%, apsd 11%, CalendarWidgetExtension 5%, MobileCal 4%
+16:25:15 simulator  187% mac  247% load 164.8 | Brickson 99%, diagnosticd 31%, apsd 11%, CalendarWidgetExtension 5%, searchd 2%, chronod 2%
+16:25:20 simulator  152% mac  233% load 161.5 | Brickson 100%, diagnosticd 20%, apsd 12%, trustd 1%, SpringBoard 1%, TrialArchivingService 1%
+16:25:25 simulator  185% mac  252% load 156.1 | Brickson 100%, diagnosticd 31%, apsd 12%, assistantd 2%, searchd 2%, assetsd 2%
+16:25:30 simulator  232% mac  266% load 147.7 | Brickson 100%, diagnosticd 41%, assetsd 18%, apsd 10%, triald 3%, mediaanalysisd 3%
+16:25:36 simulator  198% mac  240% load 164.6 | Brickson 99%, diagnosticd 35%, apsd 22%, cfprefsd 3%, trustd 2%, securityd 2%
+16:25:41 simulator  219% mac  266% load 165.1 | Brickson 100%, diagnosticd 50%, apsd 31%, trustd 3%, securityd 2%, cfprefsd 2%
+16:25:47 simulator  195% mac  242% load 161.4 | Brickson 96%, diagnosticd 45%, apsd 31%, trustd 4%, securityd 3%, cfprefsd 1%
+16:25:54 simulator  209% mac  261% load 158.7 | Brickson 101%, diagnosticd 39%, apsd 26%, com.apple.MapKit.SnapshotService 17%, geod 4%, GeneralMapsWidget 4%
+16:25:59 simulator  163% mac  254% load 161.0 | Brickson 59%, diagnosticd 51%, apsd 35%, trustd 4%, securityd 3%, logd 2%
+16:26:06 simulator  193% mac  256% load 162.8 | Brickson 99%, diagnosticd 38%, apsd 25%, mobileassetd 6%, spotlightknowledged.updater 3%, assetsubscriptiond 3%
+16:26:11 simulator  221% mac  262% load 160.3 | Brickson 100%, diagnosticd 42%, apsd 20%, remindd 3%, searchd 3%, mobileassetd 2%
+16:26:19 simulator  217% mac  256% load 151.0 | Brickson 95%, diagnosticd 48%, apsd 32%, cloudd 9%, trustd 5%, securityd 2%
+16:26:25 simulator  231% mac  277% load 149.7 | Brickson 105%, diagnosticd 50%, apsd 36%, trustd 9%, triald 7%, (mlhostd) 5%
+16:26:30 simulator  212% mac  256% load 147.3 | Brickson 101%, diagnosticd 49%, apsd 31%, trustd 3%, securityd 2%, cfprefsd 2%
+16:26:35 simulator  236% mac  266% load 138.7 | Brickson 101%, diagnosticd 45%, apsd 10%, searchd 7%, remindd 3%, homed 3%
+16:26:41 simulator  214% mac  245% load 130.1 | Brickson 99%, diagnosticd 34%, apsd 9%, searchd 8%, mobileassetd 6%, homed 3%
+16:26:46 simulator  193% mac  223% load 122.3 | Brickson 99%, diagnosticd 25%, apsd 9%, searchd 8%, spotlightknowledged.updater 4%, homed 3%
+16:26:51 simulator  248% mac  272% load 113.2 | Brickson 100%, diagnosticd 31%, cloudd 13%, apsd 8%, nsurlsessiond 8%, triald 7%
+16:26:57 simulator  205% mac  240% load 105.1 | Brickson 98%, diagnosticd 23%, apsd 10%, cloudd 8%, triald 7%, nsurlsessiond 5%
+16:27:02 simulator  155% mac  213% load 102.0 | Brickson 102%, diagnosticd 17%, apsd 10%, SpringBoard 2%, triald 2%, cloudd 2%
+16:27:07 simulator  238% mac  261% load  95.3 | Brickson 99%, diagnosticd 21%, IntelligencePlatformComputeService 12%, siriinferenced 11%, assistant_service 11%, healthappd 10%
+16:27:12 simulator  205% mac  239% load  89.3 | Brickson 99%, diagnosticd 18%, apsd 10%, healthappd 10%, siriinferenced 10%, mobileassetd 9%
+16:27:18 simulator  243% mac  271% load  79.7 | Brickson 104%, diagnosticd 21%, healthappd 18%, siriinferenced 15%, AuthenticationServicesAgent 13%, dataaccessd 13%
+16:27:23 simulator  247% mac  270% load  73.9 | Brickson 100%, siriinferenced 20%, mobileassetd 18%, healthappd 18%, AuthenticationServicesAgent 18%, dataaccessd 18%
+16:27:28 simulator  206% mac  234% load  72.4 | Brickson 99%, mobileassetd 28%, diagnosticd 17%, STExtractionService 12%, healthappd 7%, apsd 6%
+16:27:34 simulator  255% mac  277% load  68.7 | Brickson 100%, STExtractionService 44%, diagnosticd 22%, healthappd 15%, mobileassetd 10%, nsurlsessiond 7%
+16:27:39 simulator  235% mac  256% load  64.2 | Brickson 100%, STExtractionService 23%, diagnosticd 17%, CalendarWidgetExtension 17%, AuthenticationServicesAgent 7%, SetStoreUpdateService 6%
+16:27:44 simulator  150% mac  171% load  62.7 | Brickson 100%, diagnosticd 12%, AppSSODaemon 7%, apsd 7%, GSSCred 4%, MobileCal 4%
+16:27:49 simulator  136% mac  149% load  57.8 | Brickson 100%, diagnosticd 14%, apsd 7%, mobileassetd 2%, nsurlsessiond 2%, dasd 1%
+16:27:55 simulator  135% mac  159% load  53.4 | Brickson 100%, diagnosticd 13%, apsd 7%, mobileassetd 2%, nsurlsessiond 2%, trustd 1%
+16:28:00 simulator  140% mac  156% load  49.7 | Brickson 100%, diagnosticd 16%, apsd 8%, mobileassetd 3%, nsurlsessiond 2%, trustd 1%
+16:28:05 simulator  136% mac  153% load  45.8 | Brickson 100%, diagnosticd 13%, apsd 8%, mobileassetd 3%, nsurlsessiond 2%, trustd 1%
+16:28:10 simulator  139% mac  179% load  42.4 | Brickson 100%, diagnosticd 16%, apsd 8%, mobileassetd 3%, nsurlsessiond 2%, trustd 1%
+16:28:16 simulator  136% mac  163% load  39.3 | Brickson 100%, diagnosticd 14%, apsd 8%, mobileassetd 3%, nsurlsessiond 2%, trustd 2%
+16:28:21 simulator  135% mac  161% load  37.1 | Brickson 100%, diagnosticd 14%, apsd 8%, mobileassetd 2%, nsurlsessiond 2%, trustd 1%
+16:28:26 simulator  134% mac  145% load  34.3 | Brickson 100%, diagnosticd 13%, apsd 8%, mobileassetd 2%, nsurlsessiond 1%, trustd 1%
+16:28:32 simulator  131% mac  176% load  31.7 | Brickson 99%, diagnosticd 12%, apsd 7%, mobileassetd 2%, nsurlsessiond 1%, trustd 1%
+16:28:37 simulator  136% mac  214% load  30.7 | Brickson 101%, diagnosticd 12%, apsd 7%, mobileassetd 3%, trustd 1%, nsurlsessiond 1%
+16:28:42 simulator  136% mac  249% load  32.3 | Brickson 99%, diagnosticd 12%, mobileassetd 8%, apsd 8%, assetsubscriptiond 1%, trustd 1%
+16:28:47 simulator  140% mac  212% load  29.9 | Brickson 100%, diagnosticd 14%, apsd 8%, spotlightknowledged.updater 3%, cfprefsd 3%, searchd 3%
+16:28:53 simulator  135% mac  217% load  28.0 | Brickson 99%, diagnosticd 14%, apsd 10%, trustd 1%, securityd 1%, logd 1%
+16:28:58 simulator  154% mac  220% load  29.2 | Brickson 101%, diagnosticd 18%, apsd 8%, axassetsd 5%, spotlightknowledged.updater 4%, cfprefsd 3%
+16:29:04 simulator  130% mac  157% load  29.5 | Brickson 99%, diagnosticd 12%, apsd 8%, managedappdistributiond 2%, SpringBoard 1%, trustd 1%
+16:29:09 simulator  129% mac  140% load  27.6 | Brickson 101%, diagnosticd 11%, apsd 8%, trustd 1%, securityd 1%, remindd 0%
+16:29:14 simulator  120% mac  161% load  29.8 | Brickson 98%, diagnosticd 10%, apsd 7%, trustd 1%, securityd 1%, SpringBoard 0%
+16:29:20 simulator  143% mac  236% load  27.7 | Brickson 100%, diagnosticd 13%, apsd 9%, healthappd 6%, (mlhostd) 5%, trustd 1%
+16:29:25 simulator  136% mac  239% load  28.6 | Brickson 102%, diagnosticd 13%, apsd 8%, healthappd 5%, trustd 1%, cfprefsd 1%
+16:29:31 simulator  196% mac  235% load  29.8 | Brickson 98%, diagnosticd 45%, apsd 31%, trustd 3%, securityd 2%, cfprefsd 1%
+16:29:36 simulator  205% mac  258% load  33.2 | Brickson 101%, diagnosticd 49%, apsd 35%, trustd 4%, securityd 3%, cfprefsd 1%
+16:29:42 simulator  208% mac  257% load  35.9 | Brickson 99%, diagnosticd 53%, apsd 32%, trustd 3%, securityd 2%, cfprefsd 1%
+16:29:47 simulator  193% mac  215% load  33.4 | Brickson 102%, nanotimekitcompaniond 38%, diagnosticd 23%, apsd 14%, logd_helper 2%, trustd 1%
+16:29:53 simulator  145% mac  169% load  30.8 | Brickson 100%, diagnosticd 18%, apsd 12%, nanotimekitcompaniond 3%, trustd 1%, securityd 1%
+16:29:58 simulator  139% mac  171% load  29.2 | Brickson 100%, diagnosticd 17%, apsd 11%, trustd 1%, securityd 1%, logd 1%
+16:30:03 simulator  154% mac  175% load  27.2 | Brickson 101%, diagnosticd 21%, apsd 12%, SpringBoard 3%, dasd 2%, axassetsd 2%
+16:30:09 simulator  138% mac  163% load  25.2 | Brickson 100%, diagnosticd 17%, apsd 11%, trustd 1%, securityd 1%, SpringBoard 0%
+16:30:14 simulator  138% mac  169% load  24.1 | Brickson 100%, diagnosticd 17%, apsd 11%, trustd 1%, securityd 1%, cfprefsd 1%
+16:30:19 simulator  154% mac  171% load  24.3 | Brickson 99%, diagnosticd 21%, apsd 11%, spotlightknowledged.updater 6%, cfprefsd 4%, trustd 1%
+16:30:25 simulator  138% mac  163% load  22.9 | Brickson 100%, diagnosticd 16%, apsd 10%, trustd 1%, securityd 1%, cfprefsd 1%
+16:30:30 simulator  135% mac  155% load  21.1 | Brickson 101%, diagnosticd 15%, apsd 10%, trustd 1%, securityd 1%, SpringBoard 1%
+16:30:36 simulator  164% mac  226% load  27.1 | Brickson 94%, diagnosticd 32%, apsd 23%, trustd 3%, securityd 1%, cfprefsd 1%
+16:30:43 simulator  182% mac  249% load  33.2 | Brickson 102%, diagnosticd 38%, apsd 27%, trustd 3%, securityd 2%, cfprefsd 1%
+16:30:48 simulator  188% mac  255% load  39.3 | Brickson 103%, diagnosticd 41%, apsd 29%, trustd 4%, securityd 2%, cfprefsd 1%
+16:30:53 simulator  192% mac  265% load  44.7 | Brickson 99%, diagnosticd 41%, apsd 32%, trustd 3%, securityd 2%, cfprefsd 1%
+16:30:59 simulator  183% mac  277% load  62.3 | Brickson 100%, diagnosticd 37%, apsd 29%, trustd 3%, securityd 2%, cfprefsd 1%
+16:31:05 simulator  164% mac  246% load  76.5 | Brickson 99%, diagnosticd 25%, apsd 20%, mlhostd 5%, trustd 2%, SpringBoard 1%
+16:31:10 simulator  190% mac  245% load  73.4 | Brickson 101%, diagnosticd 43%, apsd 18%, dataaccessd 2%, trustd 2%, remindd 2%
+16:31:16 simulator  210% mac  258% load  71.4 | Brickson 87%, diagnosticd 47%, apsd 30%, com.apple.MapKit.SnapshotService 16%, GeneralMapsWidget 3%, trustd 3%
+16:31:22 simulator  184% mac  262% load  72.1 | Brickson 76%, diagnosticd 50%, apsd 36%, trustd 4%, securityd 2%, cfprefsd 2%
+16:31:27 simulator  207% mac  256% load  70.6 | Brickson 99%, diagnosticd 51%, apsd 33%, trustd 3%, securityd 2%, logd 1%
+16:31:33 simulator  210% mac  249% load  67.9 | Brickson 99%, diagnosticd 50%, apsd 33%, trustd 4%, securityd 2%, cfprefsd 2%
+16:31:38 simulator  219% mac  256% load  62.6 | Brickson 99%, diagnosticd 55%, apsd 36%, trustd 4%, securityd 2%, cfprefsd 1%
+16:31:44 simulator  208% mac  255% load  60.8 | Brickson 102%, diagnosticd 50%, apsd 33%, trustd 4%, securityd 2%, logd 1%
+16:31:49 simulator  189% mac  240% load  59.8 | Brickson 94%, diagnosticd 45%, apsd 30%, trustd 3%, securityd 2%, cfprefsd 1%
+16:31:55 simulator  202% mac  256% load  62.5 | Brickson 106%, diagnosticd 45%, apsd 34%, trustd 4%, securityd 2%, cfprefsd 1%
+16:32:00 simulator  219% mac  270% load  58.0 | Brickson 100%, diagnosticd 54%, apsd 35%, trustd 4%, securityd 2%, SpringBoard 2%
+16:32:06 simulator  212% mac  255% load  58.2 | Brickson 100%, diagnosticd 51%, apsd 34%, trustd 4%, securityd 3%, assistantd 2%
+16:32:11 simulator  209% mac  257% load  57.9 | Brickson 101%, diagnosticd 53%, apsd 34%, trustd 4%, securityd 2%, logd 1%
+16:32:16 simulator  152% mac  177% load  53.4 | Brickson 101%, diagnosticd 23%, apsd 15%, trustd 2%, securityd 1%, dataaccessd 1%
+16:32:22 simulator  135% mac  153% load  49.2 | Brickson 99%, diagnosticd 16%, apsd 11%, trustd 1%, securityd 1%, cfprefsd 1%
+16:32:27 simulator  137% mac  167% load  48.1 | Brickson 100%, diagnosticd 16%, apsd 11%, trustd 1%, securityd 1%, cfprefsd 1%
+16:32:32 simulator  139% mac  157% load  44.4 | Brickson 100%, diagnosticd 17%, apsd 11%, trustd 1%, securityd 1%, SpringBoard 1%
+16:32:38 simulator  137% mac  150% load  41.0 | Brickson 101%, diagnosticd 16%, apsd 11%, trustd 1%, logd 1%, cfprefsd 1%
+16:32:43 simulator  136% mac  171% load  38.0 | Brickson 100%, diagnosticd 16%, apsd 10%, trustd 1%, securityd 1%, SpringBoard 0%
+16:32:48 simulator  137% mac  153% load  35.0 | Brickson 100%, diagnosticd 17%, apsd 11%, trustd 1%, securityd 1%, SpringBoard 1%
+16:32:54 simulator  137% mac  153% load  35.4 | Brickson 101%, diagnosticd 17%, apsd 11%, trustd 1%, securityd 1%, cfprefsd 1%
+16:32:59 simulator  136% mac  178% load  32.7 | Brickson 100%, diagnosticd 15%, apsd 10%, SpringBoard 1%, trustd 1%, securityd 1%
+16:33:04 simulator  145% mac  195% load  30.3 | Brickson 99%, diagnosticd 18%, apsd 10%, assetsd 3%, intelligenceflowd 2%, dasd 2%
+16:33:10 simulator  142% mac  165% load  29.8 | Brickson 100%, diagnosticd 16%, apsd 11%, (mlhostd) 6%, trustd 1%, securityd 1%
+16:33:15 simulator  136% mac  170% load  25.5 | Brickson 100%, diagnosticd 16%, apsd 10%, trustd 1%, securityd 1%, cfprefsd 1%
+16:33:21 simulator  139% mac  153% load  23.6 | Brickson 100%, diagnosticd 17%, apsd 11%, trustd 1%, securityd 1%, SpringBoard 1%
+16:33:26 simulator  137% mac  164% load  21.9 | Brickson 99%, diagnosticd 17%, apsd 11%, trustd 1%, securityd 1%, SpringBoard 1%
+16:33:31 simulator  139% mac  165% load  20.3 | Brickson 101%, diagnosticd 16%, apsd 11%, trustd 1%, securityd 1%, logd 1%
+16:33:37 simulator  141% mac  156% load  19.1 | Brickson 100%, diagnosticd 18%, apsd 12%, trustd 2%, securityd 1%, SpringBoard 1%
+16:33:42 simulator  132% mac  157% load  18.0 | Brickson 100%, diagnosticd 15%, apsd 10%, trustd 1%, securityd 1%, SpringBoard 1%
+16:33:47 simulator  136% mac  159% load  16.8 | Brickson 100%, diagnosticd 16%, apsd 11%, trustd 1%, securityd 1%, cfprefsd 1%
+16:33:53 simulator  133% mac  146% load  15.6 | Brickson 100%, diagnosticd 15%, apsd 10%, trustd 1%, securityd 1%, logd 1%
+16:33:58 simulator  162% mac  196% load  14.5 | Brickson 100%, diagnosticd 26%, apsd 17%, trustd 2%, chronod 1%, securityd 1%
+16:34:04 simulator  204% mac  249% load  17.4 | Brickson 99%, diagnosticd 50%, apsd 32%, trustd 4%, securityd 2%, cfprefsd 1%
+16:34:10 simulator  210% mac  254% load  18.6 | Brickson 94%, diagnosticd 50%, apsd 31%, axassetsd 4%, trustd 3%, securityd 2%
+16:34:17 simulator  194% mac  251% load  27.6 | Brickson 97%, diagnosticd 46%, apsd 32%, trustd 4%, securityd 3%, cfprefsd 2%
+16:34:23 simulator  195% mac  249% load  35.1 | Brickson 108%, diagnosticd 42%, apsd 30%, trustd 4%, securityd 2%, cfprefsd 1%
+16:34:28 simulator  220% mac  266% load  40.0 | Brickson 102%, diagnosticd 54%, apsd 39%, trustd 4%, securityd 3%, cfprefsd 1%
+16:34:34 simulator  227% mac  269% load  40.1 | Brickson 99%, diagnosticd 62%, apsd 35%, trustd 4%, securityd 2%, dataaccessd 2%
+16:34:39 simulator  218% mac  259% load  37.8 | Brickson 101%, diagnosticd 55%, apsd 35%, trustd 4%, securityd 2%, cfprefsd 1%
+16:34:45 simulator  202% mac  245% load  37.9 | Brickson 99%, diagnosticd 48%, apsd 32%, trustd 4%, securityd 2%, cfprefsd 1%
+16:34:50 simulator  218% mac  260% load  38.4 | Brickson 100%, diagnosticd 54%, apsd 35%, trustd 4%, securityd 3%, cfprefsd 2%
+16:34:56 simulator  215% mac  251% load  35.5 | Brickson 99%, diagnosticd 54%, apsd 35%, trustd 4%, securityd 2%, logd 1%
+16:35:01 simulator  217% mac  262% load  36.9 | Brickson 101%, diagnosticd 54%, apsd 35%, trustd 4%, securityd 2%, cfprefsd 2%
+16:35:08 simulator  164% mac  230% load  39.4 | Brickson 70%, diagnosticd 41%, apsd 29%, launchd_sim 3%, trustd 3%, MTLCompilerService 2%
+16:35:14 simulator  187% mac  246% load  41.2 | Brickson 71%, diagnosticd 53%, apsd 35%, MTLCompilerService 6%, trustd 4%, securityd 2%
+16:35:19 simulator  223% mac  263% load  41.0 | Brickson 100%, diagnosticd 56%, apsd 34%, trustd 4%, securityd 2%, dasd 2%
+16:35:25 simulator  201% mac  244% load  40.6 | Brickson 94%, diagnosticd 49%, apsd 33%, trustd 4%, securityd 2%, cfprefsd 2%
+16:35:32 simulator  181% mac  238% load  46.8 | Brickson 94%, diagnosticd 42%, apsd 30%, trustd 4%, securityd 2%, cfprefsd 1%
+16:35:38 simulator  217% mac  266% load  51.8 | Brickson 109%, diagnosticd 50%, apsd 37%, trustd 4%, securityd 3%, logd 1%
+16:35:43 simulator  225% mac  268% load  51.3 | Brickson 100%, diagnosticd 59%, apsd 33%, trustd 4%, securityd 2%, dataaccessd 2%
+16:35:49 simulator  211% mac  247% load  51.7 | Brickson 99%, diagnosticd 51%, apsd 34%, trustd 4%, securityd 3%, cfprefsd 1%
+16:35:54 simulator  201% mac  264% load  51.2 | Brickson 84%, diagnosticd 54%, apsd 37%, cfprefsd 5%, trustd 4%, securityd 2%
+16:36:01 simulator  114% mac  180% load  53.6 | diagnosticd 45%, apsd 30%, SpringBoard 14%, backboardd 3%, trustd 3%, securityd 2%
+16:36:06 simulator  151% mac  238% load  57.9 | diagnosticd 71%, apsd 44%, trustd 4%, securityd 3%, logd 2%, cfprefsd 2%
+16:36:12 simulator  160% mac  215% load  54.4 | diagnosticd 74%, apsd 45%, trustd 5%, securityd 3%, dataaccessd 2%, homed 2%
+16:36:17 simulator  154% mac  201% load  53.3 | diagnosticd 69%, apsd 45%, managedappdistributiond 5%, trustd 4%, securityd 3%, logd 2%
+Processor time the simulator's processes used while watched:
+    1161.5 s  Brickson
+     462.3 s  diagnosticd
+     285.9 s  apsd
+      45.4 s  amsengagementd
+      36.9 s  BackgroundShortcutRunner
+      33.5 s  trustd
+      20.5 s  SpringBoard
+      20.4 s  securityd
+      17.2 s  cfprefsd
+      13.7 s  healthappd
+      13.6 s  logd
+      13.1 s  mobileassetd
+      12.9 s  NewsToday2
+      10.2 s  CalendarWidgetExtension
+      10.0 s  PhotosReliveWidget
+       9.9 s  launchd_sim
+       9.7 s  identityservicesd
+       8.7 s  PosterBoard
+       8.4 s  NewsTag
+       8.0 s  MobileCal
+Paused 13 lock-screen wallpaper extension processes.
+Resumed 13 of them.
+Stopped.
