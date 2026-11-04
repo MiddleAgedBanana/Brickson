@@ -410,18 +410,21 @@ class Watch:
     def resume(self):
         """Lets every paused process run again. One that has ended since
         needs nothing."""
-        resumed, ended = 0, 0
+        resumed, ended = 0, []
         for pid in sorted(self.paused):
             try:
                 self.kill(pid, signal.SIGCONT)
             except ProcessLookupError:
-                ended += 1
+                ended.append(pid)
             except OSError as error:
                 self.write(f"could not resume process {pid}: {error}")
             else:
                 resumed += 1
         if self.paused:
-            self.write(f"Resumed {resumed} of them" + (f"; {ended} had already ended." if ended else "."))
+            # Which ones ended, to match against the "paused" lines: in the
+            # probe run of 2026-11-04, 49 of the 65 paused on the iPhone had.
+            self.write(f"Resumed {resumed} of them" + (
+                f"; {len(ended)} had already ended: {', '.join(map(str, ended))}." if ended else "."))
 
 
 def alive(pid):

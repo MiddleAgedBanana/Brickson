@@ -1101,8 +1101,8 @@ class SimulatorLoadTests(unittest.TestCase):
                                       (151, signal.SIGSTOP)])
 
     # Leaving the extensions stopped when the watcher stops, resuming any
-    # other process, or stopping at a process that is already gone fails
-    # this test: a simulator that is not shut down after its run (a failed
+    # other process, stopping at a process that is already gone, or not
+    # naming the ones that had ended fails this test: a simulator that is not shut down after its run (a failed
     # shutdown) would keep its wallpaper extensions stopped (Copilot's
     # review).
     def test_the_paused_extensions_run_again_when_the_watcher_stops(self):
@@ -1120,7 +1120,7 @@ class SimulatorLoadTests(unittest.TestCase):
         watcher.resume()
         self.assertEqual(self.kills, [(121, signal.SIGSTOP), (122, signal.SIGSTOP),
                                       (121, signal.SIGCONT), (122, signal.SIGCONT)])
-        self.assertIn("Resumed 1 of them; 1 had already ended.", self.record.read_text())
+        self.assertIn("Resumed 1 of them; 1 had already ended: 121.", self.record.read_text())
 
     # A watcher that stops without resuming what it paused, or resumes
     # only after "Stopped." (when `stop` no longer waits), fails this test.
