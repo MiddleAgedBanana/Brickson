@@ -38,7 +38,7 @@ after its run is not left with them stopped.
 The process list comes from the Mac's own process calls, made from
 Python through ctypes (MacProcesses): libproc's proc_listpids,
 proc_pidinfo and proc_pidpath, the sysctl that gives a process's
-arguments, and the Mach call that counts the processors' busy time. None
+arguments, and the Mach call that counts each processor's busy time. None
 of them starts a process. Until 2026-11-04 the watcher ran /bin/ps twice
 a reading instead. While GitHub's Mac was starved, ps ran past its time
 limit reading after reading, a ps killed for it still had to end before
@@ -112,7 +112,8 @@ class MacProcesses:
     process's memory they read is launchd_sim's arguments, once.
 
     Values are from xnu's headers (bsd/sys/proc_info.h, bsd/sys/proc.h,
-    bsd/sys/sysctl.h, osfmk/mach/host_info.h and osfmk/mach/machine.h)."""
+    bsd/sys/sysctl.h, osfmk/mach/processor_info.h and
+    osfmk/mach/machine.h)."""
 
     PROC_ALL_PIDS = 1
     PROC_PIDTASKINFO = 4
@@ -120,7 +121,7 @@ class MacProcesses:
     PROC_PIDPATHINFO_MAXSIZE = 4096
     SSTOP = 4  # stopped, as by SIGSTOP
     CTL_KERN, KERN_ARGMAX, KERN_PROCARGS2 = 1, 8, 49
-    HOST_CPU_LOAD_INFO = 3
+    PROCESSOR_CPU_LOAD_INFO = 2
     CPU_STATE_MAX = 4  # user, system, idle, nice
 
     def __init__(self, library="/usr/lib/libSystem.B.dylib"):
@@ -135,8 +136,10 @@ class MacProcesses:
                  [ctypes.POINTER(ctypes.c_int), ctypes.c_uint, ctypes.c_void_p,
                   ctypes.POINTER(ctypes.c_size_t), ctypes.c_void_p, ctypes.c_size_t]),
                 ("mach_host_self", ctypes.c_uint32, []),
-                ("host_statistics", ctypes.c_int,
-                 [ctypes.c_uint32, ctypes.c_int, ctypes.c_void_p, ctypes.POINTER(ctypes.c_uint32)]),
+                ("host_processor_info", ctypes.c_int,
+                 [ctypes.c_uint32, ctypes.c_int, ctypes.POINTER(ctypes.c_uint32),
+                  ctypes.POINTER(ctypes.POINTER(ctypes.c_uint32)), ctypes.POINTER(ctypes.c_uint32)]),
+                ("vm_deallocate", ctypes.c_int, [ctypes.c_uint32, ctypes.c_size_t, ctypes.c_size_t]),
                 ("mach_timebase_info", ctypes.c_int, [ctypes.POINTER(Timebase)])):
             function = getattr(lib, name)
             function.restype, function.argtypes = result, arguments
@@ -148,6 +151,7 @@ class MacProcesses:
         # Macs but not on Apple silicon.
         self.seconds_per_unit = timebase.numer / timebase.denom / 1e9
         self.host = lib.mach_host_self()
+        self.task_port = ctypes.c_uint32.in_dll(lib, "mach_task_self_").value
         self.ticks_per_second = os.sysconf("SC_CLK_TCK")
         self.argmax = self.read_argmax()
         self.info, self.task = ShortInfo(), TaskInfo()
@@ -215,16 +219,34 @@ class MacProcesses:
                 self.path.value.decode(errors="replace"))
 
     def processor_ticks(self):
-        """How long the Mac's processors have been busy, all of them
-        together: user, system and nice ticks (ticks_per_second a second),
-        each a counter that wraps at 2**32."""
-        ticks = (ctypes.c_uint32 * self.CPU_STATE_MAX)()
-        count = ctypes.c_uint32(self.CPU_STATE_MAX)
-        result = self.lib.host_statistics(self.host, self.HOST_CPU_LOAD_INFO, ticks,
-                                          ctypes.byref(count))
+        """How long each of the Mac's processors has been busy: its user,
+        system and nice ticks (ticks_per_second a second), processor after
+        processor, each a counter that wraps at 2**32.
+
+        From host_processor_info, not host_statistics: to programs that
+        are not part of macOS, the watcher among them, the kernel answers
+        host_statistics from a copy up to a second old once they have
+        asked a few times in that second (osfmk/kern/host.c,
+        rate_limit_host_statistics). On GitHub's machine it gave the same
+        counts before and after half a second of work."""
+        processors, array, length = (ctypes.c_uint32(), ctypes.POINTER(ctypes.c_uint32)(),
+                                     ctypes.c_uint32())
+        result = self.lib.host_processor_info(self.host, self.PROCESSOR_CPU_LOAD_INFO,
+                                              ctypes.byref(processors), ctypes.byref(array),
+                                              ctypes.byref(length))
         if result != 0:
-            raise OSError(f"host_statistics: kern_return_t {result}")
-        return (ticks[0], ticks[1], ticks[3])
+            raise OSError(f"host_processor_info: kern_return_t {result}")
+        try:
+            counts = array[:length.value]
+        finally:
+            # The kernel hands over memory of its own allocating.
+            self.lib.vm_deallocate(self.task_port, ctypes.cast(array, ctypes.c_void_p).value,
+                                   length.value * ctypes.sizeof(ctypes.c_uint32))
+        ticks = []
+        for first in range(0, processors.value * self.CPU_STATE_MAX, self.CPU_STATE_MAX):
+            user, system, _, nice = counts[first:first + self.CPU_STATE_MAX]
+            ticks += [user, system, nice]
+        return tuple(ticks)
 
 
 class ProcessFile:

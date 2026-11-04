@@ -1337,7 +1337,9 @@ class MacProcessesTests(unittest.TestCase):
 
     # Task times are in Mach time units, which are not nanoseconds on Apple
     # silicon. Reading them as nanoseconds, or the processors' busy time
-    # from anything that does not grow with work done, fails this test.
+    # from a copy that does not grow with the work done (host_statistics
+    # gave the same counts before and after this test's half second of work
+    # on GitHub's machine, run 41748946044), fails this test.
     def test_processor_time_is_in_seconds(self):
         own, used, ticks = (self.system.details(os.getpid())[0], time.process_time(),
                             self.system.processor_ticks())
