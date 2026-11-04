@@ -4718,7 +4718,26 @@ review setup does not quietly break them.
 
 ### Code review
 
-- **2026-11-03, owner, reversible:** Copilot reviews a pull request
+- **2026-11-04: Copilot is no longer a reviewer.** The month's AI
+  credits ran out on pull request #78, whose one request Copilot could
+  not review; the subscription ends on 2026-11-09; and the owner's
+  instructions for this project say there is no Copilot review and
+  never to request one. So the step below goes now rather than on
+  2026-11-10, as it said it would: no agent requests a Copilot review or
+  starts a Copilot task, and the guard and `.claude/settings.json`
+  refuse `request_copilot_review` again, as they did before 2026-11-03,
+  with every other way of asking for Copilot (`gh`, the API, a pull
+  request's reviewer field). The guard's record of requests and its hook
+  after a call are gone; a `.git/brickson-copilot-reviews.json` left in
+  an older clone is no longer read and can be deleted. Codex, CodeRabbit
+  and Greptile review as before, and the agent answers every round.
+  `.github/copilot-instructions.md` and `.github/skills/code-review/`
+  stay: they cost nothing, and they are the instructions Copilot would
+  read if the owner ever added it again. Record:
+  [`log/2026-11-04-device-procedures.md`](log/2026-11-04-device-procedures.md).
+  Before: the bullet below.
+- *Until 2026-11-04 (the bullet above replaces it).*
+  **2026-11-03, owner, reversible:** Copilot reviews a pull request
   once, after Codex's round is answered, until the owner's Copilot
   subscription ends on 2026-11-09 (the owner had already cancelled
   it). The owner turned off automatic Copilot review in
@@ -4767,11 +4786,9 @@ review setup does not quietly break them.
   review, the owner can choose **Re-request review**.
 - *Added 2026-10-12.* Dependabot's pull requests get no automatic review
   from Copilot or Codex: PR #7, Dependabot's first, got neither, while
-  PR #8, opened by an agent, got both. The owner requests a Copilot review
-  of one by hand when wanted. Only the owner requests Copilot's review
-  of a Dependabot pull request, because each review spends the owner's
-  credits; on its own pull requests an agent requests one once (since
-  2026-11-03, the first bullet).
+  PR #8, opened by an agent, got both. Since 2026-11-04 Copilot reviews
+  nothing (the first bullet), so the owner reads each Dependabot pull
+  request (AGENTS.md, "Reviews and updates on GitHub").
 - Review guidance lives in AGENTS.md, *Code Review Rules*, which Codex,
   Copilot and Claude Code all read. `.github/copilot-instructions.md` only
   adds what is specific to Copilot and points back to AGENTS.md, so the
@@ -4912,9 +4929,9 @@ through its API on 2026-10-15:
 | Require a pull request before merging | 0 approvals; merge commits only | Nobody pushes to `main`. The owner cannot approve pull requests that show them as author, so any approval count would block every merge. Merge commits keep the commit hashes HANDOFF cites on `main`. |
 | Require status checks to pass | "Unit tests" and "UI tests" | The job names in `tests.yml`. Renaming a job blocks every pull request until the ruleset is changed to match. |
 | Require branches to be up to date | Off | Each update reruns the Mac tests; `main` is tested again after every merge anyway. |
-| Require conversation resolution | On | Every Codex and Copilot comment, and every CodeQL alert posted on the pull request, gets an answer before a merge. AI Scan findings are answered too, by practice (*Code scanning* above). |
+| Require conversation resolution | On | Every reviewer's comment (Codex, CodeRabbit, Greptile), and every CodeQL alert posted on the pull request, gets an answer before a merge. AI Scan findings are answered too, by practice (*Code scanning* above). |
 | Require code scanning results | CodeQL: errors, high or higher | A workflow change that CodeQL flags as an error, or as a high or critical security problem, cannot merge. It did not cover Dependabot's first pull request, which got no CodeQL analysis before merging (*Code scanning* above). |
-| Automatically request Copilot code review | Off since 2026-11-03 (on before, with new pushes and drafts off) | Copilot reviews once, after Codex's round is answered, when the agent requests it (*Code review* above). |
+| Automatically request Copilot code review | Off since 2026-11-03 (on before, with new pushes and drafts off) | Copilot no longer reviews (since 2026-11-04, *Code review* above). |
 | Block force pushes, restrict deletions | On | History on `main` never changes. |
 | Bypass | Repository admin, for pull requests only | The owner can still merge in an emergency, such as GitHub's Mac machines being down, but never push straight to `main`. |
 
@@ -4969,8 +4986,8 @@ Rules*: a Codex at default settings never saw *Not findings*,
   Apple's current Xcode" (the cut falls in it; never pinning a version
   is also a review rule, in *Tests, workflows and the rules
   themselves*), including the two rules that set the deployment target;
-  "Reviews and updates on GitHub" (one Copilot request per pull
-  request, until 2026-11-09; GitHub's AI Scan findings answered like
+  "Reviews and updates on GitHub" (no Copilot review since
+  2026-11-04; GitHub's AI Scan findings answered like
   review comments; a Dependabot pull request treated as not
   security-reviewed); committing the String Catalog a unit run brings up
   to date, which CI also checks; and how `scripts/test.sh` and CI work.
@@ -4978,7 +4995,8 @@ Rules*: a Codex at default settings never saw *Not findings*,
   recorded in "Minimum iOS, iPhone and iPad" (the owner set the first
   and left the rest to the project), which every session reads at its
   start (*Workflow rules*, "Start of a session"); the Copilot
-  step ends on 2026-11-09; CI fails a catalog that does not match
+  step is gone since 2026-11-04 ("Reviews, updates and GitHub
+  settings", *Code review*); CI fails a catalog that does not match
   the code; and repeating more would push *Build and test*'s own rules
   past the cut in their place.
 - **Everything still binds.** The introduction says what Codex reads,

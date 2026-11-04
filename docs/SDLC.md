@@ -216,17 +216,16 @@ which agents also act through, can bypass it (*Deploy*).
 
 **What it means here.** Three kinds of release, each behind the owner.
 
-- **Into `main`.** Codex reviews every push to a pull request, GitHub
-  Copilot reviews a code pull request once after Codex's round is
-  answered, until the owner's subscription ends on 2026-11-09 (the
-  agent requests it; AGENTS.md, "Reviews and updates on GitHub"), and GitHub's AI Scan posts security findings; all three review against AGENTS.md,
-  *Code Review Rules*, which is this project's `REVIEW.md` (p39). Their
+- **Into `main`.** Codex reviews every push to a pull request against
+  AGENTS.md, *Code Review Rules*, which is this project's `REVIEW.md`
+  (p39); CodeRabbit and Greptile review by themselves as far as their
+  plans allow, and GitHub's AI Scan posts security findings. Their
   findings inform the owner; they never approve or block on their own
   (p38). The agent that opened the pull request answers every finding,
   fixing it or saying why not, and says in its ready message whether the
   findings are handled. **The owner merges.** Agents never merge, never
-  push to `main`, and ask for Copilot only once, through its review
-  tool.
+  push to `main`, and never ask for Copilot, which is no longer a
+  reviewer (AGENTS.md, "Reviews and updates on GitHub").
 - **The website** publishes itself from `site/` after each merge to
   `main` ("Publish website", `.github/workflows/pages.yml`).
 - **The app.** The owner archives a build on the Mac with the current
@@ -280,8 +279,8 @@ intent.md").
 **Signals, and where they arrive:**
 - a failed CI run on `main` or a flaky test (GitHub Actions);
 - Dependabot's monthly pull request for the workflow actions, and any
-  security update (not reviewed by Copilot unless the owner requests it;
-  AGENTS.md, *Build and test*);
+  security update (reviewed by none of the review tools, so the owner
+  reads it; AGENTS.md, *Build and test*);
 - CodeQL alerts on the workflow files and Python scripts;
 - a new Xcode or iOS release from Apple (moved to through a pull request);
 - device-check results, TestFlight feedback, and after release, crash
@@ -317,8 +316,7 @@ can hold that rule, a test (p50: add an eval for the incident).
   two were built on 2026-10-21 (AGENTS.md, *Guardrails for agents*), and
   the generated project is never committed.
 - **Continuous evals in CI** (p34) need an API key and a budget in CI.
-  Codex already reviews every pull request, and Copilot each code pull
-  request once, against the same rules. Revisit if agent mistakes start to repeat; the evidence would be
+  Codex already reviews every pull request against the same rules. Revisit if agent mistakes start to repeat; the evidence would be
   the same lesson appearing twice in `docs/LESSONS.md`.
 - **Control bands** (p49) need a steady stream of runs to set a baseline;
   this project has a few CI runs a day. Every failure on `main` is looked

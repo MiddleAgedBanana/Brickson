@@ -4,6 +4,7 @@
     "deny": [
       "mcp__github__merge_pull_request",
       "mcp__github__enable_pr_auto_merge",
+      "mcp__github__request_copilot_review",
       "mcp__github__assign_copilot_to_issue",
       "mcp__github__create_pull_request_with_copilot"
     ]
@@ -29,18 +30,6 @@
             "command": "python3 \"${CLAUDE_PROJECT_DIR}/.claude/hooks/guard.py\"",
             "timeout": 10,
             "onFailure": "block"
-          }
-        ]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "^mcp__.*__request_copilot_review$",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python3 \"${CLAUDE_PROJECT_DIR}/.claude/hooks/guard.py\"",
-            "timeout": 10
           }
         ]
       }
