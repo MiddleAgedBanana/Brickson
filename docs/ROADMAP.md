@@ -839,13 +839,14 @@ what passes and who checks it:
   with a `reason` key, since every such report lists every running
   process) appears in Settings > Privacy &
   Security > Analytics & Improvements > Analytics Data.
-  *Attached, by a thread on the Mac:* with the device connected to
-  Xcode, memory stays out of the memory gauge's warning region and
+  *Attached, run by the owner from Xcode, since an agent never opens
+  the project in Xcode:* with the device connected, memory stays out of the memory gauge's warning region and
   shows no growth across 100 phrases (Instruments' Allocations
   generations), and the thermal state, read in the Energy Impact
   view's timeline, never reaches serious, which Apple says "reduces performance".
-  *Checks:* owner, then a thread reading the trace; a thread for the
-  attached run. *Today:* not run.
+  *Checks:* owner, then a thread reading the trace; for the attached
+  run, the owner, then a thread reading its screenshots. *Today:* not
+  run.
 - **Q9. The owner lives with it.** The owner's answer of 2026-11-01
   (docs/DECISIONS.md, "Every release passes the quality bar"). The owner keeps the
   internal TestFlight build on their own iPhone and iPad and uses it

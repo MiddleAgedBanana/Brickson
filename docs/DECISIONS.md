@@ -4132,6 +4132,19 @@ nothing said how fast the app must be, how long it must hold up in use,
 how a screen is judged designed, or that the owner's own answer comes
 last.
 
+## The queued dwell checks run before sound
+
+*Default, adopted 2026-11-04, from the owner's standing rules as given
+for pull request #79.* The real-device checks already queued (the three
+dwell hazards, the floors on a device, and Dwell and Eye Tracking on
+hardware) are the first procedures the owner runs (docs/DEVICE-CHECKS.md,
+*The order*), although Q4 of docs/ROADMAP.md, *The quality bar*, a
+default of 2026-10-30, puts sound first. Those checks decide open design
+questions (Q2, Q12 and Q13) that later work builds on. No pass or fail
+changes: Q4 still passes only once every sound check (S1 to S6) has
+passed. To run sound first instead, swap the sessions in *The order*;
+nothing else moves.
+
 ## Check-ins come every three months
 
 *2026-10-21. Default, adopted 2026-10-21: the owner left these choices to

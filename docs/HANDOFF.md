@@ -957,8 +957,8 @@ docs/ROADMAP.md, *The quality bar*, Q24):
    its first two sessions: Snap to Item and Dwell measured, the three
    dwell hazards and Settings by a stray dwell, then the floors. Before
    them, an agent can run Brickson's UI tests on each device from your
-   Mac (its A1): plug the device in, unlock it, and write "go" in the
-   thread.
+   Mac (its A1): plug the device in, unlock it, write "go" in the
+   thread, and stay near for the device's passcode.
 5. Review the starter phrases (`Brickson/Resources/StarterPhrases.json`): two
    are near duplicates, and "Please move me." could be clearer.
 6. Delete the failed Swift configuration on the Tool status page

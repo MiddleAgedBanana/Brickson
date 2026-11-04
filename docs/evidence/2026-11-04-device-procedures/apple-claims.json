@@ -1018,6 +1018,15 @@
      "url": "https://support.apple.com/en-us/guide/iphone/lock-iphone-to-one-app-iph7fad0d10/27/ios/27",
      "correct_version": "",
      "notes": "The iOS 26 iPhone guide has the same sentence. The iPadOS 27 Guided Access page (https://support.apple.com/en-us/guide/ipad/lock-ipad-to-one-app-ipada16d1374/27/ipados/27) does not contain it. The iOS 27 page also names the session settings Side Button, Volume Buttons, Motion, Software Keyboards, Pose Changes and Display Changes (iPhone Duo), Touch and Time Limit, and Display Auto-Lock in Guided Access settings."
+    },
+    {
+     "id": "R23",
+     "claim": "A4's owner steps (Codex's review of the fixes moved them from an agent, which never opens the project in Xcode): Product > Run with the device as run destination; the Debug navigator's debug gauges and Energy Impact; Product > Profile makes a release build and opens Instruments; the Allocations template, Record, Mark Generation, Stop, File > Save; the Generations view.",
+     "status": "confirmed",
+     "apple_says": "Analyzing your app's battery use: \"In Xcode, set the run destination to a device and choose Product > Run.\" \"In the Debug navigator, show the debug gauges and click Energy Impact to see your app’s energy usage.\" Measuring your app’s power use with Power Profiler: \"In Xcode, choose Product > Profile.\" \"In Instruments the Choose a Template… window opens\". WWDC24 10173 Analyze heap memory: \"To profile in Instruments, I’ll use the Product, Profile menu item. This will perform a release build of my app and open Instruments with it selected as the target. When Instruments opens it asks us to choose a template for profiling. In this case we want to profile our app’s heap, so I’ll choose Allocations.\" \"I’ll start the trace, by clicking the Record button at the top left of the trace document.\" \"I’ll stop the trace by clicking the Stop button at the top left.\" \"I’ll save the trace using the menu item File, Save\". Gathering information about memory use: \"The Generations view in the Allocations instrument is useful for investigating memory use for a particular feature of your app.\" \"click the Mark Generation button in the Allocations instrument\".",
+     "url": "https://developer.apple.com/documentation/xcode/analyzing-your-app-s-battery-use.md",
+     "correct_version": "",
+     "notes": "Also https://developer.apple.com/documentation/xcode/measuring-your-app-s-power-use-with-power-profiler, https://developer.apple.com/videos/play/wwdc2024/10173 and https://developer.apple.com/documentation/xcode/gathering-information-about-memory-use.md. Apple does not name the Generations view's columns, so the procedure names none."
     }
    ]
   }

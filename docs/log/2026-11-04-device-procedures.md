@@ -31,7 +31,8 @@ thread, which cannot build or run anything.*
     look can be read without firing; Q8's iPad day as four hours at
     touch's answer and four with Eye Tracking; A2 times cold launches,
     each after a restart, as Q7 says; the dwell checks run before the
-    sound checks Q4 puts first, because they decide design questions;
+    sound checks Q4 puts first, because they decide design questions
+    (docs/DECISIONS.md, "The queued dwell checks run before sound");
     every step runs on both devices unless it names one; a development
     build answers a row early, and the gate passes when the same steps
     pass on the build that ships.
@@ -77,10 +78,12 @@ rechecked against Apple's pages:
 - **An agent can:** run Brickson's own UI tests on the owner's paired
   device from the Mac (`xcodebuild` with `-destination
   'platform=iOS,id=…'`, which `scripts/test.sh` passes through, Apple's
-  TN2339); record App Launch, Hangs and Allocations with Instruments; read
-  the memory gauge and Energy Impact in Xcode; install, launch and end
-  apps and copy crash logs with `devicectl`. These are evidence under
-  AGENTS.md, *Workflow rules*.
+  TN2339); record App Launch and Hangs with Instruments from Terminal
+  (`xcrun xctrace`); install, launch and end apps and copy crash logs
+  with `devicectl`. These are evidence under AGENTS.md,
+  *Workflow rules*. The memory gauge, Energy Impact and Allocations'
+  generation marks need Xcode and clicks, and an agent never opens the
+  project in Xcode, so A4 gives them to the owner.
 - **Nothing automated can:** turn on or drive Eye Tracking, Head
   Tracking, Switch Control, AssistiveTouch Dwell, Voice Control or Full
   Keyboard Access. XCTest delivers touches straight to the app; Apple
@@ -110,8 +113,9 @@ found 22 more, stated without a check or brought in by its fixes, and
 four more checkers checked them the same way: 20 confirmed and 2
 corrected (Console saves streamed messages only by Share or by copying,
 and Attention Aware Features has another path and fewer models on
-iPad). They are the evidence file's last group (*The review, and what
-it changed*). Each claim, its status, Apple's words and the page are
+iPad). Codex's review of those fixes brought in one more, A4's steps
+in Xcode and Instruments, confirmed the same way. They are the evidence
+file's last group (*The review, and what it changed*). Each claim, its status, Apple's words and the page are
 in [`evidence/2026-11-04-device-procedures/apple-claims.json`](../evidence/2026-11-04-device-procedures/apple-claims.json).
 
 Corrections the procedures carry:
@@ -216,6 +220,15 @@ below.
   Voice Control is an inference stated as Apple's: Apple's sentence is
   quoted exactly, and the procedures draw the consequence in their own
   words.
+- **The second round.** Codex found that A4 had an agent run Brickson
+  from Xcode, which AGENTS.md, *Build and test*, forbids: A4's steps at
+  the Mac, and Q8's attached run, are now the owner's, with a thread
+  reading the screenshots and the saved trace. CodeRabbit found that A1's
+  second device would delete the first one's result bundle (each device
+  now writes to its own folder), that HANDOFF's step 4 left out the
+  passcode, and that the dwell-first order needed a recorded decision
+  (docs/DECISIONS.md, "The queued dwell checks run before sound"). The
+  long lines in AGENTS.md's Copilot paragraphs were rewrapped.
 - **Not taken.** Changing Q7 to warm launches, which the review offered
   as the other way to match A2 to Q7: the gate stays as the owner set
   it.
@@ -226,9 +239,10 @@ below.
   again.
 - `be30141` The procedures, this record, its evidence and the edits to
   HANDOFF, ROADMAP, AGENTS.md and SDLC.
-- The review's fixes (*The review, and what it changed*), with the
-  Copilot wording in AGENTS.md, DECISIONS, HANDOFF and the guard's
-  notes, and ROADMAP's Q8 jetsam wording.
+- `a9c0f7f` The review's fixes (*The review, and what it changed*),
+  with the Copilot wording in AGENTS.md, DECISIONS, HANDOFF and the
+  guard's notes, and ROADMAP's Q8 jetsam wording.
+- The second round's fixes (*The review, and what it changed*).
 
 ## Verified
 
@@ -239,8 +253,9 @@ calls skip, as they say) and `scripts/test-select-xcode.py` (23) pass,
 and `git diff --check` is clean.
 The new hook test, `test_no_agent_requests_copilots_review`, fails with
 the guard's Copilot refusal taken out (3 failures), so it can fail.
-The same checks pass again after the review's fixes. CI on `be30141`
-passed (unit tests, UI tests on iPad and iPhone, CodeQL).
+The same checks pass again after the review's fixes and after the
+second round's. CI on `be30141` passed (unit tests, UI tests on iPad
+and iPhone, CodeQL).
 
 ## Not verified
 

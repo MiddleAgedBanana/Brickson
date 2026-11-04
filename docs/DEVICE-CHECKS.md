@@ -62,7 +62,8 @@ questions before any larger-size build goes to App Review (docs/ROADMAP.md,
 *The quality bar*, Q2, Q12 and Q13). Q4 puts sound first; here the dwell
 checks run before it because they decide those questions, and Q4
 passes only once S1 to S6 have passed. The order of sessions changes no
-pass or fail.
+pass or fail (docs/DECISIONS.md, "The queued dwell checks run before
+sound").
 
 | When | What | Who | About how long |
 |---|---|---|---|
@@ -474,10 +475,12 @@ everything else on hardware.*
 1. **Owner:** *For an agent run*, above.
 2. **Agent:** on the Mac, in the checkout, with only `project.yml`'s
    `DEVELOPMENT_TEAM` changed:
-   `DESTINATION='platform=iOS,id=<identifier>' scripts/test.sh ui`.
-   With a device, the script starts no simulator and lets `xcodebuild`
-   choose the device; the result is
-   `build/TestResults/ui-destination.xcresult`. If signing fails because
+   `TEST_RESULTS_DIR=build/TestResults/<device> DESTINATION='platform=iOS,id=<identifier>' scripts/test.sh ui`,
+   with `<device>` a folder per device (`iphone`, `ipad`), since the
+   script deletes the bundle at its path before each run. With a device,
+   the script starts no simulator and lets `xcodebuild` choose the
+   device; the result is `build/TestResults/<device>/ui-destination.xcresult`.
+   If signing fails because
    the test runner has no profile yet, add `-allowProvisioningUpdates`
    after `ui` (anything after the mode goes to `xcodebuild`).
 3. **Agent:** reads the result: how many tests ran, passed and failed,
@@ -555,20 +558,33 @@ everything else on hardware.*
 
 ### A4. Memory and heat, attached (Q8)
 
-1. **Agent:** runs Brickson from Xcode on the device, with the Debug
-   navigator's memory gauge in view, and records with Instruments'
-   Allocations.
-2. **Owner:** speaks 100 phrases in five sets of 20 (or a UI test does);
-   **Agent:** marks a generation after each set (Allocations' Mark
-   Generation).
-3. *Passes* when memory never enters the gauge's yellow region (Apple:
-   "memory use high enough to trigger a warning"), and generations 2 to
-   5 show no memory that persists. Any growth fails until it is fixed,
-   or until the owner accepts it as a named exception in
-   docs/DECISIONS.md.
-4. **Agent:** reads the device's thermal condition in the Energy Impact
-   view's timeline (Debug navigator > Energy Impact). *Passes* when it
-   never reaches serious, which Apple says "reduces performance".
+Both runs start from Xcode, and an agent never opens the project in
+Xcode (AGENTS.md, *Build and test*); Allocations' marks are made by
+clicking, too. So the steps at the Mac are the owner's, with the device
+on the cable, and a thread reads what they save.
+
+1. **Owner:** in Terminal, in the Brickson folder, run
+   `xcodegen generate` and `open Brickson.xcodeproj`, choose the device
+   in Xcode's device menu (docs/GETTING_STARTED.md, *Run it on your own
+   iPhone or iPad*), and choose Product > Run. In the Debug navigator,
+   show the debug gauges.
+2. **Owner:** speak 100 phrases in five sets of 20 while watching the
+   memory gauge, then click Energy Impact, whose timeline Apple says
+   shows "the device's thermal condition". Save a screenshot of each into
+   `private/device-checks/`. *Passes* when memory never enters the
+   gauge's yellow region (Apple: "memory use high enough to trigger a
+   warning") and the thermal condition never reaches serious, which
+   Apple says "reduces performance".
+3. **Owner:** stop the run and choose Product > Profile, which makes a
+   release build and opens Instruments. Choose the Allocations
+   template, click Record, speak 20 phrases, then click Mark Generation;
+   five sets, five marks. Click Stop, save the trace with File > Save
+   into `private/device-checks/`, and save a screenshot of the
+   Generations view there too.
+4. **Thread:** reads the screenshots and writes the record. *Passes*
+   when generations 2 to 5 show no memory that persists. Any growth
+   fails until it is fixed, or until the owner accepts it as a named
+   exception in docs/DECISIONS.md.
 
 ## Sound (Q4)
 

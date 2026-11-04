@@ -582,17 +582,17 @@ a comment or review. The guard refuses the Copilot tools, `gh`'s
 reviewer, assignee and agent-task commands, the REST reviewer, assignee
 and task endpoints, a GitHub tool's reviewer or assignee field and a
 GraphQL agent assignment; other GraphQL requests and a mention are held
-by this rule alone (*Guardrails for
-agents*; docs/DECISIONS.md, *Code review*). None of these reviewers
-reviews Dependabot's pull requests by itself. All of them review against
-*Code Review Rules* above. GitHub's AI
-Scan also posts security findings after each push to such a pull request;
-answer them like review comments. It skips Dependabot's pull requests and
-those from forks, and CodeQL did not analyse Dependabot's first one before
-it merged, so treat a Dependabot pull request as not security-reviewed
-until the owner reads it (docs/DECISIONS.md, *Code
-scanning*). Dependabot opens one pull request a month for new versions of
-the actions in `.github/workflows`, and one at once for a security fix.
+by this rule alone (*Guardrails for agents*; docs/DECISIONS.md,
+*Code review*). None of these reviewers reviews Dependabot's pull
+requests by itself. All of them review against *Code Review Rules*
+above. GitHub's AI Scan also posts security findings after each push
+to such a pull request; answer them like review comments. It skips
+Dependabot's pull requests and those from forks, and CodeQL did not
+analyse Dependabot's first one before it merged, so treat a Dependabot
+pull request as not security-reviewed until the owner reads it
+(docs/DECISIONS.md, *Code scanning*). Dependabot opens one pull
+request a month for new versions of the actions in
+`.github/workflows`, and one at once for a security fix.
 The intended repository settings, and why, are in docs/DECISIONS.md,
 "Reviews, updates and GitHub settings".
 
@@ -651,10 +651,11 @@ above are backed by checks wherever a check can run:
   GitHub API or a GitHub tool); a Copilot review or Copilot task asked
   for by a Copilot tool, `gh`, the REST API, a GitHub tool's reviewer
   or assignee field or a GraphQL agent assignment (*Reviews and updates
-  on GitHub* says what only the rule holds); and a GitHub tool writing a file onto `main`. The same
-  settings deny the merge tools and the Copilot tools outright. When the guard refuses, do
-  not look for another way round: say in the thread what you needed and
-  why. It is a guard against mistakes, not a sandbox, and it covers
+  on GitHub* says what only the rule holds); and a GitHub tool writing
+  a file onto `main`. The same settings deny the merge tools and the
+  Copilot tools outright. When the guard refuses, do not look for
+  another way round: say in the thread what you needed and why. It is
+  a guard against mistakes, not a sandbox, and it covers
   Claude Code only; Codex, Jules and the owner are held to the same rules
   by review. Both policy hooks use `onFailure: "block"`, so a startup
   error, crash, invalid output or timeout blocks the original action in
@@ -668,8 +669,9 @@ above are backed by checks wherever a check can run:
   that thread had cloned only this repository (Claude Code 2.1.317): a
   `git add -A --dry-run`, which the guard refuses, ran. The
   environment's documentation says a cloud thread applies a
-  repository's settings only in a project with one repository. So in a cloud thread, check before relying on it:
-  where the guard runs, `git add -A --dry-run` is refused.
+  repository's settings only in a project with one repository. So in a
+  cloud thread, check before relying on it: where the guard runs,
+  `git add -A --dry-run` is refused.
 - **Its tests.** `scripts/test-hooks.py` feeds the guard the calls it must
   refuse and the ones it must let through; `scripts/test.sh` runs it
   before the unit tests, so CI runs it. A new rule gets a test first.
