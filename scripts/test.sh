@@ -190,7 +190,26 @@ start_watcher() {
     fi
 }
 
+# PROBE (temporary, removed by the next commit): main's ps watcher,
+# watching only, beside the new one, so one run shows both on the same
+# machine at the same moments.
+probe_pid=""
+start_probe() {
+    [ -f scripts/probe-ps-watcher.py ] || return 0
+    probe_pid="$(/usr/bin/python3 -I scripts/probe-ps-watcher.py start --udid "$1" \
+        --out "${watcher_record%.txt}-ps.txt" --parent "$$")" || probe_pid=""
+    echo "Probe: main's ps watcher, watching only: ${watcher_record%.txt}-ps.txt"
+}
+stop_probe() {
+    local pid="$probe_pid"
+    [ -n "$pid" ] || return 0
+    probe_pid=""
+    /usr/bin/python3 -I scripts/probe-ps-watcher.py stop --pid "$pid" \
+        --out "${watcher_record%.txt}-ps.txt" || true
+}
+
 stop_watcher() {
+    stop_probe
     local pid="$watcher_pid"
     [ -n "$pid" ] || return 0
     watcher_pid=""
@@ -426,6 +445,7 @@ run_tests_on_simulator() {
         xcrun simctl bootstatus "$udid" -b || return 1
         mkdir -p "$results_dir" || return 1
         start_watcher "$udid"
+        start_probe "$udid"
         if [ "$mode" = ui ]; then
             show_full_keyboard "$udid" || return 1
         fi
