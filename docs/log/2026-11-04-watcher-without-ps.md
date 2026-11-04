@@ -20,7 +20,7 @@ still waits for it to end before going on. The old record could not
 say how long each reading took, but in the green run on `ec21266`
 (41669225544) one iPad reading took about 160 s and one in the unit job
 about 175 s (the gaps between lines in
-[its records](ui-test-evidence/2026-11-04-watcher/), less the 5 s
+[its records](../evidence/2026-11-04-watcher/), less the 5 s
 between readings), and the iPhone's watcher could read no list for its
 first two minutes. Extensions iOS started meanwhile were not paused.
 
@@ -107,7 +107,7 @@ Run 41748946044 (on `6eb2a8f`, started by hand) ran the new watcher as
 the real one and, beside it on the same simulator, `main`'s `ps`
 watcher, watching only (no pausing), writing
 `simulator-load-<family>-ps.txt`. Its records are in
-[`ui-test-evidence/2026-11-04-watcher/`](ui-test-evidence/2026-11-04-watcher/)
+[`docs/evidence/2026-11-04-watcher/`](../evidence/2026-11-04-watcher/)
 (`probe-*`), with the green run's (`ec21266-*`). Its unit job stopped at
 the `host_statistics` test above, so only the UI jobs ran; they ran the
 5-second version, before the check every second, and its "mac" column
