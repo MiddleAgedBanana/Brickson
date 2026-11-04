@@ -1179,13 +1179,85 @@ class SimulatorLoadTests(unittest.TestCase):
         watcher.summary()
         self.assertIn("     5.0 s  EmojiPosterExtension", self.record.read_text())
 
+    # A check between lines (a reading made only to find new wallpaper
+    # extensions) that misses a new one, writes a line of its own, or
+    # moves the time the next line counts from fails this test; so does a
+    # "paused" line that does not say how much processor time the
+    # extension had used.
+    def test_a_check_between_lines_pauses_new_extensions_and_leaves_the_line_alone(self):
+        watcher = self.watch(pause_posters=True)
+        watcher.sample()
+        written = len(self.record.read_text().splitlines())
+        self.now = 1.0
+        newcomer = [(124, 120, "R", f"{EXTENSIONS}/KaleidoscopePoster.appex/KaleidoscopePoster", None)]
+        self.times({124: 2.5}, extra=newcomer)
+        watcher.sample(line=False)
+        self.assertEqual(self.kills[-1], (124, signal.SIGSTOP))
+        lines = self.record.read_text().splitlines()
+        self.assertEqual(len(lines), written + 1, lines)
+        self.assertRegex(lines[-1], r"\A\d\d:\d\d:\d\d paused KaleidoscopePoster \(124\) "
+                                    r"after 2\.5 s of processor time\Z")
+        self.now = 5.0
+        self.times({124: 2.5, 110: 1.0}, extra=newcomer)
+        watcher.sample()
+        # Over the five seconds since the last line: counted from the
+        # check instead, SpringBoard would be 25% and the newcomer nothing.
+        line = self.record.read_text().splitlines()[-1]
+        self.assertRegex(line, r" simulator +70% ")
+        self.assertTrue(line.endswith("| KaleidoscopePoster 50%, SpringBoard 20%"), line)
+
+    # A check while the simulator is not running writes nothing: saying so
+    # every second would bury the record's lines.
+    def test_a_check_while_the_simulator_is_not_running_writes_nothing(self):
+        watcher = self.watch(pause_posters=True)
+        self.times({}, without=(100,))
+        watcher.sample()
+        watcher.sample(line=False)
+        lines = self.record.read_text().splitlines()
+        self.assertEqual(len(lines), 1, lines)
+        self.assertRegex(lines[0], r"the simulator PAD is not running\Z")
+
+    # While pausing, the watcher looks for new wallpaper extensions every
+    # second, between its five-second lines. Looking only when it writes a
+    # line, as it did before 2026-11-04, fails this test. The extensions
+    # here are this test's own children, since the watcher pauses them for
+    # real.
+    def test_a_new_extension_is_paused_at_the_next_check_not_the_next_line(self):
+        children = [subprocess.Popen(["sleep", "60"]) for _ in range(2)]
+        for child in children:
+            self.addCleanup(child.wait)
+            self.addCleanup(end, child.pid)
+        rows = [(child.pid, 100, "S", f"{EXTENSIONS}/{name}.appex/{name}", None)
+                for child, name in zip(children, ("AegirPoster", "MercuryPosterExtension"))]
+
+        def stopped(child):
+            pid, status = os.waitpid(child.pid, os.WNOHANG | os.WUNTRACED)
+            return pid == child.pid and os.WIFSTOPPED(status)
+
+        self.times({}, without=(121, 122), extra=rows[:1])
+        started = self.run_script("start", "--udid", "PAD", "--out", str(self.record),
+                                  "--parent", str(os.getpid()), "--pause-posters",
+                                  "--processes", str(self.processes))
+        self.assertEqual(started.returncode, 0, started.stderr)
+        pid = int(started.stdout.split()[0])
+        self.addCleanup(end, pid)
+        self.assertTrue(wait_for(lambda: stopped(children[0])), self.record.read_text())
+        self.times({}, without=(121, 122), extra=rows)
+        added = time.monotonic()
+        self.assertTrue(wait_for(lambda: stopped(children[1])), self.record.read_text())
+        self.assertLess(time.monotonic() - added, 3.0, self.record.read_text())
+        stop = self.run_script("stop", "--pid", str(pid), "--out", str(self.record))
+        self.assertEqual(stop.returncode, 0, stop.stderr)
+        self.assertIn("Resumed 2 of them.", self.record.read_text())
+
     def run_script(self, *arguments):
         return subprocess.run([sys.executable, "-I", str(SCRIPT.with_name("simulator-load.py")),
                                *arguments], capture_output=True, text=True, timeout=60)
 
     # `start` returning before the watcher is watching, or not seeing that
-    # it is, `stop` returning before its summary is written, or a first
-    # line that does not say when the watcher began, fails this test.
+    # it is, `stop` returning before its summary is written, a first line
+    # that does not say when the watcher began, or a summary that does not
+    # say how much processor time the watcher itself used, fails this test.
     # (Without --pause-posters: the stand-in's pids may be real processes
     # here.)
     def test_start_waits_for_the_watcher_and_stop_for_its_summary(self):
@@ -1199,6 +1271,7 @@ class SimulatorLoadTests(unittest.TestCase):
         self.assertEqual(stopped.returncode, 0, stopped.stderr)
         self.assertEqual(self.record.read_text().splitlines()[-1], "Stopped.")
         self.assertIn("Processor time the simulator's processes used while watched:", stopped.stdout)
+        self.assertRegex(stopped.stdout, r"\nProcessor time the watcher itself used: \d+\.\d s\n")
 
     # A Mac busy starting a simulator can take longer than `start` waits
     # to start Python: on GitHub's machine (run 41656480638) the iPad's

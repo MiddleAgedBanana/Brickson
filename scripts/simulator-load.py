@@ -10,14 +10,14 @@ watching (or, on a Mac too busy to start it in time, leaves it to begin)
 and prints its pid; `stop` stops it, waits for its summary and prints it.
 scripts/test.sh starts one for each simulator it tests on.
 
-Every few seconds the watcher reads the Mac's process list, finds the
+Every five seconds the watcher reads the Mac's process list, finds the
 processes the simulator runs (everything started under that device's
 launchd_sim), and writes one line: the time, how much processor time the
 simulator and the whole Mac used since the last line, the Mac's load, how
 long reading the list took, and the simulator's busiest processes. When
 it is stopped (SIGTERM or SIGINT) it writes the processes that used the
-most time over the whole run, lets any process it paused run again, then
-writes "Stopped.".
+most time over the whole run, lets any process it paused run again,
+writes how much processor time it used itself, then writes "Stopped.".
 It also stops by itself once the process named by --parent (the test run)
 is gone, so a test run that is killed never leaves it running.
 
@@ -33,7 +33,13 @@ out (docs/log/2026-11-03-ui-test-stall.md). The tests never show the lock
 screen. A process is paused rather than ended because iOS would start an
 ended one again. When the watcher stops, after the tests, it lets the
 paused ones run again (SIGCONT), so a simulator that is not shut down
-after its run is not left with them stopped.
+after its run is not left with them stopped. While pausing, it also
+reads the list every second between its lines, so a new extension is
+found a second after the last reading rather than up to five: in the
+probe run of 2026-11-04 iOS started 49 new ones on GitHub's iPhone and
+17 on its iPad, with the first ones paused, and each new one ran flat out
+until a reading found it, on processors the tests needed. Each "paused"
+line says how much processor time that extension had used.
 
 The process list comes from the Mac's own process calls, made from
 Python through ctypes (MacProcesses): libproc's proc_listpids,
@@ -63,7 +69,10 @@ POSTER = re.compile(r"Poster(Extension|Provider)?$")
 # The kernel's name for the simulator's own launchd.
 LAUNCHD_SIM = "launchd_sim"
 
+# Seconds between the record's lines, and, while pausing, between the
+# readings that look for new wallpaper extensions.
 INTERVAL = 5.0
+CHECK = 1.0
 # How long `start` waits for the watcher to begin, and `stop` for it to end.
 # A watcher that has not begun by then is left to begin, not stopped: a Mac
 # busy starting a simulator can take longer than this to start Python.
@@ -333,7 +342,11 @@ class Watch:
                     break
         return self.root
 
-    def sample(self):
+    def sample(self, line=True):
+        """Reads the process list and pauses any new wallpaper extension.
+        With `line`, it also writes the record's line for the time since
+        the last one; a reading without (a check, between lines) leaves
+        that line's counts where they were."""
         began = self.clock()
         table = self.system.table()
         root = self.simulator_root(table)
@@ -344,15 +357,16 @@ class Watch:
                 # None: it ended after the list was read.
                 if details is not None:
                     processes[pid] = (table[pid][1],) + details
-        ticks = self.system.processor_ticks()
+        ticks = self.system.processor_ticks() if line else None
         now = self.clock()
         stamp = clock_time()
         if root is None:
-            self.write(f"{stamp} the simulator {self.udid} is not running")
-            self.before, self.ticks, self.at = {}, ticks, now
+            if line:
+                self.write(f"{stamp} the simulator {self.udid} is not running")
+                self.before, self.ticks, self.at = {}, ticks, now
             return
         if self.pause_posters:
-            for pid, (stopped, _, path) in processes.items():
+            for pid, (stopped, seconds, path) in processes.items():
                 if is_poster_extension(path) and not stopped and pid not in self.paused:
                     try:
                         self.kill(pid, signal.SIGSTOP)
@@ -360,7 +374,10 @@ class Watch:
                         self.write(f"{stamp} could not pause {name_of(path)} ({pid}): {error}")
                     else:
                         self.paused.add(pid)
-                        self.write(f"{stamp} paused {name_of(path)} ({pid})")
+                        self.write(f"{stamp} paused {name_of(path)} ({pid}) "
+                                   f"after {seconds:.1f} s of processor time")
+        if not line:
+            return
         if self.before is not None:
             elapsed = max(now - self.at, 1e-6)
             used = {}
@@ -432,12 +449,18 @@ def watch(arguments, parent_alive=alive, kill=os.kill):
         watcher.write(f"Watching simulator {arguments.udid}"
                       + (", pausing lock-screen wallpaper extensions" if arguments.pause_posters else "")
                       + f", from {clock_time()}")
+        # Only pausing needs a reading between lines.
+        every = CHECK if arguments.pause_posters else INTERVAL
+        next_line = time.monotonic()
         while not stopping:
+            line = time.monotonic() >= next_line
+            if line:
+                next_line = time.monotonic() + INTERVAL
             try:
-                watcher.sample()
+                watcher.sample(line=line)
             except OSError as error:
                 watcher.write(f"{clock_time()} could not read the process list: {error}")
-            deadline = time.monotonic() + INTERVAL
+            deadline = time.monotonic() + every
             while not stopping and time.monotonic() < deadline:
                 if not parent_alive(arguments.parent):
                     watcher.write(f"The test run ({arguments.parent}) is gone.")
@@ -446,6 +469,7 @@ def watch(arguments, parent_alive=alive, kill=os.kill):
                 time.sleep(0.2)
         watcher.summary()
         watcher.resume()
+        watcher.write(f"Processor time the watcher itself used: {time.process_time():.1f} s")
         watcher.write(STOPPED)
     return 0
 
