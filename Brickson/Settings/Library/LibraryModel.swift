@@ -57,10 +57,11 @@ final class LibraryModel {
 
     /// Reads the library afresh, or keeps no library and says why it could
     /// not be read. `read` exists so tests can make the read fail; the app
-    /// never passes it.
+    /// never passes it. It runs on the main actor, as `LibraryEditor.read`
+    /// does.
     func refresh(
         _ container: ModelContainer,
-        read: (ModelContainer) throws(LibraryEditError) -> LibrarySnapshot = LibraryEditor.read
+        read: @MainActor (ModelContainer) throws(LibraryEditError) -> LibrarySnapshot = LibraryEditor.read
     ) {
         do {
             snapshot = try read(container)
@@ -72,17 +73,18 @@ final class LibraryModel {
     }
 
     /// Plans `edit` against the library as stored now and writes it in one
-    /// save, or changes nothing and says why.
+    /// save, or changes nothing and says why. It reads the store as
+    /// `refresh` does, so a read that fails here keeps no library either.
     @discardableResult
-    func perform(_ edit: LibraryEdit, in container: ModelContainer) -> Outcome {
-        let library: LibrarySnapshot
-        do {
-            library = try LibraryEditor.read(container)
-        } catch {
-            readFailure = error.message
-            return .refused(error.message)
+    func perform(
+        _ edit: LibraryEdit,
+        in container: ModelContainer,
+        read: @MainActor (ModelContainer) throws(LibraryEditError) -> LibrarySnapshot = LibraryEditor.read
+    ) -> Outcome {
+        refresh(container, read: read)
+        guard let library = snapshot else {
+            return .refused(readFailure ?? LibraryEditError.libraryUnreadable.message)
         }
-        snapshot = library
         let plan: LibraryPlan
         do {
             plan = try edit.plan(in: library, starter: starter)
