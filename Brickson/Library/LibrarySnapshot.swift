@@ -32,7 +32,7 @@ nonisolated struct LibrarySnapshot: Equatable, Sendable {
         }
     }
 
-    nonisolated struct Phrase: Equatable, Sendable {
+    nonisolated struct Phrase: Equatable, Identifiable, Sendable {
         var id: UUID
         var text: String
 

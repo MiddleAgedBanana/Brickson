@@ -35,6 +35,32 @@ enum CategorySelection {
         categories.map { RestBoard.Category(id: $0.uuid, isEmergency: $0.isEmergency, phrases: $0.phrases?.count ?? 0) }
     }
 
+    /// The phrases Home shows for the category `id`, in their fixed order,
+    /// as values, read from every phrase Home's query of phrases returned
+    /// (`HomeView`). Nil for no category.
+    ///
+    /// Home does not read a category's phrases through the category: the
+    /// Library saves each edit in a context of its own, and on CI's iPad
+    /// (2026-11-05) Home's category kept a phrase's old words and place
+    /// after an edit saved there, until the app was opened again. A query
+    /// of phrases is read again whenever a phrase changes, and values
+    /// redraw the grid where the same phrase objects would not.
+    static func phrases(of id: UUID?, in phrases: [Phrase]) -> [LibrarySnapshot.Phrase]? {
+        guard let id else { return nil }
+        return Phrase.orderedForDisplay(phrases.filter { $0.category?.uuid == id })
+            .map { LibrarySnapshot.Phrase(id: $0.uuid, text: $0.text) }
+    }
+
+    /// How many phrases each category holds, by its `uuid`, from the same
+    /// query of phrases. A phrase in no category counts for none.
+    static func phraseCounts(_ phrases: [Phrase]) -> [UUID: Int] {
+        phrases.reduce(into: [:]) { counts, phrase in
+            if let id = phrase.category?.uuid {
+                counts[id, default: 0] += 1
+            }
+        }
+    }
+
     /// The category the Emergency control switches to.
     static func emergency(in categories: [PhraseCategory]) -> PhraseCategory? {
         categories.first { $0.isEmergency }
