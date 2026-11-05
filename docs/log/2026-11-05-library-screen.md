@@ -258,9 +258,19 @@ Codex and CodeRabbit reviewed `246695f`:
   (invariant 10). Every place is now as tall as the tallest
   (`LibraryEqualRowsLayout`); the places' words are the same set before
   and after a move, so no frame changes. The UI chain test now fails if
-  Move Phrase's or Move Category's places on screen are not all one
-  height, at either text size. Whether the old rows there differed (it
-  takes words that wrap to different heights) was not measured.
+  Move Phrase's or Move Category's places are not all one height, at
+  either text size. The old rows did differ: CI's run on `b520315`
+  drew Feelings' Move Phrase places at the largest text on the iPhone
+  79.7, 144.7 and 209.7 points tall (its captures,
+  `library-chains-Move Phrase-AX5 text-iPhone-…-buttons.json`).
+- **The height check counted only the places in the window**
+  (CodeRabbit, on `72b5a0f`). The chain test reads the controls the
+  window shows, and at the largest text on the iPhone every place
+  starts below the window (Move Phrase's first at 2,192 points in an
+  874-point window, in the same captures), so the check would have
+  found no places and failed. It now reads every place in the
+  accessibility tree, which holds them: the captures list all seven of
+  Move Phrase's and all five of Move Category's.
 - **A change whose read failed kept the library read before it**
   (CodeRabbit). `LibraryModel.perform` read the store on its own and
   kept the old snapshot when that read failed, and kept an earlier
@@ -299,7 +309,8 @@ Codex and CodeRabbit reviewed `246695f`:
   phrases, and the Library tests' frame reads.
 - The third round: the build fix for `LibraryModel.refresh`, the search
   compared on thirds of a point, Move's places of one height, `perform`
-  reading through `refresh`, and the category-move query test.
+  reading through `refresh`, and the category-move query test; then
+  the height check reading every place in the accessibility tree.
 
 ## Verified
 
@@ -380,8 +391,8 @@ Codex and CodeRabbit reviewed `246695f`:
   - `SwiftDataBehaviourTests.s2cAQueryOfPhrasesShowsAPhraseMovedToAnotherCategory`:
     a query of phrases showing a moved phrase under the category it
     left, or not under the one it joined.
-  - `LibraryTests`' places of one height: a move question's places on
-    screen of different heights, at either text size.
+  - `LibraryTests`' places of one height: a move question's places,
+    on screen or below it, of different heights, at either text size.
   - `LibraryTests` (UI): adding, changing, moving and deleting a phrase
     and its effect on Home; three to four categories, a refused wide
     name, a picture and a rename; the sample backup added; Apple's audit

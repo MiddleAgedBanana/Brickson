@@ -361,8 +361,10 @@ final class LibraryTests: XCTestCase {
         let editor = try read(app, window: window)
             + (field.exists ? [ScreenControl(name: LibraryChains.phraseField, frame: field.frame, isSelected: false)] : [])
         attachCapture(app, name: "library-chains-editor-\(context)".replacingOccurrences(of: ", ", with: "-"))
-        let movePhrase = try ask("libraryMovePhrase", from: editor, returningTo: "librarySave", state: LibraryChains.movePhrase, words: &words, in: app, window: window, context: context)
-        expectPlacesOfOneHeight(movePhrase, in: LibraryChains.movePhrase, context: context)
+        let movePhrase = try ask(
+            "libraryMovePhrase", from: editor, returningTo: "librarySave", state: LibraryChains.movePhrase, placesOfOneHeight: true,
+            words: &words, in: app, window: window, context: context
+        )
         let deletePhrase = try ask("libraryDeletePhrase", from: editor, returningTo: "librarySave", state: LibraryChains.deletePhrase, words: &words, in: app, window: window, context: context)
         back(to: "Feelings", in: app)
 
@@ -377,8 +379,10 @@ final class LibraryTests: XCTestCase {
         }
         attachCapture(app, name: "library-chains-category-\(context)".replacingOccurrences(of: ", ", with: "-"))
         let picture = try ask("libraryChangePicture", from: category, returningTo: "libraryRename", state: LibraryChains.picture, words: &words, in: app, window: window, context: context)
-        let moveCategory = try ask("libraryMoveCategory", from: category, returningTo: "libraryRename", state: LibraryChains.moveCategory, words: &words, in: app, window: window, context: context)
-        expectPlacesOfOneHeight(moveCategory, in: LibraryChains.moveCategory, context: context)
+        let moveCategory = try ask(
+            "libraryMoveCategory", from: category, returningTo: "libraryRename", state: LibraryChains.moveCategory, placesOfOneHeight: true,
+            words: &words, in: app, window: window, context: context
+        )
         let deleteCategory = try ask("libraryDeleteCategory", from: category, returningTo: "libraryRename", state: LibraryChains.deleteCategory, words: &words, in: app, window: window, context: context)
 
         guard let frames = HomeChains.frames(from: Self.named(home), categories: Self.everydayCategories) else {
@@ -460,12 +464,13 @@ final class LibraryTests: XCTestCase {
     }
 
     /// Opens a question with `row`, read on `screen`; checks that its way
-    /// back takes the row's place where the row showed whole; reads its
+    /// back takes the row's place where the row showed whole, and, for a
+    /// move (`placesOfOneHeight`), that its places are one height; reads its
     /// controls and its words; and goes back with the way back, waiting for
     /// `returningTo`, a control of the screen that asked.
     @MainActor
     private func ask(
-        _ row: String, from screen: [ScreenControl], returningTo: String, state: String,
+        _ row: String, from screen: [ScreenControl], returningTo: String, state: String, placesOfOneHeight: Bool = false,
         words: inout [String: CGRect], in app: XCUIApplication, window: CGRect, context: String
     ) throws -> [(name: String, frame: CGRect)] {
         // XCUITest scrolls a row it cannot hit into view before tapping it,
@@ -479,7 +484,11 @@ final class LibraryTests: XCTestCase {
         if let asked {
             expectInRowsPlace(wayBack, row: asked.frame, "\(state)'s way back is not in \(row)'s place (\(context))", in: app)
         }
-        let controls = try read(app, window: window)
+        let tree = try screenControls(in: app)
+        if placesOfOneHeight {
+            expectPlacesOfOneHeight(tree, in: state, context: context)
+        }
+        let controls = Self.cover(tree, in: window)
         let text = app.descendants(matching: .any).matching(identifier: LibraryChains.words).firstMatch
         if text.exists {
             words[state] = text.frame
@@ -496,7 +505,13 @@ final class LibraryTests: XCTestCase {
     /// accessibility tree beneath it.
     @MainActor
     private func read(_ app: XCUIApplication, window: CGRect) throws -> [ScreenControl] {
-        try Self.onScreen(screenControls(in: app), in: window).filter { !Self.fixedOnHome.contains($0.name) && $0.name != "phraseTile" }
+        Self.cover(try screenControls(in: app), in: window)
+    }
+
+    /// Of every control in the accessibility tree, the Settings cover's in
+    /// the window.
+    private static func cover(_ controls: [ScreenControl], in window: CGRect) -> [ScreenControl] {
+        onScreen(controls, in: window).filter { !fixedOnHome.contains($0.name) && $0.name != "phraseTile" }
     }
 
     private static func onScreen(_ controls: [ScreenControl], in window: CGRect) -> [ScreenControl] {
@@ -611,11 +626,15 @@ final class LibraryTests: XCTestCase {
     /// A move redraws its places in the new order, so their words trade
     /// rows; were the rows of different heights, every row under one that
     /// grew would move, and a held look could rest nearest a place the
-    /// person did not choose. Fails if a move question's places on screen
-    /// are not all one height (`LibraryEqualRowsLayout`).
-    private func expectPlacesOfOneHeight(_ controls: [(name: String, frame: CGRect)], in state: String, context: String) {
+    /// person did not choose. Fails if a move question's places are not all
+    /// one height (`LibraryEqualRowsLayout`). `controls` is the whole
+    /// accessibility tree, not only what the window shows: at the largest
+    /// text on the phone every place starts below the window (CI,
+    /// 2026-11-05: Move Phrase's first place at 2,192 points in an
+    /// 874-point window), and the tree still holds them.
+    private func expectPlacesOfOneHeight(_ controls: [ScreenControl], in state: String, context: String) {
         let heights = controls.filter { $0.name.hasPrefix(LibraryChains.movePlacePrefix) }.map { $0.frame.height }
-        XCTAssertGreaterThan(heights.count, 1, "\(state) shows fewer than two places (\(context))")
+        XCTAssertGreaterThan(heights.count, 1, "\(state) has fewer than two places (\(context))")
         XCTAssertLessThan(
             (heights.max() ?? 0) - (heights.min() ?? 0), 0.5,
             "\(state)'s places are not all one height: \(heights) (\(context))"
