@@ -2,9 +2,9 @@
 /// A path makes the idle reset one assignment (`path = []`) and lets UI
 /// tests and screen checks open any screen directly.
 ///
-/// The Library's screen joins here as `case library` when it lands, pushed
-/// from a Family Setup row (docs/DECISIONS.md, "Settings is a cover with a
-/// fixed safety bar").
+/// The Library's screens hold identities, never stored objects
+/// (`LibraryModel`), and start at Family Setup's Phrases and Categories row
+/// (docs/DECISIONS.md, "The Library in Settings").
 nonisolated enum SettingsRoute: Hashable, Sendable {
     case familySetup
     case guidedSetup(GuidedSetupStep)
@@ -15,6 +15,34 @@ nonisolated enum SettingsRoute: Hashable, Sendable {
     case moreAccessibility
     case privacy
     case about
+    /// Phrases and Categories: every category, and the backups.
+    case library
+    case libraryCategory(UUID)
+    case newCategory
+    case categoryName(UUID)
+    case categoryPicture(UUID)
+    case moveCategory(UUID)
+    case deleteCategory(UUID)
+    case newPhrase(category: UUID)
+    case phrase(UUID)
+    case movePhrase(UUID)
+    case deletePhrase(UUID)
+    /// The question about a backup the family chose (`LibraryModel.restore`).
+    case restoreBackup
+
+    /// Whether this screen is about the category or phrase `id`, so that
+    /// deleting it leaves the screen nothing to show.
+    func isAbout(_ id: UUID) -> Bool {
+        switch self {
+        case .libraryCategory(let item), .categoryName(let item), .categoryPicture(let item),
+             .moveCategory(let item), .deleteCategory(let item), .phrase(let item),
+             .movePhrase(let item), .deletePhrase(let item), .newPhrase(category: let item):
+            item == id
+        case .familySetup, .guidedSetup, .voice, .reachingTheScreen, .keepOpen, .callsSiriAndShortcuts,
+             .moreAccessibility, .privacy, .about, .library, .newCategory, .restoreBackup:
+            false
+        }
+    }
 }
 
 /// The steps of Set Up Step by Step, in order.

@@ -239,13 +239,26 @@ struct SettingsCard<Content: View>: View {
 /// the screen keeps at its top for the navigation bar, and names its
 /// content as a coordinate space (`SettingsMetrics.contentSpace`).
 struct SettingsScreen<Content: View>: View {
-    let title: LocalizedStringKey
-    @ViewBuilder let content: Content
+    let title: Text
+    let content: Content
+
+    init(title: LocalizedStringKey, @ViewBuilder content: () -> Content) {
+        self.title = Text(title)
+        self.content = content()
+    }
+
+    /// For a title in the person's own words, such as a category's name,
+    /// which is never looked up for translation.
+    init(verbatimTitle: String, @ViewBuilder content: () -> Content) {
+        title = Text(verbatim: verbatimTitle)
+        self.content = content()
+    }
 
     @Environment(\.settingsCover) private var cover
     /// What the system keeps at each edge of this screen: the navigation
     /// bar at its top.
     @State private var safeArea: HomeLayout.Insets?
+    @State private var scroll = SettingsScrollPosition()
 
     var body: some View {
         ScrollView {
@@ -255,6 +268,14 @@ struct SettingsScreen<Content: View>: View {
             .coordinateSpace(.named(SettingsMetrics.contentSpace))
             .padding(SettingsMetrics.gutter)
             .environment(\.settingsScreenFrames, frames)
+            .environment(\.settingsScrollPosition, scroll)
+        }
+        // Kept without redrawing the screen: only a row that opens a
+        // Library question reads it, when chosen.
+        .onScrollGeometryChange(for: CGFloat.self) { geometry in
+            geometry.contentOffset.y + geometry.contentInsets.top
+        } action: { _, offset in
+            scroll.offset = offset
         }
         .onGeometryChange(for: HomeLayout.Insets.self) { proxy in
             let insets = proxy.safeAreaInsets
@@ -280,9 +301,19 @@ nonisolated struct SettingsCover: Equatable, Sendable {
     let stack: CGRect
 }
 
+/// How far a Settings screen has scrolled down from its top, kept outside
+/// SwiftUI's view updates so scrolling redraws nothing. A row that opens a
+/// Library question reads it when chosen, to say where it was on screen
+/// (`LibraryModel.askedFrom`).
+final class SettingsScrollPosition {
+    var offset: CGFloat = 0
+}
+
 extension EnvironmentValues {
     /// Set by Settings' cover; nil anywhere else.
     @Entry var settingsCover: SettingsCover? = nil
+    /// Set by each `SettingsScreen` for its content; nil anywhere else.
+    @Entry var settingsScrollPosition: SettingsScrollPosition? = nil
     /// Where this Settings screen sits in the window, once it has measured
     /// what it keeps for its navigation bar (`SettingsScreen`).
     @Entry var settingsScreenFrames: SettingsScreenFrames? = nil

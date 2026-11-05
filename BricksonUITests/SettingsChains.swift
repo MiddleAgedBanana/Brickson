@@ -52,9 +52,11 @@ nonisolated enum SettingsChains {
     /// The first step's way into the guide, and the guide's way out.
     static let learnAboutEachWay = "learnAboutEachWay"
     static let eachWayDone = "eachWayDone"
-    /// Family Setup's rows that open guides and settings of their own.
+    /// Family Setup's rows that open guides and settings of their own. The
+    /// Library's screens, which Phrases and Categories opens, are a surface
+    /// of their own (`LibraryChains`).
     static let familySetupGuides: Set = [
-        "voiceSettings", "reachingTheScreen", "keepOpen", "callsSiriAndShortcuts", "moreAccessibility", "privacyPolicy",
+        "library", "voiceSettings", "reachingTheScreen", "keepOpen", "callsSiriAndShortcuts", "moreAccessibility", "privacyPolicy",
         "about",
     ]
 

@@ -12,6 +12,18 @@ struct LibraryRulesTests {
         }
     }
 
+    /// Every picture is a button named in words for VoiceOver and Voice
+    /// Control (`LibrarySymbolNames`). Fails if a picture is added without
+    /// a name, or two share one, which Voice Control could not tell apart.
+    @Test func everySymbolChoiceHasAName() {
+        let names = LibraryRules.symbolChoices.map(LibrarySymbolNames.name(of:))
+        let fallback = LibrarySymbolNames.name(of: "not.a.listed.symbol")
+        for (symbol, name) in zip(LibraryRules.symbolChoices, names) {
+            #expect(!name.isEmpty && name != fallback, "\(symbol) has no name of its own")
+        }
+        #expect(Set(names).count == names.count)
+    }
+
     @Test func everySymbolChoiceIsListedOnce() {
         #expect(Set(LibraryRules.symbolChoices).count == LibraryRules.symbolChoices.count)
     }

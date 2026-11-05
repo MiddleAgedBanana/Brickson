@@ -34,6 +34,7 @@ struct SettingsView: View {
     @State private var path: [SettingsRoute] = []
     @State private var activity: SettingsActivity
     @State private var landing = SettingsLanding()
+    @State private var library = LibraryModel()
     /// The navigation stack's height, once measured: the cover less the
     /// safety bar and the sound line.
     @State private var stackHeight: CGFloat?
@@ -82,13 +83,15 @@ struct SettingsView: View {
             }
         }
         // As on Home, the window is the space, whatever a keyboard leaves of
-        // it (Settings has no field of its own, but Home's keyboard can
-        // still be going away as Settings opens), so Back to Talking never
-        // moves.
+        // it (Home's keyboard can still be going away as Settings opens,
+        // and the Library's editors keep their field and Save at the top of
+        // their screens), so Back to Talking and every screen's controls
+        // never move.
         .ignoresSafeArea(.keyboard)
         .background(Palette.screen)
         .environment(activity)
         .environment(landing)
+        .environment(library)
         .onChange(of: path) {
             activity.recordActivity()
         }
@@ -113,6 +116,7 @@ struct SettingsView: View {
             guard !Task.isCancelled else { return }
             if activity.resetIfDue() {
                 path = []
+                library.reset()
             }
         }
     }
@@ -138,6 +142,30 @@ struct SettingsView: View {
             PrivacyPolicyView()
         case .about:
             AboutView()
+        case .library:
+            LibraryView(path: $path)
+        case .libraryCategory(let id):
+            LibraryCategoryView(categoryID: id, path: $path)
+        case .newCategory:
+            LibraryNameEditor(categoryID: nil, path: $path)
+        case .categoryName(let id):
+            LibraryNameEditor(categoryID: id, path: $path)
+        case .categoryPicture(let id):
+            LibraryPictureQuestion(categoryID: id, path: $path)
+        case .moveCategory(let id):
+            LibraryMoveQuestion(item: .category(id), path: $path)
+        case .deleteCategory(let id):
+            LibraryDeleteQuestion(item: .category(id), path: $path)
+        case .newPhrase(let category):
+            LibraryPhraseEditor(phraseID: nil, categoryID: category, path: $path)
+        case .phrase(let id):
+            LibraryPhraseEditor(phraseID: id, categoryID: nil, path: $path)
+        case .movePhrase(let id):
+            LibraryMoveQuestion(item: .phrase(id), path: $path)
+        case .deletePhrase(let id):
+            LibraryDeleteQuestion(item: .phrase(id), path: $path)
+        case .restoreBackup:
+            LibraryRestoreQuestion(path: $path)
         }
     }
 
