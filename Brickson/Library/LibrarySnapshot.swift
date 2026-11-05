@@ -51,6 +51,12 @@ nonisolated extension LibrarySnapshot {
         categories.reduce(0) { $0 + $1.phrases.count }
     }
 
+    /// The categories with a button of their own on Home: all but
+    /// Emergency, which its own control opens.
+    var everydayCategoryCount: Int {
+        categories.count { !$0.isEmergency }
+    }
+
     func categoryIndex(of id: UUID) -> Int? {
         categories.firstIndex { $0.id == id }
     }

@@ -481,6 +481,95 @@ struct LibraryEditTests {
         let plan = try makePlan(.addPhrase(text: "Please.", category: F.basicsID), in: noEmergency)
         #expect(plan.after.phraseCount == 5)
     }
+
+    // MARK: Home's room for categories
+
+    /// Emergency and `count` everyday categories, each with one phrase.
+    /// Category ids are 1100, 1200…; each phrase's follows its category's.
+    private func libraryWith(everyday count: Int, from first: Int = 1) -> LibrarySnapshot {
+        LibrarySnapshot(categories: [F.emergency] + (first..<(first + count)).map(everyday))
+    }
+
+    private func everyday(_ number: Int) -> LibrarySnapshot.Category {
+        LibrarySnapshot.Category(
+            id: F.id(1000 + number * 100),
+            name: "Category \(number)",
+            symbolName: "star.fill",
+            isEmergency: false,
+            phrases: [.init(id: F.id(1001 + number * 100), text: "Phrase \(number).")]
+        )
+    }
+
+    /// Home has a cell for four everyday categories (docs/DECISIONS.md,
+    /// "Home's slot plan", *Open: a library with more than four everyday
+    /// categories*). Fails if an add can make a fifth.
+    @Test func aFifthEverydayCategoryIsRefused() throws {
+        #expect(throws: LibraryEditRejection.homeHasRoomForFour) {
+            try makePlan(.addCategory(name: "Family", symbolName: "person.2.fill"), in: libraryWith(everyday: 4))
+        }
+        let fourth = try makePlan(.addCategory(name: "Family", symbolName: "person.2.fill"), in: libraryWith(everyday: 3))
+        #expect(fourth.after.categories.filter { !$0.isEmergency }.count == 4)
+    }
+
+    /// Import keeps every word, so a backup that would make a fifth is
+    /// refused whole, never trimmed. Fails if merge or replace skips the
+    /// rule, or applies it to categories the library already has.
+    @Test func aBackupThatWouldMakeAFifthIsRefusedWhole() throws {
+        #expect(throws: LibraryEditRejection.homeHasRoomForFour) {
+            try makePlan(.merge(libraryWith(everyday: 1, from: 5)), in: libraryWith(everyday: 4))
+        }
+        #expect(throws: LibraryEditRejection.homeHasRoomForFour) {
+            try makePlan(.merge(libraryWith(everyday: 2, from: 4)), in: libraryWith(everyday: 3))
+        }
+        #expect(throws: LibraryEditRejection.homeHasRoomForFour) {
+            try makePlan(.replace(libraryWith(everyday: 5)), in: libraryWith(everyday: 4))
+        }
+        // The same categories again add nothing, and one more makes four.
+        let again = try makePlan(.merge(libraryWith(everyday: 4)), in: libraryWith(everyday: 4))
+        #expect(again.changes.isEmpty)
+        let fourth = try makePlan(.merge(libraryWith(everyday: 1, from: 4)), in: libraryWith(everyday: 3))
+        #expect(fourth.after.categories.count == 5)
+    }
+
+    /// Fewer than three everyday categories can leave Again, which speaks,
+    /// nearest Stop's empty well (docs/DECISIONS.md, "Get Attention and
+    /// Stop on Home", *Open: fewer than three everyday categories*). Fails
+    /// if a delete or a replace can take a library below three.
+    @Test func theThirdEverydayCategoryStays() throws {
+        let three = libraryWith(everyday: 3)
+        #expect(throws: LibraryEditRejection.homeNeedsThree) {
+            try makePlan(.deleteCategory(F.id(1100)), in: three)
+        }
+        #expect(throws: LibraryEditRejection.homeNeedsThree) {
+            try makePlan(.replace(libraryWith(everyday: 2)), in: three)
+        }
+        let fromFour = try makePlan(.deleteCategory(F.id(1100)), in: libraryWith(everyday: 4))
+        #expect(fromFour.after.categories.filter { !$0.isEmergency }.count == 3)
+        // Deleting its phrases leaves the category, so it is not refused.
+        let emptied = try makePlan(.deletePhrase(F.id(1101)), in: three)
+        #expect(emptied.after.categories.count == 4)
+    }
+
+    /// Only a damaged or hand-made store can be outside the bounds. It can
+    /// still be edited, so the family can bring it back, and so can the
+    /// libraries the other tests use. Fails if the rule refuses an edit
+    /// that does not cross a bound.
+    @Test func aLibraryOutsideTheBoundsCanStillBeEdited() throws {
+        let two = libraryWith(everyday: 2)
+        _ = try makePlan(.deleteCategory(F.id(1100)), in: two)
+        _ = try makePlan(.replace(libraryWith(everyday: 1)), in: two)
+        let six = libraryWith(everyday: 6)
+        _ = try makePlan(.deleteCategory(F.id(1100)), in: six)
+        _ = try makePlan(.addPhrase(text: "More.", category: F.id(1600)), in: six)
+        _ = try makePlan(.replace(libraryWith(everyday: 5)), in: six)
+        // Crossing from one side to the other is still refused.
+        #expect(throws: LibraryEditRejection.homeHasRoomForFour) {
+            try makePlan(.replace(libraryWith(everyday: 5)), in: two)
+        }
+        #expect(throws: LibraryEditRejection.homeNeedsThree) {
+            try makePlan(.replace(libraryWith(everyday: 2)), in: six)
+        }
+    }
 }
 
 /// Bringing a backup into a library: `LibraryImport` through

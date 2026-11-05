@@ -46,6 +46,12 @@ nonisolated enum LibraryRules {
     /// The picture a new category starts with.
     static let newCategorySymbol = "square.grid.2x2.fill"
 
+    /// Home has a cell for four everyday categories (`HomeLayout.categoryCapacity`)
+    /// and needs three, or Again can be nearest Stop's empty well
+    /// (docs/DECISIONS.md, "Three or four everyday categories").
+    static let mostEverydayCategories = HomeLayout.categoryCapacity
+    static let fewestEverydayCategories = 3
+
     /// Names of controls on Home and on the family screens' safety bar. A
     /// category with one of these names would be a second button with the
     /// same name, which Voice Control ("Tap Yes") and VoiceOver cannot tell
@@ -126,6 +132,10 @@ nonisolated enum LibraryEditRejection: Error, Equatable, Sendable {
     case emergencyCategoryNeedsAPhrase
     /// The edit would leave no categories at all.
     case libraryNeedsACategory
+    /// The edit would give Home more than four everyday categories.
+    case homeHasRoomForFour
+    /// The edit would leave Home fewer than three everyday categories.
+    case homeNeedsThree
     /// The category or phrase is no longer in the library.
     case notFound
     /// Two items in the stored library share an identity, so an edit
@@ -152,6 +162,10 @@ nonisolated enum LibraryEditRejection: Error, Equatable, Sendable {
             String(localized: "Emergency needs at least one phrase. Change this phrase's words instead.")
         case .libraryNeedsACategory:
             String(localized: "The library needs at least one category. Add another before deleting this one.")
+        case .homeHasRoomForFour:
+            String(localized: "Home has room for four categories besides Emergency, and this would make more.")
+        case .homeNeedsThree:
+            String(localized: "Home needs at least three categories besides Emergency, and this would leave fewer.")
         case .notFound:
             String(localized: "This was changed or deleted somewhere else. Go back and try again.")
         case .libraryNeedsRepair:

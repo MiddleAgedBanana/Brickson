@@ -33,6 +33,8 @@ struct LibraryRulesTests {
             .emergencyCategoryCannotBeDeleted,
             .emergencyCategoryNeedsAPhrase,
             .libraryNeedsACategory,
+            .homeHasRoomForFour,
+            .homeNeedsThree,
             .notFound,
             .libraryNeedsRepair,
         ]

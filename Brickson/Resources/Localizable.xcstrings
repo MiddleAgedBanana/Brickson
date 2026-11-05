@@ -265,6 +265,12 @@
     "Home can show one category's phrases or Emergency's, with Yes, No, Emergency, Again and Get Attention as large as this screen has room for. The other categories stay where they are, dimmed, so nothing moves. The change shows when Settings closes." : {
 
     },
+    "Home has room for four categories besides Emergency, and this would make more." : {
+
+    },
+    "Home needs at least three categories besides Emergency, and this would leave fewer." : {
+
+    },
     "Home shows every category." : {
 
     },
