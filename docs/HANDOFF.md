@@ -119,11 +119,12 @@ replacing it where that removes nothing the person wrote. No edit or
 backup takes a library from three or four everyday categories to more
 or fewer; a damaged or hand-made store already outside them can still be
 edited, and an edit can take it farther out (a follow-up in
-`docs/log/2026-11-05-library-screen.md`). A category with fewer than
-four phrases, as a new one starts, is dimmed on Home until it has four,
-and its screen says how many more; no edit or backup takes a category
-from four to fewer (docs/DECISIONS.md, "Four phrases in every
-category"). Each delete, move, picture and
+`docs/log/2026-11-05-library-screen.md`). An everyday category with
+fewer than four phrases, as a new one starts, is dimmed on Home until
+it has four, and its screen says how many more; Emergency is never
+dimmed. No edit or backup takes a category, Emergency included, from
+four or more phrases to fewer than four (docs/DECISIONS.md, "Four
+phrases in every category"). Each delete, move, picture and
 restore asks on a screen of its own, with the way back where the row
 that asked was and the choices well clear of it, and the chain engine
 scores the Library's screens, on the controls each window shows, all
