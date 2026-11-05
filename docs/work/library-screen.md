@@ -2,7 +2,10 @@
 
 *Roadmap: R0 item 6, the rest of it after the library core (PR #14).
 Owner: the thread "Let families edit and back up phrases" (2026-11-05).
-Status: building (a cloud session; untested until CI passes).*
+Status: built in one pull request, from a cloud session; untested until
+CI passes. Where building it changed this spec, *What building it
+changed*, at the end, says how, and docs/DECISIONS.md holds what was
+decided.*
 
 ## Intent
 
@@ -13,9 +16,8 @@ Status: building (a cloud session; untested until CI passes).*
   keep a copy of what they wrote, move it to a new iPad, or make the
   iPhone and the iPad match. The library core can do every one of these
   changes safely (`LibraryEdit`, `LibraryEditor`, `LibraryImport`,
-  `BackupCodec`, all tested), but nothing in the app calls it
-  (docs/HANDOFF.md, *Known gaps*, "No editing, export or import
-  screens"). The privacy policy already describes backups a person
+  `BackupCodec`, all tested), but nothing in the app called it (a gap
+  in docs/HANDOFF.md, *Known gaps*, until this work). The privacy policy already describes backups a person
   exports, and the quality bar's Q24 asks that phrases and categories can
   be added, edited, reordered and removed and the library backed up and
   restored before App Review.
@@ -419,3 +421,26 @@ the log. Device checks added to docs/HANDOFF.md: the file picker reaching
 iCloud Drive without an iCloud capability; AirDrop and Mail from the
 share sheet; Voice Control's names for the pictures; editing with Switch
 Control and Full Keyboard Access.
+
+## What building it changed
+
+Each is recorded, with its reason, in docs/DECISIONS.md.
+
+- **The owner's two answers** (2026-11-05): three is the floor ("Three or
+  four everyday categories"), and a phrase with a word wider than Home's
+  narrowest tile is saved with a note, while a category name with one is
+  refused ("Words wider than Home's narrowest buttons"). The spec had
+  refused both.
+- **The question screens** ("The Library's question screens"): every
+  word, results and reasons too, sits beside the way back; Delete for
+  Good stays and dims after deleting, and Keep reads Done, instead of
+  returning at once; a screen's last row puts its question's choices
+  above the way back; Change Picture's pictures are named rows, not a
+  grid; Rename is a category's last row. The chain engine found each.
+- **Words without plurals:** the Library's rows show names only, and
+  counts read "New phrases: 1" ("The Library in Settings").
+- **The idle reset:** the Restore question does not hold it, and the share
+  sheet cannot ("The Library in Settings").
+- **The route** is `restoreBackup`, not `importBackup`.
+- **The share sheet** is not opened by a UI test: whether it opens, and
+  AirDrop and Mail from it, are device checks.
