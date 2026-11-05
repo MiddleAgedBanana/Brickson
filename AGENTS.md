@@ -529,7 +529,10 @@ scripts/test.sh device   # a build for a real device (needs DEVELOPMENT_TEAM)
 
 On a Mac, the unit suite must be **100% green before any commit**; for
 work made where nothing can be built, CI must be green before the pull
-request merges. No exceptions and no unexplained skips. A known limitation is a strict `withKnownIssue`
+request merges. Work made in a cloud session is committed and pushed
+before the owner's Mac can test it (below): there the Mac's run or CI
+must be green before the pull request is called ready, and CI before
+it merges. No exceptions and no unexplained skips. A known limitation is a strict `withKnownIssue`
 naming its decision, so it fails when it starts passing.
 
 **Warnings are errors** in every target and build configuration
@@ -550,8 +553,10 @@ itself on green once its other merge requirements are met: after the final
 push, stop and let it. Agents never enable auto-merge or merge a PR.
 
 **Cloud agents** with no route to a Mac (Codex cloud, Jules, a Claude
-Code session without the tools below) cannot build or run anything. Say
-so plainly, treat the change as untested until CI or a Mac run passes,
+Code session without the tools below) cannot build or run the app or
+its Xcode tests; the Python checks run anywhere, and plain Swift types
+can be tested on Linux (`docs/log/2026-11-05-four-phrases.md`). Say so
+plainly, treat the change as untested until CI or a Mac run passes,
 and never describe unbuilt code as working.
 
 **A cloud session that reaches the owner's Mac builds and tests there**
@@ -575,7 +580,11 @@ out, stash, reset or clean there. The route:
    After a later push, `git fetch origin <branch>`, then
    `git checkout --detach origin/<branch>` and `xcodegen generate` in
    the worktree. Remote Control can run `scripts/test.sh` there too,
-   the only route that also brings the String Catalog up to date.
+   the only route that also brings the String Catalog up to date. The
+   worktree is detached, so nothing made in it reaches your branch by
+   itself: if the script changes `Brickson/Resources/Localizable.xcstrings`,
+   have Remote Control give you the diff, and commit it on your branch
+   from your own session.
    Once the pull request is merged,
    `git -C ~/code/brickson worktree remove ~/code/brickson-<topic>`.
 2. MobileBuildMCP: `session_show_defaults`, then `session_set_defaults`
@@ -598,8 +607,10 @@ out, stash, reset or clean there. The route:
    newest bundle in
    `~/Library/Developer/MobileBuildMCP/workspaces/*/result-bundles/`).
 
-Results from either tool are test results like a Mac's, recorded with
-the Xcode, simulator and iOS they ran on; MobileBuildMCP's taps and
+MobileBuildMCP builds and tests only: run `scripts/test-docs.py` and
+`scripts/test-hooks.py` yourself before pushing, as `scripts/test.sh
+unit` does before it builds. Results from either tool are test results
+like a Mac's, recorded with the Xcode, simulator and iOS they ran on; MobileBuildMCP's taps and
 snapshots are not evidence (*Gotchas*). Whether the guard (*Guardrails
 for agents*) runs in a Remote Control session started in `~/code` is
 not checked: keep its rules yourself there.

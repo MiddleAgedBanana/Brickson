@@ -84,10 +84,13 @@ With the first review round's fix (Set Up's line, applied to the
 worktree as a patch before it was pushed), the build had no warnings or
 errors, and `CategorySelectionTests` and `LibraryRulesTests` passed:
 24 tests, the new `setUpSaysWhyAShortCategoryIsDimmedWhateverIsChosen`
-among them.
-
-The String Catalog was not synced there (only `scripts/test.sh` does
-that), and no UI test ran there.
+among them. Then, at `7fe4ee3` (that fix pushed), Remote Control ran
+`scripts/test.sh unit` in the worktree: 935 tests, 925 passed, none
+failed, the same 9 expected failures and 1 skip, in 8 minutes 41
+seconds, and the String Catalog was up to date with the code; and
+`scripts/test.sh ui '-only-testing:BricksonUITests/LibraryTests'`
+passed its 7 tests on the iPad Pro 13-inch (M5) and on the iPhone 17,
+both iOS 27.2. The rest of the UI suite ran on CI only.
 
 Earlier, on Linux (Swift 6.4.1, the pure types and their Swift Testing
 tests in a throwaway package, with stand-ins for

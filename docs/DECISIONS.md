@@ -1611,8 +1611,8 @@ category.
   (docs/DEVICE-CHECKS.md, B2 and I8); if Snap to Item skips a dimmed
   control, this and typing's dimming both need another answer.
 - **Open: Emergency with fewer than four.** Emergency is never dimmed
-  (invariant 2). Its starter phrases are six and no edit takes it below
-  four, so only a library already short of them, which nothing in 1.0
+  (invariant 2). Its starter phrases are six, and no edit takes it from
+  four or more to fewer, so only a library already short of them, which nothing in 1.0
   makes, shows its empty cells. Scored
   (`HomeLayoutEngineTests.aShortEmergencysEmptyCellsMeetOnlyClearPutBackAndPhrases`):
   while typing, a look on them meets Clear or Put Back; while browsing,
