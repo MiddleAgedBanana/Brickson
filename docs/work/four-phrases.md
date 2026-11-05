@@ -56,7 +56,8 @@ building.*
   restore that would is refused the same way.
 - **Set Up:** the rest-board question dims a category with fewer than
   four, unless it is already the board, with a line under the question
-  that says why.
+  that says why. The line shows wherever any category is short, whatever
+  is chosen, so changing the answer never moves the choices.
 - **Colours:** none new.
 - **Privacy policy:** nothing it says changes.
 - **Screens:** no Figma frames: every control keeps its frame, and the

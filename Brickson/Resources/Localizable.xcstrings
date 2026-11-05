@@ -37,7 +37,7 @@
     "A category in this backup has “%@” in its name, which is too wide for Home's category buttons." : {
 
     },
-    "A category with fewer than four phrases is dimmed until it has four." : {
+    "A category with fewer than four phrases can't be chosen until it has four." : {
 
     },
     "A partner can point to phrases on the screen for the person to choose with a look, a blink or a nod, then tap the one chosen." : {

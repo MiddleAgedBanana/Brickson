@@ -159,6 +159,22 @@ struct CategorySelectionTests {
         #expect(CategorySelection.isDimmed(everyday, restBoard: feelings.uuid, phraseCounts: full))
     }
 
+    /// Fails if Set Up's rest-board question stops dimming a short category,
+    /// dims the board already chosen, says why where nothing is short, or
+    /// says why for some answers and not others: then choosing another
+    /// answer would add the line and move the choices under the look.
+    @Test func setUpSaysWhyAShortCategoryIsDimmedWhateverIsChosen() {
+        var counts = full
+        counts[feelings.uuid] = LibraryRules.fewestPhrases - 1
+        for chosen in [nil, everyday.uuid, feelings.uuid] {
+            let choices = CategorySelection.restBoardChoices([everyday, feelings], chosen: chosen, phraseCounts: counts)
+            #expect(choices.saysWhy)
+            #expect(choices.dimmed == (chosen == feelings.uuid ? [] : [feelings.uuid]))
+        }
+        let noneShort = CategorySelection.restBoardChoices([everyday, feelings], chosen: feelings.uuid, phraseCounts: full)
+        #expect(noneShort == CategorySelection.RestBoardChoices(dimmed: [], saysWhy: false))
+    }
+
     /// Fails if the board's view of the library loses a category, its order,
     /// which one is Emergency, or a phrase count, from which the grid's
     /// rows are sized.

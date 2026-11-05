@@ -301,15 +301,16 @@ private struct SetupRestBoardQuestion: View {
     var body: some View {
         let everyday = CategorySelection.shownInCategoryRow(PhraseCategory.orderedForDisplay(categories))
         let current = everyday.first { $0.uuid == chosen }?.uuid
-        let counts = CategorySelection.phraseCounts(phrases)
-        let dimmed = Set(everyday.filter { $0.uuid != current && !CategorySelection.isOffered($0, phraseCounts: counts) }.map(\.uuid))
+        let choices = CategorySelection.restBoardChoices(
+            everyday, chosen: current, phraseCounts: CategorySelection.phraseCounts(phrases)
+        )
 
         SetupChoicesLayout(screen: frames, choices: everyday.count + 1, spacing: SettingsMetrics.rowSpacing) {
             VStack(alignment: .leading, spacing: SettingsMetrics.rowSpacing) {
                 SettingsHeading("Which phrases does Home show?")
                 SettingsParagraph("Home can show one category's phrases or Emergency's, with Yes, No, Emergency, Again and Get Attention as large as this screen has room for. The other categories stay where they are, dimmed, so nothing moves. The change shows when Settings closes.")
-                if !dimmed.isEmpty {
-                    SettingsParagraph("A category with fewer than four phrases is dimmed until it has four.")
+                if choices.saysWhy {
+                    SettingsParagraph("A category with fewer than four phrases can't be chosen until it has four.")
                 }
             }
 
@@ -321,7 +322,7 @@ private struct SetupRestBoardQuestion: View {
                 choice(Text(verbatim: category.name), isChosen: current == category.uuid, identifier: "restBoardCategory") {
                     choose(category.uuid)
                 }
-                .disabled(dimmed.contains(category.uuid))
+                .disabled(choices.dimmed.contains(category.uuid))
             }
 
             if saveFailed {

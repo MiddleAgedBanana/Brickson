@@ -35,7 +35,12 @@ every category"; work file [`work/four-phrases.md`](../work/four-phrases.md)):
   be edited. Delete Phrase dims with the reason beside it.
 - **The Library says how many more** on a category's screen
   (`LibraryRules.shortNote`), and Set Up's rest-board question dims a
-  category with fewer than four, with a line saying why.
+  category with fewer than four, with a line saying why. The line shows
+  wherever any category is short, whatever is chosen
+  (`CategorySelection.restBoardChoices`): in the first version it showed
+  only while something was dimmed, so where the only short category was
+  the board already chosen, choosing another answer added it and moved
+  the choices (Codex's review).
 - **Emergency is never dimmed** (invariant 2). Only a library already
   short of four Emergency phrases, which no edit can now make, shows its
   empty cells: scored and pinned as two strict known issues
@@ -97,7 +102,9 @@ Each new test, and the change that makes it fail:
   if a damaged library shows nothing;
   `aCategoryIsDimmedWithTooFewPhrasesOrOffTheRestBoard` if `isDimmed`
   changes; `theRestBoardShowsEvenWithTooFewPhrases` if a board is
-  skipped. These use SwiftData, so only CI runs them.
+  skipped; `setUpSaysWhyAShortCategoryIsDimmedWhateverIsChosen` if Set
+  Up's line shows for some answers and not others, as it did when it
+  followed what was dimmed. These use SwiftData, so only CI runs them.
 - `LibraryTests.testCategoriesStayBetweenThreeAndFour` (UI): fails if a
   new category with no phrases is not dimmed on Home, or its screen does
   not say "Add 4 more."

@@ -1580,7 +1580,8 @@ category.
   with a VoiceOver hint that says it shows once it has four phrases. It
   never shows, even where it was chosen before: Home shows the first
   everyday category it offers, then Emergency's
-  (`CategorySelection.resolve`). The grid's rows still come from the
+  (`CategorySelection.resolve`). The one exception is a rest board
+  chosen before it was short (below). The grid's rows still come from the
   largest category, so nothing moves when a category reaches four
   (invariant 8).
 - **A category keeps four once it has them.** `LibraryEdit.plan`
@@ -1598,9 +1599,12 @@ category.
   than four phrases says, under them, that Home shows it once it has
   four, and how many to add (`LibraryRules.shortNote`).
 - **Set Up's rest board** dims a category with fewer than four among
-  its choices, with a line under the question that says why. A board
-  chosen before stays the person's, and Home shows it whatever it holds
-  ("The late-stage profile").
+  its choices, with a line under the question that says why
+  (`CategorySelection.restBoardChoices`). The line shows wherever any
+  everyday category is short, whatever is chosen, so changing the answer
+  never adds it and moves the choices. A board chosen before stays the
+  person's, and Home shows it whatever it holds ("The late-stage
+  profile").
 - **Dimmed is modelled as Snap to Item stopping on the control** and
   doing nothing, as typing's dimmed categories and phrases are
   (`HomeChains`). Whether it does is a device check
@@ -1618,8 +1622,10 @@ category.
   that comes under the look. Pinned as two strict known issues, like
   "Get Attention and Stop on Home", *Open: fewer than three everyday
   categories*; Emergency's screen tells the family to add phrases.
-- **Not covered:** a category's last row can still end short in a lower
-  row, where a look meets a phrase beside it, the board itself, unscored
+- **Not covered:** a rest board already short of four, which Set Up no
+  longer offers and no edit can make (a board chosen with four keeps
+  them), shows its empty cells, unscored; a category's last row can
+  still end short in a lower row, where a look meets a phrase beside it, the board itself, unscored
   as before; and where the grid scrolls (a library grown past the
   starter's largest category), a short last row can scroll up beside the
   categories, part of invariant 11's scrolling gap (docs/HANDOFF.md,
@@ -3475,8 +3481,10 @@ plan's places (*Home's slot plan*).
   its top row's empty cells met Clear or Put Back while typing, and,
   while browsing, the category above, after which the phrase under the
   look spoke; no placement removes that. Home now dims such a category
-  and never shows it, and the Library keeps four in a category once it
-  has them. A starter category's last row can still end short in a lower
+  and never shows it (except a rest board chosen before it was short),
+  and the Library keeps four in a category once it has them. That holds
+  where Snap to Item stops on a dimmed control (docs/DEVICE-CHECKS.md,
+  B2). A starter category's last row can still end short in a lower
   row; a look resting there meets a phrase beside it, the board itself,
   which no test scores.
 - **Fewer tiles to a screen, for R1** (drawn, not built; the work file's

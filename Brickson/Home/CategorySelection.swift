@@ -100,6 +100,30 @@ enum CategorySelection {
         return !isOffered(category, phraseCounts: phraseCounts)
     }
 
+    /// What Set Up's rest-board question shows of the everyday categories
+    /// (`everyday`, in Home's order).
+    nonisolated struct RestBoardChoices: Equatable, Sendable {
+        /// The categories it dims: each Home does not offer (`isOffered`),
+        /// except the board already chosen, which stays the person's.
+        var dimmed: Set<UUID>
+        /// Whether it says why under the question: wherever any category is
+        /// short, whatever is chosen, so choosing another answer never adds
+        /// the line and moves the choices from under a resting look
+        /// (AGENTS.md, *Design rules for dwell, switch and pointer input*).
+        var saysWhy: Bool
+    }
+
+    /// Set Up's rest-board question for `everyday` with the board `chosen`
+    /// (docs/DECISIONS.md, "Four phrases in every category").
+    static func restBoardChoices(
+        _ everyday: [PhraseCategory],
+        chosen: UUID?,
+        phraseCounts: [UUID: Int]
+    ) -> RestBoardChoices {
+        let short = everyday.filter { !isOffered($0, phraseCounts: phraseCounts) }.map(\.uuid)
+        return RestBoardChoices(dimmed: Set(short.filter { $0 != chosen }), saysWhy: !short.isEmpty)
+    }
+
     /// The category the Emergency control switches to.
     static func emergency(in categories: [PhraseCategory]) -> PhraseCategory? {
         categories.first { $0.isEmergency }

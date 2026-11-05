@@ -743,9 +743,10 @@ what passes and who checks it:
   owner's rule keeps three; the short category's opened and closed the
   same day: Home dims a category with fewer than four phrases and the
   Library keeps four once reached, the owner's rule, docs/DECISIONS.md,
-  "Four phrases in every category"; that, like typing's
-  dimming, assumes Snap to Item stops on a dimmed control, which
-  docs/DEVICE-CHECKS.md, B2 checks; an Emergency already short of four,
+  "Four phrases in every category"; closed in the model only until
+  docs/DEVICE-CHECKS.md, B2 shows that Snap to Item stops on a dimmed
+  control (Q12), as typing's dimming also assumes, and reopened for the
+  owner if it skips one; an Emergency already short of four,
   which no edit can make, stays a strict known issue);
   the Library's screens are scored on modelled frames and on CI's iPad
   and iPhone at the default and largest text sizes, with nothing found
