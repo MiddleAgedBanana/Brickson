@@ -2,7 +2,7 @@
 
 *Roadmap: R0 item 6, the rest of it after the library core (PR #14).
 Owner: the thread "Let families edit and back up phrases" (2026-11-05).
-Status: plan.*
+Status: building (a cloud session; untested until CI passes).*
 
 ## Intent
 
@@ -101,6 +101,46 @@ Status: plan.*
 
 ## Spec
 
+### The drawings
+
+Drawn in the project's Figma file, from copies of the existing Settings
+frames, in the section [Library screen flow (R0 item 6,
+2026-11-05)](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f?node-id=206-285).
+They are pictures of what the app should produce, not the layout's
+source: sizes and places come from the code and its tests. Labels are
+Inter, not SF Pro (SF Pro written through the connector draws nothing),
+so how words fit is estimated there and measured on CI.
+
+- iPhone 17, light, default size:
+  [Family Setup with the new row](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f?node-id=206-290),
+  [the Library](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f?node-id=207-300),
+  [a restore refused](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f?node-id=207-364),
+  [Needs](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f?node-id=208-330),
+  [Emergency](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f?node-id=208-396),
+  [the phrase editor](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f?node-id=209-360),
+  [with words changed and the keyboard up](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f?node-id=209-406),
+  [New Phrase after a save](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f?node-id=209-1195),
+  [Delete](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f?node-id=210-531),
+  [Move](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f?node-id=210-572),
+  [Change Picture](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f?node-id=210-631),
+  [Rename](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f?node-id=210-741),
+  [the Restore question](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f?node-id=211-591)
+  and [its result](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f?node-id=211-639).
+- iPad Pro 13-inch, portrait:
+  [the Library](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f?node-id=212-622),
+  [the phrase editor](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f?node-id=212-679)
+  and [Delete](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f?node-id=212-720).
+- [The Library in dark mode](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f?node-id=213-624),
+  [the phrase editor at the largest text size](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f?node-id=213-704),
+  and [the way back in the place of the row that asked](https://www.figma.com/design/zCYdh8hSJ9ZmrVhtealp8f?node-id=214-653):
+  Edit Phrase, Delete and Move side by side.
+
+Drawing it settled three points, taken into the spec below: each
+category screen keeps a result line at its top, as the Library does; a
+restore's result and refusals show in a line kept under Restore from a
+Backup, where the family is, not at the top of a Library that may be
+scrolled; and Emergency's example count is the starter library's six.
+
 ### Where it lives
 
 - **The way in.** Family Setup gets one row, **Phrases and Categories**
@@ -138,7 +178,7 @@ a control that cannot act is dimmed in place, never removed.
    for results ("Deleted Feelings and its 6 phrases."); where the store is
    only in memory or unreadable, Home's own warning words
    (`PhraseLibraryIssue`, "Phrases can't be saved right now…"); the
-   Emergency row first ("Emergency, 4 phrases"), then each everyday
+   Emergency row first ("Emergency, 6 phrases"), then each everyday
    category in Home's order, each opening its category; **Add a
    Category**, dimmed when there are four everyday categories, with the
    reason beside it ("Home has room for four categories. Rename one, or
@@ -147,8 +187,10 @@ a control that cannot act is dimmed in place, never removed.
    encrypted, so anyone who has it can read your phrases. Keep it
    somewhere private."), **Export a Backup** (the system share sheet,
    `ShareLink`) and **Restore from a Backup** (the system file picker,
-   `fileImporter`). Every control here only opens something.
-2. **A category** (titled with its name). **Add a Phrase**; then a row
+   `fileImporter`), with a line kept under it for what a restore did or
+   why it could not. Every control here only opens something.
+2. **A category** (titled with its name). A line kept for results at
+   the top, as on the Library; **Add a Phrase**; then a row
    per phrase, in Home's order, opening its editor; then **Rename**,
    **Change Picture**, **Move Category** and **Delete Category**. For
    Emergency the four category rows are replaced by passive words in
@@ -211,8 +253,8 @@ a control that cannot act is dimmed in place, never removed.
    changes nothing.
 9. **Restore from a Backup.** The system file picker. The file is read
    through its security-scoped address, decoded by `BackupCodec` and
-   checked, without touching the library. Any refusal shows on the
-   Library's result line, ending "Nothing was changed.". A readable
+   checked, without touching the library. Any refusal shows in the line
+   kept under Restore from a Backup, ending "Nothing was changed.". A readable
    backup opens the question screen (5): what the backup holds, what
    Add would bring in, and whether Replace can run. **Add to My Phrases**
    (`LibraryImport.merge`) only adds; **Replace My Phrases**
