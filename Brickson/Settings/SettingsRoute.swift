@@ -1,3 +1,5 @@
+import Foundation
+
 /// The screens inside Settings, pushed onto its `NavigationStack(path:)`.
 /// A path makes the idle reset one assignment (`path = []`) and lets UI
 /// tests and screen checks open any screen directly.
