@@ -165,6 +165,32 @@ struct SetupAnswersPlaceTests {
         }
     }
 
+    /// A phone at 3x lays frames out on thirds of a point, which no binary
+    /// fraction holds exactly, so the plain way's top, built by adding 8
+    /// and taking away 1 again and again, can round differently from the
+    /// halving's single sum by a hair: an independent check of 2026-11-05
+    /// found differences of about 1e-13 points. Fails if the search finds
+    /// a top that differs by more than a hair from the plain way's on the
+    /// measured windows moved down by a third and by two thirds of a
+    /// point, or one where a look could still be nearer the answers.
+    @Test(arguments: [1.0 / 3, 2.0 / 3] as [CGFloat])
+    func onThirdsOfAPointTheSearchFindsWhatThePlainWayFinds(shift: CGFloat) {
+        for window in Self.windows {
+            let moved = Measured(
+                name: window.name, homesSettings: window.homesSettings.offsetBy(dx: 0, dy: shift),
+                rootRow: window.rootRow.offsetBy(dx: 0, dy: shift), guided: window.guided.offsetBy(dx: 0, dy: shift),
+                content: window.content
+            )
+            let plain = Self.plainTop(
+                arrivals: [moved.homesSettings, moved.rootRow, moved.guided], link: moved.guided, answersMinX: moved.content.minX,
+                answersWidth: moved.content.width, answerHeight: 64, earliest: moved.guided.maxY + 16
+            )
+            let top = Self.place(moved).top
+            #expect(abs(top - plain) < 0.001, "\(window.name) moved \(shift): \(top) against \(plain)")
+            #expect(Self.everyPointHolds(moved, top: top), "\(window.name) moved \(shift): answers at \(top)")
+        }
+    }
+
     /// A frame of words far taller than any screen, such as a long phrase
     /// at the largest text size, is placed at once. Fails if the search
     /// goes back to a try for every 8 points over a point every 4: on this

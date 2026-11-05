@@ -57,11 +57,15 @@ nonisolated struct SetupAnswersPlace: Equatable, Sendable {
     /// The answers' top that the plain search finds: down 8 points at a
     /// time from `earliest` to the first top that holds, or to the first at
     /// or past `deepest`, then back up a point at a time while it holds.
-    /// An answer holds only below every point, and lower only takes it
+    /// With the link above the answers, as both callers place it, an
+    /// answer holds only below every point, and lower only takes it
     /// farther from each, so a top holds at every whole point below the
     /// first that does: this finds that first one by halving, in about 17
     /// tries for a frame 100,000 points tall, where the plain search took a
-    /// try for every 8 points (`SetupAnswersPlaceTests` compares the two).
+    /// try for every 8 points. The top it returns always holds. On thirds
+    /// of a point, as a 3x screen lays frames out, the plain search's
+    /// repeated sums can round differently from this one sum by a hair
+    /// (`SetupAnswersPlaceTests` compares the two).
     static func firstTop(from earliest: CGFloat, to deepest: CGFloat, where holds: (CGFloat) -> Bool) -> CGFloat {
         guard deepest > earliest else { return earliest }
         let last = ((deepest - earliest) / 8).rounded(.up) * 8
@@ -88,8 +92,10 @@ nonisolated struct SetupAnswersPlace: Equatable, Sendable {
     /// around the link's centre. A frame whose corners lie in both lies
     /// wholly in both. A frame that reaches down to the answer fails at its
     /// lower corners, as every point at or below the answer's top does.
-    /// Each corner is the same point the frame's grid of points has there
-    /// (`SettingsRowPlace.points(across:every:)`).
+    /// Each corner comes from the same grid of points
+    /// (`SettingsRowPlace.points(across:every:)`), with one step across the
+    /// whole frame; the grid's own far edge can differ from it by a hair of
+    /// rounding.
     static func corners(of frame: CGRect) -> [CGPoint] {
         SettingsRowPlace.points(across: frame, every: max(frame.width, frame.height, 1))
     }
