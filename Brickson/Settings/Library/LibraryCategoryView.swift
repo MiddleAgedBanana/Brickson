@@ -1,8 +1,8 @@
 import SwiftUI
 
 /// One category, titled with its name: Add a Phrase, a row for each
-/// phrase in Home's order, then Rename, Change Picture, Move Category and
-/// Delete Category. Emergency keeps passive words in those four rows'
+/// phrase in Home's order, then Change Picture, Move Category, Delete
+/// Category and Rename. Emergency keeps passive words in those four rows'
 /// place, because it is always one step away on Home. Every control here
 /// only opens something, and what a delete did shows in a line kept for it
 /// at the top.
@@ -47,12 +47,6 @@ private struct LibraryCategoryContent: View {
             if category.isEmergency {
                 SettingsParagraph("Emergency is always one step away on Home, so it can't be renamed, moved or deleted. You can change its phrases.")
             } else {
-                NavigationLink(value: SettingsRoute.categoryName(categoryID)) {
-                    SettingsRowLabel(title: "Rename", systemImage: "pencil")
-                }
-                .settingsRowStyle()
-                .accessibilityIdentifier("libraryRename")
-
                 LibraryAskingRow(title: "Change Picture", systemImage: "photo.fill", route: .categoryPicture(categoryID), path: $path)
                     .accessibilityIdentifier("libraryChangePicture")
                 LibraryAskingRow(title: "Move Category", systemImage: "arrow.up.arrow.down", route: .moveCategory(categoryID), path: $path)
@@ -60,6 +54,14 @@ private struct LibraryCategoryContent: View {
                 LibraryAskingRow(title: "Delete Category", systemImage: "trash.fill", route: .deleteCategory(categoryID), path: $path)
                     .disabled(deleteRefusal != nil)
                     .accessibilityIdentifier("libraryDeleteCategory")
+                // Last, so a look resting under the rows meets a screen
+                // where nothing changes until words are typed
+                // (docs/DECISIONS.md, "The Library's question screens").
+                NavigationLink(value: SettingsRoute.categoryName(categoryID)) {
+                    SettingsRowLabel(title: "Rename", systemImage: "pencil")
+                }
+                .settingsRowStyle()
+                .accessibilityIdentifier("libraryRename")
                 LibraryResultLine(text: deleteRefusal, alternatives: [deleteRefusal].compactMap { $0 }, identifier: "libraryDeleteReason")
             }
         } else {

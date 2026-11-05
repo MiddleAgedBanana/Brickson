@@ -57,12 +57,16 @@ struct LibraryResultLine: View {
 }
 
 /// A row that opens one of the Library's question screens. It says where
-/// it was on screen as it was chosen (`LibraryModel.askedFrom`), so the
-/// question puts its way back there (`LibraryQuestionPlace`).
+/// it was on screen as it was chosen (`LibraryModel.askedFrom`), and
+/// whether it is the last control of its screen, so the question puts its
+/// way back there and its choices where a look that met the row cannot
+/// meet them (`LibraryQuestionPlace`).
 struct LibraryAskingRow: View {
     let title: LocalizedStringKey
     let systemImage: String
     let route: SettingsRoute
+    /// The last control of its screen, with nothing under it but words.
+    var isLast = false
     @Binding var path: [SettingsRoute]
 
     @Environment(LibraryModel.self) private var library
@@ -74,6 +78,7 @@ struct LibraryAskingRow: View {
         Button {
             activity?.recordActivity()
             library.askedFrom = frame.map { $0.offsetBy(dx: 0, dy: -(scroll?.offset ?? 0)) }
+            library.askedFromLast = isLast
             path.append(route)
         } label: {
             SettingsRowLabel(title: title, systemImage: systemImage)
@@ -121,6 +126,8 @@ nonisolated struct LibraryQuestionLayout: Layout {
     /// The row that opened the screen, in this screen's content as it
     /// first shows; nil puts the way back at the top.
     let row: CGRect?
+    /// The row was the last control of its screen.
+    let rowIsLast: Bool
     /// How much of the content shows without scrolling.
     let visibleHeight: CGFloat
     /// The gap between the way back and the words: the rows' gap.
@@ -151,9 +158,10 @@ nonisolated struct LibraryQuestionLayout: Layout {
         let choices = subviews[2]
         let width = width.flatMap { $0.isFinite ? $0 : nil } ?? choices.sizeThatFits(.unspecified).width
         let place = LibraryQuestionPlace(
-            row: row, width: width, visibleHeight: visibleHeight,
+            row: row, rowIsLast: rowIsLast, width: width, visibleHeight: visibleHeight,
             backHeight: { back.sizeThatFits(ProposedViewSize(width: $0, height: nil)).height },
             wordsHeight: { words.sizeThatFits(ProposedViewSize(width: $0, height: nil)).height },
+            choicesHeight: { choices.sizeThatFits(ProposedViewSize(width: $0, height: nil)).height },
             spacing: spacing, rowHeight: rowHeight
         )
         let choicesHeight = choices.sizeThatFits(ProposedViewSize(width: width, height: nil)).height
@@ -163,7 +171,8 @@ nonisolated struct LibraryQuestionLayout: Layout {
 
 /// A Library question screen's content: the words, the way back in the
 /// place of the row that asked, and the choices that change something
-/// well below both (docs/DECISIONS.md, "The Library's question screens").
+/// well clear of both (docs/DECISIONS.md, "The Library's question screens").
+/// Every passive word goes in `words`, and `choices` holds only buttons.
 struct LibraryQuestion<Words: View, Back: View, Choices: View>: View {
     @ViewBuilder let words: Words
     @ViewBuilder let back: Back
@@ -175,13 +184,18 @@ struct LibraryQuestion<Words: View, Back: View, Choices: View>: View {
     var body: some View {
         LibraryQuestionLayout(
             row: library.askedFrom,
+            rowIsLast: library.askedFromLast,
             visibleHeight: frames?.content.height ?? .greatestFiniteMagnitude,
             spacing: SettingsMetrics.rowSpacing,
             rowHeight: SettingsMetrics.rowHeight
         ) {
+            // Every word the screen shows, its results and reasons too, so a
+            // look resting on any of them is nearest the way back.
             VStack(alignment: .leading, spacing: SettingsMetrics.rowSpacing) {
                 words
             }
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("libraryQuestionWords")
             back
             VStack(alignment: .leading, spacing: SettingsMetrics.rowSpacing) {
                 choices
@@ -190,17 +204,25 @@ struct LibraryQuestion<Words: View, Back: View, Choices: View>: View {
     }
 }
 
-/// A question screen's way back: it only goes back to the screen that
-/// asked. It is as tall as the place it is given, the asking row's.
+/// A question screen's way back: it only goes back, to the screen that
+/// asked, or, once what it asked about is deleted (`returnsPast`), past
+/// every screen about it. It is as tall as the place it is given, the
+/// asking row's.
 struct LibraryWayBack: View {
     let title: LocalizedStringKey
+    /// A deleted item: the way back returns past its screens.
+    var returnsPast: UUID? = nil
     @Binding var path: [SettingsRoute]
     @Environment(SettingsActivity.self) private var activity: SettingsActivity?
 
     var body: some View {
         Button {
             activity?.recordActivity()
-            if !path.isEmpty {
+            if let returnsPast {
+                while let last = path.last, last.isAbout(returnsPast) {
+                    path.removeLast()
+                }
+            } else if !path.isEmpty {
                 path.removeLast()
             }
         } label: {

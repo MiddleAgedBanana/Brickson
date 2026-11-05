@@ -43,6 +43,9 @@ final class LibraryModel {
     /// was in the question's content as it first shows, and the way back
     /// takes its place (`LibraryQuestionPlace`).
     var askedFrom: CGRect?
+    /// That row was the last control of its screen, so a look anywhere
+    /// under it met it too.
+    var askedFromLast = false
 
     /// The bundled starter library, so a replace can tell untouched starter
     /// phrases from the person's own words. Without it every word counts as
@@ -99,6 +102,7 @@ final class LibraryModel {
         categoryResults = [:]
         restore = nil
         askedFrom = nil
+        askedFromLast = false
     }
 
     // MARK: Reading the snapshot

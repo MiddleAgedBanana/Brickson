@@ -216,6 +216,8 @@ private struct LibraryContent: View {
             library.backupResult = nil
             library.restore = RestoreChoices(backup: backup, library: current, starter: library.starter)
             library.askedFrom = askedFrom
+            // Restore from a Backup is the Library's last control.
+            library.askedFromLast = true
             path.append(.restoreBackup)
         case .failure(let error):
             library.backupResult = error.message

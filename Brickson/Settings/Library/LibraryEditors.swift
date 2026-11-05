@@ -80,7 +80,7 @@ private struct LibraryPhraseEditorContent: View {
         if let phraseID {
             LibraryAskingRow(title: "Move Phrase", systemImage: "arrow.up.arrow.down", route: .movePhrase(phraseID), path: $path)
                 .accessibilityIdentifier("libraryMovePhrase")
-            LibraryAskingRow(title: "Delete Phrase", systemImage: "trash.fill", route: .deletePhrase(phraseID), path: $path)
+            LibraryAskingRow(title: "Delete Phrase", systemImage: "trash.fill", route: .deletePhrase(phraseID), isLast: true, path: $path)
                 .disabled(deleteRefusal != nil)
                 .accessibilityIdentifier("libraryDeletePhrase")
             LibraryResultLine(text: deleteRefusal, alternatives: [deleteRefusal].compactMap { $0 }, identifier: "libraryDeleteReason")

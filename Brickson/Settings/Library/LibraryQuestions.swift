@@ -3,12 +3,14 @@ import SwiftUI
 
 // The Library's question screens: Delete, Move, Change Picture and a
 // chosen backup. Each puts its way back in the place of the row that
-// asked, its words beside it and its choices well below both
+// asked, its words beside it and its choices well clear of both, below
+// them, or above the way back where the row was its screen's last
 // (`LibraryQuestion`; docs/DECISIONS.md, "The Library's question
 // screens"). Nothing changes until a choice is made, and each choice
 // changes the library in one save, or not at all.
 
-/// Words for what a delete did, shown on the screen above it.
+/// Words for what a delete did, shown on its question and on the screen
+/// above what was deleted.
 enum LibraryDeleteWords {
     static func deleted(phrase text: String) -> String {
         String(localized: "Deleted “\(text)”.")
@@ -22,9 +24,11 @@ enum LibraryDeleteWords {
 // MARK: - Delete
 
 /// Delete Phrase or Delete Category: what goes and what keeps a copy, Keep
-/// in the place of the row that asked, and Delete for Good well below.
-/// Delete for Good returns to the screen above what was deleted, whose
-/// controls only open screens, and says there what it did.
+/// in the place of the row that asked, and Delete for Good well clear of it.
+/// Delete for Good deletes and the screen stays: it dims in place, so a
+/// repeat on it does nothing, the words say what it did, and Keep reads
+/// Done, which returns past the deleted item's screens to the one above
+/// it, where the same words show.
 struct LibraryDeleteQuestion: View {
     let item: LibraryItem
     @Binding var path: [SettingsRoute]
@@ -52,31 +56,53 @@ private struct LibraryDeleteContent: View {
     @Environment(SettingsActivity.self) private var activity: SettingsActivity?
     @Environment(\.modelContext) private var modelContext
     @State private var result: String?
+    /// The question as it was first asked, kept after the delete so the
+    /// words never change height under the way back.
+    @State private var asked: String?
+    /// Deleted: Delete for Good dims, and Keep reads Done.
+    @State private var isDone = false
 
     var body: some View {
         LibraryQuestion {
-            SettingsParagraph(verbatim: question)
+            SettingsParagraph(verbatim: asked ?? question)
+                .onAppear {
+                    if asked == nil {
+                        asked = question
+                    }
+                }
+            LibraryResultLine(
+                text: result ?? refusal,
+                alternatives: [refusal, deletedLine].compactMap { $0 } + (result.map { [$0] } ?? []) + LibraryMessages.anyChange,
+                identifier: "libraryQuestionResult"
+            )
         } back: {
-            LibraryWayBack(title: keep, path: $path)
+            LibraryWayBack(title: backTitle, returnsPast: isDone ? item.id : nil, path: $path)
         } choices: {
             Button(action: deleteForGood) {
                 SettingsRowLabel(title: "Delete for Good", systemImage: "trash.fill")
             }
             .settingsRowStyle()
-            .disabled(refusal != nil)
+            .disabled(isDone || refusal != nil)
             .accessibilityIdentifier("libraryDeleteForGood")
-            LibraryResultLine(
-                text: result ?? refusal,
-                alternatives: [refusal].compactMap { $0 } + LibraryMessages.anyChange,
-                identifier: "libraryQuestionResult"
-            )
         }
     }
 
-    private var keep: LocalizedStringKey {
+    private var backTitle: LocalizedStringKey {
+        if isDone {
+            return "Done"
+        }
         switch item {
-        case .phrase: "Keep Phrase"
-        case .category: "Keep Category"
+        case .phrase: return "Keep Phrase"
+        case .category: return "Keep Category"
+        }
+    }
+
+    /// What the line says once the item is deleted, while it is still there
+    /// to name.
+    private var deletedLine: String? {
+        switch item {
+        case .phrase(let id): library.phrase(id).map { LibraryDeleteWords.deleted(phrase: $0.phrase.text) }
+        case .category(let id): library.category(id).map { LibraryDeleteWords.deleted(category: $0.name) }
         }
     }
 
@@ -87,8 +113,10 @@ private struct LibraryDeleteContent: View {
         }
     }
 
+    /// Why Delete for Good is dimmed, or nil where it can delete. Once the
+    /// item is deleted, nothing: the line says what was done.
     private var refusal: String? {
-        library.refusal(of: change)
+        isDone ? nil : library.refusal(of: change)
     }
 
     private var question: String {
@@ -110,27 +138,23 @@ private struct LibraryDeleteContent: View {
 
     private func deleteForGood() {
         activity?.recordActivity()
-        // The words for the screen above, read before they are gone.
-        let line: String?
+        guard !isDone else { return }
+        // The words, read before they are gone.
+        let line = deletedLine
         let categoryID: UUID?
         switch item {
-        case .phrase(let id):
-            let found = library.phrase(id)
-            line = found.map { LibraryDeleteWords.deleted(phrase: $0.phrase.text) }
-            categoryID = found?.category.id
-        case .category(let id):
-            line = library.category(id).map { LibraryDeleteWords.deleted(category: $0.name) }
-            categoryID = nil
+        case .phrase(let id): categoryID = library.phrase(id)?.category.id
+        case .category: categoryID = nil
         }
         switch library.perform(change, in: modelContext.container) {
         case .saved:
+            isDone = true
+            result = line
+            // The screen above says it too, once Done returns there.
             if let categoryID {
                 library.categoryResults[categoryID] = line
             } else {
                 library.libraryResult = line
-            }
-            while let last = path.last, last.isAbout(item.id) {
-                path.removeLast()
             }
         case .refused(let reason):
             result = reason
@@ -186,6 +210,7 @@ private struct LibraryMoveContent: View {
     var body: some View {
         LibraryQuestion {
             SettingsParagraph(verbatim: words)
+            LibraryResultLine(text: result, alternatives: results, identifier: "libraryQuestionResult")
         } back: {
             LibraryWayBack(title: "Leave It Here", path: $path)
         } choices: {
@@ -200,7 +225,6 @@ private struct LibraryMoveContent: View {
                 .settingsRowStyle()
                 .accessibilityIdentifier("libraryMovePlace\(index)")
             }
-            LibraryResultLine(text: result, alternatives: results, identifier: "libraryQuestionResult")
         }
     }
 
@@ -269,9 +293,12 @@ private struct LibraryMoveContent: View {
 
 // MARK: - Change Picture
 
-/// Change Picture: the pictures a category can have, each named in words,
-/// the one it has marked with a check. Choosing one saves it and the
-/// screen stays; choosing the one it has changes nothing.
+/// Change Picture: the pictures a category can have, each a row with its
+/// name in words, the one it has marked with a check. Choosing one saves it
+/// and the screen stays; choosing the one it has changes nothing. The rows
+/// are as wide as the way back: under the nearest-centre rule a narrower
+/// button below a wide row is nearer its corners than its own centre is
+/// (docs/DECISIONS.md, "The Library's question screens").
 struct LibraryPictureQuestion: View {
     let categoryID: UUID
     @Binding var path: [SettingsRoute]
@@ -301,6 +328,11 @@ private struct LibraryPictureContent: View {
                     text: Text(verbatim: Self.now(category.symbolName)),
                     alternatives: LibraryRules.symbolChoices.map { Text(verbatim: Self.now($0)) }
                 )
+                LibraryResultLine(
+                    text: result,
+                    alternatives: [String(localized: "Saved.")] + [LibraryEditRejection.unknownSymbol.message] + LibraryMessages.anyChange,
+                    identifier: "libraryQuestionResult"
+                )
             } else {
                 SettingsParagraph(verbatim: String(localized: "This isn't in your phrases any more."))
             }
@@ -308,19 +340,9 @@ private struct LibraryPictureContent: View {
             LibraryWayBack(title: "Keep This Picture", path: $path)
         } choices: {
             if let category {
-                LazyVGrid(
-                    columns: [GridItem(.adaptive(minimum: SettingsMetrics.rowHeight), spacing: SettingsMetrics.rowSpacing)],
-                    spacing: SettingsMetrics.rowSpacing
-                ) {
-                    ForEach(LibraryRules.symbolChoices, id: \.self) { symbol in
-                        picture(symbol, isChosen: symbol == category.symbolName)
-                    }
+                ForEach(LibraryRules.symbolChoices, id: \.self) { symbol in
+                    picture(symbol, isChosen: symbol == category.symbolName)
                 }
-                LibraryResultLine(
-                    text: result,
-                    alternatives: [String(localized: "Saved.")] + [LibraryEditRejection.unknownSymbol.message] + LibraryMessages.anyChange,
-                    identifier: "libraryQuestionResult"
-                )
             }
         }
     }
@@ -333,20 +355,18 @@ private struct LibraryPictureContent: View {
         Button {
             choose(symbol)
         } label: {
-            Image(systemName: symbol)
-                .font(.title2.weight(.semibold))
-                .foregroundStyle(.white)
-                .frame(maxWidth: .infinity, minHeight: SettingsMetrics.rowHeight)
-                .overlay(alignment: .topTrailing) {
-                    if isChosen {
-                        Image(systemName: "checkmark.circle.fill")
-                            .font(.body.weight(.bold))
-                            .foregroundStyle(.white)
-                    }
-                }
+            HStack {
+                SettingsRowLabel(text: Text(verbatim: LibrarySymbolNames.name(of: symbol)), systemImage: symbol)
+                // The check keeps its room on every row, so no name moves
+                // when the choice does.
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.body.weight(.bold))
+                    .foregroundStyle(.white)
+                    .opacity(isChosen ? 1 : 0)
+                    .accessibilityHidden(true)
+            }
         }
         .settingsRowStyle()
-        .accessibilityLabel(Text(verbatim: LibrarySymbolNames.name(of: symbol)))
         .accessibilityAddTraits(isChosen ? .isSelected : [])
         .accessibilityIdentifier("libraryPicture-\(symbol)")
     }
@@ -382,7 +402,7 @@ enum LibraryRestoreWords {
 
 /// The Restore question for a backup the family chose: what it holds,
 /// Cancel in the place of Restore from a Backup, and Add to My Phrases and
-/// Replace My Phrases well below, each dimmed with its reason where it
+/// Replace My Phrases well above it, Restore being the Library's last row, each dimmed with its reason where it
 /// can't run (`RestoreChoices`). After either, both dim in place and
 /// Cancel reads Done.
 struct LibraryRestoreQuestion: View {
@@ -410,7 +430,22 @@ private struct LibraryRestoreContent: View {
             if let choices = library.restore {
                 SettingsParagraph(verbatim: Self.summary(of: choices.backup))
                 SettingsParagraph("Add to My Phrases adds what this backup has that your phrases don't. It removes and moves nothing.")
+                LibraryResultLine(
+                    text: refusal(choices.add),
+                    alternatives: [refusal(choices.add)].compactMap { $0 },
+                    identifier: "libraryRestoreAddReason"
+                )
                 SettingsParagraph("Replace My Phrases makes your phrases match this backup, in its order.")
+                LibraryResultLine(
+                    text: refusal(choices.replace),
+                    alternatives: [refusal(choices.replace)].compactMap { $0 },
+                    identifier: "libraryRestoreReplaceReason"
+                )
+                LibraryResultLine(
+                    text: result,
+                    alternatives: LibraryRestoreWords.results + (result.map { [$0] } ?? []) + LibraryMessages.anyChange,
+                    identifier: "libraryQuestionResult"
+                )
             } else {
                 SettingsParagraph("There's no backup to restore. Go back and choose one.")
             }
@@ -426,11 +461,6 @@ private struct LibraryRestoreContent: View {
                 .settingsRowStyle()
                 .disabled(isDone || refusal(choices.add) != nil)
                 .accessibilityIdentifier("libraryRestoreAdd")
-                LibraryResultLine(
-                    text: refusal(choices.add),
-                    alternatives: [refusal(choices.add)].compactMap { $0 },
-                    identifier: "libraryRestoreAddReason"
-                )
 
                 Button {
                     restore(choices.replace, words: { _ in LibraryRestoreWords.replaced })
@@ -440,17 +470,6 @@ private struct LibraryRestoreContent: View {
                 .settingsRowStyle()
                 .disabled(isDone || refusal(choices.replace) != nil)
                 .accessibilityIdentifier("libraryRestoreReplace")
-                LibraryResultLine(
-                    text: refusal(choices.replace),
-                    alternatives: [refusal(choices.replace)].compactMap { $0 },
-                    identifier: "libraryRestoreReplaceReason"
-                )
-
-                LibraryResultLine(
-                    text: result,
-                    alternatives: LibraryRestoreWords.results + (result.map { [$0] } ?? []) + LibraryMessages.anyChange,
-                    identifier: "libraryQuestionResult"
-                )
             }
         }
     }

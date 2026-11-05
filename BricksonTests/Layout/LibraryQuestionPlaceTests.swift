@@ -10,12 +10,12 @@ struct LibraryQuestionPlaceTests {
     private static let spacing = SettingsMetrics.rowSpacing
 
     private static func place(
-        row: CGRect?, width: CGFloat = 358, visibleHeight: CGFloat = 600,
-        backHeight: CGFloat = 64, wordsHeight: CGFloat = 80
+        row: CGRect?, rowIsLast: Bool = false, width: CGFloat = 358, visibleHeight: CGFloat = 600,
+        backHeight: CGFloat = 64, wordsHeight: CGFloat = 80, choicesHeight: CGFloat = 64
     ) -> LibraryQuestionPlace {
         LibraryQuestionPlace(
-            row: row, width: width, visibleHeight: visibleHeight,
-            backHeight: { _ in backHeight }, wordsHeight: { _ in wordsHeight },
+            row: row, rowIsLast: rowIsLast, width: width, visibleHeight: visibleHeight,
+            backHeight: { _ in backHeight }, wordsHeight: { _ in wordsHeight }, choicesHeight: { _ in choicesHeight },
             spacing: spacing, rowHeight: rowHeight
         )
     }
@@ -87,5 +87,43 @@ struct LibraryQuestionPlaceTests {
                 }
             }
         }
+    }
+
+    /// A look in the gap under a row met the row too. Fails if the first
+    /// choice is nearer any point of that gap than the way back is.
+    @Test func theGapUnderTheRowIsNearerTheWayBack() {
+        let place = Self.place(row: CGRect(x: 0, y: 300, width: 358, height: 64))
+        let gap = CGRect(x: 0, y: 364, width: 358, height: Self.spacing / 2)
+        let choice = CGRect(x: 0, y: place.choicesTop, width: 358, height: Self.rowHeight)
+        let nearer = SettingsRowPlace.points(across: gap, every: 2).allSatisfy {
+            SettingsRowPlace.isNearer($0, toOneOf: [place.back], thanAny: [choice], margin: SettingsRowPlace.margin)
+        }
+        #expect(nearer)
+    }
+
+    /// A screen's last row is nearest every point under it. Fails if its
+    /// question puts a choice under the way back, if the choices are not a
+    /// row and a gap clear above it, or if the words are not under it.
+    @Test func aLastRowsChoicesGoAbove() {
+        let row = CGRect(x: 0, y: 400, width: 358, height: 64)
+        let place = Self.place(row: row, rowIsLast: true, choicesHeight: 144)
+        #expect(place.back == row)
+        #expect(place.choicesTop + 144 == row.minY - Self.rowHeight - Self.spacing)
+        #expect(place.words.minY == row.maxY + Self.spacing)
+    }
+
+    /// Where a last row's choices do not fit above it, they go below every
+    /// point down to the foot of what shows. Fails if a point there, under
+    /// the way back, is nearer the first choice.
+    @Test func aLastRowsChoicesThatDoNotFitAboveGoBelowTheFoot() {
+        let row = CGRect(x: 0, y: 100, width: 358, height: 64)
+        let place = Self.place(row: row, rowIsLast: true, choicesHeight: 400)
+        let choice = CGRect(x: 0, y: place.choicesTop, width: 358, height: Self.rowHeight)
+        let under = CGRect(x: 0, y: row.maxY, width: 358, height: 600 - row.maxY)
+        let nearer = SettingsRowPlace.points(across: under, every: 8).allSatisfy {
+            SettingsRowPlace.isNearer($0, toOneOf: [place.back], thanAny: [choice], margin: SettingsRowPlace.margin)
+        }
+        #expect(place.choicesTop > 600)
+        #expect(nearer)
     }
 }
