@@ -3348,14 +3348,34 @@ plan's places (*Home's slot plan*).
   switch, head or gaze profile ships, pinned as a strict known issue so
   it fails when it goes. Which rule Snap to Item follows over a dimmed
   control is a device check. The model fills the grid with the largest
-  category's tiles: where a library a family grew shows a category with
-  fewer phrases than the grid has columns, or none, the top row's empty
-  cells are the empty grid again, by either rule. Every starter category
-  has at least six phrases, and the grid at most four columns. While
+  category's tiles; a category with fewer phrases than the grid has
+  columns is the next item. While
   typing, the top of Stop's well is
   nearest Speak where it was nearest Again (*Get Attention and Stop on
   Home*, *Open: the top of Stop's well is nearest Again*); the same test
   allows only that and the centre's finding.
+- **Open: a category with fewer phrases than the grid has columns.**
+  Every starter category has at least six phrases, and the grid at most
+  four columns, so the starter library fills the grid's top row. Since
+  2026-11-05 the Library lets a family make a category with fewer, and
+  a new one starts with none ("The Library in Settings"). Scored on the
+  engine's frames with each everyday category in turn that short, from
+  none to one fewer than the columns, and a look resting across each
+  empty cell of its top row
+  (`HomeLayoutEngineTests.aShortCategorysEmptyCellsMeetOnlyClearPutBackAndPhrases`):
+  while typing, the empty cells are the empty grid the first version
+  had, and a look there meets Clear or Put Back in the shorter cells
+  above, by either rule. While browsing, a look there meets the category
+  above, and once that category shows, the phrase now under the look
+  speaks (pointer going back to the look, by either rule), or it meets
+  the short category's own last phrase beside it; and, by centre, a
+  category chosen with the look near its lower edge is followed by the
+  phrase that comes under the look. Nothing else is met. Both are open,
+  not accepted: a placement for a short category's empty cells is the
+  layout engine's to find, or the owner accepts them, before a dwell,
+  switch, head or gaze profile ships; pinned as two strict known issues.
+  A starter category's last row can also end short; a look resting there
+  meets a phrase beside it, the board itself, which no test scores.
 - **Fewer tiles to a screen, for R1** (drawn, not built; the work file's
   *Fewer tiles to a screen*). Where the starter library's largest
   category does not fit at the floors, a dwell, switch, head or gaze
