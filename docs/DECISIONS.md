@@ -1552,6 +1552,80 @@ either bound is refused whole, never trimmed (invariant 7).
 The Library dims Add a Category at four and Delete Category at three,
 with the reason beside each.
 
+## Four phrases in every category
+
+*Default, adopted 2026-11-05 by the thread that built it, with the
+owner's answer asked the same day: reversible if the owner objects. It
+closes "Typing on Home", *a category with fewer phrases than the grid
+has columns*.*
+
+A category with fewer phrases than Home's grid has columns leaves empty
+cells in the grid's top row, beside the controls above it. Scored on
+the engine's frames (2026-11-05), a look resting there met Clear or Put
+Back while typing, by either rule, and, while browsing, the category
+above, after which the phrase now under the look spoke. No placement
+removes it: a new category starts with no phrases, so the grid's top row
+borders the categories, or Clear and Put Back, with nothing in it
+whatever the cells' order, and a decoy is forbidden (AGENTS.md, *Design
+rules for dwell, switch and pointer input*). So Home never shows such a
+category.
+
+- **The floor is four** (`LibraryRules.fewestPhrases`): the most columns
+  any grid has (`HomeLayout.mostColumns`: four on regular widths, two
+  lanes of two either side of a fold).
+  `HomeLayoutEngineTests.noGridIsWiderThanTheMostColumns` fails if any
+  layout's grid has more. Every phrase counts, words or not, because
+  each takes a cell. Every starter category has six or eight.
+- **Home dims an everyday category with fewer**, in its place, as it
+  dims the rest board's other categories (`CategorySelection.isDimmed`),
+  with a VoiceOver hint that says it shows once it has four phrases. It
+  never shows, even where it was chosen before: Home shows the first
+  everyday category it offers, then Emergency's
+  (`CategorySelection.resolve`). The grid's rows still come from the
+  largest category, so nothing moves when a category reaches four
+  (invariant 8).
+- **A category keeps four once it has them.** `LibraryEdit.plan`
+  refuses a delete, move or replace that takes a category, matched by
+  identity, from four or more phrases to fewer
+  (`LibraryEditRejection.categoryKeepsFour`), takes Emergency from four
+  or more to fewer (`.emergencyKeepsFour`), or leaves Home no everyday
+  category with four where it had one (`.homeNeedsAFullCategory`), so
+  Home always has one to show. As in "Three or four everyday
+  categories", only an edit that crosses is refused: a new category
+  grows from none, and one already under four can still be edited. A
+  backup that would cross is refused whole (invariant 7). The Library
+  dims Delete Phrase with the reason beside it.
+- **The Library says how many more.** A category's screen with fewer
+  than four phrases says, under them, that Home shows it once it has
+  four, and how many to add (`LibraryRules.shortNote`).
+- **Set Up's rest board** dims a category with fewer than four among
+  its choices, with a line under the question that says why. A board
+  chosen before stays the person's, and Home shows it whatever it holds
+  ("The late-stage profile").
+- **Dimmed is modelled as Snap to Item stopping on the control** and
+  doing nothing, as typing's dimmed categories and phrases are
+  (`HomeChains`). Whether it does is a device check
+  (docs/DEVICE-CHECKS.md, B2 and I8); if Snap to Item skips a dimmed
+  control, this and typing's dimming both need another answer.
+- **Open: Emergency with fewer than four.** Emergency is never dimmed
+  (invariant 2). Its starter phrases are six and no edit takes it below
+  four, so only a library already short of them, which nothing in 1.0
+  makes, shows its empty cells. Scored
+  (`HomeLayoutEngineTests.aShortEmergencysEmptyCellsMeetOnlyClearPutBackAndPhrases`):
+  while typing, a look on them meets Clear or Put Back; while browsing,
+  the category above, and then the phrase under the look speaks, or
+  Emergency's own last phrase beside them; and, by centre, a category
+  chosen with the look near its lower edge is followed by the phrase
+  that comes under the look. Pinned as two strict known issues, like
+  "Get Attention and Stop on Home", *Open: fewer than three everyday
+  categories*; Emergency's screen tells the family to add phrases.
+- **Not covered:** a category's last row can still end short in a lower
+  row, where a look meets a phrase beside it, the board itself, unscored
+  as before; and where the grid scrolls (a library grown past the
+  starter's largest category), a short last row can scroll up beside the
+  categories, part of invariant 11's scrolling gap (docs/HANDOFF.md,
+  *Known gaps*).
+
 ## Words wider than Home's narrowest buttons
 
 *The owner's decision, 2026-11-05 ("Allow, with a note"), for phrases;
@@ -3389,33 +3463,23 @@ plan's places (*Home's slot plan*).
   it fails when it goes. Which rule Snap to Item follows over a dimmed
   control is a device check. The model fills the grid with the largest
   category's tiles; a category with fewer phrases than the grid has
-  columns is the next item. While
+  columns is the next item, closed by "Four phrases in every category".
+  While
   typing, the top of Stop's well is
   nearest Speak where it was nearest Again (*Get Attention and Stop on
   Home*, *Open: the top of Stop's well is nearest Again*); the same test
   allows only that and the centre's finding.
-- **Open: a category with fewer phrases than the grid has columns.**
-  Every starter category has at least six phrases, and the grid at most
-  four columns, so the starter library fills the grid's top row. Since
-  2026-11-05 the Library lets a family make a category with fewer, and
-  a new one starts with none ("The Library in Settings"). Scored on the
-  engine's frames with each everyday category in turn that short, from
-  none to one fewer than the columns, and a look resting across each
-  empty cell of its top row
-  (`HomeLayoutEngineTests.aShortCategorysEmptyCellsMeetOnlyClearPutBackAndPhrases`):
-  while typing, the empty cells are the empty grid the first version
-  had, and a look there meets Clear or Put Back in the shorter cells
-  above, by either rule. While browsing, a look there meets the category
-  above, and once that category shows, the phrase now under the look
-  speaks (pointer going back to the look, by either rule), or it meets
-  the short category's own last phrase beside it; and, by centre, a
-  category chosen with the look near its lower edge is followed by the
-  phrase that comes under the look. Nothing else is met. Both are open,
-  not accepted: a placement for a short category's empty cells is the
-  layout engine's to find, or the owner accepts them, before a dwell,
-  switch, head or gaze profile ships; pinned as two strict known issues.
-  A starter category's last row can also end short; a look resting there
-  meets a phrase beside it, the board itself, which no test scores.
+- **Closed: a category with fewer phrases than the grid has columns**
+  (2026-11-05, "Four phrases in every category"). Since 2026-11-05 the
+  Library lets a family make such a category, and a new one starts with
+  none ("The Library in Settings"). Scored then on the engine's frames,
+  its top row's empty cells met Clear or Put Back while typing, and,
+  while browsing, the category above, after which the phrase under the
+  look spoke; no placement removes that. Home now dims such a category
+  and never shows it, and the Library keeps four in a category once it
+  has them. A starter category's last row can still end short in a lower
+  row; a look resting there meets a phrase beside it, the board itself,
+  which no test scores.
 - **Fewer tiles to a screen, for R1** (drawn, not built; the work file's
   *Fewer tiles to a screen*). Where the starter library's largest
   category does not fit at the floors, a dwell, switch, head or gaze

@@ -51,7 +51,7 @@ never had. Home was scored with one
 a look resting on its empty cells meets Clear or Put Back while typing,
 and while browsing the category above, whose phrase then speaks under
 the look. It is recorded open (docs/DECISIONS.md, "Typing on Home",
-*Open: a category with fewer phrases than the grid has columns*; Q2),
+*a category with fewer phrases than the grid has columns*; Q2),
 pinned as two strict known issues, for the layout engine to place or the
 owner to accept before a dwell, switch, head or gaze build ships.
 

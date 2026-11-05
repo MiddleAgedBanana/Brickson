@@ -28,6 +28,11 @@ struct CategorySelectionTests {
 
     private var ordered: [PhraseCategory] { [emergency, everyday, feelings] }
 
+    /// Every category with as many phrases as Home needs to offer it.
+    private var full: [UUID: Int] {
+        Dictionary(uniqueKeysWithValues: ordered.map { ($0.uuid, LibraryRules.fewestPhrases) })
+    }
+
     @Test func startsOnTheFirstEverydayCategoryEvenWhenEmergencyComesFirst() {
         #expect(CategorySelection.resolve(ordered, selectedID: nil) === everyday)
     }
@@ -86,20 +91,72 @@ struct CategorySelectionTests {
     /// Emergency's: every other category is dimmed there, so a remembered
     /// choice of one would show phrases no button on the screen leads to.
     @Test func theRestBoardShowsItsCategoryOrEmergency() {
-        #expect(CategorySelection.resolve(ordered, selectedID: nil, restBoard: feelings.uuid) === feelings)
-        #expect(CategorySelection.resolve(ordered, selectedID: everyday.uuid, restBoard: feelings.uuid) === feelings)
-        #expect(CategorySelection.resolve(ordered, selectedID: UUID(), restBoard: feelings.uuid) === feelings)
-        #expect(CategorySelection.resolve(ordered, selectedID: emergency.uuid, restBoard: feelings.uuid) === emergency)
+        #expect(CategorySelection.resolve(ordered, selectedID: nil, restBoard: feelings.uuid, phraseCounts: full) === feelings)
+        #expect(CategorySelection.resolve(ordered, selectedID: everyday.uuid, restBoard: feelings.uuid, phraseCounts: full) === feelings)
+        #expect(CategorySelection.resolve(ordered, selectedID: UUID(), restBoard: feelings.uuid, phraseCounts: full) === feelings)
+        #expect(CategorySelection.resolve(ordered, selectedID: emergency.uuid, restBoard: feelings.uuid, phraseCounts: full) === emergency)
     }
 
     /// Fails if a board the library no longer holds, or Emergency named as
     /// one, changes what Home shows: Home then shows every category as it
     /// would with no board.
     @Test func aBoardNotInTheLibraryShowsAsEveryCategoryDoes() {
-        #expect(CategorySelection.resolve(ordered, selectedID: feelings.uuid, restBoard: UUID()) === feelings)
-        #expect(CategorySelection.resolve(ordered, selectedID: nil, restBoard: UUID()) === everyday)
-        #expect(CategorySelection.resolve(ordered, selectedID: feelings.uuid, restBoard: emergency.uuid) === feelings)
-        #expect(CategorySelection.resolve(ordered, selectedID: nil, restBoard: nil) === everyday)
+        #expect(CategorySelection.resolve(ordered, selectedID: feelings.uuid, restBoard: UUID(), phraseCounts: full) === feelings)
+        #expect(CategorySelection.resolve(ordered, selectedID: nil, restBoard: UUID(), phraseCounts: full) === everyday)
+        #expect(CategorySelection.resolve(ordered, selectedID: feelings.uuid, restBoard: emergency.uuid, phraseCounts: full) === feelings)
+        #expect(CategorySelection.resolve(ordered, selectedID: nil, restBoard: nil, phraseCounts: full) === everyday)
+    }
+
+    /// The rest board's category shows whatever it holds: Set Up offers no
+    /// board with too few phrases, and one chosen before stays the
+    /// person's. Fails if it is skipped for being short.
+    @Test func theRestBoardShowsEvenWithTooFewPhrases() {
+        #expect(CategorySelection.resolve(ordered, selectedID: nil, restBoard: feelings.uuid, phraseCounts: [:]) === feelings)
+    }
+
+    // MARK: Four phrases in every category (docs/DECISIONS.md)
+
+    /// Fails if Home shows an everyday category with fewer phrases than the
+    /// widest grid has columns, chosen or not: its empty cells would border
+    /// the controls above the grid.
+    @Test func aCategoryWithTooFewPhrasesIsNeverShown() {
+        var counts = full
+        counts[feelings.uuid] = LibraryRules.fewestPhrases - 1
+        #expect(CategorySelection.resolve(ordered, selectedID: feelings.uuid, restBoard: nil, phraseCounts: counts) === everyday)
+        counts[everyday.uuid] = 0
+        counts[feelings.uuid] = LibraryRules.fewestPhrases
+        #expect(CategorySelection.resolve(ordered, selectedID: nil, restBoard: nil, phraseCounts: counts) === feelings)
+        #expect(CategorySelection.resolve(ordered, selectedID: everyday.uuid, restBoard: nil, phraseCounts: counts) === feelings)
+    }
+
+    /// Fails if Home, offering no everyday category, shows a dimmed one
+    /// instead of Emergency's phrases, or stops showing Emergency's when
+    /// they are fewer than four (Emergency is never dimmed, invariant 2).
+    @Test func offeringNoEverydayCategoryHomeShowsEmergency() {
+        let counts = [emergency.uuid: 1, everyday.uuid: 3]
+        #expect(CategorySelection.resolve(ordered, selectedID: nil, restBoard: nil, phraseCounts: counts) === emergency)
+        #expect(CategorySelection.resolve(ordered, selectedID: everyday.uuid, restBoard: nil, phraseCounts: counts) === emergency)
+        #expect(CategorySelection.resolve(ordered, selectedID: emergency.uuid, restBoard: nil, phraseCounts: counts) === emergency)
+        #expect(CategorySelection.isOffered(emergency, phraseCounts: [:]))
+    }
+
+    /// A damaged library with no Emergency and no category Home offers
+    /// still shows a category, as before the rule. Fails if it shows
+    /// nothing.
+    @Test func aLibraryOfferingNothingFallsBackToEveryCategory() {
+        #expect(CategorySelection.resolve([everyday, feelings], selectedID: nil, restBoard: nil, phraseCounts: [:]) === everyday)
+    }
+
+    /// Fails if a category's button is dimmed with enough phrases, or not
+    /// dimmed with too few; or if, on the rest board, the board's rule
+    /// stops deciding: every other category dimmed, the board never.
+    @Test func aCategoryIsDimmedWithTooFewPhrasesOrOffTheRestBoard() {
+        var counts = full
+        #expect(!CategorySelection.isDimmed(feelings, restBoard: nil, phraseCounts: counts))
+        counts[feelings.uuid] = LibraryRules.fewestPhrases - 1
+        #expect(CategorySelection.isDimmed(feelings, restBoard: nil, phraseCounts: counts))
+        #expect(!CategorySelection.isDimmed(feelings, restBoard: feelings.uuid, phraseCounts: counts))
+        #expect(CategorySelection.isDimmed(everyday, restBoard: feelings.uuid, phraseCounts: full))
     }
 
     /// Fails if the board's view of the library loses a category, its order,

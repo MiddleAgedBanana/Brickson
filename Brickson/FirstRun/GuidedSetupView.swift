@@ -284,23 +284,33 @@ private struct SetupAccessQuestion: View {
 /// to them. The standard Back button, where a look
 /// arrives from the third step, sits in the navigation bar above the
 /// words. A choice the library no longer has as an everyday category shows
-/// as Every Category, as Home does (`RestBoard`).
+/// as Every Category, as Home does (`RestBoard`). A category Home does not
+/// offer, with too few phrases, is dimmed in its place, with a line under
+/// the words that says why, unless it is already the board
+/// (docs/DECISIONS.md, "Four phrases in every category").
 private struct SetupRestBoardQuestion: View {
     let chosen: UUID?
     let saveFailed: Bool
     let choose: (UUID?) -> Void
 
     @Query private var categories: [PhraseCategory]
+    /// Read for the counts, as Home reads them (`CategorySelection.phrases`).
+    @Query private var phrases: [Phrase]
     @Environment(\.settingsScreenFrames) private var frames
 
     var body: some View {
         let everyday = CategorySelection.shownInCategoryRow(PhraseCategory.orderedForDisplay(categories))
         let current = everyday.first { $0.uuid == chosen }?.uuid
+        let counts = CategorySelection.phraseCounts(phrases)
+        let dimmed = Set(everyday.filter { $0.uuid != current && !CategorySelection.isOffered($0, phraseCounts: counts) }.map(\.uuid))
 
         SetupChoicesLayout(screen: frames, choices: everyday.count + 1, spacing: SettingsMetrics.rowSpacing) {
             VStack(alignment: .leading, spacing: SettingsMetrics.rowSpacing) {
                 SettingsHeading("Which phrases does Home show?")
                 SettingsParagraph("Home can show one category's phrases or Emergency's, with Yes, No, Emergency, Again and Get Attention as large as this screen has room for. The other categories stay where they are, dimmed, so nothing moves. The change shows when Settings closes.")
+                if !dimmed.isEmpty {
+                    SettingsParagraph("A category with fewer than four phrases is dimmed until it has four.")
+                }
             }
 
             choice(Text("Every Category"), isChosen: current == nil, identifier: "restBoardEveryCategory") {
@@ -311,6 +321,7 @@ private struct SetupRestBoardQuestion: View {
                 choice(Text(verbatim: category.name), isChosen: current == category.uuid, identifier: "restBoardCategory") {
                     choose(category.uuid)
                 }
+                .disabled(dimmed.contains(category.uuid))
             }
 
             if saveFailed {

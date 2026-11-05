@@ -454,9 +454,11 @@ Each is recorded, with its reason, in docs/DECISIONS.md.
   starter library never had. Scoring Home with one found that a look
   resting on its empty cells meets Clear or Put Back while typing, and,
   while browsing, a category whose phrase then speaks under the look
-  (docs/DECISIONS.md, "Typing on Home", *Open: a category with fewer
+  (docs/DECISIONS.md, "Typing on Home", *a category with fewer
   phrases than the grid has columns*). Placing those cells is Home's,
   so this pull request records the finding, open, and pins it strict.
+  (No placement could; Home now dims such a category: docs/DECISIONS.md,
+  "Four phrases in every category".)
 - **The drawings are behind the build** for a category's rows (Rename
   last), Delete (the choice above Keep, Delete for Good staying, Done),
   Change Picture (named rows, not a grid) and the Restore question (every

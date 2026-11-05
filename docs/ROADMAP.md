@@ -725,10 +725,7 @@ what passes and who checks it:
   a device run has found is gone by placement or accepted by the owner
   as a named exception in docs/DECISIONS.md. Open today: Yes and No
   bordering the message; the top of Stop's well nearest Again; by
-  centre, dimmed phrases bordering Clear and Put Back; a look on the
-  empty cells of a category with fewer phrases than the grid has
-  columns, which the Library makes possible, meeting Clear or Put Back
-  while typing and a phrase that speaks while browsing; and, on iPhone
+  centre, dimmed phrases bordering Clear and Put Back; and, on iPhone
   Duo at AX5, the chain that starts at Family Setup's Back and reaches
   Back to Talking and Get Attention (R0 item 13). Also open under R0
   item 13: on iPhone Duo, a look resting before the window changes
@@ -740,10 +737,16 @@ what passes and who checks it:
   first step's guide scrolled, and Settings' other screens), and finds
   nothing new. *Checks:* a thread and CI
   score; after the Snap to Item device check (Q12), the owner decides
-  each hazard that placement does not remove. *Today:* five open, plus
+  each hazard that placement does not remove. *Today:* four open, plus
   iPhone Duo's changed-window finding (Again nearest Stop's empty well
   with fewer than three everyday categories closed on 2026-11-05: the
-  owner's rule keeps three; the short category's opened the same day);
+  owner's rule keeps three; the short category's opened and closed the
+  same day: Home dims a category with fewer than four phrases and the
+  Library keeps four once reached, docs/DECISIONS.md, "Four phrases in
+  every category", with the owner's answer asked; that, like typing's
+  dimming, assumes Snap to Item stops on a dimmed control, which
+  docs/DEVICE-CHECKS.md, B2 checks; an Emergency already short of four,
+  which no edit can make, stays a strict known issue);
   the Library's screens are scored on modelled frames and on CI's iPad
   and iPhone at the default and largest text sizes, with nothing found
   (`LibraryChainsTests`, `LibraryTests`); the Duo chain was scored on
@@ -1178,13 +1181,12 @@ are complete, including item 11's TestFlight pilot; the device checks they
 touch are logged in `docs/log/`; Wave 3 items 8 and 9 are complete,
 with item 8's sizes switched on (the owner chose the largest sizes that
 fit, 2026-10-30); and every dwell hazard still open is gone or
-accepted by the owner, five today plus iPhone Duo's changed-window
+accepted by the owner, four today plus iPhone Duo's changed-window
 finding (*The quality bar*, Q2): the three
 the larger sizes left (Yes and No bordering the message, the top of
 Stop's well nearest Again, and dimmed phrases bordering Clear and Put
 Back by centre; DECISIONS.md, "Sizes that follow how the screen is reached"),
-a look on the empty cells of a category with fewer phrases than the
-grid has columns, the iPhone Duo chain at AX5 from Family Setup's Back, and,
+the iPhone Duo chain at AX5 from Family Setup's Back, and,
 on iPhone Duo, a look resting before the window changes meeting Get
 Attention, Speak, No or Clear after it (R0 item 13), since no build goes
 to App Review or to an external TestFlight group

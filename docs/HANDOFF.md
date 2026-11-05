@@ -119,7 +119,11 @@ replacing it where that removes nothing the person wrote. No edit or
 backup takes a library from three or four everyday categories to more
 or fewer; a damaged or hand-made store already outside them can still be
 edited, and an edit can take it farther out (a follow-up in
-`docs/log/2026-11-05-library-screen.md`). Each delete, move, picture and
+`docs/log/2026-11-05-library-screen.md`). A category with fewer than
+four phrases, as a new one starts, is dimmed on Home until it has four,
+and its screen says how many more; no edit or backup takes a category
+from four to fewer (docs/DECISIONS.md, "Four phrases in every
+category"). Each delete, move, picture and
 restore asks on a screen of its own, with the way back where the row
 that asked was and the choices well clear of it, and the chain engine
 scores the Library's screens, on the controls each window shows, all
@@ -540,22 +544,23 @@ release in docs/ROADMAP.md when no thread has it yet.
   (neither loses words: Put Back only brings back what Clear took, and
   Clear can be undone once). By nearest edge nothing is met: the empty
   grid's finding by both rules went when the tiles stayed in place,
-  dimmed, except over the empty cells of a category with fewer phrases
-  than the grid has columns (the next item). Open, not accepted, pinned strict in `HomeLayoutEngineTests`
+  dimmed, except over the empty cells of an Emergency with fewer than
+  four phrases (the next item). Open, not accepted, pinned strict in `HomeLayoutEngineTests`
   (docs/DECISIONS.md, "Typing on Home", *Open: by centre, dimmed phrases border Clear and Put Back*). *(owner, before any build goes to App Review or the external pilot)*
-- Since the Library (2026-11-05), a family can make a category with
-  fewer phrases than Home's grid has columns, and a new one starts with
-  none. A look resting on its top row's empty cells meets, while typing,
-  Clear or Put Back by either rule; while browsing, the category button
-  above, and once that category shows, the phrase now under the look
-  speaks, or a phrase beside it; and, by centre, a category chosen with
-  the look near its lower edge is followed by the phrase that comes
-  under the look. Scored on the engine's frames, open, not accepted,
-  pinned as two strict known issues in `HomeLayoutEngineTests`
-  (docs/DECISIONS.md, "Typing on Home", *Open: a category with fewer
-  phrases than the grid has columns*). *(the layout engine, a new thread;
-  then the owner, before any build goes to App Review or the external
-  pilot)*
+- A category with fewer phrases than Home's widest grid has columns
+  (four), which the Library lets a family make, is dimmed on Home and
+  never shows, and the Library keeps four in a category once it has
+  them (docs/DECISIONS.md, "Four phrases in every category"; the owner
+  was asked on 2026-11-05, and the default stands until they answer).
+  Two things stay open. Emergency is never dimmed, so an Emergency
+  already short of four (no edit can make one) shows its empty cells,
+  where a look meets Clear or Put Back while typing and a phrase that
+  speaks while browsing; scored, pinned as two strict known issues in
+  `HomeLayoutEngineTests` (*Emergency with fewer than four*), and the
+  Library tells the family to add phrases. And the dimming, like
+  typing's, assumes Snap to Item stops on a dimmed control, unmeasured
+  until docs/DEVICE-CHECKS.md, I8 and B2. *(the owner's answer; the
+  device checks)*
 - No typing on Home where the keyboard's room reaches the safety row:
   320pt windows at every size, a 375×667 phone from AX3, and the iPad
   mini and a zoomed 13-inch iPad in landscape from AX3. There Type is
@@ -962,18 +967,19 @@ docs/ROADMAP.md, *The quality bar*, Q24):
    identifier), the price, how the name is said, and your EU trader
    status (needed before the App Store release in the EU). Before any
    build goes to the external TestFlight pilot or App Review, every
-   dwell hazard in docs/ROADMAP.md, *The quality bar*, Q2 (five today,
+   dwell hazard in docs/ROADMAP.md, *The quality bar*, Q2 (four today,
    plus iPhone Duo's changed-window finding) must be gone, or accepted
    by you. Three wait on your answer, once the
    Snap to Item device check (Q12) has measured them: whether Yes and No
    may border the message, the top of Stop's well nearest Again, and
    dimmed phrases bordering Clear and Put Back (*Known gaps*). The other
-   two, a look on the empty cells of a category with fewer phrases than
-   the grid has columns, which the Library makes possible, and iPhone
-   Duo's chain from Family Setup at the largest text size, come to you
-   only if a thread cannot remove them by placement. (Again nearest
-   Stop's empty well, with fewer than three everyday categories, went
-   with your rule that three is the floor, 2026-11-05.) So does the changed-window finding (a look resting
+   one, iPhone Duo's chain from Family Setup at the largest text size,
+   comes to you only if a thread cannot remove it by placement. (Again
+   nearest Stop's empty well, with fewer than three everyday categories,
+   went with your rule that three is the floor, 2026-11-05; a look on
+   the empty cells of a category with fewer phrases than the grid has
+   columns went the same day, by dimming such a category, with your
+   answer on the four-phrase floor asked.) So does the changed-window finding (a look resting
    on iPhone Duo before the window changes meets Get Attention, Speak,
    No or Clear after it), once a device has shown how the pointer really
    moves when the window changes (R0 item 13; *Known gaps*). Also before
@@ -1236,7 +1242,7 @@ settings, date) and summarise it here.
 | Eight hours on the iPad with Brickson in front under Guided Access, and four on the iPhone, unplugged, with a Performance Trace in Power Profiler mode: the screen never dims or locks, everything works at the end, battery used per hour at touch's and Eye Tracking's setup, and no `EXC_RESOURCE` or `JetsamEvent` report for Brickson in Analytics Data; then, attached to Xcode on the Mac, memory out of the gauge's warning region with no growth across 100 phrases, and the thermal state never serious | Q8 |
 | Two hours each on the mounted iPad with Eye Tracking and Dwell with Snap to Item, Head Tracking with Dwell, Switch Control's auto scanning and its Gliding Cursor (point scanning), and half an hour each on the iPhone with Switch Control and Eye Tracking, following Q11's script: every activation not meant and where the pointer rested before it, activations per common task, recalibrations and rests | Q11, and invariant 10 over hours rather than one activation |
 | Export a Backup to Files, iCloud Drive, AirDrop and Mail, and restore it on the other device from iCloud Drive and the Files app; a `.json` file that is not a backup is refused; the share sheet left open past Settings' idle time changes nothing | The Library's backups (docs/DECISIONS.md, "Exporting and restoring a backup") |
-| Editing phrases and categories with Voice Control (pictures by name), Switch Control, Full Keyboard Access and Dwell with Snap to Item; a look held on Delete for Good, and resting under the lowest asking rows; and a look resting on a short category's empty cells on Home | The Library's question screens; docs/DECISIONS.md, "Typing on Home", *Open: a category with fewer phrases than the grid has columns* |
+| Editing phrases and categories with Voice Control (pictures by name), Switch Control, Full Keyboard Access and Dwell with Snap to Item; a look held on Delete for Good, and resting under the lowest asking rows; and a look resting on a category dimmed on Home for having fewer than four phrases | The Library's question screens; docs/DECISIONS.md, "Four phrases in every category" |
 
 ## Repository, CI and website
 

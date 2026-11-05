@@ -1,7 +1,8 @@
 import SwiftUI
 
 /// One category, titled with its name: Add a Phrase, a row for each
-/// phrase in Home's order, then Change Picture, Move Category, Delete
+/// phrase in Home's order, a note while it has too few phrases for Home
+/// to offer it, then Change Picture, Move Category, Delete
 /// Category and Rename. Emergency keeps passive words in those four rows'
 /// place, because it is always one step away on Home. Every control here
 /// only opens something, and what a delete did shows in a line kept for it
@@ -42,6 +43,16 @@ private struct LibraryCategoryContent: View {
                 }
                 .settingsRowStyle()
                 .accessibilityIdentifier("libraryPhrase\(index)")
+            }
+
+            // Why Home dims a category with too few phrases, or shows
+            // Emergency with empty spaces, and how many more it needs
+            // (docs/DECISIONS.md, "Four phrases in every category"). Like
+            // the Emergency paragraph below, passive words beside rows that
+            // only open something.
+            if let note = LibraryRules.shortNote(for: category) {
+                SettingsParagraph(verbatim: note)
+                    .accessibilityIdentifier("libraryShortNote")
             }
 
             if category.isEmergency {

@@ -19,6 +19,12 @@ import Foundation
 /// board's category or Emergency's phrases show, and every other category
 /// is dimmed in place, so each does nothing; typing is as without it.
 ///
+/// Elsewhere, an everyday category with fewer phrases than the widest grid
+/// has columns is dimmed in place and never shows (docs/DECISIONS.md, "Four
+/// phrases in every category"). Dimmed controls are modelled as Snap to
+/// Item stopping on them, doing nothing, as typing's are; whether it does
+/// is a device check (docs/DEVICE-CHECKS.md, B2 and I8).
+///
 /// The names are the ones the UI tests read Home's controls by
 /// (`screenControls(in:)`): the accessibility identifier where a control
 /// has one, its label otherwise. The unit tests build it from the layout's
@@ -48,6 +54,10 @@ nonisolated enum HomeChains {
     static let emptyWell = "Stop's empty well"
     /// The state Home's Settings leads to: Settings' first screen.
     static let settingsRoot = "Settings"
+    /// An empty cell of the phrase grid's top row, which a category with
+    /// fewer phrases than the grid has columns leaves: a place a look can
+    /// rest on, beside the controls above the grid.
+    static let emptyCell = "an empty cell"
 
     /// One of Home's states: what changes what its controls do.
     struct State: Hashable, Sendable {
@@ -91,8 +101,10 @@ nonisolated enum HomeChains {
         var settings: CGRect
         /// The everyday categories, in the library's order.
         var categories: [(name: String, frame: CGRect)]
-        /// The phrase tiles of the category showing, in every state: they
-        /// speak while browsing and are dimmed while typing. Browsing, a
+        /// The phrase tiles of the category showing, in every state, in
+        /// the grid's order, so its top row comes first; a category with
+        /// fewer shows only some (`phraseCounts`). They speak while
+        /// browsing and are dimmed while typing. Browsing, a
         /// tile that another category would not have is one more control
         /// that speaks, so it can only add hazards. Typing, it is one more
         /// place a look rests on that does nothing, so it can hide one: the
@@ -100,12 +112,17 @@ nonisolated enum HomeChains {
         /// "Typing on Home", *Open: by centre, dimmed phrases border Clear
         /// and Put Back*).
         var tiles: [CGRect] = []
-        /// An everyday category, by its place in `categories`, that shows
-        /// only these of `tiles`, as a category a family made can: a new
-        /// one starts with none. Its empty cells are places a look rests
-        /// on (docs/DECISIONS.md, "Typing on Home", *Open: a category with
-        /// fewer phrases than the grid has columns*).
-        var shortCategory: (index: Int, tiles: [CGRect])? = nil
+        /// Everyday categories, by their place in `categories`, that Home
+        /// dims for having too few phrases (`CategorySelection.isDimmed`):
+        /// each does nothing and never shows. A new category starts with
+        /// none. Ignored on the rest board, where the board's rule dims.
+        var dimmed: Set<Int> = []
+        /// How many phrases a category holds where it holds fewer than
+        /// `tiles`, by its place in `categories`, or nil for Emergency's.
+        /// It shows only that many of `tiles`, and the cells of the grid's
+        /// top row it leaves empty are places a look rests on
+        /// (`emptyCell`). A category not listed fills `tiles`.
+        var phraseCounts: [Int?: Int] = [:]
         /// Phrases and Type, beside the message. Nil where they are not
         /// known; the map then has neither.
         var phrases: CGRect?
@@ -152,18 +169,21 @@ nonisolated enum HomeChains {
         )
     }
 
-    /// Where Home starts: nothing spoken, the first everyday category
-    /// showing (the rest board's, where it shows), the alarm quiet.
-    static func atRest(categoryCount: Int, restBoard: Int? = nil) -> State {
-        State(hasSpoken: false, showing: restBoard ?? (categoryCount > 0 ? 0 : nil), sounding: false)
+    /// Where Home starts: nothing spoken, the first everyday category it
+    /// offers showing (the rest board's, where it shows; Emergency's where
+    /// every one is dimmed), the alarm quiet.
+    static func atRest(categoryCount: Int, restBoard: Int? = nil, dimmed: Set<Int> = []) -> State {
+        let first = (0..<categoryCount).first { !dimmed.contains($0) }
+        return State(hasSpoken: false, showing: restBoard ?? first, sounding: false)
     }
 
     /// Every state, for a library of `categoryCount` everyday categories:
     /// with `typing`, typing and browsing with each draft; without it,
     /// browsing with an empty draft. With `restBoard`, only its category
-    /// or Emergency's phrases show.
-    static func states(categoryCount: Int, typing: Bool = false, restBoard: Int? = nil) -> [State] {
-        let showing: [Int?] = [nil] + (restBoard.map { [$0] } ?? Array(0..<categoryCount)).map { Optional($0) }
+    /// or Emergency's phrases show; without it, never a `dimmed` one.
+    static func states(categoryCount: Int, typing: Bool = false, restBoard: Int? = nil, dimmed: Set<Int> = []) -> [State] {
+        let offered = (0..<categoryCount).filter { !dimmed.contains($0) }
+        let showing: [Int?] = [nil] + (restBoard.map { [$0] } ?? offered).map { Optional($0) }
         let modes = typing ? [false, true] : [false]
         let drafts = typing ? Draft.allCases : [.empty]
         return [false, true].flatMap { hasSpoken in
@@ -199,7 +219,8 @@ nonisolated enum HomeChains {
         let names = frames.categories.map(\.name)
         var states: [String: [ChainControl]] = [:]
         var resting: [String: [(name: String, frame: CGRect)]] = [:]
-        for state in Self.states(categoryCount: names.count, typing: frames.typing != nil, restBoard: frames.restBoard) {
+        let dimmed = frames.restBoard == nil ? frames.dimmed : []
+        for state in Self.states(categoryCount: names.count, typing: frames.typing != nil, restBoard: frames.restBoard, dimmed: dimmed) {
             func after(_ change: (inout State) -> Void) -> String {
                 var next = state
                 change(&next)
@@ -244,6 +265,9 @@ nonisolated enum HomeChains {
                 } else if let board = frames.restBoard, index != board {
                     // Dimmed on the rest board.
                     controls.append(ChainControl(category.name, category.frame, .nothing))
+                } else if dimmed.contains(index) {
+                    // Dimmed for having too few phrases.
+                    controls.append(ChainControl(category.name, category.frame, .nothing))
                 } else {
                     controls.append(
                         state.showing == index
@@ -269,7 +293,8 @@ nonisolated enum HomeChains {
                         : ChainControl(Self.type, type, .navigates, leadsTo: after { $0.typing = true })
                 )
             }
-            let tiles = frames.shortCategory.flatMap { $0.index == state.showing ? $0.tiles : nil } ?? frames.tiles
+            let shown = frames.phraseCounts[state.showing].map { min(max($0, 0), frames.tiles.count) } ?? frames.tiles.count
+            let tiles = Array(frames.tiles.prefix(shown))
             if let typing {
                 controls.append(ChainControl(field, typing.field, .nothing))
                 controls += tiles.map { ChainControl(phraseTile, $0, .nothing) }
@@ -279,7 +304,9 @@ nonisolated enum HomeChains {
             let here = name(of: state, categories: names)
             states[here] = controls
             let well = state.sounding ? nil : frames.stop.map { (name: emptyWell, frame: $0) }
-            resting[here] = (well.map { [$0] } ?? []) + extra
+            let topRow = frames.tiles.filter { $0.minY == frames.tiles.first?.minY }
+            let empty = topRow.dropFirst(shown).map { (name: emptyCell, frame: $0) }
+            resting[here] = (well.map { [$0] } ?? []) + empty + extra
         }
         return ChainMap(states: states, resting: resting)
     }

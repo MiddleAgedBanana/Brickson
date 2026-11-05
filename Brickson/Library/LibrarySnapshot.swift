@@ -57,6 +57,12 @@ nonisolated extension LibrarySnapshot {
         categories.count { !$0.isEmergency }
     }
 
+    /// The everyday categories Home offers: those holding at least
+    /// `LibraryRules.fewestPhrases` phrases.
+    var offeredEverydayCategoryCount: Int {
+        categories.count { !$0.isEmergency && LibraryRules.homeOffers(phrases: $0.phrases.count) }
+    }
+
     func categoryIndex(of id: UUID) -> Int? {
         categories.firstIndex { $0.id == id }
     }

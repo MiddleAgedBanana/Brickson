@@ -241,6 +241,13 @@ nonisolated extension LibraryEdit {
         if everydayBefore >= LibraryRules.fewestEverydayCategories && everydayAfter < LibraryRules.fewestEverydayCategories {
             throw .homeNeedsThree
         }
+        // Four phrases in every category (docs/DECISIONS.md, "Four phrases
+        // in every category"): a category with fewer leaves empty cells in
+        // Home's top row, where a resting look meets the controls above.
+        // As above, only an edit that crosses the bound is refused: a new
+        // category starts with none and is dimmed on Home until it has
+        // four, and a library already under it can still be edited.
+        try Self.keepsFour(from: library, to: after)
         guard after.hasUniqueIDs else { throw .libraryNeedsRepair }
 
         return LibraryPlan(
@@ -251,6 +258,30 @@ nonisolated extension LibraryEdit {
             needsSafetyCopy: needsSafetyCopy,
             importReport: importReport
         )
+    }
+}
+
+nonisolated extension LibraryEdit {
+    /// Refuses a change that takes a category, matched by identity (or
+    /// Emergency, by its flag), from `LibraryRules.fewestPhrases` phrases
+    /// or more to fewer, or that leaves Home no everyday category to offer
+    /// where it had one.
+    static func keepsFour(from library: LibrarySnapshot, to after: LibrarySnapshot) throws(LibraryEditRejection) {
+        let fewest = LibraryRules.fewestPhrases
+        if let before = library.categories.first(where: \.isEmergency)?.phrases.count,
+           let now = after.categories.first(where: \.isEmergency)?.phrases.count,
+           before >= fewest, now < fewest {
+            throw .emergencyKeepsFour
+        }
+        for category in after.categories where !category.isEmergency && category.phrases.count < fewest {
+            let before = library.categories.first { $0.id == category.id && !$0.isEmergency }
+            if let before, before.phrases.count >= fewest {
+                throw .categoryKeepsFour
+            }
+        }
+        if library.offeredEverydayCategoryCount > 0 && after.offeredEverydayCategoryCount == 0 {
+            throw .homeNeedsAFullCategory
+        }
     }
 }
 

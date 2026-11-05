@@ -14,14 +14,28 @@ enum CategorySelection {
         return categories.first { !$0.isEmergency } ?? categories.first
     }
 
-    /// Which category Home shows on the rest board whose category is
-    /// `restBoard` (docs/DECISIONS.md, "The late-stage profile"): Emergency's
-    /// where Emergency was chosen, otherwise the board's. Every other
-    /// category is dimmed there, so none can be chosen; a board no longer in
-    /// the library shows as every category does (`resolve(_:selectedID:)`).
-    static func resolve(_ categories: [PhraseCategory], selectedID: UUID?, restBoard: UUID?) -> PhraseCategory? {
+    /// Which category Home shows. On the rest board whose category is
+    /// `restBoard` (docs/DECISIONS.md, "The late-stage profile"):
+    /// Emergency's where Emergency was chosen, otherwise the board's. Every
+    /// other category is dimmed there, so none can be chosen; a board no
+    /// longer in the library shows as every category does.
+    ///
+    /// With no board, as `resolve(_:selectedID:)` among the categories Home
+    /// offers (`isOffered`): a category with fewer phrases than the widest
+    /// grid has columns is dimmed, so it is never shown, even when it was
+    /// chosen before it lost a phrase or came from a backup; Home shows the
+    /// first everyday category it offers, then Emergency's (docs/DECISIONS.md,
+    /// "Four phrases in every category"). Only a damaged library that
+    /// offers nothing at all falls back to every category.
+    static func resolve(
+        _ categories: [PhraseCategory],
+        selectedID: UUID?,
+        restBoard: UUID?,
+        phraseCounts: [UUID: Int]
+    ) -> PhraseCategory? {
         guard let restBoard, let board = categories.first(where: { $0.uuid == restBoard && !$0.isEmergency }) else {
-            return resolve(categories, selectedID: selectedID)
+            let offered = categories.filter { isOffered($0, phraseCounts: phraseCounts) }
+            return resolve(offered, selectedID: selectedID) ?? resolve(categories, selectedID: selectedID)
         }
         if let emergency = emergency(in: categories), emergency.uuid == selectedID {
             return emergency
@@ -59,6 +73,31 @@ enum CategorySelection {
                 counts[id, default: 0] += 1
             }
         }
+    }
+
+    /// Whether Home offers `category`: Emergency always (the Emergency
+    /// control opens it from every state, invariant 2), an everyday
+    /// category only while it has at least `LibraryRules.fewestPhrases`
+    /// phrases. Home dims one it does not offer, as it dims the rest
+    /// board's other categories: its grid would leave empty cells beside
+    /// the categories and the controls that take their place while typing,
+    /// where a resting look would meet them (invariant 10; docs/DECISIONS.md,
+    /// "Four phrases in every category"). `phraseCounts` comes from
+    /// `phraseCounts(_:)`.
+    static func isOffered(_ category: PhraseCategory, phraseCounts: [UUID: Int]) -> Bool {
+        category.isEmergency || LibraryRules.homeOffers(phrases: phraseCounts[category.uuid] ?? 0)
+    }
+
+    /// Whether Home dims `category`'s button in its place (invariant 8):
+    /// on the rest board, every category but the board's; otherwise one
+    /// Home does not offer (`isOffered`). The board itself is never dimmed,
+    /// even with too few phrases: Set Up offers no such board, and one
+    /// chosen before a library changed stays the person's.
+    static func isDimmed(_ category: PhraseCategory, restBoard: UUID?, phraseCounts: [UUID: Int]) -> Bool {
+        if let restBoard {
+            return restBoard != category.uuid
+        }
+        return !isOffered(category, phraseCounts: phraseCounts)
     }
 
     /// The category the Emergency control switches to.
