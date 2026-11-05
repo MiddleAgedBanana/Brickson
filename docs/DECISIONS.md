@@ -1499,7 +1499,13 @@ was, so each question is placed from it (`LibraryQuestionPlace`,
 - **A move or a picture changes and the screen stays.** Moves are absolute
   ("Editing the library"), so a repeat on the same spot meets either the
   same place or the item's own Leave Here row and changes nothing; a
-  picture chosen again is the one the category has.
+  picture chosen again is the one the category has. That holds only
+  while the places keep their frames, and their words trade rows after
+  a move, so every place is as tall as the tallest
+  (`LibraryEqualRowsLayout`). Codex found the first version, in which a
+  long phrase's place taking a short one's moved every row under it,
+  and a look held where the chosen place had been could rest nearest
+  another place.
 - **Scored by the one chain engine** (`LibraryChains`): every control of
   every Library screen chosen, and a look resting across each question's
   words, under both nearest rules and both pointers, on modelled frames
@@ -3771,10 +3777,11 @@ CI's UI tests pass on this change.
   Since 2026-11-05 the top is found by halving, and a frame that lies
   across the answers' width is decided by its corners (the points
   nearer the link by both rules form a convex region there), with the
-  same top as stepping down every point of every frame
-  (`SetupAnswersPlaceTests`): the Library's question screens use it for
-  a phrase's words, and a long phrase at the largest text size took
-  seconds the old way.
+  same top as stepping down every point of every frame on the windows
+  and shapes the tests try, and on thirds of a point to within a hair
+  of rounding (`SetupAnswersPlaceTests`): the Library's question
+  screens use it for a phrase's words, and a long phrase at the largest
+  text size took seconds the old way.
 - **The guide is a cover of its own** (`EachWayCover`), not a pushed
   screen. Pushed like Family Setup's other guides, it would have only
   Back and Back to Talking near the look, so a held look on Learn About

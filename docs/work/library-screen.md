@@ -246,7 +246,8 @@ a control that cannot act is dimmed in place, never removed.
    "Thank you."**, the item itself as **Leave "Hello." Here**, and **At
    the End** (`LibraryEdit.movePhrase`/`moveCategory`, absolute places).
    Choosing one moves it in one save and the screen stays, the list
-   redrawn in the new order in the same frames: the moved item's own row
+   redrawn in the new order in the same frames, every place as tall as
+   the tallest (`LibraryEqualRowsLayout`): the moved item's own row
    is where it now is, so a repeat on the spot meets either its Leave
    row or the place it already has, and changes nothing
    (docs/DECISIONS.md, "Editing the library": moves are absolute). Moving

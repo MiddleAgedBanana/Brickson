@@ -143,7 +143,20 @@ Codex's review of that round found four things. Two are fixed:
   in the sweep, and in a Python probe of about 60,000 random draws of a
   frame beside or across the answers' edge its corners never disagreed
   with its points; those frames are still read point by point, because
-  the argument needs the width.
+  the argument needs the width. An independent check afterwards (a
+  fuzzer on Linux against the plain search, more than 25,000 shapes)
+  found the two within about 1e-13 points of each other on shapes like
+  the app's: where frames lie on thirds of a point, as a 3x phone lays
+  them out, the plain search's repeated sums round differently from the
+  halving's one sum. It found a whole point's difference only at an
+  exact tie with a link shorter than any the app has (Set Up Step by
+  Step is at least 78 points tall), and wild shapes no caller makes (a
+  link beside the answers) differ more. The top the halving returns
+  always holds. So the decision now says "to within a hair of rounding"
+  on thirds, and `onThirdsOfAPointTheSearchFindsWhatThePlainWayFinds`
+  compares the two on the measured windows moved by a third and two
+  thirds of a point (it fails, by 1 to 7 points, on a search that stops
+  8 points early).
 
 Two are the owner's to decide, and stay open on their threads:
 
@@ -222,6 +235,43 @@ causes. None was excused:
   one wholly under the bar, and checks every way back against the row's
   place kept whole in what shows.
 
+CI's next run, on `246695f`, did not build. `LibraryModel.refresh`'s
+`read` parameter, which lets a test make the read fail, defaulted to
+`LibraryEditor.read`, a main-actor function, in a plain function type,
+and the compiler refused the conversion ("loses global actor
+'MainActor'"). The Linux package does not hold `LibraryModel`, which
+needs SwiftData, so only Apple's build could see it; a stub of the same
+shape reproduced the error on Linux, and the fix, a parameter typed
+`@MainActor`, built there clean. The build stopped there, so the other
+files of the second round were then read for anything else the compiler
+would refuse before pushing again.
+
+### The third review round
+
+Codex and CodeRabbit reviewed `246695f`:
+
+- **Move's places moved after a move** (Codex). The places are redrawn
+  in the new order, so their words trade rows, and each row was as tall
+  as its own words: a long phrase's place taking a short one's moved
+  every row under it, and a look held where the chosen place had been
+  could rest nearest another place, which a repeat would choose
+  (invariant 10). Every place is now as tall as the tallest
+  (`LibraryEqualRowsLayout`); the places' words are the same set before
+  and after a move, so no frame changes. The UI chain test now fails if
+  Move Phrase's or Move Category's places on screen are not all one
+  height, at either text size. Whether the old rows there differed (it
+  takes words that wrap to different heights) was not measured.
+- **A change whose read failed kept the library read before it**
+  (CodeRabbit). `LibraryModel.perform` read the store on its own and
+  kept the old snapshot when that read failed, and kept an earlier
+  failure beside a good read. It now reads through `refresh`, so the
+  rule is one rule (`LibraryModelTests.aChangeWhoseReadFailsKeepsNoLibrary`).
+- **A phrase moved to another category** (CodeRabbit's nitpick). Home
+  groups phrases by each phrase's own category, and the query test
+  covered only words and places. `SwiftDataBehaviourTests.s2cAQueryOfPhrasesShowsAPhraseMovedToAnotherCategory`
+  moves one through `LibraryModel.perform` and waits for the query to
+  show it under its new category only.
+
 ## Commits
 
 - `eb1790f`, `a5cdae7`, `52b82fb`, `ef6df02`: the work file's intent,
@@ -247,6 +297,9 @@ causes. None was excused:
   keeping no library after a failed read.
 - What CI found on the review round: Home's grid from a query of
   phrases, and the Library tests' frame reads.
+- The third round: the build fix for `LibraryModel.refresh`, the search
+  compared on thirds of a point, Move's places of one height, `perform`
+  reading through `refresh`, and the category-move query test.
 
 ## Verified
 
@@ -317,6 +370,18 @@ causes. None was excused:
   - `LibraryEditorWordsTests`, `LibraryModelTests` and
     `SetupAnswersPlaceTests`' two new tests: as the second round above
     says.
+  - `SetupAnswersPlaceTests.onThirdsOfAPointTheSearchFindsWhatThePlainWayFinds`:
+    a top more than a hair from the plain search's on frames laid out
+    on thirds of a point, or one where a look could still be nearer the
+    answers.
+  - `LibraryModelTests.aChangeWhoseReadFailsKeepsNoLibrary`: a change
+    whose read fails keeping the earlier library or saying nothing, or
+    the next good change keeping the failure.
+  - `SwiftDataBehaviourTests.s2cAQueryOfPhrasesShowsAPhraseMovedToAnotherCategory`:
+    a query of phrases showing a moved phrase under the category it
+    left, or not under the one it joined.
+  - `LibraryTests`' places of one height: a move question's places on
+    screen of different heights, at either text size.
   - `LibraryTests` (UI): adding, changing, moving and deleting a phrase
     and its effect on Home; three to four categories, a refused wide
     name, a picture and a rename; the sample backup added; Apple's audit

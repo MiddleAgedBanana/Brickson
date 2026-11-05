@@ -1287,7 +1287,8 @@ settings, date) and summarise it here.
   ([record](log/2026-10-30-unit-test-time.md)). The Settings sweep's
   remaining cost was `SetupAnswersPlace`; since 2026-11-05 it halves and
   reads a frame across the answers' width by its corners, with the same
-  results ([record](log/2026-11-05-library-screen.md)).
+  results on the tests' shapes and within a hair of rounding on thirds
+  of a point ([record](log/2026-11-05-library-screen.md)).
 - CodeQL scans the workflow files and the Python scripts, not the Swift
   code, on purpose (docs/DECISIONS.md, *Code scanning*); the failed Swift
   attempt of 2026-10-10 is still listed on the Tool status page.
