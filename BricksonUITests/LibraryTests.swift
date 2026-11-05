@@ -60,13 +60,20 @@ final class LibraryTests: XCTestCase {
         app.buttons["librarySave"].tap()
         waitForLine("libraryEditorResult", saying: "Saved.", in: app)
 
-        // Move it first.
+        // Move it first, from its editor opened again. With the keyboard up
+        // after Save, Move Phrase lay under the keyboard on CI's phone, and
+        // XCUITest scrolled it into view as it tapped, so its frame read
+        // before the tap was not where it was chosen (2026-11-05).
+        back(to: "Basics", in: app)
+        phraseRow("Please close the door.", in: app).tap()
+        XCTAssertTrue(app.navigationBars["Edit Phrase"].waitForExistence(timeout: 10), "the changed phrase's row did not open its editor")
         let moveRow = app.buttons["libraryMovePhrase"]
+        XCTAssertTrue(moveRow.waitForExistence(timeout: 10) && moveRow.isHittable, "Move Phrase does not show as Edit Phrase opens")
         let moveFrame = moveRow.frame
         moveRow.tap()
         let wayBack = app.buttons["libraryWayBack"]
         XCTAssertTrue(wayBack.waitForExistence(timeout: 10), "Move Phrase did not ask")
-        expectSameFrame(wayBack.frame, moveFrame, "Leave It Here is not in Move Phrase's place")
+        expectInRowsPlace(wayBack, row: moveFrame, "Leave It Here is not in Move Phrase's place", in: app)
         app.buttons["libraryMovePlace0"].tap()
         waitForLine("libraryQuestionResult", saying: "Moved.", in: app)
         wayBack.tap()
@@ -74,10 +81,11 @@ final class LibraryTests: XCTestCase {
 
         // Delete asks, with Keep Phrase in Delete Phrase's place.
         let deleteRow = app.buttons["libraryDeletePhrase"]
+        XCTAssertTrue(deleteRow.isHittable, "Delete Phrase does not show under Move Phrase")
         let deleteFrame = deleteRow.frame
         deleteRow.tap()
         XCTAssertTrue(wayBack.waitForExistence(timeout: 10), "Delete Phrase did not ask")
-        expectSameFrame(wayBack.frame, deleteFrame, "Keep Phrase is not in Delete Phrase's place")
+        expectInRowsPlace(wayBack, row: deleteFrame, "Keep Phrase is not in Delete Phrase's place", in: app)
         let deleteForGood = app.buttons["libraryDeleteForGood"]
         XCTAssertLessThanOrEqual(
             deleteForGood.frame.maxY, wayBack.frame.minY - 64,
@@ -359,10 +367,12 @@ final class LibraryTests: XCTestCase {
 
         // Feelings read as the family leaves it once they have scrolled to
         // its rows that ask. A row the navigation bar covers wholly is not
-        // there to choose: a tap on it meets the bar.
-        let bar = showTheRowsThatAsk(in: app, window: window, context: context)
+        // there to choose, since a tap on it meets the bar, nor is a row
+        // wholly past the screen's foot, which does not show.
+        let shown = showTheRowsThatAsk(in: app, window: window, context: context)
         let category = try read(app, window: window).filter { control in
-            [LibraryChains.backToTalking, LibraryChains.back].contains(control.name) || control.frame.maxY > bar.maxY
+            [LibraryChains.backToTalking, LibraryChains.back].contains(control.name)
+                || (control.frame.maxY > shown.bar.maxY && control.frame.minY < shown.foot)
         }
         attachCapture(app, name: "library-chains-category-\(context)".replacingOccurrences(of: ", ", with: "-"))
         let picture = try ask("libraryChangePicture", from: category, returningTo: "libraryRename", state: LibraryChains.picture, words: &words, in: app, window: window, context: context)
@@ -412,13 +422,16 @@ final class LibraryTests: XCTestCase {
     }
 
     /// Scrolls a category to its foot, then back toward its top by held
-    /// drags that leave no momentum until Change Picture clears the
-    /// navigation bar, so its four rows that ask show together: at the
-    /// largest text on the phone, the foot left Change Picture under the
-    /// bar, where a tap met the bar and nothing asked. Returns the bar's
-    /// frame.
+    /// drags that leave no momentum until Change Picture shows whole under
+    /// the navigation bar, so the rows that ask a question can be chosen
+    /// where they show: at the largest text on the phone, the foot left
+    /// Change Picture under the bar, where a tap met the bar and nothing
+    /// asked. There the screen shows about three of these rows at once
+    /// (2026-11-05: content from 241 to 705 points in an 874-point
+    /// window), so Rename can lie past the foot, and Delete Category
+    /// across it. Returns the bar's frame and the screen's foot.
     @MainActor
-    private func showTheRowsThatAsk(in app: XCUIApplication, window: CGRect, context: String) -> CGRect {
+    private func showTheRowsThatAsk(in app: XCUIApplication, window: CGRect, context: String) -> (bar: CGRect, foot: CGFloat) {
         let rename = app.buttons["libraryRename"]
         for _ in 0..<4 where !(rename.isHittable && window.contains(rename.frame)) {
             app.swipeUp()
@@ -426,17 +439,22 @@ final class LibraryTests: XCTestCase {
         let bar = app.navigationBars.firstMatch.frame
         let changePicture = app.buttons["libraryChangePicture"]
         let middle = app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: window.midX, dy: window.midY))
-        for _ in 0..<8 where changePicture.frame.minY < bar.maxY {
+        for _ in 0..<8 where changePicture.frame.minY < bar.maxY + Self.gutter {
             middle.press(forDuration: 0.2, thenDragTo: middle.withOffset(CGVector(dx: 0, dy: 40)), withVelocity: .slow, thenHoldForDuration: 0.5)
         }
-        for row in ["libraryChangePicture", "libraryMoveCategory", "libraryDeleteCategory", "libraryRename"] {
+        let foot = screenFrame(holding: "libraryChangePicture", in: app).maxY
+        for row in ["libraryChangePicture", "libraryMoveCategory", "libraryDeleteCategory"] {
             let element = app.buttons[row]
             XCTAssertTrue(
-                element.isHittable && window.contains(element.frame) && element.frame.minY >= bar.maxY,
-                "\(row) does not show with the other rows that ask (\(context)): \(element.frame), navigation bar \(bar)"
+                element.isHittable && element.frame.minY >= bar.maxY && element.frame.midY < foot,
+                "\(row) cannot be chosen where it shows (\(context)): \(element.frame), navigation bar \(bar), foot \(foot)"
             )
         }
-        return bar
+        XCTAssertGreaterThanOrEqual(
+            changePicture.frame.minY, bar.maxY + Self.gutter,
+            "Change Picture does not show whole under the navigation bar (\(context)): \(changePicture.frame), navigation bar \(bar)"
+        )
+        return (bar, foot)
     }
 
     /// Opens a question with `row`, read on `screen`; checks that its way
@@ -448,14 +466,16 @@ final class LibraryTests: XCTestCase {
         _ row: String, from screen: [ScreenControl], returningTo: String, state: String,
         words: inout [String: CGRect], in app: XCUIApplication, window: CGRect, context: String
     ) throws -> [(name: String, frame: CGRect)] {
-        let asked = screen.first { $0.name == row }
+        // XCUITest scrolls a row it cannot hit into view before tapping it,
+        // and the row is then not where it was read.
+        let asked = app.buttons[row].isHittable ? screen.first(where: { $0.name == row }) : nil
         app.buttons[row].tap()
         let wayBack = app.buttons["libraryWayBack"]
         XCTAssertTrue(wayBack.waitForExistence(timeout: 10), "\(row) did not ask (\(context))")
         let gone = expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: app.buttons[returningTo])
         XCTAssertEqual(XCTWaiter.wait(for: [gone], timeout: 10), .completed, "\(row)'s question did not settle (\(context))")
-        if let asked, window.contains(asked.frame) {
-            expectSameFrame(wayBack.frame, asked.frame, "\(state)'s way back is not in \(row)'s place (\(context))")
+        if let asked {
+            expectInRowsPlace(wayBack, row: asked.frame, "\(state)'s way back is not in \(row)'s place (\(context))", in: app)
         }
         let controls = try read(app, window: window)
         let text = app.descendants(matching: .any).matching(identifier: LibraryChains.words).firstMatch
@@ -572,6 +592,36 @@ final class LibraryTests: XCTestCase {
     private func waitUntil(_ element: XCUIElement, _ format: String, _ message: String, file: StaticString = #filePath, line: UInt = #line) {
         let changed = XCTNSPredicateExpectation(predicate: NSPredicate(format: format), object: element)
         XCTAssertEqual(XCTWaiter.wait(for: [changed], timeout: 10), .completed, message, file: file, line: line)
+    }
+
+    /// Settings' gutter round each screen's content
+    /// (`SettingsMetrics.gutter`, in the app).
+    private static let gutter: CGFloat = 16
+
+    /// The frame of the scrolling screen that holds the control `name`:
+    /// the Settings screen showing, from its top under the safety bar to
+    /// its foot.
+    @MainActor
+    private func screenFrame(holding name: String, in app: XCUIApplication) -> CGRect {
+        app.scrollViews.containing(.button, identifier: name).firstMatch.frame
+    }
+
+    /// Fails unless a question's way back takes the place of the row that
+    /// asked, read at `row` as it was chosen: the row's frame, moved the
+    /// least that keeps it whole in what the question's content shows,
+    /// from a gutter under the navigation bar to a gutter above the
+    /// screen's foot (`LibraryQuestionPlace`; `SettingsScreenFrames`). A row
+    /// that showed whole there gives exactly its frame; one partly under
+    /// the bar or past the foot, a way back a little lower or higher.
+    @MainActor
+    private func expectInRowsPlace(
+        _ wayBack: XCUIElement, row: CGRect, _ message: String, in app: XCUIApplication,
+        file: StaticString = #filePath, line: UInt = #line
+    ) {
+        let top = app.navigationBars.firstMatch.frame.maxY + Self.gutter
+        let bottom = screenFrame(holding: "libraryWayBack", in: app).maxY - Self.gutter
+        let place = CGRect(x: row.minX, y: min(max(row.minY, top), bottom - row.height), width: row.width, height: row.height)
+        expectSameFrame(wayBack.frame, place, "\(message), from the row at \(row) with content showing from \(top) to \(bottom)", file: file, line: line)
     }
 
     @MainActor
