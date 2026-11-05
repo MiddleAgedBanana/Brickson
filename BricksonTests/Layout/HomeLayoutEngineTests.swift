@@ -943,10 +943,12 @@ struct HomeLayoutEngineTests {
     /// scrolling: speaking while browsing, dimmed while typing. With
     /// `restBoard`, the rest board's category by its place: only it or
     /// Emergency's phrases show, and the other categories are dimmed. With
-    /// `shortCategory`, that category, by its place, shows only its first
-    /// `phrases` tiles, as a category a family made can.
+    /// `dimmed`, those categories, by their place, are dimmed for having
+    /// too few phrases. With `phraseCounts`, a category by its place (nil:
+    /// Emergency) shows only that many tiles, and the top row's cells it
+    /// leaves empty are places a look rests on (`HomeChains.emptyCell`).
     static func chainMap(
-        _ layout: HomeLayout, typing: Bool = false, restBoard: Int? = nil, shortCategory: (index: Int, phrases: Int)? = nil
+        _ layout: HomeLayout, typing: Bool = false, restBoard: Int? = nil, dimmed: Set<Int> = [], phraseCounts: [Int?: Int] = [:]
     ) -> ChainMap {
         let categories = (0..<HomeLayout.categoryCapacity).map { (name: "category \($0 + 1)", frame: layout.frame(.category($0))) }
         let hasModes = layout.modes == .phrasesAndTyping
@@ -962,7 +964,7 @@ struct HomeLayoutEngineTests {
             yes: layout.frame(.yes), no: layout.frame(.no), emergency: layout.frame(.emergency), again: layout.frame(.again),
             getAttention: layout.frame(.getAttention), stop: layout.frame(.stop), settings: layout.frame(.settings),
             categories: categories, tiles: tiles,
-            shortCategory: shortCategory.map { (index: $0.index, tiles: Array(tiles.prefix($0.phrases))) },
+            dimmed: dimmed, phraseCounts: phraseCounts,
             phrases: hasModes ? layout.frame(.phrases) : nil, type: hasModes ? layout.frame(.type) : nil,
             typing: typing && hasModes ? HomeChains.Typing(
                 field: layout.frame(.message), clearCell: layout.typingCells.clear, putBackCell: layout.typingCells.putBack
@@ -1099,75 +1101,86 @@ struct HomeLayoutEngineTests {
         }
     }
 
-    /// A category with fewer phrases than the grid has columns, which the
-    /// Library lets a family make: a new category starts with none
-    /// (docs/DECISIONS.md, "Typing on Home", *Open: a category with fewer
-    /// phrases than the grid has columns*). Each everyday category in turn
-    /// shows from none to one fewer than the columns, the others the
-    /// largest category's tiles, and a look rests across each empty cell
-    /// of its top row and every 4 points half a point under that cell's top
-    /// edge, in every state showing it, at the default and the largest text
-    /// size, on a phone's and an iPad's height, every 64 points and both
-    /// sides of each change of arrangement. Every start chosen is scored
-    /// too where the first category is the short one.
+    /// A category with fewer phrases than the widest grid has columns,
+    /// which the Library lets a family make (a new one starts with none),
+    /// is dimmed in its place on Home and never shows (docs/DECISIONS.md,
+    /// "Four phrases in every category"). Each everyday category in turn
+    /// has none, and every chain is followed from every start, with a look
+    /// also resting every 4 points half a point under the top edge of any
+    /// empty cell of the grid's top row, in every state, at the default
+    /// and the largest text size, on a phone's and an iPad's height, every
+    /// 64 points and both sides of each change of arrangement.
+    ///
+    /// Only Stop's well's finding is allowed, as above. Fails if a dimmed
+    /// category shows: its empty cells are then the empty grid of typing's
+    /// first version, where a look meets Clear or Put Back in the shorter
+    /// cells above, and, browsing, the category above, after which the
+    /// phrase under the look speaks. Fails too if choosing a dimmed
+    /// category does anything.
+    @Test func aDimmedShortCategoryNeverShowsItsEmptyCells() {
+        var unexpected: [String] = []
+        let categories = (0..<HomeLayout.categoryCapacity).map { "category \($0 + 1)" }
+        for (name, text) in [("default", Self.defaultText), ("AX5", Self.largestText)] {
+            for height: CGFloat in [874, 1376] {
+                for (width, layout) in Self.shortCategoryLayouts(text: text, height: height) {
+                    for short in categories.indices {
+                        let context = "\(width)×\(height), \(name), \(categories[short]) dimmed with no phrases"
+                        let map = Self.chainMap(layout, typing: true, dimmed: [short], phraseCounts: [short: 0])
+                        let starts = map.everyStart() + Self.underTheTopEdge(of: map, categories: categories, typing: true)
+                        for finding in ChainFinding.findings(in: map.hazards(from: starts)) where !Self.isStopsWellFinding(finding, in: layout) {
+                            unexpected.append("\(finding) (\(context))")
+                        }
+                    }
+                }
+            }
+        }
+        let unexpectedCount = unexpected.count
+        #expect(unexpectedCount == 0, "first: \(unexpected.first ?? "")")
+    }
+
+    /// Known gap (docs/DECISIONS.md, "Four phrases in every category",
+    /// *Emergency with fewer than four*): Emergency is never dimmed
+    /// (invariant 2), and no edit takes it below four phrases, but a
+    /// library already short of them still shows its empty cells. Emergency
+    /// shows from one phrase to one fewer than the columns, the everyday
+    /// categories the largest category's tiles, scored as the test above
+    /// (every start where Emergency has one phrase; the looks on its empty
+    /// cells for each count).
     ///
     /// Two findings are known, each pinned strict, so it fails once
-    /// placement removes it. While typing, the top row's empty cells are
-    /// the empty grid the first version had: a look there meets Clear or
-    /// Put Back in the shorter cells above, by either rule. While
-    /// browsing, a look there meets the category above, and once that
-    /// category shows, the phrase under the look speaks, or it meets the
-    /// short category's own last phrase beside it; and, by centre, a
-    /// category chosen with the look near its lower edge is followed by
-    /// the phrase that comes under the look. Stop's well's finding is
-    /// allowed as above. Anything else fails: Yes, No, the alarm, any other
-    /// chosen control meeting anything, or a look on an empty cell meeting
-    /// anything else.
-    @Test func aShortCategorysEmptyCellsMeetOnlyClearPutBackAndPhrases() {
-        let emptyCell = "an empty cell"
+    /// placement removes it. While typing, a look on an empty cell meets
+    /// Clear or Put Back in the shorter cells above, by either rule. While
+    /// browsing, it meets the category above, and once that category
+    /// shows, the phrase under the look speaks, or it meets Emergency's own
+    /// last phrase beside it; and, by centre, a category chosen with the
+    /// look near its lower edge, which the empty cell below no longer
+    /// claims, is followed by the phrase that comes under the look. Stop's
+    /// well's finding is allowed, as above. Anything else fails.
+    @Test func aShortEmergencysEmptyCellsMeetOnlyClearPutBackAndPhrases() {
         var whileTyping = 0
         var whileBrowsing = 0
         var unexpected: [String] = []
         let categories = (0..<HomeLayout.categoryCapacity).map { "category \($0 + 1)" }
-        let every = HomeChains.states(categoryCount: categories.count, typing: true)
         for (name, text) in [("default", Self.defaultText), ("AX5", Self.largestText)] {
             for height: CGFloat in [874, 1376] {
-                func layout(_ width: CGFloat) -> HomeLayout {
-                    HomeLayout(space: .init(size: CGSize(width: width, height: height)), text: text, modes: .phrasesAndTyping)
-                }
-                let boundaries = Self.chainWidths(layout).filter { $0.truncatingRemainder(dividingBy: 16) != 0 }
-                for width in Set(stride(from: CGFloat(320), through: 1432, by: 64)).union(boundaries).sorted() {
-                    let layout = layout(width)
-                    let grid = layout.grid
-                    for short in categories.indices {
-                        let showing = every.filter { $0.showing == short }
-                        for count in 0..<grid.columns {
-                            let context = "\(width)×\(height), \(name), \(categories[short]) with \(count) phrases"
-                            let map = Self.chainMap(layout, typing: true, shortCategory: (short, count))
-                            let looks = (count..<grid.columns).flatMap { column in
-                                let cell = grid.tile(row: 0, column: column)
-                                return ChainEngine.points(across: cell, columns: 2, rows: 2)
-                                    + stride(from: cell.minX + 0.5, through: cell.maxX - 0.5, by: 4).map { CGPoint(x: $0, y: cell.minY + 0.5) }
-                            }
-                            let resting = showing.flatMap { state in
-                                looks.map { ChainStart.resting(at: $0, on: emptyCell, in: HomeChains.name(of: state, categories: categories)) }
-                            }
-                            let chosen = short == 0 ? map.everyStart() : []
-                            for finding in ChainFinding.findings(in: map.hazards(from: chosen + resting)) {
-                                let start = finding.example.start
-                                let fromTheWell = start.chosen?.name == HomeChains.stop || start.restingOn == HomeChains.emptyWell
-                                let met = finding.example.hazard?.control.name
-                                let typing = start.state.contains(", typing")
-                                if !Self.emergencyIsAboveTheWell(layout) && fromTheWell && (met == HomeChains.again || met == HomeChains.speak) {
-                                    continue
-                                } else if start.restingOn == emptyCell && typing && (met == HomeChains.clear || met == HomeChains.putBack) {
-                                    whileTyping += 1
-                                } else if !typing && met == HomeChains.phraseTile
-                                    && (start.restingOn == emptyCell || start.chosen.map { categories.contains($0.name) } == true) {
-                                    whileBrowsing += 1
-                                } else {
-                                    unexpected.append("\(finding) (\(context))")
-                                }
+                for (width, layout) in Self.shortCategoryLayouts(text: text, height: height) {
+                    for count in 1..<layout.grid.columns {
+                        let context = "\(width)×\(height), \(name), Emergency with \(count) phrases"
+                        let map = Self.chainMap(layout, typing: true, phraseCounts: [nil: count])
+                        let every = map.everyStart()
+                        let chosen = count == 1 ? every : every.filter { $0.restingOn == HomeChains.emptyCell }
+                        let starts = chosen + Self.underTheTopEdge(of: map, categories: categories, typing: true)
+                        for finding in ChainFinding.findings(in: map.hazards(from: starts)) where !Self.isStopsWellFinding(finding, in: layout) {
+                            let start = finding.example.start
+                            let met = finding.example.hazard?.control.name
+                            let typing = start.state.contains(", typing")
+                            if start.restingOn == HomeChains.emptyCell && typing && (met == HomeChains.clear || met == HomeChains.putBack) {
+                                whileTyping += 1
+                            } else if !typing && met == HomeChains.phraseTile
+                                && (start.restingOn == HomeChains.emptyCell || start.chosen.map { categories.contains($0.name) } == true) {
+                                whileBrowsing += 1
+                            } else {
+                                unexpected.append("\(finding) (\(context))")
                             }
                         }
                     }
@@ -1176,12 +1189,61 @@ struct HomeLayoutEngineTests {
         }
         let unexpectedCount = unexpected.count
         #expect(unexpectedCount == 0, "first: \(unexpected.first ?? "")")
-        withKnownIssue("docs/DECISIONS.md, \"Typing on Home\": a category with fewer phrases than the grid has columns, while typing") {
+        withKnownIssue("docs/DECISIONS.md, \"Four phrases in every category\": Emergency with fewer than four, while typing") {
             #expect(whileTyping == 0)
         }
-        withKnownIssue("docs/DECISIONS.md, \"Typing on Home\": a category with fewer phrases than the grid has columns, while browsing") {
+        withKnownIssue("docs/DECISIONS.md, \"Four phrases in every category\": Emergency with fewer than four, while browsing") {
             #expect(whileBrowsing == 0)
         }
+    }
+
+    /// The widths a short category is scored at: every 64 points from 320
+    /// to 1432, and both sides of each change of arrangement, with Phrases
+    /// and Type.
+    private static func shortCategoryLayouts(text: HomeLayout.Text, height: CGFloat) -> [(width: CGFloat, layout: HomeLayout)] {
+        func layout(_ width: CGFloat) -> HomeLayout {
+            HomeLayout(space: .init(size: CGSize(width: width, height: height)), text: text, modes: .phrasesAndTyping)
+        }
+        let boundaries = chainWidths(layout).filter { $0.truncatingRemainder(dividingBy: 16) != 0 }
+        return Set(stride(from: CGFloat(320), through: 1432, by: 64)).union(boundaries).sorted().map { ($0, layout($0)) }
+    }
+
+    /// A look resting every 4 points half a point under the top edge of
+    /// each empty cell of the grid's top row, in every state of `map` that
+    /// has one: by centre, the shorter cell above is nearer there than
+    /// anything in the grid.
+    private static func underTheTopEdge(of map: ChainMap, categories: [String], typing: Bool) -> [ChainStart] {
+        HomeChains.states(categoryCount: categories.count, typing: typing).flatMap { state in
+            let here = HomeChains.name(of: state, categories: categories)
+            return (map.resting[here] ?? []).filter { $0.name == HomeChains.emptyCell }.flatMap { cell in
+                stride(from: cell.frame.minX + 0.5, through: cell.frame.maxX - 0.5, by: 4).map {
+                    ChainStart.resting(at: CGPoint(x: $0, y: cell.frame.minY + 0.5), on: HomeChains.emptyCell, in: here)
+                }
+            }
+        }
+    }
+
+    /// Stop's well's finding (the tests above): where Again is above the
+    /// well, a look resting in it, empty or after choosing Stop, can meet
+    /// Again, or Speak in its place while typing.
+    private static func isStopsWellFinding(_ finding: ChainFinding, in layout: HomeLayout) -> Bool {
+        let start = finding.example.start
+        let fromTheWell = start.chosen?.name == HomeChains.stop || start.restingOn == HomeChains.emptyWell
+        let met = finding.example.hazard?.control.name
+        return !emergencyIsAboveTheWell(layout) && fromTheWell && (met == HomeChains.again || met == HomeChains.speak)
+    }
+
+    /// Fails if any layout's phrase grid has more columns than
+    /// `HomeLayout.mostColumns`, on which the fewest phrases a category
+    /// keeps rests (`LibraryRules.fewestPhrases`): a wider grid would leave
+    /// empty cells in a category with four.
+    @Test func noGridIsWiderThanTheMostColumns() {
+        var faults: [String] = []
+        for (layout, _, context) in Self.everyLayout where layout.grid.columns > HomeLayout.mostColumns {
+            faults.append("\(layout.grid.columns) columns (\(context))")
+        }
+        let count = faults.count
+        #expect(count == 0, "first: \(faults.first ?? "")")
     }
 
     /// Window widths for chain scoring: every 16pt from 320 to 1432, and

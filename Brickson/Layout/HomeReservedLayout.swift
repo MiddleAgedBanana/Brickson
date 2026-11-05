@@ -466,7 +466,7 @@ nonisolated struct HomeReservedLayout {
             append(count, start: frame.minX, width: left)
             append(count, start: vertical.maxX, width: right)
         } else {
-            let preferred = hasDivision ? 4 : regular ? 4 : 3
+            let preferred = hasDivision || regular ? HomeLayout.mostColumns : 3
             let fallback = hasDivision ? 2 : regular ? 3 : 2
             let count = frame.width >= CGFloat(preferred) * max(minimum, floor) + CGFloat(preferred - 1) * spacing ? preferred : fallback
             append(count, start: frame.minX, width: frame.width)

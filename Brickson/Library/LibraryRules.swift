@@ -52,6 +52,32 @@ nonisolated enum LibraryRules {
     static let mostEverydayCategories = HomeLayout.categoryCapacity
     static let fewestEverydayCategories = 3
 
+    /// The fewest phrases a category holds for Home to show it: as many as
+    /// the widest phrase grid has columns, so the grid's top row is always
+    /// full and no empty cell borders the controls above it, where a
+    /// resting look would meet them (docs/DECISIONS.md, "Four phrases in
+    /// every category"). Every phrase counts, words or not: each takes a
+    /// cell.
+    static let fewestPhrases = HomeLayout.mostColumns
+
+    /// Whether Home offers a category holding `phrases` phrases: an
+    /// everyday one with fewer is dimmed in its place, so it cannot show.
+    static func homeOffers(phrases: Int) -> Bool {
+        phrases >= fewestPhrases
+    }
+
+    /// What a category's screen in the Library says while `category` has
+    /// fewer than `fewestPhrases` phrases, so the family knows why Home
+    /// dims it, or why Emergency shows empty spaces, and how many to add.
+    /// Nil once it has enough.
+    static func shortNote(for category: LibrarySnapshot.Category) -> String? {
+        let missing = fewestPhrases - category.phrases.count
+        guard missing > 0 else { return nil }
+        return category.isEmergency
+            ? String(localized: "Emergency should have at least four phrases, so Home never shows it with empty spaces. Add \(missing) more.")
+            : String(localized: "Home shows “\(category.name)” once it has four phrases. Until then it is dimmed there. Add \(missing) more.")
+    }
+
     /// Names of controls on Home and on the family screens' safety bar. A
     /// category with one of these names would be a second button with the
     /// same name, which Voice Control ("Tap Yes") and VoiceOver cannot tell
@@ -136,6 +162,14 @@ nonisolated enum LibraryEditRejection: Error, Equatable, Sendable {
     case homeHasRoomForFour
     /// The edit would leave Home fewer than three everyday categories.
     case homeNeedsThree
+    /// The edit would take an everyday category from four phrases or more
+    /// to fewer, and Home would dim it.
+    case categoryKeepsFour
+    /// The edit would take Emergency from four phrases or more to fewer.
+    case emergencyKeepsFour
+    /// The edit would leave no everyday category with four phrases, so
+    /// Home would offer none.
+    case homeNeedsAFullCategory
     /// The category or phrase is no longer in the library.
     case notFound
     /// Two items in the stored library share an identity, so an edit
@@ -166,6 +200,12 @@ nonisolated enum LibraryEditRejection: Error, Equatable, Sendable {
             String(localized: "Home has room for four categories besides Emergency, and this would make more.")
         case .homeNeedsThree:
             String(localized: "Home needs at least three categories besides Emergency, and this would leave fewer.")
+        case .categoryKeepsFour:
+            String(localized: "Home shows a category while it has at least four phrases, and this would leave one with fewer. Change a phrase's words instead, or add a phrase first.")
+        case .emergencyKeepsFour:
+            String(localized: "Emergency keeps at least four phrases, so Home never shows it with empty spaces. Change a phrase's words instead, or add a phrase first.")
+        case .homeNeedsAFullCategory:
+            String(localized: "Home needs at least one category besides Emergency with four phrases, and this would leave none.")
         case .notFound:
             String(localized: "This was changed or deleted somewhere else. Go back and try again.")
         case .libraryNeedsRepair:

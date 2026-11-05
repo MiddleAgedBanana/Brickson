@@ -47,6 +47,9 @@ struct LibraryRulesTests {
             .libraryNeedsACategory,
             .homeHasRoomForFour,
             .homeNeedsThree,
+            .categoryKeepsFour,
+            .emergencyKeepsFour,
+            .homeNeedsAFullCategory,
             .notFound,
             .libraryNeedsRepair,
         ]

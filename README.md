@@ -60,7 +60,10 @@ The initial implementation includes:
   restores one from the Files app, adding to the phrases or replacing
   them where nothing the person wrote would be lost. Every delete,
   move and restore asks on a screen of its own first, with the way back
-  where the row that asked was.
+  where the row that asked was. An everyday category shows on Home once
+  it has four phrases, so its row of phrases has no gaps; until then it
+  is dimmed there, and its screen says how many more it needs.
+  Emergency is never dimmed.
 - Speech through Apple's built-in speech system, with Personal Voice
   selection when permission and availability allow it.
 - Local phrase storage with SwiftData, without CloudKit sync.

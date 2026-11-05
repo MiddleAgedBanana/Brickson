@@ -37,6 +37,9 @@
     "A category in this backup has “%@” in its name, which is too wide for Home's category buttons." : {
 
     },
+    "A category with fewer than four phrases can't be chosen until it has four." : {
+
+    },
     "A partner can point to phrases on the screen for the person to choose with a look, a blink or a nod, then tap the one chosen." : {
 
     },
@@ -289,7 +292,13 @@
     "Emergency is always one step away on Home, so it can't be renamed, moved or deleted. You can change its phrases." : {
 
     },
+    "Emergency keeps at least four phrases, so Home never shows it with empty spaces. Change a phrase's words instead, or add a phrase first." : {
+
+    },
     "Emergency needs at least one phrase. Change this phrase's words instead." : {
+
+    },
+    "Emergency should have at least four phrases, so Home never shows it with empty spaces. Add %lld more." : {
 
     },
     "Enhanced" : {
@@ -409,13 +418,22 @@
     "Home has room for four categories besides Emergency." : {
 
     },
+    "Home needs at least one category besides Emergency with four phrases, and this would leave none." : {
+
+    },
     "Home needs at least three categories besides Emergency, and this would leave fewer." : {
+
+    },
+    "Home shows a category while it has at least four phrases, and this would leave one with fewer. Change a phrase's words instead, or add a phrase first." : {
 
     },
     "Home shows every category." : {
 
     },
     "Home shows one category's phrases:" : {
+
+    },
+    "Home shows “%@” once it has four phrases. Until then it is dimmed there. Add %lld more." : {
 
     },
     "Home's buttons take the size the answers need, as large as this screen has room for, and are largest until something is chosen. The new size shows when Settings closes." : {
@@ -795,6 +813,9 @@
     },
     "Share Accessibility Settings" : {
 
+    },
+    "Shown once it has four phrases. Phrases are added in Settings." : {
+      "comment" : "VoiceOver hint on a dimmed category button on Home, because the category has fewer than four phrases."
     },
     "Siri Pause Time, on the same screen, gives more time to finish speaking." : {
 

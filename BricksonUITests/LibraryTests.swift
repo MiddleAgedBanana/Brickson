@@ -132,8 +132,11 @@ final class LibraryTests: XCTestCase {
 
     /// Fails if Home's room for three or four everyday categories is not
     /// kept (docs/DECISIONS.md, "Three or four everyday categories"), if a
-    /// name with a word too wide for Home's category buttons is saved, or if
-    /// a category added, given a picture and renamed does not reach Home.
+    /// name with a word too wide for Home's category buttons is saved, if
+    /// a category added, given a picture and renamed does not reach Home,
+    /// or if, with no phrases yet, it is not dimmed there and its screen
+    /// does not say how many it needs (docs/DECISIONS.md, "Four phrases in
+    /// every category").
     @MainActor
     func testCategoriesStayBetweenThreeAndFour() throws {
         let app = launchedApp(shortTimeouts: false)
@@ -174,6 +177,8 @@ final class LibraryTests: XCTestCase {
         app.buttons["librarySave"].tap()
         XCTAssertTrue(app.navigationBars["Outings"].waitForExistence(timeout: 10), "a saved category did not open its screen")
         waitForLine("libraryResult", saying: "Added “Outings”.", in: app)
+        waitForLine("libraryShortNote", saying: "Home shows “Outings” once it has four phrases.", in: app)
+        waitForLine("libraryShortNote", saying: "Add 4 more.", in: app)
 
         // A picture.
         app.buttons["libraryChangePicture"].tap()
@@ -194,6 +199,7 @@ final class LibraryTests: XCTestCase {
 
         closeSettings(in: app)
         XCTAssertTrue(app.buttons["Trips"].waitForExistence(timeout: 10), "Home has no button for the new category")
+        XCTAssertFalse(app.buttons["Trips"].isEnabled, "Home offers a category with no phrases")
         XCTAssertFalse(app.buttons["Feelings"].exists, "Home still has the deleted category")
     }
 

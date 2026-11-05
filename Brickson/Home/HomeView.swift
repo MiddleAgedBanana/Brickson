@@ -96,8 +96,13 @@ struct HomeView: View {
         let board = homeRequest.restBoard.flatMap { chosen in
             ordered.first { $0.uuid == chosen.category && !$0.isEmergency }
         }
-        let selected = CategorySelection.resolve(ordered, selectedID: selectedCategoryID, restBoard: board?.uuid)
         let counts = CategorySelection.phraseCounts(phrases)
+        let selected = CategorySelection.resolve(
+            ordered,
+            selectedID: selectedCategoryID,
+            restBoard: board?.uuid,
+            phraseCounts: counts
+        )
         let largestCategoryCount = ordered
             .filter { board == nil || $0 === board || $0 === emergency }
             .map { counts[$0.uuid] ?? 0 }.max() ?? 0
@@ -146,6 +151,7 @@ struct HomeView: View {
                     categories: CategorySelection.shownInCategoryRow(ordered),
                     selectedID: isTyping ? nil : selected?.uuid,
                     restBoard: board?.uuid,
+                    phraseCounts: counts,
                     typingCells: isTyping ? layout.typingCells : nil,
                     select: { selectedCategoryID = $0 },
                     showsSettings: $showsSettings
@@ -867,6 +873,9 @@ private struct CategoriesAndSettings: View {
     /// The rest board's category: every other one is dimmed in its place.
     /// Nil where Home shows every category.
     let restBoard: UUID?
+    /// How many phrases each category holds: one with too few is dimmed
+    /// in its place (`CategorySelection.isDimmed`).
+    let phraseCounts: [UUID: Int]
     /// While typing, the cells that show Clear and Put Back; the other
     /// categories are dimmed then. Nil while the phrases show.
     let typingCells: HomeLayout.TypingCells?
@@ -932,7 +941,9 @@ private struct CategoriesAndSettings: View {
     /// choosing one would leave typing and turn the dimmed phrases under a
     /// look resting there into phrases that speak (docs/DECISIONS.md,
     /// "Typing on Home"). On the rest board, every category but the
-    /// board's is dimmed in its place, so nothing moves (invariant 8).
+    /// board's is dimmed in its place, and elsewhere a category with too
+    /// few phrases (docs/DECISIONS.md, "Four phrases in every category"),
+    /// so nothing moves (invariant 8).
     @ViewBuilder
     private func cell(_ index: Int) -> some View {
         Group {
@@ -953,6 +964,7 @@ private struct CategoriesAndSettings: View {
                     spacing: layout.spacing,
                     selectedID: selectedID,
                     restBoard: restBoard,
+                    phraseCounts: phraseCounts,
                     select: select
                 )
                 .disabled(typingCells != nil)
@@ -1025,13 +1037,16 @@ private struct StopWell: View {
 /// selected, which the ring never reaches, so its words keep their place
 /// whether it is selected or not (`HomeLayout.selectableSideInset`). An
 /// empty cell shows nothing and is hidden from assistive technologies. On
-/// the rest board, a category other than the board's is dimmed.
+/// the rest board, a category other than the board's is dimmed, and
+/// elsewhere one with too few phrases, which says why to VoiceOver
+/// (`CategorySelection.isDimmed`).
 private struct CategoryCell: View {
     let categories: ArraySlice<PhraseCategory>
     let buttonHeight: CGFloat
     let spacing: CGFloat
     let selectedID: UUID?
     let restBoard: UUID?
+    let phraseCounts: [UUID: Int]
     let select: (UUID) -> Void
 
     var body: some View {
@@ -1068,7 +1083,15 @@ private struct CategoryCell: View {
             isSelected: isSelected,
             sideInset: HomeLayout.selectableSideInset
         ))
-        .disabled(restBoard.map { $0 != category.uuid } ?? false)
+        .disabled(CategorySelection.isDimmed(category, restBoard: restBoard, phraseCounts: phraseCounts))
+        .accessibilityHint(
+            restBoard == nil && !CategorySelection.isOffered(category, phraseCounts: phraseCounts)
+                ? Text(
+                    "Shown once it has four phrases. Phrases are added in Settings.",
+                    comment: "VoiceOver hint on a dimmed category button on Home, because the category has fewer than four phrases."
+                )
+                : Text(verbatim: "")
+        )
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }

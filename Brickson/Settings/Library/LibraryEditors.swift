@@ -85,7 +85,8 @@ private struct LibraryPhraseEditorContent: View {
 
     private var canSave: Bool { words.canSave }
 
-    /// Why Delete Phrase is dimmed (Emergency's last phrase), or nil.
+    /// Why Delete Phrase is dimmed (Emergency's last phrase with words,
+    /// or a category's fourth phrase), or nil.
     private var deleteRefusal: String? {
         phraseID.flatMap { library.refusal(of: .deletePhrase($0)) }
     }

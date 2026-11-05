@@ -399,6 +399,14 @@ nonisolated struct HomeLayout: Equatable, Sendable {
     static let statusSpacing: CGFloat = 4
     /// Everyday categories with a cell of their own (the slot plan's four).
     static let categoryCapacity = 4
+    /// The most columns any phrase grid has: four on regular widths, and
+    /// two lanes of two either side of a fold (`HomeReservedLayout`). A
+    /// category with fewer phrases would leave empty cells in the grid's
+    /// top row, where a resting look meets the controls above, so a
+    /// category holds at least this many before Home offers it
+    /// (`LibraryRules.fewestPhrases`; docs/DECISIONS.md, "Four phrases in
+    /// every category").
+    static let mostColumns = 4
     /// The starter library's largest category, Basics and Needs (eight
     /// phrases each): the grid the controls above it leave room for. A
     /// library with more scrolls at the tiles' floor; one with fewer gets
@@ -840,7 +848,7 @@ nonisolated struct HomeLayout: Equatable, Sendable {
         let tileMinimum: CGFloat
         if isRegular {
             tileMinimum = text.boldText ? Self.regularTile.boldMinimumWidth : Self.regularTile.minimumWidth
-            columns = (width - 3 * arrangementSpacing) / 4 >= tileMinimum ? 4 : 3
+            columns = (width - CGFloat(Self.mostColumns - 1) * arrangementSpacing) / CGFloat(Self.mostColumns) >= tileMinimum ? Self.mostColumns : 3
         } else {
             tileMinimum = text.boldText ? Self.compactTile.boldMinimumWidth : Self.compactTile.minimumWidth
             columns = (width - 2 * arrangementSpacing) / 3 >= tileMinimum ? 3 : 2

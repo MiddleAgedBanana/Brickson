@@ -386,6 +386,58 @@ struct HomeChainsTests {
 }
 
 extension HomeChainsTests {
+    /// A category Home dims for too few phrases (docs/DECISIONS.md, "Four
+    /// phrases in every category"). Fails if a state shows it, if choosing
+    /// it does anything in any state, if Home starts on it rather than the
+    /// first category it offers, or if the rest board's rule stops winning
+    /// on the rest board, where the board's category shows whatever it
+    /// holds.
+    @Test func aDimmedCategoryDoesNothingAndNeverShows() {
+        var frames = Self.frames
+        frames.dimmed = [0]
+        let map = HomeChains.map(frames)
+        let names = ["Basics", "Needs"]
+        #expect(map.states.count == 2 * 2 * 2)
+        #expect(!map.states.keys.contains { $0.contains("Basics showing") })
+        #expect(map.states.values.allSatisfy { controls in controls.first { $0.name == "Basics" }?.effect == .nothing })
+        #expect(HomeChains.atRest(categoryCount: 2, dimmed: [0]).showing == 1)
+        #expect(HomeChains.atRest(categoryCount: 2, dimmed: [0, 1]).showing == nil)
+        #expect(HomeChains.atRest(categoryCount: 2, restBoard: 0, dimmed: [0]).showing == 0)
+
+        frames.restBoard = 0
+        let board = HomeChains.map(frames)
+        let showingBoard = HomeChains.name(of: HomeChains.State(showing: 0), categories: names)
+        #expect(board.states[showingBoard] != nil)
+        #expect(board.states[showingBoard]?.first { $0.name == "Needs" }?.effect == .nothing)
+    }
+
+    /// A category with fewer phrases than the grid has columns. Fails if
+    /// it shows more tiles than it holds, if the top row's cells it leaves
+    /// empty stop being places a look rests on, if a lower row's are
+    /// counted, or if any other category loses a tile.
+    @Test func aShortCategoryShowsOnlyItsTilesAndLeavesItsTopRowEmptyCells() {
+        var frames = Self.frames
+        frames.tiles = [
+            CGRect(x: 0, y: 148, width: 40, height: 40), CGRect(x: 48, y: 148, width: 40, height: 40),
+            CGRect(x: 96, y: 148, width: 40, height: 40), CGRect(x: 0, y: 196, width: 40, height: 40),
+        ]
+        frames.phraseCounts = [nil: 1, 1: 3]
+        let map = HomeChains.map(frames)
+        let names = ["Basics", "Needs"]
+        func tiles(_ state: HomeChains.State) -> Int {
+            map.states[HomeChains.name(of: state, categories: names)]?.filter { $0.name == HomeChains.phraseTile }.count ?? -1
+        }
+        func empty(_ state: HomeChains.State) -> [CGRect] {
+            (map.resting[HomeChains.name(of: state, categories: names)] ?? []).filter { $0.name == HomeChains.emptyCell }.map(\.frame)
+        }
+        #expect(tiles(HomeChains.State(showing: nil)) == 1)
+        #expect(empty(HomeChains.State(showing: nil)) == [frames.tiles[1], frames.tiles[2]])
+        #expect(tiles(HomeChains.State(showing: 1)) == 3)
+        #expect(empty(HomeChains.State(showing: 1)).isEmpty)
+        #expect(tiles(HomeChains.State(showing: 0)) == 4)
+        #expect(empty(HomeChains.State(showing: 0)).isEmpty)
+    }
+
     /// Fails if Home's frames read off the running app lose a control, keep
     /// a phrase tile out, or invent Stop's well when the screen has no Stop:
     /// the UI tests build Home's map this way (`SettingsOnHomeTests`).

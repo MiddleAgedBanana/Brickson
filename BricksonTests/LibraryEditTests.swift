@@ -570,6 +570,122 @@ struct LibraryEditTests {
             try makePlan(.replace(libraryWith(everyday: 2)), in: six)
         }
     }
+
+    // MARK: Four phrases in every category
+
+    /// A category numbered `number` holding `count` phrases; Emergency's
+    /// where `isEmergency`. Ids 5000 + number × 100, its phrases' after it.
+    private func category(_ number: Int, phrases count: Int, isEmergency: Bool = false) -> LibrarySnapshot.Category {
+        LibrarySnapshot.Category(
+            id: F.id(5000 + number * 100),
+            name: isEmergency ? "Emergency" : "Full \(number)",
+            symbolName: "star.fill",
+            isEmergency: isEmergency,
+            phrases: (0..<count).map { .init(id: F.id(5001 + number * 100 + $0), text: "Phrase \(number)-\($0).") }
+        )
+    }
+
+    private func phraseID(_ number: Int, _ index: Int) -> UUID {
+        F.id(5001 + number * 100 + index)
+    }
+
+    /// Emergency with `emergency` phrases, then everyday categories 1, 2…
+    /// with `everyday` phrases each.
+    private func library(emergency: Int, everyday: [Int]) -> LibrarySnapshot {
+        LibrarySnapshot(categories: [category(0, phrases: emergency, isEmergency: true)]
+            + everyday.enumerated().map { category($0.offset + 1, phrases: $0.element) })
+    }
+
+    /// The bound is the widest grid's columns (docs/DECISIONS.md, "Four
+    /// phrases in every category"). Fails if the two drift apart.
+    @Test func theFloorIsTheWidestGridsColumns() {
+        #expect(LibraryRules.fewestPhrases == HomeLayout.mostColumns)
+        #expect(LibraryRules.homeOffers(phrases: HomeLayout.mostColumns))
+        #expect(!LibraryRules.homeOffers(phrases: HomeLayout.mostColumns - 1))
+    }
+
+    /// An everyday category with four phrases fills the grid's top row;
+    /// with fewer, Home dims it. Fails if a delete, a move to another
+    /// category or a replace can take one from four to three, or if a
+    /// category with more than four cannot lose one.
+    @Test func anEverydayCategoryWithFourKeepsFour() throws {
+        let four = library(emergency: 6, everyday: [4, 6, 6])
+        #expect(throws: LibraryEditRejection.categoryKeepsFour) {
+            try makePlan(.deletePhrase(phraseID(1, 0)), in: four)
+        }
+        #expect(throws: LibraryEditRejection.categoryKeepsFour) {
+            try makePlan(.movePhrase(phraseID(1, 3), category: F.id(5200), before: nil), in: four)
+        }
+        #expect(throws: LibraryEditRejection.categoryKeepsFour) {
+            try makePlan(.replace(library(emergency: 6, everyday: [3, 6, 6])), in: four)
+        }
+        // Within the category, a move keeps its count.
+        _ = try makePlan(.movePhrase(phraseID(1, 3), category: F.id(5100), before: phraseID(1, 0)), in: four)
+        let five = library(emergency: 6, everyday: [5, 6, 6])
+        let deleted = try makePlan(.deletePhrase(phraseID(1, 0)), in: five)
+        #expect(deleted.after.categories[1].phrases.count == 4)
+        let moved = try makePlan(.movePhrase(phraseID(1, 4), category: F.id(5200), before: nil), in: five)
+        #expect(moved.after.categories[2].phrases.count == 7)
+    }
+
+    /// Emergency is never dimmed (invariant 2), so it keeps four too.
+    /// Fails if a delete, a move out or a replace can take it from four to
+    /// three, or if Emergency with more than four cannot lose one.
+    @Test func emergencyWithFourKeepsFour() throws {
+        let four = library(emergency: 4, everyday: [6, 6, 6])
+        #expect(throws: LibraryEditRejection.emergencyKeepsFour) {
+            try makePlan(.deletePhrase(phraseID(0, 0)), in: four)
+        }
+        #expect(throws: LibraryEditRejection.emergencyKeepsFour) {
+            try makePlan(.movePhrase(phraseID(0, 0), category: F.id(5100), before: nil), in: four)
+        }
+        #expect(throws: LibraryEditRejection.emergencyKeepsFour) {
+            try makePlan(.replace(library(emergency: 2, everyday: [6, 6, 6])), in: four)
+        }
+        let six = library(emergency: 6, everyday: [6, 6, 6])
+        let deleted = try makePlan(.deletePhrase(phraseID(0, 0)), in: six)
+        #expect(deleted.after.categories[0].phrases.count == 5)
+    }
+
+    /// Only crossing the bound is refused. A new category starts with
+    /// none, and one that never reached four, or Emergency already under
+    /// it, can still be edited, so a damaged or hand-made library can be
+    /// brought back. Fails if the rule refuses an edit that does not cross.
+    @Test func aCategoryUnderFourCanStillBeEdited() throws {
+        let short = library(emergency: 2, everyday: [3, 6, 6])
+        let added = try makePlan(.addCategory(name: "Trips", symbolName: "car.fill"), in: short)
+        #expect(added.after.categories.last?.phrases.isEmpty == true)
+        _ = try makePlan(.deletePhrase(phraseID(1, 0)), in: short)
+        _ = try makePlan(.deletePhrase(phraseID(0, 0)), in: short)
+        let grown = try makePlan(.addPhrase(text: "One more.", category: F.id(5100)), in: short)
+        #expect(grown.after.categories[1].phrases.count == 4)
+        // A backup may bring a category with fewer: Home dims it.
+        _ = try makePlan(.merge(LibrarySnapshot(categories: [category(4, phrases: 2)])), in: library(emergency: 6, everyday: [6, 6, 6]))
+        // And a replace may bring one under its own identity, new here.
+        let withNew = LibrarySnapshot(categories: library(emergency: 6, everyday: [6, 6, 6]).categories + [category(4, phrases: 1)])
+        _ = try makePlan(.replace(withNew), in: library(emergency: 6, everyday: [6, 6, 6]))
+    }
+
+    /// Home offers an everyday category only once it has four, so a
+    /// library keeps one that does. Fails if deleting a category or a
+    /// replace can leave none where there was one, or if a library that
+    /// had none cannot be edited.
+    @Test func homeKeepsOneCategoryToOffer() throws {
+        let one = library(emergency: 6, everyday: [4, 2, 0, 1])
+        #expect(throws: LibraryEditRejection.homeNeedsAFullCategory) {
+            try makePlan(.deleteCategory(F.id(5100)), in: one)
+        }
+        #expect(throws: LibraryEditRejection.homeNeedsAFullCategory) {
+            // New identities, as a backup from another library has, so no
+            // category of `one` crosses the bound on its own.
+            try makePlan(.replace(LibrarySnapshot(categories: [
+                category(0, phrases: 6, isEmergency: true), category(6, phrases: 0), category(7, phrases: 2), category(8, phrases: 1),
+            ])), in: one)
+        }
+        _ = try makePlan(.deleteCategory(F.id(5200)), in: one)
+        let none = library(emergency: 6, everyday: [3, 2, 0, 1])
+        _ = try makePlan(.deleteCategory(F.id(5100)), in: none)
+    }
 }
 
 /// Bringing a backup into a library: `LibraryImport` through

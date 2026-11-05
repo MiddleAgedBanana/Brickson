@@ -1296,8 +1296,7 @@ step showed.
 ### B2. Editing with each input method
 
 *The row on editing with each input method; docs/DECISIONS.md, "The
-Library's question screens" and "Typing on Home", *Open: a category with
-fewer phrases than the grid has columns*.*
+Library's question screens" and "Four phrases in every category".*
 
 1. **Owner:** with Voice Control, then Switch Control, then Full
    Keyboard Access, then AssistiveTouch Dwell with Snap to Item: add a
@@ -1315,12 +1314,15 @@ fewer phrases than the grid has columns*.*
    resting just under Edit Phrase's Delete Phrase row and under the
    Library's Restore from a Backup: *passes* when only their questions
    open, never a choice in them.
-3. **Owner:** make a category with one phrase. On Home, with Dwell and
-   Snap to Item, show it, rest the look on the empty cells beside that
-   phrase, first while browsing, then after Type. Record which control
-   Snap to Item selects and whether anything activates. This decides how
-   the open finding about a short category binds; the record goes to F2's
-   owner question.
+3. **Owner:** make a category with one phrase; its screen says Home
+   shows it once it has four, and to add 3 more. On Home its button is
+   dimmed. With Dwell and Snap to Item, rest the look on that dimmed
+   button, first while browsing, then after Type. Record which control
+   Snap to Item outlines and whether anything activates. *Passes* when
+   nothing activates. If Snap to Item skips the dimmed button and selects
+   a neighbour, record which: Home's dimming here and while typing
+   assumes it stops on a dimmed control (docs/DECISIONS.md, "Four phrases
+   in every category"), and the record goes to F2's owner question.
 
 ## Coverage
 
