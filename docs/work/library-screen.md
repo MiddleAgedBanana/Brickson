@@ -2,7 +2,7 @@
 
 *Roadmap: R0 item 6, the rest of it after the library core (PR #14).
 Owner: the thread "Let families edit and back up phrases" (2026-11-05).
-Status: intent.*
+Status: spec.*
 
 ## Intent
 
@@ -98,3 +98,214 @@ Status: intent.*
      version* come first in the emergency repair record's list, but the
      probe can crash the whole unit run and the store fixture needs a
      store file made on a Mac, so each stays a pull request of its own.
+
+## Spec
+
+### Where it lives
+
+- **The way in.** Family Setup gets one row, **Phrases and Categories**
+  (`library`, `SettingsRoute.library`), the first of its rows: after Set
+  Up Step by Step's lead-in, the check-in card and the setup warning,
+  before Voice Settings. It only opens the Library. Every row after it
+  moves down one row, and the chain sweeps that list Family Setup's rows
+  are updated with it.
+- **The routes** are `SettingsRoute` cases, so the idle reset
+  (`path = []`) and the UI tests treat them like every other screen:
+  `library`, `libraryCategory(UUID)`, `newPhrase(category: UUID)`,
+  `phrase(UUID)`, `newCategory`, `categoryName(UUID)`,
+  `categoryPicture(UUID)`, `movePhrase(UUID)`, `moveCategory(UUID)`,
+  `deletePhrase(UUID)`, `deleteCategory(UUID)` and `importBackup`.
+  Screens hold identities and a `LibrarySnapshot`, never a model object
+  (docs/DECISIONS.md, "Every save is explicit"), read with
+  `LibraryEditor.read` when they appear and replaced by what
+  `LibraryEditor.apply` returns.
+- **Every screen** is a `SettingsScreen` under the safety bar, so Back to
+  Talking and the sound line stay where they are. Rows are Settings'
+  64-point rows, white on `Palette.controlFill`; Save, the one action
+  that commits typing, is white on `Palette.phraseFill`, as
+  docs/DESIGN.md's colour table already has it. A person's words
+  (category names, phrases) are shown with `Text(verbatim:)`, with a new
+  verbatim title for `SettingsScreen`.
+
+### The screens and their states
+
+Every control keeps its frame in every state of its screen: a result or
+failure appears as passive words in a line kept for it, with every
+version of the words laid out hidden (`SettingsReservedParagraph`), and
+a control that cannot act is dimmed in place, never removed.
+
+1. **Phrases and Categories** (the Library). Top to bottom: a line kept
+   for results ("Deleted Feelings and its 6 phrases."); where the store is
+   only in memory or unreadable, Home's own warning words
+   (`PhraseLibraryIssue`, "Phrases can't be saved right now…"); the
+   Emergency row first ("Emergency, 4 phrases"), then each everyday
+   category in Home's order, each opening its category; **Add a
+   Category**, dimmed when there are four everyday categories, with the
+   reason beside it ("Home has room for four categories. Rename one, or
+   delete one first."); then the backups: a heading, the policy's words
+   ("A backup is a file with your categories and phrases. It isn't
+   encrypted, so anyone who has it can read your phrases. Keep it
+   somewhere private."), **Export a Backup** (the system share sheet,
+   `ShareLink`) and **Restore from a Backup** (the system file picker,
+   `fileImporter`). Every control here only opens something.
+2. **A category** (titled with its name). **Add a Phrase**; then a row
+   per phrase, in Home's order, opening its editor; then **Rename**,
+   **Change Picture**, **Move Category** and **Delete Category**. For
+   Emergency the four category rows are replaced by passive words in
+   their place ("Emergency is always one step away on Home, so it can't
+   be renamed, moved or deleted. You can change its phrases."). Every
+   control here only opens something.
+3. **A phrase's editor** (Edit Phrase, or New Phrase from Add a Phrase).
+   The text field at the top (`typingFieldTraits()`, Writing Tools off),
+   then **Save**, the line kept for results and refusals, then **Move
+   Phrase** and **Delete Phrase** (not on New Phrase, whose rows are
+   kept empty so nothing moves when the phrase exists). Save is dimmed
+   until the words differ from what is saved, so a look resting on it
+   meets nothing to do. Return saves, as it speaks on Home (a typed line
+   break never reaches the phrase). New Phrase empties its field after a
+   save and says "Added "…" to Needs.", ready for the next; Edit Phrase
+   stays, with Save dimmed again.
+4. **A category's name** (Rename, or New Category from Add a Category):
+   the field and Save as on the phrase editor. New Category opens the new
+   category's screen in place of itself once saved, so its next step,
+   Add a Phrase, is one activation away.
+5. **The question screens.** Delete Phrase, Delete Category, Move Phrase,
+   Move Category, Change Picture and a chosen backup each open a screen
+   built the same way (`LibraryQuestionPlace`):
+   - **The way back** (**Keep Phrase**, **Keep Category**, **Leave It
+     Here**, **Keep This Picture**, **Cancel**) takes the frame, in the
+     window, of the row that opened the screen, so a repeated activation
+     meets it and goes back: Keep takes the asking control's place
+     (invariant 3), and a held look goes back and forth between two
+     controls that only open screens.
+   - **The words** sit beside it, above where there is room and below
+     where there is not, so a look that rests on them while reading is
+     nearest the way back.
+   - **The choices** that change something (**Delete for Good**, the
+     places in a move, the pictures, **Add to My Phrases** and **Replace
+     My Phrases**) start at least one row's height below both, so none is
+     nearest the spot just activated, nor the words. Where they do not
+     fit on screen they are scrolled to, which costs a dwell user several
+     activations: on these screens that cost protects the person.
+   The way back is the standard Back button too, never hidden.
+6. **Delete.** The question names what goes and how much ("Delete
+   "Hello."? It will be gone from Brickson."; "Delete Needs and its 6
+   phrases?"), and that backups keep their copy. Delete for Good deletes
+   in one save and returns to the screen above the deleted item (the
+   category, or the Library), whose controls only open screens; the
+   result shows in its line ("Deleted "Hello."").
+7. **Move.** The words name what moves; then each other item as **Before
+   "Thank you."**, the item itself as **Leave "Hello." Here**, and **At
+   the End** (`LibraryEdit.movePhrase`/`moveCategory`, absolute places).
+   Choosing one moves it in one save and the screen stays, the list
+   redrawn in the new order in the same frames: the moved item's own row
+   is where it now is, so a repeat on the spot meets either its Leave
+   row or the place it already has, and changes nothing
+   (docs/DECISIONS.md, "Editing the library": moves are absolute). Moving
+   a phrase to another category is left for later: today it means
+   deleting and adding it again.
+8. **Change Picture.** The 32 pictures of `LibraryRules.symbolChoices`
+   in a grid of 64-point buttons, each named for VoiceOver and Voice
+   Control in words; the chosen one marked with a check and its name.
+   Choosing saves at once and stays; choosing the chosen one again
+   changes nothing.
+9. **Restore from a Backup.** The system file picker. The file is read
+   through its security-scoped address, decoded by `BackupCodec` and
+   checked, without touching the library. Any refusal shows on the
+   Library's result line, ending "Nothing was changed.". A readable
+   backup opens the question screen (5): what the backup holds, what
+   Add would bring in, and whether Replace can run. **Add to My Phrases**
+   (`LibraryImport.merge`) only adds; **Replace My Phrases**
+   (`LibraryImport.replace`) is dimmed, with the reason, where it would
+   remove the person's own words ("Replacing would remove phrases that
+   aren't in the backup…"). After either, the words say what happened
+   ("Added 12 phrases and 1 category. Nothing was removed or moved.");
+   the choices dim in place and Cancel reads Done.
+10. **Export a Backup.** The system share sheet with one file,
+    "Brickson Phrases 2026-11-05.json" (the date of the export in the
+    name, never in the file: docs/DECISIONS.md, "Backup file format").
+    Where the library cannot be encoded (over 8 MB), Export is dimmed
+    with the reason.
+
+### Rules the library core gains
+
+- **Three or four everyday categories.** `LibraryEdit.plan` refuses an
+  add, merge or replace that would take a library from four or fewer
+  everyday categories to more than four
+  (`LibraryEditRejection.homeHasRoomForFour`), and a delete or replace
+  that would take it from three or more to fewer than three
+  (`.homeNeedsThree`). A library already outside those bounds (a damaged
+  or hand-made store) can still be edited in the direction that brings
+  it back. Import keeps every word, so it is refused whole, never
+  trimmed.
+- **Every word fits the narrowest tile.** A phrase or name with a word
+  too wide for Home's narrowest phrase tile or category button, at the
+  default text size with Bold Text on, is refused by the editors
+  (`HomeWordRoom`, measured with `LabelFont` on the 320-point window the
+  engine plans for), and a backup holding one is refused whole, naming
+  the word (docs/HANDOFF.md, *Known gaps*: "those must keep every word
+  within the narrowest tile").
+- **A phrase or category named like a Home control** stays as the
+  editor makes it today: category names are refused (`LibraryRules`),
+  phrases are allowed, because a phrase tile is named by what it says
+  and Home's controls keep their own names (docs/DECISIONS.md, "Home's
+  scan order and names").
+
+### Input methods
+
+- **Touch and Voice Control** (the family): every control is a standard
+  button with its words as its name; Voice Control's "Show names" reads
+  them. Pictures are named in words.
+- **Switch Control, dwell, head and gaze** (the person, by a stray
+  activation): every screen reached from Family Setup's row only opens
+  screens until a question screen, where the way back is under the
+  repeat. Scored by the chain engine on the frames the UI tests measure
+  (`LibraryChains`), from every start on every Library screen, under both
+  nearest rules and both pointer models; a chain that ends on a choice
+  that deletes, moves or saves fails the test.
+- **The keyboard.** Settings keeps the whole window whatever the keyboard
+  covers, so nothing moves when it appears; the field and Save are the
+  first two controls under the navigation bar, above the tallest keyboard
+  `KeyboardAllowance` keeps room for on Home, and Return saves.
+  Settings' sound line, at the foot, can be under the keyboard while a
+  family member types; nothing in Settings speaks then except a voice
+  sample, which typing cannot start (an accepted cost, recorded).
+
+### Colours
+
+None new. Delete for Good is a 64-point row on `Palette.controlFill`,
+told apart by its words, its trash icon and its place: docs/DESIGN.md
+gave it the emergency fill, but one meaning per colour (*The quality
+bar*, Q16) keeps red for Emergency, and Settings' rows are white on
+`controlFill` or `phraseFill` (docs/DECISIONS.md, "Settings is a cover
+with a fixed safety bar"). docs/DESIGN.md's table is corrected.
+
+### Privacy policy
+
+No sentence becomes untrue, and several become true: "the phrases and
+categories you use, add or change", "delete a phrase or category in
+Brickson, and it is gone from the app", and the backups you export,
+through the share sheet to "the Files app, iCloud Drive, AirDrop, email
+or another app". The export writes no copy that stays in Brickson's
+storage (a `DataRepresentation`, not a file left behind). Import keeps
+no copy of the chosen file. The Effective date stays.
+
+### Concerns
+
+1. *Fewer than three everyday categories:* the owner's rule, asked; kept
+   meanwhile (Intent, question 1).
+2. *A fifth everyday category:* the layout engine's thread decides
+   Home's place for it; refused until then.
+3. *A chain through the system file picker or share sheet* leaves the
+   app and is not scored: what lies past it is the system's. Restore and
+   Export are two screens below Family Setup, and the file picker and
+   share sheet each need deliberate choices before anything happens.
+4. *The idle reset* returns Settings to its root after 90 seconds
+   without activity. Typing in a field counts as activity, and a field
+   with unsaved words, the file picker, the share sheet and a chosen
+   backup waiting for its answer hold the reset
+   (`holdsSettingsIdleReset`, as docs/DECISIONS.md, "Settings resets when
+   idle and never closes", planned for the Library).
+5. *System components* (the share sheet, the file picker, the text
+   field's own look) are not measured yet (*The quality bar*, Q17);
+   their captures go in the UI tests' attachments for that check.
