@@ -5,10 +5,10 @@ import SwiftUI
 /// Save, a line kept for what Save did, then Move Phrase and Delete Phrase
 /// (Edit Phrase only).
 ///
-/// Save is dimmed until the words differ from what is saved, so a look
-/// resting on it meets nothing to do, and Return saves, as it speaks on
-/// Home: the field's words go through `MessageComposer`, so a typed line
-/// break never reaches the phrase. New Phrase empties its field after a
+/// Save is dimmed until the words differ from what the field first showed
+/// (`LibraryEditorWords`), so a look resting on it meets nothing to do, and
+/// Return saves, as it speaks on Home: the field's words go through
+/// `MessageComposer`, so a typed line break never reaches the phrase. New Phrase empties its field after a
 /// save, ready for the next. Words not yet saved hold Settings' idle
 /// reset, and typing counts as activity.
 ///
@@ -43,11 +43,8 @@ private struct LibraryPhraseEditorContent: View {
     @Environment(LibraryModel.self) private var library
     @Environment(SettingsActivity.self) private var activity: SettingsActivity?
     @Environment(\.modelContext) private var modelContext
-    @State private var composer = MessageComposer()
+    @State private var words = LibraryEditorWords()
     @State private var text = ""
-    /// The words as saved, trimmed as the library keeps them; empty for a
-    /// new phrase.
-    @State private var saved = ""
     @State private var result: String?
     @State private var hasLoaded = false
     @FocusState private var isFocused: Bool
@@ -86,10 +83,7 @@ private struct LibraryPhraseEditorContent: View {
         }
     }
 
-    /// Words that differ from what is saved, and are not blank.
-    private var canSave: Bool {
-        !LibraryText.isBlank(composer.text) && LibraryText.trimmed(composer.text) != saved
-    }
+    private var canSave: Bool { words.canSave }
 
     /// Why Delete Phrase is dimmed (Emergency's last phrase), or nil.
     private var deleteRefusal: String? {
@@ -109,14 +103,13 @@ private struct LibraryPhraseEditorContent: View {
         guard !hasLoaded else { return }
         hasLoaded = true
         guard let phraseID, let found = library.phrase(phraseID) else { return }
-        composer = MessageComposer(restoring: found.phrase.text)
-        text = composer.text
-        saved = LibraryText.trimmed(found.phrase.text)
+        words = LibraryEditorWords(restoring: found.phrase.text)
+        text = words.composer.text
     }
 
     private func edit(_ proposed: String) {
         activity?.recordActivity()
-        let outcome = composer.apply(.propose(proposed))
+        let outcome = words.composer.apply(.propose(proposed))
         if outcome.draftChanged {
             result = nil
         }
@@ -124,7 +117,7 @@ private struct LibraryPhraseEditorContent: View {
             result = String(localized: "That's as long as a phrase can be.")
         }
         if outcome.fieldNeedsUpdate {
-            text = composer.text
+            text = words.composer.text
         }
         if outcome.textToSpeak != nil {
             // Return saves.
@@ -135,34 +128,32 @@ private struct LibraryPhraseEditorContent: View {
     private func save() {
         activity?.recordActivity()
         guard canSave else { return }
-        let words = composer.text
+        let typed = words.composer.text
         let change: LibraryEdit
         if let phraseID {
-            change = .editPhrase(phraseID, text: words)
+            change = .editPhrase(phraseID, text: typed)
         } else if let categoryID {
-            change = .addPhrase(text: words, category: categoryID)
+            change = .addPhrase(text: typed, category: categoryID)
         } else {
             return
         }
         switch library.perform(change, in: modelContext.container) {
         case .saved:
-            let stored = LibraryText.trimmed(words)
+            let stored = LibraryText.trimmed(typed)
             let isWide = !HomeWordRoom.wordsTooWide(inPhrase: stored).isEmpty
             if phraseID == nil {
                 let name = categoryID.flatMap { library.category($0)?.name } ?? ""
                 result = isWide
                     ? String(localized: "Added “\(stored)” to \(name). A word in it is wider than Home's narrowest phrase buttons, so on the narrowest screens it can wrap onto a second line.")
                     : String(localized: "Added “\(stored)” to \(name).")
-                composer = MessageComposer()
+                words = LibraryEditorWords()
                 text = ""
-                saved = ""
             } else {
                 result = isWide
                     ? String(localized: "Saved. A word in it is wider than Home's narrowest phrase buttons, so on the narrowest screens it can wrap onto a second line.")
                     : String(localized: "Saved.")
-                composer = MessageComposer(restoring: stored)
-                text = composer.text
-                saved = stored
+                words = LibraryEditorWords(restoring: stored)
+                text = words.composer.text
             }
         case .refused(let reason):
             result = reason
@@ -204,9 +195,8 @@ private struct LibraryNameEditorContent: View {
     @Environment(LibraryModel.self) private var library
     @Environment(SettingsActivity.self) private var activity: SettingsActivity?
     @Environment(\.modelContext) private var modelContext
-    @State private var composer = MessageComposer()
+    @State private var words = LibraryEditorWords()
     @State private var text = ""
-    @State private var saved = ""
     @State private var result: String?
     @State private var hasLoaded = false
     @FocusState private var isFocused: Bool
@@ -235,9 +225,7 @@ private struct LibraryNameEditorContent: View {
         LibraryResultLine(text: result, alternatives: resultLines, identifier: "libraryEditorResult")
     }
 
-    private var canSave: Bool {
-        !LibraryText.isBlank(composer.text) && LibraryText.trimmed(composer.text) != saved
-    }
+    private var canSave: Bool { words.canSave }
 
     private var resultLines: [String] {
         [String(localized: "Saved."), String(localized: "That's as long as a name can be.")]
@@ -249,14 +237,13 @@ private struct LibraryNameEditorContent: View {
         guard !hasLoaded else { return }
         hasLoaded = true
         guard let categoryID, let category = library.category(categoryID) else { return }
-        composer = MessageComposer(restoring: category.name)
-        text = composer.text
-        saved = LibraryText.trimmed(category.name)
+        words = LibraryEditorWords(restoring: category.name)
+        text = words.composer.text
     }
 
     private func edit(_ proposed: String) {
         activity?.recordActivity()
-        let outcome = composer.apply(.propose(proposed))
+        let outcome = words.composer.apply(.propose(proposed))
         if outcome.draftChanged {
             result = nil
         }
@@ -264,7 +251,7 @@ private struct LibraryNameEditorContent: View {
             result = String(localized: "That's as long as a name can be.")
         }
         if outcome.fieldNeedsUpdate {
-            text = composer.text
+            text = words.composer.text
         }
         if outcome.textToSpeak != nil {
             save()
@@ -274,7 +261,7 @@ private struct LibraryNameEditorContent: View {
     private func save() {
         activity?.recordActivity()
         guard canSave else { return }
-        let name = LibraryText.trimmed(composer.text)
+        let name = LibraryText.trimmed(words.composer.text)
         if let word = HomeWordRoom.wordsTooWide(inCategoryName: name).first {
             result = String(localized: "“\(word)” is too wide for Home's category buttons. Choose a shorter word.")
             return
@@ -292,9 +279,8 @@ private struct LibraryNameEditorContent: View {
                 }
             } else {
                 result = String(localized: "Saved.")
-                composer = MessageComposer(restoring: name)
-                text = composer.text
-                saved = name
+                words = LibraryEditorWords(restoring: name)
+                text = words.composer.text
             }
         case .refused(let reason):
             result = reason
