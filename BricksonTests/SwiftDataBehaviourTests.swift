@@ -142,11 +142,7 @@ struct SwiftDataBehaviourTests {
     @Test func s2bAQueryOfPhrasesShowsWordsAndPlacesSavedElsewhere() async throws {
         let container = try store()
         let probe = PhraseQueryProbe()
-        let host = UIHostingController(rootView: PhraseQueryProbeView(probe: probe).modelContainer(container))
-        let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
-        let window = UIWindow(windowScene: scene)
-        window.rootViewController = host
-        window.isHidden = false
+        let window = try show(PhraseQueryProbeView(probe: probe).modelContainer(container))
         defer { window.isHidden = true }
         try await settle { probe.basics == ["Hello.", "Thank you.", "Goodbye."] }
         #expect(probe.basics == ["Hello.", "Thank you.", "Goodbye."])
@@ -163,6 +159,41 @@ struct SwiftDataBehaviourTests {
         let changed = ["See you soon.", "Thank you.", "Hello."]
         try await settle { probe.basics == changed }
         #expect(probe.basics == changed)
+    }
+
+    /// A phrase can also change category (`LibraryEdit.movePhrase` takes
+    /// the category it goes to), and Home groups phrases by each phrase's
+    /// own category (`CategorySelection.phrases(of:in:)`). Fails if, after
+    /// such a move is saved from a context of its own
+    /// (`LibraryModel.perform`), a view's query of phrases still shows the
+    /// phrase under the category it left, or not under the one it joined.
+    @Test func s2cAQueryOfPhrasesShowsAPhraseMovedToAnotherCategory() async throws {
+        let container = try store()
+        let probe = PhraseQueryProbe()
+        let window = try show(PhraseQueryProbeView(probe: probe).modelContainer(container))
+        defer { window.isHidden = true }
+        try await settle { probe.basics == ["Hello.", "Thank you.", "Goodbye."] && probe.needs == ["I'm thirsty."] }
+        #expect(probe.needs == ["I'm thirsty."])
+
+        let outcome = LibraryModel().perform(.movePhrase(F.id(103), category: F.needsID, before: nil), in: container)
+        guard case .saved = outcome else {
+            Issue.record("the move was refused: \(outcome)")
+            return
+        }
+
+        try await settle { probe.basics == ["Hello.", "Thank you."] && probe.needs == ["I'm thirsty.", "Goodbye."] }
+        #expect(probe.basics == ["Hello.", "Thank you."])
+        #expect(probe.needs == ["I'm thirsty.", "Goodbye."])
+    }
+
+    /// Shows `view` in a window of the test host's scene, so its queries
+    /// run as Home's do. Hide the window when done.
+    private func show(_ view: some View) throws -> UIWindow {
+        let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let window = UIWindow(windowScene: scene)
+        window.rootViewController = UIHostingController(rootView: view)
+        window.isHidden = false
+        return window
     }
 
     // MARK: S3: failed saves
@@ -265,16 +296,21 @@ struct SwiftDataBehaviourTests {
 /// What `PhraseQueryProbeView` last drew of Basics.
 private final class PhraseQueryProbe {
     var basics: [String] = []
+    var needs: [String] = []
 }
 
-/// Reads Basics' phrases the way Home does: from a query of phrases.
+/// Reads Basics' and Needs' phrases the way Home does: from a query of
+/// phrases.
 private struct PhraseQueryProbeView: View {
     @Query private var phrases: [Phrase]
     let probe: PhraseQueryProbe
 
     var body: some View {
         let basics = CategorySelection.phrases(of: LibraryFixtures.basicsID, in: phrases)?.map(\.text) ?? []
-        Color.clear.onChange(of: basics, initial: true) { _, drawn in probe.basics = drawn }
+        let needs = CategorySelection.phrases(of: LibraryFixtures.needsID, in: phrases)?.map(\.text) ?? []
+        Color.clear
+            .onChange(of: basics, initial: true) { _, drawn in probe.basics = drawn }
+            .onChange(of: needs, initial: true) { _, drawn in probe.needs = drawn }
     }
 }
 
