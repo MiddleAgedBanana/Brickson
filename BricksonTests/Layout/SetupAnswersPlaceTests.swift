@@ -99,4 +99,87 @@ struct SetupAnswersPlaceTests {
         let lower = Self.place(phone, earliest: 700)
         #expect(lower.top == 700)
     }
+
+    /// The search as it was before it halved and read a frame across the
+    /// answers' width by its corners, kept as the plain way to compare
+    /// with: every point of every frame, down 8 points at a time, then back
+    /// up a point at a time.
+    static func plainTop(
+        arrivals: [CGRect], link: CGRect, answersMinX: CGFloat, answersWidth: CGFloat, answerHeight: CGFloat, earliest: CGFloat
+    ) -> CGFloat {
+        let points = arrivals.filter { !$0.isNull }.flatMap { SettingsRowPlace.points(across: $0, every: 4) }
+        func holds(_ top: CGFloat) -> Bool {
+            let answer = CGRect(x: answersMinX, y: top, width: answersWidth, height: answerHeight)
+            return points.allSatisfy { SettingsRowPlace.isNearer($0, toOneOf: [link], thanAny: [answer], margin: SettingsRowPlace.margin) }
+        }
+        let deepest = points.map { $0.y + SettingsRowPlace.centreDistance(from: $0, to: link) }.max().map { $0 + SettingsRowPlace.margin + 1 }
+            ?? earliest
+        var coarse = earliest
+        while coarse < deepest, !holds(coarse) {
+            coarse += 8
+        }
+        var found = coarse
+        while found - 1 >= earliest, found - 1 > coarse - 8, holds(found - 1) {
+            found -= 1
+        }
+        return found
+    }
+
+    /// Fails if the search finds any top but the plain way's: on the
+    /// measured windows, and swept over links high and low, wide and
+    /// narrow, frames of words short and tall under them, a frame beyond
+    /// the answers' width (read point by point), a frame reaching below
+    /// where the answers may start, and a fractional start.
+    @Test func theSearchFindsWhatThePlainWayFinds() {
+        for window in Self.windows {
+            let arrivals = [window.homesSettings, window.rootRow, window.guided]
+            let plain = Self.plainTop(
+                arrivals: arrivals, link: window.guided, answersMinX: window.content.minX,
+                answersWidth: window.content.width, answerHeight: 64, earliest: window.guided.maxY + 16
+            )
+            #expect(Self.place(window).top == plain, "\(window.name)")
+        }
+        let links = [
+            CGRect(x: 16, y: 0, width: 370, height: 64), CGRect(x: 16, y: 240, width: 200, height: 96),
+            CGRect(x: 150, y: 120, width: 120, height: 48), CGRect(x: 236, y: 30.5, width: 150, height: 130),
+        ]
+        for link in links {
+            for wordsHeight in [0, 24, 101.5] as [CGFloat] {
+                let words = CGRect(x: 16, y: link.maxY + 16, width: 370, height: wordsHeight)
+                let sets: [(arrivals: [CGRect], earliest: CGFloat)] = [
+                    ([link.insetBy(dx: 0, dy: -8), words], words.maxY + 64),
+                    ([link, words, CGRect(x: 380, y: link.minY - 30, width: 60, height: 50)], words.maxY + 64),
+                    ([link, CGRect(x: 276, y: link.maxY + 4, width: 110, height: 48)], link.maxY + 16.25),
+                    ([link, words], words.maxY + 0.5),
+                ]
+                for set in sets {
+                    let place = SetupAnswersPlace(
+                        arrivals: set.arrivals, link: link, answersMinX: 16, answersWidth: 370, answerHeight: 64, earliest: set.earliest
+                    )
+                    let plain = Self.plainTop(
+                        arrivals: set.arrivals, link: link, answersMinX: 16, answersWidth: 370, answerHeight: 64, earliest: set.earliest
+                    )
+                    #expect(place.top == plain, "link \(link), words \(wordsHeight), arrivals \(set.arrivals)")
+                }
+            }
+        }
+    }
+
+    /// A frame of words far taller than any screen, such as a long phrase
+    /// at the largest text size, is placed at once. Fails if the search
+    /// goes back to a try for every 8 points over a point every 4: on this
+    /// frame that is hours, and the screen's layout waits for it.
+    @Test(.timeLimit(.minutes(1)))
+    func aFrameFarTallerThanAScreenIsPlacedAtOnce() {
+        let link = CGRect(x: 16, y: 100, width: 370, height: 64)
+        let words = CGRect(x: 16, y: link.maxY + 16, width: 370, height: 100_000)
+        let place = SetupAnswersPlace(
+            arrivals: [link, words], link: link, answersMinX: 16, answersWidth: 370, answerHeight: 64, earliest: words.maxY + 64
+        )
+        let answer = CGRect(x: 16, y: place.top, width: 370, height: 64)
+        let lowest = [CGPoint(x: 16, y: words.maxY), CGPoint(x: 386, y: words.maxY)]
+        #expect(lowest.allSatisfy { SettingsRowPlace.isNearer($0, toOneOf: [link], thanAny: [answer], margin: SettingsRowPlace.margin) })
+        let higher = CGRect(x: 16, y: place.top - 1, width: 370, height: 64)
+        #expect(!lowest.allSatisfy { SettingsRowPlace.isNearer($0, toOneOf: [link], thanAny: [higher], margin: SettingsRowPlace.margin) })
+    }
 }
