@@ -1259,6 +1259,63 @@ docs/DECISIONS.md.
 1. **Owner:** last, for the build that will go to App Review: answer
    yes in writing. The release's `docs/log/` record keeps the answer.
 
+## The Library (R0 item 6)
+
+### B1. A backup leaves and comes back
+
+*The row on exporting and restoring a backup; docs/DECISIONS.md,
+"Exporting and restoring a backup".*
+
+1. **Owner:** on the iPhone, Settings > Family Setup > Phrases and
+   Categories > Export a Backup. *Passes* when the share sheet opens with
+   one file, "Brickson Phrases" and the day, ".json", and each of these
+   delivers it: Save to Files (On My iPhone), Save to Files (iCloud
+   Drive), AirDrop to the iPad, and Mail to yourself.
+2. **Owner:** on the iPad, add a phrase of your own first, then Restore
+   from a Backup, and choose the iPhone's file from iCloud Drive, then
+   the AirDropped copy from the Files app. *Passes* when the question
+   says what the backup holds, Replace My Phrases is dimmed with its
+   reason (it would remove the phrase you added), and Add to My Phrases
+   adds what the iPad did not have, then dims, with Done in Cancel's
+   place.
+3. **Owner:** Restore from a Backup, and choose a `.json` file that is
+   not a Brickson backup. *Passes* when the line under the row says why,
+   ending "Nothing was changed.", and the library is as it was.
+4. **Owner:** open Export a Backup and leave the share sheet open for
+   more than 90 seconds, then close it. Note what shows: Settings'
+   first screen behind the sheet is expected (the share sheet cannot
+   hold the idle reset). *Passes* when nothing in the library changed.
+
+Write down the device, iOS version, where each file went and what each
+step showed.
+
+### B2. Editing with each input method
+
+*The row on editing with each input method; docs/DECISIONS.md, "The
+Library's question screens" and "Typing on Home", *Open: a category with
+fewer phrases than the grid has columns*.*
+
+1. **Owner:** with Voice Control, then Switch Control, then Full
+   Keyboard Access, then AssistiveTouch Dwell with Snap to Item: add a
+   phrase to a category, change its words, move it, delete it; add a
+   category, give it a picture (with Voice Control, say the picture's
+   name, such as "Tap Heart"), rename it, delete it. *Passes* when every
+   control is reached and named, and each way back (Keep, Leave It Here,
+   Keep This Picture, Cancel) appears where the row that asked was.
+2. **Owner:** with Dwell and Snap to Item, open Delete Phrase and hold
+   the look on Delete for Good until it deletes, then keep holding.
+   *Passes* when Delete for Good dims in place, nothing else is
+   activated, and Done returns to the category. Do the same with the look
+   resting just under Edit Phrase's Delete Phrase row and under the
+   Library's Restore from a Backup: *passes* when only their questions
+   open, never a choice in them.
+3. **Owner:** make a category with one phrase. On Home, with Dwell and
+   Snap to Item, show it, rest the look on the empty cells beside that
+   phrase, first while browsing, then after Type. Record which control
+   Snap to Item selects and whether anything activates. This decides how
+   the open finding about a short category binds; the record goes to F2's
+   owner question.
+
 ## Coverage
 
 Every row of docs/HANDOFF.md, *Checks that need a real device*, by its
@@ -1318,6 +1375,8 @@ first words:
 | 100 activations with the Hangs instrument | A3 |
 | Eight hours on the iPad | M3, A4 |
 | Two hours each on the mounted iPad | I7 |
+| Export a Backup to Files, iCloud Drive, AirDrop and Mail | B1 |
+| Editing phrases and categories with Voice Control | B2 |
 
 Every gate of docs/ROADMAP.md, *The quality bar*, that the owner checks
 or answers:

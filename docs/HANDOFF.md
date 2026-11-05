@@ -111,6 +111,16 @@ exception is on narrow windows at the largest text sizes: by centre, a
 look at the row's top trailing corner meets Back to Talking and closes
 Settings onto Home's Emergency (nothing is said; modelled;
 docs/DECISIONS.md, "Settings' first row, placed from Home's frames").
+Family Setup's Phrases and Categories opens the Library (2026-11-05):
+a family adds, changes, moves and deletes phrases and categories,
+changes a category's picture, exports a backup through the share sheet
+and restores one from the file picker, adding to the library or
+replacing it where that removes nothing the person wrote. Every library
+keeps three or four everyday categories. Each delete, move, picture and
+restore asks on a screen of its own, with the way back where the row
+that asked was and the choices well clear of it, and the chain engine
+scores every Library screen (docs/DECISIONS.md, "The Library in
+Settings" and "The Library's question screens").
 "Speaking", "Sounding", audio failures, very low volume and a typed
 message that cannot be saved or restored share one passive status line
 under the message, in space always kept for it, and
@@ -449,17 +459,20 @@ release in docs/ROADMAP.md when no thread has it yet.
   *(R0 item 3, before App Review: docs/ROADMAP.md, *The quality bar*,
   Q3; then the owner)*
 - The slot plan has no answer yet for more than four everyday categories
-  (docs/DECISIONS.md, "Home's slot plan", *Open*): editing and import
-  must not add a fifth until it does. Meanwhile Home keeps the fourth and
-  later ones in the fourth cell, which scrolls (docs/DECISIONS.md, "Get
-  Attention and Stop on Home"). *(the layout engine, a new thread)*
+  (docs/DECISIONS.md, "Home's slot plan", *Open*), so editing and import
+  refuse a fifth (docs/DECISIONS.md, "Three or four everyday
+  categories"). Only a store made some other way could hold one; Home
+  keeps the fourth and later ones in the fourth cell, which scrolls
+  (docs/DECISIONS.md, "Get Attention and Stop on Home"). *(the layout
+  engine, a new thread)*
 - A library with fewer than three everyday categories can leave Again,
   which speaks, nearest Stop's empty well: the cell under the well can be
   empty (docs/DECISIONS.md, "Get Attention and Stop on Home"; a strict
-  known issue in `HomeLayoutEngineTests`). No screen can remove a category yet;
-  editing and import must not leave fewer than three until the layout
-  keeps a category nearest the well, or the owner accepts a rule that
-  keeps three. *(R0, the library thread with the layout engine)*
+  known issue in `HomeLayoutEngineTests`). Since 2026-11-05 no edit or
+  import can leave fewer than three, the owner's rule (docs/DECISIONS.md,
+  "Three or four everyday categories"), so the hazard is closed for every
+  library Brickson writes; the layout still has no answer for one, should
+  a store ever hold one. *(the layout engine, if a store can)*
 - The top of Stop's well is nearest Again, 10 to 12pt above it (up to
   30.5pt where the categories sit lower), which speaks: by the stand-in's model about 10 to 40% of the well by nearest
   centre and about 40% by nearest edge. On the engine's frames Again is
@@ -521,10 +534,22 @@ release in docs/ROADMAP.md when no thread has it yet.
   (neither loses words: Put Back only brings back what Clear took, and
   Clear can be undone once). By nearest edge nothing is met: the empty
   grid's finding by both rules went when the tiles stayed in place,
-  dimmed, except over the empty cells of a grown library's category with
-  fewer phrases than the grid has columns: when editing or import ships,
-  score typing with the shown category's own tiles. Open, not accepted, pinned strict in `HomeLayoutEngineTests`
+  dimmed, except over the empty cells of a category with fewer phrases
+  than the grid has columns (the next item). Open, not accepted, pinned strict in `HomeLayoutEngineTests`
   (docs/DECISIONS.md, "Typing on Home", *Open: by centre, dimmed phrases border Clear and Put Back*). *(owner, before any build goes to App Review or the external pilot)*
+- Since the Library (2026-11-05), a family can make a category with
+  fewer phrases than Home's grid has columns, and a new one starts with
+  none. A look resting on its top row's empty cells meets, while typing,
+  Clear or Put Back by either rule; while browsing, the category button
+  above, and once that category shows, the phrase now under the look
+  speaks, or a phrase beside it; and, by centre, a category chosen with
+  the look near its lower edge is followed by the phrase that comes
+  under the look. Scored on the engine's frames, open, not accepted,
+  pinned as two strict known issues in `HomeLayoutEngineTests`
+  (docs/DECISIONS.md, "Typing on Home", *Open: a category with fewer
+  phrases than the grid has columns*). *(the layout engine, a new thread;
+  then the owner, before any build goes to App Review or the external
+  pilot)*
 - No typing on Home where the keyboard's room reaches the safety row:
   320pt windows at every size, a 375×667 phone from AX3, and the iPad
   mini and a zoomed 13-inch iPad in landscape from AX3. There Type is
@@ -545,10 +570,12 @@ release in docs/ROADMAP.md when no thread has it yet.
 - A label with a word too wide for its slot even at the default text size
   is cut short with an ellipsis when it is one word, but in a phrase of
   several words that word can wrap mid-word. No starter label has one
-  (`StarterLabelFitTests`), and nothing can add one until editing or
-  import exists; those must keep every word within the narrowest tile, or
-  the layout engine must give it room. *(Library editing and backup format,
-  with the layout engine)*
+  (`StarterLabelFitTests`). Since 2026-11-05 a family can save a phrase
+  with one, with a note that it can wrap on the narrowest screens: the
+  owner's choice (docs/DECISIONS.md, "Words wider than Home's narrowest
+  buttons"). A category name with one is refused, by editing and import.
+  *(accepted by the owner; the layout engine, if it ever gives such a
+  word room)*
 - On windows under 345pt with Bold Text, the message beside Phrases and
   Type is too narrow for "understand.", which can break there; since
   typing came to Home (2026-10-24) this is Home's (docs/DECISIONS.md,
@@ -652,12 +679,22 @@ release in docs/ROADMAP.md when no thread has it yet.
   launches; no actual keyboard covered Home in these restricted states.
   The device checks are in *Checks that need a real device*. *(Codex on
   the owner's Mac, then the owner's devices)*
-- No editing, export or import screens. The library core (`LibraryEdit`,
-  `LibraryEditor`, `LibraryImport`, `BackupCodec`) is tested code that
-  nothing calls yet. A Replace that would remove the person's own words
-  is refused. A safety-copy exception is not adopted and requires the
+- The Library's screens (docs/DECISIONS.md, "The Library in Settings")
+  leave these open. The share sheet cannot hold Settings' idle reset, so
+  a reset can return Settings to its root behind it. The chain engine
+  does not follow past the share sheet or the file picker, nor where a
+  look rests after the picker closes, nor into New Phrase, New Category
+  and Rename Category, whose Save is dimmed until a family member types
+  ("The Library's question screens", *Not scored*). The Figma drawings
+  of a category's rows, Delete, Change Picture and the Restore question
+  show the first version, before the chain engine moved them
+  ([work file](work/library-screen.md), *What building it changed*).
+  Whether the file picker reads a backup from iCloud Drive, and the share
+  sheet's AirDrop and Mail, need a device (*Checks that need a real
+  device*). A Replace that would remove the person's own words is
+  refused; a safety-copy exception is not adopted and requires the
   owner's decision before implementation (docs/DECISIONS.md, "Replacing
-  the library"). *(R0, a new library thread)*
+  the library"). *(R0 item 6 follow-ups; the device checks, the owner)*
 - `rollback()` crashes SwiftData after deletes, even without a cascade
   (issue #19, seen with Xcode 26.6 on iOS 26.5). Brickson never calls it;
   the reproduction is disabled and has not been run on the current Xcode
@@ -778,10 +815,9 @@ release in docs/ROADMAP.md when no thread has it yet.
   because the kept one is gone, no line says so yet
   ([`log/2026-10-22-voice-screen.md`](log/2026-10-22-voice-screen.md),
   *Follow-ups*). *(the next Settings thread)*
-- The privacy policy still describes R0 features not built yet
-  (editing, exported backups); each is built or
-  its sentence deleted before release (docs/APP-STORE.md, section 3, lists
-  each sentence). The sections for recorded phrases, caregiver alerts and
+- Every sentence of the privacy policy describes something built since
+  the Library (2026-11-05) built editing and exported backups
+  (docs/APP-STORE.md, section 3, lists each sentence). The sections for recorded phrases, caregiver alerts and
   Siri and Shortcuts, which 1.0 does not ship, were deleted on 2026-10-23
   ([`log/2026-10-23-accessibility-page-and-privacy-trim.md`](log/2026-10-23-accessibility-page-and-privacy-trim.md)
   keeps their words). *(App Store readiness and ASO)*
@@ -926,10 +962,12 @@ docs/ROADMAP.md, *The quality bar*, Q24):
    Snap to Item device check (Q12) has measured them: whether Yes and No
    may border the message, the top of Stop's well nearest Again, and
    dimmed phrases bordering Clear and Put Back (*Known gaps*). The other
-   two, Again nearest Stop's empty well in a library with fewer than
-   three everyday categories and iPhone Duo's chain from Family Setup at
-   the largest text size, come to you only if a thread cannot remove
-   them by placement. So does the changed-window finding (a look resting
+   two, a look on the empty cells of a category with fewer phrases than
+   the grid has columns, which the Library makes possible, and iPhone
+   Duo's chain from Family Setup at the largest text size, come to you
+   only if a thread cannot remove them by placement. (Again nearest
+   Stop's empty well, with fewer than three everyday categories, went
+   with your rule that three is the floor, 2026-11-05.) So does the changed-window finding (a look resting
    on iPhone Duo before the window changes meets Get Attention, Speak,
    No or Clear after it), once a device has shown how the pointer really
    moves when the window changes (R0 item 13; *Known gaps*). Also before
@@ -1068,10 +1106,12 @@ legacy uses kept, and the moves still planned with who owns each, are in
 docs/DECISIONS.md under that title
 ([`log/2026-10-23-current-frameworks.md`](log/2026-10-23-current-frameworks.md)).
 The library core landed with PR #14, and the launch repair that keeps
-Emergency working after it; the next library pull request starts from the
-*Follow-ups* in [`log/2026-10-23-emergency-repair.md`](log/2026-10-23-emergency-repair.md),
-in order (the rollback probe on the current Xcode, stores from every
-schema version, safety copies, export and import, the editing screens). Calls (R0 item 8) wait for a device build. Files under
+Emergency working after it; the Library's screens, export and restore
+landed on 2026-11-05 ([`log/2026-11-05-library-screen.md`](log/2026-11-05-library-screen.md),
+*Follow-ups*). What is left from the *Follow-ups* in
+[`log/2026-10-23-emergency-repair.md`](log/2026-10-23-emergency-repair.md)
+is, in order, the rollback probe on the current Xcode, stores from every
+schema version and safety copies, each a pull request of its own. Calls (R0 item 8) wait for a device build. Files under
 `.github/workflows` are committed by the owner (docs/SDLC.md, *Deploy*). The toolchain's follow-ups
 (Xcode's recommended settings, iOS 27 APIs behind `#available`) are in
 [`log/2026-10-21-toolchain.md`](log/2026-10-21-toolchain.md). Xcode's
@@ -1189,6 +1229,8 @@ settings, date) and summarise it here.
 | 100 activations with the Hangs instrument at 100 ms on the oldest device at hand, and the device's Hang Detection (Settings > Developer > Hang Detection, at its shortest threshold) on through the TestFlight period; a thread reads the crash reports in Xcode's Crashes organizer and the crash feedback testers send through that period, and every crash and hang found is fixed | Q5 |
 | Eight hours on the iPad with Brickson in front under Guided Access, and four on the iPhone, unplugged, with a Performance Trace in Power Profiler mode: the screen never dims or locks, everything works at the end, battery used per hour at touch's and Eye Tracking's setup, and no `EXC_RESOURCE` or `JetsamEvent` report for Brickson in Analytics Data; then, attached to Xcode on the Mac, memory out of the gauge's warning region with no growth across 100 phrases, and the thermal state never serious | Q8 |
 | Two hours each on the mounted iPad with Eye Tracking and Dwell with Snap to Item, Head Tracking with Dwell, Switch Control's auto scanning and its Gliding Cursor (point scanning), and half an hour each on the iPhone with Switch Control and Eye Tracking, following Q11's script: every activation not meant and where the pointer rested before it, activations per common task, recalibrations and rests | Q11, and invariant 10 over hours rather than one activation |
+| Export a Backup to Files, iCloud Drive, AirDrop and Mail, and restore it on the other device from iCloud Drive and the Files app; a `.json` file that is not a backup is refused; the share sheet left open past Settings' idle time changes nothing | The Library's backups (docs/DECISIONS.md, "Exporting and restoring a backup") |
+| Editing phrases and categories with Voice Control (pictures by name), Switch Control, Full Keyboard Access and Dwell with Snap to Item; a look held on Delete for Good, and resting under the lowest asking rows; and a look resting on a short category's empty cells on Home | The Library's question screens; docs/DECISIONS.md, "Typing on Home", *Open: a category with fewer phrases than the grid has columns* |
 
 ## Repository, CI and website
 

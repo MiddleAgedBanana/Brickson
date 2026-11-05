@@ -142,7 +142,7 @@ hard requirements, checked against Apple's pages on 2026-10-21:
 | Answers to the updated age-rating questions (since 2026-01-31) | Drafted in section 6 | same |
 | A privacy policy URL, and a link inside the app "in an easily accessible manner" | The URL exists, and `Settings > Family Setup > Privacy Policy` shows the policy inside the app and opens the web page in an in-app sheet (`SFSafariViewController`, 2026-10-21) | [Guideline 5.1.1(i)](https://developer.apple.com/app-store/review/guidelines/#data-collection-and-storage) |
 | A support URL that "must lead to actual contact information" | The support page has the contact email | [Platform version information](https://developer.apple.com/help/app-store-connect/reference/app-information/platform-version-information) |
-| Final versions only: "placeholder text, empty websites, and other temporary content should be scrubbed"; tested on a device | Home, typing, Get Attention and Settings are built; the app icon is still a placeholder, editing and backup screens are not yet built, and the app has been installed and launched once on an iPhone (2026-10-25) but no device check has passed (docs/HANDOFF.md, *Verification*) | [Guideline 2.1](https://developer.apple.com/app-store/review/guidelines/#app-completeness) |
+| Final versions only: "placeholder text, empty websites, and other temporary content should be scrubbed"; tested on a device | Home, typing, Get Attention, Settings and the Library (editing, export and restore, 2026-11-05) are built; the app icon is still a placeholder, and the app has been installed and launched once on an iPhone (2026-10-25) but no device check has passed (docs/HANDOFF.md, *Verification*) | [Guideline 2.1](https://developer.apple.com/app-store/review/guidelines/#app-completeness) |
 | Enough lasting use to be "app-like" | Home speaks the starter phrases and any typed message; editing and backup complete R0 | [Guideline 4.2](https://developer.apple.com/app-store/review/guidelines/#minimum-functionality) |
 | Export compliance | `ITSAppUsesNonExemptEncryption = NO` in `project.yml` skips the question on every upload | `project.yml` |
 | At least one iPhone and one 13-inch iPad screenshot | Plan in section 9 | [Screenshot specifications](https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications) |
@@ -152,8 +152,8 @@ hard requirements, checked against Apple's pages on 2026-10-21:
 ## 3. The privacy policy must match the build
 
 The public policy (`site/privacy/index.html`) is a promise App Review and
-privacy law hold the app to, and it describes some features that are not
-built yet. Before a build is submitted, every row below must say **true** or
+privacy law hold the app to. Since 2026-11-05 every row below is true or
+deleted; it must stay so for every build submitted, each row saying **true** or
 **deleted**, with the page's Effective date and the in-app copy updated in
 the same pull request (AGENTS.md, *The privacy policy is a promise*). The
 policy also promises that an update's notes will mention a policy change, so
@@ -161,13 +161,13 @@ say so in What's New when it happens.
 
 | Policy sentence or section | True of the build? | Before submitting |
 |---|---|---|
-| "The phrases and categories you use, add or change" | Partly: the starter library is saved on the device, but adding and changing wait for editing | Ship editing, or reword to "The phrases and categories you use" |
+| "The phrases and categories you use, add or change" | Yes, from 2026-11-05: the Library in Settings adds and changes them, saved on the device (docs/DECISIONS.md, "The Library in Settings") | — |
 | "The message you are typing… stays until you clear it" | Yes, from 2026-10-24: Home's typing keeps the message in Application Support/Typing until Clear (docs/DECISIONS.md, "Typing on Home", "The typed message") | — |
 | "Your settings, such as the voice and speaking speed you chose" | Yes, from 2026-10-23: Settings' Voice Settings screen chooses both (docs/log/2026-10-21-settings-and-first-run.md), and Home's Settings button opens it (docs/log/2026-10-23-settings-on-home.md). The policy no longer mentions a text-size setting (fixed 2026-10-21) | — |
-| Deleting things "in the app" | Not until editing ships | Ship editing, or reword |
+| Deleting things "in the app" | Yes, from 2026-11-05: Delete Phrase and Delete Category, each after a question; Emergency stays, but its phrases can be deleted | — |
 | Speech and Personal Voice | Yes | — |
 | How you control the app ("If you use Apple's accessibility features, such as Eye Tracking, Switch Control or Voice Control, iOS runs them") | True: on 2026-10-23 "Brickson works with" these features became this sentence, which claims nothing nobody has checked on a device; the website's accessibility page says what is checked. The data half is true: Brickson has no input code of its own, so it never receives what those features use | — (2026-10-24: typing shipped, and the section gained a paragraph on typed and dictated words) |
-| Backups you export | No: no backup yet | Ship backup, or delete the paragraph |
+| Backups you export | Yes, from 2026-11-05: Export a Backup makes one unencrypted JSON file of the categories and phrases, which goes only where the family sends it through the share sheet (Files, iCloud Drive, AirDrop, Mail or another app); no copy stays in Brickson (docs/DECISIONS.md, "Exporting and restoring a backup"). AirDrop and Mail are device checks | — |
 | Your device's own backups (iCloud Backup) | Yes | — |
 | If you turn on recorded phrases | **Deleted** 2026-10-23: not built, not in R0. Its words are in docs/log/2026-10-23-accessibility-page-and-privacy-trim.md | The pull request that ships recorded phrases adds a section back (AGENTS.md, *The privacy policy is a promise*) |
 | If you turn on caregiver alerts | **Deleted** 2026-10-23: not built; needs network code, which invariant 9 forbids until the owner decides. The summary's "features you choose to use" and the Emergencies paragraph's caregiver sentence went with it | As above, only after the owner's decision |

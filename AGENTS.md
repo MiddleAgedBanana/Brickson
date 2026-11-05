@@ -429,7 +429,7 @@ the failure.
   `EmergencyRepair`, `SettingsLeadIn`, `SettingsRowPlace`,
   `SettingsScreenFrames`, `SetupAnswersPlace`, `SetupChoicesPlace`,
   `KeyboardAllowance`, `SettingsAppLink`, `HomeLayout`, `ProfileChoice`,
-  `RestBoard`.
+  `RestBoard`, `HomeWordRoom`, `LibraryQuestionPlace`, `RestoreChoices`.
   Views only read them.
 - **Run it, don't just read it.** Layout and flow changes are checked in the
   running app on an iPad and an iPhone simulator, at default and
