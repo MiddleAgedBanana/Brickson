@@ -1,11 +1,11 @@
-import CoreTransferable
 import Foundation
 import Testing
-import UniformTypeIdentifiers
 @testable import Brickson
 
 /// Exporting a backup through the share sheet (`BackupFile`). Each test
-/// names the change that would make it fail.
+/// names the change that would make it fail; the file made on another
+/// thread, as the share sheet may ask for it, is in
+/// `OffMainThreadCallbackTests`.
 struct BackupFileTests {
     private typealias F = LibraryFixtures
 
@@ -19,15 +19,6 @@ struct BackupFileTests {
         let name = BackupFile(library: F.library, madeOn: date, calendar: calendar).fileName
         #expect(name.hasPrefix(AppName.display))
         #expect(name.hasSuffix(" 2026-11-04.json"))
-    }
-
-    /// The share sheet may ask for the file from any thread. Fails if the
-    /// representation's closure becomes main-actor isolated, which traps
-    /// there, or if the file holds anything but the codec's bytes.
-    @Test func theFileCanBeMadeOnABackgroundThread() async throws {
-        let file = BackupFile(library: F.library, madeOn: .now)
-        let bytes = try await Task.detached { try await file.exported(as: .json) }.value
-        #expect(bytes == (try BackupCodec.encode(F.library)))
     }
 }
 
