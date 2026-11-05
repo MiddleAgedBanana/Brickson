@@ -53,6 +53,14 @@ The initial implementation includes:
   Type is dimmed instead.
 - Settings for the family, opened from Home's Settings button: voices,
   setup guides and the privacy policy.
+- Phrases and Categories, in Settings' Family Setup: a family adds,
+  changes, moves and deletes phrases and categories (Emergency's
+  phrases too, though Emergency itself always stays), gives each
+  category a picture, exports a backup through the share sheet and
+  restores one from the Files app, adding to the phrases or replacing
+  them where nothing the person wrote would be lost. Every delete,
+  move and restore asks on a screen of its own first, with the way back
+  where the row that asked was.
 - Speech through Apple's built-in speech system, with Personal Voice
   selection when permission and availability allow it.
 - Local phrase storage with SwiftData, without CloudKit sync.
@@ -60,7 +68,7 @@ The initial implementation includes:
   restarting a phrase that is already being spoken.
 - Unit tests for core logic and simulator UI tests for the initial Home flow.
 
-Phrase editing and backup export are not implemented yet. Home's layout comes from one tested layout
+Home's layout comes from one tested layout
 engine. Its sizes follow Family Setup's answer about how the screen is
 reached: larger for switches, head and eye tracking where the window
 has room (an iPhone keeps touch sizes). For the late stage, a family can

@@ -92,8 +92,9 @@ struct PaletteTests {
         }
     }
 
-    /// Primary ink on the screen: the message text, the status warnings, and
-    /// Again's look while it is off (text and border).
+    /// Primary ink on the screen: the message text, the status warnings,
+    /// Again's look while it is off, and a dimmed Settings row's
+    /// (`SettingsRowButtonStyle`), text and border.
     @Test func primaryInkIsReadableOnTheScreen() {
         for appearance in Self.appearances {
             let screen = UIColor.systemBackground.resolvedColor(with: appearance.traits)

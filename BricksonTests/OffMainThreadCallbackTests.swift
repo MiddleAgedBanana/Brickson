@@ -1,6 +1,8 @@
 import AVFoundation
+import CoreTransferable
 import Foundation
 import Testing
+import UniformTypeIdentifiers
 @testable import Brickson
 
 /// With the project's default main-actor isolation, a closure handed to a
@@ -10,6 +12,15 @@ import Testing
 /// the main thread"). Every such callback gets a test that calls it from a
 /// background thread.
 struct OffMainThreadCallbackTests {
+    /// The share sheet may ask for a backup's file from any thread. Fails
+    /// if `BackupFile`'s representation becomes main-actor isolated, which
+    /// traps there, or if the file holds anything but the codec's bytes.
+    @Test func theBackupFileCanBeMadeOnABackgroundThread() async throws {
+        let file = BackupFile(library: LibraryFixtures.library, madeOn: .now)
+        let bytes = try await Task.detached { try await file.exported(as: .json) }.value
+        #expect(bytes == (try BackupCodec.encode(LibraryFixtures.library)))
+    }
+
     /// AVAudioSession documents outputVolume as KVO-observable but gives no
     /// thread guarantee. The observation must tolerate a background delivery.
     @Test func outputVolumeChangeCanArriveOnABackgroundThread() async {

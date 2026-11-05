@@ -133,6 +133,44 @@ struct LaunchOptionsTests {
         #expect(options.unrecognized == typos)
     }
 
+    // The sample backup stands in for the file picker only in a UI test:
+    // reaching a person's launch, or one without test storage, fails this,
+    // and so does a misspelt or valued option being taken for it.
+    @Test func theSampleBackupRequiresDebugAndTestStorage() {
+        #expect(LaunchOptions.standard.activeRestoresSampleBackup == false)
+        let ordinary = LaunchOptions.parse(["--restore-sample-backup"])
+        #expect(ordinary.restoresSampleBackup)
+        #expect(ordinary.activeRestoresSampleBackup == false)
+        for storage in ["--test-storage", "--fresh-test-storage"] {
+            let options = LaunchOptions.parse([storage, "--restore-sample-backup"])
+            #expect(options.activeRestoresSampleBackup == LaunchOptions.readsLaunchArguments)
+            #expect(options.unrecognized.isEmpty)
+        }
+        let typos = ["--restore-sample-backup=yes", "--restore-sample"]
+        let options = LaunchOptions.parse(["--test-storage"] + typos)
+        #expect(options.restoresSampleBackup == false)
+        #expect(options.unrecognized == typos)
+    }
+
+    // The UI tests restore it to see one phrase arrive and nothing go. Fails
+    // if it changes anything but adding that phrase, or if Add would bring
+    // more than it or Replace would remove the person's words on a fresh
+    // library.
+    @Test func theSampleBackupAddsOnePhraseToTheStarterLibrary() throws {
+        let starter = try StarterLibrary.bundled()
+        let backup = LaunchOptions.sampleBackup(from: starter)
+        let changes = LibraryChanges(from: starter, to: backup)
+        #expect(changes.phrasesAdded == 1)
+        #expect(changes.phrasesRemoved == 0 && changes.phrasesChanged == 0 && changes.phrasesMoved == 0)
+        #expect(changes.categoriesAdded == 0 && changes.categoriesRemoved == 0)
+        #expect(changes.categoriesChanged == 0 && changes.categoriesMoved == 0)
+        let everyday = try #require(backup.categories.first { !$0.isEmergency })
+        #expect(everyday.phrases.last?.text == LaunchOptions.samplePhrase)
+        let choices = RestoreChoices(backup: backup, library: starter, starter: starter)
+        #expect(try choices.add.get().changes.phrasesAdded == 1)
+        #expect(try choices.replace.get().changes.phrasesRemoved == 0)
+    }
+
     // A fixture must use the supplied window and safe area rather than a
     // device table. Moving the band outside the first row, or allowing it
     // into an ordinary launch, fails these independent 12/10pt bounds.

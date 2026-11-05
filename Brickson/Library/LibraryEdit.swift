@@ -228,6 +228,19 @@ nonisolated extension LibraryEdit {
         if !library.categories.isEmpty && after.categories.isEmpty {
             throw .libraryNeedsACategory
         }
+        // Home has a cell for four everyday categories and needs three
+        // (docs/DECISIONS.md, "Three or four everyday categories"). Only an
+        // edit that crosses a bound is refused, so a damaged or hand-made
+        // store outside them can still be edited back. Import keeps every
+        // word, so a backup that would cross one is refused whole.
+        let everydayBefore = library.everydayCategoryCount
+        let everydayAfter = after.everydayCategoryCount
+        if everydayBefore <= LibraryRules.mostEverydayCategories && everydayAfter > LibraryRules.mostEverydayCategories {
+            throw .homeHasRoomForFour
+        }
+        if everydayBefore >= LibraryRules.fewestEverydayCategories && everydayAfter < LibraryRules.fewestEverydayCategories {
+            throw .homeNeedsThree
+        }
         guard after.hasUniqueIDs else { throw .libraryNeedsRepair }
 
         return LibraryPlan(

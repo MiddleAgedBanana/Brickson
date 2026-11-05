@@ -1,7 +1,9 @@
+import SwiftData
 import SwiftUI
 
 /// Family Setup: everything a family member configures, one screen below
-/// Settings' root.
+/// Settings' root. Its first row after the lead-in, Phrases and Categories,
+/// opens the Library (docs/DECISIONS.md, "The Library in Settings").
 ///
 /// Set Up Step by Step takes the place of the root's Family Setup row as
 /// drawn (`SettingsLanding`), in its frame and at least as tall, so a look
@@ -18,6 +20,9 @@ struct FamilySetupView: View {
 
     @Environment(SetupStore.self) private var setup
     @Environment(SettingsLanding.self) private var landing: SettingsLanding?
+    @Environment(SettingsActivity.self) private var activity: SettingsActivity?
+    @Environment(LibraryModel.self) private var library: LibraryModel?
+    @Environment(\.modelContext) private var modelContext
     /// The check-in card was showing while this screen was open. Its place
     /// is then kept until the screen closes, so answering it moves nothing.
     @State private var checkInWasShown = false
@@ -46,6 +51,18 @@ struct FamilySetupView: View {
             // moves it.
             CheckInCard(keepsItsPlace: checkInWasShown, path: $path)
             SetupIssueText()
+
+            // Reads the library before its screen opens, so the screen's
+            // rows are there from its first frame.
+            Button {
+                activity?.recordActivity()
+                library?.refresh(modelContext.container)
+                path.append(.library)
+            } label: {
+                SettingsRowLabel(title: "Phrases and Categories", systemImage: "square.grid.2x2.fill")
+            }
+            .settingsRowStyle()
+            .accessibilityIdentifier("library")
 
             NavigationLink(value: SettingsRoute.voice) {
                 SettingsRowLabel(title: "Voice Settings", systemImage: "waveform")

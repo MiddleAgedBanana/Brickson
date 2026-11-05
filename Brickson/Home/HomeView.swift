@@ -69,6 +69,10 @@ struct HomeView: View {
     /// Settings last closed (`BricksonApp`).
     @Environment(\.homeRequest) private var homeRequest
     @Query private var categories: [PhraseCategory]
+    /// Every phrase. The grid and the rows' room are read from these, not
+    /// through the categories, so a phrase whose words or place change in
+    /// the Library shows changed (`CategorySelection.phrases(of:in:)`).
+    @Query private var phrases: [Phrase]
     @State private var selectedCategoryID: UUID?
     /// Whether Home is typing. Type turns it on; Phrases, Emergency and
     /// opening Settings turn it off. Lowering the keyboard does not.
@@ -93,9 +97,10 @@ struct HomeView: View {
             ordered.first { $0.uuid == chosen.category && !$0.isEmergency }
         }
         let selected = CategorySelection.resolve(ordered, selectedID: selectedCategoryID, restBoard: board?.uuid)
+        let counts = CategorySelection.phraseCounts(phrases)
         let largestCategoryCount = ordered
             .filter { board == nil || $0 === board || $0 === emergency }
-            .map { $0.phrases?.count ?? 0 }.max() ?? 0
+            .map { counts[$0.uuid] ?? 0 }.max() ?? 0
         let text = HomeLayout.Text.measured(at: dynamicTypeSize, boldText: legibilityWeight == .bold)
 
         GeometryReader { proxy in
@@ -151,7 +156,8 @@ struct HomeView: View {
                 HStack(spacing: 0) {
                     Spacer(minLength: 0).frame(width: layout.grid.frame.minX - layout.content.minX)
                     PhraseGrid(
-                        category: selected,
+                        phrases: CategorySelection.phrases(of: selected?.uuid, in: phrases),
+                        isEmergency: selected?.isEmergency == true,
                         isTyping: isTyping,
                         layout: layout.grid,
                         largestCategoryCount: largestCategoryCount,
@@ -1079,7 +1085,10 @@ private struct CategoryCell: View {
 private struct PhraseGrid: View {
     @Environment(SpeechService.self) private var speech
     @Environment(\.phraseLibraryIssue) private var phraseLibraryIssue
-    let category: PhraseCategory?
+    /// The showing category's phrases, in order; nil for no category.
+    let phrases: [LibrarySnapshot.Phrase]?
+    /// Whether they are Emergency's, drawn in its colour.
+    let isEmergency: Bool
     /// While typing the tiles stay in place, dimmed, as the categories are:
     /// nothing that speaks sits under the keyboard, and lowering it reveals
     /// nothing that speaks. By nearest edge, a look resting on the grid
@@ -1098,8 +1107,7 @@ private struct PhraseGrid: View {
             // A warning can reduce D's height, but never its resolved
             // column lanes or its fixed camera/fold exclusion.
             let sizing = layout.reflow(in: CGRect(origin: .zero, size: proxy.size), phraseCount: largestCategoryCount)
-            if let category {
-                let phrases = category.phrasesInOrder
+            if let phrases {
                 let grid = FixedColumns(phrases, layout: sizing) { phrase in
                     Button {
                         speech.speak(phrase.text)
@@ -1107,7 +1115,7 @@ private struct PhraseGrid: View {
                         FittedLabel(phrase.text, font: tileFont)
                     }
                     .buttonStyle(HomeButtonStyle(
-                        fill: category.isEmergency ? Palette.emergencyFill : Palette.phraseFill
+                        fill: isEmergency ? Palette.emergencyFill : Palette.phraseFill
                     ))
                     .frame(height: sizing.tileSize.height)
                     // Lets the UI tests tell phrase tiles from controls

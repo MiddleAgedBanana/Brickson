@@ -127,6 +127,7 @@ targets:
       - path: BricksonUITests/ChainEngine.swift
       - path: BricksonUITests/HomeChains.swift
       - path: BricksonUITests/SettingsChains.swift
+      - path: BricksonUITests/LibraryChains.swift
     dependencies:
       - target: Brickson
     settings:

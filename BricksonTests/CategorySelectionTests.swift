@@ -117,4 +117,44 @@ struct CategorySelectionTests {
             RestBoard.Category(id: feelings.uuid, isEmergency: false, phrases: 3),
         ])
     }
+
+    // MARK: The grid's phrases
+
+    /// Fails if Home's grid shows another category's phrase or one in no
+    /// category, loses the fixed order (place, then words, then identity),
+    /// or carries anything but each phrase's identity and words.
+    @Test func theGridShowsOneCategorysPhrasesInTheirOrder() {
+        let tied = UUID(uuidString: "00000000-0000-4000-8000-000000000001")!
+        let phrases = [
+            Phrase(text: "Later", sortOrder: 2, category: feelings),
+            Phrase(text: "Water", sortOrder: 0, category: everyday),
+            Phrase(text: "Yes please", sortOrder: 0, category: feelings),
+            Phrase(text: "Not now", sortOrder: 1, category: feelings, uuid: UUID(uuidString: "00000000-0000-4000-8000-000000000002")!),
+            Phrase(text: "Not now", sortOrder: 1, category: feelings, uuid: tied),
+            Phrase(text: "Alone", sortOrder: 0),
+        ]
+        for phrase in phrases { container.mainContext.insert(phrase) }
+
+        let shown = CategorySelection.phrases(of: feelings.uuid, in: phrases)
+        #expect(shown?.map(\.text) == ["Yes please", "Not now", "Not now", "Later"])
+        #expect(shown?[1].id == tied)
+        #expect(shown?.map(\.id) == Phrase.orderedForDisplay(phrases.filter { $0.category === feelings }).map(\.uuid))
+        #expect(CategorySelection.phrases(of: emergency.uuid, in: phrases) == [])
+        #expect(CategorySelection.phrases(of: nil, in: phrases) == nil)
+    }
+
+    /// Fails if a category's count, from which the grid's rows are sized,
+    /// misses a phrase, counts another category's, or counts a phrase in
+    /// no category.
+    @Test func eachCategoryCountsItsOwnPhrases() {
+        let phrases = [
+            Phrase(text: "Water", sortOrder: 0, category: everyday),
+            Phrase(text: "Tea", sortOrder: 1, category: everyday),
+            Phrase(text: "Yes please", sortOrder: 0, category: feelings),
+            Phrase(text: "Alone", sortOrder: 0),
+        ]
+        for phrase in phrases { container.mainContext.insert(phrase) }
+
+        #expect(CategorySelection.phraseCounts(phrases) == [everyday.uuid: 2, feelings.uuid: 1])
+    }
 }

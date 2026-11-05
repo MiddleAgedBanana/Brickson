@@ -47,6 +47,10 @@ import SwiftData
 ///   Home is as everyone gets it: following the answer while the switch
 ///   is on (`ProfileChoice.followsTheAnswer`).
 ///
+/// - `--restore-sample-backup`: with test storage only, the Library's
+///   Restore from a Backup opens a sample backup (`sampleBackup(from:)`)
+///   instead of the system's file picker, which UI tests cannot drive.
+///
 /// Text size still uses UIKit's `-UIPreferredContentSizeCategoryName`
 /// argument. Appearance needs an app-local option because command-line
 /// simulator runs can report `XCUIDevice.appearance == .dark` while the
@@ -121,6 +125,8 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
     var homeProfile: HomeLayout.Profile?
     /// Never applied to ordinary storage or in a release build.
     var homeFollowsAnswer = false
+    /// Never applied to ordinary storage or in a release build.
+    var restoresSampleBackup = false
     /// Arguments written like these options but not understood: a misspelt
     /// name, an unknown value. They are logged at launch, so a typo in a
     /// test shows up instead of quietly running with the defaults.
@@ -184,6 +190,8 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
                 options.homeProfile = homeProfiles[value]
             case ("home-profile", let value?) where value == homeSizesFromTheAnswer:
                 options.homeFollowsAnswer = true
+            case ("restore-sample-backup", nil):
+                options.restoresSampleBackup = true
             default:
                 options.unrecognized.append(argument)
             }
@@ -208,6 +216,32 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
     var activeHomeFollowsAnswer: Bool {
         guard Self.readsLaunchArguments, storage != .standard else { return false }
         return homeFollowsAnswer
+    }
+
+    /// Whether a test asked Restore from a Backup to open the sample backup
+    /// instead of the file picker, only with test storage in a debug build.
+    var activeRestoresSampleBackup: Bool {
+        guard Self.readsLaunchArguments, storage != .standard else { return false }
+        return restoresSampleBackup
+    }
+
+    /// The phrase the sample backup brings that the starter library does
+    /// not have: neutral and practical, like every starter phrase
+    /// (AGENTS.md, invariant 7).
+    static let samplePhrase = "Please open the window."
+
+    /// What `--restore-sample-backup` restores: the starter library with
+    /// `samplePhrase` added at the end of its first everyday category, so
+    /// Add brings exactly one phrase and Replace removes nothing the
+    /// person wrote on a fresh library.
+    static func sampleBackup(from starter: LibrarySnapshot) -> LibrarySnapshot {
+        var backup = starter
+        if let index = backup.categories.firstIndex(where: { !$0.isEmergency }) {
+            // A fixed identity, so every run restores the same phrase.
+            let id = UUID(uuid: (0x5A, 0x4D, 0x50, 0x4C, 0x45, 0x00, 0x40, 0x00, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01))
+            backup.categories[index].phrases.append(LibrarySnapshot.Phrase(id: id, text: samplePhrase))
+        }
+        return backup
     }
 
     /// A synthetic reservation relative to this window's available space,

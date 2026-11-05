@@ -906,7 +906,7 @@ struct SettingsChainsTests {
             wordsHeight: { window.words * max(1, content.width / $0) }
         )
         let guided = leadIn.control.offsetBy(dx: content.minX, dy: content.minY)
-        let familyRows = ["voiceSettings", "reachingTheScreen", "keepOpen", "callsSiriAndShortcuts", "moreAccessibility", "privacyPolicy", "about"]
+        let familyRows = ["library", "voiceSettings", "reachingTheScreen", "keepOpen", "callsSiriAndShortcuts", "moreAccessibility", "privacyPolicy", "about"]
             .enumerated().map { index, name in
                 (name, CGRect(
                     x: content.minX, y: content.minY + leadIn.size.height + 16 + window.familyRow.step * CGFloat(index),
@@ -1164,7 +1164,7 @@ struct SettingsChainsTests {
             guided = leadIn.control.offsetBy(dx: content.minX, dy: content.minY)
             let back = CGRect(x: window.navigationBar.minX + 16, y: window.navigationBar.minY + 10, width: 44, height: 44)
             let rowHeight = window.rowHeight(text: text, width: content.width)
-            let rows = ["voiceSettings", "reachingTheScreen", "keepOpen", "callsSiriAndShortcuts", "moreAccessibility", "privacyPolicy", "about"]
+            let rows = ["library", "voiceSettings", "reachingTheScreen", "keepOpen", "callsSiriAndShortcuts", "moreAccessibility", "privacyPolicy", "about"]
                 .enumerated().map { index, name in
                     (name, CGRect(
                         x: content.minX, y: content.minY + leadIn.size.height + 16 + (rowHeight + 16) * CGFloat(index),

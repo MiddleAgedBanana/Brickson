@@ -33,26 +33,70 @@ nonisolated struct SetupAnswersPlace: Equatable, Sendable {
     ///   - earliest: the highest top the step's own layout leaves for the
     ///     answers, under the link.
     init(arrivals: [CGRect], link: CGRect, answersMinX: CGFloat, answersWidth: CGFloat, answerHeight: CGFloat, earliest: CGFloat) {
-        let points = arrivals.filter { !$0.isNull }.flatMap { SettingsRowPlace.points(across: $0, every: 4) }
+        let frames = arrivals.filter { !$0.isNull }
+        let answersMaxX = answersMinX + answersWidth
+        let points = frames.flatMap { frame in
+            frame.minX >= answersMinX && frame.maxX <= answersMaxX
+                ? Self.corners(of: frame)
+                : SettingsRowPlace.points(across: frame, every: 4)
+        }
         func holds(_ top: CGFloat) -> Bool {
             let answer = CGRect(x: answersMinX, y: top, width: answersWidth, height: answerHeight)
             return points.allSatisfy { SettingsRowPlace.isNearer($0, toOneOf: [link], thanAny: [answer], margin: SettingsRowPlace.margin) }
         }
-        // An answer holds only below every point, and lower only takes it
-        // farther from each: down 8 points at a time to the first top that
-        // holds, then back up a point at a time while it holds. Every point
-        // holds once the answer's top is farther below it than the link's
-        // centre is from it, by more than the margin.
-        let deepest = points.map { $0.y + SettingsRowPlace.centreDistance(from: $0, to: link) }.max().map { $0 + SettingsRowPlace.margin + 1 }
-            ?? earliest
-        var coarse = earliest
-        while coarse < deepest, !holds(coarse) {
-            coarse += 8
+        // Every point holds once the answer's top is farther below it than
+        // the link's centre is from it, by more than the margin. A point's
+        // depth plus its distance from that centre is greatest at a corner
+        // of its frame.
+        let deepest = frames.flatMap(Self.corners(of:))
+            .map { $0.y + SettingsRowPlace.centreDistance(from: $0, to: link) }.max()
+            .map { $0 + SettingsRowPlace.margin + 1 } ?? earliest
+        top = Self.firstTop(from: earliest, to: deepest, where: holds)
+    }
+
+    /// The answers' top that the plain search finds: down 8 points at a
+    /// time from `earliest` to the first top that holds, or to the first at
+    /// or past `deepest`, then back up a point at a time while it holds.
+    /// With the link above the answers, as both callers place it, an
+    /// answer holds only below every point, and lower only takes it
+    /// farther from each, so a top holds at every whole point below the
+    /// first that does: this finds that first one by halving, in about 17
+    /// tries for a frame 100,000 points tall, where the plain search took a
+    /// try for every 8 points. The top it returns always holds. On thirds
+    /// of a point, as a 3x screen lays frames out, the plain search's
+    /// repeated sums can round differently from this one sum by a hair
+    /// (`SetupAnswersPlaceTests` compares the two).
+    static func firstTop(from earliest: CGFloat, to deepest: CGFloat, where holds: (CGFloat) -> Bool) -> CGFloat {
+        guard deepest > earliest else { return earliest }
+        let last = ((deepest - earliest) / 8).rounded(.up) * 8
+        guard last.isFinite, holds(earliest + last) else { return earliest + last }
+        var low: CGFloat = 0
+        var high = last
+        while low < high {
+            let middle = ((low + high) / 2).rounded(.down)
+            if holds(earliest + middle) {
+                high = middle
+            } else {
+                low = middle + 1
+            }
         }
-        var found = coarse
-        while found - 1 >= earliest, found - 1 > coarse - 8, holds(found - 1) {
-            found -= 1
-        }
-        top = found
+        return earliest + low
+    }
+
+    /// The corners of a frame that lies across the answers' width, which
+    /// decide for every point of it. Above an answer and within its width,
+    /// a point's distance from the answer's edge is its height above it,
+    /// so the points nearer the link by edge, with the margin, form a
+    /// convex region; so do the points nearer the link's centre than the
+    /// answer's by more than the margin, inside one branch of a hyperbola
+    /// around the link's centre. A frame whose corners lie in both lies
+    /// wholly in both. A frame that reaches down to the answer fails at its
+    /// lower corners, as every point at or below the answer's top does.
+    /// Each corner comes from the same grid of points
+    /// (`SettingsRowPlace.points(across:every:)`), with one step across the
+    /// whole frame; the grid's own far edge can differ from it by a hair of
+    /// rounding.
+    static func corners(of frame: CGRect) -> [CGPoint] {
+        SettingsRowPlace.points(across: frame, every: max(frame.width, frame.height, 1))
     }
 }

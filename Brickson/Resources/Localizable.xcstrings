@@ -1,6 +1,9 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "%@ Phrases %@" : {
+
+    },
     "%@ can speak in a voice that sounds like you, made with Apple's Personal Voice. Choose Ask to Use Personal Voice, then Allow when iOS asks. iOS asks only once." : {
 
     },
@@ -22,7 +25,16 @@
     "%@ works with every way an iPhone or iPad can be controlled. Each is part of iOS and is turned on in the Settings app; %@ needs no setup of its own." : {
 
     },
+    "A backup couldn't be made. Nothing was saved." : {
+
+    },
+    "A backup is a file with your categories and phrases. It isn't encrypted, so anyone who has it can read your phrases. Keep it somewhere private." : {
+
+    },
     "A button on Home already has this name. Choose a different name." : {
+
+    },
+    "A category in this backup has “%@” in its name, which is too wide for Home's category buttons." : {
 
     },
     "A partner can point to phrases on the screen for the person to choose with a look, a blink or a nod, then tap the one chosen." : {
@@ -44,6 +56,30 @@
 
     },
     "Add Switch Control to Settings > Accessibility > Accessibility Shortcut: once it is on, the usual touches cannot turn it off, and a triple-click can." : {
+
+    },
+    "Add a Category" : {
+
+    },
+    "Add a Phrase" : {
+
+    },
+    "Add to My Phrases" : {
+
+    },
+    "Add to My Phrases adds what this backup has that your phrases don't. It removes and moves nothing." : {
+
+    },
+    "Added “%@” to %@." : {
+
+    },
+    "Added “%@” to %@. A word in it is wider than Home's narrowest phrase buttons, so on the narrowest screens it can wrap onto a second line." : {
+
+    },
+    "Added “%@”. Add its phrases here." : {
+
+    },
+    "Added. New categories: %lld. New phrases: %lld. Nothing was removed or moved." : {
 
     },
     "Again" : {
@@ -76,6 +112,9 @@
     "Assistive Access is on, so these steps are done after leaving it: triple-click the side or top button (the Home button, on a model that has one), choose Exit Assistive Access, and enter its passcode." : {
 
     },
+    "At the End" : {
+
+    },
     "Audio could not start. Speech and Get Attention may be silent. Try again." : {
 
     },
@@ -97,10 +136,40 @@
     "Back to Talking" : {
 
     },
+    "Backups" : {
+
+    },
+    "Bed" : {
+
+    },
+    "Before “%@”" : {
+
+    },
+    "Book" : {
+
+    },
+    "Calendar" : {
+
+    },
     "Calls, Siri and Shortcuts" : {
 
     },
     "Can't be used while Personal Voice is turned off for %@." : {
+
+    },
+    "Cancel" : {
+
+    },
+    "Car" : {
+
+    },
+    "Categories in this backup: %lld. Phrases in it: %lld." : {
+
+    },
+    "Category Name" : {
+
+    },
+    "Change Picture" : {
 
     },
     "Check-ins are off. Set Up Step by Step is always here." : {
@@ -108,6 +177,9 @@
     },
     "Choose a phrase to speak it." : {
       "comment" : "Shown where the spoken message appears, before anything has been spoken."
+    },
+    "Choose a picture for “%@”. It shows on the category's button on Home." : {
+
     },
     "Choose a picture from the list." : {
 
@@ -133,10 +205,19 @@
     "Choose where the switch is: External, Screen, Camera, Back Tap, Sound or AirPod Gestures." : {
 
     },
+    "Choose where “%@” goes in %@. Home shows the phrases in this order." : {
+
+    },
+    "Choose where “%@” goes. Home shows the categories in this order." : {
+
+    },
     "Clear" : {
       "comment" : "Empties the typed message. Shown in a category's place while typing."
     },
     "Clear My Choices" : {
+
+    },
+    "Clock" : {
 
     },
     "Connect an external switch first, if one is used. A Bluetooth switch is paired in Settings > Bluetooth." : {
@@ -149,6 +230,30 @@
 
     },
     "Create an Assistive Access passcode." : {
+
+    },
+    "Cup and Saucer" : {
+
+    },
+    "Delete Category" : {
+
+    },
+    "Delete Phrase" : {
+
+    },
+    "Delete for Good" : {
+
+    },
+    "Delete “%@” and every phrase in it? They will be gone from %@. A backup you exported still has them." : {
+
+    },
+    "Delete “%@”? It will be gone from %@. A backup you exported still has it." : {
+
+    },
+    "Deleted “%@” and every phrase in it." : {
+
+    },
+    "Deleted “%@”." : {
 
     },
     "Device volume is very low. Raise it before relying on speech or Get Attention." : {
@@ -172,10 +277,16 @@
     "Earlier setup answers could not be read, so setup starts again. Nothing else was changed." : {
 
     },
+    "Edit Phrase" : {
+
+    },
     "Emergency" : {
 
     },
     "Emergency can't be deleted, so it's always one step away. You can change its phrases." : {
+
+    },
+    "Emergency is always one step away on Home, so it can't be renamed, moved or deleted. You can change its phrases." : {
 
     },
     "Emergency needs at least one phrase. Change this phrase's words instead." : {
@@ -188,6 +299,12 @@
 
     },
     "Everything here can be changed later in Family Setup. In about three months, Family Setup will ask whether anything has changed." : {
+
+    },
+    "Everything in this backup is already in your phrases." : {
+
+    },
+    "Export a Backup" : {
 
     },
     "Eye Tracking" : {
@@ -208,6 +325,9 @@
     "Family: help with setting up is in Settings." : {
 
     },
+    "First Aid Kit" : {
+
+    },
     "First, open Settings > Accessibility > Accessibility Shortcut and make sure Touch Accommodations is selected, so a triple-click can turn it off again if touches stop working as expected." : {
 
     },
@@ -215,6 +335,12 @@
 
     },
     "For the device's own options, choose Devices, then its name." : {
+
+    },
+    "Fork and Knife" : {
+
+    },
+    "Game Controller" : {
 
     },
     "Get Attention" : {
@@ -232,7 +358,13 @@
     "Get Attention stopped unexpectedly. Choose it again to restart." : {
 
     },
+    "Gift" : {
+
+    },
     "Go Through Setup Again" : {
+
+    },
+    "Grid" : {
 
     },
     "Guided Access" : {
@@ -253,6 +385,9 @@
     "Hear Automatic" : {
 
     },
+    "Heart" : {
+
+    },
     "Help" : {
       "comment" : "Another name a person can say for the Get Attention control with Voice Control."
     },
@@ -265,6 +400,18 @@
     "Home can show one category's phrases or Emergency's, with Yes, No, Emergency, Again and Get Attention as large as this screen has room for. The other categories stay where they are, dimmed, so nothing moves. The change shows when Settings closes." : {
 
     },
+    "Home has room for four categories besides Emergency, and this would make more." : {
+
+    },
+    "Home has room for four categories besides Emergency, so another can't be added. Rename one, or delete one first." : {
+
+    },
+    "Home has room for four categories besides Emergency." : {
+
+    },
+    "Home needs at least three categories besides Emergency, and this would leave fewer." : {
+
+    },
     "Home shows every category." : {
 
     },
@@ -272,6 +419,12 @@
 
     },
     "Home's buttons take the size the answers need, as large as this screen has room for, and are largest until something is chosen. The new size shows when Settings closes." : {
+
+    },
+    "Home's rest board shows this category, so Home will show every category instead." : {
+
+    },
+    "House" : {
 
     },
     "How is the screen reached?" : {
@@ -298,13 +451,34 @@
     "In Use" : {
 
     },
+    "It's already there." : {
+
+    },
     "Keep %@ Open" : {
+
+    },
+    "Keep Category" : {
+
+    },
+    "Keep Phrase" : {
+
+    },
+    "Keep This Picture" : {
 
     },
     "Keeps the iPhone or iPad in one app until a passcode is entered." : {
 
     },
+    "Leaf" : {
+
+    },
     "Learn About Each Way" : {
+
+    },
+    "Leave It Here" : {
+
+    },
+    "Leave “%@” Here" : {
 
     },
     "Lends the person's accessibility settings to another iPhone or iPad for a while. Sharing ends with Stop Sharing, a triple-click or locking the device, or when the two are more than 30 feet (about 9 m) apart." : {
@@ -346,10 +520,28 @@
     "Most settings, these guides' steps included, are changed only after leaving Assistive Access." : {
 
     },
+    "Move Category" : {
+
+    },
+    "Move Phrase" : {
+
+    },
     "Move the pointer by moving the head; choose with a facial expression or Dwell Control." : {
 
     },
+    "Moved." : {
+
+    },
+    "Music Note" : {
+
+    },
     "Needs can change. Is the screen still reached the same way? Going through setup again takes a few minutes." : {
+
+    },
+    "New Category" : {
+
+    },
+    "New Phrase" : {
 
     },
     "Next" : {
@@ -389,6 +581,9 @@
       "comment" : "VoiceOver hint on Home's Type while it is dimmed, because the window has no room for the safety buttons above the keyboard."
     },
     "Nothing to turn on. If tapping is hard, Touch Accommodations can help: Hold Duration ignores touches shorter than a set time, Ignore Repeat treats several quick touches as one, and Tap Assistance uses the first or last place touched." : {
+
+    },
+    "Now: %@." : {
 
     },
     "On an iPhone with an Action button, pressing and holding it can use an accessibility feature or run a shortcut." : {
@@ -466,6 +661,12 @@
     "Other settings in iOS that can help. Each is in Settings > Accessibility." : {
 
     },
+    "Paw Print" : {
+
+    },
+    "Person" : {
+
+    },
     "Personal Voice" : {
 
     },
@@ -478,10 +679,25 @@
     "Personal Voice isn't available here" : {
 
     },
+    "Phone" : {
+
+    },
+    "Phrase" : {
+
+    },
     "Phrases" : {
       "comment" : "Shows the phrases instead of typing. Beside the message, above Type."
     },
+    "Phrases and Categories" : {
+
+    },
     "Phrases can't be saved right now. Changes will be lost when the app closes." : {
+
+    },
+    "Picture" : {
+
+    },
+    "Pills" : {
 
     },
     "Place the iPhone or iPad on a stable stand, about 1½ feet (45 cm) from the face." : {
@@ -499,19 +715,58 @@
     "Put Back" : {
       "comment" : "Brings back the typed message Clear just emptied. Shown in a category's place while typing."
     },
+    "Question Mark" : {
+
+    },
+    "Raised Hand" : {
+
+    },
     "Reaching the Screen" : {
+
+    },
+    "Reading the backup…" : {
 
     },
     "Ready" : {
 
     },
+    "Rename" : {
+
+    },
+    "Rename Category" : {
+
+    },
     "Repeat" : {
       "comment" : "Another name a person can say for the Again control with Voice Control."
+    },
+    "Replace My Phrases" : {
+
+    },
+    "Replace My Phrases makes your phrases match this backup, in its order." : {
+
+    },
+    "Replaced. Your phrases now match this backup." : {
+
+    },
+    "Replacing would remove phrases or categories you wrote that aren't in this backup. Add it instead, then delete what you don't need." : {
+
     },
     "Replacing would remove phrases that aren't in the backup, so nothing was changed. Add the backup to your phrases instead." : {
 
     },
+    "Restore from a Backup" : {
+
+    },
+    "Save" : {
+
+    },
     "Save phrases under Favorite Phrases on the same screen." : {
+
+    },
+    "Saved." : {
+
+    },
+    "Saved. A word in it is wider than Home's narrowest phrase buttons, so on the narrowest screens it can wrap onto a second line." : {
 
     },
     "Say the name of a button to choose it, such as “Tap Yes”." : {
@@ -544,6 +799,9 @@
     "Siri Pause Time, on the same screen, gives more time to finish speaking." : {
 
     },
+    "Smiling Face" : {
+
+    },
     "Someone else helps" : {
 
     },
@@ -568,6 +826,9 @@
     "Speaking with a newly available voice." : {
 
     },
+    "Speech Bubbles" : {
+
+    },
     "Speech stopped unexpectedly. Choose Again to repeat it." : {
 
     },
@@ -581,6 +842,9 @@
 
     },
     "Standard" : {
+
+    },
+    "Star" : {
 
     },
     "Step %lld of %lld" : {
@@ -604,6 +868,9 @@
     "Stopped: Phrases" : {
 
     },
+    "Sun" : {
+
+    },
     "Swipe to Accessibility and choose a feature, or to Shortcut and choose a shortcut. Without a choice, the button does nothing." : {
 
     },
@@ -616,10 +883,25 @@
     "Switch Control timing" : {
 
     },
+    "Television" : {
+
+    },
+    "Text Bubble" : {
+
+    },
     "That answer could not be saved. Try again." : {
 
     },
+    "That's as long as a name can be." : {
+
+    },
+    "That's as long as a phrase can be." : {
+
+    },
     "The Action button" : {
+
+    },
+    "The file couldn't be opened. Nothing was changed." : {
 
     },
     "The iPhone or iPad learns a word or a sound of the person's own and runs an action when it hears it. It suits someone who can still make a few sounds the same way each time. While it is on, the microphone is in use; what it hears is handled on the device." : {
@@ -646,6 +928,9 @@
     "The voice chosen earlier is no longer on this device, so Automatic is used." : {
 
     },
+    "There's no backup to restore. Go back and choose one." : {
+
+    },
     "These are in Settings > Accessibility > Switch Control." : {
 
     },
@@ -656,6 +941,9 @@
 
     },
     "This category already has this phrase." : {
+
+    },
+    "This category isn't in your phrases any more." : {
 
     },
     "This file couldn't be read. It may be damaged or not a phrase backup. Nothing was changed." : {
@@ -673,6 +961,9 @@
     "This is where a family member or carer sets up %@: the voice it speaks with, help with reaching the screen, and how to keep it open. Nothing here is needed to start talking." : {
 
     },
+    "This isn't in your phrases any more." : {
+
+    },
     "This library is too large to fit in one backup. Nothing was saved." : {
 
     },
@@ -683,6 +974,9 @@
 
     },
     "This was changed or deleted somewhere else. Go back and try again." : {
+
+    },
+    "Thumbs Up" : {
 
     },
     "Time for a check-in" : {
@@ -725,6 +1019,9 @@
 
     },
     "Turn on what is used" : {
+
+    },
+    "Two People" : {
 
     },
     "Two items in this library have the same identity, so it can't be changed safely." : {
@@ -778,6 +1075,15 @@
     "Volume low" : {
 
     },
+    "Walking" : {
+
+    },
+    "Warning Sign" : {
+
+    },
+    "Water Drop" : {
+
+    },
     "Ways of reaching the screen chosen:" : {
 
     },
@@ -799,16 +1105,25 @@
     "Your Personal Voice when it is allowed, otherwise the best voice on this device" : {
 
     },
+    "Your phrases already match this backup." : {
+
+    },
     "Your phrases changed while this was open, so nothing was changed. Try again." : {
 
     },
     "Your phrases couldn't be read, so nothing was changed." : {
 
     },
+    "Your saved phrases couldn't be opened, so they can't be backed up now." : {
+
+    },
     "Your saved phrases couldn't be opened. They haven't been deleted. Restart the app to try again. Don't delete the app: that would erase them." : {
 
     },
     "Zoom" : {
+
+    },
+    "“%@” is too wide for Home's category buttons. Choose a shorter word." : {
 
     }
   },

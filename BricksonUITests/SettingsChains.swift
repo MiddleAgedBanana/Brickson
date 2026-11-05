@@ -52,6 +52,10 @@ nonisolated enum SettingsChains {
     /// The first step's way into the guide, and the guide's way out.
     static let learnAboutEachWay = "learnAboutEachWay"
     static let eachWayDone = "eachWayDone"
+    /// Family Setup's Phrases and Categories, which opens the Library: its
+    /// screens are a surface of their own (`LibraryChains`), so a map
+    /// merged with theirs follows chains on into them.
+    static let libraryRow = "library"
     /// Family Setup's rows that open guides and settings of their own.
     static let familySetupGuides: Set = [
         "voiceSettings", "reachingTheScreen", "keepOpen", "callsSiriAndShortcuts", "moreAccessibility", "privacyPolicy",
@@ -96,6 +100,7 @@ nonisolated enum SettingsChains {
                 switch name {
                 case back: ChainControl(name, frame, .navigates, leadsTo: root)
                 case guidedSetupRow: ChainControl(name, frame, .navigates, leadsTo: firstStep)
+                case libraryRow: ChainControl(name, frame, .navigates, leadsTo: LibraryChains.library)
                 case _ where familySetupGuides.contains(name): ChainControl(name, frame, .navigates, leadsTo: name)
                 default: nil
                 }

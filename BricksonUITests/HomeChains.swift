@@ -100,6 +100,12 @@ nonisolated enum HomeChains {
         /// "Typing on Home", *Open: by centre, dimmed phrases border Clear
         /// and Put Back*).
         var tiles: [CGRect] = []
+        /// An everyday category, by its place in `categories`, that shows
+        /// only these of `tiles`, as a category a family made can: a new
+        /// one starts with none. Its empty cells are places a look rests
+        /// on (docs/DECISIONS.md, "Typing on Home", *Open: a category with
+        /// fewer phrases than the grid has columns*).
+        var shortCategory: (index: Int, tiles: [CGRect])? = nil
         /// Phrases and Type, beside the message. Nil where they are not
         /// known; the map then has neither.
         var phrases: CGRect?
@@ -263,11 +269,12 @@ nonisolated enum HomeChains {
                         : ChainControl(Self.type, type, .navigates, leadsTo: after { $0.typing = true })
                 )
             }
+            let tiles = frames.shortCategory.flatMap { $0.index == state.showing ? $0.tiles : nil } ?? frames.tiles
             if let typing {
                 controls.append(ChainControl(field, typing.field, .nothing))
-                controls += frames.tiles.map { ChainControl(phraseTile, $0, .nothing) }
+                controls += tiles.map { ChainControl(phraseTile, $0, .nothing) }
             } else {
-                controls += frames.tiles.map { ChainControl(phraseTile, $0, .speaks, leadsTo: spoken) }
+                controls += tiles.map { ChainControl(phraseTile, $0, .speaks, leadsTo: spoken) }
             }
             let here = name(of: state, categories: names)
             states[here] = controls

@@ -114,7 +114,16 @@ extension PhraseCategory {
     /// This category's phrases in their fixed on-screen order, with the same
     /// tie-breaking as `orderedForDisplay`.
     var phrasesInOrder: [Phrase] {
-        (phrases ?? []).sorted { lhs, rhs in
+        Phrase.orderedForDisplay(phrases ?? [])
+    }
+}
+
+extension Phrase {
+    /// Phrases in their fixed on-screen order: by stored place, then by
+    /// words, then by the stable `uuid`, as `PhraseCategory.orderedForDisplay`
+    /// orders categories (invariant 8).
+    static func orderedForDisplay(_ phrases: [Phrase]) -> [Phrase] {
+        phrases.sorted { lhs, rhs in
             if lhs.sortOrder != rhs.sortOrder { return lhs.sortOrder < rhs.sortOrder }
             if lhs.text != rhs.text { return lhs.text < rhs.text }
             return lhs.uuid.uuidString < rhs.uuid.uuidString

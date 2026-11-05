@@ -123,13 +123,13 @@ what they sit on).
 | Token | Hex | Used for | White label on it | Edge on white | Edge on black |
 |---|---|---|---|---|---|
 | `phrase` (`AccentColor`) | `#0A60D6` | Phrase tiles, categories, Again, Speak, Type, Yes, No, Hear, Use, Save | 5.74:1 | 5.74:1 | 3.66:1 |
-| `control` (`ControlFill`) | `#5A6474` | Clear, Settings, Back to Talking, Family Setup rows, Slower, Faster, Move to…, Keep | 5.98:1 | 5.98:1 | 3.51:1 |
-| `emergency` (`EmergencyFill`) | `#C8161E` | Emergency, emergency phrases, Delete Phrase, "Delete … for good" | 5.85:1 | 5.85:1 | 3.59:1 |
+| `control` (`ControlFill`) | `#5A6474` | Clear, Settings, Back to Talking, Family Setup rows, Slower, Faster, the Library's rows and questions, Delete Phrase and Delete for Good | 5.98:1 | 5.98:1 | 3.51:1 |
+| `emergency` (`EmergencyFill`) | `#C8161E` | Emergency, emergency phrases | 5.85:1 | 5.85:1 | 3.59:1 |
 | `attention` (`AttentionFill`) | `#B45309` | Get Attention | 5.02:1 | 5.02:1 | 4.18:1 |
 | `stop` (`StopFill`) | `#0F766E` | Stop (Stop Alert in the drawings) | 5.47:1 | 5.47:1 | 3.84:1 |
 
 All five are `Palette`'s fills, pinned by `PaletteTests` (the last two
-since *Get Attention and Stop on Home*, 2026-10-23). The "Used for" column is the drawings' assignment. Today's
+since *Get Attention and Stop on Home*, 2026-10-23). The "Used for" column is the drawings' assignment, except the Library's deletes: the drawings put them on `emergency`, and the built Library keeps red for Emergency alone, telling Delete apart by its words, icon and place (docs/DECISIONS.md, "The Library in Settings", 2026-11-05). Today's
 stand-in Home puts Yes, No, Again and the categories not selected on
 `control`; which role each control takes on the new Home is settled with
 "Home's slot plan", and every role it can take is a pair measured here.
@@ -601,9 +601,9 @@ a held activation meets next*). Below the band:
   [`work/settings-row-place.md`](work/settings-row-place.md)).
 - **Family Setup**: the landed rows are Set Up Step by Step, Voice
   Settings, Reaching the Screen, Keep Brickson Open, Privacy Policy and
-  About, each a standard control. The Library row joins them when its
-  screen lands; the drawings' Phrases row is not that finished flow. No
-  toggles: a toggle turns into its opposite in place.
+  About, each a standard control, with Phrases and Categories first
+  after the lead-in since 2026-11-05 (docs/DECISIONS.md, "The Library in
+  Settings"). No toggles: a toggle turns into its opposite in place.
 - **Privacy Policy**: a screen that shows the policy's text bundled in the
   app, so it opens with no network, and on it a separate button that
   opens the web page in an in-app Safari sheet, never in Safari
@@ -626,8 +626,12 @@ a held activation meets next*). Below the band:
   The ready-to-turned-off card's longer words and the chain through iOS's
   real question remain recorded gaps. These decisions win over the
   drawings; this reference does not switch the permission policy.
-- **Library and phrase editor: drawn for their look only, not as a
-  flow.** The drawings show the Library list (a reserved status line for
+- **Library and phrase editor (the first drawings, 2026-10-22): drawn
+  for their look only, not as a flow.** Since 2026-11-05 the Library is
+  drawn as a flow and built
+  ([`work/library-screen.md`](work/library-screen.md), *The drawings*,
+  and *What building it changed*); what follows is the first drawings'
+  record. The drawings show the Library list (a reserved status line for
   save results; the Emergency category row first with a note that it
   cannot be deleted; a row per category; Add Category; a note on
   backups; Export and Restore) and a phrase editor (the field, Save,

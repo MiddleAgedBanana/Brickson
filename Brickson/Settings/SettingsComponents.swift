@@ -5,9 +5,9 @@ import SwiftUI
 ///
 /// Colours are only pairs `PaletteTests` already pins: white on
 /// `Palette.controlFill` or `Palette.phraseFill` for controls, and primary
-/// ink on the screen for text and card edges. The system's secondary gray and
-/// grouped-list headers are not used: they measure under 4.5:1
-/// (AGENTS.md, invariant 6).
+/// ink on the screen for text, card edges and dimmed rows. The system's
+/// secondary gray, grouped-list headers and dimmed buttons are not used:
+/// they measure under 4.5:1 (AGENTS.md, invariant 6).
 enum SettingsMetrics {
     static let gutter: CGFloat = 16
     static let rowSpacing: CGFloat = 16
@@ -44,6 +44,10 @@ struct SettingsRowLabel: View {
         self.systemImage = systemImage
     }
 
+    /// Off, the row is drawn unfilled, with primary ink
+    /// (`SettingsRowButtonStyle`).
+    @Environment(\.isEnabled) private var isEnabled
+
     var body: some View {
         Label {
             title
@@ -52,9 +56,53 @@ struct SettingsRowLabel: View {
             Image(systemName: systemImage)
         }
         .font(.title3.weight(.semibold))
-        .foregroundStyle(.white)
+        .foregroundStyle(isEnabled ? Color.white : Color.primary)
         .multilineTextAlignment(.leading)
         .frame(maxWidth: .infinity, minHeight: SettingsMetrics.rowHeight, alignment: .leading)
+    }
+}
+
+/// Settings' row: the system's bordered prominent button, white on `fill`.
+///
+/// Dimmed, the system draws a light gray with paler words, which Apple's
+/// audit measured under 4.5:1 on the Library's Add a Category on CI
+/// (AGENTS.md, invariant 6). So a dimmed row is drawn over with the look
+/// Home gives a control that is off (`HomeButtonLook`): unfilled, with a
+/// primary-ink edge and primary-ink words on the screen, pairs
+/// `PaletteTests` pins. The system's button stays underneath, so the row
+/// keeps its frame, its place in the accessibility tree and its identity
+/// as it dims and comes back (AGENTS.md, "Controls keep their frames
+/// across every state of a screen").
+struct SettingsRowButtonStyle: PrimitiveButtonStyle {
+    let fill: Color
+
+    func makeBody(configuration: Configuration) -> some View {
+        SettingsRowButton(configuration: configuration, fill: fill)
+    }
+}
+
+private struct SettingsRowButton: View {
+    let configuration: PrimitiveButtonStyleConfiguration
+    let fill: Color
+    @Environment(\.isEnabled) private var isEnabled
+
+    var body: some View {
+        BorderedProminentButtonStyle().makeBody(configuration: configuration)
+            .tint(fill)
+            .overlay {
+                if !isEnabled {
+                    ZStack {
+                        Rectangle().fill(Palette.screen)
+                        Capsule().strokeBorder(Color.primary, lineWidth: 2)
+                        // The system's own inset for the words (measured on
+                        // CI's captures), so they sit where they did.
+                        configuration.label
+                            .padding(.horizontal, 14)
+                    }
+                    .accessibilityHidden(true)
+                    .allowsHitTesting(false)
+                }
+            }
     }
 }
 
@@ -73,6 +121,10 @@ struct SettingsPairLabel: View {
         self.systemImage = systemImage
     }
 
+    /// Off, the button is drawn unfilled, with primary ink
+    /// (`SettingsRowButtonStyle`).
+    @Environment(\.isEnabled) private var isEnabled
+
     var body: some View {
         VStack(spacing: 4) {
             Image(systemName: systemImage)
@@ -84,17 +136,17 @@ struct SettingsPairLabel: View {
                 .fixedSize(horizontal: false, vertical: true)
         }
         .font(.title3.weight(.semibold))
-        .foregroundStyle(.white)
+        .foregroundStyle(isEnabled ? Color.white : Color.primary)
         .frame(maxWidth: .infinity, minHeight: SettingsMetrics.rowHeight)
     }
 }
 
 extension View {
     /// The look of every row and action button in Settings: white on the
-    /// control fill (5.98:1).
-    func settingsRowStyle() -> some View {
-        buttonStyle(.borderedProminent)
-            .tint(Palette.controlFill)
+    /// control fill (5.98:1), or on `fill`, and dimmed with words that
+    /// still read (`SettingsRowButtonStyle`).
+    func settingsRowStyle(fill: Color = Palette.controlFill) -> some View {
+        buttonStyle(SettingsRowButtonStyle(fill: fill))
     }
 
     /// Keeps the view at the tallest it has been since its screen opened,
@@ -239,13 +291,26 @@ struct SettingsCard<Content: View>: View {
 /// the screen keeps at its top for the navigation bar, and names its
 /// content as a coordinate space (`SettingsMetrics.contentSpace`).
 struct SettingsScreen<Content: View>: View {
-    let title: LocalizedStringKey
-    @ViewBuilder let content: Content
+    let title: Text
+    let content: Content
+
+    init(title: LocalizedStringKey, @ViewBuilder content: () -> Content) {
+        self.title = Text(title)
+        self.content = content()
+    }
+
+    /// For a title in the person's own words, such as a category's name,
+    /// which is never looked up for translation.
+    init(verbatimTitle: String, @ViewBuilder content: () -> Content) {
+        title = Text(verbatim: verbatimTitle)
+        self.content = content()
+    }
 
     @Environment(\.settingsCover) private var cover
     /// What the system keeps at each edge of this screen: the navigation
     /// bar at its top.
     @State private var safeArea: HomeLayout.Insets?
+    @State private var scroll = SettingsScrollPosition()
 
     var body: some View {
         ScrollView {
@@ -255,6 +320,14 @@ struct SettingsScreen<Content: View>: View {
             .coordinateSpace(.named(SettingsMetrics.contentSpace))
             .padding(SettingsMetrics.gutter)
             .environment(\.settingsScreenFrames, frames)
+            .environment(\.settingsScrollPosition, scroll)
+        }
+        // Kept without redrawing the screen: only a row that opens a
+        // Library question reads it, when chosen.
+        .onScrollGeometryChange(for: CGFloat.self) { geometry in
+            geometry.contentOffset.y + geometry.contentInsets.top
+        } action: { _, offset in
+            scroll.offset = offset
         }
         .onGeometryChange(for: HomeLayout.Insets.self) { proxy in
             let insets = proxy.safeAreaInsets
@@ -280,9 +353,19 @@ nonisolated struct SettingsCover: Equatable, Sendable {
     let stack: CGRect
 }
 
+/// How far a Settings screen has scrolled down from its top, kept outside
+/// SwiftUI's view updates so scrolling redraws nothing. A row that opens a
+/// Library question reads it when chosen, to say where it was on screen
+/// (`LibraryModel.askedFrom`).
+final class SettingsScrollPosition {
+    var offset: CGFloat = 0
+}
+
 extension EnvironmentValues {
     /// Set by Settings' cover; nil anywhere else.
     @Entry var settingsCover: SettingsCover? = nil
+    /// Set by each `SettingsScreen` for its content; nil anywhere else.
+    @Entry var settingsScrollPosition: SettingsScrollPosition? = nil
     /// Where this Settings screen sits in the window, once it has measured
     /// what it keeps for its navigation bar (`SettingsScreen`).
     @Entry var settingsScreenFrames: SettingsScreenFrames? = nil

@@ -83,6 +83,7 @@ struct BricksonApp: App {
                 .environment(\.phraseLibraryIssue, phraseLibraryIssue)
                 .environment(\.appTimeouts, launch.timeouts)
                 .environment(\.homeRequest, homeRequest)
+                .environment(\.restoresSampleBackup, launch.activeRestoresSampleBackup)
                 // The owner's switch, not a test's fixed sizes, decides,
                 // so Settings' UI tests draw the first step as people see it.
                 .environment(\.homeSizesFollowTheAnswer, ProfileChoice.followsTheAnswer || launch.activeHomeFollowsAnswer)
@@ -172,4 +173,8 @@ extension EnvironmentValues {
     /// while the owner's switch has them follow the answer
     /// (`ProfileChoice.followsTheAnswer`), even where a UI test fixes them.
     @Entry var homeSizesFollowTheAnswer = false
+    /// Whether the Library's Restore from a Backup opens a sample backup
+    /// instead of the system's file picker, which UI tests cannot drive:
+    /// only for a UI test in a debug build (`LaunchOptions`).
+    @Entry var restoresSampleBackup = false
 }

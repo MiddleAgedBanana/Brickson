@@ -659,7 +659,7 @@ one replaces with no loss.
 | What | Where | Why | Revisit when |
 |---|---|---|---|
 | XCTest and XCUIAutomation | UI tests | Swift Testing cannot launch or drive an app. Apple: "UI automation and performance testing APIs are only available in XCTest" (WWDC26, "Migrate to Swift Testing"), and the XCTest page says to "continue to use XCTest for user interface tests". | Swift Testing can drive an app |
-| UIKit types in UI tests: `UIDevice` (its idiom and system version), `UIDeviceOrientation`, a screenshot's `UIImage`; in the opt-in slide probe, `UIAccessibility.isBoldTextEnabled` and `UILargeContentViewerInteraction.isEnabled` | `GetAttentionOnHomeTests`, `HeldSlideProbeTests`, `HomeAccessibilityOrderTests`, `HomeLayoutTests`, `HomeReachabilityTests`, `HomeSizesTests`, `KeyboardProbeTests`, `LaunchHelpers`, `LaunchTests`, `SettingsOnHomeTests` | XCUIAutomation's own API uses these types (`XCUIDevice.orientation`, `XCUIScreenshot.image`) and reports no device idiom. Nor does it report whether Bold Text or the large content viewer is on, which the probe records beside each result. | With the row above |
+| UIKit types in UI tests: `UIDevice` (its idiom and system version), `UIDeviceOrientation`, a screenshot's `UIImage`; in the opt-in slide probe, `UIAccessibility.isBoldTextEnabled` and `UILargeContentViewerInteraction.isEnabled` | `GetAttentionOnHomeTests`, `HeldSlideProbeTests`, `HomeAccessibilityOrderTests`, `HomeLayoutTests`, `HomeReachabilityTests`, `HomeSizesTests`, `KeyboardProbeTests`, `LaunchHelpers`, `LaunchTests`, `LibraryTests`, `SettingsOnHomeTests` | XCUIAutomation's own API uses these types (`XCUIDevice.orientation`, `XCUIScreenshot.image`) and reports no device idiom. Nor does it report whether Bold Text or the large content viewer is on, which the probe records beside each result. | With the row above |
 | `UIApplication.isIdleTimerDisabled` | `BricksonApp` | Invariant 12. SwiftUI has no way to keep the screen awake; Apple documents this property for it. | SwiftUI gains one |
 | A `UIApplicationDelegate` answering `application(_:shouldAllowExtensionPointIdentifier:)`, given to SwiftUI with `UIApplicationDelegateAdaptor`; `UIApplication` in its tests | `BricksonAppDelegate`, `BricksonApp`, `BricksonAppDelegateTests` | Refusing other apps' keyboards (*Third-party keyboards refused in 1.0*). SwiftUI has no way to refuse an app extension; Apple documents this delegate method for it (not deprecated, iOS 8 and later, read 2026-10-23), and the adaptor as how a SwiftUI app handles app-delegate callbacks. | SwiftUI gains a way |
 | `UIFont` (text-style sizes, weights, line heights), `NSString.size(withAttributes:)`, `UIImage.SymbolConfiguration` | `LabelFont` | `WordFit` measures words before layout, as a plain tested type. SwiftUI measures text only inside a view hierarchy (`Text.Layout`; `ViewThatFits` failed Apple's accessibility audit). iOS 26's `Font.resolve(in:)` gives a point size and a Core Text font, but measuring a word still needs UIKit or Core Text, and resolving a font outside a view is undocumented. | Under *Planned moves* |
@@ -799,6 +799,17 @@ model object. What SwiftData does when a held object is deleted elsewhere,
 and the other SwiftData behaviours this rests on, are probed by
 `SwiftDataBehaviourTests` (questions S1 to S4 in
 `docs/log/2026-10-21-library-core.md`).
+
+Home draws its phrases from a query of phrases, never through a
+category's relationship (`HomeView`; `CategorySelection.phrases(of:in:)`).
+Read through its category, a phrase edited in the Library's own context
+kept its old words and place on Home (CI's iPad, 2026-11-05), while
+added and deleted phrases and a renamed category showed: the query of
+categories seems to be read again only when a category's own row
+changes. Any later screen that shows
+the library while it can change reads each kind of model through a
+query of that kind (`SwiftDataBehaviourTests.s2bAQueryOfPhrasesShowsWordsAndPlacesSavedElsewhere`;
+docs/log/2026-11-05-library-screen.md).
 
 The launch's own writes, the seeder filling an empty store and the
 emergency repair (*The emergency category is always there*), are not
@@ -1218,9 +1229,9 @@ remain significant. This extends the listed comparison rules without
 rewriting stored or imported names. It does not change phrase validation
 or declare Unicode punctuation silent.
 
-The editing screens are not built. They live in a Library screen inside
-Settings for 1.0 (the memo's recommendation); an edit mode on Home may
-come later, for touch only.
+The editing screens live in a Library screen inside Settings for 1.0 (the
+memo's recommendation; "The Library in Settings"); an edit mode on Home
+may come later, for touch only.
 
 ## Importing a backup
 
@@ -1228,7 +1239,7 @@ come later, for touch only.
 Reversible if the owner objects.*
 
 - A backup comes in only through the system file picker, from inside the
-  family area (built later). Brickson registers no document type in 1.0,
+  family area ("Exporting and restoring a backup"). Brickson registers no document type in 1.0,
   so no file can open Brickson by itself or put an import question over
   Home, where it could cover Emergency, Yes and No.
 - Import keeps the backup's words exactly, byte for byte. It never trims,
@@ -1357,6 +1368,244 @@ that saved phrases existed or warn them off deleting the app.
 
 Not built: a way for the family to rescue the phrases from a file that
 will not open.
+
+## The Library in Settings
+
+*Default, adopted 2026-11-05 by the thread that built it (R0 item 6):
+reversible if the owner objects. The work file is
+[`work/library-screen.md`](work/library-screen.md).*
+
+The family edits phrases and categories, and exports and restores
+backups, on screens inside Settings, a screen below Family Setup, never on
+Home (invariant 2; "Editing the library").
+
+- **The way in** is Family Setup's **Phrases and Categories**, its first
+  row after Set Up Step by Step's lead-in, the check-in card and the
+  setup warning. It is a button that reads the library and then opens it,
+  so the Library's rows are there from its first frame.
+- **Phrases and Categories** (the Library): a line kept for results;
+  Home's own warnings where the store is only in memory or unreadable;
+  Emergency first, then the everyday categories in Home's order, each
+  opening its screen; **Add a Category**, dimmed at four with the reason
+  beside it ("Three or four everyday categories"); then *Backups*: the
+  privacy policy's words about a backup, **Export a Backup**, **Restore
+  from a Backup** and a line kept for what a restore did
+  ("Exporting and restoring a backup").
+- **A category**, titled with its name: a line kept for results, **Add a
+  Phrase**, a row per phrase in Home's order, then **Change Picture**,
+  **Move Category**, **Delete Category** and, last, **Rename** ("The
+  Library's question screens" says why last). Emergency has passive
+  words in place of those four rows: it cannot be renamed, moved or
+  deleted ("The emergency category is always there").
+- **Edit Phrase** and **New Phrase**: the field, **Save**, a line kept for
+  what Save did, then **Move Phrase** and **Delete Phrase** (Edit Phrase
+  only). **Rename Category** and **New Category**: the field, Save and the
+  line. Save is dimmed until the words differ from what is saved, so a
+  look resting on it meets nothing to do; Return saves, as it speaks on
+  Home, and a typed line break never reaches the words
+  (`MessageComposer`). New Phrase empties its field after a save, ready
+  for the next. New Category opens the new category's screen in its
+  place, so Add a Phrase is one activation away.
+- **Every change** is planned by `LibraryEdit.plan` against the library as
+  stored and written by `LibraryEditor.apply` in one save, or not at all,
+  through `LibraryModel`; what it did, or why not, shows as passive words
+  in a line kept for it (`LibraryResultLine`), with every version the line
+  can show laid out hidden and its tallest height kept, so nothing moves
+  when words appear. A control that would only be refused is dimmed in
+  place with its reason beside it, never removed. A dimmed row is drawn
+  as Home draws a control that is off, unfilled with primary-ink words
+  and edge (`SettingsRowButtonStyle`): the system's own dimmed look
+  measured under 4.5:1 in Apple's audit on CI (invariant 6).
+- **A person's words** (phrases, category names, titles) are shown with
+  `Text(verbatim:)` and never translated; `SettingsScreen` gained a
+  verbatim title for a category's screen.
+- **Counts are written without plurals** ("New phrases: 1"), and the
+  Library's rows show names only, not "Emergency, 6 phrases" as the spec
+  drew them: the String Catalog's plural forms are not used yet, and a
+  count must never read "1 phrases".
+- **Colours:** none new. Every row is white on `Palette.controlFill`, Save
+  is white on `Palette.phraseFill`, and Delete for Good is a row on
+  `controlFill`, told apart by its words, its icon and its place: red
+  stays Emergency's (docs/DESIGN.md's colour table).
+- **The idle reset** ("Settings resets when idle and never closes"): a
+  field with unsaved words, the file picker and the reading of a chosen
+  file hold it. The share sheet cannot: `ShareLink` says nothing about
+  when its sheet is showing, so a reset can happen under it, which only
+  returns Settings to its root behind the sheet (an accepted gap). The
+  Restore question does not hold it, though the spec planned that: a
+  reset only forgets the chosen backup, while holding it would leave
+  Replace My Phrases waiting for as long as the screen stayed open.
+- **Routes** are `SettingsRoute` cases, so the idle reset and the UI tests
+  treat them like every other screen. The spec's `importBackup` is
+  `restoreBackup`, after the row's words.
+
+## The Library's question screens
+
+*Default, adopted 2026-11-05 by the thread that built them: reversible if
+the owner objects.*
+
+Delete Phrase, Delete Category, Move Phrase, Move Category, Change
+Picture and a chosen backup each ask on a screen of their own, opened by
+a row that only opens it (`LibraryAskingRow`). Under AssistiveTouch
+Dwell, head tracking or Eye Tracking the look is still where that row
+was, so each question is placed from it (`LibraryQuestionPlace`,
+`LibraryQuestionLayout`):
+
+- **The way back** (Keep Phrase, Keep Category, Leave It Here, Keep This
+  Picture, Cancel) takes the row's frame in the window: the row's frame
+  in its screen's content less what that screen had scrolled, and every
+  Settings screen's content starts at the same place in the window. Keep
+  takes the asking control's place (invariant 3), and a repeat goes back
+  and forth between two controls that only open screens.
+- **Every word** on a question screen, its results and refusals too, is
+  in one block just under the way back. The choices hold only buttons.
+  The first version put the words just above the way back where they
+  fitted; on CI the chain test found a look resting on their top nearer
+  Back to Talking than the way back (Change Picture, on the phone at the
+  default text size and on the iPad at the largest), and Back to Talking
+  closes Settings onto Home's Yes, No, phrases and Get Attention.
+  Under the way back they lead away from the top of the screen, which
+  the placement cannot see from the screen's content.
+- **The choices** start at least a row below both, and lower until every
+  point of the way back, the words and the gap around the row is nearer
+  the way back than the first choice, by centre and by edge, with 8
+  points to spare (`SetupAnswersPlace`). Where that is below what shows,
+  the family scrolls, which costs a dwell user several activations.
+- **A screen's last row** is nearest every point under it, so a look
+  resting anywhere below it opens its question, and a choice under the
+  way back would be nearer some of those points. Its question puts the
+  choices above the way back, a row and a gap clear of it, and the words
+  under it; where they do not fit above, they go below every point down
+  to the foot of what shows. Today that is Edit Phrase's Delete Phrase
+  and the Library's Restore from a Backup. A category's screen ends with
+  Rename, whose screen changes nothing until words are typed, so none of
+  its asking rows is last. The chain test found the first version, which
+  put Delete for Good under Keep Phrase: a phrase row lower on a category
+  than Edit Phrase's Delete Phrase opened its editor, the same look met
+  Delete Phrase there, then Delete for Good.
+- **Choices are rows as wide as the way back.** By nearest centre, a
+  button narrower than a wide row and under it is nearer the row's lower
+  corners than the row's own centre is. Change Picture was drawn as a
+  grid of 64-point pictures, and the modelled chain test found a look on
+  Change Picture's lower corner meeting the first picture
+  (`LibraryChainsTests`); its 32 pictures are rows, each with its name in
+  words, which Voice Control can also say.
+- **Delete for Good deletes and the screen stays.** It dims in place, the
+  words say what was deleted, and Keep reads Done, which returns past the
+  deleted item's screens to the one above it, where the same words show.
+  The spec returned to that screen at once; a look still resting where
+  Delete for Good was then met whatever row was there, on to another
+  phrase's editor.
+- **A move or a picture changes and the screen stays.** Moves are absolute
+  ("Editing the library"), so a repeat on the same spot meets either the
+  same place or the item's own Leave Here row and changes nothing; a
+  picture chosen again is the one the category has. That holds only
+  while the places keep their frames, and their words trade rows after
+  a move, so every place is as tall as the tallest
+  (`LibraryEqualRowsLayout`). Codex found the first version, in which a
+  long phrase's place taking a short one's moved every row under it,
+  and a look held where the chosen place had been could rest nearest
+  another place.
+- **Scored by the one chain engine** (`LibraryChains`): every control of
+  every Library screen chosen, but for what the next item names, and a
+  look resting across each question's words, under both nearest rules
+  and both pointers, on modelled frames (`LibraryChainsTests`) and on
+  the frames the app draws on CI's iPad and iPhone at the default and
+  the largest text size (`LibraryTests`), of the controls the window
+  shows. Every phrase's row opens the one editor read, since every
+  editor is built the same way. Edit Phrase's field is not a button, so the UI test reads it
+  on its own as a control that changes nothing: left out, a look over it
+  met Back to Talking. The category is read scrolled so that its four
+  rows that ask show together, under the navigation bar; a row the
+  bar covers wholly is not a start there, since a tap on it meets the
+  bar (on CI, the largest text size's Change Picture did nothing when
+  tapped under the bar). Whether Snap to Item can reach a covered row
+  is a device check.
+- **Not scored:** what lies past the system's share sheet and file
+  picker; where a look rests after the file picker closes on the Restore
+  question, which is the system's screen; controls that show only once
+  the screen is scrolled (at the largest text on the iPhone, every place
+  on Move Phrase and Move Category starts below the window); and New
+  Phrase, New Category and Rename Category, whose only control besides
+  Back is a dimmed Save
+  until a family member types.
+
+## Three or four everyday categories
+
+*The owner's decision, 2026-11-05 ("Yes, three is the floor"). It answers
+"Get Attention and Stop on Home", *Open: fewer than three everyday
+categories*, for 1.0.*
+
+Every library keeps three or four everyday categories, besides
+Emergency. `LibraryEdit.plan` refuses an add, merge or replace that would
+take a library from four or fewer to more than four
+(`LibraryEditRejection.homeHasRoomForFour`), and a delete or replace that
+would take it from three or more to fewer than three (`.homeNeedsThree`).
+Home's slot plan has no place for a fifth ("Home's slot plan", *Open*),
+and fewer than three can leave Again, which speaks, nearest Stop's empty
+well. Only an edit that crosses a bound is refused, so a library already
+outside them (a damaged or hand-made store, which no screen or backup
+can make) can still be edited and brought back; an edit can also take it
+farther out, which no rule stops yet (a follow-up in
+`docs/log/2026-11-05-library-screen.md`). A backup that would cross
+either bound is refused whole, never trimmed (invariant 7).
+The Library dims Add a Category at four and Delete Category at three,
+with the reason beside each.
+
+## Words wider than Home's narrowest buttons
+
+*The owner's decision, 2026-11-05 ("Allow, with a note"), for phrases;
+category names by default, adopted the same day.*
+
+`HomeWordRoom` measures each word as Home draws it (`LabelFont`, the
+default text size, Bold Text on) against the narrowest phrase tile and
+category button the layout engine plans for, on the 320-point window
+(99 and 110 points).
+
+- **A phrase** with a wider word is saved, with a note that on the
+  narrowest screens it can wrap onto a second line: the family's words
+  come first. This makes docs/HANDOFF.md's gap about such words
+  reachable, and accepted.
+- **A category name** with a wider word is refused, naming the word: a
+  category button has no second line to wrap onto.
+- **A backup** whose new everyday category has such a name is refused
+  whole, naming the word, because import never changes a backup's words
+  (invariant 7). Its phrases come in as they are.
+
+## Exporting and restoring a backup
+
+*Default, adopted 2026-11-05 by the thread that built it: reversible if
+the owner objects. It builds on "Importing a backup", "Replacing the
+library" and "Backup file format".*
+
+- **Export a Backup** is a `ShareLink` with one file, "Brickson Phrases
+  2026-11-05.json" (the app's name as people see it and the day, never in
+  the file), whose bytes `BackupCodec` makes only when the family chooses
+  where it goes (`BackupFile`, a `Transferable` `DataRepresentation`).
+  Nothing is written to Brickson's own storage, so no copy stays behind.
+  Export is dimmed with the reason where the library cannot be read, where
+  it is the starter phrases standing in for a saved library that will not
+  open, or where it is over 8 MB.
+- **Restore from a Backup** opens the system file picker for `.json`
+  files. The chosen file is read through its security-scoped address and
+  `NSFileCoordinator`, off the main thread (`BackupReading`, which holds
+  the idle reset while it reads), decoded and checked without touching
+  the library. A refusal shows under the row, ending "Nothing was
+  changed."
+- **The Restore question** says what the backup holds; **Add to My
+  Phrases** (`LibraryImport.merge`) and **Replace My Phrases**
+  (`LibraryImport.replace`) are each planned first (`RestoreChoices`) and
+  dimmed, with the reason, where they cannot run: Replace where it would
+  remove words the person wrote ("Replacing the library"), either where
+  it would cross "Three or four everyday categories" or bring a category
+  name too wide for Home, Add where there is nothing to add. After
+  either, both dim, the words say what happened and Cancel reads Done.
+- **UI tests cannot drive the file picker**, so a debug-only
+  `--restore-sample-backup`, read only with test storage, opens a sample
+  backup in its place: the starter library with one more neutral phrase
+  ("Please open the window."). A release build ignores it.
+- **The privacy policy** already describes backups a person exports and
+  keeps; nothing it says became untrue.
 
 ## Home version 0 is a stand-in
 
@@ -2354,9 +2603,9 @@ ROADMAP R0 item 4 ([`work/get-attention-on-home.md`](work/get-attention-on-home.
   (`HomeRegion.firstInRegion`, `secondInRegion`).
 - **More than four everyday categories, for now:** the fourth cell holds
   the fourth and later ones and scrolls on its own
-  (`CategorySelection.inCell`); nothing else in B scrolls. No screen can
-  add a fifth yet; the layout engine's thread decides for good (*Home's
-  slot plan*, *Open*).
+  (`CategorySelection.inCell`); nothing else in B scrolls. Editing and
+  import refuse a fifth ("Three or four everyday categories"); the layout
+  engine's thread decides for good (*Home's slot plan*, *Open*).
 - **Open: fewer than three everyday categories.** A cell with no
   category holds nothing, and the cell directly under Stop's well holds
   the first category in the band, the third in three columns and the
@@ -2364,13 +2613,11 @@ ROADMAP R0 item 4 ([`work/get-attention-on-home.md`](work/get-attention-on-home.
   the band, from 584pt of content or 630pt with Bold Text), after Stop
   the control nearest the well can be Again,
   which speaks: a hazard under invariant 10, not an accepted exception.
-  Nobody meets it yet: the starter library has four, no screen can
-  delete a category, and a store with none is filled with the starter
-  set, so only a damaged store could. Before editing or import can leave
-  fewer than three, the library and layout engine threads either keep a
-  category nearest the well for every library (never a decoy) or bring
-  the owner a rule that keeps three, since that limits what a family can
-  delete. `HomeLayoutEngineTests.aLibraryOfFewerThanThreeEverydayCategoriesLeavesTheWellUnsafe`
+  Nobody meets it: the starter library has four, the owner's rule keeps
+  three in every edit and import ("Three or four everyday categories",
+  2026-11-05), and a store with none is filled with the starter set, so
+  only a damaged store could. A layout that keeps a category nearest the
+  well for every library (never a decoy) would let the rule go. `HomeLayoutEngineTests.aLibraryOfFewerThanThreeEverydayCategoriesLeavesTheWellUnsafe`
   records it as a strict known issue, so it fails when the gap closes.
   Found in review of PR #38.
 - **Open: the top of Stop's well is nearest Again.** Stop's well is 12pt
@@ -3141,14 +3388,34 @@ plan's places (*Home's slot plan*).
   switch, head or gaze profile ships, pinned as a strict known issue so
   it fails when it goes. Which rule Snap to Item follows over a dimmed
   control is a device check. The model fills the grid with the largest
-  category's tiles: where a library a family grew shows a category with
-  fewer phrases than the grid has columns, or none, the top row's empty
-  cells are the empty grid again, by either rule. Every starter category
-  has at least six phrases, and the grid at most four columns. While
+  category's tiles; a category with fewer phrases than the grid has
+  columns is the next item. While
   typing, the top of Stop's well is
   nearest Speak where it was nearest Again (*Get Attention and Stop on
   Home*, *Open: the top of Stop's well is nearest Again*); the same test
   allows only that and the centre's finding.
+- **Open: a category with fewer phrases than the grid has columns.**
+  Every starter category has at least six phrases, and the grid at most
+  four columns, so the starter library fills the grid's top row. Since
+  2026-11-05 the Library lets a family make a category with fewer, and
+  a new one starts with none ("The Library in Settings"). Scored on the
+  engine's frames with each everyday category in turn that short, from
+  none to one fewer than the columns, and a look resting across each
+  empty cell of its top row
+  (`HomeLayoutEngineTests.aShortCategorysEmptyCellsMeetOnlyClearPutBackAndPhrases`):
+  while typing, the empty cells are the empty grid the first version
+  had, and a look there meets Clear or Put Back in the shorter cells
+  above, by either rule. While browsing, a look there meets the category
+  above, and once that category shows, the phrase now under the look
+  speaks (pointer going back to the look, by either rule), or it meets
+  the short category's own last phrase beside it; and, by centre, a
+  category chosen with the look near its lower edge is followed by the
+  phrase that comes under the look. Nothing else is met. Both are open,
+  not accepted: a placement for a short category's empty cells is the
+  layout engine's to find, or the owner accepts them, before a dwell,
+  switch, head or gaze profile ships; pinned as two strict known issues.
+  A starter category's last row can also end short; a look resting there
+  meets a phrase beside it, the board itself, which no test scores.
 - **Fewer tiles to a screen, for R1** (drawn, not built; the work file's
   *Fewer tiles to a screen*). Where the starter library's largest
   category does not fit at the floors, a dwell, switch, head or gaze
@@ -3511,6 +3778,14 @@ CI's UI tests pass on this change.
   iPhone 17 (322.67 before), 553 on the 13-inch iPad in portrait and
   552 in landscape, 763 on the iPad at AX5, and below the window on the
   phone at AX5, whose first screenful then shows no answer, as before.
+  Since 2026-11-05 the top is found by halving, and a frame that lies
+  across the answers' width is decided by its corners (the points
+  nearer the link by both rules form a convex region there), with the
+  same top as stepping down every point of every frame on the windows
+  and shapes the tests try, and on thirds of a point to within a hair
+  of rounding (`SetupAnswersPlaceTests`): the Library's question
+  screens use it for a phrase's words, and a long phrase at the largest
+  text size took seconds the old way.
 - **The guide is a cover of its own** (`EachWayCover`), not a pushed
   screen. Pushed like Family Setup's other guides, it would have only
   Back and Back to Talking near the look, so a held look on Learn About
@@ -3606,8 +3881,9 @@ rebuilt scrolled to the top, and **stays open** (`SettingsIdleClock`,
 nobody chose. The clock is held while the privacy policy's web sheet is
 open, while iOS asks about Personal Voice, while the alarm sounds, while
 a screen is being scrolled, and
-while a screen calls `holdsSettingsIdleReset(true)` (for the Library's
-editors and backup tasks); when the last hold ends, the full 90 seconds
+while a screen calls `holdsSettingsIdleReset(true)` (the Library's editors
+with unsaved words, its file picker and the reading of a chosen file:
+"The Library in Settings"); when the last hold ends, the full 90 seconds
 start again. Time in another app or with the screen off never counts.
 Time is `ContinuousClock`; the pure clock takes `now:`.
 
