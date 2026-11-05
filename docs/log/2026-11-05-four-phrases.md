@@ -62,9 +62,35 @@ On `claude/project-thread-hwa1vz`; the pull request lists them.
 
 ## Verified
 
-Made in a cloud session, which cannot build the iOS app: untested until
-CI runs it. On Linux (Swift 6.4.1, the pure types and their Swift
-Testing tests in a throwaway package, with stand-ins for
+Made in a cloud session, and built and tested on the owner's Mac from
+it (AGENTS.md, *Build and test*): Remote Control made a worktree of the
+pushed branch and generated its project, and MobileBuildMCP built and
+tested it, with Xcode 27.2 (27B52) on the iPad Pro 13-inch (M5)
+simulator, iOS 27.2. At `a883185`:
+
+- The app and its unit tests built for testing with no warnings or
+  errors, warnings being errors, in 16 seconds.
+- 118 tests of `CategorySelectionTests`, `LibraryEditTests`,
+  `LibraryRulesTests`, `HomeChainsTests` and `PhraseLibraryTests`
+  passed, in 39 seconds.
+- The whole unit suite passed: 934 tests, 924 passed, none failed, the
+  9 tests with strict known issues failing as expected (the new
+  Emergency sweep among them) and the crash reproduction of issue #19,
+  disabled, skipped, in 7 minutes 46 seconds. MobileBuildMCP
+  stopped waiting for it after 60 seconds; Remote Control read the
+  result bundle (`xcresulttool get test-results summary`).
+
+With the first review round's fix (Set Up's line, applied to the
+worktree as a patch before it was pushed), the build had no warnings or
+errors, and `CategorySelectionTests` and `LibraryRulesTests` passed:
+24 tests, the new `setUpSaysWhyAShortCategoryIsDimmedWhateverIsChosen`
+among them.
+
+The String Catalog was not synced there (only `scripts/test.sh` does
+that), and no UI test ran there.
+
+Earlier, on Linux (Swift 6.4.1, the pure types and their Swift Testing
+tests in a throwaway package, with stand-ins for
 `String(localized:)`):
 
 - `LibraryEditTests`, `LibraryRulesTests` (without its SF Symbol check)
@@ -104,7 +130,8 @@ Each new test, and the change that makes it fail:
   changes; `theRestBoardShowsEvenWithTooFewPhrases` if a board is
   skipped; `setUpSaysWhyAShortCategoryIsDimmedWhateverIsChosen` if Set
   Up's line shows for some answers and not others, as it did when it
-  followed what was dimmed. These use SwiftData, so only CI runs them.
+  followed what was dimmed. These use SwiftData, so they ran on the Mac
+  and CI, not on Linux.
 - `LibraryTests.testCategoriesStayBetweenThreeAndFour` (UI): fails if a
   new category with no phrases is not dimmed on Home, or its screen does
   not say "Add 4 more."
@@ -114,9 +141,9 @@ format; a unit run on CI checks it against the code.
 
 ## Not verified
 
-- Nothing was built for iOS here: the SwiftUI changes (`HomeView`,
-  `GuidedSetupView`, `LibraryCategoryView`, `LibraryEditors`) and the
-  SwiftData tests run only on CI or a Mac.
+- How the SwiftUI changes (`HomeView`, `GuidedSetupView`,
+  `LibraryCategoryView`, `LibraryEditors`) look and behave: they
+  compiled on the Mac, and the UI tests run on CI.
 - Whether Snap to Item stops on a dimmed category, which the chain
   model assumes as it does for typing's dimmed controls:
   docs/DEVICE-CHECKS.md, B2 step 3 and I8.

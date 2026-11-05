@@ -582,7 +582,9 @@ out, stash, reset or clean there. The route:
    with the worktree's `Brickson.xcodeproj` by its full path, scheme
    `Brickson` (the unit tests), configuration Debug, a simulator's id
    from `list_sims`, `derivedDataPath` set to the worktree's
-   `build/DerivedData` (ignored by git) and `persist: false`.
+   `build/DerivedData` (ignored by git) and `persist: false`. Show them
+   again before a later build: they were lost once when the tool
+   restarted.
 3. `build_sim` with `buildForTesting: true` builds the app and its unit
    tests, with warnings as errors, and gives the path of a
    `.xctestproducts` bundle.
