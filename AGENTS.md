@@ -549,9 +549,58 @@ as a limit of two fix pushes. A PR with owner-enabled auto-merge merges
 itself on green once its other merge requirements are met: after the final
 push, stop and let it. Agents never enable auto-merge or merge a PR.
 
-**Cloud agents** without Xcode (Claude Code on the web, Codex cloud, Jules)
-cannot build or run anything. Say so plainly, treat the change as untested
-until CI or a Mac run passes, and never describe unbuilt code as working.
+**Cloud agents** with no route to a Mac (Codex cloud, Jules, a Claude
+Code session without the tools below) cannot build or run anything. Say
+so plainly, treat the change as untested until CI or a Mac run passes,
+and never describe unbuilt code as working.
+
+**A cloud session that reaches the owner's Mac builds and tests there**
+(first done on 2026-11-05: `docs/log/2026-11-05-four-phrases.md`). Two
+tools reach it, and a Claude Code session in this project may have both:
+Remote Control, which runs a Claude Code session on the Mac, in `~/code`
+or `~/code/brickson`, with the Mac's own Xcode, XcodeGen and
+simulators; and MobileBuildMCP, a build tool on the Mac whose tools are
+named `MobileBuildMCP__…`. Neither works in the owner's own checkout,
+`~/code/brickson`, which may hold their uncommitted work: never check
+out, stash, reset or clean there. The route:
+
+1. Push your branch. Then, through Remote Control, make a separate
+   worktree of it and generate its project (MobileBuildMCP cannot run
+   XcodeGen):
+   ```sh
+   cd ~/code/brickson && git fetch origin <branch>
+   git worktree add --detach ~/code/brickson-<topic> origin/<branch>
+   cd ~/code/brickson-<topic> && xcodegen generate
+   ```
+   After a later push, `git fetch origin <branch>`, then
+   `git checkout --detach origin/<branch>` and `xcodegen generate` in
+   the worktree. Remote Control can run `scripts/test.sh` there too,
+   the only route that also brings the String Catalog up to date.
+   Once the pull request is merged,
+   `git -C ~/code/brickson worktree remove ~/code/brickson-<topic>`.
+2. MobileBuildMCP: `session_show_defaults`, then `session_set_defaults`
+   with the worktree's `Brickson.xcodeproj` by its full path, scheme
+   `Brickson` (the unit tests), configuration Debug, a simulator's id
+   from `list_sims`, `derivedDataPath` set to the worktree's
+   `build/DerivedData` (ignored by git) and `persist: false`.
+3. `build_sim` with `buildForTesting: true` builds the app and its unit
+   tests, with warnings as errors, and gives the path of a
+   `.xctestproducts` bundle.
+4. `test_sim` with that `testProductsPath` and `extraArgs` such as
+   `["-only-testing:BricksonTests/LibraryEditTests",
+   "-collect-test-diagnostics", "never"]` runs them and reports the
+   counts; a run with no tests is not a pass. The tool waits only 60
+   seconds for the Mac's answer: a longer run, such as the whole unit
+   suite, keeps going there, and Remote Control reads its result with
+   `xcrun xcresulttool get test-results summary --path <bundle>` (the
+   newest bundle in
+   `~/Library/Developer/MobileBuildMCP/workspaces/*/result-bundles/`).
+
+Results from either tool are test results like a Mac's, recorded with
+the Xcode, simulator and iOS they ran on; MobileBuildMCP's taps and
+snapshots are not evidence (*Gotchas*). Whether the guard (*Guardrails
+for agents*) runs in a Remote Control session started in `~/code` is
+not checked: keep its rules yourself there.
 
 `Brickson.xcodeproj` is generated from `project.yml` and is not committed.
 Regenerate after adding, removing or renaming any file. Never edit the
