@@ -196,10 +196,14 @@ extension XCTestCase {
     /// see every issue, not only the first.
     ///
     /// One kind of issue is expected and not reported: the audit's guess
-    /// that a phrase tile's label is "not human-readable". A tile's label is
-    /// the phrase itself, the person's own words, which VoiceOver must read
-    /// exactly as written; the audit flagged the starter phrase "Maybe." on
-    /// CI. An empty tile label still fails.
+    /// that a phrase's label is "not human-readable", on Home's phrase
+    /// tiles and on the Library's phrase rows. Each label is the phrase
+    /// itself, the person's own words, which VoiceOver must read exactly as
+    /// written; the audit flagged the starter phrase "Maybe." on CI, on a
+    /// tile and on a row. An empty label still fails.
+    ///
+    /// `types` narrows the audit to some kinds of issue, for a screen the
+    /// audit service cannot finish in time all at once.
     ///
     /// The audit is only evidence about a still screen. It reads a
     /// screenshot and the accessibility tree a moment apart, so text that
@@ -211,15 +215,16 @@ extension XCTestCase {
     func assertPassesAccessibilityAudit(
         _ app: XCUIApplication,
         context: String,
+        types: XCUIAccessibilityAuditType = .all,
         file: StaticString = #filePath,
         line: UInt = #line
     ) throws {
         try AccessibilityAuditRunner.perform(settle: {
             waitForSpeechToFinish(in: app, context: context, file: file, line: line)
         }) {
-            try app.performAccessibilityAudit { issue in
+            try app.performAccessibilityAudit(for: types) { issue in
                 MainActor.assumeIsolated {
-                    if isPhraseTileLabelGuess(issue) { return true }
+                    if isPhraseLabelGuess(issue) { return true }
                     // Some findings identify no element. Keep the screen
                     // and tree at reporting time, not only before the audit
                     // changes Dynamic Type, and retain Apple's native issue.
@@ -309,14 +314,19 @@ extension XCTestCase {
 
 }
 
-/// The audit's guess that a phrase tile's label is "not human-readable"
+/// The audit's guess that a phrase's label is "not human-readable"
 /// (`assertPassesAccessibilityAudit`). Phrase tiles carry the identifier
-/// "phraseTile" (HomeView's PhraseGrid).
+/// "phraseTile" (HomeView's PhraseGrid), and the Library's phrase rows
+/// "libraryPhrase" and their place in their category
+/// (`LibraryCategoryView`); its other "libraryPhrase…" names, such as the
+/// field, are not rows and are not excused.
 @MainActor
-private func isPhraseTileLabelGuess(_ issue: XCUIAccessibilityAuditIssue) -> Bool {
-    guard issue.auditType == .sufficientElementDescription,
-          let element = issue.element,
-          element.identifier == "phraseTile" else { return false }
+private func isPhraseLabelGuess(_ issue: XCUIAccessibilityAuditIssue) -> Bool {
+    guard issue.auditType == .sufficientElementDescription, let element = issue.element else { return false }
+    let identifier = element.identifier
+    let rowPlace = identifier.hasPrefix("libraryPhrase") ? identifier.dropFirst("libraryPhrase".count) : ""
+    let isPhrase = identifier == "phraseTile" || (!rowPlace.isEmpty && rowPlace.allSatisfy(\.isASCII) && rowPlace.allSatisfy(\.isNumber))
+    guard isPhrase else { return false }
     return !element.label.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
 }
 

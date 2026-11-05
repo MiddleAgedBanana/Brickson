@@ -15,9 +15,11 @@ import Foundation
 ///   Phrase; each phrase's row opens its editor; Rename opens the name's
 ///   editor; Change Picture, Move Category and Delete Category open their
 ///   questions.
-/// - A phrase's editor: Back returns to the category; Save does nothing
-///   until the words are changed, which a held look cannot do; Move Phrase
-///   and Delete Phrase open their questions.
+/// - A phrase's editor: Back returns to the category; the field puts the
+///   cursor in its words, and Save does nothing until they are changed,
+///   which a held look cannot do; Move Phrase and Delete Phrase open their
+///   questions. The field is not a button, so the UI test reads it on its
+///   own: left out, a look over it met Back to Talking.
 /// - A question: Back and the way back (Keep, Leave It Here, Keep This
 ///   Picture) return to the screen that asked; Delete for Good deletes and
 ///   the screen stays, with Delete for Good dimmed and the way back, now
@@ -56,6 +58,7 @@ nonisolated enum LibraryChains {
     static let wayBack = "libraryWayBack"
     static let deleteForGood = "libraryDeleteForGood"
     static let save = "librarySave"
+    static let phraseField = "libraryPhraseField"
     static let addCategory = "libraryAddCategory"
     static let export = "libraryExport"
     static let restore = "libraryRestore"
@@ -138,7 +141,7 @@ nonisolated enum LibraryChains {
         }
         states[editor] = controls(screens.editor, on: editor, backTo: category) { name, frame in
             switch name {
-            case save: ChainControl(name, frame, .nothing)
+            case save, phraseField: ChainControl(name, frame, .nothing)
             case movePhraseRow: ChainControl(name, frame, .navigates, leadsTo: movePhrase)
             case deletePhraseRow: ChainControl(name, frame, .navigates, leadsTo: deletePhrase)
             default: nil

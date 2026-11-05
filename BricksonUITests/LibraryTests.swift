@@ -52,7 +52,7 @@ final class LibraryTests: XCTestCase {
         back(to: "Basics", in: app)
 
         // Change.
-        let added = app.buttons["Please open the door."]
+        let added = phraseRow("Please open the door.", in: app)
         XCTAssertTrue(added.waitForExistence(timeout: 10), "the added phrase has no row in Basics")
         added.tap()
         XCTAssertTrue(app.navigationBars["Edit Phrase"].waitForExistence(timeout: 10), "the phrase's row did not open its editor")
@@ -96,7 +96,7 @@ final class LibraryTests: XCTestCase {
         // Delete for Good.
         openLibrary(in: app)
         open("libraryCategory0", leaving: "libraryAddCategory", in: app)
-        app.buttons["Please close the door."].tap()
+        phraseRow("Please close the door.", in: app).tap()
         XCTAssertTrue(app.navigationBars["Edit Phrase"].waitForExistence(timeout: 10), "the phrase's row did not open its editor")
         app.buttons["libraryDeletePhrase"].tap()
         XCTAssertTrue(deleteForGood.waitForExistence(timeout: 10), "Delete Phrase did not ask")
@@ -109,7 +109,7 @@ final class LibraryTests: XCTestCase {
         wayBack.tap()
         XCTAssertTrue(app.navigationBars["Basics"].waitForExistence(timeout: 10), "Done did not return to Basics")
         waitForLine("libraryResult", saying: "Deleted “Please close the door.”.", in: app)
-        XCTAssertFalse(app.buttons["Please close the door."].exists, "Basics still has the deleted phrase")
+        XCTAssertFalse(phraseRow("Please close the door.", in: app).exists, "Basics still has the deleted phrase")
 
         closeSettings(in: app)
         app.buttons["Basics"].tap()
@@ -259,7 +259,7 @@ final class LibraryTests: XCTestCase {
             try audit(app, "Basics, \(appearance)")
             app.buttons["libraryChangePicture"].tap()
             XCTAssertTrue(app.buttons["libraryWayBack"].waitForExistence(timeout: 10), "Change Picture did not ask")
-            try audit(app, "Change Picture, \(appearance)")
+            try audit(app, "Change Picture, \(appearance)", oneKindAtATime: true)
             app.buttons["libraryWayBack"].tap()
             XCTAssertTrue(app.navigationBars["Basics"].waitForExistence(timeout: 10), "Keep This Picture did not go back")
         }
@@ -279,11 +279,29 @@ final class LibraryTests: XCTestCase {
         }
     }
 
+    /// Audits the screen as it is. `oneKindAtATime` audits each kind of
+    /// issue on its own, every kind, for a screen the audit service cannot
+    /// finish in time at once: Change Picture's 32 rows timed out twice in
+    /// a row on CI's phone (2026-11-05), where the iPad finished in 7
+    /// seconds.
     @MainActor
-    private func audit(_ app: XCUIApplication, _ context: String) throws {
+    private func audit(_ app: XCUIApplication, _ context: String, oneKindAtATime: Bool = false) throws {
         attachCapture(app, name: "library-\(context)".replacingOccurrences(of: ", ", with: "-"))
-        try assertPassesAccessibilityAudit(app, context: context)
+        guard oneKindAtATime else {
+            try assertPassesAccessibilityAudit(app, context: context)
+            return
+        }
+        for kind in Self.auditKinds {
+            try assertPassesAccessibilityAudit(app, context: "\(context), audit kind \(kind.rawValue)", types: kind)
+        }
     }
+
+    /// Every kind of issue Apple's audit checks on iOS
+    /// (`XCUIAccessibilityAuditType`'s documentation, read 2026-11-05;
+    /// `action` and `parentChild` are macOS only).
+    private static let auditKinds: [XCUIAccessibilityAuditType] = [
+        .contrast, .dynamicType, .elementDetection, .hitRegion, .sufficientElementDescription, .textClipped, .trait,
+    ]
 
     // MARK: Chains
 
@@ -320,32 +338,36 @@ final class LibraryTests: XCTestCase {
         let library = try read(app, window: window)
         attachCapture(app, name: "library-chains-library-\(context)".replacingOccurrences(of: ", ", with: "-"))
 
-        // The last everyday category, the one with fewest phrases, read as
-        // the family leaves it once they have scrolled to its last rows.
+        // The last everyday category, the one with fewest phrases.
         open("libraryCategory3", leaving: "libraryAddCategory", in: app)
         XCTAssertTrue(app.navigationBars["Feelings"].waitForExistence(timeout: 10), "Feelings did not open (\(context))")
-        let rename = app.buttons["libraryRename"]
-        for _ in 0..<4 where !(rename.isHittable && window.contains(rename.frame)) {
-            app.swipeUp()
-        }
-        let category = try read(app, window: window)
-        attachCapture(app, name: "library-chains-category-\(context)".replacingOccurrences(of: ", ", with: "-"))
-        var words: [String: CGRect] = [:]
-        let picture = try ask("libraryChangePicture", from: category, returningTo: "libraryRename", state: LibraryChains.picture, words: &words, in: app, window: window, context: context)
-        let moveCategory = try ask("libraryMoveCategory", from: category, returningTo: "libraryRename", state: LibraryChains.moveCategory, words: &words, in: app, window: window, context: context)
-        let deleteCategory = try ask("libraryDeleteCategory", from: category, returningTo: "libraryRename", state: LibraryChains.deleteCategory, words: &words, in: app, window: window, context: context)
 
-        // Any phrase opens the same editor: the lowest one showing.
-        let phraseRow = try XCTUnwrap(
-            category.filter { $0.name.hasPrefix(LibraryChains.phraseRowPrefix) }.max { $0.frame.minY < $1.frame.minY },
-            "Feelings shows no phrase (\(context))"
-        )
-        open(phraseRow.name, leaving: "libraryRename", in: app)
+        // Every phrase opens the same editor: the first one's, opened
+        // before the screen scrolls. Its field is not a button, so it is
+        // read on its own.
+        var words: [String: CGRect] = [:]
+        open("libraryPhrase0", leaving: "libraryAddPhrase", in: app)
         XCTAssertTrue(app.navigationBars["Edit Phrase"].waitForExistence(timeout: 10), "a phrase's row did not open its editor (\(context))")
+        let field = app.descendants(matching: .any).matching(identifier: LibraryChains.phraseField).firstMatch
+        XCTAssertTrue(field.exists, "Edit Phrase has no field (\(context))")
         let editor = try read(app, window: window)
+            + (field.exists ? [ScreenControl(name: LibraryChains.phraseField, frame: field.frame, isSelected: false)] : [])
         attachCapture(app, name: "library-chains-editor-\(context)".replacingOccurrences(of: ", ", with: "-"))
         let movePhrase = try ask("libraryMovePhrase", from: editor, returningTo: "librarySave", state: LibraryChains.movePhrase, words: &words, in: app, window: window, context: context)
         let deletePhrase = try ask("libraryDeletePhrase", from: editor, returningTo: "librarySave", state: LibraryChains.deletePhrase, words: &words, in: app, window: window, context: context)
+        back(to: "Feelings", in: app)
+
+        // Feelings read as the family leaves it once they have scrolled to
+        // its rows that ask. A row the navigation bar covers wholly is not
+        // there to choose: a tap on it meets the bar.
+        let bar = showTheRowsThatAsk(in: app, window: window, context: context)
+        let category = try read(app, window: window).filter { control in
+            [LibraryChains.backToTalking, LibraryChains.back].contains(control.name) || control.frame.maxY > bar.maxY
+        }
+        attachCapture(app, name: "library-chains-category-\(context)".replacingOccurrences(of: ", ", with: "-"))
+        let picture = try ask("libraryChangePicture", from: category, returningTo: "libraryRename", state: LibraryChains.picture, words: &words, in: app, window: window, context: context)
+        let moveCategory = try ask("libraryMoveCategory", from: category, returningTo: "libraryRename", state: LibraryChains.moveCategory, words: &words, in: app, window: window, context: context)
+        let deleteCategory = try ask("libraryDeleteCategory", from: category, returningTo: "libraryRename", state: LibraryChains.deleteCategory, words: &words, in: app, window: window, context: context)
 
         guard let frames = HomeChains.frames(from: Self.named(home), categories: Self.everydayCategories) else {
             XCTFail("Home is missing a control the chains need (\(context)): \(home)")
@@ -387,6 +409,34 @@ final class LibraryTests: XCTestCase {
         XCTAssertEqual(findings(.changesTheLibrary), [], "a held look changes the library (\(context))")
         XCTAssertEqual(findings(.closesUnderTheLook), [], "a held look closes Settings under the look (\(context))")
         XCTAssertEqual(findings(.unexpected), [], "a chain through the Library meets a new hazard (\(context))")
+    }
+
+    /// Scrolls a category to its foot, then back toward its top by held
+    /// drags that leave no momentum until Change Picture clears the
+    /// navigation bar, so its four rows that ask show together: at the
+    /// largest text on the phone, the foot left Change Picture under the
+    /// bar, where a tap met the bar and nothing asked. Returns the bar's
+    /// frame.
+    @MainActor
+    private func showTheRowsThatAsk(in app: XCUIApplication, window: CGRect, context: String) -> CGRect {
+        let rename = app.buttons["libraryRename"]
+        for _ in 0..<4 where !(rename.isHittable && window.contains(rename.frame)) {
+            app.swipeUp()
+        }
+        let bar = app.navigationBars.firstMatch.frame
+        let changePicture = app.buttons["libraryChangePicture"]
+        let middle = app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: window.midX, dy: window.midY))
+        for _ in 0..<8 where changePicture.frame.minY < bar.maxY {
+            middle.press(forDuration: 0.2, thenDragTo: middle.withOffset(CGVector(dx: 0, dy: 40)), withVelocity: .slow, thenHoldForDuration: 0.5)
+        }
+        for row in ["libraryChangePicture", "libraryMoveCategory", "libraryDeleteCategory", "libraryRename"] {
+            let element = app.buttons[row]
+            XCTAssertTrue(
+                element.isHittable && window.contains(element.frame) && element.frame.minY >= bar.maxY,
+                "\(row) does not show with the other rows that ask (\(context)): \(element.frame), navigation bar \(bar)"
+            )
+        }
+        return bar
     }
 
     /// Opens a question with `row`, read on `screen`; checks that its way
@@ -473,6 +523,13 @@ final class LibraryTests: XCTestCase {
         backToTalking.tap()
         let closed = expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: backToTalking)
         XCTAssertEqual(XCTWaiter.wait(for: [closed], timeout: 10), .completed, "Settings did not close", file: file, line: line)
+    }
+
+    /// A phrase's row in a category, by its words: Home's tile under the
+    /// cover can have the same words.
+    @MainActor
+    private func phraseRow(_ words: String, in app: XCUIApplication) -> XCUIElement {
+        app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@ AND label == %@", LibraryChains.phraseRowPrefix, words)).firstMatch
     }
 
     @MainActor

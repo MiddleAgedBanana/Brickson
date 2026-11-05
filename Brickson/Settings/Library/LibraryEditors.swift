@@ -69,8 +69,7 @@ private struct LibraryPhraseEditorContent: View {
         Button(action: save) {
             SettingsRowLabel(title: "Save", systemImage: "checkmark")
         }
-        .buttonStyle(.borderedProminent)
-        .tint(Palette.phraseFill)
+        .settingsRowStyle(fill: Palette.phraseFill)
         .disabled(!canSave)
         .holdsSettingsIdleReset(canSave)
         .accessibilityIdentifier("librarySave")
@@ -228,8 +227,7 @@ private struct LibraryNameEditorContent: View {
         Button(action: save) {
             SettingsRowLabel(title: "Save", systemImage: "checkmark")
         }
-        .buttonStyle(.borderedProminent)
-        .tint(Palette.phraseFill)
+        .settingsRowStyle(fill: Palette.phraseFill)
         .disabled(!canSave)
         .holdsSettingsIdleReset(canSave)
         .accessibilityIdentifier("librarySave")

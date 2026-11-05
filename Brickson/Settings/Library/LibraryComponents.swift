@@ -128,8 +128,9 @@ nonisolated struct LibraryQuestionLayout: Layout {
     let row: CGRect?
     /// The row was the last control of its screen.
     let rowIsLast: Bool
-    /// How much of the content shows without scrolling.
-    let visibleHeight: CGFloat
+    /// How much of the content shows without scrolling; nil until the
+    /// screen has measured it.
+    let visibleHeight: CGFloat?
     /// The gap between the way back and the words: the rows' gap.
     let spacing: CGFloat
     /// A row's least height (`LibraryQuestionPlace`).
@@ -185,7 +186,8 @@ struct LibraryQuestion<Words: View, Back: View, Choices: View>: View {
         LibraryQuestionLayout(
             row: library.askedFrom,
             rowIsLast: library.askedFromLast,
-            visibleHeight: frames?.content.height ?? .greatestFiniteMagnitude,
+            // Nil until the screen knows where it sits (`LibraryQuestionPlace`).
+            visibleHeight: frames?.content.height,
             spacing: SettingsMetrics.rowSpacing,
             rowHeight: SettingsMetrics.rowHeight
         ) {

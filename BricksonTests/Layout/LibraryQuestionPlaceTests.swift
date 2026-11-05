@@ -10,7 +10,7 @@ struct LibraryQuestionPlaceTests {
     private static let spacing = SettingsMetrics.rowSpacing
 
     private static func place(
-        row: CGRect?, rowIsLast: Bool = false, width: CGFloat = 358, visibleHeight: CGFloat = 600,
+        row: CGRect?, rowIsLast: Bool = false, width: CGFloat = 358, visibleHeight: CGFloat? = 600,
         backHeight: CGFloat = 64, wordsHeight: CGFloat = 80, choicesHeight: CGFloat = 64
     ) -> LibraryQuestionPlace {
         LibraryQuestionPlace(
@@ -35,13 +35,15 @@ struct LibraryQuestionPlaceTests {
         #expect(Self.place(row: row, backHeight: 40).back == row)
     }
 
-    /// Fails if the words are put anywhere but just above the way back
-    /// where they fit, and just under it where they do not.
-    @Test func theWordsGoJustAboveWhereTheyFit() {
-        let low = Self.place(row: CGRect(x: 0, y: 300, width: 358, height: 64))
-        #expect(low.words == CGRect(x: 0, y: 300 - Self.spacing - 80, width: 358, height: 80))
-        let high = Self.place(row: CGRect(x: 0, y: 40, width: 358, height: 64))
-        #expect(high.words == CGRect(x: 0, y: 40 + 64 + Self.spacing, width: 358, height: 80))
+    /// Fails if the words are put anywhere but just under the way back,
+    /// whether the row was high or low. Above it, where they fitted, they
+    /// reached toward Back to Talking: the chain test found a look resting
+    /// on their top nearer it than the way back, on the phone at the
+    /// default text size and on the iPad at the largest.
+    @Test(arguments: [40, 300, 600] as [CGFloat])
+    func theWordsGoJustUnderTheWayBack(top: CGFloat) {
+        let place = Self.place(row: CGRect(x: 0, y: top, width: 358, height: 64))
+        #expect(place.words == CGRect(x: 0, y: place.back.maxY + Self.spacing, width: 358, height: 80))
     }
 
     /// Fails if a row measured below what shows, or above the content,
@@ -125,5 +127,22 @@ struct LibraryQuestionPlaceTests {
         }
         #expect(place.choicesTop > 600)
         #expect(nearer)
+    }
+
+    /// A question is laid out once before its screen has measured where it
+    /// sits. Fails if that pass moves the way back off the row, or places
+    /// a last row's choices from a stand-in height instead of from its
+    /// words: one far enough down (the greatest finite number) left no top
+    /// below it to find, and the layout never finished.
+    @Test(.timeLimit(.minutes(1)))
+    func beforeTheScreenIsMeasuredTheChoicesGoBelowTheWords() {
+        let row = CGRect(x: 0, y: 100, width: 358, height: 64)
+        let place = Self.place(row: row, rowIsLast: true, visibleHeight: nil, choicesHeight: 400)
+        #expect(place.back == row)
+        #expect(place.words.minY == row.maxY + Self.spacing)
+        let endingAtTheWords = Self.place(row: row, rowIsLast: true, visibleHeight: place.words.maxY, choicesHeight: 400)
+        #expect(place.choicesTop == endingAtTheWords.choicesTop)
+        let low = CGRect(x: 0, y: 900, width: 358, height: 64)
+        #expect(Self.place(row: low, visibleHeight: nil).back == low)
     }
 }

@@ -31,18 +31,23 @@ struct LibraryChainsTests {
     ]
 
     /// A category whose lower phrase rows lie under Edit Phrase's last
-    /// row, Delete Phrase.
-    private static let category: [(name: String, frame: CGRect)] = bar + [(LibraryChains.addPhrase, row(0))]
-        + (0..<5).map { ("libraryPhrase\($0)", row($0 + 1)) }
-        + [(LibraryChains.changePicture, row(6)), (LibraryChains.rename, row(7))]
+    /// row, Delete Phrase, with Change Picture and Rename after them.
+    private static func category(phrases: Int) -> [(name: String, frame: CGRect)] {
+        bar + [(LibraryChains.addPhrase, row(0))]
+            + (0..<phrases).map { ("libraryPhrase\($0)", row($0 + 1)) }
+            + [(LibraryChains.changePicture, row(phrases + 1)), (LibraryChains.rename, row(phrases + 2))]
+    }
 
-    /// Edit Phrase: the field (not a button) keeps four lines at the top,
-    /// and Delete Phrase is the last control.
+    /// Edit Phrase: the field keeps four lines at the top, and Delete
+    /// Phrase is the last control. The field is not a button; the UI test
+    /// reads it on its own.
+    private static let field = CGRect(x: 28, y: 192, width: 334, height: 112)
     private static let save = CGRect(x: 16, y: 336, width: 358, height: 64)
     private static let movePhraseRow = CGRect(x: 16, y: 454, width: 358, height: 64)
     private static let deletePhraseRow = CGRect(x: 16, y: 534, width: 358, height: 64)
     private static let editor: [(name: String, frame: CGRect)] = bar + [
-        (LibraryChains.save, save), (LibraryChains.movePhraseRow, movePhraseRow), (LibraryChains.deletePhraseRow, deletePhraseRow),
+        (LibraryChains.phraseField, field), (LibraryChains.save, save),
+        (LibraryChains.movePhraseRow, movePhraseRow), (LibraryChains.deletePhraseRow, deletePhraseRow),
     ]
 
     /// A question opened from `row`, in the window: the way back and the
@@ -71,14 +76,14 @@ struct LibraryChainsTests {
     private static let pictures = ["libraryPicture-heart.fill", "libraryPicture-star.fill", "libraryPicture-house.fill", "libraryPicture-bed.double.fill"]
 
     private static func map(
-        deletePhrase: [(name: String, frame: CGRect)], pictureColumns: Int = 1
+        deletePhrase: [(name: String, frame: CGRect)], pictureColumns: Int = 1, phrases: Int = 5
     ) -> (map: ChainMap, unknown: [String]) {
         let delete = question(from: deletePhraseRow, isLast: true, choices: [LibraryChains.deleteForGood])
         let move = question(from: movePhraseRow, choices: (0..<7).map { "libraryMovePlace\($0)" })
-        let picture = question(from: row(6), choices: pictures, columns: pictureColumns)
+        let picture = question(from: row(phrases + 1), choices: pictures, columns: pictureColumns)
         return LibraryChains.map(
             LibraryChains.Screens(
-                library: library, categoryRow: "libraryCategory0", category: category,
+                library: library, categoryRow: "libraryCategory0", category: category(phrases: phrases),
                 editor: editor,
                 deletePhrase: deletePhrase,
                 movePhrase: move.controls,
@@ -117,21 +122,25 @@ struct LibraryChainsTests {
         #expect(hazards.contains { LibraryChains.kind(of: $0) == .changesTheLibrary && $0.hazard?.control.name == LibraryChains.deleteForGood })
     }
 
-    /// Delete for Good under the way back, though Delete Phrase is Edit
-    /// Phrase's last control. Fails if the surface could not see why its
-    /// choice goes above: a phrase row lower than Delete Phrase opens the
-    /// editor, the look under Delete Phrase meets it, and then meets Delete
-    /// for Good, deleting a phrase nobody chose.
+    /// Delete for Good under the way back and its words, though Delete
+    /// Phrase is Edit Phrase's last control, with a category long enough
+    /// to have phrase rows level with it. Fails if the surface could not
+    /// see why its choice goes above: a phrase row lower than Delete Phrase
+    /// opens the editor, the look under Delete Phrase meets it, and then
+    /// meets Delete for Good, deleting a phrase nobody chose.
     @Test func deleteForGoodUnderALastRowIsFound() {
-        let modelled = Self.map(deletePhrase: Self.question(from: Self.deletePhraseRow, choices: [LibraryChains.deleteForGood]).controls)
+        let modelled = Self.map(
+            deletePhrase: Self.question(from: Self.deletePhraseRow, choices: [LibraryChains.deleteForGood]).controls, phrases: 7
+        )
         let hazards = modelled.map.hazards(from: LibraryChains.starts(in: modelled.map))
         #expect(hazards.contains { LibraryChains.kind(of: $0) == .changesTheLibrary && $0.hazard?.control.name == LibraryChains.deleteForGood })
     }
 
     /// Change Picture's pictures as a grid of 64-point squares under the way
-    /// back. Fails if the surface could not see why they are rows as wide
-    /// as it: by the nearest centre, a look at the asking row's lower
-    /// corner meets the first picture, not the way back.
+    /// back and its words. Fails if the surface could not see why they are
+    /// rows as wide as it: by the nearest centre, a look resting on the
+    /// words' lower leading corner meets the first picture, not the way
+    /// back.
     @Test func picturesNarrowerThanTheWayBackAreFound() {
         let modelled = Self.map(
             deletePhrase: Self.question(from: Self.deletePhraseRow, isLast: true, choices: [LibraryChains.deleteForGood]).controls,
@@ -139,6 +148,19 @@ struct LibraryChainsTests {
         )
         let hazards = modelled.map.hazards(from: LibraryChains.starts(in: modelled.map))
         #expect(hazards.contains { LibraryChains.kind(of: $0) == .changesTheLibrary && $0.hazard?.state == LibraryChains.picture })
+    }
+
+    /// A look over Edit Phrase's field meets the field, which only puts the
+    /// cursor in its words. Fails if the field is reported as a control the
+    /// surface does not know, or scored as anything but changing nothing.
+    @Test func thePhraseFieldChangesNothing() {
+        let modelled = Self.map(
+            deletePhrase: Self.question(from: Self.deletePhraseRow, isLast: true, choices: [LibraryChains.deleteForGood]).controls
+        )
+        #expect(modelled.unknown == [])
+        let field = modelled.map.states[LibraryChains.editor]?.first { $0.name == LibraryChains.phraseField }
+        #expect(field?.effect == .nothing)
+        #expect(field?.leadsTo == nil)
     }
 
     /// Fails if a control the surface does not know is scored as harmless
