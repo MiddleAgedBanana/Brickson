@@ -503,6 +503,12 @@ the failure.
   `docs/DECISIONS.md` and the newest `docs/log/` records from the fetched
   `origin/main`, before changing anything. Another agent may have landed
   work since; the repository is the shared source of truth.
+- **Use the tools you have.** At the start of every session, read your
+  own tool list for build, simulator and device access (a build tool on
+  the owner's Mac, Remote Control, a connected folder) and use what is
+  there. Never conclude from a handoff note or an earlier thread that
+  you cannot build or run the app; a cloud session that reaches the Mac
+  can (*Build and test*).
 
 ## Working with the owner
 
