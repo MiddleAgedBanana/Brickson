@@ -947,17 +947,26 @@ docs/ROADMAP.md, *The quality bar*, Q24):
    device gates on your own iPhone and iPad with the build that will
    ship, from TestFlight once the App Store Connect record exists (a
    build from step 4 lets you rehearse them but passes none), and the
-   rest as written answers.
+   rest as written answers. The step-by-step procedure for each, with
+   what passes and which steps an agent runs from your Mac, is
+   [docs/DEVICE-CHECKS.md](DEVICE-CHECKS.md).
 3. Run the app once yourself and hear a phrase ([local setup](GETTING_STARTED.md)).
 4. Put your Team ID in `project.yml` (`DEVELOPMENT_TEAM`), then run the app
-   on your iPhone and iPad and work through *Checks that need a real device*.
+   on your iPhone and iPad and work through *Checks that need a real
+   device* with [docs/DEVICE-CHECKS.md](DEVICE-CHECKS.md), starting with
+   its first two sessions: Snap to Item and Dwell measured, the three
+   dwell hazards and Settings by a stray dwell, then the floors. Before
+   them, an agent can run Brickson's UI tests on each device from your
+   Mac (its A1): plug the device in, unlock it, write "go" in the
+   thread, and stay near for the device's passcode.
 5. Review the starter phrases (`Brickson/Resources/StarterPhrases.json`): two
    are near duplicates, and "Please move me." could be clearer.
 6. Delete the failed Swift configuration on the Tool status page
    (docs/DECISIONS.md, *Code scanning*).
 7. You can delete the `xcode-skills` folder in `~/code/brickson`: its
    skills are installed where agents load them.
-8. Optional: let Codex on your Mac read all of `AGENTS.md`. By default
+8. Done on your Mac on 2026-11-04; for another Mac: let Codex read all
+   of `AGENTS.md`. By default
    it reads only the first 32 KiB, and the file is about 69 KB
    (docs/DECISIONS.md, "AGENTS.md puts first what Codex reads"). In
    Terminal, run this one line; it adds the setting at the top of
@@ -976,13 +985,13 @@ docs/ROADMAP.md, *The quality bar*, has passed, the owner's answer last
 (owner, 2026-10-30), unless the owner decides that one urgent fix goes
 sooner (docs/DECISIONS.md, "Every release passes the quality bar"); a
 pull request that moves a gate edits its *Today*
-line. A candidate next job, for one cloud thread: before the owner's
-first device session, write the step-by-step procedure, with what
-success looks like, for each gate the owner checks and each row of
-*Checks that need a real device*, as the 2026-10-26 procedure did for
-Settings ([`log/2026-10-26-settings-simulator-checks.md`](log/2026-10-26-settings-simulator-checks.md));
-docs/ROADMAP.md, *The quality bar*, requires them, and none exists yet
-for the other gates. R0 in [docs/ROADMAP.md](ROADMAP.md), in order; the owner's
+line. The device procedures are written
+([docs/DEVICE-CHECKS.md](DEVICE-CHECKS.md), 2026-11-04): the next device
+work is the owner's first two sessions there, for which a thread makes the
+look-target sheet and, when the owner writes "go" with a device on the
+cable, runs A1 over Remote Control; its record lists what else it
+leaves ([`log/2026-11-04-device-procedures.md`](log/2026-11-04-device-procedures.md),
+*Follow-ups*). R0 in [docs/ROADMAP.md](ROADMAP.md), in order; the owner's
 long-term vision, the direction behind it, is its *Where this goes*.
 The next pull requests, in order, with which may run side by side and
 which change Home, are its
@@ -1120,8 +1129,11 @@ that build has gone to App Review. The earlier order is in
 
 ## Checks that need a real device
 
-Simulators cannot show these. Record each result in a `docs/log/` file
-(device, OS version, settings, date) and summarise it here.
+Simulators cannot show these. Each row's step-by-step procedure, with
+what passes and who runs each step, is in
+[docs/DEVICE-CHECKS.md](DEVICE-CHECKS.md), whose *Coverage* maps every
+row. Record each result in a `docs/log/` file (device, OS version,
+settings, date) and summarise it here.
 
 | Check | What it decides |
 |---|---|
@@ -1236,13 +1248,12 @@ Simulators cannot show these. Record each result in a `docs/log/` file
   quoted titles starting with a small letter and titles after the first
   included: [record](log/2026-10-23-docs-check-gaps.md).
 - Codex reviews every push to a pull request (CodeRabbit and Greptile
-  too, as far as their free plans allow), Copilot a code pull
-  request once after those rounds are answered, requested by the agent
-  through `request_copilot_review` (from 2026-11-03 until the owner's
-  subscription ends on 2026-11-09; docs/DECISIONS.md, *Code review*),
-  AI Scan each
-  push; none reviews Dependabot's pull requests by itself. The AI credits they use show only in Settings →
-  Billing → AI usage.
+  too, as far as their free plans allow), and AI Scan each push; none
+  reviews Dependabot's pull requests by itself. Copilot no longer
+  reviews: its credits ran out on pull request #78, and since
+  2026-11-04 no agent requests it (docs/DECISIONS.md, *Code review*).
+  The AI credits AI Scan uses show only in Settings → Billing → AI
+  usage.
 - The [website](https://middleagedbanana.github.io/Brickson/), its
   [privacy policy](https://middleagedbanana.github.io/Brickson/privacy/)
   (Effective October 24, 2026, since typing came to Home; the page since PR #40) and its
@@ -1262,9 +1273,10 @@ Simulators cannot show these. Record each result in a `docs/log/` file
   2026-11-03 they were not loaded in a Brickson cloud thread with only
   this repository cloned (AGENTS.md, *Guardrails for agents*). The guard
   refuses `git add -A`, force pushes, pushes to `main`, merges, approvals
-  and Copilot actions other than one review requested through its own
-  tool, and records that request in the clone's Git folder so a second
-  one on the same pull request is refused. `scripts/test.sh` runs its tests and the docs
+  and Copilot reviews and tasks asked for by a Copilot tool, `gh`, the
+  REST API, a GitHub tool's reviewer or assignee field or a GraphQL agent
+  assignment; an `@copilot` mention and other GraphQL requests are held
+  by AGENTS.md alone. `scripts/test.sh` runs its tests and the docs
   cross-reference check (`scripts/test-docs.py`) before the unit tests.
   New issues start from the "Something went wrong" form; blank issues are
   off. Record: [`docs/log/2026-10-21-agent-guardrails.md`](log/2026-10-21-agent-guardrails.md).

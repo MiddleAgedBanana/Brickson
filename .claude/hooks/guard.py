@@ -5,8 +5,7 @@ Claude Code runs this before every Bash command and before the GitHub tools
 named in .claude/settings.json (AGENTS.md, "Guardrails for agents"). It reads
 the tool call as JSON on standard input and, for a forbidden call, prints a
 "deny" decision with the rule it breaks. Anything else passes through to the
-normal permission flow untouched. It also runs after a Copilot review
-request succeeds, to record it, and then prints nothing.
+normal permission flow untouched.
 
 It denies:
 - staging everything at once (git add -A, --all, -u, "." and all-tree commits),
@@ -14,11 +13,11 @@ It denies:
 - force pushes, and any push that would update main;
 - merging a pull request or turning on auto-merge, by gh, the GitHub API or
   a GitHub tool, and approving one;
-- the Copilot actions that spend the owner's credits, except a Copilot
-  review requested through its own GitHub tool (request_copilot_review),
-  which an agent uses once on a code pull request after Codex's round: a
-  second request on the same pull request, from any worktree of the same
-  clone, is refused;
+- a Copilot review or Copilot task asked for by a Copilot tool, gh, the
+  REST API, a GitHub tool's reviewer or assignee field or a GraphQL agent
+  assignment: Copilot is not part of the review process, and each one
+  would spend the owner's credits (other GraphQL requests and an
+  @copilot mention are held by AGENTS.md alone);
 - a GitHub tool that writes a file straight onto main.
 
 This is a guard against mistakes, not a sandbox: a determined command can
@@ -27,7 +26,6 @@ owner are held to the same rules by review. Standard library only, so it
 runs wherever python3 does. Its tests are scripts/test-hooks.py.
 """
 import json
-import fcntl
 import fnmatch
 import os
 import re
@@ -35,9 +33,7 @@ import shlex
 import subprocess
 import sys
 import stat
-import tempfile
 import posixpath
-from datetime import datetime, timezone
 from urllib.parse import urlsplit, unquote
 
 PROTECTED = {'main', 'master'}
@@ -56,27 +52,9 @@ TO_MAIN = ('Never push to main. Push your <agent>/<topic> branch and open a pull
 MERGE = ('Agents never merge, approve or auto-merge a pull request: the owner '
          'merges (AGENTS.md, "Branches and pull requests"). Say in the thread '
          'that the pull request is ready, and whether its reviews are answered.')
-COPILOT = ('Each Copilot review or Copilot task spends the owner\'s monthly AI '
-           'credits. An agent asks for Copilot\'s review only through the GitHub '
-           'tool request_copilot_review, once on a code pull request after Codex\'s '
-           'round is answered; every other Copilot action is the owner\'s '
-           '(AGENTS.md, "Build and test", "Reviews and updates on GitHub").')
-COPILOT_AGAIN = ('Copilot\'s review of {pull} was already requested from this clone '
-                 '({when}). An agent requests it once per pull request; if another '
-                 'review is needed, say so in the thread and the owner adds Copilot '
-                 'under Reviewers (AGENTS.md, "Reviews and updates on GitHub").')
-# Where a clone keeps the pull requests whose Copilot review an agent has
-# requested: inside its Git folder, shared by its worktrees, never committed.
-COPILOT_RECORD = 'brickson-copilot-reviews.json'
-COPILOT_UNREADABLE = ('The guard cannot tell which pull request this Copilot review request '
-                      'is for, so it could not hold it to one request per pull request. '
-                      'Request it through GitHub\'s request_copilot_review, naming owner, '
-                      'repo and pullNumber '
-                      '(AGENTS.md, "Reviews and updates on GitHub").')
-COPILOT_UNRECORDED = ('Copilot\'s review of {pull} was requested, but the guard could not '
-                      'record it ({why}), so it cannot refuse a second request. Do not '
-                      'request it again on this pull request '
-                      '(AGENTS.md, "Reviews and updates on GitHub").')
+COPILOT = ('Copilot is not part of Brickson\'s reviews, and each Copilot review or '
+           'Copilot task would spend the owner\'s AI credits, so agents never start '
+           'one (AGENTS.md, "Build and test", "Reviews and updates on GitHub").')
 UNKNOWN = ('The guard cannot inspect this push/sync destination or API request body. '
            'Use an explicit feature branch or a readable request file '
            '(AGENTS.md, "Guardrails for agents").')
@@ -1604,9 +1582,8 @@ def check_github_tool(name, arguments):
     tool = name.rsplit('__', 1)[-1]
     if tool in ('merge_pull_request', 'enable_pr_auto_merge'):
         deny(MERGE)
-    # request_copilot_review is the one Copilot door agents may use (owner,
-    # 2026-11-03); the hook still runs before it.
-    if tool in ('assign_copilot_to_issue', 'create_pull_request_with_copilot'):
+    if tool in ('request_copilot_review', 'assign_copilot_to_issue',
+                'create_pull_request_with_copilot'):
         deny(COPILOT)
     if tool == 'assign_copilot_to_issue_with_intent' and arguments.get('is_suggestion') is not True:
         deny(COPILOT)
@@ -1626,91 +1603,6 @@ def check_github_tool(name, arguments):
         deny(COPILOT)
 
 
-def review_key(arguments):
-    """owner/repo#number of a Copilot review request, or None."""
-    owner, repo = arguments.get('owner'), arguments.get('repo')
-    number = arguments.get('pullNumber')
-    if not isinstance(owner, str) or not isinstance(repo, str) or not owner or not repo:
-        return None
-    if isinstance(number, bool) or not isinstance(number, (int, float, str)):
-        return None
-    try:
-        number = int(number)
-    except (ValueError, OverflowError):
-        return None
-    return f'{owner.lower()}/{repo.lower()}#{number}'
-
-
-def copilot_record_path(cwd):
-    """The clone's record of Copilot review requests: in the Git folder that
-    every worktree of the clone shares. The session's project comes first,
-    so a `cd` into another clone never moves the record; the working
-    directory only when no project is named. None outside any clone."""
-    for directory in (os.environ.get('CLAUDE_PROJECT_DIR'), cwd):
-        if not directory or not os.path.isdir(directory):
-            continue
-        common = git((directory, [], {}), 'rev-parse', '--git-common-dir')
-        if common:
-            # Relative to the directory it was asked from, unless absolute.
-            return os.path.join(directory, common, COPILOT_RECORD)
-    return None
-
-
-def read_copilot_record(path):
-    try:
-        with open(path, encoding='utf-8') as file:
-            record = json.load(file)
-    except (OSError, ValueError, RecursionError, MemoryError):
-        return {}
-    return record if isinstance(record, dict) else {}
-
-
-def check_copilot_again(arguments, cwd):
-    key = review_key(arguments)
-    if key is None:
-        # Nothing would record it, so it could be sent again and again.
-        deny(COPILOT_UNREADABLE)
-    path = copilot_record_path(cwd)
-    record = read_copilot_record(path) if path else {}
-    if key in record:
-        deny(COPILOT_AGAIN.format(pull=key, when=record[key]))
-
-
-def record_copilot_review(arguments, cwd):
-    """After a request succeeded: remember it, so a second one is refused.
-    The request has already run, so a record that cannot be written is told
-    to the agent (exit 2 shows Claude the message after a tool ran) rather
-    than blocking anything. A lock beside the record keeps two sessions of
-    one clone from losing each other's entries."""
-    key = review_key(arguments)
-    if not key:
-        return
-    path = copilot_record_path(cwd)
-    if not path:
-        print(COPILOT_UNRECORDED.format(pull=key, why='no Git folder found'), file=sys.stderr)
-        sys.exit(2)
-    try:
-        with open(path + '.lock', 'a', encoding='utf-8') as lock:
-            fcntl.flock(lock, fcntl.LOCK_EX)
-            record = read_copilot_record(path)
-            record[key] = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')
-            handle, partial = tempfile.mkstemp(dir=os.path.dirname(path),
-                                               prefix=COPILOT_RECORD + '.')
-            try:
-                with os.fdopen(handle, 'w', encoding='utf-8') as file:
-                    json.dump(record, file, indent=1, sort_keys=True)
-                os.replace(partial, path)
-            except BaseException:
-                try:
-                    os.unlink(partial)
-                except OSError:
-                    pass
-                raise
-    except OSError as error:
-        print(COPILOT_UNRECORDED.format(pull=key, why=error), file=sys.stderr)
-        sys.exit(2)
-
-
 def main():
     try:
         call = json.load(sys.stdin)
@@ -1726,20 +1618,10 @@ def main():
     if not isinstance(arguments, dict):
         arguments = {}
     cwd = call.get('cwd') or os.getcwd()
-    event = call.get('hook_event_name')
-    review = name.startswith('mcp__') and name.rsplit('__', 1)[-1] == 'request_copilot_review'
-    if event in ('PostToolUse', 'PostToolUseFailure'):
-        # After the call: only a Copilot review request that ran is recorded.
-        # Any other event, or none, is checked as a call about to run.
-        if event == 'PostToolUse' and review:
-            record_copilot_review(arguments, str(cwd))
-        return
     if name == 'Bash':
         check_command(str(arguments.get('command', '')), cwd)
     elif name.startswith('mcp__'):
         check_github_tool(name, arguments)
-        if review:
-            check_copilot_again(arguments, str(cwd))
 
 
 if __name__ == '__main__':

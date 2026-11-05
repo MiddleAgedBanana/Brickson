@@ -572,40 +572,27 @@ request that a person or agent opens. CodeRabbit and Greptile, which
 the owner also installed, review pull requests by themselves too, as
 far as their plans allow: CodeRabbit on a free trial and then its more
 limited free tier for public repositories, Greptile on its free tier
-(out of usage on 2026-11-03). GitHub Copilot no longer reviews
-by itself (the owner turned that off on 2026-11-03), and each Copilot
-review spends the owner's monthly AI credits. The owner has cancelled
-the Copilot subscription, and it ends on 2026-11-09. Until then, the
-owner's order (2026-11-03) is staggered: the agent
-answers and fixes the automatic rounds first (Codex's, and CodeRabbit's
-or Greptile's when they review), then Copilot reviews the pull request
-once, so it sees the fixed code and their threads instead of repeating
-them. A pull request that changes only documents gets no
-Copilot review. The agent that opened the pull request requests it
-itself (owner, 2026-11-03), so nothing waits for the owner: once Codex
-has reviewed the latest push and every automatic reviewer's finding is
-fixed or answered, it
-calls the GitHub tool `request_copilot_review` once for that pull
-request, and never again on it, nor any other way (the guard refuses
-`gh`, the API, the reviewer field and a second request from the same
-clone; *Guardrails for agents*). If the request fails because the
-month's AI credits have run out or the subscription has ended, the
-agent says so in the pull
-request's description and in the thread and goes on without Copilot:
-it never retries, and the owner does not add Copilot, which would spend
-the same credits. If the tool is unavailable or refused for another
-reason, it says so in the thread and the owner adds Copilot under
-**Reviewers**. From 2026-11-10 no pull request gets a Copilot review,
-and a pull request removes the step from this file, docs/DECISIONS.md
-and docs/SDLC.md. Neither reviews Dependabot's pull requests
-by itself. Both review against *Code Review Rules* above. GitHub's AI
-Scan also posts security findings after each push to such a pull request;
-answer them like review comments. It skips Dependabot's pull requests and
-those from forks, and CodeQL did not analyse Dependabot's first one before
-it merged, so treat a Dependabot pull request as not security-reviewed
-until the owner reads it or requests Copilot (docs/DECISIONS.md, *Code
-scanning*). Dependabot opens one pull request a month for new versions of
-the actions in `.github/workflows`, and one at once for a security fix.
+(out of usage on 2026-11-03). The agent that opened the pull request
+answers and fixes every round. GitHub Copilot is no longer one of the
+reviewers: the owner's AI credits ran out on pull request #78
+(2026-11-04) and the subscription ends on 2026-11-09, so no agent
+requests a Copilot review or starts a Copilot task by any route: a
+Copilot tool, `gh`, the REST or GraphQL API, or an `@copilot` mention in
+a comment or review. The guard refuses the Copilot tools, `gh`'s
+reviewer, assignee and agent-task commands, the REST reviewer, assignee
+and task endpoints, a GitHub tool's reviewer or assignee field and a
+GraphQL agent assignment; other GraphQL requests and a mention are held
+by this rule alone (*Guardrails for agents*; docs/DECISIONS.md,
+*Code review*). None of these reviewers reviews Dependabot's pull
+requests by itself. All of them review against *Code Review Rules*
+above. GitHub's AI Scan also posts security findings after each push
+to such a pull request; answer them like review comments. It skips
+Dependabot's pull requests and those from forks, and CodeQL did not
+analyse Dependabot's first one before it merged, so treat a Dependabot
+pull request as not security-reviewed until the owner reads it
+(docs/DECISIONS.md, *Code scanning*). Dependabot opens one pull
+request a month for new versions of the actions in
+`.github/workflows`, and one at once for a security fix.
 The intended repository settings, and why, are in docs/DECISIONS.md,
 "Reviews, updates and GitHub settings".
 
@@ -661,41 +648,30 @@ above are backed by checks wherever a check can run:
   write. It refuses, with the rule it breaks: `git add -A`, `--all`, `-u`
   or `.` and `git commit -a`; force pushes and any push that updates
   `main`; merging, auto-merging or approving a pull request (`gh`, the
-  GitHub API or a GitHub tool); the Copilot actions that spend the owner's
-  credits, except one Copilot review requested through
-  `request_copilot_review` (*Reviews and updates on GitHub*); and a
-  GitHub tool writing a file onto `main`. After a Copilot review request
-  succeeds, the guard runs again and records the pull request in the Git
-  folder of the session's project (`.git/brickson-copilot-reviews.json`,
-  shared by the clone's worktrees, never committed), and it refuses a
-  second request on that pull request, and a request whose pull request
-  it cannot read, since nothing would record it. A request that fails is not
-  recorded (the agent still says so in the thread and does not retry,
-  *Reviews and updates on GitHub*); a request that ran but could not be
-  recorded is told to the agent; a fresh clone starts with an empty
-  record. The same settings deny the
-  merge tools and the other Copilot tools outright. When the guard refuses, do
-  not look for another way round: say in the thread what you needed and
-  why. It is a guard against mistakes, not a sandbox, and it covers
+  GitHub API or a GitHub tool); a Copilot review or Copilot task asked
+  for by a Copilot tool, `gh`, the REST API, a GitHub tool's reviewer
+  or assignee field or a GraphQL agent assignment (*Reviews and updates
+  on GitHub* says what only the rule holds); and a GitHub tool writing
+  a file onto `main`. The same settings deny the merge tools and the
+  Copilot tools outright. When the guard refuses, do not look for
+  another way round: say in the thread what you needed and why. It is
+  a guard against mistakes, not a sandbox, and it covers
   Claude Code only; Codex, Jules and the owner are held to the same rules
-  by review. Both policy hooks, the ones before a call, use
-  `onFailure: "block"`, so a startup
+  by review. Both policy hooks use `onFailure: "block"`, so a startup
   error, crash, invalid output or timeout blocks the original action in
   Claude Code 2.1.295 or later. Older or unknown runtimes do not establish
   that protection; confirm the runtime and hook reload before relying on it.
-  The recording hook after a Copilot request cannot block anything, since
-  the request has already run.
 - **Where the guard runs.** Claude Code reads a repository's hooks and
   permission rules in a session with one repository. A cloud session that
   clones several repositories reads only plugin settings from them, so
   there the guard does not run and these rules are yours alone to keep.
   On 2026-11-03 it did not run in a Brickson cloud thread either, though
   that thread had cloned only this repository (Claude Code 2.1.317): a
-  `git add -A --dry-run`, which the guard refuses, ran, and the thread's
-  Copilot request left no record. The environment's documentation says
-  a cloud thread applies a repository's settings only in a project with
-  one repository. So in a cloud thread, check before relying on it:
-  where the guard runs, `git add -A --dry-run` is refused.
+  `git add -A --dry-run`, which the guard refuses, ran. The
+  environment's documentation says a cloud thread applies a
+  repository's settings only in a project with one repository. So in a
+  cloud thread, check before relying on it: where the guard runs,
+  `git add -A --dry-run` is refused.
 - **Its tests.** `scripts/test-hooks.py` feeds the guard the calls it must
   refuse and the ones it must let through; `scripts/test.sh` runs it
   before the unit tests, so CI runs it. A new rule gets a test first.
@@ -744,6 +720,12 @@ above are backed by checks wherever a check can run:
   (`site/accessibility/index.html`, the App Store's Accessibility URL)
   where its words become untrue. That page says only what is in place and
   how it was checked, never "works with" before a real-device check.
+- **`docs/DEVICE-CHECKS.md`**: the step-by-step procedure, with what
+  passes, for every row of docs/HANDOFF.md, *Checks that need a real
+  device*, and every gate of docs/ROADMAP.md, *The quality bar*, that
+  the owner checks, each step marked as the owner's or one an agent
+  runs from the owner's Mac. A pull request that adds or changes a
+  device check or an owner gate edits its procedure there.
 - **`docs/PORTING.md`**: what has come over from the reference app, what is
   next, and how to port a file.
 - **`README.md`**: the overview for people, written for a beginner. Keep it
