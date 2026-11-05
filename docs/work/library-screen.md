@@ -2,7 +2,7 @@
 
 *Roadmap: R0 item 6, the rest of it after the library core (PR #14).
 Owner: the thread "Let families edit and back up phrases" (2026-11-05).
-Status: spec.*
+Status: plan.*
 
 ## Intent
 
@@ -309,3 +309,71 @@ no copy of the chosen file. The Effective date stays.
 5. *System components* (the share sheet, the file picker, the text
    field's own look) are not measured yet (*The quality bar*, Q17);
    their captures go in the UI tests' attachments for that check.
+
+## Plan
+
+One pull request, in this order of commits (one task each):
+
+1. **The core's new rules, tests first** (`LibraryEditTests`): the
+   everyday-category bounds as a backstop for every kind of edit in
+   `LibraryEdit.plan`, applied only to a library inside them (three or
+   four), so a damaged or hand-made library can still be edited; the
+   new `LibraryEditRejection` cases and their words. Then `HomeWordRoom`
+   (Layout), with `StarterLabelFitTests`-style checks that every starter
+   word fits and a long word does not, and a measured list of common long
+   words in the test's attachments, for the owner.
+2. **The question screens' placement**, a plain type
+   (`LibraryQuestionPlace`) with unit tests: the way back in the opening
+   row's frame, the words beside it, the choices at least a row below
+   both, at every width and text size the tests sweep.
+3. **Export and import as plain types:** `BackupFile` (`Transferable`,
+   a `DataRepresentation` of `BackupCodec`'s bytes with the dated file
+   name; its closure is `nonisolated` and tested in
+   `OffMainThreadCallbackTests`), and `BackupReading` (the picked file's
+   bytes through its security-scoped address and `NSFileCoordinator`,
+   then the decode, the word check and both plans), each refusal tested.
+4. **The screens** in `Brickson/Settings/Library/`: the route cases, the
+   Family Setup row, the Library, a category, the editors, the question
+   screens, export and import. A verbatim title for `SettingsScreen`.
+   Every action records Settings activity; editors with unsaved words,
+   the file picker, the share sheet and a pending import hold the idle
+   reset.
+5. **The chain engine's Library surface** (`BricksonUITests/
+   LibraryChains.swift`, compiled into both test targets): each screen's
+   controls with what they do, the question screens' states, and the
+   moves redrawn in the same frames; unit tests on modelled frames, then
+   a UI test that measures every screen on CI's iPhone and iPad and
+   scores every start under both rules and both pointer models.
+   `SettingsChains` learns the new row, and the sweeps that list Family
+   Setup's rows gain it.
+6. **UI tests** (`LibraryTests`): add, change, move and delete a phrase
+   and see it on Home; Keep in Delete's frame; a category added,
+   renamed, re-pictured and deleted; the bounds refused with their
+   reasons; a backup restored through a debug-only launch option
+   (`--restore-sample-backup`) that stands in for the file picker, which
+   UI tests cannot drive; the share sheet opened and closed; Apple's
+   audit on every screen in light and dark; captures for Q17.
+7. **Documents:** docs/DECISIONS.md (the Library's placement, colours,
+   bounds, words, Export and Restore), docs/DESIGN.md's colour table,
+   docs/HANDOFF.md in place, docs/ROADMAP.md (R0 item 6, Q2, Q15, Q22,
+   Q24 *Today* lines), docs/ACCESSIBILITY.md's R0-6 rows, docs/APP-STORE.md's
+   policy rows, README.md, and the log.
+
+**Risks and how each is checked:**
+- *SwiftData seeing a delete made in another context while Home's
+  `@Query` holds the deleted objects* (docs/LESSONS.md, "Never roll back a
+  cascade delete"): the UI test deletes a phrase and a category with
+  Home under the cover, then closes Settings and reads Home.
+- *The String Catalog* must match the code exactly; CI's check prints
+  any difference.
+- *Placement under scrolling:* the way back is placed from the opening
+  row's frame in the window, measured after any scrolling, not in the
+  content; the UI test opens a question from a scrolled row.
+- *Unit-test time:* the new chain sweeps are timed on their own and
+  reported in the pull request (AGENTS.md, *Gotchas*).
+
+**Proof:** each new test names the change that would make it fail, in
+the log. Device checks added to docs/HANDOFF.md: the file picker reaching
+iCloud Drive without an iCloud capability; AirDrop and Mail from the
+share sheet; Voice Control's names for the pictures; editing with Switch
+Control and Full Keyboard Access.
