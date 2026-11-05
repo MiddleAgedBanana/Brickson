@@ -168,8 +168,8 @@ private struct LibraryDeleteContent: View {
 /// the item itself as Leave Here, and At the End. Places are absolute
 /// (`LibraryEdit.movePhrase`, `.moveCategory`), so choosing one again
 /// changes nothing. The screen stays after a move, the list redrawn in the
-/// new order in the same frames, and Leave It Here, in the place of the
-/// row that asked, goes back.
+/// new order in the same frames (`LibraryEqualRowsLayout`), and Leave It
+/// Here, in the place of the row that asked, goes back.
 struct LibraryMoveQuestion: View {
     let item: LibraryItem
     @Binding var path: [SettingsRoute]
@@ -215,15 +215,19 @@ private struct LibraryMoveContent: View {
             LibraryWayBack(title: "Leave It Here", path: $path)
         } choices: {
             // By place, not by item, so each row keeps its frame and only
-            // its words change after a move.
-            ForEach(Array(places.enumerated()), id: \.offset) { index, place in
-                Button {
-                    move(to: place)
-                } label: {
-                    SettingsRowLabel(text: Text(verbatim: place.label), systemImage: place.systemImage)
+            // its words change after a move; every row is as tall as the
+            // tallest, so words that trade rows move none of them.
+            LibraryEqualRowsLayout(spacing: SettingsMetrics.rowSpacing) {
+                ForEach(Array(places.enumerated()), id: \.offset) { index, place in
+                    Button {
+                        move(to: place)
+                    } label: {
+                        SettingsRowLabel(text: Text(verbatim: place.label), systemImage: place.systemImage)
+                            .frame(maxHeight: .infinity)
+                    }
+                    .settingsRowStyle()
+                    .accessibilityIdentifier("libraryMovePlace\(index)")
                 }
-                .settingsRowStyle()
-                .accessibilityIdentifier("libraryMovePlace\(index)")
             }
         }
     }

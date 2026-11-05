@@ -170,6 +170,41 @@ nonisolated struct LibraryQuestionLayout: Layout {
     }
 }
 
+/// Stacks rows, each as tall as the tallest of them. Move Phrase and Move
+/// Category redraw their places in the new order after a move, so the
+/// words trade rows: were each row as tall as its own words, a long
+/// phrase's place taking a short one's would move every row under it, and
+/// a look held where the chosen place was could rest nearest another
+/// place, which a repeated activation would then choose (AGENTS.md,
+/// invariant 10). The rows' words are the same set before and after a
+/// move, so the tallest, and with it every frame, stays put.
+nonisolated struct LibraryEqualRowsLayout: Layout {
+    /// The gap between rows.
+    let spacing: CGFloat
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let width = proposal.width.flatMap { $0.isFinite ? $0 : nil }
+            ?? subviews.map { $0.sizeThatFits(.unspecified).width }.max() ?? 0
+        let count = CGFloat(subviews.count)
+        return CGSize(width: width, height: count * rowHeight(width: width, subviews: subviews) + max(count - 1, 0) * spacing)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let height = rowHeight(width: bounds.width, subviews: subviews)
+        for (index, subview) in subviews.enumerated() {
+            subview.place(
+                at: CGPoint(x: bounds.minX, y: bounds.minY + CGFloat(index) * (height + spacing)),
+                proposal: ProposedViewSize(width: bounds.width, height: height)
+            )
+        }
+    }
+
+    /// The tallest row's height at `width`.
+    private func rowHeight(width: CGFloat, subviews: Subviews) -> CGFloat {
+        subviews.map { $0.sizeThatFits(ProposedViewSize(width: width, height: nil)).height }.max() ?? 0
+    }
+}
+
 /// A Library question screen's content: the words, the way back in the
 /// place of the row that asked, and the choices that change something
 /// well clear of both (docs/DECISIONS.md, "The Library's question screens").

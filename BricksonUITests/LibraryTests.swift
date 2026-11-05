@@ -362,6 +362,7 @@ final class LibraryTests: XCTestCase {
             + (field.exists ? [ScreenControl(name: LibraryChains.phraseField, frame: field.frame, isSelected: false)] : [])
         attachCapture(app, name: "library-chains-editor-\(context)".replacingOccurrences(of: ", ", with: "-"))
         let movePhrase = try ask("libraryMovePhrase", from: editor, returningTo: "librarySave", state: LibraryChains.movePhrase, words: &words, in: app, window: window, context: context)
+        expectPlacesOfOneHeight(movePhrase, in: LibraryChains.movePhrase, context: context)
         let deletePhrase = try ask("libraryDeletePhrase", from: editor, returningTo: "librarySave", state: LibraryChains.deletePhrase, words: &words, in: app, window: window, context: context)
         back(to: "Feelings", in: app)
 
@@ -377,6 +378,7 @@ final class LibraryTests: XCTestCase {
         attachCapture(app, name: "library-chains-category-\(context)".replacingOccurrences(of: ", ", with: "-"))
         let picture = try ask("libraryChangePicture", from: category, returningTo: "libraryRename", state: LibraryChains.picture, words: &words, in: app, window: window, context: context)
         let moveCategory = try ask("libraryMoveCategory", from: category, returningTo: "libraryRename", state: LibraryChains.moveCategory, words: &words, in: app, window: window, context: context)
+        expectPlacesOfOneHeight(moveCategory, in: LibraryChains.moveCategory, context: context)
         let deleteCategory = try ask("libraryDeleteCategory", from: category, returningTo: "libraryRename", state: LibraryChains.deleteCategory, words: &words, in: app, window: window, context: context)
 
         guard let frames = HomeChains.frames(from: Self.named(home), categories: Self.everydayCategories) else {
@@ -604,6 +606,20 @@ final class LibraryTests: XCTestCase {
     @MainActor
     private func screenFrame(holding name: String, in app: XCUIApplication) -> CGRect {
         app.scrollViews.containing(.button, identifier: name).firstMatch.frame
+    }
+
+    /// A move redraws its places in the new order, so their words trade
+    /// rows; were the rows of different heights, every row under one that
+    /// grew would move, and a held look could rest nearest a place the
+    /// person did not choose. Fails if a move question's places on screen
+    /// are not all one height (`LibraryEqualRowsLayout`).
+    private func expectPlacesOfOneHeight(_ controls: [(name: String, frame: CGRect)], in state: String, context: String) {
+        let heights = controls.filter { $0.name.hasPrefix(LibraryChains.movePlacePrefix) }.map { $0.frame.height }
+        XCTAssertGreaterThan(heights.count, 1, "\(state) shows fewer than two places (\(context))")
+        XCTAssertLessThan(
+            (heights.max() ?? 0) - (heights.min() ?? 0), 0.5,
+            "\(state)'s places are not all one height: \(heights) (\(context))"
+        )
     }
 
     /// Fails unless a question's way back takes the place of the row that
