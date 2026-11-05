@@ -118,7 +118,7 @@ nonisolated enum LibraryChains {
         states[library] = controls(screens.library, on: library, backTo: SettingsChains.familySetup) { name, frame in
             switch name {
             case screens.categoryRow: ChainControl(name, frame, .navigates, leadsTo: category)
-            case emergencyRow, _ where name.hasPrefix(categoryRowPrefix): ChainControl(name, frame, .navigates, leadsTo: "category \(name)")
+            case _ where name == emergencyRow || name.hasPrefix(categoryRowPrefix): ChainControl(name, frame, .navigates, leadsTo: "category \(name)")
             case addCategory: ChainControl(name, frame, .navigates, leadsTo: "New Category")
             case export: ChainControl(name, frame, .navigates, leadsTo: "the share sheet")
             case restore: ChainControl(name, frame, .navigates, leadsTo: "the file picker")
