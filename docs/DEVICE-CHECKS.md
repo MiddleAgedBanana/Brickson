@@ -339,7 +339,11 @@ Steps:
    its first screen until a row is partly, then wholly, off the screen.
    Rest the look at the edge nearest the hidden row. Note whether the
    pointer goes to the hidden row, the screen scrolls, or nothing
-   happens.
+   happens. Then, in Family Setup > Phrases and Categories, open a
+   category, scroll until a phrase row lies wholly under the navigation
+   bar at the top, rest the look on the bar over it, and note the same.
+   The chain test leaves out a row the bar covers wholly
+   (docs/DECISIONS.md, "The Library's question screens").
 7. **A comfortable dwell time and movement tolerance. Owner.** Starting
    from the values found, read the message aloud to yourself for a
    minute with the look on it, then speak five phrases and answer Yes
@@ -1297,7 +1301,9 @@ fewer phrases than the grid has columns*.*
 
 1. **Owner:** with Voice Control, then Switch Control, then Full
    Keyboard Access, then AssistiveTouch Dwell with Snap to Item: add a
-   phrase to a category, change its words, move it, delete it; add a
+   phrase to a category, change its words, move it, delete it; delete an
+   everyday category so that three remain (Add a Category is dimmed
+   while there are four; restore it from B1's backup afterwards); add a
    category, give it a picture (with Voice Control, say the picture's
    name, such as "Tap Heart"), rename it, delete it. *Passes* when every
    control is reached and named, and each way back (Keep, Leave It Here,
@@ -1339,7 +1345,7 @@ first words:
 | How far Snap to Item jumps | F1 |
 | Whether Snap to Item and Dwell pick a target by its nearest centre or its nearest edge | F1, F2 |
 | Whether a lingering look re-fires a dwell | F1 |
-| Whether Snap to Item ignores controls scrolled off screen | F1 |
+| Whether Snap to Item ignores controls scrolled off screen, or wholly under the navigation bar | F1 |
 | What the real software keyboard covers | A1, I8 |
 | Typing on Home by touch, Switch Control | I8 |
 | Get Attention heard from the next room | S5 |

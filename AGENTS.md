@@ -405,9 +405,9 @@ the failure.
   unless the change makes it worse or newly reachable, or claims to close
   it and doesn't. A feature that is planned but not built yet is not
   missing.
-- The accessibility audit's "not human-readable" guess on phrase-tile
-  labels, which the UI tests' audit helper
-  (`assertPassesAccessibilityAudit`) expects.
+- The accessibility audit's "not human-readable" guess on phrase labels
+  (Home's phrase tiles and the Library's phrase rows), which the UI
+  tests' audit helper (`assertPassesAccessibilityAudit`) expects.
 - That an agent did not run the app: for cloud agents the GitHub CI run is
   the build (*Build and test*).
 

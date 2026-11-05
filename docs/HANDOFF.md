@@ -135,8 +135,10 @@ launch, added after what is already there, and an emergency category
 whose identity an earlier category shares gets a new one, with nothing of
 the person's changed or moved (docs/DECISIONS.md, "The emergency category
 is always there") ([`log/2026-10-23-emergency-repair.md`](log/2026-10-23-emergency-repair.md)).
-Editing and backup exist as tested code with no screens yet
-([`log/2026-10-21-library-core.md`](log/2026-10-21-library-core.md)).
+Editing and backup are the tested library core
+([`log/2026-10-21-library-core.md`](log/2026-10-21-library-core.md)),
+reached from the Library's screens above
+([`log/2026-11-05-library-screen.md`](log/2026-11-05-library-screen.md)).
 The screen never locks. Ported code:
 [`docs/PORTING.md`](PORTING.md).
 
@@ -1193,7 +1195,7 @@ settings, date) and summarise it here.
 | How far Snap to Item jumps, and whether the pointer stays on an activated control or follows the gaze | Spacing and placement for dwell profiles, and which of the chain engine's findings bind: it scores both pointers at any distance, and "Settings closes under the look" needs the pointer to follow the gaze (docs/DECISIONS.md, "One chain engine for dwell safety") |
 | Whether Snap to Item and Dwell pick a target by its nearest centre or its nearest edge, and which control a look resting on the message selects | What removes "Yes and No border the message" (docs/DECISIONS.md, "Settings on Home"), and "the top of Stop's well is nearest Again" ("Get Attention and Stop on Home") |
 | Whether a lingering look re-fires a dwell | How much repeat protection matters |
-| Whether Snap to Item ignores controls scrolled off screen | Whether scrolling can keep family controls out of reach, and whether the chain engine may keep scoring only the controls in the window |
+| Whether Snap to Item ignores controls scrolled off screen, or wholly under the navigation bar | Whether scrolling can keep family controls out of reach, and whether the chain engine may keep scoring only the controls in the window and leave out a Library row the bar covers |
 | What the real software keyboard covers in each orientation (CI measures the simulator's on every UI run; a device, other languages and windowed iPads are not measured), that a third-party keyboard never appears in Brickson, and typing checks 1–8 in [`log/2026-10-21-typing-foundation.md`](log/2026-10-21-typing-foundation.md) | `KeyboardAllowance`'s references, the typing layout (docs/LESSONS.md, "Test with the real software keyboard"), the word row, Return under dwell, and whether Brickson needs its own keyboard |
 | Typing on Home by touch, Switch Control, Voice Control ("Tap Type"), Full Keyboard Access and Dwell with Snap to Item: Type brings the cursor and Apple's keyboard at once; Speak and Return say the message; Clear, then Put Back; Phrases puts the keyboard away and keeps the message; a look slipping off the keyboard's top row meets nothing that speaks or changes the message; Snap to Item stops on the dimmed phrase tiles and categories while typing; and, on an iPhone SE with Display Zoom and at AX3 without it, where Type is dimmed, whether the real keyboard would cover Speak or Get Attention | docs/DECISIONS.md, "Typing on Home" (*The keyboard's room, measured*; *Open: by centre, dimmed phrases border Clear and Put Back*) and "Return speaks" |
 | Get Attention heard from the next room, on the speaker and over Bluetooth | The alarm's sound and level, and the replacement tone |

@@ -222,9 +222,10 @@ a control that cannot act is dimmed in place, never removed.
      meets it and goes back: Keep takes the asking control's place
      (invariant 3), and a held look goes back and forth between two
      controls that only open screens.
-   - **The words** sit beside it, above where there is room and below
-     where there is not, so a look that rests on them while reading is
-     nearest the way back.
+   - **The words** sit just under it, so a look that rests on them
+     while reading is nearest the way back. (Built first above it where
+     there was room; the chain test on CI found their top nearer Back to
+     Talking.)
    - **The choices** that change something (**Delete for Good**, the
      places in a move, the pictures, **Add to My Phrases** and **Replace
      My Phrases**) start at least one row's height below both, so none is
@@ -278,10 +279,10 @@ a control that cannot act is dimmed in place, never removed.
   everyday categories to more than four
   (`LibraryEditRejection.homeHasRoomForFour`), and a delete or replace
   that would take it from three or more to fewer than three
-  (`.homeNeedsThree`). A library already outside those bounds (a damaged
-  or hand-made store) can still be edited in the direction that brings
-  it back. Import keeps every word, so it is refused whole, never
-  trimmed.
+  (`.homeNeedsThree`). Only an edit that crosses a bound is refused, so
+  a library already outside them (a damaged or hand-made store) can
+  still be edited and brought back. Import keeps every word, so it is
+  refused whole, never trimmed.
 - **Every word fits the narrowest tile.** A phrase or name with a word
   too wide for Home's narrowest phrase tile or category button, at the
   default text size with Bold Text on, is refused by the editors
@@ -432,7 +433,7 @@ Each is recorded, with its reason, in docs/DECISIONS.md.
   refused ("Words wider than Home's narrowest buttons"). The spec had
   refused both.
 - **The question screens** ("The Library's question screens"): every
-  word, results and reasons too, sits beside the way back; Delete for
+  word, results and reasons too, sits just under the way back; Delete for
   Good stays and dims after deleting, and Keep reads Done, instead of
   returning at once; a screen's last row puts its question's choices
   above the way back; Change Picture's pictures are named rows, not a

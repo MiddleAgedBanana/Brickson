@@ -1401,7 +1401,10 @@ Home (invariant 2; "Editing the library").
   in a line kept for it (`LibraryResultLine`), with every version the line
   can show laid out hidden and its tallest height kept, so nothing moves
   when words appear. A control that would only be refused is dimmed in
-  place with its reason beside it, never removed.
+  place with its reason beside it, never removed. A dimmed row is drawn
+  as Home draws a control that is off, unfilled with primary-ink words
+  and edge (`SettingsRowButtonStyle`): the system's own dimmed look
+  measured under 4.5:1 in Apple's audit on CI (invariant 6).
 - **A person's words** (phrases, category names, titles) are shown with
   `Text(verbatim:)` and never translated; `SettingsScreen` gained a
   verbatim title for a category's screen.
@@ -1444,8 +1447,14 @@ was, so each question is placed from it (`LibraryQuestionPlace`,
   takes the asking control's place (invariant 3), and a repeat goes back
   and forth between two controls that only open screens.
 - **Every word** on a question screen, its results and refusals too, is
-  in one block beside the way back: just above it where it fits, under
-  it where it does not. The choices hold only buttons.
+  in one block just under the way back. The choices hold only buttons.
+  The first version put the words just above the way back where they
+  fitted; on CI the chain test found a look resting on their top nearer
+  Back to Talking than the way back (Change Picture, on the phone at the
+  default text size and on the iPad at the largest), and Back to Talking
+  closes Settings onto Home's Yes, No, phrases and Get Attention.
+  Under the way back they lead away from the top of the screen, which
+  the placement cannot see from the screen's content.
 - **The choices** start at least a row below both, and lower until every
   point of the way back, the words and the gap around the row is nearer
   the way back than the first choice, by centre and by edge, with 8
@@ -1486,7 +1495,14 @@ was, so each question is placed from it (`LibraryQuestionPlace`,
   (`LibraryChainsTests`) and on the frames the app draws on CI's iPad and
   iPhone at the default and the largest text size (`LibraryTests`). Every
   phrase's row opens the one editor read, since every editor is built the
-  same way.
+  same way. Edit Phrase's field is not a button, so the UI test reads it
+  on its own as a control that changes nothing: left out, a look over it
+  met Back to Talking. The category is read scrolled so that its four
+  rows that ask show together, under the navigation bar; a row the
+  bar covers wholly is not a start there, since a tap on it meets the
+  bar (on CI, the largest text size's Change Picture did nothing when
+  tapped under the bar). Whether Snap to Item can reach a covered row
+  is a device check.
 - **Not scored:** what lies past the system's share sheet and file
   picker; where a look rests after the file picker closes on the Restore
   question, which is the system's screen; and New Phrase, New Category
@@ -1506,9 +1522,12 @@ take a library from four or fewer to more than four
 would take it from three or more to fewer than three (`.homeNeedsThree`).
 Home's slot plan has no place for a fifth ("Home's slot plan", *Open*),
 and fewer than three can leave Again, which speaks, nearest Stop's empty
-well. A library already outside the bounds (a damaged or hand-made store)
-can still be edited in the direction that brings it back. A backup that
-would cross either bound is refused whole, never trimmed (invariant 7).
+well. Only an edit that crosses a bound is refused, so a library already
+outside them (a damaged or hand-made store, which no screen or backup
+can make) can still be edited and brought back; an edit can also take it
+farther out, which no rule stops yet (a follow-up in
+`docs/log/2026-11-05-library-screen.md`). A backup that would cross
+either bound is refused whole, never trimmed (invariant 7).
 The Library dims Add a Category at four and Delete Category at three,
 with the reason beside each.
 

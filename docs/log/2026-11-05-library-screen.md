@@ -1,6 +1,6 @@
 # The Library: editing, export and restore in Settings
 
-*2026-11-05. Pull request (`claude/project-thread-muium0`). The thread
+*2026-11-05. Pull request #80 (`claude/project-thread-muium0`). The thread
 "Let families edit and back up phrases", from a cloud session that
 cannot build; CI is the build.*
 
@@ -23,7 +23,7 @@ The decisions are in docs/DECISIONS.md:
   plurals, no new colours.
 - "The Library's question screens": every delete, move, picture and
   restore asks on a screen of its own, with the way back where the row
-  that asked was, the words beside it and the choices well clear of
+  that asked was, the words under it and the choices well clear of
   both, placed by `LibraryQuestionPlace` and scored by the chain engine
   (`LibraryChains`).
 - "Three or four everyday categories": the owner's answer, "Yes, three is
@@ -55,6 +55,64 @@ the look. It is recorded open (docs/DECISIONS.md, "Typing on Home",
 pinned as two strict known issues, for the layout engine to place or the
 owner to accept before a dwell, switch, head or gaze build ships.
 
+### What CI and the reviews found
+
+The first CI runs drew the screens, and the chain engine and Apple's
+audit read them on CI's iPad and iPhone. Each finding was fixed in the
+app or in how the test reads the screen, never by excusing a hazard:
+
+- **A question's words above its way back** reached toward Back to
+  Talking: on the phone at the default text size and on the iPad at the
+  largest, a look resting on the top of Change Picture's words was
+  nearer Back to Talking than the way back, and Back to Talking closes
+  Settings onto Home's No, a phrase or Get Attention. The words now go
+  just under the way back on every question (`LibraryQuestionPlace`;
+  `LibraryQuestionPlaceTests.theWordsGoJustUnderTheWayBack`).
+- **Edit Phrase's field** is not a button, so the test did not read it,
+  and a look over it met Back to Talking. It is now read on its own and
+  scored as a control that changes nothing (`LibraryChains`,
+  `LibraryChainsTests.thePhraseFieldChangesNothing`). The modelled
+  category grew to seven phrases where a test needs a phrase row level
+  with a choice under the words.
+- **A row scrolled wholly under the navigation bar** was scored as if a
+  look could choose it. On CI a tap on such a row (Change Picture at the
+  largest text on the phone) met the bar and nothing asked, so the test
+  now leaves such rows out, keeps partly covered ones whole, and scrolls
+  a category back by held drags until its four rows that ask show
+  together. Whether Snap to Item can reach a covered row joins device
+  check F1.
+- **A dimmed row** (Add a Category with four categories) failed Apple's
+  contrast audit in light and dark: the system's dimmed look is a light
+  gray with paler words. A dimmed Settings row is now drawn as Home draws
+  a control that is off, unfilled with primary-ink words and edge
+  (`SettingsRowButtonStyle`), pairs `PaletteTests` already pins. Save
+  uses the same style in the phrase fill.
+- **The audit's "not human-readable" guess** on the Library's phrase
+  rows ("Maybe.", "Hello."), the same guess the audit helper already
+  expects on Home's phrase tiles. The helper now expects it on rows named
+  `libraryPhrase` and a number, and AGENTS.md, *Not findings*, says so:
+  a widened note for the owner to see.
+- **Change Picture's audit timed out** twice in a row on the phone (its
+  32 rows), where the iPad finished in about 7 seconds. It is audited one
+  kind of issue at a time, every kind iOS has.
+- **A phrase row and Home's tile with the same words** under the cover
+  matched one query twice; the test now finds a row by its identifier
+  and words.
+
+CodeRabbit's review found four things. Three were fixed: a question laid
+out before its screen was measured used the greatest finite number as
+the height that shows, and a last row's choices that did not fit above
+were then searched for below a point that far down, which never ended
+(reproduced on Linux: the test did not finish in 60 seconds; it takes
+0.19 seconds now; `LibraryQuestionPlaceTests.beforeTheScreenIsMeasuredTheChoicesGoBelowTheWords`);
+docs/HANDOFF.md still called editing unreachable; and device check B2
+added a category while there were four. The fourth, refusing an edit
+that takes a library already outside three or four everyday categories
+farther out, is declined for now: a library outside the bounds comes
+only from a damaged or hand-made store, and refusing it needs fixture
+libraries of each kind in the core's and the SwiftData tests (a
+follow-up below; the decision's words now say so).
+
 ## Commits
 
 - `eb1790f`, `a5cdae7`, `52b82fb`, `ef6df02`: the work file's intent,
@@ -72,7 +130,9 @@ owner to accept before a dwell, switch, head or gaze build ships.
 - `2ea98b9`, `1abe4f5`: the build fixes CI found (a missing `import
   Foundation`; a `where` clause the compiler warned about).
 - `0fb11b4`: Home scored with a short category.
-- The last commits: this record and the documents it makes untrue.
+- `215dfca`: this record and the documents it makes untrue.
+- The review round: CodeRabbit's three fixes, then what CI found (the
+  section above).
 
 ## Verified
 
@@ -81,8 +141,8 @@ owner to accept before a dwell, switch, head or gaze build ships.
   default main-actor isolation and the project's upcoming features, and
   `String(localized:)` replaced by a stand-in: `LibraryChainsTests`,
   `LibraryQuestionPlaceTests`, `SetupAnswersPlaceTests`,
-  `LibraryEditTests`, `LibraryImportTests` and `BackupCodecTests`, 90
-  tests, all passed; `HomeLayoutEngineTests`' new short-category sweep
+  `LibraryEditTests`, `LibraryImportTests` and `BackupCodecTests`, all
+  passed, before and after the review round; `HomeLayoutEngineTests`' new short-category sweep
   passed with its two known issues (1,824 findings while typing and
   3,080 while browsing, none unexpected) in about 121 seconds there,
   unoptimised.
@@ -93,7 +153,11 @@ owner to accept before a dwell, switch, head or gaze build ships.
   `scripts/test-hooks.py`, `scripts/test-site.py`; the String Catalog
   holds every new string (`xcstringstool` itself runs on CI).
 - **GitHub CI**, on the newest released Xcode, CI's iPad Pro 13-inch and
-  iPhone simulators: the results are in the pull request.
+  iPhone simulators. On `215dfca` the unit tests passed (1,251 passed,
+  18 strict known issues, 1 skipped) in 29 minutes for the build and
+  tests; the short-category sweep took 102 seconds there. The UI
+  findings of the first runs are in the section above; the results after
+  the review round are in the pull request.
 - **Each new test, and what would make it fail:**
   - `LibraryChainsTests.noHeldLookChangesTheLibrary`: a way back moved
     off the asking row, words among the choices, choices nearer the row
@@ -102,8 +166,11 @@ owner to accept before a dwell, switch, head or gaze build ships.
     hazards the placements prevent (choices under a last row, Delete for
     Good under Delete Phrase, a grid of pictures).
   - `LibraryQuestionPlaceTests`: the way back off the row's frame, words
-    overlapping it, choices nearer the row, a last row's choices under
-    the way back.
+    anywhere but just under it, choices nearer the row, a last row's
+    choices under the way back, a layout before the screen is measured
+    that never finishes.
+  - `LibraryChainsTests.thePhraseFieldChangesNothing`: the field reported
+    as unknown, or scored as anything but changing nothing.
   - `LibraryEditTests`' new four: a fifth everyday category, or fewer
     than three, let through by an edit or a backup.
   - `HomeWordRoomTests`: a starter word wider than its button, or a wide
@@ -161,4 +228,9 @@ owner to accept before a dwell, switch, head or gaze build ships.
 - **The rest of the emergency repair record's list:** the rollback probe
   on the current Xcode, stores from every schema version, safety copies,
   each a pull request of its own. *(R0, library threads)*
-- **Device checks B1 and B2.** *(the owner)*
+- **Device checks B1 and B2, and F1's covered row.** *(the owner)*
+- **A library already outside three or four everyday categories:** an
+  edit can take it farther out (CodeRabbit, PR #80). Refusing that needs
+  fixture libraries of each kind in `LibraryEditTests` and the SwiftData
+  tests, whose shared fixture has two everyday categories. *(a library
+  thread)*
