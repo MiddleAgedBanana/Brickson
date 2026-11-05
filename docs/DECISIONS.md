@@ -1507,12 +1507,13 @@ was, so each question is placed from it (`LibraryQuestionPlace`,
   and a look held where the chosen place had been could rest nearest
   another place.
 - **Scored by the one chain engine** (`LibraryChains`): every control of
-  every Library screen chosen, and a look resting across each question's
-  words, under both nearest rules and both pointers, on modelled frames
-  (`LibraryChainsTests`) and on the frames the app draws on CI's iPad and
-  iPhone at the default and the largest text size (`LibraryTests`). Every
-  phrase's row opens the one editor read, since every editor is built the
-  same way. Edit Phrase's field is not a button, so the UI test reads it
+  every Library screen chosen, but for what the next item names, and a
+  look resting across each question's words, under both nearest rules
+  and both pointers, on modelled frames (`LibraryChainsTests`) and on
+  the frames the app draws on CI's iPad and iPhone at the default and
+  the largest text size (`LibraryTests`), of the controls the window
+  shows. Every phrase's row opens the one editor read, since every
+  editor is built the same way. Edit Phrase's field is not a button, so the UI test reads it
   on its own as a control that changes nothing: left out, a look over it
   met Back to Talking. The category is read scrolled so that its four
   rows that ask show together, under the navigation bar; a row the
@@ -1522,8 +1523,11 @@ was, so each question is placed from it (`LibraryQuestionPlace`,
   is a device check.
 - **Not scored:** what lies past the system's share sheet and file
   picker; where a look rests after the file picker closes on the Restore
-  question, which is the system's screen; and New Phrase, New Category
-  and Rename Category, whose only control besides Back is a dimmed Save
+  question, which is the system's screen; controls that show only once
+  the screen is scrolled (at the largest text on the iPhone, every place
+  on Move Phrase and Move Category starts below the window); and New
+  Phrase, New Category and Rename Category, whose only control besides
+  Back is a dimmed Save
   until a family member types.
 
 ## Three or four everyday categories

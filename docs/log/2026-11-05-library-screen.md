@@ -282,6 +282,31 @@ Codex and CodeRabbit reviewed `246695f`:
   moves one through `LibraryModel.perform` and waits for the query to
   show it under its new category only.
 
+### What the verifier found
+
+The repository's verifier (`.claude/agents/verifier.md`), run on
+`31865a5` once CI was green, found no failure and these five things,
+all now corrected:
+
+- `docs/HANDOFF.md` and docs/DECISIONS.md, "The Library's question
+  screens", said the chain engine scores every Library screen. It reads
+  only the controls the window shows, and three editors are not scored;
+  both now say so, and the decision names the places that start below
+  the window at the largest text on the iPhone.
+- This log said CI ran on the newest released Xcode; it ran on 27.1
+  until `31865a5`, and the counts it gave were the result bundle's, one
+  per argument. The *Verified* section now says both.
+- `BackupFile`'s note pointed to `OffMainThreadCallbackTests`, which held
+  no backup test (AGENTS.md, *Workflow rules*, puts every framework
+  callback's test there). The test that makes the file on another
+  thread moved there, as
+  `OffMainThreadCallbackTests.theBackupFileCanBeMadeOnABackgroundThread`.
+- The pull request said the faster search alone ended Change Picture's
+  audit timeout; CI ran it together with the audit reading one kind of
+  issue at a time, as this log already says.
+- The pull request's *Not verified* list was incomplete; it now holds
+  the verifier's list.
+
 ## Commits
 
 - `eb1790f`, `a5cdae7`, `52b82fb`, `ef6df02`: the work file's intent,
@@ -311,6 +336,9 @@ Codex and CodeRabbit reviewed `246695f`:
   compared on thirds of a point, Move's places of one height, `perform`
   reading through `refresh`, and the category-move query test; then
   the height check reading every place in the accessibility tree.
+- What the verifier found: the coverage words in HANDOFF and DECISIONS,
+  this log's CI paragraph, and the share sheet's off-main test moved to
+  `OffMainThreadCallbackTests`.
 
 ## Verified
 
@@ -335,15 +363,25 @@ Codex and CodeRabbit reviewed `246695f`:
 - **The Python checks**, here: `scripts/test-docs.py`,
   `scripts/test-hooks.py`, `scripts/test-site.py`; the String Catalog
   holds every new string (`xcstringstool` itself runs on CI).
-- **GitHub CI**, on the newest released Xcode, CI's iPad Pro 13-inch and
-  iPhone simulators. On `215dfca` the unit tests passed (1,251 passed,
-  18 strict known issues, 1 skipped) in 29 minutes for the build and
-  tests; the short-category sweep took 102 seconds there. On `b520315`
-  (run 41986372497) the unit tests passed again (1,255 passed, 18 strict
-  known issues, 1 skipped), and the UI tests failed as *What CI found on
-  the review round* says; every other UI test passed on both devices.
-  The results of the second round and these fixes are in the pull
-  request.
+- **GitHub CI**, on CI's iPad Pro 13-inch and iPhone 17 simulators, with
+  the Xcode each machine had. On `215dfca` and `b520315` that was Xcode
+  27.1 everywhere, and the unit job warned that Apple's newest release
+  was 27.2. On `215dfca` the unit tests passed (1,251 passed, 18 strict
+  known issues, 1 skipped, counting each argument as the result bundle
+  does; CI's own line counted 905 tests and 9 expected failures) in 29
+  minutes for the build and tests; the short-category sweep took 102
+  seconds there. On `b520315` (run 41986372497) the unit tests passed
+  again (1,255 passed, 18 strict known issues, 1 skipped; CI's line, 907
+  tests), and the UI tests failed as *What CI found on the review round*
+  says; every other UI test passed on both devices. On `31865a5` (run
+  42002415932) everything passed: the unit tests (920 tests by CI's
+  line, 910 passed, 9 expected failures, 1 skipped; Xcode 27.2, iOS
+  27.2), the UI tests on the iPhone (71 ran, 65 passed, 6 skipped; Xcode
+  27.1, iOS 27.0, that machine's 27.2 being a release candidate) and on
+  the iPad (71 ran, 69 passed, 2 skipped; Xcode 27.2, iOS 27.2), with the
+  same skips as before and every `LibraryTests` test passing on both.
+  The run on the last push, which changed only words and moved one
+  test, is in the pull request.
 - **Each new test, and what would make it fail:**
   - `LibraryChainsTests.noHeldLookChangesTheLibrary`: a way back moved
     off the asking row, words among the choices, choices nearer the row

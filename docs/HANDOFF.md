@@ -122,8 +122,9 @@ edited, and an edit can take it farther out (a follow-up in
 `docs/log/2026-11-05-library-screen.md`). Each delete, move, picture and
 restore asks on a screen of its own, with the way back where the row
 that asked was and the choices well clear of it, and the chain engine
-scores every Library screen (docs/DECISIONS.md, "The Library in
-Settings" and "The Library's question screens").
+scores the Library's screens, on the controls each window shows, all
+but three editors that open with Save dimmed (docs/DECISIONS.md, "The
+Library in Settings" and "The Library's question screens").
 "Speaking", "Sounding", audio failures, very low volume and a typed
 message that cannot be saved or restored share one passive status line
 under the message, in space always kept for it, and
