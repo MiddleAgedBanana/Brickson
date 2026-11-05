@@ -1554,10 +1554,9 @@ with the reason beside each.
 
 ## Four phrases in every category
 
-*Default, adopted 2026-11-05 by the thread that built it, with the
-owner's answer asked the same day: reversible if the owner objects. It
-closes "Typing on Home", *a category with fewer phrases than the grid
-has columns*.*
+*The owner's decision, 2026-11-05 ("Yes, four is the floor"), over
+accepting the hazard as a recorded exception. It closes "Typing on
+Home", *a category with fewer phrases than the grid has columns*.*
 
 A category with fewer phrases than Home's grid has columns leaves empty
 cells in the grid's top row, beside the controls above it. Scored on

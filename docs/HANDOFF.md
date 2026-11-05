@@ -550,8 +550,8 @@ release in docs/ROADMAP.md when no thread has it yet.
 - A category with fewer phrases than Home's widest grid has columns
   (four), which the Library lets a family make, is dimmed on Home and
   never shows, and the Library keeps four in a category once it has
-  them (docs/DECISIONS.md, "Four phrases in every category"; the owner
-  was asked on 2026-11-05, and the default stands until they answer).
+  them (docs/DECISIONS.md, "Four phrases in every category", the
+  owner's decision of 2026-11-05).
   Two things stay open. Emergency is never dimmed, so an Emergency
   already short of four (no edit can make one) shows its empty cells,
   where a look meets Clear or Put Back while typing and a phrase that
@@ -559,8 +559,7 @@ release in docs/ROADMAP.md when no thread has it yet.
   `HomeLayoutEngineTests` (*Emergency with fewer than four*), and the
   Library tells the family to add phrases. And the dimming, like
   typing's, assumes Snap to Item stops on a dimmed control, unmeasured
-  until docs/DEVICE-CHECKS.md, I8 and B2. *(the owner's answer; the
-  device checks)*
+  until docs/DEVICE-CHECKS.md, I8 and B2. *(the device checks)*
 - No typing on Home where the keyboard's room reaches the safety row:
   320pt windows at every size, a 375×667 phone from AX3, and the iPad
   mini and a zoomed 13-inch iPad in landscape from AX3. There Type is
@@ -978,8 +977,8 @@ docs/ROADMAP.md, *The quality bar*, Q24):
    nearest Stop's empty well, with fewer than three everyday categories,
    went with your rule that three is the floor, 2026-11-05; a look on
    the empty cells of a category with fewer phrases than the grid has
-   columns went the same day, by dimming such a category, with your
-   answer on the four-phrase floor asked.) So does the changed-window finding (a look resting
+   columns went the same day, with your rule that four phrases is the
+   floor.) So does the changed-window finding (a look resting
    on iPhone Duo before the window changes meets Get Attention, Speak,
    No or Clear after it), once a device has shown how the pointer really
    moves when the window changes (R0 item 13; *Known gaps*). Also before

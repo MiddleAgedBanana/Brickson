@@ -30,9 +30,9 @@ building.*
 - **Open questions:** whether placement can remove it. Two independent
   reviews found it cannot: a new category has no phrases, so whatever
   the order of the cells, the top row borders the categories with
-  nothing in it. The owner was asked on 2026-11-05 whether four is the
-  floor or the hazard is accepted; the default is the floor
-  (docs/DECISIONS.md, "Four phrases in every category").
+  nothing in it. Asked on 2026-11-05 whether four is the floor or the
+  hazard is accepted, the owner chose the floor (docs/DECISIONS.md,
+  "Four phrases in every category").
 
 ## Spec
 

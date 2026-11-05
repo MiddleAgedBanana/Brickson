@@ -48,8 +48,8 @@ every category"; work file [`work/four-phrases.md`](../work/four-phrases.md)):
   reach on the owner's Mac).
 
 The owner was asked the same day whether four is the floor or the hazard
-is accepted, with the floor recommended; it is built as the default and
-stands until they answer.
+is accepted, with the floor recommended, and chose the floor ("Yes, four
+is the floor").
 
 ## Commits
 
@@ -120,9 +120,6 @@ format; a unit run on CI checks it against the code.
 
 ## Follow-ups
 
-- **The owner's answer** on the four-phrase floor. If they accept the
-  hazard instead, the dimming and the rule come out and the finding is
-  recorded as an accepted exception. *(this thread)*
 - **Device check B2 step 3.** *(the owner)*
 - **A library already outside the bounds** can still be taken farther
   out by an edit, for phrases as for categories (the Library record's

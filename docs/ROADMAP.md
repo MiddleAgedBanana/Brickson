@@ -742,8 +742,8 @@ what passes and who checks it:
   with fewer than three everyday categories closed on 2026-11-05: the
   owner's rule keeps three; the short category's opened and closed the
   same day: Home dims a category with fewer than four phrases and the
-  Library keeps four once reached, docs/DECISIONS.md, "Four phrases in
-  every category", with the owner's answer asked; that, like typing's
+  Library keeps four once reached, the owner's rule, docs/DECISIONS.md,
+  "Four phrases in every category"; that, like typing's
   dimming, assumes Snap to Item stops on a dimmed control, which
   docs/DEVICE-CHECKS.md, B2 checks; an Emergency already short of four,
   which no edit can make, stays a strict known issue);
