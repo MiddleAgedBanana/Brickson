@@ -113,6 +113,115 @@ only from a damaged or hand-made store, and refusing it needs fixture
 libraries of each kind in the core's and the SwiftData tests (a
 follow-up below; the decision's words now say so).
 
+Codex's review of that round found four things. Two are fixed:
+
+- **Save on a phrase with a line break.** The field shows a stored line
+  break as a space (`MessageComposer`), and a phrase restored from a
+  backup can hold one, so Edit Phrase compared the field with the stored
+  words and opened with Save on: a held look on Save would have rewritten
+  the phrase with nothing typed, which the chain sweeps assume cannot
+  happen. Rename had the same mismatch. Both editors now compare with
+  what the field first showed (`LibraryEditorWords`;
+  `LibraryEditorWordsTests` fails three of its four stored words when
+  the comparison goes back to the stored ones, and `emptiedWordsDimSave`
+  fails without the check for blank words, which an independent check
+  found no test held).
+- **A long phrase's question.** `SetupAnswersPlace` stepped down 8
+  points at a time and tried every point of every frame, every 4 points,
+  at each step: Codex timed 15 seconds for words 5,000 points tall, a
+  height a long phrase reaches at the largest text size, and the
+  question's layout waits for it. It now halves, and reads a frame that
+  lies across the answers' width by its corners, which decide for every
+  point of it: there, the points nearer the link by both rules form a
+  convex region. On Linux, `SetupAnswersPlaceTests.theSearchFindsWhatThePlainWayFinds`
+  matches the old search exactly on the measured windows and 48 swept
+  cases (5.6 seconds, debug build, run alone) and fails when the halving
+  skips the last 8 points; words 100,000 points tall are placed at once
+  (`aFrameFarTallerThanAScreenIsPlacedAtOnce`, under a one-minute limit,
+  where the old search would take hours). Reading every frame by its
+  corners, frames beyond the answers' width included, changed nothing
+  in the sweep, and in a Python probe of about 60,000 random draws of a
+  frame beside or across the answers' edge its corners never disagreed
+  with its points; those frames are still read point by point, because
+  the argument needs the width.
+
+Two are the owner's to decide, and stay open on their threads:
+
+- **The widened *Not findings* line** (the audit's guess on the
+  Library's phrase rows). AGENTS.md's review rules leave a widening to
+  the owner.
+- **A short category's empty cells on Home**, which the Library makes
+  reachable: open, not accepted, pinned strict, and in the quality bar's
+  Q2, so no dwell, switch, head or gaze build leaves before a placement
+  removes it or the owner accepts it. Codex asks that it be fixed or
+  prevented before the Library merges instead.
+
+CodeRabbit's review of the same round raised the short category too,
+and three more. Two are fixed: a read of the store that failed kept the
+library read before it, so Export could share it and Restore plan
+against it though the store would not open; `LibraryModel.refresh` now
+keeps no library then (`LibraryModelTests`, through a read that tests
+make fail). And docs/HANDOFF.md said every library keeps three or four
+everyday categories, which a damaged store need not. One is declined:
+it asked that a backup's category count as new when its identity is new,
+even where the library already has a category of that name, so that a
+too-wide name already on Home would refuse a Replace. Home already draws
+that name, so the restore changes nothing Home shows, and refusing it
+would only stop a family restoring their own backup; such a name comes
+only from a hand-made store, or from a later layout with narrower
+buttons.
+
+### What CI found on the review round
+
+CI's run on `b520315` (the review round's fixes, before the second
+round's) passed the unit tests and failed five UI tests, for three
+causes. None was excused:
+
+- **An edited phrase kept its old words and place on Home.** On the
+  iPad, a phrase added, changed and moved to first in the Library showed
+  on Home with the words it was added with, last, after Settings closed
+  (the app's accessibility tree at the failure, kept in the run's
+  result). Adds, deletes, a renamed category and a new picture had
+  reached Home in the other tests. Home read each category's phrases
+  through the category, from its query of categories; every Library edit
+  is saved in a context of its own, and that query seems to be read
+  again only when a category's own row changes, which a change to a
+  phrase's words or place is not (an inference from what reached Home
+  and what did not; Apple documents neither). So a person would have seen, and Home would have
+  spoken, the old words until Brickson was opened again. Home now also
+  queries the phrases, which is read again whenever any phrase changes,
+  and draws its grid from that query as values: the phrases' identities
+  and words (`CategorySelection.phrases(of:in:)`, `phraseCounts`;
+  `HomeView`). Reading through a context made fresh for each read was the
+  other way; it would have meant rebuilding Home's views, and their
+  state, after every edit. `SwiftDataBehaviourTests.s2bAQueryOfPhrasesShowsWordsAndPlacesSavedElsewhere`
+  pins what this rests on, with a view that reads phrases as Home does,
+  and the UI test that found it checks it on both devices.
+- **Apple's audit timed out on Change Picture**, on both devices, now
+  one kind of issue at a time: its Dynamic Type pass did not finish. The
+  question's layout asks `LibraryQuestionPlace` where its choices go
+  each time it measures, and the audit re-lays it out at every text size
+  it tries. On Linux, placing Change Picture's choices at the largest
+  text size took 1.02 seconds with the plain search and 0.23
+  milliseconds with the second round's halving search (the same top,
+  debug builds, ten runs each), so the layout spent seconds on each text
+  size the audit tried. The halving search is the fix; the audit still
+  reads Change Picture one kind at a time.
+- **Two tests read frames the screen had not settled on.** On the phone,
+  Move Phrase lay under the keyboard after Save, and XCUITest scrolled it
+  into view as it tapped, so its frame read before the tap was not where
+  it was chosen; the test now opens the editor again before moving. At
+  the largest text on the phone, a category's screen shows about three of
+  its rows that ask at once (content from 241 to 705 points in an
+  874-point window), so they cannot all show together as the chain test
+  required; and a row partly under the navigation bar or past the
+  screen's foot gives a way back moved the least that keeps it whole in
+  what the question shows, as `LibraryQuestionPlace` says, which the test
+  read as a way back out of place. The test now shows Change Picture
+  whole under the bar, leaves out a row wholly past the foot as it does
+  one wholly under the bar, and checks every way back against the row's
+  place kept whole in what shows.
+
 ## Commits
 
 - `eb1790f`, `a5cdae7`, `52b82fb`, `ef6df02`: the work file's intent,
@@ -133,6 +242,11 @@ follow-up below; the decision's words now say so).
 - `215dfca`: this record and the documents it makes untrue.
 - The review round: CodeRabbit's three fixes, then what CI found (the
   section above).
+- Codex's and CodeRabbit's second round: `LibraryEditorWords`,
+  `SetupAnswersPlace`'s halving search, and `LibraryModel.refresh`
+  keeping no library after a failed read.
+- What CI found on the review round: Home's grid from a query of
+  phrases, and the Library tests' frame reads.
 
 ## Verified
 
@@ -142,7 +256,12 @@ follow-up below; the decision's words now say so).
   `String(localized:)` replaced by a stand-in: `LibraryChainsTests`,
   `LibraryQuestionPlaceTests`, `SetupAnswersPlaceTests`,
   `LibraryEditTests`, `LibraryImportTests` and `BackupCodecTests`, all
-  passed, before and after the review round; `HomeLayoutEngineTests`' new short-category sweep
+  passed, before and after the review round, and with
+  `LibraryEditorWordsTests` after the second, run suite by suite (in one
+  run of every suite at once, the two tests with a one-minute limit
+  waited longer than that for the main actor; CI's unit job passed the
+  first of them in a 29-minute run, so it does not start them all at
+  once); `HomeLayoutEngineTests`' new short-category sweep
   passed with its two known issues (1,824 findings while typing and
   3,080 while browsing, none unexpected) in about 121 seconds there,
   unoptimised.
@@ -155,9 +274,12 @@ follow-up below; the decision's words now say so).
 - **GitHub CI**, on the newest released Xcode, CI's iPad Pro 13-inch and
   iPhone simulators. On `215dfca` the unit tests passed (1,251 passed,
   18 strict known issues, 1 skipped) in 29 minutes for the build and
-  tests; the short-category sweep took 102 seconds there. The UI
-  findings of the first runs are in the section above; the results after
-  the review round are in the pull request.
+  tests; the short-category sweep took 102 seconds there. On `b520315`
+  (run 41986372497) the unit tests passed again (1,255 passed, 18 strict
+  known issues, 1 skipped), and the UI tests failed as *What CI found on
+  the review round* says; every other UI test passed on both devices.
+  The results of the second round and these fixes are in the pull
+  request.
 - **Each new test, and what would make it fail:**
   - `LibraryChainsTests.noHeldLookChangesTheLibrary`: a way back moved
     off the asking row, words among the choices, choices nearer the row
@@ -185,6 +307,16 @@ follow-up below; the decision's words now say so).
   - `HomeLayoutEngineTests.aShortCategorysEmptyCellsMeetOnlyClearPutBackAndPhrases`:
     any new hazard from a short category's empty cells; strict, so it
     also fails once placement removes a known one.
+  - `CategorySelectionTests.theGridShowsOneCategorysPhrasesInTheirOrder`
+    and `eachCategoryCountsItsOwnPhrases`: another category's phrase or
+    one in no category in Home's grid or its count, or the fixed order
+    lost.
+  - `SwiftDataBehaviourTests.s2bAQueryOfPhrasesShowsWordsAndPlacesSavedElsewhere`:
+    a query of phrases no longer showing words and places saved in
+    another context.
+  - `LibraryEditorWordsTests`, `LibraryModelTests` and
+    `SetupAnswersPlaceTests`' two new tests: as the second round above
+    says.
   - `LibraryTests` (UI): adding, changing, moving and deleting a phrase
     and its effect on Home; three to four categories, a refused wide
     name, a picture and a rename; the sample backup added; Apple's audit

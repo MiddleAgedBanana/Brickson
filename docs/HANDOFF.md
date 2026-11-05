@@ -115,8 +115,11 @@ Family Setup's Phrases and Categories opens the Library (2026-11-05):
 a family adds, changes, moves and deletes phrases and categories,
 changes a category's picture, exports a backup through the share sheet
 and restores one from the file picker, adding to the library or
-replacing it where that removes nothing the person wrote. Every library
-keeps three or four everyday categories. Each delete, move, picture and
+replacing it where that removes nothing the person wrote. No edit or
+backup takes a library from three or four everyday categories to more
+or fewer; a damaged or hand-made store already outside them can still be
+edited, and an edit can take it farther out (a follow-up in
+`docs/log/2026-11-05-library-screen.md`). Each delete, move, picture and
 restore asks on a screen of its own, with the way back where the row
 that asked was and the choices well clear of it, and the chain engine
 scores every Library screen (docs/DECISIONS.md, "The Library in
@@ -1282,8 +1285,9 @@ settings, date) and summarise it here.
   now costs about half as much with the same results: the job's next
   two runs took 24.4 and 28.2 minutes, and the limit is 60
   ([record](log/2026-10-30-unit-test-time.md)). The Settings sweep's
-  remaining cost is `SetupAnswersPlace`, app code, left to the next
-  Settings thread.
+  remaining cost was `SetupAnswersPlace`; since 2026-11-05 it halves and
+  reads a frame across the answers' width by its corners, with the same
+  results ([record](log/2026-11-05-library-screen.md)).
 - CodeQL scans the workflow files and the Python scripts, not the Swift
   code, on purpose (docs/DECISIONS.md, *Code scanning*); the failed Swift
   attempt of 2026-10-10 is still listed on the Tool status page.

@@ -45,8 +45,11 @@ decided.*
   - *The app:* Settings (a new route and screens), the library core (two
     new rules on how many everyday categories a library keeps), a file
     type for export, the chain engine's Settings surface and the UI
-    tests. Home's code does not change: it already reads the library
-    through `@Query` and keeps only the selected category's identity.
+    tests. Home reads the library through `@Query` and keeps only the
+    selected category's identity; its grid reads the phrases through a
+    query of phrases, since CI showed a phrase edited here keeping its
+    old words on Home when read through its category
+    (docs/log/2026-11-05-library-screen.md).
 - **Constraints:**
   - Invariant 1: standard `Button`s and `NavigationLink`s, at least
     Settings' 64-point rows; the text fields are standard `TextField`s.

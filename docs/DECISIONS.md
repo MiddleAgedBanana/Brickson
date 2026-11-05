@@ -800,6 +800,17 @@ and the other SwiftData behaviours this rests on, are probed by
 `SwiftDataBehaviourTests` (questions S1 to S4 in
 `docs/log/2026-10-21-library-core.md`).
 
+Home draws its phrases from a query of phrases, never through a
+category's relationship (`HomeView`; `CategorySelection.phrases(of:in:)`).
+Read through its category, a phrase edited in the Library's own context
+kept its old words and place on Home (CI's iPad, 2026-11-05), while
+added and deleted phrases and a renamed category showed: the query of
+categories seems to be read again only when a category's own row
+changes. Any later screen that shows
+the library while it can change reads each kind of model through a
+query of that kind (`SwiftDataBehaviourTests.s2bAQueryOfPhrasesShowsWordsAndPlacesSavedElsewhere`;
+docs/log/2026-11-05-library-screen.md).
+
 The launch's own writes, the seeder filling an empty store and the
 emergency repair (*The emergency category is always there*), are not
 edits, but follow the same rules: a context of their own, one save, no
@@ -3757,6 +3768,13 @@ CI's UI tests pass on this change.
   iPhone 17 (322.67 before), 553 on the 13-inch iPad in portrait and
   552 in landscape, 763 on the iPad at AX5, and below the window on the
   phone at AX5, whose first screenful then shows no answer, as before.
+  Since 2026-11-05 the top is found by halving, and a frame that lies
+  across the answers' width is decided by its corners (the points
+  nearer the link by both rules form a convex region there), with the
+  same top as stepping down every point of every frame
+  (`SetupAnswersPlaceTests`): the Library's question screens use it for
+  a phrase's words, and a long phrase at the largest text size took
+  seconds the old way.
 - **The guide is a cover of its own** (`EachWayCover`), not a pushed
   screen. Pushed like Family Setup's other guides, it would have only
   Back and Back to Talking near the look, so a held look on Learn About
