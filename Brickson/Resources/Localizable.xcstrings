@@ -1,6 +1,9 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "%@ Phrases %@" : {
+
+    },
     "%@ can speak in a voice that sounds like you, made with Apple's Personal Voice. Choose Ask to Use Personal Voice, then Allow when iOS asks. iOS asks only once." : {
 
     },
@@ -23,6 +26,9 @@
 
     },
     "A button on Home already has this name. Choose a different name." : {
+
+    },
+    "A category in this backup has “%@” in its name, which is too wide for Home's category buttons." : {
 
     },
     "A partner can point to phrases on the screen for the person to choose with a look, a blink or a nod, then tap the one chosen." : {
@@ -188,6 +194,9 @@
 
     },
     "Everything here can be changed later in Family Setup. In about three months, Family Setup will ask whether anything has changed." : {
+
+    },
+    "Everything in this backup is already in your phrases." : {
 
     },
     "Eye Tracking" : {
@@ -514,6 +523,9 @@
     "Repeat" : {
       "comment" : "Another name a person can say for the Again control with Voice Control."
     },
+    "Replacing would remove phrases or categories you wrote that aren't in this backup. Add it instead, then delete what you don't need." : {
+
+    },
     "Replacing would remove phrases that aren't in the backup, so nothing was changed. Add the backup to your phrases instead." : {
 
     },
@@ -803,6 +815,9 @@
       "comment" : "Spoken when the Yes control is chosen."
     },
     "Your Personal Voice when it is allowed, otherwise the best voice on this device" : {
+
+    },
+    "Your phrases already match this backup." : {
 
     },
     "Your phrases changed while this was open, so nothing was changed. Try again." : {
