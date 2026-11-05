@@ -20,7 +20,10 @@ final class LibraryModel {
     }
 
     /// The library as last read or written; nil until the Library opens,
-    /// or where the store cannot be read.
+    /// and nil again when `refresh` finds the store cannot be read, so
+    /// Export cannot share, and Restore cannot plan against, a library
+    /// read before it failed (docs/DECISIONS.md, "Exporting and restoring
+    /// a backup").
     private(set) var snapshot: LibrarySnapshot?
     /// Why the library could not be read, where it could not.
     private(set) var readFailure: String?
@@ -52,12 +55,18 @@ final class LibraryModel {
     /// theirs, which only makes Replace more careful.
     let starter: LibrarySnapshot? = try? StarterLibrary.bundled()
 
-    /// Reads the library afresh.
-    func refresh(_ container: ModelContainer) {
+    /// Reads the library afresh, or keeps no library and says why it could
+    /// not be read. `read` exists so tests can make the read fail; the app
+    /// never passes it.
+    func refresh(
+        _ container: ModelContainer,
+        read: (ModelContainer) throws(LibraryEditError) -> LibrarySnapshot = LibraryEditor.read
+    ) {
         do {
-            snapshot = try LibraryEditor.read(container)
+            snapshot = try read(container)
             readFailure = nil
         } catch {
+            snapshot = nil
             readFailure = error.message
         }
     }
