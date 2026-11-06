@@ -164,16 +164,16 @@ nonisolated extension LibraryEdit {
         case let .addPhrase(text, categoryID):
             guard let index = library.categoryIndex(of: categoryID) else { throw .notFound }
             let text = try LibraryRules.phraseText(text, in: library.categories[index], excluding: nil)
+            try LibraryRules.checkSafetyControlName(text)
             var ids = LibraryIDs(library)
             after.categories[index].phrases.append(LibrarySnapshot.Phrase(id: ids.newPhraseID(makeID), text: text))
 
         case let .editPhrase(id, text):
             guard let location = library.location(ofPhrase: id) else { throw .notFound }
-            after.categories[location.category].phrases[location.phrase].text = try LibraryRules.phraseText(
-                text,
-                in: library.categories[location.category],
-                excluding: id
-            )
+            let category = library.categories[location.category]
+            let text = try LibraryRules.phraseText(text, in: category, excluding: id)
+            try LibraryRules.checkSafetyControlName(text, replacing: category.phrases[location.phrase].text)
+            after.categories[location.category].phrases[location.phrase].text = text
 
         case let .movePhrase(id, categoryID, before: target):
             guard let source = library.location(ofPhrase: id),

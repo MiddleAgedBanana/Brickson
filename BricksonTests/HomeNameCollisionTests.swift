@@ -127,16 +127,54 @@ struct LibraryNameCollisionTests {
         #expect(try StarterLibrary.bundled().sharedNames == [])
     }
 
-    /// The family's words come first (docs/DECISIONS.md, "Phrases named
-    /// like Home's controls"). Fails if the editor starts refusing such a
-    /// phrase, or changes its words.
-    @Test(arguments: ["Yes", "No", "Help", "Stop.", "Again"])
+    /// The family's words come first, for every control but the four that
+    /// are one activation away (docs/DECISIONS.md, "Phrases named like
+    /// Home's controls"). Fails if the editor starts refusing such a phrase,
+    /// or changes its words.
+    @Test(arguments: ["Stop.", "Again", "Repeat!", "Settings", "Type", "Put back", "Help me.", "Yes, please."])
     func theWordsAreKeptAsWritten(text: String) throws {
         let ids = SequentialIDs()
         let added = try LibraryEdit.addPhrase(text: text, category: F.basicsID).plan(in: F.library, makeID: ids.make)
         #expect(added.after.categories[0].phrases.last?.text == text)
         let changed = try LibraryEdit.editPhrase(F.id(101), text: text).plan(in: F.library, makeID: ids.make)
         #expect(changed.after.categories[0].phrases.first?.text == text)
+    }
+
+    /// Invariant 10: Yes, No, Emergency and Get Attention are one activation
+    /// away, so with Voice Control their names stay theirs. Fails if a name
+    /// is left out, Get Attention's Help among them, if case, punctuation
+    /// or a symbol gets one past, or if only adding or only editing refuses.
+    @Test(arguments: ["Yes", "no.", "EMERGENCY", "Get attention", "GetAttention", "help!", "Help", "😀Yes😀"])
+    func theFourControlsKeepTheirNames(text: String) {
+        let ids = SequentialIDs()
+        #expect(throws: LibraryEditRejection.phraseNamedLikeASafetyControl) {
+            try LibraryEdit.addPhrase(text: text, category: F.basicsID).plan(in: F.library, makeID: ids.make)
+        }
+        #expect(throws: LibraryEditRejection.phraseNamedLikeASafetyControl) {
+            try LibraryEdit.editPhrase(F.id(101), text: text).plan(in: F.library, makeID: ids.make)
+        }
+    }
+
+    /// A backup's words are never changed or refused on the way in
+    /// (invariant 7), so a library can hold such a phrase. Only an edit that
+    /// gives a phrase such a name is refused: it can still be moved,
+    /// deleted, changed to other words, or edited and stay what it was.
+    /// Fails if the rule stops a family fixing one, or if a second phrase
+    /// can take the name because one already has it.
+    @Test func aPhraseThatAlreadyHasSuchANameCanStillBeChanged() throws {
+        let ids = SequentialIDs()
+        let held = library(adding: ["Help", "Water, please."])
+        let phrase = F.id(900)
+        #expect(try LibraryEdit.editPhrase(phrase, text: "Help!").plan(in: held, makeID: ids.make).after.categories[0].phrases.map(\.text).contains("Help!"))
+        #expect(try LibraryEdit.editPhrase(phrase, text: "Help me.").plan(in: held, makeID: ids.make).after.categories[0].phrases.map(\.text).contains("Help me."))
+        _ = try LibraryEdit.movePhrase(phrase, category: F.basicsID, before: F.id(101)).plan(in: held, makeID: ids.make)
+        _ = try LibraryEdit.deletePhrase(phrase).plan(in: held, makeID: ids.make)
+        #expect(throws: LibraryEditRejection.phraseNamedLikeASafetyControl) {
+            try LibraryEdit.editPhrase(F.id(101), text: "Help!").plan(in: held, makeID: ids.make)
+        }
+        #expect(throws: LibraryEditRejection.phraseNamedLikeASafetyControl) {
+            try LibraryEdit.editPhrase(phrase, text: "Yes").plan(in: held, makeID: ids.make)
+        }
     }
 
     /// A restore says so only where it brings a shared name the library

@@ -419,7 +419,7 @@ struct LibraryEditTests {
             try LibraryEdit.movePhrase(F.id(201), category: F.basicsID, before: nil).plan(in: one)
         }
         // Its words can still change, and it can still move within itself.
-        _ = try LibraryEdit.editPhrase(F.id(201), text: "Help.").plan(in: one)
+        _ = try LibraryEdit.editPhrase(F.id(201), text: "Help me.").plan(in: one)
         _ = try LibraryEdit.movePhrase(F.id(201), category: F.emergencyID, before: nil).plan(in: one)
     }
 
@@ -453,7 +453,7 @@ struct LibraryEditTests {
         // Emergency all keep a reachable phrase with words.
         let removedBlank = try makePlan(.deletePhrase(F.id(202)), in: imported)
         #expect(texts(removedBlank.after, F.emergencyID) == ["I need help now."])
-        let edited = try makePlan(.editPhrase(F.id(201), text: "Help."), in: imported)
+        let edited = try makePlan(.editPhrase(F.id(201), text: "Help me."), in: imported)
         #expect(edited.after.keepsEmergencyWorking)
         let reordered = try makePlan(.movePhrase(F.id(201), category: F.emergencyID, before: nil), in: imported)
         #expect(reordered.after.keepsEmergencyWorking)

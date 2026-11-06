@@ -128,7 +128,8 @@ final class LibraryTests: XCTestCase {
         )
     }
 
-    /// Fails if a phrase another control on Home answers to is refused or
+    /// Fails if a phrase with the name of a control one activation away is
+    /// saved, if another that a control answers to is refused or
     /// changed, if nothing says so as it is saved, if the keyboard stays
     /// up while a line carries a note, a wide word's or a renamed
     /// category's included (it covers the line at the largest text on a
@@ -148,8 +149,15 @@ final class LibraryTests: XCTestCase {
 
         open("libraryAddPhrase", leaving: "libraryAddPhrase", in: app)
         XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 10), "New Phrase did not open the keyboard")
-        app.typeText("Stop.")
+
+        // Get Attention's name stays its own; the keyboard goes so the
+        // reason can be read.
+        app.typeText("Help")
         try audit(app, "New Phrase, its field focused")
+        app.buttons["librarySave"].tap()
+        waitForLine("libraryEditorResult", saying: "already answers to this", in: app)
+        waitUntil(app.keyboards.firstMatch, "exists == false", "the keyboard stayed up with the reason on New Phrase")
+        replaceWords(in: field("libraryPhraseField", in: app), with: "Stop.", deleting: 4, in: app)
         app.buttons["librarySave"].tap()
         waitForLine("libraryEditorResult", saying: "Added “Stop.” to Basics. \(note)", in: app)
         waitUntil(app.keyboards.firstMatch, "exists == false", "the keyboard stayed up with the note on New Phrase")
@@ -186,7 +194,11 @@ final class LibraryTests: XCTestCase {
         }
         open("libraryRename", leaving: "libraryRename", in: app)
         XCTAssertTrue(app.navigationBars["Rename Category"].waitForExistence(timeout: 10), "Rename did not open")
-        replaceWords(in: field("libraryNameField", in: app), with: "Maybe", deleting: 6, in: app)
+        replaceWords(in: field("libraryNameField", in: app), with: "Yes", deleting: 6, in: app)
+        app.buttons["librarySave"].tap()
+        waitForLine("libraryEditorResult", saying: "A button on Home already has this name", in: app)
+        waitUntil(app.keyboards.firstMatch, "exists == false", "the keyboard stayed up with the reason on Rename")
+        replaceWords(in: field("libraryNameField", in: app), with: "Maybe", deleting: 3, in: app)
         app.buttons["librarySave"].tap()
         waitForLine("libraryEditorResult", saying: "Saved. \(note)", in: app)
         waitUntil(app.keyboards.firstMatch, "exists == false", "the keyboard stayed up with the note on Rename")
@@ -237,6 +249,7 @@ final class LibraryTests: XCTestCase {
         app.typeText("Entertainment")
         app.buttons["librarySave"].tap()
         waitForLine("libraryEditorResult", saying: "“Entertainment” is too wide for Home's category buttons.", in: app)
+        waitUntil(app.keyboards.firstMatch, "exists == false", "the keyboard stayed up with the reason on New Category")
         replaceWords(in: field("libraryNameField", in: app), with: "Outings", deleting: 13, in: app)
         app.buttons["librarySave"].tap()
         XCTAssertTrue(app.navigationBars["Outings"].waitForExistence(timeout: 10), "a saved category did not open its screen")

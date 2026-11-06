@@ -124,6 +124,14 @@ nonisolated enum HomeControlNames {
         [yes, no, emergency, getAttention, again, phrases, type, settings]
     }
 
+    /// The controls invariant 10 keeps one activation away from every Home
+    /// state, whose names stay theirs alone: with Voice Control, a phrase
+    /// sharing one would take a second command to reach the control
+    /// (docs/DECISIONS.md, "Phrases named like Home's controls").
+    static var oneActivationAway: [ControlNames] {
+        [yes, no, emergency, getAttention]
+    }
+
     /// The controls Home shows in a well only while they apply: Stop, while
     /// the alarm sounds, whichever category shows; and while typing, Speak
     /// in Again's place and Clear and Put Back in two categories' places.

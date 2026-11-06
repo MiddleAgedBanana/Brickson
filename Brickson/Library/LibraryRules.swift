@@ -96,6 +96,18 @@ nonisolated enum LibraryRules {
         HomeControlNames.spokenForm(name).filter { !$0.isWhitespace }
     }
 
+    /// Refuses words that would give a phrase the name of a control one
+    /// activation away from every Home state (`HomeControlNames`), compared
+    /// as Voice Control hears them. `current` is the phrase's stored text
+    /// when it is being edited: a phrase a backup brought with such a name
+    /// can keep it, as only an edit that gives one a name is refused.
+    static func checkSafetyControlName(_ proposed: String, replacing current: String? = nil) throws(LibraryEditRejection) {
+        let key = reservedCategoryNameKey(proposed)
+        let names = HomeControlNames.oneActivationAway.flatMap(\.inputLabels).map(reservedCategoryNameKey)
+        guard names.contains(key), current.map(reservedCategoryNameKey) != key else { return }
+        throw .phraseNamedLikeASafetyControl
+    }
+
     /// What the Library adds where saved words are too wide for Home's
     /// narrowest phrase buttons (docs/DECISIONS.md, "Words wider than
     /// Home's narrowest buttons").
@@ -186,6 +198,9 @@ nonisolated enum LibraryEditRejection: Error, Equatable, Sendable {
     case duplicateCategoryName
     case duplicatePhrase
     case reservedCategoryName
+    /// A phrase would take the name of a control that must stay one
+    /// activation away (invariant 10).
+    case phraseNamedLikeASafetyControl
     case unknownSymbol
     /// The emergency category can never be deleted (decision E1).
     case emergencyCategoryCannotBeDeleted
@@ -223,6 +238,8 @@ nonisolated enum LibraryEditRejection: Error, Equatable, Sendable {
             String(localized: "This category already has this phrase.")
         case .reservedCategoryName:
             String(localized: "A button on Home already has this name. Choose a different name.")
+        case .phraseNamedLikeASafetyControl:
+            String(localized: "A button on Home that must always be one step away already answers to this. Add another word, such as “Help me.” or “Yes, please.”")
         case .unknownSymbol:
             String(localized: "Choose a picture from the list.")
         case .emergencyCategoryCannotBeDeleted:

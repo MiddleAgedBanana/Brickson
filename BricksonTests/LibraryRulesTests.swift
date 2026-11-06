@@ -41,6 +41,7 @@ struct LibraryRulesTests {
             .duplicateCategoryName,
             .duplicatePhrase,
             .reservedCategoryName,
+            .phraseNamedLikeASafetyControl,
             .unknownSymbol,
             .emergencyCategoryCannotBeDeleted,
             .emergencyCategoryNeedsAPhrase,
