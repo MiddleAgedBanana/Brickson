@@ -96,6 +96,25 @@ nonisolated enum LibraryRules {
         HomeControlNames.spokenForm(name).filter { !$0.isWhitespace }
     }
 
+    /// Refuses words that would give a phrase the name of a control one
+    /// activation away from every Home state (`HomeControlNames`), compared
+    /// as Voice Control hears them. `current` is the phrase's stored text
+    /// when it is being edited: a phrase a backup brought with such a name
+    /// can keep it, as only an edit that gives one a name is refused.
+    static func checkSafetyControlName(_ proposed: String, replacing current: String? = nil) throws(LibraryEditRejection) {
+        guard let name = safetyControlName(in: proposed), current.flatMap(safetyControlName(in:)) != name else { return }
+        throw .phraseNamedLikeASafetyControl
+    }
+
+    /// The name of a control one activation away that `text` is said as,
+    /// or nil. Word breaks count, so "Y E S" is not "Yes"; a name run
+    /// together, "GetAttention", is still the control's.
+    private static func safetyControlName(in text: String) -> String? {
+        let form = HomeControlNames.spokenForm(text)
+        let names = HomeControlNames.oneActivationAway.flatMap(\.inputLabels).map(HomeControlNames.spokenForm)
+        return names.first { $0 == form || (!form.contains(" ") && reservedCategoryNameKey($0) == form) }
+    }
+
     /// What the Library adds where saved words are too wide for Home's
     /// narrowest phrase buttons (docs/DECISIONS.md, "Words wider than
     /// Home's narrowest buttons").
@@ -186,6 +205,9 @@ nonisolated enum LibraryEditRejection: Error, Equatable, Sendable {
     case duplicateCategoryName
     case duplicatePhrase
     case reservedCategoryName
+    /// A phrase would take the name of a control that must stay one
+    /// activation away (invariant 10).
+    case phraseNamedLikeASafetyControl
     case unknownSymbol
     /// The emergency category can never be deleted (decision E1).
     case emergencyCategoryCannotBeDeleted
@@ -223,6 +245,8 @@ nonisolated enum LibraryEditRejection: Error, Equatable, Sendable {
             String(localized: "This category already has this phrase.")
         case .reservedCategoryName:
             String(localized: "A button on Home already has this name. Choose a different name.")
+        case .phraseNamedLikeASafetyControl:
+            String(localized: "A button on Home that must always be one step away already answers to this. Add another word, such as “Help me.” or “Yes, please.”")
         case .unknownSymbol:
             String(localized: "Choose a picture from the list.")
         case .emergencyCategoryCannotBeDeleted:

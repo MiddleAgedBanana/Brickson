@@ -15,7 +15,8 @@ import SwiftUI
 /// A phrase with a word wider than Home's narrowest phrase buttons is saved
 /// with a note that it may wrap there (`HomeWordRoom`; docs/DECISIONS.md,
 /// "Words wider than Home's narrowest buttons"), and one with a name another
-/// control on Home answers to with a note saying so (docs/DECISIONS.md,
+/// control on Home answers to with a note saying so, except the names of the
+/// controls one activation away, which are refused (docs/DECISIONS.md,
 /// "Phrases named like Home's controls").
 struct LibraryPhraseEditor: View {
     let phraseID: UUID?
@@ -95,7 +96,7 @@ private struct LibraryPhraseEditorContent: View {
 
     private var resultLines: [String] {
         LibraryRules.savedPhraseLines + [String(localized: "That's as long as a phrase can be.")]
-            + [LibraryEditRejection.emptyText, .duplicatePhrase].map(\.message)
+            + [LibraryEditRejection.emptyText, .duplicatePhrase, .phraseNamedLikeASafetyControl].map(\.message)
             + (result.map { [$0] } ?? []) + LibraryMessages.anyChange
     }
 
@@ -159,6 +160,8 @@ private struct LibraryPhraseEditorContent: View {
                 text = words.composer.text
             }
         case .refused(let reason):
+            // The reason is there to be read too.
+            isFocused = false
             result = reason
         }
     }
@@ -271,6 +274,7 @@ private struct LibraryNameEditorContent: View {
         guard canSave else { return }
         let name = LibraryText.trimmed(words.composer.text)
         if let word = HomeWordRoom.wordsTooWide(inCategoryName: name).first {
+            isFocused = false
             result = String(localized: "“\(word)” is too wide for Home's category buttons. Choose a shorter word.")
             return
         }
@@ -298,6 +302,7 @@ private struct LibraryNameEditorContent: View {
                 text = words.composer.text
             }
         case .refused(let reason):
+            isFocused = false
             result = reason
         }
     }

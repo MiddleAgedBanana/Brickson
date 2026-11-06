@@ -1670,21 +1670,32 @@ category button the layout engine plans for, on the 320-point window
 
 ## Phrases named like Home's controls
 
-*What the editor says is a default, adopted 2026-11-05 by the thread that
-built it, reversible if the owner objects: "Home's scan order and names"
-left that to the editing thread, and the owner's answer for wide words
-the same day ("Allow, with a note") has the same shape. Whether the four
-controls' own names may be saved is not settled: *An exception to
-invariant 10*, below, is proposed, not adopted, and is the owner's to
-decide.*
+*The names of the four controls one activation away are refused: the
+owner's decision, 2026-11-06, who asked for the best choice for the
+people using Brickson and their caregivers and took the thread's
+recommendation. For every other name, what the editor says is a default,
+adopted 2026-11-05 by the thread that built it, reversible if the owner
+objects: "Home's scan order and names" left that to the editing thread,
+and the owner's answer for wide words ("Allow, with a note") has the
+same shape.*
 
 When two controls on Home answer to one name, Voice Control cannot tell
-which is meant. A family can write such a phrase: "Help", "Stop." or
-"Again!", or two phrases said alike, "Okay." and "Okay?", which the
-library keeps apart because punctuation counts
-(`LibraryText.phraseKey`).
+which is meant. A family can write such a phrase: "Stop." or "Again!",
+or two phrases said alike, "Okay." and "Okay?", which the library keeps
+apart because punctuation counts (`LibraryText.phraseKey`).
 
-- **The words are saved as written, with a note.** The line kept for
+- **A phrase cannot take the name of a control one activation away.**
+  Invariant 10 keeps Get Attention, Emergency, Yes and No one activation
+  from every Home state, and with Voice Control a phrase sharing a name
+  is expected to take a second command. So the editor refuses a phrase
+  Voice Control hears as "Yes", "No", "Emergency", "Get Attention" or
+  "Help", whole, with case, punctuation and symbols dropped ("Yes." and
+  "help!" count, "Yes, please." and "Y E S" do not), and asks for another word
+  (`LibraryRules.checkSafetyControlName`,
+  `LibraryEditRejection.phraseNamedLikeASafetyControl`). A wide word only
+  looks odd; this touches the call for help. The cost is that a bare
+  "Help" cannot be a phrase, and "Help me." can.
+- **Other words are saved as written, with a note.** The line kept for
   what Save did adds: "Another button on Home answers to these words
   too, so Voice Control may ask which one is meant." The family's words
   come first, as in "Words wider than Home's narrowest buttons", and
@@ -1708,7 +1719,10 @@ library keeps apart because punctuation counts
 - **A restore** keeps a backup's words as they are (invariant 7), and
   its line says so where it brought a name two controls did not share
   before (`LibraryPlan.bringsASharedName`). A backup is never refused
-  for this.
+  for this, so it is the one way a library made from now on can hold a
+  phrase with one of the five names. As with the floors, only an edit that gives a phrase
+  such a name is refused: one that has it can be moved, deleted, changed
+  to other words or edited and stay what it was.
 - **Not chosen.** Refusing every such phrase would cost words a family
   may need, such as "Stop", for no safety control's sake. Giving a
   colliding tile another Voice Control name ("Say Yes")
@@ -1716,23 +1730,21 @@ library keeps apart because punctuation counts
   the visible text"
   ([Voice Control evaluation criteria](https://developer.apple.com/help/app-store-connect/manage-app-accessibility/voice-control-evaluation-criteria/)),
   and it changes what "Home's scan order and names" decided.
-- **An exception to invariant 10, proposed to the owner.** A phrase Voice
-  Control hears as "Yes", "No", "Emergency", "Get Attention" or "Help",
-  whole, with case and punctuation dropped (so "Yes." and "help!" count,
-  and "Yes, please." does not), means that with Voice Control, while it
-  shows, saying that control's name is expected to take a second
-  command: the person is asked which one they meant. Its expected size,
-  unmeasured until device check I2: one more command, in a library where
-  a family wrote that phrase after being told; "Get Attention" still
-  reaches the alarm in one where the phrase is "Help". Touch, Switch
-  Control and dwell are unchanged, and so is the starter library, which
+- **The one exception to invariant 10 left: a restored backup's words.**
+  The owner chose this with the refusal, 2026-11-06: a backup that holds
+  such a phrase keeps it, with the note, because a backup's words are
+  never changed (invariant 7). Its expected size, unmeasured until
+  device check I2: while that phrase shows, one more command with Voice
+  Control for that control's name; "Get Attention" still reaches the
+  alarm in one where the phrase is "Help". A backup's everyday category
+  can carry such a name the same way, though only a hand-made one could,
+  as the editor refuses it ("Importing a backup"); its button then shows
+  with every category's phrases, so the cost is there on every board.
+  The question the owner answered named phrases; this case follows from
+  the same rule, under their word to make the best choice for the people
+  using Brickson, and the pull request that adopted it names it for them.
+  Touch, Switch Control and dwell are unchanged, and the starter library
   has none (`LibraryNameCollisionTests.theStarterLibrarySharesNoNames`).
-  Such a phrase could already be saved before this change, with nothing
-  said; it still can, now with the note, until the owner decides. The
-  thread that built this recommends refusing these five names and
-  keeping the note for the rest: a wide word only looks odd, and this
-  touches the call for help. Listed in docs/ROADMAP.md, *The quality
-  bar*, Q24.
 - **Not covered:** Apple's pages do not say what Voice Control does with
   two matching names; [one developer's write-up](https://www.basbroek.nl/improving-voice-control)
   says iOS overlays numbers on them. With Flexible Item Names on
@@ -1747,7 +1759,7 @@ library keeps apart because punctuation counts
   text sizes the keyboard covers Save and the whole line, so a note
   would never be read (seen on 2026-11-05, iPhone 17, AX5). So Save puts
   the keyboard away whenever its line carries a note, the wide-word note
-  included; nothing moves. The line then starts at the screen's foot,
+  included, or a refusal; nothing moves. The line then starts at the screen's foot,
   with the note itself a scroll away, and a plain "Saved." or "Added"
   line stays behind the keyboard (docs/HANDOFF.md, *Known gaps*).
 
@@ -2550,7 +2562,8 @@ R0 item 3's accessibility work (docs/ACCESSIBILITY.md, sections 1 and 3;
   editing lets a family add a phrase or category that collides, the
   editing thread (R0 item 6) decides what the editor says; it never
   renames the person's words. *2026-11-05:* it says so as the words are
-  saved (*Phrases named like Home's controls*).
+  saved. *2026-11-06:* it refuses the names of the controls one
+  activation away (*Phrases named like Home's controls*).
 
 *Before:* none. Home was reached in its order on screen (the message and
 Again first), as one flat list, and its controls answered only to their

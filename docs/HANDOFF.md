@@ -124,12 +124,14 @@ fewer than four phrases, as a new one starts, is dimmed on Home until
 it has four, and its screen says how many more; Emergency is never
 dimmed. No edit or backup takes a category, Emergency included, from
 four or more phrases to fewer than four (docs/DECISIONS.md, "Four
-phrases in every category"). A phrase saved with words another control
-on Home answers to, such as "Help", or a category name a phrase also
-has, is kept as written, with a note that Voice Control may ask which
-one is meant, and a restore that brings such a name says so too; a
-category name a Home control has is still refused (docs/DECISIONS.md,
-"Phrases named like Home's controls"). Each delete, move, picture and
+phrases in every category"). A phrase cannot take the name of Yes, No,
+Emergency or Get Attention, "Help" included: the editor asks for another
+word. A phrase saved with words another control on Home answers to, such
+as "Stop", or a category name a phrase also has, is kept as written,
+with a note that Voice Control may ask which one is meant, and a restore
+that brings such a name says so too; a category name a Home control has
+is still refused (docs/DECISIONS.md, "Phrases named like Home's
+controls"). Each delete, move, picture and
 restore asks on a screen of its own, with the way back where the row
 that asked was and the choices well clear of it, and the chain engine
 scores the Library's screens, on the controls each window shows, all
@@ -575,20 +577,25 @@ release in docs/ROADMAP.md when no thread has it yet.
   typing's, assumes Snap to Item stops on a dimmed control, unmeasured
   until docs/DEVICE-CHECKS.md, I8 and B2. *(the owner; the device
   checks)*
-- A phrase Voice Control hears as "Yes", "No", "Emergency", "Get
-  Attention" or "Help" (so "Yes." and "help!" count, "Yes, please." does
-  not) is expected to cost a Voice Control user a second command for
-  that control while the phrase shows: an exception to invariant 10,
-  named in docs/DECISIONS.md, "Phrases named like Home's controls",
-  unmeasured until device check I2, not accepted yet. The Library says
-  so as the phrase is saved. *(the owner; the device check)*
+- A restored backup can hold a phrase Voice Control hears as "Yes",
+  "No", "Emergency", "Get Attention" or "Help", which the editor refuses:
+  a backup's words are never changed. It is expected to cost a Voice
+  Control user a second command for that control while the phrase shows:
+  the exception to invariant 10 the owner chose on 2026-11-06
+  (docs/DECISIONS.md, "Phrases named like Home's controls"). A hand-made
+  backup can give a category such a name too, at that cost on every
+  board, which follows from the same rule, though the question the owner
+  answered named phrases. Both are unmeasured until device check I2.
+  *(the device check)*
 - On a phone at the largest text sizes the keyboard covers Save and the
   line under it on the Library's editors (iPhone 17, AX5, 2026-11-05).
-  Save puts the keyboard away when its line carries a note, but the
-  line then starts at the screen's foot: Edit Phrase shows "Saved.
-  Another", New Phrase "Added “Stop.” to", and the rest is a scroll
-  away. A plain "Saved." or "Added" stays behind the keyboard, and Save
-  itself takes a scroll or Return to reach. *(the next library thread)*
+  Save puts the keyboard away when its line carries a note or a refusal,
+  but the line then starts at the screen's foot: Edit Phrase shows
+  "Saved. Another", New Phrase "Added “Stop.” to", and the rest is a
+  scroll away, a refusal's reason too, past the part of the screen
+  Settings keeps. A plain
+  "Saved." or "Added" stays behind the keyboard, and Save itself takes a
+  scroll or Return to reach. *(the next library thread)*
 - No typing on Home where the keyboard's room reaches the safety row:
   320pt windows at every size, a 375×667 phone from AX3, and the iPad
   mini and a zoomed 13-inch iPad in landscape from AX3. There Type is
@@ -739,7 +746,8 @@ release in docs/ROADMAP.md when no thread has it yet.
   Run once on 2026-11-05, the reproduction passed with Xcode 27.2 on an
   iOS 27.2 simulator, in memory; not on a store on disk, a device, or
   iOS 26 with this Xcode. It stays disabled and the rule stands, because
-  Brickson also runs on iOS 26. *(the result still goes on issue #19)*
+  Brickson also runs on iOS 26. The result is on issue #19. *(nothing
+  left for the probe)*
 - On the owner's Mac, on the iPhone simulator, the app sometimes reports
   no idle for over a minute after Save on New Category, so
   `LibraryTests.testCategoriesStayBetweenThreeAndFour` runs past
@@ -758,9 +766,11 @@ release in docs/ROADMAP.md when no thread has it yet.
   needs changing: it ends when GitHub finishes the rollout. On the newer
   image `HomeAccessibilityOrderTests.testQuickControlsComeFirstInEveryStateAtDefaultText`
   failed once on the iPhone, just opened, reading Phrases and Type before
-  Yes and No. It has passed on the Mac's iOS 27.2 each time. If it fails
-  again on that image, it is real, and pull requests will meet it once
-  every machine has the image. *(the next thread whose CI shows it)*
+  Yes and No. It has passed on the Mac's iOS 27.2 each time, and on
+  PR #82's last commit, with all three jobs on the newer image. If it
+  fails again on that image, it is intermittent, and pull requests will
+  meet it once every machine has the image. *(the next thread whose CI
+  shows it)*
 - Settings' Get Attention place is still empty, although AGENTS.md's
   design rules say "Settings opens on a large way back and a start-only
   Get Attention". Scored on 2026-10-24, Get Attention there would sound
@@ -1038,10 +1048,7 @@ docs/ROADMAP.md, *The quality bar*, Q24):
    moves when the window changes (R0 item 13; *Known gaps*). Also before
    then: whether Get Attention goes in
    Settings' bar (docs/DECISIONS.md, "Get Attention in Settings' bar:
-   the owner decides"); whether a family may save a phrase Voice Control
-   hears as the name of Yes, No, Emergency or Get Attention, "Help"
-   included, which the app allows for now, with a note (docs/DECISIONS.md,
-   "Phrases named like Home's controls"); and, once a thread has measured them, Settings'
+   the owner decides"); and, once a thread has measured them, Settings'
    floors under a larger profile (Q3). (How long you use each TestFlight
    build yourself is answered: two weeks before the pilot, seven days
    on the build sent to App Review, your choice on 2026-11-01.)
@@ -1302,7 +1309,7 @@ settings, date) and summarise it here.
 | Eight hours on the iPad with Brickson in front under Guided Access, and four on the iPhone, unplugged, with a Performance Trace in Power Profiler mode: the screen never dims or locks, everything works at the end, battery used per hour at touch's and Eye Tracking's setup, and no `EXC_RESOURCE` or `JetsamEvent` report for Brickson in Analytics Data; then, attached to Xcode on the Mac, memory out of the gauge's warning region with no growth across 100 phrases, and the thermal state never serious | Q8 |
 | Two hours each on the mounted iPad with Eye Tracking and Dwell with Snap to Item, Head Tracking with Dwell, Switch Control's auto scanning and its Gliding Cursor (point scanning), and half an hour each on the iPhone with Switch Control and Eye Tracking, following Q11's script: every activation not meant and where the pointer rested before it, activations per common task, recalibrations and rests | Q11, and invariant 10 over hours rather than one activation |
 | Export a Backup to Files, iCloud Drive, AirDrop and Mail, and restore it on the other device from iCloud Drive and the Files app; a `.json` file that is not a backup is refused; the share sheet left open past Settings' idle time changes nothing | The Library's backups (docs/DECISIONS.md, "Exporting and restoring a backup") |
-| With phrases saved as "Help" and "Yes": what Voice Control does on "Tap Help" and "Tap Yes", with Flexible Item Names off and on and while typing, and that "Tap Get Attention" still sounds the alarm at once | docs/DECISIONS.md, "Phrases named like Home's controls" |
+| With a phrase saved as "Again", or a restored "Help", "Yes" or category named "Yes": what Voice Control does on "Tap Again", "Tap Help" and "Tap Yes", with Flexible Item Names off and on, on "Tap Help" and "Tap Yes" while typing, that with only "Help me." and "Yes, please." showing each takes one command, and that "Tap Get Attention" still sounds the alarm at once | docs/DECISIONS.md, "Phrases named like Home's controls" |
 | Editing phrases and categories with Voice Control (pictures by name), Switch Control, Full Keyboard Access and Dwell with Snap to Item; a look held on Delete for Good, and resting under the lowest asking rows; and a look resting on a category dimmed on Home for having fewer than four phrases | The Library's question screens; docs/DECISIONS.md, "Four phrases in every category" |
 
 ## Repository, CI and website

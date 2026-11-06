@@ -34,6 +34,9 @@
     "A button on Home already has this name. Choose a different name." : {
 
     },
+    "A button on Home that must always be one step away already answers to this. Add another word, such as “Help me.” or “Yes, please.”" : {
+
+    },
     "A category in this backup has “%@” in its name, which is too wide for Home's category buttons." : {
 
     },

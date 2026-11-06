@@ -917,17 +917,35 @@ and the Large Content Viewer on Home").*
    Attention) and "Tap Stop Alert" (Stop). *Passes* when each does what
    its words say.
 3. **Owner:** "Tap Type", dictate a word into the message, "Tap Speak".
-4. **Owner:** in the Library, add the phrases "Help" and "Yes" to a
-   category, and read the note under Save. On Home, with that category
-   showing, "Tap Help", "Tap Yes" and "Tap Get Attention"; do all three
-   with Flexible Item Names off, then on. Then "Tap Type" and say "Tap
-   Help" and "Tap Yes" again, with the tiles dimmed. Note each time what
-   Voice Control did, how many commands it took and which control it
-   pressed. Delete the phrases. *Passes* when Voice Control asks which
-   one is meant, or the note's words are changed to say what it does
-   instead (docs/DECISIONS.md, "Phrases named like Home's controls"),
-   and "Tap Get Attention" sounds the alarm at once. The counts go to
-   the owner with that decision's exception to invariant 10.
+4. **Owner:** in the Library, try to add the phrase "Help" to Feelings:
+   the editor refuses it and says why. Add "Again" there instead, read
+   the note under Save, and export a backup to the Mac. **Agent:** on the
+   Mac, makes two copies of that backup. The first has the phrases "Help"
+   and "Yes" added to Feelings; Yes has no second name, so it is the
+   worst case. The second has Feelings renamed "Yes", which only a
+   hand-made backup can do. **Owner:** puts the first copy on the device
+   and restores it with Add to My Phrases. On Home, with Feelings
+   showing, "Tap Again", "Tap Help", "Tap Yes" and "Tap Get Attention";
+   do all four with Flexible Item Names off, then on. Then "Tap Type" and
+   say "Tap Help" and "Tap Yes" again, with the tiles dimmed. Leave
+   typing, delete "Again", "Help" and "Yes" from Feelings, and add the
+   phrases "Help me." and "Yes, please." there. With Feelings showing,
+   "Tap Help" and "Tap Yes", with Flexible Item Names off, then on.
+   Delete those two phrases, put the second copy on the device and
+   restore it with Replace My Phrases. With another category's phrases
+   showing, "Tap Yes", with Flexible Item Names off, then on. Note each
+   time what Voice Control did, how many commands it took and which
+   control it pressed. Rename the category Feelings again and delete
+   "Again". *Passes* when the editor refused "Help"; with two matches,
+   Voice Control asks which one is meant, or the note's words are changed
+   to say what it does instead (docs/DECISIONS.md, "Phrases named like
+   Home's controls"); "Tap Get Attention" sounds the alarm at once; and
+   with "Help me." and "Yes, please." showing, "Tap Help" and "Tap Yes"
+   press Get Attention and Yes in one command. If they do not, with
+   Flexible Item Names off or on, the check fails, because the refusal
+   tells families to write those two phrases, and the rule goes back to
+   the owner. The counts measure that decision's one exception to
+   invariant 10, for a phrase and for a category.
 
 ### I3. Full Keyboard Access
 
@@ -1399,7 +1417,7 @@ first words:
 | Eight hours on the iPad | M3, A4 |
 | Two hours each on the mounted iPad | I7 |
 | Export a Backup to Files, iCloud Drive, AirDrop and Mail | B1 |
-| With phrases saved as "Help" and "Yes": what Voice Control does | I2 |
+| With a phrase saved as "Again", or a restored "Help", "Yes" or category named "Yes": what Voice Control does | I2 |
 | Editing phrases and categories with Voice Control | B2 |
 
 Every gate of docs/ROADMAP.md, *The quality bar*, that the owner checks
