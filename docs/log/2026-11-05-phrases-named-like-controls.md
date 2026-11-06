@@ -28,12 +28,14 @@ buttons, and until now nothing told the family why.
   in any test: on the iPhone 17 at AX5 the keyboard covered Save and the
   whole line, so the note could not be read. Save now puts the keyboard
   away when its line carries a note.
-- **An exception to invariant 10, named for the owner.** A phrase Voice
-  Control hears as "Yes", "No", "Emergency", "Get Attention" or "Help"
-  ("Yes." and "help!" count, "Yes, please." does not) is expected to
-  cost a Voice Control user a second command for that control. The app
-  already allowed it, silently; it now says so, and docs/ROADMAP.md,
-  Q24, lists it for the owner to accept or refuse.
+- **An exception to invariant 10, proposed to the owner.** A phrase
+  Voice Control hears as "Yes", "No", "Emergency", "Get Attention" or
+  "Help" ("Yes." and "help!" count, "Yes, please." does not) is expected
+  to cost a Voice Control user a second command for that control. The
+  app already allowed it, silently; it now says so, and docs/ROADMAP.md,
+  Q24, lists it for the owner to accept or refuse. Codex's review was
+  right that the thread could not adopt it, so it is proposed, with a
+  recommendation to refuse those five names.
 - **Also fixed on the way:** the phrase and name fields had no
   description for Apple's audit while focused (they now carry their
   label), and a category's line now clears with the next change that
@@ -91,13 +93,15 @@ Pro 13-inch (M5) and iPhone 17 simulators, iOS 27.2.
 - **`scripts/test.sh ui '-only-testing:BricksonUITests/LibraryTests'`:**
   8 of 8 on each simulator, before the review's fixes; the new test
   passed on both again after them.
-- **`scripts/test.sh ui`, on the final code, iPad:** 72 tests, 69
-  passed, 2 skipped, and one failed:
+- **`scripts/test.sh ui`, on the final code, run whole on both:** iPad,
+  72 tests, 69 passed, 2 skipped, 1 failed; iPhone, 72 tests, 65 passed,
+  6 skipped, 1 failed. On both, the one failure is
   `LaunchTests.testLargestTextKeepsQuickControlWordsVisible`, whose four
   waits for "Speaking" to end timed out, the failure this Mac's simulators
-  have shown since 2026-10-25 (docs/HANDOFF.md, *Known gaps*), with no
-  connection to this change. The session on the Mac dropped before the
-  iPhone's whole suite finished, so CI is its first complete run.
+  have shown since 2026-10-25 (docs/HANDOFF.md, *Known gaps*). It has no
+  connection to this change, and it passes on CI. A first run was cut
+  off during the iPhone's turn when the desktop app stopped the idle
+  session (AGENTS.md, *Gotchas*), so this one started again from the top.
 - **In the running app,** through a temporary UI test not committed:
   New Phrase and Edit Phrase with the note, at the default size and AX5,
   light and dark, in portrait, with the full software keyboard, on both
@@ -150,10 +154,9 @@ Each new test, and the change that made it fail on this Mac:
 
 ## Follow-ups
 
-- **The owner:** accept the exception to invariant 10, or ask for a
-  refusal instead (docs/DECISIONS.md, "Phrases named like Home's
-  controls"); the three out-of-reach hazards of Q2, after the Snap to
-  Item check.
+- **The owner:** decide the proposed exception to invariant 10
+  (docs/DECISIONS.md, "Phrases named like Home's controls"); the three
+  out-of-reach hazards of Q2, after the Snap to Item check.
 - **Device check I2, step 4.** *(the owner)*
 - **Clear a rest board's choice when its category is deleted,** so a
   later restore cannot bring it back short; it needs a save with a

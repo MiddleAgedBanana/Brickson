@@ -21,9 +21,10 @@
   activation away), and the owner's answer for wide words ("Allow, with
   a note").
 - **Open questions:** warn or refuse. "Home's scan order and names"
-  leaves it to the editing thread: warn, with the owner able to refuse
-  the four controls' names instead (docs/DECISIONS.md, "Phrases named
-  like Home's controls").
+  leaves what the editor says to the editing thread, and it warns. For
+  the names of the four controls invariant 10 keeps one activation away,
+  that would be an exception, so the owner decides (docs/DECISIONS.md,
+  "Phrases named like Home's controls").
 
 ## Spec
 

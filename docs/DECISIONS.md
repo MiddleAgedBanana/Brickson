@@ -1670,11 +1670,13 @@ category button the layout engine plans for, on the 320-point window
 
 ## Phrases named like Home's controls
 
-*Default, adopted 2026-11-05 by the thread that built it, reversible if
-the owner objects: "Home's scan order and names" left what the editor
-says to the editing thread, and the owner's answer for wide words the
-same day ("Allow, with a note") has the same shape. One consequence is
-the owner's to accept or refuse: *An exception to invariant 10*, below.*
+*What the editor says is a default, adopted 2026-11-05 by the thread that
+built it, reversible if the owner objects: "Home's scan order and names"
+left that to the editing thread, and the owner's answer for wide words
+the same day ("Allow, with a note") has the same shape. Whether the four
+controls' own names may be saved is not settled: *An exception to
+invariant 10*, below, is proposed, not adopted, and is the owner's to
+decide.*
 
 When two controls on Home answer to one name, Voice Control cannot tell
 which is meant. A family can write such a phrase: "Help", "Stop." or
@@ -1707,15 +1709,14 @@ library keeps apart because punctuation counts
   its line says so where it brought a name two controls did not share
   before (`LibraryPlan.bringsASharedName`). A backup is never refused
   for this.
-- **Not chosen.** Refusing such a phrase would keep Voice Control's one
-  command, at the price of a word a family may need ("Help", "Stop"):
-  the owner can still ask for it, for the four controls below or for
-  all. Giving a colliding tile another Voice Control name ("Say Yes")
+- **Not chosen.** Refusing every such phrase would cost words a family
+  may need, such as "Stop", for no safety control's sake. Giving a
+  colliding tile another Voice Control name ("Say Yes")
   would keep both, but Apple asks apps to "Match Voice Control labels to
   the visible text"
   ([Voice Control evaluation criteria](https://developer.apple.com/help/app-store-connect/manage-app-accessibility/voice-control-evaluation-criteria/)),
   and it changes what "Home's scan order and names" decided.
-- **An exception to invariant 10, for the owner.** A phrase Voice
+- **An exception to invariant 10, proposed to the owner.** A phrase Voice
   Control hears as "Yes", "No", "Emergency", "Get Attention" or "Help",
   whole, with case and punctuation dropped (so "Yes." and "help!" count,
   and "Yes, please." does not), means that with Voice Control, while it
@@ -1726,7 +1727,12 @@ library keeps apart because punctuation counts
   reaches the alarm in one where the phrase is "Help". Touch, Switch
   Control and dwell are unchanged, and so is the starter library, which
   has none (`LibraryNameCollisionTests.theStarterLibrarySharesNoNames`).
-  Listed in docs/ROADMAP.md, *The quality bar*, Q24.
+  Such a phrase could already be saved before this change, with nothing
+  said; it still can, now with the note, until the owner decides. The
+  thread that built this recommends refusing these five names and
+  keeping the note for the rest: a wide word only looks odd, and this
+  touches the call for help. Listed in docs/ROADMAP.md, *The quality
+  bar*, Q24.
 - **Not covered:** Apple's pages do not say what Voice Control does with
   two matching names; [one developer's write-up](https://www.basbroek.nl/improving-voice-control)
   says iOS overlays numbers on them. With Flexible Item Names on
