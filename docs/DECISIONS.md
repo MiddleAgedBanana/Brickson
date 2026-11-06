@@ -1622,9 +1622,26 @@ category.
   that comes under the look. Pinned as two strict known issues, like
   "Get Attention and Stop on Home", *Open: fewer than three everyday
   categories*; Emergency's screen tells the family to add phrases.
-- **Not covered:** a rest board already short of four, which Set Up no
-  longer offers and no edit can make (a board chosen with four keeps
-  them), shows its empty cells, unscored; a category's last row can
+  Out of reach is neither gone nor accepted, so it stays on
+  docs/ROADMAP.md, *The quality bar*, Q2, for the owner's decision
+  after the Snap to Item check.
+- **Open: a rest board with fewer than four.** A board chosen with four
+  keeps them, and Set Up no longer offers a short one, so no edit makes
+  one. A damaged or hand-made store can hold one, and so can one rare
+  restore: the chosen category is deleted, which leaves the choice stored
+  (`SetupRecord.restBoardCategory`), and an older backup that held it with
+  fewer than four brings it back under the same identity. Measured on
+  2026-11-05
+  (`LateStageProfileTests.aShortBoardsEmptyCellsMeetOnlyClearPutBackAndPhrases`,
+  448 windows at the four profiles a board takes, every pair of category
+  cell and count from none to one fewer than the columns coming round):
+  while typing, a look on an empty cell meets Clear or Put Back, 622
+  findings; while browsing, the board's last phrase beside it, 323
+  findings (a finding is one path in one window, and many chains can
+  take it). A board with no phrases meets no phrase. Nothing else, beyond
+  Stop's well's finding on every board. Pinned as two strict known
+  issues, and on Q2's list for the owner's decision in the same way.
+- **Not covered:** a category's last row can
   still end short in a lower row, where a look meets a phrase beside it, the board itself, unscored
   as before; and where the grid scrolls (a library grown past the
   starter's largest category), a short last row can scroll up beside the
@@ -2773,7 +2790,9 @@ ROADMAP R0 item 4 ([`work/get-attention-on-home.md`](work/get-attention-on-home.
   only a damaged store could. A layout that keeps a category nearest the
   well for every library (never a decoy) would let the rule go. `HomeLayoutEngineTests.aLibraryOfFewerThanThreeEverydayCategoriesLeavesTheWellUnsafe`
   records it as a strict known issue, so it fails when the gap closes.
-  Found in review of PR #38.
+  Found in review of PR #38. Out of reach is neither gone nor accepted,
+  so it stays on docs/ROADMAP.md, *The quality bar*, Q2, for the
+  owner's decision after the Snap to Item check.
 - **Open: the top of Stop's well is nearest Again.** Stop's well is 12pt
   under Again and 8pt over its category, so its centre and lower part are
   nearest the category, but by the model its upper part (about 10 to 40%

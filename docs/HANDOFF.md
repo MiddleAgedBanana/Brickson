@@ -486,9 +486,11 @@ release in docs/ROADMAP.md when no thread has it yet.
   empty (docs/DECISIONS.md, "Get Attention and Stop on Home"; a strict
   known issue in `HomeLayoutEngineTests`). Since 2026-11-05 no edit or
   import can leave fewer than three, the owner's rule (docs/DECISIONS.md,
-  "Three or four everyday categories"), so the hazard is closed for every
-  library Brickson writes; the layout still has no answer for one, should
-  a store ever hold one. *(the layout engine, if a store can)*
+  "Three or four everyday categories"), so the hazard is out of reach of
+  every library Brickson writes; the layout still has no answer for one,
+  should a store ever hold one, so it stays on docs/ROADMAP.md, *The
+  quality bar*, Q2. *(the owner, after the Snap to Item check, or the
+  layout engine)*
 - The top of Stop's well is nearest Again, 10 to 12pt above it (up to
   30.5pt where the categories sit lower), which speaks: by the stand-in's model about 10 to 40% of the well by nearest
   centre and about 40% by nearest edge. On the engine's frames Again is
@@ -558,14 +560,34 @@ release in docs/ROADMAP.md when no thread has it yet.
   never shows, and the Library keeps four in a category once it has
   them (docs/DECISIONS.md, "Four phrases in every category", the
   owner's decision of 2026-11-05).
-  Two things stay open. Emergency is never dimmed, so an Emergency
+  Three things stay open. Emergency is never dimmed, so an Emergency
   already short of four (no edit can make one) shows its empty cells,
   where a look meets Clear or Put Back while typing and a phrase that
   speaks while browsing; scored, pinned as two strict known issues in
   `HomeLayoutEngineTests` (*Emergency with fewer than four*), and the
-  Library tells the family to add phrases. And the dimming, like
+  Library tells the family to add phrases. A rest board already short
+  of four does the same, measured on 448 windows and pinned in
+  `LateStageProfileTests`; no edit or Set Up makes one, but a chosen
+  category deleted and later restored from an older backup that held it
+  short comes back as the board (*Open: a rest board with fewer than
+  four*). Both are on docs/ROADMAP.md, *The quality bar*, Q2, for the
+  owner's decision. And the dimming, like
   typing's, assumes Snap to Item stops on a dimmed control, unmeasured
-  until docs/DEVICE-CHECKS.md, I8 and B2. *(the device checks)*
+  until docs/DEVICE-CHECKS.md, I8 and B2. *(the owner; the device
+  checks)*
+- A phrase Voice Control hears as "Yes", "No", "Emergency", "Get
+  Attention" or "Help" (so "Yes." and "help!" count, "Yes, please." does
+  not) is expected to cost a Voice Control user a second command for
+  that control while the phrase shows: an exception to invariant 10,
+  named in docs/DECISIONS.md, "Phrases named like Home's controls",
+  unmeasured until device check I2, not accepted yet. The Library says
+  so as the phrase is saved. *(the owner; the device check)*
+- On a phone at the largest text sizes the keyboard covers Save and the
+  line under it on the Library's editors (iPhone 17, AX5, 2026-11-05).
+  Save puts the keyboard away when its line carries a note, and its
+  first words then show, with the rest a scroll away; a plain "Saved."
+  or "Added" stays behind the keyboard, and Save itself takes a scroll
+  or Return to reach. *(the next library thread)*
 - No typing on Home where the keyboard's room reaches the safety row:
   320pt windows at every size, a 375×667 phone from AX3, and the iPad
   mini and a zoomed 13-inch iPad in landscape from AX3. There Type is
@@ -972,19 +994,19 @@ docs/ROADMAP.md, *The quality bar*, Q24):
    identifier), the price, how the name is said, and your EU trader
    status (needed before the App Store release in the EU). Before any
    build goes to the external TestFlight pilot or App Review, every
-   dwell hazard in docs/ROADMAP.md, *The quality bar*, Q2 (four today,
+   dwell hazard in docs/ROADMAP.md, *The quality bar*, Q2 (seven today,
    plus iPhone Duo's changed-window finding) must be gone, or accepted
-   by you. Three wait on your answer, once the
+   by you. Six wait on your answer, once the
    Snap to Item device check (Q12) has measured them: whether Yes and No
    may border the message, the top of Stop's well nearest Again, and
-   dimmed phrases bordering Clear and Put Back (*Known gaps*). The other
+   dimmed phrases bordering Clear and Put Back (*Known gaps*), and three
+   your rules of 2026-11-05 put out of reach of every edit, which a
+   damaged or hand-made store, or for a rest board one rare restore, can
+   still show: an Emergency or a rest board already short of four
+   phrases, and fewer than three everyday categories. The other
    one, iPhone Duo's chain from Family Setup at the largest text size,
-   comes to you only if a thread cannot remove it by placement. (Again
-   nearest Stop's empty well, with fewer than three everyday categories,
-   went with your rule that three is the floor, 2026-11-05; a look on
-   the empty cells of a category with fewer phrases than the grid has
-   columns went the same day, with your rule that four phrases is the
-   floor.) So does the changed-window finding (a look resting
+   comes to you only if a thread cannot remove it by placement. So does
+   the changed-window finding (a look resting
    on iPhone Duo before the window changes meets Get Attention, Speak,
    No or Clear after it), once a device has shown how the pointer really
    moves when the window changes (R0 item 13; *Known gaps*). Also before

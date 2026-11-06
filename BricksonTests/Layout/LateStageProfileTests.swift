@@ -416,6 +416,59 @@ struct LateStageProfileTests {
         #expect(windows.count > 10, "\(windows.count)")
     }
 
+    /// Known gap (docs/DECISIONS.md, "Four phrases in every category",
+    /// *Open: a rest board with fewer than four*): a board already short of
+    /// four, which Set Up no longer offers and no edit can make, still
+    /// shows its empty cells. Window by window, at every profile the board
+    /// takes, the board is each category cell in turn and holds from none
+    /// to one fewer than the columns, every pair coming round, with
+    /// Emergency's six phrases, from every start and from a look under the
+    /// top edge of each empty cell.
+    ///
+    /// Two findings are known, each pinned strict, so it fails once
+    /// placement removes it: while typing, a look on an empty cell meets
+    /// Clear or Put Back in the cells above, and while browsing, the board's
+    /// own last phrase beside it, which speaks. Stop's well's finding is
+    /// allowed, as on every board. Anything else fails, and so do too few
+    /// windows to count.
+    @Test(arguments: Profile.lateStage.withSmallerOnes)
+    func aShortBoardsEmptyCellsMeetOnlyClearPutBackAndPhrases(profile: Profile) {
+        var whileTyping = 0
+        var whileBrowsing = 0
+        var unexpected: [String] = []
+        let categories = (0..<HomeLayout.categoryCapacity).map { "category \($0 + 1)" }
+        let windows = Self.boardWindows(profile, phrases: 6, every: 64)
+        for (index, (layout, _, _, context)) in windows.enumerated() {
+            let board = index % HomeLayout.categoryCapacity
+            let count = (index / HomeLayout.categoryCapacity) % layout.grid.columns
+            let map = HomeLayoutEngineTests.chainMap(layout, typing: true, restBoard: board, phraseCounts: [board: count])
+            let starts = map.everyStart()
+                + HomeLayoutEngineTests.underTheTopEdge(of: map, categories: categories, typing: true, restBoard: board)
+            for finding in ChainFinding.findings(in: map.hazards(from: starts))
+            where !HomeLayoutEngineTests.isStopsWellFinding(finding, in: layout) {
+                let start = finding.example.start
+                let met = finding.example.hazard?.control.name
+                let typing = start.state.contains(", typing")
+                if start.restingOn == HomeChains.emptyCell && typing && (met == HomeChains.clear || met == HomeChains.putBack) {
+                    whileTyping += 1
+                } else if start.restingOn == HomeChains.emptyCell && !typing && met == HomeChains.phraseTile {
+                    whileBrowsing += 1
+                } else {
+                    unexpected.append("\(finding) (\(context), board \(board) of \(count))")
+                }
+            }
+        }
+        let unexpectedCount = unexpected.count
+        #expect(unexpectedCount == 0, "first: \(unexpected.first ?? "")")
+        #expect(windows.count > 10, "\(windows.count)")
+        withKnownIssue("docs/DECISIONS.md, \"Four phrases in every category\": a rest board with fewer than four, while typing") {
+            #expect(whileTyping == 0)
+        }
+        withKnownIssue("docs/DECISIONS.md, \"Four phrases in every category\": a rest board with fewer than four, while browsing") {
+            #expect(whileBrowsing == 0)
+        }
+    }
+
     /// The open hazard (docs/DECISIONS.md, "Home's slot plan", *Open
     /// hazard, not accepted: Yes and No border the message*) on the board:
     /// fails if a look resting on the message meets Yes, No or Again over

@@ -363,7 +363,7 @@ time and tolerance, in a pull request.
 
 ### F2. The three dwell hazards
 
-*Q2. Open today: Yes and No border the message; the top of Stop's well
+*Q2, the hazards a run here measures: Yes and No border the message; the top of Stop's well
 is nearest Again; by centre, dimmed phrases border Clear and Put Back
 (docs/DECISIONS.md, "Settings on Home", "Get Attention and Stop on Home"
 and "Typing on Home").*
@@ -398,9 +398,13 @@ above Stop's well, so the second hazard shows only on compact widths.
    it as a named exception in docs/DECISIONS.md, with how often it
    happened. Q2 passes only when every open hazard is one or the other.
 
-Q2's other items wait: Again nearest Stop's empty well with fewer than
-three everyday categories needs editing, which is not built, and the
-iPhone Duo items need a folding iPhone (W3).
+Q2's other items: the three no edit can make (an Emergency or a rest
+board already short of four phrases,
+and fewer than three everyday categories; docs/DECISIONS.md, "Four
+phrases in every category" and "Get Attention and Stop on Home") need
+no run of their own: a thread puts them on the same card, with F1's
+rule, for the owner to accept or to have placed. The iPhone Duo items
+need a folding iPhone (W3).
 
 ### F3. The floors
 
