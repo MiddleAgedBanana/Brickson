@@ -913,6 +913,17 @@ and the Large Content Viewer on Home").*
    Attention) and "Tap Stop Alert" (Stop). *Passes* when each does what
    its words say.
 3. **Owner:** "Tap Type", dictate a word into the message, "Tap Speak".
+4. **Owner:** in the Library, add the phrases "Help" and "Yes" to a
+   category, and read the note under Save. On Home, with that category
+   showing, "Tap Help", "Tap Yes" and "Tap Get Attention"; do all three
+   with Flexible Item Names off, then on. Then "Tap Type" and say "Tap
+   Help" and "Tap Yes" again, with the tiles dimmed. Note each time what
+   Voice Control did, how many commands it took and which control it
+   pressed. Delete the phrases. *Passes* when Voice Control asks which
+   one is meant, or the note's words are changed to say what it does
+   instead (docs/DECISIONS.md, "Phrases named like Home's controls"),
+   and "Tap Get Attention" sounds the alarm at once. The counts go to
+   the owner with that decision's exception to invariant 10.
 
 ### I3. Full Keyboard Access
 
@@ -1384,6 +1395,7 @@ first words:
 | Eight hours on the iPad | M3, A4 |
 | Two hours each on the mounted iPad | I7 |
 | Export a Backup to Files, iCloud Drive, AirDrop and Mail | B1 |
+| With phrases saved as "Help" and "Yes": what Voice Control does | I2 |
 | Editing phrases and categories with Voice Control | B2 |
 
 Every gate of docs/ROADMAP.md, *The quality bar*, that the owner checks

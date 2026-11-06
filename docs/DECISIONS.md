@@ -1651,6 +1651,80 @@ category button the layout engine plans for, on the 320-point window
   whole, naming the word, because import never changes a backup's words
   (invariant 7). Its phrases come in as they are.
 
+## Phrases named like Home's controls
+
+*Default, adopted 2026-11-05 by the thread that built it, reversible if
+the owner objects: "Home's scan order and names" left what the editor
+says to the editing thread, and the owner's answer for wide words the
+same day ("Allow, with a note") has the same shape. One consequence is
+the owner's to accept or refuse: *An exception to invariant 10*, below.*
+
+When two controls on Home answer to one name, Voice Control cannot tell
+which is meant. A family can write such a phrase: "Help", "Stop." or
+"Again!", or two phrases said alike, "Okay." and "Okay?", which the
+library keeps apart because punctuation counts
+(`LibraryText.phraseKey`).
+
+- **The words are saved as written, with a note.** The line kept for
+  what Save did adds: "Another button on Home answers to these words
+  too, so Voice Control may ask which one is meant." The family's words
+  come first, as in "Words wider than Home's narrowest buttons", and
+  invariant 7 says Brickson never renames them. The note names no
+  control and quotes no words, so its height is known and the line
+  keeps it reserved (`LibraryRules.savedPhraseLines`): nothing under it
+  moves. "May"
+  because Stop, Speak, Clear and Put Back show only some of the time,
+  and what Voice Control does is a device check (docs/DEVICE-CHECKS.md,
+  I2).
+- **What counts** is `HomeControlNames.collisions` over Home's controls
+  while the phrase's category shows, every name each one answers to, the
+  wells' controls as if each applied, the category buttons and the
+  phrases beside it (`LibrarySnapshot.sharesAName`). Only the whole name
+  counts: "Help me." shares nothing. Phrases in two categories never
+  share a screen, so they share no name.
+- **A category name** that a phrase also has is saved with the same
+  note, on New Category and Rename Category. A name a control on Home
+  has is still refused (`reservedCategoryName`): a category button has
+  no words of its own to say.
+- **A restore** keeps a backup's words as they are (invariant 7), and
+  its line says so where it brought a name two controls did not share
+  before (`LibraryPlan.bringsASharedName`). A backup is never refused
+  for this.
+- **Not chosen.** Refusing such a phrase would keep Voice Control's one
+  command, at the price of a word a family may need ("Help", "Stop"):
+  the owner can still ask for it, for the four controls below or for
+  all. Giving a colliding tile another Voice Control name ("Say Yes")
+  would keep both, but Apple asks apps to "Match Voice Control labels to
+  the visible text"
+  ([Voice Control evaluation criteria](https://developer.apple.com/help/app-store-connect/manage-app-accessibility/voice-control-evaluation-criteria/)),
+  and it changes what "Home's scan order and names" decided.
+- **An exception to invariant 10, for the owner.** A phrase Voice
+  Control hears as "Yes", "No", "Emergency", "Get Attention" or "Help",
+  whole, with case and punctuation dropped (so "Yes." and "help!" count,
+  and "Yes, please." does not), means that with Voice Control, while it
+  shows, saying that control's name is expected to take a second
+  command: the person is asked which one they meant. Its expected size,
+  unmeasured until device check I2: one more command, in a library where
+  a family wrote that phrase after being told; "Get Attention" still
+  reaches the alarm in one where the phrase is "Help". Touch, Switch
+  Control and dwell are unchanged, and so is the starter library, which
+  has none (`LibraryNameCollisionTests.theStarterLibrarySharesNoNames`).
+  Listed in docs/ROADMAP.md, *The quality bar*, Q24.
+- **Not covered:** Apple's pages do not say what Voice Control does with
+  two matching names; [one developer's write-up](https://www.basbroek.nl/improving-voice-control)
+  says iOS overlays numbers on them. With Flexible Item Names on
+  (iOS 27) it may differ. Full Keyboard Access's type-to-find reads the
+  same names, and what it does with two matches is not known either. A
+  library that already holds such words says nothing until they are next
+  saved. Whether a dimmed phrase or category counts as a second match
+  while typing is part of the same device check.
+- **The keyboard goes when a note shows.** On a phone at the largest
+  text sizes the keyboard covers Save and the whole line, so a note
+  would never be read (seen on 2026-11-05, iPhone 17, AX5). So Save puts
+  the keyboard away whenever its line carries a note, the wide-word note
+  included; nothing moves. A plain "Saved." or "Added" line stays behind
+  the keyboard there (docs/HANDOFF.md, *Known gaps*).
+
 ## Exporting and restoring a backup
 
 *Default, adopted 2026-11-05 by the thread that built it: reversible if
@@ -2449,7 +2523,8 @@ R0 item 3's accessibility work (docs/ACCESSIBILITY.md, sections 1 and 3;
   every state of the starter library (`HomeNameCollisionTests`). When
   editing lets a family add a phrase or category that collides, the
   editing thread (R0 item 6) decides what the editor says; it never
-  renames the person's words.
+  renames the person's words. *2026-11-05:* it says so as the words are
+  saved (*Phrases named like Home's controls*).
 
 *Before:* none. Home was reached in its order on screen (the message and
 Again first), as one flat list, and its controls answered only to their

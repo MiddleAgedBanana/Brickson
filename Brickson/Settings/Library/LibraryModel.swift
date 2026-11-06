@@ -98,6 +98,9 @@ final class LibraryModel {
     func apply(_ plan: LibraryPlan, in container: ModelContainer) -> Outcome {
         do {
             snapshot = try LibraryEditor.apply(plan, to: container)
+            // A category's line says what the last change did, so a later
+            // one must not leave it saying something no longer true.
+            categoryResults = [:]
             return .saved(plan)
         } catch {
             refresh(container)

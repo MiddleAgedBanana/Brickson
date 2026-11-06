@@ -124,7 +124,12 @@ fewer than four phrases, as a new one starts, is dimmed on Home until
 it has four, and its screen says how many more; Emergency is never
 dimmed. No edit or backup takes a category, Emergency included, from
 four or more phrases to fewer than four (docs/DECISIONS.md, "Four
-phrases in every category"). Each delete, move, picture and
+phrases in every category"). A phrase saved with words another control
+on Home answers to, such as "Help", or a category name a phrase also
+has, is kept as written, with a note that Voice Control may ask which
+one is meant, and a restore that brings such a name says so too; a
+category name a Home control has is still refused (docs/DECISIONS.md,
+"Phrases named like Home's controls"). Each delete, move, picture and
 restore asks on a screen of its own, with the way back where the row
 that asked was and the choices well clear of it, and the chain engine
 scores the Library's screens, on the controls each window shows, all
@@ -985,7 +990,10 @@ docs/ROADMAP.md, *The quality bar*, Q24):
    moves when the window changes (R0 item 13; *Known gaps*). Also before
    then: whether Get Attention goes in
    Settings' bar (docs/DECISIONS.md, "Get Attention in Settings' bar:
-   the owner decides"), and, once a thread has measured them, Settings'
+   the owner decides"); whether a family may save a phrase Voice Control
+   hears as the name of Yes, No, Emergency or Get Attention, "Help"
+   included, which the app allows for now, with a note (docs/DECISIONS.md,
+   "Phrases named like Home's controls"); and, once a thread has measured them, Settings'
    floors under a larger profile (Q3). (How long you use each TestFlight
    build yourself is answered: two weeks before the pilot, seven days
    on the build sent to App Review, your choice on 2026-11-01.)
@@ -1242,6 +1250,7 @@ settings, date) and summarise it here.
 | Eight hours on the iPad with Brickson in front under Guided Access, and four on the iPhone, unplugged, with a Performance Trace in Power Profiler mode: the screen never dims or locks, everything works at the end, battery used per hour at touch's and Eye Tracking's setup, and no `EXC_RESOURCE` or `JetsamEvent` report for Brickson in Analytics Data; then, attached to Xcode on the Mac, memory out of the gauge's warning region with no growth across 100 phrases, and the thermal state never serious | Q8 |
 | Two hours each on the mounted iPad with Eye Tracking and Dwell with Snap to Item, Head Tracking with Dwell, Switch Control's auto scanning and its Gliding Cursor (point scanning), and half an hour each on the iPhone with Switch Control and Eye Tracking, following Q11's script: every activation not meant and where the pointer rested before it, activations per common task, recalibrations and rests | Q11, and invariant 10 over hours rather than one activation |
 | Export a Backup to Files, iCloud Drive, AirDrop and Mail, and restore it on the other device from iCloud Drive and the Files app; a `.json` file that is not a backup is refused; the share sheet left open past Settings' idle time changes nothing | The Library's backups (docs/DECISIONS.md, "Exporting and restoring a backup") |
+| With phrases saved as "Help" and "Yes": what Voice Control does on "Tap Help" and "Tap Yes", with Flexible Item Names off and on and while typing, and that "Tap Get Attention" still sounds the alarm at once | docs/DECISIONS.md, "Phrases named like Home's controls" |
 | Editing phrases and categories with Voice Control (pictures by name), Switch Control, Full Keyboard Access and Dwell with Snap to Item; a look held on Delete for Good, and resting under the lowest asking rows; and a look resting on a category dimmed on Home for having fewer than four phrases | The Library's question screens; docs/DECISIONS.md, "Four phrases in every category" |
 
 ## Repository, CI and website

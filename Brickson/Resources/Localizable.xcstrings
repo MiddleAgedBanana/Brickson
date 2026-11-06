@@ -52,6 +52,9 @@
     "A triple-click of the side or top button (the Home button, on a model that has one) turns chosen features on or off, such as Switch Control or Live Speech. With more than one chosen, a list appears to choose from." : {
 
     },
+    "A word in it is wider than Home's narrowest phrase buttons, so on the narrowest screens it can wrap onto a second line." : {
+
+    },
     "About %@" : {
 
     },
@@ -76,9 +79,6 @@
     "Added “%@” to %@." : {
 
     },
-    "Added “%@” to %@. A word in it is wider than Home's narrowest phrase buttons, so on the narrowest screens it can wrap onto a second line." : {
-
-    },
     "Added “%@”. Add its phrases here." : {
 
     },
@@ -92,6 +92,12 @@
 
     },
     "Alert stopped" : {
+
+    },
+    "Another button on Home answers to some of these words too, so Voice Control may ask which one is meant." : {
+
+    },
+    "Another button on Home answers to these words too, so Voice Control may ask which one is meant." : {
 
     },
     "Another category already has this name. Choose a different name." : {
@@ -782,9 +788,6 @@
 
     },
     "Saved." : {
-
-    },
-    "Saved. A word in it is wider than Home's narrowest phrase buttons, so on the narrowest screens it can wrap onto a second line." : {
 
     },
     "Say the name of a button to choose it, such as “Tap Yes”." : {

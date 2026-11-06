@@ -1113,7 +1113,10 @@ what passes and who checks it:
   explained before iOS asks (device check D1); every control on every
   screen does what its words say; and every owner question that
   touches the release is answered (the hazards of Q2, the floors of Q3,
-  the TestFlight time of Q9, Get Attention in Settings' bar, the name
+  the TestFlight time of Q9, Get Attention in Settings' bar, a phrase
+  that Voice Control hears as the name of Yes, No, Emergency or Get
+  Attention, "Help" included (docs/DECISIONS.md, "Phrases named like
+  Home's controls"), the name
   and bundle identifier, the price, how the name is said, EU trader
   status).
   *Checks:* a thread lists what is open; the owner answers. *Today:*

@@ -98,6 +98,36 @@ nonisolated extension LibrarySnapshot {
             && emergencies[0].phrases.contains { !LibraryText.isBlank($0.text) }
     }
 
+    /// The names, as Voice Control hears them, that two controls on Home
+    /// answer to while any category's phrases show, the wells' controls
+    /// counted as if each applied (`HomeControlNames.onHome`). Brickson
+    /// never renames a person's words, so the Library says so instead
+    /// (docs/DECISIONS.md, "Phrases named like Home's controls").
+    var sharedNames: Set<String> {
+        Set(categories.flatMap(sharedNames(while:)))
+    }
+
+    /// Whether a phrase in the category `id` answers to a name another
+    /// control on Home does while that category's phrases show.
+    func sharesAName(phrase text: String, inCategory id: UUID) -> Bool {
+        guard let category = categories.first(where: { $0.id == id }) else { return false }
+        return sharedNames(while: category).contains(HomeControlNames.spokenForm(text))
+    }
+
+    /// Whether the category `id`'s button on Home answers to a name another
+    /// control does. Emergency's category has no button of its own.
+    func sharesAName(category id: UUID) -> Bool {
+        guard let category = categories.first(where: { $0.id == id }), !category.isEmergency else { return false }
+        return sharedNames.contains(HomeControlNames.spokenForm(category.name))
+    }
+
+    private func sharedNames(while category: Category) -> [String] {
+        let row = categories.filter { !$0.isEmergency }.map(\.name)
+        return HomeControlNames.collisions(
+            among: HomeControlNames.onHome(categoryRow: row, phrases: category.phrases.map(\.text))
+        )
+    }
+
     /// The words in this library that the person wrote or changed: every
     /// category name and phrase text that is not a starter item with its
     /// starter text unchanged (matched by id and exact bytes). Without a
