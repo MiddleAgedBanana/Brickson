@@ -109,6 +109,11 @@ Pro 13-inch (M5) and iPhone 17 simulators, iOS 27.2.
   first run was cut off during the iPhone's turn when the desktop app
   stopped the idle session (AGENTS.md, *Gotchas*), so these started again
   from the top.
+- **GitHub CI on cd8e13c,** after one re-run of the iPhone job: unit,
+  iPad and iPhone green. The first iPhone attempt ran on the newer of two
+  machine images and failed Home's order check once; the re-run landed
+  on the older image, so it is not the same condition (docs/HANDOFF.md,
+  *Known gaps*).
 - **In the running app,** through a temporary UI test not committed:
   New Phrase and Edit Phrase with the note, at the default size and AX5,
   light and dark, in portrait, on both simulators, each screen captured

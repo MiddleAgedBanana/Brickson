@@ -748,6 +748,19 @@ release in docs/ROADMAP.md when no thread has it yet.
   once; it has not failed on CI. Cause unknown
   ([`log/2026-11-05-phrases-named-like-controls.md`](log/2026-11-05-phrases-named-like-controls.md)).
   *(a Mac thread)*
+- GitHub's `xcode-27` machines do not all run one image while a new one
+  rolls out, so one run's jobs can differ and a re-run can land on
+  another image. On 2026-11-06, PR #82's jobs ran on image 20261104.0337,
+  which has Xcode 27.2 and iOS 27.2, and on 20261026.0314, which has only
+  27.2's release candidate, so `scripts/select-xcode.py` skipped it and
+  took 27.1 with iOS 27.0. Nothing is pinned, on purpose
+  (docs/DECISIONS.md, "Build with Apple's current Xcode"), and nothing
+  needs changing: it ends when GitHub finishes the rollout. On the newer
+  image `HomeAccessibilityOrderTests.testQuickControlsComeFirstInEveryStateAtDefaultText`
+  failed once on the iPhone, just opened, reading Phrases and Type before
+  Yes and No. It has passed on the Mac's iOS 27.2 each time. If it fails
+  again on that image, it is real, and pull requests will meet it once
+  every machine has the image. *(the next thread whose CI shows it)*
 - Settings' Get Attention place is still empty, although AGENTS.md's
   design rules say "Settings opens on a large way back and a start-only
   Get Attention". Scored on 2026-10-24, Get Attention there would sound
