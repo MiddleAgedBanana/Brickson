@@ -430,17 +430,22 @@ struct LateStageProfileTests {
     /// Clear or Put Back in the cells above, and while browsing, the board's
     /// own last phrase beside it, which speaks. Stop's well's finding is
     /// allowed, as on every board. Anything else fails, and so do too few
-    /// windows to count.
+    /// windows to count, and a pair of cell and count that never comes
+    /// round.
     @Test(arguments: Profile.lateStage.withSmallerOnes)
     func aShortBoardsEmptyCellsMeetOnlyClearPutBackAndPhrases(profile: Profile) {
         var whileTyping = 0
         var whileBrowsing = 0
         var unexpected: [String] = []
+        var pairs: Set<[Int]> = []
+        var mostColumns = 0
         let categories = (0..<HomeLayout.categoryCapacity).map { "category \($0 + 1)" }
         let windows = Self.boardWindows(profile, phrases: 6, every: 64)
         for (index, (layout, _, _, context)) in windows.enumerated() {
             let board = index % HomeLayout.categoryCapacity
             let count = (index / HomeLayout.categoryCapacity) % layout.grid.columns
+            pairs.insert([board, count])
+            mostColumns = max(mostColumns, layout.grid.columns)
             let map = HomeLayoutEngineTests.chainMap(layout, typing: true, restBoard: board, phraseCounts: [board: count])
             let starts = map.everyStart()
                 + HomeLayoutEngineTests.underTheTopEdge(of: map, categories: categories, typing: true, restBoard: board)
@@ -461,6 +466,8 @@ struct LateStageProfileTests {
         let unexpectedCount = unexpected.count
         #expect(unexpectedCount == 0, "first: \(unexpected.first ?? "")")
         #expect(windows.count > 10, "\(windows.count)")
+        let everyPair = (0..<HomeLayout.categoryCapacity).flatMap { board in (0..<mostColumns).map { [board, $0] } }
+        #expect(pairs == Set(everyPair), "\(profile)")
         withKnownIssue("docs/DECISIONS.md, \"Four phrases in every category\": a rest board with fewer than four, while typing") {
             #expect(whileTyping == 0)
         }
