@@ -920,13 +920,16 @@ and the Large Content Viewer on Home").*
 4. **Owner:** in the Library, try to add the phrase "Help" to Feelings:
    the editor refuses it and says why. Add "Again" there instead, read
    the note under Save, and export a backup to the Mac. **Agent:** on the
-   Mac, adds a phrase "Help" to that backup's Feelings. **Owner:** puts
-   the file back on the device and restores it with Add to My Phrases.
-   On Home, with Feelings showing, "Tap Again", "Tap Help" and "Tap Get
-   Attention"; do all three with Flexible Item Names off, then on. Then
-   "Tap Type" and say "Tap Help" again, with the tile dimmed. Note each
-   time what Voice Control did, how many commands it took and which
-   control it pressed. Delete the phrases. *Passes* when Voice Control asks which
+   Mac, adds the phrases "Help" and "Yes" to that backup's Feelings; Yes
+   has no second name, so it is the worst case. **Owner:** puts the file
+   back on the device and restores it with Add to My Phrases. On Home,
+   with Feelings showing, "Tap Again", "Tap Help", "Tap Yes" and "Tap Get
+   Attention"; do all four with Flexible Item Names off, then on. Then
+   "Tap Type" and say "Tap Help" and "Tap Yes" again, with the tiles
+   dimmed. Then, with phrases "Help me." and "Yes, please." added, "Tap
+   Help" and "Tap Yes" once more, to see that a longer phrase takes no
+   second command. Note each time what Voice Control did, how many
+   commands it took and which control it pressed. Delete the phrases. *Passes* when Voice Control asks which
    one is meant, or the note's words are changed to say what it does
    instead (docs/DECISIONS.md, "Phrases named like Home's controls"),
    and "Tap Get Attention" sounds the alarm at once. The counts measure
@@ -1402,7 +1405,7 @@ first words:
 | Eight hours on the iPad | M3, A4 |
 | Two hours each on the mounted iPad | I7 |
 | Export a Backup to Files, iCloud Drive, AirDrop and Mail | B1 |
-| With a phrase saved as "Again", or a restored "Help": what Voice Control does | I2 |
+| With a phrase saved as "Again", or a restored "Help" or "Yes": what Voice Control does | I2 |
 | Editing phrases and categories with Voice Control | B2 |
 
 Every gate of docs/ROADMAP.md, *The quality bar*, that the owner checks

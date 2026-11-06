@@ -590,7 +590,8 @@ release in docs/ROADMAP.md when no thread has it yet.
   Save puts the keyboard away when its line carries a note or a refusal,
   but the line then starts at the screen's foot: Edit Phrase shows
   "Saved. Another", New Phrase "Added “Stop.” to", and the rest is a
-  scroll away, a refusal's reason too. A plain
+  scroll away, a refusal's reason too, past the part of the screen
+  Settings keeps. A plain
   "Saved." or "Added" stays behind the keyboard, and Save itself takes a
   scroll or Return to reach. *(the next library thread)*
 - No typing on Home where the keyboard's room reaches the safety row:
@@ -1306,7 +1307,7 @@ settings, date) and summarise it here.
 | Eight hours on the iPad with Brickson in front under Guided Access, and four on the iPhone, unplugged, with a Performance Trace in Power Profiler mode: the screen never dims or locks, everything works at the end, battery used per hour at touch's and Eye Tracking's setup, and no `EXC_RESOURCE` or `JetsamEvent` report for Brickson in Analytics Data; then, attached to Xcode on the Mac, memory out of the gauge's warning region with no growth across 100 phrases, and the thermal state never serious | Q8 |
 | Two hours each on the mounted iPad with Eye Tracking and Dwell with Snap to Item, Head Tracking with Dwell, Switch Control's auto scanning and its Gliding Cursor (point scanning), and half an hour each on the iPhone with Switch Control and Eye Tracking, following Q11's script: every activation not meant and where the pointer rested before it, activations per common task, recalibrations and rests | Q11, and invariant 10 over hours rather than one activation |
 | Export a Backup to Files, iCloud Drive, AirDrop and Mail, and restore it on the other device from iCloud Drive and the Files app; a `.json` file that is not a backup is refused; the share sheet left open past Settings' idle time changes nothing | The Library's backups (docs/DECISIONS.md, "Exporting and restoring a backup") |
-| With a phrase saved as "Again", or a restored "Help": what Voice Control does on "Tap Again" and "Tap Help", with Flexible Item Names off and on, on "Tap Help" while typing, and that "Tap Get Attention" still sounds the alarm at once | docs/DECISIONS.md, "Phrases named like Home's controls" |
+| With a phrase saved as "Again", or a restored "Help" or "Yes": what Voice Control does on "Tap Again", "Tap Help" and "Tap Yes", with Flexible Item Names off and on, on the last two while typing, that "Help me." and "Yes, please." take no second command, and that "Tap Get Attention" still sounds the alarm at once | docs/DECISIONS.md, "Phrases named like Home's controls" |
 | Editing phrases and categories with Voice Control (pictures by name), Switch Control, Full Keyboard Access and Dwell with Snap to Item; a look held on Delete for Good, and resting under the lowest asking rows; and a look resting on a category dimmed on Home for having fewer than four phrases | The Library's question screens; docs/DECISIONS.md, "Four phrases in every category" |
 
 ## Repository, CI and website

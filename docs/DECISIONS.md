@@ -1719,8 +1719,8 @@ apart because punctuation counts (`LibraryText.phraseKey`).
 - **A restore** keeps a backup's words as they are (invariant 7), and
   its line says so where it brought a name two controls did not share
   before (`LibraryPlan.bringsASharedName`). A backup is never refused
-  for this, so it is the one way a library can hold a phrase with one of
-  the five names. As with the floors, only an edit that gives a phrase
+  for this, so it is the one way a library made from now on can hold a
+  phrase with one of the five names. As with the floors, only an edit that gives a phrase
   such a name is refused: one that has it can be moved, deleted, changed
   to other words or edited and stay what it was.
 - **Not chosen.** Refusing every such phrase would cost words a family

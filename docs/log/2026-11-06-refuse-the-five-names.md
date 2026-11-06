@@ -40,7 +40,8 @@ built, so it comes here.
   run together is still the control's name. Its "Docstring Coverage"
   check is not a rule here, so nothing changed for it.
 - Device check I2's step 4 changed, because "Help" and "Yes" can no
-  longer be typed: it adds "Again", and a "Help" through a backup. The
+  longer be typed: it adds "Again", and "Help" and "Yes" through a
+  backup. The
   README, the accessibility page and docs/ACCESSIBILITY.md say what the
   editor refuses and what a restore keeps.
 
@@ -52,7 +53,7 @@ was merged in, not rebased (AGENTS.md, *Workflow rules*).
 ## Verified
 
 On the owner's Mac, Xcode 27.2 (27B52), iPad Pro 13-inch (M5) and iPhone
-17 simulators, iOS 27.2, on this code (only documents changed after):
+17 simulators, iOS 27.2, on the final code:
 
 - **`scripts/test.sh unit`, iPad:** 950 tests, 939 passed, none failed,
   10 expected failures (strict known issues) and issue #19's skip. The
@@ -65,16 +66,19 @@ On the owner's Mac, Xcode 27.2 (27B52), iPad Pro 13-inch (M5) and iPhone
   `LaunchTests.testLargestTextKeepsQuickControlWordsVisible`, the
   "Speaking" wait this Mac's simulators have failed since 2026-10-25
   (docs/HANDOFF.md, *Known gaps*). It passes on CI. The stall after New
-  Category's Save did not come in this run. The same counts came twice:
-  before and after CodeRabbit's fix.
-- **In the running app,** through a temporary UI test not committed: the
-  refusal on New Phrase at the default size and AX5, light and dark, in
-  portrait, on both simulators, each screen captured and read, with
-  Apple's audit on each, which passed. The keyboard goes. At AX5 on the
-  iPhone the reason starts at the screen's foot, and the rest shows after
-  a scroll, which a capture shows.
-- **Three independent reviews before the first push:** 14 findings, 9
-  confirmed by a second check, each fixed here.
+  Category's Save did not come in this run.
+- **In the running app,** through a temporary UI test not committed, on
+  the final code: the refusal on New Phrase, Edit Phrase and Rename
+  Category, at the default size and AX5, light and dark, in portrait, on
+  both simulators, with Apple's audit on each of the 24 screens, which
+  passed, and the keyboard gone each time. Each screen was captured, and
+  a sample read. At AX5 on the iPhone only the start of the line shows,
+  above the part of the screen Settings keeps, and the rest takes a
+  scroll, which an earlier run of the test captured.
+- **Three independent reviews before this pull request opened:** 14
+  findings, 9 confirmed by a second check, each fixed here. The verifier
+  then found words that went further than their evidence and one test
+  not yet shown failing; those are fixed here too.
 
 Each new test, and the change that made it fail on this Mac:
 
@@ -82,7 +86,7 @@ Each new test, and the change that made it fail on this Mac:
 - `theWordsAreKeptAsWritten`: dropping word breaks ("Y E S"), seen failing
   before the fix.
 - `aPhraseThatAlreadyHasSuchANameCanStillBeChanged`: refusing an edit
-  that keeps the name a phrase already has.
+  that keeps the name a phrase already has, run on its own.
 - `LibraryTests.testAPhraseNamedLikeAControlIsSavedWithANote`, on the
   iPad: leaving the keyboard up on the phrase editor's refusal, and on
   Rename's. `testCategoriesStayBetweenThreeAndFour`: leaving it up on
@@ -90,14 +94,18 @@ Each new test, and the change that made it fail on this Mac:
 - `aShortBoardsEmptyCellsMeetOnlyClearPutBackAndPhrases`: going back to
   the pairing that moved the cell and the count together.
 
+The other changed tests keep their earlier proofs, in the log of #82.
+
 ## Not verified
 
 - What Voice Control does with two matching names, and so the size of
-  the exception: not available on a simulator. Device check I2, step 4.
-- The refusal on Edit Phrase and the name editors at AX5 and in dark
-  mode: the temporary test covered New Phrase only.
+  the one exception left, which invariant 10 asks to be measured: not
+  available on a simulator. Device check I2, step 4, which also checks
+  that "Help me." and "Yes, please." take no second command.
+- What Full Keyboard Access's type-to-find does with two matches.
 - The Library's editors in landscape, or in a resized iPad window.
 - A whole UI run on this Mac with no failure: see above.
+- All of this on a real device.
 
 ## Follow-ups
 
