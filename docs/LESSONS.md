@@ -37,7 +37,9 @@ The first version of this rule hoped that explicit deletes instead of a
 cascade would make `rollback()` safe. Brickson's probe says they do not:
 `rollback()` after deleting a category and its phrases one by one crashed
 with the same "Unexpected backing data for snapshot creation" (Xcode 26.6,
-iOS 26.5 simulator; `SwiftDataBehaviourTests`, disabled, issue #19).
+iOS 26.5 simulator; `SwiftDataBehaviourTests`, disabled, issue #19). The same
+probe passed on Xcode 27.2 with an iOS 27.2 simulator (2026-11-05, in
+memory), but Brickson also runs on iOS 26, so the rule stands.
 Dropping the context does work: `LibraryEditorTests` makes the save fail
 for every kind of edit, deletes included, with no crash and nothing
 changed.

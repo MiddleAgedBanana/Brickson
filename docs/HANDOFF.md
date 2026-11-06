@@ -734,9 +734,10 @@ release in docs/ROADMAP.md when no thread has it yet.
   owner's decision before implementation (docs/DECISIONS.md, "Replacing
   the library"). *(R0 item 6 follow-ups; the device checks, the owner)*
 - `rollback()` crashes SwiftData after deletes, even without a cascade
-  (issue #19, seen with Xcode 26.6 on iOS 26.5). Brickson never calls it;
-  the reproduction is disabled and has not been run on the current Xcode
-  27 CI. *(R0, a new library thread re-runs it once)*
+  (issue #19, seen with Xcode 26.6 on iOS 26.5). Brickson never calls it.
+  Run once on 2026-11-05, the reproduction passed with Xcode 27.2 on an
+  iOS 27.2 simulator, in memory; it stays disabled and the rule stands,
+  because Brickson also runs on iOS 26. *(nothing left to do)*
 - Settings' Get Attention place is still empty, although AGENTS.md's
   design rules say "Settings opens on a large way back and a start-only
   Get Attention". Scored on 2026-10-24, Get Attention there would sound
@@ -813,10 +814,12 @@ release in docs/ROADMAP.md when no thread has it yet.
   follow-up 10). *(Settings' other screens: a new thread)*
 - CI compiles only the Debug configuration. Warnings are errors in
   Release too, and code under `#if DEBUG` compiles differently there, so
-  a warning only Release sees would first stop an archive; the Release
-  build has not been compiled since warnings became errors. Before the
-  first archive, run `scripts/test.sh device -configuration Release` on
-  the Mac ([`log/2026-10-23-warnings-as-errors.md`](log/2026-10-23-warnings-as-errors.md)).
+  a warning only Release sees would first stop an archive. The Release
+  build for a device compiled unsigned on the owner's Mac on 2026-11-05,
+  with no warnings ([`log/2026-11-05-phrases-named-like-controls.md`](log/2026-11-05-phrases-named-like-controls.md)).
+  Before the first archive, run
+  `scripts/test.sh device -configuration Release` on
+  the Mac again ([`log/2026-10-23-warnings-as-errors.md`](log/2026-10-23-warnings-as-errors.md)).
   *(the owner's Mac, or an agent on it)*
 - English only. `scripts/test.sh unit` brings the String Catalog up to
   date (xcodebuild alone does not), and CI fails when the committed one
@@ -1150,9 +1153,13 @@ docs/DECISIONS.md under that title
 The library core landed with PR #14, and the launch repair that keeps
 Emergency working after it; the Library's screens, export and restore
 landed on 2026-11-05 ([`log/2026-11-05-library-screen.md`](log/2026-11-05-library-screen.md),
-*Follow-ups*). What is left from the *Follow-ups* in
+*Follow-ups*, whose first two, the short category and phrases named like
+Home's controls, are built:
+[`log/2026-11-05-four-phrases.md`](log/2026-11-05-four-phrases.md) and
+[`log/2026-11-05-phrases-named-like-controls.md`](log/2026-11-05-phrases-named-like-controls.md)).
+The rollback probe was run on 2026-11-05 (*Known gaps*). What is left from the *Follow-ups* in
 [`log/2026-10-23-emergency-repair.md`](log/2026-10-23-emergency-repair.md)
-is, in order, the rollback probe on the current Xcode, stores from every
+is, in order, stores from every
 schema version and safety copies, each a pull request of its own. Calls (R0 item 8) wait for a device build. Files under
 `.github/workflows` are committed by the owner (docs/SDLC.md, *Deploy*). The toolchain's follow-ups
 (Xcode's recommended settings, iOS 27 APIs behind `#available`) are in

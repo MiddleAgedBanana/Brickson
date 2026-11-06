@@ -261,7 +261,10 @@ struct SwiftDataBehaviourTests {
     /// would stop the whole suite (docs/LESSONS.md, "Commit a crash
     /// reproduction, disabled"). Re-enable it once on a newer Xcode or iOS
     /// to see whether Apple fixed it, and record the result on the issue.
-    @Test(.disabled("Crashes SwiftData: rollback() after deletes traps (issue #19)"), .bug("https://github.com/MiddleAgedBanana/Brickson/issues/19"))
+    /// Run once on 2026-11-05 with Xcode 27.2 on an iOS 27.2 simulator, it
+    /// passed. It stays disabled, because Brickson also runs on iOS 26,
+    /// where it crashed, and never calls `rollback()`.
+    @Test(.disabled("Crashed SwiftData on iOS 26.5: rollback() after deletes traps (issue #19)"), .bug("https://github.com/MiddleAgedBanana/Brickson/issues/19"))
     func s4RollbackAfterDeletingACategoryAndItsPhrases() throws {
         let container = try store()
         let context = scratch(container)
