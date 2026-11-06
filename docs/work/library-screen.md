@@ -299,7 +299,8 @@ a control that cannot act is dimmed in place, never removed.
   phrases are allowed, because a phrase tile is named by what it says
   and Home's controls keep their own names (docs/DECISIONS.md, "Home's
   scan order and names"). *Since 2026-11-05 the phrase is saved with a
-  note saying so ([`work/phrases-named-like-controls.md`](phrases-named-like-controls.md)).*
+  note saying so, and the names of the four controls one activation away
+  are refused ([`work/phrases-named-like-controls.md`](phrases-named-like-controls.md)).*
 
 ### Input methods
 
