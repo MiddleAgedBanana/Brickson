@@ -130,10 +130,11 @@ final class LibraryTests: XCTestCase {
 
     /// Fails if a phrase another control on Home answers to is refused or
     /// changed, if nothing says so as it is saved, if the keyboard stays
-    /// over the note, which it covers at the largest text on a phone, if
-    /// the keyboard going moves Move Phrase, or if Apple's audit finds
-    /// anything with the note showing or with the field focused, where it
-    /// reported no description before the field carried its label
+    /// up while a line carries a note, a wide word's or a renamed
+    /// category's included (it covers the line at the largest text on a
+    /// phone), if the keyboard going moves Move Phrase, or if Apple's audit
+    /// finds anything with the note showing or with the field focused,
+    /// where it reported no description before the field carried its label
     /// (docs/DECISIONS.md, "Phrases named like Home's controls"). The room
     /// the line keeps is checked by
     /// `LibraryNameCollisionTests.editPhrasesLineKeepsRoomForBothNotes`.
@@ -151,7 +152,7 @@ final class LibraryTests: XCTestCase {
         try audit(app, "New Phrase, its field focused")
         app.buttons["librarySave"].tap()
         waitForLine("libraryEditorResult", saying: "Added “Stop.” to Basics. \(note)", in: app)
-        waitUntil(app.keyboards.firstMatch, "exists == false", "the keyboard stayed over the note on New Phrase")
+        waitUntil(app.keyboards.firstMatch, "exists == false", "the keyboard stayed up with the note on New Phrase")
         try audit(app, "New Phrase, with the note")
         back(to: "Basics", in: app)
 
@@ -165,8 +166,30 @@ final class LibraryTests: XCTestCase {
         let place = moveRow.frame
         app.buttons["librarySave"].tap()
         waitForLine("libraryEditorResult", saying: "Saved. \(note)", in: app)
-        waitUntil(app.keyboards.firstMatch, "exists == false", "the keyboard stayed over the note on Edit Phrase")
+        waitUntil(app.keyboards.firstMatch, "exists == false", "the keyboard stayed up with the note on Edit Phrase")
         expectSameFrame(moveRow.frame, place, "the keyboard going moved Move Phrase")
+        back(to: "Basics", in: app)
+
+        // A wide word's note puts the keyboard away too.
+        open("libraryAddPhrase", leaving: "libraryAddPhrase", in: app)
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 10), "New Phrase did not open the keyboard")
+        app.typeText("I'm uncomfortable.")
+        app.buttons["librarySave"].tap()
+        waitForLine("libraryEditorResult", saying: "A word in it is wider", in: app)
+        waitUntil(app.keyboards.firstMatch, "exists == false", "the keyboard stayed up with the wide word's note")
+        back(to: "Basics", in: app)
+
+        // So does Rename's, here to a name the phrase "Maybe." also has.
+        let rename = app.buttons["libraryRename"]
+        for _ in 0..<4 where !rename.isHittable {
+            app.swipeUp()
+        }
+        open("libraryRename", leaving: "libraryRename", in: app)
+        XCTAssertTrue(app.navigationBars["Rename Category"].waitForExistence(timeout: 10), "Rename did not open")
+        replaceWords(in: field("libraryNameField", in: app), with: "Maybe", deleting: 6, in: app)
+        app.buttons["librarySave"].tap()
+        waitForLine("libraryEditorResult", saying: "Saved. \(note)", in: app)
+        waitUntil(app.keyboards.firstMatch, "exists == false", "the keyboard stayed up with the note on Rename")
     }
 
     // MARK: Categories
