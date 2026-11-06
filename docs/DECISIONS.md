@@ -1690,7 +1690,7 @@ apart because punctuation counts (`LibraryText.phraseKey`).
   is expected to take a second command. So the editor refuses a phrase
   Voice Control hears as "Yes", "No", "Emergency", "Get Attention" or
   "Help", whole, with case, punctuation and symbols dropped ("Yes." and
-  "help!" count, "Yes, please." does not), and asks for another word
+  "help!" count, "Yes, please." and "Y E S" do not), and asks for another word
   (`LibraryRules.checkSafetyControlName`,
   `LibraryEditRejection.phraseNamedLikeASafetyControl`). A wide word only
   looks odd; this touches the call for help. The cost is that a bare

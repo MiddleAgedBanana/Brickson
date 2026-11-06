@@ -131,7 +131,7 @@ struct LibraryNameCollisionTests {
     /// are one activation away (docs/DECISIONS.md, "Phrases named like
     /// Home's controls"). Fails if the editor starts refusing such a phrase,
     /// or changes its words.
-    @Test(arguments: ["Stop.", "Again", "Repeat!", "Settings", "Type", "Put back", "Help me.", "Yes, please."])
+    @Test(arguments: ["Stop.", "Again", "Repeat!", "Settings", "Type", "Put back", "Help me.", "Yes, please.", "Y E S", "H e l p."])
     func theWordsAreKeptAsWritten(text: String) throws {
         let ids = SequentialIDs()
         let added = try LibraryEdit.addPhrase(text: text, category: F.basicsID).plan(in: F.library, makeID: ids.make)

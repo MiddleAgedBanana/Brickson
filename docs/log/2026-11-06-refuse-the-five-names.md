@@ -18,7 +18,7 @@ built, so it comes here.
 - **The editor refuses those names.** A phrase Voice Control hears as
   "Yes", "No", "Emergency", "Get Attention" or "Help", whole, with case,
   punctuation and symbols dropped ("Yes." and "help!" count, "Yes,
-  please." does not), is not saved, and the line says: "A button on Home
+  please." and "Y E S" do not), is not saved, and the line says: "A button on Home
   that must always be one step away already answers to this. Add another
   word, such as “Help me.” or “Yes, please.”"
   (`LibraryRules.checkSafetyControlName`,
@@ -33,9 +33,12 @@ built, so it comes here.
 - **The keyboard goes on a refusal too,** on the phrase and name editors
   and for a category name too wide for Home, as it goes for a note: on a
   phone at the largest text sizes it covers the line.
-- **CodeRabbit's review of #82:** the short-board sweep said every pair of
-  category cell and count comes round, and nothing held it. It now
-  checks that.
+- **CodeRabbit's reviews:** of #82, the short-board sweep said every pair
+  of category cell and count comes round, and nothing held it; it now
+  checks that. Of this pull request, the check dropped word breaks, so
+  "Y E S" was refused as "Yes"; word breaks now count, and "GetAttention"
+  run together is still the control's name. Its "Docstring Coverage"
+  check is not a rule here, so nothing changed for it.
 - Device check I2's step 4 changed, because "Help" and "Yes" can no
   longer be typed: it adds "Again", and a "Help" through a backup. The
   README, the accessibility page and docs/ACCESSIBILITY.md say what the
@@ -62,7 +65,8 @@ On the owner's Mac, Xcode 27.2 (27B52), iPad Pro 13-inch (M5) and iPhone
   `LaunchTests.testLargestTextKeepsQuickControlWordsVisible`, the
   "Speaking" wait this Mac's simulators have failed since 2026-10-25
   (docs/HANDOFF.md, *Known gaps*). It passes on CI. The stall after New
-  Category's Save did not come in this run.
+  Category's Save did not come in this run. The same counts came twice:
+  before and after CodeRabbit's fix.
 - **In the running app,** through a temporary UI test not committed: the
   refusal on New Phrase at the default size and AX5, light and dark, in
   portrait, on both simulators, each screen captured and read, with
@@ -75,6 +79,8 @@ On the owner's Mac, Xcode 27.2 (27B52), iPad Pro 13-inch (M5) and iPhone
 Each new test, and the change that made it fail on this Mac:
 
 - `theFourControlsKeepTheirNames`: leaving Help out of the names.
+- `theWordsAreKeptAsWritten`: dropping word breaks ("Y E S"), seen failing
+  before the fix.
 - `aPhraseThatAlreadyHasSuchANameCanStillBeChanged`: refusing an edit
   that keeps the name a phrase already has.
 - `LibraryTests.testAPhraseNamedLikeAControlIsSavedWithANote`, on the

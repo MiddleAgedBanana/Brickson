@@ -102,10 +102,17 @@ nonisolated enum LibraryRules {
     /// when it is being edited: a phrase a backup brought with such a name
     /// can keep it, as only an edit that gives one a name is refused.
     static func checkSafetyControlName(_ proposed: String, replacing current: String? = nil) throws(LibraryEditRejection) {
-        let key = reservedCategoryNameKey(proposed)
-        let names = HomeControlNames.oneActivationAway.flatMap(\.inputLabels).map(reservedCategoryNameKey)
-        guard names.contains(key), current.map(reservedCategoryNameKey) != key else { return }
+        guard let name = safetyControlName(in: proposed), current.flatMap(safetyControlName(in:)) != name else { return }
         throw .phraseNamedLikeASafetyControl
+    }
+
+    /// The name of a control one activation away that `text` is said as,
+    /// or nil. Word breaks count, so "Y E S" is not "Yes"; a name run
+    /// together, "GetAttention", is still the control's.
+    private static func safetyControlName(in text: String) -> String? {
+        let form = HomeControlNames.spokenForm(text)
+        let names = HomeControlNames.oneActivationAway.flatMap(\.inputLabels).map(HomeControlNames.spokenForm)
+        return names.first { $0 == form || (!form.contains(" ") && reservedCategoryNameKey($0) == form) }
     }
 
     /// What the Library adds where saved words are too wide for Home's
