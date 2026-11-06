@@ -1364,9 +1364,10 @@ settings, date) and summarise it here.
 - The docs cross-reference check reads every title a citation names,
   quoted titles starting with a small letter and titles after the first
   included: [record](log/2026-10-23-docs-check-gaps.md).
-- Codex reviews every push to a pull request (CodeRabbit and Greptile
-  too, as far as their free plans allow), and AI Scan each push; none
-  reviews Dependabot's pull requests by itself. Copilot no longer
+- Codex reviews every push to a pull request (Greptile too, as far as
+  its free plan allows), and AI Scan each push; CodeRabbit reviews only
+  when a comment asks, `@coderabbitai review`, since the owner's trial
+  ended. None reviews Dependabot's pull requests by itself. Copilot no longer
   reviews: its credits ran out on pull request #78, and since
   2026-11-04 no agent requests it (docs/DECISIONS.md, *Code review*).
   The AI credits AI Scan uses show only in Settings → Billing → AI

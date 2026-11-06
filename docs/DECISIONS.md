@@ -5199,6 +5199,10 @@ review setup does not quietly break them.
   are gone; a `.git/brickson-copilot-reviews.json` left in an older
   clone is no longer read and can be deleted. Codex, CodeRabbit
   and Greptile review as before, and the agent answers every round.
+  *2026-11-06:* CodeRabbit no longer reviews by itself: the owner's
+  trial has ended, and it gives a repository with fewer than 10 stars no
+  automatic reviews, so a pull request asks for one with a comment,
+  `@coderabbitai review`.
   `.github/copilot-instructions.md` and `.github/skills/code-review/`
   stay: they cost nothing, and they are the instructions Copilot would
   read if the owner ever added it again. Record:

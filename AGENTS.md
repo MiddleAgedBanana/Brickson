@@ -637,11 +637,13 @@ stays reachable, behind `#available` when newer (docs/DECISIONS.md,
 "Minimum iOS, iPhone and iPad").
 
 **Reviews and updates on GitHub.** Codex reviews every push to a pull
-request that a person or agent opens. CodeRabbit and Greptile, which
-the owner also installed, review pull requests by themselves too, as
-far as their plans allow: CodeRabbit on a free trial and then its more
-limited free tier for public repositories, Greptile on its free tier
-(out of usage on 2026-11-03). The agent that opened the pull request
+request that a person or agent opens. Greptile, which the owner also
+installed, reviews pull requests by itself too, as far as its free tier
+allows (out of usage on 2026-11-03). CodeRabbit, also installed, no
+longer does: the owner's trial has ended, and it gives a repository
+with fewer than 10 stars no automatic reviews. So the agent that opens
+a pull request asks for its review with a comment reading
+`@coderabbitai review`, after the push it wants reviewed. The agent that opened the pull request
 answers and fixes every round. GitHub Copilot is no longer one of the
 reviewers: the owner's AI credits ran out on pull request #78
 (2026-11-04) and the subscription ends on 2026-11-09, so no agent
