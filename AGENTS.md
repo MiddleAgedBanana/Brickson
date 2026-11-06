@@ -565,7 +565,7 @@ tools reach it, and a Claude Code session in this project may have both:
 Remote Control, which runs a Claude Code session on the Mac, in `~/code`
 or `~/code/brickson`, with the Mac's own Xcode, XcodeGen and
 simulators; and MobileBuildMCP, a build tool on the Mac whose tools are
-named `MobileBuildMCP__…`. Neither works in the owner's own checkout,
+named `MobileBuildMCP__…`. Use neither in the owner's own checkout,
 `~/code/brickson`, which may hold their uncommitted work: never check
 out, stash, reset or clean there. The route:
 
