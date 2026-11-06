@@ -1212,8 +1212,8 @@ struct HomeLayoutEngineTests {
     /// each empty cell of the grid's top row, in every state of `map` that
     /// has one: by centre, the shorter cell above is nearer there than
     /// anything in the grid.
-    private static func underTheTopEdge(of map: ChainMap, categories: [String], typing: Bool) -> [ChainStart] {
-        HomeChains.states(categoryCount: categories.count, typing: typing).flatMap { state in
+    static func underTheTopEdge(of map: ChainMap, categories: [String], typing: Bool, restBoard: Int? = nil) -> [ChainStart] {
+        HomeChains.states(categoryCount: categories.count, typing: typing, restBoard: restBoard).flatMap { state in
             let here = HomeChains.name(of: state, categories: categories)
             return (map.resting[here] ?? []).filter { $0.name == HomeChains.emptyCell }.flatMap { cell in
                 stride(from: cell.frame.minX + 0.5, through: cell.frame.maxX - 0.5, by: 4).map {
@@ -1226,7 +1226,7 @@ struct HomeLayoutEngineTests {
     /// Stop's well's finding (the tests above): where Again is above the
     /// well, a look resting in it, empty or after choosing Stop, can meet
     /// Again, or Speak in its place while typing.
-    private static func isStopsWellFinding(_ finding: ChainFinding, in layout: HomeLayout) -> Bool {
+    static func isStopsWellFinding(_ finding: ChainFinding, in layout: HomeLayout) -> Bool {
         let start = finding.example.start
         let fromTheWell = start.chosen?.name == HomeChains.stop || start.restingOn == HomeChains.emptyWell
         let met = finding.example.hazard?.control.name

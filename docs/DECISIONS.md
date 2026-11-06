@@ -1622,9 +1622,26 @@ category.
   that comes under the look. Pinned as two strict known issues, like
   "Get Attention and Stop on Home", *Open: fewer than three everyday
   categories*; Emergency's screen tells the family to add phrases.
-- **Not covered:** a rest board already short of four, which Set Up no
-  longer offers and no edit can make (a board chosen with four keeps
-  them), shows its empty cells, unscored; a category's last row can
+  Out of reach is neither gone nor accepted, so it stays on
+  docs/ROADMAP.md, *The quality bar*, Q2, for the owner's decision
+  after the Snap to Item check.
+- **Open: a rest board with fewer than four.** A board chosen with four
+  keeps them, and Set Up no longer offers a short one, so no edit makes
+  one. A damaged or hand-made store can hold one, and so can one rare
+  restore: the chosen category is deleted, which leaves the choice stored
+  (`SetupRecord.restBoardCategory`), and an older backup that held it with
+  fewer than four brings it back under the same identity. Measured on
+  2026-11-05
+  (`LateStageProfileTests.aShortBoardsEmptyCellsMeetOnlyClearPutBackAndPhrases`,
+  448 windows at the four profiles a board takes, every pair of category
+  cell and count from none to one fewer than the columns coming round):
+  while typing, a look on an empty cell meets Clear or Put Back, 622
+  findings; while browsing, the board's last phrase beside it, 323
+  findings (a finding is one path in one window, and many chains can
+  take it). A board with no phrases meets no phrase. Nothing else, beyond
+  Stop's well's finding on every board. Pinned as two strict known
+  issues, and on Q2's list for the owner's decision in the same way.
+- **Not covered:** a category's last row can
   still end short in a lower row, where a look meets a phrase beside it, the board itself, unscored
   as before; and where the grid scrolls (a library grown past the
   starter's largest category), a short last row can scroll up beside the
@@ -1650,6 +1667,89 @@ category button the layout engine plans for, on the 320-point window
 - **A backup** whose new everyday category has such a name is refused
   whole, naming the word, because import never changes a backup's words
   (invariant 7). Its phrases come in as they are.
+
+## Phrases named like Home's controls
+
+*What the editor says is a default, adopted 2026-11-05 by the thread that
+built it, reversible if the owner objects: "Home's scan order and names"
+left that to the editing thread, and the owner's answer for wide words
+the same day ("Allow, with a note") has the same shape. Whether the four
+controls' own names may be saved is not settled: *An exception to
+invariant 10*, below, is proposed, not adopted, and is the owner's to
+decide.*
+
+When two controls on Home answer to one name, Voice Control cannot tell
+which is meant. A family can write such a phrase: "Help", "Stop." or
+"Again!", or two phrases said alike, "Okay." and "Okay?", which the
+library keeps apart because punctuation counts
+(`LibraryText.phraseKey`).
+
+- **The words are saved as written, with a note.** The line kept for
+  what Save did adds: "Another button on Home answers to these words
+  too, so Voice Control may ask which one is meant." The family's words
+  come first, as in "Words wider than Home's narrowest buttons", and
+  invariant 7 says Brickson never renames them. The note names no
+  control and quotes no words, so its height is known and the line
+  keeps it reserved (`LibraryRules.savedPhraseLines`): nothing under it
+  moves. "May"
+  because Stop, Speak, Clear and Put Back show only some of the time,
+  and what Voice Control does is a device check (docs/DEVICE-CHECKS.md,
+  I2).
+- **What counts** is `HomeControlNames.collisions` over Home's controls
+  while the phrase's category shows, every name each one answers to, the
+  wells' controls as if each applied, the category buttons and the
+  phrases beside it (`LibrarySnapshot.sharesAName`). Only the whole name
+  counts: "Help me." shares nothing. Phrases in two categories never
+  share a screen, so they share no name.
+- **A category name** that a phrase also has is saved with the same
+  note, on New Category and Rename Category. A name a control on Home
+  has is still refused (`reservedCategoryName`): a category button has
+  no words of its own to say.
+- **A restore** keeps a backup's words as they are (invariant 7), and
+  its line says so where it brought a name two controls did not share
+  before (`LibraryPlan.bringsASharedName`). A backup is never refused
+  for this.
+- **Not chosen.** Refusing every such phrase would cost words a family
+  may need, such as "Stop", for no safety control's sake. Giving a
+  colliding tile another Voice Control name ("Say Yes")
+  would keep both, but Apple asks apps to "Match Voice Control labels to
+  the visible text"
+  ([Voice Control evaluation criteria](https://developer.apple.com/help/app-store-connect/manage-app-accessibility/voice-control-evaluation-criteria/)),
+  and it changes what "Home's scan order and names" decided.
+- **An exception to invariant 10, proposed to the owner.** A phrase Voice
+  Control hears as "Yes", "No", "Emergency", "Get Attention" or "Help",
+  whole, with case and punctuation dropped (so "Yes." and "help!" count,
+  and "Yes, please." does not), means that with Voice Control, while it
+  shows, saying that control's name is expected to take a second
+  command: the person is asked which one they meant. Its expected size,
+  unmeasured until device check I2: one more command, in a library where
+  a family wrote that phrase after being told; "Get Attention" still
+  reaches the alarm in one where the phrase is "Help". Touch, Switch
+  Control and dwell are unchanged, and so is the starter library, which
+  has none (`LibraryNameCollisionTests.theStarterLibrarySharesNoNames`).
+  Such a phrase could already be saved before this change, with nothing
+  said; it still can, now with the note, until the owner decides. The
+  thread that built this recommends refusing these five names and
+  keeping the note for the rest: a wide word only looks odd, and this
+  touches the call for help. Listed in docs/ROADMAP.md, *The quality
+  bar*, Q24.
+- **Not covered:** Apple's pages do not say what Voice Control does with
+  two matching names; [one developer's write-up](https://www.basbroek.nl/improving-voice-control)
+  says iOS overlays numbers on them. With Flexible Item Names on
+  (iOS 27) it may differ. Full Keyboard Access's type-to-find reads the
+  same names, and what it does with two matches is not known either. A
+  library that already holds such words says nothing until they are next
+  saved. Whether a dimmed phrase or category counts as a second match
+  while typing is part of the same device check. `LibraryEdit.movePhrase`
+  can move a phrase across categories and says nothing, but the Library
+  only moves a phrase within its own, where nothing new is shared.
+- **The keyboard goes when a note shows.** On a phone at the largest
+  text sizes the keyboard covers Save and the whole line, so a note
+  would never be read (seen on 2026-11-05, iPhone 17, AX5). So Save puts
+  the keyboard away whenever its line carries a note, the wide-word note
+  included; nothing moves. The line then starts at the screen's foot,
+  with the note itself a scroll away, and a plain "Saved." or "Added"
+  line stays behind the keyboard (docs/HANDOFF.md, *Known gaps*).
 
 ## Exporting and restoring a backup
 
@@ -2449,7 +2549,8 @@ R0 item 3's accessibility work (docs/ACCESSIBILITY.md, sections 1 and 3;
   every state of the starter library (`HomeNameCollisionTests`). When
   editing lets a family add a phrase or category that collides, the
   editing thread (R0 item 6) decides what the editor says; it never
-  renames the person's words.
+  renames the person's words. *2026-11-05:* it says so as the words are
+  saved (*Phrases named like Home's controls*).
 
 *Before:* none. Home was reached in its order on screen (the message and
 Again first), as one flat list, and its controls answered only to their
@@ -2698,7 +2799,9 @@ ROADMAP R0 item 4 ([`work/get-attention-on-home.md`](work/get-attention-on-home.
   only a damaged store could. A layout that keeps a category nearest the
   well for every library (never a decoy) would let the rule go. `HomeLayoutEngineTests.aLibraryOfFewerThanThreeEverydayCategoriesLeavesTheWellUnsafe`
   records it as a strict known issue, so it fails when the gap closes.
-  Found in review of PR #38.
+  Found in review of PR #38. Out of reach is neither gone nor accepted,
+  so it stays on docs/ROADMAP.md, *The quality bar*, Q2, for the
+  owner's decision after the Snap to Item check.
 - **Open: the top of Stop's well is nearest Again.** Stop's well is 12pt
   under Again and 8pt over its category, so its centre and lower part are
   nearest the category, but by the model its upper part (about 10 to 40%
@@ -5096,6 +5199,10 @@ review setup does not quietly break them.
   are gone; a `.git/brickson-copilot-reviews.json` left in an older
   clone is no longer read and can be deleted. Codex, CodeRabbit
   and Greptile review as before, and the agent answers every round.
+  *2026-11-06:* CodeRabbit no longer reviews by itself: the owner's
+  trial has ended, and it gives a repository with fewer than 10 stars no
+  automatic reviews, so a pull request asks for one with a comment,
+  `@coderabbitai review`.
   `.github/copilot-instructions.md` and `.github/skills/code-review/`
   stay: they cost nothing, and they are the instructions Copilot would
   read if the owner ever added it again. Record:

@@ -94,8 +94,8 @@ An item since ported or written new says what took its place
   `ControlNames` and `HomeControlNames`, the visible words first, whose
   `collisions` compares every name a control answers to, with
   `HomeNameCollisionTests` over every state of the starter library; a
-  family's own phrases are checked when editing arrives
-  (docs/DECISIONS.md, "Home's scan order and names").
+  family's own phrases are checked as they are saved
+  (docs/DECISIONS.md, "Phrases named like Home's controls").
 
 **Port and generalize:**
 - `BoardPlan`: the most valuable and the most tuned to one person.

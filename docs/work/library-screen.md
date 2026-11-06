@@ -298,7 +298,8 @@ a control that cannot act is dimmed in place, never removed.
   editor makes it today: category names are refused (`LibraryRules`),
   phrases are allowed, because a phrase tile is named by what it says
   and Home's controls keep their own names (docs/DECISIONS.md, "Home's
-  scan order and names").
+  scan order and names"). *Since 2026-11-05 the phrase is saved with a
+  note saying so ([`work/phrases-named-like-controls.md`](phrases-named-like-controls.md)).*
 
 ### Input methods
 

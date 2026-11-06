@@ -28,6 +28,28 @@ struct LibraryModelTests {
         #expect(model.readFailure == nil)
     }
 
+    /// A line says what the last change did: "Added “Water”.", with a note
+    /// that a phrase has the same name, stayed after the family renamed the
+    /// category and the note had stopped being true, and a restore's note
+    /// the same way. Fails if a change that saves leaves either line, or if
+    /// one that is refused clears them.
+    @Test func aChangeThatSavesClearsTheLinesOfEarlierChanges() throws {
+        let container = try PhraseLibraryStore.makeInMemoryContainer()
+        try PhraseLibrarySeeder.seedIfEmpty(container, with: LibraryFixtures.library)
+        let model = LibraryModel()
+        model.refresh(container)
+        model.categoryResults[LibraryFixtures.needsID] = "A line."
+        model.backupResult = "A restore's line."
+
+        model.perform(.renameCategory(LibraryFixtures.needsID, name: "Basics"), in: container)
+        #expect(model.categoryResults[LibraryFixtures.needsID] == "A line.")
+        #expect(model.backupResult == "A restore's line.")
+
+        model.perform(.renameCategory(LibraryFixtures.needsID, name: "Wants"), in: container)
+        #expect(model.categoryResults[LibraryFixtures.needsID] == nil)
+        #expect(model.backupResult == nil)
+    }
+
     /// Every change reads the store before it plans, and that read follows
     /// the same rule. Fails if a change whose read fails keeps the library
     /// read before it, or says nothing, or if the next change that reads

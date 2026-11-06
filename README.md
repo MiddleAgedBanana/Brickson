@@ -63,7 +63,9 @@ The initial implementation includes:
   where the row that asked was. An everyday category shows on Home once
   it has four phrases, so its row of phrases has no gaps; until then it
   is dimmed there, and its screen says how many more it needs.
-  Emergency is never dimmed.
+  Emergency is never dimmed. A phrase with the same name as another
+  button on Home, such as "Help", is kept as written, with a note that
+  Voice Control may ask which one is meant.
 - Speech through Apple's built-in speech system, with Personal Voice
   selection when permission and availability allow it.
 - Local phrase storage with SwiftData, without CloudKit sync.

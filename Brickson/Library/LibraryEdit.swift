@@ -93,6 +93,15 @@ nonisolated struct LibraryPlan: Equatable, Sendable {
     var asksFirst: Bool { kind.asksFirst }
 }
 
+nonisolated extension LibraryPlan {
+    /// Whether this plan gives two controls on Home a name they did not
+    /// share before (`LibrarySnapshot.sharedNames`). A restore keeps a
+    /// backup's words as they are, so it says so instead.
+    var bringsASharedName: Bool {
+        !after.sharedNames.subtracting(before.sharedNames).isEmpty
+    }
+}
+
 nonisolated extension LibraryEdit {
     /// Checks this edit against `library` and returns the plan, or throws
     /// the reason it cannot be made. Nothing is written.

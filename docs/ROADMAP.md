@@ -725,9 +725,21 @@ what passes and who checks it:
   a device run has found is gone by placement or accepted by the owner
   as a named exception in docs/DECISIONS.md. Open today: Yes and No
   bordering the message; the top of Stop's well nearest Again; by
-  centre, dimmed phrases bordering Clear and Put Back; and, on iPhone
+  centre, dimmed phrases bordering Clear and Put Back; on iPhone
   Duo at AX5, the chain that starts at Family Setup's Back and reaches
-  Back to Talking and Get Attention (R0 item 13). Also open under R0
+  Back to Talking and Get Attention (R0 item 13); and three that no
+  edit can make: an Emergency already short
+  of four phrases and a rest board already short of four, whose empty
+  cells meet Clear or Put Back while typing and a phrase that speaks
+  while browsing (docs/DECISIONS.md, "Four phrases in every category"),
+  and fewer than three everyday categories, where Again can be nearest
+  Stop's empty well (docs/DECISIONS.md, "Get Attention and Stop on
+  Home", *Open: fewer than three everyday categories*). A damaged or
+  hand-made store can show them, and a rest board can also come back
+  short through one rare restore (*Open: a rest board with fewer than
+  four*). Out of everyday reach is
+  neither gone nor accepted: each stays on this list until a placement
+  removes it or the owner accepts it. Also open under R0
   item 13: on iPhone Duo, a look resting before the window changes
   meets Get Attention, Speak, No or Clear after it, under pointer mappings that
   are only hypotheses until a device shows the real one (docs/HANDOFF.md,
@@ -737,17 +749,18 @@ what passes and who checks it:
   first step's guide scrolled, and Settings' other screens), and finds
   nothing new. *Checks:* a thread and CI
   score; after the Snap to Item device check (Q12), the owner decides
-  each hazard that placement does not remove. *Today:* four open, plus
-  iPhone Duo's changed-window finding (Again nearest Stop's empty well
-  with fewer than three everyday categories closed on 2026-11-05: the
-  owner's rule keeps three; the short category's opened and closed the
-  same day: Home dims a category with fewer than four phrases and the
-  Library keeps four once reached, the owner's rule, docs/DECISIONS.md,
-  "Four phrases in every category"; closed in the model only until
-  docs/DEVICE-CHECKS.md, B2 shows that Snap to Item stops on a dimmed
-  control (Q12), as typing's dimming also assumes, and reopened for the
-  owner if it skips one; an Emergency already short of four,
-  which no edit can make, stays a strict known issue);
+  each hazard that placement does not remove. *Today:* seven open, plus
+  iPhone Duo's changed-window finding. Three of the seven are the
+  ones above that no edit makes, each scored and pinned as
+  strict known issues, waiting for the owner's decision after Q12 (the
+  owner's rule of 2026-11-05 keeps three everyday categories in every
+  library Brickson writes; the short category's hazard opened and
+  closed the same day: Home dims a category with fewer than four
+  phrases and the Library keeps four once reached, the owner's rule,
+  docs/DECISIONS.md, "Four phrases in every category"; closed in the
+  model only until docs/DEVICE-CHECKS.md, B2 shows that Snap to Item
+  stops on a dimmed control (Q12), as typing's dimming also assumes,
+  and reopened for the owner if it skips one);
   the Library's screens are scored on modelled frames and on CI's iPad
   and iPhone at the default and largest text sizes, with nothing found
   (`LibraryChainsTests`, `LibraryTests`); the Duo chain was scored on
@@ -1113,7 +1126,10 @@ what passes and who checks it:
   explained before iOS asks (device check D1); every control on every
   screen does what its words say; and every owner question that
   touches the release is answered (the hazards of Q2, the floors of Q3,
-  the TestFlight time of Q9, Get Attention in Settings' bar, the name
+  the TestFlight time of Q9, Get Attention in Settings' bar, a phrase
+  that Voice Control hears as the name of Yes, No, Emergency or Get
+  Attention, "Help" included (docs/DECISIONS.md, "Phrases named like
+  Home's controls"), the name
   and bundle identifier, the price, how the name is said, EU trader
   status).
   *Checks:* a thread lists what is open; the owner answers. *Today:*
@@ -1182,12 +1198,14 @@ are complete, including item 11's TestFlight pilot; the device checks they
 touch are logged in `docs/log/`; Wave 3 items 8 and 9 are complete,
 with item 8's sizes switched on (the owner chose the largest sizes that
 fit, 2026-10-30); and every dwell hazard still open is gone or
-accepted by the owner, four today plus iPhone Duo's changed-window
+accepted by the owner, seven today plus iPhone Duo's changed-window
 finding (*The quality bar*, Q2): the three
 the larger sizes left (Yes and No bordering the message, the top of
 Stop's well nearest Again, and dimmed phrases bordering Clear and Put
 Back by centre; DECISIONS.md, "Sizes that follow how the screen is reached"),
-the iPhone Duo chain at AX5 from Family Setup's Back, and,
+the iPhone Duo chain at AX5 from Family Setup's Back, the three no edit
+can make (an Emergency or a rest board already short of four phrases,
+and fewer than three everyday categories), and,
 on iPhone Duo, a look resting before the window changes meeting Get
 Attention, Speak, No or Clear after it (R0 item 13), since no build goes
 to App Review or to an external TestFlight group
@@ -1211,7 +1229,7 @@ default; docs/DECISIONS.md, "Every release passes the quality bar").
 | 3 | An honest Home on both devices | Words never break, every category visible, the starter library without scrolling, sized from the space available rather than the device model | Phone layout and word fitting, then a new thread for the wells and the engine | Labels that fit themselves, four categories that never scroll sideways, three phone columns and Home's slot plan in the Phone layout pull request; Home's scan order (quick controls first, regions as containers) and Voice Control names in the accessibility first pass ([`log/2026-10-22-home-scan-order-and-names.md`](log/2026-10-22-home-scan-order-and-names.md)); Show Borders on Home's controls in the second ([`log/2026-10-23-show-borders-and-large-content.md`](log/2026-10-23-show-borders-and-large-content.md)), with the Large Content Viewer kept off Home's controls other than Settings' gear once simulators showed a slow press with it speaks nothing ([`log/2026-10-23-large-content-and-iphone-duo.md`](log/2026-10-23-large-content-and-iphone-duo.md)); Stop's well since item 4 ([`log/2026-10-23-get-attention-on-home.md`](log/2026-10-23-get-attention-on-home.md)); the slot plan's other wells, the rest of item 3's accessibility list, and no scrolling on small phones at large text and on 320-point windows are still to build; the layout engine landed with its work file on 2026-10-23 ([`log/2026-10-23-layout-engine.md`](log/2026-10-23-layout-engine.md)), and Home moved onto it on 2026-10-24, which ends the scrolling at the default size on a 375×667 phone and, by the model, on an 11-inch iPad in landscape ([`log/2026-10-24-home-on-the-layout-engine.md`](log/2026-10-24-home-on-the-layout-engine.md)) |
 | 4 | Get Attention and a sturdier speech engine | A start-only alarm with Stop elsewhere; one owner for the audio session; the code audit's speech fixes (M1, L1, L3, L4) | Speech engine and Get Attention | Engine built (PR #16); Get Attention and Stop on Home built 2026-10-23 ([`log/2026-10-23-get-attention-on-home.md`](log/2026-10-23-get-attention-on-home.md); DECISIONS.md, "Get Attention and Stop on Home"). Left: the replacement tone, after a device check; Get Attention in Settings' bar, scored 2026-10-24 and not added because its place would sound the alarm unasked, for the owner to decide (DECISIONS.md, "Get Attention in Settings' bar: the owner decides"); and the R0-4 rows of docs/ACCESSIBILITY.md (`startsMediaSession` after a device check, a test pinning `prefersAssistiveTechnologySettings`, a steady alarm under Dim Flashing Lights and Reduce Bright Effects) |
 | 5 | Typing | A composer that does not care which keyboard feeds it, a draft that survives, a probe that measures the real keyboard; then typing on Home under a safety band the keyboard never covers | Typing foundation, then a new thread | Foundation built on 2026-10-21 (`MessageComposer`, `DraftStore`, the keyboard probe; [`log/2026-10-21-typing-foundation.md`](log/2026-10-21-typing-foundation.md)). The room Home keeps for Apple's keyboard (`KeyboardAllowance`), a keyboard check on every UI run and the refusal of other apps' keyboards built on 2026-10-23 ([`log/2026-10-23-keyboard-allowance.md`](log/2026-10-23-keyboard-allowance.md)). The typing state on Home (Phrases and Type, C in one row on regular widths, Speak, Clear and Put Back, the kept message) built on 2026-10-24, Wave 3 item 5 ([`log/2026-10-24-typing-on-home.md`](log/2026-10-24-typing-on-home.md)); its device checks remain |
-| 6 | Editing and backup | One validated edit applied in one explicit save, a failure test for every save, an emergency category that cannot be deleted, fixed identities for starter phrases, a versioned backup file | Library editing and backup format, then Library follow-ups | The core (editing rules and one-save writer, failure tests, the undeletable emergency category, fixed starter identities, backup format version 1) landed with PR #14 (2026-10-23); the launch repair that gives a damaged library's Emergency its starter phrases back, and a new identity where an earlier category shares its own, is built (2026-10-23, [`log/2026-10-23-emergency-repair.md`](log/2026-10-23-emergency-repair.md)); the Library in Settings, with every edit, export and restore, landed on 2026-11-05 ([`log/2026-11-05-library-screen.md`](log/2026-11-05-library-screen.md)); the rollback probe, stores from every schema version and safety copies remain, each a pull request of its own |
+| 6 | Editing and backup | One validated edit applied in one explicit save, a failure test for every save, an emergency category that cannot be deleted, fixed identities for starter phrases, a versioned backup file | Library editing and backup format, then Library follow-ups | The core (editing rules and one-save writer, failure tests, the undeletable emergency category, fixed starter identities, backup format version 1) landed with PR #14 (2026-10-23); the launch repair that gives a damaged library's Emergency its starter phrases back, and a new identity where an earlier category shares its own, is built (2026-10-23, [`log/2026-10-23-emergency-repair.md`](log/2026-10-23-emergency-repair.md)); the Library in Settings, with every edit, export and restore, landed on 2026-11-05 ([`log/2026-11-05-library-screen.md`](log/2026-11-05-library-screen.md)), the four-phrase floor the same day ([`log/2026-11-05-four-phrases.md`](log/2026-11-05-four-phrases.md)), and the note on a phrase named like a Home control too ([`log/2026-11-05-phrases-named-like-controls.md`](log/2026-11-05-phrases-named-like-controls.md)); the rollback probe ran on 2026-11-05 and passed on the current Xcode's iOS, with the rule kept for iOS 26; stores from every schema version and safety copies remain, each a pull request of its own |
 | 7 | Settings and first run | Settings root (a large Back, a start-only Get Attention, Family setup), the voice picker and Personal Voice guidance, the in-app Privacy row, family setup including Guided Access and Assistive Access advice | Settings and first run | Built 2026-10-21 ([`log/2026-10-21-settings-and-first-run.md`](log/2026-10-21-settings-and-first-run.md)), from the first-run design and [`onboarding-and-settings.md`](recon/2026-10-15/directions/onboarding-and-settings.md); its choices are recorded in DECISIONS.md as decided defaults. Home's Settings button is built (2026-10-23, [`log/2026-10-23-settings-on-home.md`](log/2026-10-23-settings-on-home.md)). Get Attention in Settings: scored 2026-10-24 and not added, because its place would sound the alarm unasked; the owner decides (DECISIONS.md, "Get Attention in Settings' bar: the owner decides"); the fix for a held look saving a setup answer is built and held until Back to Talking is over harmless controls; Wave 3 item 5 placed it on 2026-10-24, and the link's guide still closes Settings over Get Attention, so it stays held (DECISIONS.md, "Typing on Home"); built on 2026-10-30 with the guide as a cover and the answers placed (DECISIONS.md, "The first step's own rows"). Asking for Personal Voice from Settings is built (2026-10-22, [`log/2026-10-22-voice-screen.md`](log/2026-10-22-voice-screen.md)) and switches on after device check D1. Full screen in Assistive Access and the guides to Apple's features are built (2026-10-23, Wave 3 item 1, [`log/2026-10-23-apples-doors-in-family-setup.md`](log/2026-10-23-apples-doors-in-family-setup.md)); Read & Speak's note and Switch Control's keyboard options are left |
 | 8 | Being heard on calls | Speech added to phone and FaceTime calls through Apple's "Add Audio in Calls" path, if a device check passes | None, on purpose | Held until the owner has a device build (see below) |
 | 9 | Screens designed in Figma | Home, typing, alarm, Settings, voice and library screens from Apple's iOS 27 UI kit, positions shown not to move, measured colour tokens | Figma and Claude Design screens | Reference drawings and [specification](work/design-screens.md) recorded; corrections and open placement questions remain ([record](log/2026-10-22-design-reconciliation.md)); item 3's landed slot decisions bind. The typing screens, Settings over Home and R1's fewer-tiles pages drawn from the layout engine's frames on 2026-10-24 ([work/typing-on-home.md](work/typing-on-home.md), *Screens*) |

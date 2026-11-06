@@ -565,7 +565,7 @@ tools reach it, and a Claude Code session in this project may have both:
 Remote Control, which runs a Claude Code session on the Mac, in `~/code`
 or `~/code/brickson`, with the Mac's own Xcode, XcodeGen and
 simulators; and MobileBuildMCP, a build tool on the Mac whose tools are
-named `MobileBuildMCP__…`. Neither works in the owner's own checkout,
+named `MobileBuildMCP__…`. Use neither in the owner's own checkout,
 `~/code/brickson`, which may hold their uncommitted work: never check
 out, stash, reset or clean there. The route:
 
@@ -637,11 +637,13 @@ stays reachable, behind `#available` when newer (docs/DECISIONS.md,
 "Minimum iOS, iPhone and iPad").
 
 **Reviews and updates on GitHub.** Codex reviews every push to a pull
-request that a person or agent opens. CodeRabbit and Greptile, which
-the owner also installed, review pull requests by themselves too, as
-far as their plans allow: CodeRabbit on a free trial and then its more
-limited free tier for public repositories, Greptile on its free tier
-(out of usage on 2026-11-03). The agent that opened the pull request
+request that a person or agent opens. Greptile, which the owner also
+installed, reviews pull requests by itself too, as far as its free tier
+allows (out of usage on 2026-11-03). CodeRabbit, also installed, no
+longer does: the owner's trial has ended, and it gives a repository
+with fewer than 10 stars no automatic reviews. So the agent that opens
+a pull request asks for its review with a comment reading
+`@coderabbitai review`, after the push it wants reviewed. The agent that opened the pull request
 answers and fixes every round. GitHub Copilot is no longer one of the
 reviewers: the owner's AI credits ran out on pull request #78
 (2026-11-04) and the subscription ends on 2026-11-09, so no agent
@@ -1055,6 +1057,14 @@ the time. Export them again after each new Xcode release.
   refused); `xcrun simctl list runtimes` shows which build is which
   ([`docs/log/2026-10-30-xcode-27-2.md`](docs/log/2026-10-30-xcode-27-2.md)).
 - **Simulator audio is unreliable.** Every sound check needs a real device.
+- **The desktop app stops a Remote Control session after about 60 idle
+  minutes**, and a background task of the session stops with it; a
+  running job does not count as activity. On 2026-11-05 that ended a
+  UI run with no connection lost (`~/Library/Logs/Claude/remote-control.log`:
+  `idle sweep`, `stopping session (idle)`), and the session came back
+  only when a message arrived. Run anything longer detached (`nohup`,
+  writing a file when done), and keep a background check that ends
+  within 45 minutes, so the session wakes and sets the next one.
 - **Apple's accessibility audit can time out on CI** with domain
   `com.apple.xcode.xctest.accessibilityAudit`, code `-56`. The UI suite
   retries the full audit once for that error only; a second timeout still

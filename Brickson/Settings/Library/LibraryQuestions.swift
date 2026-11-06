@@ -391,16 +391,29 @@ private struct LibraryPictureContent: View {
 /// What a restore did, in words.
 enum LibraryRestoreWords {
     static func added(_ changes: LibraryChanges) -> String {
-        String(localized: "Added. New categories: \(changes.categoriesAdded). New phrases: \(changes.phrasesAdded). Nothing was removed or moved.")
+        added(categories: changes.categoriesAdded, phrases: changes.phrasesAdded)
+    }
+
+    private static func added(categories: Int, phrases: Int) -> String {
+        String(localized: "Added. New categories: \(categories). New phrases: \(phrases). Nothing was removed or moved.")
     }
 
     static var replaced: String {
         String(localized: "Replaced. Your phrases now match this backup.")
     }
 
-    /// The lines a restore can leave that don't depend on numbers.
+    /// What a restore's line says: what it did, then a note where it
+    /// brought a name two of Home's controls now share, since a backup's
+    /// words are never changed on the way in (docs/DECISIONS.md, "Phrases
+    /// named like Home's controls").
+    static func line(_ words: String, after plan: LibraryPlan) -> String {
+        plan.bringsASharedName ? "\(words) \(LibraryRules.restoredSharedNameNote)" : words
+    }
+
+    /// The lines a restore can leave, numbers aside.
     static var results: [String] {
-        [replaced]
+        let note = LibraryRules.restoredSharedNameNote
+        return [replaced, "\(replaced) \(note)", "\(added(categories: 4, phrases: 999)) \(note)"]
     }
 }
 
@@ -505,7 +518,7 @@ private struct LibraryRestoreContent: View {
         isDone = true
         switch library.apply(plan, in: modelContext.container) {
         case .saved(let saved):
-            let line = words(saved)
+            let line = LibraryRestoreWords.line(words(saved), after: saved)
             result = line
             library.backupResult = line
         case .refused(let reason):

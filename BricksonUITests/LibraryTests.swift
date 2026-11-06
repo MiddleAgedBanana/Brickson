@@ -128,6 +128,70 @@ final class LibraryTests: XCTestCase {
         )
     }
 
+    /// Fails if a phrase another control on Home answers to is refused or
+    /// changed, if nothing says so as it is saved, if the keyboard stays
+    /// up while a line carries a note, a wide word's or a renamed
+    /// category's included (it covers the line at the largest text on a
+    /// phone), if the keyboard going moves Move Phrase, or if Apple's audit
+    /// finds anything with the note showing or with the field focused,
+    /// where it reported no description before the field carried its label
+    /// (docs/DECISIONS.md, "Phrases named like Home's controls"). The room
+    /// the line keeps is checked by
+    /// `LibraryNameCollisionTests.editPhrasesLineKeepsRoomForBothNotes`.
+    @MainActor
+    func testAPhraseNamedLikeAControlIsSavedWithANote() throws {
+        let note = "Another button on Home answers to these words too, so Voice Control may ask which one is meant."
+        let app = launchedApp(shortTimeouts: false)
+        openLibrary(in: app)
+        open("libraryCategory0", leaving: "libraryAddCategory", in: app)
+        XCTAssertTrue(app.navigationBars["Basics"].waitForExistence(timeout: 10), "Basics did not open")
+
+        open("libraryAddPhrase", leaving: "libraryAddPhrase", in: app)
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 10), "New Phrase did not open the keyboard")
+        app.typeText("Stop.")
+        try audit(app, "New Phrase, its field focused")
+        app.buttons["librarySave"].tap()
+        waitForLine("libraryEditorResult", saying: "Added “Stop.” to Basics. \(note)", in: app)
+        waitUntil(app.keyboards.firstMatch, "exists == false", "the keyboard stayed up with the note on New Phrase")
+        try audit(app, "New Phrase, with the note")
+        back(to: "Basics", in: app)
+
+        let added = phraseRow("Stop.", in: app)
+        XCTAssertTrue(added.waitForExistence(timeout: 10), "the phrase has no row in Basics, as it was typed")
+        added.tap()
+        XCTAssertTrue(app.navigationBars["Edit Phrase"].waitForExistence(timeout: 10), "the phrase's row did not open its editor")
+        replaceWords(in: field("libraryPhraseField", in: app), with: "Again!", deleting: 5, in: app)
+        let moveRow = app.buttons["libraryMovePhrase"]
+        XCTAssertTrue(moveRow.waitForExistence(timeout: 10), "Edit Phrase has no Move Phrase")
+        let place = moveRow.frame
+        app.buttons["librarySave"].tap()
+        waitForLine("libraryEditorResult", saying: "Saved. \(note)", in: app)
+        waitUntil(app.keyboards.firstMatch, "exists == false", "the keyboard stayed up with the note on Edit Phrase")
+        expectSameFrame(moveRow.frame, place, "the keyboard going moved Move Phrase")
+        back(to: "Basics", in: app)
+
+        // A wide word's note puts the keyboard away too.
+        open("libraryAddPhrase", leaving: "libraryAddPhrase", in: app)
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 10), "New Phrase did not open the keyboard")
+        app.typeText("I'm uncomfortable.")
+        app.buttons["librarySave"].tap()
+        waitForLine("libraryEditorResult", saying: "A word in it is wider", in: app)
+        waitUntil(app.keyboards.firstMatch, "exists == false", "the keyboard stayed up with the wide word's note")
+        back(to: "Basics", in: app)
+
+        // So does Rename's, here to a name the phrase "Maybe." also has.
+        let rename = app.buttons["libraryRename"]
+        for _ in 0..<4 where !rename.isHittable {
+            app.swipeUp()
+        }
+        open("libraryRename", leaving: "libraryRename", in: app)
+        XCTAssertTrue(app.navigationBars["Rename Category"].waitForExistence(timeout: 10), "Rename did not open")
+        replaceWords(in: field("libraryNameField", in: app), with: "Maybe", deleting: 6, in: app)
+        app.buttons["librarySave"].tap()
+        waitForLine("libraryEditorResult", saying: "Saved. \(note)", in: app)
+        waitUntil(app.keyboards.firstMatch, "exists == false", "the keyboard stayed up with the note on Rename")
+    }
+
     // MARK: Categories
 
     /// Fails if Home's room for three or four everyday categories is not

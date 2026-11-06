@@ -124,7 +124,12 @@ fewer than four phrases, as a new one starts, is dimmed on Home until
 it has four, and its screen says how many more; Emergency is never
 dimmed. No edit or backup takes a category, Emergency included, from
 four or more phrases to fewer than four (docs/DECISIONS.md, "Four
-phrases in every category"). Each delete, move, picture and
+phrases in every category"). A phrase saved with words another control
+on Home answers to, such as "Help", or a category name a phrase also
+has, is kept as written, with a note that Voice Control may ask which
+one is meant, and a restore that brings such a name says so too; a
+category name a Home control has is still refused (docs/DECISIONS.md,
+"Phrases named like Home's controls"). Each delete, move, picture and
 restore asks on a screen of its own, with the way back where the row
 that asked was and the choices well clear of it, and the chain engine
 scores the Library's screens, on the controls each window shows, all
@@ -481,9 +486,11 @@ release in docs/ROADMAP.md when no thread has it yet.
   empty (docs/DECISIONS.md, "Get Attention and Stop on Home"; a strict
   known issue in `HomeLayoutEngineTests`). Since 2026-11-05 no edit or
   import can leave fewer than three, the owner's rule (docs/DECISIONS.md,
-  "Three or four everyday categories"), so the hazard is closed for every
-  library Brickson writes; the layout still has no answer for one, should
-  a store ever hold one. *(the layout engine, if a store can)*
+  "Three or four everyday categories"), so the hazard is out of reach of
+  every library Brickson writes; the layout still has no answer for one,
+  should a store ever hold one, so it stays on docs/ROADMAP.md, *The
+  quality bar*, Q2. *(the owner, after the Snap to Item check, or the
+  layout engine)*
 - The top of Stop's well is nearest Again, 10 to 12pt above it (up to
   30.5pt where the categories sit lower), which speaks: by the stand-in's model about 10 to 40% of the well by nearest
   centre and about 40% by nearest edge. On the engine's frames Again is
@@ -553,14 +560,35 @@ release in docs/ROADMAP.md when no thread has it yet.
   never shows, and the Library keeps four in a category once it has
   them (docs/DECISIONS.md, "Four phrases in every category", the
   owner's decision of 2026-11-05).
-  Two things stay open. Emergency is never dimmed, so an Emergency
+  Three things stay open. Emergency is never dimmed, so an Emergency
   already short of four (no edit can make one) shows its empty cells,
   where a look meets Clear or Put Back while typing and a phrase that
   speaks while browsing; scored, pinned as two strict known issues in
   `HomeLayoutEngineTests` (*Emergency with fewer than four*), and the
-  Library tells the family to add phrases. And the dimming, like
+  Library tells the family to add phrases. A rest board already short
+  of four does the same, measured on 448 windows and pinned in
+  `LateStageProfileTests`; no edit or Set Up makes one, but a chosen
+  category deleted and later restored from an older backup that held it
+  short comes back as the board (*Open: a rest board with fewer than
+  four*). Both are on docs/ROADMAP.md, *The quality bar*, Q2, for the
+  owner's decision. And the dimming, like
   typing's, assumes Snap to Item stops on a dimmed control, unmeasured
-  until docs/DEVICE-CHECKS.md, I8 and B2. *(the device checks)*
+  until docs/DEVICE-CHECKS.md, I8 and B2. *(the owner; the device
+  checks)*
+- A phrase Voice Control hears as "Yes", "No", "Emergency", "Get
+  Attention" or "Help" (so "Yes." and "help!" count, "Yes, please." does
+  not) is expected to cost a Voice Control user a second command for
+  that control while the phrase shows: an exception to invariant 10,
+  named in docs/DECISIONS.md, "Phrases named like Home's controls",
+  unmeasured until device check I2, not accepted yet. The Library says
+  so as the phrase is saved. *(the owner; the device check)*
+- On a phone at the largest text sizes the keyboard covers Save and the
+  line under it on the Library's editors (iPhone 17, AX5, 2026-11-05).
+  Save puts the keyboard away when its line carries a note, but the
+  line then starts at the screen's foot: Edit Phrase shows "Saved.
+  Another", New Phrase "Added “Stop.” to", and the rest is a scroll
+  away. A plain "Saved." or "Added" stays behind the keyboard, and Save
+  itself takes a scroll or Return to reach. *(the next library thread)*
 - No typing on Home where the keyboard's room reaches the safety row:
   320pt windows at every size, a 375×667 phone from AX3, and the iPad
   mini and a zoomed 13-inch iPad in landscape from AX3. There Type is
@@ -707,9 +735,32 @@ release in docs/ROADMAP.md when no thread has it yet.
   owner's decision before implementation (docs/DECISIONS.md, "Replacing
   the library"). *(R0 item 6 follow-ups; the device checks, the owner)*
 - `rollback()` crashes SwiftData after deletes, even without a cascade
-  (issue #19, seen with Xcode 26.6 on iOS 26.5). Brickson never calls it;
-  the reproduction is disabled and has not been run on the current Xcode
-  27 CI. *(R0, a new library thread re-runs it once)*
+  (issue #19, seen with Xcode 26.6 on iOS 26.5). Brickson never calls it.
+  Run once on 2026-11-05, the reproduction passed with Xcode 27.2 on an
+  iOS 27.2 simulator, in memory; not on a store on disk, a device, or
+  iOS 26 with this Xcode. It stays disabled and the rule stands, because
+  Brickson also runs on iOS 26. *(the result still goes on issue #19)*
+- On the owner's Mac, on the iPhone simulator, the app sometimes reports
+  no idle for over a minute after Save on New Category, so
+  `LibraryTests.testCategoriesStayBetweenThreeAndFour` runs past
+  Settings' 90-second reset and fails. Run five times each on 2026-11-06,
+  unchanged `main` and PR #82's branch both failed once and ran slow
+  once; it has not failed on CI. Cause unknown
+  ([`log/2026-11-05-phrases-named-like-controls.md`](log/2026-11-05-phrases-named-like-controls.md)).
+  *(a Mac thread)*
+- GitHub's `xcode-27` machines do not all run one image while a new one
+  rolls out, so one run's jobs can differ and a re-run can land on
+  another image. On 2026-11-06, PR #82's jobs ran on image 20261104.0337,
+  which has Xcode 27.2 and iOS 27.2, and on 20261026.0314, which has only
+  27.2's release candidate, so `scripts/select-xcode.py` skipped it and
+  took 27.1 with iOS 27.0. Nothing is pinned, on purpose
+  (docs/DECISIONS.md, "Build with Apple's current Xcode"), and nothing
+  needs changing: it ends when GitHub finishes the rollout. On the newer
+  image `HomeAccessibilityOrderTests.testQuickControlsComeFirstInEveryStateAtDefaultText`
+  failed once on the iPhone, just opened, reading Phrases and Type before
+  Yes and No. It has passed on the Mac's iOS 27.2 each time. If it fails
+  again on that image, it is real, and pull requests will meet it once
+  every machine has the image. *(the next thread whose CI shows it)*
 - Settings' Get Attention place is still empty, although AGENTS.md's
   design rules say "Settings opens on a large way back and a start-only
   Get Attention". Scored on 2026-10-24, Get Attention there would sound
@@ -786,10 +837,12 @@ release in docs/ROADMAP.md when no thread has it yet.
   follow-up 10). *(Settings' other screens: a new thread)*
 - CI compiles only the Debug configuration. Warnings are errors in
   Release too, and code under `#if DEBUG` compiles differently there, so
-  a warning only Release sees would first stop an archive; the Release
-  build has not been compiled since warnings became errors. Before the
-  first archive, run `scripts/test.sh device -configuration Release` on
-  the Mac ([`log/2026-10-23-warnings-as-errors.md`](log/2026-10-23-warnings-as-errors.md)).
+  a warning only Release sees would first stop an archive. The Release
+  build for a device compiled unsigned on the owner's Mac on 2026-11-05,
+  with no warnings ([`log/2026-11-05-phrases-named-like-controls.md`](log/2026-11-05-phrases-named-like-controls.md)).
+  Before the first archive, run
+  `scripts/test.sh device -configuration Release` on
+  the Mac again ([`log/2026-10-23-warnings-as-errors.md`](log/2026-10-23-warnings-as-errors.md)).
   *(the owner's Mac, or an agent on it)*
 - English only. `scripts/test.sh unit` brings the String Catalog up to
   date (xcodebuild alone does not), and CI fails when the committed one
@@ -967,25 +1020,28 @@ docs/ROADMAP.md, *The quality bar*, Q24):
    identifier), the price, how the name is said, and your EU trader
    status (needed before the App Store release in the EU). Before any
    build goes to the external TestFlight pilot or App Review, every
-   dwell hazard in docs/ROADMAP.md, *The quality bar*, Q2 (four today,
+   dwell hazard in docs/ROADMAP.md, *The quality bar*, Q2 (seven today,
    plus iPhone Duo's changed-window finding) must be gone, or accepted
-   by you. Three wait on your answer, once the
+   by you. Six wait on your answer, once the
    Snap to Item device check (Q12) has measured them: whether Yes and No
    may border the message, the top of Stop's well nearest Again, and
-   dimmed phrases bordering Clear and Put Back (*Known gaps*). The other
+   dimmed phrases bordering Clear and Put Back (*Known gaps*), and three
+   your rules of 2026-11-05 put out of reach of every edit, which a
+   damaged or hand-made store, or for a rest board one rare restore, can
+   still show: an Emergency or a rest board already short of four
+   phrases, and fewer than three everyday categories. The other
    one, iPhone Duo's chain from Family Setup at the largest text size,
-   comes to you only if a thread cannot remove it by placement. (Again
-   nearest Stop's empty well, with fewer than three everyday categories,
-   went with your rule that three is the floor, 2026-11-05; a look on
-   the empty cells of a category with fewer phrases than the grid has
-   columns went the same day, with your rule that four phrases is the
-   floor.) So does the changed-window finding (a look resting
+   comes to you only if a thread cannot remove it by placement. So does
+   the changed-window finding (a look resting
    on iPhone Duo before the window changes meets Get Attention, Speak,
    No or Clear after it), once a device has shown how the pointer really
    moves when the window changes (R0 item 13; *Known gaps*). Also before
    then: whether Get Attention goes in
    Settings' bar (docs/DECISIONS.md, "Get Attention in Settings' bar:
-   the owner decides"), and, once a thread has measured them, Settings'
+   the owner decides"); whether a family may save a phrase Voice Control
+   hears as the name of Yes, No, Emergency or Get Attention, "Help"
+   included, which the app allows for now, with a note (docs/DECISIONS.md,
+   "Phrases named like Home's controls"); and, once a thread has measured them, Settings'
    floors under a larger profile (Q3). (How long you use each TestFlight
    build yourself is answered: two weeks before the pilot, seven days
    on the build sent to App Review, your choice on 2026-11-01.)
@@ -1120,9 +1176,13 @@ docs/DECISIONS.md under that title
 The library core landed with PR #14, and the launch repair that keeps
 Emergency working after it; the Library's screens, export and restore
 landed on 2026-11-05 ([`log/2026-11-05-library-screen.md`](log/2026-11-05-library-screen.md),
-*Follow-ups*). What is left from the *Follow-ups* in
+*Follow-ups*, whose first two, the short category and phrases named like
+Home's controls, are built:
+[`log/2026-11-05-four-phrases.md`](log/2026-11-05-four-phrases.md) and
+[`log/2026-11-05-phrases-named-like-controls.md`](log/2026-11-05-phrases-named-like-controls.md)).
+The rollback probe was run on 2026-11-05 (*Known gaps*). What is left from the *Follow-ups* in
 [`log/2026-10-23-emergency-repair.md`](log/2026-10-23-emergency-repair.md)
-is, in order, the rollback probe on the current Xcode, stores from every
+is, in order, stores from every
 schema version and safety copies, each a pull request of its own. Calls (R0 item 8) wait for a device build. Files under
 `.github/workflows` are committed by the owner (docs/SDLC.md, *Deploy*). The toolchain's follow-ups
 (Xcode's recommended settings, iOS 27 APIs behind `#available`) are in
@@ -1242,6 +1302,7 @@ settings, date) and summarise it here.
 | Eight hours on the iPad with Brickson in front under Guided Access, and four on the iPhone, unplugged, with a Performance Trace in Power Profiler mode: the screen never dims or locks, everything works at the end, battery used per hour at touch's and Eye Tracking's setup, and no `EXC_RESOURCE` or `JetsamEvent` report for Brickson in Analytics Data; then, attached to Xcode on the Mac, memory out of the gauge's warning region with no growth across 100 phrases, and the thermal state never serious | Q8 |
 | Two hours each on the mounted iPad with Eye Tracking and Dwell with Snap to Item, Head Tracking with Dwell, Switch Control's auto scanning and its Gliding Cursor (point scanning), and half an hour each on the iPhone with Switch Control and Eye Tracking, following Q11's script: every activation not meant and where the pointer rested before it, activations per common task, recalibrations and rests | Q11, and invariant 10 over hours rather than one activation |
 | Export a Backup to Files, iCloud Drive, AirDrop and Mail, and restore it on the other device from iCloud Drive and the Files app; a `.json` file that is not a backup is refused; the share sheet left open past Settings' idle time changes nothing | The Library's backups (docs/DECISIONS.md, "Exporting and restoring a backup") |
+| With phrases saved as "Help" and "Yes": what Voice Control does on "Tap Help" and "Tap Yes", with Flexible Item Names off and on and while typing, and that "Tap Get Attention" still sounds the alarm at once | docs/DECISIONS.md, "Phrases named like Home's controls" |
 | Editing phrases and categories with Voice Control (pictures by name), Switch Control, Full Keyboard Access and Dwell with Snap to Item; a look held on Delete for Good, and resting under the lowest asking rows; and a look resting on a category dimmed on Home for having fewer than four phrases | The Library's question screens; docs/DECISIONS.md, "Four phrases in every category" |
 
 ## Repository, CI and website
@@ -1303,9 +1364,10 @@ settings, date) and summarise it here.
 - The docs cross-reference check reads every title a citation names,
   quoted titles starting with a small letter and titles after the first
   included: [record](log/2026-10-23-docs-check-gaps.md).
-- Codex reviews every push to a pull request (CodeRabbit and Greptile
-  too, as far as their free plans allow), and AI Scan each push; none
-  reviews Dependabot's pull requests by itself. Copilot no longer
+- Codex reviews every push to a pull request (Greptile too, as far as
+  its free plan allows), and AI Scan each push; CodeRabbit reviews only
+  when a comment asks, `@coderabbitai review`, since the owner's trial
+  ended. None reviews Dependabot's pull requests by itself. Copilot no longer
   reviews: its credits ran out on pull request #78, and since
   2026-11-04 no agent requests it (docs/DECISIONS.md, *Code review*).
   The AI credits AI Scan uses show only in Settings → Billing → AI

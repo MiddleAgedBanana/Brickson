@@ -109,6 +109,7 @@ struct LibraryTextField: View {
         .foregroundStyle(.primary)
         .lineLimit(lines, reservesSpace: true)
         .focused(isFocused)
+        .accessibilityLabel(Text(label))
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .topLeading)
         .overlay {

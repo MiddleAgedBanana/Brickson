@@ -96,6 +96,41 @@ nonisolated enum LibraryRules {
         HomeControlNames.spokenForm(name).filter { !$0.isWhitespace }
     }
 
+    /// What the Library adds where saved words are too wide for Home's
+    /// narrowest phrase buttons (docs/DECISIONS.md, "Words wider than
+    /// Home's narrowest buttons").
+    static var wideWordNote: String {
+        String(localized: "A word in it is wider than Home's narrowest phrase buttons, so on the narrowest screens it can wrap onto a second line.")
+    }
+
+    /// What the Library adds where saved words are a name another control
+    /// on Home answers to (docs/DECISIONS.md, "Phrases named like Home's
+    /// controls"). "May": Stop, Speak, Clear and Put Back show only some of
+    /// the time, and what Voice Control does is a device check.
+    static var sharedNameNote: String {
+        String(localized: "Another button on Home answers to these words too, so Voice Control may ask which one is meant.")
+    }
+
+    /// The same, after a restore, whose words were not typed here.
+    static var restoredSharedNameNote: String {
+        String(localized: "Another button on Home answers to some of these words too, so Voice Control may ask which one is meant.")
+    }
+
+    /// A line kept for what Save did: `opening`, then each note that
+    /// applies, in whole sentences.
+    static func savedLine(_ opening: String, isWide: Bool = false, sharesAName: Bool) -> String {
+        ([opening] + (isWide ? [wideWordNote] : []) + (sharesAName ? [sharedNameNote] : [])).joined(separator: " ")
+    }
+
+    /// Every line Save can leave on Edit Phrase, for the line to keep the
+    /// tallest one's height: rows sit under it (`LibraryResultLine`).
+    static var savedPhraseLines: [String] {
+        let saved = String(localized: "Saved.")
+        return [false, true].flatMap { isWide in
+            [false, true].map { savedLine(saved, isWide: isWide, sharesAName: $0) }
+        }
+    }
+
     /// The name to store for a category, or why it cannot be used.
     /// `excluding` is the category being renamed, which may keep its own name.
     static func categoryName(

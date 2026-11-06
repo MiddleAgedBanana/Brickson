@@ -363,7 +363,7 @@ time and tolerance, in a pull request.
 
 ### F2. The three dwell hazards
 
-*Q2. Open today: Yes and No border the message; the top of Stop's well
+*Q2, the hazards a run here measures: Yes and No border the message; the top of Stop's well
 is nearest Again; by centre, dimmed phrases border Clear and Put Back
 (docs/DECISIONS.md, "Settings on Home", "Get Attention and Stop on Home"
 and "Typing on Home").*
@@ -398,9 +398,13 @@ above Stop's well, so the second hazard shows only on compact widths.
    it as a named exception in docs/DECISIONS.md, with how often it
    happened. Q2 passes only when every open hazard is one or the other.
 
-Q2's other items wait: Again nearest Stop's empty well with fewer than
-three everyday categories needs editing, which is not built, and the
-iPhone Duo items need a folding iPhone (W3).
+Q2's other items: the three no edit can make (an Emergency or a rest
+board already short of four phrases,
+and fewer than three everyday categories; docs/DECISIONS.md, "Four
+phrases in every category" and "Get Attention and Stop on Home") need
+no run of their own: a thread puts them on the same card, with F1's
+rule, for the owner to accept or to have placed. The iPhone Duo items
+need a folding iPhone (W3).
 
 ### F3. The floors
 
@@ -913,6 +917,17 @@ and the Large Content Viewer on Home").*
    Attention) and "Tap Stop Alert" (Stop). *Passes* when each does what
    its words say.
 3. **Owner:** "Tap Type", dictate a word into the message, "Tap Speak".
+4. **Owner:** in the Library, add the phrases "Help" and "Yes" to a
+   category, and read the note under Save. On Home, with that category
+   showing, "Tap Help", "Tap Yes" and "Tap Get Attention"; do all three
+   with Flexible Item Names off, then on. Then "Tap Type" and say "Tap
+   Help" and "Tap Yes" again, with the tiles dimmed. Note each time what
+   Voice Control did, how many commands it took and which control it
+   pressed. Delete the phrases. *Passes* when Voice Control asks which
+   one is meant, or the note's words are changed to say what it does
+   instead (docs/DECISIONS.md, "Phrases named like Home's controls"),
+   and "Tap Get Attention" sounds the alarm at once. The counts go to
+   the owner with that decision's exception to invariant 10.
 
 ### I3. Full Keyboard Access
 
@@ -1384,6 +1399,7 @@ first words:
 | Eight hours on the iPad | M3, A4 |
 | Two hours each on the mounted iPad | I7 |
 | Export a Backup to Files, iCloud Drive, AirDrop and Mail | B1 |
+| With phrases saved as "Help" and "Yes": what Voice Control does | I2 |
 | Editing phrases and categories with Voice Control | B2 |
 
 Every gate of docs/ROADMAP.md, *The quality bar*, that the owner checks

@@ -14,7 +14,9 @@ import SwiftUI
 ///
 /// A phrase with a word wider than Home's narrowest phrase buttons is saved
 /// with a note that it may wrap there (`HomeWordRoom`; docs/DECISIONS.md,
-/// "Words wider than Home's narrowest buttons").
+/// "Words wider than Home's narrowest buttons"), and one with a name another
+/// control on Home answers to with a note saying so (docs/DECISIONS.md,
+/// "Phrases named like Home's controls").
 struct LibraryPhraseEditor: View {
     let phraseID: UUID?
     /// The category a new phrase goes in; unused when editing.
@@ -92,11 +94,8 @@ private struct LibraryPhraseEditorContent: View {
     }
 
     private var resultLines: [String] {
-        [
-            String(localized: "Saved."),
-            String(localized: "Saved. A word in it is wider than Home's narrowest phrase buttons, so on the narrowest screens it can wrap onto a second line."),
-            String(localized: "That's as long as a phrase can be."),
-        ] + [LibraryEditRejection.emptyText, .duplicatePhrase].map(\.message)
+        LibraryRules.savedPhraseLines + [String(localized: "That's as long as a phrase can be.")]
+            + [LibraryEditRejection.emptyText, .duplicatePhrase].map(\.message)
             + (result.map { [$0] } ?? []) + LibraryMessages.anyChange
     }
 
@@ -139,20 +138,23 @@ private struct LibraryPhraseEditorContent: View {
             return
         }
         switch library.perform(change, in: modelContext.container) {
-        case .saved:
+        case .saved(let plan):
             let stored = LibraryText.trimmed(typed)
             let isWide = !HomeWordRoom.wordsTooWide(inPhrase: stored).isEmpty
+            let shownIn = categoryID ?? phraseID.flatMap { library.phrase($0)?.category.id }
+            let sharesAName = shownIn.map { plan.after.sharesAName(phrase: stored, inCategory: $0) } ?? false
+            // At the largest text sizes on a phone the keyboard covers the
+            // line, and a note is there to be read. Nothing moves with it.
+            if isWide || sharesAName {
+                isFocused = false
+            }
             if phraseID == nil {
                 let name = categoryID.flatMap { library.category($0)?.name } ?? ""
-                result = isWide
-                    ? String(localized: "Added “\(stored)” to \(name). A word in it is wider than Home's narrowest phrase buttons, so on the narrowest screens it can wrap onto a second line.")
-                    : String(localized: "Added “\(stored)” to \(name).")
+                result = LibraryRules.savedLine(String(localized: "Added “\(stored)” to \(name)."), isWide: isWide, sharesAName: sharesAName)
                 words = LibraryEditorWords()
                 text = ""
             } else {
-                result = isWide
-                    ? String(localized: "Saved. A word in it is wider than Home's narrowest phrase buttons, so on the narrowest screens it can wrap onto a second line.")
-                    : String(localized: "Saved.")
+                result = LibraryRules.savedLine(String(localized: "Saved."), isWide: isWide, sharesAName: sharesAName)
                 words = LibraryEditorWords(restoring: stored)
                 text = words.composer.text
             }
@@ -167,9 +169,10 @@ private struct LibraryPhraseEditorContent: View {
 ///
 /// A name with a word too wide for Home's narrowest category button is
 /// refused, naming the word, because a category's name has no second line
-/// to wrap onto (`HomeWordRoom`). New Category opens the new category's
-/// screen in place of itself once saved, so Add a Phrase is one activation
-/// away.
+/// to wrap onto (`HomeWordRoom`). A name a phrase also has is saved with a
+/// note saying so (docs/DECISIONS.md, "Phrases named like Home's controls").
+/// New Category opens the new category's screen in place of itself once
+/// saved, so Add a Phrase is one activation away.
 struct LibraryNameEditor: View {
     /// The category being renamed; nil for a new one.
     let categoryID: UUID?
@@ -229,7 +232,11 @@ private struct LibraryNameEditorContent: View {
     private var canSave: Bool { words.canSave }
 
     private var resultLines: [String] {
-        [String(localized: "Saved."), String(localized: "That's as long as a name can be.")]
+        [
+            String(localized: "Saved."),
+            LibraryRules.savedLine(String(localized: "Saved."), sharesAName: true),
+            String(localized: "That's as long as a name can be."),
+        ]
             + [LibraryEditRejection.emptyName, .duplicateCategoryName, .reservedCategoryName, .homeHasRoomForFour].map(\.message)
             + (result.map { [$0] } ?? []) + LibraryMessages.anyChange
     }
@@ -274,12 +281,19 @@ private struct LibraryNameEditorContent: View {
             if categoryID == nil {
                 let before = Set(plan.before.categories.map(\.id))
                 guard let added = plan.after.categories.first(where: { !before.contains($0.id) }) else { return }
-                library.categoryResults[added.id] = String(localized: "Added “\(name)”. Add its phrases here.")
+                library.categoryResults[added.id] = LibraryRules.savedLine(
+                    String(localized: "Added “\(name)”. Add its phrases here."),
+                    sharesAName: plan.after.sharesAName(category: added.id)
+                )
                 if let last = path.indices.last, path[last] == .newCategory {
                     path[last] = .libraryCategory(added.id)
                 }
-            } else {
-                result = String(localized: "Saved.")
+            } else if let categoryID {
+                let sharesAName = plan.after.sharesAName(category: categoryID)
+                if sharesAName {
+                    isFocused = false
+                }
+                result = LibraryRules.savedLine(String(localized: "Saved."), sharesAName: sharesAName)
                 words = LibraryEditorWords(restoring: name)
                 text = words.composer.text
             }
