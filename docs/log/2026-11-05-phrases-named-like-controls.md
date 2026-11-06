@@ -91,6 +91,13 @@ Pro 13-inch (M5) and iPhone 17 simulators, iOS 27.2.
 - **`scripts/test.sh ui '-only-testing:BricksonUITests/LibraryTests'`:**
   8 of 8 on each simulator, before the review's fixes; the new test
   passed on both again after them.
+- **`scripts/test.sh ui`, on the final code, iPad:** 72 tests, 69
+  passed, 2 skipped, and one failed:
+  `LaunchTests.testLargestTextKeepsQuickControlWordsVisible`, whose four
+  waits for "Speaking" to end timed out, the failure this Mac's simulators
+  have shown since 2026-10-25 (docs/HANDOFF.md, *Known gaps*), with no
+  connection to this change. The session on the Mac dropped before the
+  iPhone's whole suite finished, so CI is its first complete run.
 - **In the running app,** through a temporary UI test not committed:
   New Phrase and Edit Phrase with the note, at the default size and AX5,
   light and dark, in portrait, with the full software keyboard, on both
