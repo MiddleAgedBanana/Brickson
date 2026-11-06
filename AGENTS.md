@@ -1055,6 +1055,14 @@ the time. Export them again after each new Xcode release.
   refused); `xcrun simctl list runtimes` shows which build is which
   ([`docs/log/2026-10-30-xcode-27-2.md`](docs/log/2026-10-30-xcode-27-2.md)).
 - **Simulator audio is unreliable.** Every sound check needs a real device.
+- **The desktop app stops a Remote Control session after about 60 idle
+  minutes**, and a background task of the session stops with it; a
+  running job does not count as activity. On 2026-11-05 that ended a
+  UI run with no connection lost (`~/Library/Logs/Claude/remote-control.log`:
+  `idle sweep`, `stopping session (idle)`), and the session came back
+  only when a message arrived. Run anything longer detached (`nohup`,
+  writing a file when done), and keep a background check that ends
+  within 45 minutes, so the session wakes and sets the next one.
 - **Apple's accessibility audit can time out on CI** with domain
   `com.apple.xcode.xctest.accessibilityAudit`, code `-56`. The UI suite
   retries the full audit once for that error only; a second timeout still
