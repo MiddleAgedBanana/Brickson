@@ -1740,6 +1740,9 @@ apart because punctuation counts (`LibraryText.phraseKey`).
   can carry such a name the same way, though only a hand-made one could,
   as the editor refuses it ("Importing a backup"); its button then shows
   with every category's phrases, so the cost is there on every board.
+  The question the owner answered named phrases; this case follows from
+  the same rule, under their word to make the best choice for the people
+  using Brickson, and the pull request that adopted it names it for them.
   Touch, Switch Control and dwell are unchanged, and the starter library
   has none (`LibraryNameCollisionTests.theStarterLibrarySharesNoNames`).
 - **Not covered:** Apple's pages do not say what Voice Control does with
@@ -2559,7 +2562,8 @@ R0 item 3's accessibility work (docs/ACCESSIBILITY.md, sections 1 and 3;
   editing lets a family add a phrase or category that collides, the
   editing thread (R0 item 6) decides what the editor says; it never
   renames the person's words. *2026-11-05:* it says so as the words are
-  saved (*Phrases named like Home's controls*).
+  saved. *2026-11-06:* it refuses the names of the controls one
+  activation away (*Phrases named like Home's controls*).
 
 *Before:* none. Home was reached in its order on screen (the message and
 Again first), as one flat list, and its controls answered only to their

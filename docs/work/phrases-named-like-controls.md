@@ -62,11 +62,12 @@
 
 ## Plan
 
-- **Files that change:** `LibrarySnapshot`, `LibraryEdit` (`LibraryPlan`),
-  `LibraryRules`, `LibraryEditors`, `LibraryQuestions`, the String
-  Catalog, and the tests: `HomeNameCollisionTests`, `LibraryTests`.
-- **Order of work:** one pull request, with the docs follow-ups of
-  PR #81.
+- **Files that change:** `HomeControlNames`, `LibrarySnapshot`,
+  `LibraryEdit` (`LibraryPlan`), `LibraryRules`, `LibraryEditors`,
+  `LibraryQuestions`, the String Catalog, and the tests:
+  `HomeNameCollisionTests`, `LibraryTests`.
+- **Order of work:** two pull requests: #82, the note, with the docs
+  follow-ups of PR #81, and #83, the refusal.
 - **Risks:** a note on every phrase saved beside one that shares a name
   (checked: only the saved words are looked up); a rule that refuses
   more than the five names (pinned by `theWordsAreKeptAsWritten`), or

@@ -39,8 +39,9 @@ struct HomeNameCollisionTests {
 
 /// Voice Control on Home with a library a family has grown: a phrase or
 /// category saved with words another control answers to is kept as written,
-/// and the Library says so (docs/DECISIONS.md, "Phrases named like Home's
-/// controls").
+/// and the Library says so, unless they are the name of a control one
+/// activation away, which the editor refuses (docs/DECISIONS.md, "Phrases
+/// named like Home's controls").
 struct LibraryNameCollisionTests {
     private typealias F = LibraryFixtures
 

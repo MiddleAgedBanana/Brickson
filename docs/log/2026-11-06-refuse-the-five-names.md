@@ -41,7 +41,9 @@ built, so it comes here.
   check is not a rule here, so nothing changed for it.
 - Device check I2's step 4 changed, because "Help" and "Yes" can no
   longer be typed: it adds "Again", and "Help" and "Yes" through a
-  backup. The
+  backup. It also measures a restored category named "Yes", and it fails
+  if "Help me." or "Yes, please." costs a second command, because the
+  refusal tells families to write them. The
   README, the accessibility page and docs/ACCESSIBILITY.md say what the
   editor refuses and what a restore keeps.
 
@@ -53,7 +55,8 @@ was merged in, not rebased (AGENTS.md, *Workflow rules*).
 ## Verified
 
 On the owner's Mac, Xcode 27.2 (27B52), iPad Pro 13-inch (M5) and iPhone
-17 simulators, iOS 27.2, on the final code:
+17 simulators, iOS 27.2, on the final code (only documents and two
+comments changed after):
 
 - **`scripts/test.sh unit`, iPad:** 950 tests, 939 passed, none failed,
   10 expected failures (strict known issues) and issue #19's skip. The
@@ -68,8 +71,9 @@ On the owner's Mac, Xcode 27.2 (27B52), iPad Pro 13-inch (M5) and iPhone
   (docs/HANDOFF.md, *Known gaps*). It passes on CI. The stall after New
   Category's Save did not come in this run.
 - **In the running app,** through a temporary UI test not committed, on
-  the final code: the refusal on New Phrase, Edit Phrase and Rename
-  Category, at the default size and AX5, light and dark, in portrait, on
+  the final code: the refusal on New Phrase and Edit Phrase, and the
+  older refusal of a category named like a control on Rename Category,
+  at the default size and AX5, light and dark, in portrait, on
   both simulators, with Apple's audit on each of the 24 screens, which
   passed, and the keyboard gone each time. Each screen was captured, and
   a sample read. At AX5 on the iPhone only the start of the line shows,
@@ -79,6 +83,14 @@ On the owner's Mac, Xcode 27.2 (27B52), iPad Pro 13-inch (M5) and iPhone
   findings, 9 confirmed by a second check, each fixed here. The verifier
   then found words that went further than their evidence and one test
   not yet shown failing; those are fixed here too.
+- **A last read-only check,** of the pull request's description, the
+  documents, the rule and private details, by four independent readers
+  with two skeptics on each finding: 13 findings, 5 of them standing,
+  all about words, none about what the app does. It traced every way
+  typed words become a phrase, and each goes through the check. The five
+  are fixed here: device check I2 could not show what it promised about
+  longer phrases, and had no step for a category. So are the smaller
+  ones a skeptic agreed with.
 
 Each new test, and the change that made it fail on this Mac:
 
@@ -103,6 +115,11 @@ The other changed tests keep their earlier proofs, in the log of #82.
   available on a simulator. Device check I2, step 4, which also checks
   that "Help me." and "Yes, please." take no second command.
 - What Full Keyboard Access's type-to-find does with two matches.
+- Which near spellings Voice Control hears as a name. A zero-width
+  joiner or a Hangul filler inside "Yes", or a look-alike letter from
+  another alphabet, gets past the check. Nobody types those by accident,
+  and whether Voice Control hears them as "Yes" is not known, so they
+  are left as they are.
 - The Library's editors in landscape, or in a resized iPad window.
 - A whole UI run on this Mac with no failure: see above.
 - All of this on a real device.
