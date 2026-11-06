@@ -584,10 +584,11 @@ release in docs/ROADMAP.md when no thread has it yet.
   so as the phrase is saved. *(the owner; the device check)*
 - On a phone at the largest text sizes the keyboard covers Save and the
   line under it on the Library's editors (iPhone 17, AX5, 2026-11-05).
-  Save puts the keyboard away when its line carries a note, and its
-  first words then show, with the rest a scroll away; a plain "Saved."
-  or "Added" stays behind the keyboard, and Save itself takes a scroll
-  or Return to reach. *(the next library thread)*
+  Save puts the keyboard away when its line carries a note, but the
+  line then starts at the screen's foot: Edit Phrase shows "Saved.
+  Another", New Phrase "Added “Stop.” to", and the rest is a scroll
+  away. A plain "Saved." or "Added" stays behind the keyboard, and Save
+  itself takes a scroll or Return to reach. *(the next library thread)*
 - No typing on Home where the keyboard's room reaches the safety row:
   320pt windows at every size, a 375×667 phone from AX3, and the iPad
   mini and a zoomed 13-inch iPad in landscape from AX3. There Type is
@@ -736,8 +737,17 @@ release in docs/ROADMAP.md when no thread has it yet.
 - `rollback()` crashes SwiftData after deletes, even without a cascade
   (issue #19, seen with Xcode 26.6 on iOS 26.5). Brickson never calls it.
   Run once on 2026-11-05, the reproduction passed with Xcode 27.2 on an
-  iOS 27.2 simulator, in memory; it stays disabled and the rule stands,
-  because Brickson also runs on iOS 26. *(nothing left to do)*
+  iOS 27.2 simulator, in memory; not on a store on disk, a device, or
+  iOS 26 with this Xcode. It stays disabled and the rule stands, because
+  Brickson also runs on iOS 26. *(the result still goes on issue #19)*
+- On the owner's Mac, on the iPhone simulator, the app sometimes reports
+  no idle for over a minute after Save on New Category, so
+  `LibraryTests.testCategoriesStayBetweenThreeAndFour` runs past
+  Settings' 90-second reset and fails. Run five times each on 2026-11-06,
+  unchanged `main` and PR #82's branch both failed once and ran slow
+  once; it has not failed on CI. Cause unknown
+  ([`log/2026-11-05-phrases-named-like-controls.md`](log/2026-11-05-phrases-named-like-controls.md)).
+  *(a Mac thread)*
 - Settings' Get Attention place is still empty, although AGENTS.md's
   design rules say "Settings opens on a large way back and a start-only
   Get Attention". Scored on 2026-10-24, Get Attention there would sound

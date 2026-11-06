@@ -45,8 +45,8 @@
   known.
 - **The keyboard:** Save puts it away when its line carries a note: on a
   phone at the largest text sizes it covers the line. A category's line
-  clears with the next change that saves, so a note never outlives what
-  it says.
+  and a restore's clear with the next change that saves, so a note never
+  outlives what it says.
 - **Colours:** none new.
 - **Privacy policy:** nothing it says changes.
 - **Screens:** no Figma frames: every control keeps its frame, and the

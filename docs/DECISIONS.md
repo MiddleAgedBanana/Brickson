@@ -1740,13 +1740,16 @@ library keeps apart because punctuation counts
   same names, and what it does with two matches is not known either. A
   library that already holds such words says nothing until they are next
   saved. Whether a dimmed phrase or category counts as a second match
-  while typing is part of the same device check.
+  while typing is part of the same device check. `LibraryEdit.movePhrase`
+  can move a phrase across categories and says nothing, but the Library
+  only moves a phrase within its own, where nothing new is shared.
 - **The keyboard goes when a note shows.** On a phone at the largest
   text sizes the keyboard covers Save and the whole line, so a note
   would never be read (seen on 2026-11-05, iPhone 17, AX5). So Save puts
   the keyboard away whenever its line carries a note, the wide-word note
-  included; nothing moves. A plain "Saved." or "Added" line stays behind
-  the keyboard there (docs/HANDOFF.md, *Known gaps*).
+  included; nothing moves. The line then starts at the screen's foot,
+  with the note itself a scroll away, and a plain "Saved." or "Added"
+  line stays behind the keyboard (docs/HANDOFF.md, *Known gaps*).
 
 ## Exporting and restoring a backup
 

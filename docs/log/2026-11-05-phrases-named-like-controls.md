@@ -38,8 +38,9 @@ buttons, and until now nothing told the family why.
   recommendation to refuse those five names.
 - **Also fixed on the way:** the phrase and name fields had no
   description for Apple's audit while focused (they now carry their
-  label), and a category's line now clears with the next change that
-  saves, so "Added “Water”." and its note cannot outlive a rename.
+  label), and a category's line and a restore's now clear with the next
+  change that saves, so "Added “Water”." and its note cannot outlive a
+  rename.
 
 Three docs follow-ups from pull request #81 came with it:
 
@@ -90,28 +91,37 @@ Pro 13-inch (M5) and iPhone 17 simulators, iOS 27.2.
   reproduction. The String Catalog is up to date.
 - **`scripts/test.sh device -configuration Release`, final code:**
   compiled unsigned with no warnings.
-- **`scripts/test.sh ui '-only-testing:BricksonUITests/LibraryTests'`:**
-  8 of 8 on each simulator, before the review's fixes; the new test
-  passed on both again after them.
 - **`scripts/test.sh ui`, on the final code, run whole on both:** iPad,
-  72 tests, 69 passed, 2 skipped, 1 failed; iPhone, 72 tests, 65 passed,
-  6 skipped, 1 failed. On both, the one failure is
+  72 tests, 69 passed, 2 skipped, 1 failed; iPhone, 72 tests, 64 passed,
+  6 skipped, 2 failed. On both, one failure is
   `LaunchTests.testLargestTextKeepsQuickControlWordsVisible`, whose four
   waits for "Speaking" to end timed out, the failure this Mac's simulators
   have shown since 2026-10-25 (docs/HANDOFF.md, *Known gaps*). It has no
-  connection to this change, and it passes on CI. A first run was cut
-  off during the iPhone's turn when the desktop app stopped the idle
-  session (AGENTS.md, *Gotchas*), so this one started again from the top.
+  connection to this change, and it passes on CI. The iPhone's other
+  failure is `LibraryTests.testCategoriesStayBetweenThreeAndFour`: after
+  Save on New Category the app did not report idle for over a minute, so
+  XCTest waited past Settings' 90-second reset and the screen was gone.
+  Run five times each on the iPhone, this branch and unchanged `main`
+  did the same: one failed and one took twice as long, in neighbouring
+  runs, the others passing in 62 seconds. So it comes from `main`, and
+  its cause is not known (docs/HANDOFF.md, *Known gaps*). The previous
+  whole run, one small change earlier, had neither stall nor failure. A
+  first run was cut off during the iPhone's turn when the desktop app
+  stopped the idle session (AGENTS.md, *Gotchas*), so these started again
+  from the top.
 - **In the running app,** through a temporary UI test not committed:
   New Phrase and Edit Phrase with the note, at the default size and AX5,
-  light and dark, in portrait, with the full software keyboard, on both
-  simulators, each screen captured and read, with Apple's audit on each.
-  It found the keyboard covering the note on the iPhone at AX5, and the
-  focused field with no description. Both are fixed, and the audit then
-  passed on every screen. At AX5 on the iPhone the note's first words
-  show and the rest is a scroll away, above the foot Settings keeps. The
-  audit's contrast findings in that first run were all on text behind
-  the keyboard, which is gone once the keyboard goes.
+  light and dark, in portrait, on both simulators, each screen captured
+  and read, with Apple's audit on each. Its first run, with the full
+  software keyboard up as the note appeared, found the keyboard covering
+  the note on the iPhone at AX5 and the focused field with no
+  description, and every contrast finding of the audit was on text
+  behind the keyboard. Those captures were overwritten by the next run,
+  so this rests on having read them. Both are fixed, and the audit then
+  passed on every screen, the keyboard gone. At AX5 on the iPhone the
+  line starts at the screen's foot, above the part Settings keeps: Edit
+  Phrase shows "Saved. Another", New Phrase "Added “Stop.” to", and the
+  note's words are a scroll away.
 - **The sweep** takes about 20 seconds on its own on this Mac, in a test
   build, so about what the Emergency sweep adds on CI.
 - **Four independent reviews before the first push** reported 21
@@ -121,36 +131,55 @@ Pro 13-inch (M5) and iPhone 17 simulators, iOS 27.2.
   understated what was measured. Not fixed here, and recorded below: a
   rest board can come back short through one rare restore.
 
-Each new test, and the change that made it fail on this Mac:
+Each new test but the sweep failed on this Mac for the change it names:
 
+- `aPhraseNamedLikeAHomeControlSharesAName`: leaving the other names
+  (Help, Repeat, Stop Alert) out of the check.
+- `aPhraseWithOtherWordsSharesNoName`: matching part of a phrase.
 - `aPhraseNamedLikeACategoryButtonSharesAName`: leaving the category row
   out of the check.
-- `aCategoryNamedLikeAPhraseSharesAName`: counting Emergency's category
-  as a button.
+- `phrasesSaidAlikeShareANameOnlyWhereTheyShowTogether`: comparing every
+  category's phrases at once.
 - `anotherPhrasesNameIsNotThisOnes`: reporting any name shared on the
   screen for the saved words.
+- `aCategoryNamedLikeAPhraseSharesAName`: counting Emergency's category
+  as a button.
+- `theStarterLibrarySharesNoNames`: a starter phrase "Yes."
+- `theWordsAreKeptAsWritten`: refusing a phrase named like a control.
 - `aPlanSaysWhetherItBringsASharedName`: counting names shared before
   the plan, and a restore's line that never adds the note.
+- `aSavedLineSaysWhatSaveDidThenEachNote`: running the sentences
+  together.
 - `editPhrasesLineKeepsRoomForBothNotes`: leaving out the lines with the
   note.
-- `aChangeThatSavesClearsACategorysLine`: not clearing the line.
-- `LibraryTests.testAPhraseNamedLikeAControlIsSavedWithANote`: leaving
-  the keyboard up, on the iPad ("the keyboard stayed over the note"). Its
-  audit of the focused field failed before the field had its label.
-- `aShortBoardsEmptyCellsMeetOnlyClearPutBackAndPhrases`: strict known
-  issues, so it fails once placement removes either finding, and fails
-  on any other finding.
-- `theWordsAreKeptAsWritten` and `aPhraseWithOtherWordsSharesNoName`
-  were not mutated: they fail if the editor starts refusing such words,
-  or if the check matches part of a phrase.
+- `aChangeThatSavesClearsTheLinesOfEarlierChanges`: not clearing the
+  line.
+- `LibraryTests.testAPhraseNamedLikeAControlIsSavedWithANote`, on the
+  iPad, once for each path: leaving the keyboard up on a phrase's note,
+  on a wide word's and on Rename's. Its audit of the focused field failed
+  before the field had its label.
+- `aShortBoardsEmptyCellsMeetOnlyClearPutBackAndPhrases` holds strict
+  known issues, so it fails once placement removes either finding, and
+  fails on any other finding; its counts changed when the pairing did.
 
 ## Not verified
 
 - What Voice Control does with two matching names: it is not available
   on a simulator, and Apple's pages do not say. Device check I2, step 4.
-- The notes on New Category, Rename Category and the Restore question
-  on screen: the check and the words are unit-tested, and only the
-  phrase editor's note is UI-tested.
+- The notes on New Category and the Restore question on screen: the
+  check and the words are unit-tested. The phrase editor's note and
+  Rename's are UI-tested.
+- The note at AX5 and in dark mode: checked by a temporary UI test not
+  committed. The committed test runs at the default size, light, in
+  portrait.
+- The rest of the note at AX5 on the iPhone: no capture shows it after
+  scrolling.
+- The Library's editors in landscape, or in a resized iPad window.
+- The whole UI suite on this Mac with no failure at all: the two
+  failures above, one of them a test that passes on CI, whose Xcode and
+  iOS were one release behind this Mac's on this pull request.
+- The rollback probe on a store on disk, on a device, or on iOS 26 with
+  this Xcode.
 
 ## Follow-ups
 
@@ -158,12 +187,17 @@ Each new test, and the change that made it fail on this Mac:
   (docs/DECISIONS.md, "Phrases named like Home's controls"); the three
   out-of-reach hazards of Q2, after the Snap to Item check.
 - **Device check I2, step 4.** *(the owner)*
+- **Post the rollback result on issue #19,** which the test's comment
+  asks for. *(the owner, or an agent the owner lets write there)*
 - **Clear a rest board's choice when its category is deleted,** so a
   later restore cannot bring it back short; it needs a save with a
   failure test of its own. *(a library or Settings thread)*
 - **Save and its line behind the keyboard** on a phone at the largest
   text sizes, for a plain "Saved." or "Added" (docs/HANDOFF.md, *Known
   gaps*). *(the next library thread)*
+- **The stall after New Category's Save on this Mac's iPhone simulator,**
+  which `main` shows too (docs/HANDOFF.md, *Known gaps*). *(a Mac
+  thread)*
 - **Next for the Library:** the Figma drawings, then the emergency
   repair record's list, starting with stores from every schema version
   ([`log/2026-11-05-library-screen.md`](2026-11-05-library-screen.md),
