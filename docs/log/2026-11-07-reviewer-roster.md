@@ -109,6 +109,14 @@ Greptile did not review (it was out of credits when last checked, on
   dependencies" (there are six), HANDOFF's "every feature that writes
   code" (only those with a setting), an unsupported "Greptile had no
   credits", and the wording of this record's *Commits* and *Verified*.
+- **CodeRabbit's second round** found one more: a workflow or local
+  action the test could not read (not UTF-8, or a local action that is
+  missing) was handled in a way that could stop the test at that file
+  or check it on the previous file's text. In practice the file lister
+  read it first and the whole test stopped there, with an error, so the
+  files after it went unchecked. Now each file is read once, on its
+  own; one that cannot be read is reported as a problem of its own, and
+  every other file is still checked and reported.
 
 ### What the brief got wrong or left stale
 
@@ -168,8 +176,10 @@ On `claude/project-thread-cguht9`:
 - `d7ced27` the checkout test's fixes, from both rounds (*The review,
   and what it changed*).
 - `fe1a1a6` cubic leaves its threads open.
-- The commit after `fe1a1a6`: the allowlist wording, the second
-  check's corrections and this record of the review.
+- `a9829d3` the allowlist wording, the second check's corrections and
+  this record of the review.
+- The commit after `a9829d3`: a file the checkout test cannot read is
+  reported, and the rest still checked (CodeRabbit's second round).
 
 The cloud session's push of the workflow commit was refused for want
 of the `workflow` scope (AGENTS.md, *Gotchas*, still true on
@@ -215,7 +225,17 @@ and pushed them.
   numbers. Before the code changed, the new and rewritten tests failed
   or errored (the functions they call did not exist yet), and
   `test_every_checkout_leaves_no_token_behind` errored for the same
-  reason.
+  reason. After CodeRabbit's second round, on a copy of `.github` with
+  one workflow that is not UTF-8 and a later one whose checkout keeps
+  its token, the test as it stood stopped with an error at the first
+  and never reported the second; it now reports both. The new test
+  errored before the function it calls existed. Each of these then
+  made the workflow tests fail, and each was undone: checking an
+  unreadable file as empty, reusing the previous file's text, letting
+  the test's read or the file lister stop at an unreadable file, going
+  on to check a file after reporting it unreadable, and not counting
+  checkouts. Every mutation listed in this bullet was run again on the
+  final code, and each still fails the tests.
 - `scripts/test-docs.py`, `scripts/test-hooks.py` and
   `scripts/test-runner.py` pass.
 - CodeRabbit reads `.coderabbit.yaml` from the pull request's branch:

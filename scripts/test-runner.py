@@ -1677,16 +1677,26 @@ def unread_checkouts(text):
     return sorted(named - {uses_line(step)[0] for step in checkout_steps(text)})
 
 
+def read_checked(path):
+    """A checked file's text, or None when it cannot be read (missing, or
+    not UTF-8)."""
+    try:
+        return path.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError):
+        return None
+
+
 def checked_files(root):
     """The workflows, every action.yml or action.yaml under .github, and
     each local action (`uses: ./path`) that any of them runs, in the order
     found. A local action whose folder holds neither file is listed as its
-    action.yml, which does not exist."""
+    action.yml, which does not exist. A file that cannot be read is still
+    listed, for checkout_problems to report."""
     github = root / ".github"
     files = list(dict.fromkeys(sorted((github / "workflows").glob("*.y*ml"))
                                + sorted(github.rglob("action.y*ml"))))
     for path in files:  # grows as local actions are found
-        for step in workflow_steps(path.read_text()) if path.is_file() else []:
+        for step in workflow_steps(read_checked(path) or ""):
             uses = step_uses(step)
             if uses.startswith("./"):
                 folder = root / uses
@@ -1695,6 +1705,36 @@ def checked_files(root):
                 if action not in files:
                     files.append(action)
     return files
+
+
+def checkout_problems(root):
+    """What is wrong with the checkouts in each file checked_files lists,
+    as (file, line, message) triples in the order found, and how many
+    checkouts were read. Each file is checked on its own text, read once;
+    one that cannot be read is a problem of its own (line None) and never
+    stops the others being checked."""
+    problems, checkouts = [], 0
+    for path in checked_files(root):
+        name = str(path.relative_to(root))
+        text = read_checked(path)
+        if text is None:
+            problems.append((name, None, f"{name} cannot be read: a step runs a local action "
+                             "with no action.yml or action.yaml, or the file is not UTF-8."))
+            continue
+        for line in unread_checkouts(text):
+            problems.append((name, line, f"Line {line} of {name} names actions/checkout "
+                             "outside a step the reader read: a checkout in a form "
+                             "workflow_steps does not know (a flow list, an anchor or alias, "
+                             "a quoted key, a block scalar) or text that only names it. Write "
+                             "the checkout as a plain block step, or reword the text."))
+        for step in checkout_steps(text):
+            checkouts += 1
+            if not step_keeps_no_token(step):
+                line = uses_line(step)[0]
+                problems.append((name, line, f"The checkout at line {line} of {name} keeps "
+                                 "the job's token: add `persist-credentials: false` under its "
+                                 "own `with:`, written out (an alias is not followed)."))
+    return problems, checkouts
 
 
 class WorkflowTests(unittest.TestCase):
@@ -1793,29 +1833,8 @@ class WorkflowTests(unittest.TestCase):
     # read it; no step here needs it (docs/DECISIONS.md, "Reviews, updates
     # and GitHub settings", *Dependencies*).
     def test_every_checkout_leaves_no_token_behind(self):
-        checkouts = 0
-        for path in checked_files(REPOSITORY):
-            name = path.relative_to(REPOSITORY)
-            with self.subTest(file=str(name)):
-                self.assertTrue(path.is_file(),
-                                f"A step runs a local action with no {name} or action.yaml.")
-                text = path.read_text()
-                self.assertEqual(
-                    unread_checkouts(text), [],
-                    f"These lines of {name} name actions/checkout outside a step the "
-                    "reader read: a checkout in a form workflow_steps does not know (a "
-                    "flow list, an anchor or alias, a quoted key, a block scalar) or "
-                    "text that only names it. Write the checkout as a plain block step, "
-                    "or reword the text.")
-            for step in checkout_steps(text) if path.is_file() else []:
-                checkouts += 1
-                line = uses_line(step)[0]
-                with self.subTest(file=str(name), line=line):
-                    self.assertTrue(
-                        step_keeps_no_token(step),
-                        f"The checkout at line {line} of {name} keeps the job's token: add "
-                        "`persist-credentials: false` under its own `with:`, written out "
-                        "(an alias is not followed).")
+        problems, checkouts = checkout_problems(REPOSITORY)
+        self.assertEqual([message for _, _, message in problems], [])
         self.assertGreater(checkouts, 0, "No workflow checks out the repository.")
 
     # Reading steps wrongly (missing one, merging two, or losing a line's
@@ -2020,6 +2039,38 @@ class WorkflowTests(unittest.TestCase):
                 "tools/build/action.yaml",
                 "missing/action.yml",
             ])
+
+    # Stopping at a file that cannot be read (not UTF-8, or a local action
+    # that is missing), reusing the previous file's text for it, or not
+    # reporting it, fails this test: each file is checked on its own text,
+    # and one that cannot be read is a problem of its own.
+    def test_a_file_that_cannot_be_read_is_reported_and_the_rest_checked(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            files = {
+                ".github/workflows/a.yml": b"steps:\n  - uses: \xff\xfe\n",
+                ".github/workflows/b.yml":
+                    b"steps:\n  - uses: actions/checkout@v7\n  - uses: ./missing\n"
+                    b"flow: [actions/checkout@v7]\n",
+                ".github/workflows/c.yml":
+                    b"steps:\n  - uses: actions/checkout@v7\n"
+                    b"    with:\n      persist-credentials: false\n",
+            }
+            for name, data in files.items():
+                (root / name).parent.mkdir(parents=True, exist_ok=True)
+                (root / name).write_bytes(data)
+            problems, checkouts = checkout_problems(root)
+        found = [(name, line, next(kind for kind in ("cannot be read", "outside a step",
+                                                     "keeps the job's token")
+                                   if kind in message))
+                 for name, line, message in problems]
+        self.assertEqual(found, [
+            (".github/workflows/a.yml", None, "cannot be read"),
+            (".github/workflows/b.yml", 4, "outside a step"),
+            (".github/workflows/b.yml", 2, "keeps the job's token"),
+            ("missing/action.yml", None, "cannot be read"),
+        ])
+        self.assertEqual(checkouts, 2)
 
     # Writing an Xcode version or app path into the workflow fails this test.
     def test_the_workflow_names_no_xcode_version(self):
