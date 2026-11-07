@@ -5196,6 +5196,67 @@ review setup does not quietly break them.
 
 ### Code review
 
+- **2026-11-07, owner: a roster of reviewers, each configured in the
+  repository.** The owner keeps several AI reviewers on purpose: models
+  with different training and tools each see things the others miss,
+  and one stands in when another is out of credits or reviews for the
+  hour. So cubic joins Codex, CodeRabbit and Greptile (it does not
+  replace Greptile, as the consultant's brief of 2026-11-06 proposed),
+  and each reviewer's settings live in a file here, where agents and
+  reviewers read them, rather than only on its website:
+  - **`.coderabbit.yaml`** (the owner approved its contents).
+    `inheritance: false`, so the file and CodeRabbit's defaults are the
+    whole configuration, and anything set on CodeRabbit's website stops
+    applying. What the website held was not read (CodeRabbit did not
+    answer `@coderabbitai configuration`); its review ran on the Chill
+    profile, the default, which the file keeps.
+    Off: the "Docstring Coverage" pre-merge warning (it warned on every
+    pull request from #76 to #83, at 0 to 77 per cent against its 80
+    per cent bar, and Brickson has no docstring rule);
+    LanguageTool's style suggestions on prose (style only, *Not
+    findings*, yet each is a conversation the ruleset requires
+    resolved); and all six finishing touches that write commits or
+    open pull requests (docstrings, unit tests, simplify, fix comments,
+    fix CI, resolve merge conflicts). The brief's draft missed fix CI,
+    which is on by default and which open-source projects get.
+    `docs/archive/` and the JSON and text captures in `docs/evidence/`
+    are skipped. Every other tool stays on.
+  - **`cubic.yaml`.** Reviews on open and on each push; never approves;
+    writes no pull request description (the first two lines of every
+    description are attribution lines agents keep); and every fix
+    feature off ("Fix with cubic" buttons, fixes asked for in a comment,
+    auto-fix). cubic reads it from `main` only, so it applies from the
+    merge on. Its GitHub app is the owner's to install.
+  - **`.greptile/`.** The one-credit Base review, once per pull request
+    when it opens (pushes do not spend credits), logic and syntax
+    comments but no style ones, the same skipped records as CodeRabbit,
+    and `AGENTS.md` named as the rules to review against. Greptile runs
+    the highest tier any of its settings ask for, so this holds only
+    while its website's default tier is Base or Auto with no tier rule
+    above it.
+  - **Reviewers never write the code.** No agent asks one to, by any
+    command or button (AGENTS.md, "Reviews and updates on GitHub"):
+    CodeRabbit's `@coderabbitai autofix` and some other commands that
+    commit have no setting that turns them off, so the rule is what
+    holds them.
+  - **What each one does with the code** (their own pages, read
+    2026-11-07; the repository is public, so none of this was a reason
+    to leave one out). CodeRabbit's privacy notice says "We use OSS to
+    train our systems", and it treats a public repository as open
+    source. cubic's terms (section 7.1) let it train its own AI on
+    customers' code unless a separate agreement says otherwise, and say
+    its model providers do not train on it. Greptile keeps the code on
+    its servers until its access is removed, and trains on
+    de-identified data unless "Help us improve Greptile" is turned off
+    (Settings → Organization → Data & Privacy, the owner's choice).
+    Codex trains on a personal plan's tasks unless ChatGPT's "Improve
+    the model for everyone" is off, and its separate "Include
+    environments" setting covers more (the owner's choice; docs/HANDOFF.md,
+    "Next steps, in order").
+  - Every reviewer's conversations must be resolved before a merge
+    (*`main` ruleset* below), so each new reviewer is more to answer;
+    the owner chose the coverage. Record:
+    [`log/2026-11-07-reviewer-roster.md`](log/2026-11-07-reviewer-roster.md).
 - **2026-11-04: Copilot is no longer a reviewer.** The month's AI
   credits ran out on pull request #78, whose one request Copilot could
   not review; the subscription ends on 2026-11-09; and the owner's
@@ -5318,6 +5379,42 @@ with the other two on; keep all three on. Actions are referenced by
 version tag, not pinned to commit hashes: GitHub only raises security
 alerts for tag references, and all of them are GitHub's own actions.
 
+*Added 2026-11-07, owner:*
+
+- **No checkout leaves the job's token behind.** Every
+  `actions/checkout` step sets `persist-credentials: false`. By default
+  checkout keeps the job's token where every later step's `git` can
+  use it, and no step here runs `git` against GitHub; nothing uploaded
+  includes the checkout either, so this closes a door rather than a
+  leak (zizmor's `artipacked` check, run for the consultant's brief of
+  2026-11-06). `scripts/test-runner.py` fails a checkout without it,
+  in any workflow.
+- **Dependency review on every pull request.**
+  `.github/workflows/dependency-review.yml` runs GitHub's
+  `actions/dependency-review-action`, which fails a pull request that
+  brings in an action version with a known security advisory, in any
+  scope. It runs on Linux, free for a public repository, and checks
+  out nothing: the action compares through GitHub's API. With five
+  dependencies, all GitHub's own, it will nearly always pass; it is a
+  tripwire. It is not a required check: making it one is the owner's
+  call in the ruleset.
+- **Only GitHub's own actions may run** (the owner's setting, in
+  Settings → Actions → General → "Actions permissions": "Allow
+  MiddleAgedBanana, and select non-MiddleAgedBanana, actions and
+  reusable workflows", with "Allow actions created by GitHub" ticked
+  and nothing else). It makes *Code Review Rules*' flag on an action
+  not published by GitHub a check GitHub enforces when a workflow runs.
+  Trying an action from the Marketplace stays possible: the owner
+  adds it to that setting's list, and the pull request that uses it is
+  reviewed like any other.
+- **Next: a workflow lockfile** (`.github/workflows/actions.lock`,
+  written by GitHub's `gh actions-lock`, generally available since
+  2026-10-28). It records the commit each tag pointed to, so a moved
+  tag cannot change what runs, while the workflows keep their readable
+  tags and Dependabot keeps updating both. It is its own pull request,
+  run on the owner's Mac (docs/HANDOFF.md, "Repository, CI and
+  website"), and that pull request rewrites this paragraph.
+
 ### Code scanning
 
 *Revised 2026-10-12; languages corrected 2026-10-21.* CodeQL's default
@@ -5416,7 +5513,7 @@ through its API on 2026-10-15:
 | Require a pull request before merging | 0 approvals; merge commits only | Nobody pushes to `main`. The owner cannot approve pull requests that show them as author, so any approval count would block every merge. Merge commits keep the commit hashes HANDOFF cites on `main`. |
 | Require status checks to pass | "Unit tests" and "UI tests" | The job names in `tests.yml`. Renaming a job blocks every pull request until the ruleset is changed to match. |
 | Require branches to be up to date | Off | Each update reruns the Mac tests; `main` is tested again after every merge anyway. |
-| Require conversation resolution | On | Every reviewer's comment (Codex, CodeRabbit, Greptile), and every CodeQL alert posted on the pull request, gets an answer before a merge. AI Scan findings are answered too, by practice (*Code scanning* above). |
+| Require conversation resolution | On | Every reviewer's comment (Codex, CodeRabbit, Greptile, cubic), and every CodeQL alert posted on the pull request, gets an answer before a merge. AI Scan findings are answered too, by practice (*Code scanning* above). |
 | Require code scanning results | CodeQL: errors, high or higher | A workflow change that CodeQL flags as an error, or as a high or critical security problem, cannot merge. It did not cover Dependabot's first pull request, which got no CodeQL analysis before merging (*Code scanning* above). |
 | Automatically request Copilot code review | Off since 2026-11-03 (on before, with new pushes and drafts off) | Copilot no longer reviews (since 2026-11-04, *Code review* above). |
 | Block force pushes, restrict deletions | On | History on `main` never changes. |
