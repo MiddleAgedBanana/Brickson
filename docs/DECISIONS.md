@@ -26,7 +26,8 @@ one is answered, nothing hard to undo is done under it.
 
 Owner steps that are actions, not decisions: the Team ID in
 `project.yml`, device runs, committing workflow files (docs/SDLC.md,
-*Deploy*), and every step in App Store Connect.
+*Deploy*), keeping the private list and its copies (*Personal details
+stay out of the repository*), and every step in App Store Connect.
 
 ## Brickson's code is all rights reserved
 
@@ -5182,6 +5183,167 @@ request merges only when they pass.
   even with the first ones paused, and each runs flat out until a
   reading finds it. Record:
   [`log/2026-11-04-watcher-without-ps.md`](log/2026-11-04-watcher-without-ps.md).
+
+## Personal details stay out of the repository
+
+*2026-11-06. Default, asked for by the owner through the project's
+coordinator; the owner keeps the private list and sets it up (below)
+([`log/2026-11-06-privacy-check.md`](log/2026-11-06-privacy-check.md)).*
+
+The repository is public, and so is everything pushed to it. A commit
+stays readable on GitHub after it is undone: in the pull request that
+carried it, in forks and in copies other people have made. So a name or
+detail that must not be public has to be stopped before it is pushed.
+Before this, nothing looked for one: `scripts/test-site.py` looks only
+for words about price, and GitHub's secret scanning looks for passwords
+and keys, not names. The check is a plain script, with no AI and no
+outside service: nothing it reads leaves the computer it runs on.
+
+**What it looks for** (`scripts/privacy-check.py`):
+
+- **Words on a private list** the owner keeps: names, nicknames, user
+  names, addresses, anything that must appear nowhere in the repository.
+  The list is never committed and never printed, and agents never read
+  it. An entry matches as whole words in any capitals, with its words
+  joined by spaces, punctuation or nothing (camelCase), with a plural
+  ending, and with accents, invisible characters and HTML, URL and
+  `\u` escapes undone.
+- **Built-in patterns**, which need no list: email addresses (except
+  those at example domains, the services agents sign commits with, and
+  the support address the website publishes, which may appear only on
+  the website's pages and as the address the owner's own commits are
+  signed with); phone numbers (except numbers kept for fiction, such as
+  555-0100); a home folder's name (`/Users/<name>`, `/home/<name>`,
+  `C:\Users\<name>`, except stand-ins such as `/Users/you`); the place a
+  photo or video was taken, recorded inside it; and a second support
+  address on the website.
+- **Everywhere text can hide:** every file and every file's name; the
+  text inside pictures, PDFs, sound and video files (a photo's camera
+  notes, a PNG's text, a PDF's compressed pages), never their pixels;
+  commit messages, and the names and addresses commits are signed with;
+  branch and tag names; and on GitHub, a pull request's title,
+  description and branch name.
+- **No exceptions.** No line can be marked as allowed, and the list has
+  no allowances: an entry holds only what may appear nowhere, so leave
+  out what the repository publishes on purpose, such as the developer's
+  name on the website. When an entry also matches ordinary words, make it
+  longer (a full name rather than a first name) or start it with `=` to
+  match its capitals only; `--status` says how many places each entry
+  matches, by the entry's number, never its words.
+
+**Where it runs.** Every gate but the last acts before anything is
+public:
+
+1. **Before every push, on the computer pushing.** Git's pre-push hook,
+   `.githooks/pre-push`, checks the commits, branch and tags the push
+   would send, and refuses the push when it finds something. Git runs it
+   only in a checkout that has turned it on, once, with
+   `git config core.hooksPath .githooks` (every worktree of that
+   checkout shares the setting). It needs the list: without one it
+   refuses every push. Never skip it (`--no-verify`).
+2. **Before a commit or a post, in Claude Code**, where the guard runs
+   (AGENTS.md, *Guardrails for agents*). The guard checks a commit's
+   message, its staged changes and the files the same command adds, and
+   the text a command or GitHub tool would put on GitHub: a pull
+   request, an issue, a comment, a review, a file, a branch's name. It
+   refuses a push from a checkout whose pushes skip the hook, and any
+   command that names the list. Text the shell would build from a
+   variable or another command cannot be read before it runs, so it is
+   refused: write it in the command, in a quoted here-document, or in a
+   file passed with `-F`, `--file` or `--body-file`.
+3. **By hand.** `python3 scripts/privacy-check.py --outgoing` checks what
+   the next commit and push would publish; `--text -` checks a draft
+   given on stdin, such as a pull request's description or a comment,
+   before it is posted; `--history` checks every commit on every branch.
+4. **In CI, the alarm.** The "Unit tests" job's first step runs main's own
+   copy of the check, with the list from the repository secret
+   `BRICKSON_PRIVATE_WORDS`, over every file, the commits being merged
+   and the pull request's text. Its log is public, so it shows only how
+   many of each kind it found, never where. By then the commits are on
+   GitHub, so a finding there means what it found is already public
+   (below). Main's copy runs, with nothing from the run but what it
+   needs, before anything from the pull request, so a pull request
+   cannot change the code that reads the list, and the list reaches that
+   step alone. A run GitHub gives no secrets (a fork's pull request,
+   Dependabot) checks the patterns only, and says so. Until main has the
+   check, the pull request that adds it runs its own copy, without the
+   list.
+
+**When something is found:**
+
+- Not yet pushed: change it, then `git commit --amend` for the last
+  commit, or `git reset --soft @{upstream}` (`origin/main` on a new
+  branch) and commit again. Commits that were never pushed may be
+  rewritten; pushed ones never are (AGENTS.md, *Workflow rules*).
+- Already pushed: stop, and tell the owner the place and the kind the
+  check printed, nothing more. What to do about published history is
+  the owner's decision.
+- Never repeat, quote or describe what was found, anywhere: in a
+  command, a message, a thread, a log record or a pull request.
+
+**What it cannot catch:** a detail that is not on the list and matches
+no pattern, such as a description rather than a name; words drawn in a
+picture's pixels, so look at every picture and screenshot before
+committing it; text a person writes on GitHub's website; and a push
+from a checkout with the hook off, or from a cloud thread where the
+guard does not run, which CI then finds only after it is public. One
+commit from before the check holds the published support address in a
+log record, which `--history` reports; it is the address the website
+publishes, so nothing private is exposed, and pushed history is never
+rewritten.
+
+**Where the list lives.** The owner's choice; all three are
+recommended:
+
+- **The owner's Mac:** `~/.config/brickson/private-words.txt`, readable
+  by the owner alone (`chmod 600`). It sits outside every checkout, so it
+  cannot be committed; the check refuses a list inside a checkout. The
+  agents' Read and Edit tools are denied it (`.claude/settings.json`),
+  and the guard refuses commands that name it.
+- **GitHub:** the repository secret `BRICKSON_PRIVATE_WORDS`, for CI. Any
+  run from a branch of this repository gets it, including one whose pull
+  request changes the workflow; cloud agents cannot push workflow
+  changes, and the owner reads every one before it merges.
+- **Cloud sessions:** the environment variable `BRICKSON_PRIVATE_WORDS`,
+  with the setup script line `git config --global core.hooksPath .githooks`,
+  so a cloud thread's own pushes are checked before they leave. The
+  trade-off: every cloud session then has the list in its environment,
+  where an agent could read it. Without the variable, leave the line out:
+  cloud threads' pushes are then checked only by CI, after they are
+  public.
+
+The list's format: one entry per line, or entries separated by `;`; `#`
+starts a note; an entry that starts with `=` matches only in its own
+capitals. The whole list may instead be written as `base64:` followed by
+its Base64 form, which keeps it on one line, as GitHub secrets and the
+cloud environment's variables want.
+
+**Setting it up**, each step once, on the Mac, in Terminal:
+
+```sh
+mkdir -p ~/.config/brickson && touch ~/.config/brickson/private-words.txt
+chmod 600 ~/.config/brickson/private-words.txt
+open -e ~/.config/brickson/private-words.txt
+```
+
+Write the entries in the TextEdit window that opens, one per line, then
+save and close it. Then:
+
+```sh
+cd ~/code/brickson && git config core.hooksPath .githooks
+python3 scripts/privacy-check.py --status
+{ printf 'base64:'; base64 < ~/.config/brickson/private-words.txt | tr -d '\n'; } | gh secret set BRICKSON_PRIVATE_WORDS --repo MiddleAgedBanana/Brickson
+```
+
+`--status` says how many entries it read, names any entry that matches a
+place in the repository, and ends "Pushes from this checkout run the
+privacy hook." once main has the hook; `gh secret set` prints a line that
+it set the secret. For cloud sessions,
+`{ printf 'base64:'; base64 < ~/.config/brickson/private-words.txt | tr -d '\n'; } | pbcopy`
+copies the one-line form: in the project's cloud environment settings,
+add the variable `BRICKSON_PRIVATE_WORDS=` followed by that line, and
+the setup script line above. After changing the file, set the secret
+and the variable again.
 
 ## Reviews, updates and GitHub settings
 

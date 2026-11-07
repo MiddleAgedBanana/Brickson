@@ -18,7 +18,14 @@ It denies:
   assignment: Copilot is not part of the review process, and each one
   would spend the owner's credits (other GraphQL requests and an
   @copilot mention are held by AGENTS.md alone);
-- a GitHub tool that writes a file straight onto main.
+- a GitHub tool that writes a file straight onto main;
+- publishing a personal detail: before a commit, and before text goes to
+  GitHub through gh, the GitHub API or a GitHub tool, it runs
+  scripts/privacy-check.py over what would be published (the message, the
+  staged changes and the files the command adds, the text sent) and
+  refuses what it finds, naming places and kinds, never the words; a push
+  must run the privacy hook in .githooks/pre-push, which reads what the
+  push carries, and reading the private list is refused.
 
 This is a guard against mistakes, not a sandbox: a determined command can
 get around it, and it covers Claude Code sessions only. Codex, Jules and the
@@ -27,6 +34,7 @@ runs wherever python3 does. Its tests are scripts/test-hooks.py.
 """
 import json
 import fnmatch
+import importlib.util
 import os
 import re
 import shlex
@@ -34,6 +42,7 @@ import subprocess
 import sys
 import stat
 import posixpath
+from pathlib import Path
 from urllib.parse import urlsplit, unquote
 
 PROTECTED = {'main', 'master'}
@@ -93,6 +102,50 @@ WGET_CONFIG = ('The guard does not interpret Wget configuration or execute direc
                'Use --no-config and explicit command-line request options.')
 SHELL_ALIAS = ('The guard does not execute Git shell aliases. Use the underlying '
                'command explicitly so its operation and repository can be checked.')
+PRIVACY_DECISION = 'docs/DECISIONS.md, "Personal details stay out of the repository"'
+PRIVATE = 'This would publish personal details: {places}. {advice}'  # advice cites the decision
+PRIVATE_SETUP = ('The privacy check could not run, so nothing is published: {reason} ('
+                 + PRIVACY_DECISION + ').')
+HOOK_OFF = ('Pushes from this checkout must run the privacy hook, and this one does not. '
+            'In your own clone, turn it on with git config core.hooksPath .githooks; in '
+            "the owner's checkout or its worktrees, ask the owner to (" + PRIVACY_DECISION + ').')
+NO_VERIFY = ('Never skip the privacy hook (--no-verify, or another core.hooksPath): it is '
+             'the check that keeps personal details off GitHub (' + PRIVACY_DECISION + ').')
+LIST_READ = ('The private list is the owner\'s and stays unread: check with python3 '
+             'scripts/privacy-check.py --status, which never prints it (' + PRIVACY_DECISION + ').')
+PUBLISHED_EXPANSION = ('Text this command publishes comes from a variable or another command, '
+                       'which the privacy check cannot read. Write it in the command, in a '
+                       "quoted here-document ($(cat <<'EOF' ... EOF)), or in a file passed "
+                       'with -F, --file or --body-file.')
+PUBLISHED_FILE = ('A file this command publishes must exist before the command runs, so the '
+                  'privacy check can read it: write it in an earlier command.')
+PUBLISHED_STDIN = ('Text this command reads from stdin can be checked only from a '
+                   'here-document in the same command; pass a file instead.')
+LIST_REFERENCE = re.compile(r'\.config/brickson|\$\{?BRICKSON_PRIVATE_WORDS'
+                            r'|printenv\s+BRICKSON_PRIVATE_WORDS')
+# A here-document whose delimiter is quoted is literal text.
+QUOTED_HERE_DOCUMENT = re.compile(
+    r"\$\(\s*cat\s+<<-?\s*(['\"])(\w+)\1[^\n]*\n(.*?)\n\s*\2\s*\)", re.DOTALL)
+# A $ that starts an expansion, or a backtick.
+EXPANSION_START = re.compile(r'\$[A-Za-z_{(@*#?!$0-9-]|`')
+PRIVACY_SECONDS = 6
+# Bodies of here-documents fed to commands that are not shells: data, which
+# a command may publish through stdin (git commit -F -, --body-file -).
+HERE_DOCUMENTS = []
+PRIVACY_SCRIPT = Path(__file__).resolve().parents[2] / 'scripts' / 'privacy-check.py'
+# gh commands that put text on GitHub: a pull request's or an issue's title,
+# body or comment, a review, a release, a gist or a repository description.
+GH_PUBLISHES = {('pr', 'create'), ('pr', 'edit'), ('pr', 'comment'), ('pr', 'review'),
+                ('pr', 'close'), ('issue', 'create'), ('issue', 'edit'),
+                ('issue', 'comment'), ('issue', 'close'), ('release', 'create'),
+                ('release', 'edit'), ('gist', 'create'), ('gist', 'edit'),
+                ('repo', 'create'), ('repo', 'edit')}
+# GitHub tools whose text is published, and those that write files.
+TOOLS_PUBLISH = {'create_pull_request', 'update_pull_request', 'issue_write', 'create_issue',
+                 'update_issue', 'add_issue_comment', 'update_issue_comment',
+                 'add_reply_to_pull_request_comment', 'add_comment_to_pending_review',
+                 'pull_request_review_write', 'create_gist', 'update_gist',
+                 'create_or_update_file', 'push_files', 'delete_file', 'create_branch'}
 
 
 def deny(reason):
@@ -534,6 +587,7 @@ def check_commit(args):
             paths.append(arg)
         index += 1
     check_paths(paths)
+    return paths
 
 
 def require_full_options(word, options):
@@ -557,6 +611,7 @@ def check_push(args, context, branch_changed=False):
             '--no-force', '--no-force-with-lease', '--no-force-if-includes',
             '--no-mirror', '--no-all', '--no-branches', '--no-delete',
             '--repo', '--push-option', '--receive-pack', '--exec', '--recurse-submodules',
+            '--no-verify', '--verify',
         })
         if arg.startswith('--repo='):
             remote = arg.partition('=')[2]
@@ -590,6 +645,7 @@ def check_push(args, context, branch_changed=False):
         deny('Use literal push remotes and destinations; shell expansions are not inspected.')
     if dry_run:
         return  # Only the final setting determines whether Git sends updates.
+    check_push_hook(options, context)
     for option in options:
         if (option == '--force' or option.startswith(('--force-with-lease', '--force-if-includes'))
                 or (re.fullmatch(r'-[a-zA-Z46]+', option) and 'f' in option)):
@@ -838,8 +894,10 @@ def gh_command_words(words):
     return plain
 
 
-def check_gh(words, cwd, environment):
+def check_gh(words, cwd, environment, git_state=None):
     plain = expand_gh_alias(gh_command_words(words[1:]), cwd, environment)
+    if git_state is not None:
+        note_gh_text(plain, cwd, git_state)
     if len(plain) >= 2 and plain[0] in ('issue', 'pr') and plain[1] == 'new':
         plain[1] = 'create'
     if len(plain) >= 2 and plain[0] in ('agent-task', 'agent-tasks', 'agent', 'agents') \
@@ -900,6 +958,33 @@ def check_gh(words, cwd, environment):
         for value in option_values(plain[2:], options, short):
             if 'copilot' in value.lower():
                 deny(COPILOT)
+
+
+def note_gh_text(plain, cwd, git_state):
+    """The text a gh command puts on GitHub: titles, bodies, comments,
+    notes and descriptions, the files they come from, a gist's files and
+    an API write's fields and input."""
+    command = tuple(plain[:2])
+    if command in GH_PUBLISHES:
+        args = plain[2:]
+        files = list(option_values(args, {'--body-file', '--notes-file'}, {'-F'}))
+        if command[0] == 'gist':
+            files += [word for word in args if not word.startswith('-')]
+        note_published(git_state, 'gh ' + ' '.join(command), option_values(
+            args, {'--title', '--body', '--comment', '--notes', '--description'},
+            {'-t', '-b', '-c', '-n', '-d'}), files, cwd)
+    elif command[:1] == ('api',):
+        methods = list(option_values(plain, {'--method'}, {'-X'}))
+        fields = list(option_values(plain, {'--field', '--raw-field'}, {'-f', '-F'}))
+        method = methods[-1].upper() if methods else ('POST' if fields or list(
+            option_values(plain, {'--input'})) else 'GET')
+        if method not in ('GET', 'HEAD'):
+            values = [field.partition('=')[2] for field in fields
+                      if not field.partition('=')[2].startswith('@')]
+            files = [field.partition('=')[2][1:] for field in fields
+                     if field.partition('=')[2].startswith('@')]
+            note_published(git_state, 'gh api', values,
+                           files + list(option_values(plain, {'--input'})), cwd)
 
 
 def parsed_url(word):
@@ -1345,6 +1430,7 @@ def inspectable_here_documents(command):
         else:
             output.append(header.rstrip() + '\n')
             for body, quoted in bodies:
+                HERE_DOCUMENTS.append(body)
                 if not quoted:
                     # Escaped dollars/backticks in an unquoted here-doc are
                     # literal text, while unescaped substitutions execute.
@@ -1361,6 +1447,147 @@ def changed_directory(cwd, destination):
     return os.path.join(cwd, destination) if cwd is not None else None
 
 
+def published_files(filename, cwd):
+    """The text of a file a command publishes (a commit message, a body):
+    from a here-document in the same command for stdin, otherwise a
+    bounded regular file that exists before the command runs."""
+    if filename == '-':
+        if not HERE_DOCUMENTS:
+            deny(PUBLISHED_STDIN)
+        return list(HERE_DOCUMENTS)
+    if cwd is None:
+        deny(PUBLISHED_FILE)
+    path = os.path.join(cwd, os.path.expanduser(filename))
+    try:
+        metadata = os.stat(path)
+        if not stat.S_ISREG(metadata.st_mode) or metadata.st_size > 1024 * 1024:
+            deny(PUBLISHED_FILE)
+        with open(path, encoding='utf-8', errors='replace') as file:
+            return [file.read()]
+    except OSError:
+        deny(PUBLISHED_FILE)
+
+
+def literal_words(command):
+    """The words of a command, as the shell will pass them, in which every
+    $ and backtick is text: single-quoted or escaped. A word the shell
+    would build from a variable or another command is left out, and so is
+    anything this simple reading gets wrong, which then counts as built."""
+    words, word, built, quote = set(), [], False, None
+    index = 0
+
+    def end():
+        if word and not built:
+            words.add(''.join(word))
+
+    while index < len(command):
+        char = command[index]
+        if quote == "'":
+            if char == "'":
+                quote = None
+            else:
+                word.append(char)
+        elif char == '\\' and index + 1 < len(command):
+            following = command[index + 1]
+            if quote == '"' and following not in '$`"\\\n':
+                word.append(char)
+            elif following != '\n':
+                word.append(following)
+            index += 1
+        elif quote == '"':
+            if char == '"':
+                quote = None
+            else:
+                built = built or bool(EXPANSION_START.match(command, index))
+                word.append(char)
+        elif char in "'\"":
+            quote = char
+        elif char.isspace() or char in ';&|()<>':
+            end()
+            word, built = [], False
+        else:
+            built = built or bool(EXPANSION_START.match(command, index))
+            word.append(char)
+        index += 1
+    if quote is None:
+        end()
+    return words
+
+
+def expanded(value, git_state):
+    """Whether the shell builds value from a variable or another command:
+    it holds a $ or backtick outside a quoted here-document read with cat,
+    and is not, or does not end, a word in which they are text."""
+    if not EXPANSION_START.search(QUOTED_HERE_DOCUMENT.sub('', value)):
+        return False
+    for word in git_state.get('literal_words', ()):
+        if (word == value or word.endswith('=' + value)
+                or (re.match(r'-[^-]', word) and word[2:].lstrip('=') == value)):
+            return False
+    return True
+
+
+def note_published(git_state, label, values=(), files=(), cwd=None):
+    """Remember text a command would publish, for check_privacy. Text the
+    shell would build from a variable or another command is refused: what
+    it becomes cannot be read here."""
+    texts = git_state.setdefault('published', [])
+    for value in values:
+        value = str(value)
+        if expanded(value, git_state):
+            deny(PUBLISHED_EXPANSION)
+        # A quoted here-document read with cat publishes its body.
+        texts.append((label, QUOTED_HERE_DOCUMENT.sub(lambda match: match[3], value)))
+    for filename in files:
+        texts.extend((label + ' file', text) for text in published_files(filename, cwd))
+    git_state['publishes'] = True
+
+
+def effective_directory(context):
+    """The directory a git command runs in, after its -C options."""
+    cwd, options, _ = context
+    for index, option in enumerate(options[:-1]):
+        if option == '-C' and cwd is not None:
+            cwd = changed_directory(cwd, options[index + 1])
+    return cwd
+
+
+def note_commit(git_state, args, context, paths):
+    """Remember a commit: its message, the files it reads it from, and the
+    repository whose staged changes and added paths it would take."""
+    directory = effective_directory(context)
+    note_published(git_state, 'the commit message',
+                   option_values(args, {'--message'}, {'-m'}),
+                   option_values(args, {'--file'}, {'-F'}), directory)
+    if directory is None:
+        deny(UNKNOWN)
+    git_state.setdefault('commits', []).append(
+        (directory, [*git_state.get('adds', []), *paths]))
+
+
+def check_push_hook(options, context):
+    """A push must run .githooks/pre-push, which checks what it carries."""
+    if '--no-verify' in options:
+        deny(NO_VERIFY)
+    top = git(context, 'rev-parse', '--show-toplevel')
+    setting = git(context, 'config', '--get', 'core.hooksPath')
+    if top is None or not setting:
+        deny(HOOK_OFF)
+    folder = os.path.expanduser(setting)
+    folder = folder if os.path.isabs(folder) else os.path.join(top, folder)
+    hook = os.path.join(top, '.githooks', 'pre-push')
+    try:
+        same = os.path.realpath(folder) == os.path.realpath(os.path.join(top, '.githooks'))
+        with open(hook, encoding='utf-8') as file:
+            runs_check = 'scripts/privacy-check.py --pre-push' in file.read()
+    except OSError:
+        same = runs_check = False
+    if not same:
+        deny(NO_VERIFY if setting else HOOK_OFF)
+    if not runs_check or not os.access(hook, os.X_OK):
+        deny(HOOK_OFF)
+
+
 def check_command(command, cwd, depth=0, environment=None, git_state=None):
     # Branch changes persist even across subshells. Later implicit pushes
     # cannot be resolved using the repository's state before this command.
@@ -1369,6 +1596,7 @@ def check_command(command, cwd, depth=0, environment=None, git_state=None):
     if depth > 3:
         deny('Shell nesting exceeds the inspection limit. Use the underlying command explicitly.')
     command = ansi_c_quotes(without_shell_comments(inspectable_here_documents(command)))
+    literal = literal_words(command)
     try:
         parts = list(segments(command))
         raw_parts = list(segments(command, preserve_quotes=True))
@@ -1509,6 +1737,7 @@ def check_command(command, cwd, depth=0, environment=None, git_state=None):
                 next_states.add((target, True, new_stack, shell_env))
                 next_states.add((where, False, stack, shell_env))
                 continue
+            git_state['literal_words'] = literal  # this command's, not a nested one's
             if program == 'git':
                 subcommand, args, context = git_parts(unwrapped, command_cwd, command_environment)
                 subcommand, args, context = expand_git_alias(subcommand, args, context)
@@ -1524,15 +1753,17 @@ def check_command(command, cwd, depth=0, environment=None, git_state=None):
                     git_state['branch_changed'] = True
                 elif subcommand in ('add', 'stage'):
                     check_add(args)
+                    git_state.setdefault('adds', []).extend(
+                        arg for arg in args if not arg.startswith('-'))
                 elif subcommand == 'commit':
-                    check_commit(args)
+                    note_commit(git_state, args, context, check_commit(args))
                 elif subcommand == 'push':
                     check_push(args, context, git_state['branch_changed'])
                 elif subcommand == 'send-pack':
                     deny('Use git push with an explicit feature branch; send-pack '
                          'can update remote refs outside the inspected push path.')
             elif program == 'gh':
-                check_gh(unwrapped, command_cwd, command_environment)
+                check_gh(unwrapped, command_cwd, command_environment, git_state)
             elif program in ('curl', 'wget', 'http', 'https'):
                 request_words = curl_words(unwrapped) if program == 'curl' else unwrapped
                 if program == 'curl' and any(word.startswith('--expand-') for word in request_words[1:]):
@@ -1568,6 +1799,15 @@ def check_command(command, cwd, depth=0, environment=None, git_state=None):
                             operation = httpie_stdin(operation, words, separator, command_cwd)
                         arguments = api_arguments(operation, command_cwd, program)
                         method = request_method(operation, program)
+                        if method not in ('GET', 'HEAD'):
+                            # The request's body: its inline data, and the
+                            # files and items api_arguments read after the words.
+                            note_published(git_state, program, [
+                                *option_values(operation, {
+                                    '--data', '--data-ascii', '--data-binary', '--data-raw',
+                                    '--data-urlencode', '--json', '--form', '--form-string',
+                                    '--post-data', '--body-data'}, {'-d', '-F'}),
+                                arguments[len(' '.join(operation)):]])
                         if protected_api_write(operation, arguments, method):
                             deny(TO_MAIN)
                         if merge_api_request(operation, arguments, method):
@@ -1603,6 +1843,64 @@ def check_github_tool(name, arguments):
         deny(COPILOT)
 
 
+def privacy_module():
+    spec = importlib.util.spec_from_file_location('privacy_check', PRIVACY_SCRIPT)
+    module = importlib.util.module_from_spec(spec)
+    sys.dont_write_bytecode = True
+    spec.loader.exec_module(module)
+    return module
+
+
+def check_privacy(texts=(), files=(), commits=(), directory=None):
+    """Deny when what would be published holds a personal detail, naming
+    places and kinds only. If the check cannot run, nothing is published."""
+    try:
+        privacy = privacy_module()
+    except Exception as error:  # noqa: BLE001 - any failure publishes nothing
+        deny(PRIVATE_SETUP.format(reason=f'scripts/privacy-check.py could not be loaded '
+                                         f'({type(error).__name__}).'))
+    try:
+        findings = privacy.guard_findings(texts, files, commits, directory,
+                                          seconds=PRIVACY_SECONDS)
+    except privacy.SetupError as error:
+        deny(PRIVATE_SETUP.format(reason=str(error)))
+    except Exception as error:  # noqa: BLE001
+        deny(PRIVATE_SETUP.format(reason=f'it failed ({type(error).__name__}).'))
+    if findings:
+        places = '; '.join(str(finding) for finding in findings[:10])
+        if len(findings) > 10:
+            places += f'; and {len(findings) - 10} more'
+        deny(PRIVATE.format(places=places, advice=privacy.advice(findings)))
+
+
+def tool_texts(value, label):
+    """Every string in a tool's arguments, with where it came from."""
+    if isinstance(value, str):
+        yield label, value
+    elif isinstance(value, dict):
+        for key, child in value.items():
+            yield from tool_texts(child, f'{label}.{key}')
+    elif isinstance(value, list):
+        for index, child in enumerate(value):
+            yield from tool_texts(child, f'{label}[{index}]')
+
+
+def check_tool_privacy(name, arguments, cwd):
+    tool = name.rsplit('__', 1)[-1]
+    if tool not in TOOLS_PUBLISH:
+        return
+    files, rest = [], dict(arguments)
+    if tool == 'create_or_update_file' and isinstance(rest.get('content'), str):
+        files.append((str(rest.pop('path', '')), rest.pop('content')))
+    if tool == 'push_files' and isinstance(rest.get('files'), list):
+        for entry in rest.pop('files'):
+            if isinstance(entry, dict) and isinstance(entry.get('content'), str):
+                files.append((str(entry.get('path', '')), entry['content']))
+            else:
+                rest.setdefault('other_files', []).append(entry)
+    check_privacy(list(tool_texts(rest, tool)), files, directory=cwd)
+
+
 def main():
     try:
         call = json.load(sys.stdin)
@@ -1619,9 +1917,17 @@ def main():
         arguments = {}
     cwd = call.get('cwd') or os.getcwd()
     if name == 'Bash':
-        check_command(str(arguments.get('command', '')), cwd)
+        command = str(arguments.get('command', ''))
+        if LIST_REFERENCE.search(command):
+            deny(LIST_READ)
+        state = {'branch_changed': False}
+        check_command(command, cwd, git_state=state)
+        if state.get('publishes'):
+            check_privacy(state.get('published', []), commits=state.get('commits', ()),
+                          directory=cwd)
     elif name.startswith('mcp__'):
         check_github_tool(name, arguments)
+        check_tool_privacy(name, arguments, cwd)
 
 
 if __name__ == '__main__':

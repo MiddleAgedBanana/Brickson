@@ -35,6 +35,8 @@ Everywhere:
 ```sh
 python3 scripts/test-docs.py      # cited sections and relative links resolve
 python3 scripts/test-hooks.py     # the agent guard still blocks what it must
+python3 scripts/test-privacy.py   # the privacy check still finds what it must
+python3 scripts/privacy-check.py --outgoing  # personal details in what the branch would push
 python3 scripts/test-site.py      # website contrast and links
 python3 scripts/test-runner.py    # scripts/test.sh reports failures
 ```
@@ -47,7 +49,12 @@ it stops every agent's simulators.
 
 Copy each suite's last line ("Ran 13 tests ... OK", "All unit tests
 passed.") into your report. A suite that did not run is reported as not
-run, with the reason.
+run, with the reason. From the privacy check, report only whether it
+passed, how many it found of each kind, and whether a private list was
+read: never the places it printed, and never a word it matched
+(docs/DECISIONS.md, "Personal details stay out of the repository"). A
+run with `--no-list`, or one that stopped for want of a list, did not
+check the private words: say so.
 
 ## 3. Read CI for this branch
 

@@ -21,15 +21,47 @@ GUARD = ROOT / '.claude' / 'hooks' / 'guard.py'
 SETTINGS = ROOT / '.claude' / 'settings.json'
 
 
-def decision(tool_name, tool_input, cwd):
+# The privacy check reads a private list from the environment and from a
+# file under XDG_CONFIG_HOME. Tests use a made-up list and an empty folder,
+# so no list on this machine is ever read.
+PRIVACY_CONFIG = tempfile.TemporaryDirectory()
+PRIVACY_ENVIRONMENT = {'BRICKSON_PRIVATE_WORDS': 'Quillon Vassmere',
+                       'XDG_CONFIG_HOME': PRIVACY_CONFIG.name}
+HOOK_TEXT = '#!/bin/sh\nexec python3 scripts/privacy-check.py --pre-push "$1"\n'
+
+
+def with_privacy_hook(repo):
+    """Give a test repository the privacy hook the guard requires before
+    a push, as the owner's checkout has it."""
+    hook = Path(repo, '.githooks', 'pre-push')
+    hook.parent.mkdir(exist_ok=True)
+    hook.write_text(HOOK_TEXT)
+    hook.chmod(0o755)
+    subprocess.run(['git', '-C', str(repo), 'config', 'core.hooksPath', '.githooks'],
+                   check=True)
+
+
+def init_repository(folder, branch):
+    subprocess.run(['git', 'init', '-q', '-b', branch, str(folder)], check=True)
+    with_privacy_hook(folder)
+
+
+def guard_output(tool_name, tool_input, cwd, env=None):
     call = {'hook_event_name': 'PreToolUse', 'tool_name': tool_name,
             'tool_input': tool_input, 'cwd': str(cwd)}
+    if env is None:
+        env = dict(os.environ, **PRIVACY_ENVIRONMENT)
     result = subprocess.run([sys.executable, str(GUARD)], input=json.dumps(call),
-                            capture_output=True, text=True, timeout=30)
+                            capture_output=True, text=True, timeout=30, env=env)
     assert result.returncode == 0, result.stderr
     if not result.stdout.strip():
         return None
-    return json.loads(result.stdout)['hookSpecificOutput']['permissionDecision']
+    return json.loads(result.stdout)['hookSpecificOutput']
+
+
+def decision(tool_name, tool_input, cwd, env=None):
+    output = guard_output(tool_name, tool_input, cwd, env)
+    return output and output['permissionDecision']
 
 
 class GuardTests(unittest.TestCase):
@@ -46,6 +78,7 @@ class GuardTests(unittest.TestCase):
             '-c', 'commit.gpgsign=false', '-c', 'core.hooksPath=/dev/null',
             'commit', '-q', '--allow-empty', '-m', 'start')
         git('checkout', '-q', '-b', 'claude/topic')
+        with_privacy_hook(cls.repo)
 
     @classmethod
     def tearDownClass(cls):
@@ -108,11 +141,13 @@ class GuardTests(unittest.TestCase):
         self.assertAllowed('gh api repos/o/r/issues/12/%61ssignees')
 
     def test_trap_actions_require_inspectable_safe_commands(self):
+        # A trap's push runs wherever the shell ends, so whether that
+        # checkout runs the privacy hook is unknown: it is denied too.
         for command in ["trap 'git push origin main' EXIT", "trap -- 'git add -A' EXIT",
                         "trap 'gh pr merge 12' INT TERM", 'trap "$action" EXIT',
-                        "trap 'git push origin' EXIT"]:
+                        "trap 'git push origin' EXIT", "trap 'git push origin HEAD:feature' EXIT"]:
             self.assertDenied(command)
-        for command in ["trap 'git status' EXIT", "trap 'git push origin HEAD:feature' EXIT",
+        for command in ["trap 'git status' EXIT",
                         "trap '' INT", 'trap - EXIT', 'trap -p', 'trap -l', 'trap -- - EXIT']:
             self.assertAllowed(command)
 
@@ -360,7 +395,7 @@ class GuardTests(unittest.TestCase):
             local = root / 'local'; other = root / 'other'
             for base, branch in [(local, 'claude/topic'), (other, 'main')]:
                 (base / 'repo').mkdir(parents=True)
-                subprocess.run(['git', 'init', '-q', '-b', branch, str(base / 'repo')], check=True)
+                init_repository(str(base / 'repo'), branch)
             for prefix in [f'export CDPATH={other};', f'CDPATH={other};', f'CDPATH={other}']:
                 self.assertDenied(f'{prefix} cd repo && git push origin', cwd=local)
                 self.assertAllowed(f'{prefix} cd ./repo && git push origin', cwd=local)
@@ -416,7 +451,7 @@ class GuardTests(unittest.TestCase):
             self.assertAllowed(f'cat {redirect}(git status)')
         self.assertAllowed("echo '<(git add -A)'")
         with tempfile.TemporaryDirectory(dir=self.repo) as folder:
-            subprocess.run(['git', 'init', '-q', '-b', 'main', folder], check=True)
+            init_repository(folder, 'main')
             self.assertAllowed(f'cat <(cd {folder} && git status); git push origin')
             self.assertDenied(f'cat <(cd {folder} && git push origin)')
 
@@ -451,7 +486,7 @@ class GuardTests(unittest.TestCase):
 
     def test_subshells_restore_the_outer_repository_context(self):
         with tempfile.TemporaryDirectory(dir=self.repo) as folder:
-            subprocess.run(['git', 'init', '-q', '-b', 'main', folder], check=True)
+            init_repository(folder, 'main')
             self.assertAllowed(f'(cd {folder} && git status); git push origin')
             self.assertDenied(f'(cd {self.repo} && git status); git push origin', cwd=folder)
             self.assertDenied(f'(cd {folder} && git push origin); git status')
@@ -537,7 +572,7 @@ class GuardTests(unittest.TestCase):
 
     def test_shell_exports_and_unsets_preserve_repository_context(self):
         with tempfile.TemporaryDirectory(dir=self.repo) as folder:
-            subprocess.run(['git', 'init', '-q', '-b', 'main', folder], check=True)
+            init_repository(folder, 'main')
             assignment = 'GIT_DIR=' + shlex.quote(str(Path(folder) / '.git'))
             self.assertDenied(f'export {assignment}; git push origin')
             self.assertDenied(f'export {assignment} && git push origin')
@@ -596,7 +631,7 @@ class GuardTests(unittest.TestCase):
 
     def test_directory_stack_changes_are_checked(self):
         with tempfile.TemporaryDirectory(dir=self.repo) as folder:
-            subprocess.run(['git', 'init', '-q', '-b', 'main', folder], check=True)
+            init_repository(folder, 'main')
             self.assertDenied(f'pushd {folder} && git push origin')
             self.assertDenied(f'pushd {self.repo} && popd && git push origin', cwd=folder)
             self.assertAllowed(f'pushd {folder} && popd && git push origin')
@@ -616,7 +651,7 @@ class GuardTests(unittest.TestCase):
             self.assertAllowed(f"cat{redirect}'git add -A'")
         self.assertAllowed("echo 'bash <<< git add -A'")
         with tempfile.TemporaryDirectory(dir=self.repo) as folder:
-            subprocess.run(['git', 'init', '-q', '-b', 'main', folder], check=True)
+            init_repository(folder, 'main')
             self.assertDenied(f"env -C {folder} bash <<< 'git push origin'")
             self.assertAllowed(f"env -C {self.repo} bash <<< 'git push origin'", cwd=folder)
 
@@ -666,7 +701,7 @@ class GuardTests(unittest.TestCase):
 
     def test_push_mode_operands_and_dry_runs(self):
         with tempfile.TemporaryDirectory(dir=self.repo) as folder:
-            subprocess.run(['git', 'init', '-q', '-b', 'main', folder], check=True)
+            init_repository(folder, 'main')
             self.assertDenied('git push --recurse-submodules check origin', cwd=folder)
             self.assertDenied('git push --recurse-submodules=check origin', cwd=folder)
             self.assertAllowed('git push --recurse-submodules check origin HEAD:feature', cwd=folder)
@@ -691,7 +726,7 @@ class GuardTests(unittest.TestCase):
 
     def test_sudo_chdir_selects_the_repository(self):
         with tempfile.TemporaryDirectory(dir=self.repo) as folder:
-            subprocess.run(['git', 'init', '-q', '-b', 'main', folder], check=True)
+            init_repository(folder, 'main')
             for option in [f'-D {folder}', f'-D{folder}', f'--chdir {folder}', f'--chdir={folder}']:
                 self.assertDenied(f'sudo {option} git push origin')
                 self.assertAllowed(f'sudo {option} git push origin HEAD:feature')
@@ -712,7 +747,7 @@ class GuardTests(unittest.TestCase):
 
     def test_here_document_substitutions_keep_outer_repository_context(self):
         with tempfile.TemporaryDirectory(dir=self.repo) as folder:
-            subprocess.run(['git', 'init', '-q', '-b', 'main', folder], check=True)
+            init_repository(folder, 'main')
             self.assertDenied(f'env -C {self.repo} bash <<EOF\n$(git push origin)\nEOF', cwd=folder)
             self.assertAllowed(f"env -C {self.repo} bash <<'EOF'\ngit push origin\nEOF", cwd=folder)
 
@@ -774,7 +809,7 @@ class GuardTests(unittest.TestCase):
     def test_operandless_cd_uses_the_child_home(self):
         with tempfile.TemporaryDirectory(dir=self.repo) as folder:
             other = Path(folder)
-            subprocess.run(['git', 'init', '-q', '-b', 'main', str(other)], check=True)
+            init_repository(str(other), 'main')
             for prefix in [f'HOME={other}', f'env HOME={other}']:
                 for connector in [';', '&&']:
                     with self.subTest(prefix=prefix, connector=connector):
@@ -804,7 +839,7 @@ class GuardTests(unittest.TestCase):
     def test_env_directory_options_select_the_repository(self):
         with tempfile.TemporaryDirectory(dir=self.repo) as folder:
             other = Path(folder)
-            subprocess.run(['git', 'init', '-q', '-b', 'main', str(other)], check=True)
+            init_repository(str(other), 'main')
             for option in [f'-C {other}', f'-C{other}', f'--chdir {other.name}',
                            f'--chdir={other.name}']:
                 with self.subTest(option=option):
@@ -827,7 +862,7 @@ class GuardTests(unittest.TestCase):
     def test_env_directory_does_not_move_outer_shell_substitutions(self):
         with tempfile.TemporaryDirectory(dir=self.repo) as folder:
             other = Path(folder)
-            subprocess.run(['git', 'init', '-q', '-b', 'main', str(other)], check=True)
+            init_repository(str(other), 'main')
             for substitution in ['`git push origin`', '"$(git push origin)"']:
                 with self.subTest(substitution=substitution, outer='main'):
                     self.assertDenied(f'env -C {self.repo} echo {substitution}', cwd=other)
@@ -839,7 +874,7 @@ class GuardTests(unittest.TestCase):
     def test_double_quoted_child_scripts_expand_in_the_outer_shell(self):
         with tempfile.TemporaryDirectory(dir=self.repo) as folder:
             other = Path(folder)
-            subprocess.run(['git', 'init', '-q', '-b', 'main', str(other)], check=True)
+            init_repository(str(other), 'main')
             for substitution in ['$(git push origin)', '`git push origin`']:
                 with self.subTest(substitution=substitution, outer='main'):
                     self.assertDenied(f'env -C {self.repo} sh -c "echo {substitution}"', cwd=other)
@@ -850,7 +885,7 @@ class GuardTests(unittest.TestCase):
     def test_escaped_substitutions_in_child_scripts_stay_checked(self):
         with tempfile.TemporaryDirectory(dir=self.repo) as folder:
             other = Path(folder)
-            subprocess.run(['git', 'init', '-q', '-b', 'main', str(other)], check=True)
+            init_repository(str(other), 'main')
             for substitution in [r'\$(git push origin)', r'\`git push origin\`']:
                 with self.subTest(substitution=substitution):
                     self.assertDenied(f'env -C {other} sh -c "echo {substitution}"')
@@ -865,9 +900,13 @@ class GuardTests(unittest.TestCase):
                 self.assertDenied(f"git commit -m update -- '{path}'")
         for command in ['git commit docs/HANDOFF.md -m update',
                         'git commit --message . docs/HANDOFF.md',
-                        'git commit -m .', 'git commit -m. -- docs/HANDOFF.md',
-                        'git commit --file . -- docs/HANDOFF.md']:
+                        'git commit -m .', 'git commit -m. -- docs/HANDOFF.md']:
             self.assertAllowed(command)
+        # The value of --file is a message file, not a pathspec. A folder is
+        # no message, so the privacy check cannot read it and denies that.
+        reason = guard_output('Bash', {'command': 'git commit --file . -- docs/HANDOFF.md'},
+                              self.repo)['permissionDecisionReason']
+        self.assertIn('must exist before the command runs', reason)
 
     def test_pathspec_files_require_explicit_paths(self):
         with tempfile.TemporaryDirectory(dir=self.repo) as folder:
@@ -936,7 +975,7 @@ class GuardTests(unittest.TestCase):
     def test_push_queries_use_the_selected_repository(self):
         with tempfile.TemporaryDirectory(dir=self.repo) as folder:
             other = Path(folder)
-            subprocess.run(['git', 'init', '-q', '-b', 'main', str(other)], check=True)
+            init_repository(str(other), 'main')
             for selector in [f'--git-dir={other}/.git', f'--git-dir {other}/.git',
                              f'--git-dir={other.name}/.git --work-tree={other.name}',
                              f'-C {other.name}', f'-C{other.name}']:
@@ -946,7 +985,7 @@ class GuardTests(unittest.TestCase):
     def test_git_environment_selects_the_repository_for_push_checks(self):
         with tempfile.TemporaryDirectory(dir=self.repo) as folder:
             other = Path(folder)
-            subprocess.run(['git', 'init', '-q', '-b', 'main', str(other)], check=True)
+            init_repository(str(other), 'main')
             for prefix in [f'GIT_DIR={other}/.git', f'env GIT_DIR={other}/.git',
                            f'GIT_DIR={other}/.git GIT_WORK_TREE={other}']:
                 with self.subTest(prefix=prefix):
@@ -999,8 +1038,7 @@ class GuardTests(unittest.TestCase):
             # Even an existing directory may fail to open. With &&, the push
             # runs only after success; with ;, the old repository also matters.
             with tempfile.TemporaryDirectory(dir=self.repo) as folder:
-                subprocess.run(['git', 'init', '-q', '-b', 'claude/other', folder],
-                               check=True)
+                init_repository(folder, 'claude/other')
                 self.assertAllowed(f'cd {folder} && git push')
                 self.assertDenied(f'cd {folder}; git push')
         finally:
@@ -1226,6 +1264,243 @@ class GuardTests(unittest.TestCase):
         self.assertEqual((result.returncode, result.stdout), (0, ''))
 
 
+# Made-up details: a name standing in for the private list, and an
+# address, a number and a home folder put together from parts, so this
+# file holds none of its own (scripts/test-privacy.py).
+PRIVATE_NAME = 'Quillon Vassmere'
+PRIVATE_ADDRESS = 'quill.vass' + '@' + 'gmail' + '.com'
+PRIVATE_PHONE = '(212) ' + '867-' + '0142'
+PRIVATE_HOME = '/Us' + 'ers/' + 'qvassmere'
+
+
+class PrivacyGuardTests(unittest.TestCase):
+    """Publishing a personal detail is denied: in a commit's message and
+    changes, and in text sent to GitHub by gh, the API or a GitHub tool. A
+    push must run the privacy hook, which reads what the push carries.
+    Dropping any of these paths, or naming what was found in the denial,
+    fails here (docs/DECISIONS.md, "Personal details stay out of the
+    repository")."""
+
+    def setUp(self):
+        folder = tempfile.TemporaryDirectory()
+        self.addCleanup(folder.cleanup)
+        self.folder = Path(folder.name)
+        self.repo = self.folder / 'repo'
+        self.remote = self.folder / 'remote.git'
+        subprocess.run(['git', 'init', '-q', '--bare', '-b', 'main', str(self.remote)],
+                       check=True)
+        self.repo.mkdir()
+        init_repository(self.repo, 'main')
+        self.git('commit', '-q', '--allow-empty', '-m', 'start')
+        self.git('remote', 'add', 'origin', str(self.remote))
+        self.git('push', '-q', 'origin', 'main')
+        self.git('checkout', '-q', '-b', 'claude/topic')
+        # The list comes only from here: no file on this machine is read.
+        self.env = dict(os.environ, XDG_CONFIG_HOME=str(self.folder / 'config'),
+                        BRICKSON_PRIVATE_WORDS=PRIVATE_NAME + '\n')
+
+    def git(self, *args):
+        subprocess.run(['git', '-C', str(self.repo), '-c', 'user.name=t',
+                        '-c', 'user.email=t@example.com', '-c', 'commit.gpgsign=false',
+                        '-c', 'core.hooksPath=/dev/null', *args],
+                       check=True, capture_output=True)
+
+    def output(self, command):
+        return guard_output('Bash', {'command': command}, self.repo, self.env)
+
+    def assertDenied(self, command):
+        output = self.output(command)
+        self.assertEqual(output and output['permissionDecision'], 'deny', command)
+        reason = output['permissionDecisionReason']
+        for secret in ('Quillon', 'quillon', 'Vassmere', 'quill.vass', '867', 'qvassmere'):
+            self.assertNotIn(secret, reason, 'the denial must not repeat what it found')
+        return reason
+
+    def assertAllowed(self, command):
+        self.assertIsNone(self.output(command), command)
+
+    def tool(self, name, arguments):
+        return decision(name, arguments, self.repo, self.env)
+
+    def test_a_commit_message_with_a_detail_is_denied(self):
+        for message in [f'Thanks {PRIVATE_NAME}', f'Write to {PRIVATE_ADDRESS}',
+                        f'Call {PRIVATE_PHONE}', f'Measured in {PRIVATE_HOME}/code']:
+            with self.subTest(message=message):
+                reason = self.assertDenied(f'git commit -m {shlex.quote(message)}')
+                self.assertIn('the commit message:1:', reason)
+        # A here-document's body is the message: line 3 is its third line.
+        heredoc = ('git commit -m "$(cat <<\'EOF\'\nFix the layout.\n\n'
+                   f'For {PRIVATE_NAME.lower()}.\nEOF\n)"')
+        self.assertIn('the commit message:3:', self.assertDenied(heredoc))
+        self.assertAllowed('git commit -m "Fix the layout"')
+        self.assertAllowed('git commit -m "$(cat <<\'EOF\'\nCosts $5 and `x`.\nEOF\n)"')
+
+    def test_a_message_the_shell_would_build_is_denied(self):
+        # What a variable or a command holds cannot be read before it runs.
+        for command in ['git commit -m "$MESSAGE"', 'git commit -m "Fix $(cat notes.md)"',
+                        'git commit -m "Fix `cat notes.md`"', 'git commit --message="${M}"',
+                        'gh pr create --title t --body "$BODY"', 'gh pr comment 1 -b"$X"',
+                        'gh api -X POST repos/o/r/issues/1/comments -f body="$X"']:
+            with self.subTest(command=command):
+                self.assertIn('variable or another command', self.assertDenied(command))
+        # Single quotes keep a $ as text, as in a GraphQL query's variables.
+        self.assertAllowed("git commit -m 'Explain $PWD'")
+        self.assertAllowed("gh api graphql -f query='query($id: ID!) { node(id: $id) { id } }'")
+
+    def test_a_commit_message_file_is_read(self):
+        message = self.folder / 'message.txt'
+        message.write_text(f'Fix it\n\nThanks {PRIVATE_NAME}\n')
+        self.assertIn('the commit message file:3:', self.assertDenied(f'git commit -F {message}'))
+        self.assertDenied(f'git commit --file={message}')
+        message.write_text('Fix it\n')
+        self.assertAllowed(f'git commit -F {message}')
+        # A file that does not exist yet cannot be read, and neither can
+        # stdin unless a here-document in the same command gives it.
+        self.assertIn('must exist', self.assertDenied(f'git commit -F {self.folder}/later.txt'))
+        self.assertIn('stdin', self.assertDenied('git commit -F -'))
+        self.assertDenied(f"git commit -F - <<'EOF'\nFix it\n\nThanks {PRIVATE_NAME}\nEOF")
+        self.assertAllowed("git commit -F - <<'EOF'\nFix it\nEOF")
+
+    def test_what_a_commit_takes_is_read(self):
+        notes = self.repo / 'notes.md'
+        notes.write_text(f'one\n{PRIVATE_NAME}\n')
+        # Not yet staged: an add in the same command would take it.
+        self.assertIn('notes.md:2:1:', self.assertDenied(
+            'git add notes.md && git commit -m "Add notes"'))
+        # A commit naming the path takes it from the working tree.
+        self.assertDenied('git commit -m "Add notes" -- notes.md')
+        self.git('add', 'notes.md')
+        reason = self.assertDenied('git commit -m "Add notes"')
+        self.assertIn('notes.md (staged):2:1:', reason)
+        # Fixed and staged again, the commit goes ahead, amend included.
+        notes.write_text('one\n')
+        self.git('add', 'notes.md')
+        self.assertAllowed('git commit -m "Add notes"')
+        self.git('commit', '-q', '-m', 'Add notes')
+        self.assertAllowed('git commit --amend -m "Add the notes"')
+
+    def test_a_detail_in_a_file_s_name_is_never_shown(self):
+        named = self.repo / (PRIVATE_NAME.replace(' ', '-') + '.md')
+        named.write_text('Nothing personal.\n')
+        reason = self.assertDenied(f'git add {shlex.quote(named.name)} && git commit -m "Add"')
+        self.assertIn('a word from the private list in a name', reason)
+
+    def test_a_push_must_run_the_privacy_hook(self):
+        (self.repo / 'notes.md').write_text('Nothing personal.\n')
+        self.git('add', 'notes.md')
+        self.git('commit', '-q', '-m', 'Add notes')
+        self.assertAllowed('git push origin HEAD:claude/topic')
+        self.assertAllowed('git push -u origin claude/topic')
+        # Skipping the hook, or pointing git at other hooks, is denied.
+        for command in ['git push --no-verify origin claude/topic',
+                        'git -c core.hooksPath=/dev/null push origin claude/topic',
+                        'git -c core.hooksPath= push origin claude/topic',
+                        'GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=core.hooksPath '
+                        'GIT_CONFIG_VALUE_0=/dev/null git push origin claude/topic']:
+            with self.subTest(command=command):
+                self.assertDenied(command)
+        # A checkout whose pushes skip it, or whose hook does not run the
+        # check, is denied until the hook is on.
+        subprocess.run(['git', '-C', str(self.repo), 'config', '--unset', 'core.hooksPath'],
+                       check=True)
+        self.assertIn('core.hooksPath .githooks',
+                      self.assertDenied('git push origin claude/topic'))
+        with_privacy_hook(self.repo)
+        (self.repo / '.githooks' / 'pre-push').write_text('#!/bin/sh\nexit 0\n')
+        self.assertDenied('git push origin claude/topic')
+        with_privacy_hook(self.repo)
+        (self.repo / '.githooks' / 'pre-push').chmod(0o644)
+        self.assertDenied('git push origin claude/topic')
+        # A dry run sends nothing.
+        self.assertAllowed('git push --dry-run --no-verify origin claude/topic')
+
+    def test_unpublished_commands_are_allowed(self):
+        # A home folder in a command is not published; only its text is.
+        self.assertAllowed(f'cd {PRIVATE_HOME}/code && git status')
+        self.assertAllowed(f'grep -rn {shlex.quote(PRIVATE_NAME)} docs')
+        self.assertAllowed(f'git -C {self.repo} log --oneline')
+        self.assertAllowed('python3 scripts/privacy-check.py --status')
+
+    def test_text_sent_to_github_by_gh_or_the_api_is_read(self):
+        for command in [f'gh pr create --title t --body {shlex.quote(PRIVATE_ADDRESS)}',
+                        f'gh pr create -t {shlex.quote(PRIVATE_NAME)} -b ok',
+                        f'gh pr comment 12 -b {shlex.quote(PRIVATE_PHONE)}',
+                        f'gh issue create --title {shlex.quote(PRIVATE_NAME)} --body x',
+                        f'gh pr review 12 --comment -b {shlex.quote(PRIVATE_NAME)}',
+                        f'gh pr edit 12 --body {shlex.quote(PRIVATE_NAME)}',
+                        f'gh release create v1 --notes {shlex.quote(PRIVATE_NAME)}',
+                        "gh api -X POST repos/o/r/issues/12/comments -f "
+                        + shlex.quote('body=' + PRIVATE_NAME),
+                        "gh api repos/o/r/issues/12/comments -f "
+                        + shlex.quote('body=' + PRIVATE_NAME),
+                        'curl -q -X POST https://api.github.com/repos/o/r/issues/12/comments '
+                        '-d ' + shlex.quote(json.dumps({'body': PRIVATE_ADDRESS}))]:
+            with self.subTest(command=command):
+                self.assertDenied(command)
+        body = self.folder / 'body.md'
+        body.write_text(f'Thanks {PRIVATE_NAME}\n')
+        self.assertDenied(f'gh pr create --title t --body-file {body}')
+        self.assertDenied(f'gh pr comment 12 -F {body}')
+        self.assertDenied(f'gh api -X PATCH repos/o/r/pulls/12 -F body=@{body}')
+        self.assertDenied(f"gh pr comment 12 --body-file - <<'EOF'\n{PRIVATE_NAME}\nEOF")
+        # A body file that is not there yet cannot be read.
+        self.assertDenied(f'gh pr comment 12 --body-file {self.folder}/missing.md')
+        for command in ['gh pr create --title "Add a check" --body "Fixes the layout"',
+                        'gh pr view 12 --json body', 'gh api repos/o/r/pulls/12',
+                        f'gh api "search/issues?q={PRIVATE_NAME.split()[0]}"',
+                        "gh pr comment 12 --body-file - <<'EOF'\n@coderabbitai review\nEOF"]:
+            with self.subTest(command=command):
+                self.assertAllowed(command)
+
+    def test_text_sent_by_a_github_tool_is_read(self):
+        for name, arguments in [
+                ('mcp__github__create_pull_request', {'title': 't', 'body': PRIVATE_NAME}),
+                ('mcp__github__update_pull_request', {'pullNumber': 1, 'title': PRIVATE_NAME}),
+                ('mcp__github__add_issue_comment', {'issue_number': 1, 'body': PRIVATE_ADDRESS}),
+                ('mcp__github__add_reply_to_pull_request_comment', {'body': PRIVATE_PHONE}),
+                ('mcp__github__pull_request_review_write', {'event': 'COMMENT',
+                                                           'body': PRIVATE_NAME}),
+                ('mcp__github__issue_write', {'method': 'create', 'title': 'x',
+                                              'body': PRIVATE_NAME}),
+                ('mcp__github__create_branch', {'branch': 'claude/' + PRIVATE_NAME.replace(' ', '-'),
+                                                'from_branch': 'main'}),
+                ('mcp__github__create_or_update_file', {'branch': 'claude/topic',
+                                                        'path': 'a.md', 'content': PRIVATE_HOME}),
+                ('mcp__github__delete_file', {'branch': 'claude/topic', 'path': 'a.md',
+                                              'message': PRIVATE_NAME}),
+                ('mcp__github__push_files', {'branch': 'claude/topic', 'message': 'm',
+                                             'files': [{'path': 'a.md', 'content': 'ok'},
+                                                       {'path': 'b.md', 'content': PRIVATE_NAME}]}),
+                ('mcp__github__push_files', {'branch': 'claude/topic', 'message': PRIVATE_NAME,
+                                             'files': [{'path': 'a.md', 'content': 'ok'}]})]:
+            with self.subTest(name=name, arguments=arguments):
+                self.assertEqual(self.tool(name, arguments), 'deny')
+        for name, arguments in [
+                ('mcp__github__add_issue_comment', {'issue_number': 1,
+                                                    'body': '@coderabbitai review'}),
+                ('mcp__github__create_pull_request', {'title': 'Add a check',
+                                                      'body': 'noreply@anthropic.com'}),
+                ('mcp__github__pull_request_read', {'pullNumber': 1, 'body': PRIVATE_NAME})]:
+            with self.subTest(name=name):
+                self.assertIsNone(self.tool(name, arguments))
+
+    def test_without_a_list_nothing_is_published(self):
+        self.env.pop('BRICKSON_PRIVATE_WORDS')
+        self.assertIn('could not run', self.assertDenied('git commit -m "Fix it"'))
+        self.assertDenied('gh pr comment 12 --body ok')
+        self.assertEqual(self.tool('mcp__github__add_issue_comment', {'body': 'ok'}), 'deny')
+        self.assertAllowed('git status')
+
+    def test_the_private_list_is_never_read(self):
+        for command in ['cat ~/.config/brickson/private-words.txt',
+                        'cat "$HOME/.config/brickson/private-words.txt"',
+                        'ls ~/.config/brickson', 'echo "$BRICKSON_PRIVATE_WORDS"',
+                        'echo ${BRICKSON_PRIVATE_WORDS}', 'printenv BRICKSON_PRIVATE_WORDS',
+                        'base64 -d <<< "$BRICKSON_PRIVATE_WORDS"']:
+            with self.subTest(command=command):
+                self.assertIn('--status', self.assertDenied(command))
+
+
 class SettingsTests(unittest.TestCase):
     """Unhooking the guard, or dropping a deny rule, must fail."""
 
@@ -1239,7 +1514,11 @@ class SettingsTests(unittest.TestCase):
                  'assign_copilot_to_issue', 'assign_copilot_to_issue_with_intent', 'create_pull_request_with_copilot',
                  'push_files', 'create_or_update_file', 'delete_file',
                  'pull_request_review_write', 'create_pull_request', 'update_pull_request',
-                 'issue_write', 'create_issue', 'update_issue']
+                 'issue_write', 'create_issue', 'update_issue',
+                 # The tools that publish text, for the privacy check.
+                 'add_issue_comment', 'update_issue_comment',
+                 'add_reply_to_pull_request_comment', 'add_comment_to_pending_review',
+                 'create_gist', 'update_gist', 'create_branch']
         for tool in ['Bash'] + [f'mcp__github__{t}' for t in tools]:
             commands = [hook['command'] for group in groups
                         if re.fullmatch(group['matcher'], tool)
@@ -1261,6 +1540,13 @@ class SettingsTests(unittest.TestCase):
         for tool in ['merge_pull_request', 'enable_pr_auto_merge', 'request_copilot_review',
                      'assign_copilot_to_issue', 'create_pull_request_with_copilot']:
             self.assertIn(f'mcp__github__{tool}', deny)
+
+    def test_the_private_list_cannot_be_opened_or_changed(self):
+        # The list lives outside every checkout; Read and Edit never reach it
+        # (docs/DECISIONS.md, "Personal details stay out of the repository").
+        deny = set(self.settings['permissions']['deny'])
+        for rule in ['Read(~/.config/brickson/**)', 'Edit(~/.config/brickson/**)']:
+            self.assertIn(rule, deny)
 
 
 if __name__ == '__main__':

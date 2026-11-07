@@ -1,0 +1,13 @@
+#!/bin/sh
+# Before git pushes anything, look for personal and family details in what
+# the push would publish: the branch and tag names, and each new commit's
+# message, author, committer and changes, pictures' hidden text included.
+# The push stops if one is found, or if this computer has no private list
+# to check with (scripts/privacy-check.py says what to do).
+#
+# Turn it on in a clone once; its worktrees share the setting:
+#   git config core.hooksPath .githooks
+# Never push with --no-verify or another core.hooksPath: this check is how
+# the repository stays free of personal details.
+cd "$(git rev-parse --show-toplevel)" || exit 2
+exec python3 scripts/privacy-check.py --pre-push "$1"
