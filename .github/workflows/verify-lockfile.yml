@@ -1,0 +1,43 @@
+# Fails a pull request whose .github/workflows/actions.lock is out of step
+# with the workflows, or whose locked commits no longer check out against
+# the tags they were locked from. The run also refuses an action the
+# lockfile does not record, but only when that workflow runs: pages.yml
+# runs after a merge, not on a pull request, and a workflow left out of the
+# lockfile runs on plain tags with no complaint. This says so on the pull
+# request (docs/DECISIONS.md, "Reviews, updates and GitHub settings",
+# *Dependencies*). Free for public repositories, and it runs on Linux, so
+# it uses none of the Mac machines the tests need.
+#
+# Not a check the `main` ruleset requires: the owner decides whether it
+# becomes one. It has no path filter so that it can.
+#
+# GitHub's own sample, from the extension's repository
+# (.github/workflows/verify-lockfile.yml), with this repository's names and
+# a time limit. The extension is pinned to a release GitHub has made
+# immutable. Dependabot cannot update that pin: a thread moves it by hand,
+# and a lockfile written by a newer extension fails here until it does.
+name: Verify lockfile
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Verify lockfile
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install gh actions-lock
+        run: gh extension install github/gh-actions-lock --pin v0.4.1
+      - name: Check the lockfile
+        run: gh actions-lock --verify
