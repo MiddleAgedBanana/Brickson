@@ -1092,6 +1092,29 @@ docs/ROADMAP.md, *The quality bar*, Q24):
    file already set it, it prints your own line instead; any number
    larger than the file, about 69,000 bytes today, works). Codex reads
    it when a new session starts.
+9. Settings for the reviewers and GitHub's machines, from 2026-11-07
+   (docs/DECISIONS.md, *Code review* and *Dependencies*), once that
+   pull request has merged:
+   - **Install cubic** from
+     [its Marketplace page](https://github.com/marketplace/cubic-ai-code-reviews):
+     sign in at cubic.dev with GitHub, and give its app **Only select
+     repositories**, with Brickson alone. Success: the next pull request
+     gets a review from `cubic-dev-ai`.
+   - **Allow only GitHub's actions (and your own):** the repository's
+     Settings → Actions → General → "Actions permissions" → "Allow
+     MiddleAgedBanana, and select non-MiddleAgedBanana, actions and
+     reusable workflows", tick only "Allow actions created by GitHub",
+     and Save. Success: the next pull request's checks all run.
+   - **Leave CodeRabbit's "Autofix" box unticked** if its comment on a
+     pull request ever shows one (`.coderabbit.yaml` removed it): it
+     has CodeRabbit write commits itself, and reviewers here never
+     write the code.
+   - **Optional, your choice:** turn off training on your work in
+     ChatGPT (Settings → Data controls → "Improve the model for
+     everyone") and in Codex's own settings ("Include environments", at
+     chatgpt.com/codex/cloud/settings/general), and in Greptile
+     (Settings → Organization → Data & Privacy → "Help us improve
+     Greptile").
 
 For agents: no build goes to App Review until every gate of
 docs/ROADMAP.md, *The quality bar*, has passed, the owner's answer last
@@ -1367,14 +1390,40 @@ settings, date) and summarise it here.
 - CodeQL scans the workflow files and the Python scripts, not the Swift
   code, on purpose (docs/DECISIONS.md, *Code scanning*); the failed Swift
   attempt of 2026-10-10 is still listed on the Tool status page.
+- Since 2026-11-07 no checkout keeps the job's token, and a "Dependency
+  review" job on every pull request fails one that brings in an action
+  with a known security advisory; it is not a required check
+  (docs/DECISIONS.md, *Dependencies*). **Next for the repository: the
+  workflow lockfile**, one pull request of its own in a new thread,
+  made on the owner's Mac through Remote Control in a worktree of a
+  branch from `main`, never in `~/code/brickson`. Steps:
+  `gh extension install github/gh-actions-lock`, then `gh actions-lock`
+  (it writes `.github/workflows/actions.lock` and rewrites each short
+  tag such as `@v7` to its full version), read the whole diff, then
+  `gh actions-lock --verify`, which must report no errors. The pull
+  request rewrites docs/DECISIONS.md, *Dependencies*, from "Actions are
+  referenced by version tag" through its "Next" bullet, adds a gotcha
+  to AGENTS.md that a pull request changing a `uses:` line runs
+  `gh actions-lock` again, and decides whether a "Verify lockfile"
+  workflow runs `gh actions-lock --verify` on each pull request. A
+  cloud session cannot push `.github/workflows/`, so the Mac pushes it.
+  The owner's allowlist setting (*Dependencies*) is checked against
+  the locked commits; "Allow actions created by GitHub" is expected to
+  keep matching, which the first locked run shows.
 - Open PR pushes now follow AGENTS.md, "Pushing to an open PR": [rule and verification](log/2026-10-23-open-pr-push-policy.md).
 - The docs cross-reference check reads every title a citation names,
   quoted titles starting with a small letter and titles after the first
   included: [record](log/2026-10-23-docs-check-gaps.md).
-- Codex reviews every push to a pull request (Greptile too, as far as
-  its free plan allows), and AI Scan each push; CodeRabbit reviews only
-  when a comment asks, `@coderabbitai review`, since the owner's trial
-  ended. None reviews Dependabot's pull requests by itself. Copilot no longer
+- Codex reviews every push to a pull request, and AI Scan each push;
+  Greptile reviews when a pull request opens, as far as its free plan's
+  credits allow; cubic, once the owner installs its app, reviews when
+  one opens and after each push; CodeRabbit reviews only when a comment
+  asks, `@coderabbitai review`, since the owner's trial ended. Since
+  2026-11-07 each one's settings are in the repository
+  (`.coderabbit.yaml`, `cubic.yaml`, `.greptile/`), with every feature
+  that writes code and has a setting turned off, and AGENTS.md's rule
+  holds the rest (docs/DECISIONS.md, *Code review*).
+  None reviews Dependabot's pull requests by itself. Copilot no longer
   reviews: its credits ran out on pull request #78, and since
   2026-11-04 no agent requests it (docs/DECISIONS.md, *Code review*).
   The AI credits AI Scan uses show only in Settings → Billing → AI

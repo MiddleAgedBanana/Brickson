@@ -41,6 +41,8 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       # App Review rejects placeholder text, and a policy with blanks in it
       # promises nothing. Refuse to publish until every blank is filled.

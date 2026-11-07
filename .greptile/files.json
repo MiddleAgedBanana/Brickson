@@ -1,0 +1,8 @@
+{
+  "files": [
+    {
+      "path": "AGENTS.md",
+      "description": "The rules for every agent and reviewer of this repository: the non-negotiable invariants, the Code Review Rules, and what is not a finding."
+    }
+  ]
+}

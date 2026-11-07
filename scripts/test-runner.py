@@ -23,6 +23,7 @@ from unittest import mock
 
 SCRIPT = Path(__file__).resolve().with_name("test.sh")
 WORKFLOW = SCRIPT.parent.parent / ".github" / "workflows" / "tests.yml"
+WORKFLOWS = WORKFLOW.parent
 
 # Answers the version and build-settings queries from the fixture, and
 # records every other xcodebuild run, one line of tab-separated arguments
@@ -1584,6 +1585,158 @@ def workflow_jobs(text):
     return jobs
 
 
+REPOSITORY = SCRIPT.parent.parent
+STEPS_KEY = re.compile(r"steps:\s*(&[^\s#]+\s*)?(#.*)?")
+USES = re.compile(r"""uses:\s*["']?([^\s#"']+)""")
+WITH_KEY = re.compile(r"with:\s*(&[^\s#]+\s*)?(#.*)?")
+NO_TOKEN = re.compile(r"""persist-credentials:\s*(["']?)(?i:false)\1\s*(#.*)?""")
+FLOW_NO_TOKEN = re.compile(r"""with:\s*(&[^\s#]+\s*)?\{([^{}"']*,)?\s*"""
+                           r"""persist-credentials\s*:\s*(["']?)(?i:false)\3\s*[,}]""")
+# actions/checkout in any spelling GitHub may accept: any case, a backslash
+# or a doubled slash, spaces; but not another action whose name holds it.
+CHECKOUT = re.compile(r"(?<![\w.-])actions\s*[/\\]+\s*checkout(?![\w.-])", re.I)
+
+
+def workflow_steps(text):
+    """Every step of every job, as (number, column, line) triples: the
+    line's number in the file, the column where its text starts (for a
+    step's first line, after its `- `) and the line stripped, leaving out
+    blank lines and whole-line comments. A step starts at a `- ` item
+    under a `steps:` key (which may carry an anchor or a comment), at the
+    key's own depth or deeper, and runs to the next item at that depth or
+    the end of the steps. Flow lists (`steps: [...]`) and other forms are
+    not read; unread_checkouts reports a checkout written in one."""
+    steps, current, steps_indent, item_indent = [], None, None, None
+    for number, line in enumerate(text.splitlines(), 1):
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        indent = len(line) - len(line.lstrip())
+        is_item = stripped == "-" or stripped.startswith("- ")
+        if steps_indent is not None and (
+                indent < steps_indent or (indent == steps_indent and not is_item)):
+            steps_indent, item_indent, current = None, None, None
+        if steps_indent is None and STEPS_KEY.fullmatch(stripped):
+            steps_indent = indent
+        elif steps_indent is not None and is_item and item_indent in (None, indent):
+            item_indent = indent
+            content = stripped[1:].lstrip()
+            current = [(number, indent + len(stripped) - len(content), content)] if content else []
+            steps.append(current)
+        elif current is not None:
+            current.append((number, indent, stripped))
+    return steps
+
+
+def uses_line(step):
+    """The number of a step's own `uses:` line and what it names, quotes
+    and comment removed, or (None, "")."""
+    column = step[0][1] if step else 0
+    for number, col, line in step:
+        found = USES.match(line) if col == column else None
+        if found:
+            return number, found.group(1)
+    return None, ""
+
+
+def step_uses(step):
+    return uses_line(step)[1]
+
+
+def step_keeps_no_token(step):
+    """True when `persist-credentials` is false directly under the step's
+    own `with:`, or in its own flow `with: {...}`, and nowhere else counts."""
+    column = step[0][1] if step else 0
+    inside, child = False, None
+    for _, col, line in step:
+        if col <= column:
+            if col == column and FLOW_NO_TOKEN.match(line):
+                return True
+            inside, child = col == column and WITH_KEY.fullmatch(line) is not None, None
+        elif inside:
+            child = col if child is None else child
+            if col == child and NO_TOKEN.fullmatch(line):
+                return True
+    return False
+
+
+def checkout_steps(text):
+    return [step for step in workflow_steps(text) if CHECKOUT.search(step_uses(step))]
+
+
+def unread_checkouts(text):
+    """The numbers of the lines that name actions/checkout, outside
+    whole-line comments, but are not the `uses:` line of a step read as a
+    checkout: a checkout in a form workflow_steps does not read (a flow
+    list, an anchor or alias, a quoted key, a block scalar), or text that
+    only names it. Lines, not counts, are compared, so a step read where
+    none runs cannot stand in for one that was not read. The reader guards
+    against mistakes, not against a file written to fool it."""
+    named = {number for number, line in enumerate(text.splitlines(), 1)
+             if not line.lstrip().startswith("#") and CHECKOUT.search(line)}
+    return sorted(named - {uses_line(step)[0] for step in checkout_steps(text)})
+
+
+def read_checked(path):
+    """A checked file's text, or None when it cannot be read (missing, or
+    not UTF-8)."""
+    try:
+        return path.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError):
+        return None
+
+
+def checked_files(root):
+    """The workflows, every action.yml or action.yaml under .github, and
+    each local action (`uses: ./path`) that any of them runs, in the order
+    found. A local action whose folder holds neither file is listed as its
+    action.yml, which does not exist. A file that cannot be read is still
+    listed, for checkout_problems to report."""
+    github = root / ".github"
+    files = list(dict.fromkeys(sorted((github / "workflows").glob("*.y*ml"))
+                               + sorted(github.rglob("action.y*ml"))))
+    for path in files:  # grows as local actions are found
+        for step in workflow_steps(read_checked(path) or ""):
+            uses = step_uses(step)
+            if uses.startswith("./"):
+                folder = root / uses
+                action = next((folder / name for name in ("action.yml", "action.yaml")
+                               if (folder / name).is_file()), folder / "action.yml")
+                if action not in files:
+                    files.append(action)
+    return files
+
+
+def checkout_problems(root):
+    """What is wrong with the checkouts in each file checked_files lists,
+    as (file, line, message) triples in the order found, and how many
+    checkouts were read. Each file is checked on its own text, read once;
+    one that cannot be read is a problem of its own (line None) and never
+    stops the others being checked."""
+    problems, checkouts = [], 0
+    for path in checked_files(root):
+        name = str(path.relative_to(root))
+        text = read_checked(path)
+        if text is None:
+            problems.append((name, None, f"{name} cannot be read: a step runs a local action "
+                             "with no action.yml or action.yaml, or the file is not UTF-8."))
+            continue
+        for line in unread_checkouts(text):
+            problems.append((name, line, f"Line {line} of {name} names actions/checkout "
+                             "outside a step the reader read: a checkout in a form "
+                             "workflow_steps does not know (a flow list, an anchor or alias, "
+                             "a quoted key, a block scalar) or text that only names it. Write "
+                             "the checkout as a plain block step, or reword the text."))
+        for step in checkout_steps(text):
+            checkouts += 1
+            if not step_keeps_no_token(step):
+                line = uses_line(step)[0]
+                problems.append((name, line, f"The checkout at line {line} of {name} keeps "
+                                 "the job's token: add `persist-credentials: false` under its "
+                                 "own `with:`, written out (an alias is not followed)."))
+    return problems, checkouts
+
+
 class WorkflowTests(unittest.TestCase):
     """CI runs test.sh only after switching to the newest released Xcode,
     and names no Xcode version (docs/DECISIONS.md, "Build with Apple's
@@ -1672,6 +1825,252 @@ class WorkflowTests(unittest.TestCase):
                                      capture_output=True, text=True, timeout=30)
                 self.assertEqual(ran.returncode == 0, all(c == "success" for c in chosen),
                                  ran.stdout + ran.stderr)
+
+    # A checkout without `persist-credentials: false`, in a workflow or in
+    # a local action one runs, fails this test, and so does any line that
+    # names actions/checkout outside a step the reader read. By default
+    # actions/checkout leaves the job's token where every later step can
+    # read it; no step here needs it (docs/DECISIONS.md, "Reviews, updates
+    # and GitHub settings", *Dependencies*).
+    def test_every_checkout_leaves_no_token_behind(self):
+        problems, checkouts = checkout_problems(REPOSITORY)
+        self.assertEqual([message for _, _, message in problems], [])
+        self.assertGreater(checkouts, 0, "No workflow checks out the repository.")
+
+    # Reading steps wrongly (missing one, merging two, or losing a line's
+    # number or depth) fails this test, so the test above cannot pass by not
+    # seeing a checkout. Each job uses a form the reader must know: an
+    # indented list under `steps:` with a comment after the key, and a list
+    # at the key's own depth under an anchored `steps:`.
+    def test_workflow_steps_are_read_one_by_one(self):
+        steps = workflow_steps(textwrap.dedent("""\
+            jobs:
+              one:
+                steps:  # the first job
+                  # a comment
+                  - uses: actions/checkout@v7
+                    with:
+                      persist-credentials: false
+                  - name: Run
+                    run: |
+                      echo uses: actions/checkout@v7
+              two:
+                runs-on: ubuntu-latest
+                steps: &shared
+                - name: Check out
+                  uses: "actions/checkout@v7"
+                - run: echo two
+            """))
+        self.assertEqual(steps, [
+            [(5, 8, "uses: actions/checkout@v7"), (6, 8, "with:"),
+             (7, 10, "persist-credentials: false")],
+            [(8, 8, "name: Run"), (9, 8, "run: |"), (10, 10, "echo uses: actions/checkout@v7")],
+            [(14, 6, "name: Check out"), (15, 6, 'uses: "actions/checkout@v7"')],
+            [(16, 6, "run: echo two")],
+        ])
+
+    # Every line that names actions/checkout, in any spelling GitHub may
+    # accept, is either the `uses:` line of a step the reader read as a
+    # checkout or reported. Reading an anchored, aliased, quoted-key,
+    # block-scalar, next-line or flow checkout as checked, or comparing
+    # counts rather than lines (a step read inside a block scalar would
+    # then balance a flow checkout), fails this test; so does missing a
+    # checkout spelled with capitals or a backslash, or reporting a
+    # whole-line comment or another action.
+    def test_a_checkout_the_reader_cannot_see_is_reported(self):
+        text = textwrap.dedent("""\
+            jobs:
+              plain:
+                steps:
+                  - uses: actions/checkout@v7  # read
+                  - name: Two
+                    uses: 'Actions/Checkout@v7'  # read
+                  - uses: actions\\checkout@v7  # read
+                  - uses: actions/checkout-other@v1
+                  # - uses: actions/checkout@v7
+              hidden:
+                steps:
+                  - uses: &checkout actions/checkout@v7  # unread
+                  - uses: *checkout
+                  - "uses": actions/checkout@v7  # unread
+                  - uses: >-
+                      actions/checkout@v7  # unread
+                  - uses:
+                      actions/checkout@v7  # unread
+                  - {uses: actions/checkout@v7}  # unread
+                  - run: echo actions/checkout  # unread
+              flow:
+                steps: [uses: actions/checkout@v7]  # unread
+              decoy:
+                env:
+                  NOTE: |
+                    steps:
+                      - uses: actions/checkout@v7  # read
+                        with:
+                          persist-credentials: false
+                steps: [{uses: actions/checkout@v7}]  # unread
+            """)
+        lines = text.splitlines()
+        marked = {mark: [n for n, line in enumerate(lines, 1) if line.endswith("# " + mark)]
+                  for mark in ("read", "unread")}
+        self.assertEqual([uses_line(step)[0] for step in checkout_steps(text)], marked["read"])
+        self.assertEqual(unread_checkouts(text), marked["unread"])
+
+    # A step counts as keeping no token only when `persist-credentials` is
+    # false directly under its own `with:` (which may carry an anchor or be a
+    # flow mapping), in any case GitHub reads as false: the key anywhere
+    # else, true, an expression, or a `with:` given by alias, fails, and a
+    # quoted `uses:` is still read as a checkout.
+    def test_a_checkout_keeps_no_token_only_through_its_with(self):
+        def step(body):
+            steps = workflow_steps("steps:\n" + textwrap.indent(textwrap.dedent(body), "  "))
+            self.assertEqual(len(steps), 1)
+            return steps[0]
+
+        self.assertEqual(step_uses(step("""\
+            - name: Check out
+              uses: 'actions/checkout@v7'  # quoted
+            """)), "actions/checkout@v7")
+        kept = {
+            "under with": """\
+                - uses: actions/checkout@v7
+                  with:
+                    fetch-depth: 0
+                    persist-credentials: 'false'  # why
+                """,
+            "with first": """\
+                - with:
+                    persist-credentials: false
+                  uses: actions/checkout@v7
+                """,
+            "capital false": """\
+                - uses: actions/checkout@v7
+                  with:
+                    persist-credentials: "False"
+                """,
+            "anchored with": """\
+                - uses: actions/checkout@v7
+                  with: &no-token  # shared
+                    persist-credentials: FALSE
+                """,
+            "flow with": """\
+                - uses: actions/checkout@v7
+                  with: { fetch-depth: 0, persist-credentials: false }
+                """,
+        }
+        leaked = {
+            "no setting": "- uses: actions/checkout@v7\n",
+            "true": """\
+                - uses: actions/checkout@v7
+                  with:
+                    persist-credentials: true
+                """,
+            "an expression": """\
+                - uses: actions/checkout@v7
+                  with:
+                    persist-credentials: ${{ false }}
+                """,
+            "at the step's own depth": """\
+                - uses: actions/checkout@v7
+                  persist-credentials: false
+                """,
+            "under env": """\
+                - uses: actions/checkout@v7
+                  env:
+                    persist-credentials: false
+                """,
+            "nested below with": """\
+                - uses: actions/checkout@v7
+                  with:
+                    other:
+                      persist-credentials: false
+                """,
+            "with ended before it": """\
+                - uses: actions/checkout@v7
+                  with:
+                    fetch-depth: 0
+                  name: Check out
+                  persist-credentials: false
+                """,
+            "flow with, true": """\
+                - uses: actions/checkout@v7
+                  with: { persist-credentials: true }
+                """,
+            "flow with, inside a string": """\
+                - uses: actions/checkout@v7
+                  with: { note: "a, persist-credentials: false, b" }
+                """,
+            "with by alias": """\
+                - uses: actions/checkout@v7
+                  with: *no-token
+                """,
+            "a capitalised With": """\
+                - uses: actions/checkout@v7
+                  With:
+                    persist-credentials: false
+                """,
+        }
+        for name, body in kept.items():
+            with self.subTest(name):
+                self.assertTrue(step_keeps_no_token(step(body)))
+        for name, body in leaked.items():
+            with self.subTest(name):
+                self.assertFalse(step_keeps_no_token(step(body)))
+
+    # Leaving out the actions under .github, a local action a workflow or an
+    # action runs (`uses: ./path`, with action.yml or action.yaml), or one
+    # whose folder holds neither, fails this test.
+    def test_local_actions_are_checked_with_the_workflows(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            files = {
+                ".github/workflows/ci.yml": "steps:\n  - uses: ./tools/build\n  - uses: ./missing\n",
+                ".github/actions/setup/action.yml":
+                    "runs:\n  steps:\n    - uses: ./tools/build\n",
+                "tools/build/action.yaml": "runs:\n  steps:\n    - uses: actions/checkout@v7\n",
+                "tools/unused/action.yml": "runs:\n  steps:\n    - uses: actions/checkout@v7\n",
+            }
+            for name, text in files.items():
+                (root / name).parent.mkdir(parents=True, exist_ok=True)
+                (root / name).write_text(text)
+            self.assertEqual([str(path.relative_to(root)) for path in checked_files(root)], [
+                ".github/workflows/ci.yml",
+                ".github/actions/setup/action.yml",
+                "tools/build/action.yaml",
+                "missing/action.yml",
+            ])
+
+    # Stopping at a file that cannot be read (not UTF-8, or a local action
+    # that is missing), reusing the previous file's text for it, or not
+    # reporting it, fails this test: each file is checked on its own text,
+    # and one that cannot be read is a problem of its own.
+    def test_a_file_that_cannot_be_read_is_reported_and_the_rest_checked(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            files = {
+                ".github/workflows/a.yml": b"steps:\n  - uses: \xff\xfe\n",
+                ".github/workflows/b.yml":
+                    b"steps:\n  - uses: actions/checkout@v7\n  - uses: ./missing\n"
+                    b"flow: [actions/checkout@v7]\n",
+                ".github/workflows/c.yml":
+                    b"steps:\n  - uses: actions/checkout@v7\n"
+                    b"    with:\n      persist-credentials: false\n",
+            }
+            for name, data in files.items():
+                (root / name).parent.mkdir(parents=True, exist_ok=True)
+                (root / name).write_bytes(data)
+            problems, checkouts = checkout_problems(root)
+        found = [(name, line, next(kind for kind in ("cannot be read", "outside a step",
+                                                     "keeps the job's token")
+                                   if kind in message))
+                 for name, line, message in problems]
+        self.assertEqual(found, [
+            (".github/workflows/a.yml", None, "cannot be read"),
+            (".github/workflows/b.yml", 4, "outside a step"),
+            (".github/workflows/b.yml", 2, "keeps the job's token"),
+            ("missing/action.yml", None, "cannot be read"),
+        ])
+        self.assertEqual(checkouts, 2)
 
     # Writing an Xcode version or app path into the workflow fails this test.
     def test_the_workflow_names_no_xcode_version(self):
