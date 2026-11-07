@@ -1,0 +1,46 @@
+# yaml-language-server: $schema=https://cubic.dev/schema/cubic-repository-config.schema.json
+# (The line above lets editors check this file against cubic's schema.)
+#
+# Settings for cubic, one of the AI reviewers of Brickson's pull requests
+# (AGENTS.md, "Reviews and updates on GitHub"; docs/DECISIONS.md,
+# "Reviews, updates and GitHub settings", *Code review*).
+# Reference: https://docs.cubic.dev/configure/cubic-yaml
+#
+# cubic reads this file only from `main`. A pull request that changes it
+# is reviewed with the settings already on `main`.
+#
+# cubic reads AGENTS.md by itself as background, so the review rules need
+# no copy here.
+version: 1
+
+reviews:
+  # Review each pull request when it opens, and each push after that.
+  enabled: true
+  incremental_commits: true
+  # When a later commit addresses a finding, only update the comment and
+  # leave its thread open (true, the default, resolves it): the agent that
+  # opened the pull request answers every finding and then resolves the
+  # thread (AGENTS.md, *Build and test*, "Pushing to an open PR"), so no
+  # finding closes unanswered, and the `main` ruleset requires every
+  # conversation resolved (docs/DECISIONS.md, *`main` ruleset*).
+  resolve_threads_when_addressed: false
+  # Never approve a pull request. An approval from a reviewer is not the
+  # owner's merge.
+  auto_approve_behavior: disabled
+  auto_approve: disabled
+
+pr_descriptions:
+  # Leave the pull request description as its author wrote it. Its first
+  # two lines are the attribution lines agents must keep (AGENTS.md,
+  # "Workflow rules").
+  generate: false
+  cubic_review_link: false
+
+issues:
+  # cubic reviews; it never writes the code. A fix made by a reviewer
+  # skips the failing test first, the docs/log record and the rest of
+  # AGENTS.md, "Workflow rules". "off" is quoted so that every YAML
+  # reader takes it as the word, not as false.
+  fix_with_cubic_buttons: false
+  pr_comment_fixes: false
+  auto_fix: "off"

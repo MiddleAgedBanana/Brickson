@@ -220,9 +220,10 @@ which agents also act through, can bypass it (*Deploy*).
 
 - **Into `main`.** Codex reviews every push to a pull request against
   AGENTS.md, *Code Review Rules*, which is this project's `REVIEW.md`
-  (p39); Greptile reviews by itself as far as its plan allows,
-  CodeRabbit when a comment asks (`@coderabbitai review`), and GitHub's
-  AI Scan posts security findings. Their
+  (p39); Greptile reviews by itself as far as its plan allows, cubic by
+  itself once the owner installs it, CodeRabbit when a comment asks
+  (`@coderabbitai review`), and GitHub's AI Scan posts security
+  findings. Reviewers review and never write the code. Their
   findings inform the owner; they never approve or block on their own
   (p38). The agent that opened the pull request answers every finding,
   fixing it or saying why not, and says in its ready message whether the

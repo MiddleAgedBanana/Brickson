@@ -1,0 +1,34 @@
+# Fails a pull request that brings in a version of an action with a known
+# security advisory. The actions in .github/workflows are Brickson's only
+# dependencies (docs/DECISIONS.md, "Reviews, updates and GitHub settings",
+# *Dependencies*), so this checks those. Free for public repositories, and
+# it runs on Linux, so it uses none of the Mac machines the tests need.
+#
+# Not a check the `main` ruleset requires: the owner decides whether it
+# becomes one.
+#
+# It needs no checkout: the action compares the pull request's dependencies
+# with its base branch's through GitHub's API, and reads no file of the
+# repository, as no `config-file` is given.
+name: Dependency review
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  dependency-review:
+    name: Dependency review
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      # v5 has no tag of its own (only a branch), so the full version is
+      # named; Dependabot proposes newer ones like any other action.
+      - uses: actions/dependency-review-action@v5.0.0
+        with:
+          # The default blocks only "runtime" dependencies. Which scope
+          # GitHub's dependency graph gives an action is not documented,
+          # so every scope blocks.
+          fail-on-scopes: runtime, development, unknown

@@ -1,0 +1,66 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+# (The line above lets editors check this file against CodeRabbit's schema.)
+#
+# Settings for CodeRabbit, one of the AI reviewers of Brickson's pull
+# requests (AGENTS.md, "Reviews and updates on GitHub"; docs/DECISIONS.md,
+# "Reviews, updates and GitHub settings", *Code review*).
+# Reference: https://docs.coderabbit.ai/reference/configuration
+#
+# CodeRabbit reads this file from the pull request's own branch, so a pull
+# request that changes it is reviewed with its own version.
+#
+# CodeRabbit reads AGENTS.md by itself as its review guidelines, so the
+# review rules need no copy here.
+
+# Use only this file and CodeRabbit's defaults, not the settings pages on
+# CodeRabbit's website: Brickson keeps its rules in the repository, where
+# reviewers and agents can read them. Anything set on those pages stops
+# applying (docs/log/2026-11-07-reviewer-roster.md).
+inheritance: false
+
+reviews:
+  # The default, written out so the choice is visible. "assertive" adds
+  # more nitpicks.
+  profile: chill
+
+  # Skip files that are records, not code or rules: docs/archive/ holds
+  # frozen copies of old documents, and docs/evidence/ holds measurement
+  # captures. Its README files stay reviewable.
+  path_filters:
+    - "!docs/archive/**"
+    - "!docs/evidence/**/*.json"
+    - "!docs/evidence/**/*.txt"
+
+  pre_merge_checks:
+    docstrings:
+      # Brickson has no rule about docstrings, so a warning about their
+      # coverage is a conversation to resolve with nothing to fix.
+      # "off" is quoted so that every YAML reader takes it as the word,
+      # not as false.
+      mode: "off"
+
+  tools:
+    languagetool:
+      # Grammar and style suggestions on prose. They are style only
+      # (AGENTS.md, "Not findings": formatting or naming on its own), and
+      # each one is a conversation the `main` ruleset requires resolved
+      # before a merge. Every other tool stays on.
+      enabled: false
+
+  finishing_touches:
+    # Each of these has CodeRabbit write commits or open pull requests
+    # itself. Code written that way skips the failing test first, the
+    # docs/log record and the rest of AGENTS.md, "Workflow rules", so
+    # CodeRabbit reviews and never writes the code.
+    docstrings:
+      enabled: false
+    unit_tests:
+      enabled: false
+    simplify:
+      enabled: false
+    autofix:
+      enabled: false
+    fix_ci:
+      enabled: false
+    resolve_merge_conflict:
+      enabled: false

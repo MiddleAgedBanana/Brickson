@@ -388,7 +388,7 @@ the failure.
 - A change that weakens an invariant or a review rule, adds an exception
   to one, or widens *Not findings*, made in `AGENTS.md`,
   docs/DECISIONS.md, `.github/skills/` or any other file reviewers read as
-  instructions (*Gotchas* lists the ones Copilot reads); and any new file
+  instructions (*Gotchas* lists the ones each reviewer reads); and any new file
   of that kind, because review rules live here. Reviewers may be reading
   the pull request's own version of these files, so compare them with the
   base branch and name what the change weakens; the owner decides.
@@ -641,15 +641,31 @@ tracking runs the app, and every accessibility API in the ALS-stage map
 stays reachable, behind `#available` when newer (docs/DECISIONS.md,
 "Minimum iOS, iPhone and iPad").
 
-**Reviews and updates on GitHub.** Codex reviews every push to a pull
-request that a person or agent opens. Greptile, which the owner also
-installed, reviews pull requests by itself too, as far as its free tier
-allows (out of usage on 2026-11-03). CodeRabbit, also installed, no
-longer does: the owner's trial has ended, and it gives a repository
-with fewer than 10 stars no automatic reviews. So the agent that opens
-a pull request asks for its review with a comment reading
-`@coderabbitai review`, after the push it wants reviewed. The agent that opened the pull request
-answers and fixes every round. GitHub Copilot is no longer one of the
+**Reviews and updates on GitHub.** The owner keeps several AI
+reviewers on purpose (2026-11-07): each sees things the others miss,
+and one stands in when another is out of credits. Codex reviews every
+push to a pull request that a person or agent opens. Greptile, which
+the owner also installed, reviews a pull request by itself when it
+opens, as far as its free plan's credits allow (out of them when
+checked on 2026-11-06). cubic, added by the owner on 2026-11-07,
+reviews by itself when a pull request opens and after each push, once
+the owner has installed its GitHub app; when it has not reviewed, ask
+with a comment reading `@cubic-dev-ai review this PR`. CodeRabbit,
+also installed, gives a repository with fewer than 10 stars no
+automatic reviews, so the agent that opens a pull request asks for its
+review with a comment reading `@coderabbitai review`, after the push it
+wants reviewed (`@coderabbitai rate limit` says whether one is left
+this hour, without using one). The agent that opened the pull request
+answers and fixes every round. **Reviewers review; they never write
+the code.** `.coderabbit.yaml`, `cubic.yaml` and `.greptile/` turn
+off every feature that commits or opens a pull request and has a
+setting, and no agent asks a reviewer for code: no `@coderabbitai
+autofix` or other command that commits, no finishing touch or
+"Autofix" box in CodeRabbit's comment, no "Fix with cubic", no fix
+request to `@cubic-dev-ai`. Code written that way skips the failing test
+first, the `docs/log/` record and the rest of *Workflow rules*. Ask
+Greptile with a plain `@greptileai`, never for a tier ("at apex"),
+which costs more of its credits. GitHub Copilot is no longer one of the
 reviewers: the owner's AI credits ran out on pull request #78
 (2026-11-04) and the subscription ends on 2026-11-09, so no agent
 requests a Copilot review or starts a Copilot task by any route: a
@@ -1193,6 +1209,17 @@ the time. Export them again after each new Xcode release.
   `.github/skills/`, and also `REVIEW.md`, `GEMINI.md` and
   `.github/instructions/**/*.instructions.md` if one is added. A change to
   any of them applies to the review of the pull request that makes it.
+- **The other reviewers read instructions too, and not all from the
+  same branch** (their documentation, read 2026-11-07). CodeRabbit
+  takes `.coderabbit.yaml`, and as its guidelines `AGENTS.md`,
+  `CLAUDE.md`, `.github/copilot-instructions.md`, `REVIEW.md`,
+  `GEMINI.md` and any `SKILL.md` under `.github/skills/`, all from the
+  pull request's own branch. Greptile takes `.greptile/` from the pull
+  request's own branch. cubic reads `AGENTS.md`, `CLAUDE.md`, the README
+  files and everything under `.github/` as background, but takes
+  `cubic.yaml` from `main` only, so a pull request that changes
+  `cubic.yaml` is reviewed under the old one. A change to any of these
+  files is one *Code Review Rules* flags for the owner.
 - **Xcode 27.2's JSON project format is not adopted yet.** From Xcode
   27.2, Xcode can keep a project in JSON (`project.xcproj`) instead of
   `project.pbxproj`, and new projects use it by default. Brickson's
