@@ -215,9 +215,13 @@ REPO_ASKS = ('gh repo create with no words asks its questions, and one answer pu
 REPO_BUILT = ('Write gh repo create\'s options and operands as they are: the shell builds or '
               'expands one of them (a variable, a command\'s output, braces or a pattern), so '
               'the guard cannot tell whether it is --push.')
-PR_TERMINAL = ('Under script or unbuffer, gh pr create without --head can ask where to push '
-               'the branch, then push it past the guard\'s push rules. Push with git push '
-               'first, then run gh pr create with --head BRANCH, with no terminal.')
+GH_TERMINAL = ('Run gh without a terminal (not under script or unbuffer), with every text in '
+               'an option or a file it names: given one, gh asks for what it is not given and '
+               'reads the answers (from stdin, an editor or a recovery file), which the guard '
+               'does not, and gh pr create with no --head asks where to push the branch, then '
+               'pushes it past the guard\'s push rules.')
+GH_RECOVER = ('Give gh the title and body with --title and --body-file instead of --recover: '
+              'the guard does not read a recovery file, and gh publishes what it holds.')
 GH_OPTION_FIRST = ('Write gh\'s options after the command\'s name (gh pr view 5 --web, not gh pr '
                    '--web view 5): gh reads them in either place, and the guard finds the name '
                    'only where no option comes before it. -R and --repo may come first.')
@@ -227,8 +231,8 @@ GH_NOT_ITS_OWN = ('This is not one of gh\'s own commands or an alias gh had befo
 GH_ALIAS_CHANGED = ('This call changes gh\'s aliases, or may write gh\'s configuration, before '
                     'it uses an alias, and the guard reads aliases as they were before the '
                     'call. Use the alias in a call of its own, or the gh command it stands for.')
-SHELL_ALIAS = ('Run the command itself rather than defining a shell alias: the shell expands an '
-               'alias on a later line, and the guard does not read its text.')
+SHELL_ALIAS_DEFINED = ('Run the command itself rather than defining a shell alias: the shell '
+                       'expands an alias on a later line, and the guard does not read its text.')
 HOOK_CHANGED = ('This command pushes after changing what the push would run (the privacy hook, '
                 'core.hooksPath or another git setting, scripts/privacy-check.py, or the branch '
                 'checked out), or after writing a file the guard cannot place, and the guard '
@@ -370,10 +374,15 @@ GH_HELP = ('--help', '-h', '--version')
 # Words the shell may change before gh reads them: a variable, a command's
 # output, braces and patterns.
 SHELL_BUILT = re.compile(r'[$`{}*?\[]')
-# gh pr create's options that take a value (gh pr create --help).
-GH_PR_CREATE_VALUES = {'--assignee', 'a', '--base', 'B', '--body', 'b', '--body-file', 'F',
+# gh pr create's and gh issue create's options that take a value (their
+# --help), which may take a word that looks like --recover.
+GH_CREATE_VALUES = {
+    ('pr', 'create'): {'--assignee', 'a', '--base', 'B', '--body', 'b', '--body-file', 'F',
                        '--head', 'H', '--label', 'l', '--milestone', 'm', '--project', 'p',
-                       '--recover', '--reviewer', 'r', '--template', 'T', '--title', 't'}
+                       '--recover', '--reviewer', 'r', '--template', 'T', '--title', 't'},
+    ('issue', 'create'): {'--assignee', 'a', '--body', 'b', '--body-file', 'F', '--label', 'l',
+                          '--milestone', 'm', '--project', 'p', '--recover', '--template', 'T',
+                          '--title', 't'}}
 # GitHub takes release assets at this host (gh release upload uses it).
 UPLOADS_HOST = 'uploads.github.com'
 # Programs that change a file's mode or remove it, which can turn a hook off
@@ -1683,6 +1692,10 @@ def check_gh(words, cwd, environment, git_state=None):
     plain = expand_gh_alias(written, cwd, environment)
     if plain[:1] and plain[0] not in GH_GROUPS | GH_LEAVES and plain[0] not in GH_HELP:
         deny(GH_NOT_ITS_OWN)
+    if plain[:1] and plain[0] in ('extension', 'extensions', 'ext') and plain[1:2] == ['exec']:
+        deny(GH_NOT_ITS_OWN)  # runs an extension
+    if git_state is not None and git_state.get('terminal'):
+        deny(GH_TERMINAL)
     # gh's own aliases: gh pr new is gh pr create, and so on.
     if len(plain) >= 2 and plain[0] in ('issue', 'pr', 'release', 'gist', 'repo') \
             and plain[1] == 'new':
@@ -1701,10 +1714,10 @@ def check_gh(words, cwd, environment, git_state=None):
             deny(REPO_BUILT)
         if gh_switch(plain[2:], values, '--push'):
             deny(REPO_PUSH)
-    if plain[:2] == ['pr', 'create'] and git_state is not None and git_state.get('terminal'):
-        pairs, _ = gh_arguments(plain[2:], GH_PR_CREATE_VALUES | GH_REPOSITORY)
-        if not any(option in ('--head', 'H') for option, _ in pairs):
-            deny(PR_TERMINAL)
+    if tuple(plain[:2]) in GH_CREATE_VALUES:
+        pairs, _ = gh_arguments(plain[2:], GH_CREATE_VALUES[tuple(plain[:2])] | GH_REPOSITORY)
+        if any(option == '--recover' for option, _ in pairs):
+            deny(GH_RECOVER)
     if git_state is not None:
         note_gh_text(plain, cwd, git_state)
         if plain[:1] == ['alias'] and plain[1:2] in (['set'], ['import'], ['delete']):
@@ -4301,6 +4314,13 @@ def check_command(command, cwd, depth=0, environment=None, git_state=None):
                 deny(UNREAD_VARIABLE.format(name=unread))
             for inner in inners:
                 check_command(inner, where, depth + 1, inherited, git_state)
+            # script and unbuffer give what they run a terminal, which gh
+            # asks on; a substitution in their words runs before them.
+            terminal = git_state.get('terminal')
+            given_terminal = terminal or program == 'script' or any(
+                os.path.basename(word) in TERMINAL_WRAPPERS
+                for word in words[:len(words) - len(unwrapped)])
+            git_state['terminal'] = given_terminal
             if script_index is not None:
                 check_command(script, command_cwd, depth + 1,
                               command_environment, git_state)
@@ -4312,10 +4332,7 @@ def check_command(command, cwd, depth=0, environment=None, git_state=None):
                 if action is not None:
                     check_command(action, None, depth + 1, command_environment, git_state)
             elif program == 'alias' and any('=' in word for word in unwrapped[1:]):
-                deny(SHELL_ALIAS)
-            # script gives the command it runs a terminal, which gh asks on.
-            terminal = git_state.get('terminal')
-            git_state['terminal'] = terminal or program == 'script'
+                deny(SHELL_ALIAS_DEFINED)
             for runner_cwd, inner in runner_commands(unwrapped, command_cwd):
                 check_command(inner, runner_cwd, depth + 1, command_environment, git_state)
             git_state['terminal'] = terminal
@@ -4462,10 +4479,7 @@ def check_command(command, cwd, depth=0, environment=None, git_state=None):
                 if subcommand == 'config' and config_change(args) is not None:
                     git_state['config_changed'] = 'git config'
             elif program == 'gh':
-                terminal = git_state.get('terminal')
-                git_state['terminal'] = terminal or any(
-                    os.path.basename(word) in TERMINAL_WRAPPERS
-                    for word in words[:len(words) - len(unwrapped)])
+                git_state['terminal'] = given_terminal
                 check_gh(unwrapped, command_cwd, command_environment, git_state)
                 git_state['terminal'] = terminal
             elif program in ('curl', 'wget', 'http', 'https'):

@@ -6,6 +6,7 @@ runs it before the unit tests, so CI runs it too. Each test feeds the guard
 a tool call the way Claude Code does and reads its decision. Removing a rule
 from the guard, or loosening one, fails a test here.
 """
+import ast
 import base64
 import json
 import shlex
@@ -1042,23 +1043,73 @@ class GuardTests(unittest.TestCase):
             with self.subTest(command=command):
                 self.assertAllowed(command)
 
-    def test_gh_pr_create_pushes_only_through_a_terminal(self):
-        # With no --head and the branch not pushed, gh pr create asks where
-        # to push it when a terminal can answer, and stops when none can.
+    def test_gh_runs_only_without_a_terminal(self):
+        # Given a terminal, gh asks for what it is not given and reads the
+        # answers (from stdin, an editor or a recovery file), which the
+        # guard does not: gh pr create with no --head asks where to push the
+        # branch, and pushes it; gh issue create with no --body asks for one.
+        # So does every command script or unbuffer runs, through a shell
+        # or another runner too, but not a substitution in their words,
+        # which the shell runs first.
         for command in ["script -qec 'gh pr create --title t --body b' /dev/null",
                         'script -q /dev/null gh pr create --title t --body b',
                         "printf '\\n\\n' | script -qec 'gh pr new -t t -b b' /dev/null",
                         'unbuffer gh pr create --title t --body b',
-                        'unbuffer -p gh pr merge 5']:
+                        'unbuffer -p gh pr merge 5',
+                        "script -qec 'gh pr create --title t --body b --head claude/topic' "
+                        '/dev/null',
+                        "script -qec 'gh issue create --title t' /dev/null < answers.txt",
+                        "script -qec 'gh pr comment 5 --editor' /dev/null",
+                        "script -qec 'gh pr view 5' /dev/null",
+                        "unbuffer bash -c 'gh pr create --title t --body b'",
+                        "unbuffer sh -c 'gh issue comment 5'",
+                        "unbuffer env GH_REPO=o/r timeout 60 gh issue create --title t",
+                        "unbuffer bash -c 'gh pr view 5 && gh issue create --title t'",
+                        'unbuffer flock /tmp/gh.lock gh issue create --title t']:
             with self.subTest(command=command):
                 self.assertDenied(command)
         for command in ['gh pr create --title t --body b',
-                        "script -qec 'gh pr create --title t --body b --head claude/topic' "
-                        '/dev/null',
-                        "script -qec 'gh pr create -t t -b b -Hclaude/topic' /dev/null",
-                        "script -qec 'gh pr view 5' /dev/null"]:
+                        'gh issue create --title t --body b',
+                        "script -qec 'git status' /dev/null",
+                        'unbuffer git status',
+                        "bash -c 'gh pr view 5 && gh issue create --title t'",
+                        'flock /tmp/gh.lock gh issue create --title t',
+                        'unbuffer echo "$(gh pr view 5 --json title)"']:
             with self.subTest(command=command):
                 self.assertAllowed(command)
+
+    def test_gh_recovery_files_are_denied(self):
+        # gh pr create and gh issue create take a title and a body from a
+        # recovery file (--recover), which the guard does not read.
+        for command in ['gh issue create --recover state.json',
+                        'gh issue new --recover=state.json',
+                        'gh pr create --head claude/topic --recover state.json',
+                        'gh pr create -t t --recover state.json -b b',
+                        'gh -R o/r issue create --recover state.json']:
+            with self.subTest(command=command):
+                self.assertDenied(command)
+        # A value that only looks like the option is a title, as gh reads it.
+        for command in ['gh issue create -t --recover -b b',
+                        'gh pr create --head claude/topic --title --recover --body b',
+                        'gh issue create --title t --body b']:
+            with self.subTest(command=command):
+                self.assertAllowed(command)
+
+    def test_each_refusal_keeps_its_own_words(self):
+        # Two messages once shared a name, so a Git shell alias was refused
+        # with the words for a shell alias the command defines.
+        tree = ast.parse(GUARD.read_text())
+        names = [target.id for node in tree.body if isinstance(node, ast.Assign)
+                 for target in node.targets if isinstance(target, ast.Name)]
+        names += [node.name for node in tree.body
+                  if isinstance(node, (ast.FunctionDef, ast.ClassDef))]
+        self.assertEqual(sorted({name for name in names if names.count(name) > 1}), [])
+        reason = guard_output('Bash', {'command': "git -c alias.ship='!git push origin main' "
+                                       'ship'}, self.repo)['permissionDecisionReason']
+        self.assertIn('Git shell aliases', reason)
+        reason = guard_output('Bash', {'command': "alias ship='git push origin main'"},
+                              self.repo)['permissionDecisionReason']
+        self.assertIn('defining a shell alias', reason)
 
     def test_gh_runs_only_its_own_commands_and_aliases_known_before_the_call(self):
         # gh alias list reads aliases as they are before the call: one the
@@ -1077,12 +1128,15 @@ class GuardTests(unittest.TestCase):
                         f"{folder}/config.yml; gh inspect 12",
                         "python3 -c 'print(1)' > /dev/null; cp new.yml "
                         f"{folder}/config.yml && gh inspect 12",
-                        'gh dash', 'gh some-extension --push']:
+                        'gh dash', 'gh some-extension --push',
+                        'gh extension exec dash', 'gh ext exec dash --push',
+                        'gh extensions exec dash', 'gh -R o/r ext exec dash']:
                     with self.subTest(command=command):
                         self.assertDenied(command)
                 for command in ['gh inspect 12', 'gh alias list',
                                 "gh alias set mk 'pr view'", 'gh status', 'gh environment',
                                 'gh cs list', 'gh ext list', 'gh at verify x -R o/r',
+                                'gh extension list', 'gh ext upgrade --all',
                                 f'echo notes > {self.repo}/notes.txt; gh inspect 12',
                                 'gh inspect 12; gh alias set mk "pr view"']:
                     with self.subTest(command=command):

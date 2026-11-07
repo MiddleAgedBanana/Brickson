@@ -5232,7 +5232,7 @@ outside service: nothing it reads leaves the computer it runs on.
   place a photo or video was taken, recorded inside it; and a second
   support address on the website.
 - **Everywhere text can hide:** every file and every file's name, in
-  UTF-8, UTF-16 or Windows Latin text; the text inside files people do
+  UTF-8, UTF-16, UTF-32 or Windows Latin text; the text inside files people do
   not read as text, never their pixels: a picture's camera notes,
   comments, XMP and IPTC (PNG, JPEG, GIF, HEIC, TIFF, WebP, and the
   profiles ImageMagick writes into a PNG), a PDF's information,
@@ -5262,7 +5262,12 @@ outside service: nothing it reads leaves the computer it runs on.
   around it, so a name whose parts sit on neighbouring lines is found
   when a commit joins them, by adding one of the lines or by removing
   those between; what unchanged neighbouring lines already held is not
-  new. A merge is read for what it adds beyond merging cleanly (one of
+  new. A file whose changed lines do not hold its text as the file is
+  read is read whole, as a binary file is: a PDF or another format git
+  takes for text, text in UTF-16 or UTF-32 (which git shows as lines
+  when the `diff` attribute says so, or by itself where UTF-16 holds no
+  zero byte), and a picture's base64 wrapped below its `data:` address.
+  A merge is read for what it adds beyond merging cleanly (one of
   three or more branches, against its first parent), and so is a merge
   still being committed. Commits and tags are read as a push sends them,
   whatever `git replace` or git's display settings (signatures,
@@ -5288,16 +5293,19 @@ outside service: nothing it reads leaves the computer it runs on.
   `pushurl`) leaves out nothing there. Pushed to an address rather than
   a remote's name, the address may be written another way and still be
   that remote's: a local path relative, absolute or as `file://`; on
-  github.com, any scheme and user (`https://`, `git@github.com:`) and
-  names in any case; elsewhere, `ssh://` or `user@host:path`, and a
-  user other than the remote's where the path starts at `/`. A host's
-  address with or without a trailing `/` or `.git` is one. What may be
-  another repository counts as another, which leaves nothing out:
-  another scheme off GitHub, a port the scheme does not use by default
-  (for ssh, any port written, as ssh's own settings give the port when
-  none is), and, over ssh, a path that starts in the home of the user
-  who signs in (`host:path`, `~/path`) with another user, or one that
-  starts at `/` against one that does not. ssh's settings can also send
+  github.com, any scheme and user (`https://`, `git@github.com:`),
+  names in any case, and with or without a trailing `/` or `.git`;
+  elsewhere, `ssh://user@host/path` or `user@host:/path` (and
+  `ssh://host/~/path` or `host:~/path`), which git sends the server as
+  one path, and a host's name in any case. What may be another
+  repository counts as another, which leaves nothing out: off GitHub,
+  another scheme, another user or none (a server can map each user's
+  paths apart, with a chroot or a command it runs for every push), a
+  path written another way (with or without a trailing `/` or `.git`,
+  which a server can hold as two repositories, or `host:path` against
+  `host:~/path`, which such a command can read apart), and a port the
+  scheme does not use by default (for ssh, any port written, as ssh's
+  own settings give the port when none is). ssh's settings can also send
   a host's name to another server; the check takes github.com to be
   GitHub's. Push by the remote's name (`origin`) all the same.
 - **No exceptions.** No line can be marked as allowed, and the list has
@@ -5377,14 +5385,19 @@ public:
    folder's commits itself, past the guard's push rules (create the
    repository, then `git push`), with it `gh repo create` given no words,
    which asks and may then push, and one given an option or operand the
-   shell builds or expands (a variable, braces, a pattern); `gh pr
-   create` without `--head` under `script` or `unbuffer`, whose terminal
-   lets it ask where to push the branch and push it; `gh copilot`, which
-   runs the Copilot CLI agent; a gh option before the command's name
+   shell builds or expands (a variable, braces, a pattern); any gh
+   command under `script` or `unbuffer`, through a shell or another
+   program they run too, whose terminal lets gh ask for what it is not
+   given (a title, a body, an editor's text) and read answers the guard
+   does not, and lets `gh pr create` with no `--head` ask where to push
+   the branch and push it; a recovery file (`gh pr create` or `gh issue
+   create --recover`), whose title and body gh publishes; `gh copilot`,
+   which runs the Copilot CLI agent; a gh option before the command's name
    (`gh pr --squash=true merge 5` merges; `-R`, `--repo` and `--help`
    excepted), which gh reads as the command's own; a gh command that is
    not one of gh's own or an alias gh had before the call (an extension,
-   or an alias the call sets), and an alias used after the call changes
+   `gh extension exec` among them, or an alias the call sets), and an
+   alias used after the call changes
    gh's aliases or may write its configuration; a shell alias the
    command defines, which the shell expands on a later line; a release
    asset upload (`gh release create` given files, `gh release upload`,
@@ -5539,6 +5552,9 @@ public:
   words past the 1024th, or past 2 MB of text, that braces make; a
   command run by a program it does not know as one that runs commands;
   a `find -execdir` inside find's `( )`, whose folder it does not place;
+  a terminal a program gives what it runs in its own language
+  (`expect`, `socat`, `ssh -t`), where gh can ask for text and read
+  answers the guard does not;
   a GitHub host whose letters curl's IDNA library maps to ASCII where
   Unicode's compatibility mapping and case folding do not; inline code
   that writes in git's folder without naming git, `HEAD` or `refs`,

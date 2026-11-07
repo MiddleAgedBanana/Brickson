@@ -695,6 +695,65 @@ server, and the check takes github.com to be GitHub's; a program that
 gives what it runs a terminal in its own language (`expect`, `socat`,
 `ssh -t`) is not read, as an interpreter's code is not.
 
+The eighth round, Codex's and CodeRabbit's reviews of `f704512`, and
+an independent check by this thread of its own fix:
+
+- **Text git shows as lines it cannot be read in** (Codex): where
+  `.gitattributes` gives a file the `diff` attribute, git shows UTF-16
+  as lines of text with zero bytes between the letters, so a list word
+  in such a file went unread in commits and pushes, while the
+  whole-file reading found it. A change whose lines hold a zero byte,
+  or whose first line starts with UTF-16's byte order mark (git shows a
+  line of UTF-16 that holds no zero byte as text by itself), now has its
+  file read whole, as a binary file's is. Found with it: text in
+  UTF-32 went unread in every file, and is now read, with a byte order
+  mark or without.
+- **What the independent check found** in that fix, each reproduced:
+  four older gaps of the same kind, where a change past a file's first
+  line holds no zero byte: UTF-16 with a mark and no Latin letters (in
+  Chinese, a letter's byte can end git's line, and git shows such a
+  file as text with no attribute), UTF-16 with no mark whose first part
+  is Latin, a PDF not named `.pdf`, and a picture's base64 in a page,
+  wrapped below its `data:` address. A file whose changed lines are not
+  UTF-8 is now read whole where the whole-file reading reads it
+  otherwise (a binary format, UTF-16 or UTF-32), and so is one whose
+  changed lines hold a line of base64 alone. It also found that UTF-32's
+  marks start other data too (UTF-16 whose first letter is U+0000, and
+  a binary file), which the fix read as UTF-32 and so missed; such data
+  is now read as before. A scan of 150,019 files in this cloud container found
+  no binary file read as UTF-32, and `--history` reports the same and
+  takes the same time.
+- **An address off GitHub is what git sends** (CodeRabbit, twice): over
+  ssh, a path that starts at `/` counted as the same repository
+  whoever signed in, but a server can map each user's paths apart (a
+  chroot, or a command it runs for every push); and `app` and
+  `app.git` counted as one repository, which a server can hold as two.
+  Off GitHub, an address is now a remote's only with the same scheme,
+  user, host, port and path, as written, except that git sends
+  `ssh://host/~/path` as `~/path`. That also stops counting `host:path`
+  and `host:~/path` as one, which such a command can read apart. This
+  reverses part of the seventh round, which kept the user only for a
+  path in the user's home and dropped a trailing `/` or `.git` on every
+  host; on github.com both still name the same repository.
+- **gh with a terminal** (Codex's security review, and CodeRabbit):
+  `gh issue create --recover state.json`, run with a terminal, published
+  the title and body a recovery file holds, which the guard did not
+  read; and `unbuffer bash -c 'gh pr create …'` gave gh a terminal the
+  guard did not see, as it marked one only for gh run straight under
+  `unbuffer`. Given a terminal, gh also asks for any title or body it is
+  not given, or opens an editor, and reads the answers from stdin, which
+  the guard does not read either. So every gh command given a terminal
+  is now refused (it was only `gh pr create` without `--head`), whether
+  `script` or `unbuffer` runs it straight or through a shell or another
+  program, and so is `--recover` with or without one.
+- **`gh extension exec`** (CodeRabbit) ran an extension, which the
+  seventh round refused only by its own name. It is refused too.
+- **A message's name used twice** (CodeRabbit): the seventh round's
+  message for a shell alias a command defines took the name of the
+  message for a Git shell alias, so a Git shell alias was refused with
+  the other's words. Each now has its own name, and a test fails when
+  any name in the guard is defined twice.
+
 The privacy job's checkout names `actions/checkout@v7.0.1`, the version
 pull request #87 locks, so whichever of the two merges second needs no
 new lockfile entry. A cloud session cannot push `.github/workflows/`,
@@ -751,9 +810,19 @@ started).
 In this cloud thread (Linux, Python 3.13, git 2.43), last on 2026-11-07,
 after main (with the reviewer roster) was merged in:
 
-- `python3 scripts/test-privacy.py`: 140 tests, OK. Every test added
+- `python3 scripts/test-privacy.py`: 143 tests, OK. Every test added
   for the second review, and for the pull request's review rounds,
-  failed before its fix; for the seventh, the address test got 18 of
+  failed before its fix; for the eighth, the new test of text git shows
+  as lines found none of its 9 files in a commit before the fix, the
+  test of changes past a file's first line none of its 4, and the
+  UTF-32 test failed its 4 cases, and its 2 cases of other data after
+  UTF-32's marks with the round's first fix; with each part of the fix
+  taken out in turn (the zero byte, the byte order mark, UTF-32 with a
+  mark and without one, reading the file whole, the blob's own reading,
+  UTF-16 without a mark in it, base64 lines, the marks' fallback), one
+  of them failed; and
+  the address test got 16 of its 61 cases wrong at `f704512`; for the
+  seventh, the address test got 18 of
   its 42 cases wrong at `87a2b75` and 13 with the round's first fix,
   and the `openssh.com` test failed at `87a2b75`; for the sixth, the encoding test failed its 5
   cases against `2a7cb7d`, the stored-object test its 8 against the
@@ -780,7 +849,7 @@ after main (with the reviewer roster) was merged in:
   phone edges, folded phones, contractions, RTF bytes and their order
   with JSON escapes, Snappy copies, IPTC datasets, a zero place), failed
   it.
-- `python3 scripts/test-hooks.py`, with a made-up list: 215 tests, OK,
+- `python3 scripts/test-hooks.py`, with a made-up list: 217 tests, OK,
   also with `EMAIL` set to an address like the Mac's guess, which failed
   39 of them before that fix (and with `GIT_AUTHOR_EMAIL` too, at
   `ba6a4c3`). The test added for it fails with no person in the tests'
@@ -807,6 +876,8 @@ after main (with the reviewer roster) was merged in:
   commits before that test stopped, and 2 of the 3 escaped requests
   (curl's was refused already); in `scripts/test-privacy.py`, the new
   test missed 6 of its 8 names.
+  For the eighth, run against `f704512`: the 3 new tests and the 1
+  they extended failed 19 cases between them.
   For the seventh, run against `87a2b75`: the 6 new tests failed 48
   cases between them, and the 2 tests they extended 8.
   For the sixth: the encoding test failed 5 cases against `2a7cb7d`;
@@ -860,7 +931,7 @@ after main (with the reviewer roster) was merged in:
 ## Not verified
 
 - On a Mac, only the Python suites ran, last at `ba6a4c3` (*The first
-  run on the owner's Mac*); the second to seventh review rounds' fixes
+  run on the owner's Mac*); the second to eighth review rounds' fixes
   have not run there yet. `caffeinate`, `arch`, `xcrun` and macOS's
   `script` exist only on a Mac, and `chrt` without a priority only in
   util-linux 2.42 and later: how the guard reads them was checked

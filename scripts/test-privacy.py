@@ -998,6 +998,107 @@ class GitHistoryTests(unittest.TestCase):
         self.assertEqual(status, 1)
         self.assertIn('docs/thanks.pdf (staged): ' + privacy.KIND_PRIVATE, out)
 
+    def test_wide_text_git_shows_as_lines_is_read_whole(self):
+        # The diff attribute makes git show UTF-16 and UTF-32 as lines,
+        # whose letters zero bytes keep apart, and git takes one line of
+        # UTF-16 with no zero byte for text by itself: such a file is
+        # read whole, as the tracked files are.
+        greek = 'Βασσμέρη'
+        lines = ''.join(f'line {number}\n' for number in range(1, 13))
+        self.on_main('.gitattributes', '*.txt diff\n')
+        self.on_main('long.txt', lines.encode('utf-16'))
+        wide = {'marked-le.txt': ('﻿' + f'Thanks {NAME}\n').encode('utf-16-le'),
+                'marked-be.txt': ('﻿' + f'Thanks {NAME}\n').encode('utf-16-be'),
+                'unmarked-le.txt': f'Thanks {NAME}\n'.encode('utf-16-le'),
+                'unmarked-be.txt': f'Thanks {NAME}\n'.encode('utf-16-be'),
+                'wider.txt': f'Thanks {NAME}\n'.encode('utf-32'),
+                'wider-le.txt': f'Thanks {NAME}\n'.encode('utf-32-le'),
+                'wider-be.txt': f'Thanks {NAME}\n'.encode('utf-32-be'),
+                'greek.md': ('﻿' + greek).encode('utf-16-le'),
+                'long.txt': lines.replace('line 10', NAME).encode('utf-16')}
+        for path, data in wide.items():
+            (self.repo / path).write_bytes(data)
+        git(self.repo, 'add', *wide)
+        git(self.repo, 'commit', '-q', '-m', 'Wide')
+        environ = listed(NAME, NICK, greek)
+
+        def found(out, label):
+            return sorted(line.split(f' ({label}')[0] for line in out.splitlines()
+                          if f'({label}' in line and line.endswith(privacy.KIND_PRIVATE))
+
+        status, out, _ = self.run_here('--commits', 'HEAD~1..HEAD', environ=environ)
+        self.assertEqual((status, found(out, 'commit ')), (1, sorted(wide)), out)
+        self.assertRegex(out, r'long\.txt \(commit [0-9a-f]{12}\):10:1: ' + privacy.KIND_PRIVATE)
+        status, out, _ = self.run_here('--pre-push', 'origin', environ=environ, stdin=(
+            f'refs/heads/feature {git(self.repo, "rev-parse", "HEAD").strip()} '
+            f'refs/heads/feature {"0" * 40}\n'))
+        self.assertEqual((status, found(out, 'commit ')), (1, sorted(wide)), out)
+        # Staged and not yet committed, and changed but not staged, the same.
+        git(self.repo, 'reset', '-q', '--soft', 'HEAD~1')
+        status, out, _ = self.run_here('--outgoing', environ=environ)
+        self.assertEqual((status, found(out, 'staged')), (1, sorted(wide)), out)
+        git(self.repo, 'reset', '-q')
+        status, out, _ = self.run_here('--outgoing', environ=environ)
+        self.assertEqual((status, found(out, 'not committed')), (1, ['long.txt']), out)
+        self.assertSilent(out)
+
+    def test_a_file_not_read_by_its_lines_is_read_whole_past_its_first(self):
+        # Changes past a file's first line, in lines git shows as text that
+        # the file is not read in: UTF-16 with a mark and no zero byte
+        # (Chinese, where a letter's byte can end git's line), UTF-16 with
+        # no mark whose first part is Latin, a PDF not named .pdf, and the
+        # base64 of a picture in a page, wrapped below its data: address.
+        chinese = '\u594e\u9686\u74e6\u65af'
+        filler = '\u6211\u4eec\u5728\u5c71\u4e0a\u770b\u4e66\u3002'
+        latin = ''.join(f'Line {number} of the notes\n' for number in range(400))
+
+        def svg(author):
+            picture = png(png_chunk(b'tEXt', b'Comment\0' + b'drawn for the board ' * 40),
+                          png_chunk(b'tEXt', b'Author\0' + author.encode()))
+            return ('<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10">\n'
+                    '<image width="10" height="10" href="data:image/png;base64,\n'
+                    + base64.encodebytes(picture).decode() + '"/>\n</svg>\n')
+
+        before = {'marked.txt': ('\ufeff' + filler * 20).encode('utf-16-le'),
+                  'mixed.txt': (latin + filler * 20).encode('utf-16-le'),
+                  'docs/thanks': pdf_without_a_zero_byte('everyone'),
+                  'art/tile.svg': svg('Studio').encode()}
+        thanks = '\u611f\u8c22\u300c' + chinese + '\u300d\u3002'
+        after = {'marked.txt': ('\ufeff' + filler * 10 + thanks + filler * 10).encode('utf-16-le'),
+                 'mixed.txt': (latin + filler * 10 + thanks + filler * 10).encode('utf-16-le'),
+                 'docs/thanks': pdf_without_a_zero_byte(),
+                 'art/tile.svg': svg(NAME).encode()}
+        self.assertNotIn(b'\0', before['marked.txt'] + after['marked.txt'])
+        self.on_main('.gitattributes', 'mixed.txt diff\n')
+        for path, data in before.items():
+            self.on_main(path, data)
+        for path, data in after.items():
+            (self.repo / path).write_bytes(data)
+        diff = subprocess.run(['git', '-C', str(self.repo), 'diff', '-U3', '--no-color', '--',
+                               *after], capture_output=True, check=True).stdout
+        self.assertNotIn(b'\n@@ -1,', diff)  # every change is past the first line
+        self.assertNotIn(b'Binary files', diff)  # and git shows each as text
+        git(self.repo, 'add', *after)
+        git(self.repo, 'commit', '-q', '-m', 'Thanks')
+        environ = listed(NAME, NICK, chinese)
+
+        def found(out, label):
+            return sorted(line.split(f' ({label}')[0] for line in out.splitlines()
+                          if f'({label}' in line and line.endswith(privacy.KIND_PRIVATE))
+
+        status, out, _ = self.run_here('--pre-push', 'origin', environ=environ, stdin=(
+            f'refs/heads/feature {git(self.repo, "rev-parse", "HEAD").strip()} '
+            f'refs/heads/feature {"0" * 40}\n'))
+        self.assertEqual((status, found(out, 'commit ')), (1, sorted(after)), out)
+        git(self.repo, 'reset', '-q', '--soft', 'HEAD~1')
+        status, out, _ = self.run_here('--outgoing', environ=environ)
+        self.assertEqual((status, found(out, 'staged')), (1, sorted(after)), out)
+        git(self.repo, 'reset', '-q')
+        status, out, _ = self.run_here('--outgoing', environ=environ)
+        self.assertEqual((status, found(out, 'not committed')), (1, sorted(after)), out)
+        self.assertSilent(out)
+        self.assertNotIn(chinese, out)
+
     def test_a_replaced_commit_is_read_as_it_is_pushed(self):
         # git replace changes what git log shows, not what a push sends.
         dirty = self.commit('a.txt', f'Thanks {NAME}\n', message=f'Notes from {NAME}')
@@ -1746,52 +1847,72 @@ class GitSettingTests(unittest.TestCase):
                     'https://github.com:8443/example-owner/app',
                     'ssh://git@github.com:22/example-owner/app.git'):
             self.assertEqual(exclusion(url), [], url)
-        # A port the scheme does not use by default is another server, which
-        # may never have had what this one has. An absolute path is the same
-        # repository whoever signs in.
+        # Off GitHub, an address is that remote's only as git sends it:
+        # the same scheme, user, host, port and path. A port the scheme
+        # does not use by default is another server, which may never have
+        # had what this one has; a server can map each user's paths apart
+        # (a chroot, a command it runs for every push), and hold app and
+        # app.git as two repositories.
         git(self.repo, 'remote', 'set-url', 'origin', 'ssh://git@example.org:2222/team/app.git')
-        for url in ('ssh://git@example.org:2222/team/app',
-                    'ssh://deploy@Example.ORG:2222/team/app.git/'):
+        for url in ('ssh://git@Example.ORG:2222/team/app.git',
+                    'git+ssh://git@example.org:2222/team/app.git'):
             self.assertEqual(exclusion(url), ['--remotes=origin'], url)
         for url in ('ssh://git@example.org:2223/team/app.git',
                     'ssh://git@example.org/team/app.git',
                     'ssh://git@example.org:22/team/app.git',
                     'git@example.org:team/app.git',
                     'https://example.org/team/app.git',
-                    'https://example.org:2222/team/app.git'):
+                    'https://example.org:2222/team/app.git',
+                    'ssh://git@example.org:2222/team/app',
+                    'ssh://git@example.org:2222/team/app.git/',
+                    'ssh://deploy@example.org:2222/team/app.git'):
             self.assertEqual(exclusion(url), [], url)
         # An IPv6 host's port is not part of its address: [::1]:2222 is
         # ::1's port 2222, and [::1:2222] another host.
         git(self.repo, 'remote', 'set-url', 'origin', 'ssh://git@[::1]:2222/team/app.git')
-        self.assertEqual(exclusion('ssh://git@[::1]:2222/team/app'), ['--remotes=origin'])
-        for url in ('ssh://git@[::1:2222]/team/app.git', 'ssh://git@[::1]/team/app.git'):
+        self.assertEqual(exclusion('ssh+git://git@[::1]:2222/team/app.git'), ['--remotes=origin'])
+        for url in ('ssh://git@[::1:2222]/team/app.git', 'ssh://git@[::1]/team/app.git',
+                    'ssh://git@[::1]:2222/team/app'):
             self.assertEqual(exclusion(url), [], url)
         git(self.repo, 'remote', 'set-url', 'origin', 'https://[2001:db8::5]:8443/team/app')
-        self.assertEqual(exclusion('https://[2001:DB8::5]:8443/team/app.git'),
-                         ['--remotes=origin'])
-        self.assertEqual(exclusion('https://[2001:db8::5:8443]/team/app'), [])
-        # Over ssh, a path that does not start with / starts in the home of
-        # the user who signs in: user@host:app and ssh://user@host/~/app.
-        git(self.repo, 'remote', 'set-url', 'origin', 'deploy@example.org:team/app.git')
-        for url in ('ssh://deploy@example.org/~/team/app.git', 'deploy@Example.org:~/team/app',
-                    'ssh+git://deploy@example.org/~/team/app'):
+        self.assertEqual(exclusion('https://[2001:DB8::5]:8443/team/app'), ['--remotes=origin'])
+        for url in ('https://[2001:db8::5:8443]/team/app', 'https://[2001:db8::5]:8443/team/app.git'):
+            self.assertEqual(exclusion(url), [], url)
+        git(self.repo, 'remote', 'set-url', 'origin', 'https://example.org/team/app')
+        for url in ('https://EXAMPLE.org:443/team/app', 'HTTPS://example.org/team/app'):
             self.assertEqual(exclusion(url), ['--remotes=origin'], url)
-        for url in ('build@example.org:team/app.git', 'example.org:team/app.git',
-                    'ssh://build@example.org/~/team/app.git', 'deploy@example.org:/team/app.git',
-                    'ssh://deploy@example.org/team/app.git', 'https://example.org/team/app'):
+        for url in ('https://build@example.org/team/app', 'https://example.org/team/app.git',
+                    'https://example.org/team/app/', 'http://example.org/team/app'):
+            self.assertEqual(exclusion(url), [], url)
+        # Over ssh, a path that does not start with / starts in the home of
+        # the user who signs in. git sends ssh://host/~/app as ~/app, but a
+        # command a server runs for every push can read ~/app and app apart.
+        git(self.repo, 'remote', 'set-url', 'origin', 'deploy@example.org:~/team/app.git')
+        for url in ('ssh://deploy@example.org/~/team/app.git',
+                    'ssh+git://deploy@Example.org/~/team/app.git'):
+            self.assertEqual(exclusion(url), ['--remotes=origin'], url)
+        for url in ('deploy@example.org:team/app.git', 'build@example.org:~/team/app.git',
+                    'example.org:~/team/app.git', 'deploy@example.org:~/team/app',
+                    'deploy@example.org:/team/app.git', 'https://example.org/team/app'):
+            self.assertEqual(exclusion(url), [], url)
+        git(self.repo, 'remote', 'set-url', 'origin', 'deploy@example.org:team/app.git')
+        self.assertEqual(exclusion('deploy@Example.org:team/app.git'), ['--remotes=origin'])
+        for url in ('build@example.org:team/app.git', 'ssh://deploy@example.org/team/app.git'):
             self.assertEqual(exclusion(url), [], url)
         git(self.repo, 'remote', 'set-url', 'origin', 'git@example.org:/team/app.git')
-        for url in ('ssh://git@example.org/team/app.git', 'build@example.org:/team/app',
-                    'ssh://example.org/team/app/'):
+        for url in ('ssh://git@example.org/team/app.git', 'git+ssh://git@EXAMPLE.org/team/app.git'):
             self.assertEqual(exclusion(url), ['--remotes=origin'], url)
-        for url in ('ssh://git@example.org/Team/App.git', 'git@example.org:team/app.git',
+        for url in ('build@example.org:/team/app.git', 'ssh://example.org/team/app.git',
+                    'git@example.org:/team/app', 'ssh://git@example.org/team/app/',
+                    'ssh://git@example.org/Team/App.git', 'git@example.org:team/app.git',
                     'ssh://git@example.org/~team/app.git'):
             self.assertEqual(exclusion(url), [], url)
-        # ~user names one user's home, whoever signs in.
+        # ~user names one user's home, but each user who signs in may be
+        # mapped apart, as above.
         git(self.repo, 'remote', 'set-url', 'origin', 'ssh://git@example.org/~team/app.git')
-        for url in ('build@example.org:~team/app', 'ssh://deploy@example.org/~team/app'):
-            self.assertEqual(exclusion(url), ['--remotes=origin'], url)
-
+        self.assertEqual(exclusion('git@example.org:~team/app.git'), ['--remotes=origin'])
+        for url in ('build@example.org:~team/app.git', 'ssh://deploy@example.org/~team/app.git'):
+            self.assertEqual(exclusion(url), [], url)
 
 class CiTests(unittest.TestCase):
     """The CI mode: a public log, secrets that forks and Dependabot never get."""
@@ -1993,14 +2114,14 @@ def page_pdf(content, cmap=None, extra=()):
     return pdf_file(*objects, *extra)
 
 
-def pdf_without_a_zero_byte():
-    """A PDF whose compressed page holds NAME and which has no zero byte,
-    so git takes it for text. Most page streams of a few hundred bytes
-    compress without one."""
+def pdf_without_a_zero_byte(who=NAME):
+    """A PDF whose compressed page holds who (NAME) and which has no zero
+    byte, so git takes it for text. Most page streams of a few hundred
+    bytes compress without one."""
     words = [b'the', b'phrase', b'speaks', b'switch', b'dwell', b'voice', b'tile', b'home']
     for seed in range(100):
         filler = b' '.join(random.Random(seed).choices(words, k=60))
-        data = page_pdf(b'BT /F1 12 Tf (With thanks, %s) Tj ET %% %s' % (NAME.encode(), filler))
+        data = page_pdf(b'BT /F1 12 Tf (With thanks, %s) Tj ET %% %s' % (who.encode(), filler))
         if b'\0' not in data:
             return data
     raise AssertionError('no PDF without a zero byte was made')
@@ -2358,6 +2479,26 @@ class TextEncodingTests(unittest.TestCase):
         self.assertEqual(checker(NAME).data(numbers, 'x', 'x'), [])
         control = f'Call 212-867-' f'0142 or {MIXED_ADDRESS}\x01 end'.encode('utf-16-le')
         self.assertEqual(checker(NICK).data(control, 'x', 'x'), [])
+
+    def test_utf32_with_or_without_a_byte_order_mark_is_read_as_text(self):
+        text = f'Contacts\nQuillon\nVassmere\nPhone (212) 867-' f'0142\nMail {MIXED_ADDRESS}\n'
+        for data in [text.encode('utf-32'), b'\0\0\xfe\xff' + text.encode('utf-32-be'),
+                     text.encode('utf-32-le'), text.encode('utf-32-be')]:
+            with self.subTest(data=data[:8]):
+                found = checker(NAME).data(data, 'x', 'x')
+                self.assertEqual(sorted(set(kinds(found))), sorted(
+                    [privacy.KIND_EMAIL, privacy.KIND_PHONE, privacy.KIND_PRIVATE]))
+                self.assertEqual([f.line for f in found if f.kind == privacy.KIND_PRIVATE], [2])
+        # Numbers that read as UTF-32 control characters are binary data.
+        for order in '<>':
+            numbers = struct.pack(order + '200I', *range(1, 201))
+            self.assertEqual(checker(NAME).data(numbers, 'x', 'x'), [])
+        # UTF-32's marks start other data too: UTF-16 whose first letter is
+        # U+0000, and a binary file, whose readable runs are read.
+        for data in [('\ufeff\0' + f'Thanks {NAME}\n').encode('utf-16-le'),
+                     b'\0\0\xfe\xff' + b'\0\x01\x02\x03' * 8 + f'Author {NAME}'.encode() + bytes(16)]:
+            with self.subTest(data=data[:8]):
+                self.assertEqual(kinds(checker(NAME).data(data, 'x', 'x')), [privacy.KIND_PRIVATE])
 
     def test_windows_latin_text_is_read_with_its_accents(self):
         check = checker('Jos\u00e9 Quillon')

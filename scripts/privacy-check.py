@@ -732,7 +732,9 @@ class Checker:
 
 # ------------------------------------------------------- text files
 
-BYTE_ORDER_MARKS = ((b'\xef\xbb\xbf', 'utf-8-sig'), (b'\xff\xfe', 'utf-16'),
+# UTF-32's marks first: its little-endian one starts as UTF-16's does.
+BYTE_ORDER_MARKS = ((b'\xef\xbb\xbf', 'utf-8-sig'), (b'\xff\xfe\0\0', 'utf-32'),
+                    (b'\0\0\xfe\xff', 'utf-32'), (b'\xff\xfe', 'utf-16'),
                     (b'\xfe\xff', 'utf-16'))
 # Control characters plain text does not hold (tabs, line and page breaks
 # aside): UTF-16 that decodes to them is binary data, not text.
@@ -768,6 +770,36 @@ def utf16_text(data):
     return None
 
 
+def utf32_text(data):
+    """Text written as UTF-32 without a byte order mark: each letter
+    takes four bytes, and in text the two high ones are zero (the
+    highest always). None when data is not such text."""
+    sample = data[:8000]
+    if len(sample) < 8:
+        return None
+    for top, high, low, codec in ((3, 2, 0, 'utf-32-le'), (0, 1, 3, 'utf-32-be')):
+        letters = sample[low::4]
+        if (not any(sample[top::4]) and sample[high::4].count(0) >= 0.9 * len(letters)
+                and not letters.count(0)):
+            try:
+                text = data[:len(data) // 4 * 4].decode(codec)
+            except UnicodeDecodeError:
+                return None
+            return None if CONTROL.search(text) else text
+    return None
+
+
+def marked_utf32(data):
+    """Text after UTF-32's byte order mark, or None where what follows is
+    not UTF-32 text: UTF-16 whose first letter is U+0000 starts the same
+    way, and so can binary data."""
+    try:
+        text = data[:len(data) // 4 * 4].decode('utf-32')
+    except UnicodeDecodeError:
+        return None
+    return None if CONTROL.search(text) else text
+
+
 def windows_latin(data):
     """Bytes read as Windows' Latin (cp1252), as GitHub shows a text file
     that is not UTF-8."""
@@ -789,10 +821,16 @@ def file_texts(data):
     is read), or None when it is binary."""
     for mark, codec in BYTE_ORDER_MARKS:
         if data.startswith(mark):
-            return [data.decode(codec, errors='replace')]
+            if codec != 'utf-32':
+                return [data.decode(codec, errors='replace')]
+            text = marked_utf32(data)
+            if text is not None:
+                return [text]
     if binary_signature(data):
         return None
     text = utf16_text(data)
+    if text is None:
+        text = utf32_text(data)
     if text is not None:
         return [text]
     if b'\0' in data[:8000]:
@@ -2164,15 +2202,49 @@ def reading_findings(checker, lines, where, path, first):
 # A PDF with no zero byte near its start is text to git, which then shows
 # only its compressed bytes, line by line: such a file is read whole too.
 TEXT_TO_GIT = ('.pdf', '.ai')
+# UTF-16's byte order marks, as a patch's line starts with them.
+WIDE_MARKS = (b'\xff\xfe', b'\xfe\xff')
+# A line of base64 alone, as a page wraps a picture's data: address below
+# the line that starts it.
+BASE64_LINE = re.compile(r'\s*[A-Za-z0-9+/]{40,}={0,2}\s*')
+
+
+def read_otherwise(data):
+    """Whether a file is read otherwise than as lines of text (file_texts):
+    as a binary format, or as text in UTF-16 or UTF-32."""
+    return (binary_signature(data) or data.startswith(WIDE_MARKS)
+            or utf16_text(data) is not None or utf32_text(data) is not None)
+
+
+def read_whole(path, first, lines, data):
+    """Whether a file a hunk changes is read whole, through data(), as
+    well as by its lines: where its lines do not hold its text as the file
+    is read. That is a format git takes for text but keeps compressed (a
+    PDF), text in UTF-16 or UTF-32 (which git shows as lines when the diff
+    attribute says so, or by itself when UTF-16 holds no zero byte), whose
+    letters zero bytes or bytes that are not UTF-8 keep apart there, and
+    base64 wrapped below the data: address it belongs to."""
+    start = lines[0][1].encode('utf-8', 'surrogateescape') if first == 1 and lines else b''
+    if (path.lower().endswith(TEXT_TO_GIT) or binary_signature(start)
+            or start.startswith(WIDE_MARKS)
+            or any('\0' in text or BASE64_LINE.fullmatch(text) for _, text in lines)):
+        return True
+    return any(SURROGATE.search(text) for _, text in lines) and read_otherwise(data())
 
 
 def read_patch(checker, patch, label, blob, tally):
     """Findings in a patch: its paths, what its hunks add (hunk_findings)
-    and its binary files, read through blob(path). Each path's name is
+    and its binary files and those read_whole names, read through
+    blob(path). Each path's name is
     checked before anything is reported under it, whichever line of the
     patch named it, so no report shows a name that holds a finding."""
-    findings, places = [], {}
+    findings, places, contents = [], {}, {}
     hunks, binaries, names = patch_changes(patch)
+
+    def content(path):
+        if path not in contents:
+            contents[path] = blob(path)
+        return contents[path]
 
     def place(path):
         if path not in places:
@@ -2190,13 +2262,12 @@ def read_patch(checker, patch, label, blob, tally):
     for path, first, lines in hunks:
         where = place(path)
         findings.extend(hunk_findings(checker, lines, where, path, first))
-        if path.lower().endswith(TEXT_TO_GIT) or (
-                first == 1 and lines and binary_signature(lines[0][1].encode('utf-8', 'surrogateescape'))):
+        if read_whole(path, first, lines, lambda path=path: content(path)):
             binaries.append(path)
     for path in dict.fromkeys(binaries):
         where = place(path)
         tally.tick()
-        findings.extend(checker.data(blob(path), where, path))
+        findings.extend(checker.data(content(path), where, path))
     return findings
 
 
@@ -2835,14 +2906,15 @@ def repository_address(root, url):
     accepts of writing one repository compare equal and two repositories
     never do: where that is not certain, they count as two, which only
     makes a push read more. A path, relative or file://, is the folder it
-    resolves to. A host's address keeps its scheme (ssh, git+ssh and the
-    scp-like [user@]host:path are one), a port the scheme does not use by
-    default (any port written for ssh), and its path without a trailing /
-    or .git; over ssh, a path that does not start at / starts in the home
-    of the user who signs in (host:path, ~/path), so it keeps that user.
-    The host is compared in lower case, and an IPv6 host's port stays
-    apart from it. On github.com, the scheme and user only name the way
-    in, and owner and repository names are compared in lower case."""
+    resolves to. A host's address is what git sends: its scheme (ssh,
+    git+ssh and the scp-like [user@]host:path are one), user, host (in
+    lower case, an IPv6 host's port kept apart from it), a port the
+    scheme does not use by default (any port written for ssh), and its
+    path as written (git sends ssh://host/~/path as ~/path), as a server
+    can map each user's paths apart and hold app and app.git as two
+    repositories. On github.com, the scheme and user only name the way
+    in, owner and repository names are compared in lower case, and a
+    trailing / or .git names the same repository."""
     url = url.strip()
     if '://' in url:
         parts = urlsplit(url)
@@ -2868,15 +2940,11 @@ def repository_address(root, url):
             return ('', str(Path(root, os.path.expanduser(path)).resolve()))
         except (OSError, RuntimeError):
             return ('', path)
-    path = path.rstrip('/')
-    path = path[:-4] if path.endswith('.git') else path
-    path = path.rstrip('/')
     if host == 'github.com':
-        return ('github.com', port, path.lstrip('/').lower())
-    if scheme == 'ssh' and (path == '~' or path.startswith('~/')):
-        path = path[2:]  # the home the path starts in, as path alone does
-    home = scheme == 'ssh' and not path.startswith(('/', '~'))
-    return (scheme, user if home else '', host, port, path)
+        path = path.rstrip('/')
+        path = path[:-4] if path.endswith('.git') else path
+        return ('github.com', port, path.strip('/').lower())
+    return (scheme, user, host, port, path)
 
 
 def remote_exclusion(root, remote):
