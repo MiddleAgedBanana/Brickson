@@ -869,6 +869,13 @@ EXIF_SIZES = {1: 1, 2: 1, 3: 2, 4: 4, 5: 8, 6: 1, 7: 1, 8: 2, 9: 4, 10: 8, 11: 4
 # so a long word is not searched again from each of its letters.
 XML_MARKUP = re.compile(r'</?[\w:.-]+|(?<![\w:.-])[\w:.-]+(?==")|/?>')
 XML_TAG = re.compile(r'<[^<>]*>')
+# The elements that end a stretch of a document's visible text: Word's,
+# PowerPoint's and OpenDocument's paragraphs, headings, breaks, tabs,
+# spaces and table cells, and Excel's shared strings. Between them a
+# document's runs, which split a word anywhere its formatting changes,
+# are read joined.
+XML_BREAK = re.compile(r'</?(?:[\w.-]+:)?(?:p|h|br|cr|tab|tc|tr|si|s|line-break|'
+                       r'table-cell|table-row|list-item)(?![\w.:-])[^<>]*>')
 
 
 class Hidden:
@@ -951,8 +958,10 @@ def inner_texts(data, hidden, depth, xml=False):
     for text in texts:
         if xml or text.lstrip().startswith('<?xml'):
             # Words split across tags (a Word document splits its runs
-            # anywhere) are read joined, as well as apart.
-            hidden.exact += [without_markup(text), XML_TAG.sub('', text)]
+            # anywhere) are read joined, as well as apart, and joined
+            # within a paragraph only, so the one before is not part of it.
+            hidden.exact += [without_markup(text), XML_TAG.sub('', text),
+                             XML_TAG.sub('', XML_BREAK.sub('\n', text))]
             hidden.located = hidden.located or bool(GPS_IN_XMP.search(text))
         else:
             hidden.exact.append(text)

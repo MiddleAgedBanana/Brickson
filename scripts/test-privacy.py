@@ -2368,6 +2368,27 @@ class ArchiveTests(unittest.TestCase):
         self.assertEqual(self.found(self.document(text), words=NICK),
                          sorted([privacy.KIND_EMAIL, privacy.KIND_PHONE]))
 
+    def test_a_paragraph_s_runs_are_read_joined_and_paragraphs_apart(self):
+        # A word split across formatting runs is one word to the reader, and
+        # a paragraph before it is not part of it: Word, PowerPoint, Excel
+        # and OpenDocument, each with a lowercase word after a paragraph.
+        documents = [
+            ('word/document.xml', '<w:document><w:body><w:p><w:r><w:t>Notes</w:t></w:r></w:p>'
+             '<w:p><w:r><w:t>tob</w:t></w:r><w:r><w:rPr><w:b/></w:rPr><w:t>ble said hi</w:t>'
+             '</w:r></w:p></w:body></w:document>'),
+            ('ppt/slides/slide1.xml', '<p:sld><p:txBody><a:p><a:r><a:t>Notes</a:t></a:r></a:p>'
+             '<a:p><a:r><a:t>tob</a:t></a:r><a:r><a:rPr b="1"/><a:t>ble</a:t></a:r></a:p>'
+             '</p:txBody></p:sld>'),
+            ('xl/sharedStrings.xml', '<sst><si><t>Notes</t></si><si><r><t>tob</t></r>'
+             '<r><rPr><b/></rPr><t>ble</t></r></si></sst>'),
+            ('content.xml', '<office:document-content><office:body><office:text>'
+             '<text:p>Notes</text:p><text:p>tob<text:span text:style-name="T1">ble</text:span>'
+             '</text:p></office:text></office:body></office:document-content>')]
+        for name, xml in documents:
+            with self.subTest(name=name):
+                archive = zip_archive((name, '<?xml version="1.0"?>' + xml))
+                self.assertEqual(self.found(archive, words=NICK), [privacy.KIND_PRIVATE])
+
     def test_entry_names_nested_archives_and_pictures_are_read(self):
         self.assertEqual(self.found(zip_archive(('media/tobble.txt', 'x')), words=NICK),
                          [privacy.KIND_PRIVATE])

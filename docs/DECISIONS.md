@@ -5239,8 +5239,9 @@ outside service: nothing it reads leaves the computer it runs on.
   bookmarks and page text (compressed with Flate, ASCII hex or ASCII85,
   written in hex or UTF-16, or shown through a font's ToUnicode map),
   the files inside a ZIP and the documents built on one (Word, Excel,
-  PowerPoint, and Pages, Keynote and Numbers, whose text sits in
-  compressed `.iwa` records), RTF, sound and video tags (MP3, MP4, M4A,
+  PowerPoint and OpenDocument, whose words formatting splits are read
+  joined within a paragraph, and Pages, Keynote and Numbers, whose text
+  sits in compressed `.iwa` records), RTF, sound and video tags (MP3, MP4, M4A,
   MOV, WAV) and the place a video records, and pictures embedded in a
   page as `data:` addresses; commit messages, and the names and
   addresses commits are signed with (the name, the address and
@@ -5351,14 +5352,17 @@ public:
    `git add` runs in, and ignored files too when the add is forced); and
    the text a command or GitHub tool would put on GitHub: a pull
    request, an issue, a comment (`reopen --comment` too), a review, a
-   label, a gist and its files' names (a renamed one's too), a file, a
-   branch's name (`gh issue develop`'s too), a release's tag, a
-   repository's or a fork's name (a new repository named after its
-   `--source` folder, or made by the GitHub tool, too), a topic, a
-   project's text, an Actions variable, by gh's own names for a command
-   (`gh pr new`) as well, and base64 in a request however its JSON
-   spells it, and every word a gh command that publishes is given as
-   written (so a value option it reads as a switch hides nothing). It
+   label, a gist and its files' names (a renamed one's too), a key added
+   to the account or a repository (`gh gpg-key add`, `gh ssh-key add`,
+   `gh repo deploy-key add`: its file, or stdin, and its title), an
+   autolink, a file, a branch's name (`gh issue develop`'s too), a
+   release's tag, a repository's or a fork's name (a new repository
+   named after its `--source` folder, or made by the GitHub tool, too),
+   a topic, a project's text, an Actions variable, by gh's own names
+   for a command (`gh pr new`) as well, and base64 in a request however
+   its JSON spells it, and every word a gh command that publishes is
+   given as written (so a value option it reads as a switch hides
+   nothing). It
    reads the command a program runs as its own: after `env`, `timeout`,
    `stdbuf`, `setsid`, `caffeinate`, `xcrun`, `chrt` and the like, and in
    `find -exec` and `-execdir` (also inside find's `( )`), `flock`,
@@ -5391,7 +5395,10 @@ public:
    given (a title, a body, an editor's text) and read answers the guard
    does not, and lets `gh pr create` with no `--head` ask where to push
    the branch and push it; a recovery file (`gh pr create` or `gh issue
-   create --recover`), whose title and body gh publishes; `gh copilot`,
+   create --recover`), whose title and body gh publishes; text gh takes
+   from an editor even with no terminal (`gh pr comment` and `gh issue
+   comment --editor`, and `gh gist edit` given no file to put in, add or
+   remove); `gh copilot`,
    which runs the Copilot CLI agent; a gh option before the command's name
    (`gh pr --squash=true merge 5` merges; `-R`, `--repo` and `--help`
    excepted), which gh reads as the command's own; a gh command that is
@@ -5439,7 +5446,7 @@ public:
    elsewhere in the command in quotes: the guard cannot tell which of
    the two a value came from), a process substitution, stdin
    from anything but the command's own here-document (`gh gist create`
-   given no file reads it), a file the same
+   and `gh gpg-key add` given no file read it), a file the same
    command writes and then publishes or commits (a redirection after
    `( … )` writes its target; a copy writes only its destination), a
    change to the index in the same command as a commit from it

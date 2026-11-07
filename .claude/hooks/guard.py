@@ -222,6 +222,9 @@ GH_TERMINAL = ('Run gh without a terminal (not under script or unbuffer), with e
                'pushes it past the guard\'s push rules.')
 GH_RECOVER = ('Give gh the title and body with --title and --body-file instead of --recover: '
               'the guard does not read a recovery file, and gh publishes what it holds.')
+GH_EDITOR = ('Give gh the text with --body or --body-file (gh gist edit: the file to put in, '
+             '--add or --remove) instead of an editor: gh sends what the editor writes, even '
+             'with no terminal, and the guard cannot read it first.')
 GH_OPTION_FIRST = ('Write gh\'s options after the command\'s name (gh pr view 5 --web, not gh pr '
                    '--web view 5): gh reads them in either place, and the guard finds the name '
                    'only where no option comes before it. -R and --repo may come first.')
@@ -342,7 +345,24 @@ GH_PUBLISHES = {
     # A label's name is its first operand.
     ('label', 'create'): ({'--description', '--color', 'd', 'c'}, set()),
     ('label', 'edit'): ({'--description', '--color', '--name', 'd', 'c', 'n'}, set()),
+    ('pr', 'revert'): ({'--title', '--body', 't', 'b'}, {'--body-file', 'F'}),
+    # A key is its file, or stdin with none, and the account's GPG keys
+    # are public, user IDs and all (github.com/<user>.gpg).
+    ('gpg-key', 'add'): ({'--title', 't'}, set()),
+    ('ssh-key', 'add'): ({'--title', 't'}, set()),
+    ('repo', 'deploy-key', 'add'): ({'--title', 't'}, set()),
+    # An autolink's key prefix and address are its operands.
+    ('repo', 'autolink', 'create'): (set(), set()),
 }
+# gh's commands that take --editor (-e): gh pr comment and gh issue comment
+# run the editor even with no terminal (gh's commentable.go); the others
+# need one, which the guard refuses already.
+GH_EDITOR_COMMANDS = {('pr', 'create'), ('pr', 'comment'), ('issue', 'create'),
+                      ('issue', 'comment')}
+# gh's commands whose third word names the command (gh repo deploy-key add).
+GH_SUBGROUPS = {('repo', 'autolink'), ('repo', 'deploy-key')}
+# The commands above that send a key, from their file or stdin.
+GH_KEYS = {('gpg-key', 'add'), ('ssh-key', 'add'), ('repo', 'deploy-key', 'add')}
 # Options of those commands that take a value which is not published, where
 # their operands matter: gh gist edit --remove names a file to drop.
 GH_OTHER_VALUES = {('gist', 'edit'): {'--remove', 'r'},
@@ -353,6 +373,7 @@ GH_OTHER_VALUES = {('gist', 'edit'): {'--remove', 'r'},
                    ('repo', 'create'): {'--gitignore', 'g', '--license', 'l', '--remote', 'r',
                                         '--source', 's', '--team', 't', '--template', 'p'},
                    ('repo', 'fork'): {'--remote-name', '--org'},
+                   ('ssh-key', 'add'): {'--type'},
                    ('variable', 'set'): {'--env', 'e', '--org', 'o', '--visibility', 'v',
                                          '--repos', 'r'}}
 # gh's repository option, which a command takes after its name too, and
@@ -1656,7 +1677,8 @@ def expand_gh_alias(words, cwd, inherited):
 
 
 def gh_command_words(words):
-    """gh's command names, then its other words. Cobra finds a command by
+    """gh's command names (a group's two, or three under GH_SUBGROUPS),
+    then its other words. Cobra finds a command by
     its names past options written among them (gh pr --squash=true merge 5
     merges), and the guard reads the names, so an option before the last
     one is refused, but for --help, -h and --version, which only show
@@ -1665,7 +1687,9 @@ def gh_command_words(words):
     an option's value where gh does (gh pr create --title -R)."""
     plain, skip, names = [], False, []
     for index, word in enumerate(words):
-        if len(names) >= (2 if names[:1] and names[0] in GH_GROUPS else 1) or word == '--':
+        wanted = (1 if not names[:1] or names[0] not in GH_GROUPS
+                  else 3 if tuple(names[:2]) in GH_SUBGROUPS else 2)
+        if (names and len(names) >= wanted) or word == '--':
             plain.extend(words[index:])
             break
         if skip:
@@ -1700,6 +1724,8 @@ def check_gh(words, cwd, environment, git_state=None):
     if len(plain) >= 2 and plain[0] in ('issue', 'pr', 'release', 'gist', 'repo') \
             and plain[1] == 'new':
         plain[1] = 'create'
+    if tuple(plain[:2]) == ('repo', 'autolink') and plain[2:3] == ['new']:
+        plain[2] = 'create'
     if plain[:2] == ['release', 'upload'] or release_assets(plain) \
             or gh_uploads(words[1:], plain, environment):
         deny(RELEASE_ASSET)
@@ -1718,6 +1744,22 @@ def check_gh(words, cwd, environment, git_state=None):
         pairs, _ = gh_arguments(plain[2:], GH_CREATE_VALUES[tuple(plain[:2])] | GH_REPOSITORY)
         if any(option == '--recover' for option, _ in pairs):
             deny(GH_RECOVER)
+    if tuple(plain[:2]) in GH_EDITOR_COMMANDS:
+        texts, files = GH_PUBLISHES[tuple(plain[:2])]
+        values = (texts | files | GH_CREATE_VALUES.get(tuple(plain[:2]), set())
+                  | GH_REPOSITORY)
+        if gh_switch(plain[2:], values, '--editor', 'e'):
+            deny(GH_EDITOR)
+    if plain[:2] == ['gist', 'edit']:
+        # With no file to put in, to add or to remove, gh opens an editor
+        # on the gist's file (its --desc too), and sends what it writes.
+        texts, files = GH_PUBLISHES[('gist', 'edit')]
+        pairs, operands = gh_arguments(plain[2:], texts | files | GH_OTHER_VALUES[('gist', 'edit')]
+                                       | GH_REPOSITORY)
+        source = operands[1] if len(operands) > 1 else ''
+        if not source and not any(value for option, value in pairs
+                                  if option in ('--add', 'a', '--remove', 'r')):
+            deny(GH_EDITOR)
     if git_state is not None:
         note_gh_text(plain, cwd, git_state)
         if plain[:1] == ['alias'] and plain[1:2] in (['set'], ['import'], ['delete']):
@@ -1882,11 +1924,13 @@ def gh_aliases_may_change(git_state, cwd, environment):
     return any(overlaps(write, (cwd, folder)) for write in git_state.get('writes', ()))
 
 
-def gh_switch(args, value_options, name):
-    """Whether gh's boolean option name (--push) ends up on, read as gh's
-    flag parser reads it: the last --name or --name=VALUE before --, where
-    VALUE is on unless Go reads it as false, and a value option takes the
-    next word whatever it is (--description --push describes)."""
+def gh_switch(args, value_options, name, letter=None):
+    """Whether gh's boolean option name (--push), or its letter (-e), ends
+    up on, read as gh's flag parser reads it: the last --name or
+    --name=VALUE before --, where VALUE is on unless Go reads it as false,
+    the letter anywhere in a cluster before a letter that takes a value
+    (-we), or as -e=VALUE, and a value option takes the next word whatever
+    it is (--description --push describes, -b -e has a body)."""
     on, index = False, 0
     args = without_redirections(args)
     while index < len(args):
@@ -1900,8 +1944,14 @@ def gh_switch(args, value_options, name):
             elif option in value_options and not equal:
                 index += 1
         elif word.startswith('-') and word != '-':
-            for offset, letter in enumerate(word[1:], 1):
-                if letter in value_options:
+            for offset, short in enumerate(word[1:], 1):
+                if short == letter:
+                    rest = word[offset + 1:]
+                    if rest.startswith('='):
+                        on = rest[1:] not in ('0', 'f', 'F', 'false', 'FALSE', 'False')
+                        break
+                    on = True
+                elif short in value_options:
                     if not word[offset + 1:]:
                         index += 1
                     break
@@ -1941,15 +1991,19 @@ def note_gh_text(plain, cwd, git_state):
     """The text a gh command puts on GitHub: titles, bodies, comments,
     notes, descriptions and names, the files they come from, a gist's files
     and an API write's fields and input."""
-    command = tuple(plain[:2])
+    command = tuple(plain[:3] if tuple(plain[:2]) in GH_SUBGROUPS else plain[:2])
     if command in GH_PUBLISHES:
         texts, files = GH_PUBLISHES[command]
-        pairs, operands = gh_arguments(plain[2:], texts | files | GH_OTHER_VALUES.get(command, set())
-                                       | GH_REPOSITORY)
+        pairs, operands = gh_arguments(plain[len(command):], texts | files
+                                       | GH_OTHER_VALUES.get(command, set()) | GH_REPOSITORY)
         values = [value for option, value in pairs if option in texts]
         names = [value for option, value in pairs if option in files]
-        gist_files = []
-        if command == ('gist', 'create'):
+        gist_files, unpublished = [], []
+        if command in GH_KEYS:
+            # The key's file is read, not its name, which stays here.
+            names += operands[:1] or ['-']
+            unpublished = operands[:1]
+        elif command == ('gist', 'create'):
             # With no file named, gh reads the gist from stdin (gh gist
             # create --help: cat cool.txt | gh gist create).
             names += operands or ['-']
@@ -1988,7 +2042,7 @@ def note_gh_text(plain, cwd, git_state):
         # --template) would leave the text it hides an operand, so every
         # operand the shell gives as written is read too, but a gist's
         # files, which gh shows under their base names only.
-        values += [operand for operand in operands if operand not in gist_files
+        values += [operand for operand in operands if operand not in gist_files + unpublished
                    and literal_text(operand, git_state) is not None]
         note_published(git_state, 'gh ' + ' '.join(command), values, names, cwd)
         # A gist shows each file it is given under that file's name.
@@ -2108,33 +2162,54 @@ def has_api_endpoint(text, pattern):
     return False
 
 
+HTTPIE_VALUES = {'--auth', '-a', '--auth-type', '-A', '--session', '--session-read-only',
+                 '--verify', '--cert', '--cert-key', '--proxy', '--timeout', '--max-redirects',
+                 '--pretty', '--style', '--print', '-p', '--format-options', '--output', '-o',
+                 '--ssl', '--ciphers', '--raw', '--response-charset', '--response-mime',
+                 '--default-scheme'}
+
+
+def httpie_option(words, index, raw):
+    """Read the option at words[index] as HTTPie's parser does: (the index
+    after it and its value, the --raw body so far). The last --raw wins."""
+    option, equal, value = words[index].partition('=')
+    if option in HTTPIE_VALUES:
+        if not equal:
+            index += 1
+            if index >= len(words):
+                deny(UNKNOWN)
+            value = words[index]
+        if option == '--raw':
+            raw = value
+    return index + 1, raw
+
+
 def httpie_request(words):
-    """Read method and request items after ordinary leading CLI options."""
-    value_options = {'--auth', '-a', '--auth-type', '-A', '--session',
-        '--session-read-only', '--verify', '--cert', '--cert-key', '--proxy',
-        '--timeout', '--max-redirects', '--pretty', '--style', '--print', '-p',
-        '--format-options', '--output', '-o', '--ssl', '--ciphers', '--raw',
-        '--response-charset', '--response-mime', '--default-scheme'}
+    """Read the method, the request items and the --raw body. HTTPie's
+    parser (argparse) takes an option anywhere, after the address too,
+    and everything after -- as an item."""
     index, method, raw = 1, None, None
     while index < len(words):
         word = words[index]
         if github_api_host(word):
-            items = words[index + 1:]
+            items, index = [], index + 1
+            while index < len(words):
+                if words[index] == '--':
+                    items += words[index + 1:]
+                    break
+                if words[index].startswith('-') and words[index] != '-':
+                    index, raw = httpie_option(words, index, raw)
+                else:
+                    items.append(words[index])
+                    index += 1
             has_data = raw is not None or any(re.search(r'(?<![:=])(?::=|=)(?!=)', item)
                                                for item in items)
             return method or ('POST' if has_data else 'GET'), items, raw
-        option, equal, value = word.partition('=')
-        if option in value_options:
-            if not equal:
-                index += 1
-                if index >= len(words):
-                    deny(UNKNOWN)
-                value = words[index]
-            if option == '--raw':
-                raw = value
-        elif word.startswith('-'):
-            pass  # flags or attached option values are not HTTP methods
-        elif word.upper() in {'GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'}:
+        if word.startswith('-'):
+            # flags or attached option values are not HTTP methods
+            index, raw = httpie_option(words, index, raw)
+            continue
+        if word.upper() in {'GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'}:
             method = word.upper()
         else:
             deny(UNKNOWN)  # do not guess a method after an unknown operand

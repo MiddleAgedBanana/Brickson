@@ -639,6 +639,22 @@ class GuardTests(unittest.TestCase):
         self.assertAllowed('http POST https://api.github.com/repos/o/r/pulls/12/reviews event=COMMENT')
         self.assertAllowed('http POST https://api.github.com/repos/o/r/issues body=APPROVE')
 
+    def test_httpie_options_after_the_url_are_read(self):
+        url = 'https://api.github.com/repos/o/r/pulls/12/reviews'
+        approve = shlex.quote('{"event":"APPROVE"}')
+        for command in [f'http --ignore-stdin POST {url} --raw {approve}',
+                        f'http --ignore-stdin POST {url} --raw={approve}',
+                        f'http --ignore-stdin {url} --pretty all --raw {approve}',
+                        f'http --ignore-stdin POST {url} --raw ' + shlex.quote('{"event":"COMMENT"}')
+                        + f' --raw {approve}',
+                        f'http --ignore-stdin POST {url} --auth user:x event=APPROVE']:
+            with self.subTest(command=command):
+                self.assertDenied(command)
+        for command in [f'http --ignore-stdin POST {url} --raw ' + shlex.quote('{"event":"COMMENT"}'),
+                        f'http --ignore-stdin GET {url} --auth user:x --pretty all']:
+            with self.subTest(command=command):
+                self.assertAllowed(command)
+
     def test_httpie_methods_after_options(self):
         for flags in ['--auth user:example', '-a user:example', '--auth=user:example', '--verify no --pretty all']:
             self.assertDenied(f'http {flags} PUT https://api.github.com/repos/o/r/pulls/12/merge')
@@ -1075,6 +1091,32 @@ class GuardTests(unittest.TestCase):
                         "bash -c 'gh pr view 5 && gh issue create --title t'",
                         'flock /tmp/gh.lock gh issue create --title t',
                         'unbuffer echo "$(gh pr view 5 --json title)"']:
+            with self.subTest(command=command):
+                self.assertAllowed(command)
+
+    def test_gh_text_from_an_editor_is_denied(self):
+        # gh pr comment and gh issue comment run the editor with --editor,
+        # and gh gist edit with no file to put in, even without a terminal,
+        # and send what it writes, which the guard cannot read first.
+        (self.repo / 'notes.md').write_text('Build notes\n')
+        self.addCleanup((self.repo / 'notes.md').unlink)
+        for command in ['GH_EDITOR=./editor.sh gh pr comment 12 --editor --repo o/r',
+                        'gh pr comment 12 -e', 'gh pr comment 12 --edit-last -e',
+                        'gh pr comment 12 --editor=true', 'gh pr comment 12 -we',
+                        'gh issue comment 5 --editor', 'gh issue comment 5 -e=1',
+                        'gh pr create --editor --head x', 'gh issue create -e',
+                        'gh pr new -e', 'gh gist edit abc123', 'gh gist edit abc123 -f notes.md',
+                        'gh gist edit abc123 --desc Notes', 'gh gist edit abc123 -r=']:
+            with self.subTest(command=command):
+                self.assertDenied(command)
+        for command in ['gh pr comment 12 --body ok', 'gh pr comment 12 -b -e',
+                        'gh pr comment 12 --body -e', 'gh pr comment 12 --editor=false --body ok',
+                        'gh pr comment 12 -e=false -b ok', 'gh issue create -t T -b B',
+                        'gh pr create --title t --body b --head x --repo o/r',
+                        'gh gist edit abc123 --filename notes.md notes.md',
+                        'gh gist edit abc123 notes.md', 'gh gist edit abc123 --add notes.md',
+                        'gh gist edit abc123 -r old.md', 'gh gist edit abc123 -r old.md -d Notes',
+                        'gh pr edit 12 --body ok', 'gh gist view abc123']:
             with self.subTest(command=command):
                 self.assertAllowed(command)
 
@@ -2204,7 +2246,10 @@ class PrivacyGuardTests(unittest.TestCase):
                         'curl -q -X POST https:///api.github.com/repos/o/r/issues/12/comments '
                         '-d ' + shlex.quote(json.dumps({'body': PRIVATE_NAME})),
                         'curl -q -X POST HTTPS:/API.GITHUB.COM/repos/o/r/issues/12/comments '
-                        '-d ' + shlex.quote(json.dumps({'body': PRIVATE_NAME}))]:
+                        '-d ' + shlex.quote(json.dumps({'body': PRIVATE_NAME})),
+                        # HTTPie reads an option after the address too.
+                        'http --ignore-stdin POST https://api.github.com/repos/o/r/issues/12/comments'
+                        ' --raw ' + shlex.quote(json.dumps({'body': PRIVATE_NAME}))]:
             with self.subTest(command=command):
                 self.assertDenied(command)
         body = self.folder / 'body.md'
@@ -3112,6 +3157,69 @@ class PrivacyGuardTests(unittest.TestCase):
                         'gh gist edit abc123 -r old.md -d Notes', 'gh label create bug -c 000000 -d Bugs',
                         f'gh gist create {body} 2>/dev/null']:
             with self.subTest(command=command):
+                self.assertAllowed(command)
+
+    def test_keys_reverts_and_autolinks_gh_puts_on_github_are_read(self):
+        # gh gpg-key add puts a key's user IDs on the account's public page
+        # (github.com/<user>.gpg); gh ssh-key add and gh repo deploy-key add
+        # send a key and its title; gh pr revert opens a pull request; an
+        # autolink's prefix and address show in links. A key comes from its
+        # file, or stdin with none.
+        def armored_key(user_id):
+            # A made-up public key packet (version 4, then zeros), then a user ID.
+            packets = b''
+            for tag, body in ((6, b'\x04' + bytes(4) + b'\x16' + bytes(34)),
+                              (13, user_id.encode())):
+                packets += bytes([0xc0 | tag, len(body)]) + body
+            encoded = base64.b64encode(packets).decode()
+            return ('-----BEGIN PGP PUBLIC KEY BLOCK-----\n\n'
+                    + '\n'.join(encoded[at:at + 64] for at in range(0, len(encoded), 64))
+                    + '\n-----END PGP PUBLIC KEY BLOCK-----\n')
+        named_gpg, clean_gpg = self.folder / 'named.asc', self.folder / 'clean.asc'
+        named_gpg.write_text(armored_key(f'{PRIVATE_NAME} <build@example.com>'))
+        clean_gpg.write_text(armored_key('Build Bot <build@example.com>'))
+        self.assertNotIn(PRIVATE_NAME, named_gpg.read_text())  # only inside the base64
+        ssh_body = 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGnZqIcD7oT0xG3m6nU5Hk4V2wq9yJbE1cLrPx8sMfTa'
+        named_ssh, clean_ssh = self.folder / 'named.pub', self.folder / 'clean.pub'
+        named_ssh.write_text(f'{ssh_body} {PRIVATE_NAME.replace(" ", "-").lower()}\n')
+        clean_ssh.write_text(f'{ssh_body} build-bot\n')
+        body = self.folder / 'revert.md'
+        body.write_text(f'Thanks {PRIVATE_NAME}\n')
+        named, quoted = PRIVATE_NAME.replace(' ', '-'), shlex.quote(PRIVATE_NAME)
+        for command in [f'gh gpg-key add {named_gpg}', f'gh gpg-key add {clean_gpg} --title {quoted}',
+                        f'gh gpg-key add -t {quoted} {clean_gpg}', f'gh gpg-key add - < {clean_gpg}',
+                        f"gh gpg-key add <<'EOF'\n{armored_key(PRIVATE_NAME)}EOF",
+                        f'cat {clean_gpg} | gh gpg-key add',
+                        f'gh ssh-key add {named_ssh}', f'gh ssh-key add {named_ssh} --type signing',
+                        f'gh ssh-key add --type signing -t {quoted} {clean_ssh}',
+                        f'gh ssh-key add --title={quoted} {clean_ssh}',
+                        f'gh repo deploy-key add {named_ssh} -R o/r',
+                        f'gh repo deploy-key add -wt {quoted} {clean_ssh}',
+                        f'gh repo deploy-key --title {quoted} add {clean_ssh}',
+                        f'gh pr revert 12 --title {quoted}', f'gh pr revert 12 -b {quoted}',
+                        f'gh pr revert 12 -dF {body}', f'gh pr revert --body-file={body} 12',
+                        f"gh repo autolink create {named}- 'https://example.com/T?q=<num>'",
+                        f"gh repo autolink new T- 'https://example.com/{named}?q=<num>' -n"]:
+            with self.subTest(command=command[:60]):
+                self.assertDenied(command)
+        # A key file's folders stay here; only the key goes to GitHub.
+        windows = 'C:/Us' + 'ers/tobble'
+        (self.repo / windows).mkdir(parents=True)
+        (self.repo / windows / 'id.pub').write_text(clean_ssh.read_text())
+        for command in [f'gh gpg-key add {clean_gpg} --title "Build key"',
+                        f"gh gpg-key add <<'EOF'\n{armored_key('Build Bot')}EOF",
+                        f'gh ssh-key add {clean_ssh} -t Laptop --type signing',
+                        f'gh ssh-key add --type signing {clean_ssh}',
+                        f'gh ssh-key add {windows}/id.pub',
+                        f'gh repo deploy-key add {clean_ssh} --allow-write --title CI',
+                        'gh pr revert 12 --title "Revert the layout change" --body "It broke Home."',
+                        "gh repo autolink create TICKET- 'https://example.com/TICKET?query=<num>'",
+                        'gh gpg-key list', 'gh ssh-key list', 'gh repo deploy-key list',
+                        'gh repo autolink list', 'gh secret set BUILD_NOTE --body clean',
+                        # A secret's value is stored encrypted, never shown:
+                        # how the private list reaches CI.
+                        f'gh secret set BUILD_NOTE --body {quoted}']:
+            with self.subTest(command=command[:60]):
                 self.assertAllowed(command)
 
     def test_a_here_document_in_a_substitution_is_text(self):

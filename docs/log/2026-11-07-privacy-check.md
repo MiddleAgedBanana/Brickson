@@ -754,6 +754,50 @@ an independent check by this thread of its own fix:
   the other's words. Each now has its own name, and a test fails when
   any name in the guard is defined twice.
 
+The last push answers Codex's reviews of `7f3ac02`, its security
+review and its code review; findings after it are answered in words,
+not pushes, as AGENTS.md's limit on pushes to an open pull request
+asks.
+
+- **Keys put on GitHub** (Codex's security review): `gh gpg-key add`
+  sent a key the guard did not read, though a GPG key's user IDs, a
+  name and an address, are public on the account's page
+  (github.com/<user>.gpg), and `gh api` sending the same key was
+  refused. The guard now reads the key's file, or stdin when it is given
+  none, and its title, for `gh gpg-key add`, `gh ssh-key add` and
+  `gh repo deploy-key add`, and leaves the file's path, which stays
+  here, unread. Looking for others of the kind among gh's commands
+  found two more that publish text the guard did not read:
+  `gh pr revert`, which opens a pull request with a title and a body,
+  and `gh repo autolink create`, whose prefix and address show in
+  links. Both are read now, and a command's third word counts as one of
+  its names (`gh repo deploy-key --title x add` is refused, as an option
+  before any command's name is). `gh secret set` stays unread on
+  purpose: a secret's value is stored encrypted and never shown, and it
+  is how the private list reaches CI.
+- **Text gh takes from an editor** (Codex's code review): with
+  `--editor`, `gh pr comment` and `gh issue comment` run the editor
+  even with no terminal (gh 2.89's `commentable.go`) and post what it
+  writes, which the guard cannot read first. So does `gh gist edit`
+  given no file to put in, add or remove, its `--desc` alone included
+  (`edit.go`). Both are refused, `-e` in a cluster too (`-we`), but not
+  `-e` taken as a body's value (`-b -e`). `gh pr create --editor` and
+  `gh issue create --editor` need a terminal, which was refused already,
+  and are refused by name too.
+- **HTTPie's options after the address** (Codex's code review): HTTPie
+  reads an option anywhere, as its argument parser does, but the guard
+  read options only before the address, so `--raw` after it sent a body
+  the guard did not read. Options are now read wherever they stand, and
+  the last `--raw` is the body, as HTTPie takes it.
+- **Words formatting splits, after a paragraph** (Codex's code review):
+  a Word document's text was read with its tags turned into spaces, and
+  with them taken out, so a word split across formatting runs was found
+  only by the second reading, which also joined the paragraph before it
+  to the word: a lowercase list word after another paragraph was found
+  by neither, in every gate. A third reading now joins the runs within a
+  paragraph and keeps paragraphs, breaks, tabs, cells and Excel's shared
+  strings apart, in Word, PowerPoint, Excel and OpenDocument files.
+
 The privacy job's checkout names `actions/checkout@v7.0.1`, the version
 pull request #87 locks, so whichever of the two merges second needs no
 new lockfile entry. A cloud session cannot push `.github/workflows/`,
@@ -810,7 +854,7 @@ started).
 In this cloud thread (Linux, Python 3.13, git 2.43), last on 2026-11-07,
 after main (with the reviewer roster) was merged in:
 
-- `python3 scripts/test-privacy.py`: 143 tests, OK. Every test added
+- `python3 scripts/test-privacy.py`: 144 tests, OK. Every test added
   for the second review, and for the pull request's review rounds,
   failed before its fix; for the eighth, the new test of text git shows
   as lines found none of its 9 files in a commit before the fix, the
@@ -821,7 +865,11 @@ after main (with the reviewer roster) was merged in:
   mark and without one, reading the file whole, the blob's own reading,
   UTF-16 without a mark in it, base64 lines, the marks' fallback), one
   of them failed; and
-  the address test got 16 of its 61 cases wrong at `f704512`; for the
+  the address test got 16 of its 61 cases wrong at `f704512`; for
+  Codex's code review of `7f3ac02`, the test of a paragraph's runs
+  found none of its 4 documents' words there, and fails with the new
+  reading, or `p`, `si` or the end of an element's name in it, taken
+  out; for the
   seventh, the address test got 18 of
   its 42 cases wrong at `87a2b75` and 13 with the round's first fix,
   and the `openssh.com` test failed at `87a2b75`; for the sixth, the encoding test failed its 5
@@ -849,7 +897,7 @@ after main (with the reviewer roster) was merged in:
   phone edges, folded phones, contractions, RTF bytes and their order
   with JSON escapes, Snappy copies, IPTC datasets, a zero place), failed
   it.
-- `python3 scripts/test-hooks.py`, with a made-up list: 217 tests, OK,
+- `python3 scripts/test-hooks.py`, with a made-up list: 220 tests, OK,
   also with `EMAIL` set to an address like the Mac's guess, which failed
   39 of them before that fix (and with `GIT_AUTHOR_EMAIL` too, at
   `ba6a4c3`). The test added for it fails with no person in the tests'
@@ -877,7 +925,16 @@ after main (with the reviewer roster) was merged in:
   (curl's was refused already); in `scripts/test-privacy.py`, the new
   test missed 6 of its 8 names.
   For the eighth, run against `f704512`: the 3 new tests and the 1
-  they extended failed 19 cases between them.
+  they extended failed 19 cases between them. For Codex's security
+  review of `7f3ac02`, the new test failed its 19 refusals there, and
+  with each part of the fix taken out in turn (each command's entry,
+  reading the key's file, leaving its path unread, the third name, the
+  autolink's `new`, `--type`'s value), it failed. For its code review,
+  the editor test failed all 14 of its refusals at `7f3ac02`, and the
+  HTTPie tests 2 cases; with each part taken
+  out in turn (the comments' `--editor`, its letter, its `=false`, a
+  value option taking `-e`, the gist's editor, an empty `--remove`,
+  options after the address, their values), one of them failed.
   For the seventh, run against `87a2b75`: the 6 new tests failed 48
   cases between them, and the 2 tests they extended 8.
   For the sixth: the encoding test failed 5 cases against `2a7cb7d`;
@@ -931,8 +988,8 @@ after main (with the reviewer roster) was merged in:
 ## Not verified
 
 - On a Mac, only the Python suites ran, last at `ba6a4c3` (*The first
-  run on the owner's Mac*); the second to eighth review rounds' fixes
-  have not run there yet. `caffeinate`, `arch`, `xcrun` and macOS's
+  run on the owner's Mac*); the second to eighth review rounds' fixes,
+  and the last push's, have not run there yet. `caffeinate`, `arch`, `xcrun` and macOS's
   `script` exist only on a Mac, and `chrt` without a priority only in
   util-linux 2.42 and later: how the guard reads them was checked
   against their manual pages; `flock`, `watch`, `script -c` and `find`

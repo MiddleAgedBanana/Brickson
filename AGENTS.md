@@ -757,8 +757,8 @@ above are backed by checks wherever a check can run:
   these rules (`gh repo create --push`, or with no words, and any gh
   command given a terminal, which can ask for text or where to push) or
   run what it cannot read (an option before a command's name, an
-  extension, an alias set in the same call), a gh recovery file and a
-  shell alias the command defines; a push
+  extension, an alias set in the same call), a gh recovery file, text
+  gh takes from an editor and a shell alias the command defines; a push
   from a checkout whose pushes skip the privacy hook or whose branch has
   none, whichever branch the push names, or after a command in the same
   call that changes the hook, its setting or the check it runs, or checks
