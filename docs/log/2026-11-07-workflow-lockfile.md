@@ -1,6 +1,6 @@
 # A lockfile for the actions the workflows run
 
-*2026-11-07. Pull request #86 (`claude/project-thread-x2j7ue`). A
+*2026-11-07. Pull request #87 (`claude/project-thread-x2j7ue`). A
 thread on the owner's Mac, through Remote Control, from
 docs/HANDOFF.md, "Repository, CI and website".*
 
@@ -74,7 +74,7 @@ ruleset does not require signatures.
 
 ## Commits
 
-The commits of pull request #86.
+The commits of pull request #87.
 
 ## Verified
 
@@ -107,6 +107,15 @@ On the owner's Mac (macOS 27.2, `gh` 2.103.3, `gh-actions-lock` v0.4.1):
   `sha_pinning_required: false`; `selected-actions` gave
   `github_owned_allowed: true`, `verified_allowed: false` and no
   patterns. `actions/policies` listed none.
+- The first locked runs, on this pull request's first push, on GitHub's
+  Linux machine: "Verify lockfile" passed in 7 seconds and "Dependency
+  review" in 4. Each job's log says "Using locked action versions from
+  the workflow's lockfile" and names the locked commit, for example
+  `actions/dependency-review-action@v5.0.0`
+  (`SHA:a1d282b36b6f3519aa1f3fc636f609c47dddb294`). So the owner's
+  setting matches locked commits, as the handoff expected, and the
+  extension installs and runs on that machine with the job's read-only
+  token.
 - How the lockfile names an action, on a scratch repository:
   `github/codeql-action/init@v4` is recorded as
   `github/codeql-action@v4.39.3` and `Actions/Checkout@v7` as
@@ -156,10 +165,6 @@ On the owner's Mac (macOS 27.2, `gh` 2.103.3, `gh-actions-lock` v0.4.1):
   pull request changes that file, so the merge itself starts "Publish
   website": that is the first time its four actions run from the
   lockfile. If it fails, the site stays as it was.
-- **Whether the owner's setting matches the locked commits.** The
-  handoff said the first locked run shows it. GitHub's documentation says
-  it checks the setting against the locked commit; a mismatch would stop
-  every workflow at its start. This pull request's own run is that check.
 - **What CodeRabbit checks out** with these patterns: its documentation
   does not say, and `**` is there so that it should not matter.
 - A real moved tag: nothing here simulated one. What happens then is
