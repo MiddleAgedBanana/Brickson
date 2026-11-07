@@ -23,6 +23,7 @@ from unittest import mock
 
 SCRIPT = Path(__file__).resolve().with_name("test.sh")
 WORKFLOW = SCRIPT.parent.parent / ".github" / "workflows" / "tests.yml"
+WORKFLOWS = WORKFLOW.parent
 
 # Answers the version and build-settings queries from the fixture, and
 # records every other xcodebuild run, one line of tab-separated arguments
@@ -1584,6 +1585,30 @@ def workflow_jobs(text):
     return jobs
 
 
+def workflow_steps(text):
+    """Every step of every job, each as its lines stripped of indentation,
+    without comments. A step starts at a `- ` item under a `steps:` key and
+    runs to the next item at the same depth or the end of the steps."""
+    steps, current, steps_indent, item_indent = [], None, None, None
+    for line in text.splitlines():
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        indent = len(line) - len(line.lstrip())
+        if steps_indent is not None and indent <= steps_indent:
+            steps_indent, item_indent, current = None, None, None
+        if stripped == "steps:":
+            steps_indent = indent
+        elif steps_indent is not None and stripped.startswith("- ") \
+                and item_indent in (None, indent):
+            item_indent = indent
+            current = [stripped[2:].strip()]
+            steps.append(current)
+        elif current is not None:
+            current.append(stripped)
+    return steps
+
+
 class WorkflowTests(unittest.TestCase):
     """CI runs test.sh only after switching to the newest released Xcode,
     and names no Xcode version (docs/DECISIONS.md, "Build with Apple's
@@ -1672,6 +1697,54 @@ class WorkflowTests(unittest.TestCase):
                                      capture_output=True, text=True, timeout=30)
                 self.assertEqual(ran.returncode == 0, all(c == "success" for c in chosen),
                                  ran.stdout + ran.stderr)
+
+    # A checkout without `persist-credentials: false`, in any workflow,
+    # fails this test. By default actions/checkout leaves the job's token
+    # in the checkout's Git settings, where every later step can read it;
+    # no step here needs it (docs/DECISIONS.md, "Reviews, updates and
+    # GitHub settings", *Dependencies*).
+    def test_every_checkout_leaves_no_token_behind(self):
+        checkouts = 0
+        for path in sorted(WORKFLOWS.glob("*.y*ml")):
+            for step in workflow_steps(path.read_text()):
+                uses = next((re.match(r"uses:\s*([^\s#]+)", line).group(1)
+                             for line in step if re.match(r"uses:\s*\S", line)), "")
+                if uses.split("@")[0] != "actions/checkout":
+                    continue
+                checkouts += 1
+                with self.subTest(workflow=path.name, step=step[0]):
+                    self.assertTrue(
+                        any(re.fullmatch(r"""persist-credentials:\s*(false|'false'|"false")(\s+#.*)?""",
+                                         line) for line in step),
+                        f"A checkout in .github/workflows/{path.name} keeps the job's token: "
+                        "add `persist-credentials: false` under its `with:`.")
+        self.assertGreater(checkouts, 0, "No workflow checks out the repository.")
+
+    # Reading steps wrongly (missing one, or merging two) fails this test,
+    # so the test above cannot pass by not seeing a checkout.
+    def test_workflow_steps_are_read_one_by_one(self):
+        steps = workflow_steps(textwrap.dedent("""\
+            jobs:
+              one:
+                steps:
+                  # a comment
+                  - uses: actions/checkout@v7
+                    with:
+                      persist-credentials: false
+                  - name: Run
+                    run: |
+                      echo uses: actions/checkout@v7
+              two:
+                runs-on: ubuntu-latest
+                steps:
+                  - name: Check out
+                    uses: actions/checkout@v7
+            """))
+        self.assertEqual(steps, [
+            ["uses: actions/checkout@v7", "with:", "persist-credentials: false"],
+            ["name: Run", "run: |", "echo uses: actions/checkout@v7"],
+            ["name: Check out", "uses: actions/checkout@v7"],
+        ])
 
     # Writing an Xcode version or app path into the workflow fails this test.
     def test_the_workflow_names_no_xcode_version(self):

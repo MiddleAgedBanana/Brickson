@@ -46,6 +46,8 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - name: Check the Xcode choice
         run: python3 scripts/test-select-xcode.py
       - name: Use the newest released Xcode
@@ -91,6 +93,8 @@ jobs:
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - name: Use the newest released Xcode
         run: |
           xcode="$(python3 scripts/select-xcode.py choose)"
@@ -120,6 +124,8 @@ jobs:
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - name: Use the newest released Xcode
         run: |
           xcode="$(python3 scripts/select-xcode.py choose)"
