@@ -17,6 +17,13 @@ reviews:
   # Review each pull request when it opens, and each push after that.
   enabled: true
   incremental_commits: true
+  # When a later commit addresses a finding, only update the comment and
+  # leave its thread open (true, the default, resolves it): the agent that
+  # opened the pull request answers every finding and then resolves the
+  # thread (AGENTS.md, *Build and test*, "Pushing to an open PR"), so no
+  # finding closes unanswered, and the `main` ruleset requires every
+  # conversation resolved (docs/DECISIONS.md, *`main` ruleset*).
+  resolve_threads_when_addressed: false
   # Never approve a pull request. An approval from a reviewer is not the
   # owner's merge.
   auto_approve_behavior: disabled
