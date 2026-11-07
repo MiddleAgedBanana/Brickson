@@ -1,0 +1,8 @@
+{
+  "effort": "base",
+  "autoReview": ["open"],
+  "strictness": 2,
+  "commentTypes": ["logic", "syntax"],
+  "ignorePatterns": "docs/archive/\ndocs/evidence/**/*.json\ndocs/evidence/**/*.txt",
+  "instructions": "Review against AGENTS.md at the repository root: its Non-negotiable invariants and its Code Review Rules. Do not report what its Not findings section lists."
+}
