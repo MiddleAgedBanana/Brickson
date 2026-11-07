@@ -738,7 +738,7 @@ BYTE_ORDER_MARKS = ((b'\xef\xbb\xbf', 'utf-8-sig'), (b'\xff\xfe\0\0', 'utf-32'),
                     (b'\xfe\xff', 'utf-16'))
 # Control characters plain text does not hold (tabs, line and page breaks
 # aside): UTF-16 that decodes to them is binary data, not text.
-CONTROL = re.compile('[\x00-\x08\x0b\x0e-\x1f\x7f]')
+CONTROL = re.compile(r'(?![\t\n\f\r])[\x00-\x1f\x7f]')
 
 
 def binary_signature(data):
@@ -873,9 +873,12 @@ XML_TAG = re.compile(r'<[^<>]*>')
 # PowerPoint's and OpenDocument's paragraphs, headings, breaks, tabs,
 # spaces and table cells, and Excel's shared strings. Between them a
 # document's runs, which split a word anywhere its formatting changes,
-# are read joined.
+# are read joined. An element's name ends at a space, a slash or the
+# tag's end, matched rather than looked ahead to: code scanning reads a
+# pattern as if it had no lookahead, and this one, read so, would find
+# <script> and not <SCRIPT>, and be called a bad HTML filter.
 XML_BREAK = re.compile(r'</?(?:[\w.-]+:)?(?:p|h|br|cr|tab|tc|tr|si|s|line-break|'
-                       r'table-cell|table-row|list-item)(?![\w.:-])[^<>]*>')
+                       r'table-cell|table-row|list-item)(?:\s[^<>]*)?/?>')
 
 
 class Hidden:

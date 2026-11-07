@@ -18,6 +18,7 @@ import json
 import os
 from pathlib import Path
 import random
+import re
 import shutil
 import struct
 import subprocess
@@ -2389,6 +2390,50 @@ class ArchiveTests(unittest.TestCase):
                 archive = zip_archive((name, '<?xml version="1.0"?>' + xml))
                 self.assertEqual(self.found(archive, words=NICK), [privacy.KIND_PRIVATE])
 
+    def test_a_stretch_of_a_document_ends_only_where_its_format_ends_one(self):
+        # A paragraph, heading, break, tab, space or table cell ends one, in
+        # any namespace, with or without attributes; nothing else does.
+        ends = ['<w:p>', '<w:p w:rsidR="00A1">', '<w:p\n  w14:paraId="1">', '</w:p>',
+                '</w:p >', '<w:br/>', '<w:cr/>', '<w:tab/>', '<w:tc>', '</w:tr>', '<a:p>',
+                '<a:br/>', '<si>', '</si>', '<text:p text:style-name="P1">', '<text:h>',
+                '<text:s/>', '<text:s text:c="2"/>', '<text:line-break/>', '<text:tab/>',
+                '<table:table-cell>', '</table:table-row>', '<text:list-item>']
+        others = ['<w:pPr>', '<w:proofErr w:type="x"/>', '<w:tabs>', '<w:tcPr>', '<w:t>',
+                  '<w:sz w:val="1"/>', '<w:shd/>', '<p:sp>', '<a:pPr/>', '<sst>', '<s:x>',
+                  '<text:span>', '<script>', '</script>', '<style>']
+        for tag in ends:
+            with self.subTest(tag=tag):
+                self.assertTrue(privacy.XML_BREAK.fullmatch(tag))
+        for tag in others:
+            with self.subTest(tag=tag):
+                self.assertIsNone(privacy.XML_BREAK.search(tag))
+
+    def test_no_pattern_reads_to_code_scanning_as_a_tag_filter_missing_capitals(self):
+        # GitHub's code scanning reads a pattern as if it had no lookaround,
+        # and one that then finds <script> but not <SCRIPT> is a "bad HTML
+        # filtering regexp", a high alert, which the ruleset lets no pull
+        # request merge with. Each of the check's patterns that names both
+        # angle brackets, read that way, finds both or neither.
+        lookaround = r'\(\?<?[=!](?:\\.|[^()\\])*\)'
+        checked = []
+        for name, value in sorted(vars(privacy).items()):
+            if not isinstance(value, re.Pattern):
+                continue
+            text = isinstance(value.pattern, str)
+            strip = re.compile(lookaround if text else lookaround.encode())
+            read = strip.sub('' if text else b'', value.pattern)
+            if not all(mark in read for mark in (['<', '>'] if text else [b'<', b'>'])):
+                continue
+            read = re.compile(read, value.flags)
+            lower, upper = '<script>foo</script>', '<SCRIPT>foo</SCRIPT>'
+            if not text:
+                lower, upper = lower.encode(), upper.encode()
+            checked.append(name)
+            with self.subTest(name=name):
+                self.assertEqual(bool(read.search(lower)), bool(read.search(upper)))
+        self.assertIn('XML_BREAK', checked)
+        self.assertIn('XML_TAG', checked)
+
     def test_entry_names_nested_archives_and_pictures_are_read(self):
         self.assertEqual(self.found(zip_archive(('media/tobble.txt', 'x')), words=NICK),
                          [privacy.KIND_PRIVATE])
@@ -2520,6 +2565,12 @@ class TextEncodingTests(unittest.TestCase):
                      b'\0\0\xfe\xff' + b'\0\x01\x02\x03' * 8 + f'Author {NAME}'.encode() + bytes(16)]:
             with self.subTest(data=data[:8]):
                 self.assertEqual(kinds(checker(NAME).data(data, 'x', 'x')), [privacy.KIND_PRIVATE])
+
+    def test_control_characters_are_those_plain_text_does_not_hold(self):
+        # Every character below the space but tab, line feed, form feed and
+        # carriage return, and delete.
+        held = [code for code in range(0x110000) if privacy.CONTROL.search(chr(code))]
+        self.assertEqual(held, [*range(0x00, 0x09), 0x0b, *range(0x0e, 0x20), 0x7f])
 
     def test_windows_latin_text_is_read_with_its_accents(self):
         check = checker('Jos\u00e9 Quillon')

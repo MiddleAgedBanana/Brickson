@@ -798,6 +798,23 @@ asks.
   paragraph and keeps paragraphs, breaks, tabs, cells and Excel's shared
   strings apart, in Word, PowerPoint, Excel and OpenDocument files.
 
+One more push followed it, for GitHub's code scanning (CodeQL), whose
+high alerts the ruleset lets no pull request merge with. It reads a
+pattern as if it had no lookahead, and so read, the third reading's
+pattern for where a paragraph ends would find `<script>` and not
+`<SCRIPT>`, which it calls a bad HTML filter (high). Python never
+matched either, but the merge was blocked all the same. The pattern
+now matches the end of an element's name (a space, a slash or the
+tag's end) instead of looking ahead to it, which reads every
+well-formed document the same. Its medium alert called the control
+characters' range from `\x0e` to `\x1f` wider than it means; the same
+characters are now written as everything below the space but tab, line
+feed, form feed and carriage return, and delete. Tests pin which tags
+end a stretch of a document, the control characters over every code
+point, and that each of the check's patterns that names both angle
+brackets, read without its lookarounds, finds both cases of a script
+tag or neither.
+
 The privacy job's checkout names `actions/checkout@v7.0.1`, the version
 pull request #87 locks, so whichever of the two merges second needs no
 new lockfile entry. A cloud session cannot push `.github/workflows/`,
@@ -854,7 +871,7 @@ started).
 In this cloud thread (Linux, Python 3.13, git 2.43), last on 2026-11-07,
 after main (with the reviewer roster) was merged in:
 
-- `python3 scripts/test-privacy.py`: 144 tests, OK. Every test added
+- `python3 scripts/test-privacy.py`: 147 tests, OK. Every test added
   for the second review, and for the pull request's review rounds,
   failed before its fix; for the eighth, the new test of text git shows
   as lines found none of its 9 files in a commit before the fix, the
@@ -869,7 +886,11 @@ after main (with the reviewer roster) was merged in:
   Codex's code review of `7f3ac02`, the test of a paragraph's runs
   found none of its 4 documents' words there, and fails with the new
   reading, or `p`, `si` or the end of an element's name in it, taken
-  out; for the
+  out; for code scanning's alerts on `1ddf83c`, the test of the
+  patterns as it reads them failed there, on that pattern alone, and
+  the tests of where a stretch ends and of the control characters fail
+  with a slash, a space, `p`, `s`, form feed or delete taken out of
+  theirs; for the
   seventh, the address test got 18 of
   its 42 cases wrong at `87a2b75` and 13 with the round's first fix,
   and the `openssh.com` test failed at `87a2b75`; for the sixth, the encoding test failed its 5
@@ -989,7 +1010,9 @@ after main (with the reviewer roster) was merged in:
 
 - On a Mac, only the Python suites ran, last at `ba6a4c3` (*The first
   run on the owner's Mac*); the second to eighth review rounds' fixes,
-  and the last push's, have not run there yet. `caffeinate`, `arch`, `xcrun` and macOS's
+  and the last two pushes', have not run there yet. CodeQL itself was
+  not run here: this session was refused running a downloaded copy, so
+  its run on the push is the check that its alerts are gone. `caffeinate`, `arch`, `xcrun` and macOS's
   `script` exist only on a Mac, and `chrt` without a priority only in
   util-linux 2.42 and later: how the guard reads them was checked
   against their manual pages; `flock`, `watch`, `script -c` and `find`
