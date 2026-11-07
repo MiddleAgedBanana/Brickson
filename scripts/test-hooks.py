@@ -1418,7 +1418,8 @@ class PrivacyGuardTests(unittest.TestCase):
         (self.repo / 'build' / 'evidence.md').write_text(f'{PRIVATE_NAME}\n')
         for command in ['git add -f build/evidence.md && git commit -m x',
                         'git add --force build/evidence.md && git commit -m x',
-                        'git add -vf build/evidence.md && git commit -m x']:
+                        'git add -vf build/evidence.md && git commit -m x',
+                        'git add --f build/evidence.md && git commit -m x']:
             with self.subTest(command=command):
                 self.assertIn('build/evidence.md:1:1:', self.assertDenied(command))
         # Without --force git refuses to add it, so nothing is read.
@@ -1582,7 +1583,10 @@ class PrivacyGuardTests(unittest.TestCase):
                 "python3 - <<'EOF'\nopen('notes.md', 'w').write('x')\nEOF\n"
                 'git add notes.md && git commit -m Add',
                 f'echo {name} > {request} && gh api -X POST repos/o/r/issues/1/comments --input {request}',
-                f'echo {name} > {request}; curl -q -X POST {api} -d @{request}']:
+                f'echo {name} > {request}; curl -q -X POST {api} -d @{request}',
+                # A redirection after a subshell or a group writes its target.
+                f"(printf 'Summary\\n'; cat bad.md) > {body} && gh pr create -t t --body-file {body}",
+                f'(cat bad.md) >> message.txt && git add notes.md && git commit -F message.txt']:
             with self.subTest(command=command):
                 self.assertIn('in the next', self.assertDenied(command))
         # Written in an earlier command, it is read; writing another file is fine.
@@ -1759,6 +1763,203 @@ class PrivacyGuardTests(unittest.TestCase):
                         f'gh gist create {body} 2>/dev/null']:
             with self.subTest(command=command):
                 self.assertAllowed(command)
+
+    def test_a_here_document_in_a_substitution_is_text(self):
+        # "$(cat <<'EOF' ... EOF)" is how commit messages and bodies are
+        # written: its body is text, never shell code, whatever it holds.
+        template = (ROOT / '.github' / 'pull_request_template.md').read_text()
+        for body in ["Don't stage everything",
+                     'Follow docs/DECISIONS.md, "Personal details stay out of the repository"',
+                     'The guard refuses `env`, `printenv`, `export` and `git add -A`.',
+                     '$(git push --force origin main) is only text here', template]:
+            with self.subTest(body=body[:20]):
+                self.assertAllowed(f'git commit -m "$(cat <<\'EOF\'\n{body}\nEOF\n)"')
+                self.assertAllowed('gh pr create --title "Add the privacy check" --body '
+                                   f'"$(cat <<\'EOF\'\n{body}\nEOF\n)"')
+        # Unquoted, it is text while it holds no $ or backtick.
+        self.assertAllowed('git commit -m "$(cat <<EOF\nDon\'t stage everything\nEOF\n)"')
+        self.assertIn('variable or another command', self.assertDenied(
+            'git commit -m "$(cat <<EOF\nDon\'t, $USER\nEOF\n)"'))
+        # Its text is still read, and the commands round it still checked.
+        self.assertIn('the commit message:2:', self.assertDenied(
+            f'git commit -m "$(cat <<\'EOF\'\nDon\'t forget\n{PRIVATE_NAME}\nEOF\n)"'))
+        self.assertDenied('gh pr create --title t --body '
+                          f'"$(cat <<\'EOF\'\n{template}\nThanks, "{PRIVATE_NAME}".\nEOF\n)"')
+        self.assertIn('force', self.assertDenied(
+            'git commit -m "$(cat <<\'EOF\'\nDon\'t\nEOF\n)" && git push --force origin claude/topic'))
+        self.assertIn('whole environment', self.assertDenied(
+            'git commit -m "$(cat <<EOF\n`env`\nEOF\n)"'))
+
+    def test_backticks_in_literal_text_are_not_commands(self):
+        for command in ["gh pr comment 12 --body 'The guard now refuses `env` with no command.'",
+                        "git commit -m 'Refuse `printenv` and `export -p` in the guard'",
+                        "echo 'cost is `set`'", "git commit -m 'Refuse `git add -A` in the guard'",
+                        'git commit -m "Refuse \\`env\\` in the guard"']:
+            with self.subTest(command=command):
+                self.assertAllowed(command)
+        # Backticks the shell runs are still commands.
+        for command in ['echo "cost is `env`"', 'echo `printenv`', 'git commit -m "Fix `git add -A`"']:
+            with self.subTest(command=command):
+                self.assertDenied(command)
+
+    def test_redirections_are_not_git_arguments(self):
+        (self.repo / 'a.txt').write_text('ok\n')
+        for command in ['git add a.txt 2>/dev/null; git commit -m "Fix"',
+                        'git add a.txt && git commit -m x > /dev/null',
+                        'git add a.txt &>/dev/null && git commit -q -m "Fix" 2>/dev/null',
+                        'git add a.txt && git commit -m "Fix" 2>&1 | tail -3',
+                        f'git add a.txt && git commit -m "Fix" > {self.folder}/commit.log',
+                        'git push origin claude/topic 2>&1 | tail -3',
+                        'git push -u origin claude/topic >/dev/null 2>&1']:
+            with self.subTest(command=command):
+                self.assertAllowed(command)
+        (self.repo / 'a.txt').write_text(f'{PRIVATE_NAME}\n')
+        self.assertIn('a.txt:1:1:', self.assertDenied(
+            'git add a.txt 2>/dev/null && git commit -m "Fix" >/dev/null'))
+        # A bare push from main still goes to main.
+        self.git('checkout', '-q', 'main')
+        self.git('branch', '-q', '--set-upstream-to=origin/main')
+        for command in ['git push', 'git push 2>&1 | tail -3', 'git push 2>/dev/null',
+                        f'git push > {self.folder}/push.log 2>&1']:
+            with self.subTest(command=command):
+                self.assertIn('Never push to main', self.assertDenied(command))
+
+    def test_a_script_s_own_dash_is_not_inline_code(self):
+        body = self.folder / 'body.md'
+        body.write_text('ok\n')
+        # The check AGENTS.md asks for before posting, chained with the post.
+        self.assertAllowed(f'python3 scripts/privacy-check.py --text - < {body} && '
+                           f'gh pr create --title "Add the check" --body-file {body}')
+        self.assertAllowed(f'python3 scripts/privacy-check.py --text - < {body} && git commit -F {body}')
+        # Inline code still may write anything, after an option's value too.
+        for command in ["python3 -X dev -c 'open(\"notes.md\", \"w\")' && git add notes.md && git commit -m x",
+                        f"python3 -c 'print(1)' && gh pr comment 12 -F {body}"]:
+            with self.subTest(command=command):
+                self.assertIn('in the next', self.assertDenied(command))
+
+    def test_gh_aliases_and_reopen_comments_are_read(self):
+        name = shlex.quote(PRIVATE_NAME)
+        named = self.folder / 'notes.md'
+        named.write_text(f'{PRIVATE_NAME}\n')
+        for command in [f'gh pr new --title Add --body {name}', f'gh issue new --title {name}',
+                        f'gh release new v1 --notes {name}', f'gh gist new {named}',
+                        f'gh repo new r --description {name}', f'gh pr reopen 12 --comment {name}',
+                        f'gh issue reopen 12 -c {name}']:
+            with self.subTest(command=command):
+                self.assertDenied(command)
+        self.assertAllowed('gh pr reopen 12 --comment "Reopened for the fix"')
+        self.assertAllowed('gh pr new --title Add --body "Fixes the layout"')
+
+    def test_graphql_variables_cannot_make_a_write(self):
+        self.assertAllowed("gh api graphql -f query='query($n:Int!){ repository(owner:\"o\",name:\"r\")"
+                           "{ pullRequest(number:$n){ title } } }' -F n=$PR")
+        self.assertIn('variable or another command', self.assertDenied(
+            "gh api graphql -f query='mutation($b:String!){ addComment(input:{subjectId:\"X\",body:$b})"
+            "{ clientMutationId } }' -F b=$BODY"))
+        self.assertIn('variable or another command', self.assertDenied(
+            'gh api graphql -f query="$QUERY" -F n=1'))
+
+    def test_an_api_request_on_its_own_here_document_is_read(self):
+        self.assertAllowed("gh api repos/o/r/issues/1/comments --input - <<'EOF'\n"
+                           '{"body": "Thanks, fixed."}\nEOF')
+        self.assertAllowed("gh api graphql --input - <<'EOF'\n"
+                           '{"query": "query { viewer { login } }"}\nEOF')
+        self.assertDenied("gh api repos/o/r/issues/1/comments --input - <<'EOF'\n"
+                          + json.dumps({'body': PRIVATE_NAME}) + '\nEOF')
+        self.assertDenied("gh api repos/o/r/pulls/1/reviews --input - <<'EOF'\n"
+                          '{"event": "APPROVE"}\nEOF')
+        self.assertIn('stdin', self.assertDenied('gh api repos/o/r/issues/1/comments --input -'))
+
+    def test_a_change_to_the_index_in_the_same_command_is_not_committed(self):
+        patch = self.folder / 'c.patch'
+        patch.write_text('diff --git a/c.txt b/c.txt\nnew file mode 100644\n--- /dev/null\n'
+                         f'+++ b/c.txt\n@@ -0,0 +1 @@\n+{PRIVATE_NAME}\n')
+        other = self.folder / 'other'
+        init_repository(other, 'main')
+        for command in [f'git apply --cached {patch} && git commit -m "Add c"',
+                        f'git apply --index {patch} && git commit -m x',
+                        f'git apply -3 {patch} && git commit -m x',
+                        'git stash pop --index && git commit -m "Restore work"',
+                        'git stash apply && git commit -m x', f'git am {patch}; git commit -m x']:
+            with self.subTest(command=command):
+                self.assertIn('in the next', self.assertDenied(command))
+        for command in [f'git apply --check {patch}', 'git stash list && git commit -m x',
+                        f'git apply {patch} && git commit -m x',
+                        f'git -C {other} apply --cached {patch} && git commit -m x']:
+            with self.subTest(command=command):
+                self.assertAllowed(command)
+
+    def test_a_copy_writes_only_its_destination(self):
+        body = self.folder / 'body.md'
+        body.write_text('ok\n')
+        (self.repo / 'a.txt').write_text('ok\n')
+        for command in [f'git add a.txt && git commit -m "Fix" && cp a.txt {self.folder}/a.bak',
+                        f'gh pr create --title "Fix" --body-file {body} && cp {body} {self.folder}/posted.md',
+                        f'cp a.txt {self.folder}/a.bak && git add a.txt && git commit -m "Fix"',
+                        f'rsync -a {body} {self.folder}/backup/ && gh pr comment 12 -F {body}',
+                        f'ln -s {body} {self.folder}/link.md && gh pr comment 12 -F {body}',
+                        f'install -m 644 {body} {self.folder}/x.md && gh pr comment 12 -F {body}']:
+            with self.subTest(command=command):
+                self.assertAllowed(command)
+        for command in [f'cp -t {self.folder} a.txt && gh pr comment 12 -F {body}',
+                        f'cp --target-directory={self.folder} a.txt && gh pr comment 12 -F {body}',
+                        f'ditto a.txt {body} && gh pr comment 12 -F {body}']:
+            with self.subTest(command=command):
+                self.assertIn('in the next', self.assertDenied(command))
+
+    def test_a_gist_s_file_names_are_published(self):
+        named = self.folder / (PRIVATE_NAME.replace(' ', '-').lower() + '-notes.md')
+        named.write_text('notes\n')
+        for command in [f'gh gist create {named}', f'gh gist edit abc123 --add {named}']:
+            with self.subTest(command=command):
+                self.assertDenied(command)
+
+    def test_the_commit_identity_is_read(self):
+        (self.repo / 'a.txt').write_text('ok\n')
+        name, address = shlex.quote(PRIVATE_NAME), shlex.quote(PRIVATE_ADDRESS)
+        # Set in the same command, it cannot be read before the command runs.
+        for command in [f'git config user.name {name} && git commit -m x',
+                        'git config user.email t@example.com; git commit -m x',
+                        f'git config set user.name {name} && git commit -m x']:
+            with self.subTest(command=command):
+                self.assertIn('earlier command', self.assertDenied(command))
+        # Set before, it is read where the commit runs.
+        self.git('config', 'user.name', 'Test')
+        self.git('config', 'user.email', 'test@example.com')
+        self.assertAllowed('git add a.txt && git commit -m x')
+        self.assertAllowed('git config user.name && git commit -m x')  # a read sets nothing
+        for setting, value in [('user.name', PRIVATE_NAME), ('user.email', PRIVATE_ADDRESS)]:
+            with self.subTest(setting=setting):
+                self.git('config', setting, value)
+                self.assertIn('the commit author', self.assertDenied('git commit -m x'))
+                self.git('config', setting, 'test@example.com' if 'email' in setting else 'Test')
+        self.assertDenied(f'GIT_AUTHOR_EMAIL={address} git commit -m x')
+        self.assertDenied('GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=user.name '
+                          f'GIT_CONFIG_VALUE_0={name} git commit -m x')
+        self.assertIn('variable or another command', self.assertDenied(
+            'GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=user.name GIT_CONFIG_VALUE_0="$NAME" git commit -m x'))
+        # GitHub's own addresses and the published support address are fine.
+        self.git('config', 'user.email', '1+someone@users.noreply.github.com')
+        self.assertAllowed('git commit -m x')
+        support = 'help' + '@' + 'brickson-app' + '.dev'
+        site = self.repo / 'site'
+        site.mkdir()
+        (site / 'index.html').write_text(f'<a href="mailto:{support}">Email</a>\n')
+        self.git('config', 'user.email', support)
+        self.assertAllowed('git commit -m x')
+        self.git('config', 'user.email', 'other' + '@' + 'brickson-app' + '.dev')
+        self.assertIn('the commit author', self.assertDenied('git commit -m x'))
+
+    def test_a_folder_the_shell_computes_is_named_as_unknown(self):
+        reason = self.assertDenied('cd "$(git rev-parse --show-toplevel)" && git commit -m x')
+        self.assertIn('cannot tell which folder', reason)
+        self.assertNotIn('could not run', reason)
+
+    def test_a_branch_without_the_hook_file_is_told_to_merge_main(self):
+        (self.repo / '.githooks' / 'pre-push').unlink()
+        reason = self.assertDenied('git push origin claude/topic')
+        self.assertIn('merge origin/main', reason)
+        self.assertNotIn('Never skip', reason)
 
 
 class SettingsTests(unittest.TestCase):
