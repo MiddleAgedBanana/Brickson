@@ -314,12 +314,51 @@ was reproduced by a test that failed before its fix:
   and a renamed branch (`git branch -m`), which keeps its files, takes
   its place for a push that names its destination.
 
+The fourth round, CodeRabbit's and Codex's reviews of `9910f78` (three
+and five findings; two of CodeRabbit's were lines of this record and of
+docs/HANDOFF.md that were not true, now corrected). Each of the six
+code findings was reproduced by a test that failed before its fix:
+
+- **A relative read after a `cd`** (CodeRabbit): the guard read a
+  command's words as written, so `cd ~/.config/gh && cat ../b*/*`,
+  `cd ~/.config/gh/.. && cat b*/*` and `cd ~/.config/gh && grep -r . ..`
+  reached the list. Each word is now read from the folder the command
+  runs in, as the guard follows `cd`, `pushd`, `env -C` and a subshell,
+  `..` and globs included, at both places the list may be. A `cd` into a
+  config folder written with `$HOME` or `$XDG_CONFIG_HOME` is followed
+  too; any other folder the shell builds stays unknown, as before. Other
+  config files stay readable (`cd ~/.config/gh && cat hosts.yml`). A
+  recursive read of a folder that holds a config folder (`grep -r . ~`)
+  is not refused, and docs/DECISIONS.md now says so.
+- **curl's one and three slashes** (Codex): curl takes
+  `https:/api.github.com/...` and `https:///api.github.com/...` as the
+  same address, which the guard did not see as GitHub's, so a request's
+  text went unread. The guard now reads an address as curl does.
+- **A message taken from another commit** (Codex): `-C`, `-c`,
+  `--fixup` and `--squash` take a commit's message (and `-C` and `-c`
+  its author), and `--amend` keeps the last commit's, none of which the
+  guard read. It now reads them, and refuses a commit whose source it
+  cannot read (built by the shell, or not there yet).
+- **A name before a capital S** (Codex): the checker's plural took the
+  next word's capital, so a listed name in `NameStore` or
+  `NameSettings` was missed, in files, commits and CI alike. A name is
+  now also tried without its plural.
+- **Base64 spelled with JSON escapes** (Codex): a request file could
+  write every letter of a file's base64 as a `\uXXXX` escape, which the
+  check for encoded content did not undo. It now reads the run with the
+  escapes undone, as GitHub does.
+- **A release's tag and a repository's name** (Codex): both are public,
+  and the guard did not read them (round three had listed them as a
+  limit). `gh release create`'s tag, `gh release edit --tag`, and
+  `gh repo create` and `gh repo rename`'s names are now read.
+
 The privacy job's checkout names `actions/checkout@v7.0.1`, the version
 pull request #87 locks, so whichever of the two merges second needs no
 new lockfile entry. A cloud session cannot push `.github/workflows/`,
 so the workflow change came to this branch as `privacy-check-workflow.yml`
-at the repository's root, and a commit from the owner's Mac moved it
-into place.
+at the repository's root, for a commit from the owner's Mac to move into
+place; until that commit, "Unit tests" fails here on purpose (*Not
+verified*).
 
 ## The first run on the owner's Mac
 
@@ -369,7 +408,7 @@ started).
 In this cloud thread (Linux, Python 3.13, git 2.43), last on 2026-11-07,
 after main (with the reviewer roster) was merged in:
 
-- `python3 scripts/test-privacy.py`: 132 tests, OK. Every test added
+- `python3 scripts/test-privacy.py`: 133 tests, OK. Every test added
   for the second review, and for the pull request's two review rounds,
   failed before its fix. On 2026-11-06, ten
   deliberate breakages of the checker each failed it (every address
@@ -382,7 +421,7 @@ after main (with the reviewer roster) was merged in:
   phone edges, folded phones, contractions, RTF bytes and their order
   with JSON escapes, Snappy copies, IPTC datasets, a zero place), failed
   it.
-- `python3 scripts/test-hooks.py`, with a made-up list: 179 tests, OK,
+- `python3 scripts/test-hooks.py`, with a made-up list: 180 tests, OK,
   also with `EMAIL` set to an address like the Mac's guess, which failed
   39 of them before that fix (and with `GIT_AUTHOR_EMAIL` too, at
   `ba6a4c3`). The test added for it fails with no person in the tests'
@@ -391,6 +430,12 @@ after main (with the reviewer roster) was merged in:
   of `0fd0fbc`, the 4 new tests failed 55 cases between them, and the 2
   settings tests and the branch test that now expects a refusal failed
   too.
+  For the fourth, run against `9910f78`: 15 of the 16 new refused reads
+  after a `cd` passed (the other was refused for another reason), as did
+  the 3 new curl addresses, the 7 tag and repository names, 13 reused
+  commits before that test stopped, and 2 of the 3 escaped requests
+  (curl's was refused already); in `scripts/test-privacy.py`, the new
+  test missed 6 of its 8 names.
   Run against the guard as it was before the second review's fixes, the
   13 tests added for them and the 2 they extended all failed (49
   failures); the ten breakages of the guard's privacy rules from
@@ -429,8 +474,8 @@ after main (with the reviewer roster) was merged in:
 ## Not verified
 
 - On a Mac, only the Python suites ran, last at `ba6a4c3` (*The first
-  run on the owner's Mac*); the second and third review rounds' fixes
-  have not run there yet. Not run on a Mac: the hook on a real push,
+  run on the owner's Mac*); the second, third and fourth review rounds'
+  fixes have not run there yet. Not run on a Mac: the hook on a real push,
   `scripts/test.sh`, the guard in a Claude Code session there. CI runs
   the Python checks on GitHub's Mac.
 - The CI step has not run on GitHub: the workflow change waits for the

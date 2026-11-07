@@ -1088,8 +1088,10 @@ docs/ROADMAP.md, *The quality bar*, Q24):
    the list, in the project's settings. When the list changes, the
    secret must be set again; an agent on your Mac can do both
    (docs/DECISIONS.md, "Personal details stay out of the repository",
-   its last part). Without the secret, every pull request's "Privacy
-   check", and with it "Unit tests", fails.
+   its last part). Without the secret, "Privacy check", and with it
+   "Unit tests", fails on every pull request from a branch of this
+   repository; one GitHub gives no secrets (from a fork, or
+   Dependabot's) checks the built-in patterns only, and says so.
 9. Done on your Mac on 2026-11-04; for another Mac: let Codex read all
    of `AGENTS.md`. By default
    it reads only the first 32 KiB, and the file is about 69 KB

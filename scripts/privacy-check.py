@@ -428,8 +428,9 @@ def folded_lines(lines):
 
 def entry_pattern(tokens, exact):
     # Words may be joined by spaces, line breaks, punctuation or nothing
-    # (camelCase); a plural s or es may follow.
-    body = r'[\W_]*'.join(re.escape(token) for token in tokens) + r'(?:es|s)?'
+    # (camelCase); a plural s or es may follow (Checker.matches also tries
+    # the name without it, which the next word's capital S may have taken).
+    body = r'[\W_]*'.join(re.escape(token) for token in tokens) + r'(?P<plural>es|s)?'
     return re.compile(body, 0 if exact else re.IGNORECASE)
 
 
@@ -484,9 +485,14 @@ class Checker:
                 match = pattern.search(text, position)
                 if match is None:
                     break
-                if starts_word(text, match.start()) and ends_word(text, match.end()):
+                # The plural may be the start of the next word (NameStore).
+                ends = [match.end()]
+                if match.group('plural'):
+                    ends.append(match.start('plural'))
+                end = next((end for end in ends if ends_word(text, end)), None)
+                if starts_word(text, match.start()) and end is not None:
                     yield match.start(), entry
-                    position = match.end()
+                    position = end
                 else:
                     position = match.start() + 1
 
@@ -2573,7 +2579,10 @@ def guard_findings(texts=(), files=(), commits_from=(), directory=None, environ=
     findings = []
     plain = Checker(entries)
     for label, text in texts:
-        findings += plain.text(text, label) + encoded_findings(plain, text, label)
+        # JSON may write any letter of the base64 as a \uXXXX escape; what
+        # GitHub decodes is the run with each escape undone.
+        unescaped = UNICODE_ESCAPE.sub(lambda match: chr(int(match[1], 16)), text)
+        findings += plain.text(text, label) + encoded_findings(plain, unescaped, label)
     if files:
         support = set()
         if directory is not None:

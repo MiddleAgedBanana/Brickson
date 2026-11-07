@@ -265,6 +265,16 @@ class PrivateWordTests(unittest.TestCase):
             with self.subTest(text=text):
                 self.assertEqual(kinds(check.text(text, 'x')), [privacy.KIND_PRIVATE])
 
+    def test_a_name_before_a_camel_case_word_that_starts_with_s_is_found(self):
+        # The plural must not take the next word's capital S: without it,
+        # the name still ends a word.
+        check = checker(f'{NAME}\n{NICK}')
+        for text in ['let quillonVassmereStore = 1', 'QuillonVassmereSettings.swift',
+                     'tobbleService', 'TobbleSync', 'TOBBLESettings', 'tobbleEsque',
+                     'the TobblesStore', 'TobblesSettings']:
+            with self.subTest(text=text):
+                self.assertEqual(kinds(check.text(text, 'x')), [privacy.KIND_PRIVATE])
+
     def test_a_word_inside_a_longer_word_is_not_a_match(self):
         check = checker(f'{NICK}\n4471')
         for text in ['Tobblesome', 'xtobble', 'atobbles', 'Tobbler', "tobble't", '144712',

@@ -143,6 +143,9 @@ PUBLISHED_EXPANSION = ('Text this command publishes comes from a variable or ano
                        'which the privacy check cannot read. Write it in the command, in a '
                        "quoted here-document (\"$(cat <<'EOF' ... EOF)\", or <<'EOF' for "
                        'stdin), or in a file passed with -F, --file or --body-file.')
+REUSED_COMMIT = ('This commit takes its message or author from another commit (-C, -c, '
+                 '--fixup, --squash or --amend), which the privacy check cannot read here: '
+                 'name one that exists before the command runs, or write the message.')
 PUBLISHED_FILE = ('A file this command publishes must exist before the command runs, so the '
                   'privacy check can read it: write it in an earlier command.')
 PUBLISHED_STDIN = ('Text this command reads from stdin can be checked only from a '
@@ -218,12 +221,14 @@ GH_PUBLISHES = {
     ('issue', 'close'): ({'--comment', 'c'}, set()),
     ('issue', 'reopen'): ({'--comment', 'c'}, set()),
     ('release', 'create'): ({'--title', '--notes', 't', 'n'}, {'--notes-file', 'F'}),
-    ('release', 'edit'): ({'--title', '--notes', 't', 'n'}, {'--notes-file', 'F'}),
+    ('release', 'edit'): ({'--title', '--notes', '--tag', 't', 'n'}, {'--notes-file', 'F'}),
     # A gist's files are its operands (gh gist edit's second), or stdin for -.
     ('gist', 'create'): ({'--desc', '--filename', 'd', 'f'}, set()),
     ('gist', 'edit'): ({'--desc', '--filename', 'd', 'f'}, {'--add', 'a'}),
     ('repo', 'create'): ({'--description', '--homepage', 'd', 'h'}, set()),
     ('repo', 'edit'): ({'--description', '--homepage', 'd', 'h'}, set()),
+    # A new repository's name, and a new name, are their first operand.
+    ('repo', 'rename'): (set(), set()),
     # A label's name is its first operand.
     ('label', 'create'): ({'--description', '--color', 'd', 'c'}, set()),
     ('label', 'edit'): ({'--description', '--color', '--name', 'd', 'c', 'n'}, set()),
@@ -233,7 +238,9 @@ GH_PUBLISHES = {
 GH_OTHER_VALUES = {('gist', 'edit'): {'--remove', 'r'},
                    # A release's operands are its tag, then the assets to upload.
                    ('release', 'create'): {'--target', '--discussion-category',
-                                           '--notes-start-tag'}}
+                                           '--notes-start-tag'},
+                   ('repo', 'create'): {'--gitignore', 'g', '--license', 'l', '--remote', 'r',
+                                        '--source', 's', '--team', 't', '--template', 'p'}}
 # GitHub takes release assets at this host (gh release upload uses it).
 UPLOADS_HOST = 'uploads.github.com'
 # Programs that change a file's mode or remove it, which can turn a hook off
@@ -1384,6 +1391,9 @@ def note_gh_text(plain, cwd, git_state):
             gist_files = [value for option, value in pairs if option in files]
         elif command[0] == 'label':
             values += operands[:1]
+        elif command in (('release', 'create'), ('repo', 'create'), ('repo', 'rename')):
+            # A release's tag, and a repository's name, are public too.
+            values += operands[:1]
         note_published(git_state, 'gh ' + ' '.join(command), values, names, cwd)
         # A gist shows each file it is given under that file's name.
         note_published(git_state, 'gh ' + ' '.join(command) + ' file name',
@@ -1431,6 +1441,11 @@ def graphql_read(texts):
 
 
 def parsed_url(word):
+    # curl takes one, two or three slashes after the scheme's colon
+    # (https:/api.github.com), as one address.
+    scheme = re.match(r'(https?):/+', word, re.IGNORECASE)
+    if scheme:
+        word = scheme[1] + '://' + word[scheme.end():]
     try:
         url = urlsplit(word if '://' in word else 'https://' + word)
         # API clients normally remove literal dot segments before sending.
@@ -1898,12 +1913,24 @@ def inspectable_here_documents(command):
     return ''.join(output)
 
 
-def changed_directory(cwd, destination):
+def changed_directory(cwd, destination, environment=None):
     """The folder a cd, -C or chdir to destination reaches from cwd, or None
     when the guard cannot tell: the shell builds destination, or cwd is
-    unknown."""
+    unknown. Given the shell's environment, a folder in a config folder
+    named through $HOME or $XDG_CONFIG_HOME is followed all the same, so
+    a relative read from it is placed (reaches_list); any other folder the
+    shell builds stays unknown, as git commands there are refused."""
     if '$' in destination or '`' in destination:
-        return None
+        if environment is None:
+            return None
+        expanded = with_config_variables(destination, environment)
+        if expanded is None:
+            return None
+        expanded = os.path.expanduser(expanded)
+        if not os.path.isabs(expanded) and cwd is None:
+            return None
+        reached = os.path.join(cwd or '', expanded)
+        return reached if in_config_folder(reached) else None
     destination = os.path.expanduser(destination)
     if os.path.isabs(destination):
         return destination
@@ -2169,6 +2196,7 @@ def note_commit(git_state, args, context, paths):
     adds = git_state.get('adds', [])
     if directory is None or any(folder is None for folder, _, _ in adds):
         deny(UNKNOWN_FOLDER)
+    note_reused_commit(git_state, args, pairs, context, directory)
     # The author and committer: as given (--author, -c, GIT_AUTHOR_* and
     # the like), which must be the command's own text, and as git reads
     # them where the commit runs, configured ones included. They are
@@ -2201,6 +2229,42 @@ def note_commit(git_state, args, context, paths):
             note_published(git_state, 'the commit author', [author])
     git_state.setdefault('commits', []).append(
         (directory, [*adds, *((directory, path, False) for path in paths)]))
+
+
+def note_reused_commit(git_state, args, pairs, context, directory):
+    """Remember what a commit takes from another one: -C and -c its
+    message and author, --fixup and --squash its message (whose subject
+    they quote), and --amend the last commit's message when given none,
+    and its author. --reset-author takes the author from git's settings
+    instead (git commit --help)."""
+    messages = {'-m', '--message', '-F', '--file', '-C', '-c', '--reuse-message',
+                '--reedit-message', '--fixup', '--squash'}
+    keeps_author = '--reset-author' not in args
+    reused = []
+    for option, value in pairs:
+        if option in ('-C', '-c', '--reuse-message', '--reedit-message'):
+            reused.append((value, keeps_author))
+        elif option in ('--fixup', '--squash'):
+            # --fixup=amend:<commit> and reword:<commit> take its message.
+            reused.append((re.sub(r'^(?:amend|reword):', '', value), False))
+    if '--amend' in args:
+        if not any(option in messages for option, _ in pairs):
+            reused.append(('HEAD', keeps_author))
+        elif keeps_author:
+            reused.append(('HEAD', None))  # the author alone
+    for revision, author in reused:
+        if literal_text(revision, git_state) is None:
+            deny(PUBLISHED_EXPANSION)
+        found = git(context, 'log', '-1', '--format=%an%x00%ae%x00%B', '--end-of-options',
+                    revision, '--')
+        if found is None or found.count('\0') < 2:
+            deny(REUSED_COMMIT)
+        name, address, message = found.split('\0', 2)
+        if author is not None:
+            note_published(git_state, 'the reused commit message', texts=[message])
+        if author is not False:
+            git_state.setdefault('identities', []).append(
+                (directory, name, address, 'the commit author'))
 
 
 def check_push_hook(options, context):
@@ -2612,42 +2676,90 @@ def check_file_tool(name, arguments, cwd):
                 deny(LIST_READ)
 
 
-def names_configured_folder(command, cwd):
-    """Whether a word names the config folder XDG_CONFIG_HOME sets, or the
-    list's folder or file in it, which the checks for .config do not see
-    when that folder is elsewhere: by its path, or by a glob that could
-    name one of them (a glob deeper than the list's file names other
-    files)."""
-    configured = os.environ.get('XDG_CONFIG_HOME', '')
-    if not os.path.isabs(configured):
-        return False
-    config = os.path.normpath(configured)
-    folder = os.path.join(config, 'brickson')
-    targets = [config, folder, os.path.join(folder, 'private-words.txt')]
-    real = [os.path.realpath(target) for target in targets]
+CONFIG_VARIABLE = re.compile(r'\$(?:\{(HOME|XDG_CONFIG_HOME)\}|(HOME|XDG_CONFIG_HOME)(?![A-Za-z0-9_]))')
+
+
+def with_config_variables(text, environment=None):
+    """text with $HOME and $XDG_CONFIG_HOME as the shell would expand them
+    (a variable this command sets or unsets first included), or None when
+    the shell builds any other part of it, or one of them is unset."""
+    environment = environment or {}
+    missing = []
+
+    def value(match):
+        name = match[1] or match[2]
+        found = environment[name] if name in environment else os.environ.get(name)
+        if not found:
+            missing.append(name)
+        return found or ''
+    text = CONFIG_VARIABLE.sub(value, text)
+    if missing or '$' in text or '`' in text:
+        return None
+    return text
+
+
+def list_places():
+    """The private list's places, each as its config folder, the list's
+    folder and the list's file: at the default config folder and at the
+    one XDG_CONFIG_HOME sets, each as written and as its real path."""
     home = os.environ.get('HOME') or os.path.expanduser('~')
-    for word in re.findall(r'[^\s;&|()<>`]+', command):
-        word = word.replace('"', '').replace("'", '')
+    configs = [os.path.join(home, '.config')]
+    configured = os.environ.get('XDG_CONFIG_HOME', '')
+    if os.path.isabs(configured):
+        configs.append(configured)
+    places = []
+    for config in configs:
+        for form in (os.path.normpath(config), os.path.realpath(config)):
+            folder = os.path.join(form, 'brickson')
+            place = (form, folder, os.path.join(folder, 'private-words.txt'))
+            if place not in places:
+                places.append(place)
+    return places
+
+
+def in_config_folder(path):
+    """Whether path is a config folder the list may be in, or inside one."""
+    for candidate in dict.fromkeys([os.path.normpath(path), os.path.realpath(path)]):
+        for config, _, _ in list_places():
+            if candidate == config or candidate.startswith(config + os.sep):
+                return True
+    return False
+
+
+def reaches_list(words, folders, environment=None):
+    """Whether a word of one command names a config folder the list may be
+    in, the list's folder or its file, or is a glob that could name one of
+    them, read from the folder the command runs in: after a cd, through
+    .. and through $HOME or $XDG_CONFIG_HOME, which the checks in main
+    cannot follow (cd ~/.config/gh && cat ../b*/*). A glob deeper than
+    the list's file names other files. A recursive read of a folder that
+    holds a config folder (grep -r . ~) is not refused."""
+    places = list_places()
+    for word in words:
         for text in dict.fromkeys([word, word.partition('=')[2]]):
-            text = re.sub(r'\$\{?XDG_CONFIG_HOME\}?', lambda _: config, text)
-            text = re.sub(r'\$\{?HOME\}?', lambda _: home, text)
-            if not text:
+            text = with_config_variables(text, environment) if text else None
+            if not text or '\n' in text:
                 continue
-            path = os.path.normpath(os.path.join(cwd, os.path.expanduser(text)))
-            if re.search(r'[*?[]', text):
-                parts = path.split(os.sep)
-                # A shell glob matches a leading dot only when it writes one.
-                if any(len(parts) == len(target.split(os.sep)) and all(
-                        fnmatch.fnmatchcase(goal, part)
-                        and (part.startswith('.') or not goal.startswith('.'))
-                        for goal, part in zip(target.split(os.sep), parts))
-                       for target in targets):
-                    return True
-                continue
-            for candidate, (whole, inside) in ((path, targets[:2]),
-                                                (os.path.realpath(path), real[:2])):
-                if candidate in (whole, inside) or candidate.startswith(inside + os.sep):
-                    return True
+            text = os.path.expanduser(text)
+            pattern = bool(re.search(r'[*?[]', text))
+            for folder in folders:
+                if not os.path.isabs(text) and folder is None:
+                    continue
+                path = os.path.normpath(os.path.join(folder or '', text))
+                for candidate in dict.fromkeys([path, os.path.realpath(path)]):
+                    parts = candidate.split(os.sep)
+                    for config, inside, _ in places:
+                        if not pattern and (candidate in (config, inside)
+                                            or candidate.startswith(inside + os.sep)):
+                            return True
+                    # A shell glob matches a leading dot only when it writes one.
+                    if pattern and any(
+                            len(parts) == len(target.split(os.sep)) and all(
+                                fnmatch.fnmatchcase(goal, part)
+                                and (part.startswith('.') or not goal.startswith('.'))
+                                for goal, part in zip(target.split(os.sep), parts))
+                            for place in places for target in place):
+                        return True
     return False
 
 
@@ -2738,6 +2850,9 @@ def check_command(command, cwd, depth=0, environment=None, git_state=None):
             # Redirections alone, after a subshell or a group ( ... ) > file,
             # still write their targets.
             raw_words = raw_parts[part_index][0] if len(raw_parts) == len(parts) else []
+            for where, _, _, shell_env in runnable:
+                if reaches_list(words, [where], dict(shell_env)):
+                    deny(LIST_READ)
             for where in {path for path, _, _, _ in runnable}:
                 note_writes(git_state, words, raw_words, unwrapped, where, where)
             if words and all(re.match(r'^[A-Za-z_][A-Za-z0-9_]*=', word) for word in words):
@@ -2788,7 +2903,11 @@ def check_command(command, cwd, depth=0, environment=None, git_state=None):
             _, command_environment, directories = strip_wrappers(words, inherited)
             command_cwd = where
             for directory in directories:
-                command_cwd = changed_directory(command_cwd, directory)
+                command_cwd = changed_directory(command_cwd, directory, inherited)
+            # The shell opens redirections where it is; the program reads
+            # its operands where a wrapper's -C puts it.
+            if reaches_list(words, dict.fromkeys([where, command_cwd]), inherited):
+                deny(LIST_READ)
             raw_words = raw_parts[part_index][0] if len(raw_parts) == len(parts) else []
             raw_outer = None
             if len(raw_words) == len(words):
@@ -2856,7 +2975,7 @@ def check_command(command, cwd, depth=0, environment=None, git_state=None):
                     # the target unknown rather than querying the wrong repository.
                     target = None
                 else:
-                    target = changed_directory(where, destination)
+                    target = changed_directory(where, destination, inherited)
                 # Earlier shell commands may create the target, so inspect
                 # both outcomes even when it does not exist at hook time.
                 new_stack = (where,) + stack if program == 'pushd' else stack
@@ -3097,7 +3216,7 @@ def main():
     if name == 'Bash':
         command = str(arguments.get('command', ''))
         if (LIST_REFERENCE.search(command) or names_list_glob(command)
-                or names_config_folder(command) or names_configured_folder(command, cwd)):
+                or names_config_folder(command)):
             deny(LIST_READ)
         if PROCESS_ENVIRONMENT.search(command):
             deny(ENVIRONMENT_DUMP)

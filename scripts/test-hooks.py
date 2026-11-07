@@ -1349,6 +1349,10 @@ class PrivacyGuardTests(unittest.TestCase):
                         '-c', 'core.hooksPath=/dev/null', *args],
                        check=True, capture_output=True)
 
+    def git_output(self, *args):
+        return subprocess.run(['git', '-C', str(self.repo), *args], check=True,
+                              capture_output=True, text=True).stdout.strip()
+
     def output(self, command):
         return guard_output('Bash', {'command': command}, self.repo, self.env)
 
@@ -1390,6 +1394,43 @@ class PrivacyGuardTests(unittest.TestCase):
         # Single quotes keep a $ as text, as in a GraphQL query's variables.
         self.assertAllowed("git commit -m 'Explain $PWD'")
         self.assertAllowed("gh api graphql -f query='query($id: ID!) { node(id: $id) { id } }'")
+
+    def test_a_message_or_author_taken_from_another_commit_is_read(self):
+        # -C, -c, --fixup, --squash and --amend take a message (and -C, -c
+        # and --amend an author) from a commit that exists already.
+        self.git('commit', '-q', '--allow-empty', '-m', f'Thanks {PRIVATE_NAME}')
+        private = self.git_output('rev-parse', 'HEAD')
+        self.git('commit', '-q', '--allow-empty', '-m', 'Clean',
+                 f'--author={PRIVATE_NAME} <someone@example.com>')
+        authored = self.git_output('rev-parse', 'HEAD')
+        self.git('commit', '-q', '--allow-empty', '-m', 'Also clean')
+        clean = self.git_output('rev-parse', 'HEAD')
+        for command in [f'git commit --allow-empty -C {private}',
+                        f'git commit --allow-empty -c {private}',
+                        f'git commit --allow-empty --reuse-message={private}',
+                        f'git commit --allow-empty --reedit-message {private}',
+                        f'git commit --allow-empty --fixup {private}',
+                        f'git commit --allow-empty --fixup=amend:{private}',
+                        f'git commit --allow-empty --fixup=reword:{private}',
+                        f'git commit --allow-empty --squash={private}',
+                        f'git commit --allow-empty -sC {private}',
+                        f'git commit --allow-empty -C {authored}',
+                        'git commit --allow-empty -C "$SHA"',
+                        'git commit --allow-empty -C no-such-commit']:
+            with self.subTest(command=command):
+                self.assertDenied(command)
+        self.assertAllowed(f'git commit --allow-empty -C {clean}')
+        self.assertAllowed(f'git commit --allow-empty --fixup {clean}')
+        self.assertAllowed(f'git commit --allow-empty --fixup {authored}')
+        self.assertAllowed(f'git commit --allow-empty --reset-author -C {authored}')
+        # --amend keeps the last commit's message unless it is given one,
+        # and its author unless --reset-author.
+        self.git('reset', '-q', '--hard', private)
+        self.assertDenied('git commit --amend --allow-empty --no-edit')
+        self.assertAllowed('git commit --amend --allow-empty -m "Fix the message"')
+        self.git('reset', '-q', '--hard', authored)
+        self.assertDenied('git commit --amend --allow-empty -m "Fix"')
+        self.assertAllowed('git commit --amend --allow-empty --reset-author -m "Fix"')
 
     def test_a_commit_message_file_is_read(self):
         message = self.folder / 'message.txt'
@@ -1506,7 +1547,14 @@ class PrivacyGuardTests(unittest.TestCase):
                         "gh api repos/o/r/issues/12/comments -f "
                         + shlex.quote('body=' + PRIVATE_NAME),
                         'curl -q -X POST https://api.github.com/repos/o/r/issues/12/comments '
-                        '-d ' + shlex.quote(json.dumps({'body': PRIVATE_ADDRESS}))]:
+                        '-d ' + shlex.quote(json.dumps({'body': PRIVATE_ADDRESS})),
+                        # curl takes one, two or three slashes after the colon.
+                        'curl -q -X POST https:/api.github.com/repos/o/r/issues/12/comments '
+                        '-d ' + shlex.quote(json.dumps({'body': PRIVATE_NAME})),
+                        'curl -q -X POST https:///api.github.com/repos/o/r/issues/12/comments '
+                        '-d ' + shlex.quote(json.dumps({'body': PRIVATE_NAME})),
+                        'curl -q -X POST HTTPS:/API.GITHUB.COM/repos/o/r/issues/12/comments '
+                        '-d ' + shlex.quote(json.dumps({'body': PRIVATE_NAME}))]:
             with self.subTest(command=command):
                 self.assertDenied(command)
         body = self.folder / 'body.md'
@@ -1586,6 +1634,19 @@ class PrivacyGuardTests(unittest.TestCase):
         clean = base64.b64encode(b'Notes\nThanks to everyone\n').decode()
         self.assertAllowed(f'gh api --method PUT repos/o/r/contents/a.txt -f branch=claude/topic '
                            f'-f message=clean -f content={clean}')
+        # JSON may spell every letter as a \u escape: what GitHub decodes
+        # is the same base64.
+        def escaped(text):
+            return ('{"branch": "claude/topic", "message": "x", "content": "'
+                    + ''.join(f'\\u{ord(letter):04x}' for letter in text) + '"}')
+        request.write_text(escaped(encoded))
+        for command in [f'gh api -X PUT repos/o/r/contents/a.txt --input {request}',
+                        f'gh api -X POST repos/o/r/git/blobs --input {request}',
+                        f'curl -q -X PUT {api} -d @{request}']:
+            with self.subTest(command=command[:40]):
+                self.assertIn('encoded', self.assertDenied(command))
+        request.write_text(escaped(clean))
+        self.assertAllowed(f'gh api -X PUT repos/o/r/contents/a.txt --input {request}')
 
     def test_a_contents_api_write_s_file_name_is_checked(self):
         # The Contents API names the file it writes in its address, and
@@ -1663,6 +1724,18 @@ class PrivacyGuardTests(unittest.TestCase):
         self.assertAllowed('gh release create v1 --latest=false --notes clean')
         self.assertDenied(f'gh release create v1 --notes {shlex.quote(PRIVATE_NAME)}')
         self.assertAllowed('gh release view v1')
+        # A release's tag and a repository's name are public too.
+        named = PRIVATE_NAME.replace(' ', '-')
+        for command in [f'gh release create {named} --notes clean',
+                        f'gh release create --notes clean v1-{named}',
+                        f'gh release edit v1 --tag {named}',
+                        f'gh repo create {named} --public --description clean',
+                        f'gh repo create o/{named} --private',
+                        f'gh repo create --license mit o/{named}',
+                        f'gh repo rename {named}']:
+            with self.subTest(command=command):
+                self.assertDenied(command)
+        self.assertAllowed('gh repo create o/clean-tools --private --description clean')
         self.assertAllowed('gh release download v1')
 
     def test_a_quoted_word_does_not_vouch_for_a_built_one(self):
@@ -1791,11 +1864,31 @@ class PrivacyGuardTests(unittest.TestCase):
                         'cat ~/.config/./*/*', 'grep -r x ~/.config/*']:
             with self.subTest(command=command):
                 self.assertIn('--status', self.assertDenied(command))
+        # A relative path is read from the folder a cd reaches, .. and a glob
+        # included, at the default place and where XDG_CONFIG_HOME puts it.
+        config = self.folder / 'config'  # this test's XDG_CONFIG_HOME
+        for command in ['cd ~/.config/gh && cat ../b*/*', 'cd ~/.config/gh/.. && cat b*/*',
+                        'cd ~/.config/gh && grep -r . ..', 'cd ~/.config/gh; cd ..',
+                        'cd "$HOME/.config/gh" && cat ../b*/*',
+                        'cd ${HOME}/.config/gh && grep -r x ../*',
+                        'pushd ~/.config/gh && cat ../b*/*', '(cd ~/.config/gh && cat ../b*/*)',
+                        "bash -c 'cd ~/.config/gh && cat ../b*/*'",
+                        'env -C ~/.config/gh cat ../b*/*', 'cd ~/.config/gh && find .. -type f',
+                        'cd ~/.config/gh/../gh && cat ../brick?on/*',
+                        f'cd {config}/gh && cat ../b*/*', f'cd {config}/gh && grep -r . ..',
+                        'cd "$XDG_CONFIG_HOME/gh" && cat ../b*/*',
+                        'cd "${XDG_CONFIG_HOME}"/gh && grep -r . ../.']:
+            with self.subTest(command=command):
+                self.assertIn('--status', self.assertDenied(command))
         # Other config folders and files, and words that only contain .config.
         for command in ['ls ~/.config/gh', 'cat ~/.config/gh/hosts.yml',
                         'cat "$XDG_CONFIG_HOME"/gh/hosts.yml', 'cat ~/.config/*/hosts.yml',
                         'cat webpack.config.js', 'git config --get core.hooksPath',
-                        'cat ~/.gitconfig', 'ls ~/.cache', 'cat ~/.config/b*/x/y.txt']:
+                        'cat ~/.gitconfig', 'ls ~/.cache', 'cat ~/.config/b*/x/y.txt',
+                        'cd ~/.config/gh && cat hosts.yml', 'cd ~/.config/gh && ls',
+                        'cd "$HOME/.config/gh" && cat ../gh/hosts.yml',
+                        'cd ~/.config/gh && cat ../*/hosts.yml', 'cd ~/.config/gh && grep -r x .',
+                        f'cd {config}/gh && cat hosts.yml', 'cd .. && ls']:
             with self.subTest(command=command):
                 self.assertAllowed(command)
 

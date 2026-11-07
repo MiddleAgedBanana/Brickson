@@ -5292,15 +5292,19 @@ public:
    merge commit, never a rebase). `--status`, run there, says so.
 2. **Before a commit or a post, in Claude Code**, where the guard runs
    (AGENTS.md, *Guardrails for agents*). The guard checks a commit's
-   message and trailers; its author and committer, as given in the
+   message and trailers, and a message or author it takes from another
+   commit (`-C`, `-c`, `--fixup`, `--squash`, `--amend`); its author and
+   committer, as given in the
    command and as git reads them where the commit runs, configured ones
    included, by the rules a commit's are checked by; its staged changes
    and the files the same command adds (each from the folder its
    `git add` runs in, and ignored files too when the add is forced); and
    the text a command or GitHub tool would put on GitHub: a pull
    request, an issue, a comment (`reopen --comment` too), a review, a
-   label, a gist and its files' names, a file, a branch's name, by gh's
-   own names for a command (`gh pr new`) as well. A GraphQL request
+   label, a gist and its files' names, a file, a branch's name, a
+   release's tag, a repository's name, by gh's own names for a command
+   (`gh pr new`) as well, and base64 in a request however its JSON
+   spells it. A GraphQL request
    writes only through its query, so its other fields are read as
    variables. The guard refuses a push from a checkout whose pushes skip
    the hook or whose branch has none (made before the check reached
@@ -5322,7 +5326,8 @@ public:
    instead), any command that names the list, the config folder
    that holds it (a recursive read of that folder reaches the list
    without naming it) or a glob that could reach either, at the default
-   place and where `XDG_CONFIG_HOME` puts it, and any that
+   place and where `XDG_CONFIG_HOME` puts it, read from the folder the
+   command runs in (after a `cd`, through `..`), and any that
    prints the whole environment. It runs before the file tools too, and
    refuses them the list and its folder at both places (and Grep a
    folder that holds them). It also
@@ -5421,7 +5426,9 @@ public:
   file another one includes; commits `git am` makes from a patch (the
   hook reads them before a push); a hook changed by a program it does
   not recognise, or by a merge, pull or rebase, in the same command as a
-  push; and a release's tag name, and a new repository's name;
+  push; a recursive read of a folder that holds a config folder
+  (`grep -r . ~`), and a relative path after a `cd` to a folder the
+  shell builds (other than through `$HOME` or `$XDG_CONFIG_HOME`);
 - on Linux only (a Mac cannot make one), a file name that is not UTF-8:
   its text is read from commits, and a binary one stops the check;
 - a push from a checkout with the hook off, from a checkout of a branch
