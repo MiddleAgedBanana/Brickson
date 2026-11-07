@@ -64,6 +64,55 @@ Choices made along the way, so the next agent does not redo them:
   refuse rather than pass; `--no-list` runs the patterns alone and says
   so, and is never reported as a pass.
 
+## The independent review, and what it changed
+
+Before the pull request opened, four reviewers read the change (how the
+checker reads git, what it misses in text and files, ways round the
+guard, and CI, docs and tests), and a second reader tried to reproduce
+each finding. About forty were real; each was fixed with a failing test
+first, or is now listed under "What it cannot catch":
+
+- **How git is read:** a file name with a space or a quote, or in any
+  script, is read whole; git's own error text, which can name a file, is
+  never printed; a control byte in a file no longer splits its commit;
+  names joined across lines by a change are found (three lines of
+  context); `git replace`, merges of three or more branches, tags inside
+  tags, a push to an address rather than a remote's name, and what is
+  staged but changed again are all read as a push sends them; a push
+  from a linked worktree reads the list; a PDF that git takes for text
+  is read whole; CI's push run reads its own commit alone.
+- **What text and files are read for:** a list word written without its
+  accents, across HTML tags or a Markdown link, or after an acronym;
+  phone numbers at the end of a sentence, with no-break spaces, any dash
+  or an extension; home folders after a compiler flag; addresses in
+  underscore emphasis; PDFs whatever their bytes (hex and UTF-16 strings,
+  page text through each font's ToUnicode map), ZIP-based documents,
+  GIF comments, MP3 and MP4 tags, compressed XMP, pictures embedded as
+  `data:` addresses, UTF-16 and Windows Latin text; and exactly parsed
+  fields get the full text rules. Crafted files no longer slow the
+  check down quadratically.
+- **The guard:** a file the same command writes and then publishes or
+  commits; unquoted here-documents with `$` or backticks; stdin from
+  anything but the command's own here-document; process substitution;
+  commit trailers, authors and abbreviated options; `gh`'s short option
+  clusters, labels and gists; an add run in another folder, or forced
+  past `.gitignore`; `declare -x`; commands that print the whole
+  environment. It no longer refuses escaped `` \` `` and `\$` in double
+  quotes, `gh api -f body=@...`, GraphQL reads, or JSON request files
+  with backticks. Its tests no longer depend on the machine's global
+  git configuration.
+- **CI and docs:** the workflow test counts every way of naming the
+  secrets; the docs now say that a change to the workflow file itself
+  can reach the secret before anyone reads it, that GitHub's secret is
+  best kept one entry per line (each line is then hidden in logs, which
+  a base64 secret's decoded words are not), how to set it on GitHub's
+  website without the command-line tool, and that a cloud thread needs
+  both the variable and the setup line or neither.
+
+Declined: a time limit for crafted files (only their quadratic parts were
+fixed), and non-UTF-8 file names on Linux (a Mac cannot make one; they
+fail closed in commits).
+
 ## Commits
 
 The commits of this branch, from the one after `0250270` (main when it

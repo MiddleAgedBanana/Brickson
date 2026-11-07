@@ -729,9 +729,11 @@ above are backed by checks wherever a check can run:
   or assignee field or a GraphQL agent assignment (*Reviews and updates
   on GitHub* says what only the rule holds); a GitHub tool writing
   a file onto `main`; a commit, or text sent to GitHub by `gh`, the API
-  or a GitHub tool, that holds a personal detail, and a push from a
-  checkout whose pushes skip the privacy hook (*The privacy check*,
-  below); and any command that names the private list. The same
+  or a GitHub tool, that holds a personal detail, text it cannot read
+  before the command runs (built by the shell, or a file the same
+  command writes), and a push from a checkout whose pushes skip the
+  privacy hook (*The privacy check*, below); and any command that names
+  the private list or prints the whole environment. The same
   settings deny the merge tools and the Copilot tools outright, and the
   Read and Edit tools the private list. When the guard refuses, do not look for
   another way round: say in the thread what you needed and why. It is

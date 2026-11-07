@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Keep personal and family details out of this public repository.
+"""Keep personal details out of this public repository.
 
 Everything committed here, every commit message, branch name and pull
 request is public, and pushed commits stay public even after a branch is
-deleted. The people Brickson is built for have families whose names,
-words and medical details must never be published by accident
+deleted. Real people's names, words and health details must never be
+published by accident
 (AGENTS.md, *Code Review Rules*, "Data, privacy and platform";
 docs/DECISIONS.md, "Personal details stay out of the repository"). This
 script looks for them before anything is pushed. It uses no AI and no
@@ -25,8 +25,11 @@ It looks for two kinds of detail:
 
 It reads text, file names, branch and tag names, commit messages, the
 names and addresses commits are signed with, and the text hidden in
-pictures and other binary files. It never prints what it found, or a
-name that holds it, only where and what kind. Without a private list it
+pictures, PDFs, archives (Word, Excel and PowerPoint files are ZIP
+archives of XML; Pages, Keynote and Numbers files are ZIP archives of
+compressed .iwa records), RTF, sound and video files and other binary
+files. It never prints what it found, or a name that holds it, only
+where and what kind. Without a private list it
 refuses to say a check passed; --no-list runs the built-in patterns alone.
 
   python3 scripts/privacy-check.py --status     the list, its entries' matches, the hook
@@ -49,6 +52,7 @@ import binascii
 import bisect
 from dataclasses import dataclass
 import html
+import io
 import json
 import os
 from pathlib import Path
@@ -59,7 +63,8 @@ import subprocess
 import sys
 import time
 import unicodedata
-from urllib.parse import unquote as percent_decoded
+from urllib.parse import unquote as percent_decoded, urlsplit
+import zipfile
 import zlib
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -93,6 +98,10 @@ COMMIT_FIX = ('In a commit not yet pushed: fix it, then git commit --amend for t
               'commit, or git reset --soft @{upstream} (origin/main on a new branch) and '
               'commit again; unpushed commits may be rewritten. Already pushed: stop, and '
               'tell the owner the place and kind only (' + DECISION + ').')
+REFUSED_COMMIT_FIX = ('The commit was refused, so nothing was committed: change its message or '
+                      'author and run it again.')
+# A place in a commit that exists: "commit <id> message", "a.txt (commit <id>)".
+MADE_COMMIT = re.compile(r'(?:^|\()commit [0-9a-f]{12}\b')
 NEVER_REPEAT = ('Never repeat, quote or describe what was found in a command, a message, '
                 'a thread, a log record or a pull request.')
 
@@ -170,13 +179,17 @@ def committable(path):
     """Whether a git checkout around path would let it be committed: it is
     inside a work tree and not ignored there."""
     folder = str(path.parent)
+    # git gives a hook GIT_DIR (in a linked worktree, among others), and
+    # with it set, any folder answers for that repository. The question is
+    # about the folder itself, so git's own variables are left out.
+    environ = {key: value for key, value in os.environ.items() if not key.startswith('GIT_')}
     try:
         inside = subprocess.run(['git', '-C', folder, 'rev-parse', '--is-inside-work-tree'],
-                                capture_output=True, text=True, timeout=10)
+                                capture_output=True, text=True, timeout=10, env=environ)
         if inside.returncode or inside.stdout.strip() != 'true':
             return False
         ignored = subprocess.run(['git', '-C', folder, 'check-ignore', '-q', path.name],
-                                 capture_output=True, timeout=10)
+                                 capture_output=True, timeout=10, env=environ)
     except (OSError, subprocess.SubprocessError):
         return False
     return ignored.returncode != 0
@@ -234,14 +247,19 @@ def load_list(environ=None):
 
 # ------------------------------------------------------- the checks
 
+# An address's edges are ASCII letters and digits, not \w: an underscore
+# may come right before or after it, as Markdown's _emphasis_ puts it, but
+# not after a word (snake_case), so a long run is not searched again from
+# each of its parts. A dash may follow it (a typed -- dash), but not a
+# hyphen that goes on into more of a name.
 EMAIL = re.compile(
-    r'(?<![\w.%+-])[A-Za-z0-9][A-Za-z0-9._%+-]*@'
-    r'(?:[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?\.)+[A-Za-z]{2,}(?![\w-])')
+    r'(?<![A-Za-z0-9.%+-])(?<![A-Za-z0-9.%+-]_)[A-Za-z0-9][A-Za-z0-9._%+-]*@'
+    r'(?:[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?\.)+[A-Za-z]{2,}(?![A-Za-z0-9]|-[A-Za-z0-9])')
 # Inside a binary file, random bytes can look like a short mixed-case
 # address; an address written into a file's metadata is lower case.
 BINARY_EMAIL = re.compile(
-    r'(?<![\w.%+-])[a-z0-9][a-z0-9._%+-]+@'
-    r'(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}(?![\w-])')
+    r'(?<![A-Za-z0-9.%+-])(?<![A-Za-z0-9.%+-]_)[a-z0-9][a-z0-9._%+-]+@'
+    r'(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}(?![A-Za-z0-9]|-[A-Za-z0-9])')
 EXAMPLE_DOMAINS = ('example.com', 'example.org', 'example.net')
 RESERVED_SUFFIXES = ('.example', '.test', '.invalid', '.localhost')
 # The agents that write here sign their commits with these service
@@ -255,25 +273,63 @@ IMAGE_SCALE = re.compile(r'\d+(?:\.\d+)?x\.(?:png|jpe?g|pdf|svg|gif|heic|webp)')
 
 # North American numbers written with separators or brackets, and
 # international numbers written with a leading +. Digits alone, versions,
-# dates (also +2026-11-06) and build numbers are not phone numbers.
+# dates (also +2026-11-06) and build numbers are not phone numbers. A
+# number may end a sentence (a full stop, but not .5 or .txt), and its
+# groups may be split by the spaces and dashes word processors write: a
+# no-break or thin space, an en dash, a non-breaking hyphen. A dash right
+# before or after it (a closed em dash in prose) ends it, unless the dash
+# goes on into more digits (an id, a date), or is a hyphen joined to a word
+# (id-212-...).
+DASHES = '\\-\u2010-\u2015\u2212'
+GAP = '[ .\u00a0\u2009\u202f' + DASHES + ']'
+# An extension after the number (x12, ext. 12) belongs to it, but is not
+# part of the number checked against the ones kept for fiction.
+EXTENSION = r'(?:\s?(?i:extension|ext\.?|x)\s?\d{1,6})?'
+NUMBER_START = rf'(?<![\w+.])(?<!\d[{DASHES}])(?<![^\W\d]-)'
+NUMBER_END = rf'(?![\w]|[{DASHES}]\d|-[^\W\d])'
 PHONE = re.compile(
-    r'(?<![\w+.-])(?:\+?1[ .-]?)?(?:\(\d{3}\)[ .-]?|\d{3}[ .-])\d{3}[ .-]\d{4}(?![\w.-]|-\d)'
-    r'|(?<![\w+])\+(?!\d{4}-\d\d-\d\d(?!\d))[1-9](?:[ .()-]{0,2}\d){7,14}(?![\w-])')
+    rf'{NUMBER_START}(?:\+?1{GAP}?)?(?:\(\d{{3}}\){GAP}?|\d{{3}}{GAP})\d{{3}}{GAP}\d{{4}}'
+    rf'(?={EXTENSION}{NUMBER_END}(?!\.\w))'
+    rf'|(?<![\w+])\+(?!\d{{4}}[{DASHES}]\d\d[{DASHES}]\d\d(?!\d))[1-9]'
+    rf'(?:[ .()\u00a0\u2009\u202f{DASHES}]{{0,2}}\d){{7,14}}(?={EXTENSION}{NUMBER_END})')
 
+# A home folder's path, also right after a compiler flag (-I/Users/...,
+# -L/home/...) and on macOS's data volume (/System/Volumes/Data/Users/...),
+# as build logs write it.
 HOME = re.compile(
-    r'(?:(?<![\w.~/-])|(?<=file://))'
+    r'(?:(?<![\w.~/-])|(?<=file://)|(?<=/Volumes/Data)|(?<=-[A-Za-z])(?<![\w.~/-]-[A-Za-z]))'
     r'(?:/Users/|/home/|[A-Za-z]:[\\/]{1,2}Users[\\/]{1,2})([A-Za-z0-9][A-Za-z0-9._-]*)')
 # Names that stand for "your name" or a machine's own account.
 HOME_PLACEHOLDERS = {'runner', 'shared', 'user', 'username', 'you', 'yourname',
                      'your-name', 'your_name', 'name', 'me', 'example', 'guest'}
 
-# An apostrophe that continues a word (Don't, they're), unlike a
-# possessive, which ends the name before it.
-CONTRACTION = re.compile(r"['’](?:t|re|ll|ve|d|m)(?![^\W\d_])", re.IGNORECASE)
+# An apostrophe that continues a word (Don't, so the entry Don is not
+# found in it). Other endings ('s, 'll, 'd, 've) follow a name whole:
+# "Name'll be here".
+CONTRACTION = re.compile(r"['’]t(?![^\W\d_])", re.IGNORECASE)
 # A line worth reading a second time with its escapes undone and its
 # accents and invisible characters removed.
 FOLDABLE = re.compile(r'[^\x00-\x7f]|[&%\\]')
-UNICODE_ESCAPE = re.compile(r'\\u([0-9a-fA-F]{4})')
+# JSON's and Swift's \uXXXX, unless RTF's fallback follows it (below).
+UNICODE_ESCAPE = re.compile(r"\\u([0-9a-fA-F]{4})(?!\\'[0-9a-fA-F]{2}|\?)")
+# RTF's \uN, a decimal, read after JSON's: its delimiting space, and the
+# fallback older readers show instead (\'hh or ?); and RTF's \'hh, a byte
+# of Windows' Latin.
+RTF_UNICODE = re.compile(r"\\u(-?\d{1,5}) ?(?:\\'[0-9a-fA-F]{2}|\?)?")
+RTF_BYTE = re.compile(r"\\'([0-9a-fA-F]{2})")
+# Markup that can split a name the page shows whole: an HTML, SVG or XML
+# tag or comment, and a Markdown link's target ([Name](url), [Name][1]).
+MARKUP = re.compile(r'<[A-Za-z/!?][^<>]*>|(?<=\])\([^()\n]*\)|(?<=\])\[[^\[\]\n]*\]')
+# A file written into text: an SVG's or a page's picture as a data: URI.
+# Python's XML writers keep an attribute's line breaks as &#10; or &#xA;.
+LINE_BREAK_REFERENCE = re.compile(r'&#(?:1[03]|[xX]0*[aAdD]);')
+DATA_URI = re.compile(r'data:[\w.+/=;-]*?;base64,((?:[A-Za-z0-9+/=\s]|&#(?:1[03]|[xX]0*[aAdD]);)+)',
+                      re.IGNORECASE)
+BASE64_RUN = re.compile(r'[A-Za-z0-9+/\s]*=*')
+# Base64 characters decoded from one text, and how deep files written into
+# text inside files written into text are read.
+EMBEDDED_LIMIT = 16 * 1024 * 1024
+EMBEDDED_DEPTH = 2
 
 
 def email_allowed(address, path, support, identity=False):
@@ -306,7 +362,13 @@ def same_class(a, b):
 def starts_word(text, index):
     if index == 0 or not same_class(text[index - 1], text[index]):
         return True
-    return text[index - 1].islower() and text[index].isupper()  # camelCase
+    before, first = text[index - 1], text[index]
+    if before.islower() and first.isupper():
+        return True  # camelCase: qzxVoice
+    # An acronym before a word, as ends_word's SHOUTINGCase: AACVoice
+    # starts a word at its V.
+    return (before.isupper() and first.isupper() and index + 1 < len(text)
+            and text[index + 1].islower())
 
 
 def ends_word(text, end):
@@ -326,15 +388,31 @@ def ends_word(text, end):
             and text[end + 1].islower())
 
 
+def rtf_unescaped(text):
+    """RTF's escapes undone: \\uN (a character by number, then the
+    fallback character older readers show instead) and \\'hh (a byte of
+    Windows' Latin), as TextEdit, Word and LibreOffice write accents."""
+    text = RTF_UNICODE.sub(lambda match: chr(int(match[1]) % 65536), text)
+    return RTF_BYTE.sub(lambda match: bytes([int(match[1], 16)]).decode('cp1252', 'replace'),
+                        text)
+
+
 def folded(text):
-    """Text with HTML entities, percent escapes, \\/ and \\uXXXX undone,
-    compatibility forms (full-width letters) made plain, and accents and
-    invisible characters (zero-width spaces, soft hyphens) removed."""
+    """Text with HTML entities, percent escapes, RTF's escapes, \\/ and
+    \\uXXXX undone, compatibility forms (full-width letters) made plain,
+    and accents and invisible characters (zero-width spaces, soft hyphens)
+    removed."""
     text = percent_decoded(html.unescape(text), errors='replace').replace('\\/', '/')
-    text = UNICODE_ESCAPE.sub(lambda match: chr(int(match[1], 16)), text)
+    text = rtf_unescaped(UNICODE_ESCAPE.sub(lambda match: chr(int(match[1], 16)), text))
     text = unicodedata.normalize('NFKD', text)
     return ''.join(char for char in text
                    if unicodedata.category(char) not in ('Mn', 'Cf', 'Cs'))
+
+
+def folded_lines(lines):
+    """Each line folded where folding can change it, kept to one line."""
+    return [folded(line).replace('\n', ' ').replace('\r', ' ') if FOLDABLE.search(line)
+            else line for line in lines]
 
 
 def entry_pattern(tokens, exact):
@@ -351,6 +429,24 @@ def line_starts(lines):
     return starts
 
 
+def line_place(offset, view_starts, view_lines):
+    """(line number, column) of an offset in lines, the column kept within
+    its line (a folded line can be longer than the line it came from)."""
+    number = bisect.bisect_right(view_starts, offset) - 1
+    return number, min(offset - view_starts[number], len(view_lines[number]))
+
+
+def decoded_base64(chunk):
+    """The bytes a base64 run holds, b'' when it holds none."""
+    chunk = LINE_BREAK_REFERENCE.sub('', chunk)
+    letters = re.sub(r'\s+', '', BASE64_RUN.match(chunk).group()).rstrip('=')
+    letters = letters[:len(letters) // 4 * 4] if len(letters) % 4 == 1 else letters
+    try:
+        return base64.b64decode(letters + '=' * (-len(letters) % 4))
+    except (binascii.Error, ValueError):
+        return b''  # not base64 after all: the text itself was read
+
+
 class Checker:
     """Finds personal details in text. Holds the private list and the
     website's support address; reports places and kinds, never words."""
@@ -360,9 +456,13 @@ class Checker:
         self.support = {address.lower() for address in support}
         self.patterns = [(entry, entry_pattern(entry.tokens, entry.exact))
                          for entry in self.entries]
-        self.folded_patterns = [
-            (entry, entry_pattern(tuple(folded(token) for token in entry.tokens), entry.exact))
-            for entry in self.entries]
+        plain = [tuple(folded(token) for token in entry.tokens) for entry in self.entries]
+        self.folded_patterns = [(entry, entry_pattern(tokens, entry.exact))
+                                for entry, tokens in zip(self.entries, plain)]
+        # An entry folding changes (José) is also looked for in every text
+        # as folding writes it (Jose), not only on lines folding changes.
+        self.fold_always = any(tokens != entry.tokens
+                               for entry, tokens in zip(self.entries, plain))
 
     @staticmethod
     def matches(text, patterns):
@@ -379,7 +479,7 @@ class Checker:
                 else:
                     position = match.start() + 1
 
-    def scan(self, text, path, binary, patterns, phones=True):
+    def scan(self, text, path, binary, patterns):
         """(offset, kind) for everything found in text."""
         for offset, _ in self.matches(text, patterns):
             yield offset, KIND_PRIVATE
@@ -389,12 +489,12 @@ class Checker:
         for match in HOME.finditer(text):
             if match.group(1).lower() not in HOME_PLACEHOLDERS:
                 yield match.start(), KIND_HOME
-        if phones and not binary:
+        if not binary:
             for match in PHONE.finditer(text):
                 if not phone_allowed(match.group()):
                     yield match.start(), KIND_PHONE
 
-    def text(self, text, where, path=None, start_line=1, binary=False, flat=False):
+    def text(self, text, where, path=None, start_line=1, binary=False, flat=False, depth=0):
         """Findings in one text. path, relative to the repository, is where
         the text will live; text without one (a message, a draft, a name)
         has no allowances. Text with no lines of its own (a binary file's
@@ -417,28 +517,113 @@ class Checker:
 
         for offset, kind in self.scan(text, path, binary, self.patterns):
             add(offset, kind)
-        if FOLDABLE.search(text):
+        if self.fold_always or FOLDABLE.search(text):
             # The same lines with escapes undone; each keeps its line, so a
             # finding here is reported on the line it was written on.
-            plain = [folded(line).replace('\n', ' ').replace('\r', ' ')
-                     if FOLDABLE.search(line) else line for line in lines]
+            plain = folded_lines(lines)
             if plain != lines:
                 plain_starts = line_starts(plain)
+                # Phone numbers too: written with entities or invisible
+                # characters (&nbsp;, &#8209;, a soft hyphen) or escaped in
+                # a tel: link.
                 for offset, kind in self.scan('\n'.join(plain), path, binary,
-                                              self.folded_patterns, phones=False):
-                    number = bisect.bisect_right(plain_starts, offset) - 1
-                    column = min(offset - plain_starts[number], len(lines[number]))
+                                              self.folded_patterns):
+                    number, column = line_place(offset, plain_starts, lines)
                     add(starts[number] + column, kind, refound=True)
+            elif self.fold_always:
+                for offset, _ in self.matches(text, self.folded_patterns):
+                    add(offset, KIND_PRIVATE, refound=True)
+        if self.patterns and MARKUP.search(text):
+            for offset, _ in self.split_by_markup(text):
+                add(offset, KIND_PRIVATE, refound=True)
+        if not binary and depth < EMBEDDED_DEPTH and 'base64,' in text:
+            for offset, kind in self.embedded(text, path, depth):
+                add(offset, kind)
         return sorted(found.values(), key=lambda f: (f.line, f.column, f.kind))
+
+    def entry_places(self, text):
+        """(line, entry) for each place text holds a list entry, read the
+        ways text() reads it: as written, folded, and without its markup.
+        Each match as written counts; another reading adds a place only on
+        a line where that entry was not already found."""
+        text = unicodedata.normalize('NFC', text)
+        lines = text.split('\n')
+        starts = line_starts(lines)
+        places = [(bisect.bisect_right(starts, offset) - 1, entry)
+                  for offset, entry in self.matches(text, self.patterns)]
+        others = []
+        if self.fold_always or FOLDABLE.search(text):
+            plain = folded_lines(lines)
+            plain_starts = line_starts(plain)
+            others += [(line_place(offset, plain_starts, lines)[0], entry)
+                       for offset, entry in self.matches('\n'.join(plain), self.folded_patterns)]
+        if self.patterns and MARKUP.search(text):
+            others += [(bisect.bisect_right(starts, offset) - 1, entry)
+                       for offset, entry in self.split_by_markup(text)]
+        seen = set(places)
+        for place in others:
+            if place not in seen:
+                seen.add(place)
+                places.append(place)
+        return places
+
+    def split_by_markup(self, text):
+        """(offset in text, entry) for list entries that markup splits but
+        a page shows whole (<b>Name</b> Surname, [Name](url) Surname),
+        found in the text with its tags and link targets removed."""
+        kept, view_starts, text_starts, length, position = [], [], [], 0, 0
+        for match in MARKUP.finditer(text):
+            if match.start() > position:
+                kept.append(text[position:match.start()])
+                view_starts.append(length)
+                text_starts.append(position)
+                length += match.start() - position
+            position = match.end()
+        if position < len(text):
+            kept.append(text[position:])
+            view_starts.append(length)
+            text_starts.append(position)
+        view = ''.join(kept)
+
+        def original(offset):
+            index = max(bisect.bisect_right(view_starts, offset) - 1, 0)
+            return text_starts[index] + offset - view_starts[index]
+
+        for offset, entry in self.matches(view, self.patterns):
+            yield original(offset), entry
+        view_lines = view.split('\n')
+        plain = folded_lines(view_lines)
+        if plain != view_lines or self.fold_always:
+            plain_starts, starts = line_starts(plain), line_starts(view_lines)
+            for offset, entry in self.matches('\n'.join(plain), self.folded_patterns):
+                number, column = line_place(offset, plain_starts, view_lines)
+                yield original(starts[number] + column), entry
+
+    def embedded(self, text, path, depth):
+        """(offset, kind) for what files written into text as base64 data:
+        URIs hold (a picture in an SVG or a page), each at its URI."""
+        left = EMBEDDED_LIMIT
+        for match in DATA_URI.finditer(text):
+            chunk = match.group(1)[:left]
+            left -= len(chunk)
+            data = decoded_base64(chunk)
+            if data:
+                for finding in self.data(data, '', path, depth=depth + 1):
+                    yield match.start(), finding.kind
+            if left <= 0:
+                return
 
     def name_kinds(self, name, path=None):
         """The kinds found in a name: a file's, a branch's or a tag's."""
         return [finding.kind + IN_NAME for finding in self.text(name, '', path, flat=True)]
 
     def identity(self, name, address, where):
-        """A commit's author, committer or tagger: the name and the address."""
+        """A commit's author, committer or tagger: the name and the address,
+        as written and folded (accents and escapes undone)."""
         findings = []
-        if any(True for _ in self.matches(name + '\n' + address, self.patterns)):
+        signed = unicodedata.normalize('NFC', name + '\n' + address)
+        if (any(True for _ in self.matches(signed, self.patterns))
+                or any(True for _ in self.matches(folded(signed), self.folded_patterns))):
             findings.append(Finding(where, 0, 0, KIND_PRIVATE))
         if EMAIL.fullmatch(address or '') and not email_allowed(address, None, self.support,
                                                                  identity=True):
@@ -447,19 +632,31 @@ class Checker:
             findings.append(Finding(where, 0, 0, KIND_HOME))
         return findings
 
-    def data(self, data, where, path=None):
-        """A file's bytes: text if it reads as text; otherwise the text
-        hidden in it (a picture's metadata, readable runs) and whether it
-        records where it was taken."""
-        for bom, codec in ((b'\xef\xbb\xbf', 'utf-8-sig'), (b'\xff\xfe', 'utf-16'),
-                           (b'\xfe\xff', 'utf-16')):
-            if data.startswith(bom):
-                return self.text(data.decode(codec, errors='replace'), where, path)
-        if b'\0' not in data[:8000]:
-            return self.text(data.decode('utf-8', errors='replace'), where, path)
-        texts, located = binary_texts(data)
-        findings = self.text('\n'.join(texts), where, path, binary=True)
-        if located:
+    def data(self, data, where, path=None, depth=0):
+        """A file's bytes: text if it reads as text (UTF-8, UTF-16 or
+        Windows' Latin); otherwise the text hidden in it and whether it
+        records where it was taken. Text a binary file's format defines
+        (a PNG's text, an MP3's tags, a PDF's pages, a document's words)
+        gets every rule text gets; runs only guessed from its bytes keep
+        the binary rules, as random bytes can look like a number or a
+        short address."""
+        texts = file_texts(data)
+        if texts is not None:
+            findings = self.text(texts[0], where, path, depth=depth)
+            seen = {(finding.line, finding.kind) for finding in findings}
+            for other in texts[1:]:
+                for finding in self.text(other, where, path, depth=depth):
+                    if (finding.line, finding.kind) not in seen:
+                        seen.add((finding.line, finding.kind))
+                        findings.append(finding)
+            return findings
+        hidden = binary_texts(data, iwa=path is not None and path.lower().endswith('.iwa'))
+        findings = self.text('\n'.join(hidden.exact), where, path, flat=True, depth=depth)
+        kinds_found = {finding.kind for finding in findings}
+        findings += [finding for finding in
+                     self.text('\n'.join(hidden.runs), where, path, binary=True)
+                     if finding.kind not in kinds_found]
+        if hidden.located:
             findings.append(Finding(where, 0, 0, KIND_PLACE))
         return findings
 
@@ -473,21 +670,123 @@ class Checker:
         return where, [Finding(where, 0, 0, kind) for kind in kinds]
 
 
+# ------------------------------------------------------- text files
+
+BYTE_ORDER_MARKS = ((b'\xef\xbb\xbf', 'utf-8-sig'), (b'\xff\xfe', 'utf-16'),
+                    (b'\xfe\xff', 'utf-16'))
+# Control characters plain text does not hold (tabs, line and page breaks
+# aside): UTF-16 that decodes to them is binary data, not text.
+CONTROL = re.compile('[\x00-\x08\x0b\x0e-\x1f\x7f]')
+
+
+def binary_signature(data):
+    """Whether data starts as a binary format the check reads by its
+    structure: a PDF can hold no zero byte where a file is tested for one,
+    and still keep its pages in compressed streams."""
+    return (data.startswith((b'%PDF-', b'\x89PNG\r\n\x1a\n', b'\xff\xd8\xff', b'GIF87a',
+                             b'GIF89a', b'PK\x03\x04', b'II*\0', b'MM\0*'))
+            or data[4:8] == b'ftyp'
+            or (data[:4] == b'RIFF' and data[8:12] in (b'WAVE', b'WEBP', b'AVI '))
+            or (data[:3] == b'ID3' and data[3:4] in (b'\x02', b'\x03', b'\x04')))
+
+
+def utf16_text(data):
+    """Text written as UTF-16 without a byte order mark, as some Windows
+    tools write it: in Latin text every other byte is zero. None when data
+    is not such text."""
+    sample = data[:8000]
+    if len(sample) < 4:
+        return None
+    for zeros, letters, codec in ((sample[1::2], sample[0::2], 'utf-16-le'),
+                                  (sample[0::2], sample[1::2], 'utf-16-be')):
+        if zeros.count(0) >= 0.9 * len(zeros) and not letters.count(0):
+            try:
+                text = data[:len(data) // 2 * 2].decode(codec)
+            except UnicodeDecodeError:
+                return None
+            return None if CONTROL.search(text) else text
+    return None
+
+
+def windows_latin(data):
+    """Bytes read as Windows' Latin (cp1252), as GitHub shows a text file
+    that is not UTF-8."""
+    return data.decode('cp1252', errors='replace')
+
+
+def decoded(data):
+    """Bytes a format keeps as text without naming the encoding: UTF-8 when
+    they are, otherwise Windows' Latin."""
+    try:
+        return data.decode('utf-8')
+    except UnicodeDecodeError:
+        return windows_latin(data)
+
+
+def file_texts(data):
+    """A file read as text: its readings (two when it is not UTF-8: as
+    UTF-8 where it is, and as Windows' Latin, so an accented name in either
+    is read), or None when it is binary."""
+    for mark, codec in BYTE_ORDER_MARKS:
+        if data.startswith(mark):
+            return [data.decode(codec, errors='replace')]
+    if binary_signature(data):
+        return None
+    text = utf16_text(data)
+    if text is not None:
+        return [text]
+    if b'\0' in data[:8000]:
+        return None
+    try:
+        return [data.decode('utf-8')]
+    except UnicodeDecodeError:
+        return [data.decode('utf-8', errors='replace'), windows_latin(data)]
+
+
 # ------------------------------------------------------- binary files
 
-INFLATE_LIMIT = 4 * 1024 * 1024
+# What one file may inflate in all (its streams, chunks and archive
+# entries, each read up to what is left), so a small file made to inflate
+# to gigabytes cannot exhaust memory; past it, the rest is read only as it
+# is stored.
+HIDDEN_LIMIT = 64 * 1024 * 1024
+# The strings one Exif block may give: its entries can all point at one
+# long string.
+EXIF_TEXT_LIMIT = 1024 * 1024
+# Files inside files (an archive in an archive, a picture in a song) are
+# read this many deep.
+NESTING_LIMIT = 4
+ZIP_ENTRY_LIMIT = 10000
 # Runs of at least eight readable characters, as `strings` finds them: in
 # 4 MB of random bytes, shorter runs held a three-letter name a dozen times.
 READABLE = re.compile(rb'(?:[\x20-\x7e\t]|[\xc2-\xf4][\x80-\xbf]{1,3}){8,}')
 READABLE_UTF16LE = re.compile(rb'(?:[\x20-\x7e]\x00){8,}')
 READABLE_UTF16BE = re.compile(rb'(?:\x00[\x20-\x7e]){8,}')
 EXIF_HEADER = re.compile(rb'Exif\x00\x00(?=II\*\x00|MM\x00\*)')
-XMP_PACKET = re.compile(rb'<x:xmpmeta.*?</x:xmpmeta>', re.DOTALL)
+XMP_START, XMP_END = b'<x:xmpmeta', b'</x:xmpmeta>'
 GPS_IN_XMP = re.compile(r'GPS(?:Latitude|Longitude)[^0-9]{0,40}[1-9]')
 EXIF_SIZES = {1: 1, 2: 1, 3: 2, 4: 4, 5: 8, 6: 1, 7: 1, 8: 2, 9: 4, 10: 8, 11: 4, 12: 8}
 
+# Tag and attribute names; an attribute's name starts where a word does,
+# so a long word is not searched again from each of its letters.
+XML_MARKUP = re.compile(r'</?[\w:.-]+|(?<![\w:.-])[\w:.-]+(?==")|/?>')
+XML_TAG = re.compile(r'<[^<>]*>')
 
-XML_MARKUP = re.compile(r'</?[\w:.-]+|[\w:.-]+(?==")|/?>')
+
+class Hidden:
+    """What a binary file carries where people do not see it: text read
+    exactly from the fields its format defines (exact, read with every
+    rule text gets), readable runs guessed from bytes (runs, read with the
+    binary rules), and whether it records where a photo or video was
+    taken. budget is what the file may still inflate."""
+
+    def __init__(self):
+        self.exact, self.runs, self.located, self.budget = [], [], False, HIDDEN_LIMIT
+
+    def inflate(self, data):
+        found = inflate(data, max(self.budget, 0))
+        self.budget -= len(found)
+        return found
 
 
 def without_markup(xml):
@@ -504,20 +803,70 @@ def readable(data):
     return texts
 
 
-def inflate(data):
-    try:
-        return zlib.decompressobj().decompress(data, INFLATE_LIMIT)
-    except zlib.error:
-        return b''
+def inflate(data, limit):
+    """zlib data inflated, up to limit bytes. What inflates before damage
+    (a cut-off stream, a bad checksum) is kept."""
+    inflater, pieces, size = zlib.decompressobj(), [], 0
+    for start in range(0, len(data), 65536):
+        if size >= limit or inflater.eof:
+            break
+        try:
+            piece = inflater.decompress(data[start:start + 65536], limit - size)
+        except zlib.error:
+            break
+        pieces.append(piece)
+        size += len(piece)
+    return b''.join(pieces)
 
 
-def exif_texts(tiff, texts):
+def xmp_packets(data):
+    """Each XMP packet in bytes. Searched forward only: a file of unclosed
+    packets is read in time that grows with its size, not its square."""
+    position = 0
+    while True:
+        start = data.find(XMP_START, position)
+        end = -1 if start < 0 else data.find(XMP_END, start)
+        if end < 0:
+            return
+        yield data[start:end + len(XMP_END)]
+        position = end + 1
+
+
+def xmp_texts(data, hidden):
+    for packet in xmp_packets(data):
+        xmp = packet.decode('utf-8', 'replace')
+        hidden.exact.append(without_markup(xmp))
+        hidden.located = hidden.located or bool(GPS_IN_XMP.search(xmp))
+
+
+def inner_texts(data, hidden, depth, xml=False):
+    """A file inside another (an archive's entry, a PDF's attachment, a
+    song's picture): its text read exactly, XML without its tags, or what
+    its own format hides, up to NESTING_LIMIT files deep."""
+    if depth + 1 >= NESTING_LIMIT:
+        hidden.runs.extend(readable(data))
+        return
+    texts = file_texts(data)
+    if texts is None:
+        binary_texts(data, depth + 1, hidden)
+        return
+    for text in texts:
+        if xml or text.lstrip().startswith('<?xml'):
+            # Words split across tags (a Word document splits its runs
+            # anywhere) are read joined, as well as apart.
+            hidden.exact += [without_markup(text), XML_TAG.sub('', text)]
+            hidden.located = hidden.located or bool(GPS_IN_XMP.search(text))
+        else:
+            hidden.exact.append(text)
+
+
+def exif_texts(tiff, hidden):
     """The strings in an Exif (TIFF) block, and whether its GPS part holds
     a latitude or longitude."""
     if len(tiff) < 8 or tiff[:2] not in (b'II', b'MM'):
-        return False
+        return
     order = '<' if tiff[:2] == b'II' else '>'
-    located = False
+    left = EXIF_TEXT_LIMIT
     queue, seen = [(struct.unpack(order + 'I', tiff[4:8])[0], False)], set()
     while queue and len(seen) < 64:
         offset, gps = queue.pop()
@@ -536,55 +885,114 @@ def exif_texts(tiff, texts):
             if tag in (0x8769, 0xA005, 0x8825):  # Exif, interoperability, GPS
                 queue.append((pointer, tag == 0x8825))
             elif gps and tag in (2, 4) and kind == 5:
-                located = located or any(value[i:i + 4] != b'\0\0\0\0'
-                                         for i in range(0, len(value) - 3, 8))
+                hidden.located = hidden.located or any(value[i:i + 4] != b'\0\0\0\0'
+                                                       for i in range(0, len(value) - 3, 8))
+            elif left <= 0:
+                continue  # the block has given all the text it may
             elif kind == 2:
-                texts.append(value.replace(b'\0', b'\n').decode('utf-8', 'replace'))
+                hidden.exact.append(value.replace(b'\0', b'\n').decode('utf-8', 'replace'))
             elif 0x9C9B <= tag <= 0x9C9F:  # Windows' title, comment, author
-                texts.append(value.decode('utf-16-le', 'replace'))
+                hidden.exact.append(value.decode('utf-16-le', 'replace'))
+            elif tag == 0x9286 and value[:8] in (b'ASCII\0\0\0', b'UNICODE\0'):
+                # A user comment, named by its character set.
+                codec = ('utf-8' if value[:1] == b'A' else
+                         'utf-16-le' if order == '<' else 'utf-16-be')
+                hidden.exact.append(value[8:].decode(codec, 'replace').replace('\0', '\n'))
             elif kind in (1, 7):  # comments and maker notes
-                texts.extend(readable(value))
+                hidden.runs.extend(readable(value))
+            left -= len(value)
         next_offset = offset + 2 + 12 * count
         if next_offset + 4 <= len(tiff):
             following = struct.unpack(order + 'I', tiff[next_offset:next_offset + 4])[0]
             if following:
                 queue.append((following, gps))
-    return located
 
 
-def png_texts(data, texts):
-    located, position = False, 8
+def iim_texts(data, hidden):
+    """The values of IPTC's records (a byline, a caption, a place's
+    name), alone or inside Photoshop's resource blocks."""
+    position = 0
+    while True:
+        position = data.find(b'\x1c\x02', position)
+        if position < 0 or position + 5 > len(data):
+            return
+        dataset, size = data[position + 2], struct.unpack('>H', data[position + 3:position + 5])[0]
+        if size & 0x8000:  # an extended length, for large binary values
+            position += 2
+            continue
+        if dataset:  # 2:00 is the record's version number
+            hidden.exact.append(decoded(data[position + 5:position + 5 + size]))
+        position += 5 + size
+
+
+RAW_PROFILE = re.compile(r'\s*([\w-]+)\s*\n\s*(\d+)\s*\n(.*)', re.DOTALL)
+
+
+def raw_profile_texts(text, hidden):
+    """A profile ImageMagick kept in a PNG's text as hexadecimal ("Raw
+    profile type xmp"): its type, its length, then its bytes. XMP and Exif
+    are read as they are elsewhere, IPTC and Photoshop's blocks by their
+    records, and others for readable runs."""
+    parsed = RAW_PROFILE.match(text)
+    if not parsed:
+        return
+    kind, size = parsed[1].lower(), min(int(parsed[2]), max(hidden.budget, 0))
+    digits = re.sub(r'[^0-9A-Fa-f]', '', parsed[3])[:2 * size]
+    profile = bytes.fromhex(digits[:len(digits) // 2 * 2])
+    hidden.budget -= len(profile)
+    if kind == 'xmp':
+        inner_texts(profile, hidden, 0, xml=True)
+    elif kind == 'exif':
+        exif_texts(profile[6:] if profile.startswith(b'Exif\0\0') else profile, hidden)
+    elif kind in ('iptc', '8bim'):
+        iim_texts(profile, hidden)
+        hidden.runs.extend(readable(profile))
+    else:
+        hidden.runs.extend(readable(profile))
+
+
+def png_texts(data, hidden):
+    position = 8
     while position + 8 <= len(data):
         length, kind = struct.unpack('>I4s', data[position:position + 8])
         body = data[position + 8:position + 8 + length]
         position += 12 + length
-        if kind == b'tEXt':
-            texts.append(body.replace(b'\0', b'\n').decode('latin-1'))
+        text = None
+        if kind in (b'tEXt', b'zTXt') and body.startswith(b'Raw profile type '):
+            keyword, _, rest = body.partition(b'\0')
+            rest = rest if kind == b'tEXt' else hidden.inflate(rest[1:])
+            raw_profile_texts(rest.decode('latin-1'), hidden)
+            text = keyword.decode('latin-1')
+        elif kind == b'tEXt':
+            text = body.replace(b'\0', b'\n').decode('latin-1')
         elif kind == b'zTXt':
             keyword, _, rest = body.partition(b'\0')
-            texts.append(keyword.decode('latin-1') + '\n'
-                         + inflate(rest[1:]).decode('latin-1'))
+            text = keyword.decode('latin-1') + '\n' + hidden.inflate(rest[1:]).decode('latin-1')
         elif kind == b'iTXt':
             keyword, _, rest = body.partition(b'\0')
             compressed, rest = rest[:1] == b'\x01', rest[2:]
             language, _, rest = rest.partition(b'\0')
-            translated, _, text = rest.partition(b'\0')
-            text = (inflate(text) if compressed else text).decode('utf-8', 'replace')
-            texts.append(b'\n'.join([keyword, language, translated]).decode('utf-8', 'replace')
-                         + '\n' + without_markup(text))
+            translated, _, words = rest.partition(b'\0')
+            words = (hidden.inflate(words) if compressed else words).decode('utf-8', 'replace')
+            # Compressed or not, XMP here can record where a photo was taken.
+            hidden.located = hidden.located or bool(GPS_IN_XMP.search(words))
+            text = (b'\n'.join([keyword, language, translated]).decode('utf-8', 'replace')
+                    + '\n' + without_markup(words))
         elif kind == b'eXIf':
-            located = exif_texts(body, texts) or located
+            exif_texts(body, hidden)
         elif kind == b'iCCP':
-            texts.extend(readable(inflate(body.partition(b'\0')[2][1:])))
+            hidden.runs.extend(readable(hidden.inflate(body.partition(b'\0')[2][1:])))
         elif kind == b'IEND':
             break
         elif kind not in (b'IDAT', b'fdAT') and kind[:1].islower():
-            texts.extend(readable(body))  # other ancillary chunks
-    texts.extend(readable(data[position:]))  # anything after the image
-    return located
+            hidden.runs.extend(readable(body))  # other ancillary chunks
+        if text is not None:
+            hidden.exact.append(text)
+            hidden.located = hidden.located or bool(GPS_IN_XMP.search(text))
+    hidden.runs.extend(readable(data[position:]))  # anything after the image
 
 
-def jpeg_texts(data, texts):
+def jpeg_texts(data, hidden):
     position = 2
     while position + 4 <= len(data) and data[position] == 0xFF:
         marker = data[position + 1]
@@ -599,89 +1007,811 @@ def jpeg_texts(data, texts):
         length = struct.unpack('>H', data[position + 2:position + 4])[0]
         body = data[position + 4:position + 2 + length]
         if marker == 0xFE:
-            texts.append(body.decode('utf-8', 'replace'))
+            hidden.exact.append(body.decode('utf-8', 'replace'))
         elif 0xE0 <= marker <= 0xEF and not body.startswith(b'Exif\0\0'):
-            texts.extend(readable(body))  # XMP, IPTC, ICC and others
+            hidden.runs.extend(readable(body))  # XMP, IPTC, ICC and others
+            if marker == 0xED:  # Photoshop's blocks, which carry IPTC
+                iim_texts(body, hidden)
         position += 2 + length
-    return False
 
 
-def iso_media_texts(data, texts):
-    """HEIC, AVIF, MP4 and QuickTime: every box but the media data."""
-    located, position = False, 0
-    while position + 8 <= len(data):
+# A place as ISO 6709 writes it (signed latitude, longitude and height, then
+# a slash), the value of a video's location item.
+ISO6709 = re.compile(r'[+-]\d+(?:\.\d+)?[+-]\d+(?:\.\d+)?(?:[+-]\d+(?:\.\d+)?)?(?:CRS[\w:]*)?/?')
+
+
+def iso_boxes(data, start, end):
+    """(kind, body start, body end) for each box between start and end."""
+    position = start
+    while position + 8 <= end:
         size, kind = struct.unpack('>I4s', data[position:position + 8])
         header = 8
-        if size == 1 and position + 16 <= len(data):
+        if size == 1 and position + 16 <= end:
             size, header = struct.unpack('>Q', data[position + 8:position + 16])[0], 16
         elif size == 0:
-            size = len(data) - position
+            size = end - position
         if size < header:
-            break
-        if kind not in (b'mdat', b'free', b'skip', b'wide'):
-            body = data[position + header:position + size]
-            located = located or b'\xa9xyz' in body or b'location.ISO6709' in body
-            texts.extend(readable(body))
+            return
+        yield kind, position + header, min(position + size, end)
         position += size
-    return located
 
 
-def riff_texts(data, texts):
+def iso_value(value, hidden, depth):
+    """A metadata item's data atom: text by its type, or a picture."""
+    kind = struct.unpack('>I', value[:4])[0] & 0xFFFFFF
+    if kind in (1, 4):
+        text = value[8:].decode('utf-8', 'replace')
+    elif kind in (2, 5):
+        text = value[8:].decode('utf-16-be', 'replace')
+    else:
+        if kind in (13, 14, 27):  # cover art: JPEG, PNG, BMP
+            inner_texts(value[8:], hidden, depth)
+        return
+    if ISO6709.fullmatch(text.strip()):
+        hidden.located = True  # a place, not words
+    else:
+        hidden.exact.append(text)
+
+
+def iso_items(data, start, end, hidden, depth, level=0, items=False):
+    """The text a movie's metadata defines: iTunes-style items in ilst,
+    whose values are data atoms, and QuickTime's ©-named text in udta."""
+    if level > 8:
+        return
+    for kind, body, stop in iso_boxes(data, start, end):
+        if items:  # an item of ilst: its value and, for custom items, its name
+            for child, inner, inner_stop in iso_boxes(data, body, stop):
+                if child == b'data' and inner_stop - inner >= 8:
+                    iso_value(data[inner:inner_stop], hidden, depth)
+                elif child == b'name' and inner_stop - inner >= 4:
+                    hidden.exact.append(data[inner + 4:inner_stop].decode('utf-8', 'replace'))
+        elif kind == b'meta':
+            # ISO's meta box starts with a version and flags; QuickTime's does not.
+            skip = 0 if data[body + 4:body + 8] == b'hdlr' else 4
+            iso_items(data, body + skip, stop, hidden, depth, level + 1)
+        elif kind == b'ilst':
+            iso_items(data, body, stop, hidden, depth, level + 1, items=True)
+        elif kind in (b'moov', b'trak', b'udta'):
+            iso_items(data, body, stop, hidden, depth, level + 1)
+        elif kind == b'loci' and stop - body >= 6:
+            loci_texts(data[body + 6:stop], hidden)
+        elif kind[:1] == b'\xa9' and kind != b'\xa9xyz' and stop - body >= 4:
+            # QuickTime text: its length, its language, then the text.
+            size = struct.unpack('>H', data[body:body + 2])[0]
+            hidden.exact.append(data[body + 4:min(body + 4 + size, stop)].decode('utf-8',
+                                                                                  'replace'))
+
+
+def loci_texts(content, hidden):
+    """3GPP's location box (ffmpeg writes one when it remuxes a located
+    video to MP4), after its version and language: the place's name, its
+    role, its longitude, latitude and height, the planet and notes."""
+    name, _, rest = content.partition(b'\0')
+    hidden.exact.append(decoded(name))
+    if len(rest) >= 13:
+        longitude, latitude = struct.unpack('>ii', rest[1:9])
+        hidden.located = hidden.located or bool(longitude or latitude)
+        hidden.exact += [decoded(part) for part in rest[13:].split(b'\0')]
+
+
+def iso_media_texts(data, hidden, depth):
+    """HEIC, AVIF, MP4 and QuickTime: every box but the media data, and the
+    text its metadata defines."""
+    for kind, body, stop in iso_boxes(data, 0, len(data)):
+        if kind not in (b'mdat', b'free', b'skip', b'wide'):
+            content = data[body:stop]
+            hidden.located = (hidden.located or b'\xa9xyz' in content
+                              or b'location.ISO6709' in content)
+            hidden.runs.extend(readable(content))
+    iso_items(data, 0, len(data), hidden, depth)
+
+
+def riff_info(body, hidden):
+    """A RIFF INFO list's fields (artist, name, comment), each a string."""
+    position = 0
+    while position + 8 <= len(body):
+        size = struct.unpack('<I', body[position + 4:position + 8])[0]
+        hidden.exact.append(decoded(body[position + 8:position + 8 + size].rstrip(b'\0'))
+                            .replace('\0', '\n'))
+        position += 8 + size + (size & 1)
+
+
+def riff_texts(data, hidden, depth):
     """WAV, WebP and AVI: every chunk but the sound or picture itself."""
-    located, position = False, 12
+    position = 12
     while position + 8 <= len(data):
         kind, size = struct.unpack('<4sI', data[position:position + 8])
         body = data[position + 8:position + 8 + size]
         position += 8 + size + (size & 1)
-        if kind == b'LIST' and body[:4] in (b'INFO', b'adtl', b'hdrl'):
-            texts.extend(readable(body[4:]))
+        if kind == b'LIST' and body[:4] == b'INFO':
+            riff_info(body[4:], hidden)
+        elif kind == b'LIST' and body[:4] in (b'adtl', b'hdrl'):
+            hidden.runs.extend(readable(body[4:]))
         elif kind == b'EXIF':
-            located = exif_texts(body[6:] if body.startswith(b'Exif') else body,
-                                 texts) or located
+            exif_texts(body[6:] if body.startswith(b'Exif') else body, hidden)
+        elif kind in (b'id3 ', b'ID3 ') and body.startswith(b'ID3'):
+            id3_texts(body, hidden, depth)
         elif kind not in (b'data', b'LIST', b'VP8 ', b'VP8L', b'VP8X', b'ALPH', b'ANMF',
                           b'ANIM', b'idx1', b'fmt '):
-            texts.extend(readable(body))
-    return located
+            hidden.runs.extend(readable(body))
 
 
-def pdf_texts(data, texts):
-    texts.extend(readable(data))
-    for stream in re.finditer(rb'stream\r?\n(.*?)\r?\nendstream', data, re.DOTALL):
-        texts.extend(readable(inflate(stream.group(1))))
-    return False
+def gif_sub_blocks(data, position):
+    """The bytes of a GIF's sub-blocks from position, and where they end."""
+    pieces = []
+    while position < len(data):
+        size = data[position]
+        position += 1
+        if not size:
+            break
+        pieces.append(data[position:position + size])
+        position += size
+    return b''.join(pieces), position
 
 
-def binary_texts(data):
-    """(texts, located): the text a binary file carries where people do
-    not see it, and whether it records where a photo or video was taken.
-    A picture's pixels are not read: look at what a picture shows."""
-    texts = []
-    if data.startswith(b'\x89PNG\r\n\x1a\n'):
-        located = png_texts(data, texts)
-    elif data.startswith(b'\xff\xd8'):
-        located = jpeg_texts(data, texts)
-    elif data[:4] in (b'II*\0', b'MM\0*'):
-        located = exif_texts(data, texts)
-    elif data[4:8] in (b'ftyp', b'moov', b'wide', b'mdat', b'free', b'skip'):
-        located = iso_media_texts(data, texts)
-    elif data[:4] == b'RIFF':
-        located = riff_texts(data, texts)
-    elif data[:5] == b'%PDF-':
-        located = pdf_texts(data, texts)
-    elif data[:4] == b'GIF8' or data[:2] == b'BM':
-        located = False  # nothing beyond the blocks searched below
+def gif_texts(data, hidden):
+    """A GIF's comment and plain-text extensions; its pictures are not read."""
+    if len(data) < 13:
+        return
+    flags = data[10]
+    position = 13 + (3 << ((flags & 7) + 1) if flags & 0x80 else 0)
+    while position < len(data):
+        block = data[position]
+        if block == 0x21 and position + 1 < len(data):  # an extension
+            label = data[position + 1]
+            body, position = gif_sub_blocks(data, position + 2)
+            if label == 0xFE:
+                hidden.exact.append(decoded(body))
+            elif label == 0x01:  # plain text, after its 12 bytes of layout
+                hidden.exact.append(decoded(body[12:]))
+            elif label == 0xFF:
+                hidden.runs.extend(readable(body))  # application data
+        elif block == 0x2C and position + 10 <= len(data):  # a picture
+            flags = data[position + 9]
+            position += 10 + (3 << ((flags & 7) + 1) if flags & 0x80 else 0) + 1
+            _, position = gif_sub_blocks(data, position)
+        else:
+            break  # the trailer, or not a GIF block
+    hidden.runs.extend(readable(data[position:]))  # anything after the GIF
+
+
+ID3_CODECS = {0: 'latin-1', 1: 'utf-16', 2: 'utf-16-be', 3: 'utf-8'}
+PICTURE_STARTS = (b'\xff\xd8\xff', b'\x89PNG\r\n\x1a\n')
+
+
+def syncsafe_size(data):
+    """An ID3 size: four bytes of seven bits each."""
+    if len(data) < 4:
+        return 0
+    return (data[0] & 0x7f) << 21 | (data[1] & 0x7f) << 14 | (data[2] & 0x7f) << 7 | data[3] & 0x7f
+
+
+def id3_text(body):
+    """A text frame's value: its first byte names the encoding, and a zero
+    character separates its values."""
+    codec = ID3_CODECS.get(body[0]) if body else None
+    if codec is None:
+        return decoded(body)
+    return body[1:].decode(codec, 'replace').replace('\0', '\n')
+
+
+def id3_frame(kind, body, hidden, depth):
+    if kind in (b'COMM', b'USLT', b'COM', b'ULT') and len(body) >= 4:
+        hidden.exact.append(id3_text(body[:1] + body[4:]))  # after its language
+    elif kind in (b'APIC', b'PIC', b'GEOB'):
+        starts = [index for index in (body.find(start) for start in PICTURE_STARTS)
+                  if index >= 0]
+        picture = min(starts) if starts else len(body)
+        hidden.exact.append(id3_text(body[:picture]))  # its type and description
+        if starts:
+            inner_texts(body[picture:], hidden, depth)
+    elif kind[:1] == b'T' or kind in (b'WXXX', b'WXX'):
+        hidden.exact.append(id3_text(body))
+    elif kind[:1] == b'W':
+        hidden.exact.append(decoded(body))  # a link
     else:
-        texts.extend(readable(data))
-        located = False
+        hidden.runs.extend(readable(body))
+
+
+def id3_texts(data, hidden, depth):
+    """An ID3v2 tag (an MP3's, or a WAV's id3 chunk): its text, comment,
+    lyrics and link frames, and the pictures it carries."""
+    if len(data) < 10 or data[3] not in (2, 3, 4):
+        return
+    version, flags = data[3], data[5]
+    tag = data[10:10 + syncsafe_size(data[6:10])]
+    if flags & 0x80 and version < 4:
+        tag = tag.replace(b'\xff\x00', b'\xff')  # unsynchronised
+    position = 0
+    if flags & 0x40 and version == 3 and len(tag) >= 4:
+        position = 4 + struct.unpack('>I', tag[:4])[0]  # an extended header
+    elif flags & 0x40 and version == 4:
+        position = syncsafe_size(tag[:4])
+    name_size, header = (3, 6) if version == 2 else (4, 10)
+    while position + header <= len(tag):
+        kind = tag[position:position + name_size]
+        if not kind.isalnum():
+            break  # padding
+        if version == 2:
+            size = int.from_bytes(tag[position + 3:position + 6], 'big')
+        elif version == 3:
+            size = struct.unpack('>I', tag[position + 4:position + 8])[0]
+        else:
+            size = syncsafe_size(tag[position + 4:position + 8])
+        format_flags = tag[position + 9] if version > 2 else 0
+        body = tag[position + header:position + header + size]
+        position += header + size
+        if version == 4 and format_flags & 0x02:
+            body = body.replace(b'\xff\x00', b'\xff')
+        if version == 4 and format_flags & 0x01:
+            body = body[4:]  # its length before compression
+        if (version == 3 and format_flags & 0x80) or (version == 4 and format_flags & 0x08):
+            body = hidden.inflate(body[4:] if version == 3 else body)
+        id3_frame(kind, body, hidden, depth)
+
+
+def id3v1_texts(data, hidden):
+    """An ID3v1 tag, the last 128 bytes of an older MP3: its title, artist,
+    album and comment."""
+    tag = data[-128:]
+    for start, end in ((3, 33), (33, 63), (63, 93), (97, 127)):
+        hidden.exact.append(decoded(tag[start:end].split(b'\0')[0]))
+
+
+try:
+    import lzma
+    LZMA_ERRORS = (lzma.LZMAError,)
+except ImportError:  # a Python without lzma opens no such entry anyway
+    LZMA_ERRORS = ()
+ZIP_ERRORS = (zipfile.BadZipFile, zipfile.LargeZipFile, RuntimeError, NotImplementedError,
+              EOFError, OSError, ValueError, KeyError, struct.error, zlib.error) + LZMA_ERRORS
+
+
+# ------------------------------------------------------------- iWork
+
+# How deep messages inside messages are read in an iWork archive.
+PROTO_DEPTH = 8
+
+
+def snappy(data, limit):
+    """Snappy's raw form decompressed, up to limit bytes: literals, and
+    copies of bytes already written. What decompresses before damage is
+    kept."""
+    length, position, shift = 0, 0, 0
+    while position < len(data) and shift < 35:
+        byte = data[position]
+        position += 1
+        length |= (byte & 0x7f) << shift
+        shift += 7
+        if byte < 0x80:
+            break
+    out, limit = bytearray(), min(length, limit)
+    while position < len(data) and len(out) < limit:
+        tag = data[position]
+        position += 1
+        if tag & 3 == 0:  # a literal
+            size = tag >> 2
+            if size >= 60:  # its length in the next one to four bytes
+                extra = size - 59
+                size = int.from_bytes(data[position:position + extra], 'little')
+                position += extra
+            out += data[position:position + size + 1]
+            position += size + 1
+            continue
+        if tag & 3 == 1:  # a copy with an 11-bit offset
+            if position >= len(data):
+                break
+            size, offset = ((tag >> 2) & 7) + 4, ((tag >> 5) << 8) | data[position]
+            position += 1
+        else:
+            width = 2 if tag & 3 == 2 else 4
+            size, offset = (tag >> 2) + 1, int.from_bytes(data[position:position + width], 'little')
+            position += width
+        if position > len(data) or not 0 < offset <= len(out):
+            break
+        start = len(out) - offset
+        piece = bytes(out[start:start + min(offset, size)])
+        out += (piece * (size // len(piece) + 1))[:size]
+    return bytes(out[:limit])
+
+
+def proto_varint(data, position):
+    value, shift = 0, 0
+    while True:
+        if position >= len(data) or shift > 63:
+            raise ValueError('not a protocol buffer')
+        byte = data[position]
+        position += 1
+        value |= (byte & 0x7f) << shift
+        shift += 7
+        if byte < 0x80:
+            return value, position
+
+
+def proto_fields(data):
+    """(number, wire type, value) for each field of a protocol-buffer
+    message; ValueError when data is not one."""
+    fields, position = [], 0
+    while position < len(data):
+        key, position = proto_varint(data, position)
+        number, wire = key >> 3, key & 7
+        if wire == 0:
+            value, position = proto_varint(data, position)
+        elif wire in (1, 5):
+            size = 8 if wire == 1 else 4
+            value, position = data[position:position + size], position + size
+        elif wire == 2:
+            size, position = proto_varint(data, position)
+            value, position = data[position:position + size], position + size
+        else:
+            raise ValueError('not a protocol buffer')
+        if not number or position > len(data):
+            raise ValueError('not a protocol buffer')
+        fields.append((number, wire, value))
+    return fields
+
+
+def proto_texts(data, hidden, depth=0):
+    """The strings in a protocol-buffer message, and in the messages it
+    holds, read exactly: a document's words are strings."""
+    try:
+        fields = proto_fields(data)
+    except ValueError:
+        return
+    for _, wire, value in fields:
+        if wire != 2 or not value:
+            continue
+        try:
+            text = value.decode('utf-8')
+        except UnicodeDecodeError:
+            text = ''
+        if text and not CONTROL.search(text) and any(char.isalnum() for char in text):
+            hidden.exact.append(text)
+        if depth < PROTO_DEPTH:
+            proto_texts(value, hidden, depth + 1)
+
+
+def iwa_texts(data, hidden):
+    """An iWork archive (.iwa, inside a Pages, Keynote or Numbers file):
+    chunks of Snappy data, each a zero byte and a three-byte length; inside,
+    archives, each its info (which gives its messages' lengths) and then
+    its messages, whose strings hold the document's words."""
+    position = 0
+    while position + 4 <= len(data) and data[position] == 0 and hidden.budget > 0:
+        size = int.from_bytes(data[position + 1:position + 4], 'little')
+        chunk = snappy(data[position + 4:position + 4 + size], hidden.budget)
+        hidden.budget -= len(chunk)
+        position += 4 + size
+        at = 0
+        try:
+            while at < len(chunk):
+                size_of_info, at = proto_varint(chunk, at)
+                info, at = chunk[at:at + size_of_info], at + size_of_info
+                length = sum(value for number, wire, message in proto_fields(info)
+                             if number == 2 and wire == 2
+                             for inner, kind, value in proto_fields(message)
+                             if inner == 3 and kind == 0)
+                proto_texts(chunk[at:at + length], hidden)
+                at += length
+        except ValueError:
+            hidden.runs.extend(readable(chunk[at:]))  # damaged: read what is left
+
+
+def zip_texts(data, hidden, depth):
+    """A ZIP archive (Word, Excel, PowerPoint, Pages, Keynote and Numbers
+    files are ZIP archives): each entry's name, and its content read as a
+    file of its own, XML without its tags, within the file's inflate
+    budget."""
+    try:
+        archive = zipfile.ZipFile(io.BytesIO(data))
+        entries = archive.infolist()[:ZIP_ENTRY_LIMIT]
+    except ZIP_ERRORS:
+        return  # not readable as an archive: its readable runs were read
+    hidden.exact.append(decoded(archive.comment))
+    for entry in entries:
+        hidden.exact += [entry.filename, decoded(entry.comment)]
+        if entry.is_dir() or hidden.budget <= 0:
+            continue
+        try:
+            with archive.open(entry) as member:
+                content = member.read(hidden.budget)
+        except ZIP_ERRORS:
+            continue  # encrypted or damaged: its stored bytes were read as runs
+        hidden.budget -= len(content)
+        if entry.filename.lower().endswith('.iwa'):
+            iwa_texts(content, hidden)
+            hidden.runs.extend(readable(content))
+        else:
+            inner_texts(content, hidden, depth,
+                        xml=entry.filename.lower().endswith(('.xml', '.rels')))
+
+
+# ------------------------------------------------------------------ PDF
+
+PDF_OBJECT = re.compile(rb'(?<!\d)(\d+)\s+\d+\s+obj\b')
+PDF_STREAM = re.compile(rb'stream(?:\r\n|\n|\r)')
+PDF_STRING = re.compile(rb'\(|<(?!<)([0-9A-Fa-f\s]*)>')
+PDF_LITERAL_PART = re.compile(rb'[^()\\]+|\\(?:[0-7]{1,3}|\r\n|[\s\S])|[()]')
+PDF_ESCAPES = {b'n': b'\n', b'r': b'\r', b't': b'\t', b'b': b'\b', b'f': b'\f'}
+PDF_TOKEN = re.compile(rb'\(|<<|>>|<[0-9A-Fa-f\s]*>|\[|\]|/[^\s/<>\[\]()%{}]*|%[^\r\n]*'
+                       rb'|[^\s/<>\[\]()%{}]+')
+PDF_SHOWS = (b'Tj', b'TJ', b"'", b'"')
+PDF_HEX = re.compile(rb'<([0-9A-Fa-f\s]*)>')
+PDF_RANGE_TOKEN = re.compile(rb'<([0-9A-Fa-f\s]*)>|\[|\]')
+PDF_FONT_ENTRY = re.compile(rb'/Font\s*(?:<<|(\d+)\s+\d+\s+R)')
+PDF_NAMED_REFERENCE = re.compile(rb'/([^\s/<>\[\]()%{}]+)\s+(\d+)\s+\d+\s+R')
+PDF_TO_UNICODE = re.compile(rb'/ToUnicode\s+(\d+)\s+\d+\s+R')
+# Codes one ToUnicode map may hold, the bytes of one code and of the text
+# a range starts from (a ligature's few letters), and fonts one name is
+# read with.
+CMAP_LIMIT = 65536
+CODE_LIMIT = 4
+TEXT_LIMIT = 32
+FONT_CHOICES = 4
+
+
+def pdf_hex(digits):
+    digits = re.sub(rb'[^0-9A-Fa-f]', b'', digits)
+    return bytes.fromhex((digits + b'0' * (len(digits) % 2)).decode('ascii'))
+
+
+def pdf_literal(data, start):
+    """A literal string's bytes, its ( at start, and the index after its )."""
+    parts, depth = [], 0
+    for part in PDF_LITERAL_PART.finditer(data, start):
+        token = part.group()
+        if token == b'(':
+            depth += 1
+            if depth == 1:
+                continue
+        elif token == b')':
+            depth -= 1
+            if depth == 0:
+                return b''.join(parts), part.end()
+        elif token[:1] == b'\\':
+            escaped = token[1:]
+            if 0x30 <= escaped[0] <= 0x37:
+                token = bytes([int(escaped, 8) & 0xFF])
+            elif escaped in (b'\r\n', b'\n', b'\r'):
+                continue  # a line continued
+            else:
+                token = PDF_ESCAPES.get(escaped, escaped)
+        parts.append(token)
+    return b''.join(parts), len(data)
+
+
+def pdf_text(raw):
+    """A PDF text string: UTF-16 after its byte order mark, otherwise UTF-8
+    or PDFDocEncoding (much like Latin-1)."""
+    if raw.startswith(b'\xfe\xff'):
+        return raw[2:].decode('utf-16-be', 'replace')
+    if raw.startswith(b'\xff\xfe'):
+        return raw[2:].decode('utf-16-le', 'replace')
+    try:
+        return raw.decode('utf-8-sig')
+    except UnicodeDecodeError:
+        return raw.decode('latin-1')
+
+
+def pdf_strings(source):
+    """The strings in a PDF object outside any stream: its information
+    (author, title), bookmarks, annotations and form values."""
+    texts, position = [], 0
+    while True:
+        match = PDF_STRING.search(source, position)
+        if match is None:
+            return texts
+        if match.group() == b'(':
+            raw, position = pdf_literal(source, match.start())
+        else:
+            raw, position = pdf_hex(match.group(1)), match.end()
+        texts.append(pdf_text(raw))
+
+
+def pdf_objects(data):
+    """(number, dictionary, stream) for each object in a PDF, stream None
+    when it has none. Searched forward only: an object or stream left
+    open runs to the end of the file, which ends the search."""
+    position = 0
+    while True:
+        match = PDF_OBJECT.search(data, position)
+        if match is None:
+            return
+        start = match.end()
+        end = data.find(b'endobj', start)
+        end = len(data) if end < 0 else end
+        found = PDF_STREAM.search(data, start, end)
+        if found is None:
+            yield int(match.group(1)), data[start:end], None
+            position = end + 6
+            continue
+        finish = data.find(b'endstream', found.end())
+        finish = len(data) if finish < 0 else finish
+        yield int(match.group(1)), data[start:found.start()], data[found.end():finish]
+        end = data.find(b'endobj', finish)
+        position = len(data) if end < 0 else end + 6
+
+
+PDF_FILTER = re.compile(rb'/Filter\s*(\[[^\]]*\]|/[^\s/<>\[\]()%{}]+)')
+PDF_NAME = re.compile(rb'/([^\s/<>\[\]()%{}]+)')
+PDF_HEX_FILTERS = (b'ASCIIHexDecode', b'AHx')
+PDF_85_FILTERS = (b'ASCII85Decode', b'A85')
+PDF_FLATE_FILTERS = (b'FlateDecode', b'Fl')
+
+
+def ascii85(data):
+    """ASCII85 text decoded, up to its ~> end; b'' when it is damaged."""
+    data = re.sub(rb'\s+', b'', data.split(b'~>', 1)[0])
+    data = data[2:] if data.startswith(b'<~') else data
+    try:
+        return base64.a85decode(data)
+    except ValueError:
+        return b''
+
+
+def pdf_stream(dictionary, raw, hidden):
+    """A stream's content, through its filters in order: written as text
+    (ASCII hex or ASCII85, as reportlab writes every page) and compressed
+    with Flate. A stream with no filter is read as stored, and one with any
+    other filter (a picture's JPEG) is read where it is stored."""
+    found = PDF_FILTER.search(dictionary)
+    data = raw
+    for name in PDF_NAME.findall(found.group(1)) if found else ():
+        if name in PDF_HEX_FILTERS:
+            data = pdf_hex(data.split(b'>', 1)[0])
+        elif name in PDF_85_FILTERS:
+            data = ascii85(data)
+        elif name in PDF_FLATE_FILTERS:
+            data = hidden.inflate(data)
+        else:
+            return b''
+    return data
+
+
+def pdf_object_stream(dictionary, stream):
+    """The objects an object stream holds: (number, source)."""
+    first = re.search(rb'/First\s+(\d+)', dictionary)
+    if first is None:
+        return []
+    first = int(first.group(1))
+    numbers = [int(number) for number in re.findall(rb'\d+', stream[:first])][:2 * CMAP_LIMIT]
+    pairs = list(zip(numbers[0::2], numbers[1::2]))
+    objects = []
+    for index, (number, offset) in enumerate(pairs):
+        end = pairs[index + 1][1] if index + 1 < len(pairs) else len(stream) - first
+        objects.append((number, stream[first + offset:first + end]))
+    return objects
+
+
+def sections(data, begin, end):
+    """The bytes between each begin and the end after it."""
+    position = 0
+    while True:
+        start = data.find(begin, position)
+        if start < 0:
+            return
+        stop = data.find(end, start)
+        stop = len(data) if stop < 0 else stop
+        yield data[start + len(begin):stop]
+        position = stop
+
+
+class PdfMap:
+    """A font's ToUnicode CMap: its character codes, all of one width in
+    bytes, and the text each stands for."""
+
+    def __init__(self, width, codes):
+        self.width, self.codes = width, codes
+
+    def decode(self, raw):
+        width = self.width
+        return ''.join(self.codes.get(raw[i:i + width],
+                                      raw[i:i + width].decode('latin-1') if width == 1 else '')
+                       for i in range(0, len(raw) - width + 1, width))
+
+
+def pdf_cmap(stream):
+    """A ToUnicode CMap's bfchar and bfrange sections (both forms)."""
+    codes, width = {}, None
+    for section in sections(stream, b'begincodespacerange', b'endcodespacerange'):
+        first = PDF_HEX.search(section)
+        width = width or (len(pdf_hex(first.group(1))) if first else None)
+    for section in sections(stream, b'beginbfchar', b'endbfchar'):
+        values = [pdf_hex(value) for value in PDF_HEX.findall(section)]
+        for code, text in list(zip(values[0::2], values[1::2]))[:CMAP_LIMIT]:
+            codes[code] = text.decode('utf-16-be', 'replace')
+    for section in sections(stream, b'beginbfrange', b'endbfrange'):
+        tokens = [(match.group(), match.group(1)) for match in PDF_RANGE_TOKEN.finditer(section)]
+        index = 0
+        while index + 2 < len(tokens) and len(codes) < CMAP_LIMIT:
+            low, high = tokens[index][1], tokens[index + 1][1]
+            if not low or high is None:
+                index += 1  # out of step: look for the next range
+                continue
+            low = pdf_hex(low)
+            if len(low) > CODE_LIMIT:
+                index += 3  # not a character code: no font's codes are this long
+                continue
+            start, stop = int.from_bytes(low, 'big'), int.from_bytes(pdf_hex(high), 'big')
+            count = max(0, min(stop - start + 1, CMAP_LIMIT - len(codes)))
+            if tokens[index + 2][0] == b'[':
+                index += 3
+                values = []
+                while index < len(tokens) and tokens[index][0] != b']':
+                    if tokens[index][1] is not None:
+                        values.append(pdf_hex(tokens[index][1]))
+                    index += 1
+                index += 1
+                pairs = [(start + offset, value) for offset, value in enumerate(values[:count])]
+            else:
+                target = pdf_hex(tokens[index + 2][1] or b'')[:TEXT_LIMIT]
+                base = int.from_bytes(target, 'big')
+                index += 3
+                pairs = [(start + offset, (base + offset).to_bytes(len(target), 'big'))
+                         for offset in range(count) if base + offset < 256 ** len(target)]
+            for code, value in pairs:
+                if code < 256 ** len(low):
+                    codes[code.to_bytes(len(low), 'big')] = value.decode('utf-16-be', 'replace')
+    width = width or (len(next(iter(codes))) if codes else 1)
+    return PdfMap(max(1, min(width, CODE_LIMIT)), codes)
+
+
+def pdf_fonts(sources, maps):
+    """Each font resource name (/F1) and the ToUnicode maps of the fonts it
+    names on any page or form, None for a font without one. Names are read
+    from every resource dictionary, so a name two pages use for two fonts
+    is read with both."""
+    to_unicode = {}
+    for number, source in sources.items():
+        found = PDF_TO_UNICODE.search(source)
+        to_unicode[number] = maps.get(int(found.group(1))) if found else None
+    fonts = {}
+    for source in sources.values():
+        for entry in PDF_FONT_ENTRY.finditer(source):
+            if entry.group(1):
+                names = sources.get(int(entry.group(1)), b'')
+            else:
+                end = source.find(b'>>', entry.end())
+                names = source[entry.end():len(source) if end < 0 else end]
+            for name, number in PDF_NAMED_REFERENCE.findall(names):
+                choices = fonts.setdefault(name, [])
+                font = to_unicode.get(int(number))
+                if font not in choices and len(choices) < FONT_CHOICES:
+                    choices.append(font)
+    return fonts
+
+
+def pdf_shown(content):
+    """(font name, strings and spacings) for each text a content stream
+    shows, and the other strings it holds (marked content's ActualText)."""
+    shows, others, operands, font, position = [], [], [], None, 0
+    while True:
+        match = PDF_TOKEN.search(content, position)
+        if match is None:
+            return shows, others
+        token, position = match.group(), match.end()
+        if token == b'(':
+            value, position = pdf_literal(content, match.start())
+            operands.append(value)
+        elif token[:1] == b'<' and token != b'<<':
+            operands.append(pdf_hex(token[1:-1]))
+        elif token[:1] == b'/':
+            operands.append((token[1:],))  # a name
+        elif token in (b'[', b']', b'<<', b'>>') or token[:1] == b'%':
+            continue
+        else:
+            try:
+                operands.append(float(token))
+                continue
+            except ValueError:
+                pass  # an operator
+            if token == b'Tf':
+                names = [operand[0] for operand in operands if isinstance(operand, tuple)]
+                font = names[-1] if names else font
+            elif token in PDF_SHOWS:
+                shows.append((font, [operand for operand in operands
+                                     if isinstance(operand, (bytes, float))]))
+            elif token == b'ID':  # an inline picture's bytes, up to EI
+                end = content.find(b'EI', position)
+                position = len(content) if end < 0 else end + 2
+            else:
+                others += [operand for operand in operands if isinstance(operand, bytes)]
+            operands = []
+
+
+def pdf_page_texts(content, fonts):
+    """The text a content stream shows, decoded through the fonts its Tf
+    operators choose, read twice: as one run, so a word shown a letter at
+    a time is whole, and one string a line, so words shown apart stay
+    apart. A wide gap in a TJ array is a space."""
+    shows, others = pdf_shown(content)
+    texts = [pdf_text(raw) for raw in others]
+    versions = max([len(fonts.get(font) or [None]) for font, _ in shows] or [1])
+    for version in range(versions):
+        pieces = []
+        for font, items in shows:
+            choices = fonts.get(font) or [None]
+            cmap = choices[min(version, len(choices) - 1)]
+            piece = []
+            for item in items:
+                if isinstance(item, bytes):
+                    piece.append(cmap.decode(item) if cmap else pdf_text(item))
+                elif item <= -200:
+                    piece.append(' ')
+            pieces.append(''.join(piece))
+        texts += [''.join(pieces), '\n'.join(pieces)]
+    return texts
+
+
+def pdf_texts(data, hidden, depth):
+    """A PDF's information and bookmarks, the text its pages show (through
+    each font's ToUnicode map, as a viewer copies it), the files attached
+    to it and its compressed metadata."""
+    hidden.runs.extend(readable(data))
+    objects = []
+    for number, dictionary, raw in pdf_objects(data):
+        stream = None if raw is None else pdf_stream(dictionary, raw, hidden)
+        objects.append((number, dictionary, stream))
+        if stream and b'/ObjStm' in dictionary:
+            objects += [(inner, source, None)
+                        for inner, source in pdf_object_stream(dictionary, stream)]
+    sources = {number: dictionary for number, dictionary, _ in objects}
+    maps = {number: pdf_cmap(stream) for number, _, stream in objects
+            if stream and (b'beginbfchar' in stream or b'beginbfrange' in stream)}
+    fonts = pdf_fonts(sources, maps)
+    for number, dictionary, stream in objects:
+        hidden.exact.extend(pdf_strings(dictionary))
+        if not stream or number in maps or b'/ObjStm' in dictionary:
+            continue
+        if b'/EmbeddedFile' in dictionary:
+            inner_texts(stream, hidden, depth)
+        elif XMP_START in stream:
+            xmp_texts(stream, hidden)
+        elif b'/Image' not in dictionary:  # a picture's pixels are not words
+            hidden.runs.extend(readable(stream))
+            if b'BT' in stream or b'BDC' in stream:
+                hidden.exact.extend(pdf_page_texts(stream, fonts))
+
+
+def binary_texts(data, depth=0, hidden=None, iwa=False):
+    """What a binary file carries where people do not see it (a Hidden),
+    read by its format; iwa says the file is an iWork archive, which has no
+    signature of its own. A picture's pixels are not read: look at what a
+    picture shows."""
+    hidden = Hidden() if hidden is None else hidden
+    if iwa:
+        iwa_texts(data, hidden)
+        hidden.runs.extend(readable(data))
+    elif data.startswith(b'\x89PNG\r\n\x1a\n'):
+        png_texts(data, hidden)
+    elif data.startswith(b'\xff\xd8'):
+        jpeg_texts(data, hidden)
+    elif data[:4] in (b'II*\0', b'MM\0*'):
+        exif_texts(data, hidden)
+    elif data[4:8] in (b'ftyp', b'moov', b'wide', b'mdat', b'free', b'skip'):
+        iso_media_texts(data, hidden, depth)
+    elif data[:4] == b'RIFF':
+        riff_texts(data, hidden, depth)
+    elif data[:5] == b'%PDF-':
+        pdf_texts(data, hidden, depth)
+    elif data[:4] == b'GIF8':
+        gif_texts(data, hidden)
+    elif data[:4] == b'PK\x03\x04':
+        hidden.runs.extend(readable(data))
+        zip_texts(data, hidden, depth)
+    elif data[:3] == b'ID3':
+        hidden.runs.extend(readable(data))
+        id3_texts(data, hidden, depth)
+    elif data[:2] != b'BM':  # a BMP holds nothing beyond the blocks below
+        hidden.runs.extend(readable(data))
+    if data[-128:-125] == b'TAG':
+        id3v1_texts(data, hidden)
     # Exif and XMP blocks wherever they are: inside a HEIC's items, a
     # JPEG's second picture or a video's metadata.
     for header in EXIF_HEADER.finditer(data):
-        located = exif_texts(data[header.end():header.end() + 1024 * 1024], texts) or located
-    for packet in XMP_PACKET.finditer(data):
-        xmp = packet.group().decode('utf-8', 'replace')
-        texts.append(without_markup(xmp))
-        located = located or bool(GPS_IN_XMP.search(xmp))
-    return texts, located
+        exif_texts(data[header.end():header.end() + 1024 * 1024], hidden)
+    xmp_texts(data, hidden)
+    return hidden
 
 
 def support_addresses(root):
@@ -715,25 +1845,36 @@ class Tally:
                              'in smaller parts.')
 
 
+# Replace refs (git replace) change what git log shows, never what a push
+# sends, so every object is read as it is stored.
+GIT = ('git', '--no-replace-objects')
+
+
 def git(root, *args, binary=False, check=True):
     # No hooks, no file-system monitor and no external diff or textconv
     # program runs: the repository's own settings never run code here.
+    # A blank line in a patch keeps its leading space, so every line of a
+    # patch starts with its marker (patch_changes, commit_patches).
     try:
         result = subprocess.run(
-            ['git', '-C', str(root), '-c', 'core.quotePath=false', '-c', 'core.fsmonitor=false',
-             '-c', 'core.hooksPath=/dev/null', *args],
+            [*GIT, '-C', str(root), '-c', 'core.quotePath=false', '-c', 'core.fsmonitor=false',
+             '-c', 'core.hooksPath=/dev/null', '-c', 'diff.suppressBlankEmpty=false', *args],
             capture_output=True, timeout=300)
     except (OSError, subprocess.SubprocessError) as error:
         raise SetupError(f'git could not run ({type(error).__name__}).')
     if check and result.returncode:
-        message = result.stderr.decode('utf-8', 'replace').strip().splitlines()
-        raise SetupError('git ' + args[0] + ' failed: ' + (message[-1] if message else 'no message'))
+        # git's own message can name a file, a revision or a line of one,
+        # and CI's log is public: say which command failed, never what git
+        # said.
+        raise SetupError(f'git {args[0]} failed (exit status {result.returncode}). What git '
+                         'said is not shown, as it can name a file: check the folder and the '
+                         'revisions the check was given.')
     return result.stdout if binary else result.stdout.decode('utf-8', 'replace')
 
 
 def git_succeeds(root, *args):
     try:
-        return subprocess.run(['git', '-C', str(root), *args], capture_output=True,
+        return subprocess.run([*GIT, '-C', str(root), *args], capture_output=True,
                               timeout=60).returncode == 0
     except (OSError, subprocess.SubprocessError):
         return False
@@ -779,18 +1920,31 @@ def untracked_files(checker, root, tally, pathspecs=(), directory=None):
     listing = git(directory or root, 'ls-files', '-z', '--full-name', '--others',
                   '--exclude-standard', '--', *pathspecs)
     for number, path in enumerate(listing.split('\0'), 1):
-        if path and Path(root, path).is_file():
+        # A link is committed as the path it points to, which need not
+        # exist, and may name a home folder.
+        if path and (Path(root, path).is_symlink() or Path(root, path).is_file()):
             tally.pictures += path.lower().endswith(PICTURES)
             findings += read_file(checker, root, path, f'untracked file {number} of git '
                                   'ls-files --others --exclude-standard', tally)
     return findings
 
 
+C_ESCAPES = {b'a': b'\a', b'b': b'\b', b't': b'\t', b'n': b'\n', b'v': b'\v', b'f': b'\f',
+             b'r': b'\r', b'"': b'"', b'\\': b'\\'}
+C_ESCAPE = re.compile(rb'\\([0-3][0-7][0-7]|.)', re.DOTALL)
+
+
 def unquote(path):
-    if path.startswith('"') and path.endswith('"'):
-        return (path[1:-1].encode('latin-1', 'backslashreplace')
-                .decode('unicode_escape').encode('latin-1').decode('utf-8', 'replace'))
-    return path
+    """A path as git writes it: as it is, or between double quotes with C
+    escapes, where each \\ooo is one byte of the name's UTF-8 (letters may
+    also stand as they are, with core.quotePath off). The escapes are
+    undone on the bytes, so a name in any script reads back whole."""
+    if len(path) < 2 or not (path.startswith('"') and path.endswith('"')):
+        return path
+    return C_ESCAPE.sub(
+        lambda match: (bytes([int(match[1], 8)]) if len(match[1]) == 3
+                       else C_ESCAPES.get(match[1], match[1])),
+        path[1:-1].encode('utf-8')).decode('utf-8', 'replace')
 
 
 def header_path(rest):
@@ -807,26 +1961,41 @@ def header_path(rest):
     return None
 
 
-HUNK = re.compile(r'^@@ -\d+(?:,\d+)? \+(\d+)(?:,\d+)? @@')
-BINARY = re.compile(r'^Binary files (?:"?a/.*?"?|/dev/null) and ("?b/.*?"?) differ$')
+HUNK = re.compile(r'^@@ -\d+(?:,(\d+))? \+(\d+)(?:,(\d+))? @@')
+# Only the line's shape: a name in it may itself hold " and b/", so the
+# path is the one the diff --git header gave.
+BINARY = re.compile(r'^Binary files .* differ$')
 
 
 def patch_changes(patch):
-    """(runs, binaries, names) in a patch: (path, first line, text) for
-    each run of added lines, the paths of binary files it adds or changes,
-    and every path it adds or changes. A run is read as one text, so a
-    phrase wrapped over two lines is still found."""
-    runs, binaries, names = [], [], []
-    path, line, block, block_start, header = None, 0, [], 0, False
-
-    def flush():
-        if path is not None and block:
-            runs.append((path, block_start, '\n'.join(block)))
-        block.clear()
-
+    """(hunks, binaries, names) in a patch. Each hunk is (path, first
+    line, lines): the lines of the new file it shows, in order, as
+    (status, text), where status is '+' for an added line, ' ' for an
+    unchanged one, and '-' for an unchanged one that lines removed just
+    before it now join to the line above. binaries are the paths of the
+    binary files it adds or changes, and names every path it adds or
+    changes. A hunk's lines are counted from its header, so no line of a
+    file is ever read as part of the patch's own headers."""
+    hunks, binaries, names = [], [], []
+    path, header, lines, old_left, new_left, removed = None, False, [], 0, 0, False
     for raw in patch.split('\n'):
-        if raw.startswith('diff --git '):
-            flush()
+        if old_left > 0 or new_left > 0:
+            marker, text = raw[:1], raw[1:]
+            if marker == '\\':
+                continue  # "\ No newline at end of file"
+            if marker == '-':
+                old_left -= 1
+                removed = True
+                continue
+            if marker == '+':
+                new_left -= 1
+                lines.append(('+', text))
+            else:
+                old_left -= 1
+                new_left -= 1
+                lines.append(('-' if removed else ' ', text))
+            removed = False
+        elif raw.startswith('diff --git '):
             header = True
             path = header_path(raw[len('diff --git '):])
             if path is not None:
@@ -836,70 +2005,140 @@ def patch_changes(patch):
                 names.remove(path)
             path = None
         elif header and raw.startswith('+++ '):
-            target = unquote(raw[4:])
+            # Git ends the line with a tab when the name holds a space; a
+            # tab in a name itself is always quoted.
+            target = unquote(raw[4:-1] if raw.endswith('\t') else raw[4:])
             path = target[2:] if target.startswith('b/') else None
         elif header and BINARY.match(raw):
-            binaries.append(unquote(BINARY.match(raw).group(1))[2:])
+            if path is not None:
+                binaries.append(path)
         elif raw.startswith('@@'):
-            flush()
-            header = False
             hunk = HUNK.match(raw)
-            line = block_start = int(hunk.group(1)) if hunk else 0
-        elif not header and raw.startswith('+'):
-            if not block:
-                block_start = line
-            block.append(raw[1:])
-            line += 1
-        elif not header:
-            flush()
-    flush()
-    return runs, binaries, names
+            if not hunk:
+                raise SetupError('git wrote a patch the check could not read.')
+            header, removed, lines = False, False, []
+            old_left, new_left = int(hunk[1] or 1), int(hunk[3] or 1)
+            if path is not None:
+                hunks.append((path, int(hunk[2]), lines))
+    return hunks, binaries, names
 
 
-PATCH_OPTIONS = ('-p', '--unified=0', '--no-color', '--no-ext-diff', '--no-textconv',
+# Three unchanged lines around each change (git's own default), so a name
+# whose parts sit on neighbouring lines is read whole.
+PATCH_OPTIONS = ('-p', '--unified=3', '--no-color', '--no-ext-diff', '--no-textconv',
                  '--no-renames', '--src-prefix=a/', '--dst-prefix=b/')
+# git log as git itself is set by default, whatever a person's settings:
+# log.showSignature would put gpg's lines among a commit's fields, and
+# log.showRoot=false would leave out what a first commit adds.
+LOG_OPTIONS = ('--no-show-signature', '--root')
+
+
+def hunk_findings(checker, lines, where, path, first):
+    """Findings a hunk's change makes: the hunk's new lines are read as
+    one text, so a phrase wrapped over lines is found, and what lay
+    wholly in unchanged lines that were already neighbours is left out,
+    as it was there before. A finding that touches an added line, or
+    reaches across lines that were removed, is new."""
+    if all(status == ' ' for status, _ in lines):
+        return []
+    found = checker.text('\n'.join(text for _, text in lines), where, path, first)
+    blocks, block = [], None
+    for number, (status, text) in enumerate(lines):
+        if status == '+':
+            block = None
+            continue
+        if status == '-' or block is None:
+            block = (first + number, [])
+            blocks.append(block)
+        block[1].append(text)
+    old = {(finding.line, finding.column, finding.kind) for start, texts in blocks
+           for finding in checker.text('\n'.join(texts), where, path, start)}
+    return [finding for finding in found
+            if (finding.line, finding.column, finding.kind) not in old]
+
+
+# A PDF with no zero byte near its start is text to git, which then shows
+# only its compressed bytes, line by line: such a file is read whole too.
+TEXT_TO_GIT = ('.pdf', '.ai')
 
 
 def read_patch(checker, patch, label, blob, tally):
-    """Findings in a patch's added lines, its binary files (read through
-    blob(path)) and its paths."""
+    """Findings in a patch: its paths, what its hunks add (hunk_findings)
+    and its binary files, read through blob(path). Each path's name is
+    checked before anything is reported under it, whichever line of the
+    patch named it, so no report shows a name that holds a finding."""
     findings, places = [], {}
-    runs, binaries, names = patch_changes(patch)
-    for number, path in enumerate(dict.fromkeys(names), 1):
+    hunks, binaries, names = patch_changes(patch)
+
+    def place(path):
+        if path not in places:
+            tally.tick()
+            tally.changes += 1
+            tally.pictures += path.lower().endswith(PICTURES)
+            where, found = checker.named(path, path + label,
+                                         f'changed file {len(places) + 1}{label}', path)
+            places[path] = where
+            findings.extend(found)
+        return places[path]
+
+    for path in names:
+        place(path)
+    for path, first, lines in hunks:
+        where = place(path)
+        findings.extend(hunk_findings(checker, lines, where, path, first))
+        if path.lower().endswith(TEXT_TO_GIT) or (
+                first == 1 and lines and binary_signature(lines[0][1].encode('utf-8', 'replace'))):
+            binaries.append(path)
+    for path in dict.fromkeys(binaries):
+        where = place(path)
         tally.tick()
-        tally.changes += 1
-        tally.pictures += path.lower().endswith(PICTURES)
-        where, found = checker.named(path, path + label, f'changed file {number}{label}', path)
-        places[path] = where
-        findings += found
-    for path, line, text in runs:
-        findings += checker.text(text, places.get(path, path + label), path, line)
-    for path in binaries:
-        tally.tick()
-        findings += checker.data(blob(path), places.get(path, path + label), path)
+        findings.extend(checker.data(blob(path), where, path))
     return findings
 
 
 def merge_patches(root, revisions):
     """What merge commits add beyond merging cleanly: a conflict's
     resolution, or a change made while merging. Git before 2.36 cannot
-    say, so there a merge is read against its first parent."""
+    say, so there a merge is read against its first parent; and git skips
+    a merge of three or more branches (an octopus) in a remerge diff, with
+    only a warning, so those are always read against their first parent."""
     if not git(root, 'rev-list', '--merges', '-n', '1', *revisions, '--').strip():
         return ''
+    octopus = git(root, 'log', *LOG_OPTIONS, '--min-parents=3', '--format=%x01%H',
+                  '--diff-merges=first-parent', *PATCH_OPTIONS, *revisions, '--')
     for option in ('--remerge-diff', '--diff-merges=first-parent'):
         try:
-            return git(root, 'log', '--merges', '--format=%x01%H', option, *PATCH_OPTIONS,
-                       *revisions, '--')
+            return git(root, 'log', *LOG_OPTIONS, '--merges', '--max-parents=2',
+                       '--format=%x01%H', option, *PATCH_OPTIONS, *revisions,
+                       '--') + '\n' + octopus
         except SetupError:
             continue
     raise SetupError('git could not show what the merge commits change.')
+
+
+# A commit's full id, as --format=%H writes it (SHA-1 or SHA-256).
+COMMIT_ID = re.compile(r'[0-9a-f]{40}(?:[0-9a-f]{24})?')
+
+
+def commit_patches(log):
+    """(id, patch) for each commit in git log -p output written with
+    --format=%x01%H. Every line of a patch starts with a space, +, -, \\
+    or a word of its own headers, so only a line that starts with \\x01
+    starts a commit: the same byte inside a file never splits one, and
+    no line of a file is ever read as a commit's id."""
+    for chunk in ('\n' + log).split('\n\x01')[1:]:
+        sha, _, body = chunk.partition('\n')
+        if not COMMIT_ID.fullmatch(sha):
+            raise SetupError('git log wrote a line the check could not read.')
+        yield sha, body
 
 
 def commits(checker, root, revisions, tally):
     """The commits in a revision range: their messages, authors and
     committers, and the lines, files and names their changes add."""
     findings = []
-    log = git(root, 'log', '-z', '--format=%H%n%an%n%ae%n%cn%n%ce%n%B', *revisions, '--')
+    log = git(root, 'log', *LOG_OPTIONS, '-z', '--format=%H%n%an%n%ae%n%cn%n%ce%n%B',
+              *revisions, '--')
     for record in log.split('\0'):
         fields = record.split('\n', 5)
         if len(fields) < 6 or not fields[0].strip():
@@ -910,10 +2149,9 @@ def commits(checker, root, revisions, tally):
         findings += checker.identity(fields[1], fields[2], f'commit {sha} author')
         findings += checker.identity(fields[3], fields[4], f'commit {sha} committer')
         findings += checker.text(fields[5], f'commit {sha} message')
-    patches = git(root, 'log', '--no-merges', '--format=%x01%H', *PATCH_OPTIONS,
-                  *revisions, '--') + merge_patches(root, revisions)
-    for chunk in patches.split('\x01')[1:]:
-        sha, _, body = chunk.partition('\n')
+    patches = git(root, 'log', *LOG_OPTIONS, '--no-merges', '--format=%x01%H',
+                  *PATCH_OPTIONS, *revisions, '--') + '\n' + merge_patches(root, revisions)
+    for sha, body in commit_patches(patches):
         findings += read_patch(
             checker, body, f' (commit {sha[:12]})',
             lambda path, sha=sha: git(root, 'cat-file', 'blob', f'{sha}:{path}', binary=True),
@@ -922,59 +2160,181 @@ def commits(checker, root, revisions, tally):
 
 
 def tags(checker, root, objects):
-    """Annotated tags among the objects pushed: their tagger and message."""
-    findings = []
+    """Annotated tags among the objects pushed, and every tag a tag points
+    to in turn, which the push sends with it: each one's name (a renamed
+    tag keeps its first name inside), tagger and message."""
+    findings, seen = [], set()
     for name in objects:
-        if git(root, 'cat-file', '-t', name, check=False).strip() != 'tag':
-            continue
-        header, _, message = git(root, 'cat-file', 'tag', name).partition('\n\n')
-        where = f'tag object {git(root, "rev-parse", name).strip()[:12]}'
-        tagger = re.search(r'^tagger (.*) <([^>]*)>', header, re.MULTILINE)
-        if tagger:
-            findings += checker.identity(tagger.group(1), tagger.group(2), where + ' tagger')
-        findings += checker.text(message, where + ' message')
+        while git(root, 'cat-file', '-t', name, check=False).strip() == 'tag':
+            sha = git(root, 'rev-parse', name).strip()
+            if sha in seen:
+                break
+            seen.add(sha)
+            header, _, message = git(root, 'cat-file', 'tag', sha).partition('\n\n')
+            where = f'tag object {sha[:12]}'
+            tag_name = re.search(r'^tag (.*)$', header, re.MULTILINE)
+            if tag_name:
+                findings += checker.named(tag_name.group(1), '', where + ' name')[1]
+            tagger = re.search(r'^tagger (.*) <([^>]*)>', header, re.MULTILINE)
+            if tagger:
+                findings += checker.identity(tagger.group(1), tagger.group(2), where + ' tagger')
+            findings += checker.text(message, where + ' message')
+            target = re.search(r'^object ([0-9a-f]+)$', header, re.MULTILINE)
+            if not target:
+                break
+            name = target.group(1)
     return findings
 
 
+def merge_base_tree(root):
+    """While a merge waits to be committed, the tree that merging cleanly
+    gives (conflicts left as git marks them), so the commit is read for
+    what its resolution adds, as a push reads a merge (merge_patches);
+    otherwise None, and the commit is read against HEAD. Git before 2.38
+    cannot make one, and neither can a merge of several branches."""
+    heads = git(root, 'rev-parse', '--verify', '--quiet', 'MERGE_HEAD', check=False).split()
+    merging = Path(git(root, 'rev-parse', '--git-path', 'MERGE_HEAD').strip())
+    merging = merging if merging.is_absolute() else Path(root, merging)
+    try:
+        if len(heads) != 1 or len(merging.read_text(encoding='utf-8').split()) != 1:
+            return None
+    except (OSError, UnicodeDecodeError):
+        return None
+    try:
+        result = subprocess.run(
+            [*GIT, '-C', str(root), 'merge-tree', '--write-tree', '--no-messages', 'HEAD',
+             'MERGE_HEAD'], capture_output=True, timeout=300)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    tree = result.stdout.decode('ascii', 'replace').split('\n', 1)[0].strip()
+    # 0: merged cleanly; 1: with conflicts, which the tree marks.
+    return tree if result.returncode in (0, 1) and COMMIT_ID.fullmatch(tree) else None
+
+
 def staged(checker, root, tally):
-    """What the next commit would add: the index, compared with HEAD."""
-    blob = lambda path: git(root, 'cat-file', 'blob', ':' + path, binary=True)  # noqa: E731
+    """What the next commit would add: the index, compared with HEAD, or
+    while merging, with what merging cleanly gives (merge_base_tree)."""
+    # ':0:' names the index's own copy: after ':' alone, a name that
+    # starts with 0: to 3: (a Mac's 2/3 is stored as 2:3) is a stage.
+    blob = lambda path: git(root, 'cat-file', 'blob', ':0:' + path, binary=True)  # noqa: E731
     if not has_commits(root):
         return [finding for number, path in
                 enumerate(git(root, 'ls-files', '-z').split('\0'), 1) if path
                 for finding in read_file(checker, root, path, f'staged file {number}',
                                          tally, data=blob(path))]
-    return read_patch(checker, git(root, 'diff', '--cached', 'HEAD', *PATCH_OPTIONS, '--'),
+    base = merge_base_tree(root) or 'HEAD'
+    return read_patch(checker, git(root, 'diff', '--cached', base, *PATCH_OPTIONS, '--'),
                       ' (staged)', blob, tally)
 
 
 def pending(checker, root, directory, pathspecs, tally):
-    """Files a git add in the same command would stage: changed tracked
-    files and untracked files under the paths it names, read whole."""
-    findings = []
-    listing = git(directory, 'ls-files', '-z', '--full-name', '--modified', '--', *pathspecs)
-    for number, path in enumerate(listing.split('\0'), 1):
-        if path:
-            findings += read_file(checker, root, path, f'changed file {number} to be added',
-                                  tally)
-    return findings + untracked_files(checker, root, tally, pathspecs, directory)
+    """Files a git add in the same command would stage, read whole: changed
+    tracked files and untracked ones under the paths it names, and with
+    --force ignored ones too. Each pathspec is a path, named from
+    directory, or (folder, path, forced) for an add that ran in another
+    folder; an add in another repository does not feed this commit."""
+    groups = {}
+    for spec in pathspecs:
+        folder, path, forced = (directory, spec, False) if isinstance(spec, str) else spec
+        groups.setdefault((str(folder), bool(forced)), []).append(path)
+    listings = []
+    for (folder, forced), paths in groups.items():
+        if top_level(folder).resolve() != Path(root).resolve():
+            continue
+        listings.append(('changed file {} to be added',
+                         git(folder, 'ls-files', '-z', '--full-name', '--modified', '--', *paths)))
+        listings.append(('untracked file {} to be added',
+                         git(folder, 'ls-files', '-z', '--full-name', '--others',
+                             '--exclude-standard', '--', *paths)))
+        if forced:
+            listings.append(('ignored file {} to be added', git(
+                folder, 'ls-files', '-z', '--full-name', '--others', '--ignored',
+                '--exclude-standard', '--', *paths)))
+    findings, seen = [], set()
+    for hidden, listing in listings:
+        for number, path in enumerate(listing.split('\0'), 1):
+            # A link is committed as the path it points to, which need not
+            # exist, and may name a home folder.
+            if not path or path in seen or not (Path(root, path).is_symlink()
+                                               or Path(root, path).is_file()):
+                continue
+            seen.add(path)
+            tally.pictures += path.lower().endswith(PICTURES)
+            findings += read_file(checker, root, path, hidden.format(number), tally)
+    return findings
 
 
 def working_changes(checker, root, tally):
-    """Changes not yet committed: tracked files that differ from HEAD,
-    staged or not, and files git does not track yet."""
-    if not has_commits(root):
-        return tracked_files(checker, root, tally) + untracked_files(checker, root, tally)
-    findings = read_patch(checker, git(root, 'diff', 'HEAD', *PATCH_OPTIONS, '--'),
-                          ' (not committed)', lambda path: Path(root, path).read_bytes()
-                          if Path(root, path).is_file() else b'', tally)
+    """Changes not yet committed: what is staged, which the next commit
+    takes even when the file has changed again since; what is changed but
+    not staged, compared with what is staged; files a merge left in
+    conflict, read whole, as git can show them only as a combined diff;
+    and files git does not track yet."""
+    findings = staged(checker, root, tally)
+    conflicted = list(dict.fromkeys(
+        entry.partition('\t')[2] for entry in git(root, 'ls-files', '-u', '-z').split('\0')
+        if '\t' in entry))
+    for number, path in enumerate(conflicted, 1):
+        findings += read_file(checker, root, path, f'file {number} left in conflict', tally)
+    findings += read_patch(checker, git(root, 'diff', *PATCH_OPTIONS, '--', '.',
+                                        *(':(exclude,literal)' + path for path in conflicted)),
+                           ' (not committed)', lambda path: Path(root, path).read_bytes()
+                           if Path(root, path).is_file() else b'', tally)
     return findings + untracked_files(checker, root, tally)
 
 
+SCP_ADDRESS = re.compile(r'(?:[^@/:]+@)?([^/:]+):(?!//)(.+)')
+
+
+def repository_address(root, url):
+    """A repository's address written one way, so the ways git accepts
+    for the same repository compare equal: a path, relative or file://, or
+    a host and path, whatever the scheme, user or port (https, ssh, or
+    git@host:path), without a trailing / or .git. GitHub ignores the
+    case of an owner and repository's names, so they are compared in
+    lower case there."""
+    url = url.strip()
+    if '://' in url:
+        parts = urlsplit(url)
+        host, path = (parts.hostname or '').lower(), parts.path
+        if parts.scheme.lower() == 'file':
+            host = ''
+    else:
+        scp = SCP_ADDRESS.fullmatch(url)
+        host, path = (scp[1].lower(), scp[2]) if scp else ('', url)
+    if not host:
+        try:
+            return ('', str(Path(root, os.path.expanduser(path)).resolve()))
+        except (OSError, RuntimeError):
+            return ('', path)
+    path = path.strip('/')
+    path = path[:-4] if path.endswith('.git') else path
+    path = path.rstrip('/')
+    return (host, path.lower() if host == 'github.com' else path)
+
+
 def remote_exclusion(root, remote):
-    """--remotes=<remote> for a named remote; every remote for a URL."""
+    """The remote-tracking refs whose commits the remote pushed to already
+    has: --remotes=<remote> for a named remote. A push to a URL names the
+    remotes that fetch from or push to that repository, however its
+    address is written (repository_address); another remote's commits
+    may never have reached it, so with none of them, nothing is left out."""
     names = git(root, 'remote', check=False).split()
-    return [f'--remotes={remote}'] if remote in names else ['--remotes']
+    if remote in names:
+        return [f'--remotes={remote}']
+    wanted = repository_address(root, remote)
+    found = []
+    for name in names:
+        urls = set()
+        for args in (('config', '--get-all', f'remote.{name}.url'),
+                     ('config', '--get-all', f'remote.{name}.pushurl'),
+                     ('remote', 'get-url', '--all', name),
+                     ('remote', 'get-url', '--push', '--all', name)):
+            urls.update(repository_address(root, url) for url in
+                        git(root, *args, check=False).splitlines() if url.strip())
+        if wanted in urls:
+            found.append(f'--remotes={name}')
+    return found
 
 
 def outgoing(checker, root, tally):
@@ -1030,7 +2390,9 @@ def ci_revisions(root):
             not git_succeeds(root, 'merge-base', '--is-ancestor', 'HEAD', 'origin/main'):
         return ['origin/main..HEAD']
     parents = git(root, 'rev-list', '--parents', '-n', '1', 'HEAD').split()
-    return ['HEAD^1..HEAD'] if len(parents) > 2 else ['-1', 'HEAD']
+    # HEAD^! is HEAD alone: with -1, git log --merges would pick the newest
+    # older merge instead.
+    return ['HEAD^1..HEAD'] if len(parents) > 2 else ['HEAD^!']
 
 
 def ci_event(environ):
@@ -1144,8 +2506,10 @@ def advice(findings):
     for kind in dict.fromkeys(finding.kind.replace(IN_NAME, '') for finding in findings):
         if kind in FIXES:
             lines.append(FIXES[kind])
-    if any('commit ' in finding.where for finding in findings):
+    if any(MADE_COMMIT.search(finding.where) for finding in findings):
         lines.append(COMMIT_FIX)
+    elif any(finding.where.startswith('the commit ') for finding in findings):
+        lines.append(REFUSED_COMMIT_FIX)
     return ' '.join(lines + [NEVER_REPEAT])
 
 
@@ -1167,17 +2531,20 @@ def status(root, entries, counts):
     if not counts:
         print('No private list was found here: checks refuse to run without one unless '
               '--no-list is given.')
-    places, patterns = {}, Checker(entries).patterns
+    places, checker = {}, Checker(entries)
     if entries:
         for path in git(root, 'ls-files', '-z').split('\0'):
             full = Path(root, path)
             if not path or not full.is_file() or full.is_symlink():
                 continue
             data = full.read_bytes()
-            text = '\n'.join(binary_texts(data)[0]) if b'\0' in data[:8000] \
-                else data.decode('utf-8', 'replace')
-            text = unicodedata.normalize('NFC', path + '\n' + text)
-            for _, entry in Checker.matches(text, patterns):
+            texts = file_texts(data)
+            if texts is None:
+                hidden = binary_texts(data)
+                texts = hidden.exact + hidden.runs
+            else:
+                texts = texts[:1]  # one reading of a text file: no place counted twice
+            for _, entry in checker.entry_places(path + '\n' + '\n'.join(texts)):
                 places[entry] = places.get(entry, 0) + 1
     for entry in entries:
         if places.get(entry):
@@ -1203,6 +2570,12 @@ def run(options, environ, stdin):
                              f'repository secret {LIST_VARIABLE} ({DECISION}).')
         print('::warning::GitHub gives this run no secrets (a fork or Dependabot), '
               'so only the built-in patterns ran.')
+    elif not options.no_list and not entries and options.pre_push is not None:
+        # A hook takes no options, and a push must never skip it: the only
+        # way through is the list.
+        raise SetupError(NO_LIST + ' To push, the owner sets up the list as that section '
+                         'says: the file on a Mac, or the variable ' + LIST_VARIABLE + ' in a '
+                         'cloud session. Never skip this hook (--no-verify).')
     elif not options.no_list and not entries:
         raise SetupError(NO_LIST + ' Pass --no-list to check the built-in patterns alone.')
     support, findings = support_addresses(root)

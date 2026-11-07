@@ -1746,7 +1746,9 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(first_run["env"], {})
         uncommented = "\n".join(line for line in text.splitlines()
                                  if not line.lstrip().startswith("#"))
-        self.assertEqual(uncommented.count("secrets."), 1,
+        # Every way of naming the secrets context (secrets.X, secrets['X'],
+        # toJSON(secrets)) counts.
+        self.assertEqual(len(re.findall(r"\bsecrets\b", uncommented)), 1,
                          "The private list must reach the privacy step alone.")
         self.assertIn("/usr/bin/python3 -I", check["run"])
         self.assertIn("env -i ", check["run"])

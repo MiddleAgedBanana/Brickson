@@ -1,12 +1,15 @@
 #!/bin/sh
-# Before git pushes anything, look for personal and family details in what
-# the push would publish: the branch and tag names, and each new commit's
-# message, author, committer and changes, pictures' hidden text included.
-# The push stops if one is found, or if this computer has no private list
-# to check with (scripts/privacy-check.py says what to do).
+# Before git pushes anything, look for personal details in what the push
+# would publish: the branch and tag names, and each new commit's message,
+# author, committer and changes, pictures' hidden text included. The push
+# stops if one is found, or if this computer has no private list to check
+# with (scripts/privacy-check.py says what to do).
 #
 # Turn it on in a clone once; its worktrees share the setting:
 #   git config core.hooksPath .githooks
+# Git runs the copy in the branch being pushed, and says nothing when there
+# is none: a branch made before this file reached main pushes unchecked
+# until origin/main is merged into it.
 # Never push with --no-verify or another core.hooksPath: this check is how
 # the repository stays free of personal details.
 cd "$(git rev-parse --show-toplevel)" || exit 2

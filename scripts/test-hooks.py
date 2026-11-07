@@ -29,6 +29,23 @@ PRIVACY_ENVIRONMENT = {'BRICKSON_PRIVATE_WORDS': 'Quillon Vassmere',
                        'XDG_CONFIG_HOME': PRIVACY_CONFIG.name}
 HOOK_TEXT = '#!/bin/sh\nexec python3 scripts/privacy-check.py --pre-push "$1"\n'
 
+# Git's settings for the person and the machine would change what the guard
+# decides: a global core.hooksPath of .githooks, the setup line a cloud
+# session is given, turns the privacy hook on in every test repository. Git
+# reads an empty file instead, in the tests and in every guard they run.
+GIT_CONFIG = tempfile.TemporaryDirectory()
+EMPTY_GIT_CONFIG = Path(GIT_CONFIG.name, 'empty')
+EMPTY_GIT_CONFIG.write_text('')
+GIT_ENVIRONMENT = {'GIT_CONFIG_GLOBAL': str(EMPTY_GIT_CONFIG),
+                   'GIT_CONFIG_SYSTEM': str(EMPTY_GIT_CONFIG), 'GIT_CONFIG_NOSYSTEM': '1'}
+os.environ.update(GIT_ENVIRONMENT)
+
+
+def guard_environment(**overrides):
+    """The environment a guard runs in: this one, with the made-up list
+    and none of the machine's Git settings."""
+    return {**os.environ, **PRIVACY_ENVIRONMENT, **GIT_ENVIRONMENT, **overrides}
+
 
 def with_privacy_hook(repo):
     """Give a test repository the privacy hook the guard requires before
@@ -50,7 +67,7 @@ def guard_output(tool_name, tool_input, cwd, env=None):
     call = {'hook_event_name': 'PreToolUse', 'tool_name': tool_name,
             'tool_input': tool_input, 'cwd': str(cwd)}
     if env is None:
-        env = dict(os.environ, **PRIVACY_ENVIRONMENT)
+        env = guard_environment()
     result = subprocess.run([sys.executable, str(GUARD)], input=json.dumps(call),
                             capture_output=True, text=True, timeout=30, env=env)
     assert result.returncode == 0, result.stderr
@@ -1295,9 +1312,12 @@ class PrivacyGuardTests(unittest.TestCase):
         self.git('remote', 'add', 'origin', str(self.remote))
         self.git('push', '-q', 'origin', 'main')
         self.git('checkout', '-q', '-b', 'claude/topic')
+        self.env = self.environment()
+
+    def environment(self):
         # The list comes only from here: no file on this machine is read.
-        self.env = dict(os.environ, XDG_CONFIG_HOME=str(self.folder / 'config'),
-                        BRICKSON_PRIVATE_WORDS=PRIVATE_NAME + '\n')
+        return guard_environment(XDG_CONFIG_HOME=str(self.folder / 'config'),
+                                 BRICKSON_PRIVATE_WORDS=PRIVATE_NAME + '\n')
 
     def git(self, *args):
         subprocess.run(['git', '-C', str(self.repo), '-c', 'user.name=t',
@@ -1378,6 +1398,33 @@ class PrivacyGuardTests(unittest.TestCase):
         self.assertAllowed('git commit -m "Add notes"')
         self.git('commit', '-q', '-m', 'Add notes')
         self.assertAllowed('git commit --amend -m "Add the notes"')
+
+    def test_an_add_is_read_from_where_it_runs_and_as_forcefully(self):
+        sub = self.repo / 'sub'
+        sub.mkdir()
+        (sub / 'notes.md').write_text(f'one\n{PRIVATE_NAME}\n')
+        # An add that runs in another folder names paths from there.
+        for command in ['git -C sub add notes.md && git commit -m x',
+                        'cd sub && git add notes.md && cd .. && git commit -m x',
+                        'git add sub/notes.md && git -C sub commit -m x']:
+            with self.subTest(command=command):
+                self.assertIn('sub/notes.md:2:1:', self.assertDenied(command))
+        (sub / 'notes.md').unlink()
+        # An ignored file is staged only by a forced add, which must read it.
+        (self.repo / '.gitignore').write_text('build/\n')
+        self.git('add', '.gitignore')
+        self.git('commit', '-q', '-m', 'Ignore build')
+        (self.repo / 'build').mkdir()
+        (self.repo / 'build' / 'evidence.md').write_text(f'{PRIVATE_NAME}\n')
+        for command in ['git add -f build/evidence.md && git commit -m x',
+                        'git add --force build/evidence.md && git commit -m x',
+                        'git add -vf build/evidence.md && git commit -m x']:
+            with self.subTest(command=command):
+                self.assertIn('build/evidence.md:1:1:', self.assertDenied(command))
+        # Without --force git refuses to add it, so nothing is read.
+        self.assertAllowed('git add build/evidence.md && git commit -m x')
+        # An add in a folder the guard cannot know is never guessed.
+        self.assertDenied('cd "$(mktemp -d)" && git add notes.md && cd - && git commit -m x')
 
     def test_a_detail_in_a_file_s_name_is_never_shown(self):
         named = self.repo / (PRIVATE_NAME.replace(' ', '-') + '.md')
@@ -1499,6 +1546,219 @@ class PrivacyGuardTests(unittest.TestCase):
                         'base64 -d <<< "$BRICKSON_PRIVATE_WORDS"']:
             with self.subTest(command=command):
                 self.assertIn('--status', self.assertDenied(command))
+
+    def test_git_settings_outside_the_tests_do_not_change_them(self):
+        # A global core.hooksPath of .githooks, the cloud setup line, turns
+        # the hook on in every repository; the tests must not see it.
+        hostile = self.folder / 'global-config'
+        hostile.write_text('[core]\n\thooksPath = .githooks\n')
+        subprocess.run(['git', '-C', str(self.repo), 'config', '--unset', 'core.hooksPath'],
+                       check=True)
+        with patch.dict(os.environ, GIT_CONFIG_GLOBAL=str(hostile)):
+            self.env = self.environment()
+            self.assertIn('core.hooksPath .githooks',
+                          self.assertDenied('git push origin claude/topic'))
+
+    def test_a_file_the_same_command_writes_is_not_published(self):
+        # The guard reads a file before the command runs, so a file the same
+        # command writes would go out as written, unread.
+        body = self.folder / 'body.md'
+        body.write_text('ok\n')
+        request = self.folder / 'request.json'
+        request.write_text('{"body": "ok"}\n')
+        (self.repo / 'message.txt').write_text('ok\n')
+        (self.repo / 'notes.md').write_text('ok\n')
+        name = shlex.quote(PRIVATE_NAME)
+        api = 'https://api.github.com/repos/o/r/issues/1/comments'
+        for command in [
+                f"cat > {body} <<'EOF'\nThanks {PRIVATE_NAME}\nEOF\ngh pr comment 12 --body-file {body}",
+                f"printf '%s\\n' {name} >> {body} && gh pr comment 12 -F {body}",
+                f'echo {name} | tee -a {body} && gh issue create -t t --body-file={body}',
+                f'cp {self.folder}/draft.md {body}; gh pr create -t t -F {body}',
+                f'sed -i s/ok/x/ {body} && gh release create v1 --notes-file {body}',
+                f"printf '%s\\n' {name} > message.txt && git commit -F message.txt",
+                f"cat > notes.md <<'EOF'\n{PRIVATE_NAME}\nEOF\ngit add notes.md && git commit -m Add",
+                f'echo {name} > notes.md; git commit -m Add -- notes.md',
+                "python3 - <<'EOF'\nopen('notes.md', 'w').write('x')\nEOF\n"
+                'git add notes.md && git commit -m Add',
+                f'echo {name} > {request} && gh api -X POST repos/o/r/issues/1/comments --input {request}',
+                f'echo {name} > {request}; curl -q -X POST {api} -d @{request}']:
+            with self.subTest(command=command):
+                self.assertIn('in the next', self.assertDenied(command))
+        # Written in an earlier command, it is read; writing another file is fine.
+        self.assertAllowed(f'gh pr comment 12 --body-file {body}')
+        self.assertAllowed(f'date > {self.folder}/when.txt && gh pr comment 12 -F {body} 2>&1')
+        self.assertAllowed(f'echo done > {self.folder}/log.txt; git add notes.md && git commit -m Add')
+
+    def test_a_here_document_the_shell_builds_is_not_published(self):
+        # Without quotes round its delimiter, a here-document's $ and
+        # backticks run before it is published, and what they give is unread.
+        for command in ['gh pr comment 12 --body-file - <<EOF\nBy $(git log -1 --format=%an)\nEOF',
+                        'gh pr comment 12 -F - <<EOF\nThanks $NAME\nEOF',
+                        'git commit -F - <<EOF\nThanks ${NAME}\nEOF',
+                        'git commit -F - <<EOF\nBy `whoami`\nEOF']:
+            with self.subTest(command=command):
+                self.assertIn('variable or another command', self.assertDenied(command))
+        # Escaped, they are text.
+        self.assertAllowed('git commit -F - <<EOF\nCosts \\$5 and \\`x\\`.\nEOF')
+        self.assertDenied(f'git commit -F - <<EOF\nCosts \\$5, {PRIVATE_NAME}.\nEOF')
+
+    def test_stdin_is_only_the_command_s_own_here_document(self):
+        name = shlex.quote(PRIVATE_NAME)
+        draft = self.folder / 'draft.md'
+        for command in [f"cat > {draft} <<'EOF'\nsafe\nEOF\necho {name} | gh pr comment 12 -F -",
+                        f"cat <<'EOF' > {draft}\nsafe\nEOF\ngit diff | git commit -F -",
+                        "tr a-z A-Z <<'EOF' | gh pr comment 12 --body-file -\nsafe\nEOF",
+                        "gh pr comment 12 -F - 3<<'EOF'\nsafe\nEOF"]:
+            with self.subTest(command=command):
+                self.assertIn('stdin', self.assertDenied(command))
+        self.assertAllowed(f"cat > {draft} <<'EOF'\nsafe\nEOF\n"
+                           "gh pr comment 12 -F - <<'EOF'\nok\nEOF")
+        # A bare cat pipes its here-document in unchanged, and it is read.
+        self.assertAllowed("cat <<'EOF' | gh pr comment 12 --body-file -\nok\nEOF")
+        self.assertDenied(f"cat <<'EOF' | gh pr comment 12 --body-file -\n{PRIVATE_NAME}\nEOF")
+
+    def test_a_substitution_is_never_a_published_value(self):
+        for command in ['gh pr comment 12 -F <(cat notes.md)', 'git commit -F <(cat notes.md)',
+                        'gh pr comment 12 --body-file=<(cat notes.md)',
+                        'gh pr comment 12 --body $(git log -1 --format=%ae)',
+                        'gh pr comment 12 -b$(cat notes.md)', 'git commit -m $(printf x)',
+                        'gh pr create -t $((1 + 2)) -b ok']:
+            with self.subTest(command=command):
+                self.assertIn('variable or another command', self.assertDenied(command))
+        # The words after a substitution still belong to its command.
+        self.assertIn('gh pr create:1:', self.assertDenied(
+            f'gh pr create --head $(git branch --show-current) -t t -b {shlex.quote(PRIVATE_NAME)}'))
+        self.assertAllowed('gh pr create --head $(git branch --show-current) -t t -b ok')
+
+    def test_an_attached_quoted_value_is_read_whole(self):
+        # A quote that opens a word inside another (--body='a <b>') once
+        # sent the guard back to splitting at spaces, losing the text.
+        for command in [f"git commit --message='Thanks {PRIVATE_NAME} for <x>'",
+                        f"gh pr comment 12 --body='Thanks {PRIVATE_NAME} for <x>'"]:
+            with self.subTest(command=command):
+                self.assertDenied(command)
+
+    def test_escaped_dollars_and_backticks_in_double_quotes_are_text(self):
+        for command in ['git commit -m "Fix \\`HomeLayout\\` spacing"',
+                        'git commit -m "Costs \\$5 now"', 'gh pr create --title "Fix \\`x\\`" --body ok',
+                        'gh pr review 12 -cb"Costs \\$5"']:
+            with self.subTest(command=command):
+                self.assertAllowed(command)
+        self.assertDenied(f'git commit -m "Thanks \\`{PRIVATE_NAME}\\`"')
+        # An escaped backslash leaves the $ that follows it to the shell.
+        self.assertIn('variable or another command', self.assertDenied('git commit -m "Costs \\\\$5"'))
+
+    def test_a_raw_api_field_is_text_never_a_file(self):
+        comments = 'gh api -X POST repos/o/r/issues/12/comments'
+        self.assertAllowed(f"{comments} -f body='@coderabbitai review'")
+        self.assertAllowed(f"{comments} --raw-field 'body=@coderabbitai review'")
+        self.assertIn('gh api:1:', self.assertDenied(
+            f'{comments} -f ' + shlex.quote('body=@' + PRIVATE_NAME)))
+        # A typed field's @ still names a file, which must exist.
+        self.assertIn('must exist', self.assertDenied(f'{comments} -F body=@missing.md'))
+
+    def test_everything_a_commit_records_is_read(self):
+        name = shlex.quote(PRIVATE_NAME)
+        author = shlex.quote(PRIVATE_NAME + ' <q@example.com>')
+        trailer = shlex.quote(f'Co-authored-by: {PRIVATE_NAME} <q@example.com>')
+        for command in [f'git commit -m Fix --trailer {trailer}', f'git commit -m Fix --trailer={trailer}',
+                        f'git commit -m Fix --author={author}', f'git commit -m Fix --author {author}',
+                        f'git commit -sm {name}', f'git commit -qm{name}',
+                        f'git -c user.name={name} commit -m Fix',
+                        f'GIT_AUTHOR_NAME={name} git commit -m Fix']:
+            with self.subTest(command=command):
+                self.assertDenied(command)
+        # git takes a long option's unique beginning for the whole option.
+        for command in [f'git commit --mess {name}', 'git commit --fil message.txt',
+                        'git commit -m Fix --auth x']:
+            with self.subTest(command=command):
+                self.assertIn('Spell out', self.assertDenied(command))
+        self.assertAllowed("git commit -sm 'Fix the layout' "
+                           "--trailer 'Reviewed-by: Agent <noreply@anthropic.com>'")
+
+    def test_gh_short_option_clusters_are_read_as_gh_reads_them(self):
+        name = shlex.quote(PRIVATE_NAME)
+        for command in [f'gh pr review 12 -cb {name}', f'gh pr create -dt {name} -b ok',
+                        f'gh pr close 12 -dc {name}', f'gh release create v1 -dn {name}',
+                        f'gh pr review 12 -cb={name}', f'gh issue comment 3 -eb {name}']:
+            with self.subTest(command=command):
+                self.assertDenied(command)
+        self.assertAllowed("gh pr create -dt 'Add a check' -b ok")
+
+    def test_graphql_reads_publish_nothing(self):
+        read = "gh api graphql -f query='query { viewer { login } }'"
+        search = 'gh api graphql -f query=' + shlex.quote(
+            f'query {{ search(query: "{PRIVATE_NAME}", type: ISSUE, first: 5) {{ issueCount }} }}')
+        mutation = 'gh api graphql -f query=' + shlex.quote(
+            f'mutation {{ addComment(input: {{subjectId: "X", body: "{PRIVATE_NAME}"}}) {{ clientMutationId }} }}')
+        self.assertAllowed(read)
+        self.assertAllowed(search)
+        self.assertAllowed('curl -q https://api.github.com/graphql -d '
+                           + shlex.quote(json.dumps({'query': '{ viewer { login } }'})))
+        self.assertDenied(mutation)
+        query = self.folder / 'query.graphql'
+        query.write_text(f'mutation {{ addComment(input: {{subjectId: "X", body: "{PRIVATE_NAME}"}}) {{ id }} }}')
+        self.assertDenied(f'gh api graphql -F query=@{query}')
+        # Without a list, a read still runs and a write still does not.
+        self.env.pop('BRICKSON_PRIVATE_WORDS')
+        self.assertAllowed(read)
+        self.assertIn('could not run', self.assertDenied(
+            "gh api graphql -f query='mutation { addStar(input: {starrableId: \"X\"}) { clientMutationId } }'"))
+
+    def test_a_request_file_is_data_not_shell_text(self):
+        request = self.folder / 'request.json'
+        request.write_text(json.dumps({'body': 'Fixed in `HomeLayout` for $5'}))
+        api = 'https://api.github.com/repos/o/r/issues/1/comments'
+        self.assertAllowed(f'curl -q -X POST {api} -d @{request}')
+        self.assertAllowed(f'wget --no-config --post-file={request} {api}')
+        request.write_text(json.dumps({'body': f'Thanks {PRIVATE_NAME}'}))
+        self.assertDenied(f'curl -q -X POST {api} -d @{request}')
+        # Words on the command line are still the shell's.
+        self.assertIn('variable or another command', self.assertDenied(f'http POST {api} body="$X"'))
+
+    def test_declared_exports_reach_the_push_check(self):
+        for declare in ['declare -x', 'typeset -x', 'declare -gx']:
+            with self.subTest(declare=declare):
+                self.assertDenied(f'{declare} GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=core.hooksPath '
+                                  'GIT_CONFIG_VALUE_0=/dev/null; git push origin claude/topic')
+        self.assertAllowed('declare -x LANG=C; git push origin claude/topic')
+
+    def test_the_environment_is_never_printed_whole(self):
+        # It may hold the list (BRICKSON_PRIVATE_WORDS, in a cloud session).
+        for command in ['printenv', 'printenv | sort', 'env', 'env | grep -i words', 'env -0',
+                        'sudo env', 'printenv > env.txt', 'export -p', 'export', 'declare -p',
+                        'declare -x', 'typeset -px', 'set', 'set | less', 'cat /proc/self/environ',
+                        "tr '\\0' '\\n' < /proc/$$/environ"]:
+            with self.subTest(command=command):
+                self.assertIn('whole environment', self.assertDenied(command))
+        # Nor are globs that could reach the list.
+        for command in ['cat ~/.config/brick*/private-words.txt', 'cat ~/.config/*/private-words.txt',
+                        'ls ~/.config/*', 'grep -r x ~/.config/b*', 'cat "$XDG_CONFIG_HOME"/brickson/x',
+                        'cat $XDG_CONFIG_HOME/*/*', 'declare -p BRICKSON_PRIVATE_WORDS']:
+            with self.subTest(command=command):
+                self.assertIn('--status', self.assertDenied(command))
+        for command in ['printenv HOME', 'env FOO=1 git status', 'env -u FOO git status',
+                        'set -euo pipefail', 'export FOO=1', 'declare -f', 'ls ~/.config/gh',
+                        'cat ~/.config/*/hosts.yml']:
+            with self.subTest(command=command):
+                self.assertAllowed(command)
+
+    def test_labels_and_gists_publish_their_names_and_descriptions(self):
+        body = self.folder / 'body.md'
+        body.write_text('ok\n')
+        name = shlex.quote(PRIVATE_NAME)
+        for command in [f'gh label create {name} --description x --color 000000',
+                        f'gh label edit bug --description {name}', f'gh label edit bug -n {name}',
+                        f'gh gist create --desc={name} {body}', f'gh gist create -d {name} {body}',
+                        f"gh gist create -f {name} - <<'EOF'\nok\nEOF", f'gh gist edit abc123 -d {name}']:
+            with self.subTest(command=command):
+                self.assertDenied(command)
+        for command in [f"gh gist create -d 'Notes' {body}", f"gh gist create --desc 'Notes' -p {body}",
+                        'gh gist edit abc123 -r old.md -d Notes', 'gh label create bug -c 000000 -d Bugs',
+                        f'gh gist create {body} 2>/dev/null']:
+            with self.subTest(command=command):
+                self.assertAllowed(command)
 
 
 class SettingsTests(unittest.TestCase):

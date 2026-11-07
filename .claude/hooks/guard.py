@@ -21,11 +21,16 @@ It denies:
 - a GitHub tool that writes a file straight onto main;
 - publishing a personal detail: before a commit, and before text goes to
   GitHub through gh, the GitHub API or a GitHub tool, it runs
-  scripts/privacy-check.py over what would be published (the message, the
-  staged changes and the files the command adds, the text sent) and
-  refuses what it finds, naming places and kinds, never the words; a push
-  must run the privacy hook in .githooks/pre-push, which reads what the
-  push carries, and reading the private list is refused.
+  scripts/privacy-check.py over what would be published (the message,
+  trailers and author, the staged changes and the files the command adds,
+  the text sent) and refuses what it finds, naming places and kinds, never
+  the words. What it cannot read before the command runs is refused too:
+  text the shell builds from a variable or another command, stdin that is
+  not a here-document given to that command, and a file the same command
+  writes. A push must run the privacy hook in .githooks/pre-push, which
+  reads what the push carries; reading the private list, a glob that could
+  reach it, and printing the whole environment, which may hold it, are
+  refused.
 
 This is a guard against mistakes, not a sandbox: a determined command can
 get around it, and it covers Claude Code sessions only. Codex, Jules and the
@@ -115,31 +120,100 @@ LIST_READ = ('The private list is the owner\'s and stays unread: check with pyth
              'scripts/privacy-check.py --status, which never prints it (' + PRIVACY_DECISION + ').')
 PUBLISHED_EXPANSION = ('Text this command publishes comes from a variable or another command, '
                        'which the privacy check cannot read. Write it in the command, in a '
-                       "quoted here-document ($(cat <<'EOF' ... EOF)), or in a file passed "
-                       'with -F, --file or --body-file.')
+                       "quoted here-document (\"$(cat <<'EOF' ... EOF)\", or <<'EOF' for "
+                       'stdin), or in a file passed with -F, --file or --body-file.')
 PUBLISHED_FILE = ('A file this command publishes must exist before the command runs, so the '
                   'privacy check can read it: write it in an earlier command.')
 PUBLISHED_STDIN = ('Text this command reads from stdin can be checked only from a '
-                   'here-document in the same command; pass a file instead.')
-LIST_REFERENCE = re.compile(r'\.config/brickson|\$\{?BRICKSON_PRIVATE_WORDS'
-                            r'|printenv\s+BRICKSON_PRIVATE_WORDS')
+                   'here-document given to that command itself, not through a pipe or '
+                   'another redirection; pass a file instead.')
+WRITTEN_FILE = ('This command writes a file that it also publishes, sends or commits, so the '
+                'privacy check would read the file before the command changes it. Write the '
+                'file in one command, then publish or commit it in the next.')
+ENVIRONMENT_DUMP = ('This would print the whole environment, which may hold the private list. '
+                    'Name the variables you need instead (printenv HOME); the list is the '
+                    "owner's and stays unread (" + PRIVACY_DECISION + ').')
+# The list's own path and name, and the globs that could reach its file.
+LIST_REFERENCE = re.compile(r'\.config/[^/\s]*brick|private-words|\$\{?BRICKSON_PRIVATE_WORDS'
+                            r'|printenv\s+BRICKSON_PRIVATE_WORDS|XDG_CONFIG_HOME\}?["\']?/[^/\s]*brick'
+                            r'|\b(?:declare|typeset)\b[^;&|\n]*\bBRICKSON_PRIVATE_WORDS\b')
+CONFIG_FOLDER = re.compile(r'(?:\.config|XDG_CONFIG_HOME\}?)["\']?/([^/\s"\';&|()<>]*)'
+                           r'(?:/([^/\s"\';&|()<>]*))?')
+PROCESS_ENVIRONMENT = re.compile(r'/proc/\S*environ')
 # A here-document whose delimiter is quoted is literal text.
 QUOTED_HERE_DOCUMENT = re.compile(
     r"\$\(\s*cat\s+<<-?\s*(['\"])(\w+)\1[^\n]*\n(.*?)\n\s*\2\s*\)", re.DOTALL)
 # A $ that starts an expansion, or a backtick.
 EXPANSION_START = re.compile(r'\$[A-Za-z_{(@*#?!$0-9-]|`')
 PRIVACY_SECONDS = 6
-# Bodies of here-documents fed to commands that are not shells: data, which
-# a command may publish through stdin (git commit -F -, --body-file -).
+# Here-documents fed to commands that are not shells: data, which the
+# command they are given to may publish through stdin (git commit -F -,
+# --body-file -). Each is a dict: its text as the shell passes it, whether
+# the shell builds part of it, and whether it is that command's stdin. In
+# the command, a marker word stands where its <<DELIMITER was, so that only
+# that command reads it.
 HERE_DOCUMENTS = []
+HERE_MARK = ''
+# An unquoted $(...) is kept whole inside its word while the command is
+# split into words, as a quoted one is: split at its parentheses, it would
+# leave its command an empty value and cut off the words after it.
+SUBSTITUTION_MARK = ''
+# Files a request reads (curl -d @file, gh api --input): the same command
+# must not write them first.
+REQUEST_FILES = []
 PRIVACY_SCRIPT = Path(__file__).resolve().parents[2] / 'scripts' / 'privacy-check.py'
-# gh commands that put text on GitHub: a pull request's or an issue's title,
-# body or comment, a review, a release, a gist or a repository description.
-GH_PUBLISHES = {('pr', 'create'), ('pr', 'edit'), ('pr', 'comment'), ('pr', 'review'),
-                ('pr', 'close'), ('issue', 'create'), ('issue', 'edit'),
-                ('issue', 'comment'), ('issue', 'close'), ('release', 'create'),
-                ('release', 'edit'), ('gist', 'create'), ('gist', 'edit'),
-                ('repo', 'create'), ('repo', 'edit')}
+# gh commands that put text on GitHub, with the options gh reads text from
+# and those it reads a file of text from. A short option is its letter.
+# Short options cluster as gh's flag parser reads them (-cb text): a
+# letter not named here is a switch, and the first named one takes the
+# rest of the word or the next word.
+GH_PUBLISHES = {
+    ('pr', 'create'): ({'--title', '--body', 't', 'b'}, {'--body-file', 'F'}),
+    ('pr', 'edit'): ({'--title', '--body', 't', 'b'}, {'--body-file', 'F'}),
+    ('pr', 'comment'): ({'--body', 'b'}, {'--body-file', 'F'}),
+    ('pr', 'review'): ({'--body', 'b'}, {'--body-file', 'F'}),
+    ('pr', 'close'): ({'--comment', 'c'}, set()),
+    ('issue', 'create'): ({'--title', '--body', 't', 'b'}, {'--body-file', 'F'}),
+    ('issue', 'edit'): ({'--title', '--body', 't', 'b'}, {'--body-file', 'F'}),
+    ('issue', 'comment'): ({'--body', 'b'}, {'--body-file', 'F'}),
+    ('issue', 'close'): ({'--comment', 'c'}, set()),
+    ('release', 'create'): ({'--title', '--notes', 't', 'n'}, {'--notes-file', 'F'}),
+    ('release', 'edit'): ({'--title', '--notes', 't', 'n'}, {'--notes-file', 'F'}),
+    # A gist's files are its operands (gh gist edit's second), or stdin for -.
+    ('gist', 'create'): ({'--desc', '--filename', 'd', 'f'}, set()),
+    ('gist', 'edit'): ({'--desc', '--filename', 'd', 'f'}, {'--add', 'a'}),
+    ('repo', 'create'): ({'--description', '--homepage', 'd', 'h'}, set()),
+    ('repo', 'edit'): ({'--description', '--homepage', 'd', 'h'}, set()),
+    # A label's name is its first operand.
+    ('label', 'create'): ({'--description', '--color', 'd', 'c'}, set()),
+    ('label', 'edit'): ({'--description', '--color', '--name', 'd', 'c', 'n'}, set()),
+}
+# Options of those commands that take a value which is not published, where
+# their operands matter: gh gist edit --remove names a file to drop.
+GH_OTHER_VALUES = {('gist', 'edit'): {'--remove', 'r'}}
+# gh api's options that take a value.
+GH_API_VALUES = {'--method', 'X', '--field', 'F', '--raw-field', 'f', '--input', '--header',
+                 'H', '--jq', 'q', '--template', 't', '--preview', 'p', '--cache', '--hostname'}
+# The shell's redirections; the word after each is a file or a descriptor.
+REDIRECTIONS = {'>', '>>', '<', '<>', '>|', '>&', '<&', '&>', '&>>', '<<<'}
+WRITE_REDIRECTIONS = {'>', '>>', '<>', '>|', '>&', '&>', '&>>'}
+# Programs that write the files they are given.
+FILE_WRITERS = {'tee', 'cp', 'mv', 'install', 'ln', 'rsync', 'ditto'}
+INTERPRETERS = re.compile(r'(?:python[0-9.]*|node|ruby|perl|osascript)')
+# The long options git commit takes, so that an abbreviation of one, which
+# git accepts as the whole option, is refused (--mess is --message).
+COMMIT_LONG = COMMIT_VALUE_LONG | {
+    '--all', '--allow-empty', '--allow-empty-message', '--amend', '--branch', '--dry-run',
+    '--edit', '--gpg-sign', '--include', '--interactive', '--long', '--no-edit',
+    '--no-gpg-sign', '--no-post-rewrite', '--no-signoff', '--no-status', '--no-verify',
+    '--null', '--only', '--patch', '--pathspec-file-nul', '--porcelain', '--quiet',
+    '--reset-author', '--short', '--signoff', '--status', '--untracked-files', '--verbose',
+    '--verify'}
+# Settings and environment variables that name a commit's author or committer.
+IDENTITY_SETTINGS = {'user.name', 'user.email', 'author.name', 'author.email',
+                     'committer.name', 'committer.email'}
+IDENTITY_VARIABLES = ('GIT_AUTHOR_NAME', 'GIT_AUTHOR_EMAIL', 'GIT_COMMITTER_NAME',
+                      'GIT_COMMITTER_EMAIL')
 # GitHub tools whose text is published, and those that write files.
 TOOLS_PUBLISH = {'create_pull_request', 'update_pull_request', 'issue_write', 'create_issue',
                  'update_issue', 'add_issue_comment', 'update_issue_comment',
@@ -193,17 +267,77 @@ def without_shell_comments(command):
     return ''.join(result)
 
 
+def substitution_end(text, start):
+    """The index just past the ) that closes the $( before start, or None
+    when it is not closed. Quotes, nested $( and ( are followed."""
+    index, quote, stack = start, None, [None]
+    while index < len(text) and stack:
+        char = text[index]
+        if char == '\\' and quote != "'":
+            index += 2
+            continue
+        if text.startswith('$(', index) and quote != "'":
+            stack.append(quote)
+            quote = None
+            index += 2
+            continue
+        if quote:
+            if char == quote:
+                quote = None
+        elif char in ('"', "'", '`'):
+            quote = char
+        elif char == '(':
+            stack.append(None)
+        elif char == ')':
+            quote = stack.pop()
+        index += 1
+    return None if stack else index
+
+
+def protect_substitutions(command):
+    """Stand a marker in for each unquoted, closed $(...), and return the
+    command and what the markers stand for. The lexer would split one at
+    its parentheses, leaving its command an empty value and cutting the
+    words after it off from that command; kept whole, it stays in its word
+    as a double-quoted one does, and nested() reads its command."""
+    output, saved, index, quote = [], [], 0, None
+    while index < len(command):
+        char = command[index]
+        if char == '\\' and quote != "'":
+            output.append(command[index:index + 2])
+            index += 2
+            continue
+        if quote:
+            if char == quote:
+                quote = None
+        elif char in ('"', "'"):
+            quote = char
+        elif command.startswith('$(', index):
+            end = substitution_end(command, index + 2)
+            if end is not None:
+                saved.append(command[index:end])
+                output.append(f'{SUBSTITUTION_MARK}{len(saved) - 1}{SUBSTITUTION_MARK}')
+                index = end
+                continue
+        output.append(char)
+        index += 1
+    return ''.join(output), saved
+
+
 def segments(command, preserve_quotes=False):
     """Split into (words, preceding separator), keeping && and || for cd.
     Words inside $(...), `...` and sh -c '...' are split in turn."""
-    lexer = shlex.shlex(without_shell_comments(command.replace('\\\n', ' ')), posix=not preserve_quotes,
-                        punctuation_chars=';&|()<>\n')
+    text, saved = protect_substitutions(without_shell_comments(command.replace('\\\n', ' ')))
+    lexer = shlex.shlex(text, posix=not preserve_quotes, punctuation_chars=';&|()<>\n')
     lexer.whitespace = ' \t\r'
     lexer.whitespace_split = True
     lexer.commenters = ''
     current = []
     separator = ';'
+    marker = re.compile(SUBSTITUTION_MARK + r'(\d+)' + SUBSTITUTION_MARK)
     for word in lexer:
+        if saved:
+            word = marker.sub(lambda match: saved[int(match[1])], word)
         if word in ('<(', '>('):
             if current:
                 yield current, separator
@@ -290,31 +424,11 @@ def nested(words):
     for word in words:
         cursor = 0
         while (start := word.find('$(', cursor)) >= 0:
-            index, quote, stack = start + 2, None, [None]
-            while index < len(word) and stack:
-                char = word[index]
-                if char == '\\' and quote != "'":
-                    index += 2
-                    continue
-                if word.startswith('$(', index) and quote != "'":
-                    stack.append(quote)
-                    quote = None
-                    index += 2
-                    continue
-                if quote:
-                    if char == quote:
-                        quote = None
-                elif char in ('"', "'", '`'):
-                    quote = char
-                elif char == '(':
-                    stack.append(None)
-                elif char == ')':
-                    quote = stack.pop()
-                index += 1
-            if stack:
+            end = substitution_end(word, start + 2)
+            if end is None:
                 deny(UNKNOWN)
-            found.append(word[start + 2:index - 1])
-            cursor = index
+            found.append(word[start + 2:end - 1])
+            cursor = end
     # Unquoted backtick commands span several whitespace-separated words.
     found += re.findall(r'`([^`]*)`', ' '.join(words))
     return found
@@ -558,6 +672,21 @@ def check_add(args):
     check_paths(paths)
 
 
+def add_forces(args):
+    """Whether a git add is forced (-f, --force, or -f in a cluster), so
+    it stages ignored files too."""
+    for arg in args:
+        if arg == '--':
+            break
+        if arg.startswith('--'):
+            option = arg.partition('=')[0]
+            if len(option) > 3 and '--force'.startswith(option):
+                return True
+        elif arg.startswith('-') and 'f' in arg[1:]:
+            return True
+    return False
+
+
 def check_commit(args):
     paths = []
     index = 0
@@ -566,6 +695,8 @@ def check_commit(args):
         if arg == '--':
             paths.extend(args[index + 1:])
             break
+        # git takes a long option's unique beginning for the whole option.
+        require_full_options(arg, COMMIT_LONG)
         if arg in ('--all', '-a'):
             deny(STAGE_ALL)
         if arg == '--pathspec-from-file' or arg.startswith('--pathspec-from-file='):
@@ -726,6 +857,7 @@ def request_file(filename, cwd):
     """Read a bounded regular file, never stdin, devices or a pipe."""
     if filename == '-':
         deny(UNKNOWN)
+    REQUEST_FILES.append((cwd, filename))  # the same command must not write it first
     if cwd is None:
         deny(UNKNOWN)
     path = os.path.join(cwd, os.path.expanduser(filename))
@@ -960,31 +1092,104 @@ def check_gh(words, cwd, environment, git_state=None):
                 deny(COPILOT)
 
 
+def without_redirections(words):
+    """The words a program is given: the shell's redirections, and the file
+    or descriptor each names, taken out."""
+    kept, index = [], 0
+    while index < len(words):
+        if words[index] in REDIRECTIONS:
+            index += 2
+        elif (words[index].isdigit() and index + 1 < len(words)
+              and words[index + 1] in REDIRECTIONS):
+            index += 1  # 2>/dev/null: the 2 names a descriptor
+        else:
+            kept.append(words[index])
+            index += 1
+    return kept
+
+
+def gh_arguments(args, value_options):
+    """Read a gh command's words as gh's flag parser does: (option, value)
+    for each option in value_options, and the operands. A short option is
+    its letter, and short options cluster: a letter not in value_options is
+    a switch, and the first one in it takes the rest of the word (after an
+    optional =) or the next word, so -cb text gives b the text."""
+    pairs, operands, index, options = [], [], 0, True
+    args = without_redirections(args)
+    while index < len(args):
+        word = args[index]
+        if not options or word == '-' or not word.startswith('-'):
+            operands.append(word)
+        elif word == '--':
+            options = False
+        elif word.startswith('--'):
+            option, equal, value = word.partition('=')
+            if option in value_options:
+                if equal:
+                    pairs.append((option, value))
+                elif index + 1 < len(args):
+                    index += 1
+                    pairs.append((option, args[index]))
+        else:
+            for offset, letter in enumerate(word[1:], 1):
+                if letter in value_options:
+                    rest = word[offset + 1:]
+                    if rest:
+                        pairs.append((letter, rest[1:] if rest.startswith('=') else rest))
+                    elif index + 1 < len(args):
+                        index += 1
+                        pairs.append((letter, args[index]))
+                    break
+        index += 1
+    return pairs, operands
+
+
 def note_gh_text(plain, cwd, git_state):
     """The text a gh command puts on GitHub: titles, bodies, comments,
-    notes and descriptions, the files they come from, a gist's files and
-    an API write's fields and input."""
+    notes, descriptions and names, the files they come from, a gist's files
+    and an API write's fields and input."""
     command = tuple(plain[:2])
     if command in GH_PUBLISHES:
-        args = plain[2:]
-        files = list(option_values(args, {'--body-file', '--notes-file'}, {'-F'}))
-        if command[0] == 'gist':
-            files += [word for word in args if not word.startswith('-')]
-        note_published(git_state, 'gh ' + ' '.join(command), option_values(
-            args, {'--title', '--body', '--comment', '--notes', '--description'},
-            {'-t', '-b', '-c', '-n', '-d'}), files, cwd)
+        texts, files = GH_PUBLISHES[command]
+        pairs, operands = gh_arguments(plain[2:], texts | files | GH_OTHER_VALUES.get(command, set()))
+        values = [value for option, value in pairs if option in texts]
+        names = [value for option, value in pairs if option in files]
+        if command == ('gist', 'create'):
+            names += operands
+        elif command == ('gist', 'edit'):
+            names += operands[1:2]  # the first is the gist
+        elif command[0] == 'label':
+            values += operands[:1]
+        note_published(git_state, 'gh ' + ' '.join(command), values, names, cwd)
     elif command[:1] == ('api',):
-        methods = list(option_values(plain, {'--method'}, {'-X'}))
-        fields = list(option_values(plain, {'--field', '--raw-field'}, {'-f', '-F'}))
-        method = methods[-1].upper() if methods else ('POST' if fields or list(
-            option_values(plain, {'--input'})) else 'GET')
-        if method not in ('GET', 'HEAD'):
-            values = [field.partition('=')[2] for field in fields
-                      if not field.partition('=')[2].startswith('@')]
-            files = [field.partition('=')[2][1:] for field in fields
-                     if field.partition('=')[2].startswith('@')]
-            note_published(git_state, 'gh api', values,
-                           files + list(option_values(plain, {'--input'})), cwd)
+        pairs, operands = gh_arguments(plain[1:], GH_API_VALUES)
+        methods = [value for option, value in pairs if option in ('--method', 'X')]
+        raw = [value for option, value in pairs if option in ('--raw-field', 'f')]
+        typed = [value for option, value in pairs if option in ('--field', 'F')]
+        inputs = [value for option, value in pairs if option == '--input']
+        method = methods[-1].upper() if methods else ('POST' if raw or typed or inputs else 'GET')
+        if method in ('GET', 'HEAD'):
+            return
+        # A raw field is always text; a typed field's @ names a file (gh api
+        # --help), as --input does.
+        values = [field.partition('=')[2] for field in raw]
+        values += [field.partition('=')[2] for field in typed
+                   if not field.partition('=')[2].startswith('@')]
+        files = [field.partition('=')[2][1:] for field in typed
+                 if field.partition('=')[2].startswith('@')] + inputs
+        if 'graphql' in api_paths(operands) and graphql_read(
+                [literal_text(value, git_state) for value in values]
+                + [text for name in files for text in published_files(name, cwd, git_state)]):
+            return
+        note_published(git_state, 'gh api', values, files, cwd)
+
+
+def graphql_read(texts):
+    """Whether a GraphQL request only reads: it writes only through a
+    mutation, which needs the word, and none of its text (texts) holds it.
+    A text the shell builds (None) could hold anything."""
+    return None not in texts and not any(re.search(r'mutation', text, re.IGNORECASE)
+                                         for text in texts)
 
 
 def parsed_url(word):
@@ -1395,6 +1600,8 @@ def inspectable_here_documents(command):
             raw = match[2]
             delimiter = shlex.split(ansi_c_quotes(raw))[0]
             quoted = any(char in raw for char in "'\"\\")
+            # 3<<EOF feeds descriptor 3, not stdin.
+            descriptor = re.search(r'(?<![\w$])(\d+)$', line[:match.start()])
             body = []
             while index < len(lines):
                 candidate = lines[index]
@@ -1404,7 +1611,8 @@ def inspectable_here_documents(command):
                 if candidate.rstrip('\r\n') == delimiter:
                     break
                 body.append(candidate)
-            bodies.append((''.join(body), quoted))
+            bodies.append((''.join(body), quoted,
+                           descriptor is None or int(descriptor[1]) == 0))
         parts = list(segments(header))
         shell_parts = [words for words, _ in parts
                        if (unwrapped := strip_wrappers(words)[0])
@@ -1418,7 +1626,7 @@ def inspectable_here_documents(command):
         if shell_parts:
             if len(parts) != 1 or len(bodies) != 1:
                 deny(UNKNOWN)
-            body, quoted = bodies[0]
+            body, quoted, _ = bodies[0]
             if not quoted:
                 expanded = re.sub(r'\\([$`\\])', lambda m: '\uffff' if m[1] != '\\' else '\\', body)
                 for inner in nested([expanded]):
@@ -1428,9 +1636,16 @@ def inspectable_here_documents(command):
                     body = body.replace('$(' + inner + ')', '').replace('`' + inner + '`', '')
             output.append(header.rstrip() + ' -c ' + shlex.quote(body) + '\n')
         else:
-            output.append(header.rstrip() + '\n')
-            for body, quoted in bodies:
-                HERE_DOCUMENTS.append(body)
+            # A marker stands where each <<DELIMITER was, so that only the
+            # command it is given to can read it as stdin.
+            marked = line
+            for number, match in reversed(list(enumerate(matches))):
+                marked = (marked[:match.start()] + f' {HERE_MARK}{len(HERE_DOCUMENTS) + number} '
+                          + marked[match.end():])
+            output.append(marked.rstrip() + '\n')
+            for body, quoted, stdin in bodies:
+                text, built = here_document_text(body, quoted)
+                HERE_DOCUMENTS.append({'text': text, 'built': built, 'stdin': stdin})
                 if not quoted:
                     # Escaped dollars/backticks in an unquoted here-doc are
                     # literal text, while unescaped substitutions execute.
@@ -1447,14 +1662,67 @@ def changed_directory(cwd, destination):
     return os.path.join(cwd, destination) if cwd is not None else None
 
 
-def published_files(filename, cwd):
+def here_document_text(body, quoted):
+    """The text a here-document gives, and whether the shell builds part of
+    it. With its delimiter quoted, the body is the text. Without, the shell
+    runs its unescaped $ and backticks first, and drops the backslash of
+    \\$, \\`, \\\\ and a line's end."""
+    if quoted:
+        return body, False
+    text, built, index = [], False, 0
+    while index < len(body):
+        char = body[index]
+        if char == '\\' and body[index + 1:index + 2] in ('$', '`', '\\', '\n'):
+            if body[index + 1] != '\n':
+                text.append(body[index + 1])
+            index += 2
+            continue
+        built = built or bool(EXPANSION_START.match(body, index))
+        text.append(char)
+        index += 1
+    return ''.join(text), built
+
+
+def without_here_marks(parts):
+    """Take the here-document markers out of each part's words, and say
+    which here-documents each part was given."""
+    words, given = [], []
+    for part, separator in parts:
+        words.append(([word for word in part if not word.startswith(HERE_MARK)], separator))
+        given.append([int(word[1:]) for word in part if word.startswith(HERE_MARK)])
+    return words, given
+
+
+def stdin_document(parts, given, index):
+    """The here-document the command parts[index] reads as stdin: the last
+    one given to it for descriptor 0, or the one a bare cat before it pipes
+    in (cat <<'EOF' | gh pr comment 12 -F -). None when it reads another
+    pipe or redirection, or was given none: the guard cannot read those
+    before the command runs."""
+    words, separator = parts[index]
+    if any(word in ('<', '<>', '<&', '<<<') for word in words):
+        return None
+    if separator in ('|', '|&'):
+        if separator == '|' and index > 0 and parts[index - 1][0] == ['cat']:
+            return stdin_document(parts, given, index - 1)
+        return None
+    documents = [number for number in given[index] if HERE_DOCUMENTS[number]['stdin']]
+    return documents[-1] if documents else None
+
+
+def published_files(filename, cwd, git_state=None):
     """The text of a file a command publishes (a commit message, a body):
-    from a here-document in the same command for stdin, otherwise a
+    from the here-document given to that command for stdin, otherwise a
     bounded regular file that exists before the command runs."""
     if filename == '-':
-        if not HERE_DOCUMENTS:
+        number = (git_state or {}).get('stdin')
+        if number is None:
             deny(PUBLISHED_STDIN)
-        return list(HERE_DOCUMENTS)
+        if HERE_DOCUMENTS[number]['built']:
+            deny(PUBLISHED_EXPANSION)
+        return [HERE_DOCUMENTS[number]['text']]
+    if git_state is not None:
+        git_state.setdefault('read_files', []).append((cwd, filename))
     if cwd is None:
         deny(PUBLISHED_FILE)
     path = os.path.join(cwd, os.path.expanduser(filename))
@@ -1514,32 +1782,49 @@ def literal_words(command):
     return words
 
 
-def expanded(value, git_state):
-    """Whether the shell builds value from a variable or another command:
-    it holds a $ or backtick outside a quoted here-document read with cat,
-    and is not, or does not end, a word in which they are text."""
+def literal_text(value, git_state):
+    """The text the shell passes for value, or None when it builds value
+    from a variable or another command: value holds a $ or backtick outside
+    a quoted here-document read with cat, and is not, or does not end, a
+    word in which they are text. Inside double quotes the shell drops the
+    backslash of \\$ and \\`, which the guard's word splitting keeps."""
     if not EXPANSION_START.search(QUOTED_HERE_DOCUMENT.sub('', value)):
-        return False
-    for word in git_state.get('literal_words', ()):
-        if (word == value or word.endswith('=' + value)
-                or (re.match(r'-[^-]', word) and word[2:].lstrip('=') == value)):
-            return False
-    return True
+        return value
+    for candidate in dict.fromkeys([value, re.sub(r'\\([$`])', r'\1', value)]):
+        for word in git_state.get('literal_words', ()):
+            if not word.endswith(candidate):
+                continue
+            # The whole word, an option's or a field's value after =, or a
+            # short option's attached value, after any switches (-cbtext).
+            prefix = word[:len(word) - len(candidate)]
+            if not prefix or prefix.endswith('=') or re.fullmatch(r'-[A-Za-z]+=?', prefix):
+                return candidate
+    return None
 
 
-def note_published(git_state, label, values=(), files=(), cwd=None):
-    """Remember text a command would publish, for check_privacy. Text the
+def note_published(git_state, label, values=(), files=(), cwd=None, texts=()):
+    """Remember text a command would publish, for check_privacy: values are
+    the shell's words, files name files (or - for stdin) the command reads
+    its text from, and texts are data already read, such as a request
+    file's content, in which a $ or a backtick is only text. A word the
     shell would build from a variable or another command is refused: what
     it becomes cannot be read here."""
-    texts = git_state.setdefault('published', [])
+    published = git_state.setdefault('published', [])
     for value in values:
-        value = str(value)
-        if expanded(value, git_state):
+        text = literal_text(str(value), git_state)
+        if text is None:
             deny(PUBLISHED_EXPANSION)
         # A quoted here-document read with cat publishes its body.
-        texts.append((label, QUOTED_HERE_DOCUMENT.sub(lambda match: match[3], value)))
+        published.append((label, QUOTED_HERE_DOCUMENT.sub(lambda match: match[3], text)))
     for filename in files:
-        texts.extend((label + ' file', text) for text in published_files(filename, cwd))
+        filename = str(filename)
+        # A process substitution, or a name the shell builds, names nothing
+        # the guard can read before the command runs.
+        if filename.startswith(('<(', '>(')) or literal_text(filename, git_state) is None:
+            deny(PUBLISHED_EXPANSION)
+        published.extend((label + ' file', text)
+                         for text in published_files(filename, cwd, git_state))
+    published.extend((label, str(text)) for text in texts)
     git_state['publishes'] = True
 
 
@@ -1552,17 +1837,59 @@ def effective_directory(context):
     return cwd
 
 
+def commit_options(args):
+    """(option, value) for each git commit option that takes a value, read
+    as git reads them: --long=value or --long value, and short clusters in
+    which the first letter that takes a value takes the rest of the word or
+    the next word (-sm text)."""
+    pairs, index = [], 0
+    while index < len(args):
+        arg = args[index]
+        if arg == '--':
+            break
+        if arg.startswith('--'):
+            option, equal, value = arg.partition('=')
+            if option in COMMIT_VALUE_LONG:
+                if equal:
+                    pairs.append((option, value))
+                elif index + 1 < len(args):
+                    index += 1
+                    pairs.append((option, args[index]))
+        elif arg.startswith('-'):
+            for offset, letter in enumerate(arg[1:], 1):
+                if letter in COMMIT_VALUE_SHORT:
+                    # -S's optional key must be attached.
+                    if arg[offset + 1:]:
+                        pairs.append(('-' + letter, arg[offset + 1:]))
+                    elif letter != 'S' and index + 1 < len(args):
+                        index += 1
+                        pairs.append(('-' + letter, args[index]))
+                    break
+        index += 1
+    return pairs
+
+
 def note_commit(git_state, args, context, paths):
-    """Remember a commit: its message, the files it reads it from, and the
-    repository whose staged changes and added paths it would take."""
+    """Remember a commit: what it records (its message and trailers, the
+    files it reads a message from, an author or committer it is given), and
+    the repository whose staged changes and added paths it would take."""
     directory = effective_directory(context)
+    _, options, environment = context
+    pairs = commit_options(args)
     note_published(git_state, 'the commit message',
-                   option_values(args, {'--message'}, {'-m'}),
-                   option_values(args, {'--file'}, {'-F'}), directory)
-    if directory is None:
+                   [value for option, value in pairs if option in ('-m', '--message', '--trailer')],
+                   [value for option, value in pairs if option in ('-F', '--file', '-t', '--template')],
+                   directory)
+    identity = [value for option, value in pairs if option == '--author']
+    identity += [setting.partition('=')[2] for option, setting in zip(options, options[1:])
+                 if option == '-c' and setting.partition('=')[0].lower() in IDENTITY_SETTINGS]
+    identity += [environment[key] for key in IDENTITY_VARIABLES if environment.get(key)]
+    note_published(git_state, 'the commit author', identity)
+    adds = git_state.get('adds', [])
+    if directory is None or any(folder is None for folder, _, _ in adds):
         deny(UNKNOWN)
     git_state.setdefault('commits', []).append(
-        (directory, [*git_state.get('adds', []), *paths]))
+        (directory, [*adds, *((directory, path, False) for path in paths)]))
 
 
 def check_push_hook(options, context):
@@ -1588,6 +1915,157 @@ def check_push_hook(options, context):
         deny(HOOK_OFF)
 
 
+def inline_code(args):
+    """Whether an interpreter is given its code on the command line (-c,
+    -e) or on stdin, rather than a script file."""
+    if any(arg in ('-', '--eval', '--print') or re.fullmatch(r'-[a-zA-Z]*[ceEp]', arg)
+           for arg in args):
+        return True
+    return not [arg for arg in args if not arg.startswith('-')]
+
+
+def note_writes(git_state, words, raw_words, unwrapped, shell_cwd, cwd):
+    """Remember the files a command writes, as (directory, path), with None
+    for a path the guard cannot name: the shell's > and >> targets, the
+    files tee, cp, mv and the like are given, sed -i and perl -i, dd of=,
+    curl and wget downloads, and a patch or an interpreter's inline code,
+    which may write anything."""
+    writes = git_state.setdefault('writes', [])
+    aligned = len(raw_words) == len(words)
+    for index, word in enumerate(words[:-1]):
+        # A quoted '>' is a word, not a redirection.
+        if word in WRITE_REDIRECTIONS and (not aligned or raw_words[index] == word):
+            target = words[index + 1]
+            if word == '>&' and re.fullmatch(r'\d*-?', target):
+                continue  # 2>&1 copies a descriptor
+            if not target.startswith('/dev/'):
+                writes.append((shell_cwd, target))
+    if not unwrapped:
+        return
+    program = os.path.basename(unwrapped[0])
+    args = without_redirections(unwrapped[1:])
+    operands = [arg for arg in args if not arg.startswith(('-', '<(', '>('))]
+    paths = []
+    if program in FILE_WRITERS:
+        paths = operands + [arg.partition('=')[2] for arg in args
+                            if arg.startswith('--target-directory=')]
+    elif program in ('sed', 'perl') and any(re.match(r'-[a-zA-Z]*i', arg)
+                                           or arg.startswith('--in-place') for arg in args):
+        paths = operands
+    elif program == 'dd':
+        paths = [arg[3:] for arg in args if arg.startswith('of=')]
+    elif program == 'curl':
+        request = curl_words(unwrapped)[1:]
+        paths = list(option_values(request, {'--output'}, {'-o'}))
+        if any(arg in ('-O', '--remote-name', '--remote-name-all') for arg in request):
+            paths.append(None)  # named after the address
+    elif program == 'wget':
+        documents = list(option_values(args, {'--output-document'}, {'-O'}))
+        if documents:
+            paths = [document for document in documents if document != '-']
+        elif any(arg.startswith(('-P', '--directory-prefix')) for arg in args):
+            paths = [None]
+        else:
+            # It saves what it fetches under the last part of the address.
+            paths = [posixpath.basename(parsed_url(arg)[0].path) or 'index.html'
+                     for arg in operands if parsed_url(arg)[1] and '.' in parsed_url(arg)[1]]
+    elif program == 'patch' or (INTERPRETERS.fullmatch(program) and inline_code(args)):
+        paths = [None]
+    writes.extend((cwd, path) for path in paths)
+
+
+def resolved(cwd, path):
+    """A path as an absolute one, or None when the guard cannot tell where
+    it is: the shell builds it, or its directory is unknown."""
+    if path is None or '$' in path or '`' in path:
+        return None
+    path = os.path.expanduser(path)
+    if not os.path.isabs(path) and cwd is None:
+        return None
+    return os.path.realpath(os.path.join(cwd or os.sep, path))
+
+
+def overlaps(written, read):
+    """Whether a path written may be, hold or lie inside a path read (or
+    match it as a pathspec). A path that cannot be resolved may be any."""
+    one, other = resolved(*written), resolved(*read)
+    if one is None or other is None:
+        return True
+    return (one == other or other.startswith(one.rstrip(os.sep) + os.sep)
+            or one.startswith(other.rstrip(os.sep) + os.sep) or fnmatch.fnmatchcase(one, other))
+
+
+def check_written(git_state):
+    """Deny when a command writes a file it also publishes, sends or
+    commits: the guard read that file before the command runs, so what goes
+    out would be what the command wrote, unread."""
+    reads = [*git_state.get('read_files', []), *REQUEST_FILES,
+             *((folder, path) for _, specs in git_state.get('commits', ())
+               for folder, path, _ in specs)]
+    if any(overlaps(written, read) for written in git_state.get('writes', []) for read in reads):
+        deny(WRITTEN_FILE)
+
+
+def declared(args, inherited):
+    """The environment after declare, typeset, local or readonly: an
+    assignment changes it as a bare one does, -x exports, and +x takes the
+    export away. Other attributes (-n, -a, -i, -l, -u) change what a value
+    means, so a repository variable given one is unknown."""
+    updates = dict(inherited)
+    options = [arg for arg in args if arg.startswith(('-', '+')) and '=' not in arg]
+    letters = ''.join(option.lstrip('-+') for option in options)
+    if set(letters) & set('fF'):
+        return updates  # functions, not variables
+    for arg in args:
+        if arg in options:
+            continue
+        key, equal, value = arg.partition('=')
+        if not context_variable(key):
+            continue
+        if set(letters) - set('xgr'):
+            deny(UNKNOWN)
+        if any(option.startswith('+') for option in options):
+            updates[key] = None
+        elif equal:
+            if '$' in value or '`' in value:
+                deny(UNKNOWN)
+            updates[key] = value
+        elif 'x' in letters:
+            deny(UNKNOWN)  # exports a value set before, which is not known here
+    return updates
+
+
+def prints_environment(words, unwrapped):
+    """Whether a command prints every environment variable, which may hold
+    the private list: env or printenv with no command or name, export with
+    none or -p, declare or typeset with no names, and set with nothing."""
+    if not unwrapped:
+        return any(os.path.basename(word) == 'env' for word in words)
+    program = os.path.basename(unwrapped[0])
+    args = without_redirections(unwrapped[1:])
+    names = [arg for arg in args if not arg.startswith(('-', '+'))]
+    if program == 'printenv':
+        return not names
+    if program == 'export':
+        return not names or '-p' in args
+    if program in ('declare', 'typeset'):
+        letters = ''.join(arg.lstrip('-+') for arg in args if arg.startswith(('-', '+')))
+        return not names and not set(letters) & set('fF')
+    return program == 'set' and not args
+
+
+def names_list_glob(command):
+    """Whether a glob could name the private list's file: a pattern for a
+    folder in a config folder that brickson matches, followed by nothing or
+    by a name that private-words.txt matches."""
+    for match in CONFIG_FOLDER.finditer(command):
+        folder, name = match[1], match[2]
+        if (any(char in folder for char in '*?[') and fnmatch.fnmatchcase('brickson', folder)
+                and (not name or fnmatch.fnmatchcase('private-words.txt', name))):
+            return True
+    return False
+
+
 def check_command(command, cwd, depth=0, environment=None, git_state=None):
     # Branch changes persist even across subshells. Later implicit pushes
     # cannot be resolved using the repository's state before this command.
@@ -1599,11 +2077,30 @@ def check_command(command, cwd, depth=0, environment=None, git_state=None):
     literal = literal_words(command)
     try:
         parts = list(segments(command))
-        raw_parts = list(segments(command, preserve_quotes=True))
     except ValueError:
         # Unbalanced quotes: the shell would refuse it too. Look at the words.
         parts = [(command.split(), ';')]
+    try:
+        raw_parts = list(segments(command, preserve_quotes=True))
+    except ValueError:
+        # The quote-keeping reading fails on a quote that opens a word inside
+        # another (--body='a <b>'); the shell's reading above still holds.
         raw_parts = []
+    parts, given = without_here_marks(parts)
+    raw_parts = without_here_marks(raw_parts)[0]
+    # A process substitution is its command's word too (-F <(cat x)): the
+    # option before it gets a value that names nothing readable.
+    for index in range(len(parts) - 1):
+        following = parts[index + 1][0]
+        if following in (['<('], ['>(']) and parts[index][0] not in ([], ['('], [')'], ['<('], ['>(']):
+            for group in (parts, raw_parts) if len(raw_parts) == len(parts) else (parts,):
+                words, separator = group[index]
+                # --body-file=<(...) is one word.
+                if words[-1].endswith('='):
+                    words = words[:-1] + [words[-1] + following[0]]
+                else:
+                    words = words + following
+                group[index] = (words, separator)
     # The shell can continue after a failed cd. Keep both outcomes until a
     # connector selects success (&&) or failure (||), instead of assuming cd
     # succeeded because its target looked like a directory during this check.
@@ -1628,6 +2125,8 @@ def check_command(command, cwd, depth=0, environment=None, git_state=None):
             continue
         runtime_inputs = []
         unwrapped, command_environment, directories = strip_wrappers(words, environment, runtime_inputs)
+        if prints_environment(words, unwrapped):
+            deny(ENVIRONMENT_DUMP)
         if not unwrapped:
             if words and all(re.match(r'^[A-Za-z_][A-Za-z0-9_]*=', word) for word in words):
                 # Assignment-only shell commands persist, including unexported CDPATH.
@@ -1686,6 +2185,12 @@ def check_command(command, cwd, depth=0, environment=None, git_state=None):
                 action = trap_action(unwrapped)
                 if action is not None:
                     check_command(action, None, depth + 1, command_environment, git_state)
+            raw_words = raw_parts[part_index][0] if len(raw_parts) == len(parts) else []
+            note_writes(git_state, words, raw_words, unwrapped, where, command_cwd)
+            if program in ('declare', 'typeset', 'local', 'readonly'):
+                next_states.add((where, True, stack, tuple(sorted(
+                    declared(unwrapped[1:], inherited).items()))))
+                continue
             if program in ('export', 'unset'):
                 updates = dict(inherited)
                 operands = unwrapped[1:]
@@ -1738,12 +2243,17 @@ def check_command(command, cwd, depth=0, environment=None, git_state=None):
                 next_states.add((where, False, stack, shell_env))
                 continue
             git_state['literal_words'] = literal  # this command's, not a nested one's
+            git_state['stdin'] = stdin_document(parts, given, part_index)
             if program == 'git':
                 subcommand, args, context = git_parts(unwrapped, command_cwd, command_environment)
                 subcommand, args, context = expand_git_alias(subcommand, args, context)
                 if runtime_inputs and subcommand not in {
                         'status', 'diff', 'log', 'show', 'rev-parse', 'ls-files'}:
                     deny('Use explicit Git arguments; xargs may append protected flags or destinations.')
+                if subcommand in ('apply', 'am', 'stash'):
+                    # A patch or a stash changes files, or the index, that
+                    # the guard cannot name.
+                    git_state.setdefault('writes', []).append((command_cwd, None))
                 if (subcommand in ('checkout', 'switch')
                         or (subcommand == 'branch' and any(
                             (arg.startswith('--') and arg != '--' and '--move'.startswith(arg))
@@ -1753,8 +2263,11 @@ def check_command(command, cwd, depth=0, environment=None, git_state=None):
                     git_state['branch_changed'] = True
                 elif subcommand in ('add', 'stage'):
                     check_add(args)
+                    # Each path is read from the folder this add runs in,
+                    # and a forced add also takes ignored files.
+                    directory, force = effective_directory(context), add_forces(args)
                     git_state.setdefault('adds', []).extend(
-                        arg for arg in args if not arg.startswith('-'))
+                        (directory, arg, force) for arg in args if not arg.startswith('-'))
                 elif subcommand == 'commit':
                     note_commit(git_state, args, context, check_commit(args))
                 elif subcommand == 'push':
@@ -1795,19 +2308,29 @@ def check_command(command, cwd, depth=0, environment=None, git_state=None):
                             if any(github_api_host(word) and re.search(r'[{}\[\]]', word)
                                    for word in operation[1:]):
                                 deny('Use explicit GitHub API URLs or --globoff; URL globs are not inspected.')
+                        inline = []
                         if program in ('http', 'https'):
+                            # HTTPie's body items and --raw body are the
+                            # shell's words; a body it reads from stdin is data.
+                            _, items, raw = httpie_request(operation)
+                            inline = [item for item in items
+                                      if re.fullmatch(r'[^:=@]+(?::=@|=@|:=|=(?!=))(.*)', item, re.S)]
+                            inline += [] if raw is None else [raw]
                             operation = httpie_stdin(operation, words, separator, command_cwd)
                         arguments = api_arguments(operation, command_cwd, program)
                         method = request_method(operation, program)
                         if method not in ('GET', 'HEAD'):
-                            # The request's body: its inline data, and the
-                            # files and items api_arguments read after the words.
-                            note_published(git_state, program, [
-                                *option_values(operation, {
-                                    '--data', '--data-ascii', '--data-binary', '--data-raw',
-                                    '--data-urlencode', '--json', '--form', '--form-string',
-                                    '--post-data', '--body-data'}, {'-d', '-F'}),
-                                arguments[len(' '.join(operation)):]])
+                            # The request's body: its inline data, which are
+                            # the shell's words, and the files and items
+                            # api_arguments read after the words, which are data.
+                            inline += option_values(operation, {
+                                '--data', '--data-ascii', '--data-binary', '--data-raw',
+                                '--data-urlencode', '--json', '--form', '--form-string',
+                                '--post-data', '--body-data'}, {'-d', '-F'})
+                            data = arguments[len(' '.join(operation)):]
+                            if not ('graphql' in api_paths(operation) and graphql_read(
+                                    [literal_text(value, git_state) for value in inline] + [data])):
+                                note_published(git_state, program, inline, texts=[data])
                         if protected_api_write(operation, arguments, method):
                             deny(TO_MAIN)
                         if merge_api_request(operation, arguments, method):
@@ -1918,10 +2441,13 @@ def main():
     cwd = call.get('cwd') or os.getcwd()
     if name == 'Bash':
         command = str(arguments.get('command', ''))
-        if LIST_REFERENCE.search(command):
+        if LIST_REFERENCE.search(command) or names_list_glob(command):
             deny(LIST_READ)
+        if PROCESS_ENVIRONMENT.search(command):
+            deny(ENVIRONMENT_DUMP)
         state = {'branch_changed': False}
         check_command(command, cwd, git_state=state)
+        check_written(state)
         if state.get('publishes'):
             check_privacy(state.get('published', []), commits=state.get('commits', ()),
                           directory=cwd)
