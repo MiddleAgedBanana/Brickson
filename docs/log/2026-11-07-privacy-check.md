@@ -1,7 +1,7 @@
 # A privacy check keeps personal details out of the repository
 
-*2026-11-06. Branch `claude/project-thread-xre66l`. A cloud thread, at the
-owner's request through the project's coordinator.*
+*2026-11-07. Pull request #86 (`claude/project-thread-xre66l`). A cloud
+thread, at the owner's request through the project's coordinator.*
 
 ## What changed and why
 
@@ -194,6 +194,69 @@ anywhere in text, which would match ids, versions and dates; they are
 listed under what it cannot catch, and a phone link's number is found
 however it is written.
 
+## Reviews on the pull request
+
+The first round, on `f5b3093`: CodeRabbit (four findings and a nitpick)
+and Codex's code review (five findings). Each was reproduced first, and
+each fix that is not a documentation fix has a test that failed before
+it:
+
+- **Where git finds the hook** (CodeRabbit): git runs `.githooks` from
+  the checkout a push is made from, not from the branch it names, so
+  from a checkout of a branch made before the check reached main, a push
+  of a newer branch that has the hook goes out unchecked too. The
+  hook's comment, docs/DECISIONS.md, AGENTS.md and docs/HANDOFF.md said
+  "the branch being pushed"; they now say the checkout. The guard
+  already refused such a push, as it reads the checkout's own hook; a
+  test now pushes a branch that has the hook from a checkout of one that
+  has none, and the refusal names the branch checked out. `--status`
+  there now says that branch has no hook and to merge `origin/main`,
+  instead of telling to turn on a setting that is already on. Declined:
+  a hook kept outside the repository, the same for every branch, which
+  no review or test would see and which would go stale.
+- **The folder that holds the list** (CodeRabbit): `grep -r . ~/.config`,
+  `find ~/.config -type f -exec cat {} +` and `cd ~/.config && cat b*/*`
+  passed the guard, and Claude Code's Read deny rules do not cover a
+  read that does not name the file. The guard now refuses a command
+  that names a config folder itself (`~/.config`, `$XDG_CONFIG_HOME`,
+  quoted or not, with or without a trailing slash) or a glob that could
+  name it, the list's folder or the list (`~/.c*/b*/*`); other config
+  folders and files stay allowed.
+- **This record** (CodeRabbit): dated the day the pull request opened,
+  with its number.
+- **The workflow tests** (CodeRabbit): a missing "Privacy check" job or
+  step fails with a message naming it, not with an error from `next()`
+  or a `KeyError`. Git's location variables (`GIT_DIR` and the rest),
+  inherited from a hook or a shell, would point the tests' git commands
+  at the caller's checkout; the three test scripts now clear them.
+- **Text that is not UTF-8** (Codex): a commit's or a push's patch was
+  read as UTF-8 with its other bytes replaced, so an accented name in a
+  Windows Latin file, found when the file was read whole, was missed in
+  the commit that added it. A patch line that is not UTF-8 is now read
+  both ways, as the whole file is.
+- **Where a push goes** (Codex): a remote's tracking refs record what its
+  fetch address held, but a remote with a `pushurl` pushes elsewhere, so
+  its commits were left out of a push to a repository that may never
+  have had them. Only remotes that fetch from where the push goes are
+  left out now.
+- **File content in base64** (Codex): `gh api` to the Contents API
+  (`content`) or a Git blob takes a file in base64, which the guard read
+  as letters. Base64 in text a command or tool publishes is now decoded
+  and its bytes read as a file. Across the repository's 474 text files,
+  decoding every run found nothing with a made-up list.
+- **A gist with no file** (Codex): `gh gist create` given no file reads
+  stdin, which the guard did not check; it now reads it as it reads an
+  explicit `-`, so a here-document is checked and a pipe refused.
+- **A draft's file name** (Codex): `--text FILE` printed the file's name
+  even when it held a finding; such a draft is now named by its number.
+
+The privacy job's checkout names `actions/checkout@v7.0.1`, the version
+pull request #87 locks, so whichever of the two merges second needs no
+new lockfile entry. A cloud session cannot push `.github/workflows/`,
+so the workflow change came to this branch as `privacy-check-workflow.yml`
+at the repository's root, and a commit from the owner's Mac moved it
+into place.
+
 ## Commits
 
 The commits of this branch, from the one after `0250270` (main when it
@@ -204,8 +267,9 @@ started).
 In this cloud thread (Linux, Python 3.13, git 2.43), last on 2026-11-07,
 after main (with the reviewer roster) was merged in:
 
-- `python3 scripts/test-privacy.py`: 126 tests, OK. Every test added
-  for the second review failed before its fix. On 2026-11-06, ten
+- `python3 scripts/test-privacy.py`: 130 tests, OK. Every test added
+  for the second review, and for the pull request's first review round,
+  failed before its fix. On 2026-11-06, ten
   deliberate breakages of the checker each failed it (every address
   allowed, no home-folder, phone or photo-location findings, no second
   pass over escaped text, names shown in place of a hidden label, no
@@ -216,7 +280,8 @@ after main (with the reviewer roster) was merged in:
   phone edges, folded phones, contractions, RTF bytes and their order
   with JSON escapes, Snappy copies, IPTC datasets, a zero place), failed
   it.
-- `python3 scripts/test-hooks.py`, with a made-up list: 167 tests, OK.
+- `python3 scripts/test-hooks.py`, with a made-up list: 171 tests, OK;
+  the four added for the first review round each failed before its fix.
   Run against the guard as it was before the second review's fixes, the
   13 tests added for them and the 2 they extended all failed (49
   failures); the ten breakages of the guard's privacy rules from
@@ -243,6 +308,9 @@ after main (with the reviewer roster) was merged in:
   support address in one old commit's log record, which docs/DECISIONS.md
   records. `--outgoing`, with a scratch list kept outside the
   repository: nothing found in this branch's commits.
+- Run with `GIT_DIR` pointing at another repository, the privacy tests
+  as they were committed a commit and a remote there; as they are now,
+  that repository is untouched.
 - The checker, its tests, the guard, the hook tests and the runner tests
   parse as Python 3.9 (`ast.parse(..., feature_version=(3, 9))`), the
   Python the owner's Mac and its git hooks use.
@@ -253,7 +321,7 @@ after main (with the reviewer roster) was merged in:
   `scripts/test.sh`, not the guard in a Claude Code session on the Mac.
   CI runs the Python checks on GitHub's Mac.
 - The CI step has not run on GitHub: the workflow change waits for the
-  owner to commit it, and until the owner adds the secret it fails by
+  commit from the owner's Mac, and until the secret is set it fails by
   design. GitHub's masking of the secret was not tested; the check never
   prints the list either way.
 - Whether a cloud environment's setup script line turns the hook on in
@@ -265,8 +333,9 @@ after main (with the reviewer roster) was merged in:
 
 ## Follow-ups
 
-- The owner: write the list, set the GitHub secret, decide on the cloud
-  variable, commit the workflow change, and turn the hook on in
-  `~/code/brickson` (docs/HANDOFF.md, *Next steps, in order*).
+- From the owner's Mac, by an agent there: the list, the GitHub secret
+  and the workflow change; after the merge, with the owner's yes, the
+  hook in `~/code/brickson`. The owner decides on the cloud variable
+  (docs/HANDOFF.md, *Next steps, in order*).
 - Any agent: run `--outgoing` before every push, and `--text -` on a
   pull request's description before posting it.

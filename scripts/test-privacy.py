@@ -35,6 +35,12 @@ spec.loader.exec_module(privacy)
 
 ROOT = SCRIPT.parents[1]
 HOOK = ROOT / '.githooks' / 'pre-push'
+# Variables a git hook or the caller's shell may set would point git, in the
+# tests and in the checks they run, at another repository than the one named
+# with -C: the caller's own checkout.
+for _variable in ('GIT_DIR', 'GIT_WORK_TREE', 'GIT_INDEX_FILE', 'GIT_COMMON_DIR',
+                  'GIT_OBJECT_DIRECTORY', 'GIT_ALTERNATE_OBJECT_DIRECTORIES', 'GIT_PREFIX'):
+    os.environ.pop(_variable, None)
 
 AT = '@'
 # A made-up address at a real mail domain, a made-up number outside the
@@ -646,6 +652,19 @@ class GitTests(unittest.TestCase):
         self.assertEqual(status, 1)
         self.assertIn('the draft:3:8: ' + privacy.KIND_PRIVATE, out)
 
+    def test_a_draft_s_file_name_is_checked_and_never_shown(self):
+        draft = self.folder / f'{NICK} reply.md'
+        draft.write_text(f'Thanks {NAME}\n')
+        status, out, _ = self.run_here('--text', str(draft))
+        self.assertEqual(status, 1)
+        self.assertIn('draft 1:1:8: ' + privacy.KIND_PRIVATE + '\n', out)
+        self.assertIn('draft 1: ' + privacy.KIND_PRIVATE + privacy.IN_NAME, out)
+        self.assertSilent(out)
+        # A clean name is shown, as before.
+        clean = self.folder / 'reply.md'
+        clean.write_text(f'Thanks {NAME}\n')
+        self.assertIn(f'draft {clean}:1:8: ', self.run_here('--text', str(clean))[1])
+
     def test_status_names_entries_by_number_and_says_whether_the_hook_runs(self):
         self.commit('i.md', f'{NICK} and {NICK}\n')
         status, out, _ = self.run_here('--status')
@@ -660,6 +679,39 @@ class GitTests(unittest.TestCase):
         git(self.repo, 'config', 'core.hooksPath', '.githooks')
         self.assertIn('Pushes from this checkout run the privacy hook.',
                       self.run_here('--status')[1])
+
+    def test_status_names_a_checkout_whose_branch_has_no_hook(self):
+        # Git runs .githooks from the checkout, not from the branch a push
+        # names: set the right way on a branch made before the hook reached
+        # main, pushes run nothing, and turning the setting on again would
+        # not help.
+        git(self.repo, 'config', 'core.hooksPath', '.githooks')
+        status, out, _ = self.run_here('--status')
+        self.assertEqual(status, 0)
+        self.assertIn('do NOT run the privacy hook', out)
+        self.assertIn('merge origin/main', out)
+        self.assertNotIn('Turn it on', out)
+
+    def test_a_change_in_windows_latin_is_read_with_its_accents(self):
+        # A file that is not UTF-8 is read as UTF-8 where it is and as
+        # Windows' Latin (file_texts); what a commit, a push or the next
+        # commit adds to one is read both ways too.
+        environ = listed('Jos\u00e9 Quillon')
+        self.commit('notes.txt', 'Thanks to Jos\u00e9 Quillon\n'.encode('cp1252'))
+        for argv in (['--commits', 'main..HEAD'], ['--history']):
+            status, out, _ = self.run_here(*argv, environ=environ)
+            self.assertEqual(status, 1, argv)
+            self.assertRegex(out, r'notes\.txt \(commit [0-9a-f]{12}\):1:11: '
+                             + privacy.KIND_PRIVATE)
+            self.assertSilent(out)
+        (self.repo / 'more.txt').write_bytes('ok \xff\nJos\u00e9 Quillon wrote\n'.encode('latin-1'))
+        git(self.repo, 'add', 'more.txt')
+        status, out, _ = self.run_here('--outgoing', environ=environ)
+        self.assertEqual(status, 1)
+        self.assertRegex(out, r'more\.txt \(staged\):2:1: ' + privacy.KIND_PRIVATE)
+        self.assertSilent(out)
+        # Read both ways, a name is still reported once.
+        self.assertEqual(out.count('(staged)'), 1)
 
     # --status passing, or ending on the hook's line, when it read no list
     # fails this: success is a list read and the hook on.
@@ -1134,6 +1186,33 @@ class GitSettingTests(unittest.TestCase):
         self.assertIn('nothing was committed',
                       privacy.advice([privacy.Finding('the commit message', 1, 1,
                                                       privacy.KIND_PRIVATE)]))
+
+    def test_a_remote_s_tracking_refs_count_only_where_it_fetches_from(self):
+        # Tracking refs record what a remote's fetch address held. A remote
+        # that pushes elsewhere (a pushurl) says nothing about what that
+        # other repository has, so its commits there are all new.
+        mirror = self.folder / 'mirror.git'
+        subprocess.run(['git', 'init', '-q', '--bare', '-b', 'main', str(mirror)], check=True)
+        git(self.repo, 'checkout', '-q', '-b', 'notes', 'main')
+        notes = self.commit('n.txt', f'Thanks {NAME}\n')
+        git(self.repo, 'push', '-q', 'origin', 'notes')
+        line = f'refs/heads/notes {notes} refs/heads/notes {"0" * 40}\n'
+        self.assertEqual(self.run_here('--pre-push', 'origin', stdin=line)[0], 0)
+        git(self.repo, 'remote', 'set-url', '--push', 'origin', str(mirror))
+        self.assertEqual(privacy.remote_exclusion(self.repo, 'origin'), [])
+        status, out, _ = self.run_here('--pre-push', 'origin', stdin=line)
+        self.assertEqual(status, 1)
+        self.assertRegex(out, r'n\.txt \(commit [0-9a-f]{12}\):1:8: ' + privacy.KIND_PRIVATE)
+        self.assertSilent(out)
+        # Pushed to the mirror's URL: origin only pushes there, so the same.
+        self.assertEqual(privacy.remote_exclusion(self.repo, str(mirror)), [])
+        self.assertEqual(self.run_here('--pre-push', str(mirror), stdin=line)[0], 1)
+        # A remote that fetches from the mirror too is read for it.
+        git(self.repo, 'remote', 'add', 'copy', str(mirror))
+        self.assertEqual(privacy.remote_exclusion(self.repo, str(mirror)), ['--remotes=copy'])
+        # origin's fetch address is still origin's.
+        self.assertEqual(privacy.remote_exclusion(self.repo, str(self.remote)),
+                         ['--remotes=origin'])
 
     def test_a_push_to_another_spelling_of_a_remote_s_address_is_that_remote(self):
         exclusion = lambda url: privacy.remote_exclusion(self.repo, url)  # noqa: E731

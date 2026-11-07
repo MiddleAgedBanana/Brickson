@@ -118,10 +118,11 @@ HOOK_OFF = ('Pushes from this checkout must run the privacy hook, and this one d
             "the owner's checkout or its worktrees, ask the owner to (" + PRIVACY_DECISION + ').')
 NO_VERIFY = ('Never skip the privacy hook (--no-verify, or another core.hooksPath): it is '
              'the check that keeps personal details off GitHub (' + PRIVACY_DECISION + ').')
-HOOK_MISSING = ('This branch has no .githooks/pre-push, because it was made before the privacy '
-                'check reached main, so git would skip the privacy hook without a word. Merge '
-                'origin/main into it (git merge origin/main, a merge commit, never a rebase), '
-                'then push again (' + PRIVACY_DECISION + ').')
+HOOK_MISSING = ('The branch checked out here has no .githooks/pre-push (it was made before the '
+                'privacy check reached main), and git runs the hook in the checkout, whichever '
+                'branch a push names, so this push would skip it without a word. Merge '
+                'origin/main into the branch checked out here (git merge origin/main, a merge '
+                'commit, never a rebase), then push again (' + PRIVACY_DECISION + ').')
 UNKNOWN_FOLDER = ('The guard cannot tell which folder this git command runs in (a cd, -C or '
                   'chdir to a folder the shell computes, or a directory-stack entry), so it '
                   'cannot read what the command would commit or push. Use a literal path '
@@ -1301,7 +1302,9 @@ def note_gh_text(plain, cwd, git_state):
         names = [value for option, value in pairs if option in files]
         gist_files = []
         if command == ('gist', 'create'):
-            names += operands
+            # With no file named, gh reads the gist from stdin (gh gist
+            # create --help: cat cool.txt | gh gist create).
+            names += operands or ['-']
             gist_files = operands
         elif command == ('gist', 'edit'):
             names += operands[1:2]  # the first is the gist
@@ -2348,6 +2351,27 @@ def names_list_glob(command):
     return False
 
 
+def names_config_folder(command):
+    """Whether a word names a config folder itself, which a recursive or
+    wildcard read would reach the list's file through without naming it
+    (grep -r . ~/.config), or is a glob that could name the list's folder
+    or file through one (~/.c*/b*/*). Read deny rules do not cover such a
+    read, so the guard refuses it."""
+    for word in re.findall(r'[^\s;&|()<>`]+', command):
+        word = re.sub(r'\$\{?XDG_CONFIG_HOME\}?', '/.config', word.replace('"', '').replace("'", ''))
+        parts = [part for part in word.split('/') if part not in ('', '.')]
+        for index, part in enumerate(parts):
+            # A shell glob matches a leading dot only when it writes one.
+            if not (part.startswith('.') and fnmatch.fnmatchcase('.config', part)):
+                continue
+            rest = parts[index + 1:]
+            if not rest or (len(rest) <= 2 and fnmatch.fnmatchcase('brickson', rest[0])
+                            and (len(rest) == 1
+                                 or fnmatch.fnmatchcase('private-words.txt', rest[1]))):
+                return True
+    return False
+
+
 def check_command(command, cwd, depth=0, environment=None, git_state=None):
     # Branch changes persist even across subshells. Later implicit pushes
     # cannot be resolved using the repository's state before this command.
@@ -2755,7 +2779,8 @@ def main():
     cwd = call.get('cwd') or os.getcwd()
     if name == 'Bash':
         command = str(arguments.get('command', ''))
-        if LIST_REFERENCE.search(command) or names_list_glob(command):
+        if (LIST_REFERENCE.search(command) or names_list_glob(command)
+                or names_config_folder(command)):
             deny(LIST_READ)
         if PROCESS_ENVIRONMENT.search(command):
             deny(ENVIRONMENT_DUMP)

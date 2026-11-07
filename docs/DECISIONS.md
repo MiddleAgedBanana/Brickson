@@ -5190,7 +5190,7 @@ request merges only when they pass.
 
 *2026-11-06. Default, asked for by the owner through the project's
 coordinator; the owner keeps the private list and sets it up (below)
-([`log/2026-11-06-privacy-check.md`](log/2026-11-06-privacy-check.md)).*
+([`log/2026-11-07-privacy-check.md`](log/2026-11-07-privacy-check.md)).*
 
 The repository is public, and so is everything pushed to it. A commit
 stays readable on GitHub after it is undone: in the pull request that
@@ -5240,8 +5240,11 @@ outside service: nothing it reads leaves the computer it runs on.
   MOV, WAV) and the place a video records, and pictures embedded in a
   page as `data:` addresses; commit messages, and the names and
   addresses commits are signed with; branch names, and tag names,
-  taggers and messages, including the tags a tag points to; and on
-  GitHub, a pull request's title, description and branch name. Text read
+  taggers and messages, including the tags a tag points to; what a
+  commit changes in a file that is not UTF-8, read both ways, as the
+  whole file is; a file's content the GitHub API is sent in base64 (the
+  Contents API, a Git blob), decoded; and on GitHub, a pull request's
+  title, description and branch name. Text read
   exactly from a file's fields gets every rule. Text only guessed from
   runs of readable bytes is checked for list words, lower-case addresses
   and home folders alone, because random bytes look like the rest.
@@ -5253,10 +5256,13 @@ outside service: nothing it reads leaves the computer it runs on.
   three or more branches, against its first parent), and so is a merge
   still being committed. Commits are read as a push sends them, whatever
   `git replace` or git's display settings (signatures, `log.showRoot`)
-  show. A push to an address rather than a remote's name leaves out only
-  what the remotes with that address already have, however the address
-  is written (a URL, `git@host:path`, a local path, with or without
-  `.git`); push by the remote's name (`origin`) all the same.
+  show. A push leaves out only what the remotes that fetch from where
+  it goes already have: a remote's tracking refs record what its fetch
+  address held, so a remote that pushes elsewhere (a `pushurl`) leaves
+  out nothing there. Pushed to an address rather than a remote's name,
+  the address may be written any way (a URL, `git@host:path`, a local
+  path, with or without `.git`); push by the remote's name (`origin`)
+  all the same.
 - **No exceptions.** No line can be marked as allowed, and the list has
   no allowances: an entry holds only what may appear nowhere, so leave
   out what the repository publishes on purpose, such as the developer's
@@ -5275,10 +5281,12 @@ public:
    `git config core.hooksPath .githooks` (every worktree of that
    checkout shares the setting). It needs the list: without one it
    refuses every push and says how to set one up. Never skip it
-   (`--no-verify`). Git runs the hook from the branch being pushed and
-   says nothing when that branch has none, so a branch made before the
-   check reached main pushes unchecked until `origin/main` is merged
-   into it (with a merge commit, never a rebase).
+   (`--no-verify`). Git runs the hook in the checkout the push is made
+   from, whichever branch the push names, and says nothing when that
+   checkout has none: from a checkout of a branch made before the check
+   reached main, every push, of any branch, goes unchecked until
+   `origin/main` is merged into the branch checked out there (with a
+   merge commit, never a rebase). `--status`, run there, says so.
 2. **Before a commit or a post, in Claude Code**, where the guard runs
    (AGENTS.md, *Guardrails for agents*). The guard checks a commit's
    message and trailers; its author and committer, as given in the
@@ -5292,13 +5300,17 @@ public:
    own names for a command (`gh pr new`) as well. A GraphQL request
    writes only through its query, so its other fields are read as
    variables. The guard refuses a push from a checkout whose pushes skip
-   the hook or from a branch that has none (made before the check
-   reached main), a git command in a folder the shell computes, and any
-   command that names the list or prints the whole environment. It also
+   the hook or whose branch has none (made before the check reached
+   main), whichever branch the push names, a git command in a folder the
+   shell computes, any command that names the list, the config folder
+   that holds it (a recursive read of that folder reaches the list
+   without naming it) or a glob that could reach either, and any that
+   prints the whole environment. It also
    refuses what it cannot read before the command runs: text the shell
    builds from a variable or another command (an unquoted here-document
    holding `$` or a backtick included), a process substitution, stdin
-   from anything but the command's own here-document, a file the same
+   from anything but the command's own here-document (`gh gist create`
+   given no file reads it), a file the same
    command writes and then publishes or commits (a redirection after
    `( … )` writes its target; a copy writes only its destination), a
    change to the index in the same command as a commit from it
@@ -5313,7 +5325,9 @@ public:
    the next commit and push would publish (what is staged, what is not
    yet, untracked files, and files left in conflict, read whole);
    `--text -` checks a draft given on stdin, such as a pull request's
-   description or a comment, before it is posted; `--history` checks
+   description or a comment, before it is posted (`--text FILE` reads a
+   file, and names it by number when its name holds a finding);
+   `--history` checks
    every commit on every branch.
 4. **In CI, the alarm.** A job of its own, "Privacy check", runs main's
    own copy of the check, with the list from the repository secret
@@ -5387,9 +5401,10 @@ public:
   a new repository's name;
 - on Linux only (a Mac cannot make one), a file name that is not UTF-8:
   its text is read from commits, and a binary one stops the check;
-- a push from a checkout with the hook off, from a branch made before
-  the check reached main, or from a cloud thread where the guard does
-  not run, which CI then finds only after it is public.
+- a push from a checkout with the hook off, from a checkout of a branch
+  made before the check reached main (whichever branch the push names),
+  or from a cloud thread where the guard does not run, which CI then
+  finds only after it is public.
 
 One commit from before the check holds the published support address in
 a log record, which `--history` reports; it is the address the website
@@ -5430,7 +5445,9 @@ an entry that starts with `=` matches only in its own capitals. The
 whole list may instead be written as `base64:` followed by its Base64
 form, which keeps it on one line for the cloud environment's variables.
 
-**Setting it up.** First, on the Mac, in Terminal:
+**Setting it up.** An agent on the owner's Mac can do every step but
+the cloud environment's variable, which is set in the project's
+settings. First, on the Mac, in Terminal:
 
 ```sh
 mkdir -p ~/.config/brickson && touch ~/.config/brickson/private-words.txt

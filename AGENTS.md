@@ -750,9 +750,10 @@ above are backed by checks wherever a check can run:
   or a GitHub tool, that holds a personal detail, text it cannot read
   before the command runs (built by the shell, a file the same command
   writes, or an index change or commit identity it sets), and a push
-  from a checkout whose pushes skip the privacy hook or from a branch
-  that has none (*The privacy check*, below); and any command that names
-  the private list or prints the whole environment. The same
+  from a checkout whose pushes skip the privacy hook or whose branch has
+  none, whichever branch the push names (*The privacy check*, below); and
+  any command that names the private list or the config folder that
+  holds it, or prints the whole environment. The same
   settings deny the merge tools and the Copilot tools outright, and the
   Read and Edit tools the private list. When the guard refuses, do not look for
   another way round: say in the thread what you needed and why. It is

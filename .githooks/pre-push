@@ -7,9 +7,10 @@
 #
 # Turn it on in a clone once; its worktrees share the setting:
 #   git config core.hooksPath .githooks
-# Git runs the copy in the branch being pushed, and says nothing when there
-# is none: a branch made before this file reached main pushes unchecked
-# until origin/main is merged into it.
+# Git runs the copy in the checkout the push is made from, whichever branch
+# the push names, and says nothing when there is none: a checkout of a
+# branch made before this file reached main pushes everything unchecked
+# until origin/main is merged into that branch (--status says so).
 # Never push with --no-verify or another core.hooksPath: this check is how
 # the repository stays free of personal details.
 cd "$(git rev-parse --show-toplevel)" || exit 2

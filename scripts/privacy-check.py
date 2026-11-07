@@ -1879,6 +1879,31 @@ def git(root, *args, binary=False, check=True):
     return result.stdout if binary else result.stdout.decode('utf-8', 'replace')
 
 
+def git_patch(root, *args):
+    """A patch git writes, as text that keeps the bytes of a line that is
+    not UTF-8 (as surrogates), so a file in Windows' Latin is read both
+    ways, as file_texts reads it whole (line_readings)."""
+    return git(root, *args, binary=True).decode('utf-8', 'surrogateescape')
+
+
+def line_readings(text):
+    """A patch line's readings: itself, or, when its bytes are not UTF-8,
+    those bytes as UTF-8 where they are and as Windows' Latin."""
+    if not SURROGATE.search(text):
+        return [text]
+    data = text.encode('utf-8', 'surrogateescape')
+    return [data.decode('utf-8', errors='replace'), windows_latin(data)]
+
+
+def header_text(text):
+    """A name or header from a patch, with any byte that is not UTF-8
+    replaced, as git() gives it."""
+    return text.encode('utf-8', 'surrogateescape').decode('utf-8', 'replace')
+
+
+SURROGATE = re.compile('[\udc80-\udcff]')
+
+
 def git_succeeds(root, *args):
     try:
         return subprocess.run([*GIT, '-C', str(root), *args], capture_output=True,
@@ -1986,6 +2011,8 @@ def patch_changes(patch):
     hunks, binaries, names = [], [], []
     path, header, lines, old_left, new_left, removed = None, False, [], 0, 0, False
     for raw in patch.split('\n'):
+        if not (old_left > 0 or new_left > 0):
+            raw = header_text(raw)  # a header: only a hunk's lines keep their bytes
         if old_left > 0 or new_left > 0:
             marker, text = raw[:1], raw[1:]
             if marker == '\\':
@@ -2041,6 +2068,21 @@ LOG_OPTIONS = ('--no-show-signature', '--root')
 
 
 def hunk_findings(checker, lines, where, path, first):
+    """Findings a hunk's change makes, in each reading of its lines (two
+    when one is not UTF-8: line_readings), each place once."""
+    if not any(SURROGATE.search(text) for _, text in lines):
+        return reading_findings(checker, lines, where, path, first)
+    findings, seen = [], set()
+    for reading in (0, 1):
+        variant = [(status, line_readings(text)[-1 if reading else 0]) for status, text in lines]
+        for finding in reading_findings(checker, variant, where, path, first):
+            if (finding.line, finding.column, finding.kind) not in seen:
+                seen.add((finding.line, finding.column, finding.kind))
+                findings.append(finding)
+    return findings
+
+
+def reading_findings(checker, lines, where, path, first):
     """Findings a hunk's change makes: the hunk's new lines are read as
     one text, so a phrase wrapped over lines is found, and what lay
     wholly in unchanged lines that were already neighbours is left out,
@@ -2094,7 +2136,7 @@ def read_patch(checker, patch, label, blob, tally):
         where = place(path)
         findings.extend(hunk_findings(checker, lines, where, path, first))
         if path.lower().endswith(TEXT_TO_GIT) or (
-                first == 1 and lines and binary_signature(lines[0][1].encode('utf-8', 'replace'))):
+                first == 1 and lines and binary_signature(lines[0][1].encode('utf-8', 'surrogateescape'))):
             binaries.append(path)
     for path in dict.fromkeys(binaries):
         where = place(path)
@@ -2111,11 +2153,11 @@ def merge_patches(root, revisions):
     only a warning, so those are always read against their first parent."""
     if not git(root, 'rev-list', '--merges', '-n', '1', *revisions, '--').strip():
         return ''
-    octopus = git(root, 'log', *LOG_OPTIONS, '--min-parents=3', '--format=%x01%H',
+    octopus = git_patch(root, 'log', *LOG_OPTIONS, '--min-parents=3', '--format=%x01%H',
                   '--diff-merges=first-parent', *PATCH_OPTIONS, *revisions, '--')
     for option in ('--remerge-diff', '--diff-merges=first-parent'):
         try:
-            return git(root, 'log', *LOG_OPTIONS, '--merges', '--max-parents=2',
+            return git_patch(root, 'log', *LOG_OPTIONS, '--merges', '--max-parents=2',
                        '--format=%x01%H', option, *PATCH_OPTIONS, *revisions,
                        '--') + '\n' + octopus
         except SetupError:
@@ -2156,7 +2198,7 @@ def commits(checker, root, revisions, tally):
         findings += checker.identity(fields[1], fields[2], f'commit {sha} author')
         findings += checker.identity(fields[3], fields[4], f'commit {sha} committer')
         findings += checker.text(fields[5], f'commit {sha} message')
-    patches = git(root, 'log', *LOG_OPTIONS, '--no-merges', '--format=%x01%H',
+    patches = git_patch(root, 'log', *LOG_OPTIONS, '--no-merges', '--format=%x01%H',
                   *PATCH_OPTIONS, *revisions, '--') + '\n' + merge_patches(root, revisions)
     for sha, body in commit_patches(patches):
         findings += read_patch(
@@ -2230,7 +2272,7 @@ def staged(checker, root, tally):
                 for finding in read_file(checker, root, path, f'staged file {number}',
                                          tally, data=blob(path))]
     base = merge_base_tree(root) or 'HEAD'
-    return read_patch(checker, git(root, 'diff', '--cached', base, *PATCH_OPTIONS, '--'),
+    return read_patch(checker, git_patch(root, 'diff', '--cached', base, *PATCH_OPTIONS, '--'),
                       ' (staged)', blob, tally)
 
 
@@ -2283,7 +2325,7 @@ def working_changes(checker, root, tally):
         if '\t' in entry))
     for number, path in enumerate(conflicted, 1):
         findings += read_file(checker, root, path, f'file {number} left in conflict', tally)
-    findings += read_patch(checker, git(root, 'diff', *PATCH_OPTIONS, '--', '.',
+    findings += read_patch(checker, git_patch(root, 'diff', *PATCH_OPTIONS, '--', '.',
                                         *(':(exclude,literal)' + path for path in conflicted)),
                            ' (not committed)', lambda path: Path(root, path).read_bytes()
                            if Path(root, path).is_file() else b'', tally)
@@ -2321,27 +2363,31 @@ def repository_address(root, url):
 
 
 def remote_exclusion(root, remote):
-    """The remote-tracking refs whose commits the remote pushed to already
-    has: --remotes=<remote> for a named remote. A push to a URL names the
-    remotes that fetch from or push to that repository, however its
-    address is written (repository_address); another remote's commits
-    may never have reached it, so with none of them, nothing is left out."""
+    """The remote-tracking refs whose commits the repository pushed to
+    already has. Tracking refs record what a remote's fetch address held,
+    so a remote counts only where it fetches from: a push by a remote's
+    name goes to its push addresses (a pushurl, or its url), and a push to
+    a URL to that address, however it is written (repository_address).
+    Every remote that fetches from all of them is left out; with none,
+    nothing is, as a remote that only pushes there, or one that fetches
+    elsewhere, may never have reached it."""
     names = git(root, 'remote', check=False).split()
+
+    def addresses(name, *push):
+        found = set()
+        for url in git(root, 'remote', 'get-url', *push, '--all', name,
+                       check=False).splitlines():
+            if url.strip():
+                found.add(repository_address(root, url))
+        return found
+
     if remote in names:
-        return [f'--remotes={remote}']
-    wanted = repository_address(root, remote)
-    found = []
-    for name in names:
-        urls = set()
-        for args in (('config', '--get-all', f'remote.{name}.url'),
-                     ('config', '--get-all', f'remote.{name}.pushurl'),
-                     ('remote', 'get-url', '--all', name),
-                     ('remote', 'get-url', '--push', '--all', name)):
-            urls.update(repository_address(root, url) for url in
-                        git(root, *args, check=False).splitlines() if url.strip())
-        if wanted in urls:
-            found.append(f'--remotes={name}')
-    return found
+        wanted = addresses(remote, '--push')
+    else:
+        wanted = {repository_address(root, remote)}
+    if not wanted:
+        return []
+    return [f'--remotes={name}' for name in names if wanted <= addresses(name)]
 
 
 def outgoing(checker, root, tally):
@@ -2446,8 +2492,9 @@ def ci_texts(environ):
     return [(label, text) for label, text in texts if isinstance(text, str) and text]
 
 
-def hook_on(root):
-    """Whether this checkout's pushes run .githooks/pre-push."""
+def hooks_path_set(root):
+    """Whether core.hooksPath names this checkout's .githooks. Git reads
+    it from the checkout, not from the branch a push names."""
     # Read the setting itself: git() turns hooks off for its own calls.
     try:
         found = subprocess.run(['git', '-C', str(root), 'config', '--get', 'core.hooksPath'],
@@ -2459,11 +2506,15 @@ def hook_on(root):
         return False
     folder = Path(os.path.expanduser(setting))
     folder = folder if folder.is_absolute() else Path(root, folder)
-    hook = Path(root, HOOKS, 'pre-push')
     try:
-        return folder.resolve() == Path(root, HOOKS).resolve() and os.access(hook, os.X_OK)
+        return folder.resolve() == Path(root, HOOKS).resolve()
     except OSError:
         return False
+
+
+def hook_on(root):
+    """Whether this checkout's pushes run .githooks/pre-push."""
+    return hooks_path_set(root) and os.access(Path(root, HOOKS, 'pre-push'), os.X_OK)
 
 
 # ---------------------------------------------------------------- guard
@@ -2471,6 +2522,31 @@ def hook_on(root):
 NO_LIST = ('No private list is set up here, so private words were NOT checked and '
            'nothing may be published until the owner sets one up (' + DECISION + '). '
            'Never describe a check without the list as passing.')
+
+
+# A run of base64 in text a command or a tool publishes, its line breaks
+# written as JSON writes them (\\n, \\r) or as they are, and a JSON
+# body's \\/ for /: at least twelve letters, the shortest a name fills.
+ENCODED_RUN = re.compile(r'(?:[A-Za-z0-9+]|\\?/|\\[nr]|\r?\n){12,}=*')
+
+
+def encoded_findings(checker, text, where):
+    """Findings in the bytes a published text carries as base64. GitHub's
+    API takes a file's content that way (the Contents API's content, a
+    Git blob in base64, the contents of GraphQL's createCommitOnBranch),
+    so what goes public there is the decoded file, which no pre-push hook
+    reads. A run that is not base64 decodes to bytes that hold nothing."""
+    findings = []
+    for number, run in enumerate(ENCODED_RUN.finditer(text), 1):
+        letters = re.sub(r'\\[nr]|\\|\s', '', run.group()).rstrip('=')
+        if len(letters) % 4 == 1:
+            letters = letters[:-1]
+        try:
+            data = base64.b64decode(letters + '=' * (-len(letters) % 4))
+        except (binascii.Error, ValueError):
+            continue
+        findings += checker.data(data, f'{where} (encoded text {number})')
+    return findings
 
 
 def guard_findings(texts=(), files=(), commits_from=(), directory=None, environ=None,
@@ -2488,7 +2564,7 @@ def guard_findings(texts=(), files=(), commits_from=(), directory=None, environ=
     findings = []
     plain = Checker(entries)
     for label, text in texts:
-        findings += plain.text(text, label)
+        findings += plain.text(text, label) + encoded_findings(plain, text, label)
     if files:
         support = set()
         if directory is not None:
@@ -2559,9 +2635,16 @@ def status(root, entries, counts, no_list=False):
             print(f'Entry {entry.number} of {entry.source} matches {counted(places[entry], "place")} in '
                   'tracked files: if they are already published or an ordinary word, make '
                   'the entry longer (a full name), or start it with = to match its case.')
-    print('Pushes from this checkout run the privacy hook.' if hook_on(root) else
-          'Pushes from this checkout do NOT run the privacy hook. Turn it on with: '
-          f'git config core.hooksPath {HOOKS}')
+    if hook_on(root):
+        print('Pushes from this checkout run the privacy hook.')
+    elif hooks_path_set(root):
+        # Set the right way, on a branch made before the hook reached main.
+        print('Pushes from this checkout do NOT run the privacy hook: the branch checked out '
+              f'here has no {HOOKS}/pre-push, and git runs the one in the checkout, whichever '
+              'branch a push names, so merge origin/main into this branch (a merge commit).')
+    else:
+        print('Pushes from this checkout do NOT run the privacy hook. Turn it on with: '
+              f'git config core.hooksPath {HOOKS}')
     if not counts and not no_list:
         print('No private list was found here, so nothing can be checked or pushed: set one '
               f'up ({DECISION}).')
@@ -2608,9 +2691,15 @@ def run(options, environ, stdin):
         revisions.append(['--all'])
     for revision in revisions:
         findings += commits(checker, root, revision, tally)
-    for name in options.text:
-        text = stdin.read() if name == '-' else Path(name).read_text(encoding='utf-8')
-        findings += checker.text(text, 'the draft' if name == '-' else f'draft {name}')
+    for number, name in enumerate(options.text, 1):
+        if name == '-':
+            findings += checker.text(stdin.read(), 'the draft')
+            continue
+        # A draft's file name is checked too, and never shown when it holds
+        # a finding: the draft is then named by its number.
+        where, found = checker.named(name, f'draft {name}', f'draft {number}')
+        findings += found
+        findings += checker.text(Path(name).read_text(encoding='utf-8'), where)
     return findings, tally, entries
 
 

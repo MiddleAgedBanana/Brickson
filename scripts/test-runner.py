@@ -1892,7 +1892,8 @@ class WorkflowTests(unittest.TestCase):
         names = {job: next((line.split(":", 1)[1].strip() for line in lines
                             if re.match(r"    name: ", line)), None)
                  for job, lines in jobs.items()}
-        privacy = next(job for job, name in names.items() if name == "Privacy check")
+        privacy = next((job for job, name in names.items() if name == "Privacy check"), None)
+        self.assertIsNotNone(privacy, 'tests.yml has no job named "Privacy check".')
         steps = job_steps(jobs[privacy])
         self.assertEqual(len(steps), 2, "The privacy job runs only the checkout and the check.")
         checkout, check = steps
@@ -1920,7 +1921,8 @@ class WorkflowTests(unittest.TestCase):
         names = {job: next((line.split(":", 1)[1].strip() for line in lines
                             if re.match(r"    name: ", line)), None)
                  for job, lines in jobs.items()}
-        privacy = next(job for job, name in names.items() if name == "Privacy check")
+        privacy = next((job for job, name in names.items() if name == "Privacy check"), None)
+        self.assertIsNotNone(privacy, 'tests.yml has no job named "Privacy check".')
         unit = next(job for job, name in names.items() if name == "Unit tests")
         body = "\n".join(jobs[unit])
         needs = re.search(r"^    needs: *\[?([^\]\n]+)\]? *$", body, re.M)
@@ -1954,15 +1956,21 @@ class WorkflowTests(unittest.TestCase):
         folder = Path(holder.name)
         remote, repo = folder / "remote.git", folder / "repo"
         record = folder / "record.json"
+        # Variables a git hook or the caller's shell may set would point git
+        # at another repository than the one named with -C.
+        clean = {key: value for key, value in os.environ.items() if key not in (
+            "GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_COMMON_DIR",
+            "GIT_OBJECT_DIRECTORY", "GIT_ALTERNATE_OBJECT_DIRECTORIES", "GIT_PREFIX")}
 
         def git(*args):
             subprocess.run(["git", "-C", str(repo), "-c", "user.name=t",
                             "-c", "user.email=t@example.com", "-c", "commit.gpgsign=false",
                             "-c", "core.hooksPath=/dev/null", *args],
-                           check=True, capture_output=True)
+                           check=True, capture_output=True, env=clean)
 
-        subprocess.run(["git", "init", "-q", "--bare", "-b", "main", str(remote)], check=True)
-        subprocess.run(["git", "init", "-q", "-b", "main", str(repo)], check=True)
+        subprocess.run(["git", "init", "-q", "--bare", "-b", "main", str(remote)], check=True,
+                       env=clean)
+        subprocess.run(["git", "init", "-q", "-b", "main", str(repo)], check=True, env=clean)
         checker = repo / "scripts" / "privacy-check.py"
         checker.parent.mkdir()
         (repo / "README.md").write_text("Brickson\n")
@@ -2001,6 +2009,7 @@ class WorkflowTests(unittest.TestCase):
         results = []
         for name, secret in [("Check for personal details", "made-up words"),
                              ("Check for personal details (first run)", None)]:
+            self.assertTrue(name in steps, f'tests.yml has no step named "{name}".')
             step_environment = dict(environment)
             if secret is not None:
                 step_environment["BRICKSON_PRIVATE_WORDS"] = secret

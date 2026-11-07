@@ -6,6 +6,7 @@ runs it before the unit tests, so CI runs it too. Each test feeds the guard
 a tool call the way Claude Code does and reads its decision. Removing a rule
 from the guard, or loosening one, fails a test here.
 """
+import base64
 import json
 import shlex
 from pathlib import Path
@@ -38,6 +39,12 @@ EMPTY_GIT_CONFIG = Path(GIT_CONFIG.name, 'empty')
 EMPTY_GIT_CONFIG.write_text('')
 GIT_ENVIRONMENT = {'GIT_CONFIG_GLOBAL': str(EMPTY_GIT_CONFIG),
                    'GIT_CONFIG_SYSTEM': str(EMPTY_GIT_CONFIG), 'GIT_CONFIG_NOSYSTEM': '1'}
+# Variables a git hook or the caller's shell may set would point git, in the
+# tests and in the guards they run, at another repository than the one
+# named with -C: the caller's own checkout.
+for _variable in ('GIT_DIR', 'GIT_WORK_TREE', 'GIT_INDEX_FILE', 'GIT_COMMON_DIR',
+                  'GIT_OBJECT_DIRECTORY', 'GIT_ALTERNATE_OBJECT_DIRECTORIES', 'GIT_PREFIX'):
+    os.environ.pop(_variable, None)
 os.environ.update(GIT_ENVIRONMENT)
 
 
@@ -1539,6 +1546,30 @@ class PrivacyGuardTests(unittest.TestCase):
         self.assertEqual(self.tool('mcp__github__add_issue_comment', {'body': 'ok'}), 'deny')
         self.assertAllowed('git status')
 
+    def test_file_content_sent_in_base64_is_decoded_and_checked(self):
+        # The Contents API and a Git blob take a file's content in base64:
+        # what goes public is the decoded bytes, which no pre-push hook sees.
+        encoded = base64.b64encode(f'Notes\nThanks {PRIVATE_NAME}\n'.encode()).decode()
+        wrapped = '\\n'.join(encoded[i:i + 12] for i in range(0, len(encoded), 12))
+        request = self.folder / 'blob.json'
+        request.write_text('{"content": "' + wrapped + '", "encoding": "base64"}')
+        api = 'https://api.github.com/repos/o/r/contents/a.txt'
+        for command in [
+                f'gh api --method PUT repos/o/r/contents/a.txt -f branch=claude/topic '
+                f'-f message=clean -f content={encoded}',
+                f'gh api -X POST repos/o/r/git/blobs --input {request}',
+                f"curl -q -X PUT {api} -d '{{\"branch\":\"claude/topic\",\"message\":\"x\","
+                f"\"content\":\"{encoded}\"}}'"]:
+            with self.subTest(command=command[:40]):
+                self.assertIn('encoded', self.assertDenied(command))
+        mutation = ('mutation { createCommitOnBranch(input: {fileChanges: {additions: '
+                    f'[{{path: "a.txt", contents: "{encoded}"}}]}}}}) {{ commit {{ oid }} }} }}')
+        # GraphQL's commit is refused already, as a ref write.
+        self.assertDenied(f"gh api graphql -f query='{mutation}'")
+        clean = base64.b64encode(b'Notes\nThanks to everyone\n').decode()
+        self.assertAllowed(f'gh api --method PUT repos/o/r/contents/a.txt -f branch=claude/topic '
+                           f'-f message=clean -f content={clean}')
+
     def test_the_private_list_is_never_read(self):
         for command in ['cat ~/.config/brickson/private-words.txt',
                         'cat "$HOME/.config/brickson/private-words.txt"',
@@ -1547,6 +1578,26 @@ class PrivacyGuardTests(unittest.TestCase):
                         'base64 -d <<< "$BRICKSON_PRIVATE_WORDS"']:
             with self.subTest(command=command):
                 self.assertIn('--status', self.assertDenied(command))
+
+    def test_the_folder_that_holds_the_list_is_never_read_whole(self):
+        # A recursive or wildcard read of the config folder reaches the list
+        # without naming it, and Read deny rules do not cover such a read.
+        for command in ['grep -r . ~/.config', 'find ~/.config -type f -exec cat {} +',
+                        'cd ~/.config && cat b*/*', 'grep -rn word "$XDG_CONFIG_HOME"',
+                        'grep -r . "$XDG_CONFIG_HOME/"', 'grep -r . "${XDG_CONFIG_HOME}"/',
+                        'rg -uu word $HOME/.config/', 'ls ~/.config/', 'cat ~/.c*/b*/*',
+                        'cat ~/.*/brick*/*', 'cd ~ && grep -r x .config',
+                        "tar -czf out.tgz -C ~ '.config'", 'grep -r x --include=* ~/.conf?g',
+                        'cat ~/.config/./*/*', 'grep -r x ~/.config/*']:
+            with self.subTest(command=command):
+                self.assertIn('--status', self.assertDenied(command))
+        # Other config folders and files, and words that only contain .config.
+        for command in ['ls ~/.config/gh', 'cat ~/.config/gh/hosts.yml',
+                        'cat "$XDG_CONFIG_HOME"/gh/hosts.yml', 'cat ~/.config/*/hosts.yml',
+                        'cat webpack.config.js', 'git config --get core.hooksPath',
+                        'cat ~/.gitconfig', 'ls ~/.cache', 'cat ~/.config/b*/x/y.txt']:
+            with self.subTest(command=command):
+                self.assertAllowed(command)
 
     def test_git_settings_outside_the_tests_do_not_change_them(self):
         # A global core.hooksPath of .githooks, the cloud setup line, turns
@@ -1747,6 +1798,14 @@ class PrivacyGuardTests(unittest.TestCase):
                         'cat ~/.config/*/hosts.yml']:
             with self.subTest(command=command):
                 self.assertAllowed(command)
+
+    def test_a_gist_given_no_files_publishes_stdin(self):
+        # gh gist create with no file reads stdin (cat cool.txt | gh gist
+        # create), as an explicit - does.
+        self.assertDenied(f"gh gist create --public --filename note.md <<'EOF'\n"
+                          f"Thanks {PRIVATE_NAME}\nEOF")
+        self.assertIn('stdin', self.assertDenied('cat notes.md | gh gist create -d Notes'))
+        self.assertAllowed("gh gist create --filename note.md <<'EOF'\nThanks to everyone\nEOF")
 
     def test_labels_and_gists_publish_their_names_and_descriptions(self):
         body = self.folder / 'body.md'
@@ -1960,6 +2019,20 @@ class PrivacyGuardTests(unittest.TestCase):
         reason = self.assertDenied('git push origin claude/topic')
         self.assertIn('merge origin/main', reason)
         self.assertNotIn('Never skip', reason)
+
+    def test_the_hook_comes_from_the_checkout_not_the_branch_pushed(self):
+        # Git runs .githooks from the checkout: a newer branch that has the
+        # hook, pushed from a checkout of an older one that has none, would
+        # go out unchecked.
+        self.git('add', '-f', '.githooks/pre-push')
+        self.git('commit', '-q', '-m', 'Add the hook')
+        self.git('checkout', '-q', '-b', 'claude/older', 'main')
+        self.assertFalse((self.repo / '.githooks' / 'pre-push').exists())
+        reason = self.assertDenied('git push origin claude/topic')
+        self.assertIn('checked out here', reason)
+        self.assertIn('merge origin/main', reason)
+        self.git('checkout', '-q', 'claude/topic')
+        self.assertAllowed('git push origin claude/topic')
 
 
 class SettingsTests(unittest.TestCase):
