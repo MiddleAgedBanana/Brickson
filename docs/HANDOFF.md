@@ -577,8 +577,8 @@ release in docs/ROADMAP.md when no thread has it yet.
   typing's, assumes Snap to Item stops on a dimmed control, unmeasured
   until docs/DEVICE-CHECKS.md, I8 and B2. *(the owner; the device
   checks)*
-- A restored backup can hold a phrase Voice Control hears as "Yes",
-  "No", "Emergency", "Get Attention" or "Help", which the editor refuses:
+- A restored backup can hold a phrase the editor matches to "Yes",
+  "No", "Emergency", "Get Attention" or "Help" and refuses:
   a backup's words are never changed. It is expected to cost a Voice
   Control user a second command for that control while the phrase shows:
   the exception to invariant 10 the owner chose on 2026-11-06

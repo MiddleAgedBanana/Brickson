@@ -924,9 +924,11 @@ and the Large Content Viewer on Home").*
    and "Yes" added to Feelings; Yes has no second name, so it is the
    worst case. The second has Feelings renamed "Yes", which only a
    hand-made backup can do. **Owner:** puts the first copy on the device
-   and restores it with Add to My Phrases. On Home, with Feelings
-   showing, "Tap Again", "Tap Help", "Tap Yes" and "Tap Get Attention";
-   do all four with Flexible Item Names off, then on. Then "Tap Type" and
+   and restores it with Add to My Phrases. Whenever the alarm is
+   sounding, "Tap Stop Alert" before the next trial, or it hides whether
+   the command started it. On Home, with Feelings showing, "Tap Again",
+   "Tap Help", "Tap Yes" and "Tap Get Attention"; do all four with
+   Flexible Item Names off, then on. Then "Tap Type" and
    say "Tap Help" and "Tap Yes" again, with the tiles dimmed. Leave
    typing, delete "Again", "Help" and "Yes" from Feelings, and add the
    phrases "Help me." and "Yes, please." there. With Feelings showing,
@@ -935,7 +937,9 @@ and the Large Content Viewer on Home").*
    restore it with Replace My Phrases. With another category's phrases
    showing, "Tap Yes", with Flexible Item Names off, then on. Note each
    time what Voice Control did, how many commands it took and which
-   control it pressed. Rename the category Feelings again and delete
+   control it pressed. Where Settings has no Flexible Item Names, as on
+   iOS 26, do each trial once and write "not available" for the other,
+   which fails nothing. Rename the category Feelings again and delete
    "Again". *Passes* when the editor refused "Help"; with two matches,
    Voice Control asks which one is meant, or the note's words are changed
    to say what it does instead (docs/DECISIONS.md, "Phrases named like

@@ -1689,13 +1689,15 @@ apart because punctuation counts (`LibraryText.phraseKey`).
   Invariant 10 keeps Get Attention, Emergency, Yes and No one activation
   from every Home state, and with Voice Control a phrase sharing a name
   is expected to take a second command. So the editor refuses a phrase
-  Voice Control hears as "Yes", "No", "Emergency", "Get Attention" or
+  it matches to "Yes", "No", "Emergency", "Get Attention" or
   "Help", whole, with case, punctuation and symbols dropped ("Yes." and
   "help!" count, "Yes, please." and "Y E S" do not), and asks for another word
   (`LibraryRules.checkSafetyControlName`,
   `LibraryEditRejection.phraseNamedLikeASafetyControl`). A wide word only
   looks odd; this touches the call for help. The cost is that a bare
-  "Help" cannot be a phrase, and "Help me." can.
+  "Help" cannot be a phrase, and "Help me." can. The match is Brickson's
+  own comparison, not a measurement of what Voice Control hears; that is
+  a device check (docs/DEVICE-CHECKS.md, I2).
 - **Other words are saved as written, with a note.** The line kept for
   what Save did adds: "Another button on Home answers to these words
   too, so Voice Control may ask which one is meant." The family's words
