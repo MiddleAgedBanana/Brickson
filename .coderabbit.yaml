@@ -30,8 +30,13 @@ reviews:
   # CodeRabbit also skips every *.lock by default. The one lock file here is
   # .github/workflows/actions.lock, where a changed commit is code the
   # workflows will run, so the default's pattern comes back without its "!",
-  # the way CodeRabbit's documentation says to override one.
+  # the way CodeRabbit's documentation says to override one. These patterns
+  # also decide which files CodeRabbit checks out, and it does not say that
+  # this override is left out of that, so "**" keeps the whole repository,
+  # AGENTS.md included. It restricts nothing, and it brings back no other
+  # default: CodeRabbit says broad patterns leave its defaults alone.
   path_filters:
+    - "**"
     - "!docs/archive/**"
     - "!docs/evidence/**/*.json"
     - "!docs/evidence/**/*.txt"

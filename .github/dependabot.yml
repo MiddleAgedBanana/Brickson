@@ -1,6 +1,8 @@
 # Dependabot keeps the GitHub Actions used in .github/workflows up to date.
 # Brickson uses no Swift packages or other outside code (AGENTS.md,
-# invariant 9), so these actions are its only dependencies.
+# invariant 9), so these actions are its dependencies, with one tool
+# Dependabot cannot update: the gh actions-lock release that
+# verify-lockfile.yml pins.
 #
 # - A security fix arrives as soon as GitHub knows about it. That part is
 #   not in this file: it needs the dependency graph, "Dependabot alerts" and

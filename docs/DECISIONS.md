@@ -5369,7 +5369,8 @@ review setup does not quietly break them.
 ### Dependencies
 
 Brickson has no packages (invariant 9), so the actions
-in `.github/workflows` are its only dependencies. Dependabot proposes new
+in `.github/workflows` are its dependencies, with one tool a workflow
+installs (below). Dependabot proposes new
 versions once a month in one grouped pull request, waiting seven days
 after each release (`.github/dependabot.yml`); security fixes come at
 once through Dependabot security updates. Those need three switches in
@@ -5439,29 +5440,34 @@ commit each tag stood for is held apart, in the lockfile (below).
   `.github/workflows/verify-lockfile.yml`, GitHub's own sample with
   this repository's names, runs `gh actions-lock --verify` on each pull
   request and each push to `main`, on Linux, free for a public
-  repository. A run's own refusal is not enough: `pages.yml` runs only
-  after a merge, so a stale entry there would first show as a website
+  repository. A run's own refusal is not enough: no pull request runs
+  `pages.yml`, so a stale entry there would first show as a website
   that does not publish, and a workflow left out of the lockfile runs
   on plain tags with no complaint. It is not a required check: making
   it one is the owner's call in the ruleset, and it has no path filter
   so that it can be. It has no weekly run, which the extension's skill
   mentions and GitHub's sample does not: a tag that moves cannot change
   what runs. `scripts/test-runner.py` holds the workflow to this, and
-  checks with no network that every `uses:` is recorded.
-- **The extension is the one pin Dependabot cannot move.**
-  `verify-lockfile.yml` installs `gh actions-lock` at a named release,
-  because it runs on each pull request and a newest-release install
-  would run code nobody read. GitHub marks the release immutable and
-  signs it (`gh release verify` passed for v0.4.1). A thread moves the
-  pin by hand; a lockfile in a newer format fails the job until it
-  does, so a forgotten pin shows itself.
+  checks with no network the `uses:` lines of steps written in plain
+  block form; `--verify` checks every form.
+- **The extension is the one dependency that is not an action, and the
+  one pin Dependabot cannot move.** `verify-lockfile.yml` installs
+  `gh actions-lock` at a named release, because it runs on each pull
+  request and a newest-release install would run code nobody read.
+  GitHub marks the release immutable and signs it (`gh release verify`
+  passed for v0.4.1), and the job's token is read-only. Neither
+  Dependabot nor "Dependency review" watches it, so a fix to the
+  extension raises nothing here: a thread that runs it moves the pin
+  when a newer release exists (AGENTS.md, *Gotchas*). Only a lockfile
+  in a newer format shows a stale pin by itself, by failing the job.
 - **Someone reads a lockfile's diff.** A changed `commit` is new code
   the workflows will run, and a changed `owner_id` or `repo_id` means
   another repository now holds that name. GitHub suggests `CODEOWNERS`
   for this; Brickson has none (*Code review*), so *Code Review Rules*
   in AGENTS.md carries it. CodeRabbit skips every `*.lock` by default,
-  so `.coderabbit.yaml` brings the pattern back. Dependabot's pull
-  requests get no AI review, so the owner reads those.
+  so `.coderabbit.yaml` brings the pattern back, beside a `**` that
+  keeps its checkout whole. Dependabot's pull requests get no AI
+  review, so the owner reads those.
 - **"Require lockfile" stays off, for the owner to decide.** GitHub's
   policy (the repository's Settings → Actions → Policies) blocks any
   workflow that is not in the lockfile. Every workflow is in it, so it

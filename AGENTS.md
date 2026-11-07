@@ -1172,7 +1172,8 @@ the time. Export them again after each new Xcode release.
   scope"), and so was the GitHub MCP's file update ("Insufficient scope").
   Push the rest, and give the owner the workflow file's full new text to
   commit with their own account (GitHub's web editor on the branch, or an
-  agent on their Mac).
+  agent on their Mac). A change to a `uses:` line goes through the Mac
+  (next).
 - **A workflow's actions and the lockfile change together.**
   `.github/workflows/actions.lock` records the commit of every action
   each workflow runs, and a run refuses an action it does not record
@@ -1185,13 +1186,16 @@ the time. Export them again after each new Xcode release.
   file, so such a change goes through the Mac. Dependabot's pull requests
   update both by themselves. Never edit the lockfile by hand, and never
   delete it to clear an error: a fresh run accepts a tag that moved.
-  `--accept-moved` is the owner's decision, after reading what moved
-  upstream, and never runs in automation. `gh actions-lock` is an
-  extension of `gh`; keep the Mac's at the release `verify-lockfile.yml`
-  pins (`gh extension install github/gh-actions-lock --pin <release>`,
-  after `gh extension remove actions-lock` if an older one is there).
-  `scripts/test-runner.py` checks that each `uses:` is recorded, with no
-  network; only `--verify` checks the commits.
+  `--relock` and `--accept-moved` both take a moved tag's new commit, so
+  each is the owner's decision, after reading what moved upstream, and
+  neither runs in automation. `gh actions-lock` is an extension of `gh`;
+  keep the Mac's at the release `verify-lockfile.yml` pins
+  (`gh extension install github/gh-actions-lock --pin <release>`, after
+  `gh extension remove actions-lock` if an older one is there), and move
+  that pin when the extension has a newer release: nothing else raises
+  one. `python3 scripts/test-runner.py` checks, with no network, the
+  `uses:` lines of steps written in plain block form; only `--verify`
+  checks every form, and the commits.
 - **CodeQL scans the workflow files and the Python scripts in `scripts/`,
   not the Swift code, on purpose.**
   Default setup cannot build Swift without a committed Xcode project, so

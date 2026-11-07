@@ -1,10 +1,10 @@
-# Fails a pull request whose .github/workflows/actions.lock is out of step
-# with the workflows, or whose locked commits no longer check out against
-# the tags they were locked from. The run also refuses an action the
-# lockfile does not record, but only when that workflow runs: pages.yml
-# runs after a merge, not on a pull request, and a workflow left out of the
-# lockfile runs on plain tags with no complaint. This says so on the pull
-# request (docs/DECISIONS.md, "Reviews, updates and GitHub settings",
+# Fails a pull request when a workflow uses an action that
+# .github/workflows/actions.lock does not record, or when a locked commit
+# no longer checks out against the tag it was locked from. A run also
+# refuses an unrecorded action, but only when that workflow runs: no pull
+# request runs pages.yml, and a workflow left out of the lockfile runs on
+# plain tags with no complaint. This says so on the pull request
+# (docs/DECISIONS.md, "Reviews, updates and GitHub settings",
 # *Dependencies*). Free for public repositories, and it runs on Linux, so
 # it uses none of the Mac machines the tests need.
 #
@@ -15,7 +15,7 @@
 # (.github/workflows/verify-lockfile.yml), with this repository's names and
 # a time limit. The extension is pinned to a release GitHub has made
 # immutable. Dependabot cannot update that pin: a thread moves it by hand,
-# and a lockfile written by a newer extension fails here until it does.
+# and a lockfile in a newer format fails here until it does.
 name: Verify lockfile
 
 on:
