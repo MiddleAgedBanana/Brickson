@@ -5376,9 +5376,10 @@ once through Dependabot security updates. Those need three switches in
 Settings → Advanced Security that the file cannot turn on: the dependency
 graph, Dependabot alerts and Dependabot security updates. Security
 updates were on when checked on 2026-10-10, and GitHub allows that only
-with the other two on; keep all three on. Actions are referenced by
-version tag, not pinned to commit hashes: GitHub only raises security
-alerts for tag references, and all of them are GitHub's own actions.
+with the other two on; keep all three on. The workflows name each action
+by its full version tag, not a commit hash: GitHub only raises security
+alerts for tag references, and all of them are GitHub's own actions. The
+commit each tag stood for is held apart, in the lockfile (below).
 
 *Added 2026-11-07, owner:*
 
@@ -5412,14 +5413,61 @@ alerts for tag references, and all of them are GitHub's own actions.
   *Code Review Rules* still flags one, as it flags every action not
   published by GitHub. Trying an action from the Marketplace stays
   possible: the owner adds it to that setting's list, and the pull
-  request that uses it is reviewed like any other.
-- **Next: a workflow lockfile** (`.github/workflows/actions.lock`,
+  request that uses it is reviewed like any other. For a workflow in
+  the lockfile (next), GitHub checks this setting against the locked
+  commit, not the tag, so an entry written as a tag would stop
+  matching; the list holds none, and "Allow actions created by GitHub"
+  names no tag.
+- **A lockfile holds what runs** (`.github/workflows/actions.lock`,
   written by GitHub's `gh actions-lock`, generally available since
-  2026-10-28). It records the commit each tag pointed to, so a moved
-  tag cannot change what runs, while the workflows keep their readable
-  tags and Dependabot keeps updating both. It is its own pull request,
-  run on the owner's Mac (docs/HANDOFF.md, "Repository, CI and
-  website"), and that pull request rewrites this paragraph.
+  2026-10-28). For each workflow it records the commit of every action,
+  and of the actions those actions run, with the numeric identity of
+  the repository behind each name. GitHub runs the locked commit, so a
+  moved tag cannot change what runs, and a run refuses an action the
+  lockfile does not record or a commit no longer reachable from its
+  tag. The workflows keep readable tags, and Dependabot's pull requests
+  update a workflow and the lockfile together, with no setting. The
+  first run of `gh actions-lock` narrowed each short tag to its full
+  version (`@v7` to `@v7.0.1`); each pair was one commit on 2026-11-07,
+  so no code that runs changed. It holds seven entries: the six
+  actions, and the older `actions/upload-artifact` that
+  `actions/upload-pages-artifact` runs. It does not cover reusable
+  workflows from another repository or container images, and Brickson
+  uses neither. AGENTS.md, *Gotchas*, says how a pull request changes
+  an action.
+- **"Verify lockfile" on every pull request.**
+  `.github/workflows/verify-lockfile.yml`, GitHub's own sample with
+  this repository's names, runs `gh actions-lock --verify` on each pull
+  request and each push to `main`, on Linux, free for a public
+  repository. A run's own refusal is not enough: `pages.yml` runs only
+  after a merge, so a stale entry there would first show as a website
+  that does not publish, and a workflow left out of the lockfile runs
+  on plain tags with no complaint. It is not a required check: making
+  it one is the owner's call in the ruleset, and it has no path filter
+  so that it can be. It has no weekly run, which the extension's skill
+  mentions and GitHub's sample does not: a tag that moves cannot change
+  what runs. `scripts/test-runner.py` holds the workflow to this, and
+  checks with no network that every `uses:` is recorded.
+- **The extension is the one pin Dependabot cannot move.**
+  `verify-lockfile.yml` installs `gh actions-lock` at a named release,
+  because it runs on each pull request and a newest-release install
+  would run code nobody read. GitHub marks the release immutable and
+  signs it (`gh release verify` passed for v0.4.1). A thread moves the
+  pin by hand; a lockfile in a newer format fails the job until it
+  does, so a forgotten pin shows itself.
+- **Someone reads a lockfile's diff.** A changed `commit` is new code
+  the workflows will run, and a changed `owner_id` or `repo_id` means
+  another repository now holds that name. GitHub suggests `CODEOWNERS`
+  for this; Brickson has none (*Code review*), so *Code Review Rules*
+  in AGENTS.md carries it. CodeRabbit skips every `*.lock` by default,
+  so `.coderabbit.yaml` brings the pattern back. Dependabot's pull
+  requests get no AI review, so the owner reads those.
+- **"Require lockfile" stays off, for the owner to decide.** GitHub's
+  policy (the repository's Settings → Actions → Policies) blocks any
+  workflow that is not in the lockfile. Every workflow is in it, so it
+  could go on, but "Verify lockfile" already reports one that is not,
+  and Evaluate mode, which shows what a policy would block, is for
+  GitHub Enterprise Cloud only.
 
 ### Code scanning
 

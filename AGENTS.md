@@ -370,6 +370,11 @@ the failure.
   title or commit message) straight into a shell command.
 - A workflow that starts using an action not published by GitHub (one
   whose owner is not `actions` or `github`).
+- A `uses:` line changed without `.github/workflows/actions.lock`, or a
+  lockfile edited by hand. In its diff, a changed `commit` is new code the
+  workflows will run, and a changed `owner_id` or `repo_id` means another
+  repository now holds that name: say so for the owner (docs/DECISIONS.md,
+  "Reviews, updates and GitHub settings", *Dependencies*).
 - A renamed job that the `main` ruleset requires, or a path filter added
   to the workflow that runs those jobs (*Gotchas*).
 - An Xcode, SDK, simulator OS or runner image version written into the
@@ -1168,6 +1173,25 @@ the time. Export them again after each new Xcode release.
   Push the rest, and give the owner the workflow file's full new text to
   commit with their own account (GitHub's web editor on the branch, or an
   agent on their Mac).
+- **A workflow's actions and the lockfile change together.**
+  `.github/workflows/actions.lock` records the commit of every action
+  each workflow runs, and a run refuses an action it does not record
+  (docs/DECISIONS.md, "Reviews, updates and GitHub settings",
+  *Dependencies*). A pull request that adds a workflow or changes a
+  `uses:` line runs `gh actions-lock` on the owner's Mac, from the root
+  of its worktree (it also narrows a short tag such as `@v7` to the full
+  version), reads the whole diff, runs `gh actions-lock --verify`, and
+  commits the lockfile with the workflow. A cloud agent can push neither
+  file, so such a change goes through the Mac. Dependabot's pull requests
+  update both by themselves. Never edit the lockfile by hand, and never
+  delete it to clear an error: a fresh run accepts a tag that moved.
+  `--accept-moved` is the owner's decision, after reading what moved
+  upstream, and never runs in automation. `gh actions-lock` is an
+  extension of `gh`; keep the Mac's at the release `verify-lockfile.yml`
+  pins (`gh extension install github/gh-actions-lock --pin <release>`,
+  after `gh extension remove actions-lock` if an older one is there).
+  `scripts/test-runner.py` checks that each `uses:` is recorded, with no
+  network; only `--verify` checks the commits.
 - **CodeQL scans the workflow files and the Python scripts in `scripts/`,
   not the Swift code, on purpose.**
   Default setup cannot build Swift without a committed Xcode project, so
