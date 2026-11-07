@@ -5304,18 +5304,33 @@ public:
    writes only through its query, so its other fields are read as
    variables. The guard refuses a push from a checkout whose pushes skip
    the hook or whose branch has none (made before the check reached
-   main), whichever branch the push names, a git command in a folder the
+   main), whichever branch the push names; a push after a command in the
+   same call that may change what it runs, because the guard reads the
+   hook before the call runs: a `git config` change to `core.hooksPath`,
+   the `core` section or an included file, another branch or commit
+   checked out (a new branch made where HEAD is changes nothing), or a
+   file written, removed or given another mode in `.githooks`, git's own
+   folder or settings files or `scripts/privacy-check.py`, or where the
+   guard cannot place it (inline code, a patch, a stash); a release
+   asset upload (`gh release create` given files, `gh release upload`,
+   or a request to GitHub's uploads host), whose contents, an archive's
+   included, it cannot read; a git command in a folder the
    shell computes, a commit that chooses another repository, work tree
    or index than its folder's (`--git-dir`, `--work-tree`,
    `core.worktree`, `GIT_DIR`, `GIT_INDEX_FILE` and the like, whose
    staged changes the check cannot follow: commit with `git -C`
    instead), any command that names the list, the config folder
    that holds it (a recursive read of that folder reaches the list
-   without naming it) or a glob that could reach either, and any that
-   prints the whole environment. It also
+   without naming it) or a glob that could reach either, at the default
+   place and where `XDG_CONFIG_HOME` puts it, and any that
+   prints the whole environment. It runs before the file tools too, and
+   refuses them the list and its folder at both places (and Grep a
+   folder that holds them). It also
    refuses what it cannot read before the command runs: text the shell
    builds from a variable or another command (an unquoted here-document
-   holding `$` or a backtick included), a process substitution, stdin
+   holding `$` or a backtick included, and a word whose text appears
+   elsewhere in the command in quotes: the guard cannot tell which of
+   the two a value came from), a process substitution, stdin
    from anything but the command's own here-document (`gh gist create`
    given no file reads it), a file the same
    command writes and then publishes or commits (a redirection after
@@ -5404,8 +5419,9 @@ public:
   environment printing other than the forms it refuses (`ps eww`, a
   script); commit names set through `--config-env` or a configuration
   file another one includes; commits `git am` makes from a patch (the
-  hook reads them before a push); and release asset and tag names, and
-  a new repository's name;
+  hook reads them before a push); a hook changed by a program it does
+  not recognise, or by a merge, pull or rebase, in the same command as a
+  push; and a release's tag name, and a new repository's name;
 - on Linux only (a Mac cannot make one), a file name that is not UTF-8:
   its text is read from commits, and a binary one stops the check;
 - a push from a checkout with the hook off, from a checkout of a branch
@@ -5426,7 +5442,8 @@ recommended:
   cannot be committed; the check refuses a list inside a checkout that
   does not ignore it. The
   agents' Read and Edit tools are denied it (`.claude/settings.json`),
-  and the guard refuses commands that name it.
+  and the guard refuses the file tools and commands that reach it, here
+  or where `XDG_CONFIG_HOME` puts it.
 - **GitHub:** the repository secret `BRICKSON_PRIVATE_WORDS`, for CI,
   one entry per line, as in the file. GitHub hides each whole line of a
   secret wherever it appears in a log (the check never prints them

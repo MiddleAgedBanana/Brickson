@@ -41,6 +41,7 @@ runs wherever python3 does. Its tests are scripts/test-hooks.py.
 """
 import json
 import fnmatch
+import glob
 import importlib.util
 import os
 import re
@@ -150,6 +151,14 @@ PUBLISHED_STDIN = ('Text this command reads from stdin can be checked only from 
 WRITTEN_FILE = ('This command writes a file that it also publishes, sends or commits, so the '
                 'privacy check would read the file before the command changes it. Write the '
                 'file in one command, then publish or commit it in the next.')
+RELEASE_ASSET = ('This would upload a release asset, whose contents and name the privacy check '
+                 'cannot read here (an archive\'s files among them). Release assets are the '
+                 "owner's to add, on the release's page on GitHub (" + PRIVACY_DECISION + ').')
+HOOK_CHANGED = ('This command pushes after changing what the push would run (the privacy hook, '
+                'core.hooksPath or another git setting, scripts/privacy-check.py, or the branch '
+                'checked out), or after writing a file the guard cannot place, and the guard '
+                'reads the hook before the command runs. Make the change in one command, then '
+                'push in the next (' + PRIVACY_DECISION + ').')
 ENVIRONMENT_DUMP = ('This would print the whole environment, which may hold the private list. '
                     'Name the variables you need instead (printenv HOME); the list is the '
                     "owner's and stays unread (" + PRIVACY_DECISION + ').')
@@ -221,7 +230,24 @@ GH_PUBLISHES = {
 }
 # Options of those commands that take a value which is not published, where
 # their operands matter: gh gist edit --remove names a file to drop.
-GH_OTHER_VALUES = {('gist', 'edit'): {'--remove', 'r'}}
+GH_OTHER_VALUES = {('gist', 'edit'): {'--remove', 'r'},
+                   # A release's operands are its tag, then the assets to upload.
+                   ('release', 'create'): {'--target', '--discussion-category',
+                                           '--notes-start-tag'}}
+# GitHub takes release assets at this host (gh release upload uses it).
+UPLOADS_HOST = 'uploads.github.com'
+# Programs that change a file's mode or remove it, which can turn a hook off
+# without writing to it.
+FILE_CHANGERS = {'chmod', 'chown', 'chgrp', 'chflags', 'chattr', 'setfacl', 'xattr', 'rm',
+                 'rmdir', 'unlink', 'truncate', 'shred'}
+# Git commands that change files in the work tree, at the paths they name.
+GIT_FILE_CHANGERS = {'rm', 'mv', 'restore', 'checkout', 'switch', 'reset', 'clean',
+                     'checkout-index', 'read-tree', 'sparse-checkout'}
+# The file tools, and the arguments that name the file or folder each opens,
+# changes or searches.
+FILE_TOOLS = {'Read': ('file_path',), 'Edit': ('file_path',), 'MultiEdit': ('file_path',),
+              'Write': ('file_path',), 'NotebookEdit': ('notebook_path',), 'Grep': ('path',),
+              'Glob': ('path',)}
 # gh api's options that take a value.
 GH_API_VALUES = {'--method', 'X', '--field', 'F', '--raw-field', 'f', '--input', '--header',
                  'H', '--jq', 'q', '--template', 't', '--preview', 'p', '--cache', '--hostname'}
@@ -878,7 +904,7 @@ def require_full_options(word, options):
         deny('Spell out command options in full so the guard can inspect their effect.')
 
 
-def check_push(args, context, branch_changed=False):
+def check_push(args, context, branch_changed=False, git_state=None):
     refspecs = []
     options = []
     remote = None
@@ -926,6 +952,8 @@ def check_push(args, context, branch_changed=False):
     if dry_run:
         return  # Only the final setting determines whether Git sends updates.
     check_push_hook(options, context)
+    if git_state is not None:
+        check_hook_unchanged(git_state, context)
     for option in options:
         if (option == '--force' or option.startswith(('--force-with-lease', '--force-if-includes'))
                 or (re.fullmatch(r'-[a-zA-Z46]+', option) and 'f' in option)):
@@ -1191,6 +1219,9 @@ def check_gh(words, cwd, environment, git_state=None):
     if len(plain) >= 2 and plain[0] in ('issue', 'pr', 'release', 'gist', 'repo') \
             and plain[1] == 'new':
         plain[1] = 'create'
+    if plain[:2] == ['release', 'upload'] or release_assets(plain) \
+            or gh_uploads(words[1:], plain, environment):
+        deny(RELEASE_ASSET)
     if git_state is not None:
         note_gh_text(plain, cwd, git_state)
     if len(plain) >= 2 and plain[0] in ('agent-task', 'agent-tasks', 'agent', 'agents') \
@@ -1303,6 +1334,33 @@ def gh_arguments(args, value_options):
                     break
         index += 1
     return pairs, operands
+
+
+def release_assets(plain):
+    """The files gh release create uploads as assets: its operands after
+    the tag (gh release create --help)."""
+    if plain[:2] != ['release', 'create']:
+        return []
+    texts, files = GH_PUBLISHES[('release', 'create')]
+    _, operands = gh_arguments(plain[2:], texts | files | GH_OTHER_VALUES[('release', 'create')])
+    return operands[1:]
+
+
+def names_uploads(words):
+    """Whether a request names the host that takes release assets, as a
+    word or an option's value after =."""
+    return any(parsed_url(text)[1] == UPLOADS_HOST
+               for word in words for text in (word, word.partition('=')[2]) if text)
+
+
+def gh_uploads(words, plain, environment):
+    """Whether gh sends a request to the host that takes release assets:
+    its --hostname or GH_HOST, or gh api given that host's address."""
+    hosts = list(option_values(words, {'--hostname'}))
+    hosts.append((environment or {}).get('GH_HOST', ''))
+    if plain[:1] == ['api']:
+        hosts += gh_arguments(plain[1:], GH_API_VALUES)[1]
+    return any(host and parsed_url(host)[1] == UPLOADS_HOST for host in hosts)
 
 
 def note_gh_text(plain, cwd, git_state):
@@ -1927,18 +1985,22 @@ def published_files(filename, cwd, git_state=None):
 
 
 def literal_words(command):
-    """The words of a command, as the shell will pass them, in which every
-    $ and backtick is text: single-quoted or escaped. A word the shell
-    would build from a variable or another command is left out, and so is
-    anything this simple reading gets wrong, which then counts as built."""
-    words, word, built, quote = set(), [], False, None
+    """The words of a command, as the shell will pass them: those in which
+    every $ and backtick is text (single-quoted or escaped), and those the
+    shell builds from a variable or another command. Anything this simple
+    reading gets wrong is in neither, and so counts as built."""
+    words, built_words, word, built, quote = set(), set(), [], False, None
     index = 0
 
     def end():
         # A here-document read with cat stands as a marker: one whose text
         # the shell builds builds the word.
         text = unmarked(''.join(word))
-        if word and not built and not any(document[4] for document in substituted_documents(text)):
+        if not word:
+            return
+        if built or any(document[4] for document in substituted_documents(text)):
+            built_words.add(text)
+        else:
             words.add(text)
 
     while index < len(command):
@@ -1972,7 +2034,16 @@ def literal_words(command):
         index += 1
     if quote is None:
         end()
-    return words
+    return words, built_words
+
+
+def ends_with_value(word, value):
+    """Whether value is a word, an option's or a field's value after =, or
+    a short option's attached value, after any switches (-cbtext)."""
+    if not word.endswith(value):
+        return False
+    prefix = word[:len(word) - len(value)]
+    return not prefix or prefix.endswith('=') or bool(re.fullmatch(r'-[A-Za-z]+=?', prefix))
 
 
 def literal_text(value, git_state):
@@ -1981,18 +2052,18 @@ def literal_text(value, git_state):
     a here-document read with cat that the shell gives as written
     (substituted_documents), and is not, or does not end, a
     word in which they are text. Inside double quotes the shell drops the
-    backslash of \\$ and \\`, which the guard's word splitting keeps."""
+    backslash of \\$ and \\`, which the guard's word splitting keeps. The
+    same text built elsewhere in the command may be the word value came
+    from, so it counts as built: one word never vouches for another."""
     if not EXPANSION_START.search(without_documents(value, built=False)):
         return value
-    for candidate in dict.fromkeys([value, re.sub(r'\\([$`])', r'\1', value)]):
-        for word in git_state.get('literal_words', ()):
-            if not word.endswith(candidate):
-                continue
-            # The whole word, an option's or a field's value after =, or a
-            # short option's attached value, after any switches (-cbtext).
-            prefix = word[:len(word) - len(candidate)]
-            if not prefix or prefix.endswith('=') or re.fullmatch(r'-[A-Za-z]+=?', prefix):
-                return candidate
+    candidates = list(dict.fromkeys([value, re.sub(r'\\([$`])', r'\1', value)]))
+    if any(ends_with_value(word, candidate) for candidate in candidates
+           for word in git_state.get('built_words', ())):
+        return None
+    for candidate in candidates:
+        if any(ends_with_value(word, candidate) for word in git_state.get('literal_words', ())):
+            return candidate
     return None
 
 
@@ -2239,6 +2310,9 @@ def note_writes(git_state, words, raw_words, unwrapped, shell_cwd, cwd):
                      for arg in operands if parsed_url(arg)[1] and '.' in parsed_url(arg)[1]]
     elif program == 'patch' or (INTERPRETERS.fullmatch(program) and inline_code(args, cwd)):
         paths = [None]
+    elif program in FILE_CHANGERS:
+        # A mode or a removal changes no file's text, but can turn a hook off.
+        git_state.setdefault('changes', []).extend((cwd, path) for path in operands)
     writes.extend((cwd, path) for path in paths)
 
 
@@ -2283,10 +2357,11 @@ def changes_index(subcommand, args):
     return False
 
 
-def sets_identity(args):
-    """Whether git config changes a commit's author or committer (user.*,
-    author.*, committer.*): sets, adds, replaces or unsets one, or removes
-    or renames their section. A read changes nothing."""
+def config_change(args):
+    """What git config changes: (section, True) for a section it removes or
+    renames, (key, False) for a key it sets, adds, replaces or unsets, and
+    None for a read. Names are in lower case; an edit, which may change
+    anything, is ('', True)."""
     operands, index, options = [], 0, set()
     while index < len(args):
         arg = args[index]
@@ -2299,17 +2374,127 @@ def sets_identity(args):
         index += 1
     action = ''
     if operands[:1] in (['set'], ['unset'], ['get'], ['list'], ['remove-section'],
-                        ['rename-section']):
+                        ['rename-section'], ['edit']):
         action, operands = operands[0], operands[1:]
+    if action == 'edit' or options & {'--edit', '-e'}:
+        return '', True
     key = operands[0].lower() if operands else ''
     if (action in ('remove-section', 'rename-section')
             or options & {'--remove-section', '--rename-section'}):
-        return key in ('user', 'author', 'committer')
-    if key not in IDENTITY_SETTINGS or action in ('get', 'list') or any(
+        return key, True
+    if action in ('get', 'list') or any(
             option.startswith(('--get', '--list')) or option == '-l' for option in options):
+        return None
+    if action in ('set', 'unset') or len(operands) >= 2 or any(
+            option.startswith(('--unset', '--replace-all', '--add')) for option in options):
+        return key, False
+    return None
+
+
+def sets_identity(args):
+    """Whether git config changes a commit's author or committer (user.*,
+    author.*, committer.*): sets, adds, replaces or unsets one, or removes
+    or renames their section. A read changes nothing."""
+    change = config_change(args)
+    if change is None:
         return False
-    return action in ('set', 'unset') or len(operands) >= 2 or any(
-        option.startswith(('--unset', '--replace-all', '--add')) for option in options)
+    name, section = change
+    if section:
+        return name in ('', 'user', 'author', 'committer')
+    return name in IDENTITY_SETTINGS
+
+
+def sets_hooks(args):
+    """Whether git config may change which hooks git runs: core.hooksPath,
+    the core section, or a file it includes (include.path, includeIf)."""
+    change = config_change(args)
+    if change is None:
+        return False
+    name, section = change
+    if section:
+        return name in ('', 'core', 'include') or name.startswith('includeif')
+    return name == 'core.hookspath' or name.startswith(('include.', 'includeif.'))
+
+
+def leaves_files(subcommand, args):
+    """Whether git checkout or switch leaves the work tree as it is: it is
+    given nothing to check out, or only a new branch to make where HEAD is
+    (-b, -B, -c, -C or --orphan, with no start point and no paths)."""
+    creating = 'bB' if subcommand == 'checkout' else 'cC'
+    named = ('--orphan', '--create', '--force-create')
+    operands, index = [], 0
+    while index < len(args):
+        arg = args[index]
+        if arg == '--':
+            operands += args[index + 1:]
+            break
+        if arg in named:
+            index += 2  # the new branch's name follows
+            continue
+        if re.fullmatch(r'-[a-zA-Z]+', arg):
+            letters = arg[1:]
+            hit = next((offset for offset, letter in enumerate(letters) if letter in creating),
+                       None)
+            # The new branch's name is the rest of the word, or the next one.
+            if hit is not None and not letters[hit + 1:]:
+                index += 1
+        elif arg == '-' or not arg.startswith('-'):
+            operands.append(arg)  # a branch, a commit or a path (- is the last branch)
+        index += 1
+    return not operands
+
+
+def changed_paths(cwd, path):
+    """The absolute paths a command's path names, as the shell gives them
+    (a glob's matches, before the command runs), or None when the guard
+    cannot tell: the shell builds it, a brace expands it, or its folder is
+    unknown."""
+    if path is None or re.search(r'\{[^}]*(?:,|\.\.)[^}]*\}', path):
+        return None
+    absolute = resolved(cwd, path)
+    if absolute is None:
+        return None
+    if re.search(r'[*?[]', path):
+        matches = glob.glob(os.path.join(cwd or os.sep, os.path.expanduser(path)))
+        return [os.path.realpath(match) for match in matches] or [absolute]
+    return [absolute]
+
+
+def check_hook_unchanged(git_state, context):
+    """A push runs the hook, its setting and the check it calls as they are
+    when the push starts, and the guard reads them before the whole command
+    runs. Refuse a push after a change to any of them in the same command:
+    a git config change to the hooks, another branch checked out, or a file
+    written, removed or given another mode in .githooks, git's own folder,
+    git's settings files or scripts/privacy-check.py (or anywhere the guard
+    cannot place)."""
+    if git_state.get('hook_changed'):
+        deny(HOOK_CHANGED)
+    changed = [*git_state.get('writes', ()), *git_state.get('changes', ())]
+    if not changed:
+        return
+    top = git(context, 'rev-parse', '--show-toplevel')
+    folders = git(context, 'rev-parse', '--path-format=absolute', '--git-dir', '--git-common-dir')
+    if top is None or folders is None:
+        deny(HOOK_CHANGED)
+    environment = {**os.environ, **{key: value for key, value in context[2].items()
+                                    if value is not None}}
+    home = environment.get('HOME') or os.path.expanduser('~')
+    xdg = environment.get('XDG_CONFIG_HOME', '')
+    places = [os.path.join(top, '.githooks'), os.path.join(top, 'scripts', 'privacy-check.py'),
+              *folders.splitlines(), os.path.join(home, '.gitconfig'),
+              os.path.join(xdg if os.path.isabs(xdg) else os.path.join(home, '.config'),
+                           'git', 'config'), '/etc/gitconfig']
+    for name in ('GIT_CONFIG_GLOBAL', 'GIT_CONFIG_SYSTEM'):
+        places += (git(context, 'var', name) or '').splitlines()
+    places = {os.path.realpath(place) for place in places if place}
+    for cwd, path in changed:
+        paths = changed_paths(cwd, path)
+        if paths is None or any(
+                one == place or one.startswith(place.rstrip(os.sep) + os.sep)
+                or place.startswith(one.rstrip(os.sep) + os.sep)
+                for one in paths for place in places):
+            deny(HOOK_CHANGED)
 
 
 def check_written(git_state):
@@ -2394,6 +2579,78 @@ def names_list_glob(command):
     return False
 
 
+def config_folders(environment=None):
+    """The config folders the private list may be in, as real paths: the
+    default one, and the one the checker reads it from when
+    XDG_CONFIG_HOME is an absolute path (scripts/privacy-check.py,
+    default_list_file)."""
+    environment = os.environ if environment is None else environment
+    home = environment.get('HOME') or os.path.expanduser('~')
+    folders = [os.path.join(home, '.config')]
+    configured = environment.get('XDG_CONFIG_HOME', '')
+    if os.path.isabs(configured):
+        folders.append(configured)
+    return list(dict.fromkeys(os.path.realpath(folder) for folder in folders))
+
+
+def check_file_tool(name, arguments, cwd):
+    """Refuse a file tool that opens, changes or searches the private list
+    or its folder, wherever the checker reads the list from: the Read and
+    Edit deny rules name only the default folder. Grep reads every file
+    under its path, so it is refused a folder that holds the list too."""
+    for key in FILE_TOOLS[name]:
+        value = arguments.get(key)
+        if not isinstance(value, str) or not value:
+            if name != 'Grep':
+                continue
+            value = cwd  # Grep searches the folder it runs in
+        path = os.path.realpath(os.path.join(cwd, os.path.expanduser(value)))
+        for config in config_folders():
+            folder = os.path.join(config, 'brickson')
+            if (path in (config, folder) or path.startswith(folder + os.sep)
+                    or (name == 'Grep' and folder.startswith(path.rstrip(os.sep) + os.sep))):
+                deny(LIST_READ)
+
+
+def names_configured_folder(command, cwd):
+    """Whether a word names the config folder XDG_CONFIG_HOME sets, or the
+    list's folder or file in it, which the checks for .config do not see
+    when that folder is elsewhere: by its path, or by a glob that could
+    name one of them (a glob deeper than the list's file names other
+    files)."""
+    configured = os.environ.get('XDG_CONFIG_HOME', '')
+    if not os.path.isabs(configured):
+        return False
+    config = os.path.normpath(configured)
+    folder = os.path.join(config, 'brickson')
+    targets = [config, folder, os.path.join(folder, 'private-words.txt')]
+    real = [os.path.realpath(target) for target in targets]
+    home = os.environ.get('HOME') or os.path.expanduser('~')
+    for word in re.findall(r'[^\s;&|()<>`]+', command):
+        word = word.replace('"', '').replace("'", '')
+        for text in dict.fromkeys([word, word.partition('=')[2]]):
+            text = re.sub(r'\$\{?XDG_CONFIG_HOME\}?', lambda _: config, text)
+            text = re.sub(r'\$\{?HOME\}?', lambda _: home, text)
+            if not text:
+                continue
+            path = os.path.normpath(os.path.join(cwd, os.path.expanduser(text)))
+            if re.search(r'[*?[]', text):
+                parts = path.split(os.sep)
+                # A shell glob matches a leading dot only when it writes one.
+                if any(len(parts) == len(target.split(os.sep)) and all(
+                        fnmatch.fnmatchcase(goal, part)
+                        and (part.startswith('.') or not goal.startswith('.'))
+                        for goal, part in zip(target.split(os.sep), parts))
+                       for target in targets):
+                    return True
+                continue
+            for candidate, (whole, inside) in ((path, targets[:2]),
+                                                (os.path.realpath(path), real[:2])):
+                if candidate in (whole, inside) or candidate.startswith(inside + os.sep):
+                    return True
+    return False
+
+
 def names_config_folder(command):
     """Whether a word names a config folder itself, which a recursive or
     wildcard read would reach the list's file through without naming it
@@ -2424,7 +2681,7 @@ def check_command(command, cwd, depth=0, environment=None, git_state=None):
         deny('Shell nesting exceeds the inspection limit. Use the underlying command explicitly.')
     command = ansi_c_quotes(without_shell_comments(
         inspectable_here_documents(marked_documents(command))))
-    literal = literal_words(command)
+    literal, built = literal_words(command)
     try:
         parts = list(segments(command))
     except ValueError:
@@ -2606,7 +2863,8 @@ def check_command(command, cwd, depth=0, environment=None, git_state=None):
                 next_states.add((target, True, new_stack, shell_env))
                 next_states.add((where, False, stack, shell_env))
                 continue
-            git_state['literal_words'] = literal  # this command's, not a nested one's
+            # This command's words, not a nested one's.
+            git_state['literal_words'], git_state['built_words'] = literal, built
             git_state['stdin'] = stdin_document(parts, given, part_index)
             if program == 'git':
                 # 2>/dev/null and the like are the shell's, never git's arguments.
@@ -2625,6 +2883,17 @@ def check_command(command, cwd, depth=0, environment=None, git_state=None):
                         git_state.setdefault('index_changes', []).append(context)
                 if subcommand == 'config' and sets_identity(args):
                     git_state['identity_set'] = True
+                if subcommand == 'config' and sets_hooks(args):
+                    git_state['hook_changed'] = True
+                if subcommand in GIT_FILE_CHANGERS:
+                    # What their paths name may change, the hook among them.
+                    directory = effective_directory(context)
+                    git_state.setdefault('changes', []).extend(
+                        (directory, arg) for arg in args if not arg.startswith('-'))
+                    if ((subcommand in ('checkout', 'switch') and not leaves_files(subcommand, args))
+                            or (subcommand == 'reset' and any(
+                                arg in ('--hard', '--keep', '--merge') for arg in args))):
+                        git_state['hook_changed'] = True  # another commit's files
                 if (subcommand in ('checkout', 'switch')
                         or (subcommand == 'branch' and any(
                             (arg.startswith('--') and arg != '--' and '--move'.startswith(arg))
@@ -2642,7 +2911,7 @@ def check_command(command, cwd, depth=0, environment=None, git_state=None):
                 elif subcommand == 'commit':
                     note_commit(git_state, args, context, check_commit(args))
                 elif subcommand == 'push':
-                    check_push(args, context, git_state['branch_changed'])
+                    check_push(args, context, git_state['branch_changed'], git_state)
                 elif subcommand == 'send-pack':
                     deny('Use git push with an explicit feature branch; send-pack '
                          'can update remote refs outside the inspected push path.')
@@ -2667,6 +2936,8 @@ def check_command(command, cwd, depth=0, environment=None, git_state=None):
                                 full.startswith(option) for full in ('--execute', '--config')))
                                 or re.match(r'^-[^-]*e', word)):
                             deny(WGET_CONFIG)
+                if names_uploads(request_words[1:]):
+                    deny(RELEASE_ASSET)
                 for operation in http_operations(request_words):
                     if any(github_api_host(word) for word in operation[1:]):
                         # curl reads its default file before any later options;
@@ -2826,7 +3097,7 @@ def main():
     if name == 'Bash':
         command = str(arguments.get('command', ''))
         if (LIST_REFERENCE.search(command) or names_list_glob(command)
-                or names_config_folder(command)):
+                or names_config_folder(command) or names_configured_folder(command, cwd)):
             deny(LIST_READ)
         if PROCESS_ENVIRONMENT.search(command):
             deny(ENVIRONMENT_DUMP)
@@ -2836,6 +3107,8 @@ def main():
         if state.get('publishes'):
             check_privacy(state.get('published', []), commits=state.get('commits', ()),
                           directory=cwd, identities=state.get('identities', ()))
+    elif name in FILE_TOOLS:
+        check_file_tool(name, arguments, cwd)
     elif name.startswith('mcp__'):
         check_github_tool(name, arguments)
         check_tool_privacy(name, arguments, cwd)

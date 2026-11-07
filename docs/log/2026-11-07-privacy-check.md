@@ -278,6 +278,42 @@ failed before its fix:
   now gets every rule text gets; the address alone keeps the support
   address's allowance.
 
+The third round, Codex's code review of `0fd0fbc` (four findings). Each
+was reproduced by a test that failed before its fix:
+
+- **Release assets** (Codex): `gh release create` given files, and
+  `gh release upload`, send whole files to GitHub, which the guard did
+  not read (it reads a gist's files). An asset is often an archive whose
+  contents it cannot read, and agents make no releases, so the guard
+  refuses an upload, by gh or by a request to GitHub's uploads host. A
+  release's title and notes are still read.
+- **One quoted word vouching for another** (Codex): the guard decided
+  whether a `$` was text from every quoted word in the command, so in
+  `echo '$BODY'; gh pr comment 12 --body "$BODY"` the quoted one let
+  the shell's value of `BODY` through. A value whose text also appears
+  built elsewhere in the command now counts as built.
+- **The list where `XDG_CONFIG_HOME` puts it** (Codex): the checker
+  reads the list from there when that is an absolute path, while the
+  Read and Edit deny rules name only `~/.config/brickson`. The guard now
+  also runs before the file tools (Read, Edit, MultiEdit, Write,
+  NotebookEdit, Grep, Glob) and refuses them the list's folder at both
+  places, and Grep a folder that holds it. Commands that name that
+  folder, or the config folder around it, are refused there as they
+  were at the default place.
+- **A hook turned off just before a push** (Codex): the guard read the
+  hook and its setting before the whole command ran, so
+  `git config core.hooksPath /dev/null && git push` and
+  `chmod -x .githooks/pre-push && git push` passed it. A push is now
+  refused after a command in the same call that changes the hooks'
+  setting (`core.hooksPath`, the `core` section, an included file),
+  checks out another branch or commit, or writes, removes or changes
+  the mode of anything in `.githooks`, git's own folder, git's settings
+  files or `scripts/privacy-check.py`, or a file the guard cannot place.
+  That also refuses `git checkout main && git push origin HEAD:feature`,
+  which an older guard test allowed: the test now expects the refusal,
+  and a renamed branch (`git branch -m`), which keeps its files, takes
+  its place for a push that names its destination.
+
 The privacy job's checkout names `actions/checkout@v7.0.1`, the version
 pull request #87 locks, so whichever of the two merges second needs no
 new lockfile entry. A cloud session cannot push `.github/workflows/`,
@@ -346,12 +382,15 @@ after main (with the reviewer roster) was merged in:
   phone edges, folded phones, contractions, RTF bytes and their order
   with JSON escapes, Snappy copies, IPTC datasets, a zero place), failed
   it.
-- `python3 scripts/test-hooks.py`, with a made-up list: 175 tests, OK,
+- `python3 scripts/test-hooks.py`, with a made-up list: 179 tests, OK,
   also with `EMAIL` set to an address like the Mac's guess, which failed
   39 of them before that fix (and with `GIT_AUTHOR_EMAIL` too, at
   `ba6a4c3`). The test added for it fails with no person in the tests'
-  settings file. The tests added for the two review rounds each failed
-  before their fix.
+  settings file. The tests added for the three review rounds each failed
+  before their fix: for the third, run against the guard and settings
+  of `0fd0fbc`, the 4 new tests failed 55 cases between them, and the 2
+  settings tests and the branch test that now expects a refusal failed
+  too.
   Run against the guard as it was before the second review's fixes, the
   13 tests added for them and the 2 they extended all failed (49
   failures); the ten breakages of the guard's privacy rules from
@@ -375,7 +414,7 @@ after main (with the reviewer roster) was merged in:
   given as `base64:`: it found the made-up name in a file, a commit and
   a pull request's description, printed three findings as one count,
   and exited 1.
-- `python3 scripts/privacy-check.py --no-list`: no finding in the 607
+- `python3 scripts/privacy-check.py --no-list`: no finding in the 608
   tracked files. `--history --no-list`: three uses of the published
   support address in one old commit's log record, which docs/DECISIONS.md
   records. `--outgoing`, with a scratch list kept outside the
@@ -390,14 +429,16 @@ after main (with the reviewer roster) was merged in:
 ## Not verified
 
 - On a Mac, only the Python suites ran, last at `ba6a4c3` (*The first
-  run on the owner's Mac*); the second review round's fixes have not
-  run there yet. Not run on a Mac: the hook on a real push,
+  run on the owner's Mac*); the second and third review rounds' fixes
+  have not run there yet. Not run on a Mac: the hook on a real push,
   `scripts/test.sh`, the guard in a Claude Code session there. CI runs
   the Python checks on GitHub's Mac.
 - The CI step has not run on GitHub: the workflow change waits for the
   commit from the owner's Mac, and until the secret is set it fails by
   design. GitHub's masking of the secret was not tested; the check never
   prints the list either way.
+- The guard before the file tools was fed the calls Claude Code sends
+  (`file_path`, `notebook_path`, `path`), not run in a live session.
 - Whether a cloud environment's setup script line turns the hook on in
   the thread's clone was not tried; AGENTS.md also tells a cloud thread
   to turn it on in its own clone when `--status` reads a list.

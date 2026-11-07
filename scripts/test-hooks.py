@@ -281,12 +281,22 @@ class GuardTests(unittest.TestCase):
             self.assertDenied(f'curl -q -X POST -T {shlex.quote(source)} {endpoint}')
 
     def test_branch_changes_require_explicit_push_destinations(self):
-        for change in ['git checkout main', 'git switch main',
-                       "bash -c 'git switch main'", '(git checkout main)']:
+        checkouts = ['git checkout main', 'git switch main', "bash -c 'git switch main'",
+                     '(git checkout main)']
+        for change in checkouts + ['git branch -m renamed']:
             self.assertDenied(f'{change} && git push')
             self.assertDenied(f'{change}; git push origin')
             self.assertDenied(f'{change} && git push origin HEAD')
-            self.assertAllowed(f'{change} && git push origin HEAD:feature')
+        # A renamed branch keeps its files, so a push that names its
+        # destination is read as written. Another branch checked out may
+        # bring another hook, so its push waits for a command of its own
+        # (PrivacyGuardTests, test_a_push_after_a_change_to_the_hook_in_the_same_call_is_refused).
+        self.assertAllowed('git branch -m renamed && git push origin HEAD:feature')
+        for change in checkouts:
+            output = guard_output('Bash', {'command': f'{change} && git push origin HEAD:feature'},
+                                  self.repo)
+            self.assertEqual(output and output['permissionDecision'], 'deny', change)
+            self.assertIn('push in the next', output['permissionDecisionReason'])
         self.assertAllowed('git switch main')
         self.assertAllowed('git checkout main && git push --dry-run origin main')
         self.assertAllowed('git status && git push origin feature')
@@ -1627,6 +1637,139 @@ class PrivacyGuardTests(unittest.TestCase):
         self.assertAllowed(f'git -C {other} commit -m x')
         self.assertAllowed(f'GIT_DIR={other}/.git env -u GIT_DIR git commit -m x')
 
+    def test_a_release_asset_upload_is_refused(self):
+        # A release asset's contents and name go to GitHub, and what an
+        # archive holds cannot be read here, so the guard refuses the
+        # upload; a release's notes are still read as text.
+        (self.repo / 'notes.txt').write_text(f'Thanks {PRIVATE_NAME}\n')
+        (self.repo / 'clean.txt').write_text('Nothing personal.\n')
+        uploads = 'https://uploads.github.com/repos/o/r/releases/1/assets?name=clean.txt'
+        for command in ['gh release create v1 notes.txt --notes clean',
+                        'gh release create v1 clean.txt --notes clean',
+                        "gh release create v1 'clean.txt#Label' --notes clean",
+                        'gh release create --notes clean --target main v1 clean.txt',
+                        'gh release new v1 clean.txt --notes clean',
+                        'gh release upload v1 clean.txt',
+                        'gh release upload --clobber v1 clean.txt',
+                        'gh -R o/r release upload v1 clean.txt',
+                        f'curl -q -X POST --data-binary @clean.txt "{uploads}"',
+                        f'gh api --hostname uploads.github.com "{uploads[27:]}" --input clean.txt',
+                        f'gh api "{uploads}" --input clean.txt']:
+            with self.subTest(command=command):
+                self.assertIn('release asset', self.assertDenied(command))
+        # A release with no assets: its notes are read as before.
+        self.assertAllowed('gh release create v1 --notes clean')
+        self.assertAllowed('gh release create v1 --target main --notes-start-tag v0 --notes clean')
+        self.assertAllowed('gh release create v1 --latest=false --notes clean')
+        self.assertDenied(f'gh release create v1 --notes {shlex.quote(PRIVATE_NAME)}')
+        self.assertAllowed('gh release view v1')
+        self.assertAllowed('gh release download v1')
+
+    def test_a_quoted_word_does_not_vouch_for_a_built_one(self):
+        # Whether a $ is text is decided word by word: '$BODY' in one place
+        # does not make "$BODY", which the shell fills in, text elsewhere.
+        for command in ["echo '$BODY'; gh pr comment 12 --body \"$BODY\"",
+                        "gh pr create --title '$BODY' --body \"$BODY\"",
+                        "echo '$MSG' && git commit -m \"$MSG\"",
+                        "gh issue comment 1 --body=\"$BODY\" && echo '--body=$BODY'"]:
+            with self.subTest(command=command):
+                self.assertIn('variable', self.assertDenied(command))
+        self.assertAllowed("echo '$BODY'; gh pr comment 12 --body 'Costs $BODY'")
+        self.assertAllowed("gh pr create --title '$BODY' --body 'Use $BODY'")
+
+    def test_a_push_after_a_change_to_the_hook_in_the_same_call_is_refused(self):
+        # The guard reads the hook and its setting before the whole call
+        # runs; a command before the push in the same call could turn the
+        # hook off or change it, so the push is refused.
+        push = 'git push origin claude/topic'
+        for command in [f'git config --replace-all core.hooksPath /dev/null && {push}',
+                        f'git config core.hookspath /dev/null; {push}',
+                        f'git config --unset core.hooksPath && {push}',
+                        f'git config set --global core.hooksPath /dev/null && {push}',
+                        f'git config --remove-section core && {push}',
+                        f'git config include.path /tmp/other && {push}',
+                        f'chmod -x .githooks/pre-push && {push}',
+                        f'chmod -R a-x . && {push}',
+                        f'rm .githooks/pre-push && {push}',
+                        f'rm -rf .githooks; {push}',
+                        f'mv .githooks/pre-push pre-push.old && {push}',
+                        f'echo "exit 0" > .githooks/pre-push && {push}',
+                        f'printf "[core]\\n\\thooksPath = /dev/null\\n" >> .git/config && {push}',
+                        f'cp /dev/null scripts/privacy-check.py && {push}',
+                        f'cd .githooks && chmod -x pre-push && cd .. && {push}',
+                        f'git checkout main -- .githooks && {push}',
+                        f'git restore --source=main . && {push}',
+                        f'git rm -q --cached .githooks/pre-push && rm .githooks/pre-push && {push}',
+                        f'git switch main && {push}',
+                        'git checkout -b claude/other main && git push origin claude/other',
+                        f"python3 -c 'print(1)' && {push}"]:
+            with self.subTest(command=command):
+                self.assertIn('hook', self.assertDenied(command))
+        # A push in its own call, or after commands that leave the hook be.
+        for command in [push, f'git config --get core.hooksPath && {push}',
+                        'git checkout -b claude/next && git push -u origin claude/next',
+                        'git switch -c claude/next && git push -u origin claude/next',
+                        f'{push} && chmod -x .githooks/pre-push',
+                        f'echo done > notes.txt && {push}',
+                        f'python3 scripts/privacy-check.py --outgoing --no-list && {push}',
+                        f'git config user.name t && {push}']:
+            with self.subTest(command=command):
+                self.assertAllowed(command)
+
+    def test_the_list_is_closed_to_file_tools_and_commands_wherever_it_lives(self):
+        # The checker reads the list from XDG_CONFIG_HOME when that is an
+        # absolute path, and the Read and Edit deny rules name only the
+        # default folder: the guard runs before the file tools and refuses
+        # the list's folder at both places.
+        config = self.folder / 'config'  # this test's XDG_CONFIG_HOME
+        home = self.folder / 'home'
+        environment = {**self.env, 'HOME': str(home)}
+        for folder in (config / 'brickson', home / '.config' / 'brickson'):
+            folder.mkdir(parents=True)
+            (folder / 'private-words.txt').write_text(PRIVATE_NAME + '\n')
+        words = config / 'brickson' / 'private-words.txt'
+        (self.repo / 'linked.txt').symlink_to(words)
+        for name, arguments in [
+                ('Read', {'file_path': str(words)}),
+                ('Read', {'file_path': str(home / '.config/brickson/private-words.txt')}),
+                ('Read', {'file_path': 'linked.txt'}),
+                ('Edit', {'file_path': str(words), 'old_string': 'a', 'new_string': 'b'}),
+                ('MultiEdit', {'file_path': str(words), 'edits': []}),
+                ('Write', {'file_path': str(config / 'brickson' / 'new.txt'), 'content': 'x'}),
+                ('NotebookEdit', {'notebook_path': str(config / 'brickson' / 'n.ipynb'),
+                                  'new_source': 'x'}),
+                ('Grep', {'pattern': '.', 'path': str(config / 'brickson')}),
+                ('Grep', {'pattern': '.', 'path': str(config)}),
+                ('Grep', {'pattern': '.', 'path': str(self.folder)}),
+                ('Glob', {'pattern': '*', 'path': str(config / 'brickson')}),
+                ('Glob', {'pattern': '**/*', 'path': str(config)})]:
+            with self.subTest(name=name, arguments=arguments):
+                output = guard_output(name, arguments, self.repo, environment)
+                self.assertEqual(output and output['permissionDecision'], 'deny')
+                self.assertIn('--status', output['permissionDecisionReason'])
+        for name, arguments in [('Read', {'file_path': str(self.repo / 'notes.md')}),
+                                ('Edit', {'file_path': 'notes.md', 'old_string': 'a',
+                                          'new_string': 'b'}),
+                                ('Grep', {'pattern': 'x'}),
+                                ('Grep', {'pattern': 'x', 'path': str(self.repo)}),
+                                ('Glob', {'pattern': '**/*.py', 'path': str(self.folder)}),
+                                ('Read', {'file_path': str(config / 'gh' / 'hosts.yml')})]:
+            with self.subTest(name=name, arguments=arguments):
+                self.assertIsNone(guard_output(name, arguments, self.repo, environment))
+        # Commands that reach the configured folder without naming .config.
+        for command in [f'grep -r . {config}', f'ls {config}/brickson', f'cat {config}/*/*',
+                        f'cat {self.folder}/conf*/b*/*', f'find {config} -type f',
+                        f'cd {config} && cat brickson/*', f'grep -r x {self.folder}/*']:
+            with self.subTest(command=command):
+                output = guard_output('Bash', {'command': command}, self.repo, environment)
+                self.assertEqual(output and output['permissionDecision'], 'deny')
+                self.assertIn('--status', output['permissionDecisionReason'])
+        for command in [f'ls {self.folder}', f'cat {config}/gh/hosts.yml',
+                        f'cat {config}/b*/x/y.txt', f'cat {self.folder}/*/notes.md']:
+            with self.subTest(command=command):
+                self.assertIsNone(guard_output('Bash', {'command': command}, self.repo,
+                                               environment))
+
     def test_the_private_list_is_never_read(self):
         for command in ['cat ~/.config/brickson/private-words.txt',
                         'cat "$HOME/.config/brickson/private-words.txt"',
@@ -2124,18 +2267,20 @@ class SettingsTests(unittest.TestCase):
                  'add_issue_comment', 'update_issue_comment',
                  'add_reply_to_pull_request_comment', 'add_comment_to_pending_review',
                  'create_gist', 'update_gist', 'create_branch']
-        for tool in ['Bash'] + [f'mcp__github__{t}' for t in tools]:
+        # The file tools, so the private list stays closed wherever it lives.
+        files = ['Read', 'Edit', 'MultiEdit', 'Write', 'NotebookEdit', 'Grep', 'Glob']
+        for tool in ['Bash'] + [f'mcp__github__{t}' for t in tools] + files:
             commands = [hook['command'] for group in groups
                         if re.fullmatch(group['matcher'], tool)
                         for hook in group['hooks']]
             self.assertTrue(any('.claude/hooks/guard.py' in c for c in commands), tool)
 
     def test_policy_hook_failures_block_the_original_action(self):
-        # Removing onFailure from either entry makes errors fail open.
+        # Removing onFailure from any entry makes errors fail open.
         hooks = [hook for group in self.settings['hooks']['PreToolUse']
                  for hook in group['hooks']
                  if '.claude/hooks/guard.py' in hook.get('command', '')]
-        self.assertEqual(len(hooks), 2)
+        self.assertEqual(len(hooks), 3)
         for index, hook in enumerate(hooks):
             with self.subTest(index=index):
                 self.assertEqual(hook.get('onFailure'), 'block')

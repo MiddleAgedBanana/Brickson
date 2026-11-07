@@ -738,8 +738,9 @@ GitHub itself cannot tell an agent's merge from the owner's. The rules
 above are backed by checks wherever a check can run:
 
 - **The guard.** `.claude/settings.json` runs `.claude/hooks/guard.py`
-  before every Bash command and before the GitHub tools that can merge or
-  write. It refuses, with the rule it breaks: `git add -A`, `--all`, `-u`
+  before every Bash command, before the GitHub tools that can merge or
+  write, and before the file tools (Read, Edit, Write, Grep, Glob and the
+  like). It refuses, with the rule it breaks: `git add -A`, `--all`, `-u`
   or `.` and `git commit -a`; force pushes and any push that updates
   `main`; merging, auto-merging or approving a pull request (`gh`, the
   GitHub API or a GitHub tool); a Copilot review or Copilot task asked
@@ -751,17 +752,20 @@ above are backed by checks wherever a check can run:
   before the command runs (built by the shell, a file the same command
   writes, an index change or commit identity it sets, or another
   repository or index a commit names with `--git-dir`, `--work-tree` or
-  a `GIT_*` variable), and a push
+  a `GIT_*` variable); a release asset upload; a push
   from a checkout whose pushes skip the privacy hook or whose branch has
-  none, whichever branch the push names (*The privacy check*, below); and
-  any command that names the private list or the config folder that
-  holds it, or prints the whole environment. The same
+  none, whichever branch the push names, or after a command in the same
+  call that changes the hook, its setting or the check it runs, or checks
+  out another branch (*The privacy check*, below); and
+  any command or file tool that reaches the private list or the config
+  folder that holds it, wherever the check reads the list from, and any
+  command that prints the whole environment. The same
   settings deny the merge tools and the Copilot tools outright, and the
-  Read and Edit tools the private list. When the guard refuses, do not look for
+  Read and Edit tools the list's default folder. When the guard refuses, do not look for
   another way round: say in the thread what you needed and why. It is
   a guard against mistakes, not a sandbox, and it covers
   Claude Code only; Codex, Jules and the owner are held to the same rules
-  by review. Both policy hooks use `onFailure: "block"`, so a startup
+  by review. Every policy hook uses `onFailure: "block"`, so a startup
   error, crash, invalid output or timeout blocks the original action in
   Claude Code 2.1.295 or later. Older or unknown runtimes do not establish
   that protection; confirm the runtime and hook reload before relying on it.
