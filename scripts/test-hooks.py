@@ -981,6 +981,128 @@ class GuardTests(unittest.TestCase):
                 self.assertAllowed(f'gh {name} list')
                 self.assertAllowed(f'gh {name} view 17')
 
+    def test_gh_copilot_is_denied(self):
+        # gh copilot runs the Copilot CLI agent, which can push by itself.
+        for command in ['gh copilot -p "Push the current branch"',
+                        "gh copilot -- -p 'git push origin HEAD' --allow-all-tools",
+                        'gh -R o/r copilot']:
+            with self.subTest(command=command):
+                self.assertDenied(command)
+
+    def test_gh_options_before_a_command_s_name_are_denied(self):
+        # Cobra finds a command's names past options written among them (gh
+        # pr --squash=true merge 5 merges), and the guard reads the names.
+        for command in ['gh pr --squash=true merge 5',
+                        'gh --method=PUT api repos/o/r/pulls/5/merge',
+                        'gh agent-task --follow=true create "Fix the build"',
+                        'gh pr --body=ok review 5 --approve',
+                        'gh repo --push=true create o/r --source=. --public',
+                        'gh --push=1 repo create o/r --source=. --public',
+                        'gh repo --source=. create o/r --public --push',
+                        'gh release --clobber=true upload v1 notes.txt',
+                        'gh --x=y copilot']:
+            with self.subTest(command=command):
+                self.assertDenied(command)
+        for command in ['gh -R o/r pr view 5', 'gh --repo o/r pr list',
+                        'gh pr -R o/r view 5', 'gh --repo=o/r pr checks 5',
+                        'gh -Ro/r pr diff 5', 'gh pr view 5 -R o/r',
+                        'gh pr --help', 'gh --help', 'gh --version', 'gh -h pr',
+                        'gh api --method GET repos/o/r/pulls/5', 'gh status --org o',
+                        'gh repo deploy-key list -R o/r', 'gh']:
+            with self.subTest(command=command):
+                self.assertAllowed(command)
+
+    def test_gh_repo_create_pushes_by_no_other_spelling(self):
+        # -R, --repo and --hostname after the names are an option's value
+        # when the option before them takes one: -d -R --push describes the
+        # repository as -R and pushes.
+        for command in ['gh repo create o/r --source=. --public -d -R --push',
+                        'gh repo create o/r --source=. --public --description --repo --push',
+                        'gh repo create o/r --source=. --public -d -Rx --push',
+                        'gh repo create o/r --source=. --public --homepage --hostname --push',
+                        # The shell builds these words: the guard cannot read them.
+                        'F=--push; gh repo create o/r --source=. --public $F',
+                        'gh repo create o/r --source=. --public $(echo --push)',
+                        'gh repo create o/r --source=. --public "$(printf -- --push)"',
+                        'set -- --push; gh repo create o/r --source=. --public "$@"',
+                        'gh repo create o/r --source=. --public --{push,public}',
+                        'gh repo create o/r --source=. --public --pus[h]',
+                        'gh repo create o/r --source=. --public --pus?',
+                        'gh repo create o/r --source=. --public --p*',
+                        # With no words, gh asks its questions, and one of
+                        # them pushes, where a terminal can answer.
+                        'gh repo create', 'gh repo new', 'gh repo create --',
+                        'gh repo create < /dev/null']:
+            with self.subTest(command=command):
+                self.assertDenied(command)
+        for command in ['gh repo create o/r --source=. --public',
+                        "gh repo create o/r --public --description 'Tools {beta} [1]?'",
+                        'gh repo create o/r --private -d --push-notes',
+                        'gh repo create o/r --public -R o/other']:
+            with self.subTest(command=command):
+                self.assertAllowed(command)
+
+    def test_gh_pr_create_pushes_only_through_a_terminal(self):
+        # With no --head and the branch not pushed, gh pr create asks where
+        # to push it when a terminal can answer, and stops when none can.
+        for command in ["script -qec 'gh pr create --title t --body b' /dev/null",
+                        'script -q /dev/null gh pr create --title t --body b',
+                        "printf '\\n\\n' | script -qec 'gh pr new -t t -b b' /dev/null",
+                        'unbuffer gh pr create --title t --body b',
+                        'unbuffer -p gh pr merge 5']:
+            with self.subTest(command=command):
+                self.assertDenied(command)
+        for command in ['gh pr create --title t --body b',
+                        "script -qec 'gh pr create --title t --body b --head claude/topic' "
+                        '/dev/null',
+                        "script -qec 'gh pr create -t t -b b -Hclaude/topic' /dev/null",
+                        "script -qec 'gh pr view 5' /dev/null"]:
+            with self.subTest(command=command):
+                self.assertAllowed(command)
+
+    def test_gh_runs_only_its_own_commands_and_aliases_known_before_the_call(self):
+        # gh alias list reads aliases as they are before the call: one the
+        # call sets, imports, deletes or writes into gh's configuration, and
+        # an extension, are not read.
+        with tempfile.TemporaryDirectory(dir=self.repo) as folder:
+            (Path(folder) / 'config.yml').write_text('aliases:\n  inspect: pr view\n')
+            with patch.dict(os.environ, GH_CONFIG_DIR=folder):
+                for command in [
+                        "gh alias set mk 'repo create' && gh mk o/r --source=. --public --push",
+                        "gh alias set mk 'repo create' --clobber; gh mk o/r --public",
+                        'gh alias import aliases.yml && gh mk o/r --public',
+                        "gh alias set inspect 'pr merge' --clobber; gh inspect 12",
+                        'gh alias delete inspect; gh inspect 12',
+                        "printf 'aliases:\\n  inspect: pr merge\\n' > "
+                        f"{folder}/config.yml; gh inspect 12",
+                        "python3 -c 'print(1)' > /dev/null; cp new.yml "
+                        f"{folder}/config.yml && gh inspect 12",
+                        'gh dash', 'gh some-extension --push']:
+                    with self.subTest(command=command):
+                        self.assertDenied(command)
+                for command in ['gh inspect 12', 'gh alias list',
+                                "gh alias set mk 'pr view'", 'gh status', 'gh environment',
+                                'gh cs list', 'gh ext list', 'gh at verify x -R o/r',
+                                f'echo notes > {self.repo}/notes.txt; gh inspect 12',
+                                'gh inspect 12; gh alias set mk "pr view"']:
+                    with self.subTest(command=command):
+                        self.assertAllowed(command)
+
+    def test_shell_aliases_are_not_defined(self):
+        # The shell expands an alias defined on an earlier line, and the
+        # guard does not read an alias's text.
+        for command in ["shopt -s expand_aliases\nalias g='gh repo create o/r --source=. --public "
+                        "--push'\ng",
+                        "shopt -s expand_aliases\nalias g='git push --no-verify origin "
+                        "claude/topic'\ng",
+                        "alias g='git add -A'; g", 'builtin alias g="git add -A"',
+                        "alias -p g='git add -A'", "eval \"alias g='git add -A'\""]:
+            with self.subTest(command=command):
+                self.assertDenied(command)
+        for command in ['alias', 'alias g', 'alias -p', 'unalias g']:
+            with self.subTest(command=command):
+                self.assertAllowed(command)
+
     def test_wildcard_pushes_cannot_include_a_protected_branch(self):
         for pattern in ['refs/heads/*:refs/heads/*', 'refs/*:refs/*', 'ma*:ma*', '*:*']:
             with self.subTest(pattern=pattern):
@@ -1981,6 +2103,25 @@ class PrivacyGuardTests(unittest.TestCase):
         self.assertDenied('git push origin claude/topic')
         # A dry run sends nothing.
         self.assertAllowed('git push --dry-run --no-verify origin claude/topic')
+        # gh repo create --push pushes the source's commits itself (git push
+        # REMOTE HEAD, or --mirror for a bare repository), past the guard's
+        # push rules, with the hook on or off.
+        for command in ['gh repo create o/clean-tools --source=. --public --push',
+                        'gh repo create --push --source . o/clean-tools --private',
+                        'gh repo create o/clean-tools -s . --private --push=true',
+                        'gh repo create o/clean-tools -s. --private --push=1',
+                        'gh repo new o/clean-tools --source=. --private --push',
+                        'gh repo create o/clean-tools --source=. --private --push=false --push']:
+            with self.subTest(command=command):
+                self.assertIn('gh repo create --push', self.assertDenied(command))
+        with_privacy_hook(self.repo)
+        self.assertDenied('gh repo create o/clean-tools --source=. --public --push')
+        for command in ['gh repo create o/clean-tools --source=. --public',
+                        'gh repo create o/clean-tools --source=. --public --push=false',
+                        'gh repo create o/clean-tools --private --description --push',
+                        'gh repo create o/clean-tools --private -- --push']:
+            with self.subTest(command=command):
+                self.assertAllowed(command)
 
     def test_unpublished_commands_are_allowed(self):
         # A home folder in a command is not published; only its text is.
@@ -2015,6 +2156,9 @@ class PrivacyGuardTests(unittest.TestCase):
         body = self.folder / 'body.md'
         body.write_text(f'Thanks {PRIVATE_NAME}\n')
         self.assertDenied(f'gh pr create --title t --body-file {body}')
+        # After the command's name, -R is the value of an option before it.
+        self.assertDenied(f'gh pr create --title -R --body-file {body}')
+        self.assertDenied(f'gh pr create -t -R -F {body}')
         self.assertDenied(f'gh pr comment 12 -F {body}')
         self.assertDenied(f'gh api -X PATCH repos/o/r/pulls/12 -F body=@{body}')
         self.assertDenied(f"gh pr comment 12 --body-file - <<'EOF'\n{PRIVATE_NAME}\nEOF")
@@ -2211,7 +2355,7 @@ class PrivacyGuardTests(unittest.TestCase):
         clean_folder = self.folder / 'clean-tools'
         clean_folder.mkdir()
         for command in [f'gh repo create --source={named_folder} --public',
-                        f'gh repo create -s {named_folder} --private --push',
+                        f'gh repo create -s {named_folder} --private --remote=upstream',
                         f'cd {named_folder} && gh repo create --source=. --public',
                         f'cd {named_folder}/.. && gh repo create --source {named} --public']:
             with self.subTest(command=command):

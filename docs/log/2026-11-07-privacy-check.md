@@ -595,8 +595,8 @@ three independent checks by this thread of its own fixes:
 - **What a fourth check found** in those fixes: reading a signature's
   bytes as a binary file's are refused ordinary signatures. A security
   key's SSH signature names its key type, `sk-ssh-ed25519@openssh.com`,
-  which read as an address (OpenSSH's names are now allowed as
-  GitHub's are), and Sequoia adds a notation, `salt` in its own
+  which read as an address (every address at `openssh.com` itself,
+  where OpenSSH writes its names, is now allowed), and Sequoia adds a notation, `salt` in its own
   namespace, `notations.sequoia-pgp.org`, written like an address, to
   every OpenPGP signature. So an
   OpenPGP signature is now read packet by packet: its signer's user ID,
@@ -639,6 +639,61 @@ such a history (2000 imported Latin-1 commits: about 22 seconds against 9 at
 seconds against 0.9), to fetch each stored object; its text is read
 again only where it differs from what git shows, which in this
 repository's last 30 commits it never did.
+
+The seventh round, CodeRabbit's and Codex's reviews of `87a2b75`, and
+two independent checks by this thread of its own fixes:
+
+- **A port names another server** (CodeRabbit): a push to an address
+  counted as a remote's whatever its port, so a push to `host:2223` left
+  out what a remote fetching from `host:2222` had. A port the scheme
+  does not use by default now makes it another address.
+- **OpenSSH's names** (CodeRabbit): every address under `openssh.com`
+  was allowed; now only those at `openssh.com` itself, where OpenSSH
+  writes its names, are.
+- **`gh repo create --push`** (Codex) pushes the source folder's
+  commits itself (`git push REMOTE HEAD`, or `--mirror` for a bare
+  repository, in gh 2.89's source), past the guard's push rules,
+  whether or not that checkout runs the hook. The guard refuses it,
+  read as gh's flag parser reads it: `--push`, `--push=true` or `=1`,
+  the last one written counting, and not after an option that takes
+  the next word as its value.
+- **What the checks found in those fixes, and around them.** In the
+  check: joining an IPv6 host and its port made `[::1]:2222` and
+  `[::1:2222]` one address (the address is now kept in parts); `:22`
+  counted as no port, but ssh takes the port of an address without one
+  from its own settings, so any port written for ssh now counts; and
+  over ssh a path that starts in the home of the user who signs in
+  (`host:path`, `~/path`) was the same for every user, and one that
+  starts at `/` the same as one that does not, so both now keep them
+  apart, except on github.com, which names a repository the same way
+  whoever signs in. In the guard, gh had more ways to push, or to run
+  what the guard did not read, now all refused: an option before a
+  command's name, which cobra still reads as that command's (`gh pr
+  --squash=true merge 5` merged, and `gh repo --push=true create`
+  pushed), except `-R`, `--repo`, `--hostname` and help; `-R`, `--repo`
+  or `--hostname` after the names, which gh takes as the value of an
+  option before them, so `-d -R --push` pushed and `--title -R
+  --body-file f` hid the file (the guard dropped them with the next
+  word); a `--push` the shell builds or expands (`$F`, `$(…)`, `"$@"`,
+  braces, patterns); `gh repo create` with no words, which asks its
+  questions and can push where a terminal answers, and `gh pr create`
+  without `--head` under `script`, which asks where to push the branch
+  (also under `unbuffer`, which the guard now reads as a wrapper);
+  `gh copilot`, the Copilot CLI agent, which can push by itself; an
+  alias the same call sets, imports, deletes or writes into gh's
+  configuration, which `gh alias list`, read before the call, does not
+  see, and an extension, so a gh command is now one of gh's own or an
+  alias gh had before the call; and a shell alias the command defines,
+  which bash expands on a later line.
+- **A sentence that was not true**: docs/DECISIONS.md said a remote's
+  address could be written "with or without `.git`", which the check
+  does for a host's address only (a local path is the folder it
+  resolves to). It now says so.
+
+Left as limits: ssh's settings can send a host's name to another
+server, and the check takes github.com to be GitHub's; a program that
+gives what it runs a terminal in its own language (`expect`, `socat`,
+`ssh -t`) is not read, as an interpreter's code is not.
 
 The privacy job's checkout names `actions/checkout@v7.0.1`, the version
 pull request #87 locks, so whichever of the two merges second needs no
@@ -696,9 +751,11 @@ started).
 In this cloud thread (Linux, Python 3.13, git 2.43), last on 2026-11-07,
 after main (with the reviewer roster) was merged in:
 
-- `python3 scripts/test-privacy.py`: 139 tests, OK. Every test added
+- `python3 scripts/test-privacy.py`: 140 tests, OK. Every test added
   for the second review, and for the pull request's review rounds,
-  failed before its fix; for the sixth, the encoding test failed its 5
+  failed before its fix; for the seventh, the address test got 18 of
+  its 42 cases wrong at `87a2b75` and 13 with the round's first fix,
+  and the `openssh.com` test failed at `87a2b75`; for the sixth, the encoding test failed its 5
   cases against `2a7cb7d`, the stored-object test its 8 against the
   round's first fix, the tests for the second check's findings 10
   against the rework, those for the third check's 13 before their
@@ -723,7 +780,7 @@ after main (with the reviewer roster) was merged in:
   phone edges, folded phones, contractions, RTF bytes and their order
   with JSON escapes, Snappy copies, IPTC datasets, a zero place), failed
   it.
-- `python3 scripts/test-hooks.py`, with a made-up list: 209 tests, OK,
+- `python3 scripts/test-hooks.py`, with a made-up list: 215 tests, OK,
   also with `EMAIL` set to an address like the Mac's guess, which failed
   39 of them before that fix (and with `GIT_AUTHOR_EMAIL` too, at
   `ba6a4c3`). The test added for it fails with no person in the tests'
@@ -750,6 +807,8 @@ after main (with the reviewer roster) was merged in:
   commits before that test stopped, and 2 of the 3 escaped requests
   (curl's was refused already); in `scripts/test-privacy.py`, the new
   test missed 6 of its 8 names.
+  For the seventh, run against `87a2b75`: the 6 new tests failed 48
+  cases between them, and the 2 tests they extended 8.
   For the sixth: the encoding test failed 5 cases against `2a7cb7d`;
   against the round's first fix, the reworked pattern test failed 5
   cases, the stored-commit test 5 and the test of places reported once
@@ -801,7 +860,7 @@ after main (with the reviewer roster) was merged in:
 ## Not verified
 
 - On a Mac, only the Python suites ran, last at `ba6a4c3` (*The first
-  run on the owner's Mac*); the second to sixth review rounds' fixes
+  run on the owner's Mac*); the second to seventh review rounds' fixes
   have not run there yet. `caffeinate`, `arch`, `xcrun` and macOS's
   `script` exist only on a Mac, and `chrt` without a priority only in
   util-linux 2.42 and later: how the guard reads them was checked
@@ -826,6 +885,10 @@ after main (with the reviewer roster) was merged in:
   `.github/workflows/tests.yml`.
   GitHub's masking of the secret was not tested; the check never
   prints the list either way.
+- gh's questions under `script` were seen here (gh 2.89, with no
+  network) as far as the first; the push after them, and `unbuffer`,
+  which is not installed here, were read from gh's source and
+  `unbuffer`'s manual page.
 - The guard before the file tools was fed the calls Claude Code sends
   (`file_path`, `notebook_path`, `path`), not run in a live session.
 - Whether a cloud environment's setup script line turns the hook on in

@@ -5215,7 +5215,8 @@ outside service: nothing it reads leaves the computer it runs on.
 - **Built-in patterns**, which need no list: email addresses (except
   those at example domains, GitHub's own (github.com and the addresses
   under it, such as the no-reply ones commits are signed with),
-  OpenSSH's names for its key types (`sk-ssh-ed25519@openssh.com`, which
+  every address at `openssh.com` itself (not under it), where OpenSSH
+  writes the names of its key types (`sk-ssh-ed25519@openssh.com`, which
   a security key's signature holds), the services agents sign commits
   with, a picture's scale in its name
   (`icon@2x.png`), and the support address the website publishes, which
@@ -5285,9 +5286,20 @@ outside service: nothing it reads leaves the computer it runs on.
   from where it goes already have: a remote's tracking refs record what
   its fetch address held, so a remote that pushes elsewhere (a
   `pushurl`) leaves out nothing there. Pushed to an address rather than
-  a remote's name, the address may be written any way (a URL,
-  `git@host:path`, a local path, with or without `.git`); push by the
-  remote's name (`origin`) all the same.
+  a remote's name, the address may be written another way and still be
+  that remote's: a local path relative, absolute or as `file://`; on
+  github.com, any scheme and user (`https://`, `git@github.com:`) and
+  names in any case; elsewhere, `ssh://` or `user@host:path`, and a
+  user other than the remote's where the path starts at `/`. A host's
+  address with or without a trailing `/` or `.git` is one. What may be
+  another repository counts as another, which leaves nothing out:
+  another scheme off GitHub, a port the scheme does not use by default
+  (for ssh, any port written, as ssh's own settings give the port when
+  none is), and, over ssh, a path that starts in the home of the user
+  who signs in (`host:path`, `~/path`) with another user, or one that
+  starts at `/` against one that does not. ssh's settings can also send
+  a host's name to another server; the check takes github.com to be
+  GitHub's. Push by the remote's name (`origin`) all the same.
 - **No exceptions.** No line can be marked as allowed, and the list has
   no allowances: an entry holds only what may appear nowhere, so leave
   out what the repository publishes on purpose, such as the developer's
@@ -5361,7 +5373,20 @@ public:
    file written, removed or given another mode in `.githooks`, git's own
    folder or settings files or `scripts/privacy-check.py`, or where the
    guard cannot place it (inline code, a patch, a stash, a target the
-   shell builds); a release
+   shell builds); `gh repo create --push`, which pushes the source
+   folder's commits itself, past the guard's push rules (create the
+   repository, then `git push`), with it `gh repo create` given no words,
+   which asks and may then push, and one given an option or operand the
+   shell builds or expands (a variable, braces, a pattern); `gh pr
+   create` without `--head` under `script` or `unbuffer`, whose terminal
+   lets it ask where to push the branch and push it; `gh copilot`, which
+   runs the Copilot CLI agent; a gh option before the command's name
+   (`gh pr --squash=true merge 5` merges; `-R`, `--repo` and `--help`
+   excepted), which gh reads as the command's own; a gh command that is
+   not one of gh's own or an alias gh had before the call (an extension,
+   or an alias the call sets), and an alias used after the call changes
+   gh's aliases or may write its configuration; a shell alias the
+   command defines, which the shell expands on a later line; a release
    asset upload (`gh release create` given files, `gh release upload`,
    or a request to GitHub's uploads host), whose contents, an archive's
    included, it cannot read; a git command in a folder the

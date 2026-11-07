@@ -365,9 +365,17 @@ class PatternTests(unittest.TestCase):
                         'x' + AT + 'host.test', 'noreply' + AT + 'anthropic.com',
                         'codex' + AT + 'openai.com', 'git' + AT + 'github.com',
                         'support' + AT + 'github.com', '1+x' + AT + 'users.noreply.github.com',
-                        'icon' + AT + '2x.png', 'tile' + AT + '3x.jpg']:
+                        'sk-ssh-ed25519' + AT + 'openssh.com', 'icon' + AT + '2x.png',
+                        'tile' + AT + '3x.jpg']:
             with self.subTest(address=address):
                 self.assertEqual(checker().text(address, 'x'), [])
+
+    def test_only_openssh_s_own_domain_is_allowed(self):
+        # OpenSSH writes its names at openssh.com itself; an address under
+        # it, or at a domain that only ends like it, is someone's.
+        for address in ['someone' + AT + 'mail.openssh.com', 'someone' + AT + 'notopenssh.com']:
+            with self.subTest(address=address):
+                self.assertEqual(kinds(checker().text(address, 'x')), [privacy.KIND_EMAIL])
 
     def test_the_support_address_is_allowed_only_on_the_website(self):
         check = checker(support={ADDRESS})
@@ -1726,12 +1734,63 @@ class GitSettingTests(unittest.TestCase):
                     'https://github.com/example-owner/app/',
                     'git@github.com:Example-Owner/App.git',
                     'ssh://git@github.com/example-owner/app.git',
+                    'git+ssh://git@github.com/example-owner/app.git',
+                    'https://github.com:443/example-owner/app',
                     'https://GitHub.com/example-owner/app'):
             self.assertEqual(exclusion(url), ['--remotes=origin'], url)
+        # With no port, ssh takes one from its own settings, which may name
+        # another: a port written for ssh, 22 included, is another server.
         for url in ('https://github.com/example-owner/app-two',
                     'https://github.com/other-owner/app',
-                    'https://gitlab.com/example-owner/app'):
+                    'https://gitlab.com/example-owner/app',
+                    'https://github.com:8443/example-owner/app',
+                    'ssh://git@github.com:22/example-owner/app.git'):
             self.assertEqual(exclusion(url), [], url)
+        # A port the scheme does not use by default is another server, which
+        # may never have had what this one has. An absolute path is the same
+        # repository whoever signs in.
+        git(self.repo, 'remote', 'set-url', 'origin', 'ssh://git@example.org:2222/team/app.git')
+        for url in ('ssh://git@example.org:2222/team/app',
+                    'ssh://deploy@Example.ORG:2222/team/app.git/'):
+            self.assertEqual(exclusion(url), ['--remotes=origin'], url)
+        for url in ('ssh://git@example.org:2223/team/app.git',
+                    'ssh://git@example.org/team/app.git',
+                    'ssh://git@example.org:22/team/app.git',
+                    'git@example.org:team/app.git',
+                    'https://example.org/team/app.git',
+                    'https://example.org:2222/team/app.git'):
+            self.assertEqual(exclusion(url), [], url)
+        # An IPv6 host's port is not part of its address: [::1]:2222 is
+        # ::1's port 2222, and [::1:2222] another host.
+        git(self.repo, 'remote', 'set-url', 'origin', 'ssh://git@[::1]:2222/team/app.git')
+        self.assertEqual(exclusion('ssh://git@[::1]:2222/team/app'), ['--remotes=origin'])
+        for url in ('ssh://git@[::1:2222]/team/app.git', 'ssh://git@[::1]/team/app.git'):
+            self.assertEqual(exclusion(url), [], url)
+        git(self.repo, 'remote', 'set-url', 'origin', 'https://[2001:db8::5]:8443/team/app')
+        self.assertEqual(exclusion('https://[2001:DB8::5]:8443/team/app.git'),
+                         ['--remotes=origin'])
+        self.assertEqual(exclusion('https://[2001:db8::5:8443]/team/app'), [])
+        # Over ssh, a path that does not start with / starts in the home of
+        # the user who signs in: user@host:app and ssh://user@host/~/app.
+        git(self.repo, 'remote', 'set-url', 'origin', 'deploy@example.org:team/app.git')
+        for url in ('ssh://deploy@example.org/~/team/app.git', 'deploy@Example.org:~/team/app',
+                    'ssh+git://deploy@example.org/~/team/app'):
+            self.assertEqual(exclusion(url), ['--remotes=origin'], url)
+        for url in ('build@example.org:team/app.git', 'example.org:team/app.git',
+                    'ssh://build@example.org/~/team/app.git', 'deploy@example.org:/team/app.git',
+                    'ssh://deploy@example.org/team/app.git', 'https://example.org/team/app'):
+            self.assertEqual(exclusion(url), [], url)
+        git(self.repo, 'remote', 'set-url', 'origin', 'git@example.org:/team/app.git')
+        for url in ('ssh://git@example.org/team/app.git', 'build@example.org:/team/app',
+                    'ssh://example.org/team/app/'):
+            self.assertEqual(exclusion(url), ['--remotes=origin'], url)
+        for url in ('ssh://git@example.org/Team/App.git', 'git@example.org:team/app.git',
+                    'ssh://git@example.org/~team/app.git'):
+            self.assertEqual(exclusion(url), [], url)
+        # ~user names one user's home, whoever signs in.
+        git(self.repo, 'remote', 'set-url', 'origin', 'ssh://git@example.org/~team/app.git')
+        for url in ('build@example.org:~team/app', 'ssh://deploy@example.org/~team/app'):
+            self.assertEqual(exclusion(url), ['--remotes=origin'], url)
 
 
 class CiTests(unittest.TestCase):

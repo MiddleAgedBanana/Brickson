@@ -673,12 +673,12 @@ reviewers: the owner's AI credits ran out on pull request #78
 requests a Copilot review or starts a Copilot task by any route: a
 Copilot tool, `gh`, the REST or GraphQL API, or an `@copilot` mention in
 a comment or review. The guard refuses the Copilot tools, `gh`'s
-reviewer, assignee and agent-task commands, the REST reviewer, assignee
-and task endpoints, a GitHub tool's reviewer or assignee field and a
-GraphQL agent assignment; other GraphQL requests and a mention are held
-by this rule alone (*Guardrails for agents*; docs/DECISIONS.md,
-*Code review*). None of these reviewers reviews Dependabot's pull
-requests by itself. All of them review against *Code Review Rules*
+reviewer, assignee and agent-task commands, `gh copilot`, the REST
+reviewer, assignee and task endpoints, a GitHub tool's reviewer or
+assignee field and a GraphQL agent assignment; other GraphQL requests
+and a mention are held by this rule alone (*Guardrails for agents*;
+docs/DECISIONS.md, *Code review*). None of these reviewers reviews
+Dependabot's pull requests by itself. All of them review against *Code Review Rules*
 above. GitHub's AI Scan also posts security findings after each push
 to such a pull request; answer them like review comments. It skips
 Dependabot's pull requests and those from forks, and CodeQL did not
@@ -753,7 +753,11 @@ above are backed by checks wherever a check can run:
   writes, an index change or commit identity it sets, a commit it reuses
   that an earlier command in the same call may move, or another
   repository or index a commit names with `--git-dir`, `--work-tree` or
-  a `GIT_*` variable); a release asset upload; a push
+  a `GIT_*` variable); a release asset upload; the ways gh can push past
+  these rules (`gh repo create --push`, or with no words, and `gh pr
+  create` given a terminal but no `--head`) or run what it cannot read
+  (an option before a command's name, an extension, an alias set in the
+  same call) and a shell alias the command defines; a push
   from a checkout whose pushes skip the privacy hook or whose branch has
   none, whichever branch the push names, or after a command in the same
   call that changes the hook, its setting or the check it runs, or checks

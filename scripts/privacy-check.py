@@ -267,10 +267,12 @@ RESERVED_SUFFIXES = ('.example', '.test', '.invalid', '.localhost')
 # addresses; none of them is a person's.
 SERVICE_ADDRESSES = {'noreply@anthropic.com', 'codex@openai.com'}
 # GitHub's own addresses (support, noreply, git@ for remotes) and the
-# private addresses it gives its users; and OpenSSH's names for its key
-# types and extensions (sk-ssh-ed25519@openssh.com), which every
-# signature made with a security key holds.
-SERVICE_DOMAINS = ('github.com', 'openssh.com')
+# private addresses it gives its users, under github.com.
+SERVICE_DOMAINS = ('github.com',)
+# OpenSSH's names for its key types and extensions
+# (sk-ssh-ed25519@openssh.com), which every signature made with a security
+# key holds, are written at openssh.com itself, never under it.
+NAME_DOMAINS = ('openssh.com',)
 # icon@2x.png names an image's scale, not an address.
 IMAGE_SCALE = re.compile(r'\d+(?:\.\d+)?x\.(?:png|jpe?g|pdf|svg|gif|heic|webp)')
 
@@ -347,6 +349,7 @@ def email_allowed(address, path, support, identity=False):
     domain = address.rpartition('@')[2]
     if (domain in EXAMPLE_DOMAINS or domain.endswith(RESERVED_SUFFIXES)
             or address in SERVICE_ADDRESSES or IMAGE_SCALE.fullmatch(domain)
+            or domain in NAME_DOMAINS
             or any(domain == d or domain.endswith('.' + d) for d in SERVICE_DOMAINS)):
         return True
     if address in support:
@@ -2818,34 +2821,62 @@ def working_changes(checker, root, tally):
     return findings + untracked_files(checker, root, tally)
 
 
-SCP_ADDRESS = re.compile(r'(?:[^@/:]+@)?([^/:]+):(?!//)(.+)')
+# git's scp-like address, [user@]host:path, with no slash before the colon;
+# a host in brackets is kept as written.
+SCP_ADDRESS = re.compile(r'(?:([^@/:]+)@)?(\[[^\]/]*\]|[^/:\[\]]+):(?!//)(.+)')
+# The port a scheme uses when a URL names none, where the scheme fixes it.
+# ssh is not here: with no port, ssh takes the one its own settings give.
+DEFAULT_PORTS = {'https': 443, 'http': 80, 'git': 9418, 'ftp': 21, 'ftps': 990}
+SSH_SCHEMES = ('ssh', 'git+ssh', 'ssh+git')
 
 
 def repository_address(root, url):
-    """A repository's address written one way, so the ways git accepts
-    for the same repository compare equal: a path, relative or file://, or
-    a host and path, whatever the scheme, user or port (https, ssh, or
-    git@host:path), without a trailing / or .git. GitHub ignores the
-    case of an owner and repository's names, so they are compared in
-    lower case there."""
+    """A repository's address written one way, so that two ways git
+    accepts of writing one repository compare equal and two repositories
+    never do: where that is not certain, they count as two, which only
+    makes a push read more. A path, relative or file://, is the folder it
+    resolves to. A host's address keeps its scheme (ssh, git+ssh and the
+    scp-like [user@]host:path are one), a port the scheme does not use by
+    default (any port written for ssh), and its path without a trailing /
+    or .git; over ssh, a path that does not start at / starts in the home
+    of the user who signs in (host:path, ~/path), so it keeps that user.
+    The host is compared in lower case, and an IPv6 host's port stays
+    apart from it. On github.com, the scheme and user only name the way
+    in, and owner and repository names are compared in lower case."""
     url = url.strip()
     if '://' in url:
         parts = urlsplit(url)
-        host, path = (parts.hostname or '').lower(), parts.path
-        if parts.scheme.lower() == 'file':
+        scheme, user, path = parts.scheme.lower(), parts.username or '', parts.path
+        try:
+            host, port = (parts.hostname or '').lower(), parts.port
+        except ValueError:  # a port that is not a number: kept as written
+            host, port = parts.netloc.rpartition('@')[2].lower(), None
+        port = '' if port is None or port == DEFAULT_PORTS.get(scheme) else str(port)
+        if scheme == 'file':
             host = ''
+        elif scheme in SSH_SCHEMES:
+            # git gives ssh://host/~/path to the server as ~/path.
+            scheme, path = 'ssh', path[1:] if path.startswith('/~') else path
     else:
         scp = SCP_ADDRESS.fullmatch(url)
-        host, path = (scp[1].lower(), scp[2]) if scp else ('', url)
+        if scp:
+            scheme, user, host, port, path = 'ssh', scp[1] or '', scp[2].lower(), '', scp[3]
+        else:
+            host, path = '', url
     if not host:
         try:
             return ('', str(Path(root, os.path.expanduser(path)).resolve()))
         except (OSError, RuntimeError):
             return ('', path)
-    path = path.strip('/')
+    path = path.rstrip('/')
     path = path[:-4] if path.endswith('.git') else path
     path = path.rstrip('/')
-    return (host, path.lower() if host == 'github.com' else path)
+    if host == 'github.com':
+        return ('github.com', port, path.lstrip('/').lower())
+    if scheme == 'ssh' and (path == '~' or path.startswith('~/')):
+        path = path[2:]  # the home the path starts in, as path alone does
+    home = scheme == 'ssh' and not path.startswith(('/', '~'))
+    return (scheme, user if home else '', host, port, path)
 
 
 def remote_exclusion(root, remote):

@@ -87,7 +87,11 @@ WRAPPERS = {'command', 'builtin', 'exec', 'nohup', 'time', 'sudo', 'env', 'nice'
             # Programs that run the command after their options (and, for
             # chrt and taskset, a priority or a mask), as env does.
             'stdbuf', 'setsid', 'ionice', 'chrt', 'taskset', 'caffeinate', 'arch',
-            'xcrun', 'setpriv', 'prlimit', 'unshare', 'doas'}
+            'xcrun', 'setpriv', 'prlimit', 'unshare', 'doas',
+            # expect's unbuffer runs it with a terminal (TERMINAL_WRAPPERS).
+            'unbuffer'}
+# Wrappers that give the command they run a terminal, where gh asks.
+TERMINAL_WRAPPERS = {'unbuffer'}
 WRAPPER_VALUE_OPTIONS = {
     'time': {'-o', '--output', '-f', '--format'},
     'env': {'-u', '--unset', '-C', '--chdir'},
@@ -201,6 +205,30 @@ WRITTEN_FILE = ('This command writes a file that it also publishes, sends or com
 RELEASE_ASSET = ('This would upload a release asset, whose contents and name the privacy check '
                  'cannot read here (an archive\'s files among them). Release assets are the '
                  "owner's to add, on the release's page on GitHub (" + PRIVACY_DECISION + ').')
+REPO_PUSH = ('gh repo create --push pushes the source folder\'s commits itself, past the '
+             'guard\'s push rules, whether or not that checkout runs the privacy hook. Create '
+             'the repository without --push, then push with git push in the next command ('
+             + PRIVACY_DECISION + ').')
+REPO_ASKS = ('gh repo create with no words asks its questions, and one answer pushes the '
+             'folder\'s commits past the guard\'s push rules. Name the repository and who sees '
+             'it (gh repo create OWNER/NAME --private), without --push.')
+REPO_BUILT = ('Write gh repo create\'s options and operands as they are: the shell builds or '
+              'expands one of them (a variable, a command\'s output, braces or a pattern), so '
+              'the guard cannot tell whether it is --push.')
+PR_TERMINAL = ('Under script or unbuffer, gh pr create without --head can ask where to push '
+               'the branch, then push it past the guard\'s push rules. Push with git push '
+               'first, then run gh pr create with --head BRANCH, with no terminal.')
+GH_OPTION_FIRST = ('Write gh\'s options after the command\'s name (gh pr view 5 --web, not gh pr '
+                   '--web view 5): gh reads them in either place, and the guard finds the name '
+                   'only where no option comes before it. -R and --repo may come first.')
+GH_NOT_ITS_OWN = ('This is not one of gh\'s own commands or an alias gh had before this call: '
+                  'an extension, or an alias the call sets or writes, runs what the guard '
+                  'cannot read. Run the gh command it stands for.')
+GH_ALIAS_CHANGED = ('This call changes gh\'s aliases, or may write gh\'s configuration, before '
+                    'it uses an alias, and the guard reads aliases as they were before the '
+                    'call. Use the alias in a call of its own, or the gh command it stands for.')
+SHELL_ALIAS = ('Run the command itself rather than defining a shell alias: the shell expands an '
+               'alias on a later line, and the guard does not read its text.')
 HOOK_CHANGED = ('This command pushes after changing what the push would run (the privacy hook, '
                 'core.hooksPath or another git setting, scripts/privacy-check.py, or the branch '
                 'checked out), or after writing a file the guard cannot place, and the guard '
@@ -325,7 +353,27 @@ GH_OTHER_VALUES = {('gist', 'edit'): {'--remove', 'r'},
                                          '--repos', 'r'}}
 # gh's repository option, which a command takes after its name too, and
 # which takes the next word even at the end of a cluster (-yR o/r).
-GH_REPOSITORY = {'--repo', 'R'}
+GH_REPOSITORY = {'--repo', 'R', '--hostname'}
+# gh's own commands (gh --help, gh 2.89), with their aliases: those that take
+# a subcommand, and those that do not, help topics among them. Any other
+# first word is an alias, read from gh alias list, or an extension.
+GH_GROUPS = {'agent-task', 'agent-tasks', 'agent', 'agents', 'alias', 'attestation', 'at',
+             'auth', 'cache', 'codespace', 'cs', 'config', 'extension', 'extensions', 'ext',
+             'gist', 'gpg-key', 'issue', 'label', 'org', 'pr', 'preview', 'project', 'release',
+             'repo', 'ruleset', 'rs', 'run', 'search', 'secret', 'ssh-key', 'variable',
+             'workflow'}
+GH_LEAVES = {'api', 'browse', 'completion', 'copilot', 'help', 'licenses', 'status', 'version',
+             'accessibility', 'actions', 'environment', 'exit-codes', 'formatting', 'mintty',
+             'reference'}
+# gh's options that a command written after them still sees as its own.
+GH_HELP = ('--help', '-h', '--version')
+# Words the shell may change before gh reads them: a variable, a command's
+# output, braces and patterns.
+SHELL_BUILT = re.compile(r'[$`{}*?\[]')
+# gh pr create's options that take a value (gh pr create --help).
+GH_PR_CREATE_VALUES = {'--assignee', 'a', '--base', 'B', '--body', 'b', '--body-file', 'F',
+                       '--head', 'H', '--label', 'l', '--milestone', 'm', '--project', 'p',
+                       '--recover', '--reviewer', 'r', '--template', 'T', '--title', 't'}
 # GitHub takes release assets at this host (gh release upload uses it).
 UPLOADS_HOST = 'uploads.github.com'
 # Programs that change a file's mode or remove it, which can turn a hook off
@@ -1599,24 +1647,42 @@ def expand_gh_alias(words, cwd, inherited):
 
 
 def gh_command_words(words):
-    # gh's global option --repo/-R takes a value.
-    plain = []
-    skip = False
-    for word in words:
+    """gh's command names, then its other words. Cobra finds a command by
+    its names past options written among them (gh pr --squash=true merge 5
+    merges), and the guard reads the names, so an option before the last
+    one is refused, but for --help, -h and --version, which only show
+    help, and -R, --repo and --hostname, which are dropped with their
+    value. After the names those stay for the parsers, which take them as
+    an option's value where gh does (gh pr create --title -R)."""
+    plain, skip, names = [], False, []
+    for index, word in enumerate(words):
+        if len(names) >= (2 if names[:1] and names[0] in GH_GROUPS else 1) or word == '--':
+            plain.extend(words[index:])
+            break
         if skip:
             skip = False
         elif word in ('-R', '--repo', '--hostname'):
             skip = True
-        elif word.startswith(('--repo=', '--hostname=')) or \
-                word.startswith('-R'):
+        elif word.startswith(('--repo=', '--hostname=', '-R')):
             continue  # the attached forms, --repo=OWNER/REPO and -ROWNER/REPO
+        elif word in GH_HELP:
+            plain.append(word)
+        elif word.startswith('-') and word != '-':
+            deny(GH_OPTION_FIRST)
         else:
             plain.append(word)
+            names.append(word)
     return plain
 
 
 def check_gh(words, cwd, environment, git_state=None):
-    plain = expand_gh_alias(gh_command_words(words[1:]), cwd, environment)
+    written = gh_command_words(words[1:])
+    if written[:1] and written[0] not in GH_GROUPS | GH_LEAVES and written[0] not in GH_HELP \
+            and git_state is not None and gh_aliases_may_change(git_state, cwd, environment):
+        deny(GH_ALIAS_CHANGED)
+    plain = expand_gh_alias(written, cwd, environment)
+    if plain[:1] and plain[0] not in GH_GROUPS | GH_LEAVES and plain[0] not in GH_HELP:
+        deny(GH_NOT_ITS_OWN)
     # gh's own aliases: gh pr new is gh pr create, and so on.
     if len(plain) >= 2 and plain[0] in ('issue', 'pr', 'release', 'gist', 'repo') \
             and plain[1] == 'new':
@@ -1624,8 +1690,25 @@ def check_gh(words, cwd, environment, git_state=None):
     if plain[:2] == ['release', 'upload'] or release_assets(plain) \
             or gh_uploads(words[1:], plain, environment):
         deny(RELEASE_ASSET)
+    if plain[:1] == ['copilot']:
+        deny(COPILOT)  # the Copilot CLI agent, which can push by itself
+    if plain[:2] == ['repo', 'create']:
+        texts, files = GH_PUBLISHES[('repo', 'create')]
+        values = texts | files | GH_OTHER_VALUES[('repo', 'create')] | GH_REPOSITORY
+        if not [word for word in without_redirections(plain[2:]) if word != '--']:
+            deny(REPO_ASKS)
+        if gh_unread_word(plain[2:], values, texts) is not None:
+            deny(REPO_BUILT)
+        if gh_switch(plain[2:], values, '--push'):
+            deny(REPO_PUSH)
+    if plain[:2] == ['pr', 'create'] and git_state is not None and git_state.get('terminal'):
+        pairs, _ = gh_arguments(plain[2:], GH_PR_CREATE_VALUES | GH_REPOSITORY)
+        if not any(option in ('--head', 'H') for option, _ in pairs):
+            deny(PR_TERMINAL)
     if git_state is not None:
         note_gh_text(plain, cwd, git_state)
+        if plain[:1] == ['alias'] and plain[1:2] in (['set'], ['import'], ['delete']):
+            git_state['gh_aliases_changed'] = True
     if len(plain) >= 2 and plain[0] in ('agent-task', 'agent-tasks', 'agent', 'agents') \
             and plain[1] == 'create':
         deny(COPILOT)
@@ -1651,14 +1734,14 @@ def check_gh(words, cwd, environment, git_state=None):
             if option in ('-a', '--approve'):
                 if not equal or value.lower() not in ('false', 'f', '0'):
                     deny(MERGE)
-            elif option in ('--body', '--body-file'):
+            elif option in ('--body', '--body-file', '--repo', '--hostname'):
                 if not equal:
                     index += 1
             elif word.startswith('-') and not word.startswith('--'):
                 for offset, letter in enumerate(word[1:], 1):
                     if letter == 'a':
                         deny(MERGE)
-                    if letter in ('b', 'F'):
+                    if letter in ('b', 'F', 'R'):
                         if offset == len(word) - 1:
                             index += 1
                         break  # remaining characters are the body/file operand
@@ -1736,6 +1819,81 @@ def gh_arguments(args, value_options):
                     break
         index += 1
     return pairs, operands
+
+
+def gh_unread_word(args, value_options, texts):
+    """A word of a gh command, after its names, that the shell may change
+    before gh reads it (SHELL_BUILT), or None. The text an option in texts
+    publishes is left out: note_gh_text reads it, and refuses a $ in it."""
+    index = 0
+    args = without_redirections(args)
+    while index < len(args):
+        word = checked = args[index]
+        value = None
+        if word.startswith('--'):
+            option, equal, _ = word.partition('=')
+            if option in value_options:
+                checked = option if option in texts else word
+                if not equal:
+                    value = option
+        elif word.startswith('-') and word != '-':
+            for offset, letter in enumerate(word[1:], 1):
+                if letter in value_options:
+                    checked = word[:offset + 1] if letter in texts else word
+                    if not word[offset + 1:]:
+                        value = letter
+                    break
+        if SHELL_BUILT.search(checked):
+            return word
+        if value is not None:
+            index += 1
+            if value not in texts and index < len(args) and SHELL_BUILT.search(args[index]):
+                return args[index]
+        index += 1
+    return None
+
+
+def gh_aliases_may_change(git_state, cwd, environment):
+    """Whether an earlier command in the call changes gh's aliases (gh alias
+    set, import or delete) or may write in gh's configuration folder, which
+    gh alias list, read before the call, does not see."""
+    if git_state.get('gh_aliases_changed'):
+        return True
+    settings = {**os.environ, **(environment or {})}
+    if settings.get('GH_CONFIG_DIR'):
+        folder = settings['GH_CONFIG_DIR']
+    elif settings.get('XDG_CONFIG_HOME'):
+        folder = os.path.join(settings['XDG_CONFIG_HOME'], 'gh')
+    else:
+        folder = os.path.join(settings.get('HOME') or '~', '.config', 'gh')
+    return any(overlaps(write, (cwd, folder)) for write in git_state.get('writes', ()))
+
+
+def gh_switch(args, value_options, name):
+    """Whether gh's boolean option name (--push) ends up on, read as gh's
+    flag parser reads it: the last --name or --name=VALUE before --, where
+    VALUE is on unless Go reads it as false, and a value option takes the
+    next word whatever it is (--description --push describes)."""
+    on, index = False, 0
+    args = without_redirections(args)
+    while index < len(args):
+        word = args[index]
+        if word == '--':
+            break
+        if word.startswith('--'):
+            option, equal, value = word.partition('=')
+            if option == name:
+                on = not equal or value not in ('0', 'f', 'F', 'false', 'FALSE', 'False')
+            elif option in value_options and not equal:
+                index += 1
+        elif word.startswith('-') and word != '-':
+            for offset, letter in enumerate(word[1:], 1):
+                if letter in value_options:
+                    if not word[offset + 1:]:
+                        index += 1
+                    break
+        index += 1
+    return on
 
 
 def release_assets(plain):
@@ -4153,8 +4311,14 @@ def check_command(command, cwd, depth=0, environment=None, git_state=None):
                 action = trap_action(unwrapped)
                 if action is not None:
                     check_command(action, None, depth + 1, command_environment, git_state)
+            elif program == 'alias' and any('=' in word for word in unwrapped[1:]):
+                deny(SHELL_ALIAS)
+            # script gives the command it runs a terminal, which gh asks on.
+            terminal = git_state.get('terminal')
+            git_state['terminal'] = terminal or program == 'script'
             for runner_cwd, inner in runner_commands(unwrapped, command_cwd):
                 check_command(inner, runner_cwd, depth + 1, command_environment, git_state)
+            git_state['terminal'] = terminal
             raw_words = raw_parts[part_index][0] if len(raw_parts) == len(parts) else []
             note_writes(git_state, words, raw_words, unwrapped, where, command_cwd,
                         stdin_document(parts, given, part_index))
@@ -4298,7 +4462,12 @@ def check_command(command, cwd, depth=0, environment=None, git_state=None):
                 if subcommand == 'config' and config_change(args) is not None:
                     git_state['config_changed'] = 'git config'
             elif program == 'gh':
+                terminal = git_state.get('terminal')
+                git_state['terminal'] = terminal or any(
+                    os.path.basename(word) in TERMINAL_WRAPPERS
+                    for word in words[:len(words) - len(unwrapped)])
                 check_gh(unwrapped, command_cwd, command_environment, git_state)
+                git_state['terminal'] = terminal
             elif program in ('curl', 'wget', 'http', 'https'):
                 request_words = curl_words(unwrapped) if program == 'curl' else unwrapped
                 if program == 'curl' and any(word.startswith('--expand-') for word in request_words[1:]):
