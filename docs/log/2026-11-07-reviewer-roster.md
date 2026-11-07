@@ -99,7 +99,11 @@ vendors' own pages on 2026-11-07:
 
 ## Commits
 
-On `claude/project-thread-cguht9`; the pull request lists them.
+On `claude/project-thread-cguht9`; the pull request lists them. The
+cloud session's push of the commit that changes `.github/workflows/`
+was refused for want of the `workflow` scope (AGENTS.md, *Gotchas*,
+still true on 2026-11-07), so that commit and the one after it were
+pushed from a worktree on the owner's Mac, through Remote Control.
 
 ## Verified
 
@@ -126,6 +130,11 @@ On `claude/project-thread-cguht9`; the pull request lists them.
   pass by not seeing a checkout.
 - `scripts/test-docs.py`, `scripts/test-hooks.py` and
   `scripts/test-runner.py` pass.
+- CodeRabbit reads `.coderabbit.yaml` from the pull request's branch:
+  once the file was pushed (`64827e8`), the run configuration in its
+  summary comment on this pull request changed from "Repository UI"
+  with no file to "Repository YAML" with this file at that commit, and
+  the "Autofix" box (below) left the comment.
 - What each reviewer reads, how each is triggered and each one's data
   terms: the vendors' own documentation, schema and terms, read
   2026-11-07, each claim then re-read by a second agent trying to
@@ -139,13 +148,14 @@ On `claude/project-thread-cguht9`; the pull request lists them.
   comment showed the one layer it used ("Repository UI"), the Chill
   profile and no configuration file. If the owner changed a setting
   there, the file has to carry it, or it no longer applies.
-- Whether `finishing_touches.autofix.enabled: false` also stops
-  CodeRabbit's continuous Autofix mode, which the "Autofix" box in its
-  summary comment starts ("Keep fixing CodeRabbit findings and
-  required CI, and resolving merge conflicts"); the box was there
-  before the file landed, and the documentation does not say. Ticking
-  it would have CodeRabbit commit, so nobody ticks it, whatever the
-  file does (AGENTS.md, "Reviews and updates on GitHub").
+- Whether CodeRabbit's continuous Autofix mode can still be started
+  another way. Before the file, its summary comment carried an
+  "Autofix" box ("Keep fixing CodeRabbit findings and required CI, and
+  resolving merge conflicts"); with `finishing_touches.autofix` off the
+  box is gone (*Verified*), but its documentation does not say whether
+  a bare `@coderabbitai autofix` still starts the mode. The rule in
+  AGENTS.md, "Reviews and updates on GitHub", holds it: no agent asks,
+  and nobody ticks the box if it comes back.
 - Nothing was built: no Swift changed. GitHub CI runs on the pull
   request, and the new "Dependency review" job runs on it too.
 - cubic is not installed yet, so no cubic review has run, and whether

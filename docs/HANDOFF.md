@@ -1105,9 +1105,10 @@ docs/ROADMAP.md, *The quality bar*, Q24):
      MiddleAgedBanana, and select non-MiddleAgedBanana, actions and
      reusable workflows", tick only "Allow actions created by GitHub",
      and Save. Success: the next pull request's checks all run.
-   - **Leave CodeRabbit's "Autofix" box unticked** in its comment on
-     each pull request: it has CodeRabbit write commits itself, and
-     reviewers here never write the code.
+   - **Leave CodeRabbit's "Autofix" box unticked** if its comment on a
+     pull request ever shows one (`.coderabbit.yaml` removed it): it
+     has CodeRabbit write commits itself, and reviewers here never
+     write the code.
    - **Optional, your choice:** turn off training on your work in
      ChatGPT (Settings → Data controls → "Improve the model for
      everyone") and in Codex's own settings ("Include environments", at
