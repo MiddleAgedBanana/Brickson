@@ -27,9 +27,10 @@ review*, records the decision and *Dependencies* the hardening.
   anything set on CodeRabbit's website stops applying; what the website
   held could not be read (*Not verified*).
 - **`cubic.yaml`.** cubic's settings: review on open and each push,
-  never approve, never write the pull request description (agents keep
-  its first two lines), never write code. cubic reads the file from
-  `main` only, so it applies from the merge on.
+  never approve, never resolve its own threads, never write the pull
+  request description (agents keep its first two lines), never write
+  code. cubic reads the file from `main` only, so it applies from the
+  merge on.
 - **`.greptile/`.** The brief's fallback draft, kept because the owner
   kept Greptile: the one-credit Base review once per pull request, no
   style comments, `AGENTS.md` named as the rules. Its config reference
@@ -46,13 +47,68 @@ review*, records the decision and *Dependencies* the hardening.
   `tests.yml` and `pages.yml`. No step uses the token after checkout
   (no script runs `git` against GitHub), and nothing uploaded includes
   the checkout, so this closes a door rather than a leak.
+  `scripts/test-runner.py` fails a checkout, in a workflow or in a
+  local action one runs, that does not set it under its own `with:`,
+  and fails any line naming `actions/checkout` that is not a step its
+  reader read, in the forms a workflow is written in (*Verified*).
 - **`.github/workflows/dependency-review.yml`**, GitHub's own
   dependency review on every pull request, without a checkout (the
   action reads the change through GitHub's API). Not a required check.
 - **Settings for the owner** (docs/HANDOFF.md, "Next steps, in order",
-  item 9): install cubic on Brickson alone; allow only actions created
-  by GitHub; and, optionally, turn off training in ChatGPT, Codex and
-  Greptile.
+  item 9): install cubic on Brickson alone; allow only GitHub's actions
+  and the owner's own (GitHub's choice for the first always allows the
+  second);
+  and, optionally, turn off training in ChatGPT, Codex and Greptile.
+
+### The review, and what it changed
+
+Codex and CodeRabbit reviewed; cubic is not installed yet, and
+Greptile did not review (it was out of credits when last checked, on
+2026-11-06).
+
+- **Codex** asked for the owner's approval of `.greptile/`, a new file
+  reviewers read as instructions: it is listed among the owner's
+  decisions in the pull request. It then found the hardening recorded
+  but not on the branch at `64827e8`: true then, because the workflow
+  commit was still on its way from the Mac (*Commits*).
+- **CodeRabbit** found five things, all real, all fixed in one push:
+  - The step reader missed valid forms: a comment after `steps:`, an
+    anchored `steps:`, and a list at the key's own depth, so the
+    checkout test could pass without seeing a checkout. The reader now
+    reads them, and a form it still cannot read fails the test rather
+    than slipping past (the second check, below).
+  - A quoted `uses:` was not read as a checkout, and
+    `persist-credentials` counted anywhere in the step; now quotes are
+    dropped, and only the key directly under the step's own `with:`
+    counts.
+  - The allowlist setting does not make Actions GitHub-only: GitHub
+    documents that "Allow MiddleAgedBanana, and select
+    non-MiddleAgedBanana" always allows the owner's own actions.
+    docs/DECISIONS.md, *Dependencies*, and the owner's step now say so;
+    *Code Review Rules* still flags any action not published by GitHub.
+  - cubic resolves a thread by itself when it judges a later commit
+    fixed it (`resolve_threads_when_addressed`, default true). It is now
+    false, so the agent answers each finding and resolves it.
+  - *Commits* below named no hashes, which `docs/log/README.md` asks
+    for.
+- **A second check, before the push.** Three agents then tried to make
+  the checkout test pass while a checkout kept its token, in forms
+  GitHub accepts, and re-read every corrected sentence against its
+  source. They found three ways past it: an anchor on a checkout's
+  `uses:` with an alias in the other jobs (GitHub's changelog announced
+  anchors in workflows on 2025-09-18), a checkout in a local action under
+  `.github/actions/`, and a checkout spelled with capitals. The test
+  now finds every line that names `actions/checkout`, in any case or
+  separator, outside whole-line comments, and fails unless that line is
+  the `uses:` of a step it read as a checkout, comparing lines rather
+  than counts; it also reads every `action.yml` under `.github` and
+  every local action a workflow or action runs. It now also accepts an
+  anchored `with:`, a flow `with: { persist-credentials: false }` and
+  `False` written in capitals, which it had refused though they keep no
+  token. The same agents corrected the cubic comment's reason, "five
+  dependencies" (there are six), HANDOFF's "every feature that writes
+  code" (only those with a setting), an unsupported "Greptile had no
+  credits", and the wording of this record's *Commits* and *Verified*.
 
 ### What the brief got wrong or left stale
 
@@ -99,11 +155,27 @@ vendors' own pages on 2026-11-07:
 
 ## Commits
 
-On `claude/project-thread-cguht9`; the pull request lists them. The
-cloud session's push of the commit that changes `.github/workflows/`
-was refused for want of the `workflow` scope (AGENTS.md, *Gotchas*,
-still true on 2026-11-07), so that commit and the one after it were
-pushed from a worktree on the owner's Mac, through Remote Control.
+On `claude/project-thread-cguht9`:
+
+- `b878c47` cubic's and Greptile's settings.
+- `c67f1b0` this record, AGENTS.md, DECISIONS, HANDOFF and SDLC.
+- `237071e` Greptile's archive pattern.
+- `64827e8` CodeRabbit's settings.
+- `1fe6098` the checkouts, the dependency review workflow and the
+  checkout test.
+- `2fb28a7` this record's CodeRabbit and push notes, and HANDOFF's
+  step about CodeRabbit's "Autofix" box.
+- `d7ced27` the checkout test's fixes, from both rounds (*The review,
+  and what it changed*).
+- `fe1a1a6` cubic leaves its threads open.
+- The commit after `fe1a1a6`: the allowlist wording, the second
+  check's corrections and this record of the review.
+
+The cloud session's push of the workflow commit was refused for want
+of the `workflow` scope (AGENTS.md, *Gotchas*, still true on
+2026-11-07), so a worktree on the owner's Mac, through Remote Control,
+applied it and the record's next commit, as `1fe6098` and `2fb28a7`,
+and pushed them.
 
 ## Verified
 
@@ -123,11 +195,27 @@ pushed from a worktree on the owner's Mac, through Remote Control.
   `v0.4.1` at `04b7a1a4d00b339dd3ff903bb4d78d4066b2bac7`.
 - `scripts/test-runner.py`'s new
   `test_every_checkout_leaves_no_token_behind` failed on the four
-  checkouts before they changed, and passes after; removing
-  `persist-credentials: false` from any checkout, in any workflow,
-  makes it fail again. `test_workflow_steps_are_read_one_by_one` fails
-  if the step reader misses a step or merges two, so the first cannot
-  pass by not seeing a checkout.
+  checkouts before they changed, and passes after. After CodeRabbit's
+  review, each of these made the workflow tests fail, and each was
+  undone: removing the setting from one checkout; moving it to the
+  step's own depth; adding a flow-style checkout; adding a workflow
+  whose list sits at the depth of `steps:` with a checkout that keeps
+  its token; putting back the reader's old order of checks; reading a
+  quoted `uses:` with its quotes; and accepting the key at any depth.
+  After the second check, so did each of these, on a copy of the
+  repository: an anchored checkout aliased in two jobs of `tests.yml`;
+  a checkout in a new `.github/actions/setup/action.yml`; a checkout in
+  `pages.yml` spelled `Actions/Checkout` without the setting; and, in
+  the code, matching the action's name with case, without the
+  backslash or without its end, counting whole-line comments,
+  comparing counts instead of lines, letting a quoted value in a flow
+  `with:` through, matching `false` with case, refusing an anchored
+  `with:`, ignoring a flow `with:`, leaving out the actions under
+  `.github` or the local actions a step runs, and dropping line
+  numbers. Before the code changed, the new and rewritten tests failed
+  or errored (the functions they call did not exist yet), and
+  `test_every_checkout_leaves_no_token_behind` errored for the same
+  reason.
 - `scripts/test-docs.py`, `scripts/test-hooks.py` and
   `scripts/test-runner.py` pass.
 - CodeRabbit reads `.coderabbit.yaml` from the pull request's branch:

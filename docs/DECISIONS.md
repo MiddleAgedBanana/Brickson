@@ -5222,11 +5222,12 @@ review setup does not quietly break them.
     `docs/archive/` and the JSON and text captures in `docs/evidence/`
     are skipped. Every other tool stays on.
   - **`cubic.yaml`.** Reviews on open and on each push; never approves;
-    writes no pull request description (the first two lines of every
-    description are attribution lines agents keep); and every fix
-    feature off ("Fix with cubic" buttons, fixes asked for in a comment,
-    auto-fix). cubic reads it from `main` only, so it applies from the
-    merge on. Its GitHub app is the owner's to install.
+    never resolves its own threads (the agent answers each finding and
+    resolves it); writes no pull request description (the first two
+    lines of every description are attribution lines agents keep); and
+    every fix feature off ("Fix with cubic" buttons, fixes asked for in
+    a comment, auto-fix). cubic reads it from `main` only, so it applies
+    from the merge on. Its GitHub app is the owner's to install.
   - **`.greptile/`.** The one-credit Base review, once per pull request
     when it opens (pushes do not spend credits), logic and syntax
     comments but no style ones, the same skipped records as CodeRabbit,
@@ -5394,19 +5395,24 @@ alerts for tag references, and all of them are GitHub's own actions.
   `actions/dependency-review-action`, which fails a pull request that
   brings in an action version with a known security advisory, in any
   scope. It runs on Linux, free for a public repository, and checks
-  out nothing: the action compares through GitHub's API. With five
+  out nothing: the action compares through GitHub's API. With six
   dependencies, all GitHub's own, it will nearly always pass; it is a
   tripwire. It is not a required check: making it one is the owner's
   call in the ruleset.
-- **Only GitHub's own actions may run** (the owner's setting, in
-  Settings → Actions → General → "Actions permissions": "Allow
-  MiddleAgedBanana, and select non-MiddleAgedBanana, actions and
-  reusable workflows", with "Allow actions created by GitHub" ticked
-  and nothing else). It makes *Code Review Rules*' flag on an action
-  not published by GitHub a check GitHub enforces when a workflow runs.
-  Trying an action from the Marketplace stays possible: the owner
-  adds it to that setting's list, and the pull request that uses it is
-  reviewed like any other.
+- **Only GitHub's actions, and the owner's own, may run** (the
+  owner's setting, in Settings → Actions → General → "Actions
+  permissions": "Allow MiddleAgedBanana, and select
+  non-MiddleAgedBanana, actions and reusable workflows", with "Allow
+  actions created by GitHub" ticked and nothing else). GitHub then
+  lets a workflow use only GitHub's actions (the `actions` and `github`
+  organisations), local actions and reusable workflows, and the owner's
+  own: that choice always allows the owner's own actions too (GitHub's
+  documentation, read 2026-11-07, which words it as actions "within
+  your organization"). Brickson uses none of the owner's own, and
+  *Code Review Rules* still flags one, as it flags every action not
+  published by GitHub. Trying an action from the Marketplace stays
+  possible: the owner adds it to that setting's list, and the pull
+  request that uses it is reviewed like any other.
 - **Next: a workflow lockfile** (`.github/workflows/actions.lock`,
   written by GitHub's `gh actions-lock`, generally available since
   2026-10-28). It records the commit each tag pointed to, so a moved

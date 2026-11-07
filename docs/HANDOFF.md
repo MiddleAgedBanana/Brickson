@@ -1100,8 +1100,8 @@ docs/ROADMAP.md, *The quality bar*, Q24):
      sign in at cubic.dev with GitHub, and give its app **Only select
      repositories**, with Brickson alone. Success: the next pull request
      gets a review from `cubic-dev-ai`.
-   - **Allow only GitHub's own actions:** the repository's Settings →
-     Actions → General → "Actions permissions" → "Allow
+   - **Allow only GitHub's actions (and your own):** the repository's
+     Settings → Actions → General → "Actions permissions" → "Allow
      MiddleAgedBanana, and select non-MiddleAgedBanana, actions and
      reusable workflows", tick only "Allow actions created by GitHub",
      and Save. Success: the next pull request's checks all run.
@@ -1421,7 +1421,8 @@ settings, date) and summarise it here.
   asks, `@coderabbitai review`, since the owner's trial ended. Since
   2026-11-07 each one's settings are in the repository
   (`.coderabbit.yaml`, `cubic.yaml`, `.greptile/`), with every feature
-  that writes code turned off (docs/DECISIONS.md, *Code review*).
+  that writes code and has a setting turned off, and AGENTS.md's rule
+  holds the rest (docs/DECISIONS.md, *Code review*).
   None reviews Dependabot's pull requests by itself. Copilot no longer
   reviews: its credits ran out on pull request #78, and since
   2026-11-04 no agent requests it (docs/DECISIONS.md, *Code review*).
