@@ -133,6 +133,10 @@ On the owner's Mac (macOS 27.2, `gh` 2.103.3, `gh-actions-lock` v0.4.1):
   at an unreadable workflow, with or without reporting it; skipping one
   silently; leaving out `.yaml` files; an unreadable or empty lockfile
   reading as nothing to report; not counting actions.
+- `scripts/test.sh unit` on the final code, with Xcode 27.2, on the iPad
+  Pro 13-inch (M5) simulator, iOS 27.2: 950 tests ran; 939 passed, none
+  failed, 1 skipped and 10 expected failures. It left the String Catalog
+  as it was.
 - Before the pull request, three separate readers tried to refute it,
   one each for the claims about GitHub, the code and the repository's
   rules. Each finding was checked and fixed here, but one: `lock_key`
@@ -167,8 +171,7 @@ On the owner's Mac (macOS 27.2, `gh` 2.103.3, `gh-actions-lock` v0.4.1):
 - Whether cubic and Greptile read a `.lock` file: neither's documentation
   says, and only CodeRabbit's default was read.
 - The "Require lockfile" policy: off, and not tried.
-- Nothing was built on the Mac: no Swift changed. GitHub CI is the
-  build.
+- The UI tests on the Mac: no Swift changed, and GitHub CI runs them.
 
 ## Follow-ups
 
