@@ -33,17 +33,24 @@ HOOK_TEXT = '#!/bin/sh\nexec python3 scripts/privacy-check.py --pre-push "$1"\n'
 # Git's settings for the person and the machine would change what the guard
 # decides: a global core.hooksPath of .githooks, the setup line a cloud
 # session is given, turns the privacy hook on in every test repository. Git
-# reads an empty file instead, in the tests and in every guard they run.
+# reads the tests' own file instead, in the tests and in every guard they
+# run. It names a made-up person: with no name and address set, git makes
+# them up from the machine's account and host name, an address the guard
+# rightly refuses, so a commit's identity would depend on the machine.
 GIT_CONFIG = tempfile.TemporaryDirectory()
-EMPTY_GIT_CONFIG = Path(GIT_CONFIG.name, 'empty')
-EMPTY_GIT_CONFIG.write_text('')
-GIT_ENVIRONMENT = {'GIT_CONFIG_GLOBAL': str(EMPTY_GIT_CONFIG),
-                   'GIT_CONFIG_SYSTEM': str(EMPTY_GIT_CONFIG), 'GIT_CONFIG_NOSYSTEM': '1'}
+TEST_GIT_CONFIG = Path(GIT_CONFIG.name, 'config')
+TEST_GIT_CONFIG.write_text('[user]\n\tname = t\n\temail = t@example.com\n')
+GIT_ENVIRONMENT = {'GIT_CONFIG_GLOBAL': str(TEST_GIT_CONFIG),
+                   'GIT_CONFIG_SYSTEM': str(TEST_GIT_CONFIG), 'GIT_CONFIG_NOSYSTEM': '1'}
 # Variables a git hook or the caller's shell may set would point git, in the
 # tests and in the guards they run, at another repository than the one
-# named with -C: the caller's own checkout.
+# named with -C: the caller's own checkout. Others would make the caller,
+# not that made-up person, the commits' author or committer.
+IDENTITY_VARIABLES = ('GIT_AUTHOR_NAME', 'GIT_AUTHOR_EMAIL', 'GIT_COMMITTER_NAME',
+                      'GIT_COMMITTER_EMAIL', 'EMAIL')
 for _variable in ('GIT_DIR', 'GIT_WORK_TREE', 'GIT_INDEX_FILE', 'GIT_COMMON_DIR',
-                  'GIT_OBJECT_DIRECTORY', 'GIT_ALTERNATE_OBJECT_DIRECTORIES', 'GIT_PREFIX'):
+                  'GIT_OBJECT_DIRECTORY', 'GIT_ALTERNATE_OBJECT_DIRECTORIES', 'GIT_PREFIX',
+                  *IDENTITY_VARIABLES):
     os.environ.pop(_variable, None)
 os.environ.update(GIT_ENVIRONMENT)
 
@@ -2008,6 +2015,20 @@ class PrivacyGuardTests(unittest.TestCase):
         self.assertAllowed('git commit -m x')
         self.git('config', 'user.email', 'other' + '@' + 'brickson-app' + '.dev')
         self.assertIn('the commit author', self.assertDenied('git commit -m x'))
+
+    def test_the_tests_commit_as_a_made_up_person(self):
+        # Where nothing names who commits, git makes up an address from the
+        # machine's account and host name, and the guard refuses it: on a
+        # Mac, every test that commits failed. The tests and the guards
+        # they run commit as the tests' own made-up person, whatever the
+        # machine or the caller's variables say.
+        for environment in (os.environ, self.env):
+            with self.subTest(environment='tests' if environment is os.environ else 'guard'):
+                ident = subprocess.run(['git', '-C', str(self.repo), 'var', 'GIT_AUTHOR_IDENT'],
+                                       env=environment, check=True, capture_output=True,
+                                       text=True).stdout
+                self.assertRegex(ident, r'^t <t@example\.com> ')
+                self.assertFalse(set(IDENTITY_VARIABLES) & set(environment))
 
     def test_a_folder_the_shell_computes_is_named_as_unknown(self):
         reason = self.assertDenied('cd "$(git rev-parse --show-toplevel)" && git commit -m x')

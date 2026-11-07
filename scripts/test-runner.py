@@ -2022,6 +2022,14 @@ class WorkflowTests(unittest.TestCase):
         if not os.access("/usr/bin/python3", os.X_OK):
             self.skipTest("the workflow runs /usr/bin/python3, which this machine lacks")
         repo, record, environment = self.privacy_fixture()
+        # macOS's /usr/bin/python3 is a stub that starts the developer
+        # tools' Python through xcrun, which sets the SDK's paths for the
+        # tool it starts (xcrun(1)). They are allowed there alone, and never
+        # with the step's own values, which the step must not pass on.
+        sdk_paths = {"SDKROOT", "CPATH", "LIBRARY_PATH", "MANPATH"}
+        # Not SDKROOT: where git is also such a stub, a made-up SDK could
+        # stop git itself.
+        environment.update(dict.fromkeys(sdk_paths - {"SDKROOT"}, "/from/the/step"))
         check, first_run = self.run_privacy_steps(repo, environment)
         self.assertEqual(check.returncode, 0, check.stdout + check.stderr)
         ran = json.loads(record.read_text())
@@ -2033,7 +2041,11 @@ class WorkflowTests(unittest.TestCase):
                    # What the system itself adds to a process: a text
                    # encoding on macOS, and Python's own locale choice.
                    "__CF_USER_TEXT_ENCODING", "LC_CTYPE"}
+        if sys.platform == "darwin":
+            allowed |= sdk_paths
         self.assertLessEqual(set(ran["env"]), allowed)
+        for name in sdk_paths & set(ran["env"]):
+            self.assertNotIn("/from/the/step", ran["env"][name], name)
         self.assertEqual(ran["env"]["PATH"], "/usr/bin:/bin")
         # With main's copy in place, the first-run step runs nothing.
         record.unlink()

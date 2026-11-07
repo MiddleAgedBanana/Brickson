@@ -257,6 +257,39 @@ so the workflow change came to this branch as `privacy-check-workflow.yml`
 at the repository's root, and a commit from the owner's Mac moved it
 into place.
 
+## The first run on the owner's Mac
+
+Before moving the workflow into place, the agent on the owner's Mac ran
+the Python checks at `bcc123c` under the Mac's `/usr/bin/python3`
+(Python 3.9.6). `test-privacy.py` (130) and `test-docs.py` (57) passed;
+two suites failed, and both would have failed on GitHub's Mac too:
+
+- **`test-hooks.py`: 39 of 171 failed.** The tests gave git an empty
+  settings file, so a commit's name and address were git's own guess,
+  made from the machine's account and host name, and the guard rightly
+  refused that address as a personal detail. On Linux here the host name
+  has no dot, so git's guess is not an address and the tests passed.
+  With `EMAIL` set to an address like the Mac's guess (git reads it
+  before guessing), the 39 failed here too, with the same refusal. The
+  tests' settings file now names a made-up person, the variables that
+  would name the caller instead (`GIT_AUTHOR_*`, `GIT_COMMITTER_*`,
+  `EMAIL`) are cleared, and a new test checks that both the tests and
+  the guards they run commit as that person.
+- **`test-runner.py`: the privacy step's test.** The check saw
+  `SDKROOT`, `CPATH`, `LIBRARY_PATH` and `MANPATH`, which the test does
+  not allow. macOS's `/usr/bin/python3` is a stub that starts the
+  developer tools' Python through `xcrun`, which sets the SDK's paths
+  for the tool it starts (`xcrun(1)`); the step's `env -i` cannot clear
+  what is set after it. The test allows the four on macOS only, and
+  gives the step its own values for three of them (not `SDKROOT`, which
+  could stop a git that is also such a stub), which must never reach
+  the check. On Linux the four stay refused.
+
+The pull request's comment on its first CI run said only the four
+workflow tests failed. That was all CI could show: "Check the test
+script" fails first, and `scripts/test.sh`, which runs the hook tests,
+is the step after it, so the hook tests had never run on a Mac.
+
 ## Commits
 
 The commits of this branch, from the one after `0250270` (main when it
@@ -280,8 +313,11 @@ after main (with the reviewer roster) was merged in:
   phone edges, folded phones, contractions, RTF bytes and their order
   with JSON escapes, Snappy copies, IPTC datasets, a zero place), failed
   it.
-- `python3 scripts/test-hooks.py`, with a made-up list: 171 tests, OK;
-  the four added for the first review round each failed before its fix.
+- `python3 scripts/test-hooks.py`, with a made-up list: 172 tests, OK,
+  also with `EMAIL` and `GIT_AUTHOR_EMAIL` set to an address like the
+  Mac's guess, which failed 39 of them before the fix. The test added
+  for it fails with no person in the tests' settings file. The four
+  added for the first review round each failed before its fix.
   Run against the guard as it was before the second review's fixes, the
   13 tests added for them and the 2 they extended all failed (49
   failures); the ten breakages of the guard's privacy rules from
@@ -292,7 +328,9 @@ after main (with the reviewer roster) was merged in:
   named `origin/main`: main's copy ran, with `PATH=/usr/bin:/bin`,
   Python's isolated mode and none of the run's other variables; while
   main had no check, the pull request's copy ran without the list; with
-  no main fetched, both steps failed. The unit job's result step passed
+  no main fetched, both steps failed. With `sys.platform` made
+  `darwin`, the step's test passed, and failed when the step passed its
+  own `CPATH` on to the check. The unit job's result step passed
   only when the privacy job's result was success. The old layout, plain
   `origin/main`, the secrets named in a comment, `if: success()` and a
   result step that passed on anything but failure each failed them.
@@ -317,9 +355,11 @@ after main (with the reviewer roster) was merged in:
 
 ## Not verified
 
-- Nothing ran on a Mac: not the hook under the Mac's own Python 3.9, not
-  `scripts/test.sh`, not the guard in a Claude Code session on the Mac.
-  CI runs the Python checks on GitHub's Mac.
+- On a Mac, only the Python suites ran, at `bcc123c` (*The first run on
+  the owner's Mac*); the two fixes have not run there yet. Not run on a
+  Mac: the hook under the Mac's own Python 3.9, `scripts/test.sh`, the
+  guard in a Claude Code session there. CI runs the Python checks on
+  GitHub's Mac.
 - The CI step has not run on GitHub: the workflow change waits for the
   commit from the owner's Mac, and until the secret is set it fails by
   design. GitHub's masking of the secret was not tested; the check never
