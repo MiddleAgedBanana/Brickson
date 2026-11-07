@@ -165,6 +165,14 @@ class ListTests(unittest.TestCase):
                          [('Quillon', 'Vassmere'), ('Tobble',), ('Third', 'Thing')])
         self.assertEqual([entry.number for entry in found], [1, 2, 3])
 
+    # Reading only a whole line as a note, so that a note written after an
+    # entry becomes part of it and the entry stops matching, fails this.
+    def test_a_note_after_an_entry_ends_it(self):
+        found = entries(f'{NAME} # a note; not an entry\n{NICK}; Third Thing#note\n')
+        self.assertEqual([entry.tokens for entry in found],
+                         [('Quillon', 'Vassmere'), ('Tobble',), ('Third', 'Thing')])
+        self.assertEqual(len(checker(f'{NAME} # a note').text(f'Thanks {NAME}.', 'x')), 1)
+
     def test_an_entry_starting_with_equals_matches_its_case(self):
         exact = privacy.Checker(entries('=Tobble'))
         self.assertEqual(kinds(exact.text('Tobble came.', 'x')), [privacy.KIND_PRIVATE])
@@ -614,7 +622,12 @@ class GitTests(unittest.TestCase):
         self.commit('h.md', f'{NICK}\n')
         self.commit('h.md', 'clean\n')
         git(self.repo, 'fetch', '-q', 'origin')
-        self.assertEqual(privacy.ci_revisions(self.repo), ['origin/main..HEAD'])
+        self.assertEqual(privacy.ci_revisions(self.repo), ['refs/remotes/origin/main..HEAD'])
+        # A tag named origin/main, which git reads before the remote's
+        # branch, does not stand in for main.
+        git(self.repo, 'tag', 'origin/main', 'HEAD')
+        self.assertEqual(privacy.ci_revisions(self.repo), ['refs/remotes/origin/main..HEAD'])
+        git(self.repo, 'tag', '-d', 'origin/main')
         git(self.repo, 'checkout', '-q', 'main')
         git(self.repo, 'merge', '-q', '--no-ff', '--no-edit', 'feature')
         git(self.repo, 'push', '-q', 'origin', 'main')
@@ -647,6 +660,19 @@ class GitTests(unittest.TestCase):
         git(self.repo, 'config', 'core.hooksPath', '.githooks')
         self.assertIn('Pushes from this checkout run the privacy hook.',
                       self.run_here('--status')[1])
+
+    # --status passing, or ending on the hook's line, when it read no list
+    # fails this: success is a list read and the hook on.
+    def test_status_without_a_list_fails_and_says_so_last(self):
+        (self.repo / '.githooks').mkdir()
+        shutil.copy2(HOOK, self.repo / '.githooks' / 'pre-push')
+        git(self.repo, 'config', 'core.hooksPath', '.githooks')
+        status, out, _ = self.run_here('--status', environ=listed())
+        self.assertEqual(status, 2)
+        self.assertIn('No private list', out.strip().splitlines()[-1])
+        status, out, _ = self.run_here('--status', '--no-list', environ=listed())
+        self.assertEqual(status, 0)
+        self.assertIn('run the privacy hook', out.strip().splitlines()[-1])
 
 
 class GitOutputTests(unittest.TestCase):
@@ -1440,8 +1466,21 @@ class PhoneWritingTests(unittest.TestCase):
             with self.subTest(text=text):
                 self.assertEqual(kinds(checker().text(text, 'x')), [privacy.KIND_PHONE])
 
+    # Finding a phone link's number only when it has the separators or the
+    # + that numbers in prose need fails this.
+    def test_a_phone_link_s_number_is_found_however_it_is_written(self):
+        # Split after the link's name, so this file holds no number the
+        # checker finds.
+        for text in ['<a href="tel:' '2128670142">', 'tel:' '8670142', 'TEL:' '(212)8670142',
+                     'sms:' '2128670142', 'callto:' '2128670142', 'facetime:' '2128670142',
+                     'facetime-audio:' '//2128670142', 'tel:' '//212.867.' '0142']:
+            with self.subTest(text=text):
+                self.assertEqual(kinds(checker().text(text, 'x')), [privacy.KIND_PHONE])
+
     def test_versions_dates_ids_and_fiction_numbers_are_still_left_alone(self):
-        for text in ['212-867-' '0142.5', 'v1.212.867.' '0142', 'build 212.867.' '0142.7',
+        for text in ['tel:5550100', 'tel:' '+15558670142', 'tel:555-0142', 'tel:911',
+                     'hotel:' '2128670142', 'sms:12', '212-867-' '0142.5', 'v1.212.867.' '0142',
+                     'build 212.867.' '0142.7',
                      '10.212.867.' '0142', 'id 212-867-' '0142-7', 'id 212\u2013867\u2013'
                      '0142\u20137', 'x212-867-' '0142', '2026\u201311\u201306',
                      'IP 192.168.100.1', '212-867-' '01425.', '(555) 867-' '0142 x12',

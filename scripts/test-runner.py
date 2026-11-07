@@ -1877,34 +1877,76 @@ class WorkflowTests(unittest.TestCase):
                                  ran.stdout + ran.stderr)
 
     # The privacy check (docs/DECISIONS.md, "Personal details stay out of
-    # the repository"). Moving it after a step that runs the pull request's
-    # code, fetching less than the whole history, keeping the checkout's
-    # credentials, giving the private list to any other step, running the
-    # pull request's copy of the check with the list, or passing it more of
-    # the environment than it needs fails this test.
-    def test_main_s_own_privacy_check_reads_the_list_before_anything_else(self):
+    # the repository"). A value a job is given stays in its machine's memory
+    # for the whole job, so the private list gets a job of its own, where
+    # nothing from the pull request runs. Giving it to the unit job or to
+    # any other step, running another step or action beside it, fetching
+    # less than the whole history, keeping the checkout's credentials,
+    # running the pull request's copy of the check with the list, passing
+    # it more of the environment than it needs, or naming the secrets in a
+    # comment (GitHub reads ${{ }} even in a script's comments) fails this
+    # test.
+    def test_the_private_list_reaches_a_job_of_its_own_and_main_s_check_alone(self):
         text = WORKFLOW.read_text()
         jobs = workflow_jobs(text)
-        unit = next(job for job, lines in jobs.items()
-                    if any(re.match(r"    name: *Unit tests *$", line) for line in lines))
-        steps = job_steps(jobs[unit])
-        checkout, check, first_run = steps[:3]
+        names = {job: next((line.split(":", 1)[1].strip() for line in lines
+                            if re.match(r"    name: ", line)), None)
+                 for job, lines in jobs.items()}
+        privacy = next(job for job, name in names.items() if name == "Privacy check")
+        steps = job_steps(jobs[privacy])
+        self.assertEqual(len(steps), 2, "The privacy job runs only the checkout and the check.")
+        checkout, check = steps
         self.assertTrue((checkout["uses"] or "").startswith("actions/checkout@"), checkout)
         self.assertEqual(checkout["with"].get("fetch-depth"), "0")
         self.assertEqual(checkout["with"].get("persist-credentials"), "false")
         self.assertEqual(check["name"], "Check for personal details")
+        self.assertIsNone(check["uses"])
         self.assertEqual(check["env"], {
             "BRICKSON_PRIVATE_WORDS": "${{ secrets.BRICKSON_PRIVATE_WORDS }}"})
-        self.assertEqual(first_run["name"], "Check for personal details (first run)")
-        self.assertEqual(first_run["env"], {})
-        uncommented = "\n".join(line for line in text.splitlines()
-                                 if not line.lstrip().startswith("#"))
-        # Every way of naming the secrets context (secrets.X, secrets['X'],
-        # toJSON(secrets)) counts.
-        self.assertEqual(len(re.findall(r"\bsecrets\b", uncommented)), 1,
-                         "The private list must reach the privacy step alone.")
         self.assertIn("/usr/bin/python3 -I", check["run"])
         self.assertIn("env -i ", check["run"])
+        # Every way of naming the secrets context (secrets.X, secrets['X'],
+        # toJSON(secrets)) counts, on every line, comments included.
+        self.assertEqual(len(re.findall(r"\bsecrets\b", text)), 1,
+                         "The private list must reach the privacy step alone.")
+
+    # "Unit tests" is a required check, so it carries the privacy check's
+    # result. Not waiting for the privacy job, being skipped when it fails
+    # (a skipped required check reads as passed), running in a cancelled
+    # run, or passing when the privacy job did not succeed fails this test;
+    # so does the first-run step leaving the unit job, where no list is.
+    def test_unit_tests_wait_for_the_privacy_check_and_fail_unless_it_passed(self):
+        jobs = workflow_jobs(WORKFLOW.read_text())
+        names = {job: next((line.split(":", 1)[1].strip() for line in lines
+                            if re.match(r"    name: ", line)), None)
+                 for job, lines in jobs.items()}
+        privacy = next(job for job, name in names.items() if name == "Privacy check")
+        unit = next(job for job, name in names.items() if name == "Unit tests")
+        body = "\n".join(jobs[unit])
+        needs = re.search(r"^    needs: *\[?([^\]\n]+)\]? *$", body, re.M)
+        self.assertIsNotNone(needs, "Unit tests does not wait for the privacy check.")
+        self.assertIn(privacy, [job.strip() for job in needs.group(1).split(",")])
+        self.assertRegex(body, r"(?m)^    if: *\$\{\{ *!cancelled\(\) *\}\} *$",
+                         "Without a status function, a failed privacy check skips Unit tests, "
+                         "and a skipped required check reads as passed.")
+        steps = job_steps(jobs[unit])
+        self.assertEqual(steps[0]["with"].get("fetch-depth"), "0")
+        self.assertEqual(steps[1]["name"], "Check for personal details (first run)")
+        self.assertEqual(steps[1]["env"], {})
+        result = steps[-1]
+        self.assertEqual(result["name"], "Check that the privacy check passed")
+        variable = [name for name, value in result["env"].items()
+                    if re.fullmatch(r"\$\{\{ *needs\." + re.escape(privacy)
+                                    + r"\.result *\}\}", value)]
+        self.assertEqual(len(variable), 1, "The unit job does not read the privacy job's result.")
+        self.assertIn("if: ${{ !cancelled() }}", "\n".join(jobs[unit]))
+        for outcome in ["success", "failure", "cancelled", "skipped", ""]:
+            with self.subTest(result=outcome):
+                ran = subprocess.run(["bash", "-e", "-c", result["run"]],
+                                     env=dict(os.environ, **{variable[0]: outcome}),
+                                     capture_output=True, text=True, timeout=30)
+                self.assertEqual(ran.returncode == 0, outcome == "success",
+                                 ran.stdout + ran.stderr)
 
     def privacy_fixture(self, main_has_check=True, branch_has_check=True, fetched=True):
         holder = tempfile.TemporaryDirectory()
@@ -1940,6 +1982,9 @@ class WorkflowTests(unittest.TestCase):
         else:
             git("rm", "-q", "--ignore-unmatch", "scripts/privacy-check.py")
         git("commit", "-q", "--allow-empty", "-m", "change")
+        # A tag named origin/main, which git reads before the remote's
+        # branch: it must not stand in for main's copy.
+        git("tag", "origin/main", "HEAD")
         event = folder / "event.json"
         event.write_text("{}")
         (folder / "temp").mkdir()
@@ -1951,9 +1996,8 @@ class WorkflowTests(unittest.TestCase):
         return repo, record, environment
 
     def run_privacy_steps(self, repo, environment):
-        unit = next(lines for lines in workflow_jobs(WORKFLOW.read_text()).values()
-                    if any(re.match(r"    name: *Unit tests *$", line) for line in lines))
-        steps = {step["name"]: step for step in job_steps(unit)}
+        steps = {step["name"]: step for lines in workflow_jobs(WORKFLOW.read_text()).values()
+                 for step in job_steps(lines) if step["name"]}
         results = []
         for name, secret in [("Check for personal details", "made-up words"),
                              ("Check for personal details (first run)", None)]:

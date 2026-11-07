@@ -144,13 +144,13 @@ class Finding:
 
 def parse_list(text, source):
     """Entries from a private list: one per line, or several on a line
-    between semicolons. A line starting with # is a note. An entry
-    starting with = must match its case. Errors name the entry's number,
-    never its words."""
+    between semicolons. A # starts a note, to the end of its line. An
+    entry starting with = must match its case. Errors name the entry's
+    number, never its words."""
     entries = []
     for raw in text.splitlines():
-        line = unicodedata.normalize('NFC', raw).strip()
-        if not line or line.startswith('#'):
+        line = unicodedata.normalize('NFC', raw).partition('#')[0].strip()
+        if not line:
             continue
         for words in line.split(';'):
             words = words.strip()
@@ -285,13 +285,18 @@ GAP = '[ .\u00a0\u2009\u202f' + DASHES + ']'
 # An extension after the number (x12, ext. 12) belongs to it, but is not
 # part of the number checked against the ones kept for fiction.
 EXTENSION = r'(?:\s?(?i:extension|ext\.?|x)\s?\d{1,6})?'
+# A link that calls or messages a number holds nothing else, so its digits
+# need no separators: tel:5550100.
+PHONE_LINK = (r'(?<![\w.+-])(?i:tel|sms|callto|facetime|facetime-audio):(?://)?\+?'
+              rf'(?:[ .()\u00a0\u2009\u202f{DASHES}]{{0,2}}\d){{7,15}}(?![\d])')
 NUMBER_START = rf'(?<![\w+.])(?<!\d[{DASHES}])(?<![^\W\d]-)'
 NUMBER_END = rf'(?![\w]|[{DASHES}]\d|-[^\W\d])'
 PHONE = re.compile(
     rf'{NUMBER_START}(?:\+?1{GAP}?)?(?:\(\d{{3}}\){GAP}?|\d{{3}}{GAP})\d{{3}}{GAP}\d{{4}}'
     rf'(?={EXTENSION}{NUMBER_END}(?!\.\w))'
     rf'|(?<![\w+])\+(?!\d{{4}}[{DASHES}]\d\d[{DASHES}]\d\d(?!\d))[1-9]'
-    rf'(?:[ .()\u00a0\u2009\u202f{DASHES}]{{0,2}}\d){{7,14}}(?={EXTENSION}{NUMBER_END})')
+    rf'(?:[ .()\u00a0\u2009\u202f{DASHES}]{{0,2}}\d){{7,14}}(?={EXTENSION}{NUMBER_END})'
+    rf'|{PHONE_LINK}')
 
 # A home folder's path, also right after a compiler flag (-I/Users/...,
 # -L/home/...) and on macOS's data volume (/System/Volumes/Data/Users/...),
@@ -350,9 +355,11 @@ def phone_allowed(number):
     digits = re.sub(r'\D', '', number)
     if len(digits) == 11 and digits.startswith('1'):
         digits = digits[1:]
-    # Numbers kept for fiction and examples: area code 555, and 555-01xx.
-    return len(digits) == 10 and (digits[:3] == '555'
-                                  or (digits[3:6] == '555' and digits[6:8] == '01'))
+    # Numbers kept for fiction and examples: area code 555, and 555-01xx,
+    # also without its area code (a link's tel:5550100).
+    return (len(digits) == 10 and (digits[:3] == '555'
+                                   or (digits[3:6] == '555' and digits[6:8] == '01'))
+            or len(digits) == 7 and digits[:5] == '55501')
 
 
 def same_class(a, b):
@@ -2386,9 +2393,12 @@ def ci_revisions(root):
         raise SetupError('This clone is shallow, so the commits being merged cannot be '
                          'read. Check out the whole history (actions/checkout with '
                          'fetch-depth: 0).')
-    if git_succeeds(root, 'rev-parse', '--verify', '--quiet', 'origin/main^{commit}') and \
-            not git_succeeds(root, 'merge-base', '--is-ancestor', 'HEAD', 'origin/main'):
-        return ['origin/main..HEAD']
+    # The remote's branch by its full name: a tag named origin/main would
+    # come first.
+    main = 'refs/remotes/origin/main'
+    if git_succeeds(root, 'rev-parse', '--verify', '--quiet', main + '^{commit}') and \
+            not git_succeeds(root, 'merge-base', '--is-ancestor', 'HEAD', main):
+        return [main + '..HEAD']
     parents = git(root, 'rev-list', '--parents', '-n', '1', 'HEAD').split()
     # HEAD^! is HEAD alone: with -1, git log --merges would pick the newest
     # older merge instead.
@@ -2522,15 +2532,13 @@ def kinds(findings):
     return '; '.join(f'{count} × {kind}' for kind, count in sorted(counts.items()))
 
 
-def status(root, entries, counts):
+def status(root, entries, counts, no_list=False):
     """The list's sources and counts, how many places in tracked files
     each entry matches (an entry that matches many is already published
-    or an ordinary word), and whether pushes run the hook."""
+    or an ordinary word), and whether pushes run the hook. Without a list
+    (unless --no-list said so), that is said last."""
     for label, count in counts:
         print(f'{counted(count, "entry", "entries")} from {label}.')
-    if not counts:
-        print('No private list was found here: checks refuse to run without one unless '
-              '--no-list is given.')
     places, checker = {}, Checker(entries)
     if entries:
         for path in git(root, 'ls-files', '-z').split('\0'):
@@ -2554,6 +2562,9 @@ def status(root, entries, counts):
     print('Pushes from this checkout run the privacy hook.' if hook_on(root) else
           'Pushes from this checkout do NOT run the privacy hook. Turn it on with: '
           f'git config core.hooksPath {HOOKS}')
+    if not counts and not no_list:
+        print('No private list was found here, so nothing can be checked or pushed: set one '
+              f'up ({DECISION}).')
 
 
 def run(options, environ, stdin):
@@ -2562,7 +2573,7 @@ def run(options, environ, stdin):
     for warning in warnings:
         print(f'privacy check: {warning}', file=sys.stderr)
     if options.status:
-        status(root, entries, counts)
+        status(root, entries, counts, options.no_list)
         return [], Tally(), entries
     if options.ci and not options.no_list and not entries:
         if ci_gets_secrets(environ):
@@ -2647,7 +2658,7 @@ def main(argv=None, environ=None, stdin=None):
         print(f'::error::privacy check failed ({type(error).__name__}).', file=sys.stderr)
         return 2
     if options.status:
-        return 0
+        return 0 if entries or options.no_list else 2
     checked = []
     if tally.files:
         checked.append(counted(tally.files, 'file'))

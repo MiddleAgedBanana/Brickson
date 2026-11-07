@@ -90,7 +90,8 @@ or into iTerm2 or Warp if you use one of those.
    every push. How to write the list, and why, is in
    [docs/DECISIONS.md](DECISIONS.md), "Personal details stay out of the
    repository". `python3 scripts/privacy-check.py --status` says whether
-   both are in place.
+   both are in place: when they are, it ends "Pushes from this checkout
+   run the privacy hook."
 
 ### Run it on your own iPhone or iPad
 

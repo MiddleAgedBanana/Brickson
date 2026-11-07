@@ -63,8 +63,10 @@ session gets. Using the GitHub tools you have (for example the GitHub MCP
 server's pull request and Actions tools), find the newest "Tests" run for
 the branch's last commit and report:
 
-- the result of "Unit tests" and "UI tests", and the commit each ran on.
-  A run on an older commit does not verify the newest one;
+- the result of "Privacy check", "Unit tests" and "UI tests", and the
+  commit each ran on ("Unit tests" fails when "Privacy check" did not
+  pass; report only the privacy job's result and counts). A run on an
+  older commit does not verify the newest one;
 - the Xcode version and each simulator from the build-and-test step,
   where `scripts/test.sh` prints the versions and test destinations;
 - for a failure, the first failing test or error line from the job log,

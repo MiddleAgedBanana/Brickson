@@ -468,7 +468,9 @@ the failure.
   When editing an existing pull request body, preserve its first two
   attribution lines exactly.
 - **Before every push**, rerun the appropriate test script for the change,
-  and `python3 scripts/privacy-check.py --outgoing`; check a pull
+  and `python3 scripts/privacy-check.py --outgoing` (with no list, as in
+  a cloud thread given none, `--outgoing --no-list`, and say in the pull
+  request that the list was not checked); check a pull
   request's text or a comment with `--text -` before posting it. Never
   repeat what it finds (docs/DECISIONS.md, "Personal details stay out of
   the repository"). Batch completed commits into one push: each push
@@ -746,9 +748,10 @@ above are backed by checks wherever a check can run:
   on GitHub* says what only the rule holds); a GitHub tool writing
   a file onto `main`; a commit, or text sent to GitHub by `gh`, the API
   or a GitHub tool, that holds a personal detail, text it cannot read
-  before the command runs (built by the shell, or a file the same
-  command writes), and a push from a checkout whose pushes skip the
-  privacy hook (*The privacy check*, below); and any command that names
+  before the command runs (built by the shell, a file the same command
+  writes, or an index change or commit identity it sets), and a push
+  from a checkout whose pushes skip the privacy hook or from a branch
+  that has none (*The privacy check*, below); and any command that names
   the private list or prints the whole environment. The same
   settings deny the merge tools and the Copilot tools outright, and the
   Read and Edit tools the private list. When the guard refuses, do not look for
@@ -776,8 +779,8 @@ above are backed by checks wherever a check can run:
   files, file names, pictures' hidden text, commits and pull requests.
   It runs in git's pre-push hook (`.githooks/pre-push`, on once per
   checkout with `git config core.hooksPath .githooks`), in the guard,
-  by hand (`--outgoing`, `--text -`), and first in CI's "Unit tests"
-  job, which by then can only warn. Without the list it refuses to pass
+  by hand (`--outgoing`, `--text -`), and in CI's "Privacy check" job,
+  the only one given the list, which by then can only warn. Without the list it refuses to pass
   (`--no-list` checks the patterns alone, and is never described as a
   pass). It prints places and kinds, never the words, and neither does
   anyone after it. In a cloud thread, run `--status`: where it reads a
