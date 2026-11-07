@@ -250,7 +250,10 @@ gives the owner its full text (in the pull request, or in the project's
 shared files), and the owner commits it on the pull request's branch:
 open the file on that branch in GitHub, choose the pencil (Edit), paste,
 then **Commit changes** to the same branch. From the Mac, `git` works as
-usual. The owner did this for PR #12 on 2026-10-21.
+usual. The owner did this for PR #12 on 2026-10-21. A change to a
+`uses:` line, or a new workflow, also needs `.github/workflows/actions.lock`
+written again, so it goes through the Mac, not the pencil (AGENTS.md,
+*Gotchas*).
 
 **There is no rollback on the App Store.** A version that is out cannot be
 taken back; the fix is a new build. For updates, App Store Connect's

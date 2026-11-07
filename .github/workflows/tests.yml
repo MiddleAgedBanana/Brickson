@@ -45,7 +45,7 @@ jobs:
     runs-on: xcode-27
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
       - name: Check the Xcode choice
@@ -73,7 +73,7 @@ jobs:
         run: scripts/test.sh unit
       - name: Keep the test results
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: unit-test-results
           path: build/TestResults
@@ -92,7 +92,7 @@ jobs:
     runs-on: xcode-27
     timeout-minutes: 90
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
       - name: Use the newest released Xcode
@@ -111,7 +111,7 @@ jobs:
         run: scripts/test.sh ui
       - name: Keep the test results
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: ui-test-results-ipad
           path: build/TestResults
@@ -123,7 +123,7 @@ jobs:
     runs-on: xcode-27
     timeout-minutes: 90
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
       - name: Use the newest released Xcode
@@ -142,7 +142,7 @@ jobs:
         run: scripts/test.sh ui
       - name: Keep the test results
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: ui-test-results-iphone
           path: build/TestResults

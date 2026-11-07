@@ -1100,11 +1100,9 @@ docs/ROADMAP.md, *The quality bar*, Q24):
      sign in at cubic.dev with GitHub, and give its app **Only select
      repositories**, with Brickson alone. Success: the next pull request
      gets a review from `cubic-dev-ai`.
-   - **Allow only GitHub's actions (and your own):** the repository's
-     Settings → Actions → General → "Actions permissions" → "Allow
-     MiddleAgedBanana, and select non-MiddleAgedBanana, actions and
-     reusable workflows", tick only "Allow actions created by GitHub",
-     and Save. Success: the next pull request's checks all run.
+   - **Allow only GitHub's actions (and your own):** done. GitHub's API
+     showed it on 2026-11-07, with "Allow actions created by GitHub"
+     ticked and nothing else.
    - **Leave CodeRabbit's "Autofix" box unticked** if its comment on a
      pull request ever shows one (`.coderabbit.yaml` removed it): it
      has CodeRabbit write commits itself, and reviewers here never
@@ -1393,23 +1391,12 @@ settings, date) and summarise it here.
 - Since 2026-11-07 no checkout keeps the job's token, and a "Dependency
   review" job on every pull request fails one that brings in an action
   with a known security advisory; it is not a required check
-  (docs/DECISIONS.md, *Dependencies*). **Next for the repository: the
-  workflow lockfile**, one pull request of its own in a new thread,
-  made on the owner's Mac through Remote Control in a worktree of a
-  branch from `main`, never in `~/code/brickson`. Steps:
-  `gh extension install github/gh-actions-lock`, then `gh actions-lock`
-  (it writes `.github/workflows/actions.lock` and rewrites each short
-  tag such as `@v7` to its full version), read the whole diff, then
-  `gh actions-lock --verify`, which must report no errors. The pull
-  request rewrites docs/DECISIONS.md, *Dependencies*, from "Actions are
-  referenced by version tag" through its "Next" bullet, adds a gotcha
-  to AGENTS.md that a pull request changing a `uses:` line runs
-  `gh actions-lock` again, and decides whether a "Verify lockfile"
-  workflow runs `gh actions-lock --verify` on each pull request. A
-  cloud session cannot push `.github/workflows/`, so the Mac pushes it.
-  The owner's allowlist setting (*Dependencies*) is checked against
-  the locked commits; "Allow actions created by GitHub" is expected to
-  keep matching, which the first locked run shows.
+  (docs/DECISIONS.md, *Dependencies*). `.github/workflows/actions.lock`
+  now holds the commit of every action the workflows run, and a
+  "Verify lockfile" job checks it on every pull request, also not a
+  required check. A pull request that adds a workflow or changes a
+  `uses:` line runs `gh actions-lock` on the owner's Mac (AGENTS.md,
+  *Gotchas*; [record](log/2026-11-07-workflow-lockfile.md)).
 - Open PR pushes now follow AGENTS.md, "Pushing to an open PR": [rule and verification](log/2026-10-23-open-pr-push-policy.md).
 - The docs cross-reference check reads every title a citation names,
   quoted titles starting with a small letter and titles after the first

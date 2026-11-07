@@ -24,6 +24,7 @@ from unittest import mock
 SCRIPT = Path(__file__).resolve().with_name("test.sh")
 WORKFLOW = SCRIPT.parent.parent / ".github" / "workflows" / "tests.yml"
 WORKFLOWS = WORKFLOW.parent
+VERIFY_LOCKFILE = WORKFLOWS / "verify-lockfile.yml"
 
 # Answers the version and build-settings queries from the fixture, and
 # records every other xcodebuild run, one line of tab-separated arguments
@@ -1595,6 +1596,8 @@ FLOW_NO_TOKEN = re.compile(r"""with:\s*(&[^\s#]+\s*)?\{([^{}"']*,)?\s*"""
 # actions/checkout in any spelling GitHub may accept: any case, a backslash
 # or a doubled slash, spaces; but not another action whose name holds it.
 CHECKOUT = re.compile(r"(?<![\w.-])actions\s*[/\\]+\s*checkout(?![\w.-])", re.I)
+LOCKED_PATH = re.compile(r"\s+'(\.github/workflows/[^']+)':\s*")
+LOCKED_ACTION = re.compile(r"\s+- '([^']+)'\s*")
 
 
 def workflow_steps(text):
@@ -1735,6 +1738,66 @@ def checkout_problems(root):
                                  "the job's token: add `persist-credentials: false` under its "
                                  "own `with:`, written out (an alias is not followed)."))
     return problems, checkouts
+
+
+def locked_workflows(text):
+    """What actions.lock records for each workflow, as `gh actions-lock`
+    writes it: a quoted path, then one quoted `- 'owner/repo@ref'` per
+    action, until the next path or the next top-level key."""
+    locked, current = {}, None
+    for line in text.splitlines():
+        path = LOCKED_PATH.fullmatch(line)
+        entry = LOCKED_ACTION.fullmatch(line)
+        if not line.startswith(" "):
+            current = None
+        elif path:
+            current = locked.setdefault(path.group(1), set())
+        elif entry and current is not None:
+            current.add(entry.group(1))
+    return locked
+
+
+def lock_key(uses):
+    """The name actions.lock records a step's `uses:` under: its owner and
+    repository in lower case, without the path of an action in a folder of
+    its repository."""
+    name, _, ref = uses.partition("@")
+    return "/".join(name.lower().split("/")[:2]) + "@" + ref
+
+
+def lockfile_problems(root):
+    """Each action a workflow's steps name that actions.lock does not
+    record for that workflow, as (file, line, message) triples, and how
+    many actions were read. It needs no network or `gh`, so a cloud thread
+    can run this script too, as the unit job does. It covers only what
+    workflow_steps reads, and proves nothing about commits: `gh
+    actions-lock --verify`, in verify-lockfile.yml, is the real check."""
+    name = ".github/workflows/actions.lock"
+    text = read_checked(root / name)
+    if text is None:
+        return [(name, None, f"{name} cannot be read. Run `gh actions-lock`.")], 0
+    locked = locked_workflows(text)
+    if not locked:
+        return [(name, None, f"{name} records no workflows: it is empty, or not in the "
+                 "format locked_workflows reads.")], 0
+    problems, actions = [], 0
+    for path in sorted((root / ".github/workflows").glob("*.y*ml")):
+        workflow = str(path.relative_to(root))
+        steps = read_checked(path)
+        if steps is None:
+            problems.append((workflow, None, f"{workflow} cannot be read."))
+            continue
+        for step in workflow_steps(steps):
+            number, uses = uses_line(step)
+            if not uses or uses.startswith(("./", "$/", "docker://")):
+                continue
+            actions += 1
+            if lock_key(uses) not in locked.get(workflow, ()):
+                problems.append((workflow, number, f"Line {number} of {workflow} uses {uses}, "
+                                 f"which {name} does not record for it. Run `gh actions-lock` "
+                                 "on the owner's Mac and commit the lockfile with the workflow "
+                                 "(AGENTS.md, *Gotchas*)."))
+    return problems, actions
 
 
 class WorkflowTests(unittest.TestCase):
@@ -2071,6 +2134,122 @@ class WorkflowTests(unittest.TestCase):
             ("missing/action.yml", None, "cannot be read"),
         ])
         self.assertEqual(checkouts, 2)
+
+    # Changing a `uses:` line, or adding a workflow or a step that runs an
+    # action, without running `gh actions-lock` again fails this test; so
+    # does a lockfile that is gone or that this reader no longer reads, and
+    # a workflow with no actions read (docs/DECISIONS.md, *Dependencies*).
+    def test_every_action_a_workflow_runs_is_in_the_lockfile(self):
+        problems, actions = lockfile_problems(REPOSITORY)
+        self.assertEqual([message for _, _, message in problems], [])
+        self.assertGreater(actions, 0, "No workflow step that runs an action was read.")
+
+    # Matching an action in another workflow's list or under `dependencies:`,
+    # comparing names with their case or their path in the action's
+    # repository, checking local actions, or stopping at a file that cannot
+    # be read, fails this test.
+    def test_an_action_the_lockfile_does_not_record_is_reported(self):
+        lock = textwrap.dedent("""\
+            # Do not edit by hand.
+            version: 'v0.0.3'
+            workflows:
+                '.github/workflows/a.yml':
+                    - 'actions/checkout@v7.0.1'
+                    - 'github/codeql-action@v4.39.3'
+                '.github/workflows/b.yml':
+                    - 'actions/upload-artifact@v7.0.0'
+            dependencies:
+                'actions/deploy-pages@v5.0.0':
+                    ref: 'v5.0.0'
+                    uses:
+                        - 'actions/cache@v4.0.0'
+            """)
+        self.assertEqual(locked_workflows(lock), {
+            ".github/workflows/a.yml": {"actions/checkout@v7.0.1", "github/codeql-action@v4.39.3"},
+            ".github/workflows/b.yml": {"actions/upload-artifact@v7.0.0"},
+        })
+        files = {
+            ".github/workflows/actions.lock": lock.encode(),
+            ".github/workflows/a.yml": b"""\
+steps:
+  - uses: Actions/Checkout@v7.0.1
+  - uses: github/codeql-action/init@v4.39.3
+  - uses: ./tools/build
+  - uses: $/tools/build
+  - uses: docker://alpine:3
+  - run: echo no action here
+  - uses: actions/checkout@v7
+  - uses: actions/upload-artifact@v7.0.0
+  - uses: actions/deploy-pages@v5.0.0
+""",
+            ".github/workflows/b.yaml": b"steps:\n  - uses: actions/upload-artifact@v7.0.0\n",
+            ".github/workflows/c.yml": b"steps:\n  - uses: \xff\xfe\n",
+            ".github/workflows/d.yml":
+                b"steps:\n  - run: echo no action here\n  - uses: actions/cache@v4.0.0\n",
+        }
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            for name, data in files.items():
+                (root / name).parent.mkdir(parents=True, exist_ok=True)
+                (root / name).write_bytes(data)
+            problems, actions = lockfile_problems(root)
+        self.assertEqual([(name, line) for name, line, _ in problems], [
+            (".github/workflows/a.yml", 8),
+            (".github/workflows/a.yml", 9),
+            (".github/workflows/a.yml", 10),
+            (".github/workflows/b.yaml", 2),
+            (".github/workflows/c.yml", None),
+            (".github/workflows/d.yml", 3),
+        ])
+        self.assertEqual(actions, 7)
+
+    # A lockfile that is missing, not UTF-8, empty, or in a format the
+    # reader does not know must not read as "nothing to report".
+    def test_a_lockfile_that_cannot_be_read_is_reported(self):
+        for name, data in {"missing": None, "not UTF-8": b"\xff\xfe", "empty": b"",
+                           "another format": b"workflows:\n  ci: [actions/checkout@v7]\n"}.items():
+            with self.subTest(name), tempfile.TemporaryDirectory() as folder:
+                root = Path(folder)
+                (root / ".github/workflows").mkdir(parents=True)
+                (root / ".github/workflows/a.yml").write_text(
+                    "steps:\n  - uses: actions/checkout@v7\n")
+                if data is not None:
+                    (root / ".github/workflows/actions.lock").write_bytes(data)
+                problems, actions = lockfile_problems(root)
+                self.assertEqual([(file, line) for file, line, _ in problems],
+                                 [(".github/workflows/actions.lock", None)])
+                self.assertEqual(actions, 0)
+
+    # Dropping the pull request trigger, narrowing it in any way (a required
+    # check that never arrives leaves every pull request waiting), an `if:`
+    # that skips the job or a step, a failure that does not fail the job,
+    # widening the token, renaming the job, leaving the extension unpinned,
+    # checking with --verify-local, which proves no commit, or putting a
+    # flag that takes a moved tag's new commit in any workflow fails this
+    # test.
+    def test_the_lockfile_is_verified_on_every_pull_request(self):
+        text = "\n".join(line for line in VERIFY_LOCKFILE.read_text().splitlines()
+                         if not line.lstrip().startswith("#"))
+        self.assertRegex(text, r"(?m)^on:\n  pull_request: *\n  \S")
+        self.assertRegex(text, r"(?m)^  push:\n    branches: \[main\] *$")
+        self.assertNotRegex(text, r"(?m)^ +(- )?(if|continue-on-error):")
+        self.assertRegex(text, r"(?m)^permissions:\n  contents: read\n+\S")
+        self.assertEqual(text.count("permissions:"), 1)
+        self.assertNotIn("pull_request_target", text)
+        jobs = workflow_jobs(text)
+        self.assertEqual(len(jobs), 1, jobs)
+        body = "\n".join(next(iter(jobs.values())))
+        self.assertRegex(body, r"(?m)^    name: Verify lockfile *$")
+        install = re.search(
+            r"(?m)^ +(- )?run: gh extension install github/gh-actions-lock --pin v\d+\.\d+\.\d+ *$",
+            body)
+        self.assertIsNotNone(install, "The extension is not installed at a pinned release.")
+        verify = re.search(r"(?m)^ +(- )?run: gh actions-lock --verify *$", body)
+        self.assertIsNotNone(verify, "The job does not run `gh actions-lock --verify`.")
+        self.assertLess(install.start(), verify.start())
+        for path in sorted((REPOSITORY / ".github/workflows").glob("*.y*ml")):
+            with self.subTest(workflow=path.name):
+                self.assertNotRegex(path.read_text(), r"--accept-moved|--relock")
 
     # Writing an Xcode version or app path into the workflow fails this test.
     def test_the_workflow_names_no_xcode_version(self):
