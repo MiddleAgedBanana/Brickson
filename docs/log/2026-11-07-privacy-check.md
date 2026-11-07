@@ -861,6 +861,21 @@ Python suite passed on the owner's Mac under its `/usr/bin/python3`
 (3.9.6): the runner (95), hook (172), privacy (130), docs (57), site
 (7) and Xcode-choice (23) tests.
 
+At `5ed1456`, before the workflow commit (`e7803fb`), one hook test
+failed there every time, under Python 3.9.6 and 3.15.2: a script of
+eight `pushd`, `ls`, `popd` steps was refused as reaching more folders
+than the guard follows, though it passes on Linux. macOS keeps its
+temporary folders behind a link (`/var` is `/private/var`). A `cd` to
+a folder not there yet is followed both by its name and, in case bash
+falls back to it, by where its links lead (a link before a `..` leads
+elsewhere), and from a folder named through a link the two named one
+folder two ways, so every `cd` counted one folder twice. Run from a
+folder reached through a link, the same refusal, word for word, came
+here too. Where its links lead is now a second folder only when it is
+a different folder, and a new test runs the folder scripts from a
+folder behind a link, and checks that a link before a `..` is still
+followed where it leads.
+
 ## Commits
 
 The commits of this branch, from the one after `0250270` (main when it
@@ -918,7 +933,7 @@ after main (with the reviewer roster) was merged in:
   phone edges, folded phones, contractions, RTF bytes and their order
   with JSON escapes, Snappy copies, IPTC datasets, a zero place), failed
   it.
-- `python3 scripts/test-hooks.py`, with a made-up list: 220 tests, OK,
+- `python3 scripts/test-hooks.py`, with a made-up list: 221 tests, OK,
   also with `EMAIL` set to an address like the Mac's guess, which failed
   39 of them before that fix (and with `GIT_AUTHOR_EMAIL` too, at
   `ba6a4c3`). The test added for it fails with no person in the tests'
@@ -956,6 +971,10 @@ after main (with the reviewer roster) was merged in:
   out in turn (the comments' `--editor`, its letter, its `=false`, a
   value option taking `-e`, the gist's editor, an empty `--remove`,
   options after the address, their values), one of them failed.
+  For the Mac's failure at `5ed1456`, the new test of a folder behind a
+  link failed there with the Mac's refusal, word for word; it fails
+  too with where links lead always counted as a second folder, or never
+  counted (no other test fails without it).
   For the seventh, run against `87a2b75`: the 6 new tests failed 48
   cases between them, and the 2 tests they extended 8.
   For the sixth: the encoding test failed 5 cases against `2a7cb7d`;
@@ -1008,11 +1027,12 @@ after main (with the reviewer roster) was merged in:
 
 ## Not verified
 
-- On a Mac, only the Python suites ran, last at `ba6a4c3` (*The first
-  run on the owner's Mac*); the second to eighth review rounds' fixes,
-  and the last two pushes', have not run there yet. CodeQL itself was
-  not run here: this session was refused running a downloaded copy, so
-  its run on the push is the check that its alerts are gone. `caffeinate`, `arch`, `xcrun` and macOS's
+- On a Mac, only the Python suites ran, last at `5ed1456` (*The first
+  run on the owner's Mac*), where every suite passed but the one hook
+  test the last push fixes; that fix has not run there yet, only here
+  from a folder reached through a link. CodeQL itself was not run here
+  (this session was refused running a downloaded copy); its run on
+  `5ed1456` reported no new alerts. `caffeinate`, `arch`, `xcrun` and macOS's
   `script` exist only on a Mac, and `chrt` without a priority only in
   util-linux 2.42 and later: how the guard reads them was checked
   against their manual pages; `flock`, `watch`, `script -c` and `find`

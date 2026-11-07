@@ -4479,12 +4479,17 @@ def check_command(command, cwd, depth=0, environment=None, git_state=None):
                 # both outcomes even when it does not exist at hook time,
                 # unless a failure ends the shell (set -e, with nothing
                 # after it in an && or || list). Where no folder has a
-                # logical cd's name, bash goes where its links lead.
+                # logical cd's name, bash goes where its links lead: a
+                # folder of its own only when a link comes before a ..,
+                # not when the folders above are named through a link
+                # (macOS's /var is /private/var), or every cd would count
+                # one folder twice.
                 new_stack = (where,) + stack if program == 'pushd' else stack
                 next_states.add((target, True, new_stack, shell_env))
                 if target is not None and not physical and not os.path.isdir(target):
-                    next_states.add((changed_directory(where, destination, inherited),
-                                     True, new_stack, shell_env))
+                    resolved = changed_directory(where, destination, inherited)
+                    if resolved is None or resolved != changed_directory(target, '.', inherited):
+                        next_states.add((resolved, True, new_stack, shell_env))
                 if not (errexit and alone and not scopes and words[:1] in (['cd'], ['pushd'])
                         and following not in ('&&', '||')):
                     next_states.add((where, False, stack, shell_env))

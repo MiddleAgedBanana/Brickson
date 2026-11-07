@@ -2833,6 +2833,43 @@ class PrivacyGuardTests(unittest.TestCase):
                               home, self.env)
         self.assertEqual(output and output['permissionDecision'], 'deny')
 
+    def test_a_folder_reached_through_a_link_counts_once(self):
+        # macOS keeps temporary folders behind a link (/var is /private/var).
+        # Started in a folder named through a link, a cd to a folder that
+        # is not there yet names one folder two ways, by its name and by
+        # where the link leads, and the scripts above must still stay within
+        # what the guard follows. A link before a .. still leads elsewhere,
+        # and is still followed there.
+        outside = tempfile.TemporaryDirectory()
+        self.addCleanup(outside.cleanup)
+        linked = Path(outside.name, 'var')
+        linked.symlink_to(self.folder, target_is_directory=True)
+        repo = linked / self.repo.name
+        for command in ['\n'.join(f'pushd d{index} >/dev/null\nls\npopd >/dev/null'
+                                  for index in range(8)),
+                        '\n'.join(f'cd d{index} || exit 1\nls' for index in range(8)),
+                        'set -e\n' + '\n'.join(f'cd d{index}\nls\ncd ..' for index in range(8)),
+                        '\n'.join(f'cd d{index} && make && cd ..' for index in range(8)),
+                        '\n'.join(f'(cd d{index} && make)' for index in range(30))]:
+            with self.subTest(command=command[:60]):
+                start = time.monotonic()
+                self.assertIsNone(guard_output('Bash', {'command': command}, repo, self.env),
+                                  command)
+                self.assertLess(time.monotonic() - start, 4)
+        output = guard_output('Bash', {'command': '\n'.join(f'cd d{index}; ls; cd ..'
+                                                            for index in range(30))},
+                              repo, self.env)
+        self.assertIn('(cd', output and output['permissionDecisionReason'])
+        home = self.folder / 'home'
+        (home / '.config' / 'gh').mkdir(parents=True)
+        (home / 'l').symlink_to(home / '.config' / 'gh', target_is_directory=True)
+        environment = {**self.env, 'HOME': str(home)}
+        for cwd in (self.repo, repo):
+            with self.subTest(cwd=cwd):
+                output = guard_output('Bash', {'command': 'cd ~/l/../x && cat ../brickson/*'},
+                                      cwd, environment)
+                self.assertEqual(output and output['permissionDecision'], 'deny')
+
     def test_a_read_through_a_home_the_shell_finds_is_refused(self):
         # With HOME unset, bash takes ~ from the account; a HOME set from
         # ~+ or $PWD follows the folder; for, read and printf -v set it to
