@@ -5292,19 +5292,33 @@ public:
    merge commit, never a rebase). `--status`, run there, says so.
 2. **Before a commit or a post, in Claude Code**, where the guard runs
    (AGENTS.md, *Guardrails for agents*). The guard checks a commit's
-   message and trailers, and a message or author it takes from another
-   commit (`-C`, `-c`, `--fixup`, `--squash`, `--amend`); its author and
-   committer, as given in the
+   message and trailers (a message file in any encoding), and a message
+   or author it takes from another commit as git does (`-C`, `-c`,
+   `--fixup`, `--squash`, `--amend`, a pending `MERGE_MSG` or
+   `SQUASH_MSG`, a cherry-pick's author, an `--author` given as a
+   pattern); its author and committer, as given in the
    command and as git reads them where the commit runs, configured ones
    included, by the rules a commit's are checked by; its staged changes
    and the files the same command adds (each from the folder its
    `git add` runs in, and ignored files too when the add is forced); and
    the text a command or GitHub tool would put on GitHub: a pull
    request, an issue, a comment (`reopen --comment` too), a review, a
-   label, a gist and its files' names, a file, a branch's name, a
-   release's tag, a repository's name, by gh's own names for a command
+   label, a gist and its files' names (a renamed one's too), a file, a
+   branch's name (`gh issue develop`'s too), a release's tag, a
+   repository's or a fork's name (a new repository named after its
+   `--source` folder, or made by the GitHub tool, too), a topic, a
+   project's text, an Actions variable, by gh's own names for a command
    (`gh pr new`) as well, and base64 in a request however its JSON
-   spells it. A GraphQL request
+   spells it, and every word a gh command that publishes is given as
+   written (so a value option it reads as a switch hides nothing). It
+   reads the command a program runs as its own: after `env`, `timeout`,
+   `stdbuf`, `setsid`, `caffeinate`, `xcrun`, `chrt` and the like, and in
+   `find -exec` and `-execdir` (also inside find's `( )`), `flock`,
+   `watch` and `script`, with their options read as those programs read
+   them (an abbreviated long option as getopt reads it, `script -t` both
+   as a Mac's and as Linux's `script` reads it, and an option it does not
+   know refused), and a `sh -c` script find runs with the found files as
+   its arguments. A GraphQL request
    writes only through its query, so its other fields are read as
    variables. The guard refuses a push from a checkout whose pushes skip
    the hook or whose branch has none (made before the check reached
@@ -5315,7 +5329,8 @@ public:
    checked out (a new branch made where HEAD is changes nothing), or a
    file written, removed or given another mode in `.githooks`, git's own
    folder or settings files or `scripts/privacy-check.py`, or where the
-   guard cannot place it (inline code, a patch, a stash); a release
+   guard cannot place it (inline code, a patch, a stash, a target the
+   shell builds); a release
    asset upload (`gh release create` given files, `gh release upload`,
    or a request to GitHub's uploads host), whose contents, an archive's
    included, it cannot read; a git command in a folder the
@@ -5326,9 +5341,27 @@ public:
    instead), any command that names the list, the config folder
    that holds it (a recursive read of that folder reaches the list
    without naming it) or a glob that could reach either, at the default
-   place and where `XDG_CONFIG_HOME` puts it, read from the folder the
-   command runs in (after a `cd`, through `..`), and any that
-   prints the whole environment. It runs before the file tools too, and
+   place and where `XDG_CONFIG_HOME` puts it, in any case (the Mac's file
+   system finds `Brickson` at `brickson`), read from each folder the
+   command runs in or reads from (after a `cd`, its options and its
+   redirections, and a program's own `-C`, also in a cluster, as
+   `--dir` and in tar's old first word), through `..`, `~` (the
+   account's home when `HOME` is unset), `~+`, `$HOME`,
+   `$XDG_CONFIG_HOME` (as the command sets them, with `=` or `+=`, from
+   `~+` or `$PWD` too, and the hook's where the shell builds them), the
+   shell's defaults for them (`${XDG_CONFIG_HOME:-$HOME/.config}`, read
+   both ways), `$PWD`, a link (`..` after one is taken as the system
+   takes it), braces (every number of a range; braces in quotes are
+   text) and each part of `CDPATH`, or of an assignment, that a `:`
+   starts; any that sets `HOME`, `XDG_CONFIG_HOME`, `CDPATH` or a
+   variable git reads (`GIT_DIR` and the like) with `for`, `select`,
+   `read`, `mapfile`, `getopts`, `printf -v`, `${NAME:=…}` or a
+   `declare -n` reference, whose value it cannot read; a command whose
+   `cd` lines, each of which may fail, leave more than 1024 folders to
+   follow, or that needs more than 400 answers from git on the way (a
+   `cd` followed by `|| exit`, or after `set -e`, leaves no second
+   branch; or make each step a subshell, `(cd sub && make)`); and any
+   that prints the whole environment. It runs before the file tools too, and
    refuses them the list and its folder at both places (and Grep a
    folder that holds them). It also
    refuses what it cannot read before the command runs: text the shell
@@ -5342,8 +5375,21 @@ public:
    `( … )` writes its target; a copy writes only its destination), a
    change to the index in the same command as a commit from it
    (`git apply --cached`, `--index` or `--3way`, `git am`,
-   `git stash pop` or `apply`), and a commit identity the same command
-   sets with `git config` (`user.*`, `author.*`, `committer.*`). Write
+   `git stash pop` or `apply`), a commit identity the same command
+   sets with `git config` (`user.*`, `author.*`, `committer.*`), and a
+   commit that reuses a commit by a name, or takes a pending message or
+   a cherry-pick's author, after an earlier command in the same call that
+   can move it or leave one (a reset, a branch checkout, a merge, a
+   commit, a cherry-pick, a write in git's folder for `HEAD`; a fetch,
+   a tag, a stash, a note or a reflog entry taken out for other names;
+   reads and path checkouts move nothing, a listing such as `git tag -l`
+   is a read, and `git tag -a` is not), a reflog or `ORIG_HEAD`-like
+   name after a settings change, a pending message the same
+   call writes, and an `--author` pattern after a command in the same
+   call that moves a ref, changes a setting or writes a file (a
+   `.mailmap`, also by a checkout of it): it reads them before the call
+   runs. A `--no-` form (`--no-author`, `--no-file`, `--no-message`)
+   undoes the option before it, as in git. Write
    the text in the command, in a quoted here-document (also as
    `"$(cat <<'EOF'`, the text, then `EOF` and `)"` on the next line,
    whose body is text, never shell code), or in a file written by an
@@ -5423,12 +5469,27 @@ public:
   request that never says `mutation`, which it takes for a read;
   environment printing other than the forms it refuses (`ps eww`, a
   script); commit names set through `--config-env` or a configuration
-  file another one includes; commits `git am` makes from a patch (the
-  hook reads them before a push); a hook changed by a program it does
-  not recognise, or by a merge, pull or rebase, in the same command as a
-  push; a recursive read of a folder that holds a config folder
-  (`grep -r . ~`), and a relative path after a `cd` to a folder the
-  shell builds (other than through `$HOME` or `$XDG_CONFIG_HOME`);
+  file another one includes; commits that `git am`, `cherry-pick`,
+  `revert`, `merge -m`, `commit-tree` or a rebase make (the hook reads
+  them all before a push); a git alias defined earlier in the same
+  call, and a mistyped command that `help.autocorrect` runs; a hook
+  changed by a program it does not recognise, or by a merge, pull or
+  rebase, in the same command as a push; a recursive read of a folder
+  that holds a config folder (`grep -r . ~`); a relative path after a
+  `cd` it cannot place (to a folder the shell builds otherwise than
+  through `$HOME`, `$XDG_CONFIG_HOME` or `$PWD`, or gives as a default
+  it builds, `cd -` and `~-`, or a `cd` that `eval` or `source` runs, or
+  a `cd` after `set -P`, which makes it follow links), through a link
+  the same command makes, or through a glob that matches a link and is
+  followed by `..` (`~/l*/../b*`); a word longer than 64 KB, and the
+  words past the 1024th, or past 2 MB of text, that braces make; a
+  command run by a program it does not know as one that runs commands;
+  a `find -execdir` inside find's `( )`, whose folder it does not place;
+  a GitHub host whose letters curl's IDNA library maps to ASCII where
+  Unicode's compatibility mapping and case folding do not; inline code
+  that writes in git's folder without naming git, `HEAD` or `refs`,
+  before a commit that reuses another's message or author; and base64
+  of eight bytes or fewer, which is too short to tell from other words;
 - on Linux only (a Mac cannot make one), a file name that is not UTF-8:
   its text is read from commits, and a binary one stops the check;
 - a push from a checkout with the hook off, from a checkout of a branch

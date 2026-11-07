@@ -352,6 +352,184 @@ code findings was reproduced by a test that failed before its fix:
   limit). `gh release create`'s tag, `gh release edit --tag`, and
   `gh repo create` and `gh repo rename`'s names are now read.
 
+The fifth round: Codex's review of `c6b6909` (four findings), a
+follow-up of CodeRabbit's on docs/HANDOFF.md, and an adversarial review
+of the same commit by this thread, each of whose findings was
+reproduced against `c6b6909` before it counted. Each code finding was
+reproduced by a test that failed before its fix:
+
+- **An author given as a pattern** (Codex): `--author` that is not
+  `Name <address>` makes git take the identity of the latest commit
+  whose author it matches. The guard now finds that commit as git does
+  and reads its identity, and refuses a pattern no commit matches.
+- **A message file that is not UTF-8** (Codex): a `-F` file in Latin-1
+  or Windows-1252 was not read. It is now read in each encoding it may
+  be in.
+- **A repository named after its folder** (Codex): `gh repo create
+  --source` with no name names the repository after the folder, which
+  is now read; **`gh issue develop --name`** (Codex) makes a branch on
+  GitHub, whose name is now read.
+- **Where a read happens**: `cd`'s options (`-P`, `-L`, `-e`, `--`), a
+  `cd` to `$HOME` or `$XDG_CONFIG_HOME/..`, `$PWD`, `~+`, a `HOME` the
+  command changes, a program's own `-C` (`git -C`, `tar -C`,
+  `make --directory`), each part of a `CDPATH`, braces
+  (`~/.config/{,}b*/*`) and another case (the Mac's file system finds
+  `~/.config/Brickson`) each reached the list unseen. A read is now
+  placed as the shell places it.
+- **A word no path can hold**: a NUL byte or a lone surrogate crashed
+  the guard, which then blocked the call without a reason. Such a word
+  is now skipped, and git's output is read whatever its bytes.
+- **A reused commit, as git takes it**: the last of `--reset-author`
+  and `--no-reset-author` decides (an abbreviation of the second is
+  refused), an option's value is never an option (`-m --reset-author`),
+  `--author` replaces a reused author, `--amend --squash` keeps the
+  amended message, `--amend --fixup` takes nothing from it, and the
+  reading no longer follows the command's own log encoding, which made
+  git answer in UTF-16, or crashed the guard.
+- **A commit after a ref moves**: a reset, checkout, tag, fetch,
+  cherry-pick or the like earlier in the same call changes which commit
+  a name reaches, or leaves a merge message or a cherry-pick's author,
+  after the guard has read them. Such a commit is now refused unless it
+  names its source by its full hash. A pending `MERGE_MSG` or
+  `SQUASH_MSG`, and during a cherry-pick the picked commit's author, are
+  now read.
+- **Programs that run a command**: `stdbuf`, `setsid`, `ionice`, `chrt`,
+  `taskset`, `caffeinate`, `arch`, `flock`, `watch` and `find -exec` ran
+  a git command the guard never saw, so `stdbuf -o0 git add -A` passed
+  every rule. The guard now reads the command each one runs.
+- **An escaped GitHub host**: curl decodes `%` escapes in a host
+  (`api%2egithub.com`), which every API rule missed.
+- **More of what gh puts on GitHub**: a fork's name, a topic, a gist
+  file's new name, a project's text, an Actions variable (refused from
+  stdin, as a gist is), and a name after `-R` at the end of a cluster
+  (`gh repo rename -yR o/r name`). The GitHub tools that create a
+  repository or a fork now run the guard too.
+- **A lone carriage return in base64**: `\u000d` between two parts of
+  a run cut it in two, where JSON's `\r` did not.
+- **Records that were not true**: docs/HANDOFF.md, item 8, and *Not
+  verified* said "Privacy check" fails without the secret on this pull
+  request, where main has no check yet; *Verified* said the runner tests
+  pass, without saying they ran with the staged workflow in place; and
+  AGENTS.md still said the guard refuses every command that reaches the
+  list. Each now says what is so.
+
+Before this round was pushed, a second independent check read its new
+code the same way, and found that some of it refused ordinary commands,
+was slow, or could still be passed. Each finding was reproduced, and
+each has a test that failed before its fix:
+
+- **Ordinary commands refused**: a `cd` or `pushd` with a redirection
+  (`pushd sub >/dev/null`) lost its folder; reads such as `git branch
+  --show-current`, `git remote -v`, `git tag -l`, `git stash list`, a
+  fetch, and a checkout of paths while a merge waits (`git checkout
+  --theirs a`) all counted as moving a ref, which refused the usual way
+  to finish a merge (`git add a && git commit --no-edit`); and
+  `git cherry-pick -n` counted as leaving its commit's author. The
+  guard now tells a command that moves `HEAD` (a reset, a branch
+  checkout, a merge, a commit, a cherry-pick) from one that moves only
+  other names (a fetch, a tag, a stash, a note, a reflog entry), and a
+  read from either. `find -exec git add {} +` is refused, as before
+  with xargs, with a reason that says find fills `{}` in when it runs.
+- **Time**: a long JSON body's braces and colons, expanded in every
+  folder a command might run in, took the guard 26 seconds, and a
+  script of 32 `cd` lines 30, past the hook's 10. Braces in quotes are
+  now text, only the parts of an assignment a `:` starts with `~` (or
+  `CDPATH`'s) are paths, each path and each git question is answered
+  once, and folders are normalised (`sub/..` is the folder itself). A
+  script whose `cd` lines, each of which may fail, left more than 128
+  folders to follow was refused with a reason that said to join them
+  with `&&` (the third check, below, changed both).
+- **Readings that could be passed**: `flock` and `watch` options in a
+  cluster or abbreviated (`flock -nw 1`, `watch --int 1`, now read as
+  getopt reads them, and an unknown one refused); `find`'s `( )`, a
+  test's operand spelled like an action (`-name -exec`), and
+  `-execdir` (now run in the found file's folder); `chrt` with no
+  priority, and `xcrun`, `script`, `setpriv`, `prlimit`, `unshare` and
+  `doas`, which run a command; `~` with `HOME` unset (bash takes the
+  account's home); a `HOME` set from `~+` or `$PWD`, or by `for`,
+  `read`, `printf -v` or `mapfile` (now refused); a number range in
+  braces (now every number); a newline or a long first part in braces;
+  tar's `-C` in a cluster, as `--dir` or in its old first word;
+  `--no-author` and `--no-file`, which undo an earlier option; a
+  `MERGE_MSG`, `.mailmap`, `git config`, note or reflog change in the
+  same call as the commit that takes it; a value option gh takes that
+  the guard read as a switch (`--jq`, `--remove-topic`), so every word a
+  publishing gh command is given is now read; `gh repo create --source`
+  through a link (gh names it by the path as written), and a NUL there,
+  which crashed the guard; and a GitHub host in fullwidth letters or
+  with another full stop (`api.github.com。`), which curl maps to the
+  ASCII host.
+
+A third independent check then read the code those fixes added, the
+same way, and found 21 more. Each was reproduced, and each has a test
+that failed before its fix (71 failing cases between them):
+
+- **Ordinary commands refused**: `git pull` counted as leaving a picked
+  commit's author, and `git commit --amend --no-edit` as taking a
+  pending message, so a pull before a commit, or an amend beside any
+  inline code (`python3 -c 'print(1)'`), was refused; inline code that
+  names neither git, `HEAD` nor `refs` no longer counts as a write in
+  git's folder (a push after it is still refused). Scripts of seven or
+  eight `cd` lines, even joined with `&&` or followed by `|| exit 1`,
+  passed the limit of 128 folders: a `cd` followed by `|| exit`, or
+  after `set -e`, now leaves no second branch, and the limits are 1024
+  folders and 400 answers from git. `find -exec sh -c 'script' _ {}`
+  and read-only git under find (`git blame {}`) were refused as xargs
+  is. `read`, `for` and `printf -v` refused every `GIT_` name
+  (`GIT_SHA`), where only the names git reads, and those already set,
+  matter. A gist's file path was read as published whole, where gh
+  publishes its base name only.
+- **Time**: a long body after seven `cd` lines, and a 60 KB word with
+  braces, took the guard past its 10 seconds (37 for the second). A
+  word is now split at `:` only where a `:` can start a path, once per
+  word rather than once per folder; braces stop at 2 MB of text; and
+  each part's nested commands are read once. Every reproduction now
+  decides in under two seconds here.
+- **Readings that could be passed**: an appended assignment
+  (`NAME+=value`) before a command hid the command, and `HOME+=` moved
+  `~` unseen; `${XDG_CONFIG_HOME:=…}` and `declare -n` set what `read`
+  was refused for (now refused too); an abbreviated long option of
+  `setpriv`, `unshare` and the other runners took its value as the
+  command (now read as getopt reads it); `script -t` takes the next word
+  on a Mac and none on Linux (now read both ways); `git checkout
+  <branch> --`, `fetch --update-head-ok`, `checkout -b`, `switch -c` and
+  a `reset` with no commit were read as leaving `HEAD`; `git tag -a`,
+  `--sort`, `--format` and `--column` on a branch or tag,
+  `branch --set-upstream-to` and `remote -v update` were read as reads;
+  a `.mailmap` checked out before an `--author` pattern went unseen;
+  cherry-pick's `-X` options and `--no-cleanup` were read as
+  `--no-commit`; `git commit --no-message`, which undoes `-m`, was not
+  known; `..` after a link was taken by name, where the system goes
+  through the link; a GitHub host in letters that only Unicode's later
+  mapping turns into ASCII passed (now read through Unicode's
+  compatibility mapping and case folding first); and a number range in
+  braces over 4,300 digits crashed the guard.
+
+While fixing these, this thread found one more of its own: the shell's
+usual default, `"${XDG_CONFIG_HOME:-$HOME/.config}"`, was read as the
+variable alone, so a read through it reached the list wherever the
+variable was unset. A default is now read both ways.
+
+What these fixes cost: a commit that reuses another's message or author
+is refused after a write whose target the shell builds
+(`make > "$LOG"`), and an `--author` pattern after a new branch is made
+(`git checkout -b`), since either may change what the commit takes.
+
+What the guard cannot hold without running the command is recorded in
+docs/DECISIONS.md, *What it cannot catch*: commits that `cherry-pick`,
+`revert`, `merge -m`, `commit-tree` or a rebase make (the hook reads
+them before a push), an alias defined earlier in the same call or a
+mistyped command `help.autocorrect` runs, a `cd` that `eval` or
+`source` runs, `cd -` and `~-`, a `cd` after `set -P`, a link made in
+the same command, a word longer than 64 KB and the words past the
+1024th (or past 2 MB of text) that braces make, a command run by a
+program it does not know as a runner, an `-execdir` inside find's
+`( )`, a glob over a link followed by `..`, a GitHub host only curl's
+IDNA library maps, inline code that writes in git's folder without
+naming it, and base64 of eight bytes or fewer. `return` and zsh's
+`setopt errexit` are not read as ending a branch, which can only make
+the guard follow more folders, never fewer.
+
 The privacy job's checkout names `actions/checkout@v7.0.1`, the version
 pull request #87 locks, so whichever of the two merges second needs no
 new lockfile entry. A cloud session cannot push `.github/workflows/`,
@@ -421,7 +599,7 @@ after main (with the reviewer roster) was merged in:
   phone edges, folded phones, contractions, RTF bytes and their order
   with JSON escapes, Snappy copies, IPTC datasets, a zero place), failed
   it.
-- `python3 scripts/test-hooks.py`, with a made-up list: 180 tests, OK,
+- `python3 scripts/test-hooks.py`, with a made-up list: 205 tests, OK,
   also with `EMAIL` set to an address like the Mac's guess, which failed
   39 of them before that fix (and with `GIT_AUTHOR_EMAIL` too, at
   `ba6a4c3`). The test added for it fails with no person in the tests'
@@ -430,6 +608,18 @@ after main (with the reviewer roster) was merged in:
   of `0fd0fbc`, the 4 new tests failed 55 cases between them, and the 2
   settings tests and the branch test that now expects a refusal failed
   too.
+  For the fifth, the 4 tests added for Codex's findings failed their 13
+  new cases against `c6b6909`, and the 13 tests added or extended for
+  the other findings failed 113 cases between them before their fixes;
+  the 14 tests added or extended for the second check's findings failed
+  92 cases between them against the round's code before those fixes;
+  and the 13 tests added or extended for the third check's findings
+  failed 71 cases between them against the code before its fixes (one
+  of them by crashing the guard). The test for the shell's default
+  form failed 7 cases with the default's reading taken out.
+  Timed here, the commands that took the guard 26 and 30 seconds take
+  under one, a 4 KB JSON body in three folders about 0.1, and the
+  third check's 67 reproductions under two each (the slowest 1.8).
   For the fourth, run against `9910f78`: 15 of the 16 new refused reads
   after a `cd` passed (the other was refused for another reason), as did
   the 3 new curl addresses, the 7 tag and repository names, 13 reused
@@ -440,8 +630,12 @@ after main (with the reviewer roster) was merged in:
   13 tests added for them and the 2 they extended all failed (49
   failures); the ten breakages of the guard's privacy rules from
   2026-11-06 each failed it.
-- `python3 scripts/test-runner.py`: 95 tests, OK (5 skipped, as on
-  `main`: they read the Mac's processes). The workflow tests ran the
+- `python3 scripts/test-runner.py`, with `privacy-check-workflow.yml`
+  copied over `.github/workflows/tests.yml` (not committed: a cloud
+  session cannot push it): 95 tests, OK (5 skipped, as on `main`: they
+  read the Mac's processes). As committed, 4 of its workflow tests
+  fail, here and on CI, until the owner's commit moves the file into
+  place. The workflow tests ran the
   privacy steps' own scripts in copies of a repository holding a tag
   named `origin/main`: main's copy ran, with `PATH=/usr/bin:/bin`,
   Python's isolated mode and none of the run's other variables; while
@@ -469,18 +663,33 @@ after main (with the reviewer roster) was merged in:
   that repository is untouched.
 - The checker, its tests, the guard, the hook tests and the runner tests
   parse as Python 3.9 (`ast.parse(..., feature_version=(3, 9))`), the
-  Python the owner's Mac and its git hooks use.
+  Python the owner's Mac and its git hooks use, and every suite also
+  passed here under Python 3.9.25.
 
 ## Not verified
 
 - On a Mac, only the Python suites ran, last at `ba6a4c3` (*The first
-  run on the owner's Mac*); the second, third and fourth review rounds'
-  fixes have not run there yet. Not run on a Mac: the hook on a real push,
+  run on the owner's Mac*); the second to fifth review rounds' fixes
+  have not run there yet. `caffeinate`, `arch`, `xcrun` and macOS's
+  `script` exist only on a Mac, and `chrt` without a priority only in
+  util-linux 2.42 and later: how the guard reads them was checked
+  against their manual pages; `flock`, `watch`, `script -c` and `find`
+  were run here with harmless commands. How curl maps a fullwidth host
+  was checked here (curl 8.5 with libidn2), not on the Mac, whose curl
+  may not map it at all. How `|| exit`, `set -e` and `${NAME:-word}`
+  behave was checked in bash here, not in the Mac's zsh, which runs the
+  agents' commands there. The guard's times were measured on this
+  machine only. Not run on a Mac: the hook on a real push,
   `scripts/test.sh`, the guard in a Claude Code session there. CI runs
   the Python checks on GitHub's Mac.
 - The CI step has not run on GitHub: the workflow change waits for the
-  commit from the owner's Mac, and until the secret is set it fails by
-  design. GitHub's masking of the secret was not tested; the check never
+  commit from the owner's Mac. On this pull request, "Privacy check"
+  passes without reading anything (main has no check yet), and "Unit
+  tests" runs this branch's check on the patterns alone, without the
+  list; a run without the secret fails only once the check is on main.
+  Until the workflow commit, "Unit tests" fails here on purpose: its 4
+  workflow tests find no privacy job in `.github/workflows/tests.yml`.
+  GitHub's masking of the secret was not tested; the check never
   prints the list either way.
 - The guard before the file tools was fed the calls Claude Code sends
   (`file_path`, `notebook_path`, `path`), not run in a live session.

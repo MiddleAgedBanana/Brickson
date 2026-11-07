@@ -1088,10 +1088,13 @@ docs/ROADMAP.md, *The quality bar*, Q24):
    the list, in the project's settings. When the list changes, the
    secret must be set again; an agent on your Mac can do both
    (docs/DECISIONS.md, "Personal details stay out of the repository",
-   its last part). Without the secret, "Privacy check", and with it
-   "Unit tests", fails on every pull request from a branch of this
-   repository; one GitHub gives no secrets (from a fork, or
-   Dependabot's) checks the built-in patterns only, and says so.
+   its last part). Once it has merged, without the secret "Privacy
+   check", and with it "Unit tests", fails on every pull request from a
+   branch of this repository; one GitHub gives no secrets (from a fork,
+   or Dependabot's) checks the built-in patterns only, and says so.
+   Until then, as on #86 itself, "Privacy check" passes without
+   checking anything and "Unit tests" runs that pull request's own
+   check on the built-in patterns alone.
 9. Done on your Mac on 2026-11-04; for another Mac: let Codex read all
    of `AGENTS.md`. By default
    it reads only the first 32 KiB, and the file is about 69 KB
@@ -1466,8 +1469,8 @@ settings, date) and summarise it here.
   assignment; an `@copilot` mention and other GraphQL requests are held
   by AGENTS.md alone. It also refuses a commit or a post that holds a
   personal detail, a push from a checkout whose pushes skip the privacy
-  hook or whose branch has none, and reading the private list or the
-  config folder that holds it.
+  hook or whose branch has none, and a command or file tool that names
+  the private list or the config folder that holds it.
   The privacy check (`scripts/privacy-check.py`) runs in git's pre-push
   hook, in the guard, by hand and in CI's "Privacy check" job, which
   "Unit tests" waits for (docs/DECISIONS.md,

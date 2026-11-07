@@ -13,8 +13,10 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 import os
+import pwd
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -1013,6 +1015,143 @@ class GuardTests(unittest.TestCase):
                 self.assertDenied(f'{wrapper} git add -A')
                 self.assertAllowed(f'{wrapper} git add docs/HANDOFF.md')
 
+    def test_programs_that_run_a_command_do_not_hide_it(self):
+        # Each runs the git command it is given, as env and timeout do.
+        for runner in ['stdbuf -o0', 'stdbuf --output=L -e 0', 'setsid', 'setsid -w',
+                       'ionice -c3', 'ionice -c 2 -n 7', 'chrt 10', 'chrt -f 10',
+                       'taskset 0x1', 'taskset -c 0,1', 'caffeinate -i', 'caffeinate -t 60 -s',
+                       'arch -arm64', 'flock /tmp/brickson.lock', 'flock -w 5 /tmp/brickson.lock',
+                       'watch', 'watch -n1', 'watch -x', 'find . -maxdepth 0 -exec',
+                       'find . -maxdepth 0 -execdir', 'find . -ok']:
+            with self.subTest(runner=runner):
+                self.assertDenied(f'{runner} git add -A')
+                self.assertDenied(f'{runner} git push --force origin claude/topic')
+                self.assertAllowed(f'{runner} git add docs/HANDOFF.md')
+        for command in ["flock /tmp/brickson.lock -c 'git add -A'",
+                        "flock /tmp/brickson.lock --command 'git push origin main'",
+                        "find . -maxdepth 0 -exec git add -A ';'",
+                        'find . -maxdepth 0 -exec git push origin main {} +',
+                        'find . -name x -print -exec git add -A \\;']:
+            with self.subTest(command=command):
+                self.assertDenied(command)
+        self.assertAllowed("find . -name '*.py' -exec grep -l x {} +")
+        self.assertAllowed('caffeinate -i scripts/test.sh')
+        self.assertAllowed("flock /tmp/brickson.lock -c 'git status'")
+
+    def test_runner_options_are_read_as_their_programs_read_them(self):
+        # Short options cluster and long ones may be abbreviated (getopt),
+        # find's ( ) and a test's operand do not hide an -exec, chrt's
+        # priority is optional, and xcrun, script, setpriv, prlimit,
+        # unshare and doas run the command they are given.
+        for runner in ['flock -nw 1 ./lk', 'flock --wait 1 ./lk', 'flock -nE 3 ./lk',
+                       'flock -w1 ./lk', 'flock --timeout=1 ./lk', 'watch -tn 1',
+                       'watch -tn1', 'watch -n 1 -d', 'chrt -o', 'chrt --idle', 'chrt -o 0',
+                       'xcrun', 'xcrun --sdk iphoneos', 'setpriv', 'setpriv --reuid 0',
+                       'prlimit --nofile=256', 'prlimit -p 1', 'unshare', 'unshare -w .',
+                       'doas', 'doas -u root', 'script -q /dev/null', 'script -qt 0 /dev/null']:
+            with self.subTest(runner=runner):
+                self.assertDenied(f'{runner} git push origin main')
+                self.assertDenied(f'{runner} git add -A')
+                self.assertAllowed(f'{runner} git add docs/HANDOFF.md')
+        for command in ['flock --time 1 ./lk git push origin main',
+                        'watch --int 1 git push origin main',
+                        'watch -Q 1 git push origin main',
+                        "script -qc 'git push origin main' /dev/null",
+                        "script --command 'git push origin main' /dev/null",
+                        'find . -maxdepth 0 \\( -exec git push origin main \\; \\)',
+                        "find . -maxdepth 0 '(' -exec git push origin main ';' ')'",
+                        'find . -maxdepth 0 \\( -exec gh pr merge 1 \\; \\)',
+                        'find . -maxdepth 0 \\! \\( -name x \\) -exec git push origin main \\;',
+                        'find . -maxdepth 0 -name -exec -o -exec git push origin main \\;',
+                        'find . -maxdepth 0 -execdir git push origin main \\;']:
+            with self.subTest(command=command):
+                self.assertDenied(command)
+        for command in ["find . \\( -name '*.md' -o -name '*.txt' \\) -print",
+                        "find . -name '*.md' -exec grep -l x {} \\;",
+                        "script -qc 'git status' /dev/null", 'watch -n 1 git status']:
+            with self.subTest(command=command):
+                self.assertAllowed(command)
+
+    def test_a_wrapper_s_option_is_read_as_its_program_reads_it(self):
+        # getopt_long takes a unique beginning of a long option as the
+        # whole option, value included; bash's exec -a and sudo -r take
+        # a value; and bash reads NAME+=value as an assignment.
+        for wrapper in ['setpriv --pdeath SIGKILL', 'unshare --w .', 'env --unse X',
+                        'timeout --sig TERM 5', 'exec -a name', 'sudo -r role', 'A+=1',
+                        'PATH+=:/x env']:
+            with self.subTest(wrapper=wrapper):
+                self.assertDenied(f'{wrapper} git push origin HEAD:main')
+                self.assertDenied(f'{wrapper} gh pr merge 1')
+                self.assertAllowed(f'{wrapper} git add docs/HANDOFF.md')
+
+    def test_script_s_timing_option_is_read_both_ways(self):
+        # util-linux's script -t takes only an attached value, so a -c
+        # after it gives the command; macOS's takes the next word.
+        for command in ["script -q -t -c 'git push origin HEAD:main' /dev/null",
+                        "script -qt -c 'git push origin HEAD:main' /dev/null",
+                        'script -q -t 0 /dev/null git push origin HEAD:main']:
+            with self.subTest(command=command):
+                self.assertDenied(command)
+        self.assertAllowed("script -q -t -c 'git status' /dev/null")
+        self.assertAllowed('script -q -t 0 /dev/null git status')
+
+    def test_files_find_gives_a_shell_script_are_its_arguments(self):
+        # find's file names after a literal sh -c script are its $1, $2,
+        # as with any words there; only a {} in the script makes code of
+        # them. Git commands that only read take them too.
+        for command in ["find . -name '*.png' -exec sh -c 'echo \"$1\"' _ {} \\;",
+                        "find . -name '*.swift' -exec sh -c 'grep -c func \"$1\"' sh {} \\;",
+                        "find . -name '*.md' -exec sh -c 'for f; do wc -l \"$f\"; done' sh {} +",
+                        "find . -maxdepth 1 -type d -exec sh -c 'cd \"$1\" && git status' _ {} \\;",
+                        "find . -name '*.md' -exec git blame {} \\;",
+                        "find . -name '*.md' -exec git check-ignore -v {} +"]:
+            with self.subTest(command=command):
+                self.assertAllowed(command)
+        for command in ["find . -exec sh -c 'cat {}' \\;",
+                        "find . -exec sh -c 'git push origin \"$1\"' _ {} \\;",
+                        "find . -exec sh -c 'git add -A' _ {} \\;",
+                        'find . -name x -exec bash {} \\;',
+                        "find . -name x -exec git grep -O{} x \\;"]:
+            with self.subTest(command=command):
+                self.assertDenied(command)
+
+    def test_files_find_passes_to_a_command_are_named_as_unknown(self):
+        # find fills {} in when it runs, as xargs adds its input.
+        for command in ["find docs -name '*.md' -exec git add {} +",
+                        "find docs -name '*.md' -exec git add -- {} \\;"]:
+            with self.subTest(command=command):
+                reason = guard_output('Bash', {'command': command}, self.repo)
+                self.assertEqual(reason['permissionDecision'], 'deny')
+                self.assertIn('find -exec', reason['permissionDecisionReason'])
+        self.assertAllowed("find docs -name '*.md' -exec git log -1 -- {} \\;")
+
+    def test_a_cd_s_redirections_are_not_its_folder(self):
+        # cd sub 2>/dev/null and pushd sub >/dev/null still go to sub.
+        (self.repo / 'sub').mkdir(exist_ok=True)
+        for command in ['cd sub 2>/dev/null && git push origin feature',
+                        'cd sub >/dev/null && git push origin feature',
+                        'cd sub &>/dev/null && git push origin feature',
+                        'cd sub 2>&1 && git push origin feature',
+                        'pushd sub >/dev/null && git push origin feature; popd >/dev/null',
+                        'pushd sub > /dev/null && git push origin feature && popd > /dev/null']:
+            with self.subTest(command=command):
+                self.assertAllowed(command)
+        self.assertDenied('cd sub 2>/dev/null && git push origin main')
+
+    def test_an_escaped_github_host_is_read_as_curl_sends_it(self):
+        # curl decodes %-escapes in the host, and drops nothing else.
+        # With IDN support it maps fullwidth, squared and subscript letters
+        # and other full stops to the ASCII host (UTS #46).
+        for host in ['api%2egithub.com', '%61pi.github.com', 'API.GitHub.com.',
+                     'ＡＰＩ.github.com', 'api.github.com。',
+                     'api．github.com', '\U0001F130pi.github.com', 'ₐpi.github.com']:
+            with self.subTest(host=host):
+                self.assertDenied(f'curl -q -X PUT https://{host}/repos/o/r/pulls/12/merge')
+                self.assertDenied(f'curl -X GET https://{host}/repos/o/r/pulls')
+        self.assertDenied('curl -q -X POST "https://uploads%2egithub.com/repos/o/r/releases/1/'
+                          'assets?name=a.txt" --data-binary @README.md')
+        self.assertAllowed('curl -q https://api.github.com/repos/o/r/pulls')
+
     def test_push_queries_use_the_selected_repository(self):
         with tempfile.TemporaryDirectory(dir=self.repo) as folder:
             other = Path(folder)
@@ -1432,11 +1571,244 @@ class PrivacyGuardTests(unittest.TestCase):
         self.assertDenied('git commit --amend --allow-empty -m "Fix"')
         self.assertAllowed('git commit --amend --allow-empty --reset-author -m "Fix"')
 
+    def test_an_author_given_as_a_pattern_is_read_as_git_resolves_it(self):
+        # --author that is not Name <address> names the author of the
+        # latest commit it matches (git commit --help), whose whole
+        # identity the new commit then carries.
+        self.git('commit', '-q', '--allow-empty', '-m', 'Clean',
+                 f'--author={PRIVATE_NAME} <someone@example.com>')
+        self.git('commit', '-q', '--allow-empty', '-m', 'Also clean',
+                 '--author=Clean Person <clean@example.com>')
+        for command in ['git commit --allow-empty -m Fix --author=Quill',
+                        'git commit --allow-empty -m Fix --author quill',
+                        'git commit --allow-empty -m Fix --author=someone@example',
+                        'git commit --allow-empty -m Fix --author=no-such-author-here']:
+            with self.subTest(command=command):
+                self.assertDenied(command)
+        self.assertAllowed('git commit --allow-empty -m Fix --author=Clean')
+        self.assertAllowed('git commit --allow-empty -m Fix --author="Clean Person <clean@example.com>"')
+
+    def test_a_reused_author_or_message_is_read_as_git_takes_it(self):
+        # The last of --reset-author and --no-reset-author wins, an option's
+        # value is not an option, --author replaces a reused author, --squash
+        # keeps the amended message, --fixup takes nothing from it, and the
+        # reading never depends on the command's own log encoding.
+        self.git('commit', '-q', '--allow-empty', '-m', 'Clean',
+                 f'--author={PRIVATE_NAME} <someone@example.com>')
+        authored = self.git_output('rev-parse', 'HEAD')
+        self.git('commit', '-q', '--allow-empty', '-m', 'Also clean')
+        clean = self.git_output('rev-parse', 'HEAD')
+        self.git('commit', '-q', '--allow-empty', '-m', 'Café menu')
+        cafe = self.git_output('rev-parse', 'HEAD')
+        self.git('commit', '-q', '--allow-empty', '-m', f'Thanks {PRIVATE_NAME}')
+        private = self.git_output('rev-parse', 'HEAD')
+        given = '--author="Clean Name <clean@example.com>"'
+        for command in [f'git commit --allow-empty --reset-author --no-reset-author -C {authored}',
+                        f'git commit --allow-empty --reset-author --no-reset-a -C {authored}',
+                        f'git -c i18n.logOutputEncoding=UTF-16LE commit --allow-empty -C {private}',
+                        f'git -c i18n.logOutputEncoding=UTF-16LE commit --allow-empty -C {authored}',
+                        'GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=i18n.logOutputEncoding '
+                        f'GIT_CONFIG_VALUE_0=UTF-16LE git commit --allow-empty -C {private}',
+                        f'git commit --amend --allow-empty --squash={clean} --no-edit']:
+            with self.subTest(command=command):
+                self.assertDenied(command)
+        for command in [f'git commit --allow-empty -C {authored} {given}',
+                        f'git commit --amend --allow-empty --fixup={clean}',
+                        f'git -c i18n.logOutputEncoding=ISO-8859-1 commit --allow-empty -C {cafe}',
+                        f'git commit --allow-empty --no-reset-author --reset-author -C {authored}']:
+            with self.subTest(command=command):
+                self.assertAllowed(command)
+        self.git('reset', '-q', '--hard', authored)
+        for command in ['git commit --amend --allow-empty --reset-author --no-reset-author -m Fix',
+                        'git commit --amend --allow-empty -m --reset-author']:
+            with self.subTest(command=command):
+                self.assertDenied(command)
+        self.assertAllowed(f'git commit --amend --allow-empty --no-edit {given}')
+        self.assertAllowed(f'git commit --amend --allow-empty -m Fix {given}')
+
+    def test_a_commit_reusing_a_ref_an_earlier_command_moves_is_refused(self):
+        # The guard reads a reused commit before the command runs, so a
+        # reset, checkout, tag or fetch in the same call would change which
+        # commit git takes; a full hash names the same commit either way.
+        self.git('commit', '-q', '--allow-empty', '-m', 'Also clean')
+        clean = self.git_output('rev-parse', 'HEAD')
+        self.git('commit', '-q', '--allow-empty', '-m', f'Thanks {PRIVATE_NAME}')
+        self.git('commit', '-q', '--allow-empty', '-m', 'Tidy')
+        self.git('tag', 'moving', clean)
+        self.git('branch', 'secret', 'HEAD~1')
+        for command in ['git reset --soft HEAD~1 && git commit --amend --allow-empty --no-edit',
+                        'git reset --soft HEAD~2 && git commit --allow-empty -C ORIG_HEAD',
+                        'git tag -f moving HEAD~1 && git commit --allow-empty -C moving',
+                        'git checkout -q HEAD~1 && git commit --allow-empty --amend -m Fix',
+                        'git fetch origin && git commit --allow-empty -C origin/main',
+                        'git cherry-pick -n HEAD~1 && git commit --allow-empty --no-edit',
+                        # A cherry-pick that stops leaves its commit's author for the next.
+                        'git cherry-pick HEAD~1; git commit --allow-empty -m Fix',
+                        'git cherry-pick HEAD~1 && git commit --allow-empty -m Fix',
+                        # Strategy options and --no-cleanup are not -n, and
+                        # --commit undoes it.
+                        'git cherry-pick -Xminimal HEAD~1; git commit --allow-empty -m Fix',
+                        'git cherry-pick --no-cleanup HEAD~1; git commit --allow-empty -m Fix',
+                        'git cherry-pick -n --commit HEAD~1; git commit --allow-empty -m Fix',
+                        # A branch checkout with nothing after --, a fetch
+                        # into the checked-out branch.
+                        'git checkout secret -- && git commit --allow-empty --amend --no-edit',
+                        'git fetch --update-head-ok . secret:claude/topic && '
+                        'git commit --allow-empty --amend --no-edit',
+                        # A new branch or a reset at HEAD still adds a reflog
+                        # entry and sets ORIG_HEAD.
+                        'git checkout -b x && git commit --allow-empty -C HEAD@{2}',
+                        'git switch -c x && git commit --allow-empty -C HEAD@{2}',
+                        'git reset --hard && git commit --allow-empty -C HEAD@{2}',
+                        'git reset && git commit --allow-empty -C ORIG_HEAD',
+                        # Options that do not list: tag -a annotates, and
+                        # --sort, --format, --column and -v still make one.
+                        'git tag -a -f -m release moving HEAD~1 && git commit --allow-empty -C moving',
+                        'git branch --sort=refname -f other HEAD~1 && git commit --allow-empty -C other',
+                        'git branch -v other HEAD~1 && git commit --allow-empty -C other',
+                        # What @{u} names, and a remote's branches after -v.
+                        'git branch --set-upstream-to=secret && git commit --allow-empty -C @{u}',
+                        'git config branch.claude/topic.merge refs/heads/secret && '
+                        'git commit --allow-empty -C @{u}',
+                        'git remote -v update && git commit --allow-empty -C origin/main',
+                        # Notes are under --all, and a reflog entry moves when one goes.
+                        'git notes add -m n HEAD && git commit --allow-empty --author=t -m y',
+                        'git reflog delete --rewrite HEAD@{1} && git commit --allow-empty -C HEAD@{1}',
+                        'git stash && git commit --allow-empty -C stash@{0}']:
+            with self.subTest(command=command):
+                self.assertIn('earlier', self.assertDenied(command))
+        self.assertAllowed('git status && git commit --allow-empty -C moving')
+        self.assertAllowed(f'git tag -f moving HEAD~1 && git commit --allow-empty -C {clean}')
+        self.assertAllowed('git checkout -b claude/other && git commit --allow-empty -m Fix')
+        self.assertAllowed('git cherry-pick HEAD~1 && git commit --allow-empty --reset-author -m Fix')
+        # -n leaves no picked commit's author, only a message, which -m replaces.
+        self.assertAllowed('git cherry-pick -n HEAD~1 && git commit --allow-empty -m Port')
+        self.assertAllowed('git cherry-pick --no-commit HEAD~1 && git commit --allow-empty -m Port')
+        self.assertAllowed('git pull --no-rebase origin main && git commit --allow-empty -m Fix')
+        # A pull or a rebase that stops leaves no picked author: the next
+        # commit takes the configured one (REBASE_HEAD, not CHERRY_PICK_HEAD).
+        for command in ['git pull origin main; git commit --allow-empty -m Fix',
+                        'git pull && git commit --allow-empty -m x',
+                        'git pull -r && git commit --allow-empty -m x',
+                        'git rebase main; git commit --allow-empty -m x',
+                        'git checkout main && git pull && git checkout -b claude/new && '
+                        'git commit --allow-empty -m Start',
+                        # A new branch at HEAD leaves HEAD's commit as it is.
+                        'git checkout -b claude/other && git commit --allow-empty --amend --no-edit']:
+            with self.subTest(command=command):
+                self.assertAllowed(command)
+
+    def test_commands_that_move_no_commit_leave_a_reused_one_alone(self):
+        # Reading the branch, remotes, tags or stashes, fetching (which
+        # moves no checked-out branch) and checking out paths during a
+        # merge change neither HEAD nor the pending merge message.
+        (self.repo / 'a').write_text('clean\n')
+        for command in ['git branch --show-current && git commit --allow-empty --amend --no-edit',
+                        'git fetch origin && git commit --allow-empty --amend --no-edit',
+                        'git remote -v && git commit --allow-empty --amend --no-edit',
+                        'git tag -l && git commit --allow-empty --amend --no-edit',
+                        'git stash list && git commit --allow-empty --amend --no-edit',
+                        'git log -1 && git commit --allow-empty --amend -m Fix']:
+            with self.subTest(command=command):
+                self.assertAllowed(command)
+        (self.repo / '.git' / 'MERGE_MSG').write_text('Merge main\n')
+        for command in ['git checkout --theirs a && git add a && git commit --no-edit',
+                        'git checkout --ours a && git add a && git commit --no-edit',
+                        'git checkout origin/main -- a && git add a && git commit --no-edit',
+                        'git branch --show-current && git add a && git commit --no-edit']:
+            with self.subTest(command=command):
+                self.assertAllowed(command)
+        self.assertIn('earlier', self.assertDenied(
+            'git merge origin/main; git add a && git commit --no-edit'))
+
+    def test_a_cancelled_author_or_message_file_takes_nothing_s_place(self):
+        # --no-author and --no-file undo an earlier --author or -F, so
+        # --amend keeps the last commit's author and message (git's
+        # parse-options: the last of an option and its --no- form wins).
+        self.git('commit', '-q', '--allow-empty', '-m', 'Clean',
+                 f'--author={PRIVATE_NAME} <someone@example.com>')
+        self.assertDenied("git commit --allow-empty --amend --no-edit "
+                          "--author='Clean Name <clean@example.com>' --no-author")
+        self.assertAllowed("git commit --allow-empty --amend --no-edit --no-author "
+                           "--author='Clean Name <clean@example.com>'")
+        self.git('commit', '-q', '--allow-empty', '-m', f'Thanks {PRIVATE_NAME}')
+        (self.folder / 'message.txt').write_text('Clean message\n')
+        message = shlex.quote(str(self.folder / 'message.txt'))
+        self.assertDenied(f'git commit --allow-empty --amend -F {message} --no-file --no-edit '
+                          "--author='Clean Name <clean@example.com>'")
+        self.assertAllowed(f'git commit --allow-empty --amend --no-file -F {message} '
+                           "--author='Clean Name <clean@example.com>'")
+        self.assertDenied('git commit --allow-empty --amend --no-autho --no-edit')
+        # --no-message drops an earlier -m, so --amend keeps the last message.
+        self.assertDenied('git commit --allow-empty --amend --no-edit -m Clean --no-message')
+        self.assertAllowed('git commit --allow-empty --amend --no-edit --no-message -m Clean')
+
+    def test_what_an_earlier_command_writes_for_a_commit_to_take_is_refused(self):
+        # A pending message written in the same call, or a mailmap or
+        # setting that changes whom an author pattern finds, is not read.
+        for name in ('MERGE_MSG', 'SQUASH_MSG'):
+            with self.subTest(name=name):
+                self.assertDenied(f"printf 'Thanks {PRIVATE_NAME}\\n' > .git/{name} && "
+                                  'git commit --allow-empty --no-edit')
+        (self.folder / 'mailmap').write_text(f'{PRIVATE_NAME} <q@example.com> <t@example.com>\n')
+        for command in [f"printf '{PRIVATE_NAME} <q@example.com> <t@example.com>\\n' > .mailmap"
+                        ' && git commit --allow-empty --author=t -m x',
+                        'git config mailmap.file ../mailmap && git commit --allow-empty --author=t -m x',
+                        'git checkout main -- .mailmap && git commit --allow-empty --author=t -m x',
+                        'git restore --source=main .mailmap && git commit --allow-empty --author=t -m x',
+                        # Code that names git may move HEAD.
+                        "python3 -c \"import subprocess; subprocess.run(['git', 'reset', 'HEAD~1'])\""
+                        ' && git commit --allow-empty --amend --no-edit']:
+            with self.subTest(command=command):
+                self.assertDenied(command)
+        self.assertAllowed('git commit --allow-empty --author=t -m x')
+        # Code that never names git writes nothing a commit takes, and an
+        # amend reads no pending message.
+        for command in ['python3 -c "print(1)" && git commit --allow-empty --amend --no-edit',
+                        "node -e 'console.log(1)' && git commit --allow-empty --amend --no-edit",
+                        "python3 - <<'EOF'\nprint(1)\nEOF\ngit commit --allow-empty --amend --no-edit",
+                        'git commit --allow-empty --amend --no-edit && python3 -c "print(1)"']:
+            with self.subTest(command=command):
+                self.assertAllowed(command)
+
+    def test_a_pending_merge_message_or_cherry_picked_author_is_read(self):
+        # git commit with no message takes MERGE_MSG or SQUASH_MSG, and
+        # during a cherry-pick the picked commit's author (builtin/commit.c).
+        self.git('commit', '-q', '--allow-empty', '-m', 'Clean',
+                 f'--author={PRIVATE_NAME} <someone@example.com>')
+        authored = self.git_output('rev-parse', 'HEAD')
+        self.git('commit', '-q', '--allow-empty', '-m', 'Also clean')
+        for name in ('MERGE_MSG', 'SQUASH_MSG'):
+            path = self.repo / '.git' / name
+            path.write_text(f'Merge the work\n\nThanks {PRIVATE_NAME}\n')
+            with self.subTest(name=name):
+                self.assertDenied('git commit --allow-empty --no-edit')
+                self.assertDenied('git commit --allow-empty -m Fix --no-message --no-edit')
+                self.assertAllowed('git commit --allow-empty -m Fix')
+                # --amend takes its message from HEAD, never from these.
+                self.assertAllowed('git commit --allow-empty --amend --no-edit')
+            path.unlink()
+        self.git('update-ref', 'CHERRY_PICK_HEAD', authored)
+        self.assertDenied('git commit --allow-empty -m Fix')
+        self.assertAllowed('git commit --allow-empty --reset-author -m Fix')
+        self.assertAllowed('git commit --allow-empty -m Fix --author="Clean Name <clean@example.com>"')
+        self.git('update-ref', '-d', 'CHERRY_PICK_HEAD')
+        self.assertAllowed('git commit --allow-empty -m Fix')
+
     def test_a_commit_message_file_is_read(self):
         message = self.folder / 'message.txt'
         message.write_text(f'Fix it\n\nThanks {PRIVATE_NAME}\n')
         self.assertIn('the commit message file:3:', self.assertDenied(f'git commit -F {message}'))
         self.assertDenied(f'git commit --file={message}')
+        # Written in Latin-1 or Windows-1252 (i18n.commitEncoding), an
+        # accented name is read as git stores it.
+        accented = PRIVATE_NAME.replace('i', '\u00ed', 1)
+        for encoding in ('latin-1', 'cp1252'):
+            with self.subTest(encoding=encoding):
+                message.write_bytes(f'Fix it\n\nThanks {accented}\n'.encode(encoding))
+                self.assertDenied(f'git -c i18n.commitEncoding=ISO-8859-1 commit -F {message}')
+        message.write_bytes('Fix it\n\nCaf\u00e9 notes\n'.encode('latin-1'))
+        self.assertAllowed(f'git commit -F {message}')
         message.write_text('Fix it\n')
         self.assertAllowed(f'git commit -F {message}')
         # A file that does not exist yet cannot be read, and neither can
@@ -1592,7 +1964,12 @@ class PrivacyGuardTests(unittest.TestCase):
                                              'files': [{'path': 'a.md', 'content': 'ok'},
                                                        {'path': 'b.md', 'content': PRIVATE_NAME}]}),
                 ('mcp__github__push_files', {'branch': 'claude/topic', 'message': PRIVATE_NAME,
-                                             'files': [{'path': 'a.md', 'content': 'ok'}]})]:
+                                             'files': [{'path': 'a.md', 'content': 'ok'}]}),
+                ('mcp__github__create_repository', {'name': PRIVATE_NAME.replace(' ', '-')}),
+                ('mcp__github__create_repository', {'name': 'tools',
+                                                    'description': PRIVATE_NAME}),
+                ('mcp__github__fork_repository', {'owner': 'o', 'repo': 'r',
+                                                  'name': PRIVATE_NAME.replace(' ', '-')})]:
             with self.subTest(name=name, arguments=arguments):
                 self.assertEqual(self.tool(name, arguments), 'deny')
         for name, arguments in [
@@ -1600,6 +1977,8 @@ class PrivacyGuardTests(unittest.TestCase):
                                                     'body': '@coderabbitai review'}),
                 ('mcp__github__create_pull_request', {'title': 'Add a check',
                                                       'body': 'noreply@anthropic.com'}),
+                ('mcp__github__create_repository', {'name': 'clean-tools',
+                                                    'description': 'Clean tools'}),
                 ('mcp__github__pull_request_read', {'pullNumber': 1, 'body': PRIVATE_NAME})]:
             with self.subTest(name=name):
                 self.assertIsNone(self.tool(name, arguments))
@@ -1647,6 +2026,13 @@ class PrivacyGuardTests(unittest.TestCase):
                 self.assertIn('encoded', self.assertDenied(command))
         request.write_text(escaped(clean))
         self.assertAllowed(f'gh api -X PUT repos/o/r/contents/a.txt --input {request}')
+        # Any line break JSON can spell may sit between two parts of the run.
+        for separator in ['\\r', '\\n', '\\r\\n', '\\u000d', '\\u000a', '\\u000d\\u000a']:
+            request.write_text('{"branch": "claude/topic", "message": "x", "content": "'
+                               + encoded[:16] + separator + encoded[16:] + '"}')
+            with self.subTest(separator=separator):
+                self.assertIn('encoded', self.assertDenied(
+                    f'gh api -X PUT repos/o/r/contents/a.txt --input {request}'))
 
     def test_a_contents_api_write_s_file_name_is_checked(self):
         # The Contents API names the file it writes in its address, and
@@ -1736,7 +2122,85 @@ class PrivacyGuardTests(unittest.TestCase):
             with self.subTest(command=command):
                 self.assertDenied(command)
         self.assertAllowed('gh repo create o/clean-tools --private --description clean')
+        # With no name, gh names the repository after --source's folder.
+        named_folder = self.folder / named
+        named_folder.mkdir()
+        clean_folder = self.folder / 'clean-tools'
+        clean_folder.mkdir()
+        for command in [f'gh repo create --source={named_folder} --public',
+                        f'gh repo create -s {named_folder} --private --push',
+                        f'cd {named_folder} && gh repo create --source=. --public',
+                        f'cd {named_folder}/.. && gh repo create --source {named} --public']:
+            with self.subTest(command=command):
+                self.assertDenied(command)
+        self.assertAllowed(f'gh repo create --source={clean_folder} --public')
+        self.assertAllowed(f'gh repo create o/clean-tools --source={named_folder} --public')
+        # gh issue develop makes a branch on GitHub under --name.
+        for command in [f'gh issue develop 12 --name {named}',
+                        f'gh issue develop 12 -n claude/{named} --repo o/r',
+                        f'gh issue develop --base main --name={named} 12']:
+            with self.subTest(command=command):
+                self.assertDenied(command)
+        self.assertAllowed('gh issue develop 12 --name claude/fix-layout --repo o/r')
+        self.assertAllowed('gh issue develop 12 --list')
         self.assertAllowed('gh release download v1')
+
+    def test_other_names_and_text_gh_puts_on_github_are_read(self):
+        # A fork's name, a topic, a gist file's new name, a project's text
+        # and an Actions variable are put on GitHub too; -R in a cluster
+        # takes the next word, so the name after it is still read.
+        named = PRIVATE_NAME.replace(' ', '-')
+        quoted = shlex.quote(PRIVATE_NAME)
+        (self.repo / 'variables.env').write_text(f'NOTE={PRIVATE_NAME}\n')
+        for command in [f'gh repo fork o/r --fork-name {named}',
+                        f'gh repo fork o/r --fork-name={named} --clone=false',
+                        f'gh repo edit --add-topic {named.lower()}',
+                        f'gh gist rename abc123 old.txt {named}.txt',
+                        f'gh project create --owner @me --title {quoted}',
+                        f'gh project edit 1 --owner @me --readme {quoted}',
+                        f'gh project edit 1 --owner @me -d {quoted}',
+                        f'gh project item-create 1 --owner @me --title x --body {quoted}',
+                        f'gh project item-edit --id 1 --title {quoted}',
+                        f'gh project field-create 1 --owner @me --name {quoted} --data-type TEXT',
+                        f'gh variable set NOTE --body {quoted}',
+                        f'gh variable set NOTE -b{quoted}',
+                        'gh variable set -f variables.env',
+                        'gh variable set NOTE',
+                        f'gh repo rename -yR o/r {named}',
+                        f'gh label create -fR o/r {named}',
+                        # A value flag read as a switch (--jq, --template,
+                        # --remove-topic) leaves the text an operand, which
+                        # is read too.
+                        f'gh project item-create 1 --owner @me --title x --format json -t --body --body {quoted}',
+                        f'gh project item-create 1 --owner @me --format json -q --title --title {quoted}',
+                        f'gh project item-edit --id I --project-id P --field-id F --format json --jq --text --text {quoted}',
+                        f'gh project edit 1 --owner @me --format json -t --readme --readme {quoted}',
+                        f'gh repo edit --remove-topic --add-topic --add-topic {named.lower()}',
+                        f'gh repo edit --remove-topic --description --description {quoted}',
+                        f'gh pr edit 1 --add-label --title --title {quoted}']:
+            with self.subTest(command=command):
+                self.assertDenied(command)
+        # gh names a repository after --source as written, not where a link leads.
+        (self.folder / named).symlink_to(self.repo)
+        for command in [f'gh repo create --source={named} --private',
+                        f'cd {named} && gh repo create --source=. --private']:
+            with self.subTest(command=command):
+                output = guard_output('Bash', {'command': command}, self.folder, self.env)
+                self.assertEqual(output and output['permissionDecision'], 'deny')
+        for command in ['gh repo create --source=a\x00b --private',
+                        'gh repo create --source=\ud800x --private']:
+            with self.subTest(command=repr(command)):
+                self.output(command)  # guard_output fails if the guard crashes
+        self.assertAllowed('gh pr edit "$PR" --title Clean')
+        for command in ['gh repo fork o/r --fork-name clean-tools --clone=false',
+                        'gh repo edit --add-topic accessibility',
+                        'gh gist rename abc123 old.txt new.txt',
+                        'gh project create --owner @me --title Roadmap',
+                        'gh variable set NOTE --body clean',
+                        'gh release create -dR o/r v1.0 --notes clean',
+                        'gh repo rename -yR o/r clean-tools']:
+            with self.subTest(command=command):
+                self.assertAllowed(command)
 
     def test_a_quoted_word_does_not_vouch_for_a_built_one(self):
         # Whether a $ is text is decided word by word: '$BODY' in one place
@@ -1842,6 +2306,18 @@ class PrivacyGuardTests(unittest.TestCase):
             with self.subTest(command=command):
                 self.assertIsNone(guard_output('Bash', {'command': command}, self.repo,
                                                environment))
+        # A link made in an earlier call: a program, and bash's glob, read
+        # a .. after it where the link leads, though cd ~/l stays at ~/l.
+        (home / '.config' / 'gh').mkdir()
+        (home / 'l').symlink_to(home / '.config' / 'gh')
+        for command in ['cd ~/l && cat ../b*/*', 'cat ~/l/../b*/*', 'cd ~/l && grep -r . ..']:
+            with self.subTest(command=command):
+                output = guard_output('Bash', {'command': command}, self.repo, environment)
+                self.assertEqual(output and output['permissionDecision'], 'deny')
+        for command in ['cd ~/l && cat hosts.yml', 'cd ~/l && cd .. && ls']:
+            with self.subTest(command=command):
+                self.assertIsNone(guard_output('Bash', {'command': command}, self.repo,
+                                               environment))
 
     def test_the_private_list_is_never_read(self):
         for command in ['cat ~/.config/brickson/private-words.txt',
@@ -1891,6 +2367,234 @@ class PrivacyGuardTests(unittest.TestCase):
                         f'cd {config}/gh && cat hosts.yml', 'cd .. && ls']:
             with self.subTest(command=command):
                 self.assertAllowed(command)
+
+    def test_a_read_is_placed_however_the_shell_writes_its_folder(self):
+        # cd's options, a folder named through $HOME, $XDG_CONFIG_HOME or
+        # $PWD, ~+, a HOME the command changes, a program's own -C and a
+        # CDPATH entry place a relative read as the shell would.
+        config = self.folder / 'config'  # this test's XDG_CONFIG_HOME
+        for command in ['cd "$HOME" && cat .config/gh/../b*/*',
+                        'cd $HOME && grep -r . .config/gh/..',
+                        f'cd "$XDG_CONFIG_HOME/.." && cat {config.name}/b*/*',
+                        'cd -P ~/.config/gh && cat ../b*/*', 'cd -- ~/.config/gh && cat ../b*/*',
+                        'cd -L ~/.config/gh && grep -r . ..', 'cd -e ~/.config/gh && cat ../b*/*',
+                        'cd -LP -- ~/.config/gh && cat ../b*/*',
+                        'cd ~/.config/gh && cat ~+/../b*/*',
+                        'cd ~/.config/gh && cat "$PWD"/../b*/*',
+                        'cd ~/.config/gh && cat ${PWD}/../b*/*',
+                        'export HOME=~/.config/gh && cat ~/../b*/*',
+                        'HOME=~/.config/gh; cat ~/../b*/*',
+                        'export HOME=~/.config/gh && cd ~ && cat ../b*/*',
+                        'git -C ~/.config/gh diff --no-index . ..',
+                        'tar -C ~/.config/gh -cf - ..', 'tar -cf - -C~/.config/gh ..',
+                        'make --directory=~/.config/gh -f ../b*/*',
+                        f'git -C {config}/gh diff --no-index . ..',
+                        'CDPATH=:~/.config/gh/.. cd brickson && cat *',
+                        'CDPATH=/x:~/.config/gh/.. cd brickson && cat *',
+                        # The XDG idiom, and other default forms.
+                        'grep -r . "${XDG_CONFIG_HOME:-$HOME/.config}"',
+                        'cat "${XDG_CONFIG_HOME:-$HOME/.config}"/b*/*',
+                        'cat ${XDG_CONFIG_HOME-~/.config}/b*/*',
+                        'cd "${XDG_CONFIG_HOME:-${HOME}/.config}"/gh && cat ../b*/*',
+                        'cat ${XDG_CONFIG_HOME:+~/.config/gh}/../b*/*']:
+            with self.subTest(command=command):
+                self.assertIn('--status', self.assertDenied(command))
+        unset = {key: value for key, value in self.env.items() if key != 'XDG_CONFIG_HOME'}
+        for command in ['grep -r . "${XDG_CONFIG_HOME:-$HOME/.config}"',
+                        'cat "${XDG_CONFIG_HOME:-${HOME}/.config}"/b*/*']:
+            with self.subTest(command=command, xdg='unset'):
+                output = guard_output('Bash', {'command': command}, self.repo, unset)
+                self.assertEqual(output and output['permissionDecision'], 'deny')
+        for command in ['cd "$HOME" && cat .config/gh/hosts.yml',
+                        'cd -P ~/.config/gh && cat hosts.yml',
+                        'cd ~/.config/gh && cat "$PWD"/hosts.yml',
+                        'git -C ~/.config/gh status', 'tar -C ~/.config/gh -cf - hosts.yml',
+                        'grep -C 3 x README.md', 'CDPATH=/x:/y cd docs && ls',
+                        'cat "${XDG_CONFIG_HOME:-$HOME/.config}"/gh/hosts.yml',
+                        'echo "${HOME:+x}" "${PWD:-y}"']:
+            with self.subTest(command=command):
+                self.assertAllowed(command)
+
+    def test_braces_are_expanded_before_the_list_is_looked_for(self):
+        for command in ['cat ~/.config/{,}b*/*', 'cat ~/.config/b{,}*/*',
+                        'cat ~/.{config,x}/b*/*', 'cat ~/.config/{gh/..,x}/b*/*',
+                        'cd ~/.config/gh && cat ../{b,x}*/*', 'cat ~/.config/{a..c}rickson/*',
+                        'cd ~/.config/gh && cat ../b*/{,}*', 'grep -r . ~/.{con{f,x}ig,x}']:
+            with self.subTest(command=command):
+                self.assertIn('--status', self.assertDenied(command))
+        self.assertAllowed('cat docs/{HANDOFF,ROADMAP}.md')
+        self.assertAllowed('echo {1..3} {a,b}')
+        self.assertAllowed('cat ~/.config/{gh,git}/hosts.yml')
+        # A newline in one alternative, or a long one, does not hide the others.
+        for command in ["cat {$'\\n',~/.config/gh/../b*}/*",
+                        "CDPATH=$'\\n':~/.config/gh/.. cd brickson && cat p*",
+                        "export CDPATH=$'\\n':~/.config/gh/..; cd brickson && cat p*",
+                        'cat {' + 'A' * 4100 + ',~/.config/gh/../b*}/*']:
+            with self.subTest(command=command[:60]):
+                self.assertIn('--status', self.assertDenied(command))
+        # Every number of a range, as bash makes them.
+        environment = {**self.env, 'XDG_CONFIG_HOME': str(self.folder / 'cfg2')}
+        output = guard_output('Bash', {'command': f'cat {self.folder}/cfg{{0..3}}/b*/*'},
+                              self.repo, environment)
+        self.assertEqual(output and output['permissionDecision'], 'deny')
+
+    def test_a_long_word_or_many_folders_are_read_in_time(self):
+        # A long JSON body has braces and colons in quotes, and a script
+        # of many cd lines leaves the same folders many ways; the guard
+        # must still answer well inside its 10 seconds.
+        body = '[' + ','.join('{"path":"docs/a%d.md","line":%d,"side":"RIGHT","body":"Fix"}'
+                              % (index, index) for index in range(65)) + ']'
+        quoted = shlex.quote(body)
+        (self.repo / 'sub').mkdir()
+        lines = '\n'.join(body for _ in range(20))
+        for command in [f'curl -s -X POST -d payload={quoted} https://example.com/hook',
+                        f'cd sub; curl -s -X POST -d a={quoted} -d b={quoted} -d c={quoted} '
+                        'https://example.com/hook',
+                        f'cd sub; cd ..; cd sub; cd ..; curl -s -X POST -d a={quoted} '
+                        f'-d b={quoted} https://example.com/hook',
+                        f"cat > build.jsonl <<'EOF'\n{lines}\nEOF",
+                        '\n'.join(['cd sub', 'ls -la', 'cd ..', 'git status --short'] * 8)]:
+            with self.subTest(command=command[:60]):
+                start = time.monotonic()
+                self.assertAllowed(command)
+                self.assertLess(time.monotonic() - start, 4)
+        # Prose with braces and colons in a quote that opens inside a word
+        # (body="..."), after cd lines; braces with no end; a long word of
+        # many brace groups.
+        note = ''.join('Note %d: checked on iPad, iOS 27: the closure { a, b in a + b } '
+                       'works.\n' % index for index in range(900))
+        for command in ['cd d1; cd d2; cd d3; cd d4; cd d5; cd d6; cd d7\n'
+                        f'printf "%s\\n" title="Summary: {{a, b}}" body="{note}"',
+                        f'gh pr comment 12 --body="{note}"',
+                        'echo {1..' + '9' * 5000 + '}', 'echo {' + '0' * 30000 + '1..1025}',
+                        'echo ' + '{a,b}' * 11 + 'z' * 60000,
+                        'git commit --allow-empty -m ' + '{a,b}' * 11 + 'z' * 20000]:
+            with self.subTest(command=command[:60]):
+                start = time.monotonic()
+                self.output(command)  # guard_output fails if the guard crashes
+                self.assertLess(time.monotonic() - start, 4)
+        # Scripts that stop when a cd fails (|| exit, set -e), that go
+        # back with popd, or that make each step a subshell stay in the
+        # folders they name.
+        for command in ['\n'.join(f'cd d{index} || exit 1\nls' for index in range(8)),
+                        'set -e\n' + '\n'.join(f'cd d{index}\nls\ncd ..' for index in range(8)),
+                        '\n'.join(f'cd d{index} && make && cd ..' for index in range(8)),
+                        '\n'.join(f'pushd d{index} >/dev/null\nls\npopd >/dev/null'
+                                   for index in range(8)),
+                        '\n'.join(f'(cd d{index} && make)' for index in range(30))]:
+            with self.subTest(command=command[:60]):
+                start = time.monotonic()
+                self.assertAllowed(command)
+                self.assertLess(time.monotonic() - start, 4)
+        # Folders a script may reach double at each cd that may fail; past
+        # what the guard follows, it says how to make each step its own.
+        start = time.monotonic()
+        self.assertIn('(cd', self.assertDenied('\n'.join(f'cd d{index}; ls; cd ..'
+                                                         for index in range(30))))
+        self.assertLess(time.monotonic() - start, 4)
+        # An exit inside if, a function or a pipeline does not end the
+        # script, so the folder before the cd is still read from.
+        home = Path(os.environ['HOME'])
+        for command in ['if false; then cd /tmp || exit 1; fi\ncat .config/gh/../b*/*',
+                        'f() { cd /tmp || exit 1; }\ncat .config/gh/../b*/*',
+                        'cd /tmp || exit 1 | cat\ncat .config/gh/../b*/*',
+                        'false && set -e\ncd /tmp\ncat .config/gh/../b*/*',
+                        'set -e\nif cd /tmp; then ls; fi\ncat .config/gh/../b*/*']:
+            with self.subTest(command=command):
+                output = guard_output('Bash', {'command': command}, home, self.env)
+                self.assertEqual(output and output['permissionDecision'], 'deny')
+        output = guard_output('Bash', {'command': '(cd /tmp || exit 1)\ncat .config/gh/../b*/*'},
+                              home, self.env)
+        self.assertEqual(output and output['permissionDecision'], 'deny')
+
+    def test_a_read_through_a_home_the_shell_finds_is_refused(self):
+        # With HOME unset, bash takes ~ from the account; a HOME set from
+        # ~+ or $PWD follows the folder; for, read and printf -v set it to
+        # what the guard cannot read.
+        environment = {**self.env, 'HOME': pwd.getpwuid(os.getuid()).pw_dir}
+        for command in ['unset HOME; cat ~/.config/gh/../b*/*',
+                        "env -u HOME bash -c 'cat ~/.config/gh/../b*/*'",
+                        'unset HOME; cd ~/.config/gh && cat ../b*/*',
+                        'cd ~/.config/gh && HOME=~+; cat ~/../b*/*',
+                        'cd ~/.config/gh && HOME=$PWD; cat ~/../b*/*',
+                        'cd ~/.config/gh && export HOME=~+; cat ~/../b*/*',
+                        'cd ~/.config/gh && HOME=~+ bash -c "cat ~/../b*/*"',
+                        'HOME=$(pwd) cat ~/.config/gh/../b*/*',
+                        'for HOME in ~/.config/gh; do cat ~/../b*/*; done',
+                        'printf -v HOME %s ~/.config/gh; cat ~/../b*/*',
+                        'read -r HOME < path.txt; cat ~/../b*/*',
+                        'mapfile -t HOME < path.txt; cat ~/../b*/*',
+                        'read -a HOME < path.txt; cat ~/../b*/*',
+                        'read -r GIT_DIR < path.txt; git commit --allow-empty -m x',
+                        # An append, an assigning expansion and a nameref set it too.
+                        'HOME+=/.config/gh; cat ~/../b*/*',
+                        'export HOME+=/.config/gh; cat ~/../b*/*',
+                        "HOME+=/.config/gh bash -c 'cat ~/../b*/*'",
+                        ': ${XDG_CONFIG_HOME:=~/.config/gh}; cat "$XDG_CONFIG_HOME"/../b*/*',
+                        ': ${HOME=~/.config/gh}; cat ~/../b*/*',
+                        'declare -n r=HOME; r=~/.config/gh; cat ~/../b*/*']:
+            with self.subTest(command=command):
+                output = guard_output('Bash', {'command': command}, self.repo, environment)
+                self.assertEqual(output and output['permissionDecision'], 'deny')
+        # Names git never reads, a prompt or format operand, and $ in a
+        # default value only read are not set.
+        for command in ['for name in a b; do echo $name; done', 'read -r answer < path.txt',
+                        'printf -v line %s x', 'cd ~/.config/gh && HOME=~+; cat ~/hosts.yml',
+                        'read -r GIT_SHA < <(git rev-parse HEAD)',
+                        'for GIT_FILE in docs/*.md; do echo "$GIT_FILE"; done',
+                        'printf -v GIT_TAG "v%s" 1', 'printf "%s %s\\n" -v HOME',
+                        "read -p 'GIT_DIR? ' answer", 'echo "${XDG_CONFIG_HOME:-~/.config}/gh"',
+                        'A+=1; echo $A',
+                        # A command's own assignment is not the HOME its ~ is.
+                        'HOME+=/.config/gh cat ~/../b*/*']:
+            with self.subTest(command=command):
+                self.assertIsNone(guard_output('Bash', {'command': command}, self.repo,
+                                               environment))
+
+    def test_a_program_s_own_folder_option_is_read_in_every_spelling(self):
+        # tar's -C in a cluster, --dir for --directory, and tar's old
+        # first word (cfC) all move where it reads its operands.
+        for command in ['tar -cC ~/.config/gh -f - ../b*', 'tar --dir ~/.config/gh -cf - ../b*',
+                        'tar --direc=~/.config/gh -cf - ../b*', 'tar cfC - ~/.config/gh ../b*',
+                        'tar -xvC ~/.config/gh -f x.tar ../b*']:
+            with self.subTest(command=command):
+                self.assertIn('--status', self.assertDenied(command))
+        for command in ['tar -cC ~/.config/gh -f - hosts.yml', 'tar cf - docs',
+                        'grep -nC 3 x README.md']:
+            with self.subTest(command=command):
+                self.assertAllowed(command)
+
+    def test_find_s_folder_commands_run_beside_what_it_finds(self):
+        # -execdir runs in each found file's folder: the start point's
+        # parent for the start point itself.
+        self.assertIn('--status', self.assertDenied(
+            "find ~/.config/gh -maxdepth 0 -execdir sh -c 'cat b*/*' \\;"))
+        self.assertAllowed("find docs -maxdepth 0 -execdir sh -c 'ls' \\;")
+
+    def test_the_list_s_folder_is_found_whatever_its_case(self):
+        # The Mac's file system finds ~/.config/Brickson at ~/.config/brickson.
+        home = Path(os.environ['HOME'])
+        for command in ['grep -r . ~/.config/Brickson', 'ls ~/.config/BRICKSON',
+                        'cat ~/.Config/brickson/x', 'cd ~/.config/gh && grep -r . ../Brickson',
+                        'cat ~/.config/brickson/Private-Words.txt']:
+            with self.subTest(command=command):
+                self.assertIn('--status', self.assertDenied(command))
+        for name, arguments in [
+                ('Read', {'file_path': str(home / '.config/Brickson/private-words.txt')}),
+                ('Grep', {'pattern': '.', 'path': str(home / '.Config/brickson')})]:
+            with self.subTest(name=name):
+                self.assertEqual(self.tool(name, arguments), 'deny')
+        self.assertAllowed('cat ~/.config/gh/Hosts.yml')
+
+    def test_a_word_no_path_can_hold_does_not_stop_the_guard(self):
+        # A NUL byte or a lone surrogate names no file; the guard decides.
+        for command in ['ls a\x00b', 'ls \ud800', 'ls ~a\x00b', 'cd a\x00b && cat ../x']:
+            with self.subTest(command=repr(command)):
+                self.output(command)  # guard_output fails if the guard crashes
+        for name, arguments in [('Read', {'file_path': 'a\x00b'}),
+                                ('Grep', {'pattern': '.', 'path': '\ud800'})]:
+            with self.subTest(name=name):
+                self.tool(name, arguments)
 
     def test_git_settings_outside_the_tests_do_not_change_them(self):
         # A global core.hooksPath of .githooks, the cloud setup line, turns
@@ -2259,6 +2963,16 @@ class PrivacyGuardTests(unittest.TestCase):
             with self.subTest(command=command):
                 self.assertIn('in the next', self.assertDenied(command))
 
+    def test_a_gist_s_file_path_is_not_published(self):
+        # gh puts each file in a gist under its base name; its folders stay here.
+        # Built here, so this file holds no home folder of its own.
+        windows = 'C:/Us' + 'ers/tobble'
+        folder = self.repo / windows
+        folder.mkdir(parents=True)
+        (folder / 'notes.md').write_text('Build log\n')
+        self.assertAllowed(f'gh gist create {windows}/notes.md')
+        self.assertAllowed(f'gh gist create --desc "Build log" {windows}/notes.md')
+
     def test_a_gist_s_file_names_are_published(self):
         named = self.folder / (PRIVATE_NAME.replace(' ', '-').lower() + '-notes.md')
         named.write_text('notes\n')
@@ -2359,7 +3073,9 @@ class SettingsTests(unittest.TestCase):
                  # The tools that publish text, for the privacy check.
                  'add_issue_comment', 'update_issue_comment',
                  'add_reply_to_pull_request_comment', 'add_comment_to_pending_review',
-                 'create_gist', 'update_gist', 'create_branch']
+                 'create_gist', 'update_gist', 'create_branch',
+                 # A new repository's name and description, and a fork's name.
+                 'create_repository', 'fork_repository']
         # The file tools, so the private list stays closed wherever it lives.
         files = ['Read', 'Edit', 'MultiEdit', 'Write', 'NotebookEdit', 'Grep', 'Glob']
         for tool in ['Bash'] + [f'mcp__github__{t}' for t in tools] + files:

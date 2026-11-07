@@ -2540,9 +2540,10 @@ NO_LIST = ('No private list is set up here, so private words were NOT checked an
 
 
 # A run of base64 in text a command or a tool publishes, its line breaks
-# written as JSON writes them (\\n, \\r) or as they are, and a JSON
-# body's \\/ for /: at least twelve letters, the shortest a name fills.
-ENCODED_RUN = re.compile(r'(?:[A-Za-z0-9+]|\\?/|\\[nr]|\r?\n){12,}=*')
+# written as JSON writes them (\\n, \\r) or as they are (a lone \\r
+# among them, which \\u000d gives), and a JSON body's \\/ for /: at
+# least twelve letters, so a file of eight bytes or fewer is not read.
+ENCODED_RUN = re.compile(r'(?:[A-Za-z0-9+]|\\?/|\\[nr]|\r\n?|\n){12,}=*')
 
 
 def encoded_findings(checker, text, where):

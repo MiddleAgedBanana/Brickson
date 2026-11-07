@@ -36,7 +36,7 @@
         ]
       },
       {
-        "matcher": "mcp__.*__(merge_pull_request|enable_pr_auto_merge|request_copilot_review|assign_copilot_to_issue|assign_copilot_to_issue_with_intent|create_pull_request_with_copilot|push_files|create_or_update_file|delete_file|pull_request_review_write|create_pull_request|update_pull_request|issue_write|create_issue|update_issue|add_issue_comment|update_issue_comment|add_reply_to_pull_request_comment|add_comment_to_pending_review|create_gist|update_gist|create_branch)",
+        "matcher": "mcp__.*__(merge_pull_request|enable_pr_auto_merge|request_copilot_review|assign_copilot_to_issue|assign_copilot_to_issue_with_intent|create_pull_request_with_copilot|push_files|create_or_update_file|delete_file|pull_request_review_write|create_pull_request|update_pull_request|issue_write|create_issue|update_issue|add_issue_comment|update_issue_comment|add_reply_to_pull_request_comment|add_comment_to_pending_review|create_gist|update_gist|create_branch|create_repository|fork_repository)",
         "hooks": [
           {
             "type": "command",

@@ -750,16 +750,19 @@ above are backed by checks wherever a check can run:
   a file onto `main`; a commit, or text sent to GitHub by `gh`, the API
   or a GitHub tool, that holds a personal detail, text it cannot read
   before the command runs (built by the shell, a file the same command
-  writes, an index change or commit identity it sets, or another
+  writes, an index change or commit identity it sets, a commit it reuses
+  that an earlier command in the same call may move, or another
   repository or index a commit names with `--git-dir`, `--work-tree` or
   a `GIT_*` variable); a release asset upload; a push
   from a checkout whose pushes skip the privacy hook or whose branch has
   none, whichever branch the push names, or after a command in the same
   call that changes the hook, its setting or the check it runs, or checks
   out another branch (*The privacy check*, below); and
-  any command or file tool that reaches the private list or the config
-  folder that holds it, wherever the check reads the list from, and any
-  command that prints the whole environment. The same
+  any command or file tool that names the private list or the config
+  folder that holds it, by path or glob, wherever the check reads the
+  list from (not a recursive read of a folder above it, such as
+  `grep -r . ~`: docs/DECISIONS.md, "Personal details stay out of the
+  repository"), and any command that prints the whole environment. The same
   settings deny the merge tools and the Copilot tools outright, and the
   Read and Edit tools the list's default folder. When the guard refuses, do not look for
   another way round: say in the thread what you needed and why. It is

@@ -49,7 +49,13 @@ import shlex
 import subprocess
 import sys
 import stat
+import unicodedata
 import posixpath
+import functools
+try:
+    import pwd
+except ImportError:  # not on macOS or Linux
+    pwd = None
 from pathlib import Path
 from urllib.parse import urlsplit, unquote
 
@@ -77,7 +83,11 @@ UNKNOWN = ('The guard cannot inspect this push/sync destination or API request b
            '(AGENTS.md, "Guardrails for agents").')
 
 WRAPPERS = {'command', 'builtin', 'exec', 'nohup', 'time', 'sudo', 'env', 'nice',
-            'timeout', 'xargs', 'then', 'do', 'else', 'if', 'elif', 'while', 'until', '!', '{', '('}
+            'timeout', 'xargs', 'then', 'do', 'else', 'if', 'elif', 'while', 'until', '!', '{', '(',
+            # Programs that run the command after their options (and, for
+            # chrt and taskset, a priority or a mask), as env does.
+            'stdbuf', 'setsid', 'ionice', 'chrt', 'taskset', 'caffeinate', 'arch',
+            'xcrun', 'setpriv', 'prlimit', 'unshare', 'doas'}
 WRAPPER_VALUE_OPTIONS = {
     'time': {'-o', '--output', '-f', '--format'},
     'env': {'-u', '--unset', '-C', '--chdir'},
@@ -86,8 +96,32 @@ WRAPPER_VALUE_OPTIONS = {
               '--max-args', '--max-procs', '--max-chars', '--arg-file', '--delimiter', '--process-slot-var'},
     'timeout': {'-k', '--kill-after', '-s', '--signal'},
     'sudo': {'-u', '--user', '-g', '--group', '-h', '--host', '-p', '--prompt',
-             '-C', '--close-from', '-D', '--chdir', '-R', '--chroot'},
+             '-C', '--close-from', '-D', '--chdir', '-R', '--chroot', '-r', '--role',
+             '-t', '--type', '-T', '--command-timeout', '-U', '--other-user'},
+    # bash's exec -a NAME gives the command another name.
+    'exec': {'-a'},
+    'stdbuf': {'-i', '-o', '-e', '--input', '--output', '--error'},
+    'ionice': {'-c', '--class', '-n', '--classdata', '-p', '--pid', '-P', '--pgid',
+               '-u', '--uid'},
+    'chrt': {'-T', '--sched-runtime', '-P', '--sched-period', '-D', '--sched-deadline'},
+    'caffeinate': {'-t', '-w'},
+    # macOS's arch: arch -arm64 cmd, arch -arch arm64 cmd, -e NAME=value.
+    'arch': {'-arch', '-e', '-d'},
+    'xcrun': {'--sdk', '-sdk', '--toolchain', '-toolchain'},
+    'setpriv': {'--ruid', '--euid', '--reuid', '--rgid', '--egid', '--regid', '--groups',
+                '--inh-caps', '--ambient-caps', '--bounding-set', '--securebits',
+                '--pdeathsig', '--selinux-label', '--apparmor-profile', '--landlock-access',
+                '--landlock-rule', '--ptracer', '--seccomp-filter'},
+    'prlimit': {'-p', '--pid', '-o', '--output'},
+    'unshare': {'--propagation', '--setgroups', '--map-user', '--map-group', '--map-users',
+                '--map-groups', '-S', '--setuid', '-G', '--setgid', '-R', '--root', '-w',
+                '--wd', '--monotonic', '--boottime', '--load-interp'},
+    'doas': {'-C', '-u'},
 }
+# A program that runs another command after one more word: chrt's
+# priority (optional since util-linux 2.42, so only a number), taskset's
+# mask.
+WRAPPER_OPERANDS = {'chrt': re.compile(r'\d+'), 'taskset': re.compile(r'.*')}
 SHELLS = {'sh', 'bash', 'zsh', 'dash'}
 SEPARATORS = {';', '&&', '||', '|', '&', '|&', '(', ')', '\n'}
 # git options that take a separate value: git -C <path>, git -c <name=value>.
@@ -146,6 +180,15 @@ PUBLISHED_EXPANSION = ('Text this command publishes comes from a variable or ano
 REUSED_COMMIT = ('This commit takes its message or author from another commit (-C, -c, '
                  '--fixup, --squash or --amend), which the privacy check cannot read here: '
                  'name one that exists before the command runs, or write the message.')
+REUSED_EARLIER = ('An earlier command in this call ({command}) can change the commit this one '
+                  'takes its message or author from, or leave it a merge message, and the guard '
+                  'reads them before the call runs. Run that command first, then commit in '
+                  'the next call (or name the commit by its full hash).')
+AUTHOR_PATTERN = ('This commit\'s --author is not Name <address>, and no commit here has an '
+                  'author it matches, so the guard cannot tell whom git would name. Give the '
+                  'author as Name <address>.')
+SOURCE_FOLDER = ('gh repo create names the repository after its --source folder, which the '
+                 'guard cannot place here: name the repository, or give the folder as a path.')
 PUBLISHED_FILE = ('A file this command publishes must exist before the command runs, so the '
                   'privacy check can read it: write it in an earlier command.')
 PUBLISHED_STDIN = ('Text this command reads from stdin can be checked only from a '
@@ -162,15 +205,35 @@ HOOK_CHANGED = ('This command pushes after changing what the push would run (the
                 'checked out), or after writing a file the guard cannot place, and the guard '
                 'reads the hook before the command runs. Make the change in one command, then '
                 'push in the next (' + PRIVACY_DECISION + ').')
+UNREAD_VARIABLE = ('This command sets {name} to a value the guard cannot read before it runs '
+                   '(for, select, read, mapfile, getopts, printf -v, ${{{name}:=...}} or a '
+                   'declare -n reference). Set it with {name}=value, or use another name.')
+TOO_MANY_FOLDERS = ('This command can end up in more folders than the guard follows: each cd '
+                    'that may fail and is not followed by || exit, with more commands after it, '
+                    'doubles them. Make each step its own subshell, (cd sub && make), or split '
+                    'the command.')
+# Words that start a compound command or a group, in which an exit or a
+# failed command may not end the shell.
+COMPOUND_WORDS = {'if', 'then', 'else', 'elif', 'fi', 'while', 'until', 'do', 'done', 'case',
+                  'esac', 'for', 'select', 'function', '{', '}', '!', '[[', 'coproc'}
+# How many folders (with their directory stacks and settings) the guard
+# follows a command through, and how many questions it asks git on the
+# way: each folder is checked, and a script of cd lines joined by ;
+# doubles them at each line.
+STATE_LIMIT = 1024
+GIT_QUERY_LIMIT = 400
+RUNTIME_WORDS = ('xargs and find -exec add words when they run (files, flags, destinations), '
+                 'which the guard cannot read before. Name each one in the command itself.')
 ENVIRONMENT_DUMP = ('This would print the whole environment, which may hold the private list. '
                     'Name the variables you need instead (printenv HOME); the list is the '
                     "owner's and stays unread (" + PRIVACY_DECISION + ').')
 # The list's own path and name, and the globs that could reach its file.
 LIST_REFERENCE = re.compile(r'\.config/[^/\s]*brick|private-words|\$\{?BRICKSON_PRIVATE_WORDS'
                             r'|printenv\s+BRICKSON_PRIVATE_WORDS|XDG_CONFIG_HOME\}?["\']?/[^/\s]*brick'
-                            r'|\b(?:declare|typeset)\b[^;&|\n]*\bBRICKSON_PRIVATE_WORDS\b')
+                            r'|\b(?:declare|typeset)\b[^;&|\n]*\bBRICKSON_PRIVATE_WORDS\b',
+                            re.IGNORECASE)
 CONFIG_FOLDER = re.compile(r'(?:\.config|XDG_CONFIG_HOME\}?)["\']?/([^/\s"\';&|()<>]*)'
-                           r'(?:/([^/\s"\';&|()<>]*))?')
+                           r'(?:/([^/\s"\';&|()<>]*))?', re.IGNORECASE)
 PROCESS_ENVIRONMENT = re.compile(r'/proc/\S*environ')
 # The start of a here-document read with cat in a command substitution,
 # $(cat <<'EOF', on a line of its own: its delimiter (quoted or not) and
@@ -219,6 +282,8 @@ GH_PUBLISHES = {
     ('issue', 'edit'): ({'--title', '--body', 't', 'b'}, {'--body-file', 'F'}),
     ('issue', 'comment'): ({'--body', 'b'}, {'--body-file', 'F'}),
     ('issue', 'close'): ({'--comment', 'c'}, set()),
+    # gh issue develop makes a branch on GitHub, named by --name.
+    ('issue', 'develop'): ({'--name', 'n'}, set()),
     ('issue', 'reopen'): ({'--comment', 'c'}, set()),
     ('release', 'create'): ({'--title', '--notes', 't', 'n'}, {'--notes-file', 'F'}),
     ('release', 'edit'): ({'--title', '--notes', '--tag', 't', 'n'}, {'--notes-file', 'F'}),
@@ -226,9 +291,21 @@ GH_PUBLISHES = {
     ('gist', 'create'): ({'--desc', '--filename', 'd', 'f'}, set()),
     ('gist', 'edit'): ({'--desc', '--filename', 'd', 'f'}, {'--add', 'a'}),
     ('repo', 'create'): ({'--description', '--homepage', 'd', 'h'}, set()),
-    ('repo', 'edit'): ({'--description', '--homepage', 'd', 'h'}, set()),
+    ('repo', 'edit'): ({'--description', '--homepage', '--add-topic', 'd', 'h'}, set()),
+    ('repo', 'fork'): ({'--fork-name'}, set()),
     # A new repository's name, and a new name, are their first operand.
     ('repo', 'rename'): (set(), set()),
+    # gh gist rename <gist> <old> <new>: the new name is a gist file's.
+    ('gist', 'rename'): (set(), set()),
+    ('project', 'create'): ({'--title'}, set()),
+    ('project', 'copy'): ({'--title'}, set()),
+    ('project', 'edit'): ({'--title', '--readme', '--description', 'd'}, set()),
+    ('project', 'item-create'): ({'--title', '--body'}, set()),
+    ('project', 'item-edit'): ({'--title', '--body', '--text'}, set()),
+    ('project', 'field-create'): ({'--name', '--single-select-options'}, set()),
+    # An Actions variable's name is its operand; with no --body or
+    # --env-file, gh reads its value from stdin.
+    ('variable', 'set'): ({'--body', 'b'}, {'--env-file', 'f'}),
     # A label's name is its first operand.
     ('label', 'create'): ({'--description', '--color', 'd', 'c'}, set()),
     ('label', 'edit'): ({'--description', '--color', '--name', 'd', 'c', 'n'}, set()),
@@ -236,11 +313,18 @@ GH_PUBLISHES = {
 # Options of those commands that take a value which is not published, where
 # their operands matter: gh gist edit --remove names a file to drop.
 GH_OTHER_VALUES = {('gist', 'edit'): {'--remove', 'r'},
+                   ('issue', 'develop'): {'--base', 'b', '--branch-repo', '--repo', 'R'},
                    # A release's operands are its tag, then the assets to upload.
                    ('release', 'create'): {'--target', '--discussion-category',
                                            '--notes-start-tag'},
                    ('repo', 'create'): {'--gitignore', 'g', '--license', 'l', '--remote', 'r',
-                                        '--source', 's', '--team', 't', '--template', 'p'}}
+                                        '--source', 's', '--team', 't', '--template', 'p'},
+                   ('repo', 'fork'): {'--remote-name', '--org'},
+                   ('variable', 'set'): {'--env', 'e', '--org', 'o', '--visibility', 'v',
+                                         '--repos', 'r'}}
+# gh's repository option, which a command takes after its name too, and
+# which takes the next word even at the end of a cluster (-yR o/r).
+GH_REPOSITORY = {'--repo', 'R'}
 # GitHub takes release assets at this host (gh release upload uses it).
 UPLOADS_HOST = 'uploads.github.com'
 # Programs that change a file's mode or remove it, which can turn a hook off
@@ -271,8 +355,43 @@ COMMIT_LONG = COMMIT_VALUE_LONG | {
     '--edit', '--gpg-sign', '--include', '--interactive', '--long', '--no-edit',
     '--no-gpg-sign', '--no-post-rewrite', '--no-signoff', '--no-status', '--no-verify',
     '--null', '--only', '--patch', '--pathspec-file-nul', '--porcelain', '--quiet',
-    '--reset-author', '--short', '--signoff', '--status', '--untracked-files', '--verbose',
-    '--verify'}
+    '--reset-author', '--no-reset-author', '--short', '--signoff', '--status',
+    '--untracked-files', '--verbose', '--verify', '--no-author', '--no-file',
+    '--no-reuse-message', '--no-reedit-message', '--no-fixup', '--no-squash',
+    '--no-template', '--no-amend', '--no-message', '--no-trailer', '--no-date',
+    '--no-cleanup'}
+# A git commit option's --no- form undoes it where it was given before
+# (git's parse-options: the last one given wins).
+COMMIT_NEGATIONS = {'--no-author': {'--author'}, '--no-file': {'-F', '--file'},
+                    '--no-reuse-message': {'-C', '--reuse-message'},
+                    '--no-reedit-message': {'-c', '--reedit-message'},
+                    '--no-fixup': {'--fixup'}, '--no-squash': {'--squash'},
+                    '--no-template': {'-t', '--template'}, '--no-amend': {'--amend'},
+                    '--no-message': {'-m', '--message'}, '--no-trailer': {'--trailer'},
+                    '--no-date': {'--date'}, '--no-cleanup': {'--cleanup'}}
+# Git commands that can move HEAD, or leave a merge message or a picked
+# commit's author for the next commit, whatever they are given.
+HEAD_MOVERS = {'merge', 'pull', 'rebase', 'cherry-pick', 'revert', 'commit', 'am',
+               'update-ref', 'bisect', 'filter-branch', 'fast-import', 'subtree'}
+# Git commands that move another ref (a remote branch, a tag, a stash, a
+# note, a reflog entry) unless they are given only a reading word first
+# (git remote's -v comes before its subcommand).
+REF_READS = {'fetch': None, 'push': None, 'gc': None, 'maintenance': None,
+             'stash': {'list', 'show'}, 'notes': {'list', 'show', 'get-ref'},
+             'remote': {'show', 'get-url'},
+             'worktree': {'list', 'lock', 'unlock'}, 'replace': {'-l', '--list'}}
+# The options that make git branch or git tag list rather than make, move
+# or delete (builtin/branch.c, builtin/tag.c): --sort, --format, --column,
+# branch's -v and tag's -a do not.
+LISTS = {'branch': {'-l', '--list', '--show-current', '--contains', '--no-contains',
+                    '--merged', '--no-merged', '--points-at'},
+         'tag': {'-l', '--list', '--contains', '--no-contains', '--merged', '--no-merged',
+                 '--points-at', '-v', '--verify'}}
+# A revision whose commit a command can change without moving a branch:
+# a reflog entry or an upstream (@{2}, @{u}, @{-1}) and the refs git
+# writes as it works (ORIG_HEAD, FETCH_HEAD).
+VOLATILE_REVISION = re.compile(r'@\{|(?:ORIG|FETCH|MERGE|CHERRY_PICK|REVERT|REBASE)_HEAD|AUTO_MERGE')
+FULL_HASH = re.compile(r'[0-9a-f]{40}|[0-9a-f]{64}')
 # Settings and environment variables that name a commit's author or committer.
 IDENTITY_SETTINGS = {'user.name', 'user.email', 'author.name', 'author.email',
                      'committer.name', 'committer.email'}
@@ -293,7 +412,8 @@ TOOLS_PUBLISH = {'create_pull_request', 'update_pull_request', 'issue_write', 'c
                  'update_issue', 'add_issue_comment', 'update_issue_comment',
                  'add_reply_to_pull_request_comment', 'add_comment_to_pending_review',
                  'pull_request_review_write', 'create_gist', 'update_gist',
-                 'create_or_update_file', 'push_files', 'delete_file', 'create_branch'}
+                 'create_or_update_file', 'push_files', 'delete_file', 'create_branch',
+                 'create_repository', 'fork_repository'}
 
 
 def deny(reason):
@@ -491,14 +611,54 @@ def protect_substitutions(command):
     return ''.join(output), saved
 
 
+def raw_tokens(text):
+    """The words the shell's reading in segments makes of text (posix shlex
+    with whitespace ' \\t\\r' and ;&|()<>\\n grouped as punctuation),
+    each as written: quotes and escapes kept, so a quote that opens inside
+    a word (--body="a b") stays in that word. ValueError as shlex raises it."""
+    punctuation, whitespace = set(';&|()<>\n'), set(' \t\r')
+    stops = punctuation | whitespace
+    index, length = 0, len(text)
+    while index < length:
+        if text[index] in whitespace:
+            index += 1
+            continue
+        start = index
+        if text[index] in punctuation:
+            while index < length and text[index] in punctuation:
+                index += 1
+            yield text[start:index]
+            continue
+        while index < length and text[index] not in stops:
+            char = text[index]
+            if char == '\\':
+                if index + 1 >= length:
+                    raise ValueError('No escaped character')
+                index += 2
+            elif char in '\'"':
+                index += 1
+                while index < length and text[index] != char:
+                    index += 2 if char == '"' and text[index] == '\\' else 1
+                if index >= length:
+                    raise ValueError('No closing quotation')
+                index += 1
+            else:
+                index += 1
+        yield text[start:index]
+
+
 def segments(command, preserve_quotes=False):
     """Split into (words, preceding separator), keeping && and || for cd.
-    Words inside $(...), `...` and sh -c '...' are split in turn."""
+    Words inside $(...), `...` and sh -c '...' are split in turn. With
+    preserve_quotes, each word is as written (raw_tokens)."""
     text, saved = protect_substitutions(without_shell_comments(command.replace('\\\n', ' ')))
-    lexer = shlex.shlex(text, posix=not preserve_quotes, punctuation_chars=';&|()<>\n')
-    lexer.whitespace = ' \t\r'
-    lexer.whitespace_split = True
-    lexer.commenters = ''
+    if preserve_quotes:
+        lexer = raw_tokens(text)
+    else:
+        lexer = shlex.shlex(text, posix=True, punctuation_chars=';&|()<>\n')
+        lexer.whitespace = ' \t\r'
+        lexer.whitespace_split = True
+        lexer.commenters = ''
     current = []
     separator = ';'
     marker = re.compile(SUBSTITUTION_MARK + r'(\d+)' + SUBSTITUTION_MARK)
@@ -675,8 +835,30 @@ def context_variable(key):
     return key.startswith('GIT_') or key in ('HOME', 'GH_CONFIG_DIR', 'XDG_CONFIG_HOME', 'CDPATH')
 
 
-def strip_wrappers(words, inherited=None, runtime_inputs=None):
-    """Drop VAR=value assignments and wrappers such as env, sudo, command."""
+# A shell assignment: NAME=value, or NAME+=value, which appends.
+ASSIGNMENT = re.compile(r'[A-Za-z_][A-Za-z0-9_]*\+?=')
+
+
+def assignment(word, environment=None, here=None):
+    """The variable an assignment word sets and the value it gets, as the
+    shell gives it: HOME's and XDG_CONFIG_HOME's expanded (assigned_value),
+    and NAME+=value appended to the value before (the one environment
+    holds, else the hook's), unknown where that was unknown."""
+    environment = environment if environment is not None else {}
+    key, _, value = word.partition('=')
+    if key in ('HOME+', 'XDG_CONFIG_HOME+', 'HOME', 'XDG_CONFIG_HOME'):
+        value = assigned_value(value, environment, here)
+    if key.endswith('+'):
+        key = key[:-1]
+        before = environment[key] if key in environment else os.environ.get(key)
+        value = (before or '') + value
+    return key, value
+
+
+def strip_wrappers(words, inherited=None, runtime_inputs=None, here=None):
+    """Drop VAR=value assignments and wrappers such as env, sudo, command.
+    HOME and XDG_CONFIG_HOME take their values as the shell assigns them
+    in the folder here (assigned_value)."""
     environment = dict(inherited or {})
     directories = []
     while words:
@@ -688,8 +870,8 @@ def strip_wrappers(words, inherited=None, runtime_inputs=None):
             words = words[redirect + 2:]
             continue
         first = words[0]
-        if re.match(r'^[A-Za-z_][A-Za-z0-9_]*=', first):
-            key, _, value = first.partition('=')
+        if ASSIGNMENT.match(first):
+            key, value = assignment(first, environment, here)
             if context_variable(key):
                 environment[key] = value
             words = words[1:]
@@ -703,7 +885,8 @@ def strip_wrappers(words, inherited=None, runtime_inputs=None):
                 option = words[0]
                 # Expand short clusters up to the first value-taking option.
                 # Its remaining characters are an operand, never more flags.
-                if len(option) > 2 and not option.startswith('--'):
+                # arch's and xcrun's options are whole words (-arm64, -sdk).
+                if len(option) > 2 and not option.startswith('--') and wrapper not in ('arch', 'xcrun'):
                     value_flags = {flag[1] for flag in WRAPPER_VALUE_OPTIONS.get(wrapper, set())
                                    if len(flag) == 2 and flag.startswith('-')}
                     if wrapper == 'env':
@@ -720,6 +903,16 @@ def strip_wrappers(words, inherited=None, runtime_inputs=None):
                 if option == '--':
                     words = words[1:]
                     break
+                if option.startswith('--') and wrapper != 'xcrun':
+                    # getopt_long takes a unique beginning of a long option
+                    # for the whole option (setpriv --pdeath for --pdeathsig).
+                    name, equal, value = option.partition('=')
+                    values = WRAPPER_VALUE_OPTIONS.get(wrapper, set())
+                    matches = [full for full in values if full.startswith(name)
+                               and full.startswith('--')]
+                    if name not in values and len(matches) == 1:
+                        option = matches[0] + equal + value
+                        words = [option] + words[1:]
                 if wrapper == 'env' and (option in ('-S', '--split-string')
                         or option.startswith(('-S', '--split-string='))):
                     separate = option in ('-S', '--split-string')
@@ -755,6 +948,11 @@ def strip_wrappers(words, inherited=None, runtime_inputs=None):
                         directory = option.partition('=')[2]
                     elif option.startswith('-C'):
                         directory = option[2:]
+                if wrapper == 'unshare':
+                    if option in ('-w', '--wd') and len(words) > 1:
+                        directory = words[1]
+                    elif option.startswith('--wd='):
+                        directory = option.partition('=')[2]
                 count = 2 if option in WRAPPER_VALUE_OPTIONS.get(wrapper, set()) else 1
                 words = words[count:]
             # One env uses its last -C; nested env commands change again.
@@ -763,9 +961,188 @@ def strip_wrappers(words, inherited=None, runtime_inputs=None):
             # timeout's mandatory duration can be fractional and carry a unit.
             if wrapper == 'timeout' and words and re.fullmatch(r'(?:\d+(?:\.\d*)?|\.\d+)[smhd]?', words[0]):
                 words = words[1:]
+            operand = WRAPPER_OPERANDS.get(wrapper)
+            if operand and words and operand.fullmatch(words[0]):
+                words = words[1:]
         else:
             break
     return words, environment, directories
+
+
+# The options of programs that run a command they are given, as their
+# help lists them (util-linux's flock and script, procps-ng's watch, and
+# macOS's script): '' is a switch, 'value' takes the rest of the word or
+# the next word, 'optional' only the rest of the word or a value after =.
+# Each long option names its short letter. script's -t takes the next
+# word on macOS and only an attached one in util-linux, so script is read
+# both ways (SCRIPT_LINUX).
+RUNNER_OPTIONS = {
+    'flock': ({'s': '', 'x': '', 'e': '', 'u': '', 'n': '', 'o': '', 'F': '', 'h': '', 'V': '',
+               'w': 'value', 'E': 'value'},
+              {'--shared': 's', '--exclusive': 'x', '--unlock': 'u', '--nonblock': 'n',
+               '--nonblocking': 'n', '--nb': 'n', '--close': 'o', '--no-fork': 'F',
+               '--verbose': 'verbose', '--help': 'h', '--version': 'V', '--timeout': 'w',
+               '--wait': 'w', '--conflict-exit-code': 'E'}),
+    'watch': ({'b': '', 'c': '', 'C': '', 'e': '', 'g': '', 'p': '', 'r': '', 't': '', 'w': '',
+               'x': '', 'h': '', 'v': '', 'd': 'optional', 'n': 'value', 'q': 'value',
+               's': 'value'},
+              {'--beep': 'b', '--color': 'c', '--no-color': 'C', '--errexit': 'e',
+               '--chgexit': 'g', '--precise': 'p', '--no-rerun': 'r', '--no-title': 't',
+               '--no-wrap': 'w', '--no-linewrap': 'w', '--exec': 'x', '--help': 'h',
+               '--version': 'v', '--differences': 'd', '--interval': 'n', '--equexit': 'q',
+               '--shotsdir': 's'}),
+    'script': ({'a': '', 'e': '', 'f': '', 'F': '', 'k': '', 'q': '', 'r': '', 'p': '', 'd': '',
+                'h': '', 'V': '', 'c': 'value', 'E': 'value', 'I': 'value', 'O': 'value',
+                'B': 'value', 'T': 'value', 'm': 'value', 'o': 'value', 't': 'value'},
+               {'--append': 'a', '--return': 'e', '--flush': 'f', '--force': 'force',
+                '--quiet': 'q', '--help': 'h', '--version': 'V', '--command': 'c',
+                '--echo': 'E', '--log-in': 'I', '--log-out': 'O', '--log-io': 'B',
+                '--log-timing': 'T', '--logging-format': 'm', '--output-limit': 'o',
+                '--timing': 'timing'}),
+}
+RUNNER_OPTIONS['script-linux'] = ({**RUNNER_OPTIONS['script'][0], 't': 'optional'},
+                                  RUNNER_OPTIONS['script'][1])
+RUNNER_LONG_KINDS = {'verbose': '', 'force': '', 'timing': 'optional'}
+RUNNER_OPTION = ('The guard reads {program}\'s options as {program} reads them, and does not '
+                 'know {option}. Spell each option as {program} --help lists it, or run the '
+                 'command on its own.')
+# Git commands that only read, which may take words xargs or find adds
+# (git grep is not one: its -O runs a program).
+RUNTIME_READS = {'status', 'diff', 'log', 'show', 'rev-parse', 'ls-files', 'blame',
+                 'check-ignore', 'check-attr', 'cat-file', 'ls-tree', 'shortlog'}
+# find's actions that run a command, which ends at ; or at a + after {}.
+FIND_ACTIONS = {'-exec', '-execdir', '-ok', '-okdir'}
+# find's options before its start points; -D and -O take a value.
+FIND_LEADING = re.compile(r'-[HLP]|-D|-O\d*')
+
+
+def runner_options(program, words, reading=None):
+    """The options at the start of words, read as getopt_long reads them
+    for flock, watch or script (with a +: the first operand ends them):
+    short options cluster, and a long option may be any beginning of its
+    name that names one kind of option. As (letter, value) pairs, and the
+    words after them. An option the guard does not know is refused: it
+    may take the next word, which would hide the command. reading names
+    another table for the same program (script-linux)."""
+    short, long = RUNNER_OPTIONS[reading or program]
+    options, index = [], 0
+    while index < len(words):
+        word = words[index]
+        if word == '--':
+            index += 1
+            break
+        if not word.startswith('-') or word == '-':
+            break
+        if word.startswith('--'):
+            name, equal, value = word.partition('=')
+            matches = [name] if name in long else [full for full in long if full.startswith(name)]
+            letters = {long[full] for full in matches}
+            kinds = {short.get(letter, RUNNER_LONG_KINDS.get(letter)) for letter in letters}
+            if not matches or len(kinds) != 1:
+                deny(RUNNER_OPTION.format(program=program, option=name))
+            letter, kind = sorted(letters)[0], kinds.pop()
+            if kind == 'value' and not equal:
+                index += 1
+                value = words[index] if index < len(words) else None
+            options.append((letter, value if equal or kind == 'value' else None))
+        else:
+            for offset, letter in enumerate(word[1:], 1):
+                kind = short.get(letter)
+                if kind is None:
+                    deny(RUNNER_OPTION.format(program=program, option='-' + letter))
+                rest = word[offset + 1:]
+                if kind == 'value':
+                    if not rest:
+                        index += 1
+                        rest = words[index] if index < len(words) else None
+                    options.append((letter, rest))
+                    break
+                if kind == 'optional':
+                    options.append((letter, rest or None))
+                    break
+                options.append((letter, None))
+        index += 1
+    return options, words[index:]
+
+
+def find_commands(words, cwd):
+    """The commands find runs (-exec, -ok, -execdir, -okdir), as
+    (folder, words): from every action word, so a test's operand that
+    spells one (-name -exec) does not hide the next. -exec and -ok run
+    where find runs; -execdir and -okdir in each found file's folder,
+    which for a start point is its parent. A part of a find that the
+    shell's ( ) split off (find . \\( -exec ... \\)) starts with an
+    option; its start points are unknown."""
+    starts = []
+    if os.path.basename(words[0]) == 'find':
+        index = 1
+        while index < len(words) and FIND_LEADING.fullmatch(words[index]):
+            index += 2 if words[index] == '-D' else 1
+        while index < len(words) and not words[index].startswith('-') and words[index] not in (
+                '(', ')', '!', ','):
+            starts.append(words[index])
+            index += 1
+        starts = starts or ['.']
+    here = []
+    for start in starts:
+        folder = changed_directory(cwd, start) if cwd is not None else None
+        here += [os.path.dirname(folder.rstrip(os.sep)) or os.sep, folder] if folder else [None]
+    here = list(dict.fromkeys(here or [None]))
+    commands = []
+    for index, action in enumerate(words):
+        if action not in FIND_ACTIONS:
+            continue
+        end = index + 1
+        while end < len(words) and not (words[end] == ';' or (
+                words[end] == '+' and words[end - 1] == '{}')):
+            end += 1
+        command = words[index + 1:end]
+        if not command:
+            continue
+        # find fills in each {} when it runs, as xargs adds its input. In
+        # sh -c 'script' name {}, find's words are the script's $1, $2,
+        # which it reads as any words given there.
+        unwrapped = strip_wrappers(command)[0]
+        script = shell_script_index(unwrapped)
+        before = command[:len(command) - len(unwrapped) + script + 1] if script else command
+        runtime = any('{}' in word for word in before)
+        text = ('xargs ' if runtime else '') + shlex.join(command)
+        for folder in ([cwd] if action in ('-exec', '-ok') else here):
+            commands.append((folder, text))
+    return commands
+
+
+def runner_commands(words, cwd):
+    """The commands a program runs that are not its own words, as (cwd,
+    command text): find's (find_commands), flock's command or -c script,
+    watch's, which it runs with sh -c unless -x, and script's -c command
+    or, as macOS's script runs it, the command after its file."""
+    program = os.path.basename(words[0])
+    if program == 'find' or program.startswith('-'):
+        return find_commands(words, cwd)
+    if program not in RUNNER_OPTIONS or program == 'script-linux':
+        return []
+    commands = []
+    if program == 'script':
+        # macOS's reading, then util-linux's: each command either finds.
+        for reading in ('script', 'script-linux'):
+            options, rest = runner_options(program, words[1:], reading)
+            commands += [(cwd, value) for letter, value in options if letter == 'c' and value]
+            if len(rest) > 1:
+                commands.append((cwd, shlex.join(rest[1:])))
+        return list(dict.fromkeys(commands))
+    options, rest = runner_options(program, words[1:])
+    letters = [letter for letter, _ in options]
+    if program == 'flock':
+        rest = rest[1:]  # the lock file or descriptor
+        if rest[:1] in (['-c'], ['--command']):
+            commands += [(cwd, script) for script in rest[1:2]]
+        elif rest:
+            commands.append((cwd, shlex.join(rest)))
+    elif program == 'watch':
+        if rest:
+            commands.append((cwd, shlex.join(rest) if 'x' in letters else ' '.join(rest)))
+    return commands
 
 
 def git_parts(words, cwd, environment):
@@ -783,19 +1160,34 @@ def git_parts(words, cwd, environment):
 
 
 def git(context, *args):
+    """git's answer to a read-only query, run where the command would run
+    it, or None when git cannot answer. The guard asks before the whole
+    command runs, so the same question has the same answer each time it
+    is asked: a script checked in many folders asks each one once."""
     cwd, options, overrides = context
     if cwd is None:
         return None  # an inherited directory-stack destination is unknown
+    return git_answer(cwd, tuple(options), tuple(sorted(overrides.items(), key=str)), args)
+
+
+# How many questions the guard has asked git (git_answer's cache misses).
+GIT_QUERIES = [0]
+
+
+@functools.lru_cache(maxsize=4096)
+def git_answer(cwd, options, overrides, args):
+    GIT_QUERIES[0] += 1
     environment = os.environ.copy()
-    for key, value in overrides.items():
+    for key, value in overrides:
         if value is None:
             environment.pop(key, None)
         else:
             environment[key] = value
     try:
         result = subprocess.run(['git', '-C', cwd, *options, *args], capture_output=True,
-                                text=True, timeout=5, env=environment)
-    except (OSError, subprocess.SubprocessError):
+                                encoding='utf-8', errors='replace', timeout=5,
+                                env=environment)
+    except (OSError, ValueError, subprocess.SubprocessError):
         return None
     return result.stdout.strip() if result.returncode == 0 else None
 
@@ -1349,7 +1741,8 @@ def release_assets(plain):
     if plain[:2] != ['release', 'create']:
         return []
     texts, files = GH_PUBLISHES[('release', 'create')]
-    _, operands = gh_arguments(plain[2:], texts | files | GH_OTHER_VALUES[('release', 'create')])
+    _, operands = gh_arguments(plain[2:], texts | files | GH_OTHER_VALUES[('release', 'create')]
+                               | GH_REPOSITORY)
     return operands[1:]
 
 
@@ -1377,7 +1770,8 @@ def note_gh_text(plain, cwd, git_state):
     command = tuple(plain[:2])
     if command in GH_PUBLISHES:
         texts, files = GH_PUBLISHES[command]
-        pairs, operands = gh_arguments(plain[2:], texts | files | GH_OTHER_VALUES.get(command, set()))
+        pairs, operands = gh_arguments(plain[2:], texts | files | GH_OTHER_VALUES.get(command, set())
+                                       | GH_REPOSITORY)
         values = [value for option, value in pairs if option in texts]
         names = [value for option, value in pairs if option in files]
         gist_files = []
@@ -1389,11 +1783,39 @@ def note_gh_text(plain, cwd, git_state):
         elif command == ('gist', 'edit'):
             names += operands[1:2]  # the first is the gist
             gist_files = [value for option, value in pairs if option in files]
+        elif command == ('gist', 'rename'):
+            gist_files = operands[2:3]
+        elif command == ('variable', 'set'):
+            values += operands[:1]
+            if not any(option in texts | files for option, _ in pairs):
+                names.append('-')
         elif command[0] == 'label':
             values += operands[:1]
         elif command in (('release', 'create'), ('repo', 'create'), ('repo', 'rename')):
             # A release's tag, and a repository's name, are public too.
             values += operands[:1]
+            sources = [value for option, value in pairs if option in ('--source', 's')]
+            if command == ('repo', 'create') and not operands and sources:
+                # With no name, gh names it after the source folder (gh repo
+                # create --help): its path as written (filepath.Abs), and,
+                # where a link leads elsewhere, where it leads too.
+                source = os.path.expanduser(sources[-1])
+                if literal_text(sources[-1], git_state) is None:
+                    deny(PUBLISHED_EXPANSION)
+                if cwd is None and not os.path.isabs(source):
+                    deny(SOURCE_FOLDER)
+                try:
+                    path = os.path.join(cwd or '', source)
+                    for folder in (os.path.normpath(path), os.path.realpath(path)):
+                        values.append(os.fsencode(os.path.basename(folder)).decode())
+                except (ValueError, UnicodeError):
+                    deny(SOURCE_FOLDER)  # no folder can have that name
+        # A value option gh takes but the guard reads as a switch (--jq,
+        # --template) would leave the text it hides an operand, so every
+        # operand the shell gives as written is read too, but a gist's
+        # files, which gh shows under their base names only.
+        values += [operand for operand in operands if operand not in gist_files
+                   and literal_text(operand, git_state) is not None]
         note_published(git_state, 'gh ' + ' '.join(command), values, names, cwd)
         # A gist shows each file it is given under that file's name.
         note_published(git_state, 'gh ' + ' '.join(command) + ' file name',
@@ -1450,7 +1872,19 @@ def parsed_url(word):
         url = urlsplit(word if '://' in word else 'https://' + word)
         # API clients normally remove literal dot segments before sending.
         url = url._replace(path=posixpath.normpath(url.path))
-        return url, (url.hostname or '').lower()
+        # curl decodes %-escapes in the host (api%2egithub.com), and a
+        # trailing dot names the same host. With IDN support (libidn2,
+        # UTS #46) it also maps fullwidth, squared and subscript letters
+        # and other full stops (U+3002, U+FF0E) to the ASCII host: NFKC and
+        # case folding as the current Unicode has them, then the idna codec.
+        host = unquote(url.hostname or '')
+        if not host.isascii():
+            host = unicodedata.normalize('NFKC', unicodedata.normalize('NFKC', host).casefold())
+            try:
+                host = host.encode('idna').decode('ascii')
+            except UnicodeError:
+                pass  # not a name IDNA can map (an empty label): read as written
+        return url, host.lower().rstrip('.')
     except ValueError:
         return None, ''  # not an address, for example reviewers[]=name
 
@@ -1913,28 +2347,49 @@ def inspectable_here_documents(command):
     return ''.join(output)
 
 
-def changed_directory(cwd, destination, environment=None):
+def cd_options(operands):
+    """cd's options (bash's -L, -P, -e and -@, zsh's -q and -s), then --:
+    whether it reads a link's .. where the link leads (the last of -L and
+    -P), and the words after them. cd - goes to the folder before, which
+    is unknown."""
+    letters = ''
+    while operands and re.fullmatch(r'-[LPe@qs]+', operands[0]):
+        letters += operands[0][1:]
+        operands = operands[1:]
+    if operands[:1] == ['--']:
+        operands = operands[1:]
+    return letters.rfind('P') > letters.rfind('L'), operands
+
+
+def changed_directory(cwd, destination, environment=None, physical=True):
     """The folder a cd, -C or chdir to destination reaches from cwd, or None
-    when the guard cannot tell: the shell builds destination, or cwd is
-    unknown. Given the shell's environment, a folder in a config folder
-    named through $HOME or $XDG_CONFIG_HOME is followed all the same, so
-    a relative read from it is placed (reaches_list); any other folder the
-    shell builds stays unknown, as git commands there are refused."""
-    if '$' in destination or '`' in destination:
-        if environment is None:
-            return None
-        expanded = with_config_variables(destination, environment)
-        if expanded is None:
-            return None
-        expanded = os.path.expanduser(expanded)
-        if not os.path.isabs(expanded) and cwd is None:
-            return None
-        reached = os.path.join(cwd or '', expanded)
-        return reached if in_config_folder(reached) else None
-    destination = os.path.expanduser(destination)
-    if os.path.isabs(destination):
-        return destination
-    return os.path.join(cwd, destination) if cwd is not None else None
+    when the guard cannot tell: the shell builds destination otherwise than
+    from ~, ~+, $HOME, $XDG_CONFIG_HOME or $PWD (expanded from the
+    shell's environment, or the hook's when it has none), or cwd is
+    unknown. ~- and cd - name the folder before the last cd, which the
+    guard does not follow."""
+    if destination == '-':
+        return None
+    try:
+        destination = expanded_tilde(destination, environment, cwd)
+        if destination is not None and ('$' in destination or '`' in destination):
+            destination = with_config_variables(destination, environment, cwd)
+    except (ValueError, UnicodeError):
+        return None
+    if destination is None:
+        return None
+    if not os.path.isabs(destination) and cwd is None:
+        return None
+    # As chdir (git -C, env -C, cd -P) reaches it, through links, or as
+    # the shell's cd reaches it by default, by name (link/.. is the
+    # folder link is in). Either way sub/.. is the folder itself, so the
+    # folders a script's cd lines reach stay few however many ways it
+    # reaches them.
+    try:
+        path = os.path.join(cwd or '', destination)
+        return os.path.realpath(path) if physical else os.path.normpath(path)
+    except (ValueError, UnicodeError, OSError):
+        return None
 
 
 def here_document_text(body, quoted):
@@ -2005,10 +2460,26 @@ def published_files(filename, cwd, git_state=None):
         metadata = os.stat(path)
         if not stat.S_ISREG(metadata.st_mode) or metadata.st_size > 1024 * 1024:
             deny(PUBLISHED_FILE)
-        with open(path, encoding='utf-8', errors='replace') as file:
-            return [file.read()]
+        with open(path, 'rb') as file:
+            data = file.read()
     except OSError:
         deny(PUBLISHED_FILE)
+    return decoded_texts(data)
+
+
+def decoded_texts(data):
+    """A file's text as each encoding it may be read in: UTF-8, or, when
+    it is not, also Windows-1252 and Latin-1 (git commit -F with
+    i18n.commitEncoding keeps a message's bytes as they are), and UTF-16
+    when it starts with a byte order mark."""
+    texts = []
+    if data[:2] in (b'\xff\xfe', b'\xfe\xff'):
+        texts.append(data.decode('utf-16', errors='replace'))
+    try:
+        return texts + [data.decode('utf-8')]
+    except UnicodeDecodeError:
+        return texts + [data.decode('utf-8', errors='replace'),
+                        data.decode('cp1252', errors='replace'), data.decode('latin-1')]
 
 
 def literal_words(command):
@@ -2122,10 +2593,10 @@ def note_published(git_state, label, values=(), files=(), cwd=None, texts=()):
 
 def effective_directory(context):
     """The directory a git command runs in, after its -C options."""
-    cwd, options, _ = context
+    cwd, options, environment = context
     for index, option in enumerate(options[:-1]):
         if option == '-C' and cwd is not None:
-            cwd = changed_directory(cwd, options[index + 1])
+            cwd = changed_directory(cwd, options[index + 1], environment)
     return cwd
 
 
@@ -2147,6 +2618,9 @@ def commit_options(args):
                 elif index + 1 < len(args):
                     index += 1
                     pairs.append((option, args[index]))
+            elif option in COMMIT_NEGATIONS:
+                # --no-author undoes an earlier --author, and so on.
+                pairs = [pair for pair in pairs if pair[0] not in COMMIT_NEGATIONS[option]]
         elif arg.startswith('-'):
             for offset, letter in enumerate(arg[1:], 1):
                 if letter in COMMIT_VALUE_SHORT:
@@ -2225,38 +2699,210 @@ def note_commit(git_state, args, context, paths):
         if signed and literal_text(author, git_state) is not None:
             identities.append((directory, signed[1], signed[2], 'the commit author'))
         else:
-            # Not Name <address>: git looks for an author it has seen.
+            # Not Name <address>: git takes the identity of the latest
+            # commit whose author matches it, ignoring case, from every ref
+            # (git commit --help; builtin/commit.c, find_author_by_nickname).
             note_published(git_state, 'the commit author', [author])
+            # A ref, a setting or a file (.mailmap) an earlier command in
+            # this call changes may change whom it finds.
+            earlier = (git_state.get('refs_moved') or git_state.get('config_changed')
+                       or ('a command that writes a file' if git_state.get('writes')
+                           or git_state.get('changes') else None))
+            if earlier:
+                deny(REUSED_EARLIER.format(command=earlier))
+            found = git(context, 'log', '-1', '--all', '-i', '--encoding=UTF-8',
+                        '--author=' + author, '--format=%aN%x00%aE')
+            if not found or '\0' not in found:
+                deny(AUTHOR_PATTERN)
+            name, address = found.split('\0', 1)
+            identities.append((directory, name, address, 'the commit author'))
     git_state.setdefault('commits', []).append(
         (directory, [*adds, *((directory, path, False) for path in paths)]))
 
 
+def git_moves(subcommand, args):
+    """What a git command can change that a later commit in the same call
+    takes, as (head, refs, picks): whether it can move HEAD or leave a
+    merge message (MERGE_MSG, SQUASH_MSG) for the next commit; whether it
+    can move another ref a commit may name (a remote branch, a tag, a
+    stash, a note under --all, a reflog entry); and whether it can stop
+    with a picked commit's author pending (CHERRY_PICK_HEAD). Reads (git
+    branch --show-current, tag -l, stash list, remote -v) and path
+    checkouts (checkout --theirs a, checkout main -- a) move nothing."""
+    operands = [arg for arg in args if not arg.startswith('-')]
+    before = args[:args.index('--')] if '--' in args else args
+    if subcommand in HEAD_MOVERS:
+        # Only a cherry-pick that stops leaves its commit's author for the
+        # next commit (CHERRY_PICK_HEAD); a rebase, a pull or an am that
+        # stops does not (REBASE_HEAD).
+        return True, True, subcommand == 'cherry-pick' and not picks_nothing(args)
+    if subcommand in ('checkout', 'switch'):
+        # A checkout of paths (a path after --, or --ours, --theirs or
+        # --patch) leaves HEAD and the reflog as they are. Making a branch
+        # at HEAD leaves HEAD's commit, but adds a reflog entry (HEAD@{1}).
+        paths = subcommand == 'checkout' and (
+            ('--' in args and args[args.index('--') + 1:])
+            or {'--ours', '--theirs', '--patch', '-p'} & set(args))
+        if paths:
+            return False, False, False
+        return not leaves_files(subcommand, args), True, False
+    if subcommand == 'fetch':
+        # Only with -u (--update-head-ok) may it move the checked-out branch.
+        return any(re.fullmatch(r'-[a-zA-Z46]*u.*', arg) or (
+            len(arg) >= len('--update-h') and '--update-head-ok'.startswith(arg))
+            for arg in before), True, False
+    if subcommand == 'reset':
+        # Any reset of the branch sets ORIG_HEAD and a reflog entry; one
+        # of paths (after --, or -p) moves nothing.
+        if ('--' in args and args[args.index('--') + 1:]) or {'-p', '--patch'} & set(args):
+            return False, False, False
+        return any(not arg.startswith('-') for arg in before), True, False
+    if subcommand == 'symbolic-ref':
+        moves = len(operands) >= 2 or bool({'-d', '--delete'} & set(args))
+        return moves, moves, False
+    if subcommand == 'replace':
+        moves = bool(operands) and not REF_READS['replace'] & set(args)
+        return moves, moves, False
+    if subcommand == 'reflog':
+        # git reflog [show] reads; delete, expire and drop take entries out.
+        return False, operands[:1] in (['delete'], ['expire'], ['drop']), False
+    if subcommand in ('branch', 'tag'):
+        lists = any(arg.partition('=')[0] in LISTS[subcommand]
+                    or (subcommand == 'tag' and re.fullmatch(r'-n\d*', arg)) for arg in args)
+        # An upstream option changes what @{u} names, with no operand.
+        upstream = subcommand == 'branch' and any(
+            arg.partition('=')[0] in ('-u', '--set-upstream-to', '--unset-upstream', '--track')
+            or re.fullmatch(r'-[a-zA-Z]*u.*', arg) for arg in args)
+        return False, upstream or (bool(operands) and not lists), False
+    if subcommand in REF_READS:
+        reads = REF_READS[subcommand]
+        if reads is None:
+            return False, True, False
+        if subcommand == 'remote':
+            words = [arg for arg in args if arg not in ('-v', '--verbose')]
+            return False, bool(words) and words[0] not in reads, False
+        if subcommand == 'replace':
+            return False, bool(args) and args[0] not in reads, False
+        return False, not (operands[:1] and operands[0] in reads) and not (
+            subcommand in ('notes', 'remote') and not args), False
+    return False, False, False
+
+
+def picks_nothing(args):
+    """Whether a cherry-pick is given -n (--no-commit), which leaves no
+    picked commit's author pending: in a cluster before a letter that takes
+    a value (-Xminimal is a strategy option), or as any beginning of
+    --no-commit that names it alone; the last of it and --commit wins."""
+    nothing = False
+    for arg in args:
+        if arg == '--':
+            break
+        if arg.startswith('--'):
+            name = arg.partition('=')[0]
+            if len(name) >= len('--no-co') and '--no-commit'.startswith(name):
+                nothing = True
+            elif len(name) >= len('--com') and '--commit'.startswith(name):
+                nothing = False
+        elif arg.startswith('-'):
+            for letter in arg[1:]:
+                if letter in 'mXS':
+                    break  # the rest of the word is its value
+                if letter == 'n':
+                    nothing = True
+    return nothing
+
+
+def commit_switches(args):
+    """The long options a git commit is given that take no value
+    (--amend, --reset-author), read as commit_options reads values, so
+    an option's value (-m --amend) is never one."""
+    switches, index = [], 0
+    while index < len(args):
+        arg = args[index]
+        if arg == '--':
+            break
+        if arg.startswith('--'):
+            option, equal, _ = arg.partition('=')
+            if option in COMMIT_VALUE_LONG:
+                index += 0 if equal else 1
+            elif option == '--no-amend':
+                switches = [switch for switch in switches if switch != '--amend']
+            else:
+                switches.append(option)
+        elif arg.startswith('-') and arg != '-':
+            for offset, letter in enumerate(arg[1:], 1):
+                if letter in COMMIT_VALUE_SHORT:
+                    if not arg[offset + 1:] and letter != 'S':
+                        index += 1
+                    break
+        index += 1
+    return switches
+
+
 def note_reused_commit(git_state, args, pairs, context, directory):
-    """Remember what a commit takes from another one: -C and -c its
-    message and author, --fixup and --squash its message (whose subject
-    they quote), and --amend the last commit's message when given none,
-    and its author. --reset-author takes the author from git's settings
-    instead (git commit --help)."""
-    messages = {'-m', '--message', '-F', '--file', '-C', '-c', '--reuse-message',
-                '--reedit-message', '--fixup', '--squash'}
-    keeps_author = '--reset-author' not in args
+    """Remember what a commit takes from another one, as git commit does
+    (builtin/commit.c): -C and -c its message and author, --fixup and
+    --squash its message (whose subject they quote), --amend the last
+    commit's author, and its message unless it is given one (--squash
+    keeps it, --fixup takes nothing from it); with no message, a pending
+    MERGE_MSG or SQUASH_MSG; and during a cherry-pick, the picked
+    commit's author. The last of --reset-author and --no-reset-author
+    decides whether an author is reused, and --author replaces it."""
+    switches = commit_switches(args)
+    options = {option for option, _ in pairs}
+    resets = [switch for switch in switches if switch in ('--reset-author', '--no-reset-author')]
+    keeps_author = '--author' not in options and resets[-1:] != ['--reset-author']
+    reuses = options & {'-C', '-c', '--reuse-message', '--reedit-message'}
+    messages = reuses | (options & {'-m', '--message', '-F', '--file'})
     reused = []
     for option, value in pairs:
-        if option in ('-C', '-c', '--reuse-message', '--reedit-message'):
+        if option in reuses:
             reused.append((value, keeps_author))
         elif option in ('--fixup', '--squash'):
             # --fixup=amend:<commit> and reword:<commit> take its message.
             reused.append((re.sub(r'^(?:amend|reword):', '', value), False))
-    if '--amend' in args:
-        if not any(option in messages for option, _ in pairs):
+    if '--amend' in switches and not reuses and '--fixup' not in options:
+        if not messages:
             reused.append(('HEAD', keeps_author))
         elif keeps_author:
             reused.append(('HEAD', None))  # the author alone
+    # --amend takes HEAD's message, never a pending one.
+    pending = not messages and '--fixup' not in options and '--amend' not in switches
+    # The guard reads them before the call runs: an earlier command in it
+    # that moves HEAD, another ref, or writes in git's folder changes what
+    # this commit takes, and a setting what @{u} names. A full hash names
+    # the same commit either way.
+    written = 'a command that writes in git\'s folder' if writes_git_folder(
+        git_state, context) else None
+    head = git_state.get('head_moved') or written
+    refs = git_state.get('refs_moved') or written
+    for revision, _ in reused:
+        moved = head if revision == 'HEAD' else refs
+        if VOLATILE_REVISION.search(revision):
+            moved = moved or git_state.get('config_changed')
+        if moved and not FULL_HASH.fullmatch(revision):
+            deny(REUSED_EARLIER.format(command=moved))
+    if head and (pending or (keeps_author and git_state.get('picked'))):
+        deny(REUSED_EARLIER.format(command=head))
+    if keeps_author and git(context, 'rev-parse', '-q', '--verify', 'CHERRY_PICK_HEAD'):
+        reused.append(('CHERRY_PICK_HEAD', None))
+    if pending or '--squash' in options:
+        for name in ('MERGE_MSG', 'SQUASH_MSG') if pending else ('SQUASH_MSG',):
+            path = git(context, 'rev-parse', '--git-path', name)
+            if not path or directory is None:
+                continue
+            path = os.path.join(directory, path)
+            # Read before the call runs, so one its commands write is refused.
+            git_state.setdefault('read_files', []).append((directory, path))
+            if os.path.isfile(path):
+                note_published(git_state, 'the pending commit message',
+                               files=[path], cwd=directory)
     for revision, author in reused:
         if literal_text(revision, git_state) is None:
             deny(PUBLISHED_EXPANSION)
-        found = git(context, 'log', '-1', '--format=%an%x00%ae%x00%B', '--end-of-options',
-                    revision, '--')
+        # In UTF-8, whatever log encoding the command or the repository sets.
+        found = git(context, 'log', '-1', '--encoding=UTF-8',
+                    '--format=%an%x00%ae%x00%B', '--end-of-options', revision, '--')
         if found is None or found.count('\0') < 2:
             deny(REUSED_COMMIT)
         name, address, message = found.split('\0', 2)
@@ -2265,6 +2911,25 @@ def note_reused_commit(git_state, args, pairs, context, directory):
         if author is not False:
             git_state.setdefault('identities', []).append(
                 (directory, name, address, 'the commit author'))
+
+
+def writes_git_folder(git_state, context):
+    """Whether an earlier command in the call writes a file the guard
+    cannot place, or one in the repository's git folder (a ref, HEAD,
+    MERGE_MSG, a reflog), which changes what a commit reuses."""
+    writes = [write for write in git_state.get('writes', ()) if write[1] != INLINE_CODE]
+    if not writes:
+        return False
+    folders = git(context, 'rev-parse', '--path-format=absolute', '--git-dir', '--git-common-dir')
+    if folders is None:
+        return True
+    places = {os.path.realpath(folder) for folder in folders.splitlines() if folder}
+    for cwd, path in writes:
+        paths = changed_paths(cwd, path)
+        if paths is None or any(one == place or one.startswith(place.rstrip(os.sep) + os.sep)
+                                for one in paths for place in places):
+            return True
+    return False
 
 
 def check_push_hook(options, context):
@@ -2314,12 +2979,32 @@ def inline_code(args, cwd=None):
     return not [arg for arg in args if not arg.startswith('-')]
 
 
-def note_writes(git_state, words, raw_words, unwrapped, shell_cwd, cwd):
+# Inline code that names nothing of git's (git, HEAD, refs): it may write
+# any file, but not, by mistake, one in git's folder.
+INLINE_CODE = '\0inline code'
+CODE_NAMES_GIT = re.compile(r'(?i:git)|HEAD|refs')
+
+
+def inline_code_text(args, stdin=None):
+    """The code an interpreter is given on its command line (-c, -e) or
+    in its own here-document, or None when the guard cannot read it."""
+    for index, arg in enumerate(args):
+        if arg == '-':
+            break
+        if arg in ('--eval', '--print') or re.fullmatch(r'-[a-zA-Z]*[ceEp]', arg):
+            return args[index + 1] if index + 1 < len(args) else None
+    if stdin is None or HERE_DOCUMENTS[stdin]['built']:
+        return None
+    return HERE_DOCUMENTS[stdin]['text']
+
+
+def note_writes(git_state, words, raw_words, unwrapped, shell_cwd, cwd, stdin=None):
     """Remember the files a command writes, as (directory, path), with None
     for a path the guard cannot name: the shell's > and >> targets, the
     files tee, cp, mv and the like are given, sed -i and perl -i, dd of=,
     curl and wget downloads, and a patch or an interpreter's inline code,
-    which may write anything."""
+    which may write anything (INLINE_CODE where it names nothing of git's).
+    stdin is the here-document the command reads."""
     writes = git_state.setdefault('writes', [])
     aligned = len(raw_words) == len(words)
     for index, word in enumerate(words[:-1]):
@@ -2372,8 +3057,11 @@ def note_writes(git_state, words, raw_words, unwrapped, shell_cwd, cwd):
             # It saves what it fetches under the last part of the address.
             paths = [posixpath.basename(parsed_url(arg)[0].path) or 'index.html'
                      for arg in operands if parsed_url(arg)[1] and '.' in parsed_url(arg)[1]]
-    elif program == 'patch' or (INTERPRETERS.fullmatch(program) and inline_code(args, cwd)):
+    elif program == 'patch':
         paths = [None]
+    elif INTERPRETERS.fullmatch(program) and inline_code(args, cwd):
+        code = inline_code_text(args, stdin)
+        paths = [INLINE_CODE if code is not None and not CODE_NAMES_GIT.search(code) else None]
     elif program in FILE_CHANGERS:
         # A mode or a removal changes no file's text, but can turn a hook off.
         git_state.setdefault('changes', []).extend((cwd, path) for path in operands)
@@ -2383,7 +3071,7 @@ def note_writes(git_state, words, raw_words, unwrapped, shell_cwd, cwd):
 def resolved(cwd, path):
     """A path as an absolute one, or None when the guard cannot tell where
     it is: the shell builds it, or its directory is unknown."""
-    if path is None or '$' in path or '`' in path:
+    if path is None or path == INLINE_CODE or '$' in path or '`' in path:
         return None
     path = os.path.expanduser(path)
     if not os.path.isabs(path) and cwd is None:
@@ -2513,7 +3201,7 @@ def changed_paths(cwd, path):
     (a glob's matches, before the command runs), or None when the guard
     cannot tell: the shell builds it, a brace expands it, or its folder is
     unknown."""
-    if path is None or re.search(r'\{[^}]*(?:,|\.\.)[^}]*\}', path):
+    if path in (None, INLINE_CODE) or re.search(r'\{[^}]*(?:,|\.\.)[^}]*\}', path):
         return None
     absolute = resolved(cwd, path)
     if absolute is None:
@@ -2583,7 +3271,7 @@ def check_written(git_state):
         deny(WRITTEN_FILE)
 
 
-def declared(args, inherited):
+def declared(args, inherited, here=None):
     """The environment after declare, typeset, local or readonly: an
     assignment changes it as a bare one does, -x exports, and +x takes the
     export away. Other attributes (-n, -a, -i, -l, -u) change what a value
@@ -2597,6 +3285,8 @@ def declared(args, inherited):
         if arg in options:
             continue
         key, equal, value = arg.partition('=')
+        if equal and ASSIGNMENT.match(arg):
+            key, value = assignment(arg, updates, here)
         if not context_variable(key):
             continue
         if set(letters) - set('xgr'):
@@ -2604,7 +3294,7 @@ def declared(args, inherited):
         if any(option.startswith('+') for option in options):
             updates[key] = None
         elif equal:
-            if '$' in value or '`' in value:
+            if '$' in value or '`' in value or '\0' in value:
                 deny(UNKNOWN)
             updates[key] = value
         elif 'x' in letters:
@@ -2631,12 +3321,23 @@ def prints_environment(words, unwrapped):
     return program == 'set' and not args
 
 
+def names_list(command):
+    """Whether a command names the private list, its folder or a config
+    folder that holds it, as written or with its braces expanded
+    (cat ~/.config/{,}b*/*)."""
+    expanded = re.sub(r'\S+', lambda match: ' '.join(
+        brace_expansions(match[0]) if len(match[0]) <= 1024 else (match[0],)), command)
+    return any(LIST_REFERENCE.search(text) or names_list_glob(text) or names_config_folder(text)
+               for text in dict.fromkeys([command, expanded]))
+
+
 def names_list_glob(command):
     """Whether a glob could name the private list's file: a pattern for a
     folder in a config folder that brickson matches, followed by nothing or
-    by a name that private-words.txt matches."""
+    by a name that private-words.txt matches. Case does not count: the
+    Mac's file system finds ~/.config/Brickson at ~/.config/brickson."""
     for match in CONFIG_FOLDER.finditer(command):
-        folder, name = match[1], match[2]
+        folder, name = match[1].casefold(), (match[2] or '').casefold()
         if (any(char in folder for char in '*?[') and fnmatch.fnmatchcase('brickson', folder)
                 and (not name or fnmatch.fnmatchcase('private-words.txt', name))):
             return True
@@ -2659,36 +3360,114 @@ def config_folders(environment=None):
 
 def check_file_tool(name, arguments, cwd):
     """Refuse a file tool that opens, changes or searches the private list
-    or its folder, wherever the checker reads the list from: the Read and
-    Edit deny rules name only the default folder. Grep reads every file
-    under its path, so it is refused a folder that holds the list too."""
+    or its folder, wherever the checker reads the list from, in any case:
+    the Read and Edit deny rules name only the default folder, and the
+    Mac's file system does not tell ~/.config/Brickson from it. Grep reads
+    every file under its path, so it is refused a folder that holds the
+    list too. A path no file can have (a NUL byte) is left to the tool."""
     for key in FILE_TOOLS[name]:
         value = arguments.get(key)
         if not isinstance(value, str) or not value:
             if name != 'Grep':
                 continue
             value = cwd  # Grep searches the folder it runs in
-        path = os.path.realpath(os.path.join(cwd, os.path.expanduser(value)))
+        try:
+            path = os.path.realpath(os.path.join(cwd, os.path.expanduser(value))).casefold()
+        except (ValueError, UnicodeError):
+            continue
         for config in config_folders():
+            config = config.casefold()
             folder = os.path.join(config, 'brickson')
             if (path in (config, folder) or path.startswith(folder + os.sep)
                     or (name == 'Grep' and folder.startswith(path.rstrip(os.sep) + os.sep))):
                 deny(LIST_READ)
 
 
-CONFIG_VARIABLE = re.compile(r'\$(?:\{(HOME|XDG_CONFIG_HOME)\}|(HOME|XDG_CONFIG_HOME)(?![A-Za-z0-9_]))')
+CONFIG_VARIABLE = re.compile(r'\$(?:\{(HOME|XDG_CONFIG_HOME|PWD)\}'
+                             r'|(HOME|XDG_CONFIG_HOME|PWD)(?![A-Za-z0-9_]))')
 
 
-def with_config_variables(text, environment=None):
-    """text with $HOME and $XDG_CONFIG_HOME as the shell would expand them
-    (a variable this command sets or unsets first included), or None when
-    the shell builds any other part of it, or one of them is unset."""
+def variable_value(name, environment=None):
+    """The value the shell gives $name: as an earlier command or this one
+    set it (environment), else the hook's own; None when it is unset or
+    the shell built it. An assignment's own $HOME, $XDG_CONFIG_HOME and
+    leading ~ were the shell's values before it (HOME=~/x), the hook's."""
     environment = environment or {}
+    value = environment[name] if name in environment else os.environ.get(name)
+    if not value:
+        return None
+    if name in environment:
+        def earlier(match):
+            name = match[1] or match[2]
+            return '\0' if name == 'PWD' else os.environ.get(name) or '\0'
+        value = CONFIG_VARIABLE.sub(earlier, value)
+        if value == '~' or value.startswith('~/'):
+            value = (os.environ.get('HOME') or '\0') + value[1:]
+    if '\0' in value or '$' in value or '`' in value:
+        return None
+    return value
+
+
+DEFAULT_EXPANSION = re.compile(r'\$\{(HOME|XDG_CONFIG_HOME|PWD)(:?[-+=?])')
+
+
+def with_defaults(text, environment=None, here=None):
+    """text with each ${NAME:-word}, ${NAME-word}, ${NAME:+word} and the
+    like of HOME, XDG_CONFIG_HOME and PWD as the shell gives it: NAME's
+    value where it is set, else the word, itself expanded (an unset or
+    empty value counts as unset); None where the guard cannot tell (a
+    value the shell builds, a ${NAME:?} on an unset one, no closing }).
+    The XDG idiom "${XDG_CONFIG_HOME:-$HOME/.config}" names the folder."""
+    parts, index = [], 0
+    while (match := DEFAULT_EXPANSION.search(text, index)):
+        depth, end = 1, match.end()
+        while end < len(text) and depth:
+            if text[end] == '{' and text[end - 1] == '$':
+                depth += 1
+            elif text[end] == '}':
+                depth -= 1
+            end += 1
+        if depth:
+            return None
+        name, operation, word = match[1], match[2].lstrip(':'), text[match.end():end - 1]
+        given = environment[name] if environment and name in environment else os.environ.get(name)
+        value = here if name == 'PWD' else variable_value(name, environment)
+        if name == 'PWD':
+            given = here
+        if given and value is None:
+            return None  # set, to a value the shell builds
+        if word.startswith('~'):
+            word = expanded_tilde(word, environment, here)
+        if word is not None and ('$' in word or '`' in word):
+            word = with_config_variables(word, environment, here)
+        if operation == '+':
+            result = word if given else ''
+        elif given:
+            result = value
+        else:
+            result = None if operation == '?' else word
+        if result is None:
+            return None
+        parts += [text[index:match.start()], result]
+        index = end
+    return ''.join(parts) + text[index:]
+
+
+def with_config_variables(text, environment=None, here=None):
+    """text with $HOME and $XDG_CONFIG_HOME as the shell would expand them
+    (a variable this command sets or unsets first included, and their
+    default forms, with_defaults), and $PWD as the folder the command runs
+    in (here), or None when the shell builds any other part of it, or one
+    of them is unset or unknown."""
+    if DEFAULT_EXPANSION.search(text):
+        text = with_defaults(text, environment, here)
+        if text is None:
+            return None
     missing = []
 
     def value(match):
         name = match[1] or match[2]
-        found = environment[name] if name in environment else os.environ.get(name)
+        found = here if name == 'PWD' else variable_value(name, environment)
         if not found:
             missing.append(name)
         return found or ''
@@ -2698,10 +3477,198 @@ def with_config_variables(text, environment=None):
     return text
 
 
+def tilde_home(environment=None):
+    """The folder ~ names: HOME as the shell has it, or, when HOME is
+    unset, the account's home, which bash takes from the password
+    database. None when the shell builds HOME."""
+    environment = environment or {}
+    unset = (environment['HOME'] is None) if 'HOME' in environment else (
+        os.environ.get('HOME') is None)
+    if not unset:
+        return variable_value('HOME', environment)
+    try:
+        return pwd.getpwuid(os.getuid()).pw_dir if pwd else None
+    except (KeyError, OSError):
+        return None
+
+
+def assigned_value(value, environment=None, here=None):
+    """HOME's or XDG_CONFIG_HOME's value as the shell assigns it: a ~ at
+    its start or after a :, ~+, $PWD, $HOME and $XDG_CONFIG_HOME expanded
+    from the folder the assignment runs in (here) and the values before
+    it, and a NUL in place of a part the guard cannot tell, so that
+    variable_value reads the whole value as unknown."""
+    parts = []
+    for part in value.split(':'):
+        try:
+            if part.startswith('~'):
+                part = expanded_tilde(part, environment, here)
+            if part is not None and ('$' in part or '`' in part):
+                part = with_config_variables(part, environment, here)
+        except (ValueError, UnicodeError):
+            part = None
+        parts.append('\0' if part is None else part)
+    return ':'.join(parts)
+
+
+def expanded_tilde(text, environment=None, here=None):
+    """text with a leading ~ expanded as the shell would: ~ and ~/ to the
+    HOME it sees, ~+ to the folder the command runs in (here), ~user to
+    that user's home. None when the shell's value is unknown: ~- is the
+    folder before the last cd, which the guard does not follow."""
+    if not text.startswith('~'):
+        return text
+    prefix, slash, rest = text.partition('/')
+    if prefix == '~':
+        home = tilde_home(environment)
+    elif prefix == '~+':
+        home = here
+    elif prefix == '~-':
+        home = None
+    else:
+        home = os.path.expanduser(prefix)
+        if home == prefix:
+            return text  # no such user: the shell keeps the word as it is
+    if home is None:
+        return None
+    return home + slash + rest
+
+
+BRACE_SEQUENCE = re.compile(r'(-?\d+)\.\.(-?\d+)(?:\.\.-?\d+)?|([A-Za-z])\.\.([A-Za-z])(?:\.\.-?\d+)?')
+# How many words, how long a word and how much text in all the guard
+# expands braces in. No path is longer, and a mistake makes far fewer.
+BRACE_LIMIT = 1024
+BRACE_LENGTH = 65536
+BRACE_TEXT = 1 << 21
+
+
+def unquoted_characters(word):
+    """Whether each character of word is outside quotes and not escaped,
+    where the shell expands braces."""
+    active, quote, escaped = [], None, False
+    for char in word:
+        if escaped:
+            escaped = False
+            active.append(False)
+        elif quote:
+            active.append(False)
+            if char == quote:
+                quote = None
+            elif char == '\\' and quote == '"':
+                escaped = True
+        elif char == '\\':
+            escaped = True
+            active.append(False)
+        elif char in '\'"':
+            quote = char
+            active.append(False)
+        else:
+            active.append(True)
+    return active
+
+
+def brace_once(word):
+    """word with its first brace expression ({a,b} or {a..c}) expanded, as
+    the words bash makes of it, or None when it has none. Braces in quotes
+    or escaped are text, and ${ starts a variable; so is one with a space
+    in it, which the shell's word can only hold from a quote. A range of
+    numbers too long for the shell's integers gives nothing: no digit is a
+    letter of a path the guard looks for."""
+    active = unquoted_characters(word)
+    for start, char in enumerate(word):
+        if char != '{' or not active[start] or (start and word[start - 1] == '$'):
+            continue
+        depth, commas = 0, []
+        for index in range(start, len(word)):
+            if not active[index]:
+                continue
+            if word[index] == '{':
+                depth += 1
+            elif word[index] == '}':
+                depth -= 1
+                if not depth:
+                    break
+            elif word[index] == ',' and depth == 1:
+                commas.append(index)
+            elif word[index] in ' \t\n':
+                break  # the shell split there, or a quote held it
+        else:
+            continue  # no closing brace: the shell keeps the word
+        if word[index] != '}':
+            continue
+        prefix, body, suffix = word[:start], word[start + 1:index], word[index + 1:]
+        if commas:
+            edges = [start] + commas + [index]
+            return [prefix + word[left + 1:right] + suffix for left, right in zip(edges, edges[1:])]
+        sequence = BRACE_SEQUENCE.fullmatch(body)
+        if sequence and sequence[1] is not None and max(map(len, sequence.group(1, 2))) > 19:
+            continue
+        if sequence and sequence[1] is not None:
+            low, high = int(sequence[1]), int(sequence[2])
+            step = 1 if high >= low else -1
+            # bash pads every number as wide as a padded end ({01..10}).
+            width = max(len(sequence[1]), len(sequence[2])) if any(
+                re.fullmatch(r'-?0\d+', end) for end in sequence.group(1, 2)) else 0
+            # Far past the limit, the first numbers stand for the rest.
+            numbers = range(low, high + step, step)[:BRACE_LIMIT + 1]
+            return [prefix + str(number).zfill(width) + suffix for number in numbers]
+        if sequence:
+            low, high = sorted((ord(sequence[3]), ord(sequence[4])))
+            return [prefix + chr(code) + suffix for code in range(low, high + 1)]
+    return None
+
+
+@functools.lru_cache(maxsize=4096)
+def brace_expansions(word):
+    """The words bash makes of word's brace expressions, nested ones
+    included (cat ~/.{config,x}/b*/*): word itself when it has none. A
+    word longer than any path, or one that makes more than BRACE_LIMIT
+    words or BRACE_TEXT characters (a long JSON body), is read as far as
+    the limit reaches, and as it is written."""
+    if '{' not in word or len(word) > BRACE_LENGTH:
+        return [word]
+    pending, done, seen, text = [word], [], {word}, len(word)
+    while pending:
+        current = pending.pop()
+        expanded = brace_once(current)
+        if expanded is None:
+            done.append(current)
+            continue
+        for item in reversed(expanded):
+            if item not in seen:
+                seen.add(item)
+                pending.append(item)
+                text += len(item)
+        if len(seen) > BRACE_LIMIT or text > BRACE_TEXT:
+            return tuple(dict.fromkeys(done + pending + [word]))
+    return tuple(done)
+
+
+def word_pieces(word, raw=None):
+    """The words bash makes of one word by brace expansion, expanded in
+    its raw spelling (raw, with its quotes) where the guard has it, so a
+    brace or comma in quotes ('{"a":1,"b":2}') stays text, then unquoted
+    as the shell does. Without it, the shell's word is expanded."""
+    if raw is None:
+        return brace_expansions(word)
+    if '{' not in raw:
+        return (word,)
+    pieces = []
+    for piece in brace_expansions(raw):
+        try:
+            unquoted = shlex.split(piece)
+        except ValueError:
+            return brace_expansions(word)
+        pieces.append(unquoted[0] if len(unquoted) == 1 else piece if unquoted else '')
+    return tuple(dict.fromkeys(pieces))
+
+
+@functools.lru_cache(maxsize=1)
 def list_places():
     """The private list's places, each as its config folder, the list's
     folder and the list's file: at the default config folder and at the
-    one XDG_CONFIG_HOME sets, each as written and as its real path."""
+    one XDG_CONFIG_HOME sets, each as written and as its real path, in
+    the case the Mac's file system ignores (casefolded)."""
     home = os.environ.get('HOME') or os.path.expanduser('~')
     configs = [os.path.join(home, '.config')]
     configured = os.environ.get('XDG_CONFIG_HOME', '')
@@ -2710,67 +3677,128 @@ def list_places():
     places = []
     for config in configs:
         for form in (os.path.normpath(config), os.path.realpath(config)):
+            form = form.casefold()
             folder = os.path.join(form, 'brickson')
             place = (form, folder, os.path.join(folder, 'private-words.txt'))
             if place not in places:
                 places.append(place)
-    return places
+    return tuple(places)
 
 
-def in_config_folder(path):
-    """Whether path is a config folder the list may be in, or inside one."""
-    for candidate in dict.fromkeys([os.path.normpath(path), os.path.realpath(path)]):
-        for config, _, _ in list_places():
-            if candidate == config or candidate.startswith(config + os.sep):
+def placed(text, folder, environment=None):
+    """The path a word names, read from folder as the shell expands it
+    (~, ~+, $HOME, $XDG_CONFIG_HOME, $PWD), or None when the guard cannot
+    tell: the shell builds it otherwise, the folder is unknown, or no path
+    can hold it (a NUL byte, a lone surrogate). Its .. are left for
+    path_reaches_list, which reads them by name and through links."""
+    try:
+        text = expanded_tilde(text, environment, folder)
+        if text is not None:
+            text = with_config_variables(text, environment, folder)
+        if not text or (not os.path.isabs(text) and folder is None):
+            return None
+        path = os.path.join(folder or '', text)
+        os.fsencode(path)
+        return path
+    except (ValueError, UnicodeError):
+        return None
+
+
+@functools.lru_cache(maxsize=65536)
+def path_reaches_list(path, places, logical=False):
+    """Whether path names a config folder the list may be in, the list's
+    folder or its file, or is a glob that could name one of them, with its
+    .. read by name (as cd does) and where a link before it leads (as a
+    program and bash's glob do: cd ~/l && cat ../x), and where its links
+    lead. For a logical cd (logical), only by name, unless no folder has
+    that name or a glob finds it, where bash's cd goes physically. A glob
+    deeper than the list's file names other files."""
+    lexical = os.path.normpath(path)
+    pattern = bool(re.search(r'[*?[]', path))
+    forms = [lexical]
+    try:
+        forms.append(os.path.realpath(lexical))
+        if not logical or pattern or not os.path.isdir(lexical):
+            forms.append(os.path.realpath(path))
+    except (ValueError, UnicodeError, OSError):
+        pass
+    for candidate in dict.fromkeys(form.casefold() for form in forms):
+        if not pattern:
+            if any(candidate in (config, inside) or candidate.startswith(inside + os.sep)
+                   for config, inside, _ in places):
                 return True
+            continue
+        parts = candidate.split(os.sep)
+        # A shell glob matches a leading dot only when it writes one.
+        if any(len(parts) == len(target.split(os.sep)) and all(
+                fnmatch.fnmatchcase(goal, part)
+                and (part.startswith('.') or not goal.startswith('.'))
+                for goal, part in zip(target.split(os.sep), parts))
+               for place in places for target in place):
+            return True
     return False
 
 
-def reaches_list(words, folders, environment=None):
+def reaches_list(words, folders, environment=None, raw_words=None, logical=False):
     """Whether a word of one command names a config folder the list may be
     in, the list's folder or its file, or is a glob that could name one of
-    them, read from the folder the command runs in: after a cd, through
-    .. and through $HOME or $XDG_CONFIG_HOME, which the checks in main
-    cannot follow (cd ~/.config/gh && cat ../b*/*). A glob deeper than
-    the list's file names other files. A recursive read of a folder that
-    holds a config folder (grep -r . ~) is not refused."""
+    them, read from each folder the command may read it from: after a cd,
+    through .., ~, ~+, $HOME, $XDG_CONFIG_HOME and $PWD, braces expanded
+    (in the raw words, with their quotes, where the guard has them), in an
+    option's or an assignment's value, and in each part of an assignment's
+    value that a : starts with ~, or of CDPATH's (CDPATH=:~/.config/gh/..),
+    which the checks in main cannot follow (cd ~/.config/gh && cat
+    ../b*/*). Where the shell builds HOME or XDG_CONFIG_HOME, the hook's
+    stand in. A piece with a newline names no path the guard looks for. A
+    recursive read of a folder that holds a config folder (grep -r . ~)
+    is not refused. A logical cd's words are placed as path_reaches_list
+    says (logical)."""
     places = list_places()
-    for word in words:
-        for text in dict.fromkeys([word, word.partition('=')[2]]):
-            text = with_config_variables(text, environment) if text else None
-            if not text or '\n' in text:
-                continue
-            text = os.path.expanduser(text)
-            pattern = bool(re.search(r'[*?[]', text))
+    environment = dict(environment or {})
+    hooks = {key: value for key, value in environment.items()
+             if key not in ('HOME', 'XDG_CONFIG_HOME')}
+    if raw_words is None or len(raw_words) != len(words):
+        raw_words = [None] * len(words)
+    for word, raw in zip(words, raw_words):
+        for text in word_texts(word, raw):
             for folder in folders:
-                if not os.path.isabs(text) and folder is None:
-                    continue
-                path = os.path.normpath(os.path.join(folder or '', text))
-                for candidate in dict.fromkeys([path, os.path.realpath(path)]):
-                    parts = candidate.split(os.sep)
-                    for config, inside, _ in places:
-                        if not pattern and (candidate in (config, inside)
-                                            or candidate.startswith(inside + os.sep)):
-                            return True
-                    # A shell glob matches a leading dot only when it writes one.
-                    if pattern and any(
-                            len(parts) == len(target.split(os.sep)) and all(
-                                fnmatch.fnmatchcase(goal, part)
-                                and (part.startswith('.') or not goal.startswith('.'))
-                                for goal, part in zip(target.split(os.sep), parts))
-                            for place in places for target in place):
-                        return True
+                path = placed(text, folder, environment)
+                if path is None and hooks != environment:
+                    path = placed(text, folder, hooks)
+                if path and path_reaches_list(path, places, logical):
+                    return True
     return False
+
+
+@functools.lru_cache(maxsize=4096)
+def word_texts(word, raw=None):
+    """The texts in one word that may name a path (reaches_list): each
+    piece its braces make, an option's or an assignment's value, and the
+    parts of an assignment's value that a : starts with ~, or of CDPATH's
+    (NAME+= included). A text with a newline names no path the guard
+    looks for; a piece with one may still hold a part without."""
+    texts = []
+    for piece in word_pieces(word, raw):
+        texts.append(piece)
+        name, equal, value = piece.partition('=')
+        if equal:
+            texts.append(value)
+            if re.fullmatch(r'[A-Za-z_][A-Za-z0-9_]*\+?', name) and (
+                    name.rstrip('+') == 'CDPATH' or '~' in value):
+                texts += [part for part in value.split(':')
+                          if name.rstrip('+') == 'CDPATH' or part.startswith('~')]
+    return tuple(text for text in dict.fromkeys(texts) if text and '\n' not in text)
 
 
 def names_config_folder(command):
     """Whether a word names a config folder itself, which a recursive or
     wildcard read would reach the list's file through without naming it
     (grep -r . ~/.config), or is a glob that could name the list's folder
-    or file through one (~/.c*/b*/*). Read deny rules do not cover such a
-    read, so the guard refuses it."""
+    or file through one (~/.c*/b*/*), in any case. Read deny rules do not
+    cover such a read, so the guard refuses it."""
     for word in re.findall(r'[^\s;&|()<>`]+', command):
-        word = re.sub(r'\$\{?XDG_CONFIG_HOME\}?', '/.config', word.replace('"', '').replace("'", ''))
+        word = re.sub(r'\$\{?XDG_CONFIG_HOME\}?', '/.config',
+                      word.replace('"', '').replace("'", '')).casefold()
         parts = [part for part in word.split('/') if part not in ('', '.')]
         for index, part in enumerate(parts):
             # A shell glob matches a leading dot only when it writes one.
@@ -2782,6 +3810,152 @@ def names_config_folder(command):
                                  or fnmatch.fnmatchcase('private-words.txt', rest[1]))):
                 return True
     return False
+
+
+# The GIT_ variables git reads (git help git, "Environment Variables"),
+# whole and as the beginnings of their families.
+GIT_VARIABLES = {
+    'GIT_DIR', 'GIT_WORK_TREE', 'GIT_NAMESPACE', 'GIT_CEILING_DIRECTORIES',
+    'GIT_DISCOVERY_ACROSS_FILESYSTEM', 'GIT_COMMON_DIR', 'GIT_DEFAULT_HASH', 'GIT_EDITOR',
+    'GIT_PAGER', 'GIT_ASKPASS', 'GIT_TERMINAL_PROMPT', 'GIT_FLUSH', 'GIT_NO_REPLACE_OBJECTS',
+    'GIT_REPLACE_REF_BASE', 'GIT_LITERAL_PATHSPECS', 'GIT_GLOB_PATHSPECS',
+    'GIT_NOGLOB_PATHSPECS', 'GIT_ICASE_PATHSPECS', 'GIT_REFLOG_ACTION', 'GIT_REF_PARANOIA',
+    'GIT_COMMIT_GRAPH_PARANOIA', 'GIT_OPTIONAL_LOCKS', 'GIT_PRINT_SHA1_ELLIPSIS', 'GIT_ADVICE',
+    'GIT_SHALLOW_FILE', 'GIT_QUARANTINE_PATH', 'GIT_PREFIX', 'GIT_IMPLICIT_WORK_TREE',
+    'GIT_EXTERNAL_DIFF', 'GIT_PROGRESS_DELAY', 'GIT_NO_LAZY_FETCH', 'GIT_SMART_HTTP'}
+GIT_FAMILIES = ('GIT_CONFIG', 'GIT_AUTHOR_', 'GIT_COMMITTER_', 'GIT_INDEX_', 'GIT_OBJECT_',
+                'GIT_ALTERNATE_', 'GIT_TRACE', 'GIT_SSH', 'GIT_SSL_', 'GIT_HTTP_', 'GIT_CURL_',
+                'GIT_PROXY', 'GIT_PROTOCOL', 'GIT_ALLOW_', 'GIT_REDIRECT_', 'GIT_NOTES_',
+                'GIT_DIFF_', 'GIT_MERGE_', 'GIT_SEQUENCE_', 'GIT_EXEC_', 'GIT_TEMPLATE',
+                'GIT_ATTR_', 'GIT_PUSH_', 'GIT_INTERNAL_', 'GIT_TEST_')
+
+
+def read_variable(name):
+    """Whether git, gh or the shell reads name to know where to look:
+    HOME, XDG_CONFIG_HOME, CDPATH, GH_CONFIG_DIR, a GIT_ variable git reads
+    or one the environment already has (exported, so git sees it)."""
+    if name in ('HOME', 'XDG_CONFIG_HOME', 'CDPATH', 'GH_CONFIG_DIR'):
+        return True
+    return name.startswith('GIT_') and (name in GIT_VARIABLES or name.startswith(GIT_FAMILIES)
+                                        or name in os.environ)
+
+
+def option_operands(args, values, named=''):
+    """A builtin's operands after its options, as it reads them: a cluster's
+    letter in values or named takes the rest of the word or the next word,
+    and named ones' values are names too (read -a NAME)."""
+    names, index = [], 0
+    while index < len(args):
+        arg = args[index]
+        if arg == '--':
+            return names + args[index + 1:]
+        if not arg.startswith('-') or arg == '-':
+            return names + args[index:]
+        for offset, letter in enumerate(arg[1:], 1):
+            if letter in values or letter in named:
+                value = arg[offset + 1:]
+                if not value and index + 1 < len(args):
+                    index += 1
+                    value = args[index]
+                if letter in named:
+                    names.append(value)
+                break
+        index += 1
+    return names
+
+
+def unread_variable(words, everything=()):
+    """The variable that tells git, gh or the shell where to look
+    (read_variable) which a command sets to a value it reads when it
+    runs: for and select's name, read's, mapfile's and getopts' names,
+    printf -v's, a ${NAME:=word} or ${NAME=word} anywhere in the
+    command's words (everything), and a declare -n reference to it (or
+    one with no name yet, which a later assignment gives). None when it
+    sets none."""
+    for word in [*everything, *words]:
+        for match in re.finditer(r'\$\{([A-Za-z_][A-Za-z0-9_]*):?=', word):
+            if read_variable(match[1]):
+                return match[1]
+    if not words:
+        return None
+    program = os.path.basename(words[0])
+    args = without_redirections(words[1:])
+    if program in ('for', 'select'):
+        names = args[:1]
+    elif program == 'read':
+        names = option_operands(args, 'dinNptu', 'a')
+    elif program in ('mapfile', 'readarray'):
+        names = option_operands(args, 'dnOsuCc')[:1]
+    elif program == 'getopts':
+        names = args[1:2]
+    elif program == 'printf':
+        names = args[1:2] if args[:1] == ['-v'] else [args[0][2:]] if args[:1] and args[
+            0].startswith('-v') else []
+    elif program in ('declare', 'typeset', 'local'):
+        options = [arg for arg in args if arg.startswith('-') and '=' not in arg]
+        if 'n' not in ''.join(option.lstrip('-') for option in options):
+            return None
+        for arg in args:
+            if arg not in options:
+                name, equal, target = arg.partition('=')
+                if not equal or read_variable(target):
+                    return target if equal else name
+        return None
+    else:
+        return None
+    return next((name for name in names if read_variable(name)), None)
+
+
+# tar's options that take a value: in its old first word (tar cfC - dir),
+# each takes the next word in turn; in a cluster (-fC), the rest of it.
+TAR_VALUES = set('bfFgHKLNTVXIC')
+
+
+def own_directories(words, cwd, environment=None):
+    """The folders a program reads its operands from after its own -C or
+    --directory (git -C, tar -C, make -C): as its own word, at the end of
+    a cluster of short options (tar -cC dir) or attached (-Cdir), as any
+    beginning of --directory from --dir, and in tar's old first word
+    (tar cfC - dir): each value from where the one before it left off,
+    and from cwd. For a program in which -C means something else (grep
+    -C 3), these are folders it never reads, which only add places to
+    look."""
+    values, index = [], 1
+    if (words and os.path.basename(words[0]) in ('tar', 'gtar', 'bsdtar') and len(words) > 1
+            and re.fullmatch(r'[A-Za-z]+', words[1])):
+        index = 2
+        for letter in words[1]:
+            if letter in TAR_VALUES and index < len(words):
+                if letter == 'C':
+                    values.append(words[index])
+                index += 1
+    while index < len(words):
+        word = words[index]
+        if word.startswith('--'):
+            name, equal, value = word.partition('=')
+            if len(name) >= 5 and '--directory'.startswith(name):
+                if not equal and index + 1 < len(words):
+                    index += 1
+                    value = words[index]
+                values.append(value)
+        elif word.startswith('-') and len(word) > 1:
+            for offset, letter in enumerate(word[1:], 1):
+                if letter == 'C':
+                    value = word[offset + 1:]
+                    if not value and index + 1 < len(words):
+                        index += 1
+                        value = words[index]
+                    values.append(value)
+                    break
+                if letter in TAR_VALUES:
+                    break  # the rest of the word is that option's value
+        index += 1
+    folders, current = [], cwd
+    for value in values:
+        if value:
+            current = changed_directory(current, value, environment)
+            folders += [current, changed_directory(cwd, value, environment)]
+    return folders
 
 
 def check_command(command, cwd, depth=0, environment=None, git_state=None):
@@ -2825,12 +3999,22 @@ def check_command(command, cwd, depth=0, environment=None, git_state=None):
     # succeeded because its target looked like a directory during this check.
     states = {(cwd, True, (), tuple(sorted((environment or {}).items())))}
     scopes = []
+    # An exit, or a cd that fails under set -e, ends the shell, so the
+    # folder before it is not followed: only where the guard reads the
+    # order commands run in, with no if, loop, case, function or group
+    # (whose exit or failure may not run, or not end the shell) and no
+    # pipe or & (a subshell).
+    plain = not any(words[:1] and words[0] in COMPOUND_WORDS for words, _ in parts) and not any(
+        parts[index][0] == ['('] and parts[index + 1][0] == [')'] for index in range(len(parts) - 1))
+    errexit = False
     for part_index, (words, separator) in enumerate(parts):
         runnable = {(where, success, stack, env) for where, success, stack, env in states
                     if separator not in ('&&', '||')
                     or (separator == '&&' and success)
                     or (separator == '||' and not success)}
         next_states = states - runnable
+        following = parts[part_index + 1][1] if part_index + 1 < len(parts) else ';'
+        alone = plain and separator not in ('|', '|&') and following not in ('|', '|&', '&')
         if words in (['('], ['<('], ['>(']):
             scopes.append((runnable, next_states, words != ['(']))
             states = runnable
@@ -2838,10 +4022,20 @@ def check_command(command, cwd, depth=0, environment=None, git_state=None):
         if words == [')']:
             if scopes:
                 outer, skipped, asynchronous = scopes.pop()
-                outcomes = {True, False} if asynchronous else {success for _, success, _, _ in states}
+                # A subshell that exits in every state ends with any status.
+                outcomes = {True, False} if asynchronous else (
+                    {success for _, success, _, _ in states} or {True, False})
                 states = skipped | {(where, success, stack, env)
                     for where, _, stack, env in outer for success in outcomes}
             continue
+        if alone and words[:1] == ['exit']:
+            states = next_states
+            continue
+        if alone and not scopes and words[:1] == ['set'] and separator in (';', '\n'):
+            for index, word in enumerate(words[1:], 1):
+                named = words[index + 1:index + 2] == ['errexit'] and word in ('-o', '+o')
+                if named or re.fullmatch(r'[-+][a-zA-Z]*e[a-zA-Z]*', word):
+                    errexit = word.startswith('-')
         runtime_inputs = []
         unwrapped, command_environment, directories = strip_wrappers(words, environment, runtime_inputs)
         if prints_environment(words, unwrapped):
@@ -2849,22 +4043,25 @@ def check_command(command, cwd, depth=0, environment=None, git_state=None):
         if not unwrapped:
             # Redirections alone, after a subshell or a group ( ... ) > file,
             # still write their targets.
+            unread = unread_variable([], words)
+            if unread:
+                deny(UNREAD_VARIABLE.format(name=unread))
             raw_words = raw_parts[part_index][0] if len(raw_parts) == len(parts) else []
             for where, _, _, shell_env in runnable:
-                if reaches_list(words, [where], dict(shell_env)):
+                if reaches_list(words, [where], dict(shell_env), raw_words):
                     deny(LIST_READ)
             for where in {path for path, _, _, _ in runnable}:
                 note_writes(git_state, words, raw_words, unwrapped, where, where)
-            if words and all(re.match(r'^[A-Za-z_][A-Za-z0-9_]*=', word) for word in words):
+            if words and all(ASSIGNMENT.match(word) for word in words):
                 # Assignment-only shell commands persist, including unexported CDPATH.
                 for where, _, stack, shell_env in runnable:
-                    _, updates, _ = strip_wrappers(words, dict(shell_env))
+                    _, updates, _ = strip_wrappers(words, dict(shell_env), here=where)
                     next_states.add((where, True, stack, tuple(sorted(updates.items()))))
                 states = next_states
             continue
         program = os.path.basename(unwrapped[0])
         if runtime_inputs and program in SHELLS | {'eval', 'gh', 'curl', 'wget', 'http', 'https'}:
-            deny('Use explicit command arguments; xargs adds uninspected input at execution time.')
+            deny(RUNTIME_WORDS)
         script_index = shell_script_index(unwrapped)
         if script_index is None and program in SHELLS and '<<<' in unwrapped:
             redirect = unwrapped.index('<<<')
@@ -2898,22 +4095,31 @@ def check_command(command, cwd, depth=0, environment=None, git_state=None):
             # Unknown/mixed quoting is checked in both contexts conservatively.
             if quote != "'":
                 script = re.sub(r'\\([$`])', r'\1', script)
+        # The command substitutions in the words, the same in every folder.
+        raw_words = raw_parts[part_index][0] if len(raw_parts) == len(parts) else []
+        raw_outer = None
+        if len(raw_words) == len(words):
+            raw_outer = (raw_words[:absolute_index] + raw_words[absolute_index + 1:]
+                         if outer_words is not words else raw_words)
+        inners = list(dict.fromkeys(nested(outer_words, raw_outer)))
         for where, stack, shell_env in {(path, stack, env) for path, _, stack, env in runnable}:
             inherited = dict(shell_env)
-            _, command_environment, directories = strip_wrappers(words, inherited)
+            _, command_environment, directories = strip_wrappers(words, inherited, here=where)
             command_cwd = where
             for directory in directories:
                 command_cwd = changed_directory(command_cwd, directory, inherited)
             # The shell opens redirections where it is; the program reads
-            # its operands where a wrapper's -C puts it.
-            if reaches_list(words, dict.fromkeys([where, command_cwd]), inherited):
-                deny(LIST_READ)
+            # its operands where a wrapper's -C puts it, and its own -C.
+            folders = [where, command_cwd] + own_directories(unwrapped, command_cwd, inherited)
             raw_words = raw_parts[part_index][0] if len(raw_parts) == len(parts) else []
-            raw_outer = None
-            if len(raw_words) == len(words):
-                raw_outer = (raw_words[:absolute_index] + raw_words[absolute_index + 1:]
-                             if outer_words is not words else raw_words)
-            for inner in dict.fromkeys(nested(outer_words, raw_outer)):
+            logical = program in ('cd', 'pushd') and not cd_options(
+                without_redirections(unwrapped)[1:])[0]
+            if reaches_list(words, dict.fromkeys(folders), inherited, raw_words, logical):
+                deny(LIST_READ)
+            unread = unread_variable(unwrapped, words)
+            if unread:
+                deny(UNREAD_VARIABLE.format(name=unread))
+            for inner in inners:
                 check_command(inner, where, depth + 1, inherited, git_state)
             if script_index is not None:
                 check_command(script, command_cwd, depth + 1,
@@ -2925,11 +4131,14 @@ def check_command(command, cwd, depth=0, environment=None, git_state=None):
                 action = trap_action(unwrapped)
                 if action is not None:
                     check_command(action, None, depth + 1, command_environment, git_state)
+            for runner_cwd, inner in runner_commands(unwrapped, command_cwd):
+                check_command(inner, runner_cwd, depth + 1, command_environment, git_state)
             raw_words = raw_parts[part_index][0] if len(raw_parts) == len(parts) else []
-            note_writes(git_state, words, raw_words, unwrapped, where, command_cwd)
+            note_writes(git_state, words, raw_words, unwrapped, where, command_cwd,
+                        stdin_document(parts, given, part_index))
             if program in ('declare', 'typeset', 'local', 'readonly'):
                 next_states.add((where, True, stack, tuple(sorted(
-                    declared(unwrapped[1:], inherited).items()))))
+                    declared(unwrapped[1:], inherited, where).items()))))
                 continue
             if program in ('export', 'unset'):
                 updates = dict(inherited)
@@ -2940,6 +4149,8 @@ def check_command(command, cwd, depth=0, environment=None, git_state=None):
                 else:
                     for word in operands:
                         key, equal, value = word.partition('=')
+                        if equal and program == 'export' and ASSIGNMENT.match(word):
+                            key, value = assignment(word, updates, where)
                         if not context_variable(key):
                             continue
                         if flags and flags not in (['--'], ['-v']):
@@ -2947,7 +4158,8 @@ def check_command(command, cwd, depth=0, environment=None, git_state=None):
                         if program == 'unset':
                             updates[key] = None
                         elif equal:
-                            if '$' in value or '`' in value:
+                            if key not in ('HOME', 'XDG_CONFIG_HOME') and (
+                                    '$' in value or '`' in value):
                                 deny(UNKNOWN)
                             updates[key] = value
                         else:
@@ -2955,16 +4167,25 @@ def check_command(command, cwd, depth=0, environment=None, git_state=None):
                 next_states.add((where, True, stack, tuple(sorted(updates.items()))))
                 continue
             if program in ('cd', 'pushd', 'popd'):
-                if program == 'popd' or (program == 'pushd' and len(unwrapped) == 1):
+                # The shell takes a redirection out before cd runs
+                # (cd sub 2>/dev/null, pushd sub >/dev/null).
+                operands = without_redirections(unwrapped)[1:]
+                if program == 'popd' or (program == 'pushd' and not operands):
                     target = stack[0] if stack else None
                     rest = stack[1:] if stack else ()
                     new_stack = ((where,) + rest) if program == 'pushd' else rest
                     next_states.update({(target, True, new_stack, shell_env), (where, False, stack, shell_env)})
                     continue
-                if program == 'pushd' and unwrapped[1].startswith(('-', '+')):
+                if program == 'pushd' and operands[0].startswith(('-', '+')):
                     deny(UNKNOWN)  # indexed/stack-only forms are not guessed
-                destination = unwrapped[1] if len(unwrapped) > 1 else (
+                physical, operands = cd_options(operands)
+                destination = operands[0] if len(operands) == 1 else None if operands else (
                     command_environment.get('HOME', os.environ.get('HOME')))
+                if len(operands) > 1:
+                    # zsh's cd old new replaces old in the folder's path.
+                    next_states.update({(None, True, stack, shell_env),
+                                        (where, False, stack, shell_env)})
+                    continue
                 if destination is None:
                     next_states.add((where, False, stack, shell_env))
                     continue  # HOME unset: operandless cd fails.
@@ -2975,12 +4196,20 @@ def check_command(command, cwd, depth=0, environment=None, git_state=None):
                     # the target unknown rather than querying the wrong repository.
                     target = None
                 else:
-                    target = changed_directory(where, destination, inherited)
+                    target = changed_directory(where, destination, inherited, physical)
                 # Earlier shell commands may create the target, so inspect
-                # both outcomes even when it does not exist at hook time.
+                # both outcomes even when it does not exist at hook time,
+                # unless a failure ends the shell (set -e, with nothing
+                # after it in an && or || list). Where no folder has a
+                # logical cd's name, bash goes where its links lead.
                 new_stack = (where,) + stack if program == 'pushd' else stack
                 next_states.add((target, True, new_stack, shell_env))
-                next_states.add((where, False, stack, shell_env))
+                if target is not None and not physical and not os.path.isdir(target):
+                    next_states.add((changed_directory(where, destination, inherited),
+                                     True, new_stack, shell_env))
+                if not (errexit and alone and not scopes and words[:1] in (['cd'], ['pushd'])
+                        and following not in ('&&', '||')):
+                    next_states.add((where, False, stack, shell_env))
                 continue
             # This command's words, not a nested one's.
             git_state['literal_words'], git_state['built_words'] = literal, built
@@ -2991,12 +4220,13 @@ def check_command(command, cwd, depth=0, environment=None, git_state=None):
                                                       command_cwd, command_environment)
                 subcommand, args, context = expand_git_alias(subcommand, args, context)
                 args = without_redirections(args)
-                if runtime_inputs and subcommand not in {
-                        'status', 'diff', 'log', 'show', 'rev-parse', 'ls-files'}:
-                    deny('Use explicit Git arguments; xargs may append protected flags or destinations.')
-                if subcommand in ('apply', 'am', 'stash'):
+                if runtime_inputs and subcommand not in RUNTIME_READS:
+                    deny(RUNTIME_WORDS)
+                if subcommand in ('apply', 'am', 'stash') and not (
+                        subcommand == 'stash' and [arg for arg in args if not arg.startswith('-')][:1]
+                        in (['list'], ['show'])):
                     # A patch or a stash changes files, or the index, that
-                    # the guard cannot name.
+                    # the guard cannot name (git stash list and show read).
                     git_state.setdefault('writes', []).append((command_cwd, None))
                     if changes_index(subcommand, args):
                         git_state.setdefault('index_changes', []).append(context)
@@ -3034,6 +4264,17 @@ def check_command(command, cwd, depth=0, environment=None, git_state=None):
                 elif subcommand == 'send-pack':
                     deny('Use git push with an explicit feature branch; send-pack '
                          'can update remote refs outside the inspected push path.')
+                # A later commit in this call may reuse what these move,
+                # or look an author up through a mailmap it sets.
+                head, refs, picks = git_moves(subcommand, args)
+                if head:
+                    git_state['head_moved'] = 'git ' + subcommand
+                if head or refs:
+                    git_state['refs_moved'] = 'git ' + subcommand
+                if picks:
+                    git_state['picked'] = True
+                if subcommand == 'config' and config_change(args) is not None:
+                    git_state['config_changed'] = 'git config'
             elif program == 'gh':
                 check_gh(unwrapped, command_cwd, command_environment, git_state)
             elif program in ('curl', 'wget', 'http', 'https'):
@@ -3103,6 +4344,9 @@ def check_command(command, cwd, depth=0, environment=None, git_state=None):
                             deny(COPILOT)
             next_states.update({(where, True, stack, shell_env), (where, False, stack, shell_env)})
         states = next_states
+        if (len({(where, stack, env) for where, _, stack, env in states}) > STATE_LIMIT
+                or GIT_QUERIES[0] > GIT_QUERY_LIMIT):
+            deny(TOO_MANY_FOLDERS)
 
 
 def check_github_tool(name, arguments):
@@ -3215,8 +4459,7 @@ def main():
     cwd = call.get('cwd') or os.getcwd()
     if name == 'Bash':
         command = str(arguments.get('command', ''))
-        if (LIST_REFERENCE.search(command) or names_list_glob(command)
-                or names_config_folder(command)):
+        if names_list(command):
             deny(LIST_READ)
         if PROCESS_ENVIRONMENT.search(command):
             deny(ENVIRONMENT_DUMP)
