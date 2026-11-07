@@ -250,6 +250,34 @@ it:
 - **A draft's file name** (Codex): `--text FILE` printed the file's name
   even when it held a finding; such a draft is now named by its number.
 
+The second round, Codex's code review of `bcc123c` (four findings; its
+security review found nothing). Each was reproduced by a test that
+failed before its fix:
+
+- **A commit aimed at another checkout** (Codex): `git --git-dir=…
+  --work-tree=… commit`, and the same through `GIT_DIR`, `GIT_WORK_TREE`,
+  `GIT_INDEX_FILE` or `core.worktree`, commits another repository's or
+  index's staged changes, while the guard read those of the folder the
+  command runs in. Following every such choice into the checker would
+  be a lot of new code for something agents need not do, so the guard
+  refuses such a commit and says to use `git -C` or `cd`, which it
+  follows.
+- **A file name in a Contents API address** (Codex): `PUT
+  /repos/{owner}/{repo}/contents/{path}` publishes the file under the
+  path in its address, which the guard did not read, for `gh api` or
+  `curl`. A write's path there is now checked as published text; reads
+  are not.
+- **Names split by `\n` or `\t`** (Codex): JSON writes a line break or a
+  tab between two words as `\n` or `\t`, so a request body, or a JSON or
+  code file, could hold a listed name as `First\nLast` unseen. The
+  checker's second reading of a line now reads those escapes as spaces,
+  for files and commits as well as the guard's requests.
+- **An address in a commit's name** (Codex): the name an author,
+  committer or tagger signs with was checked against the list only, so
+  an address, a phone number or a home folder there passed. The name
+  now gets every rule text gets; the address alone keeps the support
+  address's allowance.
+
 The privacy job's checkout names `actions/checkout@v7.0.1`, the version
 pull request #87 locks, so whichever of the two merges second needs no
 new lockfile entry. A cloud session cannot push `.github/workflows/`,
@@ -290,6 +318,11 @@ workflow tests failed. That was all CI could show: "Check the test
 script" fails first, and `scripts/test.sh`, which runs the hook tests,
 is the step after it, so the hook tests had never run on a Mac.
 
+At `ba6a4c3`, with the two fixes and the workflow in place, every
+Python suite passed on the owner's Mac under its `/usr/bin/python3`
+(3.9.6): the runner (95), hook (172), privacy (130), docs (57), site
+(7) and Xcode-choice (23) tests.
+
 ## Commits
 
 The commits of this branch, from the one after `0250270` (main when it
@@ -300,8 +333,8 @@ started).
 In this cloud thread (Linux, Python 3.13, git 2.43), last on 2026-11-07,
 after main (with the reviewer roster) was merged in:
 
-- `python3 scripts/test-privacy.py`: 130 tests, OK. Every test added
-  for the second review, and for the pull request's first review round,
+- `python3 scripts/test-privacy.py`: 132 tests, OK. Every test added
+  for the second review, and for the pull request's two review rounds,
   failed before its fix. On 2026-11-06, ten
   deliberate breakages of the checker each failed it (every address
   allowed, no home-folder, phone or photo-location findings, no second
@@ -313,11 +346,12 @@ after main (with the reviewer roster) was merged in:
   phone edges, folded phones, contractions, RTF bytes and their order
   with JSON escapes, Snappy copies, IPTC datasets, a zero place), failed
   it.
-- `python3 scripts/test-hooks.py`, with a made-up list: 172 tests, OK,
-  also with `EMAIL` and `GIT_AUTHOR_EMAIL` set to an address like the
-  Mac's guess, which failed 39 of them before the fix. The test added
-  for it fails with no person in the tests' settings file. The four
-  added for the first review round each failed before its fix.
+- `python3 scripts/test-hooks.py`, with a made-up list: 175 tests, OK,
+  also with `EMAIL` set to an address like the Mac's guess, which failed
+  39 of them before that fix (and with `GIT_AUTHOR_EMAIL` too, at
+  `ba6a4c3`). The test added for it fails with no person in the tests'
+  settings file. The tests added for the two review rounds each failed
+  before their fix.
   Run against the guard as it was before the second review's fixes, the
   13 tests added for them and the 2 they extended all failed (49
   failures); the ten breakages of the guard's privacy rules from
@@ -355,11 +389,11 @@ after main (with the reviewer roster) was merged in:
 
 ## Not verified
 
-- On a Mac, only the Python suites ran, at `bcc123c` (*The first run on
-  the owner's Mac*); the two fixes have not run there yet. Not run on a
-  Mac: the hook under the Mac's own Python 3.9, `scripts/test.sh`, the
-  guard in a Claude Code session there. CI runs the Python checks on
-  GitHub's Mac.
+- On a Mac, only the Python suites ran, last at `ba6a4c3` (*The first
+  run on the owner's Mac*); the second review round's fixes have not
+  run there yet. Not run on a Mac: the hook on a real push,
+  `scripts/test.sh`, the guard in a Claude Code session there. CI runs
+  the Python checks on GitHub's Mac.
 - The CI step has not run on GitHub: the workflow change waits for the
   commit from the owner's Mac, and until the secret is set it fails by
   design. GitHub's masking of the secret was not tested; the check never

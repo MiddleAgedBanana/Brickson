@@ -5210,7 +5210,8 @@ outside service: nothing it reads leaves the computer it runs on.
   joined by spaces, line breaks, punctuation, markup (HTML or SVG tags,
   a Markdown link's address) or nothing (camelCase), with a plural
   ending, with or without its accents, and with invisible characters and
-  HTML, URL, `\u` and RTF escapes undone.
+  HTML, URL, `\u` and RTF escapes undone, and with `\n`, `\r` and `\t`
+  (JSON's and code's line breaks and tabs) read as spaces.
 - **Built-in patterns**, which need no list: email addresses (except
   those at example domains, GitHub's own (github.com and the addresses
   under it, such as the no-reply ones commits are signed with), the
@@ -5239,11 +5240,13 @@ outside service: nothing it reads leaves the computer it runs on.
   compressed `.iwa` records), RTF, sound and video tags (MP3, MP4, M4A,
   MOV, WAV) and the place a video records, and pictures embedded in a
   page as `data:` addresses; commit messages, and the names and
-  addresses commits are signed with; branch names, and tag names,
+  addresses commits are signed with (the name by every rule text gets);
+  branch names, and tag names,
   taggers and messages, including the tags a tag points to; what a
   commit changes in a file that is not UTF-8, read both ways, as the
   whole file is; a file's content the GitHub API is sent in base64 (the
-  Contents API, a Git blob), decoded; and on GitHub, a pull request's
+  Contents API, a Git blob), decoded, and the file name the Contents
+  API's address gives it; and on GitHub, a pull request's
   title, description and branch name. Text read
   exactly from a file's fields gets every rule. Text only guessed from
   runs of readable bytes is checked for list words, lower-case addresses
@@ -5302,7 +5305,11 @@ public:
    variables. The guard refuses a push from a checkout whose pushes skip
    the hook or whose branch has none (made before the check reached
    main), whichever branch the push names, a git command in a folder the
-   shell computes, any command that names the list, the config folder
+   shell computes, a commit that chooses another repository, work tree
+   or index than its folder's (`--git-dir`, `--work-tree`,
+   `core.worktree`, `GIT_DIR`, `GIT_INDEX_FILE` and the like, whose
+   staged changes the check cannot follow: commit with `git -C`
+   instead), any command that names the list, the config folder
    that holds it (a recursive read of that folder reaches the list
    without naming it) or a glob that could reach either, and any that
    prints the whole environment. It also

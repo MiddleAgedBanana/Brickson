@@ -284,6 +284,17 @@ class PrivateWordTests(unittest.TestCase):
                 self.assertEqual([(f.line, f.kind) for f in found],
                                  [(2, privacy.KIND_PRIVATE)])
 
+    def test_a_name_split_by_an_escaped_line_break_or_tab_is_found(self):
+        # JSON, and strings in code, write a line break or a tab between
+        # two words as \n or \t: what is published is the two words.
+        check = checker(NAME)
+        for text in ['{"body": "Quillon\\nVassmere"}', '{"body": "Quillon\\tVassmere"}',
+                     '"Quillon\\r\\nVassmere"', 'print("Thanks\\nQuillon\\tVassmere")']:
+            with self.subTest(text=text):
+                found = check.text('first line\n' + text, 'x')
+                self.assertEqual([(f.line, f.kind) for f in found],
+                                 [(2, privacy.KIND_PRIVATE)])
+
     def test_composed_and_decomposed_letters_match(self):
         check = checker('Zoë Quill')
         self.assertEqual(len(check.text('Zoe\u0308 Quill', 'x')), 1)
@@ -308,6 +319,26 @@ class PrivateWordTests(unittest.TestCase):
                         '1+x' + AT + 'users.noreply.github.com', 'codex' + AT + 'openai.com']:
             with self.subTest(address=address):
                 self.assertEqual(check.identity('Someone', address, 'c'), [])
+
+    def test_a_commit_s_name_gets_every_rule_text_gets(self):
+        # The name is as public as the address. Only the address keeps the
+        # support address's allowance: the owner's own commits are signed
+        # with it.
+        support = 'help' + AT + 'gmail.com'
+        check = checker(NAME, support={support})
+        clean = 'q' + AT + 'example.com'
+        for name, kind in [(f'Someone {ADDRESS}', privacy.KIND_EMAIL),
+                           (f'Someone <{support}>', privacy.KIND_EMAIL),
+                           (f'Someone {PHONE}', privacy.KIND_PHONE),
+                           (f'Someone /Users/{HOME_NAME}', privacy.KIND_HOME),
+                           ('Someone quill.vass&#' + '64;gmail&#46;com', privacy.KIND_EMAIL)]:
+            with self.subTest(name=name):
+                self.assertEqual(kinds(check.identity(name, clean, 'c')), [kind])
+        # Found in both, it is one finding.
+        self.assertEqual(kinds(check.identity(f'Someone {ADDRESS}', ADDRESS, 'c')),
+                         [privacy.KIND_EMAIL])
+        self.assertEqual(kinds(check.identity(NAME, ADDRESS, 'c')),
+                         [privacy.KIND_PRIVATE, privacy.KIND_EMAIL])
 
 
 class PatternTests(unittest.TestCase):

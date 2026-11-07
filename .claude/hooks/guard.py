@@ -131,6 +131,11 @@ IDENTITY_SET = ('This command sets a commit identity (git config user.*, author.
                 'committer.*) and also commits, so the privacy check cannot read the author '
                 'before the command runs. Set it in an earlier command, then commit ('
                 + PRIVACY_DECISION + ').')
+OTHER_REPOSITORY = ('This commit chooses its repository, work tree or index (--git-dir, '
+                    '--work-tree, core.worktree, GIT_DIR, GIT_WORK_TREE, GIT_INDEX_FILE and '
+                    'the like), which the privacy check cannot follow to read what it would '
+                    'commit. Commit in that checkout instead: cd /path/to/checkout, or git -C '
+                    '/path/to/checkout commit (' + PRIVACY_DECISION + ').')
 LIST_READ = ('The private list is the owner\'s and stays unread: check with python3 '
              'scripts/privacy-check.py --status, which never prints it (' + PRIVACY_DECISION + ').')
 PUBLISHED_EXPANSION = ('Text this command publishes comes from a variable or another command, '
@@ -240,6 +245,16 @@ IDENTITY_SETTINGS = {'user.name', 'user.email', 'author.name', 'author.email',
                      'committer.name', 'committer.email'}
 IDENTITY_VARIABLES = ('GIT_AUTHOR_NAME', 'GIT_AUTHOR_EMAIL', 'GIT_COMMITTER_NAME',
                       'GIT_COMMITTER_EMAIL')
+# What makes a commit take another repository, work tree or index than its
+# folder's, where the privacy check reads the staged changes.
+REPOSITORY_OPTIONS = ('--git-dir', '--work-tree')
+REPOSITORY_SETTINGS = {'core.worktree', 'core.bare'}
+REPOSITORY_VARIABLES = ('GIT_DIR', 'GIT_WORK_TREE', 'GIT_INDEX_FILE', 'GIT_COMMON_DIR',
+                        'GIT_OBJECT_DIRECTORY')
+# The Contents API names the file it writes in its address
+# (PUT /repos/{owner}/{repo}/contents/{path}), and GitHub shows the file
+# under that name.
+CONTENTS_PATH = re.compile(r'repos/[^/]+/[^/]+/contents/(.+)')
 # GitHub tools whose text is published, and those that write files.
 TOOLS_PUBLISH = {'create_pull_request', 'update_pull_request', 'issue_write', 'create_issue',
                  'update_issue', 'add_issue_comment', 'update_issue_comment',
@@ -1345,6 +1360,8 @@ def note_gh_text(plain, cwd, git_state):
                 + [text for name in query_files for text in published_files(name, cwd, git_state)]):
             return
         note_published(git_state, 'gh api', values, files, cwd)
+        if contents_paths(operands):
+            note_published(git_state, 'gh api file name', contents_paths(operands))
 
 
 def graphql_read(texts):
@@ -1646,6 +1663,11 @@ def api_paths(words):
         elif word == 'graphql' or word.startswith(('repos/', '/repos/', 'agents/', '/agents/')):
             paths.append(urlsplit(word).path.lstrip('/'))
     return [unquote(path) for path in paths]
+
+
+def contents_paths(words):
+    """The file paths a Contents API request names in its address."""
+    return [match[1] for match in map(CONTENTS_PATH.fullmatch, api_paths(words)) if match]
 
 
 def protected_api_write(words, arguments, method):
@@ -2041,10 +2063,31 @@ def commit_options(args):
     return pairs
 
 
+def selects_repository(context):
+    """Whether git's options or variables choose another repository, work
+    tree or index than the folder's (git --git-dir, -c core.worktree,
+    GIT_INDEX_FILE and the like)."""
+    _, options, environment = context
+    for index, option in enumerate(options):
+        if option.partition('=')[0] in REPOSITORY_OPTIONS:
+            return True
+        if option in ('-c', '--config-env') and index + 1 < len(options):
+            if options[index + 1].partition('=')[0].lower() in REPOSITORY_SETTINGS:
+                return True
+        elif option.startswith('--config-env='):
+            if option.partition('=')[2].partition('=')[0].lower() in REPOSITORY_SETTINGS:
+                return True
+    return any(environment.get(key) for key in REPOSITORY_VARIABLES) or any(
+        key.startswith('GIT_CONFIG_KEY_') and str(value).lower() in REPOSITORY_SETTINGS
+        for key, value in environment.items())
+
+
 def note_commit(git_state, args, context, paths):
     """Remember a commit: what it records (its message and trailers, the
     files it reads a message from, an author or committer it is given), and
     the repository whose staged changes and added paths it would take."""
+    if selects_repository(context):
+        deny(OTHER_REPOSITORY)
     directory = effective_directory(context)
     _, options, environment = context
     pairs = commit_options(args)
@@ -2659,6 +2702,9 @@ def check_command(command, cwd, depth=0, environment=None, git_state=None):
                             if not ('graphql' in api_paths(operation) and graphql_read(
                                     [literal_text(value, git_state) for value in inline] + [data])):
                                 note_published(git_state, program, inline, texts=[data])
+                            if contents_paths(operation[1:]):
+                                note_published(git_state, program + ' file name',
+                                               contents_paths(operation[1:]))
                         if protected_api_write(operation, arguments, method):
                             deny(TO_MAIN)
                         if merge_api_request(operation, arguments, method):

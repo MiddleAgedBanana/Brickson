@@ -749,7 +749,9 @@ above are backed by checks wherever a check can run:
   a file onto `main`; a commit, or text sent to GitHub by `gh`, the API
   or a GitHub tool, that holds a personal detail, text it cannot read
   before the command runs (built by the shell, a file the same command
-  writes, or an index change or commit identity it sets), and a push
+  writes, an index change or commit identity it sets, or another
+  repository or index a commit names with `--git-dir`, `--work-tree` or
+  a `GIT_*` variable), and a push
   from a checkout whose pushes skip the privacy hook or whose branch has
   none, whichever branch the push names (*The privacy check*, below); and
   any command that names the private list or the config folder that

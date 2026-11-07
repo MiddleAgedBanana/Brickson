@@ -1577,6 +1577,56 @@ class PrivacyGuardTests(unittest.TestCase):
         self.assertAllowed(f'gh api --method PUT repos/o/r/contents/a.txt -f branch=claude/topic '
                            f'-f message=clean -f content={clean}')
 
+    def test_a_contents_api_write_s_file_name_is_checked(self):
+        # The Contents API names the file it writes in its address, and
+        # GitHub shows the file under that name.
+        clean = base64.b64encode(b'ok\n').decode()
+        fields = f'-f branch=claude/topic -f message=clean -f content={clean}'
+        named = PRIVATE_NAME.replace(' ', '-')
+        api = 'https://api.github.com/repos/o/r/contents'
+        for command in [
+                f'gh api -X PUT repos/o/r/contents/docs/{named}.txt {fields}',
+                f'gh api -X PUT /repos/o/r/contents/{PRIVATE_NAME.replace(" ", "%20")}.txt {fields}',
+                f'gh api -X PUT "repos/{{owner}}/{{repo}}/contents/{named}.txt?x=1" {fields}',
+                f"curl -q -X PUT {api}/{named}.txt "
+                f"-d '{{\"branch\":\"claude/topic\",\"message\":\"x\",\"content\":\"{clean}\"}}'"]:
+            with self.subTest(command=command[:50]):
+                self.assertIn('file name', self.assertDenied(command))
+        self.assertAllowed(f'gh api -X PUT repos/o/r/contents/docs/notes.txt {fields}')
+        # Reading a file by its name publishes nothing.
+        self.assertAllowed(f'gh api repos/o/r/contents/docs/{named}.txt')
+
+    def test_a_name_split_by_an_escape_in_a_request_body_is_found(self):
+        # JSON writes a line break or a tab as \n or \t; GitHub stores the
+        # two words.
+        request = self.folder / 'payload.json'
+        request.write_text(json.dumps({'title': 'x', 'body': PRIVATE_NAME.replace(' ', '\n')}))
+        api = 'https://api.github.com/repos/o/r/issues'
+        for command in [f'gh api --method POST repos/o/r/issues --input {request}',
+                        f'curl -q -X POST {api} --json @{request}']:
+            with self.subTest(command=command[:30]):
+                self.assertDenied(command)
+
+    def test_a_commit_into_another_checkout_or_index_is_refused(self):
+        # --git-dir, --work-tree, core.worktree and Git's variables choose
+        # another repository, work tree or index than the folder's, which is
+        # what the check reads before the commit.
+        other = self.folder / 'other'
+        other.mkdir()
+        init_repository(other, 'main')
+        for command in [f'git --git-dir={other}/.git --work-tree={other} commit -m x',
+                        f'git --git-dir {other}/.git commit -m x',
+                        f'git --work-tree={other} commit -m x',
+                        f'git -c core.worktree={other} commit -m x',
+                        f'GIT_DIR={other}/.git git commit -m x',
+                        f'GIT_INDEX_FILE={other}/.git/index git commit -m x',
+                        f'env GIT_WORK_TREE={other} git commit -m x',
+                        f'export GIT_DIR={other}/.git; git commit -m x']:
+            with self.subTest(command=command):
+                self.assertIn('git -C', self.assertDenied(command))
+        self.assertAllowed(f'git -C {other} commit -m x')
+        self.assertAllowed(f'GIT_DIR={other}/.git env -u GIT_DIR git commit -m x')
+
     def test_the_private_list_is_never_read(self):
         for command in ['cat ~/.config/brickson/private-words.txt',
                         'cat "$HOME/.config/brickson/private-words.txt"',

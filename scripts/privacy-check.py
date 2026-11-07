@@ -322,6 +322,8 @@ UNICODE_ESCAPE = re.compile(r"\\u([0-9a-fA-F]{4})(?!\\'[0-9a-fA-F]{2}|\?)")
 # of Windows' Latin.
 RTF_UNICODE = re.compile(r"\\u(-?\d{1,5}) ?(?:\\'[0-9a-fA-F]{2}|\?)?")
 RTF_BYTE = re.compile(r"\\'([0-9a-fA-F]{2})")
+# A line break or a tab between two words, as JSON and code write them.
+ESCAPED_SPACE = re.compile(r'\\[nrt]')
 # Markup that can split a name the page shows whole: an HTML, SVG or XML
 # tag or comment, and a Markdown link's target ([Name](url), [Name][1]).
 MARKUP = re.compile(r'<[A-Za-z/!?][^<>]*>|(?<=\])\([^()\n]*\)|(?<=\])\[[^\[\]\n]*\]')
@@ -406,11 +408,13 @@ def rtf_unescaped(text):
 
 def folded(text):
     """Text with HTML entities, percent escapes, RTF's escapes, \\/ and
-    \\uXXXX undone, compatibility forms (full-width letters) made plain,
-    and accents and invisible characters (zero-width spaces, soft hyphens)
-    removed."""
+    \\uXXXX undone, \\n, \\r and \\t (JSON's and code's line breaks and
+    tabs) read as spaces, compatibility forms (full-width letters) made
+    plain, and accents and invisible characters (zero-width spaces, soft
+    hyphens) removed."""
     text = percent_decoded(html.unescape(text), errors='replace').replace('\\/', '/')
     text = rtf_unescaped(UNICODE_ESCAPE.sub(lambda match: chr(int(match[1], 16)), text))
+    text = ESCAPED_SPACE.sub(' ', text)
     text = unicodedata.normalize('NFKD', text)
     return ''.join(char for char in text
                    if unicodedata.category(char) not in ('Mn', 'Cf', 'Cs'))
@@ -626,18 +630,23 @@ class Checker:
 
     def identity(self, name, address, where):
         """A commit's author, committer or tagger: the name and the address,
-        as written and folded (accents and escapes undone)."""
-        findings = []
+        as written and folded (accents and escapes undone). The name gets
+        every rule text gets; only the address keeps the support address's
+        allowance, as the owner's own commits are signed with it."""
+        findings = {}
         signed = unicodedata.normalize('NFC', name + '\n' + address)
         if (any(True for _ in self.matches(signed, self.patterns))
                 or any(True for _ in self.matches(folded(signed), self.folded_patterns))):
-            findings.append(Finding(where, 0, 0, KIND_PRIVATE))
+            findings[KIND_PRIVATE] = Finding(where, 0, 0, KIND_PRIVATE)
+        # With no path, text allows the support address nowhere.
+        for finding in self.text(name or '', where, flat=True):
+            findings.setdefault(finding.kind, finding)
         if EMAIL.fullmatch(address or '') and not email_allowed(address, None, self.support,
                                                                  identity=True):
-            findings.append(Finding(where, 0, 0, KIND_EMAIL))
+            findings.setdefault(KIND_EMAIL, Finding(where, 0, 0, KIND_EMAIL))
         if HOME.search(address or ''):
-            findings.append(Finding(where, 0, 0, KIND_HOME))
-        return findings
+            findings.setdefault(KIND_HOME, Finding(where, 0, 0, KIND_HOME))
+        return list(findings.values())
 
     def data(self, data, where, path=None, depth=0):
         """A file's bytes: text if it reads as text (UTF-8, UTF-16 or
