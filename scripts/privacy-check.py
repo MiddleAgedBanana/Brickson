@@ -58,6 +58,7 @@ import os
 from pathlib import Path
 import re
 import stat
+import string
 import struct
 import subprocess
 import sys
@@ -266,8 +267,10 @@ RESERVED_SUFFIXES = ('.example', '.test', '.invalid', '.localhost')
 # addresses; none of them is a person's.
 SERVICE_ADDRESSES = {'noreply@anthropic.com', 'codex@openai.com'}
 # GitHub's own addresses (support, noreply, git@ for remotes) and the
-# private addresses it gives its users.
-SERVICE_DOMAINS = ('github.com',)
+# private addresses it gives its users; and OpenSSH's names for its key
+# types and extensions (sk-ssh-ed25519@openssh.com), which every
+# signature made with a security key holds.
+SERVICE_DOMAINS = ('github.com', 'openssh.com')
 # icon@2x.png names an image's scale, not an address.
 IMAGE_SCALE = re.compile(r'\d+(?:\.\d+)?x\.(?:png|jpe?g|pdf|svg|gif|heic|webp)')
 
@@ -351,6 +354,27 @@ def email_allowed(address, path, support, identity=False):
         # the address the owner's own commits are signed with.
         return identity or (path is not None and path.startswith('site/'))
     return False
+
+
+ADDRESS_DOMAIN = re.compile(r'(?:[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?\.)+[A-Za-z]{2,}')
+ADDRESS_LETTERS = frozenset(string.ascii_letters + string.digits + '._%+-')
+
+
+def addresses_in(field):
+    """Every address an identity's address field holds. git keeps what it
+    is given between < and >, so a field may hold an address with a
+    trailing dot or a comment, or two joined
+    (one@example.com+two@example.org, where an address in text could not
+    start after the +): each @ with the domain after it and every letter
+    an address may hold before it, back to the last that is not one, so
+    neither is read short."""
+    for at in re.finditer('@', field):
+        domain = ADDRESS_DOMAIN.match(field, at.end())
+        start = at.start()
+        while start and field[start - 1] in ADDRESS_LETTERS:
+            start -= 1
+        if domain and start < at.start():
+            yield field[start:at.start()] + '@' + domain.group()
 
 
 def phone_allowed(number):
@@ -496,12 +520,12 @@ class Checker:
                 else:
                     position = match.start() + 1
 
-    def scan(self, text, path, binary, patterns):
+    def scan(self, text, path, binary, patterns, identity=False):
         """(offset, kind) for everything found in text."""
         for offset, _ in self.matches(text, patterns):
             yield offset, KIND_PRIVATE
         for match in (BINARY_EMAIL if binary else EMAIL).finditer(text):
-            if not email_allowed(match.group(), path, self.support):
+            if not email_allowed(match.group(), path, self.support, identity):
                 yield match.start(), KIND_EMAIL
         for match in HOME.finditer(text):
             if match.group(1).lower() not in HOME_PLACEHOLDERS:
@@ -511,11 +535,14 @@ class Checker:
                 if not phone_allowed(match.group()):
                     yield match.start(), KIND_PHONE
 
-    def text(self, text, where, path=None, start_line=1, binary=False, flat=False, depth=0):
+    def text(self, text, where, path=None, start_line=1, binary=False, flat=False, depth=0,
+             identity=False):
         """Findings in one text. path, relative to the repository, is where
         the text will live; text without one (a message, a draft, a name)
         has no allowances. Text with no lines of its own (a binary file's
-        hidden text, a name) is flat: each kind is reported once, at line 0."""
+        hidden text, a name) is flat: each kind is reported once, at line 0.
+        Text that says who signed something (identity) may hold the
+        support address, as an author's address may."""
         flat = flat or binary
         text = unicodedata.normalize('NFC', text)
         lines = text.split('\n')
@@ -532,7 +559,7 @@ class Checker:
                 return  # already found as written
             found.setdefault((line, column, kind), Finding(where, line, column, kind))
 
-        for offset, kind in self.scan(text, path, binary, self.patterns):
+        for offset, kind in self.scan(text, path, binary, self.patterns, identity):
             add(offset, kind)
         if self.fold_always or FOLDABLE.search(text):
             # The same lines with escapes undone; each keeps its line, so a
@@ -544,7 +571,7 @@ class Checker:
                 # characters (&nbsp;, &#8209;, a soft hyphen) or escaped in
                 # a tel: link.
                 for offset, kind in self.scan('\n'.join(plain), path, binary,
-                                              self.folded_patterns):
+                                              self.folded_patterns, identity):
                     number, column = line_place(offset, plain_starts, lines)
                     add(starts[number] + column, kind, refound=True)
             elif self.fold_always:
@@ -634,49 +661,57 @@ class Checker:
         """The kinds found in a name: a file's, a branch's or a tag's."""
         return [finding.kind + IN_NAME for finding in self.text(name, '', path, flat=True)]
 
-    def identity(self, name, address, where):
+    def identity(self, name, address, where, rest=''):
         """A commit's author, committer or tagger: the name and the address,
-        as written and folded (accents and escapes undone). The name gets
-        every rule text gets; only the address keeps the support address's
-        allowance, as the owner's own commits are signed with it."""
+        as written and folded (accents and escapes undone), and the rest
+        of its line but the date (rest), which a header's continuation
+        lines or a merged tag's tagger line can hold. The name and the
+        rest get every rule text gets; only the address keeps the support
+        address's allowance, as the owner's own commits are signed with it."""
         findings = {}
         signed = unicodedata.normalize('NFC', name + '\n' + address)
         if (any(True for _ in self.matches(signed, self.patterns))
                 or any(True for _ in self.matches(folded(signed), self.folded_patterns))):
             findings[KIND_PRIVATE] = Finding(where, 0, 0, KIND_PRIVATE)
         # With no path, text allows the support address nowhere.
-        for finding in self.text(name or '', where, flat=True):
+        for finding in self.text((name or '') + ('\n' + rest if rest else ''), where, flat=True):
             findings.setdefault(finding.kind, finding)
-        if EMAIL.fullmatch(address or '') and not email_allowed(address, None, self.support,
-                                                                 identity=True):
+        # The address field as text too: an address written with accents
+        # or escapes (folded), or a phone number.
+        for finding in self.text(address or '', where, flat=True, identity=True):
+            findings.setdefault(finding.kind, finding)
+        if any(not email_allowed(one, None, self.support, identity=True)
+               for one in addresses_in(address or '')):
             findings.setdefault(KIND_EMAIL, Finding(where, 0, 0, KIND_EMAIL))
         if HOME.search(address or ''):
             findings.setdefault(KIND_HOME, Finding(where, 0, 0, KIND_HOME))
         return list(findings.values())
 
-    def data(self, data, where, path=None, depth=0):
+    def data(self, data, where, path=None, depth=0, identity=False):
         """A file's bytes: text if it reads as text (UTF-8, UTF-16 or
         Windows' Latin); otherwise the text hidden in it and whether it
         records where it was taken. Text a binary file's format defines
         (a PNG's text, an MP3's tags, a PDF's pages, a document's words)
         gets every rule text gets; runs only guessed from its bytes keep
         the binary rules, as random bytes can look like a number or a
-        short address."""
+        short address. A signature's bytes say who signed (identity)."""
         texts = file_texts(data)
         if texts is not None:
-            findings = self.text(texts[0], where, path, depth=depth)
+            findings = self.text(texts[0], where, path, depth=depth, identity=identity)
             seen = {(finding.line, finding.kind) for finding in findings}
             for other in texts[1:]:
-                for finding in self.text(other, where, path, depth=depth):
+                for finding in self.text(other, where, path, depth=depth, identity=identity):
                     if (finding.line, finding.kind) not in seen:
                         seen.add((finding.line, finding.kind))
                         findings.append(finding)
             return findings
         hidden = binary_texts(data, iwa=path is not None and path.lower().endswith('.iwa'))
-        findings = self.text('\n'.join(hidden.exact), where, path, flat=True, depth=depth)
+        findings = self.text('\n'.join(hidden.exact), where, path, flat=True, depth=depth,
+                             identity=identity)
         kinds_found = {finding.kind for finding in findings}
         findings += [finding for finding in
-                     self.text('\n'.join(hidden.runs), where, path, binary=True)
+                     self.text('\n'.join(hidden.runs), where, path, binary=True,
+                               identity=identity)
                      if finding.kind not in kinds_found]
         if hidden.located:
             findings.append(Finding(where, 0, 0, KIND_PLACE))
@@ -1872,7 +1907,7 @@ class Tally:
 GIT = ('git', '--no-replace-objects')
 
 
-def git(root, *args, binary=False, check=True):
+def git(root, *args, binary=False, check=True, input=None):
     # No hooks, no file-system monitor and no external diff or textconv
     # program runs: the repository's own settings never run code here.
     # A blank line in a patch keeps its leading space, so every line of a
@@ -1881,7 +1916,7 @@ def git(root, *args, binary=False, check=True):
         result = subprocess.run(
             [*GIT, '-C', str(root), '-c', 'core.quotePath=false', '-c', 'core.fsmonitor=false',
              '-c', 'core.hooksPath=/dev/null', '-c', 'diff.suppressBlankEmpty=false', *args],
-            capture_output=True, timeout=300)
+            capture_output=True, timeout=300, input=input)
     except (OSError, subprocess.SubprocessError) as error:
         raise SetupError(f'git could not run ({type(error).__name__}).')
     if check and result.returncode:
@@ -2077,9 +2112,11 @@ def patch_changes(patch):
 PATCH_OPTIONS = ('-p', '--unified=3', '--no-color', '--no-ext-diff', '--no-textconv',
                  '--no-renames', '--src-prefix=a/', '--dst-prefix=b/')
 # git log as git itself is set by default, whatever a person's settings:
-# log.showSignature would put gpg's lines among a commit's fields, and
-# log.showRoot=false would leave out what a first commit adds.
-LOG_OPTIONS = ('--no-show-signature', '--root')
+# log.showSignature would put gpg's lines among a commit's fields,
+# log.showRoot=false would leave out what a first commit adds, and
+# i18n.logOutputEncoding (or i18n.commitEncoding) would write a commit's
+# text in another encoding than UTF-8.
+LOG_OPTIONS = ('--no-show-signature', '--root', '--encoding=UTF-8')
 
 
 def hunk_findings(checker, lines, where, path, first):
@@ -2197,22 +2234,462 @@ def commit_patches(log):
         yield sha, body
 
 
-def commits(checker, root, revisions, tally):
-    """The commits in a revision range: their messages, authors and
-    committers, and the lines, files and names their changes add."""
-    findings = []
-    log = git(root, 'log', *LOG_OPTIONS, '-z', '--format=%H%n%an%n%ae%n%cn%n%ce%n%B',
-              *revisions, '--')
-    for record in log.split('\0'):
-        fields = record.split('\n', 5)
-        if len(fields) < 6 or not fields[0].strip():
+def git_texts(data):
+    """Text git keeps as it was given (a commit's or a tag's message and
+    names, which a push sends as they are), in each reading: as UTF-16
+    when it starts with a byte order mark or reads as UTF-16 without one,
+    as file_texts reads a file; as UTF-8, or, when it is not, as UTF-8
+    where it is and as Windows' Latin, so an accented name in either is
+    read; and, when it holds zero bytes, without them, so wide text no
+    reading guesses (UTF-16 whose letters look like binary data, UTF-32)
+    is read too, and as UTF-16 and UTF-32 in either byte order, so an
+    accented letter in either is read, also after bytes that put it out
+    of step (the bytes without zeros, read as Windows' Latin)."""
+    texts = []
+    for mark, codec in BYTE_ORDER_MARKS[1:]:
+        if data.startswith(mark):
+            texts.append(data.decode(codec, errors='replace'))
+    unmarked = utf16_text(data) if not texts else None
+    if unmarked is not None:
+        texts.append(unmarked)
+    try:
+        texts.append(data.decode('utf-8'))
+    except UnicodeDecodeError:
+        texts += [data.decode('utf-8', errors='replace'), windows_latin(data)]
+    if b'\0' in data:
+        texts.append(data.replace(b'\0', b'').decode('utf-8', errors='replace'))
+        texts.append(windows_latin(data.replace(b'\0', b'')))
+        texts += [data.decode(codec, errors='replace')
+                  for codec in ('utf-16-le', 'utf-16-be', 'utf-32-le', 'utf-32-be')]
+    return texts
+
+
+def readings_of(*fields):
+    """Each reading of fields (bytes) read together, as tuples of texts:
+    the first field's readings go with the second's, and so on."""
+    texts = [git_texts(field) for field in fields]
+    return [tuple(one[min(number, len(one) - 1)] for one in texts)
+            for number in range(max(len(one) for one in texts))]
+
+
+def merged(read, readings):
+    """read's findings in readings of one text (tuples of texts read
+    together), as Checker.data reads a file: all of the first reading's,
+    and of the others' only those at a place and of a kind not found
+    yet, so one name is reported once, at the column the first reading
+    gives, however many readings find it."""
+    findings, seen = [], set()
+    for number, reading in enumerate(dict.fromkeys(readings)):
+        for finding in read(*reading):
+            place = (finding.where, finding.line, finding.kind)
+            if not number or place not in seen:
+                findings.append(finding)
+            seen.add(place)
+    return findings
+
+
+def each_reading(read, *fields):
+    """read's findings in each reading of fields (bytes) (merged)."""
+    return merged(read, readings_of(*fields))
+
+
+def object_parts(data):
+    """A commit's or a tag's object as git keeps it, and a push sends it:
+    its header lines, each with its continuation lines, and its message."""
+    header, _, message = data.partition(b'\n\n')
+    lines = []
+    for line in header.split(b'\n'):
+        if line.startswith(b' ') and lines:
+            lines[-1].append(line[1:])
+        else:
+            lines.append([line])
+    return [b'\n'.join(pieces) for pieces in lines], message
+
+
+def stored_objects(root, shas):
+    """(sha, bytes) for each object, as git keeps it."""
+    out = git(root, 'cat-file', '--batch', binary=True,
+              input=b''.join(sha.encode('ascii') + b'\n' for sha in shas))
+    position = 0
+    for sha in shas:
+        end = out.find(b'\n', position)
+        header = out[position:end].split()
+        if end < 0 or len(header) != 3 or not header[2].isdigit():
+            raise SetupError('git cat-file wrote a line the check could not read.')
+        start = end + 1
+        yield sha, out[start:start + int(header[2])]
+        position = start + int(header[2]) + 1
+
+
+IDENTITY_DATE = re.compile(rb' -?\d+ [+-]\d{4}')
+OBJECT_ID = re.compile(rb'[0-9a-f]{40}(?:[0-9a-f]{24})?')
+OBJECT_TYPES = (b'commit', b'tree', b'blob', b'tag')
+
+
+def identity_parts(value):
+    """An author's, committer's or tagger's header as (name, address,
+    the rest), or None when it holds no address: the rest is what follows
+    the address but its date, which git keeps too (a continuation line,
+    or more of a merged tag's tagger line)."""
+    # The last ' <' with a '>' after it, and the first '>' after that,
+    # found without a pattern that would try every ' <' to the end.
+    last = value.rfind(b'>')
+    start = value.rfind(b' <', 0, last)
+    if last < 0 or start < 0:
+        return None
+    end = value.index(b'>', start + 2)
+    rest = value[end + 1:]
+    date = IDENTITY_DATE.match(rest)
+    return value[:start], value[start + 2:end], rest[date.end():] if date else rest
+
+
+# A signature block's own lines: where it begins and ends, an armor
+# header (Version:, Comment:), a line of its base64 (a last line may hold
+# padding alone) and OpenPGP's checksum.
+ARMOR_BEGIN = re.compile(r'-----BEGIN [A-Z0-9 ]+-----$')
+ARMOR_END = re.compile(r'-----END [A-Z0-9 ]+-----')
+ARMOR_HEADER = re.compile(r'[A-Za-z][A-Za-z0-9-]*: .*')
+ARMOR_BASE64 = re.compile(r'[A-Za-z0-9+/]*={0,2}')
+ARMOR_CHECKSUM = re.compile(r'=[A-Za-z0-9+/]{4}')
+
+
+def armored(text):
+    """text with the base64 of each signature block in it (OpenPGP's,
+    SSH's, X.509's) blanked out, each line kept so every other line keeps
+    its number, and the bytes each such block holds. A block begins
+    again at each BEGIN line, so a clearsigned message's own text is never
+    taken for its signature, and is left as text unless it is one
+    (armored_body)."""
+    lines, blocks, inside = text.split('\n'), [], None
+    for number, line in enumerate(lines):
+        line = line.strip()
+        if ARMOR_BEGIN.search(line):
+            inside = []
+        elif inside is not None and ARMOR_END.fullmatch(line):
+            body = armored_body([lines[one].strip() for one in inside])
+            if body is not None:
+                blocks.append(body[0])
+                for one in inside[body[1]:]:
+                    lines[one] = ''
+            inside = None
+        elif inside is not None:
+            inside.append(number)
+    return '\n'.join(lines), blocks
+
+
+def armored_body(lines):
+    """(the bytes, the index of the first line of base64) for the lines
+    between a block's BEGIN and END lines, or None when they are not a
+    signature's: armor headers, a blank line, then lines of base64 of
+    one width (the last no wider), and OpenPGP's checksum, that decode
+    to binary data (holding a zero byte, as every signature format's
+    lengths do)."""
+    first = 0
+    while first < len(lines) and ARMOR_HEADER.fullmatch(lines[first]):
+        first += 1
+    if first < len(lines) and not lines[first]:
+        first += 1
+    body = lines[first:]
+    if body and ARMOR_CHECKSUM.fullmatch(body[-1]):
+        body = body[:-1]
+    if (not body or not all(line and ARMOR_BASE64.fullmatch(line) for line in body)
+            or any(len(line) != len(body[0]) for line in body[:-1])
+            or len(body[-1]) > len(body[0])):
+        return None
+    try:
+        data = base64.b64decode(''.join(body), validate=True)
+    except (binascii.Error, ValueError):
+        return None
+    return (data, first) if b'\0' in data else None
+
+
+# How deep packets inside packets (an OpenPGP signature in a signature)
+# and DER's elements are read: a certificate in an X.509 signature sits
+# about a dozen deep.
+SIGNATURE_DEPTH = 32
+
+
+def signature_texts(data):
+    """The text a signature's bytes hold, read by their format, or None
+    for a format the check does not read field by field (an SSH
+    signature, whose readable runs are read as a binary file's are): an
+    OpenPGP signature's (openpgp_texts) or an X.509 one's (der_texts)."""
+    if data[:1] == b'\x30':
+        texts = []
+        return texts if der_items(data, 0, len(data), 0, texts) == len(data) else None
+    if data[:1] and data[0] & 0x80:
+        return openpgp_texts(data, 0)
+    return None
+
+
+def openpgp_packets(data):
+    """(tag, body) for each OpenPGP packet in data (RFC 9580, 4.2), or None
+    when data is not a whole run of them."""
+    packets, position = [], 0
+    while position < len(data):
+        first = data[position]
+        if not first & 0x80:
+            return None
+        if first & 0x40:
+            tag, octet = first & 0x3f, data[position + 1:position + 2]
+            if not octet or 223 < octet[0] < 255:
+                return None  # a partial length: a stream, not a signature
+            size = 1 if octet[0] < 192 else 2 if octet[0] < 224 else 5
+            field = data[position + 1:position + 1 + size]
+            if len(field) < size:
+                return None
+            length = (field[0] if size == 1
+                      else ((field[0] - 192) << 8) + field[1] + 192 if size == 2
+                      else int.from_bytes(field[1:], 'big'))
+        else:
+            tag, size = (first >> 2) & 0x0f, 1 << (first & 0x03)
+            if size == 8:
+                return None  # an indeterminate length
+            field = data[position + 1:position + 1 + size]
+            if len(field) < size:
+                return None
+            length = int.from_bytes(field, 'big')
+        position += 1 + size
+        if position + length > len(data):
+            return None
+        packets.append((tag, data[position:position + length]))
+        position += length
+    return packets
+
+
+def openpgp_texts(data, depth):
+    """The text OpenPGP packets hold where a signature may name someone:
+    a user ID packet (an embedded key's), and in a signature its signer's
+    user ID (subpacket 28), policy URI (26), preferred key server (24),
+    each readable notation's value (20) and the signatures it embeds (32).
+    A notation's name, written like an address (Sequoia's salt, in its
+    namespace notations.sequoia-pgp.org), names the notation, not a
+    person, and is not read. None when data is not OpenPGP."""
+    packets = openpgp_packets(data)
+    if not packets or depth > SIGNATURE_DEPTH:
+        return None
+    texts = []
+    for tag, body in packets:
+        if tag == 13:
+            texts.append(decoded(body))
+        elif tag == 2:
+            found = signature_packet_texts(body, depth)
+            if found is None:
+                return None
+            texts += found
+    return texts
+
+
+def signature_packet_texts(body, depth):
+    """openpgp_texts for one signature packet's body (RFC 9580, 5.2), or
+    None when it does not read as one."""
+    if body[:1] == b'\x03':
+        return []  # version 3 holds no subpackets
+    if body[:1] not in (b'\x04', b'\x05', b'\x06'):
+        return None
+    width = 4 if body[0] == 6 else 2
+    texts, position = [], 4
+    for _ in range(2):  # the hashed subpackets, then the others
+        area = body[position:position + width]
+        if len(area) < width:
+            return None
+        length = int.from_bytes(area, 'big')
+        position += width
+        if position + length > len(body):
+            return None
+        found = subpacket_texts(body[position:position + length], depth)
+        if found is None:
+            return None
+        texts += found
+        position += length
+    return texts
+
+
+def subpacket_texts(area, depth):
+    """The texts in one area of a signature's subpackets, or None."""
+    texts, position = [], 0
+    while position < len(area):
+        octet = area[position]
+        size = 1 if octet < 192 else 2 if octet < 255 else 5
+        field = area[position:position + size]
+        if len(field) < size:
+            return None
+        length = (octet if size == 1 else ((octet - 192) << 8) + field[1] + 192 if size == 2
+                  else int.from_bytes(field[1:], 'big'))
+        position += size
+        if not length or position + length > len(area):
+            return None
+        kind, value = area[position] & 0x7f, area[position + 1:position + length]
+        position += length
+        if kind in (24, 26, 28):
+            texts.append(decoded(value))
+        elif kind == 20:
+            if len(value) < 8:
+                return None
+            names, values = int.from_bytes(value[4:6], 'big'), int.from_bytes(value[6:8], 'big')
+            if 8 + names + values != len(value):
+                return None
+            if value[0] & 0x80:  # human-readable
+                texts.append(decoded(value[8 + names:]))
+        elif kind == 32:
+            found = signature_packet_texts(value, depth + 1) if depth < SIGNATURE_DEPTH else None
+            if found is None:
+                return None
+            texts += found
+    return texts
+
+
+# DER's string types (UTF8String, PrintableString, T61String, IA5String,
+# VisibleString, UniversalString, BMPString) and a certificate's names
+# (rfc822Name, a URI), with the encoding each is written in.
+DER_STRINGS = {0x0c: 'utf-8', 0x13: 'latin-1', 0x14: 'latin-1', 0x16: 'latin-1',
+               0x1a: 'latin-1', 0x1c: 'utf-32-be', 0x1e: 'utf-16-be', 0x81: 'latin-1',
+               0x86: 'latin-1'}
+
+
+def der_items(data, position, end, depth, texts):
+    """Read the DER (or BER) elements of an X.509 signature (RFC 5652's
+    SignedData, with its certificates) from position to end, or to an
+    end-of-contents mark when end is None, adding each string's text to
+    texts; the position after them, or None when they are not DER. An
+    OCTET STRING that holds a SEQUENCE is read too, as a certificate's
+    extensions (its other names) are kept that way."""
+    while end is None or position < end:
+        if end is None and data[position:position + 2] == b'\0\0':
+            return position + 2
+        if position + 2 > len(data):
+            return None
+        tag, octet = data[position], data[position + 1]
+        position += 2
+        if tag & 0x1f == 0x1f:
+            return None  # a high tag number: not in a signature
+        if octet == 0x80:
+            if not tag & 0x20 or depth >= SIGNATURE_DEPTH:
+                return None
+            position = der_items(data, position, None, depth + 1, texts)
+            if position is None:
+                return None
             continue
-        sha = fields[0].strip()[:12]
+        if octet & 0x80:
+            size = octet & 0x7f
+            if not 0 < size <= 4 or position + size > len(data):
+                return None
+            length = int.from_bytes(data[position:position + size], 'big')
+            position += size
+        else:
+            length = octet
+        stop = position + length
+        if stop > (len(data) if end is None else end):
+            return None
+        if tag & 0x20:
+            if depth >= SIGNATURE_DEPTH or der_items(data, position, stop, depth + 1,
+                                                     texts) != stop:
+                return None
+        elif tag in DER_STRINGS:
+            texts.append(data[position:stop].decode(DER_STRINGS[tag], errors='replace'))
+        elif tag == 0x04 and data[position:position + 1] == b'\x30' and depth < SIGNATURE_DEPTH:
+            inner = []
+            if der_items(data, position, stop, depth + 1, inner) == stop:
+                texts += inner
+        position = stop
+    return position
+
+
+def signed_text(checker, text, place, part):
+    """Findings in text that may hold a signature (a commit's gpgsig
+    header, a tag's message), reported as place's part: its words read
+    as text, but not a signature's base64, which is full of runs that
+    read as words (a word may start at a case change, a / or a +). The
+    bytes the base64 holds are read by their format (signature_texts),
+    or else as a binary file's are, as they can hold the signer's name
+    and address, which may be the support address, as an author's may."""
+    text, blocks = armored(text)
+    findings = checker.text(text, f'{place} {part}')
+    for data in blocks:
+        texts = signature_texts(data)
+        if texts is None:
+            findings += checker.data(data, f'{place} signature', identity=True)
+        else:
+            findings += checker.text('\n'.join(texts), f'{place} signature', flat=True,
+                                     identity=True)
+    return findings
+
+
+def tag_findings(checker, data, where):
+    """A tag object's findings (a pushed tag's, or one a merge commit
+    carries): its name, its tagger, every other header and its message,
+    with its signature. Only the first object, type and tag lines are
+    what git reads them as; any other line is read as text, and every
+    tagger line as an identity."""
+    findings, first = [], set()
+    headers, message = object_parts(data)
+    for line in headers:
+        key, _, value = line.partition(b' ')
+        signed = identity_parts(value) if key == b'tagger' else None
+        if key not in first and (key == b'object' and OBJECT_ID.fullmatch(value)
+                                 or key == b'type' and value in OBJECT_TYPES):
+            first.add(key)
+        elif key == b'tag' and key not in first:
+            first.add(key)
+            findings += each_reading(lambda name: checker.named(
+                name, '', where + ' name')[1], value)
+        elif key == b'tagger' and signed:
+            findings += each_reading(lambda name, address, rest: checker.identity(
+                name, address, where + ' tagger', rest), *signed)
+        else:
+            findings += each_reading(lambda text: signed_text(checker, text, where, 'header'),
+                                     line)
+    return findings + each_reading(lambda text: signed_text(checker, text, where, 'message'),
+                                   message)
+
+
+def commits(checker, root, revisions, tally):
+    """The commits in a revision range: their messages, authors,
+    committers and other headers, and the lines, files and names their
+    changes add. Each commit is read as git shows it in UTF-8, converted
+    from the encoding the commit names, and as git keeps it, which is what
+    a push sends: a label can misdescribe the bytes, and git log stops a
+    message at a zero byte."""
+    findings, shown = [], {}
+    log = git(root, 'log', *LOG_OPTIONS, '-z', '--format=%H%n%an%n%ae%n%cn%n%ce%n%B',
+              *revisions, '--', binary=True)
+    for record in log.split(b'\0'):
+        fields = record.split(b'\n', 5)
+        if len(fields) < 6 or not COMMIT_ID.fullmatch(fields[0].strip().decode('ascii', 'replace')):
+            continue
+        shown[fields[0].strip().decode('ascii')] = fields[1:]
+    for full, stored in stored_objects(root, list(shown)) if shown else ():
+        sha = full[:12]
         tally.tick()
         tally.commits += 1
-        findings += checker.identity(fields[1], fields[2], f'commit {sha} author')
-        findings += checker.identity(fields[3], fields[4], f'commit {sha} committer')
-        findings += checker.text(fields[5], f'commit {sha} message')
+        name, address, committer, committer_address, message = shown[full]
+        headers, stored_message = object_parts(stored)
+        people = {b'author': [(name, address, b'')],
+                  b'committer': [(committer, committer_address, b'')]}
+        other = []
+        for line in headers:
+            key, _, value = line.partition(b' ')
+            signed = identity_parts(value) if key in people else None
+            if key in (b'tree', b'parent') and OBJECT_ID.fullmatch(value):
+                continue
+            if key in people and signed:
+                people[key].append(signed)
+            elif key == b'mergetag':
+                # A merge of a signed tag carries the whole tag.
+                findings += tag_findings(checker, value, f'commit {sha} merged tag')
+            else:
+                # A signature too: its armor can hold a comment.
+                other.append(line)
+        for key, identities in people.items():
+            where = f'commit {sha} {key.decode()}'
+            findings += merged(
+                lambda one, other, rest, where=where: checker.identity(one, other, where, rest),
+                [reading for fields in identities for reading in readings_of(*fields)])
+        for line in other:
+            findings += each_reading(
+                lambda text: signed_text(checker, text, f'commit {sha}', 'header'), line)
+        findings += merged(lambda text: checker.text(text, f'commit {sha} message'),
+                           readings_of(message) + readings_of(stored_message))
     patches = git_patch(root, 'log', *LOG_OPTIONS, '--no-merges', '--format=%x01%H',
                   *PATCH_OPTIONS, *revisions, '--') + '\n' + merge_patches(root, revisions)
     for sha, body in commit_patches(patches):
@@ -2234,19 +2711,13 @@ def tags(checker, root, objects):
             if sha in seen:
                 break
             seen.add(sha)
-            header, _, message = git(root, 'cat-file', 'tag', sha).partition('\n\n')
-            where = f'tag object {sha[:12]}'
-            tag_name = re.search(r'^tag (.*)$', header, re.MULTILINE)
-            if tag_name:
-                findings += checker.named(tag_name.group(1), '', where + ' name')[1]
-            tagger = re.search(r'^tagger (.*) <([^>]*)>', header, re.MULTILINE)
-            if tagger:
-                findings += checker.identity(tagger.group(1), tagger.group(2), where + ' tagger')
-            findings += checker.text(message, where + ' message')
-            target = re.search(r'^object ([0-9a-f]+)$', header, re.MULTILINE)
+            data = git(root, 'cat-file', 'tag', sha, binary=True)
+            findings += tag_findings(checker, data, f'tag object {sha[:12]}')
+            target = re.search(rb'^object ([0-9a-f]+)$', data.partition(b'\n\n')[0],
+                               re.MULTILINE)
             if not target:
                 break
-            name = target.group(1)
+            name = target.group(1).decode('ascii')
     return findings
 
 
@@ -2436,6 +2907,10 @@ def pre_push(checker, root, remote, lines, tally):
             continue  # a deletion publishes nothing
         for name in dict.fromkeys((local_ref, remote_ref)):
             findings += checker.named(name, '', f'the names in pushed line {number}')[1]
+        if not git_succeeds(root, 'cat-file', '-e', local + '^{commit}'):
+            # Its files would be published unread.
+            raise SetupError('A push of a tree or a blob, or of a tag of one, is refused: the '
+                             'check reads only commits and what they change.')
         sources.append(local)
         if not ZERO.match(remote_sha) and git_succeeds(root, 'cat-file', '-e',
                                                         remote_sha + '^{commit}'):
@@ -2569,7 +3044,8 @@ def guard_findings(texts=(), files=(), commits_from=(), directory=None, environ=
                    seconds=None):
     """For .claude/hooks/guard.py: findings in what a command or a tool
     would publish. texts are (label, text) pairs (a message, a pull
-    request's body, a comment); files are (path, text) pairs about to be
+    request's body, a comment), where text may be a tuple of one text's
+    readings, each place in which is reported once (merged); files are (path, text) pairs about to be
     written to GitHub, from the checkout at directory; commits_from are
     (directory, paths a git add in the same command names) for a commit,
     whose message is among texts. Pushes are left to .githooks/pre-push."""
@@ -2580,10 +3056,13 @@ def guard_findings(texts=(), files=(), commits_from=(), directory=None, environ=
     findings = []
     plain = Checker(entries)
     for label, text in texts:
-        # JSON may write any letter of the base64 as a \uXXXX escape; what
-        # GitHub decodes is the run with each escape undone.
-        unescaped = UNICODE_ESCAPE.sub(lambda match: chr(int(match[1], 16)), text)
-        findings += plain.text(text, label) + encoded_findings(plain, unescaped, label)
+        def read(reading, label=label):
+            # JSON may write any letter of the base64 as a \uXXXX escape;
+            # what GitHub decodes is the run with each escape undone.
+            unescaped = UNICODE_ESCAPE.sub(lambda match: chr(int(match[1], 16)), reading)
+            return plain.text(reading, label) + encoded_findings(plain, unescaped, label)
+        findings += merged(read, [(reading,) for reading in
+                                  ((text,) if isinstance(text, str) else text)])
     if files:
         support = set()
         if directory is not None:

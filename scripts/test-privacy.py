@@ -1149,6 +1149,468 @@ class GitSettingTests(unittest.TestCase):
                                            [f'{sha}^!'], privacy.Tally())
             self.assertEqual([str(finding) for finding in findings], expected, setting)
 
+    def test_a_message_is_read_in_whatever_encoding_git_keeps_or_writes_it(self):
+        # git writes a commit's text in i18n.logOutputEncoding (by default
+        # i18n.commitEncoding), and keeps as given the bytes of a message,
+        # a name or a tag that is not UTF-8 and names no encoding, as a
+        # push then sends them.
+        accented = NAME.replace('a', 'á', 1)
+        latin = self.folder / 'latin.txt'
+        latin.write_bytes(f'Thanks {accented}\n'.encode('latin-1'))
+        checker = privacy.Checker(entries(NAME))
+
+        def found(revision, **settings):
+            with git_settings(**settings):
+                return [str(finding) for finding in privacy.commits(
+                    checker, self.repo, [f'{revision}^!'], privacy.Tally())]
+
+        (self.repo / 'u.md').write_text('fine\n')
+        git(self.repo, 'add', 'u.md')
+        git(self.repo, 'commit', '-q', '-m', f'Thanks {accented}')
+        utf8 = git(self.repo, 'rev-parse', 'HEAD').strip()
+        with self.subTest('written in another encoding'):
+            self.assertEqual(found(utf8, i18n_logOutputEncoding='ISO-8859-1'),
+                             [f'commit {utf8[:12]} message:1:8: ' + privacy.KIND_PRIVATE])
+        (self.repo / 'u.md').write_text('still fine\n')
+        git(self.repo, 'add', 'u.md')
+        git(self.repo, '-c', 'i18n.commitEncoding=ISO-8859-1', 'commit', '-q', '-F', str(latin))
+        named = git(self.repo, 'rev-parse', 'HEAD').strip()
+        with self.subTest('kept in a named encoding'):
+            self.assertEqual(found(named, i18n_commitEncoding='ISO-8859-1'),
+                             [f'commit {named[:12]} message:1:8: ' + privacy.KIND_PRIVATE])
+
+        # git commit itself reads bytes that are not UTF-8 as Latin-1 and
+        # writes them as UTF-8; a commit made otherwise (git hash-object,
+        # an import) keeps them, and a push sends them as they are.
+        def raw_commit(name, message):
+            tree = git(self.repo, 'rev-parse', 'HEAD^{tree}').strip()
+            parent = git(self.repo, 'rev-parse', 'HEAD').strip()
+            ident = name + b' <t' + AT.encode() + b'example.com> 1700000000 +0000\n'
+            body = (f'tree {tree}\nparent {parent}\n'.encode() + b'author ' + ident
+                    + b'committer ' + ident + b'\n' + message + b'\n')
+            return subprocess.run(['git', '-C', str(self.repo), 'hash-object', '-t', 'commit',
+                                   '-w', '--stdin'], input=body, capture_output=True,
+                                  check=True).stdout.decode().strip()
+
+        unnamed = raw_commit(b'T', f'Thanks {accented}'.encode('latin-1'))
+        with self.subTest('kept as its bytes'):
+            self.assertEqual(found(unnamed),
+                             [f'commit {unnamed[:12]} message:1:8: ' + privacy.KIND_PRIVATE])
+        author = raw_commit(accented.encode('latin-1'), b'Tidy')
+        with self.subTest('an author kept as its bytes'):
+            self.assertEqual(found(author),
+                             [f'commit {author[:12]} author: ' + privacy.KIND_PRIVATE,
+                              f'commit {author[:12]} committer: ' + privacy.KIND_PRIVATE])
+        # git tag keeps a message's bytes whatever they are.
+        git(self.repo, 'tag', '-a', 'v2', '-F', str(latin))
+        tag = git(self.repo, 'rev-parse', 'v2').strip()
+        with self.subTest('a tag kept as its bytes'):
+            self.assertEqual(
+                [str(finding) for finding in privacy.tags(checker, self.repo, ['v2'])],
+                [f'tag object {tag[:12]} message:1:8: ' + privacy.KIND_PRIVATE])
+
+    def test_a_commit_is_read_as_git_stores_it_as_well_as_as_git_shows_it(self):
+        # A push sends each object's bytes as they are. git log converts
+        # them from the encoding the object names, which can misdescribe
+        # them (git commit with i18n.commitEncoding keeps UTF-8 typed in a
+        # terminal under a Latin-1 label), stops a message at a zero byte,
+        # and never shows a header such as the encoding's own name.
+        accented = NAME.replace('a', 'á', 1)
+        checker = privacy.Checker(entries(NAME))
+
+        def found(revision):
+            return [str(finding) for finding in privacy.commits(
+                checker, self.repo, [f'{revision}^!'], privacy.Tally())]
+
+        def raw_commit(headers, message, name=b'T'):
+            tree = git(self.repo, 'rev-parse', 'HEAD^{tree}').strip()
+            ident = name + b' <t' + AT.encode() + b'example.com> 1700000000 +0000\n'
+            body = (f'tree {tree}\n'.encode() + b'author ' + ident + b'committer ' + ident
+                    + headers + b'\n' + message + b'\n')
+            return subprocess.run(['git', '-C', str(self.repo), 'hash-object', '--literally',
+                                   '-t', 'commit', '-w', '--stdin'], input=body,
+                                  capture_output=True, check=True).stdout.decode().strip()
+
+        git(self.repo, '-c', 'i18n.commitEncoding=ISO-8859-1', 'commit', '-q', '--allow-empty',
+            '-m', f'Thanks {accented}', f'--author={accented} <q{AT}example.com>')
+        labelled = git(self.repo, 'rev-parse', 'HEAD').strip()
+        for settings in ({}, {'i18n_commitEncoding': 'ISO-8859-1'}):
+            with self.subTest('UTF-8 under a Latin-1 label', settings=settings), \
+                    git_settings(**settings):
+                self.assertEqual(found(labelled),
+                                 [f'commit {labelled[:12]} author: ' + privacy.KIND_PRIVATE,
+                                  f'commit {labelled[:12]} message:1:8: ' + privacy.KIND_PRIVATE])
+        misdescribed = raw_commit(b'encoding UTF-16\n', f'Thanks {NAME}'.encode(),
+                                  NAME.encode())
+        with self.subTest('a label that misdescribes plain text'):
+            self.assertEqual(found(misdescribed),
+                             [f'commit {misdescribed[:12]} author: ' + privacy.KIND_PRIVATE,
+                              f'commit {misdescribed[:12]} committer: ' + privacy.KIND_PRIVATE,
+                              f'commit {misdescribed[:12]} message:1:8: ' + privacy.KIND_PRIVATE])
+        cut = raw_commit(b'', f'Tidy\0Thanks {NAME}'.encode())
+        with self.subTest('a zero byte in the message'):
+            self.assertEqual(found(cut),
+                             [f'commit {cut[:12]} message:1:13: ' + privacy.KIND_PRIVATE])
+        header = raw_commit(f'encoding {NAME}\n'.encode(), b'Tidy')
+        with self.subTest('a header'):
+            self.assertEqual(found(header),
+                             [f'commit {header[:12]} header:1:10: ' + privacy.KIND_PRIVATE])
+        mixed = raw_commit(b'', 'Café \udcff Thanks {NAME}'.format(NAME=NAME).encode(
+            'utf-8', 'surrogateescape'))
+        with self.subTest('one place reported once, whatever the readings'):
+            self.assertEqual(found(mixed),
+                             [f'commit {mixed[:12]} message:1:15: ' + privacy.KIND_PRIVATE])
+        # git tag keeps a message's bytes whatever they are, and its
+        # headers too.
+        utf16 = self.folder / 'utf16.txt'
+        utf16.write_bytes(f'Thanks {NAME}\n'.encode('utf-16'))
+        git(self.repo, 'tag', '-a', 'v3', '-F', str(utf16))
+        tag = git(self.repo, 'rev-parse', 'v3').strip()
+        with self.subTest('a tag message in UTF-16'):
+            self.assertEqual(
+                [str(finding) for finding in privacy.tags(checker, self.repo, ['v3'])],
+                [f'tag object {tag[:12]} message:1:8: ' + privacy.KIND_PRIVATE])
+        target = git(self.repo, 'rev-parse', 'HEAD').strip()
+        labelled_tag = subprocess.run(
+            ['git', '-C', str(self.repo), 'hash-object', '--literally', '-t', 'tag', '-w',
+             '--stdin'], input=(f'object {target}\ntype commit\ntag v4\ntagger T <t{AT}example'
+                                f'.com> 1700000000 +0000\nencoding {NAME}\n\nRelease\n').encode(),
+            capture_output=True, check=True).stdout.decode().strip()
+        git(self.repo, 'update-ref', 'refs/tags/v4', labelled_tag)
+        with self.subTest("a tag's header"):
+            self.assertEqual(
+                [str(finding) for finding in privacy.tags(checker, self.repo, ['v4'])],
+                [f'tag object {labelled_tag[:12]} header:1:10: ' + privacy.KIND_PRIVATE])
+
+    def test_what_a_commit_carries_is_read_as_what_it_is(self):
+        # A merge of a signed tag carries the tag in a mergetag header, read
+        # as a tag is (its tagger may use the support address); a
+        # signature's armor can hold a comment; only a tree or parent line
+        # that names an object is not text; an address git keeps with a
+        # trailing dot or a comment is still an address.
+        support = 'help' + AT + 'gmail.com'
+        checker = privacy.Checker(entries(NAME), {support})
+
+        def found(revision):
+            return [str(finding) for finding in privacy.commits(
+                checker, self.repo, [f'{revision}^!'], privacy.Tally())]
+
+        def raw_commit(headers, message=b'Tidy', address=b't' + AT.encode() + b'example.com'):
+            tree = git(self.repo, 'rev-parse', 'HEAD^{tree}').strip()
+            ident = b'T <' + address + b'> 1700000000 +0000\n'
+            body = (f'tree {tree}\n'.encode() + b'author ' + ident + b'committer ' + ident
+                    + headers + b'\n' + message + b'\n')
+            return subprocess.run(['git', '-C', str(self.repo), 'hash-object', '--literally',
+                                   '-t', 'commit', '-w', '--stdin'], input=body,
+                                  capture_output=True, check=True).stdout.decode().strip()
+
+        target = git(self.repo, 'rev-parse', 'HEAD').strip()
+
+        def mergetag(message, kind='commit', after=''):
+            return (f'mergetag object {target}\n type {kind}\n tag v9\n tagger Owner <{support}>'
+                    f' 1700000000 +0000{after}\n \n {message}\n -----BEGIN PGP SIGNATURE-----\n'
+                    ' iQEzBAABCAAdFiEE\n -----END PGP SIGNATURE-----\n').encode()
+
+        clean = raw_commit(mergetag('Release'))
+        with self.subTest("a merged tag's tagger"):
+            self.assertEqual(found(clean), [])
+        named = raw_commit(mergetag(f'Thanks {NAME}'))
+        with self.subTest("a merged tag's message"):
+            self.assertEqual(found(named), [f'commit {named[:12]} merged tag message:1:8: '
+                                            + privacy.KIND_PRIVATE])
+        armor = raw_commit(f'gpgsig -----BEGIN PGP SIGNATURE-----\n Comment: {NAME}\n \n'
+                           ' iQEzBAABCAAdFiEE\n -----END PGP SIGNATURE-----\n'.encode())
+        with self.subTest("a signature's comment"):
+            self.assertEqual(found(armor), [f'commit {armor[:12]} header:2:10: '
+                                            + privacy.KIND_PRIVATE])
+        parent = raw_commit(f'parent {NAME}\n'.encode())
+        with self.subTest('a parent line that names no object'):
+            self.assertEqual(found(parent), [f'commit {parent[:12]} header:1:8: '
+                                             + privacy.KIND_PRIVATE])
+        for address in (ADDRESS + '.', ADDRESS + ' (home)', f'ok{AT}example.com+{ADDRESS}',
+                        f'ok{AT}example.com%{ADDRESS}', f'ok{AT}example.com_{ADDRESS}',
+                        ADDRESS.replace('i', 'í', 1), ADDRESS.replace(AT, '%40'),
+                        ADDRESS.replace(AT, '＠')):
+            dotted = raw_commit(b'', address=address.encode())
+            with self.subTest('an address git keeps as given', address=address):
+                self.assertEqual(found(dotted),
+                                 [f'commit {dotted[:12]} author: ' + privacy.KIND_EMAIL,
+                                  f'commit {dotted[:12]} committer: ' + privacy.KIND_EMAIL])
+        number = raw_commit(b'', address=('+44 20 ' + '7946 0958').encode())
+        with self.subTest('a phone number for an address'):
+            self.assertEqual(found(number),
+                             [f'commit {number[:12]} author: ' + privacy.KIND_PHONE,
+                              f'commit {number[:12]} committer: ' + privacy.KIND_PHONE])
+        # A header's continuation lines belong to it, and a merged tag's
+        # tagger line can go on after its time zone.
+        continued = raw_commit(f' {NAME}\n'.encode())
+        with self.subTest("a committer's continuation line"):
+            self.assertEqual(found(continued),
+                             [f'commit {continued[:12]} committer: ' + privacy.KIND_PRIVATE])
+        after = raw_commit(mergetag('Release', after=f' {NAME}'))
+        with self.subTest("text after a merged tag's time zone"):
+            self.assertEqual(found(after),
+                             [f'commit {after[:12]} merged tag tagger: ' + privacy.KIND_PRIVATE])
+        typed = raw_commit(mergetag('Release', kind='Tobble'))
+        with self.subTest("a merged tag's type that names no type"):
+            self.assertEqual(
+                [str(finding) for finding in privacy.commits(
+                    privacy.Checker(entries('Tobble'), {support}), self.repo, [f'{typed}^!'],
+                    privacy.Tally())],
+                [f'commit {typed[:12]} merged tag header:1:6: ' + privacy.KIND_PRIVATE])
+
+        def raw_tag(text):
+            return subprocess.run(
+                ['git', '-C', str(self.repo), 'hash-object', '--literally', '-t', 'tag', '-w',
+                 '--stdin'], input=text, capture_output=True, check=True).stdout.decode().strip()
+
+        def tag_found(sha):
+            git(self.repo, 'update-ref', 'refs/tags/odd', sha)
+            return [str(finding) for finding in privacy.tags(checker, self.repo, ['odd'])]
+
+        head = (f'object {target}\ntype commit\ntag v8\n'
+                f'tagger T <t{AT}example.com> 1700000000 +0000\n').encode()
+        second = raw_tag(head + f'tagger {NAME} <q{AT}example.com> 1700000000 +0000\n\n'
+                         'Release\n'.encode())
+        with self.subTest('a second tagger'):
+            self.assertEqual(tag_found(second),
+                             [f'tag object {second[:12]} tagger: ' + privacy.KIND_PRIVATE])
+        accented = NAME.replace('a', 'á', 1)
+        for text, codec, before in (
+                (f'Thanks {NAME}\n', 'utf-32-le', b''), (f'Thanks {accented}\n', 'utf-32-le', b''),
+                (f'Thanks {accented} \U0001F600\n', 'utf-16-le', b''),
+                (f'Thanks {accented}\n', 'utf-16-le', b'x'),
+                (f'Thanks {accented}\n', 'utf-32-be', b'xy')):
+            wide = raw_tag(head + b'\n' + before + text.encode(codec))
+            with self.subTest('a message no reading guesses', text=text, codec=codec,
+                              before=before):
+                self.assertEqual(len(tag_found(wide)), 1)
+                self.assertIn(f'tag object {wide[:12]} message:1:', tag_found(wide)[0])
+
+    def test_a_signature_is_read_as_the_data_it_holds(self):
+        # A signature's base64 is full of runs that read as words (a word
+        # may start at a case change, a / or a +), so it is decoded and its
+        # bytes read by their format: an OpenPGP signer's user ID and its
+        # readable notations, an X.509 certificate's strings, and an SSH
+        # signature's readable runs, whose key type names are OpenSSH's.
+        # Its armor's own lines are text, and so is a block that is not one.
+        support = 'help' + AT + 'gmail.com'
+        checker = privacy.Checker(entries(NAME + '\nTobble'), {support})
+        target = git(self.repo, 'rev-parse', 'HEAD').strip()
+        tree = git(self.repo, 'rev-parse', 'HEAD^{tree}').strip()
+
+        def stored(kind, body):
+            return subprocess.run(['git', '-C', str(self.repo), 'hash-object', '--literally',
+                                   '-t', kind, '-w', '--stdin'], input=body,
+                                  capture_output=True, check=True).stdout.decode().strip()
+
+        def armor(lines, indent='', kind='PGP SIGNATURE'):
+            pgp = kind == 'PGP SIGNATURE'
+            return ''.join(f'{indent}{line}\n' for line in (
+                f'-----BEGIN {kind}-----', *([''] if pgp else []), *lines,
+                *(['=Tobb'] if pgp else []), f'-----END {kind}-----'))
+
+        def signed_commit(lines, headers='', kind='PGP SIGNATURE'):
+            ident = f'T <t{AT}example.com> 1700000000 +0000\n'
+            return stored('commit', (f'tree {tree}\nauthor {ident}committer {ident}{headers}'
+                                     f'gpgsig {armor(lines, " ", kind)[1:]}\nTidy\n').encode())
+
+        def found(sha, checker=checker):
+            return [str(finding) for finding in privacy.commits(
+                checker, self.repo, [f'{sha}^!'], privacy.Tally())]
+
+        def tag_found(lines, message='Release\n', checker=checker):
+            sha = stored('tag', (f'object {target}\ntype commit\ntag v7\ntagger T <t{AT}'
+                                 f'example.com> 1700000000 +0000\n\n{message}'
+                                 + armor(lines)).encode())
+            git(self.repo, 'update-ref', 'refs/tags/signed', sha)
+            return sha, [str(finding) for finding in privacy.tags(checker, self.repo, ['signed'])]
+
+        def encoded(data, width=64):
+            text = base64.b64encode(data).decode()
+            return [text[start:start + width] for start in range(0, len(text), width)]
+
+        # OpenPGP (RFC 9580): a new-format packet, a version 4 signature
+        # and its subpackets.
+        def packet(tag, body):
+            return bytes([0xc0 | tag, len(body)]) + body
+
+        def subpacket(kind, body):
+            return bytes([len(body) + 1, kind]) + body
+
+        def pgp(*hashed, unhashed=()):
+            area, rest = b''.join(hashed), b''.join(unhashed)
+            return packet(2, b'\x04\x00\x16\x0a' + len(area).to_bytes(2, 'big') + area
+                          + len(rest).to_bytes(2, 'big') + rest + b'\x12\x34\x00\xff'
+                          + bytes(range(32)))
+
+        def notation(name, value, readable=False):
+            return subpacket(20, bytes([0x80 if readable else 0, 0, 0, 0])
+                             + len(name).to_bytes(2, 'big') + len(value).to_bytes(2, 'big')
+                             + name + value)
+
+        created, issuer = subpacket(2, b'\x65\x00\x00\x00'), subpacket(16, bytes(range(8)))
+
+        def signer(identity):
+            return encoded(pgp(created, subpacket(28, identity.encode()), unhashed=[issuer]))
+
+        words = ['iQEzBAABCAAd/Tobble+FiEE']
+        with self.subTest("a word in a commit signature's base64"):
+            self.assertEqual(found(signed_commit(words)), [])
+        with self.subTest("a word in a tag signature's base64"):
+            self.assertEqual(tag_found(words)[1], [])
+        merged = signed_commit(['iQEzBAABCAAdFiEE'], headers=(
+            f'mergetag object {target}\n type commit\n tag v9\n tagger T <t{AT}example.com>'
+            f' 1700000000 +0000\n \n Release\n{armor(words, " ")}'))
+        with self.subTest("a word in a merged tag signature's base64"):
+            self.assertEqual(found(merged), [])
+        named = signed_commit(signer(f'{NAME} <{ADDRESS}>'))
+        with self.subTest("a signer's user ID in a commit signature"):
+            self.assertEqual(found(named),
+                             [f'commit {named[:12]} signature: ' + privacy.KIND_PRIVATE,
+                              f'commit {named[:12]} signature: ' + privacy.KIND_EMAIL])
+        with self.subTest("a signer's user ID in a tag signature"):
+            sha, findings = tag_found(signer(f'{NAME} <{ADDRESS}>'))
+            self.assertEqual(findings,
+                             [f'tag object {sha[:12]} signature: ' + privacy.KIND_PRIVATE,
+                              f'tag object {sha[:12]} signature: ' + privacy.KIND_EMAIL])
+        capitals = signed_commit(signer(ADDRESS.title()))
+        with self.subTest("a signer's address with capitals"):
+            self.assertEqual(found(capitals),
+                             [f'commit {capitals[:12]} signature: ' + privacy.KIND_EMAIL])
+        owner = signed_commit(signer(f'Owner <{support}>'))
+        with self.subTest("the support address as a signer's user ID"):
+            self.assertEqual(found(owner), [])
+        # Sequoia adds a notation named salt in its namespace,
+        # notations.sequoia-pgp.org, written like an address, with random
+        # bytes, to every signature: a notation's name names it, not a
+        # person. A readable notation's value is read.
+        for first in (b'q', b'\x00', b'Q'):
+            salted = signed_commit(encoded(pgp(created, notation(
+                b'salt' + AT.encode() + b'notations.sequoia-pgp.org', first + bytes(range(31))),
+                unhashed=[issuer])))
+            with self.subTest("a notation's name", first=first):
+                self.assertEqual(found(salted), [])
+        noted = signed_commit(encoded(pgp(created, notation(
+            b'note' + AT.encode() + b'example.com', f'Thanks {NAME}'.encode(), readable=True))))
+        with self.subTest("a readable notation's value"):
+            self.assertEqual(found(noted),
+                             [f'commit {noted[:12]} signature: ' + privacy.KIND_PRIVATE])
+
+        # SSH (OpenSSH's PROTOCOL.sshsig): a security key's signature names
+        # its key type, sk-ssh-ed25519@openssh.com, twice; base64 wrapped
+        # at 70 columns can end in a line of padding alone.
+        def string(data):
+            return len(data).to_bytes(4, 'big') + data
+
+        def sshsig(kind, application=b'ssh:'):
+            key = string(kind) + string(bytes(range(1, 33))) + string(application)
+            signature = string(kind) + string(bytes(range(64))) + b'\x01' + bytes(4)
+            return (b'SSHSIG' + (1).to_bytes(4, 'big') + string(key) + string(b'git')
+                    + string(b'') + string(b'sha512') + string(signature))
+
+        for kind in (b'sk-ssh-ed25519', b'sk-ecdsa-sha2-nistp256'):
+            keyed = signed_commit(encoded(sshsig(kind + AT.encode() + b'openssh.com'), 70),
+                                  kind='SSH SIGNATURE')
+            with self.subTest("a security key's type", kind=kind):
+                self.assertEqual(found(keyed), [])
+        padded = sshsig(b'sk-ssh-ed25519' + AT.encode() + b'openssh.com', b'ssh:' + b'q' * 46)
+        self.assertEqual(len(padded), 262)
+        lines = encoded(padded, 70)
+        with self.subTest('a last line of padding alone'):
+            self.assertEqual(lines[-1], '==')
+            text, blocks = privacy.armored(armor(lines, kind='SSH SIGNATURE'))
+            self.assertEqual(blocks, [padded])
+            self.assertEqual(text.split('\n')[1:-2], [''] * len(lines))
+
+        # X.509 (RFC 5652): DER, in which an address is followed by the
+        # next element's tag, often '0'.
+        def der(tag, *parts):
+            body = b''.join(parts)
+            size = (bytes([len(body)]) if len(body) < 128
+                    else bytes([0x81, len(body)]) if len(body) < 256
+                    else bytes([0x82]) + len(body).to_bytes(2, 'big'))
+            return bytes([tag]) + size + body
+
+        # A certificate (RFC 5280) as SignedData carries it, a dozen deep:
+        # its subject's name, and an address in its other names, an
+        # extension kept in an OCTET STRING.
+        certificate = der(0x30, der(0x30, der(0xa0, der(0x02, b'\x02')), der(0x02, b'\x00'),
+                                    der(0x31, der(0x30, der(0x06, b'\x55\x04\x03'),
+                                                  der(0x0c, NAME.encode()))),
+                                    der(0xa3, der(0x30, der(0x30, der(0x06, b'\x55\x1d\x11'),
+                                                            der(0x04, der(0x30, der(
+                                                                0x81, ADDRESS.encode()))))))),
+                          der(0x30, der(0x04, bytes(range(1, 20)))))
+        signed_data = der(0x30, der(0x06, b'\x2a\x86\x48'), der(0xa0, der(
+            0x30, der(0x02, b'\x01'), der(0x31), der(0x30, der(0x06, b'\x2a\x86\x48')),
+            der(0xa0, certificate))))
+        self.assertIn(b'\x00', signed_data)  # as every signature's lengths hold
+        x509 = signed_commit(encoded(signed_data), kind='SIGNED MESSAGE')
+        with self.subTest("a certificate's name and address"):
+            self.assertEqual(found(x509),
+                             [f'commit {x509[:12]} signature: ' + privacy.KIND_PRIVATE,
+                              f'commit {x509[:12]} signature: ' + privacy.KIND_EMAIL])
+        indefinite = signed_commit(encoded(b'\x30\x80' + der(0x06, b'\x2a\x86\x48')
+                                           + b'\xa0\x80' + certificate + b'\x00\x00\x00\x00'),
+                                   kind='SIGNED MESSAGE')
+        with self.subTest('a certificate inside a length BER leaves open'):
+            self.assertEqual(found(indefinite),
+                             [f'commit {indefinite[:12]} signature: ' + privacy.KIND_PRIVATE,
+                              f'commit {indefinite[:12]} signature: ' + privacy.KIND_EMAIL])
+
+        # What is not a signature's base64 is text.
+        plain = signed_commit(['Tobble'])
+        with self.subTest('a block that holds no data'):
+            self.assertEqual(found(plain), [f'commit {plain[:12]} header:3:1: '
+                                            + privacy.KIND_PRIVATE])
+        surname = privacy.Checker(entries(NAME.split()[1]))
+        with self.subTest('a clearsigned message before its signature'):
+            sha, findings = tag_found(words, '-----BEGIN PGP SIGNED MESSAGE-----\nHash: SHA256\n'
+                                      f'\nRelease notes\n{NAME.split()[1]}\n', surname)
+            self.assertEqual(findings, [f'tag object {sha[:12]} message:5:1: '
+                                        + privacy.KIND_PRIVATE])
+        with self.subTest('a word among the lines of base64'):
+            sha, findings = tag_found(['iQEzBAABCAAdFiEEiQEzBAABCAAd', NAME.split()[1],
+                                       'iQEzBAAB'], checker=surname)
+            self.assertEqual(findings, [f'tag object {sha[:12]} message:5:1: '
+                                        + privacy.KIND_PRIVATE])
+
+    def test_a_long_or_odd_header_is_read_in_time(self):
+        # A merged tag or a signature with many lines, and identities git
+        # would never write, are read in time proportional to their size.
+        for name, read in (
+                ('continuation lines', lambda: privacy.object_parts(
+                    b'gpgsig x\n' + (b' ' + b'y' * 60 + b'\n') * 100000 + b'\nTidy')),
+                ('an identity with no end', lambda: privacy.identity_parts(
+                    b'T' + b' <x' * 100000))):
+            with self.subTest(name):
+                began = time.monotonic()
+                read()
+                self.assertLess(time.monotonic() - began, 10)
+        headers, message = privacy.object_parts(b'gpgsig x\n y\n z\n\nTidy')
+        self.assertEqual((headers, message), ([b'gpgsig x\ny\nz'], b'Tidy'))
+        self.assertEqual(privacy.identity_parts(
+            b'A B <a' + AT.encode() + b'example.com> 1700000000 +0000\nmore'),
+            (b'A B', b'a' + AT.encode() + b'example.com', b'\nmore'))
+        self.assertEqual(privacy.identity_parts(b'A <b> <c> 1 +0000'), (b'A <b>', b'c', b''))
+        self.assertIsNone(privacy.identity_parts(b'A <b'))
+
+    def test_a_push_of_something_other_than_commits_is_refused(self):
+        # The check reads commits and what they change; a push of a blob
+        # or a tree, or of a tag of one, would publish files unread.
+        blob = subprocess.run(['git', '-C', str(self.repo), 'hash-object', '-w', '--stdin'],
+                              input=f'Thanks {NAME}\n', text=True, capture_output=True,
+                              check=True).stdout.strip()
+        git(self.repo, 'tag', '-a', 'blobtag', '-m', 'A blob', blob)
+        tag = git(self.repo, 'rev-parse', 'blobtag').strip()
+        for ref, sha in (('refs/tags/raw', blob), ('refs/tags/blobtag', tag)):
+            with self.subTest(ref=ref):
+                status, out, err = self.run_here(
+                    '--pre-push', 'origin', stdin=f'{ref} {sha} {ref} {"0" * 40}\n')
+                self.assertEqual(status, 2, out + err)
+                self.assertIn('only commits', err)
+
     def test_what_a_first_commit_adds_is_read_whatever_git_is_set_to_show(self):
         git(self.repo, 'checkout', '-q', '--orphan', 'pages')
         git(self.repo, 'rm', '-q', '-r', '--cached', '.')

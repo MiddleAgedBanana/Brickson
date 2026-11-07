@@ -184,9 +184,10 @@ REUSED_EARLIER = ('An earlier command in this call ({command}) can change the co
                   'takes its message or author from, or leave it a merge message, and the guard '
                   'reads them before the call runs. Run that command first, then commit in '
                   'the next call (or name the commit by its full hash).')
-AUTHOR_PATTERN = ('This commit\'s --author is not Name <address>, and no commit here has an '
-                  'author it matches, so the guard cannot tell whom git would name. Give the '
-                  'author as Name <address>.')
+AUTHOR_PATTERN = ('This commit\'s --author is not Name <address>: git would name the author '
+                  'of the latest commit it matches, and which commit that is depends on the '
+                  'locale, the log encoding and .mailmap, so the guard cannot tell whom git '
+                  'would name. Give the author as Name <address>.')
 SOURCE_FOLDER = ('gh repo create names the repository after its --source folder, which the '
                  'guard cannot place here: name the repository, or give the folder as a path.')
 PUBLISHED_FILE = ('A file this command publishes must exist before the command runs, so the '
@@ -1159,15 +1160,17 @@ def git_parts(words, cwd, environment):
     return None, [], (cwd, words[1:], environment)
 
 
-def git(context, *args):
+def git(context, *args, raw=False):
     """git's answer to a read-only query, run where the command would run
-    it, or None when git cannot answer. The guard asks before the whole
-    command runs, so the same question has the same answer each time it
-    is asked: a script checked in many folders asks each one once."""
+    it, or None when git cannot answer: as text, or as its bytes when raw.
+    The guard asks before the whole command runs, so the same question has
+    the same answer each time it is asked: a script checked in many
+    folders asks each one once."""
     cwd, options, overrides = context
     if cwd is None:
         return None  # an inherited directory-stack destination is unknown
-    return git_answer(cwd, tuple(options), tuple(sorted(overrides.items(), key=str)), args)
+    return git_answer(cwd, tuple(options), tuple(sorted(overrides.items(), key=str)), args,
+                      raw)
 
 
 # How many questions the guard has asked git (git_answer's cache misses).
@@ -1175,7 +1178,7 @@ GIT_QUERIES = [0]
 
 
 @functools.lru_cache(maxsize=4096)
-def git_answer(cwd, options, overrides, args):
+def git_answer(cwd, options, overrides, args, raw=False):
     GIT_QUERIES[0] += 1
     environment = os.environ.copy()
     for key, value in overrides:
@@ -1185,8 +1188,8 @@ def git_answer(cwd, options, overrides, args):
             environment[key] = value
     try:
         result = subprocess.run(['git', '-C', cwd, *options, *args], capture_output=True,
-                                encoding='utf-8', errors='replace', timeout=5,
-                                env=environment)
+                                timeout=5, env=environment,
+                                **({} if raw else {'encoding': 'utf-8', 'errors': 'replace'}))
     except (OSError, ValueError, subprocess.SubprocessError):
         return None
     return result.stdout.strip() if result.returncode == 0 else None
@@ -2467,6 +2470,17 @@ def published_files(filename, cwd, git_state=None):
     return decoded_texts(data)
 
 
+def git_readings(*fields):
+    """Each reading of a commit's fields, as git gave their bytes
+    (decoded_texts): a tuple of texts per reading, the first field's
+    paired with the second's. git commit writes a name or message that is
+    not UTF-8 as Latin-1 turned into UTF-8, so one kept as Latin-1 bytes
+    (a commit an import made, a configured name) is published."""
+    texts = [decoded_texts(field) for field in fields]
+    return [tuple(one[min(number, len(one) - 1)] for one in texts)
+            for number in range(max(len(one) for one in texts))]
+
+
 def decoded_texts(data):
     """A file's text as each encoding it may be read in: UTF-8, or, when
     it is not, also Windows-1252 and Latin-1 (git commit -F with
@@ -2565,13 +2579,14 @@ def literal_text(value, git_state):
     return None
 
 
-def note_published(git_state, label, values=(), files=(), cwd=None, texts=()):
+def note_published(git_state, label, values=(), files=(), cwd=None, texts=(), readings=()):
     """Remember text a command would publish, for check_privacy: values are
     the shell's words, files name files (or - for stdin) the command reads
-    its text from, and texts are data already read, such as a request
-    file's content, in which a $ or a backtick is only text. A word the
-    shell would build from a variable or another command is refused: what
-    it becomes cannot be read here."""
+    its text from, texts are data already read, such as a request file's
+    content, in which a $ or a backtick is only text, and readings are one
+    such text in each encoding it may be read in, whose findings are each
+    reported once. A word the shell would build from a variable or another
+    command is refused: what it becomes cannot be read here."""
     published = git_state.setdefault('published', [])
     for value in values:
         text = literal_text(str(value), git_state)
@@ -2585,9 +2600,10 @@ def note_published(git_state, label, values=(), files=(), cwd=None, texts=()):
         # the guard can read before the command runs.
         if filename.startswith(('<(', '>(')) or literal_text(filename, git_state) is None:
             deny(PUBLISHED_EXPANSION)
-        published.extend((label + ' file', text)
-                         for text in published_files(filename, cwd, git_state))
+        published.append((label + ' file', tuple(published_files(filename, cwd, git_state))))
     published.extend((label, str(text)) for text in texts)
+    if readings:
+        published.append((label, tuple(readings)))
     git_state['publishes'] = True
 
 
@@ -2688,34 +2704,25 @@ def note_commit(git_state, args, context, paths):
     read = 0
     for variable, where in (('GIT_AUTHOR_IDENT', 'the commit author'),
                             ('GIT_COMMITTER_IDENT', 'the commit committer')):
-        signed = re.fullmatch(r'(.*) <(.*)> \d+ [+-]\d{4}', git(context, 'var', variable) or '')
+        signed = re.fullmatch(rb'(.*) <(.*)> \d+ [+-]\d{4}',
+                              git(context, 'var', variable, raw=True) or b'')
         if signed:
-            identities.append((directory, signed[1], signed[2], where))
+            identities.append((directory, git_readings(signed[1], signed[2]), where))
             read += 1
     if not read:
         note_published(git_state, 'the commit author', given)
     for author in (value for option, value in pairs if option == '--author'):
         signed = re.fullmatch(r'(.*?)\s*<(.*)>', author.strip())
-        if signed and literal_text(author, git_state) is not None:
-            identities.append((directory, signed[1], signed[2], 'the commit author'))
-        else:
+        if not signed:
             # Not Name <address>: git takes the identity of the latest
             # commit whose author matches it, ignoring case, from every ref
-            # (git commit --help; builtin/commit.c, find_author_by_nickname).
-            note_published(git_state, 'the commit author', [author])
-            # A ref, a setting or a file (.mailmap) an earlier command in
-            # this call changes may change whom it finds.
-            earlier = (git_state.get('refs_moved') or git_state.get('config_changed')
-                       or ('a command that writes a file' if git_state.get('writes')
-                           or git_state.get('changes') else None))
-            if earlier:
-                deny(REUSED_EARLIER.format(command=earlier))
-            found = git(context, 'log', '-1', '--all', '-i', '--encoding=UTF-8',
-                        '--author=' + author, '--format=%aN%x00%aE')
-            if not found or '\0' not in found:
-                deny(AUTHOR_PATTERN)
-            name, address = found.split('\0', 1)
-            identities.append((directory, name, address, 'the commit author'))
+            # (git commit --help; builtin/commit.c, find_author_by_nickname),
+            # matched in the locale and the log encoding git runs with and
+            # after .mailmap, and kept in that commit's own bytes.
+            deny(AUTHOR_PATTERN)
+        if literal_text(author, git_state) is None:
+            deny(PUBLISHED_EXPANSION)
+        identities.append((directory, [(signed[1], signed[2])], 'the commit author'))
     git_state.setdefault('commits', []).append(
         (directory, [*adds, *((directory, path, False) for path in paths)]))
 
@@ -2900,17 +2907,32 @@ def note_reused_commit(git_state, args, pairs, context, directory):
     for revision, author in reused:
         if literal_text(revision, git_state) is None:
             deny(PUBLISHED_EXPANSION)
-        # In UTF-8, whatever log encoding the command or the repository sets.
-        found = git(context, 'log', '-1', '--encoding=UTF-8',
-                    '--format=%an%x00%ae%x00%B', '--end-of-options', revision, '--')
-        if found is None or found.count('\0') < 2:
+        # git commit takes the commit converted to its own
+        # i18n.commitEncoding: from the encoding the commit names, or its
+        # bytes as they are where the two are the same (logmsg_reencode).
+        # So both are read: in UTF-8, whatever log encoding the command or
+        # the repository sets, and as git keeps it. log.showSignature would
+        # put gpg's lines before the fields.
+        found = git(context, 'log', '-1', '--no-show-signature', '--encoding=UTF-8',
+                    '--format=%H%x00%an%x00%ae%x00%B', '--end-of-options', revision, '--',
+                    raw=True)
+        if found is None or found.count(b'\0') < 3:
             deny(REUSED_COMMIT)
-        name, address, message = found.split('\0', 2)
+        sha, name, address, message = found.split(b'\0', 3)
+        stored = git(context, 'cat-file', 'commit', sha.decode('ascii', 'replace'), raw=True)
+        if stored is None:
+            deny(REUSED_COMMIT)
+        header, _, stored_message = stored.partition(b'\n\n')
+        stored_author = re.search(rb'^author (.*) <([^>]*)>', header, re.MULTILINE)
         if author is not None:
-            note_published(git_state, 'the reused commit message', texts=[message])
+            note_published(git_state, 'the reused commit message',
+                           readings=decoded_texts(message) + decoded_texts(stored_message))
         if author is not False:
+            readings = git_readings(name, address)
+            if stored_author:
+                readings += git_readings(*stored_author.groups())
             git_state.setdefault('identities', []).append(
-                (directory, name, address, 'the commit author'))
+                (directory, readings, 'the commit author'))
 
 
 def writes_git_folder(git_state, context):
@@ -4385,8 +4407,9 @@ def privacy_module():
 def check_privacy(texts=(), files=(), commits=(), directory=None, identities=()):
     """Deny when what would be published holds a personal detail, naming
     places and kinds only. If the check cannot run, nothing is published.
-    identities are (folder, name, address, where) for a commit's author
-    and committer, checked as the checker checks a commit's."""
+    texts are (label, text or its readings); identities are (folder, its
+    readings as (name, address), where) for a commit's author and
+    committer, checked as the checker checks a commit's."""
     try:
         privacy = privacy_module()
     except Exception as error:  # noqa: BLE001 - any failure publishes nothing
@@ -4397,12 +4420,15 @@ def check_privacy(texts=(), files=(), commits=(), directory=None, identities=())
                                           seconds=PRIVACY_SECONDS)
         if identities:
             entries = privacy.load_list()[0]
-            for folder, name, address, where in identities:
+            for folder, readings, where in identities:
                 try:
                     support = privacy.support_addresses(privacy.top_level(folder))[0]
                 except privacy.SetupError:
                     support = set()  # not a checkout: the support address is not allowed
-                findings += privacy.Checker(entries, support).identity(name, address, where)
+                checker = privacy.Checker(entries, support)
+                findings += privacy.merged(
+                    lambda name, address, where=where: checker.identity(name, address, where),
+                    readings)
     except privacy.SetupError as error:
         deny(PRIVATE_SETUP.format(reason=str(error)))
     except Exception as error:  # noqa: BLE001

@@ -5214,8 +5214,10 @@ outside service: nothing it reads leaves the computer it runs on.
   (JSON's and code's line breaks and tabs) read as spaces.
 - **Built-in patterns**, which need no list: email addresses (except
   those at example domains, GitHub's own (github.com and the addresses
-  under it, such as the no-reply ones commits are signed with), the
-  services agents sign commits with, a picture's scale in its name
+  under it, such as the no-reply ones commits are signed with),
+  OpenSSH's names for its key types (`sk-ssh-ed25519@openssh.com`, which
+  a security key's signature holds), the services agents sign commits
+  with, a picture's scale in its name
   (`icon@2x.png`), and the support address the website publishes, which
   may appear only on the website's pages and as the address the owner's
   own commits are signed with); phone numbers written with separators,
@@ -5240,7 +5242,11 @@ outside service: nothing it reads leaves the computer it runs on.
   compressed `.iwa` records), RTF, sound and video tags (MP3, MP4, M4A,
   MOV, WAV) and the place a video records, and pictures embedded in a
   page as `data:` addresses; commit messages, and the names and
-  addresses commits are signed with (the name by every rule text gets);
+  addresses commits are signed with (the name, the address and
+  whatever else the line holds by every rule text gets, so an address
+  written with accents or escapes, or a phone number, is found, and
+  every address in the address's place, which git keeps as it is
+  given: with a trailing dot, a comment or a second address joined on);
   branch names, and tag names,
   taggers and messages, including the tags a tag points to; what a
   commit changes in a file that is not UTF-8, read both ways, as the
@@ -5257,15 +5263,31 @@ outside service: nothing it reads leaves the computer it runs on.
   those between; what unchanged neighbouring lines already held is not
   new. A merge is read for what it adds beyond merging cleanly (one of
   three or more branches, against its first parent), and so is a merge
-  still being committed. Commits are read as a push sends them, whatever
-  `git replace` or git's display settings (signatures, `log.showRoot`)
-  show. A push leaves out only what the remotes that fetch from where
-  it goes already have: a remote's tracking refs record what its fetch
-  address held, so a remote that pushes elsewhere (a `pushurl`) leaves
-  out nothing there. Pushed to an address rather than a remote's name,
-  the address may be written any way (a URL, `git@host:path`, a local
-  path, with or without `.git`); push by the remote's name (`origin`)
-  all the same.
+  still being committed. Commits and tags are read as a push sends them,
+  whatever `git replace` or git's display settings (signatures,
+  `log.showRoot`, the encoding `i18n.logOutputEncoding` writes text in)
+  show: each commit both as git shows it in UTF-8, converted from the
+  encoding the commit names, and as git keeps it, since a label can
+  misdescribe the bytes and git shows a message only up to a zero byte,
+  with every header but the object ids of its tree and parents, each
+  with its continuation lines, and a merged tag (`mergetag`), read as a
+  tag is. A signature's armor is read as text, as it can hold a
+  comment, and the bytes its base64 holds by their format, as they can
+  name the signer: an OpenPGP signature's signer's user ID, policy and
+  readable notations, an X.509 signature's certificates' names and
+  addresses, and an SSH signature's readable runs, as a binary file's
+  are. The base64 itself is not read as text, as it is full of runs
+  that look like words; a block that is not a signature's is. Text that is not UTF-8 is read both as
+  UTF-8 and as Windows' Latin, UTF-16 as UTF-16, and text with zero
+  bytes also without them and as UTF-16 and UTF-32; a place that
+  several readings find is reported once. A push of a tree or a blob, or of a tag of one, is
+  refused, as its files would go unread. A push leaves out only what the remotes that fetch
+  from where it goes already have: a remote's tracking refs record what
+  its fetch address held, so a remote that pushes elsewhere (a
+  `pushurl`) leaves out nothing there. Pushed to an address rather than
+  a remote's name, the address may be written any way (a URL,
+  `git@host:path`, a local path, with or without `.git`); push by the
+  remote's name (`origin`) all the same.
 - **No exceptions.** No line can be marked as allowed, and the list has
   no allowances: an entry holds only what may appear nowhere, so leave
   out what the repository publishes on purpose, such as the developer's
@@ -5292,11 +5314,17 @@ public:
    merge commit, never a rebase). `--status`, run there, says so.
 2. **Before a commit or a post, in Claude Code**, where the guard runs
    (AGENTS.md, *Guardrails for agents*). The guard checks a commit's
-   message and trailers (a message file in any encoding), and a message
-   or author it takes from another commit as git does (`-C`, `-c`,
-   `--fixup`, `--squash`, `--amend`, a pending `MERGE_MSG` or
-   `SQUASH_MSG`, a cherry-pick's author, an `--author` given as a
-   pattern); its author and committer, as given in the
+   message and trailers (a message file as UTF-8, or, where it is not
+   UTF-8, also as Windows' Latin and as Latin-1, which is how git
+   writes such bytes, and as UTF-16 where it starts with a byte order
+   mark; one kept in another encoding that `i18n.commitEncoding` names
+   is read at the push), and a message or author it takes from another
+   commit as git does, both converted to UTF-8 from the encoding that
+   commit names and as git keeps it, which git copies where
+   `i18n.commitEncoding` names the same encoding, each read like a
+   message file (`-C`, `-c`, `--fixup`, `--squash`, `--amend`, a pending
+   `MERGE_MSG` or `SQUASH_MSG`, a cherry-pick's author); its author and
+   committer, as given in the
    command and as git reads them where the commit runs, configured ones
    included, by the rules a commit's are checked by; its staged changes
    and the files the same command adds (each from the folder its
@@ -5320,7 +5348,10 @@ public:
    know refused), and a `sh -c` script find runs with the found files as
    its arguments. A GraphQL request
    writes only through its query, so its other fields are read as
-   variables. The guard refuses a push from a checkout whose pushes skip
+   variables. The guard refuses an `--author` that is not
+   `Name <address>`, which git takes as a pattern for the latest
+   commit whose author it matches: which commit that is depends on the
+   locale, the log encoding and `.mailmap`. It refuses a push from a checkout whose pushes skip
    the hook or whose branch has none (made before the check reached
    main), whichever branch the push names; a push after a command in the
    same call that may change what it runs, because the guard reads the
@@ -5384,12 +5415,10 @@ public:
    a tag, a stash, a note or a reflog entry taken out for other names;
    reads and path checkouts move nothing, a listing such as `git tag -l`
    is a read, and `git tag -a` is not), a reflog or `ORIG_HEAD`-like
-   name after a settings change, a pending message the same
-   call writes, and an `--author` pattern after a command in the same
-   call that moves a ref, changes a setting or writes a file (a
-   `.mailmap`, also by a checkout of it): it reads them before the call
-   runs. A `--no-` form (`--no-author`, `--no-file`, `--no-message`)
-   undoes the option before it, as in git. Write
+   name after a settings change, and a pending message the same call
+   writes: it reads them before the call runs. A `--no-` form
+   (`--no-author`, `--no-file`, `--no-message`) undoes the option
+   before it, as in git. Write
    the text in the command, in a quoted here-document (also as
    `"$(cat <<'EOF'`, the text, then `EOF` and `)"` on the next line,
    whose body is text, never shell code), or in a file written by an
@@ -5490,8 +5519,19 @@ public:
   that writes in git's folder without naming git, `HEAD` or `refs`,
   before a commit that reuses another's message or author; and base64
   of eight bytes or fewer, which is too short to tell from other words;
-- on Linux only (a Mac cannot make one), a file name that is not UTF-8:
-  its text is read from commits, and a binary one stops the check;
+- a file name that is not UTF-8 (a Mac cannot make one), or a branch
+  or tag name a push names that is not: a file's text is still read
+  from commits, and a binary one stops the check;
+- in the guard, an encoding's name a setting (`i18n.commitEncoding`)
+  writes into a commit, which the push reads;
+- in an SSH signature, or one in a format the check does not read
+  field by field, a name or address that is not a run of eight
+  readable bytes, as text guessed from a binary file's bytes must be;
+  and an OpenPGP notation's name, which names the notation, not a
+  person;
+- in text, an address joined to another by `+`, `%` or `_`
+  (`one@example.com+two@...`), as an address in text cannot start
+  after them; in an identity's address it is read;
 - a push from a checkout with the hook off, from a checkout of a branch
   made before the check reached main (whichever branch the push names),
   or from a cloud thread where the guard does not run, which CI then

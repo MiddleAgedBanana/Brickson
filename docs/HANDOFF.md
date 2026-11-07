@@ -1092,9 +1092,11 @@ docs/ROADMAP.md, *The quality bar*, Q24):
    check", and with it "Unit tests", fails on every pull request from a
    branch of this repository; one GitHub gives no secrets (from a fork,
    or Dependabot's) checks the built-in patterns only, and says so.
-   Until then, as on #86 itself, "Privacy check" passes without
-   checking anything and "Unit tests" runs that pull request's own
-   check on the built-in patterns alone.
+   Before it merges, #86's own run has neither that job nor the step
+   that runs the check until the workflow change is committed; after
+   that commit, "Privacy check" passes there without checking anything
+   and "Unit tests" runs #86's own check on the built-in patterns
+   alone.
 9. Done on your Mac on 2026-11-04; for another Mac: let Codex read all
    of `AGENTS.md`. By default
    it reads only the first 32 KiB, and the file is about 69 KB

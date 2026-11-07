@@ -530,6 +530,116 @@ naming it, and base64 of eight bytes or fewer. `return` and zsh's
 `setopt errexit` are not read as ending a branch, which can only make
 the guard follow more folders, never fewer.
 
+The sixth round, Codex's and CodeRabbit's reviews of `2a7cb7d`, and
+three independent checks by this thread of its own fixes:
+
+- **Commit text in another encoding** (Codex): with
+  `i18n.logOutputEncoding`, or `i18n.commitEncoding` alone, set to
+  Latin-1, `git log` wrote a commit's text in Latin-1, which the check
+  read as UTF-8, so a name with an accent went unread. The check now
+  asks git for UTF-8.
+- **What that fix cost, and what was already missed** (this thread's
+  checks): asking for UTF-8 converts from the encoding a commit names,
+  and the label can be wrong. `git commit` with `i18n.commitEncoding`
+  set to Latin-1 keeps the UTF-8 a terminal types under a Latin-1
+  label, which the old reading caught only while the setting was on,
+  and the new one missed. A label that misdescribes plain text (UTF-16,
+  CP037) made git show nothing, a zero byte ended the message git
+  showed, and an encoding's own name was never read. So each commit is
+  now read twice: as git shows it in UTF-8, and as git keeps it (`git
+  cat-file --batch`), which is what a push sends, with every header but
+  the object ids of its tree and parents. A tag's headers are read too,
+  and text in UTF-16 is read as UTF-16. Reading several ways first
+  reported one name twice, at two columns, so a place several readings
+  find is now reported once, at the first reading's column, as a file's
+  two readings already were.
+- **What the second check found** in that rework: two false refusals
+  it caused, both fixed. With `log.showSignature` on, gpg's lines came
+  before the commit id the guard asked for, so reusing any signed
+  commit was refused; and a merge of the owner's signed tag carries the
+  tag (`mergetag`), whose tagger, read as plain text, made the support
+  address a finding, so it is now read as a tag is. Older gaps it
+  found, also fixed: a signature's armor can hold a comment, now read;
+  a second tagger, or a tree or parent line that names no object, went
+  unread; an address with a trailing dot or a comment, which git keeps,
+  was not taken for one, in the check and the guard (`--author='T
+  <address>>'` too, which git cleans); text in UTF-32 went unread (a
+  reading without zero bytes is added); and a push of a blob or a tree,
+  or of a tag of one, published its files unread, and is now refused.
+- **Reused commits and `--author`** (the same checks): `git commit -C`
+  takes a commit converted to its own `i18n.commitEncoding`, as it is
+  where that names the commit's encoding, so the guard reads a reused
+  commit both ways. An `--author` that is not `Name <address>`, which
+  round five had the guard look up as git does, is now refused: which
+  commit git finds depends on the locale (a pattern's `.` is a byte in
+  the C locale and a letter in UTF-8), the log encoding and `.mailmap`,
+  and the guard found a different commit than git in each. Giving the
+  whole identity is the reliable way; agents commit as the configured
+  identity. The tests that an earlier `.mailmap`, note or setting
+  changes whom a pattern finds went with it, as there is no pattern
+  left to change.
+- **What the third check found**: one false refusal the rework
+  caused. Reading a signature's header as text read its base64 too,
+  where a word may start at a case change, a `/` or a `+`, so an
+  ordinary signed commit could hold a list word: the check found an SSH
+  signature that did by trying commit times. A signature's base64 is
+  now decoded and its bytes read as a binary file's are, which also
+  reads the signer's name and address an OpenPGP signature carries
+  (checked with a GnuPG signature here), first left as a limit. Older
+  gaps it found, also fixed: a committer's or tagger's continuation
+  line, and more of a merged tag's tagger line after its time zone; a
+  merged tag's type line that names no type; an accented name in
+  UTF-32, or in UTF-16 with a letter whose low byte is zero (an emoji);
+  and a second address joined to the first by `+`, `%` or `_`, which
+  git keeps.
+- **What a fourth check found** in those fixes: reading a signature's
+  bytes as a binary file's are refused ordinary signatures. A security
+  key's SSH signature names its key type, `sk-ssh-ed25519@openssh.com`,
+  which read as an address (OpenSSH's names are now allowed as
+  GitHub's are), and Sequoia adds a notation, `salt` in its own
+  namespace, `notations.sequoia-pgp.org`, written like an address, to
+  every OpenPGP signature. So an
+  OpenPGP signature is now read packet by packet: its signer's user ID,
+  policy, key server and readable notations' values, not a notation's
+  name. An X.509 signature (gpgsm, gitsign) is read element by element,
+  which finds a certificate's address that the next element's `0` hid
+  from the binary reading. The armor is read more strictly: a BEGIN line
+  starts a block afresh, so a clearsigned message's own lines (a name
+  alone on one) are no longer taken for its signature; only lines of one
+  width after the armor's headers count as base64, so a word among them
+  makes the block text; and a last line of padding alone (`==`, as
+  OpenSSH's 70 columns can leave) no longer leaves a whole SSH signature
+  read as words. An identity's address is also read as text, so an
+  address with accents or escapes, or a phone number, is found. Text
+  with zero bytes is also read as Windows' Latin without them, for an
+  accented name out of step with its bytes. A long merged tag or
+  signature (100,000 lines took 25 seconds) and an identity git would
+  never write (100,000 ` <` took 87) are now read in time proportional
+  to their size.
+- **Which encodings a message file is read in** (CodeRabbit):
+  docs/DECISIONS.md said "any encoding"; it now names the ones the
+  guard reads, and says that a message kept in an encoding
+  `i18n.commitEncoding` names is read at the push, where git converts
+  it (checked here with a made-up word in ISO-8859-5).
+- **CI results that have not happened** (CodeRabbit): docs/HANDOFF.md
+  and *Not verified* described this pull request's "Privacy check" job
+  as if it ran; until the workflow commit there is no such job, and
+  both now say so.
+
+Left as limits, in docs/DECISIONS.md, *What it cannot catch*: a branch
+or tag name a push names that is not UTF-8 (file names that are not
+UTF-8 were already there); in the guard, an encoding's name a setting
+writes into a commit, which the push reads; in an SSH signature, or one
+in a format the check does not read field by field, a name or address
+that is not a run of eight readable bytes; an OpenPGP notation's name;
+and in text, an address joined to another by `+`, `%` or `_`. The two
+readings of a message that is not UTF-8 take more than twice as long on
+such a history (2000 imported Latin-1 commits: about 22 seconds against 9 at
+`2a7cb7d`). UTF-8 history takes about a fifth longer (2000 commits: 1.1
+seconds against 0.9), to fetch each stored object; its text is read
+again only where it differs from what git shows, which in this
+repository's last 30 commits it never did.
+
 The privacy job's checkout names `actions/checkout@v7.0.1`, the version
 pull request #87 locks, so whichever of the two merges second needs no
 new lockfile entry. A cloud session cannot push `.github/workflows/`,
@@ -586,9 +696,23 @@ started).
 In this cloud thread (Linux, Python 3.13, git 2.43), last on 2026-11-07,
 after main (with the reviewer roster) was merged in:
 
-- `python3 scripts/test-privacy.py`: 133 tests, OK. Every test added
-  for the second review, and for the pull request's two review rounds,
-  failed before its fix. On 2026-11-06, ten
+- `python3 scripts/test-privacy.py`: 139 tests, OK. Every test added
+  for the second review, and for the pull request's review rounds,
+  failed before its fix; for the sixth, the encoding test failed its 5
+  cases against `2a7cb7d`, the stored-object test its 8 against the
+  round's first fix, the tests for the second check's findings 10
+  against the rework, those for the third check's 13 before their
+  fixes, and those for the fourth check's 15 before theirs (and the 2
+  deep certificates with the first, too shallow, nesting limit). With
+  a real GnuPG signature made here, the signer's address is found in a
+  signed commit and a signed tag; with a real SSH signature whose
+  base64 held a made-up list word, the push the third check saw
+  refused now goes through; a real gpgsm signature holding its
+  certificate gives the certificate's address, and one without gives
+  only its issuer's names. The fourth check's security-key and Sequoia
+  signatures, made by stand-ins that follow each format, now pass. Over this repository's 843
+  commits (757 signed), the made-up list finds the same 278 places as at
+  `2a7cb7d`, in about the same time (9.6 seconds against 9.3). On 2026-11-06, ten
   deliberate breakages of the checker each failed it (every address
   allowed, no home-folder, phone or photo-location findings, no second
   pass over escaped text, names shown in place of a hidden label, no
@@ -599,7 +723,7 @@ after main (with the reviewer roster) was merged in:
   phone edges, folded phones, contractions, RTF bytes and their order
   with JSON escapes, Snappy copies, IPTC datasets, a zero place), failed
   it.
-- `python3 scripts/test-hooks.py`, with a made-up list: 205 tests, OK,
+- `python3 scripts/test-hooks.py`, with a made-up list: 209 tests, OK,
   also with `EMAIL` set to an address like the Mac's guess, which failed
   39 of them before that fix (and with `GIT_AUTHOR_EMAIL` too, at
   `ba6a4c3`). The test added for it fails with no person in the tests'
@@ -626,6 +750,14 @@ after main (with the reviewer roster) was merged in:
   commits before that test stopped, and 2 of the 3 escaped requests
   (curl's was refused already); in `scripts/test-privacy.py`, the new
   test missed 6 of its 8 names.
+  For the sixth: the encoding test failed 5 cases against `2a7cb7d`;
+  against the round's first fix, the reworked pattern test failed 5
+  cases, the stored-commit test 5 and the test of places reported once
+  and each 1; against the rework, the signed-commit test failed 1 and
+  the 5 new address forms 5 (the last run against a copy with the old
+  address rule), the 2 joined addresses the third check added failed
+  against the address rule before it, and the accented address the
+  fourth check added failed without the address read as text.
   Run against the guard as it was before the second review's fixes, the
   13 tests added for them and the 2 they extended all failed (49
   failures); the ten breakages of the guard's privacy rules from
@@ -669,7 +801,7 @@ after main (with the reviewer roster) was merged in:
 ## Not verified
 
 - On a Mac, only the Python suites ran, last at `ba6a4c3` (*The first
-  run on the owner's Mac*); the second to fifth review rounds' fixes
+  run on the owner's Mac*); the second to sixth review rounds' fixes
   have not run there yet. `caffeinate`, `arch`, `xcrun` and macOS's
   `script` exist only on a Mac, and `chrt` without a priority only in
   util-linux 2.42 and later: how the guard reads them was checked
@@ -683,12 +815,15 @@ after main (with the reviewer roster) was merged in:
   `scripts/test.sh`, the guard in a Claude Code session there. CI runs
   the Python checks on GitHub's Mac.
 - The CI step has not run on GitHub: the workflow change waits for the
-  commit from the owner's Mac. On this pull request, "Privacy check"
-  passes without reading anything (main has no check yet), and "Unit
-  tests" runs this branch's check on the patterns alone, without the
-  list; a run without the secret fails only once the check is on main.
-  Until the workflow commit, "Unit tests" fails here on purpose: its 4
-  workflow tests find no privacy job in `.github/workflows/tests.yml`.
+  commit from the owner's Mac, and until then this pull request's
+  workflow has no "Privacy check" job and no step that runs the check.
+  Once that commit lands, and not before, "Privacy check" will pass
+  here without reading anything (main has no check yet), and "Unit
+  tests" will run this branch's check on the patterns alone, without
+  the list; a run without the secret fails only once the check is on
+  main. Until the workflow commit, "Unit tests" fails here on purpose:
+  its 4 workflow tests find no privacy job in
+  `.github/workflows/tests.yml`.
   GitHub's masking of the secret was not tested; the check never
   prints the list either way.
 - The guard before the file tools was fed the calls Claude Code sends

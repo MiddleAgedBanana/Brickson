@@ -1571,10 +1571,11 @@ class PrivacyGuardTests(unittest.TestCase):
         self.assertDenied('git commit --amend --allow-empty -m "Fix"')
         self.assertAllowed('git commit --amend --allow-empty --reset-author -m "Fix"')
 
-    def test_an_author_given_as_a_pattern_is_read_as_git_resolves_it(self):
+    def test_an_author_given_as_a_pattern_is_refused(self):
         # --author that is not Name <address> names the author of the
-        # latest commit it matches (git commit --help), whose whole
-        # identity the new commit then carries.
+        # latest commit it matches (git commit --help), and which commit
+        # that is depends on the locale, the log encoding and .mailmap: the
+        # guard cannot tell, so it asks for the whole identity.
         self.git('commit', '-q', '--allow-empty', '-m', 'Clean',
                  f'--author={PRIVATE_NAME} <someone@example.com>')
         self.git('commit', '-q', '--allow-empty', '-m', 'Also clean',
@@ -1582,10 +1583,12 @@ class PrivacyGuardTests(unittest.TestCase):
         for command in ['git commit --allow-empty -m Fix --author=Quill',
                         'git commit --allow-empty -m Fix --author quill',
                         'git commit --allow-empty -m Fix --author=someone@example',
-                        'git commit --allow-empty -m Fix --author=no-such-author-here']:
+                        'git commit --allow-empty -m Fix --author=no-such-author-here',
+                        'git commit --allow-empty -m Fix --author=Clean',
+                        'git commit --allow-empty --author=t -m x',
+                        "git commit --allow-empty -m Fix --author='V..ssmere'"]:
             with self.subTest(command=command):
-                self.assertDenied(command)
-        self.assertAllowed('git commit --allow-empty -m Fix --author=Clean')
+                self.assertIn('Name <address>', self.assertDenied(command))
         self.assertAllowed('git commit --allow-empty -m Fix --author="Clean Person <clean@example.com>"')
 
     def test_a_reused_author_or_message_is_read_as_git_takes_it(self):
@@ -1625,6 +1628,96 @@ class PrivacyGuardTests(unittest.TestCase):
                 self.assertDenied(command)
         self.assertAllowed(f'git commit --amend --allow-empty --no-edit {given}')
         self.assertAllowed(f'git commit --amend --allow-empty -m Fix {given}')
+
+    def test_a_name_git_keeps_in_another_encoding_is_read(self):
+        # git commit turns bytes that are not UTF-8 into UTF-8, reading them
+        # as Latin-1, so a name kept as Latin-1 bytes (in a commit git
+        # hash-object or an import made, or in a configured name) is
+        # published in the new commit.
+        accented = PRIVATE_NAME.replace('a', 'á', 1).encode('latin-1')
+        tree = self.git_output('rev-parse', 'HEAD^{tree}')
+
+        def raw_commit(name, message):
+            ident = name + b' <t@example.com> 1700000000 +0000\n'
+            body = (f'tree {tree}\n'.encode() + b'author ' + ident + b'committer ' + ident
+                    + b'\n' + message + b'\n')
+            return subprocess.run(['git', '-C', str(self.repo), 'hash-object', '-t', 'commit',
+                                   '-w', '--stdin'], input=body, check=True,
+                                  capture_output=True).stdout.decode().strip()
+
+        message = raw_commit(b'T', b'Thanks ' + accented)
+        author = raw_commit(accented, b'Tidy')
+        clean = raw_commit(b'T', b'Caf\xe9 menu')
+        for command in [f'git commit --allow-empty -C {message}',
+                        f'git commit --allow-empty -c {message}',
+                        f'git commit --allow-empty -C {author}']:
+            with self.subTest(command=command):
+                self.assertDenied(command)
+        self.assertAllowed(f'git commit --allow-empty -C {clean}')
+        subprocess.run([b'git', b'-C', bytes(self.repo), b'config', b'user.name', accented],
+                       check=True, capture_output=True)
+        self.git('config', 'user.email', 't@example.com')
+        self.assertIn('the commit author', self.assertDenied('git commit --allow-empty -m Fix'))
+
+    def test_a_reused_commit_is_read_as_git_stores_it(self):
+        # git commit takes a reused commit's message and author converted
+        # to its own i18n.commitEncoding, so where that is the encoding
+        # the commit names, it copies the bytes as they are: UTF-8 typed
+        # under a Latin-1 label, or plain text under a label that
+        # misdescribes it, which git log shows converted into something
+        # else.
+        accented = PRIVATE_NAME.replace('a', 'á', 1)
+        self.git('-c', 'i18n.commitEncoding=ISO-8859-1', 'commit', '-q', '--allow-empty',
+                 '-m', f'Thanks {accented}')
+        message = self.git_output('rev-parse', 'HEAD')
+        self.git('-c', 'i18n.commitEncoding=ISO-8859-1', 'commit', '-q', '--allow-empty',
+                 '-m', 'Tidy', f'--author={accented} <q@example.com>')
+        author = self.git_output('rev-parse', 'HEAD')
+        self.git('reset', '-q', '--hard', 'HEAD~2')
+        tree = self.git_output('rev-parse', 'HEAD^{tree}')
+        ident = f'{PRIVATE_NAME} <t@example.com> 1700000000 +0000\n'
+        misdescribed = subprocess.run(
+            ['git', '-C', str(self.repo), 'hash-object', '--literally', '-t', 'commit', '-w',
+             '--stdin'], input=(f'tree {tree}\nauthor {ident}committer {ident}'
+                                f'encoding UTF-16\n\nThanks {PRIVATE_NAME}\n').encode(),
+            check=True, capture_output=True).stdout.decode().strip()
+        latin = '-c i18n.commitEncoding=ISO-8859-1'
+        for command in [f'git {latin} commit --allow-empty -C {message}',
+                        f'git {latin} commit --allow-empty --fixup={message}',
+                        f'git {latin} commit --allow-empty -C {author}',
+                        f'git -c i18n.commitEncoding=UTF-16 commit --allow-empty -C {misdescribed}']:
+            with self.subTest(command=command):
+                self.assertIn('the reused commit message' if author not in command
+                              else 'the commit author', self.assertDenied(command))
+        self.git('config', 'i18n.commitEncoding', 'ISO-8859-1')
+        self.assertDenied(f'git commit --allow-empty -C {message}')
+
+    def test_a_signed_commit_is_reused_whatever_git_is_set_to_show(self):
+        # log.showSignature puts gpg's lines before the fields the guard
+        # asks git log for, and they are not the commit's.
+        tree = self.git_output('rev-parse', 'HEAD^{tree}')
+        ident = 'T <t@example.com> 1700000000 +0000\n'
+        signed = subprocess.run(
+            ['git', '-C', str(self.repo), 'hash-object', '-t', 'commit', '-w', '--stdin'],
+            input=(f'tree {tree}\nauthor {ident}committer {ident}'
+                   'gpgsig -----BEGIN PGP SIGNATURE-----\n \n iQEzBAABCAAdFiEE\n'
+                   ' =abcd\n -----END PGP SIGNATURE-----\n\nClean\n'),
+            text=True, check=True, capture_output=True).stdout.strip()
+        self.git('config', 'log.showSignature', 'true')
+        self.assertAllowed(f'git commit --allow-empty -C {signed}')
+        self.assertAllowed(f'git commit --allow-empty --fixup={signed}')
+
+    def test_one_place_is_reported_once_and_each_place_is_reported(self):
+        # A message read in several encodings gives one finding for each
+        # place, at the column its first reading gives; two places that
+        # share a label (a title and a body) are each reported.
+        mixed = self.folder / 'mixed.txt'
+        mixed.write_bytes(b'Caf\xc3\xa9 \xff Thanks ' + PRIVATE_NAME.encode() + b'\n')
+        reason = self.assertDenied(f'git commit --allow-empty -F {mixed}')
+        self.assertEqual(reason.count('the commit message file:1:'), 1, reason)
+        reason = self.assertDenied(f'gh pr create --title "Thanks {PRIVATE_NAME}" '
+                                   f'--body "Thanks {PRIVATE_NAME}"')
+        self.assertEqual(reason.count('gh pr create:1:8'), 2, reason)
 
     def test_a_commit_reusing_a_ref_an_earlier_command_moves_is_refused(self):
         # The guard reads a reused commit before the command runs, so a
@@ -1671,8 +1764,7 @@ class PrivacyGuardTests(unittest.TestCase):
                         'git config branch.claude/topic.merge refs/heads/secret && '
                         'git commit --allow-empty -C @{u}',
                         'git remote -v update && git commit --allow-empty -C origin/main',
-                        # Notes are under --all, and a reflog entry moves when one goes.
-                        'git notes add -m n HEAD && git commit --allow-empty --author=t -m y',
+                        # A reflog entry moves when one goes.
                         'git reflog delete --rewrite HEAD@{1} && git commit --allow-empty -C HEAD@{1}',
                         'git stash && git commit --allow-empty -C stash@{0}']:
             with self.subTest(command=command):
@@ -1744,24 +1836,15 @@ class PrivacyGuardTests(unittest.TestCase):
         self.assertAllowed('git commit --allow-empty --amend --no-edit --no-message -m Clean')
 
     def test_what_an_earlier_command_writes_for_a_commit_to_take_is_refused(self):
-        # A pending message written in the same call, or a mailmap or
-        # setting that changes whom an author pattern finds, is not read.
+        # A pending message written in the same call is not read.
         for name in ('MERGE_MSG', 'SQUASH_MSG'):
             with self.subTest(name=name):
                 self.assertDenied(f"printf 'Thanks {PRIVATE_NAME}\\n' > .git/{name} && "
                                   'git commit --allow-empty --no-edit')
-        (self.folder / 'mailmap').write_text(f'{PRIVATE_NAME} <q@example.com> <t@example.com>\n')
-        for command in [f"printf '{PRIVATE_NAME} <q@example.com> <t@example.com>\\n' > .mailmap"
-                        ' && git commit --allow-empty --author=t -m x',
-                        'git config mailmap.file ../mailmap && git commit --allow-empty --author=t -m x',
-                        'git checkout main -- .mailmap && git commit --allow-empty --author=t -m x',
-                        'git restore --source=main .mailmap && git commit --allow-empty --author=t -m x',
-                        # Code that names git may move HEAD.
-                        "python3 -c \"import subprocess; subprocess.run(['git', 'reset', 'HEAD~1'])\""
-                        ' && git commit --allow-empty --amend --no-edit']:
-            with self.subTest(command=command):
-                self.assertDenied(command)
-        self.assertAllowed('git commit --allow-empty --author=t -m x')
+        # Code that names git may move HEAD.
+        self.assertDenied("python3 -c \"import subprocess; subprocess.run(['git', 'reset', 'HEAD~1'])\""
+                          ' && git commit --allow-empty --amend --no-edit')
+        self.assertAllowed('git commit --allow-empty --amend --no-edit')
         # Code that never names git writes nothing a commit takes, and an
         # amend reads no pending message.
         for command in ['python3 -c "print(1)" && git commit --allow-empty --amend --no-edit',
@@ -2714,11 +2797,24 @@ class PrivacyGuardTests(unittest.TestCase):
         name = shlex.quote(PRIVATE_NAME)
         author = shlex.quote(PRIVATE_NAME + ' <q@example.com>')
         trailer = shlex.quote(f'Co-authored-by: {PRIVATE_NAME} <q@example.com>')
+        # git keeps an address from the first < to the first >, without
+        # spaces or quotes around it, and keeps a trailing dot, a comment,
+        # a second address joined on or an accent.
+        addresses = [shlex.quote(f'T {address}') for address in (
+            f'<{PRIVATE_ADDRESS}>>', f'< {PRIVATE_ADDRESS} >', f'<"{PRIVATE_ADDRESS}">',
+            f'<{PRIVATE_ADDRESS}.>', f'<ok@example.com+{PRIVATE_ADDRESS}>')]
         for command in [f'git commit -m Fix --trailer {trailer}', f'git commit -m Fix --trailer={trailer}',
                         f'git commit -m Fix --author={author}', f'git commit -m Fix --author {author}',
                         f'git commit -sm {name}', f'git commit -qm{name}',
                         f'git -c user.name={name} commit -m Fix',
-                        f'GIT_AUTHOR_NAME={name} git commit -m Fix']:
+                        f'GIT_AUTHOR_NAME={name} git commit -m Fix',
+                        *(f'git commit -m Fix --author={address}' for address in addresses),
+                        'git -c user.email=' + shlex.quote(f'{PRIVATE_ADDRESS} (home)')
+                        + ' commit -m Fix',
+                        'git -c user.email=' + shlex.quote(f'ok@example.com_{PRIVATE_ADDRESS}')
+                        + ' commit -m Fix',
+                        'GIT_AUTHOR_EMAIL=' + shlex.quote(PRIVATE_ADDRESS.replace('gmail', 'gmáil'))
+                        + ' git commit -m Fix']:
             with self.subTest(command=command):
                 self.assertDenied(command)
         # git takes a long option's unique beginning for the whole option.
