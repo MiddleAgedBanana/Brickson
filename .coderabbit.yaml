@@ -26,10 +26,16 @@ reviews:
   # Skip files that are records, not code or rules: docs/archive/ holds
   # frozen copies of old documents, and docs/evidence/ holds measurement
   # captures. Its README files stay reviewable.
+  #
+  # CodeRabbit also skips every *.lock by default. The one lock file here is
+  # .github/workflows/actions.lock, where a changed commit is code the
+  # workflows will run, so the default's pattern comes back without its "!",
+  # the way CodeRabbit's documentation says to override one.
   path_filters:
     - "!docs/archive/**"
     - "!docs/evidence/**/*.json"
     - "!docs/evidence/**/*.txt"
+    - "**/*.lock"
 
   pre_merge_checks:
     docstrings:

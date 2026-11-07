@@ -9,6 +9,8 @@
 # - Ordinary new versions arrive once a month, all in one pull request, and
 #   only after a release has been public for a week, so a bad or hijacked
 #   release has time to be caught before it reaches this repository.
+# - Each of these pull requests also updates .github/workflows/actions.lock,
+#   the commit every action runs at. That needs no setting here.
 #
 # Options: https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference
 version: 2
