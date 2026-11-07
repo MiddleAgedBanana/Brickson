@@ -44,12 +44,14 @@ if [ "$#" -gt 0 ]; then
     shift
 fi
 
-# Before the unit tests: the documents' cross-references resolve, and the
-# Claude Code guard in .claude/hooks still blocks what AGENTS.md forbids.
-# Both need no simulator.
+# Before the unit tests: the documents' cross-references resolve, the
+# Claude Code guard in .claude/hooks still blocks what AGENTS.md forbids,
+# and the privacy check still finds what it must (docs/DECISIONS.md,
+# "Personal details stay out of the repository"). None needs a simulator.
 if [ "$mode" = unit ]; then
     /usr/bin/python3 scripts/test-docs.py
     /usr/bin/python3 scripts/test-hooks.py
+    /usr/bin/python3 scripts/test-privacy.py
 fi
 
 if ! command -v xcodegen >/dev/null 2>&1; then

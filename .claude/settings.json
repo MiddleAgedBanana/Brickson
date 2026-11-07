@@ -6,11 +6,24 @@
       "mcp__github__enable_pr_auto_merge",
       "mcp__github__request_copilot_review",
       "mcp__github__assign_copilot_to_issue",
-      "mcp__github__create_pull_request_with_copilot"
+      "mcp__github__create_pull_request_with_copilot",
+      "Read(~/.config/brickson/**)",
+      "Edit(~/.config/brickson/**)"
     ]
   },
   "hooks": {
     "PreToolUse": [
+      {
+        "matcher": "Read|Edit|MultiEdit|Write|NotebookEdit|Grep|Glob",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PROJECT_DIR}/.claude/hooks/guard.py\"",
+            "timeout": 10,
+            "onFailure": "block"
+          }
+        ]
+      },
       {
         "matcher": "Bash",
         "hooks": [
@@ -23,7 +36,7 @@
         ]
       },
       {
-        "matcher": "mcp__.*__(merge_pull_request|enable_pr_auto_merge|request_copilot_review|assign_copilot_to_issue|assign_copilot_to_issue_with_intent|create_pull_request_with_copilot|push_files|create_or_update_file|delete_file|pull_request_review_write|create_pull_request|update_pull_request|issue_write|create_issue|update_issue)",
+        "matcher": "mcp__.*__(merge_pull_request|enable_pr_auto_merge|request_copilot_review|assign_copilot_to_issue|assign_copilot_to_issue_with_intent|create_pull_request_with_copilot|push_files|create_or_update_file|delete_file|pull_request_review_write|create_pull_request|update_pull_request|issue_write|create_issue|update_issue|add_issue_comment|update_issue_comment|add_reply_to_pull_request_comment|add_comment_to_pending_review|create_gist|update_gist|create_branch)",
         "hooks": [
           {
             "type": "command",

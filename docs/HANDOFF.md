@@ -1078,7 +1078,21 @@ docs/ROADMAP.md, *The quality bar*, Q24):
    (docs/DECISIONS.md, *Code scanning*).
 7. You can delete the `xcode-skills` folder in `~/code/brickson`: its
    skills are installed where agents load them.
-8. Done on your Mac on 2026-11-04; for another Mac: let Codex read all
+8. The private list that stops personal details reaching the public
+   repository is set up from your Mac by an agent there, for pull
+   request #86: the list, its GitHub secret and that pull request's
+   workflow change. Once it has merged, the push check in
+   `~/code/brickson` (`git config core.hooksPath .githooks`, a setting
+   of your checkout that its worktrees share) needs your yes before an
+   agent there turns it on. Your choice too: whether cloud sessions get
+   the list, in the project's settings. When the list changes, the
+   secret must be set again; an agent on your Mac can do both
+   (docs/DECISIONS.md, "Personal details stay out of the repository",
+   its last part). Without the secret, "Privacy check", and with it
+   "Unit tests", fails on every pull request from a branch of this
+   repository; one GitHub gives no secrets (from a fork, or
+   Dependabot's) checks the built-in patterns only, and says so.
+9. Done on your Mac on 2026-11-04; for another Mac: let Codex read all
    of `AGENTS.md`. By default
    it reads only the first 32 KiB, and the file is about 69 KB
    (docs/DECISIONS.md, "AGENTS.md puts first what Codex reads"). In
@@ -1450,8 +1464,18 @@ settings, date) and summarise it here.
   and Copilot reviews and tasks asked for by a Copilot tool, `gh`, the
   REST API, a GitHub tool's reviewer or assignee field or a GraphQL agent
   assignment; an `@copilot` mention and other GraphQL requests are held
-  by AGENTS.md alone. `scripts/test.sh` runs its tests and the docs
-  cross-reference check (`scripts/test-docs.py`) before the unit tests.
+  by AGENTS.md alone. It also refuses a commit or a post that holds a
+  personal detail, a push from a checkout whose pushes skip the privacy
+  hook or whose branch has none, and reading the private list or the
+  config folder that holds it.
+  The privacy check (`scripts/privacy-check.py`) runs in git's pre-push
+  hook, in the guard, by hand and in CI's "Privacy check" job, which
+  "Unit tests" waits for (docs/DECISIONS.md,
+  "Personal details stay out of the repository";
+  [`log/2026-11-07-privacy-check.md`](log/2026-11-07-privacy-check.md)).
+  `scripts/test.sh` runs the guard's tests, the docs cross-reference
+  check (`scripts/test-docs.py`) and the privacy check's tests
+  (`scripts/test-privacy.py`) before the unit tests.
   New issues start from the "Something went wrong" form; blank issues are
   off. Record: [`docs/log/2026-10-21-agent-guardrails.md`](log/2026-10-21-agent-guardrails.md).
   The review fixes cover configured and wildcard pushes, alternate Git

@@ -18,7 +18,21 @@ It denies:
   assignment: Copilot is not part of the review process, and each one
   would spend the owner's credits (other GraphQL requests and an
   @copilot mention are held by AGENTS.md alone);
-- a GitHub tool that writes a file straight onto main.
+- a GitHub tool that writes a file straight onto main;
+- publishing a personal detail: before a commit, and before text goes to
+  GitHub through gh, the GitHub API or a GitHub tool, it runs
+  scripts/privacy-check.py over what would be published (the message and
+  trailers, the author and committer as git reads them, the staged changes
+  and the files the command adds, the text sent) and refuses what it
+  finds, naming places and kinds, never the words. What it cannot read
+  before the command runs is refused too: text the shell builds from a
+  variable or another command, stdin that is not a here-document given to
+  that command, a file the same command writes, a change it makes to the
+  index it commits (git apply --cached, am, stash pop), and a commit
+  identity it sets. A push must run the privacy hook in .githooks/pre-push, which
+  reads what the push carries; reading the private list, a glob that could
+  reach it, and printing the whole environment, which may hold it, are
+  refused.
 
 This is a guard against mistakes, not a sandbox: a determined command can
 get around it, and it covers Claude Code sessions only. Codex, Jules and the
@@ -27,6 +41,8 @@ runs wherever python3 does. Its tests are scripts/test-hooks.py.
 """
 import json
 import fnmatch
+import glob
+import importlib.util
 import os
 import re
 import shlex
@@ -34,6 +50,7 @@ import subprocess
 import sys
 import stat
 import posixpath
+from pathlib import Path
 from urllib.parse import urlsplit, unquote
 
 PROTECTED = {'main', 'master'}
@@ -93,6 +110,190 @@ WGET_CONFIG = ('The guard does not interpret Wget configuration or execute direc
                'Use --no-config and explicit command-line request options.')
 SHELL_ALIAS = ('The guard does not execute Git shell aliases. Use the underlying '
                'command explicitly so its operation and repository can be checked.')
+PRIVACY_DECISION = 'docs/DECISIONS.md, "Personal details stay out of the repository"'
+PRIVATE = 'This would publish personal details: {places}. {advice}'  # advice cites the decision
+PRIVATE_SETUP = ('The privacy check could not run, so nothing is published: {reason} ('
+                 + PRIVACY_DECISION + ').')
+HOOK_OFF = ('Pushes from this checkout must run the privacy hook, and this one does not. '
+            'In your own clone, turn it on with git config core.hooksPath .githooks; in '
+            "the owner's checkout or its worktrees, ask the owner to (" + PRIVACY_DECISION + ').')
+NO_VERIFY = ('Never skip the privacy hook (--no-verify, or another core.hooksPath): it is '
+             'the check that keeps personal details off GitHub (' + PRIVACY_DECISION + ').')
+HOOK_MISSING = ('The branch checked out here has no .githooks/pre-push (it was made before the '
+                'privacy check reached main), and git runs the hook in the checkout, whichever '
+                'branch a push names, so this push would skip it without a word. Merge '
+                'origin/main into the branch checked out here (git merge origin/main, a merge '
+                'commit, never a rebase), then push again (' + PRIVACY_DECISION + ').')
+UNKNOWN_FOLDER = ('The guard cannot tell which folder this git command runs in (a cd, -C or '
+                  'chdir to a folder the shell computes, or a directory-stack entry), so it '
+                  'cannot read what the command would commit or push. Use a literal path '
+                  '(cd /path/to/checkout, or git -C /path/to/checkout).')
+IDENTITY_SET = ('This command sets a commit identity (git config user.*, author.* or '
+                'committer.*) and also commits, so the privacy check cannot read the author '
+                'before the command runs. Set it in an earlier command, then commit ('
+                + PRIVACY_DECISION + ').')
+OTHER_REPOSITORY = ('This commit chooses its repository, work tree or index (--git-dir, '
+                    '--work-tree, core.worktree, GIT_DIR, GIT_WORK_TREE, GIT_INDEX_FILE and '
+                    'the like), which the privacy check cannot follow to read what it would '
+                    'commit. Commit in that checkout instead: cd /path/to/checkout, or git -C '
+                    '/path/to/checkout commit (' + PRIVACY_DECISION + ').')
+LIST_READ = ('The private list is the owner\'s and stays unread: check with python3 '
+             'scripts/privacy-check.py --status, which never prints it (' + PRIVACY_DECISION + ').')
+PUBLISHED_EXPANSION = ('Text this command publishes comes from a variable or another command, '
+                       'which the privacy check cannot read. Write it in the command, in a '
+                       "quoted here-document (\"$(cat <<'EOF' ... EOF)\", or <<'EOF' for "
+                       'stdin), or in a file passed with -F, --file or --body-file.')
+REUSED_COMMIT = ('This commit takes its message or author from another commit (-C, -c, '
+                 '--fixup, --squash or --amend), which the privacy check cannot read here: '
+                 'name one that exists before the command runs, or write the message.')
+PUBLISHED_FILE = ('A file this command publishes must exist before the command runs, so the '
+                  'privacy check can read it: write it in an earlier command.')
+PUBLISHED_STDIN = ('Text this command reads from stdin can be checked only from a '
+                   'here-document given to that command itself, not through a pipe or '
+                   'another redirection; pass a file instead.')
+WRITTEN_FILE = ('This command writes a file that it also publishes, sends or commits, so the '
+                'privacy check would read the file before the command changes it. Write the '
+                'file in one command, then publish or commit it in the next.')
+RELEASE_ASSET = ('This would upload a release asset, whose contents and name the privacy check '
+                 'cannot read here (an archive\'s files among them). Release assets are the '
+                 "owner's to add, on the release's page on GitHub (" + PRIVACY_DECISION + ').')
+HOOK_CHANGED = ('This command pushes after changing what the push would run (the privacy hook, '
+                'core.hooksPath or another git setting, scripts/privacy-check.py, or the branch '
+                'checked out), or after writing a file the guard cannot place, and the guard '
+                'reads the hook before the command runs. Make the change in one command, then '
+                'push in the next (' + PRIVACY_DECISION + ').')
+ENVIRONMENT_DUMP = ('This would print the whole environment, which may hold the private list. '
+                    'Name the variables you need instead (printenv HOME); the list is the '
+                    "owner's and stays unread (" + PRIVACY_DECISION + ').')
+# The list's own path and name, and the globs that could reach its file.
+LIST_REFERENCE = re.compile(r'\.config/[^/\s]*brick|private-words|\$\{?BRICKSON_PRIVATE_WORDS'
+                            r'|printenv\s+BRICKSON_PRIVATE_WORDS|XDG_CONFIG_HOME\}?["\']?/[^/\s]*brick'
+                            r'|\b(?:declare|typeset)\b[^;&|\n]*\bBRICKSON_PRIVATE_WORDS\b')
+CONFIG_FOLDER = re.compile(r'(?:\.config|XDG_CONFIG_HOME\}?)["\']?/([^/\s"\';&|()<>]*)'
+                           r'(?:/([^/\s"\';&|()<>]*))?')
+PROCESS_ENVIRONMENT = re.compile(r'/proc/\S*environ')
+# The start of a here-document read with cat in a command substitution,
+# $(cat <<'EOF', on a line of its own: its delimiter (quoted or not) and
+# whether <<- strips the body's leading tabs.
+SUBSTITUTED_HERE_DOCUMENT = re.compile(
+    r"(?<!\\)\$\(\s*cat[ \t]+<<(-?)[ \t]*(?:'(\w+)'|\"(\w+)\"|(\w+))[ \t]*\r?\n")
+# A $ that starts an expansion, or a backtick.
+EXPANSION_START = re.compile(r'\$[A-Za-z_{(@*#?!$0-9-]|`')
+PRIVACY_SECONDS = 6
+# Here-documents fed to commands that are not shells: data, which the
+# command they are given to may publish through stdin (git commit -F -,
+# --body-file -). Each is a dict: its text as the shell passes it, whether
+# the shell builds part of it, and whether it is that command's stdin. In
+# the command, a marker word stands where its <<DELIMITER was, so that only
+# that command reads it.
+HERE_DOCUMENTS = []
+HERE_MARK = ''
+# An unquoted $(...) is kept whole inside its word while the command is
+# split into words, as a quoted one is: split at its parentheses, it would
+# leave its command an empty value and cut off the words after it.
+SUBSTITUTION_MARK = ''
+# Each $(cat <<'EOF' ... EOF) in a command, as written, stands as a marker
+# while the command is split into words: its body is text (or, unquoted,
+# text with substitutions the shell runs), never the shell's code, so a
+# quote in it must not end or open one round it. The words hold it again
+# once split.
+DOCUMENT_MARK = '\ue002'
+SUBSTITUTED_DOCUMENTS = []
+# Files a request reads (curl -d @file, gh api --input): the same command
+# must not write them first.
+REQUEST_FILES = []
+PRIVACY_SCRIPT = Path(__file__).resolve().parents[2] / 'scripts' / 'privacy-check.py'
+# gh commands that put text on GitHub, with the options gh reads text from
+# and those it reads a file of text from. A short option is its letter.
+# Short options cluster as gh's flag parser reads them (-cb text): a
+# letter not named here is a switch, and the first named one takes the
+# rest of the word or the next word.
+GH_PUBLISHES = {
+    ('pr', 'create'): ({'--title', '--body', 't', 'b'}, {'--body-file', 'F'}),
+    ('pr', 'edit'): ({'--title', '--body', 't', 'b'}, {'--body-file', 'F'}),
+    ('pr', 'comment'): ({'--body', 'b'}, {'--body-file', 'F'}),
+    ('pr', 'review'): ({'--body', 'b'}, {'--body-file', 'F'}),
+    ('pr', 'close'): ({'--comment', 'c'}, set()),
+    ('pr', 'reopen'): ({'--comment', 'c'}, set()),
+    ('issue', 'create'): ({'--title', '--body', 't', 'b'}, {'--body-file', 'F'}),
+    ('issue', 'edit'): ({'--title', '--body', 't', 'b'}, {'--body-file', 'F'}),
+    ('issue', 'comment'): ({'--body', 'b'}, {'--body-file', 'F'}),
+    ('issue', 'close'): ({'--comment', 'c'}, set()),
+    ('issue', 'reopen'): ({'--comment', 'c'}, set()),
+    ('release', 'create'): ({'--title', '--notes', 't', 'n'}, {'--notes-file', 'F'}),
+    ('release', 'edit'): ({'--title', '--notes', '--tag', 't', 'n'}, {'--notes-file', 'F'}),
+    # A gist's files are its operands (gh gist edit's second), or stdin for -.
+    ('gist', 'create'): ({'--desc', '--filename', 'd', 'f'}, set()),
+    ('gist', 'edit'): ({'--desc', '--filename', 'd', 'f'}, {'--add', 'a'}),
+    ('repo', 'create'): ({'--description', '--homepage', 'd', 'h'}, set()),
+    ('repo', 'edit'): ({'--description', '--homepage', 'd', 'h'}, set()),
+    # A new repository's name, and a new name, are their first operand.
+    ('repo', 'rename'): (set(), set()),
+    # A label's name is its first operand.
+    ('label', 'create'): ({'--description', '--color', 'd', 'c'}, set()),
+    ('label', 'edit'): ({'--description', '--color', '--name', 'd', 'c', 'n'}, set()),
+}
+# Options of those commands that take a value which is not published, where
+# their operands matter: gh gist edit --remove names a file to drop.
+GH_OTHER_VALUES = {('gist', 'edit'): {'--remove', 'r'},
+                   # A release's operands are its tag, then the assets to upload.
+                   ('release', 'create'): {'--target', '--discussion-category',
+                                           '--notes-start-tag'},
+                   ('repo', 'create'): {'--gitignore', 'g', '--license', 'l', '--remote', 'r',
+                                        '--source', 's', '--team', 't', '--template', 'p'}}
+# GitHub takes release assets at this host (gh release upload uses it).
+UPLOADS_HOST = 'uploads.github.com'
+# Programs that change a file's mode or remove it, which can turn a hook off
+# without writing to it.
+FILE_CHANGERS = {'chmod', 'chown', 'chgrp', 'chflags', 'chattr', 'setfacl', 'xattr', 'rm',
+                 'rmdir', 'unlink', 'truncate', 'shred'}
+# Git commands that change files in the work tree, at the paths they name.
+GIT_FILE_CHANGERS = {'rm', 'mv', 'restore', 'checkout', 'switch', 'reset', 'clean',
+                     'checkout-index', 'read-tree', 'sparse-checkout'}
+# The file tools, and the arguments that name the file or folder each opens,
+# changes or searches.
+FILE_TOOLS = {'Read': ('file_path',), 'Edit': ('file_path',), 'MultiEdit': ('file_path',),
+              'Write': ('file_path',), 'NotebookEdit': ('notebook_path',), 'Grep': ('path',),
+              'Glob': ('path',)}
+# gh api's options that take a value.
+GH_API_VALUES = {'--method', 'X', '--field', 'F', '--raw-field', 'f', '--input', '--header',
+                 'H', '--jq', 'q', '--template', 't', '--preview', 'p', '--cache', '--hostname'}
+# The shell's redirections; the word after each is a file or a descriptor.
+REDIRECTIONS = {'>', '>>', '<', '<>', '>|', '>&', '<&', '&>', '&>>', '<<<'}
+WRITE_REDIRECTIONS = {'>', '>>', '<>', '>|', '>&', '&>', '&>>'}
+# Programs that write the files they are given.
+FILE_WRITERS = {'tee', 'cp', 'mv', 'install', 'ln', 'rsync', 'ditto'}
+INTERPRETERS = re.compile(r'(?:python[0-9.]*|node|ruby|perl|osascript)')
+# The long options git commit takes, so that an abbreviation of one, which
+# git accepts as the whole option, is refused (--mess is --message).
+COMMIT_LONG = COMMIT_VALUE_LONG | {
+    '--all', '--allow-empty', '--allow-empty-message', '--amend', '--branch', '--dry-run',
+    '--edit', '--gpg-sign', '--include', '--interactive', '--long', '--no-edit',
+    '--no-gpg-sign', '--no-post-rewrite', '--no-signoff', '--no-status', '--no-verify',
+    '--null', '--only', '--patch', '--pathspec-file-nul', '--porcelain', '--quiet',
+    '--reset-author', '--short', '--signoff', '--status', '--untracked-files', '--verbose',
+    '--verify'}
+# Settings and environment variables that name a commit's author or committer.
+IDENTITY_SETTINGS = {'user.name', 'user.email', 'author.name', 'author.email',
+                     'committer.name', 'committer.email'}
+IDENTITY_VARIABLES = ('GIT_AUTHOR_NAME', 'GIT_AUTHOR_EMAIL', 'GIT_COMMITTER_NAME',
+                      'GIT_COMMITTER_EMAIL')
+# What makes a commit take another repository, work tree or index than its
+# folder's, where the privacy check reads the staged changes.
+REPOSITORY_OPTIONS = ('--git-dir', '--work-tree')
+REPOSITORY_SETTINGS = {'core.worktree', 'core.bare'}
+REPOSITORY_VARIABLES = ('GIT_DIR', 'GIT_WORK_TREE', 'GIT_INDEX_FILE', 'GIT_COMMON_DIR',
+                        'GIT_OBJECT_DIRECTORY')
+# The Contents API names the file it writes in its address
+# (PUT /repos/{owner}/{repo}/contents/{path}), and GitHub shows the file
+# under that name.
+CONTENTS_PATH = re.compile(r'repos/[^/]+/[^/]+/contents/(.+)')
+# GitHub tools whose text is published, and those that write files.
+TOOLS_PUBLISH = {'create_pull_request', 'update_pull_request', 'issue_write', 'create_issue',
+                 'update_issue', 'add_issue_comment', 'update_issue_comment',
+                 'add_reply_to_pull_request_comment', 'add_comment_to_pending_review',
+                 'pull_request_review_write', 'create_gist', 'update_gist',
+                 'create_or_update_file', 'push_files', 'delete_file', 'create_branch'}
 
 
 def deny(reason):
@@ -140,17 +341,171 @@ def without_shell_comments(command):
     return ''.join(result)
 
 
+def substitution_end(text, start):
+    """The index just past the ) that closes the $( before start, or None
+    when it is not closed. Quotes, nested $( and ( are followed."""
+    index, quote, stack = start, None, [None]
+    while index < len(text) and stack:
+        char = text[index]
+        if char == '\\' and quote != "'":
+            index += 2
+            continue
+        if text.startswith('$(', index) and quote != "'":
+            stack.append(quote)
+            quote = None
+            index += 2
+            continue
+        if quote:
+            if char == quote:
+                quote = None
+        elif char in ('"', "'", '`'):
+            quote = char
+        elif char == '(':
+            stack.append(None)
+        elif char == ')':
+            quote = stack.pop()
+        index += 1
+    return None if stack else index
+
+
+def substituted_documents(text):
+    """(start, end, body, text, built) for each $(cat <<DELIMITER ... DELIMITER)
+    in text that holds that here-document alone: its body as written (<<-'s
+    leading tabs taken out), the text the shell gives for it (without the
+    line breaks a substitution drops), and whether the shell builds part of
+    it (an unescaped $ or backtick in a body whose delimiter is unquoted)."""
+    found, index = [], 0
+    while True:
+        match = SUBSTITUTED_HERE_DOCUMENT.search(text, index)
+        if match is None:
+            return found
+        index = match.end()
+        delimiter, position = match[2] or match[3] or match[4], match.end()
+        while position < len(text):
+            stop = text.find('\n', position)
+            stop = len(text) if stop < 0 else stop
+            line = text[position:stop].rstrip('\r')
+            if (line.lstrip('\t') if match[1] else line) == delimiter:
+                closing = re.compile(r'\s*\)').match(text, stop)
+                if closing:
+                    body = text[match.end():position]
+                    if match[1]:
+                        body = ''.join(line.lstrip('\t') for line in body.splitlines(True))
+                    given, built = here_document_text(body, match[4] is None)
+                    found.append((match.start(), closing.end(), body, given.rstrip('\n'), built))
+                    index = closing.end()
+                break
+            position = stop + 1
+
+
+def marked_documents(command):
+    """The command with a marker standing for each $(cat <<EOF ... EOF)."""
+    output, last = [], 0
+    for start, end, _, _, _ in substituted_documents(command):
+        SUBSTITUTED_DOCUMENTS.append(command[start:end])
+        output += [command[last:start],
+                   f'{DOCUMENT_MARK}{len(SUBSTITUTED_DOCUMENTS) - 1}{DOCUMENT_MARK}']
+        last = end
+    return ''.join(output) + command[last:]
+
+
+def unmarked(text):
+    """text with each marker marked_documents stood in replaced by what it stands for."""
+    if DOCUMENT_MARK not in text:
+        return text
+    return re.sub(DOCUMENT_MARK + r'(\d+)' + DOCUMENT_MARK,
+                  lambda match: SUBSTITUTED_DOCUMENTS[int(match[1])], text)
+
+
+def given_documents(text):
+    """text with each $(cat <<EOF ... EOF) the shell gives as written
+    replaced by what it gives."""
+    for start, end, _, given, built in reversed(substituted_documents(text)):
+        if not built:
+            text = text[:start] + given + text[end:]
+    return text
+
+
+def without_documents(text, built=True):
+    """text without each $(cat <<EOF ... EOF), or without those the shell
+    gives as written (built=False)."""
+    for start, end, _, _, is_built in reversed(substituted_documents(text)):
+        if built or not is_built:
+            text = text[:start] + text[end:]
+    return text
+
+
+def shell_backticks(text):
+    """The commands in the backticks the shell runs in text, written as
+    the command has it (quotes kept): not in single quotes, not escaped."""
+    found, quote, start, index = [], None, None, 0
+    while index < len(text):
+        char = text[index]
+        if char == '\\' and quote != "'":
+            index += 2
+            continue
+        if start is not None:
+            if char == '`':
+                found.append(text[start:index])
+                start = None
+        elif quote == "'":
+            if char == "'":
+                quote = None
+        elif char == '`':
+            start = index + 1
+        elif char == '"':
+            quote = None if quote else '"'
+        elif char == "'" and quote is None:
+            quote = "'"
+        index += 1
+    return found
+
+
+def protect_substitutions(command):
+    """Stand a marker in for each unquoted, closed $(...), and return the
+    command and what the markers stand for. The lexer would split one at
+    its parentheses, leaving its command an empty value and cutting the
+    words after it off from that command; kept whole, it stays in its word
+    as a double-quoted one does, and nested() reads its command."""
+    output, saved, index, quote = [], [], 0, None
+    while index < len(command):
+        char = command[index]
+        if char == '\\' and quote != "'":
+            output.append(command[index:index + 2])
+            index += 2
+            continue
+        if quote:
+            if char == quote:
+                quote = None
+        elif char in ('"', "'"):
+            quote = char
+        elif command.startswith('$(', index):
+            end = substitution_end(command, index + 2)
+            if end is not None:
+                saved.append(command[index:end])
+                output.append(f'{SUBSTITUTION_MARK}{len(saved) - 1}{SUBSTITUTION_MARK}')
+                index = end
+                continue
+        output.append(char)
+        index += 1
+    return ''.join(output), saved
+
+
 def segments(command, preserve_quotes=False):
     """Split into (words, preceding separator), keeping && and || for cd.
     Words inside $(...), `...` and sh -c '...' are split in turn."""
-    lexer = shlex.shlex(without_shell_comments(command.replace('\\\n', ' ')), posix=not preserve_quotes,
-                        punctuation_chars=';&|()<>\n')
+    text, saved = protect_substitutions(without_shell_comments(command.replace('\\\n', ' ')))
+    lexer = shlex.shlex(text, posix=not preserve_quotes, punctuation_chars=';&|()<>\n')
     lexer.whitespace = ' \t\r'
     lexer.whitespace_split = True
     lexer.commenters = ''
     current = []
     separator = ';'
+    marker = re.compile(SUBSTITUTION_MARK + r'(\d+)' + SUBSTITUTION_MARK)
     for word in lexer:
+        if saved:
+            word = marker.sub(lambda match: saved[int(match[1])], word)
+        word = unmarked(word)
         if word in ('<(', '>('):
             if current:
                 yield current, separator
@@ -231,39 +586,33 @@ def ansi_c_quotes(command):
     return ''.join(output)
 
 
-def nested(words):
-    """Read balanced command substitutions, including nested shell groups."""
-    found = []
+def nested(words, raw_words=None):
+    """Read balanced command substitutions, including nested shell groups.
+    A here-document read with cat is text, but for the substitutions an
+    unquoted one runs. With the words as written (raw_words), backticks are
+    read only where the shell runs them, not in single quotes."""
+    found, plain = [], []
     for word in words:
+        for start, end, body, _, built in reversed(substituted_documents(word)):
+            if built:
+                # Escaped dollars and backticks in it are text.
+                found += nested([re.sub(r'\\([$`\\])',
+                                        lambda m: '\uffff' if m[1] != '\\' else '\\', body)])
+            word = word[:start] + word[end:]
+        plain.append(word)
+    for word in plain:
         cursor = 0
         while (start := word.find('$(', cursor)) >= 0:
-            index, quote, stack = start + 2, None, [None]
-            while index < len(word) and stack:
-                char = word[index]
-                if char == '\\' and quote != "'":
-                    index += 2
-                    continue
-                if word.startswith('$(', index) and quote != "'":
-                    stack.append(quote)
-                    quote = None
-                    index += 2
-                    continue
-                if quote:
-                    if char == quote:
-                        quote = None
-                elif char in ('"', "'", '`'):
-                    quote = char
-                elif char == '(':
-                    stack.append(None)
-                elif char == ')':
-                    quote = stack.pop()
-                index += 1
-            if stack:
+            end = substitution_end(word, start + 2)
+            if end is None:
                 deny(UNKNOWN)
-            found.append(word[start + 2:index - 1])
-            cursor = index
+            found.append(word[start + 2:end - 1])
+            cursor = end
     # Unquoted backtick commands span several whitespace-separated words.
-    found += re.findall(r'`([^`]*)`', ' '.join(words))
+    if raw_words is None:
+        found += re.findall(r'`([^`]*)`', ' '.join(plain))
+    else:
+        found += shell_backticks(' '.join(without_documents(word) for word in raw_words))
     return found
 
 
@@ -505,6 +854,21 @@ def check_add(args):
     check_paths(paths)
 
 
+def add_forces(args):
+    """Whether a git add is forced (-f, --force, or -f in a cluster), so
+    it stages ignored files too."""
+    for arg in args:
+        if arg == '--':
+            break
+        if arg.startswith('--'):
+            option = arg.partition('=')[0]
+            if len(option) > 2 and '--force'.startswith(option):
+                return True
+        elif arg.startswith('-') and 'f' in arg[1:]:
+            return True
+    return False
+
+
 def check_commit(args):
     paths = []
     index = 0
@@ -513,6 +877,8 @@ def check_commit(args):
         if arg == '--':
             paths.extend(args[index + 1:])
             break
+        # git takes a long option's unique beginning for the whole option.
+        require_full_options(arg, COMMIT_LONG)
         if arg in ('--all', '-a'):
             deny(STAGE_ALL)
         if arg == '--pathspec-from-file' or arg.startswith('--pathspec-from-file='):
@@ -534,6 +900,7 @@ def check_commit(args):
             paths.append(arg)
         index += 1
     check_paths(paths)
+    return paths
 
 
 def require_full_options(word, options):
@@ -544,7 +911,7 @@ def require_full_options(word, options):
         deny('Spell out command options in full so the guard can inspect their effect.')
 
 
-def check_push(args, context, branch_changed=False):
+def check_push(args, context, branch_changed=False, git_state=None):
     refspecs = []
     options = []
     remote = None
@@ -557,6 +924,7 @@ def check_push(args, context, branch_changed=False):
             '--no-force', '--no-force-with-lease', '--no-force-if-includes',
             '--no-mirror', '--no-all', '--no-branches', '--no-delete',
             '--repo', '--push-option', '--receive-pack', '--exec', '--recurse-submodules',
+            '--no-verify', '--verify',
         })
         if arg.startswith('--repo='):
             remote = arg.partition('=')[2]
@@ -590,6 +958,9 @@ def check_push(args, context, branch_changed=False):
         deny('Use literal push remotes and destinations; shell expansions are not inspected.')
     if dry_run:
         return  # Only the final setting determines whether Git sends updates.
+    check_push_hook(options, context)
+    if git_state is not None:
+        check_hook_unchanged(git_state, context)
     for option in options:
         if (option == '--force' or option.startswith(('--force-with-lease', '--force-if-includes'))
                 or (re.fullmatch(r'-[a-zA-Z46]+', option) and 'f' in option)):
@@ -666,10 +1037,21 @@ def option_values(words, long_options, short_options=()):
             yield word[2:].lstrip('=')
 
 
-def request_file(filename, cwd):
-    """Read a bounded regular file, never stdin, devices or a pipe."""
+def request_file(filename, cwd, git_state=None):
+    """Read a bounded regular file, never devices or a pipe, and stdin only
+    from the command's own here-document."""
     if filename == '-':
-        deny(UNKNOWN)
+        number = (git_state or {}).get('stdin')
+        if number is None:
+            deny(UNKNOWN)
+        if HERE_DOCUMENTS[number]['built']:
+            deny(PUBLISHED_EXPANSION)
+        text = HERE_DOCUMENTS[number]['text']
+        try:
+            return json.dumps(json.loads(text))
+        except ValueError:
+            return text
+    REQUEST_FILES.append((cwd, filename))  # the same command must not write it first
     if cwd is None:
         deny(UNKNOWN)
     path = os.path.join(cwd, os.path.expanduser(filename))
@@ -690,12 +1072,12 @@ def request_file(filename, cwd):
         return text
 
 
-def api_arguments(words, cwd, program='gh'):
+def api_arguments(words, cwd, program='gh', git_state=None):
     """Include the API clients' file-backed payloads in the same checks."""
     parts = [' '.join(words)]
     if program == 'gh':
         for filename in option_values(words, {'--input'}):
-            parts.append(request_file(filename, cwd))
+            parts.append(request_file(filename, cwd, git_state))
         for field in option_values(words, {'--field'}, {'-F'}):
             key, equals, value = field.partition('=')
             if equals and value.startswith('@'):
@@ -838,10 +1220,17 @@ def gh_command_words(words):
     return plain
 
 
-def check_gh(words, cwd, environment):
+def check_gh(words, cwd, environment, git_state=None):
     plain = expand_gh_alias(gh_command_words(words[1:]), cwd, environment)
-    if len(plain) >= 2 and plain[0] in ('issue', 'pr') and plain[1] == 'new':
+    # gh's own aliases: gh pr new is gh pr create, and so on.
+    if len(plain) >= 2 and plain[0] in ('issue', 'pr', 'release', 'gist', 'repo') \
+            and plain[1] == 'new':
         plain[1] = 'create'
+    if plain[:2] == ['release', 'upload'] or release_assets(plain) \
+            or gh_uploads(words[1:], plain, environment):
+        deny(RELEASE_ASSET)
+    if git_state is not None:
+        note_gh_text(plain, cwd, git_state)
     if len(plain) >= 2 and plain[0] in ('agent-task', 'agent-tasks', 'agent', 'agents') \
             and plain[1] == 'create':
         deny(COPILOT)
@@ -880,7 +1269,7 @@ def check_gh(words, cwd, environment):
                         break  # remaining characters are the body/file operand
             index += 1
     if plain[:1] == ['api']:
-        arguments = api_arguments(plain, cwd)
+        arguments = api_arguments(plain, cwd, git_state=git_state)
         methods = list(option_values(plain, {'--method'}, {'-X'}))
         method = methods[-1].upper() if methods else (
             'POST' if list(option_values(plain, {'--field', '--raw-field', '--input'},
@@ -902,7 +1291,161 @@ def check_gh(words, cwd, environment):
                 deny(COPILOT)
 
 
+def without_redirections(words):
+    """The words a program is given: the shell's redirections, and the file
+    or descriptor each names, taken out."""
+    kept, index = [], 0
+    while index < len(words):
+        if words[index] in REDIRECTIONS:
+            index += 2
+        elif (words[index].isdigit() and index + 1 < len(words)
+              and words[index + 1] in REDIRECTIONS):
+            index += 1  # 2>/dev/null: the 2 names a descriptor
+        else:
+            kept.append(words[index])
+            index += 1
+    return kept
+
+
+def gh_arguments(args, value_options):
+    """Read a gh command's words as gh's flag parser does: (option, value)
+    for each option in value_options, and the operands. A short option is
+    its letter, and short options cluster: a letter not in value_options is
+    a switch, and the first one in it takes the rest of the word (after an
+    optional =) or the next word, so -cb text gives b the text."""
+    pairs, operands, index, options = [], [], 0, True
+    args = without_redirections(args)
+    while index < len(args):
+        word = args[index]
+        if not options or word == '-' or not word.startswith('-'):
+            operands.append(word)
+        elif word == '--':
+            options = False
+        elif word.startswith('--'):
+            option, equal, value = word.partition('=')
+            if option in value_options:
+                if equal:
+                    pairs.append((option, value))
+                elif index + 1 < len(args):
+                    index += 1
+                    pairs.append((option, args[index]))
+        else:
+            for offset, letter in enumerate(word[1:], 1):
+                if letter in value_options:
+                    rest = word[offset + 1:]
+                    if rest:
+                        pairs.append((letter, rest[1:] if rest.startswith('=') else rest))
+                    elif index + 1 < len(args):
+                        index += 1
+                        pairs.append((letter, args[index]))
+                    break
+        index += 1
+    return pairs, operands
+
+
+def release_assets(plain):
+    """The files gh release create uploads as assets: its operands after
+    the tag (gh release create --help)."""
+    if plain[:2] != ['release', 'create']:
+        return []
+    texts, files = GH_PUBLISHES[('release', 'create')]
+    _, operands = gh_arguments(plain[2:], texts | files | GH_OTHER_VALUES[('release', 'create')])
+    return operands[1:]
+
+
+def names_uploads(words):
+    """Whether a request names the host that takes release assets, as a
+    word or an option's value after =."""
+    return any(parsed_url(text)[1] == UPLOADS_HOST
+               for word in words for text in (word, word.partition('=')[2]) if text)
+
+
+def gh_uploads(words, plain, environment):
+    """Whether gh sends a request to the host that takes release assets:
+    its --hostname or GH_HOST, or gh api given that host's address."""
+    hosts = list(option_values(words, {'--hostname'}))
+    hosts.append((environment or {}).get('GH_HOST', ''))
+    if plain[:1] == ['api']:
+        hosts += gh_arguments(plain[1:], GH_API_VALUES)[1]
+    return any(host and parsed_url(host)[1] == UPLOADS_HOST for host in hosts)
+
+
+def note_gh_text(plain, cwd, git_state):
+    """The text a gh command puts on GitHub: titles, bodies, comments,
+    notes, descriptions and names, the files they come from, a gist's files
+    and an API write's fields and input."""
+    command = tuple(plain[:2])
+    if command in GH_PUBLISHES:
+        texts, files = GH_PUBLISHES[command]
+        pairs, operands = gh_arguments(plain[2:], texts | files | GH_OTHER_VALUES.get(command, set()))
+        values = [value for option, value in pairs if option in texts]
+        names = [value for option, value in pairs if option in files]
+        gist_files = []
+        if command == ('gist', 'create'):
+            # With no file named, gh reads the gist from stdin (gh gist
+            # create --help: cat cool.txt | gh gist create).
+            names += operands or ['-']
+            gist_files = operands
+        elif command == ('gist', 'edit'):
+            names += operands[1:2]  # the first is the gist
+            gist_files = [value for option, value in pairs if option in files]
+        elif command[0] == 'label':
+            values += operands[:1]
+        elif command in (('release', 'create'), ('repo', 'create'), ('repo', 'rename')):
+            # A release's tag, and a repository's name, are public too.
+            values += operands[:1]
+        note_published(git_state, 'gh ' + ' '.join(command), values, names, cwd)
+        # A gist shows each file it is given under that file's name.
+        note_published(git_state, 'gh ' + ' '.join(command) + ' file name',
+                       texts=[posixpath.basename(name) for name in gist_files if name != '-'])
+    elif command[:1] == ('api',):
+        pairs, operands = gh_arguments(plain[1:], GH_API_VALUES)
+        methods = [value for option, value in pairs if option in ('--method', 'X')]
+        raw = [value for option, value in pairs if option in ('--raw-field', 'f')]
+        typed = [value for option, value in pairs if option in ('--field', 'F')]
+        inputs = [value for option, value in pairs if option == '--input']
+        method = methods[-1].upper() if methods else ('POST' if raw or typed or inputs else 'GET')
+        if method in ('GET', 'HEAD'):
+            return
+        # A raw field is always text; a typed field's @ names a file (gh api
+        # --help), as --input does.
+        values = [field.partition('=')[2] for field in raw]
+        values += [field.partition('=')[2] for field in typed
+                   if not field.partition('=')[2].startswith('@')]
+        files = [field.partition('=')[2][1:] for field in typed
+                 if field.partition('=')[2].startswith('@')] + inputs
+        # A GraphQL request writes only through its query (a field, a file
+        # or the input); its other fields are variables, which cannot make
+        # a read a write.
+        fields = [(field.partition('=')[0], field.partition('=')[2], kind)
+                  for kind, group in (('raw', raw), ('typed', typed)) for field in group]
+        query_texts = [value for key, value, kind in fields if key == 'query'
+                       and not (kind == 'typed' and value.startswith('@'))]
+        query_files = [value[1:] for key, value, kind in fields if key == 'query'
+                       and kind == 'typed' and value.startswith('@')] + inputs
+        if 'graphql' in api_paths(operands) and (query_texts or query_files) and graphql_read(
+                [literal_text(value, git_state) for value in query_texts]
+                + [text for name in query_files for text in published_files(name, cwd, git_state)]):
+            return
+        note_published(git_state, 'gh api', values, files, cwd)
+        if contents_paths(operands):
+            note_published(git_state, 'gh api file name', contents_paths(operands))
+
+
+def graphql_read(texts):
+    """Whether a GraphQL request only reads: it writes only through a
+    mutation, which needs the word, and none of its text (texts) holds it.
+    A text the shell builds (None) could hold anything."""
+    return None not in texts and not any(re.search(r'mutation', text, re.IGNORECASE)
+                                         for text in texts)
+
+
 def parsed_url(word):
+    # curl takes one, two or three slashes after the scheme's colon
+    # (https:/api.github.com), as one address.
+    scheme = re.match(r'(https?):/+', word, re.IGNORECASE)
+    if scheme:
+        word = scheme[1] + '://' + word[scheme.end():]
     try:
         url = urlsplit(word if '://' in word else 'https://' + word)
         # API clients normally remove literal dot segments before sending.
@@ -1195,6 +1738,11 @@ def api_paths(words):
     return [unquote(path) for path in paths]
 
 
+def contents_paths(words):
+    """The file paths a Contents API request names in its address."""
+    return [match[1] for match in map(CONTENTS_PATH.fullmatch, api_paths(words)) if match]
+
+
 def protected_api_write(words, arguments, method):
     if method in ('GET', 'HEAD'):
         return False
@@ -1310,6 +1858,8 @@ def inspectable_here_documents(command):
             raw = match[2]
             delimiter = shlex.split(ansi_c_quotes(raw))[0]
             quoted = any(char in raw for char in "'\"\\")
+            # 3<<EOF feeds descriptor 3, not stdin.
+            descriptor = re.search(r'(?<![\w$])(\d+)$', line[:match.start()])
             body = []
             while index < len(lines):
                 candidate = lines[index]
@@ -1319,7 +1869,8 @@ def inspectable_here_documents(command):
                 if candidate.rstrip('\r\n') == delimiter:
                     break
                 body.append(candidate)
-            bodies.append((''.join(body), quoted))
+            bodies.append((unmarked(''.join(body)), quoted,
+                           descriptor is None or int(descriptor[1]) == 0))
         parts = list(segments(header))
         shell_parts = [words for words, _ in parts
                        if (unwrapped := strip_wrappers(words)[0])
@@ -1333,7 +1884,7 @@ def inspectable_here_documents(command):
         if shell_parts:
             if len(parts) != 1 or len(bodies) != 1:
                 deny(UNKNOWN)
-            body, quoted = bodies[0]
+            body, quoted, _ = bodies[0]
             if not quoted:
                 expanded = re.sub(r'\\([$`\\])', lambda m: '\uffff' if m[1] != '\\' else '\\', body)
                 for inner in nested([expanded]):
@@ -1343,8 +1894,16 @@ def inspectable_here_documents(command):
                     body = body.replace('$(' + inner + ')', '').replace('`' + inner + '`', '')
             output.append(header.rstrip() + ' -c ' + shlex.quote(body) + '\n')
         else:
-            output.append(header.rstrip() + '\n')
-            for body, quoted in bodies:
+            # A marker stands where each <<DELIMITER was, so that only the
+            # command it is given to can read it as stdin.
+            marked = line
+            for number, match in reversed(list(enumerate(matches))):
+                marked = (marked[:match.start()] + f' {HERE_MARK}{len(HERE_DOCUMENTS) + number} '
+                          + marked[match.end():])
+            output.append(marked.rstrip() + '\n')
+            for body, quoted, stdin in bodies:
+                text, built = here_document_text(body, quoted)
+                HERE_DOCUMENTS.append({'text': text, 'built': built, 'stdin': stdin})
                 if not quoted:
                     # Escaped dollars/backticks in an unquoted here-doc are
                     # literal text, while unescaped substitutions execute.
@@ -1354,11 +1913,875 @@ def inspectable_here_documents(command):
     return ''.join(output)
 
 
-def changed_directory(cwd, destination):
+def changed_directory(cwd, destination, environment=None):
+    """The folder a cd, -C or chdir to destination reaches from cwd, or None
+    when the guard cannot tell: the shell builds destination, or cwd is
+    unknown. Given the shell's environment, a folder in a config folder
+    named through $HOME or $XDG_CONFIG_HOME is followed all the same, so
+    a relative read from it is placed (reaches_list); any other folder the
+    shell builds stays unknown, as git commands there are refused."""
+    if '$' in destination or '`' in destination:
+        if environment is None:
+            return None
+        expanded = with_config_variables(destination, environment)
+        if expanded is None:
+            return None
+        expanded = os.path.expanduser(expanded)
+        if not os.path.isabs(expanded) and cwd is None:
+            return None
+        reached = os.path.join(cwd or '', expanded)
+        return reached if in_config_folder(reached) else None
     destination = os.path.expanduser(destination)
     if os.path.isabs(destination):
         return destination
     return os.path.join(cwd, destination) if cwd is not None else None
+
+
+def here_document_text(body, quoted):
+    """The text a here-document gives, and whether the shell builds part of
+    it. With its delimiter quoted, the body is the text. Without, the shell
+    runs its unescaped $ and backticks first, and drops the backslash of
+    \\$, \\`, \\\\ and a line's end."""
+    if quoted:
+        return body, False
+    text, built, index = [], False, 0
+    while index < len(body):
+        char = body[index]
+        if char == '\\' and body[index + 1:index + 2] in ('$', '`', '\\', '\n'):
+            if body[index + 1] != '\n':
+                text.append(body[index + 1])
+            index += 2
+            continue
+        built = built or bool(EXPANSION_START.match(body, index))
+        text.append(char)
+        index += 1
+    return ''.join(text), built
+
+
+def without_here_marks(parts):
+    """Take the here-document markers out of each part's words, and say
+    which here-documents each part was given."""
+    words, given = [], []
+    for part, separator in parts:
+        words.append(([word for word in part if not word.startswith(HERE_MARK)], separator))
+        given.append([int(word[1:]) for word in part if word.startswith(HERE_MARK)])
+    return words, given
+
+
+def stdin_document(parts, given, index):
+    """The here-document the command parts[index] reads as stdin: the last
+    one given to it for descriptor 0, or the one a bare cat before it pipes
+    in (cat <<'EOF' | gh pr comment 12 -F -). None when it reads another
+    pipe or redirection, or was given none: the guard cannot read those
+    before the command runs."""
+    words, separator = parts[index]
+    if any(word in ('<', '<>', '<&', '<<<') for word in words):
+        return None
+    if separator in ('|', '|&'):
+        if separator == '|' and index > 0 and parts[index - 1][0] == ['cat']:
+            return stdin_document(parts, given, index - 1)
+        return None
+    documents = [number for number in given[index] if HERE_DOCUMENTS[number]['stdin']]
+    return documents[-1] if documents else None
+
+
+def published_files(filename, cwd, git_state=None):
+    """The text of a file a command publishes (a commit message, a body):
+    from the here-document given to that command for stdin, otherwise a
+    bounded regular file that exists before the command runs."""
+    if filename == '-':
+        number = (git_state or {}).get('stdin')
+        if number is None:
+            deny(PUBLISHED_STDIN)
+        if HERE_DOCUMENTS[number]['built']:
+            deny(PUBLISHED_EXPANSION)
+        return [HERE_DOCUMENTS[number]['text']]
+    if git_state is not None:
+        git_state.setdefault('read_files', []).append((cwd, filename))
+    if cwd is None:
+        deny(PUBLISHED_FILE)
+    path = os.path.join(cwd, os.path.expanduser(filename))
+    try:
+        metadata = os.stat(path)
+        if not stat.S_ISREG(metadata.st_mode) or metadata.st_size > 1024 * 1024:
+            deny(PUBLISHED_FILE)
+        with open(path, encoding='utf-8', errors='replace') as file:
+            return [file.read()]
+    except OSError:
+        deny(PUBLISHED_FILE)
+
+
+def literal_words(command):
+    """The words of a command, as the shell will pass them: those in which
+    every $ and backtick is text (single-quoted or escaped), and those the
+    shell builds from a variable or another command. Anything this simple
+    reading gets wrong is in neither, and so counts as built."""
+    words, built_words, word, built, quote = set(), set(), [], False, None
+    index = 0
+
+    def end():
+        # A here-document read with cat stands as a marker: one whose text
+        # the shell builds builds the word.
+        text = unmarked(''.join(word))
+        if not word:
+            return
+        if built or any(document[4] for document in substituted_documents(text)):
+            built_words.add(text)
+        else:
+            words.add(text)
+
+    while index < len(command):
+        char = command[index]
+        if quote == "'":
+            if char == "'":
+                quote = None
+            else:
+                word.append(char)
+        elif char == '\\' and index + 1 < len(command):
+            following = command[index + 1]
+            if quote == '"' and following not in '$`"\\\n':
+                word.append(char)
+            elif following != '\n':
+                word.append(following)
+            index += 1
+        elif quote == '"':
+            if char == '"':
+                quote = None
+            else:
+                built = built or bool(EXPANSION_START.match(command, index))
+                word.append(char)
+        elif char in "'\"":
+            quote = char
+        elif char.isspace() or char in ';&|()<>':
+            end()
+            word, built = [], False
+        else:
+            built = built or bool(EXPANSION_START.match(command, index))
+            word.append(char)
+        index += 1
+    if quote is None:
+        end()
+    return words, built_words
+
+
+def ends_with_value(word, value):
+    """Whether value is a word, an option's or a field's value after =, or
+    a short option's attached value, after any switches (-cbtext)."""
+    if not word.endswith(value):
+        return False
+    prefix = word[:len(word) - len(value)]
+    return not prefix or prefix.endswith('=') or bool(re.fullmatch(r'-[A-Za-z]+=?', prefix))
+
+
+def literal_text(value, git_state):
+    """The text the shell passes for value, or None when it builds value
+    from a variable or another command: value holds a $ or backtick outside
+    a here-document read with cat that the shell gives as written
+    (substituted_documents), and is not, or does not end, a
+    word in which they are text. Inside double quotes the shell drops the
+    backslash of \\$ and \\`, which the guard's word splitting keeps. The
+    same text built elsewhere in the command may be the word value came
+    from, so it counts as built: one word never vouches for another."""
+    if not EXPANSION_START.search(without_documents(value, built=False)):
+        return value
+    candidates = list(dict.fromkeys([value, re.sub(r'\\([$`])', r'\1', value)]))
+    if any(ends_with_value(word, candidate) for candidate in candidates
+           for word in git_state.get('built_words', ())):
+        return None
+    for candidate in candidates:
+        if any(ends_with_value(word, candidate) for word in git_state.get('literal_words', ())):
+            return candidate
+    return None
+
+
+def note_published(git_state, label, values=(), files=(), cwd=None, texts=()):
+    """Remember text a command would publish, for check_privacy: values are
+    the shell's words, files name files (or - for stdin) the command reads
+    its text from, and texts are data already read, such as a request
+    file's content, in which a $ or a backtick is only text. A word the
+    shell would build from a variable or another command is refused: what
+    it becomes cannot be read here."""
+    published = git_state.setdefault('published', [])
+    for value in values:
+        text = literal_text(str(value), git_state)
+        if text is None:
+            deny(PUBLISHED_EXPANSION)
+        # A here-document read with cat publishes its body.
+        published.append((label, given_documents(text)))
+    for filename in files:
+        filename = str(filename)
+        # A process substitution, or a name the shell builds, names nothing
+        # the guard can read before the command runs.
+        if filename.startswith(('<(', '>(')) or literal_text(filename, git_state) is None:
+            deny(PUBLISHED_EXPANSION)
+        published.extend((label + ' file', text)
+                         for text in published_files(filename, cwd, git_state))
+    published.extend((label, str(text)) for text in texts)
+    git_state['publishes'] = True
+
+
+def effective_directory(context):
+    """The directory a git command runs in, after its -C options."""
+    cwd, options, _ = context
+    for index, option in enumerate(options[:-1]):
+        if option == '-C' and cwd is not None:
+            cwd = changed_directory(cwd, options[index + 1])
+    return cwd
+
+
+def commit_options(args):
+    """(option, value) for each git commit option that takes a value, read
+    as git reads them: --long=value or --long value, and short clusters in
+    which the first letter that takes a value takes the rest of the word or
+    the next word (-sm text)."""
+    pairs, index = [], 0
+    while index < len(args):
+        arg = args[index]
+        if arg == '--':
+            break
+        if arg.startswith('--'):
+            option, equal, value = arg.partition('=')
+            if option in COMMIT_VALUE_LONG:
+                if equal:
+                    pairs.append((option, value))
+                elif index + 1 < len(args):
+                    index += 1
+                    pairs.append((option, args[index]))
+        elif arg.startswith('-'):
+            for offset, letter in enumerate(arg[1:], 1):
+                if letter in COMMIT_VALUE_SHORT:
+                    # -S's optional key must be attached.
+                    if arg[offset + 1:]:
+                        pairs.append(('-' + letter, arg[offset + 1:]))
+                    elif letter != 'S' and index + 1 < len(args):
+                        index += 1
+                        pairs.append(('-' + letter, args[index]))
+                    break
+        index += 1
+    return pairs
+
+
+def selects_repository(context):
+    """Whether git's options or variables choose another repository, work
+    tree or index than the folder's (git --git-dir, -c core.worktree,
+    GIT_INDEX_FILE and the like)."""
+    _, options, environment = context
+    for index, option in enumerate(options):
+        if option.partition('=')[0] in REPOSITORY_OPTIONS:
+            return True
+        if option in ('-c', '--config-env') and index + 1 < len(options):
+            if options[index + 1].partition('=')[0].lower() in REPOSITORY_SETTINGS:
+                return True
+        elif option.startswith('--config-env='):
+            if option.partition('=')[2].partition('=')[0].lower() in REPOSITORY_SETTINGS:
+                return True
+    return any(environment.get(key) for key in REPOSITORY_VARIABLES) or any(
+        key.startswith('GIT_CONFIG_KEY_') and str(value).lower() in REPOSITORY_SETTINGS
+        for key, value in environment.items())
+
+
+def note_commit(git_state, args, context, paths):
+    """Remember a commit: what it records (its message and trailers, the
+    files it reads a message from, an author or committer it is given), and
+    the repository whose staged changes and added paths it would take."""
+    if selects_repository(context):
+        deny(OTHER_REPOSITORY)
+    directory = effective_directory(context)
+    _, options, environment = context
+    pairs = commit_options(args)
+    note_published(git_state, 'the commit message',
+                   [value for option, value in pairs if option in ('-m', '--message', '--trailer')],
+                   [value for option, value in pairs if option in ('-F', '--file', '-t', '--template')],
+                   directory)
+    adds = git_state.get('adds', [])
+    if directory is None or any(folder is None for folder, _, _ in adds):
+        deny(UNKNOWN_FOLDER)
+    note_reused_commit(git_state, args, pairs, context, directory)
+    # The author and committer: as given (--author, -c, GIT_AUTHOR_* and
+    # the like), which must be the command's own text, and as git reads
+    # them where the commit runs, configured ones included. They are
+    # checked as a commit's are, so the published support address and
+    # GitHub's own addresses pass. Where git cannot tell who commits, the
+    # commit fails.
+    given = [setting.partition('=')[2] for option, setting in zip(options, options[1:])
+             if option == '-c' and setting.partition('=')[0].lower() in IDENTITY_SETTINGS]
+    given += [environment[key] for key in IDENTITY_VARIABLES if environment.get(key)]
+    # GIT_CONFIG_COUNT, _KEY_n and _VALUE_n can set them too.
+    if any(literal_text(value, git_state) is None for value in given + [
+            value for key, value in environment.items() if key.startswith('GIT_CONFIG') and value]):
+        deny(PUBLISHED_EXPANSION)
+    identities = git_state.setdefault('identities', [])
+    read = 0
+    for variable, where in (('GIT_AUTHOR_IDENT', 'the commit author'),
+                            ('GIT_COMMITTER_IDENT', 'the commit committer')):
+        signed = re.fullmatch(r'(.*) <(.*)> \d+ [+-]\d{4}', git(context, 'var', variable) or '')
+        if signed:
+            identities.append((directory, signed[1], signed[2], where))
+            read += 1
+    if not read:
+        note_published(git_state, 'the commit author', given)
+    for author in (value for option, value in pairs if option == '--author'):
+        signed = re.fullmatch(r'(.*?)\s*<(.*)>', author.strip())
+        if signed and literal_text(author, git_state) is not None:
+            identities.append((directory, signed[1], signed[2], 'the commit author'))
+        else:
+            # Not Name <address>: git looks for an author it has seen.
+            note_published(git_state, 'the commit author', [author])
+    git_state.setdefault('commits', []).append(
+        (directory, [*adds, *((directory, path, False) for path in paths)]))
+
+
+def note_reused_commit(git_state, args, pairs, context, directory):
+    """Remember what a commit takes from another one: -C and -c its
+    message and author, --fixup and --squash its message (whose subject
+    they quote), and --amend the last commit's message when given none,
+    and its author. --reset-author takes the author from git's settings
+    instead (git commit --help)."""
+    messages = {'-m', '--message', '-F', '--file', '-C', '-c', '--reuse-message',
+                '--reedit-message', '--fixup', '--squash'}
+    keeps_author = '--reset-author' not in args
+    reused = []
+    for option, value in pairs:
+        if option in ('-C', '-c', '--reuse-message', '--reedit-message'):
+            reused.append((value, keeps_author))
+        elif option in ('--fixup', '--squash'):
+            # --fixup=amend:<commit> and reword:<commit> take its message.
+            reused.append((re.sub(r'^(?:amend|reword):', '', value), False))
+    if '--amend' in args:
+        if not any(option in messages for option, _ in pairs):
+            reused.append(('HEAD', keeps_author))
+        elif keeps_author:
+            reused.append(('HEAD', None))  # the author alone
+    for revision, author in reused:
+        if literal_text(revision, git_state) is None:
+            deny(PUBLISHED_EXPANSION)
+        found = git(context, 'log', '-1', '--format=%an%x00%ae%x00%B', '--end-of-options',
+                    revision, '--')
+        if found is None or found.count('\0') < 2:
+            deny(REUSED_COMMIT)
+        name, address, message = found.split('\0', 2)
+        if author is not None:
+            note_published(git_state, 'the reused commit message', texts=[message])
+        if author is not False:
+            git_state.setdefault('identities', []).append(
+                (directory, name, address, 'the commit author'))
+
+
+def check_push_hook(options, context):
+    """A push must run .githooks/pre-push, which checks what it carries."""
+    if '--no-verify' in options:
+        deny(NO_VERIFY)
+    if context[0] is None:
+        deny(UNKNOWN_FOLDER)
+    top = git(context, 'rev-parse', '--show-toplevel')
+    setting = git(context, 'config', '--get', 'core.hooksPath')
+    if top is None or not setting:
+        deny(HOOK_OFF)
+    folder = os.path.expanduser(setting)
+    folder = folder if os.path.isabs(folder) else os.path.join(top, folder)
+    hook = os.path.join(top, '.githooks', 'pre-push')
+    try:
+        same = os.path.realpath(folder) == os.path.realpath(os.path.join(top, '.githooks'))
+    except (OSError, ValueError):
+        same = False
+    if not same:
+        deny(NO_VERIFY)
+    if not os.path.lexists(hook):
+        # Set the right way, on a branch made before the hook reached main.
+        deny(HOOK_MISSING)
+    try:
+        with open(hook, encoding='utf-8') as file:
+            runs_check = 'scripts/privacy-check.py --pre-push' in file.read()
+    except (OSError, UnicodeError):
+        runs_check = False
+    if not runs_check or not os.access(hook, os.X_OK):
+        deny(HOOK_OFF)
+
+
+def inline_code(args, cwd=None):
+    """Whether an interpreter is given its code on the command line (-c,
+    -e) or on stdin, rather than a script file. The options end at the
+    script: what follows it is the script's own (privacy-check.py --text -).
+    An operand that is neither a script's name nor a file may be an
+    option's value (python3 -X dev -c ...), so reading goes on past it."""
+    for arg in args:
+        if arg in ('-', '--eval', '--print') or re.fullmatch(r'-[a-zA-Z]*[ceEp]', arg):
+            return True
+        if arg == '--' or (not arg.startswith('-') and (
+                re.search(r'\.(?:py|js|mjs|cjs|ts|rb|pl|pm|scpt|applescript)$', arg)
+                or (cwd is not None and os.path.isfile(os.path.join(cwd, arg))))):
+            return False
+    return not [arg for arg in args if not arg.startswith('-')]
+
+
+def note_writes(git_state, words, raw_words, unwrapped, shell_cwd, cwd):
+    """Remember the files a command writes, as (directory, path), with None
+    for a path the guard cannot name: the shell's > and >> targets, the
+    files tee, cp, mv and the like are given, sed -i and perl -i, dd of=,
+    curl and wget downloads, and a patch or an interpreter's inline code,
+    which may write anything."""
+    writes = git_state.setdefault('writes', [])
+    aligned = len(raw_words) == len(words)
+    for index, word in enumerate(words[:-1]):
+        # A quoted '>' is a word, not a redirection.
+        if word in WRITE_REDIRECTIONS and (not aligned or raw_words[index] == word):
+            target = words[index + 1]
+            if word == '>&' and re.fullmatch(r'\d*-?', target):
+                continue  # 2>&1 copies a descriptor
+            if not target.startswith('/dev/'):
+                writes.append((shell_cwd, target))
+    if not unwrapped:
+        return
+    program = os.path.basename(unwrapped[0])
+    args = without_redirections(unwrapped[1:])
+    operands = [arg for arg in args if not arg.startswith(('-', '<(', '>('))]
+    paths = []
+    if program in ('tee', 'mv'):
+        # tee writes every file it is given; mv takes its sources away.
+        paths = operands + [arg.partition('=')[2] for arg in args
+                            if arg.startswith('--target-directory=')]
+    elif program in FILE_WRITERS:
+        # cp, install, ln, rsync and ditto write only their destination:
+        # the last operand, or the folder -t names (rsync's -t keeps times).
+        targets = list(option_values(args, {'--target-directory'},
+                                     set() if program == 'rsync' else {'-t'}))
+        if targets:
+            paths = targets
+        elif program == 'install' and any(arg == '--directory' or re.fullmatch(
+                r'-[a-zA-Z]*d[a-zA-Z]*', arg) for arg in args):
+            paths = operands  # install -d makes each folder it names
+        else:
+            paths = operands[-1:]
+    elif program in ('sed', 'perl') and any(re.match(r'-[a-zA-Z]*i', arg)
+                                           or arg.startswith('--in-place') for arg in args):
+        paths = operands
+    elif program == 'dd':
+        paths = [arg[3:] for arg in args if arg.startswith('of=')]
+    elif program == 'curl':
+        request = curl_words(unwrapped)[1:]
+        paths = list(option_values(request, {'--output'}, {'-o'}))
+        if any(arg in ('-O', '--remote-name', '--remote-name-all') for arg in request):
+            paths.append(None)  # named after the address
+    elif program == 'wget':
+        documents = list(option_values(args, {'--output-document'}, {'-O'}))
+        if documents:
+            paths = [document for document in documents if document != '-']
+        elif any(arg.startswith(('-P', '--directory-prefix')) for arg in args):
+            paths = [None]
+        else:
+            # It saves what it fetches under the last part of the address.
+            paths = [posixpath.basename(parsed_url(arg)[0].path) or 'index.html'
+                     for arg in operands if parsed_url(arg)[1] and '.' in parsed_url(arg)[1]]
+    elif program == 'patch' or (INTERPRETERS.fullmatch(program) and inline_code(args, cwd)):
+        paths = [None]
+    elif program in FILE_CHANGERS:
+        # A mode or a removal changes no file's text, but can turn a hook off.
+        git_state.setdefault('changes', []).extend((cwd, path) for path in operands)
+    writes.extend((cwd, path) for path in paths)
+
+
+def resolved(cwd, path):
+    """A path as an absolute one, or None when the guard cannot tell where
+    it is: the shell builds it, or its directory is unknown."""
+    if path is None or '$' in path or '`' in path:
+        return None
+    path = os.path.expanduser(path)
+    if not os.path.isabs(path) and cwd is None:
+        return None
+    return os.path.realpath(os.path.join(cwd or os.sep, path))
+
+
+def overlaps(written, read):
+    """Whether a path written may be, hold or lie inside a path read (or
+    match it as a pathspec). A path that cannot be resolved may be any."""
+    one, other = resolved(*written), resolved(*read)
+    if one is None or other is None:
+        return True
+    return (one == other or other.startswith(one.rstrip(os.sep) + os.sep)
+            or one.startswith(other.rstrip(os.sep) + os.sep) or fnmatch.fnmatchcase(one, other))
+
+
+def changes_index(subcommand, args):
+    """Whether git apply, am or stash changes the index, which a commit
+    takes: apply with --cached, --index or --3way, am, stash pop and apply."""
+    if subcommand == 'am':
+        return True
+    if subcommand == 'stash':
+        return [arg for arg in args if not arg.startswith('-')][:1] in (['pop'], ['apply'])
+    for arg in args:
+        if arg == '--':
+            break
+        option = arg.partition('=')[0]
+        # git takes an option's unique beginning for the whole option.
+        if (len(option) > 3 and option.startswith('--')
+                and any(full.startswith(option) for full in ('--cached', '--index', '--3way'))):
+            return True
+        if re.fullmatch(r'-[a-zA-Z0-9]*3[a-zA-Z0-9]*', arg):
+            return True
+    return False
+
+
+def config_change(args):
+    """What git config changes: (section, True) for a section it removes or
+    renames, (key, False) for a key it sets, adds, replaces or unsets, and
+    None for a read. Names are in lower case; an edit, which may change
+    anything, is ('', True)."""
+    operands, index, options = [], 0, set()
+    while index < len(args):
+        arg = args[index]
+        if arg in ('-f', '--file', '--blob', '--type', '--default', '--comment', '--value'):
+            index += 1
+        elif arg.startswith('-'):
+            options.add(arg.partition('=')[0])
+        else:
+            operands.append(arg)
+        index += 1
+    action = ''
+    if operands[:1] in (['set'], ['unset'], ['get'], ['list'], ['remove-section'],
+                        ['rename-section'], ['edit']):
+        action, operands = operands[0], operands[1:]
+    if action == 'edit' or options & {'--edit', '-e'}:
+        return '', True
+    key = operands[0].lower() if operands else ''
+    if (action in ('remove-section', 'rename-section')
+            or options & {'--remove-section', '--rename-section'}):
+        return key, True
+    if action in ('get', 'list') or any(
+            option.startswith(('--get', '--list')) or option == '-l' for option in options):
+        return None
+    if action in ('set', 'unset') or len(operands) >= 2 or any(
+            option.startswith(('--unset', '--replace-all', '--add')) for option in options):
+        return key, False
+    return None
+
+
+def sets_identity(args):
+    """Whether git config changes a commit's author or committer (user.*,
+    author.*, committer.*): sets, adds, replaces or unsets one, or removes
+    or renames their section. A read changes nothing."""
+    change = config_change(args)
+    if change is None:
+        return False
+    name, section = change
+    if section:
+        return name in ('', 'user', 'author', 'committer')
+    return name in IDENTITY_SETTINGS
+
+
+def sets_hooks(args):
+    """Whether git config may change which hooks git runs: core.hooksPath,
+    the core section, or a file it includes (include.path, includeIf)."""
+    change = config_change(args)
+    if change is None:
+        return False
+    name, section = change
+    if section:
+        return name in ('', 'core', 'include') or name.startswith('includeif')
+    return name == 'core.hookspath' or name.startswith(('include.', 'includeif.'))
+
+
+def leaves_files(subcommand, args):
+    """Whether git checkout or switch leaves the work tree as it is: it is
+    given nothing to check out, or only a new branch to make where HEAD is
+    (-b, -B, -c, -C or --orphan, with no start point and no paths)."""
+    creating = 'bB' if subcommand == 'checkout' else 'cC'
+    named = ('--orphan', '--create', '--force-create')
+    operands, index = [], 0
+    while index < len(args):
+        arg = args[index]
+        if arg == '--':
+            operands += args[index + 1:]
+            break
+        if arg in named:
+            index += 2  # the new branch's name follows
+            continue
+        if re.fullmatch(r'-[a-zA-Z]+', arg):
+            letters = arg[1:]
+            hit = next((offset for offset, letter in enumerate(letters) if letter in creating),
+                       None)
+            # The new branch's name is the rest of the word, or the next one.
+            if hit is not None and not letters[hit + 1:]:
+                index += 1
+        elif arg == '-' or not arg.startswith('-'):
+            operands.append(arg)  # a branch, a commit or a path (- is the last branch)
+        index += 1
+    return not operands
+
+
+def changed_paths(cwd, path):
+    """The absolute paths a command's path names, as the shell gives them
+    (a glob's matches, before the command runs), or None when the guard
+    cannot tell: the shell builds it, a brace expands it, or its folder is
+    unknown."""
+    if path is None or re.search(r'\{[^}]*(?:,|\.\.)[^}]*\}', path):
+        return None
+    absolute = resolved(cwd, path)
+    if absolute is None:
+        return None
+    if re.search(r'[*?[]', path):
+        matches = glob.glob(os.path.join(cwd or os.sep, os.path.expanduser(path)))
+        return [os.path.realpath(match) for match in matches] or [absolute]
+    return [absolute]
+
+
+def check_hook_unchanged(git_state, context):
+    """A push runs the hook, its setting and the check it calls as they are
+    when the push starts, and the guard reads them before the whole command
+    runs. Refuse a push after a change to any of them in the same command:
+    a git config change to the hooks, another branch checked out, or a file
+    written, removed or given another mode in .githooks, git's own folder,
+    git's settings files or scripts/privacy-check.py (or anywhere the guard
+    cannot place)."""
+    if git_state.get('hook_changed'):
+        deny(HOOK_CHANGED)
+    changed = [*git_state.get('writes', ()), *git_state.get('changes', ())]
+    if not changed:
+        return
+    top = git(context, 'rev-parse', '--show-toplevel')
+    folders = git(context, 'rev-parse', '--path-format=absolute', '--git-dir', '--git-common-dir')
+    if top is None or folders is None:
+        deny(HOOK_CHANGED)
+    environment = {**os.environ, **{key: value for key, value in context[2].items()
+                                    if value is not None}}
+    home = environment.get('HOME') or os.path.expanduser('~')
+    xdg = environment.get('XDG_CONFIG_HOME', '')
+    places = [os.path.join(top, '.githooks'), os.path.join(top, 'scripts', 'privacy-check.py'),
+              *folders.splitlines(), os.path.join(home, '.gitconfig'),
+              os.path.join(xdg if os.path.isabs(xdg) else os.path.join(home, '.config'),
+                           'git', 'config'), '/etc/gitconfig']
+    for name in ('GIT_CONFIG_GLOBAL', 'GIT_CONFIG_SYSTEM'):
+        places += (git(context, 'var', name) or '').splitlines()
+    places = {os.path.realpath(place) for place in places if place}
+    for cwd, path in changed:
+        paths = changed_paths(cwd, path)
+        if paths is None or any(
+                one == place or one.startswith(place.rstrip(os.sep) + os.sep)
+                or place.startswith(one.rstrip(os.sep) + os.sep)
+                for one in paths for place in places):
+            deny(HOOK_CHANGED)
+
+
+def check_written(git_state):
+    """Deny when a command writes a file it also publishes, sends or
+    commits: the guard read that file before the command runs, so what goes
+    out would be what the command wrote, unread. A change to the index
+    (git apply --cached, am, stash pop) in the repository a commit in the
+    same command takes it from counts too. So does a commit identity the
+    same command sets."""
+    if git_state.get('identity_set') and git_state.get('commits'):
+        deny(IDENTITY_SET)
+    changes = git_state.get('index_changes', [])
+    if changes and git_state.get('commits'):
+        tops = {git(context, 'rev-parse', '--show-toplevel') for context in changes}
+        for directory, _ in git_state['commits']:
+            if None in tops or git((directory, [], {}), 'rev-parse', '--show-toplevel') in tops:
+                deny(WRITTEN_FILE)
+    reads = [*git_state.get('read_files', []), *REQUEST_FILES,
+             *((folder, path) for _, specs in git_state.get('commits', ())
+               for folder, path, _ in specs)]
+    if any(overlaps(written, read) for written in git_state.get('writes', []) for read in reads):
+        deny(WRITTEN_FILE)
+
+
+def declared(args, inherited):
+    """The environment after declare, typeset, local or readonly: an
+    assignment changes it as a bare one does, -x exports, and +x takes the
+    export away. Other attributes (-n, -a, -i, -l, -u) change what a value
+    means, so a repository variable given one is unknown."""
+    updates = dict(inherited)
+    options = [arg for arg in args if arg.startswith(('-', '+')) and '=' not in arg]
+    letters = ''.join(option.lstrip('-+') for option in options)
+    if set(letters) & set('fF'):
+        return updates  # functions, not variables
+    for arg in args:
+        if arg in options:
+            continue
+        key, equal, value = arg.partition('=')
+        if not context_variable(key):
+            continue
+        if set(letters) - set('xgr'):
+            deny(UNKNOWN)
+        if any(option.startswith('+') for option in options):
+            updates[key] = None
+        elif equal:
+            if '$' in value or '`' in value:
+                deny(UNKNOWN)
+            updates[key] = value
+        elif 'x' in letters:
+            deny(UNKNOWN)  # exports a value set before, which is not known here
+    return updates
+
+
+def prints_environment(words, unwrapped):
+    """Whether a command prints every environment variable, which may hold
+    the private list: env or printenv with no command or name, export with
+    none or -p, declare or typeset with no names, and set with nothing."""
+    if not unwrapped:
+        return any(os.path.basename(word) == 'env' for word in words)
+    program = os.path.basename(unwrapped[0])
+    args = without_redirections(unwrapped[1:])
+    names = [arg for arg in args if not arg.startswith(('-', '+'))]
+    if program == 'printenv':
+        return not names
+    if program == 'export':
+        return not names or '-p' in args
+    if program in ('declare', 'typeset'):
+        letters = ''.join(arg.lstrip('-+') for arg in args if arg.startswith(('-', '+')))
+        return not names and not set(letters) & set('fF')
+    return program == 'set' and not args
+
+
+def names_list_glob(command):
+    """Whether a glob could name the private list's file: a pattern for a
+    folder in a config folder that brickson matches, followed by nothing or
+    by a name that private-words.txt matches."""
+    for match in CONFIG_FOLDER.finditer(command):
+        folder, name = match[1], match[2]
+        if (any(char in folder for char in '*?[') and fnmatch.fnmatchcase('brickson', folder)
+                and (not name or fnmatch.fnmatchcase('private-words.txt', name))):
+            return True
+    return False
+
+
+def config_folders(environment=None):
+    """The config folders the private list may be in, as real paths: the
+    default one, and the one the checker reads it from when
+    XDG_CONFIG_HOME is an absolute path (scripts/privacy-check.py,
+    default_list_file)."""
+    environment = os.environ if environment is None else environment
+    home = environment.get('HOME') or os.path.expanduser('~')
+    folders = [os.path.join(home, '.config')]
+    configured = environment.get('XDG_CONFIG_HOME', '')
+    if os.path.isabs(configured):
+        folders.append(configured)
+    return list(dict.fromkeys(os.path.realpath(folder) for folder in folders))
+
+
+def check_file_tool(name, arguments, cwd):
+    """Refuse a file tool that opens, changes or searches the private list
+    or its folder, wherever the checker reads the list from: the Read and
+    Edit deny rules name only the default folder. Grep reads every file
+    under its path, so it is refused a folder that holds the list too."""
+    for key in FILE_TOOLS[name]:
+        value = arguments.get(key)
+        if not isinstance(value, str) or not value:
+            if name != 'Grep':
+                continue
+            value = cwd  # Grep searches the folder it runs in
+        path = os.path.realpath(os.path.join(cwd, os.path.expanduser(value)))
+        for config in config_folders():
+            folder = os.path.join(config, 'brickson')
+            if (path in (config, folder) or path.startswith(folder + os.sep)
+                    or (name == 'Grep' and folder.startswith(path.rstrip(os.sep) + os.sep))):
+                deny(LIST_READ)
+
+
+CONFIG_VARIABLE = re.compile(r'\$(?:\{(HOME|XDG_CONFIG_HOME)\}|(HOME|XDG_CONFIG_HOME)(?![A-Za-z0-9_]))')
+
+
+def with_config_variables(text, environment=None):
+    """text with $HOME and $XDG_CONFIG_HOME as the shell would expand them
+    (a variable this command sets or unsets first included), or None when
+    the shell builds any other part of it, or one of them is unset."""
+    environment = environment or {}
+    missing = []
+
+    def value(match):
+        name = match[1] or match[2]
+        found = environment[name] if name in environment else os.environ.get(name)
+        if not found:
+            missing.append(name)
+        return found or ''
+    text = CONFIG_VARIABLE.sub(value, text)
+    if missing or '$' in text or '`' in text:
+        return None
+    return text
+
+
+def list_places():
+    """The private list's places, each as its config folder, the list's
+    folder and the list's file: at the default config folder and at the
+    one XDG_CONFIG_HOME sets, each as written and as its real path."""
+    home = os.environ.get('HOME') or os.path.expanduser('~')
+    configs = [os.path.join(home, '.config')]
+    configured = os.environ.get('XDG_CONFIG_HOME', '')
+    if os.path.isabs(configured):
+        configs.append(configured)
+    places = []
+    for config in configs:
+        for form in (os.path.normpath(config), os.path.realpath(config)):
+            folder = os.path.join(form, 'brickson')
+            place = (form, folder, os.path.join(folder, 'private-words.txt'))
+            if place not in places:
+                places.append(place)
+    return places
+
+
+def in_config_folder(path):
+    """Whether path is a config folder the list may be in, or inside one."""
+    for candidate in dict.fromkeys([os.path.normpath(path), os.path.realpath(path)]):
+        for config, _, _ in list_places():
+            if candidate == config or candidate.startswith(config + os.sep):
+                return True
+    return False
+
+
+def reaches_list(words, folders, environment=None):
+    """Whether a word of one command names a config folder the list may be
+    in, the list's folder or its file, or is a glob that could name one of
+    them, read from the folder the command runs in: after a cd, through
+    .. and through $HOME or $XDG_CONFIG_HOME, which the checks in main
+    cannot follow (cd ~/.config/gh && cat ../b*/*). A glob deeper than
+    the list's file names other files. A recursive read of a folder that
+    holds a config folder (grep -r . ~) is not refused."""
+    places = list_places()
+    for word in words:
+        for text in dict.fromkeys([word, word.partition('=')[2]]):
+            text = with_config_variables(text, environment) if text else None
+            if not text or '\n' in text:
+                continue
+            text = os.path.expanduser(text)
+            pattern = bool(re.search(r'[*?[]', text))
+            for folder in folders:
+                if not os.path.isabs(text) and folder is None:
+                    continue
+                path = os.path.normpath(os.path.join(folder or '', text))
+                for candidate in dict.fromkeys([path, os.path.realpath(path)]):
+                    parts = candidate.split(os.sep)
+                    for config, inside, _ in places:
+                        if not pattern and (candidate in (config, inside)
+                                            or candidate.startswith(inside + os.sep)):
+                            return True
+                    # A shell glob matches a leading dot only when it writes one.
+                    if pattern and any(
+                            len(parts) == len(target.split(os.sep)) and all(
+                                fnmatch.fnmatchcase(goal, part)
+                                and (part.startswith('.') or not goal.startswith('.'))
+                                for goal, part in zip(target.split(os.sep), parts))
+                            for place in places for target in place):
+                        return True
+    return False
+
+
+def names_config_folder(command):
+    """Whether a word names a config folder itself, which a recursive or
+    wildcard read would reach the list's file through without naming it
+    (grep -r . ~/.config), or is a glob that could name the list's folder
+    or file through one (~/.c*/b*/*). Read deny rules do not cover such a
+    read, so the guard refuses it."""
+    for word in re.findall(r'[^\s;&|()<>`]+', command):
+        word = re.sub(r'\$\{?XDG_CONFIG_HOME\}?', '/.config', word.replace('"', '').replace("'", ''))
+        parts = [part for part in word.split('/') if part not in ('', '.')]
+        for index, part in enumerate(parts):
+            # A shell glob matches a leading dot only when it writes one.
+            if not (part.startswith('.') and fnmatch.fnmatchcase('.config', part)):
+                continue
+            rest = parts[index + 1:]
+            if not rest or (len(rest) <= 2 and fnmatch.fnmatchcase('brickson', rest[0])
+                            and (len(rest) == 1
+                                 or fnmatch.fnmatchcase('private-words.txt', rest[1]))):
+                return True
+    return False
 
 
 def check_command(command, cwd, depth=0, environment=None, git_state=None):
@@ -1368,14 +2791,35 @@ def check_command(command, cwd, depth=0, environment=None, git_state=None):
         git_state = {'branch_changed': False}
     if depth > 3:
         deny('Shell nesting exceeds the inspection limit. Use the underlying command explicitly.')
-    command = ansi_c_quotes(without_shell_comments(inspectable_here_documents(command)))
+    command = ansi_c_quotes(without_shell_comments(
+        inspectable_here_documents(marked_documents(command))))
+    literal, built = literal_words(command)
     try:
         parts = list(segments(command))
-        raw_parts = list(segments(command, preserve_quotes=True))
     except ValueError:
         # Unbalanced quotes: the shell would refuse it too. Look at the words.
-        parts = [(command.split(), ';')]
+        parts = [([unmarked(word) for word in command.split()], ';')]
+    try:
+        raw_parts = list(segments(command, preserve_quotes=True))
+    except ValueError:
+        # The quote-keeping reading fails on a quote that opens a word inside
+        # another (--body='a <b>'); the shell's reading above still holds.
         raw_parts = []
+    parts, given = without_here_marks(parts)
+    raw_parts = without_here_marks(raw_parts)[0]
+    # A process substitution is its command's word too (-F <(cat x)): the
+    # option before it gets a value that names nothing readable.
+    for index in range(len(parts) - 1):
+        following = parts[index + 1][0]
+        if following in (['<('], ['>(']) and parts[index][0] not in ([], ['('], [')'], ['<('], ['>(']):
+            for group in (parts, raw_parts) if len(raw_parts) == len(parts) else (parts,):
+                words, separator = group[index]
+                # --body-file=<(...) is one word.
+                if words[-1].endswith('='):
+                    words = words[:-1] + [words[-1] + following[0]]
+                else:
+                    words = words + following
+                group[index] = (words, separator)
     # The shell can continue after a failed cd. Keep both outcomes until a
     # connector selects success (&&) or failure (||), instead of assuming cd
     # succeeded because its target looked like a directory during this check.
@@ -1400,7 +2844,17 @@ def check_command(command, cwd, depth=0, environment=None, git_state=None):
             continue
         runtime_inputs = []
         unwrapped, command_environment, directories = strip_wrappers(words, environment, runtime_inputs)
+        if prints_environment(words, unwrapped):
+            deny(ENVIRONMENT_DUMP)
         if not unwrapped:
+            # Redirections alone, after a subshell or a group ( ... ) > file,
+            # still write their targets.
+            raw_words = raw_parts[part_index][0] if len(raw_parts) == len(parts) else []
+            for where, _, _, shell_env in runnable:
+                if reaches_list(words, [where], dict(shell_env)):
+                    deny(LIST_READ)
+            for where in {path for path, _, _, _ in runnable}:
+                note_writes(git_state, words, raw_words, unwrapped, where, where)
             if words and all(re.match(r'^[A-Za-z_][A-Za-z0-9_]*=', word) for word in words):
                 # Assignment-only shell commands persist, including unexported CDPATH.
                 for where, _, stack, shell_env in runnable:
@@ -1437,16 +2891,29 @@ def check_command(command, cwd, depth=0, environment=None, git_state=None):
             elif quote == '\"':
                 # These substitutions run before env; inspect the remaining
                 # child commands without evaluating those substitutions twice.
-                for inner in nested([script]):
+                # Escaped ones (\$( and \`) are the child's: this shell only
+                # drops their backslash.
+                for inner in nested([re.sub(r'\\[$`]', '\uffff', script)]):
                     script = script.replace('$(' + inner + ')', '').replace('`' + inner + '`', '')
             # Unknown/mixed quoting is checked in both contexts conservatively.
+            if quote != "'":
+                script = re.sub(r'\\([$`])', r'\1', script)
         for where, stack, shell_env in {(path, stack, env) for path, _, stack, env in runnable}:
             inherited = dict(shell_env)
             _, command_environment, directories = strip_wrappers(words, inherited)
             command_cwd = where
             for directory in directories:
-                command_cwd = changed_directory(command_cwd, directory)
-            for inner in dict.fromkeys(nested(outer_words)):
+                command_cwd = changed_directory(command_cwd, directory, inherited)
+            # The shell opens redirections where it is; the program reads
+            # its operands where a wrapper's -C puts it.
+            if reaches_list(words, dict.fromkeys([where, command_cwd]), inherited):
+                deny(LIST_READ)
+            raw_words = raw_parts[part_index][0] if len(raw_parts) == len(parts) else []
+            raw_outer = None
+            if len(raw_words) == len(words):
+                raw_outer = (raw_words[:absolute_index] + raw_words[absolute_index + 1:]
+                             if outer_words is not words else raw_words)
+            for inner in dict.fromkeys(nested(outer_words, raw_outer)):
                 check_command(inner, where, depth + 1, inherited, git_state)
             if script_index is not None:
                 check_command(script, command_cwd, depth + 1,
@@ -1458,6 +2925,12 @@ def check_command(command, cwd, depth=0, environment=None, git_state=None):
                 action = trap_action(unwrapped)
                 if action is not None:
                     check_command(action, None, depth + 1, command_environment, git_state)
+            raw_words = raw_parts[part_index][0] if len(raw_parts) == len(parts) else []
+            note_writes(git_state, words, raw_words, unwrapped, where, command_cwd)
+            if program in ('declare', 'typeset', 'local', 'readonly'):
+                next_states.add((where, True, stack, tuple(sorted(
+                    declared(unwrapped[1:], inherited).items()))))
+                continue
             if program in ('export', 'unset'):
                 updates = dict(inherited)
                 operands = unwrapped[1:]
@@ -1502,19 +2975,44 @@ def check_command(command, cwd, depth=0, environment=None, git_state=None):
                     # the target unknown rather than querying the wrong repository.
                     target = None
                 else:
-                    target = changed_directory(where, destination)
+                    target = changed_directory(where, destination, inherited)
                 # Earlier shell commands may create the target, so inspect
                 # both outcomes even when it does not exist at hook time.
                 new_stack = (where,) + stack if program == 'pushd' else stack
                 next_states.add((target, True, new_stack, shell_env))
                 next_states.add((where, False, stack, shell_env))
                 continue
+            # This command's words, not a nested one's.
+            git_state['literal_words'], git_state['built_words'] = literal, built
+            git_state['stdin'] = stdin_document(parts, given, part_index)
             if program == 'git':
-                subcommand, args, context = git_parts(unwrapped, command_cwd, command_environment)
+                # 2>/dev/null and the like are the shell's, never git's arguments.
+                subcommand, args, context = git_parts(without_redirections(unwrapped),
+                                                      command_cwd, command_environment)
                 subcommand, args, context = expand_git_alias(subcommand, args, context)
+                args = without_redirections(args)
                 if runtime_inputs and subcommand not in {
                         'status', 'diff', 'log', 'show', 'rev-parse', 'ls-files'}:
                     deny('Use explicit Git arguments; xargs may append protected flags or destinations.')
+                if subcommand in ('apply', 'am', 'stash'):
+                    # A patch or a stash changes files, or the index, that
+                    # the guard cannot name.
+                    git_state.setdefault('writes', []).append((command_cwd, None))
+                    if changes_index(subcommand, args):
+                        git_state.setdefault('index_changes', []).append(context)
+                if subcommand == 'config' and sets_identity(args):
+                    git_state['identity_set'] = True
+                if subcommand == 'config' and sets_hooks(args):
+                    git_state['hook_changed'] = True
+                if subcommand in GIT_FILE_CHANGERS:
+                    # What their paths name may change, the hook among them.
+                    directory = effective_directory(context)
+                    git_state.setdefault('changes', []).extend(
+                        (directory, arg) for arg in args if not arg.startswith('-'))
+                    if ((subcommand in ('checkout', 'switch') and not leaves_files(subcommand, args))
+                            or (subcommand == 'reset' and any(
+                                arg in ('--hard', '--keep', '--merge') for arg in args))):
+                        git_state['hook_changed'] = True  # another commit's files
                 if (subcommand in ('checkout', 'switch')
                         or (subcommand == 'branch' and any(
                             (arg.startswith('--') and arg != '--' and '--move'.startswith(arg))
@@ -1524,15 +3022,20 @@ def check_command(command, cwd, depth=0, environment=None, git_state=None):
                     git_state['branch_changed'] = True
                 elif subcommand in ('add', 'stage'):
                     check_add(args)
+                    # Each path is read from the folder this add runs in,
+                    # and a forced add also takes ignored files.
+                    directory, force = effective_directory(context), add_forces(args)
+                    git_state.setdefault('adds', []).extend(
+                        (directory, arg, force) for arg in args if not arg.startswith('-'))
                 elif subcommand == 'commit':
-                    check_commit(args)
+                    note_commit(git_state, args, context, check_commit(args))
                 elif subcommand == 'push':
-                    check_push(args, context, git_state['branch_changed'])
+                    check_push(args, context, git_state['branch_changed'], git_state)
                 elif subcommand == 'send-pack':
                     deny('Use git push with an explicit feature branch; send-pack '
                          'can update remote refs outside the inspected push path.')
             elif program == 'gh':
-                check_gh(unwrapped, command_cwd, command_environment)
+                check_gh(unwrapped, command_cwd, command_environment, git_state)
             elif program in ('curl', 'wget', 'http', 'https'):
                 request_words = curl_words(unwrapped) if program == 'curl' else unwrapped
                 if program == 'curl' and any(word.startswith('--expand-') for word in request_words[1:]):
@@ -1552,6 +3055,8 @@ def check_command(command, cwd, depth=0, environment=None, git_state=None):
                                 full.startswith(option) for full in ('--execute', '--config')))
                                 or re.match(r'^-[^-]*e', word)):
                             deny(WGET_CONFIG)
+                if names_uploads(request_words[1:]):
+                    deny(RELEASE_ASSET)
                 for operation in http_operations(request_words):
                     if any(github_api_host(word) for word in operation[1:]):
                         # curl reads its default file before any later options;
@@ -1564,10 +3069,32 @@ def check_command(command, cwd, depth=0, environment=None, git_state=None):
                             if any(github_api_host(word) and re.search(r'[{}\[\]]', word)
                                    for word in operation[1:]):
                                 deny('Use explicit GitHub API URLs or --globoff; URL globs are not inspected.')
+                        inline = []
                         if program in ('http', 'https'):
+                            # HTTPie's body items and --raw body are the
+                            # shell's words; a body it reads from stdin is data.
+                            _, items, raw = httpie_request(operation)
+                            inline = [item for item in items
+                                      if re.fullmatch(r'[^:=@]+(?::=@|=@|:=|=(?!=))(.*)', item, re.S)]
+                            inline += [] if raw is None else [raw]
                             operation = httpie_stdin(operation, words, separator, command_cwd)
                         arguments = api_arguments(operation, command_cwd, program)
                         method = request_method(operation, program)
+                        if method not in ('GET', 'HEAD'):
+                            # The request's body: its inline data, which are
+                            # the shell's words, and the files and items
+                            # api_arguments read after the words, which are data.
+                            inline += option_values(operation, {
+                                '--data', '--data-ascii', '--data-binary', '--data-raw',
+                                '--data-urlencode', '--json', '--form', '--form-string',
+                                '--post-data', '--body-data'}, {'-d', '-F'})
+                            data = arguments[len(' '.join(operation)):]
+                            if not ('graphql' in api_paths(operation) and graphql_read(
+                                    [literal_text(value, git_state) for value in inline] + [data])):
+                                note_published(git_state, program, inline, texts=[data])
+                            if contents_paths(operation[1:]):
+                                note_published(git_state, program + ' file name',
+                                               contents_paths(operation[1:]))
                         if protected_api_write(operation, arguments, method):
                             deny(TO_MAIN)
                         if merge_api_request(operation, arguments, method):
@@ -1603,6 +3130,74 @@ def check_github_tool(name, arguments):
         deny(COPILOT)
 
 
+def privacy_module():
+    spec = importlib.util.spec_from_file_location('privacy_check', PRIVACY_SCRIPT)
+    module = importlib.util.module_from_spec(spec)
+    sys.dont_write_bytecode = True
+    spec.loader.exec_module(module)
+    return module
+
+
+def check_privacy(texts=(), files=(), commits=(), directory=None, identities=()):
+    """Deny when what would be published holds a personal detail, naming
+    places and kinds only. If the check cannot run, nothing is published.
+    identities are (folder, name, address, where) for a commit's author
+    and committer, checked as the checker checks a commit's."""
+    try:
+        privacy = privacy_module()
+    except Exception as error:  # noqa: BLE001 - any failure publishes nothing
+        deny(PRIVATE_SETUP.format(reason=f'scripts/privacy-check.py could not be loaded '
+                                         f'({type(error).__name__}).'))
+    try:
+        findings = privacy.guard_findings(texts, files, commits, directory,
+                                          seconds=PRIVACY_SECONDS)
+        if identities:
+            entries = privacy.load_list()[0]
+            for folder, name, address, where in identities:
+                try:
+                    support = privacy.support_addresses(privacy.top_level(folder))[0]
+                except privacy.SetupError:
+                    support = set()  # not a checkout: the support address is not allowed
+                findings += privacy.Checker(entries, support).identity(name, address, where)
+    except privacy.SetupError as error:
+        deny(PRIVATE_SETUP.format(reason=str(error)))
+    except Exception as error:  # noqa: BLE001
+        deny(PRIVATE_SETUP.format(reason=f'it failed ({type(error).__name__}).'))
+    if findings:
+        places = '; '.join(str(finding) for finding in findings[:10])
+        if len(findings) > 10:
+            places += f'; and {len(findings) - 10} more'
+        deny(PRIVATE.format(places=places, advice=privacy.advice(findings)))
+
+
+def tool_texts(value, label):
+    """Every string in a tool's arguments, with where it came from."""
+    if isinstance(value, str):
+        yield label, value
+    elif isinstance(value, dict):
+        for key, child in value.items():
+            yield from tool_texts(child, f'{label}.{key}')
+    elif isinstance(value, list):
+        for index, child in enumerate(value):
+            yield from tool_texts(child, f'{label}[{index}]')
+
+
+def check_tool_privacy(name, arguments, cwd):
+    tool = name.rsplit('__', 1)[-1]
+    if tool not in TOOLS_PUBLISH:
+        return
+    files, rest = [], dict(arguments)
+    if tool == 'create_or_update_file' and isinstance(rest.get('content'), str):
+        files.append((str(rest.pop('path', '')), rest.pop('content')))
+    if tool == 'push_files' and isinstance(rest.get('files'), list):
+        for entry in rest.pop('files'):
+            if isinstance(entry, dict) and isinstance(entry.get('content'), str):
+                files.append((str(entry.get('path', '')), entry['content']))
+            else:
+                rest.setdefault('other_files', []).append(entry)
+    check_privacy(list(tool_texts(rest, tool)), files, directory=cwd)
+
+
 def main():
     try:
         call = json.load(sys.stdin)
@@ -1619,9 +3214,23 @@ def main():
         arguments = {}
     cwd = call.get('cwd') or os.getcwd()
     if name == 'Bash':
-        check_command(str(arguments.get('command', '')), cwd)
+        command = str(arguments.get('command', ''))
+        if (LIST_REFERENCE.search(command) or names_list_glob(command)
+                or names_config_folder(command)):
+            deny(LIST_READ)
+        if PROCESS_ENVIRONMENT.search(command):
+            deny(ENVIRONMENT_DUMP)
+        state = {'branch_changed': False}
+        check_command(command, cwd, git_state=state)
+        check_written(state)
+        if state.get('publishes'):
+            check_privacy(state.get('published', []), commits=state.get('commits', ()),
+                          directory=cwd, identities=state.get('identities', ()))
+    elif name in FILE_TOOLS:
+        check_file_tool(name, arguments, cwd)
     elif name.startswith('mcp__'):
         check_github_tool(name, arguments)
+        check_tool_privacy(name, arguments, cwd)
 
 
 if __name__ == '__main__':
