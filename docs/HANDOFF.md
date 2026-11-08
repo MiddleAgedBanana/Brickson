@@ -1414,8 +1414,9 @@ settings, date) and summarise it here.
   quoted titles starting with a small letter and titles after the first
   included: [record](log/2026-10-23-docs-check-gaps.md).
 - Codex reviews every push to a pull request; Copilot reviews a pull
-  request that changes code once, when the agent asks after Codex's
-  review is answered (since 2026-11-08; AI Scan is off since that day);
+  request that changes code once, when the agent asks right after
+  opening it, its local Codex review answered (since 2026-11-08; AI
+  Scan is off since that day);
   Greptile reviews when a pull request opens, as far as its free plan's
   credits allow; cubic, once the owner installs its app, reviews when
   one opens and after each push; CodeRabbit reviews only when a comment

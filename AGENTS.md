@@ -694,10 +694,14 @@ request to `@cubic-dev-ai`. Code written that way skips the failing test
 first, the `docs/log/` record and the rest of *Workflow rules*. Ask
 Greptile with a plain `@greptileai`, never for a tier ("at apex"),
 which costs more of its credits. GitHub Copilot reviews again since
-2026-11-08 (the owner kept its plan): the agent that opened a pull
-request that changes code asks for Copilot's review **once**, after
-Codex's review is answered, so Copilot sees the fixed code. A pull
-request that changes only documents gets none. Each review spends some
+2026-11-08 (the owner kept its plan): the agent that opens a pull
+request that changes code asks for Copilot's review **once**, right
+after opening it. Before opening, it runs Codex's local review
+(`codex review --base origin/main`, read-only, where the Codex CLI is
+installed, as on the owner's Mac) and answers its findings, so Copilot
+sees the fixed code; Codex's review on GitHub, which the owner runs
+from the Codex app, is not part of this step. A pull request that
+changes only documents gets none. Each review spends some
 of the owner's monthly AI credits (about 31 to 46 of 1,500); a request
 that fails for lack of them is said in the pull request and the thread,
 with no retry. Ask only through the GitHub tool `request_copilot_review`:
@@ -707,7 +711,7 @@ second request on the same pull request from any worktree of the clone,
 and refuses the other Copilot tools, `gh`'s reviewer, assignee and
 agent-task commands, `gh copilot`, the REST reviewer, assignee and task
 endpoints, a GitHub tool's reviewer or assignee field and a GraphQL
-agent assignment; "changes code", "after Codex's review", other GraphQL
+agent assignment; "changes code", the local review first, other GraphQL
 requests and a mention are held by this rule alone (*Guardrails for
 agents*; docs/DECISIONS.md, *Code review*). None of these reviewers
 reviews Dependabot's pull requests by itself. All of them review

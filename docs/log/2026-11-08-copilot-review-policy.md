@@ -18,9 +18,14 @@ for 35 to 50 Copilot reviews a month (docs/DECISIONS.md, "Reviews,
 updates and GitHub settings", *Code review*, the 2026-11-08 bullet).
 
 - **The rule** (AGENTS.md, "Reviews and updates on GitHub"): the agent
-  that opened a pull request that changes code asks for Copilot's
-  review once, after Codex's review is answered, through the GitHub
-  tool `request_copilot_review` only. A pull request that changes only
+  that opens a pull request that changes code asks for Copilot's
+  review once, right after opening it, through the GitHub tool
+  `request_copilot_review` only. Before opening, it runs Codex's local
+  review (`codex review --base origin/main`) and answers its findings;
+  Codex's review on GitHub, which the owner runs from the Codex app, is
+  not part of the step, because on pull request #89 it did not run and
+  would have left the request waiting for nothing (decided in the
+  thread on 2026-11-08, after the pull request opened). A pull request that changes only
   documents gets none. A request that fails for lack of credits is said
   in the pull request and the thread, with no retry.
 - **The guard** (`.claude/hooks/guard.py`) lets that one tool through
@@ -161,11 +166,6 @@ set to `.githooks` for this worktree only (`git config --worktree`).
 
 ## Follow-ups
 
-- The owner, through the coordinator: what starts the Copilot request
-  on a pull request where Codex posts no review (Codex's GitHub review
-  did not run on pull request #89). Until that is decided, the rule
-  waits for Codex's review, so such a pull request gets no Copilot
-  review.
 - The first agent to ask for Copilot's review after the merge: check
   that `brickson-copilot-reviews.json` appeared in the clone's Git
   folder (`git rev-parse --git-common-dir`), and say so in its record.

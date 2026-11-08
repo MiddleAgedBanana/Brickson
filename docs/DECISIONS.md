@@ -5793,9 +5793,15 @@ review setup does not quietly break them.
   #73, #75 and #76. So the owner turned AI Scan off, keeps Copilot
   Autofix on (CodeQL's suggested fixes, which spend no credits), and
   has room for 35 to 50 Copilot reviews a month:
-  - The agent that opened a pull request that changes code requests
-    Copilot's review **once**, after Codex's review is answered, so
-    Copilot sees the fixed code and does not repeat Codex's findings. A
+  - The agent that opens a pull request that changes code requests
+    Copilot's review **once**, right after opening it. Before opening,
+    it runs Codex's local review (`codex review --base origin/main`,
+    read-only) and answers its findings, so Copilot sees the fixed code
+    and does not repeat Codex's findings. Codex's review on GitHub,
+    which the owner runs from the Codex app, is not part of the step: on
+    pull request #89 it did not run, which would have left nothing to
+    wait for (the coordinator's decision of 2026-11-08, which keeps the
+    owner's "after Codex's review"). A
     pull request that changes only documents gets none. The agent asks
     itself, through the GitHub tool `request_copilot_review`, so a pull
     request does not wait for the owner; every other way of asking for
@@ -5817,7 +5823,7 @@ review setup does not quietly break them.
     fresh clone, such as a new cloud session, starts with an empty
     record, and a cloud thread may not run the guard at all (AGENTS.md,
     *Guardrails for agents*), so there "once" rests on AGENTS.md and
-    review; "changes code" and "after Codex's review" always do.
+    review; "changes code" and the local review first always do.
   - The ruleset's automatic Copilot review stays off: an agent asks at
     the right moment instead (*`main` ruleset* below).
   - Autofix's suggestions are read like a review comment, and the fix

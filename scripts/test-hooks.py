@@ -1691,9 +1691,9 @@ class GuardTests(unittest.TestCase):
             self.assertIsNone(decision(name, arguments, self.repo), name)
 
     # Copilot's review has one door: its own GitHub tool, which an agent
-    # uses once on a pull request that changes code, after Codex's review
-    # is answered (owner, 2026-11-08; AGENTS.md, "Reviews and updates on
-    # GitHub"). Denying that tool, or letting a review be requested any
+    # uses once on a pull request that changes code, right after opening
+    # it (owner, 2026-11-08; AGENTS.md, "Reviews and updates on GitHub").
+    # Denying that tool, or letting a review be requested any
     # other way (a pull request's reviewer field, gh or the API), fails
     # this test.
     def test_copilots_review_is_requested_only_through_its_own_tool(self):
