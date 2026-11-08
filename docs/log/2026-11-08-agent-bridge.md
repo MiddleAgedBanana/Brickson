@@ -86,7 +86,7 @@ The commits of pull request #91.
 On the owner's Mac (macOS 27.2; the Mac's `/usr/bin/python3`, 3.9), on
 2026-11-08:
 
-- `scripts/test-agent-bridge.py`, 21 of 21. It uses stand-ins for `codex`
+- `scripts/test-agent-bridge.py`, 22 of 22. It uses stand-ins for `codex`
   and `agy` that record how they were called and answer as the real tools
   did, in throwaway repositories with a made-up home folder. Seven broken
   copies of the bridge each failed it: stdin left open, the owner's
@@ -98,7 +98,9 @@ On the owner's Mac (macOS 27.2; the Mac's `/usr/bin/python3`, 3.9), on
   timeout that leaves a child process writing) failed on the first
   version of the bridge. Those added for its second round (a bridge told
   to stop, and `done` written after the wrong-folder verdict) failed on
-  the second.
+  the second. The one added for its third (a tracked file the thread had
+  edited, rewritten by the agent: git's status line for it starts with a
+  space, which the bridge used to strip) failed on the third.
 - `scripts/test-runner.py`, 99 of 99. It checks `scripts/test.sh` with
   stand-ins for each check it runs first, and it now knows the bridge's.
   The first push missed this: CI's "Unit tests" failed in those tests,
@@ -116,6 +118,11 @@ On the owner's Mac (macOS 27.2; the Mac's `/usr/bin/python3`, 3.9), on
   sentence for each.
 - `scripts/test-docs.py`, and `scripts/privacy-check.py --outgoing`
   with the private list.
+
+- Copilot's review was requested once, as AGENTS.md says for a pull
+  request that changes code; Copilot answered that the requester has
+  too little remaining quota, so it did not review, and it was not asked
+  again.
 
 ## Not verified
 

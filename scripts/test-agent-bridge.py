@@ -33,6 +33,9 @@ if 'sleep' in mode:
 if 'touch' in mode:
     with open('stray.txt', 'w') as stray:
         stray.write('x\n')
+if 'overwrite' in mode:
+    with open('AGENTS.md', 'w') as tracked:
+        tracked.write('rewritten by the agent\n')
 if 'spawn' in mode:
     import subprocess
     subprocess.Popen(['/bin/sh', '-c', 'sleep 3; echo late > late.txt'])
@@ -350,6 +353,16 @@ class BridgeTests(unittest.TestCase):
         self.assertEqual(result.returncode, 1)
         summary = json.loads((self.job_folder(result) / 'summary.json').read_text())
         self.assertEqual(summary['status'], 'changed files in a read-only job')
+
+    def test_a_tracked_file_rewritten_in_a_read_only_job_is_reported(self):
+        # The thread's own edit to a tracked file is the first status line,
+        # which starts with a space (" M AGENTS.md").
+        (self.worktree / 'AGENTS.md').write_text('the thread\'s own edit\n')
+        result = self.bridge('codex', '--brief', str(self.brief), env={'STUB_MODE': 'overwrite'})
+        self.assertEqual(result.returncode, 1)
+        summary = json.loads((self.job_folder(result) / 'summary.json').read_text())
+        self.assertEqual(summary['status'], 'changed files in a read-only job')
+        self.assertIn(' M AGENTS.md', summary['changed_files'])
 
     def test_agy_refuses_a_folder_with_uncommitted_work(self):
         self.point_agy_at(self.agy_folder)

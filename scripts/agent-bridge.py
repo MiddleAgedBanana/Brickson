@@ -91,12 +91,12 @@ class Stop(Exception):
     """The job cannot run as asked; the message says why."""
 
 
-def git(folder, *args, check=True):
+def git(folder, *args, check=True, strip=True):
     result = subprocess.run(['git', '-C', str(folder), *args], capture_output=True,
                             text=True, stdin=subprocess.DEVNULL)
     if check and result.returncode != 0:
         raise Stop(f'git {" ".join(args)} failed in {folder}: {result.stderr.strip()}')
-    return result.stdout.strip()
+    return result.stdout.strip() if strip else result.stdout
 
 
 def brickson_checkout(folder):
@@ -193,9 +193,11 @@ def job_folder(checkout, agent, kind):
 
 
 def changed_lines(checkout):
+    # Unstripped: a porcelain line's first column can be a space (" M a"),
+    # and the path starts at the fourth character.
     return sorted(line for line in git(checkout, 'status', '--porcelain', '--untracked-files=all',
-                                       check=False).splitlines()
-                  if not line[3:].startswith('build/'))
+                                       check=False, strip=False).splitlines()
+                  if line and not line[3:].startswith('build/'))
 
 
 def git_state(checkout):
