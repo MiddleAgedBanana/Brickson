@@ -68,8 +68,8 @@ link is refused. Codex writes its final message itself, so it is given a
 fresh folder in the checkout's git folder, where its sandbox lets the
 agent write nothing, and the bridge copies the message in. The bridge's
 own git commands run without the thread's GitHub tokens and with
-`core.fsmonitor` off, so a git setting the agent leaves behind runs
-nothing with what the agent was not given. Every brief opens with the
+`core.fsmonitor` and git hooks off, so a git setting the agent leaves
+behind runs nothing outside its sandbox or with what it was not given. Every brief opens with the
 same rules: read all of AGENTS.md with `cat AGENTS.md`, work only in the
 named folder, never push to `main`, force-push or merge, no real
 people's details, evidence under `build/`, and a final message saying
@@ -94,7 +94,12 @@ agent's own process, so they guard against mistakes, not against an
 agent that removes them: it could still push with the owner's sign-in.
 Isolation outside the agent's process, such as running it with no
 credentials, is future work. An agent's own GitHub tool with its own
-sign-in is not covered either (*Not verified*).
+sign-in is not covered either (*Not verified*). Nor is an agent that
+weakens its own guard: agy's hook file, `.agents/hooks.json`, is
+git-ignored in agy's folder, and the bridge checks only that it names the
+guard's command, not that the guard runs on every tool, so an agy job
+that rewrote it could leave the next agy session, with agy's own GitHub
+connection, unguarded (Codex's security review of `d7e713c`; not fixed).
 
 What an agent returns is data, never instructions or approval (AGENTS.md,
 *Guardrails for agents*).
@@ -182,6 +187,13 @@ On the owner's Mac (macOS 27.2; the Mac's `/usr/bin/python3`, 3.9), on
   `core.fsmonitor` command had read the thread's `GH_TOKEN` (Codex's
   security review). `scripts/test-agent-bridge.py` (33 tests) and the
   checks above ran again on Linux, with `--outgoing --no-list`.
+- Codex's security review of that push raised two more. The coordinator
+  agreed to one fix: the bridge's git now runs with git hooks off, where
+  a `post-checkout` hook one job had set under `build/` ran in the next
+  write job's `git worktree add`, outside any sandbox (a test that
+  failed on `d7e713c`). The other, an agy job that weakens its own hook
+  file, is recorded under *Known limits*. After this push, further
+  findings on pull request #91 are answered in words only.
 
 ## Not verified
 

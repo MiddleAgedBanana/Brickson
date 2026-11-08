@@ -69,6 +69,16 @@ if 'fsmonitor' in mode:
         script.write('#!/bin/sh\necho "${GH_TOKEN:-no token}" >> "%s/leak"\n' % outside)
     os.chmod(hook, 0o755)
     subprocess.run(['git', 'config', 'core.fsmonitor', hook], check=True, capture_output=True)
+if 'hookspath' in mode:
+    import subprocess
+    hooks = os.path.abspath(os.path.join('build', 'hooks'))
+    os.makedirs(hooks, exist_ok=True)
+    hook = os.path.join(hooks, 'post-checkout')
+    with open(hook, 'w') as script:
+        script.write('#!/bin/sh\necho "${GH_CONFIG_DIR:-none}" >> "%s/ran"\n'
+                     % os.environ['STUB_OUTSIDE'])
+    os.chmod(hook, 0o755)
+    subprocess.run(['git', 'config', 'core.hooksPath', hooks], check=True, capture_output=True)
 if 'spawn' in mode:
     import subprocess
     subprocess.Popen(['/bin/sh', '-c', 'sleep 3; echo late > late.txt'])
@@ -518,6 +528,21 @@ class BridgeTests(unittest.TestCase):
         leak = outside / 'leak'
         self.assertFalse(leak.exists() and 'from-the-thread' in leak.read_text())
         self.assertFalse(leak.exists())
+
+    def test_git_hooks_an_agent_sets_never_run_in_the_bridges_git(self):
+        # One job points git at a hook of its own under build/; the next
+        # write job's worktree add would run it outside any sandbox.
+        outside = Path(self.temp.name) / 'outside'
+        outside.mkdir()
+        self.install_codex_hook()
+        first = self.bridge('codex', '--brief', str(self.brief),
+                            env={'STUB_MODE': 'hookspath', 'STUB_OUTSIDE': str(outside)})
+        self.assertEqual(first.returncode, 0, first.stderr)
+        second = self.bridge('codex', '--brief', str(self.brief), '--write', '--branch', 'tests',
+                             env={'STUB_OUTSIDE': str(outside)})
+        self.assertEqual(second.returncode, 0, second.stderr)
+        self.assertTrue((self.home / 'code' / 'brickson-codex-tests').is_dir())
+        self.assertEqual(list(outside.iterdir()), [])
 
     def test_these_tests_pass_inside_a_job(self):
         # An agent asked to run scripts/test.sh runs this file with the

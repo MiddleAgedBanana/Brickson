@@ -129,11 +129,12 @@ class Stop(Exception):
 
 def git(folder, *args, check=True, strip=True):
     """The bridge's own git, without the thread's GitHub tokens and with
-    core.fsmonitor off: an agent can change the checkout's git settings,
-    and a command it names there must never run with what the agent was
-    not given."""
+    core.fsmonitor and git hooks off: an agent can change the checkout's
+    git settings, and a command it names there must never run outside its
+    sandbox or with what the agent was not given."""
     env = {key: value for key, value in os.environ.items() if key not in TOKENS}
-    result = subprocess.run(['git', '-c', 'core.fsmonitor=false', '-C', str(folder), *args],
+    result = subprocess.run(['git', '-c', 'core.fsmonitor=false', '-c', 'core.hooksPath=/dev/null',
+                             '-C', str(folder), *args],
                             capture_output=True, text=True, stdin=subprocess.DEVNULL, env=env)
     if check and result.returncode != 0:
         raise Stop(f'git {" ".join(args)} failed in {folder}: {result.stderr.strip()}')
