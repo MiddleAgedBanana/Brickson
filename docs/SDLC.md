@@ -223,8 +223,9 @@ which agents also act through, can bypass it (*Deploy*).
   (p39); Greptile reviews by itself as far as its plan allows, cubic by
   itself once the owner installs it, CodeRabbit when a comment asks
   (`@coderabbitai review`), and Copilot once on a pull request that
-  changes code, when the agent asks after Codex's review is answered
-  (`request_copilot_review`, never on one that changes only documents).
+  changes code, when the agent asks right after opening it, its local
+  Codex review answered (`request_copilot_review`, never on one that
+  changes only documents).
   Reviewers review and never write the code. Their
   findings inform the owner; they never approve or block on their own
   (p38). The agent that opened the pull request answers every finding,
