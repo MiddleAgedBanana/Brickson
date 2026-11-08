@@ -64,7 +64,12 @@ git's list, and the commit and branch, so a job that moves the checkout
 to another commit is reported too. The bridge writes into the job folder
 through a handle taken before the agent starts, and never through a link
 the agent leaves there; a `build/` or `build/agent-bridge/` that is a
-link is refused. Every brief opens with the
+link is refused. Codex writes its final message itself, so it is given a
+fresh folder in the checkout's git folder, where its sandbox lets the
+agent write nothing, and the bridge copies the message in. The bridge's
+own git commands run without the thread's GitHub tokens and with
+`core.fsmonitor` off, so a git setting the agent leaves behind runs
+nothing with what the agent was not given. Every brief opens with the
 same rules: read all of AGENTS.md with `cat AGENTS.md`, work only in the
 named folder, never push to `main`, force-push or merge, no real
 people's details, evidence under `build/`, and a final message saying
@@ -76,7 +81,9 @@ in agy's folder. The agent commits there and cannot publish by mistake: every jo
 runs with git told to push origin, and any https, http, ssh or `git@`
 URL, to a `no-push://` address git cannot reach, and with `gh` signed
 out (an empty configuration folder, and no `GH_TOKEN` or
-`GITHUB_TOKEN`). The thread reads the commits and the record, runs the
+`GITHUB_TOKEN`). A checkout that sets a push URL of its own is refused,
+because git pushes to every push URL a remote has, so the job's would
+only be added beside it. The thread reads the commits and the record, runs the
 checks, then pushes and opens the pull request. A write job needs the
 agent's guard hook installed. The
 bridge never runs in the owner's own checkout (the repository's main
@@ -161,6 +168,20 @@ On the owner's Mac (macOS 27.2; the Mac's `/usr/bin/python3`, 3.9), on
   `scripts/privacy-check.py --outgoing --no-list`: a cloud thread has no
   private list, so that checked the built-in patterns only. CI runs the
   bridge's tests on macOS.
+- Codex reviewed that push and raised four more, and the coordinator,
+  holding the owner's go-ahead for routine fixes, agreed to one last
+  push for them, each with a test that failed on `85ae1c4`: a checkout
+  that sets its own push URL is refused, because git pushed to it beside
+  the no-push URL and a stand-in published a branch that way; the
+  bridge's tests drop the job's no-push settings they inherit, so an
+  agent that runs `scripts/test.sh` in a job can run them; Codex's final
+  message is written outside the job folder and copied in, so a link
+  the agent leaves at `result.md` is never written through (Codex's
+  security review); and the bridge's git after a job runs without the
+  thread's tokens and with `core.fsmonitor` off, where a stand-in's
+  `core.fsmonitor` command had read the thread's `GH_TOKEN` (Codex's
+  security review). `scripts/test-agent-bridge.py` (33 tests) and the
+  checks above ran again on Linux, with `--outgoing --no-list`.
 
 ## Not verified
 

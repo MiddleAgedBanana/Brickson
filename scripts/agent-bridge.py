@@ -46,6 +46,7 @@ import json
 import os
 import re
 import secrets
+import shutil
 import signal
 import subprocess
 import sys
@@ -127,8 +128,13 @@ class Stop(Exception):
 
 
 def git(folder, *args, check=True, strip=True):
-    result = subprocess.run(['git', '-C', str(folder), *args], capture_output=True,
-                            text=True, stdin=subprocess.DEVNULL)
+    """The bridge's own git, without the thread's GitHub tokens and with
+    core.fsmonitor off: an agent can change the checkout's git settings,
+    and a command it names there must never run with what the agent was
+    not given."""
+    env = {key: value for key, value in os.environ.items() if key not in TOKENS}
+    result = subprocess.run(['git', '-c', 'core.fsmonitor=false', '-C', str(folder), *args],
+                            capture_output=True, text=True, stdin=subprocess.DEVNULL, env=env)
     if check and result.returncode != 0:
         raise Stop(f'git {" ".join(args)} failed in {folder}: {result.stderr.strip()}')
     return result.stdout.strip() if strip else result.stdout
@@ -136,7 +142,10 @@ def git(folder, *args, check=True, strip=True):
 
 def brickson_checkout(folder):
     """The top of the Brickson checkout holding folder, refusing the
-    owner's own checkout (the repository's main worktree)."""
+    owner's own checkout (the repository's main worktree) and a checkout
+    that sets a push URL: git pushes to every push URL a remote has and
+    skips pushInsteadOf for them, so a job's no-push URL would only be
+    added beside it."""
     folder = Path(os.path.expanduser(str(folder))).resolve()
     if not folder.is_dir():
         raise Stop(f'no such folder: {folder}')
@@ -148,6 +157,11 @@ def brickson_checkout(folder):
     if common.parent == top:
         raise Stop(f'{top} is the owner\'s own checkout, which may hold their '
                    'uncommitted work; use a worktree (AGENTS.md, "Build and test")')
+    push_urls = git(top, 'config', '--get-regexp', r'^remote\..*\.pushurl$', check=False)
+    if push_urls:
+        names = sorted({line.split()[0] for line in push_urls.splitlines()})
+        raise Stop(f'{top} sets a push URL ({", ".join(names)}), which a job\'s pushes would '
+                   'still reach; remove it before handing a job off here')
     return top
 
 
@@ -247,6 +261,16 @@ def write_in(out, name, text):
     with os.fdopen(handle, 'w', encoding='utf-8') as file:
         file.write(text)
     os.replace(temp, name, src_dir_fd=folder, dst_dir_fd=folder)
+
+
+def read_answer(path):
+    """The text of an agent's answer file, never read through a link."""
+    try:
+        handle = os.open(str(path), os.O_RDONLY | os.O_NOFOLLOW)
+    except OSError:
+        return ''
+    with os.fdopen(handle, encoding='utf-8', errors='replace') as file:
+        return file.read()
 
 
 def changed_lines(checkout):
@@ -412,12 +436,22 @@ def codex_job(args):
     out = job_folder(checkout, 'codex', 'write' if args.write else 'read')
     prompt = brief_text(args, checkout, branch)
     write_in(out, 'brief.md', prompt)
-    command = ['codex', 'exec', '--sandbox', 'workspace-write' if args.write else 'read-only',
-               '-c', 'approval_policy="never"', '-C', str(checkout), '--json',
-               '-o', str(out / 'result.md'), prompt]
-    write_command(out, command[:-1] + ['<brief.md>'], checkout)
-    before = git_state(checkout)
-    result = run(command, checkout, out, args.timeout)
+    # Codex writes its final message itself, through whatever is at the
+    # path it is given, so the path is a fresh folder in the checkout's
+    # git folder, where Codex's sandbox lets the agent write nothing, and
+    # the bridge copies the message into the job folder.
+    answer = Path(tempfile.mkdtemp(prefix='agent-bridge-answer-',
+                                   dir=git(checkout, 'rev-parse', '--absolute-git-dir')))
+    try:
+        command = ['codex', 'exec', '--sandbox', 'workspace-write' if args.write else 'read-only',
+                   '-c', 'approval_policy="never"', '-C', str(checkout), '--json',
+                   '-o', str(answer / 'result.md'), prompt]
+        write_command(out, command[:-1] + ['<brief.md>'], checkout)
+        before = git_state(checkout)
+        result = run(command, checkout, out, args.timeout)
+        write_in(out, 'result.md', read_answer(answer / 'result.md'))
+    finally:
+        shutil.rmtree(answer, ignore_errors=True)
     refusals = [line.strip() for line in (out / 'stderr.txt').read_text().splitlines()
                 if 'blocked by PreToolUse hook' in line]
     return out, finish(out, checkout, before, result,

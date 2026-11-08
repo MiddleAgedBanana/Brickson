@@ -8,6 +8,7 @@ stdin was closed) and answer the way the real tools did on 2026-11-08, so
 no test reaches OpenAI or Google. Each test uses a made-up home folder and
 throwaway repositories, never the machine's own settings.
 """
+import importlib.util
 import json
 import os
 import subprocess
@@ -16,6 +17,12 @@ import tempfile
 import time
 import unittest
 from pathlib import Path
+
+# An agent that runs the checks inside a bridge job inherits the job's
+# no-push settings; this file's throwaway origins need plain git.
+for key in [key for key in os.environ if key.startswith(('GIT_CONFIG_KEY_', 'GIT_CONFIG_VALUE_'))
+            or key in ('GIT_CONFIG_COUNT', 'GIT_CONFIG_PARAMETERS')]:
+    del os.environ[key]
 
 ROOT = Path(__file__).resolve().parents[1]
 BRIDGE = ROOT / 'scripts' / 'agent-bridge.py'
@@ -54,6 +61,14 @@ if 'link' in mode:
     job = os.path.join('build', 'agent-bridge', os.environ['BRICKSON_BRIDGE_JOB'])
     for name in ('result.md', 'summary.json', 'summary.json.partial', 'done'):
         os.symlink(os.path.join(os.environ['STUB_OUTSIDE'], name), os.path.join(job, name))
+if 'fsmonitor' in mode:
+    import subprocess
+    outside = os.environ['STUB_OUTSIDE']
+    hook = os.path.join(outside, 'fsmonitor.sh')
+    with open(hook, 'w') as script:
+        script.write('#!/bin/sh\necho "${GH_TOKEN:-no token}" >> "%s/leak"\n' % outside)
+    os.chmod(hook, 0o755)
+    subprocess.run(['git', 'config', 'core.fsmonitor', hook], check=True, capture_output=True)
 if 'spawn' in mode:
     import subprocess
     subprocess.Popen(['/bin/sh', '-c', 'sleep 3; echo late > late.txt'])
@@ -464,6 +479,59 @@ class BridgeTests(unittest.TestCase):
         self.assertIn('is a link', result.stderr)
         self.assertEqual(list(outside.iterdir()), [])
         self.assertEqual(self.calls(), [])
+
+    def test_a_checkout_with_its_own_push_url_is_refused(self):
+        # git pushes to every push URL a remote has, and skips pushInsteadOf
+        # for them, so the job's no-push URL would only be added beside it.
+        origin = subprocess.run(['git', '-C', str(self.worktree), 'remote', 'get-url', 'origin'],
+                                capture_output=True, text=True, check=True).stdout.strip()
+        git(self.worktree, 'config', 'remote.origin.pushurl', origin)
+        result = self.bridge('codex', '--brief', str(self.brief), env={'STUB_MODE': 'push'})
+        self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertIn('push URL', result.stderr)
+        self.assertEqual(self.calls(), [])
+        self.assertFalse((self.worktree / 'build').exists())
+        branches = subprocess.run(['git', '-C', str(self.owner), 'ls-remote', '--heads', 'origin'],
+                                  capture_output=True, text=True).stdout
+        self.assertNotIn('from-agent', branches)
+
+    def test_codex_never_writes_its_answer_through_a_link(self):
+        outside = Path(self.temp.name) / 'outside'
+        outside.mkdir()
+        result = self.bridge('codex', '--brief', str(self.brief),
+                             env={'STUB_MODE': 'link', 'STUB_OUTSIDE': str(outside)})
+        self.assertEqual(sorted(p.name for p in outside.iterdir()), [])
+        out = self.job_folder(result)
+        self.assertFalse((out / 'result.md').is_symlink())
+        self.assertEqual((out / 'result.md').read_text(), 'codex final answer\n')
+        git_dir = subprocess.run(['git', '-C', str(self.worktree), 'rev-parse', '--absolute-git-dir'],
+                                 capture_output=True, text=True, check=True).stdout.strip()
+        self.assertEqual([p.name for p in Path(git_dir).iterdir() if 'answer' in p.name], [])
+
+    def test_git_after_a_job_runs_no_callback_with_the_threads_token(self):
+        outside = Path(self.temp.name) / 'outside'
+        outside.mkdir()
+        result = self.bridge('codex', '--brief', str(self.brief),
+                             env={'STUB_MODE': 'fsmonitor', 'STUB_OUTSIDE': str(outside),
+                                  'GH_TOKEN': 'from-the-thread'})
+        self.assertTrue((self.job_folder(result) / 'done').exists(), result.stderr)
+        leak = outside / 'leak'
+        self.assertFalse(leak.exists() and 'from-the-thread' in leak.read_text())
+        self.assertFalse(leak.exists())
+
+    def test_these_tests_pass_inside_a_job(self):
+        # An agent asked to run scripts/test.sh runs this file with the
+        # job's no-push settings; its throwaway origins must still work.
+        spec = importlib.util.spec_from_file_location('agent_bridge', BRIDGE)
+        bridge = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(bridge)
+        job = Path(self.temp.name) / 'job'
+        job.mkdir()
+        result = subprocess.run([sys.executable, '-B', __file__,
+                                 'BridgeTests.test_status_names_what_is_installed'],
+                                capture_output=True, text=True, timeout=120,
+                                env=bridge.job_environment(job))
+        self.assertEqual(result.returncode, 0, result.stderr[-2000:])
 
     def test_agy_refuses_a_folder_with_uncommitted_work(self):
         self.point_agy_at(self.agy_folder)
