@@ -46,12 +46,14 @@ fi
 
 # Before the unit tests: the documents' cross-references resolve, the
 # Claude Code guard in .claude/hooks still blocks what AGENTS.md forbids,
-# and the privacy check still finds what it must (docs/DECISIONS.md,
-# "Personal details stay out of the repository"). None needs a simulator.
+# the privacy check still finds what it must (docs/DECISIONS.md,
+# "Personal details stay out of the repository"), and the bridge to Codex
+# and agy still runs them safely. None needs a simulator.
 if [ "$mode" = unit ]; then
     /usr/bin/python3 scripts/test-docs.py
     /usr/bin/python3 scripts/test-hooks.py
     /usr/bin/python3 scripts/test-privacy.py
+    /usr/bin/python3 scripts/test-agent-bridge.py
 fi
 
 if ! command -v xcodegen >/dev/null 2>&1; then
