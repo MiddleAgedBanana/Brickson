@@ -1078,25 +1078,20 @@ docs/ROADMAP.md, *The quality bar*, Q24):
    (docs/DECISIONS.md, *Code scanning*).
 7. You can delete the `xcode-skills` folder in `~/code/brickson`: its
    skills are installed where agents load them.
-8. The private list that stops personal details reaching the public
-   repository is set up from your Mac by an agent there, for pull
-   request #86: the list, its GitHub secret and that pull request's
-   workflow change. Once it has merged, the push check in
-   `~/code/brickson` (`git config core.hooksPath .githooks`, a setting
-   of your checkout that its worktrees share) needs your yes before an
-   agent there turns it on. Your choice too: whether cloud sessions get
-   the list, in the project's settings. When the list changes, the
-   secret must be set again; an agent on your Mac can do both
-   (docs/DECISIONS.md, "Personal details stay out of the repository",
-   its last part). Once it has merged, without the secret "Privacy
-   check", and with it "Unit tests", fails on every pull request from a
-   branch of this repository; one GitHub gives no secrets (from a fork,
-   or Dependabot's) checks the built-in patterns only, and says so.
-   Before it merges, #86's own run has neither that job nor the step
-   that runs the check until the workflow change is committed; after
-   that commit, "Privacy check" passes there without checking anything
-   and "Unit tests" runs #86's own check on the built-in patterns
-   alone.
+8. The privacy check is on main (pull request #86, merged 2026-11-08),
+   with its private list on your Mac and its GitHub secret set, one
+   entry each, as you decided (docs/DECISIONS.md, "Personal details
+   stay out of the repository", *Avery's decision of 2026-11-08*). The
+   push check in `~/code/brickson` (`git config core.hooksPath
+   .githooks`, a setting of your checkout that its worktrees share)
+   needs your yes before an agent there turns it on. Your choice too:
+   whether cloud sessions get the list, in the project's settings. When
+   the list changes, the secret must be set again; an agent on your Mac
+   can do both (the same decision, its setup part). Without the secret,
+   "Privacy check", and with it "Unit tests", fails on every pull
+   request from a branch of this repository; one GitHub gives no
+   secrets (from a fork, or Dependabot's) checks the built-in patterns
+   only, and says so.
 9. Done on your Mac on 2026-11-04; for another Mac: let Codex read all
    of `AGENTS.md`. By default
    it reads only the first 32 KiB, and the file is about 69 KB
@@ -1465,6 +1460,20 @@ settings, date) and summarise it here.
   "Unit tests" waits for (docs/DECISIONS.md,
   "Personal details stay out of the repository";
   [`log/2026-11-07-privacy-check.md`](log/2026-11-07-privacy-check.md)).
+  Its six follow-ups from #86's last review are closed: RTF formatting,
+  a block in minified HTML, and a PDF line of level text no longer hide a
+  list word (text a PDF rotates still can, when it is shown in pieces
+  after other text), an XMP place near zero degrees is found, and the
+  guard reads HTTPie's standalone `@file` body and refuses
+  `gh pr create --fill`
+  ([`log/2026-11-08-privacy-check-follow-ups.md`](log/2026-11-08-privacy-check-follow-ups.md)).
+  Next for agents, in a pull request of its own: trim AGENTS.md (81 KB)
+  without losing a rule, with a snapshot in `docs/archive/` first, moving
+  long reference material (much of *Gotchas*, the Mac route under
+  *Build and test*) into a document it points to, and bringing the
+  sections Codex must read (32 KB today, under the 32 KiB it reads) to
+  within the first 24,000 bytes, where Antigravity stops reading rule
+  files (the coordinator's target, 2026-11-08).
   `scripts/test.sh` runs the guard's tests, the docs cross-reference
   check (`scripts/test-docs.py`) and the privacy check's tests
   (`scripts/test-privacy.py`) before the unit tests.

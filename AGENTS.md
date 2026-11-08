@@ -339,20 +339,23 @@ the failure.
   promise*: SwiftData opened without `cloudKitDatabase: .none`, a person's
   words in a crash message, anything stored in the Keychain.
 - Personal names, email addresses, or health or family details in a
-  committed file: the repository is public. The developer's name and
-  support email on the website pages in `site/` are the exception: Apple
-  requires them, and the owner chose to publish them. On 2026-10-12 the
-  owner also explicitly authorized the short "Why Brickson?" founder note
-  in `README.md` and `site/index.html`, attributed to Avery Dedmon: his
-  brother invented the name as a teenager, it remains a family joke more
-  than twenty years later, his brother died of ALS, and Avery is building
-  the app in his memory. Documentation of that name/publication decision
-  in `docs/DECISIONS.md` and `docs/HANDOFF.md` is also permitted. This is
-  a specific exception for those facts and attribution, not permission
-  to publish other family identities, medical details or private documents.
-  On 2026-10-27 the owner also authorized Avery Dedmon's copyright
-  attribution in `LICENSE.md` and the README's license notice, and recording
-  that licensing choice in `docs/DECISIONS.md` and its `docs/log/` record.
+  committed file: the repository is public. The owner's exceptions, each
+  only for what it names: the developer's name and support email on the
+  website's pages in `site/` (Apple requires them); the short "Why
+  Brickson?" founder note in `README.md` and `site/index.html`,
+  attributed to Avery Dedmon (his brother invented the name as a
+  teenager, it is still a family joke, his brother died of ALS, and Avery
+  builds the app in his memory), and its record in `docs/DECISIONS.md`
+  and `docs/HANDOFF.md` (2026-10-12); Avery Dedmon's copyright
+  attribution in `LICENSE.md` and the README's license notice, and its
+  record (2026-10-27); and, by Avery's decision of 2026-11-08, Avery's
+  own name, their brother's first name, their own email addresses and
+  the Claude session links, anywhere in the repository, its commits and
+  its pull requests (docs/DECISIONS.md, "Personal details stay out of
+  the repository", *Avery's decision of 2026-11-08*). None of them
+  permits other family identities, the brother's medical or hospice
+  details, phrases, device or settings, quotes from family
+  conversations, private documents or the Mac's account name.
 - Text anywhere that says what Brickson costs (an amount, "free" or
   "paid") before docs/DECISIONS.md records the owner's decision ("Price
   not decided"). "Free" about something else, such as Xcode or GitHub
@@ -554,15 +557,28 @@ never silence it. CI builds Debug only: before an archive,
 `scripts/test.sh device -configuration Release` on a Mac shows any
 warning only the Release build sees (code under `#if DEBUG` differs).
 
-**Pushing to an open PR.** Once CI is green, push again only if CI fails,
-a reviewer finds a real bug or a rule violation, or `main` moved and must
-be merged in. Batch cosmetic, wording and style findings into one otherwise
-needed push, or answer them in words and resolve the thread; never one
-push per finding. After the first green run, apply the existing
+**Pushing to an open PR.** Review rounds count from the moment the pull
+request opens, not from its first green run: at most three rounds, one
+push each, and never a push while CI is still running on the last one;
+then one final push that batches what is left. A round is the reviews and
+CI results that one push brings. Push only when CI fails, a reviewer finds
+a real bug or a rule violation, or `main` moved and must be merged in.
+Batch cosmetic, wording and style findings into one otherwise needed
+push, or answer them in words and resolve the thread; never one push per
+finding. Record declined findings in docs/DECISIONS.md or
+docs/HANDOFF.md with a push you make anyway; after the final push, list
+them in the pull request's description instead, for the next pull
+request to record. After the final push, answer the rest in words and
+resolve their threads, but a real bug or rule violation found then, or
+CI still failing, stays open: tell the owner what it is and the fix you
+propose, and the owner decides whether another push goes in. This
+replaces counting the
 [stop after two rounds rule](docs/log/2026-10-22-agent-guardrail-reconciliation.md#main-refresh-and-declined-findings-2026-10-23)
-as a limit of two fix pushes. A PR with owner-enabled auto-merge merges
-itself on green once its other merge requirements are met: after the final
-push, stop and let it. Agents never enable auto-merge or merge a PR.
+from the first green run, which never applied to #86: it was first green
+at its fourteenth push (`docs/log/2026-11-08-privacy-check-follow-ups.md`).
+A PR with owner-enabled auto-merge merges itself on green once its other
+merge requirements are met: after the final push, stop and let it.
+Agents never enable auto-merge or merge a PR.
 
 **Cloud agents** with no route to a Mac (Codex cloud, Jules, a Claude
 Code session without the tools below) cannot build or run the app or
@@ -651,7 +667,12 @@ stays reachable, behind `#available` when newer (docs/DECISIONS.md,
 **Reviews and updates on GitHub.** The owner keeps several AI
 reviewers on purpose (2026-11-07): each sees things the others miss,
 and one stands in when another is out of credits. Codex reviews every
-push to a pull request that a person or agent opens. Greptile, which
+push to a pull request that a person or agent opens. A pull request
+that changes privacy or a workflow (the privacy check, the guard,
+`.github/workflows/`, or a rule in this file) also asks Codex for a
+security review, once, with a comment reading `@codex security review`
+(owner, 2026-11-08): the only `@codex` command an agent writes, as
+others can have Codex push code. Greptile, which
 the owner also installed, reviews a pull request by itself when it
 opens, as far as its free plan's credits allow (out of them when
 checked on 2026-11-06). cubic, added by the owner on 2026-11-07,
@@ -763,7 +784,8 @@ above are backed by checks wherever a check can run:
   command given a terminal, which can ask for text or where to push) or
   run what it cannot read (an option before a command's name, an
   extension, an alias set in the same call), a gh recovery file, text
-  gh takes from an editor and a shell alias the command defines; a push
+  gh takes from an editor or fills in from commits (`gh pr create
+  --fill`) and a shell alias the command defines; a push
   from a checkout whose pushes skip the privacy hook or whose branch has
   none, whichever branch the push names, or after a command in the same
   call that changes the hook, its setting or the check it runs, or checks
