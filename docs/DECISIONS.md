@@ -5783,7 +5783,50 @@ review setup does not quietly break them.
     (*`main` ruleset* below), so each new reviewer is more to answer;
     the owner chose the coverage. Record:
     [`log/2026-11-07-reviewer-roster.md`](log/2026-11-07-reviewer-roster.md).
-- **2026-11-04: Copilot is no longer a reviewer.** The month's AI
+- **2026-11-08, owner: Copilot reviews again, once per code pull
+  request; AI Scan is off.** The owner keeps the Copilot Pro plan, so
+  the 2026-11-04 bullet below no longer holds. The owner's figures, from
+  GitHub's AI usage page: AI Scan for pull requests used 1,044 of the
+  plan's 1,500 monthly AI credits in October and 1,288 in the first
+  three days of November, and found nothing; Copilot's 16 reviews used
+  644 (about 31 to 46 each) and caught real bugs on pull requests #72,
+  #73, #75 and #76. So the owner turned AI Scan off, keeps Copilot
+  Autofix on (CodeQL's suggested fixes, which spend no credits), and
+  has room for 35 to 50 Copilot reviews a month:
+  - The agent that opened a pull request that changes code requests
+    Copilot's review **once**, after Codex's review is answered, so
+    Copilot sees the fixed code and does not repeat Codex's findings. A
+    pull request that changes only documents gets none. The agent asks
+    itself, through the GitHub tool `request_copilot_review`, so a pull
+    request does not wait for the owner; every other way of asking for
+    Copilot, and every Copilot task, stays refused. A request that fails
+    (no credits left) is said in the pull request and the thread, and
+    the pull request goes on without it: no retry.
+  - The guard lets that tool through and records each request that
+    succeeded in the clone's Git folder (`brickson-copilot-reviews.json`,
+    never committed), and refuses a second one on the same pull request
+    from any worktree of the clone, as it did from 2026-11-03 to
+    2026-11-04 (the bullets below). `.claude/settings.json` no longer
+    denies the tool, and runs the guard after it, with `onFailure:
+    "block"`, so a crash while recording is shown to the agent. A
+    record that exists but cannot be read refuses every request, and is
+    never overwritten, until the owner reads it and moves it aside
+    (Codex's local review: read as empty, it let a second request
+    through and lost its entries). No
+    record was left in the owner's Mac clone (checked 2026-11-08). A
+    fresh clone, such as a new cloud session, starts with an empty
+    record, and a cloud thread may not run the guard at all (AGENTS.md,
+    *Guardrails for agents*), so there "once" rests on AGENTS.md and
+    review; "changes code" and "after Codex's review" always do.
+  - The ruleset's automatic Copilot review stays off: an agent asks at
+    the right moment instead (*`main` ruleset* below).
+  - Autofix's suggestions are read like a review comment, and the fix
+    is written by the agent, failing test first: reviewers never write
+    the code.
+  Record:
+  [`log/2026-11-08-copilot-review-policy.md`](log/2026-11-08-copilot-review-policy.md).
+- *Until 2026-11-08 (the bullet above replaces it).*
+  **2026-11-04: Copilot is no longer a reviewer.** The month's AI
   credits ran out on pull request #78, whose one request Copilot could
   not review; the subscription ends on 2026-11-09; and the owner's
   instructions for this project say there is no Copilot review and
@@ -5860,9 +5903,10 @@ review setup does not quietly break them.
   review, the owner can choose **Re-request review**.
 - *Added 2026-10-12.* Dependabot's pull requests get no automatic review
   from Copilot or Codex: PR #7, Dependabot's first, got neither, while
-  PR #8, opened by an agent, got both. Since 2026-11-04 Copilot reviews
-  nothing (the first bullet), so the owner reads each Dependabot pull
-  request (AGENTS.md, "Reviews and updates on GitHub").
+  PR #8, opened by an agent, got both. Since 2026-11-08 Copilot reviews
+  only a pull request whose agent asks (the 2026-11-08 bullet), so the
+  owner reads each Dependabot pull request (AGENTS.md, "Reviews and
+  updates on GitHub").
 - Review guidance lives in AGENTS.md, *Code Review Rules*, which Codex,
   Copilot and Claude Code all read. `.github/copilot-instructions.md` only
   adds what is specific to Copilot and points back to AGENTS.md, so the
@@ -6053,8 +6097,13 @@ itself once `scripts/test-site.py` landed; checks "Analyze (actions)" and
   The second does not hold for CodeQL, whose Swift support has only the
   `autobuild` and `manual` build modes; no mode that skips the build has
   been announced. It probably meant AI Scan, below.
-- GitHub's **AI Scan for pull requests** (a public preview) is on for
-  this repository, checked through GitHub's API. It reads each pull
+- **Since 2026-11-08 AI Scan is off** (the owner: it used most of the
+  month's AI credits and found nothing; *Code review* above), so no scan
+  reads the Swift code; Copilot's review of each code pull request and
+  Copilot Autofix's suggestions for CodeQL alerts remain. Before, in
+  the bullet below:
+- *Until 2026-11-08.* GitHub's **AI Scan for pull requests** (a public
+  preview) was on for this repository, checked through GitHub's API. It reads each pull
   request's changes without building anything, when the pull request
   opens and after every new commit, and its job logs show it reading
   Swift files. It skips pull requests from forks and from Dependabot.
@@ -6074,8 +6123,11 @@ itself once `scripts/test-site.py` landed; checks "Analyze (actions)" and
   repository's **Security and quality** tab, under the … menu if it is
   hidden, then **Code scanning**, then **Tool status**). It changes
   nothing else: pull request checks leave it out, and the code scanning
-  rule passed on the merges after it. It stays until someone deletes it
-  there (the Swift configuration, then … → **Delete configuration**).
+  rule passed on the merges after it. *2026-11-08:* deleted, with the
+  owner's yes: its three failed analyses were removed through GitHub's
+  API (`DELETE .../code-scanning/analyses/<id>?confirm_delete`, newest
+  first), which the page's … → **Delete configuration** also does. Default
+  setup for `actions` and `python` is untouched.
 
 Revisit when CodeQL can analyse Swift without a build (`none` under
 `build_modes` in `swift/codeql-extractor.yml` in `github/codeql`), or
@@ -6083,10 +6135,10 @@ default setup can build a generated project; when Brickson adds code that
 CodeQL's Swift checks look at (network code such as caregiver alerts,
 opening files or links from other apps, web views, SQL, encryption, or
 storing, logging or sending values whose names suggest secrets or private
-information, such as an emergency contact's phone number); when AI Scan
-stops reading Swift, leaves the preview with new terms, or costs more
-than the owner wants; or when a Swift error appears on the Tool status
-page again.
+information, such as an emergency contact's phone number); if the owner
+turns AI Scan back on, when it stops reading Swift or leaves the
+preview with new terms; or when a Swift error appears on the Tool
+status page again.
 
 ### `main` ruleset
 
@@ -6098,9 +6150,9 @@ through its API on 2026-10-15:
 | Require a pull request before merging | 0 approvals; merge commits only | Nobody pushes to `main`. The owner cannot approve pull requests that show them as author, so any approval count would block every merge. Merge commits keep the commit hashes HANDOFF cites on `main`. |
 | Require status checks to pass | "Unit tests" and "UI tests" | The job names in `tests.yml`. Renaming a job blocks every pull request until the ruleset is changed to match. |
 | Require branches to be up to date | Off | Each update reruns the Mac tests; `main` is tested again after every merge anyway. |
-| Require conversation resolution | On | Every reviewer's comment (Codex, CodeRabbit, Greptile, cubic), and every CodeQL alert posted on the pull request, gets an answer before a merge. AI Scan findings are answered too, by practice (*Code scanning* above). |
+| Require conversation resolution | On | Every reviewer's comment (Codex, CodeRabbit, Greptile, cubic, Copilot), and every CodeQL alert posted on the pull request, gets an answer before a merge. AI Scan findings were answered too, by practice, while it was on (until 2026-11-08, *Code scanning* above). |
 | Require code scanning results | CodeQL: errors, high or higher | A workflow change that CodeQL flags as an error, or as a high or critical security problem, cannot merge. It did not cover Dependabot's first pull request, which got no CodeQL analysis before merging (*Code scanning* above). |
-| Automatically request Copilot code review | Off since 2026-11-03 (on before, with new pushes and drafts off) | Copilot no longer reviews (since 2026-11-04, *Code review* above). |
+| Automatically request Copilot code review | Off since 2026-11-03 (on before, with new pushes and drafts off) | The agent asks for Copilot's review once per code pull request, after Codex's review is answered (since 2026-11-08, *Code review* above). |
 | Block force pushes, restrict deletions | On | History on `main` never changes. |
 | Bypass | Repository admin, for pull requests only | The owner can still merge in an emergency, such as GitHub's Mac machines being down, but never push straight to `main`. |
 
@@ -6155,17 +6207,18 @@ Rules*: a Codex at default settings never saw *Not findings*,
   Apple's current Xcode" (the cut falls in it; never pinning a version
   is also a review rule, in *Tests, workflows and the rules
   themselves*), including the two rules that set the deployment target;
-  "Reviews and updates on GitHub" (no Copilot review since
-  2026-11-04; GitHub's AI Scan findings answered like
-  review comments; a Dependabot pull request treated as not
+  "Reviews and updates on GitHub" (one Copilot review per code pull
+  request since 2026-11-08, and AI Scan off since that day; a
+  Dependabot pull request treated as not
   security-reviewed); committing the String Catalog a unit run brings up
   to date, which CI also checks; and how `scripts/test.sh` and CI work.
   These are not repeated: the deployment target's two rules are
   recorded in "Minimum iOS, iPhone and iPad" (the owner set the first
   and left the rest to the project), which every session reads at its
   start (*Workflow rules*, "Start of a session"); the Copilot
-  step is gone since 2026-11-04 ("Reviews, updates and GitHub
-  settings", *Code review*); CI fails a catalog that does not match
+  step only adds a review, so an agent that misses it loses that
+  review and nothing else, and the guard holds its "once" where it
+  runs ("Reviews, updates and GitHub settings", *Code review*); CI fails a catalog that does not match
   the code; and repeating more would push *Build and test*'s own rules
   past the cut in their place.
 - **Everything still binds.** The introduction says what Codex reads,

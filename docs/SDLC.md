@@ -222,14 +222,17 @@ which agents also act through, can bypass it (*Deploy*).
   AGENTS.md, *Code Review Rules*, which is this project's `REVIEW.md`
   (p39); Greptile reviews by itself as far as its plan allows, cubic by
   itself once the owner installs it, CodeRabbit when a comment asks
-  (`@coderabbitai review`), and GitHub's AI Scan posts security
-  findings. Reviewers review and never write the code. Their
+  (`@coderabbitai review`), and Copilot once on a pull request that
+  changes code, when the agent asks after Codex's review is answered
+  (`request_copilot_review`, never on one that changes only documents).
+  Reviewers review and never write the code. Their
   findings inform the owner; they never approve or block on their own
   (p38). The agent that opened the pull request answers every finding,
   fixing it or saying why not, and says in its ready message whether the
   findings are handled. **The owner merges.** Agents never merge, never
-  push to `main`, and never ask for Copilot, which is no longer a
-  reviewer (AGENTS.md, "Reviews and updates on GitHub").
+  push to `main`, and never ask for Copilot a second time on the same
+  pull request, which the guard refuses (AGENTS.md, "Reviews and
+  updates on GitHub").
 - **The website** publishes itself from `site/` after each merge to
   `main` ("Publish website", `.github/workflows/pages.yml`).
 - **The app.** The owner archives a build on the Mac with the current

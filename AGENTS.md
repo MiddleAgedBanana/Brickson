@@ -693,24 +693,32 @@ autofix` or other command that commits, no finishing touch or
 request to `@cubic-dev-ai`. Code written that way skips the failing test
 first, the `docs/log/` record and the rest of *Workflow rules*. Ask
 Greptile with a plain `@greptileai`, never for a tier ("at apex"),
-which costs more of its credits. GitHub Copilot is no longer one of the
-reviewers: the owner's AI credits ran out on pull request #78
-(2026-11-04) and the subscription ends on 2026-11-09, so no agent
-requests a Copilot review or starts a Copilot task by any route: a
-Copilot tool, `gh`, the REST or GraphQL API, or an `@copilot` mention in
-a comment or review. The guard refuses the Copilot tools, `gh`'s
-reviewer, assignee and agent-task commands, `gh copilot`, the REST
-reviewer, assignee and task endpoints, a GitHub tool's reviewer or
-assignee field and a GraphQL agent assignment; other GraphQL requests
-and a mention are held by this rule alone (*Guardrails for agents*;
-docs/DECISIONS.md, *Code review*). None of these reviewers reviews
-Dependabot's pull requests by itself. All of them review against *Code Review Rules*
-above. GitHub's AI Scan also posts security findings after each push
-to such a pull request; answer them like review comments. It skips
-Dependabot's pull requests and those from forks, and CodeQL did not
-analyse Dependabot's first one before it merged, so treat a Dependabot
-pull request as not security-reviewed until the owner reads it
-(docs/DECISIONS.md, *Code scanning*). Dependabot opens one pull
+which costs more of its credits. GitHub Copilot reviews again since
+2026-11-08 (the owner kept its plan): the agent that opened a pull
+request that changes code asks for Copilot's review **once**, after
+Codex's review is answered, so Copilot sees the fixed code. A pull
+request that changes only documents gets none. Each review spends some
+of the owner's monthly AI credits (about 31 to 46 of 1,500); a request
+that fails for lack of them is said in the pull request and the thread,
+with no retry. Ask only through the GitHub tool `request_copilot_review`:
+never `gh`, the API, a reviewer field or an `@copilot` mention, and
+never a Copilot task. The guard lets that one tool through, refuses a
+second request on the same pull request from any worktree of the clone,
+and refuses the other Copilot tools, `gh`'s reviewer, assignee and
+agent-task commands, `gh copilot`, the REST reviewer, assignee and task
+endpoints, a GitHub tool's reviewer or assignee field and a GraphQL
+agent assignment; "changes code", "after Codex's review", other GraphQL
+requests and a mention are held by this rule alone (*Guardrails for
+agents*; docs/DECISIONS.md, *Code review*). None of these reviewers
+reviews Dependabot's pull requests by itself. All of them review
+against *Code Review Rules* above. GitHub's AI Scan is off since
+2026-11-08 (it spent most of the month's AI credits and found nothing);
+Copilot Autofix, which suggests fixes for CodeQL alerts at no cost,
+stays on, and its suggestions are read like a review comment, never
+committed as they are. CodeQL did not analyse Dependabot's first pull
+request before it merged, so treat a Dependabot pull request as not
+security-reviewed until the owner reads it (docs/DECISIONS.md, *Code
+scanning*). Dependabot opens one pull
 request a month for new versions of the actions in
 `.github/workflows`, and one at once for a security fix.
 The intended repository settings, and why, are in docs/DECISIONS.md,
@@ -771,8 +779,10 @@ above are backed by checks wherever a check can run:
   `main`; merging, auto-merging or approving a pull request (`gh`, the
   GitHub API or a GitHub tool); a Copilot review or Copilot task asked
   for by a Copilot tool, `gh`, the REST API, a GitHub tool's reviewer
-  or assignee field or a GraphQL agent assignment (*Reviews and updates
-  on GitHub* says what only the rule holds); a GitHub tool writing
+  or assignee field or a GraphQL agent assignment, except one review
+  per pull request through `request_copilot_review`, which the guard
+  records after it runs (*Reviews and updates on GitHub* says what only
+  the rule holds); a GitHub tool writing
   a file onto `main`; a commit, or text sent to GitHub by `gh`, the API
   or a GitHub tool, that holds a personal detail, text it cannot read
   before the command runs (built by the shell, a file the same command
@@ -795,7 +805,7 @@ above are backed by checks wherever a check can run:
   list from (not a recursive read of a folder above it, such as
   `grep -r . ~`: docs/DECISIONS.md, "Personal details stay out of the
   repository"), and any command that prints the whole environment. The same
-  settings deny the merge tools and the Copilot tools outright, and the
+  settings deny the merge tools and the Copilot task tools outright, and the
   Read and Edit tools the list's default folder. When the guard refuses, do not look for
   another way round: say in the thread what you needed and why. It is
   a guard against mistakes, not a sandbox, and it covers
