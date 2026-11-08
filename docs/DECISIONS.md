@@ -5208,7 +5208,9 @@ outside service: nothing it reads leaves the computer it runs on.
   The list is never committed and never printed, and agents never read
   it. An entry matches as whole words in any capitals, with its words
   joined by spaces, line breaks, punctuation, markup (HTML or SVG tags,
-  a Markdown link's address) or nothing (camelCase), with a plural
+  a Markdown link's address, RTF's formatting) or nothing (camelCase),
+  where the paragraph before it is kept apart (an HTML block's tags and
+  RTF's paragraphs, lines, tabs and cells end one), with a plural
   ending, with or without its accents, and with invisible characters and
   HTML, URL, `\u` and RTF escapes undone, and with `\n`, `\r` and `\t`
   (JSON's and code's line breaks and tabs) read as spaces.
@@ -5229,7 +5231,9 @@ outside service: nothing it reads leaves the computer it runs on.
   folder's name (`/Users/<name>`, `/home/<name>`, `C:\Users\<name>`,
   also after a compiler flag such as `-I` and under
   `/System/Volumes/Data`, except stand-ins such as `/Users/you`); the
-  place a photo or video was taken, recorded inside it; and a second
+  place a photo or video was taken, recorded inside it (in XMP, a
+  coordinate with any number but zero, however many zeros it starts
+  with; zeros alone are what a camera with no fix writes); and a second
   support address on the website.
 - **Everywhere text can hide:** every file and every file's name, in
   UTF-8, UTF-16, UTF-32 or Windows Latin text; the text inside files people do
@@ -5237,11 +5241,14 @@ outside service: nothing it reads leaves the computer it runs on.
   comments, XMP and IPTC (PNG, JPEG, GIF, HEIC, TIFF, WebP, and the
   profiles ImageMagick writes into a PNG), a PDF's information,
   bookmarks and page text (compressed with Flate, ASCII hex or ASCII85,
-  written in hex or UTF-16, or shown through a font's ToUnicode map),
+  written in hex or UTF-16, or shown through a font's ToUnicode map;
+  read as one run, piece by piece, and line by line, joined within a
+  line and apart where the page moves to another),
   the files inside a ZIP and the documents built on one (Word, Excel,
   PowerPoint and OpenDocument, whose words formatting splits are read
   joined within a paragraph, and Pages, Keynote and Numbers, whose text
-  sits in compressed `.iwa` records), RTF, sound and video tags (MP3, MP4, M4A,
+  sits in compressed `.iwa` records), RTF (whose words formatting splits
+  are read joined within a paragraph), sound and video tags (MP3, MP4, M4A,
   MOV, WAV) and the place a video records, and pictures embedded in a
   page as `data:` addresses; commit messages, and the names and
   addresses commits are signed with (the name, the address and
@@ -5359,7 +5366,10 @@ public:
    release's tag, a repository's or a fork's name (a new repository
    named after its `--source` folder, or made by the GitHub tool, too),
    a topic, a project's text, an Actions variable, by gh's own names
-   for a command (`gh pr new`) as well, and base64 in a request however
+   for a command (`gh pr new`) as well, a request's body read from a
+   file it names (`gh api --input`, curl's `-d @file`, and HTTPie's
+   `field=@file` and standalone `@file`, which HTTPie sends whole, as if
+   from stdin), and base64 in a request however
    its JSON spells it, and every word a gh command that publishes is
    given as written (so a value option it reads as a switch hides
    nothing). It
@@ -5398,7 +5408,10 @@ public:
    create --recover`), whose title and body gh publishes; text gh takes
    from an editor even with no terminal (`gh pr comment` and `gh issue
    comment --editor`, and `gh gist edit` given no file to put in, add or
-   remove); `gh copilot`,
+   remove); a title and body `gh pr create` fills in from the branch's
+   commits (`--fill`, `-f`, `--fill-first`, `--fill-verbose`), which with
+   `--head` need not have been pushed, so the hook has not read them;
+   `gh copilot`,
    which runs the Copilot CLI agent; a gh option before the command's name
    (`gh pr --squash=true merge 5` merges; `-R`, `--repo` and `--help`
    excepted), which gh reads as the command's own; a gh command that is
@@ -5668,6 +5681,31 @@ matches a place in the repository, and ends "Pushes from this checkout
 run the privacy hook." With no list it ends "No private list was found
 here" instead, and fails. After changing the list, set the secret and
 the variable again.
+
+### Avery's decision of 2026-11-08
+
+*The owner, Avery Dedmon, on 2026-11-08, while the check's pull request
+(#86) was set up on their Mac
+([`log/2026-11-08-privacy-check-follow-ups.md`](log/2026-11-08-privacy-check-follow-ups.md)).*
+
+- **What may be public.** Avery's own name, their brother's first name
+  and Avery's own email addresses may appear in the repository, its
+  commits and its pull requests. The Claude session links in commit
+  messages and pull requests stay: they open only for Avery's own
+  account, and they help find what a session did. None of these is a finding for a
+  reviewer, and nothing already pushed is rewritten for them. The check
+  still reports an email address other than the website's published
+  support address outside the website's pages and commit signatures, so
+  an agent adds no other address of Avery's; Avery may add one.
+- **What stays out.** The brother's medical and hospice details, his
+  phrases, his device and its settings, quotes from family
+  conversations, and the Mac's account name. The rest of this decision
+  still holds for every other name and detail.
+- **The list stays minimal.** Avery does not want sensitive details
+  written into any list stored anywhere, so the private list (the file on
+  the Mac and the `BRICKSON_PRIVATE_WORDS` secret) holds one entry, and
+  the built-in patterns do the real work. Never ask Avery for more
+  entries; propose a pattern instead when a kind of detail needs one.
 
 ## Reviews, updates and GitHub settings
 
