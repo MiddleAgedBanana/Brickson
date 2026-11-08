@@ -47,6 +47,13 @@ if 'push' in mode:
 if 'overwrite' in mode:
     with open('AGENTS.md', 'w') as tracked:
         tracked.write('rewritten by the agent\n')
+if 'checkout' in mode:
+    import subprocess
+    subprocess.run(['git', 'checkout', '-q', 'HEAD~1'], check=True, capture_output=True)
+if 'link' in mode:
+    job = os.path.join('build', 'agent-bridge', os.environ['BRICKSON_BRIDGE_JOB'])
+    for name in ('result.md', 'summary.json', 'summary.json.partial', 'done'):
+        os.symlink(os.path.join(os.environ['STUB_OUTSIDE'], name), os.path.join(job, name))
 if 'spawn' in mode:
     import subprocess
     subprocess.Popen(['/bin/sh', '-c', 'sleep 3; echo late > late.txt'])
@@ -411,6 +418,51 @@ class BridgeTests(unittest.TestCase):
         self.assertIn('no such file', result.stderr)
         self.assertFalse((self.home / 'code' / 'brickson-codex-tests').exists())
         self.assertFalse((self.worktree / 'build').exists())
+        self.assertEqual(self.calls(), [])
+
+    def test_an_empty_brief_changes_nothing(self):
+        self.install_codex_hook()
+        result = self.bridge('codex', '--brief', '', '--write', '--branch', 'tests')
+        self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertIn('no such file', result.stderr)
+        self.assertFalse((self.home / 'code' / 'brickson-codex-tests').exists())
+        self.assertFalse((self.worktree / 'build').exists())
+        self.assertEqual(self.calls(), [])
+
+    def test_a_read_only_job_that_moves_the_checkout_is_reported(self):
+        # Going back a commit changes files without leaving any changed
+        # file or new commit behind.
+        (self.worktree / 'AGENTS.md').write_text('a newer version\n')
+        subprocess.run(['git', '-C', str(self.worktree), 'commit', '-q', '-am', 'newer'],
+                       check=True, capture_output=True, env={**os.environ, **self.env})
+        result = self.bridge('codex', '--brief', str(self.brief), env={'STUB_MODE': 'checkout'})
+        self.assertEqual(result.returncode, 1, result.stderr)
+        summary = json.loads((self.job_folder(result) / 'summary.json').read_text())
+        self.assertEqual(summary['status'], 'changed files in a read-only job')
+
+    def test_links_an_agent_leaves_in_its_job_folder_are_never_followed(self):
+        self.point_agy_at(self.agy_folder)
+        self.install_agy_hook()
+        outside = Path(self.temp.name) / 'outside'
+        outside.mkdir()
+        result = self.bridge('agy', '--brief', str(self.brief),
+                             env={'STUB_MODE': 'link', 'STUB_OUTSIDE': str(outside)})
+        self.assertEqual(sorted(p.name for p in outside.iterdir()), [])
+        out = self.job_folder(result)
+        for name in ('result.md', 'summary.json', 'done'):
+            self.assertFalse((out / name).is_symlink(), name)
+        self.assertEqual((out / 'result.md').read_text(), 'agy final answer')
+        self.assertEqual(json.loads((out / 'summary.json').read_text())['agent'], 'agy')
+        self.assertTrue((out / 'done').read_text())
+
+    def test_a_linked_build_folder_is_refused(self):
+        outside = Path(self.temp.name) / 'outside'
+        outside.mkdir()
+        (self.worktree / 'build').symlink_to(outside)
+        result = self.bridge('codex', '--brief', str(self.brief))
+        self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertIn('is a link', result.stderr)
+        self.assertEqual(list(outside.iterdir()), [])
         self.assertEqual(self.calls(), [])
 
     def test_agy_refuses_a_folder_with_uncommitted_work(self):

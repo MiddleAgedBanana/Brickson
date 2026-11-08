@@ -45,6 +45,7 @@ import hashlib
 import json
 import os
 import re
+import secrets
 import signal
 import subprocess
 import sys
@@ -57,6 +58,7 @@ AGY_FOLDER = '~/code/brickson-antigravity'
 CODEX_FOLDER = '~/code/brickson-codex-{topic}'
 TOPIC = re.compile(r'^[a-z0-9][a-z0-9-]{0,48}$')
 HELD = []  # locks held until the process ends
+FOLDERS = {}  # each job folder's handle, opened before its agent starts
 # Where a job's pushes go: nowhere. Git refuses a URL with this scheme.
 NO_PUSH = 'no-push://agent-bridge-jobs-never-publish/'
 TOKENS = ('GH_TOKEN', 'GITHUB_TOKEN', 'GH_ENTERPRISE_TOKEN', 'GITHUB_ENTERPRISE_TOKEN')
@@ -68,7 +70,9 @@ def job_environment(out):
     git cannot reach, and gh starts with an empty configuration folder and
     no token, so it is signed out. The thread that handed the job off
     checks the commits and publishes them. A guard against mistakes, not a
-    sandbox: an agent's GitHub tool with its own sign-in is not covered."""
+    sandbox: an agent that unsets these variables can still push, and an
+    agent's GitHub tool with its own sign-in is not covered. Isolation
+    outside the agent's process is not built."""
     env = {key: value for key, value in os.environ.items() if key not in TOKENS}
     entries = [('remote.origin.pushurl', NO_PUSH)]
     entries += [(f'url.{NO_PUSH}.pushInsteadOf', prefix)
@@ -210,17 +214,39 @@ def require_clean(checkout):
 
 
 def job_folder(checkout, agent, kind):
+    """A new folder for the job under the checkout's build/, with a handle
+    on it taken before the agent starts (see write_in). An agent can write
+    under build/, so a link left there by an earlier job is refused rather
+    than followed."""
     stamp = datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%SZ')
     base = checkout / 'build' / 'agent-bridge'
+    for part in (base.parent, base):
+        if part.is_symlink():
+            raise Stop(f'{part} is a link; a job folder is made only inside the checkout')
     base.mkdir(parents=True, exist_ok=True)
     for number in range(1, 100):
         folder = base / (f'{stamp}-{agent}-{kind}' + (f'-{number}' if number > 1 else ''))
         try:
             folder.mkdir()
-            return folder
         except FileExistsError:
             continue
+        FOLDERS[folder] = os.open(str(folder), os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+        return folder
     raise Stop(f'too many jobs started at once in {base}')
+
+
+def write_in(out, name, text):
+    """Write a whole file into a job folder without following a link the
+    agent may have left in its place: the text goes into a new file with a
+    fresh name, made through the folder's handle, which is then renamed
+    over the old entry. A rename replaces a link; it never follows one."""
+    folder = FOLDERS[out]
+    temp = f'.{name}.{secrets.token_hex(8)}'
+    handle = os.open(temp, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o644,
+                     dir_fd=folder)
+    with os.fdopen(handle, 'w', encoding='utf-8') as file:
+        file.write(text)
+    os.replace(temp, name, src_dir_fd=folder, dst_dir_fd=folder)
 
 
 def changed_lines(checkout):
@@ -325,22 +351,23 @@ def finish(out, checkout, before, run_result, extra, problem=None):
     summary = {'status': status, 'exit_code': code, 'seconds': seconds,
                'branch': after['branch'], 'commits': commits,
                'changed_files': after['changed'], **extra}
-    if extra.get('read_only') and (commits or after['changed'] != before['changed']
+    # A checkout moved to another commit or branch changes files without
+    # leaving a changed file or a new commit behind.
+    moved = before['head'] != after['head'] or before['branch'] != after['branch']
+    if extra.get('read_only') and (moved or after['changed'] != before['changed']
                                    or after['contents'] != before['contents']):
         summary['status'] = 'changed files in a read-only job'
     if problem:
         summary['status'] = problem
     if interrupted:
         summary['status'] = 'stopped: the bridge was told to stop, and stopped the agent'
-    partial = out / 'summary.json.partial'
-    partial.write_text(json.dumps(summary, indent=2) + '\n')
-    os.replace(partial, out / 'summary.json')
-    (out / 'done').write_text(summary['status'] + '\n')
+    write_in(out, 'summary.json', json.dumps(summary, indent=2) + '\n')
+    write_in(out, 'done', summary['status'] + '\n')
     return summary
 
 
 def write_command(out, command, cwd):
-    (out / 'command.json').write_text(json.dumps({'command': command, 'cwd': str(cwd)}, indent=2) + '\n')
+    write_in(out, 'command.json', json.dumps({'command': command, 'cwd': str(cwd)}, indent=2) + '\n')
 
 
 def brief_text(args, folder, branch):
@@ -357,7 +384,7 @@ def codex_review(args):
     write_command(out, command, checkout)
     before = git_state(checkout)
     result = run(command, checkout, out, args.timeout)
-    (out / 'result.md').write_text((out / 'output.txt').read_text())
+    write_in(out, 'result.md', (out / 'output.txt').read_text())
     return out, finish(out, checkout, before, result, {'agent': 'codex', 'read_only': True})
 
 
@@ -384,7 +411,7 @@ def codex_job(args):
         hold_checkout(checkout)
     out = job_folder(checkout, 'codex', 'write' if args.write else 'read')
     prompt = brief_text(args, checkout, branch)
-    (out / 'brief.md').write_text(prompt)
+    write_in(out, 'brief.md', prompt)
     command = ['codex', 'exec', '--sandbox', 'workspace-write' if args.write else 'read-only',
                '-c', 'approval_policy="never"', '-C', str(checkout), '--json',
                '-o', str(out / 'result.md'), prompt]
@@ -413,7 +440,7 @@ def agy_job(args):
         start_branch(checkout, branch)
     out = job_folder(checkout, 'agy', 'write' if args.write else 'read')
     prompt = brief_text(args, checkout, branch)
-    (out / 'brief.md').write_text(prompt)
+    write_in(out, 'brief.md', prompt)
     command = ['agy', '-p', prompt, '--output-format', 'stream-json',
                '--print-timeout', f'{int(args.timeout)}m']
     if args.model:
@@ -439,7 +466,7 @@ def agy_job(args):
         if event.get('event') == 'result':
             response = (event.get('result') or {}).get('response', '')
             status = (event.get('result') or {}).get('status')
-    (out / 'result.md').write_text(response)
+    write_in(out, 'result.md', response)
     extra = {'agent': 'agy', 'read_only': not args.write, 'refusals': refusals,
              'tool_steps': steps, 'agy_status': status, 'ran_in': ran_in}
     problem = None
@@ -488,7 +515,7 @@ def parse(argv):
             child.add_argument('--background', action='store_true',
                                help='run detached; read summary.json when `done` appears')
     args = parser.parse_args(argv)
-    if getattr(args, 'brief', None) and not Path(os.path.expanduser(args.brief)).is_file():
+    if getattr(args, 'brief', None) is not None and not Path(os.path.expanduser(args.brief)).is_file():
         parser.error(f'--brief: no such file: {args.brief}')
     if getattr(args, 'write', False) and not (args.branch and TOPIC.match(args.branch)):
         parser.error('--write needs --branch <topic>, lowercase letters, digits and dashes')

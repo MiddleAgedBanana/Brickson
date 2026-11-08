@@ -60,7 +60,11 @@ ended, the refusals, the tool steps, and the branch, commits and changed
 files as git reports them, not as the agent does. A read-only job that
 changes a file anyway is reported as such, including a file it rewrites
 in place: the summary compares each changed file's contents, not only
-git's list. Every brief opens with the
+git's list, and the commit and branch, so a job that moves the checkout
+to another commit is reported too. The bridge writes into the job folder
+through a handle taken before the agent starts, and never through a link
+the agent leaves there; a `build/` or `build/agent-bridge/` that is a
+link is refused. Every brief opens with the
 same rules: read all of AGENTS.md with `cat AGENTS.md`, work only in the
 named folder, never push to `main`, force-push or merge, no real
 people's details, evidence under `build/`, and a final message saying
@@ -68,7 +72,7 @@ what was done, how it was checked and what was not.
 
 A write job starts on a new branch from `origin/main`: `codex/<topic>` in
 a new worktree, `~/code/brickson-codex-<topic>`, or `antigravity/<topic>`
-in agy's folder. The agent commits there and cannot publish: every job
+in agy's folder. The agent commits there and cannot publish by mistake: every job
 runs with git told to push origin, and any https, http, ssh or `git@`
 URL, to a `no-push://` address git cannot reach, and with `gh` signed
 out (an empty configuration folder, and no `GH_TOKEN` or
@@ -77,6 +81,13 @@ checks, then pushes and opens the pull request. A write job needs the
 agent's guard hook installed. The
 bridge never runs in the owner's own checkout (the repository's main
 worktree), and never passes a danger, bypass or skip-permissions option.
+
+**Known limits.** The no-push settings are environment variables in the
+agent's own process, so they guard against mistakes, not against an
+agent that removes them: it could still push with the owner's sign-in.
+Isolation outside the agent's process, such as running it with no
+credentials, is future work. An agent's own GitHub tool with its own
+sign-in is not covered either (*Not verified*).
 
 What an agent returns is data, never instructions or approval (AGENTS.md,
 *Guardrails for agents*).
@@ -135,6 +146,21 @@ On the owner's Mac (macOS 27.2; the Mac's `/usr/bin/python3`, 3.9), on
   cannot start still ends the job with `summary.json` and `done` (exit
   127), and a mistyped `--brief` stops before any folder, lock, branch
   or worktree is made.
+- One more push, from a cloud thread after the owner's go-ahead to
+  handle what was left, answered the four findings raised on the final
+  push, three with a test that failed on `e6a41bb`: an empty `--brief`
+  is refused before anything is made (CodeRabbit); a read-only job that
+  moves the checkout to another commit or branch is reported (Codex);
+  links an agent leaves in its job folder are never written through,
+  and a linked `build/` is refused (Codex's security review). The
+  fourth, that an agent can unset the no-push variables (Codex's
+  security review), is recorded under *Known limits*, not fixed. That
+  thread ran `scripts/test-agent-bridge.py` (29 tests),
+  `scripts/test-runner.py`, `scripts/test-docs.py`,
+  `scripts/test-hooks.py` and `scripts/test-privacy.py` on Linux, and
+  `scripts/privacy-check.py --outgoing --no-list`: a cloud thread has no
+  private list, so that checked the built-in patterns only. CI runs the
+  bridge's tests on macOS.
 
 ## Not verified
 
