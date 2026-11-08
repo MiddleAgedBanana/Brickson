@@ -1,5 +1,5 @@
 # Fails a pull request that brings in a version of an action with a known
-# security advisory. The actions in .github/workflows are Brickson's only
+# security advisory. The actions in .github/workflows are Brickson's
 # dependencies (docs/DECISIONS.md, "Reviews, updates and GitHub settings",
 # *Dependencies*), so this checks those. Free for public repositories, and
 # it runs on Linux, so it uses none of the Mac machines the tests need.
