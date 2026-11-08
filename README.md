@@ -205,9 +205,9 @@ commit; changes made without Xcode remain untested until CI or a Mac run
 passes. The maintainer merges pull requests after review and passing CI.
 
 CodeQL scans the GitHub workflow files and the Python scripts in
-`scripts/`, not Swift. AI Scan reviews eligible pull-request changes,
-including Swift, but its findings do not enforce a merge gate; address
-them during review. AI Scan skips forks and Dependabot pull requests. See
+`scripts/`, not Swift. AI reviewers read pull-request changes, Swift
+included, and their findings are answered during review; they do not
+enforce a merge gate. See
 [Code scanning](docs/DECISIONS.md#code-scanning) for the coverage,
 limitations and review requirements.
 

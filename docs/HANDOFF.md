@@ -1074,11 +1074,9 @@ docs/ROADMAP.md, *The quality bar*, Q24):
    thread, and stay near for the device's passcode.
 5. Review the starter phrases (`Brickson/Resources/StarterPhrases.json`): two
    are near duplicates, and "Please move me." could be clearer.
-6. Delete the failed Swift configuration on the Tool status page
-   (docs/DECISIONS.md, *Code scanning*).
-7. You can delete the `xcode-skills` folder in `~/code/brickson`: its
+6. You can delete the `xcode-skills` folder in `~/code/brickson`: its
    skills are installed where agents load them.
-8. The privacy check is on main (pull request #86, merged 2026-11-08),
+7. The privacy check is on main (pull request #86, merged 2026-11-08),
    with its private list on your Mac and its GitHub secret set, one
    entry each, as you decided (docs/DECISIONS.md, "Personal details
    stay out of the repository", *Avery's decision of 2026-11-08*). The
@@ -1092,7 +1090,7 @@ docs/ROADMAP.md, *The quality bar*, Q24):
    request from a branch of this repository; one GitHub gives no
    secrets (from a fork, or Dependabot's) checks the built-in patterns
    only, and says so.
-9. Done on your Mac on 2026-11-04; for another Mac: let Codex read all
+8. Done on your Mac on 2026-11-04; for another Mac: let Codex read all
    of `AGENTS.md`. By default
    it reads only the first 32 KiB, and the file is about 69 KB
    (docs/DECISIONS.md, "AGENTS.md puts first what Codex reads"). In
@@ -1401,7 +1399,7 @@ settings, date) and summarise it here.
   of a point ([record](log/2026-11-05-library-screen.md)).
 - CodeQL scans the workflow files and the Python scripts, not the Swift
   code, on purpose (docs/DECISIONS.md, *Code scanning*); the failed Swift
-  attempt of 2026-10-10 is still listed on the Tool status page.
+  attempt of 2026-10-10 was deleted from the Tool status page on 2026-11-08.
 - Since 2026-11-07 no checkout keeps the job's token, and a "Dependency
   review" job on every pull request fails one that brings in an action
   with a known security advisory; it is not a required check
@@ -1415,7 +1413,9 @@ settings, date) and summarise it here.
 - The docs cross-reference check reads every title a citation names,
   quoted titles starting with a small letter and titles after the first
   included: [record](log/2026-10-23-docs-check-gaps.md).
-- Codex reviews every push to a pull request, and AI Scan each push;
+- Codex reviews every push to a pull request; Copilot reviews a pull
+  request that changes code once, when the agent asks after Codex's
+  review is answered (since 2026-11-08; AI Scan is off since that day);
   Greptile reviews when a pull request opens, as far as its free plan's
   credits allow; cubic, once the owner installs its app, reviews when
   one opens and after each push; CodeRabbit reviews only when a comment
@@ -1424,11 +1424,10 @@ settings, date) and summarise it here.
   (`.coderabbit.yaml`, `cubic.yaml`, `.greptile/`), with every feature
   that writes code and has a setting turned off, and AGENTS.md's rule
   holds the rest (docs/DECISIONS.md, *Code review*).
-  None reviews Dependabot's pull requests by itself. Copilot no longer
-  reviews: its credits ran out on pull request #78, and since
-  2026-11-04 no agent requests it (docs/DECISIONS.md, *Code review*).
-  The AI credits AI Scan uses show only in Settings → Billing → AI
-  usage.
+  None reviews Dependabot's pull requests by itself. The AI credits
+  Copilot's reviews use show only in Settings → Billing → AI usage;
+  the owner budgets 35 to 50 reviews a month (docs/DECISIONS.md,
+  *Code review*).
 - The [website](https://middleagedbanana.github.io/Brickson/), its
   [privacy policy](https://middleagedbanana.github.io/Brickson/privacy/)
   (Effective October 24, 2026, since typing came to Home; the page since PR #40) and its
@@ -1441,6 +1440,13 @@ settings, date) and summarise it here.
   support page's "in development" lines change at release, and the
   accessibility page changes with every device check and every row of
   `docs/ACCESSIBILITY.md` that changes what it says.
+- On the owner's Mac, Antigravity's only Brickson folder is
+  `~/code/brickson-antigravity`, and since 2026-11-08 local, git-ignored
+  hooks hold Antigravity and Codex to what the guard below refuses
+  (Codex not for input typed into a command already running). Once #91
+  merges, a thread on the Mac hands them a job and reads the result with
+  `scripts/agent-bridge.py`
+  ([`log/2026-11-08-codex-antigravity-setup.md`](log/2026-11-08-codex-antigravity-setup.md)).
 - Claude Code sessions with one repository run a guard before Bash and
   the selected GitHub tools named in `.claude/settings.json`
   (`.claude/hooks/guard.py`; AGENTS.md, *Guardrails for agents*). Repository
@@ -1450,8 +1456,10 @@ settings, date) and summarise it here.
   refuses `git add -A`, force pushes, pushes to `main`, merges, approvals
   and Copilot reviews and tasks asked for by a Copilot tool, `gh`, the
   REST API, a GitHub tool's reviewer or assignee field or a GraphQL agent
-  assignment; an `@copilot` mention and other GraphQL requests are held
-  by AGENTS.md alone. It also refuses a commit or a post that holds a
+  assignment, except one review per pull request through
+  `request_copilot_review`, which it records after it runs; an
+  `@copilot` mention and other GraphQL requests are held by AGENTS.md
+  alone. It also refuses a commit or a post that holds a
   personal detail, a push from a checkout whose pushes skip the privacy
   hook or whose branch has none, and a command or file tool that names
   the private list or the config folder that holds it.
