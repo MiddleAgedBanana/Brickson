@@ -1459,6 +1459,10 @@ settings, date) and summarise it here.
   merges, a thread on the Mac hands them a job and reads the result with
   `scripts/agent-bridge.py`
   ([`log/2026-11-08-codex-antigravity-setup.md`](log/2026-11-08-codex-antigravity-setup.md)).
+  Its jobs cannot push by mistake, but that is a guard, not a sandbox: an
+  agent that unsets the job's no-push settings can still push, and
+  isolation outside the agent is not built
+  ([record](log/2026-11-08-agent-bridge.md), *Known limits*).
 - Claude Code sessions with one repository run a guard before Bash and
   the selected GitHub tools named in `.claude/settings.json`
   (`.claude/hooks/guard.py`; AGENTS.md, *Guardrails for agents*). Repository
