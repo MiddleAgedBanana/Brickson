@@ -266,8 +266,10 @@ class BridgeTests(unittest.TestCase):
         self.install_agy_hook()
         result = self.bridge('agy', '--brief', str(self.brief), env={'STUB_AGY_CWD': str(self.owner)})
         self.assertEqual(result.returncode, 1)
-        summary = json.loads((self.job_folder(result) / 'summary.json').read_text())
+        out = self.job_folder(result)
+        summary = json.loads((out / 'summary.json').read_text())
         self.assertTrue(summary['status'].startswith('ran in the wrong folder'))
+        self.assertTrue((out / 'done').read_text().startswith('ran in the wrong folder'))
 
     def test_a_change_in_a_read_only_job_is_reported(self):
         self.point_agy_at(self.agy_folder)
@@ -362,6 +364,25 @@ class BridgeTests(unittest.TestCase):
         result = self.bridge('codex', '--brief', str(self.brief), '--timeout', '0.02',
                              env={'STUB_MODE': 'spawn'})
         self.assertEqual(result.returncode, 1)
+        time.sleep(4)
+        self.assertFalse((self.worktree / 'late.txt').exists())
+
+    def test_a_bridge_told_to_stop_stops_its_agent_first(self):
+        import signal
+        bridge = subprocess.Popen([sys.executable, str(BRIDGE), 'codex', '--brief', str(self.brief)],
+                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+                                  env={**os.environ, **self.env, 'STUB_MODE': 'spawn'},
+                                  cwd=str(self.worktree))
+        for _ in range(100):  # until the stand-in has started
+            if self.log.exists():
+                break
+            time.sleep(0.1)
+        time.sleep(0.5)
+        bridge.send_signal(signal.SIGTERM)
+        stdout, _ = bridge.communicate(timeout=60)
+        self.assertEqual(bridge.returncode, 1)
+        out = Path(next(l for l in stdout.splitlines() if l.startswith('Job folder: '))[12:])
+        self.assertTrue((out / 'done').read_text().startswith('stopped'))
         time.sleep(4)
         self.assertFalse((self.worktree / 'late.txt').exists())
 

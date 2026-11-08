@@ -34,9 +34,12 @@ them again. `scripts/agent-bridge.py` handles them once:
   threads never share agy's folder at once. agy has no read-only sandbox
   and its folder is shared, so an agy job also refuses to start while
   that folder holds uncommitted work.
-- A job runs in a process group of its own. When it ends or times out,
-  everything the agent started is stopped before the summary is written,
-  so nothing changes the checkout afterwards.
+- A job runs in a process group of its own. When it ends, times out, or
+  the bridge itself is told to stop (Ctrl-C, SIGTERM, SIGHUP), everything
+  the agent started is stopped before the summary is written and the
+  lock released, so nothing changes the checkout afterwards.
+- `summary.json` holds the final verdict before `done` is written, so a
+  thread that waits for `done` never reads a verdict that changes.
 
 How a thread on the Mac uses it, from any Brickson worktree:
 
@@ -83,7 +86,7 @@ The commits of pull request #91.
 On the owner's Mac (macOS 27.2; the Mac's `/usr/bin/python3`, 3.9), on
 2026-11-08:
 
-- `scripts/test-agent-bridge.py`, 20 of 20. It uses stand-ins for `codex`
+- `scripts/test-agent-bridge.py`, 21 of 21. It uses stand-ins for `codex`
   and `agy` that record how they were called and answer as the real tools
   did, in throwaway repositories with a made-up home folder. Seven broken
   copies of the bridge each failed it: stdin left open, the owner's
@@ -93,7 +96,13 @@ On the owner's Mac (macOS 27.2; the Mac's `/usr/bin/python3`, 3.9), on
   tests added for Codex's review (a second job in the same folder, a file
   rewritten in a read-only job, agy's folder with uncommitted work, and a
   timeout that leaves a child process writing) failed on the first
-  version of the bridge.
+  version of the bridge. Those added for its second round (a bridge told
+  to stop, and `done` written after the wrong-folder verdict) failed on
+  the second.
+- `scripts/test-runner.py`, 99 of 99. It checks `scripts/test.sh` with
+  stand-ins for each check it runs first, and it now knows the bridge's.
+  The first push missed this: CI's "Unit tests" failed in those tests,
+  because the stand-in for `scripts/test-agent-bridge.py` was missing.
 - **A real Codex review through the bridge.** `codex-review` on pull
   request #89's branch finished in 10 s. Codex's answer, in
   `result.md`: "The changes document an external setup and its

@@ -233,22 +233,51 @@ def stop_group(process):
             time.sleep(0.1)
 
 
+SIGNALS = (signal.SIGINT, signal.SIGTERM, signal.SIGHUP)
+
+
+class Interrupted(Exception):
+    """The bridge itself was told to stop."""
+
+
+def interrupt(signum, _frame):
+    raise Interrupted(signum)
+
+
 def run(command, cwd, out, timeout_minutes):
     """Run command with stdin closed, in a process group of its own,
-    writing stdout and stderr to files."""
+    writing stdout and stderr to files. If the bridge is told to stop
+    (Ctrl-C, SIGTERM, SIGHUP), the agent's group is stopped first, so the
+    checkout's lock is never released while the agent still runs.
+    Returns the exit code (None if it timed out or was stopped), the
+    seconds taken and whether the bridge was interrupted."""
     started = time.time()
-    with open(out / 'output.txt', 'w') as stdout, open(out / 'stderr.txt', 'w') as stderr:
-        process = subprocess.Popen(command, cwd=str(cwd), stdin=subprocess.DEVNULL,
-                                   stdout=stdout, stderr=stderr, start_new_session=True)
-        try:
-            code = process.wait(timeout=timeout_minutes * 60)
-        except subprocess.TimeoutExpired:
-            code = None
-        stop_group(process)
-    return code, round(time.time() - started, 1)
+    previous = {sig: signal.signal(sig, interrupt) for sig in SIGNALS}
+    interrupted = False
+    try:
+        with open(out / 'output.txt', 'w') as stdout, open(out / 'stderr.txt', 'w') as stderr:
+            process = subprocess.Popen(command, cwd=str(cwd), stdin=subprocess.DEVNULL,
+                                       stdout=stdout, stderr=stderr, start_new_session=True)
+            try:
+                code = process.wait(timeout=timeout_minutes * 60)
+            except subprocess.TimeoutExpired:
+                code = None
+            except Interrupted:
+                code, interrupted = None, True
+            finally:
+                for sig in SIGNALS:  # nothing cuts the clean-up short
+                    signal.signal(sig, signal.SIG_IGN)
+                stop_group(process)
+    finally:
+        for sig, handler in previous.items():
+            signal.signal(sig, handler)
+    return code, round(time.time() - started, 1), interrupted
 
 
-def finish(out, checkout, before, code, seconds, extra):
+def finish(out, checkout, before, run_result, extra, problem=None):
+    """Write summary.json, then `done` last, with the final verdict, so a
+    reader that waits for `done` never sees a verdict that later changes."""
+    code, seconds, interrupted = run_result
     after = git_state(checkout)
     commits = []
     if before['head'] and after['head'] and before['head'] != after['head']:
@@ -261,7 +290,13 @@ def finish(out, checkout, before, code, seconds, extra):
     if extra.get('read_only') and (commits or after['changed'] != before['changed']
                                    or after['contents'] != before['contents']):
         summary['status'] = 'changed files in a read-only job'
-    (out / 'summary.json').write_text(json.dumps(summary, indent=2) + '\n')
+    if problem:
+        summary['status'] = problem
+    if interrupted:
+        summary['status'] = 'stopped: the bridge was told to stop, and stopped the agent'
+    partial = out / 'summary.json.partial'
+    partial.write_text(json.dumps(summary, indent=2) + '\n')
+    os.replace(partial, out / 'summary.json')
     (out / 'done').write_text(summary['status'] + '\n')
     return summary
 
@@ -283,9 +318,9 @@ def codex_review(args):
     command = ['codex', 'review', '-c', 'sandbox_mode="read-only"', '--base', args.base]
     write_command(out, command, checkout)
     before = git_state(checkout)
-    code, seconds = run(command, checkout, out, args.timeout)
+    result = run(command, checkout, out, args.timeout)
     (out / 'result.md').write_text((out / 'output.txt').read_text())
-    return out, finish(out, checkout, before, code, seconds, {'agent': 'codex', 'read_only': True})
+    return out, finish(out, checkout, before, result, {'agent': 'codex', 'read_only': True})
 
 
 def codex_job(args):
@@ -317,10 +352,10 @@ def codex_job(args):
                '-o', str(out / 'result.md'), prompt]
     write_command(out, command[:-1] + ['<brief.md>'], checkout)
     before = git_state(checkout)
-    code, seconds = run(command, checkout, out, args.timeout)
+    result = run(command, checkout, out, args.timeout)
     refusals = [line.strip() for line in (out / 'stderr.txt').read_text().splitlines()
                 if 'blocked by PreToolUse hook' in line]
-    return out, finish(out, checkout, before, code, seconds,
+    return out, finish(out, checkout, before, result,
                        {'agent': 'codex', 'read_only': not args.write, 'refusals': refusals})
 
 
@@ -347,7 +382,7 @@ def agy_job(args):
         command += ['--model', args.model]
     write_command(out, [part if part != prompt else '<brief.md>' for part in command], checkout)
     before = git_state(checkout)
-    code, seconds = run(command, checkout, out, args.timeout + 1)
+    result = run(command, checkout, out, args.timeout + 1)
     refusals, steps, response, ran_in, status = [], 0, '', None, None
     for line in (out / 'output.txt').read_text().splitlines():
         try:
@@ -369,11 +404,10 @@ def agy_job(args):
     (out / 'result.md').write_text(response)
     extra = {'agent': 'agy', 'read_only': not args.write, 'refusals': refusals,
              'tool_steps': steps, 'agy_status': status, 'ran_in': ran_in}
-    summary = finish(out, checkout, before, code, seconds, extra)
+    problem = None
     if ran_in and Path(ran_in).resolve() != checkout:
-        summary['status'] = f'ran in the wrong folder ({ran_in})'
-        (out / 'summary.json').write_text(json.dumps(summary, indent=2) + '\n')
-    return out, summary
+        problem = f'ran in the wrong folder ({ran_in})'
+    return out, finish(out, checkout, before, result, extra, problem)
 
 
 def status(_args):
