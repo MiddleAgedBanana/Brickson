@@ -1406,6 +1406,11 @@ settings, date) and summarise it here.
 - CodeQL scans the workflow files and the Python scripts, not the Swift
   code, on purpose (docs/DECISIONS.md, *Code scanning*); the failed Swift
   attempt of 2026-10-10 was deleted from the Tool status page on 2026-11-08.
+  The root [SECURITY.md](../SECURITY.md) gives Codex Security context for
+  the app, tooling and website from the existing rules and decisions;
+  [.github/SECURITY.md](../.github/SECURITY.md) remains the private-reporting
+  policy. This is review context, not evidence of a completed scan
+  ([record](log/2026-11-08-security-policy.md)).
 - Since 2026-11-07 no checkout keeps the job's token, and a "Dependency
   review" job on every pull request fails one that brings in an action
   with a known security advisory; it is not a required check

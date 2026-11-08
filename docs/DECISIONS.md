@@ -6168,6 +6168,20 @@ turns AI Scan back on, when it stops reading Swift or leaves the
 preview with new terms; or when a Swift error appears on the Tool
 status page again.
 
+### Security review context
+
+*2026-11-08, approved by the owner in the security-policy chat.* The root
+[SECURITY.md](../SECURITY.md) summarizes the existing security boundaries,
+properties, finding criteria and evidence limits for Codex Security and
+other reviewers. It covers the app, developer tooling, CI and the static
+website. It includes the existing third-party keyboard restriction
+("Third-party keyboards refused in 1.0", above). It adopts no new accepted
+risk, blanket exclusion or severity cap, and does not relax AGENTS.md or
+this document. [.github/SECURITY.md](../.github/SECURITY.md) remains unchanged
+as the private-reporting and supported-versions policy. Adding context
+does not complete a security scan or change the review workflow. Record:
+[log/2026-11-08-security-policy.md](log/2026-11-08-security-policy.md).
+
 ### `main` ruleset
 
 Recommended to the owner, and matching GitHub's settings when checked
