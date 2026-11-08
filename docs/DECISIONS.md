@@ -5799,8 +5799,9 @@ review setup does not quietly break them.
     read-only) and answers its findings, so Copilot sees the fixed code
     and does not repeat Codex's findings. Codex's automatic review on
     GitHub, set up in the owner's Codex app, is not part of the step: it
-    reviews in its own time, and once, on pull request #89, it posted a
-    one-off setup notice instead of a review, so waiting for it could
+    reviews in its own time, and on pull requests #89 and #92 it posted
+    a notice to set up an environment instead of a review, so waiting
+    for it could
     leave the request waiting for nothing (the coordinator's decision of
     2026-11-08, which keeps the owner's "after Codex's review"; record:
     [`log/2026-11-08-copilot-right-after-opening.md`](log/2026-11-08-copilot-right-after-opening.md)). A
@@ -5839,7 +5840,14 @@ review setup does not quietly break them.
   credited to the owner. It was the coordinator's recommendation, not
   the owner's, and the owner withdrew it the same day: Codex's review
   runs from the owner's Codex app, so no agent writes an `@codex`
-  comment of any kind (some have Codex push code). Record:
+  comment of any kind (some have Codex push code). Codex's GitHub
+  review runs a security review by itself when a pull request opens
+  (its summary on #90), but on #89 and #92 it posted a notice to set up
+  an environment instead. So, as CodeRabbit's review of #92 asked, the
+  agent says so in the pull request and the thread, and a pull request
+  that changes privacy or a workflow waits for the owner to run Codex's
+  security review from the Codex app, or another security review,
+  before it merges. Record:
   [`log/2026-11-08-copilot-right-after-opening.md`](log/2026-11-08-copilot-right-after-opening.md).
 - *Until 2026-11-08 (the 2026-11-08 Copilot bullet above replaces it).*
   **2026-11-04: Copilot is no longer a reviewer.** The month's AI

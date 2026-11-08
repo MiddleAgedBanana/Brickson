@@ -671,7 +671,11 @@ push to a pull request that a person or agent opens, and runs a
 security review by itself when one opens (as on pull request #90); the
 owner set it up in the Codex app, and no agent writes an `@codex`
 comment of any kind, as some have Codex push code (owner, 2026-11-08).
-Greptile, which
+Where Codex posts a notice to set up an environment instead of its
+reviews (as on #89 and #92), the agent says so in the pull request and
+the thread, and a pull request that changes privacy or a workflow
+waits for the owner to run Codex's security review from the Codex app,
+or another security review, before it merges. Greptile, which
 the owner also installed, reviews a pull request by itself when it
 opens, as far as its free plan's credits allow (out of them when
 checked on 2026-11-06). cubic, added by the owner on 2026-11-07,

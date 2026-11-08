@@ -10,15 +10,15 @@ this pull request.*
 - **When Copilot is asked.** Pull request #90 said the agent asks for
   Copilot's review "after Codex's review is answered". Codex's
   automatic review on GitHub, set up in the owner's Codex app, reviews
-  in its own time, and once, on pull request #89, it posted a one-off
-  setup notice instead of a review, so a request waiting for it could
-  wait for nothing. Decided in the thread on 2026-11-08: the agent runs
+  in its own time, and on pull requests #89 and #92 it posted a notice
+  to set up an environment instead of a review, so a request waiting
+  for it could wait for nothing. Decided in the thread on 2026-11-08: the agent runs
   Codex's local review before opening a pull request that changes code
   (`codex review --base origin/main`, read-only, where the Codex CLI is
   installed, as on the owner's Mac), answers its findings, and asks for
   Copilot's review right after opening it. Codex's review on GitHub is
-  not part of the step; it is active (it reviewed pull requests #90 and
-  #91). This answers the first follow-up in
+  not part of the step. It reviewed pull requests #90 and #91; why it
+  posted the notice on #89 and #92 is not known. This answers the first follow-up in
   [`2026-11-08-copilot-review-policy.md`](2026-11-08-copilot-review-policy.md).
   AGENTS.md ("Reviews and updates on GitHub"), docs/DECISIONS.md
   (*Code review*, the 2026-11-08 Copilot bullet), `docs/SDLC.md`,
@@ -37,8 +37,14 @@ this pull request.*
   Rules* sends to the owner). Something already does that job: Codex's
   GitHub review runs a security review by itself when a pull request
   opens (its summary on pull request #90: "Security Review", trigger
-  "PR opened"), so AGENTS.md now says so. The owner decides; the pull
-  request flags it.
+  "PR opened"), so AGENTS.md now says so. CodeRabbit's review of this
+  pull request (Major) then pointed out that on this very pull request
+  Codex posted the environment notice instead, so nothing ran: it asked
+  for a fallback. AGENTS.md and docs/DECISIONS.md now have one: the
+  agent says so in the pull request and the thread, and a pull request
+  that changes privacy or a workflow waits for the owner to run Codex's
+  security review from the Codex app, or another security review,
+  before it merges. The owner decides; the pull request flags it.
 
 - **Where the guard runs on the Mac.** Right after opening this pull
   request, the agent asked for Copilot's review once, through
