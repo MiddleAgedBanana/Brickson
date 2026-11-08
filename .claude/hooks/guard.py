@@ -222,6 +222,10 @@ GH_TERMINAL = ('Run gh without a terminal (not under script or unbuffer), with e
                'pushes it past the guard\'s push rules.')
 GH_RECOVER = ('Give gh the title and body with --title and --body-file instead of --recover: '
               'the guard does not read a recovery file, and gh publishes what it holds.')
+GH_FILL = ('Give gh pr create the title and body with --title and --body or --body-file '
+           'instead of --fill, --fill-first, --fill-verbose or -f: gh writes them from the '
+           'branch\'s commits, which with --head need not have been pushed, so neither the '
+           'privacy hook nor the guard has read them.')
 GH_EDITOR = ('Give gh the text with --body or --body-file (gh gist edit: the file to put in, '
              '--add or --remove) instead of an editor: gh sends what the editor writes, even '
              'with no terminal, and the guard cannot read it first.')
@@ -1744,6 +1748,11 @@ def check_gh(words, cwd, environment, git_state=None):
         pairs, _ = gh_arguments(plain[2:], GH_CREATE_VALUES[tuple(plain[:2])] | GH_REPOSITORY)
         if any(option == '--recover' for option, _ in pairs):
             deny(GH_RECOVER)
+    if plain[:2] == ['pr', 'create']:
+        values = GH_CREATE_VALUES[('pr', 'create')] | GH_REPOSITORY
+        if any(gh_switch(plain[2:], values, name, letter) for name, letter in
+               (('--fill', 'f'), ('--fill-first', None), ('--fill-verbose', None))):
+            deny(GH_FILL)
     if tuple(plain[:2]) in GH_EDITOR_COMMANDS:
         texts, files = GH_PUBLISHES[tuple(plain[:2])]
         values = (texts | files | GH_CREATE_VALUES.get(tuple(plain[:2]), set())
@@ -2202,7 +2211,9 @@ def httpie_request(words):
                 else:
                     items.append(words[index])
                     index += 1
+            # A standalone @file is the body, read from that file.
             has_data = raw is not None or any(re.search(r'(?<![:=])(?::=|=)(?!=)', item)
+                                               or re.match(r'[^:=@]*@', item)
                                                for item in items)
             return method or ('POST' if has_data else 'GET'), items, raw
         if word.startswith('-'):
@@ -2219,17 +2230,21 @@ def httpie_request(words):
 
 def httpie_body(words, cwd):
     _, items, raw = httpie_request(words)
-    payload = {}
+    payload, files = {}, []
     if raw is not None:
         try:
             return json.dumps(json.loads(raw))
         except ValueError:
             deny(UNKNOWN)
     for item in items:
-        match = re.fullmatch(r'([^:=@]+)(:=@|=@|:=|==|=|:|@)(.*)', item, re.S)
+        match = re.fullmatch(r'([^:=@]*)(:=@|=@|:=|==|=|:|@)(.*)', item, re.S)
         if not match or match[2] in (':', '=='):
             continue  # headers and URL query parameters are not JSON fields
         key, operator, value = match.groups()
+        if operator == '@' and not key:
+            # HTTPie sends a standalone @file as the body, as if from stdin.
+            files.append(request_file(value, cwd))
+            continue
         if operator == '@':
             deny(UNKNOWN)  # file uploads need an explicit inspectable body
         if operator.endswith('@'):
@@ -2246,7 +2261,7 @@ def httpie_body(words, cwd):
             payload.setdefault(array[1], []).append(value)
         else:
             payload[key] = value
-    return json.dumps(payload)
+    return ' '.join([*files, json.dumps(payload)])
 
 
 # curl short options stop clustering at the first option that takes a value.
