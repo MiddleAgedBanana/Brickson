@@ -152,7 +152,8 @@ def run_script(build_body, mode="ui", destination="id=fixture-simulator",
                test_summary=summary(3), family=None, arguments=(),
                coverage=COVERAGE, strings=True, synced_catalog=None,
                sync_status=0, on_ci=True, boot_status=0,
-               bootstatus_status=0, shutdown_status=0, docs_status=0, hooks_status=0):
+               bootstatus_status=0, shutdown_status=0, docs_status=0, hooks_status=0,
+               privacy_status=0):
     with tempfile.TemporaryDirectory() as directory:
         # Exercise the exact checked-in runner and selector in an isolated
         # checkout. Preflights are dependencies, like the mocked Apple tools:
@@ -163,7 +164,8 @@ def run_script(build_body, mode="ui", destination="id=fixture-simulator",
         for name in ("test.sh", "choose-simulator.py"):
             (fixture_scripts / name).write_bytes((SCRIPT.parent / name).read_bytes())
         (fixture_scripts / "simulator-load.py").write_text(FAKE_SIMULATOR_LOAD)
-        for name, status in (("docs", docs_status), ("hooks", hooks_status)):
+        for name, status in (("docs", docs_status), ("hooks", hooks_status),
+                             ("privacy", privacy_status)):
             (fixture_scripts / f"test-{name}.py").write_text(
                 "import os, sys\nfrom pathlib import Path\n"
                 'with Path(os.environ["RUNNER_EVENTS"]).open("a") as log:\n'
@@ -221,7 +223,8 @@ def run_script(build_body, mode="ui", destination="id=fixture-simulator",
         result = subprocess.run(["/bin/bash", str(fixture_scripts / "test.sh"), mode, *arguments],
                                 env=environment, capture_output=True, text=True)
         result.events = lines(Path(directory, "events"))
-        result.preflights = [event for event in result.events if event in ("docs", "hooks")]
+        result.preflights = [event for event in result.events
+                             if event in ("docs", "hooks", "privacy")]
         result.calls = lines(Path(directory, "invocations"))
         result.invocations = len(result.calls)
         result.simctl = lines(Path(directory, "simctl"))
@@ -265,18 +268,19 @@ class PreflightTests(unittest.TestCase):
     def test_unit_preflights_run_in_order_before_building(self):
         result = run_script("exit 0", mode="unit")
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(result.events, ["docs", "hooks",
+        self.assertEqual(result.events, ["docs", "hooks", "privacy",
                                          "build-for-testing", "test-without-building"])
         self.assertEqual([name for name, _ in actions(result)],
                          ["build-for-testing", "test-without-building"])
 
     def test_each_preflight_failure_stops_before_the_build(self):
-        for docs_status, hooks_status, expected in [(37, 0, ["docs"]),
-                                                    (0, 42, ["docs", "hooks"])]:
-            with self.subTest(docs=docs_status, hooks=hooks_status):
-                result = run_script("exit 0", mode="unit",
-                                    docs_status=docs_status, hooks_status=hooks_status)
-                self.assertEqual(result.returncode, docs_status or hooks_status)
+        for docs_status, hooks_status, privacy_status, expected in [
+                (37, 0, 0, ["docs"]), (0, 42, 0, ["docs", "hooks"]),
+                (0, 0, 43, ["docs", "hooks", "privacy"])]:
+            with self.subTest(docs=docs_status, hooks=hooks_status, privacy=privacy_status):
+                result = run_script("exit 0", mode="unit", docs_status=docs_status,
+                                    hooks_status=hooks_status, privacy_status=privacy_status)
+                self.assertEqual(result.returncode, docs_status or hooks_status or privacy_status)
                 self.assertEqual(result.events, expected)
                 self.assertEqual(result.calls, [])
                 self.assertNotIn("All unit tests passed.", result.stdout)
@@ -1586,6 +1590,52 @@ def workflow_jobs(text):
     return jobs
 
 
+def job_steps(lines):
+    """A job's steps, in order: each step's name or action, its `with` and
+    `env` values, and its script. Reads the layout tests.yml uses."""
+    steps, step, block, script_indent = [], None, None, None
+    for line in lines:
+        start = re.match(r"      - (.*)$", line)
+        if start:
+            step = {"name": None, "uses": None, "with": {}, "env": {}, "run": []}
+            steps.append(step)
+            line, block, script_indent = "        " + start.group(1), None, None
+        if step is None:
+            continue
+        if script_indent is not None:
+            if line.startswith(" " * script_indent):
+                step["run"].append(line[script_indent:])
+                continue
+            script_indent = None
+        field = re.match(r"        (\w[\w-]*): *(.*)$", line)
+        if field:
+            key, value = field.groups()
+            block = key if key in ("with", "env") and not value else None
+            if key == "run":
+                if value in ("|", "|-"):
+                    script_indent = 10
+                else:
+                    step["run"].append(value)
+            elif key in ("name", "uses"):
+                step[key] = value
+            continue
+        nested = re.match(r"          ([\w-]+): *(.*)$", line)
+        if nested and block:
+            step[block][nested.group(1)] = nested.group(2)
+    for step in steps:
+        step["run"] = "\n".join(step["run"]) + ("\n" if step["run"] else "")
+    return steps
+
+
+def stub_checker(record, copy):
+    """A stand-in for scripts/privacy-check.py that records which copy ran,
+    how and with what environment."""
+    return ("import json, os, sys\n"
+            f"with open({str(record)!r}, 'w') as file:\n"
+            f"    json.dump({{'copy': {copy!r}, 'argv': sys.argv[1:], 'env': dict(os.environ),\n"
+            "               'isolated': sys.flags.isolated}, file)\n")
+
+
 REPOSITORY = SCRIPT.parent.parent
 STEPS_KEY = re.compile(r"steps:\s*(&[^\s#]+\s*)?(#.*)?")
 USES = re.compile(r"""uses:\s*["']?([^\s#"']+)""")
@@ -1888,6 +1938,202 @@ class WorkflowTests(unittest.TestCase):
                                      capture_output=True, text=True, timeout=30)
                 self.assertEqual(ran.returncode == 0, all(c == "success" for c in chosen),
                                  ran.stdout + ran.stderr)
+
+    # The privacy check (docs/DECISIONS.md, "Personal details stay out of
+    # the repository"). A value a job is given stays in its machine's memory
+    # for the whole job, so the private list gets a job of its own, where
+    # nothing from the pull request runs. Giving it to the unit job or to
+    # any other step, running another step or action beside it, fetching
+    # less than the whole history, keeping the checkout's credentials,
+    # running the pull request's copy of the check with the list, passing
+    # it more of the environment than it needs, or naming the secrets in a
+    # comment (GitHub reads ${{ }} even in a script's comments) fails this
+    # test.
+    def test_the_private_list_reaches_a_job_of_its_own_and_main_s_check_alone(self):
+        text = WORKFLOW.read_text()
+        jobs = workflow_jobs(text)
+        names = {job: next((line.split(":", 1)[1].strip() for line in lines
+                            if re.match(r"    name: ", line)), None)
+                 for job, lines in jobs.items()}
+        privacy = next((job for job, name in names.items() if name == "Privacy check"), None)
+        self.assertIsNotNone(privacy, 'tests.yml has no job named "Privacy check".')
+        steps = job_steps(jobs[privacy])
+        self.assertEqual(len(steps), 2, "The privacy job runs only the checkout and the check.")
+        checkout, check = steps
+        self.assertTrue((checkout["uses"] or "").startswith("actions/checkout@"), checkout)
+        self.assertEqual(checkout["with"].get("fetch-depth"), "0")
+        self.assertEqual(checkout["with"].get("persist-credentials"), "false")
+        self.assertEqual(check["name"], "Check for personal details")
+        self.assertIsNone(check["uses"])
+        self.assertEqual(check["env"], {
+            "BRICKSON_PRIVATE_WORDS": "${{ secrets.BRICKSON_PRIVATE_WORDS }}"})
+        self.assertIn("/usr/bin/python3 -I", check["run"])
+        self.assertIn("env -i ", check["run"])
+        # Every way of naming the secrets context (secrets.X, secrets['X'],
+        # toJSON(secrets)) counts, on every line, comments included.
+        self.assertEqual(len(re.findall(r"\bsecrets\b", text)), 1,
+                         "The private list must reach the privacy step alone.")
+
+    # "Unit tests" is a required check, so it carries the privacy check's
+    # result. Not waiting for the privacy job, being skipped when it fails
+    # (a skipped required check reads as passed), running in a cancelled
+    # run, or passing when the privacy job did not succeed fails this test;
+    # so does the first-run step leaving the unit job, where no list is.
+    def test_unit_tests_wait_for_the_privacy_check_and_fail_unless_it_passed(self):
+        jobs = workflow_jobs(WORKFLOW.read_text())
+        names = {job: next((line.split(":", 1)[1].strip() for line in lines
+                            if re.match(r"    name: ", line)), None)
+                 for job, lines in jobs.items()}
+        privacy = next((job for job, name in names.items() if name == "Privacy check"), None)
+        self.assertIsNotNone(privacy, 'tests.yml has no job named "Privacy check".')
+        unit = next(job for job, name in names.items() if name == "Unit tests")
+        body = "\n".join(jobs[unit])
+        needs = re.search(r"^    needs: *\[?([^\]\n]+)\]? *$", body, re.M)
+        self.assertIsNotNone(needs, "Unit tests does not wait for the privacy check.")
+        self.assertIn(privacy, [job.strip() for job in needs.group(1).split(",")])
+        self.assertRegex(body, r"(?m)^    if: *\$\{\{ *!cancelled\(\) *\}\} *$",
+                         "Without a status function, a failed privacy check skips Unit tests, "
+                         "and a skipped required check reads as passed.")
+        steps = job_steps(jobs[unit])
+        self.assertEqual(steps[0]["with"].get("fetch-depth"), "0")
+        self.assertEqual(steps[1]["name"], "Check for personal details (first run)")
+        self.assertEqual(steps[1]["env"], {})
+        result = steps[-1]
+        self.assertEqual(result["name"], "Check that the privacy check passed")
+        variable = [name for name, value in result["env"].items()
+                    if re.fullmatch(r"\$\{\{ *needs\." + re.escape(privacy)
+                                    + r"\.result *\}\}", value)]
+        self.assertEqual(len(variable), 1, "The unit job does not read the privacy job's result.")
+        self.assertIn("if: ${{ !cancelled() }}", "\n".join(jobs[unit]))
+        for outcome in ["success", "failure", "cancelled", "skipped", ""]:
+            with self.subTest(result=outcome):
+                ran = subprocess.run(["bash", "-e", "-c", result["run"]],
+                                     env=dict(os.environ, **{variable[0]: outcome}),
+                                     capture_output=True, text=True, timeout=30)
+                self.assertEqual(ran.returncode == 0, outcome == "success",
+                                 ran.stdout + ran.stderr)
+
+    def privacy_fixture(self, main_has_check=True, branch_has_check=True, fetched=True):
+        holder = tempfile.TemporaryDirectory()
+        self.addCleanup(holder.cleanup)
+        folder = Path(holder.name)
+        remote, repo = folder / "remote.git", folder / "repo"
+        record = folder / "record.json"
+        # Variables a git hook or the caller's shell may set would point git
+        # at another repository than the one named with -C.
+        clean = {key: value for key, value in os.environ.items() if key not in (
+            "GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_COMMON_DIR",
+            "GIT_OBJECT_DIRECTORY", "GIT_ALTERNATE_OBJECT_DIRECTORIES", "GIT_PREFIX")}
+
+        def git(*args):
+            subprocess.run(["git", "-C", str(repo), "-c", "user.name=t",
+                            "-c", "user.email=t@example.com", "-c", "commit.gpgsign=false",
+                            "-c", "core.hooksPath=/dev/null", *args],
+                           check=True, capture_output=True, env=clean)
+
+        subprocess.run(["git", "init", "-q", "--bare", "-b", "main", str(remote)], check=True,
+                       env=clean)
+        subprocess.run(["git", "init", "-q", "-b", "main", str(repo)], check=True, env=clean)
+        checker = repo / "scripts" / "privacy-check.py"
+        checker.parent.mkdir()
+        (repo / "README.md").write_text("Brickson\n")
+        git("add", "README.md")
+        if main_has_check:
+            checker.write_text(stub_checker(record, "main"))
+            git("add", "scripts/privacy-check.py")
+        git("commit", "-q", "-m", "main")
+        git("remote", "add", "origin", str(remote))
+        git("push", "-q", "origin", "main")
+        if not fetched:
+            git("update-ref", "-d", "refs/remotes/origin/main")
+        git("checkout", "-q", "-b", "feature")
+        if branch_has_check:
+            checker.write_text(stub_checker(record, "pull request"))
+            git("add", "scripts/privacy-check.py")
+        else:
+            git("rm", "-q", "--ignore-unmatch", "scripts/privacy-check.py")
+        git("commit", "-q", "--allow-empty", "-m", "change")
+        # A tag named origin/main, which git reads before the remote's
+        # branch: it must not stand in for main's copy.
+        git("tag", "origin/main", "HEAD")
+        event = folder / "event.json"
+        event.write_text("{}")
+        (folder / "temp").mkdir()
+        environment = {"PATH": os.environ["PATH"], "HOME": str(folder),
+                       "RUNNER_TEMP": str(folder / "temp"), "GITHUB_WORKSPACE": str(repo),
+                       "GITHUB_ACTIONS": "true", "GITHUB_ACTOR": "someone",
+                       "GITHUB_EVENT_NAME": "pull_request", "GITHUB_EVENT_PATH": str(event),
+                       "GITHUB_REPOSITORY": "owner/repo", "UNRELATED": "not for the check"}
+        return repo, record, environment
+
+    def run_privacy_steps(self, repo, environment):
+        steps = {step["name"]: step for lines in workflow_jobs(WORKFLOW.read_text()).values()
+                 for step in job_steps(lines) if step["name"]}
+        results = []
+        for name, secret in [("Check for personal details", "made-up words"),
+                             ("Check for personal details (first run)", None)]:
+            self.assertTrue(name in steps, f'tests.yml has no step named "{name}".')
+            step_environment = dict(environment)
+            if secret is not None:
+                step_environment["BRICKSON_PRIVATE_WORDS"] = secret
+            results.append(subprocess.run(["bash", "-e", "-c", steps[name]["run"]],
+                                          cwd=repo, env=step_environment,
+                                          capture_output=True, text=True, timeout=60))
+        return results
+
+    def test_the_privacy_step_runs_main_s_copy_with_only_what_it_needs(self):
+        if not os.access("/usr/bin/python3", os.X_OK):
+            self.skipTest("the workflow runs /usr/bin/python3, which this machine lacks")
+        repo, record, environment = self.privacy_fixture()
+        # macOS's /usr/bin/python3 is a stub that starts the developer
+        # tools' Python through xcrun, which sets the SDK's paths for the
+        # tool it starts (xcrun(1)). They are allowed there alone, and never
+        # with the step's own values, which the step must not pass on.
+        sdk_paths = {"SDKROOT", "CPATH", "LIBRARY_PATH", "MANPATH"}
+        # Not SDKROOT: where git is also such a stub, a made-up SDK could
+        # stop git itself.
+        environment.update(dict.fromkeys(sdk_paths - {"SDKROOT"}, "/from/the/step"))
+        check, first_run = self.run_privacy_steps(repo, environment)
+        self.assertEqual(check.returncode, 0, check.stdout + check.stderr)
+        ran = json.loads(record.read_text())
+        self.assertEqual((ran["copy"], ran["argv"], ran["isolated"]),
+                         ("main", ["--ci", str(repo)], 1))
+        self.assertEqual(ran["env"].get("BRICKSON_PRIVATE_WORDS"), "made-up words")
+        allowed = {"PATH", "HOME", "LANG", "GITHUB_ACTIONS", "GITHUB_ACTOR", "GITHUB_EVENT_NAME",
+                   "GITHUB_EVENT_PATH", "GITHUB_REPOSITORY", "BRICKSON_PRIVATE_WORDS",
+                   # What the system itself adds to a process: a text
+                   # encoding on macOS, and Python's own locale choice.
+                   "__CF_USER_TEXT_ENCODING", "LC_CTYPE"}
+        if sys.platform == "darwin":
+            allowed |= sdk_paths
+        self.assertLessEqual(set(ran["env"]), allowed)
+        for name in sdk_paths & set(ran["env"]):
+            self.assertNotIn("/from/the/step", ran["env"][name], name)
+        self.assertEqual(ran["env"]["PATH"], "/usr/bin:/bin")
+        # With main's copy in place, the first-run step runs nothing.
+        record.unlink()
+        self.assertEqual(first_run.returncode, 0, first_run.stdout + first_run.stderr)
+        self.assertFalse(record.exists())
+
+    def test_until_main_has_the_check_its_pull_request_runs_without_the_list(self):
+        if not os.access("/usr/bin/python3", os.X_OK):
+            self.skipTest("the workflow runs /usr/bin/python3, which this machine lacks")
+        repo, record, environment = self.privacy_fixture(main_has_check=False)
+        check, first_run = self.run_privacy_steps(repo, environment)
+        self.assertEqual((check.returncode, first_run.returncode), (0, 0),
+                         check.stderr + first_run.stderr)
+        ran = json.loads(record.read_text())
+        self.assertEqual(ran["copy"], "pull request")
+        self.assertEqual(ran["argv"], ["--ci", "--no-list", str(repo)])
+        self.assertNotIn("BRICKSON_PRIVATE_WORDS", ran["env"])
+        # Neither main nor the pull request has it, or main was not
+        # fetched: the job fails.
+        repo, record, environment = self.privacy_fixture(main_has_check=False,
+                                                         branch_has_check=False)
+        self.assertNotEqual(self.run_privacy_steps(repo, environment)[1].returncode, 0)
+        repo, record, environment = self.privacy_fixture(fetched=False)
+        self.assertTrue(all(step.returncode for step in self.run_privacy_steps(repo, environment)))
+        self.assertFalse(record.exists())
 
     # A checkout without `persist-credentials: false`, in a workflow or in
     # a local action one runs, fails this test, and so does any line that

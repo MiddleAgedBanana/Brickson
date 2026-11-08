@@ -75,6 +75,24 @@ or into iTerm2 or Warp if you use one of those.
    scheme and press ⌘U, or run `scripts/test.sh ui`, which ends with
    **All UI tests passed.** GitHub runs them on every pull request too.
 
+8. **Before you push to this repository**, turn on the privacy check
+   once, in the project folder:
+
+   ```sh
+   git config core.hooksPath .githooks
+   ```
+
+   From then on, every `git push` from this folder first checks what it
+   would publish for personal details, and stops the push if it finds
+   one, saying where and what kind, never the words. It reads a private
+   list kept outside the project, at
+   `~/.config/brickson/private-words.txt`; without the list it stops
+   every push. How to write the list, and why, is in
+   [docs/DECISIONS.md](DECISIONS.md), "Personal details stay out of the
+   repository". `python3 scripts/privacy-check.py --status` says whether
+   both are in place: when they are, it ends "Pushes from this checkout
+   run the privacy hook."
+
 ### Run it on your own iPhone or iPad
 
 The device needs iOS or iPadOS 26 or later, and Xcode needs to know which

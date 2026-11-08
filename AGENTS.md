@@ -397,10 +397,11 @@ the failure.
   of that kind, because review rules live here. Reviewers may be reading
   the pull request's own version of these files, so compare them with the
   base branch and name what the change weakens; the owner decides.
-- A change to `.claude/settings.json` or `.claude/hooks/` that unhooks
-  the guard, drops a deny rule or lets through a call its tests deny
-  (*Guardrails for agents*), or a weakened test in `scripts/test-hooks.py`
-  or `scripts/test-docs.py`.
+- A change to `.claude/settings.json`, `.claude/hooks/`, `.githooks/` or
+  `scripts/privacy-check.py` that unhooks the guard or the privacy check,
+  drops a deny rule or lets through what its tests refuse (*Guardrails
+  for agents*), or a weakened test in `scripts/test-hooks.py`,
+  `scripts/test-privacy.py` or `scripts/test-docs.py`.
 
 ### Not findings
 
@@ -471,8 +472,14 @@ the failure.
   When `main` moves, incorporate it with a merge commit; never rebase.
   When editing an existing pull request body, preserve its first two
   attribution lines exactly.
-- **Before every push**, rerun the appropriate test script for the change.
-  Batch completed commits into one push: each push cancels in-flight CI.
+- **Before every push**, rerun the appropriate test script for the change,
+  and `python3 scripts/privacy-check.py --outgoing` (with no list, as in
+  a cloud thread given none, `--outgoing --no-list`, and say in the pull
+  request that the list was not checked); check a pull
+  request's text or a comment with `--text -` before posting it. Never
+  repeat what it finds (docs/DECISIONS.md, "Personal details stay out of
+  the repository"). Batch completed commits into one push: each push
+  cancels in-flight CI.
 - **Document every change** where a fresh agent will find it, in the same
   pull request: one new file in `docs/log/` (what changed, why, how it was
   verified, what was not; the template is `docs/log/README.md`), the lines
@@ -612,9 +619,9 @@ out, stash, reset or clean there. The route:
    newest bundle in
    `~/Library/Developer/MobileBuildMCP/workspaces/*/result-bundles/`).
 
-MobileBuildMCP builds and tests only: run `scripts/test-docs.py` and
-`scripts/test-hooks.py` yourself before pushing, as `scripts/test.sh
-unit` does before it builds. Results from either tool are test results
+MobileBuildMCP builds and tests only: run `scripts/test-docs.py`,
+`scripts/test-hooks.py` and `scripts/test-privacy.py` yourself before
+pushing, as `scripts/test.sh unit` does before it builds. Results from either tool are test results
 like a Mac's, recorded with the Xcode, simulator and iOS they ran on; MobileBuildMCP's taps and
 snapshots are not evidence (*Gotchas*). Whether the guard (*Guardrails
 for agents*) runs in a Remote Control session started in `~/code` is
@@ -671,12 +678,12 @@ reviewers: the owner's AI credits ran out on pull request #78
 requests a Copilot review or starts a Copilot task by any route: a
 Copilot tool, `gh`, the REST or GraphQL API, or an `@copilot` mention in
 a comment or review. The guard refuses the Copilot tools, `gh`'s
-reviewer, assignee and agent-task commands, the REST reviewer, assignee
-and task endpoints, a GitHub tool's reviewer or assignee field and a
-GraphQL agent assignment; other GraphQL requests and a mention are held
-by this rule alone (*Guardrails for agents*; docs/DECISIONS.md,
-*Code review*). None of these reviewers reviews Dependabot's pull
-requests by itself. All of them review against *Code Review Rules*
+reviewer, assignee and agent-task commands, `gh copilot`, the REST
+reviewer, assignee and task endpoints, a GitHub tool's reviewer or
+assignee field and a GraphQL agent assignment; other GraphQL requests
+and a mention are held by this rule alone (*Guardrails for agents*;
+docs/DECISIONS.md, *Code review*). None of these reviewers reviews
+Dependabot's pull requests by itself. All of them review against *Code Review Rules*
 above. GitHub's AI Scan also posts security findings after each push
 to such a pull request; answer them like review comments. It skips
 Dependabot's pull requests and those from forks, and CodeQL did not
@@ -736,20 +743,42 @@ GitHub itself cannot tell an agent's merge from the owner's. The rules
 above are backed by checks wherever a check can run:
 
 - **The guard.** `.claude/settings.json` runs `.claude/hooks/guard.py`
-  before every Bash command and before the GitHub tools that can merge or
-  write. It refuses, with the rule it breaks: `git add -A`, `--all`, `-u`
+  before every Bash command, before the GitHub tools that can merge or
+  write, and before the file tools (Read, Edit, Write, Grep, Glob and the
+  like). It refuses, with the rule it breaks: `git add -A`, `--all`, `-u`
   or `.` and `git commit -a`; force pushes and any push that updates
   `main`; merging, auto-merging or approving a pull request (`gh`, the
   GitHub API or a GitHub tool); a Copilot review or Copilot task asked
   for by a Copilot tool, `gh`, the REST API, a GitHub tool's reviewer
   or assignee field or a GraphQL agent assignment (*Reviews and updates
-  on GitHub* says what only the rule holds); and a GitHub tool writing
-  a file onto `main`. The same settings deny the merge tools and the
-  Copilot tools outright. When the guard refuses, do not look for
+  on GitHub* says what only the rule holds); a GitHub tool writing
+  a file onto `main`; a commit, or text sent to GitHub by `gh`, the API
+  or a GitHub tool, that holds a personal detail, text it cannot read
+  before the command runs (built by the shell, a file the same command
+  writes, an index change or commit identity it sets, a commit it reuses
+  that an earlier command in the same call may move, or another
+  repository or index a commit names with `--git-dir`, `--work-tree` or
+  a `GIT_*` variable); a release asset upload; the ways gh can push past
+  these rules (`gh repo create --push`, or with no words, and any gh
+  command given a terminal, which can ask for text or where to push) or
+  run what it cannot read (an option before a command's name, an
+  extension, an alias set in the same call), a gh recovery file, text
+  gh takes from an editor and a shell alias the command defines; a push
+  from a checkout whose pushes skip the privacy hook or whose branch has
+  none, whichever branch the push names, or after a command in the same
+  call that changes the hook, its setting or the check it runs, or checks
+  out another branch (*The privacy check*, below); and
+  any command or file tool that names the private list or the config
+  folder that holds it, by path or glob, wherever the check reads the
+  list from (not a recursive read of a folder above it, such as
+  `grep -r . ~`: docs/DECISIONS.md, "Personal details stay out of the
+  repository"), and any command that prints the whole environment. The same
+  settings deny the merge tools and the Copilot tools outright, and the
+  Read and Edit tools the list's default folder. When the guard refuses, do not look for
   another way round: say in the thread what you needed and why. It is
   a guard against mistakes, not a sandbox, and it covers
   Claude Code only; Codex, Jules and the owner are held to the same rules
-  by review. Both policy hooks use `onFailure: "block"`, so a startup
+  by review. Every policy hook uses `onFailure: "block"`, so a startup
   error, crash, invalid output or timeout blocks the original action in
   Claude Code 2.1.295 or later. Older or unknown runtimes do not establish
   that protection; confirm the runtime and hook reload before relying on it.
@@ -764,9 +793,26 @@ above are backed by checks wherever a check can run:
   repository's settings only in a project with one repository. So in a
   cloud thread, check before relying on it: where the guard runs,
   `git add -A --dry-run` is refused.
+- **The privacy check.** `scripts/privacy-check.py` looks for personal
+  details (a private list the owner keeps outside the repository, email
+  addresses, phone numbers, home folders, where a photo was taken) in
+  files, file names, pictures' hidden text, commits and pull requests.
+  It runs in git's pre-push hook (`.githooks/pre-push`, on once per
+  checkout with `git config core.hooksPath .githooks`), in the guard,
+  by hand (`--outgoing`, `--text -`), and in CI's "Privacy check" job,
+  the only one given the list, which by then can only warn. Without the list it refuses to pass
+  (`--no-list` checks the patterns alone, and is never described as a
+  pass). It prints places and kinds, never the words, and neither does
+  anyone after it. In a cloud thread, run `--status`: where it reads a
+  list but says pushes do not run the hook, turn it on in your own
+  clone. How it works, what it cannot catch and what to do when it
+  finds something: docs/DECISIONS.md, "Personal details stay out of the
+  repository".
 - **Its tests.** `scripts/test-hooks.py` feeds the guard the calls it must
-  refuse and the ones it must let through; `scripts/test.sh` runs it
-  before the unit tests, so CI runs it. A new rule gets a test first.
+  refuse and the ones it must let through, and `scripts/test-privacy.py`
+  feeds the privacy check what it must find and what it must let pass;
+  `scripts/test.sh` runs both before the unit tests, so CI runs them.
+  A new rule gets a test first.
 - **Cross-references.** `scripts/test-docs.py`, run the same way, fails
   when a section cited by title (a file name, then the title in quotes or
   italics) or a relative link no longer resolves. A title after a comma

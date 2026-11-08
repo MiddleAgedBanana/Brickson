@@ -180,6 +180,7 @@ person sees it (p31), with one command:
 | `scripts/test.sh ui` | `All UI tests passed.` |
 | `scripts/test.sh device` | `The device build succeeded.` |
 | `python3 scripts/test-site.py` | `OK` |
+| `python3 scripts/privacy-check.py --outgoing` | `No personal details found in ...` |
 
 On a Mac the unit suite is green before any commit; for work made where
 nothing can be built, CI is green before the pull request merges

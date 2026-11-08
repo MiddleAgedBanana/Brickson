@@ -134,6 +134,7 @@ adding, removing or renaming files. Do not edit the generated project.
 scripts/test.sh          # Build and run unit tests
 scripts/test.sh ui       # Run simulator UI tests
 python3 scripts/test-site.py  # Check the static website
+python3 scripts/privacy-check.py --outgoing  # Look for personal details before a push
 ```
 
 The app test script generates the project and picks the newest
