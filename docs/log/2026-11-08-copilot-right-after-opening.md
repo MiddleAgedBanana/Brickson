@@ -31,7 +31,14 @@ this pull request.*
   2026-11-08: Codex's review runs from the owner's Codex app, and no
   agent writes an `@codex` comment of any kind, as some have Codex push
   code. The sentence is gone from AGENTS.md, and docs/DECISIONS.md,
-  *Code review*, records the withdrawal.
+  *Code review*, records the withdrawal. Codex's local review of this
+  pull request flagged that this drops a security review for privacy
+  and workflow changes (a weakened review rule, which *Code Review
+  Rules* sends to the owner). Something already does that job: Codex's
+  GitHub review runs a security review by itself when a pull request
+  opens (its summary on pull request #90: "Security Review", trigger
+  "PR opened"), so AGENTS.md now says so. The owner decides; the pull
+  request flags it.
 
 ## Commits
 
