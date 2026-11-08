@@ -1446,6 +1446,12 @@ settings, date) and summarise it here.
   support page's "in development" lines change at release, and the
   accessibility page changes with every device check and every row of
   `docs/ACCESSIBILITY.md` that changes what it says.
+- On the owner's Mac, Antigravity's Brickson folder is
+  `~/code/brickson-antigravity`, and since 2026-11-08 local, git-ignored
+  hooks hold Antigravity and Codex (once the owner trusts Codex's) to
+  what the guard below refuses; the old Antigravity project on
+  `~/code/brickson` and its standing grants await the owner
+  ([`log/2026-11-08-codex-antigravity-setup.md`](log/2026-11-08-codex-antigravity-setup.md)).
 - Claude Code sessions with one repository run a guard before Bash and
   the selected GitHub tools named in `.claude/settings.json`
   (`.claude/hooks/guard.py`; AGENTS.md, *Guardrails for agents*). Repository
