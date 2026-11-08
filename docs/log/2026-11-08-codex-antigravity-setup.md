@@ -26,7 +26,8 @@ the way `scripts/test-hooks.py` tests the guard.
 
 No Antigravity or Codex job has run on Brickson's code in this thread.
 The probes below ran in empty scratch folders (one command, below,
-ran in `~/code/brickson` by accident, and was undone).
+ran in `~/code/brickson` by accident, and was undone), and one checked
+Antigravity's hook in its own folder: an `echo` and a refused dry run.
 
 ### The tools, as found
 
@@ -52,33 +53,38 @@ ran in `~/code/brickson` by accident, and was undone).
 
 ### Settings, as found and as left
 
-Computer use for the two apps was declined, so no app setting was
-changed; the owner was given the clicks. Read from the apps' settings
-files:
+Computer use for the two apps was declined (twice), so this thread
+changed no app setting; the owner was given the clicks and made most of
+the changes. Read from the apps' settings files before and after:
 
-| Setting | Found | Approved | Left |
+| Setting | Found | Approved | Left (after the owner's changes, 2026-11-08) |
 |---|---|---|---|
-| Antigravity permission preset | Auto | Default | Auto, until the owner changes it |
-| Antigravity AI credit overages | On (`useAiCredits: true`) | Never | On, until the owner changes it |
-| Antigravity telemetry | Not in a local file (saved with the account) | Off | Not checked |
-| Antigravity project for Brickson | One project, "Brickson", whose folder is `~/code/brickson` | One whose only folder is `~/code/brickson-antigravity` | Unchanged; the new one is the owner's to add |
-| Antigravity CLI mode | `agentMode: auto`, `toolPermission: proceed-in-sandbox`; trusts `~/code` and `~/code/brickson` | Not in the plan | Unchanged; a decision for the owner |
+| Antigravity permission preset | Auto | Default | Default |
+| Antigravity AI credit overages | On (`useAiCredits: true`) | Never | Off (`useAiCredits: false`) |
+| Antigravity telemetry | Not in a local file (saved with the account) | Off | Not checked: not in a local file |
+| Antigravity project for Brickson | One project, "Brickson", whose folder is `~/code/brickson` | One whose only folder is `~/code/brickson-antigravity` | The same project, its only folder now `~/code/brickson-antigravity`; its 33 grants are still on it |
+| Antigravity commands | App: run automatically (`autoExecutionPolicy` Auto). CLI: `agentMode: auto`, `toolPermission: proceed-in-sandbox`; trusts `~/code` and `~/code/brickson` | Not in the plan | App: run in the sandbox (`autoExecutionPolicy` proceed-in-sandbox). CLI unchanged; a decision for the owner |
 | Antigravity CLI credits | `useG1Credits` absent (default, off) | Off | Off |
 | Codex | `sandbox_mode = "workspace-write"`, `approval_policy = "on-request"`, hooks on | Never `danger-full-access` | Unchanged |
 
 What the files also showed, each against the approved plan:
 
 - **Every `agy` run uses the "Brickson" project.** It is the command
-  line's default project, so `~/code/brickson` is added to every `agy`
+  line's default project, so its folder is added to every `agy`
   session's folders, first, whatever folder it starts in, and its
-  shell commands run there. A probe started in an empty scratch folder
-  ran `touch` in `~/code/brickson` (the empty file was deleted at once,
-  and `git status` there was clean after).
+  shell commands run there. While that folder was `~/code/brickson`, a
+  probe started in an empty scratch folder ran `touch` there (the empty
+  file was deleted at once, and `git status` there was clean after).
+  Since the owner pointed the project at `~/code/brickson-antigravity`,
+  a run started there lists only that folder (CLI log,
+  `workspaceDirs`), and its hook applies.
 - **That project carries 33 standing permission grants**, among them
   `git merge`, `git add`, `git commit`, `git cherry-pick`, pushes of
   four `codex/` branches, and GitHub tool calls that create, update and
   review pull requests. They apply to every `agy` run (the CLI log says
-  "stored 33 allow ... grants from project Brickson").
+  "stored 33 allow ... grants from project Brickson"), and stayed when
+  the project's folder changed. The hook still refuses what the guard
+  refuses, whatever a grant allows.
 - **Antigravity has a GitHub connection**: an MCP server named `github`
   with a stored header, through which those grants created and
   reviewed pull requests. The plan says no GitHub connection.
@@ -97,7 +103,10 @@ Antigravity or Codex into Claude Code's shape, gives it to
 nothing itself, so the two agents are refused what Claude Code is,
 including later changes to the guard. It refuses whenever it cannot
 read the call, find or run the guard (20-second limit), or read the
-guard's answer. Its text is at the end of this record.
+guard's answer. One 20-second deadline covers every guard run in a
+call (a patch's paths, several folders), under the hook's own 30, so a
+call that needs several checks still answers in time. Its text is at
+the end of this record.
 
 - **Antigravity:** `~/code/brickson-antigravity/.agents/hooks.json`
   (git-ignored) runs it before every tool (matcher `*`), with the guard
@@ -117,17 +126,26 @@ guard's answer. Its text is at the end of this record.
   `~/.codex/hooks/brickson_guard_adapter.py --format codex`; the file's
   two `SessionStart` hooks are unchanged and it was backed up first
   (`~/.codex/hooks.json.bak-2026-11-08`). The hook is global, so the
-  adapter acts only when the session's folder is inside a Brickson
-  checkout (one with `.claude/hooks/guard.py` and
-  `scripts/privacy-check.py`), using that checkout's guard, and says
-  nothing elsewhere; a call it cannot read is refused only when Codex
-  runs the hook in a Brickson checkout. It checks `Bash`, the paths an `apply_patch` adds,
-  updates, deletes or moves to, and `mcp__` tools. Codex runs a new or
-  changed hook only after the owner trusts it (`/hooks` in the `codex`
-  command, or the app's Settings > Hooks), so **until then it does not
-  run**.
+  adapter acts only when the call's folder, or the session's folder
+  Codex runs the hook in, is inside a Brickson checkout (one with
+  `.claude/hooks/guard.py` and `scripts/privacy-check.py`), using that
+  checkout's guard, and says nothing elsewhere; a call it cannot read is
+  refused only when Codex runs the hook in a Brickson checkout. (A
+  command a Brickson session runs from another folder, such as
+  `git -C <checkout> add -A` with `/tmp` as its folder, is checked
+  because of the session's folder.) It checks `Bash`, the paths an
+  `apply_patch` adds, updates, deletes or moves to, and `mcp__` tools.
+  Codex runs a new or changed hook only after the owner trusts it
+  (`/hooks` in the `codex` command, or the app's Settings > Hooks); the
+  owner trusted it on 2026-11-08.
+- **What Codex's hook cannot see:** input sent to a command that is
+  already running. Codex's documentation says `write_stdin` "doesn't run
+  `PreToolUse` again", so once a command has passed the hook, what an
+  agent types into it (an interpreter such as `python3` started with no
+  script, which the guard does not refuse) is not checked. Antigravity's
+  equivalent, `send_command_input`, is checked.
 - Both copies are the same file: SHA-256
-  `22c0dc062b02bd08f6dea058f25d0624c1caf8322044ebee18d4a35044521e2b`.
+  `2597cafcbf73f91194cedb51ef16736b1cadf5ca81363d334309016c2c3e0f3a`.
 
 ### What each tool does when its hook fails
 
@@ -151,8 +169,8 @@ does not say what a local hook's other failures (an exit other than 2,
 a crash, a timeout) do. A refusal is a `deny` in `hookSpecificOutput`,
 or exit 2 with the reason on stderr. So the adapter answers every
 failure inside a Brickson checkout with exit 2, and keeps the guard's
-own limit (20 s) under the hook's (30 s), counting on as little as
-possible from Codex. The
+own deadline (20 s for the whole call) under the hook's (30 s),
+counting on as little as possible from Codex. The
 measurement needs a test hook to run without the owner trusting it
 first, through Codex's `--dangerously-bypass-hook-trust`; the session's
 safety check refused that flag, so it was not run.
@@ -169,7 +187,9 @@ On the owner's Mac (macOS 27.2, Python 3 from the Mac's `python3`):
   `scripts/test-hooks.py`'s `GuardTests` and `PrivacyGuardTests` (on
   `main` at `af698ad`), with Claude Code's call turned into the agent's
   and the answer turned back: Antigravity 215 of 215 passed (361 s);
-  Codex 215 of 215 passed (379 s). Two are left out on purpose:
+  Codex 215 of 215 passed (379 s); after the first review round's two
+  fixes, 215 and 215 again (375 s and 420 s; only the
+  adapter's description changed after that run). Two are left out on purpose:
   `test_each_refusal_keeps_its_own_words` reads the guard's own source,
   and `test_unreadable_input_decides_nothing` expects the guard's
   silence where the adapter refuses (it fails closed). The Antigravity
@@ -178,22 +198,34 @@ On the owner's Mac (macOS 27.2, Python 3 from the Mac's `python3`):
   on its own passed 221 of 221 in 203 s.
 - **The suite can fail**: the same Antigravity run with a copy of the
   adapter that ignores the guard's refusals failed 907 checks.
-- **The adapter's own tests**, 10 of 10: both naming schemes, MCP calls
+- **The adapter's own tests**, 12 of 12: both naming schemes, MCP calls
   (arguments as an object or as text), input sent to a running command,
   commands without `Cwd` checked in every folder, Codex acting only in
-  a Brickson checkout and always with that checkout's own guard, patch
+  a Brickson checkout and always with that checkout's own guard, a
+  command a Brickson session runs from another folder, one deadline
+  across a patch's three paths, patch
   paths including a move, and refusing on unreadable calls, a missing,
   crashing, unreadable, non-deny or slow guard, and wrong arguments.
   Each of four broken copies of the adapter (ignoring the guard's
   refusal, failing open in either format, checking only one folder)
-  failed them. A fifth, without the `view_file` mapping, passed,
+  failed them, and the two tests added for the review round failed on
+  the adapter before it. A fifth, without the `view_file` mapping, passed,
   because the by-argument check refuses the same call; that mapping is
   a second line, not the only one.
-- **Antigravity's hook on a real run**: `agy -p` in a scratch folder
-  with the installed `hooks.json` ran `echo allowed-probe` and refused
+- **Antigravity's hook on a real run**, twice: `agy -p` in a scratch
+  folder with the installed `hooks.json`, and, after the owner pointed
+  the project there, in `~/code/brickson-antigravity` itself (its only
+  workspace folder). Each ran `echo allowed-probe` and refused
   `git add -A --dry-run -- no-such-path-xyz` with the guard's words
-  ("Stage only your own changes ..."). `git status` in `~/code/brickson`
+  ("Stage only your own changes ..."). `git status` in both checkouts
   was unchanged.
+- **Codex's hook on a real run**, after the owner trusted it: `codex exec`
+  (`workspace-write`, approvals never) in a scratch folder holding only
+  the guard, the privacy check and its hook. It ran `echo allowed-probe`
+  and Codex logged "Command blocked by PreToolUse hook: Stage only your
+  own changes ..." for the dry run. Run again after the review round's
+  fixes, with the same result, so the trust survived the script's
+  change.
 - **The hook calls Antigravity sends**, captured by a hook that logged
   and refused everything: `run_command` (`CommandLine`,
   `WaitMsBeforeAsync`, `IsDaemon`, `toolSummary`, no `Cwd`),
@@ -202,35 +234,30 @@ On the owner's Mac (macOS 27.2, Python 3 from the Mac's `python3`):
 
 ## Not verified
 
-- Codex's hook has not run: it waits for the owner to trust it. Then:
-  in a scratch worktree of Brickson, `codex exec` asked to run
-  `git add -A --dry-run` should be refused with the guard's words.
 - What Codex does when its hook fails, measured (above).
+- Codex with input typed into a running command (above): no test.
 - Antigravity's hook in the Gemini app, as opposed to `agy`; the app's
   `agy` is 1.4.11, older than the command line's 1.5.3. The hook file
   is the same one the documentation says the app reads.
 - Antigravity's names for tools not captured here (its MCP calls were
   seen as `call_mcp_tool` in an October conversation; the browser tools
   pass through, with no guard rule to apply).
-- Which ChatGPT and Google AI plans exactly, and every app setting:
-  computer use was declined.
-- Commands Codex runs from a folder outside Brickson against a Brickson
-  checkout (`git -C ~/code/brickson ...`) are not checked: the Codex
-  hook keys on the session's folder.
+- Which ChatGPT and Google AI plans exactly, and Antigravity's
+  telemetry setting: computer use was declined.
+- A Codex session started outside every Brickson checkout that runs
+  commands against one (`git -C ~/code/brickson ...`) is not checked:
+  neither folder is a Brickson checkout.
 - PR #88 changes the guard and its tests. After it merges, the adapter
   suites should run again from a worktree of the new `main`.
 
 ## Follow-ups
 
-- **The owner** (sent in the thread): Antigravity's settings (telemetry
-  off, overages Never, preset Default, a project on
-  `~/code/brickson-antigravity` only); trusting Codex's hook; reading
-  both plans; and three decisions: retire or repoint the old "Brickson"
-  Antigravity project and its 33 grants, remove Antigravity's GitHub
-  connection, and narrow the CLI's trusted folders.
-- **The next Mac thread**, after the owner trusts Codex's hook: the
-  Codex check in *Not verified*, then one line in this record's place
-  in docs/HANDOFF.md.
+- **The owner** (asked in the thread): Antigravity's telemetry off and
+  both plans' names; and three decisions: clear the 33 grants from the
+  "Brickson" Antigravity project, remove Antigravity's GitHub
+  connection, and narrow the CLI's trusted folders. Done on 2026-11-08:
+  preset Default, overages off, the project on
+  `~/code/brickson-antigravity` only, Codex's hook trusted.
 - **Later, a pull request of its own** if the owner wants the adapter
   kept in the repository: `scripts/agent-hooks/` with its tests run by
   `scripts/test.sh`, so CI checks it against every change to the guard.
@@ -262,10 +289,11 @@ Code's onFailure: block, and Codex lets a tool run when its hook fails.
 
 Antigravity: the guard is the one in the worktree that holds this file
 (<worktree>/.agents/hooks/), and every call is checked.
-Codex: the hook is global, so it acts only when the session's folder is
-inside a Brickson checkout (one with .claude/hooks/guard.py and
-scripts/privacy-check.py), using that checkout's own guard. Elsewhere it
-says nothing. BRICKSON_GUARD_FOR_ALL_FOLDERS=<guard.py> adds that guard
+Codex: the hook is global, so it acts only when the call's folder, or the
+session's folder that Codex runs the hook in, is inside a Brickson
+checkout (one with .claude/hooks/guard.py and scripts/privacy-check.py),
+using that checkout's own guard. Elsewhere it says nothing. One deadline
+(20 s) covers every guard run in a call, under the hook's own 30 s. BRICKSON_GUARD_FOR_ALL_FOLDERS=<guard.py> adds that guard
 outside Brickson checkouts too (the tests use it); it never replaces the
 guard of a Brickson checkout.
 
@@ -277,10 +305,12 @@ import os
 import re
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 GUARD_RELATIVE = Path('.claude') / 'hooks' / 'guard.py'
-TIMEOUT_CEILING = 20  # seconds; the hook's own timeout in hooks.json is 30
+TIMEOUT_CEILING = 20  # seconds for the whole call; the hook's own timeout is 30
+STARTED = time.monotonic()
 FILE_TOOLS = ('Read', 'Edit', 'MultiEdit', 'Write', 'NotebookEdit', 'Grep', 'Glob')
 
 # Antigravity's tool names: the hook call uses read_file, write_file and
@@ -308,12 +338,22 @@ class Refuse(Exception):
     """Something kept the adapter from deciding, so the call is refused."""
 
 
-def timeout_seconds():
+def budget_seconds():
     try:
         value = float(os.environ.get('BRICKSON_GUARD_TIMEOUT', TIMEOUT_CEILING))
     except ValueError:
         return TIMEOUT_CEILING
     return max(0.1, min(value, TIMEOUT_CEILING))  # can only be lowered
+
+
+def time_left():
+    """Seconds left of one deadline for every guard run in this call, so
+    several checks (a patch's paths, several folders) still answer before
+    the hook's own timeout; refuse once it has passed."""
+    left = budget_seconds() - (time.monotonic() - STARTED)
+    if left <= 0.05:
+        raise Refuse('the guard took too long to decide')
+    return left
 
 
 def ask_guard(guard, tool_name, tool_input, cwd):
@@ -325,7 +365,7 @@ def ask_guard(guard, tool_name, tool_input, cwd):
     try:
         result = subprocess.run([sys.executable or 'python3', str(guard)],
                                 input=json.dumps(call), capture_output=True, text=True,
-                                timeout=timeout_seconds(), cwd=str(cwd))
+                                timeout=time_left(), cwd=str(cwd))
     except subprocess.TimeoutExpired:
         raise Refuse('the guard took too long to decide')
     except OSError as error:
@@ -479,7 +519,9 @@ def run_codex(raw):
         return 2
     try:
         cwd = call.get('cwd') or os.getcwd()
-        root = brickson_root(cwd)
+        # The call's cwd can be a command's own folder; the hook runs in
+        # the session's, so either one inside Brickson brings the guard.
+        root = brickson_root(cwd) or brickson_root(os.getcwd())
         if root is not None:
             guard = root / GUARD_RELATIVE
         elif os.environ.get('BRICKSON_GUARD_FOR_ALL_FOLDERS'):
