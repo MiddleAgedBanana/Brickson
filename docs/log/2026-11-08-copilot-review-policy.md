@@ -18,16 +18,9 @@ for 35 to 50 Copilot reviews a month (docs/DECISIONS.md, "Reviews,
 updates and GitHub settings", *Code review*, the 2026-11-08 bullet).
 
 - **The rule** (AGENTS.md, "Reviews and updates on GitHub"): the agent
-  that opens a pull request that changes code asks for Copilot's
-  review once, right after opening it, through the GitHub tool
-  `request_copilot_review` only. Before opening, it runs Codex's local
-  review (`codex review --base origin/main`) and answers its findings;
-  Codex's automatic review on GitHub, set up in the owner's Codex app,
-  is not part of the step: it reviews in its own time, and once, on
-  pull request #89, it posted a one-off setup notice instead of a
-  review, so waiting for it could leave the request waiting for
-  nothing (decided in the thread on 2026-11-08, after the pull request
-  opened). It is active: it reviewed pull request #91. A pull request that changes only
+  that opened a pull request that changes code asks for Copilot's
+  review once, after Codex's review is answered, through the GitHub
+  tool `request_copilot_review` only. A pull request that changes only
   documents gets none. A request that fails for lack of credits is said
   in the pull request and the thread, with no retry.
 - **The guard** (`.claude/hooks/guard.py`) lets that one tool through
@@ -61,14 +54,6 @@ updates and GitHub settings", *Code review*, the 2026-11-08 bullet).
   and runs the guard after it (`PostToolUse`), with `onFailure: "block"`
   like every policy hook, so a crash while recording is shown to the
   agent rather than passing unseen.
-- **No `@codex` comments.** AGENTS.md said, since pull request #88,
-  that a pull request changing privacy or a workflow asks for
-  `@codex security review` in a comment, credited to the owner. It was
-  the coordinator's recommendation, and the owner withdrew it on
-  2026-11-08: Codex's review runs from the owner's Codex app, and no
-  agent writes an `@codex` comment of any kind. The sentence is gone
-  from AGENTS.md, and docs/DECISIONS.md, *Code review*, records the
-  withdrawal. None was posted on this pull request.
 - **AI Scan** is off. Its lines in AGENTS.md, `docs/SDLC.md`,
   `docs/HANDOFF.md`, `README.md` and docs/DECISIONS.md, *Code scanning*
   and *`main` ruleset*, now say so.
@@ -176,6 +161,11 @@ set to `.githooks` for this worktree only (`git config --worktree`).
 
 ## Follow-ups
 
+- The owner, through the coordinator: what starts the Copilot request
+  on a pull request where Codex posts no review (Codex's GitHub review
+  did not run on pull request #89). Until that is decided, the rule
+  waits for Codex's review, so such a pull request gets no Copilot
+  review.
 - The first agent to ask for Copilot's review after the merge: check
   that `brickson-copilot-reviews.json` appeared in the clone's Git
   folder (`git rev-parse --git-common-dir`), and say so in its record.

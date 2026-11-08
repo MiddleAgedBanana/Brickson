@@ -5802,7 +5802,8 @@ review setup does not quietly break them.
     reviews in its own time, and once, on pull request #89, it posted a
     one-off setup notice instead of a review, so waiting for it could
     leave the request waiting for nothing (the coordinator's decision of
-    2026-11-08, which keeps the owner's "after Codex's review"). A
+    2026-11-08, which keeps the owner's "after Codex's review"; record:
+    [`log/2026-11-08-copilot-right-after-opening.md`](log/2026-11-08-copilot-right-after-opening.md)). A
     pull request that changes only documents gets none. The agent asks
     itself, through the GitHub tool `request_copilot_review`, so a pull
     request does not wait for the owner; every other way of asking for
@@ -5839,7 +5840,7 @@ review setup does not quietly break them.
   the owner's, and the owner withdrew it the same day: Codex's review
   runs from the owner's Codex app, so no agent writes an `@codex`
   comment of any kind (some have Codex push code). Record:
-  [`log/2026-11-08-copilot-review-policy.md`](log/2026-11-08-copilot-review-policy.md).
+  [`log/2026-11-08-copilot-right-after-opening.md`](log/2026-11-08-copilot-right-after-opening.md).
 - *Until 2026-11-08 (the 2026-11-08 Copilot bullet above replaces it).*
   **2026-11-04: Copilot is no longer a reviewer.** The month's AI
   credits ran out on pull request #78, whose one request Copilot could
