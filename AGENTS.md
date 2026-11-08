@@ -827,7 +827,13 @@ above are backed by checks wherever a check can run:
   environment's documentation says a cloud thread applies a
   repository's settings only in a project with one repository. So in a
   cloud thread, check before relying on it: where the guard runs,
-  `git add -A --dry-run` is refused.
+  `git add -A --dry-run` is refused. On the owner's Mac, a session in
+  one of the desktop app's worktrees runs the guard and settings of the
+  checkout it was started from, `~/code/brickson`, not the worktree's
+  copy (2026-11-08: a worktree with #90's guard was refused Copilot by
+  the older one there). So a change to the guard binds Mac sessions
+  only once that checkout has it, and an agent never updates that
+  checkout itself: the owner pulls `main` there.
 - **The privacy check.** `scripts/privacy-check.py` looks for personal
   details (a private list the owner keeps outside the repository, email
   addresses, phone numbers, home folders, where a photo was taken) in

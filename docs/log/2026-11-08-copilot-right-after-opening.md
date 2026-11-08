@@ -40,6 +40,20 @@ this pull request.*
   "PR opened"), so AGENTS.md now says so. The owner decides; the pull
   request flags it.
 
+- **Where the guard runs on the Mac.** Right after opening this pull
+  request, the agent asked for Copilot's review once, through
+  `request_copilot_review`. The guard refused it with its old message
+  ("Copilot is not part of Brickson's reviews"), which #90 had removed:
+  the session, started from the desktop app in a worktree, ran the
+  guard and settings of `~/code/brickson`, the owner's checkout, still
+  on `main` from before #90 (`56f228d`), not the worktree's copy. The
+  call never ran, so no credits were spent, and it was not retried.
+  AGENTS.md, *Guardrails for agents* ("Where the guard runs"), now says
+  so, and docs/HANDOFF.md's owner steps say to bring that checkout up
+  to date after a merge that changes the guard. The same explains the
+  auto-mode refusals in #90's record: editing the worktree's guard
+  never changed the guard that was running.
+
 ## Commits
 
 See the pull request: one commit for when Copilot is asked, one for the
@@ -61,6 +75,8 @@ end at byte 32,112.
 
 ## Follow-ups
 
-None new. The other follow-up of #90's record (check that the guard
-writes its record after a real Copilot request) stays with the first
-agent that asks for one.
+- The owner: bring `~/code/brickson` up to date with `main`
+  (docs/HANDOFF.md, *Next steps, in order*, step 5), so Mac sessions
+  run #90's guard.
+- The first agent to ask for Copilot's review after that: check that
+  the guard writes its record (#90's record, *Follow-ups*).

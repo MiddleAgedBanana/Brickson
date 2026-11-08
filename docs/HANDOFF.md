@@ -1074,6 +1074,12 @@ docs/ROADMAP.md, *The quality bar*, Q24):
    thread, and stay near for the device's passcode.
 5. Review the starter phrases (`Brickson/Resources/StarterPhrases.json`): two
    are near duplicates, and "Please move me." could be clearer.
+   Also, after each merge that changes the guard or
+   `.claude/settings.json` (as #90 did), bring your main checkout up to
+   date, because Mac sessions run its copy of the guard (AGENTS.md,
+   *Guardrails for agents*): `git -C ~/code/brickson pull --ff-only`
+   while it is on `main` with nothing uncommitted. Success: it ends
+   with "Fast-forward" or "Already up to date".
 6. You can delete the `xcode-skills` folder in `~/code/brickson`: its
    skills are installed where agents load them.
 7. The privacy check is on main (pull request #86, merged 2026-11-08),
