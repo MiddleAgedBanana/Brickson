@@ -5847,7 +5847,11 @@ review setup does not quietly break them.
   agent says so in the pull request and the thread, and a pull request
   that changes privacy or a workflow waits for the owner to run Codex's
   security review from the Codex app, or another security review,
-  before it merges. Record:
+  before it merges. So does one whose privacy or workflow change came in
+  a push after it opened: Codex's security review runs when a pull
+  request opens (its triggers, listed in its summary on #90, are
+  opening, leaving draft and an `@codex` comment), so it never saw that
+  change (CodeRabbit's second review of #92). Record:
   [`log/2026-11-08-copilot-right-after-opening.md`](log/2026-11-08-copilot-right-after-opening.md).
 - *Until 2026-11-08 (the 2026-11-08 Copilot bullet above replaces it).*
   **2026-11-04: Copilot is no longer a reviewer.** The month's AI

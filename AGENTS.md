@@ -675,7 +675,10 @@ Where Codex posts a notice to set up an environment instead of its
 reviews (as on #89 and #92), the agent says so in the pull request and
 the thread, and a pull request that changes privacy or a workflow
 waits for the owner to run Codex's security review from the Codex app,
-or another security review, before it merges. Greptile, which
+or another security review, before it merges. So does a pull request
+whose privacy or workflow change came in a push after it opened, which
+Codex's security review on opening did not see: its ready message says
+so. Greptile, which
 the owner also installed, reviews a pull request by itself when it
 opens, as far as its free plan's credits allow (out of them when
 checked on 2026-11-06). cubic, added by the owner on 2026-11-07,

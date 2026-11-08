@@ -44,7 +44,11 @@ this pull request.*
   agent says so in the pull request and the thread, and a pull request
   that changes privacy or a workflow waits for the owner to run Codex's
   security review from the Codex app, or another security review,
-  before it merges. The owner decides; the pull request flags it.
+  before it merges. CodeRabbit's second review (Minor) added that
+  Codex's security review runs only when a pull request opens, so a
+  privacy or workflow change pushed later is never seen by it; such a
+  pull request now waits for the owner's security review too. The
+  owner decides; the pull request flags it.
 
 - **Where the guard runs on the Mac.** Right after opening this pull
   request, the agent asked for Copilot's review once, through
@@ -74,6 +78,16 @@ On the owner's Mac (macOS 27.2, Python 3.15.2):
 list: passed. The guard's change is its refusal message only, which no
 test reads word for word. AGENTS.md's sections Codex must read still
 end at byte 32,112.
+
+On GitHub: CI passed on `f237ec1`. On `339d6a1` the unit tests and
+the iPad UI tests passed, and the iPhone UI tests failed one test of
+72, `FoldOffsetUITests/testTheFirstRowClearsATopDivisionInDarkMode`:
+"Timed out while launching application via Xcode", before the app
+showed anything. Neither commit changes app code, and the same app
+passed every UI test on `f237ec1`, so it is the slow-launch failure
+AGENTS.md, *Gotchas*, describes; the next push ran the suite again.
+Codex's code review and security review of `339d6a1`, asked for from
+the owner's account, found no issues.
 
 ## Not verified
 
