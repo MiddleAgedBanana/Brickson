@@ -667,12 +667,18 @@ stays reachable, behind `#available` when newer (docs/DECISIONS.md,
 **Reviews and updates on GitHub.** The owner keeps several AI
 reviewers on purpose (2026-11-07): each sees things the others miss,
 and one stands in when another is out of credits. Codex reviews every
-push to a pull request that a person or agent opens. A pull request
-that changes privacy or a workflow (the privacy check, the guard,
-`.github/workflows/`, or a rule in this file) also asks Codex for a
-security review, once, with a comment reading `@codex security review`
-(owner, 2026-11-08): the only `@codex` command an agent writes, as
-others can have Codex push code. Greptile, which
+push to a pull request that a person or agent opens, and runs a
+security review by itself when one opens (as on pull request #90); the
+owner set it up in the Codex app, and no agent writes an `@codex`
+comment of any kind, as some have Codex push code (owner, 2026-11-08).
+Where Codex posts a notice to set up an environment instead of its
+reviews (as on #89 and #92), the agent says so in the pull request and
+the thread, and a pull request that changes privacy or a workflow
+waits for the owner to run Codex's security review from the Codex app,
+or another security review, before it merges. So does a pull request
+whose privacy or workflow change came in a push after it opened, which
+Codex's security review on opening did not see: its ready message says
+so. Greptile, which
 the owner also installed, reviews a pull request by itself when it
 opens, as far as its free plan's credits allow (out of them when
 checked on 2026-11-06). cubic, added by the owner on 2026-11-07,
@@ -694,10 +700,14 @@ request to `@cubic-dev-ai`. Code written that way skips the failing test
 first, the `docs/log/` record and the rest of *Workflow rules*. Ask
 Greptile with a plain `@greptileai`, never for a tier ("at apex"),
 which costs more of its credits. GitHub Copilot reviews again since
-2026-11-08 (the owner kept its plan): the agent that opened a pull
-request that changes code asks for Copilot's review **once**, after
-Codex's review is answered, so Copilot sees the fixed code. A pull
-request that changes only documents gets none. Each review spends some
+2026-11-08 (the owner kept its plan): the agent that opens a pull
+request that changes code asks for Copilot's review **once**, right
+after opening it. Before opening, it runs Codex's local review
+(`codex review --base origin/main`, read-only, where the Codex CLI is
+installed, as on the owner's Mac) and answers its findings, so Copilot
+sees the fixed code; Codex's review on GitHub, which the owner runs
+from the Codex app, is not part of this step. A pull request that
+changes only documents gets none. Each review spends some
 of the owner's monthly AI credits (about 31 to 46 of 1,500); a request
 that fails for lack of them is said in the pull request and the thread,
 with no retry. Ask only through the GitHub tool `request_copilot_review`:
@@ -707,7 +717,7 @@ second request on the same pull request from any worktree of the clone,
 and refuses the other Copilot tools, `gh`'s reviewer, assignee and
 agent-task commands, `gh copilot`, the REST reviewer, assignee and task
 endpoints, a GitHub tool's reviewer or assignee field and a GraphQL
-agent assignment; "changes code", "after Codex's review", other GraphQL
+agent assignment; "changes code", the local review first, other GraphQL
 requests and a mention are held by this rule alone (*Guardrails for
 agents*; docs/DECISIONS.md, *Code review*). None of these reviewers
 reviews Dependabot's pull requests by itself. All of them review
@@ -824,7 +834,13 @@ above are backed by checks wherever a check can run:
   environment's documentation says a cloud thread applies a
   repository's settings only in a project with one repository. So in a
   cloud thread, check before relying on it: where the guard runs,
-  `git add -A --dry-run` is refused.
+  `git add -A --dry-run` is refused. On the owner's Mac, a session in
+  one of the desktop app's worktrees runs the guard and settings of the
+  checkout it was started from, `~/code/brickson`, not the worktree's
+  copy (2026-11-08: a worktree with #90's guard was refused Copilot by
+  the older one there). So a change to the guard binds Mac sessions
+  only once that checkout has it, and an agent never updates that
+  checkout itself: the owner pulls `main` there.
 - **The privacy check.** `scripts/privacy-check.py` looks for personal
   details (a private list the owner keeps outside the repository, email
   addresses, phone numbers, home folders, where a photo was taken) in

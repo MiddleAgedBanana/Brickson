@@ -5793,9 +5793,18 @@ review setup does not quietly break them.
   #73, #75 and #76. So the owner turned AI Scan off, keeps Copilot
   Autofix on (CodeQL's suggested fixes, which spend no credits), and
   has room for 35 to 50 Copilot reviews a month:
-  - The agent that opened a pull request that changes code requests
-    Copilot's review **once**, after Codex's review is answered, so
-    Copilot sees the fixed code and does not repeat Codex's findings. A
+  - The agent that opens a pull request that changes code requests
+    Copilot's review **once**, right after opening it. Before opening,
+    it runs Codex's local review (`codex review --base origin/main`,
+    read-only) and answers its findings, so Copilot sees the fixed code
+    and does not repeat Codex's findings. Codex's automatic review on
+    GitHub, set up in the owner's Codex app, is not part of the step: it
+    reviews in its own time, and on pull requests #89 and #92 it posted
+    a notice to set up an environment instead of a review, so waiting
+    for it could
+    leave the request waiting for nothing (the coordinator's decision of
+    2026-11-08, which keeps the owner's "after Codex's review"; record:
+    [`log/2026-11-08-copilot-right-after-opening.md`](log/2026-11-08-copilot-right-after-opening.md)). A
     pull request that changes only documents gets none. The agent asks
     itself, through the GitHub tool `request_copilot_review`, so a pull
     request does not wait for the owner; every other way of asking for
@@ -5817,7 +5826,7 @@ review setup does not quietly break them.
     fresh clone, such as a new cloud session, starts with an empty
     record, and a cloud thread may not run the guard at all (AGENTS.md,
     *Guardrails for agents*), so there "once" rests on AGENTS.md and
-    review; "changes code" and "after Codex's review" always do.
+    review; "changes code" and the local review first always do.
   - The ruleset's automatic Copilot review stays off: an agent asks at
     the right moment instead (*`main` ruleset* below).
   - Autofix's suggestions are read like a review comment, and the fix
@@ -5825,7 +5834,26 @@ review setup does not quietly break them.
     the code.
   Record:
   [`log/2026-11-08-copilot-review-policy.md`](log/2026-11-08-copilot-review-policy.md).
-- *Until 2026-11-08 (the bullet above replaces it).*
+- **2026-11-08, owner: no `@codex` comments.** Pull request #88 added
+  to AGENTS.md that a pull request changing privacy or a workflow asks
+  Codex for a security review with a comment, `@codex security review`,
+  credited to the owner. It was the coordinator's recommendation, not
+  the owner's, and the owner withdrew it the same day: Codex's review
+  runs from the owner's Codex app, so no agent writes an `@codex`
+  comment of any kind (some have Codex push code). Codex's GitHub
+  review runs a security review by itself when a pull request opens
+  (its summary on #90), but on #89 and #92 it posted a notice to set up
+  an environment instead. So, as CodeRabbit's review of #92 asked, the
+  agent says so in the pull request and the thread, and a pull request
+  that changes privacy or a workflow waits for the owner to run Codex's
+  security review from the Codex app, or another security review,
+  before it merges. So does one whose privacy or workflow change came in
+  a push after it opened: Codex's security review runs when a pull
+  request opens (its triggers, listed in its summary on #90, are
+  opening, leaving draft and an `@codex` comment), so it never saw that
+  change (CodeRabbit's second review of #92). Record:
+  [`log/2026-11-08-copilot-right-after-opening.md`](log/2026-11-08-copilot-right-after-opening.md).
+- *Until 2026-11-08 (the 2026-11-08 Copilot bullet above replaces it).*
   **2026-11-04: Copilot is no longer a reviewer.** The month's AI
   credits ran out on pull request #78, whose one request Copilot could
   not review; the subscription ends on 2026-11-09; and the owner's

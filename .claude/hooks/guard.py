@@ -21,7 +21,7 @@ It denies:
   (request_copilot_review), which an agent uses once on a pull request
   that changes code: a second request on the same pull request, from any
   worktree of the same clone, is refused. Other GraphQL requests, an
-  @copilot mention, "changes code" and "after Codex's review" are held
+  @copilot mention, "changes code" and "the local Codex review first" are held
   by AGENTS.md alone;
 - a GitHub tool that writes a file straight onto main;
 - publishing a personal detail: before a commit, and before text goes to
@@ -89,7 +89,7 @@ MERGE = ('Agents never merge, approve or auto-merge a pull request: the owner '
 COPILOT = ('Each Copilot review or Copilot task spends the owner\'s monthly AI '
            'credits. An agent asks for Copilot\'s review only through the GitHub '
            'tool request_copilot_review, once on a pull request that changes code, '
-           'after Codex\'s review is answered; every other Copilot action is the '
+           'right after opening it; every other Copilot action is the '
            'owner\'s (AGENTS.md, "Build and test", "Reviews and updates on GitHub").')
 COPILOT_AGAIN = ('Copilot\'s review of {pull} was already requested from this clone '
                  '({when}). An agent requests it once per pull request; if another '
