@@ -5797,11 +5797,12 @@ review setup does not quietly break them.
     Copilot's review **once**, right after opening it. Before opening,
     it runs Codex's local review (`codex review --base origin/main`,
     read-only) and answers its findings, so Copilot sees the fixed code
-    and does not repeat Codex's findings. Codex's review on GitHub,
-    which the owner runs from the Codex app, is not part of the step: on
-    pull request #89 it did not run, which would have left nothing to
-    wait for (the coordinator's decision of 2026-11-08, which keeps the
-    owner's "after Codex's review"). A
+    and does not repeat Codex's findings. Codex's automatic review on
+    GitHub, set up in the owner's Codex app, is not part of the step: it
+    reviews in its own time, and once, on pull request #89, it posted a
+    one-off setup notice instead of a review, so waiting for it could
+    leave the request waiting for nothing (the coordinator's decision of
+    2026-11-08, which keeps the owner's "after Codex's review"). A
     pull request that changes only documents gets none. The agent asks
     itself, through the GitHub tool `request_copilot_review`, so a pull
     request does not wait for the owner; every other way of asking for

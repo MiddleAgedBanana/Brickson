@@ -22,10 +22,12 @@ updates and GitHub settings", *Code review*, the 2026-11-08 bullet).
   review once, right after opening it, through the GitHub tool
   `request_copilot_review` only. Before opening, it runs Codex's local
   review (`codex review --base origin/main`) and answers its findings;
-  Codex's review on GitHub, which the owner runs from the Codex app, is
-  not part of the step, because on pull request #89 it did not run and
-  would have left the request waiting for nothing (decided in the
-  thread on 2026-11-08, after the pull request opened). A pull request that changes only
+  Codex's automatic review on GitHub, set up in the owner's Codex app,
+  is not part of the step: it reviews in its own time, and once, on
+  pull request #89, it posted a one-off setup notice instead of a
+  review, so waiting for it could leave the request waiting for
+  nothing (decided in the thread on 2026-11-08, after the pull request
+  opened). It is active: it reviewed pull request #91. A pull request that changes only
   documents gets none. A request that fails for lack of credits is said
   in the pull request and the thread, with no retry.
 - **The guard** (`.claude/hooks/guard.py`) lets that one tool through
