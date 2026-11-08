@@ -68,9 +68,13 @@ what was done, how it was checked and what was not.
 
 A write job starts on a new branch from `origin/main`: `codex/<topic>` in
 a new worktree, `~/code/brickson-codex-<topic>`, or `antigravity/<topic>`
-in agy's folder. The agent commits there and never pushes. The thread
-reads the commits and the record, runs the checks, then pushes and opens
-the pull request. A write job needs the agent's guard hook installed. The
+in agy's folder. The agent commits there and cannot publish: every job
+runs with git told to push origin, and any https, http, ssh or `git@`
+URL, to a `no-push://` address git cannot reach, and with `gh` signed
+out (an empty configuration folder, and no `GH_TOKEN` or
+`GITHUB_TOKEN`). The thread reads the commits and the record, runs the
+checks, then pushes and opens the pull request. A write job needs the
+agent's guard hook installed. The
 bridge never runs in the owner's own checkout (the repository's main
 worktree), and never passes a danger, bypass or skip-permissions option.
 
@@ -86,7 +90,7 @@ The commits of pull request #91.
 On the owner's Mac (macOS 27.2; the Mac's `/usr/bin/python3`, 3.9), on
 2026-11-08:
 
-- `scripts/test-agent-bridge.py`, 22 of 22. It uses stand-ins for `codex`
+- `scripts/test-agent-bridge.py`, 25 of 25. It uses stand-ins for `codex`
   and `agy` that record how they were called and answer as the real tools
   did, in throwaway repositories with a made-up home folder. Seven broken
   copies of the bridge each failed it: stdin left open, the owner's
@@ -123,9 +127,21 @@ On the owner's Mac (macOS 27.2; the Mac's `/usr/bin/python3`, 3.9), on
   request that changes code; Copilot answered that the requester has
   too little remaining quota, so it did not review, and it was not asked
   again.
+- After the third round, the final push answered three more findings,
+  each with a test that failed on the third round's code. From Codex's
+  security review: a job cannot publish (a real `git push` to origin and
+  to an https URL both fail with `no-push`, the bare origin gets no
+  branch, and `gh` starts signed out). From CodeRabbit: an agent that
+  cannot start still ends the job with `summary.json` and `done` (exit
+  127), and a mistyped `--brief` stops before any folder, lock, branch
+  or worktree is made.
 
 ## Not verified
 
+- An agent's own GitHub tool with its own sign-in, such as agy's GitHub
+  connection, is not covered by the no-publish environment. A thread
+  writes no brief that asks for one, and the guard hook refuses what the
+  guard refuses there (merging, approving, writing to `main`).
 - A write job through the bridge, with either agent, on a real task: the
   stand-ins cover the branch set-up, and the guard hooks were proven on
   real runs by the set-up record. The first real write job is the test.

@@ -57,6 +57,37 @@ AGY_FOLDER = '~/code/brickson-antigravity'
 CODEX_FOLDER = '~/code/brickson-codex-{topic}'
 TOPIC = re.compile(r'^[a-z0-9][a-z0-9-]{0,48}$')
 HELD = []  # locks held until the process ends
+# Where a job's pushes go: nowhere. Git refuses a URL with this scheme.
+NO_PUSH = 'no-push://agent-bridge-jobs-never-publish/'
+TOKENS = ('GH_TOKEN', 'GITHUB_TOKEN', 'GH_ENTERPRISE_TOKEN', 'GITHUB_ENTERPRISE_TOKEN')
+
+
+def job_environment(out):
+    """The agent's environment: this one, but unable to publish. Every push
+    to origin, and to any URL over https, http, ssh or git@, goes to a URL
+    git cannot reach, and gh starts with an empty configuration folder and
+    no token, so it is signed out. The thread that handed the job off
+    checks the commits and publishes them. A guard against mistakes, not a
+    sandbox: an agent's GitHub tool with its own sign-in is not covered."""
+    env = {key: value for key, value in os.environ.items() if key not in TOKENS}
+    entries = [('remote.origin.pushurl', NO_PUSH)]
+    entries += [(f'url.{NO_PUSH}.pushInsteadOf', prefix)
+                for prefix in ('https://', 'http://', 'ssh://', 'git@')]
+    try:
+        start = int(env.get('GIT_CONFIG_COUNT') or 0)
+    except ValueError:
+        start = 0
+    for number, (key, value) in enumerate(entries, start):
+        env[f'GIT_CONFIG_KEY_{number}'] = key
+        env[f'GIT_CONFIG_VALUE_{number}'] = value
+    env['GIT_CONFIG_COUNT'] = str(start + len(entries))
+    signed_out = out / 'gh-signed-out'
+    signed_out.mkdir(exist_ok=True)
+    env['GH_CONFIG_DIR'] = str(signed_out)
+    env['GH_PROMPT_DISABLED'] = '1'
+    env['GIT_TERMINAL_PROMPT'] = '0'
+    env['BRICKSON_BRIDGE_JOB'] = out.name
+    return env
 
 PREAMBLE = """You are working on Brickson, an app for people living with ALS, for its
 owner. A Claude thread handed you this job through scripts/agent-bridge.py.
@@ -258,8 +289,13 @@ def run(command, cwd, out, timeout_minutes):
     interrupted = False
     try:
         with open(out / 'output.txt', 'w') as stdout, open(out / 'stderr.txt', 'w') as stderr:
-            process = subprocess.Popen(command, cwd=str(cwd), stdin=subprocess.DEVNULL,
-                                       stdout=stdout, stderr=stderr, start_new_session=True)
+            try:
+                process = subprocess.Popen(command, cwd=str(cwd), stdin=subprocess.DEVNULL,
+                                           stdout=stdout, stderr=stderr, start_new_session=True,
+                                           env=job_environment(out))
+            except OSError as error:  # not installed, or not runnable
+                stderr.write(f'could not start {command[0]}: {error}\n')
+                return 127, round(time.time() - started, 1), False
             try:
                 code = process.wait(timeout=timeout_minutes * 60)
             except subprocess.TimeoutExpired:
@@ -452,6 +488,8 @@ def parse(argv):
             child.add_argument('--background', action='store_true',
                                help='run detached; read summary.json when `done` appears')
     args = parser.parse_args(argv)
+    if getattr(args, 'brief', None) and not Path(os.path.expanduser(args.brief)).is_file():
+        parser.error(f'--brief: no such file: {args.brief}')
     if getattr(args, 'write', False) and not (args.branch and TOPIC.match(args.branch)):
         parser.error('--write needs --branch <topic>, lowercase letters, digits and dashes')
     if getattr(args, 'branch', None) and not getattr(args, 'write', False):

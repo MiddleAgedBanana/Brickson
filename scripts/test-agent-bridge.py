@@ -33,6 +33,17 @@ if 'sleep' in mode:
 if 'touch' in mode:
     with open('stray.txt', 'w') as stray:
         stray.write('x\n')
+if 'push' in mode:
+    import subprocess
+    tries = {}
+    for name, target in (('origin', 'origin'), ('url', 'https://example.invalid/x.git')):
+        pushed = subprocess.run(['git', 'push', target, 'HEAD:refs/heads/from-agent'],
+                                capture_output=True, text=True)
+        tries[name] = [pushed.returncode, pushed.stderr]
+    tries['env'] = {key: os.environ.get(key) for key in
+                    ('GH_TOKEN', 'GITHUB_TOKEN', 'GH_CONFIG_DIR', 'BRICKSON_BRIDGE_JOB')}
+    with open(os.environ['STUB_LOG'] + '.push', 'w') as record:
+        json.dump(tries, record)
 if 'overwrite' in mode:
     with open('AGENTS.md', 'w') as tracked:
         tracked.write('rewritten by the agent\n')
@@ -363,6 +374,44 @@ class BridgeTests(unittest.TestCase):
         summary = json.loads((self.job_folder(result) / 'summary.json').read_text())
         self.assertEqual(summary['status'], 'changed files in a read-only job')
         self.assertIn(' M AGENTS.md', summary['changed_files'])
+
+    def test_an_agent_cannot_publish(self):
+        result = self.bridge('codex', '--brief', str(self.brief),
+                             env={'STUB_MODE': 'push', 'GH_TOKEN': 'from-the-thread',
+                                  'GITHUB_TOKEN': 'from-the-thread'})
+        self.assertEqual(result.returncode, 0, result.stderr)
+        tries = json.loads(Path(str(self.log) + '.push').read_text())
+        for name in ('origin', 'url'):
+            self.assertNotEqual(tries[name][0], 0, name)
+            self.assertIn('no-push', tries[name][1], name)
+        branches = subprocess.run(['git', '-C', str(self.owner), 'ls-remote', '--heads', 'origin'],
+                                  capture_output=True, text=True).stdout
+        self.assertNotIn('from-agent', branches)
+        env = tries['env']
+        self.assertIsNone(env['GH_TOKEN'])
+        self.assertIsNone(env['GITHUB_TOKEN'])
+        self.assertTrue(env['GH_CONFIG_DIR'].endswith('gh-signed-out'))
+        self.assertEqual(list(Path(env['GH_CONFIG_DIR']).iterdir()), [])
+        self.assertTrue(env['BRICKSON_BRIDGE_JOB'])
+
+    def test_an_agent_that_cannot_start_still_ends_with_done(self):
+        (self.bin / 'codex').unlink()
+        result = self.bridge('codex', '--brief', str(self.brief),
+                             env={'PATH': f'{self.bin}{os.pathsep}/usr/bin{os.pathsep}/bin'})
+        self.assertEqual(result.returncode, 1, result.stderr)
+        out = self.job_folder(result)
+        self.assertEqual((out / 'done').read_text(), 'failed (exit 127)\n')
+        self.assertIn('could not start codex', (out / 'stderr.txt').read_text())
+
+    def test_a_missing_brief_changes_nothing(self):
+        self.install_codex_hook()
+        result = self.bridge('codex', '--brief', str(self.brief) + '.missing', '--write',
+                             '--branch', 'tests')
+        self.assertEqual(result.returncode, 2)
+        self.assertIn('no such file', result.stderr)
+        self.assertFalse((self.home / 'code' / 'brickson-codex-tests').exists())
+        self.assertFalse((self.worktree / 'build').exists())
+        self.assertEqual(self.calls(), [])
 
     def test_agy_refuses_a_folder_with_uncommitted_work(self):
         self.point_agy_at(self.agy_folder)
