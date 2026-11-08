@@ -36,7 +36,7 @@ Antigravity's hook in its own folder: an `echo` and a refused dry run.
 | Command-line tool | `codex-cli 0.167.0` (Homebrew), current per `codex doctor` | `agy 1.5.3` |
 | App | "ChatGPT" (`com.openai.codex`, 26.1103.41825), running | "Gemini" (`com.google.GeminiMacOS`, 1.141.3.1394), which runs the agent manager with its own `agy` 1.4.11 |
 | Signed in | `codex login status`: "Logged in using ChatGPT", exit 0 | Yes (Google account; `agy models` answered) |
-| Plan | Not read: needs the app's Settings, and computer use was declined | Paid Pro or Ultra: `agy models` lists Gemini 4 Argon and Claude Opus and Sonnet 5.5, which only paid plans get; which of the two was not read |
+| Plan | ChatGPT Pro, the $100 a month tier (the owner, 2026-11-08) | Google AI Pro (the owner, 2026-11-08); `agy models` lists Gemini 4 Argon and Claude Opus and Sonnet 5.5, which only paid plans get |
 | Reads AGENTS.md | All of it on this Mac (`project_doc_max_bytes = 131072`) | Only its first 24,000 bytes; see the pointer file below |
 
 ### Antigravity's own folder
@@ -61,9 +61,9 @@ the changes. Read from the apps' settings files before and after:
 |---|---|---|---|
 | Antigravity permission preset | Auto | Default | Default |
 | Antigravity AI credit overages | On (`useAiCredits: true`) | Never | Off (`useAiCredits: false`) |
-| Antigravity telemetry | Not in a local file (saved with the account) | Off | Not checked: not in a local file |
-| Antigravity project for Brickson | One project, "Brickson", whose folder is `~/code/brickson` | One whose only folder is `~/code/brickson-antigravity` | The same project, its only folder now `~/code/brickson-antigravity`; its 33 grants are still on it |
-| Antigravity commands | App: run automatically (`autoExecutionPolicy` Auto). CLI: `agentMode: auto`, `toolPermission: proceed-in-sandbox`; trusts `~/code` and `~/code/brickson` | Not in the plan | App: run in the sandbox (`autoExecutionPolicy` proceed-in-sandbox). CLI unchanged; a decision for the owner |
+| Antigravity telemetry | Not in a local file (saved with the account) | Off | Off (the owner, 2026-11-08) |
+| Antigravity project for Brickson | One project, "Brickson", whose folder is `~/code/brickson` | One whose only folder is `~/code/brickson-antigravity` | The same project, its only folder now `~/code/brickson-antigravity`; its 33 grants are still on it, as the owner keeps them |
+| Antigravity commands | App: run automatically (`autoExecutionPolicy` Auto). CLI: `agentMode: auto`, `toolPermission: proceed-in-sandbox`; trusts `~/code` and `~/code/brickson` | Not in the plan | App: run in the sandbox (`autoExecutionPolicy` proceed-in-sandbox). CLI unchanged, as the owner keeps it |
 | Antigravity CLI credits | `useG1Credits` absent (default, off) | Off | Off |
 | Codex | `sandbox_mode = "workspace-write"`, `approval_policy = "on-request"`, hooks on | Never `danger-full-access` | Unchanged |
 
@@ -87,7 +87,9 @@ What the files also showed, each against the approved plan:
   refuses, whatever a grant allows.
 - **Antigravity has a GitHub connection**: an MCP server named `github`
   with a stored header, through which those grants created and
-  reviewed pull requests. The plan says no GitHub connection.
+  reviewed pull requests. The plan said no GitHub connection; the owner
+  keeps it (2026-11-08), and the hook applies the guard's GitHub rules
+  to its calls.
 - **Antigravity has already worked on Brickson.** The project holds a
   worktree environment, `docs_audits_and_tests`, and grants for the
   branches of pull requests #61 to #64 (`codex/website-review`,
@@ -189,7 +191,9 @@ On the owner's Mac (macOS 27.2, Python 3 from the Mac's `python3`):
   and the answer turned back: Antigravity 215 of 215 passed (361 s);
   Codex 215 of 215 passed (379 s); after the first review round's two
   fixes, 215 and 215 again (375 s and 420 s; only the
-  adapter's description changed after that run). Two are left out on purpose:
+  adapter's description changed after that run); and after #88 changed
+  the guard and its tests, from a worktree of the new `main` (`56f228d`),
+  217 and 217 (#88 added two), with the adapter's own 12 of 12. Two are left out on purpose:
   `test_each_refusal_keeps_its_own_words` reads the guard's own source,
   and `test_unreadable_input_decides_nothing` expects the guard's
   silence where the adapter refuses (it fails closed). The Antigravity
@@ -247,21 +251,27 @@ On the owner's Mac (macOS 27.2, Python 3 from the Mac's `python3`):
 - A Codex session started outside every Brickson checkout that runs
   commands against one (`git -C ~/code/brickson ...`) is not checked:
   neither folder is a Brickson checkout.
-- PR #88 changes the guard and its tests. After it merges, the adapter
-  suites should run again from a worktree of the new `main`.
 
 ## Follow-ups
 
-- **The owner** (asked in the thread): Antigravity's telemetry off and
-  both plans' names; and three decisions: clear the 33 grants from the
-  "Brickson" Antigravity project, remove Antigravity's GitHub
-  connection, and narrow the CLI's trusted folders. Done on 2026-11-08:
-  preset Default, overages off, the project on
-  `~/code/brickson-antigravity` only, Codex's hook trusted.
+- **Handing work to Codex and agy**: `scripts/agent-bridge.py`, pull
+  request #91, runs either agent on a brief and saves its result for the
+  thread to read.
+- None for the owner. The owner set the preset, overages, telemetry and
+  the project's folder, and trusted Codex's hook, on 2026-11-08; the
+  project's grants, agy's GitHub connection and its command-line tool's
+  trusted folders stay as the owner keeps them, and the hooks hold both
+  agents to the guard either way.
+- **AGENTS.md disagrees with the owner.** Its *Reviews and updates on
+  GitHub*, as #88 left it, says a privacy or workflow pull request asks
+  for `@codex security review` in a comment (owner, 2026-11-08). The same
+  day the owner said agents need not ask Codex for reviews in comments:
+  Codex's code review is set up in the Codex app. Proposed correction:
+  drop that sentence in the next pull request that edits AGENTS.md. This
+  pull request wrote no `@codex` comment.
 - **Later, a pull request of its own** if the owner wants the adapter
   kept in the repository: `scripts/agent-hooks/` with its tests run by
   `scripts/test.sh`, so CI checks it against every change to the guard.
-  It changes what the guard covers, so it gets `@codex security review`.
 
 ## The adapter, as installed
 
