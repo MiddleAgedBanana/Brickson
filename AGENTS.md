@@ -667,12 +667,9 @@ stays reachable, behind `#available` when newer (docs/DECISIONS.md,
 **Reviews and updates on GitHub.** The owner keeps several AI
 reviewers on purpose (2026-11-07): each sees things the others miss,
 and one stands in when another is out of credits. Codex reviews every
-push to a pull request that a person or agent opens. A pull request
-that changes privacy or a workflow (the privacy check, the guard,
-`.github/workflows/`, or a rule in this file) also asks Codex for a
-security review, once, with a comment reading `@codex security review`
-(owner, 2026-11-08): the only `@codex` command an agent writes, as
-others can have Codex push code. Greptile, which
+push to a pull request that a person or agent opens; the owner runs it
+from the Codex app, and no agent writes an `@codex` comment of any
+kind, as some have Codex push code (owner, 2026-11-08). Greptile, which
 the owner also installed, reviews a pull request by itself when it
 opens, as far as its free plan's credits allow (out of them when
 checked on 2026-11-06). cubic, added by the owner on 2026-11-07,

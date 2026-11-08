@@ -59,6 +59,14 @@ updates and GitHub settings", *Code review*, the 2026-11-08 bullet).
   and runs the guard after it (`PostToolUse`), with `onFailure: "block"`
   like every policy hook, so a crash while recording is shown to the
   agent rather than passing unseen.
+- **No `@codex` comments.** AGENTS.md said, since pull request #88,
+  that a pull request changing privacy or a workflow asks for
+  `@codex security review` in a comment, credited to the owner. It was
+  the coordinator's recommendation, and the owner withdrew it on
+  2026-11-08: Codex's review runs from the owner's Codex app, and no
+  agent writes an `@codex` comment of any kind. The sentence is gone
+  from AGENTS.md, and docs/DECISIONS.md, *Code review*, records the
+  withdrawal. None was posted on this pull request.
 - **AI Scan** is off. Its lines in AGENTS.md, `docs/SDLC.md`,
   `docs/HANDOFF.md`, `README.md` and docs/DECISIONS.md, *Code scanning*
   and *`main` ruleset*, now say so.

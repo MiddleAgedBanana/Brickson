@@ -5831,7 +5831,15 @@ review setup does not quietly break them.
     the code.
   Record:
   [`log/2026-11-08-copilot-review-policy.md`](log/2026-11-08-copilot-review-policy.md).
-- *Until 2026-11-08 (the bullet above replaces it).*
+- **2026-11-08, owner: no `@codex` comments.** Pull request #88 added
+  to AGENTS.md that a pull request changing privacy or a workflow asks
+  Codex for a security review with a comment, `@codex security review`,
+  credited to the owner. It was the coordinator's recommendation, not
+  the owner's, and the owner withdrew it the same day: Codex's review
+  runs from the owner's Codex app, so no agent writes an `@codex`
+  comment of any kind (some have Codex push code). Record:
+  [`log/2026-11-08-copilot-review-policy.md`](log/2026-11-08-copilot-review-policy.md).
+- *Until 2026-11-08 (the 2026-11-08 Copilot bullet above replaces it).*
   **2026-11-04: Copilot is no longer a reviewer.** The month's AI
   credits ran out on pull request #78, whose one request Copilot could
   not review; the subscription ends on 2026-11-09; and the owner's
