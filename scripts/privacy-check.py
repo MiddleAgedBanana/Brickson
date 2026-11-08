@@ -332,6 +332,40 @@ ESCAPED_SPACE = re.compile(r'\\[nrt]')
 # Markup that can split a name the page shows whole: an HTML, SVG or XML
 # tag or comment, and a Markdown link's target ([Name](url), [Name][1]).
 MARKUP = re.compile(r'<[A-Za-z/!?][^<>]*>|(?<=\])\([^()\n]*\)|(?<=\])\[[^\[\]\n]*\]')
+# The HTML elements that end a stretch of a page's text, as a browser lays
+# it out: paragraphs, headings, lists, tables, breaks, rules and the other
+# blocks. Between them inline tags (<b>, <span>) can split a word anywhere
+# and are read joined. HTML's names have no case; a name's end is matched,
+# not looked ahead to, as XML_BREAK's is (it says why).
+HTML_BREAK = re.compile(r'</?(?:p|div|br|hr|li|ol|ul|dl|dt|dd|h[1-6]|tr|td|th|table|thead|'
+                        r'tbody|tfoot|caption|section|article|aside|header|footer|nav|main|'
+                        r'blockquote|pre|figure|figcaption|address|form|fieldset|legend|'
+                        r'details|summary|dialog|title|head|body|html|option|textarea)'
+                        r'(?:\s[^<>]*)?/?>', re.IGNORECASE)
+# RTF's marks, which a reader does not show as they are written: a control
+# word (a backslash, its letters, a number and the one space that ends
+# it), a control symbol (a backslash and one other character), a group's
+# braces, and the line breaks a writer wraps its lines with. \uN and \'hh
+# stand for a character and are kept, for folding to read (rtf_unescaped).
+RTF_MARK = re.compile(r"\\(?:(?!u-?[0-9])([a-zA-Z]{1,32})(?:-?[0-9]{1,10})? ?|([^a-zA-Z']))"
+                      r'|[{}\r\n]')
+# What the marks a reader shows stand for: the end of a paragraph, a line,
+# a section, a page or a table's cell or row (a line break; so is a
+# backslash before a line break), a tab, punctuation, no-break spaces and
+# hyphens, and an escaped brace or backslash. Every other mark stands for
+# nothing, so formatting that splits a word leaves it whole.
+# A whole RTF file starts with {\rtf and its version, on its first line or
+# after a line break (where a file is read with others, as an archive's).
+RTF_START = re.compile(r'(?:\A|\n)[ \t\r﻿]*\{\\rtf[0-9]')
+RTF_SHOWN = {'par': '\n', 'line': '\n', 'sect': '\n', 'page': '\n', 'cell': '\n', 'row': '\n',
+             'nestcell': '\n', 'nestrow': '\n', '\n': '\n', '\r': '\n', 'tab': '\t',
+             'emdash': '\N{EM DASH}', 'endash': '\N{EN DASH}', 'bullet': '\N{BULLET}',
+             'lquote': '\N{LEFT SINGLE QUOTATION MARK}',
+             'rquote': '\N{RIGHT SINGLE QUOTATION MARK}',
+             'ldblquote': '\N{LEFT DOUBLE QUOTATION MARK}',
+             'rdblquote': '\N{RIGHT DOUBLE QUOTATION MARK}', 'emspace': ' ',
+             'enspace': ' ', 'qmspace': ' ', '~': ' ', '_': '-', '{': '{', '}': '}',
+             '\\': '\\'}
 # A file written into text: an SVG's or a page's picture as a data: URI.
 # Python's XML writers keep an attribute's line breaks as &#10; or &#xA;.
 LINE_BREAK_REFERENCE = re.compile(r'&#(?:1[03]|[xX]0*[aAdD]);')
@@ -431,6 +465,37 @@ def rtf_unescaped(text):
     text = RTF_UNICODE.sub(lambda match: chr(int(match[1]) % 65536), text)
     return RTF_BYTE.sub(lambda match: bytes([int(match[1], 16)]).decode('cp1252', 'replace'),
                         text)
+
+
+def is_rtf(text, path):
+    """Whether text is RTF: a whole file, or a change to one (path). Text
+    that only mentions {\\rtf, as this file does, is not."""
+    return bool(RTF_START.search(text)) or (path or '').lower().endswith('.rtf')
+
+
+def rtf_pieces(text):
+    """RTF as a reader shows it, in pieces for Checker.reading: its text
+    without its marks, joined where formatting splits a word (Na\\b me,
+    {\\b Na}me) and apart where a paragraph, a line, a tab or a cell ends."""
+    position = 0
+    for match in RTF_MARK.finditer(text):
+        yield position, text[position:match.start()]
+        word, symbol = match.group(1), match.group(2)
+        yield match.start(), RTF_SHOWN.get(word if word is not None else symbol or '', '')
+        position = match.end()
+    yield position, text[position:]
+
+
+def markup_pieces(text, blocks):
+    """A text without its markup, in pieces for Checker.reading: with
+    blocks, an HTML block's tag stands for a line break."""
+    position = 0
+    for match in MARKUP.finditer(text):
+        yield position, text[position:match.start()]
+        if blocks and HTML_BREAK.fullmatch(match.group()):
+            yield match.start(), '\n'
+        position = match.end()
+    yield position, text[position:]
 
 
 def folded(text):
@@ -583,16 +648,20 @@ class Checker:
         if self.patterns and MARKUP.search(text):
             for offset, _ in self.split_by_markup(text):
                 add(offset, KIND_PRIVATE, refound=True)
+        if self.patterns and is_rtf(text, path):
+            for offset, _ in self.reading(rtf_pieces(text)):
+                add(offset, KIND_PRIVATE, refound=True)
         if not binary and depth < EMBEDDED_DEPTH and 'base64,' in text:
             for offset, kind in self.embedded(text, path, depth):
                 add(offset, kind)
         return sorted(found.values(), key=lambda f: (f.line, f.column, f.kind))
 
-    def entry_places(self, text):
+    def entry_places(self, text, path=None):
         """(line, entry) for each place text holds a list entry, read the
-        ways text() reads it: as written, folded, and without its markup.
-        Each match as written counts; another reading adds a place only on
-        a line where that entry was not already found."""
+        ways text() reads it: as written, folded, without its markup and
+        as RTF shows it. Each match as written counts; another reading
+        adds a place only on a line where that entry was not already
+        found."""
         text = unicodedata.normalize('NFC', text)
         lines = text.split('\n')
         starts = line_starts(lines)
@@ -607,6 +676,9 @@ class Checker:
         if self.patterns and MARKUP.search(text):
             others += [(bisect.bisect_right(starts, offset) - 1, entry)
                        for offset, entry in self.split_by_markup(text)]
+        if self.patterns and is_rtf(text, path):
+            others += [(bisect.bisect_right(starts, offset) - 1, entry)
+                       for offset, entry in self.reading(rtf_pieces(text))]
         seen = set(places)
         for place in others:
             if place not in seen:
@@ -617,19 +689,26 @@ class Checker:
     def split_by_markup(self, text):
         """(offset in text, entry) for list entries that markup splits but
         a page shows whole (<b>Name</b> Surname, [Name](url) Surname),
-        found in the text with its tags and link targets removed."""
-        kept, view_starts, text_starts, length, position = [], [], [], 0, 0
-        for match in MARKUP.finditer(text):
-            if match.start() > position:
-                kept.append(text[position:match.start()])
+        found in the text with its tags and link targets removed, and
+        again with an HTML block's tags as line breaks, so the end of one
+        paragraph is not part of a word that starts the next
+        (<p>intro</p><p>name</p> is two lines, not introname)."""
+        yield from self.reading(markup_pieces(text, blocks=False))
+        if HTML_BREAK.search(text):
+            yield from self.reading(markup_pieces(text, blocks=True))
+
+    def reading(self, pieces):
+        """(offset in text, entry) for list entries in another reading of
+        a text: pieces, in order, each (where it starts in the text, what
+        this reading has there), which is the text from there on, or what
+        a mark stands for (a line break for a paragraph's tag)."""
+        kept, view_starts, text_starts, length = [], [], [], 0
+        for start, piece in pieces:
+            if piece:
+                kept.append(piece)
                 view_starts.append(length)
-                text_starts.append(position)
-                length += match.start() - position
-            position = match.end()
-        if position < len(text):
-            kept.append(text[position:])
-            view_starts.append(length)
-            text_starts.append(position)
+                text_starts.append(start)
+                length += len(piece)
         view = ''.join(kept)
 
         def original(offset):
@@ -862,7 +941,16 @@ READABLE_UTF16LE = re.compile(rb'(?:[\x20-\x7e]\x00){8,}')
 READABLE_UTF16BE = re.compile(rb'(?:\x00[\x20-\x7e]){8,}')
 EXIF_HEADER = re.compile(rb'Exif\x00\x00(?=II\*\x00|MM\x00\*)')
 XMP_START, XMP_END = b'<x:xmpmeta', b'</x:xmpmeta>'
-GPS_IN_XMP = re.compile(r'GPS(?:Latitude|Longitude)[^0-9]{0,40}[1-9]')
+# A latitude or a longitude in XMP, or in a tool's text copy of it
+# (exif:GPSLatitude="40,26.7N", "40/1, 26/1, 7/1"), and its value: a
+# place when any of its numbers is not zero, however many zeros it starts
+# with (0,26.7N near the equator, 005,30.5N padded). A camera with no fix
+# writes zeros alone, and a rational's denominator (the /1) is not one of
+# its numbers. The value is looked for up to the next tag only, so the
+# numbers of the element after a closing tag (a time, an altitude) are not
+# taken for it.
+GPS_IN_XMP = re.compile(r'GPS(?:Latitude|Longitude)[^0-9<]{0,40}([0-9][0-9.,/\s]{0,40})')
+RATIONAL_DENOMINATOR = re.compile(r'/\s*[0-9]+')
 EXIF_SIZES = {1: 1, 2: 1, 3: 2, 4: 4, 5: 8, 6: 1, 7: 1, 8: 2, 9: 4, 10: 8, 11: 4, 12: 8}
 
 # Tag and attribute names; an attribute's name starts where a word does,
@@ -940,11 +1028,17 @@ def xmp_packets(data):
         position = end + 1
 
 
+def gps_in_xmp(text):
+    """Whether XMP, or text a tool copied from it, records a place."""
+    return any(re.search('[1-9]', RATIONAL_DENOMINATOR.sub('', match.group(1)))
+               for match in GPS_IN_XMP.finditer(text))
+
+
 def xmp_texts(data, hidden):
     for packet in xmp_packets(data):
         xmp = packet.decode('utf-8', 'replace')
         hidden.exact.append(without_markup(xmp))
-        hidden.located = hidden.located or bool(GPS_IN_XMP.search(xmp))
+        hidden.located = hidden.located or gps_in_xmp(xmp)
 
 
 def inner_texts(data, hidden, depth, xml=False):
@@ -965,7 +1059,7 @@ def inner_texts(data, hidden, depth, xml=False):
             # within a paragraph only, so the one before is not part of it.
             hidden.exact += [without_markup(text), XML_TAG.sub('', text),
                              XML_TAG.sub('', XML_BREAK.sub('\n', text))]
-            hidden.located = hidden.located or bool(GPS_IN_XMP.search(text))
+            hidden.located = hidden.located or gps_in_xmp(text)
         else:
             hidden.exact.append(text)
 
@@ -1085,7 +1179,7 @@ def png_texts(data, hidden):
             translated, _, words = rest.partition(b'\0')
             words = (hidden.inflate(words) if compressed else words).decode('utf-8', 'replace')
             # Compressed or not, XMP here can record where a photo was taken.
-            hidden.located = hidden.located or bool(GPS_IN_XMP.search(words))
+            hidden.located = hidden.located or gps_in_xmp(words)
             text = (b'\n'.join([keyword, language, translated]).decode('utf-8', 'replace')
                     + '\n' + without_markup(words))
         elif kind == b'eXIf':
@@ -1098,7 +1192,7 @@ def png_texts(data, hidden):
             hidden.runs.extend(readable(body))  # other ancillary chunks
         if text is not None:
             hidden.exact.append(text)
-            hidden.located = hidden.located or bool(GPS_IN_XMP.search(text))
+            hidden.located = hidden.located or gps_in_xmp(text)
     hidden.runs.extend(readable(data[position:]))  # anything after the image
 
 
@@ -1546,6 +1640,7 @@ PDF_ESCAPES = {b'n': b'\n', b'r': b'\r', b't': b'\t', b'b': b'\b', b'f': b'\f'}
 PDF_TOKEN = re.compile(rb'\(|<<|>>|<[0-9A-Fa-f\s]*>|\[|\]|/[^\s/<>\[\]()%{}]*|%[^\r\n]*'
                        rb'|[^\s/<>\[\]()%{}]+')
 PDF_SHOWS = (b'Tj', b'TJ', b"'", b'"')
+PDF_LINE_OPERATORS = (b'BT', b'Tm', b'Td', b'TD', b'TL', b'T*')
 PDF_HEX = re.compile(rb'<([0-9A-Fa-f\s]*)>')
 PDF_RANGE_TOKEN = re.compile(rb'<([0-9A-Fa-f\s]*)>|\[|\]')
 PDF_FONT_ENTRY = re.compile(rb'/Font\s*(?:<<|(\d+)\s+\d+\s+R)')
@@ -1791,10 +1886,39 @@ def pdf_fonts(sources, maps):
     return fonts
 
 
+def pdf_line_moved(token, operands, line):
+    """The line text is shown on after a text-positioning operator: (how
+    many moves to the next line there have been, the line matrix, the
+    leading). BT starts a text object at the page's origin, Tm sets the
+    matrix, Td and TD move it, TD and TL set the leading, and T* and the
+    quote operators move to the next line, whatever the leading."""
+    moves, matrix, leading = line
+    values = [operand for operand in operands if isinstance(operand, float)]
+    a, b, c, d, e, f = matrix
+    if token == b'BT':
+        matrix = (1.0, 0.0, 0.0, 1.0, 0.0, 0.0)
+    elif token == b'Tm' and len(values) >= 6:
+        matrix = tuple(values[-6:])
+    elif token in (b'Td', b'TD') and len(values) >= 2:
+        x, y = values[-2:]
+        matrix = (a, b, c, d, x * a + y * c + e, x * b + y * d + f)
+        leading = -y if token == b'TD' else leading
+    elif token == b'TL' and values:
+        leading = values[-1]
+    elif token in (b'T*', b"'", b'"'):
+        moves += 1
+        matrix = (a, b, c, d, e - leading * c, f - leading * d)
+    return moves, matrix, leading
+
+
 def pdf_shown(content):
-    """(font name, strings and spacings) for each text a content stream
-    shows, and the other strings it holds (marked content's ActualText)."""
+    """(font name, strings and spacings, line) for each text a content
+    stream shows, and the other strings it holds (marked content's
+    ActualText). Texts shown on one line have the same line: as many moves
+    to the next line before them, and the same height on the page (a move
+    along a line keeps it)."""
     shows, others, operands, font, position = [], [], [], None, 0
+    line = (0, (1.0, 0.0, 0.0, 1.0, 0.0, 0.0), 0.0)
     while True:
         match = PDF_TOKEN.search(content, position)
         if match is None:
@@ -1819,8 +1943,14 @@ def pdf_shown(content):
                 names = [operand[0] for operand in operands if isinstance(operand, tuple)]
                 font = names[-1] if names else font
             elif token in PDF_SHOWS:
+                if token in (b"'", b'"'):
+                    line = pdf_line_moved(token, operands, line)
+                moves, matrix, _ = line
                 shows.append((font, [operand for operand in operands
-                                     if isinstance(operand, (bytes, float))]))
+                                     if isinstance(operand, (bytes, float))],
+                               (moves, round(matrix[5], 2))))
+            elif token in PDF_LINE_OPERATORS:
+                line = pdf_line_moved(token, operands, line)
             elif token == b'ID':  # an inline picture's bytes, up to EI
                 end = content.find(b'EI', position)
                 position = len(content) if end < 0 else end + 2
@@ -1831,15 +1961,17 @@ def pdf_shown(content):
 
 def pdf_page_texts(content, fonts):
     """The text a content stream shows, decoded through the fonts its Tf
-    operators choose, read twice: as one run, so a word shown a letter at
-    a time is whole, and one string a line, so words shown apart stay
-    apart. A wide gap in a TJ array is a space."""
+    operators choose, read three times: as one run, so a word shown a
+    letter at a time is whole; one string a line, so words shown apart
+    stay apart; and as its lines, joined within a line and apart where the
+    page moves to another, so a word shown in pieces after a line is not
+    part of that line. A wide gap in a TJ array is a space."""
     shows, others = pdf_shown(content)
     texts = [pdf_text(raw) for raw in others]
-    versions = max([len(fonts.get(font) or [None]) for font, _ in shows] or [1])
+    versions = max([len(fonts.get(font) or [None]) for font, _, _ in shows] or [1])
     for version in range(versions):
-        pieces = []
-        for font, items in shows:
+        pieces, lines, last = [], [], None
+        for font, items, line in shows:
             choices = fonts.get(font) or [None]
             cmap = choices[min(version, len(choices) - 1)]
             piece = []
@@ -1849,7 +1981,9 @@ def pdf_page_texts(content, fonts):
                 elif item <= -200:
                     piece.append(' ')
             pieces.append(''.join(piece))
-        texts += [''.join(pieces), '\n'.join(pieces)]
+            lines.append(('' if line == last else '\n') + pieces[-1])
+            last = line
+        texts += [''.join(pieces), '\n'.join(pieces), ''.join(lines)]
     return texts
 
 
@@ -3237,7 +3371,7 @@ def status(root, entries, counts, no_list=False):
                 texts = hidden.exact + hidden.runs
             else:
                 texts = texts[:1]  # one reading of a text file: no place counted twice
-            for _, entry in checker.entry_places(path + '\n' + '\n'.join(texts)):
+            for _, entry in checker.entry_places(path + '\n' + '\n'.join(texts), path):
                 places[entry] = places.get(entry, 0) + 1
     for entry in entries:
         if places.get(entry):

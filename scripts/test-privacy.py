@@ -2335,6 +2335,33 @@ class PdfTests(unittest.TestCase):
                               zlib.compress(xmp))
         self.assertEqual(self.found(page_pdf(b'BT ET', extra=[metadata])), [privacy.KIND_PLACE])
 
+    def test_a_name_shown_in_pieces_after_another_line_is_read_on_its_line(self):
+        # Written in lowercase and shown in pieces that break inside its
+        # words, after a line above it: joined with that line it starts no
+        # word, and apart it is three pieces. Each way a page moves to a
+        # new line ends one; a move along the line does not.
+        lowercase = NAME.lower()
+        assert lowercase == 'quillon vassmere'
+        encode, cmap = glyph_font('Notes' + lowercase)
+        moves = [b'0 -14 Td', b'0 -14 TD', b'T*', b'1 0 0 1 72 706 Tm']
+        for glyphs in (False, True):
+            show = (lambda text: encode(text)) if glyphs else (
+                lambda text: b'(' + text.encode() + b')')
+            for move in moves:
+                content = (b'BT /F1 12 Tf 14 TL 1 0 0 1 72 720 Tm ' + show('Notes') + b' Tj '
+                           + move + b' ' + show('quil') + b' Tj 6 0 Td ' + show('lon vass')
+                           + b' Tj ' + show('mere') + b' Tj ET')
+                with self.subTest(glyphs=glyphs, move=move):
+                    self.assertEqual(self.found(page_pdf(content, cmap if glyphs else None)),
+                                     [privacy.KIND_PRIVATE])
+            # The quote operators move to the next line before they show.
+            for quote in (show('quil') + b" '", b'0 0 ' + show('quil') + b' "'):
+                content = (b'BT /F1 12 Tf 14 TL ' + show('Notes') + b' Tj ' + quote + b' '
+                           + show('lon vass') + b' Tj ' + show('mere') + b' Tj ET')
+                with self.subTest(glyphs=glyphs, quote=quote[-1:]):
+                    self.assertEqual(self.found(page_pdf(content, cmap if glyphs else None)),
+                                     [privacy.KIND_PRIVATE])
+
     def test_numbers_that_place_text_on_a_page_are_not_phone_numbers(self):
         # Split so this file holds no number the checker finds.
         data = page_pdf(b'q 100 200 ' b'1000 50 re f Q BT /F1 12 Tf 212 867 Td (Hello) Tj ET '
@@ -2484,6 +2511,39 @@ class ExactFieldTests(unittest.TestCase):
         chunk = png_chunk(b'iTXt', b'XML:com.adobe.xmp\0\x01\0\0\0' + zlib.compress(xmp))
         self.assertEqual(self.found(png(chunk)), [privacy.KIND_PLACE])
 
+    def test_an_xmp_place_whose_degrees_start_with_zero_is_read(self):
+        # Within a degree of the equator and the prime meridian, or with
+        # its degrees padded, a place starts with a zero; a camera with no
+        # fix writes zeros only, which is no place.
+        def located(latitude, longitude):
+            xmp = (b'<x:xmpmeta><rdf:Description exif:GPSLatitude="%s" '
+                   b'exif:GPSLongitude="%s"/></x:xmpmeta>' % (latitude, longitude))
+            chunk = png_chunk(b'iTXt', b'XML:com.adobe.xmp\0\x01\0\0\0' + zlib.compress(xmp))
+            element = (b'<x:xmpmeta><exif:GPSLatitude>%s</exif:GPSLatitude>'
+                       b'<exif:GPSLongitude>%s</exif:GPSLongitude></x:xmpmeta>'
+                       % (latitude, longitude))
+            return [self.found(png(chunk)), self.found(png(png_chunk(
+                b'iTXt', b'XML:com.adobe.xmp\0\0\0\0\0' + element)))]
+
+        # Rationals too, as a tool's text copy writes them.
+        for place in [(b'0,26.7N', b'0,58.9W'), (b'005,30.5N', b'000,12.25E'),
+                      (b'0,0,30N', b'0,0,0E'), (b'-0.4412', b'0.000'),
+                      (b'0/1, 26/1, 7/1', b'0/1, 0/1, 0/1')]:
+            with self.subTest(place=place):
+                self.assertEqual(located(*place), [[privacy.KIND_PLACE]] * 2)
+        for nowhere in [(b'0,0.0N', b'0,0.0E'), (b'000,00.000N', b'0,0,0W'),
+                        (b'0.000000', b'-0.0'), (b'0/1, 0/1, 0/100', b'0/1,0/1,0/1')]:
+            with self.subTest(nowhere=nowhere):
+                self.assertEqual(located(*nowhere), [[], []])
+        # The numbers of the element after a coordinate are not its value.
+        for after in [b'<exif:GPSTimeStamp>2026-11-08T01:20:00Z</exif:GPSTimeStamp>',
+                      b'<exif:GPSAltitude>120/1</exif:GPSAltitude>']:
+            xmp = (b'<x:xmpmeta><exif:GPSLatitude>0,0.0N</exif:GPSLatitude>'
+                   b'<exif:GPSLongitude>0,0.0E</exif:GPSLongitude>' + after + b'</x:xmpmeta>')
+            with self.subTest(after=after[:20]):
+                self.assertEqual(self.found(png(png_chunk(
+                    b'iTXt', b'XML:com.adobe.xmp\0\0\0\0\0' + xmp))), [])
+
     def test_a_gif_s_comment_and_plain_text_are_read(self):
         self.assertEqual(self.found(gif_file(b'!\xfe' + gif_blocks(b'Photo of Tobble')),
                                     words=NICK), [privacy.KIND_PRIVATE])
@@ -2601,6 +2661,37 @@ class MarkupTests(unittest.TestCase):
                '</svg>\n').encode()
         self.assertEqual([(f.line, f.kind) for f in check.data(svg, 'x.svg', 'design/x.svg')],
                          [(2, privacy.KIND_PRIVATE)])
+
+    def test_a_name_after_a_block_in_minified_html_is_found_on_its_line(self):
+        # With every tag removed, the end of one block joins the start of
+        # the next, and a name written in lowercase after it starts no
+        # word; a block's end keeps them apart, inline tags still join.
+        lowercase = NAME.lower()
+        assert lowercase == 'quillon vassmere'
+        check = checker(NAME)
+        for html in ['<p>intro</p><p>quillon <b>vassmere</b></p>',
+                     '<li>intro</li><li>quil<i>lon</i> vassmere</li>',
+                     '<td>intro</td><td>quillon <i>vass</i>mere</td>',
+                     'intro<br>quil<b>lon</b> vassmere', 'intro<BR/>quillon <em>vassmere</em>',
+                     '<H2>Intro</H2><DIV class="x">quillon vass<span>mere</span></DIV>',
+                     'intro<hr>quillon <code>vassmere</code>',
+                     '<dt>intro<dd><b>quillon</b> vassmere']:
+            with self.subTest(html=html):
+                found = check.text('first line\n' + html, 'x')
+                self.assertEqual([(f.line, f.kind) for f in found][:1],
+                                 [(2, privacy.KIND_PRIVATE)])
+        html = ('<!doctype html>\n<html><body><p>intro</p><p>quillon <b>vass</b>mere</p></body>'
+                '</html>\n')
+        self.assertEqual(kinds(check.data(html.encode(), 'x', 'site/x/index.html')),
+                         [privacy.KIND_PRIVATE])
+        # A block's end keeps a word apart too.
+        self.assertEqual(check.text('<p>intro</p><p>quil</p><p>lon vassmere</p>', 'x'), [])
+        for inline in ['<b>', '<span class="x">', '<a href="#">', '<em>', '<code>']:
+            with self.subTest(inline=inline):
+                self.assertIsNone(privacy.HTML_BREAK.fullmatch(inline))
+        for block in ['<p>', '</P>', '<br/>', '<li class="x">', '<h6>', '</td>', '<tr\n>']:
+            with self.subTest(block=block):
+                self.assertTrue(privacy.HTML_BREAK.fullmatch(block))
 
     def test_text_that_only_looks_like_markup_is_not_joined(self):
         check = checker(NICK)
@@ -2857,6 +2948,58 @@ class DocumentFormatTests(unittest.TestCase):
                 with self.subTest(body=body, words=words):
                     found = checker(words).data(rtf, 'x', 'notes.rtf')
                     self.assertEqual([(f.line, f.kind) for f in found], [(2, privacy.KIND_PRIVATE)])
+
+    def test_a_name_rtf_formatting_splits_is_read_on_its_line(self):
+        # Bold, italics or a font change between a name's words or inside
+        # one leave control words and group braces among its letters, and
+        # a writer wraps its lines anywhere; a paragraph, a line break, a
+        # tab or a table cell ends a stretch, so the paragraph before a
+        # name written in lowercase is not part of it.
+        lowercase = NAME.lower()
+        assert lowercase == 'quillon vassmere'
+        for body in [r'Notes\par quillon \b vassmere\b0  said hi',
+                     r'Notes\par {\b quillon} vassmere', r'Notes\par quil\i lon vass\i0 mere',
+                     'Notes\\\nquil\\f1\\fs28 lon {\\cf2 vass}mere',
+                     'Notes\\line quil\nlon vass\r\nmere', r'Notes\tab qui{\ul\ulc0 llon} vassmere',
+                     r'Notes\cell quillon\~vass\-mere']:
+            rtf = ('{\\rtf1\\ansi\\ansicpg1252\\cocoartf2761\n{\\fonttbl\\f0\\fswiss Helvetica;}\n'
+                   '\\pard\\f0\\fs24 \\cf0 ' + body + '}\n')
+            with self.subTest(body=body):
+                found = checker(NAME).data(rtf.encode(), 'x', 'notes.rtf')
+                line = rtf[:rtf.index('qui')].count('\n') + 1
+                self.assertEqual([(f.line, f.kind) for f in found][:1],
+                                 [(line, privacy.KIND_PRIVATE)])
+                # A change to the file reads it the same way.
+                lines = rtf.split('\n')[2:]
+                found = privacy.hunk_findings(checker(NAME), [('+', line) for line in lines],
+                                              'x', 'notes.rtf', 3)
+                self.assertEqual(kinds(found)[:1], [privacy.KIND_PRIVATE])
+        # A whole RTF file is read so whatever its name; text that only
+        # mentions RTF is not, so its line breaks join no words.
+        rtf = '{\\rtf1\\ansi\n\\pard Notes\\par quil\\b lon vassmere}\n'
+        for path in ('notes.txt', None):
+            with self.subTest(path=path):
+                self.assertEqual(kinds(checker(NAME).data(rtf.encode(), 'x', path)),
+                                 [privacy.KIND_PRIVATE])
+        self.assertEqual(checker(NAME).text('Notes on {\\rtf1 files: quil\nlon vassmere', 'x',
+                                            'notes.md'), [])
+        # An accent written as a character's number stays one letter.
+        for body in [r'Notes\par quillon vass\b m\u232?re', r'Notes\par quillon vass\b m\u232 ?re']:
+            rtf = '{\\rtf1\\ansi\n\\pard ' + body + '}\n'
+            with self.subTest(body=body):
+                self.assertEqual(kinds(checker('Quillon Vassmère').data(
+                    rtf.encode(), 'x', 'notes.rtf')), [privacy.KIND_PRIVATE])
+        # Control words that end no stretch, and breaks that keep a word apart.
+        for body, words, expected in [
+                (r'Tob\pard ble', NICK, [privacy.KIND_PRIVATE]),
+                (r'Tob\ulnone ble', NICK, [privacy.KIND_PRIVATE]),
+                (r'Tob\par ble', NICK, []), (r'Tob\tab ble', NICK, []),
+                (r'Tob\line ble', NICK, []), (r'Tob\cell ble', NICK, []),
+                (r'quil\par lon vassmere', NAME, [])]:
+            rtf = '{\\rtf1\\ansi\n\\pard ' + body + '}\n'
+            with self.subTest(body=body):
+                self.assertEqual(kinds(checker(words).data(rtf.encode(), 'x', 'notes.rtf')),
+                                 expected)
 
     def test_long_entries_and_streams_are_read_to_the_file_s_limit(self):
         # A long Word document's text, or a long PDF page: no smaller limit

@@ -1137,6 +1137,28 @@ class GuardTests(unittest.TestCase):
             with self.subTest(command=command):
                 self.assertAllowed(command)
 
+    def test_gh_autofill_from_commits_is_denied(self):
+        # gh pr create --fill writes the title and body from the branch's
+        # commits, which with --head need not have been pushed, so the
+        # privacy hook has not read them, and the guard reads no text gh
+        # makes itself.
+        for command in ['gh pr create --head claude/topic --fill',
+                        'gh pr create --head claude/topic -f', 'gh pr create --fill-first',
+                        'gh pr create --head claude/topic --fill-verbose', 'gh pr create -df',
+                        'gh pr create --fill=true --head claude/topic', 'gh pr new --fill',
+                        'gh -R o/r pr create --base main --fill --head claude/topic',
+                        'gh pr create --title t --fill --head claude/topic',
+                        'gh pr create --title t --body b --fill-first --head claude/topic']:
+            with self.subTest(command=command):
+                self.assertDenied(command)
+        # A value that only looks like the option, and autofill turned off.
+        for command in ['gh pr create --head claude/topic --title --fill --body b',
+                        'gh pr create --head claude/topic -t -f -b b',
+                        'gh pr create --head claude/topic --fill=false --title t --body b',
+                        'gh pr create --head claude/topic --title t --body b']:
+            with self.subTest(command=command):
+                self.assertAllowed(command)
+
     def test_each_refusal_keeps_its_own_words(self):
         # Two messages once shared a name, so a Git shell alias was refused
         # with the words for a shell alias the command defines.
@@ -1595,7 +1617,7 @@ class GuardTests(unittest.TestCase):
                            "-f 'reviewers[]=MiddleAgedBanana'")
 
     def test_reading_pull_requests_is_allowed(self):
-        for command in ['gh pr view 12', 'gh pr checks 12', 'gh pr create --fill',
+        for command in ['gh pr view 12', 'gh pr checks 12', 'gh pr create --title t --body b',
                         'gh api repos/o/r/pulls/12', 'gh pr review 12 --comment -b ok',
                         'git merge origin/main', 'git log --merges',
                         'curl -q https://example.com/api.github.com/pulls/1/merge',
@@ -2225,6 +2247,25 @@ class PrivacyGuardTests(unittest.TestCase):
         self.assertAllowed(f'grep -rn {shlex.quote(PRIVATE_NAME)} docs')
         self.assertAllowed(f'git -C {self.repo} log --oneline')
         self.assertAllowed('python3 scripts/privacy-check.py --status')
+
+    def test_a_body_httpie_reads_from_a_file_operand_is_read(self):
+        # HTTPie sends the file a standalone @file names as the request's
+        # body, as if it came from stdin; with no method, it posts it.
+        url = 'https://api.github.com/repos/o/r/issues/12/comments'
+        payload = self.folder / 'payload.json'
+        payload.write_text(json.dumps({'body': f'Thanks {PRIVATE_NAME}'}))
+        for command in [f'http --ignore-stdin POST {url} @{payload}',
+                        f'http --ignore-stdin {url} @{payload}',
+                        f'https --ignore-stdin POST {url} Accept:application/json @{payload}',
+                        f'http --ignore-stdin POST {url} -- @{payload}',
+                        f'http --ignore-stdin POST {url} @{self.folder}/missing.json']:
+            with self.subTest(command=command):
+                self.assertDenied(command)
+        payload.write_text(json.dumps({'body': 'Thanks for the review'}))
+        for command in [f'http --ignore-stdin POST {url} @{payload}',
+                        f'http --ignore-stdin {url} @{payload}']:
+            with self.subTest(command=command):
+                self.assertAllowed(command)
 
     def test_text_sent_to_github_by_gh_or_the_api_is_read(self):
         for command in [f'gh pr create --title t --body {shlex.quote(PRIVATE_ADDRESS)}',
