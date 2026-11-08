@@ -1461,9 +1461,11 @@ settings, date) and summarise it here.
   "Personal details stay out of the repository";
   [`log/2026-11-07-privacy-check.md`](log/2026-11-07-privacy-check.md)).
   Its six follow-ups from #86's last review are closed: RTF formatting,
-  a block in minified HTML and a PDF line no longer hide a list word, an
-  XMP place near zero degrees is found, and the guard reads HTTPie's
-  standalone `@file` body and refuses `gh pr create --fill`
+  a block in minified HTML, and a PDF line of level text no longer hide a
+  list word (text a PDF rotates still can, when it is shown in pieces
+  after other text), an XMP place near zero degrees is found, and the
+  guard reads HTTPie's standalone `@file` body and refuses
+  `gh pr create --fill`
   ([`log/2026-11-08-privacy-check-follow-ups.md`](log/2026-11-08-privacy-check-follow-ups.md)).
   Next for agents, in a pull request of its own: trim AGENTS.md (81 KB)
   without losing a rule, with a snapshot in `docs/archive/` first, moving

@@ -5535,6 +5535,9 @@ public:
   picture and screenshot before committing it;
 - page text in a PDF font with no ToUnicode map, or in a stream encoded
   with a filter other than Flate, ASCII hex and ASCII85 (such as LZW);
+  a list word a PDF shows in pieces on a rotated line after other text;
+  an XMP coordinate written in an element nested in its own
+  (`rdf:value`) rather than as its text or an attribute;
   encrypted PDFs and archive entries;
   anything past 64 MB of inflated content in one file, or nested more
   than four files deep;

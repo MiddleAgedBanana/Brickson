@@ -37,7 +37,12 @@ listed in its *Follow-ups*. Each now has a test that failed first:
   equator) or a padded `005,30.5N` read as no place. Now any number but
   zero in the value is a place (a rational's denominator, the `/1` a
   tool's text copy writes, is not one), and zeros alone still pass, as a
-  camera with no fix writes them (4503283734).
+  camera with no fix writes them (4503283734). The value is looked for
+  up to the next tag only: from a closing tag, the old pattern could
+  reach the next element's numbers (a time, an altitude) and report a
+  place where none was recorded, which CodeRabbit found on this pull
+  request; an XMP coordinate in an element nested in its own
+  (`rdf:value`) is now missed, and docs/DECISIONS.md says so.
 - **HTTPie's standalone `@file` body was not read.**
   `http POST <api url> @payload.json` sends the file as the body, as if
   from stdin (HTTPie's parser, `_parse_items` and `_body_from_file`,
@@ -96,10 +101,38 @@ they edit the same files:
   Avery approved it on 2026-11-08 ("yes to all three", on the Codex
   decisions the coordinator put to them).
 
+## Reviews on the pull request
+
+Round 1 (CodeRabbit, on `26a8bc9`), all four fixed in one push:
+
+- XMP's value could be read past a closing tag (above), with a test
+  that failed first: a zero coordinate followed by a time or an altitude
+  reported a place.
+- The push cap left no place to record a finding declined after the
+  final push, and told the agent to resolve threads even for a real bug
+  found then. Declined findings now go in the pull request's description
+  after the final push, for the next pull request to record, and a real
+  bug or rule violation found then, or CI still failing, stays open for
+  the owner.
+- HANDOFF's PDF sentence now says that text a PDF rotates can still hide
+  a word shown in pieces after other text, as docs/DECISIONS.md, *What
+  it cannot catch*, now does too.
+
+Codex's security review of `26a8bc9` found no issues. CI on `26a8bc9`
+(run 42433516468): unit tests, UI tests on iPhone and every other check
+passed; UI tests on iPad failed one test of 72,
+`SettingsTests.testAnIdleSettingsReturnsToItsFirstScreenAndStaysOpen`
+("Family Setup did not open after familySetup was chosen"), in a job
+that took 69 minutes against the iPhone's 45. This pull request changes
+no app or UI-test code, `main`'s run before it passed, and the same test
+failed once before on a branch that did not touch it
+(`2026-10-22-audit-still-screen.md`, its table of failures), so it is
+recorded here rather than changed; the round 1 push runs it again.
+
 ## Commits
 
 See the pull request; one commit for the checks and their tests, one for
-the documents.
+the documents, and one for each review round.
 
 ## Verified
 

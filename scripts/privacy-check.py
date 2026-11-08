@@ -946,8 +946,10 @@ XMP_START, XMP_END = b'<x:xmpmeta', b'</x:xmpmeta>'
 # place when any of its numbers is not zero, however many zeros it starts
 # with (0,26.7N near the equator, 005,30.5N padded). A camera with no fix
 # writes zeros alone, and a rational's denominator (the /1) is not one of
-# its numbers.
-GPS_IN_XMP = re.compile(r'GPS(?:Latitude|Longitude)[^0-9]{0,40}([0-9][0-9.,/\s]{0,40})')
+# its numbers. The value is looked for up to the next tag only, so the
+# numbers of the element after a closing tag (a time, an altitude) are not
+# taken for it.
+GPS_IN_XMP = re.compile(r'GPS(?:Latitude|Longitude)[^0-9<]{0,40}([0-9][0-9.,/\s]{0,40})')
 RATIONAL_DENOMINATOR = re.compile(r'/\s*[0-9]+')
 EXIF_SIZES = {1: 1, 2: 1, 3: 2, 4: 4, 5: 8, 6: 1, 7: 1, 8: 2, 9: 4, 10: 8, 11: 4, 12: 8}
 

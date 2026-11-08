@@ -565,10 +565,14 @@ CI results that one push brings. Push only when CI fails, a reviewer finds
 a real bug or a rule violation, or `main` moved and must be merged in.
 Batch cosmetic, wording and style findings into one otherwise needed
 push, or answer them in words and resolve the thread; never one push per
-finding. After the final push, answer the rest in words, record declined
-findings in docs/DECISIONS.md or docs/HANDOFF.md, and resolve the
-threads; if CI still fails, stop and tell the owner what fails and the
-fix you propose. This replaces counting the
+finding. Record declined findings in docs/DECISIONS.md or
+docs/HANDOFF.md with a push you make anyway; after the final push, list
+them in the pull request's description instead, for the next pull
+request to record. After the final push, answer the rest in words and
+resolve their threads, but a real bug or rule violation found then, or
+CI still failing, stays open: tell the owner what it is and the fix you
+propose, and the owner decides whether another push goes in. This
+replaces counting the
 [stop after two rounds rule](docs/log/2026-10-22-agent-guardrail-reconciliation.md#main-refresh-and-declined-findings-2026-10-23)
 from the first green run, which never applied to #86: it was first green
 at its fourteenth push (`docs/log/2026-11-08-privacy-check-follow-ups.md`).

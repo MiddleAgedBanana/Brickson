@@ -2535,6 +2535,14 @@ class ExactFieldTests(unittest.TestCase):
                         (b'0.000000', b'-0.0'), (b'0/1, 0/1, 0/100', b'0/1,0/1,0/1')]:
             with self.subTest(nowhere=nowhere):
                 self.assertEqual(located(*nowhere), [[], []])
+        # The numbers of the element after a coordinate are not its value.
+        for after in [b'<exif:GPSTimeStamp>2026-11-08T01:20:00Z</exif:GPSTimeStamp>',
+                      b'<exif:GPSAltitude>120/1</exif:GPSAltitude>']:
+            xmp = (b'<x:xmpmeta><exif:GPSLatitude>0,0.0N</exif:GPSLatitude>'
+                   b'<exif:GPSLongitude>0,0.0E</exif:GPSLongitude>' + after + b'</x:xmpmeta>')
+            with self.subTest(after=after[:20]):
+                self.assertEqual(self.found(png(png_chunk(
+                    b'iTXt', b'XML:com.adobe.xmp\0\0\0\0\0' + xmp))), [])
 
     def test_a_gif_s_comment_and_plain_text_are_read(self):
         self.assertEqual(self.found(gif_file(b'!\xfe' + gif_blocks(b'Photo of Tobble')),
