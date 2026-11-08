@@ -33,6 +33,10 @@ if 'sleep' in mode:
 if 'touch' in mode:
     with open('stray.txt', 'w') as stray:
         stray.write('x\n')
+if 'spawn' in mode:
+    import subprocess
+    subprocess.Popen(['/bin/sh', '-c', 'sleep 3; echo late > late.txt'])
+    time.sleep(20)
 if entry['tool'] == 'codex':
     if args and args[0] == 'review':
         print('No P0 or P1 findings.')
@@ -93,7 +97,7 @@ class BridgeTests(unittest.TestCase):
         for part in ('.claude/hooks/guard.py', 'scripts/privacy-check.py', 'AGENTS.md'):
             (seed / part).parent.mkdir(parents=True, exist_ok=True)
             (seed / part).write_text('# stand-in\n')
-        (seed / '.gitignore').write_text('build/\n')
+        (seed / '.gitignore').write_text('build/\n.agents/\n')
         env = {**os.environ, **self.env}
         for args in (['add', '.claude', 'scripts', 'AGENTS.md', '.gitignore'],
                      ['commit', '-q', '-m', 'start'], ['remote', 'add', 'origin', str(origin)],
@@ -310,19 +314,56 @@ class BridgeTests(unittest.TestCase):
         self.assertEqual(done[0].read_text(), 'finished\n')
 
     def test_two_background_jobs_keep_separate_logs(self):
+        other = self.home / 'code' / 'brickson-other'
+        git(self.owner, 'worktree', 'add', '-q', '-b', 'claude/other', str(other), 'origin/main')
         first = self.bridge('codex', '--brief', str(self.brief), '--background')
-        second = self.bridge('codex', '--brief', str(self.brief), '--background')
+        second = self.bridge('codex', '--brief', str(self.brief), '--background', '--worktree', str(other))
         logs = [line.split(' printed in ')[1].split('. Read')[0]
                 for line in (first.stdout, second.stdout)]
         self.assertEqual(len(set(logs)), 2, logs)
-        jobs = self.worktree / 'build' / 'agent-bridge'
+        jobs = [self.worktree / 'build' / 'agent-bridge', other / 'build' / 'agent-bridge']
         for _ in range(60):
-            if jobs.exists() and len(list(jobs.glob('*/done'))) == 2:
+            if all(j.exists() and list(j.glob('*/done')) for j in jobs):
                 break
             time.sleep(0.5)
-        self.assertEqual(len(list(jobs.glob('*/done'))), 2)
+        self.assertTrue(all(len(list(j.glob('*/done'))) == 1 for j in jobs))
         for log in logs:
             self.assertIn('Job folder: ', Path(log).read_text())
+
+    def test_a_second_job_in_the_same_folder_is_refused(self):
+        import fcntl
+        git_dir = subprocess.run(['git', '-C', str(self.worktree), 'rev-parse', '--absolute-git-dir'],
+                                 capture_output=True, text=True, check=True).stdout.strip()
+        with open(Path(git_dir) / 'agent-bridge.lock', 'w') as held:
+            fcntl.flock(held, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            busy = self.bridge('codex', '--brief', str(self.brief))
+        self.assertEqual(busy.returncode, 2)
+        self.assertIn('another bridge job', busy.stderr)
+        self.assertEqual(self.calls(), [])
+        self.assertEqual(self.bridge('codex', '--brief', str(self.brief)).returncode, 0)
+
+    def test_a_file_rewritten_in_a_read_only_job_is_reported(self):
+        (self.worktree / 'stray.txt').write_text('the thread\'s own work\n')
+        result = self.bridge('codex', '--brief', str(self.brief), env={'STUB_MODE': 'touch'})
+        self.assertEqual(result.returncode, 1)
+        summary = json.loads((self.job_folder(result) / 'summary.json').read_text())
+        self.assertEqual(summary['status'], 'changed files in a read-only job')
+
+    def test_agy_refuses_a_folder_with_uncommitted_work(self):
+        self.point_agy_at(self.agy_folder)
+        self.install_agy_hook()
+        (self.agy_folder / 'notes.txt').write_text('someone\'s work\n')
+        result = self.bridge('agy', '--brief', str(self.brief))
+        self.assertEqual(result.returncode, 2)
+        self.assertIn('uncommitted', result.stderr)
+        self.assertEqual(self.calls(), [])
+
+    def test_a_timeout_stops_what_the_agent_started(self):
+        result = self.bridge('codex', '--brief', str(self.brief), '--timeout', '0.02',
+                             env={'STUB_MODE': 'spawn'})
+        self.assertEqual(result.returncode, 1)
+        time.sleep(4)
+        self.assertFalse((self.worktree / 'late.txt').exists())
 
     def test_status_names_what_is_installed(self):
         self.point_agy_at(self.agy_folder)

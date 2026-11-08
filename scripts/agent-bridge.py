@@ -40,9 +40,12 @@ Standard library only; Python 3.9. Its tests are scripts/test-agent-bridge.py.
 """
 import argparse
 import datetime
+import fcntl
+import hashlib
 import json
 import os
 import re
+import signal
 import subprocess
 import sys
 import tempfile
@@ -53,6 +56,7 @@ ADAPTER = 'brickson_guard_adapter.py'
 AGY_FOLDER = '~/code/brickson-antigravity'
 CODEX_FOLDER = '~/code/brickson-codex-{topic}'
 TOPIC = re.compile(r'^[a-z0-9][a-z0-9-]{0,48}$')
+HELD = []  # locks held until the process ends
 
 PREAMBLE = """You are working on Brickson, an app for people living with ALS, for its
 owner. A Claude thread handed you this job through scripts/agent-bridge.py.
@@ -154,6 +158,26 @@ def start_branch(folder, branch):
     git(folder, 'switch', '-q', '-c', branch, '--no-track', 'origin/main')
 
 
+def hold_checkout(checkout):
+    """An exclusive lock on the checkout for this job's whole run, so two
+    jobs never share one (agy's folder is shared by every agy job). Kept
+    until the process ends."""
+    git_dir = Path(git(checkout, 'rev-parse', '--absolute-git-dir'))
+    handle = open(git_dir / 'agent-bridge.lock', 'w')
+    try:
+        fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        handle.close()
+        raise Stop(f'another bridge job is running in {checkout}; wait for its `done` file')
+    HELD.append(handle)
+
+
+def require_clean(checkout):
+    if changed_lines(checkout):
+        raise Stop(f'{checkout} has uncommitted changes or new files outside build/; '
+                   'an agent shares nobody\'s uncommitted work, so the job needs it clean')
+
+
 def job_folder(checkout, agent, kind):
     stamp = datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%SZ')
     base = checkout / 'build' / 'agent-bridge'
@@ -168,24 +192,59 @@ def job_folder(checkout, agent, kind):
     raise Stop(f'too many jobs started at once in {base}')
 
 
+def changed_lines(checkout):
+    return sorted(line for line in git(checkout, 'status', '--porcelain', '--untracked-files=all',
+                                       check=False).splitlines()
+                  if not line[3:].startswith('build/'))
+
+
 def git_state(checkout):
+    """Branch, commit, and every changed or new file with a hash of its
+    contents, so a file rewritten in place shows too."""
+    changed = changed_lines(checkout)
+    contents = {}
+    for line in changed:
+        path = checkout / line[3:].split(' -> ')[-1].strip('"')
+        if path.is_file():
+            contents[line[3:]] = hashlib.sha256(path.read_bytes()).hexdigest()
     return {'branch': git(checkout, 'branch', '--show-current', check=False),
             'head': git(checkout, 'rev-parse', 'HEAD', check=False),
-            'changed': sorted(line for line in git(checkout, 'status', '--porcelain',
-                                                    check=False).splitlines()
-                              if not line[3:].startswith('build/'))}
+            'changed': changed, 'contents': contents}
+
+
+def stop_group(process):
+    """Stop every process the agent started, so nothing changes the
+    checkout after the summary is written."""
+    for sig, grace in ((signal.SIGTERM, 5), (signal.SIGKILL, 5)):
+        try:
+            os.killpg(process.pid, sig)
+        except (ProcessLookupError, PermissionError):
+            break
+        try:
+            process.wait(timeout=grace)
+        except subprocess.TimeoutExpired:
+            continue
+        deadline = time.time() + grace
+        while time.time() < deadline:
+            try:
+                os.killpg(process.pid, 0)
+            except (ProcessLookupError, PermissionError):
+                return
+            time.sleep(0.1)
 
 
 def run(command, cwd, out, timeout_minutes):
-    """Run command with stdin closed, writing stdout and stderr to files."""
+    """Run command with stdin closed, in a process group of its own,
+    writing stdout and stderr to files."""
     started = time.time()
     with open(out / 'output.txt', 'w') as stdout, open(out / 'stderr.txt', 'w') as stderr:
+        process = subprocess.Popen(command, cwd=str(cwd), stdin=subprocess.DEVNULL,
+                                   stdout=stdout, stderr=stderr, start_new_session=True)
         try:
-            process = subprocess.run(command, cwd=str(cwd), stdin=subprocess.DEVNULL,
-                                     stdout=stdout, stderr=stderr, timeout=timeout_minutes * 60)
-            code = process.returncode
+            code = process.wait(timeout=timeout_minutes * 60)
         except subprocess.TimeoutExpired:
             code = None
+        stop_group(process)
     return code, round(time.time() - started, 1)
 
 
@@ -199,7 +258,8 @@ def finish(out, checkout, before, code, seconds, extra):
     summary = {'status': status, 'exit_code': code, 'seconds': seconds,
                'branch': after['branch'], 'commits': commits,
                'changed_files': after['changed'], **extra}
-    if extra.get('read_only') and (commits or after['changed'] != before['changed']):
+    if extra.get('read_only') and (commits or after['changed'] != before['changed']
+                                   or after['contents'] != before['contents']):
         summary['status'] = 'changed files in a read-only job'
     (out / 'summary.json').write_text(json.dumps(summary, indent=2) + '\n')
     (out / 'done').write_text(summary['status'] + '\n')
@@ -218,6 +278,7 @@ def brief_text(args, folder, branch):
 
 def codex_review(args):
     checkout = brickson_checkout(args.worktree or os.getcwd())
+    hold_checkout(checkout)
     out = job_folder(checkout, 'codex', 'review')
     command = ['codex', 'review', '-c', 'sandbox_mode="read-only"', '--base', args.base]
     write_command(out, command, checkout)
@@ -238,12 +299,16 @@ def codex_job(args):
             git(source, 'fetch', '-q', 'origin', 'main')
             git(source, 'worktree', 'add', '-q', '-b', branch, '--no-track', str(folder), 'origin/main')
             checkout = brickson_checkout(folder)
+            hold_checkout(checkout)
         else:
             checkout = brickson_checkout(folder)
+            hold_checkout(checkout)
+            require_clean(checkout)
             start_branch(checkout, branch)
     else:
         branch = None
         checkout = brickson_checkout(args.worktree or os.getcwd())
+        hold_checkout(checkout)
     out = job_folder(checkout, 'codex', 'write' if args.write else 'read')
     prompt = brief_text(args, checkout, branch)
     (out / 'brief.md').write_text(prompt)
@@ -267,6 +332,8 @@ def agy_job(args):
                    f'{folders or "unreadable"}, not {checkout}; it must be that folder alone')
     if not hook_installed_for_agy(checkout):
         raise Stop(f'{checkout}/.agents/hooks.json does not run the guard hook')
+    hold_checkout(checkout)
+    require_clean(checkout)  # agy has no read-only sandbox, and the folder is shared
     branch = None
     if args.write:
         branch = f'antigravity/{args.branch}'

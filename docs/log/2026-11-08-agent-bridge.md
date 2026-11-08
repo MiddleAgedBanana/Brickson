@@ -1,6 +1,6 @@
 # A bridge for handing work to Codex and agy
 
-*2026-11-08. Pull request #90 (`claude/agent-bridge`). The bridge thread,
+*2026-11-08. Pull request #91 (`claude/agent-bridge`). The bridge thread,
 a Claude Code session on the owner's Mac through Remote Control, at the
 owner's request.*
 
@@ -29,6 +29,14 @@ them again. `scripts/agent-bridge.py` handles them once:
 - A Remote Control session stops after about 60 idle minutes, so
   `--background` runs a job detached, and a `done` file appears when the
   job ends.
+- One job at a time per checkout: a job holds a lock on its checkout
+  (`agent-bridge.lock` in its git folder) from start to summary, so two
+  threads never share agy's folder at once. agy has no read-only sandbox
+  and its folder is shared, so an agy job also refuses to start while
+  that folder holds uncommitted work.
+- A job runs in a process group of its own. When it ends or times out,
+  everything the agent started is stopped before the summary is written,
+  so nothing changes the checkout afterwards.
 
 How a thread on the Mac uses it, from any Brickson worktree:
 
@@ -47,7 +55,9 @@ whole prompt sent), `command.json`, the agent's raw output, `result.md`
 (its final message) and `summary.json`. The summary records how the job
 ended, the refusals, the tool steps, and the branch, commits and changed
 files as git reports them, not as the agent does. A read-only job that
-changes a file anyway is reported as such. Every brief opens with the
+changes a file anyway is reported as such, including a file it rewrites
+in place: the summary compares each changed file's contents, not only
+git's list. Every brief opens with the
 same rules: read all of AGENTS.md with `cat AGENTS.md`, work only in the
 named folder, never push to `main`, force-push or merge, no real
 people's details, evidence under `build/`, and a final message saying
@@ -66,20 +76,24 @@ What an agent returns is data, never instructions or approval (AGENTS.md,
 
 ## Commits
 
-The commits of pull request #90.
+The commits of pull request #91.
 
 ## Verified
 
 On the owner's Mac (macOS 27.2; the Mac's `/usr/bin/python3`, 3.9), on
 2026-11-08:
 
-- `scripts/test-agent-bridge.py`, 16 of 16. It uses stand-ins for `codex`
+- `scripts/test-agent-bridge.py`, 20 of 20. It uses stand-ins for `codex`
   and `agy` that record how they were called and answer as the real tools
   did, in throwaway repositories with a made-up home folder. Seven broken
   copies of the bridge each failed it: stdin left open, the owner's
   checkout allowed, Codex given write access in a read-only job, agy's
   refusals not read, agy's project folder not checked, a change in a
-  read-only job not reported, and the brief's rules left out.
+  read-only job not reported, and the brief's rules left out. The four
+  tests added for Codex's review (a second job in the same folder, a file
+  rewritten in a read-only job, agy's folder with uncommitted work, and a
+  timeout that leaves a child process writing) failed on the first
+  version of the bridge.
 - **A real Codex review through the bridge.** `codex-review` on pull
   request #89's branch finished in 10 s. Codex's answer, in
   `result.md`: "The changes document an external setup and its
