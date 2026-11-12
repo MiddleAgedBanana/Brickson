@@ -2,7 +2,8 @@
 
 *Roadmap: R0, the quality bar's Q2 (the Library's first follow-up).
 Owner: the thread "Fix Home's short-category dwell hazard". Status:
-building.*
+done; merged in pull request #81 on 2026-11-05, after CI's unit and UI
+tests passed on its final head (run 42042331740).*
 
 ## Intent
 
