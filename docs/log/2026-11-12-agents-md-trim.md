@@ -85,6 +85,9 @@ Also in this pull request:
   tested the code.
 - **Snapshot.** The old AGENTS.md, byte for byte, is
   `docs/archive/2026-11-12-before-agents-md-trim/AGENTS.md`.
+- **Pull request #98** merged first and added a paragraph to the iPhone
+  Duo gotcha in AGENTS.md; merging `main` here moved it, word for word,
+  into docs/AGENT-REFERENCE.md, *Gotchas*.
 
 ## Commits
 
@@ -333,9 +336,8 @@ Measurements, file inventories and historical observations are not rules.
 
 On the owner's Mac (macOS, Python 3), documents only:
 
-- `python3 scripts/test-docs.py`: every cited section and link resolves
-  in the repository's files; the only failures came from ignored bridge
-  job files under `build/`, which CI does not have.
+- `python3 scripts/test-docs.py`, `scripts/test-hooks.py` and
+  `scripts/test-privacy.py` passed after merging `main`.
 - The invariants, every *Code Review Rules* bullet, the privacy, layout
   and design sections and *Working with the owner* compared byte for byte
   with the snapshot, apart from the planned-features pointer and the
@@ -383,12 +385,8 @@ On the owner's Mac (macOS, Python 3), documents only:
 - **A later code change:** a check in `scripts/test-docs.py` that
   *Code Review Rules* ends within 24,000 bytes, and perhaps one for the
   whole file; it still checks only that the sections Codex must read
-  end within 32 KiB. The same check reads ignored files under `build/`,
-  so a bridge brief there can fail it on a Mac.
+  end within 32 KiB.
 - **A later code change:** the same hook gap in the docstring of
   `.claude/hooks/guard.py`.
-- **Open pull request #98** adds a paragraph to the iPhone Duo gotcha in
-  AGENTS.md; whichever of the two merges second moves it into
-  docs/AGENT-REFERENCE.md, *Gotchas*.
 - **The bridge:** let a Codex write job commit (recorded as the bridge's
   next item).

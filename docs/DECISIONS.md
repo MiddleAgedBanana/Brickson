@@ -2179,6 +2179,64 @@ remains a draft until that batch is tested and its findings handled;
 current-head PR checks govern review readiness. No physical Touch
 Accommodations, dwell or AXPress result is inferred.
 
+### Why a drag spoke
+
+*2026-11-11. Found on the owner's Mac; record:
+[`log/2026-11-12-duo-drag-speech.md`](log/2026-11-12-duo-drag-speech.md).*
+The cause the repair above did not name, which project notes carried
+as "cause unknown":
+
+- **A standard Button speaks when the finger lifts within it, however far
+  the finger moved while down**, unless something takes the touch over
+  first. Yes does this today: a 60-point slide that stays on Yes says
+  "Yes.", as `SlowPressTests` already expects of a slide from Yes.
+- **The only thing that takes a phrase's touch over is the phrase scroll
+  view**, and only once the finger has moved far enough to start a
+  scroll in a direction the view can move: about 10 points on the
+  simulator. Apple's
+  [`canCancelContentTouches`](https://developer.apple.com/documentation/uikit/uiscrollview/cancancelcontenttouches.md)
+  describes this for UIKit's scroll view, which a content view's touch
+  is cancelled by "if the user drags the finger enough to initiate a
+  scroll"; that SwiftUI's `ScrollView` does the same is inferred from the
+  measurements, not documented.
+- **Before the repair, a grid whose phrases all fit could not start a
+  scroll**: `scrollDisabled` turned scrolling off, and `.basedOnSize`
+  bounces only content larger than the view
+  ([basedOnSize](https://developer.apple.com/documentation/swiftui/scrollbouncebehavior/basedonsize.md)).
+  So nothing took the touch over and every slide on a fitting grid
+  spoke. Where the phrases overflowed, the view could scroll and the
+  same slides were silent: on iPhone Duo's tall window at AX5 the grid
+  overflowed and the drag tests passed with the old modifiers, while at
+  the default text size it fit and they failed.
+- **A touch in the gap between two tiles belongs to a tile**: in the
+  middle of the 8-point gap, the one to its right. That is how the old
+  prototype's gutter drags spoke: its start, in the bottom row's first
+  gap, belongs to "I'm not finished.", the phrase the light case said.
+
+With the repair, the view can always start a vertical scroll, so an up
+or down slide of about 10 points or more, from a tile or a gap, says
+nothing, fitting grid or not; a 5-point wobble still speaks. Measured
+with `PhraseDragProbeTests` on the iPhone Duo simulator's tall window, both
+ways round. None of this was measured with a real finger, dwell, a head
+pointer or Switch Control, which tap at a point and do not slide.
+
+### Sideways slides
+
+*Owner's decision, 2026-11-11, on the recommendation of the thread that
+found the cause.* A finger that slides sideways and lifts on the phrase
+it began on says that phrase, and never another, as a slide on Yes says
+Yes. Nothing on Home scrolls sideways, so a sideways slide is not an
+attempt to scroll; making it silent would swallow more presses from
+weak or unsteady hands (invariant 2). Apple's Touch Accommodations
+(Hold Duration, Ignore Repeat, Tap Assistance) are where a person's own
+touch is tuned, not app code (*Design rules for dwell, switch and
+pointer input* in `AGENTS.md`: no time-based input guards or custom
+pointer code). Letting the phrase view bounce sideways as well
+(`scrollBounceBehavior(.always, axes: [.horizontal, .vertical])`) did
+not change it when tried. `PhraseDragTests` pins both sides: a 40-point
+sideways slide says its phrase, and a 5-point wobble still speaks; a
+high-priority drag gesture on the grid fails each, as measured.
+
 ## Home's slot plan
 
 *2026-10-21. Default, adopted 2026-10-21: the owner left these choices to
@@ -3334,6 +3392,25 @@ How the message being typed behaves (`MessageComposer`, `DraftStore`):
   A file that cannot be read at launch gives an empty message and
   "Message not restored". The message is never logged and never put in a
   crash message.
+- **The saved message keeps iOS's default file protection** (owner,
+  2026-11-12). `draft.txt` is written with
+  `.completeFileProtectionUntilFirstUserAuthentication`, the class iOS
+  gives an app's files when the app sets none, as the phrase library and
+  settings do: readable once the device has been unlocked after it
+  started, locked or not. Complete protection, readable only while the
+  device is unlocked, was proposed in pull request #94 and not taken.
+  The privacy policy promises only that iOS encrypts Brickson's storage
+  when the device has a passcode, which the default already does. And
+  the message is read once, at launch, so a launch while the device is
+  locked (R2's Get Attention and Emergency from Siri or the Action
+  button may start Brickson then) could not read it: Home would show
+  "Message not restored", and the next change would replace the saved
+  message. The default has the same gap before the first unlock after a
+  restart, which nothing reaches today; docs/ROADMAP.md's Siri and
+  Shortcuts work file (item 10) settles it, so that a message the
+  device kept locked is read once it unlocks and never replaced before.
+  Revisit complete protection only after that, and for the phrase
+  library too.
 
 ## Typing on Home
 
