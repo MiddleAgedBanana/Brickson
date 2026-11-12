@@ -4,7 +4,8 @@
 item docs/HANDOFF.md, *Known gaps*, names "Not scored yet": Voice
 Settings itself, the Personal Voice question, and Family Setup scrolled.
 Owner: the thread "Check held looks on Settings' unchecked screens" (a
-cloud session; GitHub CI is its build). Status: spec and plan, building.*
+cloud session; GitHub CI is its build). Status: built, untested in the
+app until CI runs it.*
 
 ## Intent
 
@@ -122,7 +123,11 @@ cloud session; GitHub CI is its build). Status: spec and plan, building.*
   `Brickson/Settings/VoiceSettingsView.swift`,
   `Brickson/Settings/FamilySetupView.swift`,
   `Brickson/Settings/SettingsView.swift` (`SettingsLanding.voiceRow`),
-  `Brickson/Layout/LibraryQuestionPlace.swift` (its comment),
+  `Brickson/Settings/SettingsComponents.swift` (comments),
+  `Brickson/Layout/LibraryQuestionPlace.swift` (a row that showed only
+  in part: the choices start clear of all of it, which the sweep
+  across Family Setup's scrolls found; the Library's questions take the
+  same rule), `BricksonTests/Layout/LibraryQuestionPlaceTests.swift`,
   `Brickson/Resources/Localizable.xcstrings` (the new words), and the
   records: docs/DECISIONS.md, docs/HANDOFF.md,
   docs/ROADMAP.md, docs/DEVICE-CHECKS.md, a `docs/log/` record.
@@ -144,14 +149,17 @@ cloud session; GitHub CI is its build). Status: spec and plan, building.*
   - `VoiceSettingsChainsTests.theScreenAsOnMainMeetsASpeed`: fails if the
     surface cannot see the hazard (as before this change, when Family
     Setup's row led nowhere the chains followed).
-  - `VoiceSettingsChainsTests.noHeldLookChangesTheVoice`: fails with the
+  - `VoiceSettingsChainsTests.noHeldLookActsOnTheVoice`: fails with the
     way back at the top of the screen or the content not moved down.
-  - `VoiceSettingsChainsTests.placedFromTheContentAScrolledRowMeetsASpeed`:
+  - `VoiceSettingsChainsTests.placedFromTheContentAScrolledRowMeetsBackToTalking`:
     fails if the way back's place ignored Family Setup's scroll and no
     hazard followed, which would mean the scroll test proves nothing.
+  - `LibraryQuestionPlaceTests.aRowPastTheFootKeepsTheChoicesClearOfAllOfIt`:
+    fails with the choices placed clear of the way back alone, as before
+    this change.
   - `SettingsOnHomeTests`: Voice Settings read where its row shows,
     scored with every other Settings screen (fails on any hazard, a new
-    kind `changesTheVoice` among them), the way back checked in the row's
+    kind `actsOnTheVoice` among them), the way back checked in the row's
     place, and the row back under it after going back; and
     `testVoiceSettingsFromAScrolledFamilySetup` at the largest text,
     where Family Setup scrolls on both devices.

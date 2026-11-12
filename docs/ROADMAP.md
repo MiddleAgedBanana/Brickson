@@ -746,10 +746,10 @@ what passes and who checks it:
   are only hypotheses until a device shows the real one (docs/HANDOFF.md,
   *Known gaps*). The chain engine scores every screen the
   release ships, including those not scored yet (iOS's Personal Voice
-  question, Voice Settings, Family Setup scrolled before a row other
-  than the check-in card's Go Through Setup Again is chosen, the first
-  step's guide scrolled, and Settings' other screens), and finds
-  nothing new. *Checks:* a thread and CI
+  question, Voice Settings' own words, Family Setup scrolled before a
+  row other than the check-in card's Go Through Setup Again or Voice
+  Settings is chosen, the first step's guide scrolled, and Settings'
+  other screens), and finds nothing new. *Checks:* a thread and CI
   score; after the Snap to Item device check (Q12), the owner decides
   each hazard that placement does not remove. *Today:* seven open, plus
   iPhone Duo's changed-window finding. Three of the seven are the
@@ -765,7 +765,11 @@ what passes and who checks it:
   and reopened for the owner if it skips one);
   the Library's screens are scored on modelled frames and on CI's iPad
   and iPhone at the default and largest text sizes, with nothing found
-  (`LibraryChainsTests`, `LibraryTests`); the Duo chain was scored on
+  (`LibraryChainsTests`, `LibraryTests`); Voice Settings, where a look
+  held after Family Setup's row met a speed on main's CI frames, is
+  placed and scored from 2026-11-12, with nothing found in the model
+  (`VoiceSettingsChainsTests`; in the app once CI runs
+  `SettingsOnHomeTests`); the Duo chain was scored on
   2026-10-25's app and not again since Settings changed on 2026-10-30;
   the unscored screens are in docs/HANDOFF.md, *Known gaps*.
 - **Q3. Every floor named.** Every control on every screen meets the
