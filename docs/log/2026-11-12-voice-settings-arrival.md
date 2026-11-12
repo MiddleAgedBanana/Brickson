@@ -1,6 +1,6 @@
 # Voice Settings, reached with a held look
 
-*2026-11-12. Pull request #<n> (`claude/project-thread-vl7g7k`). A cloud
+*2026-11-12. Pull request #104 (`claude/project-thread-vl7g7k`). A cloud
 thread, "Check held looks on Settings' unchecked screens"; GitHub CI is
 its build.*
 
@@ -58,7 +58,9 @@ which Open Personal Voice Settings has, and which counts as a hazard).
 - `fe8e6ee` Keep question choices clear of a row past the foot.
 - `50e1a43` Put Voice Settings' way back where its row showed.
 - `269f5b9` Read Voice Settings where its row shows, scrolled or not.
-- The records, and a merge of `main` once pull request #103 landed.
+- `9d00609` Record Voice Settings reached with a held look.
+- A fix to the existing `SettingsChainsTests` for the new screen
+  (below), and a merge of `main` once pull request #103 landed.
 
 ## Verified
 
@@ -71,7 +73,17 @@ isolation, in a debug build):
 
 - `VoiceSettingsChainsTests` and `LibraryQuestionPlaceTests`, 15 tests,
   all passing, in about 2.4 seconds together; `LibraryChainsTests`, 6
-  tests, still passing with the placement change.
+  tests, still passing with the placement change; `SettingsChainsTests`
+  (in `ChainEngineTests.swift`), 14 tests, passing in about 44 seconds,
+  as on #103.
+- The verifier found three expectations in the existing
+  `SettingsChainsTests` that still had Family Setup's Voice Settings row
+  leading to an unread guide and Settings' screens without Voice
+  Settings; they failed on Linux until updated in this pull request.
+  `ProfileChoiceTests` and `LateStageProfileTests`, which also build
+  Settings' chains, need more of the app than Linux has and were not
+  run; they build Settings without Voice Settings, where the row's chains
+  end as they did before.
 - What makes each new test fail, tried by undoing a change and running
   the tests again:
   - Family Setup's row leading nowhere the chains follow, as before this
