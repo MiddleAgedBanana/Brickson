@@ -33,7 +33,9 @@ end within that limit.
 from functools import cache
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
+import os
 import re
+import subprocess
 import unittest
 import tempfile
 import string
@@ -162,15 +164,21 @@ def without_code_spans(text, for_citations=False):
     return ''.join(output)
 
 
-def tracked_files():
-    """Every file the checks read, under ROOT, minus the excluded folders."""
+def tracked_files(root=ROOT):
+    """Every file the checks read: the repository's own files under root,
+    committed or new, minus the excluded folders. Files git ignores are not
+    the repository's: a bridge job's brief under build/ may cite a section
+    that does not exist yet, and Apple's exported skills sit in an ignored
+    folder, so neither is read."""
+    listed = subprocess.run(['git', '-C', str(root), 'ls-files', '-z', '--cached', '--others',
+                             '--exclude-standard'], capture_output=True, check=True).stdout
     files = []
-    for path in sorted(ROOT.rglob('*')):
-        relative = path.relative_to(ROOT).as_posix()
+    for path in sorted({root / os.fsdecode(name) for name in listed.split(b'\0') if name}):
+        relative = path.relative_to(root).as_posix()
         if (path.is_file() and path.suffix in SOURCE_SUFFIXES
                 and not relative.startswith(EXCLUDED)
                 and not any(part.startswith('.') and part not in ('.github', '.claude')
-                            for part in path.relative_to(ROOT).parts)
+                            for part in path.relative_to(root).parts)
                 and '.xcodeproj/' not in relative and 'DerivedData/' not in relative):
             files.append(path)
     return files
@@ -1185,6 +1193,34 @@ class CodexCutTests(unittest.TestCase):
 
 class DocumentTests(unittest.TestCase):
     """Renaming a cited section, or moving a linked file, must fail."""
+
+    def test_only_the_repositorys_own_files_are_read(self):
+        # Files git ignores are not the repository's: a bridge job's brief
+        # under build/ may cite a section that does not exist yet, and
+        # Apple's exported skills sit in an ignored folder. New files not
+        # yet added are the repository's, and are read.
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder).resolve()
+            env = {**os.environ, 'GIT_CONFIG_GLOBAL': os.devnull, 'GIT_CONFIG_NOSYSTEM': '1'}
+
+            def git(*args):
+                subprocess.run(['git', '-C', str(root), '-c', 'user.name=t',
+                                '-c', 'user.email=t@example.com', *args],
+                               check=True, capture_output=True, env=env)
+
+            git('init', '-q')
+            files = {'.gitignore': 'build/\nxcode-skills/\n', 'kept.md': '# Kept\n',
+                     'gone.md': '# Gone\n', 'docs/new name.md': '# New\n',
+                     'build/agent-bridge/job/brief.md': 'See docs/DECISIONS.md, "Not yet".\n',
+                     'xcode-skills/skill/SKILL.md': '# Apple\n'}
+            for name, text in files.items():
+                (root / name).parent.mkdir(parents=True, exist_ok=True)
+                (root / name).write_text(text)
+            git('add', '.gitignore', 'kept.md', 'gone.md')
+            git('commit', '-q', '-m', 'start')
+            (root / 'gone.md').unlink()
+            read = [path.relative_to(root).as_posix() for path in tracked_files(root)]
+        self.assertEqual(read, ['docs/new name.md', 'kept.md'])
 
     def test_every_cited_section_and_relative_link_resolves(self):
         files = tracked_files()
