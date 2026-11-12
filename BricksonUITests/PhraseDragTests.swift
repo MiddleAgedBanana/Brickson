@@ -45,6 +45,67 @@ final class PhraseDragTests: XCTestCase {
         attachCapture(app, name: "after-held-phrase")
     }
 
+    /// The other side of drag cancellation: a press whose finger wobbles a
+    /// few points, as a weak or unsteady hand's does, still speaks
+    /// (invariant 2). The phrase scroll view takes a touch over only once
+    /// it has moved far enough to start a scroll, about 10 points on the
+    /// simulator (docs/DECISIONS.md, "Phrase-grid drag cancellation").
+    /// A gesture added to the grid or its tiles that claims any movement,
+    /// or a scroll threshold lowered to a few points, must fail this.
+    @MainActor
+    func testASmallWobbleOnAPhraseStillSpeaks() throws {
+        try checkSpeaksAfterMoving(dx: 0, dy: -5, name: "after-phrase-wobble")
+    }
+
+    /// A touch belongs to the phrase it began on: one that slides sideways
+    /// and lifts on that phrase says it, and never says another, as a
+    /// slide on Yes says Yes (`SlowPressTests`). Nothing on Home scrolls
+    /// sideways, so this is not an attempt to scroll (docs/DECISIONS.md,
+    /// "Phrase-grid drag cancellation", *Sideways slides*; the owner's
+    /// decision of 2026-11-11). A gesture on the grid or its tiles that
+    /// claims sideways movement, which would swallow these presses, must
+    /// fail this.
+    @MainActor
+    func testASidewaysSlideOnAPhraseSaysThatPhrase() throws {
+        try checkSpeaksAfterMoving(dx: 40, dy: 0, name: "after-phrase-sideways-slide")
+    }
+
+    /// Presses the middle of a phrase tile, moves the finger by `dx`, `dy`
+    /// without leaving the tile, lifts, and requires that tile's words
+    /// and no other sentence.
+    @MainActor
+    private func checkSpeaksAfterMoving(dx: CGFloat, dy: CGFloat, name: String) throws {
+        let app = launchedApp()
+        defer { app.terminate() }
+        let tiles = app.buttons.matching(identifier: "phraseTile").allElementsBoundByIndex
+        let tile = try XCTUnwrap(tiles.first { $0.isHittable }, "No phrase tile can be touched")
+        let frame = tile.frame
+        XCTAssertGreaterThan(frame.width / 2, abs(dx) + 1, "The slide would leave the tile")
+        XCTAssertGreaterThan(frame.height / 2, abs(dy) + 1, "The slide would leave the tile")
+        let words = tile.label
+        let others = tiles.map(\.label).filter { $0 != words } + ["Yes.", "No."]
+        let messageRegion = app.descendants(matching: .any)["homeRegion.message"]
+        XCTAssertTrue(messageRegion.exists)
+        XCTAssertFalse(messageRegion.staticTexts[words].exists, "Speech had already changed the fresh Home before input")
+        // Offsets from the tile itself, never from the app's origin: on
+        // iPhone Duo's inner display, a point offset from the app's origin
+        // reported the aimed screen point but never reached Home.
+        let start = tile.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+        let end = start.withOffset(CGVector(dx: dx, dy: dy))
+        // Fail before input where XCTest maps the gesture somewhere else
+        // (a rotated iPhone Duo surface), as checkDrag does.
+        XCTAssertEqual(start.screenPoint.x, frame.midX, accuracy: 0.5)
+        XCTAssertEqual(start.screenPoint.y, frame.midY, accuracy: 0.5)
+        start.press(forDuration: 0.05, thenDragTo: end, withVelocity: .slow, thenHoldForDuration: 0.1)
+        XCTAssertTrue(
+            messageRegion.staticTexts[words].waitForExistence(timeout: 5),
+            "A press on \"\(words)\" that moved by (\(dx), \(dy)) points did not speak it"
+        )
+        attachCapture(app, name: name)
+        let other = messageRegion.staticTexts.matching(NSPredicate(format: "label IN %@", others)).firstMatch
+        XCTAssertFalse(other.exists, "A press that stayed on one phrase said another sentence")
+    }
+
     @MainActor
     private func checkDrags(
         textSize: UITestTextSize, appearance: UITestAppearance, requiresFittingGrid: Bool = false
