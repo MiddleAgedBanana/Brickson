@@ -26,6 +26,12 @@ import Vision
 /// the same test on the owner's Mac: that "No" in dark mode, with the
 /// white border every Home control draws there, whose whole capture read
 /// "I" (no-tall-edge.png).
+///
+/// One more comes from the check-in card's UI test on CI (pull request
+/// #103): Go Through Setup Again on an iPhone 17 at the largest text size,
+/// light, its words drawn whole on four lines with the icon beside "Go" cut
+/// by the button's rounded end, where the whole capture read every word
+/// but "Go" (gothrough-cut-icon.png).
 struct RenderedWordsTests {
     // Accurate mode, a second language, language correction or supplied
     // words each fail this.
@@ -103,6 +109,37 @@ struct RenderedWordsTests {
         }
         let dark = try #require(image(capture(of: "GetAttention", state: "dark")))
         #expect(RenderedWords.band(of: dark) == nil)
+    }
+
+    /// A short first word beside a cut icon is read past the icon: fails
+    /// if the crop past it is not read, or not cut between the icon and
+    /// the word.
+    @Test func aShortWordBesideACutIconIsRead() async throws {
+        let words = try await RenderedWords.read(contentsOf: capture(of: "GoThrough", state: "cut-icon"))
+        #expect(["Go", "Through", "Setup", "Again"].allSatisfy { RenderedWords.show($0, in: words) }, "recognized \(words)")
+    }
+
+    /// The crop past the icon: on Go Through Setup Again, from midway
+    /// across the gap between the icon, whose last marked column is 215
+    /// pixels in, and "Go", whose first is 262 in; on every other kept
+    /// capture, none, so each is read as it was. Fails if the crop cuts
+    /// into the word or leaves part of the icon, or crops one of the
+    /// others.
+    @Test func onlyWordsOfMoreThanOneLineAreCutPastTheirIcon() throws {
+        let goThrough = try #require(image(capture(of: "GoThrough", state: "cut-icon")))
+        let crop = try #require(RenderedWords.pastItsIcon(of: goThrough))
+        #expect(crop.height == goThrough.height)
+        #expect((216...261).contains(goThrough.width - crop.width), "cut \(goThrough.width - crop.width) pixels in")
+        for label in ["Yes", "No", "Emergency", "Again"] {
+            let whole = try #require(image(capture(of: label, state: "whole")))
+            #expect(RenderedWords.pastItsIcon(of: whole) == nil, "\(label)")
+        }
+        for state in ["tall", "tall-edge"] {
+            let tall = try #require(image(capture(of: "No", state: state)))
+            #expect(RenderedWords.pastItsIcon(of: tall) == nil, "\(state)")
+        }
+        let dark = try #require(image(capture(of: "GetAttention", state: "dark")))
+        #expect(RenderedWords.pastItsIcon(of: dark) == nil)
     }
 
     private func image(_ url: URL) -> CGImage? {

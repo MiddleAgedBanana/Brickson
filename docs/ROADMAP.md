@@ -747,8 +747,9 @@ what passes and who checks it:
   are only hypotheses until a device shows the real one (docs/HANDOFF.md,
   *Known gaps*). The chain engine scores every screen the
   release ships, including those not scored yet (iOS's Personal Voice
-  question, Voice Settings, the check-in rows, Family Setup and the
-  first step's guide scrolled, and Settings' other screens), and finds
+  question, Voice Settings, Family Setup scrolled before a row other
+  than the check-in card's Go Through Setup Again is chosen, the first
+  step's guide scrolled, and Settings' other screens), and finds
   nothing new. *Checks:* a thread and CI
   score; after the Snap to Item device check (Q12), the owner decides
   each hazard that placement does not remove. *Today:* seven open, plus
@@ -1093,8 +1094,10 @@ what passes and who checks it:
   default size; the Library, a category, Change Picture, Edit Phrase,
   Delete Phrase and the Restore question in light, and the Library,
   Edit Phrase and Delete Phrase in dark, at the default size
-  (`LibraryTests`); typing, Family Setup's check-in card, the Library's
-  other screens and the web version's sheet not at all.
+  (`LibraryTests`); Family Setup's check-in card light and dark at the
+  default size and light at AX5 (`SettingsTests`, since 2026-11-12,
+  passing on CI on both devices); typing, the Library's other screens and
+  the web version's sheet not at all.
 - **Q23. Every label earned.** Each Accessibility Nutrition Label
   Brickson declares meets Apple's criteria for every common task
   (docs/APP-STORE.md, section 4), because "users must be able to
@@ -1116,8 +1119,11 @@ what passes and who checks it:
   everyday categories too on rest boards of six and eight phrases
   (`HomeRestBoardTests`), and
   Phrases, Type and the everyday categories at Home's larger sizes on
-  an iPad in portrait (`HomeSizesTests`); nothing at AX3, no phrase
-  tile, no other screen's labels; no device run.
+  an iPad in portrait (`HomeSizesTests`), and Family Setup's check-in
+  rows light and dark at the default size and light at AX5
+  (`SettingsTests`, since 2026-11-12, passing on CI on both devices);
+  nothing at AX3, no phrase tile, no other screen's labels; no device
+  run.
 
 ### Complete, and true
 

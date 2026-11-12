@@ -29,7 +29,12 @@ import XCTest
 ///   be resting on the way in, Next only moves on, and the second step's
 ///   choices lie where a look resting on Next meets Next again
 ///   (`SetupChoicesPlace`; docs/DECISIONS.md, "The late-stage profile").
-///   Any hazard fails.
+///   With a check-in due (`--check-in-due`), it also reads the first step
+///   the card's Go Through Setup Again opens, with Learn About Each Way in
+///   that button's place, and the one Set Up Step by Step opens once the
+///   card is answered, with the answers clear of where the card's rows
+///   were, and follows chains through the card's rows into both. Any
+///   hazard fails, a check-in answered unasked among them.
 ///
 /// "Nearest" is scored two ways, because how Snap to Item picks a target is
 /// a device check (docs/HANDOFF.md, *Checks that need a real device*): by
@@ -62,6 +67,21 @@ final class SettingsOnHomeTests: XCTestCase {
         try checkTheWayInAndOut(textSize: .ax5, orientation: .portrait)
     }
 
+    /// With a check-in due, where its card shows without scrolling: on
+    /// CI's iPhone and iPad at the default size and on the iPad at the
+    /// largest. On the phone at the largest size the card lies below the
+    /// first screenful, which the chains do not read (docs/HANDOFF.md,
+    /// *Known gaps*).
+    @MainActor
+    func testOpeningSettingsWithACheckInDueAtDefaultText() throws {
+        try checkTheWayInAndOut(textSize: .large, orientation: .portrait, checkInDue: true)
+    }
+
+    @MainActor
+    func testOpeningSettingsWithACheckInDueAtTheLargestText() throws {
+        try checkTheWayInAndOut(textSize: .ax5, orientation: .portrait, checkInDue: true)
+    }
+
     /// The iPhone keeps portrait (docs/DECISIONS.md, "Orientations"), so
     /// this checks the iPad's other arrangement only.
     @MainActor
@@ -90,11 +110,13 @@ final class SettingsOnHomeTests: XCTestCase {
     }
 
     @MainActor
-    private func checkTheWayInAndOut(textSize: UITestTextSize, orientation: UIDeviceOrientation) throws {
+    private func checkTheWayInAndOut(textSize: UITestTextSize, orientation: UIDeviceOrientation, checkInDue: Bool = false) throws {
         // Settings' full idle limit: reading and capturing three screens can
         // take longer than the 3-second test limit, and a reset part way
         // would put Settings back on its first screen (as in `SettingsTests`).
-        let app = launchedApp(textSize: textSize, orientation: orientation, shortTimeouts: false)
+        let app = launchedApp(
+            textSize: textSize, orientation: orientation, arguments: checkInDue ? ["--check-in-due"] : [], shortTimeouts: false
+        )
         let isPad = UIDevice.current.userInterfaceIdiom == .pad
         // A query straight after a rotation can read the frames from before
         // the turn, so wait for the window to turn first.
@@ -110,6 +132,7 @@ final class SettingsOnHomeTests: XCTestCase {
         )
         let window = app.windows.firstMatch.frame
         let context = "\(textSize.name), \(orientation.isLandscape ? "landscape" : "portrait"), \(isPad ? "iPad" : "iPhone"), window \(window.size)"
+            + (checkInDue ? ", check-in due" : "")
 
         assertReachable("Settings", in: app, context: context)
         let home = try screenControls(in: app)
@@ -162,13 +185,37 @@ final class SettingsOnHomeTests: XCTestCase {
             secondStep = try Self.onCover(screenControls(in: app))
             attachCapture(app, name: "second-step-opened-\(context)".replacingOccurrences(of: ", ", with: "-"))
         }
+        var fromCheckIn: [ScreenControl]?
+        var afterCheckIn: [ScreenControl]?
+        var secondAfterCheckIn: [ScreenControl]?
+        if checkInDue {
+            XCTAssertTrue(
+                familySetup.contains { $0.name == SettingsChains.checkInGoThrough }, "Family Setup shows no check-in card (\(context))"
+            )
+            if let goThrough = Self.onScreen(familySetup, in: window).first(where: { $0.name == SettingsChains.checkInGoThrough }),
+               secondStep != nil {
+                (fromCheckIn, afterCheckIn, secondAfterCheckIn) = try readTheCheckIn(
+                    goThrough: goThrough.frame, familySetup: familySetup, in: app, window: window, context: context
+                )
+            }
+            // The card shows without scrolling on every window CI runs this
+            // on but the phone at the largest size, as the chain model has
+            // it (`SettingsChainsTests`), so both steps are read there.
+            if isPad || textSize != .ax5 {
+                XCTAssertNotNil(fromCheckIn, "the first step from the check-in was not read (\(context))")
+                XCTAssertNotNil(afterCheckIn, "the first step after the check-in was not read (\(context))")
+            }
+        }
         checkChains(
             home: home, screens: SettingsChains.Screens(
                 root: Self.named(Self.onScreen(cover, in: window)),
                 familySetup: Self.named(Self.onScreen(familySetup, in: window)),
                 firstStep: firstStep.map { Self.named(Self.onScreen($0, in: window)) },
                 eachWay: eachWay.map { Self.named(Self.onScreen($0, in: window)) },
-                secondStep: secondStep.map { Self.named(Self.onScreen($0, in: window)) }
+                secondStep: secondStep.map { Self.named(Self.onScreen($0, in: window)) },
+                firstStepFromCheckIn: fromCheckIn.map { Self.named(Self.onScreen($0, in: window)) },
+                firstStepAfterCheckIn: afterCheckIn.map { Self.named(Self.onScreen($0, in: window)) },
+                secondStepAfterCheckIn: secondAfterCheckIn.map { Self.named(Self.onScreen($0, in: window)) }
             ),
             window: window, context: context
         )
@@ -245,6 +292,91 @@ final class SettingsOnHomeTests: XCTestCase {
             app.buttons[SettingsChains.learnAboutEachWay].waitForExistence(timeout: 10), "Done did not return to the first step (\(context))"
         )
         return guide
+    }
+
+    /// From the second step, back to Family Setup with the check-in still
+    /// due; then the first step its card's Go Through Setup Again opens,
+    /// read where it rests, with Learn About Each Way in the button's place;
+    /// then back to Family Setup, now with the card answered, read again to
+    /// check that only the card's rows went and nothing else moved; then
+    /// the first step Set Up Step by Step opens from there, read where it
+    /// rests, with its answers clear of where the card's rows were; then
+    /// the second step its Next opens, with its choices clear of that
+    /// place too. Returns the two first steps and that second step.
+    @MainActor
+    private func readTheCheckIn(
+        goThrough: CGRect, familySetup: [ScreenControl], in app: XCUIApplication, window: CGRect, context: String
+    ) throws -> ([ScreenControl], [ScreenControl], [ScreenControl]) {
+        open(SettingsChains.back, leaving: "restBoardEveryCategory", in: app, context: context)
+        open(SettingsChains.back, leaving: SettingsChains.learnAboutEachWay, in: app, context: context)
+        XCTAssertTrue(
+            app.buttons[SettingsChains.checkInGoThrough].waitForExistence(timeout: 10), "Back did not return to Family Setup (\(context))"
+        )
+
+        // The card's rows go as soon as Go Through answers the check-in,
+        // before the step has slid in, so wait for Set Up Step by Step.
+        open(SettingsChains.checkInGoThrough, leaving: SettingsChains.guidedSetupRow, in: app, context: context)
+        let fromCheckIn = try Self.onCover(screenControls(in: app))
+        attachCapture(app, name: "first-step-from-the-check-in-\(context)".replacingOccurrences(of: ", ", with: "-"))
+        let link = fromCheckIn.first { $0.name == SettingsChains.learnAboutEachWay }?.frame
+        XCTAssertNotNil(link, "the first step from the check-in has no Learn About Each Way (\(context))")
+        if let link {
+            XCTAssertEqual(link.minX, goThrough.minX, accuracy: 1, "Learn About Each Way's leading edge is not Go Through's (\(context))")
+            XCTAssertEqual(link.minY, goThrough.minY, accuracy: 1, "Learn About Each Way's top is not Go Through's (\(context))")
+            XCTAssertEqual(link.width, goThrough.width, accuracy: 1, "Learn About Each Way is not Go Through's width (\(context))")
+            XCTAssertGreaterThanOrEqual(link.height, goThrough.height - 1, "Learn About Each Way is shorter than Go Through (\(context))")
+        }
+
+        open(SettingsChains.back, leaving: SettingsChains.learnAboutEachWay, in: app, context: context)
+        XCTAssertTrue(
+            app.staticTexts["Family Setup will ask again in about three months."].waitForExistence(timeout: 10),
+            "Family Setup does not say the check-in was answered (\(context))"
+        )
+        // Read where it rests: Set Up Step by Step back in its place, not
+        // part way through sliding in.
+        if let guided = familySetup.first(where: { $0.name == SettingsChains.guidedSetupRow })?.frame {
+            let settled = NSPredicate { _, _ in
+                MainActor.assumeIsolated {
+                    let frame = app.buttons[SettingsChains.guidedSetupRow].frame
+                    return abs(frame.minX - guided.minX) < 1 && abs(frame.minY - guided.minY) < 1
+                }
+            }
+            XCTAssertEqual(
+                XCTWaiter.wait(for: [expectation(for: settled, evaluatedWith: nil)], timeout: 10), .completed,
+                "Set Up Step by Step is not back where it was (\(context))"
+            )
+        }
+        let answered = try Self.onCover(screenControls(in: app))
+        attachCapture(app, name: "family-setup-after-the-check-in-\(context)".replacingOccurrences(of: ", ", with: "-"))
+        let kept = familySetup.filter { !SettingsChains.checkInRows.contains($0.name) }
+        XCTAssertEqual(answered.map(\.name).sorted(), kept.map(\.name).sorted(), "Family Setup's rows changed after the check-in (\(context))")
+        for control in answered {
+            guard let before = kept.first(where: { $0.name == control.name })?.frame else { continue }
+            XCTAssertEqual(control.frame.minY, before.minY, accuracy: 1, "\(control.name) moved after the check-in (\(context))")
+            XCTAssertEqual(control.frame.minX, before.minX, accuracy: 1, "\(control.name) moved after the check-in (\(context))")
+        }
+
+        open(SettingsChains.guidedSetupRow, leaving: SettingsChains.guidedSetupRow, in: app, context: context)
+        let afterCheckIn = try Self.onCover(screenControls(in: app))
+        attachCapture(app, name: "first-step-after-the-check-in-\(context)".replacingOccurrences(of: ", ", with: "-"))
+        let rows = familySetup.filter { SettingsChains.checkInRows.contains($0.name) }.map(\.frame).reduce(CGRect.null) { $0.union($1) }
+        if let touch = afterCheckIn.first(where: { $0.name == "Touch" }) {
+            XCTAssertGreaterThan(touch.frame.minY, rows.maxY, "the first answer starts where the card's rows were (\(context))")
+        }
+
+        // The second step from there: a look still over where the card's
+        // rows were met Next, so no choice lies across that place.
+        open(SettingsChains.firstStepNext, leaving: SettingsChains.learnAboutEachWay, in: app, context: context)
+        XCTAssertTrue(
+            app.navigationBars[SettingsChains.secondStep].waitForExistence(timeout: 10),
+            "Next did not open the second step after the check-in (\(context))"
+        )
+        let secondAfterCheckIn = try Self.onCover(screenControls(in: app))
+        attachCapture(app, name: "second-step-after-the-check-in-\(context)".replacingOccurrences(of: ", ", with: "-"))
+        for choice in secondAfterCheckIn where choice.name.hasPrefix("restBoard") {
+            XCTAssertFalse(choice.frame.intersects(rows), "\(choice.name) at \(choice.frame) lies where the card's rows were (\(context))")
+        }
+        return (fromCheckIn, afterCheckIn, secondAfterCheckIn)
     }
 
     /// Follows every chain from Home's Settings and from each control of

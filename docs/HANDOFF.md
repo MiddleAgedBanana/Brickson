@@ -106,8 +106,12 @@ next screen. Its first step opens with Learn About Each Way in that
 frame, whose guide opens as a cover of its own with Done where Back to
 Talking is, and starts its answers below every place a look can be
 resting on the way in; Next only moves on, and the check-in card's Go
-Through Setup Again answers the check-in (docs/DECISIONS.md, "The
-first step's own rows"; modelled, untested until CI runs it). It says
+Through Setup Again answers the check-in and opens the first step with
+Learn About Each Way in its own frame (docs/DECISIONS.md, "The first
+step's own rows"). The card's three buttons are full-width rows, so no
+word breaks at the largest text size (2026-11-12; CI reads each row's
+words whole on both devices; `--check-in-due` makes the card show in
+tests). It says
 what the answers do to Home's sizes, and where iOS reports Switch
 Control or VoiceOver on, which answer may fit, choosing nothing. The
 exception is on narrow windows at the largest text sizes: by centre, a
@@ -627,6 +631,21 @@ release in docs/ROADMAP.md when no thread has it yet.
   buttons"). A category name with one is refused, by editing and import.
   *(accepted by the owner; the layout engine, if it ever gives such a
   word room)*
+- At the largest text size some Settings rows hold a word wider than a
+  row's room for words, so it breaks mid-word (AGENTS.md, "Words never
+  break"): on CI's iPhone 17, "Accessibility" in More Accessibility
+  Settings and "Categories" in Phrases and Categories; on a 375-point
+  phone, "Shortcuts" and "Reaching" too. Measured from word widths and
+  a capture's row geometry, not yet read from captures of those rows.
+  The check-in card's rows, which broke the same way side by side, are
+  full-width since 2026-11-12 (`SettingsTests` reads their words;
+  [`log/2026-11-12-check-in-card.md`](log/2026-11-12-check-in-card.md)).
+  CI's first run read every word whole but "Go", drawn whole beside an
+  icon the button's rounded end cuts on a row four lines tall, so the
+  check also reads past that icon (`RenderedWords.pastItsIcon`), and
+  CI's next run read every word whole. The cut icon, on Settings rows several lines tall
+  at the largest sizes, is the system's capsule and is not changed.
+  *(the next Settings thread)*
 - On windows under 345pt with Bold Text, the message beside Phrases and
   Type is too narrow for "understand.", which can break there; since
   typing came to Home (2026-10-24) this is Home's (docs/DECISIONS.md,
@@ -811,8 +830,28 @@ release in docs/ROADMAP.md when no thread has it yet.
   own with Done in Back to Talking's frame, the answers start below
   every place a look can be resting on the way in, and Next only moves
   on (the check-in card's Go Through Setup Again answers the check-in
-  instead). Untested in the app until CI runs this change, and a device
-  check says whether it binds. On narrow or short windows at large text
+  instead, and opens the first step with Learn About Each Way in its
+  frame). A device check says whether it binds. Since 2026-11-12 the
+  card's rows are scored too, where the card shows without scrolling
+  (`SettingsChainsTests`, and `SettingsOnHomeTests` with
+  `--check-in-due`; untested in the app until CI runs that change):
+  once the card is answered, the first step Set Up Step by Step opens
+  on that visit starts its answers below where the card's rows were,
+  so on CI's windows its first screenful shows no answer, and the second
+  step it leads to keeps its choices clear of that place too, since a
+  look over it meets the first step's Next (CI's UI run found a held
+  look there choosing a category under the bar; docs/DECISIONS.md, "The
+  late-stage profile", *After the check-in, clear of the card's place
+  too*). Go Through
+  Setup Again's step takes the place the button showed in as it was
+  chosen, however far Family Setup had scrolled, as the Library's
+  questions do, and the model scores it scrolled; Set Up Step by Step
+  still takes its row's place in the content, so with Family Setup
+  scrolled a look can rest elsewhere on its step, and whether it
+  should follow Go Through Setup Again is the next Settings thread's to
+  decide ([`log/2026-11-12-check-in-card.md`](log/2026-11-12-check-in-card.md);
+  docs/DECISIONS.md, "The first step's own rows", *Where Go Through
+  Setup Again showed, scrolled or not*). On narrow or short windows at large text
   sizes the first step's first screenful shows no answer, so a family
   scrolls to answer. On a phone the second step's first screenful shows
   only the choices that can sit under its words without meeting a look
@@ -838,10 +877,10 @@ release in docs/ROADMAP.md when no thread has it yet.
   question's button was, over whatever Voice Settings has there); Voice
   Settings itself, where a look held after Family Setup's Voice Settings
   row can rest over choices that play a sample and set a voice or a
-  speed; the check-in card's
-  rows in Family Setup (no test can make a check-in due yet), and where
-  a look rests on the first step after its Go Through Setup Again;
-  Family Setup scrolled before a row is chosen; the first step's guide
+  speed; resting over the check-in card's own words; Family Setup
+  scrolled before a row other than Go Through Setup Again is chosen,
+  the card's other rows on the phone at the largest text size included,
+  where the card lies below the first screenful; the first step's guide
   scrolled; and Settings' other screens.
   Since 2026-10-30, answers change Home's sizes as Settings closes;
   Settings' first screens over a larger Home are scored
@@ -1377,7 +1416,13 @@ settings, date) and summarise it here.
   The unit job allows 60 minutes. The UI job allowed 120 for both
   device families and took about 105; since 2026-11-03 each family has
   a job of its own with 90 minutes, and "UI tests" is a job that passes
-  only when both passed (docs/DECISIONS.md, "Tests"). Four iPad
+  only when both passed (docs/DECISIONS.md, "Tests"). On 2026-11-12
+  the iPad job took 87 of its 90 minutes (pull request #103: about five
+  minutes of new check-in tests, and one Home typing test whose taps
+  each waited 120 seconds for the app to go idle), so its margin is
+  thin; why that test waited is not known
+  ([`log/2026-11-12-check-in-card.md`](log/2026-11-12-check-in-card.md),
+  *Follow-ups*). Four iPad
   runs in a row stalled because iOS's lock-screen wallpaper prewarm
   starved the simulator; since then
   `scripts/test.sh` pauses those extensions on a simulator it started
