@@ -234,6 +234,22 @@ struct DraftStoreTests {
         #expect(try file.read() == words)
     }
 
+    /// Fails if writing a draft does not succeed with complete file protection,
+    /// or if the written file does not match expected protection attributes.
+    @Test func writingDraftUsesCompleteFileProtection() throws {
+        let folder = temporaryFolder()
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let file = DraftFile(directory: folder)
+
+        try file.write("Sensitive draft")
+
+        #expect(try file.read() == "Sensitive draft")
+        let attributes = try FileManager.default.attributesOfItem(atPath: file.url.path(percentEncoded: false))
+        if let protection = attributes[.protectionKey] as? FileProtectionType {
+            #expect(protection == .complete)
+        }
+    }
+
     /// Fails if a missing file is an error instead of an empty draft (it is
     /// the normal state on a new install and after Clear).
     @Test func noFileMeansAnEmptyDraft() throws {

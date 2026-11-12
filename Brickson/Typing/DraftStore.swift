@@ -218,9 +218,9 @@ nonisolated struct DraftFile: Equatable, Sendable {
             return
         }
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        // Readable after the device is first unlocked, so a save while the
-        // screen is locked (speech keeps playing then) cannot fail for that.
-        try Data(text.utf8).write(to: url, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
+        // Encrypted while the screen is locked (.completeFileProtection), so
+        // sensitive personal drafts are protected against unauthorized access.
+        try Data(text.utf8).write(to: url, options: [.atomic, .completeFileProtection])
     }
 
     private static func isMissingFile(_ error: CocoaError) -> Bool {
