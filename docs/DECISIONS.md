@@ -4531,7 +4531,12 @@ Step by Step. The work file is
   Through Setup Again's top to Stop Asking's foot, nearer Next than
   itself, by the same two measures and margin
   (`SetupChoicesPlace.arrivals(from:checkInRows:)`); every other way in
-  is placed as before. CI's UI run found the hazard on the iPhone 17 at
+  is placed as before. The first step's Next opens this step from the
+  same control the steps were opened with
+  (`SettingsRoute.advance(_:from:entry:)`), and the route has no default
+  entry, so no step can be opened as if from Set Up Step by Step by
+  leaving it out: until Codex's and CodeRabbit's reviews of the same
+  pull request found it, Next did that, and this placement never ran in the app. CI's UI run found the hazard on the iPhone 17 at
   the default size and the 13-inch iPad at AX5: a look at Not Now's
   lower corner or Stop Asking's centre, partly or wholly under the sound
   line, chose a category the step had placed under the bar (848 and

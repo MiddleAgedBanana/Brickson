@@ -74,6 +74,9 @@ work file is [`work/settings-chains.md`](../work/settings-chains.md),
   keeps the second step's choices clear of the card's place after the
   check-in and scores that step on CI's windows; `70729b5` reads a
   row's words past its icon; the commit after them records both.
+- After Codex's review of the third push (*After Codex's review of the
+  third push*, below): `38b46f4` opens each setup step from what
+  opened the steps; the commit after it records it.
 
 ## Verified
 
@@ -276,6 +279,28 @@ so whether it reads "Go" in the crop is untested until CI runs it.
 Checked on Linux (Swift 6.4.2 release): `SetupChoicesPlaceTests` (9
 tests) and `SettingsChainsTests` (14) pass with the fix.
 `RenderedWords` uses CoreGraphics and Vision and was not compiled here.
+
+## After Codex's review of the third push
+
+Codex's and CodeRabbit's reviews of `bc733df` found that the fix above
+never ran in the app: the first step's Next opened the second step with
+`.guidedSetup(next)`, whose entry defaulted to Set Up Step by Step, so
+the second step never knew the card had been answered and placed its
+choices as before. The unit model and the place tests drew the second
+step with the right entry, so they could not see it; only
+`SettingsOnHomeTests`, which follows the real Next, could.
+
+Next now goes through `SettingsRoute.advance(_:from:entry:)`, which
+opens the step after from the same entry and, after the last step,
+goes back to where the steps started, as before. The route has no
+default entry, so a step opened without one no longer compiles.
+`SettingsRouteTests.nextKeepsWhatOpenedTheSteps` failed with Next as
+it was (10 expectations, every step after the first for the two
+entries other than Set Up Step by Step) and passes with the fix;
+`nextOnTheLastStepGoesBackToWhereTheStepsStarted` keeps the way back.
+On Linux, `SettingsRouteTests`, `SetupStoreTests`,
+`SetupChoicesPlaceTests` and `SettingsChainsTests` pass (35 tests).
+`GuidedSetupView` uses SwiftUI and was not compiled here.
 
 ## Not verified
 
