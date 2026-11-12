@@ -1517,14 +1517,12 @@ settings, date) and summarise it here.
   guard reads HTTPie's standalone `@file` body and refuses
   `gh pr create --fill`
   ([`log/2026-11-08-privacy-check-follow-ups.md`](log/2026-11-08-privacy-check-follow-ups.md)).
-  AGENTS.md stays one file with every rule (owner, 2026-11-12, after
-  reading agents.md and the Codex and Claude Code documentation): its
-  history and measurements were cut to pointers at their records, from
-  83,866 to 81,406 bytes. The sections Codex must read end inside its
-  32 KiB; the whole file is longer than Codex reads by default and than
-  Claude Code suggests, and shortening it further is a choice about
-  rules for the owner. Record:
-  [the change](log/2026-11-12-agents-md-trim.md).
+  AGENTS.md was rewritten short on 2026-11-12 (owner's request, after
+  agents.md, the Codex and Claude Code documentation and well-known
+  guides): one file of about 27,400 bytes, from 83,866, with commands,
+  conventions and hard limits and no history; the whole file fits inside
+  Codex's 32 KiB. Keep it that way: short, concrete rules, the reasons in
+  docs/DECISIONS.md. Record: [the change](log/2026-11-12-agents-md-trim.md).
   `scripts/test.sh` runs the guard's tests, the docs cross-reference
   check (`scripts/test-docs.py`) and the privacy check's tests
   (`scripts/test-privacy.py`) before the unit tests.

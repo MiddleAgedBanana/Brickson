@@ -6299,21 +6299,18 @@ through its API on 2026-10-15:
 the owner objects
 ([`log/2026-11-03-agents-md-for-codex.md`](log/2026-11-03-agents-md-for-codex.md)).*
 
-**2026-11-12: AGENTS.md stays one file with every rule.** The owner
-asked for AGENTS.md to follow agents.md, OpenAI's Codex documentation
-and Anthropic's Claude Code documentation, and rejected a rule file
-split across two documents. agents.md expects one root AGENTS.md (nested
-ones only for the subprojects of a large monorepo), Codex reads only
-AGENTS.md files and Claude Code reads AGENTS.md, so a rule kept in
-another document is read by no agent unless it chooses to. So every
-rule stays in AGENTS.md; only history and measurements that a record
-already holds may leave it, replaced by a pointer to that record. The
-order below still holds, and the sections Codex must read still end
-inside its 32 KiB. The cost: the file (81,406 bytes on 2026-11-12) is
-far longer than Codex reads by default and than Claude Code suggests
-(under 200 lines), and Antigravity's 24,000 bytes end inside *Code
-Review Rules*. Shortening it further means deciding that some rules are
-not needed, which is the owner's call
+**2026-11-12: AGENTS.md is one short file.** The owner asked for
+AGENTS.md to follow agents.md, OpenAI's Codex documentation, Anthropic's
+Claude Code documentation and reputable guides, rejecting both a rule
+file split across two documents and an 81,000-byte file that kept every
+rule word for word. So AGENTS.md is one file of commands, conventions and
+hard limits: no history, no measurements, nothing an agent can find in
+the code, the scripts, the hooks or CI, and no rule said twice. The
+reasons behind its rules stay here and in docs/LESSONS.md. The order
+below still holds, and on 2026-11-12 the whole file (about 27,400 bytes)
+fit inside Codex's 32 KiB. A rule added to AGENTS.md should be short and
+concrete; a rule that can have no exceptions belongs in a hook or a
+check, not in more words
 ([`log/2026-11-12-agents-md-trim.md`](log/2026-11-12-agents-md-trim.md)).
 The entry below is as it was written on 2026-11-03.
 
