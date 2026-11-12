@@ -50,7 +50,9 @@ struct RestoreChoices: Equatable {
     ///     every word counts as theirs.
     ///   - restBoard: the category Home's rest board shows
     ///     (`SetupRecord.restBoardCategory`), which a replace takes no
-    ///     farther under four phrases (`LibraryEdit.plan`).
+    ///     farther under four phrases, and which Add and Replace bring
+    ///     back, where it was deleted, with four or not at all
+    ///     (`LibraryEdit.plan`).
     ///   - makeID: identities for what the backup brings that clash with
     ///     the library's. Tests pass a predictable one.
     init(
