@@ -1223,8 +1223,8 @@ and Next only moving on, which ends, modelled on CI's windows and on
 the 630 swept ones now drawn through the first step, both the closing
 on the phone at its largest size and every held look that saved a
 setup answer, and CI's UI run of that change (pull request #66) found
-neither on CI's windows (docs/DECISIONS.md, "The first step's own
-rows").
+neither in the chains its UI tests score on CI's windows
+(docs/DECISIONS.md, "The first step's own rows").
 Every change follows AGENTS.md, *Apple's current frameworks first*: the
 legacy uses kept, and the moves still planned with who owns each, are in
 docs/DECISIONS.md under that title

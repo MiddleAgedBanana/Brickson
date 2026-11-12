@@ -503,8 +503,9 @@ Step's frame, its guide a cover with Done in Back to Talking's frame,
 the answers below every place a look can be resting on the way in, and
 Next only moving on, with the check-in card's Go Through Setup Again
 answering the check-in; no held look closes Settings or saves an answer
-(DECISIONS.md, "The first step's own rows"; measured on CI's windows
-by pull request #66's run of 2026-10-30). Then a start-only Get
+(DECISIONS.md, "The first step's own rows"; measured on CI's windows,
+for the chains the UI tests score, by pull request #66's run of
+2026-10-30). Then a start-only Get
 Attention in Settings' bar, in its empty place, with the sound line
 moved where its neighbours neither speak nor change a setting. This
 comes before item 8, because item 8 lets setup answers change sizes.

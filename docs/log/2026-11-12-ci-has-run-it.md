@@ -72,10 +72,16 @@ Read from GitHub's records of each run, on 2026-11-12:
   at the default text size and the largest on both, and in landscape on
   the iPad (skipped on the iPhone, which is portrait only).
   `testTheFirstStepOpensWithLearnAboutEachWayOverSetUpStepByStep` passed
-  on both. `SettingsOnHomeTests` fails on any held-look save or closing
-  (the pull request's record, *Verified*), and no UI test was an
-  expected failure, so the strict known issue for the phone at its
-  largest size was gone too.
+  on both. `SettingsOnHomeTests` fails on any held look that saves an
+  answer or closes Settings in the chains it scores (from Home's
+  Settings through Settings' first screen, Family Setup, and the first
+  step with its guide, each as it first shows; the pull request's
+  record, *Verified*), and no UI test was an expected failure, so the
+  strict known issue for the phone at its largest size was gone too.
+  What docs/DECISIONS.md, "The first step's own rows", lists as not
+  scored was not scored by this run either: a review on this pull
+  request found that the first wording claimed more, and it was
+  narrowed.
 - **Pull request #56, run 40188414972, on `f44f17f`**: concluded
   "success". The rest is that pull request's own record.
 - **Pull request #81, run 42042331740, on `f8c6d7f`** (2026-11-05):
