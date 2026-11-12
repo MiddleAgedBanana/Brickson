@@ -239,3 +239,35 @@ The tests named in *Plan* were replaced by those in the log: the UI
 tests open the guide and fail on any hazard, and the unit tests draw the
 first step and the guide on CI's windows and across the 630-window
 sweep.
+
+## The check-in card
+
+*2026-11-12. The follow-up the 2026-10-30 record left, and PR #66's
+captures found: a launch option that makes a check-in due, UI tests that
+read the card, and its chains scored. Record:
+[`log/2026-11-12-check-in-card.md`](../log/2026-11-12-check-in-card.md).*
+
+- **Problem.** No test could make a check-in due, so the card's three
+  buttons were never drawn on CI, and the chains through them were not
+  scored. CI's captures on PR #66 showed Not Now and Stop Asking, side
+  by side, breaking mid-word at the largest text size on the iPhone 17
+  (AGENTS.md, "Words never break"). And after Go Through Setup Again,
+  a held look rests over whatever the first step has in that spot.
+- **What changes for a person.** The card's buttons are three
+  full-width rows, one under another, like every other Settings row,
+  under the panel that holds the card's heading and sentence, so each
+  word stays whole. Go Through Setup Again opens the first step
+  with Learn About Each Way in its own place, as Set Up Step by Step
+  does, and the answers below every place a look can rest on the way
+  there. Once the card is answered and Set Up Step by Step is chosen in
+  the same visit, that first step starts its answers clear of where the
+  card's rows were, since a look over the words that keep the card's
+  place can meet the row. Nothing else moves, and no wording changes.
+- **Proof.** `--check-in-due` (debug, test storage only) makes the card
+  show. `SettingsTests` reads each row's drawn words whole, light and
+  dark at the default size and at the largest, runs Apple's audit with
+  the rows in view, and answers the card with Not Now and Stop Asking,
+  checking that nothing moves and that the answer is kept.
+  `SettingsOnHomeTests` reads both first steps and follows every chain
+  through the card where it shows without scrolling, and the chain
+  model scores the same on CI's windows (`SettingsChainsTests`).
