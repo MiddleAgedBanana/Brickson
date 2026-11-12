@@ -202,21 +202,37 @@ final class SettingsTests: XCTestCase {
     /// the navigation bar and the foot of the content.
     @MainActor
     private func scrollIntoView(_ element: XCUIElement, in app: XCUIApplication, title: String, context: String) {
-        let scroll = app.scrollViews.containing(.button, identifier: "library").firstMatch
         let bar = app.navigationBars[title]
         for _ in 0..<40 {
             let frame = element.frame
-            let (top, bottom) = (bar.frame.maxY, scroll.frame.maxY)
+            let (top, bottom) = (bar.frame.maxY, familySetupScroll(in: app).frame.maxY)
             if frame.minY >= top && frame.maxY <= bottom { return }
-            let (from, to): (CGFloat, CGFloat) = frame.maxY > bottom ? (0.75, 0.6) : (0.6, 0.75)
-            let gutter = scroll.coordinate(withNormalizedOffset: .zero)
-            let x = scroll.frame.width - 6
-            gutter.withOffset(CGVector(dx: x, dy: scroll.frame.height * from)).press(
-                forDuration: 0.1, thenDragTo: gutter.withOffset(CGVector(dx: x, dy: scroll.frame.height * to)),
-                withVelocity: .slow, thenHoldForDuration: 0.1
-            )
+            if frame.maxY > bottom {
+                dragFamilySetup(in: app, from: 0.75, to: 0.6)
+            } else {
+                dragFamilySetup(in: app, from: 0.6, to: 0.75)
+            }
         }
         XCTFail("\(element.identifier) did not scroll into view at \(element.frame) (\(context))")
+    }
+
+    @MainActor
+    private func familySetupScroll(in app: XCUIApplication) -> XCUIElement {
+        app.scrollViews.containing(.button, identifier: "library").firstMatch
+    }
+
+    /// One slow drag of Family Setup's content, held at its end so it does
+    /// not glide on, between two heights of the scroll view (0 its top, 1
+    /// its foot), in the trailing gutter.
+    @MainActor
+    private func dragFamilySetup(in app: XCUIApplication, from: CGFloat, to: CGFloat) {
+        let scroll = familySetupScroll(in: app)
+        let origin = scroll.coordinate(withNormalizedOffset: .zero)
+        let x = scroll.frame.width - 6
+        origin.withOffset(CGVector(dx: x, dy: scroll.frame.height * from)).press(
+            forDuration: 0.1, thenDragTo: origin.withOffset(CGVector(dx: x, dy: scroll.frame.height * to)),
+            withVelocity: .slow, thenHoldForDuration: 0.1
+        )
     }
 
     /// Family Setup's check-in card (`--check-in-due`), at the default text
@@ -262,6 +278,50 @@ final class SettingsTests: XCTestCase {
             }
             attachCapture(app, name: context)
             try assertPassesAccessibilityAudit(app, context: context)
+        }
+    }
+
+    /// Go Through Setup Again chosen with Family Setup scrolled, at the
+    /// default text size and the largest: fails if the first step it opens
+    /// does not have Learn About Each Way where the button showed as it was
+    /// chosen (the same leading edge, top and width, and at least as tall),
+    /// where a look on the button still rests. Placed from the button's
+    /// place in Family Setup's content, it lay as far lower as Family Setup
+    /// had scrolled, and the chain model found a held look there meeting
+    /// Back to Talking (`SettingsChainsTests`).
+    @MainActor
+    func testGoThroughSetupAgainOpensItsStepWhereItShowed() {
+        continueAfterFailure = true
+        for textSize in [UITestTextSize.large, .ax5] {
+            let app = openSettings(textSize: textSize, arguments: ["--check-in-due"])
+            let context = "Go Through Setup Again, Family Setup scrolled, \(textSize.name)"
+            open("familySetup", in: app, waitingFor: "Family Setup")
+            let goThrough = app.buttons["checkInGoThrough"]
+            let guided = app.buttons["guidedSetup"]
+            XCTAssertTrue(goThrough.waitForExistence(timeout: 10), "checkInGoThrough is missing (\(context))")
+            guard goThrough.exists, guided.exists else { continue }
+            let unscrolled = guided.frame
+            dragFamilySetup(in: app, from: 0.6, to: 0.45)
+            scrollIntoView(goThrough, in: app, title: "Family Setup", context: context)
+            // Read where it rests, not while it settles.
+            var shown = goThrough.frame
+            for _ in 0..<10 {
+                let again = goThrough.frame
+                if again == shown { break }
+                shown = again
+            }
+            XCTAssertLessThan(guided.frame.minY, unscrolled.minY - 1, "Family Setup did not scroll (\(context))")
+            goThrough.tap()
+            let link = app.buttons["learnAboutEachWay"]
+            XCTAssertTrue(link.waitForExistence(timeout: 10), "Go Through Setup Again did not open the first step (\(context))")
+            let gone = expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: app.buttons["library"])
+            XCTAssertEqual(XCTWaiter.wait(for: [gone], timeout: 10), .completed, "Family Setup did not go (\(context))")
+            attachCapture(app, name: context)
+            let frame = link.frame
+            XCTAssertEqual(frame.minX, shown.minX, accuracy: 1, "Learn About Each Way at \(frame), the button at \(shown) (\(context))")
+            XCTAssertEqual(frame.minY, shown.minY, accuracy: 1, "Learn About Each Way at \(frame), the button at \(shown) (\(context))")
+            XCTAssertEqual(frame.width, shown.width, accuracy: 1, "Learn About Each Way at \(frame), the button at \(shown) (\(context))")
+            XCTAssertGreaterThanOrEqual(frame.height, shown.height - 1, "Learn About Each Way at \(frame), the button at \(shown) (\(context))")
         }
     }
 

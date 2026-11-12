@@ -197,6 +197,13 @@ final class SettingsOnHomeTests: XCTestCase {
                     goThrough: goThrough.frame, familySetup: familySetup, in: app, window: window, context: context
                 )
             }
+            // The card shows without scrolling on every window CI runs this
+            // on but the phone at the largest size, as the chain model has
+            // it (`SettingsChainsTests`), so both steps are read there.
+            if isPad || textSize != .ax5 {
+                XCTAssertNotNil(fromCheckIn, "the first step from the check-in was not read (\(context))")
+                XCTAssertNotNil(afterCheckIn, "the first step after the check-in was not read (\(context))")
+            }
         }
         checkChains(
             home: home, screens: SettingsChains.Screens(

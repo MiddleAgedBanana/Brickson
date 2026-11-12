@@ -80,6 +80,23 @@ nonisolated struct SetupAnswersPlace: Equatable, Sendable {
         }
     }
 
+    /// Where `row`, measured in its screen's content, showed as it was
+    /// chosen, with that screen scrolled `offset` points down: in the
+    /// content of a screen as it first shows, since every Settings screen's
+    /// content starts at the same place in the window, and never above that
+    /// content's top, as the Library's questions take their row's place
+    /// (`LibraryQuestionPlace`). Go Through Setup Again is placed this way,
+    /// so the step it opens puts Learn About Each Way where a look on it
+    /// still rests, however far Family Setup had scrolled: placed from the
+    /// content instead, Learn About Each Way lay lower than the look, which
+    /// then met Back to Talking (docs/DECISIONS.md, "The first step's own
+    /// rows", *From the check-in card*).
+    static func shown(_ row: CGRect, scrolledBy offset: CGFloat) -> CGRect {
+        var shown = row.offsetBy(dx: 0, dy: -offset)
+        shown.origin.y = max(0, shown.minY)
+        return shown
+    }
+
     /// The answers' top that the plain search finds: down 8 points at a
     /// time from `earliest` to the first top that holds, or to the first at
     /// or past `deepest`, then back up a point at a time while it holds.

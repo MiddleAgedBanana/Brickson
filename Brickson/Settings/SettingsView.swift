@@ -301,6 +301,9 @@ struct SettingsAudioStatus: View {
 final class SettingsLanding {
     var rootRow: CGRect?
     var guidedRow: CGRect?
+    /// Go Through Setup Again where it showed as it was chosen, less what
+    /// Family Setup had scrolled (`SetupAnswersPlace.shown`): the step it
+    /// opens starts at its top, so this is where a look on it still rests.
     var goThroughRow: CGRect?
     /// The check-in card's three rows together, from Go Through Setup
     /// Again's top to Stop Asking's foot, while the card or the words that

@@ -140,6 +140,20 @@ struct SetupAnswersPlaceTests {
         #expect(!holds([rows], link: phone.guided, top: plain.top))
     }
 
+    /// Go Through Setup Again's place, for the step it opens, is where it
+    /// showed: its frame in Family Setup's content less what Family Setup
+    /// had scrolled, and never above the content's top, where it still
+    /// showed in the gutter under the bar. Fails if the scroll is left out
+    /// (Learn About Each Way then lies lower than the look) or added, or if
+    /// a row half under the bar is placed above the content.
+    @Test func goThroughSetupAgainIsPlacedWhereItShowed() {
+        let row = CGRect(x: 16, y: 678.5, width: 370, height: 78)
+        #expect(SetupAnswersPlace.shown(row, scrolledBy: 0) == row)
+        #expect(SetupAnswersPlace.shown(row, scrolledBy: 400) == CGRect(x: 16, y: 278.5, width: 370, height: 78))
+        #expect(SetupAnswersPlace.shown(row, scrolledBy: 690) == CGRect(x: 16, y: 0, width: 370, height: 78))
+        #expect(SetupAnswersPlace.shown(row, scrolledBy: -30) == CGRect(x: 16, y: 708.5, width: 370, height: 78))
+    }
+
     /// The search as it was before it halved and read a frame across the
     /// answers' width by its corners, kept as the plain way to compare
     /// with: every point of every frame, down 8 points at a time, then back

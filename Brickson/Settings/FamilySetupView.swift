@@ -136,11 +136,12 @@ struct FamilySetupView: View {
 /// speaks. Go Through Setup Again answers the check-in as it opens the
 /// first step, with the answers as they are: going through setup again is
 /// what the card asks for, and the first step's Next only moves on. The
-/// step's Learn About Each Way takes Go Through Setup Again's place
-/// (`SettingsLanding.goThroughRow`), so a look still resting there meets a
-/// control that only opens the guide (docs/DECISIONS.md, "The first step's
-/// own rows"). A failed save keeps the card and says so, and opens
-/// nothing.
+/// step's Learn About Each Way takes the place Go Through Setup Again
+/// showed in as it was chosen, however far Family Setup had scrolled
+/// (`SettingsLanding.goThroughRow`, `SetupAnswersPlace.shown`), so a look
+/// still resting there meets a control that only opens the guide
+/// (docs/DECISIONS.md, "The first step's own rows"). A failed save keeps
+/// the card and says so, and opens nothing.
 ///
 /// Once it is answered, passive words take its place at the card's own size
 /// until Family Setup closes. Otherwise the rows below would move up under
@@ -155,6 +156,9 @@ private struct CheckInCard: View {
     @Environment(SetupStore.self) private var setup
     @Environment(SettingsActivity.self) private var activity: SettingsActivity?
     @Environment(SettingsLanding.self) private var landing: SettingsLanding?
+    @Environment(\.settingsScrollPosition) private var scroll
+    /// Go Through Setup Again, in Family Setup's content.
+    @State private var goThroughFrame: CGRect?
 
     var body: some View {
         if CheckInPolicy.isDue(setup.record, now: .now, calendar: .current) {
@@ -186,15 +190,16 @@ private struct CheckInCard: View {
             VStack(alignment: .leading, spacing: SettingsMetrics.rowSpacing) {
                 Button {
                     activity?.recordActivity()
+                    // The first step's Learn About Each Way takes the place
+                    // this shows in now, scrolled or not.
+                    landing?.goThroughRow = goThroughFrame.map { SetupAnswersPlace.shown($0, scrolledBy: scroll?.offset ?? 0) }
                     setup.goThroughSetupAgain(path: &path, now: .now)
                 } label: {
                     SettingsRowLabel(title: "Go Through Setup Again", systemImage: "list.number")
                 }
                 .settingsRowStyle()
-                // The first step's Learn About Each Way takes this place
-                // when this opens it.
                 .onGeometryChange(for: CGRect.self) { $0.frame(in: .named(SettingsMetrics.contentSpace)) } action: {
-                    landing?.goThroughRow = $0
+                    goThroughFrame = $0
                 }
                 .accessibilityIdentifier("checkInGoThrough")
                 Button {
