@@ -6282,8 +6282,8 @@ Rules*: a Codex at default settings never saw *Not findings*,
   the rules themselves*). A Codex on the owner's Mac reads the whole
   file once `project_doc_max_bytes` in `~/.codex/config.toml` is at
   least the file's size (131072 leaves room to grow). Whether Codex's
-  code review on GitHub, Codex cloud or Jules apply the same limit is
-  not documented, so the order assumes they might.
+  code review on GitHub or Codex cloud apply the same limit is not
+  documented, so the order assumes they might.
 
 Before: *What this is and what's at stake* was followed by *Where
 things are* and *Build and test*, ahead of the invariants; *Guardrails
