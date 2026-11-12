@@ -109,8 +109,9 @@ resting on the way in; Next only moves on, and the check-in card's Go
 Through Setup Again answers the check-in and opens the first step with
 Learn About Each Way in its own frame (docs/DECISIONS.md, "The first
 step's own rows"). The card's three buttons are full-width rows, so no
-word breaks at the largest text size (2026-11-12, untested until CI
-runs it; `--check-in-due` makes the card show in tests). It says
+word breaks at the largest text size (2026-11-12; CI reads each row's
+words whole on both devices; `--check-in-due` makes the card show in
+tests). It says
 what the answers do to Home's sizes, and where iOS reports Switch
 Control or VoiceOver on, which answer may fit, choosing nothing. The
 exception is on narrow windows at the largest text sizes: by centre, a
@@ -640,8 +641,8 @@ release in docs/ROADMAP.md when no thread has it yet.
   [`log/2026-11-12-check-in-card.md`](log/2026-11-12-check-in-card.md)).
   CI's first run read every word whole but "Go", drawn whole beside an
   icon the button's rounded end cuts on a row four lines tall, so the
-  check also reads past that icon (`RenderedWords.pastItsIcon`; untested
-  until CI runs it). The cut icon, on Settings rows several lines tall
+  check also reads past that icon (`RenderedWords.pastItsIcon`), and
+  CI's next run read every word whole. The cut icon, on Settings rows several lines tall
   at the largest sizes, is the system's capsule and is not changed.
   *(the next Settings thread)*
 - On windows under 345pt with Bold Text, the message beside Phrases and
@@ -1407,7 +1408,13 @@ settings, date) and summarise it here.
   The unit job allows 60 minutes. The UI job allowed 120 for both
   device families and took about 105; since 2026-11-03 each family has
   a job of its own with 90 minutes, and "UI tests" is a job that passes
-  only when both passed (docs/DECISIONS.md, "Tests"). Four iPad
+  only when both passed (docs/DECISIONS.md, "Tests"). On 2026-11-12
+  the iPad job took 87 of its 90 minutes (pull request #103: about five
+  minutes of new check-in tests, and one Home typing test whose taps
+  each waited 120 seconds for the app to go idle), so its margin is
+  thin; why that test waited is not known
+  ([`log/2026-11-12-check-in-card.md`](log/2026-11-12-check-in-card.md),
+  *Follow-ups*). Four iPad
   runs in a row stalled because iOS's lock-screen wallpaper prewarm
   starved the simulator; since then
   `scripts/test.sh` pauses those extensions on a simulator it started

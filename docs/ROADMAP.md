@@ -1097,7 +1097,7 @@ what passes and who checks it:
   Edit Phrase and Delete Phrase in dark, at the default size
   (`LibraryTests`); Family Setup's check-in card light and dark at the
   default size and light at AX5 (`SettingsTests`, since 2026-11-12,
-  untested until CI runs it); typing, the Library's other screens and
+  passing on CI on both devices); typing, the Library's other screens and
   the web version's sheet not at all.
 - **Q23. Every label earned.** Each Accessibility Nutrition Label
   Brickson declares meets Apple's criteria for every common task
@@ -1122,7 +1122,7 @@ what passes and who checks it:
   Phrases, Type and the everyday categories at Home's larger sizes on
   an iPad in portrait (`HomeSizesTests`), and Family Setup's check-in
   rows light and dark at the default size and light at AX5
-  (`SettingsTests`, since 2026-11-12, untested until CI runs it);
+  (`SettingsTests`, since 2026-11-12, passing on CI on both devices);
   nothing at AX3, no phrase tile, no other screen's labels; no device
   run.
 

@@ -76,7 +76,8 @@ work file is [`work/settings-chains.md`](../work/settings-chains.md),
   row's words past its icon; the commit after them records both.
 - After Codex's review of the third push (*After Codex's review of the
   third push*, below): `38b46f4` opens each setup step from what
-  opened the steps; the commit after it records it.
+  opened the steps; the two commits after it record it and what CI's
+  run on `bc733df` showed.
 
 ## Verified
 
@@ -302,15 +303,38 @@ On Linux, `SettingsRouteTests`, `SetupStoreTests`,
 `SetupChoicesPlaceTests` and `SettingsChainsTests` pass (35 tests).
 `GuidedSetupView` uses SwiftUI and was not compiled here.
 
+CI's run on `bc733df` (run 43233324550) agrees. The unit tests passed,
+`RenderedWordsTests` among them, so Vision reads "Go" in the kept
+capture once it is cut past the icon. On both devices
+`SettingsTests.testTheCheckInCardDrawsItsWordsWholeAndPassesTheAudit`
+passed: every row's words were read whole, "Go" at AX5 on the iPhone
+included. `SettingsOnHomeTests` failed only where the dropped entry
+leaves the second step placed as before: on the iPhone 17 at the
+default size, a choice at 849 points down across the card's place and
+the same two chains as the first run; on the iPad at the default size,
+choices at 505, 599 and 693 across the card's place (no chain reached
+them); and on the iPad at AX5, a choice at 1,346 and the chain from
+Stop Asking. The iPhone's test at AX5 passed.
+
+The iPad UI job took 87 of its 90 minutes. One Home test this pull
+request does not touch,
+`TypingOnHomeTests.testSpeakAndReturnSayTheMessageAndKeepIt`, took 576
+seconds against 40 on the run before, each of its four taps waiting
+120 seconds for the app to go idle; without it the iPad's tests took
+about as long as on the run before (about 3,620 seconds against 3,660).
+The check-in tests this pull request adds take about five minutes on
+the iPad.
+
 ## Not verified
 
-- Everything in the app until CI's runs pass: the card's drawing, the
-  rows' heights and words, the audit, and every frame above. The
+- The second step opened after the check-in, in the app, until CI's
+  run on the last push passes (the route fix above). The card's rows,
+  their words and the audit passed on CI's run on `bc733df`; the
   numbers in docs/DECISIONS.md are the unit tests' model of CI's
   windows, not CI's frames.
-- `LaunchOptionsTests` and the UI tests, which need Xcode.
-- Whether the new UI tests lengthen the iPad UI job, whose runs took
-  about 50 to 69 minutes before this change.
+- How much the iPad UI job's margin under its 90-minute limit holds:
+  the new tests add about five minutes there, and one slow run of an
+  unrelated test took the job to 87 minutes (above).
 - Where a pointer rests after an activation, and how Snap to Item picks:
   device checks (docs/HANDOFF.md, "Checks that need a real device").
 - VoiceOver, Voice Control and Switch Control on the card.
@@ -360,5 +384,15 @@ On Linux, `SettingsRouteTests`, `SetupStoreTests`,
   228, and "Shortcuts" (about 243) and "Reaching" (about 231) are wider
   too. Not yet read from captures of those rows: the rendered-words
   check reads only the card's rows so far. *(the next Settings thread)*
+- The iPad UI job's margin under its 90-minute limit is thin: 87
+  minutes on run 43233324550, with this pull request's check-in tests
+  adding about five and one slow run of
+  `TypingOnHomeTests.testSpeakAndReturnSayTheMessageAndKeepIt` (four
+  taps each waiting 120 seconds for the app to go idle) adding about
+  nine. Why that test waited, and whether the limit or the tests'
+  cost should change, are open; the limit is in
+  `.github/workflows/tests.yml`, which a cloud agent cannot push.
+  *(the next thread that reads iPad UI times, and the owner for the
+  limit)*
 - `main`'s iPad UI job failed on run 43180245909, before this change;
   not looked into here. *(whoever next reads that run)*
