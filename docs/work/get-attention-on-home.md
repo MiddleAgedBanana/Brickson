@@ -2,7 +2,8 @@
 
 *Roadmap: R0 item 4 (Get Attention), the part PR #16 left for later:
 the controls on Home. Owner: the Get Attention and Stop on Home thread.
-Status: building (PR #38; untested until CI passes).*
+Status: done; merged in pull request #38 on 2026-10-23, after CI's unit
+and UI tests passed on its final head (run 39923081723).*
 
 ## Intent
 

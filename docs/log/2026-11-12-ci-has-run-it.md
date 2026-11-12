@@ -37,9 +37,25 @@ the model (the 630 swept windows), it still says so:
 - docs/HANDOFF.md, *Next steps, in order* (the paragraph for agents).
 
 Two more lines of the same list, in docs/HANDOFF.md (*What the app does
-today* and *Known gaps*, on the first step's rows), are left as they
-are: the check-in card's pull request (#103) rewrites both, and editing
-them here too would only make the two pull requests conflict.
+today* and *Known gaps*, on the first step's rows), were left at first,
+because the check-in card's pull request (#103) was rewriting both. It
+merged on 2026-11-12, and its rewrite left neither waiting for CI, but
+it added a line of the same kind to *Known gaps*: the card's rows,
+scored by `SettingsChainsTests` and by `SettingsOnHomeTests` with
+`--check-in-due`, "untested in the app until CI runs that change". CI
+had run that change on #103's final head, so after `main` was merged in,
+that line says what CI measured.
+
+Seven work files in docs/work/ also still gave the status they had
+before their pull requests merged: five waited for CI ("untested until
+CI passes", or "in review; untested in the app until CI runs it") and
+two said "building". They are Settings on Home (#33), Get Attention on
+Home (#38), Typing on Home (#53), Settings' first row (#56), the
+late-stage profile (#74), the Library screen (#80) and four phrases in
+every category (#81). Each now says "done", the word
+[`docs/work/README.md`](../work/README.md) gives a finished work file,
+with its pull request, the day it merged and the CI run on its final
+head. docs/ROADMAP.md, Q26's *Today* line, says so too.
 
 The same kind of line waited for CI to move to Xcode 27.2: "CI moves by
 itself once GitHub installs the release". It has moved, so
@@ -56,7 +72,11 @@ Nothing in the app changed.
 
 ## Commits
 
-- One commit: the corrections and this record.
+- The corrections and this record.
+- The result of pull request #66's run narrowed to the chains the UI
+  tests score, after review.
+- A merge of `main`, after pull request #103 merged.
+- The check-in card's line and the seven work files' status lines.
 
 ## Verified
 
@@ -84,6 +104,25 @@ Read from GitHub's records of each run, on 2026-11-12:
   narrowed.
 - **Pull request #56, run 40188414972, on `f44f17f`**: concluded
   "success". The rest is that pull request's own record.
+- **Pull request #103, run 43249231746, on `0c53792`**, its final head:
+  "Unit tests" passed, and "UI tests" passed on the run's second
+  attempt, after the first attempt's iPad job was cancelled at its
+  90-minute limit (the iPhone job had passed). Both UI jobs ran on
+  GitHub's `xcode-27-arm64` image, version 20261104.0337.1, with Xcode
+  27.2 (27B52): "80 tests ran on iPad Pro 13-inch (M5) (iOS Simulator
+  27.2): 77 passed, 0 failed, 3 skipped, 0 expected failures" and "80
+  tests ran on iPhone 17 (iOS Simulator 27.2): 73 passed, 0 failed, 7
+  skipped, 0 expected failures". On both,
+  `testOpeningSettingsWithACheckInDueAtDefaultText`,
+  `testOpeningSettingsWithACheckInDueAtTheLargestText` and
+  `testAnsweringTheCheckInKeepsItsPlace` passed.
+- **The seven work files' pull requests**, each on the run named in its
+  status line: #33 (39899663714), #38 (39923081723), #53
+  (40153289149), #56 (40188414972), #74 (41427429086), #80
+  (42014189828) and #81 (42042331740). Each run concluded "success" on
+  the head that merged (the pull request's head when it merged, read
+  from GitHub, and the day it merged). Of their job logs, only #81's
+  (below) was read here.
 - **Pull request #81, run 42042331740, on `f8c6d7f`** (2026-11-05):
   both UI jobs ran on GitHub's `xcode-27-arm64` image, version
   20261104.0337.1, with Xcode 27.2 (build 27B52), and passed: "71 tests
@@ -115,10 +154,10 @@ Read from GitHub's records of each run, on 2026-11-12:
 
 ## Follow-ups
 
-- **When the check-in card's pull request (#103) merges**, its own new
-  "untested in the app until CI runs that change" line, and any others
-  like it from later pull requests, become this kind of line once
-  their CI has run. *(The next thread that edits that part of
-  docs/HANDOFF.md, or the Q26 check before release.)*
+- **Later pull requests** that write "untested until CI runs it", in
+  docs/HANDOFF.md or a work file's status, leave this kind of line once
+  their CI has run, and a work file that merges still says "building"
+  unless its pull request changes it. *(The next thread that edits
+  those lines, or the Q26 check before release.)*
 - **Q26 in full**, against the release build. *(A thread, before App
   Review.)*

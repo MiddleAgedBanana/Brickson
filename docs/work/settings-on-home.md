@@ -1,7 +1,9 @@
 # Settings on Home
 
 *Roadmap: R0 item 7 (Settings and first run), the part it left for later:
-Home's Settings button. Owner: the Settings on Home thread. Status: building.*
+Home's Settings button. Owner: the Settings on Home thread.
+Status: done; merged in pull request #33 on 2026-10-23, after CI's unit
+and UI tests passed on its final head (run 39899663714).*
 
 ## Intent
 

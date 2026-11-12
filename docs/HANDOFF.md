@@ -834,7 +834,8 @@ release in docs/ROADMAP.md when no thread has it yet.
   frame). A device check says whether it binds. Since 2026-11-12 the
   card's rows are scored too, where the card shows without scrolling
   (`SettingsChainsTests`, and `SettingsOnHomeTests` with
-  `--check-in-due`; untested in the app until CI runs that change):
+  `--check-in-due`, which passed on CI's iPad and iPhone at both text
+  sizes in pull request #103's run 43249231746, on `0c53792`):
   once the card is answered, the first step Set Up Step by Step opens
   on that visit starts its answers below where the card's rows were,
   so on CI's windows its first screenful shows no answer, and the second

@@ -1163,8 +1163,9 @@ what passes and who checks it:
   *Follow-ups*, listed, and those still waiting for CI to move to Xcode
   27.2, were corrected on 2026-11-12
   ([`log/2026-11-12-ci-has-run-it.md`](log/2026-11-12-ci-has-run-it.md)),
-  except two in docs/HANDOFF.md that the check-in card's pull request
-  (#103) rewrites.
+  with the check-in card's own such line (pull request #103) and the
+  status lines of seven work files in docs/work/ that still waited for
+  CI on work it had run.
 
 ### People, then the owner's answer
 

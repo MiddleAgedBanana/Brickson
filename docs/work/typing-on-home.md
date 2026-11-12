@@ -1,8 +1,9 @@
 # Typing on Home
 
 *Roadmap: Wave 3 item 5 (R0 items 5 and 9). Owner: the Typing on Home
-thread (a cloud session; GitHub CI is its build). Status: built
-2026-10-24, untested until CI passes
+thread (a cloud session; GitHub CI is its build). Status: done;
+built 2026-10-24 and merged in pull request #53 on 2026-10-25, after
+CI's unit and UI tests passed on its final head (run 40153289149)
 ([`log/2026-10-24-typing-on-home.md`](../log/2026-10-24-typing-on-home.md);
 docs/DECISIONS.md, "Typing on Home").*
 
