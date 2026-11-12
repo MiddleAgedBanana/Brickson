@@ -83,6 +83,9 @@ if 'spawn' in mode:
     import subprocess
     subprocess.Popen(['/bin/sh', '-c', 'sleep 3; echo late > late.txt'])
     time.sleep(20)
+if 'onefile' in mode:
+    with open(os.environ['STUB_FILE'], 'w') as named:
+        named.write('rewritten by the agent\n')
 if 'unhook' in mode:
     # Weaken agy's own guard hook, which is git-ignored, so the next agy
     # session would run unguarded (Codex's security review of #91).
@@ -584,6 +587,36 @@ class BridgeTests(unittest.TestCase):
         summary = json.loads((self.job_folder(result) / 'summary.json').read_text())
         self.assertEqual(summary['status'], 'changed files in a read-only job')
         self.assertIn(' M AGENTS.md', summary['changed_files'])
+
+    def test_a_file_whose_name_git_escapes_is_still_compared(self):
+        # Without -z, git status quotes these names and escapes what is in
+        # them ("r\\303\\251sum\\303\\251.md"), so the bridge never found the
+        # file to compare (Codex, on #91's cc6069e).
+        names = ['r\u00e9sum\u00e9.md', 'say "hi".txt', 'back\\slash.txt', 'tab\there.txt',
+                 'line\nbreak.txt']
+        for name in names:
+            (self.worktree / name).write_text('the thread\'s own work\n')
+        quiet = self.bridge('codex', '--brief', str(self.brief))
+        self.assertEqual(quiet.returncode, 0, quiet.stderr)
+        listed = json.loads((self.job_folder(quiet) / 'summary.json').read_text())['changed_files']
+        self.assertEqual(sorted(listed), sorted(f'?? {name}' for name in names))
+        for name in names:
+            with self.subTest(name=name):
+                result = self.bridge('codex', '--brief', str(self.brief),
+                                     env={'STUB_MODE': 'onefile', 'STUB_FILE': name})
+                self.assertEqual(result.returncode, 1, result.stderr)
+                summary = json.loads((self.job_folder(result) / 'summary.json').read_text())
+                self.assertEqual(summary['status'], 'changed files in a read-only job')
+
+    def test_a_renamed_file_is_listed_once_and_compared(self):
+        # With -z, git writes a rename's original path as a field of its own.
+        git(self.worktree, 'mv', 'AGENTS.md', 'agents notes.md')
+        result = self.bridge('codex', '--brief', str(self.brief),
+                             env={'STUB_MODE': 'onefile', 'STUB_FILE': 'agents notes.md'})
+        self.assertEqual(result.returncode, 1, result.stderr)
+        summary = json.loads((self.job_folder(result) / 'summary.json').read_text())
+        self.assertEqual(summary['status'], 'changed files in a read-only job')
+        self.assertEqual(summary['changed_files'], ['RM AGENTS.md -> agents notes.md'])
 
     def test_an_agent_cannot_publish(self):
         result = self.bridge('codex', '--brief', str(self.brief),

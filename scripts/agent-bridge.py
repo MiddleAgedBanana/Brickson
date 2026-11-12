@@ -132,17 +132,21 @@ class Stop(Exception):
     """The job cannot run as asked; the message says why."""
 
 
-def git(folder, *args, check=True, strip=True):
+def git(folder, *args, check=True, strip=True, raw=False):
     """The bridge's own git, without the thread's GitHub tokens and with
     core.fsmonitor and git hooks off: an agent can change the checkout's
     git settings, and a command it names there must never run outside its
-    sandbox or with what the agent was not given."""
+    sandbox or with what the agent was not given. With raw, git's output
+    comes back as bytes, untouched (file names, which need not be text)."""
     env = {key: value for key, value in os.environ.items() if key not in TOKENS}
     result = subprocess.run(['git', '-c', 'core.fsmonitor=false', '-c', 'core.hooksPath=/dev/null',
                              '-C', str(folder), *args],
-                            capture_output=True, text=True, stdin=subprocess.DEVNULL, env=env)
+                            capture_output=True, text=not raw, stdin=subprocess.DEVNULL, env=env)
     if check and result.returncode != 0:
-        raise Stop(f'git {" ".join(args)} failed in {folder}: {result.stderr.strip()}')
+        error = result.stderr.decode('utf-8', 'replace') if raw else result.stderr
+        raise Stop(f'git {" ".join(args)} failed in {folder}: {error.strip()}')
+    if raw:
+        return result.stdout
     return result.stdout.strip() if strip else result.stdout
 
 
@@ -378,7 +382,7 @@ def hold_checkout(checkout):
 
 
 def require_clean(checkout):
-    if changed_lines(checkout):
+    if changed_files(checkout):
         raise Stop(f'{checkout} has uncommitted changes or new files outside build/; '
                    'an agent shares nobody\'s uncommitted work, so the job needs it clean')
 
@@ -429,26 +433,42 @@ def read_answer(path):
         return file.read()
 
 
-def changed_lines(checkout):
-    # Unstripped: a porcelain line's first column can be a space (" M a"),
-    # and the path starts at the fourth character.
-    return sorted(line for line in git(checkout, 'status', '--porcelain', '--untracked-files=all',
-                                       check=False, strip=False).splitlines()
-                  if line and not line[3:].startswith('build/'))
+def changed_files(checkout):
+    """Every changed or new file outside build/, as (status line, path),
+    from git's porcelain status with -z. Without -z, git quotes a name with
+    letters outside ASCII, quotes, backslashes or control characters, and
+    escapes them ("r\\303\\251sum\\303\\251.md"), so the file could not be
+    found to compare (Codex, on #91). With it, each entry is the two
+    status letters, a space and the path as it is on disk, ended by a NUL,
+    and a rename or copy is followed by the path it came from. A line's
+    first letter can be a space (" M a"), so nothing is stripped."""
+    fields = iter(git(checkout, 'status', '--porcelain', '-z', '--untracked-files=all',
+                      check=False, raw=True).split(b'\0'))
+    files = []
+    for field in fields:
+        if len(field) < 4:
+            continue
+        code, path = field[:2].decode('ascii', 'replace'), os.fsdecode(field[3:])
+        source = os.fsdecode(next(fields, b'')) if 'R' in code or 'C' in code else None
+        if path.startswith('build/') and (source is None or source.startswith('build/')):
+            continue
+        files.append((f'{code} {source} -> {path}' if source is not None else f'{code} {path}',
+                      path))
+    return sorted(files)
 
 
 def git_state(checkout):
     """Branch, commit, and every changed or new file with a hash of its
     contents, so a file rewritten in place shows too."""
-    changed = changed_lines(checkout)
+    changed = changed_files(checkout)
     contents = {}
-    for line in changed:
-        path = checkout / line[3:].split(' -> ')[-1].strip('"')
+    for _line, name in changed:
+        path = checkout / name
         if path.is_file():
-            contents[line[3:]] = hashlib.sha256(path.read_bytes()).hexdigest()
+            contents[name] = hashlib.sha256(path.read_bytes()).hexdigest()
     return {'branch': git(checkout, 'branch', '--show-current', check=False),
             'head': git(checkout, 'rev-parse', 'HEAD', check=False),
-            'changed': changed, 'contents': contents}
+            'changed': [line for line, _name in changed], 'contents': contents}
 
 
 def stop_group(process):
