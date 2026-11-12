@@ -251,7 +251,8 @@ struct SavedStoreTests {
         for row in saved.phrases {
             var category: PhraseCategory?
             if let id = row.category {
-                category = try #require(categories[id], "Phrase \(row.uuid) names a category that is not written")
+                let named: PhraseCategory = try #require(categories[id], "Phrase \(row.uuid) names a category that is not written")
+                category = named
             }
             context.insert(Phrase(text: row.text, sortOrder: row.sortOrder, category: category, uuid: row.uuid))
         }
