@@ -66,7 +66,20 @@ first follow-up of
 [`2026-10-30-xcode-27-2.md`](2026-10-30-xcode-27-2.md), which made the
 first CI run on 27.2 the UI tests' check on it, with a pull request to
 fix whatever 27.2 reported: runs on 27.2 have passed the UI tests,
-pull request #81's among them, so there was nothing to fix.
+pull request #81's among them. Two failures on 27.2 are known, neither
+shown to come from 27.2: `HomeAccessibilityOrderTests` failed once on pull request
+#82's run and passed on its last commit and on the Mac's iOS 27.2
+(docs/HANDOFF.md, *Known gaps*, followed there as possibly
+intermittent), and this pull request's own first iPhone UI run failed
+once in
+`SettingsTests.testAnIdleSettingsReturnsToItsFirstScreenAndStaysOpen`
+and passed on its re-run (*Verified*). That test had already failed
+once on a branch that did not touch it on 2026-10-22, before 27.2
+(its tap found no hit point:
+[`2026-10-22-audit-still-screen.md`](2026-10-22-audit-still-screen.md)),
+and once on 2026-11-08 with the same words as here
+([`2026-11-08-privacy-check-follow-ups.md`](2026-11-08-privacy-check-follow-ups.md)).
+So no fix for 27.2 was found to be needed.
 
 Nothing in the app changed.
 
@@ -77,6 +90,9 @@ Nothing in the app changed.
   tests score, after review.
 - A merge of `main`, after pull request #103 merged.
 - The check-in card's line and the seven work files' status lines.
+- Two claims a check before ready found too broad: the unit tests'
+  expected failures on pull request #66's run, and what 27.2 left to
+  fix.
 
 ## Verified
 
@@ -84,6 +100,12 @@ Read from GitHub's records of each run, on 2026-11-12:
 
 - **Pull request #66, run 41005078813, on `380ef7d`**, its final head
   and the commit that merged: "Unit tests" and "UI tests" both passed.
+  The unit job's log: "804 tests ran on iPad Pro 13-inch (M5) (iOS
+  Simulator 27.0): 795 passed, 0 failed, 1 skipped, 8 expected
+  failures", the strict known issues the unit tests keep, so "no
+  expected failure" in the documents is the UI tests' (a check before
+  this pull request was ready found docs/DECISIONS.md saying it of
+  both, and it was narrowed).
   The UI job's log: Xcode 27.1 (27A9275), chosen because GitHub's image
   then held only 27.2's release candidate; on the iPad Pro 13-inch (M5),
   iOS 27.0, "59 tests ran ... 57 passed, 0 failed, 2 skipped, 0 expected
