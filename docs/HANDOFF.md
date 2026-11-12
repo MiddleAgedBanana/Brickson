@@ -123,8 +123,9 @@ fewer than four phrases, as a new one starts, is dimmed on Home until
 it has four, and its screen says how many more; Emergency is never
 dimmed. No edit or backup takes a category, Emergency included, from
 four or more phrases to fewer than four, or an Emergency or rest board
-already short of four farther under (docs/DECISIONS.md, "Four
-phrases in every category"). A phrase cannot take the name of Yes, No,
+already short of four farther under, and no backup brings back a
+deleted rest board's category with fewer than four (docs/DECISIONS.md,
+"Four phrases in every category"). A phrase cannot take the name of Yes, No,
 Emergency or Get Attention, "Help" included: the editor asks for another
 word. A phrase saved with words another control on Home answers to, such
 as "Stop", or a category name a phrase also has, is kept as written,
@@ -570,11 +571,9 @@ release in docs/ROADMAP.md when no thread has it yet.
   `HomeLayoutEngineTests` (*Emergency with fewer than four*), and the
   Library tells the family to add phrases. A rest board already short
   of four does the same, measured on 448 windows and pinned in
-  `LateStageProfileTests`; no edit or Set Up makes one, but a chosen
-  category deleted and later restored from an older backup that held it
-  short comes back as the board (*Open: a rest board with fewer than
-  four*). Both are on docs/ROADMAP.md, *The quality bar*, Q2, for the
-  owner's decision. And the dimming, like
+  `LateStageProfileTests`; no edit, restore or Set Up makes one (*Open:
+  a rest board with fewer than four*). Both are on docs/ROADMAP.md,
+  *The quality bar*, Q2, for the owner's decision. And the dimming, like
   typing's, assumes Snap to Item stops on a dimmed control, unmeasured
   until docs/DEVICE-CHECKS.md, I8 and B2. *(the owner; the device
   checks)*
@@ -1038,9 +1037,9 @@ docs/ROADMAP.md, *The quality bar*, Q24):
    may border the message, the top of Stop's well nearest Again, and
    dimmed phrases bordering Clear and Put Back (*Known gaps*), and three
    your rules of 2026-11-05 put out of reach of every edit, which a
-   damaged or hand-made store, or for a rest board one rare restore, can
-   still show: an Emergency or a rest board already short of four
-   phrases, and fewer than three everyday categories. The other
+   damaged or hand-made store can still show: an Emergency or a rest
+   board already short of four phrases, and fewer than three everyday
+   categories. The other
    one, iPhone Duo's chain from Family Setup at the largest text size,
    comes to you only if a thread cannot remove it by placement. So does
    the changed-window finding (a look resting
@@ -1229,7 +1228,10 @@ Home's controls, are built:
 [`log/2026-11-05-phrases-named-like-controls.md`](log/2026-11-05-phrases-named-like-controls.md),
 and so is its library already outside the bounds, which no edit now
 takes farther out:
-[`log/2026-11-12-no-farther-out.md`](log/2026-11-12-no-farther-out.md)).
+[`log/2026-11-12-no-farther-out.md`](log/2026-11-12-no-farther-out.md),
+with that record's own follow-up, a deleted rest board that no backup
+now brings back short:
+[`log/2026-11-12-rest-board-comes-back-full.md`](log/2026-11-12-rest-board-comes-back-full.md)).
 The rollback probe was run on 2026-11-05 (*Known gaps*). What is left from the *Follow-ups* in
 [`log/2026-10-23-emergency-repair.md`](log/2026-10-23-emergency-repair.md)
 is, in order, stores from every
