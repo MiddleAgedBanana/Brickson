@@ -103,6 +103,9 @@ decided.*
      version* come first in the emergency repair record's list, but the
      probe can crash the whole unit run and the store fixture needs a
      store file made on a Mac, so each stays a pull request of its own.
+     Stores from every schema version were built on 2026-11-12, with
+     the store made on CI instead
+     ([`../log/2026-11-12-stores-from-every-version.md`](../log/2026-11-12-stores-from-every-version.md)).
 
 ## Spec
 

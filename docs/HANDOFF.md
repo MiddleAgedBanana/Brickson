@@ -1285,10 +1285,13 @@ takes farther out:
 with that record's own follow-up, a deleted rest board that no backup
 now brings back short:
 [`log/2026-11-12-rest-board-comes-back-full.md`](log/2026-11-12-rest-board-comes-back-full.md)).
-The rollback probe was run on 2026-11-05 (*Known gaps*). What is left from the *Follow-ups* in
+The rollback probe was run on 2026-11-05 (*Known gaps*). Since
+2026-11-12 every unit run opens a store saved by each schema version
+with today's build, and a new version commits the store it saves
+([`log/2026-11-12-stores-from-every-version.md`](log/2026-11-12-stores-from-every-version.md)).
+What is left from the *Follow-ups* in
 [`log/2026-10-23-emergency-repair.md`](log/2026-10-23-emergency-repair.md)
-is, in order, stores from every
-schema version and safety copies, each a pull request of its own. Calls (R0 item 8) wait for a device build. Files under
+is safety copies, a pull request of its own. Calls (R0 item 8) wait for a device build. Files under
 `.github/workflows` are committed by the owner (docs/SDLC.md, *Deploy*). The toolchain's follow-ups
 (Xcode's recommended settings, iOS 27 APIs behind `#available`) are in
 [`log/2026-10-21-toolchain.md`](log/2026-10-21-toolchain.md). Xcode's
