@@ -3334,6 +3334,25 @@ How the message being typed behaves (`MessageComposer`, `DraftStore`):
   A file that cannot be read at launch gives an empty message and
   "Message not restored". The message is never logged and never put in a
   crash message.
+- **The saved message keeps iOS's default file protection** (owner,
+  2026-11-12). `draft.txt` is written with
+  `.completeFileProtectionUntilFirstUserAuthentication`, the class iOS
+  gives an app's files when the app sets none, as the phrase library and
+  settings do: readable once the device has been unlocked after it
+  started, locked or not. Complete protection, readable only while the
+  device is unlocked, was proposed in pull request #94 and not taken.
+  The privacy policy promises only that iOS encrypts Brickson's storage
+  when the device has a passcode, which the default already does. And
+  the message is read once, at launch, so a launch while the device is
+  locked (R2's Get Attention and Emergency from Siri or the Action
+  button may start Brickson then) could not read it: Home would show
+  "Message not restored", and the next change would replace the saved
+  message. The default has the same gap before the first unlock after a
+  restart, which nothing reaches today; docs/ROADMAP.md's Siri and
+  Shortcuts work file (item 10) settles it, so that a message the
+  device kept locked is read once it unlocks and never replaced before.
+  Revisit complete protection only after that, and for the phrase
+  library too.
 
 ## Typing on Home
 
