@@ -1470,7 +1470,11 @@ settings, date) and summarise it here.
   an agy job runs only with agy's hook exactly as installed, and if the
   job changes the hook, the bridge puts it back and the job fails; the
   guard's own code in agy's folder is not put back
-  ([record](log/2026-11-12-bridge-safety-gaps.md)).
+  ([record](log/2026-11-12-bridge-safety-gaps.md)). A Codex write job
+  cannot commit yet: Codex keeps a worktree's git folder read-only in its
+  sandbox on purpose, and `--add-dir` does not change that (found on the
+  Mac on 2026-11-12); the next bridge pull request settles how its work
+  gets committed (same record, *Follow-ups*).
   Jules, Google's cloud coding agent, is no longer one of Brickson's
   agents: Google made it read-only after 2026-11-11 and shuts it down on
   2026-12-31, so the documents no longer name it, and no other agent

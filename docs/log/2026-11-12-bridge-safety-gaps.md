@@ -1,9 +1,10 @@
-# Two safety gaps in the agent bridge, closed
+# Two safety gaps in the agent bridge closed, and its briefs kept out of the docs check
 
 *2026-11-12. Pull request #99 (`claude/project-thread-36u0wr`). A cloud
 thread, from the coordinator's brief, for the two findings pull request
 #91 declined after its final push and left "for the next bridge pull
-request to record".*
+request to record", and one more the coordinator passed on from a thread
+on the Mac.*
 
 ## What changed and why
 
@@ -67,6 +68,17 @@ names are read as bytes, so a name that is not text cannot stop the
 bridge. `summary.json`'s `changed_files` now shows names as they are
 (`?? résumé.md`), and a rename as `R  old -> new`, without quotes.
 
+**The docs check reads only the repository's own files.**
+`scripts/test-docs.py` used to read every file under the checkout,
+ignored ones included, so a bridge job's `brief.md` under
+`build/agent-bridge/`, which may cite a section that does not exist yet,
+failed the check on the Mac (not on CI, where `build/` is empty when the
+check runs). It now lists files with `git ls-files --cached --others
+--exclude-standard`: every committed file and every new one not yet
+added, and nothing git ignores (`build/`, the `xcode-skills/` folder of
+Apple's exported skills). On this checkout it reads the same 425 files
+as before.
+
 ## Commits
 
 The commits of pull request #99.
@@ -99,6 +111,12 @@ Python 3.9.25, the version of the Mac's `/usr/bin/python3`:
     are listed by their real names and the job finishes.
   - `test_a_renamed_file_is_listed_once_and_compared`: a staged rename,
     rewritten, is listed once as `RM AGENTS.md -> agents notes.md`.
+- `scripts/test-docs.py`: 58 of 58 on both Pythons. The new
+  `test_only_the_repositorys_own_files_are_read` makes a throwaway
+  repository with a committed file, a deleted one, a new one not yet
+  added, a brief under an ignored `build/` and a skill under an ignored
+  `xcode-skills/`, and expects only the committed and the new file; it
+  failed on `main`'s check, which walked the folder.
 - Eight broken copies of the new code each failed the tests named:
   never putting the hook back (the four put-back tests); checking only
   the adapter's name (the exact-hook cases but the links, the missing
@@ -107,8 +125,8 @@ Python 3.9.25, the version of the Mac's `/usr/bin/python3`:
   (those two cases); reading through links (the two link cases); reading
   status without `-z` (both name tests); and not reading a rename's
   original name (the rename test).
-- `scripts/test-runner.py`, `scripts/test-docs.py`,
-  `scripts/test-hooks.py` and `scripts/test-privacy.py`, and
+- `scripts/test-runner.py`, `scripts/test-hooks.py` and
+  `scripts/test-privacy.py`, and
   `scripts/privacy-check.py --outgoing --no-list`: a cloud thread has no
   private list, so that checked the built-in patterns only. This pull
   request adds no check to `scripts/test.sh`, so `scripts/test-runner.py`
@@ -139,6 +157,25 @@ Python 3.9.25, the version of the Mac's `/usr/bin/python3`:
 
 ## Follow-ups
 
+- **A Codex write job cannot commit** (the next bridge pull request;
+  found by a thread on the Mac on 2026-11-12, job
+  `20261112T054316Z-codex-write`: 85 s, stopped at `index.lock`, no
+  commits). The bridge makes `~/code/brickson-codex-<topic>` a git
+  worktree, whose git folder is inside the owner's checkout's `.git`.
+  Codex's `workspace-write` sandbox keeps `.git` and a worktree's git
+  folder read-only on purpose, on macOS as on Linux, and `--add-dir`
+  does not lift it: openai/codex issue 14338 (open) and its duplicate
+  23661, read 2026-11-12. Making the shared `.git` writable instead would
+  let the agent change the owner's checkout's branches, settings and git
+  hooks, which the sandbox exists to stop. Not tried from this cloud
+  thread, which cannot run Codex. Two ways to weigh, each to be measured
+  on the Mac's Codex first: Codex leaves its work uncommitted and the
+  bridge, outside the sandbox, commits the files git shows as changed
+  (the agent's final message as the commit message, the privacy check
+  first); or a separate clone instead of a worktree, with only that
+  clone's `.git` named as a writable root (reported to work by naming
+  `.git` itself, but also reported to lose to the read-only rule in
+  recent Codex). The first loosens nothing.
 - **The guard's own code in agy's folder** (for the coordinator). The
   adapter runs the guard in agy's folder, `.claude/hooks/guard.py`, which
   git tracks. A read-only job that changes it is reported and the next
