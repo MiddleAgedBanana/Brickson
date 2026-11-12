@@ -285,8 +285,10 @@ a control that cannot act is dimmed in place, never removed.
   that would take it from three or more to fewer than three
   (`.homeNeedsThree`). Only an edit that crosses a bound is refused, so
   a library already outside them (a damaged or hand-made store) can
-  still be edited and brought back. Import keeps every word, so it is
-  refused whole, never trimmed.
+  still be edited and brought back. (Since 2026-11-12 an edit that takes
+  such a library farther out is refused too:
+  `docs/log/2026-11-12-no-farther-out.md`.) Import keeps every word, so
+  it is refused whole, never trimmed.
 - **Every word fits the narrowest tile.** A phrase or name with a word
   too wide for Home's narrowest phrase tile or category button, at the
   default text size with Bold Text on, is refused by the editors
