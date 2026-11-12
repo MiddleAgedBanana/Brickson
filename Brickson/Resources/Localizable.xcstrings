@@ -298,6 +298,9 @@
     "Emergency can't be deleted, so it's always one step away. You can change its phrases." : {
 
     },
+    "Emergency has fewer than four phrases, so Home shows it with empty spaces, and this would make more of them. Change a phrase's words instead, or add phrases first." : {
+
+    },
     "Emergency is always one step away on Home, so it can't be renamed, moved or deleted. You can change its phrases." : {
 
     },
@@ -446,6 +449,9 @@
 
     },
     "Home's buttons take the size the answers need, as large as this screen has room for, and are largest until something is chosen. The new size shows when Settings closes." : {
+
+    },
+    "Home's rest board has fewer than four phrases, so Home shows it with empty spaces, and this would make more of them. Change a phrase's words instead, or add phrases first." : {
 
     },
     "Home's rest board shows this category, so Home will show every category instead." : {

@@ -41,11 +41,11 @@ struct LibraryModelTests {
         model.categoryResults[LibraryFixtures.needsID] = "A line."
         model.backupResult = "A restore's line."
 
-        model.perform(.renameCategory(LibraryFixtures.needsID, name: "Basics"), in: container)
+        model.perform(.renameCategory(LibraryFixtures.needsID, name: "Basics"), in: container, restBoard: nil)
         #expect(model.categoryResults[LibraryFixtures.needsID] == "A line.")
         #expect(model.backupResult == "A restore's line.")
 
-        model.perform(.renameCategory(LibraryFixtures.needsID, name: "Wants"), in: container)
+        model.perform(.renameCategory(LibraryFixtures.needsID, name: "Wants"), in: container, restBoard: nil)
         #expect(model.categoryResults[LibraryFixtures.needsID] == nil)
         #expect(model.backupResult == nil)
     }
@@ -62,14 +62,14 @@ struct LibraryModelTests {
         #expect(model.snapshot != nil)
         let change = LibraryEdit.addPhrase(text: "Please.", category: LibraryFixtures.basicsID)
 
-        let refused = model.perform(change, in: container, read: { (_: ModelContainer) throws(LibraryEditError) -> LibrarySnapshot in
+        let refused = model.perform(change, in: container, restBoard: nil, read: { (_: ModelContainer) throws(LibraryEditError) -> LibrarySnapshot in
             throw .libraryUnreadable
         })
         #expect(refused == .refused(LibraryEditError.libraryUnreadable.message))
         #expect(model.snapshot == nil)
         #expect(model.readFailure == LibraryEditError.libraryUnreadable.message)
 
-        let saved = model.perform(change, in: container)
+        let saved = model.perform(change, in: container, restBoard: nil)
         #expect(saved != refused)
         #expect(model.snapshot?.categories.first { $0.id == LibraryFixtures.basicsID }?.phrases.map(\.text).contains("Please.") == true)
         #expect(model.readFailure == nil)

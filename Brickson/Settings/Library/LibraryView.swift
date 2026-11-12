@@ -23,6 +23,7 @@ private struct LibraryContent: View {
     @Binding var path: [SettingsRoute]
 
     @Environment(LibraryModel.self) private var library
+    @Environment(SetupStore.self) private var setup
     @Environment(SettingsActivity.self) private var activity: SettingsActivity?
     @Environment(\.modelContext) private var modelContext
     @Environment(\.isVolatileStore) private var isVolatileStore
@@ -214,7 +215,9 @@ private struct LibraryContent: View {
                 return
             }
             library.backupResult = nil
-            library.restore = RestoreChoices(backup: backup, library: current, starter: library.starter)
+            library.restore = RestoreChoices(
+                backup: backup, library: current, starter: library.starter, restBoard: setup.record.restBoardCategory
+            )
             library.askedFrom = askedFrom
             // Restore from a Backup is the Library's last control.
             library.askedFromLast = true

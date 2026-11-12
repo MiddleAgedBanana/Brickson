@@ -44,6 +44,7 @@ private struct LibraryPhraseEditorContent: View {
     @Binding var path: [SettingsRoute]
 
     @Environment(LibraryModel.self) private var library
+    @Environment(SetupStore.self) private var setup
     @Environment(SettingsActivity.self) private var activity: SettingsActivity?
     @Environment(\.modelContext) private var modelContext
     @State private var words = LibraryEditorWords()
@@ -88,10 +89,11 @@ private struct LibraryPhraseEditorContent: View {
 
     private var canSave: Bool { words.canSave }
 
-    /// Why Delete Phrase is dimmed (Emergency's last phrase with words,
-    /// or a category's fourth phrase), or nil.
+    /// Why Delete Phrase is dimmed (Emergency's last phrase with words, a
+    /// category's fourth phrase, or any phrase of an Emergency or a rest
+    /// board already under four), or nil.
     private var deleteRefusal: String? {
-        phraseID.flatMap { library.refusal(of: .deletePhrase($0)) }
+        phraseID.flatMap { library.refusal(of: .deletePhrase($0), restBoard: setup.record.restBoardCategory) }
     }
 
     private var resultLines: [String] {
@@ -138,7 +140,7 @@ private struct LibraryPhraseEditorContent: View {
         } else {
             return
         }
-        switch library.perform(change, in: modelContext.container) {
+        switch library.perform(change, in: modelContext.container, restBoard: setup.record.restBoardCategory) {
         case .saved(let plan):
             let stored = LibraryText.trimmed(typed)
             let isWide = !HomeWordRoom.wordsTooWide(inPhrase: stored).isEmpty
@@ -200,6 +202,7 @@ private struct LibraryNameEditorContent: View {
     @Binding var path: [SettingsRoute]
 
     @Environment(LibraryModel.self) private var library
+    @Environment(SetupStore.self) private var setup
     @Environment(SettingsActivity.self) private var activity: SettingsActivity?
     @Environment(\.modelContext) private var modelContext
     @State private var words = LibraryEditorWords()
@@ -280,7 +283,7 @@ private struct LibraryNameEditorContent: View {
         }
         let change: LibraryEdit = categoryID.map { LibraryEdit.renameCategory($0, name: name) }
             ?? LibraryEdit.addCategory(name: name, symbolName: LibraryRules.newCategorySymbol)
-        switch library.perform(change, in: modelContext.container) {
+        switch library.perform(change, in: modelContext.container, restBoard: setup.record.restBoardCategory) {
         case .saved(let plan):
             if categoryID == nil {
                 let before = Set(plan.before.categories.map(\.id))

@@ -118,12 +118,12 @@ and restores one from the file picker, adding to the library or
 replacing it where that removes nothing the person wrote. No edit or
 backup takes a library from three or four everyday categories to more
 or fewer; a damaged or hand-made store already outside them can still be
-edited, and an edit can take it farther out (a follow-up in
-`docs/log/2026-11-05-library-screen.md`). An everyday category with
+edited, but never taken farther out (2026-11-12). An everyday category with
 fewer than four phrases, as a new one starts, is dimmed on Home until
 it has four, and its screen says how many more; Emergency is never
 dimmed. No edit or backup takes a category, Emergency included, from
-four or more phrases to fewer than four (docs/DECISIONS.md, "Four
+four or more phrases to fewer than four, or an Emergency or rest board
+already short of four farther under (docs/DECISIONS.md, "Four
 phrases in every category"). A phrase cannot take the name of Yes, No,
 Emergency or Get Attention, "Help" included: the editor asks for another
 word. A phrase saved with words another control on Home answers to, such
@@ -563,7 +563,8 @@ release in docs/ROADMAP.md when no thread has it yet.
   them (docs/DECISIONS.md, "Four phrases in every category", the
   owner's decision of 2026-11-05).
   Three things stay open. Emergency is never dimmed, so an Emergency
-  already short of four (no edit can make one) shows its empty cells,
+  already short of four (no edit can make one, or take one farther
+  under) shows its empty cells,
   where a look meets Clear or Put Back while typing and a phrase that
   speaks while browsing; scored, pinned as two strict known issues in
   `HomeLayoutEngineTests` (*Emergency with fewer than four*), and the
@@ -1225,7 +1226,10 @@ landed on 2026-11-05 ([`log/2026-11-05-library-screen.md`](log/2026-11-05-librar
 *Follow-ups*, whose first two, the short category and phrases named like
 Home's controls, are built:
 [`log/2026-11-05-four-phrases.md`](log/2026-11-05-four-phrases.md) and
-[`log/2026-11-05-phrases-named-like-controls.md`](log/2026-11-05-phrases-named-like-controls.md)).
+[`log/2026-11-05-phrases-named-like-controls.md`](log/2026-11-05-phrases-named-like-controls.md),
+and so is its library already outside the bounds, which no edit now
+takes farther out:
+[`log/2026-11-12-no-farther-out.md`](log/2026-11-12-no-farther-out.md)).
 The rollback probe was run on 2026-11-05 (*Known gaps*). What is left from the *Follow-ups* in
 [`log/2026-10-23-emergency-repair.md`](log/2026-10-23-emergency-repair.md)
 is, in order, stores from every
