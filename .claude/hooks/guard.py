@@ -40,7 +40,9 @@ It denies:
   refused.
 
 This is a guard against mistakes, not a sandbox: a determined command can
-get around it, and it covers Claude Code sessions only. Codex, Jules and the
+get around it, and it covers Claude Code sessions only. On the owner's Mac,
+git-ignored hooks hold Codex and Antigravity to what it refuses
+(docs/log/2026-11-08-codex-antigravity-setup.md); elsewhere, Codex and the
 owner are held to the same rules by review. Standard library only, so it
 runs wherever python3 does. Its tests are scripts/test-hooks.py.
 """
