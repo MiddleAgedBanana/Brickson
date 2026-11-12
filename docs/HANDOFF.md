@@ -636,8 +636,13 @@ release in docs/ROADMAP.md when no thread has it yet.
   phone, "Shortcuts" and "Reaching" too. Measured from word widths and
   a capture's row geometry, not yet read from captures of those rows.
   The check-in card's rows, which broke the same way side by side, are
-  full-width since 2026-11-12 and read whole on CI (`SettingsTests`;
+  full-width since 2026-11-12 (`SettingsTests` reads their words;
   [`log/2026-11-12-check-in-card.md`](log/2026-11-12-check-in-card.md)).
+  CI's first run read every word whole but "Go", drawn whole beside an
+  icon the button's rounded end cuts on a row four lines tall, so the
+  check also reads past that icon (`RenderedWords.pastItsIcon`; untested
+  until CI runs it). The cut icon, on Settings rows several lines tall
+  at the largest sizes, is the system's capsule and is not changed.
   *(the next Settings thread)*
 - On windows under 345pt with Bold Text, the message beside Phrases and
   Type is too narrow for "understand.", which can break there; since
@@ -830,7 +835,12 @@ release in docs/ROADMAP.md when no thread has it yet.
   `--check-in-due`; untested in the app until CI runs that change):
   once the card is answered, the first step Set Up Step by Step opens
   on that visit starts its answers below where the card's rows were,
-  so on CI's windows its first screenful shows no answer. Go Through
+  so on CI's windows its first screenful shows no answer, and the second
+  step it leads to keeps its choices clear of that place too, since a
+  look over it meets the first step's Next (CI's UI run found a held
+  look there choosing a category under the bar; docs/DECISIONS.md, "The
+  late-stage profile", *After the check-in, clear of the card's place
+  too*). Go Through
   Setup Again's step takes the place the button showed in as it was
   chosen, however far Family Setup had scrolled, as the Library's
   questions do, and the model scores it scrolled; Set Up Step by Step

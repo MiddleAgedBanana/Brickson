@@ -4137,7 +4137,10 @@ CI's UI tests pass on this change.
   on the phone at AX5 the card lies below the first screenful. After
   the card is answered, the first step's first screenful shows no
   answer on any CI window, and a family scrolls to answer, the cost
-  already accepted on narrow windows at large text sizes.
+  already accepted on narrow windows at large text sizes. The second
+  step that first step leads to keeps its choices clear of the same
+  place, since a look over it meets that step's Next (*The late-stage
+  profile*, *After the check-in, clear of the card's place too*).
 - **Where Go Through Setup Again showed, scrolled or not.** Its frame is
   taken as it is chosen, less what Family Setup has scrolled, and never
   above the content's top (`SetupAnswersPlace.shown`), the rule the
@@ -4168,7 +4171,7 @@ CI's UI tests pass on this change.
 - **Not scored:** Family Setup scrolled before Not Now, Stop Asking or
   Set Up Step by Step is chosen, the card on the phone at the largest
   text size included, where it lies below the first screenful; resting
-  over the card's own heading and sentence; the steps after the first;
+  over the card's own heading and sentence; the steps after the second;
   and the guide scrolled. Where a pointer rests after an activation, and how
   Snap to Item picks, need a real device (docs/HANDOFF.md, "Checks that
   need a real device").
@@ -4515,6 +4518,33 @@ Step by Step. The work file is
   the 630 windows (53 at the default text size, 99 at AX3, 51 at AX5);
   Codex's review of pull request #74 found the step unscored. The steps
   after it are not followed (docs/HANDOFF.md, *Known gaps*).
+- **After the check-in, clear of the card's place too** (pull request
+  #103, 2026-11-12). Once the check-in card is answered with Not Now or
+  Stop Asking and Set Up Step by Step is chosen in the same visit, a
+  held look can arrive at this step still over where the card's rows
+  were: it rested there over the words that keep the card's place, met
+  Set Up Step by Step, then the first step's Next, since that step's
+  answers start below the place (*The first step's own rows*). That
+  place can lie past Next's foot, over the sound line, where the choices
+  the family scrolls to wait under the bar. So on that way in, each
+  choice also keeps every point of the card's three rows, from Go
+  Through Setup Again's top to Stop Asking's foot, nearer Next than
+  itself, by the same two measures and margin
+  (`SetupChoicesPlace.arrivals(from:checkInRows:)`); every other way in
+  is placed as before. CI's UI run found the hazard on the iPhone 17 at
+  the default size and the 13-inch iPad at AX5: a look at Not Now's
+  lower corner or Stop Asking's centre, partly or wholly under the sound
+  line, chose a category the step had placed under the bar (848 and
+  1,346 points down). The unit model did not, since it drew no second
+  step on CI's windows; it now does, and finds the same chains with the
+  choices placed from Next alone
+  (`SettingsChainsTests.theSecondStepLaidOutAsBeforeWouldSaveAChoice`).
+  The cost, on that one way in: on the phone the three choices below the
+  bar start 1,073 points down rather than 846, and on the iPad at AX5
+  the third choice leaves the first screenful, so two show above the bar
+  rather than three, with the rest from 1,546 rather than 953 and 1,344.
+  Whether a pointer can rest on a control drawn under the sound line,
+  as the chains assume, is a device check.
 - **The late stage's floors** (`HomeLayout.Profile.lateStage`), held at
   163 points per inch (*Layouts from the space available*), angles at
   46 cm:

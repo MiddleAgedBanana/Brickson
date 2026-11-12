@@ -68,8 +68,12 @@ work file is [`work/settings-chains.md`](../work/settings-chains.md),
 - `3673949` Record the check-in card's rows and scoring.
 - `f4a0dc3` Place Go Through Setup Again's step where the button
   showed (*After review*, below).
-- The commit that records it here and in docs/DECISIONS.md,
-  docs/HANDOFF.md and docs/ROADMAP.md.
+- `6caaf03` and `3bec0da` record it here and in docs/DECISIONS.md,
+  docs/HANDOFF.md and docs/ROADMAP.md, and the other reviews.
+- After CI's first run (*After CI's first run*, below): `e65cf0c`
+  keeps the second step's choices clear of the card's place after the
+  check-in and scores that step on CI's windows; `70729b5` reads a
+  row's words past its icon; the commit after them records both.
 
 ## Verified
 
@@ -198,6 +202,81 @@ none started, when the fixes were pushed, so the push cancelled no
 running job; the second push's runs are the first to test this pull
 request's code.
 
+## After CI's first run
+
+CI's first run on this code (run 43214111054, on `3bec0da`) passed the
+unit tests and failed three UI checks.
+
+**A held look saved a second-step choice.** `SettingsOnHomeTests` found
+it on the iPhone 17 at the default size, from Not Now (the look at its
+lower corner, 16.5, 830.5) and from Stop Asking (at its centre, 201,
+886), and on the 13-inch iPad at AX5, from Stop Asking (516, 1351):
+the card answered, the look over the words that keep its place met Set
+Up Step by Step, then the first step's Next (that step's answers start
+below the card's place, as the earlier fix had them), then a category
+the second step had placed under the bar, at 849 and 1,346 points
+down. Those looks rest on the sound line, under the foot of the stack
+(about 800 on the phone and 1,276 on the iPad), over parts of Not Now
+and Stop Asking the stack draws no more of; the chains count a
+control's whole frame wherever it lies in the window, as they always
+have, and whether Snap to Item can rest on a control the sound line
+hides is a device check. The unit model missed it because it drew no
+second step on CI's windows.
+
+So the second step, opened that way, keeps every point of the card's
+rows nearer Next than each choice too
+(`SetupChoicesPlace.arrivals(from:checkInRows:)`, read from
+`SettingsLanding.checkInRows`), and every other way in is placed as
+before (docs/DECISIONS.md, "The late-stage profile", *After the
+check-in, clear of the card's place too*). On CI's frames the choices
+below the bar move from 846 to 1,073 points on the phone; on the iPad
+at AX5 the third choice leaves the first screenful, and the rest start
+at 1,546. New tests, each with the change that would make it fail:
+
+- `SetupChoicesPlaceTests.afterTheCheckInEveryChoiceKeepsClearOfTheCardsPlace`,
+  on CI's two windows, and
+  `everyPlaceItGivesHoldsAtEveryPointOfTheCardsPlace`, across card
+  places above, across and under the bar on both: with the arrivals
+  ignored, both failed (12 expectations), as they should.
+- `placedFromNextAloneALookOverTheCardsPlaceMetAChoice` pins CI's
+  finding against the old placement, and
+  `onlyTheWayInAfterTheCheckInArrivesFromTheCardsPlace` fails if
+  another way in adds the card's place or that one drops it.
+- The unit model now draws the second step on CI's windows, and the
+  one after the check-in as the app does;
+  `SettingsChainsTests.theSecondStepLaidOutAsBeforeWouldSaveAChoice`
+  finds CI's chains on both windows with the choices placed from Next
+  alone, and none as placed now.
+- `SettingsOnHomeTests` reads the second step after the check-in too,
+  scores its chains, and fails if a choice lies across the card's
+  place.
+
+**"Go" was not read.** `SettingsTests.testTheCheckInCardDrawsItsWordsWholeAndPassesTheAudit`
+read "Through", "Setup" and "Again" on Go Through Setup Again at AX5 on
+the iPhone, light, but not "Go", which the capture shows drawn whole on
+the first of four lines, beside an icon the button's capsule cuts at its
+curve, half drawn white on the white screen. Each line without the icon
+was read. So `RenderedWords` also reads a capture whose words take more
+than one line from midway across the gap between that icon and the
+words (`pastItsIcon(of:)`): the leftmost mark below the first line is
+the words' edge, and the gap is found in the first line's columns left
+of it. A crop only leaves pixels out, so a clipped word stays clipped.
+The capture is kept (`BricksonTests/RenderedLabels/gothrough-cut-icon.png`,
+its pixels as CI drew them, without the screenshot's metadata);
+`RenderedWordsTests.aShortWordBesideACutIconIsRead` fails if the crop is
+not read, and `onlyWordsOfMoreThanOneLineAreCutPastTheirIcon` if it cuts
+into "Go", keeps any of the icon, or crops any other kept capture. The
+crop's geometry was checked in Python on the kept captures (it cuts Go
+Through Setup Again at 237 pixels, between the icon's last marked
+column, 215, and "Go"'s first, 262, and crops none of the one-line or
+tall ones; it crops the clipped Yes and No to fragments, which
+`aClippedLabelIsRejected` still rejects). Vision does not run on Linux,
+so whether it reads "Go" in the crop is untested until CI runs it.
+
+Checked on Linux (Swift 6.4.2 release): `SetupChoicesPlaceTests` (9
+tests) and `SettingsChainsTests` (14) pass with the fix.
+`RenderedWords` uses CoreGraphics and Vision and was not compiled here.
+
 ## Not verified
 
 - Everything in the app until CI's runs pass: the card's drawing, the
@@ -219,6 +298,17 @@ request's code.
 - If CI's runs disagree with the model (a hazard, Learn About Each Way
   off Go Through's frame, or a word not read whole), fix it on this
   pull request. *(this thread)*
+- The chains count a control's whole frame wherever it lies in the
+  window, so a look can start on the part of a row the sound line
+  hides, or past the window's foot (Stop Asking's centre on the iPhone
+  17, 886 points down in an 874-point window). Whether a pointer rests
+  there, and whether Snap to Item picks a control drawn under the sound
+  line, are device checks; the model keeps the cautious reading until
+  they say otherwise. *(a device check)*
+- Settings rows several lines tall at the largest sizes have their icon
+  cut by the system's capsule, as Go Through Setup Again showed. A row
+  shape that keeps the icon whole is a look for every Settings row,
+  not changed here. *(the next Settings thread)*
 - Family Setup scrolled before Not Now, Stop Asking or Set Up Step by
   Step is chosen is not scored, and on the phone at the largest text
   size the card is always reached by scrolling. Set Up Step by Step

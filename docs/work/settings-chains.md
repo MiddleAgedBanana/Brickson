@@ -262,12 +262,16 @@ read the card, and its chains scored. Record:
   there. Once the card is answered and Set Up Step by Step is chosen in
   the same visit, that first step starts its answers clear of where the
   card's rows were, since a look over the words that keep the card's
-  place can meet the row. Nothing else moves, and no wording changes.
+  place can meet the row, and the second step it leads to keeps its
+  choices clear of that place too, since that look then meets Next
+  (found by CI's first UI run). Nothing else moves, and no wording
+  changes.
 - **Proof.** `--check-in-due` (debug, test storage only) makes the card
   show. `SettingsTests` reads each row's drawn words whole, light and
   dark at the default size and at the largest, runs Apple's audit with
   the rows in view, and answers the card with Not Now and Stop Asking,
   checking that nothing moves and that the answer is kept.
-  `SettingsOnHomeTests` reads both first steps and follows every chain
-  through the card where it shows without scrolling, and the chain
-  model scores the same on CI's windows (`SettingsChainsTests`).
+  `SettingsOnHomeTests` reads both first steps, and the second step
+  after the card is answered, and follows every chain through the card
+  where it shows without scrolling, and the chain model scores the same
+  on CI's windows (`SettingsChainsTests`), second steps included.
