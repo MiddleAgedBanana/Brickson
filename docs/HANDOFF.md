@@ -1145,10 +1145,10 @@ docs/ROADMAP.md, *The quality bar*, Q24):
    request from a branch of this repository; one GitHub gives no
    secrets (from a fork, or Dependabot's) checks the built-in patterns
    only, and says so.
-8. Done on your Mac on 2026-11-04; for another Mac: let Codex read all
-   of `AGENTS.md`. By default
-   it reads only the first 32 KiB, and the file is about 69 KB
-   (docs/DECISIONS.md, "AGENTS.md puts first what Codex reads"). In
+8. Optional since 2026-11-12, when `AGENTS.md` was cut to fit within
+   the 32 KiB Codex reads by default (docs/DECISIONS.md, "AGENTS.md puts
+   first what Codex reads"); done on your Mac on 2026-11-04, and it only
+   adds room. For another Mac, in
    Terminal, run this one line; it adds the setting at the top of
    Codex's settings file, creating the file if needed, and changes
    nothing if a line of the file already sets it, however the name is
@@ -1157,7 +1157,7 @@ docs/ROADMAP.md, *The quality bar*, Q24):
    Success: `command grep -n project_doc_max_bytes ~/.codex/config.toml`
    prints a line reading `1:project_doc_max_bytes = 131072` (if your
    file already set it, it prints your own line instead; any number
-   larger than the file, about 69,000 bytes today, works). Codex reads
+   larger than the file, under 32,768 bytes today, works). Codex reads
    it when a new session starts.
 9. Settings for the reviewers and GitHub's machines, from 2026-11-07
    (docs/DECISIONS.md, *Code review* and *Dependencies*), once that
@@ -1571,7 +1571,7 @@ settings, date) and summarise it here.
   ([`log/2026-11-08-privacy-check-follow-ups.md`](log/2026-11-08-privacy-check-follow-ups.md)).
   AGENTS.md was rewritten short on 2026-11-12 (owner's request, after
   agents.md, the Codex and Claude Code documentation and well-known
-  guides): one file of about 27,400 bytes, from 83,866, with commands,
+  guides): one file of 31,985 bytes, from 83,866, with commands,
   conventions and hard limits and no history; the whole file fits inside
   Codex's 32 KiB. Keep it that way: short, concrete rules, the reasons in
   docs/DECISIONS.md. Record: [the change](log/2026-11-12-agents-md-trim.md).

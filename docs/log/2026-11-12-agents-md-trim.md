@@ -6,8 +6,8 @@ Claude thread on the owner's Mac; Codex, through the agent bridge
 
 ## What changed and why
 
-AGENTS.md went from 83,866 bytes and 1,328 lines to about 27,400 bytes
-and 485 lines, one file, with the rules that protect people first. The
+AGENTS.md went from 83,866 bytes and 1,338 lines to 31,985 bytes and
+556 lines, one file, with the rules that protect people first. The
 owner asked for it to follow the official documentation and reputable
 guides, which agree on these points (all read on 2026-11-12):
 
@@ -81,13 +81,52 @@ Also in this pull request:
   Codex exception is named. docs/log/2026-11-12-no-farther-out.md: the
   Mac was reachable, but CI built and tested the code.
 - **Snapshot.** The AGENTS.md this replaces is
-  `docs/archive/2026-11-12-before-agents-md-trim/AGENTS.md`, byte for
+  `docs/archive/2026-11-12-before-agents-md-trim/AGENTS.before-trim.md`,
+  byte for
   byte.
 
 ## Commits
 
 See the pull request's commit list. The bridge cannot yet let Codex
 commit, so the Claude thread committed.
+
+## The independent review
+
+Before merging, the owner asked for an independent review against the
+standards. A Claude cloud session that did not write this change checked
+about 410 rules of the old file against the new one and posted its
+findings on the pull request; Codex's review on GitHub found two of the
+same. Each was checked against the old file and the sources, and all were
+applied (the file grew from 27,360 to 31,985 bytes, still inside 32 KiB):
+
+- **Fixed:** the privacy hook is turned on only where a private list is
+  read (with no list the hook refuses every push); where the guard does
+  not run, agents keep its refusals themselves, including never printing
+  the whole environment; the lockfile identity-change review rule; all
+  four privacy exceptions named again, each with its record; the line
+  telling an agent whose copy is cut short to read the rest; the Python
+  checks any machine can run, and the Mac's `scripts/test.sh` variants.
+- **Restored wording:** the Mac worktree route and MobileBuildMCP in
+  short, the local Codex review only where its CLI is installed, the
+  security-review wait for a privacy or workflow change pushed after
+  opening, the version rule's two exceptions, "its current Swift API",
+  the keyboard set-up and probe lines that tests and docs/DEVICE-CHECKS.md
+  cite, standard Back, Close and swipe navigation, timing new chain
+  sweeps, checking that something did not change only after waiting,
+  recording reversals, the *Not findings* scope, a crash not being a
+  known issue, and reading `simulator-load-<family>.txt` first.
+- **Process:** a check in `scripts/test-docs.py` that the whole file fits
+  in 32 KiB (written to fail first); the archived copy renamed so it is
+  not a nested AGENTS.md; docs/DECISIONS.md records that the length is
+  deliberate; docs/HANDOFF.md owner step 8 and docs/SDLC.md edited in
+  place.
+- **Codex's local review** (`codex review --base origin/main`, through
+  the bridge, once the change touched `scripts/test-docs.py`) found one
+  more: where the guard does not run, agents must keep its full refusal
+  list, not the short one here. AGENTS.md now sends them to the list at
+  the top of `.claude/hooks/guard.py` and names the refusals no other line
+  covers.
+- **Declined:** none.
 
 ## Verified
 

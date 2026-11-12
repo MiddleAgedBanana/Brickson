@@ -6438,10 +6438,17 @@ rule word for word. So AGENTS.md is one file of commands, conventions and
 hard limits: no history, no measurements, nothing an agent can find in
 the code, the scripts, the hooks or CI, and no rule said twice. The
 reasons behind its rules stay here and in docs/LESSONS.md. The order
-below still holds, and on 2026-11-12 the whole file (about 27,400 bytes)
-fit inside Codex's 32 KiB. A rule added to AGENTS.md should be short and
-concrete; a rule that can have no exceptions belongs in a hook or a
-check, not in more words
+below still holds, and `scripts/test-docs.py` now also fails when the
+whole file passes the 32 KiB Codex reads by default (31,985 bytes and
+556 lines on 2026-11-12).
+
+Its length is deliberate. Claude Code's guidance is under about 200 lines
+per file, but this project's safety, privacy, review and guard rules do
+not fit in that without dropping rules, and the ways Claude Code offers to
+load rules only when needed (path-scoped rules, nested files) do not load
+in a project's cloud threads, so they would hide rules there. A rule that
+can have no exceptions belongs in a hook or a check, and also as one short
+line here, because hooks do not run in cloud threads
 ([`log/2026-11-12-agents-md-trim.md`](log/2026-11-12-agents-md-trim.md)).
 The entry below is as it was written on 2026-11-03.
 

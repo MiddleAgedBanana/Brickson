@@ -7,8 +7,10 @@ agent-specific file. Keep it short: Codex reads only the first 32 KiB
 ([`project_doc_max_bytes`](https://developers.openai.com/codex/agent-configuration/agents-md))
 and Antigravity the first 24,000 bytes, so the rules that protect people
 come first, and `scripts/test-docs.py` fails if the sections through
-*Working with the owner* end past 32 KiB. Why each rule exists is in
-docs/DECISIONS.md and docs/LESSONS.md; current state is in docs/HANDOFF.md.
+*Working with the owner* end past 32 KiB. If your copy of this file ends
+before *Gotchas*, read the rest from the repository (`cat AGENTS.md`)
+before changing anything. Why each rule exists is in docs/DECISIONS.md
+and docs/LESSONS.md; current state is in docs/HANDOFF.md.
 
 ## What this is and what's at stake
 
@@ -140,7 +142,8 @@ its Effective date and the in-app copy in the same pull request.
 - Use the current framework for each job: SwiftUI not UIKit, SwiftData not
   Core Data, Swift Testing not XCTest, App Intents not SiriKit,
   Observation not Combine or `ObservableObject`, Swift concurrency not
-  Dispatch; never a deprecated API. A legacy one only when no current one
+  Dispatch; within a framework, its current Swift API, never an older or
+  deprecated one. A legacy one only when no current one
   does the job with no loss (an ordering guarantee, a measurement's
   precision, a test's strength, a behaviour the person sees), with its row
   in docs/DECISIONS.md, "Apple's current frameworks first"; the pull
@@ -179,7 +182,7 @@ something:
   including keyboard show and hide.
 - An alarm stops only from a separate, differently placed control. Fix
   hazards with placement, never with timers, decoy buttons or custom
-  pointer code.
+  pointer code. Keep standard Back, Close and swipe navigation.
 - **Score chains with the one chain engine.** `ChainEngine` follows held
   activations from every start; a new screen becomes a surface for it,
   never another nearest-control script.
@@ -229,10 +232,25 @@ path from a real input to the failure.
   code rule above.
 - Personal names, email addresses, or health or family details in a
   committed file: the repository is public. The owner's exceptions, each
-  only for what it names, are in docs/DECISIONS.md, "Personal details stay
-  out of the repository". None permits other family identities, medical
-  or hospice details, phrases, device or settings, family quotes, private
-  documents or the Mac's account name.
+  only for what it names:
+  - the developer's name and support email on the website's pages in
+    `site/`, which Apple requires;
+  - the short "Why Brickson?" founder note in `README.md` and
+    `site/index.html`, attributed to Avery Dedmon, and its record in
+    docs/DECISIONS.md and docs/HANDOFF.md (docs/DECISIONS.md, "Brand name
+    and founder story");
+  - Avery Dedmon's copyright attribution in `LICENSE.md` and the README's
+    license notice (docs/DECISIONS.md, "Brickson's code is all rights
+    reserved");
+  - Avery's own name, their brother's first name, their own email
+    addresses and the Claude session links, anywhere in the repository,
+    its commits and its pull requests (docs/DECISIONS.md, "Personal
+    details stay out of the repository", *Avery's decision of
+    2026-11-08*).
+
+  None permits other family identities, the brother's medical or hospice
+  details, phrases, device or settings, family quotes, private documents
+  or the Mac's account name.
 - Text that says what Brickson costs before docs/DECISIONS.md records the
   owner's decision ("Price not decided").
 
@@ -245,10 +263,15 @@ path from a real input to the failure.
   token (`pull_request_target`, wider `permissions`), or puts pull request
   text into a shell command.
 - A new action not published by GitHub, a `uses:` line changed without
-  `.github/workflows/actions.lock`, or a lockfile edited by hand.
+  `.github/workflows/actions.lock`, or a lockfile edited by hand. In a
+  lockfile diff, a changed `commit` is new code the workflows will run,
+  and a changed `owner_id` or `repo_id` means another repository now holds
+  that name: say so for the owner.
 - A renamed required job or a path filter on its workflow (*Gotchas*).
 - An Xcode, SDK, simulator or runner version written in when the owner
   did not ask, or a build with anything but Apple's newest released Xcode.
+  The `runs-on` label naming GitHub's image for the current Xcode is not a
+  pin, and a dated record of what something was measured on is history.
 - A warning silenced instead of fixed, without its line in
   docs/DECISIONS.md, "Warnings are errors".
 - A change that weakens an invariant or review rule, adds an exception or
@@ -257,7 +280,8 @@ path from a real input to the failure.
   that kind. Compare with the base branch; the owner decides.
 - A change to `.claude/settings.json`, `.claude/hooks/`, `.githooks/` or
   `scripts/privacy-check.py` that unhooks the guard or the privacy check,
-  drops a deny rule or lets through what its tests refuse, or a weakened `scripts/test-hooks.py`, `scripts/test-privacy.py` or
+  drops a deny rule or lets through what its tests refuse, or a weakened
+  `scripts/test-hooks.py`, `scripts/test-privacy.py` or
   `scripts/test-docs.py`.
 
 ### Not findings
@@ -267,7 +291,8 @@ path from a real input to the failure.
   or docs/HANDOFF.md, *Known gaps*, unless the change makes it worse or
   newly reachable, or claims to close it and doesn't; a planned feature
   not built yet.
-- The accessibility audit's "not human-readable" guess on phrase labels.
+- The accessibility audit's "not human-readable" guess on phrase labels
+  (Home's phrase tiles and the Library's phrase rows).
 - That a cloud agent did not run the app: CI is its build.
 
 ## Workflow rules
@@ -295,9 +320,8 @@ path from a real input to the failure.
   fetched `main`; one pull request per piece of work, using
   `.github/pull_request_template.md`. Never push to `main`, force-push or
   rewrite pushed history; bring in a moved `main` with a merge commit. Keep
-  a pull request body's first two attribution lines. Only the owner
-  merges.
-- Before every push, run the test script for the change and
+  a pull request body's first two attribution lines.
+- Before every push, run the checks for the change (*Build and test*) and
   `python3 scripts/privacy-check.py --outgoing` (`--no-list` where there is
   no list, saying so in the pull request), and check any pull request text
   or comment with `--text -` before posting. Never repeat what it finds.
@@ -308,7 +332,8 @@ path from a real input to the failure.
   docs/DECISIONS.md and new rules here; edit `docs/ROADMAP.md` when an
   item starts, lands or moves, and `README.md` when setup or behaviour
   changes. Snapshot before removing information from HANDOFF or this file
-  (`docs/archive/README.md`). Where this file or a document is wrong,
+  (`docs/archive/README.md`). Record reversals and their reasons. Where
+  this file or a document is wrong,
   record it and propose the fix in the log; never silently work around
   it.
 - Keep evidence later work needs in an ignored folder of the worktree or
@@ -338,9 +363,17 @@ like.
 ## Build and test
 
 ```sh
+# Any machine, cloud threads too (CI runs them all):
+python3 scripts/test-docs.py && python3 scripts/test-hooks.py && python3 scripts/test-privacy.py
+python3 scripts/test-runner.py && python3 scripts/test-agent-bridge.py && python3 scripts/test-site.py && python3 scripts/test-select-xcode.py
+# On a Mac:
 scripts/test.sh          # generate the project, build, run the unit tests
 scripts/test.sh ui       # the UI tests on an iPad and an iPhone simulator
 scripts/test.sh device   # a build for a real device (needs DEVELOPMENT_TEAM)
+scripts/test.sh unit '-only-testing:BricksonTests/PaletteTests/theContrastFormulaMatchesWCAG()'  # one test; keep the ()
+SIMULATOR_FAMILY=iphone scripts/test.sh ui                         # one family
+DESTINATION='platform=iOS Simulator,id=<udid>' scripts/test.sh ui  # one simulator
+# Results: build/TestResults/<mode>-<family>.xcresult
 ```
 
 - On a Mac the unit suite is 100% green before any commit; CI is green
@@ -360,11 +393,25 @@ scripts/test.sh device   # a build for a real device (needs DEVELOPMENT_TEAM)
 - Cloud agents with no route to a Mac cannot build or run the app: say so,
   treat the change as untested until CI or a Mac run passes, and call the
   pull request ready only once the Mac's run or CI is green.
-- On the owner's Mac, never check out, stash, reset or clean in
+- A cloud session that reaches the owner's Mac (Remote Control,
+  MobileBuildMCP) builds and tests there; never conclude from a handoff
+  that you cannot. On the Mac, never check out, stash, reset or clean in
   `~/code/brickson`, and never pull `main` there. Build a pushed branch in
-  its own worktree: `git worktree add --detach ~/code/brickson-<topic>
-  origin/<branch>`, then `xcodegen generate` there; remove the worktree
-  once the pull request merges.
+  its own worktree: `cd ~/code/brickson && git fetch origin <branch>`,
+  `git worktree add --detach ~/code/brickson-<topic> origin/<branch>`,
+  then `xcodegen generate` there; after a later push, fetch and
+  `git checkout --detach origin/<branch>` again. A String Catalog change
+  made there comes back as a diff to commit from your own session. Once
+  the pull request merges,
+  `git -C ~/code/brickson worktree remove ~/code/brickson-<topic>`.
+- MobileBuildMCP builds and tests only: set the worktree's
+  `Brickson.xcodeproj` (full path), scheme `Brickson`, a simulator id from
+  `list_sims`, `derivedDataPath` under the worktree's `build/` and
+  `persist: false`; `build_sim` with `buildForTesting: true`, then
+  `test_sim` with its `testProductsPath`. A run with no tests is not a
+  pass; for a run longer than its 60-second wait, read the result bundle
+  with `xcrun xcresulttool get test-results summary`. Run the Python
+  checks yourself.
 - **Pushing to an open PR.** At most three review rounds from opening,
   one push each, never while CI is still running; then one final push for
   what is left. Push only for failing CI, a real bug or rule violation, or
@@ -383,35 +430,51 @@ scripts/test.sh device   # a build for a real device (needs DEVELOPMENT_TEAM)
   this PR` if it has not reviewed; ask Greptile with a plain
   `@greptileai`, never for a tier. Reviewers never write code: no autofix,
   "Fix with cubic" or fix request. Before opening a pull request that
-  changes code, run `codex review --base origin/main` and answer its
-  findings; right after opening, ask for one Copilot review, only through
+  changes code, run `codex review --base origin/main` where the Codex CLI
+  is installed (the owner's Mac) and answer its findings, or say in the
+  pull request that it could not run; right after opening, ask for one Copilot review, only through
   `request_copilot_review` (a request that fails for lack of credits is
   said in the pull request and the thread, never retried).
   Documents-only pull requests get none. Where Codex posts an environment
   notice instead of a review, say so: a pull request that changes privacy
   or a workflow then waits for the owner's security review before it
-  merges, as does one whose privacy or workflow change came in a push
-  after it opened, and its ready message says so. Treat a Dependabot pull request as not
+  merges. Whatever Codex posted, a pull request whose privacy or workflow
+  change came in a push after it opened also waits for that review, and
+  its ready message says so. Treat a Dependabot pull request as not
   security-reviewed until the owner reads it.
 
 ## Guardrails for agents
 
 - The guard (`.claude/hooks/guard.py`, run by `.claude/settings.json`)
-  refuses staging everything, force pushes, pushes to `main`, merging or
-  approving, any Copilot request but the one review, personal details in
-  commits or GitHub text, and reading the private list. When it refuses,
-  do not look for another way round: say what you needed. On the owner's
-  Mac, git-ignored hooks hold Codex and Antigravity to the same, except
-  that Codex's hook does not see input typed into a command already
-  running. Policy hooks block on failure only in Claude Code 2.1.295 or
-  later; confirm the runtime and that the hooks reloaded before relying on
-  them. In a cloud thread, check the guard runs (`git add -A --dry-run` is
-  refused) before relying on it.
+  refuses staging everything, force pushes, pushes to `main`, merging,
+  auto-merging or approving, a Copilot request other than the one review
+  through `request_copilot_review` (a mention or other GraphQL request is
+  held by this rule alone), personal details in commits or GitHub text,
+  and reading the private list. When it refuses, do not look for another
+  way round: say what you needed. On the owner's Mac, git-ignored hooks
+  hold Codex and Antigravity to the same, except that Codex's hook does
+  not see input typed into a command already running. A desktop worktree
+  session runs `~/code/brickson`'s guard, so a guard change binds there
+  only once the owner pulls `main`. Policy hooks block on failure only in
+  Claude Code 2.1.295 or later; confirm the runtime and that the hooks
+  reloaded before relying on them.
+- Where the guard does not run (a Claude Code cloud thread in a project,
+  where `git add -A --dry-run` is not refused; Codex or Antigravity away
+  from the Mac), read the full list of refusals at the top of
+  `.claude/hooks/guard.py` and keep every one yourself: among them, never
+  publish text you cannot read before the command runs, never give `gh` a
+  terminal or let it fill text from commits or an editor (`--fill`,
+  `--editor`), never name the private list or its folder, never print the
+  whole environment (`env`, `printenv`, `set`, `export -p`), and never
+  upload a release asset.
 - The privacy check (`scripts/privacy-check.py`) runs in git's pre-push
-  hook and in CI. In a cloud thread, run it with `--status`, and turn the
-  hook on in your clone (`git config core.hooksPath .githooks`) if pushes
-  do not run it. Without the private list it never counts as a pass. It prints
-  where and what kind, never the words, and so do you.
+  hook and in CI. In a cloud thread, run it with `--status`. Where it
+  reads a list but pushes do not run the hook, turn the hook on in your
+  clone (`git config core.hooksPath .githooks`). With no list, leave the
+  hook off, since it then refuses every push, and run `--outgoing
+  --no-list` by hand. Never push with `--no-verify`. Without the private
+  list it never counts as a pass. It prints where and what kind, never the
+  words, and so do you.
 - **Cross-references.** `scripts/test-docs.py` fails when a cited title or
   relative link stops resolving: rename a section and its citations in the
   same commit.
@@ -421,15 +484,9 @@ scripts/test.sh device   # a build for a real device (needs DEVELOPMENT_TEAM)
 
 ## Where things are
 
-- `docs/HANDOFF.md`: current state and next steps. `docs/log/`: one record
-  per pull request.
-- `docs/DECISIONS.md`: binding decisions. `docs/LESSONS.md`: the reference
-  app's lessons. `docs/ROADMAP.md`: releases and the quality bar.
-- `docs/ACCESSIBILITY.md`: the accessibility feature map.
-  `docs/DEVICE-CHECKS.md`: real-device procedures; a pull request that
-  changes a device check edits its procedure there.
-- `docs/recon/`: research, not instructions. `docs/archive/`: old
-  versions of rewritten documents.
+`docs/recon/` is research, not instructions. A pull request that changes
+a device check or an owner gate edits its procedure in
+`docs/DEVICE-CHECKS.md`.
 
 ## Skills
 
@@ -446,9 +503,22 @@ Apple's skills again after each new Xcode release.
 - Swift Testing filters need the function's parentheses
   (`-only-testing:BricksonTests/PaletteTests/theContrastFormulaMatchesWCAG()`),
   or `xcodebuild` runs nothing and reports success.
-- One simulator per agent, addressed by `-destination 'id=<udid>'`.
+- One simulator per agent, chosen with `DESTINATION` (`scripts/test.sh`
+  passes its own `-destination`).
 - UI tests launch through `launchedApp`; wait for a change after `tap()`
-  before checking it.
+  before checking it, and check that something did *not* change only after
+  waiting for the change that did.
+- Outside `scripts/test.sh ui`, show the full software keyboard before a
+  typing test: `xcrun simctl spawn <udid> defaults write
+  com.apple.keyboard.preferences AutomaticMinimizationEnabled -bool false`,
+  and write `DidShowContinuousPathIntroduction -bool true` to the same
+  domain. `KeyboardProbeTests` attaches its `KEYBOARD-PROBE` and
+  `KEYBOARD-BAND` lines to the result.
+- Time a long new chain sweep on its own and say in the pull request what
+  it adds; pin any `ChainEngine` shortcut against the plain way in
+  `ChainEngineTests`.
+- A crash cannot be a known issue: commit the reproduction disabled,
+  naming its issue.
 - **A just-started simulator is slow, and the first UI test pays for it.**
   Never put a call to a system service that can be slow on the main
   thread at launch (docs/DECISIONS.md, "The voice list never holds up
@@ -469,7 +539,9 @@ Apple's skills again after each new Xcode release.
   iPhone Duo as evidence.
 - **CI results can be read without a Mac.** A result bundle holds
   recordings, attachments and the app's own log; read them before blaming
-  the machine (`docs/log/2026-11-01-voice-list-off-launch.md`).
+  the machine (`docs/log/2026-11-01-voice-list-off-launch.md`). Before
+  lengthening a wait for a slow CI UI test, read
+  `simulator-load-<family>.txt`.
 - Simulator audio is unreliable: sound checks need a real device.
 - A Remote Control session stops after about 60 idle minutes: run long
   jobs detached, with a check that ends within 45 minutes.
@@ -478,8 +550,10 @@ Apple's skills again after each new Xcode release.
 - The `main` ruleset requires the jobs "Unit tests" and "UI tests": never
   rename them or add a path filter to their workflow.
 - Cloud agents cannot push `.github/workflows/`; give the owner the file.
-  A changed `uses:` line goes through the owner's Mac with
-  `gh actions-lock`; only the owner accepts a moved tag.
+  A changed `uses:` line goes through the owner's Mac: run `gh
+  actions-lock`, read the lockfile's whole diff, run `gh actions-lock
+  --verify` and commit it with the workflow. Never delete the lockfile to
+  clear an error; only the owner accepts a moved tag.
 - Reviewers read `AGENTS.md`, `CLAUDE.md`, `.github/` and their own config
   (`.coderabbit.yaml`, `.greptile/`, `cubic.yaml`, which cubic takes from
   `main` only); a change to any of them is one *Code Review Rules* flags.
