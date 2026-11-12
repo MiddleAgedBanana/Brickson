@@ -113,7 +113,8 @@ nonisolated extension LibraryEdit {
     ///   - restBoard: the everyday category Home's rest board shows
     ///     (`SetupRecord.restBoardCategory`), if one was chosen. Home shows
     ///     it whatever it holds, so, like Emergency, a board already under
-    ///     four phrases is taken no farther under.
+    ///     four phrases is taken no farther under, and a board whose
+    ///     category was deleted comes back with four or not at all.
     ///   - makeID: makes identities for new categories and phrases. Tests
     ///     pass a predictable one; the app uses random ones.
     func plan(
@@ -263,7 +264,8 @@ nonisolated extension LibraryEdit {
         // A new category starts with none and is dimmed on Home until it
         // has four, so for an everyday category only crossing the bound is
         // refused. Emergency and the rest board, which Home shows whatever
-        // they hold, are also taken no farther under it.
+        // they hold, are also taken no farther under it, and the board is
+        // never brought back under it.
         try Self.keepsFour(from: library, to: after, restBoard: restBoard)
         guard after.hasUniqueIDs else { throw .libraryNeedsRepair }
 
@@ -282,8 +284,9 @@ nonisolated extension LibraryEdit {
     /// Refuses a change that takes a category, matched by identity (or
     /// Emergency, by its flag), from `LibraryRules.fewestPhrases` phrases
     /// or more to fewer; that takes Emergency, or the everyday category
-    /// `restBoard` names, from fewer to fewer still; or that leaves Home no
-    /// everyday category to offer where it had one.
+    /// `restBoard` names, from fewer to fewer still; that brings that
+    /// category back, where the library no longer has it, with fewer; or
+    /// that leaves Home no everyday category to offer where it had one.
     static func keepsFour(
         from library: LibrarySnapshot,
         to after: LibrarySnapshot,
@@ -297,6 +300,14 @@ nonisolated extension LibraryEdit {
         }
         for category in after.categories where !category.isEmergency && category.phrases.count < fewest {
             guard let before = library.categories.first(where: { $0.id == category.id && !$0.isEmergency }) else {
+                // New to the library, as a category added or a backup's is,
+                // so Home dims it until it has four. The exception is the
+                // board: deleting its category leaves the choice stored, and
+                // a backup that brings it back under that identity makes it
+                // the board again, which Home shows whatever it holds.
+                if category.id == restBoard {
+                    throw .restBoardComesBackShort(category.name)
+                }
                 continue
             }
             if before.phrases.count >= fewest {
