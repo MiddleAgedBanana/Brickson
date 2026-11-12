@@ -53,6 +53,7 @@ struct LibraryRulesTests {
             .homeNeedsAFullCategory,
             .emergencyShortOfFour,
             .restBoardShortOfFour,
+            .restBoardComesBackShort("Family"),
             .notFound,
             .libraryNeedsRepair,
         ]
@@ -60,5 +61,7 @@ struct LibraryRulesTests {
             #expect(!rejection.message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
         }
         #expect(Set(cases.map(\.message)).count == cases.count)
+        // The board is not in the library to see, so the words name it.
+        #expect(LibraryEditRejection.restBoardComesBackShort("Family").message.contains("“Family”"))
     }
 }
