@@ -47,8 +47,12 @@ version 1 is the only one to cover.
     though Swift's `==` calls it equal, a phrase in no category gone, a
     tied phrase moved) and shows the checks tell each from the saved
     store.
-- **`BricksonTests/SavedStores/library-v1.0.0.store`**: version 1's
-  saved store, written on CI by this pull request's own run (*Verified*).
+- **`BricksonTests/SavedStores/library-v1.0.0.store`**, with the
+  `-wal` and `-shm` files beside it: version 1's saved store, written on
+  CI by a run of this branch and committed as the app left it
+  (*Verified*). The write-ahead log is empty, because SQLite had moved
+  everything into the store when the app let it go, and the `-shm` file
+  is SQLite's index of that log, which the next opening resets.
   Its contents (`SavedLibraryStore.v1`) are neutral, practical words, and
   what a store gathers that the starter library does not: an accent
   stored as one character and as a letter with a combining mark, a
@@ -106,9 +110,44 @@ On `claude/project-thread-cb53df`; the pull request lists them.
 ## Verified
 
 Made in a cloud session, which cannot build the app; GitHub CI is the
-build and the test run.
+build and the test run. The runs below were started by hand on the
+branch (`workflow_dispatch`), before the pull request opened.
 
-To be completed from the runs on this branch.
+- **The first run** (run 517, `c65d5f2`) did not build: Swift Testing
+  called the `#require` in `write(_:to:)` redundant, because its result
+  was assigned to an optional and so was read as one, and warnings are
+  errors. The category found is now named first, then assigned
+  (`a5eceeb`). Its UI jobs, on the same code, passed on both families.
+- **The second run** (run 523, `85cd52c`, with `main` merged in), Unit
+  tests job: Xcode 27.2 (27B52), iPad Pro 13-inch (M5) simulator, iOS
+  27.2 (24B8117). 957 tests ran: 944 passed, 2 failed, 1 skipped and 10
+  were expected failures. The two failures were the ones this branch
+  expected before its store was committed, so they show both checks
+  fail while a version has no store: `everySchemaVersionHasASavedStore`
+  ("bundledFiles(of: saved)["store"] != nil") and
+  `aSavedStoreOpensWithEverythingInItsPlace` ("files["store"] != nil").
+  `todaysSchemaWritesTheSavedContents` passed in 0.145 s, so today's
+  schema writes and reopens version 1's contents with Home's places,
+  and `theChecksCatchAChangedWordALostPhraseAndAMovedOne` passed in
+  0.134 s. The suite took 0.35 s. Its UI jobs were cancelled once the
+  unit job had finished, as this change touches no screen; the pull
+  request's run runs them.
+- **The saved store** came from that run's `unit-test-results`
+  artifact (GitHub's digest `sha256:c6dfb56a…`), taken out with the
+  Python steps in *Making the next version's store*: `library-v1.0.0.store`
+  (77,824 bytes), `-shm` (32,768) and `-wal` (0). Read back with
+  Python's `sqlite3`, on a copy: integrity check ok, journal mode WAL,
+  model version `1.0.0` in its metadata, 5 categories and 18 phrases,
+  each with the identity, words, sort order and category in
+  `SavedLibraryStore.v1`, byte for byte (the accent written as a letter
+  and a combining mark is stored as `65 cc 81`, the one written as one
+  character as `c3 a9`). Beside them, SwiftData's change history holds
+  one transaction, naming the app's bundle identifier (public in
+  `project.yml`) and its process, Brickson. No other text is in the
+  files: no path from the machine that wrote them. The privacy check
+  (`--outgoing --no-list`) found nothing in them.
+- **The pull request's own run**, the first with the store committed,
+  is the one that must be green: the pull request reports it.
 
 ## Not verified
 
