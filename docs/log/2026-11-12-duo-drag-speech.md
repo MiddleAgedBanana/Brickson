@@ -108,9 +108,13 @@ that offset its points from the app element's own origin reported every
 point aimed correctly, yet none of 19 gestures, plain taps on Yes
 included, changed Home; offsets from the touched element reached it.
 
-The unit suite, and `PhraseDragTests` on the standard iPad and iPhone
-simulators: see the pull request, which records their results before it
-is called ready.
+On the same Mac, `scripts/test.sh` (unit, iPad Pro 13-inch (M5), iOS
+27.2): 950 ran, 939 passed, 0 failed, 1 skipped (the existing #19
+skip) and 10 strict expected failures; the String Catalog was up to
+date. `scripts/test.sh ui` with `PhraseDragTests` and `SlowPressTests`
+only: 9 of 9 passed on the iPad Pro 13-inch (M5) and 9 of 9 on the
+iPhone 17, both iOS 27.2, portrait, as the tests set text size and
+appearance. Codex's local review of the change found nothing to fix.
 
 ## Not verified
 
