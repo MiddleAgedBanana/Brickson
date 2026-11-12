@@ -795,6 +795,17 @@ release in docs/ROADMAP.md when no thread has it yet.
   fails again on that image, it is intermittent, and pull requests will
   meet it once every machine has the image. *(the next thread whose CI
   shows it)*
+- `SettingsTests.testAnIdleSettingsReturnsToItsFirstScreenAndStaysOpen`
+  has failed once each on 2026-10-22, 2026-11-08 and 2026-11-12, on
+  branches that did not touch it, and passed on each re-run: Family
+  Setup did not open, or its tap found no hit point. The 2026-11-12
+  recording stays on Settings' first screen throughout. A likely cause,
+  not proven: under `--short-timeouts` Settings' idle limit is 3
+  seconds, an untouched Settings resets every 3 seconds, and each reset
+  changes the navigation stack's identity (`.id(activity.resetCount)`)
+  even on its first screen, so a tap can land on a rebuild
+  ([`log/2026-11-12-ci-claims-narrowed.md`](log/2026-11-12-ci-claims-narrowed.md)).
+  *(a Settings thread, in its own pull request)*
 - Settings' Get Attention place is still empty, although AGENTS.md's
   design rules say "Settings opens on a large way back and a start-only
   Get Attention". Scored on 2026-10-24, Get Attention there would sound
