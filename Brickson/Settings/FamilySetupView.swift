@@ -64,11 +64,7 @@ struct FamilySetupView: View {
             .settingsRowStyle()
             .accessibilityIdentifier("library")
 
-            NavigationLink(value: SettingsRoute.voice) {
-                SettingsRowLabel(title: "Voice Settings", systemImage: "waveform")
-            }
-            .settingsRowStyle()
-            .accessibilityIdentifier("voiceSettings")
+            VoiceSettingsRow(path: $path)
 
             NavigationLink(value: SettingsRoute.reachingTheScreen) {
                 SettingsRowLabel(title: "Reaching the Screen", systemImage: "hand.point.up.left.fill")
@@ -225,6 +221,34 @@ private struct CheckInCard: View {
                 landing?.checkInRows = $0
             }
         }
+    }
+}
+
+/// The row that opens Voice Settings. It says where it showed as it was
+/// chosen, however far Family Setup had scrolled
+/// (`SettingsLanding.voiceRow`, `SetupAnswersPlace.shown`), so Voice
+/// Settings puts its way back there and its speeds and voices below, where
+/// a look held on the row cannot meet them (docs/DECISIONS.md, "Voice
+/// Settings, reached with a held look").
+private struct VoiceSettingsRow: View {
+    @Binding var path: [SettingsRoute]
+    @Environment(SettingsLanding.self) private var landing: SettingsLanding?
+    @Environment(SettingsActivity.self) private var activity: SettingsActivity?
+    @Environment(\.settingsScrollPosition) private var scroll
+    /// The row, in Family Setup's content.
+    @State private var frame: CGRect?
+
+    var body: some View {
+        Button {
+            activity?.recordActivity()
+            landing?.voiceRow = frame.map { SetupAnswersPlace.shown($0, scrolledBy: scroll?.offset ?? 0) }
+            path.append(.voice)
+        } label: {
+            SettingsRowLabel(title: "Voice Settings", systemImage: "waveform")
+        }
+        .settingsRowStyle()
+        .onGeometryChange(for: CGRect.self) { $0.frame(in: .named(SettingsMetrics.contentSpace)) } action: { frame = $0 }
+        .accessibilityIdentifier("voiceSettings")
     }
 }
 
