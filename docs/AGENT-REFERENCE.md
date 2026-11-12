@@ -485,8 +485,8 @@ using them, and say when you could not.
 Skills are installed per machine (`.agents/skills/`, with `.claude/skills/`
 symlinks), and both folders are ignored by git. Committed skills live in
 `.github/skills/`: `code-review/` holds the review steps given to GitHub
-Copilot code review (*Code Review Rules*). Put new review rules in this
-file, not in a skill. Where per-machine skills exist:
+Copilot code review (*Code Review Rules*). Put new review rules in AGENTS.md,
+not in a skill. Where per-machine skills exist:
 `swiftui-pro` leads for SwiftUI, `swiftdata-pro` for SwiftData,
 `swift-concurrency` for concurrency, `swift-testing-expert` for tests,
 `ios-accessibility` for accessibility, `app-intents` for Siri and

@@ -355,6 +355,10 @@ On the owner's Mac (macOS, Python 3), documents only:
   whose "this file" now meant the reference. Every one was fixed by
   restoring the original words or naming the file, except the fact that
   AGENTS.md is longer than 32 KiB, which is no longer true.
+- CodeRabbit's review of the pull request found one more moved sentence
+  whose "this file" still meant AGENTS.md (*Skills*: where new review
+  rules go); it now names AGENTS.md, and no other moved sentence says
+  "this file".
 - A third pass asked, section by section, whether each moved paragraph
   could leave the file every agent loads. Its 20 objections were met by
   the short rules now in AGENTS.md (cloud agents without a Mac, the
