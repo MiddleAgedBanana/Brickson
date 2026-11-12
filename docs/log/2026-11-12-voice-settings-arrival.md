@@ -74,6 +74,9 @@ which Open Personal Voice Settings has, and which counts as a hazard).
   screenful), tapped where it shows rather than with the element's own
   tap, which may scroll it whole into view first, and checks that the
   way back stays above the foot.
+- `7a85b77` Record where Voice Settings reads its screen's frames, a
+  merge of `main` once pull request #104 landed, and what CI measured
+  on `4729b20` (below), in the places that waited for it.
 
 ## Verified
 
@@ -120,6 +123,16 @@ isolation, in a debug build):
   `scripts/test-privacy.py`, and `scripts/privacy-check.py --outgoing
   --no-list` (the private list is not in this session, so that check
   covered the patterns only).
+
+CI's run 43307160244, on `4729b20` (before `192f8db`), passed the
+unit tests and the UI tests on CI's iPad Pro 13-inch (M5) and iPhone 17,
+iOS 27.2: Voice Settings read where the row shows whole, at both text
+sizes, and from a scrolled Family Setup at the largest, with every
+chain scored and nothing found. `testVoiceSettingsFromAScrolledFamilySetup`
+took 35.8 seconds on the iPad and 40.8 on the iPhone; the iPad UI job
+took 69 minutes and the iPhone's 75, of their 90, the unit job 42 of
+its 60. The arrival from a row shown in part adds one more read and
+score to that test on the iPhone.
 
 ## Not verified
 

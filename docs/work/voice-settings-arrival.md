@@ -4,8 +4,10 @@
 item docs/HANDOFF.md, *Known gaps*, names "Not scored yet": Voice
 Settings itself, the Personal Voice question, and Family Setup scrolled.
 Owner: the thread "Check held looks on Settings' unchecked screens" (a
-cloud session; GitHub CI is its build). Status: built, untested in the
-app until CI runs it.*
+cloud session; GitHub CI is its build). Status: built; CI's run
+43307160244, on `4729b20`, passed it in the app on the iPad and the
+iPhone where the row showed whole, and the arrival from a row that
+showed only in part was added after that run (`192f8db`).*
 
 ## Intent
 

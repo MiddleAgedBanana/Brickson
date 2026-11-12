@@ -3169,7 +3169,9 @@ engine, not five scripts".
     Brickson (`leavesBrickson`). On main's CI frames a look held on the
     row met a speed; its way back now takes the row's place (*Voice
     Settings, reached with a held look*). `SettingsOnHomeTests` fails on
-    any. Untested until CI runs it.
+    any, and found none on CI's iPad and iPhone in pull request #105's
+    run 43307160244, on `4729b20`; the arrival from a row that showed
+    only in part was added after that run (`192f8db`).
 
 - **What it costs.** *2026-10-30:* the unit tests run the engine
   millions of times in a build that is not optimised, and its sweeps
@@ -5189,8 +5191,10 @@ invariant 10). So the screen is placed from the row:
   frames the app draws on CI: where the row shows whole on Family
   Setup's first screenful, and from a scrolled Family Setup at the
   largest text size, with the row whole and, on the phone, with only
-  its top showing (`SettingsOnHomeTests`). Untested in the app until
-  CI runs it.
+  its top showing (`SettingsOnHomeTests`). CI's run 43307160244, on
+  `4729b20`, passed it on the iPad and the iPhone where the row showed
+  whole; the arrival from a row that showed only in part was added
+  after that run (`192f8db`).
 - **Not scored:** iOS's Personal Voice question, which shows only under
   `PersonalVoiceAskPolicy.fromSettings` ("Personal Voice permission is
   asked at launch, for now") and only on a device that supports Personal

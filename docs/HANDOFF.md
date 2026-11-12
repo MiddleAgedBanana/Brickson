@@ -878,7 +878,8 @@ release in docs/ROADMAP.md when no thread has it yet.
   sets the voice's speed and plays a sample, and now Back to Family
   Setup takes the place the row showed in, scrolled or not, with the
   speeds and voices below it (docs/DECISIONS.md, "Voice Settings,
-  reached with a held look"; untested in the app until CI runs it).
+  reached with a held look"; read in the app on CI's iPad and iPhone,
+  where the row showed whole, by pull request #105's run 43307160244).
   Not scored yet: the chain through iOS's Personal Voice question once
   the Ask button shows (after answering, the look rests where the
   question's button was, over whatever Voice Settings has there), which

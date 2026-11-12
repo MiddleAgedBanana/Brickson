@@ -769,8 +769,8 @@ what passes and who checks it:
   (`LibraryChainsTests`, `LibraryTests`); Voice Settings, where a look
   held after Family Setup's row met a speed on main's CI frames, is
   placed and scored from 2026-11-12, with nothing found in the model
-  (`VoiceSettingsChainsTests`; in the app once CI runs
-  `SettingsOnHomeTests`); the Duo chain was scored on
+  (`VoiceSettingsChainsTests`, and in the app on CI's iPad and iPhone,
+  where the row showed whole, by pull request #105's run 43307160244); the Duo chain was scored on
   2026-10-25's app and not again since Settings changed on 2026-10-30;
   the unscored screens are in docs/HANDOFF.md, *Known gaps*.
 - **Q3. Every floor named.** Every control on every screen meets the
