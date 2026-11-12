@@ -1,6 +1,6 @@
 # Voice Settings, reached with a held look
 
-*2026-11-12. Pull request #104 (`claude/project-thread-vl7g7k`). A cloud
+*2026-11-12. Pull request #105 (`claude/project-thread-vl7g7k`). A cloud
 thread, "Check held looks on Settings' unchecked screens"; GitHub CI is
 its build.*
 
