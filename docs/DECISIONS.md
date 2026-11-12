@@ -773,6 +773,24 @@ stage, move the `PhraseCategory` and `Phrase` type aliases, and never edit
 V1. Models carry a stable `uuid` for backups, restores and (later) Siri and
 Shortcuts.
 
+Every schema version has a saved store (2026-11-12, the follow-up of
+`docs/log/2026-10-21-library-core.md`). A store the app wrote with each
+version is committed in `BricksonTests/SavedStores`
+(`library-v1.0.0.store` for version 1) and never rewritten, and
+`SavedStoreTests` opens each with today's schema and launch on every
+unit run: it must open, the launch must neither seed nor repair it,
+every row must come back byte for byte, Home must show every category
+and phrase in its place, and an edit must save. A test fails while a
+version in `PhraseLibraryMigrationPlan` has no saved store or no record
+of what it holds (`SavedLibraryStore.all`). The store is made on CI, not
+by hand: every unit run writes the newest version's contents with
+today's models and keeps the files in its results, and the pull request
+that adds a version commits the files its own run kept
+(`docs/log/2026-11-12-stores-from-every-version.md`, *Making the next
+version's store*). The saved store was written by its version's models
+as they were, so it is also opened against any later edit of that
+version, which this section forbids.
+
 Deleting a category does not cascade to its phrases (`.nullify`); the code
 that deletes a category deletes its phrases in the same save
 (docs/LESSONS.md, "Never roll back a cascade delete").
