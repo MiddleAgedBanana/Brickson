@@ -34,7 +34,8 @@ import Foundation
 ///   on its own since its answers start lower: each as the first step, with
 ///   Back returning to Family Setup with the check-in answered, and the
 ///   guide and the second step it leads to as the others, each returning
-///   to it.
+///   to it. The second step after the card is answered is read on its own
+///   too, since its choices keep clear of where the card's rows were.
 ///
 /// A control on the first screen, Family Setup or the guide's cover that
 /// this does not know is returned as unknown rather than guessed at, so a
@@ -103,11 +104,16 @@ nonisolated enum SettingsChains {
         var eachWay: [(name: String, frame: CGRect)]? = nil
         var secondStep: [(name: String, frame: CGRect)]? = nil
         /// The first step opened from the check-in card, and the one Set
-        /// Up Step by Step opens once the card is answered. Their guides and
-        /// second steps are `eachWay` and `secondStep`, which do not depend
-        /// on what opened the step.
+        /// Up Step by Step opens once the card is answered. Their guides
+        /// are `eachWay`, which does not depend on what opened the step.
         var firstStepFromCheckIn: [(name: String, frame: CGRect)]? = nil
         var firstStepAfterCheckIn: [(name: String, frame: CGRect)]? = nil
+        /// The second step reached from the first step after the check-in,
+        /// whose choices keep clear of where the card's rows were
+        /// (`SetupChoicesPlace.arrivals(from:checkInRows:)`); where it was
+        /// not read, `secondStep`. The second step from the card is
+        /// `secondStep`: a look comes to it on Next alone.
+        var secondStepAfterCheckIn: [(name: String, frame: CGRect)]? = nil
     }
 
     /// The map of Settings' first screens, with Back to Talking leading to
@@ -156,9 +162,11 @@ nonisolated enum SettingsChains {
             }
         }
         /// A first step, its guide and its second step, with Back from the
-        /// first step leading to `familySetupState`.
+        /// first step leading to `familySetupState`, and the second step's
+        /// controls `secondControls`.
         func steps(
-            _ first: [(name: String, frame: CGRect)]?, named step: String, guide: String, second: String, back familySetupState: String
+            _ first: [(name: String, frame: CGRect)]?, named step: String, guide: String, second: String, back familySetupState: String,
+            secondControls: [(name: String, frame: CGRect)]?
         ) {
             if let list = first {
                 states[step] = controls(list, on: step) { name, frame in
@@ -175,7 +183,7 @@ nonisolated enum SettingsChains {
                     name == eachWayDone ? ChainControl(name, frame, .navigates, leadsTo: step) : nil
                 }
             }
-            if let list = screens.secondStep {
+            if let list = secondControls {
                 states[second] = controls(list, on: second) { name, frame in
                     switch name {
                     case back: ChainControl(name, frame, .navigates, leadsTo: step)
@@ -185,17 +193,19 @@ nonisolated enum SettingsChains {
                 }
             }
         }
-        steps(screens.firstStep, named: firstStep, guide: eachWay, second: secondStep, back: familySetup)
+        steps(
+            screens.firstStep, named: firstStep, guide: eachWay, second: secondStep, back: familySetup, secondControls: screens.secondStep
+        )
         if let fromCheckIn = screens.firstStepFromCheckIn {
             steps(
                 fromCheckIn, named: firstStepFromCheckIn, guide: eachWayFromCheckIn, second: secondStepFromCheckIn,
-                back: familySetupAfterCheckIn
+                back: familySetupAfterCheckIn, secondControls: screens.secondStep
             )
         }
         if let afterCheckIn = screens.firstStepAfterCheckIn {
             steps(
                 afterCheckIn, named: firstStepAfterCheckIn, guide: eachWayAfterCheckIn, second: secondStepAfterCheckIn,
-                back: familySetupAfterCheckIn
+                back: familySetupAfterCheckIn, secondControls: screens.secondStepAfterCheckIn ?? screens.secondStep
             )
         }
         return (ChainMap(states: states), unknown)

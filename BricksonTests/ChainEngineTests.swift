@@ -1010,6 +1010,10 @@ struct SettingsChainsTests {
         /// Again's place in Family Setup's content, as the first version of
         /// this layout put it, rather than where it showed.
         case dueFromTheContent
+        /// As `due`, but with the second step after the card is answered
+        /// placing its choices from Next alone, as every second step did
+        /// before.
+        case dueWithTheSecondStepAsBefore
     }
 
     struct Model {
@@ -1064,7 +1068,13 @@ struct SettingsChainsTests {
     /// answers below both and where `SetupAnswersPlace` puts them from Go
     /// Through Setup Again alone. Once the card is answered, Set Up Step by
     /// Step's first step has its answers where `SetupAnswersPlace` puts
-    /// them from the card's three rows too.
+    /// them from the card's three rows too, and the second step it leads
+    /// to its choices where `SetupChoicesPlace` puts them from those rows
+    /// as well as Next.
+    ///
+    /// The second step, from every first step: its words, choices, Back
+    /// and Next as the sweep models them (`SweptFamilySetup`), with Next
+    /// where CI measured it and each choice as tall as Family Setup's rows.
     ///
     /// With `scroll`, Family Setup has scrolled that far down before a row
     /// is chosen: its rows move up by as much, and a look reaches only what
@@ -1154,8 +1164,26 @@ struct SettingsChainsTests {
             SetupAnswersPlace.shown($0.offsetBy(dx: -content.minX, dy: -content.minY), scrolledBy: checkIn == .dueFromTheContent ? 0 : scroll)
                 .offsetBy(dx: content.minX, dy: content.minY)
         }
-        if let goThrough, let goThroughShown, let stopAsking = card.last?.frame, checkIn == .due || checkIn == .dueFromTheContent {
+        let secondStepControls = { (choices: [(name: String, frame: CGRect)]) in
+            [(SettingsChains.backToTalking, backToTalking), (SettingsChains.back, window.back)] + choices
+                + [(SettingsChains.firstStepNext, window.next)]
+        }
+        let secondStep = secondStepControls(
+            SweptFamilySetup.restBoardChoices(content: content, next: window.next, body: body, rowHeight: window.familyRow.height)
+        )
+        var secondAfterCheckIn = secondStep
+        if let goThrough, let goThroughShown, let stopAsking = card.last?.frame,
+           checkIn == .due || checkIn == .dueFromTheContent || checkIn == .dueWithTheSecondStepAsBefore {
             let rows = goThrough.union(stopAsking)
+            if checkIn != .dueWithTheSecondStepAsBefore {
+                secondAfterCheckIn = secondStepControls(
+                    SweptFamilySetup.restBoardChoices(
+                        content: content, next: window.next,
+                        arrivals: SetupChoicesPlace.arrivals(from: .setUpStepByStepAfterTheCheckIn, checkInRows: rows),
+                        body: body, rowHeight: window.familyRow.height
+                    )
+                )
+            }
             let afterCard = SetupAnswersPlace(
                 arrivals: SetupAnswersPlace.arrivals(
                     from: .setUpStepByStepAfterTheCheckIn, homesSettings: layout.frame(.settings), rootRow: rootRow, opener: guided,
@@ -1219,6 +1247,7 @@ struct SettingsChainsTests {
             eachWay: guide == .cover
                 ? [(SettingsChains.eachWayDone, backToTalking)]
                 : [(SettingsChains.backToTalking, backToTalking), (SettingsChains.back, window.back)],
+            secondStep: onScreen(secondStep),
             // Read only where Go Through Setup Again shows, as the UI test
             // reads it.
             firstStepFromCheckIn: cardShows
@@ -1226,7 +1255,8 @@ struct SettingsChainsTests {
                 : nil,
             firstStepAfterCheckIn: cardShows
                 ? onScreen([(SettingsChains.backToTalking, backToTalking), (SettingsChains.back, window.back)] + afterCheckIn)
-                : nil
+                : nil,
+            secondStepAfterCheckIn: onScreen(secondAfterCheckIn)
         )
         let categories = (1...HomeLayout.categoryCapacity).map { "category \($0)" }
         let atRest = HomeChains.name(of: HomeChains.State(), categories: categories)
@@ -1333,6 +1363,29 @@ struct SettingsChainsTests {
         #expect(saved.contains { $0.hasPrefix("choosing \(SettingsChains.checkInGoThrough) → ") }, "\(saved)")
         #expect(saved.contains { $0.hasPrefix("choosing \(SettingsChains.checkInNotNow) → \(SettingsChains.guidedSetupRow) ") }, "\(saved)")
         #expect(Self.paths(.savesAnAnswer, in: Self.modelled(.phone, checkIn: .due)) == [])
+    }
+
+    /// Why the second step Set Up Step by Step leads to once the check-in
+    /// card is answered keeps its choices clear of where the card's rows
+    /// were (docs/DECISIONS.md, "The late-stage profile", *Where the second
+    /// step's choices start*). With them placed from Next alone, as every
+    /// second step placed them before, a held look that chose Not Now or
+    /// Stop Asking low on the card rests over the words that keep its
+    /// place, meets Set Up Step by Step, then the first step's Next, since
+    /// that step's answers start below the place, and then a choice the
+    /// family scrolls to, under the bar and the sound line: on the iPhone
+    /// 17 at the default size and the 13-inch iPad at the largest, as CI's
+    /// UI run on pull request #103 found. Fails once that layout no longer
+    /// saves a choice there, so it can be scored to come back.
+    @Test func theSecondStepLaidOutAsBeforeWouldSaveAChoice() {
+        for window in [ModelledWindow.phone, .padPortraitLargest] {
+            let saved = Self.paths(.savesAnAnswer, in: Self.modelled(window, checkIn: .dueWithTheSecondStepAsBefore))
+            #expect(saved.contains {
+                ($0.hasPrefix("choosing \(SettingsChains.checkInNotNow) → ") || $0.hasPrefix("choosing \(SettingsChains.checkInStopAsking) → "))
+                    && $0.contains("\(SettingsChains.firstStepNext) (navigates) → restBoard")
+            }, "\(window.name): \(saved)")
+            #expect(Self.paths(.savesAnAnswer, in: Self.modelled(window, checkIn: .due)) == [], "\(window.name)")
+        }
     }
 
     /// The chains from Go Through Setup Again, with Family Setup scrolled
@@ -1477,10 +1530,12 @@ struct SettingsChainsTests {
         /// The second step's choices across `content`, under its words or
         /// below the bar, where `SetupChoicesPlace` places them from
         /// `next`.
-        static func restBoardChoices(content: CGRect, next: CGRect, body: CGFloat, rowHeight: CGFloat) -> [(name: String, frame: CGRect)] {
+        static func restBoardChoices(
+            content: CGRect, next: CGRect, arrivals: [CGRect] = [], body: CGFloat, rowHeight: CGFloat
+        ) -> [(name: String, frame: CGRect)] {
             let heights = restBoardChoiceNames.map { _ in rowHeight }
             let place = SetupChoicesPlace(
-                next: next, choicesMinX: content.minX, choicesWidth: content.width, heights: heights, spacing: 16,
+                next: next, arrivals: arrivals, choicesMinX: content.minX, choicesWidth: content.width, heights: heights, spacing: 16,
                 earliest: content.minY + restBoardWordsHeight(content.width, body: body) + 16
             )
             return zip(restBoardChoiceNames, place.tops).map { name, top in

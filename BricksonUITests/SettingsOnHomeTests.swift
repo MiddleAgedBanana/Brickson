@@ -187,13 +187,14 @@ final class SettingsOnHomeTests: XCTestCase {
         }
         var fromCheckIn: [ScreenControl]?
         var afterCheckIn: [ScreenControl]?
+        var secondAfterCheckIn: [ScreenControl]?
         if checkInDue {
             XCTAssertTrue(
                 familySetup.contains { $0.name == SettingsChains.checkInGoThrough }, "Family Setup shows no check-in card (\(context))"
             )
             if let goThrough = Self.onScreen(familySetup, in: window).first(where: { $0.name == SettingsChains.checkInGoThrough }),
                secondStep != nil {
-                (fromCheckIn, afterCheckIn) = try readTheCheckIn(
+                (fromCheckIn, afterCheckIn, secondAfterCheckIn) = try readTheCheckIn(
                     goThrough: goThrough.frame, familySetup: familySetup, in: app, window: window, context: context
                 )
             }
@@ -213,7 +214,8 @@ final class SettingsOnHomeTests: XCTestCase {
                 eachWay: eachWay.map { Self.named(Self.onScreen($0, in: window)) },
                 secondStep: secondStep.map { Self.named(Self.onScreen($0, in: window)) },
                 firstStepFromCheckIn: fromCheckIn.map { Self.named(Self.onScreen($0, in: window)) },
-                firstStepAfterCheckIn: afterCheckIn.map { Self.named(Self.onScreen($0, in: window)) }
+                firstStepAfterCheckIn: afterCheckIn.map { Self.named(Self.onScreen($0, in: window)) },
+                secondStepAfterCheckIn: secondAfterCheckIn.map { Self.named(Self.onScreen($0, in: window)) }
             ),
             window: window, context: context
         )
@@ -298,12 +300,13 @@ final class SettingsOnHomeTests: XCTestCase {
     /// then back to Family Setup, now with the card answered, read again to
     /// check that only the card's rows went and nothing else moved; then
     /// the first step Set Up Step by Step opens from there, read where it
-    /// rests, with its answers clear of where the card's rows were. Returns
-    /// the two first steps.
+    /// rests, with its answers clear of where the card's rows were; then
+    /// the second step its Next opens, with its choices clear of that
+    /// place too. Returns the two first steps and that second step.
     @MainActor
     private func readTheCheckIn(
         goThrough: CGRect, familySetup: [ScreenControl], in app: XCUIApplication, window: CGRect, context: String
-    ) throws -> ([ScreenControl], [ScreenControl]) {
+    ) throws -> ([ScreenControl], [ScreenControl], [ScreenControl]) {
         open(SettingsChains.back, leaving: "restBoardEveryCategory", in: app, context: context)
         open(SettingsChains.back, leaving: SettingsChains.learnAboutEachWay, in: app, context: context)
         XCTAssertTrue(
@@ -360,7 +363,20 @@ final class SettingsOnHomeTests: XCTestCase {
         if let touch = afterCheckIn.first(where: { $0.name == "Touch" }) {
             XCTAssertGreaterThan(touch.frame.minY, rows.maxY, "the first answer starts where the card's rows were (\(context))")
         }
-        return (fromCheckIn, afterCheckIn)
+
+        // The second step from there: a look still over where the card's
+        // rows were met Next, so no choice lies across that place.
+        open(SettingsChains.firstStepNext, leaving: SettingsChains.learnAboutEachWay, in: app, context: context)
+        XCTAssertTrue(
+            app.navigationBars[SettingsChains.secondStep].waitForExistence(timeout: 10),
+            "Next did not open the second step after the check-in (\(context))"
+        )
+        let secondAfterCheckIn = try Self.onCover(screenControls(in: app))
+        attachCapture(app, name: "second-step-after-the-check-in-\(context)".replacingOccurrences(of: ", ", with: "-"))
+        for choice in secondAfterCheckIn where choice.name.hasPrefix("restBoard") {
+            XCTAssertFalse(choice.frame.intersects(rows), "\(choice.name) at \(choice.frame) lies where the card's rows were (\(context))")
+        }
+        return (fromCheckIn, afterCheckIn, secondAfterCheckIn)
     }
 
     /// Follows every chain from Home's Settings and from each control of
