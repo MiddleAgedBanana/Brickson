@@ -1,9 +1,10 @@
 # Brickson — Agent Briefing
 
 Read this before changing anything. It is the one shared briefing for every
-agent working here: Codex and Jules read it directly, and Claude Code loads
-it through `CLAUDE.md` (which contains only `@AGENTS.md`). Put instructions
-here, not in an agent-specific file, so every agent gets the same rules.
+agent working here: Codex and Antigravity read it directly, and Claude Code
+loads it through `CLAUDE.md` (which contains only `@AGENTS.md`). Put
+instructions here, not in an agent-specific file, so every agent gets the
+same rules.
 
 **Read all of it.** Codex reads only the first 32 KiB of `AGENTS.md` by
 default and drops the rest without saying so (OpenAI's
@@ -580,8 +581,8 @@ A PR with owner-enabled auto-merge merges itself on green once its other
 merge requirements are met: after the final push, stop and let it.
 Agents never enable auto-merge or merge a PR.
 
-**Cloud agents** with no route to a Mac (Codex cloud, Jules, a Claude
-Code session without the tools below) cannot build or run the app or
+**Cloud agents** with no route to a Mac (Codex cloud, a Claude Code
+session without the tools below) cannot build or run the app or
 its Xcode tests; the Python checks run anywhere, and plain Swift types
 can be tested on Linux (`docs/log/2026-11-05-four-phrases.md`). Say so
 plainly, treat the change as untested until CI or a Mac run passes,
@@ -819,11 +820,14 @@ above are backed by checks wherever a check can run:
   Read and Edit tools the list's default folder. When the guard refuses, do not look for
   another way round: say in the thread what you needed and why. It is
   a guard against mistakes, not a sandbox, and it covers
-  Claude Code only; Codex, Jules and the owner are held to the same rules
-  by review. Every policy hook uses `onFailure: "block"`, so a startup
-  error, crash, invalid output or timeout blocks the original action in
-  Claude Code 2.1.295 or later. Older or unknown runtimes do not establish
-  that protection; confirm the runtime and hook reload before relying on it.
+  Claude Code only. On the owner's Mac, git-ignored hooks hold Codex and
+  Antigravity to what it refuses
+  (`docs/log/2026-11-08-codex-antigravity-setup.md`); elsewhere, Codex
+  and the owner are held to the same rules by review. Every policy hook
+  uses `onFailure: "block"`, so a startup error, crash, invalid output or
+  timeout blocks the original action in Claude Code 2.1.295 or later.
+  Older or unknown runtimes do not establish that protection; confirm the
+  runtime and hook reload before relying on it.
 - **Where the guard runs.** Claude Code reads a repository's hooks and
   permission rules in a session with one repository. A cloud session that
   clones several repositories reads only plugin settings from them, so
@@ -1147,6 +1151,16 @@ the time. Export them again after each new Xcode release.
   test failures: phone-idiom landscape skips do not cover the inner
   display. The record is
   [`docs/log/2026-10-25-mac-keyboard-checks.md`](docs/log/2026-10-25-mac-keyboard-checks.md).
+  XCTest's touches reach the inner display where they are aimed in one
+  orientation only: opened flat, it starts in a wide 951×669 window, and
+  after three quarter turns to the right (Device Hub, or the Claude
+  desktop app's simulator control) it is the tall 669×951 window in
+  which `PhraseDragTests`' coordinate check passes; in the other two,
+  that check fails before input, as it should. Even in that window, a
+  point offset from the app element's own origin reported the aimed
+  screen point but never reached Home; offset from the element touched
+  instead (2026-11-11,
+  [`docs/log/2026-11-12-duo-drag-speech.md`](docs/log/2026-11-12-duo-drag-speech.md)).
   `DESTINATION='platform=iOS Simulator,id=<udid>' scripts/test.sh ui`
   runs the UI tests on whichever display is showing. Xcode 27.2's
   [release notes](https://developer.apple.com/documentation/xcode-release-notes/xcode-27_2-release-notes)

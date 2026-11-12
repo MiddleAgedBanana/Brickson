@@ -1562,12 +1562,14 @@ take a library from four or fewer to more than four
 would take it from three or more to fewer than three (`.homeNeedsThree`).
 Home's slot plan has no place for a fifth ("Home's slot plan", *Open*),
 and fewer than three can leave Again, which speaks, nearest Stop's empty
-well. Only an edit that crosses a bound is refused, so a library already
-outside them (a damaged or hand-made store, which no screen or backup
-can make) can still be edited and brought back; an edit can also take it
-farther out, which no rule stops yet (a follow-up in
-`docs/log/2026-11-05-library-screen.md`). A backup that would cross
-either bound is refused whole, never trimmed (invariant 7).
+well. A library already outside them (a damaged or hand-made store,
+which no screen or backup can make) can still be edited, brought back
+or left as far out as it was, but an edit that would take it farther
+out is refused with the same reasons: two categories never become one,
+and six never seven (2026-11-12, `docs/log/2026-11-12-no-farther-out.md`;
+until then only a crossing was refused). A backup that would cross
+either bound, or go farther out, is refused whole, never trimmed
+(invariant 7).
 The Library dims Add a Category at four and Delete Category at three,
 with the reason beside each.
 
@@ -1609,11 +1611,17 @@ category.
   (`LibraryEditRejection.categoryKeepsFour`), takes Emergency from four
   or more to fewer (`.emergencyKeepsFour`), or leaves Home no everyday
   category with four where it had one (`.homeNeedsAFullCategory`), so
-  Home always has one to show. As in "Three or four everyday
-  categories", only an edit that crosses is refused: a new category
-  grows from none, and one already under four can still be edited. A
-  backup that would cross is refused whole (invariant 7). The Library
-  dims Delete Phrase with the reason beside it.
+  Home always has one to show. For an everyday category Home dims, only
+  an edit that crosses is refused: a new category grows from none, and
+  one already under four can still be edited, its phrases deleted or
+  moved out. Home shows Emergency and a chosen rest board whatever they
+  hold, so neither goes farther under four: an edit that takes one
+  already short of four to fewer phrases still is refused
+  (`.emergencyShortOfFour`, `.restBoardShortOfFour`; 2026-11-12), and
+  changing a phrase's words, adding and moving phrases in stay open. A
+  backup that would cross, or go farther under, is refused whole
+  (invariant 7). The Library dims Delete Phrase and Delete Category
+  with the reason beside them.
 - **The Library says how many more.** A category's screen with fewer
   than four phrases says, under them, that Home shows it once it has
   four, and how many to add (`LibraryRules.shortNote`).
@@ -1631,8 +1639,9 @@ category.
   control, this and typing's dimming both need another answer.
 - **Open: Emergency with fewer than four.** Emergency is never dimmed
   (invariant 2). Its starter phrases are six, and no edit takes it from
-  four or more to fewer, so only a library already short of them, which nothing in 1.0
-  makes, shows its empty cells. Scored
+  four or more to fewer, or farther under four, so only a library
+  already short of them, which nothing in 1.0 makes, shows its empty
+  cells. Scored
   (`HomeLayoutEngineTests.aShortEmergencysEmptyCellsMeetOnlyClearPutBackAndPhrases`):
   while typing, a look on them meets Clear or Put Back; while browsing,
   the category above, and then the phrase under the look speaks, or
@@ -1646,8 +1655,10 @@ category.
   after the Snap to Item check.
 - **Open: a rest board with fewer than four.** A board chosen with four
   keeps them, and Set Up no longer offers a short one, so no edit makes
-  one. A damaged or hand-made store can hold one, and so can one rare
-  restore: the chosen category is deleted, which leaves the choice stored
+  one, and none takes one farther under four (2026-11-12). A damaged or
+  hand-made store can hold one, and so can one rare restore, which is
+  not refused because the board was not in the library before it: the
+  chosen category is deleted, which leaves the choice stored
   (`SetupRecord.restBoardCategory`), and an older backup that held it with
   fewer than four brings it back under the same identity. Measured on
   2026-11-05
@@ -2185,6 +2196,64 @@ repair-loop budget is implied. PR #58
 remains a draft until that batch is tested and its findings handled;
 current-head PR checks govern review readiness. No physical Touch
 Accommodations, dwell or AXPress result is inferred.
+
+### Why a drag spoke
+
+*2026-11-11. Found on the owner's Mac; record:
+[`log/2026-11-12-duo-drag-speech.md`](log/2026-11-12-duo-drag-speech.md).*
+The cause the repair above did not name, which project notes carried
+as "cause unknown":
+
+- **A standard Button speaks when the finger lifts within it, however far
+  the finger moved while down**, unless something takes the touch over
+  first. Yes does this today: a 60-point slide that stays on Yes says
+  "Yes.", as `SlowPressTests` already expects of a slide from Yes.
+- **The only thing that takes a phrase's touch over is the phrase scroll
+  view**, and only once the finger has moved far enough to start a
+  scroll in a direction the view can move: about 10 points on the
+  simulator. Apple's
+  [`canCancelContentTouches`](https://developer.apple.com/documentation/uikit/uiscrollview/cancancelcontenttouches.md)
+  describes this for UIKit's scroll view, which a content view's touch
+  is cancelled by "if the user drags the finger enough to initiate a
+  scroll"; that SwiftUI's `ScrollView` does the same is inferred from the
+  measurements, not documented.
+- **Before the repair, a grid whose phrases all fit could not start a
+  scroll**: `scrollDisabled` turned scrolling off, and `.basedOnSize`
+  bounces only content larger than the view
+  ([basedOnSize](https://developer.apple.com/documentation/swiftui/scrollbouncebehavior/basedonsize.md)).
+  So nothing took the touch over and every slide on a fitting grid
+  spoke. Where the phrases overflowed, the view could scroll and the
+  same slides were silent: on iPhone Duo's tall window at AX5 the grid
+  overflowed and the drag tests passed with the old modifiers, while at
+  the default text size it fit and they failed.
+- **A touch in the gap between two tiles belongs to a tile**: in the
+  middle of the 8-point gap, the one to its right. That is how the old
+  prototype's gutter drags spoke: its start, in the bottom row's first
+  gap, belongs to "I'm not finished.", the phrase the light case said.
+
+With the repair, the view can always start a vertical scroll, so an up
+or down slide of about 10 points or more, from a tile or a gap, says
+nothing, fitting grid or not; a 5-point wobble still speaks. Measured
+with `PhraseDragProbeTests` on the iPhone Duo simulator's tall window, both
+ways round. None of this was measured with a real finger, dwell, a head
+pointer or Switch Control, which tap at a point and do not slide.
+
+### Sideways slides
+
+*Owner's decision, 2026-11-11, on the recommendation of the thread that
+found the cause.* A finger that slides sideways and lifts on the phrase
+it began on says that phrase, and never another, as a slide on Yes says
+Yes. Nothing on Home scrolls sideways, so a sideways slide is not an
+attempt to scroll; making it silent would swallow more presses from
+weak or unsteady hands (invariant 2). Apple's Touch Accommodations
+(Hold Duration, Ignore Repeat, Tap Assistance) are where a person's own
+touch is tuned, not app code (*Design rules for dwell, switch and
+pointer input* in `AGENTS.md`: no time-based input guards or custom
+pointer code). Letting the phrase view bounce sideways as well
+(`scrollBounceBehavior(.always, axes: [.horizontal, .vertical])`) did
+not change it when tried. `PhraseDragTests` pins both sides: a 40-point
+sideways slide says its phrase, and a 5-point wobble still speaks; a
+high-priority drag gesture on the grid fails each, as measured.
 
 ## Home's slot plan
 
@@ -3341,6 +3410,25 @@ How the message being typed behaves (`MessageComposer`, `DraftStore`):
   A file that cannot be read at launch gives an empty message and
   "Message not restored". The message is never logged and never put in a
   crash message.
+- **The saved message keeps iOS's default file protection** (owner,
+  2026-11-12). `draft.txt` is written with
+  `.completeFileProtectionUntilFirstUserAuthentication`, the class iOS
+  gives an app's files when the app sets none, as the phrase library and
+  settings do: readable once the device has been unlocked after it
+  started, locked or not. Complete protection, readable only while the
+  device is unlocked, was proposed in pull request #94 and not taken.
+  The privacy policy promises only that iOS encrypts Brickson's storage
+  when the device has a passcode, which the default already does. And
+  the message is read once, at launch, so a launch while the device is
+  locked (R2's Get Attention and Emergency from Siri or the Action
+  button may start Brickson then) could not read it: Home would show
+  "Message not restored", and the next change would replace the saved
+  message. The default has the same gap before the first unlock after a
+  restart, which nothing reaches today; docs/ROADMAP.md's Siri and
+  Shortcuts work file (item 10) settles it, so that a message the
+  device kept locked is read once it unlocks and never replaced before.
+  Revisit complete protection only after that, and for the phrase
+  library too.
 
 ## Typing on Home
 
@@ -6300,8 +6388,8 @@ Rules*: a Codex at default settings never saw *Not findings*,
   the rules themselves*). A Codex on the owner's Mac reads the whole
   file once `project_doc_max_bytes` in `~/.codex/config.toml` is at
   least the file's size (131072 leaves room to grow). Whether Codex's
-  code review on GitHub, Codex cloud or Jules apply the same limit is
-  not documented, so the order assumes they might.
+  code review on GitHub or Codex cloud apply the same limit is not
+  documented, so the order assumes they might.
 
 Before: *What this is and what's at stake* was followed by *Where
 things are* and *Build and test*, ahead of the invariants; *Guardrails

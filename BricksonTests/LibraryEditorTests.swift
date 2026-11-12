@@ -38,7 +38,7 @@ struct LibraryEditorTests {
     /// misses a field, an order or a delete.
     @Test(arguments: LibraryEdit.Kind.allCases)
     func everyKindOfEditIsWritten(kind: LibraryEdit.Kind) throws {
-        let container = try store()
+        let container = try store(with: F.sampleLibrary(kind))
         // Measured against the starter, the fixture library holds none of
         // the person's own words, so a replace may run without a safety copy.
         let plan = try makePlan(F.sampleEdit(kind), in: container, starter: F.library)
@@ -59,17 +59,18 @@ struct LibraryEditorTests {
     /// part of it reaches the store before the save.
     @Test(arguments: LibraryEdit.Kind.allCases)
     func aFailedSaveChangesNothing(kind: LibraryEdit.Kind) throws {
-        let container = try store()
+        let library = F.sampleLibrary(kind)
+        let container = try store(with: library)
         let plan = try makePlan(F.sampleEdit(kind), in: container, starter: F.library)
 
         #expect(throws: LibraryEditError.saveFailed) {
             try LibraryEditor.apply(plan, to: container) { _ in throw SaveFailed() }
         }
 
-        #expect(try LibraryEditor.read(container) == F.library)
+        #expect(try LibraryEditor.read(container) == library)
         let stored = try counts(container)
-        #expect(stored.categories == 3)
-        #expect(stored.phrases == 6)
+        #expect(stored.categories == library.categories.count)
+        #expect(stored.phrases == library.phraseCount)
         #expect(!container.mainContext.hasChanges)
         // And the same plan still applies afterwards.
         #expect(try LibraryEditor.apply(plan, to: container) == plan.after)
@@ -89,7 +90,7 @@ struct LibraryEditorTests {
             let writable = try PhraseLibraryStore.makeContainer(ModelConfiguration(
                 schema: PhraseLibraryStore.schema, url: url, cloudKitDatabase: .none
             ))
-            try PhraseLibrarySeeder.seedIfEmpty(writable, with: F.library)
+            try PhraseLibrarySeeder.seedIfEmpty(writable, with: F.libraryOfFour)
             let readOnly = try PhraseLibraryStore.makeContainer(ModelConfiguration(
                 schema: PhraseLibraryStore.schema, url: url, allowsSave: false, cloudKitDatabase: .none
             ))
@@ -98,8 +99,8 @@ struct LibraryEditorTests {
             #expect(throws: LibraryEditError.saveFailed) {
                 try LibraryEditor.apply(plan, to: readOnly)
             }
-            #expect(try LibraryEditor.read(readOnly) == F.library)
-            #expect(try LibraryEditor.read(writable) == F.library)
+            #expect(try LibraryEditor.read(readOnly) == F.libraryOfFour)
+            #expect(try LibraryEditor.read(writable) == F.libraryOfFour)
         }
     }
 
@@ -135,18 +136,18 @@ struct LibraryEditorTests {
     /// relationship does not cascade. Fails if the writer deletes only the
     /// category, which would leave invisible phrases behind.
     @Test func deletingACategoryLeavesNoPhrasesBehind() throws {
-        let container = try store()
+        let container = try store(with: F.libraryOfFour)
         try LibraryEditor.apply(makePlan(.deleteCategory(F.basicsID), in: container), to: container)
 
         let phrases = try ModelContext(container).fetch(FetchDescriptor<Phrase>())
-        #expect(phrases.count == 3)
+        #expect(phrases.count == F.libraryOfFour.phraseCount - F.basics.phrases.count)
         #expect(phrases.allSatisfy { $0.category != nil })
     }
 
     /// A phrase that belongs to no category is not part of the library and
     /// is never touched, so no edit can delete it (invariant 7).
     @Test func phrasesOutsideTheLibraryAreNeverTouched() throws {
-        let container = try store()
+        let container = try store(with: F.libraryOfFour)
         let context = ModelContext(container)
         context.insert(Phrase(text: "Kept.", sortOrder: 0, category: nil, uuid: F.id(999)))
         try context.save()

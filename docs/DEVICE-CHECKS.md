@@ -892,7 +892,10 @@ and the Large Content Viewer on Home").*
    follow the row's steps in docs/HANDOFF.md, *Checks that need a real
    device*, in order: press Yes for about half a second and lift, then a
    phrase tile; hold Yes, slide onto No and lift; hold a phrase tile,
-   slide onto the next and lift; then the same with Touch Accommodations'
+   slide onto the next and lift; where every phrase fits, press a phrase
+   tile, slide up about a finger's width and lift, then press one, slide
+   sideways on it and lift (docs/DECISIONS.md, "Phrase-grid drag
+   cancellation"); then the same with Touch Accommodations'
    Hold Duration on, and with AssistiveTouch Dwell. Then, in a window
    where Settings shows its gear alone, the gear steps the row lists.
    **Thread:** names that window first, from A1's frames or the layout
@@ -900,7 +903,8 @@ and the Large Content Viewer on Home").*
    375-point-wide phone with Bold Text); if none is at hand, the gear
    steps are UNVERIFIED.
 2. *Passes* when each press speaks, a slide says the control it began on
-   or nothing, never the next, and a held press on the gear opens
+   or nothing, never the next, the slide up says nothing, the sideways
+   slide says its phrase, and a held press on the gear opens
    Settings or does nothing, never anything else. Record whether
    Settings opened on the held press and whether the large copy showed.
 3. **Owner:** the task list by touch, on the iPhone and the iPad.

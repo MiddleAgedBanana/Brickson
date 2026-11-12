@@ -33,8 +33,10 @@ reported. With --write the job starts on a new branch from origin/main
 (codex/<topic> in a new worktree ~/code/brickson-codex-<topic>, or
 antigravity/<topic> in agy's folder), commits there and never pushes; the
 thread checks the commits and pushes. A write job needs the agent's guard
-hook installed (docs/log/2026-11-08-codex-antigravity-setup.md). Never the
-owner's own checkout, never a danger or skip-permissions mode.
+hook installed (docs/log/2026-11-08-codex-antigravity-setup.md). Every agy
+job needs agy's hook exactly as installed there, and if a job changes it,
+the bridge puts it back and says so. Never the owner's own checkout, never
+a danger or skip-permissions mode.
 
 Standard library only; Python 3.9. Its tests are scripts/test-agent-bridge.py.
 """
@@ -48,6 +50,7 @@ import re
 import secrets
 import shutil
 import signal
+import stat
 import subprocess
 import sys
 import tempfile
@@ -55,6 +58,8 @@ import time
 from pathlib import Path
 
 ADAPTER = 'brickson_guard_adapter.py'
+# agy's guard hook, in agy's folder (git-ignored there): its settings, then the adapter it runs.
+AGY_GUARD = ('.agents/hooks.json', f'.agents/hooks/{ADAPTER}')
 AGY_FOLDER = '~/code/brickson-antigravity'
 CODEX_FOLDER = '~/code/brickson-codex-{topic}'
 TOPIC = re.compile(r'^[a-z0-9][a-z0-9-]{0,48}$')
@@ -127,17 +132,21 @@ class Stop(Exception):
     """The job cannot run as asked; the message says why."""
 
 
-def git(folder, *args, check=True, strip=True):
+def git(folder, *args, check=True, strip=True, raw=False):
     """The bridge's own git, without the thread's GitHub tokens and with
     core.fsmonitor and git hooks off: an agent can change the checkout's
     git settings, and a command it names there must never run outside its
-    sandbox or with what the agent was not given."""
+    sandbox or with what the agent was not given. With raw, git's output
+    comes back as bytes, untouched (file names, which need not be text)."""
     env = {key: value for key, value in os.environ.items() if key not in TOKENS}
     result = subprocess.run(['git', '-c', 'core.fsmonitor=false', '-c', 'core.hooksPath=/dev/null',
                              '-C', str(folder), *args],
-                            capture_output=True, text=True, stdin=subprocess.DEVNULL, env=env)
+                            capture_output=True, text=not raw, stdin=subprocess.DEVNULL, env=env)
     if check and result.returncode != 0:
-        raise Stop(f'git {" ".join(args)} failed in {folder}: {result.stderr.strip()}')
+        error = result.stderr.decode('utf-8', 'replace') if raw else result.stderr
+        raise Stop(f'git {" ".join(args)} failed in {folder}: {error.strip()}')
+    if raw:
+        return result.stdout
     return result.stdout.strip() if strip else result.stdout
 
 
@@ -177,12 +186,162 @@ def hook_installed_for_codex():
                for hook in group.get('hooks', []) if isinstance(hook, dict))
 
 
-def hook_installed_for_agy(folder):
+def agy_hook_config(checkout):
+    """The one .agents/hooks.json the bridge accepts in agy's folder, as
+    installed on 2026-11-08 (docs/log/2026-11-08-codex-antigravity-setup.md,
+    *The adapter, as installed*): the adapter in this folder, run before
+    every tool, and nothing else. A file that only names the guard can
+    still never run it, with a matcher that matches no tool, an adapter
+    elsewhere, or a hook beside it, and agy's folder is git-ignored there,
+    so nothing else would notice (Codex's security review of #91)."""
+    adapter = Path(checkout) / AGY_GUARD[1]
+    return {'brickson-guard': {'PreToolUse': [{'matcher': '*', 'hooks': [{
+        'type': 'command', 'command': f"python3 '{adapter}' --format antigravity",
+        'timeout': 30}]}]}}
+
+
+def open_folder(checkout, parts, repair=False):
+    """A handle on the folder checkout/parts..., opened one name at a time
+    without following a link. With repair, a part that is missing, or a
+    link in its place, is made again as a folder (the link removed, never
+    followed); anything else in its way is left and raises OSError."""
+    handle = os.open(str(checkout), os.O_RDONLY | os.O_DIRECTORY)
     try:
-        config = json.loads((Path(folder) / '.agents' / 'hooks.json').read_text())
-    except (OSError, ValueError):
-        return False
-    return ADAPTER in json.dumps(config) and '--format antigravity' in json.dumps(config)
+        for part in parts:
+            flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
+            try:
+                inner = os.open(part, flags, dir_fd=handle)
+            except OSError:
+                if not repair:
+                    raise
+                try:
+                    if stat.S_ISLNK(os.stat(part, dir_fd=handle, follow_symlinks=False).st_mode):
+                        os.unlink(part, dir_fd=handle)
+                except FileNotFoundError:
+                    pass
+                os.mkdir(part, 0o755, dir_fd=handle)
+                inner = os.open(part, flags, dir_fd=handle)
+            os.close(handle)
+            handle = inner
+    except BaseException:
+        os.close(handle)
+        raise
+    return handle
+
+
+def read_plain(checkout, name):
+    """The bytes and mode of the plain file checkout/name, read without
+    following a link anywhere below the checkout, or None."""
+    *parts, last = name.split('/')
+    try:
+        folder = open_folder(checkout, parts)
+    except OSError:
+        return None
+    try:
+        # O_NONBLOCK: a pipe left in the file's place must not hang the bridge.
+        handle = os.open(last, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=folder)
+    except OSError:
+        return None
+    finally:
+        os.close(folder)
+    try:
+        mode = os.fstat(handle).st_mode
+        if not stat.S_ISREG(mode):
+            return None
+        with os.fdopen(handle, 'rb', closefd=False) as file:
+            return file.read(), stat.S_IMODE(mode)
+    except OSError:
+        return None
+    finally:
+        os.close(handle)
+
+
+def put_plain(checkout, name, data, mode):
+    """Write a plain file at checkout/name, replacing whatever a job left
+    there (a changed file, a link) without following it: the bytes go into
+    a new file with a fresh name, which is renamed over the old entry."""
+    *parts, last = name.split('/')
+    folder = open_folder(checkout, parts, repair=True)
+    temp = f'.{last}.{secrets.token_hex(8)}'
+    try:
+        handle = os.open(temp, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600,
+                         dir_fd=folder)
+        with os.fdopen(handle, 'wb') as file:
+            os.fchmod(file.fileno(), mode)
+            file.write(data)
+        os.replace(temp, last, src_dir_fd=folder, dst_dir_fd=folder)
+    except BaseException:
+        try:
+            os.unlink(temp, dir_fd=folder)
+        except OSError:
+            pass
+        raise
+    finally:
+        os.close(folder)
+
+
+def unique_keys(pairs):
+    """JSON objects with each key once: with a key twice, the bridge and
+    agy could each read a different one."""
+    keys = [key for key, _ in pairs]
+    if len(set(keys)) != len(keys):
+        raise ValueError('a key appears twice')
+    return dict(pairs)
+
+
+def read_agy_guard(checkout):
+    """agy's guard hook files in checkout, each as (bytes, mode) or None."""
+    return {name: read_plain(checkout, name) for name in AGY_GUARD}
+
+
+def agy_hook_problem(checkout, files):
+    """None when files (from read_agy_guard) are exactly the guard hook the
+    bridge expects in checkout; otherwise what is wrong."""
+    for name in AGY_GUARD:
+        if files[name] is None:
+            return f'{name} is missing, or is a link or not a plain file'
+    try:
+        config = json.loads(files[AGY_GUARD[0]][0].decode('utf-8'), object_pairs_hook=unique_keys)
+    except ValueError as error:
+        return f'{AGY_GUARD[0]} is not JSON the bridge can read ({error})'
+    if config != agy_hook_config(checkout):
+        return (f'{AGY_GUARD[0]} is not exactly the guard hook (matcher "*", this folder\'s '
+                f'{ADAPTER}, timeout 30, and nothing else)')
+    return None
+
+
+def agy_guard_snapshot(checkout):
+    """agy's guard hook files, checked and kept before a job, so the bridge
+    can put them back after it."""
+    files = read_agy_guard(checkout)
+    problem = agy_hook_problem(checkout, files)
+    if problem:
+        raise Stop(f'{checkout} does not hold exactly the guard hook the bridge expects: '
+                   f'{problem}; reinstall it as docs/log/2026-11-08-codex-antigravity-setup.md shows')
+    return files
+
+
+def restore_agy_guard(checkout, saved):
+    """After an agy job, put back any guard hook file the job changed:
+    the file is git-ignored, so git would not show it, and the next agy
+    session would run with whatever the job left. Returns what happened
+    for summary.json, and the job's status when the guard was changed."""
+    changed = [name for name in AGY_GUARD if read_plain(checkout, name) != saved[name]]
+    if not changed:
+        return 'unchanged', None
+    names = ', '.join(changed)
+    try:
+        for name in changed:
+            put_plain(checkout, name, *saved[name])
+        if read_agy_guard(checkout) != saved:
+            raise OSError('it still differs after being written')
+    except Exception as error:  # whatever stops it, the job still ends with done
+        return (f'changed by the job ({names}); not put back: {error}',
+                f'changed its own guard hook ({names}), and the bridge could not put it back '
+                f'({error}): agy may run unguarded in {checkout} until the hook is reinstalled '
+                'as docs/log/2026-11-08-codex-antigravity-setup.md shows')
+    return (f'changed by the job ({names}) and put back',
+            f'changed its own guard hook ({names}); the bridge put it back')
 
 
 def agy_project_folders():
@@ -223,7 +382,7 @@ def hold_checkout(checkout):
 
 
 def require_clean(checkout):
-    if changed_lines(checkout):
+    if changed_files(checkout):
         raise Stop(f'{checkout} has uncommitted changes or new files outside build/; '
                    'an agent shares nobody\'s uncommitted work, so the job needs it clean')
 
@@ -274,26 +433,42 @@ def read_answer(path):
         return file.read()
 
 
-def changed_lines(checkout):
-    # Unstripped: a porcelain line's first column can be a space (" M a"),
-    # and the path starts at the fourth character.
-    return sorted(line for line in git(checkout, 'status', '--porcelain', '--untracked-files=all',
-                                       check=False, strip=False).splitlines()
-                  if line and not line[3:].startswith('build/'))
+def changed_files(checkout):
+    """Every changed or new file outside build/, as (status line, path),
+    from git's porcelain status with -z. Without -z, git quotes a name with
+    letters outside ASCII, quotes, backslashes or control characters, and
+    escapes them ("r\\303\\251sum\\303\\251.md"), so the file could not be
+    found to compare (Codex, on #91). With it, each entry is the two
+    status letters, a space and the path as it is on disk, ended by a NUL,
+    and a rename or copy is followed by the path it came from. A line's
+    first letter can be a space (" M a"), so nothing is stripped."""
+    fields = iter(git(checkout, 'status', '--porcelain', '-z', '--untracked-files=all',
+                      check=False, raw=True).split(b'\0'))
+    files = []
+    for field in fields:
+        if len(field) < 4:
+            continue
+        code, path = field[:2].decode('ascii', 'replace'), os.fsdecode(field[3:])
+        source = os.fsdecode(next(fields, b'')) if 'R' in code or 'C' in code else None
+        if path.startswith('build/') and (source is None or source.startswith('build/')):
+            continue
+        files.append((f'{code} {source} -> {path}' if source is not None else f'{code} {path}',
+                      path))
+    return sorted(files)
 
 
 def git_state(checkout):
     """Branch, commit, and every changed or new file with a hash of its
     contents, so a file rewritten in place shows too."""
-    changed = changed_lines(checkout)
+    changed = changed_files(checkout)
     contents = {}
-    for line in changed:
-        path = checkout / line[3:].split(' -> ')[-1].strip('"')
+    for _line, name in changed:
+        path = checkout / name
         if path.is_file():
-            contents[line[3:]] = hashlib.sha256(path.read_bytes()).hexdigest()
+            contents[name] = hashlib.sha256(path.read_bytes()).hexdigest()
     return {'branch': git(checkout, 'branch', '--show-current', check=False),
             'head': git(checkout, 'rev-parse', 'HEAD', check=False),
-            'changed': changed, 'contents': contents}
+            'changed': [line for line, _name in changed], 'contents': contents}
 
 
 def stop_group(process):
@@ -465,9 +640,8 @@ def agy_job(args):
     if folders != [str(checkout)]:
         raise Stop(f'agy runs its commands in its default project\'s folder, which is '
                    f'{folders or "unreadable"}, not {checkout}; it must be that folder alone')
-    if not hook_installed_for_agy(checkout):
-        raise Stop(f'{checkout}/.agents/hooks.json does not run the guard hook')
     hold_checkout(checkout)
+    guard = agy_guard_snapshot(checkout)
     require_clean(checkout)  # agy has no read-only sandbox, and the folder is shared
     branch = None
     if args.write:
@@ -483,6 +657,7 @@ def agy_job(args):
     write_command(out, [part if part != prompt else '<brief.md>' for part in command], checkout)
     before = git_state(checkout)
     result = run(command, checkout, out, args.timeout + 1)
+    guard_hook, guard_problem = restore_agy_guard(checkout, guard)
     refusals, steps, response, ran_in, status = [], 0, '', None, None
     for line in (out / 'output.txt').read_text().splitlines():
         try:
@@ -503,11 +678,12 @@ def agy_job(args):
             status = (event.get('result') or {}).get('status')
     write_in(out, 'result.md', response)
     extra = {'agent': 'agy', 'read_only': not args.write, 'refusals': refusals,
-             'tool_steps': steps, 'agy_status': status, 'ran_in': ran_in}
-    problem = None
+             'tool_steps': steps, 'agy_status': status, 'ran_in': ran_in,
+             'guard_hook': guard_hook}
+    problems = [guard_problem] if guard_problem else []
     if ran_in and Path(ran_in).resolve() != checkout:
-        problem = f'ran in the wrong folder ({ran_in})'
-    return out, finish(out, checkout, before, result, extra, problem)
+        problems.append(f'ran in the wrong folder ({ran_in})')
+    return out, finish(out, checkout, before, result, extra, '; '.join(problems) or None)
 
 
 def status(_args):
@@ -520,9 +696,10 @@ def status(_args):
         except (OSError, subprocess.TimeoutExpired) as error:
             lines.append(f'{tool}: not available ({error})')
     lines.append('codex guard hook: ' + ('installed' if hook_installed_for_codex() else 'missing'))
-    agy = Path(os.path.expanduser(AGY_FOLDER))
+    agy = Path(os.path.expanduser(AGY_FOLDER)).resolve()
     lines.append(f'agy folder {AGY_FOLDER}: ' + ('present' if agy.is_dir() else 'missing'))
-    lines.append('agy guard hook: ' + ('installed' if hook_installed_for_agy(agy) else 'missing'))
+    problem = agy_hook_problem(agy, read_agy_guard(agy)) if agy.is_dir() else 'no folder'
+    lines.append('agy guard hook: ' + (f'missing or changed: {problem}' if problem else 'installed'))
     folders = agy_project_folders()
     lines.append('agy project folders: ' + (', '.join(f.replace(os.path.expanduser('~'), '~')
                                                      for f in folders) if folders else 'unreadable'))
