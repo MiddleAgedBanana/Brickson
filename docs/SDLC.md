@@ -322,7 +322,11 @@ can hold that rule, a test (p50: add an eval for the incident).
 - **Hooks, managed settings and telemetry** (pp. 27, 40-43). They suit a
   company that manages its engineers' machines. Claude Code hooks bind
   only Claude Code; Codex and Antigravity are held to the same guard only
-  on the owner's Mac, by local hooks (AGENTS.md, *Guardrails for agents*),
+  on the owner's Mac, by local hooks, except input typed into a command
+  already running: Codex's `write_stdin` does not rerun `PreToolUse`;
+  Antigravity's `send_command_input` is checked. Codex's hook lives in
+  `~/.codex/hooks.json` and acts only inside a Brickson checkout
+  (AGENTS.md, *Guardrails for agents*),
   so GitHub's ruleset is the backstop for every agent, once the guardrails work makes it bind them (*Deploy*). A small `.claude/settings.json` hook that
   blocks `git add -A`, a push to `main` and edits to the generated Xcode
   project would add a second line of defence for Claude Code; the first
