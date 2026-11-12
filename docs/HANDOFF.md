@@ -60,7 +60,10 @@ and a longer message scrolls inside them. The phrase grid keeps native
 pan cancellation even when its tiles fit, so a deliberate vertical drag
 can bounce only its content rather than speak. Static Home controls stay
 fixed, and fitting tiles must return to their frames when the drag
-settles (docs/DECISIONS.md, "Phrase-grid drag cancellation"). Type opens Apple's keyboard
+settles; a press that wobbles a few points still speaks, and a sideways
+slide says the phrase it began on, as a slide on Yes says Yes
+(docs/DECISIONS.md, "Phrase-grid drag cancellation", with why a drag
+once spoke). Type opens Apple's keyboard
 with the message being typed in the message's place: Speak, in Again's
 place, or Return says the whole message and keeps it; Phrases goes back
 to the phrases and keeps it too; Clear and Put Back take two category
@@ -952,6 +955,10 @@ release in docs/ROADMAP.md when no thread has it yet.
   drag investigation first found a reflected XCTest coordinate and
   passing long paths; a later verified
   80pt tile-start drag proved a shared-app bug by speaking on release.
+  Its cause was found on 2026-11-11: a Button speaks on lift unless the
+  scroll view takes the touch over, which a fitting grid's disabled
+  scroll view never did (docs/DECISIONS.md, "Phrase-grid drag
+  cancellation", *Why a drag spoke*).
   The repair keeps native pan handling even when tiles fit, using the
   same standard Buttons and ScrollView with no fitting-content disable
   and `.scrollBounceBehavior(.always)`. Removing the disable alone failed.
@@ -1340,7 +1347,7 @@ settings, date) and summarise it here.
 | Brickson inside Assistive Access with `UISupportsFullScreenInAssistiveAccess`: its window size (all the space above the Back button), whether Eye Tracking and Switch Control work there, and that the guides show no Open … Settings button and say to leave Assistive Access first | Assistive Access support (R0 item 7; Wave 3 item 1) |
 | Guided Access with each input method, and with a short Display Auto-Lock while Brickson keeps the screen awake | Setup advice, and invariant 12 under Guided Access |
 | Which of the VoiceOver, Switch Control and AssistiveTouch flags each input method turns on | Profile suggestions (R1) |
-| With a real finger at an accessibility text size, in the shipped build: press Yes slowly (about half a second) and lift, then a phrase tile; then hold Yes, slide onto No and lift, and hold a phrase tile, slide onto the next and lift; also with Touch Accommodations' Hold Duration on, and with AssistiveTouch Dwell. Each press speaks; a slide says the control it began on or nothing, never the next. In a window where Settings shows its gear alone (iPhone Duo's outer display with Bold Text on is one; [`log/2026-10-23-settings-on-home.md`](log/2026-10-23-settings-on-home.md)): tap the gear (Settings opens); hold it until its large copy shows and lift, and record whether Settings opened (opening means a real finger is not swallowed as XCTest's touch was); hold it and slide onto each control beside, above and below it, and lift: Settings opens or nothing happens, never anything else; dwell on it; and press Yes and a phrase tile slowly there: each speaks. The simulator results these confirm are in [`log/2026-10-23-large-content-and-iphone-duo.md`](log/2026-10-23-large-content-and-iphone-duo.md) | That Home speaks on a slow real press and a slide never says the next control; from the gear, whether a real finger's held press is swallowed as XCTest's was, and whether the gear keeps the viewer (docs/DECISIONS.md, "Show Borders and the Large Content Viewer on Home") |
+| With a real finger at an accessibility text size, in the shipped build: press Yes slowly (about half a second) and lift, then a phrase tile; then hold Yes, slide onto No and lift, and hold a phrase tile, slide onto the next and lift; where every phrase fits, press a phrase tile, slide up about a finger's width and lift, then press one and slide sideways on it and lift (docs/DECISIONS.md, "Phrase-grid drag cancellation"); also with Touch Accommodations' Hold Duration on, and with AssistiveTouch Dwell. Each press speaks; a slide says the control it began on or nothing, never the next; the slide up says nothing, and the sideways slide says its phrase. In a window where Settings shows its gear alone (iPhone Duo's outer display with Bold Text on is one; [`log/2026-10-23-settings-on-home.md`](log/2026-10-23-settings-on-home.md)): tap the gear (Settings opens); hold it until its large copy shows and lift, and record whether Settings opened (opening means a real finger is not swallowed as XCTest's touch was); hold it and slide onto each control beside, above and below it, and lift: Settings opens or nothing happens, never anything else; dwell on it; and press Yes and a phrase tile slowly there: each speaks. The simulator results these confirm are in [`log/2026-10-23-large-content-and-iphone-duo.md`](log/2026-10-23-large-content-and-iphone-duo.md) | That Home speaks on a slow real press and a slide never says the next control; from the gear, whether a real finger's held press is swallowed as XCTest's was, and whether the gear keeps the viewer (docs/DECISIONS.md, "Show Borders and the Large Content Viewer on Home") |
 | Show Borders on, in light and dark, with and without Increase Contrast, and Show Borders off in dark: every Home control shows its border, a press thickens it, a selected category and Emergency show their inner ring, measured on the rendered pixels; Settings' system buttons show theirs | "Show Borders and the Large Content Viewer on Home"; Show Borders on Settings and setup |
 | In the build that ships: the time from an activation completing to a phrase's first sound, read frame by frame from a screen recording with sound, as the median of ten activations each for the default voice and a Personal Voice | docs/ROADMAP.md, *The quality bar*, Q6 (the default voice's median within half a second) |
 | A cold launch's time to first frame with Instruments' App Launch template on the oldest device at hand (within 400 ms); Brickson reopening on Home with the typed message after the system ended it in the background; no flash at launch before Home, in light or dark mode | Q7 |

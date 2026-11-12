@@ -1147,6 +1147,16 @@ the time. Export them again after each new Xcode release.
   test failures: phone-idiom landscape skips do not cover the inner
   display. The record is
   [`docs/log/2026-10-25-mac-keyboard-checks.md`](docs/log/2026-10-25-mac-keyboard-checks.md).
+  XCTest's touches reach the inner display where they are aimed in one
+  orientation only: opened flat, it starts in a wide 951×669 window, and
+  after three quarter turns to the right (Device Hub, or the Claude
+  desktop app's simulator control) it is the tall 669×951 window in
+  which `PhraseDragTests`' coordinate check passes; in the other two,
+  that check fails before input, as it should. Even in that window, a
+  point offset from the app element's own origin reported the aimed
+  screen point but never reached Home; offset from the element touched
+  instead (2026-11-11,
+  [`docs/log/2026-11-12-duo-drag-speech.md`](docs/log/2026-11-12-duo-drag-speech.md)).
   `DESTINATION='platform=iOS Simulator,id=<udid>' scripts/test.sh ui`
   runs the UI tests on whichever display is showing. Xcode 27.2's
   [release notes](https://developer.apple.com/documentation/xcode-release-notes/xcode-27_2-release-notes)
