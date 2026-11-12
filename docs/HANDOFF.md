@@ -1517,16 +1517,14 @@ settings, date) and summarise it here.
   guard reads HTTPie's standalone `@file` body and refuses
   `gh pr create --fill`
   ([`log/2026-11-08-privacy-check-follow-ups.md`](log/2026-11-08-privacy-check-follow-ups.md)).
-  AGENTS.md was trimmed from 83,195 to 35,475 bytes on 2026-11-12 with
-  every rule that binds every change kept in it: the reference material
-  moved to `docs/AGENT-REFERENCE.md`, behind pointers that say when to
-  read it, and the old file is in `docs/archive/`. Everything through
-  *Code Review Rules* now ends within Antigravity's first 24,000 bytes;
-  the sections Codex must read end at byte 29,824, and fitting them in
-  24,000 would mean moving rules out of AGENTS.md, which the owner may
-  still choose. Next, in a code change: a 24,000-byte check for *Code
-  Review Rules* in `scripts/test-docs.py`, which still checks only
-  32 KiB. Record: [the trim](log/2026-11-12-agents-md-trim.md).
+  AGENTS.md stays one file with every rule (owner, 2026-11-12, after
+  reading agents.md and the Codex and Claude Code documentation): its
+  history and measurements were cut to pointers at their records, from
+  83,866 to 81,406 bytes. The sections Codex must read end inside its
+  32 KiB; the whole file is longer than Codex reads by default and than
+  Claude Code suggests, and shortening it further is a choice about
+  rules for the owner. Record:
+  [the change](log/2026-11-12-agents-md-trim.md).
   `scripts/test.sh` runs the guard's tests, the docs cross-reference
   check (`scripts/test-docs.py`) and the privacy check's tests
   (`scripts/test-privacy.py`) before the unit tests.

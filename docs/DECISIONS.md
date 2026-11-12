@@ -6299,34 +6299,21 @@ through its API on 2026-10-15:
 the owner objects
 ([`log/2026-11-03-agents-md-for-codex.md`](log/2026-11-03-agents-md-for-codex.md)).*
 
-**2026-11-12: AGENTS.md trimmed, every rule kept in it.** Antigravity
-reads only the first 24,000 bytes of a rule file, a tighter limit than
-Codex's 32 KiB below. AGENTS.md went from 83,195 to 35,475 bytes: the
-reference material after *Working with the owner*, and six background
-or one-activity passages before it, moved whole to
-`docs/AGENT-REFERENCE.md`, each behind a pointer that says when to read
-it; the rest stayed. The rule for what may leave AGENTS.md: a rule that
-applies to every change, or that no kept invariant or review bullet
-already states in full, stays, because Claude Code loads only AGENTS.md
-and the reviewers read AGENTS.md and `.github/`, not `docs/`.
-Explanation, reasons, examples, measurements and rules for one activity
-may move, whole, never as a paraphrase beside a full copy. After
-*Working with the owner*, AGENTS.md keeps a plain one-line version of
-each rule there that binds every change, with the full text, which
-governs, in the reference.
-
-The sections Codex must read now end at byte 29,824, still past 24,000.
-Fitting them in would mean moving rules that protect people out of the
-file Claude Code and the reviewers load, so they were not moved (the
-choice made on 2026-11-12 for the owner under their standing rule for
-routine decisions, which the owner may reverse). Instead, everything up
-to and including *Code Review Rules* ends within the first 24,000 bytes
-(at byte 23,660); the introduction tells an agent whose copy ends early
-to read the rest, and on the owner's Mac Antigravity has an always-on
-rule to do so. The whole file is past Codex's default 32 KiB by 2,707
-bytes, inside *Where things are*. `scripts/test-docs.py` still checks
-only the 32 KiB limit for the sections Codex must read; a check that
-*Code Review Rules* ends within 24,000 bytes is a follow-up
+**2026-11-12: AGENTS.md stays one file with every rule.** The owner
+asked for AGENTS.md to follow agents.md, OpenAI's Codex documentation
+and Anthropic's Claude Code documentation, and rejected a rule file
+split across two documents. agents.md expects one root AGENTS.md (nested
+ones only for the subprojects of a large monorepo), Codex reads only
+AGENTS.md files and Claude Code reads AGENTS.md, so a rule kept in
+another document is read by no agent unless it chooses to. So every
+rule stays in AGENTS.md; only history and measurements that a record
+already holds may leave it, replaced by a pointer to that record. The
+order below still holds, and the sections Codex must read still end
+inside its 32 KiB. The cost: the file (81,406 bytes on 2026-11-12) is
+far longer than Codex reads by default and than Claude Code suggests
+(under 200 lines), and Antigravity's 24,000 bytes end inside *Code
+Review Rules*. Shortening it further means deciding that some rules are
+not needed, which is the owner's call
 ([`log/2026-11-12-agents-md-trim.md`](log/2026-11-12-agents-md-trim.md)).
 The entry below is as it was written on 2026-11-03.
 
