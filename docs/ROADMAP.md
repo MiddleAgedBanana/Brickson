@@ -748,9 +748,9 @@ what passes and who checks it:
   are only hypotheses until a device shows the real one (docs/HANDOFF.md,
   *Known gaps*). The chain engine scores every screen the
   release ships, including those not scored yet (iOS's Personal Voice
-  question, Voice Settings, the check-in card on a phone at the largest
-  text size, Family Setup and the first step's guide scrolled, and
-  Settings' other screens), and finds
+  question, Voice Settings, Family Setup scrolled before a row other
+  than the check-in card's Go Through Setup Again is chosen, the first
+  step's guide scrolled, and Settings' other screens), and finds
   nothing new. *Checks:* a thread and CI
   score; after the Snap to Item device check (Q12), the owner decides
   each hazard that placement does not remove. *Today:* seven open, plus

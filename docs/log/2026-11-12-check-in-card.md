@@ -65,8 +65,11 @@ work file is [`work/settings-chains.md`](../work/settings-chains.md),
 - `c684deb` Add a test-only launch option that makes a check-in due.
 - `c59115c` Lay out the check-in card's buttons as rows and score their
   chains.
-- The commit that adds this record and edits docs/HANDOFF.md,
-  docs/DECISIONS.md and docs/ROADMAP.md.
+- `3673949` Record the check-in card's rows and scoring.
+- `f4a0dc3` Place Go Through Setup Again's step where the button
+  showed (*After review*, below).
+- The commit that records it here and in docs/DECISIONS.md,
+  docs/HANDOFF.md and docs/ROADMAP.md.
 
 ## Verified
 
@@ -135,6 +138,58 @@ The Python checks (`scripts/test-docs.py`, `scripts/test-hooks.py`,
 --no-list` ran before the push; the private list was not available
 here, so it was not checked.
 
+## After review
+
+CodeRabbit's review of the first push (one finding, marked minor)
+pointed out that Go Through Setup Again's place was taken in Family
+Setup's content, so with Family Setup scrolled, Learn About Each Way lay
+lower than the button had shown. A probe of the chain model, Family
+Setup scrolled 0 to 2,400 points, 40 at a time, wherever some of the
+button shows, scored three placements of the step it opens, chains
+from Go Through Setup Again only:
+
+- in the content (the first push): hazards at 6 of 14 scrolls on the
+  iPhone 17, 7 of 17 at AX5, 5 of 13 on the iPad in portrait and in
+  landscape and 13 of 25 at AX5, from 320 points of scroll at the
+  default size: Back to Talking, then Get Attention (alarms), No
+  (speaks) or, on the iPad at AX5, a phrase (speaks);
+- in Set Up Step by Step's place, as `main` had it: hazards at 9, 3, 13,
+  13 and 18 of them, an answer saved at small scrolls;
+- where the button showed: none, once the button's frame is cut to
+  what shows between the bar and the foot of the stack and its place
+  kept below the content's top, as the Library's questions keep theirs
+  (`LibraryQuestionPlace`).
+
+So the step now takes the place the button showed in
+(`SetupAnswersPlace.shown`, read when the button is chosen, as
+`LibraryAskingRow` does). New tests, each with the change that would
+make it fail:
+
+- `SetupAnswersPlaceTests.goThroughSetupAgainIsPlacedWhereItShowed`:
+  fails if the scroll is left out or added, or if a button half under
+  the bar is placed above the content.
+- `SettingsChainsTests.goThroughSetupAgainOpensItsStepUnderTheLookHoweverFamilySetupScrolled`:
+  the sweep above; with `shown` made to ignore the scroll, it failed at
+  36 scrolls, as it should.
+- `SettingsChainsTests.goThroughSetupAgainPlacedFromTheContentWouldSoundTheAlarm`:
+  pins why, and fails once the content placement no longer sounds Get
+  Attention on the iPhone 17 and the iPad scrolled 400 points.
+- `SettingsTests.testGoThroughSetupAgainOpensItsStepWhereItShowed`
+  (CI only): scrolls Family Setup, chooses the button, and fails if
+  Learn About Each Way is not where the button showed.
+
+CodeRabbit's other note (trivial): `SettingsOnHomeTests` read the two
+check-in steps only where Go Through Setup Again showed, so a layout
+that pushed it off the first screenful would have dropped them without
+failing. It now fails if either is missing, except on the phone at
+the largest size, where the card lies below the first screenful.
+
+Set Up Step by Step still takes its row's place in Family Setup's
+content (docs/DECISIONS.md, "Settings' first row, placed from Home's
+frames", whose bullet on a scrolled first screen gives the reason), so
+the two rows now follow different rules; whether it should follow Go Through Setup Again is a
+follow-up, below.
+
 ## Not verified
 
 - Everything in the app until CI's runs pass: the card's drawing, the
@@ -156,9 +211,13 @@ here, so it was not checked.
 - If CI's runs disagree with the model (a hazard, Learn About Each Way
   off Go Through's frame, or a word not read whole), fix it on this
   pull request. *(this thread)*
-- On the phone at the largest text size the card lies below Family
-  Setup's first screenful, so its chains are scored only once Family
-  Setup scrolled before a row is chosen is scored. *(the next Settings
+- Family Setup scrolled before Not Now, Stop Asking or Set Up Step by
+  Step is chosen is not scored, and on the phone at the largest text
+  size the card is always reached by scrolling. Set Up Step by Step
+  could take the place it showed in, as Go Through Setup Again now does,
+  reversing the reasoning in docs/DECISIONS.md, "Settings' first row,
+  placed from Home's frames", on a scrolled first screen; the model's
+  `scroll` can score it. *(the next Settings
   thread)*
 - After the card is answered, the first step Set Up Step by Step opens
   on that visit shows no answer on its first screenful on CI's windows

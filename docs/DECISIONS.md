@@ -4138,10 +4138,38 @@ CI's UI tests pass on this change.
   the card is answered, the first step's first screenful shows no
   answer on any CI window, and a family scrolls to answer, the cost
   already accepted on narrow windows at large text sizes.
-- **Not scored:** the card on the phone at the largest text size,
-  where it lies below Family Setup's first screenful; resting over the
-  card's own heading and sentence; the steps after the first; and the
-  guide scrolled. Where a pointer rests after an activation, and how
+- **Where Go Through Setup Again showed, scrolled or not.** Its frame is
+  taken as it is chosen, less what Family Setup has scrolled, and never
+  above the content's top (`SetupAnswersPlace.shown`), the rule the
+  Library's question screens follow (*The Library's question screens*),
+  so Learn About Each Way lies where a look on the button still rests.
+  The first version took the button's place in Family Setup's content,
+  as Set Up Step by Step takes its row's (*Settings' first row, placed
+  from Home's frames*, *A scrolled first screen*); CodeRabbit's review
+  of PR #103 pointed at the difference, and the chain model found what it
+  costs: with Family Setup scrolled far enough (320 points or more at
+  the default size), Learn About Each Way lay that much lower than the
+  look, which met Back to Talking and closed Settings onto Home's Get
+  Attention, which sounds, or No, which speaks, on the iPhone 17 at the
+  default size and AX5 and the iPad at the default size, and onto a
+  phrase on the iPad at AX5
+  (`SettingsChainsTests.goThroughSetupAgainPlacedFromTheContentWouldSoundTheAlarm`).
+  Placed where it showed, no chain from Go Through Setup Again meets a
+  hazard on CI's windows with Family Setup scrolled 0 to 2,400 points,
+  40 at a time, wherever some of the button shows: 14 scrolls on the
+  iPhone 17, 17 at AX5 (where the card shows only once Family Setup has
+  scrolled), 13 on the iPad in portrait and in landscape, and 25 at AX5
+  (`goThroughSetupAgainOpensItsStepUnderTheLookHoweverFamilySetupScrolled`).
+  A place that follows where the person scrolled is not one that
+  follows usage or time (invariant 8): it is where the control they
+  just chose was, as the Library's Keep takes its asking row's place.
+  Whether Set Up Step by Step should follow the same rule is the next
+  Settings thread's to decide (docs/HANDOFF.md, *Known gaps*).
+- **Not scored:** Family Setup scrolled before Not Now, Stop Asking or
+  Set Up Step by Step is chosen, the card on the phone at the largest
+  text size included, where it lies below the first screenful; resting
+  over the card's own heading and sentence; the steps after the first;
+  and the guide scrolled. Where a pointer rests after an activation, and how
   Snap to Item picks, need a real device (docs/HANDOFF.md, "Checks that
   need a real device").
 

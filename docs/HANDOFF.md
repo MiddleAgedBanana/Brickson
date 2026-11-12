@@ -830,8 +830,16 @@ release in docs/ROADMAP.md when no thread has it yet.
   `--check-in-due`; untested in the app until CI runs that change):
   once the card is answered, the first step Set Up Step by Step opens
   on that visit starts its answers below where the card's rows were,
-  so on CI's windows its first screenful shows no answer
-  ([`log/2026-11-12-check-in-card.md`](log/2026-11-12-check-in-card.md)). On narrow or short windows at large text
+  so on CI's windows its first screenful shows no answer. Go Through
+  Setup Again's step takes the place the button showed in as it was
+  chosen, however far Family Setup had scrolled, as the Library's
+  questions do, and the model scores it scrolled; Set Up Step by Step
+  still takes its row's place in the content, so with Family Setup
+  scrolled a look can rest elsewhere on its step, and whether it
+  should follow Go Through Setup Again is the next Settings thread's to
+  decide ([`log/2026-11-12-check-in-card.md`](log/2026-11-12-check-in-card.md);
+  docs/DECISIONS.md, "The first step's own rows", *Where Go Through
+  Setup Again showed, scrolled or not*). On narrow or short windows at large text
   sizes the first step's first screenful shows no answer, so a family
   scrolls to answer. On a phone the second step's first screenful shows
   only the choices that can sit under its words without meeting a look
@@ -857,10 +865,11 @@ release in docs/ROADMAP.md when no thread has it yet.
   question's button was, over whatever Voice Settings has there); Voice
   Settings itself, where a look held after Family Setup's Voice Settings
   row can rest over choices that play a sample and set a voice or a
-  speed; the check-in card on the phone at the largest text size,
-  where it lies below the first screenful, and resting over the card's
-  own words; Family Setup scrolled before a row is chosen; the first
-  step's guide scrolled; and Settings' other screens.
+  speed; resting over the check-in card's own words; Family Setup
+  scrolled before a row other than Go Through Setup Again is chosen,
+  the card's other rows on the phone at the largest text size included,
+  where the card lies below the first screenful; the first step's guide
+  scrolled; and Settings' other screens.
   Since 2026-10-30, answers change Home's sizes as Settings closes;
   Settings' first screens over a larger Home are scored
   (`ProfileChoiceTests`), and `HomeSizesTests` audits them over the
