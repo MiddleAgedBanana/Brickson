@@ -34,7 +34,7 @@ struct FamilySetupView: View {
                     .accessibilityElement(children: .combine)
                     .accessibilityIdentifier("familySetupOpening")
 
-                NavigationLink(value: SettingsRoute.guidedSetup(.access)) {
+                NavigationLink(value: SettingsRoute.guidedSetup(.access, from: entry)) {
                     // As tall as the place it is given.
                     SettingsRowLabel(title: "Set Up Step by Step", systemImage: "list.number")
                         .frame(maxHeight: .infinity)
@@ -118,25 +118,47 @@ struct FamilySetupView: View {
         guard let row = landing?.rootRow else { return .atTheTop }
         return .inPlaceOf(row)
     }
+
+    /// Set Up Step by Step's way into the steps: after the check-in card
+    /// was answered in its place on this visit, the first step also keeps
+    /// its answers clear of where the card's rows were.
+    private var entry: GuidedSetupEntry {
+        checkInWasShown && !CheckInPolicy.isDue(setup.record, now: .now, calendar: .current)
+            ? .setUpStepByStepAfterTheCheckIn : .setUpStepByStep
+    }
 }
 
 /// Every three months, a passive card asks whether how the person reaches
 /// the screen has changed (`CheckInPolicy`). Its three buttons sit apart,
-/// and none of them changes how Brickson speaks. Go Through Setup Again
-/// answers the check-in as it opens the first step, with the answers as
-/// they are: going through setup again is what the card asks for, and the
-/// first step's Next only moves on (docs/DECISIONS.md, "The first step's
-/// own rows"). A failed save keeps the card and says so, and opens nothing.
+/// one under another across the content like every other Settings row, so
+/// each keeps the room a row has for its words at every text size
+/// (AGENTS.md, "Words never break"), and none of them changes how Brickson
+/// speaks. Go Through Setup Again answers the check-in as it opens the
+/// first step, with the answers as they are: going through setup again is
+/// what the card asks for, and the first step's Next only moves on. The
+/// step's Learn About Each Way takes the place Go Through Setup Again
+/// showed in as it was chosen, however far Family Setup had scrolled
+/// (`SettingsLanding.goThroughRow`, `SetupAnswersPlace.shown`), so a look
+/// still resting there meets a control that only opens the guide
+/// (docs/DECISIONS.md, "The first step's own rows"). A failed save keeps
+/// the card and says so, and opens nothing.
 ///
 /// Once it is answered, passive words take its place at the card's own size
 /// until Family Setup closes. Otherwise the rows below would move up under
 /// the button just chosen, where a held look or a switch's auto-select
-/// could open one of them (AGENTS.md, invariant 10).
+/// could open one of them (AGENTS.md, invariant 10). A look held there can
+/// still meet Set Up Step by Step, the nearest row, so its first step then
+/// starts the answers clear of where the card's rows were
+/// (`GuidedSetupEntry.setUpStepByStepAfterTheCheckIn`).
 private struct CheckInCard: View {
     let keepsItsPlace: Bool
     @Binding var path: [SettingsRoute]
     @Environment(SetupStore.self) private var setup
     @Environment(SettingsActivity.self) private var activity: SettingsActivity?
+    @Environment(SettingsLanding.self) private var landing: SettingsLanding?
+    @Environment(\.settingsScrollPosition) private var scroll
+    /// Go Through Setup Again, in Family Setup's content.
+    @State private var goThroughFrame: CGRect?
 
     var body: some View {
         if CheckInPolicy.isDue(setup.record, now: .now, calendar: .current) {
@@ -160,31 +182,47 @@ private struct CheckInCard: View {
     }
 
     private var card: some View {
-        SettingsCard {
-            SettingsHeading("Time for a check-in")
-            SettingsParagraph("Needs can change. Is the screen still reached the same way? Going through setup again takes a few minutes.")
-            Button {
-                activity?.recordActivity()
-                setup.goThroughSetupAgain(path: &path, now: .now)
-            } label: {
-                SettingsRowLabel(title: "Go Through Setup Again", systemImage: "list.number")
+        VStack(alignment: .leading, spacing: SettingsMetrics.rowSpacing) {
+            SettingsCard {
+                SettingsHeading("Time for a check-in")
+                SettingsParagraph("Needs can change. Is the screen still reached the same way? Going through setup again takes a few minutes.")
             }
-            .settingsRowStyle()
-            HStack(spacing: SettingsMetrics.rowSpacing) {
+            VStack(alignment: .leading, spacing: SettingsMetrics.rowSpacing) {
+                Button {
+                    activity?.recordActivity()
+                    // The first step's Learn About Each Way takes the place
+                    // this shows in now, scrolled or not.
+                    landing?.goThroughRow = goThroughFrame.map { SetupAnswersPlace.shown($0, scrolledBy: scroll?.offset ?? 0) }
+                    setup.goThroughSetupAgain(path: &path, now: .now)
+                } label: {
+                    SettingsRowLabel(title: "Go Through Setup Again", systemImage: "list.number")
+                }
+                .settingsRowStyle()
+                .onGeometryChange(for: CGRect.self) { $0.frame(in: .named(SettingsMetrics.contentSpace)) } action: {
+                    goThroughFrame = $0
+                }
+                .accessibilityIdentifier("checkInGoThrough")
                 Button {
                     activity?.recordActivity()
                     setup.update { CheckInPolicy.notNow(&$0, now: .now, calendar: .current) }
                 } label: {
-                    SettingsPairLabel(title: "Not Now", systemImage: "clock")
+                    SettingsRowLabel(title: "Not Now", systemImage: "clock")
                 }
                 .settingsRowStyle()
+                .accessibilityIdentifier("checkInNotNow")
                 Button {
                     activity?.recordActivity()
                     setup.update { CheckInPolicy.stopAsking(&$0) }
                 } label: {
-                    SettingsPairLabel(title: "Stop Asking", systemImage: "bell.slash")
+                    SettingsRowLabel(title: "Stop Asking", systemImage: "bell.slash")
                 }
                 .settingsRowStyle()
+                .accessibilityIdentifier("checkInStopAsking")
+            }
+            // Where a look can be resting once the card is answered: Set Up
+            // Step by Step's first step then starts its answers below it.
+            .onGeometryChange(for: CGRect.self) { $0.frame(in: .named(SettingsMetrics.contentSpace)) } action: {
+                landing?.checkInRows = $0
             }
         }
     }

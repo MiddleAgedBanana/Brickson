@@ -21,15 +21,20 @@ import SwiftUI
 /// setup again from the check-in card answers the check-in there
 /// (`CheckInPolicy.wentThroughAgain`), so Next never saves.
 ///
-/// The first step opens on Learn About Each Way, which opens the Reaching
-/// the Screen guide as a cover of its own (`EachWayCover`), and starts its
-/// answers below every place a look can be resting on the way in
+/// The first step opens on Learn About Each Way, in the place of the control
+/// that opened it (`GuidedSetupEntry`), which opens the Reaching the Screen
+/// guide as a cover of its own (`EachWayCover`), and starts its answers
+/// below every place a look can be resting on the way in
 /// (`SetupAccessQuestion`; docs/DECISIONS.md, "The first step's own rows").
 /// The second step places its choices where a look resting on Next meets
-/// Next again (`SetupRestBoardQuestion`; docs/DECISIONS.md, "The
-/// late-stage profile").
+/// Next again, and once the check-in card was answered, where a look over
+/// the card's place meets Next too (`SetupRestBoardQuestion`;
+/// docs/DECISIONS.md, "The late-stage profile").
 struct GuidedSetupView: View {
     let step: GuidedSetupStep
+    /// What opened the steps: only the first and second steps' layouts
+    /// depend on it.
+    let entry: GuidedSetupEntry
     @Binding var path: [SettingsRoute]
 
     @Environment(SetupStore.self) private var setup
@@ -64,12 +69,12 @@ struct GuidedSetupView: View {
     private var content: some View {
         switch step {
         case .access:
-            SetupAccessQuestion(chosen: chosen, saveFailed: saveFailed, answer: answer) {
+            SetupAccessQuestion(entry: entry, chosen: chosen, saveFailed: saveFailed, answer: answer) {
                 activity?.recordActivity()
                 showsEachWay = true
             }
         case .restBoard:
-            SetupRestBoardQuestion(chosen: setup.record.restBoardCategory, saveFailed: saveFailed, choose: chooseRestBoard)
+            SetupRestBoardQuestion(entry: entry, chosen: setup.record.restBoardCategory, saveFailed: saveFailed, choose: chooseRestBoard)
         case .voice:
             SettingsHeading("Choose the voice")
             VoiceContent()
@@ -135,14 +140,7 @@ struct GuidedSetupView: View {
 
     private func advance() {
         activity?.recordActivity()
-        if let next = step.next {
-            path.append(.guidedSetup(next))
-        } else {
-            // Back to Family Setup, wherever the steps were started from.
-            if let start = path.firstIndex(where: { if case .guidedSetup = $0 { true } else { false } }) {
-                path.removeSubrange(start...)
-            }
-        }
+        SettingsRoute.advance(&path, from: step, entry: entry)
     }
 }
 
@@ -161,19 +159,23 @@ extension AccessMethod {
 
 /// The first step's question: how the screen is reached.
 ///
-/// Learn About Each Way takes Set Up Step by Step's place as Family Setup
-/// drew it (`SettingsLanding`), at least as tall, so a look still resting
-/// there meets a control that only opens the guide; the question and its
-/// sentence go beside it, above it or under it (`SettingsLeadIn`). The
-/// answers start where every point of Home's Settings, the root's row and
-/// Set Up Step by Step lies nearer the link than the first answer
-/// (`SetupAnswersPlace`), so a held look on the way in saves nothing
-/// (docs/DECISIONS.md, "The first step's own rows").
+/// Learn About Each Way takes the place of the control that opened the
+/// steps as Family Setup drew it (`SettingsLanding`): Set Up Step by Step,
+/// or the check-in card's Go Through Setup Again. It is at least as tall,
+/// so a look still resting there meets a control that only opens the
+/// guide; the question and its sentence go beside it, above it or under it
+/// (`SettingsLeadIn`). The answers start where every point a look can be
+/// resting on the way in lies nearer the link than the first answer
+/// (`SetupAnswersPlace`): Home's Settings, the root's row and Set Up Step by
+/// Step, with the check-in card's rows once the card was answered in its
+/// place, or Go Through Setup Again. So a held look on the way in saves
+/// nothing (docs/DECISIONS.md, "The first step's own rows").
 ///
 /// Choices only ever select: a repeated activation of a choice leaves it
 /// chosen rather than undoing it (AGENTS.md, invariant 10). Clear My
 /// Choices is a separate button at the end.
 private struct SetupAccessQuestion: View {
+    let entry: GuidedSetupEntry
     let chosen: Set<AccessMethod>
     let saveFailed: Bool
     let answer: (Set<AccessMethod>) -> Void
@@ -242,7 +244,7 @@ private struct SetupAccessQuestion: View {
     }
 
     private var placement: SettingsLeadInLayout.Placement {
-        guard let row = landing?.guidedRow else { return .atTheTop }
+        guard let row = landing?.opener(entry) else { return .atTheTop }
         return .inPlaceOf(row)
     }
 
@@ -257,12 +259,16 @@ private struct SetupAccessQuestion: View {
     /// above where `SetupAnswersPlace` starts the answers, in the content.
     /// Until the screen knows where it sits and what led to it, nothing.
     private var leadInHeight: CGFloat {
-        guard let cover, let frames, let guided = landing?.guidedRow else { return 0 }
+        guard let cover, let frames, let opener = landing?.opener(entry) else { return 0 }
         let origin = frames.content.origin
-        let link = guided.offsetBy(dx: origin.x, dy: origin.y)
+        let link = opener.offsetBy(dx: origin.x, dy: origin.y)
         let root = landing?.rootRow?.offsetBy(dx: origin.x, dy: origin.y) ?? .null
+        let card = landing?.checkInRows?.offsetBy(dx: origin.x, dy: origin.y) ?? .null
         let place = SetupAnswersPlace(
-            arrivals: [cover.home.frame(.settings), root, link], link: link,
+            arrivals: SetupAnswersPlace.arrivals(
+                from: entry, homesSettings: cover.home.frame(.settings), rootRow: root, opener: link, checkInRows: card
+            ),
+            link: link,
             answersMinX: frames.content.minX, answersWidth: frames.content.width,
             answerHeight: SettingsMetrics.rowHeight, earliest: link.maxY + SettingsMetrics.rowSpacing
         )
@@ -281,14 +287,20 @@ private struct SetupAccessQuestion: View {
 /// Next is nearer Next than the choice (`SetupChoicesPlace`): each under
 /// the words, or the choice before it, where it holds there, and from the
 /// first that does not, the rest below the bar, where the family scrolls
-/// to them. The standard Back button, where a look
-/// arrives from the third step, sits in the navigation bar above the
-/// words. A choice the library no longer has as an everyday category shows
-/// as Every Category, as Home does (`RestBoard`). A category Home does not
-/// offer, with too few phrases, is dimmed in its place, with a line under
-/// the words that says why, unless it is already the board
-/// (docs/DECISIONS.md, "Four phrases in every category").
+/// to them. Opened with Set Up Step by Step once the check-in card was
+/// answered in its place, a look can arrive still over where the card's
+/// rows were, which the first step's Next was nearest, so every point of
+/// that place is kept nearer Next than each choice too
+/// (`SetupChoicesPlace.arrivals(from:checkInRows:)`). The standard Back
+/// button, where a look arrives from the third step, sits in the
+/// navigation bar above the words. A choice the library no longer has as
+/// an everyday category shows as Every Category, as Home does
+/// (`RestBoard`). A category Home does not offer, with too few phrases, is
+/// dimmed in its place, with a line under the words that says why, unless
+/// it is already the board (docs/DECISIONS.md,
+/// "Four phrases in every category").
 private struct SetupRestBoardQuestion: View {
+    let entry: GuidedSetupEntry
     let chosen: UUID?
     let saveFailed: Bool
     let choose: (UUID?) -> Void
@@ -297,6 +309,7 @@ private struct SetupRestBoardQuestion: View {
     /// Read for the counts, as Home reads them (`CategorySelection.phrases`).
     @Query private var phrases: [Phrase]
     @Environment(\.settingsScreenFrames) private var frames
+    @Environment(SettingsLanding.self) private var landing: SettingsLanding?
 
     var body: some View {
         let everyday = CategorySelection.shownInCategoryRow(PhraseCategory.orderedForDisplay(categories))
@@ -305,7 +318,7 @@ private struct SetupRestBoardQuestion: View {
             everyday, chosen: current, phraseCounts: CategorySelection.phraseCounts(phrases)
         )
 
-        SetupChoicesLayout(screen: frames, choices: everyday.count + 1, spacing: SettingsMetrics.rowSpacing) {
+        SetupChoicesLayout(screen: frames, arrivals: arrivals, choices: everyday.count + 1, spacing: SettingsMetrics.rowSpacing) {
             VStack(alignment: .leading, spacing: SettingsMetrics.rowSpacing) {
                 SettingsHeading("Which phrases does Home show?")
                 SettingsParagraph("Home can show one category's phrases or Emergency's, with Yes, No, Emergency, Again and Get Attention as large as this screen has room for. The other categories stay where they are, dimmed, so nothing moves. The change shows when Settings closes.")
@@ -331,6 +344,17 @@ private struct SetupRestBoardQuestion: View {
         }
     }
 
+    /// Where else a look can be resting as the step appears, in the
+    /// window: where the check-in card's rows were in Family Setup's
+    /// content, which starts where this step's does. None until the screen
+    /// knows where it sits.
+    private var arrivals: [CGRect] {
+        guard let frames, let rows = landing?.checkInRows else { return [] }
+        return SetupChoicesPlace.arrivals(
+            from: entry, checkInRows: rows.offsetBy(dx: frames.content.minX, dy: frames.content.minY)
+        )
+    }
+
     private func choice(_ title: Text, isChosen: Bool, identifier: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             SettingsRowLabel(text: title, systemImage: isChosen ? "checkmark.circle.fill" : "circle")
@@ -352,6 +376,9 @@ nonisolated struct SetupChoicesLayout: Layout {
     /// Where the screen sits in the window, with Next at its foot; nil
     /// until the screen knows, when the choices follow the words.
     let screen: SettingsScreenFrames?
+    /// Where else a look can be resting as the step appears, in the window
+    /// (`SetupChoicesPlace.arrivals(from:checkInRows:)`).
+    let arrivals: [CGRect]
     /// How many views after the words are choices.
     let choices: Int
     let spacing: CGFloat
@@ -383,7 +410,7 @@ nonisolated struct SetupChoicesLayout: Layout {
         let earliest = words + spacing
         let origin = screen?.content.origin ?? .zero
         let tops = SetupChoicesPlace(
-            next: screen?.foot ?? .zero, choicesMinX: origin.x, choicesWidth: width, heights: choiceHeights,
+            next: screen?.foot ?? .zero, arrivals: arrivals, choicesMinX: origin.x, choicesWidth: width, heights: choiceHeights,
             spacing: spacing, earliest: origin.y + earliest
         ).tops.map { $0 - origin.y }
         var frames = [CGRect(x: 0, y: 0, width: width, height: words)]

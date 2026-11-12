@@ -50,6 +50,11 @@ struct BricksonApp: App {
         _speech = State(initialValue: audio.speech)
         _attention = State(initialValue: audio.attention)
         let setup = SetupStore(defaults: launch.settings)
+        if launch.activeCheckInDue {
+            // A UI test's check-in card, on test storage only. A failed save
+            // shows in Family Setup like any other (`SetupStore.issue`).
+            setup.update { CheckInPolicy.makeDue(&$0, now: .now, calendar: .current) }
+        }
         _setup = State(initialValue: setup)
         _drafts = State(initialValue: DraftStore(directory: DraftFile.directory(in: launch.filesDirectory)))
         _showsSettings = State(initialValue: launch.startScreen == .settings)
