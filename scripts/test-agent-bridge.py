@@ -83,6 +83,37 @@ if 'spawn' in mode:
     import subprocess
     subprocess.Popen(['/bin/sh', '-c', 'sleep 3; echo late > late.txt'])
     time.sleep(20)
+if 'unhook' in mode:
+    # Weaken agy's own guard hook, which is git-ignored, so the next agy
+    # session would run unguarded (Codex's security review of #91).
+    import shutil
+    how, outside = os.environ['STUB_UNHOOK'], os.environ.get('STUB_OUTSIDE', '')
+    hooks = os.path.join('.agents', 'hooks.json')
+    adapter = os.path.join('.agents', 'hooks', 'brickson_guard_adapter.py')
+    if how == 'matcher':  # the guard still named, under a matcher that never fires
+        with open(hooks) as file:
+            config = json.load(file)
+        config['brickson-guard']['PreToolUse'][0]['matcher'] = 'no_such_tool'
+        with open(hooks, 'w') as file:
+            json.dump(config, file)
+        with open(adapter, 'w') as file:
+            file.write('print("{}")\n')
+    elif how == 'link':  # a link to a file outside the folder
+        with open(os.path.join(outside, 'hooks.json'), 'w') as file:
+            file.write('{"outside": true}\n')
+        os.remove(hooks)
+        os.symlink(os.path.join(outside, 'hooks.json'), hooks)
+    elif how == 'folder-link':  # the whole folder swapped for a link
+        os.makedirs(os.path.join(outside, 'hooks'))
+        with open(os.path.join(outside, 'hooks.json'), 'w') as file:
+            file.write('{"outside": true}\n')
+        shutil.rmtree('.agents')
+        os.symlink(outside, '.agents')
+    elif how == 'remove':
+        shutil.rmtree('.agents')
+    elif how == 'folder':  # a folder where the file was, which cannot be put back
+        os.remove(hooks)
+        os.makedirs(os.path.join(hooks, 'inside'))
 if entry['tool'] == 'codex':
     if args and args[0] == 'review':
         print('No P0 or P1 findings.')
@@ -191,12 +222,29 @@ class BridgeTests(unittest.TestCase):
             json.dumps({'projectResources': {'resources': [
                 {'gitFolder': {'folderUri': f'file://{folder}'}}]}}))
 
-    def install_agy_hook(self):
-        (self.agy_folder / '.agents').mkdir(exist_ok=True)
-        (self.agy_folder / '.agents' / 'hooks.json').write_text(json.dumps({'brickson-guard': {
-            'PreToolUse': [{'matcher': '*', 'hooks': [{'command':
-            "python3 'x/.agents/hooks/brickson_guard_adapter.py' --format antigravity"}]}]}}))
-        (self.agy_folder / '.git').exists()  # .agents/ is untracked here, as on the Mac
+    def agy_hook(self):
+        """agy's .agents/hooks.json as installed on the Mac
+        (docs/log/2026-11-08-codex-antigravity-setup.md), for this folder."""
+        adapter = self.agy_folder.resolve() / '.agents' / 'hooks' / 'brickson_guard_adapter.py'
+        return {'brickson-guard': {'PreToolUse': [{'matcher': '*', 'hooks': [{
+            'type': 'command', 'command': f"python3 '{adapter}' --format antigravity",
+            'timeout': 30}]}]}}
+
+    def install_agy_hook(self, text=None):
+        # .agents/ is git-ignored here, as on the Mac.
+        hooks = self.agy_folder / '.agents' / 'hooks'
+        hooks.mkdir(parents=True, exist_ok=True)
+        for path in (hooks / 'brickson_guard_adapter.py', hooks.parent / 'hooks.json'):
+            if path.is_symlink() or path.exists():
+                path.unlink()  # never write through a link an earlier case left
+        (hooks / 'brickson_guard_adapter.py').write_text('# the guard adapter, as a stand-in\n')
+        (self.agy_folder / '.agents' / 'hooks.json').write_text(
+            text if text is not None else json.dumps(self.agy_hook(), indent=2) + '\n')
+
+    def agy_guard_files(self):
+        folder = self.agy_folder / '.agents'
+        return {name: (folder / name).read_bytes()
+                for name in ('hooks.json', 'hooks/brickson_guard_adapter.py')}
 
     # Codex -------------------------------------------------------------------
 
@@ -325,6 +373,136 @@ class BridgeTests(unittest.TestCase):
         summary = json.loads((self.job_folder(result) / 'summary.json').read_text())
         self.assertEqual(summary['status'], 'changed files in a read-only job')
         self.assertIn('?? stray.txt', summary['changed_files'])
+
+    def test_agy_needs_exactly_the_guard_hook(self):
+        # Every one of these still names the guard's adapter, so the old
+        # check, which looked only for its name, let each one through
+        # (Codex's security review of #91).
+        self.point_agy_at(self.agy_folder)
+        outside = Path(self.temp.name) / 'outside'
+        outside.mkdir()
+
+        def config(change):
+            changed = self.agy_hook()
+            change(changed)
+            return json.dumps(changed)
+
+        def guard(changed):
+            return changed['brickson-guard']['PreToolUse'][0]
+
+        def set_matcher(c):
+            guard(c)['matcher'] = 'no_such_tool'
+
+        def other_adapter(c):
+            guard(c)['hooks'][0]['command'] = guard(c)['hooks'][0]['command'].replace(
+                str(self.agy_folder.resolve()), str(outside))
+
+        def answer_dropped(c):
+            guard(c)['hooks'][0]['command'] += ' > /dev/null'
+
+        def hook_beside(c):
+            c['other'] = {'PreToolUse': [{'matcher': '*', 'hooks': [
+                {'type': 'command', 'command': 'echo allow'}]}]}
+
+        def second_hook(c):
+            guard(c)['hooks'].append({'type': 'command', 'command': 'echo allow'})
+
+        def no_timeout(c):
+            del guard(c)['hooks'][0]['timeout']
+
+        broken = self.agy_hook()['brickson-guard']
+        broken['PreToolUse'][0]['matcher'] = 'no_such_tool'
+        twice = ('{"brickson-guard": ' + json.dumps(broken) + ', "brickson-guard": '
+                 + json.dumps(self.agy_hook()['brickson-guard']) + '}')
+        texts = {'a matcher that matches nothing': config(set_matcher),
+                 'an adapter outside this folder': config(other_adapter),
+                 "the guard's answer thrown away": config(answer_dropped),
+                 'a hook beside the guard': config(hook_beside),
+                 "a second hook in the guard's entry": config(second_hook),
+                 'no timeout': config(no_timeout),
+                 'the guard twice, the first one broken': twice}
+        for case, text in texts.items():
+            with self.subTest(case):
+                self.install_agy_hook(text)
+                refused = self.bridge('agy', '--brief', str(self.brief))
+                self.assertEqual(refused.returncode, 2, refused.stderr)
+                self.assertIn('guard hook', refused.stderr)
+        hooks_json = self.agy_folder / '.agents' / 'hooks.json'
+        adapter = self.agy_folder / '.agents' / 'hooks' / 'brickson_guard_adapter.py'
+        (outside / 'hooks.json').write_text(json.dumps(self.agy_hook()))
+        (outside / 'adapter.py').write_text('# elsewhere\n')
+        for case, path, target in (('hooks.json is a link', hooks_json, outside / 'hooks.json'),
+                                   ('the adapter is a link', adapter, outside / 'adapter.py'),
+                                   ('the adapter is missing', adapter, None)):
+            with self.subTest(case):
+                self.install_agy_hook()
+                path.unlink()
+                if target:
+                    path.symlink_to(target)
+                refused = self.bridge('agy', '--brief', str(self.brief))
+                self.assertEqual(refused.returncode, 2, refused.stderr)
+                self.assertIn('guard hook', refused.stderr)
+        self.assertEqual(self.calls(), [])
+        self.install_agy_hook()
+        self.assertEqual(self.bridge('agy', '--brief', str(self.brief)).returncode, 0)
+
+    def test_an_agy_job_that_changes_its_guard_hook_is_reported_and_put_back(self):
+        self.point_agy_at(self.agy_folder)
+        for how in ('matcher', 'link', 'folder-link', 'remove'):
+            with self.subTest(how):
+                outside = Path(self.temp.name) / f'outside-{how}'
+                outside.mkdir()
+                self.install_agy_hook()
+                installed = self.agy_guard_files()
+                result = self.bridge('agy', '--brief', str(self.brief),
+                                     env={'STUB_MODE': 'unhook', 'STUB_UNHOOK': how,
+                                          'STUB_OUTSIDE': str(outside)})
+                self.assertEqual(result.returncode, 1, result.stderr)
+                out = self.job_folder(result)
+                summary = json.loads((out / 'summary.json').read_text())
+                self.assertTrue(summary['status'].startswith('changed its own guard hook'),
+                                summary['status'])
+                self.assertIn('put it back', summary['status'])
+                self.assertIn('put back', summary['guard_hook'])
+                self.assertEqual((out / 'done').read_text(), summary['status'] + '\n')
+                for part in ('.agents', '.agents/hooks', '.agents/hooks.json'):
+                    self.assertFalse((self.agy_folder / part).is_symlink(), part)
+                self.assertEqual(self.agy_guard_files(), installed)
+                if how in ('link', 'folder-link'):  # nothing written through the link
+                    self.assertEqual((outside / 'hooks.json').read_text(), '{"outside": true}\n')
+                    self.assertEqual(sorted(p.name for p in outside.iterdir()),
+                                     ['hooks', 'hooks.json'] if how == 'folder-link'
+                                     else ['hooks.json'])
+                    if how == 'folder-link':
+                        self.assertEqual(list((outside / 'hooks').iterdir()), [])
+                again = self.bridge('agy', '--brief', str(self.brief))
+                self.assertEqual(again.returncode, 0, again.stderr)
+                self.assertEqual(json.loads((self.job_folder(again) / 'summary.json')
+                                            .read_text())['guard_hook'], 'unchanged')
+
+    def test_an_agy_write_job_that_changes_its_guard_hook_is_reported(self):
+        self.point_agy_at(self.agy_folder)
+        self.install_agy_hook()
+        installed = self.agy_guard_files()
+        result = self.bridge('agy', '--brief', str(self.brief), '--write', '--branch', 'docs',
+                             env={'STUB_MODE': 'unhook', 'STUB_UNHOOK': 'matcher'})
+        self.assertEqual(result.returncode, 1, result.stderr)
+        summary = json.loads((self.job_folder(result) / 'summary.json').read_text())
+        self.assertTrue(summary['status'].startswith('changed its own guard hook'))
+        self.assertEqual(self.agy_guard_files(), installed)
+
+    def test_a_guard_hook_that_cannot_be_put_back_is_reported_and_stops_the_next_job(self):
+        self.point_agy_at(self.agy_folder)
+        self.install_agy_hook()
+        result = self.bridge('agy', '--brief', str(self.brief),
+                             env={'STUB_MODE': 'unhook', 'STUB_UNHOOK': 'folder'})
+        self.assertEqual(result.returncode, 1, result.stderr)
+        summary = json.loads((self.job_folder(result) / 'summary.json').read_text())
+        self.assertIn('could not put it back', summary['status'])
+        self.assertIn('unguarded', summary['status'])
+        refused = self.bridge('agy', '--brief', str(self.brief))
+        self.assertEqual(refused.returncode, 2, refused.stderr)
+        self.assertIn('guard hook', refused.stderr)
 
     def test_agy_write_job_starts_its_branch_from_origin_main(self):
         self.point_agy_at(self.agy_folder)
