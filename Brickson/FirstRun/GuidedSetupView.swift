@@ -140,14 +140,7 @@ struct GuidedSetupView: View {
 
     private func advance() {
         activity?.recordActivity()
-        if let next = step.next {
-            path.append(.guidedSetup(next))
-        } else {
-            // Back to Family Setup, wherever the steps were started from.
-            if let start = path.firstIndex(where: { if case .guidedSetup = $0 { true } else { false } }) {
-                path.removeSubrange(start...)
-            }
-        }
+        SettingsRoute.advance(&path, from: step, entry: entry)
     }
 }
 

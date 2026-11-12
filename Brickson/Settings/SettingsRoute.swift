@@ -10,8 +10,10 @@ import Foundation
 nonisolated enum SettingsRoute: Hashable, Sendable {
     case familySetup
     /// A step of Set Up Step by Step, and the control the steps were opened
-    /// with, whose place the first step's Learn About Each Way takes.
-    case guidedSetup(GuidedSetupStep, from: GuidedSetupEntry = .setUpStepByStep)
+    /// with, whose place the first step's Learn About Each Way takes. Every
+    /// step keeps it, with no default, since the second step's layout
+    /// depends on it too (`advance(_:from:entry:)`).
+    case guidedSetup(GuidedSetupStep, from: GuidedSetupEntry)
     case voice
     case reachingTheScreen
     case keepOpen
@@ -47,6 +49,20 @@ nonisolated enum SettingsRoute: Hashable, Sendable {
             false
         }
     }
+
+    /// Next, on `step` of Set Up Step by Step: opens the step after it from
+    /// the same control the steps were opened with, since the second step
+    /// keeps its choices clear of the check-in card's place only when it
+    /// knows the steps were opened after the card was answered
+    /// (`SetupChoicesPlace.arrivals(from:checkInRows:)`). After the last
+    /// step, back to the screen the steps were started from.
+    static func advance(_ path: inout [SettingsRoute], from step: GuidedSetupStep, entry: GuidedSetupEntry) {
+        if let next = step.next {
+            path.append(.guidedSetup(next, from: entry))
+        } else if let start = path.firstIndex(where: { if case .guidedSetup = $0 { true } else { false } }) {
+            path.removeSubrange(start...)
+        }
+    }
 }
 
 /// The control Set Up Step by Step was opened with. The first step's Learn
@@ -54,7 +70,10 @@ nonisolated enum SettingsRoute: Hashable, Sendable {
 /// resting there meets a control that only opens the guide, and the
 /// answers start below every place a look can be resting on the way in
 /// (`SetupAnswersPlace.arrivals(from:homesSettings:rootRow:opener:checkInRows:)`;
-/// docs/DECISIONS.md, "The first step's own rows").
+/// docs/DECISIONS.md, "The first step's own rows"). Opened after the
+/// check-in card was answered, the second step keeps its choices clear of
+/// the card's place too (`SetupChoicesPlace.arrivals(from:checkInRows:)`),
+/// so Next carries the entry to every step (`SettingsRoute.advance(_:from:entry:)`).
 nonisolated enum GuidedSetupEntry: Hashable, Sendable {
     /// Family Setup's Set Up Step by Step.
     case setUpStepByStep

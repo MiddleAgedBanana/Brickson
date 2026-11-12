@@ -155,7 +155,7 @@ struct SetupStoreTests {
         store.goThroughSetupAgain(path: &path, now: due)
 
         #expect(path == [.familySetup, .guidedSetup(.access, from: .checkIn)])
-        #expect(path.last != .guidedSetup(.access))
+        #expect(path.last != .guidedSetup(.access, from: .setUpStepByStep))
         #expect(store.record.accessMethods == [.eyeTracking])
         #expect(store.record.answeredAt == due)
         #expect(store.issue == nil)
