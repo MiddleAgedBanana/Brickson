@@ -61,6 +61,19 @@ which Open Personal Voice Settings has, and which counts as a hazard).
 - `9d00609` Record Voice Settings reached with a held look.
 - A fix to the existing `SettingsChainsTests` for the new screen
   (below), and a merge of `main` once pull request #103 landed.
+- `192f8db` Read Voice Settings' frames inside its screen, and test a
+  row shown in part. Codex's review found that Voice Settings read the
+  screen's frames outside `SettingsScreen`, which gives them only to
+  what it holds, so they were always missing and the way back was
+  never kept within what shows: opened from a row that showed only in
+  part, it reached past the foot. Its content now reads them from
+  inside the screen, as a Library question does, and
+  `testVoiceSettingsFromAScrolledFamilySetup` first opens Voice
+  Settings from a row that shows only its top part (the iPhone at the
+  largest text size, where the row starts below the first
+  screenful), tapped where it shows rather than with the element's own
+  tap, which may scroll it whole into view first, and checks that the
+  way back stays above the foot.
 
 ## Verified
 
@@ -112,8 +125,13 @@ isolation, in a debug build):
 
 - The app: that Back to Family Setup lands in the row's frame on the
   iPhone and the iPad, that Family Setup keeps its scroll on the way
-  back, and the new and changed UI tests themselves. CI's UI jobs are
-  the first run.
+  back, that it stays above the foot when the row showed only in part,
+  and the new and changed UI tests themselves. CI's UI jobs are the
+  first run; the run on `4729b20` had the frames bug and no test that
+  opened Voice Settings from a row shown in part. That the in-part
+  check fails on `4729b20`'s code is reasoned, not run: with no
+  frames, `LibraryQuestionPlace` has no visible height and leaves the
+  way back at the row's top, past the foot.
 - The String Catalog: "Back to Family Setup" was added by hand, as
   `scripts/test.sh unit` would add it; CI says if it differs.
 - Gaze comfort, Snap to Item and where a real pointer rests: device

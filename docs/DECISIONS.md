@@ -5151,6 +5151,11 @@ invariant 10). So the screen is placed from the row:
   nearer the first speed than the way back. So the block starts clear of
   the whole row, not only of the way back, and the Library's questions
   take the same rule (`LibraryQuestionPlaceTests.aRowPastTheFootKeepsTheChoicesClearOfAllOfIt`).
+  Keeping the way back within what shows needs the screen's frames,
+  which `SettingsScreen` gives only to what it holds, so the screen's
+  content reads them from inside it, as a Library question does; read
+  outside it, as first written, they were always missing and the way
+  back reached past the foot (found in review on pull request #105).
 - **What it costs.** One more button on the screen for touch,
   VoiceOver, Voice Control and Full Keyboard Access. On a phone the
   speeds and voices start lower, at the largest text size below the
@@ -5164,7 +5169,8 @@ invariant 10). So the screen is placed from the row:
   whatever control comes first (`VoiceSettingsChainsTests`), and on the
   frames the app draws on CI: where the row shows whole on Family
   Setup's first screenful, and from a scrolled Family Setup at the
-  largest text size (`SettingsOnHomeTests`). Untested in the app until
+  largest text size, with the row whole and, on the phone, with only
+  its top showing (`SettingsOnHomeTests`). Untested in the app until
   CI runs it.
 - **Not scored:** iOS's Personal Voice question, which shows only under
   `PersonalVoiceAskPolicy.fromSettings` ("Personal Voice permission is
