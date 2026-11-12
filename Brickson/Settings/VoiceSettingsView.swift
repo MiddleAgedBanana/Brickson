@@ -26,40 +26,52 @@ import SwiftUI
 struct VoiceSettingsView: View {
     @Binding var path: [SettingsRoute]
 
+    var body: some View {
+        SettingsScreen(title: "Voice Settings") {
+            VoiceSettingsPlaced(path: $path)
+        }
+    }
+}
+
+/// Voice Settings' content, placed from Family Setup's row. It sits inside
+/// `SettingsScreen`, which gives the screen's frames only to what it holds,
+/// so the way back is kept within what shows where the row showed only in
+/// part (`LibraryQuestionPlace`).
+private struct VoiceSettingsPlaced: View {
+    @Binding var path: [SettingsRoute]
+
     @Environment(SettingsLanding.self) private var landing: SettingsLanding?
     @Environment(SettingsActivity.self) private var activity: SettingsActivity?
     @Environment(\.settingsScreenFrames) private var frames
 
     var body: some View {
-        SettingsScreen(title: "Voice Settings") {
-            LibraryQuestionLayout(
-                row: landing?.voiceRow,
-                rowIsLast: false,
-                // Nil until the screen knows where it sits (`LibraryQuestionPlace`).
-                visibleHeight: frames?.content.height,
-                spacing: SettingsMetrics.rowSpacing,
-                rowHeight: SettingsMetrics.rowHeight
-            ) {
-                // No words of its own between the way back and the rest:
-                // the screen's words stay with the controls they explain.
-                Color.clear
-                    .frame(height: 0)
-                    .accessibilityHidden(true)
-                Button {
-                    activity?.recordActivity()
-                    if path.last == .voice {
-                        path.removeLast()
-                    }
-                } label: {
-                    // As tall as the place it is given.
-                    SettingsRowLabel(title: "Back to Family Setup", systemImage: "arrow.uturn.backward")
-                        .frame(maxHeight: .infinity)
+        LibraryQuestionLayout(
+            row: landing?.voiceRow,
+            rowIsLast: false,
+            // Nil until the screen knows where it sits (`LibraryQuestionPlace`).
+            visibleHeight: frames?.content.height,
+            spacing: SettingsMetrics.rowSpacing,
+            rowHeight: SettingsMetrics.rowHeight
+        ) {
+            // No words of its own between the way back and the rest:
+            // the screen's words stay with the controls they explain.
+            Color.clear
+                .frame(height: 0)
+                .accessibilityHidden(true)
+            Button {
+                activity?.recordActivity()
+                if path.last == .voice {
+                    path.removeLast()
                 }
-                .settingsRowStyle()
-                .accessibilityIdentifier("voiceSettingsWayBack")
-                VStack(alignment: .leading, spacing: SettingsMetrics.rowSpacing) {
-                    VoiceContent()
-                }
+            } label: {
+                // As tall as the place it is given.
+                SettingsRowLabel(title: "Back to Family Setup", systemImage: "arrow.uturn.backward")
+                    .frame(maxHeight: .infinity)
+            }
+            .settingsRowStyle()
+            .accessibilityIdentifier("voiceSettingsWayBack")
+            VStack(alignment: .leading, spacing: SettingsMetrics.rowSpacing) {
+                VoiceContent()
             }
         }
     }
