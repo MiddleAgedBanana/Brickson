@@ -106,8 +106,11 @@ next screen. Its first step opens with Learn About Each Way in that
 frame, whose guide opens as a cover of its own with Done where Back to
 Talking is, and starts its answers below every place a look can be
 resting on the way in; Next only moves on, and the check-in card's Go
-Through Setup Again answers the check-in (docs/DECISIONS.md, "The
-first step's own rows"; modelled, untested until CI runs it). It says
+Through Setup Again answers the check-in and opens the first step with
+Learn About Each Way in its own frame (docs/DECISIONS.md, "The first
+step's own rows"). The card's three buttons are full-width rows, so no
+word breaks at the largest text size (2026-11-12, untested until CI
+runs it; `--check-in-due` makes the card show in tests). It says
 what the answers do to Home's sizes, and where iOS reports Switch
 Control or VoiceOver on, which answer may fit, choosing nothing. The
 exception is on narrow windows at the largest text sizes: by centre, a
@@ -626,6 +629,16 @@ release in docs/ROADMAP.md when no thread has it yet.
   buttons"). A category name with one is refused, by editing and import.
   *(accepted by the owner; the layout engine, if it ever gives such a
   word room)*
+- At the largest text size some Settings rows hold a word wider than a
+  row's room for words, so it breaks mid-word (AGENTS.md, "Words never
+  break"): on CI's iPhone 17, "Accessibility" in More Accessibility
+  Settings and "Categories" in Phrases and Categories; on a 375-point
+  phone, "Shortcuts" and "Reaching" too. Measured from word widths and
+  a capture's row geometry, not yet read from captures of those rows.
+  The check-in card's rows, which broke the same way side by side, are
+  full-width since 2026-11-12 and read whole on CI (`SettingsTests`;
+  [`log/2026-11-12-check-in-card.md`](log/2026-11-12-check-in-card.md)).
+  *(the next Settings thread)*
 - On windows under 345pt with Bold Text, the message beside Phrases and
   Type is too narrow for "understand.", which can break there; since
   typing came to Home (2026-10-24) this is Home's (docs/DECISIONS.md,
@@ -810,8 +823,15 @@ release in docs/ROADMAP.md when no thread has it yet.
   own with Done in Back to Talking's frame, the answers start below
   every place a look can be resting on the way in, and Next only moves
   on (the check-in card's Go Through Setup Again answers the check-in
-  instead). Untested in the app until CI runs this change, and a device
-  check says whether it binds. On narrow or short windows at large text
+  instead, and opens the first step with Learn About Each Way in its
+  frame). A device check says whether it binds. Since 2026-11-12 the
+  card's rows are scored too, where the card shows without scrolling
+  (`SettingsChainsTests`, and `SettingsOnHomeTests` with
+  `--check-in-due`; untested in the app until CI runs that change):
+  once the card is answered, the first step Set Up Step by Step opens
+  on that visit starts its answers below where the card's rows were,
+  so on CI's windows its first screenful shows no answer
+  ([`log/2026-11-12-check-in-card.md`](log/2026-11-12-check-in-card.md)). On narrow or short windows at large text
   sizes the first step's first screenful shows no answer, so a family
   scrolls to answer. On a phone the second step's first screenful shows
   only the choices that can sit under its words without meeting a look
@@ -837,11 +857,10 @@ release in docs/ROADMAP.md when no thread has it yet.
   question's button was, over whatever Voice Settings has there); Voice
   Settings itself, where a look held after Family Setup's Voice Settings
   row can rest over choices that play a sample and set a voice or a
-  speed; the check-in card's
-  rows in Family Setup (no test can make a check-in due yet), and where
-  a look rests on the first step after its Go Through Setup Again;
-  Family Setup scrolled before a row is chosen; the first step's guide
-  scrolled; and Settings' other screens.
+  speed; the check-in card on the phone at the largest text size,
+  where it lies below the first screenful, and resting over the card's
+  own words; Family Setup scrolled before a row is chosen; the first
+  step's guide scrolled; and Settings' other screens.
   Since 2026-10-30, answers change Home's sizes as Settings closes;
   Settings' first screens over a larger Home are scored
   (`ProfileChoiceTests`), and `HomeSizesTests` audits them over the

@@ -4114,12 +4114,36 @@ CI's UI tests pass on this change.
   the question and the link but no answer, and a family scrolls to
   answer. The first step has one more control. Going through the steps
   answers a check-in only from the card, or by choosing an answer.
-- **Not scored:** the check-in card's rows (no test can make a check-in
-  due); where a look rests after Go Through Setup Again, over whatever
-  the first step has at that spot, as when it was a link; the steps
-  after the first; and the guide scrolled. Where a pointer rests after
-  an activation, and how Snap to Item picks, need a real device
-  (docs/HANDOFF.md, "Checks that need a real device").
+- **From the check-in card** (2026-11-12;
+  [`log/2026-11-12-check-in-card.md`](log/2026-11-12-check-in-card.md)).
+  Go Through Setup Again opens the first step with Learn About Each Way
+  in its frame (`SettingsLanding.goThroughRow`), as Set Up Step by Step
+  does, and the answers below it (`GuidedSetupEntry.checkIn`). A look
+  comes to the card's button from no other control, since every control
+  before it only opens the next screen and one that did would have
+  answered the check-in unasked. Once the card is answered in its
+  place, a look held over the words that keep that place can meet Set
+  Up Step by Step, the nearest row, so the first step it opens on that
+  visit also starts its answers below where the card's rows were
+  (`GuidedSetupEntry.setUpStepByStepAfterTheCheckIn`). Laid out as
+  before, a held look saved an answer both ways on the phone at the
+  default size, and the second way on the iPad at AX5 too
+  (`SettingsChainsTests.theStepsLaidOutAsBeforeWouldSaveAnAnswer`).
+  Each of the card's rows changes data in the chain map, so a chain
+  that answers the check-in unasked is a hazard. Modelled on CI's
+  windows, Learn About Each Way's top is Go Through's (678.7 on the
+  iPhone 17, 615.1 on the 13-inch iPad in portrait, 615.6 in landscape
+  and 1119.2 at AX5) and Touch starts at 792.7, 760.1, 773.6 and 1266.2;
+  on the phone at AX5 the card lies below the first screenful. After
+  the card is answered, the first step's first screenful shows no
+  answer on any CI window, and a family scrolls to answer, the cost
+  already accepted on narrow windows at large text sizes.
+- **Not scored:** the card on the phone at the largest text size,
+  where it lies below Family Setup's first screenful; resting over the
+  card's own heading and sentence; the steps after the first; and the
+  guide scrolled. Where a pointer rests after an activation, and how
+  Snap to Item picks, need a real device (docs/HANDOFF.md, "Checks that
+  need a real device").
 
 *Before:* the first step opened on its question with the answers under
 it (Touch at 322.67 on the iPhone 17), Next saved the answers, and the
@@ -4713,7 +4737,14 @@ Again answers it as it opens the first step, with the answers as they
 are (`CheckInPolicy.wentThroughAgain`; *The first step's own rows*). Once it is answered on screen,
 passive words take its place at the card's own size until Family Setup
 closes (`CheckInPolicy.afterword`), so the rows below never move up under
-the button just chosen (invariant 10). These times use `Date` and
+the button just chosen (invariant 10). *2026-11-12:* its three
+buttons are full-width rows, one under another, like every other
+Settings row. Side by side, Not Now and Stop Asking each had about 111
+points for their words at the largest text size on CI's iPhone 17, and
+broke mid-word ("Asking" is about 170 points wide there; AGENTS.md,
+"Words never break"). Tests make a check-in due with `--check-in-due`
+(debug builds on test storage only; `CheckInPolicy.makeDue`). These
+times use `Date` and
 `Calendar`, an exception to "Time is `ContinuousClock`": they must survive
 relaunches and restarts, which `ContinuousClock` does not, and a clock
 set backwards only delays a card.
