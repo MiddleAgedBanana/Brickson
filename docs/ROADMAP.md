@@ -587,7 +587,10 @@ Shortcut phrases, titles and parameters that never hold a person's words
 (Apple may use App Shortcuts' phrases and titles, anonymized, to train
 its models); the privacy policy's Siri and Shortcuts section, which
 comes back with the build (AGENTS.md, *The privacy policy is a
-promise*); and whether `INAlternativeAppNames` then works. No code.
+promise*); how the typed message is restored when an action starts
+Brickson while the device is locked, so it is never replaced unread
+(docs/DECISIONS.md, "The typed message"); and whether
+`INAlternativeAppNames` then works. No code.
 *Rows:* section 3's `AppIntent`, `AudioPlaybackIntent`,
 `AppShortcutsProvider`, Vocal Shortcuts, the Action button and
 `INAlternativeAppNames`. *Needs:* the owner's yes, then cloud.
